@@ -2653,8 +2653,8 @@ enum MODE { m_todo, m_vertical, m_horizontal, m_diagonal, m_align } backtrace_mo
 
 
 void
-algn_backtrace_affine (const dyn_char_p shortSeq,
-                       const dyn_char_p longSeq,
+algn_backtrace_affine (const dyn_char_p shortChar,
+                       const dyn_char_p longChar,
                        DIR_MTX_ARROW_t  *direction_matrix,
                        dyn_char_p median,
                        dyn_char_p medianwg,
@@ -2665,26 +2665,26 @@ algn_backtrace_affine (const dyn_char_p shortSeq,
     enum MODE mode = m_todo;
     int shortIdx,
         longIdx,
-        lenShortSeq,
+        shortChar_len,
         longerChar_len;
 
-    elem_t shortSeqElem,
-         longSeqElem,
+    elem_t shortCharElem,
+         longCharElem,
          prep;
 
     DIR_MTX_ARROW_t *initial_direction_matrix;
 
-    shortIdx      = shortSeq->len - 1;
-    longIdx       = longSeq->len - 1;
-    lenShortSeq   = shortIdx;
+    shortIdx      = shortChar->len - 1;
+    longIdx       = longChar->len - 1;
+    shortChar_len   = shortIdx;
     longerChar_len = longIdx;
 
-    assert (lenShortSeq <= longerChar_len);
+    assert (shortChar_len <= longerChar_len);
 
-    shortSeqElem             = shortSeq->seq_begin[shortIdx];
-    longSeqElem              = longSeq->seq_begin[longIdx];
+    shortCharElem             = shortChar->seq_begin[shortIdx];
+    longCharElem              = longChar->seq_begin[longIdx];
     initial_direction_matrix = direction_matrix;
-    direction_matrix         = direction_matrix + (((lenShortSeq + 1) * (longerChar_len + 1)) - 1);
+    direction_matrix         = direction_matrix + (((shortChar_len + 1) * (longerChar_len + 1)) - 1);
     while ((shortIdx != 0) && (longIdx != 0)) {
         if (DEBUG_AFFINE) {
             printf ("In position %d %d of affine backtrace\n", shortIdx, longIdx);
@@ -2706,44 +2706,44 @@ algn_backtrace_affine (const dyn_char_p shortSeq,
             if (HAS_FLAG(END_VERTICAL)) {
                 mode = m_todo;
             }
-            if (!(shortSeqElem & TMPGAP)) {
-                dyn_char_prepend (median, (shortSeqElem | TMPGAP));
-                dyn_char_prepend (medianwg, (shortSeqElem | TMPGAP));
+            if (!(shortCharElem & TMPGAP)) {
+                dyn_char_prepend (median, (shortCharElem | TMPGAP));
+                dyn_char_prepend (medianwg, (shortCharElem | TMPGAP));
             } else {
                 dyn_char_prepend (medianwg, TMPGAP);
             }
-            dyn_char_prepend(retShortSeq, shortSeqElem);
+            dyn_char_prepend(retShortSeq, shortCharElem);
             dyn_char_prepend(retLongSeq, TMPGAP);
             shortIdx--;
             direction_matrix -= (longerChar_len + 1);
-            shortSeqElem = shortSeq->seq_begin[shortIdx];
+            shortCharElem = shortChar->seq_begin[shortIdx];
         } else if (mode == m_horizontal) {
             if (HAS_FLAG(END_HORIZONTAL)) {
                 mode = m_todo;
             }
-            if (!(longSeqElem & TMPGAP)) {
-                dyn_char_prepend (median, (longSeqElem | TMPGAP));
-                dyn_char_prepend (medianwg, (longSeqElem | TMPGAP));
+            if (!(longCharElem & TMPGAP)) {
+                dyn_char_prepend (median, (longCharElem | TMPGAP));
+                dyn_char_prepend (medianwg, (longCharElem | TMPGAP));
             } else {
                 dyn_char_prepend (medianwg, TMPGAP);
             }
             dyn_char_prepend (retShortSeq, TMPGAP);
-            dyn_char_prepend (retLongSeq, longSeqElem);
+            dyn_char_prepend (retLongSeq, longCharElem);
             longIdx--;
             direction_matrix -= 1;
-            longSeqElem = longSeq->seq_begin[longIdx];
+            longCharElem = longChar->seq_begin[longIdx];
         } else if (mode == m_diagonal) {
             if (HAS_FLAG(END_BLOCK)) {
                 mode = m_todo;
             }
-            dyn_char_prepend(retShortSeq, shortSeqElem);
-            dyn_char_prepend(retLongSeq, longSeqElem);
+            dyn_char_prepend(retShortSeq, shortCharElem);
+            dyn_char_prepend(retLongSeq, longCharElem);
             dyn_char_prepend(medianwg, TMPGAP);
             shortIdx--;
             longIdx--;
             direction_matrix -= (longerChar_len + 2);
-            longSeqElem       = longSeq->seq_begin[longIdx];
-            shortSeqElem      = shortSeq->seq_begin[shortIdx];
+            longCharElem       = longChar->seq_begin[longIdx];
+            shortCharElem      = shortChar->seq_begin[shortIdx];
         } else {
             assert (mode == m_align);
             if (HAS_FLAG(ALIGN_TO_HORIZONTAL)) {
@@ -2753,45 +2753,45 @@ algn_backtrace_affine (const dyn_char_p shortSeq,
             } else if (HAS_FLAG(ALIGN_TO_VERTICAL)) {
                 mode = m_vertical;
             }
-            prep = cm_get_median(costMatrix, (shortSeqElem & (NTMPGAP)), (longSeqElem & (NTMPGAP)));
+            prep = cm_get_median(costMatrix, (shortCharElem & (NTMPGAP)), (longCharElem & (NTMPGAP)));
             dyn_char_prepend(median, prep);
             dyn_char_prepend(medianwg, prep);
-            dyn_char_prepend(retShortSeq, shortSeqElem);
-            dyn_char_prepend(retLongSeq, longSeqElem);
+            dyn_char_prepend(retShortSeq, shortCharElem);
+            dyn_char_prepend(retLongSeq, longCharElem);
             shortIdx--;
             longIdx--;
             direction_matrix -= (longerChar_len + 2);
-            longSeqElem       = longSeq->seq_begin[longIdx];
-            shortSeqElem      = shortSeq->seq_begin[shortIdx];
+            longCharElem       = longChar->seq_begin[longIdx];
+            shortCharElem      = shortChar->seq_begin[shortIdx];
         }
     }
     while (shortIdx != 0) {
         assert (initial_direction_matrix < direction_matrix);
-        if (!(shortSeqElem & TMPGAP)) {
-            dyn_char_prepend (median, (shortSeqElem | TMPGAP));
-            dyn_char_prepend (medianwg, (shortSeqElem | TMPGAP));
+        if (!(shortCharElem & TMPGAP)) {
+            dyn_char_prepend (median, (shortCharElem | TMPGAP));
+            dyn_char_prepend (medianwg, (shortCharElem | TMPGAP));
         } else {
             dyn_char_prepend (medianwg, TMPGAP);
         }
-        dyn_char_prepend(retShortSeq, shortSeqElem);
+        dyn_char_prepend(retShortSeq, shortCharElem);
         dyn_char_prepend(retLongSeq, TMPGAP);
         direction_matrix -= (longerChar_len + 1);
         shortIdx--;
-        shortSeqElem = shortSeq->seq_begin[shortIdx];
+        shortCharElem = shortChar->seq_begin[shortIdx];
     }
     while (longIdx != 0) {
         assert (initial_direction_matrix < direction_matrix);
-        if (!(longSeqElem & TMPGAP)) {
-            dyn_char_prepend (median, (longSeqElem | TMPGAP));
-            dyn_char_prepend (medianwg, (longSeqElem | TMPGAP));
+        if (!(longCharElem & TMPGAP)) {
+            dyn_char_prepend (median, (longCharElem | TMPGAP));
+            dyn_char_prepend (medianwg, (longCharElem | TMPGAP));
         } else {
             dyn_char_prepend (medianwg, TMPGAP);
         }
         dyn_char_prepend (retShortSeq, TMPGAP);
-        dyn_char_prepend (retLongSeq, longSeqElem);
+        dyn_char_prepend (retLongSeq, longCharElem);
         longIdx--;
         direction_matrix -= 1;
-        longSeqElem = longSeq->seq_begin[longIdx];
+        longCharElem = longChar->seq_begin[longIdx];
     }
     dyn_char_prepend(retShortSeq, TMPGAP);
     dyn_char_prepend(retLongSeq, TMPGAP);
@@ -2836,19 +2836,19 @@ algn_initialize_matrices_affine_nobt (int go,
                                       int *extend_vertical,
                                       int *extend_horizontal,
                                       const int *precalcMtx) {
-    int // lenShortSeq,
+    int // shortChar_len,
         longerChar_len,
         i = 1,
         j = 1,
         r;
     int *prev_extend_vertical;
     const int *gap_row;
-    elem_t //longSeqElem,
-//         longSeqPrevElem,
-         shortSeqElem;
-//         shortSeqPrevElem;
+    elem_t //longCharElem,
+//         longCharPrevElem,
+         shortCharElem;
+//         shortCharPrevElem;
 
-//    lenShortSeq              = si->len - 1;
+//    shortChar_len              = si->len - 1;
     longerChar_len            = sj->len - 1;
     close_block_diagonal[0]  = 0;
     extend_block_diagonal[0] = 0;
@@ -2866,8 +2866,8 @@ algn_initialize_matrices_affine_nobt (int go,
         print_array ("CB: ", close_block_diagonal,  longerChar_len);
     }
     for (; j <= longerChar_len; j++) {
-//        longSeqElem              = sj->seq_begin[j];
-//        longSeqPrevElem          = sj->seq_begin[j - 1];
+//        longCharElem              = sj->seq_begin[j];
+//        longCharPrevElem          = sj->seq_begin[j - 1];
         r                        = extend_horizontal[j - 1] + gap_row[j];
         extend_horizontal[j]     = r;
         close_block_diagonal[j]  = r;
@@ -2883,15 +2883,15 @@ algn_initialize_matrices_affine_nobt (int go,
         print_array ("CB: ", close_block_diagonal,  longerChar_len);
         printf ("Finished initialization\n\n");
     }
-    /* for (; i <= lenShortSeq; i++) { */
+    /* for (; i <= shortChar_len; i++) { */
         prev_extend_vertical     = extend_vertical;
         extend_vertical         += (1 + longerChar_len);
         close_block_diagonal    += (1 + longerChar_len);
         extend_block_diagonal   += (1 + longerChar_len);
         extend_horizontal       += (1 + longerChar_len);
-        shortSeqElem             = si->seq_begin[i];
-//        shortSeqPrevElem         = si->seq_begin[i - 1];
-        r                        = prev_extend_vertical[0] + (HAS_GAP_EXTENSION(shortSeqElem, c));
+        shortCharElem             = si->seq_begin[i];
+//        shortCharPrevElem         = si->seq_begin[i - 1];
+        r                        = prev_extend_vertical[0] + (HAS_GAP_EXTENSION(shortCharElem, c));
         extend_horizontal[0]     = VERY_LARGE_NUMBER;
         close_block_diagonal[0]  = r;
         extend_block_diagonal[0] = VERY_LARGE_NUMBER;
@@ -2902,8 +2902,8 @@ algn_initialize_matrices_affine_nobt (int go,
 
 void
 algn_initialize_matrices_affine (int go,
-                                 const dyn_char_p shortSeq,
-                                 const dyn_char_p longSeq,
+                                 const dyn_char_p shortChar,
+                                 const dyn_char_p longChar,
                                  const cost_matrices_2d_p costMatrix,
                                  int *close_block_diagonal,
                                  int *extend_block_diagonal,
@@ -2916,13 +2916,13 @@ algn_initialize_matrices_affine (int go,
         printf("\ninitialize_matrices_affine\n");
         fflush(stdout);
     }
-    int /* lenShortSeq, */ longerChar_len, i = 1, j = 1, r;
+    int /* shortChar_len, */ longerChar_len, i = 1, j = 1, r;
     int *prev_extend_vertical;
     const int *gap_row;
-    elem_t /* longSeqElem, longSeqPrevElem, shortSeqPrevElem, */ shortSeqElem;
-//    lenShortSeq    = shortSeq->len - 1; //TODO: is this for deleting opening gap? This is currently unused
+    elem_t /* longCharElem, longCharPrevElem, shortCharPrevElem, */ shortCharElem;
+//    shortChar_len    = shortChar->len - 1; //TODO: is this for deleting opening gap? This is currently unused
 
-    longerChar_len            = longSeq->len  - 1; //TODO: is this for deleting opening gap?
+    longerChar_len            = longChar->len  - 1; //TODO: is this for deleting opening gap?
     final_cost_matrix[0]     = 0;
     close_block_diagonal[0]  = 0;
     extend_block_diagonal[0] = 0;
@@ -2943,8 +2943,8 @@ algn_initialize_matrices_affine (int go,
     }
 
     for (; j <= longerChar_len; j++) {
-//        longSeqElem              = longSeq->seq_begin[j];
-//        longSeqPrevElem          = longSeq->seq_begin[j - 1];
+//        longCharElem              = longChar->seq_begin[j];
+//        longCharPrevElem          = longChar->seq_begin[j - 1];
         r                        = extend_horizontal[j - 1] + gap_row[j];
 
         extend_horizontal[j]     = r;
@@ -2965,7 +2965,7 @@ algn_initialize_matrices_affine (int go,
         print_dirMtx ("DM: ", direction_matrix,     longerChar_len);
         printf ("Finished initializing.\n");
     }
-    /* for (; i <= lenShortSeq; i++) { */
+    /* for (; i <= shortChar_len; i++) { */
         prev_extend_vertical   = extend_vertical;
         extend_vertical       += (1 + longerChar_len);
         close_block_diagonal  += (1 + longerChar_len);
@@ -2974,9 +2974,9 @@ algn_initialize_matrices_affine (int go,
         extend_horizontal     += (1 + longerChar_len);
         direction_matrix      += (1 + longerChar_len);
 
-        shortSeqElem             = shortSeq->seq_begin[i];
-//        shortSeqPrevElem         = shortSeq->seq_begin[i - 1];
-        r                        = prev_extend_vertical[0] + (HAS_GAP_EXTENSION(shortSeqElem, costMatrix));
+        shortCharElem             = shortChar->seq_begin[i];
+//        shortCharPrevElem         = shortChar->seq_begin[i - 1];
+        r                        = prev_extend_vertical[0] + (HAS_GAP_EXTENSION(shortCharElem, costMatrix));
 
         extend_horizontal[0]     = VERY_LARGE_NUMBER;
         close_block_diagonal[0]  = r;
@@ -3026,9 +3026,9 @@ ASSIGN_MINIMUM (int *final_cost_matrix,
 }
 
 int
-algn_fill_plane_2d_affine_nobt (const dyn_char_p shortSeq,
-                                const dyn_char_p longSeq,
-                                int lenShortSeq,
+algn_fill_plane_2d_affine_nobt (const dyn_char_p shortChar,
+                                const dyn_char_p longChar,
+                                int shortChar_len,
                                 int longerChar_len,
                                 const cost_matrices_2d_p costMatrix,
                                 int *extend_horizontal,
@@ -3037,7 +3037,7 @@ algn_fill_plane_2d_affine_nobt (const dyn_char_p shortSeq,
                                 int *extend_block_diagonal,
                                 const int *precalcMtx,
                                 int *gap_open_prec,
-                                int *longSeq_horizontal_extension) {
+                                int *longChar_horizontal_extension) {
     int start_pos = 1,
         end_pos,
         start_v   = 40,
@@ -3055,29 +3055,29 @@ algn_fill_plane_2d_affine_nobt (const dyn_char_p shortSeq,
         *init_close_block_diagonal,
         *init_extend_block_diagonal;
 
-    const int *shortSeq_no_gap_vector;
+    const int *shortChar_no_gap_vector;
 
-    int shortSeq_gap_opening,
-        shortSeq_gap_extension,
-        longSeq_gap_opening,
-        longSeq_gap_extension;
+    int shortChar_gap_opening,
+        shortChar_gap_extension,
+        longChar_gap_opening,
+        longChar_gap_extension;
 
     int gap_char,
         gap_open;
 
     const int *gap_row;
-    int shortSeq_vertical_extension;
+    int shortChar_vertical_extension;
 
     gap_char = costMatrix->gap_char;
     gap_open = costMatrix->gap_open;
-    assert (longerChar_len >= lenShortSeq);
+    assert (longerChar_len >= shortChar_len);
 
     init_extend_horizontal     = extend_horizontal;
     init_extend_vertical       = extend_vertical;
     init_extend_block_diagonal = extend_block_diagonal;
     init_close_block_diagonal  = close_block_diagonal;
     gap_row = cm_get_precal_row(precalcMtx, 0, longerChar_len);
-    end_pos = (longerChar_len - lenShortSeq) + 8;
+    end_pos = (longerChar_len - shortChar_len) + 8;
 
     if (DEBUG_AFFINE) {
         printf("\n--algn fill plane 3 affine nobt\n");
@@ -3091,26 +3091,26 @@ algn_fill_plane_2d_affine_nobt (const dyn_char_p shortSeq,
     if (end_pos < 40) end_pos = 40;
 
     if (end_pos > longerChar_len) end_pos = longerChar_len;
-    elem_t longSeqElem, /* longSeqPrevElem, */ shortSeqElem, shortSeqPrevElem, shortSeq_no_gap, longSeq_no_gap;
+    elem_t longCharElem, /* longCharPrevElem, */ shortCharElem, shortCharPrevElem, shortChar_no_gap, longChar_no_gap;
     elem_t *seq_begini, *seq_beginj;
-    seq_begini = shortSeq->seq_begin;
-    seq_beginj = longSeq->seq_begin;
-    shortSeqElem = seq_begini[0];
+    seq_begini = shortChar->seq_begin;
+    seq_beginj = longChar->seq_begin;
+    shortCharElem = seq_begini[0];
 
     for (j = 1; j <= longerChar_len; j++) {
         gap_open_prec[j] = HAS_GAP_OPENING(seq_beginj[j - 1], seq_beginj[j], gap_char, gap_open);
 
         if ((seq_beginj[j - 1] & gap_char) && (!(seq_beginj[j] & gap_char))) {
-            longSeq_horizontal_extension[j] = gap_open_prec[j] + gap_row[j];
+            longChar_horizontal_extension[j] = gap_open_prec[j] + gap_row[j];
         } else {
-            longSeq_horizontal_extension[j] = gap_row[j];
+            longChar_horizontal_extension[j] = gap_row[j];
         }
     }
 
-    longSeq_horizontal_extension[1] = gap_row[1];
+    longChar_horizontal_extension[1] = gap_row[1];
     int r;
 
-    for (;i <= lenShortSeq; i++) {
+    for (;i <= shortChar_len; i++) {
         prev_extend_horizontal = init_extend_horizontal +
             (((i - 1) % 2) * (longerChar_len + 1));
         prev_extend_vertical = init_extend_vertical +
@@ -3128,68 +3128,68 @@ algn_fill_plane_2d_affine_nobt (const dyn_char_p shortSeq,
         if (i > start_v) start_pos++;
 
         extend_horizontal[start_pos - 1] = VERY_LARGE_NUMBER;
-        shortSeqPrevElem       = shortSeqElem;
-        shortSeqElem           = seq_begini[i];
-        shortSeq_gap_extension = HAS_GAP_EXTENSION(shortSeqElem, costMatrix);
-        shortSeq_gap_opening   = HAS_GAP_OPENING (shortSeqPrevElem, shortSeqElem, gap_char, gap_open);
-        shortSeq_no_gap        = (NTMPGAP) & shortSeqElem;
+        shortCharPrevElem       = shortCharElem;
+        shortCharElem           = seq_begini[i];
+        shortChar_gap_extension = HAS_GAP_EXTENSION(shortCharElem, costMatrix);
+        shortChar_gap_opening   = HAS_GAP_OPENING (shortCharPrevElem, shortCharElem, gap_char, gap_open);
+        shortChar_no_gap        = (NTMPGAP) & shortCharElem;
 
-        if ((i > 1) && ((shortSeqPrevElem & gap_char) && (!(shortSeqElem & gap_char)))) {
-            shortSeq_vertical_extension = shortSeq_gap_opening + shortSeq_gap_extension;
+        if ((i > 1) && ((shortCharPrevElem & gap_char) && (!(shortCharElem & gap_char)))) {
+            shortChar_vertical_extension = shortChar_gap_opening + shortChar_gap_extension;
         } else {
-            shortSeq_vertical_extension = shortSeq_gap_extension;
+            shortChar_vertical_extension = shortChar_gap_extension;
         }
 
-        r = prev_extend_vertical[start_pos - 1] + shortSeq_vertical_extension;
+        r = prev_extend_vertical[start_pos - 1] + shortChar_vertical_extension;
         extend_horizontal    [start_pos - 1] = VERY_LARGE_NUMBER;
         close_block_diagonal [start_pos - 1] = r;
         extend_block_diagonal[start_pos - 1] = VERY_LARGE_NUMBER;
         extend_vertical      [start_pos - 1] = r;
-        longSeqElem                          = seq_beginj[start_pos - 1];
+        longCharElem                          = seq_beginj[start_pos - 1];
         close_block_diagonal [start_pos - 1] = VERY_LARGE_NUMBER;
-        shortSeq_no_gap_vector = costMatrix->cost + (shortSeq_no_gap << costMatrix->costMatrixDimension);
+        shortChar_no_gap_vector = costMatrix->cost + (shortChar_no_gap << costMatrix->costMatrixDimension);
 
         for (j=start_pos; j <= end_pos; j++) {
-//            longSeqPrevElem       = longSeqElem;
-            longSeqElem           = seq_beginj[j];
-            longSeq_no_gap        = (NTMPGAP) & longSeqElem;
-            longSeq_gap_extension = gap_row[j];
-            longSeq_gap_opening   = gap_open_prec[j];
-            FILL_EXTEND_HORIZONTAL_NOBT( longSeq_horizontal_extension[j]
-                                       , longSeq_gap_extension
-                                       , longSeq_gap_opening
+//            longCharPrevElem       = longCharElem;
+            longCharElem           = seq_beginj[j];
+            longChar_no_gap        = (NTMPGAP) & longCharElem;
+            longChar_gap_extension = gap_row[j];
+            longChar_gap_opening   = gap_open_prec[j];
+            FILL_EXTEND_HORIZONTAL_NOBT( longChar_horizontal_extension[j]
+                                       , longChar_gap_extension
+                                       , longChar_gap_opening
                                        , j
                                        , extend_horizontal
 //                                       , costMatrix
                                        , close_block_diagonal );
 
-            FILL_EXTEND_VERTICAL_NOBT( shortSeq_vertical_extension
-                                     , shortSeq_gap_extension
-                                     , shortSeq_gap_opening
+            FILL_EXTEND_VERTICAL_NOBT( shortChar_vertical_extension
+                                     , shortChar_gap_extension
+                                     , shortChar_gap_opening
                                      , j
                                      , extend_vertical
                                      , prev_extend_vertical
 //                                     , costMatrix
                                      , prev_close_block_diagonal );
 
-            FILL_EXTEND_BLOCK_DIAGONAL_NOBT( shortSeqElem
-                                           , longSeqElem
-                                           , shortSeqPrevElem
-//                                           , longSeqPrevElem
+            FILL_EXTEND_BLOCK_DIAGONAL_NOBT( shortCharElem
+                                           , longCharElem
+                                           , shortCharPrevElem
+//                                           , longCharPrevElem
                                            , gap_open
                                            , j
                                            , extend_block_diagonal
                                            , prev_extend_block_diagonal
                                            , prev_close_block_diagonal );
 
-            FILL_CLOSE_BLOCK_DIAGONAL_NOBT( shortSeqElem
-                                          , longSeqElem
-                                          , shortSeq_no_gap
-                                          , longSeq_no_gap
-                                          , shortSeq_gap_opening
-                                          , longSeq_gap_opening
+            FILL_CLOSE_BLOCK_DIAGONAL_NOBT( shortCharElem
+                                          , longCharElem
+                                          , shortChar_no_gap
+                                          , longChar_no_gap
+                                          , shortChar_gap_opening
+                                          , longChar_gap_opening
                                           , j
-                                          , shortSeq_no_gap_vector
+                                          , shortChar_no_gap_vector
                                           , close_block_diagonal
                                           , prev_close_block_diagonal
                                           , prev_extend_vertical
@@ -3223,9 +3223,9 @@ algn_fill_plane_2d_affine_nobt (const dyn_char_p shortSeq,
 
 
 int
-algn_fill_plane_2d_affine ( const dyn_char_p shortSeq
-                          , const dyn_char_p longSeq
-                          ,       size_t lenShortSeq
+algn_fill_plane_2d_affine ( const dyn_char_p shortChar
+                          , const dyn_char_p longChar
+                          ,       size_t shortChar_len
                           ,       size_t longerChar_len
                           ,       int *final_cost_matrix
                           ,       DIR_MTX_ARROW_t  *direction_matrix
@@ -3236,7 +3236,7 @@ algn_fill_plane_2d_affine ( const dyn_char_p shortSeq
                           ,       int *extend_block_diagonal
                           , const int *precalcMtx
                           ,       int *gap_open_prec
-                          ,       int *longSeq_horizontal_extension
+                          ,       int *longChar_horizontal_extension
                           )
 {
     if (DEBUG_AFFINE) {
@@ -3260,30 +3260,32 @@ algn_fill_plane_2d_affine ( const dyn_char_p shortSeq
         *init_close_block_diagonal,
         *init_extend_block_diagonal;
 
-    const int *shortSeq_no_gap_vector;
+    const int *shortChar_no_gap_vector;
 
-    int shortSeq_gap_opening,
-        shortSeq_gap_extension,
-        longSeq_gap_opening,
-        longSeq_gap_extension;
+    int shortChar_gap_opening,
+        shortChar_gap_extension,
+        longChar_gap_opening,
+        longChar_gap_extension;
 
     int gap_char, gap_open;
 
     const int *gap_row;
 
-    int shortSeq_vertical_extension;
+    int shortChar_vertical_extension;
 
     DIR_MTX_ARROW_t tmp_direction_matrix;
 
     gap_char                   = costMatrix->gap_char;
     gap_open                   = costMatrix->gap_open;
-    assert (longerChar_len >= lenShortSeq);
+
+    assert (longerChar_len >= shortChar_len);
+
     init_extend_horizontal     = extend_horizontal;
     init_extend_vertical       = extend_vertical;
     init_extend_block_diagonal = extend_block_diagonal;
     init_close_block_diagonal  = close_block_diagonal;
     gap_row                    = cm_get_precal_row(precalcMtx, 0, longerChar_len);
-    end_pos                    = (longerChar_len - lenShortSeq) + 8;
+    end_pos                    = (longerChar_len - shortChar_len) + 8;
     if (DEBUG_AFFINE) {
         printf("\n--algn fill plane 3 affine\n");
         printf("Before initializing:\n");
@@ -3301,24 +3303,26 @@ algn_fill_plane_2d_affine ( const dyn_char_p shortSeq
         end_pos = longerChar_len;
     }
     //end_pos = longerChar_len;
-    elem_t longSeqElem,
-//         longSeqPrevElem,
-         shortSeqElem,
-         shortSeqPrevElem,
-         shortSeq_no_gap,
-         longSeq_no_gap;
+    elem_t longCharElem,
+           // longCharPrevElem,
+           shortCharElem,
+           shortCharPrevElem,
+           shortChar_no_gap,
+           longChar_no_gap;
     elem_t *seq_begini,
-         *seq_beginj;
+           *seq_beginj;
 
-    seq_begini   = shortSeq->seq_begin;
-    seq_beginj   = longSeq->seq_begin;
-    shortSeqElem = seq_begini[0];
+    seq_begini   = shortChar->seq_begin;
+    seq_beginj   = longChar->seq_begin;
+    shortCharElem = seq_begini[0];
 
     for (j = 1; j <= longerChar_len; j++) {
-        printf("j: %4zu ", j);
+        printf("j: %2zu len: %2zu cap: %2zu\n", j, shortChar->len, shortChar->cap);
+        printf("j: %2zu len: %2zu cap: %2zu\n", j, lenSeq->len, longChar->cap);
+        fflush(stdout);
         // printf("\tseq_beginj %d\n", seq_beginj[j - 1]);
         // printf("\tseq_beginj %d\n", seq_beginj[j]);
-        // printf("\tlongSeq_horizontal_extension %d\n", longSeq_horizontal_extension[j - 1]);
+        // printf("\tlongChar_horizontal_extension %d\n", longChar_horizontal_extension[j - 1]);
         // printf("\tgap_open_prec %d\n", gap_open_prec[j]);
         // printf("\tgap_row %d\n", gap_row[j]);
         // printf("\tgap_char %d\n", gap_char);
@@ -3326,14 +3330,14 @@ algn_fill_plane_2d_affine ( const dyn_char_p shortSeq
         if (     (seq_beginj[j - 1] & gap_char)
             && (!(seq_beginj[j]     & gap_char)) ) {
 
-            longSeq_horizontal_extension[j] = gap_open_prec[j] + gap_row[j];
+            longChar_horizontal_extension[j] = gap_open_prec[j] + gap_row[j];
         } else {
-            longSeq_horizontal_extension[j] = gap_row[j];
+            longChar_horizontal_extension[j] = gap_row[j];
         }
     }
-    longSeq_horizontal_extension[1] = gap_row[1];
+    longChar_horizontal_extension[1] = gap_row[1];
     int r;
-    for (;i <= lenShortSeq; i++) {
+    for (;i <= shortChar_len; i++) {
         // printf("i: %zu\n", i);
         //printf("%d, %d\n", seq_begini[i - 1], seq_begini[i]);
 
@@ -3355,48 +3359,48 @@ algn_fill_plane_2d_affine ( const dyn_char_p shortSeq
         }
         direction_matrix [start_pos - 1] = DO_VERTICAL | END_VERTICAL;
         extend_horizontal[start_pos - 1] = VERY_LARGE_NUMBER;
-        shortSeqPrevElem       = shortSeqElem;
-        shortSeqElem           = seq_begini[i];
-        shortSeq_gap_extension = HAS_GAP_EXTENSION(shortSeqElem, costMatrix);
-        shortSeq_gap_opening   = HAS_GAP_OPENING (shortSeqPrevElem, shortSeqElem, gap_char, gap_open);
-        shortSeq_no_gap        = (NTMPGAP) & shortSeqElem;
+        shortCharPrevElem       = shortCharElem;
+        shortCharElem           = seq_begini[i];
+        shortChar_gap_extension = HAS_GAP_EXTENSION(shortCharElem, costMatrix);
+        shortChar_gap_opening   = HAS_GAP_OPENING (shortCharPrevElem, shortCharElem, gap_char, gap_open);
+        shortChar_no_gap        = (NTMPGAP) & shortCharElem;
 
-        if ((i > 1) && ((shortSeqPrevElem & gap_char) && (!(shortSeqElem & gap_char)))) {
-            shortSeq_vertical_extension = shortSeq_gap_opening + shortSeq_gap_extension;
+        if ((i > 1) && ((shortCharPrevElem & gap_char) && (!(shortCharElem & gap_char)))) {
+            shortChar_vertical_extension = shortChar_gap_opening + shortChar_gap_extension;
         } else {
-            shortSeq_vertical_extension = shortSeq_gap_extension;
+            shortChar_vertical_extension = shortChar_gap_extension;
         }
-        r = prev_extend_vertical[start_pos - 1] + shortSeq_vertical_extension;
+        r = prev_extend_vertical[start_pos - 1] + shortChar_vertical_extension;
         extend_horizontal       [start_pos - 1] = VERY_LARGE_NUMBER;
         close_block_diagonal    [start_pos - 1] = r;
         final_cost_matrix       [start_pos - 1] = r;
         extend_block_diagonal   [start_pos - 1] = VERY_LARGE_NUMBER;
         extend_vertical         [start_pos - 1] = r;
         direction_matrix        [start_pos - 1] = DO_VERTICAL | END_VERTICAL;
-        longSeqElem                             = seq_beginj[start_pos - 1];
+        longCharElem                             = seq_beginj[start_pos - 1];
         close_block_diagonal    [start_pos - 1] = VERY_LARGE_NUMBER;
-        shortSeq_no_gap_vector                  = costMatrix->cost + (shortSeq_no_gap << costMatrix->costMatrixDimension);
+        shortChar_no_gap_vector                  = costMatrix->cost + (shortChar_no_gap << costMatrix->costMatrixDimension);
 
         for (j = start_pos; j <= end_pos; j++) {
-//            longSeqPrevElem       = longSeqElem;
-            longSeqElem           = seq_beginj[j];
+//            longCharPrevElem       = longCharElem;
+            longCharElem           = seq_beginj[j];
             tmp_direction_matrix  = 0;
-            longSeq_no_gap        = (NTMPGAP) & longSeqElem;
-            longSeq_gap_extension = gap_row[j];
-            longSeq_gap_opening   = gap_open_prec[j];
+            longChar_no_gap        = (NTMPGAP) & longCharElem;
+            longChar_gap_extension = gap_row[j];
+            longChar_gap_opening   = gap_open_prec[j];
 
-            tmp_direction_matrix = FILL_EXTEND_HORIZONTAL( longSeq_horizontal_extension[j]
-                                                         , longSeq_gap_extension
-                                                         , longSeq_gap_opening
+            tmp_direction_matrix = FILL_EXTEND_HORIZONTAL( longChar_horizontal_extension[j]
+                                                         , longChar_gap_extension
+                                                         , longChar_gap_opening
                                                          , j
                                                          , extend_horizontal
 //                                                         , c
                                                          , close_block_diagonal
                                                          , tmp_direction_matrix );
 
-            tmp_direction_matrix = FILL_EXTEND_VERTICAL( shortSeq_vertical_extension
-                                                       , shortSeq_gap_extension
-                                                       , shortSeq_gap_opening
+            tmp_direction_matrix = FILL_EXTEND_VERTICAL( shortChar_vertical_extension
+                                                       , shortChar_gap_extension
+                                                       , shortChar_gap_opening
                                                        , j
                                                        , extend_vertical
                                                        , prev_extend_vertical
@@ -3404,10 +3408,10 @@ algn_fill_plane_2d_affine ( const dyn_char_p shortSeq
                                                        , prev_close_block_diagonal
                                                        , tmp_direction_matrix );
 
-            tmp_direction_matrix = FILL_EXTEND_BLOCK_DIAGONAL( shortSeqElem
-                                                             , longSeqElem
-//                                                             , shortSeqPrevElem
-//                                                             , longSeqPrevElem
+            tmp_direction_matrix = FILL_EXTEND_BLOCK_DIAGONAL( shortCharElem
+                                                             , longCharElem
+//                                                             , shortCharPrevElem
+//                                                             , longCharPrevElem
 //                                                             , gap_open
                                                              , j
                                                              , extend_block_diagonal
@@ -3415,14 +3419,14 @@ algn_fill_plane_2d_affine ( const dyn_char_p shortSeq
                                                              , prev_close_block_diagonal
                                                              , tmp_direction_matrix );
 
-            tmp_direction_matrix = FILL_CLOSE_BLOCK_DIAGONAL( shortSeqElem
-                                                            , longSeqElem
-                                                            , shortSeq_no_gap
-                                                            , longSeq_no_gap
-                                                            , shortSeq_gap_opening
-                                                            , longSeq_gap_opening
+            tmp_direction_matrix = FILL_CLOSE_BLOCK_DIAGONAL( shortCharElem
+                                                            , longCharElem
+                                                            , shortChar_no_gap
+                                                            , longChar_no_gap
+                                                            , shortChar_gap_opening
+                                                            , longChar_gap_opening
                                                             , j
-                                                            , shortSeq_no_gap_vector
+                                                            , shortChar_no_gap_vector
                                                             , close_block_diagonal
                                                             , prev_close_block_diagonal
                                                             , prev_extend_vertical
