@@ -1,0 +1,339 @@
+/* POY 4.0 Beta. A phylogenetic analysis program using Dynamic Homologies.    */
+/* Copyright (C) 2007  Andrés Varón, Le Sy Vinh, Illya Bomash, Ward Wheeler,  */
+/* and the American Museum of Natural History.                                */
+/*                                                                            */
+/* This program is free software; you can redistribute it and/or modify       */
+/* it under the terms of the GNU General Public License as published by       */
+/* the Free Software Foundation; either version 2 of the License, or          */
+/* (at your option) any later version.                                        */
+/*                                                                            */
+/* This program is distributed in the hope that it will be useful,            */
+/* but WITHOUT ANY WARRANTY; without even the implied warranty of             */
+/* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the              */
+/* GNU General Public License for more details.                               */
+/*                                                                            */
+/* You should have received a copy of the GNU General Public License          */
+/* along with this program; if not, write to the Free Software                */
+/* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301   */
+/* USA                                                                        */
+
+/******************************************************************************/
+/*                        Pairwise Standard Alignment                         */
+/******************************************************************************/
+/*
+ * As standard, all the caml binding functions are called algn_CAML_<function
+ * name>
+ */
+
+/** Fill a row in a two dimentional alignment
+ *
+ *  When pairwise alignment is performed, two characters are compared over a
+ *  transformation cost matrix. Let's call them characters x and y written over
+ *  some alphabet a of length |a|. Each base of x
+ *  is represented by a column in the transformation cost matrix and each base of
+ *  y by a row. However, note that the actual values that are added during the
+ *  alignment are produced by comparing every single base of x with only |a|
+ *  elements. Now, in order to to make these operations vectorizable, we perform
+ *  the comparisons with |a| precalculated vectors. This puts in context the
+ *  explanation of each parameter in the function.
+ *
+ *  @param nwMtx is the cost matrix row to be filled with values.
+ *  @param pm is the row above nwMtx in the cost matrix being filled.
+ *  @param gap_row is the cost of aligning each base in x with a gap.
+ *  @param alg_row is the cost of aligning each base in x wit hthe base
+ *  represented by the base of the row of nwMtx in y.
+ *  @param dirMtx is the directional matrix for the backtrace
+ *  @param c is the cost of an insertion. As an insertion can only occur for one
+ *  particular base in the alphabet, corresponding to the base in y represented
+ *  by the row that is being filled.
+ *  @param st is the starting cell for the filling.
+ *  @param end is the final cell for the filling.
+ *  If you modify this code check algn_fill_3dMtx as there is sinwMtxilar code there
+ *  used in the first plane of the alignment. It didn't use this function because
+ *  the direction codes are different for three dimensional alignments.
+ */
+
+#ifndef ALIGN_CHARACTERS_H
+#define ALIGN_CHARACTERS_H
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
+
+//#include "alignCharacters.h"
+#include "costMatrix.h"
+#include "debug_constants.h"
+#include "nwMatrices.h"
+#include "dyn_character.h"
+
+// TODO: consider changing this number
+#define VERY_LARGE_NUMBER 100000 // large number, but as this gets added to itself repeatedly, small enough that it won't overflow.
+
+/*
+ * As standard, all the caml binding functions are called algn_CAML_<function
+ * name>
+ */
+/*
+static inline void
+algn_fill_row (       int *curRow
+              , const int *prevRow
+              , const int *gap_row
+              , const int *alg_row
+              ,       DIR_MTX_ARROW_t *dirMtx
+              ,       int c
+              ,       int i
+              ,       int end
+              );
+*/
+
+/*
+static inline int
+algn_fill_plane ( const dyn_char_p seq1
+                ,       int *precalcMtx
+                ,       size_t seq1_len
+                ,       size_t seq2_len
+                ,       int *curRow
+                ,       DIR_MTX_ARROW_t *dirMtx
+                , const cost_matrices_2d_p c
+                );
+*/
+
+
+/* These two seem to be missing in .c file:
+inline void
+algn_fill_row_uk (int *nwMtx, const int *pm, const int *gap_row,
+                  const int *alg_row, unsigned char *dm, int c, int l, int lowerbound,
+                  int upperbound);
+
+inline int
+algn_fill_plane_uk (const dyn_character_t *seq1, int *prec, int seq1_len,
+                    int seq2_len, int *nwMtx, unsigned char *dm, int uk, const struct cost_matrices_2d *c);
+*/
+
+
+/*
+static inline void
+fill_moved (       size_t seq3_len
+           , const int *prev_m
+           , const int *upper_m
+           , const int *diag_m
+           , const int *seq1_gap_seq3
+           , const int *gap_seq2_seq3
+           , const int *seq1_seq2_seq3
+           ,       int *curRow
+           ,       DIR_MTX_ARROW_t *dirMtx
+           );
+*/
+
+
+void
+fill_parallel (       size_t seq3_len
+              , const int *prev_m
+              , const int *upper_m
+              , const int *diag_m
+              ,       int seq1_gap_gap
+              ,       int gap_seq2_gap
+              ,       int seq1_seq2_gap
+              ,       int *curRow
+              ,       DIR_MTX_ARROW_t *dirMtx
+              );
+
+/**
+ *  @param seq1 is a pointer to the character seq1 (vertical)
+ *  @param seq2 is horizontal 1
+    **** Note that seq1 <= seq2 ****
+ *
+ *  @param precalcMtx is a pointer to the precalculated_cost_matrices, a
+ *    three-dimensional matrix that holds
+ *    the transitionn costs for the entire alphabet (of all three characters)
+ *    with the character seq3. The columns are the bases of seq3, and the rows are
+ *    each of the alphabet characters (possibly including ambiguities). See
+ *    cm_precalc_4algn_3d for more information).
+ *  @param seq1_len, @param seq2_len and @param seq3_len are the lengths of the three
+ *    characters to be aligned
+ *  @param nwMtx is a pointer to the first element of the alignment 3dMtx that will
+ *    hold the matrix of the dynamic programming algorithm,
+ *  @param dm holds the direction information for the backtrace.
+ *  @param uk is the value of the Ukkonen barriers (not used in this version of the program)
+ *
+ * TODO: figure out wtf this means:
+ *  consider all combinations:
+ *  seq1, gap, gap   -> const for plane
+ *  gap, seq2, gap   -> const const per row
+ *  seq1, seq2, gap  -> const const per row
+ *  gap, seq2, seq3  -> vector (changes on each row)
+ *  seq1, gap, seq3  -> vector (change per plane)
+ *  seq1, seq2, seq3 -> vector (changes on each row)
+ *  gap, gap, seq3   -> vector (the last one to be done, not parallelizable)
+ *
+ *  All following fns have the same argument values, when present
+ */
+
+int
+algn_fill_3dMtx ( const dyn_char_p seq1
+                , const dyn_char_p seq2
+                , const int *precalcMtx
+                ,       size_t seq1_len
+                ,       size_t seq2_len
+                ,       size_t seq3_len
+                ,       int *curRow
+                ,       DIR_MTX_ARROW_t  *dirMtx
+             // ,       int uk
+                ,       int gap
+                ,       size_t alphSize
+                );
+
+int
+algn_nw_2d ( const dyn_char_p seq1
+           , const dyn_char_p seq2
+           , const cost_matrices_2d_p c
+           ,       nw_matrices_p nwMtxs
+           ,       int uk
+           );
+
+/** Creates N-W matrices, then does alignment
+ *  deltawh is width of ukkonnen barrier
+ */
+int
+algn_nw_3d ( const dyn_char_p seq1
+           , const dyn_char_p seq2
+           , const dyn_char_p seq3
+           , const cost_matrices_3d_p costMtx
+           ,       nw_matrices_p nwMtxs
+        // , int deltawh
+           );
+
+void
+algn_print_bcktrck_2d (const dyn_char_p seq1, const dyn_char_p seq2, const nw_matrices_p m);
+
+void
+algn_print_dynmtrx_2d (const dyn_char_p seq1, const dyn_char_p seq2, nw_matrices_p m);
+
+/** takes two previously aligned characters, @param seq1 & @param seq2, for which some align function has been called,
+ *  and extracts their
+ *  edited version into @param ret_seq1 and @param ret_seq2, using the alignment matrix @param m and the transformation
+ *  cost mstrix @param c. *Nota bene:* Make sure the m and c are the same as used in the alignment of
+ *  the character for the call of cost_2. No check of an appropriate call of cost_2
+ *  is made, therefore the behavior of the function in that case is undefined.
+ *  As passed in, unaligned seq is always shorter than seq2.
+ *  If @param swapped == 1, then seq1 and seq2 are in their original order. Otherwise, len_seq2 > len_seq1
+ *  so they have been switched before the call (meaning that seq1 is still the shortest).
+ *  Depending on the case, deletion or insertion may be biased toward either longer or shorter.
+ *  @param st_seq1 and @param st_seq2 are 0 if there are no limits, have values otherwise.
+ */
+void
+algn_backtrace_2d ( const dyn_char_p seq1
+                  , const dyn_char_p seq2
+                  ,       dyn_char_p ret_seq1
+                  ,       dyn_char_p ret_seq2
+                  , const nw_matrices_p nwMatrix
+                  , const cost_matrices_2d_p costMatrix
+                  ,       int st_seq1
+                  ,       int st_seq2
+                  ,       int swapped
+                  );
+
+/** As backtrace_2d, but for three characters */
+void
+algn_backtrace_3d ( const dyn_char_p seq1
+                  , const dyn_char_p seq2
+                  ,       dyn_char_p seq3
+                  ,       dyn_char_p r1
+                  ,       dyn_char_p r2
+                  ,       dyn_char_p r3
+                  , const cost_matrices_3d_p costMatrix
+                  ,       nw_matrices_p nwMatrix
+                  );
+
+/* replaced with gaps and no gaps versions below
+inline void
+algn_get_median_2d (dyn_char_p seq1, dyn_char_p seq2, cost_matrices_2d_p m, dyn_char_p sm);
+*/
+
+/*
+ * Given three aligned characters seq1, seq2, and seq3, the median between them is
+ * returned in the character sm, using the cost matrix stored in m.
+ */
+void
+algn_get_median_3d (dyn_char_p seq1, dyn_char_p seq2, dyn_char_p seq3, cost_matrices_3d_p m, dyn_char_p sm);
+
+// TODO: document following four fns
+void
+algn_initialize_matrices_affine (       int go
+                                , const dyn_char_p si
+                                , const dyn_char_p sj
+                                , const cost_matrices_2d_p c
+                                ,       int *close_block_diagonal
+                                ,       int *extend_block_diagonal
+                                ,       int *extend_vertical
+                                ,       int *extend_horizontal
+                                ,       int *final_cost_matrix
+                                ,       DIR_MTX_ARROW_t  *direction_matrix
+                                , const int *precalcMtx
+                                );
+
+// TODO: what is nobt? no backtrace? And why the 3? It's not 3d. Maybe third iteration of fn? In that case remove 3, as it's confusing.
+int
+algn_fill_plane_2d_affine_nobt ( const dyn_char_p si
+                               , const dyn_char_p sj
+                               ,       int leni
+                               ,       int lenj
+                               , const cost_matrices_2d_p c
+                               ,       int *extend_horizontal
+                               ,       int *extend_vertical
+                               ,       int *close_block_diagonal
+                               ,       int *extend_block_diagonal
+                               , const int *precalcMtx
+                               ,       int *gap_open_prec
+                               ,       int *sj_horizontal_extension
+                               );
+
+void
+algn_backtrace_affine ( const dyn_char_p shortSeq
+                      , const dyn_char_p longSeq
+                      ,       DIR_MTX_ARROW_t *direction_matrix
+                      ,       dyn_char_p median
+                      ,       dyn_char_p medianwg
+                      ,       dyn_char_p resultShort
+                      ,       dyn_char_p resultLong
+                      , const cost_matrices_2d_p costMatrix
+                      );
+
+int
+algn_fill_plane_2d_affine ( const dyn_char_p si
+                          , const dyn_char_p sj
+                          ,       size_t leni
+                          ,       size_t lenj
+                          ,       int *final_cost_matrix
+                          ,       DIR_MTX_ARROW_t *direction_matrix
+                          , const cost_matrices_2d_p costMatrix
+                          ,       int *extend_horizontal
+                          ,       int *extend_vertical
+                          ,       int *close_block_diagonal
+                          ,       int *extend_block_diagonal
+                          , const int *precalcMtx
+                          ,       int *gap_open_prec
+                          ,       int *sj_horizontal_extension
+                          );
+
+void
+algn_get_median_2d_no_gaps ( dyn_char_p seq1
+                           , dyn_char_p seq2
+                           , cost_matrices_2d_p costMatrix
+                           , dyn_char_p sm
+                           );
+
+void
+algn_get_median_2d_with_gaps ( dyn_char_p seq1
+                             , dyn_char_p seq2
+                             , cost_matrices_2d_p costMatrix
+                             , dyn_char_p sm
+                             );
+
+void
+algn_union ( dyn_char_p seq1
+           , dyn_char_p seq2
+           , dyn_char_p unionSeq
+           );
+
+#endif /* ALIGN_CHARACTERS_H */
