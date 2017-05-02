@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "../alignSequences.h"
+#include "../alignCharacters.h"
 #include "../c_alignment_interface.h"
 #include "../c_code_alloc_setup.h"
 #include "../debug_constants.h"
@@ -41,17 +41,17 @@ int main() {
           // middleCharLen,
            shortCharLen;
 
-    SEQT *longest_vals  = malloc(sizeof(SEQT)),
-        // *middle_vals = malloc(sizeof(SEQT)),
-         *shortest_vals = malloc(sizeof(SEQT));
+    elem_t *longest_vals  = malloc(sizeof(elem_t)),
+        // *middle_vals = malloc(sizeof(elem_t)),
+         *shortest_vals = malloc(sizeof(elem_t));
 
     // Likewise, internal arrays will be alloced and realloced below.
-    // seq_p shortChar     = malloc( sizeof(struct seq) );
-    // seq_p middleChar    = malloc( sizeof(struct seq) );
-    // seq_p longChar      = malloc( sizeof(struct seq) );
-    // seq_p retLongChar   = malloc( sizeof(struct seq) );
-    // seq_p retMiddleChar = malloc( sizeof(struct seq) );
-    // seq_p retShortChar  = malloc( sizeof(struct seq) );
+    // dyn_char_p shortChar     = malloc( sizeof(dyn_character_t) );
+    // dyn_char_p middleChar    = malloc( sizeof(dyn_character_t) );
+    // dyn_char_p longChar      = malloc( sizeof(dyn_character_t) );
+    // dyn_char_p retLongChar   = malloc( sizeof(dyn_character_t) );
+    // dyn_char_p retMiddleChar = malloc( sizeof(dyn_character_t) );
+    // dyn_char_p retShortChar  = malloc( sizeof(dyn_character_t) );
 
     alignIO_p inputChar1         = malloc(sizeof(struct alignIO));    // inputs to align2d fn.
     alignIO_p inputChar2         = malloc(sizeof(struct alignIO));    // inputs to align2d fn.
@@ -395,7 +395,7 @@ int main() {
             copyValsToAIO(inputChar1, longest_vals,  longCharLen,  maxLength);
             copyValsToAIO(inputChar2, shortest_vals, shortCharLen, maxLength);
 
-            // printf("\n\n********** Cost only (all chars should be empty): **********\n");
+            // printf("\n\n******* Cost only (all characters should be empty): ********\n");
             // printf("  \n***************** Original 2d characters: ******************\n");
             // alignIO_print(inputChar1);
             // alignIO_print(inputChar2);
@@ -585,17 +585,17 @@ int main() {
 
         printf("\n\n\n");
 
-        // for (SEQT *base = retLongChar->seq_begin; base != retLongChar->end; base++) {
+        // for (elem_t *base = retLongChar->seq_begin; base != retLongChar->end; base++) {
         //     printf("a: %c\n", *base);
         // }
-        // for (SEQT *base = retShortChar->seq_begin; base != retShortChar->end; base++) {
+        // for (elem_t *base = retShortChar->seq_begin; base != retShortChar->end; base++) {
         //     printf("b: %s\n", base);
         // }
     }
 */
 
-    // Next this: algn_get_median_3d (seq_p inputChar1, seq_p inputChar2, seq_p char3,
-    //                cost_matrices_3d_p m, seq_p sm)
+    // Next this: algn_get_median_3d (dyn_char_p inputChar1, dyn_char_p inputChar2, dyn_char_p char3,
+    //                cost_matrices_3d_p m, dyn_char_p sm)
 
     if(DO_2D) freeCostMtx(costMtx2d, 1);
     if(DO_2D_AFF) freeCostMtx(costMtx2d_affine, 1);  // 0 is !2d

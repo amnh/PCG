@@ -46,7 +46,7 @@
 
 //#define NO_ALLOC_ROUTINES 1
 #include "debug_constants.h"
-#include "seq.h"
+#include "dyn_character.h"
 //#include "ukkCheckp.h"
 #include "ukkCommon.h"
 
@@ -94,7 +94,7 @@ char cStr[MAX_STR];
 
 size_t aLen, bLen, cLen;
 
-//extern int doUkk(seq_p retSeqA, seq_p retSeqB, seq_p retSeqC);    // Main driver function
+//extern int doUkk(dyn_char_p retSeqA, dyn_char_p retSeqB, dyn_char_p retSeqC);    // Main driver function
 
 
 #ifndef NO_ALLOC_ROUTINES
@@ -317,12 +317,12 @@ void *getPtr(AllocInfo *a, int ab, int ac, size_t d, int s) {
 #endif // NO_ALLOC_ROUTINES
 
 
-void copySequence (seq_p s, char *str) {
+void copyCharacter (dyn_char_p s, char *str) {
     if (DEBUG_CALL_ORDER) {
-        printf("copySequence\n");
+        printf("copyCharacter\n");
     }
     int len, i;
-    SEQT *seq_begin;
+    elem_t *seq_begin;
     len       = s->len;
     seq_begin = s->seq_begin;
 
@@ -345,8 +345,8 @@ void copySequence (seq_p s, char *str) {
     return;
 }
 
-int powell_3D_align (seq_p seqA,    seq_p seqB,    seq_p seqC,
-                     seq_p retSeqA, seq_p retSeqB, seq_p retSeqC,
+int powell_3D_align (dyn_char_p seqA,    dyn_char_p seqB,    dyn_char_p seqC,
+                     dyn_char_p retSeqA, dyn_char_p retSeqB, dyn_char_p retSeqC,
                      int mismatch, int gapOpen, int gapExtend) {
     if (DEBUG_CALL_ORDER) {
         printf("powell_3D_align\n");
@@ -368,9 +368,9 @@ int powell_3D_align (seq_p seqA,    seq_p seqB,    seq_p seqC,
     assert (mismatchCost != 0 && gapOpenCost >= 0 && gapExtendCost > 0);
 
 
-    copySequence (seqA, aStr);
-    copySequence (seqB, bStr);
-    copySequence (seqC, cStr);
+    copyCharacter (seqA, aStr);
+    copyCharacter (seqB, bStr);
+    copyCharacter (seqC, cStr);
 
     aLen = seqA->len;
     bLen = seqB->len;

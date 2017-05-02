@@ -16,22 +16,22 @@
  * Place - Suite 330, Boston, MA 02111-1307, USA.
  *
  *
- * This program calculates the edit cost for optimally aligning three sequences
+ * This program calculates the edit cost for optimally aligning three characters
  * under linear gap costs. It also determines an optimal alignment.
- * A generalisation of Ukkonen's algorithm to three sequence is used.
+ * A generalisation of Ukkonen's algorithm to three character is used.
  * Check-pointing is used to recover the alignment.
  * Average time complexity O(n*log(d) + d^3), space complexity O(d^2).
  * For more details, see
  *
  *  D. R. Powell, L. Allison and T. I. Dix,
- *  "Fast, Optimal Alignment of Three Sequences Using Linear Gap Costs"
+ *  "Fast, Optimal Alignment of Three Characters Using Linear Gap Costs"
  *  Journal of Theoretical Biology, 207:3, pp 325-336.
  *
  *  D. R. Powell, L. Allison and T. I. Dix,
  *  "A Versatile Divide and Conquer Technique for Optimal String Alignment
  *  Information Processing Letters, 1999, 70:3, pp 127-139.
  *
- *  D. R. Powell, "Algorithms for Sequence Alignment",
+ *  D. R. Powell, "Algorithms for Character Alignment",
  *  PhD Thesis, Monash University, 2001, Chapter 4.
  */
 
@@ -47,7 +47,7 @@
 #include <stdlib.h>
 
 #include "debug_constants.h"
-#include "seq.h"
+#include "dyn_character.h"
 #include "ukkCheckp.h"
 //#include "ukkCommon.h"
 
@@ -182,7 +182,7 @@ size_t doUkkInLimits( int sab, int sac, int sCost, int sState, int sDist,
         fprintf(stderr, "       fab = %2d, fac = %2d, fCost = %2d, fState = %2d, fDist = %2d\n", fab, fac, fCost, fState, fDist);
 
         int i;
-        fprintf(stderr, "Sequence to align at this step:\n");
+        fprintf(stderr, "Character to align at this step:\n");
         for (i = sDist; i < fDist; i++) {
             fprintf(stderr, "%c", aStr[i]);
             fprintf(stderr, "\n");
@@ -446,7 +446,7 @@ int char_to_base (char v) {
     else return -1;
 }
 
-void printTraceBack(seq_p retSeqA, seq_p retSeqB, seq_p retSeqC) {
+void printTraceBack(dyn_char_p retSeqA, dyn_char_p retSeqB, dyn_char_p retSeqC) {
     // Print out the alignment
 
     // Add the first run of matches to the alignment
@@ -480,13 +480,13 @@ void printTraceBack(seq_p retSeqA, seq_p retSeqB, seq_p retSeqC) {
 
     // Print out the alignment
     for (int j = aSeqIdx - 1; j >= 0; j--) {
-      seq_prepend (retSeqA, char_to_base (resultA[j]));
-      seq_prepend (retSeqB, char_to_base (resultB[j]));
-      seq_prepend (retSeqC, char_to_base (resultC[j]));
+      dyn_char_prepend (retSeqA, char_to_base (resultA[j]));
+      dyn_char_prepend (retSeqB, char_to_base (resultB[j]));
+      dyn_char_prepend (retSeqC, char_to_base (resultC[j]));
     }
-    seq_prepend (retSeqA, 16);
-    seq_prepend (retSeqB, 16);
-    seq_prepend (retSeqC, 16);
+    dyn_char_prepend (retSeqA, 16);
+    dyn_char_prepend (retSeqB, 16);
+    dyn_char_prepend (retSeqC, 16);
 
     assert(aSeqIdx == bSeqIdx && aSeqIdx == cSeqIdx && aSeqIdx == stateIdx && aSeqIdx == costIdx);
 
@@ -555,7 +555,7 @@ int Ukk(int ab, int ac, int d, int state) {
     char indent[1000];
 
 
-int doUkk(seq_p retSeqA, seq_p retSeqB, seq_p retSeqC) {
+int doUkk(dyn_char_p retSeqA, dyn_char_p retSeqB, dyn_char_p retSeqC) {
     CPdummyCell.dist      = 0;
     CPdummyCell.cost      = 0;
     UdummyCell.dist       = 0;

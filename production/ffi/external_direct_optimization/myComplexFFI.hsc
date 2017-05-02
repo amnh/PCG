@@ -33,8 +33,8 @@ instance Storable AlignResult where
     alignment _ = alignment (undefined :: CChar)
     peek ptr    = do -- to get values from the C app
         value    <- (#peek struct align, finalWt) ptr
-        sequence <- (#peek struct align, finalStr) ptr
-        return  AlignResult { val = value, seqFinal = sequence }
+        character <- (#peek struct align, finalStr) ptr
+        return  AlignResult { val = value, seqFinal = character }
 
 ------------- Don't need this part, but left in for completion ---------------
 ----- Will get compiler warning if left out, because of missing instances ----

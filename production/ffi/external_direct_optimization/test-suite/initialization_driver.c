@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../alignSequences.h"
+#include "../alignCharacters.h"
 #include "../c_code_alloc_setup.h"
 #include "../debug_constants.h"
 // #include "../costMatrix.h"
@@ -18,8 +18,8 @@ int power_2 (int input) {
 
 
 
-void setChar(const int *vals, size_t length, seq_p retChar) {
-    // assign sequence into sequence struct
+void setChar(const int *vals, size_t length, dyn_char_p retChar) {
+    // assign character into character struct
     retChar->len = length;
     retChar->seq_begin = retChar->end - length;
     if (length > 0) {
@@ -37,9 +37,9 @@ int main() {
 /******************************** set up and allocate all variables and structs ************************************/
 
 
-/****************  Allocate sequences  ****************/
+/****************  Allocate characters  ****************/
 
-        //***** for following seqs, affine requires gap at start of sequence!!! *****/
+        //***** for following seqs, affine requires gap at start of character!!! *****/
 
     const int longCharLen   = 22;
     const int middleCharLen = 18;
@@ -55,25 +55,25 @@ int main() {
 
 
 
-    seq_p shortChar     = malloc(sizeof(struct seq));
+    dyn_char_p shortChar     = malloc(sizeof(dyn_character_t));
     initializeChar(shortChar, CHAR_CAPACITY);
     setChar(shortest_vals, shortCharLen, shortChar);
 
-    seq_p middleChar    = malloc(sizeof(struct seq));
+    dyn_char_p middleChar    = malloc(sizeof(dyn_character_t));
     initializeChar(middleChar, CHAR_CAPACITY);
     setChar(middle_vals, middleCharLen, middleChar);
 
-    seq_p longChar      = malloc(sizeof(struct seq));
+    dyn_char_p longChar      = malloc(sizeof(dyn_character_t));
     initializeChar(longChar, CHAR_CAPACITY);
     setChar(longest_vals, longCharLen, longChar);
 
-    seq_p retShortChar  = malloc( sizeof(struct seq) );
+    dyn_char_p retShortChar  = malloc( sizeof(dyn_character_t) );
     initializeChar(retShortChar,  CHAR_CAPACITY);
 
-    seq_p retMiddleChar = malloc( sizeof(struct seq) );
+    dyn_char_p retMiddleChar = malloc( sizeof(dyn_character_t) );
     initializeChar(retMiddleChar, CHAR_CAPACITY);
 
-    seq_p retLongChar   = malloc( sizeof(struct seq) );
+    dyn_char_p retLongChar   = malloc( sizeof(dyn_character_t) );
     initializeChar(retLongChar,   CHAR_CAPACITY);
 
 
@@ -89,7 +89,7 @@ int main() {
     // !!!!! if modifying this code, also make sure to change is_metric !!!!!!
     /** TCM is only for non-ambiguous nucleotides, and it used to generate
      *  the entire cost matrix, which includes ambiguous elements.
-     *  TCM is row-major, with each row being the left sequence element.
+     *  TCM is row-major, with each row being the left character element.
      *  It is therefore indexed not by powers of two, but by cardinal integer.
      *  This particular example is both metric and symmetric. All TCMs must be
      *  symmetric. Metricity is decided by PCG application.
@@ -183,7 +183,7 @@ int main() {
 /**************************************************** Do 2d alignment ********************************************************/
 
     if (DO_2D) {
-        printf("\n\n\n******************** Align 2 sequences **********************\n");
+        printf("\n\n\n******************** Align 2 characters **********************\n");
 
         // printf("Original alignment matrix before algn_nw_2d: \n");
         // algn_print_dynmtrx_2d( longChar, shortChar, algn_mtxs2d );
@@ -196,42 +196,42 @@ int main() {
         }
 
 
-        printf("Original 2d sequences:\n");
-        seq_print(longChar);
-        seq_print(shortChar);
+        printf("Original 2d characters:\n");
+        dyn_char_print(longChar);
+        dyn_char_print(shortChar);
 
         algn_backtrace_2d (shortChar, longChar, retShortChar, retLongChar, algn_mtxs2d, costMtx2d, 0, 0, 1);
-        printf("\nAligned 2d sequences\n");
-        seq_print(retLongChar);
-        seq_print(retShortChar);
+        printf("\nAligned 2d characters\n");
+        dyn_char_print(retLongChar);
+        dyn_char_print(retShortChar);
 
         printf("\nAlignment cost: %d\n", algnCost);
 
         /****  Now get alignments  ****/
 
-        printf("\nAligned sequences:\n");
+        printf("\nAligned characters:\n");
         //int *algnCharVals = calloc(retLongChar->len, sizeof(int));
-        seq_p algnChar = malloc( sizeof(struct seq) );;
+        dyn_char_p algnChar = malloc( sizeof(dyn_character_t) );;
         initializeChar(algnChar, CHAR_CAPACITY);
         //free (algnCharVals);
         resetCharValues(algnChar);
 
         // union:
         algn_union (retShortChar, retLongChar, algnChar);
-        printf("  Unioned sequence\n  ");
-        seq_print(algnChar);
+        printf("  Unioned character\n  ");
+        dyn_char_print(algnChar);
 
         // ungapped:
         resetCharValues(algnChar);
         algn_get_median_2d_no_gaps (retShortChar, retLongChar, costMtx2d, algnChar);
         printf("\n  Median without gaps\n  ");
-        seq_print(algnChar);
+        dyn_char_print(algnChar);
 
         // gapped:
         resetCharValues(algnChar);
         algn_get_median_2d_with_gaps (retShortChar, retLongChar, costMtx2d, algnChar);
         printf("\n  Median with gaps\n  ");
-        seq_print(algnChar);
+        dyn_char_print(algnChar);
 
         free (algnChar);
     }
@@ -240,7 +240,7 @@ int main() {
 
 /************************************************ Do 2d affine alignment *****************************************************/
 
-    /*** must have gap at start of sequence!!! ***/
+    /*** must have gap at start of character!!! ***/
 
     if (DO_2D_AFF) {
         resetCharValues(retLongChar);
@@ -272,7 +272,7 @@ int main() {
         //       also note the int factors, which maybe have something to do with the unexplained 12
         //       that appears in matrices.c?
         // here and in algn.c, "block" refers to a block of gaps, so close_block_diagonal is the cost to
-        // end a subsequence of gaps, presumably with a substitution, but maybe by simply switching directions:
+        // end a subcharacter of gaps, presumably with a substitution, but maybe by simply switching directions:
         // there was a vertical gap, now there's a horizontal one.
         close_block_diagonal       = matrix_2d;
         extend_block_diagonal      = matrix_2d + ( 2 * lenLongerChar);
@@ -286,29 +286,29 @@ int main() {
 
         // TODO: ungappedMedChar might not be necessary, as it's unused in ml code:
         size_t medianCharLen       = lenLongChar + lenShortChar + 2;  // 2 because that's how it is in ML code
-        seq_p gappedMedChar        = malloc( sizeof(struct seq) );
+        dyn_char_p gappedMedChar        = malloc( sizeof(dyn_character_t) );
         gappedMedChar->cap         = medianCharLen;
-        gappedMedChar->array_head  = calloc( medianCharLen, sizeof(SEQT));
+        gappedMedChar->array_head  = calloc( medianCharLen, sizeof(elem_t));
         gappedMedChar->len         = 0;
         gappedMedChar->seq_begin   = gappedMedChar->end = gappedMedChar->array_head + medianCharLen;
 
-        seq_p ungappedMedChar       = malloc( sizeof(struct seq) );
+        dyn_char_p ungappedMedChar       = malloc( sizeof(dyn_character_t) );
         ungappedMedChar->cap        = medianCharLen;
-        ungappedMedChar->array_head = calloc( medianCharLen, sizeof(SEQT));
+        ungappedMedChar->array_head = calloc( medianCharLen, sizeof(elem_t));
         ungappedMedChar->len        = 0;
         ungappedMedChar->seq_begin  = ungappedMedChar->end = ungappedMedChar->array_head + medianCharLen;
 
         direction_matrix            = algn_mtxs2dAffine->nw_dirMtx;
 
-        printf("\n\n\n***************** Align 2 sequences affine ********************\n\n");
+        printf("\n\n\n***************** Align 2 characters affine ********************\n\n");
 
-        printf("Original affine 2d sequences:\n");
+        printf("Original affine 2d characters:\n");
 
-        // seq_p longerCharuence = lenLongChar > lenShortChar ? longChar : shortChar;
-        // seq_p shorterCharuence = lenLongChar > lenShortChar ? shortChar : longChar;
+        // dyn_char_p longerCharacter = lenLongChar > lenShortChar ? longChar : shortChar;
+        // dyn_char_p shorterCharacter = lenLongChar > lenShortChar ? shortChar : longChar;
 
-        seq_print(longChar);
-        seq_print(shortChar);
+        dyn_char_print(longChar);
+        dyn_char_print(shortChar);
 
         cm_precalc_4algn(costMtx2d_affine, algn_mtxs2dAffine, longChar);
 
@@ -383,13 +383,13 @@ int main() {
                                retLongChar,
                                costMtx2d_affine);
 
-        printf("\nAligned affine 2d sequences\n");
+        printf("\nAligned affine 2d characters\n");
         if (lenLongChar > lenShortChar) {
-          seq_print(retShortChar);
-          seq_print(retLongChar);
+          dyn_char_print(retShortChar);
+          dyn_char_print(retLongChar);
         } else {
-          seq_print(retLongChar);
-          seq_print(retShortChar);
+          dyn_char_print(retLongChar);
+          dyn_char_print(retShortChar);
         }
 
 
@@ -397,11 +397,11 @@ int main() {
 
         // ungapped:
         printf("\n  Median without gaps\n  ");
-        seq_print(ungappedMedChar);
+        dyn_char_print(ungappedMedChar);
 
         // gapped:
         printf("\n  Median with gaps\n  ");
-        seq_print(gappedMedChar);
+        dyn_char_print(gappedMedChar);
 
         freeChar(gappedMedChar);
         freeChar(ungappedMedChar);
@@ -413,7 +413,7 @@ int main() {
 
     if (DO_3D) {
 
-        printf("\n\n\n******************** Align 3 sequences **********************\n\n");
+        printf("\n\n\n******************** Align 3 characters **********************\n\n");
 
         // must first reset values in retLongChar and retShortChar
         resetCharValues(retLongChar);
@@ -423,10 +423,10 @@ int main() {
         //printf("Final alignment matrix: \n");
         //algn_print_dynmtrx_2d_2d( longChar, shortChar, algn_mtxs3d );
 
-        printf("Original 3d sequences:\n");
-        seq_print(longChar);
-        seq_print(middleChar);
-        seq_print(shortChar);
+        printf("Original 3d characters:\n");
+        dyn_char_print(longChar);
+        dyn_char_print(middleChar);
+        dyn_char_print(shortChar);
         printf("\n");
 
         // short input, middle input, long input
@@ -442,25 +442,25 @@ int main() {
 
         //algn_backtrace_3d (longChar, middleChar, shortChar, retLongChar, retMiddleChar, retShortChar, costMtx3d, algn_mtxs3d);
 
-        printf("\n\nAligned 3d sequences:\n");
-        seq_print(retLongChar);
-        seq_print(retMiddleChar);
-        seq_print(retShortChar);
+        printf("\n\nAligned 3d characters:\n");
+        dyn_char_print(retLongChar);
+        dyn_char_print(retMiddleChar);
+        dyn_char_print(retShortChar);
 
         printf("\nAlignment cost: %d\n", algnCost);
 
         printf("\n\n\n");
 
-        // for (SEQT *base = retLongChar->seq_begin; base != retLongChar->end; base++) {
+        // for (elem_t *base = retLongChar->seq_begin; base != retLongChar->end; base++) {
         //     printf("a: %c\n", *base);
         // }
-        // for (SEQT *base = retShortChar->seq_begin; base != retShortChar->end; base++) {
+        // for (elem_t *base = retShortChar->seq_begin; base != retShortChar->end; base++) {
         //     printf("b: %s\n", base);
         // }
     }
 
-    // Next this: algn_get_median_3d (seq_p seq1, seq_p seq2, seq_p seq3,
-    //                cost_matrices_3d_p m, seq_p sm)
+    // Next this: algn_get_median_3d (dyn_char_p seq1, dyn_char_p seq2, dyn_char_p seq3,
+    //                cost_matrices_3d_p m, dyn_char_p sm)
 
     freeCostMtx(costMtx2d,        1);  // 1 is 2d
     freeCostMtx(costMtx2d_affine, 1);
