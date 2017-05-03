@@ -316,12 +316,6 @@ cm_calc_cost (int *tcm, elem_t a, elem_t b, int alphSize) {
     int *res;
     unsigned int one = 1;
     unsigned int upperBound = one << alphSize;
-    /*
-    printf ("(1 << alphSize) = %d\n", (1 << alphSize));
-    printf ("a = %d\n", a);
-    printf ("b = %d\n", b);
-    fflush(stdout);
-    */
     assert (alphSize >= 0);
     assert (upperBound > a);
     assert (upperBound > b);
@@ -335,15 +329,15 @@ cm_calc_median_3d (elem_t *tcm, elem_t a, elem_t b, elem_t c, int alphSize) {
     unsigned int upperBound = one << alphSize;
 
     if (alphSize <= 0) {
-        printf("Alphabet size = 2");
+        printf("Alphabet size <= 0");
         exit(1);
     }
     if (upperBound <= a) {
-        printf("2a is bigger than alphabet size\n");
+        printf("Element a has a larger than allowed value.\n");
         exit(1);
     }
     if (upperBound <= b) {
-        printf("b is bigger than alphabet size\n");
+        printf("Element b has a larger than allowed value.\n");
         exit(1);
     }
     return (*(tcm + cm_calc_cost_position_3d (a, b, c, alphSize)));
@@ -453,7 +447,8 @@ cm_precalc_4algn (const cost_matrices_2d_p costMatrix, nw_matrices_p alignmentMa
     if(DEBUG_MAT) {
         printf("\n---cm_precalc_4algn\n");
     }
-    size_t i, j,
+    size_t i,
+           j,
            seqLen = seq->len;
 
     int *tmpCost_t,
@@ -476,7 +471,7 @@ cm_precalc_4algn (const cost_matrices_2d_p costMatrix, nw_matrices_p alignmentMa
     }
 
     // We will put the cost of the prepend in the 0th row of the precalc matrix.
-    for (j = 1; j < seqLen; j++) {
+    for (j = 0; j < seqLen; j++) {
 
       //printf ("Before innerIndex (j = %d)\n", j), fflush(stdout);
         int innerIndex = seq_begin_t[j];

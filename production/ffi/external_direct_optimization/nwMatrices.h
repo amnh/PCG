@@ -53,10 +53,10 @@
 // TODO: Can this be a char, instead?
 #define DIR_MTX_ARROW_t  unsigned short
 
-#define Matrices_struct(a) ((struct nwMatrices *) Data_custom_val(a))
+#define Matrices_struct(a) ((struct nwMatrices_t *) Data_custom_val(a))
 
 // TODO: change ints to unsigned ints?
-struct nwMatrices {
+typedef struct nwMatrices_t {
             /****** In each of the following calculations, seq length includes opening gap *******/
     size_t            cap_nw;         /* Total length of available memory allocated to matrix or cube ==
                                        *   | for 2d: 12 * max(len_s1, len_s2)
@@ -77,9 +77,9 @@ struct nwMatrices {
                                        * each of the alphabet characters (possibly including ambiguities). See
                                        * cm_precalc_4algn_3d for more information).
                                        */
-};
+} nwMatrices_t;
 
-typedef struct nwMatrices *nw_matrices_p;
+typedef struct nwMatrices_t *nw_matrices_p;
 
 void print_matrices(nw_matrices_p m, size_t alphSize);
 

@@ -19,7 +19,7 @@
  *  Order of character lengths doesn't matter
  */
 void initializeNWMtx(nw_matrices_p retMtx, size_t len_char1, size_t len_char2, size_t len_char3, int alphSize) {
-
+    // printf("initializeNWMtx\n");
     // in six following allocations all matrices are set to their shortest length because they get realloced in mat_setup_size
     retMtx->cap_nw     =  0;  // a suitably small number to trigger realloc, but be larger than len_eff
     retMtx->cap_eff    = -1;  // cap_eff was -1 so that cap_eff < cap, triggering the realloc ---changed this when types switched to size_t

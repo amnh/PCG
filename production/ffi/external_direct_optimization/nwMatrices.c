@@ -100,7 +100,6 @@ mat_setup_size (nw_matrices_p nwMatrix, size_t len_seq1, size_t len_seq2, size_t
         cap            = (int) mat_size_of_2d_matrix (len_seq1, len_seq2);
         cap_precalcMtx = (1 << alphabetSize) * len_seq1;
         cap_dir        = (len_seq1 + 1) * (len_seq2 + 1);
-        cap_2d         = 0;
     } else {                       /* If the size setup is for 3d */
         cap            = (int) mat_size_of_3d_matrix (len_seq1, len_seq2, len_seq3);
         cap_precalcMtx = (1 << alphabetSize) * (1 << alphabetSize) * len_seq2;  // TODO: why character 2?

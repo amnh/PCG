@@ -134,10 +134,10 @@ int main() {
 
     /****************  Allocate NW matrices  ****************/
     // in following, penultimate parameter was ukk flag, used only to set up 3d matrices.
-    nw_matrices_p algn_mtxs2d       = malloc(sizeof(struct nwMatrices));
-    nw_matrices_p algn_mtxs2dAffine = malloc(sizeof(struct nwMatrices));
-    nw_matrices_p algn_mtxs3d       = malloc(sizeof(struct nwMatrices));
-    nw_matrices_p algn_mtxs3dAffine = malloc(sizeof(struct nwMatrices));
+    nw_matrices_p algn_mtxs2d       = malloc( sizeof(nwMatrices_t) );
+    nw_matrices_p algn_mtxs2dAffine = malloc( sizeof(nwMatrices_t) );
+    nw_matrices_p algn_mtxs3d       = malloc( sizeof(nwMatrices_t) );
+    nw_matrices_p algn_mtxs3dAffine = malloc( sizeof(nwMatrices_t) );
 
     if (DO_2D) {
         initializeNWMtx(algn_mtxs2d,       longChar->len, shortChar->len,  0,             costMtx2d->costMatrixDimension);
@@ -349,20 +349,21 @@ int main() {
 
         // shorter first
         // TODO: why isn't this argument order consistent with next fn call?
-        algnCost = algn_fill_plane_2d_affine (shortChar,
-                                              longChar,
-                                              shortChar->len - 1,
-                                              longChar->len - 1,
-                                              final_cost_matrix,
-                                              direction_matrix,
-                                              costMtx2d_affine,
-                                              extend_horizontal,
-                                              extend_vertical,
-                                              close_block_diagonal,
-                                              extend_block_diagonal,
-                                              precalcMtx,
-                                              gap_open_prec,
-                                              s_horizontal_gap_extension);
+        algnCost = algn_fill_plane_2d_affine ( shortChar
+                                             , longChar
+                                             , shortChar->len - 1
+                                             , longChar->len - 1
+                                             , final_cost_matrix
+                                             , direction_matrix
+                                             , costMtx2d_affine
+                                             , extend_horizontal
+                                             , extend_vertical
+                                             , close_block_diagonal
+                                             , extend_block_diagonal
+                                             , precalcMtx
+                                             , gap_open_prec
+                                             , s_horizontal_gap_extension
+                                             );
 
 
 

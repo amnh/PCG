@@ -233,7 +233,7 @@ int align2d( alignIO_p inputChar1_aio
     }
     //printf("Before NW init.\n");
     //fflush(stdout);
-    nw_matrices_p nw_mtxs2d = malloc(sizeof(struct nwMatrices));
+    nw_matrices_p nw_mtxs2d = malloc( sizeof(nwMatrices_t) );
     initializeNWMtx(nw_mtxs2d, longChar->len, shortChar->len, 0, costMtx2d->costMatrixDimension);
     //printf("After  NW init.\n");
     //fflush(stdout);
@@ -430,20 +430,22 @@ int align2dAffine( alignIO_p inputChar1_aio
     int *matrix_2d;                     //
     int *gap_open_prec;                 // precalculated gap opening value (top row of nw matrix)
     int *s_horizontal_gap_extension;    //
-    int lenLongerChar;                  //
+    int  lenLongerChar;                 //
 
     DIR_MTX_ARROW_t  *direction_matrix;
 
-    nw_matrices_p nw_mtxs2dAffine = malloc(sizeof(struct nwMatrices));
+    nw_matrices_p nw_mtxs2dAffine = malloc( sizeof(nwMatrices_t) );
     initializeNWMtx(nw_mtxs2dAffine, longChar->len, shortChar->len, 0, costMtx2d_affine->costMatrixDimension);
+    // printf("Jut initialized alignment matrices.\n");
     lenLongerChar = longChar->len;
 
     matrix_2d  = nw_mtxs2dAffine->nw_costMtx;
     precalcMtx = nw_mtxs2dAffine->precalcMtx;
 
-    // TODO: figure out what the following seven values do/are
-    //       also note the int factors, which maybe have something to do with the unexplained 12
-    //       that appears in matrices.c?
+
+    cm_precalc_4algn(costMtx2d_affine, nw_mtxs2dAffine, longChar);
+
+
     // here and in algn.c, "block" refers to a block of gaps, so close_block_diagonal is the cost to
     // end a subcharacter of gaps, presumably with a substitution, but maybe by simply switching directions:
     // there was a vertical gap, now there's a horizontal one.
@@ -473,36 +475,36 @@ int align2dAffine( alignIO_p inputChar1_aio
 
     // printf("!!!!!  HERE !!!!!\n");
 
-    cm_precalc_4algn(costMtx2d_affine, nw_mtxs2dAffine, longChar);
-
     // TODO: consider moving all of this into algn.
     //       the following three fns were initially not declared in algn.h
-    algn_initialize_matrices_affine (costMtx2d_affine->gap_open,
-                                     shortChar,
-                                     longChar,
-                                     costMtx2d_affine,
-                                     close_block_diagonal,
-                                     extend_block_diagonal,
-                                     extend_vertical,
-                                     extend_horizontal,
-                                     final_cost_matrix,
-                                     direction_matrix,
-                                     precalcMtx);
+    algn_initialize_matrices_affine ( costMtx2d_affine->gap_open
+                                    , shortChar
+                                    , longChar
+                                    , costMtx2d_affine
+                                    , close_block_diagonal
+                                    , extend_block_diagonal
+                                    , extend_vertical
+                                    , extend_horizontal
+                                    , final_cost_matrix
+                                    , direction_matrix
+                                    , precalcMtx
+                                    );
 
-    int algnCost = algn_fill_plane_2d_affine (shortChar,
-                                              longChar,
-                                              shortChar->len,
-                                              longChar->len,
-                                              final_cost_matrix,
-                                              direction_matrix,
-                                              costMtx2d_affine,
-                                              extend_horizontal,
-                                              extend_vertical,
-                                              close_block_diagonal,
-                                              extend_block_diagonal,
-                                              precalcMtx,
-                                              gap_open_prec,
-                                              s_horizontal_gap_extension);
+    int algnCost = algn_fill_plane_2d_affine ( shortChar
+                                             , longChar
+                                             , shortChar->len - 1  // -1 because of a loop condition in algn_fill_plane_2d_affine
+                                             , longChar->len - 1   // -1 because of a loop condition in algn_fill_plane_2d_affine
+                                             , final_cost_matrix
+                                             , direction_matrix
+                                             , costMtx2d_affine
+                                             , extend_horizontal
+                                             , extend_vertical
+                                             , close_block_diagonal
+                                             , extend_block_diagonal
+                                             , precalcMtx
+                                             , gap_open_prec
+                                             , s_horizontal_gap_extension
+                                             );
 
     if(getMedians) {
         dyn_char_p ungappedMedianChar = malloc(sizeof(dyn_character_t));
