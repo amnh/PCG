@@ -297,7 +297,7 @@ generateLocalResolutions :: HasBlockCost u'' v'' w'' x'' y'' z'' Word Double
                          ->  ResolutionInformation (CharacterSequence u'' v'' w'' x'' y'' z'')
 generateLocalResolutions f1 f2 f3 f4 f5 f6 parentalResolutionContext childResolutionContext =
                 ResInfo
-                { totalSubtreeCost      = newLocalCost + sum (totalSubtreeCost <$> childResolutionContext)
+                { totalSubtreeCost      = newTotalCost 
                 , localSequenceCost     = newLocalCost
                 , subtreeEdgeSet        = newSubtreeEdgeSet
                 , leafSetRepresentation = newLeafSetRep
@@ -305,7 +305,10 @@ generateLocalResolutions f1 f2 f3 f4 f5 f6 parentalResolutionContext childResolu
                 , characterSequence     = newCharacterSequence
                 }
               where
-                newLocalCost         = sequenceCost newCharacterSequence
+                newTotalCost = sequenceCost newCharacterSequence
+
+                newLocalCost = newTotalCost - sum (totalSubtreeCost <$> childResolutionContext)
+
                 newCharacterSequence = transformation (characterSequence parentalResolutionContext) (characterSequence <$> childResolutionContext)
                 newSubtreeEdgeSet    = foldMap subtreeEdgeSet childResolutionContext
 
