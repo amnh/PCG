@@ -78,7 +78,7 @@ costStructure i j = max i j - min i j
 
 
 denseMatrixValue :: DenseTransitionCostMatrix
-denseMatrixValue = generateDenseTransitionCostMatrix    5 costStructure
+denseMatrixValue = generateDenseTransitionCostMatrix 0  5 costStructure
 
 
 memoMatrixValue :: MemoizedCostMatrix

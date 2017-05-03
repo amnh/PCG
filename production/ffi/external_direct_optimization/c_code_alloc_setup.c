@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "alignSequences.h"
+#include "alignCharacters.h"
 #include "c_code_alloc_setup.h"
 #include "debug_constants.h"
 #include "costMatrix.h"
@@ -11,15 +11,15 @@
 //#include "ukkCheckp.h"
 //#include "ukkCommon.h"
 
-// int* tcm, int alphSize, int gap_open, int is_2d, seq_p longChar
+// int* tcm, int alphSize, int gap_open, int is_2d, dyn_char_p longChar
 
 /** Allocate nw_matrices struct. Assigns initial values where necessary. Calls
  *  mat_setup_size to allocate all internal arrays.
  *
- *  Order of sequence lengths doesn't matter
+ *  Order of character lengths doesn't matter
  */
-void initializeNWMtx(nw_matrices_p retMtx, size_t len_seq1, size_t len_seq2, size_t len_seq3, int alphSize) {
-
+void initializeNWMtx(nw_matrices_p retMtx, size_t len_char1, size_t len_char2, size_t len_char3, int alphSize) {
+    // printf("initializeNWMtx\n");
     // in six following allocations all matrices are set to their shortest length because they get realloced in mat_setup_size
     retMtx->cap_nw     =  0;  // a suitably small number to trigger realloc, but be larger than len_eff
     retMtx->cap_eff    = -1;  // cap_eff was -1 so that cap_eff < cap, triggering the realloc ---changed this when types switched to size_t
@@ -31,16 +31,16 @@ void initializeNWMtx(nw_matrices_p retMtx, size_t len_seq1, size_t len_seq2, siz
     // retMtx->cube_d     = malloc ( sizeof( int* ) );  // because they're just pointing to nw_costMtx and nw_dirMtx
     retMtx->precalcMtx = malloc ( sizeof( int ) );
 
-    mat_setup_size (retMtx, len_seq1, len_seq2, len_seq3, alphSize);
+    mat_setup_size (retMtx, len_char1, len_char2, len_char3, alphSize);
 }
 
-/** Does allocation for a sequence struct. Also sets seq pointers within array to correct positions.
+/** Does allocation for a character struct. Also sets char pointers within array to correct positions.
  *
  *  resChar must be alloced before this call.
  */
-void initializeChar(seq_p retChar, size_t allocSize) {
+void initializeChar(dyn_char_p retChar, size_t allocSize) {
     retChar->cap        = allocSize;                              // capacity
-    retChar->array_head = calloc(allocSize, sizeof(SEQT));        // beginning of array that holds dynamic character
+    retChar->array_head = calloc(allocSize, sizeof(elem_t));        // beginning of array that holds dynamic character
 
     retChar->end        = retChar->array_head + allocSize - 1;    // end of array
     retChar->seq_begin  = retChar->end;                           // position of first element in dynamic character
@@ -89,10 +89,10 @@ void setUp2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
                                                // (Actually, I changed that; it used to be 2, now it's 3.)
                                                // This value set in cm_set_affine().
     int is_metric     = 1;
-    SEQT all_elements = (1 << alphSize) - 1;   // Given data is DNA (plus gap), there are 2^5 - 1 possible character states
+    elem_t all_elements = (1 << alphSize) - 1;   // Given data is DNA (plus gap), there are 2^5 - 1 possible character states
 
     int minCost       = INT_MAX;
-    SEQT median       = 0;                     // cumulative median for 2d; combo of median1, etc., below
+    elem_t median       = 0;                     // cumulative median for 2d; combo of median1, etc., below
     int curCost;
 
     // int median1, median2;                      // median of a given nucleotide and current ambElem, for each ambElem
@@ -121,14 +121,14 @@ void setUp2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
         }
     }
 
-    for (SEQT ambElem1 = 1; ambElem1 <= all_elements; ambElem1++) { // for every possible value of ambElem1, ambElem2
-        for (SEQT ambElem2 = 1; ambElem2 <= all_elements; ambElem2++) {
+    for (elem_t ambElem1 = 1; ambElem1 <= all_elements; ambElem1++) { // for every possible value of ambElem1, ambElem2
+        for (elem_t ambElem2 = 1; ambElem2 <= all_elements; ambElem2++) {
             //curCost = 0;                // don't actually need to do this
             minCost = INT_MAX;
             median  = 0;
             // median1 = median2 = 0;
 
-            SEQT nucleotide;
+            elem_t nucleotide;
             for ( nucleotide = 1; nucleotide <= alphSize; nucleotide++) {
                 curCost = distance (tcm, alphSize, nucleotide, ambElem1)
                         + distance (tcm, alphSize, nucleotide, ambElem2);
@@ -157,13 +157,13 @@ void setUp2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
     }
 
     /*
-    SEQT* seqStart = longChar->seq_begin;
+    elem_t* charStart = longChar->seq_begin;
     int gap        = 1 << (alphSize - 1);
-    int seqElem;
+    int charElem;
     for ( size_t i = 0; i < longChar->len; i++) {
-        seqElem = (int) *(seqStart + i);
-        cm_set_prepend_2d (i, cm_get_cost(gap, seqElem, retCostMtx), retCostMtx);
-        cm_set_tail_2d    (cm_get_cost(seqElem, gap, retCostMtx), i, retCostMtx);
+        charElem = (int) *(charStart + i);
+        cm_set_prepend_2d (i, cm_get_cost(gap, charElem, retCostMtx), retCostMtx);
+        cm_set_tail_2d    (cm_get_cost(charElem, gap, retCostMtx), i, retCostMtx);
     } */
 //    return retCostMtx;
     if(DEBUG_COST_M) {
@@ -184,10 +184,10 @@ void setUp3dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_3d_p 
                                               // (Actually, I changed that; it used to be 2, now it's 3.)
                                               // This value set in cm_set_affine().
     // int is_metric    = 1;
-    SEQT all_elements = (1 << alphSize) - 1;   // Given data is DNA (plus gap), there are 2^5 - 1 possible character states
+    elem_t all_elements = (1 << alphSize) - 1;   // Given data is DNA (plus gap), there are 2^5 - 1 possible character states
 
     int minCost    = INT_MAX;
-    SEQT median    = 0;        // and 3d; combos of median1, etc., below
+    elem_t median    = 0;        // and 3d; combos of median1, etc., below
     int curCost;
 
     cm_alloc_set_costs_3d( alphSize
@@ -198,21 +198,21 @@ void setUp3dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_3d_p 
                          , retMtx
                          );
 
-    for (SEQT ambElem1 = 1; ambElem1 <= all_elements; ambElem1++) { // for every possible value of ambElem1, ambElem2, ambElem3
-        for (SEQT ambElem2 = 1; ambElem2 <= all_elements; ambElem2++) {
-            for (SEQT ambElem3 = 1; ambElem3 <= all_elements; ambElem3++) {
+    for (elem_t ambElem1 = 1; ambElem1 <= all_elements; ambElem1++) { // for every possible value of ambElem1, ambElem2, ambElem3
+        for (elem_t ambElem2 = 1; ambElem2 <= all_elements; ambElem2++) {
+            for (elem_t ambElem3 = 1; ambElem3 <= all_elements; ambElem3++) {
                 curCost = 0;                // don't actually need to do this
                 minCost = INT_MAX;
                 median  = 0;
-                for (SEQT nucleotide = 1; nucleotide <= alphSize; nucleotide++) {
+                for (elem_t nucleotide = 1; nucleotide <= alphSize; nucleotide++) {
                     curCost = distance (tcm, alphSize, nucleotide, ambElem1)
                             + distance (tcm, alphSize, nucleotide, ambElem2)
                             + distance (tcm, alphSize, nucleotide, ambElem3);
                     if (curCost < minCost) {
                         minCost = curCost;
-                        median  = (SEQT) 1 << (nucleotide - 1); // median1 | median2 | median3;
+                        median  = (elem_t) 1 << (nucleotide - 1); // median1 | median2 | median3;
                     } else if (curCost == minCost) {
-                        median |= (SEQT) 1 << (nucleotide - 1); // median1 | median2 | median3;
+                        median |= (elem_t) 1 << (nucleotide - 1); // median1 | median2 | median3;
                     }
                 } // nucleotide
 
@@ -261,14 +261,14 @@ void freeNWMtx(nw_matrices_p input) {
     free(input);
 }
 
-void freeChar(seq_p toFree) {
+void freeChar(dyn_char_p toFree) {
     free(toFree->array_head);
     free(toFree);
 }
 
-void resetCharValues(seq_p retChar) {
+void resetCharValues(dyn_char_p retChar) {
     //retChar->end   = retChar->begin + retChar->len;
-    memset(retChar->array_head, 0, retChar->cap * sizeof(SEQT));
+    memset(retChar->array_head, 0, retChar->cap * sizeof(elem_t));
     retChar->seq_begin = retChar->end;
     retChar->len       = 0;
 }

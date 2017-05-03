@@ -25,8 +25,8 @@
  *  As we're only saving one possible matrix, we don't need ambiguities,
  *  Thus for 2d we only have 3 possible states, rather than 7.
  *
- *  Remember that we bias toward the shorter sequence, so INSERT puts a gap
- *  in the longer sequence and DELETE puts a gap in the shorter sequence. TODO: make sure shorter seq is on left
+ *  Remember that we bias toward the shorter character, so INSERT puts a gap
+ *  in the longer character and DELETE puts a gap in the shorter character. TODO: make sure shorter seq is on left
  *
  *  Likewise, for 3d we should need only 7 states and not 2^7 - 1.
  */
@@ -53,10 +53,10 @@
 // TODO: Can this be a char, instead?
 #define DIR_MTX_ARROW_t  unsigned short
 
-#define Matrices_struct(a) ((struct nwMatrices *) Data_custom_val(a))
+#define Matrices_struct(a) ((struct nwMatrices_t *) Data_custom_val(a))
 
 // TODO: change ints to unsigned ints?
-struct nwMatrices {
+typedef struct nwMatrices_t {
             /****** In each of the following calculations, seq length includes opening gap *******/
     size_t            cap_nw;         /* Total length of available memory allocated to matrix or cube ==
                                        *   | for 2d: 12 * max(len_s1, len_s2)
@@ -72,27 +72,27 @@ struct nwMatrices {
     DIR_MTX_ARROW_t  *nw_dirMtx3d_d;  // Matrix for backtrace directions in a 3d alignment, just a set of pointers
                                       //     into nw_costMtx --- alloced internally
     int              *precalcMtx;     /* a three-dimensional matrix that holds
-                                       * the transition costs for the entire alphabet (of all three sequences)
-                                       * with the sequence seq3. The columns are the bases of seq3, and the rows are
+                                       * the transition costs for the entire alphabet (of all three characters)
+                                       * with the character seq3. The columns are the bases of seq3, and the rows are
                                        * each of the alphabet characters (possibly including ambiguities). See
                                        * cm_precalc_4algn_3d for more information).
                                        */
-};
+} nwMatrices_t;
 
-typedef struct nwMatrices *nw_matrices_p;
+typedef struct nwMatrices_t *nw_matrices_p;
 
 void print_matrices(nw_matrices_p m, size_t alphSize);
 
 /*
  * Calculates the amount of memory required to perform a three dimensional
- * alignment between sequences of length w, d, h with ukkonen barriers set to k
+ * alignment between characters of length w, d, h with ukkonen barriers set to k
  */
 size_t
 mat_size_of_3d_matrix (size_t w, size_t d, size_t h); // originally had a fourth parameter, k for ukkunonen
 
 /*
  * Calculates the amount of memory required to perform a two dimensional
- * alignment between sequences of length w and d. This is a small amount of
+ * alignment between characters of length w and d. This is a small amount of
  * memory, so no ukkonen barriers for this.
  */
 size_t
@@ -100,9 +100,9 @@ mat_size_of_2d_matrix (size_t w, size_t h);
 
 /*
  * Rearrange or reallocate memory if necessary to perform an alignment between
- * sequences of length w, d and h. Note that for 2d alignments is necessary to
+ * characters of length w, d and h. Note that for 2d alignments is necessary to
  * set h=0, and uk=0.
- * Order of sequences is unimportant here, as just reallocing.
+ * Order of characters is unimportant here, as just reallocing.
  */
 void
 mat_setup_size (nw_matrices_p m, size_t len_seq1, size_t len_seq2, size_t len_seq3, size_t lcm);

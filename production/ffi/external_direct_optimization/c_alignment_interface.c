@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "alignSequences.h"
+#include "alignCharacters.h"
 #include "c_alignment_interface.h"
 #include "c_code_alloc_setup.h"
 #include "debug_constants.h"
@@ -26,8 +26,8 @@ void alignIO_print(alignIO_p character) {
     fflush(stdout);
 }
 
-/** Copy an array of SEQT into an input/output type. Array values should fill last `length` elements of character buffer. */
-void copyValsToAIO(alignIO_p outChar, SEQT *vals, size_t length, size_t capacity) {
+/** Copy an array of elem_t into an input/output type. Array values should fill last `length` elements of character buffer. */
+void copyValsToAIO(alignIO_p outChar, elem_t *vals, size_t length, size_t capacity) {
     outChar->length   = length;
     outChar->capacity = capacity;
     // printf("here!\n");
@@ -35,7 +35,7 @@ void copyValsToAIO(alignIO_p outChar, SEQT *vals, size_t length, size_t capacity
     // printf("here!!\n");
     size_t offset = capacity - length;
     // printf("\n");
-    memcpy(outChar->character + offset, vals, length * sizeof(SEQT));
+    memcpy(outChar->character + offset, vals, length * sizeof(elem_t));
     // for(size_t i = 0; i < length; i++) {
     //     //outChar->character[i + offset] = vals[i];
     //     printf("copy %zu: %d, %d\n", i, vals[i], outChar->character[i + offset]);
@@ -45,7 +45,7 @@ void copyValsToAIO(alignIO_p outChar, SEQT *vals, size_t length, size_t capacity
 
 /** Reset an alignIO struct. Note: does not realloc or change capacity, so can only be reused if not changing allocation size. */
 void resetAlignIO(alignIO_p inChar) {
-    memset(inChar->character, 0, inChar->capacity * sizeof(SEQT));
+    memset(inChar->character, 0, inChar->capacity * sizeof(elem_t));
     inChar->length = 0;
     // for(size_t i = 0; i < inChar->capacity; i++) {
     //     inChar->character[i] = 0;
@@ -55,7 +55,13 @@ void resetAlignIO(alignIO_p inChar) {
 void allocAlignIO(alignIO_p toAlloc, size_t capacity) {
     toAlloc->length    = 0;
     toAlloc->capacity  = capacity;
-    toAlloc->character = calloc(capacity, sizeof(SEQT));
+    toAlloc->character = calloc(capacity, sizeof(elem_t));
+}
+
+void reallocAlignIO(alignIO_p toAlloc, size_t capacity) {
+    toAlloc->length    = 0;
+    toAlloc->capacity  = capacity;
+    toAlloc->character = realloc(toAlloc->character, capacity * sizeof(elem_t));
 }
 
 
@@ -63,7 +69,7 @@ void allocAlignIO(alignIO_p toAlloc, size_t capacity) {
  *  The values in the last `length` elements in `input` get copied to the last `length` elements in the array in`retChar`.
  *  Ported code needs a gap character at beginning, so provide that.
  */
-void alignIOtoChar(seq_p retChar, alignIO_p input, size_t alphabetSize) {
+void alignIOtoChar(dyn_char_p retChar, alignIO_p input, size_t alphabetSize) {
     // printf("\n\nInput Length:        %2zu\n", input->length  );
     // printf("Input Capacity:      %2zu\n", input->capacity);
     // printf("Input alphabetSize:  %2zu\n", alphabetSize);
@@ -83,12 +89,12 @@ void alignIOtoChar(seq_p retChar, alignIO_p input, size_t alphabetSize) {
     // printf("Input First:       %2d\n",  input->character[input->capacity - input->length]);
     // printf("Input Last:        %2d\n",  input->character[input->capacity - 1]);
     // fflush(stdout);
-    // memcpy(retChar->seq_begin, input->character + offset, input->length * sizeof(SEQT));
+    // memcpy(retChar->seq_begin, input->character + offset, input->length * sizeof(elem_t));
     //printf("\nmemcpy completed\n");
 
     // now add gap to beginning
     retChar->seq_begin--;   // Add another cell, prepended to the array
-    *retChar->seq_begin = ((SEQT) 1) << (alphabetSize - 1);   //Prepend a gap to the array.
+    *retChar->seq_begin = ((elem_t) 1) << (alphabetSize - 1);   //Prepend a gap to the array.
     retChar->len++;
 
     // printf("\nAfter duping struct:\n");
@@ -97,7 +103,7 @@ void alignIOtoChar(seq_p retChar, alignIO_p input, size_t alphabetSize) {
     // printf("Output Array Head: %2d\n",  retChar->array_head[0]);
     // printf("Output First:      %2d\n",  retChar->seq_begin[0] );
     // printf("Output Last:       %2d\n",  retChar->end[0]       );
-    // //printf("Gap value:           %2d\n", ((SEQT) 1) << (alphabetSize - 1));
+    // //printf("Gap value:           %2d\n", ((elem_t) 1) << (alphabetSize - 1));
     // fflush(stdout);
 
 }
@@ -105,7 +111,7 @@ void alignIOtoChar(seq_p retChar, alignIO_p input, size_t alphabetSize) {
 /** Takes in an alignIO and a seq. *Copies* values of character from end of seq to end of alignIO->character.
  *  Also eliminates extra gap needed by legacy code.
  */
-void charToAlignIO(alignIO_p output, seq_p input) {
+void charToAlignIO(alignIO_p output, dyn_char_p input) {
   /*
     printf("Length:   %zu\n", input->len);
     printf("Capacity: %zu\n", input->cap);
@@ -119,13 +125,13 @@ void charToAlignIO(alignIO_p output, seq_p input) {
     output->capacity = input->cap;     // this shouldn't change
 
     // TODO: is this necessary? Is it calloc'ed, and if not do these values matter?
-    memset(output->character, 0, input->cap * sizeof(SEQT));
+    memset(output->character, 0, input->cap * sizeof(elem_t));
     // for(size_t i = output->length; i < input->cap; i++) {
     //     output->character[i] = 0;
     // }
 
     // Start copy after unnecessary gap char in input.
-    memcpy( output->character + offset, input->seq_begin + 1, (input->len - 1) * sizeof(SEQT));
+    memcpy( output->character + offset, input->seq_begin + 1, (input->len - 1) * sizeof(elem_t));
     // for(size_t i = 0; i < input->len; i++) {
     //     printf("Cur char: %zu %u\n", i, input->seq_begin[i]);
     //     fflush(stdout);
@@ -176,10 +182,10 @@ int align2d( alignIO_p inputChar1_aio
     alignIO_p longIO,
               shortIO;
 
-    seq_p longChar     = malloc(sizeof(struct seq)); // input to algn_nw_2d
-    seq_p shortChar    = malloc(sizeof(struct seq)); // input to algn_nw_2d
-    seq_p retShortChar = malloc(sizeof(struct seq)); // aligned sequence outputs from backtrace (not medians)
-    seq_p retLongChar  = malloc(sizeof(struct seq)); // aligned sequence outputs from backtrace (not medians)
+    dyn_char_p longChar     = malloc(sizeof(dyn_character_t)); // input to algn_nw_2d
+    dyn_char_p shortChar    = malloc(sizeof(dyn_character_t)); // input to algn_nw_2d
+    dyn_char_p retShortChar = malloc(sizeof(dyn_character_t)); // aligned character outputs from backtrace (not medians)
+    dyn_char_p retLongChar  = malloc(sizeof(dyn_character_t)); // aligned character outputs from backtrace (not medians)
 
     /*** Most character allocation is now done on Haskell side, but these two are local. ***/
     /*** longChar and shortChar will both have pointers into the input characters, so don't need to be initialized separately ***/
@@ -221,13 +227,13 @@ int align2d( alignIO_p inputChar1_aio
 
     if (DEBUG_ALGN) {
         printf("\nafter copying, seq 1:\n");
-        seq_print(longChar);
+        dyn_char_print(longChar);
         printf("\nafter copying, seq 2:\n");
-        seq_print(shortChar);
+        dyn_char_print(shortChar);
     }
     //printf("Before NW init.\n");
     //fflush(stdout);
-    nw_matrices_p nw_mtxs2d = malloc(sizeof(struct nwMatrices));
+    nw_matrices_p nw_mtxs2d = malloc( sizeof(nwMatrices_t) );
     initializeNWMtx(nw_mtxs2d, longChar->len, shortChar->len, 0, costMtx2d->costMatrixDimension);
     //printf("After  NW init.\n");
     //fflush(stdout);
@@ -255,16 +261,16 @@ int align2d( alignIO_p inputChar1_aio
         //printf("Before backtrace.\n"), fflush(stdout);
         algn_backtrace_2d (shortChar, longChar, retShortChar, retLongChar, nw_mtxs2d, costMtx2d, 0, 0, swapped);
         // printf("After  backtrace.\n"), fflush(stdout);
-        // seq_print(retShortChar);
-        // seq_print(retLongChar);
+        // dyn_char_print(retShortChar);
+        // dyn_char_print(retLongChar);
 
         if (getUngapped) {
-            seq_p ungappedMedianChar = malloc(sizeof(struct seq));
+            dyn_char_p ungappedMedianChar = malloc(sizeof(dyn_character_t));
             initializeChar(ungappedMedianChar, CHAR_CAPACITY);
 
             algn_get_median_2d_no_gaps (retShortChar, retLongChar, costMtx2d, ungappedMedianChar);
             // printf("\n\nUngapped median:\n"), fflush(stdout);
-            // seq_print(ungappedMedianChar);
+            // dyn_char_print(ungappedMedianChar);
 
             charToAlignIO(ungappedOutput_aio, ungappedMedianChar);
             // printf("\n\nUngapped median copy:\n"), fflush(stdout);
@@ -283,7 +289,7 @@ int align2d( alignIO_p inputChar1_aio
         }
         if (getGapped && !getUnion) {
 	    //printf("In here!\n"), fflush(stdout);
-            seq_p gappedMedianChar   = malloc(sizeof(struct seq));
+            dyn_char_p gappedMedianChar   = malloc(sizeof(dyn_character_t));
 
 	    //printf("Before initialize character!\n"), fflush(stdout);
             initializeChar(gappedMedianChar, CHAR_CAPACITY);
@@ -304,7 +310,7 @@ int align2d( alignIO_p inputChar1_aio
 
         }
         if (getUnion) {
-            seq_p gappedMedianChar = malloc(sizeof(struct seq));
+            dyn_char_p gappedMedianChar = malloc(sizeof(dyn_character_t));
 
             initializeChar(gappedMedianChar, CHAR_CAPACITY);
 
@@ -315,7 +321,7 @@ int align2d( alignIO_p inputChar1_aio
             freeChar(gappedMedianChar);
 
             /*** following once union has its own output field again ***/
-            // seq_p unionChar = malloc(sizeof(struct seq));
+            // dyn_char_p unionChar = malloc(sizeof(dyn_character_t));
             // initializeChar(unionChar, CHAR_CAPACITY);
             // algn_union(retShortChar, retLongChar, gappedMedianChar);
 
@@ -364,10 +370,10 @@ int align2dAffine( alignIO_p inputChar1_aio
               shortIO;
 
 
-    seq_p longChar     = malloc(sizeof(struct seq)); // input to algn_nw_2d
-    seq_p shortChar    = malloc(sizeof(struct seq)); // input to algn_nw_2d
-    seq_p retShortChar = malloc(sizeof(struct seq)); // aligned sequence outputs from backtrace (not medians)
-    seq_p retLongChar  = malloc(sizeof(struct seq)); // aligned sequence outputs from backtrace (not medians)
+    dyn_char_p longChar     = malloc(sizeof(dyn_character_t)); // input to algn_nw_2d
+    dyn_char_p shortChar    = malloc(sizeof(dyn_character_t)); // input to algn_nw_2d
+    dyn_char_p retShortChar = malloc(sizeof(dyn_character_t)); // aligned character outputs from backtrace (not medians)
+    dyn_char_p retLongChar  = malloc(sizeof(dyn_character_t)); // aligned character outputs from backtrace (not medians)
 
     /*** Most character allocation is now done on Haskell side, but these two are local. ***/
     /*** longChar and shortChar will both have pointers into the input characters, so don't need to be initialized separately ***/
@@ -408,9 +414,9 @@ int align2dAffine( alignIO_p inputChar1_aio
 
     if (DEBUG_ALGN) {
         printf("\nafter copying, seq 1:\n");
-        seq_print(longChar);
+        dyn_char_print(longChar);
         printf("\nafter copying, seq 2:\n");
-        seq_print(shortChar);
+        dyn_char_print(shortChar);
     }
 
     // TODO: document these variables
@@ -424,26 +430,28 @@ int align2dAffine( alignIO_p inputChar1_aio
     int *matrix_2d;                     //
     int *gap_open_prec;                 // precalculated gap opening value (top row of nw matrix)
     int *s_horizontal_gap_extension;    //
-    int lenLongerChar;                  //
+    int  lenLongerChar;                 //
 
     DIR_MTX_ARROW_t  *direction_matrix;
 
-    nw_matrices_p nw_mtxs2dAffine = malloc(sizeof(struct nwMatrices));
+    nw_matrices_p nw_mtxs2dAffine = malloc( sizeof(nwMatrices_t) );
     initializeNWMtx(nw_mtxs2dAffine, longChar->len, shortChar->len, 0, costMtx2d_affine->costMatrixDimension);
+    // printf("Jut initialized alignment matrices.\n");
     lenLongerChar = longChar->len;
 
     matrix_2d  = nw_mtxs2dAffine->nw_costMtx;
     precalcMtx = nw_mtxs2dAffine->precalcMtx;
 
-    // TODO: figure out what the following seven values do/are
-    //       also note the int factors, which maybe have something to do with the unexplained 12
-    //       that appears in matrices.c?
+
+    cm_precalc_4algn(costMtx2d_affine, nw_mtxs2dAffine, longChar);
+
+
     // here and in algn.c, "block" refers to a block of gaps, so close_block_diagonal is the cost to
     // end a subcharacter of gaps, presumably with a substitution, but maybe by simply switching directions:
     // there was a vertical gap, now there's a horizontal one.
 
     /** 2 through 11 below are offsets into various "matrices" in the alignment matrices, of which there are four
-        of length 2 * longer_sequence and two of longer_sequence */
+        of length 2 * longer_character and two of longer_character */
     close_block_diagonal            =  matrix_2d;
     extend_block_diagonal           = (matrix_2d + ( 2 * lenLongerChar));
     extend_vertical                 = (matrix_2d + ( 4 * lenLongerChar));
@@ -455,9 +463,9 @@ int align2dAffine( alignIO_p inputChar1_aio
 
     // TODO: empty_medianChar might not be necessary, as it's unused in ml code:
 /*    size_t medianCharLen             = CHAR_CAPACITY;
-    seq_p empty_medianChar           = malloc( sizeof(struct seq) );
+    dyn_char_p empty_medianChar           = malloc( sizeof(dyn_character_t) );
     empty_medianChar->cap            = CHAR_CAPACITY;
-    empty_medianChar->array_head     = calloc( CHAR_CAPACITY, sizeof(SEQT));
+    empty_medianChar->array_head     = calloc( CHAR_CAPACITY, sizeof(elem_t));
     empty_medianChar->len            = 0;
     empty_medianChar->seq_begin      = empty_medianChar->end = empty_medianChar->array_head + CHAR_CAPACITY;
 */
@@ -467,40 +475,40 @@ int align2dAffine( alignIO_p inputChar1_aio
 
     // printf("!!!!!  HERE !!!!!\n");
 
-    cm_precalc_4algn(costMtx2d_affine, nw_mtxs2dAffine, longChar);
-
     // TODO: consider moving all of this into algn.
     //       the following three fns were initially not declared in algn.h
-    algn_initialize_matrices_affine (costMtx2d_affine->gap_open,
-                                     shortChar,
-                                     longChar,
-                                     costMtx2d_affine,
-                                     close_block_diagonal,
-                                     extend_block_diagonal,
-                                     extend_vertical,
-                                     extend_horizontal,
-                                     final_cost_matrix,
-                                     direction_matrix,
-                                     precalcMtx);
+    algn_initialize_matrices_affine ( costMtx2d_affine->gap_open
+                                    , shortChar
+                                    , longChar
+                                    , costMtx2d_affine
+                                    , close_block_diagonal
+                                    , extend_block_diagonal
+                                    , extend_vertical
+                                    , extend_horizontal
+                                    , final_cost_matrix
+                                    , direction_matrix
+                                    , precalcMtx
+                                    );
 
-    int algnCost = algn_fill_plane_2d_affine (shortChar,
-                                              longChar,
-                                              shortChar->len,
-                                              longChar->len,
-                                              final_cost_matrix,
-                                              direction_matrix,
-                                              costMtx2d_affine,
-                                              extend_horizontal,
-                                              extend_vertical,
-                                              close_block_diagonal,
-                                              extend_block_diagonal,
-                                              precalcMtx,
-                                              gap_open_prec,
-                                              s_horizontal_gap_extension);
+    int algnCost = algn_fill_plane_2d_affine ( shortChar
+                                             , longChar
+                                             , shortChar->len - 1  // -1 because of a loop condition in algn_fill_plane_2d_affine
+                                             , longChar->len - 1   // -1 because of a loop condition in algn_fill_plane_2d_affine
+                                             , final_cost_matrix
+                                             , direction_matrix
+                                             , costMtx2d_affine
+                                             , extend_horizontal
+                                             , extend_vertical
+                                             , close_block_diagonal
+                                             , extend_block_diagonal
+                                             , precalcMtx
+                                             , gap_open_prec
+                                             , s_horizontal_gap_extension
+                                             );
 
     if(getMedians) {
-        seq_p ungappedMedianChar = malloc(sizeof(struct seq));
-        seq_p gappedMedianChar   = malloc(sizeof(struct seq));
+        dyn_char_p ungappedMedianChar = malloc(sizeof(dyn_character_t));
+        dyn_char_p gappedMedianChar   = malloc(sizeof(dyn_character_t));
         initializeChar(ungappedMedianChar, CHAR_CAPACITY);
         initializeChar(gappedMedianChar,   CHAR_CAPACITY);
 

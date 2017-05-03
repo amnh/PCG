@@ -91,7 +91,7 @@ cm_print_matrix (int *costMatrix, size_t w, size_t h) {
 }
 
 void
-cm_print_median (SEQT *costMatrix, size_t w, size_t h) {
+cm_print_median (elem_t *costMatrix, size_t w, size_t h) {
     size_t i, j;
     for (i = 0; i < h; i++) {
         //fprintf(stdout,"%zu: ", i);
@@ -195,13 +195,13 @@ cm_alloc_set_costs_2d ( int alphSize
     size = 2
          * (1 << (res->costMatrixDimension))
          * (1 << (res->costMatrixDimension))
-         * sizeof(SEQT); // size for median matrix
+         * sizeof(elem_t); // size for median matrix
 
     if (size == 0) {
         printf("Your cost matrix is too large to fit in your memory. I can't continue with your data loading.\n");
         exit(1);
     }
-    res->median = (SEQT *) calloc (size, 1);
+    res->median = (elem_t *) calloc (size, 1);
 
     if ((res->cost == NULL) || (res->median == NULL)) {
         free (res->cost);
@@ -258,7 +258,7 @@ cm_alloc_set_costs_3d ( int alphSize
                       * (1 << (res->costMatrixDimension + 1));
 
     res->cost         = calloc (size * sizeof(int),  1);
-    res->median       = calloc (size * sizeof(SEQT), 1);
+    res->median       = calloc (size * sizeof(elem_t), 1);
 
     if ((res->cost == NULL) || (res->median == NULL)) {
         free (res->cost);
@@ -282,13 +282,13 @@ cm_calc_cost_position (int a, int b, int alphSize) {
 }
 
 static inline int
-cm_calc_cost_position_seq_p (SEQT a, SEQT b, int alphSize) {
+cm_calc_cost_position_dyn_char_p (elem_t a, elem_t b, int alphSize) {
     assert(alphSize >= 0);
     return ((((int) a) << alphSize) + ((int) b));
 }
 
 int
-cm_calc_cost_position_3d_seq_p (SEQT a, SEQT b, SEQT c, int alphSize) {
+cm_calc_cost_position_3d_dyn_char_p (elem_t a, elem_t b, elem_t c, int alphSize) {
     assert(alphSize >= 0);
     return ((((((int) a) << alphSize) + ((int) b)) << alphSize) + ((int) c));
 }
@@ -299,51 +299,45 @@ cm_calc_cost_position_3d (int a, int b, int c, int alphSize) {
     return (((a << alphSize) + b) << alphSize) + c;
 }
 
-static inline SEQT
-cm_calc_median (SEQT *tcm, SEQT a, SEQT b, int alphSize) {
-    SEQT *res;
+static inline elem_t
+cm_calc_median (elem_t *tcm, elem_t a, elem_t b, int alphSize) {
+    elem_t *res;
     unsigned int one = 1;
     unsigned int upperBound = one << alphSize;
     assert (alphSize >= 0);
     assert (upperBound > a);
     assert (upperBound > b);
-    res = tcm + cm_calc_cost_position_seq_p (a, b, alphSize);
+    res = tcm + cm_calc_cost_position_dyn_char_p (a, b, alphSize);
     return (*res);
 }
 
 int
-cm_calc_cost (int *tcm, SEQT a, SEQT b, int alphSize) {
+cm_calc_cost (int *tcm, elem_t a, elem_t b, int alphSize) {
     int *res;
     unsigned int one = 1;
     unsigned int upperBound = one << alphSize;
-    /*
-    printf ("(1 << alphSize) = %d\n", (1 << alphSize));
-    printf ("a = %d\n", a);
-    printf ("b = %d\n", b);
-    fflush(stdout);
-    */
     assert (alphSize >= 0);
     assert (upperBound > a);
     assert (upperBound > b);
-    res = tcm + cm_calc_cost_position_seq_p (a, b, alphSize);
+    res = tcm + cm_calc_cost_position_dyn_char_p (a, b, alphSize);
     return (*res);
 }
 
-static inline SEQT
-cm_calc_median_3d (SEQT *tcm, SEQT a, SEQT b, SEQT c, int alphSize) {
+static inline elem_t
+cm_calc_median_3d (elem_t *tcm, elem_t a, elem_t b, elem_t c, int alphSize) {
     unsigned int one = 1;
     unsigned int upperBound = one << alphSize;
 
     if (alphSize <= 0) {
-        printf("Alphabet size = 2");
+        printf("Alphabet size <= 0");
         exit(1);
     }
     if (upperBound <= a) {
-        printf("2a is bigger than alphabet size\n");
+        printf("Element a has a larger than allowed value.\n");
         exit(1);
     }
     if (upperBound <= b) {
-        printf("b is bigger than alphabet size\n");
+        printf("Element b has a larger than allowed value.\n");
         exit(1);
     }
     return (*(tcm + cm_calc_cost_position_3d (a, b, c, alphSize)));
@@ -351,7 +345,7 @@ cm_calc_median_3d (SEQT *tcm, SEQT a, SEQT b, SEQT c, int alphSize) {
 
 /* TODO: dead code?
 static inline int
-cm_calc_cost_3d (int *tcm, SEQT a, SEQT b, SEQT c, int alphSize) {
+cm_calc_cost_3d (int *tcm, elem_t a, elem_t b, elem_t c, int alphSize) {
     if (alphSize <= 0) {
         printf("Alphabet size = 2\n");
         exit(1);
@@ -367,8 +361,8 @@ cm_calc_cost_3d (int *tcm, SEQT a, SEQT b, SEQT c, int alphSize) {
     return (*(tcm + cm_calc_cost_position_3d (a, b, c, alphSize)));
 }
 
-static inline SEQT
-cm_calc_cost_3d_seq_p (SEQT *tcm, SEQT a, SEQT b, SEQT c, int alphSize) {
+static inline elem_t
+cm_calc_cost_3d_dyn_char_p (elem_t *tcm, elem_t a, elem_t b, elem_t c, int alphSize) {
     if (alphSize <= 0) {
         printf("Alphabet size = 2\n");
         exit(1);
@@ -391,13 +385,13 @@ cm_calc_tmm (int *tmm, int a, int b, int alphSize) {
 }
 
 inline int
-cm_calc_median_position (SEQT a, SEQT b, int alphSize) {
+cm_calc_median_position (elem_t a, elem_t b, int alphSize) {
     return (cm_calc_cost_position (a, b, alphSize));
 }
 */
 
 static inline int *
-cm_get_row (int *tcm, SEQT a, int alphSize) {
+cm_get_row (int *tcm, elem_t a, int alphSize) {
     unsigned int one = 1;
     unsigned int upperBound = one << alphSize;
 
@@ -413,7 +407,7 @@ cm_get_row (int *tcm, SEQT a, int alphSize) {
 }
 
 static inline int *
-cm_get_row_3d (int *tcm, SEQT seq1, SEQT seq2, int alphSize) {
+cm_get_row_3d (int *tcm, elem_t seq1, elem_t seq2, int alphSize) {
     unsigned int one = 1;
     unsigned int upperBound = one << alphSize;
 
@@ -433,8 +427,8 @@ cm_get_row_3d (int *tcm, SEQT seq1, SEQT seq2, int alphSize) {
 }
 
 void
-cm_set_value_2d_seq_p (SEQT a, SEQT b, SEQT v, SEQT *p, int alphSize) {
-    *(p + (cm_calc_cost_position_seq_p (a, b, alphSize))) = v;
+cm_set_value_2d_dyn_char_p (elem_t a, elem_t b, elem_t v, elem_t *p, int alphSize) {
+    *(p + (cm_calc_cost_position_dyn_char_p (a, b, alphSize))) = v;
 }
 
 void
@@ -449,11 +443,12 @@ cm_get_value (int a, int b, int *p, int alphSize) {
 
 /** Sets first row of nw cost matrix, where @param seq is column headers */
 void
-cm_precalc_4algn (const cost_matrices_2d_p costMatrix, nw_matrices_p alignmentMatrices, const seq_p seq) {
+cm_precalc_4algn (const cost_matrices_2d_p costMatrix, nw_matrices_p alignmentMatrices, const dyn_char_p seq) {
     if(DEBUG_MAT) {
         printf("\n---cm_precalc_4algn\n");
     }
-    size_t i, j,
+    size_t i,
+           j,
            seqLen = seq->len;
 
     int *tmpCost_t,
@@ -463,7 +458,7 @@ cm_precalc_4algn (const cost_matrices_2d_p costMatrix, nw_matrices_p alignmentMa
         *prepend_t    = costMatrix->prepend_cost,
         *tailCosts_t  = costMatrix->tail_cost;
 
-    SEQT *seq_begin_t = seq->seq_begin;
+    elem_t *seq_begin_t = seq->seq_begin;
 
     if (DEBUG_MAT) {
         printf ("Precalculated transformation cost matrix.\n");
@@ -476,7 +471,7 @@ cm_precalc_4algn (const cost_matrices_2d_p costMatrix, nw_matrices_p alignmentMa
     }
 
     // We will put the cost of the prepend in the 0th row of the precalc matrix.
-    for (j = 1; j < seqLen; j++) {
+    for (j = 0; j < seqLen; j++) {
 
       //printf ("Before innerIndex (j = %d)\n", j), fflush(stdout);
 	int innerIndex = seq_begin_t[j];
@@ -531,7 +526,7 @@ cm_precalc_4algn (const cost_matrices_2d_p costMatrix, nw_matrices_p alignmentMa
 }
 
 const int *
-cm_get_precal_row (const int *p, SEQT item, int len) {
+cm_get_precal_row (const int *p, elem_t item, int len) {
     return (p + (len * item));
 }
 
@@ -550,7 +545,7 @@ cm_get_row_precalc_3d (const int *outPrecalcMtx, int seq3Len, int alphSize, int 
 }
 
 void
-cm_precalc_4algn_3d (const cost_matrices_3d_p costMtx, int *outPrecalcMtx, const seq_p seq3) {
+cm_precalc_4algn_3d (const cost_matrices_3d_p costMtx, int *outPrecalcMtx, const dyn_char_p seq3) {
     size_t seq3idx,
            seq1idx,
            seq2idx,
@@ -558,7 +553,7 @@ cm_precalc_4algn_3d (const cost_matrices_3d_p costMtx, int *outPrecalcMtx, const
 
     int *tmp_cost,
         *tcm,
-         sequence,
+         character,
         *precalc_pos;
 
     seq3Len = seq3->len;
@@ -573,7 +568,7 @@ cm_precalc_4algn_3d (const cost_matrices_3d_p costMtx, int *outPrecalcMtx, const
 
             //printf("seq1: %d,    seq2: %d,    cost: %d\n", seq1idx, seq2idx, *(tmp_cost+1));
             for (seq3idx = 0; seq3idx < seq3Len; seq3idx++) {
-                sequence     = seq3->seq_begin[seq3idx];
+                character     = seq3->seq_begin[seq3idx];
 
                 precalc_pos  = (int *) cm_get_pos_in_precalc ( outPrecalcMtx
                                                              , seq3Len
@@ -582,16 +577,16 @@ cm_precalc_4algn_3d (const cost_matrices_3d_p costMtx, int *outPrecalcMtx, const
                                                              , seq2idx
                                                              , seq3idx
                                                              );
-                *precalc_pos = *(tmp_cost + sequence);
-                // printf("seq1: %2d,    seq2: %2d,    sequence: %2d,    cost: %2d\n", seq1idx, seq2idx, sequence, *(precalc_pos));
+                *precalc_pos = *(tmp_cost + character);
+                // printf("seq1: %2d,    seq2: %2d,    character: %2d,    cost: %2d\n", seq1idx, seq2idx, character, *(precalc_pos));
             }
         }
     }
 }
 
 void
-cm_set_value_3d_seq_p (SEQT a, SEQT b, SEQT c, SEQT v, SEQT *p, int alphSize) {
-    *(p + (cm_calc_cost_position_3d_seq_p (a, b, c, alphSize))) = v;
+cm_set_value_3d_dyn_char_p (elem_t a, elem_t b, elem_t c, elem_t v, elem_t *p, int alphSize) {
+    *(p + (cm_calc_cost_position_3d_dyn_char_p (a, b, c, alphSize))) = v;
 }
 
 void
@@ -631,13 +626,13 @@ cm_set_tail_2d (int a, int b, cost_matrices_2d_p c) {
 }
 
 void
-cm_set_median_2d (SEQT a, SEQT b, SEQT v, cost_matrices_2d_p c) {
-    cm_set_value_2d_seq_p (a, b, v, c->median, c->costMatrixDimension);
+cm_set_median_2d (elem_t a, elem_t b, elem_t v, cost_matrices_2d_p c) {
+    cm_set_value_2d_dyn_char_p (a, b, v, c->median, c->costMatrixDimension);
 }
 
 void
-cm_set_median_3d (SEQT a, SEQT b, SEQT cp, SEQT v, cost_matrices_3d_p c) {
-    cm_set_value_3d_seq_p (a, b, cp, v, c->median, c->costMatrixDimension);
+cm_set_median_3d (elem_t a, elem_t b, elem_t cp, elem_t v, cost_matrices_3d_p c) {
+    cm_set_value_3d_dyn_char_p (a, b, cp, v, c->median, c->costMatrixDimension);
 }
 
 int
@@ -662,7 +657,7 @@ cm_compare (cost_matrices_2d_p a, cost_matrices_2d_p b) {
     else {
         len_g = 2 * (1 << (a->costMatrixDimension)) * (1 << (a->costMatrixDimension));
         len   = len_g * sizeof(int);
-        len1  = len_g * sizeof(SEQT);
+        len1  = len_g * sizeof(elem_t);
         cmp   = memcmp (a->cost, b->cost, len);
         if (cmp != 0) return (cmp);
         cmp   = memcmp (a->median, b->median, len1);
@@ -681,18 +676,18 @@ cm_copy_contents (int *src, int *tgt, int len) {
 
 
 void
-cm_copy_contents_seq_p (SEQT *src, SEQT *tgt, int len) {
+cm_copy_contents_dyn_char_p (elem_t *src, elem_t *tgt, int len) {
     int i;
     for (i = 0; i < len; i++)
         *(tgt + i) = *(src + i);
 }
 
-SEQT
-cm_get_median (const cost_matrices_2d_p tmp, SEQT a, SEQT b) {
+elem_t
+cm_get_median (const cost_matrices_2d_p tmp, elem_t a, elem_t b) {
     return (cm_calc_median((tmp->median), a, b, tmp->costMatrixDimension));
 }
 
-SEQT
-cm_get_median_3d (const cost_matrices_3d_p t, SEQT a, SEQT b, SEQT c) {
+elem_t
+cm_get_median_3d (const cost_matrices_3d_p t, elem_t a, elem_t b, elem_t c) {
     return (cm_calc_median_3d((t->median), a, b, c, t->costMatrixDimension));
 }

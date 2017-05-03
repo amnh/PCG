@@ -27,8 +27,8 @@
 
 /** Fill a row in a two dimentional alignment
  *
- *  When pairwise alignment is performed, two sequences are compared over a
- *  transformation cost matrix. Let's call them sequences x and y written over
+ *  When pairwise alignment is performed, two characters are compared over a
+ *  transformation cost matrix. Let's call them characters x and y written over
  *  some alphabet a of length |a|. Each base of x
  *  is represented by a column in the transformation cost matrix and each base of
  *  y by a row. However, note that the actual values that are added during the
@@ -53,18 +53,18 @@
  *  the direction codes are different for three dimensional alignments.
  */
 
-#ifndef SEQALIGN_H
-#define SEQALIGN_H
+#ifndef ALIGN_CHARACTERS_H
+#define ALIGN_CHARACTERS_H
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 
-//#include "alignSequences.h"
+//#include "alignCharacters.h"
 #include "costMatrix.h"
 #include "debug_constants.h"
 #include "nwMatrices.h"
-#include "seq.h"
+#include "dyn_character.h"
 
 // TODO: consider changing this number
 #define VERY_LARGE_NUMBER 100000 // large number, but as this gets added to itself repeatedly, small enough that it won't overflow.
@@ -88,7 +88,7 @@ algn_fill_row (       int *curRow
 
 /*
 static inline int
-algn_fill_plane ( const seq_p seq1
+algn_fill_plane ( const dyn_char_p seq1
                 ,       int *precalcMtx
                 ,       size_t seq1_len
                 ,       size_t seq2_len
@@ -106,7 +106,7 @@ algn_fill_row_uk (int *nwMtx, const int *pm, const int *gap_row,
                   int upperbound);
 
 inline int
-algn_fill_plane_uk (const struct seq *seq1, int *prec, int seq1_len,
+algn_fill_plane_uk (const dyn_character_t *seq1, int *prec, int seq1_len,
                     int seq2_len, int *nwMtx, unsigned char *dm, int uk, const struct cost_matrices_2d *c);
 */
 
@@ -139,18 +139,18 @@ fill_parallel (       size_t seq3_len
               );
 
 /**
- *  @param seq1 is a pointer to the sequence seq1 (vertical)
+ *  @param seq1 is a pointer to the character seq1 (vertical)
  *  @param seq2 is horizontal 1
     **** Note that seq1 <= seq2 ****
  *
  *  @param precalcMtx is a pointer to the precalculated_cost_matrices, a
  *    three-dimensional matrix that holds
- *    the transitionn costs for the entire alphabet (of all three sequences)
- *    with the sequence seq3. The columns are the bases of seq3, and the rows are
+ *    the transitionn costs for the entire alphabet (of all three characters)
+ *    with the character seq3. The columns are the bases of seq3, and the rows are
  *    each of the alphabet characters (possibly including ambiguities). See
  *    cm_precalc_4algn_3d for more information).
  *  @param seq1_len, @param seq2_len and @param seq3_len are the lengths of the three
- *    sequences to be aligned
+ *    characters to be aligned
  *  @param nwMtx is a pointer to the first element of the alignment 3dMtx that will
  *    hold the matrix of the dynamic programming algorithm,
  *  @param dm holds the direction information for the backtrace.
@@ -170,8 +170,8 @@ fill_parallel (       size_t seq3_len
  */
 
 int
-algn_fill_3dMtx ( const seq_p seq1
-                , const seq_p seq2
+algn_fill_3dMtx ( const dyn_char_p seq1
+                , const dyn_char_p seq2
                 , const int *precalcMtx
                 ,       size_t seq1_len
                 ,       size_t seq2_len
@@ -184,8 +184,8 @@ algn_fill_3dMtx ( const seq_p seq1
                 );
 
 int
-algn_nw_2d ( const seq_p seq1
-           , const seq_p seq2
+algn_nw_2d ( const dyn_char_p seq1
+           , const dyn_char_p seq2
            , const cost_matrices_2d_p c
            ,       nw_matrices_p nwMtxs
            ,       int uk
@@ -195,25 +195,25 @@ algn_nw_2d ( const seq_p seq1
  *  deltawh is width of ukkonnen barrier
  */
 int
-algn_nw_3d ( const seq_p seq1
-           , const seq_p seq2
-           , const seq_p seq3
+algn_nw_3d ( const dyn_char_p seq1
+           , const dyn_char_p seq2
+           , const dyn_char_p seq3
            , const cost_matrices_3d_p costMtx
            ,       nw_matrices_p nwMtxs
         // , int deltawh
            );
 
 void
-algn_print_bcktrck_2d (const seq_p seq1, const seq_p seq2, const nw_matrices_p m);
+algn_print_bcktrck_2d (const dyn_char_p seq1, const dyn_char_p seq2, const nw_matrices_p m);
 
 void
-algn_print_dynmtrx_2d (const seq_p seq1, const seq_p seq2, nw_matrices_p m);
+algn_print_dynmtrx_2d (const dyn_char_p seq1, const dyn_char_p seq2, nw_matrices_p m);
 
-/** takes two previously aligned sequences, @param seq1 & @param seq2, for which some align function has been called,
+/** takes two previously aligned characters, @param seq1 & @param seq2, for which some align function has been called,
  *  and extracts their
  *  edited version into @param ret_seq1 and @param ret_seq2, using the alignment matrix @param m and the transformation
  *  cost mstrix @param c. *Nota bene:* Make sure the m and c are the same as used in the alignment of
- *  the sequence for the call of cost_2. No check of an appropriate call of cost_2
+ *  the character for the call of cost_2. No check of an appropriate call of cost_2
  *  is made, therefore the behavior of the function in that case is undefined.
  *  As passed in, unaligned seq is always shorter than seq2.
  *  If @param swapped == 1, then seq1 and seq2 are in their original order. Otherwise, len_seq2 > len_seq1
@@ -222,10 +222,10 @@ algn_print_dynmtrx_2d (const seq_p seq1, const seq_p seq2, nw_matrices_p m);
  *  @param st_seq1 and @param st_seq2 are 0 if there are no limits, have values otherwise.
  */
 void
-algn_backtrace_2d ( const seq_p seq1
-                  , const seq_p seq2
-                  ,       seq_p ret_seq1
-                  ,       seq_p ret_seq2
+algn_backtrace_2d ( const dyn_char_p seq1
+                  , const dyn_char_p seq2
+                  ,       dyn_char_p ret_seq1
+                  ,       dyn_char_p ret_seq2
                   , const nw_matrices_p nwMatrix
                   , const cost_matrices_2d_p costMatrix
                   ,       int st_seq1
@@ -233,35 +233,35 @@ algn_backtrace_2d ( const seq_p seq1
                   ,       int swapped
                   );
 
-/** As backtrace_2d, but for three sequences */
+/** As backtrace_2d, but for three characters */
 void
-algn_backtrace_3d ( const seq_p seq1
-                  , const seq_p seq2
-                  ,       seq_p seq3
-                  ,       seq_p r1
-                  ,       seq_p r2
-                  ,       seq_p r3
+algn_backtrace_3d ( const dyn_char_p seq1
+                  , const dyn_char_p seq2
+                  ,       dyn_char_p seq3
+                  ,       dyn_char_p r1
+                  ,       dyn_char_p r2
+                  ,       dyn_char_p r3
                   , const cost_matrices_3d_p costMatrix
                   ,       nw_matrices_p nwMatrix
                   );
 
 /* replaced with gaps and no gaps versions below
 inline void
-algn_get_median_2d (seq_p seq1, seq_p seq2, cost_matrices_2d_p m, seq_p sm);
+algn_get_median_2d (dyn_char_p seq1, dyn_char_p seq2, cost_matrices_2d_p m, dyn_char_p sm);
 */
 
 /*
- * Given three aligned sequences seq1, seq2, and seq3, the median between them is
- * returned in the sequence sm, using the cost matrix stored in m.
+ * Given three aligned characters seq1, seq2, and seq3, the median between them is
+ * returned in the character sm, using the cost matrix stored in m.
  */
 void
-algn_get_median_3d (seq_p seq1, seq_p seq2, seq_p seq3, cost_matrices_3d_p m, seq_p sm);
+algn_get_median_3d (dyn_char_p seq1, dyn_char_p seq2, dyn_char_p seq3, cost_matrices_3d_p m, dyn_char_p sm);
 
 // TODO: document following four fns
 void
 algn_initialize_matrices_affine (       int go
-                                , const seq_p si
-                                , const seq_p sj
+                                , const dyn_char_p si
+                                , const dyn_char_p sj
                                 , const cost_matrices_2d_p c
                                 ,       int *close_block_diagonal
                                 ,       int *extend_block_diagonal
@@ -274,8 +274,8 @@ algn_initialize_matrices_affine (       int go
 
 // TODO: what is nobt? no backtrace? And why the 3? It's not 3d. Maybe third iteration of fn? In that case remove 3, as it's confusing.
 int
-algn_fill_plane_2d_affine_nobt ( const seq_p si
-                               , const seq_p sj
+algn_fill_plane_2d_affine_nobt ( const dyn_char_p si
+                               , const dyn_char_p sj
                                ,       int leni
                                ,       int lenj
                                , const cost_matrices_2d_p c
@@ -289,19 +289,19 @@ algn_fill_plane_2d_affine_nobt ( const seq_p si
                                );
 
 void
-algn_backtrace_affine ( const seq_p shortSeq
-                      , const seq_p longSeq
+algn_backtrace_affine ( const dyn_char_p shortSeq
+                      , const dyn_char_p longSeq
                       ,       DIR_MTX_ARROW_t *direction_matrix
-                      ,       seq_p median
-                      ,       seq_p medianwg
-                      ,       seq_p resultShort
-                      ,       seq_p resultLong
+                      ,       dyn_char_p median
+                      ,       dyn_char_p medianwg
+                      ,       dyn_char_p resultShort
+                      ,       dyn_char_p resultLong
                       , const cost_matrices_2d_p costMatrix
                       );
 
 int
-algn_fill_plane_2d_affine ( const seq_p si
-                          , const seq_p sj
+algn_fill_plane_2d_affine ( const dyn_char_p si
+                          , const dyn_char_p sj
                           ,       size_t leni
                           ,       size_t lenj
                           ,       int *final_cost_matrix
@@ -317,23 +317,23 @@ algn_fill_plane_2d_affine ( const seq_p si
                           );
 
 void
-algn_get_median_2d_no_gaps ( seq_p seq1
-                           , seq_p seq2
+algn_get_median_2d_no_gaps ( dyn_char_p seq1
+                           , dyn_char_p seq2
                            , cost_matrices_2d_p costMatrix
-                           , seq_p sm
+                           , dyn_char_p sm
                            );
 
 void
-algn_get_median_2d_with_gaps ( seq_p seq1
-                             , seq_p seq2
+algn_get_median_2d_with_gaps ( dyn_char_p seq1
+                             , dyn_char_p seq2
                              , cost_matrices_2d_p costMatrix
-                             , seq_p sm
+                             , dyn_char_p sm
                              );
 
 void
-algn_union ( seq_p seq1
-           , seq_p seq2
-           , seq_p unionSeq
+algn_union ( dyn_char_p seq1
+           , dyn_char_p seq2
+           , dyn_char_p unionSeq
            );
 
-#endif /* SEQALIGN_H */
+#endif /* ALIGN_CHARACTERS_H */

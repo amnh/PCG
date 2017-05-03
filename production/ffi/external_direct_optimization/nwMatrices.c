@@ -68,7 +68,7 @@ void print_matrices(nw_matrices_p nwMatrix, size_t alphSize) {
 inline size_t
 mat_size_of_2d_matrix (size_t w, size_t h) {
     if (w > h) return (w * 12); //TODO: do I need a cast here?
-    else return (h * 12);
+    else       return (h * 12);
 }
 
 void
@@ -91,7 +91,7 @@ mat_setup_size (nw_matrices_p nwMatrix, size_t len_seq1, size_t len_seq2, size_t
         printf("capacity: %zu\nefficiency: %d\nprecalc: %zu\n", nwMatrix->cap_nw, nwMatrix->cap_eff, nwMatrix->cap_pre);
     }
     int cap;
-    size_t cap_2d,
+    size_t cap_2d = 0,
            cap_precalcMtx,
            cap_dir;
     //cap_dir     = (len_seq1 + 1) * (len_seq2 + 1);
@@ -100,10 +100,9 @@ mat_setup_size (nw_matrices_p nwMatrix, size_t len_seq1, size_t len_seq2, size_t
         cap            = (int) mat_size_of_2d_matrix (len_seq1, len_seq2);
         cap_precalcMtx = (1 << alphabetSize) * len_seq1;
         cap_dir        = (len_seq1 + 1) * (len_seq2 + 1);
-        cap_2d         = 0;
     } else {                       /* If the size setup is for 3d */
         cap            = (int) mat_size_of_3d_matrix (len_seq1, len_seq2, len_seq3);
-        cap_precalcMtx = (1 << alphabetSize) * (1 << alphabetSize) * len_seq2;  // TODO: why sequence 2?
+        cap_precalcMtx = (1 << alphabetSize) * (1 << alphabetSize) * len_seq2;  // TODO: why character 2?
         cap_2d         = len_seq1 * len_seq2;
         cap_dir        = cap_2d * len_seq3;
     }
@@ -114,16 +113,21 @@ mat_setup_size (nw_matrices_p nwMatrix, size_t len_seq1, size_t len_seq2, size_t
         if (DEBUG_MAT) {
             printf("cap_eff too small. New allocation: %d\n", cap);
         }
-        nwMatrix->nw_costMtx3d_d = nwMatrix->nw_costMtx = realloc (nwMatrix->nw_costMtx, (cap * sizeof(int)));
+        nwMatrix->nw_costMtx3d_d =
+        nwMatrix->nw_costMtx =
+            realloc (nwMatrix->nw_costMtx, (cap * sizeof(int)));
+
         nwMatrix->cap_eff = cap;
     }
     if (nwMatrix->cap_nw < cap_dir) {         /* If the other matrices are not large enough */
         if (DEBUG_MAT) {
             printf("cap nw cost mtx too small. New allocation: %zu\n", cap_dir);
         }
-        nwMatrix->nw_dirMtx3d_d = nwMatrix->nw_dirMtx =
-            realloc (nwMatrix->nw_dirMtx, cap_dir * sizeof(DIR_MTX_ARROW_t) );
-        if (0 != cap_2d) {
+        nwMatrix->nw_dirMtx3d_d =
+        nwMatrix->nw_dirMtx =
+                realloc (nwMatrix->nw_dirMtx, cap_dir * sizeof(DIR_MTX_ARROW_t) );
+
+        if (cap_2d) {
             if (DEBUG_MAT) {
                 printf("\n3d alignment. cap_2d: %zu\n", cap_2d);
             }

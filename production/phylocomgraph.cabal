@@ -128,8 +128,8 @@ library
     ffi/external_direct_optimization/c_code_alloc_setup.c
     ffi/external_direct_optimization/costMatrix.c
     ffi/external_direct_optimization/nwMatrices.c
-    ffi/external_direct_optimization/seq.c
-    ffi/external_direct_optimization/alignSequences.c
+    ffi/external_direct_optimization/dyn_character.c
+    ffi/external_direct_optimization/alignCharacters.c
     ffi/external_direct_optimization/ukkCheckp.c
     ffi/external_direct_optimization/ukkCommon.c
     -- ffi/memoized_tcm/dynamicCharacterOperations.h

@@ -1,6 +1,6 @@
 #include "/Library/Frameworks/GHC.framework/Versions/7.10.3-x86_64/usr/lib/ghc-7.10.3/template-hsc.h"
 #line 28 "externalCAlignment.hsc"
-#include "alignSequences.h"
+#include "alignCharacters.h"
 #line 29 "externalCAlignment.hsc"
 #include "nwMatrices.h"
 
@@ -48,25 +48,25 @@ int main (int argc, char *argv [])
            "type CArrayUnit  = CULong -- This will be compatible with uint64_t\n"
            "type CDirMtxUnit = CShort -- C short type\n"
            "\n"
-           "{- ******************************************* Sequence declaration and Storable instance ******************************************* -}\n"
+           "{- ******************************************* Character declaration and Storable instance ******************************************* -}\n"
            "\n"
-           "data Alignment2d = Alignment2d { alignedSequence1 :: AlignIO\n"
-           "                               , alignedSequence2 :: AlignIO\n"
+           "data Alignment2d = Alignment2d { alignedCharacter1 :: AlignIO\n"
+           "                               , alignedCharacter2 :: AlignIO\n"
            "                               , alignment        :: AlignIO\n"
            "                               , cost             :: CInt\n"
            "                               }\n"
            "\n"
-           "data Alignment3d = Alignment3d { alignedSequence1 :: AlignIO\n"
-           "                               , alignedSequence2 :: AlignIO\n"
-           "                               , alignedSequence3 :: AlignIO\n"
+           "data Alignment3d = Alignment3d { alignedCharacter1 :: AlignIO\n"
+           "                               , alignedCharacter2 :: AlignIO\n"
+           "                               , alignedCharacter3 :: AlignIO\n"
            "                               , alignment        :: AlignIO\n"
            "                               , cost             :: CInt\n"
            "                               }\n"
            "\n"
            "\n"
            "data AlignIO = AlignIO { -- magic_number :: CInt     -- TODO: No idea what this is for; figure it out\?\n"
-           "                         sequence :: Ptr CInt     -- Capacity of the sequence memory structure.\n"
-           "                       , seqLen   :: CSize        -- Total length of the sequence stored.\n"
+           "                         character :: Ptr CInt     -- Capacity of the character memory structure.\n"
+           "                       , seqLen   :: CSize        -- Total length of the character stored.\n"
            "                       }\n"
            "\n"
            "-- Because we\'re using a struct we need to make a Storable instance\n"
@@ -87,7 +87,7 @@ int main (int argc, char *argv [])
     hsc_line (61, "externalCAlignment.hsc");
     hsc_fputs ("        arr :: Ptr CInt <- (", hsc_stdout());
 #line 61 "externalCAlignment.hsc"
-    hsc_peek (struct alignIO, sequence);
+    hsc_peek (struct alignIO, character);
     hsc_fputs (") ptr\n"
            "", hsc_stdout());
     hsc_line (62, "externalCAlignment.hsc");
@@ -99,12 +99,12 @@ int main (int argc, char *argv [])
     hsc_line (63, "externalCAlignment.hsc");
     hsc_fputs ("\n"
            "        return  AlignIO { seqLen   = len\n"
-           "                        , sequence = seq\n"
+           "                        , character = seq\n"
            "                        }\n"
            "    poke ptr (AlignIO len seq ) = do -- to modify values in the C app\n"
            "        (", hsc_stdout());
 #line 68 "externalCAlignment.hsc"
-    hsc_pokeArray (len (struct alignIO, sequence));
+    hsc_pokeArray (len (struct alignIO, character));
     hsc_fputs (") ptr seq\n"
            "", hsc_stdout());
     hsc_line (69, "externalCAlignment.hsc");
@@ -118,7 +118,7 @@ int main (int argc, char *argv [])
            "\n"
            "{- ******************************************* CostMatrix declarations and Storable instances ******************************************* -}\n"
            "-- | Holds single cost matrix, which contains costs and medians for all\n"
-           "-- possible sequence elements. It is completely filled using a TCM. See note below at \'setupCostMatrixFn_c\'.\n"
+           "-- possible character elements. It is completely filled using a TCM. See note below at \'setupCostMatrixFn_c\'.\n"
            "data CostMatrix2d = CostMatrix2d { alphSize      :: CInt      -- alphabet size including gap, and including ambiguities if\n"
            "                                                              --     combinations == True\n"
            "                                 , lcm           :: CInt      -- ceiling of log_2 (alphSize)\n"
@@ -132,7 +132,7 @@ int main (int argc, char *argv [])
            "                                                               -}\n"
            "                                 , combinations    :: CInt    {- This is a flag set to true if we are going to accept\n"
            "                                                               - all possible combinations of the elements in the alphabet\n"
-           "                                                               - in the alignments. This is not true for protein sequences\n"
+           "                                                               - in the alignments. This is not true for protein characters\n"
            "                                                               - for example, where the number of elements of the alphabet\n"
            "                                                               - is already too big to build all the possible combinations.\n"
            "                                                               -}\n"
@@ -173,7 +173,7 @@ int main (int argc, char *argv [])
            "instance Storable CostMatrix3d where\n"
            "    sizeOf    _   = (", hsc_stdout());
 #line 127 "externalCAlignment.hsc"
-    hsc_size (struct seq);
+    hsc_size (dyn_character_t);
     hsc_fputs (") -- #size is a built-in that works with arrays, as are #peek and #poke, below\n"
            "", hsc_stdout());
     hsc_line (128, "externalCAlignment.hsc");
@@ -354,7 +354,7 @@ int main (int argc, char *argv [])
            "\n"
            "{- ******************************************* CostMatrix declarations and Storable instances ******************************************* -}\n"
            "-- | Holds single cost matrix, which contains costs and medians for all\n"
-           "-- possible sequence elements. It is completely filled using a TCM. See note below at \'setupCostMatrixFn_c\'.\n"
+           "-- possible character elements. It is completely filled using a TCM. See note below at \'setupCostMatrixFn_c\'.\n"
            "data CostMatrix3d = CostMatrix3d { alphSize      :: CInt      -- alphabet size including gap, and including ambiguities if\n"
            "                                                              --     combinations == True\n"
            "                                 , lcm           :: CInt      -- ceiling of log_2 (alphSize)\n"
@@ -368,7 +368,7 @@ int main (int argc, char *argv [])
            "                                                               -}\n"
            "                                 , combinations    :: CInt     {- This is a flag set to true if we are going to accept\n"
            "                                                                - all possible combinations of the elements in the alphabet\n"
-           "                                                                - in the alignments. This is not true for protein sequences\n"
+           "                                                                - in the alignments. This is not true for protein characters\n"
            "                                                                - for example, where the number of elements of the alphabet\n"
            "                                                                - is already too big to build all the possible combinations.\n"
            "                                                                -}\n"
@@ -393,7 +393,7 @@ int main (int argc, char *argv [])
            "instance Storable CostMatrix where\n"
            "    sizeOf    _   = (", hsc_stdout());
 #line 212 "externalCAlignment.hsc"
-    hsc_size (struct seq);
+    hsc_size (dyn_character_t);
     hsc_fputs (") -- #size is a built-in that works with arrays, as are #peek and #poke, below\n"
            "", hsc_stdout());
     hsc_line (213, "externalCAlignment.hsc");
@@ -536,7 +536,7 @@ int main (int argc, char *argv [])
            "-- | Create and allocate cost matrix\n"
            "-- first argument, TCM, is only for non-ambiguous nucleotides, and it used to generate\n"
            "-- the entire cost matrix, which includes ambiguous elements.\n"
-           "-- TCM is row-major, with each row being the left sequence element.\n"
+           "-- TCM is row-major, with each row being the left character element.\n"
            "-- It is therefore indexed not by powers of two, but by cardinal integer.\n"
            "foreign import ccall unsafe \"c_code_alloc_setup.h setupCostMtx\"\n"
            "    setupCostMatrixFn_c :: Ptr CInt  -- tcm\n"
@@ -546,31 +546,31 @@ int main (int argc, char *argv [])
            "                        -> Ptr CostMatrix\n"
            "\n"
            "foreign import ccall unsafe \"c_code_alloc_setup.h initializeSeq\"\n"
-           "    allocateSequenceFn_c :: CSize -> CSize -> Ptr Sequence\n"
+           "    allocateCharacterFn_c :: CSize -> CSize -> Ptr Character\n"
            "\n"
            "\n"
            "\n"
            "\n"
-           "-- | Get union of two sequences.\n"
+           "-- | Get union of two characters.\n"
            "-- Will only work if alignment and backtrace have already been called.\n"
-           "-- First sequence must be shortest\n"
+           "-- First character must be shortest\n"
            "foreign import ccall unsafe \"algn.h algn_union\"\n"
-           "    getUnionFn_c :: Ptr Sequence -> Ptr Sequence -> Ptr Sequence\n"
+           "    getUnionFn_c :: Ptr Character -> Ptr Character -> Ptr Character\n"
            "\n"
            "-- | Will only work if alignment and backtrace have already been called.\n"
-           "-- First sequence must be shortest\n"
+           "-- First character must be shortest\n"
            "foreign import ccall unsafe \"algn.h algn_get_median_2d_no_gaps\"\n"
-           "    getUngappedMedianFn_c :: Ptr Sequence -> Ptr Sequence -> Ptr CostMatrix -> Ptr Sequence\n"
+           "    getUngappedMedianFn_c :: Ptr Character -> Ptr Character -> Ptr CostMatrix -> Ptr Character\n"
            "\n"
            "-- | Will only work if alignment and backtrace have already been called.\n"
-           "-- First sequence must be shortest\n"
+           "-- First character must be shortest\n"
            "foreign import ccall unsafe \"algn.h algn_get_median_2d_with_gaps\"\n"
-           "    getGappedMedianFn_c :: Ptr Sequence -> Ptr Sequence -> Ptr CostMatrix -> Ptr Sequence\n"
+           "    getGappedMedianFn_c :: Ptr Character -> Ptr Character -> Ptr CostMatrix -> Ptr Character\n"
            "\n"
            "\n"
            "\n"
            "-- testFn can be called from within Haskell code.\n"
-           "call2dSeqAlignFn_c :: Sequence -> Sequence -> CostMatrix -> NWMatrices -> Alignment\n"
+           "call2dSeqAlignFn_c :: Character -> Character -> CostMatrix -> NWMatrices -> Alignment\n"
            "call2dSeqAlignFn_c shortSeq longSeq costMatrix nwMatrices = unsafePerformIO $\n"
            "    -- have to allocate memory. Note that we\'re allocating via a lambda fn. I\n"
            "    -- don\'t yet understand what exactly is going on here.\n"
@@ -585,7 +585,7 @@ int main (int argc, char *argv [])
            "        -- Now checking return status. If 0, then all is well, otherwise throw an error.\n"
            "        if (fromIntegral status) == 0\n"
            "            then do\n"
-           "                Sequence val seq <- peek alignPtr\n"
+           "                Character val seq <- peek alignPtr\n"
            "                seqStr           <- peekCAString seq\n"
            "                free seq\n"
            "                pure $ Right (fromIntegral val, seqStr)\n"

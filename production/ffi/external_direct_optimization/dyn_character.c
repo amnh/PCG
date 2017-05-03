@@ -20,11 +20,11 @@
 #include <assert.h>
 
 // #include "array_pool.h" ARRAY_POOL_DELETE
-#include "seq.h"
+#include "dyn_character.h"
 
-void seq_print(seq_p inSeq) {
-    SEQT *start = inSeq->seq_begin;
-    SEQT *end   = inSeq->end;
+void dyn_char_print(dyn_char_p inSeq) {
+    elem_t *start = inSeq->seq_begin;
+    elem_t *end   = inSeq->end;
     printf("Seq length   %3zu\n", inSeq->len);
     printf("Seq capacity %3zu\n", inSeq->cap);
     for( ; start < end; start++) {
@@ -40,7 +40,7 @@ seq_begin (size_t cap, size_t len) {
 
 
 void
-seq_set (seq_p seq, size_t pos, SEQT val)
+seq_set (dyn_char_p seq, size_t pos, elem_t val)
 {
     if (seq->len == 0) {
         assert (pos == 0);
@@ -52,8 +52,8 @@ seq_set (seq_p seq, size_t pos, SEQT val)
 }
 
 inline void
-seq_reverse_ip (seq_p seq) {
-    SEQT *beginning, *end, tmp;
+seq_reverse_ip (dyn_char_p seq) {
+    elem_t *beginning, *end, tmp;
 
     beginning = seq->seq_begin;
     end       = seq->end;
@@ -68,7 +68,7 @@ seq_reverse_ip (seq_p seq) {
 }
 
 void
-seq_prepend (seq_p a, SEQT v) {
+dyn_char_prepend (dyn_char_p a, elem_t v) {
     if ( a->cap <= a->len ) {
       printf("Failing values: capacity: %zu, length: %zu\n", a->cap, a->len);
       assert(a->cap > a->len);
@@ -80,7 +80,7 @@ seq_prepend (seq_p a, SEQT v) {
 
 
 inline void
-seq_reverse (seq_p target, seq_p source) {
+seq_reverse (dyn_char_p target, dyn_char_p source) {
     size_t i;
     target->len = source->len;
     target->seq_begin = target->array_head + (target->cap - target->len);
@@ -92,17 +92,17 @@ seq_reverse (seq_p target, seq_p source) {
 
 
 void
-seq_clear (seq_p s) {
+seq_clear (dyn_char_p s) {
     s->len = 0;
     s->seq_begin = s->end + 1;
 }
 
 
 inline int
-seq_compare (seq_p seq1, seq_p seq2) {
+seq_compare (dyn_char_p seq1, dyn_char_p seq2) {
     size_t i;
     size_t len_seq1, len_seq2;
-    SEQT cseq1, cseq2;
+    elem_t cseq1, cseq2;
     len_seq1 = seq1->len;
     len_seq2 = seq2->len;
     if (len_seq2 != len_seq1) {

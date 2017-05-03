@@ -14,6 +14,7 @@ import           System.Environment        (getArgs)
 import           Test.Custom.NucleotideSequence
 import           Test.QuickCheck
 
+
 main :: IO ()
 main = do
     args <- getArgs
@@ -39,23 +40,15 @@ performCounterExampleSearch = do
 counterExampleCheck :: (NucleotideSequence, NucleotideSequence) -> Bool
 counterExampleCheck (NS lhs, NS rhs) = foreignDOResult == foreignDOResult
   where
-  --  nativeDOResult  = naiveDOMemo       lhs rhs (getMedianAndCost memoMatrixValue)
     foreignDOResult = foreignPairwiseDO lhs rhs  denseMatrixValue
 
 
 performImplementationComparison :: String -> String -> IO ()
 performImplementationComparison lhs rhs = do
-    putStrLn "Native DO Result:"
-    putStrLn nativeMessage
     putStrLn "Foreign DO Result:"
     putStrLn foreignMessage
-    if   nativeMessage == foreignMessage
-    then putStrLn "[!] Results MATCH"
-    else putStrLn "[X] Results DO NOT MATCH"
   where
-    nativeMessage    = renderResult nativeDOResult
     foreignMessage   = renderResult foreignDOResult
-    nativeDOResult   = naiveDOMemo       char1 char2 (getMedianAndCost memoMatrixValue)
     foreignDOResult  = foreignPairwiseDO char1 char2  denseMatrixValue
     char1 = readSequence lhs
     char2 = readSequence rhs
@@ -71,14 +64,22 @@ performImplementationComparison lhs rhs = do
         ]
 
 
+alphabetSize :: Word
+alphabetSize = 5
+
+
+gapOpenCost :: Word
+gapOpenCost = 3
+
+
 costStructure :: (Ord a, Num a) => a -> a -> a
 --costStructure i j = if i /= j then 1 else 0
 costStructure i j = max i j - min i j
 
 
 denseMatrixValue :: DenseTransitionCostMatrix
-denseMatrixValue = generateDenseTransitionCostMatrix    5 costStructure
+denseMatrixValue = generateDenseTransitionCostMatrix gapOpenCost alphabetSize costStructure
 
 
 memoMatrixValue :: MemoizedCostMatrix
-memoMatrixValue  = generateMemoizedTransitionCostMatrix 5 costStructure
+memoMatrixValue  = generateMemoizedTransitionCostMatrix alphabetSize costStructure

@@ -18,18 +18,18 @@
  */
 int align2d(int* seq1vals, size_t lenSeq1,
             int* seq2vals, size_t lenSeq2,
-            seq_p seq1, seq_p seq2,
+            dyn_char_p seq1, dyn_char_p seq2,
             cost_matrices_2d_p costMtx2d);
 
 int align2dAffine(int* seq1vals, size_t lenSeq1,
                   int* seq2vals, size_t lenSeq2,
-                  seq_p seq1, seq_p seq2,
+                  dyn_char_p seq1, dyn_char_p seq2,
                   cost_matrices_2d_p costMtx2d) {
 
     const size_t SEQ_CAPACITY = lenSeq1 * lenSeq2;
     int *longInputSeq, *shortInputSeq;
     int longSeqLen, shortSeqLen;
-    seq_p longSeq, shortSeq;
+    dyn_char_p longSeq, shortSeq;
     int swapped = 0;
     if (lenSeq1 > lenSeq2) {
         longInputSeq  = seq1;
@@ -68,8 +68,8 @@ int align2dAffine(int* seq1vals, size_t lenSeq1,
     initializeSeq(shortSeq, SEQ_CAPACITY);
     setSeq(shortInputSeq, shortSeqLen, shortSeq);
 
-    seq_p retLongSeq          = initializeSeq(SEQ_CAPACITY);
-    seq_p retShortSeq         = initializeSeq(SEQ_CAPACITY);
+    dyn_char_p retLongSeq          = initializeSeq(SEQ_CAPACITY);
+    dyn_char_p retShortSeq         = initializeSeq(SEQ_CAPACITY);
 
     matrix_2d  = mat_get_2d_nwMtx (algn_mtxs2dAffine);
     precalcMtx = mat_get_2d_prec  (algn_mtxs2dAffine);
@@ -92,15 +92,15 @@ int align2dAffine(int* seq1vals, size_t lenSeq1,
 
     // TODO: empty_medianSeq might not be necessary, as it's unused in ml code:
     size_t medianSeqLen          = lenLongSeq + lenShortSeq + 2;  // 2 because that's how it is in ML code
-    seq_p empty_medianSeq        = malloc( sizeof(struct seq) );
+    dyn_char_p empty_medianSeq        = malloc( sizeof(struct seq) );
     empty_medianSeq->cap         = medianSeqLen;
-    empty_medianSeq->array_head  = calloc( medianSeqLen, sizeof(SEQT));
+    empty_medianSeq->array_head  = calloc( medianSeqLen, sizeof(elem_t));
     empty_medianSeq->len         = 0;
     empty_medianSeq->seq_begin   = empty_medianSeq->end = empty_medianSeq->array_head + medianSeqLen;
 
-    seq_p medianSeq              = malloc( sizeof(struct seq) );
+    dyn_char_p medianSeq              = malloc( sizeof(struct seq) );
     medianSeq->cap               = medianSeqLen;
-    medianSeq->array_head        = calloc( medianSeqLen, sizeof(SEQT));
+    medianSeq->array_head        = calloc( medianSeqLen, sizeof(elem_t));
     medianSeq->len               = 0;
     medianSeq->seq_begin         = medianSeq->end = medianSeq->array_head + medianSeqLen;
 
@@ -148,7 +148,7 @@ int align2dAffine(int* seq1vals, size_t lenSeq1,
 int align3d(int* seq1vals, size_t lenSeq1,
             int* seq2vals, size_t lenSeq2,
             int* seq3vals, size_t lenSeq3,
-            seq_p seq1, seq_p seq2, seq_p seq3
+            dyn_char_p seq1, dyn_char_p seq2, dyn_char_p seq3
             cost_matrices_3d_p costMtx3d) {
 
     nw_matrices_p algn_mtxs3d       = initializeNWMtx(longSeq->len, middleSeq->len, shortSeq->len, costMtx3d->lcm);
@@ -177,24 +177,24 @@ int align3d(int* seq1vals, size_t lenSeq1,
         //algn_backtrace_3d (longSeq, middleSeq, shortSeq, retLongSeq, retMiddleSeq, retShortSeq, costMtx3d, algn_mtxs3d);
 
         printf("\n\nAligned 3d sequences:\n");
-        seq_print(retLongSeq,   1);
-        seq_print(retMiddleSeq, 2);
-        seq_print(retShortSeq,  3);
+        dyn_char_print(retLongSeq,   1);
+        dyn_char_print(retMiddleSeq, 2);
+        dyn_char_print(retShortSeq,  3);
 
         printf("\nAlignment cost: %d\n", algnCost);
 
         printf("\n\n\n");
 
-        // for (SEQT *base = retLongSeq->seq_begin; base != retLongSeq->end; base++) {
+        // for (elem_t *base = retLongSeq->seq_begin; base != retLongSeq->end; base++) {
         //     printf("a: %c\n", *base);
         // }
-        // for (SEQT *base = retShortSeq->seq_begin; base != retShortSeq->end; base++) {
+        // for (elem_t *base = retShortSeq->seq_begin; base != retShortSeq->end; base++) {
         //     printf("b: %s\n", base);
         // }
     }
 
-    // Next this: algn_get_median_3d (seq_p seq1, seq_p seq2, seq_p seq3,
-    //                cost_matrices_3d_p m, seq_p sm)
+    // Next this: algn_get_median_3d (dyn_char_p seq1, dyn_char_p seq2, dyn_char_p seq3,
+    //                cost_matrices_3d_p m, dyn_char_p sm)
 
     freeCostMtx(costMtx2d,        1);  // 1 is 2d
     freeCostMtx(costMtx2d_affine, 1);

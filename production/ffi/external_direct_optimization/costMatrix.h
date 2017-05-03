@@ -26,11 +26,11 @@
 #define Cost_matrix_struct_3d(a) ((struct cost_matrices_3d *) Data_custom_val(a))
 #include "debug_constants.h"
 #include "nwMatrices.h"
-#include "seq.h"
+#include "dyn_character.h"
 
 /*
  * Check cost_matrices_3d for further information. This is the corresponding data
- * structure for two dimensional sequence alignment.
+ * structure for two dimensional character alignment.
  */
 struct cost_matrices_2d {
     unsigned int alphSize;      // alphabet size including gap, and including ambiguities if
@@ -46,7 +46,7 @@ struct cost_matrices_2d {
                                  */
     int combinations;           /* This is a flag set to true if we are going to accept
                                  * all possible combinations of the elements in the alphabet
-                                 * in the alignments. This is not true for protein sequences
+                                 * in the alignments. This is not true for protein characters
                                  * for example, where the number of elements of the alphabet
                                  * is already too big to build all the possible combinations.
                                  */
@@ -61,7 +61,7 @@ struct cost_matrices_2d {
     int *cost;                  /* The transformation cost matrix, including ambiguities,
                                  * storing the **best** cost for each ambiguity pair
                                  */
-    SEQT *median;               /* The matrix of possible medians between elements in the
+    elem_t *median;               /* The matrix of possible medians between elements in the
                                  * alphabet. The best possible medians according to the cost
                                  * matrix.
                                  */
@@ -95,7 +95,7 @@ typedef struct cost_matrices_2d *cost_matrices_2d_p;
 
 /** A three dimesional cost matrix
  *
- * For three way sequence alignment, this structure holds the cost of
+ * For three way character alignment, this structure holds the cost of
  * transforming the elements of an alphabet.  A cost matrix can only be applied
  * on a particular alphabet.
  */
@@ -106,7 +106,7 @@ struct cost_matrices_3d {
     int cost_model_type;         /** The type of cost model to be used in the alignment */
     int combinations;            /** This is a flag set to true if we are going to accept
                                      all possible combinations of the elements in the alphabet
-                                     in the alignments. This is not true for protein sequences
+                                     in the alignments. This is not true for protein characters
                                      for example, where the number of elements of the alphabet
                                      is already too big to build all the possible combinations.
                                   */
@@ -118,7 +118,7 @@ struct cost_matrices_3d {
                                   *  and the lookup is a->b, where a is a row label and b is
                                   *  a column label
                                   */
-    SEQT *median;                /** The matrix of possible medians between elements in the
+    elem_t *median;                /** The matrix of possible medians between elements in the
                                      alphabet. The best possible medians according to the cost
                                      matrix. */
 };
@@ -155,12 +155,12 @@ cm_set_cost_3d (int a, int b, int cp, int v, cost_matrices_3d_p c);
 
 /*
  * Retrieves a pointer to the memory position stored in the precalculated array
- * of costs for the alphabet in three dimensions, vs. a sequence s3. This is
+ * of costs for the alphabet in three dimensions, vs. a character s3. This is
  * used in the 3d alignments procedures for vectorization. to is a pointer to
- * the precalculated cube, s3l is the length of the sequence included in the
- * precalculated cube, alphSize is the costMtxDimension of the alphabet of the sequence, s1c is
+ * the precalculated cube, s3l is the length of the character included in the
+ * precalculated cube, alphSize is the costMtxDimension of the alphabet of the character, s1c is
  * the character from s1, and s2c is defined in an analogous manner. s3p is the
- * position in the sequence s3 of interest. s3p should be less than s3l.
+ * position in the character s3 of interest. s3p should be less than s3l.
  */
 //static inline int *
 //cm_get_pos_in_precalc (const int *toOutput, int s3l, int alphSize, int s1c, int s2c, int s3p);
@@ -187,7 +187,7 @@ cm_get_row_precalc_3d (const int *toOutput, int s3l, int alphSize, int s1c, int 
  */
 /*
 static inline int
-cm_calc_median_position (SEQT a, SEQT b, int alphSize);
+cm_calc_median_position (elem_t a, elem_t b, int alphSize);
 */
 
 /*
@@ -198,10 +198,10 @@ cm_calc_median_position (SEQT a, SEQT b, int alphSize);
  * @return an element in the alphabet of t which is a median between a and b
  * according to the transformation cost matrix hold in t.
  */
-SEQT
+elem_t
 cm_get_median ( const cost_matrices_2d_p t
-              ,       SEQT a
-              ,       SEQT b
+              ,       elem_t a
+              ,       elem_t b
               );
 
 /*
@@ -211,8 +211,8 @@ cm_get_median ( const cost_matrices_2d_p t
  */
 int
 cm_calc_cost ( int *tcm
-             , SEQT a
-             , SEQT b
+             , elem_t a
+             , elem_t b
              , int alphSize
              );
 
@@ -224,7 +224,7 @@ cm_calc_cost ( int *tcm
 /*
 static inline int *
 cm_get_row ( int *tcm
-           , SEQT a
+           , elem_t a
            , int alphSize
            );
 */
@@ -239,13 +239,13 @@ cm_set_worst ( int a
 
 /*
  * Fills a precalculated matrix with the cost of comparing each elment in the
- * sequence s with each element in the alphabet specified in the transformation
+ * character s with each element in the alphabet specified in the transformation
  * cost matrix costMtx.
  *
  * @param costMtx is the transformation cost matrix to calculate the precalculated
  *  vectors.
  * @param toOutput is the matrix that will hold the output.
- * @param s is the sequence for which the cost matrix will be precalculated.
+ * @param s is the character for which the cost matrix will be precalculated.
  *
  * This function is only valid for two dimensional alignments.
  * TODO: why is this in cm instead of matrices?
@@ -253,7 +253,7 @@ cm_set_worst ( int a
 void
 cm_precalc_4algn ( const cost_matrices_2d_p costMtx
                  ,       nw_matrices_p toOutput
-                 , const seq_p s
+                 , const dyn_char_p s
                  );
 
 /*
@@ -261,12 +261,12 @@ cm_precalc_4algn ( const cost_matrices_2d_p costMtx
  * @param p is the precalculated matrix.
  * @param item is the element in the alphabet that produced p that should be
  *  generated.
- * @param len is the length of the sequence that was source of the precalculated
+ * @param len is the length of the character that was source of the precalculated
  *  matrix.
  */
 const int *
 cm_get_precal_row ( const int *p
-                  ,       SEQT item
+                  ,       elem_t item
                   ,       int len
                   );
 
@@ -292,8 +292,8 @@ cm_alloc_set_costs_3d ( int alphSize
  * median between a, b, and c, according to the transformation cost matrix
  * contained in t.
  */
-SEQT
-cm_get_median_3d (const cost_matrices_3d_p t, SEQT a, SEQT b, SEQT c);
+elem_t
+cm_get_median_3d (const cost_matrices_3d_p t, elem_t a, elem_t b, elem_t c);
 
 /*
  * Gets the row in the transformation cost matrix tcm where the transformations
@@ -301,16 +301,16 @@ cm_get_median_3d (const cost_matrices_3d_p t, SEQT a, SEQT b, SEQT c);
  * size alphSize.
  */
 //static inline int *
-//cm_get_row_3d (int *tcm, SEQT a, SEQT b, int alphSize);
+//cm_get_row_3d (int *tcm, elem_t a, elem_t b, int alphSize);
 
 /*
- * Fills a three-dimensional precalculation alignment matrix for sequence s
+ * Fills a three-dimensional precalculation alignment matrix for character s
  * See cm_precalc_4algn for further information. This is the
  * corresponding function for three dimensional alignments.
  * TODO: Why is this here, and not in matrices.c?
  */
 void
-cm_precalc_4algn_3d (const cost_matrices_3d_p c, int *toOutput, const seq_p s);
+cm_precalc_4algn_3d (const cost_matrices_3d_p c, int *toOutput, const dyn_char_p s);
 
 /*
  * Deallocates the memory structure iff there are no more pointers to it,
@@ -335,13 +335,13 @@ void
 cm_set_tail_2d (int a, int b, cost_matrices_2d_p c);
 
 void
-cm_set_median_2d (SEQT a, SEQT b, SEQT v, cost_matrices_2d_p c);
+cm_set_median_2d (elem_t a, elem_t b, elem_t v, cost_matrices_2d_p c);
 
 void
-cm_set_median_3d (SEQT a, SEQT b, SEQT cp, SEQT v, cost_matrices_3d_p c);
+cm_set_median_3d (elem_t a, elem_t b, elem_t cp, elem_t v, cost_matrices_3d_p c);
 
 void
-cm_print_median (SEQT *m, size_t w, size_t h);
+cm_print_median (elem_t *m, size_t w, size_t h);
 
 
 #endif /* COSTMATRIX_H */

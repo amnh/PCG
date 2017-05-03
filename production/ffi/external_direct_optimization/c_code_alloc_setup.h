@@ -5,7 +5,7 @@
 #ifndef C_CODE_ALLOC_SETUP_H
 #define C_CODE_ALLOC_SETUP_H
 
-#include "alignSequences.h"
+#include "alignCharacters.h"
 #include "debug_constants.h"
 #include "costMatrix.h"
 #include "nwMatrices.h"
@@ -16,22 +16,22 @@
 /** Allocate nw_matrices struct. Assigns initial values where necessary. Calls
  *  mat_setup_size to allocate all internal arrays.
  *
- *  Order of sequence lengths doesn't matter
+ *  Order of character lengths doesn't matter
  */
 void initializeNWMtx(nw_matrices_p retMtx, size_t cap_char1, size_t cap_char2, size_t cap_char3, int alphSize);
 
-/** Does internal allocation for a sequence struct. Also sets seq pointers within array to correct positions.
+/** Does internal allocation for a character struct. Also sets seq pointers within array to correct positions.
  *
  *  resChar must be alloced before this call. This is because allocation must be done on other side of FFI for pass
  *  by ref to be correct.
  */
-void initializeChar(seq_p retChar, size_t allocSize);
+void initializeChar(dyn_char_p retChar, size_t allocSize);
 
 /** Resets character array to all 0s.
  *  Makes length 0.
- *  Points beginning of sequence to end of character array.
+ *  Points beginning of character to end of character array.
  */
-void resetCharValues(seq_p retChar);
+void resetCharValues(dyn_char_p retChar);
 
 /** Find distance between an unambiguous nucleotide and an ambiguous ambElem. Return that value and the median.
  *  @param ambElem is ambiguous input.
@@ -54,6 +54,6 @@ void freeCostMtx(void * input, int is_2d);
 
 void freeNWMtx(nw_matrices_p input);
 
-void freeChar(seq_p toFree);
+void freeChar(dyn_char_p toFree);
 
 #endif // C_CODE_ALLOC_SETUP_H
