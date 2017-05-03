@@ -194,7 +194,6 @@ library
 --                       Bio.PhyloGraph.DAG
 --                       Bio.PhyloGraph.Edge
 --                       Bio.PhyloGraph.Forest
-                       Bio.PhyloGraph.Forest.Parsed
 --                       Bio.PhyloGraph.Network
 --                       Bio.PhyloGraph.Solution
 --                       Bio.PhyloGraph.Tree.Binary
@@ -211,6 +210,7 @@ library
 --                       Bio.PhyloGraph.Tree.Rose
                        Bio.PhyloGraphPrime
                        Bio.PhyloGraphPrime.Component
+                       Bio.PhyloGraphPrime.Forest.Parsed
                        Bio.PhyloGraphPrime.Node
                        Bio.PhyloGraphPrime.PhylogeneticDAG
                        Bio.PhyloGraphPrime.ReferenceDAG

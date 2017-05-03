@@ -14,8 +14,7 @@
 
 {-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
 
-module Bio.PhyloGraph.Forest.Parsed where
-
+module Bio.PhyloGraphPrime.Forest.Parsed where
 
 import           Bio.PhyloGraphPrime.Forest
 import           Bio.PhyloGraphPrime.ReferenceDAG

@@ -28,9 +28,9 @@ import           Bio.Metadata.CharacterName          hiding (sourceFile)
 import           Bio.Metadata.Parsed
 --import           Bio.PhyloGraph.Solution             hiding (parsedChars)
 --import           Bio.PhyloGraph.DAG                  hiding (structure)
-import           Bio.PhyloGraph.Forest.Parsed
 import           Bio.PhyloGraphPrime
 import           Bio.PhyloGraphPrime.Component
+import           Bio.PhyloGraphPrime.Forest.Parsed
 import           Bio.PhyloGraphPrime.PhylogeneticDAG
 import           Bio.PhyloGraphPrime.Node
 import           Bio.PhyloGraphPrime.ReferenceDAG
