@@ -115,7 +115,9 @@ static inline void *recalloc(void *p, size_t oldSize, size_t newSize) {
         return p;
     }
 
-    memset(p + oldSize, 0, newSize - oldSize);
+    // Cast the void pointer to char pointer to suppress compiler warnings.
+    // We assume that arithmetic takes place in terms of bytes.
+    memset(((char*)p) + oldSize, 0, newSize - oldSize);
     return p;
 }
 
@@ -211,7 +213,9 @@ static inline size_t allocGetSubIndex(AllocInfo *a, int ab, int ac, int s)
 
 
 void allocFinal(AllocInfo *a, void *flag, void *top) {
-    int usedFlag = flag - top;
+    // Cast the void pointers to long longs because we intend to treat the
+    // pointers as integral values.
+    int usedFlag = ((long long)flag) - ((long long )top);
 
     size_t i, j, cIndex;
 
@@ -248,7 +252,9 @@ void allocFinal(AllocInfo *a, void *flag, void *top) {
             for (cIndex = 0; cIndex < numStates * CELLS_PER_BLOCK * CELLS_PER_BLOCK; cIndex++) {
                 cellsTotal++;
 
-                if ( *(int*)(block + (cIndex * a->elemSize) + usedFlag)) {
+                // Cast the void pointer to char pointer to suppress compiler warnings.
+                // We assume that arithmetic takes place in terms of bytes.
+                if ( *(int*)(((char*)block) + (cIndex * a->elemSize) + usedFlag)) {
                     cellsUsed++;
                     tcellsUsed++;
                 }
@@ -310,7 +316,9 @@ void *getPtr(AllocInfo *a, int ab, int ac, size_t d, int s) {
     //    ab,ac,d,s,
     //    base,index);
 
-    return base + (index * a->elemSize);
+    // Cast the void pointer to char pointer to suppress compiler warnings.
+    // We assume that arithmetic takes place in terms of bytes.
+    return ((char*)base) + (index * a->elemSize);
 }
 
 
