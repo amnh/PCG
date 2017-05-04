@@ -40,8 +40,8 @@ performCounterExampleSearch = do
 counterExampleCheck :: (NucleotideSequence, NucleotideSequence) -> Bool
 counterExampleCheck (NS lhs, NS rhs) = nativeDOResult == foreignDOResult
   where
-    nativeDOResult  = naiveDOMemo       lhs rhs (getMedianAndCost memoMatrixValue)
-    foreignDOResult = foreignPairwiseDO lhs rhs  denseMatrixValue
+    nativeDOResult  =         naiveDOMemo       lhs rhs (getMedianAndCost memoMatrixValue)
+    foreignDOResult = chomp $ foreignThreeWayDO lhs rhs rhs denseMatrixValue
 
 
 performImplementationComparison :: String -> String -> IO ()
@@ -56,14 +56,14 @@ performImplementationComparison lhs rhs = do
   where
     nativeMessage    = renderResult nativeDOResult
     foreignMessage   = renderResult foreignDOResult
-    nativeDOResult   = naiveDOMemo       char1 char2 (getMedianAndCost memoMatrixValue)
-    foreignDOResult  = foreignPairwiseDO char1 char2  denseMatrixValue
+    nativeDOResult   =         naiveDOMemo       char1 char2 (getMedianAndCost memoMatrixValue)
+    foreignDOResult  = chomp $ foreignThreeWayDO char1 char2 char2 denseMatrixValue
     char1 = readSequence lhs
     char2 = readSequence rhs
     alphabet = fromSymbols ["A","C","G","T"]
     readSequence :: String -> DynamicChar
     readSequence = encodeStream alphabet . fmap ((iupacToDna BM.!) . pure . pure) . NE.fromList
-    renderResult (w, c, x, y, z) = unlines
+    renderResult  (w, c, x, y, z) = unlines
         [ "Cost           : " <> show c 
         , "Median ungapped: " <> showStream alphabet w
         , "Median   gapped: " <> showStream alphabet x
@@ -71,6 +71,9 @@ performImplementationComparison lhs rhs = do
         , "RHS   alignment: " <> showStream alphabet z
         ]
 
+
+chomp :: (a,b,c,d,e,f) -> (a,b,c,d,e)
+chomp (a,b,c,d,e,_) = (a,b,c,d,e)
 
 costStructure :: (Ord a, Num a) => a -> a -> a
 --costStructure i j = if i /= j then 1 else 0
