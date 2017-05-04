@@ -76,8 +76,8 @@ evaluate (READ fileSpecs) _old = do
 --        case masterUnify $ transformation <$> concat xs of
           Left uErr -> fail $ show uErr -- Report unification errors here.
            -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
-          Right g   -> -- (liftIO . putStrLn {- . take 500000 -} . show g)
-                        (liftIO . putStrLn $ renderSequenceCosts g)
+          Right g   ->  (liftIO . putStrLn {- . take 500000 -} $ show g)
+                       -- (liftIO . putStrLn $ renderSequenceCosts g)
                     $> g
   where
     transformation = id -- expandIUPAC

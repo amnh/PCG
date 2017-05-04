@@ -33,6 +33,8 @@ import qualified Data.List.NonEmpty  as NE
 import           Data.Monoid                ((<>))
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
+import           Data.Tree                  (unfoldTree)
+import           Data.Tree.Pretty           (drawVerticalTree)
 import           Data.Vector                (Vector)
 import qualified Data.Vector         as V
 import           Data.Vector.Instances      ()
@@ -193,7 +195,7 @@ instance PhylogeneticTree (ReferenceDAG e n) NodeRef e n where
 -- | (✔)
 instance {- (Show e, Show n) => -} Show (ReferenceDAG e n) where
 
-    show = referenceRendering 
+    show dag = unlines [topologyRendering dag, "", referenceRendering dag]
 
 
 getEdges :: ReferenceDAG e n -> EdgeSet (Int, Int)
@@ -360,6 +362,13 @@ nodePreOrder f dag = RefDAG <$> const newReferences <*> rootRefs <*> graphData $
             -- In sparsely connected graphs (like ours) this will be effectively constant.
             childPosition j = toEnum . length . takeWhile (/=i) . IM.keys . childRefs $ references dag ! j
 
+
+-- |
+-- Displays a tree-like rendering of the 'ReferenceDAG'. 
+topologyRendering :: ReferenceDAG e n -> String
+topologyRendering dag = drawVerticalTree . unfoldTree f . NE.head $ rootRefs dag
+  where
+    f i = (show i, IM.keys . childRefs $ references dag ! i)
 
 
 -- |

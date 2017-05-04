@@ -212,7 +212,7 @@ data DynamicDecorationDirectOptimizationPostOrderResult d
 
 instance EncodableStream d => Show (DynamicDecorationDirectOptimizationPostOrderResult d) where
 
-    show dec = unlines . (shownAlphabet:) . (shownCost:) $ f <$> pairs
+    show dec = (shownEdge <>) . unlines . (shownAlphabet:) . (shownCost:) $ f <$> pairs
       where
         f (prefix, accessor) = prefix <> showStream (dec ^. characterAlphabet) (dec ^. accessor)
         pairs =
@@ -223,7 +223,9 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimizationPostOrder
           , ("Right Alignment     : ", rightAlignment     )
           ]
 
-        shownAlphabet = show (dec ^. characterAlphabet)
+        shownAlphabet = show $ dec ^. characterAlphabet
+
+        shownEdge = maybe "" (\x -> "Locus Edge          : " <> show x <> "\n") $ dec ^. traversalLocus
         
         shownCost = unwords
           [ "Cost                :"
