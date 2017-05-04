@@ -457,7 +457,7 @@ foreignPairwiseDO :: ( EncodableDynamicCharacter s
                   => s                         -- ^ First  dynamic character
                   -> s                         -- ^ Second dynamic character
                   -> DenseTransitionCostMatrix -- ^ Structure defining the transition costs between character states
-                  -> (s, Double, s, s, s)      -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
+                  -> (Word, s, s, s, s)        -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
 foreignPairwiseDO lhs rhs costMatrix = algn2d lhs rhs costMatrix DoNotComputeUnions ComputeMedians
 
 
@@ -469,7 +469,7 @@ foreignThreeWayDO :: ( EncodableDynamicCharacter s
                   -> s                         -- ^ Second dynamic character
                   -> s                         -- ^ Third  dynamic character
                   -> DenseTransitionCostMatrix -- ^ Structure defining the transition costs between character states
-                  -> (s, Double, s, s, s, s)   -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
+                  -> (Word, s, s, s, s, s)     -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
 foreignThreeWayDO char1 char2 char3 costMatrix = algn3d char1 char2 char3 costMatrix
 
 
@@ -526,9 +526,9 @@ algn2d :: ( EncodableDynamicCharacter s
        -> DenseTransitionCostMatrix -- ^ Structure defining the transition costs between character states
        -> UnionContext
        -> MedianContext
-       -> (s, Double, s, s, s)      -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
+       -> (Word, s, s, s, s)        -- ^ The cost of the alignment
                                     --
-                                    --   The cost of the alignment
+                                    --   The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
                                     --
                                     --   The /gapped/ character derived from the the input characters' N-W-esque matrix traceback
                                     --
@@ -615,7 +615,7 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
 
                 -- NOTE: We swapped resultingAlignedChar1 & resultingAlignedChar2
                 -- because the C code returns the values in the wrong order!
-                pure (resultingUngapped, fromIntegral cost, resultingGapped, resultingAlignedChar2, resultingAlignedChar1)
+                pure (fromIntegral cost, resultingUngapped, resultingGapped, resultingAlignedChar2, resultingAlignedChar1)
 
             where
                 costStruct = costMatrix2D denseTCMs
@@ -663,9 +663,9 @@ algn3d :: ( EncodableDynamicCharacter s
        -> s                         -- ^ Second dynamic character
        -> s                         -- ^ Third  dynamic character
        -> DenseTransitionCostMatrix -- ^ Structure defining the transition costs between character states
-       -> (s, Double, s, s, s, s)   -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
+       -> (Word, s, s, s, s, s)     -- ^ The cost of the alignment
                                     --
-                                    --   The cost of the alignment
+                                    --   The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
                                     --
                                     --   The /gapped/ character derived from the the input characters' N-W-esque matrix traceback
                                     --
@@ -688,7 +688,7 @@ align2dCostOnly
   => s
   -> s
   -> DenseTransitionCostMatrix
-  -> (s, Double, s, s, s)
+  -> (Word, s, s, s, s)
 align2dCostOnly c1 c2 cm = trace "cost only" $ algn2d c1 c2 cm DoNotComputeUnions DoNotComputeMedians
 
 
@@ -701,7 +701,7 @@ align2dGetUngapped
   => s
   -> s
   -> DenseTransitionCostMatrix
-  -> (s, Double, s, s, s)
+  -> (Word, s, s, s, s)
 align2dGetUngapped c1 c2 cm = algn2d c1 c2 cm DoNotComputeUnions ComputeMedians
 
 
@@ -714,7 +714,7 @@ align2dGetUnion
   => s
   -> s
   -> DenseTransitionCostMatrix
-  -> (s, Double, s, s, s)
+  -> (Word, s, s, s, s)
 align2dGetUnion c1 c2 cm = algn2d c1 c2 cm ComputeUnions DoNotComputeMedians
 
 
@@ -727,7 +727,7 @@ align2dGappedUngapped
   => s
   -> s
   -> DenseTransitionCostMatrix
-  -> (s, Double, s, s, s)
+  -> (Word, s, s, s, s)
 align2dGappedUngapped c1 c2 cm = algn2d c1 c2 cm ComputeUnions ComputeMedians
 
 

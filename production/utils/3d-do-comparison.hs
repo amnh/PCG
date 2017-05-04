@@ -63,7 +63,7 @@ performImplementationComparison lhs rhs = do
     alphabet = fromSymbols ["A","C","G","T"]
     readSequence :: String -> DynamicChar
     readSequence = encodeStream alphabet . fmap ((iupacToDna BM.!) . pure . pure) . NE.fromList
-    renderResult  (w, c, x, y, z) = unlines
+    renderResult  (c, w, x, y, z) = unlines
         [ "Cost           : " <> show c 
         , "Median ungapped: " <> showStream alphabet w
         , "Median   gapped: " <> showStream alphabet x

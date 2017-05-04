@@ -38,7 +38,7 @@ import           Prelude     hiding (lookup, zip, zipWith)
 import Debug.Trace
 
 
-type PairwiseAlignment s = s -> s -> (s, Double, s, s, s)
+type PairwiseAlignment s = s -> s -> (Word, s, s, s, s)
 
 
 directOptimizationPostOrder
@@ -77,10 +77,7 @@ updateFromLeaves _ (x:|[]) = x -- This shouldn't happen
 updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) =
     extendDynamicToPostOrder leftChild localCost totalCost ungapped gapped lhsAlignment rhsAlignment
   where
-    -- TODO:
-    -- Change type of 'cost' to an integral value like 'Word'
-    (ungapped, cost, gapped, lhsAlignment, rhsAlignment) = pairwiseAlignment (leftChild ^. preliminaryUngapped) (rightChild ^. preliminaryUngapped)
-    localCost = truncate cost
+    (localCost, ungapped, gapped, lhsAlignment, rhsAlignment) = pairwiseAlignment (leftChild ^. preliminaryUngapped) (rightChild ^. preliminaryUngapped)
     totalCost = localCost + leftChild ^. characterCost + rightChild ^. characterCost
 
 

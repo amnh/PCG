@@ -84,7 +84,7 @@ foreign import ccall unsafe "sequentialAlignInterface performSequentialAlignment
 
 -- |
 -- FFI call to the C pairwise alignment algorithm with /explicit/ sub & indel cost parameters.
-pairwiseSequentialAlignment :: (EncodableDynamicCharacter s, Exportable s, Show s) => MemoizedCostMatrix -> s -> s -> (s, Double, s, s, s)
+pairwiseSequentialAlignment :: (EncodableDynamicCharacter s, Exportable s, Show s) => MemoizedCostMatrix -> s -> s -> (Word, s, s, s, s)
 pairwiseSequentialAlignment memo char1 char2 = unsafePerformIO $ do
 --        !_ <- trace "Before constructing char1" $ pure ()
         char1'        <- constructCharacterFromExportable char1
@@ -108,7 +108,7 @@ pairwiseSequentialAlignment memo char1 char2 = unsafePerformIO $ do
 --        _ <- free char1'
 --        _ <- free char2'
         resultStruct  <- peek resultPointer
-        let alignmentCost   = fromIntegral $ cost resultStruct
+        let alignmentCost   = toEnum . fromEnum $ cost resultStruct
             resultElemCount = coerceEnum $ finalLength resultStruct
             bufferLength    = calculateBufferLength width resultElemCount
             buildExportable = ExportableCharacterSequence resultElemCount width
@@ -125,6 +125,6 @@ pairwiseSequentialAlignment memo char1 char2 = unsafePerformIO $ do
         !_ <- trace ("Shown character 2 aligned: " <> show alignedChar2   ) $ pure ()
 --}
         !_ <- trace "Right Before Return" $ pure ()
-        pure (ungapped, alignmentCost, medianAlignment, alignedChar1, alignedChar2)
+        pure (alignmentCost, ungapped, medianAlignment, alignedChar1, alignedChar2)
     where
         width = exportedElementWidthSequence $ toExportableBuffer char1

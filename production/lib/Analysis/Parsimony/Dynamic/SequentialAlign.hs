@@ -27,5 +27,5 @@ import           Data.TCM.Memoized
 
 -- |
 -- sequentialAlign is similar to DO, but uses Yu's and Vahid's information theoretical sequential alignment algorithm to produce the alignment
-sequentialAlign :: (EncodableDynamicCharacter s, Exportable s, Show s) => MemoizedCostMatrix -> s -> s -> (s, Double, s, s, s)
+sequentialAlign :: (EncodableDynamicCharacter s, Exportable s, Show s) => MemoizedCostMatrix -> s -> s -> (Word, s, s, s, s)
 sequentialAlign matrix lhs rhs = handleMissingCharacter lhs rhs $ FFI.pairwiseSequentialAlignment matrix lhs rhs
