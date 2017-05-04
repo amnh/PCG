@@ -291,10 +291,10 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
               where
                 lhsMemo       = (contextualNodeDatum ! j) .!>. (n, j) 
                 rhsMemo       = (contextualNodeDatum ! k) .!>. (n, k) 
-                lhsContext    = trace (unwords ["filtering", show [k], "from", show (n, j)]) $
-                                edgeReferenceFilter [k] lhsMemo
-                rhsContext    = trace (unwords ["filtering", show [j], "from", show (n, k)]) $
-                                edgeReferenceFilter [j] rhsMemo
+                lhsContext    = trace (unwords ["filtering", show [(k,n)], "from", show (n, j)]) $
+                                edgeReferenceFilter [(k,n)] lhsMemo
+                rhsContext    = trace (unwords ["filtering", show [(j,n)], "from", show (n, k)]) $
+                                edgeReferenceFilter [(j,n)] rhsMemo
 
                 localResolutionApplication2 f xs ys = localResolutionApplication f (trace ("LHS: " <> show (n,j)) xs) (trace ("RHS: " <> show (n,k)) ys)
                 subtreeResolutions
@@ -355,7 +355,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
 --}
               where
                 invalidEdges     = (\x -> trace ("Bad edges: " <> show x) x) $ toList es >>= getDirectedEdges 
-                getDirectedEdges = uncurry (<>) . (id &&& fmap swap) . M.keys . (contextualNodeDatum !)
+                getDirectedEdges e = [e, swap e]
 
 
     rootRefWLOG  = NE.head $ rootRefs inputDag
