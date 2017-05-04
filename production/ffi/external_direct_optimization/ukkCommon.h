@@ -120,12 +120,12 @@ int  alignmentCost(int states[], char *al1, char *al2, char *al3, int len);
 void *getPtr(AllocInfo *a, int ab, int ac, size_t d, int s);
 
 // TODO: unsigned ints for costs:
-int powell_3D_align ( dyn_char_p seqA
-                    , dyn_char_p seqB
-                    , dyn_char_p seqC
-                    , dyn_char_p retSeqA
-                    , dyn_char_p retSeqB
-                    , dyn_char_p retSeqC
+int powell_3D_align ( dyn_char_p charA
+                    , dyn_char_p charB
+                    , dyn_char_p charC
+                    , dyn_char_p retCharA
+                    , dyn_char_p retCharB
+                    , dyn_char_p retCharC
                     , int mismatch
                     , int gapOpen
                     , int gapExtend

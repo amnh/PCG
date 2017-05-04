@@ -24,11 +24,11 @@ import System.IO.Unsafe
 
 import Debug.Trace
 
-#include "seqAlignInterface.h"
-#include "seqAlignOutputTypes.h"
+#include "sequentialAlignInterface.h"
+#include "sequentialAlignOutputTypes.h"
 -- #include <stdint.h>
 
-  
+
 -- |
 -- The result of the alignment from the C side of the FFI
 -- Includes a struct (actually, a pointer thereto), and that struct, in turn, has a string
@@ -74,7 +74,7 @@ instance Storable AlignResult where
         (#poke struct alignResult_t, medianChar ) ptr medVal
 
 
-foreign import ccall unsafe "seqAlignInteface performSequentialAlignment"
+foreign import ccall unsafe "sequentialAlignInterface performSequentialAlignment"
     performSeqAlignfn_c :: Ptr CDynamicChar
                         -> Ptr CDynamicChar
                         -> StablePtr ForeignVoid

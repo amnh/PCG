@@ -1,19 +1,19 @@
 //
-//  seqAlignForHaskell.h
+//  sequentialAlign.h
 //  version_Haskell_bit
 //
 //  Created by Yu Xiang on 11/1/16.
 //  Copyright © 2016 Yu Xiang. All rights reserved.
 //
 
-#ifndef YUALIGN_H
-#define YUALIGN_H
+#ifndef SEQUENTIAL_ALIGN_H
+#define SEQUENTIAL_ALIGN_H
 
 #include <stddef.h>
 
 #include "../memoized_tcm/costMatrixWrapper.h"
 #include "../memoized_tcm/dynamicCharacterOperations.h"
-#include "seqAlignOutputTypes.h"
+#include "sequentialAlignOutputTypes.h"
 
 typedef void* costMatrix_p;
 
@@ -23,25 +23,25 @@ typedef struct align {
     int       ungapped_partialCost;
     uint64_t *partialAlign_A;
     uint64_t *partialAlign_B;
-    size_t    aligned_sequence_A_end_ptr;     // current index in aligned sequenceA
-    size_t    aligned_sequence_B_end_ptr;     // current index in aligned sequenceB
-    size_t    input_sequence_A_ptr;           // current index in input sequenceA   -- for input sequences, since there are
-    size_t    input_sequence_B_ptr;           // current index in input sequenceB   -- we need a pointer for each of multiple alignments
-    int       flagWhichTree;                  // belongs to first or second tree
+    size_t    aligned_character_A_end_ptr;     // current index in aligned characterA
+    size_t    aligned_character_B_end_ptr;     // current index in aligned characterB
+    size_t    input_character_A_ptr;           // current index in input characterA   -- for input characters, since there are
+    size_t    input_character_B_ptr;           // current index in input characterB   -- we need a pointer for each of multiple alignments
+    int       flagWhichTree;                   // belongs to first or second tree
 } alignment_t;
 
-/** for use in updateSequences(), to know whether I'm going A -> GAP, GAP -> B, A -> B */
+/** for use in updateCharacters(), to know whether I'm going A -> GAP, GAP -> B, A -> B */
 enum transition { A_TO_GAP, GAP_TO_B, A_TO_B };
 
-/** Allocs enough space to hold four sequences: two gapped and two ungapped.
- *  Also assigns input values to pointers into each sequence
+/** Allocs enough space to hold four characters: two gapped and two ungapped.
+ *  Also assigns input values to pointers into each character
  */
 alignment_t *initAlignment( int    in_gapped_partialCost
                           , int    in_ungapped_partialCost
-                          , size_t in_aligned_sequence_A_end_ptr
-                          , size_t in_aligned_sequence_B_end_ptr
-                          , size_t in_input_sequence_A_ptr
-                          , size_t in_input_sequence_B_ptr
+                          , size_t in_aligned_character_A_end_ptr
+                          , size_t in_aligned_character_B_end_ptr
+                          , size_t in_input_character_A_ptr
+                          , size_t in_input_character_B_ptr
                           , int    in_flagWhichTree
                           , size_t initLength
                           );
@@ -54,10 +54,10 @@ int currentAlignmentCost( alignment_t  *path
               );
 
 /** Does actual alignment */
-int aligner( uint64_t     *seq1
-           , size_t        seq1Len
-           , uint64_t     *seq2
-           , size_t        seq2Len
+int aligner( uint64_t     *char1
+           , size_t        char1Len
+           , uint64_t     *char2
+           , size_t        char2Len
            , size_t        alphSize
            , costMatrix_p  tcm
            , retType_t    *retAlign
@@ -86,18 +86,19 @@ size_t boundedIncrement(size_t value, size_t bound);
 /** Honestly not yet sure what this does. It shuffles a bunch of values back and forth inside path
  *  and updates path->partialCost.
  */
-int updateSequences( alignment_t       *path
-                   , uint64_t          *seqA
-                   , size_t             lengthSeqA
-                   , uint64_t          *seqB
-                   , size_t             lengthSeqB
-                   , uint64_t           GAP
-                   , size_t             SEQ_MAX_LEN
-                   , const costMatrix_p tcm
-                   , size_t             alphSize
-                   , size_t             flagEmpty
-                   , enum transition    whichSub
-                   , int                cost);
+int updateCharacters( alignment_t       *path
+                    , uint64_t          *charA
+                    , size_t             lengthCharA
+                    , uint64_t          *charB
+                    , size_t             lengthCharB
+                    , uint64_t           GAP
+                    , size_t             SEQ_MAX_LEN
+                    , const costMatrix_p tcm
+                    , size_t             alphSize
+                    , size_t             flagEmpty
+                    , enum transition    whichSub
+                    , int                cost
+                    );
 
 
-#endif /* YUALIGN_H */
+#endif /* SEQUENTIAL_ALIGN */

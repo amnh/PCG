@@ -12,16 +12,16 @@ typedef struct alignResult_t {
     packedChar *medianChar;
 } alignResult_t;
 
-/** retType_t differs from alignResult_t in that it's the return type from the C sequence alignment code,
- *  which doesn't return packedChars, but ints. Also, the output from the sequence alignment gets post-processed
+/** retType_t differs from alignResult_t in that it's the return type from the C sequential alignment code,
+ *  which doesn't return packedChars, but ints. Also, the output from the sequential alignment gets post-processed
  *  to create a median, which is placed in medianChar in alignResult_t.
  */
 typedef struct retType_t {
     int       cost;
-    uint64_t *seq1;
-    size_t    seq1Len;
-    uint64_t *seq2;
-    size_t    seq2Len;
+    uint64_t *char1;
+    size_t    char1Len;
+    uint64_t *char2;
+    size_t    char2Len;
     size_t    alignmentLength;
 } retType_t;
 

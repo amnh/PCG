@@ -21,10 +21,10 @@ int power_2 (int input) {
 void setChar(const int *vals, size_t length, dyn_char_p retChar) {
     // assign character into character struct
     retChar->len = length;
-    retChar->seq_begin = retChar->end - length;
+    retChar->char_begin = retChar->end - length;
     if (length > 0) {
         for(size_t i = 0; i < length; i++) {
-            retChar->seq_begin[i] = (int) vals[i];
+            retChar->char_begin[i] = (int) vals[i];
         }
     }
 }
@@ -39,7 +39,7 @@ int main() {
 
 /****************  Allocate characters  ****************/
 
-        //***** for following seqs, affine requires gap at start of character!!! *****/
+        //***** for following characters, affine requires gap at start of character!!! *****/
 
     const int longCharLen   = 22;
     const int middleCharLen = 18;
@@ -290,13 +290,13 @@ int main() {
         gappedMedChar->cap         = medianCharLen;
         gappedMedChar->array_head  = calloc( medianCharLen, sizeof(elem_t));
         gappedMedChar->len         = 0;
-        gappedMedChar->seq_begin   = gappedMedChar->end = gappedMedChar->array_head + medianCharLen;
+        gappedMedChar->char_begin   = gappedMedChar->end = gappedMedChar->array_head + medianCharLen;
 
         dyn_char_p ungappedMedChar       = malloc( sizeof(dyn_character_t) );
         ungappedMedChar->cap        = medianCharLen;
         ungappedMedChar->array_head = calloc( medianCharLen, sizeof(elem_t));
         ungappedMedChar->len        = 0;
-        ungappedMedChar->seq_begin  = ungappedMedChar->end = ungappedMedChar->array_head + medianCharLen;
+        ungappedMedChar->char_begin  = ungappedMedChar->end = ungappedMedChar->array_head + medianCharLen;
 
         direction_matrix            = algn_mtxs2dAffine->nw_dirMtx;
 
@@ -452,15 +452,15 @@ int main() {
 
         printf("\n\n\n");
 
-        // for (elem_t *base = retLongChar->seq_begin; base != retLongChar->end; base++) {
+        // for (elem_t *base = retLongChar->char_begin; base != retLongChar->end; base++) {
         //     printf("a: %c\n", *base);
         // }
-        // for (elem_t *base = retShortChar->seq_begin; base != retShortChar->end; base++) {
+        // for (elem_t *base = retShortChar->char_begin; base != retShortChar->end; base++) {
         //     printf("b: %s\n", base);
         // }
     }
 
-    // Next this: algn_get_median_3d (dyn_char_p seq1, dyn_char_p seq2, dyn_char_p seq3,
+    // Next this: algn_get_median_3d (dyn_char_p char1, dyn_char_p char2, dyn_char_p char3,
     //                cost_matrices_3d_p m, dyn_char_p sm)
 
     freeCostMtx(costMtx2d,        1);  // 1 is 2d

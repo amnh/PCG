@@ -11,11 +11,11 @@ costMatrix     = ../../memoized_tcm/costMatrix.h \
 wrapper        = ../../memoized_tcm/costMatrixWrapper.h \
                  ../../memoized_tcm/costMatrixWrapper.c
 
-seqAlignFiles  = ../seqAlignForHaskell.h \
-                 ../seqAlignForHaskell.c \
-                 ../seqAlignInterface.h \
-                 ../seqAlignInterface.c \
-                 ../seqAlignOutputTypes.h
+seqAlignFiles  = ../sequentialAlign.h \
+                 ../sequentialAlign.c \
+                 ../sequentialAlignInterface.h \
+                 ../sequentialAlignInterface.c \
+                 ../sequentialAlignOutputTypes.h
 
 exe_align      = test_sequential_align
 
@@ -43,4 +43,4 @@ test_sequential_align : test_sequential_align.c $(seqAlignFiles) $(costMatrix) $
 	gcc -std=c11   $(sanityWarnings) -g -c $(seqAlignFiles)
 #	gcc -std=c11 -g -c ../seqAlignInterface.c
 	# in next line, need -lc++ so that it calls correct linker: we need C compiler, but C++ libraries in scope.
-	gcc -std=c11   $(sanityWarnings) -g -o $(exe_align) -Wall test_sequential_align.c seqAlignInterface.o seqAlignForHaskell.o costMatrixWrapper.o dynamicCharacterOperations.o costMatrix.o -lstdc++
+	gcc -std=c11   $(sanityWarnings) -g -o $(exe_align) -Wall test_sequential_align.c sequentialAlignInterface.o sequentialAlign.o costMatrixWrapper.o dynamicCharacterOperations.o costMatrix.o -lstdc++
