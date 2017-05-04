@@ -122,7 +122,7 @@ library
 
   -- We must provide the full relative path to every C file that the project depends on.
   c-sources:
-    -- ffi/Analysis/Parsimony/Binary/SequentialAlign/seqAlignForHaskell.c
+    -- ffi/Analysis/Parsimony/Binary/SequentialAlign/sequentialAlign.c
     -- ffi/Analysis/Parsimony/Binary/SequentialAlign/dynamicCharacterOperations.c
     ffi/external_direct_optimization/c_alignment_interface.c
     ffi/external_direct_optimization/c_code_alloc_setup.c
@@ -138,11 +138,11 @@ library
     ffi/memoized_tcm/costMatrix.cpp
     -- ffi/memoized_tcm/costMatrixWrapper.h
     ffi/memoized_tcm/costMatrixWrapper.c
-    -- ffi/sequential_align/seqAlignInterface.h
-    ffi/sequential_align/seqAlignInterface.c
-    -- ffi/sequential_align/seqAlignForHaskell.h
-    ffi/sequential_align/seqAlignForHaskell.c
-    -- ffi/sequential_align/seqAlignOutputTypes.h
+    -- ffi/sequential_align/sequentialAlignInterface.h
+    ffi/sequential_align/sequentialAlignInterface.c
+    -- ffi/sequential_align/sequentialAlign.h
+    ffi/sequential_align/sequentialAlign.c
+    -- ffi/sequential_align/sequentialAlignOutputTypes.h
 
 
   -- Here we list all directories that contain C header files that the FFI tools will need

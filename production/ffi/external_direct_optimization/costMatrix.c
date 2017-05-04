@@ -407,7 +407,7 @@ cm_get_row (int *tcm, elem_t a, int alphSize) {
 }
 
 static inline int *
-cm_get_row_3d (int *tcm, elem_t seq1, elem_t seq2, int alphSize) {
+cm_get_row_3d (int *tcm, elem_t char1, elem_t char2, int alphSize) {
     unsigned int one = 1;
     unsigned int upperBound = one << alphSize;
 
@@ -415,15 +415,15 @@ cm_get_row_3d (int *tcm, elem_t seq1, elem_t seq2, int alphSize) {
         printf("Alphabet size = 4\n");
         exit(1);
     }
-    if (upperBound <= seq1) {
-        printf("%u is bigger than alphabet size\n", seq1);
+    if (upperBound <= char1) {
+        printf("%u is bigger than alphabet size\n", char1);
         exit(1);
     }
-    if (upperBound <= seq2) {
-        printf("%u is bigger than alphabet size\n", seq2);
+    if (upperBound <= char2) {
+        printf("%u is bigger than alphabet size\n", char2);
         exit(1);
     }
-    return (tcm + (((seq1 << alphSize) + seq2) << alphSize));
+    return (tcm + (((char1 << alphSize) + char2) << alphSize));
 }
 
 void
@@ -441,52 +441,53 @@ cm_get_value (int a, int b, int *p, int alphSize) {
     return *(p + (cm_calc_cost_position (a, b, alphSize)));
 }
 
-/** Sets first row of nw cost matrix, where @param seq is column headers */
+/** Sets first row of nw cost matrix, where @param inChar is column headers */
 void
-cm_precalc_4algn (const cost_matrices_2d_p costMatrix, nw_matrices_p alignmentMatrices, const dyn_char_p seq) {
+cm_precalc_4algn (const cost_matrices_2d_p costMatrix, nw_matrices_p alignmentMatrices, const dyn_char_p inChar) {
     if(DEBUG_MAT) {
         printf("\n---cm_precalc_4algn\n");
     }
     size_t i,
            j,
-           seqLen = seq->len;
+           charLen = inChar->len;
 
-    int *tmpCost_t,
-        *precalcMtx_t = alignmentMatrices->precalcMtx,
-        *seqTcm_t     = costMatrix->cost,
-        *tmpPrecMtx_t = precalcMtx_t + seqLen,
-        *prepend_t    = costMatrix->prepend_cost,
-        *tailCosts_t  = costMatrix->tail_cost;
+    int *tmpCost,
+        *precalcMtx = alignmentMatrices->precalcMtx,
+        *charTcm    = costMatrix->cost,
+        *tmpPrecMtx = precalcMtx + charLen,
+        *prepend    = costMatrix->prepend_cost,
+        *tailCosts  = costMatrix->tail_cost;
 
-    elem_t *seq_begin_t = seq->seq_begin;
+    elem_t *char_begin = inChar->char_begin;
 
     if (DEBUG_MAT) {
         printf ("Precalculated transformation cost matrix.\n");
     }
 
     if (DEBUG_MAT) {
-        for (j = 0; j < seqLen; j++) {
-            printf ("seq_begin_t[%zu]: %d\n", j, seq_begin_t[j]), fflush(stdout);
+        for (j = 0; j < charLen; j++) {
+            printf ("char_begin_t[%zu]: %d\n", j, char_begin[j]), fflush(stdout);
         }
     }
 
     // We will put the cost of the prepend in the 0th row of the precalc matrix.
-    for (j = 0; j < seqLen; j++) {
+    for (j = 0; j < charLen; j++) {
 
       //printf ("Before innerIndex (j = %d)\n", j), fflush(stdout);
-	int innerIndex = seq_begin_t[j];
-        //printf ("After  innerIndex: {%d}\n", innerIndex), fflush(stdout);
+        int innerIndex = char_begin[j];
+        // printf ("After  innerIndex: {%d}\n", innerIndex), fflush(stdout);
 
-        //printf ("Before valueDatum\n"), fflush(stdout);
-	int valueDatum = prepend_t[innerIndex];
+        // printf ("Before valueDatum\n");
+        //fflush(stdout);
+        int valueDatum = prepend[innerIndex];
         //printf ("After  valueDatum\n"), fflush(stdout);
 
         //printf ("Before Assignment\n"), fflush(stdout);
-        precalcMtx_t[j] = valueDatum;
+        precalcMtx[j] = valueDatum;
         //printf ("After  Assignment\n"), fflush(stdout);
 
         if (DEBUG_CM) {
-            printf ("%7d", precalcMtx_t[j]);
+            printf ("%7d", precalcMtx[j]);
             fflush(stdout);
         }
     }
@@ -494,23 +495,23 @@ cm_precalc_4algn (const cost_matrices_2d_p costMatrix, nw_matrices_p alignmentMa
         printf("\n");
         fflush(stdout);
     }
-    for (j = 1; j <= costMatrix->alphSize; j++, tmpPrecMtx_t += seqLen) {
+    for (j = 1; j <= costMatrix->alphSize; j++, tmpPrecMtx += charLen) {
         // if (DEBUG_CM) {
         //     printf("%zu\t", j);
         // }
-        tmpCost_t = cm_get_row (seqTcm_t, j, costMatrix->costMatrixDimension);
+        tmpCost = cm_get_row (charTcm, j, costMatrix->costMatrixDimension);
         /* We fill almost the complete row. Only the first (aligning with the
          * gap), is filled using the tail cost */
-        tmpPrecMtx_t[0] = tailCosts_t[j];
+        tmpPrecMtx[0] = tailCosts[j];
         if (DEBUG_MAT) {
-            printf ("%7d", tmpPrecMtx_t[0]);
+            printf ("%7d", tmpPrecMtx[0]);
             fflush(stdout);
 
         }
-        for (i = 1; i < seqLen; i++) {
-            tmpPrecMtx_t[i] = tmpCost_t[seq_begin_t[i]];
+        for (i = 1; i < charLen; i++) {
+            tmpPrecMtx[i] = tmpCost[char_begin[i]];
             if (DEBUG_MAT) {
-                printf ("%7d", tmpPrecMtx_t[i]);
+                printf ("%7d", tmpPrecMtx[i]);
                 fflush(stdout);
             }
         }
@@ -531,54 +532,54 @@ cm_get_precal_row (const int *p, elem_t item, int len) {
 }
 
 static inline int *
-cm_get_pos_in_precalc (const int *outPrecalcMtx, int seq3Len, int alphSize,
-                       int seq1idx, int seq2idx, int seq3idx) {
+cm_get_pos_in_precalc (const int *outPrecalcMtx, int char3Len, int alphSize,
+                       int char1idx, int char2idx, int char3idx) {
     int *result;
     alphSize++;
-    result = (int *) outPrecalcMtx + ((seq1idx * (alphSize * seq3Len)) + (seq3Len * seq2idx) + seq3idx);
+    result = (int *) outPrecalcMtx + ((char1idx * (alphSize * char3Len)) + (char3Len * char2idx) + char3idx);
     return (result);
 }
 
 int *
-cm_get_row_precalc_3d (const int *outPrecalcMtx, int seq3Len, int alphSize, int seq1idx, int seq2idx) {
-    return (cm_get_pos_in_precalc (outPrecalcMtx, seq3Len, alphSize, seq1idx, seq2idx, 0));
+cm_get_row_precalc_3d (const int *outPrecalcMtx, int char3Len, int alphSize, int char1idx, int char2idx) {
+    return (cm_get_pos_in_precalc (outPrecalcMtx, char3Len, alphSize, char1idx, char2idx, 0));
 }
 
 void
-cm_precalc_4algn_3d (const cost_matrices_3d_p costMtx, int *outPrecalcMtx, const dyn_char_p seq3) {
-    size_t seq3idx,
-           seq1idx,
-           seq2idx,
-           seq3Len;
+cm_precalc_4algn_3d (const cost_matrices_3d_p costMtx, int *outPrecalcMtx, const dyn_char_p char3) {
+    size_t char3idx,
+           char1idx,
+           char2idx,
+           char3Len;
 
     int *tmp_cost,
         *tcm,
          character,
         *precalc_pos;
 
-    seq3Len = seq3->len;
+    char3Len = char3->len;
     tcm     = costMtx->cost;
-    for (seq1idx = 1; seq1idx < costMtx->alphSize + 1; seq1idx++) {
-        for (seq2idx = 1; seq2idx < costMtx->alphSize + 1; seq2idx++) {
+    for (char1idx = 1; char1idx < costMtx->alphSize + 1; char1idx++) {
+        for (char2idx = 1; char2idx < costMtx->alphSize + 1; char2idx++) {
             tmp_cost = cm_get_row_3d ( tcm
-                                     , seq1idx
-                                     , seq2idx
+                                     , char1idx
+                                     , char2idx
                                      , costMtx->costMatrixDimension
                                      );
 
-            //printf("seq1: %d,    seq2: %d,    cost: %d\n", seq1idx, seq2idx, *(tmp_cost+1));
-            for (seq3idx = 0; seq3idx < seq3Len; seq3idx++) {
-                character     = seq3->seq_begin[seq3idx];
+            //printf("char1: %d,    char2: %d,    cost: %d\n", char1idx, char2idx, *(tmp_cost+1));
+            for (char3idx = 0; char3idx < char3Len; char3idx++) {
+                character     = char3->char_begin[char3idx];
 
                 precalc_pos  = (int *) cm_get_pos_in_precalc ( outPrecalcMtx
-                                                             , seq3Len
+                                                             , char3Len
                                                              , costMtx->alphSize
-                                                             , seq1idx
-                                                             , seq2idx
-                                                             , seq3idx
+                                                             , char1idx
+                                                             , char2idx
+                                                             , char3idx
                                                              );
                 *precalc_pos = *(tmp_cost + character);
-                // printf("seq1: %2d,    seq2: %2d,    character: %2d,    cost: %2d\n", seq1idx, seq2idx, character, *(precalc_pos));
+                // printf("char1: %2d,    char2: %2d,    character: %2d,    cost: %2d\n", char1idx, char2idx, character, *(precalc_pos));
             }
         }
     }

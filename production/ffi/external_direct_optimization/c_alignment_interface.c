@@ -17,8 +17,8 @@ void alignIO_print(alignIO_p character) {
     printf("\n");
     printf("Length:   %zu\n", character->length);
     printf("Capacity: %zu\n", character->capacity);
-    size_t seqStart = character->capacity - character->length;
-    for(size_t i = seqStart; i < character->capacity; i++) {
+    size_t charStart = character->capacity - character->length;
+    for(size_t i = charStart; i < character->capacity; i++) {
         printf("%d, ", character->character[i]);
         //if (character->character[i] == 0) continue;
     }
@@ -65,11 +65,11 @@ void reallocAlignIO(alignIO_p toAlloc, size_t capacity) {
 }
 
 
-/** Copy an input/output type into the seq type needed by code ported forward from POY.
+/** Copy an input/output type into the char type needed by code ported forward from POY.
  *  The values in the last `length` elements in `input` get copied to the last `length` elements in the array in`retChar`.
  *  Ported code needs a gap character at beginning, so provide that.
  */
-void alignIOtoChar(dyn_char_p retChar, alignIO_p input, size_t alphabetSize) {
+void alignIOtoDynChar(dyn_char_p retChar, alignIO_p input, size_t alphabetSize) {
     // printf("\n\nInput Length:        %2zu\n", input->length  );
     // printf("Input Capacity:      %2zu\n", input->capacity);
     // printf("Input alphabetSize:  %2zu\n", alphabetSize);
@@ -80,7 +80,7 @@ void alignIOtoChar(dyn_char_p retChar, alignIO_p input, size_t alphabetSize) {
     retChar->cap        = input->capacity;
     retChar->array_head = input->character;
     retChar->end        = input->character + input->capacity - 1; // TODO: make sure this is correct.
-    retChar->seq_begin  = input->character + offset;
+    retChar->char_begin = input->character + offset;
 
     // printf("\nBefore duping struct:\n");
     // printf("Input Length:      %2zu\n", input->length);
@@ -89,29 +89,29 @@ void alignIOtoChar(dyn_char_p retChar, alignIO_p input, size_t alphabetSize) {
     // printf("Input First:       %2d\n",  input->character[input->capacity - input->length]);
     // printf("Input Last:        %2d\n",  input->character[input->capacity - 1]);
     // fflush(stdout);
-    // memcpy(retChar->seq_begin, input->character + offset, input->length * sizeof(elem_t));
+    // memcpy(retChar->char_begin, input->character + offset, input->length * sizeof(elem_t));
     //printf("\nmemcpy completed\n");
 
     // now add gap to beginning
-    retChar->seq_begin--;   // Add another cell, prepended to the array
-    *retChar->seq_begin = ((elem_t) 1) << (alphabetSize - 1);   //Prepend a gap to the array.
+    retChar->char_begin--;   // Add another cell, prepended to the array
+    *retChar->char_begin = ((elem_t) 1) << (alphabetSize - 1);   //Prepend a gap to the array.
     retChar->len++;
 
     // printf("\nAfter duping struct:\n");
     // printf("Output Length:     %2zu\n", retChar->len);
     // printf("Output Capacity:   %2zu\n", retChar->cap);
     // printf("Output Array Head: %2d\n",  retChar->array_head[0]);
-    // printf("Output First:      %2d\n",  retChar->seq_begin[0] );
+    // printf("Output First:      %2d\n",  retChar->char_begin[0] );
     // printf("Output Last:       %2d\n",  retChar->end[0]       );
     // //printf("Gap value:           %2d\n", ((elem_t) 1) << (alphabetSize - 1));
     // fflush(stdout);
 
 }
 
-/** Takes in an alignIO and a seq. *Copies* values of character from end of seq to end of alignIO->character.
+/** Takes in an alignIO and a char. *Copies* values of character from end of char to end of alignIO->character.
  *  Also eliminates extra gap needed by legacy code.
  */
-void charToAlignIO(alignIO_p output, dyn_char_p input) {
+void dynCharToAlignIO(alignIO_p output, dyn_char_p input) {
   /*
     printf("Length:   %zu\n", input->len);
     printf("Capacity: %zu\n", input->cap);
@@ -131,12 +131,12 @@ void charToAlignIO(alignIO_p output, dyn_char_p input) {
     // }
 
     // Start copy after unnecessary gap char in input.
-    memcpy( output->character + offset, input->seq_begin + 1, (input->len - 1) * sizeof(elem_t));
+    memcpy( output->character + offset, input->char_begin + 1, (input->len - 1) * sizeof(elem_t));
     // for(size_t i = 0; i < input->len; i++) {
-    //     printf("Cur char: %zu %u\n", i, input->seq_begin[i]);
+    //     printf("Cur char: %zu %u\n", i, input->char_begin[i]);
     //     fflush(stdout);
-    //     output->character[i] = input->seq_begin[i];
-    //     // printf("After  charToAlignIO[%d]\n", i);
+    //     output->character[i] = input->char_begin[i];
+    //     // printf("After  dynCharToAlignIO[%d]\n", i);
     //     // fflush(stdout);
     // }
 
@@ -211,24 +211,24 @@ int align2d( alignIO_p inputChar1_aio
     size_t alphabetSize = costMtx2d->costMatrixDimension;
 
     if (inputChar1_aio->length >= inputChar2_aio->length) {
-        alignIOtoChar(longChar, inputChar1_aio, alphabetSize);
+        alignIOtoDynChar(longChar, inputChar1_aio, alphabetSize);
         longIO = inputChar1_aio;
 
-        alignIOtoChar(shortChar, inputChar2_aio, alphabetSize);
+        alignIOtoDynChar(shortChar, inputChar2_aio, alphabetSize);
         shortIO = inputChar2_aio;
 
     } else {
-        alignIOtoChar(longChar, inputChar2_aio, alphabetSize);
+        alignIOtoDynChar(longChar, inputChar2_aio, alphabetSize);
         longIO = inputChar2_aio;
 
-        alignIOtoChar(shortChar, inputChar1_aio, alphabetSize);
+        alignIOtoDynChar(shortChar, inputChar1_aio, alphabetSize);
         shortIO = inputChar1_aio;
     }
 
     if (DEBUG_ALGN) {
-        printf("\nafter copying, seq 1:\n");
+        printf("\nafter copying, char 1:\n");
         dyn_char_print(longChar);
-        printf("\nafter copying, seq 2:\n");
+        printf("\nafter copying, char 2:\n");
         dyn_char_print(shortChar);
     }
     //printf("Before NW init.\n");
@@ -272,15 +272,15 @@ int align2d( alignIO_p inputChar1_aio
             // printf("\n\nUngapped median:\n"), fflush(stdout);
             // dyn_char_print(ungappedMedianChar);
 
-            charToAlignIO(ungappedOutput_aio, ungappedMedianChar);
+            dynCharToAlignIO(ungappedOutput_aio, ungappedMedianChar);
             // printf("\n\nUngapped median copy:\n"), fflush(stdout);
             // alignIO_print(ungappedOutput_aio);
 
             freeChar(ungappedMedianChar);
 
 
-            charToAlignIO(longIO,  retLongChar);
-            charToAlignIO(shortIO, retShortChar);
+            dynCharToAlignIO(longIO,  retLongChar);
+            dynCharToAlignIO(shortIO, retShortChar);
 
             // printf("\nAfter copy.\n"), fflush(stdout);
             // alignIO_print(longIO);
@@ -299,14 +299,14 @@ int align2d( alignIO_p inputChar1_aio
             algn_get_median_2d_with_gaps (retShortChar, retLongChar, costMtx2d, gappedMedianChar);
 	    //printf("After  algn_get_median\n"), fflush(stdout);
 
-	    //printf("Before charToAlignIO\n"), fflush(stdout);
-            charToAlignIO(gappedOutput_aio, gappedMedianChar);
-	    //printf("After  charToAlignIO\n"),  fflush(stdout);
+	    //printf("Before dynCharToAlignIO\n"), fflush(stdout);
+            dynCharToAlignIO(gappedOutput_aio, gappedMedianChar);
+	    //printf("After  dynCharToAlignIO\n"),  fflush(stdout);
 
             freeChar(gappedMedianChar);
 
-            charToAlignIO(longIO,  retLongChar);
-            charToAlignIO(shortIO, retShortChar);
+            dynCharToAlignIO(longIO,  retLongChar);
+            dynCharToAlignIO(shortIO, retShortChar);
 
         }
         if (getUnion) {
@@ -316,7 +316,7 @@ int align2d( alignIO_p inputChar1_aio
 
             algn_union (retShortChar, retLongChar, gappedMedianChar);
 
-            charToAlignIO(gappedOutput_aio, gappedMedianChar);
+            dynCharToAlignIO(gappedOutput_aio, gappedMedianChar);
 
             freeChar(gappedMedianChar);
 
@@ -325,11 +325,11 @@ int align2d( alignIO_p inputChar1_aio
             // initializeChar(unionChar, CHAR_CAPACITY);
             // algn_union(retShortChar, retLongChar, gappedMedianChar);
 
-            // charToAlignIO(unionChar, unionOutputChar);
+            // dynCharToAlignIO(unionChar, unionOutputChar);
             // freeChar(unionChar);
 
-            charToAlignIO(longIO,  retLongChar);
-            charToAlignIO(shortIO, retShortChar);
+            dynCharToAlignIO(longIO,  retLongChar);
+            dynCharToAlignIO(shortIO, retShortChar);
         }
     }
 
@@ -398,24 +398,24 @@ int align2dAffine( alignIO_p inputChar1_aio
     size_t alphabetSize = costMtx2d_affine->costMatrixDimension;
 
     if (inputChar1_aio->length >= inputChar2_aio->length) {
-        alignIOtoChar(longChar, inputChar1_aio, alphabetSize);
+        alignIOtoDynChar(longChar, inputChar1_aio, alphabetSize);
         longIO = inputChar1_aio;
 
-        alignIOtoChar(shortChar, inputChar2_aio, alphabetSize);
+        alignIOtoDynChar(shortChar, inputChar2_aio, alphabetSize);
         shortIO = inputChar2_aio;
 
     } else {
-        alignIOtoChar(longChar, inputChar2_aio, alphabetSize);
+        alignIOtoDynChar(longChar, inputChar2_aio, alphabetSize);
         longIO = inputChar2_aio;
 
-        alignIOtoChar(shortChar, inputChar1_aio, alphabetSize);
+        alignIOtoDynChar(shortChar, inputChar1_aio, alphabetSize);
         shortIO = inputChar1_aio;
     }
 
     if (DEBUG_ALGN) {
-        printf("\nafter copying, seq 1:\n");
+        printf("\nafter copying, char 1:\n");
         dyn_char_print(longChar);
-        printf("\nafter copying, seq 2:\n");
+        printf("\nafter copying, char 2:\n");
         dyn_char_print(shortChar);
     }
 
@@ -467,7 +467,7 @@ int align2dAffine( alignIO_p inputChar1_aio
     empty_medianChar->cap            = CHAR_CAPACITY;
     empty_medianChar->array_head     = calloc( CHAR_CAPACITY, sizeof(elem_t));
     empty_medianChar->len            = 0;
-    empty_medianChar->seq_begin      = empty_medianChar->end = empty_medianChar->array_head + CHAR_CAPACITY;
+    empty_medianChar->char_begin      = empty_medianChar->end = empty_medianChar->array_head + CHAR_CAPACITY;
 */
 
 
@@ -521,11 +521,11 @@ int align2dAffine( alignIO_p inputChar1_aio
                                retLongChar,
                                costMtx2d_affine);
 
-        charToAlignIO(ungappedOutput_aio, ungappedMedianChar);
-        charToAlignIO(gappedOutput_aio,   gappedMedianChar);
+        dynCharToAlignIO(ungappedOutput_aio, ungappedMedianChar);
+        dynCharToAlignIO(gappedOutput_aio,   gappedMedianChar);
 
-        charToAlignIO(longIO,  retLongChar);
-        charToAlignIO(shortIO, retShortChar);
+        dynCharToAlignIO(longIO,  retLongChar);
+        dynCharToAlignIO(shortIO, retShortChar);
 //    fflush(stdout);
 
         freeChar(ungappedMedianChar);

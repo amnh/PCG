@@ -43,7 +43,7 @@ void initializeChar(dyn_char_p retChar, size_t allocSize) {
     retChar->array_head = calloc(allocSize, sizeof(elem_t));        // beginning of array that holds dynamic character
 
     retChar->end        = retChar->array_head + allocSize - 1;    // end of array
-    retChar->seq_begin  = retChar->end;                           // position of first element in dynamic character
+    retChar->char_begin = retChar->end;                           // position of first element in dynamic character
     retChar->len        = 0;                                      // number of elements in character
 }
 
@@ -157,7 +157,7 @@ void setUp2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
     }
 
     /*
-    elem_t* charStart = longChar->seq_begin;
+    elem_t* charStart = longChar->char_begin;
     int gap        = 1 << (alphSize - 1);
     int charElem;
     for ( size_t i = 0; i < longChar->len; i++) {
@@ -269,7 +269,7 @@ void freeChar(dyn_char_p toFree) {
 void resetCharValues(dyn_char_p retChar) {
     //retChar->end   = retChar->begin + retChar->len;
     memset(retChar->array_head, 0, retChar->cap * sizeof(elem_t));
-    retChar->seq_begin = retChar->end;
+    retChar->char_begin = retChar->end;
     retChar->len       = 0;
 }
 
