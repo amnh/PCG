@@ -105,7 +105,7 @@ chooseDirectOptimizationComparison :: ( SimpleDynamicDecoration d  c
                                    -> [d']
                                    -> c
                                    -> c
-                                   -> (c, Double, c, c, c)
+                                   -> (Word, c, c, c, c)
 chooseDirectOptimizationComparison dec decs =
     case decs of
       []  -> selectBranch dec

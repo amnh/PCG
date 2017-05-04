@@ -24,6 +24,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization
   , directOptimizationPreOrder
   , directOptimizationPostOrder
   , foreignPairwiseDO
+  , foreignThreeWayDO
   , generateDenseTransitionCostMatrix
   , naiveDO
   , naiveDOConst

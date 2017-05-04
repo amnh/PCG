@@ -83,11 +83,11 @@ int align2dAffine( const alignIO_p char1
 /** Aligns three characters using non-affine algorithm.
  *  Takes in thee arrays of integer values,.
  */
-int align3d(alignIO_p character1
-           , alignIO_p character2
-           , alignIO_p character3
-           , alignIO_p medianChar
-           , cost_matrices_3d_p costMtx3d
+int align3d( const alignIO_p character1
+           , const alignIO_p character2
+           , const alignIO_p character3
+           , const alignIO_p gappedMedianChar
+           , const cost_matrices_3d_p costMtx3d
            );
 
 #endif // C_ALIGNMENT_INTERFACE_H
