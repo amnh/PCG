@@ -43,7 +43,7 @@ import           Data.Tuple                (swap)
 import qualified Data.Vector        as V
 import           Prelude            hiding (lookup, zipWith)
 
-import Debug.Trace
+-- import Debug.Trace
 
 
 -- |
@@ -76,7 +76,7 @@ assignOptimalDynamicCharacterRootEdges
   -> PhylogeneticDAG2 e n u v w x y z
 --assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) = undefined
 {--}
-assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) = traceShow (show $ (contextualNodeDatum ! 1) ! (2,1)) $ PDAG2 updatedDag
+assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) = PDAG2 updatedDag
   where
 
     -- Step 1: Construct a hashmap of all the edges.
@@ -123,13 +123,12 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
           then (a,b)
           else (b,a)
 
-    getRootingNode e | trace ("getRooting @ " <> show e) False = undefined
-    getRootingNode (i,j)
-      | (i,j) == (1,4) = trace (unwords ["1 parents: ", show iRefs, "4 parents: ", show jRefs, "Intersection", show intersected]) value
-      | otherwise = value
+    -- Given the unrooted edge, return a Just value containing the root reference
+    -- if the edge had a root node assigned to it in the Phylogenetic DAG.
+    -- Otherwise return a Nothing value if there was no root node on the unrooted
+    -- edge.
+    getRootingNode (i,j) = headMay . otoList $ iRefs `IS.intersection` jRefs
       where
-        value = headMay . otoList $intersected
-        intersected = iRefs `IS.intersection` jRefs
         iRefs = parentRefs $ refVec ! i
         jRefs = parentRefs $ refVec ! j
 
@@ -150,7 +149,6 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
 --    referenceEdgeMapping :: HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
     referenceEdgeMapping = foldMap f unrootedEdges
       where
-        f e | trace ("f @ " <> show e) False = undefined
         f e@(i,j) = 
             case getRootingNode e of
               Just r  -> M.singleton e $ getCache r
@@ -266,8 +264,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
             --childRef  = head unrootedChildRefs
 
             -- The adjacent vertex indices
-            unrootedAdjacentRefs = -- (\x -> trace ("(" <> show n <> ", _) <-< "<> show x) x) $
-                                   take 3 $ take 2 unrootedChildRefs <> take 2 unrootedParentRefs
+            unrootedAdjacentRefs = take 3 $ take 2 unrootedChildRefs <> take 2 unrootedParentRefs
 
             -- All the combinations of adjacent edges. The first position in the
             -- tuple is the only position that matters because the operation on
@@ -286,46 +283,43 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
             -- Given the three adjacent edges, generate the subtree resolutions
             -- defined by the first element of the tuple being an incomming edge.
 --            deriveDirectedEdgeDatum :: (Int, Int, Int) -> Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
---            deriveDirectedEdgeDatum (i,j,k) | trace (show (i,j,k)) False = undefined
             deriveDirectedEdgeDatum (i,j,k) = M.singleton (i, n) subtreeResolutions
               where
                 lhsMemo       = (contextualNodeDatum ! j) .!>. (n, j) 
                 rhsMemo       = (contextualNodeDatum ! k) .!>. (n, k) 
-                lhsContext    = trace (unwords ["filtering", show [(k,n)], "from", show (n, j)]) $
-                                edgeReferenceFilter [(k,n)] lhsMemo
-                rhsContext    = trace (unwords ["filtering", show [(j,n)], "from", show (n, k)]) $
-                                edgeReferenceFilter [(j,n)] rhsMemo
+                lhsContext    = edgeReferenceFilter [(k,n)] lhsMemo
+                rhsContext    = edgeReferenceFilter [(j,n)] rhsMemo
 
-                localResolutionApplication2 f xs ys = localResolutionApplication f (trace ("LHS: " <> show (n,j)) xs) (trace ("RHS: " <> show (n,k)) ys)
+--                localResolutionApplication2 f xs ys = localResolutionApplication f (trace ("LHS: " <> show (n,j)) xs) (trace ("RHS: " <> show (n,k)) ys)
                 subtreeResolutions
-                  | trace ( unwords [show (i,n), show (n,j), show (n,k), show (i `elem` unrootedParentRefs)] ) False = undefined
+--                  | trace ( unwords [show (i,n), show (n,j), show (n,k), show (i `elem` unrootedParentRefs)] ) False = undefined
                   -- Check for the recursive memoized form's base case
-                  | i `oelem` originalRootingParentRefs = trace ("Assuming cache for: " <> show (i,n)) $ getCache n
-                  | otherwise = trace ("NOT assuming cache for: " <> show (i,n)) $
+                  | i `oelem` originalRootingParentRefs = getCache n
+                  | otherwise =
                     case (isNetworkEdge (n,j), isNetworkEdge (n,k)) of
                       -- Neither are network edges
                       -- Perform standard tree operation
                       (False, False) ->
                           if   not $ isNetworkEdge (i,n)
-                          then localResolutionApplication2 extensionTransformation lhsMemo rhsMemo 
-                          else trace ("IN HERE " <> show (i,n)) $
+                          then localResolutionApplication extensionTransformation lhsMemo rhsMemo 
+                          else
                             case (lhsContext, rhsContext) of
                              (  [],   []) -> error "Well, that's ALSO embarassing..."
                              (x:xs,   []) -> x:|xs
                              (  [], y:ys) -> y:|ys
-                             (x:xs, y:ys) -> localResolutionApplication2 extensionTransformation (x:|xs) (y:|ys)
+                             (x:xs, y:ys) -> localResolutionApplication extensionTransformation (x:|xs) (y:|ys)
 
                       (False, True ) ->
                           case lhsContext of
                             []   -> rhsMemo
                             x:xs -> let lhsMemo' = x:|xs
-                                    in  sconcat  $ lhsMemo' :| [localResolutionApplication2 extensionTransformation lhsMemo' rhsMemo]
+                                    in  sconcat  $ lhsMemo' :| [localResolutionApplication extensionTransformation lhsMemo' rhsMemo]
 
                       (True , False) ->
                           case rhsContext of
                             []   -> rhsMemo
                             x:xs -> let rhsMemo' = x:|xs
-                                    in  sconcat  $ rhsMemo' :| [localResolutionApplication2 extensionTransformation lhsMemo  rhsMemo']
+                                    in  sconcat  $ rhsMemo' :| [localResolutionApplication extensionTransformation lhsMemo  rhsMemo']
 
                       (True , True ) ->
                           case (lhsContext, rhsContext) of
@@ -335,26 +329,12 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
                              (x:xs, y:ys) -> sconcat $ (x:|xs) :| [y:|ys]
 
 
-{-                
-                joinedContext = traceShowId $ 
-                    -- Check for the recursive memoized form's base case
-                    if   [i] == unrootedParentRefs
-                    then getCache n
-                    else localResolutionApplication extensionTransformation ((contextualNodeDatum ! j) .!>. (n, j)) ((contextualNodeDatum ! k) .!>. (n, k))
--}
-
-            -- Filter from the resolution cache all resolutions that have 'x'
-            -- connected to the subtree.
---          edgeReferenceFilter :: Int -> ResolutionCache (CharacterSequence u v w x y z) -> ResolutionCache (CharacterSequence u v w x y z)
-            edgeReferenceFilter es xs = (\x -> trace ("Good edgeSets: " <> show (subtreeEdgeSet <$> x)) x) $
-                                        filter (not . any (`elem` invalidEdges) . subtreeEdgeSet) $ toList xs
-{--
-                case filter (any (`elem` invalidEdges) . subtreeEdgeSet) $ toList xs of
-                  []   -> error "OHHH NOOOES!"
-                  y:ys -> y:|ys
---}
+            -- Filter from the resolution cache all resolutions that have any of
+            -- the supplied edges in the subtree.
+--          edgeReferenceFilter :: [(Int,Int)] -> ResolutionCache (CharacterSequence u v w x y z) -> ResolutionCache (CharacterSequence u v w x y z)
+            edgeReferenceFilter es xs = filter (not . any (`elem` invalidEdges) . subtreeEdgeSet) $ toList xs
               where
-                invalidEdges     = (\x -> trace ("Bad edges: " <> show x) x) $ toList es >>= getDirectedEdges 
+                invalidEdges       = toList es >>= getDirectedEdges 
                 getDirectedEdges e = [e, swap e]
 
 
@@ -404,7 +384,6 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
 {--}
 
 (.!>.) :: (Lookup f, Show (Key f)) => f a -> Key f -> a
-(.!>.) _ k | trace ("x ! " <> show k) False = undefined
 (.!>.) s k =
   case k `lookup` s of
     Just v  -> v
