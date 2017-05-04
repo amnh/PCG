@@ -67,7 +67,7 @@ extern int endA, endB, endC;
 extern int completeFromInfo;
 // extern Counts counts;
 
-//int  aSeqIdx, bSeqIdx, cSeqIdx, stateIdx, costIdx;
+//int  aCharIdx, bCharIdx, cCharIdx, stateIdx, costIdx;
 
 
 // GLOBAL VARIABLES
@@ -94,7 +94,7 @@ char cStr[MAX_STR];
 
 size_t aLen, bLen, cLen;
 
-//extern int doUkk(dyn_char_p retSeqA, dyn_char_p retSeqB, dyn_char_p retSeqC);    // Main driver function
+//extern int doUkk(dyn_char_p retCharA, dyn_char_p retCharB, dyn_char_p retCharC);    // Main driver function
 
 
 #ifndef NO_ALLOC_ROUTINES
@@ -317,23 +317,23 @@ void *getPtr(AllocInfo *a, int ab, int ac, size_t d, int s) {
 #endif // NO_ALLOC_ROUTINES
 
 
-void copyCharacter (dyn_char_p s, char *str) {
+void copyCharacter (dyn_char_p inChar, char *str) {
     if (DEBUG_CALL_ORDER) {
         printf("copyCharacter\n");
     }
     int len, i;
-    elem_t *seq_begin;
-    len       = s->len;
-    seq_begin = s->seq_begin;
+    elem_t *char_begin;
+    len        = inChar->len;
+    char_begin = inChar->char_begin;
 
     for (i = 1; i < len; i++) {
-        if (seq_begin[i] & 1) {
+        if (char_begin[i] & 1) {
             str[i - 1] = 'A';
-        } else if (seq_begin[i] & 2) {
+        } else if (char_begin[i] & 2) {
             str[i - 1] = 'C';
-        } else if (seq_begin[i] & 4) {
+        } else if (char_begin[i] & 4) {
             str[i - 1] = 'G';
-        } else if (seq_begin[i] & 8) {
+        } else if (char_begin[i] & 8) {
             str[i - 1] = 'T';
         } else {
             printf ("This is impossible!");
@@ -345,8 +345,8 @@ void copyCharacter (dyn_char_p s, char *str) {
     return;
 }
 
-int powell_3D_align (dyn_char_p seqA,    dyn_char_p seqB,    dyn_char_p seqC,
-                     dyn_char_p retSeqA, dyn_char_p retSeqB, dyn_char_p retSeqC,
+int powell_3D_align (dyn_char_p charA,    dyn_char_p charB,    dyn_char_p charC,
+                     dyn_char_p retCharA, dyn_char_p retCharB, dyn_char_p retCharC,
                      int mismatch, int gapOpen, int gapExtend) {
     if (DEBUG_CALL_ORDER) {
         printf("powell_3D_align\n");
@@ -358,27 +358,27 @@ int powell_3D_align (dyn_char_p seqA,    dyn_char_p seqB,    dyn_char_p seqC,
     deleteOpenCost   = gapOpenCost;
     deleteExtendCost = gapExtendCost;
     mismatchCost     = mismatch;
-    /* Seq_custom_val(seqA,sa);
-    Seq_custom_val(seqB,sb);
-    Seq_custom_val(seqC,sc);
-    Seq_custom_val(retSeqA,retSeqA);
-    Seq_custom_val(retSeqB,retSeqB);
-    Seq_custom_val(retSeqC,retSeqC);
+    /* Char_custom_val(charA,sa);
+    Char_custom_val(charB,sb);
+    Char_custom_val(charC,sc);
+    Char_custom_val(retCharA,retCharA);
+    Char_custom_val(retCharB,retCharB);
+    Char_custom_val(retCharC,retCharC);
     */
     assert (mismatchCost != 0 && gapOpenCost >= 0 && gapExtendCost > 0);
 
 
-    copyCharacter (seqA, aStr);
-    copyCharacter (seqB, bStr);
-    copyCharacter (seqC, cStr);
+    copyCharacter (charA, aStr);
+    copyCharacter (charB, bStr);
+    copyCharacter (charC, cStr);
 
-    aLen = seqA->len;
-    bLen = seqB->len;
-    cLen = seqC->len;
+    aLen = charA->len;
+    bLen = charB->len;
+    cLen = charC->len;
 
     setup();
 
-    return doUkk (retSeqA, retSeqB, retSeqC);
+    return doUkk (retCharA, retCharB, retCharC);
 }
 
 

@@ -5,9 +5,9 @@
 
 #include "../memoized_tcm/costMatrixWrapper.h"
 #include "../memoized_tcm/dynamicCharacterOperations.h"
-#include "seqAlignForHaskell.h"
-#include "seqAlignInterface.h"
-#include "seqAlignOutputTypes.h"
+#include "sequentialAlign.h"
+#include "sequentialAlignInterface.h"
+#include "sequentialAlignOutputTypes.h"
 
 #define __STDC_FORMAT_MACROS
 
@@ -22,11 +22,11 @@ int performSequentialAlignment(dynChar_t *seqA, dynChar_t *seqB, costMatrix_p co
     size_t alphSize     = seqA->alphSize;
 
     retType_t *retAlign       = malloc( sizeof(retType_t) );
-    retAlign->seq1            = calloc(length, sizeof(uint64_t));
-    retAlign->seq2            = calloc(length, sizeof(uint64_t));
+    retAlign->char1            = calloc(length, sizeof(uint64_t));
+    retAlign->char2            = calloc(length, sizeof(uint64_t));
     retAlign->alignmentLength = 0;
 
-    if( retAlign->seq1 == NULL || retAlign->seq2 == NULL ) {
+    if( retAlign->char1 == NULL || retAlign->char2 == NULL ) {
         printf("Memory failure!\n");
         return 1;
     }
@@ -35,10 +35,10 @@ int performSequentialAlignment(dynChar_t *seqA, dynChar_t *seqB, costMatrix_p co
 
     // size_t finalBufferLength = retAlign->alignmentLength * dcElemSize(alphSize);
 
-    result->finalChar1  = intArrToBitArr (alphSize, retAlign->alignmentLength, retAlign->seq1);
-    result->finalChar2  = intArrToBitArr (alphSize, retAlign->alignmentLength, retAlign->seq2);
+    result->finalChar1  = intArrToBitArr (alphSize, retAlign->alignmentLength, retAlign->char1);
+    result->finalChar2  = intArrToBitArr (alphSize, retAlign->alignmentLength, retAlign->char2);
 
-    result->medianChar  = getMedian(retAlign->seq1, retAlign->seq2, retAlign->alignmentLength, alphSize, costMatrix);
+    result->medianChar  = getMedian(retAlign->char1, retAlign->char2, retAlign->alignmentLength, alphSize, costMatrix);
 
     result->finalCost   = retAlign->cost;
     result->finalLength = retAlign->alignmentLength;

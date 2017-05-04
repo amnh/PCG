@@ -26,7 +26,7 @@
  *  Thus for 2d we only have 3 possible states, rather than 7.
  *
  *  Remember that we bias toward the shorter character, so INSERT puts a gap
- *  in the longer character and DELETE puts a gap in the shorter character. TODO: make sure shorter seq is on left
+ *  in the longer character and DELETE puts a gap in the shorter character. TODO: make sure shorter character is on left
  *
  *  Likewise, for 3d we should need only 7 states and not 2^7 - 1.
  */
@@ -57,7 +57,7 @@
 
 // TODO: change ints to unsigned ints?
 typedef struct nwMatrices_t {
-            /****** In each of the following calculations, seq length includes opening gap *******/
+            /****** In each of the following calculations, character length includes opening gap *******/
     size_t            cap_nw;         /* Total length of available memory allocated to matrix or cube ==
                                        *   | for 2d: 12 * max(len_s1, len_s2)
                                        *   | for 3d: len_s1 * len_s2 * len_s3
@@ -73,7 +73,7 @@ typedef struct nwMatrices_t {
                                       //     into nw_costMtx --- alloced internally
     int              *precalcMtx;     /* a three-dimensional matrix that holds
                                        * the transition costs for the entire alphabet (of all three characters)
-                                       * with the character seq3. The columns are the bases of seq3, and the rows are
+                                       * with the character char3. The columns are the bases of char3, and the rows are
                                        * each of the alphabet characters (possibly including ambiguities). See
                                        * cm_precalc_4algn_3d for more information).
                                        */
@@ -105,7 +105,7 @@ mat_size_of_2d_matrix (size_t w, size_t h);
  * Order of characters is unimportant here, as just reallocing.
  */
 void
-mat_setup_size (nw_matrices_p m, size_t len_seq1, size_t len_seq2, size_t len_seq3, size_t lcm);
+mat_setup_size (nw_matrices_p m, size_t len_char1, size_t len_char2, size_t len_char3, size_t lcm);
 
 /* Printout the contents of the matrix */
 void

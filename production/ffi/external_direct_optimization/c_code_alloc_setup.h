@@ -20,7 +20,7 @@
  */
 void initializeNWMtx(nw_matrices_p retMtx, size_t cap_char1, size_t cap_char2, size_t cap_char3, int alphSize);
 
-/** Does internal allocation for a character struct. Also sets seq pointers within array to correct positions.
+/** Does internal allocation for a character struct. Also sets character pointers within array to correct positions.
  *
  *  resChar must be alloced before this call. This is because allocation must be done on other side of FFI for pass
  *  by ref to be correct.

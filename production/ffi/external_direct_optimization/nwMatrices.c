@@ -85,7 +85,7 @@ mat_clean_direction_matrix (nw_matrices_p nwMatrix) {
  *  Checks current allocation size and increases size if necessary.
  */
 inline void
-mat_setup_size (nw_matrices_p nwMatrix, size_t len_seq1, size_t len_seq2, size_t len_seq3, size_t alphabetSize) {
+mat_setup_size (nw_matrices_p nwMatrix, size_t len_char1, size_t len_char2, size_t len_char3, size_t alphabetSize) {
     if(DEBUG_MAT) {
         printf("\n---mat_setup_size\n");
         printf("capacity: %zu\nefficiency: %d\nprecalc: %zu\n", nwMatrix->cap_nw, nwMatrix->cap_eff, nwMatrix->cap_pre);
@@ -94,17 +94,17 @@ mat_setup_size (nw_matrices_p nwMatrix, size_t len_seq1, size_t len_seq2, size_t
     size_t cap_2d = 0,
            cap_precalcMtx,
            cap_dir;
-    //cap_dir     = (len_seq1 + 1) * (len_seq2 + 1);
+    //cap_dir     = (len_char1 + 1) * (len_char2 + 1);
 
-    if (len_seq3 == 0) {           /* If the size setup is only for 2d */
-        cap            = (int) mat_size_of_2d_matrix (len_seq1, len_seq2);
-        cap_precalcMtx = (1 << alphabetSize) * len_seq1;
-        cap_dir        = (len_seq1 + 1) * (len_seq2 + 1);
+    if (len_char3 == 0) {           /* If the size setup is only for 2d */
+        cap            = (int) mat_size_of_2d_matrix (len_char1, len_char2);
+        cap_precalcMtx = (1 << alphabetSize) * len_char1;
+        cap_dir        = (len_char1 + 1) * (len_char2 + 1);
     } else {                       /* If the size setup is for 3d */
-        cap            = (int) mat_size_of_3d_matrix (len_seq1, len_seq2, len_seq3);
-        cap_precalcMtx = (1 << alphabetSize) * (1 << alphabetSize) * len_seq2;  // TODO: why character 2?
-        cap_2d         = len_seq1 * len_seq2;
-        cap_dir        = cap_2d * len_seq3;
+        cap            = (int) mat_size_of_3d_matrix (len_char1, len_char2, len_char3);
+        cap_precalcMtx = (1 << alphabetSize) * (1 << alphabetSize) * len_char2;  // TODO: why character 2?
+        cap_2d         = len_char1 * len_char2;
+        cap_dir        = cap_2d * len_char3;
     }
     if (DEBUG_MAT) {
         printf("cap_eff: %d, \ncap_nw: %d\n", nwMatrix->cap_eff, cap);

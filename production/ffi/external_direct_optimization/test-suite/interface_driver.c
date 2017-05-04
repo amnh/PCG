@@ -58,26 +58,26 @@ int main() {
 
     alignIO_p inputChar1         = malloc(sizeof(struct alignIO));    // inputs to align2d fn.
     alignIO_p inputChar2         = malloc(sizeof(struct alignIO));    // inputs to align2d fn.
+
+    // various median outputs
     alignIO_p ungappedMedianChar = malloc(sizeof(struct alignIO));
     alignIO_p gappedMedianChar   = malloc(sizeof(struct alignIO));
     alignIO_p unionMedianChar    = malloc(sizeof(struct alignIO));
 
-    // so I can realloc later:
+    // set to 1 so I can realloc later:
     allocAlignIO(inputChar1,         1);
     allocAlignIO(inputChar2,         1);
     allocAlignIO(ungappedMedianChar, 1);
     allocAlignIO(gappedMedianChar,   1);
 
-    cost_matrices_2d_p costMtx2d        = malloc(sizeof(struct cost_matrices_2d));
-    cost_matrices_2d_p costMtx2d_affine = malloc(sizeof(struct cost_matrices_2d));
-    cost_matrices_3d_p costMtx3d        = malloc(sizeof(struct cost_matrices_3d));
-
-
 
     /************  Allocate cost matrices  **************/
 
-    size_t alphSize      = rand() % 22 + 3;     // includes gap, but no ambiguities 3 so binary is smallest possible
-    size_t tcm_total_len = alphSize * alphSize; // the size of the input tcm
+    size_t alphSize          = rand() % 8 + 3;     // includes gap, but no ambiguities; 3 so binary is smallest possible
+    elem_t one = 1;
+    elem_t gap_char          = one << (alphSize - 1);
+    elem_t max_val           = one << alphSize;
+    size_t tcm_total_len     = alphSize * alphSize; // the size of the input tcm
     const size_t CHAR_LENGTH = 100;
 
     int algnCost;
@@ -105,6 +105,10 @@ int main() {
          }
     }
 
+    cost_matrices_2d_p costMtx2d        = malloc(sizeof(struct cost_matrices_2d));
+    cost_matrices_2d_p costMtx2d_affine = malloc(sizeof(struct cost_matrices_2d));
+    cost_matrices_3d_p costMtx3d        = malloc(sizeof(struct cost_matrices_3d));
+
     if(DO_2D) {
         setUp2dCostMtx (tcm, alphSize, 0, costMtx2d);
     }
@@ -126,21 +130,21 @@ int main() {
 
 
 
-        for (i = 1; i <= 30; i++){ // run 30 tests
+        for (i = 1; i <= 5; i++) { // run 30 tests
 
             longCharLen  = rand() % CHAR_LENGTH + 1;
             shortCharLen = rand() % CHAR_LENGTH + 1;
             maxLength    = longCharLen + shortCharLen + 2; // 2 because there are two gaps added (1 on beginning of each character)
 
             // need to realloc each time through the loop
-            longest_vals  = realloc( longest_vals,   longCharLen  * sizeof(int) );
-            shortest_vals = realloc( shortest_vals,  shortCharLen * sizeof(int) );
+            longest_vals  = realloc( longest_vals,   longCharLen  * sizeof(elem_t) );
+            shortest_vals = realloc( shortest_vals,  shortCharLen * sizeof(elem_t) );
 
             for (k = 0; k < longCharLen; k++ ) {
-                longest_vals[k] = rand() % (1 << (alphSize - 1));
+                longest_vals[k] = rand() % (max_val);
             }
             for (k = 0; k < shortCharLen; k++ ) {
-                shortest_vals[k] = rand() % (1 << (alphSize - 1));
+                shortest_vals[k] = rand() % (max_val);
             }
 
 
@@ -161,19 +165,20 @@ int main() {
 
             printf("\n\n********** Cost only (all chars should be empty): **********\n");
             printf("  \n***************** Original 2d characters: ******************\n");
+            printf("  \n******************** Alphabet Size: %zu ********************\n", alphSize);
             alignIO_print(inputChar1);
             alignIO_print(inputChar2);
 
-            algnCost = align2d(inputChar1,
-                               inputChar2,
-                               gappedMedianChar,
-                               ungappedMedianChar,
-                               // unionMedianChar,
-                               costMtx2d,
-                               0,                    // do ungapped
-                               0,                    // do gapped
-                               0                     // do union
-                               );
+            algnCost = align2d( inputChar1
+                              , inputChar2
+                              , gappedMedianChar
+                              , ungappedMedianChar
+                              // , unionMedianChar
+                              , costMtx2d
+                              , 0                    // do ungapped
+                              , 0                    // do gapped
+                              , 0                     // do union
+                              );
             // if (DEBUG_MAT) {
             //     printf("\n\nFinal alignment matrix: \n\n");
             //     algn_print_dynmtrx_2d( longChar, shortChar, algn_mtxs2d );
@@ -208,19 +213,22 @@ int main() {
             // printf("\n\n********** Ungapped only (gapped should be empty): **********\n");
 
             printf("  \n****************** Original 2d characters: ******************\n");
+            printf("Alphabet size: %zu\n", alphSize);
+            printf("gap character: %u\n", gap_char);
+
             alignIO_print(inputChar1);
             alignIO_print(inputChar2);
 
-            algnCost = align2d(inputChar1,
-                               inputChar2,
-                               gappedMedianChar,
-                               ungappedMedianChar,
-                               // unionMedianChar,
-                               costMtx2d,
-                               1,                    // do ungapped
-                               1,                    // do gapped
-                               0);                   // do union
-
+            algnCost = align2d( inputChar1
+                              , inputChar2
+                              , gappedMedianChar
+                              , ungappedMedianChar
+                              // , unionMedianChar
+                              , costMtx2d
+                              , 1                    // do ungapped
+                              , 1                    // do gapped
+                              , 0                   // do union
+                              );
 
             printf("\nAligned 2d characters\n");
             alignIO_print(inputChar1);
@@ -244,6 +252,9 @@ int main() {
 
             printf("\n\n********** Gapped only (ungapped should be empty): **********\n");
             printf("  \n*******************Original 2d characters:*******************\n");
+            printf("Alphabet size: %zu\n", alphSize);
+            printf("gap character: %u\n", gap_char);
+
             alignIO_print(inputChar1);
             alignIO_print(inputChar2);
 
@@ -287,6 +298,9 @@ int main() {
 
             printf("\n\n******************** Gapped and ungapped: ******************\n");
             printf(  "\n****************** Original 2d characters: *****************\n");
+            printf("Alphabet size: %zu\n", alphSize);
+            printf("gap character: %u\n",  gap_char);
+
             alignIO_print(inputChar1);
             alignIO_print(inputChar2);
 
@@ -309,6 +323,9 @@ int main() {
             printf("\nGapped character  ");
             alignIO_print(gappedMedianChar);
 
+            printf("alphSize: %zu\n", alphSize);
+            printf("gap char: %u\n", gap_char);
+
             printf("\nUngapped character  ");
             alignIO_print(ungappedMedianChar);
 
@@ -322,6 +339,7 @@ int main() {
 
             printf("\n\n********** Gapped and union (ungapped should be empty, union should override ungapped): **********\n");
             printf(  "\n************************************ Original 2d characters: *************************************\n");
+            printf("  \n*************************************** Alphabet Size: %zu ***************************************\n", alphSize);
 
 
             alignIO_print(inputChar1);
@@ -363,6 +381,7 @@ int main() {
 
     if (DO_2D_AFF) {
         printf("\n\n\n***************** Align 2 characters affine ****************\n");
+        printf("    \n******************** Alphabet Size: %zu ********************\n", alphSize);
 
         for (i = 1; i <= 30; i++){ // run 30 tests
             // printf("\nloop idx: %zu\n", i);
@@ -372,14 +391,14 @@ int main() {
                 shortCharLen = rand() % CHAR_LENGTH + 1;                // to make sure that the alignment works with switched lengths
                 maxLength    = longCharLen + shortCharLen + 2; // 2 because there are two gaps added (1 on beginning of each character)
 
-                longest_vals  = realloc( longest_vals,   longCharLen  * sizeof(int) );
-                shortest_vals = realloc( shortest_vals,  shortCharLen * sizeof(int) );
+                longest_vals  = realloc( longest_vals,   longCharLen  * sizeof(elem_t) );
+                shortest_vals = realloc( shortest_vals,  shortCharLen * sizeof(elem_t) );
 
                 for (k = 0; k < longCharLen; k++ ) {
-                    longest_vals[k] = rand() % 31;
+                    longest_vals[k] = rand() % max_val;
                 }
                 for (k = 0; k < shortCharLen; k++ ) {
-                    shortest_vals[k] = rand() % 31;
+                    shortest_vals[k] = rand() % max_val;
                 }
             }
             // printf("long len: %2zu short len: %2zu\n", longCharLen, shortCharLen);
@@ -396,6 +415,9 @@ int main() {
 
             printf("\n\n******* Cost only (all characters should be empty): ********\n");
             printf("  \n***************** Original 2d characters: ******************\n");
+            printf("Alphabet size: %zu\n", alphSize);
+            printf("gap character: %u\n",  gap_char);
+
             alignIO_print(inputChar1);
             alignIO_print(inputChar2);
 
@@ -430,6 +452,8 @@ int main() {
 
             printf("\n\n*********************** With medians: ***********************\n");
             printf("  \n****************** Original 2d characters: ******************\n");
+            printf("Alphabet size: %zu\n", alphSize);
+            printf("gap character: %u\n",  gap_char);
 
             alignIO_print(inputChar1);
             alignIO_print(inputChar2);
@@ -449,6 +473,9 @@ int main() {
 
             printf("\nGapped character\n  ");
             alignIO_print(gappedMedianChar);
+
+            printf("alphSize: %zu\n", alphSize);
+            printf("gap char: %u\n", gap_char);
 
             printf("\nUngapped character\n  ");
             alignIO_print(ungappedMedianChar);
@@ -587,10 +614,10 @@ int main() {
 
         printf("\n\n\n");
 
-        // for (elem_t *base = retLongChar->seq_begin; base != retLongChar->end; base++) {
+        // for (elem_t *base = retLongChar->char_begin; base != retLongChar->end; base++) {
         //     printf("a: %c\n", *base);
         // }
-        // for (elem_t *base = retShortChar->seq_begin; base != retShortChar->end; base++) {
+        // for (elem_t *base = retShortChar->char_begin; base != retShortChar->end; base++) {
         //     printf("b: %s\n", base);
         // }
     }

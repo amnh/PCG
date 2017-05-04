@@ -94,7 +94,7 @@ int CPcost;
 
 Counts counts;
 
-int  aSeqIdx = 0, bSeqIdx = 0, cSeqIdx = 0, stateIdx = 0, costIdx = 0;
+int  aCharIdx = 0, bCharIdx = 0, cCharIdx = 0, stateIdx = 0, costIdx = 0;
 
 char resultA[MAX_STR * 2],   resultB[MAX_STR * 2], resultC[MAX_STR * 2];
 int  states[MAX_STR * 2],    cost[MAX_STR * 2];
@@ -364,9 +364,9 @@ void traceBack(int sab, int sac, int sCost, int sState,
         // Run of matches
         while (a>a1 && b>b1 && c>c1) {
           a--; b--; c--;
-          resultA[aSeqIdx++] = aStr[a];
-          resultB[bSeqIdx++] = bStr[b];
-          resultC[cSeqIdx++] = cStr[c];
+          resultA[aCharIdx++] = aStr[a];
+          resultB[bCharIdx++] = bStr[b];
+          resultC[cCharIdx++] = cStr[c];
           states[stateIdx++] = 0;        /* The match state */
           cost[costIdx++] = d;
         }
@@ -374,20 +374,20 @@ void traceBack(int sab, int sac, int sCost, int sState,
         // The step for (nab,nac,nd,ns) -> (ab,ac,d,s)
         if (a!=a1 || b!=b1 || c!=c1) {
             if (a > a1) {
-                resultA[aSeqIdx++] = aStr[--a];
+                resultA[aCharIdx++] = aStr[--a];
             } else {
-                resultA[aSeqIdx++] = '-';
+                resultA[aCharIdx++] = '-';
             }
             if (b > b1) {
-                resultB[bSeqIdx++] = bStr[--b];
+                resultB[bCharIdx++] = bStr[--b];
             } else {
-                resultB[bSeqIdx++] = '-';
+                resultB[bCharIdx++] = '-';
             }
             if (c>c1) {
-                resultC[cSeqIdx++] = cStr[--c];
+                resultC[cCharIdx++] = cStr[--c];
             }
             else {
-                resultC[cSeqIdx++] = '-';
+                resultC[cCharIdx++] = '-';
             }
             states[stateIdx++]  = s;
             cost[costIdx++] = d;
@@ -406,15 +406,15 @@ void traceBack(int sab, int sac, int sCost, int sState,
             int i;
 
             fprintf(stderr,"Alignment so far\n");
-            for (i = aSeqIdx - 1; i >= 0; i--) {
+            for (i = aCharIdx - 1; i >= 0; i--) {
                 fprintf(stderr, "%c",resultA[i]);
                 fprintf(stderr, "\n");
             }
-            for (i = bSeqIdx - 1; i >= 0; i--) {
+            for (i = bCharIdx - 1; i >= 0; i--) {
                 fprintf(stderr, "%c",resultB[i]);
                 fprintf(stderr, "\n");
             }
-            for (i = cSeqIdx - 1; i >= 0; i--) {
+            for (i = cCharIdx - 1; i >= 0; i--) {
                 fprintf(stderr, "%c",resultC[i]);
                 fprintf(stderr, "\n");
             }
@@ -446,7 +446,7 @@ int char_to_base (char v) {
     else return -1;
 }
 
-void printTraceBack(dyn_char_p retSeqA, dyn_char_p retSeqB, dyn_char_p retSeqC) {
+void printTraceBack(dyn_char_p retCharA, dyn_char_p retCharB, dyn_char_p retCharC) {
     // Print out the alignment
 
     // Add the first run of matches to the alignment
@@ -461,9 +461,9 @@ void printTraceBack(dyn_char_p retSeqA, dyn_char_p retSeqB, dyn_char_p retSeqC) 
     endRun = i;
 
     for (int j = endRun - 1; j >= 0; j--)  {
-      resultA[aSeqIdx++] = aStr[j];
-      resultB[bSeqIdx++] = bStr[j];
-      resultC[cSeqIdx++] = cStr[j];
+      resultA[aCharIdx++] = aStr[j];
+      resultB[bCharIdx++] = bStr[j];
+      resultC[cCharIdx++] = cStr[j];
       states[stateIdx++] = 0;        /* The match state */
       cost[costIdx++]    = 0;
     }
@@ -471,30 +471,30 @@ void printTraceBack(dyn_char_p retSeqA, dyn_char_p retSeqB, dyn_char_p retSeqC) 
 
 
     // Reverse the alignments
-    revCharArray(resultA, 0, aSeqIdx);
-    revCharArray(resultB, 0, bSeqIdx);
-    revCharArray(resultC, 0, cSeqIdx);
+    revCharArray(resultA, 0, aCharIdx);
+    revCharArray(resultB, 0, bCharIdx);
+    revCharArray(resultC, 0, cCharIdx);
     revIntArray(states,   0, stateIdx);
     revIntArray(cost,     0, costIdx);
     // end reverse alignments
 
     // Print out the alignment
-    for (int j = aSeqIdx - 1; j >= 0; j--) {
-      dyn_char_prepend (retSeqA, char_to_base (resultA[j]));
-      dyn_char_prepend (retSeqB, char_to_base (resultB[j]));
-      dyn_char_prepend (retSeqC, char_to_base (resultC[j]));
+    for (int j = aCharIdx - 1; j >= 0; j--) {
+      dyn_char_prepend (retCharA, char_to_base (resultA[j]));
+      dyn_char_prepend (retCharB, char_to_base (resultB[j]));
+      dyn_char_prepend (retCharC, char_to_base (resultC[j]));
     }
-    dyn_char_prepend (retSeqA, 16);
-    dyn_char_prepend (retSeqB, 16);
-    dyn_char_prepend (retSeqC, 16);
+    dyn_char_prepend (retCharA, 16);
+    dyn_char_prepend (retCharB, 16);
+    dyn_char_prepend (retCharC, 16);
 
-    assert(aSeqIdx == bSeqIdx && aSeqIdx == cSeqIdx && aSeqIdx == stateIdx && aSeqIdx == costIdx);
+    assert(aCharIdx == bCharIdx && aCharIdx == cCharIdx && aCharIdx == stateIdx && aCharIdx == costIdx);
 
-    checkAlign(resultA, aSeqIdx, aStr, aLen);
-    checkAlign(resultB, bSeqIdx, bStr, bLen);
-    checkAlign(resultC, cSeqIdx, cStr, cLen);
+    checkAlign(resultA, aCharIdx, aStr, aLen);
+    checkAlign(resultB, bCharIdx, bStr, bLen);
+    checkAlign(resultC, cCharIdx, cStr, cLen);
 
-    assert(alignmentCost(states, resultA, resultB, resultC, aSeqIdx) == finalCost);
+    assert(alignmentCost(states, resultA, resultB, resultC, aCharIdx) == finalCost);
 }
 
 // Find the furthest distance at ab, ac, d. wantState selects whether the
@@ -555,7 +555,7 @@ int Ukk(int ab, int ac, int d, int state) {
     char indent[1000];
 
 
-int doUkk(dyn_char_p retSeqA, dyn_char_p retSeqB, dyn_char_p retSeqC) {
+int doUkk(dyn_char_p retCharA, dyn_char_p retCharB, dyn_char_p retCharC) {
     CPdummyCell.dist      = 0;
     CPdummyCell.cost      = 0;
     UdummyCell.dist       = 0;
@@ -569,9 +569,9 @@ int doUkk(dyn_char_p retSeqA, dyn_char_p retSeqB, dyn_char_p retSeqC) {
     CPwidth               = 0;
     completeFromInfo      = 0;
 
-    aSeqIdx  = 0;
-    bSeqIdx  = 0;
-    cSeqIdx  = 0;
+    aCharIdx  = 0;
+    bCharIdx  = 0;
+    cCharIdx  = 0;
     stateIdx = 0;
     costIdx  = 0;
 
@@ -661,7 +661,7 @@ int doUkk(dyn_char_p retSeqA, dyn_char_p retSeqB, dyn_char_p retSeqC) {
     }
 
     assert(dist == aLen);
-    printTraceBack(retSeqA, retSeqB, retSeqC);
+    printTraceBack(retCharA, retCharB, retCharC);
 
     allocFinal(&myUAllocInfo,  (&UdummyCell.computed), (&UdummyCell));
     allocFinal(&myCPAllocInfo, (&CPdummyCell.cost),    (&CPdummyCell));
