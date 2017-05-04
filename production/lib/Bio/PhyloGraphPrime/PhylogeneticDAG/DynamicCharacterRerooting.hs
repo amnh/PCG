@@ -34,7 +34,7 @@ import qualified Data.IntSet        as IS
 import           Data.Key
 import           Data.List.NonEmpty        (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty as NE
-import           Data.Map                  (Map)
+--import           Data.Map                  (Map)
 import qualified Data.Map           as M
 import           Data.Maybe
 import           Data.MonoTraversable
@@ -118,7 +118,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
     isNetworkEdge (a,b) = parentCount > 1
       where
         parentCount = olength . parentRefs $ refVec ! y
-        (x,y) =
+        (_,y) =
           if   (b `elem`) . IM.keys . childRefs $ refVec ! a
           then (a,b)
           else (b,a)
@@ -315,21 +315,21 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
                              (  [], y:ys) -> y:|ys
                              (x:xs, y:ys) -> localResolutionApplication2 extensionTransformation (x:|xs) (y:|ys)
 
-                      (False,  True) ->
+                      (False, True ) ->
                           case lhsContext of
                             []   -> rhsMemo
                             x:xs -> let lhsMemo' = x:|xs
-                                    in sconcat $ lhsMemo' :| [localResolutionApplication2 extensionTransformation lhsMemo' rhsMemo]
+                                    in  sconcat  $ lhsMemo' :| [localResolutionApplication2 extensionTransformation lhsMemo' rhsMemo]
 
                       (True , False) ->
                           case rhsContext of
                             []   -> rhsMemo
                             x:xs -> let rhsMemo' = x:|xs
-                                    in sconcat $ rhsMemo' :| [localResolutionApplication2 extensionTransformation lhsMemo  rhsMemo']
+                                    in  sconcat  $ rhsMemo' :| [localResolutionApplication2 extensionTransformation lhsMemo  rhsMemo']
 
-                      (True ,  True) ->
+                      (True , True ) ->
                           case (lhsContext, rhsContext) of
-                             (  [],   []) -> error "Well, that's embarassing..."
+                             (  [],   []) -> error $ "Well, that's embarassing...\nContext: " <> unwords ["Focus edge", show (i,n), "LHS edge", show (n,j), "RHS edge", show (n,k) ]
                              (x:xs,   []) -> x:|xs
                              (  [], y:ys) -> y:|ys
                              (x:xs, y:ys) -> sconcat $ (x:|xs) :| [y:|ys]
