@@ -1,4 +1,4 @@
------------------------------------------------------------------------------
+----------------------------------------------------------------------------
 -- |
 -- Module      :  PCG.Command.Types.Read.Unification.Master
 -- Copyright   :  () 2015-2015 Ward Wheeler
@@ -160,17 +160,6 @@ rectifyResults2 fprs =
             f label = PNode label $ fromMaybe defaultCharacterSequenceDatum charLabelMay
               where
                 charLabelMay     = label >>= (`lookup` charMapping)
-{-
-              case e of
-                  Nothing    -> PNode "HTU" Nothing
-                  Just label -> PNode label $ label `lookup` charMapping
--}
--- Omitted from old unifcation process            
---    combinedData    = Solution (HM.fromList $ assocs charSeqs) combinedMetadata dagForests
-    -- Step 9:  TODO: Node encoding
---    encodedSolution = encodeSolution combinedData
-    -- Step 10: TODO: masking for the nodes
---    maskedSolution  = addMasks encodedSolution
 
     -- Error collection
     errors          = catMaybes [duplicateError, extraError, missingError]
