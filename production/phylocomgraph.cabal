@@ -287,7 +287,6 @@ library
                        Bio.Character.Exportable.Class
                        Bio.Character.Parsed.Class
                        Bio.Character.Parsed.Internal
-                       Bio.Metadata.Class
                        Bio.Metadata.General
                        Bio.Metadata.General.Class
                        Bio.Metadata.General.Internal
@@ -297,7 +296,6 @@ library
                        Bio.Metadata.DiscreteWithTCM.Internal
                        Bio.Metadata.Dynamic.Class
                        Bio.Metadata.Dynamic.Internal
-                       Bio.Metadata.Internal
 --                       Bio.PhyloGraph.DAG.Internal
 --                       Bio.PhyloGraph.DAG.Class
 --                       Bio.PhyloGraph.Edge.Internal
@@ -903,13 +901,11 @@ Test-Suite testsuite
                        --Bio.Metadata.Continuous
                        Bio.Metadata.Discrete
                        Bio.Metadata.Parsed
-                       Bio.Metadata.Class
                        Bio.Metadata.General
                        Bio.Metadata.General.Class
                        Bio.Metadata.General.Internal
                        Bio.Metadata.Discrete.Class
                        Bio.Metadata.Discrete.Internal
-                       Bio.Metadata.Internal
                        Bio.Sequence
                        Bio.Sequence.Block
                        Bio.PhyloGraphPrime
