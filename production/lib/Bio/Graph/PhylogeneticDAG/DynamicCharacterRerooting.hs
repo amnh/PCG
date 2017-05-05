@@ -372,8 +372,15 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
                 { resolutions          = f <$> resolutions node
                 , nodeDecorationDatum2 = nodeDecorationDatum2 node
                 }
-        f resInfo = resInfo { characterSequence = modifiedSequence  }
+        f resInfo =
+            resInfo
+            { totalSubtreeCost  = newTotalCost
+--            , localSequenceCost = newLocalCost
+            , characterSequence = modifiedSequence
+            }
           where
+            newTotalCost     = sequenceCost modifiedSequence
+--            newLocalCost     = newTotalCost - sum (totalSubtreeCost <$> childResolutionContext) 
             modifiedSequence = fromBlocks . foldMapWithKey1 g . toBlocks $ characterSequence resInfo
         g k charBlock = pure $ charBlock { dynamicCharacters = modifiedDynamicChars }
           where
