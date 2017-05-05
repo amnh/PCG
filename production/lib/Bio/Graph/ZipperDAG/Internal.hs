@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.PhyloGraphPrime.ZipperDAG.Internal
+-- Module      :  Bio.Graph.ZipperDAG.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -16,7 +16,7 @@
 
 {-# LANGUAGE TypeFamilies #-}
 
-module Bio.PhyloGraphPrime.ZipperDAG.Internal where
+module Bio.Graph.ZipperDAG.Internal where
 
 import Data.Bifunctor
 import Data.Monoid 

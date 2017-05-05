@@ -6,10 +6,9 @@ module PCG.Command.Types.Read.Evaluate
 
 import           Bio.Character.Parsed
 import           Bio.Metadata.Parsed
-import           Bio.PhyloGraphPrime
-import           Bio.PhyloGraphPrime.Forest.Parsed
-import           Bio.PhyloGraphPrime.PhylogeneticDAG
---import           Bio.PhyloGraph.Solution      (SearchState)
+import           Bio.Graph
+import           Bio.Graph.Forest.Parsed
+import           Bio.Graph.PhylogeneticDAG
 import           Control.Evaluation
 import           Control.Monad                (when)
 import           Control.Monad.IO.Class

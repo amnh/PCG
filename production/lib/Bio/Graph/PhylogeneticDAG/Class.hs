@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Bio.PhyloGraphPrime.PhylogeneticDAG.Class where
+module Bio.Graph.PhylogeneticDAG.Class where
 
 
 id' :: a -> b -> a

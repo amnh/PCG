@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------------
 -- |
--- Module      :  Bio.PhyloGraphPrime.PhylogeneticDAG.Internal
+-- Module      :  Bio.Graph.PhylogeneticDAG.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -14,7 +14,7 @@
 
 {-# LANGUAGE FlexibleContexts #-}
 
-module Bio.PhyloGraphPrime.PhylogeneticDAG.Internal where
+module Bio.Graph.PhylogeneticDAG.Internal where
 
 import           Bio.Character
 import           Bio.Character.Decoration.Additive
@@ -25,9 +25,9 @@ import           Bio.Character.Decoration.Fitch
 import           Bio.Character.Decoration.Metric 
 import           Bio.Sequence
 import           Bio.Sequence.Block        (CharacterBlock)
-import           Bio.PhyloGraphPrime
-import           Bio.PhyloGraphPrime.Node
-import           Bio.PhyloGraphPrime.ReferenceDAG.Internal
+import           Bio.Graph
+import           Bio.Graph.Node
+import           Bio.Graph.ReferenceDAG.Internal
 import           Control.Applicative       (liftA2)
 import           Control.Evaluation
 import           Data.Bits

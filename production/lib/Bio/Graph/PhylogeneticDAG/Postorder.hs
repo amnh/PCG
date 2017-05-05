@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------------
 -- |
--- Module      :  Bio.PhyloGraphPrime.PhylogeneticDAG.Postorder
+-- Module      :  Bio.Graph.PhylogeneticDAG.Postorder
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -14,13 +14,13 @@
 
 {-# LANGUAGE FlexibleContexts #-}
 
-module Bio.PhyloGraphPrime.PhylogeneticDAG.Postorder
+module Bio.Graph.PhylogeneticDAG.Postorder
   ( postorderSequence'
   ) where
 
-import           Bio.PhyloGraphPrime.Node
-import           Bio.PhyloGraphPrime.PhylogeneticDAG.Internal
-import           Bio.PhyloGraphPrime.ReferenceDAG.Internal
+import           Bio.Graph.Node
+import           Bio.Graph.PhylogeneticDAG.Internal
+import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
 import           Control.Arrow             ((&&&))
 import           Control.Applicative       (liftA2)

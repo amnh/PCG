@@ -1,6 +1,6 @@
 module PCG.Computation.Internal where
 
-import Bio.PhyloGraphPrime.PhylogeneticDAG
+import Bio.Graph.PhylogeneticDAG
 import Control.Evaluation
 import Data.Char      (isSpace)
 import Data.Either    (partitionEithers)

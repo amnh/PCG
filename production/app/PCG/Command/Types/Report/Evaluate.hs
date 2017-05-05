@@ -11,8 +11,8 @@ module PCG.Command.Types.Report.Evaluate
 --import           Analysis.Parsimony.Binary.Optimization
 --import           Bio.Character.Decoration.Dynamic
 --import           Bio.Metadata
---import           Bio.PhyloGraphPrime
-import           Bio.PhyloGraphPrime.PhylogeneticDAG
+--import           Bio.Graph
+import           Bio.Graph.PhylogeneticDAG
 import           Control.Monad.IO.Class
 import           Control.Monad.Logger
 --import           Data.Foldable

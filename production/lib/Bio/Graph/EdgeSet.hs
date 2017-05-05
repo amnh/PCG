@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.PhyloGraphPrime.EdgeSet
+-- Module      :  Bio.Graph.EdgeSet
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -12,7 +12,7 @@
 
 {-# LANGUAGE DeriveFunctor, GeneralizedNewtypeDeriving #-}
 
-module Bio.PhyloGraphPrime.EdgeSet
+module Bio.Graph.EdgeSet
   ( EdgeSet()
   , NetworkDisplayEdgeSet(..)
   , SetLike(..)

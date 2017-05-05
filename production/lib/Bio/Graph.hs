@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.PhyloGraphPrime
+-- Module      :  Bio.Graph
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -16,16 +16,16 @@
 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Bio.PhyloGraphPrime
+module Bio.Graph
   ( PhylogeneticSolution(..)
   , PhylogeneticForest(..)
   , phylogeneticForests
   ) where
 
---import Bio.PhyloGraphPrime.Component
-import Bio.PhyloGraphPrime.Forest
---import Bio.PhyloGraphPrime.Network
---import Bio.PhyloGraphPrime.Tree
+--import Bio.Graph.Component
+import Bio.Graph.Forest
+--import Bio.Graph.Network
+--import Bio.Graph.Tree
 import Data.Key
 import Data.List
 import Data.List.NonEmpty            (NonEmpty)

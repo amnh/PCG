@@ -14,11 +14,11 @@
 
 {-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
 
-module Bio.PhyloGraphPrime.Forest.Parsed where
+module Bio.Graph.Forest.Parsed where
 
-import           Bio.PhyloGraphPrime.Forest
-import           Bio.PhyloGraphPrime.ReferenceDAG
--- import           Bio.PhyloGraphPrime.ZipperDAG
+import           Bio.Graph.Forest
+import           Bio.Graph.ReferenceDAG
+-- import           Bio.Graph.ZipperDAG
 import           Data.EdgeLength
 import           Data.Foldable
 import           Data.IntMap                              (IntMap)

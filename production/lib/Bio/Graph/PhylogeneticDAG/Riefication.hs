@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------------
 -- |
--- Module      :  Bio.PhyloGraphPrime.PhylogeneticDAG.Riefication
+-- Module      :  Bio.Graph.PhylogeneticDAG.Riefication
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -14,15 +14,15 @@
 
 {-# LANGUAGE FlexibleContexts #-}
 
-module Bio.PhyloGraphPrime.PhylogeneticDAG.Riefication
+module Bio.Graph.PhylogeneticDAG.Riefication
   ( riefiedSolution
   , riefiedToCharacterDAG
   ) where
 
-import           Bio.PhyloGraphPrime
-import           Bio.PhyloGraphPrime.Node
-import           Bio.PhyloGraphPrime.PhylogeneticDAG.Internal
-import           Bio.PhyloGraphPrime.ReferenceDAG.Internal
+import           Bio.Graph
+import           Bio.Graph.Node
+import           Bio.Graph.PhylogeneticDAG.Internal
+import           Bio.Graph.ReferenceDAG.Internal
 import           Control.Lens
 import           Control.Monad.State.Lazy
 import           Data.Bits

@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------------
 -- |
--- Module      :  Bio.PhyloGraphPrime.PhylogeneticDAG.NetworkEdgeQuantification
+-- Module      :  Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -12,15 +12,15 @@
 
 {-# LANGUAGE FlexibleContexts #-}
 
-module Bio.PhyloGraphPrime.PhylogeneticDAG.NetworkEdgeQuantification where
+module Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification where
 
 --import           Bio.Character.Decoration.Shared
 --import           Bio.Metadata.General
 import           Bio.Sequence
-import           Bio.PhyloGraphPrime.EdgeSet
-import           Bio.PhyloGraphPrime.Node
-import           Bio.PhyloGraphPrime.PhylogeneticDAG.Internal
-import           Bio.PhyloGraphPrime.ReferenceDAG.Internal
+import           Bio.Graph.EdgeSet
+import           Bio.Graph.Node
+import           Bio.Graph.PhylogeneticDAG.Internal
+import           Bio.Graph.ReferenceDAG.Internal
 import           Control.Arrow            ((&&&))
 import           Data.ExtendedReal
 import           Data.Foldable

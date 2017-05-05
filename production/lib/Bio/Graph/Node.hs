@@ -12,7 +12,7 @@
 
 {-# LANGUAGE DeriveFunctor, GeneralizedNewtypeDeriving #-}
 
-module Bio.PhyloGraphPrime.Node
+module Bio.Graph.Node
   ( EdgeSet
   , NewickSerialization()
   , PhylogeneticNode (..)
@@ -28,7 +28,7 @@ module Bio.PhyloGraphPrime.Node
   ) where
 
 
-import Bio.PhyloGraphPrime.EdgeSet
+import Bio.Graph.EdgeSet
 import Data.Bifunctor
 import Data.BitVector
 import Data.Foldable

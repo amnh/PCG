@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.PhyloGraphPrime.Component
+-- Module      :  Bio.Graph.Component
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -12,7 +12,7 @@
 
 {-# LANGUAGE FunctionalDependencies, MultiParamTypeClasses #-}
 
-module Bio.PhyloGraphPrime.Component where
+module Bio.Graph.Component where
 
 import Data.List.NonEmpty
 

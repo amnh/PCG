@@ -191,32 +191,14 @@ library
                        Bio.Metadata.Parsed
                        Bio.Sequence
                        Bio.Sequence.Block
---                       Bio.PhyloGraph
---                       Bio.PhyloGraph.DAG
---                       Bio.PhyloGraph.Edge
---                       Bio.PhyloGraph.Forest
---                       Bio.PhyloGraph.Network
---                       Bio.PhyloGraph.Solution
---                       Bio.PhyloGraph.Tree.Binary
---                       Bio.PhyloGraph.Tree.EdgeAware
---                       Bio.PhyloGraph.Node
---                       Bio.PhyloGraph.Node.Encoded
---                       Bio.PhyloGraph.Node.Final
---                       Bio.PhyloGraph.Node.ImpliedAlign
---                       Bio.PhyloGraph.Node.Internal
---                       Bio.PhyloGraph.Node.Packed
---                       Bio.PhyloGraph.Node.Preliminary
---                       Bio.PhyloGraph.Node.Referential
---                       Bio.PhyloGraph.Tree.Referential
---                       Bio.PhyloGraph.Tree.Rose
-                       Bio.PhyloGraphPrime
-                       Bio.PhyloGraphPrime.Component
-                       Bio.PhyloGraphPrime.Forest.Parsed
-                       Bio.PhyloGraphPrime.Node
-                       Bio.PhyloGraphPrime.PhylogeneticDAG
-                       Bio.PhyloGraphPrime.ReferenceDAG
-                       Bio.PhyloGraphPrime.ReferenceDAG.Internal
-                       Bio.PhyloGraphPrime.ZipperDAG
+                       Bio.Graph
+                       Bio.Graph.Component
+                       Bio.Graph.Forest.Parsed
+                       Bio.Graph.Node
+                       Bio.Graph.PhylogeneticDAG
+                       Bio.Graph.ReferenceDAG
+                       Bio.Graph.ReferenceDAG.Internal
+                       Bio.Graph.ZipperDAG
                        Control.Evaluation
                        Control.Parallel.Custom
                        Control.Monad.Logger
@@ -239,8 +221,6 @@ library
                        File.Format.TransitionCostMatrix
 
   -- probably can be moved to other-modules:
---                       Bio.Metadata.MaskGenerator
---                       Bio.PhyloGraph.Node.Topological
                        Data.List.Utility
                        Data.Matrix.NotStupid
                        Text.Megaparsec.Custom
@@ -296,31 +276,15 @@ library
                        Bio.Metadata.DiscreteWithTCM.Internal
                        Bio.Metadata.Dynamic.Class
                        Bio.Metadata.Dynamic.Internal
---                       Bio.PhyloGraph.DAG.Internal
---                       Bio.PhyloGraph.DAG.Class
---                       Bio.PhyloGraph.Edge.Internal
---                       Bio.PhyloGraph.Edge.Class
---                       Bio.PhyloGraph.Forest.Class
---                       Bio.PhyloGraph.Forest.Internal
-
---                       Bio.PhyloGraph.Network.Class
---                       Bio.PhyloGraph.Network.Subsettable
-
---                       Bio.PhyloGraph.Solution.Class
---                       Bio.PhyloGraph.Solution.Internal
---                       Bio.PhyloGraph.Solution.Metadata
---                       Bio.PhyloGraph.Tree.Binary.Class
---                       Bio.PhyloGraph.Tree.EdgeAware.Class
---                       Bio.PhyloGraph.Tree.Rose.Class
-                       Bio.PhyloGraphPrime.Forest
-                       Bio.PhyloGraphPrime.PhylogeneticDAG.Class
-                       Bio.PhyloGraphPrime.EdgeSet
-                       Bio.PhyloGraphPrime.PhylogeneticDAG.Internal
-                       Bio.PhyloGraphPrime.PhylogeneticDAG.NetworkEdgeQuantification
-                       Bio.PhyloGraphPrime.PhylogeneticDAG.DynamicCharacterRerooting
-                       Bio.PhyloGraphPrime.PhylogeneticDAG.Postorder
-                       Bio.PhyloGraphPrime.PhylogeneticDAG.Riefication
-                       Bio.PhyloGraphPrime.ZipperDAG.Internal
+                       Bio.Graph.Forest
+                       Bio.Graph.PhylogeneticDAG.Class
+                       Bio.Graph.EdgeSet
+                       Bio.Graph.PhylogeneticDAG.Internal
+                       Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
+                       Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
+                       Bio.Graph.PhylogeneticDAG.Postorder
+                       Bio.Graph.PhylogeneticDAG.Riefication
+                       Bio.Graph.ZipperDAG.Internal
                        Bio.Sequence.Internal
                        Bio.Sequence.Block.Builder
                        Bio.Sequence.Block.Internal
@@ -908,14 +872,14 @@ Test-Suite testsuite
                        Bio.Metadata.Discrete.Internal
                        Bio.Sequence
                        Bio.Sequence.Block
-                       Bio.PhyloGraphPrime
-                       Bio.PhyloGraphPrime.Component
-                       Bio.PhyloGraphPrime.Node
-                       Bio.PhyloGraphPrime.ReferenceDAG
-                       Bio.PhyloGraphPrime.ZipperDAG
-                       Bio.PhyloGraphPrime.Forest
-                       Bio.PhyloGraphPrime.ReferenceDAG.Internal
-                       Bio.PhyloGraphPrime.ZipperDAG.Internal
+                       Bio.Graph
+                       Bio.Graph.Component
+                       Bio.Graph.Node
+                       Bio.Graph.ReferenceDAG
+                       Bio.Graph.ZipperDAG
+                       Bio.Graph.Forest
+                       Bio.Graph.ReferenceDAG.Internal
+                       Bio.Graph.ZipperDAG.Internal
                        Bio.Sequence.Internal
 
 

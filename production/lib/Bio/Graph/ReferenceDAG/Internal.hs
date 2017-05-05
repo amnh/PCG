@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.PhyloGraphPrime.ReferenceDAG.Internal
+-- Module      :  Bio.Graph.ReferenceDAG.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -12,10 +12,10 @@
 
 {-# LANGUAGE FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies #-}
 
-module Bio.PhyloGraphPrime.ReferenceDAG.Internal where
+module Bio.Graph.ReferenceDAG.Internal where
 
-import           Bio.PhyloGraphPrime.Component
-import           Bio.PhyloGraphPrime.EdgeSet
+import           Bio.Graph.Component
+import           Bio.Graph.EdgeSet
 import           Control.Arrow              ((&&&),(***))
 import           Data.Bifunctor
 import           Data.ExtendedReal

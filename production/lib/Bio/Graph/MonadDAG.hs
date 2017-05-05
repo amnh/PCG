@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Bio.PhyloGraphPrime.MonadDAG where
+module Bio.Graph.MonadDAG where
 
 import Data.List.NonEmpty
 

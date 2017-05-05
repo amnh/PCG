@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.PhyloGraphPrime.Forest
+-- Module      :  Bio.Graph.Forest
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -16,7 +16,7 @@
 
 {-# LANGUAGE DeriveTraversable, GeneralizedNewtypeDeriving, TypeFamilies #-}
 
-module Bio.PhyloGraphPrime.Forest
+module Bio.Graph.Forest
   ( PhylogeneticForest(..)
   ) where
 

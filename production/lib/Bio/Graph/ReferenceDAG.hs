@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.PhyloGraphPrime.ReferenceDAG
+-- Module      :  Bio.Graph.ReferenceDAG
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Bio.PhyloGraphPrime.ReferenceDAG
+module Bio.Graph.ReferenceDAG
   ( -- * Efficient access
     ReferenceDAG()
   , NodeRef()
@@ -20,4 +20,4 @@ module Bio.PhyloGraphPrime.ReferenceDAG
   , unfoldDAG
   ) where
 
-import Bio.PhyloGraphPrime.ReferenceDAG.Internal
+import Bio.Graph.ReferenceDAG.Internal

@@ -28,12 +28,12 @@ import           Bio.Metadata.CharacterName          hiding (sourceFile)
 import           Bio.Metadata.Parsed
 --import           Bio.PhyloGraph.Solution             hiding (parsedChars)
 --import           Bio.PhyloGraph.DAG                  hiding (structure)
-import           Bio.PhyloGraphPrime
-import           Bio.PhyloGraphPrime.Component
-import           Bio.PhyloGraphPrime.Forest.Parsed
-import           Bio.PhyloGraphPrime.PhylogeneticDAG
-import           Bio.PhyloGraphPrime.Node
-import           Bio.PhyloGraphPrime.ReferenceDAG
+import           Bio.Graph
+import           Bio.Graph.Component
+import           Bio.Graph.Forest.Parsed
+import           Bio.Graph.PhylogeneticDAG
+import           Bio.Graph.Node
+import           Bio.Graph.ReferenceDAG
 import           Control.Arrow                     ((&&&))
 import           Control.Applicative               ((<|>))
 import           Control.Parallel.Custom

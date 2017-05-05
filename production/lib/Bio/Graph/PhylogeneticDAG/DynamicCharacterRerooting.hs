@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------------
 -- |
--- Module      :  Bio.PhyloGraphPrime.PhylogeneticDAG.DynamicCharacterRerooting
+-- Module      :  Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -14,16 +14,16 @@
 
 {-# LANGUAGE BangPatterns, FlexibleContexts #-}
 
-module Bio.PhyloGraphPrime.PhylogeneticDAG.DynamicCharacterRerooting
+module Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
   ( assignOptimalDynamicCharacterRootEdges
   ) where
 
 import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Sequence
-import           Bio.PhyloGraphPrime.Node
-import           Bio.PhyloGraphPrime.PhylogeneticDAG.Internal
-import           Bio.PhyloGraphPrime.ReferenceDAG.Internal
+import           Bio.Graph.Node
+import           Bio.Graph.PhylogeneticDAG.Internal
+import           Bio.Graph.ReferenceDAG.Internal
 import           Control.Applicative
 import           Control.Arrow             ((&&&))
 import           Control.Lens

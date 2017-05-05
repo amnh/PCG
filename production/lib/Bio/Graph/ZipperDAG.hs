@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.PhyloGraphPrime.ZipperDAG
+-- Module      :  Bio.Graph.ZipperDAG
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Bio.PhyloGraphPrime.ZipperDAG
+module Bio.Graph.ZipperDAG
   ( -- * Mutually recursive zipper types
     ZipperNode()
   , ZipperEdge()
@@ -24,4 +24,4 @@ module Bio.PhyloGraphPrime.ZipperDAG
   , unfoldDAG
   ) where
 
-import Bio.PhyloGraphPrime.ZipperDAG.Internal
+import Bio.Graph.ZipperDAG.Internal

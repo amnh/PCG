@@ -44,11 +44,11 @@ import           Bio.Character.Decoration.Dynamic
 --import           Bio.PhyloGraph.Solution    hiding (parsedChars)
 --import           Bio.PhyloGraph.DAG
 --import           Bio.PhyloGraph.Forest.Parsed
-import           Bio.PhyloGraphPrime
---import           Bio.PhyloGraphPrime.Component
---import           Bio.PhyloGraphPrime.Node
---import           Bio.PhyloGraphPrime.ReferenceDAG
-import           Bio.PhyloGraphPrime.PhylogeneticDAG
+import           Bio.Graph
+--import           Bio.Graph.Component
+--import           Bio.Graph.Node
+--import           Bio.Graph.ReferenceDAG
+import           Bio.Graph.PhylogeneticDAG
 --import           Control.DeepSeq
 import           Control.Lens
 --import           Control.Arrow                     ((&&&))

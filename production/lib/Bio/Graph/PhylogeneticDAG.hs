@@ -14,7 +14,7 @@
 
 {-# LANGUAGE FlexibleContexts #-}
 
-module Bio.PhyloGraphPrime.PhylogeneticDAG
+module Bio.Graph.PhylogeneticDAG
   ( CharacterResult
   , CharacterDAG
   , DecoratedCharacterResult
@@ -52,14 +52,14 @@ module Bio.PhyloGraphPrime.PhylogeneticDAG
 
 import           Bio.Character.Decoration.Additive
 import           Bio.Sequence
-import           Bio.PhyloGraphPrime.Node
-import           Bio.PhyloGraphPrime.PhylogeneticDAG.Class
-import           Bio.PhyloGraphPrime.PhylogeneticDAG.DynamicCharacterRerooting
-import           Bio.PhyloGraphPrime.PhylogeneticDAG.Internal
-import           Bio.PhyloGraphPrime.PhylogeneticDAG.NetworkEdgeQuantification
-import           Bio.PhyloGraphPrime.PhylogeneticDAG.Postorder
-import           Bio.PhyloGraphPrime.PhylogeneticDAG.Riefication
-import           Bio.PhyloGraphPrime.ReferenceDAG.Internal
+import           Bio.Graph.Node
+import           Bio.Graph.PhylogeneticDAG.Class
+import           Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
+import           Bio.Graph.PhylogeneticDAG.Internal
+import           Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
+import           Bio.Graph.PhylogeneticDAG.Postorder
+import           Bio.Graph.PhylogeneticDAG.Riefication
+import           Bio.Graph.ReferenceDAG.Internal
 import           Data.Key
 import           Data.List.NonEmpty        (NonEmpty)
 import qualified Data.List.NonEmpty as NE
