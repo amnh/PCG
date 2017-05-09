@@ -512,21 +512,21 @@ int align2dAffine( alignIO_p inputChar1_aio
         initializeChar(ungappedMedianChar, CHAR_CAPACITY);
         initializeChar(gappedMedianChar,   CHAR_CAPACITY);
 
-        algn_backtrace_affine (shortChar,
-                               longChar,
-                               direction_matrix,
-                               ungappedMedianChar,
-                               gappedMedianChar,
-                               retShortChar,
-                               retLongChar,
-                               costMtx2d_affine);
+        algn_backtrace_affine( shortChar
+                             , longChar
+                             , direction_matrix
+                             , ungappedMedianChar
+                             , gappedMedianChar
+                             , retShortChar
+                             , retLongChar
+                             , costMtx2d_affine
+                             );
 
         dynCharToAlignIO(ungappedOutput_aio, ungappedMedianChar);
         dynCharToAlignIO(gappedOutput_aio,   gappedMedianChar);
 
         dynCharToAlignIO(longIO,  retLongChar);
         dynCharToAlignIO(shortIO, retShortChar);
-//    fflush(stdout);
 
         freeChar(ungappedMedianChar);
         freeChar(gappedMedianChar);
@@ -534,6 +534,169 @@ int align2dAffine( alignIO_p inputChar1_aio
 
     freeNWMtx(nw_mtxs2dAffine);
     freeChar(retLongChar);
+    freeChar(retShortChar);
+
+    return algnCost;
+}
+
+
+/** Do a 3d alignment. Depending on the values of last two inputs,
+ *  | (0,0) = return only a cost
+ *  | (0,1) = calculate gapped and ungapped characters
+ *  | (1,0) = calculate union
+ *  | (1,1) = calculate both union and ungapped characters.
+ *
+ *  In the last two cases the union will replace the gapped character placeholder.
+ */
+int align3d( const alignIO_p          inputChar1_aio
+           , const alignIO_p          inputChar2_aio
+           , const alignIO_p          inputChar3_aio
+           , const alignIO_p          ungappedOutput_aio
+           , const alignIO_p          gappedOutput_aio
+           // , const nw_matrices_p      algn_mtxs3d
+           , const cost_matrices_3d_p costMtx3d
+           )
+{
+
+    if (DEBUG_ALGN) {
+        printf("\n\nalign2d char1 input:\n");
+        printf("\ninput char 1:");
+        alignIO_print(inputChar1_aio);
+        printf("input char 2:");
+        alignIO_print(inputChar2_aio);
+    }
+
+    const size_t CHAR_CAPACITY = inputChar1_aio->length + inputChar2_aio->length + 2; // 2 to account for gaps,
+                                                                                      // which will be added in initializeChar()
+    int algnCost;
+
+    alignIO_p longIO,
+              middleIO,
+              shortIO;
+
+    dyn_char_p longChar      = malloc(sizeof(dyn_character_t)); // input to algn_nw_3d
+    dyn_char_p middleChar    = malloc(sizeof(dyn_character_t)); // input to algn_nw_3d
+    dyn_char_p shortChar     = malloc(sizeof(dyn_character_t)); // input to algn_nw_3d
+    dyn_char_p retLongChar   = malloc(sizeof(dyn_character_t)); // aligned character outputs from backtrace (not medians)
+    dyn_char_p retMiddleChar = malloc(sizeof(dyn_character_t)); // aligned character outputs from backtrace (not medians)
+    dyn_char_p retShortChar  = malloc(sizeof(dyn_character_t)); // aligned character outputs from backtrace (not medians)
+
+    /*** Most character allocation is now done on Haskell side, but these three are local. ***/
+    /*** longChar, middleChar and shortChar will both have pointers into the input characters, so don't need to be initialized separately ***/
+    initializeChar(retLongChar,   CHAR_CAPACITY);
+    initializeChar(retMiddleChar, CHAR_CAPACITY);
+    initializeChar(retShortChar,  CHAR_CAPACITY);
+
+
+    size_t alphabetSize = costMtx3d->costMatrixDimension;
+
+    // now sort inputs into appropriate structs by name
+    if (inputChar1_aio->length >= inputChar2_aio->length) {
+
+        if (inputChar3_aio->length >= inputChar1_aio->length) {        // input 3 is longest, 2 is shortest
+            alignIOtoDynChar(longChar, inputChar3_aio, alphabetSize);
+            longIO = inputChar3_aio;
+
+            alignIOtoDynChar(middleChar, inputChar1_aio, alphabetSize);
+            middleIO = inputChar1_aio;
+
+            alignIOtoDynChar(shortChar, inputChar2_aio, alphabetSize);
+            shortIO = inputChar2_aio;
+        } else if (inputChar3_aio->length >= inputChar2_aio->length) { // input 1 is longest, 2 is shortest
+            alignIOtoDynChar(longChar, inputChar1_aio, alphabetSize);
+            longIO = inputChar1_aio;
+
+            alignIOtoDynChar(middleChar, inputChar3_aio, alphabetSize);
+            middleIO = inputChar3_aio;
+
+            alignIOtoDynChar(shortChar, inputChar2_aio, alphabetSize);
+            shortIO = inputChar2_aio;
+        } else {                                                       // input 1 is longest, 3 is shortest
+            alignIOtoDynChar(longChar, inputChar1_aio, alphabetSize);
+            longIO = inputChar1_aio;
+
+            alignIOtoDynChar(middleChar, inputChar2_aio, alphabetSize);
+            middleIO = inputChar2_aio;
+
+            alignIOtoDynChar(shortChar, inputChar3_aio, alphabetSize);
+            shortIO = inputChar3_aio;
+        }
+    } else { // input 2 longer than input 1
+        if (inputChar3_aio->length >= inputChar2_aio->length) {        // input 3 is longest, 1 is shortest
+            alignIOtoDynChar(longChar, inputChar3_aio, alphabetSize);
+            longIO = inputChar3_aio;
+
+            alignIOtoDynChar(middleChar, inputChar2_aio, alphabetSize);
+            middleIO = inputChar2_aio;
+
+            alignIOtoDynChar(shortChar, inputChar1_aio, alphabetSize);
+            shortIO = inputChar1_aio;
+        } else if (inputChar3_aio->length >= inputChar1_aio->length) { // input 2 is longest, 1 is shortest
+            alignIOtoDynChar(longChar, inputChar2_aio, alphabetSize);
+            longIO = inputChar2_aio;
+
+            alignIOtoDynChar(middleChar, inputChar3_aio, alphabetSize);
+            middleIO = inputChar3_aio;
+
+            alignIOtoDynChar(shortChar, inputChar1_aio, alphabetSize);
+            shortIO = inputChar1_aio;
+        } else {                                                       // input 2 is longest, 3 is shortest
+            alignIOtoDynChar(longChar, inputChar2_aio, alphabetSize);
+            longIO = inputChar2_aio;
+
+            alignIOtoDynChar(middleChar, inputChar1_aio, alphabetSize);
+            middleIO = inputChar1_aio;
+
+            alignIOtoDynChar(shortChar, inputChar3_aio, alphabetSize);
+            shortIO = inputChar3_aio;
+        }
+    }
+
+    if (DEBUG_3D) {
+        printf("\nafter copying, char 1:\n");
+        dyn_char_print(longChar);
+        printf("\nafter copying, char 2:\n");
+        dyn_char_print(middleChar);
+        printf("\nafter copying, char 3:\n");
+        dyn_char_print(shortChar);
+    }
+
+    algnCost = powell_3D_align ( shortChar
+                               , middleChar
+                               , longChar
+                               , retLongChar
+                               , retMiddleChar
+                               , retShortChar
+                               , 1    // mismatch cost, must be > 0
+                               , 2    // gap open cost, must be >= 0
+                               , 1    // gap extend cost, must be > 0
+                               );
+
+    dyn_char_p ungappedMedianChar = malloc(sizeof(dyn_character_t));
+    dyn_char_p gappedMedianChar   = malloc(sizeof(dyn_character_t));
+    initializeChar(ungappedMedianChar, CHAR_CAPACITY);
+    initializeChar(gappedMedianChar,   CHAR_CAPACITY);
+
+    algn_get_medians_3d ( retLongChar
+                        , retMiddleChar
+                        , retShortChar
+                        , costMtx3d
+                        , ungappedMedianChar
+                        , gappedMedianChar
+                        );
+
+    dynCharToAlignIO(ungappedOutput_aio, ungappedMedianChar);
+    dynCharToAlignIO(gappedOutput_aio,   gappedMedianChar);
+
+    dynCharToAlignIO(longIO,   retLongChar);
+    dynCharToAlignIO(middleIO, retMiddleChar);
+    dynCharToAlignIO(shortIO,  retShortChar);
+
+    freeChar(ungappedMedianChar);
+    freeChar(gappedMedianChar);
+
+    freeChar(retLongChar);
+    freeChar(retMiddleChar);
     freeChar(retShortChar);
 
     return algnCost;

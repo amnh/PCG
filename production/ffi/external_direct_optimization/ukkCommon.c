@@ -94,7 +94,7 @@ char cStr[MAX_STR];
 
 size_t aLen, bLen, cLen;
 
-//extern int doUkk(dyn_char_p retCharA, dyn_char_p retCharB, dyn_char_p retCharC);    // Main driver function
+//extern int doUkk(dyn_character_t *retCharA, dyn_character_t *retCharB, dyn_character_t *retCharC);    // Main driver function
 
 
 #ifndef NO_ALLOC_ROUTINES
@@ -317,16 +317,17 @@ void *getPtr(AllocInfo *a, int ab, int ac, size_t d, int s) {
 #endif // NO_ALLOC_ROUTINES
 
 
-void copyCharacter (dyn_char_p inChar, char *str) {
+void copyCharacter (char *str, dyn_character_t *inChar) {
     if (DEBUG_CALL_ORDER) {
         printf("copyCharacter\n");
     }
-    int len, i;
+    size_t len, i;
     elem_t *char_begin;
     len        = inChar->len;
     char_begin = inChar->char_begin;
 
     for (i = 1; i < len; i++) {
+        // printf ("seq_begin[%zu] = %d\n", i, char_begin[i]);
         if (char_begin[i] & 1) {
             str[i - 1] = 'A';
         } else if (char_begin[i] & 2) {
@@ -336,7 +337,7 @@ void copyCharacter (dyn_char_p inChar, char *str) {
         } else if (char_begin[i] & 8) {
             str[i - 1] = 'T';
         } else {
-            printf ("This is impossible!");
+            printf ("This is impossible! %d !!", char_begin[i]);
             fflush(stdout);
             exit(1);
         }
@@ -345,9 +346,17 @@ void copyCharacter (dyn_char_p inChar, char *str) {
     return;
 }
 
-int powell_3D_align (dyn_char_p charA,    dyn_char_p charB,    dyn_char_p charC,
-                     dyn_char_p retCharA, dyn_char_p retCharB, dyn_char_p retCharC,
-                     int mismatch, int gapOpen, int gapExtend) {
+int powell_3D_align ( dyn_character_t *charA
+                    , dyn_character_t *charB
+                    , dyn_character_t *charC
+                    , dyn_character_t *retCharA
+                    , dyn_character_t *retCharB
+                    , dyn_character_t *retCharC
+                    , int        mismatch
+                    , int        gapOpen
+                    , int        gapExtend
+                    )
+{
     if (DEBUG_CALL_ORDER) {
         printf("powell_3D_align\n");
     }
@@ -367,10 +376,9 @@ int powell_3D_align (dyn_char_p charA,    dyn_char_p charB,    dyn_char_p charC,
     */
     assert (mismatchCost != 0 && gapOpenCost >= 0 && gapExtendCost > 0);
 
-
-    copyCharacter (charA, aStr);
-    copyCharacter (charB, bStr);
-    copyCharacter (charC, cStr);
+    copyCharacter (aStr, charA);
+    copyCharacter (bStr, charB);
+    copyCharacter (cStr, charC);
 
     aLen = charA->len;
     bLen = charB->len;
@@ -386,13 +394,14 @@ int whichCharCost(char a, char b, char c) {
     if (DEBUG_CALL_ORDER) {
         printf("whichCharCost\n");
     }
+    // printf("a: %c, b: %c, c: %c\n", a, b, c);
     assert(a!=0 && b!=0 && c!=0);
     /*
       When running as a ukk algorithm (ie. not the DPA), then
-      a=b=c only when there is a run of matches after a state other that MMM,
+      a == b == c only when there is a run of matches after a state other that MMM,
       and since we are moving to a MMM state, this cost will NEVER be used,
       so it doesn't matter what we return
-      When running as the DPA, it can occur at a=b=c, return 0 in this case
+      When running as the DPA, it can occur at a == b == c, return 0 in this case
     */
     if (a==b && a==c) {
       return 0;
@@ -419,7 +428,7 @@ int okIndex(int a, int da, int end) {
     //     printf("okIndex\n");
     // }
     if (a < 0)           return 0;
-    if (da  && a <  end)   return 1;
+    if ( da && a <  end) return 1;
     if (!da && a <= end) return 1;
     return 0;
     //  return (a<0 ? 0 : (da==0 ? 1 : a<end));
@@ -437,14 +446,14 @@ int stateTransitionCost(int from, int to) {
 
 // --------------------------------------------------
 void step(int n, int *a, int *b, int *c) {
-    assert(n>0 && n<=7);
-    *a=(n>>0)&1;
-    *b=(n>>1)&1;
-    *c=(n>>2)&1;
+    assert(n > 0 && n <= 7);
+    *a = (n >> 0) & 1;
+    *b = (n >> 1) & 1;
+    *c = (n >> 2) & 1;
 }
 
 int neighbourNum(int i, int j, int k) {
-    return (i*1)+(j*2)+(k*4);
+    return (i * 1) + (j * 2) + (k * 4);
 }
 
 // --------------------------------------------------

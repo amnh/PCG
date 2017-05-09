@@ -93,11 +93,11 @@ int okIndex(int a, int da, int end);
 
 int whichCharCost(char a, char b, char c);
 
-int doUkk(dyn_char_p retCharA, dyn_char_p retCharB, dyn_char_p retCharC);
+int doUkk(dyn_character_t *retCharA, dyn_character_t *retCharB, dyn_character_t *retCharC);
 
 int char_to_base (char v);
 
-void printTraceBack(dyn_char_p retCharA, dyn_char_p retCharB, dyn_char_p retCharC);
+void printTraceBack(dyn_character_t *retCharA, dyn_character_t *retCharB, dyn_character_t *retCharC);
 
 int calcUkk(int ab, int ac, int d, int toState);
 

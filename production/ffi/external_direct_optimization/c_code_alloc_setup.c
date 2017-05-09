@@ -150,7 +150,8 @@ void setUp2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
 
     /* TODO: which of following two loops is correct? */
 
-    int gap = 1 << (alphSize - 1);
+    elem_t gap = 1 << (alphSize - 1);
+    retCostMtx->gap_char = gap;
     for ( size_t i = 1; i <= all_elements; i++) {
         cm_set_prepend_2d (i, cm_get_cost(gap,   i, retCostMtx), retCostMtx);
         cm_set_tail_2d    (i, cm_get_cost(  i, gap, retCostMtx), retCostMtx);
@@ -197,6 +198,7 @@ void setUp3dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_3d_p 
                          , all_elements
                          , retMtx
                          );
+    retMtx->gap_char = 1 << (alphSize - 1);
 
     for (elem_t ambElem1 = 1; ambElem1 <= all_elements; ambElem1++) { // for every possible value of ambElem1, ambElem2, ambElem3
         for (elem_t ambElem2 = 1; ambElem2 <= all_elements; ambElem2++) {

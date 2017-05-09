@@ -83,7 +83,7 @@ int CPonDist;   // Flag for whether to use distance of cost as the CP criteria
 int sabG = 0, sacG = 0, sCostG = 0, sStateG = 0;
 
 int endA, endB, endC;   // Used to define where to end on the three strings in the
-                        // checkp recursion.  So endA contains the distance the recursion
+                        // checkp recursion. So endA contains the distance the recursion
                         // must finish on + 1.
 
 int completeFromInfo = 0; // Set to 1 for base cases, so 'from' info that alignment
@@ -96,8 +96,12 @@ Counts counts;
 
 int  aCharIdx = 0, bCharIdx = 0, cCharIdx = 0, stateIdx = 0, costIdx = 0;
 
-char resultA[MAX_STR * 2],   resultB[MAX_STR * 2], resultC[MAX_STR * 2];
-int  states[MAX_STR * 2],    cost[MAX_STR * 2];
+char resultA[MAX_STR * 2],
+     resultB[MAX_STR * 2],
+     resultC[MAX_STR * 2];
+
+int  states[MAX_STR * 2],
+     cost[MAX_STR * 2];
 
 static inline U_cell_type *U(int ab, int ac, int d, int s) {
     return getPtr(&myUAllocInfo, ab, ac, d, s);
@@ -362,13 +366,16 @@ void traceBack(int sab, int sac, int sCost, int sState,
         }
 
         // Run of matches
-        while (a>a1 && b>b1 && c>c1) {
+        while ( a > a1
+                && b > b1
+                && c > c1
+              ) {
           a--; b--; c--;
           resultA[aCharIdx++] = aStr[a];
           resultB[bCharIdx++] = bStr[b];
           resultC[cCharIdx++] = cStr[c];
-          states[stateIdx++] = 0;        /* The match state */
-          cost[costIdx++] = d;
+          states[stateIdx++]  = 0;        /* The match state */
+          cost[costIdx++]     = d;
         }
 
         // The step for (nab,nac,nd,ns) -> (ab,ac,d,s)
@@ -446,7 +453,7 @@ int char_to_base (char v) {
     else return -1;
 }
 
-void printTraceBack(dyn_char_p retCharA, dyn_char_p retCharB, dyn_char_p retCharC) {
+void printTraceBack(dyn_character_t *retCharA, dyn_character_t *retCharB, dyn_character_t *retCharC) {
     // Print out the alignment
 
     // Add the first run of matches to the alignment
@@ -555,7 +562,7 @@ int Ukk(int ab, int ac, int d, int state) {
     char indent[1000];
 
 
-int doUkk(dyn_char_p retCharA, dyn_char_p retCharB, dyn_char_p retCharC) {
+int doUkk(dyn_character_t *retCharA, dyn_character_t *retCharB, dyn_character_t *retCharC) {
     CPdummyCell.dist      = 0;
     CPdummyCell.cost      = 0;
     UdummyCell.dist       = 0;
@@ -569,9 +576,9 @@ int doUkk(dyn_char_p retCharA, dyn_char_p retCharB, dyn_char_p retCharC) {
     CPwidth               = 0;
     completeFromInfo      = 0;
 
-    aCharIdx  = 0;
-    bCharIdx  = 0;
-    cCharIdx  = 0;
+    aCharIdx = 0;
+    bCharIdx = 0;
+    cCharIdx = 0;
     stateIdx = 0;
     costIdx  = 0;
 
@@ -717,16 +724,16 @@ int calcUkk(int ab, int ac, int d, int toState) {
             int transCost = stateTransitionCost(fromState,toState);
             int fromCost  = -INFINITY;
             int dist      = -INFINITY;
-            int cost      = d-transCost-contCost[toState];
-            int a1        = Ukk(ab1,ac1,cost,fromState);
+            int cost      = d - transCost - contCost[toState];
+            int a1        = Ukk(ab1, ac1, cost, fromState);
             int a2        = -1;
-
-            if ( okIndex(a1, da, endA) &&
-                 okIndex(a1 - ab1, db, endB) &&
-                 okIndex(a1 - ac1, dc, endC) &&
-                 (whichCharCost(da ? aStr[a1] : '-',
-                                db ? bStr[a1-ab1] : '-',
-                                dc ? cStr[a1-ac1] : '-') == 1)
+            // printf("a1: %d, da: %d, endA: %d\n", a1, da, endA);
+            if ( okIndex(a1, da, endA)
+                 && okIndex(a1 - ab1, db, endB)
+                 && okIndex(a1 - ac1, dc, endC)
+                 && (whichCharCost( da ? aStr[a1]     : '-',
+                                    db ? bStr[a1-ab1] : '-',
+                                    dc ? cStr[a1-ac1] : '-') == 1)
                  ) {
                 fromCost = cost;
                 dist = a1 + da;
@@ -737,11 +744,12 @@ int calcUkk(int ab, int ac, int d, int toState) {
 
                 a2 = Ukk(ab1, ac1, cost - mismatchCost, fromState);
 
-                if (okIndex(a2, da, endA) &&
-                    okIndex(a2 - ab1, db, endB) &&
-                    okIndex(a2 - ac1, dc, endC)) {
-                        fromCost = cost - mismatchCost;
-                        dist = a2 + da;
+                if (   okIndex(a2,       da, endA)
+                    && okIndex(a2 - ab1, db, endB)
+                    && okIndex(a2 - ac1, dc, endC)
+                   ) {
+                    fromCost = cost - mismatchCost;
+                    dist = a2 + da;
                 }
             }
 

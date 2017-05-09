@@ -59,35 +59,37 @@ void dynCharToAlignIO(alignIO_p output, dyn_char_p input);
  *
  *  In the last two cases the union will replace the gapped character placeholder.
  */
-int align2d( const alignIO_p char1
-           , const alignIO_p char2
-           , const alignIO_p gappedOutputChar
-           , const alignIO_p ungappedOutputChar
-           // , alignIO_p unionOutputChar
+int align2d( const alignIO_p          char1
+           , const alignIO_p          char2
+           , const alignIO_p          gappedOutputChar
+           , const alignIO_p          ungappedOutputChar
+           // ,       alignIO_p          unionOutputChar
            , const cost_matrices_2d_p costMtx2d
-           , int getUngapped
-           , int getGapped
-           , int getUnion
+           ,       int                getUngapped
+           ,       int                getGapped
+           ,       int                getUnion
            );
 
 /** As align2d, but affine */
-int align2dAffine( const alignIO_p char1
-                 , const alignIO_p char2
-                 , const alignIO_p gappedOutputChar
-                 , const alignIO_p ungappedOutputChar
-                 // , alignIO_p unionOutputChar
+int align2dAffine( const alignIO_p          char1
+                 , const alignIO_p          char2
+                 , const alignIO_p          gappedOutputChar
+                 , const alignIO_p          ungappedOutputChar
+                 // ,       alignIO_p          unionOutputChar
                  , const cost_matrices_2d_p costMtx2d
-                 , int doMedians
+                 ,       int                doMedians
                  );
 
 /** Aligns three characters using non-affine algorithm.
  *  Takes in thee arrays of integer values,.
  */
-int align3d(alignIO_p character1
-           , alignIO_p character2
-           , alignIO_p character3
-           , alignIO_p medianChar
-           , cost_matrices_3d_p costMtx3d
+int align3d( const alignIO_p          inputChar1_aio
+           , const alignIO_p          inputChar2_aio
+           , const alignIO_p          inputChar3_aio
+           , const alignIO_p          ungappedOutput_aio
+           , const alignIO_p          gappedOutput_aio
+           // , const nw_matrices_p      algn_mtxs3d
+           , const cost_matrices_3d_p costMtx3d
            );
 
 #endif // C_ALIGNMENT_INTERFACE_H

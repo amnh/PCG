@@ -70,12 +70,12 @@ dyn_char_reverse_ip (dyn_char_p inChar) {
 void
 dyn_char_prepend (dyn_char_p a, elem_t v) {
     if ( a->cap <= a->len ) {
-      printf("Failing values: capacity: %zu, length: %zu\n", a->cap, a->len);
-      assert(a->cap > a->len);
+        printf("Failing values: capacity: %zu, length: %zu\n", a->cap, a->len);
+        assert(a->cap > a->len);
     }
-    a->char_begin    -= 1;
-    *(a->char_begin)  = v;
-    a->len      += 1;
+    a->char_begin--;
+    *(a->char_begin) = v;
+    a->len++;
 }
 
 

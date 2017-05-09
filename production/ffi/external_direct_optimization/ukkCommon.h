@@ -44,11 +44,11 @@
 #define MAX_COST (2 * MAX_STR)
 #define INFINITY INT_MAX / 2
 
-#define FULL_ALLOC_INFO 0
+#define FULL_ALLOC_INFO  0
 
 #define FIXED_NUM_PLANES 1
 
-#define CELLS_PER_BLOCK   10
+#define CELLS_PER_BLOCK  10
 
 typedef enum {match, del, ins} Trans;  // The 3 possible state-machine states
 
@@ -120,12 +120,12 @@ int  alignmentCost(int states[], char *al1, char *al2, char *al3, int len);
 void *getPtr(AllocInfo *a, int ab, int ac, size_t d, int s);
 
 // TODO: unsigned ints for costs:
-int powell_3D_align ( dyn_char_p charA
-                    , dyn_char_p charB
-                    , dyn_char_p charC
-                    , dyn_char_p retCharA
-                    , dyn_char_p retCharB
-                    , dyn_char_p retCharC
+int powell_3D_align ( dyn_character_t *charA
+                    , dyn_character_t *charB
+                    , dyn_character_t *charC
+                    , dyn_character_t *retCharA
+                    , dyn_character_t *retCharB
+                    , dyn_character_t *retCharC
                     , int mismatch
                     , int gapOpen
                     , int gapExtend
