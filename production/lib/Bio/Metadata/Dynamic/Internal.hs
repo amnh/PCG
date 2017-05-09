@@ -24,7 +24,8 @@ module Bio.Metadata.Dynamic.Internal
   , HasSymbolChangeMatrix(..)
   , HasTransitionCostMatrix(..)
   , MemoizedCostMatrix()
-  , TraversalLocusEdge
+  , TraversalFoci
+  , TraversalFocusEdge
   , dynamicMetadata
   , dynamicMetadataFromTCM
   , maybeConstructDenseTransitionCostMatrix
@@ -40,15 +41,26 @@ import Bio.Metadata.Dynamic.Class
 import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
-import Data.List (intercalate)
+import Data.EdgeSet
+import Data.List          (intercalate)
+import Data.List.NonEmpty (NonEmpty)
 import Data.Monoid
 import Data.TCM
-import GHC.Generics (Generic)
+import GHC.Generics       (Generic)
 
 --import Debug.Trace
 
 
-type TraversalLocusEdge = (Int, Int)
+type TraversalTopology  = EdgeSet TraversalFocusEdge
+
+
+type TraversalFocusEdge = (Int, Int)
+
+
+type TraversalFocus     = (TraversalFocusEdge, TraversalTopology)
+
+
+type TraversalFoci      = NonEmpty TraversalFocus
 
 
 -- |
@@ -57,7 +69,7 @@ type TraversalLocusEdge = (Int, Int)
 data DynamicCharacterMetadataDec c
    = DynamicCharacterMetadataDec
    { dataDenseTransitionCostMatrix :: Maybe DenseTransitionCostMatrix
-   , optimalTraversalLocus         :: Maybe TraversalLocusEdge
+   , optimalTraversalFoci          :: Maybe TraversalFoci
    , metadata                      :: DiscreteWithTCMCharacterMetadataDec c
    } deriving (Generic)
 
@@ -67,8 +79,8 @@ data DynamicCharacterMetadataDec c
 -- appropriate 'Lens' & character class constraints.
 class ( DiscreteWithTcmCharacterMetadata s c
       , HasDenseTransitionCostMatrix     s (Maybe DenseTransitionCostMatrix)
-      , HasSparseTransitionCostMatrix    s MemoizedCostMatrix
-      , HasTraversalLocus                s (Maybe TraversalLocusEdge)
+      , HasSparseTransitionCostMatrix    s  MemoizedCostMatrix
+      , HasTraversalFoci                 s (Maybe TraversalFoci)
       ) => DynamicCharacterMetadata s c | s -> c where
 
     extractDynamicCharacterMetadata :: s -> DynamicCharacterMetadataDec c
@@ -164,9 +176,9 @@ instance HasDenseTransitionCostMatrix (DynamicCharacterMetadataDec c) (Maybe Den
 
 
 -- | (✔)
-instance HasTraversalLocus (DynamicCharacterMetadataDec c) (Maybe TraversalLocusEdge) where
+instance HasTraversalFoci (DynamicCharacterMetadataDec c) (Maybe TraversalFoci) where
 
-    traversalLocus = lens optimalTraversalLocus $ \e x -> e { optimalTraversalLocus = x }
+    traversalFoci = lens optimalTraversalFoci $ \e x -> e { optimalTraversalFoci = x }
 
 
 -- | (✔)
@@ -197,7 +209,7 @@ dynamicMetadata name weight alpha scm denseMay =
     -- TODO: Maybe don't force here.
     force DynamicCharacterMetadataDec
     { dataDenseTransitionCostMatrix = denseMay
-    , optimalTraversalLocus         = Nothing
+    , optimalTraversalFoci          = Nothing
     , metadata                      = discreteMetadataWithTCM name weight alpha scm
     }
 
@@ -209,7 +221,7 @@ dynamicMetadataFromTCM name weight alpha tcm =
     -- TODO: Maybe don't force here.
     force DynamicCharacterMetadataDec
     { dataDenseTransitionCostMatrix = denseTCM
-    , optimalTraversalLocus         = Nothing
+    , optimalTraversalFoci          = Nothing
     , metadata                      = discreteMetadataWithTCM name (coefficient * weight) alpha sigma
     }
   where

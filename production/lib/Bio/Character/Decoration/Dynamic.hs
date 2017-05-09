@@ -41,11 +41,12 @@ module Bio.Character.Decoration.Dynamic
   , HasImpliedAlignment(..)
   , HasSymbolChangeMatrix(..)
   , HasTransitionCostMatrix(..)
-  , HasTraversalLocus(..)
+  , HasTraversalFoci(..)
   , HasSparseTransitionCostMatrix(..)
   , HasDenseTransitionCostMatrix(..)
   , PossiblyMissingCharacter(..)
-  , TraversalLocusEdge
+  , TraversalFoci
+  , TraversalFocusEdge
   ) where
 
 import Bio.Character.Decoration.Dynamic.Class

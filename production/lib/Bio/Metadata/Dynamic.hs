@@ -20,9 +20,10 @@ module Bio.Metadata.Dynamic
     , HasDenseTransitionCostMatrix(..)
     , HasSymbolChangeMatrix(..)
     , HasTransitionCostMatrix(..)
-    , HasTraversalLocus(..)
+    , HasTraversalFoci(..)
     , MemoizedCostMatrix()
-    , TraversalLocusEdge
+    , TraversalFoci
+    , TraversalFocusEdge
     , dynamicMetadata
     , dynamicMetadataFromTCM
     , maybeConstructDenseTransitionCostMatrix
