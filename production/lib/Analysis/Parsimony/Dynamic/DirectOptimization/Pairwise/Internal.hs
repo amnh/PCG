@@ -66,6 +66,21 @@ type DOCharConstraint c = (EncodableDynamicCharacter c, {- Show c, -} Show (Elem
 type OverlapFunction c = c -> c -> (c, Word)
 
 
+handleMissingCharacter
+  :: PossiblyMissingCharacter s
+  => s
+  -> s
+  -> (Word, s, s, s, s)
+  -> (Word, s, s, s, s) 
+handleMissingCharacter lhs rhs v =
+    -- Appropriately handle missing data:
+    case (isMissing lhs, isMissing rhs) of
+      (True , True ) -> (0, lhs, lhs, lhs, rhs) --WLOG
+      (True , False) -> (0, rhs, rhs, rhs, rhs)
+      (False, True ) -> (0, lhs, lhs, lhs, lhs)
+      (False, False) -> v
+
+
 -- |
 -- Performs a naive direct optimization.
 -- Takes in two characters to run DO on and a metadata object
@@ -76,9 +91,9 @@ naiveDO :: DOCharConstraint s
         => s                       -- ^ First  dynamic character
         -> s                       -- ^ Second dynamic character
         -> (Word -> Word -> Word)  -- ^ Structure defining the transition costs between character states
-        -> (s, Double, s, s, s)    -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
+        -> (Word, s, s, s, s)      -- ^ The cost of the alignment
                                    -- 
-                                   --   The cost of the alignment
+                                   --   The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
                                    -- 
                                    --   The /gapped/ character derived from the the input characters' N-W-esque matrix traceback
                                    -- 
@@ -91,15 +106,17 @@ naiveDO char1 char2 costStruct = handleMissingCharacter char1 char2 $ naiveDOInt
 -- |
 -- The same as 'naiveDO' except that the "cost structure" parameter is ignored.
 -- Instead a constant cost is used.
-naiveDOConst :: DOCharConstraint s => s -> s -> (Word -> Word -> Word) -> (s, Double, s, s, s)
+naiveDOConst :: DOCharConstraint s => s -> s -> (Word -> Word -> Word) -> (Word, s, s, s, s)
 naiveDOConst char1 char2 _ = handleMissingCharacter char1 char2 $ naiveDOInternal char1 char2 overlapConst
 
 
+-- |
+-- The same as 'naiveDO' except that the "cost structure" parameter is assumed to be a memoized overlap function.
 naiveDOMemo :: DOCharConstraint s
             => s
             -> s
             -> OverlapFunction (Element s)
-            -> (s, Double, s, s, s)
+            -> (Word, s, s, s, s)
 naiveDOMemo char1 char2 tcm = handleMissingCharacter char1 char2 $ naiveDOInternal char1 char2 tcm
 
 
@@ -389,12 +406,12 @@ overlapConst lhs rhs
     intersect = lhs .&. rhs
 
 
-naiveDOInternal :: (DOCharConstraint s, Show (Element s))
+naiveDOInternal :: (DOCharConstraint s {- , Show (Element s) -} )
         => s
         -> s
         -> OverlapFunction (Element s)
-        -> (s, Double, s, s, s)
-naiveDOInternal char1 char2 overlapFunction = (ungapped, fromIntegral alignmentCost, gapped', alignedChar1, alignedChar2)
+        -> (Word, s, s, s, s)
+naiveDOInternal char1 char2 overlapFunction = (alignmentCost, ungapped, gapped', alignedChar1, alignedChar2)
     where
       char1Len = olength char1
       char2Len = olength char2
@@ -413,16 +430,4 @@ naiveDOInternal char1 char2 overlapFunction = (ungapped, fromIntegral alignmentC
         | swapped   = (right', left' )
         | otherwise = (left' , right')
 
-handleMissingCharacter
-  :: PossiblyMissingCharacter s
-  => s
-  -> s
-  -> (s, Double, s, s, s)
-  -> (s, Double, s, s, s) 
-handleMissingCharacter lhs rhs v =
-    -- Appropriately handle missing data:
-    case (isMissing lhs, isMissing rhs) of
-      (True , True ) -> (lhs, 0, lhs, lhs, rhs) --WLOG
-      (True , False) -> (rhs, 0, rhs, rhs, rhs)
-      (False, True ) -> (lhs, 0, lhs, lhs, lhs)
-      (False, False) -> v
+

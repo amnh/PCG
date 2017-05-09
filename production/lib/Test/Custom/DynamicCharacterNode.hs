@@ -68,7 +68,7 @@ pairwiseFunction :: ( Integral (Element s)
                     , Show (Element s)
                     , Show s
                     , EncodableDynamicCharacter s
-                    ) => s -> s -> (s, Double, s, s, s)
+                    ) => s -> s -> (Word, s, s, s, s)
 pairwiseFunction x y = naiveDO x y scm
 
 
