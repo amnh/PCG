@@ -28,9 +28,9 @@ module Bio.Graph.Node
   ) where
 
 
-import Bio.Graph.EdgeSet
 import Data.Bifunctor
 import Data.BitVector
+import Data.EdgeSet
 import Data.Foldable
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Semigroup

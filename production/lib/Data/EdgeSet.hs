@@ -12,7 +12,7 @@
 
 {-# LANGUAGE DeriveFunctor, GeneralizedNewtypeDeriving #-}
 
-module Bio.Graph.EdgeSet
+module Data.EdgeSet
   ( EdgeSet()
   , NetworkDisplayEdgeSet(..)
   , SetLike(..)

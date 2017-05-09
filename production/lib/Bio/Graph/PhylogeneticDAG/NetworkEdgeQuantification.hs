@@ -17,11 +17,11 @@ module Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification where
 --import           Bio.Character.Decoration.Shared
 --import           Bio.Metadata.General
 import           Bio.Sequence
-import           Bio.Graph.EdgeSet
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
 import           Control.Arrow            ((&&&))
+import           Data.EdgeSet
 import           Data.ExtendedReal
 import           Data.Foldable
 import           Data.Key

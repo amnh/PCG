@@ -278,7 +278,6 @@ library
                        Bio.Metadata.Dynamic.Internal
                        Bio.Graph.Forest
                        Bio.Graph.PhylogeneticDAG.Class
-                       Bio.Graph.EdgeSet
                        Bio.Graph.PhylogeneticDAG.Internal
                        Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
                        Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
@@ -294,6 +293,7 @@ library
                        Data.Alphabet.Internal
                        Data.BitMatrix.Internal
                        Data.BitVector.Instances
+                       Data.EdgeSet
                        Data.ExtendedFinite
                        Data.ExtendedNatural
                        Data.ExtendedReal

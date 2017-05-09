@@ -15,9 +15,9 @@
 module Bio.Graph.ReferenceDAG.Internal where
 
 import           Bio.Graph.Component
-import           Bio.Graph.EdgeSet
 import           Control.Arrow              ((&&&),(***))
 import           Data.Bifunctor
+import           Data.EdgeSet
 import           Data.ExtendedReal
 import           Data.Foldable
 import           Data.Hashable              (Hashable)
