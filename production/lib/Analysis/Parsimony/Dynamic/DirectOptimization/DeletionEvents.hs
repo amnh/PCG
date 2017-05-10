@@ -27,7 +27,6 @@ import           Data.MonoTraversable
 import           Data.Semigroup
 
 
--- TODO: Use BitVectors here for efficency!
 -- |
 -- A wrapped type to represent deletion events on an edge with a custom 'Monoid'
 -- instance.
