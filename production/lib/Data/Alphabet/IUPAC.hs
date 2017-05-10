@@ -31,7 +31,8 @@ import qualified Data.Set              as Set
 import           Data.String
 
 
--- | Substitutions for converting to an Amino Acid sequence based on IUPAC codes.
+-- |
+-- Substitutions for converting to an Amino Acid sequence based on IUPAC codes.
 iupacToAminoAcid :: Bimap (AmbiguityGroup String) (AmbiguityGroup String)
 iupacToAminoAcid = toBimap
     [ ('A', "A")
@@ -62,7 +63,8 @@ iupacToAminoAcid = toBimap
     ] 
 
 
--- | Substitutions for converting to a DNA sequence based on IUPAC codes.
+-- |
+-- Substitutions for converting to a DNA sequence based on IUPAC codes.
 iupacToDna :: Bimap (AmbiguityGroup String) (AmbiguityGroup String)
 iupacToDna = toBimap
     [ ('A', "A")
@@ -136,7 +138,7 @@ isAlphabetSubsetOf alpha str = alphaSet `Set.isSubsetOf` strSet
     strSet   = Set.fromList $ fromString . pure <$> str
 
 
-toBimap :: [(Char,String)] ->  Bimap (AmbiguityGroup String) (AmbiguityGroup String)
+toBimap :: [(Char, String)] ->  Bimap (AmbiguityGroup String) (AmbiguityGroup String)
 toBimap = BM.fromList . fmap transform
   where
     transform = pure . pure *** fmap pure . NE.fromList

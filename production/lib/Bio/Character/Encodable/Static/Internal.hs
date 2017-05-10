@@ -143,7 +143,7 @@ instance MonoFunctor StaticCharacterBlock where
 instance Semigroup StaticCharacterBlock where
 
     (SCB lhs) <> (SCB rhs)
-      | m == n    = SCB . expandVector m $ collapseRows lhs `mappend` collapseRows rhs
+      | m == n    = SCB . factorRows m $ expandRows lhs `mappend` expandRows rhs
       | otherwise = error $ unwords ["Attempt to concatentate two StaticCharacterBlock of differing stateCounts:", show m, show n]
       where
         m = numCols lhs

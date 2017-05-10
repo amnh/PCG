@@ -8,6 +8,10 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
+-- We must ensure that missing and gap are appropriately 
+-- code as "-" & "?", respectively, before this module is used, i.e., as output 
+-- from either parsers or in unification step.
+--
 -----------------------------------------------------------------------------   
 
 {-# LANGUAGE DeriveGeneric #-}
@@ -43,10 +47,6 @@ import           Prelude               hiding (lookup, zip)
 import           Test.Tasty.QuickCheck hiding (generate)
 import           Test.QuickCheck.Arbitrary.Instances ()
 
-{- PRECONDITION: We must ensure that missing and gap are appropriately 
-   code as "-" & "?", respectively, before this module is used, i.e., as output 
-   from either parsers or in unification step.
- -}
 
 -- |
 -- A non empty collection of symbols from an 'Alphabet'.
@@ -65,66 +65,8 @@ data Alphabet a =
 type instance Key Alphabet = Int
 
 
-instance NFData a => NFData (Alphabet a)
-
-
-instance Indexable Alphabet where
-  {-# INLINE index #-}
-  index a i = fromMaybe raiseError $ i `lookup` a
-    where
-      raiseError = error $ mconcat
-                 ["Error indexing Alphabet at location "
-                 , show i
-                 , ", valid inclusive index range is [0, "
-                 , show $ length a - 1
-                 , "]."
-                 ]
-
-
-instance Lookup Alphabet where
-  {-# INLINE lookup #-}
-  lookup i alphabet = symbolVector alphabet V.!? i
-
-
-instance Foldable Alphabet where
-  {-# INLINE foldr #-}
-  foldr  f e = V.foldr  f e . symbolVector
-
-  {-# INLINE foldl #-}
-  foldl  f e = V.foldl  f e . symbolVector
-
-  {-# INLINE foldr1 #-}
-  foldr1 f   = V.foldr1 f   . symbolVector
-
-  {-# INLINE foldl1 #-}
-  foldl1 f   = V.foldl1 f   . symbolVector
-
-  {-# INLINE length #-}
-  length = V.length . symbolVector
-
-
-instance FoldableWithKey Alphabet where
-  {-# INLINE foldrWithKey #-}
-  foldrWithKey f e = V.ifoldr' f e . symbolVector
-
-  {-# INLINE foldlWithKey #-}
-  foldlWithKey f e = V.ifoldl' f e . symbolVector
-
-
--- | /O(n * log n)/
-instance Ord a => Eq (Alphabet a) where
-  lhs == rhs =  length lhs == length rhs
-             && sort (toList lhs) == sort (toList rhs)
-
-
-instance Show a => Show (Alphabet a) where
-  show x = mconcat [ "Alphabet: {"
-                   , intercalate ", " $ show <$> toList x
-                   , "}"
-                   ]
-
-
 instance (Ord a, IsString a) => Arbitrary (Alphabet a) where
+
     arbitrary = do
         n <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 62)
         pure . fromSymbols $ take n symbolSpace
@@ -133,59 +75,131 @@ instance (Ord a, IsString a) => Arbitrary (Alphabet a) where
         symbolSpace = fromString . pure <$> ['0'..'9'] <> ['A'..'Z'] <> ['a'..'z'] <> "?-"
 
 
--- | Constructs an 'Alphabet' from a 'Foldable' structure of symbols which are
---   'IsString' values.
+instance Indexable Alphabet where
+
+    {-# INLINE index #-}
+    index a i = fromMaybe raiseError $ i `lookup` a
+      where
+        raiseError = error $ mconcat
+            ["Error indexing Alphabet at location "
+            , show i
+            , ", valid inclusive index range is [0, "
+            , show $ length a - 1
+            , "]."
+            ]
+
+
+instance Lookup Alphabet where
+
+    {-# INLINE lookup #-}
+    lookup i alphabet = symbolVector alphabet V.!? i
+
+
+instance Foldable Alphabet where
+
+    {-# INLINE foldr #-}
+    foldr  f e = V.foldr  f e . symbolVector
+
+    {-# INLINE foldl #-}
+    foldl  f e = V.foldl  f e . symbolVector
+
+    {-# INLINE foldr1 #-}
+    foldr1 f   = V.foldr1 f   . symbolVector
+
+    {-# INLINE foldl1 #-}
+    foldl1 f   = V.foldl1 f   . symbolVector
+
+    {-# INLINE length #-}
+    length = V.length . symbolVector
+
+
+instance FoldableWithKey Alphabet where
+  
+    {-# INLINE foldrWithKey #-}
+    foldrWithKey f e = V.ifoldr' f e . symbolVector
+
+    {-# INLINE foldlWithKey #-}
+    foldlWithKey f e = V.ifoldl' f e . symbolVector
+
+
+instance NFData a => NFData (Alphabet a)
+
+
+-- |
+-- /O(n * log n)/
+instance Ord a => Eq (Alphabet a) where
+
+    lhs == rhs =  length lhs == length rhs
+               && sort (toList lhs) == sort (toList rhs)
+
+
+instance Show a => Show (Alphabet a) where
+
+    show x = mconcat
+        [ "Alphabet: {"
+        , intercalate ", " $ show <$> toList x
+        , "}"
+        ]
+
+
+-- |
+-- /O(n * log n)/
 --
---   /O(n * log n)/
+-- Constructs an 'Alphabet' from a 'Foldable' structure of symbols which are
+-- 'IsString' values.
 fromSymbols :: (Ord a, IsString a, Foldable t) => t a -> Alphabet a
 fromSymbols inputSymbols = Alphabet symbols []
   where
     symbols = V.fromList . fmap toSingle . alphabetPreprocessing . fmap fromSingle $ toList inputSymbols
 
 
--- | Constructs an 'Alphabet' from a 'Foldable' structure of symbols and
---   coresponding state names, both of which a are 'IsString' values.
+-- |
+-- /O(n * log n)/
 --
---   The input ordering is preserved.
+-- Constructs an 'Alphabet' from a 'Foldable' structure of symbols and
+-- coresponding state names, both of which a are 'IsString' values.
 --
---   /O(n * log n)/
+-- The input ordering is preserved.
 fromSymbolsWithStateNames :: (Ord a, IsString a, Foldable t) => t (a,a) -> Alphabet a
 fromSymbolsWithStateNames inputSymbols = Alphabet symbols names
   where
     (symbols, names) = first V.fromList . unzip . fmap toTuple . alphabetPreprocessing . fmap fromTuple $ toList inputSymbols
 
 
--- | Retreives the symbols of the 'Alphabet'. Synonym for 'toList'.
---
+-- |
 -- /O(n)/
+--
+-- Retreives the symbols of the 'Alphabet'. Synonym for 'toList'.
 alphabetSymbols :: Alphabet a -> [a]
 alphabetSymbols = toList
 
 
--- | Retreives the state names for the symbols of the 'Alphabet'.
+-- |
+-- /O(n)/
+--
+-- Retreives the state names for the symbols of the 'Alphabet'.
 --
 -- If there the symbols of the 'Alphabet' were not given state names during
 -- construction then an empty list is returned.
---
--- /O(n)/
 alphabetStateNames :: Alphabet a -> [a]
 alphabetStateNames = stateNames
 
 
--- | Retreives the "gap character" from the alphabet.
+-- |
+-- /O(1)/
 --
---   /O(1)/
+-- Retreives the "gap character" from the alphabet.
 gapSymbol :: Alphabet a -> a
 gapSymbol alphabet = alphabet ! (length alphabet - 1)
 
 -- |
+-- /O(n*log(n)/
+--
 -- Attempts to find the symbol in the Alphabet.
 -- If the symbol exists, returns an alphabet with all the symbols occuring
 -- before the supplied symbol included and all symbols occring after the
 -- supplied symbol excluded. The gap character is preserved in the alphabet
 -- regardless of the supplied symbol.
---
--- /O(n*log(n)/
 truncateAtSymbol :: (Ord a, IsString a) => a -> Alphabet a -> Alphabet a
 truncateAtSymbol symbol alphabet =
     case elemIndex symbol $ toList alphabet of

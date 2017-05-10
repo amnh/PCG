@@ -14,7 +14,10 @@ import Data.ExtendedFinite
 import Data.Maybe          (fromMaybe)
 
 
--- | A natural number extended to include infinity. Where infinity == maxBound
+-- |
+-- A natural number extended to include infinity, where:
+--
+-- > infinity == maxBound
 newtype ExtendedNatural = Cost (Maybe Word)
 
 

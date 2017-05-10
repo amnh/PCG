@@ -129,7 +129,8 @@ instance Show a => Show (DuplicateSet a) where
 -- |
 -- /O(1)/
 --
--- @replicate n x@ is a 'DuplicateSet' of the supplied element value repeated @n@ times.
+-- @replicate n x@ is a 'DuplicateSet' of the supplied element value repeated
+-- @n@ times.
 {-# INLINE replicate #-}
 replicate :: Ord a => Int -> a -> DuplicateSet a
 replicate i e

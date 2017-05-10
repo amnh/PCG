@@ -132,7 +132,8 @@ instance Show a => Show (ReplicatedSequence a) where
 -- |
 -- /O(1)/
 --
--- @replicate n x@ is a 'ReplicatedSequence' of the supplied element value repeated n times.
+-- @replicate n x@ is a 'ReplicatedSequence' of the supplied element value
+-- repeated n times.
 {-# INLINE replicate #-}
 replicate :: Int -> a -> ReplicatedSequence a
 replicate i e

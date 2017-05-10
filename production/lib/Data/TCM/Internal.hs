@@ -32,29 +32,31 @@ import           Prelude              hiding   (lookup)
 import           Test.QuickCheck      hiding   (generate)
 
 
--- | A data structure for storing a two dimensional, square array of dimensionality
---   greater that or equal to two with positive cost values at the array indices.
---   Values are stored in an unboxed structure for cache efficiency.
+-- |
+-- A data structure for storing a two dimensional, square array of dimensionality
+-- greater that or equal to two with positive cost values at the array indices.
+-- Values are stored in an unboxed structure for cache efficiency.
 --
---  A 'TCM' can be constructed by calling one of the following functions:
+-- A 'TCM' can be constructed by calling one of the following functions:
 --
---    * 'fromList'
+--   * 'fromList'
 --
---    * 'fromCols'
+--   * 'fromCols'
 --
---    * 'fromRows'
+--   * 'fromRows'
 --
---    * 'generate'
+--   * 'generate'
 --
---  Attempts to construct an empty or singleton 'TCM' through the above constructors
---  will result in a runtime exception.
+-- Attempts to construct an empty or singleton 'TCM' through the above
+-- constructors will result in a runtime exception.
 data TCM
    = TCM Int (Vector Word32)
    deriving (Eq)
 
 
 -- |
--- The monomorphic element of a TCM representing the transition cost between to state symbols.
+-- The monomorphic element of a TCM representing the transition cost between to
+-- state symbols.
 type instance Element TCM = Word32
 
 
@@ -131,49 +133,62 @@ data TCMStructure
 -- The result of a call to 'diagnoseTcm'.
 data TCMDiagnosis
    = TCMDiagnosis
-   { factoredWeight :: Int -- ^ The multiplicative constant factor of a 'TCM'. Minimum value of the multiplicative identiy /one/.
-   , factoredTcm    :: TCM -- ^ The new 'TCM' with each value divided by the 'factoredWeight' .
-   , tcmStructure   :: TCMStructure -- ^ The most restrictive present in the 'factoredTcm'.
+   { factoredWeight :: Int          -- ^ The multiplicative constant factor of a
+                                    --   'TCM'. Minimum value of the
+                                    --   multiplicative identiy /one/.
+   , factoredTcm    :: TCM          -- ^ The new 'TCM' with each value divided by
+                                    --   the 'factoredWeight'.
+   , tcmStructure   :: TCMStructure -- ^ The most restrictive present in the
+                                    --   'factoredTcm'.
    } deriving (Show)
 
 
--- | Performs a element-wise monomporphic map over the 'TCM'.
+-- |
+-- Performs a element-wise monomporphic map over the 'TCM'.
 instance MonoFunctor TCM where
 
     omap f (TCM n v) = TCM n $ V.map f v
 
 
--- | Performs a row-major monomporphic fold over the 'TCM'.
+-- |
+-- Performs a row-major monomporphic fold over the 'TCM'.
 instance MonoFoldable TCM where
 
-    -- | Map each element of a structure to a 'Monoid' and combine the results.
+    -- |
+    -- Map each element of a structure to a 'Monoid' and combine the results.
     {-# INLINE ofoldMap #-}
     ofoldMap f = V.foldr (mappend . f) mempty . vec
 
-    -- | Right-associative fold of a structure.
+    -- |
+    -- Right-associative fold of a structure.
     {-# INLINE ofoldr #-}
     ofoldr f e = V.foldr f e . vec
 
-    -- | Strict left-associative fold of a structure.
+    -- |
+    -- Strict left-associative fold of a structure.
     {-# INLINE ofoldl' #-}
     ofoldl' f e = V.foldl' f e . vec
 
-    -- | Right-associative fold of a monomorphic container with no base element.
+    -- |
+    -- Right-associative fold of a monomorphic container with no base element.
     --
     -- Note: this is a partial function. On an empty 'MonoFoldable', it will
     -- throw an exception.
     --
-    -- /See 'Data.MinLen.ofoldr1Ex' from "Data.MinLen" for a total version of this function./
+    -- /See 'Data.MinLen.ofoldr1Ex' from "Data.MinLen" for a total version of
+    -- this function./
     {-# INLINE ofoldr1Ex #-}
     ofoldr1Ex f = V.foldr1 f . vec
 
-    -- | Strict left-associative fold of a monomorphic container with no base
+    -- |
+    -- Strict left-associative fold of a monomorphic container with no base
     -- element.
     --
     -- Note: this is a partial function. On an empty 'MonoFoldable', it will
     -- throw an exception.
     --
-    -- /See 'Data.MinLen.ofoldl1Ex'' from "Data.MinLen" for a total version of this function./
+    -- /See 'Data.MinLen.ofoldl1Ex'' from "Data.MinLen" for a total version of
+    -- this function./
     {-# INLINE ofoldl1Ex' #-}
     ofoldl1Ex' f = V.foldl1' f . vec
 
@@ -187,22 +202,25 @@ instance MonoFoldable TCM where
     olength = V.length .vec
 
 
--- | Performs a row-major monomporphic traversal over ther 'TCM'.
+-- |
+-- Performs a row-major monomporphic traversal over ther 'TCM'.
 instance MonoTraversable TCM where
 
-    -- | Map each element of a monomorphic container to an action,
-    -- evaluate these actions in row-major order and collect the results.
+    -- |
+    -- Map each element of a monomorphic container to an action, evaluate these
+    -- actions in row-major order and collect the results.
     {-# INLINE otraverse #-}
     otraverse f (TCM n v) = fmap (TCM n . V.fromList) . traverse f $ V.toList v
 
-    -- | Map each element of a monomorphic container to a monadic action,
-    -- evaluate these actions from left to right, and
-    -- collect the results.
+    -- |
+    -- Map each element of a monomorphic container to a monadic action, evaluate
+    -- these actions from left to right, and collect the results.
     {-# INLINE omapM #-}
     omapM = otraverse
 
 
--- | Resulting TCMs will have at a dimension between 2 and 25.
+-- |
+-- Resulting TCMs will have at a dimension between 2 and 25.
 instance Arbitrary TCM where
 
     arbitrary = do 
@@ -242,29 +260,37 @@ reduceTcm missingSymbolIndicies tcm = generate reducedDimension genFunction
         jOffset = length $ filter (<=j) indices
 
 
--- | /O(1)/ Indexing without bounds checking.
+-- |
+-- /O(1)/
+--
+-- Indexing without bounds checking.
 {-# INLINE (!) #-}
 (!) :: Enum i => TCM -> (i, i) -> Word32
 (!) (TCM n v) (i,j) = v `V.unsafeIndex` (fromEnum i * n + fromEnum j)
 
 
--- | /O(1)/ Safe indexing.
+-- |
+-- /O(1)/
+--
+-- Safe indexing.
 {-# INLINE (!?) #-}
 (!?) :: Enum i => TCM -> (i, i) -> Maybe Word32
 (!?) (TCM n v) (i,j) = v V.!? (fromEnum i * n + fromEnum j)
 
 
--- | /O(1)/
+-- |
+-- /O(1)/
 --
---   The number of rows and columns in the 'TCM'.
+-- The number of rows and columns in the 'TCM'.
 {-# INLINE size #-}
 size :: TCM -> Int
 size (TCM x _) = x
 
 
--- | /O(n*n)/
+-- |
+-- /O(n*n)/
 --
---   Construct a 'TCM' from a list of elements in row major order.
+-- Construct a 'TCM' from a list of elements in row major order.
 --
 -- ==== __Examples__
 --
@@ -309,9 +335,10 @@ fromList xs
                                 ]
 
 
--- | /O(n*n)/
+-- |
+-- /O(n*n)/
 --
---   Construct a 'TCM' from a list of columns.
+-- Construct a 'TCM' from a list of columns.
 --
 -- ==== __Examples__
 --
@@ -352,9 +379,10 @@ fromCols xs
                                 ]
 
 
--- | /O(n*n)/
+-- |
+-- /O(n*n)/
 --
---   Construct a 'TCM' from a list of rows.
+-- Construct a 'TCM' from a list of rows.
 --
 -- ==== __Examples__
 --
@@ -395,7 +423,8 @@ fromRows xs
 
 
 -- |
--- Determines the mode length and the other lengths of a nested foldable structure.
+-- Determines the mode length and the other lengths of a nested foldable
+-- structure.
 modeAndOutlierLengths :: (Foldable t, Foldable t') => t (t' a) -> (Int, [Int])
 modeAndOutlierLengths xs = (mode, otherLengths)
   where
@@ -404,11 +433,12 @@ modeAndOutlierLengths xs = (mode, otherLengths)
     otherLengths = keys  $ mode `delete` occuranceMap
 
 
--- | /O(n*n)/
+-- |
+-- /O(n*n)/
 --
---   A generating function for a 'TCM'. Efficiently constructs a
---   'TCM' of the specified dimensions with each value defined by the result
---   of the supplied function.
+-- A generating function for a 'TCM'. Efficiently constructs a 'TCM' of the
+-- specified dimensions with each value defined by the result of the supplied
+-- function.
 --
 -- ==== __Examples__
 --

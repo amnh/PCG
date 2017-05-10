@@ -15,7 +15,10 @@ import Data.Ratio
 import Data.Maybe          (fromMaybe)
 
 
--- | A non-negative real number extended to include infinity, where infinity == maxBound.
+-- |
+-- A non-negative real number extended to include infinity, where:
+--
+-- > infinity == maxBound
 newtype ExtendedReal = Cost (Maybe Double)
 
 
@@ -92,7 +95,6 @@ instance Ord ExtendedReal where
                     Just y  -> x > y
 
 
--- TODO: maybe remove this? 
 instance Enum ExtendedReal where
 
     fromEnum (Cost x) = maybe (maxBound :: Int) fromEnum x
