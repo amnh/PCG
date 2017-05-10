@@ -27,7 +27,7 @@ void dyn_char_print(dyn_char_p inChar) {
     elem_t *end   = inChar->end;
     printf("Char length   %3zu\n", inChar->len);
     printf("Char capacity %3zu\n", inChar->cap);
-    for( ; start < end; start++) {
+    for( ; start <= end; start++) {
         printf("%2d, ", *start);
     }
     printf("\n");

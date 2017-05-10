@@ -360,9 +360,9 @@ int powell_3D_align ( dyn_character_t *charA
                     , dyn_character_t *retCharA
                     , dyn_character_t *retCharB
                     , dyn_character_t *retCharC
-                    , int        mismatch
-                    , int        gapOpen
-                    , int        gapExtend
+                    , int              mismatch
+                    , int              gapOpen
+                    , int              gapExtend
                     )
 {
     if (DEBUG_CALL_ORDER) {

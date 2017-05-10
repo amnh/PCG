@@ -327,7 +327,8 @@ cm_calc_cost (int *tcm, elem_t a, elem_t b, int alphSize) {
 elem_t
 cm_get_median_3d (elem_t *tcm, elem_t a, elem_t b, elem_t c, size_t alphSize) {
     elem_t upperBound = ((elem_t) 1) << alphSize;
-    printf("alphSize: %zu, upperBound: %u, a: %u, b: %u, c: %u\n", alphSize, upperBound, a, b, c);
+    if (DEBUG_3D) printf("alphSize: %zu, upperBound: %u, a: %u, b: %u, c: %u\n", alphSize, upperBound, a, b, c);
+
     if (alphSize <= 0) {
         printf("Alphabet size <= 0");
         exit(1);

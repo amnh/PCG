@@ -565,6 +565,7 @@ int align3d( const alignIO_p          inputChar1_aio
         printf("input char 2:");
         alignIO_print(inputChar2_aio);
     }
+    printf("gap char: %u\n", costMtx3d->gap_char);
 
     const size_t CHAR_CAPACITY = inputChar1_aio->length + inputChar2_aio->length + 2; // 2 to account for gaps,
                                                                                       // which will be added in initializeChar()
@@ -653,20 +654,20 @@ int align3d( const alignIO_p          inputChar1_aio
     }
 
     if (DEBUG_3D) {
-        printf("\nafter copying, char 1:\n");
+        printf("\nafter copying, long (char 1):\n");
         dyn_char_print(longChar);
-        printf("\nafter copying, char 2:\n");
+        printf("\nafter copying, middle (char 2):\n");
         dyn_char_print(middleChar);
-        printf("\nafter copying, char 3:\n");
+        printf("\nafter copying, short (char 3):\n");
         dyn_char_print(shortChar);
     }
 
     algnCost = powell_3D_align ( shortChar
                                , middleChar
                                , longChar
-                               , retLongChar
-                               , retMiddleChar
                                , retShortChar
+                               , retMiddleChar
+                               , retLongChar
                                , 1    // mismatch cost, must be > 0
                                , 2    // gap open cost, must be >= 0
                                , 1    // gap extend cost, must be > 0

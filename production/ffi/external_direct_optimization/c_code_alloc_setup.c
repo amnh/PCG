@@ -18,7 +18,7 @@
  *
  *  Order of character lengths doesn't matter
  */
-void initializeNWMtx(nw_matrices_p retMtx, size_t len_char1, size_t len_char2, size_t len_char3, int alphSize) {
+void initializeNWMtx(nw_matrices_p retMtx, size_t len_char1, size_t len_char2, size_t len_char3, size_t alphSize) {
     // printf("initializeNWMtx\n");
     // in six following allocations all matrices are set to their shortest length because they get realloced in mat_setup_size
     retMtx->cap_nw     =  0;  // a suitably small number to trigger realloc, but be larger than len_eff
@@ -198,7 +198,7 @@ void setUp3dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_3d_p 
                          , all_elements
                          , retMtx
                          );
-    retMtx->gap_char = 1 << (alphSize - 1);
+    retMtx->gap_char = 1 << alphSize;
 
     for (elem_t ambElem1 = 1; ambElem1 <= all_elements; ambElem1++) { // for every possible value of ambElem1, ambElem2, ambElem3
         for (elem_t ambElem2 = 1; ambElem2 <= all_elements; ambElem2++) {
@@ -212,9 +212,10 @@ void setUp3dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_3d_p 
                             + distance (tcm, alphSize, nucleotide, ambElem3);
                     if (curCost < minCost) {
                         minCost = curCost;
-                        median  = (elem_t) 1 << (nucleotide - 1); // median1 | median2 | median3;
-                    } else if (curCost == minCost) {
-                        median |= (elem_t) 1 << (nucleotide - 1); // median1 | median2 | median3;
+                        median  = ((elem_t) 1) << (nucleotide - 1); // median1 | median2 | median3;
+                    }
+                    else if (curCost == minCost) {
+                        median |= ((elem_t) 1) << (nucleotide - 1); // median1 | median2 | median3;
                     }
                 } // nucleotide
 

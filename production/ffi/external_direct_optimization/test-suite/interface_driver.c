@@ -172,8 +172,6 @@ int main() {
 
             allocAlignIO(unionMedianChar,    maxLength);
 
-            copyValsToAIO(inputChar1, longest_vals,  longCharLen,  maxLength);
-            copyValsToAIO(inputChar2, shortest_vals, shortCharLen, maxLength);
 
             printf("\n\n********** Cost only (all chars should be empty): **********\n");
             printf("  \n***************** Original 2d characters: ******************\n");

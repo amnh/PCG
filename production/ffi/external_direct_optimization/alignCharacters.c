@@ -1264,7 +1264,15 @@ algn_fill_plane_2 ( const dyn_char_p longerChar
          */
         // subset 2:
         if (8 >= (longChar_len - height)) {
-            return (algn_fill_plane (longerChar, precalcMtx, longChar_len, len_lesserChar, curRow, dirMtx, costMatrix));
+            return (algn_fill_plane ( longerChar
+                                    , precalcMtx
+                                    , longChar_len
+                                    , len_lesserChar
+                                    , curRow
+                                    , dirMtx
+                                    , costMatrix
+                                    )
+                    );
         // subset 3:
         } else {
             algn_fill_first_row (curRow, dirMtx, width, gap_row);
@@ -2313,7 +2321,10 @@ algn_fill_plane_affine ( const dyn_char_p char1
                                           , costMatrix->gap_char
                                           , costMatrix->costMatrixDimension
                                           );
-        align_row           = cm_get_precal_row (precalcMtx, char1->char_begin[i], char2_len);
+        align_row           = cm_get_precal_row ( precalcMtx
+                                                , char1->char_begin[i]
+                                                , char2_len
+                                                );
         algn_fill_full_row_affine ( curRow
                                   , newNWMtx
                                   , gap_row
@@ -2366,7 +2377,12 @@ algn_choose_affine_other( int *next_row
 
 static inline int
 HAS_GAP_EXTENSION (elem_t base, const cost_matrices_2d_p costMatrix) {
-    return (cm_calc_cost(costMatrix->cost, base, costMatrix->gap_char, costMatrix->costMatrixDimension));
+    return (cm_calc_cost( costMatrix->cost
+                        , base
+                        , costMatrix->gap_char
+                        , costMatrix->costMatrixDimension
+                        )
+            );
 }
 
 static inline int
@@ -2431,7 +2447,8 @@ FILL_EXTEND_HORIZONTAL ( int sj_horizontal_extension
     if (ext_cost < open_cost) {
         LOR_WITH_DIR_MTX_ARROW_t(BEGIN_HORIZONTAL, direction_matrix);
         extend_horizontal[j] = ext_cost;
-    } else {
+    }
+    else {
         LOR_WITH_DIR_MTX_ARROW_t(END_HORIZONTAL, direction_matrix);
         extend_horizontal[j] = open_cost;
     }
@@ -2462,11 +2479,8 @@ FILL_EXTEND_VERTICAL_NOBT ( int si_vertical_extension
               + si_gap_opening
               + si_gap_extension;
 
-    if (ext_cost < open_cost) {
-        extend_vertical[j] = ext_cost;
-    } else {
-        extend_vertical[j] = open_cost;
-    }
+    if (ext_cost < open_cost) extend_vertical[j] = ext_cost;
+    else                      extend_vertical[j] = open_cost;
 }
 
 DIR_MTX_ARROW_t
@@ -2493,7 +2507,8 @@ FILL_EXTEND_VERTICAL (       int  si_vertical_extension
     if (ext_cost < open_cost) {
         LOR_WITH_DIR_MTX_ARROW_t(BEGIN_VERTICAL, direction_matrix);
         extend_vertical[j] = ext_cost;
-    } else {
+    }
+    else {
         LOR_WITH_DIR_MTX_ARROW_t(END_VERTICAL, direction_matrix);
         extend_vertical[j] = open_cost;
     }
@@ -2554,7 +2569,8 @@ FILL_EXTEND_BLOCK_DIAGONAL (       elem_t              si_base
         diag;
 //    int open_diag;
 
-    diag = ((costMatrix->gap_char & si_base) && (costMatrix->gap_char & sj_base)) ? 0 : VERY_LARGE_NUMBER;
+    diag = ( (    costMatrix->gap_char & si_base)
+              && (costMatrix->gap_char & sj_base)) ? 0 : VERY_LARGE_NUMBER;
 
 /*
     if ( !(gap_char & si_prev_base)
@@ -2719,7 +2735,7 @@ void
 algn_backtrace_affine ( const dyn_char_p         shortChar
                       , const dyn_char_p         longChar
                       ,       DIR_MTX_ARROW_t   *direction_matrix
-                      ,       dyn_char_p         median
+                      ,       dyn_char_p         gapped_median
                       ,       dyn_char_p         ungapped_median
                       ,       dyn_char_p         retShortChar
                       ,       dyn_char_p         retLongChar
@@ -2742,10 +2758,10 @@ algn_backtrace_affine ( const dyn_char_p         shortChar
 
     DIR_MTX_ARROW_t *initial_direction_matrix;
 
-    shortIdx       = shortChar->len - 1;
-    longIdx        = longChar->len - 1;
-    shortChar_len  = shortIdx;
-    longChar_len = longIdx;
+    shortIdx      = shortChar->len - 1;
+    longIdx       = longChar->len - 1;
+    shortChar_len = shortIdx;
+    longChar_len  = longIdx;
 
     assert (shortChar_len <= longChar_len);
 
@@ -2776,7 +2792,7 @@ algn_backtrace_affine ( const dyn_char_p         shortChar
                 mode = m_todo;
             }
             if (!(shortCharElem & gap_char)) {
-                dyn_char_prepend (median, (shortCharElem | gap_char));
+                dyn_char_prepend (gapped_median,   (shortCharElem | gap_char));
                 dyn_char_prepend (ungapped_median, (shortCharElem | gap_char));
             } else {
                 dyn_char_prepend (ungapped_median, gap_char);
@@ -2791,13 +2807,13 @@ algn_backtrace_affine ( const dyn_char_p         shortChar
                 mode = m_todo;
             }
             if (!(longCharElem & gap_char)) {
-                dyn_char_prepend (median, (longCharElem | gap_char));
+                dyn_char_prepend (gapped_median,   (longCharElem | gap_char));
                 dyn_char_prepend (ungapped_median, (longCharElem | gap_char));
             } else {
                 dyn_char_prepend (ungapped_median, gap_char);
             }
             dyn_char_prepend (retShortChar, gap_char);
-            dyn_char_prepend (retLongChar, longCharElem);
+            dyn_char_prepend (retLongChar,  longCharElem);
             longIdx--;
             direction_matrix -= 1;
             longCharElem = longChar->char_begin[longIdx];
@@ -2805,8 +2821,8 @@ algn_backtrace_affine ( const dyn_char_p         shortChar
             if (HAS_FLAG(END_BLOCK)) {
                 mode = m_todo;
             }
-            dyn_char_prepend(retShortChar, shortCharElem);
-            dyn_char_prepend(retLongChar, longCharElem);
+            dyn_char_prepend(retShortChar,    shortCharElem);
+            dyn_char_prepend(retLongChar,     longCharElem);
             dyn_char_prepend(ungapped_median, gap_char);
             shortIdx--;
             longIdx--;
@@ -2822,11 +2838,14 @@ algn_backtrace_affine ( const dyn_char_p         shortChar
             } else if (HAS_FLAG(ALIGN_TO_VERTICAL)) {
                 mode = m_vertical;
             }
-            prep = cm_get_median(costMatrix, (shortCharElem & all_ambiguous), (longCharElem & all_ambiguous));
-            dyn_char_prepend(median, prep);
+            prep = cm_get_median( costMatrix
+                                , (shortCharElem & all_ambiguous)
+                                , (longCharElem  & all_ambiguous)
+                                );
+            dyn_char_prepend(gapped_median,   prep);
             dyn_char_prepend(ungapped_median, prep);
-            dyn_char_prepend(retShortChar, shortCharElem);
-            dyn_char_prepend(retLongChar, longCharElem);
+            dyn_char_prepend(retShortChar,    shortCharElem);
+            dyn_char_prepend(retLongChar,     longCharElem);
             shortIdx--;
             longIdx--;
             direction_matrix -= (longChar_len + 2);
@@ -2837,13 +2856,14 @@ algn_backtrace_affine ( const dyn_char_p         shortChar
     while (shortIdx != 0) {
         assert (initial_direction_matrix < direction_matrix);
         if (!(shortCharElem & gap_char)) {
-            dyn_char_prepend (median, (shortCharElem | gap_char));
+            dyn_char_prepend (gapped_median,   (shortCharElem | gap_char));
             dyn_char_prepend (ungapped_median, (shortCharElem | gap_char));
-        } else {
+        }
+        else {
             dyn_char_prepend (ungapped_median, gap_char);
         }
         dyn_char_prepend(retShortChar, shortCharElem);
-        dyn_char_prepend(retLongChar, gap_char);
+        dyn_char_prepend(retLongChar,  gap_char);
         direction_matrix -= (longChar_len + 1);
         shortIdx--;
         shortCharElem = shortChar->char_begin[shortIdx];
@@ -2851,9 +2871,10 @@ algn_backtrace_affine ( const dyn_char_p         shortChar
     while (longIdx != 0) {
         assert (initial_direction_matrix < direction_matrix);
         if (!(longCharElem & gap_char)) {
-            dyn_char_prepend (median,          (longCharElem | gap_char));
+            dyn_char_prepend (gapped_median,   (longCharElem | gap_char));
             dyn_char_prepend (ungapped_median, (longCharElem | gap_char));
-        } else {
+        }
+        else {
             dyn_char_prepend (ungapped_median, gap_char);
         }
 
@@ -2867,8 +2888,8 @@ algn_backtrace_affine ( const dyn_char_p         shortChar
     dyn_char_prepend(retLongChar,     gap_char);
     dyn_char_prepend(ungapped_median, gap_char);
 
-    if (gap_char != median->char_begin[0]) {
-        dyn_char_prepend(median, gap_char);
+    if (gap_char != gapped_median->char_begin[0]) {
+        dyn_char_prepend(gapped_median, gap_char);
     }
 #undef HAS_FLAG
 
@@ -2960,7 +2981,7 @@ algn_initialize_matrices_affine_nobt (int go,
         close_block_diagonal    += (1 + longChar_len);
         extend_block_diagonal   += (1 + longChar_len);
         extend_horizontal       += (1 + longChar_len);
-        shortCharElem             = si->char_begin[i];
+        shortCharElem            = si->char_begin[i];
 //        shortCharPrevElem         = si->char_begin[i - 1];
         r                        = prev_extend_vertical[0] + (HAS_GAP_EXTENSION(shortCharElem, c));
         extend_horizontal[0]     = VERY_LARGE_NUMBER;
@@ -3170,11 +3191,17 @@ algn_fill_plane_2d_affine_nobt ( const dyn_char_p          shortChar
     if (end_pos < 40) end_pos = 40;
 
     if (end_pos > longChar_len) end_pos = longChar_len;
-    elem_t longCharElem, /* longCharPrevElem, */ shortCharElem, shortCharPrevElem, shortChar_no_gap, longChar_no_gap;
-    elem_t *shortCharBegin, *longCharBegin;
+    elem_t longCharElem,
+           // longCharPrevElem,
+           shortCharElem,
+           shortCharPrevElem,
+           shortChar_no_gap,
+           longChar_no_gap;
+    elem_t *shortCharBegin,
+           *longCharBegin;
     shortCharBegin = shortChar->char_begin;
-    longCharBegin = longChar->char_begin;
-    shortCharElem = shortCharBegin[0];
+    longCharBegin  = longChar->char_begin;
+    shortCharElem  = shortCharBegin[0];
 
     for (j = 1; j <= longChar_len; j++) {
         gap_open_prec[j] = HAS_GAP_OPENING(longCharBegin[j - 1], longCharBegin[j], gap_char, gap_open);
@@ -3372,9 +3399,6 @@ algn_fill_plane_2d_affine ( const dyn_char_p          shortChar
     int shortChar_vertical_extension;
 
     DIR_MTX_ARROW_t tmp_direction_matrix;
-
-    ;
-    ;
 
     init_extend_horizontal     = extend_horizontal;
     init_extend_vertical       = extend_vertical;
@@ -3835,13 +3859,13 @@ algn_fill_plane_2_affine ( const dyn_char_p          char1
 /** Fill parallel must have been called before */
 static inline void
 fill_moved (       size_t char3_len
-           , const int *prev_m
-           , const int *upper_m
-           , const int *diag_m
-           , const int *char1_gap_char3
-           , const int *gap_char2_char3
-           , const int *char1_char2_char3
-           ,       int *curRow
+           , const int   *prev_m
+           , const int   *upper_m
+           , const int   *diag_m
+           , const int   *char1_gap_char3
+           , const int   *gap_char2_char3
+           , const int   *char1_char2_char3
+           ,       int   *curRow
            ,       DIR_MTX_ARROW_t *dirMtx
            )
 {
@@ -4719,7 +4743,11 @@ algn_print_bcktrck_2d (const dyn_char_p char1, const dyn_char_p char2,
 
 
 void
-algn_print_dynmtrx_2d (const dyn_char_p char1, const dyn_char_p char2, nw_matrices_p alignment_matrices) {
+algn_print_dynmtrx_2d ( const dyn_char_p    char1
+                      , const dyn_char_p    char2
+                      ,       nw_matrices_p alignment_matrices
+                      )
+{
 
   int i, j;
 
@@ -5484,11 +5512,12 @@ algn_get_medians_3d ( dyn_char_p         char1
     char_end2 = char2->end;
     char_end3 = char3->end;
 
+    // TODO: does this for loop actually do anything?
     for (int i = char1->len - 1; i >= 0; i--) {
         interim = cm_get_median_3d( costMatrix->median
-                                  , char_end1[i]
-                                  , char_end2[i]
-                                  , char_end3[i]
+                                  , *char_end1
+                                  , *char_end2
+                                  , *char_end3
                                   , costMatrix->costMatrixDimension
                                   );
 
