@@ -454,12 +454,10 @@ contractToContiguousVertexMapping inputMap = foldMapWithKey contractIndices inpu
     
 
 expandVertexMapping :: Monoid a => IntMap (IntSet, t, IntMap a) -> IntMap (IntSet, t, IntMap a)
-expandVertexMapping unexpandedMap = snd . foldl' f (initialCounter+1, unexpandedMap) $ IM.keys unexpandedMap
+expandVertexMapping unexpandedMap = snd . foldl' expandEdges (initialCounter+1, unexpandedMap) $ IM.keys unexpandedMap
   where
     (initialCounter, _) = IM.findMax unexpandedMap
     
-    f acc key = expandEdges acc key
-
     expandEdges acc@(counter, mapping) key =
         case parentCount of
           0 -> if   childCount <= 2

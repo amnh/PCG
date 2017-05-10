@@ -27,7 +27,8 @@ import Data.Monoid   ()
 import Data.Semigroup
 
 
--- | A monad transformer of 'Evaluation'.
+-- |
+-- A monad transformer of 'Evaluation'.
 newtype EvaluationT m a
       = EvaluationT
       { -- | Run the 'EvaluationT' monad transformer

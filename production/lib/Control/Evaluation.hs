@@ -31,11 +31,15 @@ import Control.Evaluation.Internal
 import Control.Evaluation.Trans
 import Control.Evaluation.Unit
 
--- | Synonym for 'impure'
+
+-- |
+-- Synonym for 'impure'
 evalIO :: IO a -> EvaluationT IO a
 evalIO = impure
 
--- | Lifts an 'Either' with a `Show` error condition into the 'Evaluation' context.
+
+-- |
+-- Lifts an 'Either' with a `Show` error condition into the 'Evaluation' context.
 evalEither :: Show s => Either s b -> Evaluation b
 evalEither (Left  e) = fail $ show e
 evalEither (Right x) = pure x

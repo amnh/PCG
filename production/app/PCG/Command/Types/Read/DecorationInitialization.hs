@@ -137,7 +137,7 @@ initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ f
                           (g additivePostOrder)
                           (g adaptiveDirectOptimizationPostOrder)
       where
-        g _  Nothing  [] = error $ "Uninitialized leaf node. This is bad!"
+        g _  Nothing  [] = error "Uninitialized leaf node. This is bad!"
         g h (Just  v) [] = h v []
         g h        e  xs = h (error $ "We shouldn't be using this value." ++ show e ++ show (length xs)) xs
 {--}

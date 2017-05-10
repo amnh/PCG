@@ -10,8 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveFunctor, GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric, GeneralizedNewtypeDeriving #-}
 
 module Data.EdgeSet
   ( EdgeSet()

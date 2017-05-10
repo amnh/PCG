@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns, FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
   ( assignOptimalDynamicCharacterRootEdges
@@ -251,7 +251,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
             -- We never reference a "root" node of the component which contains
             -- inherently directed edges, only the sister node on the undirected
             -- edge.
-            unrootedParentRefs = fmap g $ otoList originalRootingParentRefs
+            unrootedParentRefs = g <$> otoList originalRootingParentRefs
               where
                 g candidate
                   | candidate `notElem` rootRefs inputDag = candidate
@@ -376,12 +376,10 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
                 gatherMinimalLoci acc e (cs, es) =
                     case acc of
                       Nothing      -> Just (c, r)
-                      Just (c',xs) ->
-                        if   c > c'
-                        then acc
-                        else if c < c'
-                        then Just (c, r)
-                        else Just (c, xs <> r)
+                      Just (c', xs)
+                        | c > c'    -> acc
+                        | c < c'    -> Just (c, r)
+                        | otherwise -> Just (c, xs <> r)
                   where
                     r = pure (e, es)
                     (c, es) = (fst $ head vs, fmap snd vs)
@@ -418,7 +416,4 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
 {--}
 
 (.!>.) :: (Lookup f, Show (Key f)) => f a -> Key f -> a
-(.!>.) s k =
-  case k `lookup` s of
-    Just v  -> v
-    Nothing -> error $ "Could not index: " <> show k
+(.!>.) s k = fromMaybe (error $ "Could not index: " <> show k) $ k `lookup` s

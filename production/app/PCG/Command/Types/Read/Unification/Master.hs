@@ -116,12 +116,12 @@ rectifyResults2 fprs =
     forestTaxa      = {- (\x ->  trace ("Forest Set: " <> show x) x) . -} gatherForestsTerminalNames `parmap'` allForests
     -- Step 5: Assert that each terminal node name is unique in each forest
     duplicateNames :: [([[Identifier]], FracturedParseResult)]
-    duplicateNames  = filter (not . (all null) . fst) $ first (fmap duplicates) `parmap'` forestTaxa
+    duplicateNames  = filter (not . all null . fst) $ first (fmap duplicates) `parmap'` forestTaxa
     -- Step 6: Assert that each forest's terminal node set is exactly the same as the taxa set from "data files"
     extraNames   :: [([Set Identifier], FracturedParseResult)]
-    extraNames      = filter (not . (all null) . fst) $ first (fmap ((\\ taxaSet) . Set.fromList . toList)) `parmap'` forestTaxa
+    extraNames      = filter (not . all null . fst) $ first (fmap ((\\ taxaSet) . Set.fromList . toList)) `parmap'` forestTaxa
     missingNames :: [([Set Identifier], FracturedParseResult)]
-    missingNames    = filter (not . (all null) . fst) $ first (fmap ((taxaSet \\) . Set.fromList . toList)) `parmap'` forestTaxa
+    missingNames    = filter (not . all null . fst) $ first (fmap ((taxaSet \\) . Set.fromList . toList)) `parmap'` forestTaxa
     -- Step 7: Combine disparte sequences from many sources  into single metadata & character sequence.
     charSeqs        = joinSequences2 dataSeqs
     -- Step 8: Collect the parsed forests to be merged
@@ -139,7 +139,7 @@ rectifyResults2 fprs =
           -- Build a forest of with Units () as character type parameter
           (False, True ) -> Right . Left  . PhylogeneticSolution $ NE.fromList suppliedForests
           -- BUild a forest with the corresponding character data on the nodes
-          (False, False) -> Right . Right . PhylogeneticSolution $ (matchToChars charSeqs) <$> NE.fromList suppliedForests
+          (False, False) -> Right . Right . PhylogeneticSolution $ matchToChars charSeqs <$> NE.fromList suppliedForests
       where
         defaultCharacterSequenceDatum = fromBlocks . fmap blockTransform . toBlocks . head $ toList charSeqs
           where
@@ -339,7 +339,7 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
 
     performMetadataTransformations :: Functor f
                     => f (Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, TCM, TCMStructure, CharacterName)))
-                    -> f (Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, (Word -> Word -> Word), TCMStructure, CharacterName)))
+                    -> f (Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName)))
     performMetadataTransformations = fmap reduceFileBlock
       where
         reduceFileBlock mapping = fmap (zipWith updateMetadataInformation updatedMetadataTokens) mapping
