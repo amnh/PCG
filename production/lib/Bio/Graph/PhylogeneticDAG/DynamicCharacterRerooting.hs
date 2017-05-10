@@ -34,6 +34,7 @@ import qualified Data.IntSet        as IS
 import           Data.Key
 import           Data.List.NonEmpty        (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty as NE
+import           Data.List.Utility
 --import           Data.Map                  (Map)
 import qualified Data.Map           as M
 import           Data.Maybe
@@ -63,7 +64,7 @@ import           Prelude            hiding (lookup, zipWith)
 
 assignOptimalDynamicCharacterRootEdges
   :: ( HasBlockCost u v w x y z Word Double
-     , HasTraversalLocus z (Maybe TraversalLocusEdge)
+     , HasTraversalFoci z (Maybe TraversalFoci)
      , Show u
      , Show v
      , Show w
@@ -339,26 +340,50 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
 
 
     rootRefWLOG  = NE.head $ rootRefs inputDag
-    sequenceWLOG = fmap dynamicCharacters . toBlocks . characterSequence . NE.head $ getCache rootRefWLOG
 
-
-    sequenceOfEdgesWithMinimalCost = foldMapWithKey1 f sequenceWLOG
+    -- Here we calculate, for each character block, for each display tree in the
+    -- phylogenetic DAG, the minimal traversal loci and the corresponding cost.
+ -- sequenceOfEdgesWithMinimalCost :: NonEmpty (NonEmpty (Minimal Loci, Minimal Cost, Topology))
+    sequenceOfEdgesWithMinimalCost = foldMapWithKey1 blockLogic sequenceWLOG
       where
-        f k v = V.generate (length v) g :| []
+
+        -- First we select an arbitrary character sequence from the DAG.
+        -- We do this to produce a result that matches the structure of the
+        -- character sequence in our DAG. Since all character sequences in the
+        -- DAG have the same number of chracter blocks, and each character block
+        -- has the same number of characters, we can select any character
+        -- sequence without loss of generality.
+        --
+        -- By mapping over the structure we ensure that our result shares the
+        -- the same structure because that's how Functors work.
+        --
+        -- The only structural difference is that character types other than
+        -- dynamic characters are filtered from each character block.
+        sequenceWLOG = fmap dynamicCharacters . toBlocks . characterSequence . NE.head $ getCache rootRefWLOG
+
+        -- Generate a vector of characters that mirrors the dynamic character
+        -- vector of the given block.
+        blockLogic k v = V.generate (length v) deriveMinimalCharacterContexts :| []
           where
-            g i = result
+
+            -- 
+            deriveMinimalCharacterContexts i = result
               where
-                result@(_minimumEdge, _minimumCost) = fromJust $ foldlWithKey h Nothing edgeIndexCostMapping
-                edgeIndexCostMapping = fmap (fmap ((^. characterCost) . (! i) . dynamicCharacters . (! k) . toBlocks . characterSequence)) edgeCostMapping
-                h acc e cs =
+                result@(_minimumCost, _minimumTopologyAndEdgePairs) = fromJust $ foldlWithKey gatherMinimalLoci Nothing edgeIndexCostMapping
+                edgeIndexCostMapping = fmap (fmap (((^. characterCost) . (! i) . dynamicCharacters . (! k) . toBlocks . characterSequence) &&& subtreeEdgeSet)) edgeCostMapping
+                gatherMinimalLoci acc e (cs, es) =
                     case acc of
-                      Nothing      -> Just (e, c)
-                      Just (_e', c') ->
-                        if   c < c'
-                        then Just (e, c)
-                        else acc
+                      Nothing      -> Just (c, r)
+                      Just (c',xs) ->
+                        if   c > c'
+                        then acc
+                        else if c < c'
+                        then Just (c, r)
+                        else Just (c, xs <> r)
                   where
-                    c = minimum cs
+                    r = pure (e, es)
+                    (c, es) = (fst $ head vs, fmap snd vs)
+                    vs = minimaBy (comparing fst) cs
 
 
     -- Step 4: Update the dynamic character decoration's cost & add an edge reference.
@@ -385,9 +410,9 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
         g k charBlock = pure $ charBlock { dynamicCharacters = modifiedDynamicChars }
           where
             modifiedDynamicChars = zipWith h (minimalCostSequence ! k) $ dynamicCharacters charBlock
-            h (edgeVal, costVal) originalDec = originalDec
-                                                 & characterCost  .~ costVal
-                                                 & traversalLocus .~ Just edgeVal
+            h (costVal, foci) originalDec = originalDec
+                                              & characterCost .~ costVal
+                                              & traversalFoci .~ Just foci
 {--}
 
 (.!>.) :: (Lookup f, Show (Key f)) => f a -> Key f -> a
