@@ -39,6 +39,7 @@ import           Data.List.Utility
 import qualified Data.Map           as M
 import           Data.Maybe
 import           Data.MonoTraversable
+import           Data.Ord                  (comparing)
 import           Data.Semigroup
 import           Data.Tuple                (swap)
 import qualified Data.Vector        as V
@@ -342,8 +343,9 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
     rootRefWLOG  = NE.head $ rootRefs inputDag
 
     -- Here we calculate, for each character block, for each display tree in the
-    -- phylogenetic DAG, the minimal traversal loci and the corresponding cost.
- -- sequenceOfEdgesWithMinimalCost :: NonEmpty (NonEmpty (Minimal Loci, Minimal Cost, Topology))
+    -- phylogenetic DAG, the minimal traversal foci and the corresponding cost.
+    -- Note that there could be many minimal traversal foci for each display tree.
+ -- sequenceOfEdgesWithMinimalCost :: NonEmpty (NonEmpty (Topology, Minimal Cost, NonEmpty (Minimal Foci)))
     sequenceOfEdgesWithMinimalCost = foldMapWithKey1 blockLogic sequenceWLOG
       where
 
