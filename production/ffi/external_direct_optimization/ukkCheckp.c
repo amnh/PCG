@@ -208,15 +208,15 @@ size_t doUkkInLimits( int startAB
         int i;
         fprintf(stderr, "Character to align at this step:\n");
         for (i = startDist; i < finalDist; i++) {
-            fprintf(stderr, "%3c", aStr[i]);
+            fprintf(stderr, "%3c", lesserStr[i]);
         }
         fprintf(stderr, "\n");
         for (i = startDist - startAB; i < finalDist - finalAB; i++) {
-            fprintf(stderr, "%3c", bStr[i]);
+            fprintf(stderr, "%3c", longerStr[i]);
         }
         fprintf(stderr, "\n");
         for (i = startDist - startAC; i < finalDist - finalAC; i++) {
-            fprintf(stderr, "%3c", cStr[i]);
+            fprintf(stderr, "%3c", middleStr[i]);
         }
         fprintf(stderr, "\n");
     }
@@ -439,9 +439,9 @@ nab = %3d, nac = %3d, nd = %3d, ns = %2d, ndist = %3d\n\n",
                 && c > c1
               ) {
           a--; b--; c--;
-          resultA[aCharIdx++] = aStr[a];
-          resultB[bCharIdx++] = bStr[b];
-          resultC[cCharIdx++] = cStr[c];
+          resultA[aCharIdx++] = lesserStr[a];
+          resultB[bCharIdx++] = longerStr[b];
+          resultC[cCharIdx++] = middleStr[c];
           states[stateIdx++]  = 0;        /* The match state */
           cost[costIdx++]     = d;
         }
@@ -451,13 +451,13 @@ nab = %3d, nac = %3d, nd = %3d, ns = %2d, ndist = %3d\n\n",
             || b != b1
             || c != c1
            ) {
-            if (a > a1) resultA[aCharIdx++] = aStr[--a];
+            if (a > a1) resultA[aCharIdx++] = lesserStr[--a];
             else        resultA[aCharIdx++] = '-';
 
-            if (b > b1) resultB[bCharIdx++] = bStr[--b];
+            if (b > b1) resultB[bCharIdx++] = longerStr[--b];
             else        resultB[bCharIdx++] = '-';
 
-            if (c > c1) resultC[cCharIdx++] = cStr[--c];
+            if (c > c1) resultC[cCharIdx++] = middleStr[--c];
             else        resultC[cCharIdx++] = '-';
 
             states[stateIdx++]  = s;
@@ -525,15 +525,15 @@ void printTraceBack(dyn_character_t *retCharA, dyn_character_t *retCharB, dyn_ch
     size_t endRun,
            i = 0;
 
-    while ( i < aLen && (aStr[i] == bStr[i] && aStr[i] == cStr[i]) ) {
+    while ( i < lesserLen && (lesserStr[i] == longerStr[i] && lesserStr[i] == middleStr[i]) ) {
       i++;
     }
     endRun = i;
 
     for (int j = endRun - 1; j >= 0; j--)  {
-      resultA[aCharIdx++] = aStr[j];
-      resultB[bCharIdx++] = bStr[j];
-      resultC[cCharIdx++] = cStr[j];
+      resultA[aCharIdx++] = lesserStr[j];
+      resultB[bCharIdx++] = longerStr[j];
+      resultC[cCharIdx++] = middleStr[j];
       states[stateIdx++] = 0;        /* The match state */
       cost[costIdx++]    = 0;
     }
@@ -560,9 +560,9 @@ void printTraceBack(dyn_character_t *retCharA, dyn_character_t *retCharB, dyn_ch
 
     assert(aCharIdx == bCharIdx && aCharIdx == cCharIdx && aCharIdx == stateIdx && aCharIdx == costIdx);
 
-    checkAlign(resultA, aCharIdx, aStr, aLen);
-    checkAlign(resultB, bCharIdx, bStr, bLen);
-    checkAlign(resultC, cCharIdx, cStr, cLen);
+    checkAlign(resultA, aCharIdx, lesserStr, lesserLen);
+    checkAlign(resultB, bCharIdx, longerStr, longerLen);
+    checkAlign(resultC, cCharIdx, middleStr, middleLen);
 
     assert(alignmentCost(states, resultA, resultB, resultC, aCharIdx) == finalCost);
 }
@@ -625,6 +625,7 @@ int Ukk(int ab, int ac, int d, int state) {
     char indent[1000];
 
 
+// IMPORTANT!!! Order of input characters is short, long, middle.
 int doUkk( dyn_character_t *retCharA
          , dyn_character_t *retCharB
          , dyn_character_t *retCharC
@@ -658,7 +659,7 @@ int doUkk( dyn_character_t *retCharA
     startStateG = 0;
 
     size_t curDist,
-           finalab,
+           finalAB,
            finalac,
            startDist;
 
@@ -674,9 +675,9 @@ int doUkk( dyn_character_t *retCharA
 
     // Calculate starting position
     curDist = 0;
-    while (   curDist < aLen
-           && (   aStr[curDist] == bStr[curDist]
-               && aStr[curDist] == cStr[curDist]
+    while (   curDist < lesserLen
+           && (   lesserStr[curDist] == longerStr[curDist]
+               && lesserStr[curDist] == middleStr[curDist]
               )
           ) {
         curDist++;
@@ -686,25 +687,25 @@ int doUkk( dyn_character_t *retCharA
     U(0, 0, 0, 0)->computed = 0 + costOffset;
     startDist = curDist;
 
-    finalab = aLen - bLen;
-    finalac = aLen - cLen;
-    endA    = aLen;
-    endB    = bLen;
-    endC    = cLen;
+    finalAB = lesserLen - longerLen;
+    finalac = lesserLen - middleLen;
+    endA    = lesserLen;
+    endB    = longerLen;
+    endC    = middleLen;
 
     CPonDist = 1;
     CPcost   = INFINITY;
     do {
         curDist++;
-        Ukk(finalab, finalac, curDist, 0);
+        Ukk(finalAB, finalac, curDist, 0);
 
         if (DEBUG_3D) {
             fprintf(stderr, "Furthest reached for cost %2zu is %2d.\n",
                     curDist, furthestReached);
         }
 
-        int half_aLen = (int) (aLen / 2);
-        if (CPonDist && furthestReached >= half_aLen) {
+        int half_lesserLen = (int) (lesserLen / 2);
+        if (CPonDist && furthestReached >= half_lesserLen) {
             CPcost   = curDist + 1;
             CPonDist = 0;
 
@@ -714,33 +715,33 @@ int doUkk( dyn_character_t *retCharA
         }
 
 
-    } while (best(finalab, finalac, curDist, 0) < (int) aLen);
+    } while (best(finalAB, finalac, curDist, 0) < (int) lesserLen);
 
-    assert(best(finalab, finalac, curDist, 0) == (int) aLen);
+    assert(best(finalAB, finalac, curDist, 0) == (int) lesserLen);
 
     CPonDist  = 0;
     finalCost = curDist;
 
 
     // Recurse for alignment
-    int finalState = best(finalab, finalac, finalCost, 1);
+    int finalState = best(finalAB, finalac, finalCost, 1);
     size_t dist;
 
-    if ( U(finalab, finalac, finalCost, finalState)->from.cost <= 0) {
+    if ( U(finalAB, finalac, finalCost, finalState)->from.cost <= 0) {
         // We check pointed too late on this first pass.
         // So we got no useful information.  Oh well, have to do it all over again
-        assert( U(finalab, finalac, finalCost, finalState)->computed == finalCost + costOffset);
+        assert( U(finalAB, finalac, finalCost, finalState)->computed == finalCost + costOffset);
 
         dist = doUkkInLimits( 0
                             , 0
                             , 0
                             , 0
                             , startDist
-                            , finalab
+                            , finalAB
                             , finalac
                             , finalCost
                             , finalState
-                            , aLen
+                            , lesserLen
                             );
     } else {
         // Use the 'from' info and do the two sub parts.
@@ -749,15 +750,15 @@ int doUkk( dyn_character_t *retCharA
                               , 0
                               , 0
                               , startDist
-                              , finalab
+                              , finalAB
                               , finalac
                               , finalCost
                               , finalState
-                              , aLen
+                              , lesserLen
                               );
     }
 
-    assert(dist == aLen);
+    assert(dist == lesserLen);
     printTraceBack(retCharA, retCharB, retCharC);
 
     allocFinal(&myUAllocInfo,  (&UdummyCell.computed), (&UdummyCell));
@@ -818,12 +819,14 @@ int calcUkk(int ab, int ac, int d, int toState) {
             int a1        = Ukk(ab1, ac1, cost, fromState);
             int a2        = -1;
             // printf("a1: %d, da: %d, endA: %d\n", a1, da, endA);
+            // printf("b1: %d, db: %d, endB: %d\n", a1, da, endA);
+            // printf("c1: %d, dc: %d, endC: %d\n", a1, da, endA);
             if ( okIndex(a1, da, endA)
                  && okIndex(a1 - ab1, db, endB)
                  && okIndex(a1 - ac1, dc, endC)
-                 && (whichCharCost( da ? aStr[a1]     : '-',
-                                    db ? bStr[a1-ab1] : '-',
-                                    dc ? cStr[a1-ac1] : '-') == 1)
+                 && (whichCharCost( da ? lesserStr[a1]     : '-',
+                                    db ? longerStr[a1-ab1] : '-',
+                                    dc ? middleStr[a1-ac1] : '-') == 1)
                  ) {
                 fromCost = cost;
                 dist = a1 + da;
@@ -912,8 +915,8 @@ int calcUkk(int ab, int ac, int d, int toState) {
         while (okIndex(dist, 1, endA) &&
                okIndex(dist - ab, 1, endB) &&
                okIndex(dist - ac, 1, endC) &&
-               (aStr[dist] == bStr[dist - ab] &&
-                aStr[dist] == cStr[dist - ac])
+               (lesserStr[dist] == longerStr[dist - ab] &&
+                lesserStr[dist] == middleStr[dist - ac])
               ) {
           dist++;
           counts.innerLoop++;

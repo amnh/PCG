@@ -88,11 +88,11 @@ int deleteExtendCost = 1;
 size_t numStates;
 size_t maxSingleStep;
 
-char aStr[MAX_STR];
-char bStr[MAX_STR];
-char cStr[MAX_STR];
+char lesserStr[MAX_STR];
+char longerStr[MAX_STR];
+char middleStr[MAX_STR];
 
-size_t aLen, bLen, cLen;
+size_t lesserLen, longerLen, middleLen;
 
 //extern int doUkk(dyn_character_t *retCharA, dyn_character_t *retCharB, dyn_character_t *retCharC);    // Main driver function
 
@@ -146,10 +146,10 @@ static inline void *allocPlane(AllocInfo *a) {
     retStruct.memAllocated = 0;
     retStruct.elemSize     = elemSize;
 
-    retStruct.abSize   = aLen + bLen+1;
-    retStruct.acSize   = aLen + cLen+1;
-    retStruct.abOffset = bLen;
-    retStruct.acOffset = cLen;
+    retStruct.abSize   = lesserLen + longerLen + 1;
+    retStruct.acSize   = lesserLen + middleLen + 1;
+    retStruct.abOffset = longerLen;
+    retStruct.acOffset = middleLen;
 
     retStruct.abBlocks = retStruct.abSize / CELLS_PER_BLOCK + 1;
     retStruct.acBlocks = retStruct.acSize / CELLS_PER_BLOCK + 1;
@@ -354,9 +354,10 @@ void copyCharacter (char *str, dyn_character_t *inChar) {
     return;
 }
 
-int powell_3D_align ( dyn_character_t *charA
-                    , dyn_character_t *charB
-                    , dyn_character_t *charC
+// IMPORTANT!!! Order of input characters is short, long, middle.
+int powell_3D_align ( dyn_character_t *lesserChar
+                    , dyn_character_t *longerChar
+                    , dyn_character_t *middleChar
                     , dyn_character_t *retCharA
                     , dyn_character_t *retCharB
                     , dyn_character_t *retCharC
@@ -375,22 +376,22 @@ int powell_3D_align ( dyn_character_t *charA
     deleteOpenCost   = gapOpenCost;
     deleteExtendCost = gapExtendCost;
     mismatchCost     = mismatch;
-    /* Char_custom_val(charA,sa);
-    Char_custom_val(charB,sb);
-    Char_custom_val(charC,sc);
+    /* Char_custom_val(lesserChar,sa);
+    Char_custom_val(longerChar,sb);
+    Char_custom_val(middleChar,sc);
     Char_custom_val(retCharA,retCharA);
     Char_custom_val(retCharB,retCharB);
     Char_custom_val(retCharC,retCharC);
     */
     assert (mismatchCost != 0 && gapOpenCost >= 0 && gapExtendCost > 0);
 
-    copyCharacter (aStr, charA);
-    copyCharacter (bStr, charB);
-    copyCharacter (cStr, charC);
+    copyCharacter (lesserStr, lesserChar);
+    copyCharacter (longerStr, longerChar);
+    copyCharacter (middleStr, middleChar);
 
-    aLen = charA->len;
-    bLen = charB->len;
-    cLen = charC->len;
+    lesserLen = lesserChar->len;
+    longerLen = longerChar->len;
+    middleLen = middleChar->len;
 
     setup();
 
