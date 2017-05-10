@@ -94,10 +94,9 @@ testNumerate = testGroup "Numeration properties"
         defaultH = V.fromList [0..olength inChar - 1] 
         (traces, (_, counter), _) =  numerateOne inChar inChar (0, 0)
 
-    -- TODO: Talk to Eric about olength ()
     lengthHolds                      = testProperty "Numerate returns a sequence of the correct length" checkLen
     checkLen :: (GoodParsedChar, GoodParsedChar) -> Int -> Bool
-    checkLen inParse count           = V.length traces >= maxLen
+    checkLen inParse count           = length traces >= maxLen
       where 
          (seq1, seq2)        = encodeArbSameLen inParse
          (traces, (_, _), _) = numerateOne seq1 seq2 (olength seq1, count)
