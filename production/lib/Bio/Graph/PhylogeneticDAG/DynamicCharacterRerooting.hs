@@ -417,3 +417,36 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
 
 (.!>.) :: (Lookup f, Show (Key f)) => f a -> Key f -> a
 (.!>.) s k = fromMaybe (error $ "Could not index: " <> show k) $ k `lookup` s
+
+
+newtype MinimalTopologyContext e = MW (NonEmpty (EdgeSet e, Word, NonEmpty e))
+
+
+instance Ord e => Semigroup (MinimalTopologyContext e) where
+
+    (MW lhs) <> (MW rhs) = MW . NE.fromList $ mergeMin (toList lhs) (toList rhs)
+      where
+        mergeMin    []     []  = []
+        mergeMin    []     ys  = ys
+        mergeMin    xs     []  = xs
+        mergeMin (x:xs) (y:ys) =
+            case comparing firstOfThree x y of
+              GT -> y : mergeMin (x:xs)    ys
+              LT -> x : mergeMin    xs  (y:ys)
+              EQ ->
+                let mergedValue =
+                      case comparing costOfFoci x y of
+                        GT -> x
+                        LT -> y
+                        EQ -> mergeFoci x y
+                in mergedValue : mergeMin xs ys
+          where
+            costOfFoci (_,c,_) = c
+            mergeFoci (es, c, a) (_, _, b) = (es, c, a <> b)
+
+
+toMinimalTopologyContext :: Ord e => NonEmpty (EdgeSet e, Word, e) -> MinimalTopologyContext e
+toMinimalTopologyContext = MW . fmap (\(x,y,z) -> (x, y, pure z)) . NE.sortWith firstOfThree 
+
+
+firstOfThree (x, _, _) = x

@@ -35,7 +35,7 @@ import           Prelude     hiding (zipWith)
 
 
 newtype EdgeSet e = ES (Set e)
-  deriving (Foldable, Generic, Monoid, Semigroup, Show)
+  deriving (Eq, Foldable, Generic, Monoid, Ord, Semigroup, Show)
 
 
 newtype NetworkDisplayEdgeSet e = NDES (NonEmpty (EdgeSet e))
