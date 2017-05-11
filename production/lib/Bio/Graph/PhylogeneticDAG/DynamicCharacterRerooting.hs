@@ -41,6 +41,7 @@ import           Data.Maybe
 import           Data.MonoTraversable
 import           Data.Ord                  (comparing)
 import           Data.Semigroup
+import           Data.Semigroup.Foldable
 import           Data.Tuple                (swap)
 import qualified Data.Vector        as V
 import           Prelude            hiding (lookup, zipWith)
@@ -371,19 +372,9 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
             -- 
             deriveMinimalCharacterContexts i = result
               where
-                result@(_minimumCost, _minimumTopologyAndEdgePairs) = fromJust $ foldlWithKey gatherMinimalLoci Nothing edgeIndexCostMapping
-                edgeIndexCostMapping = fmap (fmap (((^. characterCost) . (! i) . dynamicCharacters . (! k) . toBlocks . characterSequence) &&& subtreeEdgeSet)) edgeCostMapping
-                gatherMinimalLoci acc e (cs, es) =
-                    case acc of
-                      Nothing      -> Just (c, r)
-                      Just (c', xs)
-                        | c > c'    -> acc
-                        | c < c'    -> Just (c, r)
-                        | otherwise -> Just (c, xs <> r)
-                  where
-                    r = pure (e, es)
-                    (c, es) = (fst $ head vs, fmap snd vs)
-                    vs = minimaBy (comparing fst) cs
+                result = fromMinimalTopologyContext . foldMap1 gatherMinimalLoci . NE.fromList $ M.assocs edgeIndexCostMapping
+                edgeIndexCostMapping   = fmap (fmap (((^. characterCost) . (! i) . dynamicCharacters . (! k) . toBlocks . characterSequence) &&& subtreeEdgeSet)) edgeCostMapping
+                gatherMinimalLoci (e, xs) = toMinimalTopologyContext $ (\(c, es) -> (es, c, e)) <$> xs
 
 
     -- Step 4: Update the dynamic character decoration's cost & add an edge reference.
@@ -397,6 +388,8 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
                 { resolutions          = f <$> resolutions node
                 , nodeDecorationDatum2 = nodeDecorationDatum2 node
                 }
+
+        -- TODO: Only apply logic in the appropriate resolutions.
         f resInfo =
             resInfo
             { totalSubtreeCost  = newTotalCost
@@ -410,16 +403,22 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
         g k charBlock = pure $ charBlock { dynamicCharacters = modifiedDynamicChars }
           where
             modifiedDynamicChars = zipWith h (minimalCostSequence ! k) $ dynamicCharacters charBlock
-            h (costVal, foci) originalDec = originalDec
-                                              & characterCost .~ costVal
-                                              & traversalFoci .~ Just foci
+            h topologyContexts originalDec =
+                originalDec
+                  & characterCost .~ costVal
+                  & traversalFoci .~ Just foci
+              where
+                minimaContext   = NE.fromList $ minimaBy (comparing costOfFoci) topologyContexts
+                (_, costVal, _) = NE.head minimaContext
+                foci = (\(x,_,y) -> (y,x)) <$> minimaContext
+
 {--}
 
 (.!>.) :: (Lookup f, Show (Key f)) => f a -> Key f -> a
 (.!>.) s k = fromMaybe (error $ "Could not index: " <> show k) $ k `lookup` s
 
 
-newtype MinimalTopologyContext e = MW (NonEmpty (EdgeSet e, Word, NonEmpty e))
+newtype MinimalTopologyContext e = MW { fromMinimalTopologyContext :: (NonEmpty (EdgeSet e, Word, NonEmpty e)) }
 
 
 instance Ord e => Semigroup (MinimalTopologyContext e) where
@@ -441,12 +440,13 @@ instance Ord e => Semigroup (MinimalTopologyContext e) where
                         EQ -> mergeFoci x y
                 in mergedValue : mergeMin xs ys
           where
-            costOfFoci (_,c,_) = c
             mergeFoci (es, c, a) (_, _, b) = (es, c, a <> b)
 
 
 toMinimalTopologyContext :: Ord e => NonEmpty (EdgeSet e, Word, e) -> MinimalTopologyContext e
 toMinimalTopologyContext = MW . fmap (\(x,y,z) -> (x, y, pure z)) . NE.sortWith firstOfThree 
 
+
+costOfFoci (_,c,_) = c
 
 firstOfThree (x, _, _) = x
