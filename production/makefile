@@ -2,7 +2,7 @@
 linking       = --make
 warnings      = -w -W -Wall -Werror
 sanity        = -fwarn-duplicate-exports -fwarn-incomplete-patterns -fwarn-missing-signatures -fwarn-overlapping-patterns -fwarn-tabs -fwarn-unused-binds -fwarn-unused-imports -fwarn-unused-matches -fwarn-unused-do-bind
-stacktracing  = -prof -auto-all -caf-all
+stacktracing  = -prof -fprof-auto -fprof-cafs
 
 #Flags for `stack`
 haddock       = --haddock --haddock-deps
