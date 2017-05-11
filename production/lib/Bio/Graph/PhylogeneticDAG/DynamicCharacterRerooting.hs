@@ -34,7 +34,7 @@ import qualified Data.IntSet        as IS
 import           Data.Key
 import           Data.List.NonEmpty        (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty as NE
-import           Data.List.Utility
+--import           Data.List.Utility
 --import           Data.Map                  (Map)
 import qualified Data.Map           as M
 import           Data.Maybe
@@ -46,7 +46,7 @@ import           Data.Tuple                (swap)
 import qualified Data.Vector        as V
 import           Prelude            hiding (lookup, zipWith)
 
--- import Debug.Trace
+--import Debug.Trace
 
 
 -- |
@@ -347,7 +347,8 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
     -- phylogenetic DAG, the minimal traversal foci and the corresponding cost.
     -- Note that there could be many minimal traversal foci for each display tree.
  -- sequenceOfEdgesWithMinimalCost :: NonEmpty (NonEmpty (Topology, Minimal Cost, NonEmpty (Minimal Foci)))
-    sequenceOfEdgesWithMinimalCost = foldMapWithKey1 blockLogic sequenceWLOG
+    sequenceOfEdgesWithMinimalCost = -- (\x -> trace (show $ (fmap (fmap costOfFoci)) <$> x) x) $
+                                     foldMapWithKey1 blockLogic sequenceWLOG
       where
 
         -- First we select an arbitrary character sequence from the DAG.
@@ -397,20 +398,23 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
             , characterSequence = modifiedSequence
             }
           where
-            newTotalCost     = sequenceCost modifiedSequence
---            newLocalCost     = newTotalCost - sum (totalSubtreeCost <$> childResolutionContext) 
-            modifiedSequence = fromBlocks . foldMapWithKey1 g . toBlocks $ characterSequence resInfo
-        g k charBlock = pure $ charBlock { dynamicCharacters = modifiedDynamicChars }
-          where
-            modifiedDynamicChars = zipWith h (minimalCostSequence ! k) $ dynamicCharacters charBlock
-            h topologyContexts originalDec =
-                originalDec
-                  & characterCost .~ costVal
-                  & traversalFoci .~ Just foci
+            newTotalCost       = sequenceCost modifiedSequence
+--            newLocalCost       = newTotalCost - sum (totalSubtreeCost <$> childResolutionContext) 
+            modifiedSequence   = fromBlocks . foldMapWithKey1 g . toBlocks $ characterSequence resInfo
+            resolutionTopology = subtreeEdgeSet resInfo
+            
+            g k charBlock = pure $ charBlock { dynamicCharacters = modifiedDynamicChars }
               where
-                minimaContext   = NE.fromList $ minimaBy (comparing costOfFoci) topologyContexts
-                (_, costVal, _) = NE.head minimaContext
-                foci = (\(x,_,y) -> (y,x)) <$> minimaContext
+                modifiedDynamicChars = zipWith h (minimalCostSequence ! k) $ dynamicCharacters charBlock
+                h topologyContexts originalDec =
+                    originalDec
+                      & characterCost .~ costVal
+                      & traversalFoci .~ (Just foci :: Maybe TraversalFoci)
+                  where
+                    (es, costVal, fociEdges) = fromJust $ find ((resolutionTopology ==) . firstOfThree) topologyContexts
+                    foci = (\x -> (x, es)) <$> fociEdges
+--                    minimaContext   = NE.fromList $ minimaBy (comparing costOfFoci) topologyContexts
+--                    (_, costVal, _) = NE.head minimaContext
 
 {--}
 
@@ -447,6 +451,8 @@ toMinimalTopologyContext :: Ord e => NonEmpty (EdgeSet e, Word, e) -> MinimalTop
 toMinimalTopologyContext = MW . fmap (\(x,y,z) -> (x, y, pure z)) . NE.sortWith firstOfThree 
 
 
+costOfFoci :: (a, b, c) -> b
 costOfFoci (_,c,_) = c
 
+firstOfThree :: (a, b, c) -> a
 firstOfThree (x, _, _) = x
