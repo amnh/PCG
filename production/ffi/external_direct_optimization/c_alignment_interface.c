@@ -662,12 +662,14 @@ int align3d( const alignIO_p          inputChar1_aio
         dyn_char_print(shortChar);
     }
 
-    algnCost = powell_3D_align ( shortChar
+    longChar->array_head[0] = middleChar->array_head[0] = shortChar->array_head[0] = 8;
+
+    algnCost = powell_3D_align ( longChar
+                               , shortChar
                                , middleChar
-                               , longChar
+                               , retLongChar
                                , retShortChar
                                , retMiddleChar
-                               , retLongChar
                                , 1    // mismatch cost, must be > 0
                                , 2    // gap open cost, must be >= 0
                                , 1    // gap extend cost, must be > 0

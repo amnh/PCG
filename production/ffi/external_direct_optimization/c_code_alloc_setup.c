@@ -185,7 +185,7 @@ void setUp3dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_3d_p 
                                               // (Actually, I changed that; it used to be 2, now it's 3.)
                                               // This value set in cm_set_affine().
     // int is_metric    = 1;
-    elem_t all_elements = (1 << alphSize) - 1;   // Given data is DNA (plus gap), there are 2^5 - 1 possible character states
+    elem_t all_elements = (1 << alphSize) - 1;   // Given data is DNA (plus gap), for instance, there are 2^5 - 1 possible character states
 
     int minCost    = INT_MAX;
     elem_t median    = 0;        // and 3d; combos of median1, etc., below
@@ -198,7 +198,7 @@ void setUp3dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_3d_p 
                          , all_elements
                          , retMtx
                          );
-    retMtx->gap_char = 1 << alphSize;
+    retMtx->gap_char = 1 << (alphSize - 1);
 
     for (elem_t ambElem1 = 1; ambElem1 <= all_elements; ambElem1++) { // for every possible value of ambElem1, ambElem2, ambElem3
         for (elem_t ambElem2 = 1; ambElem2 <= all_elements; ambElem2++) {
