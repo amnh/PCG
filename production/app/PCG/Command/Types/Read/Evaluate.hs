@@ -67,7 +67,7 @@ evaluate :: Command -> EvaluationT IO a -> SearchState -- EvaluationT IO (Either
 -- evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
 evaluate (READ fileSpecs) _old = do
     when (null fileSpecs) $ fail "No files specified in 'read()' command"
-    result <- liftIO . runEitherT . eitherTValidation $ parmap rpar parseSpecifiedFile fileSpecs
+    result <- liftIO . runEitherT . eitherTValidation $ parMap rpar parseSpecifiedFile fileSpecs
     case result of
       Left pErr -> fail $ show pErr   -- Report structural errors here.
       Right xs ->
@@ -102,6 +102,7 @@ renderSequenceCosts (Right sol) = outputStream
         ]
     indent = intercalate "\n" . fmap ("  "<>) . lines
 --    unlines . toList . fmap (unlines . toList . fmap (unlines . fmap show . toList . rootCosts)) . phylogeneticForests
+
 
 
 parseSpecifiedFile  :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
