@@ -18,8 +18,8 @@ module Bio.Character.Decoration.Additive.Class where
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Shared
 import Control.Lens
-import Data.ExtendedFinite
 import Data.Range
+import Numeric.Extended
 
 
 -- |

@@ -18,7 +18,7 @@ module Bio.Character.Decoration.Metric.Class where
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Shared
 import Control.Lens
-import Data.ExtendedNatural
+import Numeric.Extended.Natural
 
 
 -- |

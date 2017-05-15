@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.ExtendedNatural
+-- Module      :  Numeric.Extended.Natural
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -8,6 +8,23 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
+-----------------------------------------------------------------------------
+
+{-# LANGUAGE MagicHash, TypeFamilies #-}
+
+module Numeric.Extended.Natural
+  ( ExtendedNatural()
+  , ExtendedNumber(..)
+  , Finite
+  ) where
+
+import Data.Bits
+import GHC.Exts
+import GHC.Integer.Logarithms
+import Numeric.Extended.Internal
+
+
+-- |
 -- A type that extends the Natural numbers to include an infinity value.
 --
 -- This is a newtyped 'Word' for efficiency purposes.
@@ -32,26 +49,8 @@
 --   - An @infinity@ value can only result from it's use as a constant, addition
 --     with @infinity@ as an operand, multiplication with @infinity@ as an
 --     operand subtraction with @infinity@ as the minuend, or division with
---     @infinity@ as the0 denominator.
+--     @infinity@ as the denominator.
 -- 
------------------------------------------------------------------------------
-
-{-# LANGUAGE MagicHash, TypeFamilies #-}
-
-module Data.ExtendedNatural
-  ( ExtendedNatural()
-  , ExtendedNumber(..)
-  , Finite
-  ) where
-
-import Data.Bits
-import Data.ExtendedFinite
-import GHC.Exts
-import GHC.Integer.Logarithms
-
-
--- |
--- A natural number extended to include infinity.
 newtype ExtendedNatural = Cost Word
   deriving (Eq, Ord)
 

@@ -16,9 +16,9 @@ module Bio.Character.Encodable.Continuous.Internal where
 
 import Bio.Character.Encodable.Continuous.Class
 import Bio.Character.Encodable.Internal
-import Control.Arrow     ((&&&))
-import Data.ExtendedReal
+import Control.Arrow ((&&&))
 import Data.Range
+import Numeric.Extended.Real
 
 
 -- |

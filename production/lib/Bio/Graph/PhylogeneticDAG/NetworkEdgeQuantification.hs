@@ -22,7 +22,6 @@ import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
 import           Control.Arrow            ((&&&))
 import           Data.EdgeSet
-import           Data.ExtendedReal
 import           Data.Foldable
 import           Data.Key
 import           Data.List.NonEmpty       (NonEmpty((:|)))
@@ -30,6 +29,7 @@ import qualified Data.List.NonEmpty as NE
 import           Data.List.Utility
 import           Data.Semigroup
 import           Data.Ord
+import           Numeric.Extended.Real
 import           Prelude            hiding (zipWith)
 
 import Debug.Trace
