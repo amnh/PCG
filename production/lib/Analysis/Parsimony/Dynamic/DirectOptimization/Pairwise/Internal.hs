@@ -144,8 +144,6 @@ filterGaps char = constructDynamic . filter (/= gap) $ otoList char
 -- Takes in two 'EncodableDynamicCharacter's and a 'CostStructure'. The first character
 -- must be the longer of the two and is the top labeling of the matrix.
 -- Returns an 'DOAlignMatrix'.
--- TODO: See if we can move topDynChar logic inside here. It's also necessary in DO. 
--- Or maybe DO can just call doAlignment?
 createDOAlignMatrix :: DOCharConstraint s => s -> s -> OverlapFunction (Element s) -> DOAlignMatrix (Element s)
 createDOAlignMatrix topChar leftChar overlapFunction = {- trace renderedMatrix $ -} result
   where
@@ -343,7 +341,6 @@ minimalChoice = foldr1 f
       | otherwise      = (val2         , cost2)
 
 
--- TODO: Can we eliminate all characters from below, and just pass around Ints?
 -- |
 -- Finds the cost of a pairing of two static characters.
 -- Takes in a 'CostStructure' and two ambiguous 'EncodableStreamElement's. Returns a list of tuples of all possible unambiguous
@@ -425,7 +422,6 @@ naiveDOInternal char1 char2 overlapFunction = (alignmentCost, ungapped, gapped',
       (gapped , left , right ) = traceback traversalMat longerChar shorterChar
       (gapped', left', right') = (\(x,y,z) -> (constructDynamic x, constructDynamic y, constructDynamic z)) 
                                $ correctBiasing (getGapElement $ gapped `indexStream` 0) (otoList gapped, otoList left, otoList right)
-      -- TODO: change to occur in traceback, to remove constant factor.
       ungapped = filterGaps gapped'
       (alignedChar1, alignedChar2)
         | swapped   = (right', left' )

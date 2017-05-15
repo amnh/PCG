@@ -80,31 +80,46 @@ int CPonDist;   // Flag for whether to use distance of cost as the CP criteria
 
 // Use these globals cause don't want to pass 'em around, and they're needed
 // by the withinMatrix func.  Be nice to have closures :-)
-int sabG = 0, sacG = 0, sCostG = 0, sStateG = 0;
+int startABG = 0,
+    startACG = 0,
+    startCostG = 0,
+    startStateG = 0;
 
-int endA, endB, endC;   // Used to define where to end on the three strings in the
-                        // checkp recursion.  So endA contains the distance the recursion
-                        // must finish on + 1.
+// Used to define where to end on the three strings in the
+// checkp recursion. So endA contains the distance the recursion
+// must finish on + 1.
+int endA,
+    endB,
+    endC;
 
-int completeFromInfo = 0; // Set to 1 for base cases, so 'from' info that alignment
-                          //  can be retrieved from is set.
+// Set to 1 for base cases, so 'from' info that alignment
+//  can be retrieved from is set.
+int completeFromInfo = 0;
 
 int CPwidth;
 int CPcost;
 
 Counts counts;
 
-int  aCharIdx = 0, bCharIdx = 0, cCharIdx = 0, stateIdx = 0, costIdx = 0;
+int aCharIdx = 0,
+    bCharIdx = 0,
+    cCharIdx = 0,
+    stateIdx = 0,
+    costIdx  = 0;
 
-char resultA[MAX_STR * 2],   resultB[MAX_STR * 2], resultC[MAX_STR * 2];
-int  states[MAX_STR * 2],    cost[MAX_STR * 2];
+char resultA[MAX_STR * 2],
+     resultB[MAX_STR * 2],
+     resultC[MAX_STR * 2];
+
+int  states[MAX_STR * 2],
+     cost[MAX_STR * 2];
 
 static inline U_cell_type *U(int ab, int ac, int d, int s) {
     return getPtr(&myUAllocInfo, ab, ac, d, s);
 }
 
 U_cell_type UdummyCell;
-CPType CPdummyCell;
+CPType      CPdummyCell;
 
 
 /************* next three functions are static inline, so not in .h file. ******************/
@@ -139,16 +154,16 @@ static inline int withinMatrix(int ab, int ac, int d) {
         return 0;
     }
 
-    aval[0] = abs(sabG - ab);
-    aval[1] = abs(sacG - ac);
-    aval[2] = abs((sacG - sabG) - bc);
+    aval[0] = abs(startABG - ab);
+    aval[1] = abs(startACG - ac);
+    aval[2] = abs(startACG - startABG - bc);
 
     // Set g and h to the smallest and second smallest of aval[] respectively
     sort(aval, 3);
     g = aval[0];
     h = aval[1];
 
-    if (sStateG == 0) {
+    if (startStateG == 0) {
         // We know a good boudary check if the start state is MMM
         cheapest = (g==0 ? 0 : gapOpenCost + g * gapExtendCost) + (h==0 ? 0 : gapOpenCost + h * gapExtendCost);
     } else {
@@ -157,44 +172,53 @@ static inline int withinMatrix(int ab, int ac, int d) {
         cheapest = (g==0 ? 0 : g*gapExtendCost) + (h==0 ? 0 : h * gapExtendCost);
     }
 
-    if (cheapest + sCostG > d) {
+    if (cheapest + startCostG > d) {
         return 0;
     } else {
         return 1;
     }
 }
 
-size_t doUkkInLimits( int sab, int sac, int sCost, int sState, int sDist,
-                      int fab, int fac, int fCost, int fState, int fDist)
+size_t doUkkInLimits( int startAB
+                    , int startAC
+                    , int startCost
+                    , int startState
+                    , int startDist
+                    , int finalAB
+                    , int finalAC
+                    , int finalCost
+                    , int finalState
+                    , int finalDist
+                    )
 {
-    assert(sCost >= 0 && fCost >= 0);
+    assert(startCost >= 0 && finalCost >= 0);
 
-    sabG    = sab;
-    sacG    = sac;
-    sCostG  = sCost;
-    sStateG = sState;
-    endA    = fDist;
-    endB    = fDist - fab;
-    endC    = fDist - fac;
+    startABG    = startAB;
+    startACG    = startAC;
+    startCostG  = startCost;
+    startStateG = startState;
+    endA    = finalDist;
+    endB    = finalDist - finalAB;
+    endC    = finalDist - finalAC;
 
     if (DEBUG_3D) {
-        fprintf(stderr, "Doing (sab = %2d, sac = %2d, sCost = %2d, sState = %2d, sDist = %2d\n", sab, sac, sCost, sState, sDist);
-        fprintf(stderr, "       fab = %2d, fac = %2d, fCost = %2d, fState = %2d, fDist = %2d\n", fab, fac, fCost, fState, fDist);
+        fprintf(stderr, "Doing (startAB = %2d, startAC = %2d, startCost = %2d, startState = %2d, startDist = %2d\n", startAB, startAC, startCost, startState, startDist);
+        fprintf(stderr, "       finalAB = %2d, finalAC = %2d, finalCost = %2d, finalState = %2d, finalDist = %2d\n", finalAB, finalAC, finalCost, finalState, finalDist);
 
         int i;
         fprintf(stderr, "Character to align at this step:\n");
-        for (i = sDist; i < fDist; i++) {
-            fprintf(stderr, "%c", aStr[i]);
-            fprintf(stderr, "\n");
+        for (i = startDist; i < finalDist; i++) {
+            fprintf(stderr, "%3c", lesserStr[i]);
         }
-        for (i = sDist - sab; i < fDist - fab; i++) {
-            fprintf(stderr, "%c", bStr[i]);
-            fprintf(stderr, "\n");
+        fprintf(stderr, "\n");
+        for (i = startDist - startAB; i < finalDist - finalAB; i++) {
+            fprintf(stderr, "%3c", longerStr[i]);
         }
-        for (i = sDist - sac; i < fDist - fac; i++) {
-            fprintf(stderr, "%c", cStr[i]);
-            fprintf(stderr, "\n");
+        fprintf(stderr, "\n");
+        for (i = startDist - startAC; i < finalDist - finalAC; i++) {
+            fprintf(stderr, "%3c", middleStr[i]);
         }
+        fprintf(stderr, "\n");
     }
 
     completeFromInfo = 0;
@@ -202,10 +226,10 @@ size_t doUkkInLimits( int sab, int sac, int sCost, int sState, int sDist,
     costOffset += finalCost + 1;
     assert(costOffset > 0 && "Oops, overflow in costOffset");
 
-    U(sab, sac, sCost, sState)->dist     = sDist;
-    U(sab, sac, sCost, sState)->computed = sCost+costOffset;
+    U(startAB, startAC, startCost, startState)->dist     = startDist;
+    U(startAB, startAC, startCost, startState)->computed = startCost+costOffset;
 
-    if (fCost - sCost <= CPwidth) { // Is it the base case?
+    if (finalCost - startCost <= CPwidth) { // Is it the base case?
         int i;
         completeFromInfo = 1;
 
@@ -214,23 +238,23 @@ size_t doUkkInLimits( int sab, int sac, int sCost, int sState, int sDist,
         }
 
         #if 0
-            for (i=sCost; i<=fCost; i++)
-              Ukk(fab,fac,i,0);
+            for (i=startCost; i<=finalCost; i++)
+              Ukk(finalAB,finalAC,i,0);
 
-            assert(U(fab,fac,fCost,fState)->dist==fDist);
+            assert(U(finalAB,finalAC,finalCost,finalState)->dist==finalDist);
         #else
         {
             int dist;
-            i = sCost - 1;
+            i = startCost - 1;
             do {
                 i++;
-                dist = Ukk(fab, fac, i, fState);
-            } while (dist < fDist);
+                dist = Ukk(finalAB, finalAC, i, finalState);
+            } while (dist < finalDist);
 
-            assert(dist == fDist);
-            if (i != fCost) {
-                fprintf(stderr, "Dist reached for cost %2d (old cost %2d)\n",i,fCost);
-                fCost = i;
+            assert(dist == finalDist);
+            if (i != finalCost) {
+                fprintf(stderr, "Dist reached for cost %2d (old cost %2d)\n",i,finalCost);
+                finalCost = i;
                 assert(0);
             }
         }
@@ -240,61 +264,87 @@ size_t doUkkInLimits( int sab, int sac, int sCost, int sState, int sDist,
         if (DEBUG_3D) {
             fprintf(stderr,"Tracing back in base case.\n");
         }
-        traceBack(sab, sac, sCost, sState,
-                  fab, fac, fCost, fState);
+        traceBack( startAB
+                 , startAC
+                 , startCost
+                 , startState
+                 , finalAB
+                 , finalAC
+                 , finalCost
+                 , finalState
+                 );
 
         completeFromInfo = 0;
-        return best(fab, fac, fCost, 0);
+        return best(finalAB, finalAC, finalCost, 0);
     }
 
 
-    CPcost = (fCost + sCost - CPwidth + 1) / 2;
+    CPcost = (finalCost + startCost - CPwidth + 1) / 2;
 
     #if 0
-        // Do the loop up to the desired cost.  Can't do Ukk(fab,fac,fCost,fState) directly (without
+        // Do the loop up to the desired cost.  Can't do Ukk(finalAB,finalAC,finalCost,finalState) directly (without
         // the loop) because the Umatrix is written to before it is actually needed.
         // Could be fixed, but this is also fine
         {
         int i;
-        for (i=sCost; i<=fCost; i++) {
-          Ukk(fab,fac,i,0);
-          //      Ukk(fab,fac,i,fState);
+        for (i=startCost; i<=finalCost; i++) {
+          Ukk(finalAB,finalAC,i,0);
+          //      Ukk(finalAB,finalAC,i,finalState);
         }
-        assert(U(fab,fac,fCost,fState)->dist==fDist);
+        assert(U(finalAB,finalAC,finalCost,finalState)->dist==finalDist);
         }
     #else
     {
         int dist, i;
-        i = sCost - 1;
+        i = startCost - 1;
         do {
             i++;
-            dist = Ukk(fab, fac, i, 0);      // Need this (?) otherwise if fState!=0 we may need larger than expected slice size.
-            dist = Ukk(fab, fac, i, fState);
-        } while (dist < fDist);
+            dist = Ukk(finalAB, finalAC, i, 0);      // Need this (?) otherwise if finalState!=0 we may need larger than expected slice size.
+            dist = Ukk(finalAB, finalAC, i, finalState);
+        } while (dist < finalDist);
 
-        assert(dist == fDist);
-        if (i != fCost) {
-            fprintf(stderr, "Dist reached for cost %2d (old cost %2d)\n", i, fCost);
-            fCost = i;
+        assert(dist == finalDist);
+        if (i != finalCost) {
+            fprintf(stderr, "Dist reached for cost %2d (old cost %2d)\n", i, finalCost);
+            finalCost = i;
             assert(0);
         }
     }
     #endif
 
-    return getSplitRecurse(sab, sac, sCost, sState, sDist,
-                           fab, fac, fCost, fState, fDist);
+    return getSplitRecurse( startAB
+                          , startAC
+                          , startCost
+                          , startState
+                          , startDist
+                          , finalAB
+                          , finalAC
+                          , finalCost
+                          , finalState
+                          , finalDist
+                          );
 }
 
-int getSplitRecurse(int sab, int sac, int sCost, int sState, int sDist,
-                    int fab, int fac, int fCost, int fState, int fDist) {
+int getSplitRecurse( int startAB
+                   , int startAC
+                   , int startCost
+                   , int startState
+                   , int startDist
+                   , int finalAB
+                   , int finalAC
+                   , int finalCost
+                   , int finalState
+                   , int finalDist
+                   )
+{
     // Get 'from' and CP data.  Then recurse
     int finalLen;
     int CPdist;
     fromType f;
 
-    assert(sCost >= 0 && fCost >= 0);
-    assert( U(fab, fac, fCost, fState)->computed == fCost + costOffset);
-    f = U(fab, fac, fCost, fState)->from;
+    assert(startCost >= 0 && finalCost >= 0);
+    assert( U(finalAB, finalAC, finalCost, finalState)->computed == finalCost + costOffset);
+    f = U(finalAB, finalAC, finalCost, finalState)->from;
 
     assert(f.cost >= 0);
 
@@ -317,88 +367,109 @@ int getSplitRecurse(int sab, int sac, int sCost, int sState, int sDist,
     // for this is so the alignment is retrieved in exactly reverse order
     // making it easy to print out.
     finalLen = doUkkInLimits(f.ab, f.ac, f.cost, f.state, CPdist,
-                             fab, fac, fCost, fState, fDist);
+                             finalAB, finalAC, finalCost, finalState, finalDist);
 
-    doUkkInLimits(sab, sac, sCost, sState, sDist,
-                  f.ab, f.ac, f.cost, f.state, CPdist);
+    doUkkInLimits( startAB
+                 , startAC
+                 , startCost
+                 , startState
+                 , startDist
+                 , f.ab
+                 , f.ac
+                 , f.cost
+                 , f.state
+                 , CPdist
+                 );
 
     if (DEBUG_3D) {
         fprintf(stderr,"Done.\n");
     }
 
-    //  return best(fab,fac,fCost,0);
+    //  return best(finalAB,finalAC,finalCost,0);
     return finalLen;
 }
 
 // -- Traceback routines --------------------------------------------------------------
-void traceBack(int sab, int sac, int sCost, int sState,
-               int fab, int fac, int fCost, int fState)
+void traceBack( int startAB
+              , int startAC
+              , int startCost
+              , int startState
+              , int finalAB
+              , int finalAC
+              , int finalCost
+              , int finalState
+              )
 {
     int ab, ac, d, s;
-    ab = fab;
-    ac = fac;
-    d  = fCost;
-    s  = fState;
+    ab = finalAB;
+    ac = finalAC;
+    d  = finalCost;
+    s  = finalState;
 
-    while (ab!=sab || ac!=sac || d!=sCost || s!=sState) {
+    while (   ab != startAB
+           || ac != startAC
+           || d  != startCost
+           || s  != startState
+          ) {
         int a   = U(ab, ac, d, s)->dist;
         int nab = U(ab, ac, d, s)->from.ab;
         int nac = U(ab, ac, d, s)->from.ac;
         int nd  = U(ab, ac, d, s)->from.cost;
         int ns  = U(ab, ac, d, s)->from.state;
 
-        int b = a - ab, c = a - ac;
-        int a1 = U(nab, nac, nd, ns)->dist;
-        int b1 = a1 - nab, c1 = a1 - nac;
+        int b  = a - ab,
+            c = a - ac,
+            a1 = U(nab, nac, nd, ns)->dist,
+            b1 = a1 - nab,
+            c1 = a1 - nac;
 
         assert( U(ab, ac, d, s)->computed == d + costOffset);
         assert( U(nab, nac, nd, ns)->computed == nd + costOffset);
 
         if (DEBUG_3D) {
-            fprintf(stderr, "ab = %3d, ac = %3d, d = %3d, s = %2d, dist = %3d, \n \
-                    nab = %3d, nac = %3d, nd = %3d, ns = %2d, ndist = %3d\n",
+            fprintf(stderr, " ab = %3d,  ac = %3d,  d = %3d,  s = %2d,  dist = %3d, \n\
+nab = %3d, nac = %3d, nd = %3d, ns = %2d, ndist = %3d\n\n",
                     ab, ac, d, s, a,
                     nab, nac, nd, ns, a1);
         }
 
         // Run of matches
-        while (a>a1 && b>b1 && c>c1) {
+        while (    a > a1
+                && b > b1
+                && c > c1
+              ) {
           a--; b--; c--;
-          resultA[aCharIdx++] = aStr[a];
-          resultB[bCharIdx++] = bStr[b];
-          resultC[cCharIdx++] = cStr[c];
-          states[stateIdx++] = 0;        /* The match state */
-          cost[costIdx++] = d;
+          resultA[aCharIdx++] = lesserStr[a];
+          resultB[bCharIdx++] = longerStr[b];
+          resultC[cCharIdx++] = middleStr[c];
+          states[stateIdx++]  = 0;        /* The match state */
+          cost[costIdx++]     = d;
         }
 
         // The step for (nab,nac,nd,ns) -> (ab,ac,d,s)
-        if (a!=a1 || b!=b1 || c!=c1) {
-            if (a > a1) {
-                resultA[aCharIdx++] = aStr[--a];
-            } else {
-                resultA[aCharIdx++] = '-';
-            }
-            if (b > b1) {
-                resultB[bCharIdx++] = bStr[--b];
-            } else {
-                resultB[bCharIdx++] = '-';
-            }
-            if (c>c1) {
-                resultC[cCharIdx++] = cStr[--c];
-            }
-            else {
-                resultC[cCharIdx++] = '-';
-            }
+        if (   a != a1
+            || b != b1
+            || c != c1
+           ) {
+            if (a > a1) resultA[aCharIdx++] = lesserStr[--a];
+            else        resultA[aCharIdx++] = '-';
+
+            if (b > b1) resultB[bCharIdx++] = longerStr[--b];
+            else        resultB[bCharIdx++] = '-';
+
+            if (c > c1) resultC[cCharIdx++] = middleStr[--c];
+            else        resultC[cCharIdx++] = '-';
+
             states[stateIdx++]  = s;
-            cost[costIdx++] = d;
+            cost[costIdx++]     = d;
         }
 
         assert(a==a1 && b==b1 && c==c1);
 
         ab = nab;
         ac = nac;
-        d = nd;
-        s = ns;
+        d  = nd;
+        s  = ns;
     }
 
     if (DEBUG_3D) {
@@ -408,15 +479,14 @@ void traceBack(int sab, int sac, int sCost, int sState,
             fprintf(stderr,"Alignment so far\n");
             for (i = aCharIdx - 1; i >= 0; i--) {
                 fprintf(stderr, "%c",resultA[i]);
-                fprintf(stderr, "\n");
             }
+            fprintf(stderr, "\n");
             for (i = bCharIdx - 1; i >= 0; i--) {
                 fprintf(stderr, "%c",resultB[i]);
-                fprintf(stderr, "\n");
             }
+            fprintf(stderr, "\n");
             for (i = cCharIdx - 1; i >= 0; i--) {
                 fprintf(stderr, "%c",resultC[i]);
-                fprintf(stderr, "\n");
             }
             // Print state information
             for (i = stateIdx - 1; i >= 0; i--) {
@@ -426,15 +496,15 @@ void traceBack(int sab, int sac, int sCost, int sState,
             // Print cost stuff
             for (i = costIdx - 1; i >= 0; i--) {
                 fprintf(stderr,"%-2d  ",cost[i]);
-                fprintf(stderr,"\n");
             }
+            fprintf(stderr, "\n");
         }
     }
 
-    assert(ab == sab);
-    assert(ac == sac);
-    assert(d  == sCost);
-    assert(s  == sState);
+    assert(ab == startAB);
+    assert(ac == startAC);
+    assert(d  == startCost);
+    assert(s  == startState);
 }
 
 int char_to_base (char v) {
@@ -446,7 +516,7 @@ int char_to_base (char v) {
     else return -1;
 }
 
-void printTraceBack(dyn_char_p retCharA, dyn_char_p retCharB, dyn_char_p retCharC) {
+void printTraceBack(dyn_character_t *retCharA, dyn_character_t *retCharB, dyn_character_t *retCharC) {
     // Print out the alignment
 
     // Add the first run of matches to the alignment
@@ -455,15 +525,15 @@ void printTraceBack(dyn_char_p retCharA, dyn_char_p retCharB, dyn_char_p retChar
     size_t endRun,
            i = 0;
 
-    while ( i < aLen && (aStr[i] == bStr[i] && aStr[i] == cStr[i]) ) {
+    while ( i < lesserLen && (lesserStr[i] == longerStr[i] && lesserStr[i] == middleStr[i]) ) {
       i++;
     }
     endRun = i;
 
     for (int j = endRun - 1; j >= 0; j--)  {
-      resultA[aCharIdx++] = aStr[j];
-      resultB[bCharIdx++] = bStr[j];
-      resultC[cCharIdx++] = cStr[j];
+      resultA[aCharIdx++] = lesserStr[j];
+      resultB[bCharIdx++] = longerStr[j];
+      resultC[cCharIdx++] = middleStr[j];
       states[stateIdx++] = 0;        /* The match state */
       cost[costIdx++]    = 0;
     }
@@ -490,9 +560,9 @@ void printTraceBack(dyn_char_p retCharA, dyn_char_p retCharB, dyn_char_p retChar
 
     assert(aCharIdx == bCharIdx && aCharIdx == cCharIdx && aCharIdx == stateIdx && aCharIdx == costIdx);
 
-    checkAlign(resultA, aCharIdx, aStr, aLen);
-    checkAlign(resultB, bCharIdx, bStr, bLen);
-    checkAlign(resultC, cCharIdx, cStr, cLen);
+    checkAlign(resultA, aCharIdx, lesserStr, lesserLen);
+    checkAlign(resultB, bCharIdx, longerStr, longerLen);
+    checkAlign(resultC, cCharIdx, middleStr, middleLen);
 
     assert(alignmentCost(states, resultA, resultB, resultC, aCharIdx) == finalCost);
 }
@@ -555,7 +625,12 @@ int Ukk(int ab, int ac, int d, int state) {
     char indent[1000];
 
 
-int doUkk(dyn_char_p retCharA, dyn_char_p retCharB, dyn_char_p retCharC) {
+// IMPORTANT!!! Order of input characters is short, long, middle.
+int doUkk( dyn_character_t *retCharA
+         , dyn_character_t *retCharB
+         , dyn_character_t *retCharC
+         )
+{
     CPdummyCell.dist      = 0;
     CPdummyCell.cost      = 0;
     UdummyCell.dist       = 0;
@@ -569,23 +644,24 @@ int doUkk(dyn_char_p retCharA, dyn_char_p retCharB, dyn_char_p retCharC) {
     CPwidth               = 0;
     completeFromInfo      = 0;
 
-    aCharIdx  = 0;
-    bCharIdx  = 0;
-    cCharIdx  = 0;
+    aCharIdx = 0;
+    bCharIdx = 0;
+    cCharIdx = 0;
     stateIdx = 0;
     costIdx  = 0;
 
     costOffset      = 1;
     furthestReached = -1;
 
-    sabG    = 0;
-    sacG    = 0;
-    sCostG  = 0;
-    sStateG = 0;
+    startABG    = 0;
+    startACG    = 0;
+    startCostG  = 0;
+    startStateG = 0;
 
-    size_t curDist;
-    size_t finalab, finalac;
-    size_t startDist;
+    size_t curDist,
+           finalAB,
+           finalac,
+           startDist;
 
     CPwidth = maxSingleStep;
     // Concern: what is the correct value to use for Umatrix depth.
@@ -599,7 +675,11 @@ int doUkk(dyn_char_p retCharA, dyn_char_p retCharB, dyn_char_p retCharC) {
 
     // Calculate starting position
     curDist = 0;
-    while (curDist < aLen && (aStr[curDist] == bStr[curDist] && aStr[curDist] == cStr[curDist])) {
+    while (   curDist < lesserLen
+           && (   lesserStr[curDist] == longerStr[curDist]
+               && lesserStr[curDist] == middleStr[curDist]
+              )
+          ) {
         curDist++;
         counts.innerLoop++;
     }
@@ -607,25 +687,25 @@ int doUkk(dyn_char_p retCharA, dyn_char_p retCharB, dyn_char_p retCharC) {
     U(0, 0, 0, 0)->computed = 0 + costOffset;
     startDist = curDist;
 
-    finalab = aLen - bLen;
-    finalac = aLen - cLen;
-    endA    = aLen;
-    endB    = bLen;
-    endC    = cLen;
+    finalAB = lesserLen - longerLen;
+    finalac = lesserLen - middleLen;
+    endA    = lesserLen;
+    endB    = longerLen;
+    endC    = middleLen;
 
     CPonDist = 1;
-    CPcost = INFINITY;
+    CPcost   = INFINITY;
     do {
         curDist++;
-        Ukk(finalab, finalac, curDist, 0);
+        Ukk(finalAB, finalac, curDist, 0);
 
         if (DEBUG_3D) {
             fprintf(stderr, "Furthest reached for cost %2zu is %2d.\n",
                     curDist, furthestReached);
         }
 
-        int half_aLen = (int) aLen / 2;
-        if (CPonDist && furthestReached >= half_aLen) {
+        int half_lesserLen = (int) (lesserLen / 2);
+        if (CPonDist && furthestReached >= half_lesserLen) {
             CPcost   = curDist + 1;
             CPonDist = 0;
 
@@ -635,32 +715,50 @@ int doUkk(dyn_char_p retCharA, dyn_char_p retCharB, dyn_char_p retCharC) {
         }
 
 
-    } while (best(finalab, finalac, curDist, 0) < (int) aLen);
+    } while (best(finalAB, finalac, curDist, 0) < (int) lesserLen);
 
-    assert(best(finalab, finalac, curDist, 0) == (int) aLen);
+    assert(best(finalAB, finalac, curDist, 0) == (int) lesserLen);
 
     CPonDist  = 0;
     finalCost = curDist;
 
 
     // Recurse for alignment
-    int fState = best(finalab, finalac, finalCost, 1);
+    int finalState = best(finalAB, finalac, finalCost, 1);
     size_t dist;
 
-    if ( U(finalab, finalac, finalCost, fState)->from.cost <= 0) {
+    if ( U(finalAB, finalac, finalCost, finalState)->from.cost <= 0) {
         // We check pointed too late on this first pass.
         // So we got no useful information.  Oh well, have to do it all over again
-        assert( U(finalab, finalac, finalCost, fState)->computed == finalCost + costOffset);
+        assert( U(finalAB, finalac, finalCost, finalState)->computed == finalCost + costOffset);
 
-        dist = doUkkInLimits(0, 0, 0, 0, startDist, finalab, finalac, finalCost,
-                             fState, aLen);
+        dist = doUkkInLimits( 0
+                            , 0
+                            , 0
+                            , 0
+                            , startDist
+                            , finalAB
+                            , finalac
+                            , finalCost
+                            , finalState
+                            , lesserLen
+                            );
     } else {
         // Use the 'from' info and do the two sub parts.
-        dist = getSplitRecurse(0, 0, 0, 0, startDist, finalab, finalac, finalCost,
-                               fState, aLen);
+        dist = getSplitRecurse( 0
+                              , 0
+                              , 0
+                              , 0
+                              , startDist
+                              , finalAB
+                              , finalac
+                              , finalCost
+                              , finalState
+                              , lesserLen
+                              );
     }
 
-    assert(dist == aLen);
+    assert(dist == lesserLen);
     printTraceBack(retCharA, retCharB, retCharC);
 
     allocFinal(&myUAllocInfo,  (&UdummyCell.computed), (&UdummyCell));
@@ -714,19 +812,21 @@ int calcUkk(int ab, int ac, int d, int toState) {
         // Loop over possible state we are moving from
         //   May be possible to limit this?
         for (fromState = 0; fromState < numStates; fromState++) {
-            int transCost = stateTransitionCost(fromState,toState);
+            int transtartCost = stateTransitionCost(fromState,toState);
             int fromCost  = -INFINITY;
             int dist      = -INFINITY;
-            int cost      = d-transCost-contCost[toState];
-            int a1        = Ukk(ab1,ac1,cost,fromState);
+            int cost      = d - transtartCost - contCost[toState];
+            int a1        = Ukk(ab1, ac1, cost, fromState);
             int a2        = -1;
-
-            if ( okIndex(a1, da, endA) &&
-                 okIndex(a1 - ab1, db, endB) &&
-                 okIndex(a1 - ac1, dc, endC) &&
-                 (whichCharCost(da ? aStr[a1] : '-',
-                                db ? bStr[a1-ab1] : '-',
-                                dc ? cStr[a1-ac1] : '-') == 1)
+            // printf("a1: %d, da: %d, endA: %d\n", a1, da, endA);
+            // printf("b1: %d, db: %d, endB: %d\n", a1, da, endA);
+            // printf("c1: %d, dc: %d, endC: %d\n", a1, da, endA);
+            if ( okIndex(a1, da, endA)
+                 && okIndex(a1 - ab1, db, endB)
+                 && okIndex(a1 - ac1, dc, endC)
+                 && (whichCharCost( da ? lesserStr[a1]     : '-',
+                                    db ? longerStr[a1-ab1] : '-',
+                                    dc ? middleStr[a1-ac1] : '-') == 1)
                  ) {
                 fromCost = cost;
                 dist = a1 + da;
@@ -737,11 +837,12 @@ int calcUkk(int ab, int ac, int d, int toState) {
 
                 a2 = Ukk(ab1, ac1, cost - mismatchCost, fromState);
 
-                if (okIndex(a2, da, endA) &&
-                    okIndex(a2 - ab1, db, endB) &&
-                    okIndex(a2 - ac1, dc, endC)) {
-                        fromCost = cost - mismatchCost;
-                        dist = a2 + da;
+                if (   okIndex(a2,       da, endA)
+                    && okIndex(a2 - ab1, db, endB)
+                    && okIndex(a2 - ac1, dc, endC)
+                   ) {
+                    fromCost = cost - mismatchCost;
+                    dist = a2 + da;
                 }
             }
 
@@ -814,8 +915,8 @@ int calcUkk(int ab, int ac, int d, int toState) {
         while (okIndex(dist, 1, endA) &&
                okIndex(dist - ab, 1, endB) &&
                okIndex(dist - ac, 1, endC) &&
-               (aStr[dist] == bStr[dist - ab] &&
-                aStr[dist] == cStr[dist - ac])
+               (lesserStr[dist] == longerStr[dist - ab] &&
+                lesserStr[dist] == middleStr[dist - ac])
               ) {
           dist++;
           counts.innerLoop++;

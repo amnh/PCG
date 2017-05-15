@@ -10,6 +10,8 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE MultiParameterTypeclasses #-}
+
 module Bio.Graph.MonadDAG where
 
 import Data.List.NonEmpty
@@ -18,7 +20,7 @@ import Data.List.NonEmpty
 newtype NodeRef = NR Int deriving (Eq)
 
 
-data MonadDAG t e n where
+class MonadDAG t e n where
 
     parents   :: NodeRef -> t [NodeRef]
 

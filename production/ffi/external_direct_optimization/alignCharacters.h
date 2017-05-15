@@ -170,17 +170,17 @@ fill_parallel (       size_t char3_len
  */
 
 int
-algn_fill_3dMtx ( const dyn_char_p char1
-                , const dyn_char_p char2
-                , const int *precalcMtx
-                ,       size_t char1_len
-                ,       size_t char2_len
-                ,       size_t char3_len
-                ,       int *curRow
-                ,       DIR_MTX_ARROW_t  *dirMtx
-             // ,       int uk
-                ,       int gap
-                ,       size_t alphSize
+algn_fill_3dMtx ( const dyn_char_p       char1
+                , const dyn_char_p       char2
+                , const int             *precalcMtx
+                ,       size_t           char1_len
+                ,       size_t           char2_len
+                ,       size_t           char3_len
+                ,       int             *curRow
+                ,       DIR_MTX_ARROW_t *dirMtx
+                // ,       int              uk
+                ,       elem_t           gap_char
+                ,       size_t           alphSize
                 );
 
 int
@@ -255,7 +255,13 @@ algn_get_median_2d (dyn_char_p char1, dyn_char_p char2, cost_matrices_2d_p m, dy
  * returned in the character sm, using the cost matrix stored in m.
  */
 void
-algn_get_median_3d (dyn_char_p char1, dyn_char_p char2, dyn_char_p char3, cost_matrices_3d_p m, dyn_char_p sm);
+algn_get_medians_3d ( dyn_char_p         char1
+                    , dyn_char_p         char2
+                    , dyn_char_p         char3
+                    , cost_matrices_3d_p costMatrix
+                    , dyn_char_p         ungapped_median
+                    , dyn_char_p         gapped_median
+                    );
 
 // TODO: document following four fns
 void

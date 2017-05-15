@@ -160,10 +160,6 @@ library
   -- Modules exported by the library.
   exposed-modules:
 --                       Analysis.ImpliedAlignment
---                       Analysis.ImpliedAlignment.Standard
---                       Analysis.Parsimony.Binary.Fitch
---                       Analysis.Parsimony.Binary.Internal
---                       Analysis.Parsimony.Binary.Optimization
                        Analysis.Parsimony.Additive.Internal
                        Analysis.Parsimony.Dynamic.DirectOptimization
                        Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
@@ -232,8 +228,6 @@ library
                     --   Analysis.ImpliedAlignment.AlignmentContext
                     --   Analysis.ImpliedAlignment.DynamicProgramming
                     --   Analysis.ImpliedAlignment.Internal
-                    --   Analysis.Parsimony.Binary.SequentialAlign.FFI
-                    --   Analysis.Parsimony.Binary.Constraints
                        Analysis.Parsimony.Dynamic.DirectOptimization.DeletionEvents
                        Analysis.Parsimony.Dynamic.DirectOptimization.FFI
                        Analysis.Parsimony.Dynamic.DirectOptimization.Internal
@@ -278,7 +272,6 @@ library
                        Bio.Metadata.Dynamic.Internal
                        Bio.Graph.Forest
                        Bio.Graph.PhylogeneticDAG.Class
-                       Bio.Graph.EdgeSet
                        Bio.Graph.PhylogeneticDAG.Internal
                        Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
                        Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
@@ -294,6 +287,7 @@ library
                        Data.Alphabet.Internal
                        Data.BitMatrix.Internal
                        Data.BitVector.Instances
+                       Data.EdgeSet
                        Data.ExtendedFinite
                        Data.ExtendedNatural
                        Data.ExtendedReal

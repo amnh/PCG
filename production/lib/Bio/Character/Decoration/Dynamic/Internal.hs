@@ -45,6 +45,7 @@ data DynamicDecorationInitial d
    } deriving (Eq)
 
 
+-- | (✔)
 instance Hashable d => Hashable (DynamicDecorationInitial d) where
 
     hashWithSalt salt = hashWithSalt salt . dynamicDecorationInitialEncodedField
@@ -136,12 +137,12 @@ instance (Element d ~ c) => HasDenseTransitionCostMatrix (DynamicDecorationIniti
 
 
 -- | (✔)
-instance HasTraversalLocus (DynamicDecorationInitial c) (Maybe TraversalLocusEdge) where
+instance HasTraversalFoci (DynamicDecorationInitial c) (Maybe TraversalFoci) where
 
-    traversalLocus = lens getter setter
+    traversalFoci = lens getter setter
       where
-         getter e   = metadata e ^. traversalLocus
-         setter e x = e { metadata = metadata e &  traversalLocus .~ x }
+         getter e   = metadata e ^. traversalFoci
+         setter e x = e { metadata = metadata e &  traversalFoci .~ x }
 
 
 -- | (✔)
@@ -210,6 +211,7 @@ data DynamicDecorationDirectOptimizationPostOrderResult d
    } deriving (Eq)
 
 
+-- | (✔)
 instance EncodableStream d => Show (DynamicDecorationDirectOptimizationPostOrderResult d) where
 
     show dec = (shownEdge <>) . unlines . (shownAlphabet:) . (shownCost:) $ f <$> pairs
@@ -225,7 +227,7 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimizationPostOrder
 
         shownAlphabet = show $ dec ^. characterAlphabet
 
-        shownEdge = maybe "" (\x -> "Locus Edge          : " <> show x <> "\n") $ dec ^. traversalLocus
+        shownEdge = maybe "" (\x -> "Locus Edges         : " <> show x <> "\n") . fmap (fmap fst) $ dec ^. traversalFoci
         
         shownCost = unwords
           [ "Cost                :"
@@ -236,6 +238,7 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimizationPostOrder
           ]
   
 
+-- | (✔)
 instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostOrderDecoration (DynamicDecorationDirectOptimizationPostOrderResult d) d where
 
     extendDynamicToPostOrder subDecoration localCost totalCost ungapped gapped lhsAlignment rhsAlignment =
@@ -251,6 +254,7 @@ instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostOrderDecoratio
         }
 
 
+-- | (✔)
 instance Hashable d => Hashable (DynamicDecorationDirectOptimizationPostOrderResult d) where
 
       hashWithSalt salt dec = foldr1 xor $
@@ -363,13 +367,13 @@ instance (Element d ~ c) => HasDenseTransitionCostMatrix (DynamicDecorationDirec
 
 
 -- | (✔)
-instance HasTraversalLocus (DynamicDecorationDirectOptimizationPostOrderResult c) (Maybe TraversalLocusEdge) where
+instance HasTraversalFoci (DynamicDecorationDirectOptimizationPostOrderResult c) (Maybe TraversalFoci) where
 
-    traversalLocus = lens getter setter
+    traversalFoci = lens getter setter
       where
-         getter e   = dynamicDecorationDirectOptimizationPostOrderMetadata e ^. traversalLocus
-         setter e x = e { dynamicDecorationDirectOptimizationPostOrderMetadata = dynamicDecorationDirectOptimizationPostOrderMetadata e &  traversalLocus .~ x }
-      
+         getter e   = dynamicDecorationDirectOptimizationPostOrderMetadata e ^. traversalFoci
+         setter e x = e { dynamicDecorationDirectOptimizationPostOrderMetadata = dynamicDecorationDirectOptimizationPostOrderMetadata e &  traversalFoci .~ x }
+
 
 -- | (✔)
 instance HasCharacterWeight (DynamicDecorationDirectOptimizationPostOrderResult d) Double where
@@ -405,6 +409,7 @@ instance (EncodableStream d, Element d ~ c) => DynamicCharacterMetadata (Dynamic
     extractDynamicCharacterMetadata = extractDynamicCharacterMetadata . dynamicDecorationDirectOptimizationPostOrderMetadata
 
 
+-- | (✔)
 instance EncodableDynamicCharacter d => SimpleDynamicDecoration (DynamicDecorationDirectOptimizationPostOrderResult d) d where
 
 
@@ -581,12 +586,12 @@ instance (Element d ~ c) => HasDenseTransitionCostMatrix (DynamicDecorationDirec
 
 
 -- | (✔)
-instance HasTraversalLocus (DynamicDecorationDirectOptimization c) (Maybe TraversalLocusEdge) where
+instance HasTraversalFoci (DynamicDecorationDirectOptimization c) (Maybe TraversalFoci) where
 
-    traversalLocus = lens getter setter
+    traversalFoci = lens getter setter
       where
-         getter e   = dynamicDecorationDirectOptimizationMetadata e ^. traversalLocus
-         setter e x = e { dynamicDecorationDirectOptimizationMetadata = dynamicDecorationDirectOptimizationMetadata e &  traversalLocus .~ x }
+         getter e   = dynamicDecorationDirectOptimizationMetadata e ^. traversalFoci
+         setter e x = e { dynamicDecorationDirectOptimizationMetadata = dynamicDecorationDirectOptimizationMetadata e &  traversalFoci .~ x }
 
 
 -- | (✔)
@@ -702,6 +707,7 @@ instance HasPreliminaryUngapped (DynamicDecorationImpliedAlignment d) d where
     preliminaryUngapped = lens dynamicDecorationImpliedAlignmentPreliminaryUngappedField (\e x -> e { dynamicDecorationImpliedAlignmentPreliminaryUngappedField = x })
 
 
+-- | (✔)
 instance HasLeftAlignment (DynamicDecorationImpliedAlignment d) d where
 
     leftAlignment = lens dynamicDecorationImpliedAlignmentLeftAlignmentField (\e x -> e { dynamicDecorationImpliedAlignmentLeftAlignmentField = x })
@@ -776,12 +782,12 @@ instance (Element d ~ c) => HasDenseTransitionCostMatrix (DynamicDecorationImpli
 
 
 -- | (✔)
-instance HasTraversalLocus (DynamicDecorationImpliedAlignment c) (Maybe TraversalLocusEdge) where
+instance HasTraversalFoci (DynamicDecorationImpliedAlignment c) (Maybe TraversalFoci) where
 
-    traversalLocus = lens getter setter
+    traversalFoci = lens getter setter
       where
-         getter e   = dynamicDecorationImpliedAlignmentMetadata e ^. traversalLocus
-         setter e x = e { dynamicDecorationImpliedAlignmentMetadata = dynamicDecorationImpliedAlignmentMetadata e &  traversalLocus .~ x }
+         getter e   = dynamicDecorationImpliedAlignmentMetadata e ^. traversalFoci
+         setter e x = e { dynamicDecorationImpliedAlignmentMetadata = dynamicDecorationImpliedAlignmentMetadata e &  traversalFoci .~ x }
 
 
 -- | (✔)

@@ -21,7 +21,8 @@ import Data.Map      (assocs, empty, insertWith)
 import Data.Ord      (comparing)
   
 
--- | Determines whether a foldable structure contains a single element.
+-- |
+-- Determines whether a foldable structure contains a single element.
 isSingleton :: Foldable t => t a -> Bool
 isSingleton = f . toList
   where
@@ -29,7 +30,8 @@ isSingleton = f . toList
     f  _  = False
 
 
--- | Returns the list of elements which are not unique in the input list.
+-- |
+-- Returns the list of elements which are not unique in the input list.
 duplicates :: (Foldable t, Ord a) => t a -> [a]
 duplicates = duplicates' . sort . toList
   where 
@@ -40,7 +42,8 @@ duplicates = duplicates' . sort . toList
                            else duplicates (y:ys)
 
 
--- | Returns the element that occurs the most often in the list.
+-- |
+-- Returns the element that occurs the most often in the list.
 mostCommon :: (Foldable t, Ord a) => t a -> Maybe a
 mostCommon xs
   | null xs   = Nothing
@@ -49,8 +52,9 @@ mostCommon xs
                   (x,_):_ -> Just x
 
 
--- | Returns a mapping of each unique element in the list
---   paired with how often the element occurs in the list.
+-- |
+-- Returns a mapping of each unique element in the list paired with how often
+-- the element occurs in the list.
 occurances :: (Foldable t, Ord a) => t a -> [(a,Int)]
 occurances = collateOccuranceMap . buildOccuranceMap
   where
@@ -65,7 +69,8 @@ occurances = collateOccuranceMap . buildOccuranceMap
         descending x   = x
 
 
--- | chunksOf is based on Text.chunksOf, but is more general.
+-- |
+-- chunksOf is based on Text.chunksOf, but is more general.
 chunksOf :: Foldable t => Int -> t a -> [[a]]
 chunksOf n = chunksOf' . toList
   where
@@ -75,7 +80,8 @@ chunksOf n = chunksOf' . toList
         (y,ys) -> y : chunksOf' ys
 
 
--- | Useful function to check subsets of lists.
+-- |
+-- Useful function to check subsets of lists.
 subsetOf :: (Foldable t, Foldable c, Ord a) => t a -> c a -> Bool
 subsetOf xs ys = xs' `intersection` ys' == xs'
   where
@@ -132,7 +138,19 @@ pairwiseSequence predicate structure = f [] $ toList <$> toList structure
         g e = f (e:thread) $ fmap (filter (predicate e)) xs
 
 
-maximaBy :: Traversable t => (a -> a -> Ordering) -> t a -> [a]
+-- |
+-- The largest elements of a possibly empty structure with respect to the given
+-- comparison function. If multiple elements are equal under the comparison
+-- function, then all the equally maximal elements are returned in the order
+-- they existed in the foldable structure.
+--
+-- The empty list is returned if and only if an empty structure was provided.
+--
+-- Similar to 'Data.Foldable.maximumBy'. For non-empty structures, the following
+-- will hold:
+--
+-- > head . maximaBy == maximumBy
+maximaBy :: Foldable t => (a -> a -> Ordering) -> t a -> [a]
 maximaBy cmp = foldr f []
   where
     f e es =
@@ -143,9 +161,21 @@ maximaBy cmp = foldr f []
                 EQ -> e:es
                 GT -> [e]
                 LT -> es
-  
 
-minimaBy :: Traversable t => (a -> a -> Ordering) -> t a -> [a]
+
+-- |
+-- The smallest elements of a possibly empty structure with respect to the given
+-- comparison function. If multiple elements are equal under the comparison
+-- function, then all the equally minimal elements are returned in the order
+-- they existed in the foldable structure.
+--
+-- The empty list is returned if and only if an empty structure was provided.
+--
+-- Similar to 'Data.Foldable.minimumBy'. For non-empty structures, the following
+-- will hold:
+--
+-- > head . minimaBy == minimumBy
+minimaBy :: Foldable t => (a -> a -> Ordering) -> t a -> [a]
 minimaBy cmp = foldr f []
   where
     f e es =
@@ -156,4 +186,3 @@ minimaBy cmp = foldr f []
                 EQ -> e:es
                 GT -> es
                 LT -> [e]
-  

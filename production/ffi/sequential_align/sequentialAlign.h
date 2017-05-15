@@ -23,10 +23,12 @@ typedef struct align {
     int       ungapped_partialCost;
     uint64_t *partialAlign_A;
     uint64_t *partialAlign_B;
-    size_t    aligned_character_A_end_ptr;     // current index in aligned characterA
-    size_t    aligned_character_B_end_ptr;     // current index in aligned characterB
-    size_t    input_character_A_ptr;           // current index in input characterA   -- for input characters, since there are
-    size_t    input_character_B_ptr;           // current index in input characterB   -- we need a pointer for each of multiple alignments
+    size_t    aligned_character_A_end_ptr;     // current index to end of aligned characterA
+    size_t    aligned_character_B_end_ptr;     // current index to end of aligned characterB
+
+    // For each input character there are multiple alignments; we need a pointer for each:
+    size_t    input_character_A_ptr;           // current index to beginning of unconsumed portion of original characterA
+    size_t    input_character_B_ptr;           // current index to beginning of unconsumed portion of original characterB
     int       flagWhichTree;                   // belongs to first or second tree
 } alignment_t;
 
@@ -73,7 +75,7 @@ void copyAligmentStruct ( alignment_t  *copyTo
                         , const size_t  initLength
                         );
 
-/** sort two arrays at once, using the values in firstArray as the sort keys */
+/** sort two arrays at once, using the values in valArray as the sort keys */
 void doubleBubbleSort(int *valArray, int *secondArray, size_t number_Elements);
 
 void printCostBuffer(int *buffer, size_t bufLen, char *prefix);
@@ -83,8 +85,12 @@ void printBuffer(uint64_t *buffer, size_t bufLen, char *prefix);
 /** increment value, making sure that new value is < bound */
 size_t boundedIncrement(size_t value, size_t bound);
 
-/** Honestly not yet sure what this does. It shuffles a bunch of values back and forth inside path
- *  and updates path->partialCost.
+/** Takes as input a path, which has two characters---the original input characters, and a variable
+ *  which determines what is getting aligned (A/Gap, Gap/B or A/B). Updates the current cost of
+ *  the new alignment, which is either the current cost summed with the passed-in cost (determined
+ *  by the new aligned characters), or by finding the accumulated cost of the alignment thus far.
+ *  Also updates the two characters by adding the appropriate character at the end of each, based on
+ *  the input direction.
  */
 int updateCharacters( alignment_t       *path
                     , uint64_t          *charA

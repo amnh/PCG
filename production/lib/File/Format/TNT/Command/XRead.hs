@@ -196,14 +196,17 @@ continuousSequence = many (missingValue <|> presentValue)
     missingValue = Nothing    <$  char '?' <* whitespaceInline
 
 
+-- |
+-- Parses a collection of discrete characters.
+-- Intended to be reused as a primative for other XREAD combinators.
 coreDiscreteSequenceThatGetsReused :: (MonadParsec e s m, Token s ~ Char) => m [TntDiscreteCharacter]
 coreDiscreteSequenceThatGetsReused = many discreteCharacter
   where
-    discreteCharacter         = (ambiguityCharacter <|> singletonCharacter) <* whitespaceInline
-    singletonCharacter        = bitPack . pure <$> stateToken
-    ambiguityCharacter        = bitPack <$> (validateAmbiguityGroup =<< withinBraces (many stateToken))
-    stateToken                = characterStateChar <* whitespaceInline
-    bitPack                   = foldr (.|.) zeroBits . catMaybes . fmap (`lookup` deserializeStateDiscrete)
+    discreteCharacter  = (ambiguityCharacter <|> singletonCharacter) <* whitespaceInline
+    singletonCharacter = bitPack . pure <$> stateToken
+    ambiguityCharacter = bitPack <$> (validateAmbiguityGroup =<< withinBraces (many stateToken))
+    stateToken         = characterStateChar <* whitespaceInline
+    bitPack            = foldr (.|.) zeroBits . catMaybes . fmap (`lookup` deserializeStateDiscrete)
     validateAmbiguityGroup xs
       | null xs    = fail   "An ambiguity group containing no character states was found."
       | hasDupes   = fail $ "An ambiguity group contains duplicate character states: " <> show dupes <> "."

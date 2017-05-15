@@ -42,22 +42,28 @@ import           Text.Megaparsec.Prim     (MonadParsec)
 import           Text.Megaparsec.Lexer    (float,integer,signed)
 
 
--- | Prepend a single combinator result element to the combinator result of a list of elements
+-- |
+-- Prepend a single combinator result element to the combinator result of a list
+-- of elements.
 (<:>)  :: Applicative f => f a -> f [a] -> f [a]
 (<:>)  a b = (:)  <$> a <*> b
 
 
--- | Concatenate the result of two list producing combinators
+-- |
+-- Concatenate the result of two list producing combinators.
 (<++>) :: (Applicative f, Semigroup a) => f a -> f a -> f a
 (<++>) a b = (<>) <$> a <*> b
 
 
--- | Collects one or more of the arguments into a `NonEmpty` list.
+-- |
+-- Collects one or more of the arguments into a `NonEmpty` list.
 nonEmpty :: MonadParsec e s m => m a -> m (NonEmpty a)
 nonEmpty c = NE.fromList <$> some c
 
 
--- | @anythingTill end@ consumes zero or more characters until @end@ is matched, leaving @end@ in the stream
+-- |
+-- @anythingTill end@ consumes zero or more characters until @end@ is matched,
+-- leaving @end@ in the stream.
 anythingTill :: (MonadParsec e s m, Token s ~ Char) => m a -> m String
 anythingTill c = do 
     ahead <- optional . try $ lookAhead c
@@ -66,43 +72,50 @@ anythingTill c = do
       Nothing -> somethingTill c
 
 
--- | @somethingTill end@ consumes one or more characters until @end@ is matched, leaving @end@ in the stream
+-- |
+-- @somethingTill end@ consumes one or more characters until @end@ is matched,
+-- leaving @end@ in the stream.
 somethingTill :: (MonadParsec e s m, Token s ~ Char) => m a -> m String
-somethingTill c = 
-    do
+somethingTill c = do
     _ <- notFollowedBy c
     anyChar <:> anythingTill c
 
 
--- | Flexibly parses a 'Double' value represented in a variety of forms.
+-- |
+-- Flexibly parses a 'Double' value represented in a variety of forms.
 double :: (MonadParsec e s m, Token s ~ Char) => m Double
-double = try (signed space float)
-     <|> fromIntegral <$> signed space integer
+double = try (signed space float) <|> fromIntegral <$> signed space integer
 
 
--- | Custom 'eol' combinator to account for /very/ old Mac file formats ending lines in a single @\'\\r\'@
+-- |
+-- Custom 'eol' combinator to account for /very/ old Mac file formats ending
+-- lines in a single @\'\\r\'@.
 endOfLine :: (MonadParsec e s m, Token s ~ Char) => m Char
 endOfLine = (try eol <|> string "\r") $> '\n'
 
 
--- | Accepts zero or more Failure messages
+-- |
+-- Accepts zero or more Failure messages.
 fails :: MonadParsec e s m => [String] -> m a
 fails = failure mempty mempty . S.fromList . fmap representFail
 
 
--- | Consumes a whitespace character that is not a newline character
+-- |
+-- Consumes a whitespace character that is not a newline character.
 inlineSpaceChar :: (MonadParsec e s m, Token s ~ Char) => m Char
 inlineSpaceChar = satisfy $ \x -> isSpace x 
                                && '\n' /= x
                                && '\r' /= x
 
 
--- | Consumes zero or more whitespace characters that are not newline characters
+-- |
+-- Consumes zero or more whitespace characters that are not newline characters.
 inlineSpace :: (MonadParsec e s m, Token s ~ Char) => m ()
 inlineSpace = skipMany inlineSpaceChar
 
 
--- | @comment start end@ will parse a /nested/ comment structure which begins with
+-- |
+-- @comment start end@ will parse a /nested/ comment structure which begins with
 -- the delimiter @start@ and ends with the delimiter @end@.
 --
 -- Each opening @start@ must be matched with an @end@ in a proper nested structure.
@@ -131,8 +144,8 @@ comment start end = commentDefinition' False
                     else pure ""
         pure . concat $
           if enquote
-          then [prefix,before,comments,suffix,after]
-          else [before,comments,after]
+          then [ prefix, before, comments, suffix, after ]
+          else [         before, comments,         after ]
 
 
 -- |
@@ -143,6 +156,9 @@ runParserOnFile :: Show a => Parsec Dec String a -> FilePath -> IO String
 runParserOnFile parser filePath = either (parseErrorPretty :: ParseError Char Dec -> String) show . parse parser filePath <$> readFile filePath
 
 
+-- |
+-- Runs the supplied parser on the input stream with default error types.
+-- Useful for quick tests in GHCi.
 parseWithDefaultErrorType :: Parsec Dec s a -> s -> Either (ParseError (Token s) Dec) a
 parseWithDefaultErrorType c = parse c "" 
 

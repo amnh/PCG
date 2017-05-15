@@ -42,7 +42,7 @@ cm_combinations_of_alphabet (const int alphSize) {
 
 void cm_print_2d (cost_matrices_2d_p costMatrix) {
     printf("\nCost matrix fields:\n");
-    printf("  alphabet size: %d\n", costMatrix->alphSize);
+    printf("  alphabet size: %zu\n", costMatrix->alphSize);
     printf("  costMatrixDimension:           %zu\n", costMatrix->costMatrixDimension);
     printf("  gap_char:      %d\n", costMatrix->gap_char);
     printf("  cost model:    %d\n", costMatrix->cost_model_type);
@@ -147,7 +147,8 @@ cm_alloc_set_costs_2d ( int alphSize
                       , int gap_open
                       , int is_metric
                       , int all_elements
-                      , cost_matrices_2d_p res)
+                      , cost_matrices_2d_p res
+                      )
 {
     if(DEBUG_CM) {
         printf("\n---cm_alloc_set_costs_2d\n");
@@ -323,10 +324,10 @@ cm_calc_cost (int *tcm, elem_t a, elem_t b, int alphSize) {
     return (*res);
 }
 
-static inline elem_t
-cm_calc_median_3d (elem_t *tcm, elem_t a, elem_t b, elem_t c, int alphSize) {
-    unsigned int one = 1;
-    unsigned int upperBound = one << alphSize;
+elem_t
+cm_get_median_3d (elem_t *tcm, elem_t a, elem_t b, elem_t c, size_t alphSize) {
+    elem_t upperBound = ((elem_t) 1) << alphSize;
+    if (DEBUG_3D) printf("alphSize: %zu, upperBound: %u, a: %u, b: %u, c: %u\n", alphSize, upperBound, a, b, c);
 
     if (alphSize <= 0) {
         printf("Alphabet size <= 0");
@@ -340,7 +341,7 @@ cm_calc_median_3d (elem_t *tcm, elem_t a, elem_t b, elem_t c, int alphSize) {
         printf("Element b has a larger than allowed value.\n");
         exit(1);
     }
-    return (*(tcm + cm_calc_cost_position_3d (a, b, c, alphSize)));
+    return ( tcm[cm_calc_cost_position_3d (a, b, c, alphSize)] );
 }
 
 /* TODO: dead code?
@@ -558,7 +559,7 @@ cm_precalc_4algn_3d (const cost_matrices_3d_p costMtx, int *outPrecalcMtx, const
         *precalc_pos;
 
     char3Len = char3->len;
-    tcm     = costMtx->cost;
+    tcm      = costMtx->cost;
     for (char1idx = 1; char1idx < costMtx->alphSize + 1; char1idx++) {
         for (char2idx = 1; char2idx < costMtx->alphSize + 1; char2idx++) {
             tmp_cost = cm_get_row_3d ( tcm
@@ -688,7 +689,7 @@ cm_get_median (const cost_matrices_2d_p tmp, elem_t a, elem_t b) {
     return (cm_calc_median((tmp->median), a, b, tmp->costMatrixDimension));
 }
 
-elem_t
-cm_get_median_3d (const cost_matrices_3d_p t, elem_t a, elem_t b, elem_t c) {
-    return (cm_calc_median_3d((t->median), a, b, c, t->costMatrixDimension));
-}
+// elem_t
+// cm_get_median_3d (const cost_matrices_3d_p t, elem_t a, elem_t b, elem_t c) {
+//     return (cm_calc_median_3d((t->median), a, b, c, t->costMatrixDimension));
+// }

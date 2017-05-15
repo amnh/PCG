@@ -38,10 +38,16 @@ import qualified Data.Vector        as V
 import           Prelude            hiding (zipWith)
 
 
+-- |
+-- Riefies a solution, performing several initialization functions on each DAG
+-- before it's cost can be calculated.
 riefiedSolution :: PhylogeneticSolution UnRiefiedCharacterDAG -> CharacterResult
 riefiedSolution  = PhylogeneticSolution . fmap (fmap riefiedToCharacterDAG) . phylogeneticForests
 
 
+-- |
+-- Riefies a particular DAg so it has the requisite context for a post-order
+-- traversal.
 riefiedToCharacterDAG :: UnRiefiedCharacterDAG -> CharacterDAG
 riefiedToCharacterDAG (PDAG dag) = PDAG2
     RefDAG

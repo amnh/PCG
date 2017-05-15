@@ -17,7 +17,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 module Analysis.Parsimony.Sankoff.Internal where
 
@@ -68,7 +68,7 @@ sankoffPreOrder childDecoration [] = childDecoration & discreteCharacter .~ newC
         newChar     = foldlWithKey' setState emptyMedian childMins
 
         setState acc pos childMin
-            | toWord childMin == overallMin = {- trace (show $ unwords ["root:"
+            | unsafeToFinite childMin == overallMin = {- trace (show $ unwords ["root:"
                                                                     , show overallMin
                                                                     , show pos
                                                                     , show childMin
@@ -137,7 +137,7 @@ updateCostVector _parentDecoration (leftChild:|rightChild:_) = returnNodeDecorat
         range = [0..5 :: Word]
         -- leaf  = leftChild ^. isLeaf
         initialAccumulator   = ([], ([],[]), infinity)  -- (min cost per state, (leftMin, rightMin), overall minimum)
-        returnNodeDecoration = {- trace (show costVector) $ -} extendDiscreteToSankoff leftChild costVector dirStateTuple (toWord charCost) emptyMedian False
+        returnNodeDecoration = {- trace (show costVector) $ -} extendDiscreteToSankoff leftChild costVector dirStateTuple (unsafeToFinite charCost) emptyMedian False
         emptyMedian          = emptyStatic $ leftChild ^. discreteCharacter
 
         findMins :: Word
@@ -315,7 +315,7 @@ calcCostPerState parentCharState leftChildDec rightChildDec = retVal
 
                 curLeftMin      = transitionCost + leftMinFromVector
                 curRightMin     = transitionCost + rightMinFromVector
-                transitionCost  = fromWord . scm parentCharState $ toEnum childCharState
+                transitionCost  = fromFinite . scm parentCharState $ toEnum childCharState
 
 
         -- Following needed for outputting TCM in trace statements

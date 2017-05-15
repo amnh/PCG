@@ -67,18 +67,18 @@ typedef struct {
 //U_cell_type *U(int ab, int ac, int d, int s);
 
 // doUkkInLimits - for Ukkonen check point between to specified points in the U matrix
-size_t doUkkInLimits(int sab, int sac, int sCost, int sState, int sDist,
-                     int fab, int fac, int fCost, int fState, int fDist);
+size_t doUkkInLimits(int startAB, int startAC, int startCost, int startState, int startDist,
+                     int finalAB, int finalAC, int finalCost, int finalState, int finalDist);
 
 // getSplitRecurse - extracts info from the 'from' and CP info then recurses with doUkkInLimits
 //                   for the two subparts
-int getSplitRecurse(int sab, int sac, int sCost, int sState, int sDist,
-                    int fab, int fac, int fCost, int fState, int fDist);
+int getSplitRecurse(int startAB, int startAC, int startCost, int startState, int startDist,
+                    int finalAB, int finalAC, int finalCost, int finalState, int finalDist);
 
 // traceBack - recovers an alignment from the U matrix directly.  Used for the base case
 //             of the check point recursion
-void traceBack(int sab, int sac, int sCost, int sState,
-               int fab, int fac, int fCost, int fState);
+void traceBack(int startAB, int startAC, int startCost, int startState,
+               int finalAB, int finalAC, int finalCost, int finalState);
 
 
 int Ukk(int ab,int ac,int d,int state);
@@ -93,11 +93,12 @@ int okIndex(int a, int da, int end);
 
 int whichCharCost(char a, char b, char c);
 
-int doUkk(dyn_char_p retCharA, dyn_char_p retCharB, dyn_char_p retCharC);
+// IMPORTANT!!! Order of input characters is short, long, middle.
+int doUkk(dyn_character_t *retCharA, dyn_character_t *retCharB, dyn_character_t *retCharC);
 
 int char_to_base (char v);
 
-void printTraceBack(dyn_char_p retCharA, dyn_char_p retCharB, dyn_char_p retCharC);
+void printTraceBack(dyn_character_t *retCharA, dyn_character_t *retCharB, dyn_character_t *retCharC);
 
 int calcUkk(int ab, int ac, int d, int toState);
 

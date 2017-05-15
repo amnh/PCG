@@ -1,3 +1,17 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.EdgeLength
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- A possible present, real-valued edge length with a 'Monoid' instance defined
+-- in terms of addition. 
+--
+-----------------------------------------------------------------------------
 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
@@ -52,11 +66,16 @@ instance Show EdgeLength where
     show (C (Just x)) = "{" <> show (getSum x) <> "}"
             
 
+-- |
+-- Construct an 'EdgeLength' from a 'Double' value.
 {-# INLINE fromDouble #-}
 fromDouble :: Double -> EdgeLength
 fromDouble = C . Just . Sum
 
 
+-- |
+-- Construct an 'EdgeLength' from a 'Maybe Double' value.
+-- A @Nothing@ value indicates aa missing edge length.
 {-# INLINE fromDoubleMay #-}
 fromDoubleMay :: Maybe Double -> EdgeLength
 fromDoubleMay = C . fmap Sum

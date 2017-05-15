@@ -37,8 +37,6 @@ import           Foreign.C.Types
 {-# DEPRECATED getGapChar "Don't use getGapChar, use getGapElement instead!" #-}
 
 
--- TODO: Add more laws here.
--- TODO: Remove Num constraint?
 {- |
  Represents a character of fixed width encoding one or more character states.
 
@@ -72,7 +70,6 @@ class ( FiniteBits b
     getGapChar    = getGapElement
 
 
--- TODO: Add more laws here
 {- |
  Represents a non empty stream of 'EncodableStreamElement' of variable length.
 

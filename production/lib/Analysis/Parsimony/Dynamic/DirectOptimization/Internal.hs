@@ -41,6 +41,11 @@ import           Prelude     hiding (lookup, zip, zipWith)
 type PairwiseAlignment s = s -> s -> (Word, s, s, s, s)
 
 
+-- |
+-- The post-order scoring logic for dynamic characters.
+--
+-- Parameterized over a 'PairwiseAlignment' function to allow for different
+-- atomic alignments depending on the character's metadata.
 directOptimizationPostOrder
   :: SimpleDynamicDecoration d c
   => PairwiseAlignment c
@@ -81,6 +86,11 @@ updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) =
     totalCost = localCost + leftChild ^. characterCost + rightChild ^. characterCost
 
 
+-- |
+-- The pre-order scoring logic for dynamic characters.
+--
+-- Parameterized over a 'PairwiseAlignment' function to allow for different
+-- atomic alignments depending on the character's metadata.
 directOptimizationPreOrder
   :: (DirectOptimizationPostOrderDecoration d c, Show c {-, Show (Element c)-})
   => PairwiseAlignment c

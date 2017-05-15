@@ -16,16 +16,19 @@
 
 module Data.BitMatrix
   ( BitMatrix()
+  -- * Construction
   , bitMatrix
-  , collapseRows
-  , expandVector
   , fromRows
+  -- * Querries
   , isSet
   , isZeroMatrix
   , numCols
   , numRows
-  , rows
   , row
+  , rows
+  -- * Specializations
+  , expandRows
+  , factorRows
   ) where
 
 import Data.BitMatrix.Internal

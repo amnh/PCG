@@ -14,7 +14,10 @@
 
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, TypeSynonymInstances #-}
 
-module Bio.Metadata.Parsed where
+module Bio.Metadata.Parsed
+  ( ParsedCharacterMetadata(..)
+  , ParsedMetadata(..)
+  ) where
 
 import           Bio.Character.Parsed
 import           Data.Alphabet
@@ -217,13 +220,16 @@ instance ParsedMetadata Nexus where
 
 
 
-disAlph, dnaAlph, rnaAlph, aaAlph :: Vector String
+disAlph, dnaAlph, aaAlph :: Vector String
 -- | The acceptable DNA character values (with IUPAC codes).
 dnaAlph = V.fromList $ pure <$> addOtherCases "AGCTRMWSKTVDHBNX?-"
+
 -- | The acceptable RNA character values (with IUPAC codes).
-rnaAlph = V.fromList $ pure <$> addOtherCases "AGCURMWSKTVDHBNX?-"
+-- rnaAlph = V.fromList $ pure <$> addOtherCases "AGCURMWSKTVDHBNX?-"
+
 -- | The acceptable amino acid/protein character values (with IUPAC codes).
 aaAlph  = V.fromList $ pure <$> addOtherCases "ABCDEFGHIKLMNPQRSTVWXYZ-"
+
 -- | The acceptable discrete character values.
 disAlph = V.fromList $ pure <$> (['0'..'9'] <> ['A'..'Z'] <> ['a'..'z'] <> "-" <> "?")
 

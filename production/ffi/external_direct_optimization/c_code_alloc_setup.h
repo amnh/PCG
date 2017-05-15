@@ -18,7 +18,7 @@
  *
  *  Order of character lengths doesn't matter
  */
-void initializeNWMtx(nw_matrices_p retMtx, size_t cap_char1, size_t cap_char2, size_t cap_char3, int alphSize);
+void initializeNWMtx(nw_matrices_p retMtx, size_t cap_char1, size_t cap_char2, size_t cap_char3, size_t alphSize);
 
 /** Does internal allocation for a character struct. Also sets character pointers within array to correct positions.
  *

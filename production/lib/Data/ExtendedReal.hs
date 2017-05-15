@@ -1,13 +1,26 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.ExtendedReal
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- A type that extends the Real numbers to include an infinity value.
+--
+-- This is a newtyped @Maybe Double@ for efficiency purposes.
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE TypeFamilies #-}
 
 module Data.ExtendedReal
- ( ExtendedReal()
- , ExtendedNumber(..)
- , Finite
- , toDouble
- , fromDouble
- ) where
-
+  ( ExtendedReal()
+  , ExtendedNumber(..)
+  , Finite
+  ) where
 
 import Control.Applicative (liftA2)
 import Data.ExtendedFinite
@@ -15,7 +28,10 @@ import Data.Ratio
 import Data.Maybe          (fromMaybe)
 
 
--- | A non-negative real number extended to include infinity, where infinity == maxBound.
+-- |
+-- A non-negative real number extended to include infinity, where:
+--
+-- > infinity == maxBound
 newtype ExtendedReal = Cost (Maybe Double)
 
 
@@ -45,20 +61,20 @@ instance Bounded ExtendedReal where
 
 instance Num ExtendedReal where
 
-  (Cost lhs) + (Cost rhs) = Cost $ liftA2 (+) lhs rhs
+    (Cost lhs) + (Cost rhs) = Cost $ liftA2 (+) lhs rhs
 
-  (Cost lhs) - (Cost rhs) = Cost $ liftA2 (-) lhs rhs
+    (Cost lhs) - (Cost rhs) = Cost $ liftA2 (-) lhs rhs
 
-  (Cost lhs) * (Cost rhs) = Cost $ liftA2 (*) lhs rhs
+    (Cost lhs) * (Cost rhs) = Cost $ liftA2 (*) lhs rhs
 
-  abs = id
+    abs = id
 
-  signum (Cost (Just x)) = Cost . Just $ signum x -- the second signum is Double.signum
-  signum               _ = 1
+    signum (Cost (Just x)) = Cost . Just $ signum x -- the second signum is Double.signum
+    signum               _ = 1
 
-  fromInteger = Cost . Just . fromInteger
+    fromInteger = Cost . Just . fromInteger
 
-  negate = id
+    negate = id
 
 
 instance Eq ExtendedReal where
@@ -92,7 +108,6 @@ instance Ord ExtendedReal where
                     Just y  -> x > y
 
 
--- TODO: maybe remove this? 
 instance Enum ExtendedReal where
 
     fromEnum (Cost x) = maybe (maxBound :: Int) fromEnum x
@@ -118,10 +133,12 @@ instance Fractional ExtendedReal where
     fromRational = Cost . Just . fromRational
 
 
+{-# INLINE toDouble #-}
 toDouble :: ExtendedReal -> Double
 toDouble (Cost x) = fromMaybe (read "infinity" :: Double) x
 
 
+{-# INLINE fromDouble #-}
 fromDouble :: Double -> ExtendedReal
 fromDouble = Cost . Just
 

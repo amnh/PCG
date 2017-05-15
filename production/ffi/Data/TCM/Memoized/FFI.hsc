@@ -68,6 +68,8 @@ data DCElement = DCElement
 data ForeignVoid deriving (Generic)
 
 
+-- |
+-- A type-safe wrapper for the mutable, memoized TCm.
 data MemoizedCostMatrix
    = MemoizedCostMatrix
    { costMatrix :: StablePtr ForeignVoid
@@ -229,6 +231,13 @@ getMemoizedCostMatrix alphabetSize costFn = unsafePerformIO . withArray rowMajor
     range = [0 .. alphabetSize - 1]
 
 
+-- |
+-- /O(1)/ amortized.
+--
+-- Calculate the median symbol set and transition cost between the two input
+-- symbol sets.
+--
+-- *Note:* This operation is lazily evaluated and memoized for future calls.
 getMedianAndCost :: Exportable s => MemoizedCostMatrix -> s -> s -> (s, Word)
 getMedianAndCost memo lhs rhs = unsafePerformIO $ do
     medianPtr     <- constructEmptyElement alphabetSize

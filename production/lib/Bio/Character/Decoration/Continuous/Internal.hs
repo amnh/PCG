@@ -12,7 +12,12 @@
 
 {-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies, UndecidableInstances #-}
 
-module Bio.Character.Decoration.Continuous.Internal where
+module Bio.Character.Decoration.Continuous.Internal
+  ( ContinuousDecorationInitial(..)
+  , ContinuousPostorderDecoration(..)
+  , ContinuousOptimizationDecoration(..)
+  , continuousDecorationInitial
+  ) where
 
 
 import Bio.Character.Decoration.Additive
@@ -150,116 +155,9 @@ instance ContinuousCharacter c => ContinuousDecoration (ContinuousDecorationInit
 
   
 
-{-
-data ContinuousOptimizationDecoration a
-   = ContinuousOptimizationDecoration
-   { continuousMinCost              :: Double
-   , continuousPreliminaryInterval  :: (Double, Double)
-   , continuousChildPrelimIntervals :: ((Double, Double), (Double, Double))
-   , continuousIsLeaf               :: Bool
-   , continuousCharacterField       :: a
-   , continuousMetadataField        :: ContinuousCharacterMetadataDec
-   }
-
-
--- | (✔)
-instance HasContinuousCharacter (ContinuousOptimizationDecoration c) c where
-
-    continuousCharacter = lens continuousCharacterField $ \e x -> e { continuousCharacterField = x }
-
-
--- | (✔)
-instance HasCharacterName (ContinuousOptimizationDecoration a) CharacterName where
-
-    characterName = lens getter setter
-      where
-         getter e   = continuousMetadataField e ^. characterName
-         setter e x = e { continuousMetadataField = continuousMetadataField e &  characterName .~ x }
-
-
--- | (✔)
-instance HasCharacterWeight (ContinuousOptimizationDecoration a) Double where
-
-    characterWeight = lens getter setter
-      where
-         getter e   = continuousMetadataField e ^. characterWeight
-         setter e x = e { continuousMetadataField = continuousMetadataField e &  characterWeight .~ x }
-
-
--- | (✔)
-instance HasIsLeaf (ContinuousOptimizationDecoration a) Bool where
-
-    isLeaf = lens continuousIsLeaf (\e x -> e { continuousIsLeaf = x })
-
-
--- | (✔)
-instance HasCharacterCost (ContinuousOptimizationDecoration a) Double where
-
-    characterCost = lens continuousMinCost (\e x -> e { continuousMinCost = x })
-
-
--- | (✔)
-instance HasPreliminaryInterval (ContinuousOptimizationDecoration a) (Double, Double) where
-
-    preliminaryInterval = lens continuousPreliminaryInterval (\e x -> e { continuousPreliminaryInterval = x })
-
-
--- | (✔)
-instance HasChildPrelimIntervals (ContinuousOptimizationDecoration a) ((Double, Double),(Double, Double)) where
-
-    childPrelimIntervals = lens continuousChildPrelimIntervals (\e x -> e { continuousChildPrelimIntervals = x })
-
-
--- | (✔)
-instance GeneralCharacterMetadata (ContinuousOptimizationDecoration a) where
-
-
-{-
--- | (✔)
-instance EncodableStreamElement a => DiscreteCharacterMetadata (ContinuousOptimizationDecoration a) a where
-
-
--- | (✔)
-instance EncodableStaticCharacter a => DiscreteCharacterDecoration (ContinuousOptimizationDecoration a) a where
--}
-
-
--- | (✔)
-instance ContinuousCharacter a => ContinuousDecoration (ContinuousOptimizationDecoration a) a where
-
-
--- | (✔)
-instance ContinuousCharacter a => ContinuousCharacterDecoration (ContinuousOptimizationDecoration a) a where
-
-
-{-
--- | (✔)
-instance EncodableStaticCharacter a => ContinuousAdditiveHybridDecoration (ContinuousOptimizationDecoration a) a where
-
-
--- | (✔)
-instance EncodableStaticCharacter a => DiscreteExtensionContinuousDecoration (ContinuousOptimizationDecoration a) a where
-
-    extendDiscreteToContinuous subDecoration cost prelimInterval childMedianTup isLeafVal =
-
-        ContinuousOptimizationDecoration
-        { continuousChildPrelimIntervals = childMedianTup
-        , continuousIsLeaf               = isLeafVal
-        , continuousMinCost              = cost
-        , continuousMetadataField        = metadataValue
-        , continuousPreliminaryInterval  = prelimInterval
-        , continuousCharacterField       = subDecoration ^. discreteCharacter
-        }
-      where
-        metadataValue =
-          continuousMetadata
-            <$> (^. characterName)
-            <*> (^. characterWeight)
-            $ subDecoration
--}
--}
-
-
+-- |
+-- Represents the partially complete character decoration after a post-order
+-- traversal.
 newtype ContinuousPostorderDecoration c = CPostD (AdditivePostorderDecoration c)
 
 
@@ -395,7 +293,8 @@ instance ( DiscreteCharacterMetadata   (ContinuousPostorderDecoration a)
 
 
 
-
+-- |
+-- Represents a character decoration after a pre-order traversal.
 newtype ContinuousOptimizationDecoration  c = COptD  (AdditiveOptimizationDecoration c)
 
 

@@ -61,6 +61,9 @@ instance Semigroup (PartialCharacterBlock m i c f a d) where
           }
           
 
+-- |
+-- Converts a 'PartialCharacterBlock' to a 'CharacterBlock', finalizing the
+-- efficient construction process.
 finalizeCharacterBlock :: PartialCharacterBlock m i c f a d -> CharacterBlock m i c f a d
 finalizeCharacterBlock =
     CharacterBlock

@@ -39,11 +39,14 @@
 module Data.Alphabet
   ( Alphabet()
   , AmbiguityGroup
-  , alphabetStateNames
-  , alphabetSymbols
+  -- * Construction
   , fromSymbols
   , fromSymbolsWithStateNames
+  -- * Querries
+  , alphabetStateNames
+  , alphabetSymbols
   , gapSymbol
+  -- * Truncation
   , truncateAtSymbol
   , truncateAtMaxSymbol
   ) where

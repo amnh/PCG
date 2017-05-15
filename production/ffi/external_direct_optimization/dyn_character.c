@@ -27,7 +27,7 @@ void dyn_char_print(dyn_char_p inChar) {
     elem_t *end   = inChar->end;
     printf("Char length   %3zu\n", inChar->len);
     printf("Char capacity %3zu\n", inChar->cap);
-    for( ; start < end; start++) {
+    for( ; start <= end; start++) {
         printf("%2d, ", *start);
     }
     printf("\n");
@@ -70,12 +70,12 @@ dyn_char_reverse_ip (dyn_char_p inChar) {
 void
 dyn_char_prepend (dyn_char_p a, elem_t v) {
     if ( a->cap <= a->len ) {
-      printf("Failing values: capacity: %zu, length: %zu\n", a->cap, a->len);
-      assert(a->cap > a->len);
+        printf("Failing values: capacity: %zu, length: %zu\n", a->cap, a->len);
+        assert(a->cap > a->len);
     }
-    a->char_begin    -= 1;
-    *(a->char_begin)  = v;
-    a->len      += 1;
+    a->char_begin--;
+    *(a->char_begin) = v;
+    a->len++;
 }
 
 

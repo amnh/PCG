@@ -141,6 +141,7 @@ data SankoffOptimizationDecoration c
 type StateContributionList = [Word]
 
 
+-- | (✔)
 instance EncodableStreamElement c => Show (SankoffOptimizationDecoration c) where
 
     show = showDiscreteCharacterElement

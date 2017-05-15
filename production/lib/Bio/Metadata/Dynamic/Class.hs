@@ -20,7 +20,7 @@ module Bio.Metadata.Dynamic.Class
   , HasDenseTransitionCostMatrix(..)
   , HasSymbolChangeMatrix(..)
   , HasTransitionCostMatrix(..)
-  , HasTraversalLocus(..)
+  , HasTraversalFoci(..)
   , MemoizedCostMatrix()
   ) where
 
@@ -43,8 +43,8 @@ class HasDenseTransitionCostMatrix s a | s -> a where
 
 
 -- |
--- A 'Lens' for the 'denseTransitionCostMatrix' field
-class HasTraversalLocus s a | s -> a where
+-- A 'Lens' for the 'traversalFoci' field
+class HasTraversalFoci s a | s -> a where
 
-    {-# MINIMAL traversalLocus #-}
-    traversalLocus  :: Lens' s a
+    {-# MINIMAL traversalFoci #-}
+    traversalFoci  :: Lens' s a

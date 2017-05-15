@@ -17,11 +17,11 @@ module Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification where
 --import           Bio.Character.Decoration.Shared
 --import           Bio.Metadata.General
 import           Bio.Sequence
-import           Bio.Graph.EdgeSet
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
 import           Control.Arrow            ((&&&))
+import           Data.EdgeSet
 import           Data.ExtendedReal
 import           Data.Foldable
 import           Data.Key
@@ -50,10 +50,9 @@ assignPunativeNetworkEdgeCost input@(PDAG2 dag) = PDAG2 $ dag { graphData = newG
 
 calculatePunativeNetworkEdgeCost :: HasBlockCost u v w x y z i r => PhylogeneticDAG2 e n u v w x y z -> ExtendedReal
 calculatePunativeNetworkEdgeCost inputDag
-  | cardinality extraneousEdges > 0 =
-                                    trace   ("Extraneous edges: " <> show extraneousEdges)
-                                    $ trace ("Entire     edges: " <> show entireNetworkEdgeSet)
-                                    $ trace ("Minimal Block edges: " <> show ((\(_,_,x) -> collapseToEdgeSet x) <$> minimalBlockNetworkDisplay))
+  | cardinality extraneousEdges > 0 = trace   ("Extraneous edges: " <> show extraneousEdges)
+                                    . trace ("Entire     edges: " <> show entireNetworkEdgeSet)
+                                    . trace ("Minimal Block edges: " <> show ((\(_,_,x) -> collapseToEdgeSet x) <$> minimalBlockNetworkDisplay)) $
                                       infinity
   | otherwise                       = realToFrac numerator / realToFrac denominator
   where

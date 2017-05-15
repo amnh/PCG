@@ -95,8 +95,8 @@ intersects lhs rhs = lowerBound rhs <= upperBound lhs
 -- |
 -- /O(1)/
 --
--- Finds the intersection of two intervals, the intersection being the smallest interval possible. Does
--- not assume there's an overlap.
+-- Finds the intersection of two intervals, the intersection being the smallest
+-- interval possible. Does not assume there's an overlap.
 intersection :: Ord r => Range r -> Range r -> Range r
 intersection lhs rhs = Range (newLowerBound, newUpperBound, precision lhs)
     where
@@ -107,10 +107,12 @@ intersection lhs rhs = Range (newLowerBound, newUpperBound, precision lhs)
 -- |
 -- /O(1)/
 --
--- Finds the union of two intervals, where the union is the largest interval possible, i.e. from the smallest possible
--- value to the largest possible, considering the values in both intervals.
+-- Finds the union of two intervals, where the union is the largest interval
+-- possible, i.e. from the smallest possible value to the largest possible,
+-- considering the values in both intervals.
 --
--- Works for overlapped or subsetted intervals, as well as non-overlapping intervals.
+-- Works for overlapped or subsetted intervals, as well as non-overlapping
+-- intervals.
 union :: Ord r => Range r -> Range r -> Range r
 union lhs rhs = Range (newLowerBound, newUpperBound, precision lhs)
     where
@@ -121,9 +123,9 @@ union lhs rhs = Range (newLowerBound, newUpperBound, precision lhs)
 -- |
 -- /O(1)/
 --
--- The closest state is the closest value in the left interval to the right interval.
--- This assumes that there is no overlap between the intervals. If the two intervals intersect.
--- incorrect results will be returned.
+-- The closest state is the closest value in the left interval to the right
+-- interval. This assumes that there is no overlap between the intervals. If the
+-- two intervals intersect, incorrect results will be returned.
 closestStateTo :: Ord r => Range r -> Range r -> r
 closestStateTo lhs rhs
     | upperBound lhs < lowerBound rhs = upperBound lhs
@@ -133,8 +135,9 @@ closestStateTo lhs rhs
 -- |
 -- /O(1)/
 --
--- The smallest closed interval is the smallext interval between two non-overlapping intervals, so the
--- largest value in the leftmost interval on the number line to the smallest value of the rightmost.
+-- The smallest closed interval is the smallext interval between two non-
+-- overlapping intervals, so the largest value in the leftmost interval on the
+-- number line to the smallest value of the rightmost.
 smallestClosed :: Ord r => Range r -> Range r -> Range r
 smallestClosed lhs rhs = Range (newLowerBound, newUpperBound, precision lhs)
     where
@@ -145,8 +148,9 @@ smallestClosed lhs rhs = Range (newLowerBound, newUpperBound, precision lhs)
 -- |
 -- /O(1)/
 --
--- The largest closed interval between the single value on the left and the interval on the right.
--- This is the equivalent of 'union', but works for a single value on the left, rather than an interval.
+-- The largest closed interval between the single value on the left and the
+-- interval on the right. This is the equivalent of 'union', but works for a
+-- single value on the left, rather than an interval.
 largestClosed :: Ord r => Range r -> r -> Range r
 largestClosed interval value = Range (newLowerBound, newUpperBound, precision interval)
     where

@@ -10,9 +10,9 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveFunctor, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveGeneric, GeneralizedNewtypeDeriving #-}
 
-module Bio.Graph.EdgeSet
+module Data.EdgeSet
   ( EdgeSet()
   , NetworkDisplayEdgeSet(..)
   , SetLike(..)
@@ -22,22 +22,24 @@ module Bio.Graph.EdgeSet
   ) where
 
 
+import           Control.DeepSeq 
 import           Data.Foldable
 import           Data.Key
 import           Data.List.NonEmpty (NonEmpty(..))
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Data.Set           (Set)
-import qualified Data.Set as Set
-import           Prelude  hiding (zipWith)
+import qualified Data.Set    as Set
+import           GHC.Generics       (Generic)
+import           Prelude     hiding (zipWith)
 
 
 newtype EdgeSet e = ES (Set e)
-  deriving (Foldable, Monoid, Semigroup, Show)
+  deriving (Eq, Foldable, Generic, Monoid, Ord, Semigroup, Show)
 
 
 newtype NetworkDisplayEdgeSet e = NDES (NonEmpty (EdgeSet e))
-  deriving (Show)
+  deriving (Generic, Show)
 
 
 class SetLike s where
@@ -49,6 +51,16 @@ class SetLike s where
     difference :: s -> s -> s
 
     cardinality :: s -> Word
+
+
+instance NFData e => NFData (EdgeSet e) where
+
+    rnf (ES set) = rnf set
+
+
+instance NFData e => NFData (NetworkDisplayEdgeSet e) where
+
+    rnf (NDES sets) = rnf sets
 
 
 instance Ord a => SetLike (Set a) where

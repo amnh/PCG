@@ -1,3 +1,19 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Test.Custom.NucleotideSequence
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Arbitrary instance for dynamic characters.
+--
+-- Allows for base ambiguities and gaps. The sequence will be non-empty.
+--
+-----------------------------------------------------------------------------
+
 module Test.Custom.NucleotideSequence
   ( NucleotideSequence(..)
   ) where
@@ -8,7 +24,12 @@ import           Data.Bimap               (elems)
 import qualified Data.List.NonEmpty as NE
 import           Test.QuickCheck
 
+
+-- |
+-- Represents an arbitrary, non-empty sequence of nucleotide bases that may be
+-- ambiguous and/or include gaps.
 newtype NucleotideSequence = NS DynamicChar
+
 
 instance Show NucleotideSequence where
 
