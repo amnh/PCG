@@ -2,8 +2,8 @@
 #define DEBUG_H
 
 #define DO_2D            0
-#define DO_2D_AFF        1
-#define DO_3D            0
+#define DO_2D_AFF        0
+#define DO_3D            1
 #define DO_3D_AFF        0
 
 #define IDENTITY_COST    0
@@ -11,7 +11,7 @@
 #define SUB_COST         1
 #define GAP_OPEN_COST    2
 
-#define DEBUG_3D         0
+#define DEBUG_3D         1
 #define DEBUG_AFFINE     0
 #define DEBUG_ALGN       0
 #define DEBUG_BT         0

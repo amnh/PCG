@@ -33,10 +33,10 @@
  * structure for two dimensional character alignment.
  */
 struct cost_matrices_2d {
-    unsigned int alphSize;      // alphabet size including gap, and including ambiguities if
+    size_t alphSize;            // alphabet size including gap, and including ambiguities if
                                 // combinations == True
     size_t costMatrixDimension; // n in an n x n matrix
-    unsigned int gap_char;      // gap character value (1 << (alphSize - 1))
+    elem_t gap_char;            // gap character value (1 << (alphSize - 1))
     int cost_model_type;        /* The type of cost model to be used in the alignment,
                                  * i.e. affine or not.
                                  * Based on cost_matrix.ml, values are:
@@ -50,25 +50,24 @@ struct cost_matrices_2d {
                                  * for example, where the number of elements of the alphabet
                                  * is already too big to build all the possible combinations.
                                  */
-    int gap_open;               /* The cost of opening a gap. This is only useful in
-                                 * certain cost_model_types (type 2: affine, based on my reading of ML code).
+    int gap_open;               /* The cost of opening a gap. For affine (type 2).
                                  */
     int is_metric;              /* if tcm is symmetric
                                  *
-                                 * > MISSING IN 3D
+                                 * -- MISSING IN 3D
                                  */
     int all_elements;           // total number of elements. This is alphSize if we're using only unambiguous elems, otherwise |power set|
     int *cost;                  /* The transformation cost matrix, including ambiguities,
                                  * storing the **best** cost for each ambiguity pair
                                  */
-    elem_t *median;               /* The matrix of possible medians between elements in the
+    elem_t *median;             /* The matrix of possible medians between elements in the
                                  * alphabet. The best possible medians according to the cost
                                  * matrix.
                                  */
     int *worst;                 /* The transformation cost matrix, including ambiguities,
                                  * storing the **worst** cost for each ambiguity pair
                                  *
-                                 * > MISSING IN 3D
+                                 * -- MISSING IN 3D
                                  */
     int *prepend_cost;          /* The cost of going from gap -> each base. For ambiguities, use best cost.
                                  * Set up as all_elements x all_elements
@@ -76,7 +75,7 @@ struct cost_matrices_2d {
                                  * Missing in 3d because current version of 3d sets gap cost
                                  * as constant.
                                  *
-                                 * > MISSING IN 3D
+                                 * -- MISSING IN 3D
                                  */
     int *tail_cost;             /* As prepend_cost, but with reverse directionality,
                                  * so base -> gap.
@@ -84,7 +83,7 @@ struct cost_matrices_2d {
                                  * Missing in 3d because current version of 3d sets gap cost
                                  * as constant.
                                  *
-                                 * > MISSING IN 3D
+                                 * -- MISSING IN 3D
                                  */
 };
 
@@ -102,25 +101,23 @@ typedef struct cost_matrices_2d *cost_matrices_2d_p;
 struct cost_matrices_3d {
     size_t alphSize;             /** The number of elements in the alphabet */
     size_t costMatrixDimension;  /** Based on alphSize */
-    unsigned int gap_char;       /** The integer representing a gap character in the alphabet */
+    elem_t gap_char;             /** The integer representing a gap character in the alphabet */
     int cost_model_type;         /** The type of cost model to be used in the alignment */
     int combinations;            /** This is a flag set to true if we are going to accept
-                                     all possible combinations of the elements in the alphabet
-                                     in the alignments. This is not true for protein characters
-                                     for example, where the number of elements of the alphabet
-                                     is already too big to build all the possible combinations.
-                                  */
+                                  *  all possible combinations of the elements in the alphabet
+                                  *  in the alignments. This is not true for protein characters
+                                  *  for example, where the number of elements of the alphabet
+                                  *  is already too big to build all the possible combinations.  */
     int gap_open;                /** The cost of opening a gap. This is only useful in
-                                     certain cost_model_type's. */
+                                  *  certain cost_model_type's. */
     int all_elements;            /** The integer that represents all the combinations, used
-                                     for ambiguities */
+                                  *  for ambiguities */
     int *cost;                   /** The transformation cost matrix. The ordering is row-major,
                                   *  and the lookup is a->b, where a is a row label and b is
-                                  *  a column label
-                                  */
-    elem_t *median;                /** The matrix of possible medians between elements in the
-                                     alphabet. The best possible medians according to the cost
-                                     matrix. */
+                                  *  a column label  */
+    elem_t *median;              /** The matrix of possible medians between elements in the
+                                  *  alphabet. The best possible medians according to the cost
+                                  *  matrix. */
 };
 
 /*
@@ -265,20 +262,20 @@ cm_precalc_4algn ( const cost_matrices_2d_p costMtx
  *  matrix.
  */
 const int *
-cm_get_precal_row ( const int *p
-                  ,       elem_t item
-                  ,       int len
+cm_get_precal_row ( const int    *p
+                  ,       elem_t  item
+                  ,       int     len
                   );
 
 
 
 /** As with 2d, but doesn't compute worst, prepend or tail */
 void
-cm_alloc_set_costs_3d ( int alphSize
-                      , int combinations
-                      , int do_aff
-                      , int gap_open
-                      , int all_elements
+cm_alloc_set_costs_3d ( int                alphSize
+                      , int                combinations
+                      , int                do_aff
+                      , int                gap_open
+                      , int                all_elements
                       , cost_matrices_3d_p res
                       );
 
@@ -293,7 +290,7 @@ cm_alloc_set_costs_3d ( int alphSize
  * contained in t.
  */
 elem_t
-cm_get_median_3d (const cost_matrices_3d_p t, elem_t a, elem_t b, elem_t c);
+cm_get_median_3d (elem_t *tcm, elem_t a, elem_t b, elem_t c, size_t alphSize);
 
 /*
  * Gets the row in the transformation cost matrix tcm where the transformations
