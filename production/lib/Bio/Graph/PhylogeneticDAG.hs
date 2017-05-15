@@ -31,7 +31,7 @@ module Bio.Graph.PhylogeneticDAG
   , UnifiedDynamicCharacter
   , UnRiefiedCharacterDAG
   , assignOptimalDynamicCharacterRootEdges
-  , assignPunativeNetworkEdgeCost
+  , assignPunitiveNetworkEdgeCost
   , generateLocalResolutions
   , postorderSequence'
   , renderSummary

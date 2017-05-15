@@ -38,6 +38,18 @@ import           Prelude     hiding (lookup, zip, zipWith)
 -- import Debug.Trace
 
 
+-- |
+-- A function representing an alignment of two dynamic characters.
+--
+-- The first  result in the tuple is the cost of the alignment.
+--
+-- The second result in the tuple is the /ungapped/ median alignment.
+--
+-- The third  result in the tuple is the   /gapped/ median alignment.
+--
+-- The fourth result in the tuple is the first  input aligned with respect to the second.
+--
+-- The fifth  result in the tuple is the second input aligned with respect to the first.
 type PairwiseAlignment s = s -> s -> (Word, s, s, s, s)
 
 
@@ -58,6 +70,9 @@ directOptimizationPostOrder pairwiseAlignment charDecoration xs =
         y:ys -> updateFromLeaves pairwiseAlignment $ y:|ys
 
 
+-- |
+-- Given a simple dynamic character as input, initializes the leaf node
+-- decoration as the base case of the post-order traversal.
 initializeLeaf
   :: SimpleDynamicDecoration d c
   => d
@@ -73,6 +88,9 @@ initializeLeaf =
       <*> (^. encoded)
 
 
+-- |
+-- Use the decoration(s) of the descendant nodes to calculate the currect node
+-- decoration. The recursive logic of the post-order traversal.
 updateFromLeaves
   :: EncodableDynamicCharacter c
   => PairwiseAlignment c
@@ -103,6 +121,10 @@ directOptimizationPreOrder pairwiseAlignment charDecoration xs =
         (_, parent):_ -> updateFromParent pairwiseAlignment charDecoration parent
 
 
+-- |
+-- Given a post-order traversal result of a dynamic character as input,
+-- initializes the root node decoration as the base case of the pre-order
+-- traversal.
 initializeRoot
   :: DirectOptimizationPostOrderDecoration d c
   => d
@@ -114,6 +136,9 @@ initializeRoot =
       <*> (^. preliminaryGapped)
 
 
+-- |
+-- Use the decoration(s) of the ancestoral nodes to calculate the currect node
+-- decoration. The recursive logic of the pre-order traversal.
 updateFromParent
   :: (EncodableDynamicCharacter c, DirectOptimizationPostOrderDecoration d c, Show c {-, Show (Element c)-})
   => PairwiseAlignment c

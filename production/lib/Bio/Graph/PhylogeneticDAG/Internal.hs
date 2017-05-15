@@ -280,7 +280,7 @@ localResolutionApplication f x y =
         , localSequenceCost     = 0
         , subtreeEdgeSet        = mempty
         , leafSetRepresentation = zeroBits
-        , subtreeRepresentation = singletonNewickSerialization 0
+        , subtreeRepresentation = singletonNewickSerialization (0 :: Word)
         , characterSequence     = characterSequence $ NE.head x
         }
 

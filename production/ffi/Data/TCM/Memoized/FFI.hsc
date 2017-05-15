@@ -59,12 +59,16 @@ data CDynamicChar
    }
 
 
+-- |
+-- Represents a single element in a dynamic character in an exportable form.
 data DCElement = DCElement
     { alphabetSizeElem :: CSize
     , characterElement :: Ptr CBufferUnit
     } deriving (Show)
 
 
+-- |
+-- A closed type wrapping a void pointer in C to the C++ memoized TCM.
 data ForeignVoid deriving (Generic)
 
 
@@ -253,16 +257,32 @@ getMedianAndCost memo lhs rhs = unsafePerformIO $ do
     bufferLength    = calculateBufferLength alphabetSize 1
 
 
-calculateBufferLength :: Enum b => Int -> Int -> b
+-- |
+-- /O(1)/
+--
+-- Calculate the buffer length based on the element count and element bit width.
+calculateBufferLength :: Enum b
+                      => Int -- ^ Element count
+                      -> Int -- ^ Element bit width
+                      -> b
 calculateBufferLength count width = coerceEnum $ q + if r == 0 then 0 else 1
    where
     (q,r)  = (count * width) `divMod` finiteBitSize (undefined :: CULong)
 
 
+-- |
+-- Coerce one 'Enum' value to another through the type's corresponding 'Int'
+-- values.
 coerceEnum :: (Enum a, Enum b) => a -> b
 coerceEnum = toEnum . fromEnum
 
 
+-- |
+-- /O(n)/ where @n@ is the length of the dynamic character.
+--
+-- Malloc and populate a pointer to an exportable representation of the
+-- 'Exportable' value. The supplied value is assumed to be a dynamic character
+-- and the result is a pointer to a C representation of a dynamic character.
 constructCharacterFromExportable :: Exportable s => s -> IO (Ptr CDynamicChar)
 constructCharacterFromExportable exChar = do
     valueBuffer <- newArray $ exportedBufferChunks exportableBuffer
@@ -277,6 +297,13 @@ constructCharacterFromExportable exChar = do
     exportableBuffer = toExportableBuffer exChar
 
 
+-- |
+-- /O(1)/
+--
+-- Malloc and populate a pointer to an exportable representation of the
+-- 'Exportable' value. The supplied value is assumed to be a dynamic character
+-- element and the result is a pointer to a C representation of a dynamic
+-- character element.
 constructElementFromExportable :: Exportable s => s -> IO (Ptr DCElement)
 constructElementFromExportable exChar = do
     valueBuffer    <- newArray $ exportedBufferChunks exportableBuffer
@@ -289,7 +316,13 @@ constructElementFromExportable exChar = do
     exportableBuffer = toExportableBuffer exChar
 
 
-constructEmptyElement :: Int -> IO (Ptr DCElement)
+-- |
+-- /O(1)/
+--
+-- Malloc and populate a pointer to a C representation of a dynamic character.
+-- The buffer of the resulting value is intentially zeroed out.
+constructEmptyElement :: Int -- ^ Bit width of a dynamic character element.
+                      -> IO (Ptr DCElement)
 constructEmptyElement alphabetSize = do
     elementPointer <- malloc :: IO (Ptr DCElement)
     valueBuffer    <- mallocArray bufferLength

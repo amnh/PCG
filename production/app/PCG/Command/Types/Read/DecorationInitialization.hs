@@ -127,7 +127,7 @@ chooseDirectOptimizationComparison dec decs =
 initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
   where
 --    performDecoration :: CharacterDAG -> InitialDecorationDAG
-    performDecoration = assignPunativeNetworkEdgeCost
+    performDecoration = assignPunitiveNetworkEdgeCost
                       . assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostOrder
                       . postorderSequence'
                           (g additivePostOrder)
