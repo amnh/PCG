@@ -49,6 +49,7 @@ import Data.ExtendedFinite
 import GHC.Exts
 import GHC.Integer.Logarithms
 
+
 -- |
 -- A natural number extended to include infinity.
 newtype ExtendedNatural = Cost Word
@@ -56,6 +57,20 @@ newtype ExtendedNatural = Cost Word
 
 
 type instance Finite ExtendedNatural = Word
+
+
+instance Bounded ExtendedNatural where
+
+    maxBound = Cost $ maxBound - 1
+
+    minBound = Cost minBound
+
+
+instance Enum ExtendedNatural where
+
+    fromEnum = fromEnum . toWord
+
+    toEnum   = Cost . toEnum
 
 
 instance ExtendedNumber ExtendedNatural where
@@ -67,64 +82,42 @@ instance ExtendedNumber ExtendedNatural where
     infinity = maxBound
 
 
-instance Show ExtendedNatural where
-
-    show (Cost input)
-      | input == maxBound     = "∞"
-      | input == maxBound - 1 = "ε"
-      | otherwise             = show input
-
-
-instance Bounded ExtendedNatural where
-
-    maxBound = Cost $ maxBound - 1
-
-    minBound = Cost minBound
-
-
 instance Num ExtendedNatural where
 
-  lhs@(Cost x) + rhs@(Cost y)
-    | lhs    == infinity   = infinity
-    | rhs    == infinity   = infinity
-    | result >= infinity   = maxBound
-    | result <  maxima     = maxBound
-    | otherwise            = Cost result
-    where
-      maxima = max x y
-      result = x + y
+    lhs@(Cost x) + rhs@(Cost y)
+      | lhs    == infinity   = infinity
+      | rhs    == infinity   = infinity
+      | result >= infinity   = maxBound
+      | result <  maxima     = maxBound
+      | otherwise            = Cost result
+      where
+        maxima = max x y 
+        result = x + y
 
-  lhs@(Cost x) - rhs@(Cost y)
-    | lhs == infinity = infinity
-    | lhs <= rhs      = minBound 
-    | otherwise       = Cost $ x - y
+    lhs@(Cost x) - rhs@(Cost y)
+      | lhs == infinity = infinity
+      | lhs <= rhs      = minBound 
+      | otherwise       = Cost $ x - y
 
-  lhs@(Cost x) * rhs@ (Cost y)
-    | lhs    == infinity   = infinity
-    | rhs    == infinity   = infinity
-    | zBits  >= wordWidth  = maxBound
-    | otherwise            = Cost $ x * y
-    where
-      wordWidth = finiteBitSize (minBound :: Word)
-      zBits = xBits + yBits
-      xBits = wordLog2 x
-      yBits = wordLog2 y
+    lhs@(Cost x) * rhs@ (Cost y)
+      | lhs    == infinity   = infinity
+      | rhs    == infinity   = infinity
+      | zBits  >= wordWidth  = maxBound
+      | otherwise            = Cost $ x * y
+      where
+        wordWidth = finiteBitSize (minBound :: Word)
+        zBits = xBits + yBits
+        xBits = wordLog2 x
+        yBits = wordLog2 y
 
-  abs = id
+    abs = id
 
-  signum (Cost 0) = 0
-  signum        _ = 1
+    signum (Cost 0) = 0
+    signum        _ = 1
 
-  fromInteger = Cost . fromInteger
+    fromInteger = Cost . fromInteger
 
-  negate = const 0
-
-
-instance Enum ExtendedNatural where
-
-    fromEnum = fromEnum . toWord
-
-    toEnum   = Cost . toEnum
+    negate = const 0
 
 
 instance Integral ExtendedNatural where
@@ -142,6 +135,13 @@ instance Integral ExtendedNatural where
 instance Real ExtendedNatural where
 
     toRational = toRational . toInteger
+
+
+instance Show ExtendedNatural where
+
+    show (Cost input)
+      | input == maxBound     = "∞"
+      | otherwise             = show input
 
 
 {-# INLINE toWord #-}
