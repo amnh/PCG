@@ -46,6 +46,7 @@ data AdditivePostorderDecoration a
    }
 
 
+-- | (✔)
 instance
   ( EncodableStreamElement c
   , Show (Bound c)
@@ -217,7 +218,8 @@ instance ( DiscreteCharacterMetadata   (AdditivePostorderDecoration a)
 
 
 
-
+-- |
+-- Represents the finalized character decoration after a pre-order traversal.
 data AdditiveOptimizationDecoration a
    = AdditiveOptimizationDecoration
    { additiveFinalInterval :: Range (Bound a)
@@ -225,6 +227,7 @@ data AdditiveOptimizationDecoration a
    }
 
 
+-- | (✔)
 instance
   ( EncodableStreamElement c
   , Show (Bound c)

@@ -192,12 +192,13 @@ alphabetStateNames = stateNames
 gapSymbol :: Alphabet a -> a
 gapSymbol alphabet = alphabet ! (length alphabet - 1)
 
+
 -- |
 -- /O(n*log(n)/
 --
 -- Attempts to find the symbol in the Alphabet.
 -- If the symbol exists, returns an alphabet with all the symbols occuring
--- before the supplied symbol included and all symbols occring after the
+-- before the supplied symbol included and all symbols occuring after the
 -- supplied symbol excluded. The gap character is preserved in the alphabet
 -- regardless of the supplied symbol.
 truncateAtSymbol :: (Ord a, IsString a) => a -> Alphabet a -> Alphabet a
@@ -210,6 +211,14 @@ truncateAtSymbol symbol alphabet =
           xs -> fromSymbolsWithStateNames . take (i + 1) $ zip (alphabetSymbols alphabet) xs
 
 
+-- |
+-- /O(n*log(n)/
+--
+-- Attempts to find the maximum provided symbol in the Alphabet.
+-- If the any of the provided symbols exists, returns an alphabet including all
+-- the symbols occuring before the maximum provided symbol and all symbols
+-- occuring after the maximum supplied symbol excluded. The gap character is
+-- preserved in the alphabet regardless of the supplied symbol.
 truncateAtMaxSymbol :: (Foldable t, Ord a, IsString a) => t a -> Alphabet a -> Alphabet a
 truncateAtMaxSymbol symbols alphabet =
     case maxIndex of

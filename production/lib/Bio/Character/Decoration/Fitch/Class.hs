@@ -17,7 +17,7 @@ module Bio.Character.Decoration.Fitch.Class where
 
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Shared
---ximport Bio.Character.Encodable
+--import Bio.Character.Encodable
 --import Bio.Metadata.Discrete
 import Control.Lens
 --import Data.Word
@@ -60,8 +60,8 @@ class ( FitchDecoration s c
 -- A 'Lens' for the 'fitchChildMedians' field.
 class HasChildMedians s a | s -> a where
 
-    childMedians :: Lens' s a
     {-# MINIMAL childMedians #-}
+    childMedians :: Lens' s a
 
 
 {-
@@ -78,11 +78,13 @@ class HasMinCost s a | s -> a where
 -- A 'Lens' for the 'fitchPreliminaryMedian' field.
 class HasPreliminaryMedian s a | s -> a where
 
-    preliminaryMedian :: Lens' s a
     {-# MINIMAL preliminaryMedian #-}
+    preliminaryMedian :: Lens' s a
 
 
+-- |
+-- A 'Lens' for the 'HasFinalMedian' field.
 class HasFinalMedian s a | s -> a where
 
-    finalMedian :: Lens' s a
     {-# MINIMAL finalMedian #-}
+    finalMedian :: Lens' s a

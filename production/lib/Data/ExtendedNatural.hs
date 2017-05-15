@@ -14,7 +14,7 @@
 --
 -- The following behavior should be noted:
 --
---   - 'ExtendedNatural' has a domain of @[0, (maxBound :: Word) - 1] <> infinity@ 
+--   - 'ExtendedNatural' has a domain of @[0 .. (maxBound :: Word) - 1] <> infinity@ 
 --
 --   - @unsafeToFinite (maxBound :: ExtendedNatural) == (maxBound :: Word) - 1@
 --

@@ -22,6 +22,9 @@ import Data.ExtendedFinite
 import Data.Range
 
 
+-- |
+-- A partially complete character decoration that contains an interval character
+-- after a post-order traversal.
 class ( RangedCharacterDecoration s c
       , HasCharacterCost s (Finite (Bound c))
       , HasChildPrelimIntervals s (Range (Bound c), Range (Bound c))
@@ -30,6 +33,9 @@ class ( RangedCharacterDecoration s c
       ) => RangedPostorderDecoration s c | s -> c where
 
 
+-- |
+-- A finalized character decoration that contains an interval character after a
+-- pre-order traversal.
 class ( RangedCharacterDecoration s c
       , HasFinalInterval s (Range (Bound c))
       ) => RangedDecorationOptimization s c | s -> c where
@@ -40,7 +46,11 @@ class ( RangedCharacterDecoration s c
 -- type.
 
 -- class DiscreteCharacterDecoration s a => AdditiveCharacterDecoration s a | s -> a where
-  
+
+
+-- |
+-- A character decoration that can extended to a represent the results of a
+-- post-order traversal.
 class RangedPostorderDecoration s c => RangedExtensionPostorder s c | s -> c where
 
     extendRangedToPostorder :: ( DiscreteCharacterMetadata x
@@ -54,6 +64,9 @@ class RangedPostorderDecoration s c => RangedExtensionPostorder s c | s -> c whe
                             -> s
 
 
+-- |
+-- A character decoration that can extended to a represent the results of a
+-- pre-order traversal.
 class ( RangedDecorationOptimization s c
       ) => RangedExtensionPreorder s c | s -> c where
 

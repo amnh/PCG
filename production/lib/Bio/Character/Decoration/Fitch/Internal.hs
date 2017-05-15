@@ -45,6 +45,7 @@ data FitchOptimizationDecoration f
    }
 
 
+-- | (✔)
 instance EncodableStreamElement c => Show (FitchOptimizationDecoration c) where
 
     show c = unlines

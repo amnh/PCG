@@ -43,8 +43,6 @@ class HasContinuousCharacter s a | s -> a where
     {-# MINIMAL continuousCharacter #-} 
 
 
-
-
 -- |
 -- An abstract initial additive character decoration with a polymorphic character
 -- type.

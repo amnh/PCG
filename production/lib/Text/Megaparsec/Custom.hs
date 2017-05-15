@@ -156,6 +156,9 @@ runParserOnFile :: Show a => Parsec Dec String a -> FilePath -> IO String
 runParserOnFile parser filePath = either (parseErrorPretty :: ParseError Char Dec -> String) show . parse parser filePath <$> readFile filePath
 
 
+-- |
+-- Runs the supplied parser on the input stream with default error types.
+-- Useful for quick tests in GHCi.
 parseWithDefaultErrorType :: Parsec Dec s a -> s -> Either (ParseError (Token s) Dec) a
 parseWithDefaultErrorType c = parse c "" 
 

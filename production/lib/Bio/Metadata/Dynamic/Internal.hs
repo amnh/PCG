@@ -54,12 +54,16 @@ import GHC.Generics       (Generic)
 type TraversalTopology  = EdgeSet TraversalFocusEdge
 
 
+-- |
+-- An unrooted edge.
 type TraversalFocusEdge = (Int, Int)
 
 
 type TraversalFocus     = (TraversalFocusEdge, TraversalTopology)
 
 
+-- |
+-- Represents a collection of paired rooting edges and unrooted topologies.
 type TraversalFoci      = NonEmpty TraversalFocus
 
 
@@ -232,6 +236,14 @@ dynamicMetadataFromTCM name weight alpha tcm =
     denseTCM = maybeConstructDenseTransitionCostMatrix alpha sigma
 
 
+-- |
+-- /O(n^3)/ Constructs 2D & 3D dense TCMs.
+--
+-- Conditionally construct a 'DenseTransitionCostMatrix'. If the alphabet size is
+-- too large, a @Nothing@ value will be returned. Otherwise the dense TCM is
+-- constructed strictly at the time the function in invoked.
+--
+-- Currentlty returns a @Just@ value for alphabet sizes in the range @[2..8]@.
 maybeConstructDenseTransitionCostMatrix :: Alphabet a -> (Word -> Word -> Word) -> Maybe DenseTransitionCostMatrix
 maybeConstructDenseTransitionCostMatrix alpha sigma = force f
   where

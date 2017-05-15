@@ -247,6 +247,10 @@ instance Show TCM where
             pad   = (padSpacing - length shown) `replicate` ' '
         
 
+-- |
+-- /O(n^2)/
+-- 
+-- Removes the supplied columns/rows from the TCM.
 reduceTcm :: IntSet -> TCM -> TCM
 reduceTcm missingSymbolIndicies tcm = generate reducedDimension genFunction
   where

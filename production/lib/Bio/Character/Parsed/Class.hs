@@ -13,7 +13,10 @@
 -----------------------------------------------------------------------------
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 
-module Bio.Character.Parsed.Class where
+module Bio.Character.Parsed.Class
+  ( ParsedCharacters(..)
+  , TaxonCharacters
+  ) where
 
 import           Bio.Character.Parsed.Internal
 import           Control.Arrow             ((&&&))

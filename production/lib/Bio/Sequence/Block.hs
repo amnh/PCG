@@ -37,6 +37,7 @@ import qualified Data.Vector                   as V
 import           Prelude                       hiding (zipWith)
 import           Safe                                 (headMay)
 
+
 -- |
 -- CharacterBlocks satisfying this constraint have a calculable cost.
 type HasBlockCost u v w x y z i r =
@@ -77,6 +78,12 @@ hexmap f1 f2 f3 f4 f5 f6 =
       <*> (parmap rpar f6 . dynamicCharacters       )
 
 
+-- |
+-- Performs a 2D transform on the 'Traversable' structure of 'CharacterBlock'
+-- values.
+-- 
+-- Assumes that the 'CharacterBlock' values in the 'Traversable' structure are of
+-- equal length. If this assumtion is violated, the result will be truncated.
 hexTranspose :: Traversable t => t (CharacterBlock m i c f a d) -> CharacterBlock (t m) (t i) (t c) (t f) (t a) (t d)
 hexTranspose = 
     CharacterBlock
@@ -96,6 +103,12 @@ hexTranspose =
         listOfVectors = fmap f xs
 
 
+-- |
+-- Performs a zip over the two character blocks. Uses the input functions to zip
+-- the different character types in the character block.
+-- 
+-- Assumes that the 'CharacterBlock' values have the same number of each character
+-- type. If this assumtion is violated, the result will be truncated.
 hexZipWith :: (m1 -> m2 -> m3)
            -> (i1 -> i2 -> i3) 
            -> (c1 -> c2 -> c3)
@@ -138,6 +151,9 @@ toMissingCharacters cb =
     }
 
 
+-- |
+-- Calculates the cost of a 'CharacterBlock'. Performs some of the operation in
+-- parallel.
 blockCost :: HasBlockCost u v w x y z i r => CharacterBlock u v w x y z -> r
 blockCost block = sum . fmap sum $
     [ parmap rpar integralCost . nonAdditiveCharacterBins

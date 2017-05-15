@@ -20,6 +20,10 @@ import Data.ExtendedFinite
 import Data.Range
 
 
+-- |
+-- Represents a character decoration that has a bounded interval for the character.
+--
+-- Used for Additive character scoring.
 class ( HasIntervalCharacter d c
       , Ranged c
       , ExtendedNumber (Bound c)
@@ -30,7 +34,7 @@ class ( HasIntervalCharacter d c
 
 
 -- |
--- A 'Lens' for the field.
+-- A 'Lens' for the 'isLeaf' field.
 class HasIsLeaf s a | s -> a where
 
     {-# MINIMAL isLeaf #-}
@@ -38,13 +42,15 @@ class HasIsLeaf s a | s -> a where
 
 
 -- |
--- A 'Lens' for the field.
+-- A 'Lens' for the 'characterCost' field.
 class HasCharacterCost s a | s -> a where
 
     {-# MINIMAL characterCost #-}
     characterCost :: Lens' s a
 
 
+-- |
+-- A 'Lens' for the 'intervalCharacter' field.
 class HasIntervalCharacter s a | s -> a where
 
     {-# MINIMAL intervalCharacter #-}

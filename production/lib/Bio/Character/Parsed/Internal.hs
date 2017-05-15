@@ -24,17 +24,24 @@ import Data.Map           (Map)
 import Data.Vector        (Vector)
 
 
--- | A mapping from taxon identifiers to thier corresponding sequences.
+-- |
+-- A mapping from taxon identifiers to thier corresponding sequences.
 type TaxonCharacters = Map Identifier ParsedChars
 
 
--- | Represents a character sequence containing possibly missing character data.
+-- |
+-- Represents a character sequence containing possibly missing character data.
 type ParsedChars = Vector ParsedCharacter
 
-
+-- |
+-- The string value that uniquely identifies a taxon.
 type Identifier = String
 
 
+-- |
+-- A generalized character type extracted from a parser.
+-- A character can be real-valued, discrete and singular,
+-- or discrete with variable length.
 data ParsedCharacter
    = ParsedContinuousCharacter (Maybe Double)
    | ParsedDiscreteCharacter   (Maybe (AmbiguityGroup String))

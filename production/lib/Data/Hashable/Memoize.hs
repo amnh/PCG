@@ -1,3 +1,18 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Hashable.Memoize
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Exposes memoization combinators. Assumes that the supplied functions are
+-- side effect free. If this assumtion is violated, undefined and unexpected
+-- behavior may result.
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE BangPatterns #-}
 
 module Data.Hashable.Memoize
@@ -62,6 +77,9 @@ memoize f = unsafePerformIO $ do
             let !v = f k
             in insert ht k v $> v
 
+-- |
+-- A memoizing combinator similar to 'memoize' except that it that acts on a
+-- function of two inputs rather than one.
 {-# NOINLINE memoize2 #-}
 memoize2 :: (Eq a, Eq b, Hashable a, Hashable b) => (a -> b -> c) -> a -> b -> c
 memoize2 f = let f' = memoize (uncurry f)

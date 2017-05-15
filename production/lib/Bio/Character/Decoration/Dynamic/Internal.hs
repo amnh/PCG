@@ -45,6 +45,7 @@ data DynamicDecorationInitial d
    } deriving (Eq)
 
 
+-- | (✔)
 instance Hashable d => Hashable (DynamicDecorationInitial d) where
 
     hashWithSalt salt = hashWithSalt salt . dynamicDecorationInitialEncodedField
@@ -210,6 +211,7 @@ data DynamicDecorationDirectOptimizationPostOrderResult d
    } deriving (Eq)
 
 
+-- | (✔)
 instance EncodableStream d => Show (DynamicDecorationDirectOptimizationPostOrderResult d) where
 
     show dec = (shownEdge <>) . unlines . (shownAlphabet:) . (shownCost:) $ f <$> pairs
@@ -236,6 +238,7 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimizationPostOrder
           ]
   
 
+-- | (✔)
 instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostOrderDecoration (DynamicDecorationDirectOptimizationPostOrderResult d) d where
 
     extendDynamicToPostOrder subDecoration localCost totalCost ungapped gapped lhsAlignment rhsAlignment =
@@ -251,6 +254,7 @@ instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostOrderDecoratio
         }
 
 
+-- | (✔)
 instance Hashable d => Hashable (DynamicDecorationDirectOptimizationPostOrderResult d) where
 
       hashWithSalt salt dec = foldr1 xor $
@@ -405,6 +409,7 @@ instance (EncodableStream d, Element d ~ c) => DynamicCharacterMetadata (Dynamic
     extractDynamicCharacterMetadata = extractDynamicCharacterMetadata . dynamicDecorationDirectOptimizationPostOrderMetadata
 
 
+-- | (✔)
 instance EncodableDynamicCharacter d => SimpleDynamicDecoration (DynamicDecorationDirectOptimizationPostOrderResult d) d where
 
 
@@ -702,6 +707,7 @@ instance HasPreliminaryUngapped (DynamicDecorationImpliedAlignment d) d where
     preliminaryUngapped = lens dynamicDecorationImpliedAlignmentPreliminaryUngappedField (\e x -> e { dynamicDecorationImpliedAlignmentPreliminaryUngappedField = x })
 
 
+-- | (✔)
 instance HasLeftAlignment (DynamicDecorationImpliedAlignment d) d where
 
     leftAlignment = lens dynamicDecorationImpliedAlignmentLeftAlignmentField (\e x -> e { dynamicDecorationImpliedAlignmentLeftAlignmentField = x })

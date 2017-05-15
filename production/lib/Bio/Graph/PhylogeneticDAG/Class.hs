@@ -12,13 +12,13 @@
 --
 -----------------------------------------------------------------------------
 
-module Bio.Graph.PhylogeneticDAG.Class where
+module Bio.Graph.PhylogeneticDAG.Class
+  ( PhylogeneticDAGish(..)
+  ) where
 
 
-id' :: a -> b -> a
-id' x _ = x
-
-
+-- |
+-- A typeclass for abstracting opperations on a phylogenetic DAG.
 class PhylogeneticDAGish dag where
 
     postorderDAG         :: (e -> [e'] -> e')
@@ -187,4 +187,6 @@ class PhylogeneticDAGish dag where
                         -> dag e n u v w x y z'
     preorderDynamic       = preorderDAG id' id' id' id' id' id' id'
 
-                 
+
+id' :: a -> b -> a
+id' x _ = x

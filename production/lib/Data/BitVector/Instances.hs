@@ -1,3 +1,16 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.BitVector.Instances
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Defines a 'FiniteBits' instance for 'BitVector'. 
+--
+-----------------------------------------------------------------------------
 
 {-# LANGUAGE MagicHash #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}

@@ -14,7 +14,6 @@
 
 module Bio.Character.Encodable.Continuous.Internal where
 
-
 import Bio.Character.Encodable.Continuous.Class
 import Bio.Character.Encodable.Internal
 import Control.Arrow     ((&&&))
@@ -22,6 +21,9 @@ import Data.ExtendedReal
 import Data.Range
 
 
+-- |
+-- Represents a real-valued range with a minimum lower bound of zero and a
+-- maximum upper bound of infinity.
 newtype ContinuousChar = CC (ExtendedReal, ExtendedReal)
   deriving (Eq)
 
@@ -46,6 +48,10 @@ instance PossiblyMissingCharacter ContinuousChar where
     isMissing (CC c) = c == missingRange
 
 
+-- |
+-- The default range for "missing" continuous characters.
+--
+-- This value ensures that the scoring on th character produces correct results.
 missingRange :: (ExtendedReal, ExtendedReal)
 missingRange = (minBound, maxBound)
 
@@ -71,6 +77,7 @@ instance ContinuousCharacter ContinuousChar where
 type instance Bound ContinuousChar = ExtendedReal
 
 
+-- | (✔)
 instance Ranged ContinuousChar where
 
     toRange (CC interval) = fromTuple interval

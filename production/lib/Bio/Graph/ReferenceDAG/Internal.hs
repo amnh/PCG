@@ -73,6 +73,7 @@ data  GraphData
     }
 
 
+-- | (✔)
 instance Show GraphData where
   
     show x = unlines
@@ -110,6 +111,7 @@ instance Foldable (ReferenceDAG e) where
 type instance Key (ReferenceDAG e) = Int
 
 
+-- | (✔)
 instance FoldableWithKey (ReferenceDAG e) where
 
     {-# INLINE foldrWithKey #-}
@@ -198,6 +200,9 @@ instance {- (Show e, Show n) => -} Show (ReferenceDAG e n) where
     show dag = unlines [topologyRendering dag, "", referenceRendering dag]
 
 
+
+-- |
+-- Get the edge set of the DAG. Includes edges to root nodes.
 getEdges :: ReferenceDAG e n -> EdgeSet (Int, Int)
 getEdges dag = foldMap1 f $ rootRefs dag
   where
@@ -408,6 +413,10 @@ referenceRendering dag = unlines $ [shownRootRefs] <> toList shownDataLines
     pad n (x:xs) = x : pad (n-1) xs
 
 
+-- |
+-- Use the supplied transformation to fold the Node values of the DAG into a
+-- 'Monoid' result. The fold is *loosely* ordered from *a* root node towards the
+-- leaves.
 nodeFoldMap :: Monoid m => (n -> m) -> ReferenceDAG e n -> m
 nodeFoldMap f = foldMap f . fmap nodeDecoration . references
 
@@ -453,6 +462,20 @@ contractToContiguousVertexMapping inputMap = foldMapWithKey contractIndices inpu
         value' = (IS.map decrementIndex iSet, datum, IM.mapKeysMonotonic decrementIndex iMap) 
     
 
+-- |
+-- Ensure that each vertex has either:
+--
+--   - In-degree 0, out degree 1
+--
+--   - In-degree 0, out degree 2
+--
+--   - In-degree 1, out degree 2
+--
+--   - In-degree 1, out degree 0
+--
+--   - In-degree 2, out degree 1
+--
+-- Expand or contract edges as necessary to enforce the above invariant.
 expandVertexMapping :: Monoid a => IntMap (IntSet, t, IntMap a) -> IntMap (IntSet, t, IntMap a)
 expandVertexMapping unexpandedMap = snd . foldl' expandEdges (initialCounter+1, unexpandedMap) $ IM.keys unexpandedMap
   where

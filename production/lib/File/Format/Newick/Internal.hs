@@ -86,6 +86,10 @@ instance Semigroup NewickNode where
         }
 
 
+-- |
+-- Renders the 'NewickForest' to a 'String'. If the forest contains a DAG with
+-- in-degree  greater than one, then the shared subtree in a DAG will be rendered
+-- multiple times. 
 renderNewickForest :: NewickForest -> String
 renderNewickForest = drawForest . unfoldForest f . toList
   where
