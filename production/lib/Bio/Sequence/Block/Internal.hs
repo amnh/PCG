@@ -19,9 +19,9 @@ module Bio.Sequence.Block.Internal
 
 import Data.Foldable
 import Data.Semigroup
-import Data.Vector                  (Vector)
-import Data.Vector.Instances        ()
-import Prelude               hiding (zipWith)
+import Data.Vector           (Vector)
+import Data.Vector.Instances ()
+import Prelude        hiding (zipWith)
 
 
 -- |
@@ -30,18 +30,18 @@ import Prelude               hiding (zipWith)
 -- definitions.
 --
 -- Use '(<>)' to construct larger blocks.
-data CharacterBlock m i c f a d
+data CharacterBlock u v w x y z
    = CharacterBlock
-   { continuousCharacterBins  :: Vector c
-   , nonAdditiveCharacterBins :: Vector f
-   , additiveCharacterBins    :: Vector a
-   , metricCharacterBins      :: Vector m
-   , nonMetricCharacterBins   :: Vector i
-   , dynamicCharacters        :: Vector d
+   { continuousCharacterBins  :: Vector u
+   , nonAdditiveCharacterBins :: Vector v
+   , additiveCharacterBins    :: Vector w
+   , metricCharacterBins      :: Vector x
+   , nonMetricCharacterBins   :: Vector y
+   , dynamicCharacters        :: Vector z
    } deriving (Eq)
 
 
-instance Semigroup (CharacterBlock m i c f a d) where
+instance Semigroup (CharacterBlock u v w x y z) where
 
     lhs <> rhs =
         CharacterBlock
@@ -54,13 +54,13 @@ instance Semigroup (CharacterBlock m i c f a d) where
           }
 
 
-instance ( Show m
-         , Show i
-         , Show c
-         , Show f
-         , Show a
-         , Show d
-         ) => Show (CharacterBlock m i c f a d) where
+instance ( Show u
+         , Show v
+         , Show w
+         , Show x
+         , Show y
+         , Show z
+         ) => Show (CharacterBlock u v w x y z) where
 
     show block = unlines
         [ "Fitch Characters:"

@@ -59,21 +59,21 @@ import           Prelude                 hiding (zipWith)
 -- routines.
 --
 -- Blocks are optimized atomically with resepect to network resolutions.
-newtype CharacterSequence m i c f a d
-    = CharSeq (NonEmpty (CharacterBlock m i c f a d))
+newtype CharacterSequence u v w x y z
+    = CharSeq (NonEmpty (CharacterBlock u v w x y z))
     deriving (Eq)
 
 
 -- |
 -- Perform a six way map over the polymorphic types.
-hexmap :: (m -> m')
-       -> (i -> i')
-       -> (c -> c')
-       -> (f -> f')
-       -> (a -> a')
-       -> (d -> d')
-       -> CharacterSequence m  i  c  f  a  d
-       -> CharacterSequence m' i' c' f' a' d'
+hexmap :: (u -> u')
+       -> (v -> v')
+       -> (w -> w')
+       -> (x -> x')
+       -> (y -> y')
+       -> (z -> z')
+       -> CharacterSequence u  v  w  x  y  z
+       -> CharacterSequence u' v' w' x' y' z'
 hexmap f1 f2 f3 f4 f5 f6 = fromBlocks . parmap rpar (Blk.hexmap f1 f2 f3 f4 f5 f6) . toBlocks
 
 
@@ -106,42 +106,42 @@ hexTranspose = fromBlocks . deepTranspose . fmap toBlocks . toList
 -- Assumes that the 'CharacterSequence' values have the same number of character
 -- blocks and the same number of each character type in the corresponding block
 -- of each block. If this assumtion is violated, the result will be truncated.
-hexZipWith :: (m1 -> m2 -> m3)
-           -> (i1 -> i2 -> i3)
-           -> (c1 -> c2 -> c3)
-           -> (f1 -> f2 -> f3)
-           -> (a1 -> a2 -> a3)
-           -> (d1 -> d2 -> d3)
-           -> CharacterSequence m1 i1 c1 f1 a1 d1
-           -> CharacterSequence m2 i2 c2 f2 a2 d2
-           -> CharacterSequence m3 i3 c3 f3 a3 d3
+hexZipWith :: (u -> u' -> u'')
+           -> (v -> v' -> v'')
+           -> (w -> w' -> w'')
+           -> (x -> x' -> x'')
+           -> (y -> y' -> y'')
+           -> (z -> z' -> z'')
+           -> CharacterSequence u   v   w   x   y   z
+           -> CharacterSequence u'  v'  w'  x'  y'  z'
+           -> CharacterSequence u'' v'' w'' x'' y'' z''
 hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = fromBlocks $ parZipWith rpar (Blk.hexZipWith f1 f2 f3 f4 f5 f6) (toBlocks lhs) (toBlocks rhs)
 
 
 -- |
 -- Destructs a 'CharacterSequence' to it's composite blocks.
 {-# INLINE toBlocks #-}
-toBlocks :: CharacterSequence m i c f a d -> NonEmpty (CharacterBlock m i c f a d)
+toBlocks :: CharacterSequence u v w x y z -> NonEmpty (CharacterBlock u v w x y z)
 toBlocks (CharSeq x) = x
 
 
 -- |
 -- Constructs a 'CharacterSequence' from a non-empty colection of blocks.
 {-# INLINE fromBlocks #-}
-fromBlocks :: NonEmpty (CharacterBlock m i c f a d) -> CharacterSequence m i c f a d
+fromBlocks :: NonEmpty (CharacterBlock u v w x y z) -> CharacterSequence u v w x y z
 fromBlocks = CharSeq
 
 
-type instance Element (CharacterSequence m i c f a d) = CharacterBlock m i c f a d
+type instance Element (CharacterSequence u v w x y z) = CharacterBlock u v w x y z
 
 
-instance MonoFunctor (CharacterSequence m i c f a d) where
+instance MonoFunctor (CharacterSequence u v w x y z) where
 
     {-# INLINE omap #-}
     omap f = fromBlocks . fmap f . toBlocks
 
 
-instance MonoFoldable (CharacterSequence m i c f a d) where
+instance MonoFoldable (CharacterSequence u v w x y z) where
 
     {-# INLINE ofoldMap #-}
     ofoldMap f = foldMap f . toBlocks
@@ -166,7 +166,7 @@ instance MonoFoldable (CharacterSequence m i c f a d) where
 
 
 -- | Monomorphic containers that can be traversed from left to right.
-instance MonoTraversable (CharacterSequence m i c f a d) where
+instance MonoTraversable (CharacterSequence u v w x y z) where
 
     {-# INLINE otraverse #-}
     otraverse f = fmap fromBlocks . traverse f . toBlocks

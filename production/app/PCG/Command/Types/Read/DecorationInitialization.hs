@@ -130,11 +130,11 @@ initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ f
     performDecoration = assignPunativeNetworkEdgeCost
                       . assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostOrder
                       . postorderSequence'
-                          (g  sankoffPostOrder)
-                          (g  sankoffPostOrder)
                           (g additivePostOrder)
                           (g    fitchPostOrder)
                           (g additivePostOrder)
+                          (g  sankoffPostOrder)
+                          (g  sankoffPostOrder)
                           (g adaptiveDirectOptimizationPostOrder)
       where
         g _  Nothing  [] = error "Uninitialized leaf node. This is bad!"
