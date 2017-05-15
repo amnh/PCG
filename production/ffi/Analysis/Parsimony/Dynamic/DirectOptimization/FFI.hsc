@@ -433,6 +433,9 @@ foreign import ccall unsafe "c_alignment_interface.h align3d"
 {- Exported Functions -}
 
 
+-- |
+-- Generate the 2D and 3D dense TCM matricies used for FFI calls to
+-- 'foreignPairwiseDO' and 'foreignThreeWayDO'.
 generateDenseTransitionCostMatrix
   :: Word                   -- ^ The gap open cost. A zero value indicates non-affine alignment context
   -> Word                   -- ^ The character alphabet size
@@ -444,6 +447,12 @@ generateDenseTransitionCostMatrix affineCost alphabetSize costFunction =
       _ -> getCostMatrix2dAffine    affineCost alphabetSize costFunction
 
 
+-- |
+-- Align two dynamic characters using an FFI call for more efficient computation
+-- on small alphabet sizes.
+--
+-- Requires a pre-generated 'DenseTransitionCostMatrix' from a call to
+-- 'generateDenseTransitionCostMatrix' defining the alphabet and transition costs.
 foreignPairwiseDO :: ( EncodableDynamicCharacter s
                      , Exportable s
                      , Show s
@@ -455,6 +464,12 @@ foreignPairwiseDO :: ( EncodableDynamicCharacter s
 foreignPairwiseDO lhs rhs costMatrix = algn2d lhs rhs costMatrix DoNotComputeUnions ComputeMedians
 
 
+-- |
+-- Align three dynamic characters using an FFI call for more efficient computation
+-- on small alphabet sizes.
+--
+-- Requires a pre-generated 'DenseTransitionCostMatrix' from a call to
+-- 'generateDenseTransitionCostMatrix' defining the alphabet and transition costs.
 foreignThreeWayDO :: ( EncodableDynamicCharacter s
                      , Exportable s
                      , Show s

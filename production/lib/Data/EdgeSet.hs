@@ -8,6 +8,8 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
+-- Set-like structures for collection of edges.
+--
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveGeneric, GeneralizedNewtypeDeriving #-}
@@ -34,14 +36,24 @@ import           GHC.Generics       (Generic)
 import           Prelude     hiding (zipWith)
 
 
+-- |
+-- Represents a collection of edges.
+--
+-- Often used to represent a spanning tree in a DAG.
 newtype EdgeSet e = ES (Set e)
   deriving (Eq, Foldable, Generic, Monoid, Ord, Semigroup, Show)
 
 
+-- |
+-- Represents a multiple disconnected collections of edges.
+--
+-- Often used to represent a spanning forest in a multi-rooted DAG.
 newtype NetworkDisplayEdgeSet e = NDES (NonEmpty (EdgeSet e))
   deriving (Generic, Show)
 
 
+-- |
+-- Set operations that can be perfomred on set-like structures.
 class SetLike s where
 
     union :: s -> s -> s
@@ -101,13 +113,22 @@ instance Ord a => Semigroup (NetworkDisplayEdgeSet a) where
     (NDES x) <> (NDES y) = NDES $ zipWith (<>) x y
 
 
+-- |
+-- Coalesce the disconnected edge sets of the 'NetworkDisplayEdgeSet' to a
+-- single 'EdgeSet'.
 collapseToEdgeSet :: Ord e => NetworkDisplayEdgeSet e -> EdgeSet e
 collapseToEdgeSet (NDES x) = fold1 x
 
 
+-- |
+-- Construct a 'NetworkDisplayEdgeSet' from a non-empty collection of edge sets.
 fromEdgeSets :: NonEmpty (EdgeSet e) -> NetworkDisplayEdgeSet e
 fromEdgeSets = NDES
 
 
+-- |
+-- Construct a singleton 'EdgeSet' value. Use the semigroup operator '(<>)' to
+-- construct larger a 'EdgeSet'. This enforces the non-empty invariant of the
+-- 'EdgeSet' data-structure.
 singletonEdgeSet :: e -> EdgeSet e
 singletonEdgeSet = ES . Set.singleton

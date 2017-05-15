@@ -197,7 +197,8 @@ instance (EncodableDynamicCharacter d) => DynamicCharacterDecoration (DynamicDec
         denseMay = maybeConstructDenseTransitionCostMatrix alphabet scm
 
 
-
+-- |
+-- Represents the partial character decoration result of a post-order traversal.
 data DynamicDecorationDirectOptimizationPostOrderResult d
    = DynamicDecorationDirectOptimizationPostOrderResult
    { dynamicDecorationDirectOptimizationPostOrderCharacterCost            :: Word

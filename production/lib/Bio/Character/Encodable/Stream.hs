@@ -104,7 +104,8 @@ class ( EncodableStreamElement (Element s)
     gapOfStream = getGapElement . headEx
 
 
--- | Show an 'EncodableStreamElement' by decoding it with it's corresponding alphabet.
+-- |
+-- Show an 'EncodableStreamElement' by decoding it with it's corresponding alphabet.
 showStreamElement :: EncodableStreamElement e => Alphabet String -> e -> String
 showStreamElement alphabet element
   | zeroBits == element = "<Empty Character>"
@@ -131,6 +132,10 @@ showStreamElement alphabet element
       | otherwise                    = x
 
 
+-- |
+-- Serialize any instance of 'FiniteBits' as a stream of 1s and 0s with the
+-- left hand side of the stream representing the least significant bit and the
+-- right hand side of the stream representing the most significant bit.
 showBits :: FiniteBits b => b -> String
 showBits b = foldMap f [0 .. finiteBitSize b - 1]
   where
@@ -139,16 +144,20 @@ showBits b = foldMap f [0 .. finiteBitSize b - 1]
       | otherwise      = "0"
 
 
--- | Show an 'EncodableStream' by decoding it with it's corresponding alphabet.
+-- |
+-- Show an 'EncodableStream' by decoding it with it's corresponding alphabet.
 showStream :: EncodableStream s => Alphabet String -> s -> String
 showStream alphabet = ofoldMap (showStreamElement alphabet)
 
 
--- | Number of bits in a `Word` or `Int` type on this machine, derived at compile time.
+-- |
+-- Number of bits in a `Word` or `Int` type on this machine, derived at compile time.
 bitsInLocalWord :: Int
 bitsInLocalWord  = finiteBitSize (undefined :: CULong)
 
 
+-- |
+-- Convert an encobale stream to a concrete 'ExportableCharacterElements' value.
 encodableStreamToExportableCharacterElements :: (EncodableStream s, EncodedAmbiguityGroupContainer s, Integral (Element s))
                                              => s -> Maybe ExportableCharacterElements
 encodableStreamToExportableCharacterElements dc
