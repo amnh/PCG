@@ -53,6 +53,7 @@ type BlockTopologies = NonEmpty (EdgeSet (Int, Int))
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
 preorderSequence' :: ( Eq z, Eq z', Hashable z, Hashable z'
+                     , HasBlockCost u  v  w  x  y  z  Word Double
                      , HasBlockCost u' v' w' x' y' z' Word Double
                      )
                   => (u -> [(Word, u')] -> u')
@@ -84,15 +85,15 @@ preorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
           where
             (inheritedToplogies, newResolution)
               | i `elem` rootRefs dag = (sequenceOfBlockMinimumTopologies, mockResInfo datumResolutions $ computeOnApplicableResolution f1 f2 f3 f4 f5 f6 sequenceOfBlockMinimumTopologies datumResolutions [])
-              | otherwise             = (               parentalToplogies, mockResInfo datumResolutions $ computeOnApplicableResolution f1 f2 f3 f4 f5 f6                parentalToplogies datumResolutions $ fmap snd parentResolutions)
+              | otherwise             = (               parentalToplogies, mockResInfo datumResolutions $ computeOnApplicableResolution f1 f2 f3 f4 f5 f6                parentalToplogies datumResolutions parentalResolutions)
 
             -- A "sequence" of the minimum topologies that correspond to each block.
-            -- sequenceOfBlockMinimumTopologies :: NonEmpty (EdgeSet (Int, Int))
+            sequenceOfBlockMinimumTopologies :: NonEmpty (EdgeSet (Int, Int))
             sequenceOfBlockMinimumTopologies = getTopologies blockMinimalResolutions
               where
                 getTopologies = fmap subtreeEdgeSet
 
-                blockMinimalResolutions = foldMapWithKey1 f $ toBlocks sequenceWLOG
+                blockMinimalResolutions = mapWithKey f $ toBlocks sequenceWLOG
 
                 sequenceWLOG = characterSequence . NE.head $ datumResolutions
 
@@ -121,7 +122,7 @@ preorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
             parentIndices   = otoList $ parentRefs node
             -- In sparsely connected graphs (like ours) this will be effectively constant.
             childPosition j = toEnum . length . takeWhile (/=i) . IM.keys . childRefs $ references dag ! j
-            parentContexts  = (\x -> second (childPosition x &&& id). (memo !) x) <$> parentIndices
+            parentContexts  = (\x -> second (const (childPosition x) &&& NE.head . resolutions) $ memo ! x) <$> parentIndices
             parentalResolutions = snd <$> parentContexts
             parentalToplogies   = fst $ head parentContexts
 
