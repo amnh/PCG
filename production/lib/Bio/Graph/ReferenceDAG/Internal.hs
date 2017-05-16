@@ -18,7 +18,6 @@ import           Bio.Graph.Component
 import           Control.Arrow              ((&&&),(***))
 import           Data.Bifunctor
 import           Data.EdgeSet
-import           Data.ExtendedReal
 import           Data.Foldable
 import           Data.Hashable              (Hashable)
 import qualified Data.HashMap.Strict as HM
@@ -38,6 +37,7 @@ import           Data.Tree.Pretty           (drawVerticalTree)
 import           Data.Vector                (Vector)
 import qualified Data.Vector         as V
 import           Data.Vector.Instances      ()
+import           Numeric.Extended.Real
 import           Prelude             hiding (lookup)
 
 --import           Debug.Trace

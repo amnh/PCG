@@ -56,11 +56,14 @@ data  PhylogeneticNode2 s n
     } deriving (Eq, Functor)
 
 
+-- |
+-- A safe constructor of a 'PhylogeneticNode2'.
 pNode2 :: n -> ResolutionCache s -> PhylogeneticNode2 s n
 pNode2 = flip PNode2
 
 
--- | A collection of information used to memoize network optimizations.
+-- |
+-- A collection of information used to memoize network optimizations.
 data  ResolutionInformation s
     = ResInfo
     { totalSubtreeCost      :: Double
@@ -72,13 +75,27 @@ data  ResolutionInformation s
     } deriving (Functor)
 
 
+-- |
+-- A collection of subtree resolutions. Represents a non-deterministic collection
+-- of subtree choices.
 type ResolutionCache s = NonEmpty (ResolutionInformation s)
 
 
+-- |
+-- A newick representation of a subtree. Semigroup instance used for subtree
+-- joining.
 newtype NewickSerialization = NS String
   deriving (Eq, Ord)
 
 
+-- |
+-- An arbitraryily ordered collection of leaf nodes in a subtree. Leaves in the
+-- tree are uniquely identified by an index across the entire DAG. Set bits
+-- represent a leaf uniquily identified by that index being present in the
+-- subtree.
+--
+-- Use the 'Semigroup' operation '(<>)' to union the leaves included in a leaf
+-- set.
 newtype SubtreeLeafSet = LS BitVector
   deriving (Eq, Ord, Bits)
 
@@ -149,13 +166,23 @@ instance Bifunctor PhylogeneticNode where
             <*> f . sequenceDecoration
 
 
-singletonNewickSerialization :: Int -> NewickSerialization
+-- |
+-- Construct a singleton newick string with a unique identifier that can be
+-- rendered to a string through it's 'Show' instance.
+singletonNewickSerialization :: Show i => i -> NewickSerialization
 singletonNewickSerialization i = NS $ show i
 
 
-singletonSubtreeLeafSet :: Int -> Int -> SubtreeLeafSet
+-- |
+-- Construct a singleton leaf set by supplying the number of leaves and the
+-- unique leaf index.
+singletonSubtreeLeafSet :: Int -- ^ Leaf count
+                        -> Int -- ^ Leaf index
+                        -> SubtreeLeafSet
 singletonSubtreeLeafSet n i = LS . (`setBit` i) $ n `bitVec` (0 :: Integer)
 
 
+-- |
+-- Adds an edge reference to an existing subtree resolution.
 addEdgeToEdgeSet :: (Int, Int) -> ResolutionInformation s -> ResolutionInformation s
 addEdgeToEdgeSet e r = r { subtreeEdgeSet = singletonEdgeSet e <> subtreeEdgeSet r }

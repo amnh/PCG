@@ -62,9 +62,9 @@ type UnRiefiedCharacterDAG =
        PhylogeneticDAG
          EdgeLength
          (Maybe String)
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
          UnifiedContinuousCharacter
+         UnifiedDiscreteCharacter
+         UnifiedDiscreteCharacter
          UnifiedDiscreteCharacter
          UnifiedDiscreteCharacter
          UnifiedDynamicCharacter
@@ -74,9 +74,9 @@ type CharacterDAG =
        PhylogeneticDAG2
          EdgeLength
          (Maybe String)
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
          UnifiedContinuousCharacter
+         UnifiedDiscreteCharacter
+         UnifiedDiscreteCharacter
          UnifiedDiscreteCharacter
          UnifiedDiscreteCharacter
          UnifiedDynamicCharacter
@@ -86,14 +86,14 @@ type InitialDecorationDAG =
        PhylogeneticDAG2
          EdgeLength
          (Maybe String)
-         (SankoffOptimizationDecoration StaticCharacter)
-         (SankoffOptimizationDecoration StaticCharacter)
          -- UnifiedContinuousCharacter
          -- (ContinuousOptimizationDecoration ContinuousChar)
          (ContinuousPostorderDecoration  ContinuousChar)
          (FitchOptimizationDecoration   StaticCharacter)
-         (AdditivePostorderDecoration   StaticCharacter)
          -- (AdditiveOptimizationDecoration StaticCharacter)
+         (AdditivePostorderDecoration   StaticCharacter)
+         (SankoffOptimizationDecoration StaticCharacter)
+         (SankoffOptimizationDecoration StaticCharacter)
          -- UnifiedDynamicCharacter
          -- (DynamicDecorationDirectOptimization DynamicChar)
          (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
@@ -101,9 +101,9 @@ type InitialDecorationDAG =
 
 type UnifiedCharacterSequence
      = CharacterSequence
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
          UnifiedContinuousCharacter
+         UnifiedDiscreteCharacter
+         UnifiedDiscreteCharacter
          UnifiedDiscreteCharacter
          UnifiedDiscreteCharacter
          UnifiedDynamicCharacter
@@ -111,9 +111,9 @@ type UnifiedCharacterSequence
 
 type UnifiedCharacterBlock
      = CharacterBlock
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
          UnifiedContinuousCharacter
+         UnifiedDiscreteCharacter
+         UnifiedDiscreteCharacter
          UnifiedDiscreteCharacter
          UnifiedDiscreteCharacter
          UnifiedDynamicCharacter
@@ -128,12 +128,12 @@ type UnifiedDiscreteCharacter   = Maybe (DiscreteDecoration StaticCharacter)
 type UnifiedDynamicCharacter    = Maybe (DynamicDecorationInitial DynamicChar)
 
 
-data PhylogeneticDAG e n m i c f a d
-     = PDAG (ReferenceDAG e (PhylogeneticNode n (CharacterSequence m i c f a d)))
+data PhylogeneticDAG e n u v w x y z
+     = PDAG (ReferenceDAG e (PhylogeneticNode n (CharacterSequence u v w x y z)))
 
 
-data PhylogeneticDAG2 e n m i c f a d
-     = PDAG2 (ReferenceDAG e (PhylogeneticNode2 (CharacterSequence m i c f a d) n))
+data PhylogeneticDAG2 e n u v w x y z
+     = PDAG2 (ReferenceDAG e (PhylogeneticNode2 (CharacterSequence u v w x y z) n))
 
 
 instance ( Show e
@@ -280,7 +280,7 @@ localResolutionApplication f x y =
         , localSequenceCost     = 0
         , subtreeEdgeSet        = mempty
         , leafSetRepresentation = zeroBits
-        , subtreeRepresentation = singletonNewickSerialization 0
+        , subtreeRepresentation = singletonNewickSerialization (0 :: Word)
         , characterSequence     = characterSequence $ NE.head x
         }
 

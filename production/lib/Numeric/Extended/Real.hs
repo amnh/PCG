@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.ExtendedReal
+-- Module      :  Numeric.Extended.Real
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -16,22 +16,23 @@
 
 {-# LANGUAGE TypeFamilies #-}
 
-module Data.ExtendedReal
+module Numeric.Extended.Real
   ( ExtendedReal()
   , ExtendedNumber(..)
   , Finite
   ) where
 
-import Control.Applicative (liftA2)
-import Data.ExtendedFinite
+import Control.Applicative       (liftA2)
 import Data.Ratio
-import Data.Maybe          (fromMaybe)
+import Data.Maybe                (fromMaybe)
+import Numeric.Extended.Internal
 
 
 -- |
 -- A non-negative real number extended to include infinity, where:
 --
 -- > infinity == maxBound
+--
 newtype ExtendedReal = Cost (Maybe Double)
 
 

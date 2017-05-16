@@ -28,44 +28,60 @@ import Data.Semigroup
 -- import Debug.Trace
 
 
-
+-- |
+-- The direction to align the character at a given matrix point.
+--
 -- It should be noted that the ordering of the three arrow types are important
 -- as it guarantees that the derived Ord instance will have the following property:
 --
 -- DiagArrow < LeftArrow < UpArrow
 --
--- This means DiagArrow is biased towards most   when one or more costs are equal
---            LeftArrow is biased towards second when one or more costs are equal
---              UpArrow is biased towards least  when one or more costs are equal
+-- This means:
+--
+--   - DiagArrow is biased towards most   when one or more costs are equal
+--
+--   - LeftArrow is biased towards second when one or more costs are equal
+--
+--   -   UpArrow is biased towards least  when one or more costs are equal
 --
 -- Using this Ord instance, we can resolve ambiguous transformations in a
 -- deterministic way. Without loss of generality in determining the ordering,
--- we choose the same biasing as in POY 5.
--- | The direction to align the character at a given matrix point.
+-- we choose the same biasing as the C code called from the FFI for consistency.
 data Direction = DiagArrow | LeftArrow | UpArrow
   deriving (Eq, Ord)
 
 
+-- | (✔)
 instance Show Direction where
 
-  show DiagArrow = "↖"
-  show LeftArrow = "←"
-  show UpArrow   = "↑"
+    show DiagArrow = "↖"
+    show LeftArrow = "←"
+    show UpArrow   = "↑"
 
 
--- | A representation of an alignment matrix for DO.
+-- |
+-- A representation of an alignment matrix for DO.
 -- The matrix itself stores tuples of the cost and direction at that position.
 -- We also store a vector of characters that are generated.
 type DOAlignMatrix s = Matrix (Word, Direction, s)
 
 
--- | Constraints on the input dynamic characters that direct optiomization operates on.
+-- |
+-- Constraints on the input dynamic characters that direct optiomization operates on.
 type DOCharConstraint c = (EncodableDynamicCharacter c, {- Show c, -} Show (Element c), Integral (Element c))
 
 
+-- |
+-- A generalized function represention the "overlap" between dynamic character
+-- elements, supplying the corresponding median and cost to align the two
+-- characters.
 type OverlapFunction c = c -> c -> (c, Word)
 
 
+-- |
+-- A generalized function to handle missing dynamic characters.
+--
+-- Intended to be resued by multiple, differing implementations.
 handleMissingCharacter
   :: PossiblyMissingCharacter s
   => s
@@ -120,7 +136,8 @@ naiveDOMemo :: DOCharConstraint s
 naiveDOMemo char1 char2 tcm = handleMissingCharacter char1 char2 $ naiveDOInternal char1 char2 tcm
 
 
--- | Wrapper function to do an enhanced Needleman-Wunsch algorithm.
+-- |
+-- Wrapper function to do an enhanced Needleman-Wunsch algorithm.
 -- Calls naiveDO, but only returns the last two fields (gapped alignments of inputs)
 doAlignment :: DOCharConstraint s => s -> s -> (Word -> Word -> Word) -> (s, s)
 doAlignment char1 char2 costStruct = (char1Align, char2Align)
@@ -196,6 +213,11 @@ createDOAlignMatrix topChar leftChar overlapFunction = {- trace renderedMatrix $
 -}
 
 
+-- |
+-- Serializes an alignment matrix to a 'String'. Uses input characters for row
+-- and column labelings.
+--
+-- Useful for debugging purposes.
 renderCostMatrix :: DOCharConstraint s => s -> s -> DOAlignMatrix a -> String
 renderCostMatrix lhs rhs mtx = unlines
     [ dimensionPrefix
@@ -251,6 +273,11 @@ renderCostMatrix lhs rhs mtx = unlines
         len = length e
 
 
+-- |
+-- Serializes an alignment matrix to a 'String'. Omits the median characters in
+-- the matrix.
+--
+-- Useful for debugging purposes.
 renderMatrix :: DOAlignMatrix a -> String
 renderMatrix mat = unlines . fmap unwords . toLists $ showCell <$> mat
   where
@@ -395,6 +422,8 @@ correctBiasing gap (x1:x2:xs, y1:y2:ys, z1:z2:zs)
 -}
 
 
+-- |
+-- An overlap function that applies the discrete metric to aligning two elements.
 overlapConst :: (EncodableStreamElement c {- , Show c -}) => c -> c -> (c, Word)
 overlapConst lhs rhs
   | intersect == zeroBits = (lhs .|. rhs, 1)
@@ -403,6 +432,11 @@ overlapConst lhs rhs
     intersect = lhs .&. rhs
 
 
+-- |
+-- Wraps the primative operations in this module to a cohesive operation that is
+-- parameterized by an 'OverlapFunction'.
+--
+-- Reused internally by different implementations.
 naiveDOInternal
   :: DOCharConstraint s
   => s

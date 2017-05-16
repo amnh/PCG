@@ -24,8 +24,8 @@ import Bio.Metadata.CharacterName
 import Bio.Metadata.DiscreteWithTCM
 import Control.Lens
 import Data.Alphabet
-import Data.ExtendedNatural
 import Data.TCM
+import Numeric.Extended.Natural
 
 
 -- |

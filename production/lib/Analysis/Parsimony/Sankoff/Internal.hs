@@ -27,12 +27,12 @@ import Bio.Character.Decoration.Metric
 import Bio.Character.Encodable
 import Control.Lens
 import Data.Bits
-import Data.ExtendedNatural
 import Data.Key
 import Data.List.NonEmpty (NonEmpty( (:|) ))
 -- import Data.Monoid        ((<>))
 -- import qualified Data.TCM as TCM
 import Data.Word
+import Numeric.Extended.Natural
 import Prelude hiding (zip)
 
 --import Debug.Trace

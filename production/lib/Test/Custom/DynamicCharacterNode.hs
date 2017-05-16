@@ -1,3 +1,19 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Test.Custom.DynamicCharacterNode
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Arbitrary instance for a cherry of dynamic characters.
+--
+-- Allows for base ambiguities and gaps. The dynamic characters will be
+-- non-empty and non-missing.
+--
+-----------------------------------------------------------------------------
 
 {-# LANGUAGE FlexibleContexts #-}
 
@@ -19,8 +35,10 @@ import           Test.Custom.NucleotideSequence
 import           Test.QuickCheck
 
 
+-- |
+-- Represents a cherry node of dynamic character decorations.
 newtype DynamicCharacterNode = DCN
-    { getDynamicCharacterDecoration :: DynamicDecorationDirectOptimization DynamicChar
+    { getDynamicCharacterDecoration :: DynamicDecorationDirectOptimization DynamicChar -- ^ Extract the character decoration.
     }
     deriving (Show)
 
@@ -36,6 +54,9 @@ instance Arbitrary DynamicCharacterNode where
         unwrap (NS x) = x
 
 
+-- |
+-- Given two dynamic characters, constructs a cherry node with each character as
+-- a child.
 constructNode :: DynamicChar -> DynamicChar -> DynamicDecorationDirectOptimization DynamicChar
 constructNode lhs rhs = directOptimizationPreOrder pairwiseFunction lhsDec [(0,rootDec)]
   where

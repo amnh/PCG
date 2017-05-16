@@ -14,15 +14,12 @@
 
 module Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification where
 
---import           Bio.Character.Decoration.Shared
---import           Bio.Metadata.General
 import           Bio.Sequence
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
 import           Control.Arrow            ((&&&))
 import           Data.EdgeSet
-import           Data.ExtendedReal
 import           Data.Foldable
 import           Data.Key
 import           Data.List.NonEmpty       (NonEmpty((:|)))
@@ -30,15 +27,18 @@ import qualified Data.List.NonEmpty as NE
 import           Data.List.Utility
 import           Data.Semigroup
 import           Data.Ord
+import           Numeric.Extended.Real
 import           Prelude            hiding (zipWith)
 
 import Debug.Trace
 
 
-assignPunativeNetworkEdgeCost :: HasBlockCost u v w x y z i r => PhylogeneticDAG2 e n u v w x y z -> PhylogeneticDAG2 e n u v w x y z
-assignPunativeNetworkEdgeCost input@(PDAG2 dag) = PDAG2 $ dag { graphData = newGraphData }
+-- |
+-- Calculate and assign the punitive networkedge cost for the DAG.
+assignPunitiveNetworkEdgeCost :: HasBlockCost u v w x y z i r => PhylogeneticDAG2 e n u v w x y z -> PhylogeneticDAG2 e n u v w x y z
+assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = PDAG2 $ dag { graphData = newGraphData }
   where
-    punativeCost  = calculatePunativeNetworkEdgeCost input
+    punativeCost  = calculatePunitiveNetworkEdgeCost input
     sequenceCosts = minimum . fmap totalSubtreeCost . resolutions . nodeDecoration . (references dag !) <$> rootRefs dag
     newGraphData  =
         GraphData        
@@ -48,9 +48,11 @@ assignPunativeNetworkEdgeCost input@(PDAG2 dag) = PDAG2 $ dag { graphData = newG
         }
         
 
-calculatePunativeNetworkEdgeCost :: HasBlockCost u v w x y z i r => PhylogeneticDAG2 e n u v w x y z -> ExtendedReal
-calculatePunativeNetworkEdgeCost inputDag
-  | cardinality extraneousEdges > 0 = trace   ("Extraneous edges: " <> show extraneousEdges)
+-- |
+-- Calculate the punitive networkedge cost for the DAG.
+calculatePunitiveNetworkEdgeCost :: HasBlockCost u v w x y z i r => PhylogeneticDAG2 e n u v w x y z -> ExtendedReal
+calculatePunitiveNetworkEdgeCost inputDag
+  | cardinality extraneousEdges > 0 = trace ("Extraneous edges: " <> show extraneousEdges)
                                     . trace ("Entire     edges: " <> show entireNetworkEdgeSet)
                                     . trace ("Minimal Block edges: " <> show ((\(_,_,x) -> collapseToEdgeSet x) <$> minimalBlockNetworkDisplay)) $
                                       infinity
@@ -82,6 +84,9 @@ calculatePunativeNetworkEdgeCost inputDag
             (edgeDifference, minDifferenceDisplayEdgeSet) = minimumBy (comparing fst) $ (cardinality . (displayEdgeSet `difference`) &&& id) <$> minDisplayEdgeSets
 
 
+-- |
+-- Construct each most parsimonious display forest resolution with respect to the
+-- DAG rootings.
 extractNetworkMinimalDisplayTrees :: PhylogeneticDAG2 e n u v w x y z -> NonEmpty (NetworkDisplayEdgeSet (Int, Int))
 extractNetworkMinimalDisplayTrees (PDAG2 dag) = rootTransformation rootResolutions
   where
@@ -96,10 +101,15 @@ extractNetworkMinimalDisplayTrees (PDAG2 dag) = rootTransformation rootResolutio
     refs = references dag
     
 
+-- |
+-- Derive the entire edgeset of the DAG.
 extractNetworkEdgeSet :: PhylogeneticDAG2 e n u v w x y z -> EdgeSet (Int, Int)
 extractNetworkEdgeSet (PDAG2 dag) = getEdges dag
 
 
+-- |
+-- Construct a "Sequence" of minimal cost minimal and display tree resolutions
+-- for each character block.
 extractBlocksMinimalEdgeSets :: HasBlockCost u v w x y z i r 
                              => PhylogeneticDAG2 e n u v w x y z
                              -> NonEmpty (r, NonEmpty (NetworkDisplayEdgeSet (Int,Int)))

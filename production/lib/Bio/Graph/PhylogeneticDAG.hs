@@ -31,7 +31,7 @@ module Bio.Graph.PhylogeneticDAG
   , UnifiedDynamicCharacter
   , UnRiefiedCharacterDAG
   , assignOptimalDynamicCharacterRootEdges
-  , assignPunativeNetworkEdgeCost
+  , assignPunitiveNetworkEdgeCost
   , generateLocalResolutions
   , postorderSequence'
   , renderSummary
@@ -50,7 +50,6 @@ module Bio.Graph.PhylogeneticDAG
   ) where
 
 
-import           Bio.Character.Decoration.Additive
 import           Bio.Sequence
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Class
@@ -65,7 +64,8 @@ import           Data.List.NonEmpty        (NonEmpty)
 import qualified Data.List.NonEmpty as NE
 import           Prelude            hiding (zipWith)
 
-
+-- HasBlockCost u v w x y z i r
+{-
 rootCosts :: ( Integral e
              , HasCharacterWeight u Double
              , HasCharacterWeight v Double
@@ -73,14 +73,16 @@ rootCosts :: ( Integral e
              , HasCharacterWeight x Double
              , HasCharacterWeight y Double
              , HasCharacterWeight z Double
-             , HasCharacterCost u e
+             , HasCharacterCost u Double
              , HasCharacterCost v e
-             , HasCharacterCost w Double
+             , HasCharacterCost w e
              , HasCharacterCost x e
              , HasCharacterCost y e
              , HasCharacterCost z e
              )
-          => PhylogeneticDAG2 s t u v w x y z -> NonEmpty Double
+-}
+rootCosts :: HasBlockCost u v w x y z i r
+          => PhylogeneticDAG2 s t u v w x y z -> NonEmpty r
 rootCosts (PDAG2 dag) = sequenceCost <$> rootDecs
   where
     roots     = rootRefs dag

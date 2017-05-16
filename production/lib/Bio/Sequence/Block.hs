@@ -41,9 +41,9 @@ import           Safe                                 (headMay)
 -- |
 -- CharacterBlocks satisfying this constraint have a calculable cost.
 type HasBlockCost u v w x y z i r =
-    ( HasCharacterCost   u i
+    ( HasCharacterCost   u r
     , HasCharacterCost   v i
-    , HasCharacterCost   w r
+    , HasCharacterCost   w i
     , HasCharacterCost   x i
     , HasCharacterCost   y i
     , HasCharacterCost   z i
@@ -60,21 +60,21 @@ type HasBlockCost u v w x y z i r =
 
 -- |
 -- Perform a six way map over the polymorphic types.
-hexmap :: (m -> m')
-       -> (i -> i')
-       -> (c -> c')
-       -> (f -> f')
-       -> (a -> a')
-       -> (d -> d')
-       -> CharacterBlock m  i  c  f  a  d
-       -> CharacterBlock m' i' c' f' a' d'
+hexmap :: (u -> u')
+       -> (v -> v')
+       -> (w -> w')
+       -> (x -> x')
+       -> (y -> y')
+       -> (z -> z')
+       -> CharacterBlock u  v  w  x  y  z
+       -> CharacterBlock u' v' w' x' y' z'
 hexmap f1 f2 f3 f4 f5 f6 =
     CharacterBlock
-      <$> (parmap rpar f3 . continuousCharacterBins )
-      <*> (parmap rpar f4 . nonAdditiveCharacterBins)
-      <*> (parmap rpar f5 . additiveCharacterBins   )
-      <*> (parmap rpar f1 . metricCharacterBins     )
-      <*> (parmap rpar f2 . nonMetricCharacterBins  )
+      <$> (parmap rpar f1 . continuousCharacterBins )
+      <*> (parmap rpar f2 . nonAdditiveCharacterBins)
+      <*> (parmap rpar f3 . additiveCharacterBins   )
+      <*> (parmap rpar f4 . metricCharacterBins     )
+      <*> (parmap rpar f5 . nonMetricCharacterBins  )
       <*> (parmap rpar f6 . dynamicCharacters       )
 
 
@@ -84,7 +84,7 @@ hexmap f1 f2 f3 f4 f5 f6 =
 -- 
 -- Assumes that the 'CharacterBlock' values in the 'Traversable' structure are of
 -- equal length. If this assumtion is violated, the result will be truncated.
-hexTranspose :: Traversable t => t (CharacterBlock m i c f a d) -> CharacterBlock (t m) (t i) (t c) (t f) (t a) (t d)
+hexTranspose :: Traversable t => t (CharacterBlock u v w x y z) -> CharacterBlock (t u) (t v) (t w) (t x) (t y) (t z)
 hexTranspose = 
     CharacterBlock
       <$> transposition continuousCharacterBins
@@ -109,37 +109,37 @@ hexTranspose =
 -- 
 -- Assumes that the 'CharacterBlock' values have the same number of each character
 -- type. If this assumtion is violated, the result will be truncated.
-hexZipWith :: (m1 -> m2 -> m3)
-           -> (i1 -> i2 -> i3) 
-           -> (c1 -> c2 -> c3)
-           -> (f1 -> f2 -> f3)
-           -> (a1 -> a2 -> a3)
-           -> (d1 -> d2 -> d3)
-           -> CharacterBlock m1 i1 c1 f1 a1 d1
-           -> CharacterBlock m2 i2 c2 f2 a2 d2
-           -> CharacterBlock m3 i3 c3 f3 a3 d3
+hexZipWith :: (u -> u' -> u'')
+           -> (v -> v' -> v'') 
+           -> (w -> w' -> w'')
+           -> (x -> x' -> x'')
+           -> (y -> y' -> y'')
+           -> (z -> z' -> z'')
+           -> CharacterBlock u   v   w   x   y   z
+           -> CharacterBlock u'  v'  w'  x'  y'  z'
+           -> CharacterBlock u'' v'' w'' x'' y'' z''
 hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs =
     CharacterBlock
-        { continuousCharacterBins  = parZipWith rpar f3 (continuousCharacterBins  lhs) (continuousCharacterBins  rhs)
-        , nonAdditiveCharacterBins = parZipWith rpar f4 (nonAdditiveCharacterBins lhs) (nonAdditiveCharacterBins rhs)
-        , additiveCharacterBins    = parZipWith rpar f5 (additiveCharacterBins    lhs) (additiveCharacterBins    rhs)
-        , metricCharacterBins      = parZipWith rpar f1 (metricCharacterBins      lhs) (metricCharacterBins      rhs)
-        , nonMetricCharacterBins   = parZipWith rpar f2 (nonMetricCharacterBins   lhs) (nonMetricCharacterBins   rhs)
+        { continuousCharacterBins  = parZipWith rpar f1 (continuousCharacterBins  lhs) (continuousCharacterBins  rhs)
+        , nonAdditiveCharacterBins = parZipWith rpar f2 (nonAdditiveCharacterBins lhs) (nonAdditiveCharacterBins rhs)
+        , additiveCharacterBins    = parZipWith rpar f3 (additiveCharacterBins    lhs) (additiveCharacterBins    rhs)
+        , metricCharacterBins      = parZipWith rpar f4 (metricCharacterBins      lhs) (metricCharacterBins      rhs)
+        , nonMetricCharacterBins   = parZipWith rpar f5 (nonMetricCharacterBins   lhs) (nonMetricCharacterBins   rhs)
         , dynamicCharacters        =    zipWith      f6 (dynamicCharacters        lhs) (dynamicCharacters        rhs)
         }
 
 
 -- |
 -- Convert all characters contained in the block to thier missing value.
-toMissingCharacters :: ( PossiblyMissingCharacter m
-                       , PossiblyMissingCharacter i
-                       , PossiblyMissingCharacter c
-                       , PossiblyMissingCharacter f
-                       , PossiblyMissingCharacter a
-                       , PossiblyMissingCharacter d
+toMissingCharacters :: ( PossiblyMissingCharacter u
+                       , PossiblyMissingCharacter v
+                       , PossiblyMissingCharacter w
+                       , PossiblyMissingCharacter x
+                       , PossiblyMissingCharacter y 
+                       , PossiblyMissingCharacter z
                        )
-                    => CharacterBlock m i c f a d
-                    -> CharacterBlock m i c f a d
+                    => CharacterBlock u v w x y z
+                    -> CharacterBlock u v w x y z
 toMissingCharacters cb =
     CharacterBlock
     { continuousCharacterBins  = toMissing <$> continuousCharacterBins  cb
@@ -156,8 +156,8 @@ toMissingCharacters cb =
 -- parallel.
 blockCost :: HasBlockCost u v w x y z i r => CharacterBlock u v w x y z -> r
 blockCost block = sum . fmap sum $
-    [ parmap rpar integralCost . nonAdditiveCharacterBins
-    , parmap rpar floatingCost . continuousCharacterBins 
+    [ parmap rpar floatingCost . continuousCharacterBins 
+    , parmap rpar integralCost . nonAdditiveCharacterBins
     , parmap rpar integralCost . additiveCharacterBins   
     , parmap rpar integralCost . metricCharacterBins     
     , parmap rpar integralCost . nonMetricCharacterBins  

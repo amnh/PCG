@@ -27,9 +27,9 @@ import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
 import Control.Lens
 import Data.Alphabet
-import Data.ExtendedFinite
 import Data.Range
 import Data.Semigroup
+import Numeric.Extended
 
 
 -- |

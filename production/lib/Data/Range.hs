@@ -8,8 +8,6 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Class for needed operations of coded sequences and characters
---
 --
 -----------------------------------------------------------------------------
 
@@ -38,13 +36,22 @@ module Data.Range
   ) where
 
 
+-- |
+-- A range between two bounds. The lower bound will always be less that or equal
+-- to the upper bound.
 newtype Range r = Range (r, r, Maybe Int)
   deriving (Eq)
 
 
+-- |
+-- The bound of a 'Ranged' type.
 type family Bound (f :: *)
 
 
+-- |
+-- Represents a numeric range. Allows for conversion to and from 'Ranged' types.
+-- There is also a constructor for the zero range which can be used to for an
+-- identity element in some contexts.
 class Num (Bound a) => Ranged a where
 
     toRange :: a -> Range (Bound a)
@@ -59,15 +66,26 @@ instance Show r => Show (Range r) where
     show (Range (x,y,_)) = mconcat [ "[" , show x, ", ", show y, "]" ]
     
 
-fromTuple :: (r, r) -> Range r
-fromTuple (x,y) = Range (x, y, Nothing)
-
-
-fromTupleWithPrecision :: (r, r) -> Int -> Range r
-fromTupleWithPrecision (x,y) d = Range (x, y, Just d)
+-- |
+-- /O(1)/
+--
+-- Construct a 'Range' from a tuple of upper and lower bounds.
+fromTuple :: Ord r => (r, r) -> Range r
+fromTuple (x,y) = Range (min x y, max x y, Nothing)
 
 
 -- |
+-- /O(1)/
+--
+-- Construct a 'Range' from a tuple of upper and lower bounds along with a
+-- precision value used for conversion back to the non-ranged type.
+fromTupleWithPrecision :: Ord r => (r, r) -> Int -> Range r
+fromTupleWithPrecision (x,y) d = Range (max x y, min x y, Just d)
+
+
+-- |
+-- /O(1)/
+--
 -- Represents the precision of the Range.
 -- A Nothing value represents infinite precision.
 -- A Just    value represents a finite precision.
@@ -75,10 +93,18 @@ precision :: Range r -> Maybe Int
 precision  (Range (_, _, p)) = p
 
 
+-- |
+-- /O(1)/
+--
+-- Extract the lower bound of the range.
 lowerBound :: Range r -> r
 lowerBound (Range (lhs, _, _)) = lhs
 
 
+-- |
+-- /O(1)/
+--
+-- Extract the upper bound of the range.
 upperBound :: Range r -> r
 upperBound (Range (_, rhs, _)) = rhs
 
@@ -158,6 +184,11 @@ largestClosed interval value = Range (newLowerBound, newUpperBound, precision in
         newUpperBound = max value $ lowerBound interval
 
 
+-- |
+-- /O(1)/
+--
+-- Perform a fancy three-way operation used in a special case fo the additive
+-- character scoring logic.
 threeWayRange :: Ord r => Range r -> Range r -> Range r -> Range r
 threeWayRange ancestoralInterval selfInterval descendantInterval = Range (newLowerBound, newUpperBound, precision selfInterval) 
     where

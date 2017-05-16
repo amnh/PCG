@@ -276,6 +276,7 @@ library
                        Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
                        Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
                        Bio.Graph.PhylogeneticDAG.Postorder
+                       Bio.Graph.PhylogeneticDAG.Preorder
                        Bio.Graph.PhylogeneticDAG.Riefication
                        Bio.Graph.ZipperDAG.Internal
                        Bio.Sequence.Internal
@@ -288,9 +289,6 @@ library
                        Data.BitMatrix.Internal
                        Data.BitVector.Instances
                        Data.EdgeSet
-                       Data.ExtendedFinite
-                       Data.ExtendedNatural
-                       Data.ExtendedReal
                        Data.Range
                        Data.TCM.Internal
                        Data.TCM.Memoized.FFI
@@ -316,6 +314,10 @@ library
                        File.Format.Nexus.Validate
                        File.Format.TransitionCostMatrix.Parser
                        File.Format.VertexEdgeRoot.Parser
+                       Numeric.Extended
+                       Numeric.Extended.Internal
+                       Numeric.Extended.Natural
+                       Numeric.Extended.Real
                        Test.QuickCheck.Arbitrary.Instances
 
 

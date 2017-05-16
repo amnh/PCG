@@ -23,12 +23,12 @@ module Bio.Sequence.Block.Builder
 
 
 import           Bio.Sequence.Block.Internal
-import           Data.DList                    hiding (toList)
+import           Data.DList     hiding (toList)
 import           Data.Foldable
 import           Data.Semigroup
 import           Data.TCM
-import           Data.Vector.Instances                ()
-import qualified Data.Vector                   as V
+import           Data.Vector.Instances ()
+import qualified Data.Vector    as V
 
 
 -- |
@@ -37,18 +37,18 @@ import qualified Data.Vector                   as V
 -- definitions.
 --
 -- Use '(<>)' to construct larger blocks.
-data PartialCharacterBlock m i c f a d
+data PartialCharacterBlock u v w x y z
    = PartialCharacterBlock
-   { partialContinuousCharacterBins  :: DList c
-   , partialNonAdditiveCharacterBins :: DList f
-   , partialAdditiveCharacterBins    :: DList a
-   , partialMetricCharacterBins      :: DList m
-   , partialNonMetricCharacterBins   :: DList i
-   , partialDynamicCharacters        :: DList d
+   { partialContinuousCharacterBins  :: DList u
+   , partialNonAdditiveCharacterBins :: DList v
+   , partialAdditiveCharacterBins    :: DList w
+   , partialMetricCharacterBins      :: DList x
+   , partialNonMetricCharacterBins   :: DList y
+   , partialDynamicCharacters        :: DList z
    } deriving (Eq)
 
 
-instance Semigroup (PartialCharacterBlock m i c f a d) where
+instance Semigroup (PartialCharacterBlock u v w x y z) where
 
     lhs <> rhs =
         PartialCharacterBlock
@@ -64,7 +64,7 @@ instance Semigroup (PartialCharacterBlock m i c f a d) where
 -- |
 -- Converts a 'PartialCharacterBlock' to a 'CharacterBlock', finalizing the
 -- efficient construction process.
-finalizeCharacterBlock :: PartialCharacterBlock m i c f a d -> CharacterBlock m i c f a d
+finalizeCharacterBlock :: PartialCharacterBlock u v w x y z -> CharacterBlock u v w x y z
 finalizeCharacterBlock =
     CharacterBlock
       <$> fromDList . partialContinuousCharacterBins 
@@ -87,8 +87,8 @@ toMissingCharacters :: ( PossiblyMissingCharacter m
                        , PossiblyMissingCharacter a
                        , PossiblyMissingCharacter d
                        )
-                    => CharacterBlock m i c f a d
-                    -> CharacterBlock m i c f a d
+                    => CharacterBlock u v w x y z
+                    -> CharacterBlock u v w x y z
 toMissingCharacters cb =
     CharacterBlock
     { continuousCharacterBins  = toMissing <$> continuousCharacterBins  cb
@@ -105,13 +105,13 @@ toMissingCharacters cb =
 
 -- |
 -- Construct a singleton block containing a /continuous/ character.
-continuousSingleton :: c -> PartialCharacterBlock m i c f a d
+continuousSingleton :: c -> PartialCharacterBlock c v w x y z
 continuousSingleton dec = PartialCharacterBlock (pure dec) mempty mempty mempty mempty mempty
 
 
 -- |
 -- Construct a singleton block containing a /discrete/ character.
-discreteSingleton :: TCMStructure -> s -> PartialCharacterBlock s s c s s d
+discreteSingleton :: TCMStructure -> s -> PartialCharacterBlock c s s s s d
 discreteSingleton struct dec =
     case struct of
       NonSymmetric -> PartialCharacterBlock mempty mempty mempty mempty bin    mempty
@@ -126,6 +126,6 @@ discreteSingleton struct dec =
 
 -- |
 -- Construct a singleton block containing a /dynamic/ character.
-dynamicSingleton :: d -> PartialCharacterBlock m i c f a d
+dynamicSingleton :: d -> PartialCharacterBlock u v w x y d
 dynamicSingleton = PartialCharacterBlock mempty mempty mempty mempty mempty . pure
 
