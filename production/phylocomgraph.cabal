@@ -276,6 +276,7 @@ library
                        Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
                        Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
                        Bio.Graph.PhylogeneticDAG.Postorder
+                       Bio.Graph.PhylogeneticDAG.Preorder
                        Bio.Graph.PhylogeneticDAG.Riefication
                        Bio.Graph.ZipperDAG.Internal
                        Bio.Sequence.Internal

@@ -64,74 +64,6 @@ newtype CharacterSequence u v w x y z
     deriving (Eq)
 
 
--- |
--- Perform a six way map over the polymorphic types.
-hexmap :: (u -> u')
-       -> (v -> v')
-       -> (w -> w')
-       -> (x -> x')
-       -> (y -> y')
-       -> (z -> z')
-       -> CharacterSequence u  v  w  x  y  z
-       -> CharacterSequence u' v' w' x' y' z'
-hexmap f1 f2 f3 f4 f5 f6 = fromBlocks . parmap rpar (Blk.hexmap f1 f2 f3 f4 f5 f6) . toBlocks
-
-
--- |
--- Performs a 2D transform on the 'Traversable' structure of 'CharacterSequence'
--- values.
---
--- Assumes that the 'CharacterSequence' values in the 'Traversable' structure are
--- of equal length. If this assumtion is violated, the result will be truncated. 
-hexTranspose :: Traversable1 t => t (CharacterSequence m i c f a d) -> CharacterSequence [m] [i] [c] [f] [a] [d]
-hexTranspose = fromBlocks . deepTranspose . fmap toBlocks . toList
-  where
---    deepTranspose :: [(NonEmpty (CharacterBlock m i c f a d))] -> NonEmpty (CharacterBlock (t m) (t i) (t c) (t f) (t a) (t d))
-    deepTranspose val =
-        let beta = NE.unfold f val -- :: NonEmpty [CharacterBlock m i c f a d]
-        in fmap Blk.hexTranspose beta
-      where
---        f :: [NonEmpty (CharacterBlock m i c f a d)] -> ([CharacterBlock m i c f a d], Maybe [NonEmpty (CharacterBlock m i c f a d)])
-        f = second sequenceA . unzip . fmap NE.uncons
-{-
-        f (x@(_:|[]):xs) = (NE.head <$> (x:xs), Nothing)
-        f            xs  = (NE.head <$>    xs , Just $ NE.tail <$> xs) 
--}
-
-
--- |
--- Performs a zip over the two character sequences. Uses the input functions to
--- zip the different character types in the character block.
---
--- Assumes that the 'CharacterSequence' values have the same number of character
--- blocks and the same number of each character type in the corresponding block
--- of each block. If this assumtion is violated, the result will be truncated.
-hexZipWith :: (u -> u' -> u'')
-           -> (v -> v' -> v'')
-           -> (w -> w' -> w'')
-           -> (x -> x' -> x'')
-           -> (y -> y' -> y'')
-           -> (z -> z' -> z'')
-           -> CharacterSequence u   v   w   x   y   z
-           -> CharacterSequence u'  v'  w'  x'  y'  z'
-           -> CharacterSequence u'' v'' w'' x'' y'' z''
-hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = fromBlocks $ parZipWith rpar (Blk.hexZipWith f1 f2 f3 f4 f5 f6) (toBlocks lhs) (toBlocks rhs)
-
-
--- |
--- Destructs a 'CharacterSequence' to it's composite blocks.
-{-# INLINE toBlocks #-}
-toBlocks :: CharacterSequence u v w x y z -> NonEmpty (CharacterBlock u v w x y z)
-toBlocks (CharSeq x) = x
-
-
--- |
--- Constructs a 'CharacterSequence' from a non-empty colection of blocks.
-{-# INLINE fromBlocks #-}
-fromBlocks :: NonEmpty (CharacterBlock u v w x y z) -> CharacterSequence u v w x y z
-fromBlocks = CharSeq
-
-
 type instance Element (CharacterSequence u v w x y z) = CharacterBlock u v w x y z
 
 
@@ -197,6 +129,70 @@ instance ( Show u
             , "\n"
             ]
         indent = unlines . fmap ("  "<>) . lines
+
+
+-- |
+-- Perform a six way map over the polymorphic types.
+hexmap :: (u -> u')
+       -> (v -> v')
+       -> (w -> w')
+       -> (x -> x')
+       -> (y -> y')
+       -> (z -> z')
+       -> CharacterSequence u  v  w  x  y  z
+       -> CharacterSequence u' v' w' x' y' z'
+hexmap f1 f2 f3 f4 f5 f6 = fromBlocks . parmap rpar (Blk.hexmap f1 f2 f3 f4 f5 f6) . toBlocks
+
+
+-- |
+-- Performs a 2D transform on the 'Traversable' structure of 'CharacterSequence'
+-- values.
+--
+-- Assumes that the 'CharacterSequence' values in the 'Traversable' structure are
+-- of equal length. If this assumtion is violated, the result will be truncated. 
+hexTranspose :: Traversable1 t => t (CharacterSequence u v w x y z) -> CharacterSequence [u] [v] [w] [x] [y] [z]
+hexTranspose = fromBlocks . deepTranspose . fmap toBlocks . toList
+  where
+--    deepTranspose :: [(NonEmpty (CharacterBlock m i c f a d))] -> NonEmpty (CharacterBlock (t m) (t i) (t c) (t f) (t a) (t d))
+    deepTranspose val =
+        let beta = NE.unfold f val -- :: NonEmpty [CharacterBlock m i c f a d]
+        in  fmap Blk.hexTranspose beta
+      where
+--        f :: [NonEmpty (CharacterBlock m i c f a d)] -> ([CharacterBlock m i c f a d], Maybe [NonEmpty (CharacterBlock m i c f a d)])
+        f = second sequenceA . unzip . fmap NE.uncons
+
+
+-- |
+-- Performs a zip over the two character sequences. Uses the input functions to
+-- zip the different character types in the character block.
+--
+-- Assumes that the 'CharacterSequence' values have the same number of character
+-- blocks and the same number of each character type in the corresponding block
+-- of each block. If this assumtion is violated, the result will be truncated.
+hexZipWith :: (u -> u' -> u'')
+           -> (v -> v' -> v'')
+           -> (w -> w' -> w'')
+           -> (x -> x' -> x'')
+           -> (y -> y' -> y'')
+           -> (z -> z' -> z'')
+           -> CharacterSequence u   v   w   x   y   z
+           -> CharacterSequence u'  v'  w'  x'  y'  z'
+           -> CharacterSequence u'' v'' w'' x'' y'' z''
+hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = fromBlocks $ parZipWith rpar (Blk.hexZipWith f1 f2 f3 f4 f5 f6) (toBlocks lhs) (toBlocks rhs)
+
+
+-- |
+-- Destructs a 'CharacterSequence' to it's composite blocks.
+{-# INLINE toBlocks #-}
+toBlocks :: CharacterSequence u v w x y z -> NonEmpty (CharacterBlock u v w x y z)
+toBlocks (CharSeq x) = x
+
+
+-- |
+-- Constructs a 'CharacterSequence' from a non-empty colection of blocks.
+{-# INLINE fromBlocks #-}
+fromBlocks :: NonEmpty (CharacterBlock u v w x y z) -> CharacterSequence u v w x y z
+fromBlocks = CharSeq
 
 
 -- |

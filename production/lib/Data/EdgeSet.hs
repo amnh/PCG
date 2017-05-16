@@ -56,13 +56,15 @@ newtype NetworkDisplayEdgeSet e = NDES (NonEmpty (EdgeSet e))
 -- Set operations that can be perfomred on set-like structures.
 class SetLike s where
 
-    union :: s -> s -> s
+    cardinality  :: s -> Word
+
+    difference   :: s -> s -> s
 
     intersection :: s -> s -> s
 
-    difference :: s -> s -> s
+    isSubsetOf   :: s -> s -> Bool
 
-    cardinality :: s -> Word
+    union        :: s -> s -> s
 
 
 instance NFData e => NFData (EdgeSet e) where
@@ -75,42 +77,49 @@ instance NFData e => NFData (NetworkDisplayEdgeSet e) where
     rnf (NDES sets) = rnf sets
 
 
-instance Ord a => SetLike (Set a) where
+instance Ord a => Semigroup (NetworkDisplayEdgeSet a) where
 
-    union        = Set.union
-
-    intersection = Set.intersection
-
-    difference   = Set.difference
-
-    cardinality  = fromIntegral . length 
+    (NDES x) <> (NDES y) = NDES $ zipWith (<>) x y
 
 
 instance Ord a => SetLike (EdgeSet a) where
 
-    union        (ES x) (ES y) = ES $ union x y 
 
-    intersection (ES x) (ES y) = ES $ intersection x y 
+    cardinality  (ES x) = cardinality x
 
     difference   (ES x) (ES y) = ES $ difference x y 
 
-    cardinality  (ES x) = cardinality x
+    intersection (ES x) (ES y) = ES $ intersection x y 
+
+    isSubsetOf   (ES x) (ES y) = isSubsetOf x y 
+
+    union        (ES x) (ES y) = ES $ union x y 
 
 
 instance Ord a => SetLike (NetworkDisplayEdgeSet a) where
 
-    union        (NDES x) (NDES y) = NDES $ zipWith union x y 
-
-    intersection (NDES x) (NDES y) = NDES $ zipWith intersection x y 
+    cardinality  (NDES x) = sum $ cardinality <$> x
 
     difference   (NDES x) (NDES y) = NDES $ zipWith difference x y 
 
-    cardinality  (NDES x) = sum $ cardinality <$> x
+    intersection (NDES x) (NDES y) = NDES $ zipWith intersection x y 
+
+    isSubsetOf   (NDES x) (NDES y) = and  $ zipWith isSubsetOf x y 
+
+    union        (NDES x) (NDES y) = NDES $ zipWith union x y 
 
 
-instance Ord a => Semigroup (NetworkDisplayEdgeSet a) where
+instance Ord a => SetLike (Set a) where
 
-    (NDES x) <> (NDES y) = NDES $ zipWith (<>) x y
+    cardinality  = toEnum . length 
+
+    difference   = Set.difference
+
+    intersection = Set.intersection
+
+    isSubsetOf   = Set.isSubsetOf
+
+    union        = Set.union
 
 
 -- |
