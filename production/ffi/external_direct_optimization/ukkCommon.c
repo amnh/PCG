@@ -52,8 +52,8 @@
 
 // extern variable (all from ukkCheckp.c)
 
-extern AllocInfo myUAllocInfo;
-extern AllocInfo myCPAllocInfo;
+extern      AllocInfo myUAllocInfo;
+extern      AllocInfo myCPAllocInfo;
 extern long costOffset;
 extern long finalCost;
 
