@@ -567,8 +567,9 @@ int align3d( const alignIO_p          inputChar1_aio
     }
     printf("gap char: %u\n", costMtx3d->gap_char);
 
-    const size_t CHAR_CAPACITY = inputChar1_aio->length + inputChar2_aio->length + 2; // 2 to account for gaps,
-                                                                                      // which will be added in initializeChar()
+    const size_t CHAR_CAPACITY = inputChar1_aio->length + inputChar2_aio->length + inputChar3_aio->length + 3; // 2 to account for gaps,
+                                                                                                               // which will be added in
+                                                                                                               // initializeChar()
     int algnCost;
 
     alignIO_p longIO,

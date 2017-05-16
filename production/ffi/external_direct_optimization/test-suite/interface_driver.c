@@ -110,14 +110,16 @@ int main() {
     for (i = 0; i < tcm_total_len; i += alphSize) {
         //printf("i: %zu\n", i);
         for (j = 0; j < alphSize; j++) {
-            //printf("i: %zu, j: %zu, cost: %lu\n", i, j, 2 * i + 2 * j);
             //tcm[i + j] = 2 * i + 2 * j;
             if ( i == j * alphSize ) {
                 tcm[i + j] = IDENTITY_COST;    // identity
+                printf("i: %zu, j: %zu, cost: %d\n", i, j, IDENTITY_COST);
             } else if (i == (tcm_total_len - alphSize) || j == (alphSize - 1)) {
                 tcm[i + j] = INDEL_COST;       // indel cost
+                printf("i: %zu, j: %zu, cost: %d\n", i, j, INDEL_COST);
             } else {
                 tcm[i + j] = SUB_COST;         // sub cost
+                printf("i: %zu, j: %zu, cost: %d\n", i, j, SUB_COST);
             }
          }
     }
@@ -127,15 +129,15 @@ int main() {
     cost_matrices_3d_p costMtx3d        = malloc(sizeof(struct cost_matrices_3d));
 
     if(DO_2D) {
-        setUp2dCostMtx (tcm, alphSize, 0, costMtx2d);
+        setUp2dCostMtx (costMtx2d, tcm, alphSize, 0);
     }
 
     if(DO_2D_AFF) {
-        setUp2dCostMtx (tcm, alphSize, GAP_OPEN_COST, costMtx2d_affine);
+        setUp2dCostMtx (costMtx2d_affine, tcm, alphSize, GAP_OPEN_COST);
     }
 
     if(DO_3D) {
-        setUp3dCostMtx (tcm, alphSize, 0, costMtx3d);
+        setUp3dCostMtx (costMtx3d, tcm, alphSize, 0);
     }
 
 

@@ -44,13 +44,13 @@ void resetCharValues(dyn_char_p retChar);
  *
  *  Requires symmetric, if not metric, matrix.
  */
-int distance (int const *tcm, size_t alphSize, int nucleotide, int ambElem);
+int distance(int const *tcm, size_t alphSize, int nucleotide, int ambElem);
 
-void setUp2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p retMtx);
+void setUp2dCostMtx(cost_matrices_2d_p retMtx, int *tcm, size_t alphSize, int gap_open);
 
-void setUp3dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_3d_p retMtx);
+void setUp3dCostMtx(cost_matrices_3d_p retMtx, int *tcm, size_t alphSize, int gap_open);
 
-void freeCostMtx(void * input, int is_2d);
+void freeCostMtx(void *input, int is_2d);
 
 void freeNWMtx(nw_matrices_p input);
 

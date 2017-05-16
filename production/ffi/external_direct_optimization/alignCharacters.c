@@ -4628,10 +4628,10 @@ algn_calculate_from_2_aligned ( dyn_char_p          char1
     /* We initialize i to the proper location */
     char1_begin = char1->char_begin[0];
     char2_begin = char2->char_begin[0];
-    if (   (  costMatrix->combinations
+    if (   (  costMatrix->include_ambiguities
               && (gap_char &  char1_begin)
               && (gap_char &  char2_begin))
-        || ( !costMatrix->combinations
+        || ( !costMatrix->include_ambiguities
               && (gap_char == char1_begin)
               && (gap_char == char2_begin)) )
     {
@@ -4644,19 +4644,19 @@ algn_calculate_from_2_aligned ( dyn_char_p          char1
         char1_begin = char1->char_begin[i];
         char2_begin = char2->char_begin[i];
         if (0 == gap_row) { /* We have no gaps */
-            if (   ( costMatrix->combinations
+            if (   ( costMatrix->include_ambiguities
                      &&  (char1_begin & gap_char)
                      && !(char2_begin & gap_char))
-                || (!costMatrix->combinations
+                || (!costMatrix->include_ambiguities
                      && (char1_begin == gap_char)) )
             {
                 res     += gap_opening;
                 gap_row  = 1;
             }
-            else if (   (  costMatrix->combinations
+            else if (   (  costMatrix->include_ambiguities
                            &&  (char2_begin &  gap_char)
                            && !(char1_begin & gap_char))
-                     || ( !costMatrix->combinations
+                     || ( !costMatrix->include_ambiguities
                            && (char2_begin == gap_char)) )
             {
                 res     += gap_opening;
@@ -4664,16 +4664,16 @@ algn_calculate_from_2_aligned ( dyn_char_p          char1
             }
         }
         else if (1 == gap_row) { /* We are in char1's block of gaps */
-            if (   ( costMatrix->combinations
+            if (   ( costMatrix->include_ambiguities
                      && !(char1_begin &  gap_char))
-                || (!costMatrix->combinations
+                || (!costMatrix->include_ambiguities
                      && (char1_begin != gap_char)) )
             {
 
-                if (   ( costMatrix->combinations
+                if (   ( costMatrix->include_ambiguities
                          &&  (char2_begin &  gap_char)
                          && !(char1_begin & gap_char))
-                    || ( !costMatrix->combinations
+                    || ( !costMatrix->include_ambiguities
                           && (char2_begin == gap_char)) ) {
                   res    += gap_opening;
                   gap_row = 2;
@@ -4683,15 +4683,15 @@ algn_calculate_from_2_aligned ( dyn_char_p          char1
         }
         else { /* We are in char2's block of gaps */
             assert (2 == gap_row);
-            if (   (  costMatrix->combinations
+            if (   (  costMatrix->include_ambiguities
                       && !(char2_begin &  gap_char))
-                || ( !costMatrix->combinations
+                || ( !costMatrix->include_ambiguities
                       && (char2_begin != gap_char)))
             {
 
-                if (  ( costMatrix->combinations
+                if (  ( costMatrix->include_ambiguities
                            && (char1_begin &  gap_char))
-                      || ( !costMatrix->combinations
+                      || ( !costMatrix->include_ambiguities
                            && (char1_begin == gap_char))) {
                     res    += gap_opening;
                     gap_row = 1;
@@ -5458,7 +5458,7 @@ algn_ancestor_2 ( dyn_char_p char1
                  interim,
                  gap_char;
 
-    int          is_combinations,
+    int          are_ambiguities,
                  cost_model,
                  i;            // Can't be size_t, because counting down to 0.
 
@@ -5466,13 +5466,13 @@ algn_ancestor_2 ( dyn_char_p char1
     char_begin1     = char1->char_begin;
     char_begin2     = char2->char_begin;
     gap_char        = costMatrix->gap_char;
-    is_combinations = costMatrix->combinations;
+    are_ambiguities = costMatrix->include_ambiguities;
     cost_model      = costMatrix->cost_model_type;
 
     for (i = char1->len - 1; i >= 0; i--) {
         interim = cm_get_median (costMatrix, char_begin1[i], char_begin2[i]);
 
-        if (!is_combinations || cost_model != 1) {
+        if (!are_ambiguities || cost_model != 1) {
             if (interim != gap_char) {
                 dyn_char_prepend (medianToReturn, interim);
             }
@@ -5480,10 +5480,10 @@ algn_ancestor_2 ( dyn_char_p char1
             dyn_char_prepend (medianToReturn, interim);
         }
     }
-    if ( !is_combinations || (cost_model != 1 && gap_char != medianToReturn->char_begin[0])) {
+    if ( !are_ambiguities || (cost_model != 1 && gap_char != medianToReturn->char_begin[0])) {
         dyn_char_prepend (medianToReturn, gap_char);
     }
-    else if (is_combinations) {
+    else if (are_ambiguities) {
         algn_correct_blocks_affine (gap_char, medianToReturn, char1, char2);
     }
 }
@@ -5491,8 +5491,8 @@ algn_ancestor_2 ( dyn_char_p char1
 
 
 /*
- * Given three aligned characters char1, char2, and char3, the median between them is
- * returned in the character medianToReturn, using the cost matrix stored in m.
+ * Given three aligned dynamic characters char1, char2, and char3, the medians between them are
+ * returned in the characters gapped_median and ungapped_median, using the cost matrix stored in costMatrix.
  */
 void
 algn_get_medians_3d ( dyn_char_p         char1
@@ -5515,9 +5515,9 @@ algn_get_medians_3d ( dyn_char_p         char1
     // TODO: does this for loop actually do anything?
     for (int i = char1->len - 1; i >= 0; i--) {
         interim = cm_get_median_3d( costMatrix->median
-                                  , *char_end1
-                                  , *char_end2
-                                  , *char_end3
+                                  , char1->char_begin[i]
+                                  , char2->char_begin[i]
+                                  , char3->char_begin[i]
                                   , costMatrix->costMatrixDimension
                                   );
 

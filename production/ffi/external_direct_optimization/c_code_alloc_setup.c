@@ -59,7 +59,12 @@ void initializeChar(dyn_char_p retChar, size_t allocSize) {
  *
  *  Requires symmetric, if not metric, matrix.
  */
-int distance (int const *tcm, size_t alphSize, int nucleotide, int ambElem) {
+int distance( int    const *tcm
+            , size_t        alphSize
+            , int           nucleotide
+            , int           ambElem
+            )
+{
     int min     = INT_MAX;
     // int max     = 0;
     int curCost = 0;
@@ -81,7 +86,12 @@ int distance (int const *tcm, size_t alphSize, int nucleotide, int ambElem) {
  *  No longer setting max, as algorithm to do so is unclear: see note below.
  *  Not sure which of two loops to set prepend and tail arrays is correct.
  */
-void setUp2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p retCostMtx) {
+void setUp2dCostMtx( cost_matrices_2d_p retCostMtx
+                   , int *tcm
+                   , size_t alphSize
+                   , int gap_open
+                   )
+{
 
     // first allocate retMatrix
     int combinations  = 1;                     // false if matrix is sparse. In this case, it's DNA, so not sparse.
@@ -101,13 +111,13 @@ void setUp2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
 
     //    tcm = tcm2;
 
-    cm_alloc_set_costs_2d( alphSize
+    cm_alloc_set_costs_2d( retCostMtx
+                         , alphSize
                          , combinations
                          , do_aff
                          , gap_open
                          , is_metric
                          , all_elements
-                         , retCostMtx
                          );
     // Print TCM in pretty format
     if(DEBUG_MAT) {
@@ -141,8 +151,8 @@ void setUp2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
                     median |= 1 << (nucleotide - 1); // median = this nucleotide | old median
                 }
             } // nucleotide
-            cm_set_cost_2d   (ambElem1, ambElem2, minCost, retCostMtx);
-            cm_set_median_2d (ambElem1, ambElem2, median,  retCostMtx);
+            cm_set_cost_2d   (retCostMtx, ambElem1, ambElem2, minCost);
+            cm_set_median_2d (retCostMtx, ambElem1, ambElem2, median);
         } // ambElem2
     } // ambElem1
     // Gap number is alphSize - 1, which makes bit representation
@@ -153,8 +163,8 @@ void setUp2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
     elem_t gap = 1 << (alphSize - 1);
     retCostMtx->gap_char = gap;
     for ( size_t i = 1; i <= all_elements; i++) {
-        cm_set_prepend_2d (i, cm_get_cost(gap,   i, retCostMtx), retCostMtx);
-        cm_set_tail_2d    (i, cm_get_cost(  i, gap, retCostMtx), retCostMtx);
+        cm_set_prepend_2d (retCostMtx, i, cm_get_cost(retCostMtx, gap,   i));
+        cm_set_tail_2d    (retCostMtx, i, cm_get_cost(retCostMtx,   i, gap));
     }
 
     /*
@@ -178,7 +188,12 @@ void setUp2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
  *  I attempted to do with with a return of void *, but was having trouble with allocation, and was forced to move
  *  it outside this fn.
  */
-void setUp3dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_3d_p retMtx) {
+void setUp3dCostMtx( cost_matrices_3d_p  retMtx
+                   , int                *tcm
+                   , size_t              alphSize
+                   , int                 gap_open
+                   )
+{
     // first allocate retMatrix
     int combinations = 1;                     // false if matrix is sparse. In this case, it's DNA, so not sparse.
     int do_aff       = gap_open == 0 ? 0 : 3; // The 3 is because affine's cost_model_type is 3, according to my reading of ML code.
@@ -191,13 +206,13 @@ void setUp3dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_3d_p 
     elem_t median    = 0;        // and 3d; combos of median1, etc., below
     int curCost;
 
-    cm_alloc_set_costs_3d( alphSize
-                         , combinations
-                         , do_aff
-                         , gap_open
-                         , all_elements
-                         , retMtx
-                         );
+    cm_alloc_3d( retMtx
+               , alphSize
+               , combinations
+               , do_aff
+               , gap_open
+               , all_elements
+               );
     retMtx->gap_char = 1 << (alphSize - 1);
 
     for (elem_t ambElem1 = 1; ambElem1 <= all_elements; ambElem1++) { // for every possible value of ambElem1, ambElem2, ambElem3
@@ -218,9 +233,9 @@ void setUp3dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_3d_p 
                         median |= ((elem_t) 1) << (nucleotide - 1); // median1 | median2 | median3;
                     }
                 } // nucleotide
-
-                cm_set_cost_3d   (ambElem1, ambElem2, ambElem3, minCost, retMtx);
-                cm_set_median_3d (ambElem1, ambElem2, ambElem3, median,  retMtx);
+                // printf("%2u %2u %2u %2d %2u\n", ambElem1, ambElem2, ambElem3, minCost, median);
+                cm_set_cost_3d   (retMtx, ambElem1, ambElem2, ambElem3, minCost);
+                cm_set_median_3d (retMtx, ambElem1, ambElem2, ambElem3, median);
                 // cm_set_worst     (ambElem1, ambElem2, max_2d,    (cost_matrices_2d_p) retMtx);    // no worst in 3d
             } // ambElem3
         } // ambElem2

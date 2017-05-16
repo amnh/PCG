@@ -42,64 +42,72 @@ cm_combinations_of_alphabet (const int alphSize) {
 
 void cm_print_2d (cost_matrices_2d_p costMatrix) {
     printf("\nCost matrix fields:\n");
-    printf("  alphabet size: %zu\n", costMatrix->alphSize);
-    printf("  costMatrixDimension:           %zu\n", costMatrix->costMatrixDimension);
-    printf("  gap_char:      %d\n", costMatrix->gap_char);
-    printf("  cost model:    %d\n", costMatrix->cost_model_type);
-    printf("  combinations:  %d\n", costMatrix->combinations);
-    printf("  gap open:      %d\n", costMatrix->gap_open);
-    printf("  is metric:     %d\n", costMatrix->is_metric);
-    printf("  all elements:  %d\n", costMatrix->all_elements);
+    printf("  alphabet size:        %zu\n", costMatrix->alphSize);
+    printf("  costMatrixDimension:  %zu\n", costMatrix->costMatrixDimension);
+    printf("  gap_char:             %d\n",  costMatrix->gap_char);
+    printf("  cost model:           %d\n",  costMatrix->cost_model_type);
+    printf("  include ambiguities:  %d\n",  costMatrix->include_ambiguities);
+    printf("  gap open:             %d\n",  costMatrix->gap_open);
+    printf("  is metric:            %d\n",  costMatrix->is_metric);
+    printf("  num elements:         %d\n",  costMatrix->num_elements);
 
     printf("\n  Cost matrix:\n    ");
-    cm_print_matrix(costMatrix->cost,         costMatrix->alphSize + 1, costMatrix->alphSize + 1);
+    cm_print_matrix_2d(costMatrix->cost,         costMatrix->alphSize + 1, costMatrix->alphSize + 1);
     printf("  Prepend cost\n    ");
-    cm_print_matrix(costMatrix->prepend_cost, 1,               costMatrix->alphSize + 1);
+    cm_print_matrix_2d(costMatrix->prepend_cost, 1,               costMatrix->alphSize + 1);
  //   printf("  Worst\n    ");
  //   cm_print_matrix(c->worst,        costMatrix->alphSize + 1, costMatrix->alphSize + 1);
     printf("  Tail cost:\n    ");
-    cm_print_matrix(costMatrix->tail_cost,    1,               costMatrix->alphSize);
+    cm_print_matrix_2d(costMatrix->tail_cost,    1,               costMatrix->alphSize);
     printf("  Median costs:\n    ");
-    cm_print_median(costMatrix->median,        costMatrix->alphSize + 1, costMatrix->alphSize + 1);
+    cm_print_matrix_2d(costMatrix->median,        costMatrix->alphSize + 1, costMatrix->alphSize + 1);
 }
 
 void cm_print_3d (cost_matrices_3d_p costMatrix) {
     printf("\nCost matrix fields:\n");
-    printf("  alphabet size: %zu\n",                 costMatrix->alphSize);
-    printf("  costMatrixDimension:           %zu\n", costMatrix->costMatrixDimension);
-    printf("  gap_char:      %u\n",                  costMatrix->gap_char);
-    printf("  cost model:    %d\n",                  costMatrix->cost_model_type);
-    printf("  combinations:  %d\n",                  costMatrix->combinations);
-    printf("  gap open:      %d\n",                  costMatrix->gap_open);
-    printf("  all elements:  %d\n",                  costMatrix->all_elements);
+    printf("  alphabet size:        %zu\n", costMatrix->alphSize);
+    printf("  costMatrixDimension:  %zu\n", costMatrix->costMatrixDimension);
+    printf("  gap_char:             %u\n",  costMatrix->gap_char);
+    printf("  cost model:           %d\n",  costMatrix->cost_model_type);
+    printf("  include ambiguities:  %d\n",  costMatrix->include_ambiguities);
+    printf("  gap open:             %d\n",  costMatrix->gap_open);
+    printf("  num elements:         %d\n",  costMatrix->num_elements);
 
     printf("\n  Cost matrix:\n    ");
-    cm_print_matrix(costMatrix->cost,   costMatrix->alphSize + 1, costMatrix->alphSize + 1);
+    cm_print_matrix_3d(costMatrix->cost,   costMatrix->alphSize + 1, costMatrix->alphSize + 1, costMatrix->alphSize + 1);
     printf("  Median costs:\n    ");
-    cm_print_median(costMatrix->median, costMatrix->alphSize + 1, costMatrix->alphSize + 1);
+    cm_print_matrix_3d(costMatrix->median, costMatrix->alphSize + 1, costMatrix->alphSize + 1, costMatrix->alphSize + 1);
 }
 
+
 void
-cm_print_matrix (int *costMatrix, size_t w, size_t h) {
-    size_t i, j;
-    for (i = 0; i < h; i++) {
+cm_print_matrix_3d (int *costMatrix, size_t w, size_t h, size_t d) {
+    for (size_t i = 0; i < h; i++) {
         //fprintf(stdout,"%zu: ", i);
-        for (j = 0; j < w; j++)
+        for (size_t j = 0; j < w; j++) {
+            for (size_t k = 0; k < d; k++) {
+                printf ("%4d", *( costMatrix[cm_calc_cost_position()] + (w * h * i) + (d * j) + k ));
+            }
+            printf ("\n");
+            for (size_t num_tabs = 0; num_tabs < j; num_tabs++) {
+                printf("    ");
+            }
+        }
+    }
+    printf ("\n    ");
+}
+
+
+void
+cm_print_matrix_2d (int *costMatrix, size_t w, size_t h) {
+    for (size_t i = 0; i < h; i++) {
+        //fprintf(stdout,"%zu: ", i);
+        for (size_t j = 0; j < w; j++)
             printf ("%4d", *(costMatrix + (w * i) + j));
         printf ("\n    ");
     }
 }
 
-void
-cm_print_median (elem_t *costMatrix, size_t w, size_t h) {
-    size_t i, j;
-    for (i = 0; i < h; i++) {
-        //fprintf(stdout,"%zu: ", i);
-        for (j = 0; j < w; j++)
-            printf ("%d", *(costMatrix + (w * i) + j));
-        printf ("\n    ");
-    }
-}
 
 void
 cm_free (cost_matrices_2d_p costMatrix) {
@@ -141,16 +149,16 @@ cm_set_affine_3d (cost_matrices_3d_p costMatrix, int do_aff, int gapOpenCost) {
  * In case of error the function fails with the message "Memory error.".
  */
 void
-cm_alloc_set_costs_2d ( int alphSize
-                      , int combinations
-                      , int do_aff
-                      , int gap_open
-                      , int is_metric
-                      , int all_elements
-                      , cost_matrices_2d_p res
+cm_alloc_set_costs_2d ( cost_matrices_2d_p res
+                      , int                alphSize
+                      , int                combinations
+                      , int                do_aff
+                      , int                gap_open
+                      , int                is_metric
+                      , int                num_elements
                       )
 {
-    if(DEBUG_CM) {
+    if(DEBUG_COST_M) {
         printf("\n---cm_alloc_set_costs_2d\n");
     }
 #ifndef USE_LARGE_ALPHABETS
@@ -168,14 +176,14 @@ cm_alloc_set_costs_2d ( int alphSize
         res->gap_char = 1 << (alphSize - 1);
         res->alphSize = cm_combinations_of_alphabet (alphSize); // 2 ^ alphSize - 1 is |power set of alphSize|
         res->costMatrixDimension = alphSize;
-        res->combinations = 1;
+        res->include_ambiguities = 1;
     } else {
-        res->gap_char = alphSize;
-        res->alphSize = alphSize;
+        res->gap_char            = alphSize;
+        res->alphSize            = alphSize;
         res->costMatrixDimension = ceil_log_2 (alphSize + 1);
-        res->combinations = 0;
+        res->include_ambiguities = 0;
     }
-    res->all_elements = all_elements;
+    res->num_elements = num_elements;
     res->is_metric    = is_metric;
     cm_set_affine (res, do_aff, gap_open);
 
@@ -223,16 +231,16 @@ cm_alloc_set_costs_2d ( int alphSize
  * In case of error the function fails with the message "Memory error.".
  */
 void
-cm_alloc_set_costs_3d ( int alphSize
-                      , int combinations
-                      , int do_aff
-                      , int gap_open
-                      , int all_elements
-                      , cost_matrices_3d_p res
-                      )
+cm_alloc_3d ( cost_matrices_3d_p res
+            , int                alphSize
+            , int                combinations
+            , int                do_aff
+            , int                gap_open
+            , int                num_elements
+            )
 {
     int size;
-    if (DEBUG_CM) {
+    if (DEBUG_COST_M) {
         printf ("Allocating a three dimensional matrix:\n");
         printf ("alphabet size: %d \n", alphSize);
         printf ("combinations:  %d \n", combinations);
@@ -240,19 +248,19 @@ cm_alloc_set_costs_3d ( int alphSize
         printf ("gap open cost: %d \n", gap_open);
     }
     // TODO: check the following code. Does combinations need to be reset? Are the dimensions set right?
+    res->gap_char            = 1 << (alphSize - 1);
     if (combinations != 0) {
-        res->gap_char            = 1 << (alphSize - 1);
         res->alphSize            = cm_combinations_of_alphabet (alphSize); // 2 ^ alphSize - 1 is |power set of alphSize|
         res->costMatrixDimension = alphSize;
-        res->combinations = 1;
+        res->include_ambiguities = 1;
     } else {
-        res->gap_char            = alphSize;
+       // res->gap_char            = alphSize;
         res->alphSize            = alphSize;
         res->costMatrixDimension = ceil_log_2 (alphSize + 1);
-        res->combinations = 0;
+        res->include_ambiguities = 0;
     }
 
-    res->all_elements = all_elements;
+    res->num_elements = num_elements;
     cm_set_affine_3d (res, do_aff, gap_open);
     size              = (1 << (res->costMatrixDimension + 1))
                       * (1 << (res->costMatrixDimension + 1))
@@ -276,29 +284,29 @@ cm_get_gap_opening_parameter_3d (const cost_matrices_3d_p c) {
     return c->gap_open;
 }
 
-int
-cm_calc_cost_position (int a, int b, int alphSize) {
+// int
+// cm_calc_cost_position_2d (int a, int b, int alphSize) {
+//     assert(alphSize >= 0);
+//     return ((a << alphSize) + b);
+// }
+
+static inline size_t
+cm_calc_cost_position_2d (elem_t a, elem_t b, size_t alphSize) {
     assert(alphSize >= 0);
     return ((a << alphSize) + b);
 }
 
-static inline int
-cm_calc_cost_position_dyn_char_p (elem_t a, elem_t b, int alphSize) {
-    assert(alphSize >= 0);
-    return ((((int) a) << alphSize) + ((int) b));
-}
-
 int
-cm_calc_cost_position_3d_dyn_char_p (elem_t a, elem_t b, elem_t c, int alphSize) {
+cm_calc_cost_position_3d (elem_t a, elem_t b, elem_t c, size_t alphSize) {
     assert(alphSize >= 0);
-    return ((((((int) a) << alphSize) + ((int) b)) << alphSize) + ((int) c));
+    return ((((a << alphSize) + b) << alphSize) + c);
 }
 
-static inline int
-cm_calc_cost_position_3d (int a, int b, int c, int alphSize) {
-    assert(alphSize >= 0);
-    return (((a << alphSize) + b) << alphSize) + c;
-}
+// static inline size_t
+// cm_calc_cost_position_3d (int a, int b, int c, size_t alphSize) {
+//     assert(alphSize >= 0);
+//     return (((a << alphSize) + b) << alphSize) + c;
+// }
 
 static inline elem_t
 cm_calc_median (elem_t *tcm, elem_t a, elem_t b, int alphSize) {
@@ -487,7 +495,7 @@ cm_precalc_4algn (const cost_matrices_2d_p costMatrix, nw_matrices_p alignmentMa
         precalcMtx[j] = valueDatum;
         //printf ("After  Assignment\n"), fflush(stdout);
 
-        if (DEBUG_CM) {
+        if (DEBUG_COST_M) {
             printf ("%7d", precalcMtx[j]);
             fflush(stdout);
         }
@@ -587,54 +595,54 @@ cm_precalc_4algn_3d (const cost_matrices_3d_p costMtx, int *outPrecalcMtx, const
 }
 
 void
-cm_set_value_3d_dyn_char_p (elem_t a, elem_t b, elem_t c, elem_t v, elem_t *p, int alphSize) {
-    *(p + (cm_calc_cost_position_3d_dyn_char_p (a, b, c, alphSize))) = v;
+cm_set_value_3d_dyn_char_p (elem_t a, elem_t b, elem_t c, elem_t val, elem_t *matrix_array, int alphSize) {
+    *(matrix_array + (cm_calc_cost_position_3d_dyn_char_p (a, b, c, alphSize))) = val;
 }
 
 void
-cm_set_value_3d (int a, int b, int c, int v, int *p, int alphSize) {
-    *(p + (cm_calc_cost_position_3d (a, b, c, alphSize))) = v;
+cm_set_value_3d (int a, int b, int c, int val, int *matrix_array, int alphSize) {
+    *(matrix_array + (cm_calc_cost_position_3d (a, b, c, alphSize))) = val;
 }
 
 void
-cm_set_cost_2d (int a, int b, int v, cost_matrices_2d_p c) {
-    cm_set_value (a, b, v, c->cost, c->costMatrixDimension);
+cm_set_cost_2d (cost_matrices_2d_p c, int a, int b, int val) {
+    cm_set_value (a, b, val, c->cost, c->costMatrixDimension);
 }
 
 int
-cm_get_cost (int a, int b, cost_matrices_2d_p c) {
+cm_get_cost (cost_matrices_2d_p c, int a, int b) {
     return cm_get_value (a, b, c->cost, c->costMatrixDimension);
 }
 
 // TODO: This seems never to be used
 void
-cm_set_worst (int a, int b, int v, cost_matrices_2d_p c) {
-    cm_set_value (a, b, v, c->worst, c->costMatrixDimension);
+cm_set_worst (cost_matrices_2d_p c, int a, int b, int val) {
+    cm_set_value (a, b, val, c->worst, c->costMatrixDimension);
 }
 
 void
-cm_set_cost_3d (int a, int b, int cp, int v, cost_matrices_3d_p c) {
-    cm_set_value_3d (a, b, cp, v, c->cost, c->costMatrixDimension);
+cm_set_cost_3d (cost_matrices_3d_p c, int elem1, int elem2, int elem3, int val) {
+    cm_set_value_3d (elem1, elem2, elem3, val, c->cost, c->costMatrixDimension);
 }
 
 void
-cm_set_prepend_2d (int a, int b, cost_matrices_2d_p c) {
+cm_set_prepend_2d (cost_matrices_2d_p c, int a, int b) {
     c->prepend_cost[a] = b;
 }
 
 void
-cm_set_tail_2d (int a, int b, cost_matrices_2d_p c) {
+cm_set_tail_2d (cost_matrices_2d_p c, int a, int b) {
     c->tail_cost[a] = b;
 }
 
 void
-cm_set_median_2d (elem_t a, elem_t b, elem_t v, cost_matrices_2d_p c) {
+cm_set_median_2d (cost_matrices_2d_p c, elem_t a, elem_t b, elem_t v) {
     cm_set_value_2d_dyn_char_p (a, b, v, c->median, c->costMatrixDimension);
 }
 
 void
-cm_set_median_3d (elem_t a, elem_t b, elem_t cp, elem_t v, cost_matrices_3d_p c) {
-    cm_set_value_3d_dyn_char_p (a, b, cp, v, c->median, c->costMatrixDimension);
+cm_set_median_3d (cost_matrices_3d_p c, elem_t elem1, elem_t elem2, elem_t elem3, elem_t val) {
+    cm_set_value_3d_dyn_char_p (elem1, elem2, elem3, val, c->median, c->costMatrixDimension);
 }
 
 int
@@ -644,8 +652,8 @@ cm_compare (cost_matrices_2d_p a, cost_matrices_2d_p b) {
     if (a->alphSize != b->alphSize) {
         return (a->alphSize - b->alphSize);
     }
-    else if (a->combinations != b->combinations) {
-        return (a->combinations - b->combinations);
+    else if (a->include_ambiguities != b->include_ambiguities) {
+        return (a->include_ambiguities - b->include_ambiguities);
     }
     else if (a->cost_model_type != b->cost_model_type) {
         return (a->cost_model_type - b->cost_model_type);

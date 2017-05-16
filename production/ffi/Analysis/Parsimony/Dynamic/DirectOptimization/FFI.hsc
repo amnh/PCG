@@ -129,7 +129,7 @@ data CostMatrix3d
    , costMatrixDimension3D :: CInt
    , gapChar3D             :: CInt
    , costModelType3D       :: CInt
-   , combinations3D        :: CInt 
+   , combinations3D        :: CInt
    , gapOpenCost3D         :: CInt
    , allElems3D            :: CInt
    , bestCost3D            :: Ptr CInt
@@ -144,7 +144,7 @@ data DenseTransitionCostMatrix
    { costMatrix2D :: Ptr CostMatrix2d
    , costMatrix3D :: Ptr CostMatrix3d
    } deriving (Generic)
-    
+
 
 data MedianContext = ComputeMedians | DoNotComputeMedians
 
@@ -375,19 +375,19 @@ instance Enum UnionContext where
 -- It is therefore indexed not by powers of two, but by cardinal integer.
 foreign import ccall unsafe "c_code_alloc_setup.h setUp2dCostMtx"
 
-    setUpCostMatrix2dFn_c :: Ptr CUInt         -- ^ tcm
+    setUpCostMatrix2dFn_c :: Ptr CostMatrix2d
+                          -> Ptr CUInt         -- ^ tcm
                           -> CSize             -- ^ alphSize
                           -> CInt              -- ^ gap_open
-                          -> Ptr CostMatrix2d
                           -> IO ()
 
 
 foreign import ccall unsafe "c_code_alloc_setup.h setUp3dCostMtx"
 
-    setUpCostMatrix3dFn_c :: Ptr CUInt         -- ^ tcm
+    setUpCostMatrix3dFn_c :: Ptr CostMatrix3d
+                          -> Ptr CUInt         -- ^ tcm
                           -> CSize             -- ^ alphSize
                           -> CInt              -- ^ gap_open
-                          -> Ptr CostMatrix3d
                           -> IO ()
 
 
@@ -494,8 +494,8 @@ performMatrixAllocation :: Word -> Word -> (Word -> Word -> Word) -> DenseTransi
 performMatrixAllocation openningCost alphabetSize costFn = unsafePerformIO . withArray rowMajorList $ \allocedTCM -> do
         !ptr2D <- malloc :: IO (Ptr CostMatrix2d)
         !ptr3D <- malloc :: IO (Ptr CostMatrix3d)
-        !_ <- setUpCostMatrix2dFn_c allocedTCM matrixDimension gapOpen ptr2D
-        !_ <- setUpCostMatrix3dFn_c allocedTCM matrixDimension gapOpen ptr3D
+        !_ <- setUpCostMatrix2dFn_c ptr2D allocedTCM matrixDimension gapOpen
+        !_ <- setUpCostMatrix3dFn_c ptr3D allocedTCM matrixDimension gapOpen
         pure DenseTransitionCostMatrix
              { costMatrix2D = ptr2D
              , costMatrix3D = ptr3D
@@ -590,8 +590,8 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
 --                !_ <- trace (" Aligned LHS : " <> renderBuffer char1Aligned) $ pure ()
 --                !_ <- trace (" Aligned RHS : " <> renderBuffer char2Aligned) $ pure ()
 -}
-                
-{-                
+
+{-
                 AlignIO char1Ptr' char1Len' buffer1Len' <- peek char1ToSend
                 AlignIO char2Ptr' char2Len' buffer2Len' <- peek char2ToSend
                 output1Buffer <- peekArray (fromEnum buffer1Len') char1Ptr'
@@ -599,7 +599,7 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
                 !_ <- trace (mconcat [" Output LHS : { ", show char1Len', " / ", show buffer1Len', " } ", renderBuffer output1Buffer]) $ pure ()
                 !_ <- trace (mconcat [" Output RHS : { ", show char2Len', " / ", show buffer2Len', " } ", renderBuffer output2Buffer]) $ pure ()
 -}
-                
+
                 resultingAlignedChar1 <- extractFromAlignIO elemWidth char1ToSend
                 resultingAlignedChar2 <- extractFromAlignIO elemWidth char2ToSend
                 resultingGapped       <- extractFromAlignIO elemWidth retGapped
@@ -676,7 +676,7 @@ algn3d :: ( EncodableDynamicCharacter s
                                     --   The gapped alignment of the /third/ input character when aligned with the first & second character
                                     --
 algn3d char1 char2 char3 denseTCMs = undefined -- TODO: implement once C code is in place!
-  
+
 
 
 -- | A C binding that computes only the cost of a 2d alignment
