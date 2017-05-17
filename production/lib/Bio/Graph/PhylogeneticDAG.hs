@@ -18,10 +18,11 @@ module Bio.Graph.PhylogeneticDAG
   ( CharacterResult
   , CharacterDAG
   , DecoratedCharacterResult
-  , InitialDecorationDAG
+  , FinalDecorationDAG
   , PhylogeneticDAG(..)
   , PhylogeneticDAG2(..)
   , PhylogeneticDAGish(..)
+  , PostOrderDecorationDAG
   , SearchState
   , TopologicalResult
   , UnifiedCharacterSequence
@@ -34,6 +35,7 @@ module Bio.Graph.PhylogeneticDAG
   , assignPunitiveNetworkEdgeCost
   , generateLocalResolutions
   , postorderSequence'
+  , preorderSequence'
   , renderSummary
   , riefiedSolution
   , riefiedToCharacterDAG
@@ -57,6 +59,7 @@ import           Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
 import           Bio.Graph.PhylogeneticDAG.Postorder
+import           Bio.Graph.PhylogeneticDAG.Preorder
 import           Bio.Graph.PhylogeneticDAG.Riefication
 import           Bio.Graph.ReferenceDAG.Internal
 import           Data.Key

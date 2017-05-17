@@ -46,7 +46,7 @@ import           Data.Semigroup.Foldable
 import           Prelude            hiding (zipWith)
 
 
-type SearchState = EvaluationT IO (Either TopologicalResult (PhylogeneticSolution InitialDecorationDAG))
+type SearchState = EvaluationT IO (Either TopologicalResult DecoratedCharacterResult)
 
 
 type TopologicalResult = PhylogeneticSolution (ReferenceDAG EdgeLength (Maybe String))
@@ -55,7 +55,7 @@ type TopologicalResult = PhylogeneticSolution (ReferenceDAG EdgeLength (Maybe St
 type CharacterResult = PhylogeneticSolution CharacterDAG
 
 
-type DecoratedCharacterResult = PhylogeneticSolution InitialDecorationDAG
+type DecoratedCharacterResult = PhylogeneticSolution FinalDecorationDAG
 
 
 type UnRiefiedCharacterDAG =
@@ -82,19 +82,28 @@ type CharacterDAG =
          UnifiedDynamicCharacter
 
 
-type InitialDecorationDAG =
+type PostOrderDecorationDAG =
        PhylogeneticDAG2
          EdgeLength
          (Maybe String)
-         -- UnifiedContinuousCharacter
-         -- (ContinuousOptimizationDecoration ContinuousChar)
          (ContinuousPostorderDecoration  ContinuousChar)
          (FitchOptimizationDecoration   StaticCharacter)
-         -- (AdditiveOptimizationDecoration StaticCharacter)
          (AdditivePostorderDecoration   StaticCharacter)
          (SankoffOptimizationDecoration StaticCharacter)
          (SankoffOptimizationDecoration StaticCharacter)
-         -- UnifiedDynamicCharacter
+         -- (DynamicDecorationDirectOptimization DynamicChar)
+         (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
+
+
+type FinalDecorationDAG =
+       PhylogeneticDAG2
+         EdgeLength
+         (Maybe String)
+         (ContinuousOptimizationDecoration ContinuousChar)
+         (FitchOptimizationDecoration   StaticCharacter)
+         (AdditiveOptimizationDecoration StaticCharacter)
+         (SankoffOptimizationDecoration StaticCharacter)
+         (SankoffOptimizationDecoration StaticCharacter)
          -- (DynamicDecorationDirectOptimization DynamicChar)
          (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
 

@@ -1,4 +1,4 @@
------------------------------------------------------------------------------
+----------------------------------------------------------------------------
 -- |
 -- Module      :  PCG.Command.Types.Read.DecorationInitialization
 -- Copyright   :  () 2015-2015 Ward Wheeler
@@ -122,20 +122,37 @@ chooseDirectOptimizationComparison dec decs =
               in \x y -> naiveDO x y scm
 
 
+id2 x _ = x
+
 {--}
---initializeDecorations2 :: CharacterResult -> PhylogeneticSolution InitialDecorationDAG
+initializeDecorations2 :: CharacterResult -> PhylogeneticSolution FinalDecorationDAG
 initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
   where
---    performDecoration :: CharacterDAG -> InitialDecorationDAG
-    performDecoration = assignPunitiveNetworkEdgeCost
-                      . assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostOrder
-                      . postorderSequence'
-                          (g additivePostOrder)
-                          (g    fitchPostOrder)
-                          (g additivePostOrder)
-                          (g  sankoffPostOrder)
-                          (g  sankoffPostOrder)
-                          (g adaptiveDirectOptimizationPostOrder)
+    performDecoration :: CharacterDAG -> FinalDecorationDAG
+    performDecoration = performPreOrderDecoration . performPostOrderDecoration
+
+    
+    performPreOrderDecoration :: PostOrderDecorationDAG -> FinalDecorationDAG
+    performPreOrderDecoration =
+        preorderSequence'
+          additivePreOrder
+          fitchPreOrder
+          additivePreOrder
+          sankoffPreOrder
+          sankoffPreOrder
+          id2
+
+    performPostOrderDecoration :: CharacterDAG -> PostOrderDecorationDAG
+    performPostOrderDecoration =
+        assignPunitiveNetworkEdgeCost
+        . assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostOrder
+        . postorderSequence'
+           (g additivePostOrder)
+           (g    fitchPostOrder)
+           (g additivePostOrder)
+           (g  sankoffPostOrder)
+           (g  sankoffPostOrder)
+           (g adaptiveDirectOptimizationPostOrder)
       where
         g _  Nothing  [] = error "Uninitialized leaf node. This is bad!"
         g h (Just  v) [] = h v []

@@ -23,7 +23,7 @@ import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
 import qualified Bio.Sequence.Block as BLK
-import           Control.Arrow             ((&&&))
+import           Control.Arrow             ((&&&),(***))
 import           Control.Applicative       (liftA2)
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
@@ -38,6 +38,7 @@ import           Data.List.NonEmpty        (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty as NE
 import           Data.MonoTraversable
 import           Data.Ord                  (comparing)
+import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import qualified Data.Vector        as V
 import           Prelude            hiding (zip, zipWith)
@@ -84,8 +85,12 @@ preorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
             )
           where
             (inheritedToplogies, newResolution)
-              | i `elem` rootRefs dag = (sequenceOfBlockMinimumTopologies, mockResInfo datumResolutions $ computeOnApplicableResolution f1 f2 f3 f4 f5 f6 sequenceOfBlockMinimumTopologies datumResolutions [])
-              | otherwise             = (               parentalToplogies, mockResInfo datumResolutions $ computeOnApplicableResolution f1 f2 f3 f4 f5 f6                parentalToplogies datumResolutions parentalResolutions)
+              | i `elem` rootRefs dag =
+                let (_, newSequence) = computeOnApplicableResolution f1 f2 f3 f4 f5 f6 sequenceOfBlockMinimumTopologies datumResolutions []
+                in (sequenceOfBlockMinimumTopologies, mockResInfo datumResolutions newSequence)
+              | otherwise             =
+                let (prunedToplogies, newSequence) = computeOnApplicableResolution f1 f2 f3 f4 f5 f6 parentalToplogies datumResolutions parentalResolutions
+                in  (prunedToplogies, mockResInfo datumResolutions newSequence)
 
             -- A "sequence" of the minimum topologies that correspond to each block.
             sequenceOfBlockMinimumTopologies :: NonEmpty (EdgeSet (Int, Int))
@@ -100,7 +105,6 @@ preorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
                 f key block = minimumBy (comparing extractedBlockCost) datumResolutions
                   where
                     extractedBlockCost = blockCost . (! key) . toBlocks . characterSequence
-
 
 
 --            completeCoverage = (completeLeafSet ==) . (completeLeafSet .&.) . leafSetRepresentation
@@ -151,18 +155,27 @@ computeOnApplicableResolution
   -> BlockTopologies
   -> ResolutionCache (CharacterSequence u v w x y z)
   -> [(Word, ResolutionInformation (CharacterSequence u' v' w' x' y' z'))]
-  -> CharacterSequence u' v' w' x' y' z'
-computeOnApplicableResolution f1 f2 f3 f4 f5 f6 topologies currentResolutions parentalResolutions = fromBlocks $ mapWithKey g topologies
+  -> (BlockTopologies, CharacterSequence u' v' w' x' y' z')
+computeOnApplicableResolution f1 f2 f3 f4 f5 f6 topologies currentResolutions parentalResolutions =
+   (zipWith intersection topologies *** fromBlocks) . NE.unzip $ mapWithKey g topologies
   where
-    g key es = BLK.hexZipWith f1 f2 f3 f4 f5 f6 currentBlock parentBlocks
+    g key es = (currentTopology, BLK.hexZipWith f1 f2 f3 f4 f5 f6 currentBlock parentBlocks)
       where
         getBlock = (! key) . toBlocks . characterSequence
-        currentBlock =
+        (currentTopology, currentBlock) =
             case selectApplicableResolutions es currentResolutions of
               []  -> error "No applicable resolution found on pre-order traversal"
-              [x] -> getBlock x
-              _   -> error "Multiple applicable resolutions found on pre-order traversal"
-
+              [x] -> (subtreeEdgeSet &&& getBlock) x
+              xs  -> let x = maximumBy (comparing (length . subtreeEdgeSet)) xs
+                     in (subtreeEdgeSet &&& getBlock) x
+{-
+                    error $ unlines
+                      [ "Multiple applicable resolutions found on pre-order traversal"
+                      , "On block index: " <> show key
+                      , show es
+                      , show $ subtreeEdgeSet <$> xs
+                      ]
+-}
         parentBlocks =
             case second getBlock <$> parentalResolutions of
               []   -> let c = const []
