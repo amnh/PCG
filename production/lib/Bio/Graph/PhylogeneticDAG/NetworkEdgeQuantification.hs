@@ -45,6 +45,7 @@ assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = PDAG2 $ dag { graphData = newG
         { dagCost           = punativeCost + realToFrac (sum sequenceCosts)
         , networkEdgeCost   = punativeCost
         , rootSequenceCosts = sequenceCosts
+        , graphMetadata     = graphMetadata $ graphData dag
         }
         
 

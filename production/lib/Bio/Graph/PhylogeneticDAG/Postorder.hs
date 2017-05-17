@@ -57,7 +57,15 @@ postorderSequence' :: ( Eq z, Eq z', Hashable z, Hashable z'
 postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
   where
     f6' = memoize2 f6
-    newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> graphData
+{-    
+    newDAG
+      :: ReferenceDAG d e x
+      -> ReferenceDAG
+           d
+           e
+           (PhylogeneticNode2 (CharacterSequence u' v' w' x' y' z') n)
+-}
+    newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> defaultGraphMetadata . graphData
     dagSize       = length $ references dag
     newReferences = V.generate dagSize h
       where

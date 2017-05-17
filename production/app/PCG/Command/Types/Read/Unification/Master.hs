@@ -491,7 +491,7 @@ fromTreeOnlyFile fpr = null chars || all null chars
     chars = parsedChars fpr
 
 
-terminalNames2 :: ReferenceDAG a (Maybe String) -> [Identifier]
+terminalNames2 :: ReferenceDAG a b (Maybe String) -> [Identifier]
 terminalNames2 dag = catMaybes $ (`nodeDatum` dag) <$> leaves dag
 
 

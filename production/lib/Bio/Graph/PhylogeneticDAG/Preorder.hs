@@ -69,7 +69,7 @@ preorderSequence' :: (-- Eq z, Eq z', Hashable z, Hashable z'
                   -> PhylogeneticDAG2 e n u' v' w' x' y' z'
 preorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
   where
-    newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> graphData
+    newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> defaultGraphMetadata . graphData
     dagSize       = length $ references dag
     newReferences = V.generate dagSize g
       where

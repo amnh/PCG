@@ -45,11 +45,11 @@ import           Prelude             hiding (lookup)
 
 -- |
 -- A constant time access representation of a directed acyclic graph.
-data  ReferenceDAG e n
+data  ReferenceDAG d e n
     = RefDAG
     { references :: Vector (IndexData e n)
     , rootRefs   :: NonEmpty Int
-    , graphData  :: GraphData
+    , graphData  :: GraphData d
     }
 
 
@@ -64,17 +64,19 @@ data  IndexData e n
     } deriving (Show)
 
 
--- | Annotations which are global to the graph
-data  GraphData
+-- |
+-- Annotations which are global to the graph
+data  GraphData d
     = GraphData
     { dagCost           :: ExtendedReal
     , networkEdgeCost   :: ExtendedReal
     , rootSequenceCosts :: NonEmpty Double
+    , graphMetadata     :: d
     }
 
 
 -- | (✔)
-instance Show GraphData where
+instance Show (GraphData m) where
   
     show x = unlines
         [ "DAG total cost:          " <> show (dagCost x)
@@ -90,7 +92,7 @@ newtype NodeRef = NR Int deriving (Eq, Enum)
                    
 
 -- | (✔)
-instance Bifunctor ReferenceDAG where
+instance Bifunctor (ReferenceDAG d) where
 
     bimap f g dag =
         RefDAG
@@ -103,16 +105,16 @@ instance Bifunctor ReferenceDAG where
 
 
 -- | (✔) 
-instance Foldable (ReferenceDAG e) where
+instance Foldable (ReferenceDAG d e) where
 
     foldMap f = foldMap (f . nodeDecoration) . references
 
 
-type instance Key (ReferenceDAG e) = Int
+type instance Key (ReferenceDAG d e) = Int
 
 
 -- | (✔)
-instance FoldableWithKey (ReferenceDAG e) where
+instance FoldableWithKey (ReferenceDAG d e) where
 
     {-# INLINE foldrWithKey #-}
     foldrWithKey f e = V.ifoldr' (\i n a -> f i (nodeDecoration n) a) e . references
@@ -122,7 +124,7 @@ instance FoldableWithKey (ReferenceDAG e) where
 
 
 -- | (✔)
-instance Functor (ReferenceDAG e) where
+instance Functor (ReferenceDAG d e) where
 
     fmap f dag =
         RefDAG
@@ -135,7 +137,7 @@ instance Functor (ReferenceDAG e) where
 
 
 -- | (✔)
-instance PhylogeneticComponent (ReferenceDAG e n) NodeRef e n where
+instance PhylogeneticComponent (ReferenceDAG d e n) NodeRef e n where
 
     parents   i dag = fmap toEnum . otoList . parentRefs $ references dag ! fromEnum i
  
@@ -180,7 +182,7 @@ instance PhylogeneticComponent (ReferenceDAG e n) NodeRef e n where
 
 
 -- | (✔)
-instance PhylogeneticNetwork (ReferenceDAG e n) NodeRef e n where
+instance PhylogeneticNetwork (ReferenceDAG d e n) NodeRef e n where
 
     root = toEnum . NE.head . rootRefs
   
@@ -189,13 +191,13 @@ instance PhylogeneticNetwork (ReferenceDAG e n) NodeRef e n where
 
 
 -- | (✔)
-instance PhylogeneticTree (ReferenceDAG e n) NodeRef e n where
+instance PhylogeneticTree (ReferenceDAG d e n) NodeRef e n where
 
     parent i dag = fmap toEnum . headMay . otoList . parentRefs $ references dag ! fromEnum i
 
 
 -- | (✔)
-instance {- (Show e, Show n) => -} Show (ReferenceDAG e n) where
+instance {- (Show e, Show n) => -} Show (ReferenceDAG d e n) where
 
     show dag = unlines [topologyRendering dag, "", referenceRendering dag]
 
@@ -203,7 +205,7 @@ instance {- (Show e, Show n) => -} Show (ReferenceDAG e n) where
 
 -- |
 -- Get the edge set of the DAG. Includes edges to root nodes.
-getEdges :: ReferenceDAG e n -> EdgeSet (Int, Int)
+getEdges :: ReferenceDAG d e n -> EdgeSet (Int, Int)
 getEdges dag = foldMap1 f $ rootRefs dag
   where
     refs = references dag
@@ -228,12 +230,12 @@ getEdges dag = foldMap1 f $ rootRefs dag
 unfoldDAG :: (Eq a, Hashable a, Monoid e)
           => (a -> ([(e,a)], n, [(e,a)]))
           -> a
-          -> ReferenceDAG e n
+          -> ReferenceDAG () e n
 unfoldDAG f origin =
     RefDAG
     { references = referenceVector
     , rootRefs   = NE.fromList roots2 -- otoList rootIndices
-    , graphData  = GraphData 0 0 (0:|[])
+    , graphData  = GraphData 0 0 (0:|[]) ()
     }
   where
     referenceVector = V.fromList . fmap h $ toList expandedMap
@@ -328,7 +330,7 @@ unfoldDAG f origin =
 -- The logic function takes a current node decoration,
 -- a list of child node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
-nodePostOrder :: (n -> [n'] -> n') -> ReferenceDAG e n -> ReferenceDAG e n'
+nodePostOrder :: (n -> [n'] -> n') -> ReferenceDAG d e n -> ReferenceDAG d e n'
 nodePostOrder f dag = RefDAG <$> const newReferences <*> rootRefs <*> graphData $ dag
   where
     dagSize       = length $ references dag
@@ -350,7 +352,7 @@ nodePostOrder f dag = RefDAG <$> const newReferences <*> rootRefs <*> graphData 
 -- The logic function takes a current node decoration,
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
-nodePreOrder :: (n -> [(Word, n')] -> n') -> ReferenceDAG e n -> ReferenceDAG e n'
+nodePreOrder :: (n -> [(Word, n')] -> n') -> ReferenceDAG d e n -> ReferenceDAG d e n'
 nodePreOrder f dag = RefDAG <$> const newReferences <*> rootRefs <*> graphData $ dag
   where
     dagSize       = length $ references dag
@@ -370,7 +372,7 @@ nodePreOrder f dag = RefDAG <$> const newReferences <*> rootRefs <*> graphData $
 
 -- |
 -- Displays a tree-like rendering of the 'ReferenceDAG'. 
-topologyRendering :: ReferenceDAG e n -> String
+topologyRendering :: ReferenceDAG d e n -> String
 topologyRendering dag = drawVerticalTree . unfoldTree f . NE.head $ rootRefs dag
   where
     f i = (show i, IM.keys . childRefs $ references dag ! i)
@@ -379,7 +381,7 @@ topologyRendering dag = drawVerticalTree . unfoldTree f . NE.head $ rootRefs dag
 -- |
 -- Renders the 'ReferenceDAG' without showing the node or edge decorations.
 -- Displays a multi-line, tabular reference map of the 'ReferenceDAG'. 
-referenceRendering :: ReferenceDAG e n -> String
+referenceRendering :: ReferenceDAG d e n -> String
 referenceRendering dag = unlines $ [shownRootRefs] <> toList shownDataLines
   where
     shownRootRefs   = listShow . toList $ rootRefs dag
@@ -417,7 +419,7 @@ referenceRendering dag = unlines $ [shownRootRefs] <> toList shownDataLines
 -- Use the supplied transformation to fold the Node values of the DAG into a
 -- 'Monoid' result. The fold is *loosely* ordered from *a* root node towards the
 -- leaves.
-nodeFoldMap :: Monoid m => (n -> m) -> ReferenceDAG e n -> m
+nodeFoldMap :: Monoid m => (n -> m) -> ReferenceDAG d e n -> m
 nodeFoldMap f = foldMap f . fmap nodeDecoration . references
 
 -- A test for unfoldDAG containing all node types!
@@ -649,3 +651,11 @@ expandVertexMapping unexpandedMap = snd . foldl' expandEdges (initialCounter+1, 
             rhsRecursiveResult = expandEdges lhsRecursiveResult (counter+1)
 
         
+
+defaultGraphMetadata :: Monoid m => GraphData d -> GraphData m
+defaultGraphMetadata =
+    GraphData
+      <$> dagCost
+      <*> networkEdgeCost
+      <*> rootSequenceCosts
+      <*> const mempty

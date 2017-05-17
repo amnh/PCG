@@ -18,6 +18,7 @@ module Bio.Graph.ReferenceDAG
   , nodePostOrder
   , nodePreOrder
   , unfoldDAG
+  , defaultGraphMetadata
   ) where
 
 import Bio.Graph.ReferenceDAG.Internal
