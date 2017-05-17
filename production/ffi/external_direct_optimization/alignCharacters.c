@@ -2993,17 +2993,17 @@ algn_initialize_matrices_affine_nobt (int go,
 
 
 void
-algn_initialize_matrices_affine (       int                 gap_open_cost
+algn_initialize_matrices_affine (       unsigned int        gap_open_cost
                                 , const dyn_char_p          shortChar
                                 , const dyn_char_p          longChar
-                                , const cost_matrices_2d_p  costMatrix
-                                ,       int                *close_block_diagonal
-                                ,       int                *extend_block_diagonal
-                                ,       int                *extend_vertical
-                                ,       int                *extend_horizontal
-                                ,       int                *final_cost_matrix
+                                , const cost_matrices_2d_t *costMatrix
+                                ,       unsigned int       *close_block_diagonal
+                                ,       unsigned int       *extend_block_diagonal
+                                ,       unsigned int       *extend_vertical
+                                ,       unsigned int       *extend_horizontal
+                                ,       unsigned int       *final_cost_matrix
                                 ,       DIR_MTX_ARROW_t    *direction_matrix
-                                , const int                *precalcMtx
+                                , const unsigned int       *precalcMtx
                                 )
 {
     if (DEBUG_AFFINE) {
@@ -3350,16 +3350,16 @@ algn_fill_plane_2d_affine ( const dyn_char_p          shortChar
                           , const dyn_char_p          longChar
                           ,       size_t              shortChar_len    // note that this is actually 1 less than length
                           ,       size_t              longChar_len   // note that this is actually 1 less than length
-                          ,       int                *final_cost_matrix
+                          , const unsigned int       *final_cost_matrix
                           ,       DIR_MTX_ARROW_t    *direction_matrix
                           , const cost_matrices_2d_p  costMatrix
-                          ,       int                *extend_horizontal
-                          ,       int                *extend_vertical
-                          ,       int                *close_block_diagonal
-                          ,       int                *extend_block_diagonal
-                          , const int                *precalcMtx
-                          ,       int                *gap_open_prec
-                          ,       int                *longChar_horizontal_extension
+                          , const unsigned int       *extend_horizontal
+                          , const unsigned int       *extend_vertical
+                          , const unsigned int       *close_block_diagonal
+                          , const unsigned int       *extend_block_diagonal
+                          , const unsigned int       *precalcMtx
+                          , const unsigned int       *gap_open_prec
+                          , const unsigned int       *longChar_horizontal_extension
                           )
 {
     if (DEBUG_AFFINE) {
@@ -3373,15 +3373,15 @@ algn_fill_plane_2d_affine ( const dyn_char_p          shortChar
             longCharIdx,
             res;
 
-    int *prev_extend_horizontal,
-        *prev_extend_vertical,
-        *prev_close_block_diagonal,
-        *prev_extend_block_diagonal;
+    unsigned int *prev_extend_horizontal,
+                 *prev_extend_vertical,
+                 *prev_close_block_diagonal,
+                 *prev_extend_block_diagonal;
 
-    int *init_extend_horizontal,
-        *init_extend_vertical,
-        *init_close_block_diagonal,
-        *init_extend_block_diagonal;
+    unsigned int *init_extend_horizontal,
+                 *init_extend_vertical,
+                 *init_close_block_diagonal,
+                 *init_extend_block_diagonal;
 
     const int *shortChar_no_gap_vector;
 

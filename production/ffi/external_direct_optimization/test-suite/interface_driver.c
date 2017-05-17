@@ -14,7 +14,7 @@
 #include "../c_code_alloc_setup.h"
 #include "../debug_constants.h"
 #include "../costMatrix.h"
-#include "../nwMatrices.h"
+#include "../alignmentMatrices.h"
 #include "../ukkCheckp.h"
 #include "../ukkCommon.h"
 
