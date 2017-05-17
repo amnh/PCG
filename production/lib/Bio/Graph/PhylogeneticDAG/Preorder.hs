@@ -18,6 +18,7 @@ module Bio.Graph.PhylogeneticDAG.Preorder
   ( preorderSequence'
   ) where
 
+import           Bio.Character.Decoration.Dynamic
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
@@ -194,3 +195,19 @@ computeOnApplicableResolution f1 f2 f3 f4 f5 f6 topologies currentResolutions pa
 
 selectApplicableResolutions :: EdgeSet (Int, Int) -> ResolutionCache s -> [ResolutionInformation s]
 selectApplicableResolutions topology = filter (\x -> subtreeEdgeSet x `isSubsetOf` topology) . toList 
+
+
+-- |
+-- Applies a traversal logic function over a 'ReferenceDAG' in a /pre-order/ manner.
+--
+-- The logic function takes a current node decoration,
+-- a list of parent node decorations with the logic function already applied,
+-- and returns the new decoration for the current node.
+preorderFromRooting
+  :: ( HasBlockCost u  v  w  x  y  z  Word Double
+     , HasTraversalFoci z TraversalFoci
+     )
+  => (z -> [(Word, z')] -> z')
+  -> PhylogeneticDAG2 e n u  v  w  x  y  z
+  -> PhylogeneticDAG2 e n u' v' w' x' y' z'
+preorderFromRooting f (PDAG2 dag) = PDAG2 $ undefined
