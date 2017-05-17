@@ -23,15 +23,15 @@ import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
 import qualified Bio.Sequence.Block as BLK
-import           Control.Arrow             ((&&&),(***))
-import           Control.Applicative       (liftA2)
+import           Control.Arrow             ((&&&))
+--import           Control.Applicative       (liftA2)
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
-import           Data.Bits
+--import           Data.Bits
 import           Data.EdgeSet
 import           Data.Foldable
-import           Data.Hashable
-import           Data.Hashable.Memoize
+--import           Data.Hashable
+--import           Data.Hashable.Memoize
 import qualified Data.IntMap        as IM
 import           Data.Key
 import           Data.List.NonEmpty        (NonEmpty( (:|) ))
@@ -39,10 +39,12 @@ import qualified Data.List.NonEmpty as NE
 import           Data.MonoTraversable
 import           Data.Ord                  (comparing)
 import           Data.Semigroup
-import           Data.Semigroup.Foldable
+--import           Data.Semigroup.Foldable
 import qualified Data.Vector        as V
 import           Prelude            hiding (zip, zipWith)
 
+import Debug.Trace
+  
 
 type BlockTopologies = NonEmpty (EdgeSet (Int, Int))
 
@@ -53,9 +55,9 @@ type BlockTopologies = NonEmpty (EdgeSet (Int, Int))
 -- The logic function takes a current node decoration,
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
-preorderSequence' :: ( Eq z, Eq z', Hashable z, Hashable z'
-                     , HasBlockCost u  v  w  x  y  z  Word Double
-                     , HasBlockCost u' v' w' x' y' z' Word Double
+preorderSequence' :: (-- Eq z, Eq z', Hashable z, Hashable z'
+                       HasBlockCost u  v  w  x  y  z  Word Double
+--                     , HasBlockCost u' v' w' x' y' z' Word Double
                      )
                   => (u -> [(Word, u')] -> u')
                   -> (v -> [(Word, v')] -> v')
@@ -67,7 +69,6 @@ preorderSequence' :: ( Eq z, Eq z', Hashable z, Hashable z'
                   -> PhylogeneticDAG2 e n u' v' w' x' y' z'
 preorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
   where
-    f6' = memoize2 f6
     newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> graphData
     dagSize       = length $ references dag
     newReferences = V.generate dagSize g
@@ -86,11 +87,11 @@ preorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
           where
             (inheritedToplogies, newResolution)
               | i `elem` rootRefs dag =
-                let (_, newSequence) = computeOnApplicableResolution f1 f2 f3 f4 f5 f6 sequenceOfBlockMinimumTopologies datumResolutions []
+                let newSequence = computeOnApplicableResolution f1 f2 f3 f4 f5 f6 sequenceOfBlockMinimumTopologies datumResolutions []
                 in (sequenceOfBlockMinimumTopologies, mockResInfo datumResolutions newSequence)
               | otherwise             =
-                let (prunedToplogies, newSequence) = computeOnApplicableResolution f1 f2 f3 f4 f5 f6 parentalToplogies datumResolutions parentalResolutions
-                in  (prunedToplogies, mockResInfo datumResolutions newSequence)
+                let newSequence = computeOnApplicableResolution f1 f2 f3 f4 f5 f6 parentalToplogies datumResolutions parentalResolutions
+                in  (parentalToplogies, mockResInfo datumResolutions newSequence)
 
             -- A "sequence" of the minimum topologies that correspond to each block.
             sequenceOfBlockMinimumTopologies :: NonEmpty (EdgeSet (Int, Int))
@@ -102,7 +103,7 @@ preorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
 
                 sequenceWLOG = characterSequence . NE.head $ datumResolutions
 
-                f key block = minimumBy (comparing extractedBlockCost) datumResolutions
+                f key _block = minimumBy (comparing extractedBlockCost) datumResolutions
                   where
                     extractedBlockCost = blockCost . (! key) . toBlocks . characterSequence
 
@@ -122,7 +123,7 @@ preorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
 
 
             node            = references dag ! i
-            childIndices    = IM.keys $ childRefs node
+--            childIndices    = IM.keys $ childRefs node
             parentIndices   = otoList $ parentRefs node
             -- In sparsely connected graphs (like ours) this will be effectively constant.
             childPosition j = toEnum . length . takeWhile (/=i) . IM.keys . childRefs $ references dag ! j
@@ -155,19 +156,24 @@ computeOnApplicableResolution
   -> BlockTopologies
   -> ResolutionCache (CharacterSequence u v w x y z)
   -> [(Word, ResolutionInformation (CharacterSequence u' v' w' x' y' z'))]
-  -> (BlockTopologies, CharacterSequence u' v' w' x' y' z')
+  -> CharacterSequence u' v' w' x' y' z'
 computeOnApplicableResolution f1 f2 f3 f4 f5 f6 topologies currentResolutions parentalResolutions =
-   (zipWith intersection topologies *** fromBlocks) . NE.unzip $ mapWithKey g topologies
+    fromBlocks $ mapWithKey g topologies
   where
-    g key es = (currentTopology, BLK.hexZipWith f1 f2 f3 f4 f5 f6 currentBlock parentBlocks)
+    g key es = BLK.hexZipWith f1 f2 f3 f4 f5 f6 currentBlock parentBlocks
       where
         getBlock = (! key) . toBlocks . characterSequence
-        (currentTopology, currentBlock) =
+        currentBlock =
             case selectApplicableResolutions es currentResolutions of
-              []  -> error "No applicable resolution found on pre-order traversal"
-              [x] -> (subtreeEdgeSet &&& getBlock) x
+              []  -> error $ unlines
+                       [ "No applicable resolution found on pre-order traversal"
+                       , "On block index: " <> show key
+                       , "Input set:  " <> show es
+                       , "Local sets: " <> show (subtreeEdgeSet <$> currentResolutions)
+                       ]
+              [x] -> getBlock x
               xs  -> let x = maximumBy (comparing (length . subtreeEdgeSet)) xs
-                     in (subtreeEdgeSet &&& getBlock) x
+                     in getBlock x
 {-
                     error $ unlines
                       [ "Multiple applicable resolutions found on pre-order traversal"
