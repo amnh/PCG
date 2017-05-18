@@ -106,7 +106,7 @@ int main() {
      *  This particular example is both metric and symmetric. All TCMs must be
      *  symmetric. Metricity is decided by PCG application.
      */
-    int *tcm = calloc(tcm_total_len, sizeof(int)); // this is the input tcm, not the generated one
+    unsigned int *tcm = calloc(tcm_total_len, sizeof(int)); // this is the input tcm, not the generated one
     for (i = 0; i < tcm_total_len; i += alphSize) {
         //printf("i: %zu\n", i);
         for (j = 0; j < alphSize; j++) {
@@ -124,9 +124,9 @@ int main() {
          }
     }
 
-    cost_matrices_2d_p costMtx2d        = malloc(sizeof(struct cost_matrices_2d));
-    cost_matrices_2d_p costMtx2d_affine = malloc(sizeof(struct cost_matrices_2d));
-    cost_matrices_3d_p costMtx3d        = malloc(sizeof(struct cost_matrices_3d));
+    cost_matrices_2d_t *costMtx2d        = malloc(sizeof(struct cost_matrices_2d_t));
+    cost_matrices_2d_t *costMtx2d_affine = malloc(sizeof(struct cost_matrices_2d_t));
+    cost_matrices_3d_t *costMtx3d        = malloc(sizeof(struct cost_matrices_3d_t));
 
     if(DO_2D) {
         setUp2dCostMtx (costMtx2d, tcm, alphSize, 0);
@@ -639,7 +639,7 @@ int main() {
 */
 
     // Next this: algn_get_median_3d (dyn_char_p inputChar1, dyn_char_p inputChar2, dyn_char_p char3,
-    //                cost_matrices_3d_p m, dyn_char_p sm)
+    //                cost_matrices_3d_t *m, dyn_char_p sm)
 
     if(DO_2D)     freeCostMtx(costMtx2d,        1);
     if(DO_2D_AFF) freeCostMtx(costMtx2d_affine, 1);  // 1 is 2d

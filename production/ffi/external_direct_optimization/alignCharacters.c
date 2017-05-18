@@ -99,19 +99,19 @@ DIR_MTX_ARROW_t *_algn_max_direction = NULL;
 
 #if ( __GNUC__ && __MMX__ )
 static inline void
-algn_fill_row ( int *curRow
-              , const int *prevRow
-              , const int *gap_row
-              , const int *align_row
-              , DIR_MTX_ARROW_t *dirMtx
-              , int c
-              , int i
-              , int end
+algn_fill_row (       unsigned int    *curRow
+              , const unsigned int    *prevRow
+              , const unsigned int    *gap_row
+              , const unsigned int    *align_row
+              ,       DIR_MTX_ARROW_t *dirMtx
+              ,       int              c
+              ,       int              i
+              ,       int              end
               )
 {
 
     register int aa, bb, cc;
-    register const int TWO = 0x200;
+    register const int TWO  = 0x200;
     register const int ZERO = 0;
 
     bb = curRow[i - 1];
@@ -385,19 +385,21 @@ algn_fill_row ( int *curRow
 
 
 static inline void
-algn_fill_row ( int *currRow
-              , const int *prevRow
-              , const int *gap_row
-              , const int *align_row
-              , DIR_MTX_ARROW_t *dirVect
-              , int c
-              , int startIndex
-              , int finalIndex
+algn_fill_row (       unsigned int    *currRow
+              , const unsigned int    *prevRow
+              , const unsigned int    *gap_row
+              , const unsigned int    *align_row
+              ,       DIR_MTX_ARROW_t *dirVect
+              ,       int               c
+              ,       size_t            startIndex
+              ,       size_t            finalIndex
               )
 {
-    int i, upwardCost, leftwardCost, diagonalCost;
+    unsigned int upwardCost,
+                 leftwardCost,
+                 diagonalCost;
 
-    for (i = startIndex; i <= finalIndex; i++) {
+    for (size_t i = startIndex; i <= finalIndex; i++) {
         // try align with substitution
         upwardCost   = prevRow[i    ] + c;
         leftwardCost = currRow[i - 1] + gap_row[i];
@@ -463,13 +465,13 @@ algn_fill_row ( int *currRow
 
 
 static inline void
-algn_fill_ukk_right_cell (       int *curRow
-                         , const int *prevRow
-                         , const int *gap_row
-                         , const int *align_row
-                         , DIR_MTX_ARROW_t *dirMtx
+algn_fill_ukk_right_cell (       unsigned int *curRow
+                         , const unsigned int *prevRow
+                         , const unsigned int *gap_row
+                         , const unsigned int *align_row
+                         , DIR_MTX_ARROW_t    *dirMtx
                          // ,       int c
-                         ,       int  pos
+                         ,       size_t         pos
                          )
 {
     int leftwardCost, diagonalCost;
@@ -510,13 +512,13 @@ algn_fill_ukk_right_cell (       int *curRow
 }
 
 static inline void
-algn_fill_ukk_left_cell (       int *curRow
-                        , const int *prevRow
+algn_fill_ukk_left_cell (       unsigned int    *curRow
+                        , const unsigned int    *prevRow
                        // , const int *gap_row
-                        , const int *align_row
-                        , DIR_MTX_ARROW_t *dirMtx
-                        , int c
-                        , int pos
+                        , const unsigned int    *align_row
+                        ,       DIR_MTX_ARROW_t *dirMtx
+                        ,       size_t           c
+                        ,       size_t           pos
                         )
 {
     int upwardCost, diagonalCost;
@@ -551,16 +553,16 @@ algn_fill_ukk_left_cell (       int *curRow
 }
 
 static inline void
-algn_fill_last_column (       int *curRow
-                      , const int *prevRow
-                      ,       int  tlc
-                      ,       int  lastColumnIndex
-                      , DIR_MTX_ARROW_t *dirMtx
+algn_fill_last_column (       unsigned int    *curRow
+                      , const unsigned int    *prevRow
+                      ,       unsigned int     const_val_tail
+                      ,       size_t           lastColumnIndex
+                      ,       DIR_MTX_ARROW_t *dirMtx
                       )
 {
-    int cost;
+    unsigned int cost;
     if (lastColumnIndex > 0) {
-        cost = prevRow[lastColumnIndex] + tlc; // Gotta add some tender loving care to the cost!
+        cost = prevRow[lastColumnIndex] + const_val_tail; // Gotta add some tender loving care to the cost!
         if (cost < curRow[lastColumnIndex]) {
 	    curRow[lastColumnIndex] = cost;
             dirMtx[lastColumnIndex] = DELETE;
@@ -571,37 +573,50 @@ algn_fill_last_column (       int *curRow
 }
 
 static inline void
-algn_fill_full_row (       int *curRow
-                   , const int *prevRow
-                   , const int *gap_row
-                   , const int *align_row
-                   , DIR_MTX_ARROW_t *dirMtx
-                   , int c
-                   , int tlc
-                   , int rowLength
+algn_fill_full_row (       unsigned int    *curRow
+                   , const unsigned int    *prevRow
+                   , const unsigned int    *gap_row
+                   , const unsigned int    *align_row
+                   ,       DIR_MTX_ARROW_t *dirMtx
+                   ,       int              const_val
+                   ,       int              const_val_tail
+                   ,       size_t           rowLength
                    )
 {
     /* first entry is delete */
-    curRow[0] = c + prevRow[0];
+    curRow[0] = const_val + prevRow[0];
     dirMtx[0] = DELETE;
 
     if (DEBUG_DIR_M) {
         printf ("D\t");
     }
 
-    algn_fill_row (curRow, prevRow, gap_row, align_row, dirMtx, c, 1, rowLength - 1);
-    algn_fill_last_column (curRow, prevRow, tlc, rowLength - 1, dirMtx);
+    algn_fill_row ( curRow
+                  , prevRow
+                  , gap_row
+                  , align_row
+                  , dirMtx
+                  , const_val
+                  , 1
+                  , rowLength - 1
+                  );
+
+    algn_fill_last_column ( curRow
+                          , prevRow
+                          , const_val_tail
+                          , rowLength - 1
+                          , dirMtx
+                          );
 
 }
 
 void
-algn_fill_first_row ( int *curRow
-                    , DIR_MTX_ARROW_t *dirMtx
-                    , int len
-                    , int const *gap_row
+algn_fill_first_row ( unsigned int          *curRow
+                    , DIR_MTX_ARROW_t       *dirMtx
+                    , size_t                 len
+                    , unsigned int    const *gap_row
                     )
 {
-    int i;
     /* We fill the first cell to start with */
     curRow[0] = 0;
     dirMtx[0] = ALIGN;
@@ -612,7 +627,7 @@ algn_fill_first_row ( int *curRow
         printf ("%d\t", curRow[0]);
         fflush (stdout);
     }
-    for (i = 1; i < len; i++) {
+    for (size_t i = 1; i < len; i++) {
         curRow[i] = curRow[i - 1] + gap_row[i];
         dirMtx[i] = INSERT;
         if (DEBUG_DIR_M)
@@ -625,10 +640,10 @@ algn_fill_first_row ( int *curRow
 }
 
 void
-algn_fill_first_cell ( int             *curRow
-                     , int              prevRow
+algn_fill_first_cell ( unsigned int    *curRow
+                     , unsigned int     prevRow
                      , DIR_MTX_ARROW_t *dirMtx
-                     , int              gap_char
+                     , elem_t           gap_char
                      )
 {
     *curRow = prevRow + gap_char;
@@ -655,44 +670,45 @@ algn_fill_first_cell ( int             *curRow
  * 8. align_row is the vector of costs of aligning char2 with cur_char1
  */
 
-static inline int *
-algn_fill_extending_right ( const dyn_char_p char1
-                          , int *precalcMtx
+static inline unsigned int *
+algn_fill_extending_right ( const dyn_char_p         char1
+                          ,       unsigned int      *algn_precalcMtx
                          // , size_t char1_len
-                          , size_t  char2_len
-                          , int *curRow
-                          , int *prevRow
-                          , DIR_MTX_ARROW_t *dirMtx
-                          , const cost_matrices_2d_p costMatrix
-                          , size_t start_row
-                          , size_t end_row
-                          , size_t len
+                          ,       size_t              char2_len
+                          ,       unsigned int       *curRow
+                          ,       unsigned int       *prevRow
+                          ,       DIR_MTX_ARROW_t    *dirMtx
+                          , const cost_matrices_2d_t *costMatrix
+                          ,       size_t              start_row
+                          ,       size_t              end_row
+                          ,       size_t              len
                           )
 {
     // printf("algn_fill_extending_right\n");
     size_t i = start_row;
-    int *tmp, cur_char1, const_val;
-    const int *gap_row, *align_row;
+    unsigned int *tmp, const_val;
+    elem_t cur_char1;
+    const unsigned int *gap_row, *align_row;
     /** Invariants block
      * len is the number of items in the row to be filled **/
 
     /* This is what we will perform conceptually, I will stop using the
      * cm_get_precal_row function to speed this up a little bit
-    gap_row = cm_get_precal_row (precalcMtx, gap_char, char2_len);
+    gap_row = cm_get_precal_row (algn_precalcMtx, gap_char, char2_len);
     */
-    gap_row = precalcMtx + (costMatrix->gap_char * char2_len);
+    gap_row = algn_precalcMtx + (costMatrix->gap_char * char2_len);
     while (i < end_row) {
         /** Invariants block */
-        cur_char1  = char1->char_begin[i];
-        const_val = cm_calc_cost( costMatrix->cost
-                                , cur_char1
-                                , costMatrix->gap_char
-                                , costMatrix->costMatrixDimension
-                                );
+        cur_char1 = char1->char_begin[i];
+        const_val = cm_calc_cost_2d( costMatrix->cost
+                                   , cur_char1
+                                   , costMatrix->gap_char
+                                   , costMatrix->costMatrixDimension
+                                   );
         /* This is conceptually what we do in the next line
-        align_row = cm_get_precal_row (precalcMtx, cur_char1, char2_len);
+        align_row = cm_get_precal_row (algn_precalcMtx, cur_char1, char2_len);
         */
-        align_row = precalcMtx + (cur_char1 * char2_len);
+        align_row = algn_precalcMtx + (cur_char1 * char2_len);
         /* Align! */
         algn_fill_first_cell( curRow
                             , prevRow[0]
@@ -728,46 +744,47 @@ algn_fill_extending_right ( const dyn_char_p char1
     return (curRow);
 }
 
-static inline int *
-algn_fill_extending_left_right ( const dyn_char_p char1
-                               , int *precalcMtx
+static inline unsigned int *
+algn_fill_extending_left_right ( const dyn_char_p          char1
+                               ,       unsigned int       *algn_precalcMtx
                               // , size_t char1_len
-                               , size_t char2_len
-                               , int *curRow
-                               , int *prevRow
-                               , DIR_MTX_ARROW_t *dirMtx
-                               , const cost_matrices_2d_p costMtx
-                               , size_t start_row
-                               , size_t end_row
-                               , size_t start_column
-                               , size_t len
+                               ,       size_t              char2_len
+                               ,       unsigned int       *curRow
+                               ,       unsigned int       *prevRow
+                               ,       DIR_MTX_ARROW_t    *dirMtx
+                               , const cost_matrices_2d_t *costMtx
+                               ,       size_t              start_row
+                               ,       size_t              end_row
+                               ,       size_t              start_column
+                               ,       size_t              len
                                )
 {
     // printf("algn_fill_extending_left_right\n");
     size_t i;
-    int *tmpRow, cur_char1, const_val;
-    const int *gap_row, *align_row;
+    unsigned int *tmpRow, const_val;
+    elem_t cur_char1;
+    const unsigned int *gap_row, *align_row;
     /** Invariants block
      * len is the number of cells to fill in the current row minus 1
      * start_column is the first cell to fill in the row */
     i = start_row;
     /* Conceptually,
-       gap_row = cm_get_precal_row (precalcMtx, gap_char, char2_len);
+       gap_row = cm_get_precal_row (algn_precalcMtx, gap_char, char2_len);
     */
-    gap_row = precalcMtx + (costMtx->gap_char * char2_len);
+    gap_row = algn_precalcMtx + (costMtx->gap_char * char2_len);
     len--;
     while (i < end_row) {
         /** Invariants block */
         cur_char1  = char1->char_begin[i];
-        const_val = cm_calc_cost( costMtx->cost
-                                , cur_char1
-                                , costMtx->gap_char
-                                , costMtx->costMatrixDimension
-                                );
+        const_val = cm_calc_cost_2d( costMtx->cost
+                                   , cur_char1
+                                   , costMtx->gap_char
+                                   , costMtx->costMatrixDimension
+                                   );
         /* Conceptually,
-           align_row = cm_get_precal_row (precalcMtx, cur_char1, char2_len);
+           align_row = cm_get_precal_row (algn_precalcMtx, cur_char1, char2_len);
         */
-        align_row = precalcMtx + (cur_char1 * char2_len);
+        align_row = algn_precalcMtx + (cur_char1 * char2_len);
         /* Align! */
         algn_fill_ukk_left_cell( curRow
                                , prevRow
@@ -805,49 +822,51 @@ algn_fill_extending_left_right ( const dyn_char_p char1
     return (curRow);
 }
 
-static inline int *
-algn_fill_extending_left ( const dyn_char_p char1
-                         , int *precalcMtx
+static inline unsigned int *
+algn_fill_extending_left ( const dyn_char_p          char1
+                         ,       unsigned int       *algn_precalcMtx
                         // , size_t char1_len
-                         , size_t char2_len
-                         , int *curRow
-                         , int *prevRow
-                         , DIR_MTX_ARROW_t *dirMtx
-                         , const cost_matrices_2d_p costMatrix
-                         , size_t start_row
-                         , size_t end_row
-                         , size_t start_column     // the first cell to fill in the row
-                         , size_t len              // len is the number of cells to fill in the current row minus 1
+                         ,       size_t              char2_len
+                         ,       unsigned int       *curRow
+                         ,       unsigned int       *prevRow
+                         ,       DIR_MTX_ARROW_t    *dirMtx
+                         , const cost_matrices_2d_t *costMatrix
+                         ,       size_t              start_row
+                         ,       size_t              end_row
+                         ,       size_t              start_column     // the first cell to fill in the row
+                         ,       size_t              len              // len is the number of cells to fill in the current row minus 1
                          )
 {
     // printf("algn_fill_extending_left\n");
     size_t i = start_row;
-    int *tmpRow,
-         cur_char1,
-         const_val,
-         const_val_tail;
-    const int *gap_row,
-              *align_row;
+    unsigned int *tmpRow,
+                  const_val,
+                  const_val_tail;
+
+    elem_t cur_char1;
+
+    const unsigned int *gap_row,
+                       *align_row;
 
     /* Conceptually,
-       gap_row = cm_get_precal_row (precalcMtx, gap_char, char2_len);
+       gap_row = cm_get_precal_row (algn_precalcMtx, gap_char, char2_len);
     */
-    gap_row = precalcMtx + (costMatrix->gap_char * char2_len);
+    gap_row = algn_precalcMtx + (costMatrix->gap_char * char2_len);
     while (i < end_row) {
         /** Invariants block */
         cur_char1       = char1->char_begin[i];
-        const_val      = cm_calc_cost ( costMatrix->cost
-                                      , cur_char1
-                                      , costMatrix->gap_char
-                                      , costMatrix->costMatrixDimension
-                                      );
+        const_val      = cm_calc_cost_2d ( costMatrix->cost
+                                         , cur_char1
+                                         , costMatrix->gap_char
+                                         , costMatrix->costMatrixDimension
+                                         );
 
         const_val_tail = costMatrix->tail_cost[cur_char1];
 
         /* Conceptually,
-           align_row = cm_get_precal_row (precalcMtx, cur_char1, char2_len);
+           align_row = cm_get_precal_row (algn_precalcMtx, cur_char1, char2_len);
         */
-        align_row = precalcMtx + (cur_char1 * char2_len);
+        align_row = algn_precalcMtx + (cur_char1 * char2_len);
         /* Align! */
         algn_fill_ukk_left_cell ( curRow
                                 , prevRow
@@ -899,52 +918,59 @@ algn_fill_extending_left ( const dyn_char_p char1
     return (curRow);
 }
 
-int *
-algn_fill_no_extending ( const dyn_char_p char1
-                       ,       int *precalcMtx
+static inline unsigned int *
+algn_fill_no_extending ( const dyn_char_p          char1
+                       ,       unsigned int       *algn_precalcMtx
                       // ,       int  char1_len
-                       ,       int  char2_len
-                       ,       int *curRow
-                       ,       int *prevRow
-                       ,       DIR_MTX_ARROW_t *dirMtx
-                       , const cost_matrices_2d_p costMatrix
-                       ,       size_t start_row
-                       ,       size_t end_row
+                       ,       unsigned int        char2_len
+                       ,       unsigned int       *curRow
+                       ,       unsigned int       *prevRow
+                       ,       DIR_MTX_ARROW_t    *dirMtx
+                       , const cost_matrices_2d_t *costMatrix
+                       ,       size_t              start_row
+                       ,       size_t              end_row
                        )
 {
     // printf("algn_fill_no_extending\n");
     size_t i;
-    int *tmpRow,
-         cur_char1,
-         const_val,
-         const_val_tail;
+    unsigned int *tmpRow,
+                  const_val,
+                  const_val_tail;
 
-    const int *gap_row,
-              *align_row;
+    size_t cur_char1;
+
+    unsigned int *gap_row,
+                 *align_row;
 
     /** Invariants block */
     i = start_row;
     /* Conceptually,
-       gap_row = cm_get_precal_row (precalcMtx, gap_char, char2_len);
+       gap_row = cm_get_precal_row (algn_precalcMtx, gap_char, char2_len);
     */
-    gap_row = precalcMtx + (costMatrix->gap_char * char2_len);
+    gap_row = algn_precalcMtx + (costMatrix->gap_char * char2_len);
 
     while (i < end_row) {
         /** Invariants block */
-        cur_char1       = char1->char_begin[i];
-        const_val      = cm_calc_cost ( costMatrix->cost
-                                      , cur_char1
-                                      , costMatrix->gap_char
-                                      , costMatrix->costMatrixDimension
-                                      );
+        cur_char1      = char1->char_begin[i];
+        const_val      = cm_calc_cost_2d ( costMatrix->cost
+                                         , cur_char1
+                                         , costMatrix->gap_char
+                                         , costMatrix->costMatrixDimension
+                                         );
 
         const_val_tail = costMatrix->tail_cost[cur_char1];
         /* Conceptually,
-           align_row = cm_get_precal_row (precalcMtx, cur_char1, char2_len);
+           align_row = cm_get_precal_row (algn_precalcMtx, cur_char1, char2_len);
         */
-        align_row = precalcMtx + (cur_char1 * char2_len);
+        align_row = algn_precalcMtx + (cur_char1 * char2_len);
+
         /* Align! */
-        algn_fill_first_cell (curRow, prevRow[0], dirMtx, align_row[0]);
+        algn_fill_first_cell ( curRow
+                             , prevRow[0]
+                             , dirMtx
+                             , align_row[0]
+                             );
+
         algn_fill_row ( curRow
                       , prevRow
                       , gap_row
@@ -954,12 +980,14 @@ algn_fill_no_extending ( const dyn_char_p char1
                       , 1
                       , char2_len - 1
                       );
+
         algn_fill_last_column ( curRow
                               , prevRow
                               , const_val_tail
                               , char2_len - 1
                               , dirMtx
                               );
+
         /** Invariants block */
         tmpRow  = curRow;
         curRow  = prevRow;
@@ -968,20 +996,19 @@ algn_fill_no_extending ( const dyn_char_p char1
         i++;
     }
 
-    return (curRow);
+    return curRow;
 }
 
 /* Similar to the previous but when no barriers are set */
-
-static inline int
-algn_fill_plane ( const dyn_char_p longerCharacter
-                , int *precalcMtx
+static inline unsigned int
+algn_fill_plane ( const dyn_char_p          longerCharacter
+                ,       unsigned int       *algn_precalcMtx
                  // Leading gap included in input lengths
-                ,       size_t longerCharacterLength //larger, horizontal dimension
-                ,       size_t lesserCharacterLength //smaller,  vertical dimension
-                ,       int *curRow
-                ,       DIR_MTX_ARROW_t *dirMtx
-                , const cost_matrices_2d_p costMatrix
+                ,       size_t              longerCharacterLength // larger, horizontal dimension
+                ,       size_t              lesserCharacterLength // smaller, vertical dimension
+                ,       unsigned int       *curRow
+                ,       DIR_MTX_ARROW_t    *dirMtx
+                , const cost_matrices_2d_t *costMatrix
                 )
 {
     // printf("algn_fill_plane\n");
@@ -989,16 +1016,16 @@ algn_fill_plane ( const dyn_char_p longerCharacter
     // printf("longerCharacterLength: %d\n", longerCharacterLength);
 
     size_t i, j;
-    const int *align_row,
-              *gap_row,
-              *first_gap_row;
+    const unsigned int *align_row,
+                       *gap_row,
+                       *first_gap_row;
 
-    int        const_val,
-               const_val_tail,
-              *prevRow , // This is misnamed, it is a buffer reference to the previous row.
-              *tmpRow,
-               gapcode,
-               curChar1_elem;
+    unsigned int  const_val,
+                  const_val_tail,
+                 *prevRow , // This is misnamed, it is a buffer reference to the previous row.
+                 *tmpRow,
+                  gapcode,
+                  curChar1_elem;
 
     int* debugCostMatrixBuffer = NULL; // Only used in DEBUG_COST_M branches
 
@@ -1007,8 +1034,8 @@ algn_fill_plane ( const dyn_char_p longerCharacter
 
     /* A precalculated cost of a gap aligned with each base in the array */
     gapcode       = costMatrix->gap_char;
-    gap_row       = cm_get_precal_row (precalcMtx, gapcode, lesserCharacterLength);
-    first_gap_row = cm_get_precal_row (precalcMtx,       0, lesserCharacterLength);
+    gap_row       = cm_get_precal_row (algn_precalcMtx, gapcode, lesserCharacterLength);
+    first_gap_row = cm_get_precal_row (algn_precalcMtx,       0, lesserCharacterLength);
     prevRow       = curRow;
     curRow[0]     = 0;
     dirMtx[0]     = ALIGN;
@@ -1051,12 +1078,12 @@ algn_fill_plane ( const dyn_char_p longerCharacter
         const_val_tail = costMatrix->tail_cost[curChar1_elem]; // get tail cost in costMatrix for value at
                                                               // position i in char1
 	    // printf("const_val_tail: %d\n",const_val_tail);
-        const_val = cm_calc_cost ( costMatrix->cost
-                                 , longerCharacter->char_begin[i]
-                                 , costMatrix->gap_char
-                                 , costMatrix->costMatrixDimension);
+        const_val = cm_calc_cost_2d ( costMatrix->cost
+                                    , longerCharacter->char_begin[i]
+                                    , costMatrix->gap_char
+                                    , costMatrix->costMatrixDimension);
 
-        align_row = cm_get_precal_row ( precalcMtx
+        align_row = cm_get_precal_row ( algn_precalcMtx
    				                      , longerCharacter->char_begin[i]
                                       , lesserCharacterLength
                                       );
@@ -1117,8 +1144,10 @@ algn_fill_plane ( const dyn_char_p longerCharacter
     return prevRow[lesserCharacterLength - 1];
 }
 
-static inline int *
-choose_other (int *compare, int *a, int *b) {
+static inline unsigned int *
+choose_other ( unsigned int *compare
+             , unsigned int *a
+             , unsigned int *b) {
     if (a == compare) {
         return b;
     } else {
@@ -1127,56 +1156,59 @@ choose_other (int *compare, int *a, int *b) {
 }
 
 static inline int
-algn_fill_plane_2 ( const dyn_char_p longerChar
-                  ,       int *precalcMtx
-                  ,       int  longChar_len
-                  ,       int  len_lesserChar
-                  ,       int *curRow
-                  ,       DIR_MTX_ARROW_t *dirMtx
-                  , const cost_matrices_2d_p costMatrix
-                  ,       int   width
-                  ,       int   height
-                  ,       int   dwidth_height
+algn_fill_plane_2 ( const dyn_char_p          longerChar
+                  ,       unsigned int       *algn_precalcMtx
+                  ,       size_t              longerChar_len
+                  ,       size_t              len_lesserChar
+                  ,       unsigned int       *curRow
+                  ,       DIR_MTX_ARROW_t    *dirMtx
+                  , const cost_matrices_2d_t *costMatrix
+                  ,       size_t              width
+                  ,       size_t              height
+                  ,       size_t              deltawh
                   )
 {
     // printf("algn_fill_plane_2 %d", iteration);
     //fflush(stdout);
-    int *next_row,
-        *next_prevRow,
-        *prevRow,
-         start_row,
-         final_row,
-         start_column,
-         length;
+    unsigned int *next_row,
+                 *next_prevRow,
+                 *prevRow,
+                  start_row,
+                  final_row,
+                  start_column,
+                  length;
 
-    int const *gap_row;
+    unsigned int const *gap_row;
 
     DIR_MTX_ARROW_t *to_go_dirMtx;
-    width = width + dwidth_height;
+    width = width + deltawh;
 
     if (width > len_lesserChar) {
         width = len_lesserChar; // width is at most len_lesserChar
     }
 
-    height = height + dwidth_height;
+    height = height + deltawh;
 
-    if (height > longChar_len) {
-        height = longChar_len; // likewise, height is at most longChar_len
+    if (height > longerChar_len) {
+        height = longerChar_len; // likewise, height is at most longerChar_len
     }
 
     prevRow = curRow + len_lesserChar;
-    gap_row = cm_get_precal_row (precalcMtx, 0, len_lesserChar); // We want the first horizontal row
+    gap_row = cm_get_precal_row( algn_precalcMtx
+                               , 0
+                               , len_lesserChar // We want the first horizontal row
+                               );
 
     /* We have to consider three cases in this new alignment procedure (much
      * cleaner than the previous):
      *
      * Case 1:
-     * If longChar_len >= 1.5 * char2_len, there is no point in using the
+     * If longerChar_len >= 1.5 * char2_len, there is no point in using the
      * barriers. Rather, we fill the full matrix in one shot */
-    if (longChar_len >= 1.5 * len_lesserChar) { // deleted a bunch of casts here
+    if (longerChar_len >= 1.5 * len_lesserChar) { // deleted a bunch of casts here
         return algn_fill_plane ( longerChar
-                               , precalcMtx
-                               , longChar_len
+                               , algn_precalcMtx
+                               , longerChar_len
                                , len_lesserChar
                                , curRow
                                , dirMtx
@@ -1187,7 +1219,7 @@ algn_fill_plane_2 ( const dyn_char_p longerChar
      * There are no full rows to be filled, therefore we have to break the
      * procedure into two different subsets */
     // subset 1:
-    else if (2 * height < longChar_len) {
+    else if (2 * height < longerChar_len) {
         algn_fill_first_row (curRow, dirMtx, width, gap_row);
         start_row    = 1;
         final_row    = height;
@@ -1197,8 +1229,8 @@ algn_fill_plane_2 ( const dyn_char_p longerChar
 
         /* Now we fill that space */
         next_row = algn_fill_extending_right ( longerChar
-                                             , precalcMtx
-                                            // , longChar_len
+                                             , algn_precalcMtx
+                                            // , longerChar_len
                                              , len_lesserChar
                                              , prevRow
                                              , curRow
@@ -1212,14 +1244,14 @@ algn_fill_plane_2 ( const dyn_char_p longerChar
         next_prevRow = choose_other (next_row, curRow, prevRow);
         /* Next group */
         start_row    = final_row;
-        final_row    = longChar_len - (height - 1);
+        final_row    = longerChar_len - (height - 1);
         start_column = 1;
         length       = width  + height;
         to_go_dirMtx = dirMtx + (start_row * len_lesserChar);
 
         next_row     = algn_fill_extending_left_right ( longerChar
-                                                      , precalcMtx
-                                                     // , longChar_len
+                                                      , algn_precalcMtx
+                                                     // , longerChar_len
                                                       , len_lesserChar
                                                       , next_row
                                                       , next_prevRow
@@ -1234,14 +1266,14 @@ algn_fill_plane_2 ( const dyn_char_p longerChar
         next_prevRow = choose_other (next_row, curRow, prevRow);
         /* The final group */
         start_row    = final_row;
-        final_row    = longChar_len;
+        final_row    = longerChar_len;
         length       = length - 2;
         start_column = len_lesserChar - length;
         to_go_dirMtx = dirMtx + (start_row * len_lesserChar);
 
         next_row = algn_fill_extending_left ( longerChar
-                                            , precalcMtx
-                                           // , longChar_len
+                                            , algn_precalcMtx
+                                           // , longerChar_len
                                             , len_lesserChar
                                             , next_row
                                             , next_prevRow
@@ -1263,10 +1295,10 @@ algn_fill_plane_2 ( const dyn_char_p longerChar
          * is too small, don't use the barriers at all, just fill it all up
          */
         // subset 2:
-        if (8 >= (longChar_len - height)) {
+        if (8 >= (longerChar_len - height)) {
             return (algn_fill_plane ( longerChar
-                                    , precalcMtx
-                                    , longChar_len
+                                    , algn_precalcMtx
+                                    , longerChar_len
                                     , len_lesserChar
                                     , curRow
                                     , dirMtx
@@ -1282,8 +1314,8 @@ algn_fill_plane_2 ( const dyn_char_p longerChar
             length       = width + 1;
             to_go_dirMtx = dirMtx + (len_lesserChar * start_row);
             next_row     = algn_fill_extending_right ( longerChar
-                                                     , precalcMtx
-                                                    // , longChar_len
+                                                     , algn_precalcMtx
+                                                    // , longerChar_len
                                                      , len_lesserChar
                                                      , prevRow
                                                      , curRow
@@ -1296,12 +1328,12 @@ algn_fill_plane_2 ( const dyn_char_p longerChar
 
             next_prevRow = choose_other (next_row, curRow, prevRow);
             start_row    = final_row;
-            final_row    = longChar_len - (len_lesserChar - width) + 1;
+            final_row    = longerChar_len - (len_lesserChar - width) + 1;
             length       = len_lesserChar;
             to_go_dirMtx = dirMtx + (len_lesserChar * start_row);
             next_row     = algn_fill_no_extending ( longerChar
-                                                  , precalcMtx
-                                                 // , longChar_len
+                                                  , algn_precalcMtx
+                                                 // , longerChar_len
                                                   , len_lesserChar
                                                   , next_row
                                                   , next_prevRow
@@ -1313,13 +1345,13 @@ algn_fill_plane_2 ( const dyn_char_p longerChar
 
             next_prevRow = choose_other (next_row, curRow, prevRow);
             start_row    = final_row;
-            final_row    = longChar_len;
+            final_row    = longerChar_len;
             start_column = 1;
             length       = len_lesserChar - 1;
             to_go_dirMtx = dirMtx + (len_lesserChar * start_row);
             next_row     = algn_fill_extending_left ( longerChar
-                                                    , precalcMtx
-                                                   // , longChar_len
+                                                    , algn_precalcMtx
+                                                   // , longerChar_len
                                                     , len_lesserChar
                                                     , next_row
                                                     , next_prevRow
@@ -1351,67 +1383,68 @@ algn_fill_plane_2 ( const dyn_char_p longerChar
 #define algn_assign_dirMtx(dirMtx, pos, v) dirMtx[pos] = dirMtx[pos] | v
 
 static inline void
-algn_fill_row_affine ( int *curRow
-                     , const int *prevRow
-                     , const int *gap_row
-                     , const int *align_row
-                     , DIR_MTX_ARROW_t *dirMtx
-                     , int c
-                     , int cprev
-                     , int st
-                     , int end
-                     , int *dncurRow
-                     , const int *pdncurRow
-                     , int *htcurRow
-                     , int open_gap
+algn_fill_row_affine (       unsigned int    *curRow
+                     , const unsigned int    *prevRow
+                     , const unsigned int    *gap_row
+                     , const unsigned int    *align_row
+                     ,       DIR_MTX_ARROW_t *dirMtx
+                     ,       unsigned int     const_val
+                     ,       unsigned int     const_val_prev
+                     ,       size_t           st
+                     ,       size_t           end
+                     ,       unsigned int    *dncurRow
+                     , const unsigned int    *pdncurRow
+                     ,       unsigned int    *htcurRow
+                     ,       unsigned int     gap_open_cost
                      )
 {
 
-    int i, tmp1, tmp2, tmp3, tmp4, tmp5;
+    size_t i;
+    int tmp1, tmp2, tmp3, tmp4, tmp5;
 
     for (i = st; i <= end; i++) {
         /* try align with substitution */
 #ifdef DEBUG_ALL_ASSERTIONS
-        assert ((curRow + i) < _algn_max_matrix);
-        assert ((prevRow + i) < _algn_max_matrix);
-        assert ((dirMtx + i) < _algn_max_direction);
-        assert ((dncurRow + i) < _algn_max_matrix);
+        assert ((curRow    + i) < _algn_max_matrix);
+        assert ((prevRow   + i) < _algn_max_matrix);
+        assert ((dirMtx    + i) < _algn_max_direction);
+        assert ((dncurRow  + i) < _algn_max_matrix);
         assert ((pdncurRow + i) < _algn_max_matrix);
-        assert ((htcurRow + i) < _algn_max_matrix);
+        assert ((htcurRow  + i) < _algn_max_matrix);
 #endif
         dirMtx[i] = 0;
-        { /* We deal with the difficultness of using an opening gap as
+        { /* We deal with the difficulty of using an opening gap as
              another DIR_MTX_ARROW_t */
-            if ((0 == cprev) && (0 != c)) {
-                tmp1 = pdncurRow[i] + open_gap + c;
-                tmp4 = prevRow[i] + open_gap + c;
+            if ((0 == const_val_prev) && (0 != const_val)) {
+                tmp1 = pdncurRow[i] + gap_open_cost + const_val;
+                tmp4 = prevRow[i]   + gap_open_cost + const_val;
             }
-            else if ((0 != cprev) && (0 == c)) {
-                tmp1 = pdncurRow[i] + open_gap + c;
+            else if ((0 != const_val_prev) && (0 == const_val)) {
+                tmp1 = pdncurRow[i] + gap_open_cost + const_val;
                 tmp4 = prevRow[i];
             }
             else {
-                tmp1 = pdncurRow[i] + c;
-                tmp4 = prevRow[i] + open_gap + c;
+                tmp1 = pdncurRow[i] + const_val;
+                tmp4 = prevRow[i]   + gap_open_cost + const_val;
             }
 
             if ((0 == gap_row[i - 1]) && (0 != gap_row[i])) {
-                tmp5 = htcurRow[i - 1] + open_gap + gap_row[i];
-                tmp2 = curRow[i - 1] + open_gap + gap_row[i];
+                tmp5 = htcurRow[i - 1] + gap_open_cost + gap_row[i];
+                tmp2 = curRow[i - 1]   + gap_open_cost + gap_row[i];
             }
             else if ((0 != gap_row[i - 1]) && (0 == gap_row[i])) {
-                tmp5 = htcurRow[i - 1] + open_gap + gap_row[i];
+                tmp5 = htcurRow[i - 1] + gap_open_cost + gap_row[i];
                 tmp2 = curRow[i - 1];
             }
             else {
-                tmp2 = curRow[i - 1] + open_gap + gap_row[i];
+                tmp2 = curRow[i - 1]   + gap_open_cost + gap_row[i];
                 tmp5 = htcurRow[i - 1] + gap_row[i];
             }
 
-            if ((((0 == gap_row[i]) && (0 != c)) ||
-                    ((0 != gap_row[i]) && (0 == c))) &&
-                    ((0 == gap_row[i - 1]) || (0 == cprev)))
-                tmp3 = prevRow[i - 1] + open_gap + align_row[i];
+            if ((((0 == gap_row[i]) && (0 != const_val)) ||
+                    ((0 != gap_row[i]) && (0 == const_val))) &&
+                    ((0 == gap_row[i - 1]) || (0 == const_val_prev)))
+                tmp3 = prevRow[i - 1] + gap_open_cost + align_row[i];
             else
                 tmp3 = prevRow[i - 1] + align_row[i];
         }
@@ -1431,6 +1464,7 @@ algn_fill_row_affine ( int *curRow
         }
         dncurRow[i] = tmp1;
         htcurRow[i] = tmp2;
+
         /* check whether insertion is better */
         /* This option will allow all the possible optimal paths to be stored
          * concurrently on the same backtrace matrix. This is important for the
@@ -1502,25 +1536,25 @@ algn_fill_row_affine ( int *curRow
 }
 
 static inline void
-algn_fill_ukk_right_cell_affine ( int *curRow
-                                , const int *prevRow
-                                , const int *gap_row
-                                , const int *align_row
-                                , DIR_MTX_ARROW_t *dirMtx
-                                , int c
-                                , int cprev
-                                , int pos
-                                , int *dncurRow
-                                , int *htcurRow
-                                , int open_gap
+algn_fill_ukk_right_cell_affine (       unsigned int    *curRow
+                                , const unsigned int    *prevRow
+                                , const unsigned int    *gap_row
+                                , const unsigned int    *align_row
+                                ,       DIR_MTX_ARROW_t *dirMtx
+                                ,       unsigned int     const_val
+                                ,       unsigned int     const_val_prev
+                                ,       unsigned int     pos
+                                ,       unsigned int    *dncurRow
+                                ,       unsigned int    *htcurRow
+                                ,       unsigned int     gap_open_cost
                                 )
 {
     int tmp2, tmp3, tmp4;
     /* try align with substitution */
 #ifdef DEBUG_ALL_ASSERTIONS
-        assert ((curRow + pos) < _algn_max_matrix);
-        assert ((prevRow + pos) < _algn_max_matrix);
-        assert ((dirMtx + pos) < _algn_max_direction);
+        assert ((curRow   + pos) < _algn_max_matrix);
+        assert ((prevRow  + pos) < _algn_max_matrix);
+        assert ((dirMtx   + pos) < _algn_max_direction);
         assert ((htcurRow + pos) < _algn_max_matrix);
 #endif
     dirMtx[pos] = 0;
@@ -1528,18 +1562,18 @@ algn_fill_ukk_right_cell_affine ( int *curRow
         if ((0 != gap_row[pos - 1]) && (0 == gap_row[pos]))
             tmp2 = curRow[pos - 1];
         else
-            tmp2 = curRow[pos - 1] + open_gap + gap_row[pos];
+            tmp2 = curRow[pos - 1] + gap_open_cost + gap_row[pos];
 
         if (((0 == gap_row[pos - 1]) && (0 != gap_row[pos])) ||
             ((0 != gap_row[pos - 1]) && (0 == gap_row[pos])))
-            tmp4 = htcurRow[pos - 1] + open_gap + gap_row[pos];
+            tmp4 = htcurRow[pos - 1] + gap_open_cost + gap_row[pos];
         else
             tmp4 = htcurRow[pos - 1] + gap_row[pos];
 
-        if ((((0 == gap_row[pos]) && (0 != c)) ||
-                ((0 != gap_row[pos]) && (0 == c))) &&
-                ((0 == gap_row[pos - 1]) || (0 == cprev)))
-            tmp3 = prevRow[pos - 1] + open_gap + align_row[pos];
+        if ((((0 == gap_row[pos]) && (0 != const_val)) ||
+                ((0 != gap_row[pos]) && (0 == const_val))) &&
+                ((0 == gap_row[pos - 1]) || (0 == const_val_prev)))
+            tmp3 = prevRow[pos - 1] + gap_open_cost + align_row[pos];
         else
             tmp3 = prevRow[pos - 1] + align_row[pos];
     }
@@ -1583,46 +1617,50 @@ algn_fill_ukk_right_cell_affine ( int *curRow
 }
 
 static inline void
-algn_fill_ukk_left_cell_affine ( int *curRow
-                               , const int *prevRow
-                               , const int *gap_row
-                               , const int *align_row
-                               , DIR_MTX_ARROW_t *dirMtx
-                               , int c
-                               , int cprev
-                               , int pos
-                               , int *dncurRow
-                               , int *pdncurRow
-                               , int *htcurRow
-                               , int open_gap
+algn_fill_ukk_left_cell_affine (       unsigned int    *curRow
+                               , const unsigned int    *prevRow
+                               , const unsigned int    *gap_row
+                               , const unsigned int    *align_row
+                               ,       DIR_MTX_ARROW_t *dirMtx
+                               ,       unsigned int     const_val
+                               ,       unsigned int     const_val_prev
+                               ,       size_t           pos
+                               ,       unsigned int    *dncurRow
+                               ,       unsigned int    *pdncurRow
+                               ,       unsigned int    *htcurRow
+                               ,       unsigned int     gap_open_cost
                                )
 {
-    int tmp1, tmp3, tmp5;
     /* try align with substitution */
 #ifdef DEBUG_ALL_ASSERTIONS
-        assert ((curRow + pos) < _algn_max_matrix);
-        assert ((prevRow + pos) < _algn_max_matrix);
-        assert ((dirMtx + pos) < _algn_max_direction);
-        assert ((dncurRow + pos) < _algn_max_matrix);
+        assert ((curRow    + pos) < _algn_max_matrix);
+        assert ((prevRow   + pos) < _algn_max_matrix);
+        assert ((dirMtx    + pos) < _algn_max_direction);
+        assert ((dncurRow  + pos) < _algn_max_matrix);
         assert ((pdncurRow + pos) < _algn_max_matrix);
 #endif
+
+    unsigned int tmp1,
+                 tmp3,
+                 tmp5;
+
     dirMtx[pos] = 0;
     { /* Affine gap difficultness */
-        if ((0 != cprev) && (0 == c))
+        if ((0 != const_val_prev) && (0 == const_val))
             tmp1 = prevRow[pos];
         else
-            tmp1 = prevRow[pos] + open_gap + c;
+            tmp1 = prevRow[pos] + gap_open_cost + const_val;
 
-        if (((0 == cprev) && (0 != c)) ||
-            ((0 != cprev) && (0 == c)))
-            tmp5 = pdncurRow[pos] + open_gap + c;
+        if (((0 == const_val_prev) && (0 != const_val)) ||
+            ((0 != const_val_prev) && (0 == const_val)))
+            tmp5 = pdncurRow[pos] + gap_open_cost + const_val;
         else
-            tmp5 = pdncurRow[pos] + c;
+            tmp5 = pdncurRow[pos] + const_val;
 
-        if ((((0 == gap_row[pos]) && (0 != c)) ||
-                ((0 != gap_row[pos]) && (0 == c))) &&
-                    ((0 == gap_row[pos - 1]) || (0 == cprev)))
-            tmp3 = prevRow[pos - 1] + open_gap + align_row[pos];
+        if ((((0 == gap_row[pos]) && (0 != const_val)) ||
+                ((0 != gap_row[pos]) && (0 == const_val))) &&
+                    ((0 == gap_row[pos - 1]) || (0 == const_val_prev)))
+            tmp3 = prevRow[pos - 1] + gap_open_cost + align_row[pos];
         else
             tmp3 = prevRow[pos - 1] + align_row[pos];
     }
@@ -1658,128 +1696,157 @@ algn_fill_ukk_left_cell_affine ( int *curRow
     }
     if (DEBUG_COST_M) {
         /* Print the cost matrix */
-        printf ("(%d, ,%d)\t", curRow[pos], dncurRow[pos]);
+        printf ("(%u, ,%u)\t", curRow[pos], dncurRow[pos]);
     }
 }
 
 static inline void
-algn_fill_last_column_affine ( int *curRow
-                             , const int *prevRow
-                             , int tlc
-                             , int tlcprev
-                             , int l
-                             , DIR_MTX_ARROW_t *dirMtx
-                             , int *dncurRow
-                             , const int *pdncurRow
-                             , int open_gap
+algn_fill_last_column_affine (       unsigned int    *curRow
+                             , const unsigned int    *prevRow
+                             ,       unsigned int     const_val_tail
+                             ,       int              const_val_tail_prev
+                             ,       size_t           length
+                             ,       DIR_MTX_ARROW_t *dirMtx
+                             ,       unsigned int    *dncurRow
+                             , const unsigned int    *pdncurRow
+                             ,       unsigned int     gap_open_cost
                              )
 {
-    int cst, tmp2;
+    unsigned int cst, tmp2;
+
 #ifdef DEBUG_ALL_ASSERTIONS
-        assert ((curRow + l) < _algn_max_matrix);
-        assert ((prevRow + l) < _algn_max_matrix);
-        assert ((dirMtx + l) < _algn_max_direction);
-        assert ((dncurRow + l) < _algn_max_matrix);
-        assert ((pdncurRow + l) < _algn_max_matrix);
+        assert ((curRow    + length) < _algn_max_matrix);
+        assert ((prevRow   + length) < _algn_max_matrix);
+        assert ((dirMtx    + length) < _algn_max_direction);
+        assert ((dncurRow  + length) < _algn_max_matrix);
+        assert ((pdncurRow + length) < _algn_max_matrix);
 #endif
-    tmp2 = prevRow[l] + tlc + open_gap;
+
+    tmp2 = prevRow[length] + const_val_tail + gap_open_cost;
     { /* Affine gap difficultness */
-        if (((0 == tlcprev) && (0 != tlc)) ||
-            ((0 != tlcprev) && (0 == tlc)))
-            cst = pdncurRow[l] + open_gap + tlc;
+        if (((0 == const_val_tail_prev) && (0 != const_val_tail)) ||
+            ((0 != const_val_tail_prev) && (0 == const_val_tail)))
+            cst = pdncurRow[length] + gap_open_cost + const_val_tail;
         else
-            cst = pdncurRow[l] + tlc;
+            cst = pdncurRow[length] + const_val_tail;
     }
     if (cst < tmp2)
-        algn_assign_dirMtx(dirMtx, l, DELETE_V);
+        algn_assign_dirMtx(dirMtx, length, DELETE_V);
     else {
         cst = tmp2;
-        algn_assign_dirMtx(dirMtx, l, ALIGN_V);
+        algn_assign_dirMtx(dirMtx, length, ALIGN_V);
     }
-    dncurRow[l] = cst;
-    if (cst < curRow[l]) {
-        curRow[l] = cst;
-        algn_assign_dirMtx(dirMtx, l, (DELETE));
+    dncurRow[length] = cst;
+    if (cst < curRow[length]) {
+        curRow[length] = cst;
+        algn_assign_dirMtx(dirMtx, length, (DELETE));
     }
-    else if (cst == curRow[l])
-        algn_assign_dirMtx(dirMtx, l, DELETE);
+    else if (cst == curRow[length])
+        algn_assign_dirMtx(dirMtx, length, DELETE);
 }
 
+
 static inline void
-algn_fill_full_row_affine ( int *curRow
-                          , const int *prevRow
-                          , const int *gap_row
-                          , const int *align_row
-                          , DIR_MTX_ARROW_t *dirMtx
-                          , int c
-                          , int cprev
-                          , int tlc
-                          , int tlcprev
-                          , int l
-                          , int *dncurRow
-                          , const int *pdncurRow
-                          , int *htcurRow
-                          , int open_gap
+algn_fill_full_row_affine (       unsigned int    *curRow
+                          , const unsigned int    *prevRow
+                          , const unsigned int    *gap_row
+                          , const unsigned int    *align_row
+                          ,       DIR_MTX_ARROW_t *dirMtx
+                          ,       unsigned int     const_val
+                          ,       unsigned int     prev_const_val
+                          ,       unsigned int     const_val_tail
+                          ,       unsigned int     const_val_tail_prev
+                          ,       size_t           char_length
+                          ,       unsigned int    *dncurRow
+                          , const unsigned int    *pdncurRow
+                          ,       unsigned int    *htcurRow
+                          ,       int              gap_open_cost
                           )
 {
     /* first entry is delete */
     htcurRow[0] = VERY_LARGE_NUMBER;
-    curRow[0] += c;
-    dirMtx[0] = DELETE | DELETE_V;
-    dncurRow[0] = c + pdncurRow[0];
+    curRow[0]  += const_val;
+    dirMtx[0]   = DELETE | DELETE_V;
+    dncurRow[0] = const_val + pdncurRow[0];
+
     if (DEBUG_COST_M)
         printf ("%d\t", curRow[0]);
     if (DEBUG_DIR_M)
         printf ("D\t");
-    algn_fill_row_affine (curRow, prevRow, gap_row, align_row, dirMtx, c, cprev, 1, l - 1,
-                       dncurRow, pdncurRow, htcurRow, open_gap);
-    algn_fill_last_column_affine (curRow, prevRow, tlc, tlcprev, l - 1, dirMtx, dncurRow, pdncurRow, open_gap);
+    algn_fill_row_affine ( curRow
+                         , prevRow
+                         , gap_row
+                         , align_row
+                         , dirMtx
+                         , const_val
+                         , prev_const_val
+                         , 1
+                         , char_length - 1
+                         , dncurRow
+                         , pdncurRow
+                         , htcurRow
+                         , gap_open_cost
+                         );
+
+    algn_fill_last_column_affine ( curRow
+                                 , prevRow
+                                 , const_val_tail
+                                 , const_val_tail_prev
+                                 , char_length - 1
+                                 , dirMtx
+                                 , dncurRow
+                                 , pdncurRow
+                                 , gap_open_cost
+                                 );
 }
 
 void
-algn_fill_first_row_affine ( int *curRow
-                           , DIR_MTX_ARROW_t *dirMtx
-                           , int len
-                           , int const *gap_row
-                           , int *dncurRow
-                           , int *htcurRow
-                           , int open_gap
+algn_fill_first_row_affine ( unsigned int       *curRow
+                           , DIR_MTX_ARROW_t    *dirMtx
+                           , size_t              len
+                           , unsigned int const *gap_row
+                           , unsigned int       *dncurRow
+                           , unsigned int       *htcurRow
+                           , unsigned int        gap_open_cost
                            )
 {
-    int i;
     /* We fill the first cell to start with */
-    curRow[0] = open_gap;
-    dncurRow[0] = htcurRow[0] = VERY_LARGE_NUMBER;
-    dirMtx[0] = ALIGN | ALIGN_V | ALIGN_H;
+    curRow[0]   = gap_open_cost;
+
+    dncurRow[0] = htcurRow[0]
+                = VERY_LARGE_NUMBER;
+
+    dirMtx[0]   = ALIGN | ALIGN_V | ALIGN_H;
+
     /* Now the rest of the row */
     if (DEBUG_DIR_M)
         printf ("A\t");
     if (DEBUG_COST_M)
         printf ("%d\t", curRow[0]);
-    for (i = 1; i < len; i++) {
+
+    for (size_t i = 1; i < len; i++) {
         dncurRow[i] = VERY_LARGE_NUMBER;
-        curRow[i] = curRow[i - 1] + gap_row[i];
-        dirMtx[i] = INSERT | (INSERT_H);
-        if (DEBUG_DIR_M)
-            printf ("I\t");
-        if (DEBUG_COST_M)
-            printf ("%d\t", curRow[i]);
+        curRow[i]   = curRow[i - 1] + gap_row[i];
+        dirMtx[i]   = INSERT | (INSERT_H);
+
+        if (DEBUG_DIR_M)  printf ("I\t");
+        if (DEBUG_COST_M) printf ("%d\t", curRow[i]);
     }
 }
 
 void
-algn_fill_first_cell_affine (int *curRow,
-                            // int prevRow,
-                             DIR_MTX_ARROW_t *dirMtx,
-                             int gap_char,
-                             int *dncurRow,
-                             int *pdncurRow,
-                             int *htcurRow
-                             )
+algn_fill_first_cell_affine ( unsigned int    *curRow
+                            // , int              prevRow
+                            , DIR_MTX_ARROW_t *dirMtx
+                            , elem_t           gap_char
+                            , unsigned int    *dncurRow
+                            , unsigned int    *pdncurRow
+                            , unsigned int    *htcurRow
+                            )
 {
     htcurRow[0] = VERY_LARGE_NUMBER;
-    curRow[0] += gap_char;
-    *dirMtx = DELETE | DELETE_V;
+    curRow[0]  += gap_char;
+    *dirMtx     = DELETE | DELETE_V;
     dncurRow[0] = gap_char + pdncurRow[0];
     if (DEBUG_DIR_M)
         printf ("D\t");
@@ -1801,65 +1868,67 @@ algn_fill_first_cell_affine (int *curRow,
  * 8. align_row is the vector of costs of aligning char2 with cur_char1
  */
 
-static inline int *
-algn_fill_extending_right_affine ( const dyn_char_p char1
-                                 ,       int *precalcMtx
+static inline unsigned int *
+algn_fill_extending_right_affine ( const dyn_char_p           char1
+                                 ,       unsigned int        *algn_precalcMtx
                                 // ,       size_t char1_len
-                                 ,       size_t char2_len
-                                 ,       int *curRow
-                                 ,       int *prevRow
-                                 ,       DIR_MTX_ARROW_t *dirMtx
-                                 , const cost_matrices_2d_p costMatrix
-                                 ,       size_t start_row
-                                 ,       size_t end_row, int len
-                                 ,       int *dncurRow
-                                 ,       int *pdncurRow
-                                 ,       int *htcurRow
-                                 ,       int open_gap
+                                 ,       size_t               char2_len
+                                 ,       unsigned int        *curRow
+                                 ,       unsigned int        *prevRow
+                                 ,       DIR_MTX_ARROW_t     *dirMtx
+                                 , const cost_matrices_2d_t  *costMatrix
+                                 ,       size_t               start_row
+                                 ,       size_t               end_row
+                                 ,       size_t               len
+                                 ,       unsigned int        *dncurRow
+                                 ,       unsigned int        *pdncurRow
+                                 ,       unsigned int        *htcurRow
+                                 ,       unsigned int         gap_open_cost
                                  )
 {
     // printf("algn_fill_extending_right_affine\n");
-    size_t i;
-    int *tmp,
-        *tmp1,
-         cur_char1,
-         const_val,
-         prev_char1,
-         prev_const_val;
 
-    const int *gap_row,
-              *align_row;
+    unsigned int *tmp,
+                 *tmp1,
+                  cur_char1,
+                  const_val,
+                  prev_const_val,
+                 *gap_row,
+                 *align_row;
+
+    elem_t prev_char1;
 
     /** Invariants block
      *  len is the number of items in the row to be filled
      */
-    i = start_row;
+    size_t i = start_row;
+
     /* This is what we will perform conceptually, I will stop using the
      * cm_get_precal_row function to speed this up a little bit
-     * gap_row = cm_get_precal_row (precalcMtx, gap_char, char2_len);
+     * gap_row = cm_get_precal_row (algn_precalcMtx, gap_char, char2_len);
     */
-    gap_row = precalcMtx + (costMatrix->gap_char * char2_len);
+    gap_row = algn_precalcMtx + (costMatrix->gap_char * char2_len);
     while (i < end_row) {
         /** Invariants block */
         assert (i > 0);
         prev_char1      = char1->char_begin[i - 1];
         cur_char1       = char1->char_begin[i];
 
-        const_val      = cm_calc_cost( costMatrix->cost
-                                     , cur_char1
-                                     , costMatrix->gap_char
-                                     , costMatrix->costMatrixDimension
-                                     );
-        prev_const_val = cm_calc_cost( costMatrix->cost
-                                     , prev_char1
-                                     , costMatrix->gap_char
-                                     , costMatrix->costMatrixDimension
-                                     );
+        const_val      = cm_calc_cost_2d( costMatrix->cost
+                                        , cur_char1
+                                        , costMatrix->gap_char
+                                        , costMatrix->costMatrixDimension
+                                        );
+        prev_const_val = cm_calc_cost_2d( costMatrix->cost
+                                        , prev_char1
+                                        , costMatrix->gap_char
+                                        , costMatrix->costMatrixDimension
+                                        );
 
         /* This is conceptually what we do in the next line
-         * align_row = cm_get_precal_row (precalcMtx, cur_char1, char2_len);
+         * align_row = cm_get_precal_row (algn_precalcMtx, cur_char1, char2_len);
          */
-        align_row = precalcMtx + (cur_char1 * char2_len);
+        align_row = algn_precalcMtx + (cur_char1 * char2_len);
 
         /* Align! */
         algn_fill_first_cell_affine( curRow
@@ -1870,6 +1939,7 @@ algn_fill_extending_right_affine ( const dyn_char_p char1
                                    , pdncurRow
                                    , htcurRow
                                    );
+
         algn_fill_row_affine( curRow
                             , prevRow
                             , gap_row
@@ -1882,8 +1952,9 @@ algn_fill_extending_right_affine ( const dyn_char_p char1
                             , dncurRow
                             , pdncurRow
                             , htcurRow
-                            , open_gap
+                            , gap_open_cost
                             );
+
         algn_fill_ukk_right_cell_affine( curRow
                                        , prevRow
                                        , gap_row
@@ -1894,7 +1965,7 @@ algn_fill_extending_right_affine ( const dyn_char_p char1
                                        , len - 1
                                        , dncurRow
                                        , htcurRow
-                                       , open_gap
+                                       , gap_open_cost
                                        );
         /** Invariants block */
         tmp        = curRow;
@@ -1912,46 +1983,48 @@ algn_fill_extending_right_affine ( const dyn_char_p char1
     return curRow;
 }
 
-static inline int *
-algn_fill_extending_left_right_affine ( const dyn_char_p char1
-                                      , int *precalcMtx
+static inline unsigned int *
+algn_fill_extending_left_right_affine ( const dyn_char_p          char1
+                                      ,       unsigned int       *algn_precalcMtx
                                      // , size_t char1_len
-                                      , size_t char2_len
-                                      , int *curRow
-                                      , int *prevRow
-                                      , DIR_MTX_ARROW_t *dirMtx
-                                      , const cost_matrices_2d_p costMatrix
-                                      , size_t start_row
-                                      , size_t end_row
-                                      , size_t start_column
-                                      , int len
-                                      , int *dncurRow
-                                      , int *pdncurRow
-                                      , int *htcurRow
-                                      , int open_gap
+                                      ,       size_t              char2_len
+                                      ,       unsigned int       *curRow
+                                      ,       unsigned int       *prevRow
+                                      ,       DIR_MTX_ARROW_t    *dirMtx
+                                      , const cost_matrices_2d_t *costMatrix
+                                      ,       size_t              start_row
+                                      ,       size_t              end_row
+                                      ,       size_t              start_column
+                                      ,       size_t              len
+                                      ,       unsigned int        *dncurRow
+                                      ,       unsigned int        *pdncurRow
+                                      ,       unsigned int        *htcurRow
+                                      ,       unsigned int         gap_open_cost
                                       )
 {
     // printf("algn_fill_extending_left_right_affine\n");
     size_t i;
 
-    int *tmp,
-        *tmp1,
-         cur_char1,
-         const_val,
-         prev_char1,
-         prev_const_val;
+    unsigned int *tmp,
+                 *tmp1,
+                  const_val,
+                  prev_char1,
+                  prev_const_val;
 
-    const int *gap_row,
-              *align_row;
+    elem_t cur_char1;
+
+    const unsigned int *gap_row,
+                       *align_row;
 
     /** Invariants block
      * len is the number of cells to fill in the current row minus 1
      * start_column is the first cell to fill in the row */
     i = start_row;
+
     /* Conceptually,
-       gap_row = cm_get_precal_row (precalcMtx, gap_char, char2_len);
+       gap_row = cm_get_precal_row (algn_precalcMtx, gap_char, char2_len);
     */
-    gap_row = precalcMtx + (costMatrix->gap_char * char2_len);
+    gap_row = algn_precalcMtx + (costMatrix->gap_char * char2_len);
     len--;
 
     while (i < end_row) {
@@ -1959,12 +2032,12 @@ algn_fill_extending_left_right_affine ( const dyn_char_p char1
         assert (i > 0);
         prev_char1     = char1->char_begin[i - 1];
         cur_char1      = char1->char_begin[i];
-        const_val      = cm_calc_cost (costMatrix->cost, cur_char1,  costMatrix->gap_char, costMatrix->costMatrixDimension);
-        prev_const_val = cm_calc_cost (costMatrix->cost, prev_char1, costMatrix->gap_char, costMatrix->costMatrixDimension);
+        const_val      = cm_calc_cost_2d (costMatrix->cost, cur_char1,  costMatrix->gap_char, costMatrix->costMatrixDimension);
+        prev_const_val = cm_calc_cost_2d (costMatrix->cost, prev_char1, costMatrix->gap_char, costMatrix->costMatrixDimension);
         /* Conceptually,
-         * align_row = cm_get_precal_row (precalcMtx, cur_char1, char2_len);
+         * align_row = cm_get_precal_row (algn_precalcMtx, cur_char1, char2_len);
          */
-        align_row = precalcMtx + (cur_char1 * char2_len);
+        align_row = algn_precalcMtx + (cur_char1 * char2_len);
         /* Align! */
         algn_fill_ukk_left_cell_affine ( curRow
                                        , prevRow
@@ -1977,8 +2050,9 @@ algn_fill_extending_left_right_affine ( const dyn_char_p char1
                                        , dncurRow
                                        , pdncurRow
                                        , htcurRow
-                                       , open_gap
+                                       , gap_open_cost
                                        );
+
         algn_fill_row_affine ( curRow
                              , prevRow
                              , gap_row
@@ -1990,8 +2064,9 @@ algn_fill_extending_left_right_affine ( const dyn_char_p char1
                              , dncurRow
                              , pdncurRow
                              , htcurRow
-                             , open_gap
+                             , gap_open_cost
                              );
+
         algn_fill_ukk_right_cell_affine ( curRow
                                         , prevRow
                                         , gap_row
@@ -2002,76 +2077,87 @@ algn_fill_extending_left_right_affine ( const dyn_char_p char1
                                         , start_column + len - 1
                                         , dncurRow
                                         , htcurRow
-                                        , open_gap
+                                        , gap_open_cost
                                         );
         /** Invariants block */
-        tmp = curRow;
-        tmp1 = dncurRow;
-        curRow = prevRow;
-        dncurRow = pdncurRow;
-        prevRow = tmp;
+        tmp       = curRow;
+        tmp1      = dncurRow;
+        curRow    = prevRow;
+        dncurRow  = pdncurRow;
+        prevRow   = tmp;
         pdncurRow = tmp1;
         i++;
-        dirMtx += char2_len;
+        dirMtx   += char2_len;
         start_column++;
     }
     return (curRow);
 }
 
-int *
-algn_fill_extending_left_affine( const dyn_char_p char1
-                               , int *precalcMtx
-                             // , size_t char1_len
-                               , size_t char2_len
-                               , int *curRow
-                               , int *prevRow
-                               , DIR_MTX_ARROW_t *dirMtx
-                               , const cost_matrices_2d_p costMatrix
-                               , size_t start_row
-                               , size_t end_row
-                               , int start_column
-                               , size_t len
-                               , int *dncurRow
-                               , int *pdncurRow
-                               , int *htcurRow
-                               , int open_gap
+unsigned int *
+algn_fill_extending_left_affine( const dyn_char_p          char1
+                               ,       unsigned int       *algn_precalcMtx
+                             // ,       size_t              char1_len
+                               ,       size_t              char2_len
+                               ,       unsigned int       *curRow
+                               ,       unsigned int       *prevRow
+                               ,       DIR_MTX_ARROW_t    *dirMtx
+                               , const cost_matrices_2d_t *costMatrix
+                               ,       size_t              start_row
+                               ,       size_t              end_row
+                               ,       size_t              start_column
+                               ,       size_t              len
+                               ,       unsigned int       *dncurRow
+                               ,       unsigned int       *pdncurRow
+                               ,       unsigned int       *htcurRow
+                               ,       unsigned int        gap_open_cost
                                )
 {
     // printf("algn_fill_extending_left_affine\n");
-    size_t i;
-    int *tmp,
-        *tmp1,
-         cur_char1,
-         const_val,
-         prev_char1,
-         prev_const_val,
-         const_val_tail,
-         prev_const_val_tail;
+    unsigned int *tmp,
+                 *tmp1,
+                  const_val,
+                  prev_const_val,
+                  const_val_tail,
+                  const_val_tail_prev,
+                 *gap_row,
+                 *align_row;
 
-    const int *gap_row,
-              *align_row;
+     elem_t cur_char1,
+            prev_char1;
+
     /** Invariants block
      *  start_column is the first cell to fill in the row
      *  len is the number of cells to fill in the current row minus 1
      */
-    i = start_row;
+    size_t i = start_row;
+
     /* Conceptually,
-     * gap_row = cm_get_precal_row (precalcMtx, gap_char, char2_len);
+     * gap_row = cm_get_precal_row (algn_precalcMtx, gap_char, char2_len);
      */
-    gap_row = precalcMtx + (costMatrix->gap_char * char2_len);
+    gap_row = algn_precalcMtx + (costMatrix->gap_char * char2_len);
+
     while (i < end_row) {
         /** Invariants block */
         assert (i > 0);
-        prev_char1           = char1->char_begin[i - 1];
-        cur_char1            = char1->char_begin[i];
-        prev_const_val      = cm_calc_cost (costMatrix->cost, prev_char1, costMatrix->gap_char, costMatrix->costMatrixDimension);
-        const_val           = cm_calc_cost (costMatrix->cost, cur_char1,  costMatrix->gap_char, costMatrix->costMatrixDimension);
+        prev_char1          = char1->char_begin[i - 1];
+        cur_char1           = char1->char_begin[i];
+        prev_const_val      = cm_calc_cost_2d ( costMatrix->cost
+                                              , prev_char1
+                                              , costMatrix->gap_char
+                                              , costMatrix->costMatrixDimension
+                                              );
+        const_val           = cm_calc_cost_2d ( costMatrix->cost
+                                              , cur_char1
+                                              , costMatrix->gap_char
+                                              , costMatrix->costMatrixDimension
+                                              );
+
         const_val_tail      = costMatrix->tail_cost[cur_char1];
-        prev_const_val_tail = costMatrix->tail_cost[prev_char1];
+        const_val_tail_prev = costMatrix->tail_cost[prev_char1];
         /* Conceptually,
-         * align_row = cm_get_precal_row (precalcMtx, cur_char1, char2_len);
+         * align_row = cm_get_precal_row (algn_precalcMtx, cur_char1, char2_len);
          */
-        align_row = precalcMtx + (cur_char1 * char2_len);
+        align_row = algn_precalcMtx + (cur_char1 * char2_len);
         /* Align! */
         algn_fill_ukk_left_cell_affine ( curRow
                                        , prevRow
@@ -2084,7 +2170,7 @@ algn_fill_extending_left_affine( const dyn_char_p char1
                                        , dncurRow
                                        , pdncurRow
                                        , htcurRow
-                                       , open_gap);
+                                       , gap_open_cost);
 
         algn_fill_row_affine ( curRow
                              , prevRow
@@ -2098,17 +2184,17 @@ algn_fill_extending_left_affine( const dyn_char_p char1
                              , dncurRow
                              , pdncurRow
                              , htcurRow
-                             , open_gap);
+                             , gap_open_cost);
 
         algn_fill_last_column_affine ( curRow
                                      , prevRow
                                      , const_val_tail
-                                     , prev_const_val_tail
+                                     , const_val_tail_prev
                                      , start_column + len - 1
                                      , dirMtx
                                      , dncurRow
                                      , pdncurRow
-                                     , open_gap);
+                                     , gap_open_cost);
         /** Invariants block */
         tmp       = curRow;
         tmp1      = dncurRow;
@@ -2134,63 +2220,62 @@ algn_fill_extending_left_affine( const dyn_char_p char1
     return (curRow);
 }
 
-int *
-algn_fill_no_extending_affine ( const dyn_char_p char1
-                              ,       int *precalcMtx
+unsigned int *
+algn_fill_no_extending_affine ( const dyn_char_p          char1
+                              ,       unsigned int       *algn_precalcMtx
                              // ,       size_t char1_len
-                              ,       size_t char2_len
-                              ,       int *curRow
-                              ,       int *prevRow
-                              ,       DIR_MTX_ARROW_t *dirMtx
-                              , const cost_matrices_2d_p costMatrix
-                              ,       size_t start_row
-                              ,       size_t end_row
-                              ,       int *dncurRow
-                              ,       int *pdncurRow
-                              ,       int *htcurRow
-                              ,       int  open_gap
+                              ,       size_t              char2_len
+                              ,       unsigned int       *curRow
+                              ,       unsigned int       *prevRow
+                              ,       DIR_MTX_ARROW_t    *dirMtx
+                              , const cost_matrices_2d_t *costMatrix
+                              ,       size_t              start_row
+                              ,       size_t              end_row
+                              ,       unsigned int       *dncurRow
+                              ,       unsigned int       *pdncurRow
+                              ,       unsigned int       *htcurRow
+                              ,       unsigned int        gap_open_cost
                               )
 {
     // printf("algn_fill_no_extending_affine\n");
-    size_t i;
 
-    int *tmp,
-         cur_char1,
-         const_val,
-         const_val_tail,
-         prev_char1,
-         prev_const_val,
-         prev_const_val_tail,
-        *tmp1;
+    unsigned int *tmp,
+                  cur_char1,
+                  const_val,
+                  const_val_tail,
+                  prev_char1,
+                  prev_const_val,
+                  const_val_tail_prev,
+                 *tmp1;
 
-    const int *gap_row,
-              *align_row;
+    const unsigned int *gap_row,
+                       *align_row;
 
     /** Invariants block */
-    i = start_row;
+    size_t i = start_row;
     /* Conceptually,
-     * gap_row = cm_get_precal_row (precalcMtx, gap_char, char2_len);
+     * gap_row = cm_get_precal_row (algn_precalcMtx, gap_char, char2_len);
      */
-    gap_row = precalcMtx + (costMatrix->gap_char * char2_len);
+    gap_row = algn_precalcMtx + (costMatrix->gap_char * char2_len);
 
     while (i < end_row) {
         /** Invariants block */
         assert (i > 0);
         prev_char1           = char1->char_begin[i - 1];
         cur_char1            = char1->char_begin[i];
-        const_val           = cm_calc_cost (costMatrix->cost, cur_char1,  costMatrix->gap_char, costMatrix->costMatrixDimension);
-        prev_const_val      = cm_calc_cost (costMatrix->cost, prev_char1, costMatrix->gap_char, costMatrix->costMatrixDimension);
+        const_val           = cm_calc_cost_2d (costMatrix->cost, cur_char1,  costMatrix->gap_char, costMatrix->costMatrixDimension);
+        prev_const_val      = cm_calc_cost_2d (costMatrix->cost, prev_char1, costMatrix->gap_char, costMatrix->costMatrixDimension);
         const_val_tail      = costMatrix->tail_cost[cur_char1];
-        prev_const_val_tail = costMatrix->tail_cost[prev_char1];
+        const_val_tail_prev = costMatrix->tail_cost[prev_char1];
         /* Conceptually,
-         * align_row = cm_get_precal_row (precalcMtx, cur_char1, char2_len);
+         * align_row = cm_get_precal_row (algn_precalcMtx, cur_char1, char2_len);
          */
-        align_row           = precalcMtx + (cur_char1 * char2_len);
+        align_row           = algn_precalcMtx + (cur_char1 * char2_len);
         /* Align! */
         algn_fill_first_cell_affine ( curRow
                                    // , prevRow[0]
                                     , dirMtx
-                                    , open_gap
+                                    , gap_open_cost
                                     , dncurRow
                                     , pdncurRow
                                     , htcurRow
@@ -2208,17 +2293,17 @@ algn_fill_no_extending_affine ( const dyn_char_p char1
                              , dncurRow
                              , pdncurRow
                              , htcurRow
-                             , open_gap);
+                             , gap_open_cost);
 
         algn_fill_last_column_affine ( curRow
                                      , prevRow
                                      , const_val_tail
-                                     , prev_const_val_tail
+                                     , const_val_tail_prev
                                      , char2_len - 1
                                      , dirMtx
                                      , dncurRow
                                      , pdncurRow
-                                     , open_gap);
+                                     , gap_open_cost);
         /** Invariants block */
         tmp       = curRow;
         tmp1      = dncurRow;
@@ -2233,43 +2318,45 @@ algn_fill_no_extending_affine ( const dyn_char_p char1
 }
 
 /* SicurRowilar to the previous but when no barriers are set */
-static inline int
+static inline unsigned int
 algn_fill_plane_affine ( const dyn_char_p char1
-                       , int *precalcMtx
-                       , int char1_len
-                       , int char2_len
-                       , int *curRow
-                       , DIR_MTX_ARROW_t *dirMtx
-                       , const cost_matrices_2d_p costMatrix
-                       , int *dncurRow
-                       , int *htcurRow
-                       , int open_gap
+                       ,       unsigned int       *algn_precalcMtx
+                       ,       size_t              char1_len
+                       ,       size_t              char2_len
+                       ,       unsigned int       *curRow
+                       ,       DIR_MTX_ARROW_t    *dirMtx
+                       , const cost_matrices_2d_t *costMatrix
+                       ,       unsigned int       *dncurRow
+                       ,       unsigned int       *htcurRow
+                       ,       unsigned int        gap_open_cost
                        )
 {
     // printf("algn_fill_plane_affine\n");
 
-    const int *align_row,
-              *gap_row,
-              *first_gap_row;
+    const unsigned int *align_row,
+                       *gap_row,
+                       *first_gap_row;
 
-    int  i,
-         const_val,
-         const_val_tail,
-         prev_const_val,
-         prev_const_val_tail,
-         gap_char,
-        *newNWMtx,
-        *tmp,
-        *tmp1,
-        *pdncurRow;
+    unsigned int  const_val,
+                  const_val_tail,
+                  prev_const_val,
+                  const_val_tail_prev,
+                 *newNWMtx,
+                 *tmp,
+                 *tmp1,
+                 *pdncurRow;
+
+    size_t i;
+
+    elem_t gap_char;
 
     /* A precalculated cost of a gap aligned with each base in the array */
     gap_char      = costMatrix->gap_char;
-    gap_row       = cm_get_precal_row (precalcMtx, gap_char, char2_len);
-    first_gap_row = cm_get_precal_row (precalcMtx, 0, char2_len);
+    gap_row       = cm_get_precal_row (algn_precalcMtx, gap_char, char2_len);
+    first_gap_row = cm_get_precal_row (algn_precalcMtx, 0, char2_len);
     newNWMtx      = curRow;
     pdncurRow     = dncurRow;
-    curRow[0]     = open_gap;
+    curRow[0]     = gap_open_cost;
     dirMtx[0]     = ALIGN | ALIGN_H | ALIGN_V;
     htcurRow[0]   = VERY_LARGE_NUMBER;
     dncurRow[0]   = VERY_LARGE_NUMBER;
@@ -2308,20 +2395,20 @@ algn_fill_plane_affine ( const dyn_char_p char1
     /* Now we fill the rest of the matrix */
     for (i = 1, dirMtx += char2_len; i < char1_len; i++, dirMtx += char2_len) {
 
-        prev_const_val_tail = (costMatrix->tail_cost)[char1->char_begin[i - 1]];
-        prev_const_val      = cm_calc_cost( costMatrix->cost
-                                          , char1->char_begin[i - 1]
-                                          , costMatrix->gap_char
-                                          , costMatrix->costMatrixDimension
-                                          );
+        const_val_tail_prev = (costMatrix->tail_cost)[char1->char_begin[i - 1]];
+        prev_const_val      = cm_calc_cost_2d( costMatrix->cost
+                                             , char1->char_begin[i - 1]
+                                             , costMatrix->gap_char
+                                             , costMatrix->costMatrixDimension
+                                             );
         const_val_tail      = (costMatrix->tail_cost)[char1->char_begin[i]];
 
-        const_val           = cm_calc_cost( costMatrix->cost
-                                          , char1->char_begin[i]
-                                          , costMatrix->gap_char
-                                          , costMatrix->costMatrixDimension
-                                          );
-        align_row           = cm_get_precal_row ( precalcMtx
+        const_val           = cm_calc_cost_2d( costMatrix->cost
+                                             , char1->char_begin[i]
+                                             , costMatrix->gap_char
+                                             , costMatrix->costMatrixDimension
+                                             );
+        align_row           = cm_get_precal_row ( algn_precalcMtx
                                                 , char1->char_begin[i]
                                                 , char2_len
                                                 );
@@ -2333,12 +2420,13 @@ algn_fill_plane_affine ( const dyn_char_p char1
                                   , const_val
                                   , prev_const_val
                                   , const_val_tail
-                                  , prev_const_val_tail
+                                  , const_val_tail_prev
                                   , char2_len
                                   , dncurRow
                                   , pdncurRow
                                   , htcurRow
-                                  , open_gap);
+                                  , gap_open_cost
+                                  );
         if (DEBUG_COST_M) {
             printf ("\n");
             fflush (stdout);
@@ -2356,12 +2444,12 @@ algn_fill_plane_affine ( const dyn_char_p char1
 }
 
 static inline void
-algn_choose_affine_other( int *next_row
-                        , int *curRow
-                        , int **next_dncurRow
-                        , int **next_pdncurRow
-                        , int *dncurRow
-                        , int *pdncurRow
+algn_choose_affine_other( unsigned int *next_row
+                        , unsigned int *curRow
+                        , unsigned int **next_dncurRow
+                        , unsigned int **next_pdncurRow
+                        , unsigned int *dncurRow
+                        , unsigned int *pdncurRow
                         )
 {
     if (next_row == curRow) {
@@ -2375,41 +2463,49 @@ algn_choose_affine_other( int *next_row
 }
 
 
-static inline int
-HAS_GAP_EXTENSION (elem_t base, const cost_matrices_2d_p costMatrix) {
-    return (cm_calc_cost( costMatrix->cost
-                        , base
-                        , costMatrix->gap_char
-                        , costMatrix->costMatrixDimension
-                        )
+static inline unsigned int
+HAS_GAP_EXTENSION (       elem_t              base
+                  , const cost_matrices_2d_t *costMatrix
+                  )
+{
+    return (cm_calc_cost_2d( costMatrix->cost
+                           , base
+                           , costMatrix->gap_char
+                           , costMatrix->costMatrixDimension
+                           )
             );
 }
 
-static inline int
-HAS_GAP_OPENING (elem_t prev, elem_t curr, int gap_char, int gap_open) {
-    if ((!(gap_char & prev)) && (gap_char & curr)) return 0;
-    else return gap_open;
+static inline unsigned int
+HAS_GAP_OPENING ( elem_t       prev
+                , elem_t       curr
+                , elem_t       gap_char
+                , unsigned int gap_open_cost
+                )
+{
+    if   ((!(gap_char & prev)) && (gap_char & curr)) return 0;
+    else                                             return gap_open_cost;
 }
 
 
 static inline void
-FILL_EXTEND_HORIZONTAL_NOBT ( int sj_horizontal_extension
-                            , int sj_gap_extension
-                            , int sj_gap_opening
-                            , int j
-                            , int *extend_horizontal
-//                            , const cost_matrices_2d_p c
-                            , const int *close_block_diagonal
+FILL_EXTEND_HORIZONTAL_NOBT (       unsigned int  sj_horizontal_extension
+                            ,       unsigned int  sj_gap_extension
+                            ,       unsigned int  longerChar_gap_open_cost
+                            ,       int           j
+                            ,       unsigned int *extend_horizontal
+//                            , const       cost_matrices_2d_t *c
+                            , const unsigned int *close_block_diagonal
                             )
 {
     int ext_cost, open_cost;
     ext_cost = extend_horizontal[j - 1] + sj_horizontal_extension;
     open_cost = close_block_diagonal[j - 1] +
-                sj_gap_opening + sj_gap_extension;
+                longerChar_gap_open_cost + sj_gap_extension;
     if (DEBUG_AFFINE) {
         printf("\nFILL_EXTEND_HORIZONTAL_NOBT\n");
         printf ("Ext cost: %d, Open cost: %d, Gap extension: %d, gap opening: %d, sj_horizontal_extension: %d\n",
-                ext_cost, open_cost, sj_gap_extension, sj_gap_opening, sj_horizontal_extension);
+                ext_cost, open_cost, sj_gap_extension, longerChar_gap_open_cost, sj_horizontal_extension);
     }
     if (ext_cost < open_cost)
         extend_horizontal[j] = ext_cost;
@@ -2420,14 +2516,14 @@ FILL_EXTEND_HORIZONTAL_NOBT ( int sj_horizontal_extension
 }
 
 DIR_MTX_ARROW_t
-FILL_EXTEND_HORIZONTAL ( int sj_horizontal_extension
-                       , int sj_gap_extension
-                       , int sj_gap_opening
-                       , int j
-                       , int *extend_horizontal
-//                       , const cost_matrices_2d_p costMatrix
-                       , const int *close_block_diagonal
-                       , DIR_MTX_ARROW_t direction_matrix
+FILL_EXTEND_HORIZONTAL (       unsigned int     sj_horizontal_extension
+                       ,       unsigned int     sj_gap_extension
+                       ,       unsigned int     longerChar_gap_open_cost
+                       ,       int              j
+                       ,       unsigned int    *extend_horizontal
+                       // , const cost_matrices_2d_t *costMatrix
+                       , const unsigned int    *close_block_diagonal
+                       ,       DIR_MTX_ARROW_t  direction_matrix
                        )
 {
     int ext_cost,
@@ -2436,13 +2532,13 @@ FILL_EXTEND_HORIZONTAL ( int sj_horizontal_extension
               + sj_horizontal_extension;
 
     open_cost = close_block_diagonal[j - 1]
-              + sj_gap_opening
+              + longerChar_gap_open_cost
               + sj_gap_extension;
 
     if (DEBUG_AFFINE) {
         printf("\nFILL_EXTEND_HORIZONTAL\n");
         printf ("Ext cost: %d, Open cost: %d, Gap extension: %d, gap opening: %d, sj_horizontal_extension: %d\n",
-                ext_cost, open_cost, sj_gap_extension, sj_gap_opening, sj_horizontal_extension);
+                ext_cost, open_cost, sj_gap_extension, longerChar_gap_open_cost, sj_horizontal_extension);
     }
     if (ext_cost < open_cost) {
         LOR_WITH_DIR_MTX_ARROW_t(BEGIN_HORIZONTAL, direction_matrix);
@@ -2459,14 +2555,14 @@ FILL_EXTEND_HORIZONTAL ( int sj_horizontal_extension
 }
 
 void
-FILL_EXTEND_VERTICAL_NOBT ( int si_vertical_extension
-                          , int si_gap_extension
-                          , int si_gap_opening
-                          , int j
-                          , int *extend_vertical
-                          , const int *prev_extend_vertical
-//                          , const cost_matrices_2d_p c
-                          , const int *prev_close_block_diagonal
+FILL_EXTEND_VERTICAL_NOBT (       unsigned int  si_vertical_extension
+                          ,       unsigned int  si_gap_extension
+                          ,       unsigned int  lesserChar_gap_open_cost
+                          ,       int           j
+                          ,       unsigned int *extend_vertical
+                          , const unsigned int *prev_extend_vertical
+//                          , const cost_matrices_2d_t *c
+                          , const unsigned int *prev_close_block_diagonal
                           )
 {
     int ext_cost,
@@ -2476,7 +2572,7 @@ FILL_EXTEND_VERTICAL_NOBT ( int si_vertical_extension
               + si_vertical_extension;
 
     open_cost = prev_close_block_diagonal[j]
-              + si_gap_opening
+              + lesserChar_gap_open_cost
               + si_gap_extension;
 
     if (ext_cost < open_cost) extend_vertical[j] = ext_cost;
@@ -2484,14 +2580,14 @@ FILL_EXTEND_VERTICAL_NOBT ( int si_vertical_extension
 }
 
 DIR_MTX_ARROW_t
-FILL_EXTEND_VERTICAL (       int  si_vertical_extension
-                     ,       int  si_gap_extension
-                     ,       int  si_gap_opening
-                     ,       int  j
-                     ,       int *extend_vertical
-                     , const int *prev_extend_vertical
-//                     , const cost_matrices_2d_p costMatrix
-                     , const int *prev_close_block_diagonal
+FILL_EXTEND_VERTICAL (       unsigned int  si_vertical_extension
+                     ,       unsigned int  si_gap_extension
+                     ,       unsigned int  lesserChar_gap_open_cost
+                     ,       unsigned int  j
+                     ,       unsigned int *extend_vertical
+                     , const unsigned int *prev_extend_vertical
+//                     , const cost_matrices_2d_t *costMatrix
+                     , const unsigned int *prev_close_block_diagonal
                      ,       DIR_MTX_ARROW_t direction_matrix
                      )
 {
@@ -2501,7 +2597,7 @@ FILL_EXTEND_VERTICAL (       int  si_vertical_extension
     ext_cost  = prev_extend_vertical[j] + si_vertical_extension;
 
     open_cost = prev_close_block_diagonal[j]
-              + si_gap_opening
+              + lesserChar_gap_open_cost
               + si_gap_extension;
 
     if (ext_cost < open_cost) {
@@ -2516,33 +2612,35 @@ FILL_EXTEND_VERTICAL (       int  si_vertical_extension
 }
 
 void
-FILL_EXTEND_BLOCK_DIAGONAL_NOBT (       elem_t              si_base
-                                ,       elem_t              sj_base
+FILL_EXTEND_BLOCK_DIAGONAL_NOBT (       elem_t              original_lesserChar
+                                ,       elem_t              original_longerChar
                                 ,       elem_t              si_prev_base
                                 // ,       elem_t              sj_prev_base
-                                , const cost_matrices_2d_p  costMatrix
+                                , const cost_matrices_2d_t *costMatrix
                                 ,       int                 j
-                                ,       int                *extend_block_diagonal
-                                , const int                *prev_extend_block_diagonal
-                                , const int                *prev_close_block_diagonal
+                                ,       unsigned int       *extend_block_diagonal
+                                , const unsigned int       *prev_extend_block_diagonal
+                                , const unsigned int       *prev_close_block_diagonal
                                 )
 {
-    int ext_cost,
-        open_cost,
-        diag,
-        open_diag,
-        flag,
+    unsigned int ext_cost,
+                 open_cost,
+                 diag,
+                 open_diag;
+
+    int flag,
         flag2;
 
-    elem_t gap_char = costMatrix->gap_char,
-           gap_open = costMatrix->gap_open;
+    elem_t gap_char      = costMatrix->gap_char;
+
+    unsigned int gap_open_cost = costMatrix->gap_open_cost;
 
 
-    flag      = ( (gap_char & si_base)      && (  gap_char & sj_base));
-    flag2     = (!(gap_char & si_prev_base) && (!(gap_char & sj_base)));
+    flag      = ( (gap_char & original_lesserChar)      && (  gap_char & original_longerChar));
+    flag2     = (!(gap_char & si_prev_base) && (!(gap_char & original_longerChar)));
 
     diag      = flag ? 0 : VERY_LARGE_NUMBER;
-    open_diag = flag ? (flag2 ? 0 : (2 * gap_open)) : VERY_LARGE_NUMBER;
+    open_diag = flag ? (flag2 ? 0 : (2 * gap_open_cost)) : VERY_LARGE_NUMBER;
 
     ext_cost  = prev_extend_block_diagonal[j - 1] + diag;
     open_cost = prev_close_block_diagonal [j - 1] + open_diag;
@@ -2552,15 +2650,15 @@ FILL_EXTEND_BLOCK_DIAGONAL_NOBT (       elem_t              si_base
 }
 
 DIR_MTX_ARROW_t
-FILL_EXTEND_BLOCK_DIAGONAL (       elem_t              si_base
-                           ,       elem_t              sj_base
+FILL_EXTEND_BLOCK_DIAGONAL (       elem_t              original_lesserChar
+                           ,       elem_t              original_longerChar
                            // ,       elem_t              si_prev_base
                            // ,       elem_t              sj_prev_base
-                           , const cost_matrices_2d_p  costMatrix
-                           ,       int                 j
-                           ,       int                *extend_block_diagonal
-                           , const int                *prev_extend_block_diagonal
-                           , const int                *prev_close_block_diagonal
+                           , const cost_matrices_2d_t * costMatrix
+                           ,       unsigned int        j
+                           ,       unsigned int       *extend_block_diagonal
+                           , const unsigned int       *prev_extend_block_diagonal
+                           , const unsigned int       *prev_close_block_diagonal
                            ,       DIR_MTX_ARROW_t     direction_matrix
                            )
 {
@@ -2569,20 +2667,20 @@ FILL_EXTEND_BLOCK_DIAGONAL (       elem_t              si_base
         diag;
 //    int open_diag;
 
-    diag = ( (    costMatrix->gap_char & si_base)
-              && (costMatrix->gap_char & sj_base)) ? 0 : VERY_LARGE_NUMBER;
+    diag = ( (    costMatrix->gap_char & original_lesserChar)
+              && (costMatrix->gap_char & original_longerChar)) ? 0 : VERY_LARGE_NUMBER;
 
 /*
     if ( !(gap_char & si_prev_base)
-        && (!(gap_char & sj_base))
-        &&   (gap_char & si_base)
-        &&   (gap_char & sj_base)
+        && (!(gap_char & original_longerChar))
+        &&   (gap_char & original_lesserChar)
+        &&   (gap_char & original_longerChar)
        ) {
         open_diag = 0;
 
-    } else if (  (gap_char & si_base)
-              && (gap_char & sj_base) ) {
-        open_diag = 2 * gap_open;
+    } else if (  (gap_char & original_lesserChar)
+              && (gap_char & original_longerChar) ) {
+        open_diag = 2 * gap_open_cost;
     } else {
         open_diag = VERY_LARGE_NUMBER;
     }
@@ -2590,12 +2688,12 @@ FILL_EXTEND_BLOCK_DIAGONAL (       elem_t              si_base
 
 /* following logic is reproduced legibly above
     open_diag = (    !(gap_char & si_prev_base)
-                 && (!(gap_char & sj_base))
-                 &&   (gap_char & si_base)
-                 &&   (gap_char & sj_base)
+                 && (!(gap_char & original_longerChar))
+                 &&   (gap_char & original_lesserChar)
+                 &&   (gap_char & original_longerChar)
                 ) ?
-        0 : (    ((gap_char & si_base)
-              && (gap_char & sj_base)) ? (2 * gap_open) : VERY_LARGE_NUMBER );
+        0 : (    ((gap_char & original_lesserChar)
+              && (gap_char & original_longerChar)) ? (2 * gap_open_cost) : VERY_LARGE_NUMBER );
 */
     ext_cost  = prev_extend_block_diagonal[j - 1] + diag;
     open_cost = prev_close_block_diagonal [j - 1] + diag;
@@ -2610,121 +2708,137 @@ FILL_EXTEND_BLOCK_DIAGONAL (       elem_t              si_base
     return (direction_matrix);
 }
 
+
 void
-FILL_CLOSE_BLOCK_DIAGONAL_NOBT(       elem_t  si_base
-                              ,       elem_t  sj_base
-                              ,       elem_t  si_no_gap
-                              ,       elem_t  sj_no_gap
-                              ,       int     si_gap_opening
-                              ,       int     sj_gap_opening
-                              ,       int     j
-                              , const int    *c
-                              ,       int    *close_block_diagonal
-                              , const int    *prev_close_block_diagonal
-                              , const int    *prev_extend_vertical
-                              , const int    *prev_extend_horizontal
-                              , const int    *prev_extend_block_diagonal
+FILL_CLOSE_BLOCK_DIAGONAL_NOBT(       elem_t        original_lesserChar
+                              ,       elem_t        original_longerChar
+                              ,       elem_t        lesserChar_no_gap
+                              ,       elem_t        longerChar_no_gap
+                              ,       unsigned int  lesserChar_gap_open_cost
+                              ,       unsigned int  longerChar_gap_open_cost
+                              ,       unsigned int  j
+                              , const unsigned int *c
+                              ,       unsigned int *close_block_diagonal
+                              , const unsigned int *prev_close_block_diagonal
+                              , const unsigned int *prev_extend_vertical
+                              , const unsigned int *prev_extend_horizontal
+                              , const unsigned int *prev_extend_block_diagonal
                               )
 {
-    int diag, extra_gap_opening;
-    int algn, from_vertical, from_horizontal, from_diagonal;
-    diag = c[sj_no_gap];
+    unsigned int diag,
+                 extra_gap_opening,
+                 algn,
+                 from_vertical,
+                 from_horizontal,
+                 from_diagonal;
+
+    diag = c[longerChar_no_gap];
+
     /*
-    diag = cm_calc_cost(c->cost, si_no_gap, sj_no_gap, c->costMatrixDimension);
+    diag = cm_calc_cost_2d(c->cost, lesserChar_no_gap, longerChar_no_gap, c->costMatrixDimension);
     */
-    extra_gap_opening = (sj_gap_opening < si_gap_opening)?si_gap_opening:sj_gap_opening;
+    extra_gap_opening = (longerChar_gap_open_cost < lesserChar_gap_open_cost) ? lesserChar_gap_open_cost : longerChar_gap_open_cost;
+
     if (DEBUG_AFFINE) {
-        //printf ("Between %d and %d: Diag : %d, Extra gap opening: %d\n", si_no_gap, sj_no_gap, diag, extra_gap_opening);
+        //printf ("Between %d and %d: Diag : %d, Extra gap opening: %d\n", lesserChar_no_gap, longerChar_no_gap, diag, extra_gap_opening);
         //fflush (stdout);
     }
+
     algn = prev_close_block_diagonal[j - 1] + diag;
-    if (si_base == si_no_gap)
-        from_vertical = prev_extend_vertical[j - 1] + diag;
-    else
-        from_vertical = prev_extend_vertical[j - 1] + diag + sj_gap_opening;
-    if (sj_base == sj_no_gap)
-        from_horizontal = prev_extend_horizontal[j - 1] + diag;
-    else
-        from_horizontal = prev_extend_horizontal[j - 1] + diag + si_gap_opening;
-    from_diagonal = prev_extend_block_diagonal[j - 1] + diag + extra_gap_opening;
+
+    if   (original_lesserChar == lesserChar_no_gap) from_vertical = prev_extend_vertical[j - 1] + diag;
+    else                                            from_vertical = prev_extend_vertical[j - 1] + diag + longerChar_gap_open_cost;
+
+    if   (original_longerChar == longerChar_no_gap) from_horizontal = prev_extend_horizontal[j - 1] + diag;
+    else                                            from_horizontal = prev_extend_horizontal[j - 1] + diag + lesserChar_gap_open_cost;
+
+    from_diagonal           = prev_extend_block_diagonal[j - 1] + diag + extra_gap_opening;
     close_block_diagonal[j] = algn;
-    if (close_block_diagonal[j] > from_vertical)
-        close_block_diagonal[j] = from_vertical;
-    if (close_block_diagonal[j] > from_horizontal)
-            close_block_diagonal[j] = from_horizontal;
-    if (close_block_diagonal[j] > from_diagonal)
-            close_block_diagonal[j] = from_diagonal;
+
+    if (close_block_diagonal[j] > from_vertical)   close_block_diagonal[j] = from_vertical;
+    if (close_block_diagonal[j] > from_horizontal) close_block_diagonal[j] = from_horizontal;
+    if (close_block_diagonal[j] > from_diagonal)   close_block_diagonal[j] = from_diagonal;
 }
 
 DIR_MTX_ARROW_t
-FILL_CLOSE_BLOCK_DIAGONAL(       elem_t  si_base
-                         ,       elem_t  sj_base
-                         ,       elem_t  si_no_gap
-                         ,       elem_t  sj_no_gap
-                         ,       int     si_gap_opening
-                         ,       int     sj_gap_opening
-                         ,       int     j
-                         , const int    *c
-                         ,       int    *close_block_diagonal
-                         , const int    *prev_close_block_diagonal
-                         , const int    *prev_extend_vertical
-                         , const int    *prev_extend_horizontal
-                         , const int    *prev_extend_block_diagonal
-                         ,       DIR_MTX_ARROW_t direction_matrix
+FILL_CLOSE_BLOCK_DIAGONAL(       elem_t           original_lesserChar
+                         ,       elem_t           original_longerChar
+                         ,       elem_t           lesserChar_no_gap
+                         ,       elem_t           longerChar_no_gap
+                         ,       unsigned int     lesserChar_gap_open_cost
+                         ,       unsigned int     longerChar_gap_open_cost
+                         ,       int              j
+                         , const unsigned int    *c
+                         ,       unsigned int    *close_block_diagonal
+                         , const unsigned int    *prev_close_block_diagonal
+                         , const unsigned int    *prev_extend_vertical
+                         , const unsigned int    *prev_extend_horizontal
+                         , const unsigned int    *prev_extend_block_diagonal
+                         ,       DIR_MTX_ARROW_t  direction_matrix
                          )
 {
-    int diag,
-        extra_gap_opening,
-        algn,
-        from_vertical,
-        from_horizontal,
-        from_diagonal;
+    unsigned int diag,
+                 extra_gap_opening,
+                 algn,
+                 from_vertical,
+                 from_horizontal,
+                 from_diagonal;
+
     DIR_MTX_ARROW_t mask;
 
-    diag = c[sj_no_gap];
+    diag = c[longerChar_no_gap];
     /*
-        cm_calc_cost(c->cost, si_no_gap, sj_no_gap, c->costMatrixDimension);
+        cm_calc_cost_2d(c->cost, lesserChar_no_gap, longerChar_no_gap, c->costMatrixDimension);
         */
     extra_gap_opening =
-        (sj_gap_opening < si_gap_opening)?si_gap_opening:sj_gap_opening;
+        (longerChar_gap_open_cost < lesserChar_gap_open_cost)?lesserChar_gap_open_cost:longerChar_gap_open_cost;
     if (DEBUG_AFFINE) {
-        // printf ("Between %d and %d: Diag : %d, Extra gap opening: %d\n", si_no_gap, sj_no_gap, diag, extra_gap_opening);
+        // printf ("Between %d and %d: Diag : %d, Extra gap opening: %d\n", lesserChar_no_gap, longerChar_no_gap, diag, extra_gap_opening);
         // fflush (stdout);
     }
     algn = prev_close_block_diagonal[j - 1] + diag;
-    if (si_base == si_no_gap)
-        from_vertical = prev_extend_vertical[j - 1] + diag;
-    else
-        from_vertical = prev_extend_vertical[j - 1] + diag + sj_gap_opening;
-    if (sj_base == sj_no_gap)
-        from_horizontal = prev_extend_horizontal[j - 1] + diag;
-    else
-        from_horizontal = prev_extend_horizontal[j - 1] + diag + si_gap_opening;
-    from_diagonal = prev_extend_block_diagonal[j - 1] + diag + extra_gap_opening;
-    mask = ALIGN_TO_ALIGN;
+    if   (original_lesserChar == lesserChar_no_gap) from_vertical = prev_extend_vertical[j - 1] + diag;
+    else                        from_vertical = prev_extend_vertical[j - 1] + diag + longerChar_gap_open_cost;
+
+    if   (original_longerChar == longerChar_no_gap) from_horizontal = prev_extend_horizontal[j - 1] + diag;
+    else                        from_horizontal = prev_extend_horizontal[j - 1] + diag + lesserChar_gap_open_cost;
+
+    from_diagonal           = prev_extend_block_diagonal[j - 1] + diag + extra_gap_opening;
+    mask                    = ALIGN_TO_ALIGN;
     close_block_diagonal[j] = algn;
+
     if (close_block_diagonal[j] >= from_vertical) {
         if (close_block_diagonal[j] > from_vertical) {
             close_block_diagonal[j] = from_vertical;
             mask = ALIGN_TO_VERTICAL;
         }
-        else mask = mask | ALIGN_TO_VERTICAL;
+        else {
+            mask = mask | ALIGN_TO_VERTICAL;
+        }
     }
+
     if (close_block_diagonal[j] >= from_horizontal) {
         if (close_block_diagonal[j] > from_horizontal) {
             close_block_diagonal[j] = from_horizontal;
             mask = ALIGN_TO_HORIZONTAL;
         }
-        else mask = mask | ALIGN_TO_HORIZONTAL;
+        else {
+            mask = mask | ALIGN_TO_HORIZONTAL;
+        }
     }
+
     if (close_block_diagonal[j] >= from_diagonal) {
         if (close_block_diagonal[j] > from_diagonal) {
             close_block_diagonal[j] = from_diagonal;
             mask = ALIGN_TO_DIAGONAL;
         }
-        else mask = mask | ALIGN_TO_DIAGONAL;
+        else {
+            mask = mask | ALIGN_TO_DIAGONAL;
+        }
     }
+
     LOR_WITH_DIR_MTX_ARROW_t(mask, direction_matrix);
+
     return (direction_matrix);
 }
 
@@ -2733,13 +2847,13 @@ enum MODE { m_todo, m_vertical, m_horizontal, m_diagonal, m_align } backtrace_mo
 
 void
 algn_backtrace_affine ( const dyn_char_p         shortChar
-                      , const dyn_char_p         longChar
+                      , const dyn_char_p         longerChar
                       ,       DIR_MTX_ARROW_t   *direction_matrix
                       ,       dyn_char_p         gapped_median
                       ,       dyn_char_p         ungapped_median
                       ,       dyn_char_p         retShortChar
                       ,       dyn_char_p         retLongChar
-                      , const cost_matrices_2d_p costMatrix
+                      , const cost_matrices_2d_t *costMatrix
                       )
 {
 #define HAS_FLAG(flag) (*direction_matrix & flag)
@@ -2747,10 +2861,10 @@ algn_backtrace_affine ( const dyn_char_p         shortChar
     int shortIdx,
         longIdx,
         shortChar_len,
-        longChar_len;
+        longerChar_len;
 
     elem_t shortCharElem,
-           longCharElem,
+           longerCharElem,
            prep;
 
     elem_t gap_char      = costMatrix->gap_char,
@@ -2759,16 +2873,16 @@ algn_backtrace_affine ( const dyn_char_p         shortChar
     DIR_MTX_ARROW_t *initial_direction_matrix;
 
     shortIdx      = shortChar->len - 1;
-    longIdx       = longChar->len - 1;
+    longIdx       = longerChar->len - 1;
     shortChar_len = shortIdx;
-    longChar_len  = longIdx;
+    longerChar_len  = longIdx;
 
-    assert (shortChar_len <= longChar_len);
+    assert (shortChar_len <= longerChar_len);
 
     shortCharElem            = shortChar->char_begin[shortIdx];
-    longCharElem             = longChar->char_begin[longIdx];
+    longerCharElem             = longerChar->char_begin[longIdx];
     initial_direction_matrix = direction_matrix;
-    direction_matrix         = direction_matrix + (((shortChar_len + 1) * (longChar_len + 1)) - 1);
+    direction_matrix         = direction_matrix + (((shortChar_len + 1) * (longerChar_len + 1)) - 1);
 
     while ((shortIdx != 0) && (longIdx != 0)) {
         if (DEBUG_AFFINE) {
@@ -2800,34 +2914,34 @@ algn_backtrace_affine ( const dyn_char_p         shortChar
             dyn_char_prepend(retShortChar, shortCharElem);
             dyn_char_prepend(retLongChar, gap_char);
             shortIdx--;
-            direction_matrix -= (longChar_len + 1);
+            direction_matrix -= (longerChar_len + 1);
             shortCharElem = shortChar->char_begin[shortIdx];
         } else if (mode == m_horizontal) {
             if (HAS_FLAG(END_HORIZONTAL)) {
                 mode = m_todo;
             }
-            if (!(longCharElem & gap_char)) {
-                dyn_char_prepend (gapped_median,   (longCharElem | gap_char));
-                dyn_char_prepend (ungapped_median, (longCharElem | gap_char));
+            if (!(longerCharElem & gap_char)) {
+                dyn_char_prepend (gapped_median,   (longerCharElem | gap_char));
+                dyn_char_prepend (ungapped_median, (longerCharElem | gap_char));
             } else {
                 dyn_char_prepend (ungapped_median, gap_char);
             }
             dyn_char_prepend (retShortChar, gap_char);
-            dyn_char_prepend (retLongChar,  longCharElem);
+            dyn_char_prepend (retLongChar,  longerCharElem);
             longIdx--;
             direction_matrix -= 1;
-            longCharElem = longChar->char_begin[longIdx];
+            longerCharElem = longerChar->char_begin[longIdx];
         } else if (mode == m_diagonal) {
             if (HAS_FLAG(END_BLOCK)) {
                 mode = m_todo;
             }
             dyn_char_prepend(retShortChar,    shortCharElem);
-            dyn_char_prepend(retLongChar,     longCharElem);
+            dyn_char_prepend(retLongChar,     longerCharElem);
             dyn_char_prepend(ungapped_median, gap_char);
             shortIdx--;
             longIdx--;
-            direction_matrix -= (longChar_len + 2);
-            longCharElem       = longChar->char_begin[longIdx];
+            direction_matrix -= (longerChar_len + 2);
+            longerCharElem       = longerChar->char_begin[longIdx];
             shortCharElem      = shortChar->char_begin[shortIdx];
         } else {
             assert (mode == m_align);
@@ -2840,16 +2954,16 @@ algn_backtrace_affine ( const dyn_char_p         shortChar
             }
             prep = cm_get_median( costMatrix
                                 , (shortCharElem & all_ambiguous)
-                                , (longCharElem  & all_ambiguous)
+                                , (longerCharElem  & all_ambiguous)
                                 );
             dyn_char_prepend(gapped_median,   prep);
             dyn_char_prepend(ungapped_median, prep);
             dyn_char_prepend(retShortChar,    shortCharElem);
-            dyn_char_prepend(retLongChar,     longCharElem);
+            dyn_char_prepend(retLongChar,     longerCharElem);
             shortIdx--;
             longIdx--;
-            direction_matrix -= (longChar_len + 2);
-            longCharElem       = longChar->char_begin[longIdx];
+            direction_matrix -= (longerChar_len + 2);
+            longerCharElem       = longerChar->char_begin[longIdx];
             shortCharElem      = shortChar->char_begin[shortIdx];
         }
     }
@@ -2864,25 +2978,25 @@ algn_backtrace_affine ( const dyn_char_p         shortChar
         }
         dyn_char_prepend(retShortChar, shortCharElem);
         dyn_char_prepend(retLongChar,  gap_char);
-        direction_matrix -= (longChar_len + 1);
+        direction_matrix -= (longerChar_len + 1);
         shortIdx--;
         shortCharElem = shortChar->char_begin[shortIdx];
     }
     while (longIdx != 0) {
         assert (initial_direction_matrix < direction_matrix);
-        if (!(longCharElem & gap_char)) {
-            dyn_char_prepend (gapped_median,   (longCharElem | gap_char));
-            dyn_char_prepend (ungapped_median, (longCharElem | gap_char));
+        if (!(longerCharElem & gap_char)) {
+            dyn_char_prepend (gapped_median,   (longerCharElem | gap_char));
+            dyn_char_prepend (ungapped_median, (longerCharElem | gap_char));
         }
         else {
             dyn_char_prepend (ungapped_median, gap_char);
         }
 
         dyn_char_prepend (retShortChar, gap_char);
-        dyn_char_prepend (retLongChar,  longCharElem);
+        dyn_char_prepend (retLongChar,  longerCharElem);
         longIdx--;
         direction_matrix -= 1;
-        longCharElem = longChar->char_begin[longIdx];
+        longerCharElem = longerChar->char_begin[longIdx];
     }
     dyn_char_prepend(retShortChar,    gap_char);
     dyn_char_prepend(retLongChar,     gap_char);
@@ -2896,70 +3010,80 @@ algn_backtrace_affine ( const dyn_char_p         shortChar
 }
 
 void
-print_array (char *title, int *arr, int max) {
-    int i;
+print_array ( char *title
+            , const unsigned int *arr
+            , size_t max
+            )
+{
     printf ("%s", title);
-    for (i = 0; i <= max; i++) {
+    for (size_t i = 0; i <= max; i++) {
         printf ("%d ", arr[i]);
     }
     printf ("\n");
     fflush (stdout);
 }
 
+
 void
-print_dirMtx (char *title, DIR_MTX_ARROW_t *arr, int max) {
-    int i;
+print_dirMtx ( const char            *title
+             , const DIR_MTX_ARROW_t *arr
+             ,       size_t           max
+             )
+{
     printf ("%s", title);
-    for (i = 0; i <= max; i++) {
+    for (size_t i = 0; i <= max; i++) {
         printf ("%d ", arr[i]);
     }
     printf ("\n");
     fflush (stdout);
 }
+
 
 // nobt: no backtrace
 void
-algn_initialize_matrices_affine_nobt (int go,
-                                      const dyn_char_p si,
-                                      const dyn_char_p sj,
-                                      const cost_matrices_2d_p c,
-                                      int *close_block_diagonal,
-                                      int *extend_block_diagonal,
-                                      int *extend_vertical,
-                                      int *extend_horizontal,
-                                      const int *precalcMtx) {
-    int // shortChar_len,
-        longChar_len,
-        i = 1,
-        j = 1,
-        r;
-    int *prev_extend_vertical;
-    const int *gap_row;
-    elem_t //longCharElem,
-//         longCharPrevElem,
-         shortCharElem;
-//         shortCharPrevElem;
+algn_initialize_matrices_affine_nobt (      unsigned int        gap_open_cost,
+                                      const dyn_char_p          si,
+                                      const dyn_char_p          sj,
+                                      const cost_matrices_2d_t *c,
+                                            unsigned int       *close_block_diagonal,
+                                            unsigned int       *extend_block_diagonal,
+                                            unsigned int       *extend_vertical,
+                                            unsigned int       *extend_horizontal,
+                                            unsigned int       *algn_precalcMtx) {
+    size_t longerChar_len,
+           r,
+           i = 1;
+           // shortChar_len;
+
+    unsigned int *prev_extend_vertical,
+                 *gap_row;
+
+    elem_t  shortCharElem;
+/*            longerCharElem,
+         longerCharPrevElem,
+         shortCharPrevElem;
+*/
 
 //    shortChar_len              = si->len - 1;
-    longChar_len            = sj->len - 1;
+    longerChar_len            = sj->len - 1;
     close_block_diagonal[0]  = 0;
     extend_block_diagonal[0] = 0;
-    extend_horizontal[0]     = go;
-    extend_vertical[0]       = go;
-    gap_row                  = cm_get_precal_row(precalcMtx, 0, longChar_len);
+    extend_horizontal[0]     = gap_open_cost;
+    extend_vertical[0]       = gap_open_cost;
+    gap_row                  = cm_get_precal_row(algn_precalcMtx, 0, longerChar_len);
 
     if (DEBUG_AFFINE) {
         printf("initialize_matrices_affine_nobt\n");
-        printf ("\n\nThe gap opening parameter is %d\n", go);
+        printf ("\n\nThe gap opening parameter is %d\n", gap_open_cost);
         printf ("\nPre-initialized values:\n");
-        print_array ("EH: ", extend_horizontal,     longChar_len);
-        print_array ("EV: ", extend_vertical,       longChar_len);
-        print_array ("EB: ", extend_block_diagonal, longChar_len);
-        print_array ("CB: ", close_block_diagonal,  longChar_len);
+        print_array ("EH: ", extend_horizontal,     longerChar_len);
+        print_array ("EV: ", extend_vertical,       longerChar_len);
+        print_array ("EB: ", extend_block_diagonal, longerChar_len);
+        print_array ("CB: ", close_block_diagonal,  longerChar_len);
     }
-    for (; j <= longChar_len; j++) {
-//        longCharElem              = sj->char_begin[j];
-//        longCharPrevElem          = sj->char_begin[j - 1];
+    for (size_t j = 1; j <= longerChar_len; j++) {
+//        longerCharElem              = sj->char_begin[j];
+//        longerCharPrevElem          = sj->char_begin[j - 1];
         r                        = extend_horizontal[j - 1] + gap_row[j];
         extend_horizontal[j]     = r;
         close_block_diagonal[j]  = r;
@@ -2969,18 +3093,18 @@ algn_initialize_matrices_affine_nobt (int go,
     if (DEBUG_AFFINE) {
         printf("initialize_matrices_affine_nobt\n");
         printf ("\nInitialized values:\n");
-        print_array ("EH: ", extend_horizontal,     longChar_len);
-        print_array ("EV: ", extend_vertical,       longChar_len);
-        print_array ("EB: ", extend_block_diagonal, longChar_len);
-        print_array ("CB: ", close_block_diagonal,  longChar_len);
+        print_array ("EH: ", extend_horizontal,     longerChar_len);
+        print_array ("EV: ", extend_vertical,       longerChar_len);
+        print_array ("EB: ", extend_block_diagonal, longerChar_len);
+        print_array ("CB: ", close_block_diagonal,  longerChar_len);
         printf ("Finished initialization\n\n");
     }
-    /* for (; i <= shortChar_len; i++) { */
+    /* for (size_t i = 1; i <= shortChar_len; i++) { */
         prev_extend_vertical     = extend_vertical;
-        extend_vertical         += (1 + longChar_len);
-        close_block_diagonal    += (1 + longChar_len);
-        extend_block_diagonal   += (1 + longChar_len);
-        extend_horizontal       += (1 + longChar_len);
+        extend_vertical         += (1 + longerChar_len);
+        close_block_diagonal    += (1 + longerChar_len);
+        extend_block_diagonal   += (1 + longerChar_len);
+        extend_horizontal       += (1 + longerChar_len);
         shortCharElem            = si->char_begin[i];
 //        shortCharPrevElem         = si->char_begin[i - 1];
         r                        = prev_extend_vertical[0] + (HAS_GAP_EXTENSION(shortCharElem, c));
@@ -2995,7 +3119,7 @@ algn_initialize_matrices_affine_nobt (int go,
 void
 algn_initialize_matrices_affine (       unsigned int        gap_open_cost
                                 , const dyn_char_p          shortChar
-                                , const dyn_char_p          longChar
+                                , const dyn_char_p          longerChar
                                 , const cost_matrices_2d_t *costMatrix
                                 ,       unsigned int       *close_block_diagonal
                                 ,       unsigned int       *extend_block_diagonal
@@ -3003,47 +3127,47 @@ algn_initialize_matrices_affine (       unsigned int        gap_open_cost
                                 ,       unsigned int       *extend_horizontal
                                 ,       unsigned int       *final_cost_matrix
                                 ,       DIR_MTX_ARROW_t    *direction_matrix
-                                , const unsigned int       *precalcMtx
+                                ,       unsigned int       *algn_precalcMtx
                                 )
 {
     if (DEBUG_AFFINE) {
         printf("\ninitialize_matrices_affine\n");
         fflush(stdout);
     }
-    int // shortChar_len,
-         longChar_len,
-         i = 1,
-         j = 1,
-         r,
-        *prev_extend_vertical;
+    unsigned int longerChar_len,
+                 r,
+                *prev_extend_vertical;
+                // shortChar_len;
 
-    const int *gap_row;
-    elem_t /* longCharElem, longCharPrevElem, shortCharPrevElem, */ shortCharElem;
+    size_t i = 1;
+
+    const unsigned int *gap_row;
+    elem_t /* longerCharElem, longerCharPrevElem, shortCharPrevElem, */ shortCharElem;
 //    shortChar_len    = shortChar->len - 1; //TODO: is this for deleting opening gap? This is currently unused
 
-    longChar_len           = longChar->len - 1; //TODO: is this for deleting opening gap?
+    longerChar_len           = longerChar->len - 1; //TODO: is this for deleting opening gap?
     final_cost_matrix[0]     = 0;
     close_block_diagonal[0]  = 0;
     extend_block_diagonal[0] = 0;
     extend_horizontal[0]     = gap_open_cost;
     extend_vertical[0]       = gap_open_cost;
     direction_matrix[0]      = 0xFFFF;
-    gap_row                  = cm_get_precal_row(precalcMtx, 0, longChar_len);
+    gap_row                  = cm_get_precal_row(algn_precalcMtx, 0, longerChar_len);
 
     if (DEBUG_AFFINE) {
         printf ("\n\nThe gap opening parameter is %d\n", gap_open_cost);
         printf ("\nPre-initialized values:\n");
-        print_array ("EH: ", extend_horizontal,     longChar_len);
-        print_array ("EV: ", extend_vertical,       longChar_len);
-        print_array ("EB: ", extend_block_diagonal, longChar_len);
-        print_array ("CB: ", close_block_diagonal,  longChar_len);
-        print_array ("FC: ", final_cost_matrix,     longChar_len);
-        print_dirMtx ("DM: ", direction_matrix,     longChar_len);
+        print_array ("EH: ", extend_horizontal,     longerChar_len);
+        print_array ("EV: ", extend_vertical,       longerChar_len);
+        print_array ("EB: ", extend_block_diagonal, longerChar_len);
+        print_array ("CB: ", close_block_diagonal,  longerChar_len);
+        print_array ("FC: ", final_cost_matrix,     longerChar_len);
+        print_dirMtx ("DM: ", direction_matrix,     longerChar_len);
     }
 
-    for (; j <= longChar_len; j++) {
-//        longCharElem              = longChar->char_begin[j];
-//        longCharPrevElem          = longChar->char_begin[j - 1];
+    for (size_t j = 1; j <= longerChar_len; j++) {
+//        longerCharElem              = longerChar->char_begin[j];
+//        longerCharPrevElem          = longerChar->char_begin[j - 1];
         r                        = extend_horizontal[j - 1] + gap_row[j];
 
         extend_horizontal[j]     = r;
@@ -3056,22 +3180,22 @@ algn_initialize_matrices_affine (       unsigned int        gap_open_cost
 
     if (DEBUG_AFFINE) {
         printf ("\nInitialized values:\n");
-        print_array  ("EH: ", extend_horizontal,     longChar_len);
-        print_array  ("EV: ", extend_vertical,       longChar_len);
-        print_array  ("EB: ", extend_block_diagonal, longChar_len);
-        print_array  ("CB: ", close_block_diagonal,  longChar_len);
-        print_array  ("FC: ", final_cost_matrix,     longChar_len);
-        print_dirMtx ("DM: ", direction_matrix,      longChar_len);
+        print_array  ("EH: ", extend_horizontal,     longerChar_len);
+        print_array  ("EV: ", extend_vertical,       longerChar_len);
+        print_array  ("EB: ", extend_block_diagonal, longerChar_len);
+        print_array  ("CB: ", close_block_diagonal,  longerChar_len);
+        print_array  ("FC: ", final_cost_matrix,     longerChar_len);
+        print_dirMtx ("DM: ", direction_matrix,      longerChar_len);
         printf ("Finished initializing.\n");
     }
     /* for (; i <= shortChar_len; i++) { */
         prev_extend_vertical   = extend_vertical;
-        extend_vertical       += (1 + longChar_len);
-        close_block_diagonal  += (1 + longChar_len);
-        final_cost_matrix     += (1 + longChar_len);
-        extend_block_diagonal += (1 + longChar_len);
-        extend_horizontal     += (1 + longChar_len);
-        direction_matrix      += (1 + longChar_len);
+        extend_vertical       += (1 + longerChar_len);
+        close_block_diagonal  += (1 + longerChar_len);
+        final_cost_matrix     += (1 + longerChar_len);
+        extend_block_diagonal += (1 + longerChar_len);
+        extend_horizontal     += (1 + longerChar_len);
+        direction_matrix      += (1 + longerChar_len);
 
         shortCharElem          = shortChar->char_begin[i];
         // shortCharPrevElem       = shortChar->char_begin[i - 1];
@@ -3087,12 +3211,12 @@ algn_initialize_matrices_affine (       unsigned int        gap_open_cost
 }
 
 DIR_MTX_ARROW_t
-ASSIGN_MINIMUM (int *final_cost_matrix,
-                int extend_horizontal,
-                int extend_vertical,
-                int extend_block_diagonal,
-                int close_block_diagonal,
-                DIR_MTX_ARROW_t direction_matrix) {
+ASSIGN_MINIMUM (unsigned int    *final_cost_matrix,
+                unsigned int     extend_horizontal,
+                unsigned int     extend_vertical,
+                unsigned int     extend_block_diagonal,
+                unsigned int     close_block_diagonal,
+                DIR_MTX_ARROW_t  direction_matrix) {
     int mask;
     mask                        = DO_HORIZONTAL;
     *final_cost_matrix          = extend_horizontal;
@@ -3104,6 +3228,7 @@ ASSIGN_MINIMUM (int *final_cost_matrix,
             mask = mask | DO_VERTICAL;
         }
     }
+
     if (*final_cost_matrix >= extend_block_diagonal) {
         if (*final_cost_matrix > extend_block_diagonal) {
             *final_cost_matrix = extend_block_diagonal;
@@ -3112,6 +3237,7 @@ ASSIGN_MINIMUM (int *final_cost_matrix,
             mask = mask | DO_DIAGONAL;
         }
     }
+
     if (*final_cost_matrix >= close_block_diagonal) {
         if (*final_cost_matrix > close_block_diagonal) {
             *final_cost_matrix = close_block_diagonal;
@@ -3120,258 +3246,31 @@ ASSIGN_MINIMUM (int *final_cost_matrix,
             mask = mask | DO_ALIGN;
         }
     }
+
     LOR_WITH_DIR_MTX_ARROW_t(mask, direction_matrix);
     return (direction_matrix);
 }
 
-int
+unsigned int
 algn_fill_plane_2d_affine_nobt ( const dyn_char_p          shortChar
-                               , const dyn_char_p          longChar
-                               ,       int                 shortChar_len
-                               ,       int                 longChar_len
-                               , const cost_matrices_2d_p  costMatrix
-                               ,       int                *extend_horizontal
-                               ,       int                *extend_vertical
-                               ,       int                *close_block_diagonal
-                               ,       int                *extend_block_diagonal
-                               , const int                *precalcMtx
-                               ,       int                *gap_open_prec
-                               ,       int                *longChar_horizontal_extension
+                               , const dyn_char_p          longerChar
+                               ,       size_t              shortChar_len
+                               ,       size_t              longerChar_len
+                               ,       cost_matrices_2d_t *costMatrix
+                               ,       unsigned int       *extend_horizontal
+                               ,       unsigned int       *extend_vertical
+                               ,       unsigned int       *close_block_diagonal
+                               ,       unsigned int       *extend_block_diagonal
+                               ,       unsigned int       *algn_precalcMtx
+                               ,       unsigned int       *gap_open_prec
+                               ,       unsigned int       *longerChar_horizontal_extension
                                )
 {
-    int start_pos = 1,
-        end_pos,
-        start_v   = 40,
-        i = 1,
-        j,
-        res;
-
-    int *prev_extend_horizontal,
-        *prev_extend_vertical,
-        *prev_close_block_diagonal,
-        *prev_extend_block_diagonal;
-
-    int *init_extend_horizontal,
-        *init_extend_vertical,
-        *init_close_block_diagonal,
-        *init_extend_block_diagonal;
-
-    const int *shortChar_no_gap_vector;
-
-    int shortChar_gap_opening,
-        shortChar_gap_extension,
-        longChar_gap_opening,
-        longChar_gap_extension;
-
-    elem_t gap_char      = costMatrix->gap_char,
-           gap_open      = costMatrix->gap_open,
-           all_ambiguous = costMatrix->gap_char - 1;
-
-    const int *gap_row;
-    int shortChar_vertical_extension;
-
-    assert (longChar_len >= shortChar_len);
-
-    init_extend_horizontal     = extend_horizontal;
-    init_extend_vertical       = extend_vertical;
-    init_extend_block_diagonal = extend_block_diagonal;
-    init_close_block_diagonal  = close_block_diagonal;
-    gap_row = cm_get_precal_row(precalcMtx, 0, longChar_len);
-    end_pos = (longChar_len - shortChar_len) + 8;
-
-    if (DEBUG_AFFINE) {
-        printf("\n--algn fill plane 3 affine nobt\n");
-        printf("Before initializing:\n");
-        print_array ("EH: ", extend_horizontal,     longChar_len);
-        print_array ("EV: ", extend_vertical,       longChar_len);
-        print_array ("EB: ", extend_block_diagonal, longChar_len);
-        print_array ("CB: ", close_block_diagonal,  longChar_len);
-    }
-
-    if (end_pos < 40) end_pos = 40;
-
-    if (end_pos > longChar_len) end_pos = longChar_len;
-    elem_t longCharElem,
-           // longCharPrevElem,
-           shortCharElem,
-           shortCharPrevElem,
-           shortChar_no_gap,
-           longChar_no_gap;
-    elem_t *shortCharBegin,
-           *longCharBegin;
-    shortCharBegin = shortChar->char_begin;
-    longCharBegin  = longChar->char_begin;
-    shortCharElem  = shortCharBegin[0];
-
-    for (j = 1; j <= longChar_len; j++) {
-        gap_open_prec[j] = HAS_GAP_OPENING(longCharBegin[j - 1], longCharBegin[j], gap_char, gap_open);
-
-        if ((longCharBegin[j - 1] & gap_char) && (!(longCharBegin[j] & gap_char))) {
-            longChar_horizontal_extension[j] = gap_open_prec[j] + gap_row[j];
-        } else {
-            longChar_horizontal_extension[j] = gap_row[j];
-        }
-    }
-
-    longChar_horizontal_extension[1] = gap_row[1];
-    int r;
-
-    for (;i <= shortChar_len; i++) {
-        prev_extend_horizontal = init_extend_horizontal
-                               + ((i - 1) % 2) * (longChar_len + 1);
-
-        prev_extend_vertical = init_extend_vertical
-                             + (longChar_len + 1) * ((i - 1) % 2);
-
-        prev_extend_block_diagonal = init_extend_block_diagonal
-                                   + (longChar_len + 1) * ((i - 1) % 2);
-
-        prev_close_block_diagonal = init_close_block_diagonal
-                                  + (longChar_len + 1) * ((i - 1) % 2);
-
-        extend_horizontal = init_extend_horizontal + ((i % 2)           * (longChar_len + 1));
-        extend_vertical   = init_extend_vertical   + (longChar_len + 1) * (i % 2);
-
-        extend_block_diagonal = init_extend_block_diagonal
-                              + (longChar_len + 1) * (i % 2);
-
-        close_block_diagonal = init_close_block_diagonal
-                             + (longChar_len + 1) * (i % 2);
-
-        if (i > start_v) start_pos++;
-
-        extend_horizontal[start_pos - 1] = VERY_LARGE_NUMBER;
-        shortCharPrevElem       = shortCharElem;
-        shortCharElem           = shortCharBegin[i];
-        shortChar_gap_extension = HAS_GAP_EXTENSION(shortCharElem, costMatrix);
-        shortChar_gap_opening   = HAS_GAP_OPENING (shortCharPrevElem, shortCharElem, gap_char, gap_open);
-        shortChar_no_gap        = (all_ambiguous) & shortCharElem;
-
-        if ( (i > 1)
-             && (     (shortCharPrevElem & gap_char)
-                  && !(shortCharElem     & gap_char)
-                )
-           ) {
-            shortChar_vertical_extension = shortChar_gap_opening + shortChar_gap_extension;
-        } else {
-            shortChar_vertical_extension = shortChar_gap_extension;
-        }
-
-        r = prev_extend_vertical[start_pos - 1] + shortChar_vertical_extension;
-
-        extend_horizontal    [start_pos - 1] = VERY_LARGE_NUMBER;
-        close_block_diagonal [start_pos - 1] = r;
-        extend_block_diagonal[start_pos - 1] = VERY_LARGE_NUMBER;
-        extend_vertical      [start_pos - 1] = r;
-        longCharElem                         = longCharBegin[start_pos - 1];
-        close_block_diagonal [start_pos - 1] = VERY_LARGE_NUMBER;
-
-        shortChar_no_gap_vector = costMatrix->cost + (shortChar_no_gap << costMatrix->costMatrixDimension);
-
-        for (j=start_pos; j <= end_pos; j++) {
-//            longCharPrevElem       = longCharElem;
-            longCharElem           = longCharBegin[j];
-            longChar_no_gap        = (all_ambiguous) & longCharElem;
-            longChar_gap_extension = gap_row[j];
-            longChar_gap_opening   = gap_open_prec[j];
-            FILL_EXTEND_HORIZONTAL_NOBT( longChar_horizontal_extension[j]
-                                       , longChar_gap_extension
-                                       , longChar_gap_opening
-                                       , j
-                                       , extend_horizontal
-//                                       , costMatrix
-                                       , close_block_diagonal
-                                       );
-
-            FILL_EXTEND_VERTICAL_NOBT( shortChar_vertical_extension
-                                     , shortChar_gap_extension
-                                     , shortChar_gap_opening
-                                     , j
-                                     , extend_vertical
-                                     , prev_extend_vertical
-//                                     , costMatrix
-                                     , prev_close_block_diagonal
-                                     );
-
-            FILL_EXTEND_BLOCK_DIAGONAL_NOBT( shortCharElem
-                                           , longCharElem
-                                           , shortCharPrevElem
-//                                           , longCharPrevElem
-                                           , costMatrix
-                                           , j
-                                           , extend_block_diagonal
-                                           , prev_extend_block_diagonal
-                                           , prev_close_block_diagonal
-                                           );
-
-            FILL_CLOSE_BLOCK_DIAGONAL_NOBT( shortCharElem
-                                          , longCharElem
-                                          , shortChar_no_gap
-                                          , longChar_no_gap
-                                          , shortChar_gap_opening
-                                          , longChar_gap_opening
-                                          , j
-                                          , shortChar_no_gap_vector
-                                          , close_block_diagonal
-                                          , prev_close_block_diagonal
-                                          , prev_extend_vertical
-                                          , prev_extend_horizontal
-                                          , prev_extend_block_diagonal
-                                          );
-        }
-        if (end_pos < longChar_len) {
-            end_pos++;
-            extend_vertical[end_pos]       = VERY_LARGE_NUMBER;
-            close_block_diagonal[end_pos]  = VERY_LARGE_NUMBER;
-            extend_horizontal[end_pos]     = VERY_LARGE_NUMBER;
-            extend_block_diagonal[end_pos] = VERY_LARGE_NUMBER;
-        }
-        if (DEBUG_AFFINE) {
-            printf("algn fill plane 3 affine nobt\n");
-            printf("After initializing:\n");
-            print_array ("EH: ", extend_horizontal,     longChar_len);
-            print_array ("EV: ", extend_vertical,       longChar_len);
-            print_array ("EB: ", extend_block_diagonal, longChar_len);
-            print_array ("CB: ", close_block_diagonal,  longChar_len);
-        }
-    }
-
-    res = extend_horizontal[longChar_len];
-    if (res > extend_vertical[longChar_len])       res = extend_vertical[longChar_len];
-    if (res > extend_block_diagonal[longChar_len]) res = extend_block_diagonal[longChar_len];
-    if (res > close_block_diagonal[longChar_len])  res = close_block_diagonal[longChar_len];
-
-    return res;
-}
-
-
-int
-algn_fill_plane_2d_affine ( const dyn_char_p          shortChar
-                          , const dyn_char_p          longChar
-                          ,       size_t              shortChar_len    // note that this is actually 1 less than length
-                          ,       size_t              longChar_len   // note that this is actually 1 less than length
-                          , const unsigned int       *final_cost_matrix
-                          ,       DIR_MTX_ARROW_t    *direction_matrix
-                          , const cost_matrices_2d_p  costMatrix
-                          , const unsigned int       *extend_horizontal
-                          , const unsigned int       *extend_vertical
-                          , const unsigned int       *close_block_diagonal
-                          , const unsigned int       *extend_block_diagonal
-                          , const unsigned int       *precalcMtx
-                          , const unsigned int       *gap_open_prec
-                          , const unsigned int       *longChar_horizontal_extension
-                          )
-{
-    if (DEBUG_AFFINE) {
-        printf("algn_fill_plane_2d_affine\n");
-        fflush(stdout);
-    }
-    size_t  start_pos = 1,
-            end_pos,
-            start_v = 40,
-            shortCharIdx = 1,
-            longCharIdx,
-            res;
+    size_t start_pos = 1,
+           end_pos,
+           start_v   = 40,
+           j,
+           res;
 
     unsigned int *prev_extend_horizontal,
                  *prev_extend_vertical,
@@ -3383,20 +3282,250 @@ algn_fill_plane_2d_affine ( const dyn_char_p          shortChar
                  *init_close_block_diagonal,
                  *init_extend_block_diagonal;
 
-    const int *shortChar_no_gap_vector;
+    unsigned int *shortChar_no_gap_vector;
 
-    int shortChar_gap_opening,
-        shortChar_gap_extension,
-        longChar_gap_opening,
-        longChar_gap_extension;
+    unsigned int  lesserChar_gap_open_cost,
+                  lesserChar_gap_extend_cost,
+                  longerChar_gap_open_cost,
+                  longerChar_gap_extension,
+                  shortChar_vertical_extension,
+                  gap_open_cost                 = costMatrix->gap_open_cost;
 
     elem_t gap_char      = costMatrix->gap_char,
-           gap_open      = costMatrix->gap_open,
            all_ambiguous = costMatrix->gap_char - 1;
 
-    const int *gap_row;
 
-    int shortChar_vertical_extension;
+    const unsigned int *gap_row;
+
+    assert (longerChar_len >= shortChar_len);
+
+    init_extend_horizontal     = extend_horizontal;
+    init_extend_vertical       = extend_vertical;
+    init_extend_block_diagonal = extend_block_diagonal;
+    init_close_block_diagonal  = close_block_diagonal;
+
+    gap_row = cm_get_precal_row(algn_precalcMtx, 0, longerChar_len);
+    end_pos = (longerChar_len - shortChar_len) + 8;
+
+    if (DEBUG_AFFINE) {
+        printf("\n--algn fill plane 3 affine nobt\n");
+        printf("Before initializing:\n");
+        print_array ("EH: ", extend_horizontal,     longerChar_len);
+        print_array ("EV: ", extend_vertical,       longerChar_len);
+        print_array ("EB: ", extend_block_diagonal, longerChar_len);
+        print_array ("CB: ", close_block_diagonal,  longerChar_len);
+    }
+
+    if (end_pos < 40) end_pos = 40;
+
+    if (end_pos > longerChar_len) end_pos = longerChar_len;
+    elem_t  longerCharElem,
+           // longerCharPrevElem,
+            shortCharElem,
+            shortCharPrevElem,
+            shortChar_no_gap,
+            longerChar_no_gap;
+
+    elem_t *shortCharBegin,
+           *longerCharBegin;
+
+    shortCharBegin = shortChar->char_begin;
+    longerCharBegin  = longerChar->char_begin;
+    shortCharElem  = shortCharBegin[0];
+
+    for (j = 1; j <= longerChar_len; j++) {
+        gap_open_prec[j] = HAS_GAP_OPENING(longerCharBegin[j - 1], longerCharBegin[j], gap_char, gap_open_cost);
+
+        if ((longerCharBegin[j - 1] & gap_char) && (!(longerCharBegin[j] & gap_char))) {
+            longerChar_horizontal_extension[j] = gap_open_prec[j] + gap_row[j];
+        } else {
+            longerChar_horizontal_extension[j] = gap_row[j];
+        }
+    }
+
+    longerChar_horizontal_extension[1] = gap_row[1];
+    int r;
+
+    for (size_t i = 1; i <= shortChar_len; i++) {
+        prev_extend_horizontal = init_extend_horizontal
+                               + ((i - 1) % 2) * (longerChar_len + 1);
+
+        prev_extend_vertical = init_extend_vertical
+                             + (longerChar_len + 1) * ((i - 1) % 2);
+
+        prev_extend_block_diagonal = init_extend_block_diagonal
+                                   + (longerChar_len + 1) * ((i - 1) % 2);
+
+        prev_close_block_diagonal = init_close_block_diagonal
+                                  + (longerChar_len + 1) * ((i - 1) % 2);
+
+        extend_horizontal = init_extend_horizontal + ((i % 2)           * (longerChar_len + 1));
+        extend_vertical   = init_extend_vertical   + (longerChar_len + 1) * (i % 2);
+
+        extend_block_diagonal = init_extend_block_diagonal
+                              + (longerChar_len + 1) * (i % 2);
+
+        close_block_diagonal = init_close_block_diagonal
+                             + (longerChar_len + 1) * (i % 2);
+
+        if (i > start_v) start_pos++;
+
+        extend_horizontal[start_pos - 1] = VERY_LARGE_NUMBER;
+        shortCharPrevElem          = shortCharElem;
+        shortCharElem              = shortCharBegin[i];
+        lesserChar_gap_extend_cost = HAS_GAP_EXTENSION(shortCharElem, costMatrix);
+        lesserChar_gap_open_cost   = HAS_GAP_OPENING (shortCharPrevElem, shortCharElem, gap_char, gap_open_cost);
+        shortChar_no_gap           = (all_ambiguous) & shortCharElem;
+
+        if ( (i > 1)
+             && (     (shortCharPrevElem & gap_char)
+                  && !(shortCharElem     & gap_char)
+                )
+           ) {
+            shortChar_vertical_extension = lesserChar_gap_open_cost + lesserChar_gap_extend_cost;
+        } else {
+            shortChar_vertical_extension = lesserChar_gap_extend_cost;
+        }
+
+        r = prev_extend_vertical[start_pos - 1] + shortChar_vertical_extension;
+
+        extend_horizontal    [start_pos - 1] = VERY_LARGE_NUMBER;
+        close_block_diagonal [start_pos - 1] = r;
+        extend_block_diagonal[start_pos - 1] = VERY_LARGE_NUMBER;
+        extend_vertical      [start_pos - 1] = r;
+        longerCharElem                       = longerCharBegin[start_pos - 1];
+        close_block_diagonal [start_pos - 1] = VERY_LARGE_NUMBER;
+
+        shortChar_no_gap_vector = costMatrix->cost + (shortChar_no_gap << costMatrix->costMatrixDimension);
+
+        for (j=start_pos; j <= end_pos; j++) {
+//            longerCharPrevElem       = longerCharElem;
+            longerCharElem           = longerCharBegin[j];
+            longerChar_no_gap        = (all_ambiguous) & longerCharElem;
+            longerChar_gap_extension = gap_row[j];
+            longerChar_gap_open_cost   = gap_open_prec[j];
+            FILL_EXTEND_HORIZONTAL_NOBT( longerChar_horizontal_extension[j]
+                                       , longerChar_gap_extension
+                                       , longerChar_gap_open_cost
+                                       , j
+                                       , extend_horizontal
+//                                       , costMatrix
+                                       , close_block_diagonal
+                                       );
+
+            FILL_EXTEND_VERTICAL_NOBT( shortChar_vertical_extension
+                                     , lesserChar_gap_extend_cost
+                                     , lesserChar_gap_open_cost
+                                     , j
+                                     , extend_vertical
+                                     , prev_extend_vertical
+//                                     , costMatrix
+                                     , prev_close_block_diagonal
+                                     );
+
+            FILL_EXTEND_BLOCK_DIAGONAL_NOBT( shortCharElem
+                                           , longerCharElem
+                                           , shortCharPrevElem
+//                                           , longerCharPrevElem
+                                           , costMatrix
+                                           , j
+                                           , extend_block_diagonal
+                                           , prev_extend_block_diagonal
+                                           , prev_close_block_diagonal
+                                           );
+
+            FILL_CLOSE_BLOCK_DIAGONAL_NOBT( shortCharElem
+                                          , longerCharElem
+                                          , shortChar_no_gap
+                                          , longerChar_no_gap
+                                          , lesserChar_gap_open_cost
+                                          , longerChar_gap_open_cost
+                                          , j
+                                          , shortChar_no_gap_vector
+                                          , close_block_diagonal
+                                          , prev_close_block_diagonal
+                                          , prev_extend_vertical
+                                          , prev_extend_horizontal
+                                          , prev_extend_block_diagonal
+                                          );
+        }
+        if (end_pos < longerChar_len) {
+            end_pos++;
+            extend_vertical[end_pos]       = VERY_LARGE_NUMBER;
+            close_block_diagonal[end_pos]  = VERY_LARGE_NUMBER;
+            extend_horizontal[end_pos]     = VERY_LARGE_NUMBER;
+            extend_block_diagonal[end_pos] = VERY_LARGE_NUMBER;
+        }
+        if (DEBUG_AFFINE) {
+            printf("algn fill plane 3 affine nobt\n");
+            printf("After initializing:\n");
+            print_array ("EH: ", extend_horizontal,     longerChar_len);
+            print_array ("EV: ", extend_vertical,       longerChar_len);
+            print_array ("EB: ", extend_block_diagonal, longerChar_len);
+            print_array ("CB: ", close_block_diagonal,  longerChar_len);
+        }
+    }
+
+    res = extend_horizontal[longerChar_len];
+    if (res > extend_vertical[longerChar_len])       res = extend_vertical[longerChar_len];
+    if (res > extend_block_diagonal[longerChar_len]) res = extend_block_diagonal[longerChar_len];
+    if (res > close_block_diagonal[longerChar_len])  res = close_block_diagonal[longerChar_len];
+
+    return res;
+}
+
+
+unsigned int
+algn_fill_plane_2d_affine ( const dyn_char_p          shortChar
+                          , const dyn_char_p          longerChar
+                          ,       size_t              shortChar_len    // note that this is actually 1 less than length
+                          ,       size_t              longerChar_len   // note that this is actually 1 less than length
+                          ,       unsigned int       *final_cost_matrix
+                          ,       DIR_MTX_ARROW_t    *direction_matrix
+                          , const cost_matrices_2d_t * costMatrix
+                          ,       unsigned int       *extend_horizontal
+                          ,       unsigned int       *extend_vertical
+                          ,       unsigned int       *close_block_diagonal
+                          ,       unsigned int       *extend_block_diagonal
+                          ,       unsigned int       *algn_precalcMtx
+                          ,       unsigned int       *gap_open_prec
+                          ,       unsigned int       *longerChar_horizontal_extension
+                          )
+{
+    if (DEBUG_AFFINE) {
+        printf("algn_fill_plane_2d_affine\n");
+        fflush(stdout);
+    }
+    size_t start_pos    = 1,
+           end_pos,
+           start_v      = 40,
+           res,
+           longerCharIdx;
+
+    unsigned int *prev_extend_horizontal,
+                 *prev_extend_vertical,
+                 *prev_close_block_diagonal,
+                 *prev_extend_block_diagonal;
+
+    unsigned int *init_extend_horizontal,
+                 *init_extend_vertical,
+                 *init_close_block_diagonal,
+                 *init_extend_block_diagonal;
+
+    unsigned int shortChar_vertical_extension;
+
+    const unsigned int *shortChar_no_gap_vector;
+
+    unsigned int lesserChar_gap_open_cost,
+                 lesserChar_gap_extend_cost,
+                 longerChar_gap_open_cost,
+                 longerChar_gap_extension;
+
+    elem_t gap_char      = costMatrix->gap_char,
+           gap_open_cost = costMatrix->gap_open_cost,
+           all_ambiguous = costMatrix->gap_char - 1;
+
+    unsigned int *gap_row;
 
     DIR_MTX_ARROW_t tmp_direction_matrix;
 
@@ -3404,95 +3533,92 @@ algn_fill_plane_2d_affine ( const dyn_char_p          shortChar
     init_extend_vertical       = extend_vertical;
     init_extend_block_diagonal = extend_block_diagonal;
     init_close_block_diagonal  = close_block_diagonal;
-    gap_row                    = cm_get_precal_row(precalcMtx, 0, longChar_len);
-    end_pos                    = (longChar_len - shortChar_len) + 8;
+    gap_row                    = cm_get_precal_row(algn_precalcMtx, 0, longerChar_len);
+    end_pos                    = (longerChar_len - shortChar_len) + 8;
     if (DEBUG_AFFINE) {
         printf("\n--algn fill plane 3 affine\n");
         printf("Before initializing:\n");
-        print_array  ("EH: ", extend_horizontal,     longChar_len);
-        print_array  ("EV: ", extend_vertical,       longChar_len);
-        print_array  ("EB: ", extend_block_diagonal, longChar_len);
-        print_array  ("CB: ", close_block_diagonal,  longChar_len);
-        print_array  ("FC: ", final_cost_matrix,     longChar_len);
-        print_dirMtx ("DM: ", direction_matrix,      longChar_len);
+        print_array  ("EH: ", extend_horizontal,     longerChar_len);
+        print_array  ("EV: ", extend_vertical,       longerChar_len);
+        print_array  ("EB: ", extend_block_diagonal, longerChar_len);
+        print_array  ("CB: ", close_block_diagonal,  longerChar_len);
+        print_array  ("FC: ", final_cost_matrix,     longerChar_len);
+        print_dirMtx ("DM: ", direction_matrix,      longerChar_len);
     }
 
-    if (end_pos < 40) {
-        end_pos = 40;
-    }
-    if (end_pos > longChar_len) {
-        end_pos = longChar_len;
-    }
+    if (end_pos < 40) end_pos = 40;
 
-    //end_pos = longChar_len;
-    elem_t  longCharElem,
-            // longCharPrevElem,
+    if (end_pos > longerChar_len) end_pos = longerChar_len;
+
+    //end_pos = longerChar_len;
+    elem_t  longerCharElem,
+            // longerCharPrevElem,
             shortCharElem,
             shortCharPrevElem,
             shortChar_no_gap,
-            longChar_no_gap,
+            longerChar_no_gap,
            *shortCharBegin,
-           *longCharBegin;
+           *longerCharBegin;
 
     shortCharBegin = shortChar->char_begin;
-    longCharBegin  = longChar->char_begin;
+    longerCharBegin  = longerChar->char_begin;
     shortCharElem  = shortCharBegin[0];
 
-    for (longCharIdx = 1; longCharIdx <= longChar_len; longCharIdx++) {
-        // if (shortChar->len >= longChar->len) {
-        //     printf("short j: %2zu len: %2zu cap: %2zu\n", longCharIdx, shortChar->len, shortChar->cap);
-        //     printf("long  j: %2zu len: %2zu cap: %2zu\n", longCharIdx, longChar->len,  longChar->cap);
+    for (longerCharIdx = 1; longerCharIdx <= longerChar_len; longerCharIdx++) {
+        // if (shortChar->len >= longerChar->len) {
+        //     printf("short j: %2zu len: %2zu cap: %2zu\n", longerCharIdx, shortChar->len, shortChar->cap);
+        //     printf("long  j: %2zu len: %2zu cap: %2zu\n", longerCharIdx, longerChar->len,  longerChar->cap);
         //     fflush(stdout);
         // }
-        // printf("\tlongCharBegin %d\n", longCharBegin[j - 1]);
-        // printf("\tlongCharBegin %d\n", longCharBegin[j]);
-        // printf("\tlongChar_horizontal_extension %d\n", longChar_horizontal_extension[j - 1]);
+        // printf("\tlongerCharBegin %d\n", longerCharBegin[j - 1]);
+        // printf("\tlongerCharBegin %d\n", longerCharBegin[j]);
+        // printf("\tlongerChar_horizontal_extension %d\n", longerChar_horizontal_extension[j - 1]);
         // printf("\tgap_open_prec %d\n", gap_open_prec[j]);
         // printf("\tgap_row %d\n", gap_row[j]);
         // printf("\tgap_char %d\n", gap_char);
-        gap_open_prec[longCharIdx] = HAS_GAP_OPENING(longCharBegin[longCharIdx - 1], longCharBegin[longCharIdx], gap_char, gap_open);
-        if (     (longCharBegin[longCharIdx - 1] & gap_char)
-            && (!(longCharBegin[longCharIdx]     & gap_char)) ) {
+        gap_open_prec[longerCharIdx] = HAS_GAP_OPENING(longerCharBegin[longerCharIdx - 1], longerCharBegin[longerCharIdx], gap_char, gap_open_cost);
+        if (     (longerCharBegin[longerCharIdx - 1] & gap_char)
+            && (!(longerCharBegin[longerCharIdx]     & gap_char)) ) {
 
-            longChar_horizontal_extension[longCharIdx] = gap_open_prec[longCharIdx] + gap_row[longCharIdx];
+            longerChar_horizontal_extension[longerCharIdx] = gap_open_prec[longerCharIdx] + gap_row[longerCharIdx];
         } else {
-            longChar_horizontal_extension[longCharIdx] = gap_row[longCharIdx];
+            longerChar_horizontal_extension[longerCharIdx] = gap_row[longerCharIdx];
         }
     }
-    longChar_horizontal_extension[1] = gap_row[1];
+    longerChar_horizontal_extension[1] = gap_row[1];
     int r;
-    for (;shortCharIdx <= shortChar_len; shortCharIdx++) {
+    for (size_t shortCharIdx = 1; shortCharIdx <= shortChar_len; shortCharIdx++) {
         // printf("i: %zu\n", i);
         //printf("%d, %d\n", shortCharBegin[i - 1], shortCharBegin[i]);
 
         prev_extend_horizontal     = init_extend_horizontal +
-                                       (((shortCharIdx - 1) % 2) * (longChar_len + 1));
+                                       (((shortCharIdx - 1) % 2) * (longerChar_len + 1));
         prev_extend_vertical       = init_extend_vertical +
-                                       ((longChar_len + 1) * ((shortCharIdx - 1) % 2));
-        prev_extend_block_diagonal = init_extend_block_diagonal + ((longChar_len + 1) * ((shortCharIdx - 1) % 2));
+                                       ((longerChar_len + 1) * ((shortCharIdx - 1) % 2));
+        prev_extend_block_diagonal = init_extend_block_diagonal + ((longerChar_len + 1) * ((shortCharIdx - 1) % 2));
         prev_close_block_diagonal  = init_close_block_diagonal +
-                                       ((longChar_len + 1) * ((shortCharIdx - 1) % 2));
-        extend_horizontal          = init_extend_horizontal + ((shortCharIdx % 2) * (longChar_len + 1));
-        extend_vertical            = init_extend_vertical + ((longChar_len + 1) * (shortCharIdx % 2));
-        extend_block_diagonal      = init_extend_block_diagonal + ((longChar_len + 1) * (shortCharIdx % 2));
-        close_block_diagonal       = init_close_block_diagonal + ((longChar_len + 1) * (shortCharIdx % 2));
-        direction_matrix           = direction_matrix + (longChar_len + 1);
+                                       ((longerChar_len + 1) * ((shortCharIdx - 1) % 2));
+        extend_horizontal          = init_extend_horizontal + ((shortCharIdx % 2) * (longerChar_len + 1));
+        extend_vertical            = init_extend_vertical + ((longerChar_len + 1) * (shortCharIdx % 2));
+        extend_block_diagonal      = init_extend_block_diagonal + ((longerChar_len + 1) * (shortCharIdx % 2));
+        close_block_diagonal       = init_close_block_diagonal + ((longerChar_len + 1) * (shortCharIdx % 2));
+        direction_matrix           = direction_matrix + (longerChar_len + 1);
 
         if (shortCharIdx > start_v) {
             start_pos++;
         }
         direction_matrix [start_pos - 1] = DO_VERTICAL | END_VERTICAL;
         extend_horizontal[start_pos - 1] = VERY_LARGE_NUMBER;
-        shortCharPrevElem       = shortCharElem;
-        shortCharElem           = shortCharBegin[shortCharIdx];
-        shortChar_gap_extension = HAS_GAP_EXTENSION(shortCharElem, costMatrix);
-        shortChar_gap_opening   = HAS_GAP_OPENING (shortCharPrevElem, shortCharElem, gap_char, gap_open);
-        shortChar_no_gap        = (all_ambiguous) & shortCharElem;
+        shortCharPrevElem        = shortCharElem;
+        shortCharElem            = shortCharBegin[shortCharIdx];
+        lesserChar_gap_extend_cost  = HAS_GAP_EXTENSION(shortCharElem, costMatrix);
+        lesserChar_gap_open_cost = HAS_GAP_OPENING (shortCharPrevElem, shortCharElem, gap_char, gap_open_cost);
+        shortChar_no_gap         = (all_ambiguous) & shortCharElem;
 
         if ((shortCharIdx > 1) && ((shortCharPrevElem & gap_char) && (!(shortCharElem & gap_char)))) {
-            shortChar_vertical_extension = shortChar_gap_opening + shortChar_gap_extension;
+            shortChar_vertical_extension = lesserChar_gap_open_cost + lesserChar_gap_extend_cost;
         } else {
-            shortChar_vertical_extension = shortChar_gap_extension;
+            shortChar_vertical_extension = lesserChar_gap_extend_cost;
         }
         r = prev_extend_vertical[start_pos - 1] + shortChar_vertical_extension;
         extend_horizontal       [start_pos - 1] = VERY_LARGE_NUMBER;
@@ -3501,22 +3627,22 @@ algn_fill_plane_2d_affine ( const dyn_char_p          shortChar
         extend_block_diagonal   [start_pos - 1] = VERY_LARGE_NUMBER;
         extend_vertical         [start_pos - 1] = r;
         direction_matrix        [start_pos - 1] = DO_VERTICAL | END_VERTICAL;
-        longCharElem                            = longCharBegin[start_pos - 1];
+        longerCharElem                          = longerCharBegin[start_pos - 1];
         close_block_diagonal    [start_pos - 1] = VERY_LARGE_NUMBER;
         shortChar_no_gap_vector                 = costMatrix->cost + (shortChar_no_gap << costMatrix->costMatrixDimension);
 
-        for (longCharIdx = start_pos; longCharIdx <= end_pos; longCharIdx++) {
-//            longCharPrevElem       = longCharElem;
-            longCharElem           = longCharBegin[longCharIdx];
+        for (longerCharIdx = start_pos; longerCharIdx <= end_pos; longerCharIdx++) {
+//            longerCharPrevElem       = longerCharElem;
+            longerCharElem           = longerCharBegin[longerCharIdx];
             tmp_direction_matrix   = 0;
-            longChar_no_gap        = (all_ambiguous) & longCharElem;
-            longChar_gap_extension = gap_row[longCharIdx];
-            longChar_gap_opening   = gap_open_prec[longCharIdx];
+            longerChar_no_gap        = (all_ambiguous) & longerCharElem;
+            longerChar_gap_extension = gap_row[longerCharIdx];
+            longerChar_gap_open_cost   = gap_open_prec[longerCharIdx];
 
-            tmp_direction_matrix = FILL_EXTEND_HORIZONTAL( longChar_horizontal_extension[longCharIdx]
-                                                         , longChar_gap_extension
-                                                         , longChar_gap_opening
-                                                         , longCharIdx
+            tmp_direction_matrix = FILL_EXTEND_HORIZONTAL( longerChar_horizontal_extension[longerCharIdx]
+                                                         , longerChar_gap_extension
+                                                         , longerChar_gap_open_cost
+                                                         , longerCharIdx
                                                          , extend_horizontal
 //                                                         , c
                                                          , close_block_diagonal
@@ -3524,9 +3650,9 @@ algn_fill_plane_2d_affine ( const dyn_char_p          shortChar
                                                          );
 
             tmp_direction_matrix = FILL_EXTEND_VERTICAL( shortChar_vertical_extension
-                                                       , shortChar_gap_extension
-                                                       , shortChar_gap_opening
-                                                       , longCharIdx
+                                                       , lesserChar_gap_extend_cost
+                                                       , lesserChar_gap_open_cost
+                                                       , longerCharIdx
                                                        , extend_vertical
                                                        , prev_extend_vertical
 //                                                       , c
@@ -3535,11 +3661,11 @@ algn_fill_plane_2d_affine ( const dyn_char_p          shortChar
                                                        );
 
             tmp_direction_matrix = FILL_EXTEND_BLOCK_DIAGONAL( shortCharElem
-                                                             , longCharElem
+                                                             , longerCharElem
 //                                                             , shortCharPrevElem
-//                                                             , longCharPrevElem
+//                                                             , longerCharPrevElem
                                                              , costMatrix
-                                                             , longCharIdx
+                                                             , longerCharIdx
                                                              , extend_block_diagonal
                                                              , prev_extend_block_diagonal
                                                              , prev_close_block_diagonal
@@ -3547,12 +3673,12 @@ algn_fill_plane_2d_affine ( const dyn_char_p          shortChar
                                                              );
 
             tmp_direction_matrix = FILL_CLOSE_BLOCK_DIAGONAL( shortCharElem
-                                                            , longCharElem
+                                                            , longerCharElem
                                                             , shortChar_no_gap
-                                                            , longChar_no_gap
-                                                            , shortChar_gap_opening
-                                                            , longChar_gap_opening
-                                                            , longCharIdx
+                                                            , longerChar_no_gap
+                                                            , lesserChar_gap_open_cost
+                                                            , longerChar_gap_open_cost
+                                                            , longerCharIdx
                                                             , shortChar_no_gap_vector
                                                             , close_block_diagonal
                                                             , prev_close_block_diagonal
@@ -3562,16 +3688,17 @@ algn_fill_plane_2d_affine ( const dyn_char_p          shortChar
                                                             , tmp_direction_matrix
                                                             );
 
-            tmp_direction_matrix = ASSIGN_MINIMUM ( final_cost_matrix + longCharIdx
-                                                  , extend_horizontal[longCharIdx]
-                                                  , extend_vertical[longCharIdx]
-                                                  , extend_block_diagonal[longCharIdx]
-                                                  , close_block_diagonal[longCharIdx]
-                                                  , tmp_direction_matrix );
+            tmp_direction_matrix = ASSIGN_MINIMUM ( final_cost_matrix + longerCharIdx
+                                                  , extend_horizontal[longerCharIdx]
+                                                  , extend_vertical[longerCharIdx]
+                                                  , extend_block_diagonal[longerCharIdx]
+                                                  , close_block_diagonal[longerCharIdx]
+                                                  , tmp_direction_matrix
+                                                  );
 
-            direction_matrix[longCharIdx]  = tmp_direction_matrix;
+            direction_matrix[longerCharIdx]  = tmp_direction_matrix;
         }
-        if (end_pos < longChar_len) {
+        if (end_pos < longerChar_len) {
             end_pos++;
             direction_matrix[end_pos]      = DO_HORIZONTAL | END_HORIZONTAL;
             extend_vertical[end_pos]       = VERY_LARGE_NUMBER;
@@ -3583,101 +3710,104 @@ algn_fill_plane_2d_affine ( const dyn_char_p          shortChar
         if (DEBUG_AFFINE) {
             printf("\n--algn fill plane 3 affine\n");
             printf("Inside loop:\n");
-            print_array ("EH: ", extend_horizontal,     longChar_len);
-            print_array ("EV: ", extend_vertical,       longChar_len);
-            print_array ("EB: ", extend_block_diagonal, longChar_len);
-            print_array ("CB: ", close_block_diagonal,  longChar_len);
-            print_array ("FC: ", final_cost_matrix,     longChar_len);
-            print_dirMtx ("DM: ", direction_matrix,     longChar_len);
+            print_array ("EH: ", extend_horizontal,     longerChar_len);
+            print_array ("EV: ", extend_vertical,       longerChar_len);
+            print_array ("EB: ", extend_block_diagonal, longerChar_len);
+            print_array ("CB: ", close_block_diagonal,  longerChar_len);
+            print_array ("FC: ", final_cost_matrix,     longerChar_len);
+            print_dirMtx ("DM: ", direction_matrix,     longerChar_len);
         }
     }
-    res = final_cost_matrix[longChar_len];
+    res = final_cost_matrix[longerChar_len];
     return res;
 }
 
+
 static inline int
-algn_fill_plane_2_affine ( const dyn_char_p          char1
-                         ,       int                *precalcMtx
-                         ,       int                 char1_len
-                         ,       int                 char2_len
-                         ,       int                *curRow
+algn_fill_plane_2_affine ( const dyn_char_p          longerChar
+                         ,       unsigned int       *algn_precalcMtx
+                         ,       size_t              longerChar_len
+                         ,       size_t              lesserChar_len
+                         ,       unsigned int       *curRow
                          ,       DIR_MTX_ARROW_t    *dirMtx
-                         , const cost_matrices_2d_p  costMatrix
-                         ,       int                 width
-                         ,       int                 height
-                         ,       int                 dwidth_height
-                         ,       int                *dncurRow
-                         ,       int                *htcurRow
+                         , const cost_matrices_2d_t *costMatrix
+                         ,       size_t              width
+                         ,       size_t              height
+                         ,       size_t              deltawh
+                         ,       unsigned int       *dncurRow
+                         ,       unsigned int       *htcurRow
                          )
 {
-    int *next_row,
-        *next_prevRow,
-        *next_dncurRow,
-        *next_pdncurRow,
-     // *a,
-        *b,
-        *d,
-        *e,
-         open_gap,
-         start_row,
-         final_row,
-         start_column,
-         length;
+    unsigned int *next_row,
+                 *next_prevRow,
+                 *next_dncurRow,
+                 *next_pdncurRow,
+              // *a,
+                 *b,
+                 *d,
+                 *e,
+                  gap_open_cost,
+                  start_row,
+                  final_row,
+                  start_column,
+                  length,
+                 *gap_row;
 
-    int const *gap_row;
     DIR_MTX_ARROW_t *to_go_dirMtx;
 
-    open_gap = costMatrix->gap_open;
-    width    = width + dwidth_height;
-    if (width > char2_len) {
-        width = char2_len;
+    gap_open_cost = costMatrix->gap_open_cost;
+    width    = width + deltawh;
+
+    if (width > lesserChar_len) {
+        width = lesserChar_len;
     }
 
-    height = height + dwidth_height;
-    if (height > char1_len) {
-        height = char1_len;
+    height = height + deltawh;
+    if (height > longerChar_len) {
+        height = longerChar_len;
     }
     // a = curRow;
-    b = curRow + char2_len;
+    b = curRow + lesserChar_len;
     d = dncurRow;
-    e = dncurRow + char2_len;
-    gap_row = cm_get_precal_row (precalcMtx, 0, char2_len); /* We want the horizontal row */
+    e = dncurRow + lesserChar_len;
+    gap_row = cm_get_precal_row (algn_precalcMtx, 0, lesserChar_len); /* We want the horizontal row */
     /* We have to consider three cases in this new alignment procedure (much
      * cleaner than the previous):
      *
      * Case 1:
-     * If char1 is much longer than char2, then there is no point on using the
+     * If longerChar is much longer than char2, then there is no point on using the
      * barriers, we rather fill the full matrix in one shot */
-    if ( char1_len > 1.5 * char2_len ) {
-        return (algn_fill_plane_affine ( char1
-                                       , precalcMtx
-                                       , char1_len
-                                       , char2_len
+    if ( longerChar_len > 1.5 * lesserChar_len ) {
+        return (algn_fill_plane_affine ( longerChar
+                                       , algn_precalcMtx
+                                       , longerChar_len
+                                       , lesserChar_len
                                        , curRow
                                        , dirMtx
                                        , costMatrix
                                        , d
                                        , htcurRow
-                                       , open_gap)
+                                       , gap_open_cost
+                                       )
                );
     }
     /* Case 2:
      * There are no full rows to be filled, therefore we have to break the
      * procedure in three different subsets */
-    else if ( 2 * height < char1_len) {
-        algn_fill_first_row_affine ( curRow, dirMtx, width, gap_row, d, htcurRow, open_gap);
+    else if ( 2 * height < longerChar_len) {
+        algn_fill_first_row_affine ( curRow, dirMtx, width, gap_row, d, htcurRow, gap_open_cost);
         b[0] = curRow[0];
         curRow[0] = 0;
         start_row    = 1;
         final_row    = height;
         start_column = 0;
         length       = width + 1;
-        to_go_dirMtx = dirMtx + (start_row * char2_len);
+        to_go_dirMtx = dirMtx + (start_row * lesserChar_len);
         /* Now we fill that space */
-        next_row     = algn_fill_extending_right_affine ( char1
-                                                        , precalcMtx
-                                                       // , char1_len
-                                                        , char2_len
+        next_row     = algn_fill_extending_right_affine ( longerChar
+                                                        , algn_precalcMtx
+                                                       // , longerChar_len
+                                                        , lesserChar_len
                                                         , b
                                                         , curRow
                                                         , to_go_dirMtx
@@ -3688,22 +3818,24 @@ algn_fill_plane_2_affine ( const dyn_char_p          char1
                                                         , e
                                                         , d
                                                         , htcurRow
-                                                        , open_gap );
+                                                        , gap_open_cost
+                                                        );
+
         next_prevRow = choose_other (next_row, curRow, b);
 
         algn_choose_affine_other (next_row, curRow, &next_dncurRow, &next_pdncurRow, d, e);
 
         /* Next group */
         start_row    = final_row;
-        final_row    = char1_len - (height - 1);
+        final_row    = longerChar_len - (height - 1);
         start_column = 1;
         length       = width + height;
-        to_go_dirMtx = dirMtx + (start_row * char2_len);
+        to_go_dirMtx = dirMtx + (start_row * lesserChar_len);
 
-        next_row = algn_fill_extending_left_right_affine ( char1
-                                                         , precalcMtx
-                                                        // , char1_len
-                                                         , char2_len
+        next_row = algn_fill_extending_left_right_affine ( longerChar
+                                                         , algn_precalcMtx
+                                                        // , longerChar_len
+                                                         , lesserChar_len
                                                          , next_row
                                                          , next_prevRow
                                                          , to_go_dirMtx
@@ -3715,7 +3847,8 @@ algn_fill_plane_2_affine ( const dyn_char_p          char1
                                                          , next_dncurRow
                                                          , next_pdncurRow
                                                          , htcurRow
-                                                         , open_gap );
+                                                         , gap_open_cost
+                                                         );
 
         next_prevRow = choose_other (next_row, curRow, b);
 
@@ -3723,15 +3856,15 @@ algn_fill_plane_2_affine ( const dyn_char_p          char1
 
         /* The final group */
         start_row    = final_row;
-        final_row    = char1_len;
+        final_row    = longerChar_len;
         length       = length - 2;
-        start_column = char2_len - length;
-        to_go_dirMtx = dirMtx + (start_row * char2_len);
+        start_column = lesserChar_len - length;
+        to_go_dirMtx = dirMtx + (start_row * lesserChar_len);
 
-        next_row     = algn_fill_extending_left_affine ( char1
-                                                       , precalcMtx
-                                                      // , char1_len
-                                                       , char2_len
+        next_row     = algn_fill_extending_left_affine ( longerChar
+                                                       , algn_precalcMtx
+                                                      // , longerChar_len
+                                                       , lesserChar_len
                                                        , next_row
                                                        , next_prevRow
                                                        , to_go_dirMtx
@@ -3743,7 +3876,9 @@ algn_fill_plane_2_affine ( const dyn_char_p          char1
                                                        , next_dncurRow
                                                        , next_pdncurRow
                                                        , htcurRow
-                                                       , open_gap);
+                                                       , gap_open_cost
+                                                       );
+
         next_prevRow = choose_other (next_row, curRow, b);
 
         algn_choose_affine_other (next_row, curRow, &next_dncurRow, &next_pdncurRow, d, e);
@@ -3754,17 +3889,18 @@ algn_fill_plane_2_affine ( const dyn_char_p          char1
     else {
         /* We will simplify this case even further, if the size of the leftover
          * is too small, don't use the barriers at all, just fill it up all */
-        if (8 >= (char1_len - height)) {
-            return ( algn_fill_plane_affine ( char1
-                                            , precalcMtx
-                                            , char1_len
-                                            , char2_len
+        if (8 >= (longerChar_len - height)) {
+            return ( algn_fill_plane_affine ( longerChar
+                                            , algn_precalcMtx
+                                            , longerChar_len
+                                            , lesserChar_len
                                             , curRow
                                             , dirMtx
                                             , costMatrix
                                             , d
                                             , htcurRow
-                                            , open_gap)
+                                            , gap_open_cost
+                                            )
                    );
         } else {
             algn_fill_first_row_affine ( curRow
@@ -3773,19 +3909,20 @@ algn_fill_plane_2_affine ( const dyn_char_p          char1
                                        , gap_row
                                        , dncurRow
                                        , htcurRow
-                                       , open_gap);
+                                       , gap_open_cost
+                                       );
 
             b[0]         = curRow[0];
             curRow[0]    = 0;
             start_row    = 1;
-            final_row    = (char2_len - width) + 1;
+            final_row    = (lesserChar_len - width) + 1;
             start_column = 0;
             length       = width + 1;
-            to_go_dirMtx = dirMtx + (char2_len * start_row);
-            next_row     = algn_fill_extending_right_affine ( char1
-                                                            , precalcMtx
-                                                           // , char1_len
-                                                            , char2_len
+            to_go_dirMtx = dirMtx + (lesserChar_len * start_row);
+            next_row     = algn_fill_extending_right_affine ( longerChar
+                                                            , algn_precalcMtx
+                                                           // , longerChar_len
+                                                            , lesserChar_len
                                                             , b
                                                             , curRow
                                                             , to_go_dirMtx
@@ -3796,21 +3933,21 @@ algn_fill_plane_2_affine ( const dyn_char_p          char1
                                                             , e
                                                             , d
                                                             , htcurRow
-                                                            , open_gap
+                                                            , gap_open_cost
                                                             );
             next_prevRow = choose_other (next_row, curRow, b);
 
             algn_choose_affine_other (next_row, curRow, &next_dncurRow, &next_pdncurRow, d, e);
 
             start_row    = final_row;
-            final_row    = char1_len - (char2_len - width) + 1;
-            length       = char2_len;
-            to_go_dirMtx = dirMtx + (char2_len * start_row);
+            final_row    = longerChar_len - (lesserChar_len - width) + 1;
+            length       = lesserChar_len;
+            to_go_dirMtx = dirMtx + (lesserChar_len * start_row);
 
-            next_row     = algn_fill_no_extending_affine ( char1
-                                                         , precalcMtx
-                                                        // , char1_len
-                                                         , char2_len
+            next_row     = algn_fill_no_extending_affine ( longerChar
+                                                         , algn_precalcMtx
+                                                        // , longerChar_len
+                                                         , lesserChar_len
                                                          , next_row
                                                          , next_prevRow
                                                          , to_go_dirMtx
@@ -3820,22 +3957,22 @@ algn_fill_plane_2_affine ( const dyn_char_p          char1
                                                          , next_dncurRow
                                                          , next_pdncurRow
                                                          , htcurRow
-                                                         , open_gap
+                                                         , gap_open_cost
                                                          );
             next_prevRow = choose_other (next_row, curRow, b);
 
             algn_choose_affine_other (next_row, curRow, &next_dncurRow, &next_pdncurRow, d, e);
 
             start_row    = final_row;
-            final_row    = char1_len;
+            final_row    = longerChar_len;
             start_column = 1;
-            length       = char2_len - 1;
-            to_go_dirMtx = dirMtx + (char2_len * start_row);
+            length       = lesserChar_len - 1;
+            to_go_dirMtx = dirMtx + (lesserChar_len * start_row);
 
-            next_row     = algn_fill_extending_left_affine ( char1
-                                                           , precalcMtx
-                                                          // , char1_len
-                                                           , char2_len
+            next_row     = algn_fill_extending_left_affine ( longerChar
+                                                           , algn_precalcMtx
+                                                          // , longerChar_len
+                                                           , lesserChar_len
                                                            , next_row
                                                            , next_prevRow
                                                            , to_go_dirMtx
@@ -3847,34 +3984,33 @@ algn_fill_plane_2_affine ( const dyn_char_p          char1
                                                            , next_dncurRow
                                                            , next_pdncurRow
                                                            , htcurRow
-                                                           , open_gap
+                                                           , gap_open_cost
                                                            );
             next_prevRow = choose_other (next_row, curRow, b);
         }
     }
-    return (next_prevRow[char2_len - 1]);
+    return (next_prevRow[lesserChar_len - 1]);
 }
 /******************************************************************************/
 
 /** Fill parallel must have been called before */
 static inline void
-fill_moved (       size_t char3_len
-           , const int   *prev_m
-           , const int   *upper_m
-           , const int   *diag_m
-           , const int   *char1_gap_char3
-           , const int   *gap_char2_char3
-           , const int   *char1_char2_char3
-           ,       int   *curRow
+fill_moved (       size_t           char3_len
+           , const unsigned int    *prev_m
+           , const unsigned int    *upper_m
+           , const unsigned int    *diag_m
+           , const unsigned int    *char1_gap_char3
+           , const unsigned int    *gap_char2_char3
+           , const unsigned int    *char1_char2_char3
+           ,       unsigned int    *curRow
            ,       DIR_MTX_ARROW_t *dirMtx
            )
 {
-    size_t k;
-    int tmp0,
-        tmp1,
-        tmp;
+    unsigned int tmp0,
+                 tmp1,
+                 tmp;
 
-    for (k = 1; k < char3_len; k++) {
+    for (size_t k = 1; k < char3_len; k++) {
         tmp0 = upper_m[k] + char1_gap_char3[k];
         if (tmp0 < curRow[k]) {
             curRow[k] = tmp0;
@@ -3898,21 +4034,21 @@ fill_moved (       size_t char3_len
 }
 
 void
-fill_parallel (       size_t char3_len
-              , const int *prev_m
-              , const int *upper_m
-              , const int *diag_m
-              ,       int char1_gap_gap
-              ,       int gap_char2_gap
-              ,       int char1_char2_gap
-              ,       int *curRow
+fill_parallel (       size_t           char3_len
+              , const unsigned int    *prev_m
+              , const unsigned int    *upper_m
+              , const unsigned int    *diag_m
+              ,       unsigned int     char1_gap_gap
+              ,       unsigned int     gap_char2_gap
+              ,       unsigned int     char1_char2_gap
+              ,       unsigned int    *curRow
               ,       DIR_MTX_ARROW_t *dirMtx
               )
 {
     size_t k;
 
-    int tmp1,
-        tmp;
+    unsigned int tmp1,
+                 tmp;
 
     for (k = 0; k < char3_len; k++) {
         curRow[k] = upper_m[k] + char1_gap_gap;
@@ -3936,11 +4072,11 @@ fill_parallel (       size_t char3_len
 /**
  *  @param lChar is a pointer to the character lChar (vertical; columns).
  *  @param mChar is a pointer to the middle-lengthed character (depth; pages).
- *  @param precalcMtx is a pointer to a precalculated three dimensional matrix that holds
+ *  @param algn_precalcMtx is a pointer to a precalculated three dimensional matrix that holds
  *     the alignment values for all the combinations of elements (i.e. alphabet
  *     plus ambiguities) with the character sChar (see cm_precalc_4algn_3d for more
  *     information).
- *  @param lCharLen, @param mCharLen and @param sCharLen are the lengths of the three characters
+ *  @param longerChar_len, @param mediumChar_len and @param lesserChar_len are the lengths of the three characters
  *     to be aligned
  *  @param curCostColPtr is a pointer to the first element of the 3dMtx that will
  *     hold the cost information for the 3-way N-W algorithm
@@ -3965,7 +4101,7 @@ fill_parallel (       size_t char3_len
  *  To be ridiculously clear:
  *  To move within a row, or move between pages, increment by one;
  *  to move within a column, or move between rows, increment by medium character length;
- *  to move within a page, or move between columns, increment by mCharLen * sCharLen.
+ *  to move within a page, or move between columns, increment by mediumChar_len * lesserChar_len.
 
  *  Moving orthogonally toward any plane inserts a gap in the associated character, so moving
  *  from right to left inserts a gap in the middle character and the long character.
@@ -3979,21 +4115,21 @@ fill_parallel (       size_t char3_len
  *  lChar, mChar, sChar -> move to a new row, column, page
  *  gap,   gap,   sChar -> move to a new              page (the last one to be done, not parallelizable)
 
- *  Including the precalcMtx allows us to get the value of the alignments of the current elements
+ *  Including the algn_precalcMtx allows us to get the value of the alignments of the current elements
  *  quickly using just a lookup. For this reason we don't need to include sChar as an input. Instead,
  *  we can simply iterate down the precalculated matrix.
 
  *  Function iterates from back to front, so page by page.
  *
  */
-int
+unsigned int
 algn_fill_3dMtx ( const dyn_char_p       lChar
                 , const dyn_char_p       mChar
-                , const int             *precalcMtx
-                ,       size_t           lCharLen
-                ,       size_t           mCharLen
-                ,       size_t           sCharLen
-                ,       int             *tcm
+                ,       unsigned int    *algn_precalcMtx
+                ,       size_t           longerChar_len
+                ,       size_t           mediumChar_len
+                ,       size_t           lesserChar_len
+                ,       unsigned int    *tcm
                 ,       DIR_MTX_ARROW_t *dirMtxPtr
               // ,       int uk
                 ,       elem_t           gap_char
@@ -4009,25 +4145,25 @@ algn_fill_3dMtx ( const dyn_char_p       lChar
     /* Each of the following arrays hold some precalculated value for the
      * character sChar which is not passed as argument.
      */
-    const int *gap_mChar_sChar;     /* Align a gap and the current base of mChar with sChar */
-    const int *lChar_gap_sChar;     /* Align the current base of lChar and a gap with sChar */
-    const int *lChar_mChar_sChar;    /* Align the current bases of lChar and mChar with sChar */
-    const int *gap_gap_sChar;      /* Align two gaps with sChar */
+    const unsigned int *gap_mChar_sChar;     /* Align a gap and the current base of mChar with sChar */
+    const unsigned int *lChar_gap_sChar;     /* Align the current base of lChar and a gap with sChar */
+    const unsigned int *lChar_mChar_sChar;   /* Align the current bases of lChar and mChar with sChar */
+    const unsigned int *gap_gap_sChar;       /* Align two gaps with sChar */
 
     /* Each of the following arrays hold the arrays of the three dimensional
      * matrix that are located around the row that is filled on each iteration.
      * These rows are already filled in some previous iteration and used in
      * the dynamic programming matrix.
      */
-    int *curCostColPtr;
+    unsigned int *curCostColPtr;
     DIR_MTX_ARROW_t *curDirColPtr;     // points to the head of the current column
-    int *upper_m;                       /* The row above the current row; the same row in the plane above the current plane */
-    int *prevCostColPtr;                /* The column to the left the current column in the same plane */
-    int *diag_m;                        /* The upper_m relative to prevCostColPtr */
-    int *tmp_curCostColPtr;             /* A temporary pointer to the column that is being filled currently */
+    unsigned int *upper_m;                       /* The row above the current row; the same row in the plane above the current plane */
+    unsigned int *prevCostColPtr;                /* The column to the left the current column in the same plane */
+    unsigned int *diag_m;                        /* The upper_m relative to prevCostColPtr */
+    unsigned int *tmp_curCostColPtr;             /* A temporary pointer to the column that is being filled currently */
     DIR_MTX_ARROW_t *tmp_curDirColPtr; /* Same as previous for curDirColPtr */
     size_t i, j, k;
-    int tmp;
+    unsigned int tmp;
 
     curCostColPtr     = tcm;
     curDirColPtr      = dirMtxPtr;
@@ -4035,7 +4171,7 @@ algn_fill_3dMtx ( const dyn_char_p       lChar
     mCharPtr          = mChar->char_begin;
     tmp_curDirColPtr  = curDirColPtr;
     tmp_curCostColPtr = curCostColPtr;
-    upper_m           = curCostColPtr + sCharLen;
+    upper_m           = curCostColPtr + lesserChar_len;
     diag_m            = curCostColPtr;
     if (DEBUG_MAT) {
         printf ("Three dimensional character alignment matrix.\n");
@@ -4051,27 +4187,27 @@ algn_fill_3dMtx ( const dyn_char_p       lChar
      * The first row consists of aligning sChar with gaps, we have that
      * precalculated, so all we really need is to add up that vector.
      */
-    gap_gap_sChar = cm_get_row_precalc_3d (precalcMtx, sCharLen, alphSize, gap_char, gap_char);
+    gap_gap_sChar = cm_get_row_precalc_3d (algn_precalcMtx, lesserChar_len, alphSize, gap_char, gap_char);
 
-    for (i = 1; i <= sCharLen; i++) {
+    for (i = 1; i <= lesserChar_len; i++) {
         curCostColPtr[i] = curCostColPtr[i - 1] + gap_gap_sChar[i];
         curDirColPtr[i]  = G_G_A;
     }
 
     prevCostColPtr = curCostColPtr;
-    curCostColPtr += sCharLen;
-    curDirColPtr  += sCharLen;
+    curCostColPtr += lesserChar_len;
+    curDirColPtr  += lesserChar_len;
 
     /* Finish filling the first plane.
      * In this plane filling all we really need to deal with is aligning mChar
      * and sChar, as the first plane holds the inital gap of lChar. */
-    for (i = 1; i < mCharLen; i++,
-                             prevCostColPtr += sCharLen,
-                             curCostColPtr  += sCharLen,
-                             curDirColPtr   += sCharLen) {
+    for (i = 1; i < mediumChar_len; i++,
+                             prevCostColPtr += lesserChar_len,
+                             curCostColPtr  += lesserChar_len,
+                             curDirColPtr   += lesserChar_len) {
 
-        lChar_gap_sChar = cm_get_row_precalc_3d (precalcMtx, sCharLen, alphSize, gap_char   , lCharPtr[i]);
-        gap_mChar_sChar = cm_get_row_precalc_3d (precalcMtx, sCharLen, alphSize, mCharPtr[i], gap_char   );
+        lChar_gap_sChar = cm_get_row_precalc_3d (algn_precalcMtx, lesserChar_len, alphSize, gap_char   , lCharPtr[i]);
+        gap_mChar_sChar = cm_get_row_precalc_3d (algn_precalcMtx, lesserChar_len, alphSize, mCharPtr[i], gap_char   );
 
         /* Fill the first cell with the cost of extending the gap from the
          * previous column */
@@ -4082,7 +4218,7 @@ algn_fill_3dMtx ( const dyn_char_p       lChar
          * is almost the same as algn_fill_row, so if something is modified
          * there, there will be need of modifying it in the same way here. */
         /* TODO: Add the ukkonen barriers */
-        for (j = 1; j < sCharLen; j++) {
+        for (j = 1; j < lesserChar_len; j++) {
             curCostColPtr[j] = prevCostColPtr[j] + lChar_gap_sChar[0];
             curDirColPtr[j]  = G_A_G;
             tmp              = prevCostColPtr[j - 1] + gap_mChar_sChar[j];
@@ -4097,17 +4233,18 @@ algn_fill_3dMtx ( const dyn_char_p       lChar
             }
         }
     }
+
     if (DEBUG_COST_M) {  /* Printing the cost matrix */
-        int *tmp_curCostColPtr_debug;
-        tmp_curCostColPtr_debug = tmp_curCostColPtr;
+        unsigned int *tmp_curCostColPtr_debug = tmp_curCostColPtr;
+
         printf ("\n");
-        for (i = 0; i < mCharLen; i++) {
-            for (int l = mCharLen - i; l > 1; l--) {
+        for (i = 0; i < mediumChar_len; i++) {
+            for (int l = mediumChar_len - i; l > 1; l--) {
                 printf("  ");
             }
-            for (j = 0; j < sCharLen; j++)
+            for (j = 0; j < lesserChar_len; j++)
                 printf ("%-6d", tmp_curCostColPtr_debug[j]);
-            tmp_curCostColPtr_debug += mCharLen;
+            tmp_curCostColPtr_debug += mediumChar_len;
             printf ("\n");
         }
         printf ("\n");
@@ -4117,16 +4254,16 @@ algn_fill_3dMtx ( const dyn_char_p       lChar
 
 
     /****************************** Fill plane by plane ******************************/
-    curCostColPtr  = tmp_curCostColPtr + (sCharLen * mCharLen);
-    curDirColPtr   = tmp_curDirColPtr  + (sCharLen * mCharLen);
+    curCostColPtr  = tmp_curCostColPtr + (lesserChar_len * mediumChar_len);
+    curDirColPtr   = tmp_curDirColPtr  + (lesserChar_len * mediumChar_len);
     diag_m         = tmp_curCostColPtr;
-    upper_m        = tmp_curCostColPtr + sCharLen;
-    prevCostColPtr = curCostColPtr     - sCharLen;
+    upper_m        = tmp_curCostColPtr + lesserChar_len;
+    prevCostColPtr = curCostColPtr     - lesserChar_len;
 
-    for (i = 1; i < lCharLen; i++) { /* For each plane */
+    for (i = 1; i < longerChar_len; i++) { /* For each plane */
         int lChar_curElmt; /* The element in lChar represented by this plane */
         lChar_curElmt  = lCharPtr[i];
-        lChar_gap_sChar = cm_get_row_precalc_3d (precalcMtx, sCharLen, alphSize, lChar_curElmt, gap_char);
+        lChar_gap_sChar = cm_get_row_precalc_3d (algn_precalcMtx, lesserChar_len, alphSize, lChar_curElmt, gap_char);
         /* Filling the first row of the current plane. */
 
         /* This requires only three operations, equivalent to the
@@ -4136,7 +4273,7 @@ algn_fill_3dMtx ( const dyn_char_p       lChar
         if (DEBUG_COST_M) {
             printf ("%-6d", curCostColPtr[0]);
         }
-        for (j = 1, k = 0; j < sCharLen; j++, k++) {
+        for (j = 1, k = 0; j < lesserChar_len; j++, k++) {
             curCostColPtr[j] = diag_m[j] + lChar_gap_sChar[0];
             curDirColPtr[j]  = A_G_G;
             tmp              = diag_m[k] + lChar_gap_sChar[j];
@@ -4159,26 +4296,27 @@ algn_fill_3dMtx ( const dyn_char_p       lChar
             printf ("\n");
         }
         /* Now we should move to the next row to continue filling the matrix */
-        curDirColPtr  += sCharLen;
-        curCostColPtr += sCharLen;
+        curDirColPtr  += lesserChar_len;
+        curCostColPtr += lesserChar_len;
 
         /* Now, go on with the rest of the rows. On each row, curCostColPtr is the row
          * being constructed, prevCostColPtr is the previous row in the same horizontal
          * plane, upper_m is the previous row in the vertical plane and diag_m
          * is the row in the previous planes (vertical and horizontal).
          */
-        for (j = 1; j < mCharLen; j++,
-                                 diag_m         += sCharLen,
-                                 upper_m        += sCharLen,
-                                 prevCostColPtr += sCharLen,
-                                 curCostColPtr  += sCharLen,
-                                 curDirColPtr   += sCharLen ) {
+        for (j = 1; j < mediumChar_len; j++,
+                                 diag_m         += lesserChar_len,
+                                 upper_m        += lesserChar_len,
+                                 prevCostColPtr += lesserChar_len,
+                                 curCostColPtr  += lesserChar_len,
+                                 curDirColPtr   += lesserChar_len
+            ) {
             /* We first set the vectors that are needed */
             int mChar_it;
             mChar_it          = mCharPtr[j];
-            gap_mChar_sChar   = cm_get_row_precalc_3d (precalcMtx, sCharLen, alphSize, gap_char,      mChar_it);
-            lChar_mChar_sChar = cm_get_row_precalc_3d (precalcMtx, sCharLen, alphSize, lChar_curElmt, mChar_it);
-            fill_parallel( sCharLen
+            gap_mChar_sChar   = cm_get_row_precalc_3d (algn_precalcMtx, lesserChar_len, alphSize, gap_char,      mChar_it);
+            lChar_mChar_sChar = cm_get_row_precalc_3d (algn_precalcMtx, lesserChar_len, alphSize, lChar_curElmt, mChar_it);
+            fill_parallel( lesserChar_len
                          , prevCostColPtr
                          , upper_m
                          , diag_m
@@ -4189,7 +4327,7 @@ algn_fill_3dMtx ( const dyn_char_p       lChar
                          , curDirColPtr
                          );
 
-            fill_moved ( sCharLen
+            fill_moved ( lesserChar_len
                        , prevCostColPtr - 1
                        , upper_m - 1
                        , diag_m - 1
@@ -4205,7 +4343,7 @@ algn_fill_3dMtx ( const dyn_char_p       lChar
             if (DEBUG_COST_M) {
                 printf ("%-6d", curCostColPtr[0]);
             }
-            for (k = 1; k < sCharLen; k++) {
+            for (k = 1; k < lesserChar_len; k++) {
                 tmp = curCostColPtr[k - 1] + gap_gap_sChar[k];
 
                 if (tmp < curCostColPtr[k]) {
@@ -4238,7 +4376,7 @@ algn_fill_3dMtx ( const dyn_char_p       lChar
  * analysis procedures in the rest of POY.
  * */
 // inline int
-// algn_fill_3dMtx_ukk (const dyn_char_p char1, const dyn_char_p char2, const int *precalcMtx,
+// algn_fill_3dMtx_ukk (const dyn_char_p char1, const dyn_char_p char2, const int *algn_precalcMtx,
 //                     int char1_len, int char2_len, int char3_len, int *curRow, DIR_MTX_ARROW_t *dirMtx, int uk,
 //                     int gap_char, int alphSize, int w, int d, int h) {
 //     elem_t *char1Ptr, *char2Ptr;
@@ -4277,7 +4415,7 @@ algn_fill_3dMtx ( const dyn_char_p       lChar
 //         /* Fill first row based on precalculated row.
 //          * The first row consists of aligning char3 with gaps, we have that
 //          * precalculated, so all we really need is to add up that vector.*/
-//         gap_gap_char3 = cm_get_row_precalc_3d (precalcMtx, char3_len, alphSize, gap_char, gap_char);
+//         gap_gap_char3 = cm_get_row_precalc_3d (algn_precalcMtx, char3_len, alphSize, gap_char, gap_char);
 //         for (i = 1; i < char3_len; i++) {
 //             curRow[i] = curRow[i - 1] + gap_gap_char3[i];
 //             dirMtx[i] = G_G_A;
@@ -4291,7 +4429,7 @@ algn_fill_3dMtx ( const dyn_char_p       lChar
 //          * In this plane filling, all we really need to deal with is aligning char2
 //          * and char3, as the first plane holds the inital gap of char1. */
 //         for (i = 1; i < char2_len; i++, prev_m += char3_len, curRow += char3_len, dirMtx += char3_len) {
-//             gap_char2_char3 = cm_get_row_precalc_3d (precalcMtx, char3_len, alphSize, gap_char, char2Ptr[i]);
+//             gap_char2_char3 = cm_get_row_precalc_3d (algn_precalcMtx, char3_len, alphSize, gap_char, char2Ptr[i]);
 
 //             /** Fill the first cell with the cost of extending the gap from the
 //              * previous row */
@@ -4343,7 +4481,7 @@ algn_fill_3dMtx ( const dyn_char_p       lChar
 //     for (i = 1; i < char1_len; i++) { /* For each plane */
 //         int char1_curElmt; /* The element in char1 represented by this plane */
 //         char1_curElmt = char1Ptr[i];
-//         char1_gap_char3 = cm_get_row_precalc_3d (precalcMtx, char3_len, alphSize, char1_curElmt, gap_char);
+//         char1_gap_char3 = cm_get_row_precalc_3d (algn_precalcMtx, char3_len, alphSize, char1_curElmt, gap_char);
 //         /* Filling the first row of the current plane. */
 //         {
 //             /* This requires only three operations, equivalent to the
@@ -4389,8 +4527,8 @@ algn_fill_3dMtx ( const dyn_char_p       lChar
 //             /* We first set the vectors that are needed */
 //             int char2_it;
 //             char2_it = char2Ptr[j];
-//             gap_char2_char3 = cm_get_row_precalc_3d (precalcMtx, char3_len, alphSize, gap_char, char2_it);
-//             char1_char2_char3 = cm_get_row_precalc_3d (precalcMtx, char3_len, alphSize, char1_curElmt, char2_it);
+//             gap_char2_char3 = cm_get_row_precalc_3d (algn_precalcMtx, char3_len, alphSize, gap_char, char2_it);
+//             char1_char2_char3 = cm_get_row_precalc_3d (algn_precalcMtx, char3_len, alphSize, char1_curElmt, char2_it);
 //             fill_parallel (char3_len, prev_m, upper_m, diag_m, char1_gap_char3[0], gap_char2_char3[0],
 //                            char1_char2_char3[0], curRow, dirMtx);
 //             fill_moved (char3_len, prev_m - 1, upper_m - 1, diag_m - 1, char1_gap_char3,
@@ -4424,44 +4562,44 @@ algn_fill_3dMtx ( const dyn_char_p       lChar
 /** [algn_nw_limit_2d performs a pairwise
  *  alignment of the subcharacters of char1 and char2 starting in position st_char1
  *  and st_char2, respectively, with length len_char1 and len_char2 using the
- *  transformation cost matrix cstMtx and the alignment matrices nw_mtxs.
+ *  transformation cost matrix cstMtx and the alignment matrices algn_mtxs.
  */
 /** TODO: st_char1 and st_char2 are unused??? Also, limit defined here seems to be defined in character.ml but
  *        never used. Its only call traces back to algn_CAML_limit_2, which, in turn, seems never to be called?
  */
 static inline int
-algn_nw_limit_2d ( const dyn_char_p shorterChar
-                 , const dyn_char_p longerChar
-                 , const cost_matrices_2d_p costMatrix
-                 , nw_matrices_p nw_mtxs
-                 , int deltawh
-                 , int len_shorterChar
-                 , int longChar_len
+algn_nw_limit_2d ( const dyn_char_p            shorterChar
+                 , const dyn_char_p            longerChar
+                 , const cost_matrices_2d_t   *costMatrix
+                 ,       alignment_matrices_t *algn_mtxs
+                 ,       size_t                deltawh
+                 ,       size_t                len_shorterChar
+                 ,       size_t                longerChar_len
                  )
 {
     // printf("algn_nw_limit_2d %d\n", deltawh);
     // fflush(stdout);
 
 //    const elem_t *slongerChar, *sshorterChar;
-    int *curRow,
-        *precalcMtx;
+    unsigned int *curRow,
+                 *algn_precalcMtx;
 
     DIR_MTX_ARROW_t  *dirMtx;
 
 //    slongerChar  = longerChar->char_begin;
 //    sshorterChar = shorterChar->char_begin;
-    curRow      = nw_mtxs->nw_costMtx;
-    dirMtx      = nw_mtxs->nw_dirMtx;
+    curRow      = algn_mtxs->algn_costMtx;
+    dirMtx      = algn_mtxs->algn_dirMtx;
 
     // printf("before pre-calc \n");
     // fflush(stdout);
-    precalcMtx = nw_mtxs->precalcMtx;
+    algn_precalcMtx = algn_mtxs->algn_precalcMtx;
     // printf("after  pre-calc \n");
     // fflush(stdout);
 
     // printf("before pre-calc alignment\n");
     // fflush(stdout);
-    cm_precalc_4algn (costMatrix, nw_mtxs, shorterChar); // returns precalculated cost matrix (in matrices) computed using character from shorterChar.
+    cm_precalc_4algn (costMatrix, algn_mtxs, shorterChar); // returns precalculated cost matrix (in matrices) computed using character from shorterChar.
                                                // shorterChar bases will be column heads of that matrix
     //printf("after  pre-calc alignment\n");
     //fflush(stdout);
@@ -4469,14 +4607,14 @@ algn_nw_limit_2d ( const dyn_char_p shorterChar
     // cost_model_type is 1 for affine, 0 for non-affine
     if (costMatrix->cost_model_type) {
         return algn_fill_plane_2_affine ( longerChar
-                                        , precalcMtx
-                                        , longChar_len
+                                        , algn_precalcMtx
+                                        , longerChar_len
                                         , len_shorterChar
                                         , curRow
                                         , dirMtx
                                         , costMatrix
                                         , 50
-                                        , (longChar_len - len_shorterChar) + 50
+                                        , (longerChar_len - len_shorterChar) + 50
                                         , deltawh
                                         , curRow + (2 * len_shorterChar)
                                         , curRow + (4 * len_shorterChar)
@@ -4485,14 +4623,14 @@ algn_nw_limit_2d ( const dyn_char_p shorterChar
                 // starting value for the matrix width/height
     } else {
         return algn_fill_plane_2 ( longerChar
-                                 , precalcMtx
-                                 , longChar_len
+                                 , algn_precalcMtx
+                                 , longerChar_len
                                  , len_shorterChar
                                  , curRow
                                  , dirMtx
                                  , costMatrix
                                  , 50
-                                 , (longChar_len - len_shorterChar) + 50
+                                 , (longerChar_len - len_shorterChar) + 50
                                  , deltawh
                                  );
     }
@@ -4502,11 +4640,11 @@ algn_nw_limit_2d ( const dyn_char_p shorterChar
  *  both seem to be doing the same thing
  */
 /** second character must be longer!!! */
-int
+unsigned int
 algn_nw_2d ( const dyn_char_p shorterChar
            , const dyn_char_p longerChar
-           , const cost_matrices_2d_p costMatrix
-           , nw_matrices_p nw_mtxs
+           , const cost_matrices_2d_t *costMatrix
+           , alignment_matrices_t *algn_mtxs
            , int deltawh )
 {
     // deltawh is the size of the direction matrix, and was determined by the following algorithm:
@@ -4531,70 +4669,74 @@ algn_nw_2d ( const dyn_char_p shorterChar
         dyn_char_print(longerChar);
         dyn_char_print(shorterChar);
         printf("second character\n");
-        print_matrices(nw_mtxs, costMatrix->costMatrixDimension);
+        algn_matx_print(algn_mtxs, costMatrix->costMatrixDimension);
     }
 
 
-    int longChar_len  = longerChar->len,
+    int longerChar_len  = longerChar->len,
         shorterChar_len = shorterChar->len;
 
-    assert (longChar_len >= shorterChar_len);
+    assert (longerChar_len >= shorterChar_len);
     return algn_nw_limit_2d ( shorterChar
                             , longerChar
                             , costMatrix
-                            , nw_mtxs
+                            , algn_mtxs
                             , deltawh
                             , shorterChar_len
-                            , longChar_len
+                            , longerChar_len
                             );
 }
 
 // Unused
 // TODO: clean up arguments and then costMatrixVals variable name
-int
-algn_nw_3d ( const dyn_char_p char1
-           , const dyn_char_p char2
-           , const dyn_char_p char3
-           , const cost_matrices_3d_p costMatrix
-           , nw_matrices_p alignment_matrices
+unsigned int
+algn_nw_3d ( const dyn_char_p            char1
+           , const dyn_char_p            char2
+           , const dyn_char_p            char3
+           , const cost_matrices_3d_t   *costMatrix
+           ,       alignment_matrices_t *alignment_matrices
         // , int deltawh
            )
 {
     //const elem_t *schar1, *schar2, *schar3;
-    int *costMatrixVals,
-        *precalcMtx,
-         char1_len,
-         char2_len,
-         char3_len,
-         gap_char,
-         res;
+    unsigned int *costMatrixVals,
+                 *algn_precalcMtx,
+                  res;
+
+    size_t char1_len,
+           char2_len,
+           char3_len;
+
+    elem_t gap_char;
+
     DIR_MTX_ARROW_t *dirMtx;
    /*
     schar1 = char1->char_begin;
     schar2 = char2->char_begin;
     schar3 = char3->char_begin;
     */
-    mat_setup_size ( alignment_matrices
-                   , char2->len
-                   , char3->len
-                   , char1->len
-                   , costMatrix->costMatrixDimension );
+    algn_mtx_setup_size ( alignment_matrices
+                        , char2->len
+                        , char3->len
+                        , char1->len
+                        , costMatrix->costMatrixDimension
+                        );
 
-    costMatrixVals = alignment_matrices->nw_costMtx3d_d;
-    dirMtx         = alignment_matrices->nw_dirMtx3d_d;
-    precalcMtx     = alignment_matrices->precalcMtx;
-    char1_len      = char1->len;
-    char2_len      = char2->len;
-    char3_len      = char3->len;
-    gap_char       = costMatrix->gap_char;
+    costMatrixVals  = alignment_matrices->algn_costMtx3d;
+    dirMtx          = alignment_matrices->algn_dirMtx3d;
+    algn_precalcMtx = alignment_matrices->algn_precalcMtx;
+    char1_len       = char1->len;
+    char2_len       = char2->len;
+    char3_len       = char3->len;
+    gap_char        = costMatrix->gap_char;
 
-    cm_precalc_4algn_3d (costMatrix, precalcMtx, char3);
+    cm_precalc_4algn_3d (costMatrix, algn_precalcMtx, char3);
 
     /* TODO Check how is this ukkonen barrier affecting this fill 3dMtx, the deltawh
      * was called uk */
     res = algn_fill_3dMtx ( char1
                           , char2
-                          , precalcMtx
+                          , algn_precalcMtx
                           , char1_len
                           , char2_len
                           , char3_len
@@ -4610,8 +4752,8 @@ algn_nw_3d ( const dyn_char_p char1
 int
 algn_calculate_from_2_aligned ( dyn_char_p          char1
                               , dyn_char_p          char2
-                              , cost_matrices_2d_p  costMatrix
-                              , int                *matrix
+                              , cost_matrices_2d_t *costMatrix
+                              , unsigned int       *matrix
                               )
 {
     // printf("algn_calculate_from_2_aligned\n");
@@ -4619,9 +4761,9 @@ algn_calculate_from_2_aligned ( dyn_char_p          char1
            gap_row = 0;
     int    res     = 0;
 
+    unsigned int gap_opening = costMatrix->gap_open_cost;
 
     elem_t gap_char    = costMatrix->gap_char,
-           gap_opening = costMatrix->gap_open,
            char1_begin,
            char2_begin;
 
@@ -4701,32 +4843,32 @@ algn_calculate_from_2_aligned ( dyn_char_p          char1
                 }
             }
         }
-        res += cm_calc_cost ( matrix
-                            , char1->char_begin[i]
-                            , char2->char_begin[i]
-                            , costMatrix->costMatrixDimension
-                            );
+        res += cm_calc_cost_2d ( matrix
+                               , char1->char_begin[i]
+                               , char2->char_begin[i]
+                               , costMatrix->costMatrixDimension
+                               );
     }
     return (res);
 }
 
 /*
 int
-algn_worst_2 (dyn_char_p char1, dyn_char_p char2, cost_matrices_2d_p c) {
+algn_worst_2 (dyn_char_p char1, dyn_char_p char2, cost_matrices_2d_t *c) {
     return (algn_calculate_from_2_aligned (char1, char2, c, c->worst));
 }
 
 int
-algn_verify_2 (dyn_char_p char1, dyn_char_p char2, cost_matrices_2d_p c) {
+algn_verify_2 (dyn_char_p char1, dyn_char_p char2, cost_matrices_2d_t *c) {
     return (algn_calculate_from_2_aligned (char1, char2, c, c->cost));
 }
 */
 
 void
 algn_print_bcktrck_2d (const dyn_char_p char1, const dyn_char_p char2,
-              const nw_matrices_p alignmentMatrices) {
+              const alignment_matrices_t *alignmentMatrices) {
     size_t i, j;
-    DIR_MTX_ARROW_t *direction_matrix = alignmentMatrices->nw_dirMtx;
+    DIR_MTX_ARROW_t *direction_matrix = alignmentMatrices->algn_dirMtx;
     printf ("\n");
     for (i = 0; i < char1->len; i++) {
         for (j = 0; j < char2->len; j++) {
@@ -4745,7 +4887,7 @@ algn_print_bcktrck_2d (const dyn_char_p char1, const dyn_char_p char2,
 void
 algn_print_dynmtrx_2d ( const dyn_char_p    char1
                       , const dyn_char_p    char2
-                      ,       nw_matrices_p alignment_matrices
+                      , const alignment_matrices_t *alignment_matrices
                       )
 {
 
@@ -4763,10 +4905,10 @@ algn_print_dynmtrx_2d ( const dyn_char_p    char1
   const int n = longerCharLen + 1;
   const int m = lesserCharLen + 1;
 
-//  int *nw_costMatrix;
-//  nw_costMatrix = alignment_matrices->nw_costMtx;
+//  int *algn_costMatrix;
+//  algn_costMatrix = alignment_matrices->algn_costMtx;
 
-  DIR_MTX_ARROW_t *nw_dirMtx  = alignment_matrices->nw_dirMtx;
+  DIR_MTX_ARROW_t *algn_dirMtx  = alignment_matrices->algn_dirMtx;
 
   printf ("Character 1 length: %d\n", charLen1);
   printf ("Character 2 length: %d\n", charLen2);
@@ -4818,7 +4960,7 @@ algn_print_dynmtrx_2d ( const dyn_char_p    char1
       // if (j == 0 && i == 0) {
       //     printf("%7d ", 0);
       // } else {
-      printf ("%7d ", nw_costMatrix[lesserCharLen * j + i]);
+      printf ("%7d ", algn_costMatrix[lesserCharLen * j + i]);
       // }
     }
     printf ("\n");
@@ -4849,7 +4991,7 @@ algn_print_dynmtrx_2d ( const dyn_char_p    char1
     else        printf (" %2d | ", lesserChar->char_begin[i]);
 
     for (j = 0; j < longerCharLen; j++) {
-      DIR_MTX_ARROW_t dirToken = nw_dirMtx[lesserCharLen * j + i];
+      DIR_MTX_ARROW_t dirToken = algn_dirMtx[lesserCharLen * j + i];
       /*
       printf("    "); // leading pad
 
@@ -4896,8 +5038,8 @@ algn_backtrace_2d ( const dyn_char_p shorterChar
                   , const dyn_char_p longerChar
                   , dyn_char_p ret_longerChar
                   , dyn_char_p ret_shorterChar
-                  , const nw_matrices_p alignMatrix
-                  , const cost_matrices_2d_p costMatrix
+                  , const alignment_matrices_t *alignMatrix
+                  , const cost_matrices_2d_t *costMatrix
                   , int st_longerChar
                   , int st_shorterChar
                   , int swapped
@@ -4914,7 +5056,7 @@ algn_backtrace_2d ( const dyn_char_p shorterChar
     idx_longerChar                   = longerChar->len;
     idx_shorterChar                  = shorterChar->len;
     l                               = idx_longerChar * idx_shorterChar;
-    beg                             = alignMatrix->nw_dirMtx + st_shorterChar; // offset by limit into matrix
+    beg                             = alignMatrix->algn_dirMtx + st_shorterChar; // offset by limit into matrix
     // TODO: figure out wtf this means:
     /* Stitching goes to hell now
     end = beg + (idx_shorterChar * idx_longerChar) + idx_shorterChar - 1;
@@ -5210,8 +5352,8 @@ algn_backtrace_3d ( const dyn_char_p char1
                   , dyn_char_p ret_char1
                   , dyn_char_p ret_char2
                   , dyn_char_p ret_char3
-                  , const cost_matrices_3d_p costMatrix
-                  , nw_matrices_p alignment_matrices
+                  , const cost_matrices_3d_t *costMatrix
+                  , alignment_matrices_t *alignment_matrices
                   )
 {
     int len_dirMtx,
@@ -5231,7 +5373,7 @@ algn_backtrace_3d ( const dyn_char_p char1
     a_plane    = idx_char2 * idx_char3; // move one plane up (so move one down char1) TODO: check these three assertions
     a_line     = idx_char3;            // move one line over (so move one down char3)
     a_cell     = 1;                   // move over 1 (so move one down char2)
-    beg        = alignment_matrices->nw_dirMtx3d_d;
+    beg        = alignment_matrices->algn_dirMtx3d;
 
     if (DEBUG_DIR_M) {
         char *toprint;
@@ -5306,7 +5448,7 @@ algn_backtrace_3d ( const dyn_char_p char1
 void
 algn_get_median_2d_with_gaps ( dyn_char_p shorterChar
                              , dyn_char_p longerChar
-                             , cost_matrices_2d_p costMatrix
+                             , cost_matrices_2d_t *costMatrix
                              , dyn_char_p medianToReturn
                              )
 {
@@ -5327,7 +5469,7 @@ algn_get_median_2d_with_gaps ( dyn_char_p shorterChar
 void
 algn_get_median_2d_no_gaps( dyn_char_p shorterChar
                           , dyn_char_p longerChar
-                          , cost_matrices_2d_p costMatrix
+                          , cost_matrices_2d_t *costMatrix
                           , dyn_char_p sm
                           )
 {
@@ -5449,7 +5591,7 @@ algn_correct_blocks_affine ( elem_t     gap_char
 inline void
 algn_ancestor_2 ( dyn_char_p char1
                 , dyn_char_p char2
-                , cost_matrices_2d_p costMatrix
+                , cost_matrices_2d_t *costMatrix
                 , dyn_char_p medianToReturn
                 )
 {
@@ -5498,7 +5640,7 @@ void
 algn_get_medians_3d ( dyn_char_p         char1
                     , dyn_char_p         char2
                     , dyn_char_p         char3
-                    , cost_matrices_3d_p costMatrix
+                    , cost_matrices_3d_t *costMatrix
                     , dyn_char_p         ungapped_median
                     , dyn_char_p         gapped_median
                     )
@@ -5513,7 +5655,7 @@ algn_get_medians_3d ( dyn_char_p         char1
     char_end3 = char3->end;
 
     // TODO: does this for loop actually do anything?
-    for (int i = char1->len - 1; i >= 0; i--) {
+    for (int i = char1->len - 3; i >= 0; i--) {
         interim = cm_get_median_3d( costMatrix->median
                                   , char1->char_begin[i]
                                   , char2->char_begin[i]
