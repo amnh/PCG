@@ -33,12 +33,15 @@ import           Control.Evaluation
 import           Data.Bits
 import           Data.EdgeLength
 import           Data.Foldable
+import           Data.Hashable
+import           Data.Hashable.Memoize
 import           Data.IntSet               (IntSet)
 import qualified Data.IntSet        as IS
 import           Data.Key
 import           Data.List.NonEmpty        (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty as NE
 import           Data.List.Utility
+import           Data.Map                  (Map)
 import           Data.Maybe
 import           Data.MonoTraversable
 import           Data.Semigroup
@@ -46,16 +49,16 @@ import           Data.Semigroup.Foldable
 import           Prelude            hiding (zipWith)
 
 
-type SearchState = EvaluationT IO (Either TopologicalResult (PhylogeneticSolution InitialDecorationDAG))
+type SearchState = EvaluationT IO (Either TopologicalResult DecoratedCharacterResult)
 
 
-type TopologicalResult = PhylogeneticSolution (ReferenceDAG EdgeLength (Maybe String))
+type TopologicalResult = PhylogeneticSolution (ReferenceDAG () EdgeLength (Maybe String))
 
 
 type CharacterResult = PhylogeneticSolution CharacterDAG
 
 
-type DecoratedCharacterResult = PhylogeneticSolution InitialDecorationDAG
+type DecoratedCharacterResult = PhylogeneticSolution FinalDecorationDAG
 
 
 type UnRiefiedCharacterDAG =
@@ -82,19 +85,28 @@ type CharacterDAG =
          UnifiedDynamicCharacter
 
 
-type InitialDecorationDAG =
+type PostOrderDecorationDAG =
        PhylogeneticDAG2
          EdgeLength
          (Maybe String)
-         -- UnifiedContinuousCharacter
-         -- (ContinuousOptimizationDecoration ContinuousChar)
          (ContinuousPostorderDecoration  ContinuousChar)
          (FitchOptimizationDecoration   StaticCharacter)
-         -- (AdditiveOptimizationDecoration StaticCharacter)
          (AdditivePostorderDecoration   StaticCharacter)
          (SankoffOptimizationDecoration StaticCharacter)
          (SankoffOptimizationDecoration StaticCharacter)
-         -- UnifiedDynamicCharacter
+         -- (DynamicDecorationDirectOptimization DynamicChar)
+         (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
+
+
+type FinalDecorationDAG =
+       PhylogeneticDAG2
+         EdgeLength
+         (Maybe String)
+         (ContinuousOptimizationDecoration ContinuousChar)
+         (FitchOptimizationDecoration   StaticCharacter)
+         (AdditiveOptimizationDecoration StaticCharacter)
+         (SankoffOptimizationDecoration StaticCharacter)
+         (SankoffOptimizationDecoration StaticCharacter)
          -- (DynamicDecorationDirectOptimization DynamicChar)
          (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
 
@@ -129,11 +141,15 @@ type UnifiedDynamicCharacter    = Maybe (DynamicDecorationInitial DynamicChar)
 
 
 data PhylogeneticDAG e n u v w x y z
-     = PDAG (ReferenceDAG e (PhylogeneticNode n (CharacterSequence u v w x y z)))
+     = PDAG (ReferenceDAG () e (PhylogeneticNode n (CharacterSequence u v w x y z)))
 
 
 data PhylogeneticDAG2 e n u v w x y z
-     = PDAG2 (ReferenceDAG e (PhylogeneticNode2 (CharacterSequence u v w x y z) n))
+     = PDAG2 ( ReferenceDAG
+                 (Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
+                 e
+                 (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
+             )
 
 
 instance ( Show e

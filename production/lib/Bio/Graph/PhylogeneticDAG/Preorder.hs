@@ -18,30 +18,34 @@ module Bio.Graph.PhylogeneticDAG.Preorder
   ( preorderSequence'
   ) where
 
+import           Bio.Character.Decoration.Dynamic
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
 import qualified Bio.Sequence.Block as BLK
 import           Control.Arrow             ((&&&))
-import           Control.Applicative       (liftA2)
+--import           Control.Applicative       (liftA2)
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
-import           Data.Bits
+--import           Data.Bits
 import           Data.EdgeSet
 import           Data.Foldable
-import           Data.Hashable
-import           Data.Hashable.Memoize
+--import           Data.Hashable
+--import           Data.Hashable.Memoize
 import qualified Data.IntMap        as IM
 import           Data.Key
 import           Data.List.NonEmpty        (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty as NE
 import           Data.MonoTraversable
 import           Data.Ord                  (comparing)
-import           Data.Semigroup.Foldable
+import           Data.Semigroup
+--import           Data.Semigroup.Foldable
 import qualified Data.Vector        as V
 import           Prelude            hiding (zip, zipWith)
 
+import Debug.Trace
+  
 
 type BlockTopologies = NonEmpty (EdgeSet (Int, Int))
 
@@ -52,9 +56,9 @@ type BlockTopologies = NonEmpty (EdgeSet (Int, Int))
 -- The logic function takes a current node decoration,
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
-preorderSequence' :: ( Eq z, Eq z', Hashable z, Hashable z'
-                     , HasBlockCost u  v  w  x  y  z  Word Double
-                     , HasBlockCost u' v' w' x' y' z' Word Double
+preorderSequence' :: (-- Eq z, Eq z', Hashable z, Hashable z'
+                       HasBlockCost u  v  w  x  y  z  Word Double
+--                     , HasBlockCost u' v' w' x' y' z' Word Double
                      )
                   => (u -> [(Word, u')] -> u')
                   -> (v -> [(Word, v')] -> v')
@@ -66,8 +70,7 @@ preorderSequence' :: ( Eq z, Eq z', Hashable z, Hashable z'
                   -> PhylogeneticDAG2 e n u' v' w' x' y' z'
 preorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
   where
-    f6' = memoize2 f6
-    newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> graphData
+    newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> defaultGraphMetadata . graphData
     dagSize       = length $ references dag
     newReferences = V.generate dagSize g
       where
@@ -84,8 +87,12 @@ preorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
             )
           where
             (inheritedToplogies, newResolution)
-              | i `elem` rootRefs dag = (sequenceOfBlockMinimumTopologies, mockResInfo datumResolutions $ computeOnApplicableResolution f1 f2 f3 f4 f5 f6 sequenceOfBlockMinimumTopologies datumResolutions [])
-              | otherwise             = (               parentalToplogies, mockResInfo datumResolutions $ computeOnApplicableResolution f1 f2 f3 f4 f5 f6                parentalToplogies datumResolutions parentalResolutions)
+              | i `elem` rootRefs dag =
+                let newSequence = computeOnApplicableResolution f1 f2 f3 f4 f5 f6 sequenceOfBlockMinimumTopologies datumResolutions []
+                in (sequenceOfBlockMinimumTopologies, mockResInfo datumResolutions newSequence)
+              | otherwise             =
+                let newSequence = computeOnApplicableResolution f1 f2 f3 f4 f5 f6 parentalToplogies datumResolutions parentalResolutions
+                in  (parentalToplogies, mockResInfo datumResolutions newSequence)
 
             -- A "sequence" of the minimum topologies that correspond to each block.
             sequenceOfBlockMinimumTopologies :: NonEmpty (EdgeSet (Int, Int))
@@ -97,10 +104,9 @@ preorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
 
                 sequenceWLOG = characterSequence . NE.head $ datumResolutions
 
-                f key block = minimumBy (comparing extractedBlockCost) datumResolutions
+                f key _block = minimumBy (comparing extractedBlockCost) datumResolutions
                   where
                     extractedBlockCost = blockCost . (! key) . toBlocks . characterSequence
-
 
 
 --            completeCoverage = (completeLeafSet ==) . (completeLeafSet .&.) . leafSetRepresentation
@@ -118,7 +124,7 @@ preorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
 
 
             node            = references dag ! i
-            childIndices    = IM.keys $ childRefs node
+--            childIndices    = IM.keys $ childRefs node
             parentIndices   = otoList $ parentRefs node
             -- In sparsely connected graphs (like ours) this will be effectively constant.
             childPosition j = toEnum . length . takeWhile (/=i) . IM.keys . childRefs $ references dag ! j
@@ -152,17 +158,31 @@ computeOnApplicableResolution
   -> ResolutionCache (CharacterSequence u v w x y z)
   -> [(Word, ResolutionInformation (CharacterSequence u' v' w' x' y' z'))]
   -> CharacterSequence u' v' w' x' y' z'
-computeOnApplicableResolution f1 f2 f3 f4 f5 f6 topologies currentResolutions parentalResolutions = fromBlocks $ mapWithKey g topologies
+computeOnApplicableResolution f1 f2 f3 f4 f5 f6 topologies currentResolutions parentalResolutions =
+    fromBlocks $ mapWithKey g topologies
   where
     g key es = BLK.hexZipWith f1 f2 f3 f4 f5 f6 currentBlock parentBlocks
       where
         getBlock = (! key) . toBlocks . characterSequence
         currentBlock =
             case selectApplicableResolutions es currentResolutions of
-              []  -> error "No applicable resolution found on pre-order traversal"
+              []  -> error $ unlines
+                       [ "No applicable resolution found on pre-order traversal"
+                       , "On block index: " <> show key
+                       , "Input set:  " <> show es
+                       , "Local sets: " <> show (subtreeEdgeSet <$> currentResolutions)
+                       ]
               [x] -> getBlock x
-              _   -> error "Multiple applicable resolutions found on pre-order traversal"
-
+              xs  -> let x = maximumBy (comparing (length . subtreeEdgeSet)) xs
+                     in getBlock x
+{-
+                    error $ unlines
+                      [ "Multiple applicable resolutions found on pre-order traversal"
+                      , "On block index: " <> show key
+                      , show es
+                      , show $ subtreeEdgeSet <$> xs
+                      ]
+-}
         parentBlocks =
             case second getBlock <$> parentalResolutions of
               []   -> let c = const []
@@ -175,3 +195,19 @@ computeOnApplicableResolution f1 f2 f3 f4 f5 f6 topologies currentResolutions pa
 
 selectApplicableResolutions :: EdgeSet (Int, Int) -> ResolutionCache s -> [ResolutionInformation s]
 selectApplicableResolutions topology = filter (\x -> subtreeEdgeSet x `isSubsetOf` topology) . toList 
+
+
+-- |
+-- Applies a traversal logic function over a 'ReferenceDAG' in a /pre-order/ manner.
+--
+-- The logic function takes a current node decoration,
+-- a list of parent node decorations with the logic function already applied,
+-- and returns the new decoration for the current node.
+preorderFromRooting
+  :: ( HasBlockCost u  v  w  x  y  z  Word Double
+     , HasTraversalFoci z TraversalFoci
+     )
+  => (z -> [(Word, z')] -> z')
+  -> PhylogeneticDAG2 e n u  v  w  x  y  z
+  -> PhylogeneticDAG2 e n u' v' w' x' y' z'
+preorderFromRooting f (PDAG2 dag) = PDAG2 $ undefined

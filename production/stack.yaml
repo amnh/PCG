@@ -22,7 +22,7 @@ packages:
  - location:  https://github.com/haskell/deepseq/archive/0b22c98.zip
    extra-dep: true
 
-resolver: lts-8.13
+resolver: lts-8.14
 
 setup-info:
   ghc:
@@ -41,4 +41,3 @@ setup-info:
         url: https://downloads.haskell.org/~ghc/8.2.1-rc2/ghc-8.2.0.20170507-x86_64-unknown-mingw32.tar.xz
         content-length: 177295548
         sha1: 87646ca3a89278775ceb7be429faafac3cf738d8
-

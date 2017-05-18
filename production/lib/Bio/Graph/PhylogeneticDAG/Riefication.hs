@@ -53,7 +53,7 @@ riefiedToCharacterDAG (PDAG dag) = PDAG2
     RefDAG
     { references = newRefs
     , rootRefs   = rootRefs  dag
-    , graphData  = graphData dag
+    , graphData  = defaultGraphMetadata $ graphData dag
     }
   where
     dagSize   = length $ references dag

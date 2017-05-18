@@ -93,7 +93,10 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
     minimalCostSequence = sequenceOfEdgesWithMinimalCost
     
     -- Step 4: Update the dynamic character decoration's cost & add an edge reference.
-    updatedDag = inputDag { references = refVec V.// toList modifiedRootRefs }
+    updatedDag = inputDag
+        { references = refVec V.// toList modifiedRootRefs
+        , graphData  = (graphData inputDag) { graphMetadata = edgeCostMapping }
+        }
 
 
     -- These are the edges of the DAG which might, not including the current root edge,

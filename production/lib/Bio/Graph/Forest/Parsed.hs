@@ -48,7 +48,7 @@ import           Prelude                           hiding (lookup)
 
 -- |
 -- The type of possibly present decorations on a tree from a parsed file.
-type ParserTree   = ReferenceDAG EdgeLength (Maybe String)
+type ParserTree   = ReferenceDAG () EdgeLength (Maybe String)
 
 
 -- |
