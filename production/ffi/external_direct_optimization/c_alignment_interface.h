@@ -5,7 +5,7 @@
 #include "c_code_alloc_setup.h"
 #include "debug_constants.h"
 #include "costMatrix.h"
-#include "nwMatrices.h"
+#include "alignmentMatrices.h"
 #include "alignCharacters.h"
 
 /** Input/output structure for Haskell FFI.
@@ -59,37 +59,37 @@ void dynCharToAlignIO(alignIO_p output, dyn_char_p input);
  *
  *  In the last two cases the union will replace the gapped character placeholder.
  */
-int align2d( const alignIO_p          char1
-           , const alignIO_p          char2
-           , const alignIO_p          gappedOutputChar
-           , const alignIO_p          ungappedOutputChar
-           // ,       alignIO_p          unionOutputChar
-           , const cost_matrices_2d_p costMtx2d
-           ,       int                getUngapped
-           ,       int                getGapped
-           ,       int                getUnion
+int align2d( const alignIO_p           char1
+           , const alignIO_p           char2
+           , const alignIO_p           gappedOutputChar
+           , const alignIO_p           ungappedOutputChar
+           // ,       alignIO_p           unionOutputChar
+           ,       cost_matrices_2d_t *costMtx2d
+           ,       int                 getUngapped
+           ,       int                 getGapped
+           ,       int                 getUnion
            );
 
 /** As align2d, but affine */
-int align2dAffine( const alignIO_p          char1
-                 , const alignIO_p          char2
-                 , const alignIO_p          gappedOutputChar
-                 , const alignIO_p          ungappedOutputChar
-                 // ,       alignIO_p          unionOutputChar
-                 , const cost_matrices_2d_p costMtx2d
-                 ,       int                doMedians
+int align2dAffine( const alignIO_p           char1
+                 , const alignIO_p           char2
+                 , const alignIO_p           gappedOutputChar
+                 , const alignIO_p           ungappedOutputChar
+                 // ,       alignIO_p           unionOutputChar
+                 ,       cost_matrices_2d_t *costMtx2d
+                 ,       int                 doMedians
                  );
 
 /** Aligns three characters using non-affine algorithm.
  *  Takes in thee arrays of integer values,.
  */
-int align3d( const alignIO_p          inputChar1_aio
-           , const alignIO_p          inputChar2_aio
-           , const alignIO_p          inputChar3_aio
-           , const alignIO_p          ungappedOutput_aio
-           , const alignIO_p          gappedOutput_aio
-           // , const nw_matrices_p      algn_mtxs3d
-           , const cost_matrices_3d_p costMtx3d
+int align3d( const alignIO_p           inputChar1_aio
+           , const alignIO_p           inputChar2_aio
+           , const alignIO_p           inputChar3_aio
+           , const alignIO_p           ungappedOutput_aio
+           , const alignIO_p           gappedOutput_aio
+           // , const nw_matrices_p       algn_mtxs3d
+           ,       cost_matrices_3d_t *costMtx3d
            );
 
 #endif // C_ALIGNMENT_INTERFACE_H

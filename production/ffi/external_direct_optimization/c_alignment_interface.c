@@ -8,7 +8,7 @@
 #include "c_code_alloc_setup.h"
 #include "debug_constants.h"
 // #include "costMatrix.h"
-#include "nwMatrices.h"
+#include "alignmentMatrices.h"
 //#include "ukkCheckp.h"
 #include "ukkCommon.h"
 
@@ -156,15 +156,15 @@ void freeAlignIO(alignIO_p toFree) {
  *
  *  In the last two cases the union will replace the gapped character placeholder.
  */
-int align2d( alignIO_p inputChar1_aio
-           , alignIO_p inputChar2_aio
-           , alignIO_p gappedOutput_aio
-           , alignIO_p ungappedOutput_aio
-         // , alignIO_p unionOutput_aio
-           , cost_matrices_2d_p costMtx2d
-           , int getUngapped
-           , int getGapped
-           , int getUnion
+int align2d( const alignIO_p           inputChar1_aio
+           , const alignIO_p           inputChar2_aio
+           , const alignIO_p           gappedOutput_aio
+           , const alignIO_p           ungappedOutput_aio
+         // , alignIO_p           unionOutput_aio
+           ,       cost_matrices_2d_t *costMtx2d
+           ,       int                 getUngapped
+           ,       int                 getGapped
+           ,       int                 getUnion
            )
 {
 
@@ -233,17 +233,18 @@ int align2d( alignIO_p inputChar1_aio
     }
     //printf("Before NW init.\n");
     //fflush(stdout);
-    nw_matrices_p nw_mtxs2d = malloc( sizeof(nwMatrices_t) );
-    initializeNWMtx(nw_mtxs2d, longChar->len, shortChar->len, 0, costMtx2d->costMatrixDimension);
+    alignment_matrices_t *algnMtxs2d = malloc( sizeof(alignment_matrices_t) );
+    initializeAlignmentMtx(algnMtxs2d, longChar->len, shortChar->len, 0, costMtx2d->costMatrixDimension);
     //printf("After  NW init.\n");
     //fflush(stdout);
 
     // deltawh is for use in Ukonnen, it gives the current necessary width of the Ukk matrix.
     // The following calculation to compute deltawh, which increases the matrix height or width in algn_nw_2d,
     // was pulled from POY ML code.
-    int deltawh = 0;
-    int diff = longChar->len - shortChar->len;
+    int deltawh     = 0;
+    int diff        = longChar->len - shortChar->len;
     int lower_limit = .1 * longChar->len;
+
     if (deltawh) {
         deltawh = diff < lower_limit ? lower_limit : deltawh;
     } else {
@@ -253,13 +254,13 @@ int align2d( alignIO_p inputChar1_aio
     //printf("%d, %zu, %d, %zu\n", shortCharLen, shortChar->len, longCharLen, longChar->len);
     //printf("Before align cost.\n");
     //fflush(stdout);
-    int algnCost = algn_nw_2d( shortChar, longChar, costMtx2d, nw_mtxs2d, deltawh );
+    int algnCost = algn_nw_2d( shortChar, longChar, costMtx2d, algnMtxs2d, deltawh );
 
     //printf("After align cost.\n");
     //fflush(stdout);
     if (getGapped || getUngapped || getUnion) {
         //printf("Before backtrace.\n"), fflush(stdout);
-        algn_backtrace_2d (shortChar, longChar, retShortChar, retLongChar, nw_mtxs2d, costMtx2d, 0, 0, swapped);
+        algn_backtrace_2d (shortChar, longChar, retShortChar, retLongChar, algnMtxs2d, costMtx2d, 0, 0, swapped);
         // printf("After  backtrace.\n"), fflush(stdout);
         // dyn_char_print(retShortChar);
         // dyn_char_print(retLongChar);
@@ -335,7 +336,7 @@ int align2d( alignIO_p inputChar1_aio
 
 
     //freeCostMtx(costMtx2d, 1);  // 1 is 2d
-    freeNWMtx(nw_mtxs2d);
+    freeNWMtx(algnMtxs2d);
 
     freeChar(retLongChar);
     freeChar(retShortChar);
@@ -345,13 +346,13 @@ int align2d( alignIO_p inputChar1_aio
 }
 
 /** As align2d, but affine */
-int align2dAffine( alignIO_p inputChar1_aio
-                 , alignIO_p inputChar2_aio
-                 , alignIO_p gappedOutput_aio
-                 , alignIO_p ungappedOutput_aio
+int align2dAffine( const alignIO_p           inputChar1_aio
+                 , const alignIO_p           inputChar2_aio
+                 , const alignIO_p           gappedOutput_aio
+                 , const alignIO_p           ungappedOutput_aio
 //                 , alignIO_p unionOutput_aio
-                 , cost_matrices_2d_p costMtx2d_affine
-                 , int getMedians
+                 ,       cost_matrices_2d_t *costMtx2d_affine
+                 ,       int                 getMedians
                  )
 {
 
@@ -421,29 +422,29 @@ int align2dAffine( alignIO_p inputChar1_aio
 
     // TODO: document these variables
     // int *matrix;                        //
-    int *close_block_diagonal;          //
-    int *extend_block_diagonal;         //
-    int *extend_vertical;               //
-    int *extend_horizontal;             //
-    int *final_cost_matrix;             //
-    int *precalcMtx;                    //
-    int *matrix_2d;                     //
-    int *gap_open_prec;                 // precalculated gap opening value (top row of nw matrix)
-    int *s_horizontal_gap_extension;    //
-    int  lenLongerChar;                 //
+    unsigned int *close_block_diagonal;       //
+    unsigned int *extend_block_diagonal;      //
+    unsigned int *extend_vertical;            //
+    unsigned int *extend_horizontal;          //
+    unsigned int *final_cost_matrix;          //
+    unsigned int *precalcMtx;                 //
+    unsigned int *matrix_2d;                  //
+    unsigned int *gap_open_prec;              // precalculated gap opening value (top row of nw matrix)
+    unsigned int *s_horizontal_gap_extension; //
+    size_t        lenLongerChar;              //
 
     DIR_MTX_ARROW_t  *direction_matrix;
 
-    nw_matrices_p nw_mtxs2dAffine = malloc( sizeof(nwMatrices_t) );
-    initializeNWMtx(nw_mtxs2dAffine, longChar->len, shortChar->len, 0, costMtx2d_affine->costMatrixDimension);
+    alignment_matrices_t *algnMtxs2dAffine = malloc( sizeof(alignment_matrices_t) );
+    initializeAlignmentMtx(algnMtxs2dAffine, longChar->len, shortChar->len, 0, costMtx2d_affine->costMatrixDimension);
     // printf("Jut initialized alignment matrices.\n");
     lenLongerChar = longChar->len;
 
-    matrix_2d  = nw_mtxs2dAffine->nw_costMtx;
-    precalcMtx = nw_mtxs2dAffine->precalcMtx;
+    matrix_2d  = algnMtxs2dAffine->algn_costMtx;
+    precalcMtx = algnMtxs2dAffine->algn_precalcMtx;
 
 
-    cm_precalc_4algn(costMtx2d_affine, nw_mtxs2dAffine, longChar);
+    cm_precalc_4algn(costMtx2d_affine, algnMtxs2dAffine, longChar);
 
 
     // here and in algn.c, "block" refers to a block of gaps, so close_block_diagonal is the cost to
@@ -453,12 +454,12 @@ int align2dAffine( alignIO_p inputChar1_aio
     /** 2 through 11 below are offsets into various "matrices" in the alignment matrices, of which there are four
         of length 2 * longer_character and two of longer_character */
     close_block_diagonal            =  matrix_2d;
-    extend_block_diagonal           = (matrix_2d + ( 2 * lenLongerChar));
-    extend_vertical                 = (matrix_2d + ( 4 * lenLongerChar));
-    extend_horizontal               = (matrix_2d + ( 6 * lenLongerChar));
-    final_cost_matrix               = (matrix_2d + ( 8 * lenLongerChar));
-    gap_open_prec                   = (matrix_2d + (10 * lenLongerChar));
-    s_horizontal_gap_extension      = (matrix_2d + (11 * lenLongerChar));
+    extend_block_diagonal           = (matrix_2d + ( lenLongerChar *  2 ));
+    extend_vertical                 = (matrix_2d + ( lenLongerChar *  4 ));
+    extend_horizontal               = (matrix_2d + ( lenLongerChar *  6 ));
+    final_cost_matrix               = (matrix_2d + ( lenLongerChar *  8 ));
+    gap_open_prec                   = (matrix_2d + ( lenLongerChar * 10 ));
+    s_horizontal_gap_extension      = (matrix_2d + ( lenLongerChar * 11 ));
 
 
     // TODO: empty_medianChar might not be necessary, as it's unused in ml code:
@@ -471,7 +472,7 @@ int align2dAffine( alignIO_p inputChar1_aio
 */
 
 
-    direction_matrix                = nw_mtxs2dAffine->nw_dirMtx;
+    direction_matrix                = algnMtxs2dAffine->algn_dirMtx;
 
     // printf("!!!!!  HERE !!!!!\n");
 
@@ -493,7 +494,7 @@ int align2dAffine( alignIO_p inputChar1_aio
     int algnCost = algn_fill_plane_2d_affine ( shortChar
                                              , longChar
                                              , shortChar->len - 1  // -1 because of a loop condition in algn_fill_plane_2d_affine
-                                             , longChar->len - 1   // -1 because of a loop condition in algn_fill_plane_2d_affine
+                                             , longChar->len  - 1  // -1 because of a loop condition in algn_fill_plane_2d_affine
                                              , final_cost_matrix
                                              , direction_matrix
                                              , costMtx2d_affine
@@ -532,7 +533,7 @@ int align2dAffine( alignIO_p inputChar1_aio
         freeChar(gappedMedianChar);
     }
 
-    freeNWMtx(nw_mtxs2dAffine);
+    freeNWMtx(algnMtxs2dAffine);
     freeChar(retLongChar);
     freeChar(retShortChar);
 
@@ -553,8 +554,8 @@ int align3d( const alignIO_p          inputChar1_aio
            , const alignIO_p          inputChar3_aio
            , const alignIO_p          ungappedOutput_aio
            , const alignIO_p          gappedOutput_aio
-           // , const nw_matrices_p      algn_mtxs3d
-           , const cost_matrices_3d_p costMtx3d
+           // , const alignment_matrices_t *     algn_mtxs3d
+           ,       cost_matrices_3d_t *costMtx3d
            )
 {
 
