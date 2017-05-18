@@ -21,6 +21,14 @@ packages:
  - '.'
  - location:  https://github.com/haskell/deepseq/archive/0b22c98.zip
    extra-dep: true
+ - location:  https://github.com/ekmett/distributive/archive/3f29260.zip
+   extra-dep: true
+ - location:  https://github.com/ekmett/distributive/archive/3f29260.zip
+   extra-dep: true
+ - location:  https://github.com/ekmett/lens/archive/7031e00.zip
+   extra-dep: true
+ - location:  https://github.com/ekmett/semigroupoids/archive/c3297f9.zip
+   extra-dep: true
 
 resolver: lts-8.14
 
