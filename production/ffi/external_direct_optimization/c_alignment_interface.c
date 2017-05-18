@@ -688,6 +688,8 @@ int align3d( const alignIO_p          inputChar1_aio
                         , ungappedMedianChar
                         , gappedMedianChar
                         );
+    dyn_char_print(ungappedMedianChar);
+    dyn_char_print(gappedMedianChar);
 
     dynCharToAlignIO(ungappedOutput_aio, ungappedMedianChar);
     dynCharToAlignIO(gappedOutput_aio,   gappedMedianChar);
