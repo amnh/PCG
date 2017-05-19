@@ -95,7 +95,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
     -- Step 4: Update the dynamic character decoration's cost & add an edge reference.
     updatedDag = inputDag
         { references = refVec V.// toList modifiedRootRefs
-        , graphData  = (graphData inputDag) { graphMetadata = edgeCostMapping }
+        , graphData  = (graphData inputDag) { graphMetadata = (edgeCostMapping, contextualNodeDatum) }
         }
 
 

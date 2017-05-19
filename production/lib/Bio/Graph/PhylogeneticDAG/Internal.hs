@@ -33,8 +33,8 @@ import           Control.Evaluation
 import           Data.Bits
 import           Data.EdgeLength
 import           Data.Foldable
-import           Data.Hashable
-import           Data.Hashable.Memoize
+--import           Data.Hashable
+--import           Data.Hashable.Memoize
 import           Data.IntSet               (IntSet)
 import qualified Data.IntSet        as IS
 import           Data.Key
@@ -46,6 +46,7 @@ import           Data.Maybe
 import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
+import           Data.Vector               (Vector)
 import           Prelude            hiding (zipWith)
 
 
@@ -146,7 +147,9 @@ data PhylogeneticDAG e n u v w x y z
 
 data PhylogeneticDAG2 e n u v w x y z
      = PDAG2 ( ReferenceDAG
-                 (Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
+                 ( Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
+                 , Vector (Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
+                 )
                  e
                  (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
              )

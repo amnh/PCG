@@ -297,7 +297,7 @@ preorderFromRooting f (PDAG2 dag) = PDAG2 $ newDAG dag
                 
             datumResolutions = mapWithKey g parentVectors
               where
-                g k v = 
+                g k v = undefined
             
 --            childResolutions :: NonEmpty [a]
 --            childResolutions = applySoftwireResolutions $ extractResolutionContext <$> childIndices
