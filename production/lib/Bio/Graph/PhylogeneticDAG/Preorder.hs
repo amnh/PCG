@@ -15,7 +15,8 @@
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 module Bio.Graph.PhylogeneticDAG.Preorder
-  ( preorderSequence'
+  ( preorderFromRooting
+  , preorderSequence'
   ) where
 
 import           Bio.Character.Decoration.Dynamic
@@ -168,13 +169,17 @@ computeOnApplicableResolution f1 f2 f3 f4 f5 f6 topologies currentResolutions pa
   where
     g key es = BLK.hexZipWith f1 f2 f3 f4 f5 f6 currentBlock parentBlocks
       where
-        getBlock = (! key) . toBlocks . characterSequence
+     -- We can't use this below because the monomorphism restriction is quite dumb at deduction.
+     -- getBlock = (! key) . toBlocks . characterSequence
         currentBlock = ((! key) . toBlocks . characterSequence) $ selectApplicableResolutions es currentResolutions
         parentBlocks =
             case second ((! key) . toBlocks . characterSequence) <$> parentalResolutions of
               []   -> let c = const []
                       in  BLK.hexmap c c c c c c currentBlock
-              x:xs -> let f   = zip (fst <$> (x:xs))
+              x:xs -> let
+                  -- We can't use this below because the monomorphism restriction is quite dumb at deduction.
+
+                  --      f   = zip (fst <$> (x:xs))
                           val = snd <$> x:xs
                           trs = BLK.hexTranspose $ val
                       in  BLK.hexmap
@@ -198,9 +203,6 @@ selectApplicableResolutions topology cache =
                  ]
       [x] -> x 
       xs  -> maximumBy (comparing (length . subtreeEdgeSet)) xs
-
-
-id2 x _ = x
 
 
 -- |
@@ -277,13 +279,13 @@ preorderFromRooting f (PDAG2 dag) = PDAG2 $ newDAG dag
     sequenceOfBlockMinimumTopologies :: NonEmpty (EdgeSet (Int, Int), Vector (Int, Int))
     sequenceOfBlockMinimumTopologies = blockMinimalResolutions
       where
-        blockMinimalResolutions = mapWithKey f $ toBlocks sequenceWLOG
+        blockMinimalResolutions = mapWithKey g $ toBlocks sequenceWLOG
 
         sequenceWLOG = characterSequence $ NE.head datumResolutions
 
         datumResolutions = resolutions . nodeDecoration . (references dag !) . NE.head $ rootRefs dag
 
-        f key _block = (subtreeEdgeSet &&& grabTraversalFoci)
+        g key _block = (subtreeEdgeSet &&& grabTraversalFoci)
                      $ minimumBy (comparing extractedBlockCost) datumResolutions
           where
             getBlock           = (! key) . toBlocks . characterSequence
@@ -314,11 +316,11 @@ preorderFromRooting f (PDAG2 dag) = PDAG2 $ newDAG dag
 -}
 
 --            parentCharSeqOnlyDynChars :: NonEmpty (Vector [a])
-            parentCharSeqOnlyDynChars = zipWithKey g parentVectors $ fst <$> sequenceOfBlockMinimumTopologies
+            parentCharSeqOnlyDynChars = mapWithKey g parentVectors
               where
-                g k v topology = foldMapWithKey h v
+                g k v = mapWithKey h v
                   where
-                    h j x = V.singleton [(0,dec)]
+                    h j x = [(0,dec)] -- Aways labeled as the first child (0) of the parent is technically incorrect. Probably won't matter, probably.
                       where
                         dec = 
                             case x ! i of
@@ -337,14 +339,14 @@ preorderFromRooting f (PDAG2 dag) = PDAG2 $ newDAG dag
                           -- Get the appropriate block from the resolution that contains this character
                           . (NE.!! k) . toBlocks . characterSequence
                           -- Get the appropriate resolution based on this character's display tree toplogy
-                          $ selectApplicableResolutions topology resolutions
+                          $ selectApplicableResolutions topology directedResolutions
                       where
-                        resolutions = (contextualNodeDatum ! i) ! (i, p)
+                        directedResolutions = (contextualNodeDatum ! i) ! (i, p)
                           where
                             p = case x V.! i of
-                                  Right (p,_) -> p
+                                  Right (n,_) -> n
                                   -- error "Next up Batman vs The RTS!\nReady?\nFIGHT!\nPOW! BLARM! THRAP!\nBatman wins!"
-                                  Left  p -> p 
+                                  Left  n -> n
             
             
 --            childResolutions :: NonEmpty [a]
