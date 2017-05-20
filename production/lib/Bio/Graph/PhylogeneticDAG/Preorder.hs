@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 module Bio.Graph.PhylogeneticDAG.Preorder
   ( preorderSequence'
@@ -168,37 +168,29 @@ computeOnApplicableResolution f1 f2 f3 f4 f5 f6 topologies currentResolutions pa
     g key es = BLK.hexZipWith f1 f2 f3 f4 f5 f6 currentBlock parentBlocks
       where
         getBlock = (! key) . toBlocks . characterSequence
-        currentBlock =
-            case selectApplicableResolutions es currentResolutions of
-              []  -> error $ unlines
-                       [ "No applicable resolution found on pre-order traversal"
-                       , "On block index: " <> show key
-                       , "Input set:  " <> show es
-                       , "Local sets: " <> show (subtreeEdgeSet <$> currentResolutions)
-                       ]
-              [x] -> getBlock x
-              xs  -> let x = maximumBy (comparing (length . subtreeEdgeSet)) xs
-                     in getBlock x
-{-
-                    error $ unlines
-                      [ "Multiple applicable resolutions found on pre-order traversal"
-                      , "On block index: " <> show key
-                      , show es
-                      , show $ subtreeEdgeSet <$> xs
-                      ]
--}
+        currentBlock = getBlock $ selectApplicableResolutions es currentResolutions
         parentBlocks =
             case second getBlock <$> parentalResolutions of
               []   -> let c = const []
                       in  BLK.hexmap c c c c c c currentBlock
-              x:xs -> let f = zip (fst <$> (x:xs))
+              x:xs -> let f   = zip (fst <$> (x:xs))
                           val = snd <$> x:xs
                           trs = BLK.hexTranspose $ val
-                      in  BLK.hexmap f f f f f f trs
+                      in  BLK.hexmap id id id id id f trs
 
 
-selectApplicableResolutions :: EdgeSet (Int, Int) -> ResolutionCache s -> [ResolutionInformation s]
-selectApplicableResolutions topology = filter (\x -> subtreeEdgeSet x `isSubsetOf` topology) . toList 
+
+selectApplicableResolutions :: EdgeSet (Int, Int) -> ResolutionCache s -> ResolutionInformation s
+selectApplicableResolutions topology cache =
+    case   filter (\x -> subtreeEdgeSet x `isSubsetOf` topology) $ toList cache of
+      []  -> error $ unlines
+                 [ "No applicable resolution found on pre-order traversal"
+                 , "Input set:  " <> show topology
+                 , "Local sets: " <> show (subtreeEdgeSet <$> cache)
+                 ]
+      [x] -> x 
+      xs  -> maximumBy (comparing (length . subtreeEdgeSet)) xs
+
 
 id2 x _ = x
 
@@ -222,29 +214,50 @@ preorderFromRooting f (PDAG2 dag) = PDAG2 $ newDAG dag
     dagSize       = length $ references dag
     newReferences = V.generate dagSize g
       where
-        g i = IndexData <$> const (snd $ memo ! i) <*> parentRefs <*> childRefs $ references dag ! i
+        g i =
+            IndexData
+              <$> (applyNewDynamicCharacters (memo ! i) . nodeDecoration)
+              <*> parentRefs
+              <*> childRefs
+              $ references dag ! i
 
-    edgeCostMapping = graphMetadata $ graphData dag
+    (edgeCostMapping, contextualNodeDatum) = graphMetadata $ graphData dag
+
+    applyNewDynamicCharacters dynCharSeq oldNode = oldNode { resolutions = pure newResolution }
+      where
+        oldResolution = NE.head $ resolutions oldNode
+        oldSequence   = characterSequence oldResolution
+        newSequence   = fromBlocks . zipWith g dynCharSeq $ toBlocks oldSequence
+        newResolution = oldResolution { characterSequence = newSequence }
+        g newDynChars oldBlock = oldBlock { dynamicCharacters = newDynChars }
+
 
     -- |
     -- For each block, for each dynamic character, a vector of parent ref indicies.
-    parentVectors :: NonEmpty (Vector (Vector (Maybe Int)))
-    parentVectors = fmap deriveParentVectors sequenceOfBlockMinimumTopologies
+--    parentVectors :: NonEmpty (Vector (Vector (Either Int (ResolutionCache (CharacterSequence u v w x y z)))))
+    parentVectors = mapWithKey deriveParentVectors sequenceOfBlockMinimumTopologies
       where
-        deriveParentVectors (topo, dynchars) = fmap h dynchars
+        deriveParentVectors k (topo, dynchars) = mapWithKey h dynchars
           where
-            h rootEdge = V.generate dagSize g
+            h charIndex rootEdge@(lhsRootRef, rhsRootRef) = V.generate dagSize g
               where
                 g i = mapping ! i
                 
-                mapping :: IntMap (Maybe Int)
+--                mapping :: IntMap (Maybe Int)
                 mapping = lhs <> rhs
                   where
-                    lhs = IM.singleton (fst rootEdge) Nothing <> genMap (fst rootEdge)
-                    rhs = IM.singleton (snd rootEdge) Nothing <> genMap (snd rootEdge)
-                    genMap i = foldMap (\x -> IM.singleton x $ Just i) kids <> foldMap genMap kids
+                    -- TODO: Get the appropriate resolution here!
+                    lhs = IM.singleton lhsRootRef (Right (rhsRootRef, val)) <> genMap lhsRootRef
+                    rhs = IM.singleton rhsRootRef (Right (lhsRootRef, val)) <> genMap rhsRootRef
+                    genMap j = foldMap (\x -> IM.singleton x $ Left j) kids <> foldMap genMap kids
                       where
-                        kids = catMaybes $ contains i <$> toList topo
+                        kids = catMaybes $ contains j <$> toList topo
+
+                    val = (! charIndex) . dynamicCharacters
+                          -- Get the appropriate block from the resolution that contains this character
+                        . (! k) . toBlocks . characterSequence
+                          -- Get the appropriate resolution based on this character's display tree toplogy
+                        $ selectApplicableResolutions topo $ edgeCostMapping ! rootEdge
 
                     contains i (x,y)
                       | x == i    = Just y
@@ -267,20 +280,16 @@ preorderFromRooting f (PDAG2 dag) = PDAG2 $ newDAG dag
           where
             getBlock           = (! key) . toBlocks . characterSequence
             extractedBlockCost = blockCost . getBlock
-            grabTraversalFoci :: HasTraversalFoci z TraversalFoci => ResolutionInformation (CharacterSequence u v w x y z) -> Vector (Int, Int)
+--            grabTraversalFoci :: HasTraversalFoci z TraversalFoci => ResolutionInformation (CharacterSequence u v w x y z) -> Vector (Int, Int)
             grabTraversalFoci  = fmap (fst . NE.head . (^. traversalFoci)) . dynamicCharacters . getBlock
                                    
       
---    memo :: Vector (BlockTopologies, PhylogeneticNode2 n (CharacterSequence u' v' w' x' y' z'))
-    memo = V.generate dagSize g
+--    memo :: Vector (NonEmpty (Vector z'))
+    memo = V.generate dagSize generateDatum
       where
-        g i = (inheritedToplogies,
-            PNode2
-            { resolutions          = newResolution
-            , nodeDecorationDatum2 = nodeDecorationDatum2 $ nodeDecoration node
-            }
-            )
+        generateDatum i = undefined
           where
+{-
             (inheritedToplogies, newResolution)
               | i `elem` rootRefs dag =
                 let newSequence = computeOnApplicableResolution id2 id2 id2 id2 id2 f sequenceOfBlockMinimumTopologies datumResolutions []
@@ -291,13 +300,43 @@ preorderFromRooting f (PDAG2 dag) = PDAG2 $ newDAG dag
 
 --            completeCoverage = (completeLeafSet ==) . (completeLeafSet .&.) . leafSetRepresentation
 --            localResolutions = liftA2 (generateLocalResolutions f1 f2 f3 f4 f5 f6') datumResolutions childResolutions
---            completeLeafSet  = complement $ wlog `xor`wlog
+--            completeLeafSet  = complement $ wlog `xor` wlog
 --              where
 --                wlog = leafSetRepresentation $ NE.head localResolutions
-                
-            datumResolutions = mapWithKey g parentVectors
+-}
+
+--          parentCharSeqOnlyDynChars :: 
+            parentCharSeqOnlyDynChars = zipWithKey g parentVectors $ fst <$> sequenceOfBlockMinimumTopologies
               where
-                g k v = undefined
+                g k v topology = foldMapWithKey h v
+                  where
+                    h j x = [(0,dec)]
+                      where
+                        dec = 
+                            case x ! i of
+                              Right (_, y) -> f y []
+                              Left  p      -> (! j) . (! k) $ memo ! p
+
+            
+            childCharSeqOnlyDynChars = undefined
+              where
+                -- FoldMap is a bit inefficient with Vectors here, worry about it later.
+                g k v topology = foldMapWithKey h v
+                  where
+                          -- Get this character from the block
+                    h j x = (! j) . dynamicCharacters
+                          -- Get the appropriate block from the resolution that contains this character
+                          . (! k) . toBlocks . characterSequence
+                          -- Get the appropriate resolution based on this character's display tree toplogy
+                          $ selectApplicableResolutions topology resolutions
+                      where
+                        resolutions = (contextualNodeDatum ! i) ! (i, p)
+                          where
+                            p = case x ! i of
+                                  Right (p,_) -> p
+                                  -- error "Next up Batman vs The RTS!\nReady?\nFIGHT!\nPOW! BLARM! THRAP!\nBatman wins!"
+                                  Left  p -> p 
+            
             
 --            childResolutions :: NonEmpty [a]
 --            childResolutions = applySoftwireResolutions $ extractResolutionContext <$> childIndices
