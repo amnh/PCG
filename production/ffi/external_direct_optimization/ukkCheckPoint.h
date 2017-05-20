@@ -37,29 +37,29 @@
 // AllocInfo myUAllocInfo;
 // AllocInfo myCPAllocInfo;
 
-typedef struct {
+typedef struct counts_t {
     long cells;
     long innerLoop;
-} Counts;
+} counts_t;
 
 //typedef struct {int dist; long computed;} U_cell_type;
-typedef struct {
-    int ab;
-    int ac;
-    int cost;
-    int state;
-} fromType;
+typedef struct from_t {
+    int          ab;
+    int          ac;
+    unsigned int cost;
+    int          state;
+} from_t;
 
-typedef struct {
-    int dist;
-    long computed;
-    fromType from;
-} U_cell_type;
+typedef struct ukk_cell_t {
+    int    dist;
+    long   computed;
+    from_t from;
+} ukk_cell_t;
 
-typedef struct {
-    int dist;
-    int cost;
-} CPType;
+typedef struct check_point_t {
+    size_t       dist;
+    unsigned int cost;
+} check_point_t;
 
 //typedef struct {int from_ab,from_ac,from_cost,from_state;} From_type;
 
@@ -67,39 +67,76 @@ typedef struct {
 //U_cell_type *U(int ab, int ac, int d, int s);
 
 // doUkkInLimits - for Ukkonen check point between to specified points in the U matrix
-size_t doUkkInLimits(int startAB, int startAC, int startCost, int startState, int startDist,
-                     int finalAB, int finalAC, int finalCost, int finalState, int finalDist);
+size_t doUkkInLimits( size_t       startAB
+                    , size_t       startAC
+                    , unsigned int startCost
+                    , int          startState
+                    , size_t       startDist
+                    , size_t       finalAB
+                    , size_t       finalAC
+                    , unsigned int finalCost
+                    , int          finalState
+                    , size_t       finalDist
+                    );
 
 // getSplitRecurse - extracts info from the 'from' and CP info then recurses with doUkkInLimits
 //                   for the two subparts
-int getSplitRecurse(int startAB, int startAC, int startCost, int startState, int startDist,
-                    int finalAB, int finalAC, int finalCost, int finalState, int finalDist);
+int getSplitRecurse( size_t       startAB
+                   , size_t       startAC
+                   , unsigned int startCost
+                   , int          startState
+                   , size_t       startDist
+                   , size_t       finalAB
+                   , size_t       finalAC
+                   , unsigned int finalCost
+                   , int          finalState
+                   , size_t       finalDist
+                   );
 
 // traceBack - recovers an alignment from the U matrix directly.  Used for the base case
 //             of the check point recursion
-void traceBack(int startAB, int startAC, int startCost, int startState,
-               int finalAB, int finalAC, int finalCost, int finalState);
+void traceBack( int startAB
+              , int startAC
+              , int startCost
+              , int startState
+              , int finalAB
+              , int finalAC
+              , int finalCost
+              , int finalState
+              );
 
 
-int Ukk(int ab,int ac,int d,int state);
+int Ukk( int ab
+       , int ac
+       , int d
+       , int state
+       );
 
-// Find the furthest distance at ab,ac,d.   wantState selects whether the
+// Find the furthest distance at ab, ac, d. wantState selects whether the
 // best distance is returned, or the best final state (needed for ukk.alloc traceback)
 int best(int ab, int ac, int d, int wantState);
 
 int calcUkk(int ab, int ac, int d, int toState);
 
-int okIndex(int a, int da, int end);
-
 int whichCharCost(char a, char b, char c);
 
 // IMPORTANT!!! Order of input characters is short, long, middle.
-int doUkk(dyn_character_t *retCharA, dyn_character_t *retCharB, dyn_character_t *retCharC);
+int doUkk( dyn_character_t *retCharA
+         , dyn_character_t *retCharB
+         , dyn_character_t *retCharC
+         );
 
 int char_to_base (char v);
 
-void printTraceBack(dyn_character_t *retCharA, dyn_character_t *retCharB, dyn_character_t *retCharC);
+void printTraceBack( dyn_character_t *retCharA
+                   , dyn_character_t *retCharB
+                   , dyn_character_t *retCharC
+                   );
 
-int calcUkk(int ab, int ac, int d, int toState);
+int calcUkk( int ab
+           , int ac
+           , int d
+           , int toState
+           );
 
 #endif

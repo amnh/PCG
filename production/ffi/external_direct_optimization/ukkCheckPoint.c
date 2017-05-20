@@ -48,14 +48,14 @@
 
 #include "debug_constants.h"
 #include "dyn_character.h"
-#include "ukkCheckp.h"
+#include "ukkCheckPoint.h"
 //#include "ukkCommon.h"
 
 #define MAXINT INT_MAX
 // #define FIXED_NUM_PLANES TODO: this is also defined in ukkCommon.h; it was commented out, but then allocInit() failed to compile
 
-AllocInfo myUAllocInfo;
-AllocInfo myCPAllocInfo;
+alloc_info_t myUkk_allocInfo;
+alloc_info_t myCheckPt_allocInfo;
 
 // these three are also extern in ukkCommon.h
 extern int mismatchCost;
@@ -66,46 +66,47 @@ extern int gapExtendCost;
 // TODO: globals--it'd be nice to clean these up a little
 
 
-// costOffset - added to the 'computed' field of each cell.  'costOffset' is
-// recursive step of the checlpoint algorithm.  'Tis really a hack so I don't
+// costOffset - added to the 'computed' field of each cell. 'costOffset' is
+// recursive step of the check point algorithm. 'Tis really a hack so I don't
 // have to reinitialize the memory structures.
 long costOffset = 1;    // must be signed for future comparisons
-long finalCost;
+unsigned int finalCost;
 
 int furthestReached = -1;
-int CPonDist;   // Flag for whether to use distance of cost as the CP criteria
-                // CP on dist is only done for first iteration when then final
-                // cost is unknown
+int checkPoint_dist;       // Flag for whether to use distance of cost as the check pointing criterion.
+                           // Check pointing on the distance is only done for first iteration, when the final
+                           // cost is unknown.
 
 
 // Use these globals cause don't want to pass 'em around, and they're needed
 // by the withinMatrix func.  Be nice to have closures :-)
-int startABG = 0,
-    startACG = 0,
-    startCostG = 0,
+// must be signed; later used as possibly negative
+int startABG    = 0,
+    startACG    = 0,
+    startCostG  = 0,
     startStateG = 0;
 
 // Used to define where to end on the three strings in the
-// checkp recursion. So endA contains the distance the recursion
+// check-point recursion. So endA contains the distance the recursion
 // must finish on + 1.
-int endA,
-    endB,
-    endC;
+size_t endA,
+       endB,
+       endC;
 
 // Set to 1 for base cases, so 'from' info that alignment
 //  can be retrieved from is set.
 int completeFromInfo = 0;
 
-int CPwidth;
+size_t CPwidth;
 int CPcost;
 
-Counts counts;
+counts_t counts;
 
-int aCharIdx = 0,
-    bCharIdx = 0,
-    cCharIdx = 0,
-    stateIdx = 0,
-    costIdx  = 0;
+size_t aCharIdx = 0,
+       bCharIdx = 0,
+       cCharIdx = 0,
+       stateIdx = 0,
+       costIdx  = 0;
 
 char resultA[MAX_STR * 2],
      resultB[MAX_STR * 2],
@@ -114,22 +115,36 @@ char resultA[MAX_STR * 2],
 int  states[MAX_STR * 2],
      cost[MAX_STR * 2];
 
-static inline U_cell_type *U(int ab, int ac, int d, int s) {
-    return getPtr(&myUAllocInfo, ab, ac, d, s);
-}
+ukk_cell_t    UdummyCell;
+check_point_t CPdummyCell;
 
-U_cell_type UdummyCell;
-CPType      CPdummyCell;
+
+static inline ukk_cell_t *U( int ab
+                           , int ac
+                           , int d
+                           , int s
+                           )
+{
+    return getPtr(&myUkk_allocInfo, ab, ac, d, s);
+}
 
 
 /************* next three functions are static inline, so not in .h file. ******************/
-static inline CPType *CP(int ab, int ac, int d, int s)     {
-    return getPtr(&myCPAllocInfo, ab, ac, d, s);
+static inline check_point_t *CP( int ab
+                               , int ac
+                               , int d
+                               , int s
+                               )
+{
+    return getPtr( &myCheckPt_allocInfo, ab, ac, d, s );
 }
 
 
-static inline void sort(int aval[], int len) {
-    int i, j;
+static inline void sort( int    aval[]
+                       , size_t len
+                       )
+{
+    size_t i, j;
 
     for (i = 0; i < len; i++) {
         int minI = i, t;
@@ -179,16 +194,16 @@ static inline int withinMatrix(int ab, int ac, int d) {
     }
 }
 
-size_t doUkkInLimits( int startAB
-                    , int startAC
-                    , int startCost
-                    , int startState
-                    , int startDist
-                    , int finalAB
-                    , int finalAC
-                    , int finalCost
-                    , int finalState
-                    , int finalDist
+size_t doUkkInLimits( size_t       startAB
+                    , size_t       startAC
+                    , unsigned int startCost
+                    , int          startState
+                    , size_t       startDist
+                    , size_t       finalAB
+                    , size_t       finalAC
+                    , unsigned int finalCost
+                    , int          finalState
+                    , size_t       finalDist
                     )
 {
     assert(startCost >= 0 && finalCost >= 0);
@@ -197,15 +212,29 @@ size_t doUkkInLimits( int startAB
     startACG    = startAC;
     startCostG  = startCost;
     startStateG = startState;
-    endA    = finalDist;
-    endB    = finalDist - finalAB;
-    endC    = finalDist - finalAC;
+    endA        = finalDist;
+    endB        = finalDist - finalAB;
+    endC        = finalDist - finalAC;
 
     if (DEBUG_3D) {
-        fprintf(stderr, "Doing (startAB = %2d, startAC = %2d, startCost = %2d, startState = %2d, startDist = %2d\n", startAB, startAC, startCost, startState, startDist);
-        fprintf(stderr, "       finalAB = %2d, finalAC = %2d, finalCost = %2d, finalState = %2d, finalDist = %2d\n", finalAB, finalAC, finalCost, finalState, finalDist);
+        fprintf(stderr
+               , "Doing (startAB = %2zu, startAC = %2zu, startCost = %2u, startState = %2d, startDist = %2zu\n"
+               , startAB
+               , startAC
+               , startCost
+               , startState
+               , startDist
+               );
+        fprintf(stderr
+               , "       finalAB = %2zu, finalAC = %2zu, finalCost = %2u, finalState = %2d, finalDist = %2zu\n"
+               , finalAB
+               , finalAC
+               , finalCost
+               , finalState
+               , finalDist
+               );
 
-        int i;
+        size_t i;
         fprintf(stderr, "Character to align at this step:\n");
         for (i = startDist; i < finalDist; i++) {
             fprintf(stderr, "%3c", lesserStr[i]);
@@ -230,7 +259,7 @@ size_t doUkkInLimits( int startAB
     U(startAB, startAC, startCost, startState)->computed = startCost+costOffset;
 
     if (finalCost - startCost <= CPwidth) { // Is it the base case?
-        int i;
+        size_t i;
         completeFromInfo = 1;
 
         if (DEBUG_3D) {
@@ -244,7 +273,7 @@ size_t doUkkInLimits( int startAB
             assert(U(finalAB,finalAC,finalCost,finalState)->dist==finalDist);
         #else
         {
-            int dist;
+            size_t dist;
             i = startCost - 1;
             do {
                 i++;
@@ -253,7 +282,7 @@ size_t doUkkInLimits( int startAB
 
             assert(dist == finalDist);
             if (i != finalCost) {
-                fprintf(stderr, "Dist reached for cost %2d (old cost %2d)\n",i,finalCost);
+                fprintf(stderr, "Dist reached for cost %2zu (old cost %2u)\n", i, finalCost);
                 finalCost = i;
                 assert(0);
             }
@@ -295,8 +324,11 @@ size_t doUkkInLimits( int startAB
         }
     #else
     {
-        int dist, i;
+        size_t dist,
+               i;
+
         i = startCost - 1;
+
         do {
             i++;
             dist = Ukk(finalAB, finalAC, i, 0);      // Need this (?) otherwise if finalState!=0 we may need larger than expected slice size.
@@ -305,7 +337,7 @@ size_t doUkkInLimits( int startAB
 
         assert(dist == finalDist);
         if (i != finalCost) {
-            fprintf(stderr, "Dist reached for cost %2d (old cost %2d)\n", i, finalCost);
+            fprintf(stderr, "Dist reached for cost %2zu (old cost %2u)\n", i, finalCost);
             finalCost = i;
             assert(0);
         }
@@ -325,22 +357,22 @@ size_t doUkkInLimits( int startAB
                           );
 }
 
-int getSplitRecurse( int startAB
-                   , int startAC
-                   , int startCost
-                   , int startState
-                   , int startDist
-                   , int finalAB
-                   , int finalAC
-                   , int finalCost
-                   , int finalState
-                   , int finalDist
+int getSplitRecurse( size_t       startAB
+                   , size_t       startAC
+                   , unsigned int startCost
+                   , int          startState
+                   , size_t       startDist
+                   , size_t       finalAB
+                   , size_t       finalAC
+                   , unsigned int finalCost
+                   , int          finalState
+                   , size_t       finalDist
                    )
 {
     // Get 'from' and CP data.  Then recurse
-    int finalLen;
-    int CPdist;
-    fromType f;
+    size_t finalLen;
+    size_t CPdist;
+    from_t f;
 
     assert(startCost >= 0 && finalCost >= 0);
     assert( U(finalAB, finalAC, finalCost, finalState)->computed == finalCost + costOffset);
@@ -357,17 +389,26 @@ int getSplitRecurse( int startAB
     assert(CPdist >= 0);
 
     if (DEBUG_3D) {
-        fprintf(stderr, "CPcost = %2d CPwidth = %2d\n", CPcost, CPwidth);
+        fprintf(stderr, "CPcost   = %2d CPwidth = %2zu\n", CPcost, CPwidth);
         fprintf(stderr, "From: ab = %2d ac = %2d d = %2d s = %2d\n", f.ab, f.ac, f.cost, f.state);
-        fprintf(stderr, "CP dist = %2d\n", CPdist);
+        fprintf(stderr, "CP dist  = %2zu\n", CPdist);
     }
 
 
     // Note: Doing second half of alignment first.  Only reason
     // for this is so the alignment is retrieved in exactly reverse order
     // making it easy to print out.
-    finalLen = doUkkInLimits(f.ab, f.ac, f.cost, f.state, CPdist,
-                             finalAB, finalAC, finalCost, finalState, finalDist);
+    finalLen = doUkkInLimits( f.ab
+                            , f.ac
+                            , f.cost
+                            , f.state
+                            , CPdist
+                            , finalAB
+                            , finalAC
+                            , finalCost
+                            , finalState
+                            , finalDist
+                            );
 
     doUkkInLimits( startAB
                  , startAC
@@ -516,7 +557,11 @@ int char_to_base (char v) {
     else return -1;
 }
 
-void printTraceBack(dyn_character_t *retCharA, dyn_character_t *retCharB, dyn_character_t *retCharC) {
+void printTraceBack( dyn_character_t *retCharA
+                   , dyn_character_t *retCharB
+                   , dyn_character_t *retCharC
+                   )
+{
     // Print out the alignment
 
     // Add the first run of matches to the alignment
@@ -525,12 +570,17 @@ void printTraceBack(dyn_character_t *retCharA, dyn_character_t *retCharB, dyn_ch
     size_t endRun,
            i = 0;
 
-    while ( i < lesserLen && (lesserStr[i] == longerStr[i] && lesserStr[i] == middleStr[i]) ) {
+    int j; // countdown later, so much be signed
+
+    while (   i < lesserLen
+           && (   lesserStr[i] == longerStr[i]
+               && lesserStr[i] == middleStr[i])
+           ) {
       i++;
     }
     endRun = i;
 
-    for (int j = endRun - 1; j >= 0; j--)  {
+    for (j = endRun - 1; j >= 0; j--)  {
       resultA[aCharIdx++] = lesserStr[j];
       resultB[bCharIdx++] = longerStr[j];
       resultC[cCharIdx++] = middleStr[j];
@@ -549,7 +599,7 @@ void printTraceBack(dyn_character_t *retCharA, dyn_character_t *retCharB, dyn_ch
     // end reverse alignments
 
     // Print out the alignment
-    for (int j = aCharIdx - 1; j >= 0; j--) {
+    for (j = aCharIdx - 1; j >= 0; j--) {
       dyn_char_prepend (retCharA, char_to_base (resultA[j]));
       dyn_char_prepend (retCharB, char_to_base (resultB[j]));
       dyn_char_prepend (retCharC, char_to_base (resultC[j]));
@@ -558,7 +608,10 @@ void printTraceBack(dyn_character_t *retCharA, dyn_character_t *retCharB, dyn_ch
     dyn_char_prepend (retCharB, 16);
     dyn_char_prepend (retCharC, 16);
 
-    assert(aCharIdx == bCharIdx && aCharIdx == cCharIdx && aCharIdx == stateIdx && aCharIdx == costIdx);
+    assert(   aCharIdx == bCharIdx
+           && aCharIdx == cCharIdx
+           && aCharIdx == stateIdx
+           && aCharIdx == costIdx);
 
     checkAlign(resultA, aCharIdx, lesserStr, lesserLen);
     checkAlign(resultB, bCharIdx, longerStr, longerLen);
@@ -667,8 +720,8 @@ int doUkk( dyn_character_t *retCharA
     // Concern: what is the correct value to use for Umatrix depth.
     // Would think that maxSingleCost=maxSingleStep*2 would be enough
     // but doesn't seem to be.  No idea why. *shrug*
-    myUAllocInfo  = allocInit(sizeof(U_cell_type), maxSingleCost);
-    myCPAllocInfo = allocInit(sizeof(CPType), CPwidth);
+    myUkk_allocInfo     = allocInit(sizeof(ukk_cell_t),   maxSingleCost);
+    myCheckPt_allocInfo = allocInit(sizeof(check_point_t), CPwidth);
 
     counts.cells     = 0;
     counts.innerLoop = 0;
@@ -693,7 +746,7 @@ int doUkk( dyn_character_t *retCharA
     endB    = longerLen;
     endC    = middleLen;
 
-    CPonDist = 1;
+    checkPoint_dist = 1;
     CPcost   = INFINITY;
     do {
         curDist++;
@@ -705,9 +758,9 @@ int doUkk( dyn_character_t *retCharA
         }
 
         int half_lesserLen = (int) (lesserLen / 2);
-        if (CPonDist && furthestReached >= half_lesserLen) {
+        if (checkPoint_dist && furthestReached >= half_lesserLen) {
             CPcost   = curDist + 1;
-            CPonDist = 0;
+            checkPoint_dist = 0;
 
             if (DEBUG_3D) {
                 fprintf(stderr, "Setting CPcost: %2d\n", CPcost);
@@ -719,7 +772,7 @@ int doUkk( dyn_character_t *retCharA
 
     assert(best(finalAB, finalac, curDist, 0) == (int) lesserLen);
 
-    CPonDist  = 0;
+    checkPoint_dist  = 0;
     finalCost = curDist;
 
 
@@ -761,8 +814,8 @@ int doUkk( dyn_character_t *retCharA
     assert(dist == lesserLen);
     printTraceBack(retCharA, retCharB, retCharC);
 
-    allocFinal(&myUAllocInfo,  (&UdummyCell.computed), (&UdummyCell));
-    allocFinal(&myCPAllocInfo, (&CPdummyCell.cost),    (&CPdummyCell));
+    allocFinal(&myUkk_allocInfo,     (&UdummyCell.computed), (&UdummyCell));
+    allocFinal(&myCheckPt_allocInfo, (&CPdummyCell.cost),    (&CPdummyCell));
 
     printf("doUkk: dist: = %2zu\n", curDist);
     return (int) curDist;
@@ -770,13 +823,13 @@ int doUkk( dyn_character_t *retCharA
 
 int calcUkk(int ab, int ac, int d, int toState) {
     if (DEBUG_CALL_ORDER) {
-        printf("--ukk.checkp: calcUkk\n" );
+        printf("--ukk.check-point: calcUkk\n" );
         fflush(stdout);
     }
     int neighbour = neighbours[toState];
     int da, db, dc, ab1, ac1;
 
-    fromType from;
+    from_t from;
     int bestDist;
 
     from.cost = -1;
@@ -904,7 +957,7 @@ int calcUkk(int ab, int ac, int d, int toState) {
 
         for (size_t s = 0; s < numStates; s++) {
             int thisdist;
-            thisdist = (s == 0) ? bestDist : Ukk(ab,ac,d,s);
+            thisdist = (s == 0) ? bestDist : Ukk(ab, ac, d, s);
             if (thisdist > dist) {
                 dist       = thisdist;
                 from_state = s;

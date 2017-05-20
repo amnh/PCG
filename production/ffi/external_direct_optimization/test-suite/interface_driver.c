@@ -15,7 +15,7 @@
 #include "../debug_constants.h"
 #include "../costMatrix.h"
 #include "../alignmentMatrices.h"
-#include "../ukkCheckp.h"
+#include "../ukkCheckPoint.h"
 #include "../ukkCommon.h"
 
 // #define SEQ_CAPACITY 64

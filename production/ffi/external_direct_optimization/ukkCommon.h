@@ -35,14 +35,14 @@
 #include <string.h>
 
 #include "dyn_character.h"
-#include "ukkCheckp.h"
+#include "ukkCheckPoint.h"
 
-#define MAX_STR 100000
+#define MAX_STR    100000
 
 #define MAX_STATES 27                 // Maximum number of possible states, 3^3
 
-#define MAX_COST (2 * MAX_STR)
-#define INFINITY INT_MAX / 2
+#define MAX_COST   (2 * MAX_STR)
+#define INFINITY   INT_MAX / 2
 
 #define FULL_ALLOC_INFO  0
 
@@ -52,7 +52,7 @@
 
 typedef enum {match, del, ins} Trans;  // The 3 possible state-machine states
 
-typedef struct {
+typedef struct alloc_info_t {
     size_t elemSize;
     size_t abSize;
     size_t acSize;
@@ -62,14 +62,14 @@ typedef struct {
     size_t acBlocks;
 
     #ifdef FIXED_NUM_PLANES
-        int costSize;
+        size_t costSize;
     #endif
 
     size_t baseAlloc;
     void **basePtr;     // void because may point at U_cell_type or CPTye
 
     size_t memAllocated;
-} AllocInfo;
+} alloc_info_t;
 
 
 #ifndef UKKCOMMON_C
@@ -98,26 +98,73 @@ typedef struct {
 
 #define maxSingleCost (maxSingleStep * 2)
 
-int whichCharCost(char a, char b, char c);
+int whichCharCost( char a
+                 , char b
+                 , char c
+                 );
 
-int okIndex(int a, int da, int end);
+int okIndex( size_t a
+           , size_t da
+           , size_t end
+           );
 
 // Setup routines
 int  stateTransitionCost(int from, int to);
-void step(int n, int *a, int *b, int *c);
-int  neighbourNum(int i, int j, int k);
-void transitions(int s, Trans st[3]);
-char *state2str(int s) ;
-int  countTrans(Trans st[3], Trans t);
+
+void step( int  n
+         , int *a
+         , int *b
+         , int *c
+         );
+
+int  neighbourNum( int i
+                 , int j
+                 , int k
+                 );
+
+void transitions( int s
+                , Trans st[3]
+                );
+
+char *state2str( int s );
+
+int countTrans( Trans st[3]
+              , Trans t
+              );
+
 void setup();
 
-// Alignment checking routines
-void checkAlign(char *al, int alLen, char *str, int strLen);
-void revIntArray(int *arr, int start, int end);
-void revCharArray(char *arr, int start, int end);
-int  alignmentCost(int states[], char *al1, char *al2, char *al3, int len);
 
-void *getPtr(AllocInfo *a, int ab, int ac, size_t d, int s);
+// Alignment checking routines
+void checkAlign( char   *al
+               , size_t  alLen
+               , char   *str
+               , size_t  strLen
+               );
+
+void revIntArray( int    *arr
+                , size_t  start
+                , size_t  end
+                );
+
+void revCharArray( char   *arr
+                 , size_t  start
+                 , size_t  end
+                 );
+
+int alignmentCost( int     states[]
+                 , char   *al1
+                 , char   *al2
+                 , char   *al3
+                 , size_t  len
+                 );
+
+void *getPtr( alloc_info_t *a
+            , int    ab
+            , int    ac
+            , size_t d
+            , int    s
+            );
 
 // TODO: unsigned ints for costs:
 // IMPORTANT!!! Order of input characters is short, long, middle.
@@ -127,18 +174,23 @@ int powell_3D_align ( dyn_character_t *charA
                     , dyn_character_t *retCharA
                     , dyn_character_t *retCharB
                     , dyn_character_t *retCharC
-                    , int mismatch
-                    , int gapOpen
-                    , int gapExtend
+                    , int              mismatch
+                    , int              gapOpen
+                    , int              gapExtend
                     );
 
 // allocation routines. Were previously commented out.
-void allocFinal(AllocInfo *a, void *flag, void *top);
+void allocFinal( alloc_info_t *a
+               , void         *flag
+               , void         *top
+               );
 
 #ifdef FIXED_NUM_PLANES
-    AllocInfo allocInit(int elemSize, int costSize);
+    alloc_info_t allocInit( size_t elemSize
+                          , size_t costSize
+                          );
 #else
-    AllocInfo allocInit(int elemSize);
+    alloc_info_t allocInit( size_t elemSize );
 #endif
 
 

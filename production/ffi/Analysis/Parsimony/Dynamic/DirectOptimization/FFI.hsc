@@ -56,7 +56,7 @@ import System.IO.Unsafe (unsafePerformIO)
 #include "c_alignment_interface.h"
 #include "c_code_alloc_setup.h"
 #include "costMatrix.h"
-#include "nwMatrices.h"
+#include "alignmentMatrices.h"
 -- #include "seqAlign.h"
 
 
@@ -92,7 +92,7 @@ data CostMatrix2d
                                        - • no_alignment == 2,
                                        - but I updated it. See costMatrix.h.
                                        -}
-   , combinations        :: CInt      {- This is a flag set to true if we are going to accept
+   , include_ambiguities :: CInt      {- This is a flag set to true if we are going to accept
                                          all possible combinations of the elements in the alphabet
                                          in the alignments. This is not true for protein characters
                                          for example, where the number of elements of the alphabet
@@ -114,7 +114,7 @@ data CostMatrix2d
                                          storing the **worst** cost for each ambiguity pair
                                       -}
    , prependCost         :: Ptr CInt  {- The cost of going from gap -> each base. For ambiguities, use best cost.
-                                         Set up as all_elements x all_elements matrix, but seemingly only first row is used.
+                                         Set up as num_elements x num_elements matrix, but seemingly only first row is used.
                                       -}
    , tailCost            :: Ptr CInt  {- As prepend_cost, but with reverse directionality,
                                          so base -> gap.
@@ -129,7 +129,7 @@ data CostMatrix3d
    , costMatrixDimension3D :: CInt
    , gapChar3D             :: CInt
    , costModelType3D       :: CInt
-   , combinations3D        :: CInt
+   , include_ambiguities3D :: CInt
    , gapOpenCost3D         :: CInt
    , allElems3D            :: CInt
    , bestCost3D            :: Ptr CInt
@@ -188,7 +188,7 @@ instance Show CostMatrix2d where
             , show . costMatrixDimension
             , show . gapChar
             , show . costModelType
-            , show . combinations
+            , show . include_ambiguities
             , show . gapOpenCost
             , show . isMetric
             , show . allElems
@@ -202,30 +202,30 @@ instance Show CostMatrix2d where
 
 instance Storable CostMatrix2d where
 
-    sizeOf _  = (#size struct cost_matrices_2d)
+    sizeOf _  = (#size struct cost_matrices_2d_t)
 
     alignment = sizeOf -- alignment (undefined :: StablePtr CostMatrix2d)
 
     peek ptr  = do
-        aSizeVal               <- (#peek struct cost_matrices_2d, alphSize           ) ptr
-        costMatrixDimensionVal <- (#peek struct cost_matrices_2d, costMatrixDimension) ptr
-        gapcharVal             <- (#peek struct cost_matrices_2d, gap_char           ) ptr
-        costModelVal           <- (#peek struct cost_matrices_2d, cost_model_type    ) ptr
-        combosVal              <- (#peek struct cost_matrices_2d, combinations       ) ptr
-        gapOpenVal             <- (#peek struct cost_matrices_2d, gap_open           ) ptr
-        metricVal              <- (#peek struct cost_matrices_2d, is_metric          ) ptr
-        elemsVal               <- (#peek struct cost_matrices_2d, all_elements       ) ptr
-        bestVal                <- (#peek struct cost_matrices_2d, cost               ) ptr
-        medsVal                <- (#peek struct cost_matrices_2d, median             ) ptr
-        worstVal               <- (#peek struct cost_matrices_2d, worst              ) ptr
-        prependVal             <- (#peek struct cost_matrices_2d, prepend_cost       ) ptr
-        tailVal                <- (#peek struct cost_matrices_2d, tail_cost          ) ptr
+        aSizeVal               <- (#peek struct cost_matrices_2d_t, alphSize           ) ptr
+        costMatrixDimensionVal <- (#peek struct cost_matrices_2d_t, costMatrixDimension) ptr
+        gapcharVal             <- (#peek struct cost_matrices_2d_t, gap_char           ) ptr
+        costModelVal           <- (#peek struct cost_matrices_2d_t, cost_model_type    ) ptr
+        combosVal              <- (#peek struct cost_matrices_2d_t, include_ambiguities) ptr
+        gapOpenVal             <- (#peek struct cost_matrices_2d_t, gap_open_cost      ) ptr
+        metricVal              <- (#peek struct cost_matrices_2d_t, is_metric          ) ptr
+        elemsVal               <- (#peek struct cost_matrices_2d_t, num_elements       ) ptr
+        bestVal                <- (#peek struct cost_matrices_2d_t, cost               ) ptr
+        medsVal                <- (#peek struct cost_matrices_2d_t, median             ) ptr
+        worstVal               <- (#peek struct cost_matrices_2d_t, worst              ) ptr
+        prependVal             <- (#peek struct cost_matrices_2d_t, prepend_cost       ) ptr
+        tailVal                <- (#peek struct cost_matrices_2d_t, tail_cost          ) ptr
         pure CostMatrix2d
             { alphSize            = aSizeVal
             , costMatrixDimension = costMatrixDimensionVal
             , gapChar             = gapcharVal
             , costModelType       = costModelVal
-            , combinations        = combosVal
+            , include_ambiguities = combosVal
             , gapOpenCost         = gapOpenVal
             , isMetric            = metricVal
             , allElems            = elemsVal
@@ -241,7 +241,7 @@ instance Storable CostMatrix2d where
                   costMatrixDimensionVal
                   gapCharVal
                   costModelTypeVal
-                  combinationsVal
+                  include_ambiguitiesVal
                   gapOpenVal
                   isMetricVal
                   elemsVal
@@ -251,19 +251,19 @@ instance Storable CostMatrix2d where
                   prependCostVal
                   tailCostVal
               ) = do -- to modify values in the C app
-        (#poke struct cost_matrices_2d, alphSize           ) ptr alphSizeVal
-        (#poke struct cost_matrices_2d, costMatrixDimension) ptr costMatrixDimensionVal
-        (#poke struct cost_matrices_2d, gap_char           ) ptr gapCharVal
-        (#poke struct cost_matrices_2d, cost_model_type    ) ptr costModelTypeVal
-        (#poke struct cost_matrices_2d, combinations       ) ptr combinationsVal
-        (#poke struct cost_matrices_2d, gap_open           ) ptr gapOpenVal
-        (#poke struct cost_matrices_2d, is_metric          ) ptr isMetricVal
-        (#poke struct cost_matrices_2d, all_elements       ) ptr elemsVal
-        (#poke struct cost_matrices_2d, cost               ) ptr bestCostVal
-        (#poke struct cost_matrices_2d, median             ) ptr mediansVal
-        (#poke struct cost_matrices_2d, worst              ) ptr worstCostVal
-        (#poke struct cost_matrices_2d, prepend_cost       ) ptr prependCostVal
-        (#poke struct cost_matrices_2d, tail_cost          ) ptr tailCostVal
+        (#poke struct cost_matrices_2d_t, alphSize           ) ptr alphSizeVal
+        (#poke struct cost_matrices_2d_t, costMatrixDimension) ptr costMatrixDimensionVal
+        (#poke struct cost_matrices_2d_t, gap_char           ) ptr gapCharVal
+        (#poke struct cost_matrices_2d_t, cost_model_type    ) ptr costModelTypeVal
+        (#poke struct cost_matrices_2d_t, include_ambiguities) ptr include_ambiguitiesVal
+        (#poke struct cost_matrices_2d_t, gap_open_cost      ) ptr gapOpenVal
+        (#poke struct cost_matrices_2d_t, is_metric          ) ptr isMetricVal
+        (#poke struct cost_matrices_2d_t, num_elements       ) ptr elemsVal
+        (#poke struct cost_matrices_2d_t, cost               ) ptr bestCostVal
+        (#poke struct cost_matrices_2d_t, median             ) ptr mediansVal
+        (#poke struct cost_matrices_2d_t, worst              ) ptr worstCostVal
+        (#poke struct cost_matrices_2d_t, prepend_cost       ) ptr prependCostVal
+        (#poke struct cost_matrices_2d_t, tail_cost          ) ptr tailCostVal
 
 
 instance NFData CostMatrix3d
@@ -278,7 +278,7 @@ instance Show CostMatrix3d where
             , show . costMatrixDimension3D
             , show . gapChar3D
             , show . costModelType3D
-            , show . combinations3D
+            , show . include_ambiguities3D
             , show . gapOpenCost3D
             , show . allElems3D
             , show . bestCost3D
@@ -288,26 +288,26 @@ instance Show CostMatrix3d where
 
 instance Storable CostMatrix3d where
 
-    sizeOf _  = (#size struct cost_matrices_2d)
+    sizeOf _  = (#size struct cost_matrices_2d_t)
 
     alignment = sizeOf -- alignment (undefined :: StablePtr CostMatrix2d)
 
     peek ptr  = do
-        aSizeVal               <- (#peek struct cost_matrices_3d, alphSize           ) ptr
-        costMatrixDimensionVal <- (#peek struct cost_matrices_3d, costMatrixDimension) ptr
-        gapcharVal             <- (#peek struct cost_matrices_3d, gap_char           ) ptr
-        costModelVal           <- (#peek struct cost_matrices_3d, cost_model_type    ) ptr
-        combosVal              <- (#peek struct cost_matrices_3d, combinations       ) ptr
-        gapOpenVal             <- (#peek struct cost_matrices_3d, gap_open           ) ptr
-        elemsVal               <- (#peek struct cost_matrices_3d, all_elements       ) ptr
-        bestVal                <- (#peek struct cost_matrices_3d, cost               ) ptr
-        medsVal                <- (#peek struct cost_matrices_3d, median             ) ptr
+        aSizeVal               <- (#peek struct cost_matrices_3d_t, alphSize           ) ptr
+        costMatrixDimensionVal <- (#peek struct cost_matrices_3d_t, costMatrixDimension) ptr
+        gapcharVal             <- (#peek struct cost_matrices_3d_t, gap_char           ) ptr
+        costModelVal           <- (#peek struct cost_matrices_3d_t, cost_model_type    ) ptr
+        combosVal              <- (#peek struct cost_matrices_3d_t, include_ambiguities) ptr
+        gapOpenVal             <- (#peek struct cost_matrices_3d_t, gap_open_cost      ) ptr
+        elemsVal               <- (#peek struct cost_matrices_3d_t, num_elements       ) ptr
+        bestVal                <- (#peek struct cost_matrices_3d_t, cost               ) ptr
+        medsVal                <- (#peek struct cost_matrices_3d_t, median             ) ptr
         pure CostMatrix3d
             { alphSize3D            = aSizeVal
             , costMatrixDimension3D = costMatrixDimensionVal
             , gapChar3D             = gapcharVal
             , costModelType3D       = costModelVal
-            , combinations3D        = combosVal
+            , include_ambiguities3D = combosVal
             , gapOpenCost3D         = gapOpenVal
             , allElems3D            = elemsVal
             , bestCost3D            = bestVal
@@ -319,21 +319,21 @@ instance Storable CostMatrix3d where
                   costMatrixDimensionVal
                   gapCharVal
                   costModelTypeVal
-                  combinationsVal
+                  include_ambiguitiesVal
                   gapOpenVal
                   elemsVal
                   bestCostVal
                   mediansVal
               ) = do -- to modify values in the C app
-        (#poke struct cost_matrices_3d, alphSize           ) ptr alphSizeVal
-        (#poke struct cost_matrices_3d, costMatrixDimension) ptr costMatrixDimensionVal
-        (#poke struct cost_matrices_3d, gap_char           ) ptr gapCharVal
-        (#poke struct cost_matrices_3d, cost_model_type    ) ptr costModelTypeVal
-        (#poke struct cost_matrices_3d, combinations       ) ptr combinationsVal
-        (#poke struct cost_matrices_3d, gap_open           ) ptr gapOpenVal
-        (#poke struct cost_matrices_3d, all_elements       ) ptr elemsVal
-        (#poke struct cost_matrices_3d, cost               ) ptr bestCostVal
-        (#poke struct cost_matrices_3d, median             ) ptr mediansVal
+        (#poke struct cost_matrices_3d_t, alphSize           ) ptr alphSizeVal
+        (#poke struct cost_matrices_3d_t, costMatrixDimension) ptr costMatrixDimensionVal
+        (#poke struct cost_matrices_3d_t, gap_char           ) ptr gapCharVal
+        (#poke struct cost_matrices_3d_t, cost_model_type    ) ptr costModelTypeVal
+        (#poke struct cost_matrices_3d_t, include_ambiguities) ptr include_ambiguitiesVal
+        (#poke struct cost_matrices_3d_t, gap_open_cost      ) ptr gapOpenVal
+        (#poke struct cost_matrices_3d_t, num_elements       ) ptr elemsVal
+        (#poke struct cost_matrices_3d_t, cost               ) ptr bestCostVal
+        (#poke struct cost_matrices_3d_t, median             ) ptr mediansVal
 
 
 instance NFData DenseTransitionCostMatrix
@@ -378,7 +378,7 @@ foreign import ccall unsafe "c_code_alloc_setup.h setUp2dCostMtx"
     setUpCostMatrix2dFn_c :: Ptr CostMatrix2d
                           -> Ptr CUInt         -- ^ tcm
                           -> CSize             -- ^ alphSize
-                          -> CInt              -- ^ gap_open
+                          -> CInt              -- ^ gap_open_cost
                           -> IO ()
 
 
@@ -387,7 +387,7 @@ foreign import ccall unsafe "c_code_alloc_setup.h setUp3dCostMtx"
     setUpCostMatrix3dFn_c :: Ptr CostMatrix3d
                           -> Ptr CUInt         -- ^ tcm
                           -> CSize             -- ^ alphSize
-                          -> CInt              -- ^ gap_open
+                          -> CInt              -- ^ gap_open_cost
                           -> IO ()
 
 

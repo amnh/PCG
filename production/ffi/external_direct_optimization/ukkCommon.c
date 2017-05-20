@@ -52,19 +52,26 @@
 
 // extern variable (all from ukkCheckp.c)
 
-extern      AllocInfo myUAllocInfo;
-extern      AllocInfo myCPAllocInfo;
+extern      alloc_info_t myUkkAllocInfo;
+extern      alloc_info_t myCheckPtAllocInfo;
 extern long costOffset;
 extern long finalCost;
 
-extern int sabG, sacG, sCostG, sStateG;
-extern int CPwidth;
-extern int CPcost;
+extern int    sabG,
+              sacG,
+              sCostG,
+              sStateG;
 
-extern int furthestReached;
-extern int CPonDist;
-extern int endA, endB, endC;
-extern int completeFromInfo;
+extern size_t CPwidth;
+extern int    CPcost;
+
+extern size_t furthestReached;
+extern size_t CPonDist;
+extern size_t endA,
+              endB,
+              endC;
+
+extern int    completeFromInfo;
 // extern Counts counts;
 
 //int  aCharIdx, bCharIdx, cCharIdx, stateIdx, costIdx;
@@ -79,11 +86,11 @@ int transCost [MAX_STATES] [MAX_STATES];
 int stateNum  [MAX_STATES];
 
 // TODO: can/should we make these unsigned ints?
-int mismatchCost     = 1;
-int gapOpenCost      = 3;             // a: w(k)=a+b*k
-int gapExtendCost    = 1;             // b:
-int deleteOpenCost   = 3;
-int deleteExtendCost = 1;
+unsigned int mismatchCost     = 1;
+unsigned int gapOpenCost      = 3;             // a: w(k) = a + b * k
+unsigned int gapExtendCost    = 1;             // b:
+unsigned int deleteOpenCost   = 3;
+unsigned int deleteExtendCost = 1;
 
 size_t numStates;
 size_t maxSingleStep;
@@ -92,7 +99,9 @@ char lesserStr[MAX_STR];
 char longerStr[MAX_STR];
 char middleStr[MAX_STR];
 
-size_t lesserLen, longerLen, middleLen;
+size_t lesserLen,
+       longerLen,
+       middleLen;
 
 //extern int doUkk(dyn_character_t *retCharA, dyn_character_t *retCharB, dyn_character_t *retCharC);    // Main driver function
 
@@ -121,7 +130,7 @@ static inline void *recalloc(void *p, size_t oldSize, size_t newSize) {
     return p;
 }
 
-static inline void *allocPlane(AllocInfo *a) {
+static inline void *allocPlane(alloc_info_t *a) {
     void *p;
 
     a->memAllocated += a->abBlocks * a->acBlocks * sizeof(void*);
@@ -135,13 +144,13 @@ static inline void *allocPlane(AllocInfo *a) {
 }
 
 #ifdef FIXED_NUM_PLANES
-    AllocInfo allocInit(int elemSize, int costSize)
+    alloc_info_t allocInit(int elemSize, int costSize)
 #else
-    AllocInfo allocInit(int elemSize)
+    alloc_info_t allocInit(int elemSize)
 #endif
 
 {
-    AllocInfo retStruct;
+    alloc_info_t retStruct;
 
     retStruct.memAllocated = 0;
     retStruct.elemSize     = elemSize;
@@ -172,7 +181,7 @@ static inline void *allocPlane(AllocInfo *a) {
     return retStruct;
 }
 
-static inline void *allocEntry(AllocInfo *a) {
+static inline void *allocEntry(alloc_info_t *a) {
     void *p;
 
     size_t entries = CELLS_PER_BLOCK * CELLS_PER_BLOCK * numStates;
@@ -188,7 +197,7 @@ static inline void *allocEntry(AllocInfo *a) {
     return p;
 }
 
-static inline size_t allocGetSubIndex(AllocInfo *a, int ab, int ac, int s)
+static inline size_t allocGetSubIndex(alloc_info_t *a, int ab, int ac, int s)
 {
     size_t index = 0;
 
@@ -212,7 +221,7 @@ static inline size_t allocGetSubIndex(AllocInfo *a, int ab, int ac, int s)
 }
 
 
-void allocFinal(AllocInfo *a, void *flag, void *top) {
+void allocFinal(alloc_info_t *a, void *flag, void *top) {
     // Cast the void pointers to long longs because we intend to treat the
     // pointers as integral values.
     int usedFlag = ((long long)flag) - ((long long )top);
@@ -268,7 +277,7 @@ void allocFinal(AllocInfo *a, void *flag, void *top) {
 
 }
 
-void *getPtr(AllocInfo *a, int ab, int ac, size_t d, int s) {
+void *getPtr(alloc_info_t *a, int ab, int ac, size_t d, int s) {
     size_t i, j;
     void **bPtr;
     void  *base;
@@ -361,9 +370,9 @@ int powell_3D_align ( dyn_character_t *lesserChar
                     , dyn_character_t *retCharA
                     , dyn_character_t *retCharB
                     , dyn_character_t *retCharC
-                    , int              mismatch
-                    , int              gapOpen
-                    , int              gapExtend
+                    , unsigned int     mismatch
+                    , unsigned int     gapOpen
+                    , unsigned int     gapExtend
                     )
 {
     if (DEBUG_CALL_ORDER) {
@@ -383,7 +392,7 @@ int powell_3D_align ( dyn_character_t *lesserChar
     Char_custom_val(retCharB,retCharB);
     Char_custom_val(retCharC,retCharC);
     */
-    assert (mismatchCost != 0 && gapOpenCost >= 0 && gapExtendCost > 0);
+    /* assert (mismatchCost != 0 && gapOpenCost >= 0 && gapExtendCost > 0); */ // SKIP, because now using unsigned ints
 
     copyCharacter (lesserStr, lesserChar);
     copyCharacter (longerStr, longerChar);
@@ -432,13 +441,18 @@ int whichCharCost(char a, char b, char c) {
 }
 
 
-int okIndex(int a, int da, int end) {
+int okIndex( size_t a
+           , size_t da
+           , size_t end
+           )
+{
     // if (DEBUG_CALL_ORDER) {
     //     printf("okIndex\n");
     // }
     if (a < 0)           return 0;
     if ( da && a <  end) return 1;
     if (!da && a <= end) return 1;
+
     return 0;
     //  return (a<0 ? 0 : (da==0 ? 1 : a<end));
 }
@@ -493,14 +507,16 @@ int countTrans(Trans st[3], Trans t) {
 }
 
 void setup() {
-    maxSingleStep = numStates = 0;
-    int i, j;
+    maxSingleStep = numStates
+                  = 0;
+    size_t i;
+
     for (i = 0; i < MAX_STATES - 1; i++) {
         neighbours[i] = 0;
         contCost[i]   = 0;
         secondCost[i] = 0;
         stateNum[i]   = 0;
-        for (j = 0; j < MAX_STATES - 1; j++) {
+        for (size_t j = 0; j < MAX_STATES - 1; j++) {
             transCost[i][j] = 0;
         }
     }
@@ -572,7 +588,7 @@ void setup() {
     size_t s1, s2;
     int maxCost = 0;
 
-    assert(gapOpenCost==deleteOpenCost && "Need to rewrite setup routine");
+    assert(gapOpenCost == deleteOpenCost && "Need to rewrite setup routine");
     for (s1 = 0; s1 < numStates; s1++) {
         for (s2 = 0; s2 < numStates; s2++) {
             Trans from[3], to[3];
@@ -640,14 +656,19 @@ void revCharArray(char *arr, int start, int end) {
     }
 }
 
-int alignmentCost(int states[], char *al1, char *al2, char *al3, int len) {
-    int i;
-    int cost = 0;
+unsigned int alignmentCost( int     states[]
+                          , char   *al1
+                          , char   *al2
+                          , char   *al3
+                          , size_t  len
+                          )
+{
+    unsigned int cost = 0;
     Trans last_st[3] = {match, match, match};
 
     assert(gapOpenCost == deleteOpenCost);
 
-    for (i = 0; i < len; i++) {
+    for (size_t i = 0; i < len; i++) {
         int s;
         Trans st[3];
         transitions(stateNum[states[i]], st);
@@ -678,6 +699,7 @@ int alignmentCost(int states[], char *al1, char *al2, char *al3, int len) {
         // Pay for mismatches
         char ch[3];
         int localCIdx = 0;
+
         if (st[0] == match) {
             assert(al1[i] != '-');
             ch[localCIdx++] = al1[i];
@@ -692,11 +714,12 @@ int alignmentCost(int states[], char *al1, char *al2, char *al3, int len) {
         }
         localCIdx--;
         for (; localCIdx > 0; localCIdx--) {
-            if (ch[localCIdx-1] != ch[localCIdx]) {
-                cost += mismatchCost;
-            }
+            if (ch[localCIdx-1] != ch[localCIdx])  cost += mismatchCost;
         }
-        if (countTrans(st, match)==3 && ch[0]==ch[2] && ch[0]!=ch[1]) {
+        if (   countTrans(st, match) == 3
+            && ch[0] == ch[2]
+            && ch[0] != ch[1]
+            ) {
             cost -= mismatchCost;
         }
         // end pay for mismatches
