@@ -46,6 +46,7 @@ import           Data.Semigroup
 --import           Data.Semigroup.Foldable
 import           Data.Vector               (Vector)
 import qualified Data.Vector        as V
+import           Data.Vector.Instances     ()
 import           Prelude            hiding (zip, zipWith)
 
 import Debug.Trace
@@ -168,15 +169,22 @@ computeOnApplicableResolution f1 f2 f3 f4 f5 f6 topologies currentResolutions pa
     g key es = BLK.hexZipWith f1 f2 f3 f4 f5 f6 currentBlock parentBlocks
       where
         getBlock = (! key) . toBlocks . characterSequence
-        currentBlock = getBlock $ selectApplicableResolutions es currentResolutions
+        currentBlock = ((! key) . toBlocks . characterSequence) $ selectApplicableResolutions es currentResolutions
         parentBlocks =
-            case second getBlock <$> parentalResolutions of
+            case second ((! key) . toBlocks . characterSequence) <$> parentalResolutions of
               []   -> let c = const []
                       in  BLK.hexmap c c c c c c currentBlock
               x:xs -> let f   = zip (fst <$> (x:xs))
                           val = snd <$> x:xs
                           trs = BLK.hexTranspose $ val
-                      in  BLK.hexmap id id id id id f trs
+                      in  BLK.hexmap
+                            (zip (fst <$> (x:xs)))
+                            (zip (fst <$> (x:xs)))
+                            (zip (fst <$> (x:xs)))
+                            (zip (fst <$> (x:xs)))
+                            (zip (fst <$> (x:xs)))
+                            (zip (fst <$> (x:xs)))
+                              trs
 
 
 
@@ -287,7 +295,7 @@ preorderFromRooting f (PDAG2 dag) = PDAG2 $ newDAG dag
 --    memo :: Vector (NonEmpty (Vector z'))
     memo = V.generate dagSize generateDatum
       where
-        generateDatum i = undefined
+        generateDatum i = zipWith (zipWith f) childCharSeqOnlyDynChars parentCharSeqOnlyDynChars
           where
 {-
             (inheritedToplogies, newResolution)
@@ -305,12 +313,12 @@ preorderFromRooting f (PDAG2 dag) = PDAG2 $ newDAG dag
 --                wlog = leafSetRepresentation $ NE.head localResolutions
 -}
 
---          parentCharSeqOnlyDynChars :: 
+--            parentCharSeqOnlyDynChars :: NonEmpty (Vector [a])
             parentCharSeqOnlyDynChars = zipWithKey g parentVectors $ fst <$> sequenceOfBlockMinimumTopologies
               where
                 g k v topology = foldMapWithKey h v
                   where
-                    h j x = [(0,dec)]
+                    h j x = V.singleton [(0,dec)]
                       where
                         dec = 
                             case x ! i of
@@ -318,21 +326,22 @@ preorderFromRooting f (PDAG2 dag) = PDAG2 $ newDAG dag
                               Left  p      -> (! j) . (! k) $ memo ! p
 
             
-            childCharSeqOnlyDynChars = undefined
+--          childCharSeqOnlyDynChars   :: NonEmpty (Vector a)
+            childCharSeqOnlyDynChars = zipWithKey g parentVectors $ fst <$> sequenceOfBlockMinimumTopologies
               where
                 -- FoldMap is a bit inefficient with Vectors here, worry about it later.
-                g k v topology = foldMapWithKey h v
+                g k v topology = mapWithKey h v
                   where
                           -- Get this character from the block
-                    h j x = (! j) . dynamicCharacters
+                    h j x = (V.! j) . dynamicCharacters
                           -- Get the appropriate block from the resolution that contains this character
-                          . (! k) . toBlocks . characterSequence
+                          . (NE.!! k) . toBlocks . characterSequence
                           -- Get the appropriate resolution based on this character's display tree toplogy
                           $ selectApplicableResolutions topology resolutions
                       where
                         resolutions = (contextualNodeDatum ! i) ! (i, p)
                           where
-                            p = case x ! i of
+                            p = case x V.! i of
                                   Right (p,_) -> p
                                   -- error "Next up Batman vs The RTS!\nReady?\nFIGHT!\nPOW! BLARM! THRAP!\nBatman wins!"
                                   Left  p -> p 
@@ -343,7 +352,7 @@ preorderFromRooting f (PDAG2 dag) = PDAG2 $ newDAG dag
 --            extractResolutionContext = getResolutions &&& parentRefs . (references dag !)
 --            getResolutions j = fmap (addEdgeToEdgeSet (i,j)) . resolutions $ memo ! j
 
-
+{-
             node            = references dag ! i
 --            childIndices    = IM.keys $ childRefs node
             parentIndices   = otoList $ parentRefs node
@@ -352,4 +361,4 @@ preorderFromRooting f (PDAG2 dag) = PDAG2 $ newDAG dag
             parentContexts  = (\x -> second (const (childPosition x) &&& NE.head . resolutions) $ memo ! x) <$> parentIndices
             parentalResolutions = snd <$> parentContexts
             parentalToplogies   = fst $ head parentContexts
-
+-}
