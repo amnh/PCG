@@ -122,6 +122,34 @@ chooseDirectOptimizationComparison dec decs =
               in \x y -> naiveDO x y scm
 
 
+chooseDirectOptimizationComparison2 :: ( SimpleDynamicDecoration d  c
+                                      , SimpleDynamicDecoration d' c
+                                      , Exportable c
+                                      , Show c
+                                      , Show (Element c)
+                                      , Integral (Element c)
+                                      )
+                                   => d
+                                   -> [(a,d')]
+                                   -> c
+                                   -> c
+                                   -> (Word, c, c, c, c)
+chooseDirectOptimizationComparison2 dec decs =
+    case decs of
+      []  -> selectBranch dec
+      (_,x):_ -> selectBranch x
+  where
+--    selectBranch x | trace (show . length $ x ^. characterAlphabet) False = undefined
+    selectBranch candidate
+      | sequentialAlignOverride = sequentialAlign (candidate ^. sparseTransitionCostMatrix)
+      | otherwise =
+          case candidate ^. denseTransitionCostMatrix of
+            Just  d -> \x y -> foreignPairwiseDO x y d
+            Nothing ->
+              let !scm = (candidate ^. symbolChangeMatrix)
+              in \x y -> naiveDO x y scm
+
+
 id2 x _ = x
 
 {--}
@@ -140,7 +168,14 @@ initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ f
           additivePreOrder
           sankoffPreOrder
           sankoffPreOrder
-          id2
+          id2 .
+        preorderFromRooting
+          adaptiveDirectOptimizationPreOrder
+      where
+        adaptiveDirectOptimizationPreOrder dec kidDecs = directOptimizationPreOrder pairwiseAlignmentFunction dec kidDecs
+          where
+            pairwiseAlignmentFunction = chooseDirectOptimizationComparison2 dec kidDecs
+        
 
     performPostOrderDecoration :: CharacterDAG -> PostOrderDecorationDAG
     performPostOrderDecoration =
@@ -161,6 +196,7 @@ initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ f
         adaptiveDirectOptimizationPostOrder dec kidDecs = directOptimizationPostOrder pairwiseAlignmentFunction dec kidDecs
           where
             pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec kidDecs
+
 {--}
 
 

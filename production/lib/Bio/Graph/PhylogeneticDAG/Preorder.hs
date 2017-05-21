@@ -40,7 +40,7 @@ import qualified Data.IntMap        as IM
 import           Data.Key
 import           Data.List.NonEmpty        (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty as NE
-import           Data.Maybe                (catMaybes)
+import           Data.Maybe                (catMaybes, fromJust)
 import           Data.MonoTraversable
 import           Data.Ord                  (comparing)
 import           Data.Semigroup
@@ -213,7 +213,7 @@ selectApplicableResolutions topology cache =
 -- and returns the new decoration for the current node.
 preorderFromRooting
   :: ( HasBlockCost u v w x y z  Word Double
-     , HasTraversalFoci z TraversalFoci
+     , HasTraversalFoci z (Maybe TraversalFoci)
      )
   => (z -> [(Word, z')] -> z')
   -> PhylogeneticDAG2 e n u v w x y z
@@ -291,7 +291,7 @@ preorderFromRooting f (PDAG2 dag) = PDAG2 $ newDAG dag
             getBlock           = (! key) . toBlocks . characterSequence
             extractedBlockCost = blockCost . getBlock
 --            grabTraversalFoci :: HasTraversalFoci z TraversalFoci => ResolutionInformation (CharacterSequence u v w x y z) -> Vector (Int, Int)
-            grabTraversalFoci  = fmap (fst . NE.head . (^. traversalFoci)) . dynamicCharacters . getBlock
+            grabTraversalFoci  = fmap (fst . NE.head . fromJust . (^. traversalFoci)) . dynamicCharacters . getBlock
                                    
       
 --    memo :: Vector (NonEmpty (Vector z'))

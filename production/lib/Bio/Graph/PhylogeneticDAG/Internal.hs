@@ -95,7 +95,6 @@ type PostOrderDecorationDAG =
          (AdditivePostorderDecoration   StaticCharacter)
          (SankoffOptimizationDecoration StaticCharacter)
          (SankoffOptimizationDecoration StaticCharacter)
-         -- (DynamicDecorationDirectOptimization DynamicChar)
          (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
 
 
@@ -108,8 +107,8 @@ type FinalDecorationDAG =
          (AdditiveOptimizationDecoration StaticCharacter)
          (SankoffOptimizationDecoration StaticCharacter)
          (SankoffOptimizationDecoration StaticCharacter)
-         -- (DynamicDecorationDirectOptimization DynamicChar)
-         (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
+         (DynamicDecorationDirectOptimization DynamicChar)
+--         (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
 
 
 type UnifiedCharacterSequence
