@@ -40,7 +40,8 @@ import qualified Data.IntMap        as IM
 import           Data.Key
 import           Data.List.NonEmpty        (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty as NE
-import           Data.Maybe                (catMaybes, fromJust)
+import qualified Data.Map           as M
+import           Data.Maybe
 import           Data.MonoTraversable
 import           Data.Ord                  (comparing)
 import           Data.Semigroup
@@ -341,13 +342,15 @@ preorderFromRooting f (PDAG2 dag) = PDAG2 $ newDAG dag
                           -- Get the appropriate resolution based on this character's display tree toplogy
                           $ selectApplicableResolutions topology directedResolutions
                       where
-                        directedResolutions =
+                        directedResolutions = (contextualNodeDatum .!>. i) .!>. (i,p)
+{-                          
                             case i `lookup` contextualNodeDatum of
-                              Nothing ->
+                              Nothing -> error $ "Couldn't find: " <> show i
                               Just z  ->
                                 case (i, p) `lookup` z of
-                                  Nothing -> 
+                                  Nothing -> error $ "Couldn't find: " <> show (i, p) <> " in: " <> show (M.keys z)
                                   Just a  -> a
+-}
                           where
                             p = case x V.! i of
                                   Right (n,_) -> n
@@ -370,3 +373,7 @@ preorderFromRooting f (PDAG2 dag) = PDAG2 $ newDAG dag
             parentalResolutions = snd <$> parentContexts
             parentalToplogies   = fst $ head parentContexts
 -}
+
+
+(.!>.) :: (Lookup f, Show (Key f)) => f a -> Key f -> a
+(.!>.) s k = fromMaybe (error $ "Could not index: " <> show k) $ k `lookup` s
