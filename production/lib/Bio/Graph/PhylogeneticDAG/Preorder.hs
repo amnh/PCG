@@ -48,7 +48,7 @@ import           Data.Semigroup
 import           Data.Vector               (Vector)
 import qualified Data.Vector        as V
 import           Data.Vector.Instances     ()
-import           Prelude            hiding (zip, zipWith)
+import           Prelude            hiding (lookup, zip, zipWith)
 
 import Debug.Trace
   
@@ -341,7 +341,13 @@ preorderFromRooting f (PDAG2 dag) = PDAG2 $ newDAG dag
                           -- Get the appropriate resolution based on this character's display tree toplogy
                           $ selectApplicableResolutions topology directedResolutions
                       where
-                        directedResolutions = (contextualNodeDatum ! i) ! (i, p)
+                        directedResolutions =
+                            case i `lookup` contextualNodeDatum of
+                              Nothing ->
+                              Just z  ->
+                                case (i, p) `lookup` z of
+                                  Nothing -> 
+                                  Just a  -> a
                           where
                             p = case x V.! i of
                                   Right (n,_) -> n
