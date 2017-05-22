@@ -29,6 +29,9 @@
 
 // TODO: document all of this?
 
+
+/**** NOTE: All distances and costs are signed, as often initialized to -INFINITY ****/
+
 #include "ukkCommon.h"
 
 #ifndef UKKCHECKP_H
@@ -42,59 +45,64 @@ typedef struct counts_t {
     long innerLoop;
 } counts_t;
 
-//typedef struct {int dist; long computed;} U_cell_type;
+
+/**  */
 typedef struct from_t {
-    int          ab;
-    int          ac;
-    unsigned int cost;
-    int          state;
+    int ab_idx_diff;
+    int ac_idx_diff;
+    int cost;           // Must be signed, as is sometimes initialized as negative
+    int state;
 } from_t;
 
+
+/**  */
 typedef struct ukk_cell_t {
-    int    dist;
+    int    dist;        // must be int because comparing to -INFINITY
     long   computed;
     from_t from;
 } ukk_cell_t;
 
+
+/**  */
 typedef struct check_point_t {
-    size_t       dist;
-    unsigned int cost;
+    int dist;   // must be int because comparing to -INFINITY
+    int cost;
 } check_point_t;
 
-//typedef struct {int from_ab,from_ac,from_cost,from_state;} From_type;
 
+/** For Ukkonen check point between to specified points in the U matrix... TODO: ...?
+ *  All distances and costs are signed, as often initialized to -INFINITY
+ */
+int doUkkInLimits( int startAB
+                 , int startAC
+                 , int startCost
+                 , int startState
+                 , int startDist
+                 , int finalAB
+                 , int finalAC
+                 , int finalCost
+                 , int finalState
+                 , int finalDist
+                 );
 
-//U_cell_type *U(int ab, int ac, int d, int s);
-
-// doUkkInLimits - for Ukkonen check point between to specified points in the U matrix
-size_t doUkkInLimits( size_t       startAB
-                    , size_t       startAC
-                    , unsigned int startCost
-                    , int          startState
-                    , size_t       startDist
-                    , size_t       finalAB
-                    , size_t       finalAC
-                    , unsigned int finalCost
-                    , int          finalState
-                    , size_t       finalDist
-                    );
-
-// getSplitRecurse - extracts info from the 'from' and CP info then recurses with doUkkInLimits
-//                   for the two subparts
-int getSplitRecurse( size_t       startAB
-                   , size_t       startAC
-                   , unsigned int startCost
-                   , int          startState
-                   , size_t       startDist
-                   , size_t       finalAB
-                   , size_t       finalAC
-                   , unsigned int finalCost
-                   , int          finalState
-                   , size_t       finalDist
+/** Extracts info from the 'from' and CP info then recurses with doUkkInLimits for the two subparts.
+ *  All distances and costs are signed, as often initialized to -INFINITY
+ */
+int getSplitRecurse( size_t startAB
+                   , size_t startAC
+                   , int    startCost
+                   , int    startState
+                   , int    startDist
+                   , size_t finalAB
+                   , size_t finalAC
+                   , int    finalCost
+                   , int    finalState
+                   , int    finalDist
                    );
 
-// traceBack - recovers an alignment from the U matrix directly.  Used for the base case
-//             of the check point recursion
+/** Recovers an alignment directly from the Ukkonnen matrix.
+ *  Used for the base case of the check point recursion.
+ */
 void traceBack( int startAB
               , int startAC
               , int startCost
@@ -102,22 +110,26 @@ void traceBack( int startAB
               , int finalAB
               , int finalAC
               , int finalCost
-              , int finalState
+              , unsigned int finalState
               );
 
-
-int Ukk( int ab
-       , int ac
-       , int d
-       , int state
+/**  */
+int Ukk( int          ab_idx_diff
+       , int          ac_idx_diff
+       , int          distance
+       , unsigned int state
        );
 
-// Find the furthest distance at ab, ac, d. wantState selects whether the
+// Find the furthest distance at ab_idx_diff, ac_idx_diff, input_distance. wantState selects whether the
 // best distance is returned, or the best final state (needed for ukk.alloc traceback)
-int best(int ab, int ac, int d, int wantState);
+int findBest_DistState( int ab_idx_diff
+                      , int ac_idx_diff
+                      , int input_dist
+                      , int return_the_state
+                      );
 
-int calcUkk(int ab, int ac, int d, int toState);
 
+/**  */
 int whichCharCost(char a, char b, char c);
 
 // IMPORTANT!!! Order of input characters is short, long, middle.
@@ -126,16 +138,22 @@ int doUkk( dyn_character_t *retCharA
          , dyn_character_t *retCharC
          );
 
+
+/**  */
 int char_to_base (char v);
 
+
+/**  */
 void printTraceBack( dyn_character_t *retCharA
                    , dyn_character_t *retCharB
                    , dyn_character_t *retCharC
                    );
 
-int calcUkk( int ab
-           , int ac
-           , int d
+
+/**  */
+int calcUkk( int ab_idx_diff
+           , int ac_idx_diff
+           , int input_dist
            , int toState
            );
 

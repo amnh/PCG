@@ -50,7 +50,10 @@
 
 #define CELLS_PER_BLOCK  10
 
-typedef enum {match, del, ins} Trans;  // The 3 possible state-machine states
+typedef enum { MATCH
+             , DEL
+             , INS
+             } Trans;  // The 3 possible state-machine states
 
 typedef struct alloc_info_t {
     size_t elemSize;
@@ -74,11 +77,11 @@ typedef struct alloc_info_t {
 
 #ifndef UKKCOMMON_C
 
-    extern int mismatchCost;
-    extern int gapOpenCost;
-    extern int gapExtendCost;
-    extern int deleteOpenCost;
-    extern int deleteExtendCost;
+    extern unsigned int mismatchCost;
+    extern unsigned int gapOpenCost;
+    extern unsigned int gapExtendCost;
+    extern unsigned int deleteOpenCost;
+    extern unsigned int deleteExtendCost;
 
     extern int neighbours[MAX_STATES];
     extern int contCost  [MAX_STATES];
@@ -98,18 +101,25 @@ typedef struct alloc_info_t {
 
 #define maxSingleCost (maxSingleStep * 2)
 
+
 int whichCharCost( char a
                  , char b
                  , char c
                  );
 
-int okIndex( size_t a
-           , size_t da
-           , size_t end
+
+/** Make sure that index a is valid for a given set of array indices */
+int okIndex( int a
+           , int da
+           , int end
            );
 
+
 // Setup routines
-int  stateTransitionCost(int from, int to);
+int  stateTransitionCost( int from
+                        , int to
+                        );
+
 
 void step( int  n
          , int *a
@@ -117,21 +127,27 @@ void step( int  n
          , int *c
          );
 
-int  neighbourNum( int i
-                 , int j
-                 , int k
-                 );
 
-void transitions( int s
-                , Trans st[3]
+int neighbourNum( int i
+                , int j
+                , int k
                 );
 
-char *state2str( int s );
 
-int countTrans( Trans st[3]
-              , Trans t
-              );
+void transitions( Trans  stateTransition[3]
+                , size_t state
+                );
 
+
+char *state2str( size_t state );
+
+
+/** Count number of times whichTransition appears in stateTransitions */
+size_t countThisTransition( Trans stateTransitions[3]
+                          , Trans whichTransition
+                          );
+
+/** Set up the Ukkonnen and check point matrices before running alignment. */
 void setup();
 
 
@@ -142,22 +158,24 @@ void checkAlign( char   *al
                , size_t  strLen
                );
 
+/** Reverses an array of ints. */
 void revIntArray( int    *arr
                 , size_t  start
                 , size_t  end
                 );
 
+/** Reverses an array of chars. */
 void revCharArray( char   *arr
                  , size_t  start
                  , size_t  end
                  );
 
-int alignmentCost( int     states[]
-                 , char   *al1
-                 , char   *al2
-                 , char   *al3
-                 , size_t  len
-                 );
+unsigned int alignmentCost( int     states[]
+                          , char   *al1
+                          , char   *al2
+                          , char   *al3
+                          , size_t  len
+                          );
 
 void *getPtr( alloc_info_t *a
             , int    ab
@@ -174,9 +192,9 @@ int powell_3D_align ( dyn_character_t *charA
                     , dyn_character_t *retCharA
                     , dyn_character_t *retCharB
                     , dyn_character_t *retCharC
-                    , int              mismatch
-                    , int              gapOpen
-                    , int              gapExtend
+                    , unsigned int     mismatch
+                    , unsigned int     gapOpen
+                    , unsigned int     gapExtend
                     );
 
 // allocation routines. Were previously commented out.

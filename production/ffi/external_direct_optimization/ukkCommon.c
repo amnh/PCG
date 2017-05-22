@@ -27,14 +27,14 @@
 // Created:      Tue May 11 13:22:07 1999
 // Author:       David Powell
 
-// Contains the common routines for ukk.alloc, ukk.noalign, ukk.checkp and ukk.dpa
+// ContaINS the common routines for ukk.alloc, ukk.noalign, ukk.checkp and ukk.dpa
 // Also see ukkCommon.h
 // Compile with -DSYSTEM_INFO to print system information of
 // every run. Useful to timing runs where cpu info is important.
 
 /**
  *  Usage: [m a b]
- *  where m is the cost of a mismatch,
+ *  where m is the cost of a misMATCH,
  *      a is the cost to start a gap,
  *      b is the cost to extend a gap.
  */
@@ -62,11 +62,11 @@ extern int    sabG,
               sCostG,
               sStateG;
 
-extern size_t CPwidth;
-extern int    CPcost;
+extern size_t checkPoint_width;
+extern int    checkPoint_cost;
 
 extern size_t furthestReached;
-extern size_t CPonDist;
+extern size_t checkPoint_onDist;
 extern size_t endA,
               endB,
               endC;
@@ -144,9 +144,11 @@ static inline void *allocPlane(alloc_info_t *a) {
 }
 
 #ifdef FIXED_NUM_PLANES
-    alloc_info_t allocInit(int elemSize, int costSize)
+    alloc_info_t allocInit( size_t elemSize
+                          , size_t costSize
+                          )
 #else
-    alloc_info_t allocInit(int elemSize)
+    alloc_info_t allocInit( size_t elemSize )
 #endif
 
 {
@@ -370,7 +372,7 @@ int powell_3D_align ( dyn_character_t *lesserChar
                     , dyn_character_t *retCharA
                     , dyn_character_t *retCharB
                     , dyn_character_t *retCharC
-                    , unsigned int     mismatch
+                    , unsigned int     misMATCH
                     , unsigned int     gapOpen
                     , unsigned int     gapExtend
                     )
@@ -384,7 +386,7 @@ int powell_3D_align ( dyn_character_t *lesserChar
     gapExtendCost    = gapExtend;
     deleteOpenCost   = gapOpenCost;
     deleteExtendCost = gapExtendCost;
-    mismatchCost     = mismatch;
+    mismatchCost     = misMATCH;
     /* Char_custom_val(lesserChar,sa);
     Char_custom_val(longerChar,sb);
     Char_custom_val(middleChar,sc);
@@ -416,7 +418,7 @@ int whichCharCost(char a, char b, char c) {
     assert(a!=0 && b!=0 && c!=0);
     /*
       When running as a ukk algorithm (ie. not the DPA), then
-      a == b == c only when there is a run of matches after a state other that MMM,
+      a == b == c only when there is a run of MATCHes after a state other that MMM,
       and since we are moving to a MMM state, this cost will NEVER be used,
       so it doesn't matter what we return
       When running as the DPA, it can occur at a == b == c, return 0 in this case
@@ -441,9 +443,10 @@ int whichCharCost(char a, char b, char c) {
 }
 
 
-int okIndex( size_t a
-           , size_t da
-           , size_t end
+/** Make sure that index a is valid for a given set of array indices */
+int okIndex( int a
+           , int da
+           , int end
            )
 {
     // if (DEBUG_CALL_ORDER) {
@@ -481,35 +484,61 @@ int neighbourNum(int i, int j, int k) {
 
 // --------------------------------------------------
 
-void transitions(int s, Trans st[3]) {
-    st[0] = (s / 1) % 3;
-    st[1] = (s / 3) % 3;
-    st[2] = (s / 9) % 3;
+void transitions( Trans  stateTransitions[3]
+                , size_t state
+                )
+{
+    stateTransitions[0] = (state / 1) % 3;
+    stateTransitions[1] = (state / 3) % 3;
+    stateTransitions[2] = (state / 9) % 3;
 }
 
-char *state2str(int s)  {
-    static char str[4];
-    Trans st[3];
-    int i;
-    transitions(stateNum[s], st);
-    for (i = 0;i < 3;i++) {
-        str[i] = (st[i]==match ? 'M' : (st[i]==del ? 'D' : 'I'));
+
+/**  */
+char *state2str( size_t state )
+{
+    static char returnStr[4];
+    Trans stateTransitions[3];
+
+    transitions( stateTransitions, stateNum[state] );
+
+    for (size_t i = 0; i < 3; i++) {
+        returnStr[i] = ( stateTransitions[i] == MATCH ? 'M' : ( stateTransitions[i] == DEL ? 'D' : 'I') );
     }
-    return str;
+    return returnStr;
 }
 
-int countTrans(Trans st[3], Trans t) {
-    int i, n = 0;
-    for (i = 0; i < 3; i++) {
-        if (st[i] == t) n++;
+
+/** Count number of times whichTransition appears in stateTransitions */
+size_t countThisTransition( Trans stateTransitions[3]
+                          , Trans whichTransition
+                          )
+{
+    size_t num = 0;
+
+    for (size_t i = 0; i < 3; i++) {
+        if (stateTransitions[i] == whichTransition) num++;
     }
-    return n;
+    return num;
 }
 
-void setup() {
+
+/** Set up the Ukkonnen and check point matrices before running alignment. */
+void setup()
+{
     maxSingleStep = numStates
                   = 0;
     size_t i;
+
+    int thisCost,
+        cost,
+        maxCost = 0;
+
+    int nState = 0;
+
+    size_t s1,
+           s2;
+
 
     for (i = 0; i < MAX_STATES - 1; i++) {
         neighbours[i] = 0;
@@ -520,95 +549,99 @@ void setup() {
             transCost[i][j] = 0;
         }
     }
-    int s, ns = 0;
+
 
     assert(gapOpenCost   == deleteOpenCost   && "Need to rewrite setup routine");
     assert(gapExtendCost == deleteExtendCost && "Need to rewrite setup routine");
 
-    for (s = 0; s < MAX_STATES; s++) {
-        Trans st[3];
-        transitions(s, st);
+    for (size_t state = 0; state < MAX_STATES; state++) {
+        Trans stateTransitions[3];
+        transitions( stateTransitions, state );
 
-        if (countTrans(st, match) == 0) {
-          continue;     // Must be at least one match
+        if (countThisTransition(stateTransitions, MATCH) == 0) {
+          continue;     // Must be at least one MATCH
         }
 
-        if (countTrans(st, ins) > 1) {
-          continue;     // Can't be more than 1 insert state!  (7/7/1998)
+        if (countThisTransition(stateTransitions, INS) > 1) {
+          continue;     // Can't be more than 1 INSert state!  (7/7/1998)
         }
 
         #ifdef LIMIT_TO_GOTOH
-            // Gotoh86 only allowed states that had a least 2 match states. (Total of 7 possible)
-            if (countTrans(st, ins) + countTrans(st, del) > 1) {
+            // Gotoh86 only allowed states that had a least 2 MATCH states. (Total of 7 possible)
+            if (countThisTransition(stateTransitions, INS) + countThisTransition(stateTransitions, DEL) > 1) {
               continue;
             }
         #endif
 
-        stateNum[ns] = s;
+        stateNum[nState] = state;
 
         // Setup possible neighbours for states (neighbours[])
-        int numInserts = countTrans(st, ins);
+        int numInserts = countThisTransition(stateTransitions, INS);
         if (numInserts == 0) {
-            neighbours[ns] = neighbourNum(st[0]==match ? 1 : 0,
-                                          st[1]==match ? 1 : 0,
-                                          st[2]==match ? 1 : 0);
+            neighbours[nState] = neighbourNum( stateTransitions[0] == MATCH ? 1 : 0
+                                         , stateTransitions[1] == MATCH ? 1 : 0
+                                         , stateTransitions[2] == MATCH ? 1 : 0
+                                         );
         } else { // (numInserts == 1)
-            neighbours[ns] = neighbourNum(st[0]==ins ? 1 : 0,
-                                          st[1]==ins ? 1 : 0,
-                                          st[2]==ins ? 1 : 0);
+            neighbours[nState] = neighbourNum( stateTransitions[0] == INS ? 1 : 0
+                                         , stateTransitions[1] == INS ? 1 : 0
+                                         , stateTransitions[2] == INS ? 1 : 0
+                                         );
         }
         // End setting up neighbours
 
 
         // Setup cost for continuing a state (contCost[])
-        int cost, cont2;
-        if (countTrans(st, ins) > 0) {
-            cost  = gapExtendCost;    /* Can only continue 1 insert at a time */
+        int cont2;
+        if (countThisTransition(stateTransitions, INS) > 0) {
+            cost  = gapExtendCost;    /* Can only continue 1 INSert at a time */
             cont2 = 0;
-        } else if (countTrans(st, match) == 3) {
-            cost  = mismatchCost;        /* All match states */
+        } else if (countThisTransition(stateTransitions, MATCH) == 3) {
+            cost  = mismatchCost;        /* All MATCH states */
             cont2 = 1;
-        } else if (countTrans(st, del) == 1) {
-            cost  = deleteExtendCost;    /* Continuing a delete */
+        } else if (countThisTransition(stateTransitions, DEL) == 1) {
+            cost  = deleteExtendCost;    /* Continuing a DELete */
             cont2 = 1;
         } else {
-            cost  = 2 * deleteExtendCost;    /* Continuing 2 deletes */
+            cost  = 2 * deleteExtendCost;    /* Continuing 2 DELetes */
             cont2 = 0;
         }
-        contCost[ns]   = cost;
-        secondCost[ns] = cont2;
+        contCost[nState]   = cost;
+        secondCost[nState] = cont2;
         // End setup of contCost[]
 
-        ns++;
+        nState++;
     }
 
-    numStates = ns;
+    numStates = nState;
 
     // Setup state transition costs (transCost[][])
-    size_t s1, s2;
-    int maxCost = 0;
 
     assert(gapOpenCost == deleteOpenCost && "Need to rewrite setup routine");
     for (s1 = 0; s1 < numStates; s1++) {
         for (s2 = 0; s2 < numStates; s2++) {
             Trans from[3], to[3];
-            int cost = 0, i;
-            transitions(stateNum[s1], from);
-            transitions(stateNum[s2], to);
+            int cost = 0;
+            transitions( from, stateNum[s1] );
+            transitions( to  , stateNum[s2] );
 
             for (i = 0; i < 3; i++) {
-                if ((to[i]==ins || to[i]==del) && (to[i] != from[i])){
+                if (    (to[i] == INS || to[i] == DEL)
+                     && (to[i] != from[i])
+                   ){
                     cost += gapOpenCost;
                 }
             }
             transCost[s1][s2] = cost;
 
             // Determine biggest single step cost
-            int thisCost = cost + contCost[s2];
-            Trans st[3];
-            transitions(stateNum[s2], st);
-            thisCost += mismatchCost * (countTrans(st, match) - 1);
-            maxCost = (maxCost < thisCost ? thisCost : maxCost);
+            thisCost = cost + contCost[s2];
+            Trans stateTransitions[3];
+
+            transitions( stateTransitions, stateNum[s2] );
+
+            thisCost += mismatchCost * (countThisTransition(stateTransitions, MATCH) - 1);
+            maxCost   = (maxCost < thisCost ? thisCost : maxCost);
 
         }
     }
@@ -622,40 +655,59 @@ void setup() {
 
 /* ---------------------------------------------------------------------- */
 /* Some alignment checking routines */
-void checkAlign(char *al, int alLen, char *str, int strLen)  {
-    int i,j=0;
-    for (i=0; i<alLen; i++) {
-        if (al[i] == '-') continue;
-        assert(al[i]==str[j] && "Output alignment not equal to input string");
+void checkAlign( char   *alignment
+               , size_t  alLen
+               , char   *str
+               , size_t  strLen
+               )
+{
+    size_t j = 0;
+
+    for (size_t i = 0; i < alLen; i++) {
+        if (alignment[i] == '-') continue;
+
+        assert( alignment[i] == str[j] && "Output alignment not equal to input string" );
         j++;
     }
-    assert(j==strLen && "Output alignment not equal length to input string");
+
+    assert( j == strLen && "Output alignment not equal length to input string" );
 }
 
-void revIntArray(int *arr, int start, int end) {
-    int i;
-    if (end<=start) {
-        return;
-    }
-    for (i=start; i<(end+start)/2; i++) {
-        int t = arr[i];
-        arr[i] = arr[end-i+start-1];
-        arr[end-i+start-1] = t;
-    }
-}
 
-void revCharArray(char *arr, int start, int end) {
-    int i;
-    if (end<=start) {
-        return;
-    }
-    for (i=start; i<(end+start)/2; i++) {
-        char t = arr[i];
-        arr[i] = arr[end-i+start-1];
-        arr[end-i+start-1] = t;
+void revIntArray( int    *arr
+                , size_t  start
+                , size_t  end
+                )
+{
+    if (end <= start) return;
+
+    int swap;
+
+    for (size_t i = start; i < (end + start) / 2; i++) {
+        swap                     = arr[i];
+        arr[i]                   = arr[end - i + start - 1];
+        arr[end - i + start - 1] = swap;
     }
 }
 
+void revCharArray( char   *arr
+                 , size_t  start
+                 , size_t  end
+                 )
+{
+    if (end <= start) return;
+
+    char swap;
+
+    for (size_t i = start; i < (end + start) / 2; i++) {
+        swap                     = arr[i];
+        arr[i]                   = arr[end - i + start - 1];
+        arr[end - i + start - 1] = swap;
+    }
+}
+
+
+/**  */
 unsigned int alignmentCost( int     states[]
                           , char   *al1
                           , char   *al2
@@ -664,65 +716,72 @@ unsigned int alignmentCost( int     states[]
                           )
 {
     unsigned int cost = 0;
-    Trans last_st[3] = {match, match, match};
+    size_t state;
 
-    assert(gapOpenCost == deleteOpenCost);
+    Trans last_stateTransitions[3] = {MATCH, MATCH, MATCH};
+    Trans stateTransitions[3];
+
+    assert( gapOpenCost == deleteOpenCost );
 
     for (size_t i = 0; i < len; i++) {
-        int s;
-        Trans st[3];
-        transitions(stateNum[states[i]], st);
+        transitions( stateTransitions, stateNum[ states[i] ] );
 
     //    if (i>0) fprintf(stderr,"%-2d  ",cost);
 
         // Pay for begining a gap.
-        for (s = 0; s < 3; s++) {
-            if (st[s] != match && st[s] != last_st[s]) {
+        for (state = 0; state < 3; state++) {
+            if (   stateTransitions[state] != MATCH
+                && stateTransitions[state] != last_stateTransitions[state]
+               ) {
                 cost += gapOpenCost;
             }
         }
 
-        for (s = 0; s < 3; s++) {
-          last_st[s] = st[s];
+        for (state = 0; state < 3; state++) {
+          last_stateTransitions[state] = stateTransitions[state];
         }
 
         // Pay for continuing an insert
-        if (countTrans(st, ins)>0) {
-            assert(countTrans(st,ins) == 1);
+        if (countThisTransition(stateTransitions, INS) > 0) {
+            assert(countThisTransition(stateTransitions,INS) == 1);
             cost += gapExtendCost;
             continue;
         }
 
         // Pay for continuing deletes
-        cost += deleteExtendCost * countTrans(st, del);
+        cost += deleteExtendCost * countThisTransition(stateTransitions, DEL);
 
         // Pay for mismatches
         char ch[3];
         int localCIdx = 0;
 
-        if (st[0] == match) {
+        if (stateTransitions[0] == MATCH) {
             assert(al1[i] != '-');
             ch[localCIdx++] = al1[i];
         }
-        if (st[1] == match) {
+
+        if (stateTransitions[1] == MATCH) {
             assert(al2[i] != '-');
             ch[localCIdx++] = al2[i];
         }
-        if (st[2] == match) {
+
+        if (stateTransitions[2] == MATCH) {
             assert(al3[i] != '-');
             ch[localCIdx++] = al3[i];
         }
+
         localCIdx--;
+
         for (; localCIdx > 0; localCIdx--) {
             if (ch[localCIdx-1] != ch[localCIdx])  cost += mismatchCost;
         }
-        if (   countTrans(st, match) == 3
+
+        if (   countThisTransition(stateTransitions, MATCH) == 3
             && ch[0] == ch[2]
             && ch[0] != ch[1]
-            ) {
-            cost -= mismatchCost;
+           ) {
+            cost -= mismatchCost; // end pay for misMATCHes
         }
-        // end pay for mismatches
     }
 
     printf ("The recomputed cost is %d\n", cost);
