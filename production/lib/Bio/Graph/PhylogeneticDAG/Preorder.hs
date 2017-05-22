@@ -215,6 +215,7 @@ selectApplicableResolutions topology cache =
 preorderFromRooting
   :: ( HasBlockCost u v w x y z  Word Double
      , HasTraversalFoci z (Maybe TraversalFoci)
+     , Show z
      )
   => (z -> [(Word, z')] -> z')
   -> PhylogeneticDAG2 e n u v w x y z
@@ -254,7 +255,6 @@ preorderFromRooting f (PDAG2 dag) = PDAG2 $ newDAG dag
               where
                 g i = mapping ! i
                 
---                mapping :: IntMap (Maybe Int)
                 mapping = lhs <> rhs
                   where
                     -- TODO: Get the appropriate resolution here!
@@ -298,8 +298,11 @@ preorderFromRooting f (PDAG2 dag) = PDAG2 $ newDAG dag
 --    memo :: Vector (NonEmpty (Vector z'))
     memo = V.generate dagSize generateDatum
       where
-        generateDatum i = zipWith (zipWith f) childCharSeqOnlyDynChars parentCharSeqOnlyDynChars
+        generateDatum i
+          | i `notElem` rootRefs dag = zipWith (zipWith f) childCharSeqOnlyDynChars parentCharSeqOnlyDynChars
+          | otherwise  = memo ! adjacentIndex
           where
+            adjacentIndex = head . IM.keys . childRefs $ references dag ! i
 {-
             (inheritedToplogies, newResolution)
               | i `elem` rootRefs dag =
@@ -326,23 +329,26 @@ preorderFromRooting f (PDAG2 dag) = PDAG2 $ newDAG dag
                         dec = 
                             case x ! i of
                               Right (_, y) -> f y []
-                              Left  p      -> (! j) . (! k) $ memo ! p
+                              Left  p      -> if i == p
+                                              then error $ "Recursive memoizeation for " <> show i
+                                              else (! j) . (! k) $ memo ! p
 
             
 --          childCharSeqOnlyDynChars   :: NonEmpty (Vector a)
             childCharSeqOnlyDynChars = zipWithKey g parentVectors $ fst <$> sequenceOfBlockMinimumTopologies
               where
                 -- FoldMap is a bit inefficient with Vectors here, worry about it later.
-                g k v topology = mapWithKey h v
+                g k v topology = trace ("\nnode: " <> show i <> "block: " <> show k) mapWithKey h v
                   where
                           -- Get this character from the block
-                    h j x = (V.! j) . dynamicCharacters
+                    h j x = (! j) . dynamicCharacters
                           -- Get the appropriate block from the resolution that contains this character
-                          . (NE.!! k) . toBlocks . characterSequence
+                          . (! k) . toBlocks . characterSequence
                           -- Get the appropriate resolution based on this character's display tree toplogy
                           $ selectApplicableResolutions topology directedResolutions
                       where
-                        directedResolutions = (contextualNodeDatum .!>. i) .!>. (i,p)
+                        directedResolutions = (contextualNodeDatum ! i) ! (trace ("\nkey: " <> show j <> "\nsub keys: " <> show (M.keys $ contextualNodeDatum ! i) <> " ! parent: ")) (p,i)
+                                            --  (contextualNodeDatum .!>. i) .!>. (i,p)
 {-                          
                             case i `lookup` contextualNodeDatum of
                               Nothing -> error $ "Couldn't find: " <> show i
@@ -351,11 +357,10 @@ preorderFromRooting f (PDAG2 dag) = PDAG2 $ newDAG dag
                                   Nothing -> error $ "Couldn't find: " <> show (i, p) <> " in: " <> show (M.keys z)
                                   Just a  -> a
 -}
-                          where
-                            p = case x V.! i of
-                                  Right (n,_) -> n
-                                  -- error "Next up Batman vs The RTS!\nReady?\nFIGHT!\nPOW! BLARM! THRAP!\nBatman wins!"
-                                  Left  n -> n
+                        p = case x ! i of
+                              Right (n,_) -> n
+                              -- error "Next up Batman vs The RTS!\nReady?\nFIGHT!\nPOW! BLARM! THRAP!\nBatman wins!"
+                              Left  n -> n
             
             
 --            childResolutions :: NonEmpty [a]
