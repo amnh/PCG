@@ -9,7 +9,7 @@
 #include "debug_constants.h"
 // #include "costMatrix.h"
 #include "alignmentMatrices.h"
-//#include "ukkCheckp.h"
+#include "ukkCheckPoint.h"
 #include "ukkCommon.h"
 
 /** Print an alignIO char. Assume char exists at end of buffer. */
@@ -549,13 +549,15 @@ int align2dAffine( const alignIO_p           inputChar1_aio
  *
  *  In the last two cases the union will replace the gapped character placeholder.
  */
-int align3d( const alignIO_p          inputChar1_aio
-           , const alignIO_p          inputChar2_aio
-           , const alignIO_p          inputChar3_aio
-           , const alignIO_p          ungappedOutput_aio
-           , const alignIO_p          gappedOutput_aio
+int align3d( const alignIO_p           inputChar1_aio
+           , const alignIO_p           inputChar2_aio
+           , const alignIO_p           inputChar3_aio
+           , const alignIO_p           ungappedOutput_aio
+           , const alignIO_p           gappedOutput_aio
            // , const alignment_matrices_t *     algn_mtxs3d
            ,       cost_matrices_3d_t *costMtx3d
+           ,       unsigned int        gap_open_cost
+           ,       unsigned int        gap_extension_cost
            )
 {
 
@@ -672,9 +674,9 @@ int align3d( const alignIO_p          inputChar1_aio
                                , retLongChar
                                , retShortChar
                                , retMiddleChar
-                               , 1    // mismatch cost, must be > 0
-                               , 2    // gap open cost, must be >= 0
-                               , 1    // gap extend cost, must be > 0
+                               , 1                   // mismatch cost, must be > 0
+                               , gap_open_cost       // must be >= 0
+                               , gap_extension_cost  // must be > 0
                                );
 
     dyn_char_p ungappedMedianChar = malloc(sizeof(dyn_character_t));

@@ -30,12 +30,12 @@
 // TODO: document all of this?
 
 
-/**** NOTE: All distances and costs are signed, as often initialized to -INFINITY ****/
-
-#include "ukkCommon.h"
+/**** NOTE: All edit distances and costs are signed, as often initialized to -INFINITY ****/
 
 #ifndef UKKCHECKP_H
 #define UKKCHECKP_H
+
+#include "ukkCommon.h"
 
 // AllocInfo myUAllocInfo;
 // AllocInfo myCPAllocInfo;
@@ -57,75 +57,106 @@ typedef struct from_t {
 
 /**  */
 typedef struct ukk_cell_t {
-    int    dist;        // must be int because comparing to -INFINITY
+    int    editDist;        // must be int because comparing to -INFINITY
     long   computed;
     from_t from;
 } ukk_cell_t;
 
 
 /**  */
-typedef struct check_point_t {
-    int dist;   // must be int because comparing to -INFINITY
+typedef struct checkPoint_cell_t {
+    int editDist;   // must be int because comparing to -INFINITY
     int cost;
-} check_point_t;
+} checkPoint_cell_t;
+
+
+// TODO: unsigned ints for costs? Probably shouldn't be, actually.
+/** This is the interface function to the alignment code. It takes in three characters, as well as a mismatch cost, a gap open cost and
+ *  a gap extention cost (all of which should be replaced by a 3d cost matrix).
+ *
+ *  IMPORTANT!!! Order of input characters is short, long, middle, or at least short must be first.
+ */
+int powell_3D_align ( dyn_character_t *charA
+                    , dyn_character_t *charB
+                    , dyn_character_t *charC
+                    , dyn_character_t *retCharA
+                    , dyn_character_t *retCharB
+                    , dyn_character_t *retCharC
+                    , unsigned int     mismatch_cost
+                    , unsigned int     gapOpen
+                    , unsigned int     gapExtend
+                    );
 
 
 /** For Ukkonen check point between to specified points in the U matrix... TODO: ...?
  *  All distances and costs are signed, as often initialized to -INFINITY
  */
-int doUkkInLimits( int startAB
-                 , int startAC
-                 , int startCost
-                 , int startState
-                 , int startDist
-                 , int finalAB
-                 , int finalAC
-                 , int finalCost
-                 , int finalState
-                 , int finalDist
+int doUkkInLimits( int                  start_ab_diff
+                 , int                  start_ac_diff
+                 , int                  startCost
+                 , int                  startState
+                 , int                  startDist
+                 , int                  final_ab_diff
+                 , int                  final_ac_diff
+                 , int                  finalCost
+                 , int                  finalState
+                 , int                  finalDist
+                 , global_costs_t      *globalCosts
+                 , global_characters_t *globalCharacters
                  );
+
 
 /** Extracts info from the 'from' and CP info then recurses with doUkkInLimits for the two subparts.
  *  All distances and costs are signed, as often initialized to -INFINITY
  */
-int getSplitRecurse( size_t startAB
-                   , size_t startAC
-                   , int    startCost
-                   , int    startState
-                   , int    startDist
-                   , size_t finalAB
-                   , size_t finalAC
-                   , int    finalCost
-                   , int    finalState
-                   , int    finalDist
+int getSplitRecurse( size_t               start_ab_diff
+                   , size_t               start_ac_diff
+                   , int                  startCost
+                   , int                  startState
+                   , int                  startDist
+                   , size_t               final_ab_diff
+                   , size_t               final_ac_diff
+                   , int                  finalCost
+                   , int                  finalState
+                   , int                  finalDist
+                   , global_costs_t      *globalCosts
+                   , global_characters_t *globalCharacters
+                   , global_arrays_t     *globalCostArrays
                    );
+
 
 /** Recovers an alignment directly from the Ukkonnen matrix.
  *  Used for the base case of the check point recursion.
  */
-void traceBack( int startAB
-              , int startAC
-              , int startCost
-              , int startState
-              , int finalAB
-              , int finalAC
-              , int finalCost
-              , unsigned int finalState
+void traceBack( int                  start_ab_diff
+              , int                  start_ac_diff
+              , int                  startCost
+              , int                  startState
+              , int                  final_ab_diff
+              , int                  final_ac_diff
+              , int                  finalCost
+              , unsigned int         finalState
+              , global_characters_t *globalCharacters
               );
 
 /**  */
-int Ukk( int          ab_idx_diff
-       , int          ac_idx_diff
-       , int          distance
-       , unsigned int state
+int Ukk( int                  ab_idx_diff
+       , int                  ac_idx_diff
+       , int                  editDistance
+       , unsigned int         state
+       , global_costs_t      *globalCosts
+       , global_characters_t *globalCharacters
+       , global_arrays_t     *globalCostArrays
        );
+
 
 // Find the furthest distance at ab_idx_diff, ac_idx_diff, input_distance. wantState selects whether the
 // best distance is returned, or the best final state (needed for ukk.alloc traceback)
-int findBest_DistState( int ab_idx_diff
-                      , int ac_idx_diff
-                      , int input_dist
-                      , int return_the_state
+int findBest_DistState( int    ab_idx_diff
+                      , int    ac_idx_diff
+                      , int    input_editDist
+                      , int    return_the_state
+                      , size_t numStates
                       );
 
 
@@ -133,28 +164,38 @@ int findBest_DistState( int ab_idx_diff
 int whichCharCost(char a, char b, char c);
 
 // IMPORTANT!!! Order of input characters is short, long, middle.
-int doUkk( dyn_character_t *retCharA
-         , dyn_character_t *retCharB
-         , dyn_character_t *retCharC
+int doUkk( dyn_character_t     *retLesserChar
+         , dyn_character_t     *retMiddleChar
+         , dyn_character_t     *retLongerChar
+         , global_costs_t      *globalCosts
+         , global_characters_t *globalCharacters
+         , global_arrays_t     *globalCostArrays
          );
 
 
-/**  */
+/** Converts a character input, {A, C, G, T} to an int. Problem: on ambiguous inputs biases toward A.
+ *  Also, disallows larger alphabets.
+ */
 int char_to_base (char v);
 
 
 /**  */
-void printTraceBack( dyn_character_t *retCharA
-                   , dyn_character_t *retCharB
-                   , dyn_character_t *retCharC
+void printTraceBack( dyn_character_t     *retLesserChar
+                   , dyn_character_t     *retMiddleChar
+                   , dyn_character_t     *retLongerChar
+                   , global_costs_t      *globalCosts
+                   , global_characters_t *globalCharacters
                    );
 
 
 /**  */
-int calcUkk( int ab_idx_diff
-           , int ac_idx_diff
-           , int input_dist
-           , int toState
+int calcUkk( int                  ab_idx_diff
+           , int                  ac_idx_diff
+           , int                  input_editDist
+           , int                  toState
+           , global_costs_t      *globalCosts
+           , global_characters_t *globalCharacters
+           , global_arrays_t     *globalCostArrays
            );
 
-#endif
+#endif // UKKCHECKP_H

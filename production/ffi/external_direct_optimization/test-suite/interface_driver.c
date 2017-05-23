@@ -545,6 +545,8 @@ int main() {
                               , ungappedMedianChar
                               , gappedMedianChar
                               , costMtx3d
+                              , 2        // gap open cost
+                              , 1        // gap extension cost
                               );
             // if (DEBUG_MAT) {
             //     printf("\n\nFinal alignment matrix: \n\n");

@@ -88,8 +88,10 @@ int align3d( const alignIO_p           inputChar1_aio
            , const alignIO_p           inputChar3_aio
            , const alignIO_p           ungappedOutput_aio
            , const alignIO_p           gappedOutput_aio
-           // , const nw_matrices_p       algn_mtxs3d
+           // , const alignment_matrices_t *     algn_mtxs3d
            ,       cost_matrices_3d_t *costMtx3d
+           ,       unsigned int        gap_open_cost
+           ,       unsigned int        gap_extension_cost
            );
 
 #endif // C_ALIGNMENT_INTERFACE_H
