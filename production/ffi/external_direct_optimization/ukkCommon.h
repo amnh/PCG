@@ -87,6 +87,7 @@ typedef struct global_costs_t {
     unsigned int deleteExtendCost;
 } global_costs_t;
 
+
 typedef struct global_characters_t {
     size_t numStates;
     size_t maxSingleStep;
@@ -100,12 +101,13 @@ typedef struct global_characters_t {
     size_t middleLen;
 } global_characters_t;
 
+
 typedef struct global_arrays_t {
-    int neighbours;
-    int contCost;
-    int secondCost;
-    int transCost;
-    int stateNum;
+    int *neighbours;
+    int *contCost;
+    int *secondCost;
+    int *transCost;
+    int *stateNum;
 } global_arrays_t;
 
 // #ifndef UKKCOMMON_C
@@ -154,11 +156,14 @@ int okIndex( int a
            );
 
 
-// Setup routines
+/******** Setup routines ********/
+
+/*
 int stateTransitionCost( int from
                        , int to
+                       , int *transCost
                        );
-
+*/
 
 void copyCharacter ( char            *str
                    , dyn_character_t *inChar
@@ -183,7 +188,12 @@ void transitions( Trans  stateTransition[3]
                 );
 
 
-char *state2str( size_t state );
+/** Takes an array of states by value and returns a string of those states as match, delete, insert.
+ *  Used only in printing of state array if DEBUG_3D is set.
+ */
+char *state2str( size_t  state
+               , int    *stateNum
+               );
 
 
 /** Count number of times whichTransition appears in stateTransitions */
@@ -228,12 +238,13 @@ void revCharArray( char   *arr
                  );
 
 
-unsigned int alignmentCost( int             states[]
-                          , char           *al1
-                          , char           *al2
-                          , char           *al3
-                          , size_t          len
-                          , global_costs_t *globalCosts
+unsigned int alignmentCost( int              states[]
+                          , char            *al1
+                          , char            *al2
+                          , char            *al3
+                          , size_t           len
+                          , global_costs_t  *globalCosts
+                          , global_arrays_t *globalCostArrays
                           );
 
 

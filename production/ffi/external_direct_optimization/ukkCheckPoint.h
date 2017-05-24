@@ -103,6 +103,7 @@ int doUkkInLimits( int                  start_ab_diff
                  , int                  finalDist
                  , global_costs_t      *globalCosts
                  , global_characters_t *globalCharacters
+                 , global_arrays_t     *globalCostArrays
                  );
 
 
@@ -150,14 +151,31 @@ int Ukk( int                  ab_idx_diff
        );
 
 
-// Find the furthest distance at ab_idx_diff, ac_idx_diff, input_distance. wantState selects whether the
-// best distance is returned, or the best final state (needed for ukk.alloc traceback)
-int findBest_DistState( int    ab_idx_diff
-                      , int    ac_idx_diff
-                      , int    input_editDist
-                      , int    return_the_state
-                      , size_t numStates
-                      );
+/** For clarity, calls findBest with return_the_state = 0 */
+int find_bestDist( int    ab_idx_diff
+                 , int    ac_idx_diff
+                 , int    input_editDist
+                 , size_t numStates
+                 );
+
+
+/** For clarity, calls findBest with return_the_state = 1 */
+int find_bestState( int    ab_idx_diff
+                  , int    ac_idx_diff
+                  , int    input_editDist
+                  , size_t numStates
+                  );
+
+
+/** Find the furthest distance at ab_idx_diff, ac_idx_diff, input_editDistance. return_the_state selects whether the
+ *  best distance is returned, or the best final state (needed for ukk.alloc traceback)
+ */
+int findBest( int    ab_idx_diff
+            , int    ac_idx_diff
+            , int    input_editDist
+            , int    return_the_state
+            , size_t numStates
+            );
 
 
 /**  */
@@ -185,6 +203,7 @@ void printTraceBack( dyn_character_t     *retLesserChar
                    , dyn_character_t     *retLongerChar
                    , global_costs_t      *globalCosts
                    , global_characters_t *globalCharacters
+                   , global_arrays_t     *globalCostArrays
                    );
 
 

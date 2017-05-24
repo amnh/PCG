@@ -438,22 +438,36 @@ int okIndex( int a
 
 
 
-/* ---------------------------------------------------------------------- */
-/* Common setup routines */
+/******** Setup routines ********/
 
-int stateTransitionCost(int from, int to) {
+/*
+int stateTransitionCost( int from
+                       , int to
+                       , int *transCost
+                       )
+{
     return transCost[from][to];
 }
+*/
 
 // --------------------------------------------------
-void step(int n, int *a, int *b, int *c) {
+void step( int n
+         , int *a
+         , int *b
+         , int *c
+         )
+{
     assert(n > 0 && n <= 7);
     *a = (n >> 0) & 1;
     *b = (n >> 1) & 1;
     *c = (n >> 2) & 1;
 }
 
-int neighbourNum(int i, int j, int k) {
+int neighbourNum( int i
+                , int j
+                , int k
+                )
+{
     return (i * 1) + (j * 2) + (k * 4);
 }
 
@@ -469,8 +483,12 @@ void transitions( Trans  stateTransitions[3]
 }
 
 
-/**  */
-char *state2str( size_t state )
+/** Takes an array of states by value and returns a string of those states as match, delete, insert.
+ *  Used only in printing of state array if DEBUG_3D is set.
+ */
+char *state2str( size_t  state
+               , int    *stateNum
+               )
 {
     static char returnStr[4];
     Trans stateTransitions[3];
@@ -535,21 +553,21 @@ void setup( global_costs_t      *globalCosts
     globalCharacters->longerLen = longerChar->len;
     globalCharacters->middleLen = middleChar->len;
 
-    globalCosts->neighbours = calloc( MAX_STATES,              sizeof(int) );
-    globalCosts->contCost   = calloc( MAX_STATES,              sizeof(int) );
-    globalCosts->secondCost = calloc( MAX_STATES,              sizeof(int) );
-    globalCosts->transCost  = calloc( MAX_STATES * MAX_STATES, sizeof(int) );
-    globalCosts->stateNum   = calloc( MAX_STATES,              sizeof(int) );
+    globalCostArrays->neighbours = calloc( MAX_STATES,              sizeof(int) );
+    globalCostArrays->contCost   = calloc( MAX_STATES,              sizeof(int) );
+    globalCostArrays->secondCost = calloc( MAX_STATES,              sizeof(int) );
+    globalCostArrays->transCost  = calloc( MAX_STATES * MAX_STATES, sizeof(int) );
+    globalCostArrays->stateNum   = calloc( MAX_STATES,              sizeof(int) );
 
     int thisCost,
         cost,
         maxCost = 0,
-        nState = 0;
+        nState  = 0;
 
     size_t s1,
-           s2,
-           numStates;
+           s2;
 
+/* Don't need to do this; calloc'ed above
     for (i = 0; i < MAX_STATES - 1; i++) {
         globalCosts->neighbours[i] = 0;
         globalCosts->contCost[i]   = 0;
@@ -559,6 +577,7 @@ void setup( global_costs_t      *globalCosts
             globalCosts->transCost[i][j] = 0;
         }
     }
+*/
 
     assert(globalCosts->gapOpenCost   == globalCosts->deleteOpenCost   && "Need to rewrite setup routine");
     assert(globalCosts->gapExtendCost == globalCosts->deleteExtendCost && "Need to rewrite setup routine");
@@ -568,34 +587,34 @@ void setup( global_costs_t      *globalCosts
         transitions( stateTransitions, state );
 
         if (countThisTransition(stateTransitions, MATCH) == 0) {
-          continue;     // Must be at least one MATCH
+          continue;     // Must be at least one match
         }
 
         if (countThisTransition(stateTransitions, INS) > 1) {
-          continue;     // Can't be more than 1 INSert state!  (7/7/1998)
+          continue;     // Can't be more than 1 insert state!  (7/7/1998)
         }
 
         #ifdef LIMIT_TO_GOTOH
-            // Gotoh86 only allowed states that had a least 2 MATCH states. (Total of 7 possible)
+            // Gotoh86 only allowed states that had a least 2 match states. (Total of 7 possible)
             if (countThisTransition(stateTransitions, INS) + countThisTransition(stateTransitions, DEL) > 1) {
               continue;
             }
         #endif
 
-        stateNum[nState] = state;
+        globalCostArrays->stateNum[nState] = state;
 
         // Setup possible neighbours for states (neighbours[])
         int numInserts = countThisTransition(stateTransitions, INS);
         if (numInserts == 0) {
-            globalCosts->neighbours[nState] = neighbourNum( stateTransitions[0] == MATCH ? 1 : 0
-                                                          , stateTransitions[1] == MATCH ? 1 : 0
-                                                          , stateTransitions[2] == MATCH ? 1 : 0
-                                                          );
+            globalCostArrays->neighbours[nState] = neighbourNum( stateTransitions[0] == MATCH ? 1 : 0
+                                                               , stateTransitions[1] == MATCH ? 1 : 0
+                                                               , stateTransitions[2] == MATCH ? 1 : 0
+                                                               );
         } else { // (numInserts == 1)
-            globalCosts->neighbours[nState] = neighbourNum( stateTransitions[0] == INS ? 1 : 0
-                                                          , stateTransitions[1] == INS ? 1 : 0
-                                                          , stateTransitions[2] == INS ? 1 : 0
-                                                          );
+            globalCostArrays->neighbours[nState] = neighbourNum( stateTransitions[0] == INS ? 1 : 0
+                                                               , stateTransitions[1] == INS ? 1 : 0
+                                                               , stateTransitions[2] == INS ? 1 : 0
+                                                               );
         }
         // End setting up neighbours
 
@@ -603,36 +622,36 @@ void setup( global_costs_t      *globalCosts
         // Setup cost for continuing a state (contCost[])
         int cont2;
         if (countThisTransition(stateTransitions, INS) > 0) {
-            cost  = globalCosts->gapExtendCost;    /* Can only continue 1 INSert at a time */
+            cost  = globalCosts->gapExtendCost;    /* Can only continue 1 insert at a time */
             cont2 = 0;
         } else if (countThisTransition(stateTransitions, MATCH) == 3) {
-            cost  = globalCosts->mismatchCost;        /* All MATCH states */
+            cost  = globalCosts->mismatchCost;        /* All match states */
             cont2 = 1;
         } else if (countThisTransition(stateTransitions, DEL) == 1) {
-            cost  = globalCosts->deleteExtendCost;    /* Continuing a DELete */
+            cost  = globalCosts->deleteExtendCost;    /* Continuing  delete */
             cont2 = 1;
         } else {
-            cost  = 2 * globalCosts->deleteExtendCost;    /* Continuing 2 DELetes */
+            cost  = 2 * globalCosts->deleteExtendCost;    /* Continuing 2 deletes */
             cont2 = 0;
         }
-        globalCosts->contCost[nState]   = cost;
-        globalCosts->secondCost[nState] = cont2;
+        globalCostArrays->contCost[nState]   = cost;
+        globalCostArrays->secondCost[nState] = cont2;
         // End setup of contCost[]
 
-        nState++;
+        nState++; // Because of continues, above, does not track `state`.
     }
 
-    numStates = nState;
+    globalCharacters->numStates = nState;
 
     // Setup state transition costs (transCost[][])
 
     assert(globalCosts->gapOpenCost == globalCosts->deleteOpenCost && "Need to rewrite setup routine");
-    for (s1 = 0; s1 < numStates; s1++) {
-        for (s2 = 0; s2 < numStates; s2++) {
+    for (s1 = 0; s1 < globalCharacters->numStates; s1++) {
+        for (s2 = 0; s2 < globalCharacters->numStates; s2++) {
             Trans from[3], to[3];
             int cost = 0;
-            transitions( from, stateNum[s1] );
-            transitions( to  , stateNum[s2] );
+            transitions( from, globalCostArrays->stateNum[s1] );
+            transitions( to  , globalCostArrays->stateNum[s2] );
 
             for (i = 0; i < 3; i++) {
                 if (    (to[i] == INS || to[i] == DEL)
@@ -641,13 +660,13 @@ void setup( global_costs_t      *globalCosts
                     cost += globalCosts->gapOpenCost;
                 }
             }
-            transCost[s1][s2] = cost;
+            globalCostArrays->transCost[s1 * MAX_STATES + s2] = cost;
 
             // Determine biggest single step cost
-            thisCost = cost + globalCosts->contCost[s2];
+            thisCost = cost + globalCostArrays->contCost[s2];
             Trans stateTransitions[3];
 
-            transitions( stateTransitions, stateNum[s2] );
+            transitions( stateTransitions, globalCostArrays->stateNum[s2] );
 
             thisCost += globalCosts->mismatchCost * (countThisTransition(stateTransitions, MATCH) - 1);
             maxCost   = (maxCost < thisCost ? thisCost : maxCost);
@@ -717,12 +736,13 @@ void revCharArray( char   *arr
 
 
 /**  */
-unsigned int alignmentCost( int             states[]
-                          , char           *al1
-                          , char           *al2
-                          , char           *al3
-                          , size_t          len
-                          , global_costs_t *globalCosts
+unsigned int alignmentCost( int              states[]
+                          , char            *al1
+                          , char            *al2
+                          , char            *al3
+                          , size_t           len
+                          , global_costs_t  *globalCosts
+                          , global_arrays_t *globalCostArrays
                           )
 {
     unsigned int totalCost = 0;
@@ -734,7 +754,7 @@ unsigned int alignmentCost( int             states[]
     assert( globalCosts->gapOpenCost == globalCosts->deleteOpenCost );
 
     for (size_t i = 0; i < len; i++) {
-        transitions( stateTransitions, stateNum[ states[i] ] );
+        transitions( stateTransitions, globalCostArrays->stateNum[ states[i] ] );
 
     //    if (i>0) fprintf(stderr,"%-2d  ",totalCost);
 
@@ -748,7 +768,7 @@ unsigned int alignmentCost( int             states[]
         }
 
         for (state = 0; state < 3; state++) {
-          last_stateTransitions[state] = stateTransitions[state];
+            last_stateTransitions[state] = stateTransitions[state];
         }
 
         // Pay for continuing an insert
