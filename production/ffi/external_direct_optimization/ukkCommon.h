@@ -104,7 +104,7 @@ typedef struct global_characters_t {
 
 typedef struct global_arrays_t {
     int *neighbours;
-    int *contCost;
+    int *stateContinuationCost;
     int *secondCost;
     int *transCost;
     int *stateNum;
@@ -113,7 +113,7 @@ typedef struct global_arrays_t {
 // #ifndef UKKCOMMON_C
 
 //     extern int neighbours[MAX_STATES];
-//     extern int contCost  [MAX_STATES];
+//     extern int stateContinuationCost  [MAX_STATES];
 //     extern int secondCost[MAX_STATES];
 //     extern int transCost [MAX_STATES][MAX_STATES];
 //     extern int stateNum  [MAX_STATES];
