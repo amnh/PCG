@@ -9,7 +9,7 @@
 #include "debug_constants.h"
 // #include "costMatrix.h"
 #include "alignmentMatrices.h"
-//#include "ukkCheckp.h"
+#include "ukkCheckPoint.h"
 #include "ukkCommon.h"
 
 /** Print an alignIO char. Assume char exists at end of buffer. */
@@ -19,7 +19,7 @@ void alignIO_print(alignIO_p character) {
     printf("Capacity: %zu\n", character->capacity);
     size_t charStart = character->capacity - character->length;
     for(size_t i = charStart; i < character->capacity; i++) {
-        printf("%d, ", character->character[i]);
+        printf("%3d,", character->character[i]);
         //if (character->character[i] == 0) continue;
     }
     printf("\n\n");
@@ -429,7 +429,7 @@ int align2dAffine( const alignIO_p           inputChar1_aio
     unsigned int *final_cost_matrix;          //
     unsigned int *precalcMtx;                 //
     unsigned int *matrix_2d;                  //
-    unsigned int *gap_open_prec;              // precalculated gap opening value (top row of nw matrix)
+    unsigned int *precalc_gap_open_cost;              // precalculated gap opening value (top row of nw matrix)
     unsigned int *s_horizontal_gap_extension; //
     size_t        lenLongerChar;              //
 
@@ -458,7 +458,7 @@ int align2dAffine( const alignIO_p           inputChar1_aio
     extend_vertical                 = (matrix_2d + ( lenLongerChar *  4 ));
     extend_horizontal               = (matrix_2d + ( lenLongerChar *  6 ));
     final_cost_matrix               = (matrix_2d + ( lenLongerChar *  8 ));
-    gap_open_prec                   = (matrix_2d + ( lenLongerChar * 10 ));
+    precalc_gap_open_cost                   = (matrix_2d + ( lenLongerChar * 10 ));
     s_horizontal_gap_extension      = (matrix_2d + ( lenLongerChar * 11 ));
 
 
@@ -478,7 +478,7 @@ int align2dAffine( const alignIO_p           inputChar1_aio
 
     // TODO: consider moving all of this into algn.
     //       the following three fns were initially not declared in algn.h
-    algn_initialize_matrices_affine ( costMtx2d_affine->gap_open
+    algn_initialize_matrices_affine ( costMtx2d_affine->gap_open_cost
                                     , shortChar
                                     , longChar
                                     , costMtx2d_affine
@@ -503,7 +503,7 @@ int align2dAffine( const alignIO_p           inputChar1_aio
                                              , close_block_diagonal
                                              , extend_block_diagonal
                                              , precalcMtx
-                                             , gap_open_prec
+                                             , precalc_gap_open_cost
                                              , s_horizontal_gap_extension
                                              );
 
@@ -549,13 +549,15 @@ int align2dAffine( const alignIO_p           inputChar1_aio
  *
  *  In the last two cases the union will replace the gapped character placeholder.
  */
-int align3d( const alignIO_p          inputChar1_aio
-           , const alignIO_p          inputChar2_aio
-           , const alignIO_p          inputChar3_aio
-           , const alignIO_p          ungappedOutput_aio
-           , const alignIO_p          gappedOutput_aio
+int align3d( const alignIO_p           inputChar1_aio
+           , const alignIO_p           inputChar2_aio
+           , const alignIO_p           inputChar3_aio
+           , const alignIO_p           ungappedOutput_aio
+           , const alignIO_p           gappedOutput_aio
            // , const alignment_matrices_t *     algn_mtxs3d
            ,       cost_matrices_3d_t *costMtx3d
+           ,       unsigned int        gap_open_cost
+           ,       unsigned int        gap_extension_cost
            )
 {
 
@@ -672,9 +674,9 @@ int align3d( const alignIO_p          inputChar1_aio
                                , retLongChar
                                , retShortChar
                                , retMiddleChar
-                               , 1    // mismatch cost, must be > 0
-                               , 2    // gap open cost, must be >= 0
-                               , 1    // gap extend cost, must be > 0
+                               , 1                   // mismatch cost, must be > 0
+                               , gap_open_cost       // must be >= 0
+                               , gap_extension_cost  // must be > 0
                                );
 
     dyn_char_p ungappedMedianChar = malloc(sizeof(dyn_character_t));

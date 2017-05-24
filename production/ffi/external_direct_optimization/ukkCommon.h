@@ -35,14 +35,14 @@
 #include <string.h>
 
 #include "dyn_character.h"
-#include "ukkCheckp.h"
+// #include "ukkCheckPoint.h"
 
-#define MAX_STR 100000
+#define MAX_STR    100000
 
-#define MAX_STATES 27                 // Maximum number of possible states, 3^3
+#define MAX_STATES 27      // Maximum number of possible states where states are {insert, delete, substitute}, so 3^3. See enum below
 
-#define MAX_COST (2 * MAX_STR)
-#define INFINITY INT_MAX / 2
+#define MAX_COST   (2 * MAX_STR)
+#define INFINITY   INT_MAX / 2
 
 #define FULL_ALLOC_INFO  0
 
@@ -50,9 +50,13 @@
 
 #define CELLS_PER_BLOCK  10
 
-typedef enum {match, del, ins} Trans;  // The 3 possible state-machine states
+typedef enum { MATCH
+             , DEL
+             , INS
+             } Trans;  // The 3 possible state-machine states
 
-typedef struct {
+/** How much space was allocated for the characters. */
+typedef struct alloc_info_t {
     size_t elemSize;
     size_t abSize;
     size_t acSize;
@@ -61,85 +65,196 @@ typedef struct {
     size_t abBlocks;
     size_t acBlocks;
 
-    #ifdef FIXED_NUM_PLANES
-        int costSize;
+    #ifdef FIXED_NUM_PLANES // See above
+        size_t costSize;
     #endif
 
     size_t baseAlloc;
     void **basePtr;     // void because may point at U_cell_type or CPTye
 
     size_t memAllocated;
-} AllocInfo;
+} alloc_info_t;
 
 
-#ifndef UKKCOMMON_C
+// This is a persistent set of costs needed throughout the code.
+// I moved these costs all into this struct so I could remove global variables.
+// TODO: eventually a 3d cost matrix needs to move into here.
+typedef struct global_costs_t {
+    unsigned int mismatchCost;
+    unsigned int gapOpenCost;
+    unsigned int gapExtendCost;
+    unsigned int deleteOpenCost;
+    unsigned int deleteExtendCost;
+} global_costs_t;
 
-    extern int mismatchCost;
-    extern int gapOpenCost;
-    extern int gapExtendCost;
-    extern int deleteOpenCost;
-    extern int deleteExtendCost;
+typedef struct global_characters_t {
+    size_t numStates;
+    size_t maxSingleStep;
 
-    extern int neighbours[MAX_STATES];
-    extern int contCost  [MAX_STATES];
-    extern int secondCost[MAX_STATES];
-    extern int transCost [MAX_STATES][MAX_STATES];
-    extern int stateNum  [MAX_STATES];
+    char *lesserStr;
+    char *longerStr;
+    char *middleStr;
 
-    extern size_t numStates;
-    extern size_t maxSingleStep;
+    size_t lesserLen;
+    size_t longerLen;
+    size_t middleLen;
+} global_characters_t;
 
-    extern char lesserStr[MAX_STR];
-    extern char longerStr[MAX_STR];
-    extern char middleStr[MAX_STR];
-    extern size_t  lesserLen, longerLen, middleLen;
+typedef struct global_arrays_t {
+    int neighbours;
+    int contCost;
+    int secondCost;
+    int transCost;
+    int stateNum;
+} global_arrays_t;
 
+// #ifndef UKKCOMMON_C
+
+//     extern int neighbours[MAX_STATES];
+//     extern int contCost  [MAX_STATES];
+//     extern int secondCost[MAX_STATES];
+//     extern int transCost [MAX_STATES][MAX_STATES];
+//     extern int stateNum  [MAX_STATES];
+
+//     extern size_t numStates;
+//     extern size_t maxSingleStep;
+
+//     extern char lesserStr[MAX_STR];
+//     extern char longerStr[MAX_STR];
+//     extern char middleStr[MAX_STR];
+//     extern size_t  lesserLen, longerLen, middleLen;
+
+// #endif
+
+// #define MAX_SINGLE_COST (maxSingleStep * 2)
+
+
+#ifdef FIXED_NUM_PLANES // see above
+    alloc_info_t allocInit( size_t elemSize
+                          , size_t costSize
+                          , global_characters_t *globalCharacters
+                          );
+#else
+    alloc_info_t allocInit( size_t elemSize
+                          , global_characters_t *globalCharacters
+                          );
 #endif
 
-#define maxSingleCost (maxSingleStep * 2)
 
-int whichCharCost(char a, char b, char c);
+int whichCharCost( char a
+                 , char b
+                 , char c
+                 );
 
-int okIndex(int a, int da, int end);
+
+/** Make sure that index a is valid for a given set of array indices */
+int okIndex( int a
+           , int da
+           , int end
+           );
+
 
 // Setup routines
-int  stateTransitionCost(int from, int to);
-void step(int n, int *a, int *b, int *c);
-int  neighbourNum(int i, int j, int k);
-void transitions(int s, Trans st[3]);
-char *state2str(int s) ;
-int  countTrans(Trans st[3], Trans t);
-void setup();
+int stateTransitionCost( int from
+                       , int to
+                       );
+
+
+void copyCharacter ( char            *str
+                   , dyn_character_t *inChar
+                   );
+
+
+void step( int  n
+         , int *a
+         , int *b
+         , int *c
+         );
+
+
+int neighbourNum( int i
+                , int j
+                , int k
+                );
+
+
+void transitions( Trans  stateTransition[3]
+                , size_t state
+                );
+
+
+char *state2str( size_t state );
+
+
+/** Count number of times whichTransition appears in stateTransitions */
+size_t countThisTransition( Trans stateTransitions[3]
+                          , Trans whichTransition
+                          );
+
+/** Set up the Ukkonnen and check point matrices before running alignment.
+ *  Finish setup of characters.
+ */
+void setup( global_costs_t      *globalCosts
+          , global_characters_t *globalCharacters
+          , global_arrays_t     *globalCostArrays
+          , dyn_character_t     *lesserChar
+          , dyn_character_t     *middleChar
+          , dyn_character_t     *longerChar
+          , unsigned int         mismatch_cost
+          , unsigned int         gapOpen
+          , unsigned int         gapExtend
+          );
+
 
 // Alignment checking routines
-void checkAlign(char *al, int alLen, char *str, int strLen);
-void revIntArray(int *arr, int start, int end);
-void revCharArray(char *arr, int start, int end);
-int  alignmentCost(int states[], char *al1, char *al2, char *al3, int len);
+void checkAlign( char   *al
+               , size_t  alLen
+               , char   *str
+               , size_t  strLen
+               );
 
-void *getPtr(AllocInfo *a, int ab, int ac, size_t d, int s);
 
-// TODO: unsigned ints for costs:
-// IMPORTANT!!! Order of input characters is short, long, middle.
-int powell_3D_align ( dyn_character_t *charA
-                    , dyn_character_t *charB
-                    , dyn_character_t *charC
-                    , dyn_character_t *retCharA
-                    , dyn_character_t *retCharB
-                    , dyn_character_t *retCharC
-                    , int mismatch
-                    , int gapOpen
-                    , int gapExtend
-                    );
+/** Reverses an array of ints. */
+void revIntArray( int    *arr
+                , size_t  start
+                , size_t  end
+                );
 
-// allocation routines. Were previously commented out.
-void allocFinal(AllocInfo *a, void *flag, void *top);
 
-#ifdef FIXED_NUM_PLANES
-    AllocInfo allocInit(int elemSize, int costSize);
-#else
-    AllocInfo allocInit(int elemSize);
-#endif
+/** Reverses an array of chars. */
+void revCharArray( char   *arr
+                 , size_t  start
+                 , size_t  end
+                 );
+
+
+unsigned int alignmentCost( int             states[]
+                          , char           *al1
+                          , char           *al2
+                          , char           *al3
+                          , size_t          len
+                          , global_costs_t *globalCosts
+                          );
+
+
+/** Return a pointer into either Ukkonnen matrix or distance matrix. */
+void *getPtr( alloc_info_t *a
+            , int           ab
+            , int           ac
+            , size_t        editDist
+            , int           state
+            , size_t        numStates
+            );
+
+
+/************* allocation routines. Were previously commented out. ***************/
+void allocFinal( alloc_info_t *a
+               , void         *flag
+               , void         *top
+               , size_t        numStates
+               );
+
+
 
 
 #endif // UKKCOMMON_H

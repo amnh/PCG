@@ -8,7 +8,7 @@ necessary_c_files = ../c_alignment_interface.c \
                     ../alignmentMatrices.c \
                     ../dyn_character.c \
                     ../alignCharacters.c \
-                    ../ukkCheckp.c \
+                    ../ukkCheckPoint.c \
                     ../ukkCommon.c
 
 necessary_h_files = ../c_alignment_interface.h \
@@ -17,7 +17,7 @@ necessary_h_files = ../c_alignment_interface.h \
                     ../alignmentMatrices.h \
                     ../dyn_character.h \
                     ../alignCharacters.h \
-                    ../ukkCheckp.h \
+                    ../ukkCheckPoint.h \
                     ../ukkCommon.h
 
 object_files      = c_alignment_interface.o \
@@ -26,7 +26,7 @@ object_files      = c_alignment_interface.o \
                     alignmentMatrices.o \
                     dyn_character.o \
                     alignCharacters.o \
-                    ukkCheckp.o \
+                    ukkCheckPoint.o \
                     ukkCommon.o
 
 
