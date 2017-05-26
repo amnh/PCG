@@ -180,14 +180,14 @@ cm_set_affine_3d (cost_matrices_3d_t *costMatrix, int do_aff, int gapOpenCost)
  * In case of error the function fails with the message "Memory error.".
  */
 void
-cm_alloc_set_costs_2d ( cost_matrices_2d_t *res
-                      , size_t              alphSize
-                      , size_t              combinations
-                      , int                 do_aff
-                      , unsigned int        gap_open_cost
-                      , int                 is_metric
-                      , size_t              num_elements
-                      )
+cm_alloc_2d ( cost_matrices_2d_t *res
+            , size_t              alphSize
+            , size_t              combinations
+            , int                 do_aff
+            , unsigned int        gap_open_cost
+            , int                 is_metric
+            , size_t              num_elements
+            )
 {
     if(DEBUG_COST_M) {
         printf("\n---cm_alloc_set_costs_2d\n");
@@ -443,7 +443,7 @@ cm_calc_median_position (elem_t a, elem_t b, int alphSize) {
 }
 */
 
-static inline unsigned int *
+unsigned int *
 cm_get_row (unsigned int *tcm, elem_t a, size_t alphSize) {
     unsigned int one = 1;
     unsigned int upperBound = one << alphSize;
@@ -459,12 +459,12 @@ cm_get_row (unsigned int *tcm, elem_t a, size_t alphSize) {
     return (tcm + (a << alphSize));
 }
 
-static inline unsigned int *
-cm_get_row_3d ( unsigned int *tcm
-              , elem_t        char1
-              , elem_t        char2
-              , size_t        alphSize
-              )
+unsigned int *
+cm_get_row_3d( unsigned int *tcm
+             , elem_t        char1
+             , elem_t        char2
+             , size_t        alphSize
+             )
 {
     unsigned int one = 1;
     unsigned int upperBound = one << alphSize;
@@ -499,171 +499,6 @@ cm_get_value_2d (elem_t a, elem_t b, unsigned int *p, size_t alphSize) {
     return p[ cm_calc_cost_position_2d (a, b, alphSize) ];
 }
 
-/** Sets first row of nw cost matrix, where @param inChar is column headers */
-void
-cm_precalc_4algn ( const cost_matrices_2d_t   *costMatrix
-                 ,       alignment_matrices_t *alignmentMatrices
-                 , const dyn_char_p            inChar) {
-    if(DEBUG_MAT) {
-        printf("\n---cm_precalc_4algn\n");
-    }
-    size_t i,
-           j,
-           charLen = inChar->len;
-
-    unsigned int *tmpCost,
-                 *precalcMtx = alignmentMatrices->algn_precalcMtx,
-                 *charTcm    = costMatrix->cost,
-                 *tmpPrecMtx = precalcMtx + charLen,
-                 *prepend    = costMatrix->prepend_cost,
-                 *tailCosts  = costMatrix->tail_cost;
-
-    elem_t *char_begin = inChar->char_begin;
-
-    if (DEBUG_MAT) {
-        printf ("Precalculated transformation cost matrix.\n");
-    }
-
-    if (DEBUG_MAT) {
-        for (j = 0; j < charLen; j++) {
-            printf ("char_begin_t[%zu]: %d\n", j, char_begin[j]), fflush(stdout);
-        }
-    }
-
-    // We will put the cost of the prepend in the 0th row of the precalc matrix.
-    for (j = 0; j < charLen; j++) {
-
-      //printf ("Before innerIndex (j = %d)\n", j), fflush(stdout);
-        int innerIndex = char_begin[j];
-        // printf ("After  innerIndex: {%d}\n", innerIndex), fflush(stdout);
-
-        // printf ("Before valueDatum\n");
-        //fflush(stdout);
-        int valueDatum = prepend[innerIndex];
-        //printf ("After  valueDatum\n"), fflush(stdout);
-
-        //printf ("Before Assignment\n"), fflush(stdout);
-        precalcMtx[j] = valueDatum;
-        //printf ("After  Assignment\n"), fflush(stdout);
-
-        if (DEBUG_COST_M) {
-            printf ("%7d", precalcMtx[j]);
-            fflush(stdout);
-        }
-    }
-    if (DEBUG_MAT) {
-        printf("\n");
-        fflush(stdout);
-    }
-    for (j = 1; j <= costMatrix->alphSize; j++, tmpPrecMtx += charLen) {
-        // if (DEBUG_CM) {
-        //     printf("%zu\t", j);
-        // }
-        tmpCost = cm_get_row (charTcm, j, costMatrix->costMatrixDimension);
-        /* We fill almost the complete row. Only the first (aligning with the
-         * gap), is filled using the tail cost */
-        tmpPrecMtx[0] = tailCosts[j];
-        if (DEBUG_MAT) {
-            printf ("%7d", tmpPrecMtx[0]);
-            fflush(stdout);
-
-        }
-        for (i = 1; i < charLen; i++) {
-            tmpPrecMtx[i] = tmpCost[char_begin[i]];
-            if (DEBUG_MAT) {
-                printf ("%7d", tmpPrecMtx[i]);
-                fflush(stdout);
-            }
-        }
-        if (DEBUG_MAT) {
-            printf ("\n");
-        }
-    }
-    if (DEBUG_MAT) {
-        printf ("Finished printing transformation cost matrix\n");
-        fflush(stdout);
-
-    }
-}
-
-unsigned int *
-cm_get_precal_row ( unsigned int *p
-                  , elem_t        item
-                  , size_t        len
-                  )
-{
-    return p + (len * item);
-}
-
-static inline unsigned int *
-cm_get_ptr_to_precalc_3d ( unsigned int *outPrecalcMtx
-                         , size_t        char3Len
-                         , size_t        alphSize
-                         , size_t        char1idx
-                         , size_t        char2idx
-                         , size_t        char3idx
-                         )
-{
-    alphSize++;
-    // TODO: rewrite this to use bitwise algebra.
-    return outPrecalcMtx + ((char1idx * (alphSize * char3Len)) + (char3Len * char2idx) + char3idx);
-}
-
-unsigned int *
-cm_get_row_precalc_3d ( unsigned int *outPrecalcMtx
-                      , size_t        char3Len
-                      , size_t        alphSize
-                      , size_t        char1idx
-                      , size_t        char2idx
-                      )
-{
-    return (cm_get_ptr_to_precalc_3d (outPrecalcMtx, char3Len, alphSize, char1idx, char2idx, 0));
-}
-
-void
-cm_precalc_4algn_3d ( const cost_matrices_3d_t *costMtx
-                    ,       unsigned int       *outPrecalcMtx
-                    , const dyn_char_p          char3)
-{
-    size_t char3idx,
-           char1idx,
-           char2idx,
-           char3Len;
-
-    unsigned int *tmp_cost,
-                 *tcm,
-                 *precalc_ptr;
-
-    elem_t character;
-
-    char3Len = char3->len;
-    tcm      = costMtx->cost;
-
-    for (char1idx = 1; char1idx < costMtx->alphSize + 1; char1idx++) {
-        for (char2idx = 1; char2idx < costMtx->alphSize + 1; char2idx++) {
-            tmp_cost = cm_get_row_3d ( tcm
-                                     , char1idx
-                                     , char2idx
-                                     , costMtx->costMatrixDimension
-                                     );
-
-            //printf("char1: %d,    char2: %d,    cost: %d\n", char1idx, char2idx, *(tmp_cost+1));
-            for (char3idx = 0; char3idx < char3Len; char3idx++) {
-
-                character    = char3->char_begin[char3idx];
-                precalc_ptr  = cm_get_ptr_to_precalc_3d ( outPrecalcMtx
-                                                        , char3Len
-                                                        , costMtx->alphSize
-                                                        , char1idx
-                                                        , char2idx
-                                                        , char3idx
-                                                        );
-                *precalc_ptr = tmp_cost[character];
-                // printf("char1: %2d,    char2: %2d,    character: %2d,    cost: %2d\n", char1idx, char2idx, character, *(precalc_pos));
-            }
-        }
-    }
-}
 
 // void
 // cm_set_value_3d_dyn_char_p ( elem_t       elem1

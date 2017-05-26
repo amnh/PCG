@@ -30,13 +30,14 @@ void initializeAlignmentMtx( alignment_matrices_t *retMtx
  *  resChar must be alloced before this call. This is because allocation must be done on other side of FFI for pass
  *  by ref to be correct.
  */
-void initializeChar(dyn_char_p retChar, size_t allocSize);
+void initializeChar( dyn_character_t *retChar
+                   , size_t           allocSize );
 
 /** Resets character array to all 0s.
  *  Makes length 0.
  *  Points beginning of character to end of character array.
  */
-void resetCharValues(dyn_char_p retChar);
+void resetCharValues( dyn_character_t *retChar );
 
 /** Find distance between an unambiguous nucleotide and an ambiguous ambElem. Return that value and the median.
  *  @param ambElem is ambiguous input.
@@ -82,6 +83,6 @@ void freeCostMtx(void *input, int is_2d);
 
 void freeNWMtx(alignment_matrices_t *input);
 
-void freeChar(dyn_char_p toFree);
+void freeChar(dyn_character_t *toFree);
 
 #endif // C_CODE_ALLOC_SETUP_H

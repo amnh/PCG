@@ -11,16 +11,22 @@
 //#include "ukkCheckp.h"
 //#include "ukkCommon.h"
 
-// int* tcm, int alphSize, int gap_open, int is_2d, dyn_char_p longChar
+// int* tcm, int alphSize, int gap_open, int is_2d, dyn_character_t *longChar
 
 /** Allocate algn_matrices struct. Assigns initial values where necessary. Calls
- *  algn_mtx_setup_size to allocate all internal arrays.
+ *  algnMat_setup_size to allocate all internal arrays.
  *
  *  Order of character lengths doesn't matter
  */
-void initializeAlignmentMtx(alignment_matrices_t *retMtx, size_t len_char1, size_t len_char2, size_t len_char3, size_t alphSize) {
+void initializeAlignmentMtx( alignment_matrices_t *retMtx
+                           , size_t                len_char1
+                           , size_t                len_char2
+                           , size_t                len_char3
+                           , size_t                alphSize
+                           )
+{
     // printf("initializeAlignmentMtx\n");
-    // in six following allocations all matrices are set to their shortest length because they get realloced in algn_mtx_setup_size
+    // in six following allocations all matrices are set to their shortest length because they get realloced in algnMat_setup_size
     retMtx->cap_nw          =  0;  // a suitably small number to trigger realloc, but be larger than len_eff
     retMtx->cap_eff         = -1;  // cap_eff was -1 so that cap_eff < cap, triggering the realloc
                                    // ---changed this when types switched to size_t
@@ -32,14 +38,14 @@ void initializeAlignmentMtx(alignment_matrices_t *retMtx, size_t len_char1, size
     // retMtx->cube_d        = malloc ( sizeof( int* ) );  // because they're just pointing to algn_costMtx and algn_dirMtx
     retMtx->algn_precalcMtx = malloc ( sizeof( unsigned int ) );
 
-    algn_mtx_setup_size (retMtx, len_char1, len_char2, len_char3, alphSize);
+    algnMat_setup_size (retMtx, len_char1, len_char2, len_char3, alphSize);
 }
 
 /** Does allocation for a character struct. Also sets char pointers within array to correct positions.
  *
  *  resChar must be alloced before this call.
  */
-void initializeChar(dyn_char_p retChar, size_t allocSize) {
+void initializeChar(dyn_character_t *retChar, size_t allocSize) {
     retChar->cap        = allocSize;                              // capacity
     retChar->array_head = calloc(allocSize, sizeof(elem_t));        // beginning of array that holds dynamic character
 
@@ -112,14 +118,14 @@ void setUp2dCostMtx( cost_matrices_2d_t *retCostMtx
 
     //    tcm = tcm2;
 
-    cm_alloc_set_costs_2d( retCostMtx
-                         , alphSize
-                         , combinations
-                         , do_aff
-                         , gap_open
-                         , is_metric
-                         , all_elements
-                         );
+    cm_alloc_2d( retCostMtx
+               , alphSize
+               , combinations
+               , do_aff
+               , gap_open
+               , is_metric
+               , all_elements
+               );
     // Print TCM in pretty format
     if(DEBUG_MAT) {
         printf("setUp2dCostMtx\n");
@@ -280,12 +286,12 @@ void freeNWMtx(alignment_matrices_t *input) {
     free(input);
 }
 
-void freeChar(dyn_char_p toFree) {
+void freeChar(dyn_character_t *toFree) {
     free(toFree->array_head);
     free(toFree);
 }
 
-void resetCharValues(dyn_char_p retChar) {
+void resetCharValues(dyn_character_t *retChar) {
     //retChar->end   = retChar->begin + retChar->len;
     memset(retChar->array_head, 0, retChar->cap * sizeof(elem_t));
     retChar->char_begin = retChar->end;

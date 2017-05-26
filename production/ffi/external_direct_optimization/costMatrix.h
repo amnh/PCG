@@ -25,7 +25,7 @@
 #define Cost_matrix_struct(a) ((struct cost_matrices_2d *) Data_custom_val(a))
 #define Cost_matrix_struct_3d(a) ((struct cost_matrices_3d *) Data_custom_val(a))
 #include "debug_constants.h"
-#include "alignmentMatrices.h"
+//#include "alignmentMatrices.h"
 #include "dyn_character.h"
 
 /*
@@ -106,17 +106,22 @@ typedef struct cost_matrices_3d_t {
                                   *  all possible combinations of the elements in the alphabet
                                   *  in the alignments. This is not true for protein characters
                                   *  for example, where the number of elements of the alphabet
-                                  *  is already too big to build all the possible combinations.  */
+                                  *  is already too big to build all the possible combinations.
+                                  */
     unsigned int gap_open_cost;  /** The cost of opening a gap. This is only useful in
-                                  *  certain cost_model_type's. */
+                                  *  certain cost_model_types.
+                                  */
     size_t num_elements;         /** The integer that represents all the combinations, used
-                                  *  for ambiguities */
+                                  *  for ambiguities
+                                  */
     unsigned int *cost;          /** The transformation cost matrix. The ordering is row-major,
                                   *  and the lookup is a->b, where a is a row label and b is
-                                  *  a column label  */
+                                  *  a column label
+                                  */
     elem_t *median;              /** The matrix of possible medians between elements in the
                                   *  alphabet. The best possible medians according to the cost
-                                  *  matrix. */
+                                  *  matrix.
+                                  */
 } cost_matrices_3d_t;
 
 
@@ -144,48 +149,27 @@ void cm_print_matrix_2d (elem_t *costMatrix, size_t height, size_t alphSize);
  * stored in do_aff, gap_open, in the cost matrix res.
  * In case of error the function fails with the message "Memory error.".
  */
-void cm_alloc_set_costs_2d ( cost_matrices_2d_t *res
-                           , size_t              alphSize
-                           , size_t              combinations
-                           , int                 do_aff
-                           , unsigned int        gap_open_cost
-                           , int                 is_metric
-                           , size_t              num_elements
-                           );
+void cm_alloc_2d ( cost_matrices_2d_t *res
+                 , size_t              alphSize
+                 , size_t              combinations
+                 , int                 do_aff
+                 , unsigned int        gap_open_cost
+                 , int                 is_metric
+                 , size_t              num_elements
+                 );
 
 
 void
 cm_set_cost_2d (cost_matrices_2d_t *costMtx, elem_t elem1, elem_t elem2, unsigned int v);
 
+
 void
 cm_set_cost_3d (cost_matrices_3d_t * costMtx, elem_t elem1, elem_t elem2, elem_t elem3, unsigned int v);
 
 
-/*
- * Retrieves a pointer to the memory position stored in the precalculated array
- * of costs for the alphabet in three dimensions, vs. a character s3. This is
- * used in the 3d alignments procedures for vectorization. to is a pointer to
- * the precalculated cube, s3l is the length of the character included in the
- * precalculated cube, alphSize is the costMtxDimension of the alphabet of the character, s1c is
- * the character from s1, and s2c is defined in an analogous manner. s3p is the
- * position in the character s3 of interest. s3p should be less than s3l.
- */
-//static inline int *
-//cm_get_pos_in_precalc (const int *toOutput, int s3l, int alphSize, int s1c, int s2c, int s3p);
-
-/*
- * During the 3d alignments, calculations are performed for each element in the
- * array using the complete vectors of the precalculated matrix. This function
- * retrieves the first element in those precalculated arrays. The parameters
- * definitions are analogous to those explained in cm_get_pos_in_precalc
- */
 unsigned int *
-cm_get_row_precalc_3d ( unsigned int *outPrecalcMtx
-                      , size_t        char3Len
-                      , size_t        alphSize
-                      , size_t        char1idx
-                      , size_t        char2idx
-                      );
+cm_get_row (unsigned int *tcm, elem_t a, size_t alphSize);
+
 
 /*
  * Gets the total number of possible combinations of an alphabeet of size
@@ -250,24 +234,6 @@ cm_set_worst ( cost_matrices_2d_t *c
              , unsigned int       v
              );
 
-/*
- * Fills a precalculated matrix with the cost of comparing each elment in the
- * character s with each element in the alphabet specified in the transformation
- * cost matrix costMtx.
- *
- * @param costMtx is the transformation cost matrix to calculate the precalculated
- *  vectors.
- * @param toOutput is the matrix that will hold the output.
- * @param s is the character for which the cost matrix will be precalculated.
- *
- * This function is only valid for two dimensional alignments.
- * TODO: why is this in cm instead of matrices?
- */
-void
-cm_precalc_4algn ( const cost_matrices_2d_t   *costMtx
-                 ,       alignment_matrices_t *toOutput
-                 , const dyn_char_p            s
-                 );
 
 /*
  * Gets the precalculated row for a particular character in the alphabet.
@@ -313,17 +279,13 @@ cm_get_median_3d (elem_t *tcm, elem_t a, elem_t b, elem_t c, size_t alphSize);
  * of character a are located, when tcm holds information for an alphabet of
  * size alphSize.
  */
-//static inline int *
-//cm_get_row_3d (int *tcm, elem_t a, elem_t b, int alphSize);
+unsigned int *
+cm_get_row_3d( unsigned int *tcm
+             , elem_t        a
+             , elem_t        b
+             , size_t        alphSize
+             );
 
-/*
- * Fills a three-dimensional precalculation alignment matrix for character s
- * See cm_precalc_4algn for further information. This is the
- * corresponding function for three dimensional alignments.
- * TODO: Why is this here, and not in matrices.c?
- */
-void
-cm_precalc_4algn_3d (const cost_matrices_3d_t *costMtx, unsigned int *outPrecalcMtx, const dyn_char_p char3);
 
 /*
  * Deallocates the memory structure iff there are no more pointers to it,

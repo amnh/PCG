@@ -67,14 +67,14 @@ int main() {
     // dyn_char_p retMiddleChar = malloc( sizeof(dyn_character_t) );
     // dyn_char_p retShortChar  = malloc( sizeof(dyn_character_t) );
 
-    alignIO_p inputChar1  = malloc(sizeof(struct alignIO));    // inputs to align2d fn.
-    alignIO_p inputChar2  = malloc(sizeof(struct alignIO));    // inputs to align2d fn.
-    alignIO_p inputChar3  = malloc(sizeof(struct alignIO));    // additional input to align3d fn.
+    alignIO_t *inputChar1 = malloc( sizeof(struct alignIO_t) );    // inputs to align2d fn.
+    alignIO_t *inputChar2 = malloc( sizeof(struct alignIO_t) );    // inputs to align2d fn.
+    alignIO_t *inputChar3 = malloc( sizeof(struct alignIO_t) );    // additional input to align3d fn.
 
     // various median outputs
-    alignIO_p ungappedMedianChar = malloc(sizeof(struct alignIO));
-    alignIO_p gappedMedianChar   = malloc(sizeof(struct alignIO));
-    alignIO_p unionMedianChar    = malloc(sizeof(struct alignIO));
+    alignIO_t *ungappedMedianChar = malloc( sizeof(struct alignIO_t) );
+    alignIO_t *gappedMedianChar   = malloc( sizeof(struct alignIO_t) );
+    alignIO_t *unionMedianChar    = malloc( sizeof(struct alignIO_t) );
 
     // set to 1 so I can realloc later:
     allocAlignIO(inputChar1,         1);

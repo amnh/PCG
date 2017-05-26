@@ -55,17 +55,17 @@ typedef struct dyn_character_t {
     //struct pool *my_pool; ARRAY_POOL_DELETE
 } dyn_character_t;
 
-typedef struct dyn_character_t *dyn_char_p;
+void dyn_char_print( const dyn_character_t *inChar );
 
-void dyn_char_print(dyn_char_p inChar);
-
-void dyn_char_prepend (dyn_char_p a, elem_t v);
+void dyn_char_prepend( dyn_character_t *a
+                     , elem_t           v
+                     );
 
 /** Does allocation for a character struct. Also sets char pointers within array to correct positions.
  *
  *  resChar must be alloced before this call.
  */
-// dyn_char_p initializeChar(dyn_char_p retChar, size_t allocSize) {
+// dyn_character_t *initializeChar(dyn_character_t *retChar, size_t allocSize) {
 //     retChar->cap        = allocSize;                              // capacity
 //     retChar->array_head = calloc(allocSize, sizeof(elem_t));        // beginning of array that holds dynamic character
 
@@ -76,6 +76,9 @@ void dyn_char_prepend (dyn_char_p a, elem_t v);
 
 
 /* Stores the value v in the position p of character a. */
-void dyn_char_set (dyn_char_p character, size_t position, elem_t value);
+void dyn_char_set( dyn_character_t *character
+                 , size_t           position
+                 , elem_t           value
+                 );
 
 #endif /* DYN_CHAR_H */

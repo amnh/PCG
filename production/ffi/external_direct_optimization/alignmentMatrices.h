@@ -21,6 +21,8 @@
 
 #define NWMATRICES_H
 
+#include "costMatrix.h"
+
 /** The following consts are to define possible moves in an NW matrix.
  *  As we're only saving one possible matrix, we don't need ambiguities,
  *  Thus for 2d we only have 3 possible states, rather than 7.
@@ -83,14 +85,106 @@ typedef struct alignment_matrices_t {
                                          */
 } alignment_matrices_t;
 
-void algn_matx_print(alignment_matrices_t *m, size_t alphSize);
+void algnMtx_print(alignment_matrices_t *m, size_t alphSize);
+
+
+/*
+ * Fills a precalculated matrix with the cost of comparing each elment in the
+ * character inChar with each element in the alphabet specified in the transformation
+ * cost matrix costMtx.
+ *
+ * @param costMtx is the transformation cost matrix to calculate the precalculated
+ *  vectors.
+ * @param toOutput is the matrix that will hold the output.
+ * @param s is the character for which the cost matrix will be precalculated.
+ *
+ * This function is only valid for two dimensional alignments.
+ * TODO: why is this in cm instead of matrices?
+ */
+void
+algnMtx_precalc_4algn_2d(       alignment_matrices_t *alignmentMatrices
+                        , const cost_matrices_2d_t   *costMatrix
+                        , const dyn_character_t      *inChar);
+
+
+/*
+ * Fills a three-dimensional precalculation alignment matrix for char3
+ * See algnMtx_precalc_4algn_2d for further information. This is the
+ * corresponding function for three dimensional alignments.
+ */
+void
+algnMtx_precalc_4algn_3d(       unsigned int       *outPrecalcMtx
+                        , const cost_matrices_3d_t *costMtx
+                        , const dyn_character_t    *char3);
+
+
+unsigned int *
+algnMtx_get_precal_row ( unsigned int *p
+                       , elem_t        item
+                       , size_t        len
+                       );
+
+
+/*
+ * Retrieves a pointer to the memory position stored in the precalculated array
+ * of costs for the alphabet in three dimensions, vs. a character s3. This is
+ * used in the 3d alignments procedures for vectorization. to is a pointer to
+ * the precalculated cube, s3l is the length of the character included in the
+ * precalculated cube, alphSize is the costMtxDimension of the alphabet of the character, s1c is
+ * the character from s1, and s2c is defined in an analogous manner. s3p is the
+ * position in the character s3 of interest. s3p should be less than s3l.
+ */
+//static inline int *
+//algnMtx_get_pos_in_precalc (const int *toOutput, int s3l, int alphSize, int s1c, int s2c, int s3p);
+
+/*
+ * During the 3d alignments, calculations are performed for each element in the
+ * array using the complete vectors of the precalculated matrix. This function
+ * retrieves the first element in those precalculated arrays. The parameters
+ * definitions are analogous to those explained in cm_get_pos_in_precalc
+ */
+unsigned int *
+algnMtx_get_row_precalc_3d ( unsigned int *outPrecalcMtx
+                      , size_t        char3Len
+                      , size_t        alphSize
+                      , size_t        char1idx
+                      , size_t        char2idx
+                      );
+
+
+/*
+ * Retrieves a pointer to the memory position stored in the precalculated array
+ * of costs for the alphabet in three dimensions, vs. a character s3. This is
+ * used in the 3d alignments procedures for vectorization. to is a pointer to
+ * the precalculated cube, s3l is the length of the character included in the
+ * precalculated cube, alphSize is the costMtxDimension of the alphabet of the character, s1c is
+ * the character from s1, and s2c is defined in an analogous manner. s3p is the
+ * position in the character s3 of interest. s3p should be less than s3l.
+ */
+//static inline int *
+//cm_get_pos_in_precalc (const int *toOutput, int s3l, int alphSize, int s1c, int s2c, int s3p);
+
+/*
+ * During the 3d alignments, calculations are performed for each element in the
+ * array using the complete vectors of the precalculated matrix. This function
+ * retrieves the first element in those precalculated arrays. The parameters
+ * definitions are analogous to those explained in cm_get_pos_in_precalc
+ */
+unsigned int *
+algnMtx_get_row_precalc_3d ( unsigned int *outPrecalcMtx
+                      , size_t        char3Len
+                      , size_t        alphSize
+                      , size_t        char1idx
+                      , size_t        char2idx
+                      );
+
 
 /*
  * Calculates the amount of memory required to perform a three dimensional
  * alignment between characters of length w, d, h with ukkonen barriers set to k
  */
 size_t
-algn_mtx_size_of_3d_matrix (size_t w, size_t d, size_t h); // originally had a fourth parameter, k for ukkunonen
+algnMat_size_of_3d_matrix (size_t w, size_t d, size_t h); // originally had a fourth parameter, k for ukkunonen
 
 /*
  * Calculates the amount of memory required to perform a two dimensional
@@ -98,7 +192,7 @@ algn_mtx_size_of_3d_matrix (size_t w, size_t d, size_t h); // originally had a f
  * memory, so no ukkonen barriers for this.
  */
 size_t
-algn_mtx_size_of_2d_matrix (size_t w, size_t h);
+algnMat_size_of_2d_matrix (size_t w, size_t h);
 
 /*
  * Rearrange or reallocate memory if necessary to perform an alignment between
@@ -107,13 +201,13 @@ algn_mtx_size_of_2d_matrix (size_t w, size_t h);
  * Order of characters is unimportant here, as just reallocing.
  */
 void
-algn_mtx_setup_size (alignment_matrices_t *m, size_t len_char1, size_t len_char2, size_t len_char3, size_t lcm);
+algnMat_setup_size (alignment_matrices_t *m, size_t len_char1, size_t len_char2, size_t len_char3, size_t lcm);
 
 /* Printout the contents of the matrix */
 void
-algn_mtx_print_algn_2d (alignment_matrices_t *m, size_t w, size_t h);
+algnMat_print_algn_2d (alignment_matrices_t *m, size_t w, size_t h);
 
 void
-algn_mtx_print_algn_3d (alignment_matrices_t *m, size_t w, size_t h, size_t d);
+algnMat_print_algn_3d (alignment_matrices_t *m, size_t w, size_t h, size_t d);
 
 #endif /* NWMATRICES_H */

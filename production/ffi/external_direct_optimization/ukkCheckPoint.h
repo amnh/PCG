@@ -18,9 +18,9 @@
  */
 
 // TODO: Is this true?
-          // A given state can have come from 1 and only 1 neighbour
+          // A given fsm_state can have come from 1 and only 1 neighbour
           // MMM, MMD, MDD, IMM, etc.  all have exactly one neighbour
-          // Not possible to have more than 1 'I' state (eg. MII IMI)
+          // Not possible to have more than 1 'I' fsm_state (eg. MII IMI)
 
 // Name:         ukkCheckp.h
 // FileType:     C Header
@@ -35,11 +35,13 @@
 #ifndef UKKCHECKP_H
 #define UKKCHECKP_H
 
+#include "costMatrix.h"
 #include "ukkCommon.h"
 
 // AllocInfo myUAllocInfo;
 // AllocInfo myCPAllocInfo;
 
+// TODO: /** How many cells there are, and how wide ukk band is? */
 typedef struct counts_t {
     long cells;
     long innerLoop;
@@ -51,7 +53,7 @@ typedef struct from_t {
     int ab_idx_diff;
     int ac_idx_diff;
     int cost;           // Must be signed, as is sometimes initialized as negative
-    int state;
+    int fsm_state;
 } from_t;
 
 
@@ -76,16 +78,17 @@ typedef struct checkPoint_cell_t {
  *
  *  IMPORTANT!!! Order of input characters is short, long, middle, or at least short must be first.
  */
-int powell_3D_align ( dyn_character_t *charA
-                    , dyn_character_t *charB
-                    , dyn_character_t *charC
-                    , dyn_character_t *retCharA
-                    , dyn_character_t *retCharB
-                    , dyn_character_t *retCharC
-                    , unsigned int     mismatch_cost
-                    , unsigned int     gapOpen
-                    , unsigned int     gapExtend
-                    );
+int powell_3D_align( dyn_character_t    *lesserChar
+                   , dyn_character_t    *middleChar
+                   , dyn_character_t    *longerChar
+                   , dyn_character_t    *retLesserChar
+                   , dyn_character_t    *retMiddleChar
+                   , dyn_character_t    *retLongerChar
+                   , unsigned int        mismatch_cost
+                   , unsigned int        gapOpen
+                   , unsigned int        gapExtend
+                   , cost_matrices_3d_t *costMtx_3d
+                   );
 
 
 /** For Ukkonen check point between to specified points in the U matrix... TODO: ...?
@@ -144,14 +147,14 @@ void traceBack( int                  start_ab_diff
 int Ukk( int                  ab_idx_diff
        , int                  ac_idx_diff
        , int                  editDistance
-       , unsigned int         state
+       , unsigned int         fsm_state
        , global_costs_t      *globalCosts
        , global_characters_t *globalCharacters
        , global_arrays_t     *globalCostArrays
        );
 
 
-/** For clarity, calls findBest with return_the_state = 0 */
+/** For clarity, calls findBest with return_the_fsm_state = 0 */
 int find_bestDist( int    ab_idx_diff
                  , int    ac_idx_diff
                  , int    input_editDist
@@ -159,7 +162,7 @@ int find_bestDist( int    ab_idx_diff
                  );
 
 
-/** For clarity, calls findBest with return_the_state = 1 */
+/** For clarity, calls findBest with return_the_fsm_state = 1 */
 int find_bestState( int    ab_idx_diff
                   , int    ac_idx_diff
                   , int    input_editDist
@@ -167,13 +170,13 @@ int find_bestState( int    ab_idx_diff
                   );
 
 
-/** Find the furthest distance at ab_idx_diff, ac_idx_diff, input_editDistance. return_the_state selects whether the
- *  best distance is returned, or the best final state (needed for ukk.alloc traceback)
+/** Find the furthest distance at ab_idx_diff, ac_idx_diff, input_editDistance. return_the_fsm_state selects whether the
+ *  best distance is returned, or the best final fsm_state (needed for ukk.alloc traceback)
  */
 int findBest( int    ab_idx_diff
             , int    ac_idx_diff
             , int    input_editDist
-            , int    return_the_state
+            , int    return_the_fsm_state
             , size_t numStates
             );
 
@@ -192,7 +195,7 @@ int doUkk( dyn_character_t     *retLesserChar
 
 
 /** Converts a character input, {A, C, G, T} to an int. Problem: on ambiguous inputs biases toward A.
- *  Also, disallows larger alphabets.
+ *  TODO: Also, disallows larger alphabets.
  */
 int char_to_base (char v);
 
