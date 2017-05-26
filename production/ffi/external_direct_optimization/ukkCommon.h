@@ -108,11 +108,11 @@ typedef struct global_characters_t {
 
 
 typedef struct global_arrays_t {
-    int *neighbours;            // array of neighbor fsm_states for each possible fsm_state in fsm_stateNum
-    int *fsm_stateContinuationCost; // as with transition cost, the cost to extend one or two gaps. Moot once a tcm is used.
-    int *secondCost;            //
-    int *transitionCost;        // cost to transition from one fsm_state to another (i.e. start a gap)
-    int *fsm_stateNum;              // number that corresponds to a given fsm_state, i.e. 0 is all match/subs and 1 is [m/s m/s del]
+    int *neighbours;                // array of neighbor fsm_states for each possible fsm_state in fsm_stateNum
+    int *fsmState_continuationCost; // as with transition cost, the cost to extend one or two gaps. Moot once a tcm is used.
+    int *secondCost;                //
+    int *transitionCost;            // cost to transition from one fsm_state to another (i.e. start a gap)
+    int *fsmState_num;              // number that corresponds to a given fsm_state, i.e. 0 is all match/subs and 1 is [m/s m/s del]
 } global_arrays_t;
 
 // #ifndef UKKCOMMON_C

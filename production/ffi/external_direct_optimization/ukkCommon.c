@@ -57,10 +57,10 @@ extern      alloc_info_t myCheckPtAllocInfo;
 extern long costOffset;
 extern long finalCost;
 
-extern int    sabG,
-              sacG,
-              sCostG,
-              sStateG;
+extern int sabG,
+           sacG,
+           sCostG,
+           sStateG;
 
 extern size_t checkPoint_width;
 extern int    checkPoint_cost;
@@ -74,7 +74,7 @@ extern size_t endA,
 extern int    completeFromInfo;
 // extern Counts counts;
 
-//int  aCharIdx, bCharIdx, cCharIdx, fsm_stateIdx, costIdx;
+//int  aCharIdx, bCharIdx, cCharIdx, fsmStateIdx, costIdx;
 
 
 
@@ -468,10 +468,10 @@ int okIndex( int a
 /******** Setup routines ********/
 
 /*
-int fsm_stateTransitionCost( int from
-                       , int to
-                       , int *transitionCost
-                       )
+int fsmState_transitionCost( int from
+                           , int to
+                           , int *transitionCost
+                           )
 {
     return transitionCost[from][to];
 }
@@ -505,49 +505,49 @@ int neighbourNum( int i
 
 // --------------------------------------------------
 
-/** Resets a transitionn array that holds the transitions fsm_states for three fsm_state-transition FSMs. There are 27 possible fsm_states.
+/** Resets a transitionn array that holds the transitions fsm states for three fsm state-transition FSMs. There are 27 possible fsm states.
  *  For instance, if the fsm_state is 1, then the FSMs are in the cumulative fsm_state [DEL, MATCH_SUB, MATCH_SUB], whereas if the fsm_state were
  *  22, the cumulative fsm_state would be [DEL, DEL, INS] (which is actually not possible, as it signifies a gap in all three dynamic
  *  characters, which is meaningless).
  */
-void transitions( Trans  fsm_stateTransitions[3]
+void transitions( Trans  fsmState_transitions[3]
                 , size_t fsm_state
                 )
 {
-    fsm_stateTransitions[0] =  fsm_state      % 3;    // repeats 0, 1, 2, 0, 1, 2, ...
-    fsm_stateTransitions[1] = (fsm_state / 3) % 3;    // repeats 0, 0, 0, 1, 1, 1, 2, 2, 2, 0, ...
-    fsm_stateTransitions[2] = (fsm_state / 9) % 3;    // repeats: nine 0s, nine 1s, nine 2s, start over
+    fsmState_transitions[0] =  fsm_state      % 3;    // repeats 0, 1, 2, 0, 1, 2, ...
+    fsmState_transitions[1] = (fsm_state / 3) % 3;    // repeats 0, 0, 0, 1, 1, 1, 2, 2, 2, 0, ...
+    fsmState_transitions[2] = (fsm_state / 9) % 3;    // repeats: nine 0s, nine 1s, nine 2s, start over
 }
 
 
-/** Takes an array of fsm_states by value and returns a string of those fsm_states as match, delete, insert.
+/** Takes an array of fsm states by value and returns a string of those fsm states as match, delete, insert.
  *  Used only in printing of fsm_state array if DEBUG_3D is set.
  */
 char *fsm_state2str( size_t  fsm_state
-               , int    *fsm_stateNum
+               , int    *fsmState_num
                )
 {
     static char returnStr[4];
-    Trans fsm_stateTransitions[3];
+    Trans fsmState_transitions[3];
 
-    transitions( fsm_stateTransitions, fsm_stateNum[fsm_state] );
+    transitions( fsmState_transitions, fsmState_num[fsm_state] );
 
     for (size_t i = 0; i < 3; i++) {
-        returnStr[i] = ( fsm_stateTransitions[i] == MATCH_SUB ? 'M' : ( fsm_stateTransitions[i] == DEL ? 'D' : 'I') );
+        returnStr[i] = ( fsmState_transitions[i] == MATCH_SUB ? 'M' : ( fsmState_transitions[i] == DEL ? 'D' : 'I') );
     }
     return returnStr;
 }
 
 
-/** Count number of times whichTransition appears in fsm_stateTransitions, where MATCH_SUB = 0, DEL = 1, INS = 2. */
-size_t countThisTransition( Trans fsm_stateTransitions[3]
+/** Count number of times whichTransition appears in fsmState_transitions, where MATCH_SUB = 0, DEL = 1, INS = 2. */
+size_t countThisTransition( Trans fsmState_transitions[3]
                           , Trans whichTransition
                           )
 {
     size_t num = 0;
 
     for (size_t i = 0; i < 3; i++) {
-        if (fsm_stateTransitions[i] == whichTransition) num++;
+        if (fsmState_transitions[i] == whichTransition) num++;
     }
     return num;
 }
@@ -557,9 +557,9 @@ size_t countThisTransition( Trans fsm_stateTransitions[3]
 void setup( global_costs_t      *globalCosts
           , global_characters_t *globalCharacters
           , global_arrays_t     *globalCostArrays
-          , dyn_character_t     *lesserChar
-          , dyn_character_t     *middleChar
-          , dyn_character_t     *longerChar
+          , dyn_character_t     *in_lesserChar
+          , dyn_character_t     *in_middleChar
+          , dyn_character_t     *in_longerChar
           , unsigned int         mismatch_cost
           , unsigned int         gapOpen
           , unsigned int         gapExtend
@@ -580,32 +580,32 @@ void setup( global_costs_t      *globalCosts
     globalCharacters->middleStr = calloc( MAX_STR, sizeof(char) );
 
     // Initialize all characters. As with globalCosts, these will be passed around to remove globals and functional side effects.
-    copyCharacter( globalCharacters->lesserStr, lesserChar) ;
-    copyCharacter( globalCharacters->longerStr, longerChar) ;
-    copyCharacter( globalCharacters->middleStr, middleChar) ;
+    copyCharacter( globalCharacters->lesserStr, in_lesserChar) ;
+    copyCharacter( globalCharacters->longerStr, in_longerChar) ;
+    copyCharacter( globalCharacters->middleStr, in_middleChar) ;
 
-    globalCharacters->lesserLen = lesserChar->len;
-    globalCharacters->longerLen = longerChar->len;
-    globalCharacters->middleLen = middleChar->len;
+    globalCharacters->lesserLen = in_lesserChar->len;
+    globalCharacters->longerLen = in_longerChar->len;
+    globalCharacters->middleLen = in_middleChar->len;
 
-    globalCostArrays->neighbours            = calloc( MAX_STATES,              sizeof(int) );
-    globalCostArrays->fsm_stateContinuationCost = calloc( MAX_STATES,              sizeof(int) );
-    globalCostArrays->secondCost            = calloc( MAX_STATES,              sizeof(int) );
-    globalCostArrays->transitionCost        = calloc( MAX_STATES * MAX_STATES, sizeof(int) );
-    globalCostArrays->fsm_stateNum              = calloc( MAX_STATES,              sizeof(int) );
+    globalCostArrays->neighbours                = calloc( MAX_STATES,              sizeof(int) );
+    globalCostArrays->fsmState_continuationCost = calloc( MAX_STATES,              sizeof(int) );
+    globalCostArrays->secondCost                = calloc( MAX_STATES,              sizeof(int) );
+    globalCostArrays->transitionCost            = calloc( MAX_STATES * MAX_STATES, sizeof(int) );
+    globalCostArrays->fsmState_num              = calloc( MAX_STATES,              sizeof(int) );
 
     int thisCost,
         cost,
         maxCost = 0;
 
-    size_t fsm_state_reindex_num  = 0;    // we reindex fsm_state sets to eliminate extras.
+    size_t fsmState_reindex_num  = 0;    // we reindex fsm_state sets to eliminate extras.
 
 /* Don't need to do this; calloc'ed above
     for (i = 0; i < MAX_STATES - 1; i++) {
         globalCosts->neighbours[i] = 0;
-        globalCosts->fsm_stateContinuationCost[i]   = 0;
+        globalCosts->fsmState_continuationCost[i]   = 0;
         globalCosts->secondCost[i] = 0;
-        globalCosts->fsm_stateNum[i]   = 0;
+        globalCosts->fsmState_num[i]   = 0;
         for (size_t j = 0; j < MAX_STATES - 1; j++) {
             globalCosts->transitionCost[i][j] = 0;
         }
@@ -616,81 +616,81 @@ void setup( global_costs_t      *globalCosts
     /**** Now set cost arrays which correspond to FSM fsm_state-transition sets. This won't work for non-constant TCMs. ****/
     // TODO: Hard code this. It's a ridiculous amount of wasted time and code.
 
-    Trans fsm_stateTransitions[3];    // safe because this gets reset in first line of for loop:
+    Trans fsmState_transitions[3];    // safe because this gets reset in first line of for loop:
     size_t numInserts;
-    size_t two_fsm_states_continuing; // if there are, for instance, two deletions that carry forward in the same
+    size_t two_fsmStates_continuing; // if there are, for instance, two deletions that carry forward in the same
 
     // For each possible 3-FSM fsm_state, set fsm_state transitions.
-    // If none of the three fsm_states is a match, skip it.
+    // If none of the three fsm states is a match, skip it.
     // Not clear why there can't be two inserts but can be two deletes. Maybe it's in Powell's thesis.
     for (size_t fsm_state = 0; fsm_state < MAX_STATES; fsm_state++) {
-        transitions( fsm_stateTransitions, fsm_state );
+        transitions( fsmState_transitions, fsm_state );
 
-        if (countThisTransition( fsm_stateTransitions, MATCH_SUB ) == 0) {
+        if (countThisTransition( fsmState_transitions, MATCH_SUB ) == 0) {
             continue;     // Must be at least one match
         }
 
-        if (countThisTransition( fsm_stateTransitions, INS ) > 1) {
+        if (countThisTransition( fsmState_transitions, INS ) > 1) {
             continue;     // Can't be more than 1 insert fsm_state!  (7/7/1998)   // TODO: looks this up
         }
 
 /* Not doing this
         #ifdef LIMIT_TO_GOTOH
-            // Gotoh86 only allowed fsm_states that had a least 2 match fsm_states. (Total of 7 possible)
-            if (countThisTransition(fsm_stateTransitions, INS) + countThisTransition(fsm_stateTransitions, DEL) > 1) {
+            // Gotoh86 only allowed fsm states that had a least 2 match fsm states. (Total of 7 possible)
+            if (countThisTransition(fsmState_transitions, INS) + countThisTransition(fsmState_transitions, DEL) > 1) {
                 continue;
             }
         #endif
 */
-        globalCostArrays->fsm_stateNum[fsm_state_reindex_num] = fsm_state; // compacting possible fsm_states into smaller set. From now on can just loop
-                                                               // over fsm_state_reindex_num, which means continuing to skip meaningless FSM
-                                                               // fsm_states.
-        printf("%zu %zu\n", fsm_state_reindex_num, fsm_state);
+        globalCostArrays->fsmState_num[fsmState_reindex_num] = fsm_state; // compacting possible fsm states into smaller set. From now on can just loop
+                                                               // over fsmState_reindex_num, which means continuing to skip meaningless FSM
+                                                               // states.
+        printf("%zu %zu\n", fsmState_reindex_num, fsm_state);
 
-        // Set up possible neighbours for fsm_states (neighbours[])
-        numInserts = countThisTransition(fsm_stateTransitions, INS);
+        // Set up possible neighbours for fsm states (neighbours[])
+        numInserts = countThisTransition(fsmState_transitions, INS);
 
         if (numInserts == 0) { // if no inserts, then match/sub is 1 and del is 0 in resulting binary number
-            globalCostArrays->neighbours[fsm_state_reindex_num] = neighbourNum( fsm_stateTransitions[0] == MATCH_SUB ? 1 : 0
-                                                                          , fsm_stateTransitions[1] == MATCH_SUB ? 1 : 0
-                                                                          , fsm_stateTransitions[2] == MATCH_SUB ? 1 : 0
-                                                                          );
-        } else { // numInserts == 1, as we've already eliminated any fsm_states which have two INSs // TODO: looks this up
+            globalCostArrays->neighbours[fsmState_reindex_num] = neighbourNum( fsmState_transitions[0] == MATCH_SUB ? 1 : 0
+                                                                             , fsmState_transitions[1] == MATCH_SUB ? 1 : 0
+                                                                             , fsmState_transitions[2] == MATCH_SUB ? 1 : 0
+                                                                             );
+        } else { // numInserts == 1, as we've already eliminated any fsm states which have two INSs // TODO: looks this up
                  // if one insert, then match/sub or del is 0 ins is 1 in resulting binary number
-            globalCostArrays->neighbours[fsm_state_reindex_num] = neighbourNum( fsm_stateTransitions[0] == INS ? 1 : 0
-                                                                          , fsm_stateTransitions[1] == INS ? 1 : 0
-                                                                          , fsm_stateTransitions[2] == INS ? 1 : 0
-                                                                          );
+            globalCostArrays->neighbours[fsmState_reindex_num] = neighbourNum( fsmState_transitions[0] == INS ? 1 : 0
+                                                                             , fsmState_transitions[1] == INS ? 1 : 0
+                                                                             , fsmState_transitions[2] == INS ? 1 : 0
+                                                                             );
         }
         // End setting up neighbours
 
 
-        // Set up cost for continuing a fsm_state (fsm_stateContinuationCost[])
-        // For a given fsm_state, either 1 or more fsm_states continue. If 2 or 3 continue,
+        // Set up cost for continuing an fsm state (fsmState_continuationCost[])
+        // For a given fsm_state, either 1 or more fsm states continue. If 2 or 3 continue,
         //
         // TODO: most of this will die, because we're using a tcm. Again, though, why not hard code these arrays?
-        if (countThisTransition( fsm_stateTransitions, INS ) > 0) { // TODO: hasn't this already been eliminated by the continue above?
+        if (countThisTransition( fsmState_transitions, INS ) > 0) { // TODO: hasn't this already been eliminated by the continue above?
             cost = globalCosts->gapExtendCost;           /* Can only continue 1 insert at a time. */ // TODO: looks this up
-            two_fsm_states_continuing = 0;
-        } else if (countThisTransition( fsm_stateTransitions, MATCH_SUB ) == 3) {
+            two_fsmStates_continuing = 0;
+        } else if (countThisTransition( fsmState_transitions, MATCH_SUB ) == 3) {
             cost = globalCosts->mismatchCost;            /* No indel */
-            two_fsm_states_continuing = 1;
-        } else if (countThisTransition( fsm_stateTransitions, DEL ) == 1) {
-            cost = globalCosts->gapExtendCost;        /* Continuing delete */ // Two fsm_states must match
-            two_fsm_states_continuing = 1;
+            two_fsmStates_continuing = 1;
+        } else if (countThisTransition( fsmState_transitions, DEL ) == 1) {
+            cost = globalCosts->gapExtendCost;        /* Continuing delete */ // Two fsm states must match
+            two_fsmStates_continuing = 1;
         } else {
             cost  = 2 * globalCosts->gapExtendCost;    /* Continuing 2 deletes */
-            two_fsm_states_continuing = 0;
+            two_fsmStates_continuing = 0;
         }
 
-        globalCostArrays->fsm_stateContinuationCost[fsm_state_reindex_num] = cost;
-        globalCostArrays->secondCost[fsm_state_reindex_num]            = two_fsm_states_continuing;
-        // End setup of fsm_stateContinuationCost[]
+        globalCostArrays->fsmState_continuationCost[fsmState_reindex_num] = cost;
+        globalCostArrays->secondCost[fsmState_reindex_num]            = two_fsmStates_continuing;
+        // End setup of fsmState_continuationCost[]
 
-        fsm_state_reindex_num++; // Because of continues, above, does not track `fsm_state`.
+        fsmState_reindex_num++; // Because of continues, above, does not track `fsm_state`.
     }
 
-    globalCharacters->numStates = fsm_state_reindex_num;
+    globalCharacters->numStates = fsmState_reindex_num;
 
     // Setup fsm_state transition costs (transitionCost[][])
     Trans from[3],
@@ -701,8 +701,8 @@ void setup( global_costs_t      *globalCosts
 
 
             cost = 0;
-            transitions( from, globalCostArrays->fsm_stateNum[s1] );
-            transitions( to  , globalCostArrays->fsm_stateNum[s2] );
+            transitions( from, globalCostArrays->fsmState_num[s1] );
+            transitions( to  , globalCostArrays->fsmState_num[s2] );
 
             for (i = 0; i < 3; i++) {
                 if (    (to[i] == INS || to[i] == DEL)
@@ -714,12 +714,12 @@ void setup( global_costs_t      *globalCosts
             globalCostArrays->transitionCost[s1 * MAX_STATES + s2] = cost;
 
             // Determine biggest single step cost
-            thisCost = cost + globalCostArrays->fsm_stateContinuationCost[s2];
-            Trans fsm_stateTransitions[3];
+            thisCost = cost + globalCostArrays->fsmState_continuationCost[s2];
+            Trans fsmState_transitions[3];
 
-            transitions( fsm_stateTransitions, globalCostArrays->fsm_stateNum[s2] );
+            transitions( fsmState_transitions, globalCostArrays->fsmState_num[s2] );
 
-            thisCost += globalCosts->mismatchCost * ( countThisTransition(fsm_stateTransitions, MATCH_SUB) - 1 );
+            thisCost += globalCosts->mismatchCost * ( countThisTransition(fsmState_transitions, MATCH_SUB) - 1 );
             maxCost   = (maxCost < thisCost ? thisCost : maxCost);
 
         }
@@ -800,52 +800,52 @@ unsigned int alignmentCost( int              fsm_states[]
     size_t fsm_state,        // FSM fsm_state
            localCIdx;
 
-    Trans last_fsm_stateTransitions[3] = { MATCH_SUB, MATCH_SUB, MATCH_SUB };
-    Trans cur_fsm_stateTransitions[3];
+    Trans last_fsmState_transitions[3] = { MATCH_SUB, MATCH_SUB, MATCH_SUB };
+    Trans cur_fsmState_transitions[3];
 
     for (size_t i = 0; i < len; i++) {
-        transitions( cur_fsm_stateTransitions, globalCostArrays->fsm_stateNum[ fsm_states[i] ] );
+        transitions( cur_fsmState_transitions, globalCostArrays->fsmState_num[ fsm_states[i] ] );
 
     //    if (i > 0) fprintf( stderr, "%-2d  ", totalCost );
 
         // Pay for begining a gap.
         for (fsm_state = 0; fsm_state < 3; fsm_state++) {
-            if (   cur_fsm_stateTransitions[fsm_state] != MATCH_SUB
-                && cur_fsm_stateTransitions[fsm_state] != last_fsm_stateTransitions[fsm_state]
+            if (   cur_fsmState_transitions[fsm_state] != MATCH_SUB
+                && cur_fsmState_transitions[fsm_state] != last_fsmState_transitions[fsm_state]
                ) {
                 totalCost += globalCosts->gapOpenCost;
             }
         }
 
         for (fsm_state = 0; fsm_state < 3; fsm_state++) {
-            last_fsm_stateTransitions[fsm_state] = cur_fsm_stateTransitions[fsm_state];
+            last_fsmState_transitions[fsm_state] = cur_fsmState_transitions[fsm_state];
         }
 
         // Pay for continuing an insert
-        if (countThisTransition(cur_fsm_stateTransitions, INS) > 0) {
-            assert(countThisTransition(cur_fsm_stateTransitions,INS) == 1);
+        if (countThisTransition(cur_fsmState_transitions, INS) > 0) {
+            assert(countThisTransition(cur_fsmState_transitions,INS) == 1);
             totalCost += globalCosts->gapExtendCost;
             continue;
         }
 
         // Pay for continuing deletes
-        totalCost += globalCosts->gapExtendCost * countThisTransition(cur_fsm_stateTransitions, DEL);
+        totalCost += globalCosts->gapExtendCost * countThisTransition(cur_fsmState_transitions, DEL);
 
         // Pay for mismatches
         char ch[3];
         localCIdx = 0;
 
-        if (cur_fsm_stateTransitions[0] == MATCH_SUB) {
+        if (cur_fsmState_transitions[0] == MATCH_SUB) {
             assert(aligned_1[i] != '-');
             ch[localCIdx++] = aligned_1[i];
         }
 
-        if (cur_fsm_stateTransitions[1] == MATCH_SUB) {
+        if (cur_fsmState_transitions[1] == MATCH_SUB) {
             assert(aligned_2[i] != '-');
             ch[localCIdx++] = aligned_2[i];
         }
 
-        if (cur_fsm_stateTransitions[2] == MATCH_SUB) {
+        if (cur_fsmState_transitions[2] == MATCH_SUB) {
             assert(aligned_3[i] != '-');
             ch[localCIdx++] = aligned_3[i];
         }
@@ -856,7 +856,7 @@ unsigned int alignmentCost( int              fsm_states[]
             if (ch[localCIdx - 1] != ch[localCIdx])  totalCost += globalCosts->mismatchCost;
         }
 
-        if (   countThisTransition(cur_fsm_stateTransitions, MATCH_SUB) == 3
+        if (   countThisTransition(cur_fsmState_transitions, MATCH_SUB) == 3
             && ch[0] == ch[2]
             && ch[0] != ch[1]
            ) {
