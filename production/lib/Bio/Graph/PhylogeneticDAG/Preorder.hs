@@ -88,7 +88,7 @@ preorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
 
     -- A "sequence" of the minimum topologies that correspond to each block.
     sequenceOfBlockMinimumTopologies :: NonEmpty (EdgeSet (Int, Int))
-    sequenceOfBlockMinimumTopologies = traceShowId $ getTopologies blockMinimalResolutions
+    sequenceOfBlockMinimumTopologies = getTopologies blockMinimalResolutions
       where
         getTopologies = fmap subtreeEdgeSet
 
@@ -97,12 +97,13 @@ preorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
         sequenceWLOG = characterSequence $ NE.head rootResolutions
 
         f key _block = minimumBy (comparing extractedBlockCost)
-                     $ (\x -> trace (show $ extractedBlockCost <$> toList x) x)
+--                     $ (\x -> trace (show $ extractedBlockCost <$> toList x) x)
                        rootResolutions
           where
             extractedBlockCost = blockCost . (! key) . toBlocks . characterSequence
 
-        rootResolutions = (\x -> trace ("Root resolutions: " <> show (length x)) x) $ resolutions . nodeDecoration $ references dag ! rootWLOG
+        rootResolutions = -- (\x -> trace ("Root resolutions: " <> show (length x)) x) $
+                          resolutions . nodeDecoration $ references dag ! rootWLOG
 
         rootWLOG = NE.head $ rootRefs dag
 
@@ -260,25 +261,25 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ 
     -- |
     -- For each block, for each dynamic character, a vector of parent ref indicies.
 --    parentVectors :: NonEmpty (Vector (Vector (Either Int (Int, ResolutionCache (CharacterSequence u v w x y z)))))
-    parentVectors = trace "after force !!"
+    parentVectors = {-
+                  trace "after force !!"
                   . (\x -> trace ("before force !!" <> show (fmap (fmap (fmap (fmap (fmap (const ()))))) x)) x
                     )
-                  $ mapWithKey deriveParentVectors sequenceOfBlockMinimumTopologies
+                  -}
+                    mapWithKey deriveParentVectors sequenceOfBlockMinimumTopologies
       where
         deriveParentVectors k (topo, dynchars) = mapWithKey h dynchars
           where
             h charIndex rootEdge@(lhsRootRef, rhsRootRef) = V.generate dagSize g
               where
-                g i | trace (show i) False = undefined
+--                g i | trace (show i) False = undefined
                 g i = mapping ! i
                 
                 mapping = lhs <> rhs
                   where
                     -- TODO: Get the appropriate resolution here!
-                    lhs = (\x -> trace ("LHS: " <> show (fmap (fmap (fmap (const ()))) x)) x) $
-                            IM.singleton lhsRootRef (Right (rhsRootRef, val)) <> genMap (IS.singleton rhsRootRef) lhsRootRef
-                    rhs = (\x -> trace ("RHS: " <> show (fmap (fmap (fmap (const ()))) x)) x) $
-                            IM.singleton rhsRootRef (Right (lhsRootRef, val)) <> genMap (IS.singleton lhsRootRef) rhsRootRef
+                    lhs = IM.singleton lhsRootRef (Right (rhsRootRef, val)) <> genMap (IS.singleton rhsRootRef) lhsRootRef
+                    rhs = IM.singleton rhsRootRef (Right (lhsRootRef, val)) <> genMap (IS.singleton lhsRootRef) rhsRootRef
 --                    genMap _  j | trace (show j) False = undefined
                     genMap is j = foldMap (\x -> IM.singleton x $ Left j) kids <> foldMap (genMap (IS.insert j is)) kids
                       where
@@ -300,7 +301,8 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ 
 
     -- A "sequence" of the minimum topologies that correspond to each block.
     sequenceOfBlockMinimumTopologies :: NonEmpty (EdgeSet (Int, Int), Vector (Int, Int))
-    sequenceOfBlockMinimumTopologies = trace "after force" $ force (trace "before force" blockMinimalResolutions)
+    sequenceOfBlockMinimumTopologies = --trace "after force" $ force (trace "before force" blockMinimalResolutions)
+        blockMinimalResolutions
       where
         blockMinimalResolutions = mapWithKey g $ toBlocks sequenceWLOG
 
@@ -374,7 +376,7 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ 
             childCharSeqOnlyDynChars = zipWithKey g parentVectors $ fst <$> sequenceOfBlockMinimumTopologies
               where
                 -- FoldMap is a bit inefficient with Vectors here, worry about it later.
-                g k v topology = trace ("\nnode: " <> show i <> "block: " <> show k) mapWithKey h v
+                g k v topology = mapWithKey h v
                   where
                           -- Get this character from the block
                     h j x = (! j) . dynamicCharacters
@@ -383,8 +385,8 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ 
                           -- Get the appropriate resolution based on this character's display tree toplogy
                           $ selectApplicableResolutions topology directedResolutions
                       where
-                        directedResolutions = (contextualNodeDatum ! i) ! (trace (unwords ["\nkey:",show i,"sub-key:",show (p,i),"\nmapping sub-keys:",show (M.keys $ contextualNodeDatum ! i)])) (p,i)
-                                              -- (contextualNodeDatum .!>. i) .!>. (i,p)
+                        directedResolutions = --(contextualNodeDatum ! i) ! (trace (unwords ["\nkey:",show i,"sub-key:",show (p,i),"\nmapping sub-keys:",show (M.keys $ contextualNodeDatum ! i)])) (p,i)
+                                               (contextualNodeDatum .!>. i) .!>. (p,i)
 {-                          
                             case i `lookup` contextualNodeDatum of
                               Nothing -> error $ "Couldn't find: " <> show i
@@ -394,9 +396,8 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ 
                                   Just a  -> a
 -}
                         p = case x ! i of
-                              Right (n,_) -> trace (unwords ["For", show i, "( Right (", show n,", ? ) )"]) n
-                              -- error "Next up Batman vs The RTS!\nReady?\nFIGHT!\nPOW! BLARM! THRAP!\nBatman wins!"
-                              Left  n     -> trace (unwords ["For", show i, "( Left", show n,")"]) n
+                              Right (n,_) -> n
+                              Left  n     -> n
             
             
 --            childResolutions :: NonEmpty [a]
