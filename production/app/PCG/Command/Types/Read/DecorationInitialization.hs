@@ -122,45 +122,88 @@ chooseDirectOptimizationComparison dec decs =
               in \x y -> naiveDO x y scm
 
 
+chooseDirectOptimizationComparison2 :: ( SimpleDynamicDecoration d  c
+                                      , SimpleDynamicDecoration d' c
+                                      , Exportable c
+                                      , Show c
+                                      , Show (Element c)
+                                      , Integral (Element c)
+                                      )
+                                   => d
+                                   -> [(a,d')]
+                                   -> c
+                                   -> c
+                                   -> (Word, c, c, c, c)
+chooseDirectOptimizationComparison2 dec decs =
+    case decs of
+      []  -> selectBranch dec
+      (_,x):_ -> selectBranch x
+  where
+--    selectBranch x | trace (show . length $ x ^. characterAlphabet) False = undefined
+    selectBranch candidate
+      | sequentialAlignOverride = sequentialAlign (candidate ^. sparseTransitionCostMatrix)
+      | otherwise =
+          case candidate ^. denseTransitionCostMatrix of
+            Just  d -> \x y -> foreignPairwiseDO x y d
+            Nothing ->
+              let !scm = (candidate ^. symbolChangeMatrix)
+              in \x y -> naiveDO x y scm
+
+
 id2 x _ = x
+
 
 {--}
 initializeDecorations2 :: CharacterResult -> PhylogeneticSolution FinalDecorationDAG
 initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
   where
     performDecoration :: CharacterDAG -> FinalDecorationDAG
-    performDecoration = performPreOrderDecoration . performPostOrderDecoration
-
-    
-    performPreOrderDecoration :: PostOrderDecorationDAG -> FinalDecorationDAG
-    performPreOrderDecoration =
-        preorderSequence'
-          additivePreOrder
-          fitchPreOrder
-          additivePreOrder
-          sankoffPreOrder
-          sankoffPreOrder
-          id2
-
-    performPostOrderDecoration :: CharacterDAG -> PostOrderDecorationDAG
-    performPostOrderDecoration =
-        assignPunitiveNetworkEdgeCost
-        . assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostOrder
-        . postorderSequence'
-           (g additivePostOrder)
-           (g    fitchPostOrder)
-           (g additivePostOrder)
-           (g  sankoffPostOrder)
-           (g  sankoffPostOrder)
-           (g adaptiveDirectOptimizationPostOrder)
+    performDecoration x = performPreOrderDecoration performPostOrderDecoration
       where
-        g _  Nothing  [] = error "Uninitialized leaf node. This is bad!"
-        g h (Just  v) [] = h v []
-        g h        e  xs = h (error $ "We shouldn't be using this value." ++ show e ++ show (length xs)) xs
+    
+        performPreOrderDecoration :: PostOrderDecorationDAG -> FinalDecorationDAG
+        performPreOrderDecoration =
+            preorderFromRooting
+              adaptiveDirectOptimizationPreOrder
+              edgeCostMapping
+              contextualNodeDatum
+              
+            . preorderSequence'
+              additivePreOrder
+              fitchPreOrder
+              additivePreOrder
+              sankoffPreOrder
+              sankoffPreOrder
+              id2
+          where
+            adaptiveDirectOptimizationPreOrder dec kidDecs = directOptimizationPreOrder pairwiseAlignmentFunction dec kidDecs
+              where
+                pairwiseAlignmentFunction = chooseDirectOptimizationComparison2 dec kidDecs
+    
+        performPostOrderDecoration :: PostOrderDecorationDAG
+        performPostOrderDecoration = assignPunitiveNetworkEdgeCost post
+        
+        (post, edgeCostMapping, contextualNodeDatum) =
+             assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostOrder
+             . postorderSequence'
+                 (g additivePostOrder)
+                 (g    fitchPostOrder)
+                 (g additivePostOrder)
+                 (g  sankoffPostOrder)
+                 (g  sankoffPostOrder)
+                 (g adaptiveDirectOptimizationPostOrder)
+             $ x
+          where
+            g _  Nothing  [] = error "Uninitialized leaf node. This is bad!"
+            g h (Just  v) [] = h v []
+            g h        e  xs = h (error $ "We shouldn't be using this value." ++ show e ++ show (length xs)) xs
+
+
 {--}
         adaptiveDirectOptimizationPostOrder dec kidDecs = directOptimizationPostOrder pairwiseAlignmentFunction dec kidDecs
           where
             pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec kidDecs
+
 {--}
 
 

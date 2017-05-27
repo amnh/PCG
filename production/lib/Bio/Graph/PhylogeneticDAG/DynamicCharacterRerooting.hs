@@ -35,7 +35,7 @@ import           Data.Key
 import           Data.List.NonEmpty        (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty as NE
 --import           Data.List.Utility
---import           Data.Map                  (Map)
+import           Data.Map                  (Map)
 import qualified Data.Map           as M
 import           Data.Maybe
 import           Data.MonoTraversable
@@ -43,6 +43,7 @@ import           Data.Ord                  (comparing)
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Data.Tuple                (swap)
+import           Data.Vector               (Vector)
 import qualified Data.Vector        as V
 import           Prelude            hiding (lookup, zipWith)
 
@@ -76,10 +77,14 @@ assignOptimalDynamicCharacterRootEdges
      ) --x, Ord x, Show x)
   => (z -> [z] -> z)
   -> PhylogeneticDAG2 e n u v w x y z
-  -> PhylogeneticDAG2 e n u v w x y z
+  -> ( PhylogeneticDAG2 e n u v w x y z
+     , Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
+     , Vector (Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
+     ) 
 --assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) = undefined
 {--}
-assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) = PDAG2 updatedDag
+assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) =
+    (PDAG2 updatedDag, edgeCostMapping, contextualNodeDatum)
   where
 
     -- Step 1: Construct a hashmap of all the edges.
@@ -95,7 +100,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
     -- Step 4: Update the dynamic character decoration's cost & add an edge reference.
     updatedDag = inputDag
         { references = refVec V.// toList modifiedRootRefs
-        , graphData  = (graphData inputDag) { graphMetadata = edgeCostMapping }
+        , graphData  = (graphData inputDag) { graphMetadata = (edgeCostMapping, contextualNodeDatum) }
         }
 
 
