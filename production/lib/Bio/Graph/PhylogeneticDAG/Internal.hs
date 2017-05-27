@@ -288,9 +288,9 @@ localResolutionApplication f x y =
     liftA2 (generateLocalResolutions id2 id2 id2 id2 id2 f) mutalatedChild relativeChildResolutions
   where
     relativeChildResolutions = applySoftwireResolutions
-      [ (x, IS.singleton 0)
-      , (y, IS.singleton 0)
-      ]
+        [ (x, IS.singleton 0)
+        , (y, IS.singleton 0)
+        ]
     id2 z _ = z
     mutalatedChild = pure
         ResInfo

@@ -152,46 +152,53 @@ chooseDirectOptimizationComparison2 dec decs =
 
 id2 x _ = x
 
+
 {--}
 initializeDecorations2 :: CharacterResult -> PhylogeneticSolution FinalDecorationDAG
 initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
   where
     performDecoration :: CharacterDAG -> FinalDecorationDAG
-    performDecoration = performPreOrderDecoration . performPostOrderDecoration
-
+    performDecoration x = performPreOrderDecoration performPostOrderDecoration
+      where
     
-    performPreOrderDecoration :: PostOrderDecorationDAG -> FinalDecorationDAG
-    performPreOrderDecoration =
-        preorderSequence'
-          additivePreOrder
-          fitchPreOrder
-          additivePreOrder
-          sankoffPreOrder
-          sankoffPreOrder
-          id2 .
-        preorderFromRooting
-          adaptiveDirectOptimizationPreOrder
-      where
-        adaptiveDirectOptimizationPreOrder dec kidDecs = directOptimizationPreOrder pairwiseAlignmentFunction dec kidDecs
+        performPreOrderDecoration :: PostOrderDecorationDAG -> FinalDecorationDAG
+        performPreOrderDecoration =
+            preorderFromRooting
+              adaptiveDirectOptimizationPreOrder
+              edgeCostMapping
+              contextualNodeDatum
+              
+            . preorderSequence'
+              additivePreOrder
+              fitchPreOrder
+              additivePreOrder
+              sankoffPreOrder
+              sankoffPreOrder
+              id2
           where
-            pairwiseAlignmentFunction = chooseDirectOptimizationComparison2 dec kidDecs
+            adaptiveDirectOptimizationPreOrder dec kidDecs = directOptimizationPreOrder pairwiseAlignmentFunction dec kidDecs
+              where
+                pairwiseAlignmentFunction = chooseDirectOptimizationComparison2 dec kidDecs
+    
+        performPostOrderDecoration :: PostOrderDecorationDAG
+        performPostOrderDecoration = assignPunitiveNetworkEdgeCost post
         
+        (post, edgeCostMapping, contextualNodeDatum) =
+             assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostOrder
+             . postorderSequence'
+                 (g additivePostOrder)
+                 (g    fitchPostOrder)
+                 (g additivePostOrder)
+                 (g  sankoffPostOrder)
+                 (g  sankoffPostOrder)
+                 (g adaptiveDirectOptimizationPostOrder)
+             $ x
+          where
+            g _  Nothing  [] = error "Uninitialized leaf node. This is bad!"
+            g h (Just  v) [] = h v []
+            g h        e  xs = h (error $ "We shouldn't be using this value." ++ show e ++ show (length xs)) xs
 
-    performPostOrderDecoration :: CharacterDAG -> PostOrderDecorationDAG
-    performPostOrderDecoration =
-        assignPunitiveNetworkEdgeCost
-        . assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostOrder
-        . postorderSequence'
-           (g additivePostOrder)
-           (g    fitchPostOrder)
-           (g additivePostOrder)
-           (g  sankoffPostOrder)
-           (g  sankoffPostOrder)
-           (g adaptiveDirectOptimizationPostOrder)
-      where
-        g _  Nothing  [] = error "Uninitialized leaf node. This is bad!"
-        g h (Just  v) [] = h v []
-        g h        e  xs = h (error $ "We shouldn't be using this value." ++ show e ++ show (length xs)) xs
+
 {--}
         adaptiveDirectOptimizationPostOrder dec kidDecs = directOptimizationPostOrder pairwiseAlignmentFunction dec kidDecs
           where

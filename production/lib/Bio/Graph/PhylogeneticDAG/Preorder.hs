@@ -42,6 +42,7 @@ import qualified Data.IntSet        as IS
 import           Data.Key
 import           Data.List.NonEmpty        (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty as NE
+import           Data.Map                  (Map)
 import qualified Data.Map           as M
 import           Data.Maybe
 import           Data.MonoTraversable
@@ -220,15 +221,18 @@ selectApplicableResolutions topology cache =
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
 preorderFromRooting
-  :: ( HasBlockCost u v w x y z  Word Double
+  :: ( HasBlockCost u  v  w  x  y  z   Word Double
+     , HasBlockCost u' v' w' x' y' z'  Word Double
      , HasTraversalFoci z  (Maybe TraversalFoci)
      , HasTraversalFoci z' (Maybe TraversalFoci)
      , Show z
      )
   => (z -> [(Word, z')] -> z')
-  -> PhylogeneticDAG2 e n u v w x y z
-  -> PhylogeneticDAG2 e n u v w x y z'
-preorderFromRooting f (PDAG2 dag) = PDAG2 $ newDAG dag
+  -> Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
+  -> Vector (Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
+  -> PhylogeneticDAG2 e' n' u' v' w' x' y' z
+  -> PhylogeneticDAG2 e' n' u' v' w' x' y' z'
+preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ newDAG dag
   where
     newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> defaultGraphMetadata . graphData
     dagSize       = length $ references dag
@@ -242,7 +246,7 @@ preorderFromRooting f (PDAG2 dag) = PDAG2 $ newDAG dag
               <*> childRefs
               $ references dag ! i
 
-    (edgeCostMapping, contextualNodeDatum) = graphMetadata $ graphData dag
+--    (edgeCostMapping, contextualNodeDatum) = graphMetadata $ graphData dag
 
     applyNewDynamicCharacters dynCharSeq oldNode = oldNode { resolutions = pure newResolution }
       where
