@@ -87,70 +87,72 @@ int powell_3D_align( dyn_character_t    *lesserChar
                    , unsigned int        mismatch_cost
                    , unsigned int        gapOpen
                    , unsigned int        gapExtend
-                   , cost_matrices_3d_t *costMtx_3d
                    );
 
 
 /** For Ukkonen check point between to specified points in the U matrix... TODO: ...?
  *  All distances and costs are signed, as often initialized to -INFINITY
  */
-int doUkkInLimits( int                  start_ab_diff
-                 , int                  start_ac_diff
-                 , int                  startCost
-                 , int                  startState
-                 , int                  startDist
-                 , int                  final_ab_diff
-                 , int                  final_ac_diff
-                 , int                  finalCost
-                 , int                  finalState
-                 , int                  finalDist
-                 , global_costs_t      *globalCosts
-                 , global_characters_t *globalCharacters
-                 , global_arrays_t     *globalCostArrays
+int doUkkInLimits( int              start_ab_idx_diff
+                 , int              start_ac_idx_diff
+                 , int              startCost
+                 , int              startState
+                 , int              start_editDist
+                 , int              final_ab_idx_diff
+                 , int              final_ac_idx_diff
+                 , int              finalCost
+                 , int              finalState
+                 , int              finalDist
+                 , global_costs_t  *globalCosts
+                 , characters_t    *inputChars
+                 , characters_t    *resultChars
+                 , fsm_arrays_t *fsmArrays
                  );
 
 
 /** Extracts info from the 'from' and CP info then recurses with doUkkInLimits for the two subparts.
  *  All distances and costs are signed, as often initialized to -INFINITY
  */
-int getSplitRecurse( size_t               start_ab_diff
-                   , size_t               start_ac_diff
-                   , int                  startCost
-                   , int                  startState
-                   , int                  startDist
-                   , size_t               final_ab_diff
-                   , size_t               final_ac_diff
-                   , int                  finalCost
-                   , int                  finalState
-                   , int                  finalDist
-                   , global_costs_t      *globalCosts
-                   , global_characters_t *globalCharacters
-                   , global_arrays_t     *globalCostArrays
+int getSplitRecurse( size_t           start_ab_idx_diff
+                   , size_t           start_ac_idx_diff
+                   , int              startCost
+                   , int              startState
+                   , int              start_editDist
+                   , size_t           final_ab_idx_diff
+                   , size_t           final_ac_idx_diff
+                   , int              finalCost
+                   , int              finalState
+                   , int              finalDist
+                   , global_costs_t  *globalCosts
+                   , characters_t    *inputChars
+                   , characters_t    *resultChars
+                   , fsm_arrays_t *fsmArrays
                    );
 
 
 /** Recovers an alignment directly from the Ukkonnen matrix.
  *  Used for the base case of the check point recursion.
  */
-void traceBack( int                  start_ab_diff
-              , int                  start_ac_diff
-              , int                  startCost
-              , int                  startState
-              , int                  final_ab_diff
-              , int                  final_ac_diff
-              , int                  finalCost
-              , unsigned int         finalState
-              , global_characters_t *globalCharacters
+void traceBack( int           start_ab_idx_diff
+              , int           start_ac_idx_diff
+              , int           startCost
+              , int           startState
+              , int           final_ab_idx_diff
+              , int           final_ac_idx_diff
+              , int           finalCost
+              , unsigned int  finalState
+              , characters_t *inputChars
+              , characters_t *resultChars
               );
 
 /**  */
-int Ukk( int                  ab_idx_diff
-       , int                  ac_idx_diff
-       , int                  editDistance
-       , unsigned int         fsm_state
-       , global_costs_t      *globalCosts
-       , global_characters_t *globalCharacters
-       , global_arrays_t     *globalCostArrays
+int Ukk( int             ab_idx_diff
+       , int             ac_idx_diff
+       , int             editDistance
+       , unsigned int    fsm_state
+       , global_costs_t *globalCosts
+       , characters_t   *inputChars
+       , fsm_arrays_t   *fsmArrays
        );
 
 
@@ -185,12 +187,10 @@ int findBest( int    ab_idx_diff
 int whichCharCost(char a, char b, char c);
 
 // IMPORTANT!!! Order of input characters is short, long, middle.
-int doUkk( dyn_character_t     *retLesserChar
-         , dyn_character_t     *retMiddleChar
-         , dyn_character_t     *retLongerChar
-         , global_costs_t      *globalCosts
-         , global_characters_t *globalCharacters
-         , global_arrays_t     *globalCostArrays
+int doUkk( global_costs_t *globalCosts
+         , characters_t   *inputChars
+         , characters_t   *resultChars
+         , fsm_arrays_t   *fsmArrays
          );
 
 
@@ -201,23 +201,21 @@ int char_to_base (char v);
 
 
 /**  */
-void printTraceBack( dyn_character_t     *retLesserChar
-                   , dyn_character_t     *retMiddleChar
-                   , dyn_character_t     *retLongerChar
-                   , global_costs_t      *globalCosts
-                   , global_characters_t *globalCharacters
-                   , global_arrays_t     *globalCostArrays
+void printTraceBack( global_costs_t *globalCosts
+                   , characters_t   *inputChars
+                   , characters_t   *resultChars
+                   , fsm_arrays_t   *fsmArrays
                    );
 
 
 /**  */
-int calcUkk( int                  ab_idx_diff
-           , int                  ac_idx_diff
-           , int                  input_editDist
-           , int                  toState
-           , global_costs_t      *globalCosts
-           , global_characters_t *globalCharacters
-           , global_arrays_t     *globalCostArrays
+int calcUkk( int             ab_idx_diff
+           , int             ac_idx_diff
+           , int             input_editDist
+           , int             toState
+           , global_costs_t *globalCosts
+           , characters_t   *globalCharacters
+           , fsm_arrays_t   *fsmArrays
            );
 
 #endif // UKKCHECKP_H

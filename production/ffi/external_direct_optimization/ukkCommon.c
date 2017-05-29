@@ -52,26 +52,26 @@
 
 // extern variable (all from ukkCheckp.c)
 // TODO: finish getting rid of these globals
-extern      alloc_info_t myUkkAllocInfo;
-extern      alloc_info_t myCheckPtAllocInfo;
-extern long costOffset;
-extern long finalCost;
+// extern      alloc_info_t myUkkAllocInfo;
+// extern      alloc_info_t myCheckPtAllocInfo;
+// extern long costOffset;
+// extern long finalCost;
 
-extern int sabG,
-           sacG,
-           sCostG,
-           sStateG;
+// extern int sabG,
+//            sacG,
+//            sCostG,
+//            sStateG;
 
-extern size_t checkPoint_width;
-extern int    checkPoint_cost;
+// extern size_t checkPoint_width;
+// extern int    checkPoint_cost;
 
-extern size_t furthestReached;
-extern size_t checkPoint_onDist;
-extern size_t endA,
-              endB,
-              endC;
+// extern size_t furthestReached;
+// extern size_t checkPoint_onDist;
+// extern size_t endA,
+//               endB,
+//               endC;
 
-extern int    completeFromInfo;
+// extern int    completeFromInfo;
 // extern Counts counts;
 
 //int  aCharIdx, bCharIdx, cCharIdx, fsmStateIdx, costIdx;
@@ -124,13 +124,13 @@ static inline void *allocPlane( alloc_info_t *a )
 }
 
 #ifdef FIXED_NUM_PLANES
-    alloc_info_t allocInit( size_t elemSize
-                          , size_t costSize
-                          , global_characters_t *globalCharacters
+    alloc_info_t allocInit( size_t        elemSize
+                          , size_t        costSize
+                          , characters_t *inputChars
                           )
 #else
-    alloc_info_t allocInit( size_t elemSize
-                          , global_characters_t *globalCharacters
+    alloc_info_t allocInit( size_t        elemSize
+                          , characters_t *inputChars
                           )
 #endif
 
@@ -140,10 +140,10 @@ static inline void *allocPlane( alloc_info_t *a )
     retStruct.memAllocated = 0;
     retStruct.elemSize     = elemSize;
 
-    retStruct.abSize   = globalCharacters->lesserLen + globalCharacters->longerLen + 1;
-    retStruct.acSize   = globalCharacters->lesserLen + globalCharacters->middleLen + 1;
-    retStruct.abOffset = globalCharacters->longerLen;
-    retStruct.acOffset = globalCharacters->middleLen;
+    retStruct.abSize   = inputChars->lesserLen + inputChars->longerLen + 1;
+    retStruct.acSize   = inputChars->lesserLen + inputChars->middleLen + 1;
+    retStruct.abOffset = inputChars->longerLen;
+    retStruct.acOffset = inputChars->middleLen;
 
     retStruct.abBlocks = retStruct.abSize / CELLS_PER_BLOCK + 1;
     retStruct.acBlocks = retStruct.acSize / CELLS_PER_BLOCK + 1;
@@ -414,14 +414,14 @@ int whichCharCost(char a, char b, char c)
     if (DEBUG_CALL_ORDER) {
         printf("whichCharCost\n");
     }
-    printf("a: %c, b: %c, c: %c\n", a, b, c);
+    // printf("a: %c, b: %c, c: %c\n", a, b, c);
     assert(   a != 0
            && b != 0
            && c != 0
-           );
+          );
     /*
-      When running as a ukk algorithm (ie. not the DPA), then
-      a == b == c only when there is a run of MATCH_SUBs after a fsm_state other that MMM,
+      When running as a ukk algorithm (ie. not the dynamic programming algorithm), then
+      a == b == c only when there is a run of MATCH_SUBs after a fsm_state other than MMM,
       and since we are moving to a MMM fsm_state, this cost will NEVER be used,
       so it doesn't matter what we return
       When running as the DPA, it can occur at a == b == c, return 0 in this case
@@ -554,51 +554,64 @@ size_t countThisTransition( Trans fsmState_transitions[3]
 
 
 /** Set up the Ukkonnen and check point matrices before running alignment. */
-void setup( global_costs_t      *globalCosts
-          , global_characters_t *globalCharacters
-          , global_arrays_t     *globalCostArrays
-          , dyn_character_t     *in_lesserChar
-          , dyn_character_t     *in_middleChar
-          , dyn_character_t     *in_longerChar
-          , unsigned int         mismatch_cost
-          , unsigned int         gapOpen
-          , unsigned int         gapExtend
+void setup( global_costs_t  *globalCosts
+          , characters_t    *inputChars
+          , characters_t    *resultChars
+          , fsm_arrays_t    *fsmArrays
+          , dyn_character_t *in_lesserChar
+          , dyn_character_t *in_middleChar
+          , dyn_character_t *in_longerChar
+          , unsigned int     mismatch_cost
+          , unsigned int     gapOpen
+          , unsigned int     gapExtend
           )
 {
 
     // Initialize global costs. These will be passed around to remove globals and make functional side effects more clear.
-    globalCosts->mismatchCost       = mismatch_cost;
-    globalCosts->gapOpenCost        = gapOpen;
-    globalCosts->gapExtendCost      = gapExtend;
-    globalCharacters->maxSingleStep = globalCharacters->numStates
-                                    = 0;
+    globalCosts->mismatchCost  = mismatch_cost;
+    globalCosts->gapOpenCost   = gapOpen;
+    globalCosts->gapExtendCost = gapExtend;
+    inputChars->maxSingleStep  = inputChars->numStates
+                               = 0;
     size_t i;  // for use in multiple for loops below
 
-    // TODO: change this from char to something else. Can we alloc this more intelligently, like not using MAX_STR?
-    globalCharacters->lesserStr = calloc( MAX_STR, sizeof(char) );
-    globalCharacters->longerStr = calloc( MAX_STR, sizeof(char) );
-    globalCharacters->middleStr = calloc( MAX_STR, sizeof(char) );
+    // TODO: Can we alloc this more intelligently, like not using MAX_STR?
+    inputChars->lesserStr = calloc( MAX_STR, sizeof(char) );
+    inputChars->longerStr = calloc( MAX_STR, sizeof(char) );
+    inputChars->middleStr = calloc( MAX_STR, sizeof(char) );
+
+    resultChars->lesserStr = calloc( MAX_STR * 2, sizeof(char) );
+    resultChars->longerStr = calloc( MAX_STR * 2, sizeof(char) );
+    resultChars->middleStr = calloc( MAX_STR * 2, sizeof(char) );
+
+    resultChars->lesserIdx = 0;
+    resultChars->longerIdx = 0;
+    resultChars->middleIdx = 0;
+
+    resultChars->lesserLen = 0;
+    resultChars->longerLen = 0;
+    resultChars->middleLen = 0;
 
     // Initialize all characters. As with globalCosts, these will be passed around to remove globals and functional side effects.
-    copyCharacter( globalCharacters->lesserStr, in_lesserChar) ;
-    copyCharacter( globalCharacters->longerStr, in_longerChar) ;
-    copyCharacter( globalCharacters->middleStr, in_middleChar) ;
+    copyCharacter( inputChars->lesserStr, in_lesserChar ) ;
+    copyCharacter( inputChars->longerStr, in_longerChar ) ;
+    copyCharacter( inputChars->middleStr, in_middleChar ) ;
 
-    globalCharacters->lesserLen = in_lesserChar->len;
-    globalCharacters->longerLen = in_longerChar->len;
-    globalCharacters->middleLen = in_middleChar->len;
+    inputChars->lesserLen = in_lesserChar->len;
+    inputChars->longerLen = in_longerChar->len;
+    inputChars->middleLen = in_middleChar->len;
 
-    globalCostArrays->neighbours                = calloc( MAX_STATES,              sizeof(int) );
-    globalCostArrays->fsmState_continuationCost = calloc( MAX_STATES,              sizeof(int) );
-    globalCostArrays->secondCost                = calloc( MAX_STATES,              sizeof(int) );
-    globalCostArrays->transitionCost            = calloc( MAX_STATES * MAX_STATES, sizeof(int) );
-    globalCostArrays->fsmState_num              = calloc( MAX_STATES,              sizeof(int) );
+    fsmArrays->neighbours                = calloc( MAX_STATES,              sizeof(int) );
+    fsmArrays->fsmState_continuationCost = calloc( MAX_STATES,              sizeof(int) );
+    fsmArrays->secondCost                = calloc( MAX_STATES,              sizeof(int) );
+    fsmArrays->transitionCost            = calloc( MAX_STATES * MAX_STATES, sizeof(int) );
+    fsmArrays->fsmState_num              = calloc( MAX_STATES,              sizeof(int) );
 
     int thisCost,
         cost,
         maxCost = 0;
 
-    size_t fsmState_reindex_num  = 0;    // we reindex fsm_state sets to eliminate extras.
+    size_t fsmState_reindex_num = 0;    // we reindex fsm_state sets to eliminate extras.
 
 /* Don't need to do this; calloc'ed above
     for (i = 0; i < MAX_STATES - 1; i++) {
@@ -642,7 +655,7 @@ void setup( global_costs_t      *globalCosts
             }
         #endif
 */
-        globalCostArrays->fsmState_num[fsmState_reindex_num] = fsm_state; // compacting possible fsm states into smaller set. From now on can just loop
+        fsmArrays->fsmState_num[fsmState_reindex_num] = fsm_state; // compacting possible fsm states into smaller set. From now on can just loop
                                                                // over fsmState_reindex_num, which means continuing to skip meaningless FSM
                                                                // states.
         printf("%zu %zu\n", fsmState_reindex_num, fsm_state);
@@ -651,13 +664,13 @@ void setup( global_costs_t      *globalCosts
         numInserts = countThisTransition(fsmState_transitions, INS);
 
         if (numInserts == 0) { // if no inserts, then match/sub is 1 and del is 0 in resulting binary number
-            globalCostArrays->neighbours[fsmState_reindex_num] = neighbourNum( fsmState_transitions[0] == MATCH_SUB ? 1 : 0
+            fsmArrays->neighbours[fsmState_reindex_num] = neighbourNum( fsmState_transitions[0] == MATCH_SUB ? 1 : 0
                                                                              , fsmState_transitions[1] == MATCH_SUB ? 1 : 0
                                                                              , fsmState_transitions[2] == MATCH_SUB ? 1 : 0
                                                                              );
         } else { // numInserts == 1, as we've already eliminated any fsm states which have two INSs // TODO: looks this up
                  // if one insert, then match/sub or del is 0 ins is 1 in resulting binary number
-            globalCostArrays->neighbours[fsmState_reindex_num] = neighbourNum( fsmState_transitions[0] == INS ? 1 : 0
+            fsmArrays->neighbours[fsmState_reindex_num] = neighbourNum( fsmState_transitions[0] == INS ? 1 : 0
                                                                              , fsmState_transitions[1] == INS ? 1 : 0
                                                                              , fsmState_transitions[2] == INS ? 1 : 0
                                                                              );
@@ -683,26 +696,26 @@ void setup( global_costs_t      *globalCosts
             two_fsmStates_continuing = 0;
         }
 
-        globalCostArrays->fsmState_continuationCost[fsmState_reindex_num] = cost;
-        globalCostArrays->secondCost[fsmState_reindex_num]            = two_fsmStates_continuing;
+        fsmArrays->fsmState_continuationCost[fsmState_reindex_num] = cost;
+        fsmArrays->secondCost[fsmState_reindex_num]            = two_fsmStates_continuing;
         // End setup of fsmState_continuationCost[]
 
         fsmState_reindex_num++; // Because of continues, above, does not track `fsm_state`.
     }
 
-    globalCharacters->numStates = fsmState_reindex_num;
+    inputChars->numStates = fsmState_reindex_num;
 
     // Setup fsm_state transition costs (transitionCost[][])
     Trans from[3],
           to[3];
 
-    for (size_t s1 = 0; s1 < globalCharacters->numStates; s1++) {
-        for (size_t s2 = 0; s2 < globalCharacters->numStates; s2++) {
+    for (size_t s1 = 0; s1 < inputChars->numStates; s1++) {
+        for (size_t s2 = 0; s2 < inputChars->numStates; s2++) {
 
 
             cost = 0;
-            transitions( from, globalCostArrays->fsmState_num[s1] );
-            transitions( to  , globalCostArrays->fsmState_num[s2] );
+            transitions( from, fsmArrays->fsmState_num[s1] );
+            transitions( to  , fsmArrays->fsmState_num[s2] );
 
             for (i = 0; i < 3; i++) {
                 if (    (to[i] == INS || to[i] == DEL)
@@ -711,13 +724,13 @@ void setup( global_costs_t      *globalCosts
                     cost += globalCosts->gapOpenCost;
                 }
             }
-            globalCostArrays->transitionCost[s1 * MAX_STATES + s2] = cost;
+            fsmArrays->transitionCost[s1 * MAX_STATES + s2] = cost;
 
             // Determine biggest single step cost
-            thisCost = cost + globalCostArrays->fsmState_continuationCost[s2];
+            thisCost = cost + fsmArrays->fsmState_continuationCost[s2];
             Trans fsmState_transitions[3];
 
-            transitions( fsmState_transitions, globalCostArrays->fsmState_num[s2] );
+            transitions( fsmState_transitions, fsmArrays->fsmState_num[s2] );
 
             thisCost += globalCosts->mismatchCost * ( countThisTransition(fsmState_transitions, MATCH_SUB) - 1 );
             maxCost   = (maxCost < thisCost ? thisCost : maxCost);
@@ -725,7 +738,7 @@ void setup( global_costs_t      *globalCosts
         }
     }
 
-    globalCharacters->maxSingleStep = maxCost;
+    inputChars->maxSingleStep = maxCost;
     // End setup of transition costs
 }
 
@@ -787,13 +800,13 @@ void revCharArray( char   *arr
 
 
 /**  */
-unsigned int alignmentCost( int              fsm_states[]
-                          , char            *aligned_1
-                          , char            *aligned_2
-                          , char            *aligned_3
-                          , size_t           len
-                          , global_costs_t  *globalCosts
-                          , global_arrays_t *globalCostArrays
+unsigned int alignmentCost( int             fsm_states[]
+                          , char           *al1
+                          , char           *al2
+                          , char           *al3
+                          , size_t          len
+                          , global_costs_t *globalCosts
+                          , fsm_arrays_t   *fsmArrays
                           )
 {
     unsigned int totalCost = 0;
@@ -804,7 +817,7 @@ unsigned int alignmentCost( int              fsm_states[]
     Trans cur_fsmState_transitions[3];
 
     for (size_t i = 0; i < len; i++) {
-        transitions( cur_fsmState_transitions, globalCostArrays->fsmState_num[ fsm_states[i] ] );
+        transitions( cur_fsmState_transitions, fsmArrays->fsmState_num[ fsm_states[i] ] );
 
     //    if (i > 0) fprintf( stderr, "%-2d  ", totalCost );
 

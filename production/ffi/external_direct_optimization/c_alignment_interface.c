@@ -682,7 +682,6 @@ int align3d( alignIO_t          *inputChar1_aio
                                , 1                   // mismatch cost, must be > 0
                                , gap_open_cost       // must be >= 0
                                , gap_extension_cost  // must be > 0
-                               , costMtx3d
                                );
 
     dyn_character_t *ungappedMedianChar = malloc(sizeof(dyn_character_t));

@@ -92,28 +92,32 @@ typedef struct global_costs_t {
 } global_costs_t;
 
 
-typedef struct global_characters_t {
+typedef struct characters_t {
     size_t numStates;           // how many possible FSM fsm_states there are, if each of three FSMs is in one of {INS, DEL, MATCH_SUB}
                                 // and given that one can't have all gap or more than one insertion. This is, btw, always 15.
     size_t maxSingleStep;
 
-    char *lesserStr;            // string representation of shortest input character
-    char *longerStr;            // string representation of longest input character
-    char *middleStr;            // string representation of middle input character
+    char *lesserStr;            // string representation of shortest character
+    char *longerStr;            // string representation of longest character
+    char *middleStr;            // string representation of middle character
+
+    size_t lesserIdx;           // current index into shortest character
+    size_t longerIdx;           // current index into longest character
+    size_t middleIdx;           // current index into middle character
 
     size_t lesserLen;           // length of respective string representation
     size_t longerLen;           // length of respective string representation
     size_t middleLen;           // length of respective string representation
-} global_characters_t;
+} characters_t;
 
 
-typedef struct global_arrays_t {
+typedef struct fsm_arrays_t {
     int *neighbours;                // array of neighbor fsm_states for each possible fsm_state in fsm_stateNum
     int *fsmState_continuationCost; // as with transition cost, the cost to extend one or two gaps. Moot once a tcm is used.
     int *secondCost;                //
     int *transitionCost;            // cost to transition from one fsm_state to another (i.e. start a gap)
     int *fsmState_num;              // number that corresponds to a given fsm_state, i.e. 0 is all match/subs and 1 is [m/s m/s del]
-} global_arrays_t;
+} fsm_arrays_t;
 
 // #ifndef UKKCOMMON_C
 
@@ -139,11 +143,11 @@ typedef struct global_arrays_t {
 #ifdef FIXED_NUM_PLANES // see above
     alloc_info_t allocInit( size_t elemSize
                           , size_t costSize
-                          , global_characters_t *globalCharacters
+                          , characters_t *globalCharacters
                           );
 #else
     alloc_info_t allocInit( size_t elemSize
-                          , global_characters_t *globalCharacters
+                          , characters_t *globalCharacters
                           );
 #endif
 
@@ -214,15 +218,16 @@ size_t countThisTransition( Trans fsm_stateTransitions[3]
 /** Set up the Ukkonnen and check point matrices before running alignment.
  *  Finish setup of characters.
  */
-void setup( global_costs_t      *globalCosts
-          , global_characters_t *globalCharacters
-          , global_arrays_t     *globalCostArrays
-          , dyn_character_t     *lesserChar
-          , dyn_character_t     *middleChar
-          , dyn_character_t     *longerChar
-          , unsigned int         mismatch_cost
-          , unsigned int         gapOpen
-          , unsigned int         gapExtend
+void setup( global_costs_t  *globalCosts
+          , characters_t    *inputChars
+          , characters_t    *resultChars
+          , fsm_arrays_t    *fsmArrays
+          , dyn_character_t *in_lesserChar
+          , dyn_character_t *in_middleChar
+          , dyn_character_t *in_longerChar
+          , unsigned int     mismatch_cost
+          , unsigned int     gapOpen
+          , unsigned int     gapExtend
           );
 
 
@@ -248,13 +253,13 @@ void revCharArray( char   *arr
                  );
 
 
-unsigned int alignmentCost( int              fsm_states[]
-                          , char            *al1
-                          , char            *al2
-                          , char            *al3
-                          , size_t           len
-                          , global_costs_t  *globalCosts
-                          , global_arrays_t *globalCostArrays
+unsigned int alignmentCost( int             fsm_states[]
+                          , char           *al1
+                          , char           *al2
+                          , char           *al3
+                          , size_t          len
+                          , global_costs_t *globalCosts
+                          , fsm_arrays_t   *fsmArrays
                           );
 
 

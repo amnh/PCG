@@ -127,7 +127,7 @@ fill_moved (       size_t char3_len
 
 
 void
-fill_parallel (       size_t char3_len
+fill_parallel (       size_t           char3_len
               , const unsigned int    *prev_m
               , const unsigned int    *upper_m
               , const unsigned int    *diag_m
