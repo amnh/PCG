@@ -127,13 +127,6 @@ typedef struct cost_matrices_3d_t {
 
 void cm_print_2d (cost_matrices_2d_t *c);
 
-void cm_print_3d (cost_matrices_3d_t *c);
-
-/** Print one of matrices in costMatrix_3d struct
- *  don't take entire cost matrix because you want to print only medians or costs.
- *  Only need matrix dimension because both median and cost matrices are cubic.
- */
-void cm_print_matrix_3d (elem_t *costMatrix, size_t costMatrixDimension);
 
 /** Print one of matrices in costMatrix_2d struct
  *  don't take entire cost matrix because you want to print only medians or costs.
@@ -161,10 +154,6 @@ void cm_alloc_2d ( cost_matrices_2d_t *res
 
 void
 cm_set_cost_2d (cost_matrices_2d_t *costMtx, elem_t elem1, elem_t elem2, unsigned int v);
-
-
-void
-cm_set_cost_3d (cost_matrices_3d_t * costMtx, elem_t elem1, elem_t elem2, elem_t elem3, unsigned int v);
 
 
 unsigned int *
@@ -196,10 +185,10 @@ cm_calc_median_position (elem_t a, elem_t b, int alphSize);
  * according to the transformation cost matrix hold in t.
  */
 elem_t
-cm_get_median ( const cost_matrices_2d_t *t
-              ,       elem_t             a
-              ,       elem_t             b
-              );
+cm_get_median_2d ( const cost_matrices_2d_t *t
+                 ,       elem_t             a
+                 ,       elem_t             b
+                 );
 
 /*
  * Retrieves the transformation cost of the elements a and b as stored in the
@@ -250,43 +239,6 @@ cm_get_precal_row ( unsigned int *p
                   );
 
 
-
-/** As with 2d, but doesn't compute worst, prepend or tail */
-void
-cm_alloc_3d ( cost_matrices_3d_t *res
-            , int                 alphSize
-            , int                 combinations
-            , int                 do_aff
-            , int                 gap_open
-            , int                 all_elements
-            );
-
-/*
- * The median between three alphabet elements a, b and c.
- * @param t is the transformation cost matrix
- * @param a is the first element in the alphabet
- * @param b is the second element in the alphabet
- * @param c is the third element in the alphabet
- * @return an element of the alphabet contained in t that provides the best
- * median between a, b, and c, according to the transformation cost matrix
- * contained in t.
- */
-elem_t
-cm_get_median_3d (elem_t *tcm, elem_t a, elem_t b, elem_t c, size_t alphSize);
-
-/*
- * Gets the row in the transformation cost matrix tcm where the transformations
- * of character a are located, when tcm holds information for an alphabet of
- * size alphSize.
- */
-unsigned int *
-cm_get_row_3d( unsigned int *tcm
-             , elem_t        a
-             , elem_t        b
-             , size_t        alphSize
-             );
-
-
 /*
  * Deallocates the memory structure iff there are no more pointers to it,
  * otherwise it will just decrease the garbage collection counter.
@@ -312,8 +264,78 @@ cm_set_tail_2d (cost_matrices_2d_t *costMtx, int a, int b);
 void
 cm_set_median_2d (cost_matrices_2d_t *costMtx, elem_t a, elem_t b, elem_t v);
 
+
+void cm_print_3d (cost_matrices_3d_t *c);
+
+
+/** Print one of matrices in costMatrix_3d struct
+ *  don't take entire cost matrix because you want to print only medians or costs.
+ *  Only need matrix dimension because both median and cost matrices are cubic.
+ */
+void cm_print_matrix_3d (elem_t *costMatrix, size_t costMatrixDimension);
+
+
 void
-cm_set_median_3d (cost_matrices_3d_t *costMtx, elem_t a, elem_t b, elem_t c, elem_t v);
+cm_set_cost_3d (cost_matrices_3d_t * costMtx, elem_t elem1, elem_t elem2, elem_t elem3, unsigned int v);
+
+
+/** As with 2d, but doesn't compute worst, prepend or tail */
+void
+cm_alloc_3d ( cost_matrices_3d_t *res
+            , int                 alphSize
+            , int                 combinations
+            , int                 do_aff
+            , int                 gap_open
+            , int                 all_elements
+            );
+
+/*
+ * The median between three alphabet elements a, b and c.
+ * @param t is the transformation cost matrix
+ * @param a is the first element in the alphabet
+ * @param b is the second element in the alphabet
+ * @param c is the third element in the alphabet
+ * @return an element of the alphabet contained in t that provides the best
+ * median between a, b, and c, according to the transformation cost matrix
+ * contained in t.
+ */
+elem_t
+cm_get_median_3d( const cost_matrices_3d_t *matrix
+                ,       elem_t              a
+                ,       elem_t              b
+                ,       elem_t              c
+                );
+
+
+/*
+ * Gets the row in the transformation cost matrix tcm where the transformations
+ * of character a are located, when tcm holds information for an alphabet of
+ * size alphSize.
+ */
+unsigned int *
+cm_get_row_3d( unsigned int *tcm
+             , elem_t        char1
+             , elem_t        char2
+             , size_t        alphSize
+             );
+
+
+unsigned int
+cm_get_cost_3d ( const cost_matrices_3d_t *costMtx
+               ,       elem_t              elem1
+               ,       elem_t              elem2
+               ,       elem_t              elem3
+               );
+
+
+void
+cm_set_median_3d( const cost_matrices_3d_t *costMtx
+                ,       elem_t              elem1
+                ,       elem_t              elem2
+                ,       elem_t              elem3
+                ,       elem_t              val
+                );
+
 
 void
 cm_print_median (elem_t *m, size_t w, size_t h);

@@ -59,12 +59,12 @@ typedef enum { MATCH_SUB
 /** How much space was allocated for the characters. */
 typedef struct alloc_info_t {
     size_t elemSize;
-    size_t abSize;
-    size_t acSize;
-    size_t abOffset;
-    size_t acOffset;
-    size_t abBlocks;
-    size_t acBlocks;
+    size_t lessLong_size;
+    size_t lessMidd_size;
+    size_t lessLong_offset;
+    size_t lessMidd_offset;
+    size_t lessLong_blocks;
+    size_t lessMidd_blocks;
 
     #ifdef FIXED_NUM_PLANES // See above
         size_t costSize;
@@ -141,12 +141,12 @@ typedef struct fsm_arrays_t {
 
 
 #ifdef FIXED_NUM_PLANES // see above
-    alloc_info_t allocInit( size_t elemSize
-                          , size_t costSize
+    alloc_info_t allocInit( size_t        elemSize
+                          , size_t        costSize
                           , characters_t *globalCharacters
                           );
 #else
-    alloc_info_t allocInit( size_t elemSize
+    alloc_info_t allocInit( size_t        elemSize
                           , characters_t *globalCharacters
                           );
 #endif
@@ -206,8 +206,8 @@ void transitions( Trans  fsm_stateTransition[3]
  *  Used only in printing of fsm_state array if DEBUG_3D is set.
  */
 char *fsm_state2str( size_t  fsm_state
-               , int    *fsm_stateNum
-               );
+                   , int    *fsm_stateNum
+                   );
 
 
 /** Count number of times whichTransition appears in fsm_stateTransitions, where MATCH_SUB = 0, DEL = 1, INS = 2. */
@@ -221,7 +221,7 @@ size_t countThisTransition( Trans fsm_stateTransitions[3]
 void setup( global_costs_t  *globalCosts
           , characters_t    *inputChars
           , characters_t    *resultChars
-          , fsm_arrays_t    *fsmArrays
+          , fsm_arrays_t    *globalCostArrays
           , dyn_character_t *in_lesserChar
           , dyn_character_t *in_middleChar
           , dyn_character_t *in_longerChar

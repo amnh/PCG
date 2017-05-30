@@ -578,7 +578,7 @@ int align3d( alignIO_t          *inputChar1_aio
     const size_t CHAR_CAPACITY = inputChar1_aio->length + inputChar2_aio->length + inputChar3_aio->length + 3; // 2 to account for gaps,
                                                                                                                // which will be added in
                                                                                                                // initializeChar()
-    int algnCost;
+    unsigned int algnCost;
 
     alignIO_t *longIO,
               *middleIO,
@@ -673,6 +673,7 @@ int align3d( alignIO_t          *inputChar1_aio
 
     longChar->array_head[0] = middleChar->array_head[0] = shortChar->array_head[0] = 8;
 
+    // Powell aligns three sequences.
     algnCost = powell_3D_align ( longChar
                                , shortChar
                                , middleChar
@@ -689,15 +690,16 @@ int align3d( alignIO_t          *inputChar1_aio
     initializeChar(ungappedMedianChar, CHAR_CAPACITY);
     initializeChar(gappedMedianChar,   CHAR_CAPACITY);
 
-    algn_get_medians_3d ( retLongChar
-                        , retMiddleChar
-                        , retShortChar
-                        , costMtx3d
-                        , ungappedMedianChar
-                        , gappedMedianChar
-                        );
-    dyn_char_print(ungappedMedianChar);
-    dyn_char_print(gappedMedianChar);
+    algnCost = algn_get_cost_medians_3d( retLongChar
+                                       , retMiddleChar
+                                       , retShortChar
+                                       , costMtx3d
+                                       , ungappedMedianChar
+                                       , gappedMedianChar
+                                       );
+
+    // dyn_char_print(ungappedMedianChar);
+    // dyn_char_print(gappedMedianChar);
 
     dynCharToAlignIO(ungappedOutput_aio, ungappedMedianChar);
     dynCharToAlignIO(gappedOutput_aio,   gappedMedianChar);

@@ -2953,19 +2953,22 @@ algn_backtrace_affine ( const dyn_character_t    *shortChar
             } else if (HAS_FLAG(ALIGN_TO_VERTICAL)) {
                 mode = m_vertical;
             }
-            prep = cm_get_median( costMatrix
-                                , (shortCharElem & all_ambiguous)
-                                , (longerCharElem  & all_ambiguous)
-                                );
+            prep = cm_get_median_2d( costMatrix
+                                   , (shortCharElem & all_ambiguous)
+                                   , (longerCharElem  & all_ambiguous)
+                                   );
+
             dyn_char_prepend(gapped_median,   prep);
             dyn_char_prepend(ungapped_median, prep);
             dyn_char_prepend(retShortChar,    shortCharElem);
             dyn_char_prepend(retLongChar,     longerCharElem);
+
             shortIdx--;
             longIdx--;
+
             direction_matrix -= (longerChar_len + 2);
-            longerCharElem       = longerChar->char_begin[longIdx];
-            shortCharElem      = shortChar->char_begin[shortIdx];
+            longerCharElem    = longerChar->char_begin[longIdx];
+            shortCharElem     = shortChar->char_begin[shortIdx];
         }
     }
     while (shortIdx != 0) {
@@ -5460,7 +5463,7 @@ algn_get_median_2d_with_gaps ( dyn_character_t *shorterChar
     // printf("charLen - 1 of longer: %zu\n", longerChar->len - 1);
 
     for (i = longerChar->len - 1; i >= 0; i--) {
-        interim = cm_get_median (costMatrix, char_begin_longerChar[i], char_begin_shorterChar[i]);
+        interim = cm_get_median_2d (costMatrix, char_begin_longerChar[i], char_begin_shorterChar[i]);
         dyn_char_prepend (medianToReturn, interim);
     }
 }
@@ -5480,7 +5483,7 @@ algn_get_median_2d_no_gaps( dyn_character_t *shorterChar
     char_begin_longerChar  = longerChar->char_begin;
     char_begin_shorterChar = shorterChar->char_begin;
     for (i = longerChar->len - 1; i >= 0; i--) {
-        interim = cm_get_median (costMatrix, char_begin_longerChar[i], char_begin_shorterChar[i]);
+        interim = cm_get_median_2d (costMatrix, char_begin_longerChar[i], char_begin_shorterChar[i]);
 
         if (interim != costMatrix->gap_char) {
             dyn_char_prepend (sm, interim);
@@ -5611,7 +5614,7 @@ algn_ancestor_2 ( dyn_character_t *char1
     cost_model      = costMatrix->cost_model_type;
 
     for (i = char1->len - 1; i >= 0; i--) {
-        interim = cm_get_median (costMatrix, char_begin1[i], char_begin2[i]);
+        interim = cm_get_median_2d (costMatrix, char_begin1[i], char_begin2[i]);
 
         if (!are_ambiguities || cost_model != 1) {
             if (interim != gap_char) {
@@ -5635,19 +5638,21 @@ algn_ancestor_2 ( dyn_character_t *char1
  * Given three aligned dynamic characters char1, char2, and char3, the medians between them are
  * returned in the characters gapped_median and ungapped_median, using the cost matrix stored in costMatrix.
  */
-void
-algn_get_medians_3d ( dyn_character_t    *char1
-                    , dyn_character_t    *char2
-                    , dyn_character_t    *char3
-                    , cost_matrices_3d_t *costMatrix
-                    , dyn_character_t    *ungapped_median
-                    , dyn_character_t    *gapped_median
-                    )
+unsigned int
+algn_get_cost_medians_3d ( dyn_character_t    *char1
+                         , dyn_character_t    *char2
+                         , dyn_character_t    *char3
+                         , cost_matrices_3d_t *costMatrix
+                         , dyn_character_t    *ungapped_median
+                         , dyn_character_t    *gapped_median
+                         )
 {
     elem_t *char_end1,
            *char_end2,
            *char_end3,
             interim;
+
+    unsigned int curCost = 0;
 
     char_end1 = char1->end;
     char_end2 = char2->end;
@@ -5655,11 +5660,10 @@ algn_get_medians_3d ( dyn_character_t    *char1
 
     // TODO: does this for loop actually do anything?
     for (int i = char1->len - 3; i >= 0; i--) {
-        interim = cm_get_median_3d( costMatrix->median
+        interim = cm_get_median_3d( costMatrix
                                   , char1->char_begin[i]
                                   , char2->char_begin[i]
                                   , char3->char_begin[i]
-                                  , costMatrix->costMatrixDimension
                                   );
 
         dyn_char_prepend(gapped_median, interim);
@@ -5667,8 +5671,17 @@ algn_get_medians_3d ( dyn_character_t    *char1
         if (interim != costMatrix->gap_char) {
             dyn_char_prepend(ungapped_median, interim);
         }
+
+        curCost += cm_get_cost_3d ( costMatrix
+                                  , char1->char_begin[i]
+                                  , char2->char_begin[i]
+                                  , char3->char_begin[i]
+                                  );
     }
+
+    return curCost;
 }
+
 
 void
 algn_union ( dyn_character_t *shorterChar

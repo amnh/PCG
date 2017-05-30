@@ -560,13 +560,13 @@ int main() {
 
             printf("Alignment cost: %d\n", algnCost);
 
-            printf("\nGapped character\n  ");
+            printf("\nGapped median\n  ");
             alignIO_print(gappedMedianChar);
 
             printf("alphSize: %zu\n", alphSize);
             printf("gap char: %u\n",  gap_char);
 
-            printf("\nUngapped character\n  ");
+            printf("\nUngapped median\n  ");
             alignIO_print(ungappedMedianChar);
 
             printf("\n\n\n");

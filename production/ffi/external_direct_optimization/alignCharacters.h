@@ -261,14 +261,14 @@ algn_get_median_2d (dyn_character_t *char1, dyn_character_t *char2, cost_matrice
  * Given three aligned characters char1, char2, and char3, the median between them is
  * returned in the character sm, using the cost matrix stored in m.
  */
-void
-algn_get_medians_3d ( dyn_character_t    *char1
-                    , dyn_character_t    *char2
-                    , dyn_character_t    *char3
-                    , cost_matrices_3d_t *costMatrix
-                    , dyn_character_t    *ungapped_median
-                    , dyn_character_t    *gapped_median
-                    );
+unsigned int
+algn_get_cost_medians_3d ( dyn_character_t    *char1
+                         , dyn_character_t    *char2
+                         , dyn_character_t    *char3
+                         , cost_matrices_3d_t *costMatrix
+                         , dyn_character_t    *ungapped_median
+                         , dyn_character_t    *gapped_median
+                         );
 
 // TODO: document following four fns
 void
