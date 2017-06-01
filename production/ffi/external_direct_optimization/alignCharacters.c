@@ -5648,16 +5648,9 @@ algn_get_cost_medians_3d ( dyn_character_t    *char1
                          , dyn_character_t    *gapped_median
                          )
 {
-    elem_t *char_end1,
-           *char_end2,
-           *char_end3,
-            interim;
+    elem_t interim;
 
     unsigned int curCost = 0;
-
-    char_end1 = char1->end;
-    char_end2 = char2->end;
-    char_end3 = char3->end;
 
     // The subtracted 2 is because of extra crap that Powell adds to end of aligned sequences.
     for (int i = char1->len - 2; i >= 0; i--) {

@@ -50,7 +50,7 @@ cm_combinations_of_alphabet (const int alphSize)
 static inline size_t
 cm_calc_cost_position_2d (elem_t a, elem_t b, size_t alphSize)
 {
-    assert(alphSize >= 0);
+    // assert(alphSize >= 0); alphSize is size_t, always >= 0
     return ((((size_t) a) << alphSize) + (size_t) b);
 }
 
@@ -106,7 +106,7 @@ cm_free (cost_matrices_2d_t *costMatrix)
 static inline size_t
 cm_calc_cost_position_3d (elem_t a, elem_t b, elem_t c, size_t alphSize)
 {
-    assert(alphSize >= 0);
+    // assert(alphSize >= 0); alphSize is size_t, always >= 0
     return ((((a << alphSize) + b) << alphSize) + c);
 }
 
@@ -240,7 +240,7 @@ cm_calc_cost_2d ( unsigned int *tcm
     unsigned int *res;
     unsigned int one = 1;
     unsigned int upperBound = one << alphSize;
-    assert (alphSize >= 0);
+    // assert(alphSize >= 0); alphSize is size_t, always >= 0
     assert (upperBound > a);
     assert (upperBound > b);
     res = tcm + cm_calc_cost_position_2d(a, b, alphSize);

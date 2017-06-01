@@ -177,7 +177,7 @@ int powell_3D_align( dyn_character_t *lesserChar
     fsm_arrays_t *globalCostArrays = malloc( sizeof(fsm_arrays_t) );
 
     // TODO: should be able to forego this. Double check that that's the case.
-    assert (mismatchCost != 0 && gapOpenCost >= 0 && gapExtendCost > 0);
+    assert (mismatchCost != 0 /* && gapOpenCost >= 0 unsigned int */ && gapExtendCost != 0);
 
     setup( globalCosts
          , inputChars
@@ -878,9 +878,9 @@ void printTraceBack( dyn_character_t *retLesserChar
 
     // Copy the alignment from original to return chars, using results as templates.
     // I.e., if result[i] is a gap, copy in a gap, otherwise copy in correct place from original sequence.
-    size_t orig_lessIdx = original_lesserChar->len,
-           orig_longIdx = original_longerChar->len,
-           orig_middIdx = original_middleChar->len;
+    size_t orig_lessIdx = original_lesserChar->len - 1,
+           orig_longIdx = original_longerChar->len - 1,
+           orig_middIdx = original_middleChar->len - 1;
 
     for (int j = resultChars->lesserIdx - 1; j >= 0; j--) {
         if (resultChars->lesserStr[j] == '-') {
