@@ -7,38 +7,45 @@
 #include "c_code_alloc_setup.h"
 #include "debug_constants.h"
 #include "costMatrix.h"
-#include "nwMatrices.h"
+#include "alignmentMatrices.h"
 //#include "ukkCheckp.h"
 //#include "ukkCommon.h"
 
-// int* tcm, int alphSize, int gap_open, int is_2d, dyn_char_p longChar
+// int* tcm, int alphSize, int gap_open, int is_2d, dyn_character_t *longChar
 
-/** Allocate nw_matrices struct. Assigns initial values where necessary. Calls
- *  mat_setup_size to allocate all internal arrays.
+/** Allocate algn_matrices struct. Assigns initial values where necessary. Calls
+ *  algnMat_setup_size to allocate all internal arrays.
  *
  *  Order of character lengths doesn't matter
  */
-void initializeNWMtx(nw_matrices_p retMtx, size_t len_char1, size_t len_char2, size_t len_char3, size_t alphSize) {
-    // printf("initializeNWMtx\n");
-    // in six following allocations all matrices are set to their shortest length because they get realloced in mat_setup_size
-    retMtx->cap_nw     =  0;  // a suitably small number to trigger realloc, but be larger than len_eff
-    retMtx->cap_eff    = -1;  // cap_eff was -1 so that cap_eff < cap, triggering the realloc ---changed this when types switched to size_t
-    retMtx->cap_pre    =  0;  // again, trigger realloc
+void initializeAlignmentMtx( alignment_matrices_t *retMtx
+                           , size_t                len_char1
+                           , size_t                len_char2
+                           , size_t                len_char3
+                           , size_t                alphSize
+                           )
+{
+    // printf("initializeAlignmentMtx\n");
+    // in six following allocations all matrices are set to their shortest length because they get realloced in algnMat_setup_size
+    retMtx->cap_nw          =  0;  // a suitably small number to trigger realloc, but be larger than len_eff
+    retMtx->cap_eff         = -1;  // cap_eff was -1 so that cap_eff < cap, triggering the realloc
+                                   // ---changed this when types switched to size_t
+    retMtx->cap_pre         =  0;  // again, trigger realloc
 
-    retMtx->nw_costMtx = malloc ( sizeof( int ) );
-    retMtx->nw_dirMtx  = malloc ( sizeof( DIR_MTX_ARROW_t ) );
-    // retMtx->cube       = malloc ( sizeof( int* ) );  // don't have to allocate these two,
-    // retMtx->cube_d     = malloc ( sizeof( int* ) );  // because they're just pointing to nw_costMtx and nw_dirMtx
-    retMtx->precalcMtx = malloc ( sizeof( int ) );
+    retMtx->algn_costMtx    = malloc ( sizeof( unsigned int ) );
+    retMtx->algn_dirMtx     = malloc ( sizeof( DIR_MTX_ARROW_t ) );
+    // retMtx->cube          = malloc ( sizeof( int* ) );  // don't have to allocate these two,
+    // retMtx->cube_d        = malloc ( sizeof( int* ) );  // because they're just pointing to algn_costMtx and algn_dirMtx
+    retMtx->algn_precalcMtx = malloc ( sizeof( unsigned int ) );
 
-    mat_setup_size (retMtx, len_char1, len_char2, len_char3, alphSize);
+    algnMat_setup_size (retMtx, len_char1, len_char2, len_char3, alphSize);
 }
 
 /** Does allocation for a character struct. Also sets char pointers within array to correct positions.
  *
  *  resChar must be alloced before this call.
  */
-void initializeChar(dyn_char_p retChar, size_t allocSize) {
+void initializeChar(dyn_character_t *retChar, size_t allocSize) {
     retChar->cap        = allocSize;                              // capacity
     retChar->array_head = calloc(allocSize, sizeof(elem_t));        // beginning of array that holds dynamic character
 
@@ -59,7 +66,12 @@ void initializeChar(dyn_char_p retChar, size_t allocSize) {
  *
  *  Requires symmetric, if not metric, matrix.
  */
-int distance (int const *tcm, size_t alphSize, int nucleotide, int ambElem) {
+int distance( unsigned int const *tcm
+            , size_t              alphSize
+            , elem_t              nucleotide
+            , elem_t              ambElem
+            )
+{
     int min     = INT_MAX;
     // int max     = 0;
     int curCost = 0;
@@ -81,7 +93,12 @@ int distance (int const *tcm, size_t alphSize, int nucleotide, int ambElem) {
  *  No longer setting max, as algorithm to do so is unclear: see note below.
  *  Not sure which of two loops to set prepend and tail arrays is correct.
  */
-void setUp2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p retCostMtx) {
+void setUp2dCostMtx( cost_matrices_2d_t *retCostMtx
+                   , unsigned int       *tcm
+                   , size_t              alphSize
+                   , unsigned int        gap_open
+                   )
+{
 
     // first allocate retMatrix
     int combinations  = 1;                     // false if matrix is sparse. In this case, it's DNA, so not sparse.
@@ -101,14 +118,14 @@ void setUp2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
 
     //    tcm = tcm2;
 
-    cm_alloc_set_costs_2d( alphSize
-                         , combinations
-                         , do_aff
-                         , gap_open
-                         , is_metric
-                         , all_elements
-                         , retCostMtx
-                         );
+    cm_alloc_2d( retCostMtx
+               , alphSize
+               , combinations
+               , do_aff
+               , gap_open
+               , is_metric
+               , all_elements
+               );
     // Print TCM in pretty format
     if(DEBUG_MAT) {
         printf("setUp2dCostMtx\n");
@@ -141,8 +158,8 @@ void setUp2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
                     median |= 1 << (nucleotide - 1); // median = this nucleotide | old median
                 }
             } // nucleotide
-            cm_set_cost_2d   (ambElem1, ambElem2, minCost, retCostMtx);
-            cm_set_median_2d (ambElem1, ambElem2, median,  retCostMtx);
+            cm_set_cost_2d   (retCostMtx, ambElem1, ambElem2, minCost);
+            cm_set_median_2d (retCostMtx, ambElem1, ambElem2, median);
         } // ambElem2
     } // ambElem1
     // Gap number is alphSize - 1, which makes bit representation
@@ -153,8 +170,8 @@ void setUp2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
     elem_t gap = 1 << (alphSize - 1);
     retCostMtx->gap_char = gap;
     for ( size_t i = 1; i <= all_elements; i++) {
-        cm_set_prepend_2d (i, cm_get_cost(gap,   i, retCostMtx), retCostMtx);
-        cm_set_tail_2d    (i, cm_get_cost(  i, gap, retCostMtx), retCostMtx);
+        cm_set_prepend_2d (retCostMtx, i, cm_get_cost_2d(retCostMtx, gap,   i));
+        cm_set_tail_2d    (retCostMtx, i, cm_get_cost_2d(retCostMtx,   i, gap));
     }
 
     /*
@@ -178,7 +195,12 @@ void setUp2dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_2d_p 
  *  I attempted to do with with a return of void *, but was having trouble with allocation, and was forced to move
  *  it outside this fn.
  */
-void setUp3dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_3d_p retMtx) {
+void setUp3dCostMtx( cost_matrices_3d_t *retMtx
+                   , unsigned int       *tcm
+                   , size_t              alphSize
+                   , unsigned int        gap_open
+                   )
+{
     // first allocate retMatrix
     int combinations = 1;                     // false if matrix is sparse. In this case, it's DNA, so not sparse.
     int do_aff       = gap_open == 0 ? 0 : 3; // The 3 is because affine's cost_model_type is 3, according to my reading of ML code.
@@ -191,13 +213,13 @@ void setUp3dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_3d_p 
     elem_t median    = 0;        // and 3d; combos of median1, etc., below
     int curCost;
 
-    cm_alloc_set_costs_3d( alphSize
-                         , combinations
-                         , do_aff
-                         , gap_open
-                         , all_elements
-                         , retMtx
-                         );
+    cm_alloc_3d( retMtx
+               , alphSize
+               , combinations
+               , do_aff
+               , gap_open
+               , all_elements
+               );
     retMtx->gap_char = 1 << (alphSize - 1);
 
     for (elem_t ambElem1 = 1; ambElem1 <= all_elements; ambElem1++) { // for every possible value of ambElem1, ambElem2, ambElem3
@@ -218,10 +240,10 @@ void setUp3dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_3d_p 
                         median |= ((elem_t) 1) << (nucleotide - 1); // median1 | median2 | median3;
                     }
                 } // nucleotide
-
-                cm_set_cost_3d   (ambElem1, ambElem2, ambElem3, minCost, retMtx);
-                cm_set_median_3d (ambElem1, ambElem2, ambElem3, median,  retMtx);
-                // cm_set_worst     (ambElem1, ambElem2, max_2d,    (cost_matrices_2d_p) retMtx);    // no worst in 3d
+                // printf("%2u %2u %2u %2d %2u\n", ambElem1, ambElem2, ambElem3, minCost, median);
+                cm_set_cost_3d   (retMtx, ambElem1, ambElem2, ambElem3, minCost);
+                cm_set_median_3d (retMtx, ambElem1, ambElem2, ambElem3, median);
+                // cm_set_worst     (ambElem1, ambElem2, max_2d,    (cost_matrices_2d_t *) retMtx);    // no worst in 3d
             } // ambElem3
         } // ambElem2
     } // ambElem1
@@ -237,14 +259,14 @@ void setUp3dCostMtx(int* tcm, size_t alphSize, int gap_open, cost_matrices_3d_p 
 void freeCostMtx(void * input, int is_2d) {
 
     if (is_2d) {
-        free( ( (cost_matrices_2d_p) input )->cost);
-        free( ( (cost_matrices_2d_p) input )->median);
-        free( ( (cost_matrices_2d_p) input )->worst);
-        free( ( (cost_matrices_2d_p) input )->prepend_cost);
-        free( ( (cost_matrices_2d_p) input )->tail_cost);
+        free( ( (cost_matrices_2d_t *) input )->cost);
+        free( ( (cost_matrices_2d_t *) input )->median);
+        free( ( (cost_matrices_2d_t *) input )->worst);
+        free( ( (cost_matrices_2d_t *) input )->prepend_cost);
+        free( ( (cost_matrices_2d_t *) input )->tail_cost);
     } else {
-        free( ( (cost_matrices_3d_p) input )->cost);
-        free( ( (cost_matrices_3d_p) input )->median);
+        free( ( (cost_matrices_3d_t *) input )->cost);
+        free( ( (cost_matrices_3d_t *) input )->median);
     }
 
     free (input);
@@ -254,22 +276,22 @@ void freeCostMtx(void * input, int is_2d) {
  *
  * TODO: make sure I'm actually deallocing right here.
  */
-void freeNWMtx(nw_matrices_p input) {
-    free (input->nw_costMtx);
-    free (input->nw_dirMtx);
+void freeNWMtx(alignment_matrices_t *input) {
+    free (input->algn_costMtx);
+    free (input->algn_dirMtx);
     // free (input->cube);    // don't have to deallocate these two,
-    // free (input->cube_d);  // because they're just pointing to nw_costMtx and nw_dirMtx
-    free (input->precalcMtx);
+    // free (input->cube_d);  // because they're just pointing to algn_costMtx and algn_dirMtx
+    free (input->algn_precalcMtx);
 
     free(input);
 }
 
-void freeChar(dyn_char_p toFree) {
+void freeChar(dyn_character_t *toFree) {
     free(toFree->array_head);
     free(toFree);
 }
 
-void resetCharValues(dyn_char_p retChar) {
+void resetCharValues(dyn_character_t *retChar) {
     //retChar->end   = retChar->begin + retChar->len;
     memset(retChar->array_head, 0, retChar->cap * sizeof(elem_t));
     retChar->char_begin = retChar->end;

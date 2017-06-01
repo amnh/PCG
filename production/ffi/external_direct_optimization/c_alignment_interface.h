@@ -5,38 +5,37 @@
 #include "c_code_alloc_setup.h"
 #include "debug_constants.h"
 #include "costMatrix.h"
-#include "nwMatrices.h"
+#include "alignmentMatrices.h"
 #include "alignCharacters.h"
 
 /** Input/output structure for Haskell FFI.
  *  Note that the character will be in the last `length` elements of the array.
  */
-struct alignIO {
+typedef struct alignIO_t {
     elem_t *character;
     size_t length;
     size_t capacity;
-};
+} alignIO_t;
 
-typedef struct alignIO * alignIO_p;
 
 /**  prints an alignIO struct */
-void alignIO_print(alignIO_p character);
+void alignIO_print( const alignIO_t *character );
 
 /** Takes in an array of values. Copies those values into an already alloced alignIO struct. Then sets length to input length and
  *  capacity to input capacity. Does not allocate.
  */
-void copyValsToAIO(alignIO_p outChar, elem_t *vals, size_t length, size_t capacity);
+void copyValsToAIO(alignIO_t *outChar, elem_t *vals, size_t length, size_t capacity);
 
 /** resets an alignIO struct. Note: does not realloc or change capacity, so can only be reused if not changing allocation size. */
-void resetAlignIO(alignIO_p inChar);
+void resetAlignIO(alignIO_t *inChar);
 
-void freeAlignIO(alignIO_p toFree);
+void freeAlignIO(alignIO_t *toFree);
 
 /** Allocates alignIO, setting length to 0 and capacity to capacity */
-void allocAlignIO(alignIO_p toAlloc, size_t capacity);
+void allocAlignIO(alignIO_t *toAlloc, size_t capacity);
 
 /** As allocAlignIO, but reallocs character. */
-void reallocAlignIO(alignIO_p toAlloc, size_t capacity);
+void reallocAlignIO(alignIO_t *toAlloc, size_t capacity);
 
 /** Takes in an alignIO struct and a dyn_character struct. Copies values of alignIO to dyn_character.
  *  Points dyn_character->char_begin, dyn_character->end to respective points in alignIO->character.
@@ -44,12 +43,15 @@ void reallocAlignIO(alignIO_p toAlloc, size_t capacity);
  *
  *  Nota bene: assumes that retChar->character has already been allocated correctly.
  */
-void alignIOtoDynChar(dyn_char_p retChar, alignIO_p input, size_t alphabetSize);
+void alignIOtoDynChar(       dyn_character_t *retChar
+                     , const alignIO_t       *input
+                     ,       size_t           alphabetSize
+                     );
 
 /** Takes in an alignIO and a dyn_character. *Copies* values of character from _end_ of dyn_character to _beginning_ of alignIO->character.
  *  Also eliminates extra gap needed by legacy code.
  */
-void dynCharToAlignIO(alignIO_p output, dyn_char_p input);
+void dynCharToAlignIO(alignIO_t *output, dyn_character_t *input);
 
 /** Do a 2d alignment. Depending on the values of last two inputs,
  *  | (0,0) = return only a cost
@@ -59,37 +61,39 @@ void dynCharToAlignIO(alignIO_p output, dyn_char_p input);
  *
  *  In the last two cases the union will replace the gapped character placeholder.
  */
-int align2d( const alignIO_p          char1
-           , const alignIO_p          char2
-           , const alignIO_p          gappedOutputChar
-           , const alignIO_p          ungappedOutputChar
-           // ,       alignIO_p          unionOutputChar
-           , const cost_matrices_2d_p costMtx2d
-           ,       int                getUngapped
-           ,       int                getGapped
-           ,       int                getUnion
+int align2d( alignIO_t          *inputChar1_aio
+           , alignIO_t          *inputChar2_aio
+           , alignIO_t          *gappedOutput_aio
+           , alignIO_t          *ungappedOutput_aio
+           // , alignIO_t          *unionOutput_aio
+           , cost_matrices_2d_t *costMtx2d
+           , int                 getUngapped
+           , int                 getGapped
+           , int                 getUnion
            );
 
 /** As align2d, but affine */
-int align2dAffine( const alignIO_p          char1
-                 , const alignIO_p          char2
-                 , const alignIO_p          gappedOutputChar
-                 , const alignIO_p          ungappedOutputChar
-                 // ,       alignIO_p          unionOutputChar
-                 , const cost_matrices_2d_p costMtx2d
-                 ,       int                doMedians
+int align2dAffine( alignIO_t          *inputChar1_aio
+                 , alignIO_t          *inputChar2_aio
+                 , alignIO_t          *gappedOutput_aio
+                 , alignIO_t          *ungappedOutput_aio
+                 // , alignIO_t          *unionOutput_aio
+                 , cost_matrices_2d_t *costMtx2d_affine
+                 , int                 getMedians
                  );
 
 /** Aligns three characters using non-affine algorithm.
  *  Takes in thee arrays of integer values,.
  */
-int align3d( const alignIO_p          inputChar1_aio
-           , const alignIO_p          inputChar2_aio
-           , const alignIO_p          inputChar3_aio
-           , const alignIO_p          ungappedOutput_aio
-           , const alignIO_p          gappedOutput_aio
-           // , const nw_matrices_p      algn_mtxs3d
-           , const cost_matrices_3d_p costMtx3d
+int align3d( alignIO_t          *inputChar1_aio
+           , alignIO_t          *inputChar2_aio
+           , alignIO_t          *inputChar3_aio
+           , alignIO_t          *ungappedOutput_aio
+           , alignIO_t          *gappedOutput_aio
+           // , alignment_matrices_t *algn_mtxs3d
+           , cost_matrices_3d_t *costMtx3d
+           , unsigned int        gap_open_cost
+           // , unsigned int        gap_extension_cost
            );
 
 #endif // C_ALIGNMENT_INTERFACE_H

@@ -27,14 +27,14 @@
 // Created:      Tue May 11 13:22:07 1999
 // Author:       David Powell
 
-// Contains the common routines for ukk.alloc, ukk.noalign, ukk.checkp and ukk.dpa
+// ContaINS the common routines for ukk.alloc, ukk.noalign, ukk.checkp and ukk.dpa
 // Also see ukkCommon.h
 // Compile with -DSYSTEM_INFO to print system information of
 // every run. Useful to timing runs where cpu info is important.
 
 /**
  *  Usage: [m a b]
- *  where m is the cost of a mismatch,
+ *  where m is the cost of a mismatch_cost,
  *      a is the cost to start a gap,
  *      b is the cost to extend a gap.
  */
@@ -47,52 +47,36 @@
 //#define NO_ALLOC_ROUTINES 1
 #include "debug_constants.h"
 #include "dyn_character.h"
-//#include "ukkCheckp.h"
+#include "ukkCheckPoint.h"
 #include "ukkCommon.h"
 
 // extern variable (all from ukkCheckp.c)
-
-extern      AllocInfo myUAllocInfo;
-extern      AllocInfo myCPAllocInfo;
+// TODO: finish getting rid of these globals
+extern      alloc_info_t myUkkAllocInfo;
+extern      alloc_info_t myCheckPtAllocInfo;
 extern long costOffset;
 extern long finalCost;
 
-extern int sabG, sacG, sCostG, sStateG;
-extern int CPwidth;
-extern int CPcost;
+extern int sabG,
+           sacG,
+           sCostG,
+           sStateG;
 
-extern int furthestReached;
-extern int CPonDist;
-extern int endA, endB, endC;
-extern int completeFromInfo;
+extern size_t checkPoint_width;
+extern int    checkPoint_cost;
+
+extern size_t furthestReached;
+extern size_t checkPoint_onDist;
+extern size_t endA,
+              endB,
+              endC;
+
+extern int    completeFromInfo;
 // extern Counts counts;
 
-//int  aCharIdx, bCharIdx, cCharIdx, stateIdx, costIdx;
+//int  aCharIdx, bCharIdx, cCharIdx, fsmStateIdx, costIdx;
 
 
-// GLOBAL VARIABLES
-// TODO: Can we make these variables non-global?
-int neighbours[MAX_STATES];
-int contCost  [MAX_STATES];
-int secondCost[MAX_STATES];
-int transCost [MAX_STATES] [MAX_STATES];
-int stateNum  [MAX_STATES];
-
-// TODO: can/should we make these unsigned ints?
-int mismatchCost     = 1;
-int gapOpenCost      = 3;             // a: w(k)=a+b*k
-int gapExtendCost    = 1;             // b:
-int deleteOpenCost   = 3;
-int deleteExtendCost = 1;
-
-size_t numStates;
-size_t maxSingleStep;
-
-char lesserStr[MAX_STR];
-char longerStr[MAX_STR];
-char middleStr[MAX_STR];
-
-size_t lesserLen, longerLen, middleLen;
 
 //extern int doUkk(dyn_character_t *retCharA, dyn_character_t *retCharB, dyn_character_t *retCharC);    // Main driver function
 
@@ -109,7 +93,11 @@ size_t lesserLen, longerLen, middleLen;
 //}
 
 // recalloc - does a realloc() but sets any new memory to 0.
-static inline void *recalloc(void *p, size_t oldSize, size_t newSize) {
+static inline void *recalloc( void *p
+                            , size_t oldSize
+                            , size_t newSize
+                            )
+{
     p = realloc(p, newSize);
     if (!p || oldSize > newSize) {
         return p;
@@ -121,13 +109,14 @@ static inline void *recalloc(void *p, size_t oldSize, size_t newSize) {
     return p;
 }
 
-static inline void *allocPlane(AllocInfo *a) {
+static inline void *allocPlane( alloc_info_t *a )
+{
     void *p;
 
-    a->memAllocated += a->abBlocks * a->acBlocks * sizeof(void*);
-    p = calloc(a->abBlocks * a->acBlocks, sizeof(void*));
+    a->memAllocated += a->lessLong_blocks * a->lessMidd_blocks * sizeof(void*);
+    p = calloc( a->lessLong_blocks * a->lessMidd_blocks, sizeof(void*) );
     if (p==NULL) {
-        fprintf(stderr,"Unable to alloc memory\n");
+        fprintf(stderr, "Unable to alloc memory\n");
         exit(-1);
     }
 
@@ -135,24 +124,29 @@ static inline void *allocPlane(AllocInfo *a) {
 }
 
 #ifdef FIXED_NUM_PLANES
-    AllocInfo allocInit(int elemSize, int costSize)
+    alloc_info_t allocInit( size_t elemSize
+                          , size_t costSize
+                          , characters_t *inputChars
+                          )
 #else
-    AllocInfo allocInit(int elemSize)
+    alloc_info_t allocInit( size_t elemSize
+                          , characters_t *inputChars
+                          )
 #endif
 
 {
-    AllocInfo retStruct;
+    alloc_info_t retStruct;
 
     retStruct.memAllocated = 0;
     retStruct.elemSize     = elemSize;
 
-    retStruct.abSize   = lesserLen + longerLen + 1;
-    retStruct.acSize   = lesserLen + middleLen + 1;
-    retStruct.abOffset = longerLen;
-    retStruct.acOffset = middleLen;
+    retStruct.lessLong_size   = inputChars->lesserLen + inputChars->longerLen + 1;
+    retStruct.lessMidd_size   = inputChars->lesserLen + inputChars->middleLen + 1;
+    retStruct.lessLong_offset = inputChars->longerLen;
+    retStruct.lessMidd_offset = inputChars->middleLen;
 
-    retStruct.abBlocks = retStruct.abSize / CELLS_PER_BLOCK + 1;
-    retStruct.acBlocks = retStruct.acSize / CELLS_PER_BLOCK + 1;
+    retStruct.lessLong_blocks = retStruct.lessLong_size / CELLS_PER_BLOCK + 1;
+    retStruct.lessMidd_blocks = retStruct.lessMidd_size / CELLS_PER_BLOCK + 1;
 
     #ifdef FIXED_NUM_PLANES
         retStruct.costSize  = costSize;
@@ -162,9 +156,10 @@ static inline void *allocPlane(AllocInfo *a) {
     #endif
 
     retStruct.memAllocated += retStruct.baseAlloc * sizeof(void *);
-    retStruct.basePtr = calloc(retStruct.baseAlloc, sizeof(void *));
 
-    if (retStruct.basePtr == NULL) {
+    retStruct.baseArrays = calloc( retStruct.baseAlloc, sizeof(void *) );
+
+    if (retStruct.baseArrays == NULL) {
         fprintf(stderr,"Unable to alloc memory\n");
         exit(-1);
     }
@@ -172,7 +167,10 @@ static inline void *allocPlane(AllocInfo *a) {
     return retStruct;
 }
 
-static inline void *allocEntry(AllocInfo *a) {
+static inline void *allocEntry( alloc_info_t *a
+                              , size_t        numStates
+                              )
+{
     void *p;
 
     size_t entries = CELLS_PER_BLOCK * CELLS_PER_BLOCK * numStates;
@@ -188,36 +186,65 @@ static inline void *allocEntry(AllocInfo *a) {
     return p;
 }
 
-static inline size_t allocGetSubIndex(AllocInfo *a, int ab, int ac, int s)
+static inline size_t allocGetSubIndex( alloc_info_t *allocInfo
+                                     , int           lessLong_idx_diff
+                                     , int           lessMidd_idx_diff
+                                     , int           fsm_state
+                                     , size_t        numStates
+                                     )
 {
     size_t index = 0;
 
-    size_t i = (ab + a->abOffset) / CELLS_PER_BLOCK;
-    size_t j = (ac + a->acOffset) / CELLS_PER_BLOCK;
-    int abAdjusted = ab + a->abOffset - i * CELLS_PER_BLOCK;
-    int acAdjusted = ac + a->acOffset - j * CELLS_PER_BLOCK;
+    /* Because why not just % (and yes, it took me a while to figure that out).
+    size_t i = (lessLong_idx_diff + allocInfo->lessLong_offset) / CELLS_PER_BLOCK;
+    size_t j = (lessMidd_idx_diff + allocInfo->lessMidd_offset) / CELLS_PER_BLOCK;
 
-    //  fprintf(stderr,"ab=%d ac=%d abA=%d acA=%d abO=%d acO=%d i=%d j=%d\n",
-    //    ab,ac,abAdjusted,acAdjusted,a->abOffset,a->acOffset,i,j);
+    int lessLong_adjusted = lessLong_idx_diff + allocInfo->lessLong_offset - i * CELLS_PER_BLOCK;
+    int lessMidd_adjusted = lessMidd_idx_diff + allocInfo->lessMidd_offset - j * CELLS_PER_BLOCK;
+    */
 
-    assert(abAdjusted >= 0 && abAdjusted < CELLS_PER_BLOCK);
-    assert(acAdjusted >= 0 && acAdjusted < CELLS_PER_BLOCK);
-    assert(s >= 0  && s < (int) numStates);
+    int lessLong_adjusted = (lessLong_idx_diff + allocInfo->lessLong_offset) % CELLS_PER_BLOCK;
+    int lessMidd_adjusted = (lessMidd_idx_diff + allocInfo->lessMidd_offset) % CELLS_PER_BLOCK;
 
-    index = (index + abAdjusted) * CELLS_PER_BLOCK;
-    index = (index + acAdjusted) * numStates;
-    index = (index + s);
+    /*
+    if (   lessLong_adjusted != lessLong_adjusted_2
+        || lessMidd_adjusted != lessMidd_adjusted_2
+       ) {
+        fprintf( stderr, "lessLong_idx_diff = %2d, lessLong_idx_diff offset = %2zu, lessLong_idx_diff adjusted = %2d\nlessMidd_idx_diff = %2d, lessMidd_idx_diff offset = %2zu, lessMidd_idx_diff adjusted = %2d\n"
+               , lessLong_idx_diff
+               , allocInfo->lessLong_offset
+               , lessLong_adjusted
+               , lessMidd_idx_diff
+               , allocInfo->lessMidd_offset
+               , lessMidd_adjusted
+               );
+        exit(1);
+    }
+
+
+    assert(lessLong_adjusted >= 0 && lessLong_adjusted < CELLS_PER_BLOCK);
+    assert(lessMidd_adjusted >= 0 && lessMidd_adjusted < CELLS_PER_BLOCK);
+    */
+
+    assert( fsm_state >= 0 && fsm_state < (int) numStates );
+
+    index = (index + lessLong_adjusted) * CELLS_PER_BLOCK;
+    index = (index + lessMidd_adjusted) * numStates;
+    index = (index + fsm_state);
 
     return index;
 }
 
 
-void allocFinal(AllocInfo *a, void *flag, void *top) {
+void allocFinal( alloc_info_t *allocInfo
+               , void         *flag
+               , void         *top
+               , size_t        numStates
+               )
+{
     // Cast the void pointers to long longs because we intend to treat the
     // pointers as integral values.
-    int usedFlag = ((long long)flag) - ((long long )top);
-
-    size_t i, j, cIndex;
+    int usedFlag = ((long long) flag) - ((long long) top);
 
     size_t planesUsed = 0;
 
@@ -227,19 +254,25 @@ void allocFinal(AllocInfo *a, void *flag, void *top) {
     size_t cellsTotal = 0,
            cellsUsed  = 0;
 
-    for (i = 0; i < a->baseAlloc; i++) {
-        long tblocksUsed = 0;
-        void **p = a->basePtr[i];
+    long tblocksUsed;
+    void **baseArrays;
 
-        if (!p) {
+    for (size_t i = 0; i < allocInfo->baseAlloc; i++) {
+        tblocksUsed = 0;
+        baseArrays = allocInfo->baseArrays[i];
+
+        if (!baseArrays) {
             continue;
         }
 
         planesUsed++;
 
-        for (j = 0; j < a->abBlocks * a->acBlocks; j++) {
-            long tcellsUsed = 0;
-            void *block = p[j];
+        long tcellsUsed;
+        void *block;
+
+        for (size_t j = 0; j < allocInfo->lessLong_blocks * allocInfo->lessMidd_blocks; j++) {
+            tcellsUsed = 0;
+            block = baseArrays[j];
             blocksTotal++;
 
             if (!block) {
@@ -249,83 +282,104 @@ void allocFinal(AllocInfo *a, void *flag, void *top) {
             blocksUsed++;
             tblocksUsed++;
 
-            for (cIndex = 0; cIndex < numStates * CELLS_PER_BLOCK * CELLS_PER_BLOCK; cIndex++) {
+            for (size_t cIndex = 0; cIndex < numStates * CELLS_PER_BLOCK * CELLS_PER_BLOCK; cIndex++) {
                 cellsTotal++;
 
                 // Cast the void pointer to char pointer to suppress compiler warnings.
                 // We assume that arithmetic takes place in terms of bytes.
-                if ( *(int*)(((char*)block) + (cIndex * a->elemSize) + usedFlag)) {
+                if ( *(int*) ( ( (char*) block ) + (cIndex * allocInfo->elemSize) + usedFlag) ) {
                     cellsUsed++;
                     tcellsUsed++;
                 }
             }
             free (block);
       }
-      free (p);
+      free (baseArrays);
     }
-    free (a->basePtr);
-    a->basePtr = NULL;
+    free (allocInfo->baseArrays);
+    allocInfo->baseArrays = NULL;
 
 }
 
-void *getPtr(AllocInfo *a, int ab, int ac, size_t d, int s) {
-    size_t i, j;
-    void **bPtr;
-    void  *base;
+void *getPtr( alloc_info_t *allocInfo
+            , int           lessLong_idx_diff
+            , int           lessMidd_idx_diff
+            , size_t        editDist
+            , int           fsm_state
+            , size_t        numStates
+            )
+{
+    void **baseArrays,
+          *this_baseArr;
+
     size_t index;
 
     #ifdef FIXED_NUM_PLANES
-        // If doing a noalign or checkp,  remap 'd' into 0..costSize-1
-        d = d % a->costSize;
+        // If doing a noalign or checkp,  remap 'editDist' into 0..costSize-1
+        editDist = editDist % allocInfo->costSize;
     #endif
 
     // Increase the base array as needed
-    while (d >= a->baseAlloc) {
-        int oldSize   = a->baseAlloc;
-        a->baseAlloc *= 2;
-        a->basePtr    = recalloc(a->basePtr, oldSize * sizeof(void *), a->baseAlloc * sizeof(void *));
-        if (a->basePtr == NULL) {
+    while (editDist >= allocInfo->baseAlloc) {
+
+        int oldSize           = allocInfo->baseAlloc;
+        allocInfo->baseAlloc *= 2;
+        allocInfo->baseArrays    = recalloc( allocInfo->baseArrays
+                                        , oldSize              * sizeof(void *)
+                                        , allocInfo->baseAlloc * sizeof(void *)
+                                        );
+
+        if (allocInfo->baseArrays == NULL) {
             fprintf(stderr, "Unable to alloc memory\n");
             exit(-1);
         }
-        a->memAllocated += oldSize * sizeof(void *);
-    }
-    assert(d < a->baseAlloc);
 
-    if (a->basePtr[d] == NULL) {
-        a->basePtr[d] = allocPlane(a);
+        allocInfo->memAllocated += oldSize * sizeof(void *);
     }
 
-    bPtr = a->basePtr[d];
+    assert(editDist < allocInfo->baseAlloc);
 
-    i = (ab + a->abOffset) / CELLS_PER_BLOCK;
-    j = (ac + a->acOffset) / CELLS_PER_BLOCK;
-    assert(i < a->abBlocks);
-    assert(j < a->acBlocks);
+    if (allocInfo->baseArrays[editDist] == NULL)  allocInfo->baseArrays[editDist] = allocPlane( allocInfo );
 
-    if (bPtr[(i * a->acBlocks) + j] == NULL) {
-        bPtr[(i * a->acBlocks) + j] = allocEntry(a);
+    baseArrays = allocInfo->baseArrays[editDist];
+
+    size_t i = (lessLong_idx_diff + allocInfo->lessLong_offset) / CELLS_PER_BLOCK;
+    size_t j = (lessMidd_idx_diff + allocInfo->lessMidd_offset) / CELLS_PER_BLOCK;
+
+    assert(i < allocInfo->lessLong_blocks);
+    assert(j < allocInfo->lessMidd_blocks);
+
+    if (baseArrays[(i * allocInfo->lessMidd_blocks) + j] == NULL) {
+        baseArrays[(i * allocInfo->lessMidd_blocks) + j] = allocEntry( allocInfo, numStates );
     }
 
-    base = bPtr[(i * a->acBlocks) + j];
-    assert(base != NULL);
+    this_baseArr = baseArrays[(i * allocInfo->lessMidd_blocks) + j];
+    assert(this_baseArr != NULL);
 
-    index = allocGetSubIndex(a, ab, ac, s);
+    index = allocGetSubIndex( allocInfo
+                            , lessLong_idx_diff
+                            , lessMidd_idx_diff
+                            , fsm_state
+                            , numStates
+                            );
 
-    //  fprintf(stderr,"getPtr(ab=%d,ac=%d,d=%d,s=%d): base=%p index=%d\n",
-    //    ab,ac,d,s,
-    //    base,index);
+    //  fprintf(stderr,"getPtr(lessLong_idx_diff=%d,lessMidd_idx_diff=%d,d=%d,s=%d): this_baseArr=%p index=%d\n",
+    //    lessLong_idx_diff,lessMidd_idx_diff,d,s,
+    //    this_baseArr,index);
 
     // Cast the void pointer to char pointer to suppress compiler warnings.
     // We assume that arithmetic takes place in terms of bytes.
-    return ((char*)base) + (index * a->elemSize);
+    return ( (char*) this_baseArr) + (index * allocInfo->elemSize);
 }
 
 
 #endif // NO_ALLOC_ROUTINES
 
 
-void copyCharacter (char *str, dyn_character_t *inChar) {
+void copyCharacter ( char            *str
+                   , dyn_character_t *inChar
+                   )
+{
     if (DEBUG_CALL_ORDER) {
         printf("copyCharacter\n");
     }
@@ -354,65 +408,25 @@ void copyCharacter (char *str, dyn_character_t *inChar) {
     return;
 }
 
-// IMPORTANT!!! Order of input characters is short, long, middle.
-int powell_3D_align ( dyn_character_t *lesserChar
-                    , dyn_character_t *longerChar
-                    , dyn_character_t *middleChar
-                    , dyn_character_t *retCharA
-                    , dyn_character_t *retCharB
-                    , dyn_character_t *retCharC
-                    , int              mismatch
-                    , int              gapOpen
-                    , int              gapExtend
-                    )
+
+int whichCharCost(char a, char b, char c)
 {
-    if (DEBUG_CALL_ORDER) {
-        printf("powell_3D_align\n");
-    }
-
-    // Nota bene: following are assigning to global vars.
-    gapOpenCost      = gapOpen;
-    gapExtendCost    = gapExtend;
-    deleteOpenCost   = gapOpenCost;
-    deleteExtendCost = gapExtendCost;
-    mismatchCost     = mismatch;
-    /* Char_custom_val(lesserChar,sa);
-    Char_custom_val(longerChar,sb);
-    Char_custom_val(middleChar,sc);
-    Char_custom_val(retCharA,retCharA);
-    Char_custom_val(retCharB,retCharB);
-    Char_custom_val(retCharC,retCharC);
-    */
-    assert (mismatchCost != 0 && gapOpenCost >= 0 && gapExtendCost > 0);
-
-    copyCharacter (lesserStr, lesserChar);
-    copyCharacter (longerStr, longerChar);
-    copyCharacter (middleStr, middleChar);
-
-    lesserLen = lesserChar->len;
-    longerLen = longerChar->len;
-    middleLen = middleChar->len;
-
-    setup();
-
-    return doUkk (retCharA, retCharB, retCharC);
-}
-
-
-int whichCharCost(char a, char b, char c) {
     if (DEBUG_CALL_ORDER) {
         printf("whichCharCost\n");
     }
     // printf("a: %c, b: %c, c: %c\n", a, b, c);
-    assert(a!=0 && b!=0 && c!=0);
+    assert(   a != 0
+           && b != 0
+           && c != 0
+           );
     /*
       When running as a ukk algorithm (ie. not the DPA), then
-      a == b == c only when there is a run of matches after a state other that MMM,
-      and since we are moving to a MMM state, this cost will NEVER be used,
+      a == b == c only when there is a run of MATCH_SUBs after a fsm_state other that MMM,
+      and since we are moving to a MMM fsm_state, this cost will NEVER be used,
       so it doesn't matter what we return
       When running as the DPA, it can occur at a == b == c, return 0 in this case
     */
-    if (a==b && a==c) {
+    if (a == b && a == c) {
       return 0;
     }
     /* return 1 for the following
@@ -425,179 +439,307 @@ int whichCharCost(char a, char b, char c) {
          xyz
     */
     // Take care of any 2 the same
-    if (a==b || a==c || b==c) {
+    if (a == b || a == c || b == c) {
         return 1;
     }
     return 2;
 }
 
 
-int okIndex(int a, int da, int end) {
-    // if (DEBUG_CALL_ORDER) {
-    //     printf("okIndex\n");
-    // }
+/** Make sure that index a is valid for a given set of array indices */
+int okIndex( int a
+           , int da
+           , int end
+           )
+{
+    // if (DEBUG_CALL_ORDER) printf("okIndex\n");
+
     if (a < 0)           return 0;
     if ( da && a <  end) return 1;
     if (!da && a <= end) return 1;
-    return 0;
+
+    return 0;  // a > end
     //  return (a<0 ? 0 : (da==0 ? 1 : a<end));
 }
 
 
 
 
-/* ---------------------------------------------------------------------- */
-/* Common setup routines */
+/******** Setup routines ********/
 
-int stateTransitionCost(int from, int to) {
-    return transCost[from][to];
+/*
+int fsmState_transitionCost( int from
+                           , int to
+                           , int *transitionCost
+                           )
+{
+    return transitionCost[from][to];
 }
+*/
 
 // --------------------------------------------------
-void step(int n, int *a, int *b, int *c) {
-    assert(n > 0 && n <= 7);
-    *a = (n >> 0) & 1;
-    *b = (n >> 1) & 1;
-    *c = (n >> 2) & 1;
+/** Mutates a, b, and c such that each is true or false if the least significant first, second or third digit, respectively,
+ *  of neighbour is 1.
+ */
+void step( int  neighbour
+         , int *a
+         , int *b
+         , int *c
+         )
+{
+    assert(neighbour > 0 && neighbour <= 7);
+    *a =  neighbour       & 1;
+    *b = (neighbour >> 1) & 1;
+    *c = (neighbour >> 2) & 1;
 }
 
-int neighbourNum(int i, int j, int k) {
+
+/** Creates a binary number where i is the least significant bit and k is the most */
+int neighbourNum( int i
+                , int j
+                , int k
+                )
+{
     return (i * 1) + (j * 2) + (k * 4);
 }
 
 // --------------------------------------------------
 
-void transitions(int s, Trans st[3]) {
-    st[0] = (s / 1) % 3;
-    st[1] = (s / 3) % 3;
-    st[2] = (s / 9) % 3;
+/** Resets a transitionn array that holds the transitions fsm states for three fsm state-transition FSMs. There are 27 possible fsm states.
+ *  For instance, if the fsm_state is 1, then the FSMs are in the cumulative fsm_state [DEL, MATCH_SUB, MATCH_SUB], whereas if the fsm_state were
+ *  22, the cumulative fsm_state would be [DEL, DEL, INS] (which is actually not possible, as it signifies a gap in all three dynamic
+ *  characters, which is meaningless).
+ */
+void transitions( Trans  fsmState_transitions[3]
+                , size_t fsm_state
+                )
+{
+    fsmState_transitions[0] =  fsm_state      % 3;    // repeats 0, 1, 2, 0, 1, 2, ...
+    fsmState_transitions[1] = (fsm_state / 3) % 3;    // repeats 0, 0, 0, 1, 1, 1, 2, 2, 2, 0, ...
+    fsmState_transitions[2] = (fsm_state / 9) % 3;    // repeats: nine 0s, nine 1s, nine 2s, start over
 }
 
-char *state2str(int s)  {
-    static char str[4];
-    Trans st[3];
-    int i;
-    transitions(stateNum[s], st);
-    for (i = 0;i < 3;i++) {
-        str[i] = (st[i]==match ? 'M' : (st[i]==del ? 'D' : 'I'));
+
+/** Takes an array of fsm states by value and returns a string of those fsm states as match, delete, insert.
+ *  Used only in printing of fsm_state array if DEBUG_3D is set.
+ */
+char *fsm_state2str( size_t  fsm_state
+               , int    *fsmState_num
+               )
+{
+    static char returnStr[4];
+    Trans fsmState_transitions[3];
+
+    transitions( fsmState_transitions, fsmState_num[fsm_state] );
+
+    for (size_t i = 0; i < 3; i++) {
+        returnStr[i] = ( fsmState_transitions[i] == MATCH_SUB ? 'M' : ( fsmState_transitions[i] == DEL ? 'D' : 'I') );
     }
-    return str;
+    return returnStr;
 }
 
-int countTrans(Trans st[3], Trans t) {
-    int i, n = 0;
-    for (i = 0; i < 3; i++) {
-        if (st[i] == t) n++;
+
+/** Count number of times whichTransition appears in fsmState_transitions, where MATCH_SUB = 0, DEL = 1, INS = 2. */
+size_t countThisTransition( Trans fsmState_transitions[3]
+                          , Trans whichTransition
+                          )
+{
+    size_t num = 0;
+
+    for (size_t i = 0; i < 3; i++) {
+        if (fsmState_transitions[i] == whichTransition) num++;
     }
-    return n;
+    return num;
 }
 
-void setup() {
-    maxSingleStep = numStates = 0;
-    int i, j;
+
+/** Set up the Ukkonnen and check point matrices before running alignment. */
+void setup( global_costs_t  *globalCosts
+          , characters_t    *inputChars
+          , characters_t    *resultChars
+          , fsm_arrays_t    *globalCostArrays
+          , dyn_character_t *in_lesserChar
+          , dyn_character_t *in_middleChar
+          , dyn_character_t *in_longerChar
+          , unsigned int     mismatch_cost
+          , unsigned int     gapOpen
+          , unsigned int     gapExtend
+          )
+{
+
+    // Initialize global costs. These will be passed around to remove globals and make functional side effects more clear.
+    globalCosts->mismatchCost  = mismatch_cost;
+    globalCosts->gapOpenCost   = gapOpen;
+    globalCosts->gapExtendCost = gapExtend;
+
+    inputChars->maxSingleStep  = inputChars->numStates
+                               = 0;
+    size_t i;  // for use in multiple for loops below
+
+    // TODO: change this from char to something else. Can we alloc this more intelligently, like not using MAX_STR?
+    inputChars->lesserStr = calloc( MAX_STR, sizeof(char) );
+    inputChars->longerStr = calloc( MAX_STR, sizeof(char) );
+    inputChars->middleStr = calloc( MAX_STR, sizeof(char) );
+
+    resultChars->lesserStr = calloc( MAX_STR * 2, sizeof(char) );
+    resultChars->longerStr = calloc( MAX_STR * 2, sizeof(char) );
+    resultChars->middleStr = calloc( MAX_STR * 2, sizeof(char) );
+
+    // Initialize all characters. As with globalCosts, these will be passed around to remove globals and functional side effects.
+    copyCharacter( inputChars->lesserStr, in_lesserChar) ;
+    copyCharacter( inputChars->longerStr, in_longerChar) ;
+    copyCharacter( inputChars->middleStr, in_middleChar) ;
+
+    inputChars->lesserLen = in_lesserChar->len;
+    inputChars->longerLen = in_longerChar->len;
+    inputChars->middleLen = in_middleChar->len;
+
+    resultChars->lesserLen = 0;
+    resultChars->longerLen = 0;
+    resultChars->middleLen = 0;
+
+    resultChars->lesserIdx = 0;
+    resultChars->longerIdx = 0;
+    resultChars->middleIdx = 0;
+
+    globalCostArrays->neighbours                = calloc( MAX_STATES,              sizeof(int) );
+    globalCostArrays->fsmState_continuationCost = calloc( MAX_STATES,              sizeof(int) );
+    globalCostArrays->secondCost                = calloc( MAX_STATES,              sizeof(int) );
+    globalCostArrays->transitionCost            = calloc( MAX_STATES * MAX_STATES, sizeof(int) );
+    globalCostArrays->fsmState_num              = calloc( MAX_STATES,              sizeof(int) );
+
+    int thisCost,
+        cost,
+        maxCost = 0;
+
+    size_t fsmState_reindex_num  = 0;    // we reindex fsm_state sets to eliminate extras.
+
+/* Don't need to do this; calloc'ed above
     for (i = 0; i < MAX_STATES - 1; i++) {
-        neighbours[i] = 0;
-        contCost[i]   = 0;
-        secondCost[i] = 0;
-        stateNum[i]   = 0;
-        for (j = 0; j < MAX_STATES - 1; j++) {
-            transCost[i][j] = 0;
+        globalCosts->neighbours[i] = 0;
+        globalCosts->fsmState_continuationCost[i]   = 0;
+        globalCosts->secondCost[i] = 0;
+        globalCosts->fsmState_num[i]   = 0;
+        for (size_t j = 0; j < MAX_STATES - 1; j++) {
+            globalCosts->transitionCost[i][j] = 0;
         }
     }
-    int s, ns = 0;
+*/
 
-    assert(gapOpenCost   == deleteOpenCost   && "Need to rewrite setup routine");
-    assert(gapExtendCost == deleteExtendCost && "Need to rewrite setup routine");
 
-    for (s = 0; s < MAX_STATES; s++) {
-        Trans st[3];
-        transitions(s, st);
+    /**** Now set cost arrays which correspond to FSM fsm_state-transition sets. This won't work for non-constant TCMs. ****/
+    // TODO: Hard code this. It's a ridiculous amount of wasted time and code.
 
-        if (countTrans(st, match) == 0) {
-          continue;     // Must be at least one match
+    Trans fsmState_transitions[3];    // safe because this gets reset in first line of for loop:
+    size_t numInserts;
+    size_t two_fsmStates_continuing; // if there are, for instance, two deletions that carry forward in the same
+
+    // For each possible 3-FSM fsm_state, set fsm_state transitions.
+    // If none of the three fsm states is a match, skip it.
+    // Not clear why there can't be two inserts but can be two deletes. Maybe it's in Powell's thesis.
+    for (size_t fsm_state = 0; fsm_state < MAX_STATES; fsm_state++) {
+        transitions( fsmState_transitions, fsm_state );
+
+        if (countThisTransition( fsmState_transitions, MATCH_SUB ) == 0) {
+            continue;     // Must be at least one match
         }
 
-        if (countTrans(st, ins) > 1) {
-          continue;     // Can't be more than 1 insert state!  (7/7/1998)
+        if (countThisTransition( fsmState_transitions, INS ) > 1) {
+            continue;     // Can't be more than 1 insert fsm_state!  (7/7/1998)   // TODO: looks this up
         }
 
+/* Not doing this
         #ifdef LIMIT_TO_GOTOH
-            // Gotoh86 only allowed states that had a least 2 match states. (Total of 7 possible)
-            if (countTrans(st, ins) + countTrans(st, del) > 1) {
-              continue;
+            // Gotoh86 only allowed fsm states that had a least 2 match fsm states. (Total of 7 possible)
+            if (countThisTransition(fsmState_transitions, INS) + countThisTransition(fsmState_transitions, DEL) > 1) {
+                continue;
             }
         #endif
+*/
+        globalCostArrays->fsmState_num[fsmState_reindex_num] = fsm_state; // compacting possible fsm states into smaller set. From now on can just loop
+                                                               // over fsmState_reindex_num, which means continuing to skip meaningless FSM
+                                                               // states.
+        printf("%zu %zu\n", fsmState_reindex_num, fsm_state);
 
-        stateNum[ns] = s;
+        // Set up possible neighbours for fsm states (neighbours[])
+        numInserts = countThisTransition(fsmState_transitions, INS);
 
-        // Setup possible neighbours for states (neighbours[])
-        int numInserts = countTrans(st, ins);
-        if (numInserts == 0) {
-            neighbours[ns] = neighbourNum(st[0]==match ? 1 : 0,
-                                          st[1]==match ? 1 : 0,
-                                          st[2]==match ? 1 : 0);
-        } else { // (numInserts == 1)
-            neighbours[ns] = neighbourNum(st[0]==ins ? 1 : 0,
-                                          st[1]==ins ? 1 : 0,
-                                          st[2]==ins ? 1 : 0);
+        if (numInserts == 0) { // if no inserts, then match/sub is 1 and del is 0 in resulting binary number
+            globalCostArrays->neighbours[fsmState_reindex_num] = neighbourNum( fsmState_transitions[0] == MATCH_SUB ? 1 : 0
+                                                                             , fsmState_transitions[1] == MATCH_SUB ? 1 : 0
+                                                                             , fsmState_transitions[2] == MATCH_SUB ? 1 : 0
+                                                                             );
+        } else { // numInserts == 1, as we've already eliminated any fsm states which have two INSs // TODO: looks this up
+                 // if one insert, then match/sub or del is 0 ins is 1 in resulting binary number
+            globalCostArrays->neighbours[fsmState_reindex_num] = neighbourNum( fsmState_transitions[0] == INS ? 1 : 0
+                                                                             , fsmState_transitions[1] == INS ? 1 : 0
+                                                                             , fsmState_transitions[2] == INS ? 1 : 0
+                                                                             );
         }
         // End setting up neighbours
 
 
-        // Setup cost for continuing a state (contCost[])
-        int cost, cont2;
-        if (countTrans(st, ins) > 0) {
-            cost  = gapExtendCost;    /* Can only continue 1 insert at a time */
-            cont2 = 0;
-        } else if (countTrans(st, match) == 3) {
-            cost  = mismatchCost;        /* All match states */
-            cont2 = 1;
-        } else if (countTrans(st, del) == 1) {
-            cost  = deleteExtendCost;    /* Continuing a delete */
-            cont2 = 1;
+        // Set up cost for continuing an fsm state (fsmState_continuationCost[])
+        // For a given fsm_state, either 1 or more fsm states continue. If 2 or 3 continue,
+        //
+        // TODO: most of this will die, because we're using a tcm. Again, though, why not hard code these arrays?
+        if (countThisTransition( fsmState_transitions, INS ) > 0) { // TODO: hasn't this already been eliminated by the continue above?
+            cost = globalCosts->gapExtendCost;           /* Can only continue 1 insert at a time. */ // TODO: looks this up
+            two_fsmStates_continuing = 0;
+        } else if (countThisTransition( fsmState_transitions, MATCH_SUB ) == 3) {
+            cost = globalCosts->mismatchCost;            /* No indel */
+            two_fsmStates_continuing = 1;
+        } else if (countThisTransition( fsmState_transitions, DEL ) == 1) {
+            cost = globalCosts->gapExtendCost;        /* Continuing delete */ // Two fsm states must match
+            two_fsmStates_continuing = 1;
         } else {
-            cost  = 2 * deleteExtendCost;    /* Continuing 2 deletes */
-            cont2 = 0;
+            cost  = 2 * globalCosts->gapExtendCost;    /* Continuing 2 deletes */
+            two_fsmStates_continuing = 0;
         }
-        contCost[ns]   = cost;
-        secondCost[ns] = cont2;
-        // End setup of contCost[]
 
-        ns++;
+        globalCostArrays->fsmState_continuationCost[fsmState_reindex_num] = cost;
+        globalCostArrays->secondCost[fsmState_reindex_num]            = two_fsmStates_continuing;
+        // End setup of fsmState_continuationCost[]
+
+        fsmState_reindex_num++; // Because of continues, above, does not track `fsm_state`.
     }
 
-    numStates = ns;
+    inputChars->numStates = fsmState_reindex_num;
 
-    // Setup state transition costs (transCost[][])
-    size_t s1, s2;
-    int maxCost = 0;
+    // Setup fsm_state transition costs (transitionCost[][])
+    Trans from[3],
+          to[3];
 
-    assert(gapOpenCost==deleteOpenCost && "Need to rewrite setup routine");
-    for (s1 = 0; s1 < numStates; s1++) {
-        for (s2 = 0; s2 < numStates; s2++) {
-            Trans from[3], to[3];
-            int cost = 0, i;
-            transitions(stateNum[s1], from);
-            transitions(stateNum[s2], to);
+    for (size_t s1 = 0; s1 < inputChars->numStates; s1++) {
+        for (size_t s2 = 0; s2 < inputChars->numStates; s2++) {
+
+
+            cost = 0;
+            transitions( from, globalCostArrays->fsmState_num[s1] );
+            transitions( to  , globalCostArrays->fsmState_num[s2] );
 
             for (i = 0; i < 3; i++) {
-                if ((to[i]==ins || to[i]==del) && (to[i] != from[i])){
-                    cost += gapOpenCost;
+                if (    (to[i] == INS || to[i] == DEL)
+                     && (to[i] != from[i])
+                   ){
+                    cost += globalCosts->gapOpenCost;
                 }
             }
-            transCost[s1][s2] = cost;
+            globalCostArrays->transitionCost[s1 * MAX_STATES + s2] = cost;
 
             // Determine biggest single step cost
-            int thisCost = cost + contCost[s2];
-            Trans st[3];
-            transitions(stateNum[s2], st);
-            thisCost += mismatchCost * (countTrans(st, match) - 1);
-            maxCost = (maxCost < thisCost ? thisCost : maxCost);
+            thisCost = cost + globalCostArrays->fsmState_continuationCost[s2];
+            Trans fsmState_transitions[3];
+
+            transitions( fsmState_transitions, globalCostArrays->fsmState_num[s2] );
+
+            thisCost += globalCosts->mismatchCost * ( countThisTransition(fsmState_transitions, MATCH_SUB) - 1 );
+            maxCost   = (maxCost < thisCost ? thisCost : maxCost);
 
         }
     }
 
-    maxSingleStep = maxCost;
+    inputChars->maxSingleStep = maxCost;
     // End setup of transition costs
 }
 
@@ -606,105 +748,139 @@ void setup() {
 
 /* ---------------------------------------------------------------------- */
 /* Some alignment checking routines */
-void checkAlign(char *al, int alLen, char *str, int strLen)  {
-    int i,j=0;
-    for (i=0; i<alLen; i++) {
-        if (al[i] == '-') continue;
-        assert(al[i]==str[j] && "Output alignment not equal to input string");
+void checkAlign( char   *alignment
+               , size_t  alLen
+               , char   *str
+               , size_t  strLen
+               )
+{
+    size_t j = 0;
+
+    for (size_t i = 0; i < alLen; i++) {
+        if (alignment[i] == '-') continue;
+
+        assert( alignment[i] == str[j] && "Output alignment not equal to input string" );
         j++;
     }
-    assert(j==strLen && "Output alignment not equal length to input string");
+
+    assert( j == strLen && "Output alignment not equal length to input string" );
 }
 
-void revIntArray(int *arr, int start, int end) {
-    int i;
-    if (end<=start) {
-        return;
-    }
-    for (i=start; i<(end+start)/2; i++) {
-        int t = arr[i];
-        arr[i] = arr[end-i+start-1];
-        arr[end-i+start-1] = t;
-    }
-}
 
-void revCharArray(char *arr, int start, int end) {
-    int i;
-    if (end<=start) {
-        return;
-    }
-    for (i=start; i<(end+start)/2; i++) {
-        char t = arr[i];
-        arr[i] = arr[end-i+start-1];
-        arr[end-i+start-1] = t;
+void revIntArray( int    *arr
+                , size_t  start
+                , size_t  end
+                )
+{
+    if (end <= start) return;
+
+    int swap;
+
+    for (size_t i = start; i < (end + start) / 2; i++) {
+        swap                     = arr[i];
+        arr[i]                   = arr[end - i + start - 1];
+        arr[end - i + start - 1] = swap;
     }
 }
 
-int alignmentCost(int states[], char *al1, char *al2, char *al3, int len) {
-    int i;
-    int cost = 0;
-    Trans last_st[3] = {match, match, match};
+void revCharArray( char   *arr
+                 , size_t  start
+                 , size_t  end
+                 )
+{
+    if (end <= start) return;
 
-    assert(gapOpenCost == deleteOpenCost);
+    char swap;
 
-    for (i = 0; i < len; i++) {
-        int s;
-        Trans st[3];
-        transitions(stateNum[states[i]], st);
+    for (size_t i = start; i < (end + start) / 2; i++) {
+        swap                     = arr[i];
+        arr[i]                   = arr[end - i + start - 1];
+        arr[end - i + start - 1] = swap;
+    }
+}
 
-    //    if (i>0) fprintf(stderr,"%-2d  ",cost);
+
+/**  */
+unsigned int alignmentCost( int              fsm_states[]
+                          , char            *aligned_1
+                          , char            *aligned_2
+                          , char            *aligned_3
+                          , size_t           len
+                          , global_costs_t  *globalCosts
+                          , fsm_arrays_t *globalCostArrays
+                          )
+{
+    unsigned int totalCost = 0;
+    size_t fsm_state,        // FSM fsm_state
+           localCIdx;
+
+    Trans last_fsmState_transitions[3] = { MATCH_SUB, MATCH_SUB, MATCH_SUB };
+    Trans cur_fsmState_transitions[3];
+
+    for (size_t i = 0; i < len; i++) {
+        transitions( cur_fsmState_transitions, globalCostArrays->fsmState_num[ fsm_states[i] ] );
+
+    //    if (i > 0) fprintf( stderr, "%-2d  ", totalCost );
 
         // Pay for begining a gap.
-        for (s = 0; s < 3; s++) {
-            if (st[s] != match && st[s] != last_st[s]) {
-                cost += gapOpenCost;
+        for (fsm_state = 0; fsm_state < 3; fsm_state++) {
+            if (   cur_fsmState_transitions[fsm_state] != MATCH_SUB
+                && cur_fsmState_transitions[fsm_state] != last_fsmState_transitions[fsm_state]
+               ) {
+                totalCost += globalCosts->gapOpenCost;
             }
         }
 
-        for (s = 0; s < 3; s++) {
-          last_st[s] = st[s];
+        for (fsm_state = 0; fsm_state < 3; fsm_state++) {
+            last_fsmState_transitions[fsm_state] = cur_fsmState_transitions[fsm_state];
         }
 
         // Pay for continuing an insert
-        if (countTrans(st, ins)>0) {
-            assert(countTrans(st,ins) == 1);
-            cost += gapExtendCost;
+        if (countThisTransition(cur_fsmState_transitions, INS) > 0) {
+            assert(countThisTransition(cur_fsmState_transitions,INS) == 1);
+            totalCost += globalCosts->gapExtendCost;
             continue;
         }
 
         // Pay for continuing deletes
-        cost += deleteExtendCost * countTrans(st, del);
+        totalCost += globalCosts->gapExtendCost * countThisTransition(cur_fsmState_transitions, DEL);
 
         // Pay for mismatches
         char ch[3];
-        int localCIdx = 0;
-        if (st[0] == match) {
-            assert(al1[i] != '-');
-            ch[localCIdx++] = al1[i];
+        localCIdx = 0;
+
+        if (cur_fsmState_transitions[0] == MATCH_SUB) {
+            assert(aligned_1[i] != '-');
+            ch[localCIdx++] = aligned_1[i];
         }
-        if (st[1] == match) {
-            assert(al2[i] != '-');
-            ch[localCIdx++] = al2[i];
+
+        if (cur_fsmState_transitions[1] == MATCH_SUB) {
+            assert(aligned_2[i] != '-');
+            ch[localCIdx++] = aligned_2[i];
         }
-        if (st[2] == match) {
-            assert(al3[i] != '-');
-            ch[localCIdx++] = al3[i];
+
+        if (cur_fsmState_transitions[2] == MATCH_SUB) {
+            assert(aligned_3[i] != '-');
+            ch[localCIdx++] = aligned_3[i];
         }
+
         localCIdx--;
+
         for (; localCIdx > 0; localCIdx--) {
-            if (ch[localCIdx-1] != ch[localCIdx]) {
-                cost += mismatchCost;
-            }
+            if (ch[localCIdx - 1] != ch[localCIdx])  totalCost += globalCosts->mismatchCost;
         }
-        if (countTrans(st, match)==3 && ch[0]==ch[2] && ch[0]!=ch[1]) {
-            cost -= mismatchCost;
+
+        if (   countThisTransition(cur_fsmState_transitions, MATCH_SUB) == 3
+            && ch[0] == ch[2]
+            && ch[0] != ch[1]
+           ) {
+            totalCost -= globalCosts->mismatchCost; // end pay for mismatch_costs
         }
-        // end pay for mismatches
     }
 
-    printf ("The recomputed cost is %d\n", cost);
+    printf ("The recomputed total cost is %d\n", totalCost);
 
-    return cost;
+    return totalCost;
 }
 
 

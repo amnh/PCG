@@ -5,28 +5,28 @@ sanity-warnings   = -Wall -Wextra -pedantic -fdiagnostics-color
 necessary_c_files = ../c_alignment_interface.c \
                     ../c_code_alloc_setup.c \
                     ../costMatrix.c \
-                    ../nwMatrices.c \
+                    ../alignmentMatrices.c \
                     ../dyn_character.c \
                     ../alignCharacters.c \
-                    ../ukkCheckp.c \
+                    ../ukkCheckPoint.c \
                     ../ukkCommon.c
 
 necessary_h_files = ../c_alignment_interface.h \
                     ../c_code_alloc_setup.h \
                     ../costMatrix.h \
-                    ../nwMatrices.h \
+                    ../alignmentMatrices.h \
                     ../dyn_character.h \
                     ../alignCharacters.h \
-                    ../ukkCheckp.h \
+                    ../ukkCheckPoint.h \
                     ../ukkCommon.h
 
 object_files      = c_alignment_interface.o \
                     c_code_alloc_setup.o \
                     costMatrix.o \
-                    nwMatrices.o \
+                    alignmentMatrices.o \
                     dyn_character.o \
                     alignCharacters.o \
-                    ukkCheckp.o \
+                    ukkCheckPoint.o \
                     ukkCommon.o
 
 
