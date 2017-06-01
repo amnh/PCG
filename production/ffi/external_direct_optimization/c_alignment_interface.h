@@ -93,7 +93,7 @@ int align3d( alignIO_t          *inputChar1_aio
            // , alignment_matrices_t *algn_mtxs3d
            , cost_matrices_3d_t *costMtx3d
            , unsigned int        gap_open_cost
-           , unsigned int        gap_extension_cost
+           // , unsigned int        gap_extension_cost
            );
 
 #endif // C_ALIGNMENT_INTERFACE_H

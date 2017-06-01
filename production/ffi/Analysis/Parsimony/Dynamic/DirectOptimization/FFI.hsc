@@ -432,7 +432,8 @@ foreign import ccall unsafe "c_alignment_interface.h align3d"
                 -> Ptr AlignIO -- ^ character3, input & output
                 -> Ptr AlignIO -- ^ gapped median output
                 -> Ptr AlignIO -- ^ ungapped median output
-                -> Ptr CostMatrix2d
+                -> Ptr CostMatrix3d
+                -> CInt        -- ^ gap open cost
                 -> CInt        -- ^ cost
 
 
@@ -675,7 +676,7 @@ algn3d :: ( EncodableDynamicCharacter s
                                     --
                                     --   The gapped alignment of the /third/ input character when aligned with the first & second character
                                     --
-algn3d char1 char2 char3 denseTCMs = undefined -- TODO: implement once C code is in place!
+algn3d char1 char2 char3 denseTCMs = undefined -- TODO: implement once C code is in place! Remember to add gap open cost.
 
 
 

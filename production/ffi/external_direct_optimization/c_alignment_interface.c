@@ -562,7 +562,7 @@ int align3d( alignIO_t          *inputChar1_aio
            // , alignment_matrices_t *algn_mtxs3d
            , cost_matrices_3d_t *costMtx3d
            , unsigned int        gap_open_cost
-           , unsigned int        gap_extension_cost
+           //, unsigned int        gap_extension_cost <-- This comes from tcm so is not necessary.
            )
 {
 
@@ -682,7 +682,7 @@ int align3d( alignIO_t          *inputChar1_aio
                                , retMiddleChar
                                , 1                   // mismatch cost, must be > 0
                                , gap_open_cost       // must be >= 0
-                               , gap_extension_cost  // must be > 0
+                               , 1                   // gap extension cost: must be > 0
                                );
 
     dyn_character_t *ungappedMedianChar = malloc(sizeof(dyn_character_t));

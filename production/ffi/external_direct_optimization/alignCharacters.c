@@ -5637,6 +5637,7 @@ algn_ancestor_2 ( dyn_character_t *char1
 /*
  * Given three aligned dynamic characters char1, char2, and char3, the medians between them are
  * returned in the characters gapped_median and ungapped_median, using the cost matrix stored in costMatrix.
+ * TODO: Affine costs are currently not computed.
  */
 unsigned int
 algn_get_cost_medians_3d ( dyn_character_t    *char1
@@ -5658,8 +5659,8 @@ algn_get_cost_medians_3d ( dyn_character_t    *char1
     char_end2 = char2->end;
     char_end3 = char3->end;
 
-    // TODO: does this for loop actually do anything?
-    for (int i = char1->len - 3; i >= 0; i--) {
+    // The subtracted 2 is because of extra crap that Powell adds to end of aligned sequences.
+    for (int i = char1->len - 2; i >= 0; i--) {
         interim = cm_get_median_3d( costMatrix
                                   , char1->char_begin[i]
                                   , char2->char_begin[i]
@@ -5672,6 +5673,7 @@ algn_get_cost_medians_3d ( dyn_character_t    *char1
             dyn_char_prepend(ungapped_median, interim);
         }
 
+        // NOTE that affine is not computed here.
         curCost += cm_get_cost_3d ( costMatrix
                                   , char1->char_begin[i]
                                   , char2->char_begin[i]

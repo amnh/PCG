@@ -871,6 +871,7 @@ void printTraceBack( dyn_character_t *retLesserChar
     revCharArray(resultChars->lesserStr, 0, resultChars->lesserIdx);
     revCharArray(resultChars->longerStr, 0, resultChars->longerIdx);
     revCharArray(resultChars->middleStr, 0, resultChars->middleIdx);
+
     revIntArray(fsm_states, 0, fsm_stateIdx);
     revIntArray(cost,       0, costIdx);
     // end reverse alignments
