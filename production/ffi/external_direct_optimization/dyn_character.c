@@ -22,7 +22,8 @@
 // #include "array_pool.h" ARRAY_POOL_DELETE
 #include "dyn_character.h"
 
-void dyn_char_print(dyn_char_p inChar) {
+void dyn_char_print( const dyn_character_t *inChar )
+{
     elem_t *start = inChar->char_begin;
     elem_t *end   = inChar->end;
     printf("Char length   %3zu\n", inChar->len);
@@ -40,7 +41,7 @@ char_begin (size_t cap, size_t len) {
 
 
 void
-dyn_char_set (dyn_char_p inChar, size_t pos, elem_t val)
+dyn_char_set (dyn_character_t *inChar, size_t pos, elem_t val)
 {
     if (inChar->len == 0) {
         assert (pos == 0);
@@ -52,7 +53,7 @@ dyn_char_set (dyn_char_p inChar, size_t pos, elem_t val)
 }
 
 inline void
-dyn_char_reverse_ip (dyn_char_p inChar) {
+dyn_char_reverse_ip (dyn_character_t *inChar) {
     elem_t *beginning, *end, tmp;
 
     beginning = inChar->char_begin;
@@ -68,7 +69,7 @@ dyn_char_reverse_ip (dyn_char_p inChar) {
 }
 
 void
-dyn_char_prepend (dyn_char_p a, elem_t v) {
+dyn_char_prepend (dyn_character_t *a, elem_t v) {
     if ( a->cap <= a->len ) {
         printf("Failing values: capacity: %zu, length: %zu\n", a->cap, a->len);
         assert(a->cap > a->len);
@@ -80,7 +81,7 @@ dyn_char_prepend (dyn_char_p a, elem_t v) {
 
 
 inline void
-dyn_char_reverse (dyn_char_p target, dyn_char_p source) {
+dyn_char_reverse (dyn_character_t *target, dyn_character_t *source) {
     size_t i;
     target->len = source->len;
     target->char_begin = target->array_head + (target->cap - target->len);
@@ -92,14 +93,14 @@ dyn_char_reverse (dyn_char_p target, dyn_char_p source) {
 
 
 void
-dyn_char_clear (dyn_char_p s) {
+dyn_char_clear (dyn_character_t *s) {
     s->len = 0;
     s->char_begin = s->end + 1;
 }
 
 
 inline int
-dyn_char_compare (dyn_char_p char1, dyn_char_p char2) {
+dyn_char_compare (dyn_character_t *char1, dyn_character_t *char2) {
     size_t i;
     size_t len_char1, len_char2;
     elem_t curElem1, curElem2;

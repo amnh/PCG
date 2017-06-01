@@ -14,8 +14,8 @@
 #include "../c_code_alloc_setup.h"
 #include "../debug_constants.h"
 #include "../costMatrix.h"
-#include "../nwMatrices.h"
-#include "../ukkCheckp.h"
+#include "../alignmentMatrices.h"
+#include "../ukkCheckPoint.h"
 #include "../ukkCommon.h"
 
 // #define SEQ_CAPACITY 64
@@ -53,9 +53,9 @@ int main() {
            middleCharLen,
            shortCharLen;
 
-    // elem_t *longest_vals  = malloc(sizeof(elem_t)),
+    // elem_t *longer_vals  = malloc(sizeof(elem_t)),
     //        *middle_vals   = malloc(sizeof(elem_t)),
-    //        *shortest_vals = malloc(sizeof(elem_t));
+    //        *lesser_vals = malloc(sizeof(elem_t));
 
     // Likewise, internal arrays will be alloced and realloced below.
     // dyn_char_p shortChar     = malloc( sizeof(dyn_character_t) );
@@ -67,14 +67,14 @@ int main() {
     // dyn_char_p retMiddleChar = malloc( sizeof(dyn_character_t) );
     // dyn_char_p retShortChar  = malloc( sizeof(dyn_character_t) );
 
-    alignIO_p inputChar1  = malloc(sizeof(struct alignIO));    // inputs to align2d fn.
-    alignIO_p inputChar2  = malloc(sizeof(struct alignIO));    // inputs to align2d fn.
-    alignIO_p inputChar3  = malloc(sizeof(struct alignIO));    // additional input to align3d fn.
+    alignIO_t *inputChar1 = malloc( sizeof(struct alignIO_t) );    // inputs to align2d fn.
+    alignIO_t *inputChar2 = malloc( sizeof(struct alignIO_t) );    // inputs to align2d fn.
+    alignIO_t *inputChar3 = malloc( sizeof(struct alignIO_t) );    // additional input to align3d fn.
 
     // various median outputs
-    alignIO_p ungappedMedianChar = malloc(sizeof(struct alignIO));
-    alignIO_p gappedMedianChar   = malloc(sizeof(struct alignIO));
-    alignIO_p unionMedianChar    = malloc(sizeof(struct alignIO));
+    alignIO_t *ungappedMedianChar = malloc( sizeof(struct alignIO_t) );
+    alignIO_t *gappedMedianChar   = malloc( sizeof(struct alignIO_t) );
+    alignIO_t *unionMedianChar    = malloc( sizeof(struct alignIO_t) );
 
     // set to 1 so I can realloc later:
     allocAlignIO(inputChar1,         1);
@@ -106,36 +106,38 @@ int main() {
      *  This particular example is both metric and symmetric. All TCMs must be
      *  symmetric. Metricity is decided by PCG application.
      */
-    int *tcm = calloc(tcm_total_len, sizeof(int)); // this is the input tcm, not the generated one
+    unsigned int *tcm = calloc(tcm_total_len, sizeof(int)); // this is the input tcm, not the generated one
     for (i = 0; i < tcm_total_len; i += alphSize) {
         //printf("i: %zu\n", i);
         for (j = 0; j < alphSize; j++) {
-            //printf("i: %zu, j: %zu, cost: %lu\n", i, j, 2 * i + 2 * j);
             //tcm[i + j] = 2 * i + 2 * j;
             if ( i == j * alphSize ) {
                 tcm[i + j] = IDENTITY_COST;    // identity
+                printf("i: %zu, j: %zu, cost: %d\n", i, j, IDENTITY_COST);
             } else if (i == (tcm_total_len - alphSize) || j == (alphSize - 1)) {
                 tcm[i + j] = INDEL_COST;       // indel cost
+                printf("i: %zu, j: %zu, cost: %d\n", i, j, INDEL_COST);
             } else {
                 tcm[i + j] = SUB_COST;         // sub cost
+                printf("i: %zu, j: %zu, cost: %d\n", i, j, SUB_COST);
             }
          }
     }
 
-    cost_matrices_2d_p costMtx2d        = malloc(sizeof(struct cost_matrices_2d));
-    cost_matrices_2d_p costMtx2d_affine = malloc(sizeof(struct cost_matrices_2d));
-    cost_matrices_3d_p costMtx3d        = malloc(sizeof(struct cost_matrices_3d));
+    cost_matrices_2d_t *costMtx2d        = malloc(sizeof(struct cost_matrices_2d_t));
+    cost_matrices_2d_t *costMtx2d_affine = malloc(sizeof(struct cost_matrices_2d_t));
+    cost_matrices_3d_t *costMtx3d        = malloc(sizeof(struct cost_matrices_3d_t));
 
     if(DO_2D) {
-        setUp2dCostMtx (tcm, alphSize, 0, costMtx2d);
+        setUp2dCostMtx (costMtx2d, tcm, alphSize, 0);
     }
 
     if(DO_2D_AFF) {
-        setUp2dCostMtx (tcm, alphSize, GAP_OPEN_COST, costMtx2d_affine);
+        setUp2dCostMtx (costMtx2d_affine, tcm, alphSize, GAP_OPEN_COST);
     }
 
     if(DO_3D) {
-        setUp3dCostMtx (tcm, alphSize, 0, costMtx3d);
+        setUp3dCostMtx (costMtx3d, tcm, alphSize, 0);
     }
 
 
@@ -154,11 +156,11 @@ int main() {
 //             maxLength    = longCharLen + shortCharLen + 2; // 2 because there are two gaps added (1 on beginning of each character)
 
 //             // need to realloc each time through the loop
-//             longest_vals  = realloc( longest_vals,   longCharLen  * sizeof(elem_t) );
-//             shortest_vals = realloc( shortest_vals,  shortCharLen * sizeof(elem_t) );
+//             longer_vals  = realloc( longer_vals,   longCharLen  * sizeof(elem_t) );
+//             lesser_vals = realloc( lesser_vals,  shortCharLen * sizeof(elem_t) );
 
-//             set_vals( longest_vals,  longCharLen,  max_val);
-//             set_vals( shortest_vals, shortCharLen, max_val);
+//             set_vals( longer_vals,  longCharLen,  max_val);
+//             set_vals( lesser_vals, shortCharLen, max_val);
 
 //             // need to allocate space for return alignIOs, as they're no longer alloc'ed in c_alignment_interface
 //             reallocAlignIO(inputChar1, maxLength);
@@ -167,8 +169,8 @@ int main() {
 //             reallocAlignIO(ungappedMedianChar, maxLength);
 //             reallocAlignIO(gappedMedianChar,   maxLength);
 
-//             copyValsToAIO(inputChar1, longest_vals,  longCharLen,  maxLength);
-//             copyValsToAIO(inputChar2, shortest_vals, shortCharLen, maxLength);
+//             copyValsToAIO(inputChar1, longer_vals,  longCharLen,  maxLength);
+//             copyValsToAIO(inputChar2, lesser_vals, shortCharLen, maxLength);
 
 //             allocAlignIO(unionMedianChar,    maxLength);
 
@@ -257,8 +259,8 @@ int main() {
 //             resetAlignIO(ungappedMedianChar);
 //             resetAlignIO(gappedMedianChar);
 
-//             copyValsToAIO(inputChar1, longest_vals, longCharLen, maxLength);
-//             copyValsToAIO(inputChar2, shortest_vals, shortCharLen, maxLength);
+//             copyValsToAIO(inputChar1, longer_vals, longCharLen, maxLength);
+//             copyValsToAIO(inputChar2, lesser_vals, shortCharLen, maxLength);
 
 //             printf("\n\n********** Gapped only (ungapped should be empty): **********\n");
 //             printf("  \n*******************Original 2d characters:*******************\n");
@@ -295,16 +297,16 @@ int main() {
 //             resetAlignIO(ungappedMedianChar);
 //             resetAlignIO(gappedMedianChar);
 
-//             copyValsToAIO(inputChar1, longest_vals,  longCharLen,  maxLength);
-//             copyValsToAIO(inputChar2, shortest_vals, shortCharLen, maxLength);
+//             copyValsToAIO(inputChar1, longer_vals,  longCharLen,  maxLength);
+//             copyValsToAIO(inputChar2, lesser_vals, shortCharLen, maxLength);
 
 //             resetAlignIO(inputChar1);
 //             resetAlignIO(inputChar2);
 //             resetAlignIO(ungappedMedianChar);
 //             resetAlignIO(gappedMedianChar);
 
-//             copyValsToAIO(inputChar1, longest_vals,  longCharLen,  maxLength);
-//             copyValsToAIO(inputChar2, shortest_vals, shortCharLen, maxLength);
+//             copyValsToAIO(inputChar1, longer_vals,  longCharLen,  maxLength);
+//             copyValsToAIO(inputChar2, lesser_vals, shortCharLen, maxLength);
 
 //             printf("\n\n******************** Gapped and ungapped: ******************\n");
 //             printf(  "\n****************** Original 2d characters: *****************\n");
@@ -344,8 +346,8 @@ int main() {
 //             resetAlignIO(ungappedMedianChar);
 //             resetAlignIO(gappedMedianChar);
 
-//             copyValsToAIO(inputChar1, longest_vals, longCharLen, maxLength);
-//             copyValsToAIO(inputChar2, shortest_vals, shortCharLen, maxLength);
+//             copyValsToAIO(inputChar1, longer_vals, longCharLen, maxLength);
+//             copyValsToAIO(inputChar2, lesser_vals, shortCharLen, maxLength);
 
 //             printf("\n\n********** Gapped and union (ungapped should be empty, union should override ungapped): **********\n");
 //             printf(  "\n************************************ Original 2d characters: *************************************\n");
@@ -401,11 +403,11 @@ int main() {
 //                 shortCharLen = rand() % CHAR_LENGTH + 1;                // to make sure that the alignment works with switched lengths
 //                 maxLength    = longCharLen + shortCharLen + 2; // 2 because there are two gaps added (1 on beginning of each character)
 
-//                 longest_vals  = realloc( longest_vals,   longCharLen  * sizeof(elem_t) );
-//                 shortest_vals = realloc( shortest_vals,  shortCharLen * sizeof(elem_t) );
+//                 longer_vals  = realloc( longer_vals,   longCharLen  * sizeof(elem_t) );
+//                 lesser_vals = realloc( lesser_vals,  shortCharLen * sizeof(elem_t) );
 
-//                 set_vals( longest_vals,  longCharLen,  max_val);
-//                 set_vals( shortest_vals, shortCharLen, max_val);
+//                 set_vals( longer_vals,  longCharLen,  max_val);
+//                 set_vals( lesser_vals, shortCharLen, max_val);
 //             }
 //             // printf("long len: %2zu short len: %2zu\n", longCharLen, shortCharLen);
 
@@ -416,8 +418,8 @@ int main() {
 //             reallocAlignIO(ungappedMedianChar, maxLength);
 //             reallocAlignIO(gappedMedianChar,   maxLength);
 
-//             copyValsToAIO(inputChar1, longest_vals,  longCharLen,  maxLength);
-//             copyValsToAIO(inputChar2, shortest_vals, shortCharLen, maxLength);
+//             copyValsToAIO(inputChar1, longer_vals,  longCharLen,  maxLength);
+//             copyValsToAIO(inputChar2, lesser_vals, shortCharLen, maxLength);
 
 //             printf("\n\n******* Cost only (all characters should be empty): ********\n");
 //             printf("  \n***************** Original 2d characters: ******************\n");
@@ -453,8 +455,8 @@ int main() {
 //             resetAlignIO(ungappedMedianChar);
 //             resetAlignIO(gappedMedianChar);
 
-//             copyValsToAIO(inputChar1, longest_vals,  longCharLen,  maxLength);
-//             copyValsToAIO(inputChar2, shortest_vals, shortCharLen, maxLength);
+//             copyValsToAIO(inputChar1, longer_vals,  longCharLen,  maxLength);
+//             copyValsToAIO(inputChar2, lesser_vals, shortCharLen, maxLength);
 
 //             printf("\n\n*********************** With medians: ***********************\n");
 //             printf("  \n****************** Original 2d characters: ******************\n");
@@ -506,19 +508,19 @@ int main() {
 
         for (i = 0; i < 1; i++) { // run 30 tests
 
-            longCharLen   = 72; // rand() % CHAR_LENGTH + 1;
-            middleCharLen = 54; // rand() % CHAR_LENGTH + 1;
-            shortCharLen  = 47; // rand() % CHAR_LENGTH + 1;
+            longCharLen   = 7; // rand() % CHAR_LENGTH + 1;
+            middleCharLen = 5; // rand() % CHAR_LENGTH + 1;
+            shortCharLen  = 4; // rand() % CHAR_LENGTH + 1;
             maxLength     = longCharLen + middleCharLen + shortCharLen + 3; // 3 because there are three gaps added (1 on beginning of each character)
 
             // need to realloc each time through the loop
-            elem_t longest_vals[72]  = {3, 9, 9, 7, 5, 5, 7, 2, 10, 5, 7, 7, 10, 1, 6, 8, 15, 7, 5, 3, 11, 9, 7, 13, 13, 11, 11, 1, 14, 12, 15, 8, 15, 14, 8, 13, 6, 9, 11, 1, 6, 5, 12, 9, 15, 6, 15, 15, 7, 15, 1, 8, 2, 13, 14, 5, 6, 12, 11, 11, 15, 5, 5, 11, 1, 2, 7, 15, 1, 7, 15, 11}; // realloc( longest_vals,  longCharLen   * sizeof(elem_t) );
-            elem_t middle_vals[54]   = {3, 12, 7, 10, 1, 4, 9, 12, 14, 12, 4, 11, 4, 12, 7, 9, 7, 10, 9, 14, 13, 4, 12, 1, 13, 14, 14, 8, 8, 15, 9, 15, 4, 5, 8, 11, 6, 10, 8, 2, 6, 6, 8, 10, 14, 11, 4, 11, 8, 2, 2, 13, 14, 10}; // realloc( middle_vals,   middleCharLen * sizeof(elem_t) );
-            elem_t shortest_vals[47] = {7, 9, 3, 12, 4, 15, 5, 7, 9, 13, 15, 11, 12, 8, 5, 15, 6, 1, 7, 7, 15, 7, 11, 6, 8, 11, 5, 13, 7, 10, 5, 6, 10, 14, 8, 2, 3, 1, 15, 7, 7, 7, 7, 7, 7, 7, 7}; // realloc( shortest_vals, shortCharLen  * sizeof(elem_t) );
+            elem_t longer_vals[7] = {3, 12, 7, 9, 9, 4, 9}; // realloc( longer_vals,  longCharLen   * sizeof(elem_t) );
+            elem_t middle_vals[5] = {3, 9, 9, 7, 5}; // realloc( middle_vals,   middleCharLen * sizeof(elem_t) );
+            elem_t lesser_vals[4] = {7, 9, 9, 4}; // realloc( lesser_vals, shortCharLen  * sizeof(elem_t) );
 
-            // set_vals( longest_vals,  longCharLen,   max_val);
+            // set_vals( longer_vals,  longCharLen,   max_val);
             // set_vals( middle_vals,   middleCharLen, max_val);
-            // set_vals( shortest_vals, shortCharLen,  max_val);
+            // set_vals( lesser_vals, shortCharLen,  max_val);
 
             reallocAlignIO(inputChar1, maxLength);
             reallocAlignIO(inputChar2, maxLength);
@@ -527,9 +529,9 @@ int main() {
             reallocAlignIO(ungappedMedianChar, maxLength);
             reallocAlignIO(gappedMedianChar,   maxLength);
 
-            copyValsToAIO(inputChar1, longest_vals,  longCharLen,   maxLength);
+            copyValsToAIO(inputChar1, longer_vals,  longCharLen,   maxLength);
             copyValsToAIO(inputChar2, middle_vals,   middleCharLen, maxLength);
-            copyValsToAIO(inputChar3, shortest_vals, shortCharLen,  maxLength);
+            copyValsToAIO(inputChar3, lesser_vals, shortCharLen,  maxLength);
 
             printf("\n\n\n******************** Align 3 characters **********************\n\n");
             printf(      "*****************  Original 3d characters:  ******************\n");
@@ -543,6 +545,8 @@ int main() {
                               , ungappedMedianChar
                               , gappedMedianChar
                               , costMtx3d
+                              , 2        // gap open cost
+                              // , 1        // gap extension cost
                               );
             // if (DEBUG_MAT) {
             //     printf("\n\nFinal alignment matrix: \n\n");
@@ -556,13 +560,13 @@ int main() {
 
             printf("Alignment cost: %d\n", algnCost);
 
-            printf("\nGapped character\n  ");
+            printf("\nGapped median\n  ");
             alignIO_print(gappedMedianChar);
 
             printf("alphSize: %zu\n", alphSize);
             printf("gap char: %u\n",  gap_char);
 
-            printf("\nUngapped character\n  ");
+            printf("\nUngapped median\n  ");
             alignIO_print(ungappedMedianChar);
 
             printf("\n\n\n");
@@ -586,9 +590,9 @@ int main() {
         medianChar->length    = 0;
         medianChar->capacity  = maxLength;
 
-        copyValsToAIO(inputChar1, longest_vals,  longCharLen,   maxLength);
+        copyValsToAIO(inputChar1, longer_vals,  longCharLen,   maxLength);
         copyValsToAIO(inputChar2, middle_vals,   middleCharLen, maxLength);
-        copyValsToAIO(char3, shortest_vals, shortCharLen,  maxLength);
+        copyValsToAIO(char3, lesser_vals, shortCharLen,  maxLength);
 
         // printf("Original alignment matrix before algn_nw_2d: \n");
         // algn_print_dynmtrx_2d( longChar, shortChar, algn_mtxs2d );
@@ -637,7 +641,7 @@ int main() {
 */
 
     // Next this: algn_get_median_3d (dyn_char_p inputChar1, dyn_char_p inputChar2, dyn_char_p char3,
-    //                cost_matrices_3d_p m, dyn_char_p sm)
+    //                cost_matrices_3d_t *m, dyn_char_p sm)
 
     if(DO_2D)     freeCostMtx(costMtx2d,        1);
     if(DO_2D_AFF) freeCostMtx(costMtx2d_affine, 1);  // 1 is 2d

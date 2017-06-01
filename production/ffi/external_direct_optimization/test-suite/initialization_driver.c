@@ -6,7 +6,7 @@
 #include "../c_code_alloc_setup.h"
 #include "../debug_constants.h"
 // #include "../costMatrix.h"
-#include "../nwMatrices.h"
+#include "../alignmentMatrices.h"
 #include "../ukkCheckp.h"
 #include "../ukkCommon.h"
 
@@ -134,10 +134,10 @@ int main() {
 
     /****************  Allocate NW matrices  ****************/
     // in following, penultimate parameter was ukk flag, used only to set up 3d matrices.
-    nw_matrices_p algn_mtxs2d       = malloc( sizeof(nwMatrices_t) );
-    nw_matrices_p algn_mtxs2dAffine = malloc( sizeof(nwMatrices_t) );
-    nw_matrices_p algn_mtxs3d       = malloc( sizeof(nwMatrices_t) );
-    nw_matrices_p algn_mtxs3dAffine = malloc( sizeof(nwMatrices_t) );
+    nw_matrices_p algn_mtxs2d       = malloc( sizeof(alignmentMatrices_t) );
+    nw_matrices_p algn_mtxs2dAffine = malloc( sizeof(alignmentMatrices_t) );
+    nw_matrices_p algn_mtxs3d       = malloc( sizeof(alignmentMatrices_t) );
+    nw_matrices_p algn_mtxs3dAffine = malloc( sizeof(alignmentMatrices_t) );
 
     if (DO_2D) {
         initializeNWMtx(algn_mtxs2d,       longChar->len, shortChar->len,  0,             costMtx2d->costMatrixDimension);

@@ -33,7 +33,7 @@ cabal-version:       >= 1.22
 
 flag build-cpp-files
   description: Toggles the C++ files being successfully build.
-  default: True
+  default: False
 
 
 library
@@ -128,10 +128,10 @@ library
     ffi/external_direct_optimization/c_alignment_interface.c
     ffi/external_direct_optimization/c_code_alloc_setup.c
     ffi/external_direct_optimization/costMatrix.c
-    ffi/external_direct_optimization/nwMatrices.c
+    ffi/external_direct_optimization/alignmentMatrices.c
     ffi/external_direct_optimization/dyn_character.c
     ffi/external_direct_optimization/alignCharacters.c
-    ffi/external_direct_optimization/ukkCheckp.c
+    ffi/external_direct_optimization/ukkCheckPoint.c
     ffi/external_direct_optimization/ukkCommon.c
     -- ffi/memoized_tcm/dynamicCharacterOperations.h
     ffi/memoized_tcm/dynamicCharacterOperations.c
