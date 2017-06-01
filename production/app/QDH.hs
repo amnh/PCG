@@ -4,7 +4,7 @@ import Analysis.ImpliedAlignment.DynamicProgramming
 import Analysis.Parsimony.Binary.Optimization
 import Bio.Metadata
 import Control.Applicative ((<|>))
-import Data.Alphabet       (constructAlphabet)
+import Data.Alphabet       (fromSymbols)
 import Data.Maybe          (fromMaybe)
 import Data.Vector         (Vector)
 import Safe                (headMay, readMay, tailMay)
@@ -51,7 +51,7 @@ exampleTree = createSimpleTree 8 "ACTG"
 defMeta :: Vector (CharacterMetadata s)
 defMeta = pure CharMeta
         { charType   = DirectOptimization
-        , alphabet   = constructAlphabet []
+        , alphabet   = fromSymbols []
         , name       = "DefaultCharacter"
         , isAligned  = False
         , isIgnored  = False

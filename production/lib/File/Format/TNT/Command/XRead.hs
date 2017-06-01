@@ -12,7 +12,9 @@
 -- and thier corresponding sequences. Sequences are well typed and may be
 -- specified as contiguous segments of character types.
 ----------------------------------------------------------------------------- 
+
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+
 module File.Format.TNT.Command.XRead where
 
 {-- TODO:
@@ -20,6 +22,7 @@ module File.Format.TNT.Command.XRead where
   - Good documentation
   - Organize this jumbled monolith
   -}
+
 
 import           Data.Bifunctor           (second)
 import           Data.Bits
@@ -34,6 +37,7 @@ import qualified Data.List.NonEmpty as NE (filter,fromList,length)
 import           Data.List.Utility
 import           Data.Map                 (assocs,insertWith,lookup)
 import           Data.Maybe               (catMaybes,fromJust,isJust)
+import           Data.Semigroup
 import           Data.Traversable
 import           File.Format.TNT.Internal
 import           Prelude           hiding (lookup)
@@ -41,15 +45,17 @@ import           Text.Megaparsec
 import           Text.Megaparsec.Custom
 import           Text.Megaparsec.Prim     (MonadParsec)
 
--- | Parses an XREAD command. Correctly validates for taxa count
--- and character sequence length. Produces one or more taxa sequences.
+
+-- |
+-- Parses an XREAD command. Correctly validates for taxa count and character
+-- sequence length. Produces one or more taxa sequences.
 xreadCommand :: (MonadParsec e s m, Token s ~ Char) => m XRead
 xreadCommand = xreadValidation =<< xreadDefinition
   where
     xreadDefinition :: (MonadParsec e s m, Token s ~ Char) => m (Int, Int, NonEmpty TaxonInfo)
     xreadDefinition = uncurry (,,) <$> xreadPreamble <*> xreadSequences <* symbol (char ';')
 
-    xreadValidation :: (MonadParsec e s m, Token s ~ Char) => (Int, Int, NonEmpty TaxonInfo) -> m XRead
+    xreadValidation :: (MonadParsec e s m {- , Token s ~ Char -}) => (Int, Int, NonEmpty TaxonInfo) -> m XRead
     xreadValidation (charCount, taxaCount, taxaSeqs)
       | null errors = pure $ XRead charCount taxaCount taxaSeqs
       | otherwise   = fails errors
@@ -65,6 +71,7 @@ xreadCommand = xreadValidation =<< xreadDefinition
                               , show $ length taxaSeqs
                               , ")"
                               ]
+
         charCountError = case NE.filter ((/= charCount) . snd) . fmap (second length) $ taxaSeqs of
                            [] -> Nothing
                            xs -> Just $ concat
@@ -73,14 +80,19 @@ xreadCommand = xreadValidation =<< xreadDefinition
                               , ") does not match the number of chararacters found for the following taxa:\n"
                               , unlines $ prettyPrint <$> xs
                               ]                            
+
         prettyPrint (name, num) = concat ["\t",show name," found (",show num,") characters"]
 
--- | Consumes everything in the XREAD command prior to the taxa sequences.
+
+-- |
+-- Consumes everything in the XREAD command prior to the taxa sequences.
 -- Produces the expected taxa count and the length of the character sequences.
 xreadPreamble :: (MonadParsec e s m, Token s ~ Char) => m (Int, Int)
 xreadPreamble = xreadHeader *> ((,) <$> xreadCharCount <*> xreadTaxaCount)
 
--- | The superflous information of an XREAD command.
+
+-- |
+-- The superflous information of an XREAD command.
 -- Consumes the XREAD string identifier and zero or more comments
 -- preceeding the taxa count and character cound parameters
 xreadHeader :: (MonadParsec e s m, Token s ~ Char) => m ()
@@ -92,17 +104,23 @@ xreadHeader =  symbol (keyword "xread" 2)
       where
         delimiter = char '\''
 
--- | The number of taxa present in the XREAD command.
+
+-- |
+-- The number of taxa present in the XREAD command.
 -- __Naturally__ this number must be a positive integer.
 xreadTaxaCount :: (MonadParsec e s m, Token s ~ Char) => m Int
 xreadTaxaCount = symbol $ flexiblePositiveInt "taxa count" 
 
--- | The number of characters in a taxon sequence for this XREAD command.
+
+-- |
+-- The number of characters in a taxon sequence for this XREAD command.
 -- __Naturally__ this number must be a non-negative integer.
 xreadCharCount :: (MonadParsec e s m, Token s ~ Char) => m Int
 xreadCharCount = symbol $ flexibleNonNegativeInt "character count"
 
--- | Reads one or more taxon sequences.
+
+-- |
+-- Reads one or more taxon sequences.
 -- Performs deinterleaving of identically named taxon sequences. 
 -- ==== __Examples__
 --
@@ -125,62 +143,73 @@ xreadSequences = NE.fromList . deinterleaveTaxa <$> taxonSequence
     deinterleaveTaxa = assocs . fmap toList . foldr f mempty
     f (taxaName, taxonSeq) = insertWith append taxaName (DL.fromList taxonSeq)
 
--- | Parses a taxon name and sequence of characters for a given character.
+
+-- |
+-- Parses a taxon name and sequence of characters for a given character.
 -- Character values can be one of 64 states ordered @[0..9,A..Z,a..z]@ and
 -- also the Chars @\'-\'@ & @\'?\'@.
 -- Taxon name cannot contain spaces or the @\';\'@ character.
 taxonSequence :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty TaxonInfo)
 taxonSequence = NE.fromList . toList . DL.concat <$> some taxonSequenceSegment
 
--- | Parses the taxon name prepending a taxon sequence. A taxon name cannot
---   begin with with the prefix '"&["' as this make the taxon name ambiguous
---   with a character type segmentation specifcation. Taxon names cannot
---   contain the characters '"().;"' as this makes it impossible to parse
---   other things that I forget. Maybe I'll remember and add that info some day.
+
+-- |
+-- Parses the taxon name prepending a taxon sequence. A taxon name cannot begin
+-- with with the prefix '"&["' as this make the taxon name ambiguous with a
+-- character type segmentation specifcation. Taxon names cannot contain the
+-- characters '"().;"' as this makes it impossible to parse other things that I
+-- forget. Maybe I'll remember and add that info some day.
 taxonName :: (MonadParsec e s m, Token s ~ Char) => m String
 taxonName = notFollowedBy (string "&[") *> some validNameChar
   where
     validNameChar = satisfy (\x -> (not . isSpace) x && x `notElem` "(),;")
 
--- | Represents a partial taxon sequence. The sequence segment can either have
---   it's character type specified explicitly by a tag or the sequence segment
---   will be interpreted as the default discrete character type.
-taxonSequenceSegment :: (MonadParsec e s m, Token s ~ Char) => m (DList TaxonInfo)
-taxonSequenceSegment = choice [ try taggedInterleaveBlock
-                              ,    defaultInterleaveBlock
-                              ]
 
--- | The default sequence segment type is of discrete characters.
+-- |
+-- Represents a partial taxon sequence. The sequence segment can either have it's
+-- character type specified explicitly by a tag or the sequence segment will be
+-- interpreted as the default discrete character type.
+taxonSequenceSegment :: (MonadParsec e s m, Token s ~ Char) => m (DList TaxonInfo)
+taxonSequenceSegment = choice
+    [ try taggedInterleaveBlock
+    ,    defaultInterleaveBlock
+    ]
+
+
+-- |
+-- The default sequence segment type is of discrete characters.
 defaultInterleaveBlock :: (MonadParsec e s m, Token s ~ Char) => m (DList TaxonInfo)
 defaultInterleaveBlock = discreteSegments
+
 
 -- Sequence definitions
 --------------------------------------------------------------------------------
 
--- | A sequence segment consisting of real valued literals or '?' characters to
---   represent a missing value.
+
+-- |
+-- A sequence segment consisting of real valued literals or '?' characters to
+-- represent a missing value.
 continuousSequence :: (MonadParsec e s m, Token s ~ Char) => m [TntContinuousCharacter]
 continuousSequence = many (missingValue <|> presentValue)
   where
     presentValue = Just       <$> double   <* whitespaceInline
     missingValue = Nothing    <$  char '?' <* whitespaceInline
 
--- | A sequence consisting of characters states which are a prefix of the list:
---   '"?-" <> [\'0\'..\'9\'] <> [\'a\'..\'z\'] <> [\'A\'..\'Z\']'. Ambiguity
---   groups are specified by braces enclosing two or more state values. Results
---   are bitpacked into a 64 bit structure with the ordering specified by
---   'TntDiscreteCharacter'.
-discreteSequence :: (MonadParsec e s m, Token s ~ Char) => m [TntDiscreteCharacter]
-discreteSequence = many discreteCharacter
+
+-- |
+-- Parses a collection of discrete characters.
+-- Intended to be reused as a primative for other XREAD combinators.
+coreDiscreteSequenceThatGetsReused :: (MonadParsec e s m, Token s ~ Char) => m [TntDiscreteCharacter]
+coreDiscreteSequenceThatGetsReused = many discreteCharacter
   where
-    discreteCharacter         = (ambiguityCharacter <|> singletonCharacter) <* whitespaceInline
-    singletonCharacter        = bitPack . pure <$> stateToken
-    ambiguityCharacter        = bitPack <$> (validateAmbiguityGroup =<< withinBraces (many stateToken))
-    stateToken                = characterStateChar <* whitespaceInline
-    bitPack                   = foldr (.|.) zeroBits . catMaybes . fmap (`lookup` deserializeStateDiscrete)
+    discreteCharacter  = (ambiguityCharacter <|> singletonCharacter) <* whitespaceInline
+    singletonCharacter = bitPack . pure <$> stateToken
+    ambiguityCharacter = bitPack <$> (validateAmbiguityGroup =<< withinBraces (many stateToken))
+    stateToken         = characterStateChar <* whitespaceInline
+    bitPack            = foldr (.|.) zeroBits . catMaybes . fmap (`lookup` deserializeStateDiscrete)
     validateAmbiguityGroup xs
       | null xs    = fail   "An ambiguity group containing no character states was found."
-      | hasDupes   = fail $ "An ambiguity group contains duplicate character states: " ++ show dupes ++ "."
+      | hasDupes   = fail $ "An ambiguity group contains duplicate character states: " <> show dupes <> "."
       | hasMissing = fail   "An ambiguity group contains a \"missing data\" character state: '?'."
       | hasGap     = fail   "An ambiguity group contains a \"gap\" character state: '-'."
       | otherwise  = pure xs
@@ -190,61 +219,97 @@ discreteSequence = many discreteCharacter
         hasMissing = '?' `elem` xs && not (isSingleton xs)
         hasGap     = '-' `elem` xs && not (isSingleton xs)
 
--- | A sequence segment containing dna character states. This sequence segment
---   can contain IUPAC codes which will be converted to abiguity groups, or
---   explicit ambiguity group notation with braces. Ambiguity groups are
---   bitpacked into 8 bit structures with the bit ordering specified by
---   'TntDnaCharacter'.
-dnaSequence :: (MonadParsec e s m, Token s ~ Char) => m [TntDnaCharacter]
-dnaSequence = mapM discreteToDna =<< discreteSequence
 
--- | A sequence segment containing protein character states. This sequence
---   segment can contain IUPAC codes which will be converted to abiguity groups,
---   or explicit ambiguity group notation with braces. Ambiguity groups are
---   bitpacked into 8 bit structures with the bit ordering specified by
---   'TntProteinCharacter'.
+-- |
+-- A sequence consisting of characters states which are a prefix of the list:
+-- '"?-" <> [\'0\'..\'9\'] <> [\'a\'..\'z\'] <> [\'A\'..\'Z\']'. Ambiguity
+-- groups are specified by braces enclosing two or more state values. Results
+-- are bitpacked into a 64 bit structure with the ordering specified by
+-- 'TntDiscreteCharacter'.
+--
+-- Remeber that you can never have the character literal @'-'@ mean gap. It means
+-- missing. Why not use @'?'@ and just say what you mean? We'll never know.
+-- So we substitute gaps for missing in discrete charcters.
+discreteSequence :: (MonadParsec e s m, Token s ~ Char) => m [TntDiscreteCharacter]
+discreteSequence = substituteGapForMissingBecauseOfReasonsIllNeverUnderstand coreDiscreteSequenceThatGetsReused
+  where
+    gapOnlyChar = deserializeStateDiscrete ! '-'
+    missingChar = deserializeStateDiscrete ! '?'
+    substituteGapForMissingBecauseOfReasonsIllNeverUnderstand = fmap (fmap f)
+      where
+        f c
+          | c .&. gapOnlyChar /= zeroBits = missingChar
+          | otherwise                     = c
+
+
+-- |
+-- A sequence segment containing dna character states. This sequence segment
+-- can contain IUPAC codes which will be converted to abiguity groups, or
+-- explicit ambiguity group notation with braces. Ambiguity groups are
+-- bitpacked into 8 bit structures with the bit ordering specified by
+-- 'TntDnaCharacter'.
+dnaSequence :: (MonadParsec e s m, Token s ~ Char) => m [TntDnaCharacter]
+dnaSequence = mapM discreteToDna =<< coreDiscreteSequenceThatGetsReused
+
+
+-- |
+-- A sequence segment containing protein character states. This sequence segment
+-- can contain IUPAC codes which will be converted to abiguity groups, or
+-- explicit ambiguity group notation with braces. Ambiguity groups are bitpacked
+-- into 8 bit structures with the bit ordering specified by 'TntProteinCharacter'.
 proteinSequence :: (MonadParsec e s m, Token s ~ Char) => m [TntProteinCharacter]
-proteinSequence = mapM discreteToProtein =<< discreteSequence
+proteinSequence = mapM discreteToProtein =<< coreDiscreteSequenceThatGetsReused
+
 
 -- Sequence normalization & support
 --------------------------------------------------------------------------------
 
--- | A conversion function from a discrete character ambiguity group to a dna
---   character ambiguity group. The mapping is not injective and unmatched
---   discrete character values will result in a parse error being raised.
-discreteToDna :: (MonadParsec e s m, Token s ~ Char) => TntDiscreteCharacter -> m TntDnaCharacter
+
+-- |
+-- A conversion function from a discrete character ambiguity group to a dna
+-- character ambiguity group. The mapping is not injective and unmatched
+-- discrete character values will result in a parse error being raised.
+discreteToDna :: (MonadParsec e s m {- , Token s ~ Char -}) => TntDiscreteCharacter -> m TntDnaCharacter
 discreteToDna character = foldl (.|.) zeroBits <$> mapM f flags
   where
     flags = bitsToFlags character
     toDna = (`lookup` deserializeStateDna) . (serializeStateDiscrete !)
     f x   = case toDna x of
-              Nothing -> fail $ "The character state '" ++ [serializeStateDiscrete ! x] ++ "' is not a valid DNA character state." 
+              Nothing -> fail $ "The character state '" <> [serializeStateDiscrete ! x] <> "' is not a valid DNA character state." 
               Just b  -> pure b
 
--- | A conversion function from a discrete character ambiguity group to a
---   protein character ambiguity group. The mapping is not injective and
---   unmatched discrete character values will result in a parse error being
---   raised.
-discreteToProtein :: (MonadParsec e s m, Token s ~ Char) => TntDiscreteCharacter -> m TntProteinCharacter
+
+-- |
+-- A conversion function from a discrete character ambiguity group to a
+-- protein character ambiguity group. The mapping is not injective and
+-- unmatched discrete character values will result in a parse error being
+-- raised.
+discreteToProtein :: (MonadParsec e s m {- , Token s ~ Char -}) => TntDiscreteCharacter -> m TntProteinCharacter
 discreteToProtein character = foldl (.|.) zeroBits <$> mapM f flags
   where
     flags     = bitsToFlags character
     toProtein = (`lookup` deserializeStateProtein) . (serializeStateDiscrete !)
-    f x       = case toProtein x of
-                  Nothing -> fail $ "The character state '" ++ [serializeStateDiscrete ! x] ++ "' is not a valid amino acid character state." 
-                  Just b  -> pure b
+    f x       =
+        case toProtein x of
+          Nothing -> fail $ "The character state '" <> [serializeStateDiscrete ! x] <> "' is not a valid amino acid character state." 
+          Just b  -> pure b
 
--- | Represents the terminal character sequence for a chatacter sequence.
---   Nomenclature ambiguities /are fun!/
+
+-- |
+-- Represents the terminal character sequence for a chatacter sequence.
+-- Nomenclature ambiguities /are fun!/
 segmentTerminal :: (MonadParsec e s m, Token s ~ Char) => m Char
 segmentTerminal = whitespaceInline *> endOfLine <* whitespace
 
--- | Takes a 'zeroBits' bit value, a 'Foldable' structure of 'Char's to represent
---   the ordered alphabet and a 'Traversable' structure of 'Char's to be bit
---   encoded. Constructs a bit value with a bit set for each 'Char' in the
---   'Traversable' structure where the index of the set bit in the bit value is
---   equal to the index of where the 'Char' first occured in the ordered alphabet
---   'Foldable' structure.
+
+-- |
+-- Takes a 'zeroBits' bit value, a 'Foldable' structure of 'Char's to represent
+-- the ordered alphabet and a 'Traversable' structure of 'Char's to be bit
+-- encoded. Constructs a bit value with a bit set for each 'Char' in the
+-- 'Traversable' structure where the index of the set bit in the bit value is
+-- equal to the index of where the 'Char' first occured in the ordered alphabet
+-- 'Foldable' structure.
+--
 -- ==== __Examples__
 --
 -- Basic usage:
@@ -262,22 +327,30 @@ toBits b xs = foldr (.|.) b . fmap setFlag
           | e == x    = (i  ,Just i )
           | otherwise = (i+1,Nothing) 
 
--- | Represents a sequence segement tag specification identified by the
---   parameter combinator.
+
+-- |
+-- Represents a sequence segement tag specification identified by the
+-- parameter combinator.
 tagIdentifier :: (MonadParsec e s m, Token s ~ Char) => m a -> m ()
 tagIdentifier c = symbol (char '&') *> symbol (withinBraces c) $> ()
 
--- | Represents the parameter combinator within braces.
+
+-- |
+-- Represents the parameter combinator within braces.
 withinBraces :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
 withinBraces = between (f '[') (f ']')
   where
     f c = char c <* whitespaceInline 
 
--- | An append efficient datastructure containing 'TntCharacter's.
---   Used to efficiently concatenat many interleaved taxon sequence segments.
+
+-- |
+-- An append efficient datastructure containing 'TntCharacter's.
+-- Used to efficiently concatenat many interleaved taxon sequence segments.
 type TntCharacterSegment = DList TntCharacter
 
--- | Different possible tags specifications for a given sequence segment.
+
+-- |
+-- Different possible tags specifications for a given sequence segment.
 data XReadTag
    = TagContinuous
    | TagDna
@@ -289,8 +362,9 @@ data XReadTag
    | TagTrimTail
    deriving (Eq,Ord,Show)
 
--- | Different possible parse interpretations derived from a sequence segment
---   tag.
+
+-- |
+-- Different possible parse interpretations derived from a sequence segment tag.
 data XReadParseType
    = ParseContinuous
    | ParseDna
@@ -298,8 +372,9 @@ data XReadParseType
    | ParseProtein
    deriving (Eq)
 
--- | The complete parse interpretation context derived from a sequence segment
---   tag.
+
+-- |
+-- The complete parse interpretation context derived from a sequence segment tag.
 data XReadInterpretation
    = XReadInterpretation
    { parseType     :: XReadParseType
@@ -308,15 +383,19 @@ data XReadInterpretation
    , parseTrimTail :: Bool
    } deriving (Eq)
 
--- | Parses a tagged sequence segment. First parses a sequence segment tag.
---   Then validates that mutually exclusive tags do not exist. Parses a sequence
---   segment based on the contextual information derived from the sequence
---   segment tag. Applies any transformations to the sequence segment that were
---   specified by the sequence segment tag context.
+
+-- |
+-- Parses a tagged sequence segment. First parses a sequence segment tag.
+-- Then validates that mutually exclusive tags do not exist. Parses a sequence
+-- segment based on the contextual information derived from the sequence segment
+-- tag. Applies any transformations to the sequence segment that were specified
+-- by the sequence segment tag context.
 taggedInterleaveBlock :: (MonadParsec e s m, Token s ~ Char) => m (DList TaxonInfo)
 taggedInterleaveBlock = nightmare =<< xreadTags
 
--- | “Beware that, when ~~fighting monsters~~ writing parsers,
+
+-- |
+-- “Beware that, when ~~fighting monsters~~ writing parsers,
 --    you yourself do not become a monster...
 --    for when you gaze long into the abyss,
 --    the abyss gazes also into you.”
@@ -335,29 +414,42 @@ nightmare interpretation = transformation <$> segment
                 ParseNumeric    -> discreteSegments
                 ParseProtein    -> proteinSegments
 
+
 continuousSegments, dnaSegments, discreteSegments, proteinSegments :: (MonadParsec e s m, Token s ~ Char) => m (DList TaxonInfo)
 
--- | Parses one or more continuous sequence segments.
+
+-- |
+-- Parses one or more continuous sequence segments.
 continuousSegments = segmentsOf (fmap Continuous <$> continuousSequence)
 
--- | Parses one or more dna sequence segments.
+
+-- |
+-- Parses one or more dna sequence segments.
 dnaSegments        = segmentsOf (fmap Dna        <$> dnaSequence)
 
--- | Parses one or more discrete sequence segments.
+
+-- |
+-- Parses one or more discrete sequence segments.
 discreteSegments   = segmentsOf (fmap Discrete   <$> discreteSequence)
 
--- | Parses one or more protein sequence segments.
+
+-- |
+-- Parses one or more protein sequence segments.
 proteinSegments    = segmentsOf (fmap Protein    <$> proteinSequence)
 
--- | Parses one or more of the parameter sequence segment combinator.
---   Combinators are seperated by 'segmentTerminal'
+
+-- |
+-- Parses one or more of the parameter sequence segment combinator.
+-- Combinators are seperated by 'segmentTerminal'
 segmentsOf :: (MonadParsec e s m, Token s ~ Char) => m [TntCharacter] -> m (DList TaxonInfo)
 segmentsOf seqDef = DL.fromList <$> symbol (segment `sepEndBy1` segmentTerminal)
   where
     segment = (,) <$> (taxonName <* whitespaceInline) <*> seqDef
 
--- | Replaces gap chracters with missing characters. Correctly handles ambiguity
---   groups.
+
+-- |
+-- Replaces gap chracters with missing characters. Correctly handles ambiguity
+-- groups.
 gapsToMissings :: DList TaxonInfo -> DList TaxonInfo
 gapsToMissings = fmap (second (fmap gapToMissing))
   where
@@ -381,47 +473,59 @@ gapsToMissings = fmap (second (fmap gapToMissing))
         gapBit  = findFirstSet $ deserializeStateProtein ! '-'
         missing = deserializeStateProtein ! '?'
 
--- | Truncate gap values from the front of the sequence segment.
+
+-- |
+-- Truncate gap values from the front of the sequence segment.
 trimHead :: DList TaxonInfo -> DList TaxonInfo
 trimHead = fmap (second f)
   where
-    f xs = (toMissing <$> gaps) ++ chars
+    f xs = (toMissing <$> gaps) <> chars
       where
         (gaps,chars) = span isGap xs
 
--- | Truncate gap values from the end of the sequence segment.
+
+-- |
+-- Truncate gap values from the end of the sequence segment.
 trimTail :: DList TaxonInfo -> DList TaxonInfo
 trimTail = fmap (second f)
   where
-    f xs = reverse $ (toMissing <$> gaps) ++ chars
+    f xs = reverse $ (toMissing <$> gaps) <> chars
       where
         (gaps,chars) = span isGap $ reverse xs
 
--- | Test if a given sequence character value is a gap value.
+
+-- |
+-- Test if a given sequence character value is a gap value.
 isGap :: TntCharacter -> Bool
 isGap (Dna      x) | deserializeStateDna      ! '-' == x = True 
 isGap (Discrete x) | deserializeStateDiscrete ! '-' == x = True 
 isGap (Protein  x) | deserializeStateProtein  ! '-' == x = True 
 isGap _ = False
 
--- | Overwrite given seuqence character value with the missing character value.
+
+-- |
+-- Overwrite given seuqence character value with the missing character value.
 toMissing :: TntCharacter -> TntCharacter 
 toMissing Dna     {} = Dna      $ deserializeStateDna      ! '?'
 toMissing Discrete{} = Discrete $ deserializeStateDiscrete ! '?'
 toMissing Protein {} = Protein  $ deserializeStateProtein  ! '?'
 toMissing e = e
 
--- | Reads a sequence segment tag containing one or more parse interpretation
---   identifiers. Validates that neither duplicate nor mutually exclusive
---   identifiers exist. Returns the contextual information for interpreting the
---   sequence segments following the tag.
+
+-- |
+-- Reads a sequence segment tag containing one or more parse interpretation
+-- identifiers. Validates that neither duplicate nor mutually exclusive
+-- identifiers exist. Returns the contextual information for interpreting the
+-- sequence segments following the tag.
 xreadTags :: (MonadParsec e s m, Token s ~ Char) => m XReadInterpretation
 xreadTags = validateXReadTags =<< xreadTagsDef
   where
     xreadTagsDef :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty XReadTag)
     xreadTagsDef = symbol (char '&') *> symbol (withinBraces tags)
+
     tags         :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty XReadTag)
     tags         = NE.fromList <$> (tagOptions `sepBy1` whitespaceInline)
+
     tagOptions   :: (MonadParsec e s m, Token s ~ Char) => m XReadTag
     tagOptions   = choice
                  [      keyword "continuous" 4  $> TagContinuous
@@ -433,11 +537,12 @@ xreadTags = validateXReadTags =<< xreadTagsDef
                  , try (keyword "trimhead"   5) $> TagTrimHead
                  ,      keyword "trimtail"   5  $> TagTrimTail
                  ]
-    validateXReadTags :: (MonadParsec e s m, Token s ~ Char) => NonEmpty XReadTag -> m XReadInterpretation
+
+    validateXReadTags :: (MonadParsec e s m {- , Token s ~ Char -}) => NonEmpty XReadTag -> m XReadInterpretation
     validateXReadTags xs
-      | not (null dupes)                      = fail $ "You got duplicate tags man! Like only one's allowed. For realz! " ++ show dupes
-      | manyTags allTypeTags                  = fail $ "You can't have multiple character type tags: " ++ show allTypeTags
-      | manyTags allGapTags                   = fail $ "You can't have multiple gap specification tags: " ++ show allGapTags
+      | not (null dupes)                      = fail $ "You got duplicate tags man! Like only one's allowed. For realz! " <> show dupes
+      | manyTags allTypeTags                  = fail $ "You can't have multiple character type tags: " <> show allTypeTags
+      | manyTags allGapTags                   = fail $ "You can't have multiple gap specification tags: " <> show allGapTags
       | isContinuous && not (null allGapTags) = fail   "You can't have gaps or nogaps specified for continuous data"
       | isNumeric    && not (null allGapTags) = fail   "You can't have gaps or nogaps specified for numeric data"
       | not pGaps && (pTrimHead || pTrimTail) = fail   "You can't have trimhead or trimTail along with nogaps"

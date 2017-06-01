@@ -1,6 +1,7 @@
 module PCG.Command.Types.Read.ReadError
   ( ReadError()
   , ambiguous
+  , multipleTCMs
   , unfindable
   , unopenable
   , unparsable
@@ -21,11 +22,13 @@ data ReadErrorMessage
    | FileUnopenable FilePath
    | FileUnparsable String
    | FileAmbiguous  FilePath (NonEmpty FilePath)
+   | MultipleTCMs   FilePath FilePath
 
 instance Show ReadErrorMessage where
   show (FileUnfindable path        ) = "'" ++ path ++ "'"
   show (FileUnopenable path        ) = "'" ++ path ++ "'"
   show (FileUnparsable pErr        ) = pErr
+  show (MultipleTCMs   dataPath tcmPath) = "'" <> show dataPath <> "' with the referenced TCM file '" <> show tcmPath <> "'"
   show (FileAmbiguous  path matches) = message
     where
       files   = toList matches
@@ -40,9 +43,15 @@ instance Semigroup ReadError where
   (ReadError lhs) <> (ReadError rhs) = ReadError $ lhs <> rhs
 
 instance Show ReadError where
-  show (ReadError errors) = unlines $ catMaybes [unfindableMessage, unopenableMessage, unparsableMessage, ambiguousMessage]
+  show (ReadError errors) = unlines $ catMaybes
+      [ unfindableMessage
+      , unopenableMessage
+      , unparsableMessage
+      , ambiguousMessage
+      , multipleTCMsMessage
+      ]
     where
-      (unfindables,unopenables,unparsables,ambiguity) = partitionReadErrorMessages $ toList errors
+      (unfindables,unopenables,unparsables,ambiguity,doubleTCMs) = partitionReadErrorMessages $ toList errors
       unfindableMessage =
         case unfindables of
           []  -> Nothing
@@ -62,13 +71,20 @@ instance Show ReadError where
         case ambiguity of
           []  -> Nothing
           xs  -> Just . unlines $ show <$> xs
-      partitionReadErrorMessages :: [ReadErrorMessage] -> ([ReadErrorMessage], [ReadErrorMessage], [ReadErrorMessage], [ReadErrorMessage])
-      partitionReadErrorMessages = foldr f ([],[],[],[])
+      multipleTCMsMessage =
+        case doubleTCMs of
+          []  -> Nothing
+          [x] -> Just $ "The file had multiple TCM definitions " <> show x
+          xs  -> Just $ "The following files had multiple TCM definitions: \n"        ++ unlines (show <$> xs)
+      partitionReadErrorMessages ::  [ReadErrorMessage]
+                                 -> ([ReadErrorMessage], [ReadErrorMessage], [ReadErrorMessage], [ReadErrorMessage], [ReadErrorMessage])
+      partitionReadErrorMessages = foldr f ([],[],[],[],[])
         where
-          f e@(FileUnfindable _  ) (w,x,y,z) = (e:w,  x,  y,  z) 
-          f e@(FileUnopenable _  ) (w,x,y,z) = (  w,e:x,  y,  z) 
-          f e@(FileUnparsable _  ) (w,x,y,z) = (  w,  x,e:y,  z) 
-          f e@(FileAmbiguous  _ _) (w,x,y,z) = (  w,  x,  y,e:z)
+          f e@(FileUnfindable _  ) (v,w,x,y,z) = (e:v,  w,  x,  y,   z) 
+          f e@(FileUnopenable _  ) (v,w,x,y,z) = (  v,e:w,  x,  y,   z) 
+          f e@(FileUnparsable _  ) (v,w,x,y,z) = (  v,  w,e:x,  y,   z) 
+          f e@(FileAmbiguous  _ _) (v,w,x,y,z) = (  v,  w,  x,e:y,   z)
+          f e@(MultipleTCMs   _ _) (v,w,x,y,z) = (  v,  w,  x,  y, e:z)
 
 -- | Remark that the specified file could not be found on the file system
 unfindable :: FilePath -> ReadError
@@ -92,3 +108,6 @@ unparsable pErr = ReadError $ FileUnparsable (parseErrorPretty pErr) :| []
 -- Don't make me change the type of @matches@ for @['FilePath']@ to 'NonEmpty'.
 ambiguous  :: FilePath -> [FilePath] -> ReadError
 ambiguous path matches = ReadError $ FileAmbiguous path (fromList matches) :| []
+
+multipleTCMs :: FilePath -> FilePath -> ReadError
+multipleTCMs dataPath tcmPath = ReadError $ MultipleTCMs dataPath tcmPath :| []

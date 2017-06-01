@@ -19,7 +19,6 @@ import           Analysis.Parsimony.Binary.Internal
 import           Analysis.ImpliedAlignment.DynamicProgramming
 import           Bio.Metadata
 import           Bio.PhyloGraph            hiding (name)
-import           Data.Alphabet
 import           Data.Vector             (Vector)
 import           Test.Custom
 import           Test.Tasty
@@ -40,7 +39,7 @@ sillyMeta :: Vector (CharacterMetadata s)
 sillyMeta =
   pure CharMeta
     { charType   = DirectOptimization
-    , alphabet   = constructAlphabet []
+    , alphabet   = undefined 
     , name       = "DefaultCharacter"
     , isAligned  = False
     , isIgnored  = False
@@ -57,7 +56,7 @@ defaultMeta :: Vector (CharacterMetadata s)
 defaultMeta =
   pure CharMeta
     { charType   = DirectOptimization
-    , alphabet   = constructAlphabet []
+    , alphabet   = undefined 
     , name       = "DefaultCharacter"
     , isAligned  = False
     , isIgnored  = False
@@ -74,7 +73,7 @@ equalMeta :: Vector (CharacterMetadata s)
 equalMeta =
   pure CharMeta
     { charType   = DirectOptimization
-    , alphabet   = constructAlphabet []
+    , alphabet   = undefined
     , name       = "DefaultCharacter"
     , isAligned  = False
     , isIgnored  = False

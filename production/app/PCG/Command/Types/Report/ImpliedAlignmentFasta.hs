@@ -15,23 +15,23 @@
 
 module PCG.Command.Types.Report.ImpliedAlignmentFasta where
 
-import Bio.Character.Dynamic.Coded
-import Bio.Metadata   hiding (name)
+import Bio.Character.Encodable
+import Bio.Metadata    hiding (name)
 import Bio.PhyloGraph.DAG
-import Bio.PhyloGraph.Network (nodeIsLeaf)
+--import Bio.PhyloGraph.Network (nodeIsLeaf)
 import Bio.PhyloGraph.Node
 import Bio.PhyloGraph.Solution
 import Data.Alphabet
 import Data.Foldable
-import Data.IntMap           (IntMap,insert)
+import Data.IntMap            (IntMap,insert)
 import Data.Key
-import Data.List             (intercalate)
-import Data.List.Utility     (chunksOf)
-import Data.Map              (Map, singleton)
-import Data.Monoid           ((<>))
-import           Data.Vector      (Vector)
-import Data.Vector.Instances ()
-import Prelude        hiding (lookup,zipWith)
+import Data.List              (intercalate)
+import Data.List.Utility      (chunksOf)
+import Data.Map               (Map, singleton)
+import Data.Monoid            ((<>))
+import Data.Vector            (Vector)
+import Data.Vector.Instances  ()
+import Prelude         hiding (lookup,zipWith)
 
 outputHUTs :: Bool
 outputHUTs = False
@@ -100,7 +100,7 @@ iaOutput solution = {- (\x -> trace (intercalate "\n\n"
             titleLine     = "> " <> filter (/=' ') nodeName
             dynamicCharacterToFastaBlock character = unlines $ titleLine : sequenceLines <> [""]
               where
-                sequenceLines = chunksOf 50 . concatMap renderAmbiguityGroup . toList $ decodeDynamic alpha character
+                sequenceLines = chunksOf 50 . concatMap (renderAmbiguityGroup . toList) . toList $ decodeStream alpha character
                 renderAmbiguityGroup [x] = x
                 renderAmbiguityGroup xs  = "[" <> concat xs <> "]"
 

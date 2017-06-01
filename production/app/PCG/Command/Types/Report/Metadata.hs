@@ -35,7 +35,7 @@ metadataCsvOutput solution = header <> mainExport (metadata solution)
         mainExport :: Vector StandardMetadata -> String
         mainExport = intercalate "\n" . fmap fetchInfo . toList 
 
-fetchInfo :: Show s => CharacterMetadata s -> String
+fetchInfo :: CharacterMetadata s -> String
 fetchInfo c = intercalate ", " [show $ charType c, name c, show $ isAligned c, show $ stateNames c, show $ alphabet c, show $ isIgnored c, show $ weight c]
 
 foldInfo :: (Foldable t, Show a) => t a -> String  

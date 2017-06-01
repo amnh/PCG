@@ -19,13 +19,17 @@ module File.Format.Newick.Internal
   , NewickNode(..)
   , isLeaf
   , newickNode
+  , renderNewickForest
   ) where
 
-import Data.Maybe (isJust,isNothing)
-import qualified Bio.PhyloGraph.Network as N
-import Data.List
-import Data.Monoid
-import Control.Applicative (liftA2)
+
+import           Data.Tree
+import           Data.Maybe
+--import qualified Bio.PhyloGraph.Network as N
+--import           Data.List
+import           Data.List.NonEmpty  (NonEmpty, toList)
+import           Data.Semigroup
+
 
 {----
   - The Newick file format was developed by an informal committee meeting at
@@ -48,10 +52,14 @@ import Control.Applicative (liftA2)
   - Extended Newick filed format.
   -}
 
--- | One or more trees in a "Phylogenetic Forest".
-type NewickForest = [NewickNode]
 
--- | A node in a "Phylogenetic Forest"
+-- |
+-- One or more trees in a "Phylogenetic Forest".
+type NewickForest = NonEmpty NewickNode
+
+
+-- |
+-- A node in a "Phylogenetic Forest"
 data NewickNode
    = NewickNode
    { descendants  :: [NewickNode] -- leaf nodes are empty lists
@@ -59,18 +67,37 @@ data NewickNode
    , branchLength :: Maybe Double
    } deriving (Eq,Ord)
 
+
 instance Show NewickNode where
-  show (NewickNode d n b) = name ++ len ++ " " ++ show d 
-    where
-      name = maybe "Node" show n
-      len  = maybe "" (\x -> ':' : show x) b
 
-instance Monoid NewickNode where
-  mempty = NewickNode [] Nothing Nothing
-  mappend (NewickNode des1 label1 len1) (NewickNode des2 label2 len2) = NewickNode (des1 <> des2) (label1 <> label2) (liftA2 (+) len1 len2)
+    show (NewickNode d n b) = name <> len <> " " <> show d 
+      where
+        name = maybe "Node" show n
+        len  = maybe "" (\x -> ':' : show x) b
 
 
--- | Smart constructor for a 'NewickNode' preseriving the invariant:
+instance Semigroup NewickNode where
+
+    lhs <> rhs =
+        NewickNode
+        { descendants  = [lhs,rhs]
+        , newickLabel  = Nothing
+        , branchLength = Nothing
+        }
+
+
+-- |
+-- Renders the 'NewickForest' to a 'String'. If the forest contains a DAG with
+-- in-degree  greater than one, then the shared subtree in a DAG will be rendered
+-- multiple times. 
+renderNewickForest :: NewickForest -> String
+renderNewickForest = drawForest . unfoldForest f . toList
+  where
+    f = (,) <$> fromMaybe "X" . newickLabel <*> descendants
+
+
+-- |
+-- Smart constructor for a 'NewickNode' preseriving the invariant:
 --
 -- > null nodes ==> isJust . label
 newickNode :: [NewickNode] -> Maybe String -> Maybe Double -> Maybe NewickNode
@@ -79,30 +106,39 @@ newickNode nodes label length'
   | otherwise = Just $ NewickNode nodes label length'
 
 
--- | Determines whether a given 'NewickNode' is a leaf node in the tree.
+-- |
+-- Determines whether a given 'NewickNode' is a leaf node in the tree.
 isLeaf :: NewickNode -> Bool
 isLeaf node = (null . descendants) node && (isJust . newickLabel) node
 
+{-
 instance N.Network NewickNode NewickNode where
-  root     t   = t
-  children n _ = descendants n
-  nodeIsLeaf   n _ = isLeaf n
-  nodeIsRoot   n t = null $ N.parents n t
-  parents node tree 
-    | node `elem` descendants tree = nub $ tree : foldr (\n acc -> N.parents node n ++ acc) [] (descendants tree)
-    | otherwise = nub $ foldr (\n acc -> N.parents node n ++ acc) [] (descendants tree)
-  update tree new = 
-    let 
-        updateHere = foldr (\n acc -> if match n acc then upOne n acc else acc) tree new
-        updateRest = updateHere { descendants = (`N.update` new) <$> descendants updateHere }
-    in updateRest
-    where
-      match newNode t = newickLabel t == newickLabel newNode
-      upOne newNode t = t {descendants = descendants newNode, branchLength = branchLength newNode}
-  numNodes = tallyNodes
-    where
-      tallyNodes :: NewickNode -> Int
-      tallyNodes = succ . sum . fmap tallyNodes . descendants
-  addNode t n = t { descendants = n : descendants t }
 
+    root     t   = t
 
+    children n _ = descendants n
+
+    nodeIsLeaf   n _ = isLeaf n
+
+    nodeIsRoot   n t = null $ N.parents n t
+
+    parents node tree 
+      | node `elem` descendants tree = nub $ tree : foldr (\n acc -> N.parents node n ++ acc) [] (descendants tree)
+      | otherwise = nub $ foldr (\n acc -> N.parents node n ++ acc) [] (descendants tree)
+
+    update tree new = 
+      let 
+          updateHere = foldr (\n acc -> if match n acc then upOne n acc else acc) tree new
+          updateRest = updateHere { descendants = (`N.update` new) <$> descendants updateHere }
+      in updateRest
+      where
+        match newNode t = newickLabel t == newickLabel newNode
+        upOne newNode t = t {descendants = descendants newNode, branchLength = branchLength newNode}
+
+    numNodes = tallyNodes
+      where
+        tallyNodes :: NewickNode -> Int
+        tallyNodes = succ . sum . fmap tallyNodes . descendants
+
+    addNode t n = t { descendants = n : descendants t }
+-}

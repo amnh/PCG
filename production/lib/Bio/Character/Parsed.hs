@@ -1,3 +1,4 @@
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Character.Parsed
@@ -14,11 +15,11 @@
 
 
 module Bio.Character.Parsed
-  ( AmbiguityGroup
-  , ParsedChar
+  ( Identifier
+  , ParsedCharacter(..)
   , ParsedChars
   , ParsedCharacters(..)
-  , TreeChars
+  , TaxonCharacters
   ) where
 
 import Bio.Character.Parsed.Class

@@ -2,10 +2,11 @@
 linking       = --make
 warnings      = -w -W -Wall -Werror
 sanity        = -fwarn-duplicate-exports -fwarn-incomplete-patterns -fwarn-missing-signatures -fwarn-overlapping-patterns -fwarn-tabs -fwarn-unused-binds -fwarn-unused-imports -fwarn-unused-matches -fwarn-unused-do-bind
-stacktracing  = -prof -auto-all -caf-all
+stacktracing  = -prof -fprof-auto -fprof-cafs
 
 #Flags for `stack`
-haddock       = --haddock --haddock-deps \
+haddock       = --haddock --haddock-deps
+              # For later:
               # --haddock-arguments --mathjax=https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML
 profiling     = --executable-profiling --library-profiling
 
@@ -15,7 +16,8 @@ profiling     = --executable-profiling --library-profiling
 
 
 # Default build target
-all: standard-build copy-haddock
+#all: standard-build copy-haddock
+all: stack-build-profiling
 
 # Rebuilds with profiling
 prof: stack-build-profiling
@@ -56,6 +58,7 @@ stack-build-quick: phylocomgraph.cabal stack.yaml
 
 # Builds with profiling enabled
 stack-build-profiling: phylocomgraph.cabal stack.yaml
+#	stack install $(profiling) --flag phylocomgraph:build-cpp-files
 	stack install $(profiling) --ghc-options="-fprof-cafs"
 
 # Builds with profiling enabled

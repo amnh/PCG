@@ -1,13 +1,51 @@
+allow-newer: true
+
+compiler: ghc-8.2.0.20170507
+
+compiler-check: match-exact
+
 flags: {}
-extra-package-dbs: []
-local-bin-path: bin
-packages:
-- '.'
-system-ghc: false
+
 extra-deps:
-- aeson-0.11.2.1
-- bv-0.4.1
-- megaparsec-5.0.0
-- mono-traversable-1.0.0.1
+- containers-0.5.8.1
+- deepseq-1.4.3
+- lens-4.15.2
+- pretty-tree-0.1.0.0
 - quickcheck-properties-0.1
-resolver: lts-6.10
+- syb-0.7
+- semigroupoids-5.2
+
+local-bin-path: bin
+
+packages:
+ - '.'
+ - location:  https://github.com/haskell/deepseq/archive/0b22c98.zip
+   extra-dep: true
+ - location:  https://github.com/ekmett/distributive/archive/3f29260.zip
+   extra-dep: true
+ - location:  https://github.com/ekmett/distributive/archive/3f29260.zip
+   extra-dep: true
+ - location:  https://github.com/ekmett/lens/archive/7031e00.zip
+   extra-dep: true
+ - location:  https://github.com/ekmett/semigroupoids/archive/c3297f9.zip
+   extra-dep: true
+
+resolver: lts-8.15
+
+setup-info:
+  ghc:
+    linux64:
+      8.2.0.20170507:
+        url: https://downloads.haskell.org/~ghc/8.2.1-rc2/ghc-8.2.0.20170507-x86_64-deb8-linux.tar.xz
+        content-length: 141011788
+        sha1: ff886437c1d2ddfa5686d6c9efb0819a957c3dde
+    macosx:
+      8.2.0.20170507:
+        url: https://downloads.haskell.org/~ghc/8.2.1-rc2/ghc-8.2.0.20170507-x86_64-apple-darwin.tar.xz
+        content-length: 126192308
+        sha1: f059fe6f8a898d5619ab03e06e0ff0912a5f3340
+    windows64:
+      8.2.0.20170507:
+        url: https://downloads.haskell.org/~ghc/8.2.1-rc2/ghc-8.2.0.20170507-x86_64-unknown-mingw32.tar.xz
+        content-length: 177295548
+        sha1: 87646ca3a89278775ceb7be429faafac3cf738d8

@@ -25,30 +25,40 @@ module File.Format.Fastc.Parser
   , fastcTaxonSequenceDefinition
   ) where
 
+
 import           Data.Char                 (isSpace)
-import           Data.List.NonEmpty hiding (fromList)
-import qualified Data.List.NonEmpty as NE  (fromList)
-import qualified Data.Vector        as V   (fromList)
+import           Data.List.NonEmpty        (NonEmpty)
+import qualified Data.List.NonEmpty as NE
+import qualified Data.Vector        as V
 import           File.Format.Fasta.Internal
 import           Text.Megaparsec
 import           Text.Megaparsec.Custom
 import           Text.Megaparsec.Prim      (MonadParsec)
 
--- | Unconverted result of a fastc parse
+
+-- |
+-- Unconverted result of a fastc parse
 type FastcParseResult = NonEmpty FastcSequence
 
--- | Pairing of taxa label with an unconverted sequence
+
+-- |
+-- Pairing of taxa label with an unconverted sequence
 data FastcSequence
    = FastcSequence
    { fastcLabel   :: Identifier
    , fastcSymbols :: CharacterSequence
    } deriving (Eq,Show)
 
--- | Consumes a stream of 'Char's and parses the stream into a 'FastcParseResult'
+
+-- |
+-- Consumes a stream of 'Char's and parses the stream into a 'FastcParseResult'
 fastcStreamParser :: (MonadParsec e s m, Token s ~ Char) => m FastcParseResult
 fastcStreamParser = NE.fromList <$> some fastcTaxonSequenceDefinition <* eof
 
--- | Parses a FASTC 'Identifier' and the associated sequence, discarding any comments
+
+-- |
+-- Parses a FASTC 'Identifier' and the associated sequence, discarding any
+-- comments
 fastcTaxonSequenceDefinition :: (MonadParsec e s m, Token s ~ Char) => m FastcSequence
 fastcTaxonSequenceDefinition = do
     name <- identifierLine
@@ -56,7 +66,9 @@ fastcTaxonSequenceDefinition = do
     _    <- space
     pure $ FastcSequence name seq'
 
--- | Parses a sequence of 'Symbol's represneted by a 'CharacterSequence'.
+
+-- |
+-- Parses a sequence of 'Symbol's represneted by a 'CharacterSequence'.
 -- Symbols can be multi-character and are assumed to be seperated by whitespace.
 fastcSymbolSequence :: (MonadParsec e s m, Token s ~ Char) => m CharacterSequence
 fastcSymbolSequence = V.fromList <$> (space *> fullSequence)
@@ -64,16 +76,24 @@ fastcSymbolSequence = V.fromList <$> (space *> fullSequence)
     fullSequence = concat <$> some (inlineSpace *> sequenceLine)
     sequenceLine = (symbolGroup <* inlineSpace) `manyTill` endOfLine
 
--- | parses either an ambiguity group of 'Symbol's or a single, unambiguous 'Symbol'.
-symbolGroup :: (MonadParsec e s m, Token s ~ Char) => m [String]
-symbolGroup = ambiguityGroup
-          <|> (pure <$> validSymbol)
 
--- | Parses an ambiguity group of symbols. Ambiguity groups are delimited by the '\'|\'' character.
-ambiguityGroup :: (MonadParsec e s m, Token s ~ Char) => m [String]
-ambiguityGroup = validSymbol `sepBy1` (char '|' <* inlineSpace)
+-- |
+-- Parses either an ambiguity group of 'Symbol's or a single, unambiguous
+-- 'Symbol'.
+symbolGroup :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty String)
+symbolGroup = ambiguityGroup <|> (pure <$> validSymbol)
 
--- | Parses a 'Symbol' token ending with whitespace and excluding the forbidden characters: '[\'>\',\'|\']'.
+
+-- |
+-- Parses an ambiguity group of symbols. Ambiguity groups are delimited by the
+-- '\'|\'' character.
+ambiguityGroup :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty String)
+ambiguityGroup = NE.fromList <$> (validSymbol `sepBy1` (char '|' <* inlineSpace))
+
+
+-- |
+-- Parses a 'Symbol' token ending with whitespace and excluding the forbidden
+-- characters: '[\'>\',\'|\']'.
 validSymbol :: (MonadParsec e s m, Token s ~ Char) => m String
 validSymbol = (validStartChar <:> many validBodyChar) <* inlineSpace
   where

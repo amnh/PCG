@@ -15,7 +15,7 @@
 module File.Format.Nexus.Data where
 
 import qualified Data.Map.Lazy as M
-import qualified Data.Vector as V
+import qualified Data.Vector   as V
 import           File.Format.Newick
 import           File.Format.TransitionCostMatrix
 
@@ -25,17 +25,35 @@ import           File.Format.TransitionCostMatrix
 ----------------- Types for sending data out -----------------
 --------------------------------------------------------------
 
+
+-- |
+-- Mapping of taxa names to character data and a vector corresponding to each
+-- character's metadata.
 type Sequences = ( TaxonSequenceMap
                  , V.Vector CharacterMetadata
                  )
 
+
+-- |
+-- Represents a symbol in the character alphabet.
 type AlphabetSymbol = String
 
+
+-- TODO: Use Data.List.NonEmpty here?
+-- |
+-- Represents an ambiguity group of symbols in the character alphabet.
+-- Should always be a non empty list.
 type AmbiguityGroup = [AlphabetSymbol]
 
+
+-- |
+-- Represents the unique identifier of a taxon.
 type TaxonIdentifier = String
 
-data CharacterMetadata 
+
+-- |
+-- Metadata record type for a given character.
+data CharacterMetadata
    = CharacterMetadata
    { name       :: String
    , isAligned  :: Bool
@@ -47,15 +65,23 @@ data CharacterMetadata
    , weight     :: Int
    } deriving (Show)
 
+
+-- |
 -- Character is Maybe, because some chars might not be present for some taxa
 -- if unaligned, multiple characters are treated as a single "character", so V.length >= 1
 -- if aligned, each character is a "character", so V.length == 1
 type Character = Maybe (V.Vector AmbiguityGroup)
 
--- This is a Vector, because Character may have length /= 1 
+
+-- |
+-- This is a Vector, because Character may have length /= 1
 -- (see explanation at Character)
 type Sequence = V.Vector Character
 
+
+-- |
+-- Mapping of taxon identifiers (typically names) to thier corresponding
+-- sequence data.
 type TaxonSequenceMap = M.Map TaxonIdentifier Sequence
 
 
@@ -68,7 +94,7 @@ type TaxonSequenceMap = M.Map TaxonIdentifier Sequence
 data AssumptionBlock
    = AssumptionBlock
    { tcm :: [StepMatrix]
-   , add :: [Bool] 
+   , add :: [Bool]
    } deriving (Show)
 
 -- | AssumptionField is a list of fields in the Assumptions block.
@@ -82,7 +108,7 @@ data AssumptionField
 -- coverted to CharacterFormat data type for export
 -- TODO: better documentation on the use of each field below
 data CharFormatField
-   = CharDT      String
+   = CharDT      CharDataType
    | SymStr      (Either String [String]) -- the list of symbols
    | EqStr       (Either String [String]) -- the equate (symbol -> symbols) will be processed into Map Char String
    | MissStr     String -- "missing" char
@@ -105,12 +131,12 @@ data CharStateFormat
    , stateName :: [String]
    } deriving (Show)
 
--- | CharacterFormat 
+-- | CharacterFormat
 -- Note that symbols may or may not be space-delimited. I work under the assumption that it is iff
 -- Tokens is spec'd, as well.
 data CharacterFormat
    = CharacterFormat
-   { charDataType :: String    -- see CharDataType for options
+   { charDataType :: CharDataType    -- see CharDataType for options
    , symbols      :: Either String [String]
    , equate       :: Either String [String]
    , missing      :: String
@@ -127,14 +153,14 @@ data CharacterFormat
 -- | The types of data which can be present in a Nexus file.
 -- This type might get scrapped and another type imported from
 -- different module, or preserved but moved to another module.
-data CharDataType 
-    = Standard 
-    | DNA 
-    | RNA 
-    | Nucleotide 
-    | Protein 
-    | Continuous 
-    deriving (Read, Show)
+data CharDataType
+    = Standard
+    | DNA
+    | RNA
+    | Nucleotide
+    | Protein
+    | Continuous
+    deriving (Eq, Read, Show)
 
 -- | DimensionsFormat is format of dimensions field in characters and unaligned nexus blocks.
 -- It could also actually be used for the dimensions in the taxa block, with newTaxa = False
@@ -155,7 +181,7 @@ data Nexus
    { {- taxa :: [TaxonIdentifier]
    ,-} sequences :: Sequences
    {- , stepMatrices :: AssumptionBlock -}
-   , nexusForest :: NewickForest
+   , nexusForests :: [NewickForest]
    } deriving (Show)
 
 -- | Types blocks in the Nexus file and their accompanying data.
@@ -167,8 +193,8 @@ data NexusBlock
    | AssumptionsBlock AssumptionBlock
    deriving (Show)
 
-data NexusParseResult 
-   = NexusParseResult 
+data NexusParseResult
+   = NexusParseResult
    { pSeqs   :: [PhyloSequence]
    , spec    :: [TaxaSpecification]
    , treeB   :: [TreeBlock]
@@ -204,7 +230,7 @@ data SeqSubBlock
    | Taxa            [String]
    deriving (Show)
 
--- | StepMatrix is type to be pulled from Assumptions block. 
+-- | StepMatrix is type to be pulled from Assumptions block.
 data StepMatrix
    = StepMatrix
    { matrixType :: String -- Actually, the name of the tcm. Originally was to be step or real. Collected, but unused.
@@ -291,7 +317,7 @@ rnaAlphabet :: [String]
 rnaAlphabet = M.keys rna
 
 nucleotide :: M.Map String [String]
-nucleotide = M.insert "U" ["T"] dna 
+nucleotide = M.insert "U" ["T"] dna
 
 nucleotideAlphabet :: [String]
 nucleotideAlphabet = "U" : dnaAlphabet

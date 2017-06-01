@@ -18,9 +18,12 @@ module File.Format.VertexEdgeRoot
   , VertexEdgeRoot(..)
   , VertexLabel
   , connectedVertex
-  , edgeConnection
+--  , edgeConnection
+  , edgeOrigin
+  , edgeTarget
   , edgeLength
   , verStreamParser
   ) where
+
 
 import File.Format.VertexEdgeRoot.Parser

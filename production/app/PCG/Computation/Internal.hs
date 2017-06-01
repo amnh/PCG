@@ -1,6 +1,6 @@
 module PCG.Computation.Internal where
 
-import Bio.PhyloGraph.Solution
+import Bio.Graph.PhylogeneticDAG
 import Control.Evaluation
 import Data.Char      (isSpace)
 import Data.Either    (partitionEithers)
@@ -8,6 +8,7 @@ import Data.Foldable
 import Data.Monoid
 import PCG.Command
 import PCG.Script
+--import PCG.SearchState
 
 import qualified PCG.Command.Types.Read   as Read
 import qualified PCG.Command.Types.Report as Report
@@ -31,20 +32,20 @@ collapseReadCommands (x:xs)                   = x : collapseReadCommands xs
     
 evaluate :: Computation -> SearchState
 evaluate (Computation xs) = foldl' (flip f) mempty xs
-  
-f :: Command -> SearchState -> SearchState
-f x@READ   {} = Read.evaluate   x
-f x@REPORT {} = Report.evaluate x
-f _ = error "NOT YET IMPLEMENTED"
+  where
+    f :: Command -> SearchState -> SearchState
+    f x@READ   {} = Read.evaluate   x
+    f x@REPORT {} = Report.evaluate x
+    f _ = error "NOT YET IMPLEMENTED"
 
-renderSearchState :: (Show a) => Evaluation a -> IO ()
+renderSearchState :: Evaluation a -> IO ()
 renderSearchState e = do
    _ <- case notifications e of
           [] -> pure ()
           xs -> putStrLn . unlines $ show <$> xs
    case evaluationResult e of
-     NoOp         -> putStrLn   "[?] No computation speciified...?"
+     NoOp         -> putStrLn   "[❓] No computation speciified...?"
      Value _      -> putStrLn   "[✔] Computation complete!"
-     Error errMsg -> putStrLn $ "[X] Error: "<> trimR errMsg
+     Error errMsg -> putStrLn $ "[✘] Error: "<> trimR errMsg
   where
     trimR = reverse . dropWhile isSpace . reverse

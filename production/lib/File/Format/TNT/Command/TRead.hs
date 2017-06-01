@@ -11,8 +11,11 @@
 -- Parser for the TREAD command specifying how to read a forests of trees.
 -- No validation currently takes place.
 ----------------------------------------------------------------------------- 
+
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+
 module File.Format.TNT.Command.TRead where
+
 
 import           Data.Char                (isSpace)
 import           Data.Functor             (($>))
@@ -23,7 +26,9 @@ import           Text.Megaparsec
 import           Text.Megaparsec.Custom
 import           Text.Megaparsec.Prim     (MonadParsec)
 
--- | Parses an TREAD command. Correctly validates for taxa count
+
+-- |
+-- Parses an TREAD command. Correctly validates for taxa count
 -- and character sequence length. Produces one or more taxa sequences.
 treadCommand :: (MonadParsec e s m, Token s ~ Char) => m TRead
 treadCommand = treadValidation =<< treadDefinition
@@ -33,12 +38,14 @@ treadCommand = treadValidation =<< treadDefinition
                    *> symbol treadForest
                    <* symbol (char ';')
 
-    treadValidation :: (MonadParsec e s m, Token s ~ Char) => TRead -> m TRead
+    treadValidation :: (MonadParsec e s m {- , Token s ~ Char -}) => TRead -> m TRead
     treadValidation = pure -- No validation yet (what to validate?)
 
--- | The superflous information of an XREAD command.
--- Consumes the XREAD string identifier and zero or more comments
--- preceeding the taxa count and character cound parameters
+
+-- |
+-- The superflous information of an XREAD command. Consumes the XREAD string
+-- identifier and zero or more comments preceeding the taxa count and character
+-- cound parameters
 treadHeader :: (MonadParsec e s m, Token s ~ Char) => m ()
 treadHeader =  symbol (keyword "tread" 2)
             *> many simpleComment
@@ -48,16 +55,22 @@ treadHeader =  symbol (keyword "tread" 2)
       where
         delimiter = char '\''
 
--- | One or more '*' seperated trees in parenthetical notationy
+
+-- |
+-- One or more '*' seperated trees in parenthetical notationy
 treadForest :: (MonadParsec e s m, Token s ~ Char) => m TRead
 treadForest = fmap NE.fromList $ symbol treadTree `sepBy1` symbol (char '*')
 
--- | A bifurcating, rooted tree with data only on the leaf nodes.
+
+-- |
+-- A bifurcating, rooted tree with data only on the leaf nodes.
 treadTree :: (MonadParsec e s m, Token s ~ Char) => m TReadTree
 treadTree = treadSubtree <|> treadLeaf
 
--- | A leaf node of the TREAD tree, representing one of the three possible
---   identifier types used for matching with a taxon from the taxa set.
+
+-- |
+-- A leaf node of the TREAD tree, representing one of the three possible
+-- identifier types used for matching with a taxon from the taxa set.
 treadLeaf :: (MonadParsec e s m, Token s ~ Char) => m TReadTree
 treadLeaf = Leaf <$> choice [try index, try prefix, name] 
  where
@@ -68,7 +81,9 @@ treadLeaf = Leaf <$> choice [try index, try prefix, name]
    labelChar   = satisfy (\x -> not (isSpace x) && x `notElem` "(),;")
    checkTail x = if "..." `isSuffixOf` x then pure x else fail "oops"
 
--- | A branch of the TREAD tree. each brach can be either a leaf or a sub tree.
+
+-- |
+-- A branch of the TREAD tree. each brach can be either a leaf or a sub tree.
 treadSubtree :: (MonadParsec e s m, Token s ~ Char) => m TReadTree
 treadSubtree = between open close body
   where

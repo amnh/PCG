@@ -16,23 +16,29 @@
 
 module File.Format.TransitionCostMatrix.Parser where
 
+
 import           Data.Char                   (isSpace)
 import           Data.Foldable               (toList)
 import           Data.List.NonEmpty          (NonEmpty)
 import qualified Data.List.NonEmpty    as NE (fromList)
-import           Data.List.Utility           (duplicates,mostCommon)
-import           Data.Matrix.NotStupid       (Matrix,ncols,nrows)
+import           Data.List.Utility           (duplicates, mostCommon)
+import           Data.Matrix.NotStupid       (Matrix, ncols, nrows)
 import qualified Data.Matrix.NotStupid as M  (fromList)
-import           Data.Maybe                  (catMaybes,fromJust)
+import           Data.Maybe                  (catMaybes, fromJust)
+import           Data.Semigroup
 import           Text.Megaparsec
 import           Text.Megaparsec.Custom
 import           Text.Megaparsec.Prim        (MonadParsec)
 
--- | Intermediate parse result prior to consistancy validation
+
+-- |
+--Intermediate parse result prior to consistancy validation
 data TCMParseResult 
    = TCMParseResult (NonEmpty String) (Matrix Double) deriving (Show)
 
--- | The results of a TCM file consisting of
+
+-- |
+-- The results of a TCM file consisting of
 --
 --   * A custom alphabet of 'Symbol's
 --
@@ -51,14 +57,18 @@ data TCM
    , transitionCosts :: Matrix Double -- n+1 X n+1 matrix where n = length customAlphabet
    } deriving (Show)
 
--- | Parses the entirety of a stream producing a TCM result.
+
+-- |
+-- Parses the entirety of a stream producing a TCM result.
 -- The result will contain an Alphabet with no duplicate elements
 -- and a square Matrix with dimension @(n+1) x (n+1)@ where @n@ is
 -- the length of the Alphabet.
 tcmStreamParser :: (MonadParsec e s m, Token s ~ Char) => m TCM
 tcmStreamParser = validateTCMParseResult =<< tcmDefinition <* eof
 
--- | Parses an intermediary result consisting of an Alphabet and a Matrix.
+
+-- |
+-- Parses an intermediary result consisting of an Alphabet and a Matrix.
 -- Both the Alphabet and Matrix have been validated independantly for
 -- consistencey, but no validation has been performed to ensure that the
 -- dimensions of the Matrix and the length of the Alphabet are consistant
@@ -70,18 +80,25 @@ tcmDefinition = do
     matrix   <- symbol tcmMatrix
     pure $ TCMParseResult alphabet matrix
 
--- | Shorthand for the expected format of the alphabet lin in a TCM file.
+
+-- |
+-- Shorthand for the expected format of the alphabet lin in a TCM file.
 -- The same as 'alphabetLine inlineSpace'.
 tcmAlphabet :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty String)
 tcmAlphabet = alphabetLine inlineSpace
 
--- | Shorthand for the expected format of the matrix block in a TCM file
+
+-- |
+-- Shorthand for the expected format of the matrix block in a TCM file
 -- The same as 'matrixBlock inlineSpace'.
 tcmMatrix   :: (MonadParsec e s m, Token s ~ Char) => m (Matrix Double)
 tcmMatrix   = matrixBlock  inlineSpace
 
--- | The 'alphabetLine' function takes a combinator to consume delimiters between
+
+-- |
+-- The 'alphabetLine' function takes a combinator to consume delimiters between
 -- elements in the alphabet line and returns a list of elements in the alphabet.
+--
 -- ==== __Examples__
 --
 -- Basic usage:
@@ -97,8 +114,11 @@ alphabetLine spacing = validateAlphabet =<< NE.fromList <$> ((alphabetSymbol <* 
     alphabetSymbol = some nonSpace
     nonSpace       = satisfy (not . isSpace)
 
--- | The 'matrixBlock' function takes a combinator to consume delimiters between
+
+-- |
+-- The 'matrixBlock' function takes a combinator to consume delimiters between
 -- entries in a line of the matrix and returns a square 'Matrix Double'.
+--
 -- ==== __Examples__
 --
 -- Basic usage:
@@ -117,9 +137,11 @@ matrixBlock spacing = validateMatrix =<< many (symbol matrixRow)
     matrixRow   = (spacing *> matrixEntry <* spacing) `manyTill` endOfLine
     matrixEntry = double
 
--- | Validates that the dimensions of the Matrix are @(n+1) x (n+1)@
+
+-- |
+-- Validates that the dimensions of the Matrix are @(n+1) x (n+1)@
 -- where @n@ is the length of the Alphabet.
-validateTCMParseResult :: (MonadParsec e s m, Token s ~ Char) => TCMParseResult -> m TCM
+validateTCMParseResult :: (MonadParsec e s m {- , Token s ~ Char -}) => TCMParseResult -> m TCM
 validateTCMParseResult (TCMParseResult alphabet matrix)
   | dimMismatch  = fail errorMessage
   | otherwise    = pure $ TCM alphabet matrix
@@ -130,20 +152,22 @@ validateTCMParseResult (TCMParseResult alphabet matrix)
     dimMismatch  = size + 1 /= rows                   
                 || size + 1 /= cols
     errorMessage = concat
-                 [ "The alphabet length is "
-                 , show size
-                 , " but the matrix dimensions are "
-                 , show rows
-                 , " x "
-                 , show cols
-                 , ". The expected matrix dimensions were "
-                 , show (size+1)
-                 , " x "
-                 , show (size+1)
-                 , "."
-                 ]
+        [ "The alphabet length is "
+        , show size
+        , " but the matrix dimensions are "
+        , show rows
+        , " x "
+        , show cols
+        , ". The expected matrix dimensions were "
+        , show $ size + 1
+        , " x "
+        , show $ size + 1
+        , "."
+        ]
 
--- | Validates the information contained in the Alphabet.
+
+-- |
+-- Validates the information contained in the Alphabet.
 --
 -- Ensures that the Alphabet:
 --
@@ -153,13 +177,15 @@ validateTCMParseResult (TCMParseResult alphabet matrix)
 --
 validateAlphabet :: (MonadParsec e s m, Token s ~ Char) => NonEmpty String -> m (NonEmpty String)
 validateAlphabet alphabet
-  | duplicatesExist = fail $ "The following symbols were listed multiple times in the custom alphabet: " ++ show dupes
+  | duplicatesExist = fail $ "The following symbols were listed multiple times in the custom alphabet: " <> show dupes
   | otherwise       = pure alphabet 
   where
     duplicatesExist = not $ null dupes
     dupes           = duplicates $ toList alphabet
 
--- | Validates the information contained in the Matrix constitutes a square matrix.
+
+-- |
+-- Validates the information contained in the Matrix constitutes a square matrix.
 --
 -- Ensures that the Matrix:
 --
@@ -169,7 +195,7 @@ validateAlphabet alphabet
 --
 --   * The number of rows match the number of columns
 --
-validateMatrix :: (MonadParsec e s m, Token s ~ Char) => [[Double]] -> m (Matrix Double)
+validateMatrix :: (MonadParsec e s m {- , Token s ~ Char -}) => [[Double]] -> m (Matrix Double)
 validateMatrix matrix
   | null matrix        = fail "No matrix specified"
   | null matrixErrors  = pure . M.fromList rows cols $ concat matrix
@@ -179,19 +205,21 @@ validateMatrix matrix
     cols               = fromJust . mostCommon $ length <$> matrix
     badCols            = foldr getBadCols [] $ zip [(1::Int)..] matrix
     getBadCols (n,e) a = let x = length e in if x /= cols then (n,x):a else a  
-    colMsg (x,y)       = (:) (Just $ "Matrix row "++show x++" has "++show y++" columns but "++show cols++" columns were expected")
+    colMsg (x,y)       = (:) (Just $ mconcat [ "Matrix row ", show x, " has ", show y, " columns but ", show cols, " columns were expected"])
     matrixErrors       = catMaybes $ badRowCount : badColCount
     badColCount        = foldr colMsg [] badCols
     badRowCount        = if   rows == cols
                          then Nothing
                          else Just $ concat
-                                [ "The matrix is not a square matrix. The matrix has "
-                                , show rows
-                                , " rows but "
-                                , show cols
-                                , " rows were expected"
-                                ]
+                             [ "The matrix is not a square matrix. The matrix has "
+                             , show rows
+                             , " rows but "
+                             , show cols
+                             , " rows were expected"
+                             ]
 
--- | Whitespace consuming combinator wrapper
+
+-- |
+-- Whitespace consuming combinator wrapper
 symbol  :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
 symbol  x = x <* space

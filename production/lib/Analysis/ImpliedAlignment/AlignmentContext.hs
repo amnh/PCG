@@ -42,6 +42,8 @@ import           Text.Show                      (showListWith)
 
 -- import           Debug.Trace                  (trace)
 
+-- |
+-- The contextual type of a base in a character.
 data PseudoIndex
    = OriginalBase
    | InsertedBase
@@ -51,8 +53,17 @@ data PseudoIndex
    | SoftGap
    deriving (Eq)
 
+-- |
+-- The contextual representation of a character based on ancestoral insertion
+-- and deletion events.
 type PseudoCharacter = [PseudoIndex]
 
+-- |
+-- The context of an implied alignment on a given edge.
+-- Contains the subset of the global insertion events that could possibly be
+-- applied in the subtree.
+-- Also contains the alignment so far with respect to ancestoral insertion and
+-- deletion events.
 data AlignmentContext e
    = Context
    { insertionEvents :: InsertionEvents e
@@ -75,12 +86,17 @@ instance Show e => Show (AlignmentContext e) where
           , ("  "<>) . concatMap show $ pseudoCharacter ac
           ]
 
+-- |
+-- Query whetehr a given 'PseudoIndex' represents a gap in the aligned character.
 isPseudoGap :: PseudoIndex -> Bool
 isPseudoGap OriginalBase = False
 isPseudoGap InsertedBase = False
 isPseudoGap _            = True
 
-readPseudoCharacter :: String -> [PseudoIndex]
+-- |
+-- Read a 'PseudoCharacter' from a 'String'. Stops reading input at the first
+-- 'Char' values that is not recognized as a rendered 'PseudoIndex'.
+readPseudoCharacter :: String -> PseudoCharacter
 readPseudoCharacter ('O':xs) = OriginalBase : readPseudoCharacter xs
 readPseudoCharacter ('I':xs) = InsertedBase : readPseudoCharacter xs
 readPseudoCharacter ('D':xs) = DeletedBase  : readPseudoCharacter xs
@@ -89,6 +105,9 @@ readPseudoCharacter ('-':xs) = HardGap      : readPseudoCharacter xs
 readPseudoCharacter ('~':xs) = SoftGap      : readPseudoCharacter xs
 readPseudoCharacter       _  = []
 
+-- |
+-- Augments an 'AlignmentContext' based on local 'DeletionEvents' and
+-- 'InsertionEvents' Values on the given edge identifier.
 applyLocalEventsToAlignment :: (Eq e, Show e) => e -> DeletionEvents -> AlignmentContext e -> AlignmentContext e
 applyLocalEventsToAlignment edgeIdentifier (DE localDeletionEvents) alignmentContext = --  (\x -> trace ("\nOutput\n"<>show x) x)
     Context

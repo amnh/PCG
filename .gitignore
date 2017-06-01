@@ -1,0 +1,10 @@
+*.*~
+*.*#
+*.dSYM
+*.gch
+*.hi
+*.o
+*.ss
+.*
+production/bin
+

@@ -6,7 +6,8 @@ module TestSuite.LibraryTests
 import qualified Analysis.ImpliedAlignment.Test                    as IA
 import qualified Analysis.Parsimony.Binary.DirectOptimization.Test as DO
 import qualified Analysis.Parsimony.Binary.Test                    as Parsimony
-import qualified Bio.Character.Dynamic.Coded.Test                  as Char
+import qualified Bio.Character.Encodable.Dynamic.Test              as DynamicChar
+import qualified Bio.Character.Encodable.Static.Test               as StaticChar
 import qualified Bio.PhyloGraph.DAG.Test                           as DAG
 import qualified Data.BitMatrix.Test                               as BitMatrix
 import qualified Test.Custom.Tree.Test                             as MockTree
@@ -40,7 +41,8 @@ testSuite = testGroup "Library Test Suite"
     BitMatrix.testSuite
   , DAG.testSuite
   , MockTree.testSuite
-  , Char.testSuite
+  , DynamicChar.testSuite
+  , StaticChar.testSuite
   , DO.testSuite
   , Parsimony.testSuite
   , IA.testSuite

@@ -17,25 +17,36 @@
 module File.Format.Fasta.Internal where
 
 import Data.Char              (isSpace)
+import Data.List.NonEmpty
 import Data.Map               (Map)
 import Data.Vector            (Vector)
 import Text.Megaparsec
 import Text.Megaparsec.Custom
 import Text.Megaparsec.Prim   (MonadParsec)
 
--- | Naive representation of a collection taxa sequences
+
+-- |
+-- Naive representation of a collection taxa sequences
 type TaxonSequenceMap  = Map Identifier CharacterSequence
 
--- | Unique identifier for a taxa 
+
+-- |
+-- Unique identifier for a taxa 
 type Identifier        = String
 
--- | Component of a phylogenetic character
+
+-- |
+-- Component of a phylogenetic character
 type Symbol            = String
 
--- | Indexed sequences of 'Symbol's with possible abiguity at an index
-type CharacterSequence = Vector [Symbol]
 
--- | Parses a line containing the sequence identifier along with an
+-- |
+-- Indexed sequences of 'Symbol's with possible abiguity at an index
+type CharacterSequence = Vector (NonEmpty Symbol)
+
+
+-- |
+-- Parses a line containing the sequence identifier along with an
 -- optional conmment which is discarded.
 identifierLine :: (MonadParsec e s m, Token s ~ Char) => m Identifier
 identifierLine = do
@@ -50,15 +61,21 @@ identifierLine = do
     commentMessage x = "Invalid comment for following label: '" ++ x ++ "'"
     lineEndMessage x = "There is no end-of-line after label: '" ++ x ++ "'"
 
--- | 'Identifier' of a sequence
+
+-- |
+-- 'Identifier' of a sequence
 identifier :: (MonadParsec e s m, Token s ~ Char) => m Identifier
 identifier = some $ satisfy validIdentifierChar
 
--- | Defines if a 'Char' is valid to be contained within a sequence 'Identifier'
+
+-- |
+-- Defines if a 'Char' is valid to be contained within a sequence 'Identifier'
 validIdentifierChar :: Char -> Bool
 validIdentifierChar c = (not . isSpace) c && c /= '$'
 
--- | Defines the comment format which can be expected after an identifier
+
+-- |
+-- Defines the comment format which can be expected after an identifier
 commentBody :: (MonadParsec e s m, Token s ~ Char) => m String
 commentBody  = do
     _       <- inlineSpace
@@ -66,6 +83,7 @@ commentBody  = do
     _       <- inlineSpace
     content <- many (commentWord <* inlineSpace)
     pure $ unwords content
+
 
 -- | Defines the words of a commenty
 commentWord :: (MonadParsec e s m, Token s ~ Char) => m String

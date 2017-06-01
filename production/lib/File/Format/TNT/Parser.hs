@@ -12,17 +12,20 @@
 -- taxa and their possible corresponding character sequences allong with a
 -- possible forest of trees defined for the taxa set.
 -----------------------------------------------------------------------------
+
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+
 module File.Format.TNT.Parser where
 
 import           Control.Monad            ((<=<),liftM3)
-import           Data.Foldable            (toList)
+import           Data.Foldable
 import           Data.IntMap              (IntMap,insertWith,mapWithKey,toAscList)
 import qualified Data.IntMap        as IM (lookup)
 import qualified Data.Map           as M  (fromList,lookup)
 import qualified Data.List.NonEmpty as NE (fromList)
 import           Data.Matrix.NotStupid    (Matrix)
 import           Data.Maybe               (fromMaybe)
+import           Data.Semigroup
 import           Data.Vector              (Vector,(!),(//),generate)
 import qualified Data.Vector        as V  (fromList)
 import           File.Format.TNT.Command.CNames
@@ -31,14 +34,16 @@ import           File.Format.TNT.Partitioning
 import           Text.Megaparsec.Custom
 import           Text.Megaparsec.Prim                     (MonadParsec,Token)
 
--- | Parses the contents of a TNT file stream into a 'TntResult'. A file stream
---   can contain either:
+
+-- |
+-- Parses the contents of a TNT file stream into a 'TntResult'. A file stream
+-- can contain either:
 --
---   * Only a forest of trees with labeled leaf nodes and the set of leaf nodes
---     is the same across the forest.
+-- * Only a forest of trees with labeled leaf nodes and the set of leaf nodes
+--   is the same across the forest.
 --
---   * A collection of taxa sequences with coresponsing metadata and possibly
---     corresponding forest of trees whose leaf sets are equal to the taxa set.
+-- * A collection of taxa sequences with coresponsing metadata and possibly
+--   corresponding forest of trees whose leaf sets are equal to the taxa set.
 tntStreamParser :: (MonadParsec e s m, Token s ~ Char) => m TntResult
 tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gatherCommands)
   where
@@ -54,6 +59,7 @@ tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gathe
                                   (matchTaxaInTree xread treads)
       where
         vectorizeTaxa   = V.fromList . toList . sequencesx
+
         matchTaxaInTree :: (MonadParsec e s m, Token s ~ Char) => XRead -> [TReadTree] -> m [LeafyTree TaxonInfo]
         matchTaxaInTree xreadCommand = traverse interpolateLeafs
           where
@@ -63,20 +69,22 @@ tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gathe
             limit = length vseqs - 1
             interpolateLeafs = traverse substituteLeaf
             substituteLeaf (Index i)
-              | 0 > i || i > limit = fail $ "Index '" ++ show i ++ "' in TREAD tree is outside the range of taxa [0," ++ show limit ++ "]."
+              | 0 > i || i > limit = fail $ "Index '" <> show i <> "' in TREAD tree is outside the range of taxa [0," <> show limit <> "]."
               | otherwise          = pure (vseqs ! i)
             substituteLeaf (Name name) =
               case name `M.lookup` mseqs of
-                Nothing -> fail $ "Name '" ++ show name ++ "' in TREAD tree is not in the list of taxa from the XREAD commands."
+                Nothing -> fail $ "Name '" <> show name <> "' in TREAD tree is not in the list of taxa from the XREAD commands."
                 Just x  -> pure (name, x)
             substituteLeaf (Prefix _) = undefined
 
--- | Performs an inital structural collapse to the various type lists to make
---   subsequent folding easier.
-collapseStructures :: (MonadParsec e s m, Token s ~ Char) => Commands -> m ([CCode],[CharacterName],[Cost],[NStates],[TReadTree],[XRead])
-collapseStructures (ccodes,cnames,costs,nstates,treads,xreads)
+
+-- |
+-- Performs an inital structural collapse to the various type lists to make
+-- subsequent folding easier.
+collapseStructures :: (MonadParsec e s m {- , Token s ~ Char -}) => Commands -> m ([CCode],[CharacterName],[Cost],[NStates],[TReadTree],[XRead])
+collapseStructures (ccodes, cnames, costs, nstates, treads, xreads)
   | not (null errors) = fails errors
-  | otherwise         = pure (ccodes,collapsedCNames,costs,nstates,collapsedTReads,xreads)
+  | otherwise         = pure (ccodes, collapsedCNames, costs, nstates, collapsedTReads, xreads)
   where
     errors          = cnamesErrors 
     collapsedCNames = concatMap toList cnames
@@ -85,54 +93,68 @@ collapseStructures (ccodes,cnames,costs,nstates,treads,xreads)
                       then []
                       else duplicateIndexMessages $ NE.fromList collapsedCNames
 
--- | Mutate the metadata structure by replacing the default character naming
---   information with information defined in CNAME command(s).
+
+-- |
+-- Mutate the metadata structure by replacing the default character naming
+-- information with information defined in CNAME command(s).
 applyCNames :: Foldable f => f CharacterName -> Vector CharacterMetaData -> Vector CharacterMetaData
 applyCNames charNames metaData = metaData // toAscList names
   where
     names = f `mapWithKey` cnamesCoalesce charNames
     f i name = modifyMetaDataNames name $ metaData ! i
+
     cnamesCoalesce :: Foldable f => f CharacterName -> IntMap CharacterName
     cnamesCoalesce = foldl g mempty
       where
         g mapping name = insertWith const (sequenceIndex name) name mapping
 
--- | Mutate the metadata structure by replacing the default TCM costs with
---   custom TCMs defined in COST command(s).
+
+-- |
+-- Mutate the metadata structure by replacing the default TCM costs with
+-- custom TCMs defined in COST command(s).
 applyCosts :: Foldable f => f Cost -> Vector CharacterMetaData -> Vector CharacterMetaData
 applyCosts charCosts metaData = metaData // toAscList matricies
   where
-    matricies = f `mapWithKey` costsCoalesce (length metaData - 1) charCosts
+    matricies = mapWithKey f $ costsCoalesce (length metaData - 1) charCosts
+
     f i mat = modifyMetaDataTCM mat $ metaData ! i
+
     costsCoalesce :: Foldable f => Int -> f Cost -> IntMap (Matrix Double)
     costsCoalesce charCount = foldl addTCMs mempty
       where
+        addTCMs mapping (Cost changeSet mat) = foldl (insertTCM mat) mapping $ range charCount changeSet
         insertTCM mat mapping index = insertWith const index mat mapping
-        addTCMs mapping (Cost changeSet mat) = foldl (insertTCM mat) mapping (range charCount changeSet)
 
--- | Coalesces many CCODE commands respecting thier structural order
---   into a single index ordered mapping.
+
+-- |
+-- Coalesces many CCODE commands respecting thier structural order
+-- into a single index ordered mapping.
 ccodeCoalesce :: Foldable t => Int -> t CCode -> Vector CharacterMetaData
 ccodeCoalesce charCount ccodeCommands = generate charCount f
   where
     f :: Int -> CharacterMetaData
     f = fromMaybe initialMetaData . (`IM.lookup` stateMapping)
+
     stateMapping :: IntMap CharacterMetaData
-    stateMapping = foldl (foldl addChangeSet) mempty ccodeCommands
+    stateMapping = foldl' (foldl' addChangeSet) mempty ccodeCommands
+
     addChangeSet :: IntMap CharacterMetaData -> CCodeAugment -> IntMap CharacterMetaData
-    addChangeSet mapping (CCodeAugment states indicies) = foldl applyChanges mapping indicies
+    addChangeSet mapping (CCodeAugment states indicies) = foldl' applyChanges mapping indicies
       where
         applyChanges :: IntMap CharacterMetaData -> CharacterSet -> IntMap CharacterMetaData
-        applyChanges mapping' changeSet = foldl (insertStates states) mapping' (range charCount changeSet)
+        applyChanges mapping' changeSet = foldl' (insertStates states) mapping' (range charCount changeSet)
+
     insertStates :: Foldable t => t CharacterState -> IntMap CharacterMetaData ->  Int -> IntMap CharacterMetaData
-    insertStates states mapping index = foldl insertState mapping states
+    insertStates states mapping index = foldl' insertState mapping states
       where
         insertState mapping' state = insertWith translation index defaultValue mapping'
           where
             defaultValue = metaDataTemplate state
             translation  = const (modifyMetaDataState state)
 
--- | Derive an ascending sequence of indicies from a specified index range.
+
+-- |
+-- Derive an ascending sequence of indicies from a specified index range.
 range :: Int -> CharacterSet -> [Int]
 range _ (Single    i  ) = [i..i]
 range _ (Range     i j) = [i..j]

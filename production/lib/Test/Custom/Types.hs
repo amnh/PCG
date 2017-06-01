@@ -2,7 +2,7 @@
 
 module Test.Custom.Types where
 
---import           Bio.Character.Dynamic.Coded
+--import           Bio.Character.Encodable
 --import           Bio.PhyloGraph.DAG.Class
 --import qualified Bio.PhyloGraph.Network                           as N
 --import qualified Bio.PhyloGraph.Node.Encoded                      as EN
@@ -150,7 +150,6 @@ instance BinaryTree TestDAG TestNode where
 instance RoseTree TestDAG TestNode where
     parent n t = headMay $ fmap (\i -> t V.! i) (parents n)
 
--- TODO: fix this instance, it doesn't make sense, but we need it
 instance StandardDAG TestDAG TestNode Int where
   getNodes  = id
   setNodes _ t = t

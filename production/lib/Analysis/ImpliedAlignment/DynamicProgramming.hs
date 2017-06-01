@@ -19,13 +19,13 @@ import           Analysis.ImpliedAlignment.AlignmentContext
 import           Analysis.ImpliedAlignment.DeletionEvents
 import           Analysis.ImpliedAlignment.InsertionEvents
 import           Analysis.ImpliedAlignment.Internal
-import           Analysis.Parsimony.Binary.DirectOptimization
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
+import           Bio.Character.Encodable
 import           Bio.Metadata
 import           Bio.PhyloGraph.Forest
 import           Bio.PhyloGraph.Network
 import           Bio.PhyloGraph.Node     hiding  (Node,children,name)
 import           Bio.PhyloGraph.Solution
-import           Bio.Character.Dynamic.Coded
 import           Control.Arrow                   ((&&&))
 import           Data.Foldable
 import qualified Data.HashMap.Lazy       as HM
@@ -45,12 +45,16 @@ import           Data.Vector.Instances           ()
 import           Prelude                 hiding  (lookup,zip,zipWith)
 import           Safe                            (tailMay)
 
+-- |
+-- Memoized data points on the edges of the post order traversal.
 data IndelEvents e
    = IndelEvents
    { edgeInsertionEvents :: InsertionEvents e
    , edgeDeletionEvents  :: DeletionEvents
    } deriving (Show)
 
+-- |
+-- The referencial precomputation tree structure used for the tree traversals.
 data TreeReferences n
    = TreeRefs
    { rootRef    :: Int
@@ -62,13 +66,13 @@ data TreeReferences n
 -- | Top level wrapper to do an IA over an entire solution
 -- takes a solution
 -- returns an AlignmentSolution
-iaSolution :: (Eq n, SolutionConstraint r m f t n e s, IANode' n s, Show (Element s)) => r -> r
+iaSolution :: (SolutionConstraint r m f t n e s, IANode' n s) => r -> r
 iaSolution inSolution = inSolution `setForests` fmap (`iaForest` getMetadata inSolution) (getForests inSolution)
 
 -- | Simple wrapper to do an IA over a forest
 -- takes in a forest and some metadata
 -- returns an alignment forest
-iaForest :: (Eq n, FoldableWithKey k, ForestConstraint f t n e s, IANode' n s, Metadata m s, Key k ~ Int, Show (Element s)) => f -> k m -> f
+iaForest :: (FoldableWithKey k, ForestConstraint f t n e s, IANode' n s, Metadata m s, Key k ~ Int) => f -> k m -> f
 iaForest inForest inMeta = inForest `setTrees` fmap (deriveImpliedAlignments inMeta) (trees inForest)
 
 -- TODO: make sure a sequence always ends up in FinalGapped to avoid this decision tree
@@ -83,7 +87,7 @@ getForAlign n
 
 -- | Decorates a tree with implied alignments of the leaf nodes given a tree
 --   decorated with direct optimization annotations, along with suporting metadata.
-deriveImpliedAlignments :: (Eq n, FoldableWithKey f, TreeConstraint t n e s, IANode' n s, Metadata m s, Key f ~ Int, Show (Element s))
+deriveImpliedAlignments :: (FoldableWithKey f, TreeConstraint t n e s, IANode' n s, Metadata m s, Key f ~ Int)
                         => f m -> t -> t 
 deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMetadatas
   where
@@ -102,7 +106,7 @@ deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMe
 --
 --   * The tree on which implies the alignment
 -- 
-numeration :: (Eq n, TreeConstraint t n e s, IANode' n s, Show (Element s)) => Int -> CostStructure -> t -> t
+numeration :: (TreeConstraint t n e s, IANode' n s) => Int -> CostStructure -> t -> t
 numeration sequenceIndex costStructure tree = tree `update` (snd <$> updatedLeafNodes)
   where
     -- | Precomputations used for reference in the memoization
@@ -185,7 +189,14 @@ precomputeTreeReferences tree =
               where
                 (subCounter',ys) = f n (Just counter) (subCounter+1)
 
--- | Calculates the 'IndelEvents' that occur given two sequences of an edge.
+
+-- |
+-- Calculates the 'IndelEvents' that occur given two sequences of an edge.
+--
+-- Note that as a precondition to this linear time algorithim, it is assumed
+-- that both input sequences are ungapped. There can be no gaps in the input
+-- sequences. If gaps exist in the input sequences, even from user input, this
+-- function may return incorrect results!
 comparativeIndelEvents :: (Eq e, SeqConstraint s) => e -> s -> s -> CostStructure -> (DeletionEvents, InsertionEvents e, s ,s)
 comparativeIndelEvents edgeIdentifier ancestorCharacterUnaligned descendantCharacterUnaligned costStructure
   | olength ancestorCharacter /= olength descendantCharacter = error errorMessage
@@ -198,7 +209,7 @@ comparativeIndelEvents edgeIdentifier ancestorCharacterUnaligned descendantChara
                            , "\nChild length: "
                            , show $ olength descendantCharacter
                            ]
-    (ancestorCharacter, descendantCharacter) = doAlignment ancestorCharacterUnaligned descendantCharacterUnaligned costStructure
+    (ancestorCharacter, descendantCharacter) = doAlignment ancestorCharacterUnaligned descendantCharacterUnaligned $ toCostFunction costStructure
     (_, resultingDeletionEvents, resultingInsertionEvents) = foldlWithKey' f (0, mempty, mempty) $ zip (otoList ancestorCharacter) (otoList descendantCharacter)
     f (parentBaseIndex, deletions, insertions) _characterIndex (ancestorElement, descendantElement)
       -- Biological "Nothing" case
@@ -214,7 +225,7 @@ comparativeIndelEvents edgeIdentifier ancestorCharacterUnaligned descendantChara
       where
         deletions'          = parentBaseIndex `IS.insert` deletions
         insertions'         = parentBaseIndex `incInsMap` insertions
-        gap                 = getGapChar ancestorElement
+        gap                 = getGapElement ancestorElement
 --      containsGap char    = gap .&. char /= zeroBits
         insertionEventLogic =     ancestorElement == gap && descendantElement /= gap -- not (containsGap descendantElement)
         deletionEventLogic  =   descendantElement == gap && ancestorElement   /= gap --not (containsGap   ancestorElement)
@@ -223,10 +234,10 @@ comparativeIndelEvents edgeIdentifier ancestorCharacterUnaligned descendantChara
                             || (descendantElement == gap && containsGap   ancestorElement)
 -}                             
 
-incInsMap :: Int -> IntMap Int -> IntMap Int
-incInsMap key = IM.insertWith f key 1
-  where
-    f _ = succ
+        incInsMap :: Int -> IntMap Int -> IntMap Int
+        incInsMap key = IM.insertWith g key 1
+          where
+            g = const succ
 
 -- | Transforms a node's decorations to include the implied alignment given a 'PsuedoCharacter' and sequence index.
 deriveImpliedAlignment :: (EncodableDynamicCharacter s2, Foldable t, IANode' n s2, NodeConstraint n s1, Element s1 ~ Element s2)
@@ -243,7 +254,7 @@ deriveImpliedAlignment sequenceIndex psuedoCharacterVal node = node `setHomologi
         leafCharacter   = leafSequence V.! sequenceIndex
         leafAlignedChar = constructDynamic $ reverse result
         characterTokens = otoList leafCharacter
-        gap             = getGapChar $ head characterTokens
+        gap             = getGapElement $ head characterTokens
         (_,_remaining,result)    = foldl' f (0 :: Int, characterTokens, []) psuedoCharacterVal
           where
             f (basesSeen, xs, ys) e

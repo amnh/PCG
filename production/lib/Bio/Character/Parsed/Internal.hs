@@ -14,44 +14,70 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE FlexibleInstances, TypeSynonymInstances #-}
+
 module Bio.Character.Parsed.Internal where
 
 import Data.Alphabet
-import Data.Foldable
-import Data.Vector   (Vector, fromList)
-import Data.Map      (Map)
-import Test.QuickCheck
+import Data.List.NonEmpty (NonEmpty)
+import Data.Map           (Map)
+import Data.Vector        (Vector)
 
--- TODO: do ambiguity group types: more aliasing
 
--- TODO: make AmbiguityGroup a nonempty list
--- | A (nonempty) collection of possible character values. Singleton lists
---   represent a unambiguous character value.
-type AmbiguityGroup = [String]
+-- |
+-- A mapping from taxon identifiers to thier corresponding sequences.
+type TaxonCharacters = Map Identifier ParsedChars
 
--- | An ordered dynamic character of ambiguity groups. This represents a dynamic
---   homology character when it comes from the parser (so is not yet encoded
----  or packed, if those are options.)
-type ParsedChar = Vector AmbiguityGroup
 
--- TODO: Remove Maybe?
--- | Represents a character sequence containing possibly missing character data.
-type ParsedChars = Vector (Maybe ParsedChar)
+-- |
+-- Represents a character sequence containing possibly missing character data.
+type ParsedChars = Vector ParsedCharacter
 
--- TODO: add a TaxonIdentifier or TerminalName as type string - lots of aliasing
--- | A mapping from taxon identifiers to thier corresponding sequences.
-type TreeChars = Map String ParsedChars
+-- |
+-- The string value that uniquely identifies a taxon.
+type Identifier = String
 
+
+-- |
+-- A generalized character type extracted from a parser.
+-- A character can be real-valued, discrete and singular,
+-- or discrete with variable length.
+data ParsedCharacter
+   = ParsedContinuousCharacter (Maybe Double)
+   | ParsedDiscreteCharacter   (Maybe (AmbiguityGroup String))
+   | ParsedDynamicCharacter    (Maybe (NonEmpty (AmbiguityGroup String)))
+   deriving (Eq, Show)
+
+
+{-
 -- | Higher level arbitrary helper
 parsedCharsGivenAlph :: [Alphabet String] -> Gen ParsedChars
-parsedCharsGivenAlph inAlphs = fromList <$> mapM parsedMaybe inAlphs
+parsedCharsGivenAlph inAlphs = V.fromList <$> mapM parsedMaybe inAlphs
+-}
 
+
+{-
 -- | Generates a maybe character
 parsedMaybe :: Alphabet String -> Gen (Maybe ParsedChar)
 parsedMaybe inAlph = do
     c <- arbParsedGivenAlph inAlph
     elements [Just c, Nothing]
+-}
 
+
+{-
 -- | Define an arbitrary helper function to create a parsed sequence over an Alphabet
 arbParsedGivenAlph :: Alphabet String -> Gen ParsedChar
-arbParsedGivenAlph inAlph = fromList <$> listOf (sublistOf (toList inAlph))
+arbParsedGivenAlph inAlph = NE.fromList <$> listOf1 ( NE.fromList <$> sublistOf (toList inAlph))
+-}
+
+
+-- Shouldn't need this definition
+
+{-
+-- | (✔)
+instance Arbitrary ParsedChar where
+   arbitrary = do
+       let amb = NE.fromList <$> listOf1 arbitrary
+       NE.fromList <$> listOf1 amb
+ -}

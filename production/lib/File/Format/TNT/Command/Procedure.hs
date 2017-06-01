@@ -11,8 +11,11 @@
 -- Parser for the procedure command. The parse results of the procedure parser
 -- are usually ignored by the calling combinators.
 -----------------------------------------------------------------------------
+
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+
 module File.Format.TNT.Command.Procedure where
+
 
 import Data.Functor (($>))
 import File.Format.TNT.Internal
@@ -20,8 +23,9 @@ import Text.Megaparsec
 import Text.Megaparsec.Custom
 import Text.Megaparsec.Prim     (MonadParsec)
 
--- | Parses an PROCEDURE command that consisits of exacty
--- one of the following:
+
+-- |
+-- Parses an PROCEDURE command that consisits of exacty one of the following:
 --
 --  * Close file directive
 --
@@ -32,30 +36,38 @@ procedureCommand :: (MonadParsec e s m, Token s ~ Char) => m ()
 procedureCommand =  procHeader *> procBody
   where
     procBody = choice
-             [ try procFastaFile   $> ()
-             , try procCommandFile $> ()
-             , procCloseFile
-             ]
+        [ try procFastaFile   $> ()
+        , try procCommandFile $> ()
+        , procCloseFile
+        ]
 
--- | Consumes the superflous heading for a PROCEDURE command.
+
+-- |
+-- Consumes the superflous heading for a PROCEDURE command.
 procHeader :: (MonadParsec e s m, Token s ~ Char) => m ()
 procHeader = symbol $ keyword "procedure" 4
 
--- | A directive to load and interpret the specified TNT file.
---   This interpretation is beyond the scope of this software.
---   We ignore PROCEDURE commands of this form .
+
+-- |
+-- A directive to load and interpret the specified TNT file.
+-- This interpretation is beyond the scope of this software.
+-- We ignore PROCEDURE commands of this form .
 procCommandFile :: (MonadParsec e s m, Token s ~ Char) => m FilePath
 procCommandFile = anythingTill (whitespace *> char ';') <* trim (char ';')
 
--- | A directive to read in a FASTA file as aligned, non-addative data.
---   This interpretation is beyond the scope of this software.
---   We ignore PROCEDURE commands of this form. 
+
+-- |
+-- A directive to read in a FASTA file as aligned, non-addative data.
+-- This interpretation is beyond the scope of this software.
+-- We ignore PROCEDURE commands of this form. 
 procFastaFile :: (MonadParsec e s m, Token s ~ Char) => m FilePath
 procFastaFile = symbol (char '&') *> procCommandFile
 
--- | A close file directive. Closes all open files. Found at the end of all
---   properly formated TNT input files.
---   This software does not open files for interpretation from a TNT file,
---   so this command will have no effect and be ignored.
+
+-- |
+-- A close file directive. Closes all open files. Found at the end of all
+-- properly formated TNT input files.
+-- This software does not open files for interpretation from a TNT file,
+-- so this command will have no effect and be ignored.
 procCloseFile :: (MonadParsec e s m, Token s ~ Char) => m ()
 procCloseFile = symbol (char '/') *> symbol (char ';') $> ()

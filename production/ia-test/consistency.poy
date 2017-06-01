@@ -1,3 +1,0 @@
-read ("Character0.fasta")
-read ("chel_nj_tbr_rr.tre")
-report (data,"cost-check.tree")
