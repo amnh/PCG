@@ -434,6 +434,8 @@ foreign import ccall unsafe "c_alignment_interface.h align3d"
 {- Exported Functions -}
 
 
+-- TODO: Collapse this definition and defere branching tothe C side of the FFI call.
+
 -- |
 -- Generate the 2D and 3D dense TCM matricies used for FFI calls to
 -- 'foreignPairwiseDO' and 'foreignThreeWayDO'.
