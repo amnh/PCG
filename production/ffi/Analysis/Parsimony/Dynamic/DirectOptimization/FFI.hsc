@@ -155,14 +155,14 @@ data UnionContext  = ComputeUnions  | DoNotComputeUnions
 -- | Because we're using a struct we need to make a Storable instance
 instance Storable AlignIO where
 
-    sizeOf    _  = (#size struct alignIO)
+    sizeOf    _  = (#size struct alignIO_t)
 
     alignment _  = alignment (undefined :: CSize)
 
     peek ptr     = do
-        arr  <- (#peek struct alignIO, character) ptr
-        len  <- (#peek struct alignIO, length)    ptr
-        cap  <- (#peek struct alignIO, capacity)  ptr
+        arr  <- (#peek struct alignIO_t, character) ptr
+        len  <- (#peek struct alignIO_t, length)    ptr
+        cap  <- (#peek struct alignIO_t, capacity)  ptr
 
         pure AlignIO
             { character = arr
@@ -171,9 +171,9 @@ instance Storable AlignIO where
             }
 
     poke ptr (AlignIO arr len cap) = do
-        (#poke struct alignIO, character) ptr arr
-        (#poke struct alignIO, length)    ptr len
-        (#poke struct alignIO, capacity)  ptr cap
+        (#poke struct alignIO_t, character) ptr arr
+        (#poke struct alignIO_t, length)    ptr len
+        (#poke struct alignIO_t, capacity)  ptr cap
 
 
 instance NFData CostMatrix2d
