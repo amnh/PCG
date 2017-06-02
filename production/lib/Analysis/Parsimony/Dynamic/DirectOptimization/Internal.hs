@@ -269,7 +269,7 @@ insertNewGaps insertionIndicies character = constructDynamic . (<> trailingGaps)
 -- |
 -- Calculates the mean character and cost between three supplied characters.
 threeWayMean
-  :: (EncodableDynamicCharacter c, Show c)
+  :: EncodableDynamicCharacter c
   => (Word -> Word -> Word)
   -> c
   -> c

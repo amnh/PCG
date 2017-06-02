@@ -27,7 +27,7 @@ import           Bio.Sequence
 import qualified Bio.Sequence.Block as BLK
 import           Control.Arrow             ((&&&))
 --import           Control.Applicative       (liftA2)
-import           Control.DeepSeq
+--import           Control.DeepSeq
 import           Control.Lens
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
@@ -36,14 +36,14 @@ import           Data.EdgeSet
 import           Data.Foldable
 --import           Data.Hashable
 --import           Data.Hashable.Memoize
-import           Data.IntMap               (IntMap)
+--import           Data.IntMap               (IntMap)
 import qualified Data.IntMap        as IM
 import qualified Data.IntSet        as IS
 import           Data.Key
 import           Data.List.NonEmpty        (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty as NE
 import           Data.Map                  (Map)
-import qualified Data.Map           as M
+--import qualified Data.Map           as M
 import           Data.Maybe
 import           Data.MonoTraversable
 import           Data.Ord                  (comparing)
@@ -54,7 +54,7 @@ import qualified Data.Vector        as V
 import           Data.Vector.Instances     ()
 import           Prelude            hiding (lookup, zip, zipWith)
 
-import Debug.Trace
+--import Debug.Trace
   
 
 type BlockTopologies = NonEmpty (EdgeSet (Int, Int))
@@ -226,7 +226,7 @@ preorderFromRooting
      , HasBlockCost u' v' w' x' y' z'  Word Double
      , HasTraversalFoci z  (Maybe TraversalFoci)
      , HasTraversalFoci z' (Maybe TraversalFoci)
-     , Show z
+--     , Show z
      )
   => (z -> [(Word, z')] -> z')
   -> Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
@@ -273,9 +273,9 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ 
             h charIndex rootEdge@(lhsRootRef, rhsRootRef) = V.generate dagSize g
               where
 --                g i | trace (show i) False = undefined
-                g i = mapping ! i
+                g i = parentalMapping ! i
                 
-                mapping = lhs <> rhs
+                parentalMapping = lhs <> rhs
                   where
                     -- TODO: Get the appropriate resolution here!
                     lhs = IM.singleton lhsRootRef (Right (rhsRootRef, val)) <> genMap (IS.singleton rhsRootRef) lhsRootRef
@@ -283,7 +283,7 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ 
 --                    genMap _  j | trace (show j) False = undefined
                     genMap is j = foldMap (\x -> IM.singleton x $ Left j) kids <> foldMap (genMap (IS.insert j is)) kids
                       where
-                        kids = catMaybes $ contains j is <$> toList topo
+                        kids = catMaybes $ nextEdges j is <$> toList topo
 
                     val = (! charIndex) . dynamicCharacters
                           -- Get the appropriate block from the resolution that contains this character
@@ -291,7 +291,7 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ 
                           -- Get the appropriate resolution based on this character's display tree toplogy
                         $ selectApplicableResolutions topo $ edgeCostMapping ! rootEdge
 
-                    contains i is (x,y)
+                    nextEdges i is (x,y)
                       | x == i && isValid x = Just y
                       | y == i && isValid y = Just x
                       | otherwise           = Nothing
@@ -321,7 +321,7 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ 
 
     rootWLOG = NE.head $ rootRefs dag
 
-    fociWLOG = sequenceOfBlockMinimumTopologies
+--    fociWLOG = sequenceOfBlockMinimumTopologies
 
 --    applyMetadata :: NonEmpty (Vector z') -> NonEmpty (Vector z')
     applyMetadata = zipWith g sequenceOfBlockMinimumTopologies 
