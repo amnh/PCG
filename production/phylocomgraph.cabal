@@ -163,6 +163,7 @@ library
                        Analysis.Parsimony.Additive.Internal
                        Analysis.Parsimony.Dynamic.DirectOptimization
                        Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Ukkonen
                        Analysis.Parsimony.Dynamic.SequentialAlign
                        Analysis.Parsimony.Fitch.Internal
                        Analysis.Parsimony.Sankoff.Internal
@@ -234,6 +235,7 @@ library
                        Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents
                        Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Internal
                        Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Ukkonen.Internal
                        Analysis.Parsimony.Dynamic.SequentialAlign.FFI
                        Bio.Character.Decoration.Additive.Class
                        Bio.Character.Decoration.Additive.Internal

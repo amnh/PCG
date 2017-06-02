@@ -64,11 +64,11 @@ import ReadGraphs
 
 --types for character data, only BaseChar is "storable" so potentially interoperable with C
 --characterSet better as list perhaps to allow for parallel map (data parallel) 
-type BaseChar = (V.Vector Int64)               --Vector so O(1) access, Int64 so can do bitwise stuff, Storable so can do FFI-C length 1-many
-type CharacterSet = (V.Vector BaseChar)         --O(1) charcater acess--prob not need likely sequential so list OK
-type CharacterSetList = [BaseChar]              --List so can easily parallel map functinos over data
---type DataMatrix = (V.Vector CharacterSet)       --Vector so O(1) random access
-type DataMatrixVLS = (V.Vector CharacterSetList) --BVLS = Vector-List-Storable
+type BaseChar         = V.Vector Int64            --Vector so O(1) access, Int64 so can do bitwise stuff, Storable so can do FFI-C length 1-many
+type CharacterSet     = V.Vector BaseChar         --O(1) charcater acess--prob not need likely sequential so list OK
+type CharacterSetList = [BaseChar]                  --List so can easily parallel map functinos over data
+--type DataMatrix = V.Vector CharacterSet           --Vector so O(1) random access
+type DataMatrixVLS    = V.Vector CharacterSetList --BVLS = Vector-List-Storable
 
 --convertToBit converts an In to bit re 0=1, 1=2, 2=4 etc
 convertToBit :: Int -> Int64

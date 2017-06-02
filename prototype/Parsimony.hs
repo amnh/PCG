@@ -117,8 +117,9 @@ setLeftRight inL inR
             outL = max inL inR
             outR = min inL inR 
 
--- | ukkonenCore core functions of Ukkonen to allow for recursing with maxGap
---doubled if not large enough (returns Nothing)  
+-- |
+-- ukkonenCore core functions of Ukkonen to allow for recursing with maxGap
+-- doubled if not large enough (returns Nothing)  
 ukkonenCore :: BaseChar -> Int -> BaseChar -> Int -> Int -> Int -> Int -> (BaseChar, Float, BaseChar, BaseChar, BaseChar)
 ukkonenCore lSeq lLength rSeq rLength maxGap indelCost subCost | trace "ukkonenCore" False = undefined
 ukkonenCore lSeq lLength rSeq rLength maxGap indelCost subCost
@@ -135,13 +136,14 @@ ukkonenCore lSeq lLength rSeq rLength maxGap indelCost subCost
 
 --FOR both DO's  lseq is a row, acrosss so num columns = length of lseq
 --There are rseq rows
--- | UkkonenDO takes two input sequences and returns median sequence and cost
---only 1:1 for now. Uses Ukkonen's space/time saving algorithm
---need to make sure Left/Right and diag/ins/del orders consistent and with
---POY4/5
---lseq > rseq appeard more efficient--could be wrong
---move to C via FFI
---Still occasional error in cost and median (disagreement) show in Chel.seq
+-- |
+-- UkkonenDO takes two input sequences and returns median sequence and cost
+-- only 1:1 for now. Uses Ukkonen's space/time saving algorithm
+-- need to make sure Left/Right and diag/ins/del orders consistent and with
+-- POY4/5
+-- lseq > rseq appeard more efficient--could be wrong
+-- move to C via FFI
+-- Still occasional error in cost and median (disagreement) show in Chel.seq
 ukkonenDO :: BaseChar -> BaseChar -> CharInfo -> (BaseChar, Float, BaseChar, BaseChar, BaseChar)
 ukkonenDO inlSeq inrSeq charInfo | trace ("calling ukonnen DO with seqs " ++ show inlSeq ++ show inrSeq) False = undefined
 ukkonenDO inlSeq inrSeq charInfo
@@ -157,10 +159,11 @@ ukkonenDO inlSeq inrSeq charInfo
             maxGap = 1 + lLength - rLength  --10000 :: Int --holder lseq - rSeq + 1
             (median, cost, medGap, alignLeft, alignRight) = ukkonenCore lSeq lLength rSeq rLength maxGap indelCost subCost
 
--- | tracebackUkkonen creates REVERSE mediian from nwMatrix, reverse to make tail
---recusive, for Ukkonen space/time saving offsets
---need to count gaps in traceback for threshold/barrier stuff
---CHANGE TO MAYBE (V.Vector Int64) FOR BARRIER CHECK
+-- |
+-- tracebackUkkonen creates REVERSE mediian from nwMatrix, reverse to make tail
+-- recusive, for Ukkonen space/time saving offsets
+-- need to count gaps in traceback for threshold/barrier stuff
+-- CHANGE TO MAYBE (V.Vector Int64) FOR BARRIER CHECK
 tracebackUkkonen :: V.Vector (V.Vector (Int, Int64, Direction)) -> BaseChar -> BaseChar -> Int -> Int -> Int -> Int -> Int -> V.Vector (Int64, Int64, Int64)
 tracebackUkkonen nwMatrix inlSeq inrSeq posR posL maxGap rInDel lInDel | trace ("tracebackUkkonen " ++ show posR ++ show posL ++ show inlSeq ++ show inrSeq) False = undefined
 tracebackUkkonen nwMatrix inlSeq inrSeq posR posL maxGap rInDel lInDel
@@ -174,7 +177,8 @@ tracebackUkkonen nwMatrix inlSeq inrSeq posR posL maxGap rInDel lInDel
         in trace (show y) y
         where (_, state, direction) = (nwMatrix V.! posR) V.! (transformFullYShortY posL posR  maxGap) --(transformFullYShortY posL posR maxGap)
 
--- | getFirstRowUkkonen initializes first row of NW-Ukkonen matrix
+-- |
+-- getFirstRowUkkonen initializes first row of NW-Ukkonen matrix
 getFirstRowUkkonen :: Int -> Int -> Int -> Int -> BaseChar -> Int -> V.Vector (Int, Int64, Direction)
 --getFirstRowUkkonen _ rowLen position _ lSeq _ | trace ("getFirstRowUkkonen " ++ show lSeq ++ show position ++ show rowLen) False = undefined
 getFirstRowUkkonen indelCost rowLength position prevCost lSeq  maxGap
@@ -194,7 +198,8 @@ getFirstRowUkkonen indelCost rowLength position prevCost lSeq  maxGap
             newState = getUnionIntersectionState inDelBit (lSeq V.! (position - 1))
 
 
--- | getRowUkkonen starts at second row (=1) and creates each row in turn--Ukkonen
+-- |
+-- getRowUkkonen starts at second row (=1) and creates each row in turn--Ukkonen
 getRowsUkkonen :: BaseChar -> BaseChar -> Int -> Int -> Int -> V.Vector (Int, Int64, Direction) -> Int -> V.Vector (V.Vector (Int, Int64, Direction))
 getRowsUkkonen lSeq rSeq indelCost subCost rowNum prevRow maxGap | trace "getRowsUkkonen" False = undefined
 getRowsUkkonen lSeq rSeq indelCost subCost rowNum prevRow maxGap
@@ -208,8 +213,9 @@ getRowsUkkonen lSeq rSeq indelCost subCost rowNum prevRow maxGap
             thisRowZero =  getThisRowUkkonen lSeq rSeq indelCost subCost rowNum prevRow startPosition (V.length lSeq) 0 maxGap
             thisRowNonZero = V.cons (barrierCost, barrierBit, DownDir) (getThisRowUkkonen lSeq rSeq indelCost subCost rowNum prevRow startPosition  (V.length lSeq) barrierCost maxGap )
 
--- | getThisRowUkkonen takes sequences and parameters with row number and make a non-first
---row--Ukkonen
+-- |
+-- getThisRowUkkonen takes sequences and parameters with row number and make a non-first
+-- row--Ukkonen
 getThisRowUkkonen :: BaseChar -> BaseChar -> Int -> Int -> Int ->  V.Vector (Int, Int64, Direction) -> Int -> Int -> Int -> Int -> V.Vector (Int, Int64, Direction)
 getThisRowUkkonen lSeq rSeq indelCost subCost rowNum prevRow position rowLength prevCost maxGap
     | position ==  rowLength  + 1 = V.empty
