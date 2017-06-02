@@ -533,7 +533,7 @@ performMatrixAllocation openningCost alphabetSize costFn = unsafePerformIO . wit
 -- The process for this algorithm is to generate a traversal matrix, then perform a traceback.
 algn2d :: ( EncodableDynamicCharacter s
           , Exportable s
-          , Show s
+--          , Show s
           )
        => s                         -- ^ First  dynamic character
        -> s                         -- ^ Second dynamic character
@@ -654,9 +654,6 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
                     where
                         paddedArr = replicate (max 0 (fromEnum (maxAllocLen - elemCount))) 0 <> elemArr
 
-                coerceToOutputType len charElements =
-                    fromExportableElements . ExportableCharacterElements (fromEnum len) elemWidth $ fmap fromIntegral charElements
-
                 -- Used for debugging
 {-                
                 renderBuffer buf = "[" <> intercalate "," (fmap pad shownElems) <> "]"
@@ -674,7 +671,6 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
 -- The process for this algorithm is to generate a traversal matrix, then perform a traceback.
 algn3d :: ( EncodableDynamicCharacter s
           , Exportable s
-          , Show s
           )
        => s                         -- ^ First  dynamic character
        -> s                         -- ^ Second dynamic character
@@ -695,7 +691,7 @@ algn3d :: ( EncodableDynamicCharacter s
 algn3d char1 char2 char3 denseTCMs = undefined -- TODO: implement once C code is in place! Remember to add gap open cost.
 
 
-
+{-
 -- | A C binding that computes only the cost of a 2d alignment
 align2dCostOnly
   :: ( EncodableDynamicCharacter s
@@ -746,6 +742,7 @@ align2dGappedUngapped
   -> DenseTransitionCostMatrix
   -> (Word, s, s, s, s)
 align2dGappedUngapped c1 c2 cm = algn2d c1 c2 cm ComputeUnions ComputeMedians
+-}
 
 
 {- Generic helper functions -}

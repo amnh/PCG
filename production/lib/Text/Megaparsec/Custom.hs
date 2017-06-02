@@ -64,7 +64,7 @@ nonEmpty c = NE.fromList <$> some c
 -- |
 -- @anythingTill end@ consumes zero or more characters until @end@ is matched,
 -- leaving @end@ in the stream.
-anythingTill :: (MonadParsec e s m, Token s ~ Char) => m a -> m String
+anythingTill :: MonadParsec e s m => m a -> m [Token s]
 anythingTill c = do 
     ahead <- optional . try $ lookAhead c
     case ahead of
@@ -75,10 +75,14 @@ anythingTill c = do
 -- |
 -- @somethingTill end@ consumes one or more characters until @end@ is matched,
 -- leaving @end@ in the stream.
-somethingTill :: (MonadParsec e s m, Token s ~ Char) => m a -> m String
+somethingTill :: MonadParsec e s m => m a -> m [Token s]
 somethingTill c = do
     _ <- notFollowedBy c
-    anyChar <:> anythingTill c
+    anyToken <:> anythingTill c
+
+
+anyToken :: MonadParsec e s m => m (Token s)
+anyToken = token Right Nothing
 
 
 -- |
@@ -129,23 +133,26 @@ inlineSpace = skipMany inlineSpaceChar
 -- Ensure that the following holds for all `x :: String`:
 --
 -- > isRight (parse start "" x) /= isRight (parse end "" x)
-comment :: (MonadParsec e s m, Token s ~ Char) => m String -> m String -> m String
+--
+comment :: MonadParsec e s m => m [Token s] -> m [Token s] -> m [Token s]
 comment start end = commentDefinition' False
   where
-    commentChar    = notFollowedBy (start <|> end) *> anyChar
+    commentChar    = notFollowedBy (start <|> end) *> anyToken
     commentContent = many commentChar
     commentDefinition' enquote = do
         prefix   <- start
         before   <- commentContent
         comments <- concat <$> many (commentDefinition' True <++> commentContent)
         suffix   <- end
-        after    <- if enquote
+{-        
+        after    <- if   enquote
                     then many spaceChar
                     else pure ""
+-}
         pure . concat $
           if enquote
-          then [ prefix, before, comments, suffix, after ]
-          else [         before, comments,         after ]
+          then [ prefix, before, comments, suffix {- , after -} ]
+          else [         before, comments         {- , after -} ]
 
 
 -- |

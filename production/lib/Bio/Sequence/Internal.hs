@@ -155,7 +155,7 @@ hexTranspose = fromBlocks . deepTranspose . fmap toBlocks . toList
   where
 --    deepTranspose :: [(NonEmpty (CharacterBlock m i c f a d))] -> NonEmpty (CharacterBlock (t m) (t i) (t c) (t f) (t a) (t d))
     deepTranspose val =
-        let beta = NE.unfold f val -- :: NonEmpty [CharacterBlock m i c f a d]
+      let beta = NE.unfoldr f val -- :: NonEmpty [CharacterBlock m i c f a d]
         in  fmap Blk.hexTranspose beta
       where
 --        f :: [NonEmpty (CharacterBlock m i c f a d)] -> ([CharacterBlock m i c f a d], Maybe [NonEmpty (CharacterBlock m i c f a d)])

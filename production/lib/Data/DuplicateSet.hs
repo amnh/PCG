@@ -132,7 +132,7 @@ instance Show a => Show (DuplicateSet a) where
 -- @replicate n x@ is a 'DuplicateSet' of the supplied element value repeated
 -- @n@ times.
 {-# INLINE replicate #-}
-replicate :: Ord a => Int -> a -> DuplicateSet a
+replicate :: Int -> a -> DuplicateSet a
 replicate i e
   | i < 1     = error $ "Call to replicate with a non-positve value: " <> show i
   | otherwise = DSet $ Map.singleton e i

@@ -172,9 +172,9 @@ instance (Show e) => Show (InsertionEvents a e) where
 -- combined insertion events of child edges.
 --
 -- Pronounced <http://www.dictionary.com/browse/coalesce "coalesce"> operator.
-coalesce :: (Eq e, Foldable t) => DeletionEvents -> InsertionEvents e -> t (InsertionEvents e) -> InsertionEvents e
+coalesce :: Foldable t => DeletionEvents -> InsertionEvents e -> t (InsertionEvents e) -> InsertionEvents e
 coalesce ancestorDeletions (IE ancestorMap) descendantEvents
-  | any (<0) $ IM.keys descendantMap = error "A negative key value was created"
+  | any (< 0) $ IM.keys descendantMap = error "A negative key value was created"
   | size output /= sum (size <$> toList descendantEvents) + size (IE ancestorMap) = error "Serious problem, size is not additive"
   | otherwise                        = output
   where

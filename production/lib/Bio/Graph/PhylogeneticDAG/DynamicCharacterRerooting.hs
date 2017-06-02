@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, MonoLocalBinds #-}
 
 module Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
   ( assignOptimalDynamicCharacterRootEdges
@@ -68,12 +68,14 @@ import           Prelude            hiding (lookup, zipWith)
 assignOptimalDynamicCharacterRootEdges
   :: ( HasBlockCost u v w x y z Word Double
      , HasTraversalFoci z (Maybe TraversalFoci)
+{-     
      , Show u
      , Show v
      , Show w
      , Show x
      , Show y
      , Show z
+-}
      ) --x, Ord x, Show x)
   => (z -> [z] -> z)
   -> PhylogeneticDAG2 e n u v w x y z
@@ -455,7 +457,7 @@ instance (Ord e, Ord c) => Semigroup (MinimalTopologyContext e c) where
             mergeFoci (es, c, a) (_, _, b) = (es, c, a <> b)
 
 
-toMinimalTopologyContext :: (Ord e, Ord c) => NonEmpty (EdgeSet e, c, e) -> MinimalTopologyContext e c
+toMinimalTopologyContext :: Ord e => NonEmpty (EdgeSet e, c, e) -> MinimalTopologyContext e c
 toMinimalTopologyContext = MW . fmap (\(x,y,z) -> (x, y, pure z)) . NE.sortWith firstOfThree 
 
 
