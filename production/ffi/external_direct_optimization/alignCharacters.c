@@ -1045,7 +1045,7 @@ algn_fill_plane ( const dyn_character_t    *longerCharacter
         debugCostMatrixBuffer = malloc(longerCharacterLength * lesserCharacterLength * sizeof(int));
     }
     if (DEBUG_DIR_M) {
-        printf ("A\t");
+        printf ("A\t"), fflush(stdout);
     }
 
     /* We fill the first row to start with */
@@ -1053,11 +1053,11 @@ algn_fill_plane ( const dyn_character_t    *longerCharacter
         curRow[i] = curRow[i - 1] + first_gap_row[i];
         dirMtx[i] = INSERT;
         if (DEBUG_DIR_M) {
-            printf ("I\t");
+	  printf ("I\t"), fflush(stdout);
         }
     }
     if (DEBUG_DIR_M) {
-        printf ("\n");
+        printf ("\n"), fflush(stdout);
     }
 
     if (LOCAL_DEBUG_COST_M) {
@@ -4602,10 +4602,10 @@ algn_nw_limit_2d ( const dyn_character_t      *shorterChar
     // fflush(stdout);
     algnMtx_precalc_4algn_2d( algnMats, costMatrix, shorterChar ); // returns precalculated cost matrix (in matrices) computed using character from shorterChar.
                                                // shorterChar bases will be column heads of that matrix
-    //printf("after  pre-calc alignment\n");
-    //fflush(stdout);
+    // printf("after  pre-calc alignment\n");
+    // printf("Integral value of 'costMatrix->cost_model_type' : %d\n", costMatrix->cost_model_type);
+    // fflush(stdout);
 
-    printf("Integral value of 'costMatrix->cost_model_type' : %d\n", costMatrix->cost_model_type);
     // cost_model_type is 1 for affine, 0 for non-affine
     if (costMatrix->cost_model_type) {
         return algn_fill_plane_2_affine ( longerChar

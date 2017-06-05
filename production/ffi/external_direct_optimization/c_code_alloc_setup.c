@@ -25,20 +25,17 @@ void initializeAlignmentMtx( alignment_matrices_t *retMtx
                            , size_t                alphSize
                            )
 {
-    size_t size_max_value = -1;
     // printf("initializeAlignmentMtx\n");
     // in six following allocations all matrices are set to their shortest length because they get realloced in algnMat_setup_size
-    retMtx->cap_nw          =  0;             // a suitably small number to trigger realloc, but be larger than len_eff
-    retMtx->cap_eff         = size_max_value; // cap_eff was -1 so that cap_eff < cap, triggering the realloc
-                                              // ---changed this when types switched to size_t
-                                              // TODO: Do we really want this to be the max value of size_t?
-    retMtx->cap_pre         =  0;             // again, trigger realloc
+    retMtx->cap_nw          =  0; // a suitably small number to trigger realloc, but be larger than len_eff
+    retMtx->cap_eff         =  0; // cap_eff was -1 so that cap_eff < cap, triggering the realloc
+    retMtx->cap_pre         =  0; // again, trigger realloc
 
-    retMtx->algn_costMtx    = malloc ( sizeof( unsigned int ) );
+    retMtx->algn_costMtx    = malloc ( sizeof( unsigned int    ) );
     retMtx->algn_dirMtx     = malloc ( sizeof( DIR_MTX_ARROW_t ) );
+    retMtx->algn_precalcMtx = malloc ( sizeof( unsigned int     ) );
     // retMtx->cube          = malloc ( sizeof( int* ) );  // don't have to allocate these two,
     // retMtx->cube_d        = malloc ( sizeof( int* ) );  // because they're just pointing to algn_costMtx and algn_dirMtx
-    retMtx->algn_precalcMtx = malloc ( sizeof( unsigned int ) );
 
     algnMat_setup_size (retMtx, len_char1, len_char2, len_char3, alphSize);
 }
