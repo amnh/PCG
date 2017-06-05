@@ -29,7 +29,8 @@ void print_usage(char * progName) {
     printf("  <char_3>         IUPAC DNA String,     optional\n");
     printf("\n");
     printf("  If <gap_open_cost> is 0, non-affine alignment will be performed.\n");
-    printf("  If <gap_open_cost> is a positive value, an affine alignment will be performed.\n");
+    printf("  If <gap_open_cost> is a positive value, an affine alignment will\n");
+    printf("                     be performed with using <gap_open_cost>.\n");
     printf("\n");
     printf("  If <char_3> is missing, a pairwise  alignment will be performed.\n");
     printf("  If <char_3> is present, a three-way alignment will be performed.\n");
