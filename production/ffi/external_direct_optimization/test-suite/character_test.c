@@ -22,7 +22,7 @@
 
 void print_usage(char * progName) {
     printf("\n");
-    printf("Expected usage: ./%s <gap_open_cost> <char_1> <char_2> <char_3>\n", progName);
+    printf("Expected usage: %s <gap_open_cost> <char_1> <char_2> <char_3>\n", progName);
     printf("  <gap_open_cost>  Non-negative Integer, required\n");
     printf("  <char_1>         IUPAC DNA String,     required\n");
     printf("  <char_2>         IUPAC DNA String,     required\n");
