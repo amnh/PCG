@@ -48,13 +48,12 @@ alignIO_t* read_dynamic_character(size_t buffer_capacity, char * str) {
     // Infer ambiguous elements from IUPAC codes
     for (i = valid_chars = 0; i < input_length; ++i) {
         switch (str[i]) {
-	  case '?': element_buffer[valid_chars++] = BASE_A | BASE_C | BASE_G | BASE_T | BASE_GAP; break;
           case '-': element_buffer[valid_chars++] = BASE_GAP; break;
 
 	  case 'A': element_buffer[valid_chars++] = BASE_A; break;
           case 'C': element_buffer[valid_chars++] = BASE_C; break;
           case 'G': element_buffer[valid_chars++] = BASE_G; break;
-          case 'T': element_buffer[valid_chars++] = BASE_T; break;
+          case 'T': 
           case 'U': element_buffer[valid_chars++] = BASE_T; break;
 
           case 'R': element_buffer[valid_chars++] = BASE_A | BASE_G; break;
@@ -75,7 +74,7 @@ alignIO_t* read_dynamic_character(size_t buffer_capacity, char * str) {
 	  case 'a': element_buffer[valid_chars++] = BASE_A | BASE_GAP; break;
           case 'c': element_buffer[valid_chars++] = BASE_C | BASE_GAP; break;
           case 'g': element_buffer[valid_chars++] = BASE_G | BASE_GAP; break;
-          case 't': element_buffer[valid_chars++] = BASE_T | BASE_GAP; break;
+          case 't': 
           case 'u': element_buffer[valid_chars++] = BASE_T | BASE_GAP; break;
 
           case 'r': element_buffer[valid_chars++] = BASE_A | BASE_G | BASE_GAP; break;
@@ -90,7 +89,8 @@ alignIO_t* read_dynamic_character(size_t buffer_capacity, char * str) {
           case 'h': element_buffer[valid_chars++] = BASE_A | BASE_C | BASE_T | BASE_GAP; break;
           case 'v': element_buffer[valid_chars++] = BASE_A | BASE_C | BASE_G | BASE_GAP; break;
 
-          case 'n': element_buffer[valid_chars++] = BASE_A | BASE_C | BASE_G | BASE_T | BASE_GAP; break;
+          case 'n':
+	  case '?': element_buffer[valid_chars++] = BASE_A | BASE_C | BASE_G | BASE_T | BASE_GAP; break;
 	}
         /*
         printf("str[%zu]: '%c' ", i, str[i]);
