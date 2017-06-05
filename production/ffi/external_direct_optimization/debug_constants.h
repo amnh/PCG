@@ -1,7 +1,7 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
-#define DO_2D            0
+#define DO_2D            1
 #define DO_2D_AFF        0
 #define DO_3D            1
 #define DO_3D_AFF        0

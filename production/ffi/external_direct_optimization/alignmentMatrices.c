@@ -90,6 +90,7 @@ algnMat_setup_size (alignment_matrices_t *alignMtx, size_t len_char1, size_t len
         printf("\n---algnMat_setup_size\n");
         printf("capacity: %zu\nefficiency: %zu\nprecalc: %zu\n", alignMtx->cap_nw, alignMtx->cap_eff, alignMtx->cap_pre);
     }
+    int    realloc_error_3d = 0;
     size_t cap;
     size_t cap_2d = 0,
            cap_precalcMtx,
@@ -116,8 +117,8 @@ algnMat_setup_size (alignment_matrices_t *alignMtx, size_t len_char1, size_t len
         alignMtx->algn_costMtx3d =
         alignMtx->algn_costMtx =
             realloc (alignMtx->algn_costMtx, (cap * sizeof(int)));
-
         alignMtx->cap_eff = cap;
+        realloc_error_3d = alignMtx->algn_costMtx3d == NULL;
     }
     if (alignMtx->cap_nw < cap_dir) {         /* If the other matrices are not large enough */
         if (DEBUG_MAT) {
@@ -142,7 +143,7 @@ algnMat_setup_size (alignment_matrices_t *alignMtx, size_t len_char1, size_t len
         alignMtx->cap_pre         = cap_precalcMtx;
     }
     /* Check if there is an allocation error then abort program */
-    if ((cap > 0) && (alignMtx->algn_costMtx3d == NULL)) {
+    if ((cap > 0) && realloc_error_3d) {
         printf("capacity: %zu:\n", cap);
         printf("Memory allocation problem in cost matrix.\n");
         exit(1);
@@ -205,6 +206,9 @@ algnMtx_get_row_precalc_3d ( unsigned int *outPrecalcMtx
 
 
 /** Sets first row of 2d nw matrix, where @param inChar is column headers */
+// Pretty sure we don't want the version where there is an 'm' rather than an 'n'
+// in the 'align' portion of the name.
+/*
 void
 algmMtx_precalc_4algn_2d (       alignment_matrices_t *alignmentMatrices
                          , const cost_matrices_2d_t   *costMatrix
@@ -268,8 +272,8 @@ algmMtx_precalc_4algn_2d (       alignment_matrices_t *alignmentMatrices
         //     printf("%zu\t", j);
         // }
         tmpCost = cm_get_row (charTcm, j, costMatrix->costMatrixDimension);
-        /* We fill almost the complete row. Only the first (aligning with the
-         * gap), is filled using the tail cost */
+        // We fill almost the complete row. Only the first (aligning with the
+        // gap), is filled using the tail cost
         tmpPrecMtx[0] = tailCosts[j];
         if (DEBUG_MAT) {
             printf ("%7d", tmpPrecMtx[0]);
@@ -293,7 +297,7 @@ algmMtx_precalc_4algn_2d (       alignment_matrices_t *alignmentMatrices
 
     }
 }
-
+*/
 
 /** Sets first row of nw cost matrix, where @param inChar is column headers */
 void

@@ -1196,9 +1196,9 @@ algn_fill_plane_2 ( const dyn_character_t    *longerChar
 
     prevRow = curRow + len_lesserChar;
     gap_row = algnMtx_get_precal_row( algn_precalcMtx
-                               , 0
-                               , len_lesserChar // We want the first horizontal row
-                               );
+                                    , 0
+                                    , len_lesserChar // We want the first horizontal row
+                                    );
 
     /* We have to consider three cases in this new alignment procedure (much
      * cleaner than the previous):
@@ -4605,6 +4605,7 @@ algn_nw_limit_2d ( const dyn_character_t      *shorterChar
     //printf("after  pre-calc alignment\n");
     //fflush(stdout);
 
+    printf("Integral value of 'costMatrix->cost_model_type' : %d\n", costMatrix->cost_model_type);
     // cost_model_type is 1 for affine, 0 for non-affine
     if (costMatrix->cost_model_type) {
         return algn_fill_plane_2_affine ( longerChar
@@ -4671,7 +4672,8 @@ algn_nw_2d ( const dyn_character_t      *shorterChar
         dyn_char_print(longerChar);
         dyn_char_print(shorterChar);
         printf("second character\n");
-        algnMtx_print(algnMats, costMatrix->costMatrixDimension);
+	// This function is undefined: 
+        //algnMtx_print(algnMats, costMatrix->costMatrixDimension);
     }
 
 

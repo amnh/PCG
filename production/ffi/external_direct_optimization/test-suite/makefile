@@ -56,3 +56,10 @@ test_interface : interface_driver.c $(necessary_c_files) $(necessary_h_files)
 	rm -f *.o
 	gcc -std=c11 $(sanity-warnings) -g -c  $(necessary_c_files)
 	gcc -std=c11 $(sanity-warnings) -o interface_driver -g interface_driver.c $(object_files)
+
+
+######### Test the actual C interface that Hakell interact with.
+character_test : character_test.c $(necessary_c_files) $(necessary_h_files)
+	rm -f *.o
+	gcc -std=c11 $(sanity-warnings) -g -c  $(necessary_c_files)
+	gcc -std=c11 $(sanity-warnings) -o character_test -g character_test.c $(object_files)
