@@ -150,7 +150,7 @@ doAlignment char1 char2 costStruct = (char1Align, char2Align)
 filterGaps :: EncodableDynamicCharacter c => c -> c
 filterGaps char = constructDynamic . filter (/= gap) $ otoList char
   where
-    gap = getGapElement $ char `indexStream` 0
+    gap = gapOfStream char
 
 
 -- |
