@@ -79,10 +79,12 @@ ukkonenDO
   :: (DOCharConstraint s, Show s)
   => s
   -> s
-  -> (Word -> Word -> Word)
+  -> OverlapFunction (Element s)
   -> (Word, s, s, s, s)
 ukkonenDO inlSeq inrSeq _ | trace ("calling ukonnen DO with seqs " <> show inlSeq <> show inrSeq) False = undefined
-ukkonenDO char1 char2 _costStruct = handleMissingCharacter char1 char2 result
+ukkonenDO char1 char2 costStruct
+  | lesserLen <= 4 = naiveDOMemo char1 char2 costStruct
+  | otherwise      = handleMissingCharacter char1 char2 result
   where
     indelCost = 1
     subCost   = 1
