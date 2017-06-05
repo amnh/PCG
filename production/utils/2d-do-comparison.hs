@@ -56,8 +56,8 @@ performImplementationComparison lhs rhs = do
     then putStrLn "[!] Results MATCH"
     else putStrLn "[X] Results DO NOT MATCH"
   where
-    nativeMessage    = renderResult nativeDOResult
-    ukkonenMessage   = renderResult nativeDOResult
+    nativeMessage    = renderResult  nativeDOResult
+    ukkonenMessage   = renderResult ukkonenDOResult
     foreignMessage   = renderResult foreignDOResult
     nativeDOResult   = naiveDOMemo       char1 char2 (getMedianAndCost memoMatrixValue)
     ukkonenDOResult  = ukkonenDO         char1 char2  undefined -- (getMedianAndCost memoMatrixValue)
