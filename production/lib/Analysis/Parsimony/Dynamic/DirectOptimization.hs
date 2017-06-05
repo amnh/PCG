@@ -29,10 +29,12 @@ module Analysis.Parsimony.Dynamic.DirectOptimization
   , naiveDO
   , naiveDOConst
   , naiveDOMemo
+  , ukkonenDO
   ) where
 
 
 import Analysis.Parsimony.Dynamic.DirectOptimization.FFI
 import Analysis.Parsimony.Dynamic.DirectOptimization.Internal
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
+import Analysis.Parsimony.Dynamic.DirectOptimization.Ukkonen
 

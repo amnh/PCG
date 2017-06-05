@@ -38,9 +38,11 @@ performCounterExampleSearch = do
 
 
 counterExampleCheck :: (NucleotideSequence, NucleotideSequence) -> Bool
-counterExampleCheck (NS lhs, NS rhs) = nativeDOResult == foreignDOResult
+counterExampleCheck (NS lhs, NS rhs) =
+    nativeDOResult == foreignDOResult && foreignDOResult == ukkonenDOResult
   where
     nativeDOResult  = naiveDOMemo       lhs rhs (getMedianAndCost memoMatrixValue)
+    ukkonenDOResult = ukkonenDO         lhs rhs  undefined -- (getMedianAndCost memoMatrixValue)
     foreignDOResult = foreignPairwiseDO lhs rhs  denseMatrixValue
 
 
@@ -50,13 +52,15 @@ performImplementationComparison lhs rhs = do
     putStrLn nativeMessage
     putStrLn "Foreign DO Result:"
     putStrLn foreignMessage
-    if   nativeMessage == foreignMessage
+    if   nativeMessage == foreignMessage && foreignMessage == ukkonenMessage
     then putStrLn "[!] Results MATCH"
     else putStrLn "[X] Results DO NOT MATCH"
   where
     nativeMessage    = renderResult nativeDOResult
+    ukkonenMessage   = renderResult nativeDOResult
     foreignMessage   = renderResult foreignDOResult
     nativeDOResult   = naiveDOMemo       char1 char2 (getMedianAndCost memoMatrixValue)
+    ukkonenDOResult  = ukkonenDO         char1 char2  undefined -- (getMedianAndCost memoMatrixValue)
     foreignDOResult  = foreignPairwiseDO char1 char2  denseMatrixValue
     char1 = readSequence lhs
     char2 = readSequence rhs
