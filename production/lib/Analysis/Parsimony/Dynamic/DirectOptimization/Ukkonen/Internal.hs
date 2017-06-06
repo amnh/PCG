@@ -131,7 +131,7 @@ ukkonenCore
   -> (Cost, s, s, s, s)
 --ukkonenCore _ _ _ _ _ _ _ | trace "ukkonenCore" False = undefined
 ukkonenCore lSeq lLength rSeq rLength maxGap indelCost subCost
-  | headEx (trace renderedMatrix gappedMedian) /= 0 = (cost, ungappedMedian, gappedMedian, lhsAlignment, rhsAlignment)
+  | headEx gappedMedian /= 0 = (cost, ungappedMedian, gappedMedian, lhsAlignment, rhsAlignment)
   | otherwise                = --trace ("Going back!! " <> show cost) $
                                ukkonenCore lSeq lLength rSeq rLength (2 * maxGap) indelCost subCost
   where
@@ -272,15 +272,16 @@ tracebackUkkonen
 --tracebackUkkonen _nwMatrix inlSeq inrSeq posR posL _ _ _ | trace ("tracebackUkkonen " <> show posR <> show posL <> show inlSeq <> show inrSeq) False = undefined
 tracebackUkkonen nwMatrix inlSeq inrSeq posR posL maxGap rInDel lInDel
 --trace ("psLR " <> show posR <> " " <> show posL <> " Left " <> show lInDel <> " Right " <> show rInDel <> " maxGap " <> show maxGap) (
-  | (rInDel  > (maxGap - 2)) || (lInDel > (maxGap - 2)) = V.singleton (0, 0, 0)
+  | (rInDel  > (maxGap - 2)) || (lInDel > (maxGap - 2)) = V.singleton (sentinalValue, sentinalValue, sentinalValue)
   | posL <= 0 && posR <= 0 = {- trace "not y" -} V.empty
-  | otherwise = --trace "y" $
-      let y | direction == LeftArrow = V.cons (state,                             gap, inrSeq `indexStream` (posR - 1)) (tracebackUkkonen nwMatrix inlSeq inrSeq  posR      (posL - 1) maxGap  rInDel     (lInDel + 1))
-            | direction == UpArrow = V.cons (state, inlSeq `indexStream` (posL - 1),                             gap) (tracebackUkkonen nwMatrix inlSeq inrSeq (posR - 1)  posL      maxGap (rInDel + 1) lInDel     )  
-            | otherwise            = V.cons (state, inlSeq `indexStream` (posL - 1), inrSeq `indexStream` (posR - 1)) (tracebackUkkonen nwMatrix inlSeq inrSeq (posR - 1) (posL - 1) maxGap  rInDel      lInDel     )
-      in {- traceShowId -} y
+  | otherwise =
+      case direction of
+        LeftArrow -> V.cons (state,                             gap, inrSeq `indexStream` (posR - 1)) (tracebackUkkonen nwMatrix inlSeq inrSeq  posR      (posL - 1) maxGap  rInDel     (lInDel + 1))
+        UpArrow   -> V.cons (state, inlSeq `indexStream` (posL - 1),                             gap) (tracebackUkkonen nwMatrix inlSeq inrSeq (posR - 1)  posL      maxGap (rInDel + 1) lInDel     )  
+        DiagArrow -> V.cons (state, inlSeq `indexStream` (posL - 1), inrSeq `indexStream` (posR - 1)) (tracebackUkkonen nwMatrix inlSeq inrSeq (posR - 1) (posL - 1) maxGap  rInDel      lInDel     )
   where
-    gap = gapOfStream inlSeq
+    gap           = gapOfStream inlSeq
+    sentinalValue = gap `xor` gap -- a "0" value with the correct dimensionality.
     (_, state, direction) = (nwMatrix V.! posR) V.! transformFullYShortY posL posR  maxGap --(transformFullYShortY posL posR maxGap)
 
 
