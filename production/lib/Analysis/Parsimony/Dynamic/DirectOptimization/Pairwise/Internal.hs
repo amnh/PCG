@@ -32,7 +32,8 @@ import Data.Semigroup
 -- The direction to align the character at a given matrix point.
 --
 -- It should be noted that the ordering of the three arrow types are important
--- as it guarantees that the derived Ord instance will have the following property:
+-- as it guarantees that the derived Ord instance will have the following
+-- property:
 --
 -- DiagArrow < LeftArrow < UpArrow
 --
@@ -100,9 +101,10 @@ handleMissingCharacter lhs rhs v =
 -- |
 -- Performs a naive direct optimization.
 -- Takes in two characters to run DO on and a metadata object
--- Returns an assignment character, the cost of that assignment, the assignment character with gaps included,
--- the aligned version of the first input character, and the aligned version of the second input character
--- The process for this algorithm is to generate a traversal matrix, then perform a traceback.
+-- Returns an assignment character, the cost of that assignment, the assignment
+-- character with gaps included, the aligned version of the first input character,
+-- and the aligned version of the second input character. The process for this
+-- algorithm is to generate a traversal matrix, then perform a traceback.
 naiveDO :: DOCharConstraint s
         => s                       -- ^ First  dynamic character
         -> s                       -- ^ Second dynamic character
@@ -127,7 +129,8 @@ naiveDOConst char1 char2 _ = handleMissingCharacter char1 char2 $ naiveDOInterna
 
 
 -- |
--- The same as 'naiveDO' except that the "cost structure" parameter is assumed to be a memoized overlap function.
+-- The same as 'naiveDO' except that the "cost structure" parameter is assumed to
+-- be a memoized overlap function.
 naiveDOMemo :: DOCharConstraint s
             => s
             -> s
@@ -146,20 +149,26 @@ doAlignment char1 char2 costStruct = (char1Align, char2Align)
         
 
 -- |
--- Strips the gaps from the supplied character.
+-- Strips the gap elements from the supplied character.
+-- 
+-- If the character contains /only/ gaps, a missing character is returned.
 filterGaps :: EncodableDynamicCharacter c => c -> c
-filterGaps char = constructDynamic . filter (/= gap) $ otoList char
+filterGaps char =
+    case filter (/= gap) $ otoList char of
+      [] -> toMissing char
+      xs -> constructDynamic xs
   where
     gap = gapOfStream char
 
 
 -- |
 -- Main function to generate an 'DOAlignMatrix'. Works as in Needleman-Wunsch,
--- but allows for multiple indel/replacement costs, depending on the 'CostStructure'.
--- Also, returns the aligned parent characters, with appropriate ambiguities, as the third of
--- each tuple in the matrix.
--- Takes in two 'EncodableDynamicCharacter's and a 'CostStructure'. The first character
--- must be the longer of the two and is the top labeling of the matrix.
+-- but allows for multiple indel/replacement costs, depending on the symbol change
+-- cost function. Also, returns the aligned parent characters, with appropriate
+-- ambiguities, as the third of each tuple in the matrix.
+--
+-- Takes in two 'EncodableDynamicCharacter's and a 'CostStructure'. The first
+-- character must be the longer of the two and is the top labeling of the matrix.
 -- Returns an 'DOAlignMatrix'.
 createDOAlignMatrix :: DOCharConstraint s => s -> s -> OverlapFunction (Element s) -> DOAlignMatrix (Element s)
 createDOAlignMatrix topChar leftChar overlapFunction = {- trace renderedMatrix $ -} result
@@ -287,11 +296,14 @@ renderMatrix mat = unlines . fmap unwords . toLists $ showCell <$> mat
 
 -- |
 -- Performs the traceback of an 'DOAlignMatrix'.
--- Takes in an 'DOAlignMatrix', two 'EncodableDynamicCharacter's
--- Returns an aligned 'EncodableDynamicCharacter', as well as the aligned versions of the two inputs.
--- Essentially does the second step of Needleman-Wunsch, following the arrows from the bottom right corner, 
--- accumulating the sequences as it goes, but returns three alignments: the left character, the right character,
--- and the parent. The child alignments *should* be biased toward the shorter of the two sequences.
+--
+-- Takes in an 'DOAlignMatrix', two 'EncodableDynamicCharacter's and returns an
+-- aligned 'EncodableDynamicCharacter', as well as the aligned versions of the
+-- two inputs. Essentially does the second step of Needleman-Wunsch, following
+-- the arrows from the bottom right corner, accumulating the sequences as it goes,
+-- but returns three alignments: the left character, the right character, and the
+-- parent. The child alignments *should* be biased toward the shorter of the two
+-- dynamic characters.
 traceback :: (DOCharConstraint s) => DOAlignMatrix (Element s) -> s -> s -> (s, s, s)
 traceback alignMatrix longerChar lesserChar = ( constructDynamic medianStates
                                               , constructDynamic alignedLongerChar
@@ -336,15 +348,16 @@ getOverlap inChar1 inChar2 costStruct = result
 
         
 -- |
--- Takes two 'EncodableStreamElement' and a 'CostStructure' and returns a tuple of a new character, 
--- along with the cost of obtaining that character. The return character may be (or is even likely to be)
--- ambiguous. Will attempt to intersect the two characters, but will union them if that is not possible,
--- based on the 'CostStructure'. 
+-- Takes two 'EncodableStreamElement' and a symbol change cost function and
+-- returns a tuple of a new character, along with the cost of obtaining that
+-- character. The return character may be (or is even likely to be) ambiguous.
+-- Will attempt to intersect the two characters, but will union them if that is
+-- not possible, based on the symbol change cost function. 
 --
--- To clarify, the return character is an intersection of all possible least-cost combinations, so for instance,
--- if @ char1 == A,T @ and @ char2 == G,C @, and the two (non-overlapping) least cost pairs are A,C and T,G, then
--- the return value is A,C,G,T. 
--- Tests exist in the test suite.
+-- To clarify, the return character is an intersection of all possible least-cost
+-- combinations, so for instance, if @ char1 == A,T @ and @ char2 == G,C @, and
+-- the two (non-overlapping) least cost pairs are A,C and T,G, then the return
+-- value is A,C,G,T.
 overlap :: (EncodableStreamElement c {- , Show c -}) => (Word -> Word -> Word) -> c -> c -> (c, Word)
 --overlap _ inChar1 inChar2 | trace (unwords [show inChar1, show inChar2]) False = undefined
 overlap costStruct char1 char2
@@ -370,19 +383,25 @@ minimalChoice = foldr1 f
 
 -- |
 -- Finds the cost of a pairing of two static characters.
--- Takes in a 'CostStructure' and two ambiguous 'EncodableStreamElement's. Returns a list of tuples of all possible unambiguous
--- pairings, along with their costs. 
+--
+-- Takes in a symbol change cost function and two ambiguous elements of a dynamic
+-- character and returns a list of tuples of all possible unambiguous pairings,
+-- along with the cost of each pairing. The resulting elements each have exactly
+-- two bits set. 
 allPossibleBaseCombosCosts :: EncodableStreamElement s => (Word -> Word -> Word) -> s -> s -> [(s, Word)]
-allPossibleBaseCombosCosts costStruct char1 char2 = [ (x .|. y, costStruct i j)
-                                                    | (i,x) <- getSubChars char1
-                                                    , (j,y) <- getSubChars char2
-                                                    ]
+allPossibleBaseCombosCosts costStruct char1 char2 =
+    [ (x .|. y, costStruct i j)
+    | (i, x) <- getSubChars char1
+    , (j, y) <- getSubChars char2
+    ]
+
 
 -- |
--- Given a 'CostStructure' and two tuples of an 'Int' and an unambiguous 'EncodableStreamElement', determines the cost 
--- of a pairing (intersection) of those characters into an ambiguous character. The 'Int's are the set bits in each character
--- and are used as lookup into the 'CostStructure'. 
--- Tests exist in the test suite.
+-- Given a symbol change cost function and two tuples of an 'Word' and an
+-- unambiguous 'EncodableStreamElement', determines the cost of a pairing
+-- (intersection) of those characters into an ambiguous character. The 'Word's
+-- are the set bits in each character and are used as lookup into the symbol
+-- change cost function. 
 getCost :: EncodableStreamElement s => (Word -> Word -> Word) -> (Word, s) -> (Word, s) -> (s, Word)
 getCost costStruct seqTup1 seqTup2 = 
     case (seqTup1, seqTup2) of
@@ -390,11 +409,12 @@ getCost costStruct seqTup1 seqTup2 =
 
 
 -- |
--- Takes in a 'EncodableStreamElement', possibly with more than one bit set, and returns a list of tuples of 
--- 'Int's and 'EncodableStreamElement's, such that, for each set bit in the input, there is one element in the output list, 
--- a tuple with an 'Int', @ x @, giving the location of the set bit, as well as an 'EncodableStreamElement' of the same
--- length as the input, but with only the bit at location @ x @ set.
--- Tests exist in the test suite.
+-- Takes in a 'EncodableStreamElement', possibly with more than one bit set, and
+-- returns a list of tuples of 'Word's and 'EncodableStreamElement's, such that,
+-- for each set bit in the input, there is one element in the output list, a
+-- tuple with an 'Word', @ x @, giving the location of the set bit, as well as an
+-- 'EncodableStreamElement' of the same length as the input, but with only the
+-- bit at location @ x @ set.
 getSubChars :: EncodableStreamElement s => s -> [(Word, s)]
 getSubChars fullChar = foldMap f [0 .. symbolCount fullChar - 1]
   where
@@ -458,8 +478,10 @@ naiveDOInternal char1 char2 overlapFunction = (alignmentCost, ungapped, gapped',
 
 
 -- |
--- Returns sequence that is longer first, shorter second.
--- Handles equal length by not swapping characters.
+-- Returns the dynamic character that is longer first, shorter second, and notes
+-- whether or not the inputs were swapped to place the characters in this ordering.
+--
+-- Handles equal length characters by /not/ swapping characters.
 measureCharacters :: MonoFoldable s => s -> s -> (Bool, s, s)
 measureCharacters lhs rhs =
     case comparing olength lhs rhs of
