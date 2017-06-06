@@ -32,8 +32,7 @@ import           Data.Vector           (Vector)
 import qualified Data.Vector      as V
 import           Data.Vector.Instances ()
 
-
-import Debug.Trace (trace)
+--import Debug.Trace (trace)
 
 
 data Ribbon a
@@ -81,7 +80,7 @@ ukkonenDO
   -> s
   -> OverlapFunction (Element s)
   -> (Word, s, s, s, s)
-ukkonenDO inlSeq inrSeq _ | trace ("calling ukonnen DO with seqs " <> show inlSeq <> show inrSeq) False = undefined
+--ukkonenDO inlSeq inrSeq _ | trace ("calling ukonnen DO with seqs " <> show inlSeq <> show inrSeq) False = undefined
 ukkonenDO char1 char2 costStruct
   | lesserLen <= 4 = naiveDOMemo char1 char2 costStruct
   | otherwise      = handleMissingCharacter char1 char2 result
@@ -122,7 +121,7 @@ ukkonenCore
   -> Word
   -> Word
   -> (Word, s, s, s, s)
-ukkonenCore _ _ _ _ _ _ _ | trace "ukkonenCore" False = undefined
+--ukkonenCore _ _ _ _ _ _ _ | trace "ukkonenCore" False = undefined
 ukkonenCore lSeq lLength rSeq rLength maxGap indelCost subCost
   | headEx gappedMedian /= 0 = (cost, ungappedMedian, gappedMedian, lhsAlignment, rhsAlignment)
   | otherwise                = --trace ("Going back!! " <> show cost) 
@@ -168,16 +167,16 @@ tracebackUkkonen
   -> Int
   -> Int
   -> V.Vector (Element s, Element s, Element s)
-tracebackUkkonen _nwMatrix inlSeq inrSeq posR posL _ _ _ | trace ("tracebackUkkonen " <> show posR <> show posL <> show inlSeq <> show inrSeq) False = undefined
+--tracebackUkkonen _nwMatrix inlSeq inrSeq posR posL _ _ _ | trace ("tracebackUkkonen " <> show posR <> show posL <> show inlSeq <> show inrSeq) False = undefined
 tracebackUkkonen nwMatrix inlSeq inrSeq posR posL maxGap rInDel lInDel
 --trace ("psLR " <> show posR <> " " <> show posL <> " Left " <> show lInDel <> " Right " <> show rInDel <> " maxGap " <> show maxGap) (
   | (rInDel  > (maxGap - 2)) || (lInDel > (maxGap - 2)) = V.singleton (0, 0, 0)
-  | posL <= 0 && posR <= 0 = trace "not y" V.empty
-  | otherwise = trace "y" $
+  | posL <= 0 && posR <= 0 = {- trace "not y" -} V.empty
+  | otherwise = --trace "y" $
       let y | direction == LeftDir = V.cons (state,                             gap, inrSeq `indexStream` (posR - 1)) (tracebackUkkonen nwMatrix inlSeq inrSeq  posR      (posL - 1) maxGap  rInDel     (lInDel + 1))
             | direction == DownDir = V.cons (state, inlSeq `indexStream` (posL - 1),                             gap) (tracebackUkkonen nwMatrix inlSeq inrSeq (posR - 1)  posL      maxGap (rInDel + 1) lInDel     )  
             | otherwise            = V.cons (state, inlSeq `indexStream` (posL - 1), inrSeq `indexStream` (posR - 1)) (tracebackUkkonen nwMatrix inlSeq inrSeq (posR - 1) (posL - 1) maxGap  rInDel      lInDel     )
-      in trace (show y) y
+      in {- traceShowId -} y
   where
     gap = gapOfStream inlSeq
     (_, state, direction) = (nwMatrix V.! posR) V.! transformFullYShortY posL posR  maxGap --(transformFullYShortY posL posR maxGap)
@@ -224,7 +223,7 @@ getRowsUkkonen
   -> V.Vector (Word, Element s, Direction)
   -> Int
   -> V.Vector (V.Vector (Word, Element s, Direction))
-getRowsUkkonen _ _ _ _ _ _ _ | trace "getRowsUkkonen" False = undefined
+--getRowsUkkonen _ _ _ _ _ _ _ | trace "getRowsUkkonen" False = undefined
 getRowsUkkonen lSeq rSeq indelCost subCost rowNum prevRow maxGap
   | rowNum == (olength rSeq + 1) = V.empty
   | startPosition == 0 = --trace ("Row " <> show rowNum <> " of " <> show (V.length rSeq) <> " starts " <> show startPosition <> ":" <> show thisRowZero) (
