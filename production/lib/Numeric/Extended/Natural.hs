@@ -31,20 +31,22 @@ import Numeric.Extended.Internal
 --
 -- The following behavior should be noted:
 --
---   - 'ExtendedNatural' has a domain of @[0 .. (maxBound :: Word) - 1] <> infinity@ 
+--   - 'ExtendedNatural' has a domain of @[0 .. (maxBound :: Word) - 1] <> infinity@
 --
 --   - @unsafeToFinite (maxBound :: ExtendedNatural) == (maxBound :: Word) - 1@
 --
 --   - @unsafeToFinite (minBound :: ExtendedNatural) == (minBound :: Word)@
 --
+--   - @unsafeToFinite (infinity :: ExtendedNatural) == (maxBound :: Word)@
+--
 --   - 'ExtendedNatural' does not throw an error on arithmetic underflows
 --     caused by subtracting a larger value from a smaller value. Instead,
 --     the result is floored at zero.
 --
---   - 'ExtendedNatural' does not throw an error on arithmetic overflows
---     caused by adding or multiplying two numbers that would produce a
---     result larger than @(maxBound :: ExtendedNatural)@. Instead, the result is
---     capped at @(maxBound :: ExtendedNatural)@.
+--   - 'ExtendedNatural' does not throw an error on arithmetic overflows caused
+--     by adding or multiplying two numbers that would produce a result larger
+--     than @(maxBound :: ExtendedNatural)@. Instead, the result is capped at
+--     @(maxBound :: ExtendedNatural)@.
 --
 --   - An @infinity@ value can only result from it's use as a constant, addition
 --     with @infinity@ as an operand, multiplication with @infinity@ as an
@@ -156,8 +158,9 @@ fromWord = Cost
 
 
 -- |
--- Calculate the integer logarithm of a 'Word' to base 2 using efficient
--- compiler builtins. 
+-- Calculate the integer logarithm of a 'Word' to base 2 using efficient compiler
+-- builtins. This should translate into an assembly primative on CISC chipsets.
+-- Might be slightly more expensive on RISC chipsets.
 {-# INLINE wordLog2  #-}
 wordLog2 :: Word -> Int
 wordLog2 (W# w#)
