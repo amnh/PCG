@@ -131,6 +131,7 @@ ukkonenCore
   -> (Cost, s, s, s, s)
 --ukkonenCore _ _ _ _ _ _ _ | trace "ukkonenCore" False = undefined
 ukkonenCore lSeq lLength rSeq rLength maxGap indelCost subCost
+--  | headEx (trace renderedMatrix gappedMedian) /= 0 = (cost, ungappedMedian, gappedMedian, lhsAlignment, rhsAlignment)
   | headEx gappedMedian /= 0 = (cost, ungappedMedian, gappedMedian, lhsAlignment, rhsAlignment)
   | otherwise                = --trace ("Going back!! " <> show cost) $
                                ukkonenCore lSeq lLength rSeq rLength (2 * maxGap) indelCost subCost
@@ -276,14 +277,22 @@ tracebackUkkonen nwMatrix inlSeq inrSeq posR posL maxGap rInDel lInDel
   | posL <= 0 && posR <= 0 = {- trace "not y" -} V.empty
   | otherwise =
       case direction of
-        LeftArrow -> V.cons (state,                             gap, inrSeq `indexStream` (posR - 1)) (tracebackUkkonen nwMatrix inlSeq inrSeq  posR      (posL - 1) maxGap  rInDel     (lInDel + 1))
-        UpArrow   -> V.cons (state, inlSeq `indexStream` (posL - 1),                             gap) (tracebackUkkonen nwMatrix inlSeq inrSeq (posR - 1)  posL      maxGap (rInDel + 1) lInDel     )  
+        LeftArrow -> V.cons (state, inlSeq `indexStream` (posL - 1),                              gap) (tracebackUkkonen nwMatrix inlSeq inrSeq  posR      (posL - 1) maxGap (rInDel + 1) lInDel     )  
+        UpArrow   -> V.cons (state,                             gap, inrSeq `indexStream` (posR - 1)) (tracebackUkkonen nwMatrix inlSeq inrSeq (posR - 1)  posL      maxGap  rInDel     (lInDel + 1))
         DiagArrow -> V.cons (state, inlSeq `indexStream` (posL - 1), inrSeq `indexStream` (posR - 1)) (tracebackUkkonen nwMatrix inlSeq inrSeq (posR - 1) (posL - 1) maxGap  rInDel      lInDel     )
   where
     gap           = gapOfStream inlSeq
     sentinalValue = gap `xor` gap -- a "0" value with the correct dimensionality.
     (_, state, direction) = (nwMatrix V.! posR) V.! transformFullYShortY posL posR  maxGap --(transformFullYShortY posL posR maxGap)
-
+{-
+    indexStream' s i = (trace (unwords [show direction, show (posL, posR), shownStreamPokes]) s) `indexStream` i
+      where
+        shownStreamPokes =
+            case direction of
+              LeftArrow -> unwords ["L @",             "X", "R @", show $ posR - 1]
+              UpArrow   -> unwords ["L @", show $ posL - 1, "R @",             "X"]
+              DiagArrow -> unwords ["L @", show $ posL - 1, "R @", show $ posR - 1]
+-}
 
 -- |
 -- transformFullYShortY take full Y value (if did entire NW matrix) and returns
@@ -334,8 +343,8 @@ getMinCostDir :: Ord v
               -> (v, s, Direction)
 getMinCostDir leftCost downCost diagCost diagState leftState downState
   | diagCost == minValue = (diagCost, diagState, DiagArrow)
-  | downCost == minValue = (downCost, downState, UpArrow)
-  | otherwise            = (leftCost, leftState, LeftArrow)
+  | leftCost == minValue = (leftCost, leftState, LeftArrow)
+  | otherwise            = (downCost, downState,   UpArrow)
   where
     minValue = minimum [leftCost, downCost, diagCost] 
 
