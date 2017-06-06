@@ -1,5 +1,5 @@
 /* POY 4.0 Beta. A phylogenetic analysis program using Dynamic Homologies.    */
-/* Copyright (C) 2007  Andrés Varón, Le Sy Vinh, Illya Bomash, Ward Wheeler,  */
+/* Copyright (C) 2007  AndrŽs Var—n, Le Sy Vinh, Illya Bomash, Ward Wheeler,  */
 /* and the American Museum of Natural History.                                */
 /*                                                                            */
 /* This program is free software; you can redistribute it and/or modify       */
