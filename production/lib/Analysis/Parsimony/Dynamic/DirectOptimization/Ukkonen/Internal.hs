@@ -22,17 +22,17 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Ukkonen.Internal where
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal hiding (Direction)
 import           Bio.Character.Encodable
 import           Data.Bits
---import           Data.Foldable         (minimumBy)
---import           Data.Key              ((!))
---import           Data.Matrix.NotStupid (Matrix, matrix, nrows, ncols)
+--import           Data.Foldable           (minimumBy)
+--import           Data.Key                ((!))
+--import           Data.Matrix.NotStupid   (Matrix, matrix, nrows, ncols)
 import           Data.MonoTraversable
 import           Data.Ord
-import           Data.Semigroup
-import           Data.Vector           (Vector)
-import qualified Data.Vector      as V
-import           Data.Vector.Instances ()
-
---import Debug.Trace (trace)
+--import           Data.Semigroup
+import           Data.Vector              (Vector)
+import qualified Data.Vector         as V
+import           Data.Vector.Instances    ()
+import           Numeric.Extended.Natural
+import Debug.Trace
 
 
 data Ribbon a
@@ -48,11 +48,11 @@ data Direction = LeftDir | DownDir | DiagDir
     deriving (Read, Show, Eq)
 
 
-{-
-inDelBit    = bit 63 :: Int64 --(bit 63) :: Int64 --set indelBit to 64th bit in Int64
-barrierCost = bit 60 :: Int --really big Int--asssumes 64 bit at least, but can be added to without rolling over.
-barrierBit  = bit 63 :: Int64
--}
+-- |
+-- This internal type used for computing the alignment cost. This type has an
+-- "infinity" value that is conviently used for the barrier costs. The cost is
+-- strictly non-negative, and possibly infinite.
+type Cost = ExtendedNatural
 
 
 {- |
@@ -60,8 +60,8 @@ barrierBit  = bit 63 :: Int64
  -}
 
 
-barrierCost :: Word
-barrierCost = maxBound
+barrierCost :: Cost
+barrierCost = infinity
 
 
 --FOR both DO's  lseq is a row, acrosss so num columns = length of lseq
@@ -85,27 +85,31 @@ ukkonenDO char1 char2 costStruct
   | lesserLen <= 4 = naiveDOMemo char1 char2 costStruct
   | otherwise      = handleMissingCharacter char1 char2 result
   where
+    -- TODO: Do not use indel/sub costs, use the supplied overlap function.
     indelCost = 1
     subCost   = 1
+    
     maxGap    = 1 + longerLen - lesserLen  --10000 :: Int --holder lseq - rSeq + 1
+
+    -- We determine which character is longer and whether or not the alignment
+    -- results will later need to be swapped. This is necessary because we assume
+    -- an invariant of the longer character being on the left column and the
+    -- shorter character on the top row.
+    (swapped, longer, lesser) = measureCharacters char1 char2
     longerLen = olength longer
     lesserLen = olength lesser
-    (swapped, longer, lesser) = measureCharacters char1 char2
-    --this for left right constant--want longer in left for Ukkonnen
-    (median, cost, medGap, alignLeft, alignRight) = ukkonenCore longer longerLen lesser lesserLen maxGap indelCost subCost
-    result
-      | swapped   = (median, cost, medGap, alignRight, alignLeft )
-      | otherwise = (median, cost, medGap, alignLeft , alignRight)
 
-    -- |
-    -- Returns sequence that is longer first, shorter second.
-    -- Handles equal length by not swapping characters.
-    measureCharacters :: MonoFoldable s => s -> s -> (Bool, s, s)
-    measureCharacters lhs rhs =
-        case comparing olength lhs rhs of
-          EQ -> (False, lhs, rhs)
-          GT -> (False, lhs, rhs)
-          LT -> ( True, rhs, lhs)
+    -- This for left right constant--want longer in left for Ukkonnen
+    -- Perform the Ukkonen work once ensuring invariants are applied
+    (extendedCost, ungappedMedians, gappedMedian, alignLeft, alignRight) = ukkonenCore longer longerLen lesser lesserLen maxGap indelCost subCost
+    -- Conditionally swap resulting alignments if the inputs were swapped
+    (alignedChar1, alignedChar2)
+      | swapped   = (alignRight, alignLeft )
+      | otherwise = (alignLeft , alignRight)
+
+    -- Extract the cost from the extended number range, removing the Infinity value.
+    alignmentCost = unsafeToFinite extendedCost
+    result = (alignmentCost, ungappedMedians, gappedMedian, alignedChar1, alignedChar2)
 
 
 -- |
@@ -118,9 +122,9 @@ ukkonenCore
   -> s
   -> Int
   -> Int
-  -> Word
-  -> Word
-  -> (Word, s, s, s, s)
+  -> Cost
+  -> Cost
+  -> (Cost, s, s, s, s)
 --ukkonenCore _ _ _ _ _ _ _ | trace "ukkonenCore" False = undefined
 ukkonenCore lSeq lLength rSeq rLength maxGap indelCost subCost
   | headEx gappedMedian /= 0 = (cost, ungappedMedian, gappedMedian, lhsAlignment, rhsAlignment)
@@ -128,7 +132,7 @@ ukkonenCore lSeq lLength rSeq rLength maxGap indelCost subCost
                         ukkonenCore lSeq lLength rSeq rLength (2 * maxGap) indelCost subCost
   where
     firstRow       = getFirstRowUkkonen indelCost lLength 0 0 lSeq maxGap
-    nwMatrix       = V.cons firstRow (getRowsUkkonen lSeq rSeq indelCost subCost 1 firstRow maxGap)
+    nwMatrix       = V.cons firstRow $ getRowsUkkonen lSeq rSeq indelCost subCost 1 firstRow maxGap
 --    median       = V.filter (/= gap) medianGap
     gap            = gapOfStream lSeq
     gappedMedian   = constructDynamic medianGap
@@ -136,7 +140,7 @@ ukkonenCore lSeq lLength rSeq rLength maxGap indelCost subCost
     lhsAlignment   = constructDynamic alignLeft
     rhsAlignment   = constructDynamic alignRight
     (cost, _, _)   = V.last (V.last nwMatrix) -- V.! rLength) --V.! (transformFullYShortY lLength rLength  maxGap) --fix for offset
-    (medianGap, alignLeft, alignRight) = V.unzip3 $ V.reverse (tracebackUkkonen nwMatrix lSeq rSeq rLength lLength maxGap 0 0)
+    (medianGap, alignLeft, alignRight) = V.unzip3 . V.reverse $ tracebackUkkonen nwMatrix lSeq rSeq rLength lLength maxGap 0 0
 
 
 -- |
@@ -145,8 +149,8 @@ ukkonenCore lSeq lLength rSeq rLength maxGap indelCost subCost
 -- remove error when working--overhead
 transformFullYShortY :: Int -> Int -> Int -> Int
 transformFullYShortY currentY rowNumber maxGap
-  | transformY < 0 = error (show currentY <> " " <> show rowNumber <> " " <> show maxGap <> " Impossible negative value for transfomred Y")
-  | otherwise = transformY
+  | transformY < 0 = error $ unwords [show currentY, show rowNumber, show maxGap, "Impossible negative value for transfomred Y"]
+  | otherwise      = transformY
   where
     transformY = currentY - max 0 (rowNumber - maxGap - 1)
 
@@ -158,7 +162,7 @@ transformFullYShortY currentY rowNumber maxGap
 -- CHANGE TO MAYBE (V.Vector Int64) FOR BARRIER CHECK
 tracebackUkkonen
   :: (DOCharConstraint s, Show s)
-  => V.Vector (V.Vector (Word, Element s, Direction))
+  => V.Vector (V.Vector (Cost, Element s, Direction))
   -> s
   -> s
   -> Int
@@ -186,13 +190,13 @@ tracebackUkkonen nwMatrix inlSeq inrSeq posR posL maxGap rInDel lInDel
 -- getFirstRowUkkonen initializes first row of NW-Ukkonen matrix
 getFirstRowUkkonen
   :: (DOCharConstraint s, Show s)
-  => Word
+  => Cost
   -> Int
   -> Int
-  -> Word
+  -> Cost
   -> s
   -> Int
-  -> V.Vector (Word, Element s, Direction)
+  -> V.Vector (Cost, Element s, Direction)
 --getFirstRowUkkonen _ rowLen position _ lSeq _ | trace ("getFirstRowUkkonen " <> show lSeq <> show position <> show rowLen) False = undefined
 getFirstRowUkkonen indelCost rowLength position prevCost lSeq maxGap
  --trace ("row 0 pos " <> show position <> "/" <> show (maxShortY rowLength 0 maxGap) <> " rowLength " <> show rowLength <> " maxGap " <> show maxGap <> " lseq " <> show lSeq)
@@ -217,12 +221,12 @@ getRowsUkkonen
   :: (DOCharConstraint s, Show s)
   => s
   -> s
-  -> Word
-  -> Word
+  -> Cost
+  -> Cost
   -> Int
-  -> V.Vector (Word, Element s, Direction)
+  -> V.Vector (Cost, Element s, Direction)
   -> Int
-  -> V.Vector (V.Vector (Word, Element s, Direction))
+  -> V.Vector (V.Vector (Cost, Element s, Direction))
 --getRowsUkkonen _ _ _ _ _ _ _ | trace "getRowsUkkonen" False = undefined
 getRowsUkkonen lSeq rSeq indelCost subCost rowNum prevRow maxGap
   | rowNum == (olength rSeq + 1) = V.empty
@@ -244,15 +248,15 @@ getThisRowUkkonen
   :: (DOCharConstraint s, Show s)
   => s
   -> s
-  -> Word
-  -> Word
+  -> Cost
+  -> Cost
   -> Int
-  -> V.Vector (Word, Element s, Direction)
+  -> V.Vector (Cost, Element s, Direction)
   -> Int
   -> Int
-  -> Word
+  -> Cost
   -> Int
-  -> V.Vector (Word, Element s, Direction)
+  -> V.Vector (Cost, Element s, Direction)
 getThisRowUkkonen lSeq rSeq indelCost subCost rowNum prevRow position rowLength prevCost maxGap
   | position == rowLength  + 1      = V.empty
   | position == rowNum + maxGap + 1 = V.singleton (barrierCost, gap, LeftDir)

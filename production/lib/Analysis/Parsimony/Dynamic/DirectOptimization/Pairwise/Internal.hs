@@ -445,12 +445,7 @@ naiveDOInternal
   -> (Word, s, s, s, s)
 naiveDOInternal char1 char2 overlapFunction = (alignmentCost, ungapped, gapped', alignedChar1, alignedChar2)
     where
-      char1Len = olength char1
-      char2Len = olength char2
-      swapped  = char1Len < char2Len
-      (longerChar, shorterChar)
-        | swapped   = (char2, char1)
-        | otherwise = (char1, char2)
+      (swapped, longerChar, shorterChar) = measureCharacters char1 char2
       traversalMat  = createDOAlignMatrix longerChar shorterChar overlapFunction
       alignmentCost = getTotalAlignmentCost traversalMat
       (gapped , left , right ) = traceback traversalMat longerChar shorterChar
@@ -462,3 +457,12 @@ naiveDOInternal char1 char2 overlapFunction = (alignmentCost, ungapped, gapped',
         | otherwise = (left' , right')
 
 
+-- |
+-- Returns sequence that is longer first, shorter second.
+-- Handles equal length by not swapping characters.
+measureCharacters :: MonoFoldable s => s -> s -> (Bool, s, s)
+measureCharacters lhs rhs =
+    case comparing olength lhs rhs of
+      EQ -> (False, lhs, rhs)
+      GT -> (False, lhs, rhs)
+      LT -> ( True, rhs, lhs)
