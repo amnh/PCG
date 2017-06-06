@@ -80,7 +80,7 @@ instance ExtendedNumber ExtendedNatural where
 
     fromFinite = fromWord
 
-    infinity = maxBound
+    infinity = Cost maxBound
 
 
 instance Num ExtendedNatural where
@@ -141,8 +141,8 @@ instance Real ExtendedNatural where
 instance Show ExtendedNatural where
 
     show (Cost input)
-      | input == maxBound     = "∞"
-      | otherwise             = show input
+      | input == maxBound = "∞"
+      | otherwise         = show input
 
 
 {-# INLINE toWord #-}
