@@ -25,7 +25,7 @@ import Data.MonoTraversable
 import Data.Ord
 import Data.Semigroup
 
--- import Debug.Trace
+import Debug.Trace
 
 
 -- |
@@ -171,7 +171,7 @@ filterGaps char =
 -- character must be the longer of the two and is the top labeling of the matrix.
 -- Returns an 'DOAlignMatrix'.
 createDOAlignMatrix :: DOCharConstraint s => s -> s -> OverlapFunction (Element s) -> DOAlignMatrix (Element s)
-createDOAlignMatrix topChar leftChar overlapFunction = {- trace renderedMatrix $ -} result
+createDOAlignMatrix topChar leftChar overlapFunction = {-- trace renderedMatrix $ --} result
   where
     -- :)
     -- renderedMatrix = renderCostMatrix topChar leftChar result
@@ -205,11 +205,10 @@ createDOAlignMatrix topChar leftChar overlapFunction = {- trace renderedMatrix $
         rightCost                     = rightOverlapCost + leftwardValue
         diagCost                      =  diagOverlapCost + diagonalValue
         downCost                      =  downOverlapCost +   upwardValue
-        (minCost, minState, minDir)   = minimumBy (comparing (\(c,_,d) -> (c,d)))
-                                      [ (diagCost ,  diagChar        , DiagArrow)
-                                      , (rightCost, rightChar .|. gap, LeftArrow)
-                                      , (downCost ,  downChar .|. gap, UpArrow  )
-                                      ]
+        (minCost, minState, minDir)   = getMinimalCostDirection
+                                          ( diagCost,  diagChar)
+                                          (rightCost, rightChar)
+                                          ( downCost,  downChar)
 {-                                        
         err = unlines
           [ show (row, col)
@@ -220,66 +219,6 @@ createDOAlignMatrix topChar leftChar overlapFunction = {- trace renderedMatrix $
           , "  " <> show (minCost, fromIntegral minState, minDir) 
           ]            
 -}
-
-
--- |
--- Serializes an alignment matrix to a 'String'. Uses input characters for row
--- and column labelings.
---
--- Useful for debugging purposes.
-renderCostMatrix :: DOCharConstraint s => s -> s -> DOAlignMatrix a -> String
-renderCostMatrix lhs rhs mtx = unlines
-    [ dimensionPrefix
-    , headerRow
-    , barRow
-    , renderedRows
-    ]
-  where
-    (longer, lesser)
-      | olength lhs >= olength rhs = (lhs, rhs)
-      | otherwise                  = (rhs, lhs)
-    longerTokens     = toShownIntegers longer
-    lesserTokens     = toShownIntegers lesser
-    toShownIntegers  = fmap (show . (fromIntegral :: Integral a => a -> Integer)) . otoList
-    matrixTokens     = showCell <$> mtx
-    showCell (c,d,_) = show c <> show d
-    maxPrefixWidth   = maxLengthOf lesserTokens
-    maxColumnWidth   = max (maxLengthOf longerTokens) . maxLengthOf $ toList matrixTokens
-    maxLengthOf      = maximum . fmap length
-
-    dimensionPrefix  = " " <> unwords
-        [ "Dimensions:"
-        , show $ olength longer + 1
-        , "X"
-        , show $ olength lesser + 1
-        ]
-    
-    headerRow = mconcat
-        [ " "
-        , pad maxPrefixWidth "\\"
-        , "| "
-        , pad maxColumnWidth "*"
-        , concatMap (pad maxColumnWidth) longerTokens
-        ]
-
-    barRow    = mconcat
-        [ " "
-        , bar maxPrefixWidth
-        , "+"
-        , concatMap (const (bar maxColumnWidth)) $ undefined : longerTokens
-        ]
-      where
-        bar n = replicate (n+1) '-'
-
-    renderedRows = unlines . zipWith renderRow ("*":lesserTokens) $ getRows matrixTokens
-      where
-        renderRow e vs = " " <> pad maxPrefixWidth e <> "| " <> concatMap (pad maxColumnWidth) vs
-        getRows m = (`getRow` m) <$> [0 .. nrows m - 1]
-
-    pad :: Int -> String -> String
-    pad n e = replicate (n - len) ' ' <> e <> " "
-      where
-        len = length e
 
 
 -- |
@@ -488,3 +427,74 @@ measureCharacters lhs rhs =
       EQ -> (False, lhs, rhs)
       GT -> (False, lhs, rhs)
       LT -> ( True, rhs, lhs)
+
+
+getMinimalCostDirection :: (EncodableStreamElement e, Ord c) => (c, e) -> (c, e) -> (c, e) -> (c, e, Direction)
+getMinimalCostDirection (diagCost, diagChar) (rightCost, rightChar) (downCost,  downChar) = 
+    minimumBy (comparing (\(c,_,d) -> (c,d)))
+      [ (diagCost ,  diagChar        , DiagArrow)
+      , (rightCost, rightChar .|. gap, LeftArrow)
+      , (downCost ,  downChar .|. gap, UpArrow  )
+      ]
+  where
+    gap = getGapElement diagChar
+
+
+-- |
+-- Serializes an alignment matrix to a 'String'. Uses input characters for row
+-- and column labelings.
+--
+-- Useful for debugging purposes.
+renderCostMatrix :: DOCharConstraint s => s -> s -> DOAlignMatrix a -> String
+renderCostMatrix lhs rhs mtx = unlines
+    [ dimensionPrefix
+    , headerRow
+    , barRow
+    , renderedRows
+    ]
+  where
+    (longer, lesser)
+      | olength lhs >= olength rhs = (lhs, rhs)
+      | otherwise                  = (rhs, lhs)
+    longerTokens     = toShownIntegers longer
+    lesserTokens     = toShownIntegers lesser
+    toShownIntegers  = fmap (show . (fromIntegral :: Integral a => a -> Integer)) . otoList
+    matrixTokens     = showCell <$> mtx
+    showCell (c,d,_) = show c <> show d
+    maxPrefixWidth   = maxLengthOf lesserTokens
+    maxColumnWidth   = max (maxLengthOf longerTokens) . maxLengthOf $ toList matrixTokens
+    maxLengthOf      = maximum . fmap length
+
+    dimensionPrefix  = " " <> unwords
+        [ "Dimensions:"
+        , show $ olength longer + 1
+        , "X"
+        , show $ olength lesser + 1
+        ]
+    
+    headerRow = mconcat
+        [ " "
+        , pad maxPrefixWidth "\\"
+        , "| "
+        , pad maxColumnWidth "*"
+        , concatMap (pad maxColumnWidth) longerTokens
+        ]
+
+    barRow    = mconcat
+        [ " "
+        , bar maxPrefixWidth
+        , "+"
+        , concatMap (const (bar maxColumnWidth)) $ undefined : longerTokens
+        ]
+      where
+        bar n = replicate (n+1) '-'
+
+    renderedRows = unlines . zipWith renderRow ("*":lesserTokens) $ getRows matrixTokens
+      where
+        renderRow e vs = " " <> pad maxPrefixWidth e <> "| " <> concatMap (pad maxColumnWidth) vs
+        getRows m = (`getRow` m) <$> [0 .. nrows m - 1]
+
+    pad :: Int -> String -> String
+    pad n e = replicate (n - len) ' ' <> e <> " "
+      where
+        len = length e

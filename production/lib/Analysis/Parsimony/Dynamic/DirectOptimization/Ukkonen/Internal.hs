@@ -89,12 +89,6 @@ ukkonenDO char1 char2 costStruct
   | lesserLen <= 4 = naiveDOMemo char1 char2 costStruct
   | otherwise      = handleMissingCharacter char1 char2 result
   where
-    -- TODO: Do not use indel/sub costs, use the supplied overlap function.
-    indelCost = 1
-    subCost   = 1
-    
-    maxGap    = 1 + longerLen - lesserLen  --10000 :: Int --holder lseq - rSeq + 1
-
     -- We determine which character is longer and whether or not the alignment
     -- results will later need to be swapped. This is necessary because we assume
     -- an invariant of the longer character being on the left column and the
@@ -102,10 +96,11 @@ ukkonenDO char1 char2 costStruct
     (swapped, longer, lesser) = measureCharacters char1 char2
     longerLen = olength longer
     lesserLen = olength lesser
+    maxGap    = 1 + longerLen - lesserLen
 
     -- This for left right constant--want longer in left for Ukkonnen
     -- Perform the Ukkonen work once ensuring invariants are applied
-    (extendedCost, ungappedMedians, gappedMedian, alignLeft, alignRight) = ukkonenCore longer longerLen lesser lesserLen maxGap indelCost subCost
+    (extendedCost, ungappedMedians, gappedMedian, alignLeft, alignRight) = ukkonenCore longer lesser costStruct maxGap
     -- Conditionally swap resulting alignments if the inputs were swapped
     (alignedChar1, alignedChar2)
       | swapped   = (alignRight, alignLeft )
@@ -122,26 +117,21 @@ ukkonenDO char1 char2 costStruct
 ukkonenCore
   :: (DOCharConstraint s, Show s)
   => s
-  -> Int
   -> s
+  -> OverlapFunction (Element s)
   -> Int
-  -> Int
-  -> Cost
-  -> Cost
   -> (Cost, s, s, s, s)
---ukkonenCore _ _ _ _ _ _ _ | trace "ukkonenCore" False = undefined
-ukkonenCore lSeq lLength rSeq rLength maxGap indelCost subCost
+ukkonenCore longerTop lesserLeft overlapFunction maxGap
 --  | headEx (trace renderedMatrix gappedMedian) /= 0 = (cost, ungappedMedian, gappedMedian, lhsAlignment, rhsAlignment)
   | headEx gappedMedian /= 0 = (cost, ungappedMedian, gappedMedian, lhsAlignment, rhsAlignment)
-  | otherwise                = --trace ("Going back!! " <> show cost) $
-                               ukkonenCore lSeq lLength rSeq rLength (2 * maxGap) indelCost subCost
+  | otherwise                = ukkonenCore longerTop lesserLeft overlapFunction (2 * maxGap)
   where
-    firstRow       = getFirstRowUkkonen indelCost lLength 0 0 lSeq maxGap
-    otherRows      = getRowsUkkonen lSeq rSeq indelCost subCost 1 firstRow maxGap
-    nwMatrix       = firstRow `V.cons` otherRows
-    renderedMatrix = renderUkkonenMatrix nwMatrix
+    longerLen      = olength longerTop
+    lesserLen      = olength lesserLeft
+    nwMatrix       = generateUkkonenBand longerTop lesserLeft overlapFunction maxGap
+    renderedMatrix = renderUkkonenMatrix longerTop lesserLeft nwMatrix
     
-    (medianGap, alignLeft, alignRight) = V.unzip3 . V.reverse $ tracebackUkkonen nwMatrix lSeq rSeq rLength lLength maxGap 0 0
+    (medianGap, alignLeft, alignRight) = unzip3 . reverse $ tracebackUkkonen nwMatrix longerTop lesserLeft lesserLen longerLen maxGap 0 0
     (cost, _, _)   = V.last (V.last nwMatrix)
     ungappedMedian = filterGaps gappedMedian
     gappedMedian   = constructDynamic medianGap
@@ -149,59 +139,39 @@ ukkonenCore lSeq lLength rSeq rLength maxGap indelCost subCost
     rhsAlignment   = constructDynamic alignRight
 
 
--- |
--- getFirstRowUkkonen initializes first row of NW-Ukkonen matrix
-getFirstRowUkkonen
-  :: (DOCharConstraint s, Show s)
-  => Cost
-  -> Int
-  -> Int
-  -> Cost
-  -> s
-  -> Int
-  -> V.Vector (Cost, Element s, Direction)
---getFirstRowUkkonen _ rowLen position _ lSeq _ | trace ("getFirstRowUkkonen " <> show lSeq <> show position <> show rowLen) False = undefined
-getFirstRowUkkonen indelCost rowLength position prevCost lSeq maxGap
- --trace ("row 0 pos " <> show position <> "/" <> show (maxShortY rowLength 0 maxGap) <> " rowLength " <> show rowLength <> " maxGap " <> show maxGap <> " lseq " <> show lSeq)
-  | position == rowLength + 1 = V.empty
-  | position == maxGap    + 1 = V.singleton (barrierCost, gap, LeftArrow) 
-  | position == 0             = V.cons (0, gap, DiagArrow) (getFirstRowUkkonen indelCost rowLength (position + 1) 0 lSeq maxGap) 
-  | otherwise                 = --trace ("FRC " <> show newCost)
-      let y | (newState /= gap) = --if there was no inDel overlap between states
-                V.cons ( newCost, newState, LeftArrow) (getFirstRowUkkonen indelCost rowLength (position + 1)  newCost lSeq maxGap)
-            | otherwise = --indel in both states so no cost
-                V.cons (prevCost, newState, LeftArrow) (getFirstRowUkkonen indelCost rowLength (position + 1) prevCost lSeq maxGap)
-      in y
-  where
-    gap      = gapOfStream lSeq
-    newCost  = prevCost + indelCost
-    newState = getUnionIntersectionState gap $ lSeq `indexStream` (position - 1)
-
-
--- |
--- getRowUkkonen starts at second row (=1) and creates each row in turn--Ukkonen
-getRowsUkkonen
+generateUkkonenBand
   :: (DOCharConstraint s, Show s)
   => s
   -> s
-  -> Cost
-  -> Cost
-  -> Int
-  -> V.Vector (Cost, Element s, Direction)
+  -> OverlapFunction (Element s)
   -> Int
   -> V.Vector (V.Vector (Cost, Element s, Direction))
---getRowsUkkonen _ _ _ _ _ _ _ | trace "getRowsUkkonen" False = undefined
-getRowsUkkonen lSeq rSeq indelCost subCost rowNum prevRow maxGap
-  | rowNum == (olength rSeq + 1) = V.empty
-  | startPosition == 0 = --trace ("Row " <> show rowNum <> " of " <> show (V.length rSeq) <> " starts " <> show startPosition <> ":" <> show thisRowZero) (
-                V.cons thisRowZero (getRowsUkkonen lSeq rSeq indelCost subCost (rowNum + 1) thisRowZero maxGap) --)
-  | otherwise = --trace ("Row " <> show rowNum <> " of " <> show (V.length rSeq) <>" starts " <> show startPosition <> ":" <> show thisRowNonZero) (
-        V.cons thisRowNonZero (getRowsUkkonen lSeq rSeq indelCost subCost (rowNum + 1) thisRowNonZero maxGap) --)
-  where 
-    gap            = gapOfStream lSeq
-    startPosition  = max 0 (rowNum - maxGap) --check for left barriers 
-    thisRowZero    = getThisRowUkkonen lSeq rSeq indelCost subCost rowNum prevRow startPosition (olength lSeq) 0 maxGap
-    thisRowNonZero = V.cons (barrierCost, gap, UpArrow) (getThisRowUkkonen lSeq rSeq indelCost subCost rowNum prevRow startPosition (olength lSeq) barrierCost maxGap)
+generateUkkonenBand longerTop lesserLeft overlapFunction maxGap = nwMatrix
+  where
+    nwMatrix = V.fromList $ headRow : tailRows 
+    headRow  = V.fromList $ generateHeadRowUkkonen 0 0
+    tailRows = generateTailRowsUkkonen headRow 1
+
+    gap      = gapOfStream longerTop
+    rowCount = olength lesserLeft
+    colCount = olength longerTop
+
+    generateHeadRowUkkonen position prevCost
+      | position == colCount + 1 = []
+      | position == maxGap   + 1 = [(barrierCost,      gap, LeftArrow) ]
+      | position == 0            =  (          0,      gap, DiagArrow) : (generateHeadRowUkkonen (position + 1)         0) 
+      | newState /= gap          =  (  addedCost, newState, LeftArrow) : (generateHeadRowUkkonen (position + 1) addedCost)
+      | otherwise                =  (   prevCost, newState, LeftArrow) : (generateHeadRowUkkonen (position + 1)  prevCost)
+      where
+        topElement          = longerTop `indexStream` (position - 1)
+        addedCost           = prevCost + newCost
+        (newState, newCost) = fromFinite <$> overlapFunction topElement gap
+
+    generateTailRowsUkkonen prevRow rowNum
+      | rowNum == rowCount + 1 = []
+      | otherwise              = thisRow : generateTailRowsUkkonen thisRow (rowNum + 1)
+      where
+        thisRow = getThisRowUkkonen longerTop lesserLeft overlapFunction maxGap prevRow colCount rowNum
 
 
 -- |
@@ -211,47 +181,49 @@ getThisRowUkkonen
   :: (DOCharConstraint s, Show s)
   => s
   -> s
-  -> Cost
-  -> Cost
+  -> OverlapFunction (Element s)
   -> Int
   -> V.Vector (Cost, Element s, Direction)
   -> Int
   -> Int
-  -> Cost
-  -> Int
   -> V.Vector (Cost, Element s, Direction)
-getThisRowUkkonen lSeq rSeq indelCost subCost rowNum prevRow position rowLength prevCost maxGap
-  | position == rowLength  + 1      = V.empty
-  | position == rowNum + maxGap + 1 = V.singleton (barrierCost, gap, LeftArrow)
-  | position == 0 =
-      let x | (newState /= gap) =
-                V.cons (upValue + indelCost, newState, UpArrow) (getThisRowUkkonen lSeq rSeq indelCost subCost rowNum prevRow (position + 1) rowLength (upValue + indelCost) maxGap)
-            | otherwise = 
-                V.cons (upValue, newState, UpArrow) (getThisRowUkkonen lSeq rSeq indelCost subCost rowNum prevRow (position + 1) rowLength upCost maxGap)
-                where
-                    newState = getUnionIntersectionState gap (rSeq `indexStream` (rowNum - 1))
-                    (upCost, _, _) = prevRow V.! position
-      in x
-  | otherwise = V.cons (minCost, minState, minDir) (getThisRowUkkonen lSeq rSeq indelCost subCost rowNum prevRow (position + 1) rowLength minCost maxGap)
+getThisRowUkkonen longerTop lesserLeft overlapFunction maxGap prevRow rowLength rowNum = V.fromList resultRow
   where
-    gap          = gapOfStream lSeq
-    lSeqPos      = position - 1 --since first is '-' the index is row/pos - 1
-    rSeqRow      = rowNum   - 1 --since first is '-' the index is row/pos - 1
-    leftCost     = getOverlapCost prevCost indelCost gap (lSeq `indexStream` lSeqPos) --need to check for overlap
-    downCost     = getOverlapCost upValue  indelCost gap (rSeq `indexStream` rSeqRow) --need to check for overlap
-    intersection = (lSeq `indexStream` lSeqPos) .&. (rSeq `indexStream` rSeqRow)
-    union        = (lSeq `indexStream` lSeqPos) .|. (rSeq `indexStream` rSeqRow)
-    (diagCost, diagState) = getDiagArrowCost diagValue intersection union subCost
-    (  upValue,       _,      _) = prevRow V.! transformFullYShortY  position (rowNum - 1) maxGap
-    (diagValue,       _,      _) = prevRow V.! transformFullYShortY  (position - 1) (rowNum - 1) maxGap
-    ( minCost, minState, minDir) =
-        getMinCostDir
-          leftCost
-          downCost
-          diagCost
-          diagState 
-          (getUnionIntersectionState gap (lSeq `indexStream` lSeqPos))
-          (getUnionIntersectionState gap (rSeq `indexStream` rSeqRow)) 
+    resultRow
+      | startPosition == 0 =                               getThisRowUkkonen' startPosition 0
+      | otherwise          = (barrierCost, gap, UpArrow) : getThisRowUkkonen' startPosition barrierCost
+    
+    gap            = gapOfStream longerTop
+    startPosition  = max 0 (rowNum - maxGap) --check for left barrier
+    getThisRowUkkonen' position leftwardValue
+      | position == rowLength  + 1      = []
+      | position == rowNum + maxGap + 1 = [(barrierCost, gap, LeftArrow)]
+      | position == 0 =
+          let (newState, newCost) = fromFinite <$> overlapFunction gap (lesserLeft `indexStream` (rowNum - 1))
+              (  upCost, _, _) = prevRow V.! position
+              extraUpCost = upCost + newCost
+          in  if    (newState /= gap)
+              then  (extraUpCost, newState, UpArrow) : (getThisRowUkkonen' (position + 1)  extraUpCost)
+              else  (     upCost, newState, UpArrow) : (getThisRowUkkonen' (position + 1)       upCost)
+      | otherwise = (    minCost, minState, minDir ) : (getThisRowUkkonen' (position + 1)      minCost)
+      where
+        longerPos   = position - 1 --since first is '-' the index is row/pos - 1
+        lesserPos   = rowNum   - 1 --since first is '-' the index is row/pos - 1
+        leftElement = lesserLeft `indexStream` lesserPos
+        topElement  = longerTop  `indexStream` longerPos
+
+        rightCost                     = rightOverlapCost + leftwardValue
+        diagCost                      =  diagOverlapCost + diagonalValue
+        downCost                      =  downOverlapCost +   upwardValue 
+        (rightChar, rightOverlapCost) = fromFinite <$> overlapFunction topElement  gap
+        ( diagChar,  diagOverlapCost) = fromFinite <$> overlapFunction topElement  leftElement
+        ( downChar,  downOverlapCost) = fromFinite <$> overlapFunction gap         leftElement
+        (minCost, minState, minDir)   = getMinimalCostDirection
+                                          ( diagCost,  diagChar)
+                                          (rightCost, rightChar)
+                                          ( downCost,  downChar)
+        (  upwardValue,  _,      _) = prevRow V.! transformFullYShortY  position      (rowNum - 1) maxGap
+        (diagonalValue,  _,      _) = prevRow V.! transformFullYShortY (position - 1) (rowNum - 1) maxGap
 
 
 -- |
@@ -269,22 +241,22 @@ tracebackUkkonen
   -> Int
   -> Int
   -> Int
-  -> V.Vector (Element s, Element s, Element s)
---tracebackUkkonen _nwMatrix inlSeq inrSeq posR posL _ _ _ | trace ("tracebackUkkonen " <> show posR <> show posL <> show inlSeq <> show inrSeq) False = undefined
-tracebackUkkonen nwMatrix inlSeq inrSeq posR posL maxGap rInDel lInDel
+  -> [(Element s, Element s, Element s)]
+--tracebackUkkonen _nwMatrix inlongerTop inlesserLeft posR posL _ _ _ | trace ("tracebackUkkonen " <> show posR <> show posL <> show inlongerTop <> show inlesserLeft) False = undefined
+tracebackUkkonen nwMatrix longerTop lesserLeft posR posL maxGap rInDel lInDel
 --trace ("psLR " <> show posR <> " " <> show posL <> " Left " <> show lInDel <> " Right " <> show rInDel <> " maxGap " <> show maxGap) (
-  | (rInDel  > (maxGap - 2)) || (lInDel > (maxGap - 2)) = V.singleton (sentinalValue, sentinalValue, sentinalValue)
-  | posL <= 0 && posR <= 0 = {- trace "not y" -} V.empty
+  | (rInDel  >= (maxGap - 2)) || (lInDel >= (maxGap - 2)) = [(sentinalValue, sentinalValue, sentinalValue)]
+  | posL <= 0 && posR <= 0 = {-- trace (show (maxGap, rInDel, lInDel)) --} []
   | otherwise =
       case direction of
-        LeftArrow -> V.cons (state, inlSeq `indexStream` (posL - 1),                              gap) (tracebackUkkonen nwMatrix inlSeq inrSeq  posR      (posL - 1) maxGap (rInDel + 1) lInDel     )  
-        UpArrow   -> V.cons (state,                             gap, inrSeq `indexStream` (posR - 1)) (tracebackUkkonen nwMatrix inlSeq inrSeq (posR - 1)  posL      maxGap  rInDel     (lInDel + 1))
-        DiagArrow -> V.cons (state, inlSeq `indexStream` (posL - 1), inrSeq `indexStream` (posR - 1)) (tracebackUkkonen nwMatrix inlSeq inrSeq (posR - 1) (posL - 1) maxGap  rInDel      lInDel     )
+        LeftArrow -> (state, longerTop `indexStream` (posL - 1),                                 gap) : (tracebackUkkonen nwMatrix longerTop lesserLeft  posR      (posL - 1) maxGap (rInDel + 1) lInDel     )  
+        UpArrow   -> (state,                                gap, lesserLeft `indexStream` (posR - 1)) : (tracebackUkkonen nwMatrix longerTop lesserLeft (posR - 1)  posL      maxGap  rInDel     (lInDel + 1))
+        DiagArrow -> (state, longerTop `indexStream` (posL - 1), lesserLeft `indexStream` (posR - 1)) : (tracebackUkkonen nwMatrix longerTop lesserLeft (posR - 1) (posL - 1) maxGap  rInDel      lInDel     )
   where
-    gap           = gapOfStream inlSeq
+    gap           = gapOfStream longerTop
     sentinalValue = gap `xor` gap -- a "0" value with the correct dimensionality.
-    (_, state, direction) = (nwMatrix V.! posR) V.! transformFullYShortY posL posR  maxGap --(transformFullYShortY posL posR maxGap)
-{-
+    (_, state, direction) = (nwMatrix V.! posR) V.! transformFullYShortY posL posR maxGap
+{--
     indexStream' s i = (trace (unwords [show direction, show (posL, posR), shownStreamPokes]) s) `indexStream` i
       where
         shownStreamPokes =
@@ -292,7 +264,7 @@ tracebackUkkonen nwMatrix inlSeq inrSeq posR posL maxGap rInDel lInDel
               LeftArrow -> unwords ["L @",             "X", "R @", show $ posR - 1]
               UpArrow   -> unwords ["L @", show $ posL - 1, "R @",             "X"]
               DiagArrow -> unwords ["L @", show $ posL - 1, "R @", show $ posR - 1]
--}
+--}
 
 -- |
 -- transformFullYShortY take full Y value (if did entire NW matrix) and returns
@@ -336,7 +308,6 @@ getDiagArrowCost upLeftArrowCost intersection union subCost --trace ("DiagCost "
 -- |
 -- getMinCostDir takes costs and states of three directins and returns min cost,
 -- directin, and state
--- ORDER diag, down, left so same as POY4-5.
 getMinCostDir :: Ord v
               => v -> v -> v
               -> s -> s -> s
@@ -367,17 +338,72 @@ thirdOfThree :: (a, b, c) -> c
 thirdOfThree  (_, _, x) = x
 
 
-
-
-renderUkkonenMatrix :: Vector (Vector (Cost, a, Direction)) -> String
-renderUkkonenMatrix jaggedMatrix = unlines . toList $ V.generate rowCount g
+renderUkkonenMatrix :: DOCharConstraint s => s -> s -> Vector (Vector (Cost, a, Direction)) -> String
+renderUkkonenMatrix lhs rhs jaggedMatrix = unlines
+    [ dimensionPrefix
+    , headerRow
+    , barRow
+    , renderedRows
+    ]
+--  = unlines . toList $ V.generate rowCount g
   where
-    g i = prefix <> rowStr
+    (longer, lesser)
+      | olength lhs >= olength rhs = (lhs, rhs)
+      | otherwise                  = (rhs, lhs)
+    longerTokens     = toShownIntegers longer
+    lesserTokens     = toShownIntegers lesser
+    toShownIntegers  = fmap (show . (fromIntegral :: Integral a => a -> Integer)) . otoList
+    matrixTokens     = concatMap (fmap showCell . toList) $ toList jaggedMatrix
+    showCell (c,_,d) = show c <> show d
+    maxPrefixWidth   = maxLengthOf lesserTokens
+    maxColumnWidth   = max (maxLengthOf longerTokens) . maxLengthOf $ toList matrixTokens
+    maxLengthOf      = maximum . fmap length
+
+    dimensionPrefix  = " " <> unwords
+        [ "Dimensions:"
+        , show $ olength longer + 1
+        , "X"
+        , show $ olength lesser + 1
+        ] 
+
+    headerRow = mconcat
+        [ " "
+        , pad maxPrefixWidth "\\"
+        , "| "
+        , pad maxColumnWidth "*"
+        , concatMap (pad maxColumnWidth) longerTokens
+        ]
+
+    barRow    = mconcat
+        [ " "
+        , bar maxPrefixWidth
+        , "+"
+        , concatMap (const (bar maxColumnWidth)) $ undefined : longerTokens
+        ]
       where
-        prefix = replicate (max 0 offset) '\t'
-        rowStr = intercalate "\t" . fmap (show . contract) . toList $ jaggedMatrix ! i
+        bar n = replicate (n+1) '-'
+
+    renderedRows = unlines . zipWith3 renderRow [0..] ("*":lesserTokens) $ toList jaggedMatrix
+      where
+        renderRow k e vs = " " <> pad maxPrefixWidth e <> "| " <> g k vs -- concatMap (pad maxColumnWidth) vs
+--        getRows m = (`getRow` m) <$> [0 .. nrows m - 1]
+
+    pad :: Int -> String -> String
+    pad n e = replicate (n - len) ' ' <> e <> " "
+      where
+        len = length e
+
+    g i vs = prefix <> rowStr
+      where
+        prefix = mconcat $ replicate (max 0 offset) "    "
+        rowStr = intercalate " " . fmap (showTriple) $ toList vs
         offset = i - searchRange + 1
 
-    searchRange      = length $ jaggedMatrix ! 0
-    rowCount         = length jaggedMatrix
-    contract (x,_,y) = (x,y)
+    searchRange         = length $ jaggedMatrix ! 0
+    rowCount            = length jaggedMatrix
+    showTriple (x,_,y)  = show2 x <> show y
+    show2 i
+      | length str == 1 = ' ':str
+      | otherwise       = str
+      where
+        str = show i
