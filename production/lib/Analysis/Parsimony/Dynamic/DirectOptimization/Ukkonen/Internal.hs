@@ -327,67 +327,6 @@ transformFullYShortY currentY rowNumber maxGap
   where
     transformY = currentY - max 0 (rowNumber - maxGap - 1)
 
-{-
-getUnionIntersectionState :: Bits b => b -> b -> b
-getUnionIntersectionState lState rState
-  | intersection /= zeroBits = intersection
-  | otherwise                = lState .|. rState
-  where
-    intersection = lState .&. rState
-
-
--- |
--- getOverlapCost cheks for ovelap in gap so if indel, but opossite a gap
--- ambiguity--there is no cost
-getOverlapCost :: (Bits b, Num n) => n -> n -> b -> b -> n
-getOverlapCost preCost indelCost oppositeState gap
-    --trace("bits " <> show oppositeState <> " overAND " <> show ((.&.) oppositeState inDelBit) <> " control " <> show ((.&.) inDelBit inDelBit))
-  | oppositeState .&. gap == zeroBits = preCost + indelCost
-  | otherwise                         = preCost
-
-
--- |
--- getDiagArrowCost takes union intersection and state to get diagonla sub or no-sub
---cost
-getDiagArrowCost :: (Bits b, Num n) => n -> b -> b -> n -> (n, b)
-getDiagArrowCost upLeftArrowCost intersection union subCost --trace ("DiagCost " <> show upLeftArrowCost <> " int " <> show intersection <> " union " <> show union) (
-  | intersection /= zeroBits = (upLeftArrowCost          , intersection)
-  | otherwise                = (upLeftArrowCost + subCost,        union)
-
-
--- |
--- getMinCostDir takes costs and states of three directins and returns min cost,
--- directin, and state
-getMinCostDir :: Ord v
-              => v -> v -> v
-              -> s -> s -> s
-              -> (v, s, Direction)
-getMinCostDir leftCost downCost diagCost diagState leftState downState
-  | diagCost == minValue = (diagCost, diagState, DiagArrow)
-  | leftCost == minValue = (leftCost, leftState, LeftArrow)
-  | otherwise            = (downCost, downState,   UpArrow)
-  where
-    minValue = minimum [leftCost, downCost, diagCost] 
-
-
--- |
--- firstOfThree takes a triple and returns first member
-firstOfThree :: (a, b, c) -> a
-firstOfThree  (x, _, _) = x
-
-
--- |
--- secondOfThree takes a triple and returns second member
-secondOfThree :: (a, b, c) -> b
-secondOfThree (_, x, _) = x
-
-
--- |
--- thirdOfThree takes a triple and returns third member
-thirdOfThree :: (a, b, c) -> c
-thirdOfThree  (_, _, x) = x
--}
-
 
 renderUkkonenMatrix :: DOCharConstraint s => s -> s -> Int -> Vector (Vector (Cost, a, Direction)) -> String
 renderUkkonenMatrix lhs rhs maxGap jaggedMatrix = unlines
