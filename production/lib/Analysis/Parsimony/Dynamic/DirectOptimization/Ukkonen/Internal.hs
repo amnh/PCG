@@ -16,7 +16,7 @@
 -----------------------------------------------------------------------------
 {-# LANGUAGE ConstraintKinds, FlexibleContexts, TypeFamilies #-}
 
-module Analysis.Parsimony.Dynamic.DirectOptimization.Ukkonen.Internal where
+module Analysis.Parsimony.Dynamic.DirectOptimization.Ukkonen.Internal (ukkonenDO) where
 
 
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal -- hiding (Direction)
@@ -27,13 +27,15 @@ import           Data.Key                 ((!))
 import           Data.List                (intercalate)
 --import           Data.Matrix.NotStupid   (Matrix, matrix, nrows, ncols)
 import           Data.MonoTraversable
---import           Data.Ord
+import           Data.Ord
 import           Data.Semigroup
 import           Data.Vector              (Vector)
 import qualified Data.Vector         as V
 import           Data.Vector.Instances    ()
 import           Numeric.Extended.Natural
+
 import Debug.Trace
+
 
 {-
 data Ribbon a
@@ -84,59 +86,105 @@ ukkonenDO
   -> s
   -> OverlapFunction (Element s)
   -> (Word, s, s, s, s)
---ukkonenDO inlSeq inrSeq _ | trace ("calling ukonnen DO with seqs " <> show inlSeq <> show inrSeq) False = undefined
 ukkonenDO char1 char2 costStruct
-  | lesserLen <= 4 = naiveDOMemo char1 char2 costStruct
-  | otherwise      = handleMissingCharacter char1 char2 result
+  | noGainFromUkkonenMethod = naiveDOMemo char1 char2 costStruct
+  | otherwise               = handleMissingCharacter char1 char2 result
   where
+    
+    -- If the longer character is 50% larger than the shorter character then
+    -- there is no point in using the barriers. Rather, we fill the full matrix
+    -- immediately.
+    --
+    -- Do not perform Ukkonen's algorithm if and only if:
+    --
+    -- > longerLen >= 1.5 * lesserLen
+    noGainFromUkkonenMethod = 2 * longerLen >= 3 * lesserLen
+      where
+        longerLen = olength longer
+        lesserLen = olength lesser
+
     -- We determine which character is longer and whether or not the alignment
     -- results will later need to be swapped. This is necessary because we assume
     -- an invariant of the longer character being on the left column and the
     -- shorter character on the top row.
     (swapped, longer, lesser) = measureCharacters char1 char2
-    longerLen = olength longer
-    lesserLen = olength lesser
-    maxGap    = 1 + longerLen - lesserLen
 
     -- This for left right constant--want longer in left for Ukkonnen
     -- Perform the Ukkonen work once ensuring invariants are applied
-    (extendedCost, ungappedMedians, gappedMedian, alignLeft, alignRight) = ukkonenCore longer lesser costStruct maxGap
+    (extendedCost, ungappedMedians, gappedMedian, alignLeft, alignRight) = ukkonenInternal longer lesser costStruct
+
     -- Conditionally swap resulting alignments if the inputs were swapped
     (alignedChar1, alignedChar2)
       | swapped   = (alignRight, alignLeft )
       | otherwise = (alignLeft , alignRight)
 
     -- Extract the cost from the extended number range, removing the Infinity value.
-    alignmentCost = unsafeToFinite extendedCost
+    alignmentCost = extendedCost
     result = (alignmentCost, ungappedMedians, gappedMedian, alignedChar1, alignedChar2)
 
 
 -- |
--- ukkonenCore core functions of Ukkonen to allow for recursing with maxGap
+-- ukkonenInternal core functions of Ukkonen to allow for recursing with maxGap
 -- doubled if not large enough (returns Nothing)  
-ukkonenCore
+ukkonenInternal
   :: (DOCharConstraint s, Show s)
   => s
   -> s
   -> OverlapFunction (Element s)
-  -> Int
-  -> (Cost, s, s, s, s)
-ukkonenCore longerTop lesserLeft overlapFunction maxGap
---  | headEx (trace renderedMatrix gappedMedian) /= 0 = (cost, ungappedMedian, gappedMedian, lhsAlignment, rhsAlignment)
-  | headEx gappedMedian /= 0 = (cost, ungappedMedian, gappedMedian, lhsAlignment, rhsAlignment)
-  | otherwise                = ukkonenCore longerTop lesserLeft overlapFunction (2 * maxGap)
+  -> (Word, s, s, s, s)
+ukkonenInternal longerTop lesserLeft overlapFunction = ukkonenUntilOptimal startOffset
   where
-    longerLen      = olength longerTop
-    lesserLen      = olength lesserLeft
-    nwMatrix       = generateUkkonenBand longerTop lesserLeft overlapFunction maxGap
-    renderedMatrix = renderUkkonenMatrix longerTop lesserLeft nwMatrix
+    startOffset = 2
+    gap         = gapOfStream longerTop
+    longerLen   = olength longerTop
+    lesserLen   = olength lesserLeft
+
+    quasiDiagonalWidth = differenceInLength + 1
+      where
+        differenceInLength = longerLen - lesserLen
+
+    gapsPresentInInputs = longerGaps + lesserGaps
+      where
+        longerGaps = countGaps longerTop
+        lesserGaps = countGaps lesserLeft
+        countGaps  = length . filter (== gap) . otoList
+
+    -- /O(2n)
+    coefficient = minimumBy (comparing indelCost) [ 0 .. alphabetSize - 1 ]
+      where
+        alphabetSize = symbolCount gap
+        indelCost i  = min ( snd (overlapFunction (bit i)  gap    ))
+                           ( snd (overlapFunction  gap    (bit i) ))
+
+    ukkonenUntilOptimal offset
+--      | threshhold <= trace (renderedBounds <> renderedMatrix) alignmentCost = ukkonenUntilOptimal (2 * offset)
+      | threshhold <= alignmentCost = ukkonenUntilOptimal (2 * offset)
+      | otherwise                   = (alignmentCost, ungappedMedian, gappedMedian, lhsAlignment, rhsAlignment)
+--      | headEx (trace renderedMatrix gappedMedian) /= 0 = (cost, ungappedMedian, gappedMedian, lhsAlignment, rhsAlignment)
+--      | headEx gappedMedian /= 0 = (cost, ungappedMedian, gappedMedian, lhsAlignment, rhsAlignment)
+--      | otherwise          = ukkonenUntilOptimal (2 * offset)
+      where
+        nwMatrix       = generateUkkonenBand longerTop lesserLeft overlapFunction maxGap
+        renderedMatrix = renderUkkonenMatrix longerTop lesserLeft maxGap nwMatrix
+        renderedBounds = unlines
+            [ "Diag Width : " <> show quasiDiagonalWidth
+            , "Input Gaps : " <> show gapsPresentInInputs
+            , "Offset     : " <> show offset
+            , "Coefficient: " <> show coefficient
+            ]
     
-    (medianGap, alignLeft, alignRight) = unzip3 . reverse $ tracebackUkkonen nwMatrix longerTop lesserLeft lesserLen longerLen maxGap 0 0
-    (cost, _, _)   = V.last (V.last nwMatrix)
-    ungappedMedian = filterGaps gappedMedian
-    gappedMedian   = constructDynamic medianGap
-    lhsAlignment   = constructDynamic alignLeft
-    rhsAlignment   = constructDynamic alignRight
+        (medianGap, alignLeft, alignRight) = unzip3 . reverse $ tracebackUkkonen nwMatrix longerTop lesserLeft lesserLen longerLen maxGap 0 0
+        (nwCost, _, _) = V.last $ V.last nwMatrix
+        alignmentCost  = unsafeToFinite alignmentCost
+        ungappedMedian = filterGaps gappedMedian
+        gappedMedian   = constructDynamic medianGap
+        lhsAlignment   = constructDynamic alignLeft
+        rhsAlignment   = constructDynamic alignRight
+
+        maxGap         = quasiDiagonalWidth + gapsPresentInInputs + offset
+
+        computedValue  = coefficient * (quasiDiagonalWidth + offset - gapsPresentInInputs)
+        threshhold     = toEnum $ max 0 computedValue
 
 
 generateUkkonenBand
@@ -145,7 +193,7 @@ generateUkkonenBand
   -> s
   -> OverlapFunction (Element s)
   -> Int
-  -> V.Vector (V.Vector (Cost, Element s, Direction))
+  -> Vector (Vector (Cost, Element s, Direction))
 generateUkkonenBand longerTop lesserLeft overlapFunction maxGap = nwMatrix
   where
     nwMatrix = V.fromList $ headRow : tailRows 
@@ -183,10 +231,10 @@ getThisRowUkkonen
   -> s
   -> OverlapFunction (Element s)
   -> Int
-  -> V.Vector (Cost, Element s, Direction)
+  -> Vector (Cost, Element s, Direction)
   -> Int
   -> Int
-  -> V.Vector (Cost, Element s, Direction)
+  -> Vector (Cost, Element s, Direction)
 getThisRowUkkonen longerTop lesserLeft overlapFunction maxGap prevRow rowLength rowNum = V.fromList resultRow
   where
     resultRow
@@ -200,7 +248,7 @@ getThisRowUkkonen longerTop lesserLeft overlapFunction maxGap prevRow rowLength 
       | position == rowNum + maxGap + 1 = [(barrierCost, gap, LeftArrow)]
       | position == 0 =
           let (newState, newCost) = fromFinite <$> overlapFunction gap (lesserLeft `indexStream` (rowNum - 1))
-              (  upCost, _, _) = prevRow V.! position
+              (  upCost, _, _) = prevRow ! position
               extraUpCost = upCost + newCost
           in  if    (newState /= gap)
               then  (extraUpCost, newState, UpArrow) : (getThisRowUkkonen' (position + 1)  extraUpCost)
@@ -222,18 +270,18 @@ getThisRowUkkonen longerTop lesserLeft overlapFunction maxGap prevRow rowLength 
                                           ( diagCost,  diagChar)
                                           (rightCost, rightChar)
                                           ( downCost,  downChar)
-        (  upwardValue,  _,      _) = prevRow V.! transformFullYShortY  position      (rowNum - 1) maxGap
-        (diagonalValue,  _,      _) = prevRow V.! transformFullYShortY (position - 1) (rowNum - 1) maxGap
+        (  upwardValue,  _,      _) = prevRow ! transformFullYShortY  position      (rowNum - 1) maxGap
+        (diagonalValue,  _,      _) = prevRow ! transformFullYShortY (position - 1) (rowNum - 1) maxGap
 
 
 -- |
 -- tracebackUkkonen creates REVERSE mediian from nwMatrix, reverse to make tail
 -- recusive, for Ukkonen space/time saving offsets
 -- need to count gaps in traceback for threshold/barrier stuff
--- CHANGE TO MAYBE (V.Vector Int64) FOR BARRIER CHECK
+-- CHANGE TO MAYBE (Vector Int64) FOR BARRIER CHECK
 tracebackUkkonen
   :: (DOCharConstraint s, Show s)
-  => V.Vector (V.Vector (Cost, Element s, Direction))
+  => Vector (Vector (Cost, Element s, Direction))
   -> s
   -> s
   -> Int
@@ -245,7 +293,8 @@ tracebackUkkonen
 --tracebackUkkonen _nwMatrix inlongerTop inlesserLeft posR posL _ _ _ | trace ("tracebackUkkonen " <> show posR <> show posL <> show inlongerTop <> show inlesserLeft) False = undefined
 tracebackUkkonen nwMatrix longerTop lesserLeft posR posL maxGap rInDel lInDel
 --trace ("psLR " <> show posR <> " " <> show posL <> " Left " <> show lInDel <> " Right " <> show rInDel <> " maxGap " <> show maxGap) (
-  | (rInDel  >= (maxGap - 2)) || (lInDel >= (maxGap - 2)) = [(sentinalValue, sentinalValue, sentinalValue)]
+--  | (rInDel  >= (maxGap - 2)) || (lInDel >= (maxGap - 2)) = [(sentinalValue, sentinalValue, sentinalValue)]
+--  | rInDel + lInDel   >= (maxGap - 1) = [(sentinalValue, sentinalValue, sentinalValue)]
   | posL <= 0 && posR <= 0 = {-- trace (show (maxGap, rInDel, lInDel)) --} []
   | otherwise =
       case direction of
@@ -255,7 +304,8 @@ tracebackUkkonen nwMatrix longerTop lesserLeft posR posL maxGap rInDel lInDel
   where
     gap           = gapOfStream longerTop
     sentinalValue = gap `xor` gap -- a "0" value with the correct dimensionality.
-    (_, state, direction) = (nwMatrix V.! posR) V.! transformFullYShortY posL posR maxGap
+    (_, state, direction) = (nwMatrix ! posR) ! transformFullYShortY posL posR maxGap
+
 {--
     indexStream' s i = (trace (unwords [show direction, show (posL, posR), shownStreamPokes]) s) `indexStream` i
       where
@@ -272,12 +322,12 @@ tracebackUkkonen nwMatrix longerTop lesserLeft posR posL maxGap rInDel lInDel
 -- remove error when working--overhead
 transformFullYShortY :: Int -> Int -> Int -> Int
 transformFullYShortY currentY rowNumber maxGap
-  | transformY < 0 = error $ unwords [show currentY, show rowNumber, show maxGap, "Impossible negative value for transfomred Y"]
+  | transformY < 0 = error $ unwords [show currentY, show rowNumber, show maxGap, "Impossible negative value for transformed Y"]
   | otherwise      = transformY
   where
     transformY = currentY - max 0 (rowNumber - maxGap - 1)
 
-
+{-
 getUnionIntersectionState :: Bits b => b -> b -> b
 getUnionIntersectionState lState rState
   | intersection /= zeroBits = intersection
@@ -336,17 +386,21 @@ secondOfThree (_, x, _) = x
 -- thirdOfThree takes a triple and returns third member
 thirdOfThree :: (a, b, c) -> c
 thirdOfThree  (_, _, x) = x
+-}
 
 
-renderUkkonenMatrix :: DOCharConstraint s => s -> s -> Vector (Vector (Cost, a, Direction)) -> String
-renderUkkonenMatrix lhs rhs jaggedMatrix = unlines
+renderUkkonenMatrix :: DOCharConstraint s => s -> s -> Int -> Vector (Vector (Cost, a, Direction)) -> String
+renderUkkonenMatrix lhs rhs maxGap jaggedMatrix = unlines
     [ dimensionPrefix
+    , barrierPrefix
     , headerRow
     , barRow
     , renderedRows
     ]
 --  = unlines . toList $ V.generate rowCount g
   where
+    lhsLen = olength lhs
+    rhsLen = olength rhs
     (longer, lesser)
       | olength lhs >= olength rhs = (lhs, rhs)
       | otherwise                  = (rhs, lhs)
@@ -364,7 +418,19 @@ renderUkkonenMatrix lhs rhs jaggedMatrix = unlines
         , show $ olength longer + 1
         , "X"
         , show $ olength lesser + 1
-        ] 
+        ]
+
+    barrierPrefix = " " <> unwords
+        [ "Difference:"
+        , show difference
+        , ","
+        , "Barrier:"
+        , show $ maxGap - difference
+        , "Threshhold:"
+        , show maxGap
+        ]
+      where
+        difference = max lhsLen rhsLen - min lhsLen rhsLen
 
     headerRow = mconcat
         [ " "

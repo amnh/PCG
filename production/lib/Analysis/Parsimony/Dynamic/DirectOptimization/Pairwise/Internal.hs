@@ -171,10 +171,11 @@ filterGaps char =
 -- character must be the longer of the two and is the top labeling of the matrix.
 -- Returns an 'DOAlignMatrix'.
 createDOAlignMatrix :: DOCharConstraint s => s -> s -> OverlapFunction (Element s) -> DOAlignMatrix (Element s)
-createDOAlignMatrix topChar leftChar overlapFunction = {-- trace renderedMatrix $ --} result
+--createDOAlignMatrix topChar leftChar overlapFunction = trace renderedMatrix result
+createDOAlignMatrix topChar leftChar overlapFunction = result
   where
     -- :)
-    -- renderedMatrix = renderCostMatrix topChar leftChar result
+    renderedMatrix = renderCostMatrix topChar leftChar result
     
     result = matrix (olength leftChar + 1) (olength topChar + 1) generateMat
 --    gap    = gapOfStream leftChar -- The constructors of DynamicChar prevent an empty character construction.
