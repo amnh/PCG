@@ -25,7 +25,6 @@ import           Data.Bits
 import           Data.Foldable
 import           Data.Key                 ((!))
 import           Data.List                (intercalate)
-import           Data.Maybe
 import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Vector              (Vector)
@@ -77,8 +76,8 @@ ukkonenDO
   -> s
   -> OverlapFunction (Element s)
   -> (Word, s, s, s, s)
-ukkonenDO char1 char2 costStruct
-  | noGainFromUkkonenMethod = naiveDOMemo char1 char2 costStruct
+ukkonenDO char1 char2 overlapFunction
+  | noGainFromUkkonenMethod = naiveDOMemo char1 char2 overlapFunction
   | otherwise               = handleMissingCharacter char1 char2 result
   where
     
@@ -90,15 +89,41 @@ ukkonenDO char1 char2 costStruct
     -- inital barrier will be set at a adjacent to or beyond the lower left and
     -- upper right corners.
     --
+    -- Lastly, a threshhold coeffcient is computed as the minimal indel cost from
+    -- any symbol in the alphabet to gap. However, if the indel cost for any
+    -- symbol is zero, the algorithm will hang and a naive approach must be taken.
+    --
     -- Do not perform Ukkonen's algorithm if and only if:
     --
     -- > longerLen >= 1.5 * lesserLen
     --     OR
     -- > lesserLen <= 4
-    noGainFromUkkonenMethod = lesserLen <= 4 || 2 * longerLen >= 3 * lesserLen
+    --     OR
+    -- > coefficient == 0
+    noGainFromUkkonenMethod = or
+        [     lesserLen <= 4
+        , 2 * longerLen >= 3 * lesserLen
+        ,   coefficient == 0
+        ]
       where
         longerLen = olength longer
         lesserLen = olength lesser
+
+    -- /O(2*(a - 1))/
+    --
+    -- This was taken from Ukkonen's original 1985 paper where the coeffcient
+    -- delta (Δ) was defined by the minimum transition cost from any symbol in
+    -- the alphabet (Σ) to the gap symbol (-).
+    --
+    -- This should only be zero if all transition costs to gap are zero.
+    -- But if that is the case the algorithm will hang.
+    coefficient = minimum $ indelCost <$> nonGapElements
+      where
+        gap            = gapOfStream char1
+        alphabetSize   = symbolCount gap
+        nonGapElements = [ 0 .. alphabetSize - 2 ]
+        indelCost i    =  min (snd (overlapFunction (bit i)  gap    ))
+                              (snd (overlapFunction  gap    (bit i) ))
 
     -- We determine which character is longer and whether or not the alignment
     -- results will later need to be swapped. This is necessary because we assume
@@ -108,7 +133,7 @@ ukkonenDO char1 char2 costStruct
 
     -- This for left right constant--want longer in left for Ukkonnen
     -- Perform the Ukkonen work once ensuring invariants are applied
-    (alignmentCost, ungappedMedians, gappedMedian, alignLeft, alignRight) = ukkonenInternal longer lesser costStruct
+    (alignmentCost, ungappedMedians, gappedMedian, alignLeft, alignRight) = ukkonenInternal longer lesser overlapFunction coefficient
 
     -- Conditionally swap resulting alignments if the inputs were swapped
     (alignedChar1, alignedChar2)
@@ -127,14 +152,15 @@ ukkonenInternal
   => s
   -> s
   -> OverlapFunction (Element s)
+  -> Word
   -> (Word, s, s, s, s)
-ukkonenInternal longerTop lesserLeft overlapFunction = ukkonenUntilOptimal startOffset
+ukkonenInternal longerTop lesserLeft overlapFunction minimumIndelCost = ukkonenUntilOptimal startOffset
   where
     -- General values that need to be in scope for the recursive computations.
-    gap         = gapOfStream longerTop
     longerLen   = olength longerTop
     lesserLen   = olength lesserLeft
-
+    coefficient = fromEnum minimumIndelCost
+    
     -- We start the offset at two rather than at one so that the first doubling
     -- isn't trivially small.
     startOffset = 2
@@ -156,29 +182,7 @@ ukkonenInternal longerTop lesserLeft overlapFunction = ukkonenUntilOptimal start
         longerGaps = countGaps longerTop
         lesserGaps = countGaps lesserLeft
         countGaps  = length . filter (== gap) . otoList
-
-    -- /O(2*a - 1)/
-    --
-    -- This was taken from Ukkonen's original 1985 paper where the coeffcient
-    -- delta (Δ) was defined by the minimum transition cost from any symbol in
-    -- the alphabet (Σ) to the gap symbol (-).
-    --
-    -- This should only be zero if all transition costs to gap are zero.
-    -- But if that is the case the algorithm will hang.
-    coefficient =
-        case nonZeroIndelCosts of
-          [] -> 0
-          xs -> fromEnum $ minimum xs
-      where
-        nonZeroIndelCosts = catMaybes $ indelCost <$> [ 0 .. alphabetSize - 1 ]
-        alphabetSize = symbolCount gap
-        indelCost i  =
-            case value of
-              0 -> Nothing
-              v -> Just v
-          where
-            value = min ( snd (overlapFunction (bit i)  gap    ))
-                        ( snd (overlapFunction  gap    (bit i) ))
+        gap        = gapOfStream longerTop
 
     ukkonenUntilOptimal offset
 --      | threshhold <= trace (renderedBounds <> renderedMatrix) alignmentCost = ukkonenUntilOptimal (2 * offset)
