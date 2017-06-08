@@ -175,7 +175,7 @@ ukkonenInternal longerTop lesserLeft overlapFunction = ukkonenUntilOptimal start
     
         (medianGap, alignLeft, alignRight) = unzip3 . reverse $ tracebackUkkonen nwMatrix longerTop lesserLeft lesserLen longerLen maxGap 0 0
         (nwCost, _, _) = V.last $ V.last nwMatrix
-        alignmentCost  = unsafeToFinite alignmentCost
+        alignmentCost  = unsafeToFinite nwCost
         ungappedMedian = filterGaps gappedMedian
         gappedMedian   = constructDynamic medianGap
         lhsAlignment   = constructDynamic alignLeft
