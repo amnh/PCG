@@ -25,9 +25,8 @@ import           Data.Bits
 import           Data.Foldable
 import           Data.Key                 ((!))
 import           Data.List                (intercalate)
---import           Data.Matrix.NotStupid   (Matrix, matrix, nrows, ncols)
+import           Data.Maybe
 import           Data.MonoTraversable
-import           Data.Ord
 import           Data.Semigroup
 import           Data.Vector              (Vector)
 import qualified Data.Vector         as V
@@ -48,12 +47,6 @@ data Ribbon a
 -}
 
 
-{-
-data Direction = LeftDir | DownDir | DiagDir
-    deriving (Read, Show, Eq)
--}
-
-
 -- |
 -- This internal type used for computing the alignment cost. This type has an
 -- "infinity" value that is conviently used for the barrier costs. The cost is
@@ -70,8 +63,6 @@ barrierCost :: Cost
 barrierCost = infinity
 
 
---FOR both DO's  lseq is a row, acrosss so num columns = length of lseq
---There are rseq rows
 -- |
 -- UkkonenDO takes two input sequences and returns median sequence and cost
 -- only 1:1 for now. Uses Ukkonen's space/time saving algorithm
@@ -81,7 +72,7 @@ barrierCost = infinity
 -- move to C via FFI
 -- Still occasional error in cost and median (disagreement) show in Chel.seq
 ukkonenDO
-  :: (DOCharConstraint s, Show s)
+  :: DOCharConstraint s
   => s
   -> s
   -> OverlapFunction (Element s)
@@ -95,10 +86,16 @@ ukkonenDO char1 char2 costStruct
     -- there is no point in using the barriers. Rather, we fill the full matrix
     -- immediately.
     --
+    -- Additionally, if the shorter sequence is of length 4 or less, then the
+    -- inital barrier will be set at a adjacent to or beyond the lower left and
+    -- upper right corners.
+    --
     -- Do not perform Ukkonen's algorithm if and only if:
     --
     -- > longerLen >= 1.5 * lesserLen
-    noGainFromUkkonenMethod = 2 * longerLen >= 3 * lesserLen
+    --     OR
+    -- > lesserLen <= 4
+    noGainFromUkkonenMethod = lesserLen <= 4 || 2 * longerLen >= 3 * lesserLen
       where
         longerLen = olength longer
         lesserLen = olength lesser
@@ -111,15 +108,14 @@ ukkonenDO char1 char2 costStruct
 
     -- This for left right constant--want longer in left for Ukkonnen
     -- Perform the Ukkonen work once ensuring invariants are applied
-    (extendedCost, ungappedMedians, gappedMedian, alignLeft, alignRight) = ukkonenInternal longer lesser costStruct
+    (alignmentCost, ungappedMedians, gappedMedian, alignLeft, alignRight) = ukkonenInternal longer lesser costStruct
 
     -- Conditionally swap resulting alignments if the inputs were swapped
     (alignedChar1, alignedChar2)
       | swapped   = (alignRight, alignLeft )
       | otherwise = (alignLeft , alignRight)
 
-    -- Extract the cost from the extended number range, removing the Infinity value.
-    alignmentCost = extendedCost
+    -- Construct the resulting 5-tuple.
     result = (alignmentCost, ungappedMedians, gappedMedian, alignedChar1, alignedChar2)
 
 
@@ -127,34 +123,62 @@ ukkonenDO char1 char2 costStruct
 -- ukkonenInternal core functions of Ukkonen to allow for recursing with maxGap
 -- doubled if not large enough (returns Nothing)  
 ukkonenInternal
-  :: (DOCharConstraint s, Show s)
+  :: DOCharConstraint s
   => s
   -> s
   -> OverlapFunction (Element s)
   -> (Word, s, s, s, s)
 ukkonenInternal longerTop lesserLeft overlapFunction = ukkonenUntilOptimal startOffset
   where
-    startOffset = 2
+    -- General values that need to be in scope for the recursive computations.
     gap         = gapOfStream longerTop
     longerLen   = olength longerTop
     lesserLen   = olength lesserLeft
 
+    -- We start the offset at two rather than at one so that the first doubling
+    -- isn't trivially small.
+    startOffset = 2
+
+    -- /O(1)/
+    --
+    -- Necessary to compute the width of a row in the barrier constrained matrix.
     quasiDiagonalWidth = differenceInLength + 1
       where
         differenceInLength = longerLen - lesserLen
 
+    -- /O(n + m)/
+    --
+    -- This is important to decrement the threshhold value to account for
+    -- diagonal directions in the matrix having an "indel" cost because one or
+    -- more of the aligned character elements was a gap.
     gapsPresentInInputs = longerGaps + lesserGaps
       where
         longerGaps = countGaps longerTop
         lesserGaps = countGaps lesserLeft
         countGaps  = length . filter (== gap) . otoList
 
-    -- /O(2n)
-    coefficient = minimumBy (comparing indelCost) [ 0 .. alphabetSize - 1 ]
+    -- /O(2*a - 1)/
+    --
+    -- This was taken from Ukkonen's original 1985 paper where the coeffcient
+    -- delta (Δ) was defined by the minimum transition cost from any symbol in
+    -- the alphabet (Σ) to the gap symbol (-).
+    --
+    -- This should only be zero if all transition costs to gap are zero.
+    -- But if that is the case the algorithm will hang.
+    coefficient =
+        case nonZeroIndelCosts of
+          [] -> 0
+          xs -> fromEnum $ minimum xs
       where
+        nonZeroIndelCosts = catMaybes $ indelCost <$> [ 0 .. alphabetSize - 1 ]
         alphabetSize = symbolCount gap
-        indelCost i  = min ( snd (overlapFunction (bit i)  gap    ))
-                           ( snd (overlapFunction  gap    (bit i) ))
+        indelCost i  =
+            case value of
+              0 -> Nothing
+              v -> Just v
+          where
+            value = min ( snd (overlapFunction (bit i)  gap    ))
+                        ( snd (overlapFunction  gap    (bit i) ))
 
     ukkonenUntilOptimal offset
 --      | threshhold <= trace (renderedBounds <> renderedMatrix) alignmentCost = ukkonenUntilOptimal (2 * offset)
@@ -171,6 +195,8 @@ ukkonenInternal longerTop lesserLeft overlapFunction = ukkonenUntilOptimal start
             , "Input Gaps : " <> show gapsPresentInInputs
             , "Offset     : " <> show offset
             , "Coefficient: " <> show coefficient
+            , "Threshhold : " <> show threshhold
+            , "Total Cost : " <> show alignmentCost
             ]
     
         (medianGap, alignLeft, alignRight) = unzip3 . reverse $ tracebackUkkonen nwMatrix longerTop lesserLeft lesserLen longerLen maxGap 0 0
@@ -181,14 +207,14 @@ ukkonenInternal longerTop lesserLeft overlapFunction = ukkonenUntilOptimal start
         lhsAlignment   = constructDynamic alignLeft
         rhsAlignment   = constructDynamic alignRight
 
-        maxGap         = quasiDiagonalWidth + gapsPresentInInputs + offset
+        maxGap         = quasiDiagonalWidth + {- gapsPresentInInputs + -} offset
 
         computedValue  = coefficient * (quasiDiagonalWidth + offset - gapsPresentInInputs)
-        threshhold     = toEnum $ max 0 computedValue
+        threshhold     = toEnum $ max 0 computedValue -- The threshhold value must be non-negative
 
 
 generateUkkonenBand
-  :: (DOCharConstraint s, Show s)
+  :: DOCharConstraint s
   => s
   -> s
   -> OverlapFunction (Element s)
@@ -226,7 +252,7 @@ generateUkkonenBand longerTop lesserLeft overlapFunction maxGap = nwMatrix
 -- getThisRowUkkonen takes sequences and parameters with row number and make a non-first
 -- row--Ukkonen
 getThisRowUkkonen
-  :: (DOCharConstraint s, Show s)
+  :: DOCharConstraint s
   => s
   -> s
   -> OverlapFunction (Element s)
@@ -280,7 +306,7 @@ getThisRowUkkonen longerTop lesserLeft overlapFunction maxGap prevRow rowLength 
 -- need to count gaps in traceback for threshold/barrier stuff
 -- CHANGE TO MAYBE (Vector Int64) FOR BARRIER CHECK
 tracebackUkkonen
-  :: (DOCharConstraint s, Show s)
+  :: DOCharConstraint s
   => Vector (Vector (Cost, Element s, Direction))
   -> s
   -> s
@@ -302,9 +328,9 @@ tracebackUkkonen nwMatrix longerTop lesserLeft posR posL maxGap rInDel lInDel
         UpArrow   -> (state,                                gap, lesserLeft `indexStream` (posR - 1)) : (tracebackUkkonen nwMatrix longerTop lesserLeft (posR - 1)  posL      maxGap  rInDel     (lInDel + 1))
         DiagArrow -> (state, longerTop `indexStream` (posL - 1), lesserLeft `indexStream` (posR - 1)) : (tracebackUkkonen nwMatrix longerTop lesserLeft (posR - 1) (posL - 1) maxGap  rInDel      lInDel     )
   where
-    gap           = gapOfStream longerTop
-    sentinalValue = gap `xor` gap -- a "0" value with the correct dimensionality.
+    gap = gapOfStream longerTop
     (_, state, direction) = (nwMatrix ! posR) ! transformFullYShortY posL posR maxGap
+--    sentinalValue = gap `xor` gap -- a "0" value with the correct dimensionality.
 
 {--
     indexStream' s i = (trace (unwords [show direction, show (posL, posR), shownStreamPokes]) s) `indexStream` i

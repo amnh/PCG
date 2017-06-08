@@ -34,7 +34,7 @@ parseArgs args =
 performCounterExampleSearch :: IO ()
 performCounterExampleSearch = do 
     putStrLn "Performing stocastic counter-example search:"
-    quickCheckWith stdArgs { maxSuccess = 10000 } counterExampleCheck
+    quickCheckWith stdArgs { maxSuccess = 1000000 } counterExampleCheck
 
 
 counterExampleCheck :: (NucleotideSequence, NucleotideSequence) -> Bool
