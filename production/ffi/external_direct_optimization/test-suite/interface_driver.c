@@ -508,13 +508,13 @@ int main() {
 
         for (i = 0; i < 1; i++) { // run 30 tests
 
-            longCharLen   = 7; // rand() % CHAR_LENGTH + 1;
+            longCharLen   = 5; // rand() % CHAR_LENGTH + 1;
             middleCharLen = 5; // rand() % CHAR_LENGTH + 1;
             shortCharLen  = 4; // rand() % CHAR_LENGTH + 1;
             maxLength     = longCharLen + middleCharLen + shortCharLen + 3; // 3 because there are three gaps added (1 on beginning of each character)
 
             // need to realloc each time through the loop
-            elem_t longer_vals[7] = {3, 12, 7, 9, 9, 4, 9}; // realloc( longer_vals,  longCharLen   * sizeof(elem_t) );
+            elem_t longer_vals[5] = {3, 1, 9, 1, 8}; // realloc( longer_vals,  longCharLen   * sizeof(elem_t) );
             elem_t middle_vals[5] = {3, 9, 9, 7, 5}; // realloc( middle_vals,   middleCharLen * sizeof(elem_t) );
             elem_t lesser_vals[4] = {7, 9, 9, 4}; // realloc( lesser_vals, shortCharLen  * sizeof(elem_t) );
 
@@ -529,8 +529,8 @@ int main() {
             reallocAlignIO(ungappedMedianChar, maxLength);
             reallocAlignIO(gappedMedianChar,   maxLength);
 
-            copyValsToAIO(inputChar1, longer_vals,  longCharLen,   maxLength);
-            copyValsToAIO(inputChar2, middle_vals,   middleCharLen, maxLength);
+            copyValsToAIO(inputChar1, longer_vals, longCharLen,   maxLength);
+            copyValsToAIO(inputChar2, middle_vals, middleCharLen, maxLength);
             copyValsToAIO(inputChar3, lesser_vals, shortCharLen,  maxLength);
 
             printf("\n\n\n******************** Align 3 characters **********************\n\n");

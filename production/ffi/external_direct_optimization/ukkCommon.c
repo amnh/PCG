@@ -414,11 +414,11 @@ int whichCharCost(char a, char b, char c)
     if (DEBUG_CALL_ORDER) {
         printf("whichCharCost\n");
     }
-    // printf("a: %c, b: %c, c: %c\n", a, b, c);
+    printf("a: %d, b: %d, c: %d\n", a, b, c);
     assert(   a != 0
            && b != 0
            && c != 0
-           );
+          );
     /*
       When running as a ukk algorithm (ie. not the DPA), then
       a == b == c only when there is a run of MATCH_SUBs after a fsm_state other that MMM,
@@ -480,17 +480,18 @@ int fsmState_transitionCost( int from
 // --------------------------------------------------
 /** Mutates a, b, and c such that each is true or false if the least significant first, second or third digit, respectively,
  *  of neighbour is 1.
+ *  I.e., if a given fsm state of a neighbour is delete, set that state to true; otherwise, set to 0.
  */
 void step( int  neighbour
-         , int *a
-         , int *b
-         , int *c
+         , int *state1
+         , int *state2
+         , int *state3
          )
 {
     assert(neighbour > 0 && neighbour <= 7);
-    *a =  neighbour       & 1;
-    *b = (neighbour >> 1) & 1;
-    *c = (neighbour >> 2) & 1;
+    *state1 =  neighbour       & 1;
+    *state2 = (neighbour >> 1) & 1;
+    *state3 = (neighbour >> 2) & 1;
 }
 
 

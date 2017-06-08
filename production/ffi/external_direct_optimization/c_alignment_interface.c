@@ -546,13 +546,8 @@ int align2dAffine( alignIO_t          *inputChar1_aio
 }
 
 
-/** Do a 3d alignment. Depending on the values of last two inputs,
- *  | (0,0) = return only a cost
- *  | (0,1) = calculate gapped and ungapped characters
- *  | (1,0) = calculate union
- *  | (1,1) = calculate both union and ungapped characters.
- *
- *  In the last two cases the union will replace the gapped character placeholder.
+/** Aligns three characters using affine algorithm.
+ *  Set `gap_open_cost` to 0 for non-affine.
  */
 int align3d( alignIO_t          *inputChar1_aio
            , alignIO_t          *inputChar2_aio
@@ -562,7 +557,7 @@ int align3d( alignIO_t          *inputChar1_aio
            // , alignment_matrices_t *algn_mtxs3d
            , cost_matrices_3d_t *costMtx3d
            , unsigned int        gap_open_cost
-           //, unsigned int        gap_extension_cost <-- This comes from tcm so is not necessary.
+           //, unsigned int        gap_extension_cost <-- This comes from tcm so is not necessary. TODO: no tcm; add this back in?
            )
 {
 
@@ -575,7 +570,7 @@ int align3d( alignIO_t          *inputChar1_aio
     }
     printf("gap char: %u\n", costMtx3d->gap_char);
 
-    const size_t CHAR_CAPACITY = inputChar1_aio->length + inputChar2_aio->length + inputChar3_aio->length + 3; // 2 to account for gaps,
+    const size_t CHAR_CAPACITY = inputChar1_aio->length + inputChar2_aio->length + inputChar3_aio->length + 3; // 3 to account for gaps,
                                                                                                                // which will be added in
                                                                                                                // initializeChar()
     unsigned int algnCost;
@@ -600,7 +595,9 @@ int align3d( alignIO_t          *inputChar1_aio
 
     size_t alphabetSize = costMtx3d->costMatrixDimension;
 
-    // now sort inputs into appropriate structs by name
+    // Now sort inputs into appropriate structs by name.
+    // This will allow us to send inputs in in correct order by length, but also get them back in the order
+    // that corresponds to inputs.
     if (inputChar1_aio->length >= inputChar2_aio->length) {
 
         if (inputChar3_aio->length >= inputChar1_aio->length) {        // input 3 is longest, 2 is shortest
@@ -671,7 +668,11 @@ int align3d( alignIO_t          *inputChar1_aio
         dyn_char_print(shortChar);
     }
 
-    longChar->array_head[0] = middleChar->array_head[0] = shortChar->array_head[0] = 8;
+    // Adding initial gap in. Still should get rid of this. Sigh.
+    longChar->array_head[0] = middleChar->array_head[0] = shortChar->array_head[0] = 16; // TODO: Look up gap cost based on
+                                                                                         // alphabet length?
+                                                                                         // It's also hard-coded in 3d ukk, so will have
+                                                                                         // to change it there, too.
 
     // Powell aligns three sequences.
     algnCost = powell_3D_align ( longChar

@@ -82,8 +82,8 @@ int align2dAffine( alignIO_t          *inputChar1_aio
                  , int                 getMedians
                  );
 
-/** Aligns three characters using non-affine algorithm.
- *  Takes in thee arrays of integer values,.
+/** Aligns three characters using affine algorithm.
+ *  Set `gap_open_cost` to 0 for non-affine.
  */
 int align3d( alignIO_t          *inputChar1_aio
            , alignIO_t          *inputChar2_aio

@@ -146,7 +146,6 @@ static inline checkPoint_cell_t *get_checkPoint_cell( int lessLong_idx_diff
 
 
 // TODO: unsigned ints for costs? Probably shouldn't be, actually.
-// TODO: Pass in costMtx_3d
 /** This is the interface function to the alignment code. It takes in three characters, as well as a mismatch cost, a gap open cost and
  *  a gap extention cost (all of which should be replaced by a 3d cost matrix).
  *
@@ -168,11 +167,11 @@ int powell_3D_align( dyn_character_t *lesserChar
     }
 
     // Allocate global costs, characters and cost arrays. These will be initialized in setup().
-    global_costs_t *globalCosts = malloc( sizeof(global_costs_t) );
+    global_costs_t *globalCosts    = malloc( sizeof(global_costs_t) );
 
-    characters_t *inputChars = malloc( sizeof(characters_t) );
+    characters_t *inputChars       = malloc( sizeof(characters_t) );
 
-    characters_t *resultChars = malloc( sizeof(characters_t) );
+    characters_t *resultChars      = malloc( sizeof(characters_t) );
 
     fsm_arrays_t *globalCostArrays = malloc( sizeof(fsm_arrays_t) );
 
@@ -818,6 +817,9 @@ nLessLong_idx_diff = %3d, nLessMidd_idx_diff = %3d, nEdit Distance = %3d, nFsm s
 
 /** Converts a character input, {A, C, G, T} to an int. Problem: on ambiguous inputs biases toward A.
  *  TODO: Also, disallows larger alphabets.
+ *  Since we're just using the aligned outputs for gap placement, and since sub costs are always 1, the A bias is okay.
+ *  If either of those things changes, then we have trouble.
+ *  The hard-coded alphabet length constraint might be a bigger problem.
  */
 int char_to_base( char v ) {   // TODO: Can I just skip this?
     if      ('A' == v) return 1;
@@ -1036,13 +1038,13 @@ int findBest( int    lessLong_idx_diff
 }
 
 
-int Ukk( int                  lessLong_idx_diff
-       , int                  lessMidd_idx_diff
-       , int                  editDistance
-       , unsigned int         fsm_state
-       , global_costs_t      *globalCosts
-       , characters_t *inputChars
-       , fsm_arrays_t     *globalCostArrays
+int Ukk( int             lessLong_idx_diff
+       , int             lessMidd_idx_diff
+       , int             editDistance
+       , unsigned int    fsm_state
+       , global_costs_t *globalCosts
+       , characters_t   *inputChars
+       , fsm_arrays_t   *globalCostArrays
        )
 {
     if ( !withinMatrix( lessLong_idx_diff
@@ -1377,9 +1379,9 @@ int calcUkk( int                  lessLong_idx_diff
 
     // TODO: document all of these
     int neighbour = globalCostArrays->neighbours[toState];
-    int da,
-        db,
-        dc,
+    int isDeleteState_A,
+        isDeleteState_B,
+        isDeleteState_C,
         lessLong_idx_diff1,
         lessMidd_idx_diff1,
         a1,
@@ -1433,13 +1435,13 @@ int calcUkk( int                  lessLong_idx_diff
     }
 
     step(  neighbour
-        , &da
-        , &db
-        , &dc
+        , &isDeleteState_A
+        , &isDeleteState_B
+        , &isDeleteState_C
         );
 
-    lessLong_idx_diff1 = lessLong_idx_diff - da + db;
-    lessMidd_idx_diff1 = lessMidd_idx_diff - da + dc;
+    lessLong_idx_diff1 = lessLong_idx_diff - isDeleteState_A + isDeleteState_B;
+    lessMidd_idx_diff1 = lessMidd_idx_diff - isDeleteState_A + isDeleteState_C;
 
     // calculate if it's a valid diagonal
     if (    lessLong_idx_diff1 >= -end_longerChar
@@ -1467,22 +1469,22 @@ int calcUkk( int                  lessLong_idx_diff
                                , globalCostArrays
                                );
 
-            // printf("a1: %d, da: %d, end_lesserChar: %d\n", a1, da, end_lesserChar);
-            // printf("b1: %d, db: %d, end_longerChar: %d\n", a1, da, end_lesserChar);
-            // printf("c1: %d, dc: %d, end_middleChar: %d\n", a1, da, end_lesserChar);
-            if (    okIndex( a1                     , da, end_lesserChar )
-                 && okIndex( a1 - lessLong_idx_diff1, db, end_longerChar )
-                 && okIndex( a1 - lessMidd_idx_diff1, dc, end_middleChar )
-                 && ( whichCharCost( da ? inputChars->lesserStr[a1]
+            // printf("a1: %d, isDeleteState_A: %d, end_lesserChar: %d\n", a1, isDeleteState_A, end_lesserChar);
+            // printf("b1: %d, isDeleteState_B: %d, end_longerChar: %d\n", a1, isDeleteState_B, end_lesserChar);
+            // printf("c1: %d, isDeleteState_C: %d, end_middleChar: %d\n", a1, isDeleteState_C, end_lesserChar);
+            if (    okIndex( a1                     , isDeleteState_A, end_lesserChar )
+                 && okIndex( a1 - lessLong_idx_diff1, isDeleteState_B, end_longerChar )
+                 && okIndex( a1 - lessMidd_idx_diff1, isDeleteState_C, end_middleChar )
+                 && ( whichCharCost( isDeleteState_A ? inputChars->lesserStr[a1]
                                         : '-'
-                                   , db ? inputChars->longerStr[a1 - lessLong_idx_diff1]
+                                   , isDeleteState_B ? inputChars->longerStr[a1 - lessLong_idx_diff1]
                                         : '-'
-                                   , dc ? inputChars->middleStr[a1 - lessMidd_idx_diff1]
+                                   , isDeleteState_C ? inputChars->middleStr[a1 - lessMidd_idx_diff1]
                                         : '-'
                                    ) == 1 )
                ) {
                 fromCost = curCost;
-                editDist = a1 + da;
+                editDist = a1 + isDeleteState_A;
             } else {
                 if (!(globalCostArrays->secondCost)[toState]) {
                     continue;
@@ -1497,12 +1499,12 @@ int calcUkk( int                  lessLong_idx_diff
                         , globalCostArrays
                         );
 
-                if (   okIndex(a2,                      da, end_lesserChar)
-                    && okIndex(a2 - lessLong_idx_diff1, db, end_longerChar)
-                    && okIndex(a2 - lessMidd_idx_diff1, dc, end_middleChar)
+                if (   okIndex(a2,                      isDeleteState_A, end_lesserChar)
+                    && okIndex(a2 - lessLong_idx_diff1, isDeleteState_B, end_longerChar)
+                    && okIndex(a2 - lessMidd_idx_diff1, isDeleteState_C, end_middleChar)
                    ) {
                     fromCost = curCost - globalCosts->mismatchCost;
-                    editDist = a2 + da;
+                    editDist = a2 + isDeleteState_A;
                 }
             }
 
