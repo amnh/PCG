@@ -40,7 +40,7 @@ data Ribbon a
    , width    :: Int -- width >= height
    , diagonal :: Int
    , offset   :: Int
-   , linear   :: Vector a
+   , linear   :: Vector (Cost, a, Direction)
    } deriving (Eq)
 
 
@@ -60,6 +60,26 @@ ribbonIndex r (i,j) = rowPrefix + colIndex
         b = min 0 (a - i)
         t k = (k*(k+1)) `div` 2
 -}
+
+generateUkkonenRibbon
+  :: ((Int,Int) -> a) -- ^ Generating function
+  -> Word             -- ^ Length of the longer  character
+  -> Word             -- ^ Length of the shorter character
+  -> Word             -- ^ Offset from the diagonal
+  -> Ribbon a
+generateUkkonenRibbon f len1 len2 offset =
+    Ribbon
+    { height   = lesserLen + 1
+    , width    = longerLen + 1
+    , diagonal = diagonalLen
+    , offset   = fromEnum $ offset
+    , linear   = mempty
+    }
+  where
+    diagonalLen = longerLen - lesserLen + 1
+    longerLen   = fromEnum $ max len1 len2
+    lesserLen   = fromEnum $ min len1 len2
+    
 
 
 -- |
