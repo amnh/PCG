@@ -49,7 +49,7 @@ ribbonIndex r (i,j) = rowPrefix + colIndex
   where
     a = offset r
     colIndex  = j - max 0 (i - a)
-    rowPrefix = (i-1) * (d + 2*a) - t a + t b
+    rowPrefix = (max 0 (i-1)) * (d + 2*a) - t a + t b
       where
         d = diagonal r
         b = min 0 (a - i)
