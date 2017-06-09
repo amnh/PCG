@@ -103,7 +103,7 @@ int powell_3D_align( dyn_character_t *lesserChar
 //                  , int              finalCost
 //                  , int              finalState
 //                  , int              finalDist
-//                  , global_costs_t  *globalCosts
+//                  , affine_costs_t  *affineCosts
 //                  , characters_t    *inputChars
 //                  , characters_t    *resultChars
 //                  , fsm_arrays_t *fsmArrays
@@ -119,7 +119,7 @@ int doUkkInLimits( int             start_lessLong_idx_diff
                  , int             finalCost
                  , int             finalState
                  , int             finalDist
-                 , global_costs_t *globalCosts
+                 , affine_costs_t *affineCosts
                  , characters_t   *inputChars
                  , characters_t   *resultChars
                  , fsm_arrays_t   *globalCostArrays
@@ -139,7 +139,7 @@ int doUkkInLimits( int             start_lessLong_idx_diff
 //                    , int              finalCost
 //                    , int              finalState
 //                    , int              finalDist
-//                    , global_costs_t  *globalCosts
+//                    , affine_costs_t  *affineCosts
 //                    , characters_t    *inputChars
 //                    , characters_t    *resultChars
 //                    , fsm_arrays_t *fsmArrays
@@ -154,7 +154,7 @@ int getSplitRecurse( size_t          start_lessLong_idx_diff
                    , int             finalCost
                    , int             finalState
                    , int             finalDist
-                   , global_costs_t *globalCosts
+                   , affine_costs_t *affineCosts
                    , characters_t   *inputChars
                    , characters_t   *resultChars
                    , fsm_arrays_t   *globalCostArrays
@@ -193,7 +193,7 @@ int Ukk( int             lessLong_idx_diff
        , int             lessMidd_idx_diff
        , int             editDistance
        , unsigned int    fsm_state
-       , global_costs_t *globalCosts
+       , affine_costs_t *affineCosts
        , characters_t   *inputChars
        , fsm_arrays_t   *fsmArrays
        );
@@ -226,9 +226,6 @@ int findBest( int    lessLong_idx_diff
             );
 
 
-/**  */
-int whichCharCost(char a, char b, char c);
-
 // IMPORTANT!!! Order of input characters is short, long, middle.
 int doUkk( dyn_character_t *retLesserChar
          , dyn_character_t *retMiddleChar
@@ -236,7 +233,7 @@ int doUkk( dyn_character_t *retLesserChar
          , dyn_character_t *original_lesserChar
          , dyn_character_t *original_middleChar
          , dyn_character_t *original_longerChar
-         , global_costs_t  *globalCosts
+         , affine_costs_t  *affineCosts
          , characters_t    *inputChars
          , characters_t    *resultChars
          , fsm_arrays_t    *globalCostArrays
@@ -250,7 +247,7 @@ int char_to_base (char v);
 
 
 /**  */
-// void printTraceBack( global_costs_t *globalCosts
+// void printTraceBack( affine_costs_t *affineCosts
 //                    , characters_t   *inputChars
 //                    , characters_t   *resultChars
 //                    , fsm_arrays_t   *fsmArrays
@@ -262,7 +259,7 @@ void printTraceBack( dyn_character_t *retLesserChar
                    , dyn_character_t *original_lesserChar
                    , dyn_character_t *original_middleChar
                    , dyn_character_t *original_longerChar
-                   , global_costs_t  *globalCosts
+                   , affine_costs_t  *affineCosts
                    , characters_t    *inputChars
                    , characters_t    *resultChars
                    , fsm_arrays_t    *globalCostArrays
@@ -274,7 +271,7 @@ int calcUkk( int             lessLong_idx_diff
            , int             lessMidd_idx_diff
            , int             input_editDist
            , int             toState
-           , global_costs_t *globalCosts
+           , affine_costs_t *affineCosts
            , characters_t   *inputChars
            , fsm_arrays_t   *fsmArrays
            );

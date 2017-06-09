@@ -73,49 +73,57 @@ typedef struct alloc_info_t {
     size_t baseAlloc;
     void **baseArrays;     // void because may point at U_cell_type or CPTye
 
-    size_t memAllocated;
+    size_t memAllocated;   // total amount of memory allocated to the alignment matrices
 } alloc_info_t;
 
 
 // This is a persistent set of costs needed throughout the code.
 // I moved these costs all into this struct so I could remove global variables.
-// TODO: eventually a 3d cost matrix needs to replace this.
-typedef struct global_costs_t {
-    unsigned int       mismatchCost;
-    unsigned int       gapOpenCost;
-    unsigned int       gapExtendCost;
-    cost_matrices_3d_t costMatrix;
-    // unsigned int deleteOpenCost;   // This was the cost for reverting a gap opening. It was only ever used
-                                      // assert that it was the same as gapOpenCost, neither of those values ever mutate.
+typedef struct affine_costs_t {
+    unsigned int mismatchCost;        // Note that this is the substitution cost, so forces sub cost to be constant.
+    unsigned int gapOpenCost;
+    unsigned int gapExtendCost;
+
+    // unsigned int deleteOpenCost;   // This was the cost for reverting a gap opening. It was only ever used to
+                                      // assert that it was the same as gapOpenCost, and neither of those values ever mutate.
     // unsigned int deleteExtendCost; // Likewise, this was used where gapExtendCost could have been, as a delete is actually
                                       // a gap insertion, and an insertion in one character is a gap intertion in another.
-} global_costs_t;
+} affine_costs_t;
 
 
+/** struct to hold persistant dynamic characters used throughout the code. Generally, it's the original inputs and the
+ *  eventual outputs.
+ */
 typedef struct characters_t {
-    size_t numStates;           // how many possible FSM fsm_states there are, if each of three FSMs is in one of {INS, DEL, MATCH_SUB}
-                                // and given that one can't have all gap or more than one insertion. This is, btw, always 15.
+    size_t numStates;           // How many possible FSM fsm_states there are. You would expect this to be 27 (3^3), but
+                                // if each of three FSMs is in one of {INS, DEL, MATCH_SUB}
+                                // and given that one can't have all gap or more than one insertion it is---always---15.
+
     size_t maxSingleStep;
 
     char *lesserStr;            // string representation of shortest character
-    char *longerStr;            // string representation of longest character
     char *middleStr;            // string representation of middle character
+    char *longerStr;            // string representation of longest character
 
     size_t lesserIdx;           // current index into shortest character
-    size_t longerIdx;           // current index into longest character
     size_t middleIdx;           // current index into middle character
+    size_t longerIdx;           // current index into longest character
 
     size_t lesserLen;           // length of respective string representation
-    size_t longerLen;           // length of respective string representation
     size_t middleLen;           // length of respective string representation
+    size_t longerLen;           // length of respective string representation
 } characters_t;
 
 
+/** Holds arrays of fsm states. For each state it stores the previous possible state as well as
+ *  the cost to transition from the previous to the current state and the cost to stay in that state.
+ *  This is all calculated ahead of time, which begs the question, why is there only one previous state?
+ */
 typedef struct fsm_arrays_t {
-    int *neighbours;                // array of neighbor fsm_states for each possible fsm_state in fsm_stateNum
-    int *fsmState_continuationCost; // as with transition cost, the cost to extend one or two gaps. Moot once a tcm is used.
+    int *neighbours;                // array of neighbor fsm_states for each possible fsm state
+    int *fsmState_continuationCost; // as with transition cost, the cost to extend one or two gaps. (You can't extend three gaps.)
     int *secondCost;                //
-    int *transitionCost;            // cost to transition from one fsm_state to another (i.e. start a gap)
+    int *transitionCost;            // cost to transition from one fsm_state to another (i.e. start or end a gap)
     int *fsmState_num;              // number that corresponds to a given fsm_state, i.e. 0 is all match/subs and 1 is [m/s m/s del]
 } fsm_arrays_t;
 
@@ -178,14 +186,18 @@ void copyCharacter ( char            *str
                    , dyn_character_t *inChar
                    );
 
-
-void step( int  n
+/** Mutates a, b, and c such that each is true or false if the least significant first, second or third digit, respectively,
+ *  of neighbour is 1.
+ *  I.e., if a given fsm state of `neighbour` is delete, set that state to true; otherwise, set to 0.
+ */
+void step( int  neighbour
          , int *a
          , int *b
          , int *c
          );
 
 
+/** Creates a binary number where i is the least significant bit and k is the most */
 int neighbourNum( int i
                 , int j
                 , int k
@@ -218,10 +230,10 @@ size_t countThisTransition( Trans fsm_stateTransitions[3]
 /** Set up the Ukkonnen and check point matrices before running alignment.
  *  Finish setup of characters.
  */
-void setup( global_costs_t  *globalCosts
+void setup( affine_costs_t  *globalCosts
           , characters_t    *inputChars
           , characters_t    *resultChars
-          , fsm_arrays_t    *globalCostArrays
+          , fsm_arrays_t    *fsmStateArrays
           , dyn_character_t *in_lesserChar
           , dyn_character_t *in_middleChar
           , dyn_character_t *in_longerChar
@@ -258,7 +270,7 @@ unsigned int alignmentCost( int             fsm_states[]
                           , char           *al2
                           , char           *al3
                           , size_t          len
-                          , global_costs_t *globalCosts
+                          , affine_costs_t *globalCosts
                           , fsm_arrays_t   *fsmArrays
                           );
 

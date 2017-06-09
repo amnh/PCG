@@ -675,9 +675,9 @@ int align3d( alignIO_t          *inputChar1_aio
                                                                                          // to change it there, too.
 
     // Powell aligns three sequences.
-    algnCost = powell_3D_align ( longChar
-                               , shortChar
+    algnCost = powell_3D_align ( shortChar
                                , middleChar
+                               , longChar
                                , retLongChar
                                , retShortChar
                                , retMiddleChar

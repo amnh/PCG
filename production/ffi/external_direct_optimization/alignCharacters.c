@@ -1045,7 +1045,7 @@ algn_fill_plane ( const dyn_character_t    *longerCharacter
         debugCostMatrixBuffer = malloc(longerCharacterLength * lesserCharacterLength * sizeof(int));
     }
     if (DEBUG_DIR_M) {
-        printf ("A\t"), fflush(stdout);
+        printf ("A\t");
     }
 
     /* We fill the first row to start with */
@@ -1053,11 +1053,11 @@ algn_fill_plane ( const dyn_character_t    *longerCharacter
         curRow[i] = curRow[i - 1] + first_gap_row[i];
         dirMtx[i] = INSERT;
         if (DEBUG_DIR_M) {
-	  printf ("I\t"), fflush(stdout);
+            printf ("I\t");
         }
     }
     if (DEBUG_DIR_M) {
-        printf ("\n"), fflush(stdout);
+        printf ("\n");
     }
 
     if (LOCAL_DEBUG_COST_M) {
@@ -1196,9 +1196,9 @@ algn_fill_plane_2 ( const dyn_character_t    *longerChar
 
     prevRow = curRow + len_lesserChar;
     gap_row = algnMtx_get_precal_row( algn_precalcMtx
-                                    , 0
-                                    , len_lesserChar // We want the first horizontal row
-                                    );
+                               , 0
+                               , len_lesserChar // We want the first horizontal row
+                               );
 
     /* We have to consider three cases in this new alignment procedure (much
      * cleaner than the previous):
@@ -4602,9 +4602,8 @@ algn_nw_limit_2d ( const dyn_character_t      *shorterChar
     // fflush(stdout);
     algnMtx_precalc_4algn_2d( algnMats, costMatrix, shorterChar ); // returns precalculated cost matrix (in matrices) computed using character from shorterChar.
                                                // shorterChar bases will be column heads of that matrix
-    // printf("after  pre-calc alignment\n");
-    // printf("Integral value of 'costMatrix->cost_model_type' : %d\n", costMatrix->cost_model_type);
-    // fflush(stdout);
+    //printf("after  pre-calc alignment\n");
+    //fflush(stdout);
 
     // cost_model_type is 1 for affine, 0 for non-affine
     if (costMatrix->cost_model_type) {
@@ -4672,8 +4671,7 @@ algn_nw_2d ( const dyn_character_t      *shorterChar
         dyn_char_print(longerChar);
         dyn_char_print(shorterChar);
         printf("second character\n");
-	// This function is undefined: 
-        //algnMtx_print(algnMats, costMatrix->costMatrixDimension);
+        algnMtx_print(algnMats, costMatrix->costMatrixDimension);
     }
 
 

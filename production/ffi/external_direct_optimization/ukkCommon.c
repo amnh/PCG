@@ -92,30 +92,31 @@ extern int    completeFromInfo;
 //  Umatrix = (U_cell_type **)allocMatrix(sizeof(U_cell_type *));
 //}
 
-// recalloc - does a realloc() but sets any new memory to 0.
-static inline void *recalloc( void *p
-                            , size_t oldSize
-                            , size_t newSize
+
+/** recalloc - does a realloc() but sets any new memory to 0. */
+static inline void *recalloc( void   *p
+                            , size_t  oldSize
+                            , size_t  newSize
                             )
 {
-    p = realloc(p, newSize);
-    if (!p || oldSize > newSize) {
-        return p;
-    }
+    p = realloc( p, newSize );
+    if (!p || oldSize > newSize) return p;
 
     // Cast the void pointer to char pointer to suppress compiler warnings.
     // We assume that arithmetic takes place in terms of bytes.
-    memset(((char*)p) + oldSize, 0, newSize - oldSize);
+    memset( ( (char*) p ) + oldSize, 0, newSize - oldSize );
     return p;
 }
 
+
+/** Attempt to allocate an additional plane of the alignment matrix. Return pointer to that plane. */
 static inline void *allocPlane( alloc_info_t *a )
 {
     void *p;
 
     a->memAllocated += a->lessLong_blocks * a->lessMidd_blocks * sizeof(void*);
     p = calloc( a->lessLong_blocks * a->lessMidd_blocks, sizeof(void*) );
-    if (p==NULL) {
+    if (p == NULL) {
         fprintf(stderr, "Unable to alloc memory\n");
         exit(-1);
     }
@@ -123,6 +124,8 @@ static inline void *allocPlane( alloc_info_t *a )
     return p;
 }
 
+
+/**  */
 #ifdef FIXED_NUM_PLANES
     alloc_info_t allocInit( size_t elemSize
                           , size_t costSize
@@ -301,6 +304,8 @@ void allocFinal( alloc_info_t *allocInfo
 
 }
 
+
+/** Calls functions to alloc new plane, then returns pointer to first cell in that plane. */
 void *getPtr( alloc_info_t *allocInfo
             , int           lessLong_idx_diff
             , int           lessMidd_idx_diff
@@ -315,16 +320,17 @@ void *getPtr( alloc_info_t *allocInfo
     size_t index;
 
     #ifdef FIXED_NUM_PLANES
-        // If doing a noalign or checkp,  remap 'editDist' into 0..costSize-1
+        // If doing a noalign or checkp,  remap 'editDist' into 0 .. costSize - 1
         editDist = editDist % allocInfo->costSize;
     #endif
 
     // Increase the base array as needed
     while (editDist >= allocInfo->baseAlloc) {
 
+        // Keep doubling size of allocation until edit distance is within (what I assume are) Ukkonnen barriers
         int oldSize           = allocInfo->baseAlloc;
         allocInfo->baseAlloc *= 2;
-        allocInfo->baseArrays    = recalloc( allocInfo->baseArrays
+        allocInfo->baseArrays = recalloc( allocInfo->baseArrays
                                         , oldSize              * sizeof(void *)
                                         , allocInfo->baseAlloc * sizeof(void *)
                                         );
@@ -334,7 +340,7 @@ void *getPtr( alloc_info_t *allocInfo
             exit(-1);
         }
 
-        allocInfo->memAllocated += oldSize * sizeof(void *);
+        allocInfo->memAllocated += oldSize * sizeof(void *); // it's doubling in size
     }
 
     assert(editDist < allocInfo->baseAlloc);
@@ -369,7 +375,7 @@ void *getPtr( alloc_info_t *allocInfo
 
     // Cast the void pointer to char pointer to suppress compiler warnings.
     // We assume that arithmetic takes place in terms of bytes.
-    return ( (char*) this_baseArr) + (index * allocInfo->elemSize);
+    return ( (char*) this_baseArr ) + index * allocInfo->elemSize;
 }
 
 
@@ -477,10 +483,10 @@ int fsmState_transitionCost( int from
 }
 */
 
-// --------------------------------------------------
+
 /** Mutates a, b, and c such that each is true or false if the least significant first, second or third digit, respectively,
  *  of neighbour is 1.
- *  I.e., if a given fsm state of a neighbour is delete, set that state to true; otherwise, set to 0.
+ *  I.e., if a given fsm state of `neighbour` is delete, set that state to true; otherwise, set to 0.
  */
 void step( int  neighbour
          , int *state1
@@ -495,7 +501,9 @@ void step( int  neighbour
 }
 
 
-/** Creates a binary number where i is the least significant bit and k is the most */
+/** Returns the value of the neighbor fsm state where the current fsm state is ijk, and each of i, j, k can be 1 or 0.
+ *  Creates a binary number where i is the least significant bit and k is the most.
+ */
 int neighbourNum( int i
                 , int j
                 , int k
@@ -507,9 +515,9 @@ int neighbourNum( int i
 // --------------------------------------------------
 
 /** Resets a transitionn array that holds the transitions fsm states for three fsm state-transition FSMs. There are 27 possible fsm states.
- *  For instance, if the fsm_state is 1, then the FSMs are in the cumulative fsm_state [DEL, MATCH_SUB, MATCH_SUB], whereas if the fsm_state were
- *  22, the cumulative fsm_state would be [DEL, DEL, INS] (which is actually not possible, as it signifies a gap in all three dynamic
- *  characters, which is meaningless).
+ *  For instance, if the fsm_state is 1, then the FSMs are in the cumulative fsm_state [DEL, MATCH_SUB, MATCH_SUB], whereas if the
+ *  fsm_state were 22, the cumulative fsm_state would be [DEL, DEL, INS] (which is actually not possible, as it signifies a gap in all
+ *  three dynamic characters, which is meaningless).
  */
 void transitions( Trans  fsmState_transitions[3]
                 , size_t fsm_state
@@ -555,10 +563,10 @@ size_t countThisTransition( Trans fsmState_transitions[3]
 
 
 /** Set up the Ukkonnen and check point matrices before running alignment. */
-void setup( global_costs_t  *globalCosts
+void setup( affine_costs_t  *affineCosts
           , characters_t    *inputChars
           , characters_t    *resultChars
-          , fsm_arrays_t    *globalCostArrays
+          , fsm_arrays_t    *fsmStateArrays
           , dyn_character_t *in_lesserChar
           , dyn_character_t *in_middleChar
           , dyn_character_t *in_longerChar
@@ -569,9 +577,9 @@ void setup( global_costs_t  *globalCosts
 {
 
     // Initialize global costs. These will be passed around to remove globals and make functional side effects more clear.
-    globalCosts->mismatchCost  = mismatch_cost;
-    globalCosts->gapOpenCost   = gapOpen;
-    globalCosts->gapExtendCost = gapExtend;
+    affineCosts->mismatchCost  = mismatch_cost;
+    affineCosts->gapOpenCost   = gapOpen;
+    affineCosts->gapExtendCost = gapExtend;
 
     inputChars->maxSingleStep  = inputChars->numStates
                                = 0;
@@ -579,35 +587,35 @@ void setup( global_costs_t  *globalCosts
 
     // TODO: change this from char to something else. Can we alloc this more intelligently, like not using MAX_STR?
     inputChars->lesserStr = calloc( MAX_STR, sizeof(char) );
-    inputChars->longerStr = calloc( MAX_STR, sizeof(char) );
     inputChars->middleStr = calloc( MAX_STR, sizeof(char) );
+    inputChars->longerStr = calloc( MAX_STR, sizeof(char) );
 
     resultChars->lesserStr = calloc( MAX_STR * 2, sizeof(char) );
-    resultChars->longerStr = calloc( MAX_STR * 2, sizeof(char) );
     resultChars->middleStr = calloc( MAX_STR * 2, sizeof(char) );
+    resultChars->longerStr = calloc( MAX_STR * 2, sizeof(char) );
 
-    // Initialize all characters. As with globalCosts, these will be passed around to remove globals and functional side effects.
+    // Initialize all characters. As with affineCosts, these will be passed around to remove globals and functional side effects.
     copyCharacter( inputChars->lesserStr, in_lesserChar) ;
-    copyCharacter( inputChars->longerStr, in_longerChar) ;
     copyCharacter( inputChars->middleStr, in_middleChar) ;
+    copyCharacter( inputChars->longerStr, in_longerChar) ;
 
     inputChars->lesserLen = in_lesserChar->len;
-    inputChars->longerLen = in_longerChar->len;
     inputChars->middleLen = in_middleChar->len;
+    inputChars->longerLen = in_longerChar->len;
 
     resultChars->lesserLen = 0;
-    resultChars->longerLen = 0;
     resultChars->middleLen = 0;
+    resultChars->longerLen = 0;
 
     resultChars->lesserIdx = 0;
-    resultChars->longerIdx = 0;
     resultChars->middleIdx = 0;
+    resultChars->longerIdx = 0;
 
-    globalCostArrays->neighbours                = calloc( MAX_STATES,              sizeof(int) );
-    globalCostArrays->fsmState_continuationCost = calloc( MAX_STATES,              sizeof(int) );
-    globalCostArrays->secondCost                = calloc( MAX_STATES,              sizeof(int) );
-    globalCostArrays->transitionCost            = calloc( MAX_STATES * MAX_STATES, sizeof(int) );
-    globalCostArrays->fsmState_num              = calloc( MAX_STATES,              sizeof(int) );
+    fsmStateArrays->neighbours                = calloc( MAX_STATES,              sizeof(int) );
+    fsmStateArrays->fsmState_continuationCost = calloc( MAX_STATES,              sizeof(int) );
+    fsmStateArrays->secondCost                = calloc( MAX_STATES,              sizeof(int) );
+    fsmStateArrays->transitionCost            = calloc( MAX_STATES * MAX_STATES, sizeof(int) );
+    fsmStateArrays->fsmState_num              = calloc( MAX_STATES,              sizeof(int) );
 
     int thisCost,
         cost,
@@ -617,12 +625,12 @@ void setup( global_costs_t  *globalCosts
 
 /* Don't need to do this; calloc'ed above
     for (i = 0; i < MAX_STATES - 1; i++) {
-        globalCosts->neighbours[i] = 0;
-        globalCosts->fsmState_continuationCost[i]   = 0;
-        globalCosts->secondCost[i] = 0;
-        globalCosts->fsmState_num[i]   = 0;
+        affineCosts->neighbours[i] = 0;
+        affineCosts->fsmState_continuationCost[i]   = 0;
+        affineCosts->secondCost[i] = 0;
+        affineCosts->fsmState_num[i]   = 0;
         for (size_t j = 0; j < MAX_STATES - 1; j++) {
-            globalCosts->transitionCost[i][j] = 0;
+            affineCosts->transitionCost[i][j] = 0;
         }
     }
 */
@@ -646,7 +654,7 @@ void setup( global_costs_t  *globalCosts
         }
 
         if (countThisTransition( fsmState_transitions, INS ) > 1) {
-            continue;     // Can't be more than 1 insert fsm_state!  (7/7/1998)   // TODO: looks this up
+            continue;     // Can't be more than 1 insert fsm_state!  (7/7/1998)   // TODO: document why this makes sense
         }
 
 /* Not doing this
@@ -657,25 +665,26 @@ void setup( global_costs_t  *globalCosts
             }
         #endif
 */
-        globalCostArrays->fsmState_num[fsmState_reindex_num] = fsm_state; // compacting possible fsm states into smaller set. From now on can just loop
-                                                               // over fsmState_reindex_num, which means continuing to skip meaningless FSM
-                                                               // states.
+        fsmStateArrays->fsmState_num[fsmState_reindex_num] = fsm_state; // compacting possible fsm states into smaller set.
+                                                                          // From now on can just loop over fsmState_reindex_num,
+                                                                          // which means continuing to skip meaningless FSM
+                                                                          // states.
         printf("%zu %zu\n", fsmState_reindex_num, fsm_state);
 
         // Set up possible neighbours for fsm states (neighbours[])
         numInserts = countThisTransition(fsmState_transitions, INS);
 
         if (numInserts == 0) { // if no inserts, then match/sub is 1 and del is 0 in resulting binary number
-            globalCostArrays->neighbours[fsmState_reindex_num] = neighbourNum( fsmState_transitions[0] == MATCH_SUB ? 1 : 0
-                                                                             , fsmState_transitions[1] == MATCH_SUB ? 1 : 0
-                                                                             , fsmState_transitions[2] == MATCH_SUB ? 1 : 0
-                                                                             );
+            fsmStateArrays->neighbours[fsmState_reindex_num] = neighbourNum( fsmState_transitions[0] == MATCH_SUB ? 1 : 0
+                                                                           , fsmState_transitions[1] == MATCH_SUB ? 1 : 0
+                                                                           , fsmState_transitions[2] == MATCH_SUB ? 1 : 0
+                                                                           );
         } else { // numInserts == 1, as we've already eliminated any fsm states which have two INSs // TODO: looks this up
-                 // if one insert, then match/sub or del is 0 ins is 1 in resulting binary number
-            globalCostArrays->neighbours[fsmState_reindex_num] = neighbourNum( fsmState_transitions[0] == INS ? 1 : 0
-                                                                             , fsmState_transitions[1] == INS ? 1 : 0
-                                                                             , fsmState_transitions[2] == INS ? 1 : 0
-                                                                             );
+                 // if one insert, then match/sub or del is 0, ins is 1 in resulting binary number
+            fsmStateArrays->neighbours[fsmState_reindex_num] = neighbourNum( fsmState_transitions[0] == INS ? 1 : 0
+                                                                           , fsmState_transitions[1] == INS ? 1 : 0
+                                                                           , fsmState_transitions[2] == INS ? 1 : 0
+                                                                           );
         }
         // End setting up neighbours
 
@@ -683,23 +692,23 @@ void setup( global_costs_t  *globalCosts
         // Set up cost for continuing an fsm state (fsmState_continuationCost[])
         // For a given fsm_state, either 1 or more fsm states continue. If 2 or 3 continue,
         //
-        // TODO: most of this will die, because we're using a tcm. Again, though, why not hard code these arrays?
+        // TODO: Why not hard code these arrays? They could be brought back if we ever move to larger alphabet sizes.
         if (countThisTransition( fsmState_transitions, INS ) > 0) { // TODO: hasn't this already been eliminated by the continue above?
-            cost = globalCosts->gapExtendCost;           /* Can only continue 1 insert at a time. */ // TODO: looks this up
+            cost = affineCosts->gapExtendCost;           /* Can only continue 1 insert at a time. */ // TODO: looks this up
             two_fsmStates_continuing = 0;
         } else if (countThisTransition( fsmState_transitions, MATCH_SUB ) == 3) {
-            cost = globalCosts->mismatchCost;            /* No indel */
+            cost = affineCosts->mismatchCost;            /* No indel */
             two_fsmStates_continuing = 1;
         } else if (countThisTransition( fsmState_transitions, DEL ) == 1) {
-            cost = globalCosts->gapExtendCost;        /* Continuing delete */ // Two fsm states must match
+            cost = affineCosts->gapExtendCost;        /* Continuing delete */ // Two fsm states must match
             two_fsmStates_continuing = 1;
         } else {
-            cost  = 2 * globalCosts->gapExtendCost;    /* Continuing 2 deletes */
+            cost  = 2 * affineCosts->gapExtendCost;    /* Continuing 2 deletes */
             two_fsmStates_continuing = 0;
         }
 
-        globalCostArrays->fsmState_continuationCost[fsmState_reindex_num] = cost;
-        globalCostArrays->secondCost[fsmState_reindex_num]            = two_fsmStates_continuing;
+        fsmStateArrays->fsmState_continuationCost[fsmState_reindex_num] = cost;
+        fsmStateArrays->secondCost[fsmState_reindex_num]            = two_fsmStates_continuing;
         // End setup of fsmState_continuationCost[]
 
         fsmState_reindex_num++; // Because of continues, above, does not track `fsm_state`.
@@ -716,25 +725,25 @@ void setup( global_costs_t  *globalCosts
 
 
             cost = 0;
-            transitions( from, globalCostArrays->fsmState_num[s1] );
-            transitions( to  , globalCostArrays->fsmState_num[s2] );
+            transitions( from, fsmStateArrays->fsmState_num[s1] );
+            transitions( to  , fsmStateArrays->fsmState_num[s2] );
 
             for (i = 0; i < 3; i++) {
                 if (    (to[i] == INS || to[i] == DEL)
                      && (to[i] != from[i])
                    ){
-                    cost += globalCosts->gapOpenCost;
+                    cost += affineCosts->gapOpenCost;
                 }
             }
-            globalCostArrays->transitionCost[s1 * MAX_STATES + s2] = cost;
+            fsmStateArrays->transitionCost[s1 * MAX_STATES + s2] = cost;
 
             // Determine biggest single step cost
-            thisCost = cost + globalCostArrays->fsmState_continuationCost[s2];
+            thisCost = cost + fsmStateArrays->fsmState_continuationCost[s2];
             Trans fsmState_transitions[3];
 
-            transitions( fsmState_transitions, globalCostArrays->fsmState_num[s2] );
+            transitions( fsmState_transitions, fsmStateArrays->fsmState_num[s2] );
 
-            thisCost += globalCosts->mismatchCost * ( countThisTransition(fsmState_transitions, MATCH_SUB) - 1 );
+            thisCost += affineCosts->mismatchCost * ( countThisTransition(fsmState_transitions, MATCH_SUB) - 1 );
             maxCost   = (maxCost < thisCost ? thisCost : maxCost);
 
         }
@@ -807,8 +816,8 @@ unsigned int alignmentCost( int              fsm_states[]
                           , char            *aligned_2
                           , char            *aligned_3
                           , size_t           len
-                          , global_costs_t  *globalCosts
-                          , fsm_arrays_t *globalCostArrays
+                          , affine_costs_t  *affineCosts
+                          , fsm_arrays_t *fsmStateArrays
                           )
 {
     unsigned int totalCost = 0;
@@ -819,7 +828,7 @@ unsigned int alignmentCost( int              fsm_states[]
     Trans cur_fsmState_transitions[3];
 
     for (size_t i = 0; i < len; i++) {
-        transitions( cur_fsmState_transitions, globalCostArrays->fsmState_num[ fsm_states[i] ] );
+        transitions( cur_fsmState_transitions, fsmStateArrays->fsmState_num[ fsm_states[i] ] );
 
     //    if (i > 0) fprintf( stderr, "%-2d  ", totalCost );
 
@@ -828,7 +837,7 @@ unsigned int alignmentCost( int              fsm_states[]
             if (   cur_fsmState_transitions[fsm_state] != MATCH_SUB
                 && cur_fsmState_transitions[fsm_state] != last_fsmState_transitions[fsm_state]
                ) {
-                totalCost += globalCosts->gapOpenCost;
+                totalCost += affineCosts->gapOpenCost;
             }
         }
 
@@ -839,12 +848,12 @@ unsigned int alignmentCost( int              fsm_states[]
         // Pay for continuing an insert
         if (countThisTransition(cur_fsmState_transitions, INS) > 0) {
             assert(countThisTransition(cur_fsmState_transitions,INS) == 1);
-            totalCost += globalCosts->gapExtendCost;
+            totalCost += affineCosts->gapExtendCost;
             continue;
         }
 
         // Pay for continuing deletes
-        totalCost += globalCosts->gapExtendCost * countThisTransition(cur_fsmState_transitions, DEL);
+        totalCost += affineCosts->gapExtendCost * countThisTransition(cur_fsmState_transitions, DEL);
 
         // Pay for mismatches
         char ch[3];
@@ -868,14 +877,14 @@ unsigned int alignmentCost( int              fsm_states[]
         localCIdx--;
 
         for (; localCIdx > 0; localCIdx--) {
-            if (ch[localCIdx - 1] != ch[localCIdx])  totalCost += globalCosts->mismatchCost;
+            if (ch[localCIdx - 1] != ch[localCIdx])  totalCost += affineCosts->mismatchCost;
         }
 
         if (   countThisTransition(cur_fsmState_transitions, MATCH_SUB) == 3
             && ch[0] == ch[2]
             && ch[0] != ch[1]
            ) {
-            totalCost -= globalCosts->mismatchCost; // end pay for mismatch_costs
+            totalCost -= affineCosts->mismatchCost; // end pay for mismatch_costs
         }
     }
 
