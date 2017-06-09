@@ -16,7 +16,7 @@
 -----------------------------------------------------------------------------
 {-# LANGUAGE ConstraintKinds, FlexibleContexts, TypeFamilies #-}
 
-module Analysis.Parsimony.Dynamic.DirectOptimization.Ukkonen.Internal (ukkonenDO) where
+module Analysis.Parsimony.Dynamic.DirectOptimization.Ukkonen.Internal where
 
 
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal -- hiding (Direction)
@@ -34,15 +34,26 @@ import           Numeric.Extended.Natural
 import Debug.Trace
 
 
-{-
 data Ribbon a
    = Ribbon
-   { height :: Word 
-   , width  :: Word -- width >= height
-   , radius :: Word
-   , linear :: Vector a
+   { height   :: Int 
+   , width    :: Int -- width >= height
+   , diagonal :: Int
+   , offset   :: Int
+   , linear   :: Vector a
    } deriving (Eq)
--}
+
+
+ribbonIndex :: Ribbon a -> (Int, Int) -> Int
+ribbonIndex r (i,j) = rowPrefix + colIndex
+  where
+    a = offset r
+    colIndex  = j - max 0 (i - a)
+    rowPrefix = (i-1) * (d + 2*a) - t a + t b
+      where
+        d = diagonal r
+        b = min 0 (a - i)
+        t k = (k*(k+1)) `div` 2
 
 
 -- |
