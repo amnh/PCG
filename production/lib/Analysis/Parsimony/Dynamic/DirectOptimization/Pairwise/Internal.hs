@@ -25,7 +25,7 @@ import Data.MonoTraversable
 import Data.Ord
 import Data.Semigroup
 
-import Debug.Trace
+-- import Debug.Trace
 
 
 -- |
@@ -231,7 +231,6 @@ renderMatrix :: DOAlignMatrix a -> String
 renderMatrix mat = unlines . fmap unwords . toLists $ showCell <$> mat
   where
     showCell (c,d,_) = show (c, d)
---    pokedVal = showCell $ getElem (nrows mat -1) (ncols mat - 1) mat
 
 
 -- |
@@ -299,10 +298,8 @@ getOverlap inChar1 inChar2 costStruct = result
 -- the two (non-overlapping) least cost pairs are A,C and T,G, then the return
 -- value is A,C,G,T.
 overlap :: (EncodableStreamElement c {- , Show c -}) => (Word -> Word -> Word) -> c -> c -> (c, Word)
---overlap _ inChar1 inChar2 | trace (unwords [show inChar1, show inChar2]) False = undefined
 overlap costStruct char1 char2
-    | intersectionStates == zeroBits = -- (\x -> trace (unwords [show char1, show char2, show x]) x) $
-                                       minimalChoice $ allPossibleBaseCombosCosts costStruct char1 char2
+    | intersectionStates == zeroBits = minimalChoice $ allPossibleBaseCombosCosts costStruct char1 char2
     | otherwise                      = (intersectionStates, 0)
     where
       intersectionStates = char1 .&. char2

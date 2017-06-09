@@ -24,7 +24,6 @@ import           Bio.Character.Encodable
 import           Data.Bits
 import           Data.Foldable
 import           Data.Key                 ((!))
-import           Data.List                (intercalate)
 import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Vector              (Vector)
@@ -188,9 +187,6 @@ ukkonenInternal longerTop lesserLeft overlapFunction minimumIndelCost = ukkonenU
 --      | threshhold <= trace (renderedBounds <> renderedMatrix) alignmentCost = ukkonenUntilOptimal (2 * offset)
       | threshhold <= alignmentCost = ukkonenUntilOptimal (2 * offset)
       | otherwise                   = (alignmentCost, ungappedMedian, gappedMedian, lhsAlignment, rhsAlignment)
---      | headEx (trace renderedMatrix gappedMedian) /= 0 = (cost, ungappedMedian, gappedMedian, lhsAlignment, rhsAlignment)
---      | headEx gappedMedian /= 0 = (cost, ungappedMedian, gappedMedian, lhsAlignment, rhsAlignment)
---      | otherwise          = ukkonenUntilOptimal (2 * offset)
       where
         nwMatrix       = generateUkkonenBand longerTop lesserLeft overlapFunction maxGap
         renderedMatrix = renderUkkonenMatrix longerTop lesserLeft maxGap nwMatrix
@@ -203,7 +199,7 @@ ukkonenInternal longerTop lesserLeft overlapFunction minimumIndelCost = ukkonenU
             , "Total Cost : " <> show alignmentCost
             ]
     
-        (medianGap, alignLeft, alignRight) = unzip3 . reverse $ tracebackUkkonen nwMatrix longerTop lesserLeft lesserLen longerLen maxGap 0 0
+        (medianGap, alignLeft, alignRight) = unzip3 . reverse $ tracebackUkkonen nwMatrix longerTop lesserLeft lesserLen longerLen maxGap
         (nwCost, _, _) = V.last $ V.last nwMatrix
         alignmentCost  = unsafeToFinite nwCost
         ungappedMedian = filterGaps gappedMedian
@@ -211,7 +207,7 @@ ukkonenInternal longerTop lesserLeft overlapFunction minimumIndelCost = ukkonenU
         lhsAlignment   = constructDynamic alignLeft
         rhsAlignment   = constructDynamic alignRight
 
-        maxGap         = quasiDiagonalWidth + {- gapsPresentInInputs + -} offset
+        maxGap         = quasiDiagonalWidth + offset
 
         computedValue  = coefficient * (quasiDiagonalWidth + offset - gapsPresentInInputs)
         threshhold     = toEnum $ max 0 computedValue -- The threshhold value must be non-negative
@@ -317,20 +313,14 @@ tracebackUkkonen
   -> Int
   -> Int
   -> Int
-  -> Int
-  -> Int
   -> [(Element s, Element s, Element s)]
---tracebackUkkonen _nwMatrix inlongerTop inlesserLeft posR posL _ _ _ | trace ("tracebackUkkonen " <> show posR <> show posL <> show inlongerTop <> show inlesserLeft) False = undefined
-tracebackUkkonen nwMatrix longerTop lesserLeft posR posL maxGap rInDel lInDel
---trace ("psLR " <> show posR <> " " <> show posL <> " Left " <> show lInDel <> " Right " <> show rInDel <> " maxGap " <> show maxGap) (
---  | (rInDel  >= (maxGap - 2)) || (lInDel >= (maxGap - 2)) = [(sentinalValue, sentinalValue, sentinalValue)]
---  | rInDel + lInDel   >= (maxGap - 1) = [(sentinalValue, sentinalValue, sentinalValue)]
-  | posL <= 0 && posR <= 0 = {-- trace (show (maxGap, rInDel, lInDel)) --} []
+tracebackUkkonen nwMatrix longerTop lesserLeft posR posL maxGap
+  | any (== 0) [posL, posR] = []
   | otherwise =
       case direction of
-        LeftArrow -> (state, longerTop `indexStream` (posL - 1),                                 gap) : (tracebackUkkonen nwMatrix longerTop lesserLeft  posR      (posL - 1) maxGap (rInDel + 1) lInDel     )  
-        UpArrow   -> (state,                                gap, lesserLeft `indexStream` (posR - 1)) : (tracebackUkkonen nwMatrix longerTop lesserLeft (posR - 1)  posL      maxGap  rInDel     (lInDel + 1))
-        DiagArrow -> (state, longerTop `indexStream` (posL - 1), lesserLeft `indexStream` (posR - 1)) : (tracebackUkkonen nwMatrix longerTop lesserLeft (posR - 1) (posL - 1) maxGap  rInDel      lInDel     )
+        LeftArrow -> (state, longerTop `indexStream` (posL - 1),                                 gap) : (tracebackUkkonen nwMatrix longerTop lesserLeft  posR      (posL - 1) maxGap)  
+        UpArrow   -> (state,                                gap, lesserLeft `indexStream` (posR - 1)) : (tracebackUkkonen nwMatrix longerTop lesserLeft (posR - 1)  posL      maxGap)
+        DiagArrow -> (state, longerTop `indexStream` (posL - 1), lesserLeft `indexStream` (posR - 1)) : (tracebackUkkonen nwMatrix longerTop lesserLeft (posR - 1) (posL - 1) maxGap)
   where
     gap = gapOfStream longerTop
     (_, state, direction) = (nwMatrix ! posR) ! transformFullYShortY posL posR maxGap
@@ -345,6 +335,7 @@ tracebackUkkonen nwMatrix longerTop lesserLeft posR posL maxGap rInDel lInDel
               UpArrow   -> unwords ["L @", show $ posL - 1, "R @",             "X"]
               DiagArrow -> unwords ["L @", show $ posL - 1, "R @", show $ posR - 1]
 --}
+
 
 -- |
 -- transformFullYShortY take full Y value (if did entire NW matrix) and returns
@@ -366,13 +357,13 @@ renderUkkonenMatrix lhs rhs maxGap jaggedMatrix = unlines
     , barRow
     , renderedRows
     ]
---  = unlines . toList $ V.generate rowCount g
   where
     lhsLen = olength lhs
     rhsLen = olength rhs
     (longer, lesser)
       | olength lhs >= olength rhs = (lhs, rhs)
       | otherwise                  = (rhs, lhs)
+    searchRange      = length $ jaggedMatrix ! 0
     longerTokens     = toShownIntegers longer
     lesserTokens     = toShownIntegers lesser
     toShownIntegers  = fmap (show . (fromIntegral :: Integral a => a -> Integer)) . otoList
@@ -381,8 +372,12 @@ renderUkkonenMatrix lhs rhs maxGap jaggedMatrix = unlines
     maxPrefixWidth   = maxLengthOf lesserTokens
     maxColumnWidth   = max (maxLengthOf longerTokens) . maxLengthOf $ toList matrixTokens
     maxLengthOf      = maximum . fmap length
+    showPaddedCell   = pad maxColumnWidth . showCell
 
-    dimensionPrefix  = " " <> unwords
+    pad :: Int -> String -> String
+    pad n e = replicate (n - length e) ' ' <> e <> " "
+
+    dimensionPrefix = " " <> unwords
         [ "Dimensions:"
         , show $ olength longer + 1
         , "X"
@@ -409,7 +404,7 @@ renderUkkonenMatrix lhs rhs maxGap jaggedMatrix = unlines
         , concatMap (pad maxColumnWidth) longerTokens
         ]
 
-    barRow    = mconcat
+    barRow = mconcat
         [ " "
         , bar maxPrefixWidth
         , "+"
@@ -420,25 +415,9 @@ renderUkkonenMatrix lhs rhs maxGap jaggedMatrix = unlines
 
     renderedRows = unlines . zipWith3 renderRow [0..] ("*":lesserTokens) $ toList jaggedMatrix
       where
-        renderRow k e vs = " " <> pad maxPrefixWidth e <> "| " <> g k vs -- concatMap (pad maxColumnWidth) vs
---        getRows m = (`getRow` m) <$> [0 .. nrows m - 1]
-
-    pad :: Int -> String -> String
-    pad n e = replicate (n - len) ' ' <> e <> " "
-      where
-        len = length e
-
-    g i vs = prefix <> rowStr
-      where
-        prefix = mconcat $ replicate (max 0 offset) "    "
-        rowStr = intercalate " " . fmap (showTriple) $ toList vs
-        offset = i - searchRange + 1
-
-    searchRange         = length $ jaggedMatrix ! 0
-    rowCount            = length jaggedMatrix
-    showTriple (x,_,y)  = show2 x <> show y
-    show2 i
-      | length str == 1 = ' ':str
-      | otherwise       = str
-      where
-        str = show i
+        renderRow k e vs = mconcat [rowHeaderCell, uncomputedPrefix, computedRegion]
+          where
+            rowHeaderCell    = " " <> pad maxPrefixWidth e <> "| "
+            uncomputedPrefix = mconcat $ replicate (max 0 offset) (pad maxColumnWidth "")
+            computedRegion   = concatMap showPaddedCell $ toList vs
+            offset           = k - searchRange + 1
