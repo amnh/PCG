@@ -17,10 +17,10 @@ module PCG.Command.Types.Report.DynamicCharacterTable where
 import Bio.Character.Encodable
 import Bio.Character.Decoration.Dynamic
 import Bio.Sequence
-import Bio.PhyloGraphPrime
-import Bio.PhyloGraphPrime.PhylogeneticDAG
-import Bio.PhyloGraphPrime.Node
-import Bio.PhyloGraphPrime.ReferenceDAG
+import Bio.Graph
+import Bio.Graph.PhylogeneticDAG
+import Bio.Graph.Node
+import Bio.Graph.ReferenceDAG
 import Control.Lens
 import Data.Foldable
 import Data.Monoid            ((<>))
