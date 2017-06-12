@@ -22,14 +22,16 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Ukkonen.Internal where
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal -- hiding (Direction)
 import           Bio.Character.Encodable
 import           Data.Bits
+import           Data.Bifunctor
 import           Data.Foldable
-import           Data.Key                 ((!))
+import           Data.Key
 import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Vector              (Vector)
-import qualified Data.Vector         as V
+import qualified Data.Vector       as V
 import           Data.Vector.Instances    ()
 import           Numeric.Extended.Natural
+import           Prelude           hiding (lookup)
 
 import Debug.Trace
 
@@ -40,19 +42,68 @@ data Ribbon a
    , width    :: Int -- width >= height
    , diagonal :: Int
    , offset   :: Int
-   , linear   :: Vector (Cost, a, Direction)
-   } deriving (Eq)
+   , linear   :: Vector a -- (Cost, a, Direction)
+   } deriving (Eq,Show)
 
 
-ribbonIndex :: Ribbon a -> (Int, Int) -> Int
-ribbonIndex r (i,j) = rowPrefix + colIndex
+type instance Key Ribbon = (Int, Int)
+
+
+instance Indexable Ribbon where
+
+    index r k =
+      case k `lookup` r of
+        Just  v -> v
+        Nothing -> error $ mconcat
+            [ "Error indexing Ribbon at "
+            , show k
+            , ".\nThe key is outside the range [ (i,j) | i <- [0 .. "
+            , show $ height r - 1
+            , "], j <- [0 .. "
+            , show $ width  r - 1
+            , "] ]"
+            ]
+
+
+instance Lookup Ribbon where
+
+    lookup = ribbonLookup
+
+
+ribbonLookup :: (Int, Int) -> Ribbon a -> Maybe a
+ribbonLookup (i,j) r
+  | i < 0 || h <= i  = Nothing
+  | j < 0 || w <= j  = Nothing
+  | x > upperBarrier = Nothing -- Just (infinity, undefined, DiagArrow)
+  | y > lowerBarrier = Nothing -- Just (infinity, undefined, DiagArrow)
+  | otherwise        = Just $ linear r ! k
+  where
+    k = ribbonIndexInjection r (i,j)
+    h = height r
+    w = width  r
+    x = j - i
+    y = i - j
+    upperBarrier = offset r + diagonal r - 1
+    lowerBarrier = offset r
+
+
+ribbonIndexInjection :: Ribbon a -> (Int, Int) -> Int
+ribbonIndexInjection r (i,j)
+--  | i == 0    = colIndex
+  | otherwise = traceShowLabel "RESULT" $ rowPrefix + colIndex
   where
     a = offset r
-    colIndex  = j - max 0 (i - a)
-    rowPrefix = (max 0 (i-1)) * (d + 2*a) - ( ((a-b)*(a+b+1)) `div` 2 )
+    colIndex  = traceShowLabel "colIndex" $ j - max 0 (i - a)
+    rowPrefix = traceShowLabel "rowIndex" $ (max 0 i) * (d + 2*a) - v - w -- (t a - t b)--( ((a-b)*(a+b+1)) `div` 2 )
       where
+        v = traceShowLabel "v" (t a - t b)
+        w = t . max 0 $ i - a - a + 1
         d = diagonal r
-        b = min 0 (a - i)
+        b = traceShowLabel "b" $ max 0 (a - i)
+
+    h = height   r
+    t n = (n*(n+1)) `div` 2
+    traceShowLabel str v = v -- trace (str <> ": " <> show v) v
 {-
     rowPrefix = (max 0 (i-1)) * (d + 2*a) - t a + t b
       where
@@ -61,25 +112,73 @@ ribbonIndex r (i,j) = rowPrefix + colIndex
         t k = (k*(k+1)) `div` 2
 -}
 
+
+ribbonIndexSurjection :: Ribbon a -> Int -> (Int, Int)
+ribbonIndexSurjection ribbon i
+  | i < upperSpace = let (q,r) = i `quotRem` maxRowWidth
+                         v     = t a - t (a - (q+1) + 1)
+                         v'    = t a - t (a - (q+1)    )
+                         x     = if ( (q+1) * (d+a+a) ) <= i + v'
+                                 then v'
+                                 else v
+                     in  (i + x) `quotRem` maxRowWidth
+  | i > lowerSpace = let i'    = i - lowerSpace - 1
+                         (q,r) = i' `quotRem` maxRowWidth
+                         v     = t  q
+                         v'    = t (q+1)
+                         x     = if ( (q+1) * (d+a+a) ) <= i' + v'
+                                 then v'
+                                 else v
+                         (q',r') = (i' + x) `quotRem` maxRowWidth
+                         ro    = h - a
+                         co    = h - a - a + q'
+                     in  (q'+ro, r'+co)
+  | otherwise      = let (q,r) = (i - upperSpace) `divMod` maxRowWidth
+                     in  (q+a, r+q)
+  where
+    a = offset   ribbon
+    d = diagonal ribbon
+    h = height   ribbon
+    rowPrefix = (max 0 (i-1)) * (d + 2*a) - ( ((a-b)*(a+b+1)) `div` 2 )
+      where
+        b = min 0 (a - i)
+    
+    maxRowWidth = d + 2*a
+    upperSpace  = (a * maxRowWidth) - ((a*(a+1))`div`2)
+    lowerSpace  = (max 0 (h - 2*a)) * maxRowWidth + upperSpace - 1
+
+    t n = (n*(n+1)) `div` 2
+
+
 generateUkkonenRibbon
-  :: ((Int,Int) -> a) -- ^ Generating function
-  -> Word             -- ^ Length of the longer  character
-  -> Word             -- ^ Length of the shorter character
-  -> Word             -- ^ Offset from the diagonal
+  :: DOCharConstraint s
+  => ((Int, Int) -> a) -- ^ Generating function
+  -> s                 -- ^ Longer  character
+  -> s                 -- ^ Shorter character
+  -> Word              -- ^ Offset from the diagonal
   -> Ribbon a
-generateUkkonenRibbon f len1 len2 offset =
+generateUkkonenRibbon f longer lesser offset =
     Ribbon
     { height   = lesserLen + 1
     , width    = longerLen + 1
     , diagonal = diagonalLen
-    , offset   = fromEnum $ offset
-    , linear   = mempty
+    , offset   = a
+    , linear   = mempty -- V.generate (f ) cellCount
     }
-  where
+  where  
+    longerLen   = olength longer
+    lesserLen   = olength lesser
     diagonalLen = longerLen - lesserLen + 1
-    longerLen   = fromEnum $ max len1 len2
-    lesserLen   = fromEnum $ min len1 len2
-    
+--    longerLen   = fromEnum $ max len1 len2
+--    lesserLen   = fromEnum $ min len1 len2
+    cellCount   = h * w - nullCells
+    nullCells   = 2 * (t (w - d) - t (w - d - a))
+
+    a = fromEnum offset
+    d = diagonalLen
+    h = lesserLen + 1
+    w = longerLen + 1
+    t n = n * (n + 1) `div` 2
 
 
 -- |
