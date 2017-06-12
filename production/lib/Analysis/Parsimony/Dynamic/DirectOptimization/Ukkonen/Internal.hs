@@ -94,12 +94,13 @@ ribbonIndexInjection r (i,j)
   where
     a = offset r
     colIndex  = traceShowLabel "colIndex" $ j - max 0 (i - a)
-    rowPrefix = traceShowLabel "rowIndex" $ (max 0 i) * (d + 2*a) - v - w -- (t a - t b)--( ((a-b)*(a+b+1)) `div` 2 )
+    rowPrefix = traceShowLabel "rowIndex" $ i * (d + 2*a) - v - w -- (t a - t b)--( ((a-b)*(a+b+1)) `div` 2 )
       where
         v = traceShowLabel "v" (t a - t b)
-        w = t . max 0 $ i - a - a + 1
+        w = t c -- t . max 0 $ i - a - a + 1
         d = diagonal r
         b = traceShowLabel "b" $ max 0 (a - i)
+        c = traceShowLabel "c" $ max 0 (i - h + a)
 
     h = height   r
     t n = (n*(n+1)) `div` 2
