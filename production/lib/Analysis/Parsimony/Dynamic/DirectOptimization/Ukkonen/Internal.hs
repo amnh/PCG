@@ -14,7 +14,7 @@
 -- Allocates a "ribbon" down the diagonal of the matrix rather than the entire matrix.
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE ConstraintKinds, FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE BangPatterns, ConstraintKinds, FlexibleContexts, TypeFamilies #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Ukkonen.Internal where
 
@@ -36,20 +36,37 @@ import           Prelude           hiding (lookup)
 import Debug.Trace
 
 
-data Ribbon a
-   = Ribbon
-   { height   :: Int 
-   , width    :: Int -- width >= height
-   , diagonal :: Int
-   , offset   :: Int
-   , linear   :: Vector a -- (Cost, a, Direction)
-   } deriving (Eq,Show)
+data UkkonenMethodMatrix a
+   = CentralBand
+   { height   :: {-# UNPACK #-} !Int 
+   , width    :: {-# UNPACK #-} !Int -- width >= height
+   , diagonal :: {-# UNPACK #-} !Int
+   , offset   :: {-# UNPACK #-} !Int
+   , linear   :: Vector a
+   } deriving (Eq)
 
 
-type instance Key Ribbon = (Int, Int)
+instance Show (UkkonenMethodMatrix a) where
+
+    show (CentralBand h w d a v) = mconcat
+        [ "CentralBand { height = "
+        , show h
+        , " width = "
+        , show w
+        , " diagonal = "
+        , show d
+        , " offset = "
+        , show a
+        , " |linear| = "
+        , show $ length v
+        , " } "
+        ]
 
 
-instance Indexable Ribbon where
+type instance Key UkkonenMethodMatrix = (Int, Int)
+
+
+instance Indexable UkkonenMethodMatrix where
 
     index r k =
       case k `lookup` r of
@@ -65,20 +82,20 @@ instance Indexable Ribbon where
             ]
 
 
-instance Lookup Ribbon where
+instance Lookup UkkonenMethodMatrix where
 
     lookup = ribbonLookup
 
 
-ribbonLookup :: (Int, Int) -> Ribbon a -> Maybe a
+ribbonLookup :: (Int, Int) -> UkkonenMethodMatrix a -> Maybe a
 ribbonLookup (i,j) r
   | i < 0 || h <= i  = Nothing
   | j < 0 || w <= j  = Nothing
-  | x > upperBarrier = Nothing -- Just (infinity, undefined, DiagArrow)
-  | y > lowerBarrier = Nothing -- Just (infinity, undefined, DiagArrow)
+  | x > upperBarrier = Nothing
+  | y > lowerBarrier = Nothing
   | otherwise        = Just $ linear r ! k
   where
-    k = ribbonIndexInjection r (i,j)
+    k = (\x -> trace (show r <> "\nu ! " <> show x) x) $ ribbonIndexInjection r (i,j)
     h = height r
     w = width  r
     x = j - i
@@ -87,35 +104,29 @@ ribbonLookup (i,j) r
     lowerBarrier = offset r
 
 
-ribbonIndexInjection :: Ribbon a -> (Int, Int) -> Int
+ribbonIndexInjection :: UkkonenMethodMatrix a -> (Int, Int) -> Int
 ribbonIndexInjection r (i,j)
 --  | i == 0    = colIndex
-  | otherwise = traceShowLabel "RESULT" $ rowPrefix + colIndex
+  | otherwise = rowPrefix + colIndex
   where
     a = offset r
-    colIndex  = traceShowLabel "colIndex" $ j - max 0 (i - a)
-    rowPrefix = traceShowLabel "rowIndex" $ i * (d + 2*a) - v - w -- (t a - t b)--( ((a-b)*(a+b+1)) `div` 2 )
+    colIndex  = j - max 0 (i - a)
+    rowPrefix = i * (d + 2*a) - v - w -- (t a - t b)--( ((a-b)*(a+b+1)) `div` 2 )
       where
-        v = traceShowLabel "v" (t a - t b)
+        v = t a - t b
         w = t c -- t . max 0 $ i - a - a + 1
         d = diagonal r
-        b = traceShowLabel "b" $ max 0 (a - i)
-        c = traceShowLabel "c" $ max 0 (i - h + a)
+        b = max 0 (a - i)
+        c = max 0 (i - h + a)
 
     h = height   r
     t n = (n*(n+1)) `div` 2
-    traceShowLabel str v = v -- trace (str <> ": " <> show v) v
-{-
-    rowPrefix = (max 0 (i-1)) * (d + 2*a) - t a + t b
-      where
-        d = diagonal r
-        b = min 0 (a - i)
-        t k = (k*(k+1)) `div` 2
--}
 
 
-ribbonIndexSurjection :: Ribbon a -> Int -> (Int, Int)
+ribbonIndexSurjection :: UkkonenMethodMatrix a -> Int -> (Int, Int)
 ribbonIndexSurjection ribbon i
+--ribbonIndexSurjection :: (Int, Int, Int, Int) -> Int -> (Int, Int)
+--ribbonIndexSurjection (h, w, d, a) i
   | i < upperSpace = let (q,r) = i `quotRem` maxRowWidth
                          v     = t a - t (a - (q+1) + 1)
                          v'    = t a - t (a - (q+1)    )
@@ -151,29 +162,160 @@ ribbonIndexSurjection ribbon i
     t n = (n*(n+1)) `div` 2
 
 
+-- |
+-- UkkonenDO takes two input sequences and returns median sequence and cost
+-- only 1:1 for now. Uses Ukkonen's space/time saving algorithm
+-- need to make sure Left/Right and diag/ins/del orders consistent and with
+-- POY4/5
+-- lseq > rseq appeard more efficient--could be wrong
+-- move to C via FFI
+-- Still occasional error in cost and median (disagreement) show in Chel.seq
+ukkonenDO
+  :: DOCharConstraint s
+  => s
+  -> s
+  -> OverlapFunction (Element s)
+  -> (Word, s, s, s, s)
+ukkonenDO char1 char2 overlapFunction
+  | noGainFromUkkonenMethod = naiveDOMemo char1 char2 overlapFunction
+  | otherwise               = directOptimization char1 char2 overlapFunction (createUkkonenBandMatrix coefficient)
+  where
+    (_, longer, lesser) = measureCharacters char1 char2
+    
+    -- If the longer character is 50% larger than the shorter character then
+    -- there is no point in using the barriers. Rather, we fill the full matrix
+    -- immediately.
+    --
+    -- Additionally, if the shorter sequence is of length 4 or less, then the
+    -- inital barrier will be set at a adjacent to or beyond the lower left and
+    -- upper right corners.
+    --
+    -- Lastly, a threshhold coeffcient is computed as the minimal indel cost from
+    -- any symbol in the alphabet to gap. However, if the indel cost for any
+    -- symbol is zero, the algorithm will hang and a naive approach must be taken.
+    --
+    -- Do not perform Ukkonen's algorithm if and only if:
+    --
+    -- > longerLen >= 1.5 * lesserLen
+    --     OR
+    -- > lesserLen <= 4
+    --     OR
+    -- > coefficient == 0
+    noGainFromUkkonenMethod = or
+        [     lesserLen <= 4
+        , 2 * longerLen >= 3 * lesserLen
+        ,   coefficient == 0
+        ]
+      where
+        longerLen = olength longer
+        lesserLen = olength lesser
+
+    -- /O(2*(a - 1))/
+    --
+    -- This was taken from Ukkonen's original 1985 paper where the coeffcient
+    -- delta @(Δ)@ was defined by the minimum transition cost from any symbol in
+    -- the alphabet @(Σ)@ to the gap symbol @'-'@.
+    --
+    -- If there is any transition to gap from a non-gap for which the cost is
+    -- zero, then this coeffcient will be zero. This leaves us with no way to
+    -- determine if optimality is preserved, and the Ukkonen algorithm will hang.
+    -- Consequently, we do not perform Ukkonen's algorithm if the coefficient is
+    -- zero.
+    coefficient = minimum $ indelCost <$> nonGapElements
+      where
+        gap            = gapOfStream char1
+        alphabetSize   = symbolCount gap
+        nonGapElements = [ 0 .. alphabetSize - 2 ]
+        indelCost i    =  min (snd (overlapFunction (bit i)  gap    ))
+                              (snd (overlapFunction  gap    (bit i) ))
+
+
+createUkkonenBandMatrix
+  :: DOCharConstraint s
+  => Word
+  -> s 
+  -> s
+  -> OverlapFunction (Element s)
+  -> UkkonenMethodMatrix (Cost,Direction, Element s)
+createUkkonenBandMatrix minimumIndelCost longerTop lesserLeft overlapFunction = ukkonenUntilOptimal startOffset
+  where
+    -- General values that need to be in scope for the recursive computations.
+    longerLen   = olength longerTop
+    lesserLen   = olength lesserLeft
+    coefficient = fromEnum minimumIndelCost
+    
+    -- We start the offset at two rather than at one so that the first doubling
+    -- isn't trivially small.
+    startOffset = 2
+
+    -- /O(1)/
+    --
+    -- Necessary to compute the width of a row in the barrier constrained matrix.
+    quasiDiagonalWidth = differenceInLength + 1
+      where
+        differenceInLength = longerLen - lesserLen
+
+    -- /O(n + m)/
+    --
+    -- This is important to decrement the threshhold value to account for
+    -- diagonal directions in the matrix having an "indel" cost because one or
+    -- more of the aligned character elements was a gap.
+    gapsPresentInInputs = longerGaps + lesserGaps
+      where
+        longerGaps = countGaps longerTop
+        lesserGaps = countGaps lesserLeft
+        countGaps  = length . filter (== gap) . otoList
+        gap        = gapOfStream longerTop
+
+    ukkonenUntilOptimal offset
+--      | threshhold <= trace renderedBounds alignmentCost = ukkonenUntilOptimal (2 * offset)
+      | threshhold <= alignmentCost = ukkonenUntilOptimal (2 * offset)
+      | otherwise                   = ukkonenMatrix -- (alignmentCost, ungappedMedian, gappedMedian, lhsAlignment, rhsAlignment)
+      where
+        ukkonenMatrix      = generateUkkonenRibbon     longerTop lesserLeft generatingFunction $ toEnum offset
+        generatingFunction = needlemanWunschDefinition longerTop lesserLeft overlapFunction ukkonenMatrix
+        renderedBounds = unlines
+            [ "Diag Width : " <> show quasiDiagonalWidth
+            , "Input Gaps : " <> show gapsPresentInInputs
+            , "Offset     : " <> show offset
+            , "Coefficient: " <> show coefficient
+            , "Threshhold : " <> show threshhold
+            , "Total Cost : " <> show alignmentCost
+            ]
+        (cost, _, _)   = ukkonenMatrix ! (lesserLen, longerLen)
+        alignmentCost  = unsafeToFinite cost
+        computedValue  = coefficient * (quasiDiagonalWidth + offset - gapsPresentInInputs)
+        threshhold     = toEnum $ max 0 computedValue -- The threshhold value must be non-negative
+
+
 generateUkkonenRibbon
   :: DOCharConstraint s
-  => ((Int, Int) -> a) -- ^ Generating function
-  -> s                 -- ^ Longer  character
+  => s                 -- ^ Longer  character
   -> s                 -- ^ Shorter character
+  -> ((Int, Int) -> a) -- ^ Generating function
   -> Word              -- ^ Offset from the diagonal
-  -> Ribbon a
-generateUkkonenRibbon f longer lesser offset =
-    Ribbon
-    { height   = lesserLen + 1
-    , width    = longerLen + 1
-    , diagonal = diagonalLen
-    , offset   = a
-    , linear   = mempty -- V.generate (f ) cellCount
-    }
-  where  
+  -> UkkonenMethodMatrix a
+generateUkkonenRibbon longer lesser f offset = result
+  where
+    result =
+      CentralBand
+      { height   = traceShowLabel "height"   h
+      , width    = traceShowLabel "width"    w
+      , diagonal = traceShowLabel "diagonal" d
+      , offset   = traceShowLabel "offset"   a
+      , linear   = vector
+      }
+
+--    vector      = V.generate cellCount (f . ribbonIndexSurjection (h,w,d,a)) 
+    vector      = V.generate cellCount (f . ribbonIndexSurjection result) 
     longerLen   = olength longer
     lesserLen   = olength lesser
     diagonalLen = longerLen - lesserLen + 1
 --    longerLen   = fromEnum $ max len1 len2
 --    lesserLen   = fromEnum $ min len1 len2
-    cellCount   = h * w - nullCells
-    nullCells   = 2 * (t (w - d) - t (w - d - a))
+    cellCount   = traceShowLabel "Cell Count" $ h * w - nullCells -- nullCells + 2
+--    nullCells   = 2 * (t (w - d) - t (w - d - a))
+    nullCells   = 2 * (t (w - d - a))
 
     a = fromEnum offset
     d = diagonalLen
@@ -181,12 +323,14 @@ generateUkkonenRibbon f longer lesser offset =
     w = longerLen + 1
     t n = n * (n + 1) `div` 2
 
+    traceShowLabel str v = v -- trace (str <> ": " <> show v) v
+
 
 -- |
 -- This internal type used for computing the alignment cost. This type has an
 -- "infinity" value that is conviently used for the barrier costs. The cost is
 -- strictly non-negative, and possibly infinite.
-type Cost = ExtendedNatural
+-- type Cost = ExtendedNatural
 
 
 {- |
@@ -206,13 +350,13 @@ barrierCost = infinity
 -- lseq > rseq appeard more efficient--could be wrong
 -- move to C via FFI
 -- Still occasional error in cost and median (disagreement) show in Chel.seq
-ukkonenDO
+ukkonenDOOld
   :: DOCharConstraint s
   => s
   -> s
   -> OverlapFunction (Element s)
   -> (Word, s, s, s, s)
-ukkonenDO char1 char2 overlapFunction
+ukkonenDOOld char1 char2 overlapFunction
   | noGainFromUkkonenMethod = naiveDOMemo char1 char2 overlapFunction
   | otherwise               = handleMissingCharacter char1 char2 result
   where
@@ -278,6 +422,78 @@ ukkonenDO char1 char2 overlapFunction
 
     -- Construct the resulting 5-tuple.
     result = (alignmentCost, ungappedMedians, gappedMedian, alignedChar1, alignedChar2)
+
+
+-- |
+-- ukkonenInternal core functions of Ukkonen to allow for recursing with maxGap
+-- doubled if not large enough (returns Nothing)  
+ukkonenInternal2
+  :: DOCharConstraint s
+  => s
+  -> s
+  -> OverlapFunction (Element s)
+  -> Word
+  -> (Word, s, s, s, s)
+ukkonenInternal2 longerTop lesserLeft overlapFunction minimumIndelCost = ukkonenUntilOptimal startOffset
+  where
+    -- General values that need to be in scope for the recursive computations.
+    longerLen   = olength longerTop
+    lesserLen   = olength lesserLeft
+    coefficient = fromEnum minimumIndelCost
+    
+    -- We start the offset at two rather than at one so that the first doubling
+    -- isn't trivially small.
+    startOffset = 2
+
+    -- /O(1)/
+    --
+    -- Necessary to compute the width of a row in the barrier constrained matrix.
+    quasiDiagonalWidth = differenceInLength + 1
+      where
+        differenceInLength = longerLen - lesserLen
+
+    -- /O(n + m)/
+    --
+    -- This is important to decrement the threshhold value to account for
+    -- diagonal directions in the matrix having an "indel" cost because one or
+    -- more of the aligned character elements was a gap.
+    gapsPresentInInputs = longerGaps + lesserGaps
+      where
+        longerGaps = countGaps longerTop
+        lesserGaps = countGaps lesserLeft
+        countGaps  = length . filter (== gap) . otoList
+        gap        = gapOfStream longerTop
+
+    ukkonenUntilOptimal offset
+--      | threshhold <= trace (renderedBounds <> renderedMatrix) alignmentCost = ukkonenUntilOptimal (2 * offset)
+      | threshhold <= alignmentCost = ukkonenUntilOptimal (2 * offset)
+      | otherwise                   = (alignmentCost, ungappedMedian, gappedMedian, lhsAlignment, rhsAlignment)
+      where
+        ukkonenMatrix       = generateUkkonenRibbon longerTop lesserLeft (needlemanWunschDefinition longerTop lesserLeft overlapFunction ukkonenMatrix) (toEnum offset)
+--        renderedMatrix = renderUkkonenMatrix longerTop lesserLeft maxGap nwMatrix
+        renderedBounds = unlines
+            [ "Diag Width : " <> show quasiDiagonalWidth
+            , "Input Gaps : " <> show gapsPresentInInputs
+            , "Offset     : " <> show offset
+            , "Coefficient: " <> show coefficient
+            , "Threshhold : " <> show threshhold
+            , "Total Cost : " <> show alignmentCost
+            ]
+
+        (alignmentCost, medianGap, alignLeft, alignRight) = traceback ukkonenMatrix longerTop lesserLeft
+--        (medianGap, alignLeft, alignRight) = unzip3 . reverse $ tracebackUkkonen nwMatrix longerTop lesserLeft lesserLen longerLen maxGap
+--        (nwCost, _, _) = V.last $ V.last nwMatrix
+--        (nwCost, _, _) = nwMatrix ! (lesserLen, longerLen)
+--        alignmentCost  = unsafeToFinite nwCost
+        ungappedMedian = filterGaps gappedMedian
+        gappedMedian   = medianGap  -- constructDynamic medianGap
+        lhsAlignment   = alignLeft  -- constructDynamic alignLeft
+        rhsAlignment   = alignRight -- constructDynamic alignRight
+
+        maxGap         = quasiDiagonalWidth + offset
+
+        computedValue  = coefficient * (quasiDiagonalWidth + offset - gapsPresentInInputs)
+        threshhold     = toEnum $ max 0 computedValue -- The threshhold value must be non-negative
 
 
 -- |
@@ -452,7 +668,7 @@ tracebackUkkonen
   -> Int
   -> [(Element s, Element s, Element s)]
 tracebackUkkonen nwMatrix longerTop lesserLeft posR posL maxGap
-  | any (== 0) [posL, posR] = []
+  | all (== 0) [posL, posR] = []
   | otherwise =
       case direction of
         LeftArrow -> (state, longerTop `indexStream` (posL - 1),                                 gap) : (tracebackUkkonen nwMatrix longerTop lesserLeft  posR      (posL - 1) maxGap)  
