@@ -64,7 +64,7 @@ alloc_info_t myUkk_allocInfo_global;
 alloc_info_t myCheckPt_allocInfo_global;
 
 
-// costOffset_global - added to the 'computed' field of each cell. `costOffset_global` is
+// costOffset_global---added to the 'computed' field of each cell. `costOffset_global` is
 // recursive step of the check point algorithm. 'Tis really a hack so I don't
 // have to reinitialize the memory structures.
 long costOffset_global = 1;    // must be signed for future comparisons
@@ -1179,8 +1179,8 @@ int doUkk( dyn_character_t *retLesserChar
     resultChars->lesserIdx = 0;
     resultChars->longerIdx = 0;
     resultChars->middleIdx = 0;
-    fsm_stateIdx_global = 0;
-    costIdx_global      = 0;
+    fsm_stateIdx_global    = 0;
+    costIdx_global         = 0;
 
     costOffset_global      =  1;
     furthestReached_global = -1;
