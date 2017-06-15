@@ -241,6 +241,7 @@ needlemanWunschDefinition
   -> f (Cost, Direction, Element s)
   -> (Int, Int)
   -> (Cost, Direction, Element s)
+needlemanWunschDefinition topChar leftChar overlapFunction memo (row, col) | trace ("nw ?? "<> show (row,col)) False = undefined
 needlemanWunschDefinition topChar leftChar overlapFunction memo (row, col)
       -- :)
       | row == 0 && col == 0         = (0                               , DiagArrow,         gap)
@@ -329,6 +330,7 @@ traceback alignMatrix longerChar lesserChar =
       row = olength lesserChar
       gap = gapOfStream longerChar
 
+      go p | traceShow p False = undefined
       go p@(row, col)
         | p == (0,0) = (mempty, mempty, mempty)
         | otherwise  = ( previousMedianCharElements `snoc` medianElement

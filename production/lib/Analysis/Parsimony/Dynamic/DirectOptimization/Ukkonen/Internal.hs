@@ -127,40 +127,48 @@ ribbonIndexSurjection :: UkkonenMethodMatrix a -> Int -> (Int, Int)
 ribbonIndexSurjection ribbon i
 --ribbonIndexSurjection :: (Int, Int, Int, Int) -> Int -> (Int, Int)
 --ribbonIndexSurjection (h, w, d, a) i
-  | i < upperSpace = let (q,r) = i `quotRem` maxRowWidth
-                         v     = t a - t (a - (q+1) + 1)
-                         v'    = t a - t (a - (q+1)    )
-                         x     = if ( (q+1) * (d+a+a) ) <= i + v'
+  | i < upperSpace = let (q,r) = traceShowLabel "(q,r)" $ i `quotRem` maxRowWidth
+                         v     = traceShowLabel "v " $ t z - t (z - (q+1) + 1)
+                         v'    = traceShowLabel "v'" $ t z - t (z - (q+1)    )
+                         x     = if ( (q+1) * maxRowWidth ) <= i + v'
                                  then v'
                                  else v
                      in  (i + x) `quotRem` maxRowWidth
-  | i > lowerSpace = let i'    = i - lowerSpace - 1
-                         (q,r) = i' `quotRem` maxRowWidth
-                         v     = t  q
-                         v'    = t (q+1)
-                         x     = if ( (q+1) * (d+a+a) ) <= i' + v'
+  | i > lowerSpace = let i'    = traceShowLabel "i'" $ i - lowerSpace - 1
+                         (q,r) = traceShowLabel "(q,r)" $ i' `quotRem` maxRowWidth
+                         v     = traceShowLabel "v " $ t  q
+                         v'    = traceShowLabel "v'" $ t (q+1)
+                         x     = if ( ( traceShowLabel "LHS" $ (q+1) * maxRowWidth) ) <= i' + v'
                                  then v'
                                  else v
                          (q',r') = (i' + x) `quotRem` maxRowWidth
-                         ro    = h - a
-                         co    = h - a - a + q'
+                         ro    = traceShowLabel "ro" $ h - z
+                         co    = traceShowLabel "co" $ q' + (max 1 $ h - a - a)
                      in  (q'+ro, r'+co)
   | otherwise      = let (q,r) = (i - upperSpace) `divMod` maxRowWidth
-                     in  (q+a, r+q)
+                         p = if  maxRowWidth == w
+                             then 0
+                             else q
+                     in  (q+z, r+p)
   where
+    z = traceShowLabel "z" $ min a $ w - d - a
     a = offset   ribbon
     d = diagonal ribbon
     h = height   ribbon
+    w = width    ribbon
     rowPrefix = (max 0 (i-1)) * (d + 2*a) - ( ((a-b)*(a+b+1)) `div` 2 )
       where
         b = min 0 (a - i)
     
-    maxRowWidth = d + 2*a
-    upperSpace  = (a * maxRowWidth) - ((a*(a+1))`div`2)
-    lowerSpace  = (max 0 (h - 2*a)) * maxRowWidth + upperSpace - 1
+    maxRowWidth = traceShowLabel "maxRowWidth" $ min w $ d + a + a
+    upperSpace  = traceShowLabel "upperSpace" $ (t (maxRowWidth - 1) - t (d + a - 1)) --  ((a * maxRowWidth) - t a)
+    lowerSpace  = traceShowLabel "lowerSpace" $ fullRowCount * maxRowWidth + upperSpace - 1
+
+    fullRowCount = traceShowLabel "fullRowCount" $ h - z - z
 
     t n = (n*(n+1)) `div` 2
 
+    traceShowLabel str v = trace (str <> ": " <> show v) v
 
 -- |
 -- UkkonenDO takes two input sequences and returns median sequence and cost
