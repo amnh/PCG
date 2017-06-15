@@ -30,6 +30,7 @@ import           Data.Semigroup
 import           Data.Vector              (Vector)
 import qualified Data.Vector       as V
 import           Data.Vector.Instances    ()
+import           Math.NumberTheory.Powers.Squares
 import           Numeric.Extended.Natural
 import           Prelude           hiding (lookup)
 
@@ -124,9 +125,10 @@ ribbonIndexInjection r (i,j)
 
 
 ribbonIndexSurjection :: UkkonenMethodMatrix a -> Int -> (Int, Int)
-ribbonIndexSurjection ribbon i
+ribbonIndexSurjection ribbon i = (q',r')
 --ribbonIndexSurjection :: (Int, Int, Int, Int) -> Int -> (Int, Int)
 --ribbonIndexSurjection (h, w, d, a) i
+{-
   | i < upperSpace = let (q,r) = traceShowLabel "(q,r)" $ i `quotRem` maxRowWidth
                          v     = traceShowLabel "v " $ t z - t (z - (q+1) + 1)
                          v'    = traceShowLabel "v'" $ t z - t (z - (q+1)    )
@@ -150,8 +152,9 @@ ribbonIndexSurjection ribbon i
                              then 0
                              else q
                      in  (q+z, r+p)
+-}
   where
-    z = traceShowLabel "z" $ min a $ w - d - a
+    z = traceShowLabel "z" {- $ min a -} $ w - d - a
     a = offset   ribbon
     d = diagonal ribbon
     h = height   ribbon
@@ -168,7 +171,23 @@ ribbonIndexSurjection ribbon i
 
     t n = (n*(n+1)) `div` 2
 
+    (q',r') = (i + prefixPad + suffixPad) `quotRem` w
+
+    minRowWidth     = d + a
+    missingTriangle = traceShowLabel "missingTriangle" $ t (minRowWidth - 1)
+
+    cellCount  = length $ linear ribbon
+    currentRow = traceShowLabel "currentRow" $ s (             i      + missingTriangle) - minRowWidth
+    inverseRow = traceShowLabel "inverseRow" $ s ((cellCount - i - 1) + missingTriangle) - minRowWidth
+    prefixPad  = traceShowLabel "prefixPad"  $ max 0 $ t z - (traceShowLabel "xzy" $ t (max 0 $ z - (currentRow)))
+    suffixPad  = traceShowLabel "suffixPad"  $ t c -- max 0 $ t z - t (max z (inverseRow - z))
+
+    c = max 0 (z - inverseRow)
+
+    s n = (integerSquareRoot' (8*n + 1) + 1) `div` 2
+
     traceShowLabel str v = trace (str <> ": " <> show v) v
+
 
 -- |
 -- UkkonenDO takes two input sequences and returns median sequence and cost

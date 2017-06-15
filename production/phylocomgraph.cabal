@@ -41,7 +41,8 @@ library
   other-extensions: MonadFailDesugaring
 
   -- Other library packages from which modules are imported.
-  build-depends:       base             >=4.8
+  build-depends:       arithmoi
+                     , base             >=4.8
                      , bimap
                      , bv
                        -- >=0.5.8 Required for Data.Map.restrictKeys
