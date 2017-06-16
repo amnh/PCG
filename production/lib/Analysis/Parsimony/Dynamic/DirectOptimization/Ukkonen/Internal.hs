@@ -22,7 +22,6 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Ukkonen.Internal where
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal -- hiding (Direction)
 import           Bio.Character.Encodable
 import           Data.Bits
-import           Data.Bifunctor
 import           Data.Foldable
 import           Data.Key
 import           Data.MonoTraversable
@@ -30,11 +29,10 @@ import           Data.Semigroup
 import           Data.Vector              (Vector)
 import qualified Data.Vector       as V
 import           Data.Vector.Instances    ()
-import           Math.NumberTheory.Powers.Squares
 import           Numeric.Extended.Natural
 import           Prelude           hiding (lookup)
 
-import Debug.Trace
+-- import Debug.Trace
 
 
 data UkkonenMethodMatrix a
@@ -96,7 +94,7 @@ ribbonLookup (i,j) r
   | y > lowerBarrier = Nothing
   | otherwise        = Just $ linear r ! k
   where
-    k = (\x -> trace (show r <> "\nu ! " <> show x) x) $ ribbonIndexInjection r (i,j)
+    k = {- (\x -> trace (show r <> "\nu ! " <> show x) x) $ -} ribbonIndexInjection r (i,j)
     h = height r
     w = width  r
     x = j - i
@@ -108,6 +106,7 @@ ribbonLookup (i,j) r
 ribbonIndexInjection :: UkkonenMethodMatrix a -> (Int, Int) -> Int
 ribbonIndexInjection r (i,j)
 --  | i == 0    = colIndex
+--  | otherwise = (\x -> trace (unlines [show r, show (i,j), show x]) x) $ rowPrefix + colIndex
   | otherwise = rowPrefix + colIndex
   where
     a = offset r
@@ -123,7 +122,7 @@ ribbonIndexInjection r (i,j)
     h = height   r
     t n = (n*(n+1)) `div` 2
 
-
+{-
 ribbonIndexSurjection :: UkkonenMethodMatrix a -> Int -> (Int, Int)
 ribbonIndexSurjection ribbon i = (q',r')
 --ribbonIndexSurjection :: (Int, Int, Int, Int) -> Int -> (Int, Int)
@@ -186,7 +185,8 @@ ribbonIndexSurjection ribbon i = (q',r')
 
     s n = (integerSquareRoot' (8*n + 1) + 1) `div` 2
 
-    traceShowLabel str v = trace (str <> ": " <> show v) v
+    traceShowLabel str v = v -- trace (str <> ": " <> show v) v
+-}
 
 
 -- |
@@ -297,10 +297,11 @@ createUkkonenBandMatrix minimumIndelCost longerTop lesserLeft overlapFunction = 
     ukkonenUntilOptimal offset
 --      | threshhold <= trace renderedBounds alignmentCost = ukkonenUntilOptimal (2 * offset)
       | threshhold <= alignmentCost = ukkonenUntilOptimal (2 * offset)
-      | otherwise                   = (\x -> trace (renderCostMatrix longerTop lesserLeft x) x) ukkonenMatrix
+      | otherwise                   = ukkonenMatrix
       where
         ukkonenMatrix      = generateUkkonenRibbon     longerTop lesserLeft generatingFunction $ toEnum offset
         generatingFunction = needlemanWunschDefinition longerTop lesserLeft overlapFunction ukkonenMatrix
+{-        
         renderedBounds = unlines
             [ "Diag Width : " <> show quasiDiagonalWidth
             , "Input Gaps : " <> show gapsPresentInInputs
@@ -309,6 +310,7 @@ createUkkonenBandMatrix minimumIndelCost longerTop lesserLeft overlapFunction = 
             , "Threshhold : " <> show threshhold
             , "Total Cost : " <> show alignmentCost
             ]
+-}
         (cost, _, _)   = ukkonenMatrix ! (lesserLen, longerLen)
         alignmentCost  = unsafeToFinite cost
         computedValue  = coefficient * (quasiDiagonalWidth + offset - gapsPresentInInputs)
@@ -316,49 +318,41 @@ createUkkonenBandMatrix minimumIndelCost longerTop lesserLeft overlapFunction = 
 
 
 generateUkkonenRibbon
-  :: (DOCharConstraint s, Show a, Show b)
-  
+  :: DOCharConstraint s
   => s                 -- ^ Longer  character
   -> s                 -- ^ Shorter character
-  -> ((Int, Int) -> (a,b,c)) -- ^ Generating function
+  -> ((Int, Int) -> a) -- ^ Generating function
   -> Word              -- ^ Offset from the diagonal
-  -> UkkonenMethodMatrix (a,b,c)
-generateUkkonenRibbon longer lesser f offset = result
+  -> UkkonenMethodMatrix a
+generateUkkonenRibbon lhs rhs f alpha = result
   where
     result =
       CentralBand
-      { height   = traceShowLabel "height"   h
-      , width    = traceShowLabel "width"    w
-      , diagonal = traceShowLabel "diagonal" d
-      , offset   = traceShowLabel "offset"   a
+      { height   = h
+      , width    = w
+      , diagonal = d
+      , offset   = a
       , linear   = vector
       }
 
---    vector      = V.generate cellCount (f . ribbonIndexSurjection (h,w,d,a)) 
+    (_,longer,lesser) = measureCharacters lhs rhs
     vector      = V.fromListN cellCount $ f <$> points
     longerLen   = olength longer
     lesserLen   = olength lesser
     diagonalLen = longerLen - lesserLen + 1
---    longerLen   = fromEnum $ max len1 len2
---    lesserLen   = fromEnum $ min len1 len2
-    cellCount   = traceShowLabel "Cell Count" $ h * w - nullCells -- nullCells + 2
---    nullCells   = 2 * (t (w - d) - t (w - d - a))
+    cellCount   = h * w - nullCells
     nullCells   = 2 * (t (w - d - a))
 
-    a = fromEnum offset
+    a = min (fromEnum alpha) (w - d)
     d = diagonalLen
     h = lesserLen + 1
     w = longerLen + 1
     t n = n * (n + 1) `div` 2
 
-    traceShowLabel str v = v -- trace (str <> ": " <> show v) v
-
-
-    maxRowWidth = min w $ d + a + a
-    points = traceShowId
+    points =
       [ (i,j)
-      | i <- [ 0 .. h ]
-      , j <- [ max (i - a) 0 .. min (i + d + a) (w-1) ]
+      | i <- [ 0 .. (h - 1) ]
+      , j <- [ max (i - a) 0 .. min (i + d + a - 1) (w-1) ]
       ]
 
 
@@ -373,7 +367,7 @@ generateUkkonenRibbon longer lesser f offset = result
  - The Ukkonen code from the prototype codebase
  -}
 
-
+{-
 barrierCost :: Cost
 barrierCost = infinity
 
@@ -507,6 +501,7 @@ ukkonenInternal2 longerTop lesserLeft overlapFunction minimumIndelCost = ukkonen
       where
         ukkonenMatrix       = generateUkkonenRibbon longerTop lesserLeft (needlemanWunschDefinition longerTop lesserLeft overlapFunction ukkonenMatrix) (toEnum offset)
 --        renderedMatrix = renderUkkonenMatrix longerTop lesserLeft maxGap nwMatrix
+{-
         renderedBounds = unlines
             [ "Diag Width : " <> show quasiDiagonalWidth
             , "Input Gaps : " <> show gapsPresentInInputs
@@ -515,6 +510,7 @@ ukkonenInternal2 longerTop lesserLeft overlapFunction minimumIndelCost = ukkonen
             , "Threshhold : " <> show threshhold
             , "Total Cost : " <> show alignmentCost
             ]
+-}
 
         (alignmentCost, medianGap, alignLeft, alignRight) = traceback ukkonenMatrix longerTop lesserLeft
 --        (medianGap, alignLeft, alignRight) = unzip3 . reverse $ tracebackUkkonen nwMatrix longerTop lesserLeft lesserLen longerLen maxGap
@@ -578,6 +574,7 @@ ukkonenInternal longerTop lesserLeft overlapFunction minimumIndelCost = ukkonenU
       | otherwise                   = (alignmentCost, ungappedMedian, gappedMedian, lhsAlignment, rhsAlignment)
       where
         nwMatrix       = generateUkkonenBand longerTop lesserLeft overlapFunction maxGap
+{-
         renderedMatrix = renderUkkonenMatrix longerTop lesserLeft maxGap nwMatrix
         renderedBounds = unlines
             [ "Diag Width : " <> show quasiDiagonalWidth
@@ -587,7 +584,8 @@ ukkonenInternal longerTop lesserLeft overlapFunction minimumIndelCost = ukkonenU
             , "Threshhold : " <> show threshhold
             , "Total Cost : " <> show alignmentCost
             ]
-    
+-}
+
         (medianGap, alignLeft, alignRight) = unzip3 . reverse $ tracebackUkkonen nwMatrix longerTop lesserLeft lesserLen longerLen maxGap
         (nwCost, _, _) = V.last $ V.last nwMatrix
         alignmentCost  = unsafeToFinite nwCost
@@ -738,6 +736,9 @@ transformFullYShortY currentY rowNumber maxGap
     transformY = currentY - max 0 (rowNumber - maxGap - 1)
 
 
+-}
+
+{-
 renderUkkonenMatrix :: DOCharConstraint s => s -> s -> Int -> Vector (Vector (Cost, a, Direction)) -> String
 renderUkkonenMatrix lhs rhs maxGap jaggedMatrix = unlines
     [ dimensionPrefix
@@ -810,3 +811,4 @@ renderUkkonenMatrix lhs rhs maxGap jaggedMatrix = unlines
             uncomputedPrefix = mconcat $ replicate (max 0 offset) (pad maxColumnWidth "")
             computedRegion   = concatMap showPaddedCell $ toList vs
             offset           = k - searchRange + 1
+-}
