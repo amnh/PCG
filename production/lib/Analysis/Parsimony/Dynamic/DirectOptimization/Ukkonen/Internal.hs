@@ -14,7 +14,7 @@
 -- Allocates a "ribbon" down the diagonal of the matrix rather than the entire matrix.
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE BangPatterns, ConstraintKinds, FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE BangPatterns, ConstraintKinds, DeriveFoldable, DeriveFunctor, FlexibleContexts, TypeFamilies #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Ukkonen.Internal where
 
@@ -44,7 +44,7 @@ data UkkonenMethodMatrix a
    , diagonal :: {-# UNPACK #-} !Int
    , offset   :: {-# UNPACK #-} !Int
    , linear   :: Vector a
-   } deriving (Eq)
+   } deriving (Eq, Foldable, Functor)
 
 
 instance Show (UkkonenMethodMatrix a) where
@@ -297,7 +297,7 @@ createUkkonenBandMatrix minimumIndelCost longerTop lesserLeft overlapFunction = 
     ukkonenUntilOptimal offset
 --      | threshhold <= trace renderedBounds alignmentCost = ukkonenUntilOptimal (2 * offset)
       | threshhold <= alignmentCost = ukkonenUntilOptimal (2 * offset)
-      | otherwise                   = ukkonenMatrix -- (alignmentCost, ungappedMedian, gappedMedian, lhsAlignment, rhsAlignment)
+      | otherwise                   = (\x -> trace (renderCostMatrix longerTop lesserLeft x) x) ukkonenMatrix
       where
         ukkonenMatrix      = generateUkkonenRibbon     longerTop lesserLeft generatingFunction $ toEnum offset
         generatingFunction = needlemanWunschDefinition longerTop lesserLeft overlapFunction ukkonenMatrix
@@ -316,12 +316,13 @@ createUkkonenBandMatrix minimumIndelCost longerTop lesserLeft overlapFunction = 
 
 
 generateUkkonenRibbon
-  :: DOCharConstraint s
+  :: (DOCharConstraint s, Show a, Show b)
+  
   => s                 -- ^ Longer  character
   -> s                 -- ^ Shorter character
-  -> ((Int, Int) -> a) -- ^ Generating function
+  -> ((Int, Int) -> (a,b,c)) -- ^ Generating function
   -> Word              -- ^ Offset from the diagonal
-  -> UkkonenMethodMatrix a
+  -> UkkonenMethodMatrix (a,b,c)
 generateUkkonenRibbon longer lesser f offset = result
   where
     result =
@@ -334,7 +335,7 @@ generateUkkonenRibbon longer lesser f offset = result
       }
 
 --    vector      = V.generate cellCount (f . ribbonIndexSurjection (h,w,d,a)) 
-    vector      = V.generate cellCount (f . ribbonIndexSurjection result) 
+    vector      = V.fromListN cellCount $ f <$> points
     longerLen   = olength longer
     lesserLen   = olength lesser
     diagonalLen = longerLen - lesserLen + 1
@@ -351,6 +352,14 @@ generateUkkonenRibbon longer lesser f offset = result
     t n = n * (n + 1) `div` 2
 
     traceShowLabel str v = v -- trace (str <> ": " <> show v) v
+
+
+    maxRowWidth = min w $ d + a + a
+    points = traceShowId
+      [ (i,j)
+      | i <- [ 0 .. h ]
+      , j <- [ max (i - a) 0 .. min (i + d + a) (w-1) ]
+      ]
 
 
 -- |
@@ -718,7 +727,7 @@ tracebackUkkonen nwMatrix longerTop lesserLeft posR posL maxGap
 
 
 -- |
--- transformFullYShortY take full Y value (if did entire NW matrix) and returns
+-- transformFullYShortY take full Y value (if did entire NWmatrix) and returns
 -- short (Ukkonnen Y) given Y, Y length and row number
 -- remove error when working--overhead
 transformFullYShortY :: Int -> Int -> Int -> Int

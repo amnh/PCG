@@ -21,6 +21,7 @@ import Data.DList            (snoc)
 import Data.Foldable
 import Data.Key
 import Data.Matrix.NotStupid (Matrix, getRow, matrix, nrows, ncols, toLists)
+import Data.Maybe            (fromMaybe)
 import Data.MonoTraversable
 import Data.Ord
 import Data.Semigroup
@@ -521,7 +522,19 @@ getMinimalCostDirection (diagCost, diagChar) (rightCost, rightChar) (downCost,  
 -- and column labelings.
 --
 -- Useful for debugging purposes.
-renderCostMatrix :: DOCharConstraint s => s -> s -> NeedlemanWunchMatrix a -> String
+renderCostMatrix
+  :: ( DOCharConstraint s
+     , Foldable f
+     , Functor f
+     , Indexable f
+     , Key f ~ (Int,Int)
+     , Show a
+     , Show b
+     )
+  => s
+  -> s
+  -> f (a, b, c) -- ^ The Needleman-Wunsch alignment matrix
+  -> String
 renderCostMatrix lhs rhs mtx = unlines
     [ dimensionPrefix
     , headerRow
@@ -529,21 +542,22 @@ renderCostMatrix lhs rhs mtx = unlines
     , renderedRows
     ]
   where
-    (longer, lesser)
-      | olength lhs >= olength rhs = (lhs, rhs)
-      | otherwise                  = (rhs, lhs)
-    longerTokens     = toShownIntegers longer
-    lesserTokens     = toShownIntegers lesser
-    toShownIntegers  = fmap (show . (fromIntegral :: Integral a => a -> Integer)) . otoList
-    matrixTokens     = showCell <$> mtx
-    showCell (c,d,_) = show c <> show d
-    maxPrefixWidth   = maxLengthOf lesserTokens
-    maxColumnWidth   = max (maxLengthOf longerTokens) . maxLengthOf $ toList matrixTokens
-    maxLengthOf      = maximum . fmap length
+    (_,longer,lesser) = measureCharacters lhs rhs
+    longerTokens      = toShownIntegers longer
+    lesserTokens      = toShownIntegers lesser
+    toShownIntegers   = fmap (show . (fromIntegral :: Integral a => a -> Integer)) . otoList
+    matrixTokens      = showCell <$> mtx
+    showCell (c,d,_)  = show c <> show d
+    maxPrefixWidth    = maxLengthOf lesserTokens
+    maxColumnWidth    = max (maxLengthOf longerTokens) . maxLengthOf $ toList matrixTokens
+    maxLengthOf       = maximum . fmap length
+
+    colCount = olength longer + 1
+    rowCount = olength lesser + 1
 
     dimensionPrefix  = " " <> unwords
         [ "Dimensions:"
-        , show $ olength longer + 1
+        , show colCount
         , "X"
         , show $ olength lesser + 1
         ]
@@ -568,7 +582,12 @@ renderCostMatrix lhs rhs mtx = unlines
     renderedRows = unlines . zipWith renderRow ("*":lesserTokens) $ getRows matrixTokens
       where
         renderRow e vs = " " <> pad maxPrefixWidth e <> "| " <> concatMap (pad maxColumnWidth) vs
-        getRows m = (`getRow` m) <$> [0 .. nrows m - 1]
+
+        getRows m = (`getRow'` m) <$> [0 .. rowCount - 1]
+        getRow' i m = g <$> [0 .. colCount - 1]
+          where
+            g j = fromMaybe "" $ (i,j) `lookup` m
+
 
     pad :: Int -> String -> String
     pad n e = replicate (n - len) ' ' <> e <> " "
