@@ -32,7 +32,7 @@ import           Data.Vector.Instances    ()
 import           Numeric.Extended.Natural
 import           Prelude           hiding (lookup)
 
--- import Debug.Trace
+import Debug.Trace
 
 
 data UkkonenMethodMatrix a
@@ -297,11 +297,14 @@ createUkkonenBandMatrix minimumIndelCost longerTop lesserLeft overlapFunction = 
     ukkonenUntilOptimal offset
 --      | threshhold <= trace renderedBounds alignmentCost = ukkonenUntilOptimal (2 * offset)
       | threshhold <= alignmentCost = ukkonenUntilOptimal (2 * offset)
+--      | otherwise                   = trace (renderedBounds <> renderedMatrix) ukkonenMatrix
       | otherwise                   = ukkonenMatrix
       where
         ukkonenMatrix      = generateUkkonenRibbon     longerTop lesserLeft generatingFunction $ toEnum offset
         generatingFunction = needlemanWunschDefinition longerTop lesserLeft overlapFunction ukkonenMatrix
-{-        
+{--
+        renderedMatrix = renderCostMatrix longerTop lesserLeft ukkonenMatrix
+
         renderedBounds = unlines
             [ "Diag Width : " <> show quasiDiagonalWidth
             , "Input Gaps : " <> show gapsPresentInInputs
@@ -310,7 +313,7 @@ createUkkonenBandMatrix minimumIndelCost longerTop lesserLeft overlapFunction = 
             , "Threshhold : " <> show threshhold
             , "Total Cost : " <> show alignmentCost
             ]
--}
+--}
         (cost, _, _)   = ukkonenMatrix ! (lesserLen, longerLen)
         alignmentCost  = unsafeToFinite cost
         computedValue  = coefficient * (quasiDiagonalWidth + offset - gapsPresentInInputs)
@@ -350,10 +353,10 @@ generateUkkonenRibbon lhs rhs f alpha = result
     t n = n * (n + 1) `div` 2
 
     points =
-      [ (i,j)
-      | i <- [ 0 .. (h - 1) ]
-      , j <- [ max (i - a) 0 .. min (i + d + a - 1) (w-1) ]
-      ]
+        [ (i,j)
+        | i <- [ 0 .. (h - 1) ]
+        , j <- [ max (i - a) 0 .. min (i + d + a - 1) (w-1) ]
+        ]
 
 
 -- |

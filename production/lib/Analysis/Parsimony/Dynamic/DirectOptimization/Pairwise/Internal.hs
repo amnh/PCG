@@ -557,9 +557,9 @@ renderCostMatrix lhs rhs mtx = unlines
 
     dimensionPrefix  = " " <> unwords
         [ "Dimensions:"
-        , show colCount
+        , show rowCount
         , "X"
-        , show $ olength lesser + 1
+        , show colCount
         ]
     
     headerRow = mconcat
