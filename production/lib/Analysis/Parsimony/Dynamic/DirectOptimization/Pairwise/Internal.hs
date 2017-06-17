@@ -13,7 +13,32 @@
 -----------------------------------------------------------------------------
 {-# LANGUAGE ConstraintKinds, FlexibleContexts, TypeFamilies #-}
 
-module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal where
+module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
+ ( Cost
+ , Direction(..)
+ , DOCharConstraint
+ , MatrixConstraint
+ , MatrixFunction
+ , NeedlemanWunchMatrix
+ , OverlapFunction
+ -- * Direct Optimization pairwise functions
+ , naiveDO
+ , naiveDOConst
+ , naiveDOMemo
+ -- * Direct Optimization primative construction functions
+ , createNeedlemanWunchMatrix
+ , directOptimization
+ , filterGaps
+ , handleMissingCharacter
+ , measureCharacters
+ , needlemanWunschDefinition
+ , renderCostMatrix
+ , traceback
+ -- * Probably removable
+ , getOverlap
+ , minimalChoice
+ ) where
+
 
 import Bio.Character.Encodable
 import Data.Bits
@@ -28,7 +53,7 @@ import Data.Semigroup
 import Numeric.Extended.Natural
 import Prelude        hiding (lookup, zipWith)
 
-import Debug.Trace
+--import Debug.Trace
 
 
 -- |
@@ -97,56 +122,6 @@ type MatrixFunction m s = s -> s -> OverlapFunction (Element s) -> m (Cost, Dire
 
 
 -- |
--- Wraps the primative operations in this module to a cohesive operation that is
--- parameterized by an 'OverlapFunction'.
---
--- Reused internally by different implementations.
-directOptimization
-  :: ( DOCharConstraint s
-     , MatrixConstraint m
-     )
-  => s
-  -> s
-  -> OverlapFunction (Element s)
-  -> MatrixFunction m s
-  -> (Word, s, s, s, s)
-directOptimization char1 char2 overlapFunction matrixFunction =
-    handleMissingCharacter char1 char2 alignment
-  where
-    (swapped, longerChar, shorterChar)   = measureCharacters char1 char2
-    traversalMat                         = matrixFunction longerChar shorterChar overlapFunction
-    (alignmentCost, gapped, left, right) = traceback traversalMat longerChar shorterChar
-    alignment = (alignmentCost, ungapped, gapped, alignedChar1, alignedChar2)
-{-      
-    (gapped', left', right') = (\(x,y,z) -> (constructDynamic x, constructDynamic y, constructDynamic z)) 
-                               $ correctBiasing (getGapElement $ gapped `indexStream` 0) (otoList gapped, otoList left, otoList right)
--}
-    ungapped = filterGaps gapped
-    (alignedChar1, alignedChar2)
-      | swapped   = (right, left )
-      | otherwise = (left , right)
-
-
--- |
--- A generalized function to handle missing dynamic characters.
---
--- Intended to be resued by multiple, differing implementations.
-handleMissingCharacter
-  :: PossiblyMissingCharacter s
-  => s
-  -> s
-  -> (Word, s, s, s, s)
-  -> (Word, s, s, s, s) 
-handleMissingCharacter lhs rhs v =
-    -- Appropriately handle missing data:
-    case (isMissing lhs, isMissing rhs) of
-      (True , True ) -> (0, lhs, lhs, lhs, rhs) --WLOG
-      (True , False) -> (0, rhs, rhs, rhs, rhs)
-      (False, True ) -> (0, lhs, lhs, lhs, lhs)
-      (False, False) -> v
-
-
--- |
 -- Performs a naive direct optimization.
 -- Takes in two characters to run DO on and a metadata object
 -- Returns an assignment character, the cost of that assignment, the assignment
@@ -191,28 +166,6 @@ naiveDOMemo char1 char2 tcm = directOptimization char1 char2 tcm createNeedleman
 
 
 -- |
--- Wrapper function to do an enhanced Needleman-Wunsch algorithm.
--- Calls naiveDO, but only returns the last two fields (gapped alignments of inputs)
-doAlignment :: DOCharConstraint s => s -> s -> (Word -> Word -> Word) -> (s, s)
-doAlignment char1 char2 costStruct = (char1Align, char2Align)
-    where
-        (_, _, _, char1Align, char2Align) = naiveDO char1 char2 costStruct
-        
-
--- |
--- Strips the gap elements from the supplied character.
--- 
--- If the character contains /only/ gaps, a missing character is returned.
-filterGaps :: EncodableDynamicCharacter c => c -> c
-filterGaps char =
-    case filter (/= gap) $ otoList char of
-      [] -> toMissing char
-      xs -> constructDynamic xs
-  where
-    gap = gapOfStream char
-
-
--- |
 -- Main function to generate an 'NeedlemanWunchMatrix'. Works as in Needleman-Wunsch,
 -- but allows for multiple indel/replacement costs, depending on the symbol change
 -- cost function. Also, returns the aligned parent characters, with appropriate
@@ -230,6 +183,82 @@ createNeedlemanWunchMatrix topChar leftChar overlapFunction = result
     cols               = olength topChar  + 1
     generatingFunction = needlemanWunschDefinition topChar leftChar overlapFunction result
     renderedMatrix     = renderCostMatrix topChar leftChar result
+
+
+-- |
+-- Wraps the primative operations in this module to a cohesive operation that is
+-- parameterized by an 'OverlapFunction'.
+--
+-- Reused internally by different implementations.
+directOptimization
+  :: ( DOCharConstraint s
+     , MatrixConstraint m
+     )
+  => s
+  -> s
+  -> OverlapFunction (Element s)
+  -> MatrixFunction m s
+  -> (Word, s, s, s, s)
+directOptimization char1 char2 overlapFunction matrixFunction =
+    handleMissingCharacter char1 char2 alignment
+  where
+    (swapped, longerChar, shorterChar)   = measureCharacters char1 char2
+    traversalMat                         = matrixFunction longerChar shorterChar overlapFunction
+    (alignmentCost, gapped, left, right) = traceback traversalMat longerChar shorterChar
+    alignment = (alignmentCost, ungapped, gapped, alignedChar1, alignedChar2)
+{-      
+    (gapped', left', right') = (\(x,y,z) -> (constructDynamic x, constructDynamic y, constructDynamic z)) 
+                               $ correctBiasing (getGapElement $ gapped `indexStream` 0) (otoList gapped, otoList left, otoList right)
+-}
+    ungapped = filterGaps gapped
+    (alignedChar1, alignedChar2)
+      | swapped   = (right, left )
+      | otherwise = (left , right)
+
+
+-- |
+-- Strips the gap elements from the supplied character.
+-- 
+-- If the character contains /only/ gaps, a missing character is returned.
+filterGaps :: EncodableDynamicCharacter c => c -> c
+filterGaps char =
+    case filter (/= gap) $ otoList char of
+      [] -> toMissing char
+      xs -> constructDynamic xs
+  where
+    gap = gapOfStream char
+
+
+-- |
+-- A generalized function to handle missing dynamic characters.
+--
+-- Intended to be resued by multiple, differing implementations.
+handleMissingCharacter
+  :: PossiblyMissingCharacter s
+  => s
+  -> s
+  -> (Word, s, s, s, s)
+  -> (Word, s, s, s, s) 
+handleMissingCharacter lhs rhs v =
+    -- Appropriately handle missing data:
+    case (isMissing lhs, isMissing rhs) of
+      (True , True ) -> (0, lhs, lhs, lhs, rhs) --WLOG
+      (True , False) -> (0, rhs, rhs, rhs, rhs)
+      (False, True ) -> (0, lhs, lhs, lhs, lhs)
+      (False, False) -> v
+
+
+-- |
+-- Returns the dynamic character that is longer first, shorter second, and notes
+-- whether or not the inputs were swapped to place the characters in this ordering.
+--
+-- Handles equal length characters by /not/ swapping characters.
+measureCharacters :: MonoFoldable s => s -> s -> (Bool, s, s)
+measureCharacters lhs rhs =
+    case comparing olength lhs rhs of
+      EQ -> (False, lhs, rhs)
+      GT -> (False, lhs, rhs)
+      LT -> ( True, rhs, lhs)
 
 
 -- Internal generator function for the matrix
@@ -288,14 +317,81 @@ needlemanWunschDefinition topChar leftChar overlapFunction memo (row, col)
 
 
 -- |
--- Serializes an alignment matrix to a 'String'. Omits the median characters in
--- the matrix.
+-- Serializes an alignment matrix to a 'String'. Uses input characters for row
+-- and column labelings.
 --
 -- Useful for debugging purposes.
-renderMatrix :: NeedlemanWunchMatrix a -> String
-renderMatrix mat = unlines . fmap unwords . toLists $ showCell <$> mat
+renderCostMatrix
+  :: ( DOCharConstraint s
+     , Foldable f
+     , Functor f
+     , Indexable f
+     , Key f ~ (Int,Int)
+     , Show a
+     , Show b
+     )
+  => s
+  -> s
+  -> f (a, b, c) -- ^ The Needleman-Wunsch alignment matrix
+  -> String
+renderCostMatrix lhs rhs mtx = unlines
+    [ dimensionPrefix
+    , headerRow
+    , barRow
+    , renderedRows
+    ]
   where
-    showCell (c,d,_) = show (c, d)
+    (_,longer,lesser) = measureCharacters lhs rhs
+    longerTokens      = toShownIntegers longer
+    lesserTokens      = toShownIntegers lesser
+    toShownIntegers   = fmap (show . (fromIntegral :: Integral a => a -> Integer)) . otoList
+    matrixTokens      = showCell <$> mtx
+    showCell (c,d,_)  = show c <> show d
+    maxPrefixWidth    = maxLengthOf lesserTokens
+    maxColumnWidth    = max (maxLengthOf longerTokens) . maxLengthOf $ toList matrixTokens
+    maxLengthOf       = maximum . fmap length
+
+    colCount = olength longer + 1
+    rowCount = olength lesser + 1
+
+    dimensionPrefix  = " " <> unwords
+        [ "Dimensions:"
+        , show rowCount
+        , "X"
+        , show colCount
+        ]
+    
+    headerRow = mconcat
+        [ " "
+        , pad maxPrefixWidth "\\"
+        , "| "
+        , pad maxColumnWidth "*"
+        , concatMap (pad maxColumnWidth) longerTokens
+        ]
+
+    barRow    = mconcat
+        [ " "
+        , bar maxPrefixWidth
+        , "+"
+        , concatMap (const (bar maxColumnWidth)) $ undefined : longerTokens
+        ]
+      where
+        bar n = replicate (n+1) '-'
+
+    renderedRows = unlines . zipWith renderRow ("*":lesserTokens) $ getRows matrixTokens
+      where
+        renderRow e vs = " " <> pad maxPrefixWidth e <> "| " <> concatMap (pad maxColumnWidth) vs
+
+        getRows m = (`getRow'` m) <$> [0 .. rowCount - 1]
+        getRow' i m = g <$> [0 .. colCount - 1]
+          where
+            g j = fromMaybe "" $ (i,j) `lookup` m
+
+
+    pad :: Int -> String -> String
+    pad n e = replicate (n - len) ' ' <> e <> " "
+      where
+        len = length e
 
 
 -- |
@@ -349,6 +445,10 @@ traceback alignMatrix longerChar lesserChar =
                 UpArrow   -> (row - 1, col    ,                               gap , lesserChar `indexStream` (row - 1))
                 DiagArrow -> (row - 1, col - 1, longerChar `indexStream` (col - 1), lesserChar `indexStream` (row - 1))
 
+
+{--
+ - Internal computations
+ -}
 
 -- |
 -- Simple function to get the cost from an alignment matrix
@@ -493,19 +593,6 @@ naiveDOInternal char1 char2 overlapFunction = (alignmentCost, ungapped, gapped',
         | otherwise = (left' , right')
 
 
--- |
--- Returns the dynamic character that is longer first, shorter second, and notes
--- whether or not the inputs were swapped to place the characters in this ordering.
---
--- Handles equal length characters by /not/ swapping characters.
-measureCharacters :: MonoFoldable s => s -> s -> (Bool, s, s)
-measureCharacters lhs rhs =
-    case comparing olength lhs rhs of
-      EQ -> (False, lhs, rhs)
-      GT -> (False, lhs, rhs)
-      LT -> ( True, rhs, lhs)
-
-
 getMinimalCostDirection :: (EncodableStreamElement e, Ord c) => (c, e) -> (c, e) -> (c, e) -> (c, e, Direction)
 getMinimalCostDirection (diagCost, diagChar) (rightCost, rightChar) (downCost,  downChar) = 
     minimumBy (comparing (\(c,_,d) -> (c,d)))
@@ -515,81 +602,3 @@ getMinimalCostDirection (diagCost, diagChar) (rightCost, rightChar) (downCost,  
       ]
   where
     gap = getGapElement diagChar
-
-
--- |
--- Serializes an alignment matrix to a 'String'. Uses input characters for row
--- and column labelings.
---
--- Useful for debugging purposes.
-renderCostMatrix
-  :: ( DOCharConstraint s
-     , Foldable f
-     , Functor f
-     , Indexable f
-     , Key f ~ (Int,Int)
-     , Show a
-     , Show b
-     )
-  => s
-  -> s
-  -> f (a, b, c) -- ^ The Needleman-Wunsch alignment matrix
-  -> String
-renderCostMatrix lhs rhs mtx = unlines
-    [ dimensionPrefix
-    , headerRow
-    , barRow
-    , renderedRows
-    ]
-  where
-    (_,longer,lesser) = measureCharacters lhs rhs
-    longerTokens      = toShownIntegers longer
-    lesserTokens      = toShownIntegers lesser
-    toShownIntegers   = fmap (show . (fromIntegral :: Integral a => a -> Integer)) . otoList
-    matrixTokens      = showCell <$> mtx
-    showCell (c,d,_)  = show c <> show d
-    maxPrefixWidth    = maxLengthOf lesserTokens
-    maxColumnWidth    = max (maxLengthOf longerTokens) . maxLengthOf $ toList matrixTokens
-    maxLengthOf       = maximum . fmap length
-
-    colCount = olength longer + 1
-    rowCount = olength lesser + 1
-
-    dimensionPrefix  = " " <> unwords
-        [ "Dimensions:"
-        , show rowCount
-        , "X"
-        , show colCount
-        ]
-    
-    headerRow = mconcat
-        [ " "
-        , pad maxPrefixWidth "\\"
-        , "| "
-        , pad maxColumnWidth "*"
-        , concatMap (pad maxColumnWidth) longerTokens
-        ]
-
-    barRow    = mconcat
-        [ " "
-        , bar maxPrefixWidth
-        , "+"
-        , concatMap (const (bar maxColumnWidth)) $ undefined : longerTokens
-        ]
-      where
-        bar n = replicate (n+1) '-'
-
-    renderedRows = unlines . zipWith renderRow ("*":lesserTokens) $ getRows matrixTokens
-      where
-        renderRow e vs = " " <> pad maxPrefixWidth e <> "| " <> concatMap (pad maxColumnWidth) vs
-
-        getRows m = (`getRow'` m) <$> [0 .. rowCount - 1]
-        getRow' i m = g <$> [0 .. colCount - 1]
-          where
-            g j = fromMaybe "" $ (i,j) `lookup` m
-
-
-    pad :: Int -> String -> String
-    pad n e = replicate (n - len) ' ' <> e <> " "
-      where
-        len = length e

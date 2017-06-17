@@ -12,13 +12,14 @@
 --
 -----------------------------------------------------------------------------
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
-    ( doAlignment
-    , filterGaps
+    ( filterGaps
     , getOverlap
     , minimalChoice
     , naiveDO
     , naiveDOConst
     , naiveDOMemo
+    , ukkonenDO
     ) where
 
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
+import Analysis.Parsimony.Dynamic.DirectOptimization.Ukkonen
