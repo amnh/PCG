@@ -64,11 +64,11 @@ import Prelude        hiding (lookup, zipWith)
 --
 -- This means:
 --
---   - DiagArrow is biased towards most   when one or more costs are equal
+--   - DiagArrow is biased towards with highest precedency when one or more costs are equal
 --
---   - LeftArrow is biased towards second when one or more costs are equal
+--   - LeftArrow is biased towards with second highest precedence when one or more costs are equal
 --
---   -   UpArrow is biased towards least  when one or more costs are equal
+--   -   UpArrow is biased towards with lowest precedency when one or more costs are equal
 --
 -- Using this Ord instance, we can resolve ambiguous transformations in a
 -- deterministic way. Without loss of generality in determining the ordering,

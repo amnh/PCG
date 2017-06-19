@@ -169,6 +169,8 @@ transformation r (i,j) = rowPrefix + colIndex
     h = height   r
 
 
+-- |
+-- Calculate the nth Triangle Number.
 {-# INLINE t #-}
 t :: Int -> Int
 t n = (n*(n+1)) `div` 2
