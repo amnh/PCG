@@ -97,21 +97,21 @@ typedef struct affine_costs_t {
 typedef struct characters_t {
     size_t numStates;           // How many possible FSM fsm_states there are. You would expect this to be 27 (3^3), but
                                 // if each of three FSMs is in one of {INS, DEL, MATCH_SUB}
-                                // and given that one can't have all gap or more than one insertion it is---always---15.
+                                // and given that one can't have all gap or more than one insertion it is---always---16.
 
-    size_t maxSingleStep;
+    size_t maxSingleStep;       // The largest
 
     char *lesserStr;            // string representation of shortest character
     char *middleStr;            // string representation of middle character
     char *longerStr;            // string representation of longest character
 
-    int lesserIdx;           // current index into shortest character; signed to avoid compiler warnings
-    int middleIdx;           // current index into middle character; signed to avoid compiler warnings
-    int longerIdx;           // current index into longest character; signed to avoid compiler warnings
+    int lesserIdx;              // current index into shortest character; signed to avoid compiler warnings
+    int middleIdx;              // current index into middle character; signed to avoid compiler warnings
+    int longerIdx;              // current index into longest character; signed to avoid compiler warnings
 
-    int lesserLen;           // length of respective string representation  <-- Used to define where to end on the three strings in the
-    int middleLen;           // length of respective string representation  <-- check-point recursion.
-    int longerLen;           // length of respective string representation  <-- So inputChars->lesserLen contains the edit distance the
+    int lesserLen;              // length of respective string representation  <-- Used to define where to end on the three strings in the
+    int middleLen;              // length of respective string representation  <-- check-point recursion.
+    int longerLen;              // length of respective string representation  <-- So inputChars->lesserLen contains the edit distance the
                                                                                 // recursion must finish on + 1.
                                                                                 // int because their negatives are used in ukkCheckPoint
 } characters_t;
