@@ -582,12 +582,13 @@ int align3d( alignIO_t          *inputChar1_aio
     dyn_character_t *longChar      = malloc(sizeof(dyn_character_t)); // input to algn_nw_3d
     dyn_character_t *middleChar    = malloc(sizeof(dyn_character_t)); // input to algn_nw_3d
     dyn_character_t *shortChar     = malloc(sizeof(dyn_character_t)); // input to algn_nw_3d
+
     dyn_character_t *retLongChar   = malloc(sizeof(dyn_character_t)); // aligned character outputs from backtrace (not medians)
     dyn_character_t *retMiddleChar = malloc(sizeof(dyn_character_t)); // aligned character outputs from backtrace (not medians)
     dyn_character_t *retShortChar  = malloc(sizeof(dyn_character_t)); // aligned character outputs from backtrace (not medians)
 
     /*** Most character allocation is now done on Haskell side, but these three are local. ***/
-    /*** longChar, middleChar and shortChar will both have pointers into the input characters, so don't need to be initialized separately ***/
+    /*** longChar, middleChar and shortChar will have pointers into the input characters, so don't need to be initialized separately ***/
     initializeChar(retLongChar,   CHAR_CAPACITY);
     initializeChar(retMiddleChar, CHAR_CAPACITY);
     initializeChar(retShortChar,  CHAR_CAPACITY);
@@ -596,7 +597,7 @@ int align3d( alignIO_t          *inputChar1_aio
     size_t alphabetSize = costMtx3d->costMatrixDimension;
 
     // Now sort inputs into appropriate structs by name.
-    // This will allow us to send inputs in in correct order by length, but also get them back in the order
+    // This will allow us to send inputs in in correct order by length and also get them back in the order
     // that corresponds to inputs.
     if (inputChar1_aio->length >= inputChar2_aio->length) {
 
@@ -609,6 +610,7 @@ int align3d( alignIO_t          *inputChar1_aio
 
             alignIOtoDynChar(shortChar, inputChar2_aio, alphabetSize);
             shortIO = inputChar2_aio;
+
         } else if (inputChar3_aio->length >= inputChar2_aio->length) { // input 1 is longest, 2 is shortest
             alignIOtoDynChar(longChar, inputChar1_aio, alphabetSize);
             longIO = inputChar1_aio;
@@ -618,6 +620,7 @@ int align3d( alignIO_t          *inputChar1_aio
 
             alignIOtoDynChar(shortChar, inputChar2_aio, alphabetSize);
             shortIO = inputChar2_aio;
+
         } else {                                                       // input 1 is longest, 3 is shortest
             alignIOtoDynChar(longChar, inputChar1_aio, alphabetSize);
             longIO = inputChar1_aio;
@@ -628,6 +631,7 @@ int align3d( alignIO_t          *inputChar1_aio
             alignIOtoDynChar(shortChar, inputChar3_aio, alphabetSize);
             shortIO = inputChar3_aio;
         }
+
     } else { // input 2 longer than input 1
         if (inputChar3_aio->length >= inputChar2_aio->length) {        // input 3 is longest, 1 is shortest
             alignIOtoDynChar(longChar, inputChar3_aio, alphabetSize);
@@ -638,6 +642,7 @@ int align3d( alignIO_t          *inputChar1_aio
 
             alignIOtoDynChar(shortChar, inputChar1_aio, alphabetSize);
             shortIO = inputChar1_aio;
+
         } else if (inputChar3_aio->length >= inputChar1_aio->length) { // input 2 is longest, 1 is shortest
             alignIOtoDynChar(longChar, inputChar2_aio, alphabetSize);
             longIO = inputChar2_aio;
@@ -647,6 +652,7 @@ int align3d( alignIO_t          *inputChar1_aio
 
             alignIOtoDynChar(shortChar, inputChar1_aio, alphabetSize);
             shortIO = inputChar1_aio;
+
         } else {                                                       // input 2 is longest, 3 is shortest
             alignIOtoDynChar(longChar, inputChar2_aio, alphabetSize);
             longIO = inputChar2_aio;

@@ -50,9 +50,10 @@ typedef struct counts_t {
 
 /** The previous finite state machine state. */
 typedef struct from_t {
-    int lessLong_idx_diff;
-    int lessMidd_idx_diff;
-    int cost;           // Must be signed, as is sometimes initialized as negative
+    int lessLong_idx_diff;  // This and next are used to map into Ukkonnen matrix, where each cell, (ab, d) is (_idx_diff, edit distance).
+    int lessMidd_idx_diff;  // From Powell, et al. 2000: that's the length of a (top character) for a given edit distance.
+                            // So row in Ukk is diagonal in distance matrix and column is a cost "contour".
+    int cost;               // Must be signed, as is sometimes initialized as negative
     int fsm_state;
 } from_t;
 
@@ -144,8 +145,8 @@ int doUkkInLimits( int             start_lessLong_idx_diff
 //                    , characters_t    *resultChars
 //                    , fsm_arrays_t *fsmArrays
 //                    );
-int getSplitRecurse( size_t          start_lessLong_idx_diff
-                   , size_t          start_lessMidd_idx_diff
+int getSplitRecurse( int             start_lessLong_idx_diff
+                   , int             start_lessMidd_idx_diff
                    , int             startCost
                    , int             startState
                    , int             start_editDist
@@ -226,18 +227,21 @@ int findBest( int    lessLong_idx_diff
             );
 
 
-// IMPORTANT!!! Order of input characters is short, long, middle.
-int doUkk( dyn_character_t *retLesserChar
-         , dyn_character_t *retMiddleChar
-         , dyn_character_t *retLongerChar
-         , dyn_character_t *original_lesserChar
-         , dyn_character_t *original_middleChar
-         , dyn_character_t *original_longerChar
-         , affine_costs_t  *affineCosts
-         , characters_t    *inputChars
-         , characters_t    *resultChars
-         , fsm_arrays_t    *globalCostArrays
-         );
+/** Set up and then call functions that do actual affine Ukkonnen calculations.
+ *
+ *  IMPORTANT!!! Order of input characters is short, long, middle.
+ */
+int align3d_ukk( dyn_character_t *retLesserChar
+               , dyn_character_t *retMiddleChar
+               , dyn_character_t *retLongerChar
+               , dyn_character_t *original_lesserChar
+               , dyn_character_t *original_middleChar
+               , dyn_character_t *original_longerChar
+               , affine_costs_t  *affineCosts
+               , characters_t    *inputChars
+               , characters_t    *resultChars
+               , fsm_arrays_t    *globalCostArrays
+               );
 
 
 /** Converts a character input, {A, C, G, T} to an int. Problem: on ambiguous inputs biases toward A.

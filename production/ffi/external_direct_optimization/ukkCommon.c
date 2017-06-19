@@ -125,14 +125,14 @@ static inline void *allocPlane( alloc_info_t *a )
 }
 
 
-/**  */
+/** Always the previous. */
 #ifdef FIXED_NUM_PLANES
-    alloc_info_t allocInit( size_t elemSize
-                          , size_t costSize
+    alloc_info_t allocInit( size_t        elemSize
+                          , size_t        costSize
                           , characters_t *inputChars
                           )
 #else
-    alloc_info_t allocInit( size_t elemSize
+    alloc_info_t allocInit( size_t        elemSize
                           , characters_t *inputChars
                           )
 #endif
@@ -415,6 +415,9 @@ void copyCharacter ( char            *str
 }
 
 
+/** Is this a match insertion insertion (MII), etc.?
+ *  Matches return 0, subs (which are also coded as M) return 1, various transitions add gap open or gap continuation costs.
+ */
 int whichCharCost(char a, char b, char c)
 {
     if (DEBUG_CALL_ORDER) {
@@ -426,46 +429,43 @@ int whichCharCost(char a, char b, char c)
            && c != 0
           );
     /*
-      When running as a ukk algorithm (ie. not the DPA), then
+      When running as a ukk algorithm (ie. not the dynamic programming algorithm, DPA), then
       a == b == c only when there is a run of MATCH_SUBs after a fsm_state other that MMM,
       and since we are moving to a MMM fsm_state, this cost will NEVER be used,
-      so it doesn't matter what we return
-      When running as the DPA, it can occur at a == b == c, return 0 in this case
+      so it doesn't matter what we return.
+      When running as the DPA, it can occur at a == b == c, return 0 in this case.
     */
     if (a == b && a == c) {
       return 0;
     }
-    /* return 1 for the following
-         x-- -x- --x
-         xx- x-x -xx
-         xxy xyx yxx
-
-       return 2 for the following
-         xy- x-y -xy
-         xyz
+    /* return 1 for any two the same, ie. the following
+         x-- -y- --x  <- two gaps
+         xx- x-x -xx  <- two xs and a gap
+         xxy xyx yxx  <- two xs and a y
     */
-    // Take care of any 2 the same
     if (a == b || a == c || b == c) {
         return 1;
     }
+    /* return 2 for the following
+         xy- x-y -xy xyz (all three different, so sub)
+    */
     return 2;
 }
 
 
-/** Make sure that index a is valid for a given set of array indices */
-int okIndex( int a
-           , int da
+/** Make sure that index is valid for a given set of array indices */
+int okIndex( int idx
+           , int start
            , int end
            )
 {
     // if (DEBUG_CALL_ORDER) printf("okIndex\n");
 
-    if (a < 0)           return 0;
-    if ( da && a <  end) return 1;
-    if (!da && a <= end) return 1;
+    if (idx   <  0) return 0;
+    if (start == 0) return 1;
 
-    return 0;  // a > end
-    //  return (a<0 ? 0 : (da==0 ? 1 : a<end));
+    return (idx < end);
+    //  return (idx<0 ? 0 : (start==0 ? 1 : idx<end));
 }
 
 
@@ -486,7 +486,7 @@ int fsmState_transitionCost( int from
 
 /** Mutates a, b, and c such that each is true or false if the least significant first, second or third digit, respectively,
  *  of neighbour is 1.
- *  I.e., if a given fsm state of `neighbour` is delete, set that state to true; otherwise, set to 0.
+ *  I.e., if one of the transitions of the `neighbour` fsm is `delete`, set that state to true; otherwise, set to 0.
  */
 void step( int  neighbour
          , int *state1
@@ -512,6 +512,7 @@ int neighbourNum( int i
     return (i * 1) + (j * 2) + (k * 4);
 }
 
+
 // --------------------------------------------------
 
 /** Resets a transitionn array that holds the transitions fsm states for three fsm state-transition FSMs. There are 27 possible fsm states.
@@ -523,7 +524,7 @@ void transitions( Trans  fsmState_transitions[3]
                 , size_t fsm_state
                 )
 {
-    fsmState_transitions[0] =  fsm_state      % 3;    // repeats 0, 1, 2, 0, 1, 2, ...
+    fsmState_transitions[0] =  fsm_state      % 3;    // repeats 0, 1, 2, 0, 1, 2, ..., i.e. MATCH_SUB, DEL, INS
     fsmState_transitions[1] = (fsm_state / 3) % 3;    // repeats 0, 0, 0, 1, 1, 1, 2, 2, 2, 0, ...
     fsmState_transitions[2] = (fsm_state / 9) % 3;    // repeats: nine 0s, nine 1s, nine 2s, start over
 }
@@ -575,7 +576,6 @@ void setup( affine_costs_t  *affineCosts
           , unsigned int     gapExtend
           )
 {
-
     // Initialize global costs. These will be passed around to remove globals and make functional side effects more clear.
     affineCosts->mismatchCost  = mismatch_cost;
     affineCosts->gapOpenCost   = gapOpen;
@@ -720,13 +720,13 @@ void setup( affine_costs_t  *affineCosts
     Trans from[3],
           to[3];
 
-    for (size_t s1 = 0; s1 < inputChars->numStates; s1++) {
-        for (size_t s2 = 0; s2 < inputChars->numStates; s2++) {
+    for (size_t stateIdx1 = 0; stateIdx1 < inputChars->numStates; stateIdx1++) {
+        for (size_t stateIdx2 = 0; stateIdx2 < inputChars->numStates; stateIdx2++) {
 
 
             cost = 0;
-            transitions( from, fsmStateArrays->fsmState_num[s1] );
-            transitions( to  , fsmStateArrays->fsmState_num[s2] );
+            transitions( from, fsmStateArrays->fsmState_num[stateIdx1] );
+            transitions( to  , fsmStateArrays->fsmState_num[stateIdx2] );
 
             for (i = 0; i < 3; i++) {
                 if (    (to[i] == INS || to[i] == DEL)
@@ -735,13 +735,13 @@ void setup( affine_costs_t  *affineCosts
                     cost += affineCosts->gapOpenCost;
                 }
             }
-            fsmStateArrays->transitionCost[s1 * MAX_STATES + s2] = cost;
+            fsmStateArrays->transitionCost[stateIdx1 * MAX_STATES + stateIdx2] = cost;
 
             // Determine biggest single step cost
-            thisCost = cost + fsmStateArrays->fsmState_continuationCost[s2];
+            thisCost = cost + fsmStateArrays->fsmState_continuationCost[stateIdx2];
             Trans fsmState_transitions[3];
 
-            transitions( fsmState_transitions, fsmStateArrays->fsmState_num[s2] );
+            transitions( fsmState_transitions, fsmStateArrays->fsmState_num[stateIdx2] );
 
             thisCost += affineCosts->mismatchCost * ( countThisTransition(fsmState_transitions, MATCH_SUB) - 1 );
             maxCost   = (maxCost < thisCost ? thisCost : maxCost);
@@ -754,10 +754,7 @@ void setup( affine_costs_t  *affineCosts
 }
 
 
-
-
-/* ---------------------------------------------------------------------- */
-/* Some alignment checking routines */
+/* Ensure that output characters are aligned. */
 void checkAlign( char   *alignment
                , size_t  alLen
                , char   *str
@@ -793,6 +790,7 @@ void revIntArray( int    *arr
     }
 }
 
+
 void revCharArray( char   *arr
                  , size_t  start
                  , size_t  end
@@ -810,18 +808,20 @@ void revCharArray( char   *arr
 }
 
 
-/**  */
-unsigned int alignmentCost( int              fsm_states[]
-                          , char            *aligned_1
-                          , char            *aligned_2
-                          , char            *aligned_3
-                          , size_t           len
-                          , affine_costs_t  *affineCosts
-                          , fsm_arrays_t *fsmStateArrays
+/** Once three dynamic characters are aligned, step down the arrays and see when to
+ *  add affine (deleted and instert) and mismatch costs.
+ */
+unsigned int alignmentCost( int             fsm_states[]
+                          , char           *aligned_1
+                          , char           *aligned_2
+                          , char           *aligned_3
+                          , size_t          len
+                          , affine_costs_t *affineCosts
+                          , fsm_arrays_t   *fsmStateArrays
                           )
 {
     unsigned int totalCost = 0;
-    size_t fsm_state,        // FSM fsm_state
+    size_t fsm_transitionIdx,        // FSM fsm_transitionIdx
            localCIdx;
 
     Trans last_fsmState_transitions[3] = { MATCH_SUB, MATCH_SUB, MATCH_SUB };
@@ -833,16 +833,16 @@ unsigned int alignmentCost( int              fsm_states[]
     //    if (i > 0) fprintf( stderr, "%-2d  ", totalCost );
 
         // Pay for begining a gap.
-        for (fsm_state = 0; fsm_state < 3; fsm_state++) {
-            if (   cur_fsmState_transitions[fsm_state] != MATCH_SUB
-                && cur_fsmState_transitions[fsm_state] != last_fsmState_transitions[fsm_state]
+        for (fsm_transitionIdx = 0; fsm_transitionIdx < 3; fsm_transitionIdx++) {
+            if (   cur_fsmState_transitions[fsm_transitionIdx] != MATCH_SUB
+                && cur_fsmState_transitions[fsm_transitionIdx] != last_fsmState_transitions[fsm_transitionIdx]
                ) {
                 totalCost += affineCosts->gapOpenCost;
             }
         }
 
-        for (fsm_state = 0; fsm_state < 3; fsm_state++) {
-            last_fsmState_transitions[fsm_state] = cur_fsmState_transitions[fsm_state];
+        for (fsm_transitionIdx = 0; fsm_transitionIdx < 3; fsm_transitionIdx++) {
+            last_fsmState_transitions[fsm_transitionIdx] = cur_fsmState_transitions[fsm_transitionIdx];
         }
 
         // Pay for continuing an insert
@@ -859,6 +859,8 @@ unsigned int alignmentCost( int              fsm_states[]
         char ch[3];
         localCIdx = 0;
 
+        // For each character, if the state is match/sub
+        // push onto `ch` array.
         if (cur_fsmState_transitions[0] == MATCH_SUB) {
             assert(aligned_1[i] != '-');
             ch[localCIdx++] = aligned_1[i];
@@ -876,10 +878,16 @@ unsigned int alignmentCost( int              fsm_states[]
 
         localCIdx--;
 
+        // Now loop over parts of `ch` that have been changed
+        // and add a sub cost if there are mismatches.
         for (; localCIdx > 0; localCIdx--) {
-            if (ch[localCIdx - 1] != ch[localCIdx])  totalCost += affineCosts->mismatchCost;
+            if (ch[localCIdx - 1] != ch[localCIdx]) {
+                totalCost += affineCosts->mismatchCost;
+            }
         }
 
+        // Finally, this kludge because if ch[0] and ch[2] match, but ch[1] doesn't, then sub cost will have been added twice and
+        // it shouldn't have been.
         if (   countThisTransition(cur_fsmState_transitions, MATCH_SUB) == 3
             && ch[0] == ch[2]
             && ch[0] != ch[1]

@@ -91,7 +91,7 @@ typedef struct affine_costs_t {
 } affine_costs_t;
 
 
-/** struct to hold persistant dynamic characters used throughout the code. Generally, it's the original inputs and the
+/** Struct to hold persistant dynamic characters used throughout the code. Generally, it's the original inputs and the
  *  eventual outputs.
  */
 typedef struct characters_t {
@@ -105,18 +105,25 @@ typedef struct characters_t {
     char *middleStr;            // string representation of middle character
     char *longerStr;            // string representation of longest character
 
-    size_t lesserIdx;           // current index into shortest character
-    size_t middleIdx;           // current index into middle character
-    size_t longerIdx;           // current index into longest character
+    int lesserIdx;           // current index into shortest character; signed to avoid compiler warnings
+    int middleIdx;           // current index into middle character; signed to avoid compiler warnings
+    int longerIdx;           // current index into longest character; signed to avoid compiler warnings
 
-    size_t lesserLen;           // length of respective string representation
-    size_t middleLen;           // length of respective string representation
-    size_t longerLen;           // length of respective string representation
+    int lesserLen;           // length of respective string representation  <-- Used to define where to end on the three strings in the
+    int middleLen;           // length of respective string representation  <-- check-point recursion.
+    int longerLen;           // length of respective string representation  <-- So inputChars->lesserLen contains the edit distance the
+                                                                                // recursion must finish on + 1.
+                                                                                // int because their negatives are used in ukkCheckPoint
 } characters_t;
 
 
 /** Holds arrays of fsm states. For each state it stores the previous possible state as well as
  *  the cost to transition from the previous to the current state and the cost to stay in that state.
+ *
+ *  In this context, and fsm state is actually the combined states of three fsms, one for each character to be aligned,
+ *  where the possible fsm states are Insert, Delete, and Match/Sub, i.e. insert a gap in some sequence or don't insert, where
+ *  "some" is determined by the value: MDM, IMM, etc. Note that some states are not possible.
+ *
  *  This is all calculated ahead of time, which begs the question, why is there only one previous state?
  */
 typedef struct fsm_arrays_t {
@@ -160,6 +167,9 @@ typedef struct fsm_arrays_t {
 #endif
 
 
+/** Is this a match insertion insertion (MII), etc.?
+ *  Matches return 0, subs (which are also coded as M) return 1, various transitions add gap open or gap continuation costs.
+ */
 int whichCharCost( char a
                  , char b
                  , char c
@@ -182,9 +192,11 @@ int fsm_stateTransitionCost( int from
                        );
 */
 
+
 void copyCharacter ( char            *str
                    , dyn_character_t *inChar
                    );
+
 
 /** Mutates a, b, and c such that each is true or false if the least significant first, second or third digit, respectively,
  *  of neighbour is 1.
@@ -197,17 +209,19 @@ void step( int  neighbour
          );
 
 
-/** Creates a binary number where i is the least significant bit and k is the most */
+/** Returns the value of the neighbor fsm state where the current fsm state is ijk, and each of i, j, k can be 1 or 0.
+ *  Creates a binary number where i is the least significant bit and k is the most.
+ */
 int neighbourNum( int i
                 , int j
                 , int k
                 );
 
 
-/** Resets a transitionn array that holds the transitions fsm_states for three fsm_state-transition FSMs. There are 27 possible fsm_states.
- *  For instance, if the fsm_state is 1, then the FSMs are in the cumulative fsm_state [DEL, MATCH_SUB, MATCH_SUB], whereas if the fsm_state were
- *  22, the cumulative fsm_state would be [DEL, DEL, INS] (which is actually not possible, as it signifies a gap in all three dynamic
- *  characters, which is meaningless).
+/** Resets a transition array that holds the transition fsm_states for three fsm state-transition FSMs. There are 27 possible fsm states.
+ *  For instance, if the fsm state is 1, then the FSMs are in the cumulative fsm state [DEL, MATCH_SUB, MATCH_SUB],
+ *  whereas if the fsm state were 22, the cumulative fsm state would be [DEL, DEL, INS] (which is actually not possible,
+ *  as it signifies a gap in all three dynamic characters, which is meaningless).
  */
 void transitions( Trans  fsm_stateTransition[3]
                 , size_t fsm_state
@@ -243,7 +257,7 @@ void setup( affine_costs_t  *globalCosts
           );
 
 
-// Alignment checking routines
+/* Ensure that output characters are aligned. */
 void checkAlign( char   *al
                , size_t  alLen
                , char   *str
@@ -265,6 +279,9 @@ void revCharArray( char   *arr
                  );
 
 
+/** Once three dynamic characters are aligned, step down the arrays and see when to
+ *  add affine (deleted and instert) and mismatch costs.
+ */
 unsigned int alignmentCost( int             fsm_states[]
                           , char           *al1
                           , char           *al2
