@@ -36,13 +36,11 @@ type UkkonenMethodMatrix a = Ribbon a
 
 
 -- |
--- UkkonenDO takes two input sequences and returns median sequence and cost
--- only 1:1 for now. Uses Ukkonen's space/time saving algorithm
--- need to make sure Left/Right and diag/ins/del orders consistent and with
--- POY4/5
--- lseq > rseq appeard more efficient--could be wrong
--- move to C via FFI
--- Still occasional error in cost and median (disagreement) show in Chel.seq
+-- /O( (n - m + 1 ) * log(n - m + 1) )/, /n/ >= /m/
+--
+-- Compute the alignment of two dynamic characters and the median states by
+-- using Ukkone's string edit distance algorthim to improve space and time
+-- complexity.
 ukkonenDO
   :: DOCharConstraint s
   => s
@@ -103,12 +101,22 @@ ukkonenDO char1 char2 overlapFunction
                               (snd (overlapFunction  gap    (bit i) ))
 
 
+-- |
+-- /O( (n - m + 1 ) * log(n - m + 1) )/, /n/ >= /m/
+--
+-- Generates an /optimal/, partially filled in matrix using Ukkonen's string
+-- edit distance algorithm.
+--
+-- Note that the threshhold value is lowered more than described in Ukkonen's
+-- paper. This is to handle input elements that contain a gap. In Ukkonen's
+-- original description of the algorithm, there was a subtle assumption that
+-- input did not contain any gap symbols.
 createUkkonenMethodMatrix
   :: DOCharConstraint s
-  => Word
-  -> s 
-  -> s
-  -> OverlapFunction (Element s)
+  => Word                        -- ^ Coeffcient value, representing the /minimum/ transition cost from a state to gap
+  -> s                           -- ^ Longer dynamic character
+  -> s                           -- ^ Shorter dynamic character
+  -> OverlapFunction (Element s) -- ^ Function to determine the cost an median state between two other states.
   -> UkkonenMethodMatrix (Cost, Direction, Element s)
 createUkkonenMethodMatrix minimumIndelCost longerTop lesserLeft overlapFunction = ukkonenUntilOptimal startOffset
   where
@@ -134,7 +142,9 @@ createUkkonenMethodMatrix minimumIndelCost longerTop lesserLeft overlapFunction 
     --
     -- This is important to decrement the threshhold value to account for
     -- diagonal directions in the matrix having an "indel" cost because one or
-    -- more of the aligned character elements was a gap.
+    -- more of the aligned character elements contained a gap. This was not
+    -- described in Ukkonen's original paper as the inputs were assumed to not
+    -- contain any gaps.
     gapsPresentInInputs = longerGaps + lesserGaps
       where
         longerGaps = countGaps longerTop
@@ -143,12 +153,16 @@ createUkkonenMethodMatrix minimumIndelCost longerTop lesserLeft overlapFunction 
         gap        = gapOfStream longerTop
 
     ukkonenUntilOptimal offset
-      | threshhold <= alignmentCost = ukkonenUntilOptimal (2 * offset)
---      | otherwise                   = trace (renderedBounds <> renderedMatrix) ukkonenMatrix
+      | threshhold <= alignmentCost = ukkonenUntilOptimal $ 2 * offset
       | otherwise                   = ukkonenMatrix
+--      | otherwise                   = trace (renderedBounds <> renderedMatrix) ukkonenMatrix
       where
         ukkonenMatrix      = Ribbon.generate rows cols generatingFunction $ toEnum offset
         generatingFunction = needlemanWunschDefinition longerTop lesserLeft overlapFunction ukkonenMatrix
+        (cost, _, _)       = ukkonenMatrix ! (lesserLen, longerLen)
+        alignmentCost      = unsafeToFinite cost
+        computedValue      = coefficient * (quasiDiagonalWidth + offset - gapsPresentInInputs)
+        threshhold         = toEnum $ max 0 computedValue -- The threshhold value must be non-negative
 {--
         renderedMatrix = renderCostMatrix longerTop lesserLeft ukkonenMatrix
 
@@ -161,9 +175,4 @@ createUkkonenMethodMatrix minimumIndelCost longerTop lesserLeft overlapFunction 
             , "Total Cost : " <> show alignmentCost
             ]
 --}
-        (cost, _, _)   = ukkonenMatrix ! (lesserLen, longerLen)
-        alignmentCost  = unsafeToFinite cost
-        computedValue  = coefficient * (quasiDiagonalWidth + offset - gapsPresentInInputs)
-        threshhold     = toEnum $ max 0 computedValue -- The threshhold value must be non-negative
-
 

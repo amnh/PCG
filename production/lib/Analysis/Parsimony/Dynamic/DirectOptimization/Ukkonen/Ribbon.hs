@@ -19,20 +19,14 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Ukkonen.Ribbon
   ) where
 
 
---import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal -- hiding (Direction)
---import           Bio.Character.Encodable
---import           Data.Bits
 import           Data.Foldable
 import           Data.Key
---import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Vector              (Vector)
 import qualified Data.Vector       as V
 import           Data.Vector.Instances    ()
---import           Numeric.Extended.Natural
 import           Prelude           hiding (lookup)
 
---import Debug.Trace
 
 -- |
 -- Time & space saving data structure for computing only a central "ribbon " of
@@ -74,7 +68,7 @@ instance Lookup Ribbon where
 instance Show (Ribbon a) where
 
     show (Ribbon h w d a v) = mconcat
-        [ "CentralBand { height = "
+        [ "Ribbon { height = "
         , show h
         , ", width = "
         , show w
@@ -133,15 +127,14 @@ generate x y f alpha = result
         ]
 
 
+-- |
+-- Attempts to index the 'Ribbon' at a point within it's defiend region.
 ribbonLookup :: (Int, Int) -> Ribbon a -> Maybe a
 ribbonLookup (i,j) r
-  | i < 0 || h <= i  = Nothing
-  | j < 0 || w <= j  = Nothing
-  | x > upperBarrier = Nothing
-  | y > lowerBarrier = Nothing
-  | otherwise        = Just $ linear r ! k
+  | outsideBounds = Nothing
+  | otherwise     = Just $ linear r ! k
   where
-    k = {- (\x -> trace (show r <> "\nu ! " <> show x) x) $ -} ribbonIndexInjection r (i,j)
+    k = r `transformation` (i,j)
     h = height r
     w = width  r
     x = j - i
@@ -149,9 +142,19 @@ ribbonLookup (i,j) r
     upperBarrier = offset r + diagonal r - 1
     lowerBarrier = offset r
 
+    outsideBounds = or
+        [ i < 0 || h <= i
+        , j < 0 || w <= j
+        , x > upperBarrier
+        , y > lowerBarrier
+        ]
 
-ribbonIndexInjection :: Ribbon a -> (Int, Int) -> Int
-ribbonIndexInjection r (i,j) = rowPrefix + colIndex
+-- |
+-- Convert a 2D point to it's linear position in the vector.
+--
+-- Will produce undefined behavior when transforming a point outside the 'Ribbon'.
+transformation :: Ribbon a -> (Int, Int) -> Int
+transformation r (i,j) = rowPrefix + colIndex
   where
     a = offset r
     colIndex  = j - max 0 (i - a)
