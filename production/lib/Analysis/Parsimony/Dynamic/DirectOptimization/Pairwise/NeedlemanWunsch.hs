@@ -9,28 +9,21 @@
 -- Portability :  portable
 --
 -- Direct optimization pairwise alignment using the Needleman-Wunsch algorithm.
+-- These funtions will allocate an M * N matrix.
 --
 -----------------------------------------------------------------------------
+
 {-# LANGUAGE ConstraintKinds, FlexibleContexts, TypeFamilies #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
- ( naiveDO
- , naiveDOConst
- , naiveDOMemo
- ) where
+  ( naiveDO
+  , naiveDOConst
+  , naiveDOMemo
+  ) where
 
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
---import Bio.Character.Encodable
---import Data.Bits
---import Data.DList            (snoc)
---import Data.Foldable
---import Data.Key
 import Data.Matrix.NotStupid (matrix)
---import Data.Maybe            (fromMaybe)
 import Data.MonoTraversable
---import Data.Ord
---import Data.Semigroup
---import Numeric.Extended.Natural
 import Prelude        hiding (lookup, zipWith)
 
 

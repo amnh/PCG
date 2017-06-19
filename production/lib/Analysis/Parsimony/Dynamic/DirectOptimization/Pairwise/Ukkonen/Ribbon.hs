@@ -11,7 +11,8 @@
 -- Allocates a "ribbon" down the diagonal of the matrix rather than the entire matrix.
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE BangPatterns, ConstraintKinds, DeriveFoldable, DeriveFunctor, FlexibleContexts, TypeFamilies #-}
+
+{-# LANGUAGE BangPatterns, DeriveFoldable, DeriveFunctor, FlexibleContexts, TypeFamilies #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
   ( Ribbon()
@@ -154,20 +155,37 @@ ribbonLookup (i,j) r
 --
 -- Will produce undefined behavior when transforming a point outside the 'Ribbon'.
 transformation :: Ribbon a -> (Int, Int) -> Int
-transformation r (i,j) = rowPrefix + colIndex
+transformation r (i,j) = indexValue
   where
     a = offset r
-    colIndex  = j - max 0 (i - a)
-    rowPrefix = i * (d + 2*a) - v - w
+    h = height r
+
+    -- We compute the index value by determining the 'rowPrefix' and the 'colIndex'
+    --
+    -- The 'rowPrefix' is the number of cells in the linear layout required to
+    -- get to the correct row in the 2D space.
+    --
+    -- The 'colIndex' is the number of cells in the linear layout required to
+    -- get to the correct column offset in the 2D space.
+    indexValue = rowPrefix + colIndex
+
+    -- The number of cells to offset to get to the correct row in 2D space is
+    -- equal to the target row times the maximum number of cells in a paritally
+    -- filled in row minus the number of cells over-counted at the beginning of
+    -- the matrix and also minus the number of cells over-counted at the end of
+    -- the matrix.
+    rowPrefix = i * (d + 2*a) - beg - end
       where
-        v = t a - t b
-        w = t c
-        d = diagonal r
-        b = max 0 (a - i)
-        c = max 0 (i - h + a)
+        beg = t a - t b
+        end = t e
+        d   = diagonal r
+        b   = max 0 (a - i)
+        e   = max 0 (i - h + a)
 
-    h = height   r
-
+    -- The number of cells to offset to be in the correct column is equal to the
+    -- difference between the 2D space j value and the number of missing cells
+    -- in the ith row.
+    colIndex = j - max 0 (i - a)
 
 -- |
 -- Calculate the nth Triangle Number.
