@@ -7,14 +7,17 @@ compiler-check: match-exact
 flags: {}
 
 extra-deps:
-- containers-0.5.8.1
-- pretty-tree-0.1.0.0
-- quickcheck-properties-0.1
+  - containers-0.5.8.1
+  - pretty-tree-0.1.0.0
+  - quickcheck-properties-0.1
+
+ghc-options:
+  "*": -j
 
 local-bin-path: bin
 
 packages:
- - '.'
+  - '.'
 
 resolver: lts-8.15
 
