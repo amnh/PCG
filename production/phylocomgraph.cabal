@@ -41,7 +41,8 @@ library
   other-extensions: MonadFailDesugaring
 
   -- Other library packages from which modules are imported.
-  build-depends:       base             >=4.8
+  build-depends:       arithmoi
+                     , base             >=4.8
                      , bimap
                      , bv
                        -- >=0.5.8 Required for Data.Map.restrictKeys
@@ -163,7 +164,6 @@ library
                        Analysis.Parsimony.Additive.Internal
                        Analysis.Parsimony.Dynamic.DirectOptimization
                        Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
-                       Analysis.Parsimony.Dynamic.DirectOptimization.Ukkonen
                        Analysis.Parsimony.Dynamic.SequentialAlign
                        Analysis.Parsimony.Fitch.Internal
                        Analysis.Parsimony.Sankoff.Internal
@@ -230,12 +230,15 @@ library
                     --   Analysis.ImpliedAlignment.DynamicProgramming
                     --   Analysis.ImpliedAlignment.Internal
                        Analysis.Parsimony.Dynamic.DirectOptimization.DeletionEvents
-                       Analysis.Parsimony.Dynamic.DirectOptimization.FFI
                        Analysis.Parsimony.Dynamic.DirectOptimization.Internal
                        Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents
                        Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Internal
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
                        Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
-                       Analysis.Parsimony.Dynamic.DirectOptimization.Ukkonen.Internal
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Internal
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
                        Analysis.Parsimony.Dynamic.SequentialAlign.FFI
                        Bio.Character.Decoration.Additive.Class
                        Bio.Character.Decoration.Additive.Internal

@@ -34,33 +34,31 @@ parseArgs args =
 performCounterExampleSearch :: IO ()
 performCounterExampleSearch = do 
     putStrLn "Performing stocastic counter-example search:"
-    quickCheckWith stdArgs { maxSuccess = 10000 } counterExampleCheck
+    quickCheckWith stdArgs { maxSuccess = 10000000 } counterExampleCheck
 
 
 counterExampleCheck :: (NucleotideSequence, NucleotideSequence) -> Bool
 counterExampleCheck (NS lhs, NS rhs) =
-    nativeDOResult == ukkonenDOResult
+    ukkonenDOResult == foreignDOResult
   where
-    nativeDOResult  = naiveDOMemo lhs rhs (getMedianAndCost memoMatrixValue)
-    ukkonenDOResult = naiveDO     lhs rhs  costStructure
---    ukkonenDOResult = ukkonenDO   lhs rhs  costStructure
+    ukkonenDOResult = ukkonenDO         lhs rhs  (getMedianAndCost memoMatrixValue)
+    foreignDOResult = foreignPairwiseDO lhs rhs  denseMatrixValue
 
 
 performImplementationComparison :: String -> String -> IO ()
 performImplementationComparison lhs rhs = do
-    putStrLn "Native DO Result:"
-    putStrLn nativeMessage
     putStrLn "Ukkonen DO Result:"
     putStrLn ukkonenMessage
-    if   nativeMessage == ukkonenMessage
+    putStrLn "Foreign DO Result:"
+    putStrLn foreignMessage
+    if   ukkonenMessage == foreignMessage
     then putStrLn "[!] Results MATCH"
     else putStrLn "[X] Results DO NOT MATCH"
   where
-    nativeMessage    = renderResult  nativeDOResult
     ukkonenMessage   = renderResult ukkonenDOResult
-    nativeDOResult   = naiveDOMemo  char1 char2 (getMedianAndCost memoMatrixValue)
-    ukkonenDOResult  = naiveDO      char1 char2  costStructure
---    ukkonenDOResult  = ukkonenDO    char1 char2  costStructure
+    foreignMessage   = renderResult foreignDOResult
+    ukkonenDOResult  = ukkonenDO         char1 char2 (getMedianAndCost memoMatrixValue)
+    foreignDOResult  = foreignPairwiseDO char1 char2  denseMatrixValue 
     char1 = readSequence lhs
     char2 = readSequence rhs
     alphabet = fromSymbols ["A","C","G","T"]
@@ -76,14 +74,12 @@ performImplementationComparison lhs rhs = do
 
 
 costStructure :: (Ord a, Num a) => a -> a -> a
---costStructure i j = if i /= j then 1 else 0
-costStructure i j = max i j - min i j
+costStructure i j = if i /= j then 1 else 0
+--costStructure i j = max i j - min i j
 
 
-{-
 denseMatrixValue :: DenseTransitionCostMatrix
 denseMatrixValue = generateDenseTransitionCostMatrix 0  5 costStructure
--}
 
 
 memoMatrixValue :: MemoizedCostMatrix
