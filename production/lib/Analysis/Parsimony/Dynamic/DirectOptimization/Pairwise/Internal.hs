@@ -8,7 +8,9 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Direct optimization functionality for binary trees
+-- Defines the primative operations for standard Needleman-Wunsch and Ukkonen
+-- algorithms for performing a direct optimization heuristic alignmnet between
+-- two dynamic characters.
 --
 -----------------------------------------------------------------------------
 {-# LANGUAGE ConstraintKinds, FlexibleContexts, TypeFamilies #-}
@@ -21,12 +23,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
  , MatrixFunction
  , NeedlemanWunchMatrix
  , OverlapFunction
- -- * Direct Optimization pairwise functions
- , naiveDO
- , naiveDOConst
- , naiveDOMemo
  -- * Direct Optimization primative construction functions
- , createNeedlemanWunchMatrix
  , directOptimization
  , filterGaps
  , handleMissingCharacter
@@ -35,6 +32,8 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
  , renderCostMatrix
  , traceback
  -- * Probably removable
+ , overlap
+ , overlapConst
  , getOverlap
  , minimalChoice
  ) where
@@ -45,15 +44,13 @@ import Data.Bits
 import Data.DList            (snoc)
 import Data.Foldable
 import Data.Key
-import Data.Matrix.NotStupid (Matrix, getRow, matrix, nrows, ncols, toLists)
+import Data.Matrix.NotStupid (Matrix)
 import Data.Maybe            (fromMaybe)
 import Data.MonoTraversable
 import Data.Ord
 import Data.Semigroup
 import Numeric.Extended.Natural
 import Prelude        hiding (lookup, zipWith)
-
---import Debug.Trace
 
 
 -- |
@@ -103,11 +100,20 @@ type NeedlemanWunchMatrix s = Matrix (Cost, Direction, s)
 
 
 -- |
--- Constraints on the input dynamic characters that direct optiomization operates on.
+-- Constraints on the input dynamic characters that direct optimization requires
+-- to operate.
 type DOCharConstraint c = (EncodableDynamicCharacter c, {- Show c, -} Show (Element c), Integral (Element c))
 
 
+-- |
+-- Constraints on the type of structure a "matrix" expose to be used in rendering
+-- and traceback functions.
 type MatrixConstraint m = (Indexable m, Key m ~ (Int, Int))
+
+
+-- |
+-- A parameterized function to generate an alignment matrix.
+type MatrixFunction m s = s -> s -> OverlapFunction (Element s) -> m (Cost, Direction, Element s)
 
 
 -- |
@@ -115,74 +121,6 @@ type MatrixConstraint m = (Indexable m, Key m ~ (Int, Int))
 -- elements, supplying the corresponding median and cost to align the two
 -- characters.
 type OverlapFunction c = c -> c -> (c, Word)
-
-
-
-type MatrixFunction m s = s -> s -> OverlapFunction (Element s) -> m (Cost, Direction, Element s)
-
-
--- |
--- Performs a naive direct optimization.
--- Takes in two characters to run DO on and a metadata object
--- Returns an assignment character, the cost of that assignment, the assignment
--- character with gaps included, the aligned version of the first input character,
--- and the aligned version of the second input character. The process for this
--- algorithm is to generate a traversal matrix, then perform a traceback.
-naiveDO :: DOCharConstraint s
-        => s                       -- ^ First  dynamic character
-        -> s                       -- ^ Second dynamic character
-        -> (Word -> Word -> Word)  -- ^ Structure defining the transition costs between character states
-        -> (Word, s, s, s, s)      -- ^ The cost of the alignment
-                                   -- 
-                                   --   The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
-                                   -- 
-                                   --   The /gapped/ character derived from the the input characters' N-W-esque matrix traceback
-                                   -- 
-                                   --   The gapped alignment of the /first/ input character when aligned with the second character
-                                   -- 
-                                   --   The gapped alignment of the /second/ input character when aligned with the first character
-
--- naiveDO char1 char2 costStruct = handleMissingCharacter char1 char2 $ naiveDOInternal char1 char2 (overlap costStruct)
-naiveDO char1 char2 costStruct = directOptimization char1 char2 (overlap costStruct) createNeedlemanWunchMatrix
-
-
--- |
--- The same as 'naiveDO' except that the "cost structure" parameter is ignored.
--- Instead a constant cost is used.
-naiveDOConst :: DOCharConstraint s => s -> s -> (Word -> Word -> Word) -> (Word, s, s, s, s)
--- naiveDOConst char1 char2 _ = handleMissingCharacter char1 char2 $ naiveDOInternal char1 char2 overlapConst
-naiveDOConst char1 char2 _ = directOptimization char1 char2 overlapConst createNeedlemanWunchMatrix
-
-
--- |
--- The same as 'naiveDO' except that the "cost structure" parameter is assumed to
--- be a memoized overlap function.
-naiveDOMemo :: DOCharConstraint s
-            => s
-            -> s
-            -> OverlapFunction (Element s)
-            -> (Word, s, s, s, s)
-naiveDOMemo char1 char2 tcm = directOptimization char1 char2 tcm createNeedlemanWunchMatrix
-
-
--- |
--- Main function to generate an 'NeedlemanWunchMatrix'. Works as in Needleman-Wunsch,
--- but allows for multiple indel/replacement costs, depending on the symbol change
--- cost function. Also, returns the aligned parent characters, with appropriate
--- ambiguities, as the third of each tuple in the matrix.
---
--- Takes in two 'EncodableDynamicCharacter's and a 'CostStructure'. The first
--- character must be the longer of the two and is the top labeling of the matrix.
--- Returns an 'NeedlemanWunchMatrix'.
-createNeedlemanWunchMatrix :: DOCharConstraint s => s -> s -> OverlapFunction (Element s) -> NeedlemanWunchMatrix (Element s)
---createNeedlemanWunchMatrix topChar leftChar overlapFunction = trace renderedMatrix result
-createNeedlemanWunchMatrix topChar leftChar overlapFunction = result
-  where
-    result             = matrix rows cols generatingFunction
-    rows               = olength leftChar + 1
-    cols               = olength topChar  + 1
-    generatingFunction = needlemanWunschDefinition topChar leftChar overlapFunction result
-    renderedMatrix     = renderCostMatrix topChar leftChar result
 
 
 -- |
@@ -203,14 +141,10 @@ directOptimization char1 char2 overlapFunction matrixFunction =
     handleMissingCharacter char1 char2 alignment
   where
     (swapped, longerChar, shorterChar)   = measureCharacters char1 char2
-    traversalMat                         = matrixFunction longerChar shorterChar overlapFunction
-    (alignmentCost, gapped, left, right) = traceback traversalMat longerChar shorterChar
+    traversalMatrix                      = matrixFunction longerChar shorterChar overlapFunction
+    (alignmentCost, gapped, left, right) = traceback traversalMatrix longerChar shorterChar
     alignment = (alignmentCost, ungapped, gapped, alignedChar1, alignedChar2)
-{-      
-    (gapped', left', right') = (\(x,y,z) -> (constructDynamic x, constructDynamic y, constructDynamic z)) 
-                               $ correctBiasing (getGapElement $ gapped `indexStream` 0) (otoList gapped, otoList left, otoList right)
--}
-    ungapped = filterGaps gapped
+    ungapped  = filterGaps gapped
     (alignedChar1, alignedChar2)
       | swapped   = (right, left )
       | otherwise = (left , right)
@@ -261,8 +195,9 @@ measureCharacters lhs rhs =
       LT -> ( True, rhs, lhs)
 
 
--- Internal generator function for the matrix
--- Deals with both first row and other cases.
+-- |
+-- Internal generator function for the matrices based on the Needleman-Wunsch
+-- definition described in thier paper.
 needlemanWunschDefinition
   :: (DOCharConstraint s, Indexable f, Key f ~ (Int,Int))
   => s
@@ -428,7 +363,7 @@ traceback alignMatrix longerChar lesserChar =
       gap = gapOfStream longerChar
 
 --      go p | traceShow p False = undefined
-      go p@(row, col)
+      go p@(i, j)
         | p == (0,0) = (mempty, mempty, mempty)
         | otherwise  = ( previousMedianCharElements `snoc` medianElement
                        , previousLongerCharElements `snoc` longerElement
@@ -441,21 +376,14 @@ traceback alignMatrix longerChar lesserChar =
 
           (row', col', longerElement, lesserElement) =
               case directionArrow of
-                LeftArrow -> (row    , col - 1, longerChar `indexStream` (col - 1),                               gap )
-                UpArrow   -> (row - 1, col    ,                               gap , lesserChar `indexStream` (row - 1))
-                DiagArrow -> (row - 1, col - 1, longerChar `indexStream` (col - 1), lesserChar `indexStream` (row - 1))
+                LeftArrow -> (i    , j - 1, longerChar `indexStream` (j - 1),                             gap )
+                UpArrow   -> (i - 1, j    ,                             gap , lesserChar `indexStream` (i - 1))
+                DiagArrow -> (i - 1, j - 1, longerChar `indexStream` (j - 1), lesserChar `indexStream` (i - 1))
 
 
 {--
  - Internal computations
  -}
-
--- |
--- Simple function to get the cost from an alignment matrix
-getTotalAlignmentCost :: Matrix (a, b, c) -> a
-getTotalAlignmentCost alignmentMatrix = cost
-  where
-    (cost, _, _) = alignmentMatrix ! (nrows alignmentMatrix - 1, ncols alignmentMatrix - 1) 
 
 
 -- |
@@ -514,18 +442,6 @@ allPossibleBaseCombosCosts costStruct char1 char2 =
 
 
 -- |
--- Given a symbol change cost function and two tuples of an 'Word' and an
--- unambiguous 'EncodableStreamElement', determines the cost of a pairing
--- (intersection) of those characters into an ambiguous character. The 'Word's
--- are the set bits in each character and are used as lookup into the symbol
--- change cost function. 
-getCost :: EncodableStreamElement s => (Word -> Word -> Word) -> (Word, s) -> (Word, s) -> (s, Word)
-getCost costStruct seqTup1 seqTup2 = 
-    case (seqTup1, seqTup2) of
-        ((pos1, c1), (pos2, c2)) -> (c1 .|. c2, costStruct pos1 pos2)
-
-
--- |
 -- Takes in a 'EncodableStreamElement', possibly with more than one bit set, and
 -- returns a list of tuples of 'Word's and 'EncodableStreamElement's, such that,
 -- for each set bit in the input, there is one element in the output list, a
@@ -542,6 +458,42 @@ getSubChars fullChar = foldMap f [0 .. symbolCount fullChar - 1]
 
 
 -- |
+-- An overlap function that applies the discrete metric to aligning two elements.
+overlapConst :: (EncodableStreamElement c {- , Show c -}) => c -> c -> (c, Word)
+overlapConst lhs rhs
+  | intersect == zeroBits = (lhs .|. rhs, 1)
+  | otherwise             = (intersect  , 0)
+  where
+    intersect = lhs .&. rhs
+
+
+getMinimalCostDirection :: (EncodableStreamElement e, Ord c) => (c, e) -> (c, e) -> (c, e) -> (c, e, Direction)
+getMinimalCostDirection (diagCost, diagChar) (rightCost, rightChar) (downCost,  downChar) = 
+    minimumBy (comparing (\(c,_,d) -> (c,d)))
+      [ (diagCost ,  diagChar        , DiagArrow)
+      , (rightCost, rightChar .|. gap, LeftArrow)
+      , (downCost ,  downChar .|. gap, UpArrow  )
+      ]
+  where
+    gap = getGapElement diagChar
+
+
+{-
+-- |
+-- Given a symbol change cost function and two tuples of an 'Word' and an
+-- unambiguous 'EncodableStreamElement', determines the cost of a pairing
+-- (intersection) of those characters into an ambiguous character. The 'Word's
+-- are the set bits in each character and are used as lookup into the symbol
+-- change cost function. 
+getCost :: EncodableStreamElement s => (Word -> Word -> Word) -> (Word, s) -> (Word, s) -> (s, Word)
+getCost costStruct seqTup1 seqTup2 = 
+    case (seqTup1, seqTup2) of
+        ((pos1, c1), (pos2, c2)) -> (c1 .|. c2, costStruct pos1 pos2)
+-}
+
+
+{-
+-- |
 -- Transformation should no longer be nescissary
 -- Replaced definition with the identiy function over two values.
 correctBiasing :: a -> ([a], [a], [a]) -> ([a], [a], [a])
@@ -557,48 +509,4 @@ correctBiasing gap (x1:x2:xs, y1:y2:ys, z1:z2:zs)
     (xs' , ys' , zs' ) = correctBiasing gap ( x2:xs, y2:ys, z2:zs )
     (xs'', ys'', zs'') = correctBiasing gap ( x1:xs, y1:ys, z1:zs )
 -}
-
-
--- |
--- An overlap function that applies the discrete metric to aligning two elements.
-overlapConst :: (EncodableStreamElement c {- , Show c -}) => c -> c -> (c, Word)
-overlapConst lhs rhs
-  | intersect == zeroBits = (lhs .|. rhs, 1)
-  | otherwise             = (intersect  , 0)
-  where
-    intersect = lhs .&. rhs
-
-
--- |
--- Wraps the primative operations in this module to a cohesive operation that is
--- parameterized by an 'OverlapFunction'.
---
--- Reused internally by different implementations.
-naiveDOInternal
-  :: DOCharConstraint s
-  => s
-  -> s
-  -> OverlapFunction (Element s)
-  -> (Word, s, s, s, s)
-naiveDOInternal char1 char2 overlapFunction = (alignmentCost, ungapped, gapped', alignedChar1, alignedChar2)
-    where
-      (swapped, longerChar, shorterChar)   = measureCharacters char1 char2
-      traversalMat                         = createNeedlemanWunchMatrix longerChar shorterChar overlapFunction
-      (alignmentCost, gapped, left, right) = traceback traversalMat longerChar shorterChar
-      (gapped', left', right') = (\(x,y,z) -> (constructDynamic x, constructDynamic y, constructDynamic z)) 
-                               $ correctBiasing (getGapElement $ gapped `indexStream` 0) (otoList gapped, otoList left, otoList right)
-      ungapped = filterGaps gapped'
-      (alignedChar1, alignedChar2)
-        | swapped   = (right', left' )
-        | otherwise = (left' , right')
-
-
-getMinimalCostDirection :: (EncodableStreamElement e, Ord c) => (c, e) -> (c, e) -> (c, e) -> (c, e, Direction)
-getMinimalCostDirection (diagCost, diagChar) (rightCost, rightChar) (downCost,  downChar) = 
-    minimumBy (comparing (\(c,_,d) -> (c,d)))
-      [ (diagCost ,  diagChar        , DiagArrow)
-      , (rightCost, rightChar .|. gap, LeftArrow)
-      , (downCost ,  downChar .|. gap, UpArrow  )
-      ]
-  where
-    gap = getGapElement diagChar
+-}

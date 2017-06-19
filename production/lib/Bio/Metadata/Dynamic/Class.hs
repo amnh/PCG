@@ -26,7 +26,7 @@ module Bio.Metadata.Dynamic.Class
 
 
 --import Bio.Character.Encodable
-import Analysis.Parsimony.Dynamic.DirectOptimization.FFI (DenseTransitionCostMatrix)
+import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (DenseTransitionCostMatrix)
 import Bio.Metadata.General
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM

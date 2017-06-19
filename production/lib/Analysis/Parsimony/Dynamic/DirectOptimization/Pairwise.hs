@@ -8,18 +8,26 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Direct optimization export
+-- Pairwise direct optimization alignment functions using a variety of techniques.
 --
 -----------------------------------------------------------------------------
-module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
-    ( filterGaps
-    , getOverlap
-    , minimalChoice
-    , naiveDO
-    , naiveDOConst
-    , naiveDOMemo
-    , ukkonenDO
-    ) where
 
+module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
+  ( DenseTransitionCostMatrix
+  , filterGaps
+  , foreignPairwiseDO
+  , foreignThreeWayDO
+  , generateDenseTransitionCostMatrix
+  , getOverlap
+  , minimalChoice
+  , naiveDO
+  , naiveDOConst
+  , naiveDOMemo
+  , ukkonenDO
+  ) where
+
+
+import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
-import Analysis.Parsimony.Dynamic.DirectOptimization.Ukkonen
+import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
+import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen

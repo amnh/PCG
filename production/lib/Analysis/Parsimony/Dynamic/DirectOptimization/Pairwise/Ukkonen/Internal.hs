@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Analysis.Parsimony.Dynamic.DirectOptimization.Ukkonen.Internal
+-- Module      :  Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -16,12 +16,13 @@
 -----------------------------------------------------------------------------
 {-# LANGUAGE BangPatterns, ConstraintKinds, DeriveFoldable, DeriveFunctor, FlexibleContexts, TypeFamilies #-}
 
-module Analysis.Parsimony.Dynamic.DirectOptimization.Ukkonen.Internal where
+module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Internal where
 
 
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Ukkonen.Ribbon           (Ribbon)
-import qualified Analysis.Parsimony.Dynamic.DirectOptimization.Ukkonen.Ribbon as Ribbon
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch          (naiveDOMemo)
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon           (Ribbon)
+import qualified Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon as Ribbon
 import           Bio.Character.Encodable
 import           Data.Bits
 import           Data.Foldable

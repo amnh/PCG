@@ -32,7 +32,7 @@ module Bio.Metadata.Dynamic.Internal
   ) where
 
 
-import Analysis.Parsimony.Dynamic.DirectOptimization.FFI
+import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (generateDenseTransitionCostMatrix)
 import Bio.Character.Encodable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
