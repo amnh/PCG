@@ -197,7 +197,7 @@ measureCharacters lhs rhs =
 
 -- |
 -- Internal generator function for the matrices based on the Needleman-Wunsch
--- definition described in thier paper.
+-- definition described in their paper.
 needlemanWunschDefinition
   :: (DOCharConstraint s, Indexable f, Key f ~ (Int,Int))
   => s
@@ -207,7 +207,7 @@ needlemanWunschDefinition
   -> (Int, Int)
   -> (Cost, Direction, Element s)
 needlemanWunschDefinition topChar leftChar overlapFunction memo p@(row, col)
-    | p == (0,0) = (     0, DiagArrow,       gap)
+    | p == (0,0) = (      0, DiagArrow,      gap)
     | otherwise  = (minCost,    minDir, minState)
     where
 
