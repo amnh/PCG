@@ -16,7 +16,11 @@
 -----------------------------------------------------------------------------
 {-# LANGUAGE BangPatterns, ConstraintKinds, DeriveFoldable, DeriveFunctor, FlexibleContexts, TypeFamilies #-}
 
-module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Internal where
+module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Internal
+  ( UkkonenMethodMatrix()
+  , createUkkonenMethodMatrix
+  , ukkonenDO
+  ) where
 
 
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
@@ -33,7 +37,31 @@ import           Numeric.Extended.Natural
 import           Prelude           hiding (lookup)
 
 
-type UkkonenMethodMatrix a = Ribbon a
+-- |
+-- Time & space saving data structure for computing only a central "ribbon" of
+-- a two dimensional matrix.
+--
+-- Allocates a "ribbon" down the diagonal plus an offset of the matrix rather
+-- than the entire matrix. The computed ribbon of the matrix is expanded until
+-- optimality of the the result can be guaranteed. The ribbon is expanded at most
+-- a logrithmic number of times in terms of the matrix dimensions.
+--
+-- Use the 'createUkkonenMethodMatrix' function to create this effcient structure.
+newtype UkkonenMethodMatrix a = U (Ribbon a)
+  deriving (Eq, Foldable, Functor) 
+
+
+type instance Key UkkonenMethodMatrix = (Int, Int)
+
+
+instance Indexable UkkonenMethodMatrix where
+
+    index (U r) k = r ! k
+
+
+instance Lookup UkkonenMethodMatrix where
+
+      k `lookup` (U x) = k `lookup` x
 
 
 -- |
@@ -119,7 +147,7 @@ createUkkonenMethodMatrix
   -> s                           -- ^ Shorter dynamic character
   -> OverlapFunction (Element s) -- ^ Function to determine the cost an median state between two other states.
   -> UkkonenMethodMatrix (Cost, Direction, Element s)
-createUkkonenMethodMatrix minimumIndelCost longerTop lesserLeft overlapFunction = ukkonenUntilOptimal startOffset
+createUkkonenMethodMatrix minimumIndelCost longerTop lesserLeft overlapFunction = U $ ukkonenUntilOptimal startOffset
   where
     -- General values that need to be in scope for the recursive computations.
     longerLen   = olength longerTop

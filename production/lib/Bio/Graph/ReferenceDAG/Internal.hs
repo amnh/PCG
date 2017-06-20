@@ -651,7 +651,10 @@ expandVertexMapping unexpandedMap = snd . foldl' expandEdges (initialCounter+1, 
             rhsRecursiveResult = expandEdges lhsRecursiveResult (counter+1)
 
         
-
+-- |
+-- Overwrite the current graph metadata with a default value.
+--
+-- Defualt in the function's name is used as a verb, not a noun.
 defaultGraphMetadata :: Monoid m => GraphData d -> GraphData m
 defaultGraphMetadata =
     GraphData
