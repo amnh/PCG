@@ -45,9 +45,9 @@
 #define MAX_COST   (2 * MAX_STR)
 #define INFINITY   INT_MAX / 2
 
-#define FULL_ALLOC_INFO  0
+#define FULL_ALLOC_INFO  0  // Use the NO_ALLOC_ROUTINES flag to compile without alloc routines.
 
-#define FIXED_NUM_PLANES 1
+#define FIXED_NUM_PLANES 1  // Use the FIXED_NUM_PLANES flag to make routines allocate on d^2 memory.
 
 #define CELLS_PER_BLOCK  10
 
@@ -56,8 +56,10 @@ typedef enum { MATCH_SUB
              , INS
              } Trans;  // The 3 possible finite fsm_state machine fsm_states
 
-/** How much space was allocated for the characters. */
-typedef struct alloc_info_t {
+/** Matrix of either Ukkonnen or CheckPoint cells.
+ *  Also includes information on element size and amount of space currently allocated for the cells.
+ */
+typedef struct alignment_mtx_t {
     size_t elemSize;
     size_t lessLong_size;
     size_t lessMidd_size;
@@ -71,10 +73,10 @@ typedef struct alloc_info_t {
     #endif
 
     size_t baseAlloc;
-    void **baseArrays;     // void because may point at U_cell_type or CPTye
+    void **matrix;         // 2D arrays of either Ukk or CheckP cells void because may point at U_cell_type or CPTye
 
-    size_t memAllocated;   // total amount of memory allocated to the alignment matrices
-} alloc_info_t;
+    size_t memAllocated;   // total amount of memory allocated to `matrix`
+} alignment_mtx_t;
 
 
 // This is a persistent set of costs needed throughout the code.
@@ -156,12 +158,12 @@ typedef struct fsm_arrays_t {
 
 
 #ifdef FIXED_NUM_PLANES // see above
-    alloc_info_t allocInit( size_t        elemSize
+    alignment_mtx_t allocInit( size_t        elemSize
                           , size_t        costSize
                           , characters_t *globalCharacters
                           );
 #else
-    alloc_info_t allocInit( size_t        elemSize
+    alignment_mtx_t allocInit( size_t        elemSize
                           , characters_t *globalCharacters
                           );
 #endif
@@ -292,8 +294,12 @@ unsigned int alignmentCost( int             fsm_states[]
                           );
 
 
-/** Return a pointer into either Ukkonnen matrix or distance matrix. */
-void *getPtr( alloc_info_t *alloc_info_t
+/** Checks to see if Ukkonnen or CheckPoint matrix needs to be reallocated. If so, continues to double it in size until
+ *  the width is less than current edit distance. Returns pointer to cell indicated by `ab_idx_diff`, `ac_idx_diff` and `editDist`.
+ *
+ *  May call functions to alloc new plane, then returns pointer to first cell in that plane.
+ */
+void *getPtr( alignment_mtx_t *alignment_mtx_t
             , int           ab_idx_diff
             , int           ac_idx_diff
             , size_t        editDist
@@ -302,12 +308,12 @@ void *getPtr( alloc_info_t *alloc_info_t
             );
 
 
-/************* allocation routines. Were previously commented out. ***************/
-void allocFinal( alloc_info_t *allocInfo
-               , void         *flag
-               , void         *top
-               , size_t        numStates
-               );
+/** Deallocate either Ukkonnen or Check Point matrix. */
+void deallocate_MtxCell( alignment_mtx_t *inputMtx
+                       // , void            *flag
+                       // , void            *top
+                       // , size_t           numStates
+                       );
 
 
 #endif // UKKCOMMON_H

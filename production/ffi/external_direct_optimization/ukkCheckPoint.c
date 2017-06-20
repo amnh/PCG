@@ -60,8 +60,8 @@
 
 // TODO: globals--it'd be nice to clean these up a little
 
-alloc_info_t myUkk_allocInfo_global;
-alloc_info_t myCheckPt_allocInfo_global;
+alignment_mtx_t myUkk_allocInfo_global;
+alignment_mtx_t myCheckPt_allocInfo_global;
 
 
 // costOffset_global---added to the 'computed' field of each cell. `costOffset_global` is
@@ -103,7 +103,10 @@ int  fsm_states_global[MAX_STR * 2],
 
 /************* next two functions are static inline, so not in .h file. ******************/
 
-/** Calls getPtr, so creates new plane in ukk alignment matrix and returns pointer thereto. */
+/** Returns the cell in the Ukkonnen matrix determined by `lessLong_idx_diff`, `lesMidd_idx_diff` and `editDistance`.
+ *
+ *  Calls getPtr, so might reallocate.
+ */
 static inline ukk_cell_t *get_ukk_cell( int    lessLong_idx_diff
                                       , int    lessMidd_idx_diff
                                       , int    editDistance
@@ -122,7 +125,10 @@ static inline ukk_cell_t *get_ukk_cell( int    lessLong_idx_diff
 
 
 
-/** Calls getPtr, so creates new plane in check point matrix and returns pointer thereto. */
+/** Returns the cell in the Ukkonnen matrix determined by `lessLong_idx_diff`, `lesMidd_idx_diff` and `editDistance`.
+ *
+ *  Calls getPtr, so might reallocate.
+ */
 static inline checkPoint_cell_t *get_checkPoint_cell( int    lessLong_idx_diff
                                                     , int    lessMidd_idx_diff
                                                     , int    editDistance
@@ -245,26 +251,26 @@ static inline int withinMatrix( int             lessLong_idx_diff
     aval[1] = abs(start_lessMidd_idx_diff_global - lessMidd_idx_diff);
     aval[2] = abs(start_lessMidd_idx_diff_global - start_lessLong_idx_diff_global - longMidd_idx_diff);
 
-    // Set g and h to the smallest and second smallest of aval[] respectively
+    // Set g and h to the smallest and second smallest of aval[] respectively.
     sort( aval, 3 );
     g = aval[0];
     h = aval[1];
 
     if (startState_global == 0) {
-        // We know a good boudary check if the start fsm state is MMM
+        // We know a good boundary check if the start fsm state is MMM.
         cheapest = (g == 0 ? 0
                            : affineCosts->gapOpenCost + g * affineCosts->gapExtendCost)
                  + (h == 0 ? 0
                            : affineCosts->gapOpenCost + h * affineCosts->gapExtendCost);
     } else {
-        // If start fsm state is something else. Can't charge for start of gaps unless we
+        // If start fsm state is something else, can't charge for start of gaps unless we
         // do something more clever.
         cheapest = (g == 0 ? 0 : g * affineCosts->gapExtendCost)
                  + (h == 0 ? 0 : h * affineCosts->gapExtendCost);
     }
 
-    if (cheapest + startCost_global > distance) return 0;
-    else                           return 1;
+    if   (cheapest + startCost_global > distance) return 0;
+    else                                          return 1;
 
 }
 
@@ -342,7 +348,7 @@ int doUkkInLimits( int             start_lessLong_idx_diff
                 , startCost
                 , startState
                 , inputChars->numStates
-                )->editDist     = start_editDist;
+                )->editDist = start_editDist;
 
     get_ukk_cell( start_lessLong_idx_diff
                 , start_lessMidd_idx_diff
@@ -829,18 +835,22 @@ int char_to_base( char v ) {   // TODO: Can I just skip this?
 }
 
 
-/** This is not printing anything out, rather it's actually doing the traceback. Lord even knows what `traceback()` is doing. */
-void printTraceBack( dyn_character_t *retLesserChar
-                   , dyn_character_t *retMiddleChar
-                   , dyn_character_t *retLongerChar
-                   , dyn_character_t *original_lesserChar    // <---
-                   , dyn_character_t *original_middleChar    // <--- I need these to reambiguate
-                   , dyn_character_t *original_longerChar    // <---
-                   , affine_costs_t  *affineCosts
-                   , characters_t    *inputChars
-                   , characters_t    *resultChars
-                   , fsm_arrays_t    *fsmStateArrays
-                   )
+/** Do actual traceback.
+ *  Since Powell's aligned characters have been disambiguated before being aligned---and with a strong A bias at that---the actual
+ *  characters aren't useful. Instead we'll just use those characters to figure out where gaps are, then copy ambiguous elements
+ *  from input characters.
+ */
+void doTraceback( dyn_character_t *retLesserChar
+                , dyn_character_t *retMiddleChar
+                , dyn_character_t *retLongerChar
+                , dyn_character_t *original_lesserChar    // <---
+                , dyn_character_t *original_middleChar    // <--- I need these to reambiguate
+                , dyn_character_t *original_longerChar    // <---
+                , affine_costs_t  *affineCosts
+                , characters_t    *inputChars
+                , characters_t    *resultChars
+                , fsm_arrays_t    *fsmStateArrays
+                )
 {
 
     // Add the first run of matches to the alignment
@@ -848,7 +858,7 @@ void printTraceBack( dyn_character_t *retLesserChar
 
     int endRun = 0;  // signed so comparison to lesserLen doesn't complain.
 
-    int j; // countdown to 0 later, so must be signed. Used it two loops below.
+    int j; // countdown to 0 later, so must be signed. Used in two loops below.
 
     while (   endRun < inputChars->lesserLen
            && (   inputChars->lesserStr[endRun] == inputChars->longerStr[endRun]
@@ -857,6 +867,7 @@ void printTraceBack( dyn_character_t *retLesserChar
         endRun++;
     }
 
+    // TODO: replace following with memcpy()
     for (j = endRun - 1; j >= 0; j--)  {
         resultChars->lesserStr[resultChars->lesserIdx++] = inputChars->lesserStr[j]; // <---
         resultChars->longerStr[resultChars->longerIdx++] = inputChars->longerStr[j]; // <--- note that indices are incrementing here
@@ -865,7 +876,6 @@ void printTraceBack( dyn_character_t *retLesserChar
         cost_global[costIdx_global++]            = 0;
     }
     // finished adding first run of matches
-
 
     // Reverse the alignments
     revCharArray(resultChars->lesserStr, 0, resultChars->lesserIdx);
@@ -1135,48 +1145,13 @@ int Ukk( int             lessLong_idx_diff
                        )->editDist;
 }
 
-
-/** Set up and then call functions that do actual affine Ukkonnen calculations.
- *
- *  IMPORTANT!!! Order of input characters is short, long, middle.
- */
-int align3d_ukk( dyn_character_t *retLesserChar
-               , dyn_character_t *retMiddleChar
-               , dyn_character_t *retLongerChar
-               , dyn_character_t *original_lesserChar
-               , dyn_character_t *original_middleChar
-               , dyn_character_t *original_longerChar
-               , affine_costs_t  *affineCosts
-               , characters_t    *inputChars
-               , characters_t    *resultChars
-               , fsm_arrays_t    *fsmStateArrays
-               )
+/** Do initial initialization of global variables */
+void initializeGlobals( characters_t *inputChars )
 {
-    // Set up check point matrix.
-    checkPoint_cell_t *checkPoint_dummyCell = malloc( sizeof(checkPoint_cell_t) );
-
-    checkPoint_dummyCell->editDist = 0;
-    checkPoint_dummyCell->cost     = 0;
-
-    // Set up Ukkonnen matrix.
-    ukk_cell_t *ukk_dummCell = malloc( sizeof(ukk_cell_t) );
-
-    ukk_dummCell->editDist       = 0;
-    ukk_dummCell->computed       = 0;
-    ukk_dummCell->from.cost      = 0;
-    ukk_dummCell->from.fsm_state = 0;
-
-    ukk_dummCell->from.lessLong_idx_diff = 0;
-    ukk_dummCell->from.lessMidd_idx_diff = 0;
-
     finalCost_global        = 0;
     checkPoint_cost_global  = INFINITY;
     checkPoint_width_global = 0;
     completeFromInfo_global = 0;
-
-    resultChars->lesserIdx = 0;
-    resultChars->longerIdx = 0;
-    resultChars->middleIdx = 0;
 
     fsm_stateIdx_global    = 0;
     costIdx_global         = 0;
@@ -1189,11 +1164,8 @@ int align3d_ukk( dyn_character_t *retLesserChar
     startCost_global  = 0;
     startState_global = 0;
 
-    int cur_editDist,            // signed for comparison with lesserLen
-        start_editDist,          // signed because it gets assigned from cur_editDist
-        final_lessLong_idx_diff, // signed because start as negative
-        final_lessMidd_idx_diff, // signed because start as negative
-        are_equal;               // are the elements at `curEditDist` in the three characters the same?
+    checkPoint_editDist_global = 1;
+    checkPoint_cost_global     = INFINITY;
 
     checkPoint_width_global = inputChars->maxSingleStep;
 
@@ -1211,6 +1183,54 @@ int align3d_ukk( dyn_character_t *retLesserChar
 
     counts_global.cells     = 0;
     counts_global.innerLoop = 0;
+}
+
+/** Set up and then call functions that do actual affine Ukkonnen and CheckPoint algorithms, as well as traceback.
+ *
+ *  IMPORTANT!!! Order of input characters is short, long, middle.
+ */
+int align3d_ukk( dyn_character_t *retLesserChar
+               , dyn_character_t *retMiddleChar
+               , dyn_character_t *retLongerChar
+               , dyn_character_t *original_lesserChar
+               , dyn_character_t *original_middleChar
+               , dyn_character_t *original_longerChar
+               , affine_costs_t  *affineCosts
+               , characters_t    *inputChars
+               , characters_t    *resultChars
+               , fsm_arrays_t    *fsmStateArrays
+               )
+{
+    initializeGlobals( inputChars );
+
+    // Set up check point matrix.
+    checkPoint_cell_t *checkPoint_dummyCell = malloc( sizeof(checkPoint_cell_t) );
+
+    checkPoint_dummyCell->editDist = 0;
+    checkPoint_dummyCell->cost     = 0;
+
+    // Set up Ukkonnen matrix.
+    ukk_cell_t *ukk_dummyCell = malloc( sizeof(ukk_cell_t) );
+
+    ukk_dummyCell->editDist       = 0;
+    ukk_dummyCell->computed       = 0;
+    ukk_dummyCell->from.cost      = 0;
+    ukk_dummyCell->from.fsm_state = 0;
+
+    ukk_dummyCell->from.lessLong_idx_diff = 0;
+    ukk_dummyCell->from.lessMidd_idx_diff = 0;
+
+    resultChars->lesserIdx = 0;
+    resultChars->longerIdx = 0;
+    resultChars->middleIdx = 0;
+
+    int cur_editDist = 0,        // signed for comparison with lesserLen
+        start_editDist,          // signed because it gets assigned from cur_editDist
+        final_lessLong_idx_diff, // signed because start as negative
+        final_lessMidd_idx_diff, // signed because start as negative
+        are_equal,               // are the elements at `curEditDist` in the three characters the same?
+        editDist;                // signed to get rid of compiler warnings about different types
+
 
     // Calculate starting position, where elements are no longer the same for all three characters
     cur_editDist = 0;
@@ -1233,9 +1253,6 @@ int align3d_ukk( dyn_character_t *retLesserChar
 
     final_lessLong_idx_diff = inputChars->lesserLen - inputChars->longerLen; // So these two are negative.
     final_lessMidd_idx_diff = inputChars->lesserLen - inputChars->middleLen;
-
-    checkPoint_editDist_global = 1;
-    checkPoint_cost_global     = INFINITY;
 
     do {
         cur_editDist++;
@@ -1286,7 +1303,6 @@ int align3d_ukk( dyn_character_t *retLesserChar
                                    , finalCost_global
                                    , inputChars->numStates
                                    );
-    int editDist; // int to get rid of compiler warnings about different types
 
     if ( get_ukk_cell( final_lessLong_idx_diff
                      , final_lessMidd_idx_diff
@@ -1296,7 +1312,7 @@ int align3d_ukk( dyn_character_t *retLesserChar
                      )->from.cost <= 0 ) {
 
         // We check pointed too late on this first pass.
-        // So we got no useful information.  Oh well, have to do it all over again
+        // So we got no useful information. Oh well, have to do it all over again.
         assert( get_ukk_cell( final_lessLong_idx_diff
                             , final_lessMidd_idx_diff
                             , finalCost_global
@@ -1339,31 +1355,31 @@ int align3d_ukk( dyn_character_t *retLesserChar
     }
 
     assert(editDist == inputChars->lesserLen);
-    printTraceBack( retLesserChar
-                  , retMiddleChar
-                  , retLongerChar
-                  , original_lesserChar
-                  , original_middleChar
-                  , original_longerChar
-                  , affineCosts
-                  , inputChars
-                  , resultChars
-                  , fsmStateArrays
-                  );
+    doTraceback( retLesserChar
+               , retMiddleChar
+               , retLongerChar
+               , original_lesserChar
+               , original_middleChar
+               , original_longerChar
+               , affineCosts
+               , inputChars
+               , resultChars
+               , fsmStateArrays
+               );
 
-    allocFinal( &myUkk_allocInfo_global
-              , &(ukk_dummCell->computed)
-              ,  ukk_dummCell
-              ,  inputChars->numStates
-              );
+    deallocate_MtxCell( &myUkk_allocInfo_global
+                      // , &(ukk_dummyCell->computed)
+                      // ,  ukk_dummyCell
+                      // ,  inputChars->numStates
+                      );
 
-    allocFinal( &myCheckPt_allocInfo_global
-              , &(checkPoint_dummyCell->cost)
-              ,  checkPoint_dummyCell
-              ,  inputChars->numStates
-              );
+    deallocate_MtxCell( &myCheckPt_allocInfo_global
+                      // , &(checkPoint_dummyCell->cost)
+                      // ,  checkPoint_dummyCell
+                      // ,  inputChars->numStates
+                      );
 
-    printf("align3d_ukk: editDist: = %2d\n", cur_editDist);
+    printf("align3d_ukk: current editDist: = %2d\n", cur_editDist);
     return (int) cur_editDist;
 }
 

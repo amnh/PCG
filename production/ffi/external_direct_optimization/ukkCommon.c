@@ -52,8 +52,8 @@
 
 // extern variable (all from ukkCheckp.c)
 // TODO: finish getting rid of these globals
-extern      alloc_info_t myUkkAllocInfo;
-extern      alloc_info_t myCheckPtAllocInfo;
+extern      alignment_mtx_t myUkkAllocInfo;
+extern      alignment_mtx_t myCheckPtAllocInfo;
 extern long costOffset;
 extern long finalCost;
 
@@ -110,7 +110,7 @@ static inline void *recalloc( void   *p
 
 
 /** Attempt to allocate an additional plane of the alignment matrix. Return pointer to that plane. */
-static inline void *allocPlane( alloc_info_t *a )
+static inline void *allocPlane( alignment_mtx_t *a )
 {
     void *p;
 
@@ -127,18 +127,18 @@ static inline void *allocPlane( alloc_info_t *a )
 
 /** Always the previous. */
 #ifdef FIXED_NUM_PLANES
-    alloc_info_t allocInit( size_t        elemSize
+    alignment_mtx_t allocInit( size_t        elemSize
                           , size_t        costSize
                           , characters_t *inputChars
                           )
 #else
-    alloc_info_t allocInit( size_t        elemSize
+    alignment_mtx_t allocInit( size_t        elemSize
                           , characters_t *inputChars
                           )
 #endif
 
 {
-    alloc_info_t retStruct;
+    alignment_mtx_t retStruct;
 
     retStruct.memAllocated = 0;
     retStruct.elemSize     = elemSize;
@@ -170,7 +170,7 @@ static inline void *allocPlane( alloc_info_t *a )
     return retStruct;
 }
 
-static inline void *allocEntry( alloc_info_t *a
+static inline void *allocEntry( alignment_mtx_t *a
                               , size_t        numStates
                               )
 {
@@ -189,25 +189,25 @@ static inline void *allocEntry( alloc_info_t *a
     return p;
 }
 
-static inline size_t allocGetSubIndex( alloc_info_t *allocInfo
-                                     , int           lessLong_idx_diff
-                                     , int           lessMidd_idx_diff
-                                     , int           fsm_state
-                                     , size_t        numStates
+static inline size_t allocGetSubIndex( alignment_mtx_t *inputMtx
+                                     , int              lessLong_idx_diff
+                                     , int              lessMidd_idx_diff
+                                     , int              fsm_state
+                                     , size_t           numStates
                                      )
 {
     size_t index = 0;
 
     /* Because why not just % (and yes, it took me a while to figure that out).
-    size_t i = (lessLong_idx_diff + allocInfo->lessLong_offset) / CELLS_PER_BLOCK;
-    size_t j = (lessMidd_idx_diff + allocInfo->lessMidd_offset) / CELLS_PER_BLOCK;
+    size_t i = (lessLong_idx_diff + inputMtx->lessLong_offset) / CELLS_PER_BLOCK;
+    size_t j = (lessMidd_idx_diff + inputMtx->lessMidd_offset) / CELLS_PER_BLOCK;
 
-    int lessLong_adjusted = lessLong_idx_diff + allocInfo->lessLong_offset - i * CELLS_PER_BLOCK;
-    int lessMidd_adjusted = lessMidd_idx_diff + allocInfo->lessMidd_offset - j * CELLS_PER_BLOCK;
+    int lessLong_adjusted = lessLong_idx_diff + inputMtx->lessLong_offset - i * CELLS_PER_BLOCK;
+    int lessMidd_adjusted = lessMidd_idx_diff + inputMtx->lessMidd_offset - j * CELLS_PER_BLOCK;
     */
 
-    int lessLong_adjusted = (lessLong_idx_diff + allocInfo->lessLong_offset) % CELLS_PER_BLOCK;
-    int lessMidd_adjusted = (lessMidd_idx_diff + allocInfo->lessMidd_offset) % CELLS_PER_BLOCK;
+    int lessLong_adjusted = (lessLong_idx_diff + inputMtx->lessLong_offset) % CELLS_PER_BLOCK;
+    int lessMidd_adjusted = (lessMidd_idx_diff + inputMtx->lessMidd_offset) % CELLS_PER_BLOCK;
 
     /*
     if (   lessLong_adjusted != lessLong_adjusted_2
@@ -215,10 +215,10 @@ static inline size_t allocGetSubIndex( alloc_info_t *allocInfo
        ) {
         fprintf( stderr, "lessLong_idx_diff = %2d, lessLong_idx_diff offset = %2zu, lessLong_idx_diff adjusted = %2d\nlessMidd_idx_diff = %2d, lessMidd_idx_diff offset = %2zu, lessMidd_idx_diff adjusted = %2d\n"
                , lessLong_idx_diff
-               , allocInfo->lessLong_offset
+               , inputMtx->lessLong_offset
                , lessLong_adjusted
                , lessMidd_idx_diff
-               , allocInfo->lessMidd_offset
+               , inputMtx->lessMidd_offset
                , lessMidd_adjusted
                );
         exit(1);
@@ -239,79 +239,86 @@ static inline size_t allocGetSubIndex( alloc_info_t *allocInfo
 }
 
 
-void allocFinal( alloc_info_t *allocInfo
-               , void         *flag
-               , void         *top
-               , size_t        numStates
-               )
+/** Deallocate either Ukkonnen or Check Point matrix.
+ *  No idea what all of those extra accumulators were for, but they seemed to be unused.
+ */
+void deallocate_MtxCell( alignment_mtx_t *inputMtx
+                       // , void            *flag
+                       // , void            *top
+                       // , size_t           numStates
+                       )
 {
     // Cast the void pointers to long longs because we intend to treat the
     // pointers as integral values.
-    int usedFlag = ((long long) flag) - ((long long) top);
+    // int usedFlag = ((long long) flag) - ((long long) top);
 
-    size_t planesUsed = 0;
+    // size_t planesUsed = 0;
 
-    size_t blocksTotal = 0,
-           blocksUsed  = 0;
+    // size_t blocksTotal = 0,
+    //        blocksUsed  = 0;
 
-    size_t cellsTotal = 0,
-           cellsUsed  = 0;
+    // size_t cellsTotal = 0,
+    //        cellsUsed  = 0;
 
-    long tblocksUsed;
+    // long tblocksUsed;
     void **baseArrays;
 
-    for (size_t i = 0; i < allocInfo->baseAlloc; i++) {
-        tblocksUsed = 0;
-        baseArrays = allocInfo->baseArrays[i];
+    for (size_t i = 0; i < inputMtx->baseAlloc; i++) {
+        // tblocksUsed = 0;
+        baseArrays = inputMtx->baseArrays[i];
 
         if (!baseArrays) {
             continue;
         }
 
-        planesUsed++;
+        // planesUsed++;
 
-        long tcellsUsed;
-        void *block;
+        // long tcellsUsed;
+        // void *block;
 
-        for (size_t j = 0; j < allocInfo->lessLong_blocks * allocInfo->lessMidd_blocks; j++) {
-            tcellsUsed = 0;
-            block = baseArrays[j];
-            blocksTotal++;
+        for (size_t j = 0; j < inputMtx->lessLong_blocks * inputMtx->lessMidd_blocks; j++) {
+            // tcellsUsed = 0;
+            // block      = baseArrays[j];
+            // blocksTotal++;
 
-            if (!block) {
+            if (!baseArrays[j]) {
                 continue;
             }
 
-            blocksUsed++;
-            tblocksUsed++;
+            // blocksUsed++;
+            // tblocksUsed++;
 
-            for (size_t cIndex = 0; cIndex < numStates * CELLS_PER_BLOCK * CELLS_PER_BLOCK; cIndex++) {
-                cellsTotal++;
+            // for (size_t cIndex = 0; cIndex < numStates * CELLS_PER_BLOCK * CELLS_PER_BLOCK; cIndex++) {
+            //     cellsTotal++;
 
-                // Cast the void pointer to char pointer to suppress compiler warnings.
-                // We assume that arithmetic takes place in terms of bytes.
-                if ( *(int*) ( ( (char*) block ) + (cIndex * allocInfo->elemSize) + usedFlag) ) {
-                    cellsUsed++;
-                    tcellsUsed++;
-                }
-            }
-            free (block);
-      }
-      free (baseArrays);
+            //     // Cast the void pointer to char pointer to suppress compiler warnings.
+            //     // We assume that arithmetic takes place in terms of bytes.
+            //     if ( *(int*) ( ( (char*) block ) + (cIndex * inputMtx->elemSize) + usedFlag) ) {
+            //         cellsUsed++;
+            //         tcellsUsed++;
+            //     }
+            // }
+            free (baseArrays[j]);
+        }
+        free (baseArrays);
     }
-    free (allocInfo->baseArrays);
-    allocInfo->baseArrays = NULL;
+    free (inputMtx->baseArrays);
+    inputMtx->baseArrays = NULL;
 
 }
 
 
-/** Calls functions to alloc new plane, then returns pointer to first cell in that plane. */
-void *getPtr( alloc_info_t *allocInfo
-            , int           lessLong_idx_diff
-            , int           lessMidd_idx_diff
-            , size_t        editDist
-            , int           fsm_state
-            , size_t        numStates
+/** Checks to see if Ukkonnen or CheckPoint matrix needs to be reallocated. If so, continues to double it in size until
+ *  the width is less than current edit distance. Returns pointer to cell indicated by `ab_idx_diff`, `ac_idx_diff` and `editDist`.
+ *
+ *  May call functions to alloc new plane, then returns pointer to first cell in that plane.
+ */
+void *getPtr( alignment_mtx_t *inputMtx
+            , int              lessLong_idx_diff
+            , int              lessMidd_idx_diff
+            , size_t           editDist
+            , int              fsm_state
+            , size_t           numStates
             )
 {
     void **baseArrays,
@@ -320,62 +327,65 @@ void *getPtr( alloc_info_t *allocInfo
     size_t index;
 
     #ifdef FIXED_NUM_PLANES
-        // If doing a noalign or checkp,  remap 'editDist' into 0 .. costSize - 1
-        editDist = editDist % allocInfo->costSize;
+        // If doing a noalign or checkPoint,  remap 'editDist' into 0 .. costSize - 1.
+        editDist = editDist % inputMtx->costSize;
     #endif
 
-    // Increase the base array as needed
-    while (editDist >= allocInfo->baseAlloc) {
+    // Increase the base array as needed.
+    while (editDist >= inputMtx->baseAlloc) {
 
         // Keep doubling size of allocation until edit distance is within (what I assume are) Ukkonnen barriers
-        int oldSize           = allocInfo->baseAlloc;
-        allocInfo->baseAlloc *= 2;
-        allocInfo->baseArrays = recalloc( allocInfo->baseArrays
-                                        , oldSize              * sizeof(void *)
-                                        , allocInfo->baseAlloc * sizeof(void *)
-                                        );
+        int oldSize           = inputMtx->baseAlloc;
+        inputMtx->baseAlloc  *= 2;
+        inputMtx->baseArrays  = recalloc( inputMtx->baseArrays
+                                         , oldSize             * sizeof(void *)
+                                         , inputMtx->baseAlloc * sizeof(void *)
+                                         );
 
-        if (allocInfo->baseArrays == NULL) {
+        if (inputMtx->baseArrays == NULL) {
             fprintf(stderr, "Unable to alloc memory\n");
             exit(-1);
         }
 
-        allocInfo->memAllocated += oldSize * sizeof(void *); // it's doubling in size
+        inputMtx->memAllocated += oldSize * sizeof(void *); // it's doubling in size
     }
 
-    assert(editDist < allocInfo->baseAlloc);
+    assert(editDist < inputMtx->baseAlloc);
 
-    if (allocInfo->baseArrays[editDist] == NULL)  allocInfo->baseArrays[editDist] = allocPlane( allocInfo );
+    if (inputMtx->baseArrays[editDist] == NULL)  inputMtx->baseArrays[editDist] = allocPlane( inputMtx );
 
-    baseArrays = allocInfo->baseArrays[editDist];
+    baseArrays = inputMtx->baseArrays[editDist];
 
-    size_t i = (lessLong_idx_diff + allocInfo->lessLong_offset) / CELLS_PER_BLOCK;
-    size_t j = (lessMidd_idx_diff + allocInfo->lessMidd_offset) / CELLS_PER_BLOCK;
+    size_t i = (lessLong_idx_diff + inputMtx->lessLong_offset) / CELLS_PER_BLOCK;
+    size_t j = (lessMidd_idx_diff + inputMtx->lessMidd_offset) / CELLS_PER_BLOCK;
 
-    assert(i < allocInfo->lessLong_blocks);
-    assert(j < allocInfo->lessMidd_blocks);
+    assert(i < inputMtx->lessLong_blocks);
+    assert(j < inputMtx->lessMidd_blocks);
 
-    if (baseArrays[(i * allocInfo->lessMidd_blocks) + j] == NULL) {
-        baseArrays[(i * allocInfo->lessMidd_blocks) + j] = allocEntry( allocInfo, numStates );
+    if (baseArrays[(i * inputMtx->lessMidd_blocks) + j] == NULL) {
+        baseArrays[(i * inputMtx->lessMidd_blocks) + j] = allocEntry( inputMtx, numStates );
     }
 
-    this_baseArr = baseArrays[(i * allocInfo->lessMidd_blocks) + j];
+    this_baseArr = baseArrays[(i * inputMtx->lessMidd_blocks) + j];
     assert(this_baseArr != NULL);
 
-    index = allocGetSubIndex( allocInfo
+    index = allocGetSubIndex( inputMtx
                             , lessLong_idx_diff
                             , lessMidd_idx_diff
                             , fsm_state
                             , numStates
                             );
 
-    //  fprintf(stderr,"getPtr(lessLong_idx_diff=%d,lessMidd_idx_diff=%d,d=%d,s=%d): this_baseArr=%p index=%d\n",
-    //    lessLong_idx_diff,lessMidd_idx_diff,d,s,
-    //    this_baseArr,index);
+    /*  fprintf( stderr
+               , "getPtr(lessLong_idx_diff = %d,lessMidd_idx_diff = %d, d = %d, s = %d): this_baseArr = %p index = %d\n"
+               , lessLong_idx_diff, lessMidd_idx_diff, d, s
+               , this_baseArr, index)
+               ;
+    */
 
     // Cast the void pointer to char pointer to suppress compiler warnings.
     // We assume that arithmetic takes place in terms of bytes.
-    return ( (char*) this_baseArr ) + index * allocInfo->elemSize;
+    return ( (char*) this_baseArr ) + index * inputMtx->elemSize;
 }
 
 
