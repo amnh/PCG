@@ -206,49 +206,34 @@ needlemanWunschDefinition
   -> f (Cost, Direction, Element s)
   -> (Int, Int)
   -> (Cost, Direction, Element s)
---needlemanWunschDefinition topChar leftChar overlapFunction memo (row, col) | trace ("nw ?? "<> show (row,col)) False = undefined
-needlemanWunschDefinition topChar leftChar overlapFunction memo (row, col)
-      -- :)
-      | row == 0 && col == 0         = (0                               , DiagArrow,         gap)
-      | row == 0 && rightChar /= gap = (leftwardValue + rightOverlapCost, LeftArrow,   rightChar)
-      | row == 0                     = (leftwardValue                   , LeftArrow,   rightChar)
-      | col == 0 &&  downChar /= gap = (  upwardValue +  downOverlapCost,   UpArrow,    downChar)
-      | col == 0                     = (  upwardValue                   ,   UpArrow,    downChar)
-      | leftElement == gap &&
-         topElement == gap           = (diagCost                        , DiagArrow,         gap)
-      | otherwise                    = (minCost                         , minDir   ,    minState)
-      where
-        gap                           = gapOfStream topChar
-        (!?) m k =
+needlemanWunschDefinition topChar leftChar overlapFunction memo p@(row, col)
+    | p == (0,0) = (     0, DiagArrow,       gap)
+    | otherwise  = (minCost,    minDir, minState)
+    where
+
+      -- | Lookup with a default value of infinite cost.
+      {-# INLINE (!?) #-}
+      (!?) m k =
           case k `lookup` m of
             Just  v -> v
             Nothing -> (infinity, DiagArrow, gap)
         
-        topElement                    =  topChar `indexStream` (col - 1)
-        leftElement                   = leftChar `indexStream` (row - 1)
-        (leftwardValue, _, _)         = memo !? (row    , col - 1)
-        (diagonalValue, _, _)         = memo !? (row - 1, col - 1)
-        (  upwardValue, _, _)         = memo !? (row - 1, col    )
-        (rightChar, rightOverlapCost) = fromFinite <$> overlapFunction topElement  gap
-        ( diagChar,  diagOverlapCost) = fromFinite <$> overlapFunction topElement  leftElement 
-        ( downChar,  downOverlapCost) = fromFinite <$> overlapFunction gap         leftElement
-        rightCost                     = rightOverlapCost + leftwardValue
-        diagCost                      =  diagOverlapCost + diagonalValue
-        downCost                      =  downOverlapCost +   upwardValue
-        (minCost, minState, minDir)   = getMinimalCostDirection
-                                          ( diagCost,  diagChar)
-                                          (rightCost, rightChar)
-                                          ( downCost,  downChar)
-{-                                        
-        err = unlines
-          [ show (row, col)
-          , "  right: " <> show (fromIntegral rightChar, rightOverlapCost, leftwardValue, rightCost)
-          , "   down: " <> show (fromIntegral  downChar,  downOverlapCost,   upwardValue,  downCost)
-          , "   diag: " <> show (fromIntegral  diagChar,  diagOverlapCost, diagonalValue,  diagCost)
-          , "Chosen:"
-          , "  " <> show (minCost, fromIntegral minState, minDir) 
-          ]            
--}
+      gap                           = gapOfStream topChar
+      topElement                    = fromMaybe gap $  topChar `lookupStream` (col - 1)
+      leftElement                   = fromMaybe gap $ leftChar `lookupStream` (row - 1)
+      (leftwardValue, _, _)         = memo !? (row    , col - 1)
+      (diagonalValue, _, _)         = memo !? (row - 1, col - 1)
+      (  upwardValue, _, _)         = memo !? (row - 1, col    )
+      (rightChar, rightOverlapCost) = fromFinite <$> overlapFunction topElement  gap
+      ( diagChar,  diagOverlapCost) = fromFinite <$> overlapFunction topElement  leftElement 
+      ( downChar,  downOverlapCost) = fromFinite <$> overlapFunction gap         leftElement
+      rightCost                     = rightOverlapCost + leftwardValue
+      diagCost                      =  diagOverlapCost + diagonalValue
+      downCost                      =  downOverlapCost +   upwardValue
+      (minCost, minState, minDir)   = getMinimalCostDirection
+                                        ( diagCost,  diagChar)
+                                        (rightCost, rightChar)
+                                        ( downCost,  downChar)
 
 
 -- |
@@ -355,14 +340,13 @@ traceback alignMatrix longerChar lesserChar =
     )
   where
       (medianStates, alignedLongerChar, alignedLesserChar) = go lastCell
-      lastCell   = (row, col)
-      (cost,_,_) = alignMatrix ! lastCell
+      lastCell     = (row, col)
+      (cost, _, _) = alignMatrix ! lastCell
 
       col = olength longerChar
       row = olength lesserChar
       gap = gapOfStream longerChar
 
---      go p | traceShow p False = undefined
       go p@(i, j)
         | p == (0,0) = (mempty, mempty, mempty)
         | otherwise  = ( previousMedianCharElements `snoc` medianElement
@@ -388,10 +372,10 @@ traceback alignMatrix longerChar lesserChar =
 
 -- |
 -- Memoized wrapper of the overlap function
-getOverlap :: (EncodableStreamElement c {- , Memoizable c, -}) => c -> c -> (Word -> Word -> Word) -> (c, Word)
+getOverlap :: EncodableStreamElement c => c -> c -> (Word -> Word -> Word) -> (c, Word)
 getOverlap inChar1 inChar2 costStruct = result
     where
-        result = {- memoize2 -} overlap costStruct inChar1 inChar2
+        result = overlap costStruct inChar1 inChar2
 
         
 -- |

@@ -178,9 +178,9 @@ transformation r (i,j) = indexValue
       where
         beg = t a - t b
         end = t e
-        d   = diagonal r
         b   = max 0 (a - i)
         e   = max 0 (i - h + a)
+        d   = diagonal r
 
     -- The number of cells to offset to be in the correct column is equal to the
     -- difference between the 2D space j value and the number of missing cells
