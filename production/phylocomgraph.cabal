@@ -46,13 +46,11 @@ library
                      , bv
                        -- >=0.5.8 Required for Data.Map.restrictKeys
                      , containers       >=0.5.8
-                     , criterion
                      , deepseq
                      , dlist
                      , either
                      , hashable
                      , hashtables
---                     , integer-logarithms
                      , integer-gmp
                      , keys
                      , lens
@@ -60,7 +58,6 @@ library
                      , megaparsec       >=5.0
                      , mono-traversable >=1.0
                      , mtl
---                     , memoize
                      , parallel
                      , pretty-tree
                      , primitive
@@ -70,13 +67,11 @@ library
                      , scientific
                      , semigroupoids
                      , semigroups
-                     , smallcheck
                      , split
                      , tasty
                      , tasty-hunit
                      , tasty-quickcheck
                      , tasty-smallcheck
-                     , text
                      , transformers
                      , unordered-containers
                      , vector
@@ -163,7 +158,6 @@ library
                        Analysis.Parsimony.Additive.Internal
                        Analysis.Parsimony.Dynamic.DirectOptimization
                        Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
-                       Analysis.Parsimony.Dynamic.DirectOptimization.Ukkonen
                        Analysis.Parsimony.Dynamic.SequentialAlign
                        Analysis.Parsimony.Fitch.Internal
                        Analysis.Parsimony.Sankoff.Internal
@@ -226,16 +220,16 @@ library
 
   -- Modules included in this library but not exported.
   other-modules:
-                    --   Analysis.ImpliedAlignment.AlignmentContext
-                    --   Analysis.ImpliedAlignment.DynamicProgramming
-                    --   Analysis.ImpliedAlignment.Internal
                        Analysis.Parsimony.Dynamic.DirectOptimization.DeletionEvents
-                       Analysis.Parsimony.Dynamic.DirectOptimization.FFI
                        Analysis.Parsimony.Dynamic.DirectOptimization.Internal
                        Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents
                        Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Internal
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
                        Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
-                       Analysis.Parsimony.Dynamic.DirectOptimization.Ukkonen.Internal
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Internal
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
                        Analysis.Parsimony.Dynamic.SequentialAlign.FFI
                        Bio.Character.Decoration.Additive.Class
                        Bio.Character.Decoration.Additive.Internal
@@ -328,41 +322,20 @@ executable pcg
 
   build-depends:       phylocomgraph
                      , base             >=4.8
-                     , bimap
-                     , bv
                        -- Required for Data.Map.restrictKeys
                      , containers       >=0.5.8
-                     , criterion
-                     , deepseq
                      , directory
-                     , dlist
                      , either
                      , Glob
-                     , hashable
                      , keys
                      , lens
-                     , matrix
                      , megaparsec       >=5.0
                      , mono-traversable >=1.0
-                     , mtl
---                     , memoize
                      , parallel
-                     , QuickCheck
-                     , quickcheck-properties
-                     , safe
-                     , scientific
                      , semigroupoids
                      , semigroups
-                     , smallcheck
-                     , split
-                     , tasty
-                     , tasty-hunit
-                     , tasty-quickcheck
-                     , tasty-smallcheck
                      , text
                      , time
-                     , transformers
-                     , unordered-containers
                      , vector
                      , vector-instances >=3.4
 
@@ -420,40 +393,12 @@ executable fasta-differ
 
   main-is:             fasta-differ.hs
 
-  build-depends:       base                  >=4.8
-                     , bv                    -any
-                     , containers            -any
-                     , criterion             -any
-                     , deepseq               -any
-                     , directory             -any
-                     , dlist                 -any
-                     , either                -any
-                     , Glob                  -any
-                     , hashable              -any
-                     , keys                  -any
-                     , matrix                -any
-                     , megaparsec            >=5.0
-                     , mtl                   -any
---                     , memoize               -any
-                     , mono-traversable      -any
-                     , parallel              -any
-                     , phylocomgraph         -any
-                     , QuickCheck            -any
-                     , safe                  -any
-                     , scientific            -any
-                     , semigroups            -any
-                     , smallcheck            -any
-                     , split                 -any
-                     , tasty                 -any
-                     , tasty-hunit           -any
-                     , tasty-quickcheck      -any
-                     , tasty-smallcheck      -any
-                     , text                  -any
-                     , time                  -any
-                     , transformers          -any
-                     , unordered-containers  -any
-                     , vector                -any
-                     , vector-instances      -any
+  build-depends:       phylocomgraph
+                     , base >=4.8
+                     , bv
+                     , containers
+                     , keys
+                     , megaparsec >=5.0
 
   default-language:    Haskell2010
 
@@ -475,97 +420,10 @@ executable 2d-do-comparison
 
   main-is:             2d-do-comparison.hs
 
-  build-depends:       base                  >=4.8
+  build-depends:       phylocomgraph
+                     , base >=4.8
                      , bimap
-                     , bv                    -any
-                     , containers            -any
-                     , criterion             -any
-                     , deepseq               -any
-                     , directory             -any
-                     , dlist                 -any
-                     , either                -any
-                     , Glob                  -any
-                     , hashable              -any
-                     , keys                  -any
-                     , matrix                -any
-                     , megaparsec            >=5.0
-                     , mtl                   -any
---                     , memoize               -any
-                     , mono-traversable      -any
-                     , parallel              -any
-                     , phylocomgraph         -any
-                     , QuickCheck            -any
-                     , safe                  -any
-                     , scientific            -any
-                     , semigroups            -any
-                     , smallcheck            -any
-                     , split                 -any
-                     , tasty                 -any
-                     , tasty-hunit           -any
-                     , tasty-quickcheck      -any
-                     , tasty-smallcheck      -any
-                     , text                  -any
-                     , time                  -any
-                     , transformers          -any
-                     , unordered-containers  -any
-                     , vector                -any
-                     , vector-instances      -any
-
-  default-language:    Haskell2010
-
-  ghc-options:         -O2 -Wall
-                       -fwarn-duplicate-exports
-                       -fwarn-incomplete-patterns
-                       -fwarn-missing-signatures
-                       -fwarn-overlapping-patterns
-                       -fwarn-tabs
-                       -fwarn-unused-binds
-                       -fwarn-unused-do-bind
-                       -fwarn-unused-imports
-                       -fwarn-unused-matches
-
-  hs-source-dirs:      utils
-
-
-executable ukkonen-do-comparison
-
-  main-is:             ukkonen-do-comparison.hs
-
-  build-depends:       base                  >=4.8
-                     , bimap
-                     , bv                    -any
-                     , containers            -any
-                     , criterion             -any
-                     , deepseq               -any
-                     , directory             -any
-                     , dlist                 -any
-                     , either                -any
-                     , Glob                  -any
-                     , hashable              -any
-                     , keys                  -any
-                     , matrix                -any
-                     , megaparsec            >=5.0
-                     , mtl                   -any
---                     , memoize               -any
-                     , mono-traversable      -any
-                     , parallel              -any
-                     , phylocomgraph         -any
-                     , QuickCheck            -any
-                     , safe                  -any
-                     , scientific            -any
-                     , semigroups            -any
-                     , smallcheck            -any
-                     , split                 -any
-                     , tasty                 -any
-                     , tasty-hunit           -any
-                     , tasty-quickcheck      -any
-                     , tasty-smallcheck      -any
-                     , text                  -any
-                     , time                  -any
-                     , transformers          -any
-                     , unordered-containers  -any
-                     , vector                -any
-                     , vector-instances      -any
+                     , QuickCheck
 
   default-language:    Haskell2010
 
@@ -587,41 +445,10 @@ executable 3d-do-comparison
 
   main-is:             3d-do-comparison.hs
 
-  build-depends:       base                  >=4.8
+  build-depends:       phylocomgraph
+                     , base >=4.8
                      , bimap
-                     , bv                    -any
-                     , containers            -any
-                     , criterion             -any
-                     , deepseq               -any
-                     , directory             -any
-                     , dlist                 -any
-                     , either                -any
-                     , Glob                  -any
-                     , hashable              -any
-                     , keys                  -any
-                     , matrix                -any
-                     , megaparsec            >=5.0
-                     , mtl                   -any
---                     , memoize               -any
-                     , mono-traversable      -any
-                     , parallel              -any
-                     , phylocomgraph         -any
-                     , QuickCheck            -any
-                     , safe                  -any
-                     , scientific            -any
-                     , semigroups            -any
-                     , smallcheck            -any
-                     , split                 -any
-                     , tasty                 -any
-                     , tasty-hunit           -any
-                     , tasty-quickcheck      -any
-                     , tasty-smallcheck      -any
-                     , text                  -any
-                     , time                  -any
-                     , transformers          -any
-                     , unordered-containers  -any
-                     , vector                -any
-                     , vector-instances      -any
+                     , QuickCheck
 
   default-language:    Haskell2010
 
@@ -643,41 +470,10 @@ executable affine-safety
 
   main-is:             affine-safety.hs
 
-  build-depends:       base                  >=4.8
+  build-depends:       phylocomgraph
+                     , base >=4.8
                      , bimap
-                     , bv                    -any
-                     , containers            -any
-                     , criterion             -any
-                     , deepseq               -any
-                     , directory             -any
-                     , dlist                 -any
-                     , either                -any
-                     , Glob                  -any
-                     , hashable              -any
-                     , keys                  -any
-                     , matrix                -any
-                     , megaparsec            >=5.0
-                     , mtl                   -any
---                     , memoize               -any
-                     , mono-traversable      -any
-                     , parallel              -any
-                     , phylocomgraph         -any
-                     , QuickCheck            -any
-                     , safe                  -any
-                     , scientific            -any
-                     , semigroups            -any
-                     , smallcheck            -any
-                     , split                 -any
-                     , tasty                 -any
-                     , tasty-hunit           -any
-                     , tasty-quickcheck      -any
-                     , tasty-smallcheck      -any
-                     , text                  -any
-                     , time                  -any
-                     , transformers          -any
-                     , unordered-containers  -any
-                     , vector                -any
-                     , vector-instances      -any
+                     , QuickCheck
 
   default-language:    Haskell2010
 
@@ -699,41 +495,10 @@ executable sequential-alignment-invariants
 
   main-is:             sequential-alignment-invariants.hs
 
-  build-depends:       base                  >=4.8
+  build-depends:       phylocomgraph
+                     , base >=4.8
                      , bimap
-                     , bv                    -any
-                     , containers            -any
-                     , criterion             -any
-                     , deepseq               -any
-                     , directory             -any
-                     , dlist                 -any
-                     , either                -any
-                     , Glob                  -any
-                     , hashable              -any
-                     , keys                  -any
-                     , matrix                -any
-                     , megaparsec            >=5.0
-                     , mtl                   -any
---                     , memoize               -any
-                     , mono-traversable      -any
-                     , parallel              -any
-                     , phylocomgraph         -any
-                     , QuickCheck            -any
-                     , safe                  -any
-                     , scientific            -any
-                     , semigroups            -any
-                     , smallcheck            -any
-                     , split                 -any
-                     , tasty                 -any
-                     , tasty-hunit           -any
-                     , tasty-quickcheck      -any
-                     , tasty-smallcheck      -any
-                     , text                  -any
-                     , time                  -any
-                     , transformers          -any
-                     , unordered-containers  -any
-                     , vector                -any
-                     , vector-instances      -any
+                     , QuickCheck
 
   default-language:    Haskell2010
 
@@ -755,42 +520,36 @@ executable three-way-mean-check
 
   main-is:             three-way-mean-check.hs
 
-  build-depends:       base                  >=4.8
+  build-depends:       phylocomgraph
+                     , base >=4.8
                      , bimap
-                     , bv                    -any
-                     , containers            -any
-                     , criterion             -any
-                     , deepseq               -any
-                     , directory             -any
-                     , dlist                 -any
-                     , either                -any
-                     , Glob                  -any
-                     , hashable              -any
-                     , keys                  -any
                      , lens
-                     , matrix                -any
-                     , megaparsec            >=5.0
-                     , mtl                   -any
---                     , memoize               -any
-                     , mono-traversable      -any
-                     , parallel              -any
-                     , phylocomgraph         -any
-                     , QuickCheck            -any
-                     , safe                  -any
-                     , scientific            -any
-                     , semigroups            -any
-                     , smallcheck            -any
-                     , split                 -any
-                     , tasty                 -any
-                     , tasty-hunit           -any
-                     , tasty-quickcheck      -any
-                     , tasty-smallcheck      -any
-                     , text                  -any
-                     , time                  -any
-                     , transformers          -any
-                     , unordered-containers  -any
-                     , vector                -any
-                     , vector-instances      -any
+                     , QuickCheck
+
+  default-language:    Haskell2010
+
+  ghc-options:         -O2 -Wall
+                       -fwarn-duplicate-exports
+                       -fwarn-incomplete-patterns
+                       -fwarn-missing-signatures
+                       -fwarn-overlapping-patterns
+                       -fwarn-tabs
+                       -fwarn-unused-binds
+                       -fwarn-unused-do-bind
+                       -fwarn-unused-imports
+                       -fwarn-unused-matches
+
+  hs-source-dirs:      utils
+
+
+executable ukkonen-do-comparison
+
+  main-is:             ukkonen-do-comparison.hs
+
+  build-depends:       phylocomgraph
+                     , base >=4.8
+                     , bimap
+                     , QuickCheck
 
   default-language:    Haskell2010
 
@@ -814,41 +573,40 @@ Test-Suite testsuite
   main-is:             TestAll.hs
 
   build-depends:       base                 >=4.8
-                     , bimap                -any
-                     , bv                   -any
+                     , bimap
+                     , bv
                      , containers           >=0.5.8
-                     , criterion            -any
-                     , deepseq              -any
-                     , directory            -any
-                     , dlist                -any
-                     , hashable             -any
-                     , either               -any
-                     , keys                 -any
-                     , matrix               -any
+                     , criterion
+                     , deepseq
+                     , directory
+                     , dlist
+                     , hashable
+                     , either
+                     , keys
+                     , matrix
                      , megaparsec           >=5.0
-                     , mtl                  -any
---                     , memoize              -any
+                     , mtl
                      , mono-traversable     >=1.0
-                     , parallel             -any
-                     , phylocomgraph        -any
-                     , QuickCheck           -any
-                     , quickcheck-properties -any
-                     , safe                 -any
-                     , scientific           -any
-                     , semigroupoids        -any
-                     , semigroups           -any
-                     , smallcheck           -any
-                     , split                -any
-                     , tasty                -any
-                     , tasty-hunit          -any
-                     , tasty-quickcheck     -any
-                     , tasty-smallcheck     -any
-                     , text                 -any
-                     , time                 -any
-                     , transformers         -any
-                     , unordered-containers -any
-                     , vector               -any
-                     , vector-instances     -any
+                     , parallel
+                     , phylocomgraph
+                     , QuickCheck
+                     , quickcheck-properties
+                     , safe
+                     , scientific
+                     , semigroupoids
+                     , semigroups
+                     , smallcheck
+                     , split
+                     , tasty
+                     , tasty-hunit
+                     , tasty-quickcheck
+                     , tasty-smallcheck
+                     , text
+                     , time
+                     , transformers
+                     , unordered-containers
+                     , vector
+                     , vector-instances
 
   default-language:    Haskell2010
 

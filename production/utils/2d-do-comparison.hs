@@ -50,8 +50,10 @@ performCounterExampleSearch :: Maybe DynamicChar -> IO ()
 performCounterExampleSearch valueMay = do 
     putStrLn "Performing stocastic counter-example search:"
     case valueMay of
-      Nothing   -> quickCheckWith stdArgs { maxSuccess = 10000 } $ uncurry counterExampleCheck
-      Just char -> quickCheckWith stdArgs { maxSuccess = 10000 } $ counterExampleCheck (NS char)
+      Nothing   -> quickCheckWith extraItertations $ uncurry counterExampleCheck
+      Just char -> quickCheckWith extraItertations $ counterExampleCheck (NS char)
+  where
+    extraItertations = stdArgs { maxSuccess = 1000000 }
 -- Can't do this because the monomorphism restriction unexpectedly fixes the type.
 --  where
 --    stocasticSearchContext = quickCheckWith stdArgs { maxSuccess = 10000 }

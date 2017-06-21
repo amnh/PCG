@@ -24,9 +24,9 @@ import           Bio.Character.Decoration.Metric
 -- import           Bio.Character.Decoration.NonMetric
 import           Bio.Sequence
 import           Bio.Sequence.Block
-import           Bio.PhyloGraphPrime
-import           Bio.PhyloGraphPrime.Node
-import           Bio.PhyloGraphPrime.ReferenceDAG
+import           Bio.Graph
+import           Bio.Graph.Node
+import           Bio.Graph.ReferenceDAG
 import           Control.Evaluation
 import qualified Data.IntMap        as IM
 import           Data.IntSet              (IntSet)
@@ -38,7 +38,7 @@ import           Data.Monoid
 import qualified Data.Vector as V
 
 -- import Debug.Trace
-
+{-
 type SearchState = EvaluationT IO (Either TopologicalResult DecoratedCharacterResult)
 
 --type SearchState = EvaluationT IO (Either TopologicalResult CharacterResult)
@@ -163,3 +163,4 @@ nodePostorderFold = undefined
 
 edgePostorderFold :: (e -> [a] -> a)
 edgePostorderFold = undefined
+-}

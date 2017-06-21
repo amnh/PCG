@@ -44,6 +44,7 @@ counterExampleCheck node = value == value
   where
     value = getDynamicCharacterDecoration node ^. finalUngapped
 
+
 performImplementationComparison :: String -> String -> IO ()
 performImplementationComparison lhs rhs = do
     putStrLn "Attempting construction:"
