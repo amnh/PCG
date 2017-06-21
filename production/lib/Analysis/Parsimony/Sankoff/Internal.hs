@@ -114,7 +114,8 @@ initializeCostVector inputDecoration = returnChar
                 f i
                     | inputChar `testBit` i = minBound
                     | otherwise             = infinity -- Change this if it's actually Doubles.
-        returnChar = extendDiscreteToSankoff inputDecoration costList ([],[]) minBound inputChar True
+        -- On leaves preliminary costs are same as min costs for each state.
+        returnChar = extendDiscreteToSankoff inputDecoration costList costList [] ([],[]) minBound inputChar True
 
 
 -- |
@@ -135,10 +136,13 @@ updateCostVector _parentDecoration (leftChild:|rightChild:_) = returnNodeDecorat
     where
         (costVector, dirStateTuple, charCost) = foldr findMins initialAccumulator range
         range = [0..5 :: Word]
+        preliminaryMins = foldr computeExtraMin [] costVector
         -- leaf  = leftChild ^. isLeaf
         initialAccumulator   = ([], ([],[]), infinity)  -- (min cost per state, (leftMin, rightMin), overall minimum)
-        returnNodeDecoration = {- trace (show costVector) $ -} extendDiscreteToSankoff leftChild costVector dirStateTuple (unsafeToFinite charCost) emptyMedian False
+        returnNodeDecoration = {- trace (show costVector) $ -} extendDiscreteToSankoff leftChild costVector preliminaryMins [] dirStateTuple (unsafeToFinite charCost) emptyMedian False
         emptyMedian          = emptyStatic $ leftChild ^. discreteCharacter
+
+        computeExtraMin thisCost = (thisCost - charCost) : acc
 
         findMins :: Word
                  -> ([ExtendedNatural], ([StateContributionList], [StateContributionList]), ExtendedNatural)

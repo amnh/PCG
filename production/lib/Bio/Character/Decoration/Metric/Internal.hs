@@ -93,7 +93,7 @@ instance HasCharacterWeight (MetricDecorationInitial c) Double where
 instance GeneralCharacterMetadata (MetricDecorationInitial c) where
 
     extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . metadata
-      
+
 
 -- | (✔)
 instance DiscreteCharacterMetadata (MetricDecorationInitial c) where
@@ -127,13 +127,20 @@ instance EncodableStaticCharacter c => MetricCharacterDecoration (MetricDecorati
 -- A concrete type representing the results of performing Sankoff's algorithm.
 data SankoffOptimizationDecoration c
    = SankoffOptimizationDecoration
-   { sankoffMinStateTuple  :: ([StateContributionList], [StateContributionList]) -- tuple of (a,a) where a is a per-parent-state list of lists of child
-                                                                                 -- states that contributed to the minimum cost of that state
-   , sankoffMinCostVector  ::  [ExtendedNatural]                                 -- minimum total cost per state (left + right)
-   , sankoffMinCost        :: Word                                               -- overall minimum cost for all states
-   , sankoffMetadataField  :: DiscreteWithTCMCharacterMetadataDec c
-   , sankoffCharacterField :: c                                                  -- Bit Vector version of median character
-   , sankoffIsLeaf         :: Bool
+   { sankoffMinStateTuple  :: ([StateContributionList], [StateContributionList]) -- tuple of (a,a) where a is a per-parent-state list of
+                                                                                 -- lists of child states that contributed to the minimum
+                                                                                 -- cost of that state
+   , sankoffMinCostVector         :: [ExtendedNatural]                           -- minimum total cost per state (left + right)
+   , sankoffMinCost               :: Word                                        -- overall minimum cost for all states
+   , sankoffPreliminaryExtraCosts :: [Word]                                      -- list of preliminary per-character-state extra costs
+                                                                                 -- for the node
+   , sankoffFinalExtraCosts       :: [Word]                                      -- list of final extra costs for the node
+   , sankoffBeta                  :: [Word]                                      -- this is Goloboff's beta, where
+                                                                                 -- beta_(s,n) = min[t_(s,x) + prelimExtraCost_(x,n)]
+                                                                                 -- where t_(s,x) is the transition cost from state s to x
+   , sankoffMetadataField         :: DiscreteWithTCMCharacterMetadataDec c
+   , sankoffCharacterField        :: c                                           -- Bit Vector version of median character
+   , sankoffIsLeaf                :: Bool
    }
 
 -- | A list of states on the child that contribute to the lowest score on each state in the parent
@@ -223,6 +230,24 @@ instance HasIsLeaf (SankoffOptimizationDecoration c) Bool where
 
 
 -- | (✔)
+instance HasPrelimaryExtraCost (SankoffOptimizationDecoration c) [Word] where
+
+    preliminaryExtraCost = lens sankoffPreliminaryExtraCosts (\e x -> e { sankoffPreliminaryExtraCosts = x })
+
+
+-- | (✔)
+instance HasFinalExtraCost (SankoffOptimizationDecoration c) [Word] where
+
+    finalExtraCost = lens sankoffFinalExtraCosts (\e x -> e { sankoffFinalExtraCosts = x })
+
+
+    -- | (✔)
+instance HasBeta (SankoffOptimizationDecoration c) [Word] where
+
+    beta = lens sankoffBeta (\e x -> e { sankoffBeta = x })
+
+
+-- | (✔)
 instance GeneralCharacterMetadata (SankoffOptimizationDecoration c) where
 
     extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . sankoffMetadataField
@@ -254,24 +279,26 @@ instance EncodableStaticCharacter c => SankoffDecoration (SankoffOptimizationDec
 instance EncodableStaticCharacter c => DiscreteExtensionSankoffDecoration (SankoffOptimizationDecoration c) c where
 
 --    extendDiscreteToSankoff :: DiscreteCharacterDecoration x c => x -> [Word] -> ([Word], [Word]) -> Word -> s
-    extendDiscreteToSankoff subDecoration costVector childMinStates cost newMedian leaf =
+    extendDiscreteToSankoff subDecoration costVector prelimExtras finalExtras childMinStates cost newMedian leaf =
 
         SankoffOptimizationDecoration
-        { sankoffMinStateTuple  = childMinStates
-        , sankoffMinCostVector  = costVector
-        , sankoffMinCost        = cost
-        , sankoffMetadataField  = metadataValue
-        , sankoffCharacterField = newMedian
-        , sankoffIsLeaf         = leaf
+        { sankoffMinStateTuple         = childMinStates
+        , sankoffMinCostVector         = costVector
+        , sankoffPreliminaryExtraCosts = prelimExtras
+        , sankoffFinalExtraCosts       = finalExtras
+        , sankoffMetadataField         = metadataValue
+        , sankoffMinCost               = cost
+        , sankoffCharacterField        = newMedian
+        , sankoffIsLeaf                = leaf
         }
       where
         alphabetValue   = subDecoration ^. characterAlphabet
         tcmValue        = generate (length alphabetValue) generator
         generator (i,j) = (subDecoration ^. symbolChangeMatrix) (toEnum i) (toEnum j)
         metadataValue   =
-          discreteMetadataFromTCM
-            <$> (^. characterName)
-            <*> (^. characterWeight)
-            <*> const alphabetValue
-            <*> const tcmValue
-            $ subDecoration
+            discreteMetadataFromTCM
+                <$> (^. characterName)
+                <*> (^. characterWeight)
+                <*> const alphabetValue
+                <*> const tcmValue
+                 $  subDecoration
