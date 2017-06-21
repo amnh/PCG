@@ -191,7 +191,7 @@ computeOnApplicableResolution f1 f2 f3 f4 f5 f6 topologies currentResolutions pa
                   -- We can't use this below because the monomorphism restriction is quite dumb at deduction.
                   --      f   = zip (fst <$> (x:xs))
                           val = snd <$> x:xs
-                          trs = BLK.hexTranspose $ val
+                          trs = BLK.hexTranspose val
                       in  BLK.hexmap
                             (zip (fst <$> (x:xs)))
                             (zip (fst <$> (x:xs)))
@@ -289,7 +289,7 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ 
                           -- Get the appropriate block from the resolution that contains this character
                         . (! k) . toBlocks . characterSequence
                           -- Get the appropriate resolution based on this character's display tree toplogy
-                        $ selectApplicableResolutions topo $ edgeCostMapping ! rootEdge
+                        . selectApplicableResolutions topo $ edgeCostMapping ! rootEdge
 
                     nextEdges i is (x,y)
                       | x == i && isValid x = Just y
@@ -326,7 +326,7 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ 
 --    applyMetadata :: NonEmpty (Vector z') -> NonEmpty (Vector z')
     applyMetadata = zipWith g sequenceOfBlockMinimumTopologies 
       where
-        g (topo, foci) decs = zipWith h foci decs
+        g (topo, foci) = zipWith h foci
           where
             h focus dec = dec & traversalFoci .~ (Just $ (focus,topo):|[])
 
@@ -360,7 +360,7 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ 
 --            parentCharSeqOnlyDynChars :: NonEmpty (Vector [a])
             parentCharSeqOnlyDynChars = mapWithKey g parentVectors
               where
-                g k v = mapWithKey h v
+                g k = mapWithKey h
                   where
                     h j x = [(0,dec)] -- Aways labeled as the first child (0) of the parent is technically incorrect. Probably won't matter, probably.
                       where

@@ -226,17 +226,7 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimizationPostOrder
           , ("Right Alignment     : ", rightAlignment     )
           ]
 
-        shownAlphabet = show $ dec ^. characterAlphabet
-
-        shownEdge = maybe "" (\x -> "Locus Edges         : " <> show x <> "\n") . fmap (fmap fst) $ dec ^. traversalFoci
-        
-        shownCost = unwords
-          [ "Cost                :"
-          , show (dec ^. characterCost)
-          , "{"
-          , show (dec ^. characterLocalCost)
-          , "}"
-          ]
+        (shownAlphabet, shownEdge, shownCost) = renderPrefix dec
   
 
 -- | (✔)
@@ -474,17 +464,7 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimization d) where
             , ("Right Alignment     : ", rightAlignment     )
             ]
 
-        shownAlphabet = show $ dec ^. characterAlphabet
-
-        shownEdge = maybe "" (\x -> "Locus Edges         : " <> show x <> "\n") . fmap (fmap fst) $ dec ^. traversalFoci
-        
-        shownCost = unwords
-            [ "Cost                :"
-            , show (dec ^. characterCost)
-            , "{"
-            , show (dec ^. characterLocalCost)
-            , "}"
-            ]
+        (shownAlphabet, shownEdge, shownCost) = renderPrefix dec
   
 
 -- | (✔)
@@ -851,3 +831,35 @@ instance EncodableDynamicCharacter d => DirectOptimizationDecoration (DynamicDec
 
 -- | (✔)
 instance EncodableDynamicCharacter d => ImpliedAlignmentDecoration   (DynamicDecorationImpliedAlignment d) d where
+
+
+renderAlphabet :: (HasCharacterAlphabet s a, Show a) => s -> String
+renderAlphabet dec = show $ dec ^. characterAlphabet
+
+
+renderEdge :: (HasTraversalFoci s (Maybe (f (a, b))), Functor f, Show (f a)) => s -> String
+renderEdge dec = maybe "" (\x -> "Locus Edges         : " <> show x <> "\n") . fmap (fmap fst) $ dec ^. traversalFoci
+
+
+renderCost :: (HasCharacterCost s a, HasCharacterLocalCost s b, Show a, Show b) => s -> String
+renderCost dec = unwords
+    [ "Cost                :"
+    , show (dec ^. characterCost)
+    , "{"
+    , show (dec ^. characterLocalCost)
+    , "}"
+    ]
+
+
+renderPrefix
+  :: ( HasCharacterAlphabet s a
+     , HasCharacterCost s b
+     , HasCharacterLocalCost s c
+     , HasTraversalFoci s (Maybe (f (d, e))), Functor f
+     , Show a
+     , Show b
+     , Show c
+     , Show (f d)
+     )
+  => s -> (String, String, String)
+renderPrefix = (,,) <$> renderAlphabet <*> renderEdge <*> renderCost

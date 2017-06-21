@@ -23,6 +23,7 @@ main = do
          Left  parseError   -> putStr parseError
          Right resultStream -> putStr resultStream
 
+
 parseArgs :: [String] -> Either String (FilePath, FilePath)
 parseArgs args =
   case args of
@@ -30,16 +31,19 @@ parseArgs args =
     [_]         -> Left "Only one argument supplied, expecting two files."
     arg1:arg2:_ -> Right (arg1, arg2)
 
+
 readFiles :: (FilePath, FilePath) -> IO (FilePath, String, FilePath, String)
 readFiles (path1, path2) = do
     content1 <- readFile path1
     content2 <- readFile path2
     pure (path1, content1, path2, content2)
 
+
 parseFiles :: (FilePath, String, FilePath, String) -> Either String ([FastaSequence], [FastaSequence])
-parseFiles (path1, file1, path2, file2) = liftA2 ((,)) (parse' path1 file1) (parse' path2 file2)
+parseFiles (path1, file1, path2, file2) = liftA2 (,) (parse' path1 file1) (parse' path2 file2)
   where
     parse' path stream = first parseErrorPretty (parse fastaStreamParser path stream :: Either (ParseError Char Dec) [FastaSequence])
+
 
 performFileDiff :: (FastaParseResult, FastaParseResult) -> Either String String
 performFileDiff (lhs, rhs) = maybe (Right fileDiffResult) Left errorMessage 
