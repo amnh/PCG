@@ -45,11 +45,22 @@ class ( SankoffDecoration s c
     extendDiscreteToSankoff :: DiscreteCharacterDecoration x c
                             => x
                             -> [ExtendedNatural]
+                            -> [ExtendedNatural]
+                            -> [ExtendedNatural]
+                            -> [ExtendedNatural]
                             -> ([[Word]], [[Word]])
                             -> Word
                             -> c
                             -> Bool
                             -> s
+
+
+-- |
+-- A 'Lens' for the 'beta' field.
+class HasBeta s a | s -> a where
+
+    {-# MINIMAL beta #-}
+    beta :: Lens' s a
 
 
 -- |
@@ -61,9 +72,27 @@ class HasCharacterCostVector s a | s -> a where
 
 
 -- |
+-- A 'Lens' for the 'finalExtraCost' field.
+class HasFinalExtraCost s a | s -> a where
+
+    {-# MINIMAL finalExtraCost #-}
+    finalExtraCost :: Lens' s a
+
+
+-- |
+-- A 'Lens' for the 'preliminaryExtraCost' field.
+class HasPreliminaryExtraCost s a | s -> a where
+
+    {-# MINIMAL preliminaryExtraCost #-}
+    preliminaryExtraCost :: Lens' s a
+
+
+-- |
 -- A 'Lens' for the 'minStateTuple' field.
 class HasStateMinTuple s a | s -> a where
 
     {-# MINIMAL minStateTuple #-}
     minStateTuple :: Lens' s a
+
+
 

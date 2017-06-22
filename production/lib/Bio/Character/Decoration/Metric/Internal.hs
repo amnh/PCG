@@ -132,10 +132,10 @@ data SankoffOptimizationDecoration c
                                                                                  -- cost of that state
    , sankoffMinCostVector         :: [ExtendedNatural]                           -- minimum total cost per state (left + right)
    , sankoffMinCost               :: Word                                        -- overall minimum cost for all states
-   , sankoffPreliminaryExtraCosts :: [Word]                                      -- list of preliminary per-character-state extra costs
+   , sankoffPreliminaryExtraCosts :: [ExtendedNatural]                           -- list of preliminary per-character-state extra costs
                                                                                  -- for the node
-   , sankoffFinalExtraCosts       :: [Word]                                      -- list of final extra costs for the node
-   , sankoffBeta                  :: [Word]                                      -- this is Goloboff's beta, where
+   , sankoffFinalExtraCosts       :: [ExtendedNatural]                           -- list of final extra costs for the node
+   , sankoffBeta                  :: [ExtendedNatural]                           -- this is Goloboff's beta, where
                                                                                  -- beta_(s,n) = min[t_(s,x) + prelimExtraCost_(x,n)]
                                                                                  -- where t_(s,x) is the transition cost from state s to x
    , sankoffMetadataField         :: DiscreteWithTCMCharacterMetadataDec c
@@ -230,19 +230,19 @@ instance HasIsLeaf (SankoffOptimizationDecoration c) Bool where
 
 
 -- | (✔)
-instance HasPrelimaryExtraCost (SankoffOptimizationDecoration c) [Word] where
+instance HasPreliminaryExtraCost (SankoffOptimizationDecoration c) [ExtendedNatural] where
 
     preliminaryExtraCost = lens sankoffPreliminaryExtraCosts (\e x -> e { sankoffPreliminaryExtraCosts = x })
 
 
 -- | (✔)
-instance HasFinalExtraCost (SankoffOptimizationDecoration c) [Word] where
+instance HasFinalExtraCost (SankoffOptimizationDecoration c) [ExtendedNatural] where
 
     finalExtraCost = lens sankoffFinalExtraCosts (\e x -> e { sankoffFinalExtraCosts = x })
 
 
     -- | (✔)
-instance HasBeta (SankoffOptimizationDecoration c) [Word] where
+instance HasBeta (SankoffOptimizationDecoration c) [ExtendedNatural] where
 
     beta = lens sankoffBeta (\e x -> e { sankoffBeta = x })
 
@@ -279,13 +279,14 @@ instance EncodableStaticCharacter c => SankoffDecoration (SankoffOptimizationDec
 instance EncodableStaticCharacter c => DiscreteExtensionSankoffDecoration (SankoffOptimizationDecoration c) c where
 
 --    extendDiscreteToSankoff :: DiscreteCharacterDecoration x c => x -> [Word] -> ([Word], [Word]) -> Word -> s
-    extendDiscreteToSankoff subDecoration costVector prelimExtras finalExtras childMinStates cost newMedian leaf =
+    extendDiscreteToSankoff subDecoration costVector prelimExtras finalExtras inputBeta childMinStates cost newMedian leaf =
 
         SankoffOptimizationDecoration
         { sankoffMinStateTuple         = childMinStates
         , sankoffMinCostVector         = costVector
         , sankoffPreliminaryExtraCosts = prelimExtras
         , sankoffFinalExtraCosts       = finalExtras
+        , sankoffBeta                  = inputBeta
         , sankoffMetadataField         = metadataValue
         , sankoffMinCost               = cost
         , sankoffCharacterField        = newMedian
