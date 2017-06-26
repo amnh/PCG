@@ -19,5 +19,5 @@ local-bin-path: bin
 packages:
   - '.'
 
-resolver: lts-8.15
+resolver: lts-8.20
 
