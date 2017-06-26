@@ -332,6 +332,7 @@ executable pcg
                      , megaparsec       >=5.0
                      , mono-traversable >=1.0
                      , parallel
+                     , pcg-language
                      , semigroupoids
                      , semigroups
                      , text

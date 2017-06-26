@@ -20,14 +20,15 @@ import Data.Either.Custom         (eitherTValidation)
 import Data.Int
 import Data.Text.Lazy             (Text)
 import Data.Text.Lazy.IO          (readFile)
+import PCG.Command.Types.Read.ReadError
 import Prelude             hiding (readFile)
 import System.Directory
 import System.FilePath.Glob
 
-import PCG.Command.Types.Read.ReadError
 
 type FileContent  = Text
 type FileResult   = (FilePath, FileContent)
+
 
 data FileSpecificationContent
    = SpecContent
@@ -35,7 +36,9 @@ data FileSpecificationContent
    , tcmFile   :: Maybe FileResult
    } deriving (Eq)
 
+
 type TcmReference = Maybe FilePath
+
 
 data FileSpecification
    = UnspecifiedFile    [FilePath] --Try to parse them all?
@@ -48,11 +51,13 @@ data FileSpecification
    | PrealignedFile     FileSpecification TcmReference
    deriving (Show)
 
+
 data CustomAlphabetOptions
    = Init3D     Bool
    | Level      Int64 CustomAlphabetStrategy
    | Tiebreaker CustomAlphabetStrategy
    deriving (Show)
+
 
 data CustomAlphabetStrategy
    = First
@@ -60,6 +65,8 @@ data CustomAlphabetStrategy
    | AtRandom
    deriving (Show)
 
+
+{-
 getSpecifiedContent :: FileSpecification -> EitherT ReadError IO FileSpecificationContent
 getSpecifiedContent (UnspecifiedFile    xs      ) = getSpecifiedContentSimple xs
 getSpecifiedContent (AminoAcidFile      xs      ) = getSpecifiedContentSimple xs
@@ -74,6 +81,7 @@ getSpecifiedContent (PrealignedFile     fs tcm  ) = do
       Nothing -> SpecContent (dataFiles specifiedContent) <$> getSpecifiedTcm tcm
       Just _  -> pure specifiedContent 
 
+
 getSpecifiedTcm :: Maybe FilePath -> EitherT ReadError IO (Maybe (FilePath, FileContent))
 getSpecifiedTcm tcmPath =
     case tcmPath of
@@ -85,13 +93,17 @@ getSpecifiedTcm tcmPath =
           []  -> left $ unfindable tcmPath'
           _   -> left $ ambiguous tcmPath' (fst <$> tcmFiles)
 
+
 getSpecifiedFileContents :: [FilePath] -> EitherT ReadError IO [FileResult]
 getSpecifiedFileContents = fmap concat . eitherTValidation . fmap getFileContents
+
 
 getSpecifiedContentSimple :: [FilePath] -> EitherT ReadError IO FileSpecificationContent
 getSpecifiedContentSimple = fmap (`SpecContent` Nothing) . getSpecifiedFileContents
 
--- | Reads in the contents of the given FilePath, correctly interpolating glob paths
+
+-- |
+-- Reads in the contents of the given FilePath, correctly interpolating glob paths
 getFileContents :: FilePath -> EitherT ReadError IO [(FilePath, FileContent)]
 getFileContents path = do
     -- Check if the file exists exactly as specified
@@ -117,3 +129,4 @@ getFileContents path = do
         else do
             content <- liftIO $ readFile foundPath
             pure (foundPath, content)
+-}

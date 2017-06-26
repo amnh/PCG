@@ -1,74 +1,124 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module PCG.Command.Types.Read.Validate
+module PCG.Command.Read
   ( validate
   ) where
 
-import Control.Monad              (liftM2)
-import Data.Char                  (toLower)
-import Data.Either                (partitionEithers)
-import Data.Either.Combinators    (isRight, rightToMaybe)
-import Data.Maybe                 (fromJust,isNothing)
-import PCG.Command.Types
-import PCG.Command.Types.Read.Internal
-import PCG.Script.Types
+import Control.Monad           (liftM2)
+import Data.Char               (toLower)
+import Data.Either             (partitionEithers)
+import Data.Either.Combinators (isRight, rightToMaybe)
+import Data.Foldable
+import Data.Int
+import Data.List.NonEmpty      (NonEmpty( (:|) ))
+import qualified Data.List.NonEmpty as NE
+import Data.Maybe              (fromJust, isNothing)
+import Data.Text               (Text) -- hiding (foldr, toLower, unlines)
+import PCG.Syntax
+import Prelude
 
 --import Debug.Trace
 
 
-validate :: [Argument] -> Either String Command
+data  ReadCommand
+    = ReadCommand [FileSpecification]
+      
+
+data  FileSpecificationContent
+    = SpecContent
+    { dataFiles :: [FileResult]
+    , tcmFile   :: Maybe FileResult
+    } deriving (Eq)
+
+
+data  FileSpecification
+    = UnspecifiedFile    [FilePath] --Try to parse them all?
+    | AminoAcidFile      [FilePath]
+    | NucleotideFile     [FilePath]
+    | AnnotatedFile      [FilePath]
+    | ChromosomeFile     [FilePath]
+    | GenomeFile         [FilePath]
+    | CustomAlphabetFile [FilePath] TcmReference [CustomAlphabetOptions]
+    | PrealignedFile     FileSpecification TcmReference
+    deriving (Show)
+
+
+data  CustomAlphabetOptions
+    = Init3D     Bool
+    | Level      Int64 CustomAlphabetStrategy
+    | Tiebreaker       CustomAlphabetStrategy
+    deriving (Show)
+
+
+data  CustomAlphabetStrategy
+    = First
+    | Last
+    | AtRandom
+    deriving (Show)
+
+
+type  FileContent  = Text
+
+
+type  FileResult   = (FilePath, FileContent)
+
+
+type  TcmReference = Maybe FilePath
+
+
+validate :: [Argument] -> Either String ReadCommand
 validate xs =
-  case partitionEithers $ validateReadArg <$> xs of
+  case partitionEithers . toList $ validateReadArg <$> xs of
     ([]  , []) -> Left "No arguments provided to the 'read' command! The 'read' command expects one or more arguments"
     (y:ys, _ ) -> Left  $ unlines (y:ys)
-    ([]  , ys) -> Right $ READ ys
+    ([]  , ys) -> Right $ ReadCommand ys
+
 
 validateReadArg :: Argument -> Either String FileSpecification
 --validateReadArg x | traceShow x False = undefined
 --validateReadArg x | trace "[1] First!" False = undefined
 validateReadArg (PrimativeArg   (TextValue str))   = Right $ UnspecifiedFile [str]
 --validateReadArg x | trace "[2] Second" False = undefined
-validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList xs)) | (\x -> x == "aminoacid"  || x == "aminoacids"     ) $ toLower <$> identifier =
-  case partitionEithers $ primativeString <$> xs of
+validateReadArg (ListIdNamedArg (ListId identifier) (ArgumentList xs)) | (\x -> x == "aminoacid"  || x == "aminoacids"     ) $ toLower <$> identifier =
+  case partitionEithers . toList $ primativeString <$> xs of
     ([]    , filePaths) -> Right $ AminoAcidFile  filePaths
     (errors, _        ) -> Left  $ unlines errors
 --validateReadArg x | trace "[3] Third" False = undefined
-validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList xs)) | (\x -> x == "nucleotide" || x == "nucleotides"    ) $ toLower <$> identifier =
-  case partitionEithers $ primativeString <$> xs of
+validateReadArg (ListIdNamedArg (ListId identifier) (ArgumentList xs)) | (\x -> x == "nucleotide" || x == "nucleotides"    ) $ toLower <$> identifier =
+  case partitionEithers . toList $ primativeString <$> xs of
     ([]    , filePaths) -> Right $ NucleotideFile filePaths
     (errors, _        ) -> Left  $ unlines errors
 --validateReadArg x | trace "[4] Fourth" False = undefined
-validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList xs)) | "annotated"  == (toLower <$> identifier) =
-  case partitionEithers $ primativeString <$> xs of
+validateReadArg (ListIdNamedArg (ListId identifier) (ArgumentList xs)) | "annotated"  == (toLower <$> identifier) =
+  case partitionEithers . toList $ primativeString <$> xs of
     ([]    , filePaths) -> Right $ AnnotatedFile  filePaths
     (errors, _        ) -> Left  $ unlines errors
 --validateReadArg x | trace "[5] Fifth" False = undefined
-validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList xs)) | (\x -> x == "chomosome"  || x == "chromosomes"    ) $ toLower <$> identifier =
-  case partitionEithers $ primativeString <$> xs of
+validateReadArg (ListIdNamedArg (ListId identifier) (ArgumentList xs)) | (\x -> x == "chomosome"  || x == "chromosomes"    ) $ toLower <$> identifier =
+  case partitionEithers . toList $ primativeString <$> xs of
     ([]    , filePaths) -> Right $ ChromosomeFile filePaths
     (errors, _        ) -> Left  $ unlines errors
 --validateReadArg x | trace "[6] Sixth" False = undefined
-validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList xs)) | (\x -> x == "genome"     || x == "genomes"        ) $ toLower <$> identifier =
-  case partitionEithers $ primativeString <$> xs of
+validateReadArg (ListIdNamedArg (ListId identifier) (ArgumentList xs)) | (\x -> x == "genome"     || x == "genomes"        ) $ toLower <$> identifier =
+  case partitionEithers . toList $ primativeString <$> xs of
     ([]    , filePaths) -> Right $ GenomeFile     filePaths
     (errors, _        ) -> Left  $ unlines errors
 --validateReadArg x | trace "[7] Seventh" False = undefined
---validateReadArg (CommandArg (DubiousCommand (Lident identifier) xs)) | (\x -> x == "breakinv"   || x == "custom_alphabet") $ toLower <$> identifier = subDefinition
-validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList xs)) | (\x -> x == "breakinv"   || x == "custom_alphabet") $ toLower <$> identifier = subDefinition
+--validateReadArg (CommandArg (DubiousCommand (ListId identifier) xs)) | (\x -> x == "breakinv"   || x == "custom_alphabet") $ toLower <$> identifier = subDefinition
+validateReadArg (ListIdNamedArg (ListId identifier) (ArgumentList xs)) | (\x -> x == "breakinv"   || x == "custom_alphabet") $ toLower <$> identifier = subDefinition
   where
-    (files,suffix) = span (isRight . primativeString) xs
-    files'  = (fromJust . rightToMaybe . primativeString) <$> files
-    options = getCustomAlphabetOption <$> tail suffix
+    (files, suffix) = NE.span (isRight . primativeString) xs
+    files'    = (fromJust . rightToMaybe . primativeString) <$> files
+    options   = getCustomAlphabetOption <$> tail suffix
     badOption = any isNothing options
-    tcmFile' = case suffix of
-                LidentNamedArg (Lident y) ys :_ -> if "tcm" == (toLower <$> y)
+    tcmFile'  = case suffix of
+                  ListIdNamedArg (ListId y) ys :_ -> if "tcm" == (toLower <$> y)
                                                    then either (const Nothing) Just $ primativeString =<< getSingltonArgumentList ys
                                                    else Nothing
-                _                               -> Nothing
+                  _                               -> Nothing
 
     subDefinition
-      |   null xs
-      || (null.tail) xs      = Left  "Missing minimum arguments of at least one file path containing data and file path to tcm definition"
+      |  (null. NE.tail) xs  = Left  "Missing minimum arguments of at least one file path containing data and file path to tcm definition"
       |   null suffix
       ||  isNothing tcmFile' = Left  "Missing filepath to tcm definition"
       |   badOption          = Left  "One or more optional arguments are invalid"
@@ -83,16 +133,17 @@ validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList xs)) | (\x -> 
                                  ([a],[b],[c]) -> Right $ CustomAlphabetFile files' tcmFile' [a,b,c]
                                  _             -> Left "Multiple labeled arguments sharing the same label"
 
-validateReadArg (LidentNamedArg (Lident identifier) (ArgumentList (arg:args))) | "prealigned" == (toLower <$> identifier) =
+validateReadArg (ListIdNamedArg (ListId identifier) (ArgumentList (arg:|args))) | "prealigned" == (toLower <$> identifier) =
   case args of
     []                             -> flip PrealignedFile Nothing <$> val
-    [LidentNamedArg (Lident x) xs] -> case toLower <$> x of
+    [ListIdNamedArg (ListId x) xs] -> case toLower <$> x of
                                         "tcm" -> liftM2 PrealignedFile val (Just <$> primativeString xs)
                                         _     -> Left $ "Unexpected named argument '" ++ x ++ "'"
     _                              -> Left "Too many arguments"
   where
     val = validateReadArg arg
 validateReadArg _ = Left "Unknown argument in read command"
+
 
 partitionOptions :: [CustomAlphabetOptions] -> ([CustomAlphabetOptions],[CustomAlphabetOptions],[CustomAlphabetOptions])
 partitionOptions = foldr f ([],[],[])
@@ -101,14 +152,16 @@ partitionOptions = foldr f ([],[],[])
     f e@(Level    _ _) (x,y,z) = (  x,e:y,  z)
     f e@(Tiebreaker _) (x,y,z) = (  x,  y,e:z)
 
+
 getCustomAlphabetOption :: Argument -> Maybe CustomAlphabetOptions
-getCustomAlphabetOption (LidentNamedArg (Lident identifier) (PrimativeArg (BitValue b)))
+getCustomAlphabetOption (ListIdNamedArg (ListId identifier) (PrimativeArg (BitValue b)))
   | "init3d"     == (toLower <$> identifier) = Just $ Init3D b
-getCustomAlphabetOption (LidentNamedArg (Lident identifier) (ArgumentList [PrimativeArg (WholeNum n), PrimativeArg (TextValue x)]))
+getCustomAlphabetOption ( ListIdNamedArg (ListId identifier) (ArgumentList ( (PrimativeArg (WholeNum n)) :| ((PrimativeArg (TextValue x)) :_)) ) )
   |  "level"     == (toLower <$> identifier) = Level n <$> getCustomAlphabetStrategy x
-getCustomAlphabetOption (LidentNamedArg (Lident identifier) (PrimativeArg (TextValue x)))
+getCustomAlphabetOption (ListIdNamedArg (ListId identifier) (PrimativeArg (TextValue x)))
   | "tiebreaker" == (toLower <$> identifier) = Tiebreaker <$> getCustomAlphabetStrategy x
 getCustomAlphabetOption _ = Nothing
+
 
 getCustomAlphabetStrategy :: String -> Maybe CustomAlphabetStrategy
 getCustomAlphabetStrategy x
@@ -119,18 +172,21 @@ getCustomAlphabetStrategy x
   where
     x' = toLower <$> x
 
+
 primativeString :: Argument -> Either String FilePath
 primativeString (PrimativeArg   (TextValue str)) = Right str
 primativeString (PrimativeArg   _              ) = Left $ "A primative value that is not a file path " ++ primativeStringErrorSuffix
-primativeString (LidentArg      (Lident i)     ) = Left $ "Identifier '"       ++ i ++ "' " ++ primativeStringErrorSuffix
-primativeString (LidentNamedArg (Lident i) _   ) = Left $ "Labeled argument '" ++ i ++ "' " ++ primativeStringErrorSuffix
+primativeString (ListIdArg      (ListId i)     ) = Left $ "Identifier '"       ++ i ++ "' " ++ primativeStringErrorSuffix
+primativeString (ListIdNamedArg (ListId i) _   ) = Left $ "Labeled argument '" ++ i ++ "' " ++ primativeStringErrorSuffix
 primativeString (CommandArg     _              ) = Left $ "Command argument "  ++              primativeStringErrorSuffix
 primativeString (ArgumentList   _              ) = Left $ "Argument list "     ++              primativeStringErrorSuffix
 
+
 -- TODO: Make this have many different descriptive messages
 getSingltonArgumentList :: Argument -> Either String Argument
-getSingltonArgumentList (ArgumentList   [x]     ) = Right x
+getSingltonArgumentList (ArgumentList   (x:|_)     ) = Right x
 getSingltonArgumentList _  = Left "Not a singlton argument list"
+
 
 primativeStringErrorSuffix :: String
 primativeStringErrorSuffix = "found where a string argument containing a file path was expected"

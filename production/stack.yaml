@@ -17,7 +17,7 @@ ghc-options:
 local-bin-path: bin
 
 packages:
-  - '.'
+  - lib/pcg-language
 
 resolver: lts-8.20
 

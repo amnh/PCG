@@ -1,38 +1,42 @@
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
-module PCG.Script.Parser where
+
+module PCG.Syntax.Parser where
 
 import Data.Functor           (($>))
 import Data.Char              (toLower)
+import Data.List.NonEmpty     (NonEmpty, some1)
+import qualified Data.List.NonEmpty as NE
 import Data.Maybe             (fromJust)
+import Data.Semigroup
 import Data.Time.Clock        (secondsToDiffTime)
+import PCG.Syntax.Types
 import Text.Megaparsec
-import Text.Megaparsec.Custom
+--import Text.Megaparsec.Custom
 import Text.Megaparsec.Prim   (MonadParsec)
 import Text.Megaparsec.Lexer  (float,integer,signed)
 
-import PCG.Script.Types
 
 
-scriptStreamParser :: (MonadParsec e s m, Token s ~ Char) => m Script
-scriptStreamParser = scriptDefinition
+syntacticStreamParser :: (MonadParsec e s m, Token s ~ Char) => m Syntax
+syntacticStreamParser = syntaxDefinition
 
 
-scriptDefinition :: (MonadParsec e s m, Token s ~ Char) => m Script
-scriptDefinition = Script <$> (trimmed (some commandDefinition) <* eof)
+syntaxDefinition :: (MonadParsec e s m, Token s ~ Char) => m Syntax
+syntaxDefinition = Syntax <$> (trimmed (some1 commandDefinition) <* eof)
 
 
-commandDefinition :: (MonadParsec e s m, Token s ~ Char) => m DubiousCommand
+commandDefinition :: (MonadParsec e s m, Token s ~ Char) => m SyntacticCommand
 commandDefinition = do
   _         <- whitespace
-  lident    <- lidentDefinition
+  lident    <- listIdDefinition
   arguments <- argumentListDefinition
-  pure $ DubiousCommand lident arguments
+  pure $ SyntacticCommand lident arguments
 
 
-lidentDefinition :: (MonadParsec e s m, Token s ~ Char) => m Lident
-lidentDefinition = try $ Lident <$> symbol lident
+listIdDefinition :: (MonadParsec e s m, Token s ~ Char) => m ListIdentifier
+listIdDefinition = try $ ListId <$> symbol lident
   where
-    lident         = leadingChar <:> many followingChars
+    lident         = (:) <$> leadingChar <*> many followingChars
     leadingChar    = char '_' <|> lowerChar
     followingChars = char '_' <|> alphaNumChar
 
@@ -42,22 +46,23 @@ argumentDefinition = choice
     [ try (PrimativeArg <$> primativeDefinition)
     , try (CommandArg   <$> commandDefinition)
     , try lidentNamedArg'
-    , try (LidentArg    <$> lidentDefinition)
+    , try (ListIdArg    <$> listIdDefinition)
     , try (ArgumentList <$> argumentListDefinition)
     ]
   where
     lidentNamedArg' = do 
-      lident   <- lidentDefinition
+      listId   <- listIdDefinition
       _        <- trimmed $ char ':' 
       argument <- argumentDefinition
-      pure $ LidentNamedArg lident argument
+      pure $ ListIdNamedArg listId argument
 
 
-argumentListDefinition :: (MonadParsec e s m, Token s ~ Char) => m [Argument]
-argumentListDefinition = 
-     symbol (char '(') 
-  *> argumentDefinition `sepBy` trimmed (char ',')
-  <* symbol (char ')')
+argumentListDefinition :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty Argument)
+argumentListDefinition = do
+    _ <- symbol $ char '('
+    x <- NE.fromList <$> argumentDefinition `sepBy1` trimmed (char ',')
+    _ <- symbol $ char ')'
+    pure x
 
 
 primativeDefinition :: (MonadParsec e s m, Token s ~ Char) => m Primative
@@ -102,6 +107,32 @@ primativeDefinition = symbol $ choice
 
 
 -- Other combinators
+
+anyToken :: MonadParsec e s m => m (Token s)
+anyToken = token Right Nothing
+
+
+comment :: MonadParsec e s m => m [Token s] -> m [Token s] -> m [Token s]
+comment start end = commentDefinition' False
+  where
+    commentChar    = notFollowedBy (start <|> end) *> anyToken
+    commentContent = many commentChar
+    commentDefinition' enquote = do
+        prefix   <- start
+        before   <- commentContent
+        comments <- concat <$> many ((<>) <$> commentDefinition' True <*> commentContent)
+        suffix   <- end
+{-
+        after    <- if   enquote
+                    then many spaceChar
+                    else pure ""
+-}
+        pure . concat $
+            if enquote
+            then [ prefix, before, comments, suffix {- , after -} ]
+            else [         before, comments         {- , after -} ] 
+
+
 trimmed :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
 trimmed x = whitespace *> x <* whitespace
 
