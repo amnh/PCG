@@ -30,7 +30,7 @@ data  Argument
 
 
 data  Primative
-    = WholeNum  Int64
+    = WholeNum  Int
     | RealNum   Double
     | BitValue  Bool
     | TextValue String

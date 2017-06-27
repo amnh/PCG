@@ -2,19 +2,18 @@
 
 module PCG.Syntax.Parser where
 
-import Data.Functor           (($>))
+import Data.Functor           (($>), void)
 import Data.Char              (toLower)
 import Data.List.NonEmpty     (NonEmpty, some1)
 import qualified Data.List.NonEmpty as NE
 import Data.Maybe             (fromJust)
 import Data.Semigroup
-import Data.Time.Clock        (secondsToDiffTime)
+import Data.Time.Clock        (DiffTime, secondsToDiffTime)
 import PCG.Syntax.Types
-import Text.Megaparsec
+import Text.Megaparsec hiding (space)
 --import Text.Megaparsec.Custom
 import Text.Megaparsec.Prim   (MonadParsec)
-import Text.Megaparsec.Lexer  (float,integer,signed)
-
+import Text.Megaparsec.Lexer
 
 
 syntacticStreamParser :: (MonadParsec e s m, Token s ~ Char) => m Syntax
@@ -22,7 +21,7 @@ syntacticStreamParser = syntaxDefinition
 
 
 syntaxDefinition :: (MonadParsec e s m, Token s ~ Char) => m Syntax
-syntaxDefinition = Syntax <$> (trimmed (some1 commandDefinition) <* eof)
+syntaxDefinition = Syntax <$> (trim (some1 commandDefinition) <* eof)
 
 
 commandDefinition :: (MonadParsec e s m, Token s ~ Char) => m SyntacticCommand
@@ -34,11 +33,11 @@ commandDefinition = do
 
 
 listIdDefinition :: (MonadParsec e s m, Token s ~ Char) => m ListIdentifier
-listIdDefinition = try $ ListId <$> symbol lident
+listIdDefinition = ListId <$> clip lident
   where
     lident         = (:) <$> leadingChar <*> many followingChars
-    leadingChar    = char '_' <|> lowerChar
-    followingChars = char '_' <|> alphaNumChar
+    leadingChar    = char '_' <|> lowerChar    <?> "An identifier must start with a lower-case letter or an underscore."
+    followingChars = char '_' <|> alphaNumChar <?> "An identifier may only contain alpha-numeric values and underscores."
 
 
 argumentDefinition :: (MonadParsec e s m, Token s ~ Char) => m Argument
@@ -52,24 +51,24 @@ argumentDefinition = choice
   where
     lidentNamedArg' = do 
       listId   <- listIdDefinition
-      _        <- trimmed $ char ':' 
+      _        <- trim $ char ':' 
       argument <- argumentDefinition
       pure $ ListIdNamedArg listId argument
 
 
 argumentListDefinition :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty Argument)
 argumentListDefinition = do
-    _ <- symbol $ char '('
-    x <- NE.fromList <$> argumentDefinition `sepBy1` trimmed (char ',')
-    _ <- symbol $ char ')'
+    _ <- clip $ char '('
+    x <- NE.fromList <$> argumentDefinition `sepBy1` trim (char ',')
+    _ <- clip $ char ')'
     pure x
 
 
 primativeDefinition :: (MonadParsec e s m, Token s ~ Char) => m Primative
-primativeDefinition = symbol $ choice
+primativeDefinition = clip $ choice
     [ try  timeValue'
-    , try (RealNum   <$> signed space float)
-    , try (WholeNum . fromIntegral <$> signed space integer)
+    , try (RealNum   <$> signed whitespace float)
+    , try (WholeNum . fromIntegral <$> signed whitespace integer)
     , try (BitValue  <$> bitValue)
     , try (TextValue <$> textValue)
     ]
@@ -106,42 +105,102 @@ primativeDefinition = symbol $ choice
                   ]
 
 
+listId :: (MonadParsec e s m, Token s ~ Char) => String -> m ListIdentifier
+listId label = do
+    lid@(ListId found) <- listIdDefinition
+    if found ==^ label
+    then pure lid
+    else fail $ mconcat ["'", found, "' did not match '", label, "'"]  
+  where
+    -- Case-insensitive matching
+    (==^) :: String -> String -> Bool
+    (==^) lhs rhs = (toLower <$> lhs) == (toLower <$> rhs)
+
+
 -- Other combinators
 
-anyToken :: MonadParsec e s m => m (Token s)
-anyToken = token Right Nothing
+trim :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
+trim x = whitespace *> x <* whitespace
 
 
-comment :: MonadParsec e s m => m [Token s] -> m [Token s] -> m [Token s]
-comment start end = commentDefinition' False
+clip :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
+clip x = lexeme whitespace x
+
+
+whitespace :: (MonadParsec e s m, Token s ~ Char) => m () 
+whitespace = space token line block
   where
-    commentChar    = notFollowedBy (start <|> end) *> anyToken
-    commentContent = many commentChar
-    commentDefinition' enquote = do
-        prefix   <- start
-        before   <- commentContent
-        comments <- concat <$> many ((<>) <$> commentDefinition' True <*> commentContent)
-        suffix   <- end
+    token = void spaceChar
+    line  = skipLineComment "**"
+    block = skipBlockCommentNested "(*" "*)"
+
 {-
-        after    <- if   enquote
-                    then many spaceChar
-                    else pure ""
+command :: (MonadParsec e s m, Token s ~ Char) => String -> m a
+command name args = do
+  _ <- listId name
+  args
 -}
-        pure . concat $
-            if enquote
-            then [ prefix, before, comments, suffix {- , after -} ]
-            else [         before, comments         {- , after -} ] 
+
+--argumentList :: [m a] -> m a
 
 
-trimmed :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
-trimmed x = whitespace *> x <* whitespace
+namedArg :: (MonadParsec e s m, Token s ~ Char) => String -> m a -> m a
+namedArg name arg = do
+    ListId x <- listId name
+    _        <- trim (char ':') <?> ("':' between the identifier '" <> x <> "' and it's agrument")
+    arg
 
 
-symbol  :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
-symbol  x = x <* whitespace
+bool :: (MonadParsec e s m, Token s ~ Char) => m Bool
+bool = do
+    primativeValue <- primativeDefinition
+    case primativeValue of
+      BitValue  x -> pure x
+      WholeNum  _ -> fail "Expected a boolean value but found an integral value"
+      RealNum   _ -> fail "Expected a boolean value but found a real value"
+      TextValue _ -> fail "Expected a boolean value but found a textual value"
+      TimeSpan  _ -> fail "Expected a boolean value but found a time value"
 
 
-whitespace :: (MonadParsec e s m, Token s ~ Char) => m ()
-whitespace = try commentBlock <|> space
-  where
-    commentBlock = comment (string "(*") (string "*)") $> ()
+int :: (MonadParsec e s m, Token s ~ Char) => m Int
+int = do
+    primativeValue <- primativeDefinition
+    case primativeValue of
+      BitValue  _ -> fail "Expected an integral value but found a boolean value"
+      WholeNum  x -> pure x
+      RealNum   _ -> fail "Expected an integral value but found a real value"
+      TextValue _ -> fail "Expected an integral value but found a textual value"
+      TimeSpan  _ -> fail "Expected an integral value but found a time value"
+
+
+real :: (MonadParsec e s m, Token s ~ Char) => m Double
+real = do
+    primativeValue <- primativeDefinition
+    case primativeValue of
+      BitValue  _ -> fail "Expected a real value but found a boolean value"
+      WholeNum  _ -> fail "Expected a real value but found an integral value"
+      RealNum   x -> pure x
+      TextValue _ -> fail "Expected a real value but found a textual value"
+      TimeSpan  _ -> fail "Expected a real value but found a time value"
+
+
+text :: (MonadParsec e s m, Token s ~ Char) => m String
+text = do
+    primativeValue <- primativeDefinition
+    case primativeValue of
+      BitValue  _ -> fail "Expected a textual value but found a boolean value"
+      WholeNum  _ -> fail "Expected a textual value but found an integral value"
+      RealNum   _ -> fail "Expected a textual value but found a real value" 
+      TextValue x -> pure x
+      TimeSpan  _ -> fail "Expected a textual value but found a time value"
+
+time :: (MonadParsec e s m, Token s ~ Char) => m DiffTime
+time = do
+    primativeValue <- primativeDefinition
+    case primativeValue of
+      BitValue  _ -> fail "Expected a time value but found a boolean value"
+      WholeNum  _ -> fail "Expected a time value but found an integral value"
+      RealNum   _ -> fail "Expected a time value but found a real value" 
+      TextValue _ -> fail "Expected a time value but found a textual value"
+      TimeSpan  x -> pure x
+

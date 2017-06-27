@@ -16,6 +16,7 @@ import Data.Maybe              (fromJust, isNothing)
 import Data.Text               (Text) -- hiding (foldr, toLower, unlines)
 import PCG.Syntax
 import Prelude
+import Text.Megaparsec
 
 --import Debug.Trace
 
@@ -45,8 +46,8 @@ data  FileSpecification
 
 data  CustomAlphabetOptions
     = Init3D     Bool
-    | Level      Int64 CustomAlphabetStrategy
-    | Tiebreaker       CustomAlphabetStrategy
+    | Level      Int  CustomAlphabetStrategy
+    | Tiebreaker      CustomAlphabetStrategy
     deriving (Show)
 
 
@@ -64,6 +65,13 @@ type  FileResult   = (FilePath, FileContent)
 
 
 type  TcmReference = Maybe FilePath
+
+{-
+parse :: (MonadParsec e s m, Token s ~ Char) => SyntacticCommand -> m ReadCommand
+parse (SyntacticCommand listId args) =
+  if listId
+-}
+
 
 
 validate :: [Argument] -> Either String ReadCommand
