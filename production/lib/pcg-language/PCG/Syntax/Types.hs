@@ -7,11 +7,14 @@ import Control.Monad.Free.TH  (makeFree)
 --import Data.Char              (toLower)
 import Data.Functor           (($>), void)
 import Data.Key
-import Data.List.NonEmpty     (NonEmpty)
+import Data.List              (intercalate)
+import Data.List.NonEmpty     (NonEmpty(..))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
+import Data.Maybe             (fromMaybe)
 import Data.Scientific hiding (scientific)
 import Data.Semigroup  hiding (option)
+import Data.Set               (Set)
 import qualified Data.Set as S
 import Data.Time.Clock        (DiffTime, secondsToDiffTime)
 import Text.Megaparsec hiding (space)
@@ -117,15 +120,15 @@ value :: MonadFree PrimativeValue m => String -> m ()
 value = pValue
 
 
-{-
+{--}
 data TestStruct = TS Int String deriving (Show)
 
 tester :: Free PrimativeValue TestStruct
 tester = do
-  x <- pInt
-  y <- pText
+  x <- int
+  y <- text
   pure $ TS x y
--}
+{--}
 
 
 {--}
@@ -154,41 +157,50 @@ boolValue = ((string' "true" $> True) <|> (string' "false" $> False)) <?> "boole
 
 
 intValue :: (MonadParsec e s m, Token s ~ Char) => m Int
-intValue  = label intLabel $ numValue >>= (either realFail intCast)
+intValue  = label intLabel $ numValue >>= convertToInt
   where
-    intCast   = pure . fromEnum
-    realFail  = const (failure unexpMsg expctMsg mempty)
+    convertToInt  s
+      | isInteger s = pure . fromMaybe boundedValue $ toBoundedInteger s
+      | otherwise   = failure unexpMsg expctMsg mempty
+      where
+        boundedValue
+          | signum s > 0 = maxBound
+          | otherwise    = minBound
+
     unexpMsg  = S.singleton . Label $ NE.fromList realLabel
     expctMsg  = S.singleton . Label $ NE.fromList  intLabel
     intLabel  = getPrimativeName PT_Int
     realLabel = getPrimativeName PT_Real
 
 
-numValue :: (MonadParsec e s m, Token s ~ Char) => m (Either Double Integer)
-numValue = (floatingOrInteger <$> hidden signedNum) <?> "number"
+numValue :: (MonadParsec e s m, Token s ~ Char) => m Scientific
+numValue = hidden signedNum <?> "number"
   where
     signedNum = signed whitespace number
 
 
 realValue :: (MonadParsec e s m, Token s ~ Char) => m Double
 realValue = label (getPrimativeName PT_Real)
-          $ either id fromIntegral <$> numValue
+          $ either id id . toBoundedRealFloat <$> numValue
 
 
 textValue  :: (MonadParsec e s m, Token s ~ Char) => m String
 textValue = openQuote *> many (escaped <|> nonEscaped) <* closeQuote
   where
-    openQuote   = char '"' <?> "'\"' opening quote for textual value"
-    closeQuote  = char '"' <?> "'\"' closing quote for textual value"
+    openQuote   = char '"' <?> ("'\"' opening quote for " <> getPrimativeName PT_Text)
+    closeQuote  = char '"' <?> ("'\"' closing quote for " <> getPrimativeName PT_Text)
     nonEscaped  = noneOf "\\\""
-    escaped = def <?> ""
+    escaped = def -- <?> "escape character sequence"
       where
         def = do
             _ <- char '\\' <?> "'\\' beginning of character escape sequence"
-            c <- oneOf (M.keysSet mapping) <?> "escape sequence character"
+--            c <- oneOf escapeChars
+--            c <- oneOf escapeChars <?> "escape sequence character" -- <>  ( $ show <$> (toList escapeChars)))
+            c <- region special $ oneOf escapeChars
             pure $ mapping ! c
         -- all the characters which can be escaped after '\'
         -- and thier unescaped literal character value
+        escapeChars = M.keysSet mapping
         mapping = M.fromList
             [ ('\\', '\\')
             , ( '"',  '"')
@@ -200,7 +212,10 @@ textValue = openQuote *> many (escaped <|> nonEscaped) <* closeQuote
             , ( 'b', '\b')
             , ( 'f', '\f')
             ]
-                                                                          
+        special pErr = pErr { errorExpected = S.singleton . Label $ NE.fromList message }
+          where
+            message = messageItemsPretty "as an escape sequence character one of the following: " $ S.map (Tokens . pure) escapeChars
+
 
 timeValue  :: (MonadParsec e s m, Token s ~ Char) => m DiffTime
 timeValue = do
@@ -237,8 +252,33 @@ typeMismatchContext p targetType = do
         [ PPR_Bool <$> boolValue
         , PPR_Text <$> textValue
         , PPR_Time <$> timeValue
-        , (either PPR_Real (PPR_Int . fromEnum)) <$> numValue
+        , (either PPR_Real PPR_Int . floatingOrInteger) <$> numValue
         ]
+
+-- |
+-- Transforms a list of error messages into their textual representation.
+messageItemsPretty :: ShowErrorComponent a
+  => String            -- ^ Prefix to prepend
+  -> Set a             -- ^ Collection of messages
+  -> String            -- ^ Result of rendering
+messageItemsPretty prefix ts
+  | null ts   = ""
+  | otherwise = prefix <> f ts
+  where
+    f = orList . NE.fromList . S.toAscList . S.map showErrorComponent
+
+
+-- |
+-- Print a pretty list where items are separated with commas and the word “or”
+-- according to the rules of English punctuation.
+orList :: NonEmpty String -> String
+orList ne@(x:|xs)  =
+  case xs of
+    []   -> x
+    y:ys ->
+      case ys of
+        []   -> x <> " or " <> y
+        z:zs -> intercalate ", " (NE.init ne) <> ", or " <> NE.last (z:|zs)
 
 
 whitespace :: (MonadParsec e s m, Token s ~ Char) => m ()
