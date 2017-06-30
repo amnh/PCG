@@ -151,7 +151,7 @@ namedArg name arg = do
     _        <- trim (char ':') <?> ("':' between the identifier '" <> x <> "' and it's agrument")
     arg
 
-
+{-
 bool :: (MonadParsec e s m, Token s ~ Char) => m Bool
 bool = do
     primativeValue <- primativeDefinition
@@ -204,4 +204,4 @@ time = do
       RealNum   _ -> fail "Expected a time value but found a real value" 
       TextValue _ -> fail "Expected a time value but found a textual value"
       TimeSpan  x -> pure x
-
+-}
