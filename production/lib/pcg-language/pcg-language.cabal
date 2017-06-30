@@ -44,13 +44,14 @@ library
 --                     , deepseq
 --                     , dlist
                      , either
+                     , free
 --                     , hashable
 --                     , hashtables
 --                     , integer-gmp
                      , keys
 --                     , lens
 --                     , matrix
-                     , megaparsec       >=5.0
+                     , megaparsec       >=5.3
 --                     , mono-traversable >=1.0
 --                     , mtl
 --                     , parallel
@@ -59,7 +60,7 @@ library
 --                     , QuickCheck
 --                     , quickcheck-properties
                      , safe
---                     , scientific
+                     , scientific
 --                     , semigroupoids
 --                     , semigroups
 --                     , split

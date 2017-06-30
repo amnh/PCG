@@ -126,13 +126,14 @@ trim x = whitespace *> x <* whitespace
 clip :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
 clip x = lexeme whitespace x
 
-
+{-
 whitespace :: (MonadParsec e s m, Token s ~ Char) => m () 
 whitespace = space token line block
   where
     token = void spaceChar
     line  = skipLineComment "**"
     block = skipBlockCommentNested "(*" "*)"
+-}
 
 {-
 command :: (MonadParsec e s m, Token s ~ Char) => String -> m a
