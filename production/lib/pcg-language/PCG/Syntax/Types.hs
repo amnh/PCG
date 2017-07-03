@@ -2,31 +2,28 @@
 
 module PCG.Syntax.Types where
 
-import Control.Monad.Free     (liftF, Free, iterM, MonadFree)
-import Control.Monad.Free.TH  (makeFree)
-import Data.CaseInsensitive   (FoldCase)
---import Data.Char              (toLower)
-import Data.Foldable
-import Data.Functor           (($>), void)
-import Data.Key
-import Data.List              (intercalate)
-import Data.List.NonEmpty     (NonEmpty(..))
-import qualified Data.List.NonEmpty as NE
-import qualified Data.Map as M
-import Data.Maybe             (fromMaybe)
-import Data.Ord
--- import Data.Proxy
-import Data.Scientific hiding (scientific)
-import Data.Semigroup  hiding (option)
-import Data.Set               (Set)
-import qualified Data.Set as S
-import Data.String
-import Data.Time.Clock        (DiffTime, secondsToDiffTime)
-import Text.Megaparsec
-import Text.Megaparsec.Char hiding (space)
---import Text.Megaparsec.Error
---import Text.Megaparsec.Prim   (MonadParsec)
-import Text.Megaparsec.Lexer
+import           Control.Monad.Free
+import           Control.Monad.Free.TH        (makeFree)
+import           Data.CaseInsensitive         (FoldCase)
+--import           Data.Foldable
+import           Data.Functor                 (($>), void)
+import           Data.Key
+import           Data.List                    (intercalate)
+import           Data.List.NonEmpty           (NonEmpty(..))
+import qualified Data.List.NonEmpty    as NE
+import qualified Data.Map              as M
+import           Data.Maybe                   (fromMaybe)
+--import           Data.Ord
+import           Data.Scientific       hiding (scientific)
+import           Data.Semigroup        hiding (option)
+--import           Data.Set                     (Set)
+import qualified Data.Set              as S
+import           Data.String                  (IsString(..))
+import           Data.Time.Clock              (DiffTime, secondsToDiffTime)
+import           Text.Megaparsec
+import           Text.Megaparsec.Char
+import           Text.Megaparsec.Lexer        (integer, number, signed)
+import qualified Text.Megaparsec.Lexer as Lex
 
 --import Debug.Trace
 
@@ -34,6 +31,7 @@ import Text.Megaparsec.Lexer
 type ParserConstraint e s m = (MonadParsec e s m, FoldCase (Tokens s), IsString (Tokens s), Token s ~ Char)
 
 
+{-
 data  PrefixedErrorMessage e
     = Prefixed
     { unexpectedPrefix  :: String
@@ -57,6 +55,7 @@ instance (Ord e, ShowToken e) => ShowErrorComponent (PrefixedErrorMessage e) whe
         [ messageItemsPretty ("unexpected " <> unexpectedPrefix e <> " ") (toList $ unexpectedValue  e)
         , messageItemsPretty ("expecting "  <>   expectedPrefix e <> " ") (toList $   expectedValues e)
         ]
+-}
 
 
 data  PrimativeParseResult
@@ -307,7 +306,7 @@ typeMismatchContext p targetType = do
         in
           if   targetType == resultType || targetType == PT_Real && resultType == PT_Int
           then p
-          else let uxpMsg = Just . Label . NE.fromList $ mconcat [ getPrimativeName parseResult, " '", show str, "'" ]
+          else let uxpMsg = Just . Label . NE.fromList $ mconcat [ getPrimativeName parseResult, " ", show str ]
                    expMsg = S.singleton . Label . NE.fromList $ getPrimativeName targetType
                in  failure uxpMsg expMsg
   where
@@ -320,11 +319,11 @@ typeMismatchContext p targetType = do
 
 
 whitespace :: ParserConstraint e s m => m ()
-whitespace = space single line block
+whitespace = Lex.space single line block
   where
     single = void spaceChar
-    line   = skipLineComment (fromString "**")
-    block  = skipBlockCommentNested (fromString "(*") (fromString "*)")
+    line   = Lex.skipLineComment (fromString "**")
+    block  = Lex.skipBlockCommentNested (fromString "(*") (fromString "*)")
 
 
 -- |
