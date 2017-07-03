@@ -39,6 +39,7 @@ library
   build-depends:       base             >=4.8
 --                     , bimap
 --                     , bv
+                     , case-insensitive
                        -- >=0.5.8 Required for Data.Map.restrictKeys
                      , containers       >=0.5.8
 --                     , deepseq
@@ -55,6 +56,7 @@ library
 --                     , mono-traversable >=1.0
 --                     , mtl
 --                     , parallel
+                       , parser-combinators
 --                     , pretty-tree
 --                     , primitive
 --                     , QuickCheck

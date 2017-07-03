@@ -1,10 +1,12 @@
-{-# Language DeriveFunctor, FlexibleContexts, TemplateHaskell, TypeFamilies #-}
+{-# LANGUAGE ConstraintKinds, DeriveFunctor, FlexibleContexts, TemplateHaskell, TypeFamilies #-}
 
 module PCG.Syntax.Types where
 
 import Control.Monad.Free     (liftF, Free, iterM, MonadFree)
 import Control.Monad.Free.TH  (makeFree)
+import Data.CaseInsensitive   (FoldCase)
 --import Data.Char              (toLower)
+import Data.Foldable
 import Data.Functor           (($>), void)
 import Data.Key
 import Data.List              (intercalate)
@@ -12,16 +14,49 @@ import Data.List.NonEmpty     (NonEmpty(..))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map as M
 import Data.Maybe             (fromMaybe)
+import Data.Ord
+-- import Data.Proxy
 import Data.Scientific hiding (scientific)
 import Data.Semigroup  hiding (option)
 import Data.Set               (Set)
 import qualified Data.Set as S
+import Data.String
 import Data.Time.Clock        (DiffTime, secondsToDiffTime)
 import Text.Megaparsec hiding (space)
-import Text.Megaparsec.Prim   (MonadParsec)
+import Text.Megaparsec.Char hiding (space)
+import Text.Megaparsec.Error
+--import Text.Megaparsec.Prim   (MonadParsec)
 import Text.Megaparsec.Lexer
 
 --import Debug.Trace
+
+
+type ParserConstraint e s m = (MonadParsec e s m, FoldCase (Tokens s), IsString (Tokens s), Token s ~ Char)
+
+
+data  PrefixedErrorMessage e
+    = Prefixed
+    { unexpectedPrefix  :: String
+    ,   expectedPrefix  :: String
+    , unexpectedValue   :: Maybe (ErrorItem e)
+    ,   expectedValues  :: Set   (ErrorItem e)
+    } deriving (Eq, Show)
+
+
+instance Ord e => Ord (PrefixedErrorMessage e) where
+
+    lhs `compare` rhs =
+      case comparing unexpectedValue lhs rhs of
+        EQ -> comparing expectedValues lhs rhs
+        x  -> x
+
+
+instance (Ord e, ShowToken e) => ShowErrorComponent (PrefixedErrorMessage e) where
+
+    showErrorComponent e = unlines
+        [ messageItemsPretty ("unexpected " <> unexpectedPrefix e <> " ") (toList $ unexpectedValue  e)
+        , messageItemsPretty ("expecting "  <>   expectedPrefix e <> " ") (toList $   expectedValues e)
+        ]
 
 
 data  PrimativeParseResult
@@ -97,9 +132,34 @@ instance HasPrimativeType PrimativeParseResult where
           PPR_Time  {} -> PT_Time
           PPR_Value v  -> PT_Value v
 
-          
-makeFree ''PrimativeValue
 
+-- |
+-- Transforms a list of error messages into their textual representation.
+messageItemsPretty :: ShowErrorComponent a
+  => String  -- ^ Prefix to prepend
+  -> [a]     -- ^ Collection of messages
+  -> String  -- ^ Result of rendering
+messageItemsPretty prefix ts
+  | null ts   = ""
+  | otherwise = prefix <> f ts
+  where
+    f = orList . NE.fromList . S.toAscList . S.fromList . fmap showErrorComponent
+
+
+-- |
+-- Print a pretty list where items are separated with commas and the word “or”
+-- according to the rules of English punctuation.
+orList :: NonEmpty String -> String
+orList ne@(x:|xs)  =
+  case xs of
+    []   -> x
+    y:ys ->
+      case ys of
+        []   -> x <> " or " <> y
+        z:zs -> intercalate ", " (NE.init ne) <> ", or " <> NE.last (z:|zs)
+
+
+makeFree ''PrimativeValue
 
 bool :: MonadFree PrimativeValue m => m Bool
 bool = pBool
@@ -132,7 +192,7 @@ tester = do
 
 
 {--}
-parsePrimative :: (MonadParsec Dec s m, Token s ~ Char) => Free PrimativeValue a -> m a
+parsePrimative :: (ParserConstraint e s m, Show (Tokens s)) => Free PrimativeValue a -> m a
 parsePrimative = iterM run
   where
 --    run :: Monad m => PrimativeValue (m a) -> (m a)
@@ -152,51 +212,50 @@ parsePrimative = iterM run
     timeParser  = typeMismatchContext timeValue PT_Time
 
 
-boolValue :: (MonadParsec e s m, Token s ~ Char) => m Bool
-boolValue = ((string' "true" $> True) <|> (string' "false" $> False)) <?> "boolean value"
+boolValue :: ParserConstraint e s m => m Bool
+boolValue = ((string' (fromString "true") $> True) <|> (string' (fromString "false") $> False)) <?> "boolean value"
 
 
-intValue :: (MonadParsec e s m, Token s ~ Char) => m Int
+intValue :: ParserConstraint e s m => m Int
 intValue  = label intLabel $ numValue >>= convertToInt
   where
     convertToInt  s
       | isInteger s = pure . fromMaybe boundedValue $ toBoundedInteger s
-      | otherwise   = failure unexpMsg expctMsg mempty
+      | otherwise   = failure unexpMsg expctMsg
       where
         boundedValue
           | signum s > 0 = maxBound
           | otherwise    = minBound
 
-    unexpMsg  = S.singleton . Label $ NE.fromList realLabel
+    unexpMsg  = Just . Label $ NE.fromList realLabel
     expctMsg  = S.singleton . Label $ NE.fromList  intLabel
     intLabel  = getPrimativeName PT_Int
     realLabel = getPrimativeName PT_Real
 
 
-numValue :: (MonadParsec e s m, Token s ~ Char) => m Scientific
+numValue :: ParserConstraint e s m => m Scientific
 numValue = hidden signedNum <?> "number"
   where
     signedNum = signed whitespace number
 
 
-realValue :: (MonadParsec e s m, Token s ~ Char) => m Double
+realValue :: ParserConstraint e s m => m Double
 realValue = label (getPrimativeName PT_Real)
           $ either id id . toBoundedRealFloat <$> numValue
 
 
-textValue  :: (MonadParsec e s m, Token s ~ Char) => m String
+textValue  :: ParserConstraint e s m => m String -- (Tokens s)
 textValue = openQuote *> many (escaped <|> nonEscaped) <* closeQuote
   where
     openQuote   = char '"' <?> ("'\"' opening quote for " <> getPrimativeName PT_Text)
     closeQuote  = char '"' <?> ("'\"' closing quote for " <> getPrimativeName PT_Text)
-    nonEscaped  = noneOf "\\\""
-    escaped = def -- <?> "escape character sequence"
+    nonEscaped  = satisfy $ \x -> x /= '\\' && x /= '"'
+    escaped = def
       where
         def = do
             _ <- char '\\' <?> "'\\' beginning of character escape sequence"
---            c <- oneOf escapeChars
---            c <- oneOf escapeChars <?> "escape sequence character" -- <>  ( $ show <$> (toList escapeChars)))
             c <- region special $ oneOf escapeChars
+--            c <- oneOf escapeChars
             pure $ mapping ! c
         -- all the characters which can be escaped after '\'
         -- and thier unescaped literal character value
@@ -212,12 +271,16 @@ textValue = openQuote *> many (escaped <|> nonEscaped) <* closeQuote
             , ( 'b', '\b')
             , ( 'f', '\f')
             ]
-        special pErr = pErr { errorExpected = S.singleton . Label $ NE.fromList message }
-          where
-            message = messageItemsPretty "as an escape sequence character one of the following: " $ S.map (Tokens . pure) escapeChars
+        special pErr =
+            case pErr of
+              TrivialError pos xs ys ->
+                let uxp = (\(Tokens ts) -> Label . NE.fromList $ "invalid escape sequence character: " <> showTokens ts) <$> xs
+                    exp = (S.map (Tokens . pure) escapeChars)
+                in  TrivialError pos uxp exp
+              x -> x -- FancyError pos $ xs <> message
 
 
-timeValue  :: (MonadParsec e s m, Token s ~ Char) => m DiffTime
+timeValue  :: ParserConstraint e s m => m DiffTime
 timeValue = do
     days    <- integer
     _       <- char ':'
@@ -230,11 +293,11 @@ timeValue = do
     pure $ secondsToDiffTime totalSeconds
 
 
-valueValue :: (MonadParsec e s m, Token s ~ Char) => String -> m ()
-valueValue = void . string' 
+valueValue :: ParserConstraint e s m => String -> m ()
+valueValue = void . string' . fromString
 
 
-typeMismatchContext :: (MonadParsec e s m, Token s ~ Char) => m a -> PrimativeType -> m a
+typeMismatchContext :: (ParserConstraint e s m, Show (Tokens s)) => m a -> PrimativeType -> m a
 typeMismatchContext p targetType = do
     parsedPrimative <- primatives
     case parsedPrimative of
@@ -244,9 +307,9 @@ typeMismatchContext p targetType = do
         in
           if   targetType == resultType || targetType == PT_Real && resultType == PT_Int
           then p
-          else let uxpMsg = S.singleton . Label . NE.fromList $ mconcat [ getPrimativeName parseResult, " '", str, "'" ]
+          else let uxpMsg = Just . Label . NE.fromList $ mconcat [ getPrimativeName parseResult, " '", show str, "'" ]
                    expMsg = S.singleton . Label . NE.fromList $ getPrimativeName targetType
-               in  failure uxpMsg expMsg mempty
+               in  failure uxpMsg expMsg
   where
     primatives = optional . choice $ hidden . try . lookAhead . match <$>
         [ PPR_Bool <$> boolValue
@@ -255,38 +318,13 @@ typeMismatchContext p targetType = do
         , (either PPR_Real PPR_Int . floatingOrInteger) <$> numValue
         ]
 
--- |
--- Transforms a list of error messages into their textual representation.
-messageItemsPretty :: ShowErrorComponent a
-  => String            -- ^ Prefix to prepend
-  -> Set a             -- ^ Collection of messages
-  -> String            -- ^ Result of rendering
-messageItemsPretty prefix ts
-  | null ts   = ""
-  | otherwise = prefix <> f ts
-  where
-    f = orList . NE.fromList . S.toAscList . S.map showErrorComponent
 
-
--- |
--- Print a pretty list where items are separated with commas and the word “or”
--- according to the rules of English punctuation.
-orList :: NonEmpty String -> String
-orList ne@(x:|xs)  =
-  case xs of
-    []   -> x
-    y:ys ->
-      case ys of
-        []   -> x <> " or " <> y
-        z:zs -> intercalate ", " (NE.init ne) <> ", or " <> NE.last (z:|zs)
-
-
-whitespace :: (MonadParsec e s m, Token s ~ Char) => m ()
+whitespace :: ParserConstraint e s m => m ()
 whitespace = space single line block
   where
     single = void spaceChar
-    line   = skipLineComment "**"
-    block  = skipBlockCommentNested "(*" "*)"
+    line   = skipLineComment (fromString "**")
+    block  = skipBlockCommentNested (fromString "(*") (fromString "*)")
 
 
 -- |
@@ -323,5 +361,3 @@ data  Primative
 
 
 newtype ListIdentifier = ListId String deriving (Show)
-
-

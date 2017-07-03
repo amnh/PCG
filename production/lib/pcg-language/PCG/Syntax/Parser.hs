@@ -12,10 +12,11 @@ import Data.Time.Clock        (DiffTime, secondsToDiffTime)
 import PCG.Syntax.Types
 import Text.Megaparsec hiding (space)
 --import Text.Megaparsec.Custom
-import Text.Megaparsec.Prim   (MonadParsec)
+--import Text.Megaparsec.Prim   (MonadParsec)
 import Text.Megaparsec.Lexer
 
 
+{-
 syntacticStreamParser :: (MonadParsec e s m, Token s ~ Char) => m Syntax
 syntacticStreamParser = syntaxDefinition
 
@@ -150,58 +151,4 @@ namedArg name arg = do
     ListId x <- listId name
     _        <- trim (char ':') <?> ("':' between the identifier '" <> x <> "' and it's agrument")
     arg
-
-{-
-bool :: (MonadParsec e s m, Token s ~ Char) => m Bool
-bool = do
-    primativeValue <- primativeDefinition
-    case primativeValue of
-      BitValue  x -> pure x
-      WholeNum  _ -> fail "Expected a boolean value but found an integral value"
-      RealNum   _ -> fail "Expected a boolean value but found a real value"
-      TextValue _ -> fail "Expected a boolean value but found a textual value"
-      TimeSpan  _ -> fail "Expected a boolean value but found a time value"
-
-
-int :: (MonadParsec e s m, Token s ~ Char) => m Int
-int = do
-    primativeValue <- primativeDefinition
-    case primativeValue of
-      BitValue  _ -> fail "Expected an integral value but found a boolean value"
-      WholeNum  x -> pure x
-      RealNum   _ -> fail "Expected an integral value but found a real value"
-      TextValue _ -> fail "Expected an integral value but found a textual value"
-      TimeSpan  _ -> fail "Expected an integral value but found a time value"
-
-
-real :: (MonadParsec e s m, Token s ~ Char) => m Double
-real = do
-    primativeValue <- primativeDefinition
-    case primativeValue of
-      BitValue  _ -> fail "Expected a real value but found a boolean value"
-      WholeNum  _ -> fail "Expected a real value but found an integral value"
-      RealNum   x -> pure x
-      TextValue _ -> fail "Expected a real value but found a textual value"
-      TimeSpan  _ -> fail "Expected a real value but found a time value"
-
-
-text :: (MonadParsec e s m, Token s ~ Char) => m String
-text = do
-    primativeValue <- primativeDefinition
-    case primativeValue of
-      BitValue  _ -> fail "Expected a textual value but found a boolean value"
-      WholeNum  _ -> fail "Expected a textual value but found an integral value"
-      RealNum   _ -> fail "Expected a textual value but found a real value" 
-      TextValue x -> pure x
-      TimeSpan  _ -> fail "Expected a textual value but found a time value"
-
-time :: (MonadParsec e s m, Token s ~ Char) => m DiffTime
-time = do
-    primativeValue <- primativeDefinition
-    case primativeValue of
-      BitValue  _ -> fail "Expected a time value but found a boolean value"
-      WholeNum  _ -> fail "Expected a time value but found an integral value"
-      RealNum   _ -> fail "Expected a time value but found a real value" 
-      TextValue _ -> fail "Expected a time value but found a textual value"
-      TimeSpan  x -> pure x
 -}
