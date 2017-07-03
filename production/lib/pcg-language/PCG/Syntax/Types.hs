@@ -22,9 +22,9 @@ import Data.Set               (Set)
 import qualified Data.Set as S
 import Data.String
 import Data.Time.Clock        (DiffTime, secondsToDiffTime)
-import Text.Megaparsec hiding (space)
+import Text.Megaparsec
 import Text.Megaparsec.Char hiding (space)
-import Text.Megaparsec.Error
+--import Text.Megaparsec.Error
 --import Text.Megaparsec.Prim   (MonadParsec)
 import Text.Megaparsec.Lexer
 
@@ -250,13 +250,11 @@ textValue = openQuote *> many (escaped <|> nonEscaped) <* closeQuote
     openQuote   = char '"' <?> ("'\"' opening quote for " <> getPrimativeName PT_Text)
     closeQuote  = char '"' <?> ("'\"' closing quote for " <> getPrimativeName PT_Text)
     nonEscaped  = satisfy $ \x -> x /= '\\' && x /= '"'
-    escaped = def
+    escaped = do
+        _ <- char '\\' <?> "'\\' beginning of character escape sequence"
+        c <- region characterEscaping $ oneOf escapeChars
+        pure $ mapping ! c
       where
-        def = do
-            _ <- char '\\' <?> "'\\' beginning of character escape sequence"
-            c <- region special $ oneOf escapeChars
---            c <- oneOf escapeChars
-            pure $ mapping ! c
         -- all the characters which can be escaped after '\'
         -- and thier unescaped literal character value
         escapeChars = M.keysSet mapping
@@ -271,13 +269,15 @@ textValue = openQuote *> many (escaped <|> nonEscaped) <* closeQuote
             , ( 'b', '\b')
             , ( 'f', '\f')
             ]
-        special pErr =
-            case pErr of
-              TrivialError pos xs ys ->
-                let uxp = (\(Tokens ts) -> Label . NE.fromList $ "invalid escape sequence character: " <> showTokens ts) <$> xs
-                    exp = (S.map (Tokens . pure) escapeChars)
-                in  TrivialError pos uxp exp
-              x -> x -- FancyError pos $ xs <> message
+        
+        characterEscaping e@(FancyError {}) = e
+        characterEscaping   (TrivialError pos uxpItems expItems) = TrivialError pos uxpItems' expItems'
+          where
+            uxpItems' = f <$> uxpItems
+            expItems' = S.map (Tokens . pure) escapeChars <> expItems
+            f  EndOfInput     = EndOfInput
+            f (Tokens    ts ) = Label . NE.fromList $ "invalid escape sequence character: " <> showTokens ts
+            f (Label (x:|xs)) = Label $ x :| xs <> " (not a valid escape sequence character)"
 
 
 timeValue  :: ParserConstraint e s m => m DiffTime
