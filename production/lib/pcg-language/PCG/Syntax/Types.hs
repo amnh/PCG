@@ -8,7 +8,7 @@ import           Data.CaseInsensitive         (FoldCase)
 --import           Data.Foldable
 import           Data.Functor                 (($>), void)
 import           Data.Key
-import           Data.List                    (intercalate)
+--import           Data.List                    (intercalate)
 import           Data.List.NonEmpty           (NonEmpty(..))
 import qualified Data.List.NonEmpty    as NE
 import qualified Data.Map              as M
@@ -88,6 +88,24 @@ data PrimativeValue a
    deriving (Functor)
 
 
+{--}
+data  ArgumentValue a
+    = APrimativeArg   (PrimativeValue a)
+    | AListIdArg      (ListIdentifier -> a)
+    | AListIdNamedArg ListIdentifier (ArgumentValue a)
+--    | CommandArg     SyntacticCommand
+    | AArgumentList  (NonEmpty (ArgumentValue a))
+    deriving (Functor)
+{--}
+
+
+--primative :: (MonadFree PrimativeValue m, MonadFree ArgumentValue m') => m a -> m' a
+--primative x = x >>= (\v -> liftF (PrimativeArg v))
+
+
+newtype ListIdentifier = ListId String deriving (Show)
+
+
 class HasPrimativeType a where
 
     getPrimativeType :: a -> PrimativeType
@@ -131,7 +149,7 @@ instance HasPrimativeType PrimativeParseResult where
           PPR_Time  {} -> PT_Time
           PPR_Value v  -> PT_Value v
 
-
+{-
 -- |
 -- Transforms a list of error messages into their textual representation.
 messageItemsPretty :: ShowErrorComponent a
@@ -156,27 +174,33 @@ orList ne@(x:|xs)  =
       case ys of
         []   -> x <> " or " <> y
         z:zs -> intercalate ", " (NE.init ne) <> ", or " <> NE.last (z:|zs)
+-}
 
 
-makeFree ''PrimativeValue
+--makeFree ''ArgumentValue
 
 bool :: MonadFree PrimativeValue m => m Bool
-bool = pBool
+bool = liftF $ PBool id
+
 
 int :: MonadFree PrimativeValue m => m Int
-int = pInt
+int = liftF $ PInt id
+
 
 real :: MonadFree PrimativeValue m => m Double
-real = pReal
+real = liftF $ PReal id
+
 
 text :: MonadFree PrimativeValue m => m String
-text = pText
+text = liftF $ PText id
+
 
 time :: MonadFree PrimativeValue m => m DiffTime
-time = pTime
+time = liftF $ PTime id
+
 
 value :: MonadFree PrimativeValue m => String -> m ()
-value = pValue
+value str = liftF $ PValue str id
 
 
 {--}
@@ -326,6 +350,8 @@ whitespace = Lex.space single line block
     block  = Lex.skipBlockCommentNested (fromString "(*") (fromString "*)")
 
 
+{--}
+
 -- |
 -- 'SyntacticCommand' is "Stringly-Typed" and therefore inherently unsafe.
 -- We will later consume a list of SyntacticCommand as a Script type and
@@ -357,6 +383,4 @@ data  Primative
     | TextValue String
     | TimeSpan  DiffTime
     deriving (Show)
-
-
-newtype ListIdentifier = ListId String deriving (Show)
+{--}

@@ -9,12 +9,13 @@ import qualified Data.Map                   as M   (fromList)
 import qualified Data.Vector                as V   (fromList)
 import           File.Format.Fasta.Internal
 import           File.Format.Fasta.Parser
-import           Text.Parsec
---import           Text.Parsec.Custom                (fails)
+--import           Text.Parsec
+
 
 
 data FastaSequenceType = DNA | RNA | AminoAcid deriving (Bounded,Eq,Enum,Read,Show)
 
+{-
 
 colate :: FastaSequenceType -> FastaParseResult -> TaxonSequenceMap
 colate seqType = foldr f empty
@@ -70,3 +71,5 @@ iupacRNASubstitutions = insert 'U' ["U"] . delete 'T' $ f <$> iupacNucleotideSub
     f = foldr g []
     g "T" xs = "U":xs
     g   x xs =   x:xs
+
+-}

@@ -17,7 +17,7 @@
 
 module File.Format.VertexEdgeRoot.Parser where
 
-
+import           Data.CaseInsensitive
 import           Data.Char                 (isSpace)
 import           Data.Either               (partitionEithers)
 import           Data.Foldable
@@ -34,10 +34,11 @@ import           Data.Monoid
 import           Data.Ord                  (comparing)
 import           Data.Set                  (Set)
 import qualified Data.Set           as Set
+import           Data.String
 import           Prelude            hiding (lookup)
 import           Text.Megaparsec
+import           Text.Megaparsec.Char
 import           Text.Megaparsec.Custom
-import           Text.Megaparsec.Prim      (MonadParsec)
 
 
 -- |
@@ -101,7 +102,7 @@ connectedVertex v (EdgeInfo a b _)
 -- when vertex sets are unlabeled. Ensures that the elements of the root set
 -- are not connected in the forest. Ensures that the rooted trees in the
 -- forest do not contain cycles.
-verStreamParser :: (MonadParsec e s m, Token s ~ Char) => m VertexEdgeRoot
+verStreamParser :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m VertexEdgeRoot
 verStreamParser = validateForest =<< verDefinition
     
 
@@ -121,7 +122,7 @@ verStreamParser = validateForest =<< verDefinition
 -- surely a superset of the set of root nodes.
 -- |
 -- Parses exactly one vertex set, one edge set, and one root set.
-verDefinition :: (MonadParsec e s m, Token s ~ Char) => m VertexEdgeRoot
+verDefinition :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m VertexEdgeRoot
 verDefinition = do
     sets <- many setDefinition
     case partitionEithers sets of
@@ -161,7 +162,7 @@ verDefinition = do
 -- If it is a vertex set, it may be labeled as a specific set of verticies or
 -- a set of roots. We use the Either type as a return type to denote the 
 -- conditional type of the result.
-setDefinition :: (MonadParsec e s m, Token s ~ Char) => m (Either (Set EdgeInfo) (Maybe VertexSetType, Set VertexLabel))
+setDefinition :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m (Either (Set EdgeInfo) (Maybe VertexSetType, Set VertexLabel))
 setDefinition = do
     result <- optional (try edgeSetDefinition)
     case result of
@@ -173,13 +174,13 @@ setDefinition = do
 -- A vertex set can be labeled or unlabeled. We first attempt to read in a 
 -- labeled vertex set, and if that fails an unlabeled vertex set. The label
 -- is returned contidionally in a Maybe type.
-vertexSetDefinition :: (MonadParsec e s m, Token s ~ Char) => m (Maybe VertexSetType, Set VertexLabel)
+vertexSetDefinition :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m (Maybe VertexSetType, Set VertexLabel)
 vertexSetDefinition = try labeledVertexSetDefinition <|> unlabeledVertexSetDefinition
 
 
 -- |
 -- A labeled vertex set contains a label followed by an unlabeled vertex set
-labeledVertexSetDefinition :: (MonadParsec e s m, Token s ~ Char) => m (Maybe VertexSetType, Set VertexLabel )
+labeledVertexSetDefinition :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m (Maybe VertexSetType, Set VertexLabel )
 labeledVertexSetDefinition = do
     setType <- vertexSetType
     _       <- symbol (char '=')
@@ -190,12 +191,12 @@ labeledVertexSetDefinition = do
 -- |
 -- A vertex set label is one of the following case insensative strings:
 -- "vertexset", rootset"
-vertexSetType :: (MonadParsec e s m, Token s ~ Char) => m VertexSetType
+vertexSetType :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m VertexSetType
 vertexSetType = do
-    value <- optional (try (symbol (string' "VertexSet")))
+    value <- optional . try . symbol . string' $ fromString "VertexSet"
     case value of
       Just _  -> pure Vertices
-      Nothing -> symbol (string' "RootSet") $> Roots
+      Nothing -> symbol (string' (fromString "RootSet")) $> Roots
 
 
 -- |
@@ -232,13 +233,13 @@ vertexLabelDefinition = some validChar
 -- Parses an edge set with an optional edge set label.
 -- Edges cannot be from one node to the same node.
 -- Edges are undirected, with duplicate edges prohibited.
-edgeSetDefinition :: (MonadParsec e s m, Token s ~ Char) => m (Set EdgeInfo)
+edgeSetDefinition :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m (Set EdgeInfo)
 edgeSetDefinition = validateEdgeSet =<< edgeSetDefinition'
   where
-    edgeSetLabel :: (MonadParsec e s m, Token s ~ Char) => m String
-    edgeSetLabel = symbol (string' "EdgeSet") <* symbol (char '=')
+--    edgeSetLabel :: (MonadParsec e s m, Token s ~ Char) => m String
+    edgeSetLabel = symbol (string' (fromString "EdgeSet")) <* symbol (char '=')
 
-    edgeSetDefinition' :: (MonadParsec e s m, Token s ~ Char) => m [EdgeInfo]
+--    edgeSetDefinition' :: (MonadParsec e s m, Token s ~ Char) => m [EdgeInfo]
     edgeSetDefinition' = do
         _      <- optional (try edgeSetLabel)
         _      <- symbol (char '{')

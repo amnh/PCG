@@ -20,25 +20,27 @@ module File.Format.TNT.Internal where
 
 import           Control.Monad            ((<=<))
 import           Data.Bits
-import           Data.Char                (isAlpha,isLower,isUpper,toLower,toUpper)
+import           Data.CaseInsensitive
+import           Data.Char                (isAlpha, isLower, isUpper, toLower, toUpper)
 import           Data.Functor             (($>))
 import           Data.Foldable            (toList)
-import           Data.Key                 ((!),lookup)
+import           Data.Key                 ((!), lookup)
 import           Data.List                (inits)
 import           Data.List.NonEmpty       (NonEmpty)
 import           Data.Matrix.NotStupid    (Matrix)
-import           Data.Map                 (Map,assocs,insert,insertWith,keys,union)
+import           Data.Map                 (Map, assocs, insert, insertWith, keys, union)
 import qualified Data.Map            as M (fromList)
 import           Data.Scientific          (floatingOrInteger)
+import           Data.String
 import           Data.Tuple               (swap)
 import           Data.Vector              (Vector)
 import qualified Data.Vector         as V (fromList)
-import           Data.Word                (Word8,Word32,Word64)
+import           Data.Word                (Word8, Word32, Word64)
 import           Prelude           hiding (lookup)
 import           Text.Megaparsec
+import           Text.Megaparsec.Char
 import           Text.Megaparsec.Custom
-import           Text.Megaparsec.Lexer    (integer,number,signed)
-import           Text.Megaparsec.Prim     (MonadParsec)
+import           Text.Megaparsec.Lexer    (integer, number, signed)
 
 
 -- |
@@ -486,10 +488,9 @@ flexiblePositiveInt labeling = either coerceFloating coerceIntegral . floatingOr
 -- Left 1:1:
 -- unexpected "abr"
 -- expecting keyword 'abrakadabra'
-keyword :: (MonadParsec e s m, Token s ~ Char) => String -> Int -> m ()
+keyword :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => String -> Int -> m ()
 keyword x y = abreviatable x y $> ()
   where
-    abreviatable :: (MonadParsec e s m, Token s ~ Char) => String -> Int -> m String
     abreviatable fullName minimumChars
       | minimumChars < 1             = fail $ "Nonpositive abreviation prefix (" ++ show minimumChars ++ ") supplied to abreviatable combinator"
       | any (not . isAlpha) fullName = fail $ "A keywork containing a non alphabetic character: '" ++ show fullName ++ "' supplied to abreviateable combinator"
@@ -497,7 +498,7 @@ keyword x y = abreviatable x y $> ()
       where
         combinator      = choice partialOptions $> fullName
         partialOptions  = makePartial <$> drop minimumChars (inits fullName)
-        makePartial opt = try $ string' opt <* terminator
+        makePartial opt = try $ string' (fromString opt) <* terminator
         terminator      = lookAhead $ satisfy (not . isAlpha)
 
 

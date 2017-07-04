@@ -32,14 +32,15 @@ module Text.Megaparsec.Custom
 
 import           Data.Char                (isSpace)
 import           Data.Either              (either)
-import           Data.Functor             (($>))
+import           Data.Functor             (($>), void)
 import           Data.List.NonEmpty       (NonEmpty(..))
 import qualified Data.List.NonEmpty as NE (fromList)
 import           Data.Semigroup
 import qualified Data.Set           as S  (fromList)
+import           Data.Void
 import           Text.Megaparsec
-import           Text.Megaparsec.Prim     (MonadParsec)
-import           Text.Megaparsec.Lexer    (float,integer,signed)
+import           Text.Megaparsec.Char
+import           Text.Megaparsec.Lexer    (float, integer, signed)
 
 
 -- |
@@ -95,13 +96,14 @@ double = try (signed space float) <|> fromIntegral <$> signed space integer
 -- Custom 'eol' combinator to account for /very/ old Mac file formats ending
 -- lines in a single @\'\\r\'@.
 endOfLine :: (MonadParsec e s m, Token s ~ Char) => m Char
-endOfLine = (try eol <|> string "\r") $> '\n'
+endOfLine = (try (void eol) <|> void (char '\r')) $> '\n'
+
 
 
 -- |
 -- Accepts zero or more Failure messages.
 fails :: MonadParsec e s m => [String] -> m a
-fails = failure mempty mempty . S.fromList . fmap representFail
+fails = undefined -- failure mempty mempty . S.fromList . fmap representFail
 
 
 -- |
@@ -159,14 +161,14 @@ comment start end = commentDefinition' False
 -- Tries to run a parser on a given file.
 -- On a parse success returns the Show value of the parsed result.
 -- On a parse failure the nice error string.
-runParserOnFile :: Show a => Parsec Dec String a -> FilePath -> IO String
-runParserOnFile parser filePath = either (parseErrorPretty :: ParseError Char Dec -> String) show . parse parser filePath <$> readFile filePath
+runParserOnFile :: Show a => Parsec Void String a -> FilePath -> IO String
+runParserOnFile parser filePath = either (parseErrorPretty :: ParseError Char Void -> String) show . parse parser filePath <$> readFile filePath
 
 
 -- |
 -- Runs the supplied parser on the input stream with default error types.
 -- Useful for quick tests in GHCi.
-parseWithDefaultErrorType :: Parsec Dec s a -> s -> Either (ParseError (Token s) Dec) a
+parseWithDefaultErrorType :: Parsec Void s a -> s -> Either (ParseError (Token s) Void) a
 parseWithDefaultErrorType c = parse c "" 
 
 

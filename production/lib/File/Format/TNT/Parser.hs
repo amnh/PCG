@@ -18,6 +18,7 @@
 module File.Format.TNT.Parser where
 
 import           Control.Monad            ((<=<),liftM3)
+import           Data.CaseInsensitive
 import           Data.Foldable
 import           Data.IntMap              (IntMap,insertWith,mapWithKey,toAscList)
 import qualified Data.IntMap        as IM (lookup)
@@ -26,13 +27,14 @@ import qualified Data.List.NonEmpty as NE (fromList)
 import           Data.Matrix.NotStupid    (Matrix)
 import           Data.Maybe               (fromMaybe)
 import           Data.Semigroup
+import           Data.String
 import           Data.Vector              (Vector,(!),(//),generate)
 import qualified Data.Vector        as V  (fromList)
 import           File.Format.TNT.Command.CNames
 import           File.Format.TNT.Internal
 import           File.Format.TNT.Partitioning
+import           Text.Megaparsec
 import           Text.Megaparsec.Custom
-import           Text.Megaparsec.Prim                     (MonadParsec,Token)
 
 
 -- |
@@ -44,7 +46,7 @@ import           Text.Megaparsec.Prim                     (MonadParsec,Token)
 --
 -- * A collection of taxa sequences with coresponsing metadata and possibly
 --   corresponding forest of trees whose leaf sets are equal to the taxa set.
-tntStreamParser :: (MonadParsec e s m, Token s ~ Char) => m TntResult
+tntStreamParser :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m TntResult
 tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gatherCommands)
   where
     colateResult :: (MonadParsec e s m, Token s ~ Char) => ([CCode],[CharacterName],[Cost],[NStates],[TReadTree],[XRead]) -> m TntResult

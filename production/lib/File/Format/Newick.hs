@@ -42,26 +42,26 @@ module File.Format.Newick
 
 
 import Data.List.NonEmpty          (NonEmpty)
+import Data.String
 import File.Format.Newick.Internal
 import File.Format.Newick.Parser
 import Text.Megaparsec
 import Text.Megaparsec.Custom
-import Text.Megaparsec.Prim        (MonadParsec)
 
 
 -- |
 -- Parses an entire stream into a zero or more 'NewickForest's.
-newickStreamParser :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty NewickForest)
+newickStreamParser :: (IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m (NonEmpty NewickForest)
 newickStreamParser = nonEmpty forestDefinitions <* eof
 
 
-forestDefinitions :: (MonadParsec e s m, Token s ~ Char) => m NewickForest 
+forestDefinitions :: (IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m NewickForest 
 forestDefinitions = explicitForest <|> implicitForest
 
 
-explicitForest :: (MonadParsec e s m, Token s ~ Char) => m NewickForest
+explicitForest :: (IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m NewickForest
 explicitForest = try newickForestDefinition
 
 
-implicitForest :: (MonadParsec e s m, Token s ~ Char) => m NewickForest
+implicitForest :: (IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m NewickForest
 implicitForest = pure <$> newickExtendedDefinition

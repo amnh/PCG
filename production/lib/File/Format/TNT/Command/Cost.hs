@@ -17,16 +17,18 @@
 module File.Format.TNT.Command.Cost where
 
 
+import Data.CaseInsensitive
 import Data.Foldable
 import Data.Functor             (($>))
 import Data.List.NonEmpty       (NonEmpty)
 import Data.Matrix.NotStupid    (Matrix,matrix)
 import Data.Maybe               (fromJust,fromMaybe)
+import Data.String
 import Data.Vector              ((!))
 import File.Format.TNT.Internal
 import Text.Megaparsec
+import Text.Megaparsec.Char
 import Text.Megaparsec.Custom   (double, nonEmpty)
-import Text.Megaparsec.Prim     (MonadParsec)
 
 
 -- |
@@ -47,13 +49,13 @@ data TransitionCost
 --  * A single specification of the character state change
 --
 --  * One or more character indicies or index ranges of affected characters
-costCommand :: (MonadParsec e s m, Token s ~ Char) => m Cost
+costCommand :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m Cost
 costCommand = costHeader *> costBody <* symbol (char ';')
 
 
 -- |
 -- Consumes the superflous heading for a CCODE command.
-costHeader :: (MonadParsec e s m, Token s ~ Char) => m ()
+costHeader :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m ()
 costHeader = symbol $ keyword "costs" 2
 
 

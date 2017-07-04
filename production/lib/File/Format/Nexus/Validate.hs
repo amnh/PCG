@@ -38,7 +38,7 @@ import qualified Data.Vector        as V
 import           File.Format.Newick
 import           File.Format.Nexus.Data
 import           Safe
-import           Text.Megaparsec.Prim      (MonadParsec)
+import           Text.Megaparsec
 --import qualified Text.Megaparsec.Prim as P (Token)
 import           Text.Megaparsec.Custom
 

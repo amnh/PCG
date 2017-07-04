@@ -26,6 +26,7 @@ module File.Format.TNT.Command.XRead where
 
 import           Data.Bifunctor           (second)
 import           Data.Bits
+import           Data.CaseInsensitive
 import           Data.Char                (isSpace)
 import           Data.DList               (DList,append)
 import qualified Data.DList         as DL (concat,fromList)
@@ -38,21 +39,22 @@ import           Data.List.Utility
 import           Data.Map                 (assocs,insertWith,lookup)
 import           Data.Maybe               (catMaybes,fromJust,isJust)
 import           Data.Semigroup
+import           Data.String
 import           Data.Traversable
 import           File.Format.TNT.Internal
 import           Prelude           hiding (lookup)
 import           Text.Megaparsec
+import           Text.Megaparsec.Char
 import           Text.Megaparsec.Custom
-import           Text.Megaparsec.Prim     (MonadParsec)
 
 
 -- |
 -- Parses an XREAD command. Correctly validates for taxa count and character
 -- sequence length. Produces one or more taxa sequences.
-xreadCommand :: (MonadParsec e s m, Token s ~ Char) => m XRead
+xreadCommand :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m XRead
 xreadCommand = xreadValidation =<< xreadDefinition
   where
-    xreadDefinition :: (MonadParsec e s m, Token s ~ Char) => m (Int, Int, NonEmpty TaxonInfo)
+    xreadDefinition :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m (Int, Int, NonEmpty TaxonInfo)
     xreadDefinition = uncurry (,,) <$> xreadPreamble <*> xreadSequences <* symbol (char ';')
 
     xreadValidation :: (MonadParsec e s m {- , Token s ~ Char -}) => (Int, Int, NonEmpty TaxonInfo) -> m XRead
@@ -87,7 +89,7 @@ xreadCommand = xreadValidation =<< xreadDefinition
 -- |
 -- Consumes everything in the XREAD command prior to the taxa sequences.
 -- Produces the expected taxa count and the length of the character sequences.
-xreadPreamble :: (MonadParsec e s m, Token s ~ Char) => m (Int, Int)
+xreadPreamble :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m (Int, Int)
 xreadPreamble = xreadHeader *> ((,) <$> xreadCharCount <*> xreadTaxaCount)
 
 
@@ -95,7 +97,7 @@ xreadPreamble = xreadHeader *> ((,) <$> xreadCharCount <*> xreadTaxaCount)
 -- The superflous information of an XREAD command.
 -- Consumes the XREAD string identifier and zero or more comments
 -- preceeding the taxa count and character cound parameters
-xreadHeader :: (MonadParsec e s m, Token s ~ Char) => m ()
+xreadHeader :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m ()
 xreadHeader =  symbol (keyword "xread" 2)
             *> many simpleComment
             $> ()
@@ -137,7 +139,7 @@ xreadCharCount = symbol $ flexibleNonNegativeInt "character count"
 -- Right [ ("taxonOne", "GATACAACATAG")
 --       , ("taxonTwo", "GGAATTCCGATC")
 --       ]
-xreadSequences :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty TaxonInfo)
+xreadSequences :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m (NonEmpty TaxonInfo)
 xreadSequences = NE.fromList . deinterleaveTaxa <$> taxonSequence
   where
     deinterleaveTaxa = assocs . fmap toList . foldr f mempty
@@ -149,7 +151,7 @@ xreadSequences = NE.fromList . deinterleaveTaxa <$> taxonSequence
 -- Character values can be one of 64 states ordered @[0..9,A..Z,a..z]@ and
 -- also the Chars @\'-\'@ & @\'?\'@.
 -- Taxon name cannot contain spaces or the @\';\'@ character.
-taxonSequence :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty TaxonInfo)
+taxonSequence :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m (NonEmpty TaxonInfo)
 taxonSequence = NE.fromList . toList . DL.concat <$> some taxonSequenceSegment
 
 
@@ -160,16 +162,17 @@ taxonSequence = NE.fromList . toList . DL.concat <$> some taxonSequenceSegment
 -- characters '"().;"' as this makes it impossible to parse other things that I
 -- forget. Maybe I'll remember and add that info some day.
 taxonName :: (MonadParsec e s m, Token s ~ Char) => m String
-taxonName = notFollowedBy (string "&[") *> some validNameChar
+taxonName = notFollowedBy openingSequence *> some validNameChar
   where
-    validNameChar = satisfy (\x -> (not . isSpace) x && x `notElem` "(),;")
+    validNameChar   = satisfy (\x -> (not . isSpace) x && x `notElem` "(),;")
+    openingSequence = char '&' *> char '[' $> ()
 
 
 -- |
 -- Represents a partial taxon sequence. The sequence segment can either have it's
 -- character type specified explicitly by a tag or the sequence segment will be
 -- interpreted as the default discrete character type.
-taxonSequenceSegment :: (MonadParsec e s m, Token s ~ Char) => m (DList TaxonInfo)
+taxonSequenceSegment :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m (DList TaxonInfo)
 taxonSequenceSegment = choice
     [ try taggedInterleaveBlock
     ,    defaultInterleaveBlock
@@ -390,7 +393,7 @@ data XReadInterpretation
 -- segment based on the contextual information derived from the sequence segment
 -- tag. Applies any transformations to the sequence segment that were specified
 -- by the sequence segment tag context.
-taggedInterleaveBlock :: (MonadParsec e s m, Token s ~ Char) => m (DList TaxonInfo)
+taggedInterleaveBlock :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m (DList TaxonInfo)
 taggedInterleaveBlock = nightmare =<< xreadTags
 
 
@@ -517,16 +520,13 @@ toMissing e = e
 -- identifiers. Validates that neither duplicate nor mutually exclusive
 -- identifiers exist. Returns the contextual information for interpreting the
 -- sequence segments following the tag.
-xreadTags :: (MonadParsec e s m, Token s ~ Char) => m XReadInterpretation
+xreadTags :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m XReadInterpretation
 xreadTags = validateXReadTags =<< xreadTagsDef
   where
-    xreadTagsDef :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty XReadTag)
     xreadTagsDef = symbol (char '&') *> symbol (withinBraces tags)
 
-    tags         :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty XReadTag)
     tags         = NE.fromList <$> (tagOptions `sepBy1` whitespaceInline)
 
-    tagOptions   :: (MonadParsec e s m, Token s ~ Char) => m XReadTag
     tagOptions   = choice
                  [      keyword "continuous" 4  $> TagContinuous
                  ,      keyword "dna"        3  $> TagDna

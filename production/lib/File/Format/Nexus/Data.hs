@@ -116,7 +116,7 @@ data CharFormatField
    | MatchChar   String -- "match" char
    | Items       String
    | RespectCase Bool   -- should the case of the characters be respected?
-   | Tokens      Bool
+   | AreTokens   Bool
    | Transpose   Bool
    | Interleave  Bool
    | Unlabeled   Bool   -- if seqMatrix is unlabeled, in which case first token in each line is a char
