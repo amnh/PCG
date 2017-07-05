@@ -149,15 +149,9 @@ type StateContributionList = [Word]
 
 
 -- | (✔)
-instance EncodableStreamElement c => Show (SankoffOptimizationDecoration c) where
+instance HasBeta (SankoffOptimizationDecoration c) [ExtendedNatural] where
 
-    show = showDiscreteCharacterElement
-
-
--- | (✔)
-instance HasDiscreteCharacter (SankoffOptimizationDecoration c) c where
-
-    discreteCharacter = lens sankoffCharacterField (\e x -> e { sankoffCharacterField = x })
+    beta = lens sankoffBeta (\e x -> e { sankoffBeta = x })
 
 
 -- | (✔)
@@ -170,6 +164,18 @@ instance HasCharacterAlphabet (SankoffOptimizationDecoration c) (Alphabet String
 
 
 -- | (✔)
+instance HasCharacterCost (SankoffOptimizationDecoration c) Word where
+
+    characterCost = lens sankoffMinCost (\e x -> e { sankoffMinCost = x })
+
+
+-- | (✔)
+instance HasCharacterCostVector (SankoffOptimizationDecoration c) [ExtendedNatural] where
+
+    characterCostVector = lens sankoffMinCostVector (\e x -> e { sankoffMinCostVector = x })
+
+
+-- | (✔)
 instance HasCharacterName (SankoffOptimizationDecoration c) CharacterName where
 
     characterName = lens getter setter
@@ -179,6 +185,45 @@ instance HasCharacterName (SankoffOptimizationDecoration c) CharacterName where
 
 
 -- | (✔)
+instance HasCharacterWeight (SankoffOptimizationDecoration c) Double where
+
+    characterWeight = lens getter setter
+      where
+         getter e   = sankoffMetadataField e ^. characterWeight
+         setter e x = e { sankoffMetadataField = sankoffMetadataField e &  characterWeight .~ x }
+
+
+-- | (✔)
+instance HasDiscreteCharacter (SankoffOptimizationDecoration c) c where
+
+    discreteCharacter = lens sankoffCharacterField (\e x -> e { sankoffCharacterField = x })
+
+
+-- | (✔)
+instance HasFinalExtraCost (SankoffOptimizationDecoration c) [ExtendedNatural] where
+
+    finalExtraCost = lens sankoffFinalExtraCosts (\e x -> e { sankoffFinalExtraCosts = x })
+
+
+-- | (✔)
+instance HasIsLeaf (SankoffOptimizationDecoration c) Bool where
+
+    isLeaf = lens sankoffIsLeaf (\e x -> e { sankoffIsLeaf = x })
+
+
+-- | (✔)
+instance HasPreliminaryExtraCost (SankoffOptimizationDecoration c) [ExtendedNatural] where
+
+    preliminaryExtraCost = lens sankoffPreliminaryExtraCosts (\e x -> e { sankoffPreliminaryExtraCosts = x })
+
+
+-- | (✔)
+instance HasStateMinTuple (SankoffOptimizationDecoration c) ([StateContributionList], [StateContributionList]) where
+
+    minStateTuple = lens sankoffMinStateTuple (\e x -> e { sankoffMinStateTuple = x })
+
+
+    -- | (✔)
 instance HasSymbolChangeMatrix (SankoffOptimizationDecoration c) (Word -> Word -> Word) where
 
     symbolChangeMatrix = lens getter setter
@@ -197,54 +242,9 @@ instance HasTransitionCostMatrix (SankoffOptimizationDecoration c) (c -> c -> (c
 
 
 -- | (✔)
-instance HasCharacterWeight (SankoffOptimizationDecoration c) Double where
+instance EncodableStreamElement c => Show (SankoffOptimizationDecoration c) where
 
-    characterWeight = lens getter setter
-      where
-         getter e   = sankoffMetadataField e ^. characterWeight
-         setter e x = e { sankoffMetadataField = sankoffMetadataField e &  characterWeight .~ x }
-
-
--- | (✔)
-instance HasCharacterCostVector (SankoffOptimizationDecoration c) [ExtendedNatural] where
-
-    characterCostVector = lens sankoffMinCostVector (\e x -> e { sankoffMinCostVector = x })
-
-
--- | (✔)
-instance HasStateMinTuple (SankoffOptimizationDecoration c) ([StateContributionList], [StateContributionList]) where
-
-    minStateTuple = lens sankoffMinStateTuple (\e x -> e { sankoffMinStateTuple = x })
-
-
--- | (✔)
-instance HasCharacterCost (SankoffOptimizationDecoration c) Word where
-
-    characterCost = lens sankoffMinCost (\e x -> e { sankoffMinCost = x })
-
-
--- | (✔)
-instance HasIsLeaf (SankoffOptimizationDecoration c) Bool where
-
-    isLeaf = lens sankoffIsLeaf (\e x -> e { sankoffIsLeaf = x })
-
-
--- | (✔)
-instance HasPreliminaryExtraCost (SankoffOptimizationDecoration c) [ExtendedNatural] where
-
-    preliminaryExtraCost = lens sankoffPreliminaryExtraCosts (\e x -> e { sankoffPreliminaryExtraCosts = x })
-
-
--- | (✔)
-instance HasFinalExtraCost (SankoffOptimizationDecoration c) [ExtendedNatural] where
-
-    finalExtraCost = lens sankoffFinalExtraCosts (\e x -> e { sankoffFinalExtraCosts = x })
-
-
-    -- | (✔)
-instance HasBeta (SankoffOptimizationDecoration c) [ExtendedNatural] where
-
-    beta = lens sankoffBeta (\e x -> e { sankoffBeta = x })
+    show = showDiscreteCharacterElement
 
 
 -- | (✔)

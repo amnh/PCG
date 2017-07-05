@@ -123,25 +123,29 @@ updateCostVector :: DiscreteCharacterDecoration d c
                  -> NonEmpty (SankoffOptimizationDecoration c)
                  -> SankoffOptimizationDecoration c
 updateCostVector _parentDecoration (x:|[])                   = x                    -- Shouldn't be possible, but here for completion.
-updateCostVector _parentDecoration (leftChild:|rightChild:_) = returnNodeDecoration -- May? be able to amend this to use non-binary children.
+updateCostVector _parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDecoration -- May? be able to amend this to use non-binary children.
     where
-        (cs, ds, charCosts) = foldr findMins initialAccumulator range -- sory abut these shitty variable names. It was to shorten
-                                                                      -- extendDiscreteToSankoff call.
+        (cs, ds, minTransCost) = foldr findMins initialAccumulator range -- sorry abut these shitty variable names. It was to shorten
+                                                                      -- the extendDiscreteToSankoff call.
+                                                                      -- cs = min costs per state
+                                                                      -- ds = (left child min states, right child min states)
         range                    = [0..numAlphStates]
-        numAlphStates            = toEnum (length $ leftChild ^. characterAlphabet)
-        preliminaryMins          = foldr computeExtraMin [] cs
-        bs                       = foldr computeBetas    [] range
-        fCCs                     = (unsafeToFinite charCosts)
+        numAlphStates            = toEnum (length $ leftChildDec ^. characterAlphabet)
+        preliminaryMins          = foldr         computeExtraMin [] cs
+        bs                       = foldrWithKey' computeBetas    [] range     -- bs = betas
+        fCCs                     = (unsafeToFinite minTransCost)
+        scm                      = leftChildDec ^. symbolChangeMatrix
+
         initialAccumulator       = ([], ([],[]), infinity)  -- (min cost per state, (leftMin, rightMin), overall minimum)
-        returnNodeDecoration     = extendDiscreteToSankoff leftChild cs preliminaryMins [] bs ds fCCs emptyMedian False
-        emptyMedian              = emptyStatic $ leftChild ^. discreteCharacter
+        returnNodeDecoration     = extendDiscreteToSankoff leftChildDec cs preliminaryMins [] bs ds fCCs emptyMedian False
+        emptyMedian              = emptyStatic $ leftChildDec ^. discreteCharacter
 
-        computeExtraMin thisCost acc = (thisCost - charCosts) : acc
+        computeExtraMin thisCost acc = (thisCost - minTransCost) : acc
 
-        computeBetas charState acc = retVals
+        computeBetas charState childCharState acc = retVals
             where
-                transitionCost  = fromFinite . scm charState $ toEnum childCharState
-                retVal  = min [prelimMin + scm charState otherState | (otherState, prelimMin) <- zip range preliminaryMins]
+                -- transitionCost = fromFinite . scm charState childCharState
+                retVal  = minimum [prelimMin + fromFinite (scm (toEnum charState) otherState) | (otherState, prelimMin) <- zip range preliminaryMins]
                 retVals = retVal : acc
 
         findMins :: Word
@@ -153,7 +157,7 @@ updateCostVector _parentDecoration (leftChild:|rightChild:_) = returnNodeDecorat
                              then stateMin
                              else accMin
                  stateMin  = leftMin + rightMin
-                 ((leftMin, leftChildRetStates), (rightMin, rightChildRetStates)) = calcCostPerState charState leftChild rightChild
+                 ((leftMin, leftChildRetStates), (rightMin, rightChildRetStates)) = calcCostPerState charState leftChildDec rightChildDec
 
                  returnVal = ( stateMin : stateMins
                              , (leftChildRetStates : accumulatedLeftChildStates, rightChildRetStates : accumulatedRightChildStates)

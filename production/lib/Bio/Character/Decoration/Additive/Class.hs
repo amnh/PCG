@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FunctionalDependencies, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses, TypeFamilies #-}
 
 module Bio.Character.Decoration.Additive.Class where
 
@@ -20,6 +20,8 @@ import Bio.Character.Decoration.Shared
 import Control.Lens
 import Data.Range
 import Numeric.Extended
+import Text.XML.Class
+import Text.XML.Light.Types                (Content(..), QName(..))
 
 
 -- |
@@ -102,3 +104,36 @@ class HasFinalInterval s a | s -> a where
 
     {-# MINIMAL finalInterval #-}
     finalInterval :: Lens' s a
+
+
+-- |
+-- Anything that is a normal 'RangedPostorderDecoration' can be easily converted
+-- to XML.
+instance (RangedPostorderDecoration s c, Show (Finite (Bound c)), Show (Range (Bound c)), ToXML c) => ToXML s where
+
+    toXML dec = Element name attributes content Nothing
+        where
+            name           = QName "RangedPostorderDecoration" Nothing Nothing
+            attributes     = []
+            content        = [costElem, prelimInterval, charElem]
+            costElem       = CRef .  show $ dec ^. characterCost
+            prelimInterval = CRef .  show $ dec ^. preliminaryInterval
+            charElem       = Elem . toXML $ dec ^. intervalCharacter
+
+
+-- |
+-- Anything that is a normal 'RangedDecorationOptimization' can be easily converted
+-- to XML.
+instance (RangedDecorationOptimization s c, Show (Finite (Bound c)), Show (Range (Bound c)), ToXML c) => ToXML s where
+
+    toXML dec = Element name attributes content Nothing
+        where
+            name           = QName "RangedDecorationOptimization" Nothing Nothing
+            attributes     = []
+            content        = [costElem, finalInterval', prelimInterval, charElem]
+            costElem       = CRef .  show $ dec ^. characterCost
+            finalInterval' = CRef .  show $ dec ^. finalInterval
+            prelimInterval = CRef .  show $ dec ^. preliminaryInterval
+            charElem       = Elem . toXML $ dec ^. intervalCharacter
+
+
