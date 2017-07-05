@@ -2,8 +2,9 @@
 
 module PCG.Syntax.Types where
 
+import           Control.Monad
 import           Control.Monad.Free
-import           Control.Monad.Free.TH        (makeFree)
+--import           Control.Monad.Free.TH        (makeFree)
 import           Data.CaseInsensitive         (FoldCase)
 --import           Data.Foldable
 import           Data.Functor                 (($>), void)
@@ -88,19 +89,15 @@ data PrimativeValue a
    deriving (Functor)
 
 
-{--}
+{--
 data  ArgumentValue a
     = APrimativeArg   (PrimativeValue a)
-    | AListIdArg      (ListIdentifier -> a)
+--    | AListIdArg      (ListIdentifier -> a)
     | AListIdNamedArg ListIdentifier (ArgumentValue a)
 --    | CommandArg     SyntacticCommand
     | AArgumentList  (NonEmpty (ArgumentValue a))
     deriving (Functor)
-{--}
-
-
---primative :: (MonadFree PrimativeValue m, MonadFree ArgumentValue m') => m a -> m' a
---primative x = x >>= (\v -> liftF (PrimativeArg v))
+--}
 
 
 newtype ListIdentifier = ListId String deriving (Show)
@@ -177,8 +174,6 @@ orList ne@(x:|xs)  =
 -}
 
 
---makeFree ''ArgumentValue
-
 bool :: MonadFree PrimativeValue m => m Bool
 bool = liftF $ PBool id
 
@@ -203,36 +198,64 @@ value :: MonadFree PrimativeValue m => String -> m ()
 value str = liftF $ PValue str id
 
 
+primative :: (MonadFree ArgumentValue m) => Free PrimativeValue a -> m a
+primative x = liftF $ APrimativeArg x
+
+{--}
+listId :: (MonadFree ArgumentValue m) => String -> Free ArgumentValue a -> m a
+listId str x = liftF $ AListIdNamedArg (ListId str) x
+{--}
+
+
+data  ArgumentValue a
+    = APrimativeArg   (Free PrimativeValue a)
+--    | AListIdArg      (ListIdentifier -> a)
+    | AListIdNamedArg ListIdentifier (Free ArgumentValue a)
+--    | CommandArg     SyntacticCommand
+    | AArgumentList  (NonEmpty (ArgumentValue a))
+    deriving (Functor)
+
+
+--makeFree ''ArgumentValue
+
+
+parseArgument :: (ParserConstraint e s m, Show (Tokens s)) => Free ArgumentValue a -> m a
+parseArgument = iterM run
+  where
+
+run :: (ParserConstraint e s m, Show (Tokens s), Monad m) => ArgumentValue (m a) -> m a
+run (APrimativeArg x) = join $ iterM parsePrimative x <* whitespace
+run (AListIdNamedArg (ListId x) y) = do
+      _ <- void $ string' (fromString x)
+      _ <- whitespace <* char ':' <* whitespace
+      join $ iterM run y <* whitespace
+
+
 {--}
 data TestStruct = TS Int String deriving (Show)
 
-tester :: Free PrimativeValue TestStruct
+tester :: Free ArgumentValue TestStruct
 tester = do
-  x <- int
-  y <- text
+  x <- listId "age" $ primative int
+  y <- listId "key" $ primative text
   pure $ TS x y
 {--}
 
 
 {--}
-parsePrimative :: (ParserConstraint e s m, Show (Tokens s)) => Free PrimativeValue a -> m a
-parsePrimative = iterM run
-  where
---    run :: Monad m => PrimativeValue (m a) -> (m a)
-    run (PBool      x) = boolParser >>= x
-    run (PInt       x) =  intParser >>= x
-    run (PReal      x) = realParser >>= x
-    run (PText      x) = textParser >>= x
-    run (PTime      x) = timeParser >>= x
-    run (PValue str x) =
-      let valueParser = typeMismatchContext (valueValue str) (PT_Value str)
-      in  valueParser >>= x
+parsePrimatives :: (ParserConstraint e s m, Show (Tokens s)) => Free PrimativeValue a -> m a
+parsePrimatives = iterM parsePrimative
 
-    boolParser  = typeMismatchContext boolValue PT_Bool
-    intParser   = typeMismatchContext  intValue PT_Int 
-    realParser  = typeMismatchContext realValue PT_Real
-    textParser  = typeMismatchContext textValue PT_Text
-    timeParser  = typeMismatchContext timeValue PT_Time
+
+parsePrimative :: (ParserConstraint e s m, Show (Tokens s)) => PrimativeValue (m a) -> m a
+parsePrimative (PBool      x) = typeMismatchContext boolValue PT_Bool >>= x
+parsePrimative (PInt       x) = typeMismatchContext  intValue PT_Int  >>= x
+parsePrimative (PReal      x) = typeMismatchContext realValue PT_Real >>= x
+parsePrimative (PText      x) = typeMismatchContext textValue PT_Text >>= x
+parsePrimative (PTime      x) = typeMismatchContext timeValue PT_Time >>= x
+parsePrimative (PValue str x) = valueParser >>= x
+  where
+    valueParser = typeMismatchContext (valueValue str) (PT_Value str)
 
 
 boolValue :: ParserConstraint e s m => m Bool

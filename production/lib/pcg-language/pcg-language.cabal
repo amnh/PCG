@@ -52,7 +52,7 @@ library
                      , keys
 --                     , lens
 --                     , matrix
-                     , megaparsec       >=5.3
+                     , megaparsec       >=5.3.1
 --                     , mono-traversable >=1.0
 --                     , mtl
 --                     , parallel

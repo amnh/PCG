@@ -8,7 +8,7 @@ flags: {}
 
 extra-deps:
   - containers-0.5.8.1
-  - megaparsec-5.3.0
+  - megaparsec-5.3.1
   - parser-combinators-0.1
   - pretty-tree-0.1.0.0
   - quickcheck-properties-0.1
@@ -19,7 +19,6 @@ ghc-options:
 local-bin-path: bin
 
 packages:
-  - '.'
   - lib/pcg-language
   - location: https://github.com/mrkkrp/megaparsec/archive/master.zip
     extra-dep: true
