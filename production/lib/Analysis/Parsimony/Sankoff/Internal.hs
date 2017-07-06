@@ -53,9 +53,9 @@ sankoffPostOrder charDecoration xs =
 -- |
 -- Used on the pre-order (i.e. second) traversal.
 --
--- Either calls 'initializeDirVector' on root or updateDirectionalMins.
+-- Either calls `initializeDirVector` on root or `updateDirectionalMins`.
 -- Needs to determine which child it's updating, then sends the appropriate
--- minlist.
+-- minlist to `updateDirectionalMins`.
 sankoffPreOrder :: EncodableStaticCharacter c
                 => SankoffOptimizationDecoration c
                 -> [(Word, SankoffOptimizationDecoration c)]
@@ -113,9 +113,19 @@ initializeCostVector inputDecoration = returnChar
 -- Given current node and its children, does actual calculation of new node value
 -- for each character state.
 --
--- That is, folds over character states, and for each state finds the minimum cost to transition to that
+-- That is, folds over character states, and for each state, a, find:
+--     • for each state, b, min [transition cost (a, b) + left child min cost (b) + right child min cost (b)],
+--       stored as a tuple of lists
+--     •
+--     • overall lowest min over all states
 -- state from the characters on each of the left and right children. Stores those mins as a tuple of lists.
--- Likewise, for each state calculates its min (min_left + min_right), as well as the overall lowest min for all states.
+-- Likewise, for each state calculates its min (min_left + min_right)
+--
+-- Finally, in order to run Goloboff's Sankoff traversal optimizations, computes:
+--    • preliminary min for each character state: cost of this to this state - overall minimum
+--    • beta for each state: for each state, a, for each state, b, min [transition cost (a,b) + preliminary extra cost(b)]
+--
+-- Used on the post-order (i.e. first) traversal.
 --
 -- This node is not a leaf node. Assumes binary tree.
 updateCostVector :: DiscreteCharacterDecoration d c
@@ -125,27 +135,29 @@ updateCostVector :: DiscreteCharacterDecoration d c
 updateCostVector _parentDecoration (x:|[])                   = x                    -- Shouldn't be possible, but here for completion.
 updateCostVector _parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDecoration -- May? be able to amend this to use non-binary children.
     where
-        (cs, ds, minTransCost) = foldr findMins initialAccumulator range -- sorry abut these shitty variable names. It was to shorten
-                                                                      -- the extendDiscreteToSankoff call.
-                                                                      -- cs = min costs per state
-                                                                      -- ds = (left child min states, right child min states)
-        range                    = [0..numAlphStates]
-        numAlphStates            = toEnum (length $ leftChildDec ^. characterAlphabet)
-        preliminaryMins          = foldr         computeExtraMin [] cs
-        bs                       = foldrWithKey' computeBetas    [] range     -- bs = betas
-        fCCs                     = (unsafeToFinite minTransCost)
-        scm                      = leftChildDec ^. symbolChangeMatrix
+        (cs, ds, minTransCost) = foldr findMins initialAccumulator range   -- sorry abut these shitty variable names. It was to shorten
+                                                                           -- the extendDiscreteToSankoff call.
+                                                                           -- cs = min costs per state
+                                                                           -- ds = (left child min states, right child min states)
+        range                = [0..numAlphStates]
+        numAlphStates        = toEnum (length $ leftChildDec ^. characterAlphabet)
+        preliminaryMins      = foldr         computeExtraMin [] cs
+        bs                   = foldrWithKey' computeBetas    [] range      -- bs  = betas
+        omc                  = (unsafeToFinite minTransCost)               -- omc = overall min cost (min for all states)
+        scm                  = leftChildDec ^. symbolChangeMatrix
 
-        initialAccumulator       = ([], ([],[]), infinity)  -- (min cost per state, (leftMin, rightMin), overall minimum)
-        returnNodeDecoration     = extendDiscreteToSankoff leftChildDec cs preliminaryMins [] bs ds fCCs emptyMedian False
-        emptyMedian              = emptyStatic $ leftChildDec ^. discreteCharacter
+        initialAccumulator   = ([], ([],[]), infinity)                   -- (min cost per state, (leftMin, rightMin), overall minimum)
+        returnNodeDecoration = extendDiscreteToSankoff leftChildDec cs preliminaryMins [] bs ds omc emptyMedian False
+        emptyMedian          = emptyStatic $ leftChildDec ^. discreteCharacter
 
         computeExtraMin thisCost acc = (thisCost - minTransCost) : acc
 
         computeBetas charState childCharState acc = retVals
             where
                 -- transitionCost = fromFinite . scm charState childCharState
-                retVal  = minimum [prelimMin + fromFinite (scm (toEnum charState) otherState) | (otherState, prelimMin) <- zip range preliminaryMins]
+                retVal  = minimum [ prelimMin + fromFinite (scm (toEnum charState) otherState)
+                                  | (otherState, prelimMin) <- zip range preliminaryMins
+                                  ]
                 retVals = retVal : acc
 
         findMins :: Word
@@ -177,18 +189,25 @@ updateCostVector _parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeD
 -- parCharState_characterCost_left == childCharState_characterCost + TCM(parCharState, childCharState).
 --
 -- Used on second, pre-order, pass.
-updateDirectionalMins :: EncodableStaticCharacter c -- ERIC: I made this more restrictive to resolve the 'Cannot deduce EncodableStaticCharacter c from Bits c'
+updateDirectionalMins :: EncodableStaticCharacter c -- ERIC: I made this more restrictive to resolve the 'Cannot deduce
+                                                    -- EncodableStaticCharacter c from Bits c'
                       => SankoffOptimizationDecoration c
                       -> SankoffOptimizationDecoration c
                       -> [StateContributionList]
                       -> SankoffOptimizationDecoration c
-updateDirectionalMins parentDecoration childDecoration childStateMinsFromParent = childDecoration & discreteCharacter .~ resultMedian
+updateDirectionalMins parentDecoration childDecoration childStateMinsFromParent = finalDirMins
     where
         parentFinalMedian   = parentDecoration ^. discreteCharacter
         emptyMedian         = emptyStatic $ parentDecoration ^. discreteCharacter
         resultMedian        = if childDecoration ^. isLeaf
-                                  then childDecoration ^. discreteCharacter                                 -- discreteChar doesn't change
-                                  else foldlWithKey' determineWhetherToIncludeState emptyMedian childStateMinsFromParent  -- need to create new bit vector
+                              then childDecoration ^. discreteCharacter                                 -- discreteChar doesn't change
+                              else foldlWithKey' determineWhetherToIncludeState emptyMedian childStateMinsFromParent  -- need to create new bit vector
+        -- resultExtras        = if childDecoration ^. isLeaf
+        --                       then childDecoration
+        --                       else
+                                                                                           -- <-- You are here. Just commented out resultExtras.
+        finalDirMins        = childDecoration & discreteCharacter .~ resultMedian
+        -- retVal              = finalDirMins    & finalExtraCosts   .~ resultExtras
 
         -- If this character state in the parent is one of the low-cost states, then add all states in child that can contribute
         -- to this parent state.

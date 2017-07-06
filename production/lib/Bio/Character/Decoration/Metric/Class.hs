@@ -29,9 +29,9 @@ class DiscreteCharacterDecoration s a => MetricCharacterDecoration s a | s -> a 
 -- |
 -- A decoration containing a character that has been scored using Sankoff's algorithm.
 class ( DiscreteCharacterDecoration s c
-      , HasCharacterCost        s Word
-      , HasCharacterCostVector  s  [ExtendedNatural]
-      , HasStateMinTuple s ([[Word]], [[Word]])
+      , HasCharacterCost            s Word
+      , HasCharacterCostVector      s [ExtendedNatural]
+      , HasStateMinTuple            s ([[Word]], [[Word]])
       ) => SankoffDecoration s c | s -> c where
 
 
