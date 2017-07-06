@@ -1,7 +1,8 @@
-{-# LANGUAGE ConstraintKinds, DeriveFunctor, FlexibleContexts, TemplateHaskell, TypeFamilies #-}
+{-# LANGUAGE ConstraintKinds, DeriveFunctor, DeriveAnyClass, FlexibleContexts, TemplateHaskell, TypeFamilies #-}
 
 module PCG.Syntax.Types where
 
+import           Control.Applicative
 import           Control.Monad
 import           Control.Monad.Free
 --import           Control.Monad.Free.TH        (makeFree)
@@ -86,7 +87,7 @@ data PrimativeValue a
    | PText          (String   -> a)
    | PTime          (DiffTime -> a)
    | PValue String  (()       -> a)
-   deriving (Functor)
+   deriving (Functor, Applicative, Alternative)
 
 
 {--
@@ -206,14 +207,22 @@ listId :: (MonadFree ArgumentValue m) => String -> Free ArgumentValue a -> m a
 listId str x = liftF $ AListIdNamedArg (ListId str) x
 {--}
 
+{--}
+pickOne :: (MonadFree ArgumentValue m) => [Free ArgumentValue a] -> m a
+pickOne    []  = error "You cannot construct an empty set of choices!"
+pickOne (x:xs) = liftF . ExactlyOneOf $ x:xs
+  
+{--}
+
 
 data  ArgumentValue a
     = APrimativeArg   (Free PrimativeValue a)
 --    | AListIdArg      (ListIdentifier -> a)
     | AListIdNamedArg ListIdentifier (Free ArgumentValue a)
 --    | CommandArg     SyntacticCommand
-    | AArgumentList  (NonEmpty (ArgumentValue a))
-    deriving (Functor)
+    | AArgumentList  [ArgumentValue a]
+    | ExactlyOneOf   [Free ArgumentValue a]
+    deriving (Functor, Applicative, Alternative)
 
 
 --makeFree ''ArgumentValue
@@ -221,14 +230,15 @@ data  ArgumentValue a
 
 parseArgument :: (ParserConstraint e s m, Show (Tokens s)) => Free ArgumentValue a -> m a
 parseArgument = iterM run
-  where
 
-run :: (ParserConstraint e s m, Show (Tokens s), Monad m) => ArgumentValue (m a) -> m a
+
+run :: (ParserConstraint e s m, Show (Tokens s)) => ArgumentValue (m a) -> m a
 run (APrimativeArg x) = join $ iterM parsePrimative x <* whitespace
 run (AListIdNamedArg (ListId x) y) = do
-      _ <- void $ string' (fromString x)
+      _ <- void $ (string' (fromString x) <?> ("identifier '" <> x <> "'"))
       _ <- whitespace <* char ':' <* whitespace
       join $ iterM run y <* whitespace
+run (ExactlyOneOf xs) = choice $ join . iterM run <$> xs
 
 
 {--}
@@ -236,9 +246,9 @@ data TestStruct = TS Int String deriving (Show)
 
 tester :: Free ArgumentValue TestStruct
 tester = do
-  x <- listId "age" $ primative int
-  y <- listId "key" $ primative text
-  pure $ TS x y
+  x <- some . listId "age" $ primative int
+  y <- listId "class" . pickOne $ primative . value <$> [ "ninja", "zombie", "pirate"] 
+  pure $ TS (sum x) "Got It!"
 {--}
 
 
