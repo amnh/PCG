@@ -1,31 +1,34 @@
-{-# LANGUAGE ConstraintKinds, DeriveFunctor, DeriveAnyClass, FlexibleContexts, TemplateHaskell, TypeFamilies #-}
+{-# LANGUAGE ConstraintKinds, DeriveFunctor, ExistentialQuantification, FlexibleContexts, TemplateHaskell, TypeFamilies #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, TypeSynonymInstances #-}
 
 module PCG.Syntax.Types where
 
 import           Control.Applicative
 import           Control.Monad
 import           Control.Monad.Free
---import           Control.Monad.Free.TH        (makeFree)
-import           Data.CaseInsensitive         (FoldCase)
+--import           Control.Monad.Free.TH             (makeFree)
+import           Data.CaseInsensitive              (FoldCase)
 --import           Data.Foldable
-import           Data.Functor                 (($>), void)
+import           Data.Functor                      (($>), void)
 import           Data.Key
---import           Data.List                    (intercalate)
-import           Data.List.NonEmpty           (NonEmpty(..))
-import qualified Data.List.NonEmpty    as NE
-import qualified Data.Map              as M
-import           Data.Maybe                   (fromMaybe)
+--import           Data.List                         (intercalate)
+import           Data.List.NonEmpty                (NonEmpty(..))
+import qualified Data.List.NonEmpty         as NE
+import qualified Data.Map                   as M
+import           Data.Maybe                        (fromMaybe)
 --import           Data.Ord
-import           Data.Scientific       hiding (scientific)
-import           Data.Semigroup        hiding (option)
---import           Data.Set                     (Set)
-import qualified Data.Set              as S
-import           Data.String                  (IsString(..))
-import           Data.Time.Clock              (DiffTime, secondsToDiffTime)
+import           Data.Proxy
+import           Data.Scientific            hiding (scientific)
+import           Data.Semigroup             hiding (option)
+--import           Data.Set                          (Set)
+import qualified Data.Set                   as S
+import           Data.String                       (IsString(..))
+import           Data.Time.Clock                   (DiffTime, secondsToDiffTime)
+import           Data.Void
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
-import           Text.Megaparsec.Lexer        (integer, number, signed)
-import qualified Text.Megaparsec.Lexer as Lex
+import           Text.Megaparsec.Char.Lexer        (integer, number, signed)
+import qualified Text.Megaparsec.Char.Lexer as Lex
 
 --import Debug.Trace
 
@@ -87,7 +90,7 @@ data PrimativeValue a
    | PText          (String   -> a)
    | PTime          (DiffTime -> a)
    | PValue String  (()       -> a)
-   deriving (Functor, Applicative, Alternative)
+   deriving (Functor)
 
 
 {--
@@ -175,44 +178,73 @@ orList ne@(x:|xs)  =
 -}
 
 
-bool :: MonadFree PrimativeValue m => m Bool
-bool = liftF $ PBool id
+pbool :: MonadFree PrimativeValue m => m Bool
+pbool = liftF $ PBool id
 
 
-int :: MonadFree PrimativeValue m => m Int
-int = liftF $ PInt id
+pint :: MonadFree PrimativeValue m => m Int
+pint = liftF $ PInt id
 
 
-real :: MonadFree PrimativeValue m => m Double
-real = liftF $ PReal id
+preal :: MonadFree PrimativeValue m => m Double
+preal = liftF $ PReal id
 
 
-text :: MonadFree PrimativeValue m => m String
-text = liftF $ PText id
+ptext :: MonadFree PrimativeValue m => m String
+ptext = liftF $ PText id
 
 
-time :: MonadFree PrimativeValue m => m DiffTime
-time = liftF $ PTime id
+ptime :: MonadFree PrimativeValue m => m DiffTime
+ptime = liftF $ PTime id
 
 
-value :: MonadFree PrimativeValue m => String -> m ()
-value str = liftF $ PValue str id
+pvalue :: MonadFree PrimativeValue m => String -> m ()
+pvalue str = liftF $ PValue str id
 
 
 primative :: (MonadFree ArgumentValue m) => Free PrimativeValue a -> m a
-primative x = liftF $ APrimativeArg x
+primative = liftF . APrimativeArg
 
-{--}
+
+bool :: MonadFree ArgumentValue m => m Bool
+bool = primative . liftF $ PBool id
+
+
+int :: MonadFree ArgumentValue m => m Int
+int = primative . liftF $ PInt id
+
+
+real :: MonadFree ArgumentValue m => m Double
+real = primative . liftF $ PReal id
+
+
+text :: MonadFree ArgumentValue m => m String
+text = primative . liftF $ PText id
+
+
+time :: MonadFree ArgumentValue m => m DiffTime
+time = primative . liftF $ PTime id
+
+
+value :: MonadFree ArgumentValue m => String -> m ()
+value str = primative . liftF $ PValue str id
+
+
 listId :: (MonadFree ArgumentValue m) => String -> Free ArgumentValue a -> m a
 listId str x = liftF $ AListIdNamedArg (ListId str) x
-{--}
 
-{--}
+
+argList :: (MonadFree ArgumentValue m) => Free ArgumentValue a -> m a
+argList = liftF . AArgumentList 
+
+
 pickOne :: (MonadFree ArgumentValue m) => [Free ArgumentValue a] -> m a
 pickOne    []  = error "You cannot construct an empty set of choices!"
 pickOne (x:xs) = liftF . ExactlyOneOf $ x:xs
   
-{--}
+
+someOf :: (MonadFree ArgumentValue m) => Free ArgumentValue a -> m (NonEmpty a)
+someOf = liftF . SomeOf . fmap pure
 
 
 data  ArgumentValue a
@@ -220,36 +252,62 @@ data  ArgumentValue a
 --    | AListIdArg      (ListIdentifier -> a)
     | AListIdNamedArg ListIdentifier (Free ArgumentValue a)
 --    | CommandArg     SyntacticCommand
-    | AArgumentList  [ArgumentValue a]
+    | AArgumentList       (Free ArgumentValue a)
+    | AArgumentListHead   (Free ArgumentValue a) -- a here is a tuple!
+    | AArgumentListSuffix (Free ArgumentValue a) -- a here is a tuple!
     | ExactlyOneOf   [Free ArgumentValue a]
-    deriving (Functor, Applicative, Alternative)
+    | SomeOf         (Free ArgumentValue a)
+    deriving (Functor)
 
 
 --makeFree ''ArgumentValue
 
-
+  
 parseArgument :: (ParserConstraint e s m, Show (Tokens s)) => Free ArgumentValue a -> m a
 parseArgument = iterM run
 
 
 run :: (ParserConstraint e s m, Show (Tokens s)) => ArgumentValue (m a) -> m a
-run (APrimativeArg x) = join $ iterM parsePrimative x <* whitespace
+run (APrimativeArg x) = join $ iterM (tokenize . parsePrimative) x
 run (AListIdNamedArg (ListId x) y) = do
       _ <- void $ (string' (fromString x) <?> ("identifier '" <> x <> "'"))
       _ <- whitespace <* char ':' <* whitespace
       join $ iterM run y <* whitespace
-run (ExactlyOneOf xs) = choice $ join . iterM run <$> xs
+run (ExactlyOneOf   xs) = choice $ join . iterM run <$> xs
+--run (SomeOf          x) = fmap NE.fromList . some $ join . iterM run (NE.head <$> x)
+run (AArgumentListHead   tup) = join $ iterM run tup 
+run (AArgumentListSuffix tup) = join $ char ',' *> whitespace *> iterM run tup
+run (AArgumentList tup) = join $ openParen *> iterM run tup <* closeParen
+  where
+    openParen  = char '(' <* whitespace
+    closeParen = char ')' <* whitespace
+
+
+
+commas :: (ParserConstraint e s m) => m a -> m a
+commas   x = char ',' *> whitespace *> x <* whitespace
+
+tokenize x = x <* whitespace -- <* char ',' <* whitespace
+
 
 
 {--}
-data TestStruct = TS Int String deriving (Show)
+data TestStruct = TS Int String Double deriving (Show)
 
 tester :: Free ArgumentValue TestStruct
 tester = do
-  x <- some . listId "age" $ primative int
-  y <- listId "class" . pickOne $ primative . value <$> [ "ninja", "zombie", "pirate"] 
-  pure $ TS (sum x) "Got It!"
+  x     <- listId "age" int
+  y     <- listId "class" . pickOne $ value <$> [ "ninja", "zombie", "pirate"]
+  (_,z) <- argList $ (,) </|> int </*> real
+  pure $ TS x "Got It!" z
 {--}
+
+
+(</|>) :: (a -> b) -> Free ArgumentValue a -> Free ArgumentValue b
+(</|>) f x = f <$> (liftF (AArgumentListHead x))
+
+(</*>) :: Free ArgumentValue (a -> b) -> Free ArgumentValue a -> Free ArgumentValue b
+(</*>) f x = f <*> (liftF (AArgumentListSuffix x))
 
 
 {--}
@@ -375,12 +433,14 @@ typeMismatchContext p targetType = do
         ]
 
 
-whitespace :: ParserConstraint e s m => m ()
+whitespace :: (ParserConstraint e s m) => m ()
 whitespace = Lex.space single line block
   where
     single = void spaceChar
     line   = Lex.skipLineComment (fromString "**")
-    block  = Lex.skipBlockCommentNested (fromString "(*") (fromString "*)")
+    block  = Lex.skipBlockCommentNested open close
+    open   = fromString "(*"
+    close  = fromString "*)"
 
 
 {--}
@@ -417,3 +477,151 @@ data  Primative
     | TimeSpan  DiffTime
     deriving (Show)
 {--}
+
+
+
+
+
+{-
+data ArgumentList a x = Perm (Maybe a) [Branch a x] x
+  deriving (Functor)
+
+
+data Branch a x = forall b. Branch (ArgumentList (b -> a) x) b x
+
+
+instance Functor (Branch a) where
+
+    fmap f (Branch args b x) = Branch (f <$> args) b $ f x
+
+
+newperm :: (a -> b) -> x -> ArgumentList (a -> b) x
+newperm f = Perm (Just f) [] 
+
+
+add :: ArgumentList (a -> b) x -> a -> ArgumentList b x
+add perm@(Perm _mf fs x) p = Perm Nothing (first : fmap insert fs) x
+  where
+    first = Branch perm  p  x
+    insert (Branch perm' p' x') = Branch (add (mapPerms flip perm') p) p' x'
+
+
+addopt
+  :: ArgumentList (a -> b) x
+  -> a
+  -> Free ArgumentValue a
+  -> ArgumentList b x
+addopt perm@(Perm mf fs x) v p = Perm (fmap ($ v) mf) (first : fmap insert fs) x
+  where
+    first = Branch perm  p  x
+    insert (Branch perm' p' x') = Branch (addopt (mapPerms flip -perm') x p) p' x'
+
+
+mapPerms
+  :: (a -> b)
+  -> ArgumentList a x
+  -> ArgumentList b x
+mapPerms f (Perm a as x) = Perm (fmap f a) (fmap mapBranch as) x
+  where
+    mapBranch (Branch perm p x') = Branch (mapPerms (f .) perm) p x'
+
+
+
+(<||>) :: (a -> b) -> Free ArgumentValue a -> ArgumentList a x
+(<||>) f p = newperm f <::> p
+
+
+(<::>) :: ArgumentList (a -> b) x -> Free ArgumentValue a -> ArgumentList b x
+(<::>) f p = add
+
+
+-}
+
+
+data ReadCommandz = Read [FileSpec]
+
+data FileSpec
+   = Unspecified    String
+   | Nucleotide     String
+   | Chromosome     String
+   | CustomAlphabet String
+   deriving (Show)
+
+
+unspecified :: Free ArgumentValue FileSpec
+unspecified = Unspecified <$> text
+
+nucleotide :: Free ArgumentValue FileSpec
+nucleotide = listId "nucleotide" $ Nucleotide <$> text
+
+{-
+customAlphabet :: Free ArgumentValue FileSpec
+customAlphabet = listId "custom_alphabet"
+  where
+    parameters = argList $ (,) </|)
+-}
+
+
+{--}
+newtype SyntaxParser a = SP { unSyntax :: Parsec Void String a }
+
+
+instance Functor SyntaxParser where
+
+    fmap f = SP . fmap f . (<* whitespace) . unSyntax
+
+
+instance Applicative SyntaxParser where
+
+    pure = SP . pure
+
+    (<*>) f = SP . ((unSyntax f) <*>) . (char ',' *> whitespace *>) . unSyntax
+
+
+instance Monad SyntaxParser where
+
+    (>>=) x f = SP $ unSyntax x >>= unSyntax . f
+
+    (>>)  f = SP . (unSyntax f >>) . unSyntax
+
+    return = pure
+
+    fail = SP . fail
+
+
+instance MonadPlus SyntaxParser where
+
+    mzero = SP mzero
+
+    mplus x y = SP $ unSyntax x `mplus` unSyntax y
+
+
+instance Alternative SyntaxParser where
+
+    empty = SP empty
+
+    (<|>) x y = SP $ unSyntax x <|> unSyntax y
+
+
+instance MonadParsec Void String SyntaxParser where
+
+    failure e es        = SP $ failure e es
+    fancyFailure es     = SP $ fancyFailure es
+    label str           = SP . label str . unSyntax
+    try                 = SP . try . unSyntax
+    lookAhead           = SP . lookAhead . unSyntax
+    notFollowedBy       = SP . notFollowedBy . unSyntax
+    withRecovery f      = SP . withRecovery (unSyntax . f) . unSyntax
+    observing           = SP . observing . unSyntax
+    eof                 = SP eof
+    token  f m          = SP $ token  f m
+    tokens f m          = SP $ tokens f m
+    takeWhileP  m f     = SP $ takeWhileP  m f
+    takeWhile1P m f     = SP $ takeWhile1P m f
+    takeP m i           = SP $ takeP m i
+    getParserState      = SP getParserState
+    updateParserState f = SP $ updateParserState f
+{--}
+
+
+syntaxParse syn file str = parse (unSyntax syn) file str

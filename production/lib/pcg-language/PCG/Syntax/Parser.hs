@@ -13,7 +13,7 @@ import PCG.Syntax.Types
 import Text.Megaparsec hiding (space)
 --import Text.Megaparsec.Custom
 --import Text.Megaparsec.Prim   (MonadParsec)
-import Text.Megaparsec.Lexer
+import Text.Megaparsec.Char.Lexer
 
 
 {-
