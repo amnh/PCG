@@ -290,7 +290,9 @@ instance ToXML StaticCharacter where
         where
             name       = QName "StaticChar" Nothing Nothing
             attributes = []
-            content    = [CRef $ (\x -> if x then '1' else '0') <$> toBits bv]
+            content    = [intRep, bitRep]
+            intRep     = CRef . show $ toInteger bv
+            bitRep     = CRef $ (\x -> if x then '1' else '0') <$> toBits bv
 
 
 {-# INLINE unstream #-}
