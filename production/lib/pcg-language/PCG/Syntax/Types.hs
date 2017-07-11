@@ -6,10 +6,11 @@ module PCG.Syntax.Types where
 import           Control.Applicative
 import           Control.Monad
 import           Control.Monad.Free
---import           Control.Monad.Free.TH             (makeFree)
+import           Control.Monad.FreeAlt
 import           Data.CaseInsensitive              (FoldCase)
---import           Data.Foldable
+import           Data.Foldable
 import           Data.Functor                      (($>), void)
+import qualified Data.Functor.Alt           as Alt
 import           Data.Key
 --import           Data.List                         (intercalate)
 import           Data.List.NonEmpty                (NonEmpty(..))
@@ -202,8 +203,8 @@ pvalue :: MonadFree PrimativeValue m => String -> m ()
 pvalue str = liftF $ PValue str id
 
 
-primative :: (MonadFree ArgumentValue m) => Free PrimativeValue a -> m a
-primative = liftF . APrimativeArg
+primative :: (MonadFree ArgumentValue m) => FreeAlt3 PrimativeValue a -> m a
+primative = liftF . APrimativeArg Nothing
 
 
 bool :: MonadFree ArgumentValue m => m Bool
@@ -230,87 +231,85 @@ value :: MonadFree ArgumentValue m => String -> m ()
 value str = primative . liftF $ PValue str id
 
 
-listId :: (MonadFree ArgumentValue m) => String -> Free ArgumentValue a -> m a
-listId str x = liftF $ AListIdNamedArg (ListId str) x
+listId :: (MonadFree ArgumentValue m) => String -> FreeAlt3 ArgumentValue a -> m a
+listId str x = liftF $ AListIdNamedArg Nothing x (ListId str)
 
 
-argList :: (MonadFree ArgumentValue m) => Free ArgumentValue a -> m a
-argList = liftF . AArgumentList 
+argList :: (MonadFree ArgumentValue m) => FreeAlt3 ArgumentValue a -> m a
+argList = liftF . AArgumentList Nothing
 
 
-pickOne :: (MonadFree ArgumentValue m) => [Free ArgumentValue a] -> m a
+pickOne :: (MonadFree ArgumentValue m) => [FreeAlt3 ArgumentValue a] -> m a
 pickOne    []  = error "You cannot construct an empty set of choices!"
-pickOne (x:xs) = liftF . ExactlyOneOf $ x:xs
+pickOne (x:xs) = liftF . ExactlyOneOf Nothing $ x:xs
   
 
-someOf :: (MonadFree ArgumentValue m) => Free ArgumentValue a -> m (NonEmpty a)
-someOf = liftF . SomeOf . fmap pure
+--someOf :: (MonadFree ArgumentValue m) => FreeAlt3 ArgumentValue a -> m (NonEmpty a)
+--someOf = liftF . SomeOf Nothing . pure
 
 
 data  ArgumentValue a
-    = APrimativeArg   (Free PrimativeValue a)
---    | AListIdArg      (ListIdentifier -> a)
-    | AListIdNamedArg ListIdentifier (Free ArgumentValue a)
---    | CommandArg     SyntacticCommand
-    | AArgumentList       (Free ArgumentValue a)
-    | AArgumentListHead   (Free ArgumentValue a) -- a here is a tuple!
-    | AArgumentListSuffix (Free ArgumentValue a) -- a here is a tuple!
-    | ExactlyOneOf   [Free ArgumentValue a]
-    | SomeOf         (Free ArgumentValue a)
+    =     
+      APrimativeArg   (Maybe (ArgumentValue a)) (FreeAlt3 PrimativeValue a)
+    | AListIdNamedArg (Maybe (ArgumentValue a)) (FreeAlt3 ArgumentValue  a) ListIdentifier
+    | AArgumentList   (Maybe (ArgumentValue a)) (FreeAlt3 ArgumentValue  a)
+--    | SomeOf          (Maybe (ArgumentValue a)) (NonEmpty (FreeAlt3 ArgumentValue  a))
+    | ExactlyOneOf    (Maybe (ArgumentValue a)) [FreeAlt3 ArgumentValue  a]
+    | None
     deriving (Functor)
 
 
---makeFree ''ArgumentValue
+-- |
+-- Intercalates a monadic effect between actions.
+iterM' :: (Monad m, Functor f) => m () -> (f (m a) -> m a) -> Free f a -> m a
+iterM' _   _   (Pure x) = return x
+iterM' eff phi (Free f) = phi (iterM ((eff *>) . phi) <$> f)
 
-  
-parseArgument :: (ParserConstraint e s m, Show (Tokens s)) => Free ArgumentValue a -> m a
-parseArgument = iterM run
+
+parseArgument :: (ParserConstraint e s m, Show (Tokens s)) => FreeAlt3 ArgumentValue a -> m a
+parseArgument x =
+    case unFA x of
+      Pure x  -> return x
+      context -> (char '(' <* whitespace)
+              *> iterM' comma run context
+              <* (char ')' <* whitespace)
 
 
 run :: (ParserConstraint e s m, Show (Tokens s)) => ArgumentValue (m a) -> m a
-run (APrimativeArg x) = join $ iterM (tokenize . parsePrimative) x
-run (AListIdNamedArg (ListId x) y) = do
+run (APrimativeArg   next x) = join $ iterM (tokenize . parsePrimative) (unFA x)
+run (AListIdNamedArg next y (ListId x)) = do
       _ <- void $ (string' (fromString x) <?> ("identifier '" <> x <> "'"))
       _ <- whitespace <* char ':' <* whitespace
-      join $ iterM run y <* whitespace
-run (ExactlyOneOf   xs) = choice $ join . iterM run <$> xs
---run (SomeOf          x) = fmap NE.fromList . some $ join . iterM run (NE.head <$> x)
-run (AArgumentListHead   tup) = join $ iterM run tup 
-run (AArgumentListSuffix tup) = join $ char ',' *> whitespace *> iterM run tup
-run (AArgumentList tup) = join $ openParen *> iterM run tup <* closeParen
-  where
-    openParen  = char '(' <* whitespace
-    closeParen = char ')' <* whitespace
+      join $ iterM run (unFA y)   <* whitespace
+run (ExactlyOneOf   next xs) = choice $ join . iterM run . unFA <$> xs
+--run (SomeOf         next x) = fmap NE.fromList . some $ join . iterM run (unFA x)
+run (AArgumentList       next tup) = join $ parseArgument tup  --openParen *> iterM run (unFA tup) <* closeParen
+--  where
+--    openParen  = char '(' <* whitespace
+--    closeParen = char ')' <* whitespace
 
 
+comma :: (ParserConstraint e s m) => m ()
+comma = char ',' *> whitespace
 
 commas :: (ParserConstraint e s m) => m a -> m a
-commas   x = char ',' *> whitespace *> x <* whitespace
+commas   x = comma *> x <* whitespace
 
 tokenize x = x <* whitespace -- <* char ',' <* whitespace
 
 
 
 {--}
-data TestStruct = TS Int String Double deriving (Show)
+data TestStruct = TS Int String [Double] deriving (Show)
 
-tester :: Free ArgumentValue TestStruct
+tester :: FreeAlt3 ArgumentValue TestStruct
 tester = do
-  x     <- listId "age" int
-  y     <- listId "class" . pickOne $ value <$> [ "ninja", "zombie", "pirate"]
-  (_,z) <- argList $ (,) </|> int </*> real
-  pure $ TS x "Got It!" z
+    age     <- listId "age" int
+    (str,r) <- argList $ (,) <$> text <*> (Alt.many real)
+    pure $ TS age str r
 {--}
 
 
-(</|>) :: (a -> b) -> Free ArgumentValue a -> Free ArgumentValue b
-(</|>) f x = f <$> (liftF (AArgumentListHead x))
-
-(</*>) :: Free ArgumentValue (a -> b) -> Free ArgumentValue a -> Free ArgumentValue b
-(</*>) f x = f <*> (liftF (AArgumentListSuffix x))
-
-
-{--}
 parsePrimatives :: (ParserConstraint e s m, Show (Tokens s)) => Free PrimativeValue a -> m a
 parsePrimatives = iterM parsePrimative
 

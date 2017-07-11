@@ -63,7 +63,7 @@ library
 --                     , quickcheck-properties
                      , safe
                      , scientific
---                     , semigroupoids
+                     , semigroupoids
 --                     , semigroups
 --                     , split
 --                     , tasty
@@ -115,3 +115,4 @@ library
   other-modules:       PCG.Command.Read
                        PCG.Syntax.Parser
                        PCG.Syntax.Types
+                       Control.Monad.FreeAlt
