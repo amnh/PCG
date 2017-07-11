@@ -53,9 +53,7 @@ import           Data.Vector                         (Vector)
 import           Prelude                      hiding (lookup)
 import           Test.Tasty.QuickCheck        hiding ((.&.))
 import           Test.QuickCheck.Arbitrary.Instances ()
-import           Text.XML.Class
-import           Text.XML.Light.Types                (Content(..), QName(..))
-import qualified Text.XML.Light.Types         as XML
+import           Text.XML.Custom
 
 import Debug.Trace
 
@@ -354,20 +352,19 @@ instance Exportable DynamicCharacterElement where
 
 instance ToXML DynamicChar where
 
-    toXML dynamicChar = XML.Element name attributes content Nothing
+    toXML dynamicChar = xmlElement "DynamicChar" attributes contents
         where
-            name       = QName "DynamicChar" Nothing Nothing
-            attributes = []
-            content    = Elem . toXML <$> otoList dynamicChar
+            attributes   = []
+            contents     = contentTuple <$> otoList dynamicChar -- toXML on all dynamic character elements
+            contentTuple (DCE bv) = ("Character states", (\x -> if x then '1' else '0') <$> toBits bv) -- the value of this character
 
 
 instance ToXML DynamicCharacterElement where
 
-    toXML (DCE bv) = XML.Element name attributes content Nothing
+    toXML (DCE bv) = xmlElement "DynamicCharacterElement" attributes content
         where
-            name       = QName "DynamicCharacterElement" Nothing Nothing
             attributes = []
-            content    = [CRef $ (\x -> if x then '1' else '0') <$> toBits bv]
+            content    = [("Character states", (\x -> if x then '1' else '0') <$> toBits bv)] -- the value of this character
 
 {-
 {-# INLINE unstream #-}

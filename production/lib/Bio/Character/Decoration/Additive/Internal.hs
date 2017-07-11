@@ -47,23 +47,6 @@ data AdditivePostorderDecoration a
 
 
 -- | (✔)
-instance
-  ( EncodableStreamElement c
-  , Show (Bound c)
-  , Show (Finite (Bound c))
-  , Show (Range  (Bound c))
-  ) => Show (AdditivePostorderDecoration c) where
-
-    show c = unlines
-        [ "Cost = "                 <> show (c ^. characterCost)
-        , "Is Leaf Node?        : " <> show (c ^. isLeaf)
-        , "Discrete Character   : " <> showDiscreteCharacterElement c
-        , "Preliminary Interval : " <> show (additivePreliminaryInterval c)
-        , "Child       Intervals: " <> show (additiveChildPrelimIntervals c)
-        ]
-
-
--- | (✔)
 instance HasIntervalCharacter (AdditivePostorderDecoration a) a where
 
     intervalCharacter = discreteCharacter
@@ -194,9 +177,9 @@ class ( RangedCharacterDecoration s c
 
 class ( RangedCharacterDecoration s c
       , HasFinalInterval s (Range (Bound c))
-      ) => RangedDecorationOptimization s c | s -> c where 
+      ) => RangedDecorationOptimization s c | s -> c where
 -}
-  
+
 
 -- | (✔)
 instance ( DiscreteCharacterMetadata   (AdditivePostorderDecoration a)
@@ -383,23 +366,12 @@ instance RangedCharacterDecoration (AdditiveOptimizationDecoration c) c => Range
 --n| (✔)
 --instance RangedCharacterDecoration (AdditiveOptimizationDecoration c) c => RangedExtensionPostorder (AdditiveOptimizationDecoration c) c where
 
-
-{--
--- | (✔)
-instance ( RangedPostorderDecoration   (AdditiveOptimizationDecoration a) a
-         ) => RangedExtensionPostorder (AdditiveOptimizationDecoration a) a where
-
-    extendRangedToPostorder subDecoration cost prelimInterval childMedianTup isLeafVal =
-        subDecoration { postorderDecoration = extendRangedToPostorder (postorderDecoration subDecoration) cost prelimInterval childMedianTup isLeafVal }
---}
-  
-
 -- | (✔)
 instance ( RangedCharacterDecoration (AdditiveOptimizationDecoration c) c
          , HasFinalInterval (AdditiveOptimizationDecoration c) (Range (Bound c))
-         ) => RangedDecorationOptimization (AdditiveOptimizationDecoration c) c where 
+         ) => RangedDecorationOptimization (AdditiveOptimizationDecoration c) c where
 
-  
+
 -- | (✔)
 instance ( DiscreteCharacterMetadata    (AdditiveOptimizationDecoration a)
          , RangedDecorationOptimization (AdditiveOptimizationDecoration a) a
@@ -422,3 +394,32 @@ instance ( DiscreteCharacterMetadata    (AdditiveOptimizationDecoration a)
             , additivePreliminaryInterval  = subDecoration ^. preliminaryInterval
             , additiveCharacterField       = fromRange interval
             }
+
+
+{--
+-- | (✔)
+instance ( RangedPostorderDecoration   (AdditiveOptimizationDecoration a) a
+         ) => RangedExtensionPostorder (AdditiveOptimizationDecoration a) a where
+
+    extendRangedToPostorder subDecoration cost prelimInterval childMedianTup isLeafVal =
+        subDecoration { postorderDecoration = extendRangedToPostorder (postorderDecoration subDecoration) cost prelimInterval childMedianTup isLeafVal }
+--}
+
+
+-- | (✔)
+instance
+  ( EncodableStreamElement c
+  , Show (Bound c)
+  , Show (Finite (Bound c))
+  , Show (Range  (Bound c))
+  ) => Show (AdditivePostorderDecoration c) where
+
+    show c = unlines
+        [ "Cost = "                 <> show (c ^. characterCost)
+        , "Is Leaf Node?        : " <> show (c ^. isLeaf)
+        , "Discrete Character   : " <> showDiscreteCharacterElement c
+        , "Preliminary Interval : " <> show (additivePreliminaryInterval c)
+        , "Child       Intervals: " <> show (additiveChildPrelimIntervals c)
+        ]
+
+

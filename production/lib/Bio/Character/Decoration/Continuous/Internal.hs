@@ -31,9 +31,7 @@ import Data.Alphabet
 import Data.Range
 import Data.Semigroup
 import Numeric.Extended
-import           Text.XML.Class
-import           Text.XML.Light.Types                (Content(..), QName(..))
-import qualified Text.XML.Light.Types         as XML
+import Text.XML.Custom
 
 
 -- |
@@ -58,7 +56,7 @@ continuousDecorationInitial name weight value =
 
 -- |
 -- Represents a character decoration after a pre-order traversal.
-newtype ContinuousOptimizationDecoration  c = COptD  (AdditiveOptimizationDecoration c)
+newtype ContinuousOptimizationDecoration  c = COptD (AdditiveOptimizationDecoration c)
 
 
 -- |
@@ -429,7 +427,6 @@ instance
 -- | (✔)
 instance
     ( Show c
-    , Show (Bound c)
     , Show (Finite (Bound c))
     , Show (Range  (Bound c))
     ) => Show (ContinuousPostorderDecoration c) where
@@ -443,41 +440,52 @@ instance
         ]
 
 
--- | (✔)
+-- | Create xml instance for initial decoration, which is empty.
 instance (Show c) => ToXML (ContinuousDecorationInitial c) where
-
-    toXML initialDecoration = XML.Element name attributes content Nothing
+    toXML (ContinuousDecorationInitial val metadata) = xmlElement "ContinuousDecorationInitial" attributes contents
         where
-            name       = QName "ContinuousDecorationInitial" Nothing Nothing
             attributes = []
-            content    = [CRef $ show initialDecoration]
+            contents   = [ ("Name"  , show $ metadata ^. characterName  )
+                         , ("Initial character state", show val )
+                         , ("Weight", show $ metadata ^. characterWeight)
+                         ]
+            --TODO: use ToXML instance in Bio/Metadat/General/Internal
+            --meta = initialDecoration ^. continuousMetadataField
 
 
--- | (✔)
+-- | Create xml instance for preorder decoration, which has a finalized state interval.
 instance
     ( Show c
-    , Show (Bound c)
     , Show (Finite (Bound c))
     , Show (Range  (Bound c))
     ) => ToXML (ContinuousOptimizationDecoration c) where
 
-    toXML optimizationDecoration = XML.Element name attributes content Nothing
+    toXML optimizationDecoration = xmlElement "ContinuousOptimizationDecoration" attributes contents
         where
-            name       = QName "ContinuousOptimizationDecoration" Nothing Nothing
             attributes = []
-            content    = [CRef $ show optimizationDecoration]
+            contents   = [ ("Cost"                , show (optimizationDecoration ^. characterCost)       )
+                         , ("Is Leaf Node?"       , show (optimizationDecoration ^. isLeaf)              )
+                         , ("Continuous Character", show (optimizationDecoration ^. intervalCharacter)   )
+                         , ("Preliminary Interval", show (optimizationDecoration ^. preliminaryInterval) )
+                         , ("Child Intervals"     , show (optimizationDecoration ^. childPrelimIntervals))
+                         , ("Final Interval"      , show (optimizationDecoration ^. finalInterval        )                            )
+                         ]
 
 
--- | (✔)
+-- | Create xml instance for postorder decoration, which has no final state interval set.
 instance
     ( Show c
-    , Show (Bound c)
+    -- , Show (Bound c)
     , Show (Finite (Bound c))
     , Show (Range  (Bound c))
     ) => ToXML (ContinuousPostorderDecoration c) where
 
-    toXML postorderDecoration = XML.Element name attributes content Nothing
+    toXML postorderDecoration = xmlElement "ContinuousPostorderDecoration" attributes contents
         where
-            name       = QName "ContinuousPostorderDecoration" Nothing Nothing
             attributes = []
-            content    = [CRef $ show postorderDecoration]
+            contents   = [ ("Cost"                , show (postorderDecoration ^. characterCost)       )
+                         , ("Is Leaf Node?"       , show (postorderDecoration ^. isLeaf)              )
+                         , ("Continuous Character", show (postorderDecoration ^. intervalCharacter)   )
+                         , ("Preliminary Interval", show (postorderDecoration ^. preliminaryInterval) )
+                         , ("Child Intervals"     , show (postorderDecoration ^. childPrelimIntervals))
+                         ]

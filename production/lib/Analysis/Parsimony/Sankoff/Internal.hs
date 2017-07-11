@@ -10,8 +10,16 @@
 --
 -- Sankoff character analysis (cost and median)
 --
--- This only works on static characters, and due to the traversal, only one
+-- This only works on static characters, and due to the traversal only one
 -- character will be received at a time.
+--
+-- Goloboff's algorithm relies on computing the "extra cost" for each non-
+-- optimal state assignment for each node. There's a preliminary extra
+-- cost, which is the difference between the assignment cost for this state
+-- on this node, and a final extra cost, which is the total extra cost
+-- when recursing over the whole tree that this state assignment implies.
+-- This involves, then, computing extra costs even for states that are non-
+-- optimal
 --
 -- Assumes binary trees.
 --
@@ -152,7 +160,7 @@ updateCostVector _parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeD
 
         computeExtraMin thisCost acc = (thisCost - minTransCost) : acc
 
-        computeBetas charState childCharState acc = retVals
+        computeBetas charState _childCharState acc = retVals
             where
                 -- transitionCost = fromFinite . scm charState childCharState
                 retVal  = minimum [ prelimMin + fromFinite (scm (toEnum charState) otherState)

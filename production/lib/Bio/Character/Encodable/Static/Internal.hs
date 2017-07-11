@@ -51,9 +51,7 @@ import           Data.Tuple                          (swap)
 import           Prelude                      hiding (lookup)
 import           Test.QuickCheck.Arbitrary.Instances ()
 import           Test.Tasty.QuickCheck        hiding ((.&.))
-import           Text.XML.Class
-import           Text.XML.Light.Types                (Content(..), QName(..))
-import qualified Text.XML.Light.Types         as XML
+import           Text.XML.Custom
 
 --import Debug.Trace
 
@@ -286,13 +284,12 @@ instance Semigroup StaticCharacterBlock where
 
 instance ToXML StaticCharacter where
 
-    toXML (SC bv) = XML.Element name attributes content Nothing
+    toXML (SC bv) = xmlElement "StaticCharacter" attributes content
         where
-            name       = QName "StaticChar" Nothing Nothing
             attributes = []
             content    = [intRep, bitRep]
-            intRep     = CRef . show $ toInteger bv
-            bitRep     = CRef $ (\x -> if x then '1' else '0') <$> toBits bv
+            intRep     = ("Integer representation", show $ toInteger bv)
+            bitRep     = ("Bit representation", (\x -> if x then '1' else '0') <$> toBits bv)
 
 
 {-# INLINE unstream #-}

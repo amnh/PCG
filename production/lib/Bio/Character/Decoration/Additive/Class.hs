@@ -21,8 +21,8 @@ import Bio.Character.Decoration.Shared
 import Control.Lens
 import Data.Range
 import Numeric.Extended
-import Text.XML.Class
-import Text.XML.Light.Types                (Content(..), Element(..), QName(..))
+-- import Text.XML.Class
+-- import Text.XML.Light.Types                (Content(..), Element(..), QName(..))
 
 
 -- |

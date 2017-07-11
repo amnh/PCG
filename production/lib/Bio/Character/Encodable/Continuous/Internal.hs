@@ -19,8 +19,7 @@ import Bio.Character.Encodable.Internal
 import Control.Arrow ((&&&))
 import Data.Range
 import Numeric.Extended.Real
-import Text.XML.Class
-import Text.XML.Light.Types
+import Text.XML.Custom
 
 
 -- |
@@ -73,11 +72,10 @@ instance Show ContinuousChar where
 -- | (✔)
 instance ToXML ContinuousChar where
 
-    toXML continuousChar = Element name attributes content Nothing
+    toXML continuousChar = xmlElement "ContinuousChar" attributes content
         where
-            name       = QName "ContinuousChar" Nothing Nothing
             attributes = []
-            content    = [CRef $ show continuousChar]
+            content    = [("Character states", show continuousChar)]
 
 
 -- |
