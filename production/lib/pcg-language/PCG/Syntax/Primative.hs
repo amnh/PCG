@@ -266,7 +266,7 @@ typeMismatchContext p targetType = do
         in
           if   targetType == resultType || targetType == TypeOfReal && resultType == TypeOfInt
           then p
-          else let uxpMsg = Just . Label . NE.fromList $ mconcat [ getPrimativeName parseResult, " ", chunkToTokens (Proxy :: Proxy s) str ]
+          else let uxpMsg = Just . Label . NE.fromList $ mconcat [ getPrimativeName parseResult, " '", chunkToTokens (Proxy :: Proxy s) str, "'" ]
                    expMsg = S.singleton . Label . NE.fromList $ getPrimativeName targetType
                in  failure uxpMsg expMsg
   where
