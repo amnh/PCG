@@ -14,6 +14,7 @@ import           Control.Monad                (when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Either
 import           Control.Parallel.Strategies
+import           Control.Parallel.Custom
 import           Data.Alphabet   --    hiding (AmbiguityGroup)
 -- import           Data.Alphabet.IUPAC
 import           Data.Bifunctor               (bimap,first)
@@ -67,7 +68,7 @@ evaluate :: Command -> EvaluationT IO a -> SearchState -- EvaluationT IO (Either
 -- evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
 evaluate (READ fileSpecs) _old = do
     when (null fileSpecs) $ fail "No files specified in 'read()' command"
-    result <- liftIO . runEitherT . eitherTValidation $ parMap rpar parseSpecifiedFile fileSpecs
+    result <- liftIO . runEitherT . eitherTValidation $ parmap rpar parseSpecifiedFile fileSpecs
     case result of
       Left pErr -> fail $ show pErr   -- Report structural errors here.
       Right xs ->

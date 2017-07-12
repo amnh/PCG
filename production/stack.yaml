@@ -133,4 +133,4 @@ setup-info:
       8.2.0.20170704:
         url: https://downloads.haskell.org/~ghc/8.2.1-rc3/ghc-8.2.0.20170704-x86_64-unknown-mingw32.tar.xz
         content-length: 175463160
-sha1: 3648302c66769d4aa0c3a9f82be4538f402f234f
+        sha1: 3648302c66769d4aa0c3a9f82be4538f402f234f

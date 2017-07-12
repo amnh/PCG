@@ -14,7 +14,7 @@
 -- Allocates a "ribbon" down the diagonal of the matrix rather than the entire matrix.
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE BangPatterns, ConstraintKinds, DeriveFoldable, DeriveFunctor, FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE ConstraintKinds, DeriveFoldable, DeriveFunctor, FlexibleContexts, TypeFamilies #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Internal
   ( UkkonenMethodMatrix()
@@ -101,11 +101,9 @@ ukkonenDO char1 char2 overlapFunction
     -- > lesserLen <= 4
     --     OR
     -- > coefficient == 0
-    noGainFromUkkonenMethod = or
-        [     lesserLen <= 4
-        , 2 * longerLen >= 3 * lesserLen
-        ,   coefficient == 0
-        ]
+    noGainFromUkkonenMethod =     lesserLen <= 4
+                           || 2 * longerLen >= 3 * lesserLen
+                           || coefficient == 0
       where
         longerLen = olength longer
         lesserLen = olength lesser

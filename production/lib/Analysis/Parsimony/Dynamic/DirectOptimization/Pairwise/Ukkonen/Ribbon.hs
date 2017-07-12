@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns, DeriveFoldable, DeriveFunctor, FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE DeriveFoldable, DeriveFunctor, FlexibleContexts, TypeFamilies #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
   ( Ribbon()
@@ -22,6 +22,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
 
 import           Data.Foldable
 import           Data.Key
+import           Data.Maybe               (fromMaybe)
 import           Data.Semigroup
 import           Data.Vector              (Vector)
 import qualified Data.Vector       as V
@@ -47,18 +48,17 @@ type instance Key Ribbon = (Int, Int)
 
 instance Indexable Ribbon where
 
-    index r k =
-      case k `lookup` r of
-        Just  v -> v
-        Nothing -> error $ mconcat
-            [ "Error indexing Ribbon at "
-            , show k
-            , ".\nThe key is outside the range [ (i,j) | i <- [0 .. "
-            , show $ height r - 1
-            , "], j <- [0 .. "
-            , show $ width  r - 1
-            , "] ]"
-            ]
+    index r k = fromMaybe (error msg) $ k `lookup` r
+      where
+       msg = mconcat
+           [ "Error indexing Ribbon at "
+           , show k
+           , ".\nThe key is outside the range [ (i,j) | i <- [0 .. "
+           , show $ height r - 1
+           , "], j <- [0 .. "
+           , show $ width  r - 1
+           , "] ]"
+           ]
 
 
 instance Lookup Ribbon where
@@ -114,7 +114,7 @@ generate x y f alpha = result
     vector      = V.fromListN cellCount $ f <$> points
     diagonalLen = w - h + 1
     cellCount   = h * w - nullCells
-    nullCells   = 2 * (t (w - d - a))
+    nullCells   = 2 * t (w - d - a)
 
     a = min (fromEnum alpha) (w - d)
     d = diagonalLen

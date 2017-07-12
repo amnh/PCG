@@ -213,10 +213,7 @@ needlemanWunschDefinition topChar leftChar overlapFunction memo p@(row, col)
 
       -- | Lookup with a default value of infinite cost.
       {-# INLINE (!?) #-}
-      (!?) m k =
-          case k `lookup` m of
-            Just  v -> v
-            Nothing -> (infinity, DiagArrow, gap)
+      (!?) m k = fromMaybe (infinity, DiagArrow, gap) $ k `lookup` m
         
       gap                           = gapOfStream topChar
       topElement                    = fromMaybe gap $  topChar `lookupStream` (col - 1)

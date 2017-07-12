@@ -576,7 +576,7 @@ Test-Suite testsuite
                      , bimap
                      , bv
                      , containers           >=0.5.8
-                     , criterion
+--                     , criterion
                      , deepseq
                      , directory
                      , dlist
