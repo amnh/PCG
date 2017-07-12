@@ -8,7 +8,6 @@ module Control.Monad.FreeAlt
 
 import Control.Applicative
 --import Control.Alternative.Free
-import Control.Monad
 import Control.Monad.Free
 import Control.Monad.Trans.Free
 import Data.Functor.Alt
@@ -48,7 +47,11 @@ newtype FreeAlt f a = FA { unwrap :: (FreeT f Maybe a) }
     deriving (Functor)
 
 
+toFreeAlt :: Maybe (FreeF f a (FreeT f Maybe a)) -> FreeAlt f a
 toFreeAlt = FA . FreeT
+
+
+toMaybe :: FreeAlt f a -> Maybe (FreeF f a (FreeT f Maybe a))
 toMaybe   = runFreeT . unwrap
 
 
@@ -116,6 +119,7 @@ instance Functor f => MonadFree f (FreeAlt2 f) where
     wrap = Free2
 
 
+{-
 iter :: Functor f => (f a -> a) -> FreeAlt2 f a -> a
 iter = undefined
 
@@ -126,6 +130,7 @@ iterA = undefined
 
 iterM :: (Monad m, Functor f) => (f (m a) -> m a) -> FreeAlt2 f a -> m a
 iterM = undefined
+-}
 
 
 {-

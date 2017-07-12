@@ -1,7 +1,10 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module PCG.Command.Read
-  ( validate
+  ( CustomAlphabetOptions(..)
+  , FileSpecificationContent(..)
+  , ReadCommand(..)
+  , validate
   ) where
 
 import Control.Monad           (liftM2)
@@ -16,7 +19,6 @@ import Data.Maybe              (fromJust, isNothing)
 import Data.Text               (Text) -- hiding (foldr, toLower, unlines)
 import PCG.Syntax
 import Prelude
-import Text.Megaparsec
 
 --import Debug.Trace
 

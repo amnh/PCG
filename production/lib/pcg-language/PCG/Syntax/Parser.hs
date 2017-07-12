@@ -2,18 +2,56 @@
 
 module PCG.Syntax.Parser where
 
+import Data.List.NonEmpty     (NonEmpty)
+import Data.Time.Clock        (DiffTime)
+{-
 import Data.Functor           (($>), void)
 import Data.Char              (toLower)
-import Data.List.NonEmpty     (NonEmpty, some1)
 import qualified Data.List.NonEmpty as NE
 import Data.Maybe             (fromJust)
 import Data.Semigroup
-import Data.Time.Clock        (DiffTime, secondsToDiffTime)
 import PCG.Syntax.Types
 import Text.Megaparsec hiding (space)
 --import Text.Megaparsec.Custom
 --import Text.Megaparsec.Prim   (MonadParsec)
 import Text.Megaparsec.Char.Lexer
+-}
+
+
+-- |
+-- 'SyntacticCommand' is "Stringly-Typed" and therefore inherently unsafe.
+-- We will later consume a list of SyntacticCommand as a Script type and
+-- convert these into thier less dubious, well-type counterpart of type Command,
+-- or report an error explaing why the SyntacticCommand is not valid.
+data  SyntacticCommand
+    = SyntacticCommand ListIdentifier (NonEmpty Argument)
+    deriving (Show)
+
+
+data  Syntax
+    = Syntax (NonEmpty SyntacticCommand)
+    deriving (Show)
+
+
+data  Argument
+    = PrimativeArg   Primative
+    | ListIdArg      ListIdentifier
+    | ListIdNamedArg ListIdentifier Argument
+    | CommandArg     SyntacticCommand
+    | ArgumentList  (NonEmpty Argument)
+    deriving (Show)
+
+
+data  Primative
+    = WholeNum  Int
+    | RealNum   Double
+    | BitValue  Bool
+    | TextValue String
+    | TimeSpan  DiffTime
+    deriving (Show)
+
+
+newtype ListIdentifier = ListId String deriving (Show)
 
 
 {-

@@ -56,7 +56,7 @@ library
 --                     , mono-traversable >=1.0
 --                     , mtl
 --                     , parallel
-                       , parser-combinators
+                     , parser-combinators
 --                     , pretty-tree
 --                     , primitive
 --                     , QuickCheck
@@ -114,5 +114,6 @@ library
   -- Modules included in this library but not exported.
   other-modules:       PCG.Command.Read
                        PCG.Syntax.Parser
+                       PCG.Syntax.Primative
                        PCG.Syntax.Types
                        Control.Monad.FreeAlt
