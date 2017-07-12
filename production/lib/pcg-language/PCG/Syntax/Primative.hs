@@ -41,22 +41,22 @@ import qualified Text.Megaparsec.Char.Lexer as Lex
 
 
 data  PrimativeParseResult
-    = PPR_Bool  Bool
-    | PPR_Int   Int
-    | PPR_Real  Double
-    | PPR_Text  String
-    | PPR_Time  DiffTime
-    | PPR_Value String
+    = ResultBool  Bool
+    | ResultInt   Int
+    | ResultReal  Double
+    | ResultText  String
+    | ResultTime  DiffTime
+    | ResultValue String
     deriving (Show)
 
 
 data  PrimativeType
-    = PT_Bool
-    | PT_Int
-    | PT_Real
-    | PT_Text
-    | PT_Time
-    | PT_Value String
+    = TypeOfBool
+    | TypeOfInt
+    | TypeOfReal
+    | TypeOfText
+    | TypeOfTime
+    | TypeOfValue String
     deriving (Eq)
 
 
@@ -80,12 +80,12 @@ class HasPrimativeType a where
     getPrimativeName :: a -> String
     getPrimativeName x = 
         case getPrimativeType x of
-          PT_Bool  {} -> "boolean value"
-          PT_Int   {} -> "integer value"
-          PT_Real  {} -> "real value"
-          PT_Text  {} -> "text value"
-          PT_Time  {} -> "time value"
-          PT_Value v  -> "the literal '" <> v <> "'"
+          TypeOfBool  {} -> "boolean value"
+          TypeOfInt   {} -> "integer value"
+          TypeOfReal  {} -> "real value"
+          TypeOfText  {} -> "text value"
+          TypeOfTime  {} -> "time value"
+          TypeOfValue v  -> "the literal '" <> v <> "'"
 
  
 instance HasPrimativeType PrimativeType where
@@ -97,24 +97,24 @@ instance HasPrimativeType (PrimativeValue a) where
   
     getPrimativeType x =
        case x of
-          PBool  {}  -> PT_Bool
-          PInt   {}  -> PT_Int
-          PReal  {}  -> PT_Real
-          PText  {}  -> PT_Text
-          PTime  {}  -> PT_Time
-          PValue v _ -> PT_Value v
+          PBool  {}  -> TypeOfBool
+          PInt   {}  -> TypeOfInt
+          PReal  {}  -> TypeOfReal
+          PText  {}  -> TypeOfText
+          PTime  {}  -> TypeOfTime
+          PValue v _ -> TypeOfValue v
   
 
 instance HasPrimativeType PrimativeParseResult where
   
     getPrimativeType x =
         case x of
-          PPR_Bool  {} -> PT_Bool
-          PPR_Int   {} -> PT_Int
-          PPR_Real  {} -> PT_Real
-          PPR_Text  {} -> PT_Text
-          PPR_Time  {} -> PT_Time
-          PPR_Value v  -> PT_Value v
+          ResultBool  {} -> TypeOfBool
+          ResultInt   {} -> TypeOfInt
+          ResultReal  {} -> TypeOfReal
+          ResultText  {} -> TypeOfText
+          ResultTime  {} -> TypeOfTime
+          ResultValue v  -> TypeOfValue v
 
 
 bool :: MonadFree PrimativeValue m => m Bool
@@ -157,14 +157,14 @@ whitespace = Lex.space single line block
 
 
 parsePrimative :: (FoldCase (Tokens s), MonadParsec e s m,  Token s ~ Char) => PrimativeValue (m a) -> m a
-parsePrimative (PBool      x) = typeMismatchContext boolValue PT_Bool >>= x
-parsePrimative (PInt       x) = typeMismatchContext  intValue PT_Int  >>= x
-parsePrimative (PReal      x) = typeMismatchContext realValue PT_Real >>= x
-parsePrimative (PText      x) = typeMismatchContext textValue PT_Text >>= x
-parsePrimative (PTime      x) = typeMismatchContext timeValue PT_Time >>= x
+parsePrimative (PBool      x) = typeMismatchContext boolValue TypeOfBool >>= x
+parsePrimative (PInt       x) = typeMismatchContext  intValue TypeOfInt  >>= x
+parsePrimative (PReal      x) = typeMismatchContext realValue TypeOfReal >>= x
+parsePrimative (PText      x) = typeMismatchContext textValue TypeOfText >>= x
+parsePrimative (PTime      x) = typeMismatchContext timeValue TypeOfTime >>= x
 parsePrimative (PValue str x) = valueParser >>= x
   where
-    valueParser = typeMismatchContext (valueValue str) (PT_Value str)
+    valueParser = typeMismatchContext (valueValue str) (TypeOfValue str)
 
 
 boolValue :: forall e s m. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m Bool
@@ -188,8 +188,8 @@ intValue  = label intLabel $ numValue >>= convertToInt
 
     unexpMsg  = Just . Label $ NE.fromList realLabel
     expctMsg  = S.singleton . Label $ NE.fromList  intLabel
-    intLabel  = getPrimativeName PT_Int
-    realLabel = getPrimativeName PT_Real
+    intLabel  = getPrimativeName TypeOfInt
+    realLabel = getPrimativeName TypeOfReal
 
 
 numValue :: (MonadParsec e s m,  Token s ~ Char) => m Scientific
@@ -199,15 +199,15 @@ numValue = hidden signedNum <?> "number"
 
 
 realValue :: (MonadParsec e s m, Token s ~ Char) => m Double
-realValue = label (getPrimativeName PT_Real)
+realValue = label (getPrimativeName TypeOfReal)
           $ either id id . toBoundedRealFloat <$> numValue
 
 
 textValue  :: (MonadParsec e s m, Token s ~ Char) => m String -- (Tokens s)
 textValue = openQuote *> many (escaped <|> nonEscaped) <* closeQuote
   where
-    openQuote   = char '"' <?> ("'\"' opening quote for " <> getPrimativeName PT_Text)
-    closeQuote  = char '"' <?> ("'\"' closing quote for " <> getPrimativeName PT_Text)
+    openQuote   = char '"' <?> ("'\"' opening quote for " <> getPrimativeName TypeOfText)
+    closeQuote  = char '"' <?> ("'\"' closing quote for " <> getPrimativeName TypeOfText)
     nonEscaped  = satisfy $ \x -> x /= '\\' && x /= '"'
     escaped = do
         _ <- char '\\' <?> "'\\' beginning of character escape sequence"
@@ -229,7 +229,7 @@ textValue = openQuote *> many (escaped <|> nonEscaped) <* closeQuote
             , ( 'f', '\f')
             ]
         
-        characterEscaping e@(FancyError {}) = e
+        characterEscaping e@FancyError {} = e
         characterEscaping   (TrivialError pos uxpItems expItems) = TrivialError pos uxpItems' expItems'
           where
             uxpItems' = f <$> uxpItems
@@ -264,15 +264,15 @@ typeMismatchContext p targetType = do
       Just (str, parseResult) ->
         let resultType = getPrimativeType parseResult
         in
-          if   targetType == resultType || targetType == PT_Real && resultType == PT_Int
+          if   targetType == resultType || targetType == TypeOfReal && resultType == TypeOfInt
           then p
           else let uxpMsg = Just . Label . NE.fromList $ mconcat [ getPrimativeName parseResult, " ", chunkToTokens (Proxy :: Proxy s) str ]
                    expMsg = S.singleton . Label . NE.fromList $ getPrimativeName targetType
                in  failure uxpMsg expMsg
   where
     primatives = optional . choice $ hidden . try . lookAhead . match <$>
-        [ PPR_Bool <$> boolValue
-        , PPR_Text <$> textValue
-        , PPR_Time <$> timeValue
-        , (either PPR_Real PPR_Int . floatingOrInteger) <$> numValue
+        [ ResultBool <$> boolValue
+        , ResultText <$> textValue
+        , ResultTime <$> timeValue
+        , (either ResultReal ResultInt . floatingOrInteger) <$> numValue
         ]

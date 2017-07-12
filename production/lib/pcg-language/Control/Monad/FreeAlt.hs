@@ -39,11 +39,7 @@ instance Functor f => MonadFree f (FreeAlt3 f) where
     wrap = FA3 . wrap . fmap unFA
 
 
-
-
-
-
-newtype FreeAlt f a = FA { unwrap :: (FreeT f Maybe a) }
+newtype FreeAlt f a = FA { unwrap :: FreeT f Maybe a }
     deriving (Functor)
 
 
@@ -57,7 +53,7 @@ toMaybe   = runFreeT . unwrap
 
 instance (Functor f {- , Alternative f -}) => Alternative (FreeAlt f) where
 
-    lhs <|> rhs = toFreeAlt $ (toMaybe lhs) <|> (toMaybe rhs)
+    lhs <|> rhs = toFreeAlt $ toMaybe lhs <|> toMaybe rhs
 
     empty = toFreeAlt Nothing
 

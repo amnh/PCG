@@ -166,7 +166,7 @@ partitionOptions = foldr f ([],[],[])
 getCustomAlphabetOption :: Argument -> Maybe CustomAlphabetOptions
 getCustomAlphabetOption (ListIdNamedArg (ListId identifier) (PrimativeArg (BitValue b)))
   | "init3d"     == (toLower <$> identifier) = Just $ Init3D b
-getCustomAlphabetOption ( ListIdNamedArg (ListId identifier) (ArgumentList ( (PrimativeArg (WholeNum n)) :| ((PrimativeArg (TextValue x)) :_)) ) )
+getCustomAlphabetOption ( ListIdNamedArg (ListId identifier) (ArgumentList ( PrimativeArg (WholeNum n) :| (PrimativeArg (TextValue x) :_)) ) )
   |  "level"     == (toLower <$> identifier) = Level n <$> getCustomAlphabetStrategy x
 getCustomAlphabetOption (ListIdNamedArg (ListId identifier) (PrimativeArg (TextValue x)))
   | "tiebreaker" == (toLower <$> identifier) = Tiebreaker <$> getCustomAlphabetStrategy x

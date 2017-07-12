@@ -101,14 +101,14 @@ data  ArgumentValue a
 -- |
 -- Intercalates a monadic effect between actions.
 iterM' :: (Monad m, Functor f) => m () -> (f (m a) -> m a) -> Free f a -> m a
-iterM' _   _   (Pure x) = return x
+iterM' _   _   (Pure x) = pure x
 iterM' eff phi (Free f) = phi (iterM ((eff *>) . phi) <$> f)
 
 
 parseArgument :: (FoldCase (Tokens s), MonadParsec e s m,  Token s ~ Char) => FreeAlt3 ArgumentValue a -> m a
 parseArgument arg =
     case unFA arg of
-      Pure x  -> return x
+      Pure x  -> pure x
       context -> (char '(' <* whitespace)
               *> iterM' comma run context
               <* (char ')' <* whitespace)
