@@ -16,6 +16,9 @@ module PCG.Syntax.Types
   , pickOne
   -- ** MonadParsec based Free Monad interpreter
   , parseArgument
+  -- ** Testing
+  , TestStruct
+  , tester
   ) where
 
 --import           Control.Applicative
