@@ -1,4 +1,4 @@
-{-# LANGUAGE ConstraintKinds, DeriveFunctor, ExistentialQuantification, FlexibleContexts, TemplateHaskell, TypeFamilies #-}
+{-# LANGUAGE ConstraintKinds, DeriveFunctor, ExistentialQuantification, FlexibleContexts, ScopedTypeVariables, TypeFamilies #-}
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, TypeSynonymInstances #-}
 
 module PCG.Syntax.Types where
@@ -28,7 +28,7 @@ import           Data.Time.Clock                   (DiffTime, secondsToDiffTime)
 import           Data.Void
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
-import           Text.Megaparsec.Char.Lexer        (integer, number, signed)
+import           Text.Megaparsec.Char.Lexer        (decimal, scientific, signed)
 import qualified Text.Megaparsec.Char.Lexer as Lex
 
 --import Debug.Trace
@@ -300,21 +300,21 @@ tokenize x = x <* whitespace -- <* char ',' <* whitespace
 
 
 {--}
-data TestStruct = TS Int String [Double] deriving (Show)
+data TestStruct = TS Int String Double deriving (Show)
 
 tester :: FreeAlt3 ArgumentValue TestStruct
 tester = do
     age     <- listId "age" int
-    (str,r) <- argList $ (,) <$> text <*> (Alt.many real)
+    (str,r) <- argList $ (,) <$> text <*> real
     pure $ TS age str r
 {--}
 
 
-parsePrimatives :: (ParserConstraint e s m, Show (Tokens s)) => Free PrimativeValue a -> m a
+parsePrimatives :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => Free PrimativeValue a -> m a
 parsePrimatives = iterM parsePrimative
 
 
-parsePrimative :: (ParserConstraint e s m, Show (Tokens s)) => PrimativeValue (m a) -> m a
+parsePrimative :: (FoldCase (Tokens s), MonadParsec e s m,  Token s ~ Char) => PrimativeValue (m a) -> m a
 parsePrimative (PBool      x) = typeMismatchContext boolValue PT_Bool >>= x
 parsePrimative (PInt       x) = typeMismatchContext  intValue PT_Int  >>= x
 parsePrimative (PReal      x) = typeMismatchContext realValue PT_Real >>= x
@@ -325,11 +325,15 @@ parsePrimative (PValue str x) = valueParser >>= x
     valueParser = typeMismatchContext (valueValue str) (PT_Value str)
 
 
-boolValue :: ParserConstraint e s m => m Bool
-boolValue = ((string' (fromString "true") $> True) <|> (string' (fromString "false") $> False)) <?> "boolean value"
+boolValue :: forall e s m. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m Bool
+boolValue = (truthhood <|> falsehood) <?> "boolean value"
+  where
+    truthhood = string' (tokensToChunk proxy "true" ) $> True
+    falsehood = string' (tokensToChunk proxy "false") $> False
+    proxy     = Proxy :: Proxy s
 
 
-intValue :: ParserConstraint e s m => m Int
+intValue :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m Int
 intValue  = label intLabel $ numValue >>= convertToInt
   where
     convertToInt  s
@@ -346,18 +350,18 @@ intValue  = label intLabel $ numValue >>= convertToInt
     realLabel = getPrimativeName PT_Real
 
 
-numValue :: ParserConstraint e s m => m Scientific
+numValue :: (MonadParsec e s m,  Token s ~ Char) => m Scientific
 numValue = hidden signedNum <?> "number"
   where
-    signedNum = signed whitespace number
+    signedNum = signed whitespace scientific
 
 
-realValue :: ParserConstraint e s m => m Double
+realValue :: (MonadParsec e s m, Token s ~ Char) => m Double
 realValue = label (getPrimativeName PT_Real)
           $ either id id . toBoundedRealFloat <$> numValue
 
 
-textValue  :: ParserConstraint e s m => m String -- (Tokens s)
+textValue  :: (MonadParsec e s m, Token s ~ Char) => m String -- (Tokens s)
 textValue = openQuote *> many (escaped <|> nonEscaped) <* closeQuote
   where
     openQuote   = char '"' <?> ("'\"' opening quote for " <> getPrimativeName PT_Text)
@@ -393,24 +397,24 @@ textValue = openQuote *> many (escaped <|> nonEscaped) <* closeQuote
             f (Label (x:|xs)) = Label $ x :| xs <> " (not a valid escape sequence character)"
 
 
-timeValue  :: ParserConstraint e s m => m DiffTime
+timeValue  :: (MonadParsec e s m, Token s ~ Char) => m DiffTime
 timeValue = do
-    days    <- integer
+    days    <- decimal
     _       <- char ':'
-    hours   <- integer
+    hours   <- decimal
     _       <- char ':'
-    minutes <- integer
+    minutes <- decimal
     let totalSeconds = days    * 60 * 60 * 24
                      + hours   * 60 * 60
                      + minutes * 60
     pure $ secondsToDiffTime totalSeconds
 
 
-valueValue :: ParserConstraint e s m => String -> m ()
-valueValue = void . string' . fromString
+valueValue :: forall e s m. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => String -> m ()
+valueValue = void . string' . tokensToChunk (Proxy :: Proxy s)
 
 
-typeMismatchContext :: (ParserConstraint e s m, Show (Tokens s)) => m a -> PrimativeType -> m a
+typeMismatchContext :: forall e s m a. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m a -> PrimativeType -> m a
 typeMismatchContext p targetType = do
     parsedPrimative <- primatives
     case parsedPrimative of
@@ -420,7 +424,7 @@ typeMismatchContext p targetType = do
         in
           if   targetType == resultType || targetType == PT_Real && resultType == PT_Int
           then p
-          else let uxpMsg = Just . Label . NE.fromList $ mconcat [ getPrimativeName parseResult, " ", show str ]
+          else let uxpMsg = Just . Label . NE.fromList $ mconcat [ getPrimativeName parseResult, " ", chunkToTokens (Proxy :: Proxy s) str ]
                    expMsg = S.singleton . Label . NE.fromList $ getPrimativeName targetType
                in  failure uxpMsg expMsg
   where
@@ -432,14 +436,15 @@ typeMismatchContext p targetType = do
         ]
 
 
-whitespace :: (ParserConstraint e s m) => m ()
+whitespace :: forall e s m. (MonadParsec e s m, Token s ~ Char) => m ()
 whitespace = Lex.space single line block
   where
+    pxy    = Proxy :: Proxy s
     single = void spaceChar
-    line   = Lex.skipLineComment (fromString "**")
+    line   = Lex.skipLineComment (tokensToChunk pxy "**")
     block  = Lex.skipBlockCommentNested open close
-    open   = fromString "(*"
-    close  = fromString "*)"
+    open   = tokensToChunk pxy "(*"
+    close  = tokensToChunk pxy "*)"
 
 
 {--}
