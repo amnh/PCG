@@ -54,7 +54,7 @@ library
 --                     , matrix
                      , megaparsec       >=5.3.1
 --                     , mono-traversable >=1.0
---                     , mtl
+                     , mtl
 --                     , parallel
                      , parser-combinators
 --                     , pretty-tree

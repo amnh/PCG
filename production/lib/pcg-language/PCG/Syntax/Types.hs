@@ -1,5 +1,5 @@
 {-# LANGUAGE ConstraintKinds, DeriveFunctor, ExistentialQuantification, FlexibleContexts, ScopedTypeVariables, TypeFamilies #-}
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, RankNTypes, TypeSynonymInstances #-}
 
 module PCG.Syntax.Types
   ( ArgumentValue()
@@ -21,16 +21,21 @@ module PCG.Syntax.Types
   , tester
   ) where
 
---import           Control.Applicative
+
+import           Control.Applicative
+import           Control.Alternative.Free   hiding (Pure)
 import           Control.Monad
-import           Control.Monad.Free
-import           Control.Monad.FreeAlt
+--import           Control.Monad.Free                (Free)
+--import           Control.Monad.FreeAlt
+import           Control.Monad.Trans
+import           Control.Monad.Trans.Free
 import           Data.CaseInsensitive              (FoldCase)
 import           Data.Functor                      (void)
---import qualified Data.Functor.Alt           as Alt
+import qualified Data.Functor.Alt           as Alt
 --import           Data.List                         (intercalate)
 import           Data.List.NonEmpty                (NonEmpty(..))
 --import qualified Data.List.NonEmpty         as NE
+import           Data.Maybe                        (fromMaybe)
 import           Data.Proxy
 import           Data.Semigroup             hiding (option)
 import           Data.Time.Clock                   (DiffTime)
@@ -39,112 +44,146 @@ import           PCG.Syntax.Primative              (PrimativeValue, parsePrimati
 import qualified PCG.Syntax.Primative       as P
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
+import           Text.Megaparsec.Perm
 
 --import Debug.Trace
+
+
+data  ArgumentValue p a
+    = APrimativeArg    (SyntaxParser PrimativeValue    p a)
+    | ADefault         (SyntaxParser (ArgumentValue p) p a) a
+    | AListIdNamedArg  (SyntaxParser (ArgumentValue p) p a) ListIdentifier
+    | AArgumentList    (SyntaxParser (ArgumentValue p) p a)
+    | SomeOf           (SyntaxParser (ArgumentValue p) p a)
+    | ExactlyOneOf    [(SyntaxParser (ArgumentValue p) p a)]
+    deriving (Functor)
 
 
 newtype ListIdentifier = ListId String deriving (Show)
 
 
-primative :: (MonadFree ArgumentValue m) => FreeAlt3 PrimativeValue a -> m a
-primative = liftF . APrimativeArg
-
-
-bool :: MonadFree ArgumentValue m => m Bool
+bool :: (Monad p, MonadFree (ArgumentValue p) m) => m Bool
 bool = primative P.bool
 
 
-int :: MonadFree ArgumentValue m => m Int
+int :: (Monad p, MonadFree (ArgumentValue p) m) => m Int
 int = primative P.int
 
 
-real :: MonadFree ArgumentValue m => m Double
+real :: (Monad p, MonadFree (ArgumentValue p) m) => m Double
 real = primative P.real
 
 
-text :: MonadFree ArgumentValue m => m String
+text :: (Monad p, MonadFree (ArgumentValue p) m) => m String
 text = primative P.text
 
 
-time :: MonadFree ArgumentValue m => m DiffTime
+time :: (Monad p, MonadFree (ArgumentValue p) m) => m DiffTime
 time = primative P.time
 
 
-value :: MonadFree ArgumentValue m => String -> m ()
+value :: (Monad p, MonadFree (ArgumentValue p) m) => String -> m ()
 value str = primative $ P.value str
 
 
-listId :: (MonadFree ArgumentValue m) => String -> FreeAlt3 ArgumentValue a -> m a
+listId :: (Monad p, MonadFree (ArgumentValue p) m) => String -> SyntaxParser (ArgumentValue p) p a -> m a
 listId str x = liftF $ AListIdNamedArg x (ListId str)
 
 
-argList :: (MonadFree ArgumentValue m) => FreeAlt3 ArgumentValue a -> m a
+argList :: (Monad p, MonadFree (ArgumentValue p) m) => SyntaxParser (ArgumentValue p) p a -> m a
 argList = liftF . AArgumentList
 
 
-pickOne :: (MonadFree ArgumentValue m) => [FreeAlt3 ArgumentValue a] -> m a
+pickOne :: (Monad p, MonadFree (ArgumentValue p) m) => [SyntaxParser (ArgumentValue p) p a] -> m a
 pickOne    []  = error "You cannot construct an empty set of choices!"
 pickOne (x:xs) = liftF . ExactlyOneOf $ x:xs
 
 
---someOf :: (MonadFree ArgumentValue m) => FreeAlt3 ArgumentValue a -> m (NonEmpty a)
---someOf = liftF . SomeOf Nothing . pure
+--someOf :: (Monad p, MonadFree (ArgumentValue p) m) => (a -> m [a]) -> FreeAlt3 ArgumentValue a -> m a
+--someOf = Alt.some . liftF . SomeOf
 
 
-data  ArgumentValue a
-    =     
-      APrimativeArg   (FreeAlt3 PrimativeValue a)
-    | AListIdNamedArg (FreeAlt3 ArgumentValue  a) ListIdentifier
-    | AArgumentList   (FreeAlt3 ArgumentValue  a)
---    | SomeOf        (NonEmpty (FreeAlt3 ArgumentValue  a))
-    | ExactlyOneOf    [FreeAlt3 ArgumentValue  a]
-    deriving (Functor)
+withDefault :: (Monad p, MonadFree (ArgumentValue p) m) => SyntaxParser (ArgumentValue p) p a -> a -> m a
+withDefault x = liftF . ADefault x
 
 
+parseArgument :: (FoldCase (Tokens s), MonadParsec e s m,  Token s ~ Char) => SyntaxParser (ArgumentValue m) m a -> m a
+parseArgument arg = do
+    val <- runFreeT arg
+    case val of
+      Pure x  -> pure x
+      Free x -> begin *> whitespace
+              *> iterT' comma run arg
+              <* close <* whitespace
+  where
+    begin = char '(' <?> "'(' starting a new argument list"
+    close = char ')' <?> "')' ending the argument list"
+
+
+run :: (FoldCase (Tokens s), MonadParsec e s m,  Token s ~ Char) => ArgumentValue m (m a) -> m a
+run (APrimativeArg    x) = join $ iterT parsePrimative x
+--run (ADefault       x v) = join $ iterT (fmap (withDef2 v) . run) x
+run e@(ADefault       x v) = join . iterT run . fmap pure $ x >>= (lift . withDef v)
+run (ExactlyOneOf    xs) = choice $ join . iterT run <$> xs
+--run (SomeOf           x) = fmap head . some . join . iterM run $ unFA x
+run (AArgumentList  tup) = join $ parseArgument tup
+run (AListIdNamedArg y (ListId x)) = do
+      _ <- try (string'' x <?> ("identifier '" <> x <> "'"))
+      _ <- whitespace <* char ':' <* whitespace
+      join $ iterT run y
+
+
+string'' :: forall e s m. (FoldCase (Tokens s), MonadParsec e s m,  Token s ~ Char) => String -> m ()
+string'' = void . string' . tokensToChunk (Proxy :: Proxy s)
+
+
+withDef :: MonadParsec e s m => m a -> m a -> m a
+withDef v p = optional (try p) >>= maybe v pure
+
+
+withDef2 :: MonadParsec e s m => m a -> m a -> m a
+withDef2 v p = v >>= \x -> makePermParser $ id <$?> (x, try p)
+
+
+-- |
+-- The monadic effect to be intercalated between components of the syntax.
+--
+-- Consumes a comma character with leading and training whitespace.
+comma :: (MonadParsec e s m,  Token s ~ Char) => m ()
+comma = whitespace *> seperator *> whitespace
+  where
+    seperator = char ',' <?> "',' seperating argumentsy"
+
+
+{-
 -- |
 -- Intercalates a monadic effect between actions.
 iterM' :: (Monad m, Functor f) => m () -> (f (m a) -> m a) -> Free f a -> m a
 iterM' _   _   (Pure x) = pure x
 iterM' eff phi (Free f) = phi (iterM ((eff *>) . phi) <$> f)
+-}
 
 
-parseArgument :: (FoldCase (Tokens s), MonadParsec e s m,  Token s ~ Char) => FreeAlt3 ArgumentValue a -> m a
-parseArgument arg =
-    case unFA arg of
-      Pure x  -> pure x
-      context -> (char '(' <* whitespace)
-              *> iterM' comma run context
-              <* (char ')' <* whitespace)
+-- |
+-- Intercalates a monadic effect between actions.
+iterT' :: (Monad m, Functor f) => m () -> (f (m a) -> m a) -> FreeT f m a -> m a
+iterT' eff f (FreeT m) = do
+    val <- m
+    case fmap (iterT ((eff *>) . f)) val of
+      Pure x -> pure x
+      Free y -> f y
 
 
-run :: forall a e s m. (FoldCase (Tokens s), MonadParsec e s m,  Token s ~ Char) => ArgumentValue (m a) -> m a
-run (APrimativeArg   x) = join $ iterM (tokenize . parsePrimative) (unFA x)
-run (AListIdNamedArg y (ListId x)) = do
-      _ <- (void . string' . tokensToChunk (Proxy :: Proxy s)) x <?> ("identifier '" <> x <> "'")
-      _ <- whitespace <* char ':' <* whitespace
-      join $ iterM run (unFA y)   <* whitespace
-run (ExactlyOneOf   xs) = choice $ join . iterM run . unFA <$> xs
---run (SomeOf         next x) = fmap NE.fromList . some $ join . iterM run (unFA x)
-run (AArgumentList  tup) = join $ parseArgument tup
-
-
-
-comma :: (MonadParsec e s m,  Token s ~ Char) => m ()
-comma = char ',' *> whitespace
-
-commas :: (MonadParsec e s m,  Token s ~ Char) => m a -> m a
-commas   x = comma *> x <* whitespace
-
-tokenize :: (Token s ~ Char, MonadParsec e s m) => m a -> m a
-tokenize x = x <* whitespace -- <* char ',' <* whitespace
+primative :: (Monad p, MonadFree (ArgumentValue p) m) => SyntaxParser PrimativeValue p a -> m a
+primative = liftF . APrimativeArg
 
 
 {--}
 data TestStruct = TS Int String Double deriving (Show)
 
-tester :: FreeAlt3 ArgumentValue TestStruct
+tester :: Monad p => SyntaxParser (ArgumentValue p) p TestStruct
 tester = do
-    age     <- listId "age" int
+    age     <- listId "age" (int `withDefault` 42)
     (str,r) <- argList $ (,) <$> text <*> real
     pure $ TS age str r
 {--}
@@ -184,7 +223,7 @@ data  Primative
 {--}
 
 
-
+type SyntaxParser f p a = FreeT f p a
 
 
 {-
@@ -242,6 +281,7 @@ mapPerms f (Perm a as x) = Perm (fmap f a) (fmap mapBranch as) x
 
 -}
 
+{-
 
 data ReadCommandz = Read [FileSpec]
 
@@ -258,6 +298,8 @@ unspecified = Unspecified <$> text
 
 nucleotide :: Free ArgumentValue FileSpec
 nucleotide = listId "nucleotide" $ Nucleotide <$> text
+-}
+
 
 {-
 customAlphabet :: Free ArgumentValue FileSpec
