@@ -25,7 +25,6 @@ import qualified Data.List.NonEmpty as NE (fromList)
 import           Data.List.Utility
 import           Data.Ord                 (comparing)
 import           Data.Semigroup
-import           Data.String
 import           File.Format.TNT.Internal
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
@@ -35,7 +34,7 @@ import           Text.Megaparsec.Custom
 -- |
 -- Parses an CNAMES command. Correctly validates that there is no
 -- duplicate naming for a single character index in the sequence.
-cnamesCommand :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m CNames
+cnamesCommand :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m CNames
 cnamesCommand = cnamesValidation =<< cnamesDefinition
   where
     cnamesDefinition = symbol cnamesHeader
@@ -80,7 +79,7 @@ duplicateIndexMessages cnames = duplicateIndexErrors
 -- |
 -- Consumes the CNAMES string identifier and zero or more comments
 -- preceeding the taxa count and character cound parameters
-cnamesHeader :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m ()
+cnamesHeader :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m ()
 cnamesHeader = symbol (keyword "cnames" 2)
             *> many (symbol simpleComment)
             $> ()

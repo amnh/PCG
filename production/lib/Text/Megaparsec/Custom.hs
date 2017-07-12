@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts, ScopedTypeVariables, TypeFamilies #-}
 
 module Text.Megaparsec.Custom
   ( (<:>)
@@ -26,21 +26,24 @@ module Text.Megaparsec.Custom
   , inlineSpace
   , nonEmpty
   , somethingTill
+  , string''
   , runParserOnFile
   , parseWithDefaultErrorType
   ) where
 
-import           Data.Char                (isSpace)
-import           Data.Either              (either)
-import           Data.Functor             (($>), void)
-import           Data.List.NonEmpty       (NonEmpty(..))
-import qualified Data.List.NonEmpty as NE (fromList)
+import           Data.CaseInsensitive
+import           Data.Char                         (isSpace)
+import           Data.Either                       (either)
+import           Data.Functor                      (($>), void)
+import           Data.List.NonEmpty                (NonEmpty(..))
+import qualified Data.List.NonEmpty         as NE  (fromList)
+import           Data.Proxy
 import           Data.Semigroup
-import qualified Data.Set           as S  (fromList)
+--import qualified Data.Set                   as S   (fromList)
 import           Data.Void
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
-import           Text.Megaparsec.Lexer    (float, integer, signed)
+import qualified Text.Megaparsec.Char.Lexer as LEX
 
 
 -- |
@@ -54,6 +57,12 @@ import           Text.Megaparsec.Lexer    (float, integer, signed)
 -- Concatenate the result of two list producing combinators.
 (<++>) :: (Applicative f, Semigroup a) => f a -> f a -> f a
 (<++>) a b = (<>) <$> a <*> b
+
+
+-- |
+-- Parse a string-like chunk.
+string'' :: forall e s m. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => String -> m (Tokens s)
+string'' = string' . tokensToChunk (Proxy :: Proxy s)
 
 
 -- |
@@ -89,7 +98,11 @@ anyToken = token Right Nothing
 -- |
 -- Flexibly parses a 'Double' value represented in a variety of forms.
 double :: (MonadParsec e s m, Token s ~ Char) => m Double
-double = try (signed space float) <|> fromIntegral <$> signed space integer
+double = try real <|> fromIntegral <$> int
+  where
+     int  :: (MonadParsec e s m, Token s ~ Char) => m Integer
+     int  = LEX.signed space LEX.decimal
+     real = LEX.signed space LEX.float
 
 
 -- |
@@ -97,7 +110,6 @@ double = try (signed space float) <|> fromIntegral <$> signed space integer
 -- lines in a single @\'\\r\'@.
 endOfLine :: (MonadParsec e s m, Token s ~ Char) => m Char
 endOfLine = (try (void eol) <|> void (char '\r')) $> '\n'
-
 
 
 -- |

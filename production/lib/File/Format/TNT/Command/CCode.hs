@@ -16,7 +16,6 @@
 module File.Format.TNT.Command.CCode where
 
 import Data.CaseInsensitive
-import Data.String
 import File.Format.TNT.Internal
 import Text.Megaparsec
 import Text.Megaparsec.Char
@@ -29,13 +28,13 @@ import Text.Megaparsec.Custom   (nonEmpty)
 --  * One ore more specifications of the character state change
 --
 --  * One or more character indicies or index ranges of affected characters
-ccodeCommand :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m CCode
+ccodeCommand :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m CCode
 ccodeCommand = ccodeHeader *> nonEmpty ccodeAugment <* symbol (char ';')
 
 
 -- |
 -- The header of a CCODE command.
-ccodeHeader :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m ()
+ccodeHeader :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m ()
 ccodeHeader = symbol $ keyword "ccode" 2
 
 -- |

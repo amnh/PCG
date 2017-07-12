@@ -13,34 +13,35 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE BangPatterns, DeriveFoldable, DeriveFunctor, DeriveTraversable #-}
-{-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving, TypeFamilies     #-}
+{-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving, ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module File.Format.TNT.Internal where
 
 
-import           Control.Monad            ((<=<))
+import           Control.Monad              ((<=<))
 import           Data.Bits
 import           Data.CaseInsensitive
-import           Data.Char                (isAlpha, isLower, isUpper, toLower, toUpper)
-import           Data.Functor             (($>))
-import           Data.Foldable            (toList)
-import           Data.Key                 ((!), lookup)
-import           Data.List                (inits)
-import           Data.List.NonEmpty       (NonEmpty)
-import           Data.Matrix.NotStupid    (Matrix)
-import           Data.Map                 (Map, assocs, insert, insertWith, keys, union)
-import qualified Data.Map            as M (fromList)
-import           Data.Scientific          (floatingOrInteger)
-import           Data.String
-import           Data.Tuple               (swap)
-import           Data.Vector              (Vector)
-import qualified Data.Vector         as V (fromList)
-import           Data.Word                (Word8, Word32, Word64)
-import           Prelude           hiding (lookup)
+import           Data.Char                  (isAlpha, isLower, isUpper, toLower, toUpper)
+import           Data.Functor               (($>))
+import           Data.Foldable              (toList)
+import           Data.Key                   ((!), lookup)
+import           Data.List                  (inits)
+import           Data.List.NonEmpty         (NonEmpty)
+import           Data.Matrix.NotStupid      (Matrix)
+import           Data.Map                   (Map, assocs, insert, insertWith, keys, union)
+import qualified Data.Map              as M (fromList)
+import           Data.Proxy
+import           Data.Scientific            (floatingOrInteger)
+import           Data.Tuple                 (swap)
+import           Data.Vector                (Vector)
+import qualified Data.Vector           as V (fromList)
+import           Data.Word                  (Word8, Word32, Word64)
+import           Prelude             hiding (lookup)
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
+import           Text.Megaparsec.Char.Lexer (decimal, scientific, signed)
 import           Text.Megaparsec.Custom
-import           Text.Megaparsec.Lexer    (integer, number, signed)
 
 
 -- |
@@ -405,7 +406,7 @@ modifyMetaDataTCM mat old = old { costTCM = Just mat }
 -- if the value is non-negative and an integer.
 flexibleNonNegativeInt :: (MonadParsec e s m, Token s ~ Char) => String -> m Int
 flexibleNonNegativeInt labeling = either coerceFloating coerceIntegral . floatingOrInteger
-                              =<< signed whitespace number <?> ("positive integer for " ++ labeling)
+                              =<< signed whitespace scientific <?> ("positive integer for " ++ labeling)
   where
     coerceIntegral :: (MonadParsec e s m {- , Token s ~ Char -}) => Integer -> m Int
     coerceIntegral x
@@ -450,7 +451,7 @@ flexibleNonNegativeInt labeling = either coerceFloating coerceIntegral . floatin
 -- The errorCount value (0.1337) is not a positive integer
 flexiblePositiveInt :: (MonadParsec e s m, Token s ~ Char) => String -> m Int
 flexiblePositiveInt labeling = either coerceFloating coerceIntegral . floatingOrInteger
-                             =<< signed whitespace number <?> ("positive integer for " ++ labeling)
+                             =<< signed whitespace scientific <?> ("positive integer for " ++ labeling)
   where
     coerceIntegral :: (MonadParsec e s m {- , Token s ~ Char -}) => Integer -> m Int
     coerceIntegral x
@@ -488,7 +489,7 @@ flexiblePositiveInt labeling = either coerceFloating coerceIntegral . floatingOr
 -- Left 1:1:
 -- unexpected "abr"
 -- expecting keyword 'abrakadabra'
-keyword :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => String -> Int -> m ()
+keyword :: forall e s m. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => String -> Int -> m ()
 keyword x y = abreviatable x y $> ()
   where
     abreviatable fullName minimumChars
@@ -496,10 +497,10 @@ keyword x y = abreviatable x y $> ()
       | any (not . isAlpha) fullName = fail $ "A keywork containing a non alphabetic character: '" ++ show fullName ++ "' supplied to abreviateable combinator"
       | otherwise                    = combinator <?> "keyword '" ++ fullName ++ "'"
       where
-        combinator      = choice partialOptions $> fullName
-        partialOptions  = makePartial <$> drop minimumChars (inits fullName)
-        makePartial opt = try $ string' (fromString opt) <* terminator
-        terminator      = lookAhead $ satisfy (not . isAlpha)
+        combinator     = choice partialOptions $> fullName
+        partialOptions = makePartial <$> drop minimumChars (inits fullName)
+        makePartial    = try . (<* terminator) . string' . tokensToChunk (Proxy :: Proxy s)
+        terminator     = lookAhead $ satisfy (not . isAlpha)
 
 
 -- |
@@ -507,7 +508,7 @@ keyword x y = abreviatable x y $> ()
 -- Will fail integral valued Double literals. Use this in preference to 'flexibleNonNegativeInt'
 -- when expecting one of these chars ".eE" adjacent to the Int value.
 nonNegInt :: (MonadParsec e s m, Token s ~ Char) => m Int
-nonNegInt = fromIntegral <$> integer
+nonNegInt = decimal
 
 
 -- |

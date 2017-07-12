@@ -35,7 +35,6 @@ module File.Format.Nexus
 
 
 import Data.CaseInsensitive
-import Data.String
 import File.Format.Nexus.Data
 import File.Format.Nexus.Parser
 import File.Format.Nexus.Validate
@@ -44,5 +43,5 @@ import Text.Megaparsec
 
 -- |
 -- Parses the entirety of a stream consisting of a single Nexus file resulting a 'Nexus'.
-nexusStreamParser :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char {- , Show s -}) => m Nexus
+nexusStreamParser :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char {- , Show s -}) => m Nexus
 nexusStreamParser = validateNexusParseResult =<< parseNexus <* eof

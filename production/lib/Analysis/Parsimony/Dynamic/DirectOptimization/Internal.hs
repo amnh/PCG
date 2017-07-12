@@ -110,7 +110,7 @@ updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) =
 -- Parameterized over a 'PairwiseAlignment' function to allow for different
 -- atomic alignments depending on the character's metadata.
 directOptimizationPreOrder
-  :: (DirectOptimizationPostOrderDecoration d c, Show c {-, Show (Element c)-})
+  :: (DirectOptimizationPostOrderDecoration d c {- , Show c, Show (Element c)-})
   => PairwiseAlignment c
   -> d
   -> [(Word, DynamicDecorationDirectOptimization c)]
@@ -140,7 +140,7 @@ initializeRoot =
 -- Use the decoration(s) of the ancestoral nodes to calculate the currect node
 -- decoration. The recursive logic of the pre-order traversal.
 updateFromParent
-  :: (EncodableDynamicCharacter c, DirectOptimizationPostOrderDecoration d c, Show c {-, Show (Element c)-})
+  :: (EncodableDynamicCharacter c, DirectOptimizationPostOrderDecoration d c {- , Show c, Show (Element c)-})
   => PairwiseAlignment c
   -> d
   -> DynamicDecorationDirectOptimization c
@@ -169,7 +169,7 @@ updateFromParent pairwiseAlignment currentDecoration parentDecoration =
 -- |
 -- A three way comparison of characters used in the DO preorder traversal.
 tripleComparison
-  :: ( {- EncodableDynamicCharacter c, -} DirectOptimizationPostOrderDecoration d c, Show c {-, Show (Element c) -})
+  :: ( {- EncodableDynamicCharacter c, -} DirectOptimizationPostOrderDecoration d c {- , Show c, Show (Element c) -})
   => PairwiseAlignment c
   -> d
   -> c

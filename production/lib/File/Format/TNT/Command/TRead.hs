@@ -22,7 +22,6 @@ import           Data.Char                (isSpace)
 import           Data.Functor             (($>))
 import           Data.List                (isSuffixOf)
 import qualified Data.List.NonEmpty as NE (fromList)
-import           Data.String
 import           File.Format.TNT.Internal
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
@@ -32,7 +31,7 @@ import           Text.Megaparsec.Custom
 -- |
 -- Parses an TREAD command. Correctly validates for taxa count
 -- and character sequence length. Produces one or more taxa sequences.
-treadCommand :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m TRead
+treadCommand :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m TRead
 treadCommand = treadValidation =<< treadDefinition
   where
     treadDefinition = symbol treadHeader
@@ -46,7 +45,7 @@ treadCommand = treadValidation =<< treadDefinition
 -- The superflous information of an XREAD command. Consumes the XREAD string
 -- identifier and zero or more comments preceeding the taxa count and character
 -- cound parameters
-treadHeader :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m ()
+treadHeader :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m ()
 treadHeader =  symbol (keyword "tread" 2)
             *> many simpleComment
             $> ()

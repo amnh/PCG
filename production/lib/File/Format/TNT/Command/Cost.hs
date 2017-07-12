@@ -23,7 +23,6 @@ import Data.Functor             (($>))
 import Data.List.NonEmpty       (NonEmpty)
 import Data.Matrix.NotStupid    (Matrix,matrix)
 import Data.Maybe               (fromJust,fromMaybe)
-import Data.String
 import Data.Vector              ((!))
 import File.Format.TNT.Internal
 import Text.Megaparsec
@@ -49,13 +48,13 @@ data TransitionCost
 --  * A single specification of the character state change
 --
 --  * One or more character indicies or index ranges of affected characters
-costCommand :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m Cost
+costCommand :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m Cost
 costCommand = costHeader *> costBody <* symbol (char ';')
 
 
 -- |
 -- Consumes the superflous heading for a CCODE command.
-costHeader :: (FoldCase (Tokens s), IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m ()
+costHeader :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m ()
 costHeader = symbol $ keyword "costs" 2
 
 

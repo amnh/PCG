@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts, ScopedTypeVariables, TypeFamilies #-}
 
 module File.Format.Newick.Parser where
 
@@ -21,32 +21,33 @@ import Data.Functor                (void)
 import Data.List                   (intercalate)
 import Data.Map             hiding (filter, foldl, foldr, null)
 import Data.Maybe                  (fromJust, fromMaybe, isJust)
+import Data.Proxy
 import Data.Semigroup
 import Data.String
 import File.Format.Newick.Internal
 import Prelude              hiding (lookup)
 import Text.Megaparsec      hiding (label)
 import Text.Megaparsec.Char hiding (space)
+import Text.Megaparsec.Char.Lexer  (skipBlockCommentNested, space)
 import Text.Megaparsec.Custom
-import Text.Megaparsec.Lexer       (skipBlockCommentNested, space)
 
 
 -- |
 -- Parses a stream producing a standard Newick tree
-newickStandardDefinition :: (IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m NewickNode
+newickStandardDefinition :: (MonadParsec e s m, Token s ~ Char) => m NewickNode
 newickStandardDefinition = whitespace *> newickNodeDefinition <* symbol (char ';')
 
 
 -- |
 -- Parses a stream producing an extended Newick tree.
 -- Directed cycles in extended Newick trees are not permitted.
-newickExtendedDefinition :: (IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m NewickNode
+newickExtendedDefinition :: (MonadParsec e s m, Token s ~ Char) => m NewickNode
 newickExtendedDefinition = newickStandardDefinition >>= joinNonUniqueLabeledNodes
 
 
 -- |
 -- Parses a stream producing a forest of extended Newick trees.
-newickForestDefinition :: (IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m NewickForest
+newickForestDefinition :: (MonadParsec e s m, Token s ~ Char) => m NewickForest
 newickForestDefinition = whitespace *> symbol (char '<') *> nonEmpty newickExtendedDefinition <* symbol (char '>')
 
 
@@ -54,7 +55,7 @@ newickForestDefinition = whitespace *> symbol (char '<') *> nonEmpty newickExten
 -- Definition of a serialized Newick node consisiting of the node's descendants,
 -- optional label, and optional branch length. Mutually recursive with
 -- 'subtreeDefinition '.
-newickNodeDefinition :: (IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m NewickNode
+newickNodeDefinition :: (MonadParsec e s m, Token s ~ Char) => m NewickNode
 newickNodeDefinition = do
     descendants'  <- descendantListDefinition
     label'        <- optional newickLabelDefinition
@@ -65,21 +66,21 @@ newickNodeDefinition = do
 -- |
 -- Parses one or more subtrees consisting of a single node or a further
 -- descendant list.
-descendantListDefinition :: (IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m [NewickNode]
+descendantListDefinition :: (MonadParsec e s m, Token s ~ Char) => m [NewickNode]
 descendantListDefinition = char '(' *> trimmed subtreeDefinition `sepBy1` char ',' <* char ')' <* whitespace
 
 
 -- |
 -- Definition of a Newick subtree consisting of either a single leaf node or a
 -- greater subtree. Mutually recursive with 'newickNodeDefinition'.
-subtreeDefinition :: (IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m NewickNode
+subtreeDefinition :: (MonadParsec e s m, Token s ~ Char) => m NewickNode
 subtreeDefinition = newickNodeDefinition <|> newickLeafDefinition
 
 
 -- |
 -- Definition of a sigle leaf node in a Newick tree. Must contain a node label.
 -- Has no descendants be definition.
-newickLeafDefinition :: (IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m NewickNode
+newickLeafDefinition :: (MonadParsec e s m, Token s ~ Char) => m NewickNode
 newickLeafDefinition = do
     label'        <- newickLabelDefinition
     branchLength' <- optional branchLengthDefinition
@@ -88,7 +89,7 @@ newickLeafDefinition = do
 
 -- |
 -- Defines the label for a 'NewickNode' which can be either quoted or unquoted.
-newickLabelDefinition :: (IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m String
+newickLabelDefinition :: (MonadParsec e s m, Token s ~ Char) => m String
 newickLabelDefinition = (quotedLabel <|> unquotedLabel) <* whitespace
 
 
@@ -153,32 +154,35 @@ invalidUnquotedLabelChars = invalidQuotedLabelChars <> requiresQuotedLabelChars
 -- the 'branchLength' of a given 'NewickNode' is the branch length itself and
 -- it's parent. Becomes non-sensical with extended Newick trees that have nodes
 -- with "in-degree" greater than one.
-branchLengthDefinition :: (IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m Double
+branchLengthDefinition :: (MonadParsec e s m, Token s ~ Char) => m Double
 branchLengthDefinition = symbol (char ':') *> symbol double
 
 
 -- |
 -- Convinience combinator for stripping /leading and trailing/ whitespace from a
 -- combinator.
-trimmed :: (IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m a -> m a
+trimmed :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
 trimmed x = whitespace *> x <* whitespace
 
 
 -- |
 -- Convinience combinator for stripping /trailing/ whitespace from a combinator.
-symbol  :: (IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m a -> m a
-symbol  x = x <* whitespace
+symbol :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
+symbol x = x <* whitespace
 
 
 -- |
 -- Definition of space between tokens which can be discarded. This includes
 -- spaces /and/ comments.
-whitespace :: (IsString (Tokens s), MonadParsec e s m, Token s ~ Char) => m ()
+whitespace :: forall e s m. (MonadParsec e s m, Token s ~ Char) => m ()
 whitespace = space single line block
   where
     single = void spaceChar
     line   = pure ()
-    block  = skipBlockCommentNested (fromString "[") (fromString "]")
+    block  = skipBlockCommentNested (tokenToChunk proxy '[') (tokenToChunk proxy ']')
+    proxy  = Proxy :: Proxy s
+
+    
 {-
 whitespace = try commentDefinition <|> space
   where
