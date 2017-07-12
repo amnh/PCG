@@ -1,4 +1,4 @@
-{-# LANGUAGE ConstraintKinds, DeriveFunctor, ExistentialQuantification, FlexibleContexts, ScopedTypeVariables, TypeFamilies #-}
+{-# LANGUAGE ApplicativeDo, ConstraintKinds, DeriveFunctor, ExistentialQuantification, FlexibleContexts, ScopedTypeVariables, TypeFamilies #-}
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, RankNTypes, TypeSynonymInstances #-}
 
 module PCG.Syntax.Types
@@ -123,7 +123,7 @@ parseArgument arg = do
 run :: (FoldCase (Tokens s), MonadParsec e s m,  Token s ~ Char) => ArgumentValue m (m a) -> m a
 run (APrimativeArg    x) = join $ iterT parsePrimative x
 --run (ADefault       x v) = join $ iterT (fmap (withDef2 v) . run) x
-run e@(ADefault       x v) = join . iterT run . fmap pure $ x >>= (lift . withDef v)
+run e@(ADefault       x v) = join . iterT run $ x >>= (lift . pure . withDef v)
 run (ExactlyOneOf    xs) = choice $ join . iterT run <$> xs
 --run (SomeOf           x) = fmap head . some . join . iterM run $ unFA x
 run (AArgumentList  tup) = join $ parseArgument tup
@@ -152,7 +152,7 @@ withDef2 v p = v >>= \x -> makePermParser $ id <$?> (x, try p)
 comma :: (MonadParsec e s m,  Token s ~ Char) => m ()
 comma = whitespace *> seperator *> whitespace
   where
-    seperator = char ',' <?> "',' seperating argumentsy"
+    seperator = char ',' <?> "',' seperating arguments"
 
 
 {-
@@ -179,13 +179,14 @@ primative = liftF . APrimativeArg
 
 
 {--}
-data TestStruct = TS Int String Double deriving (Show)
+data TestStruct = TS Int String [Double] deriving (Show)
 
-tester :: Monad p => SyntaxParser (ArgumentValue p) p TestStruct
+tester :: MonadPlus p => SyntaxParser (ArgumentValue p) p TestStruct
 tester = do
-    age     <- listId "age" (int `withDefault` 42)
-    (str,r) <- argList $ (,) <$> text <*> real
-    pure $ TS age str r
+    age <- listId "age" int `withDefault` 42
+    str <- text
+    r   <- real
+    pure $ TS age str [r]
 {--}
 
 
