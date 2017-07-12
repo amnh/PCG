@@ -445,9 +445,9 @@ instance (Show c) => ToXML (ContinuousDecorationInitial c) where
     toXML (ContinuousDecorationInitial val metadata) = xmlElement "ContinuousDecorationInitial" attributes contents
         where
             attributes = []
-            contents   = [ ("Name"  , show $ metadata ^. characterName  )
+            contents   = [ ("Name"                   , show $ metadata ^. characterName  )
                          , ("Initial character state", show val )
-                         , ("Weight", show $ metadata ^. characterWeight)
+                         , ("Weight"                 , show $ metadata ^. characterWeight)
                          ]
             --TODO: use ToXML instance in Bio/Metadat/General/Internal
             --meta = initialDecoration ^. continuousMetadataField

@@ -41,9 +41,11 @@ import Data.List.NonEmpty (NonEmpty( (:|) ))
 -- import qualified Data.TCM as TCM
 import Data.Word
 import Numeric.Extended.Natural
-import Prelude hiding (zip)
+import Prelude                   hiding (zip)
+import Text.XML.Custom
+import Text.XML.Light
 
---import Debug.Trace
+import Debug.Trace
 
 
 -- |
@@ -68,18 +70,19 @@ sankoffPreOrder :: EncodableStaticCharacter c
                 => SankoffOptimizationDecoration c
                 -> [(Word, SankoffOptimizationDecoration c)]
                 -> SankoffOptimizationDecoration c
-sankoffPreOrder childDecoration [] = childDecoration & discreteCharacter .~ newChar -- is a root
+sankoffPreOrder childDecoration [] = (trace $ ppTopElement (toXML childDecoration)) $ newDecoration       -- is a root
     where
-        childMins   = childDecoration ^. characterCostVector
-        overallMin  = childDecoration ^. characterCost
-        emptyMedian = emptyStatic $ childDecoration ^. discreteCharacter
-        newChar     = foldlWithKey' setState emptyMedian childMins
+        childMins     = childDecoration ^. characterCostVector
+        overallMin    = childDecoration ^. characterCost
+        emptyMedian   = emptyStatic $ childDecoration ^. discreteCharacter
+        newChar       = foldlWithKey' setState emptyMedian childMins
+        newDecoration = childDecoration & discreteCharacter .~ newChar
 
         setState acc pos childMin
             | unsafeToFinite childMin == overallMin = acc `setBit` pos
             | otherwise                             = acc
 
-sankoffPreOrder childDecoration ((whichChild, parentDecoration):_) = resultDecoration $
+sankoffPreOrder childDecoration ((whichChild, parentDecoration):_) = resultDecoration $   -- is either internal node or leaf
     case whichChild of
         0 -> fst
         _ -> snd
@@ -140,7 +143,7 @@ updateCostVector :: DiscreteCharacterDecoration d c
                  => d
                  -> NonEmpty (SankoffOptimizationDecoration c)
                  -> SankoffOptimizationDecoration c
-updateCostVector _parentDecoration (x:|[])                   = x                    -- Shouldn't be possible, but here for completion.
+updateCostVector _parentDecoration (x:|[])                         = x                    -- Shouldn't be possible, but here for completion.
 updateCostVector _parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDecoration -- May? be able to amend this to use non-binary children.
     where
         (cs, ds, minTransCost) = foldr findMins initialAccumulator range   -- sorry abut these shitty variable names. It was to shorten

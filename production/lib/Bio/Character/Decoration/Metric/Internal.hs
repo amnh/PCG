@@ -26,6 +26,7 @@ import Control.Lens
 import Data.Alphabet
 import Data.TCM
 import Numeric.Extended.Natural
+import Text.XML.Custom
 
 
 -- |
@@ -36,92 +37,6 @@ data MetricDecorationInitial c
    { metricDecorationInitialCharacter :: c
    , metadata                         :: DiscreteWithTCMCharacterMetadataDec c
    }
-
-
--- | (✔)
-instance HasDiscreteCharacter (MetricDecorationInitial c) c where
-
-    discreteCharacter = lens metricDecorationInitialCharacter (\e x -> e { metricDecorationInitialCharacter = x })
-
-
--- | (✔)
-instance HasCharacterAlphabet (MetricDecorationInitial c) (Alphabet String) where
-
-    characterAlphabet = lens getter setter
-      where
-         getter e   = metadata e ^. characterAlphabet
-         setter e x = e { metadata = metadata e &  characterAlphabet .~ x }
-
-
--- | (✔)
-instance HasCharacterName (MetricDecorationInitial c) CharacterName where
-
-    characterName = lens getter setter
-      where
-         getter e   = metadata e ^. characterName
-         setter e x = e { metadata = metadata e &  characterName .~ x }
-
-
--- | (✔)
-instance HasSymbolChangeMatrix (MetricDecorationInitial c) (Word -> Word -> Word) where
-
-    symbolChangeMatrix = lens getter setter
-      where
-         getter e   = metadata e ^. symbolChangeMatrix
-         setter e f = e { metadata = metadata e & symbolChangeMatrix .~ f }
-
-
--- | (✔)
-instance HasTransitionCostMatrix (MetricDecorationInitial c) (c -> c -> (c, Word)) where
-
-    transitionCostMatrix = lens getter setter
-      where
-         getter e   = metadata e ^. transitionCostMatrix
-         setter e f = e { metadata = metadata e &  transitionCostMatrix .~ f }
-
-
--- | (✔)
-instance HasCharacterWeight (MetricDecorationInitial c) Double where
-
-    characterWeight = lens getter setter
-      where
-         getter e   = metadata e ^. characterWeight
-         setter e x = e { metadata = metadata e &  characterWeight .~ x }
-
-
--- | (✔)
-instance GeneralCharacterMetadata (MetricDecorationInitial c) where
-
-    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . metadata
-
-
--- | (✔)
-instance DiscreteCharacterMetadata (MetricDecorationInitial c) where
-
-    extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . metadata
-
-
--- | (✔)
-instance EncodableStreamElement c => DiscreteWithTcmCharacterMetadata (MetricDecorationInitial c) c where
-
-
--- | (✔)
-instance EncodableStaticCharacter c => DiscreteCharacterDecoration (MetricDecorationInitial c) c where
-
-
--- | (✔)
-instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (MetricDecorationInitial c) c where
-
-    toDiscreteCharacterDecoration name weight alphabet scm g symbolSet =
-        MetricDecorationInitial
-        { metricDecorationInitialCharacter = g symbolSet
-        , metadata                         = discreteMetadataWithTCM name weight alphabet scm
-        }
-
-
--- | (✔)
-instance EncodableStaticCharacter c => MetricCharacterDecoration (MetricDecorationInitial c) c where
-
 
 -- |
 -- A concrete type representing the results of performing Sankoff's algorithm.
@@ -148,15 +63,96 @@ data SankoffOptimizationDecoration c
    , sankoffIsLeaf                :: Bool
    }
 
+
 -- | A list of states on the child that contribute to the lowest score on each state in the parent
 -- Used to simplify? SankoffOptimizationDecoration
 type StateContributionList = [Word]
+
+
+
+-- | (✔)
+instance EncodableStaticCharacter c => DiscreteCharacterDecoration (MetricDecorationInitial c) c where
+
+
+-- | (✔)
+instance EncodableStaticCharacter c => DiscreteCharacterDecoration (SankoffOptimizationDecoration c) c where
+
+
+-- | (✔)
+instance DiscreteCharacterMetadata (MetricDecorationInitial c) where
+
+    extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . metadata
+
+
+-- | (✔)
+instance DiscreteCharacterMetadata (SankoffOptimizationDecoration c) where
+
+    extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . sankoffMetadataField
+
+
+-- | (✔)
+instance EncodableStaticCharacter c => DiscreteExtensionSankoffDecoration (SankoffOptimizationDecoration c) c where
+
+--    extendDiscreteToSankoff :: DiscreteCharacterDecoration x c => x -> [Word] -> ([Word], [Word]) -> Word -> s
+    extendDiscreteToSankoff subDecoration costVector prelimExtras finalExtras inputBeta childMinStates cost newMedian leaf =
+
+        SankoffOptimizationDecoration
+        { sankoffMinStateTuple         = childMinStates
+        , sankoffMinCostVector         = costVector
+        , sankoffPreliminaryExtraCosts = prelimExtras
+        , sankoffFinalExtraCosts       = finalExtras
+        , sankoffBeta                  = inputBeta
+        , sankoffMetadataField         = metadataValue
+        , sankoffMinCost               = cost
+        , sankoffCharacterField        = newMedian
+        , sankoffIsLeaf                = leaf
+        }
+      where
+        alphabetValue   = subDecoration ^. characterAlphabet
+        tcmValue        = generate (length alphabetValue) generator
+        generator (i,j) = (subDecoration ^. symbolChangeMatrix) (toEnum i) (toEnum j)
+        metadataValue   =
+            discreteMetadataFromTCM
+                <$> (^. characterName)
+                <*> (^. characterWeight)
+                <*> const alphabetValue
+                <*> const tcmValue
+                 $  subDecoration
+
+
+-- | (✔)
+instance EncodableStreamElement c => DiscreteWithTcmCharacterMetadata (MetricDecorationInitial c) c where
+
+
+-- | (✔)
+instance EncodableStreamElement c => DiscreteWithTcmCharacterMetadata (SankoffOptimizationDecoration c) c where
+
+
+-- | (✔)
+instance GeneralCharacterMetadata (MetricDecorationInitial c) where
+
+    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . metadata
+
+
+-- | (✔)
+instance GeneralCharacterMetadata (SankoffOptimizationDecoration c) where
+
+    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . sankoffMetadataField
 
 
 -- | (✔)
 instance HasBeta (SankoffOptimizationDecoration c) [ExtendedNatural] where
 
     beta = lens sankoffBeta (\e x -> e { sankoffBeta = x })
+
+
+-- | (✔)
+instance HasCharacterAlphabet (MetricDecorationInitial c) (Alphabet String) where
+
+    characterAlphabet = lens getter setter
+      where
+         getter e   = metadata e ^. characterAlphabet
+         setter e x = e { metadata = metadata e &  characterAlphabet .~ x }
 
 
 -- | (✔)
@@ -181,6 +177,15 @@ instance HasCharacterCostVector (SankoffOptimizationDecoration c) [ExtendedNatur
 
 
 -- | (✔)
+instance HasCharacterName (MetricDecorationInitial c) CharacterName where
+
+    characterName = lens getter setter
+      where
+         getter e   = metadata e ^. characterName
+         setter e x = e { metadata = metadata e &  characterName .~ x }
+
+
+-- | (✔)
 instance HasCharacterName (SankoffOptimizationDecoration c) CharacterName where
 
     characterName = lens getter setter
@@ -190,12 +195,27 @@ instance HasCharacterName (SankoffOptimizationDecoration c) CharacterName where
 
 
 -- | (✔)
+instance HasCharacterWeight (MetricDecorationInitial c) Double where
+
+    characterWeight = lens getter setter
+      where
+         getter e   = metadata e ^. characterWeight
+         setter e x = e { metadata = metadata e &  characterWeight .~ x }
+
+
+-- | (✔)
 instance HasCharacterWeight (SankoffOptimizationDecoration c) Double where
 
     characterWeight = lens getter setter
       where
          getter e   = sankoffMetadataField e ^. characterWeight
          setter e x = e { sankoffMetadataField = sankoffMetadataField e &  characterWeight .~ x }
+
+
+-- | (✔)
+instance HasDiscreteCharacter (MetricDecorationInitial c) c where
+
+    discreteCharacter = lens metricDecorationInitialCharacter (\e x -> e { metricDecorationInitialCharacter = x })
 
 
 -- | (✔)
@@ -228,13 +248,31 @@ instance HasStateMinTuple (SankoffOptimizationDecoration c) ([StateContributionL
     minStateTuple = lens sankoffMinStateTuple (\e x -> e { sankoffMinStateTuple = x })
 
 
-    -- | (✔)
+-- | (✔)
+instance HasSymbolChangeMatrix (MetricDecorationInitial c) (Word -> Word -> Word) where
+
+    symbolChangeMatrix = lens getter setter
+      where
+         getter e   = metadata e ^. symbolChangeMatrix
+         setter e f = e { metadata = metadata e & symbolChangeMatrix .~ f }
+
+
+-- | (✔)
 instance HasSymbolChangeMatrix (SankoffOptimizationDecoration c) (Word -> Word -> Word) where
 
     symbolChangeMatrix = lens getter setter
       where
          getter e   = sankoffMetadataField e ^. symbolChangeMatrix
          setter e f = e { sankoffMetadataField = sankoffMetadataField e & symbolChangeMatrix .~ f }
+
+
+-- | (✔)
+instance HasTransitionCostMatrix (MetricDecorationInitial c) (c -> c -> (c, Word)) where
+
+    transitionCostMatrix = lens getter setter
+      where
+         getter e   = metadata e ^. transitionCostMatrix
+         setter e f = e { metadata = metadata e &  transitionCostMatrix .~ f }
 
 
 -- | (✔)
@@ -247,29 +285,7 @@ instance HasTransitionCostMatrix (SankoffOptimizationDecoration c) (c -> c -> (c
 
 
 -- | (✔)
-instance EncodableStreamElement c => Show (SankoffOptimizationDecoration c) where
-
-    show = showDiscreteCharacterElement
-
-
--- | (✔)
-instance GeneralCharacterMetadata (SankoffOptimizationDecoration c) where
-
-    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . sankoffMetadataField
-
-
--- | (✔)
-instance DiscreteCharacterMetadata (SankoffOptimizationDecoration c) where
-
-    extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . sankoffMetadataField
-
-
--- | (✔)
-instance EncodableStreamElement c => DiscreteWithTcmCharacterMetadata (SankoffOptimizationDecoration c) c where
-
-
--- | (✔)
-instance EncodableStaticCharacter c => DiscreteCharacterDecoration (SankoffOptimizationDecoration c) c where
+instance EncodableStaticCharacter c => MetricCharacterDecoration (MetricDecorationInitial c) c where
 
 
 -- | (✔)
@@ -281,30 +297,28 @@ instance EncodableStaticCharacter c => SankoffDecoration (SankoffOptimizationDec
 
 
 -- | (✔)
-instance EncodableStaticCharacter c => DiscreteExtensionSankoffDecoration (SankoffOptimizationDecoration c) c where
+instance EncodableStreamElement c => Show (SankoffOptimizationDecoration c) where
 
---    extendDiscreteToSankoff :: DiscreteCharacterDecoration x c => x -> [Word] -> ([Word], [Word]) -> Word -> s
-    extendDiscreteToSankoff subDecoration costVector prelimExtras finalExtras inputBeta childMinStates cost newMedian leaf =
+    show = showDiscreteCharacterElement
 
-        SankoffOptimizationDecoration
-        { sankoffMinStateTuple         = childMinStates
-        , sankoffMinCostVector         = costVector
-        , sankoffPreliminaryExtraCosts = prelimExtras
-        , sankoffFinalExtraCosts       = finalExtras
-        , sankoffBeta                  = inputBeta
-        , sankoffMetadataField         = metadataValue
-        , sankoffMinCost               = cost
-        , sankoffCharacterField        = newMedian
-        , sankoffIsLeaf                = leaf
+
+-- | (✔)
+instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (MetricDecorationInitial c) c where
+
+    toDiscreteCharacterDecoration name weight alphabet scm g symbolSet =
+        MetricDecorationInitial
+        { metricDecorationInitialCharacter = g symbolSet
+        , metadata                         = discreteMetadataWithTCM name weight alphabet scm
         }
-      where
-        alphabetValue   = subDecoration ^. characterAlphabet
-        tcmValue        = generate (length alphabetValue) generator
-        generator (i,j) = (subDecoration ^. symbolChangeMatrix) (toEnum i) (toEnum j)
-        metadataValue   =
-            discreteMetadataFromTCM
-                <$> (^. characterName)
-                <*> (^. characterWeight)
-                <*> const alphabetValue
-                <*> const tcmValue
-                 $  subDecoration
+
+
+-- |
+instance ToXML (SankoffOptimizationDecoration c) where
+
+    toXML metricDecoration = xmlElement "SankoffOptimizationDecoration" attributes contents
+        where
+            attributes = []
+            contents   = [ ("Min cost vector", show $ metricDecoration ^. characterCost      )
+                         , ("Min cost"       , show $ metricDecoration ^. characterCostVector)
+                         , ("Is leaf"        , show $ metricDecoration ^. isLeaf             )
+                         ]
