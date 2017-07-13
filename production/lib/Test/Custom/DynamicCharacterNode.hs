@@ -33,6 +33,7 @@ import           Data.MonoTraversable
 import           Data.String
 import           Test.Custom.NucleotideSequence
 import           Test.QuickCheck
+import           Text.XML.Custom
 
 
 -- |
@@ -66,6 +67,8 @@ constructNode lhs rhs = directOptimizationPreOrder pairwiseFunction lhsDec [(0,r
 
 
 toLeafNode :: ( Show (Element c)
+              , Show c
+              , ToXML c
               , Integral (Element c)
               , SimpleDynamicDecoration d c
               )
@@ -78,7 +81,7 @@ toRootNode :: DynamicDecorationDirectOptimizationPostOrderResult DynamicChar
            -> DynamicDecorationDirectOptimization DynamicChar
 toRootNode x y = directOptimizationPreOrder pairwiseFunction z []
   where
-    z :: DynamicDecorationDirectOptimizationPostOrderResult DynamicChar 
+    z :: DynamicDecorationDirectOptimizationPostOrderResult DynamicChar
     z = directOptimizationPostOrder pairwiseFunction e [x,y]
     e :: DynamicDecorationDirectOptimizationPostOrderResult DynamicChar
     e = undefined
@@ -100,6 +103,6 @@ initDec = toDynamicCharacterDecoration name weight alphabet scm id
   where
     name   = fromString "Test Character"
     weight = 1
-    alphabet = fromSymbols ["A","C","G","T"] 
+    alphabet = fromSymbols ["A","C","G","T"]
 
 

@@ -30,6 +30,17 @@ import Data.Alphabet
 import Data.Range
 import Data.Semigroup
 import Numeric.Extended
+import Text.XML.Custom
+import Text.XML.Light
+
+
+-- |
+-- Represents the finalized character decoration after a pre-order traversal.
+data AdditiveOptimizationDecoration a
+   = AdditiveOptimizationDecoration
+   { additiveFinalInterval :: Range (Bound a)
+   , postorderDecoration   :: AdditivePostorderDecoration a
+   }
 
 
 -- |
@@ -199,15 +210,6 @@ instance ( DiscreteCharacterMetadata   (AdditivePostorderDecoration a)
 
 
 
-
-
--- |
--- Represents the finalized character decoration after a pre-order traversal.
-data AdditiveOptimizationDecoration a
-   = AdditiveOptimizationDecoration
-   { additiveFinalInterval :: Range (Bound a)
-   , postorderDecoration   :: AdditivePostorderDecoration a
-   }
 
 
 -- | (✔)
@@ -423,3 +425,36 @@ instance
         ]
 
 
+-- | (✔)
+instance
+    ( EncodableStreamElement c
+    -- , Show (Bound c)
+    , Show (Finite (Bound c))
+    , Show (Range  (Bound c))
+    ) => ToXML (AdditivePostorderDecoration c) where
+
+    toXML decoration = xmlElement "Additive postorder decoration" attributes contents
+        where
+            attributes = []
+            contents   = [ ("Cost"                 , show $ decoration ^. characterCost             )
+                         , ("Is leaf"              , show $ decoration ^. isLeaf                    )
+                         , ("Discrete Character"   , showDiscreteCharacterElement        decoration )
+                         , ("Preliminary Interval" , show $ additivePreliminaryInterval  decoration )
+                         , ("Child Intervals:"     , show $ additiveChildPrelimIntervals decoration )
+                         ]
+
+
+-- | (✔)
+instance
+    ( EncodableStreamElement c
+    -- , Show (Bound c)
+    , Show (Finite (Bound c))
+    , Show (Range  (Bound c))
+    ) => ToXML (AdditiveOptimizationDecoration c) where
+
+    toXML decoration = xmlElement "Additive operation decoration" attributes contents
+        where
+            attributes = []
+            contents   = [ ("Final interval"       , show      $ decoration ^. finalInterval)
+                         , ("Decoration"           , ppElement $ toXML decoration           )
+                         ]

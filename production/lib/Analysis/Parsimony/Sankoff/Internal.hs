@@ -105,7 +105,7 @@ sankoffPreOrder childDecoration ((whichChild, parentDecoration):_) = resultDecor
 -- \[ cost(i_c) =
 --       \] \(i \elem s_x\), etc...
 initializeCostVector :: DiscreteCharacterDecoration d c => d -> SankoffOptimizationDecoration c
-initializeCostVector inputDecoration = returnChar
+initializeCostVector inputDecoration = trace (ppTopElement $ toXML returnChar) $ returnChar
     where
         -- assuming metricity
         inputChar = inputDecoration ^. discreteCharacter
@@ -144,7 +144,7 @@ updateCostVector :: DiscreteCharacterDecoration d c
                  -> NonEmpty (SankoffOptimizationDecoration c)
                  -> SankoffOptimizationDecoration c
 updateCostVector _parentDecoration (x:|[])                         = x                    -- Shouldn't be possible, but here for completion.
-updateCostVector _parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDecoration -- May? be able to amend this to use non-binary children.
+updateCostVector _parentDecoration (leftChildDec:|rightChildDec:_) = trace (ppTopElement $ toXML returnNodeDecoration) $ returnNodeDecoration -- May? be able to amend this to use non-binary children.
     where
         (cs, ds, minTransCost) = foldr findMins initialAccumulator range   -- sorry abut these shitty variable names. It was to shorten
                                                                            -- the extendDiscreteToSankoff call.

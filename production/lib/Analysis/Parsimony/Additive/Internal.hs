@@ -30,8 +30,10 @@ import Control.Lens
 import Data.List.NonEmpty (NonEmpty( (:|) ))
 import Data.Range
 import Numeric.Extended
+import Text.XML.Custom
+import Text.XML.Light
 
--- import Debug.Trace
+import Debug.Trace
 
 {-
   TODO: Add these trees to the new test-suite
@@ -70,7 +72,7 @@ import Numeric.Extended
     C: 5
     D: 3
     E: 4
-    F: 2 
+    F: 2
 
       R
      / \
@@ -108,11 +110,13 @@ import Numeric.Extended
 -- Applies appropriate logic to internal node and leaf node cases.
 additivePostOrder :: ( DiscreteCharacterMetadata d
                      , RangedCharacterDecoration d  c
+                     , ToXML                     d
+                     , ToXML                     d'
                      , DiscreteCharacterMetadata d'
                      , RangedExtensionPostorder  d' c
                      )
                   => d -> [d'] -> d'
-additivePostOrder parentDecoration xs =
+additivePostOrder parentDecoration xs = trace (ppTopElement $ toXML parentDecoration) $
     case xs of
         []   -> initializeLeaf  parentDecoration -- a leaf
         y:ys -> updatePostOrder parentDecoration $ y:|ys
@@ -125,16 +129,18 @@ additivePostOrder parentDecoration xs =
 -- Used on the postorder pass.
 initializeLeaf :: ( DiscreteCharacterMetadata d
                   , RangedCharacterDecoration d  c
+                  , ToXML                     d'
 --                  , RangedCharacterDecoration d' c
                   , RangedExtensionPostorder  d' c
                   )
                => d
                -> d'
-initializeLeaf curDecoration =
-    extendRangedToPostorder curDecoration 0 (toRange label) (unitRange, unitRange) True
-  where
-    label     = curDecoration ^. intervalCharacter
-    unitRange = zeroRange label
+initializeLeaf curDecoration = trace (ppTopElement $ toXML finalDecoration) $
+    finalDecoration
+        where
+            finalDecoration = extendRangedToPostorder curDecoration 0 (toRange label) (unitRange, unitRange) True
+            label     = curDecoration ^. intervalCharacter
+            unitRange = zeroRange label
 
 
 -- |
@@ -147,23 +153,25 @@ initializeLeaf curDecoration =
 -- Used on the postorder pass.
 updatePostOrder :: (-- DiscreteCharacterMetadata d
                      RangedCharacterDecoration d c
+                   , ToXML                     d'
                    , DiscreteCharacterMetadata d'
                    , RangedExtensionPostorder  d' c
                    )
                 => d -> NonEmpty d' -> d'
 updatePostOrder _parentDecoration (x:|[])                     = x
-updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) =
-    extendRangedToPostorder leftChild totalCost newInterval childIntervals False
-  where
-    isOverlapping                = lhs `intersects` rhs
-    newInterval                  = if isOverlapping
-                                   then lhs `intersection`   rhs
-                                   else lhs `smallestClosed` rhs
-    childIntervals@(lhs, rhs)    = (leftChild ^. preliminaryInterval, rightChild ^. preliminaryInterval)
-    totalCost                    = thisNodeCost + (leftChild ^. characterCost) + (rightChild ^. characterCost)
-    thisNodeCost                 = if isOverlapping
-                                   then 0
-                                   else unsafeToFinite $ upperBound newInterval - lowerBound newInterval
+updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) = trace (ppTopElement $ toXML finalDecoration) $
+    finalDecoration
+        where
+            finalDecoration = extendRangedToPostorder leftChild totalCost newInterval childIntervals False
+            isOverlapping                = lhs `intersects` rhs
+            newInterval                  = if isOverlapping
+                                           then lhs `intersection`   rhs
+                                           else lhs `smallestClosed` rhs
+            childIntervals@(lhs, rhs)    = (leftChild ^. preliminaryInterval, rightChild ^. preliminaryInterval)
+            totalCost                    = thisNodeCost + (leftChild ^. characterCost) + (rightChild ^. characterCost)
+            thisNodeCost                 = if isOverlapping
+                                     then 0
+                                     else unsafeToFinite $ upperBound newInterval - lowerBound newInterval
 
 
 -- |
@@ -175,12 +183,15 @@ additivePreOrder  :: (-- Ranged c
 --                       Ord (Bound c)
                        DiscreteCharacterMetadata d
                      , RangedExtensionPostorder  d  c
+                     , ToXML                     d'
 --                     , RangedExtensionPostorder  d' c
                      , RangedExtensionPreorder   d' c
 --                     , RangedCharacterDecoration d' c
                      )
                   => d -> [(Word, d')] -> d'
-additivePreOrder childDecoration [] = extendRangedToPreorder childDecoration $ childDecoration ^. preliminaryInterval
+additivePreOrder childDecoration [] = trace (ppTopElement $ toXML finalDecoration) $ finalDecoration
+    where
+    finalDecoration = extendRangedToPreorder childDecoration $ childDecoration ^. preliminaryInterval
 additivePreOrder childDecoration ((_, parentDecoration):_)
     | childDecoration ^. isLeaf = finalizeLeaf childDecoration
     | otherwise                 = extendRangedToPreorder childDecoration $ determineFinalState childDecoration parentDecoration
@@ -189,14 +200,16 @@ additivePreOrder childDecoration ((_, parentDecoration):_)
 -- |
 -- Finalize a leaf node on a pre-order traversal.
 -- Set the preliminary interval as the final interval of the leaf decoration.
-finalizeLeaf :: ( RangedExtensionPreorder   d' c
+finalizeLeaf :: ( ToXML                     d'
+                , RangedExtensionPreorder   d' c
                 , DiscreteCharacterMetadata d
                 , RangedPostorderDecoration d  c
                 )
              => d -> d'
-finalizeLeaf decoration =
-    extendRangedToPreorder decoration (decoration ^. preliminaryInterval)
-                & intervalCharacter .~ decoration ^. intervalCharacter -- Un-overwrite the character data
+finalizeLeaf decoration = trace (ppTopElement $ toXML finalDecoration) $ finalDecoration
+    where
+        finalDecoration = extendRangedToPreorder decoration (decoration ^. preliminaryInterval)
+                                      & intervalCharacter .~ decoration ^. intervalCharacter -- Un-overwrite the character data
 
 
 -- |
@@ -238,4 +251,4 @@ determineFinalState childDecoration parentDecoration = resultRange
             else chi `largestClosed` (preliminary `closestStateTo` chi)
 
         -- Additive rule 3
-        | otherwise = threeWayRange ancestor preliminary leftUnionRight 
+        | otherwise = threeWayRange ancestor preliminary leftUnionRight

@@ -34,8 +34,10 @@ import           Data.Monoid
 import           Data.MonoTraversable
 import           Data.Word
 import           Prelude     hiding (lookup, zip, zipWith)
+import           Text.XML.Custom
+import           Text.XML.Light
 
--- import Debug.Trace
+import Debug.Trace
 
 
 -- |
@@ -59,7 +61,7 @@ type PairwiseAlignment s = s -> s -> (Word, s, s, s, s)
 -- Parameterized over a 'PairwiseAlignment' function to allow for different
 -- atomic alignments depending on the character's metadata.
 directOptimizationPostOrder
-  :: SimpleDynamicDecoration d c
+  :: (SimpleDynamicDecoration d c, Show c, ToXML c)
   => PairwiseAlignment c
   -> d
   -> [DynamicDecorationDirectOptimizationPostOrderResult c]
@@ -92,14 +94,14 @@ initializeLeaf =
 -- Use the decoration(s) of the descendant nodes to calculate the currect node
 -- decoration. The recursive logic of the post-order traversal.
 updateFromLeaves
-  :: EncodableDynamicCharacter c
+  :: (EncodableDynamicCharacter c, ToXML c, Show c)
   => PairwiseAlignment c
   -> NonEmpty (DynamicDecorationDirectOptimizationPostOrderResult c)
   -> DynamicDecorationDirectOptimizationPostOrderResult c
 updateFromLeaves _ (x:|[]) = x -- This shouldn't happen
-updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) =
-    extendDynamicToPostOrder leftChild localCost totalCost ungapped gapped lhsAlignment rhsAlignment
+updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) = trace (ppTopElement $ toXML resultDecoration) $ resultDecoration
   where
+    resultDecoration = extendDynamicToPostOrder leftChild localCost totalCost ungapped gapped lhsAlignment rhsAlignment
     (localCost, ungapped, gapped, lhsAlignment, rhsAlignment) = pairwiseAlignment (leftChild ^. preliminaryUngapped) (rightChild ^. preliminaryUngapped)
     totalCost = localCost + leftChild ^. characterCost + rightChild ^. characterCost
 
@@ -110,7 +112,7 @@ updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) =
 -- Parameterized over a 'PairwiseAlignment' function to allow for different
 -- atomic alignments depending on the character's metadata.
 directOptimizationPreOrder
-  :: (DirectOptimizationPostOrderDecoration d c {-, Show c , Show (Element c)-})
+  :: (DirectOptimizationPostOrderDecoration d c, ToXML d {-, Show c , Show (Element c)-})
   => PairwiseAlignment c
   -> d
   -> [(Word, DynamicDecorationDirectOptimization c)]
@@ -140,13 +142,12 @@ initializeRoot =
 -- Use the decoration(s) of the ancestoral nodes to calculate the currect node
 -- decoration. The recursive logic of the pre-order traversal.
 updateFromParent
-  :: (EncodableDynamicCharacter c, DirectOptimizationPostOrderDecoration d c {- , Show c, Show (Element c)-})
+  :: (EncodableDynamicCharacter c, DirectOptimizationPostOrderDecoration d c, ToXML d {- , Show c, Show (Element c)-})
   => PairwiseAlignment c
   -> d
   -> DynamicDecorationDirectOptimization c
   -> DynamicDecorationDirectOptimization c
-updateFromParent pairwiseAlignment currentDecoration parentDecoration =
-    extendPostOrderToDirectOptimization currentDecoration ungapped gapped
+updateFromParent pairwiseAlignment currentDecoration parentDecoration = trace (ppTopElement $ toXML currentDecoration) $ resultDecoration
   where
     -- If the current node has a missing character value representing it's
     -- preliminary median assignment, then we take the parent's final assingment
@@ -159,11 +160,12 @@ updateFromParent pairwiseAlignment currentDecoration parentDecoration =
     -- Lastly a three-way mean between the locally aligned parent assignment and
     -- the expanded left and right child alignments is used to calculate the
     -- final assignment of the current node.
+    resultDecoration = extendPostOrderToDirectOptimization currentDecoration ungapped gapped
     (ungapped, gapped)
       | isMissing $ currentDecoration ^. preliminaryGapped = (pUngapped, pGapped)
       | otherwise =  tripleComparison pairwiseAlignment currentDecoration pUngapped
-    pUngapped = parentDecoration ^. finalUngapped
-    pGapped   = parentDecoration ^. finalGapped
+    pUngapped        = parentDecoration ^. finalUngapped
+    pGapped          = parentDecoration ^. finalGapped
 
 
 -- |
