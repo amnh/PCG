@@ -455,6 +455,6 @@ instance
     toXML decoration = xmlElement "Additive operation decoration" attributes contents
         where
             attributes = []
-            contents   = [ ("Final interval"       , show      $ decoration ^. finalInterval)
-                         , ("Decoration"           , ppElement $ toXML decoration           )
+            contents   = [ ("Final interval" , Left  . show $ decoration ^. finalInterval)
+                         , ("Decoration"     , Right . toXML decoration                  )
                          ]
