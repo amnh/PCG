@@ -23,18 +23,21 @@ module PCG.Syntax.Types
 
 
 import           Control.Applicative
-import           Control.Alternative.Free   hiding (Pure)
+import           Control.Applicative.Free   hiding (Pure,Ap)
+import qualified Control.Applicative.Free   as Ap
+import           Control.Alternative.Free   hiding (Pure,Ap)
+import qualified Control.Alternative.Free   as A
 import           Control.Monad
---import           Control.Monad.Free                (Free)
+import qualified Control.Monad.Free         as F
 --import           Control.Monad.FreeAlt
 import           Control.Monad.Trans
-import           Control.Monad.Trans.Free
+import           Control.Monad.Trans.Free   hiding (Free())
 import           Data.CaseInsensitive              (FoldCase)
 import           Data.Functor                      (void)
 import qualified Data.Functor.Alt           as Alt
 --import           Data.List                         (intercalate)
 import           Data.List.NonEmpty                (NonEmpty(..))
---import qualified Data.List.NonEmpty         as NE
+import qualified Data.List.NonEmpty         as NE
 import           Data.Maybe                        (fromMaybe)
 import           Data.Proxy
 import           Data.Semigroup             hiding (option)
@@ -46,7 +49,7 @@ import           Text.Megaparsec
 import           Text.Megaparsec.Char
 import           Text.Megaparsec.Perm
 
---import Debug.Trace
+import Debug.Trace
 
 
 data  ArgumentValue p a
@@ -155,13 +158,13 @@ comma = whitespace *> seperator *> whitespace
     seperator = char ',' <?> "',' seperating arguments"
 
 
-{-
+{--}
 -- |
 -- Intercalates a monadic effect between actions.
-iterM' :: (Monad m, Functor f) => m () -> (f (m a) -> m a) -> Free f a -> m a
-iterM' _   _   (Pure x) = pure x
-iterM' eff phi (Free f) = phi (iterM ((eff *>) . phi) <$> f)
--}
+iterM' :: (Monad m, Functor f) => m () -> (f (m a) -> m a) -> F.Free f a -> m a
+iterM' _   _   (F.Pure x) = pure x
+iterM' eff phi (F.Free f) = phi (F.iterM ((eff *>) . phi) <$> f)
+{--}
 
 
 -- |
@@ -222,6 +225,77 @@ data  Primative
     | TimeSpan  DiffTime
     deriving (Show)
 {--}
+
+
+data ArgList z
+    = Exact (       Ap.Ap ZArgument  z)
+    | SomeZ (Alt   (Ap.Ap ZArgument) z)
+    | ManyZ (Alt   (Ap.Ap ZArgument) z)
+    deriving (Functor)
+
+
+data  ZArgument z
+    = ZPrimativeArg   (F.Free PrimativeValue z)
+--    | ListIdArg      ListIdentifier
+    | ZListIdNamedArg ListIdentifier (Ap.Ap ZArgument z)
+--    | CommandArg     SyntacticCommand
+    | ZArgumentList   (ArgList z)
+    deriving (Functor)
+
+
+prim :: F.Free PrimativeValue a -> Ap.Ap ZArgument a
+prim = liftAp . ZPrimativeArg
+
+
+listId2 :: String -> Ap.Ap ZArgument a -> Ap.Ap ZArgument a
+listId2 str x = liftAp $ ZListIdNamedArg (ListId str) x
+
+
+--some2 :: Alt ZArgument a -> Alt ZArgument [a]
+--some2 =  some . liftAp . ZSome
+
+
+someOf2 :: Ap.Ap ZArgument z -> Ap.Ap ZArgument [z]
+someOf2 = liftAp . ZArgumentList . SomeZ . some. liftAlt 
+
+
+argList2 :: Ap.Ap ZArgument a -> Ap.Ap ZArgument a
+argList2 = liftAp . ZArgumentList . Exact
+
+
+runExpr :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => Ap.Ap ZArgument a -> m a
+runExpr = runAp' comma apRunner
+
+
+apRunner :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => ZArgument a -> m a
+apRunner (ZPrimativeArg  p) = F.iterM parsePrimative p <* whitespace
+--apRunner (ZSome          p) = runAlt (try . apRunner) p
+apRunner (ZArgumentList  p) = parseArgumentList p
+apRunner (ZListIdNamedArg (ListId x) y) = do
+      _ <- string'' x <?> ("identifier '" <> x <> "'")
+      _ <- whitespace <* char ':' <* whitespace
+      runAp apRunner y
+
+
+parseArgumentList :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => ArgList a -> m a
+parseArgumentList argList = begin *> datum <* close
+  where
+    bookend p = void $ whitespace *> p <* whitespace
+    begin = bookend . label "'(' starting a new argument list" $ char '('
+    close = bookend . label "')' ending the argument list"     $ char ')'
+    datum =
+      case argList of
+        Exact e -> runExpr e -- (       Ap.Ap ZArgument  z)
+        SomeZ s -> runAlt runExpr s -- (Alt   (Ap.Ap ZArgument) z)
+        ManyZ m -> undefined -- (Alt   (Ap.Ap ZArgument) z) 
+
+
+-- | Given a natural transformation from @f@ to @g@, this gives a canonical monoidal natural transformation from @'Alt' f@ to @g@.
+runAp' :: forall f g a. Applicative g => g () -> (forall x. f x -> g x) -> Ap.Ap f a -> g a
+runAp' eff phi val =
+    case val of
+      Ap.Pure x -> trace "pure" $ pure x
+      Ap.Ap {}  -> trace "Appp" $ runAp ((eff *>) . phi) val
 
 
 type SyntaxParser f p a = FreeT f p a
