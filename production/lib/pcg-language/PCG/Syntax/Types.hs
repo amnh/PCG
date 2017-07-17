@@ -33,7 +33,7 @@ import qualified Control.Monad.Free         as F
 import           Control.Monad.Trans
 import           Control.Monad.Trans.Free   hiding (Free())
 import           Data.CaseInsensitive              (FoldCase)
-import           Data.Functor                      (void)
+import           Data.Functor                      (($>), void)
 import qualified Data.Functor.Alt           as Alt
 --import           Data.List                         (intercalate)
 import           Data.List.NonEmpty                (NonEmpty(..))
@@ -236,6 +236,7 @@ data ArgList z
 
 data  ZArgument z
     = ZPrimativeArg   (F.Free PrimativeValue z)
+    | ZDefaultValue   (Ap.Ap ZArgument z) z
 --    | ListIdArg      ListIdentifier
     | ZListIdNamedArg ListIdentifier (Ap.Ap ZArgument z)
 --    | CommandArg     SyntacticCommand
@@ -247,16 +248,20 @@ prim :: F.Free PrimativeValue a -> Ap.Ap ZArgument a
 prim = liftAp . ZPrimativeArg
 
 
+withDefault2 :: Ap.Ap ZArgument a -> a -> Ap.Ap ZArgument a
+withDefault2 arg def = liftAp $ ZDefaultValue arg def
+
+
 listId2 :: String -> Ap.Ap ZArgument a -> Ap.Ap ZArgument a
 listId2 str x = liftAp $ ZListIdNamedArg (ListId str) x
 
 
---some2 :: Alt ZArgument a -> Alt ZArgument [a]
---some2 =  some . liftAp . ZSome
-
-
 someOf2 :: Ap.Ap ZArgument z -> Ap.Ap ZArgument [z]
-someOf2 = liftAp . ZArgumentList . SomeZ . some. liftAlt 
+someOf2 = liftAp . ZArgumentList . SomeZ . some . liftAlt
+
+
+manyOf2 :: Ap.Ap ZArgument z -> Ap.Ap ZArgument [z]
+manyOf2 = liftAp . ZArgumentList . ManyZ . many . liftAlt
 
 
 argList2 :: Ap.Ap ZArgument a -> Ap.Ap ZArgument a
@@ -267,18 +272,22 @@ runExpr :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => Ap.Ap ZAr
 runExpr = runAp' comma apRunner
 
 
-apRunner :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => ZArgument a -> m a
-apRunner (ZPrimativeArg  p) = F.iterM parsePrimative p <* whitespace
---apRunner (ZSome          p) = runAlt (try . apRunner) p
-apRunner (ZArgumentList  p) = parseArgumentList p
-apRunner (ZListIdNamedArg (ListId x) y) = do
-      _ <- string'' x <?> ("identifier '" <> x <> "'")
-      _ <- whitespace <* char ':' <* whitespace
-      runAp apRunner y
+apRunner :: forall a e m s. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m () -> ZArgument a -> m a
+apRunner effect (ZPrimativeArg p  ) = trace "Prim" $ effect *> F.iterM parsePrimative p
+apRunner effect (ZArgumentList p  ) = trace "ArgList" $ effect *> parseArgumentList p
+apRunner effect (ZDefaultValue p v) = do
+    r <- runAlt (runAp (\x -> try (effect *> apRunner voidEffect x))) . optional $ liftAlt p
+    case r of
+      Just x  -> pure x
+      Nothing -> pure v
+apRunner effect (ZListIdNamedArg (ListId x) y) = trace "listId" $ do
+    _ <- string'' x <?> ("identifier '" <> x <> "'")
+    _ <- whitespace <* char ':' <* whitespace
+    runAp (apRunner effect) y
 
 
 parseArgumentList :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => ArgList a -> m a
-parseArgumentList argList = begin *> datum <* close
+parseArgumentList argList = trace "parseArgList" $ begin *> datum <* close
   where
     bookend p = void $ whitespace *> p <* whitespace
     begin = bookend . label "'(' starting a new argument list" $ char '('
@@ -286,16 +295,46 @@ parseArgumentList argList = begin *> datum <* close
     datum =
       case argList of
         Exact e -> runExpr e -- (       Ap.Ap ZArgument  z)
-        SomeZ s -> runAlt runExpr s -- (Alt   (Ap.Ap ZArgument) z)
-        ManyZ m -> undefined -- (Alt   (Ap.Ap ZArgument) z) 
+        SomeZ s -> runAlt' comma (runAp (apRunner voidEffect)) s
+        ManyZ m -> runAlt' comma (runAp (apRunner voidEffect)) m
 
 
--- | Given a natural transformation from @f@ to @g@, this gives a canonical monoidal natural transformation from @'Alt' f@ to @g@.
-runAp' :: forall f g a. Applicative g => g () -> (forall x. f x -> g x) -> Ap.Ap f a -> g a
+voidEffect :: Applicative f => f ()
+voidEffect = pure ()
+
+
+-- |
+-- 
+runAp' :: forall f g a. Applicative g => g () -> (forall x. g () -> f x -> g x) -> Ap.Ap f a -> g a
 runAp' eff phi val =
     case val of
-      Ap.Pure x -> trace "pure" $ pure x
-      Ap.Ap {}  -> trace "Appp" $ runAp ((eff *>) . phi) val
+      Ap.Pure x -> trace "pure1" $ pure x
+      Ap.Ap f x -> trace "Appp1" $ flip id <$> (phi voidEffect) f <*> runAp'' eff phi x
+
+
+runAp'' :: forall f g a. Applicative g => g () -> (forall x. g () -> f x -> g x) -> Ap.Ap f a -> g a
+runAp'' eff phi val =
+    case val of
+      Ap.Pure x -> trace "pure*" $ pure x
+      Ap.Ap {}  -> trace "Appp*" $ runAp (phi eff) val
+
+
+runAlt' :: forall f g a. Alternative g => g () -> (forall x. f x -> g x) -> Alt f a -> g a
+runAlt' eff phi xs0 = go xs0
+  where
+    go   :: Alt f b -> g b
+    go   (A.Alt xs) = trace "go1" $ foldr (\r a -> (flo r) <|> a) empty xs
+
+    flo  :: AltF f b -> g b
+    flo  (A.Pure a) = trace "pure flo1" $ pure a
+    flo  (A.Ap x f) = trace "Appp flo1" $ flip id <$> phi x <*> go' f
+
+    go'  :: Alt f b -> g b
+    go'  (A.Alt xs) = trace "go*" $ foldr (\r a -> flo' r <|> a) empty xs
+
+    flo' :: AltF f b -> g b
+    flo' (A.Pure a) = trace "pure flo*" $ pure a
+    flo' (A.Ap x f) = trace "Appp flo*" $ flip id <$> ((eff *>) . phi) x <*> go' f
 
 
 type SyntaxParser f p a = FreeT f p a
