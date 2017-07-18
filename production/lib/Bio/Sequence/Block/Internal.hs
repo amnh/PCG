@@ -23,6 +23,7 @@ import Data.Vector            (Vector)
 import Data.Vector.Instances  ()
 import Prelude         hiding (zipWith)
 import Text.XML.Custom
+-- import Text.XML.Light.Types
 
 
 -- |
@@ -85,7 +86,6 @@ instance ( Show u
 instance ( ToXML u
          , ToXML v
          , ToXML w
-         , ToXML x
          , ToXML y
          , ToXML z
          ) => ToXML (CharacterBlock u v w x y z) where
@@ -95,15 +95,23 @@ instance ( ToXML u
             attributes = []
             -- [(String,           Either String Text.XML.Light.Types.Element   )]
             -- [(String, [(String, Either String Text.XML.Light.Types.Element)] )]
-            contents   = createXMLContent <$> [ ("Fitch Characters"     , toList (makeContentTuple <$> nonAdditiveCharacterBins block) )
-                                              , ("Additive Characters"  , toList (makeContentTuple <$> additiveCharacterBins    block) )
-                                              , ("NonMetric Characters" , toList (makeContentTuple <$> nonMetricCharacterBins   block) )
-                                              , ("Continuous Characters", toList (makeContentTuple <$> continuousCharacterBins  block) )
-                                              , ("Metric Characters"    , toList (makeContentTuple <$> nonMetricCharacterBins   block) )
-                                              , ("Dynamic Characters"   , toList (makeContentTuple <$> dynamicCharacters        block) )
-                                              ]
-            makeContentTuple :: Vector a
-            makeContentTuple bin = ("Char", Right toXML bin)
+            contents   = [ ("Fitch Characters"     , Right $ collapseElemList "Char" [] (toList (nonAdditiveCharacterBins block)) )
+                         , ("Additive Characters"  , Right $ collapseElemList "Char" [] (toList (additiveCharacterBins    block)) )
+                         , ("NonMetric Characters" , Right $ collapseElemList "Char" [] (toList (nonMetricCharacterBins   block)) )
+                         , ("Continuous Characters", Right $ collapseElemList "Char" [] (toList (continuousCharacterBins  block)) )
+                         , ("Metric Characters"    , Right $ collapseElemList "Char" [] (toList (nonMetricCharacterBins   block)) )
+                         , ("Dynamic Characters"   , Right $ collapseElemList "Char" [] (toList (dynamicCharacters        block)) )
+                         ]
+            --
+            -- contents   = [ (buildContentsFromVecToXML "Fitch Characters"      "Char" [] (nonAdditiveCharacterBins block) )
+            --              , (buildContentsFromVecToXML "Additive Characters"   "Char" [] (additiveCharacterBins    block) )
+            --              , (buildContentsFromVecToXML "NonMetric Characters"  "Char" [] (nonMetricCharacterBins   block) )
+            --              , (buildContentsFromVecToXML "Continuous Characters" "Char" [] (continuousCharacterBins  block) )
+            --              , (buildContentsFromVecToXML "Metric Characters"     "Char" [] (nonMetricCharacterBins   block) )
+            --              , (buildContentsFromVecToXML "Dynamic Characters"    "Char" [] (dynamicCharacters        block) )
+            --              ]
+            -- makeContentTuple :: a -> (String, Either String Element)
+            -- makeContentTuple bin = ("Char", bin, [], )
 
-            -- createXMLContent :: [(String, Either String Text.XML.Light.Types.Element)] -> [Content]
-            createXMLContent lst = parseTuple <$> lst
+            -- -- createXMLContent :: [(String, Either String Text.XML.Light.Types.Element)] -> [Content]
+            -- createXMLContent bin = xmlVecToElementList "Char" [] bin
