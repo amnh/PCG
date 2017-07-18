@@ -237,6 +237,7 @@ data ArgList z
 data  ZArgument z
     = ZPrimativeArg   (F.Free PrimativeValue z)
     | ZDefaultValue   (Ap.Ap ZArgument z) z
+    | ZExactlyOneOf   (NonEmpty (Ap.Ap ZArgument z))
 --    | ListIdArg      ListIdentifier
     | ZListIdNamedArg ListIdentifier (Ap.Ap ZArgument z)
 --    | CommandArg     SyntacticCommand
@@ -250,6 +251,11 @@ prim = liftAp . ZPrimativeArg
 
 withDefault2 :: Ap.Ap ZArgument a -> a -> Ap.Ap ZArgument a
 withDefault2 arg def = liftAp $ ZDefaultValue arg def
+
+
+chooseOneFrom :: [Ap.Ap ZArgument a] -> Ap.Ap ZArgument a
+chooseOneFrom    []  = error "You cannot construct an empty set of choices!"
+chooseOneFrom (x:xs) = liftAp . ZExactlyOneOf $ x:|xs
 
 
 listId2 :: String -> Ap.Ap ZArgument a -> Ap.Ap ZArgument a
@@ -274,6 +280,7 @@ runExpr = runAp' comma apRunner
 
 apRunner :: forall a e m s. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m () -> ZArgument a -> m a
 apRunner effect (ZPrimativeArg p  ) = trace "Prim" $ effect *> F.iterM parsePrimative p
+apRunner effect (ZExactlyOneOf  xs) = effect *> choice (runAp (apRunner voidEffect) <$> xs)
 apRunner effect (ZArgumentList p  ) = trace "ArgList" $ effect *> parseArgumentList p
 apRunner effect (ZDefaultValue p v) = do
     r <- runAlt (runAp (\x -> try (effect *> apRunner voidEffect x))) . optional $ liftAlt p
