@@ -19,9 +19,10 @@ module Bio.Sequence.Block.Internal
 
 import Data.Foldable
 import Data.Semigroup
-import Data.Vector           (Vector)
-import Data.Vector.Instances ()
-import Prelude        hiding (zipWith)
+import Data.Vector            (Vector)
+import Data.Vector.Instances  ()
+import Prelude         hiding (zipWith)
+import Text.XML.Custom
 
 
 -- |
@@ -80,3 +81,29 @@ instance ( Show u
         niceRendering :: (Foldable t, Show a) => t a -> String
         niceRendering = unlines . fmap (unlines . fmap ("  " <>) . lines . show) . toList
 
+
+instance ( ToXML u
+         , ToXML v
+         , ToXML w
+         , ToXML x
+         , ToXML y
+         , ToXML z
+         ) => ToXML (CharacterBlock u v w x y z) where
+
+    toXML block = xmlElement "Character block" attributes contents
+        where
+            attributes = []
+            -- [(String,           Either String Text.XML.Light.Types.Element   )]
+            -- [(String, [(String, Either String Text.XML.Light.Types.Element)] )]
+            contents   = createXMLContent <$> [ ("Fitch Characters"     , toList (makeContentTuple <$> nonAdditiveCharacterBins block) )
+                                              , ("Additive Characters"  , toList (makeContentTuple <$> additiveCharacterBins    block) )
+                                              , ("NonMetric Characters" , toList (makeContentTuple <$> nonMetricCharacterBins   block) )
+                                              , ("Continuous Characters", toList (makeContentTuple <$> continuousCharacterBins  block) )
+                                              , ("Metric Characters"    , toList (makeContentTuple <$> nonMetricCharacterBins   block) )
+                                              , ("Dynamic Characters"   , toList (makeContentTuple <$> dynamicCharacters        block) )
+                                              ]
+            makeContentTuple :: Vector a
+            makeContentTuple bin = ("Char", Right toXML bin)
+
+            -- createXMLContent :: [(String, Either String Text.XML.Light.Types.Element)] -> [Content]
+            createXMLContent lst = parseTuple <$> lst

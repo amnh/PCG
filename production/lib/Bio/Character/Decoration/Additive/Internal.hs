@@ -31,7 +31,6 @@ import Data.Range
 import Data.Semigroup
 import Numeric.Extended
 import Text.XML.Custom
-import Text.XML.Light
 
 
 -- |
@@ -436,11 +435,11 @@ instance
     toXML decoration = xmlElement "Additive postorder decoration" attributes contents
         where
             attributes = []
-            contents   = [ ("Cost"                 , show $ decoration ^. characterCost             )
-                         , ("Is leaf"              , show $ decoration ^. isLeaf                    )
-                         , ("Discrete Character"   , showDiscreteCharacterElement        decoration )
-                         , ("Preliminary Interval" , show $ additivePreliminaryInterval  decoration )
-                         , ("Child Intervals:"     , show $ additiveChildPrelimIntervals decoration )
+            contents   = [ ("Cost"                 , Left . show $ decoration ^. characterCost             )
+                         , ("Is leaf"              , Left . show $ decoration ^. isLeaf                    )
+                         , ("Discrete Character"   , Left $ showDiscreteCharacterElement        decoration )
+                         , ("Preliminary Interval" , Left . show $ additivePreliminaryInterval  decoration )
+                         , ("Child Intervals:"     , Left . show $ additiveChildPrelimIntervals decoration )
                          ]
 
 
@@ -455,6 +454,10 @@ instance
     toXML decoration = xmlElement "Additive operation decoration" attributes contents
         where
             attributes = []
-            contents   = [ ("Final interval" , Left  . show $ decoration ^. finalInterval)
-                         , ("Decoration"     , Right . toXML decoration                  )
+            contents   = [ ("Final interval"       , Left . show $ decoration ^. finalInterval       )
+                         , ("Cost"                 , Left . show $ decoration ^. characterCost       )
+                         , ("Is leaf"              , Left . show $ decoration ^. isLeaf              )
+                         , ("Discrete Character"   , Left $ showDiscreteCharacterElement decoration  )
+                         , ("Preliminary Interval" , Left . show $ decoration ^. preliminaryInterval )
+                         , ("Child Intervals:"     , Left . show $ decoration ^. childPrelimIntervals)
                          ]

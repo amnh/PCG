@@ -65,11 +65,11 @@ instance HasCharacterWeight GeneralCharacterMetadataDec Double where
 
 instance ToXML GeneralCharacterMetadataDec where
 
-    toXML metadata = xmlElement "Metadata" attributes content
+    toXML metadata = xmlElement "Metadata" attributes contents
         where
             attributes = []
-            content    = [ ("Name"  , show $ metadata ^. characterName  )
-                         , ("Weight", show $ metadata ^. characterWeight)
+            contents   = [ ("Name"  , Left . show $ metadata ^. characterName  )
+                         , ("Weight", Left . show $ metadata ^. characterWeight)
                          ]
 
 -- |

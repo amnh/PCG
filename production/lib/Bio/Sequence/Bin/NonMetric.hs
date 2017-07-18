@@ -18,7 +18,7 @@ module Bio.Sequence.Bin.NonMetric
 
 
 import Bio.Character.Static
-import Bio.Sequence.SharedContinugousMetatdata
+import Bio.Sequence.SharedContiguousMetadata
 import Data.Monoid          (mappend)
 import Data.Semigroup
 import Data.TCM
@@ -42,7 +42,7 @@ instance EncodedAmbiguityGroupContainer (NonMetricBin s) where
 
     {-# INLINE symbolCount #-}
     symbolCount = size . tcmDefinition
-      
+
 
 instance Semigroup s => Semigroup (NonMetricBin s) where
 

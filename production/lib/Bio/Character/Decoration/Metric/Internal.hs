@@ -318,7 +318,7 @@ instance ToXML (SankoffOptimizationDecoration c) where
     toXML metricDecoration = xmlElement "SankoffOptimizationDecoration" attributes contents
         where
             attributes = []
-            contents   = [ ("Min cost vector", show $ metricDecoration ^. characterCost      )
-                         , ("Min cost"       , show $ metricDecoration ^. characterCostVector)
-                         , ("Is leaf"        , show $ metricDecoration ^. isLeaf             )
+            contents   = [ ("Min cost vector", Left . show $ metricDecoration ^. characterCost      )
+                         , ("Min cost"       , Left . show $ metricDecoration ^. characterCostVector)
+                         , ("Is leaf"        , Left . show $ metricDecoration ^. isLeaf             )
                          ]

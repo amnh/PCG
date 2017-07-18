@@ -445,9 +445,9 @@ instance (Show c) => ToXML (ContinuousDecorationInitial c) where
     toXML (ContinuousDecorationInitial val metadata) = xmlElement "ContinuousDecorationInitial" attributes contents
         where
             attributes = []
-            contents   = [ ("Name"                   , show $ metadata ^. characterName  )
-                         , ("Initial character state", show val )
-                         , ("Weight"                 , show $ metadata ^. characterWeight)
+            contents   = [ ("Name"                   , Left . show $ metadata ^. characterName  )
+                         , ("Initial character state", Left $ show val                          )
+                         , ("Weight"                 , Left . show $ metadata ^. characterWeight)
                          ]
             --TODO: use ToXML instance in Bio/Metadat/General/Internal
             --meta = initialDecoration ^. continuousMetadataField
@@ -456,6 +456,7 @@ instance (Show c) => ToXML (ContinuousDecorationInitial c) where
 -- | Create xml instance for preorder decoration, which has a finalized state interval.
 instance
     ( Show c
+    , Show (Bound c)        -- This is NOT redundant. Won't copile without it.
     , Show (Finite (Bound c))
     , Show (Range  (Bound c))
     ) => ToXML (ContinuousOptimizationDecoration c) where
@@ -463,12 +464,12 @@ instance
     toXML optimizationDecoration = xmlElement "ContinuousOptimizationDecoration" attributes contents
         where
             attributes = []
-            contents   = [ ("Cost"                , show (optimizationDecoration ^. characterCost)       )
-                         , ("Is Leaf Node?"       , show (optimizationDecoration ^. isLeaf)              )
-                         , ("Continuous Character", show (optimizationDecoration ^. intervalCharacter)   )
-                         , ("Preliminary Interval", show (optimizationDecoration ^. preliminaryInterval) )
-                         , ("Child Intervals"     , show (optimizationDecoration ^. childPrelimIntervals))
-                         , ("Final Interval"      , show (optimizationDecoration ^. finalInterval        )                            )
+            contents   = [ ("Cost"                , Left . show $ optimizationDecoration ^. characterCost       )
+                         , ("Is Leaf Node?"       , Left . show $ optimizationDecoration ^. isLeaf              )
+                         , ("Continuous Character", Left . show $ optimizationDecoration ^. intervalCharacter   )
+                         , ("Preliminary Interval", Left . show $ optimizationDecoration ^. preliminaryInterval )
+                         , ("Child Intervals"     , Left . show $ optimizationDecoration ^. childPrelimIntervals)
+                         , ("Final Interval"      , Left . show $ optimizationDecoration ^. finalInterval       )
                          ]
 
 
@@ -483,9 +484,10 @@ instance
     toXML postorderDecoration = xmlElement "ContinuousPostorderDecoration" attributes contents
         where
             attributes = []
-            contents   = [ ("Cost"                , show (postorderDecoration ^. characterCost)       )
-                         , ("Is Leaf Node?"       , show (postorderDecoration ^. isLeaf)              )
-                         , ("Continuous Character", show (postorderDecoration ^. intervalCharacter)   )
-                         , ("Preliminary Interval", show (postorderDecoration ^. preliminaryInterval) )
-                         , ("Child Intervals"     , show (postorderDecoration ^. childPrelimIntervals))
+            contents   = [ ("Cost"                , Left . show $ postorderDecoration ^. characterCost       )
+                         , ("Is Leaf Node?"       , Left . show $ postorderDecoration ^. isLeaf              )
+                         , ("Continuous Character", Left . show $ postorderDecoration ^. intervalCharacter   )
+                         , ("Preliminary Interval", Left . show $ postorderDecoration ^. preliminaryInterval )
+                         , ("Child Intervals"     , Left . show $ postorderDecoration ^. childPrelimIntervals)
                          ]
+

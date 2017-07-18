@@ -33,7 +33,7 @@ import           Data.MonoTraversable
 import           Data.String
 import           Test.Custom.NucleotideSequence
 import           Test.QuickCheck
-import           Text.XML.Custom
+--import           Text.XML.Custom
 
 
 -- |
@@ -68,7 +68,6 @@ constructNode lhs rhs = directOptimizationPreOrder pairwiseFunction lhsDec [(0,r
 
 toLeafNode :: ( Show (Element c)
               , Show c
-              , ToXML c
               , Integral (Element c)
               , SimpleDynamicDecoration d c
               )

@@ -167,4 +167,4 @@ discreteMetadataWithTCM name weight alpha scm =
 
 instance ToXML (DiscreteWithTCMCharacterMetadataDec c) where
 
-    toXML _ = xmlElement "Discrete with TCM" [] [("Nothing here", "")]
+    toXML _ = xmlElement "Discrete with TCM" [] [("Nothing here", Left "")]

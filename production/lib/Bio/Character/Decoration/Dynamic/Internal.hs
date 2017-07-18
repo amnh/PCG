@@ -30,7 +30,6 @@ import Data.Hashable
 import Data.MonoTraversable
 import Data.Semigroup
 import Text.XML.Custom
-import Text.XML.Light                          hiding (Element)
 
 
 -- TODO:
@@ -845,13 +844,13 @@ instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostOrderDecoratio
 
 
 -- | (✔)
-instance (Show d, ToXML d) => ToXML (DynamicDecorationDirectOptimizationPostOrderResult d) where
+instance (Show d) => ToXML (DynamicDecorationDirectOptimizationPostOrderResult d) where
 
     toXML decoration = xmlElement "Dynamic DO post order decoration result" attributes contents
         where
             attributes = []
-            contents   = [ ("Character cost", show $ decoration ^. characterCost      )
-                         , ("Local cost"    , show $ decoration ^. characterLocalCost )
-                         , ("Gapped char"   , ppElement . toXML $ decoration ^. preliminaryGapped  )    -- TODO: Call toXML here?
-                         , ("Ungapped char" , show $ decoration ^. preliminaryUngapped)    -- TODO: Call toXML here?
+            contents   = [ ("Character cost", Left . show $ decoration ^. characterCost      )
+                         , ("Local cost"    , Left . show $ decoration ^. characterLocalCost )
+                         , ("Gapped char"   , Left . show $ decoration ^. preliminaryGapped  )    -- TODO: Call toXML here?
+                         , ("Ungapped char" , Left . show $ decoration ^. preliminaryUngapped)    -- TODO: Call toXML here?
                          ]

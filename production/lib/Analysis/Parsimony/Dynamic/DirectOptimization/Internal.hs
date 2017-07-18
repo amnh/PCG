@@ -61,7 +61,7 @@ type PairwiseAlignment s = s -> s -> (Word, s, s, s, s)
 -- Parameterized over a 'PairwiseAlignment' function to allow for different
 -- atomic alignments depending on the character's metadata.
 directOptimizationPostOrder
-  :: (SimpleDynamicDecoration d c, Show c, ToXML c)
+  :: (SimpleDynamicDecoration d c, Show c)
   => PairwiseAlignment c
   -> d
   -> [DynamicDecorationDirectOptimizationPostOrderResult c]
@@ -94,7 +94,7 @@ initializeLeaf =
 -- Use the decoration(s) of the descendant nodes to calculate the currect node
 -- decoration. The recursive logic of the post-order traversal.
 updateFromLeaves
-  :: (EncodableDynamicCharacter c, ToXML c, Show c)
+  :: (EncodableDynamicCharacter c, Show c)
   => PairwiseAlignment c
   -> NonEmpty (DynamicDecorationDirectOptimizationPostOrderResult c)
   -> DynamicDecorationDirectOptimizationPostOrderResult c

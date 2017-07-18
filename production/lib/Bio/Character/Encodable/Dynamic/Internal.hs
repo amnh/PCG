@@ -356,7 +356,7 @@ instance ToXML DynamicChar where
         where
             attributes            = []
             contents              = contentTuple <$> otoList dynamicChar -- toXML on all dynamic character elements
-            contentTuple (DCE bv) = ("Character states", (\x -> if x then '1' else '0') <$> toBits bv) -- the value of this character
+            contentTuple (DCE bv) = ("Character states", Left $ (\x -> if x then '1' else '0') <$> toBits bv) -- the value of this character
 
 {- Don't think I need this, since it's taken care of in ToXML DynamicChar
 instance ToXML DynamicCharacterElement where

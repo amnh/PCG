@@ -200,6 +200,6 @@ instance (EncodableStreamElement c) => ToXML (DiscreteDecoration c) where
     toXML decoration = xmlElement "Discrete character decoration" attributes contents
         where
             attributes = []
-            contents   = [ ("Character", showDiscreteCharacterElement decoration)
-                         , ("Metadata" , "TCM not shown"                )
+            contents   = [ ("Character", Left $ showDiscreteCharacterElement decoration)
+                         , ("Metadata" , Left $ "TCM not shown"                          )
                          ]

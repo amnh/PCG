@@ -288,8 +288,8 @@ instance ToXML StaticCharacter where
         where
             attributes = []
             contents   = [intRep, bitRep]
-            intRep     = ("Integer representation", show $ toInteger bv)
-            bitRep     = ("Bit representation", (\x -> if x then '1' else '0') <$> toBits bv)
+            intRep     = ("Integer representation", Left . show $ toInteger bv)
+            bitRep     = ("Bit representation"    , Left $ (\x -> if x then '1' else '0') <$> toBits bv)
 
 
 {-# INLINE unstream #-}
