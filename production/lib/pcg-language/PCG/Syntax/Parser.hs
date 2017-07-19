@@ -4,6 +4,9 @@ module PCG.Syntax.Parser where
 
 import Data.List.NonEmpty     (NonEmpty)
 import Data.Time.Clock        (DiffTime)
+import PCG.Syntax.Types
+  
+
 {-
 import Data.Functor           (($>), void)
 import Data.Char              (toLower)
@@ -51,7 +54,7 @@ data  Primative
     deriving (Show)
 
 
-newtype ListIdentifier = ListId String deriving (Show)
+-- newtype ListIdentifier = ListId String deriving (Show)
 
 
 {-

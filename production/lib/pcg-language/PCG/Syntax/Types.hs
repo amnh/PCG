@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, RankNTypes, TypeSynonymInstances #-}
 
 module PCG.Syntax.Types
+{-
   ( ArgumentValue()
   -- ** Primative Free Monad constructors
   , bool
@@ -19,7 +20,9 @@ module PCG.Syntax.Types
   -- ** Testing
   , TestStruct
   , tester
-  ) where
+  )
+-}
+where
 
 
 import           Control.Applicative
@@ -190,8 +193,9 @@ tester = do
     str <- text
     r   <- real
     pure $ TS age str [r]
-{--}
 
+
+{--
 
 -- |
 -- 'SyntacticCommand' is "Stringly-Typed" and therefore inherently unsafe.
@@ -224,7 +228,7 @@ data  Primative
     | TextValue String
     | TimeSpan  DiffTime
     deriving (Show)
-{--}
+--}
 
 
 data ArgList z
@@ -275,35 +279,46 @@ argList2 = liftAp . ZArgumentList . Exact
 
 
 runExpr :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => Ap.Ap ZArgument a -> m a
-runExpr = runAp' comma apRunner
+runExpr = runPermParser . f
+  where
+    f :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => Ap.Ap ZArgument a -> Perm m a
+    f = runAp' commaP apRunner
+
+commaP :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => Perm m ()
+commaP = toPerm $ whitespace *> seperator *> whitespace
+      where
+        seperator = char ',' <?> "',' seperating arguments"
 
 
-apRunner :: forall a e m s. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m () -> ZArgument a -> m a
-apRunner effect (ZPrimativeArg p  ) = trace "Prim" $ effect *> F.iterM parsePrimative p
-apRunner effect (ZExactlyOneOf  xs) = effect *> choice (runAp (apRunner voidEffect) <$> xs)
-apRunner effect (ZArgumentList p  ) = trace "ArgList" $ effect *> parseArgumentList p
-apRunner effect (ZDefaultValue p v) = do
-    r <- runAlt (runAp (\x -> try (effect *> apRunner voidEffect x))) . optional $ liftAlt p
+
+
+apRunner :: forall a e m s. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => Perm m () -> ZArgument a -> Perm m a
+apRunner effect (ZPrimativeArg p  ) = trace "Prim" . toPerm $ (runPermParser effect) *> F.iterM parsePrimative p
+apRunner effect (ZExactlyOneOf  xs) = toPerm $ (runPermParser effect) *> choice (runPermParser . runAp (apRunner voidEffect) <$> xs)
+apRunner effect (ZArgumentList p  ) = trace "ArgList" . toPerm $ (runPermParser effect) *> runPermParser (parseArgumentList p)
+apRunner effect (ZDefaultValue p v) = toPerm $ do
+    r <- runAlt (runPermParser . runAp (\x -> toPerm . try $ (runPermParser effect) *> runPermParser (apRunner voidEffect x))) . optional $ liftAlt p
     case r of
       Just x  -> pure x
       Nothing -> pure v
-apRunner effect (ZListIdNamedArg (ListId x) y) = trace "listId" $ do
+apRunner effect (ZListIdNamedArg (ListId x) y) = trace "listId" . toPerm $ do
     _ <- string'' x <?> ("identifier '" <> x <> "'")
     _ <- whitespace <* char ':' <* whitespace
-    runAp (apRunner effect) y
+    runPermParser $ runAp (apRunner effect) y
 
 
-parseArgumentList :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => ArgList a -> m a
-parseArgumentList argList = trace "parseArgList" $ begin *> datum <* close
+parseArgumentList :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => ArgList a -> Perm m a
+parseArgumentList argList = trace "parseArgList" . toPerm $ begin *> datum <* close
   where
     bookend p = void $ whitespace *> p <* whitespace
     begin = bookend . label "'(' starting a new argument list" $ char '('
     close = bookend . label "')' ending the argument list"     $ char ')'
-    datum =
+    datum = 
       case argList of
         Exact e -> runExpr e -- (       Ap.Ap ZArgument  z)
-        SomeZ s -> runAlt' comma (runAp (apRunner voidEffect)) s
-        ManyZ m -> runAlt' comma (runAp (apRunner voidEffect)) m
+        SomeZ s -> runAlt' comma (runPermParser . runAp (apRunner voidEffect)) s
+        ManyZ m -> runAlt' comma (runPermParser . runAp (apRunner voidEffect)) m
+
 
 
 voidEffect :: Applicative f => f ()
