@@ -33,7 +33,7 @@ cabal-version:       >= 1.22
 
 flag build-cpp-files
   description: Toggles the C++ files being successfully build.
-  default: False
+  default: True
 
 
 library
@@ -340,6 +340,7 @@ executable pcg
                      , time
                      , vector
                      , vector-instances >=3.4
+                     , xml
 
   default-language:    Haskell2010
 

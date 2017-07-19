@@ -50,6 +50,8 @@ import           PCG.Command.Types.Read.Unification.Master
 --import           PCG.SearchState
 import           Prelude             hiding   (lookup)
 import           Text.Megaparsec
+import           Text.XML.Class
+import           Text.XML.Light
 
 import Debug.Trace (trace)
 
@@ -75,7 +77,7 @@ evaluate (READ fileSpecs) _old = do
 --        case masterUnify $ transformation <$> concat xs of
           Left uErr -> fail $ show uErr -- Report unification errors here.
            -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
-          Right g   ->  (liftIO . putStrLn {- . take 500000 -} $ show g)
+          Right g   ->  (liftIO . putStrLn {- . take 500000 -} $ either show (ppTopElement . toXML) g)
                        -- (liftIO . putStrLn $ renderSequenceCosts g)
                     $> g
   where
