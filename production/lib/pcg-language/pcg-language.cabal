@@ -117,3 +117,4 @@ library
                        PCG.Syntax.Primative
                        PCG.Syntax.Types
                        Control.Monad.FreeAlt
+                       Text.Megaparsec.Perm2

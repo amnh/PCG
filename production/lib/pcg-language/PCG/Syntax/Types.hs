@@ -47,7 +47,7 @@ import           PCG.Syntax.Primative              (PrimativeValue, parsePrimati
 import qualified PCG.Syntax.Primative       as P
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
-import           Text.Megaparsec.Perm
+import           Text.Megaparsec.Perm2
 
 import Debug.Trace
 
@@ -144,8 +144,8 @@ withDef :: MonadParsec e s m => m a -> m a -> m a
 withDef v p = optional (try p) >>= maybe v pure
 
 
-withDef2 :: MonadParsec e s m => m a -> m a -> m a
-withDef2 v p = v >>= \x -> makePermParser $ id <$?> (x, try p)
+--withDef2 :: MonadParsec e s m => m a -> m a -> m a
+--withDef2 v p = v >>= \x -> makePermParser $ id <$?> (x, try p)
 
 
 -- |
