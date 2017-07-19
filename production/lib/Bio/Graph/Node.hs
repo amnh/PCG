@@ -34,6 +34,7 @@ import Data.EdgeSet
 import Data.Foldable
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Semigroup
+import Text.XML.Custom
 
 
 -- |
@@ -54,12 +55,6 @@ data  PhylogeneticNode2 s n
     { resolutions          :: ResolutionCache s
     , nodeDecorationDatum2 :: n
     } deriving (Eq, Functor)
-
-
--- |
--- A safe constructor of a 'PhylogeneticNode2'.
-pNode2 :: n -> ResolutionCache s -> PhylogeneticNode2 s n
-pNode2 = flip PNode2
 
 
 -- |
@@ -100,70 +95,16 @@ newtype SubtreeLeafSet = LS BitVector
   deriving (Eq, Ord, Bits)
 
 
-instance (Show n, Show s) => Show (PhylogeneticNode2 s n) where
-
-    show node = unlines
-        [ show $ nodeDecorationDatum2 node
-        , "Resolutions: {" <> (show . length . resolutions) node <> "}\n"
-        , unlines . fmap show . toList $ resolutions node
-        ] 
+-- |
+-- Adds an edge reference to an existing subtree resolution.
+addEdgeToEdgeSet :: (Int, Int) -> ResolutionInformation s -> ResolutionInformation s
+addEdgeToEdgeSet e r = r { subtreeEdgeSet = singletonEdgeSet e <> subtreeEdgeSet r }
 
 
-instance Show s => Show (ResolutionInformation s) where
-
-    show resInfo = unlines tokens
-      where
-        tokens =
-           [ "Total Cost: "    <> show (totalSubtreeCost      resInfo)
-           , "Local Cost: "    <> show (localSequenceCost     resInfo)
-           , "Edge Set  : "    <> show (subtreeEdgeSet        resInfo)
-           , "Leaf Set  : "    <> show (leafSetRepresentation resInfo)
-           , "Subtree   : "    <> show (subtreeRepresentation resInfo)
-           , "Decoration:\n\n" <> show (characterSequence     resInfo)
-           ]
-
-
-instance Eq  (ResolutionInformation s) where
-
-    lhs == rhs = leafSetRepresentation lhs == leafSetRepresentation rhs
-              && subtreeRepresentation lhs == subtreeRepresentation rhs
-
-
-instance Ord (ResolutionInformation s) where
-
-    lhs `compare` rhs =
-        case leafSetRepresentation lhs `compare` leafSetRepresentation lhs of
-          EQ -> subtreeRepresentation lhs `compare` subtreeRepresentation rhs
-          c  -> c
-
-
-instance Semigroup SubtreeLeafSet where
-
-    (<>) = (.|.)
-
-
-instance Show SubtreeLeafSet where
-
-    show (LS bv) = foldMap f $ toBits bv
-      where
-        f x = if x then "1" else "0"
-    
-
-instance Semigroup NewickSerialization where
-
-    (NS lhs) <> (NS rhs) = NS $ "(" <> lhs <> "," <> rhs <> ")"
-
-
-instance Show NewickSerialization where
-
-    show (NS s) = s
-    
-
-instance Bifunctor PhylogeneticNode where
-
-    bimap g f = 
-      PNode <$> g . nodeDecorationDatum
-            <*> f . sequenceDecoration
+-- |
+-- A safe constructor of a 'PhylogeneticNode2'.
+pNode2 :: n -> ResolutionCache s -> PhylogeneticNode2 s n
+pNode2 = flip PNode2
 
 
 -- |
@@ -182,7 +123,93 @@ singletonSubtreeLeafSet :: Int -- ^ Leaf count
 singletonSubtreeLeafSet n i = LS . (`setBit` i) $ n `bitVec` (0 :: Integer)
 
 
--- |
--- Adds an edge reference to an existing subtree resolution.
-addEdgeToEdgeSet :: (Int, Int) -> ResolutionInformation s -> ResolutionInformation s
-addEdgeToEdgeSet e r = r { subtreeEdgeSet = singletonEdgeSet e <> subtreeEdgeSet r }
+instance Bifunctor PhylogeneticNode where
+
+    bimap g f =
+      PNode <$> g . nodeDecorationDatum
+            <*> f . sequenceDecoration
+
+
+instance Eq  (ResolutionInformation s) where
+
+    lhs == rhs = leafSetRepresentation lhs == leafSetRepresentation rhs
+              && subtreeRepresentation lhs == subtreeRepresentation rhs
+
+
+instance Ord (ResolutionInformation s) where
+
+    lhs `compare` rhs =
+        case leafSetRepresentation lhs `compare` leafSetRepresentation lhs of
+          EQ -> subtreeRepresentation lhs `compare` subtreeRepresentation rhs
+          c  -> c
+
+
+instance Semigroup NewickSerialization where
+
+    (NS lhs) <> (NS rhs) = NS $ "(" <> lhs <> "," <> rhs <> ")"
+
+
+instance Semigroup SubtreeLeafSet where
+
+    (<>) = (.|.)
+
+
+instance Show NewickSerialization where
+
+    show (NS s) = s
+
+
+instance (Show n, Show s) => Show (PhylogeneticNode2 s n) where
+
+    show node = unlines
+        [ show $ nodeDecorationDatum2 node
+        , "Resolutions: {" <> (show . length . resolutions) node <> "}\n"
+        , unlines . fmap show . toList $ resolutions node
+        ]
+
+
+instance Show s => Show (ResolutionInformation s) where
+
+    show resInfo = unlines tokens
+      where
+        tokens =
+           [ "Total Cost: "    <> show (totalSubtreeCost      resInfo)
+           , "Local Cost: "    <> show (localSequenceCost     resInfo)
+           , "Edge Set  : "    <> show (subtreeEdgeSet        resInfo)
+           , "Leaf Set  : "    <> show (leafSetRepresentation resInfo)
+           , "Subtree   : "    <> show (subtreeRepresentation resInfo)
+           , "Decoration:\n\n" <> show (characterSequence     resInfo)
+           ]
+
+
+instance Show SubtreeLeafSet where
+
+    show (LS bv) = foldMap f $ toBits bv
+      where
+        f x = if x then "1" else "0"
+
+
+instance (ToXML s) => ToXML (ResolutionInformation s) where
+
+    toXML info = xmlElement "Resolution info" attrs contents
+        where
+            attrs         = []
+            contents      = [ ("Character sequence" , Right (toXML $ characterSequence info))
+                            , ("Total subtree cost" , Left  (show  $ totalSubtreeCost  info))
+                            , ("Local sequence cost", Left  (show  $ localSequenceCost info))
+                            , ("Subtree"            , Right subtree                         )
+                            ]
+            subtree       = xmlElement "Subtree fields" [] subtreeFields
+            subtreeFields = [ ("Subtree leaf set"      , Left (show $ leafSetRepresentation info))
+                            , ("Subtree representation", Left (show $ subtreeRepresentation info))
+                            , ("Subtree edge set"      , Left (show $ subtreeEdgeSet        info))
+                            ]
+
+
+instance (ToXML n) => ToXML (PhylogeneticNode2 n s) where
+
+    toXML node = xmlElement "Phylogenetic node" nodeAttrs contents
+        where
+            nodeAttrs       = []
+            resolutionAttrs = []
+            contents        = [ ("Decorations", Right $ collapseElemList "Resolutions" resolutionAttrs (toList $ resolutions node)) ]

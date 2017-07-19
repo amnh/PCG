@@ -43,6 +43,7 @@ data CharacterBlock u v w x y z
    } deriving (Eq)
 
 
+-- | (✔)
 instance Semigroup (CharacterBlock u v w x y z) where
 
     lhs <> rhs =
@@ -56,6 +57,7 @@ instance Semigroup (CharacterBlock u v w x y z) where
           }
 
 
+-- | (✔)
 instance ( Show u
          , Show v
          , Show w
@@ -83,6 +85,7 @@ instance ( Show u
         niceRendering = unlines . fmap (unlines . fmap ("  " <>) . lines . show) . toList
 
 
+-- | (✔)
 instance ( ToXML u
          , ToXML v
          , ToXML w
@@ -93,8 +96,6 @@ instance ( ToXML u
     toXML block = xmlElement "Character block" attributes contents
         where
             attributes = []
-            -- [(String,           Either String Text.XML.Light.Types.Element   )]
-            -- [(String, [(String, Either String Text.XML.Light.Types.Element)] )]
             contents   = [ ("Fitch Characters"     , Right $ collapseElemList "Char" [] (toList (nonAdditiveCharacterBins block)) )
                          , ("Additive Characters"  , Right $ collapseElemList "Char" [] (toList (additiveCharacterBins    block)) )
                          , ("NonMetric Characters" , Right $ collapseElemList "Char" [] (toList (nonMetricCharacterBins   block)) )
@@ -102,16 +103,3 @@ instance ( ToXML u
                          , ("Metric Characters"    , Right $ collapseElemList "Char" [] (toList (nonMetricCharacterBins   block)) )
                          , ("Dynamic Characters"   , Right $ collapseElemList "Char" [] (toList (dynamicCharacters        block)) )
                          ]
-            --
-            -- contents   = [ (buildContentsFromVecToXML "Fitch Characters"      "Char" [] (nonAdditiveCharacterBins block) )
-            --              , (buildContentsFromVecToXML "Additive Characters"   "Char" [] (additiveCharacterBins    block) )
-            --              , (buildContentsFromVecToXML "NonMetric Characters"  "Char" [] (nonMetricCharacterBins   block) )
-            --              , (buildContentsFromVecToXML "Continuous Characters" "Char" [] (continuousCharacterBins  block) )
-            --              , (buildContentsFromVecToXML "Metric Characters"     "Char" [] (nonMetricCharacterBins   block) )
-            --              , (buildContentsFromVecToXML "Dynamic Characters"    "Char" [] (dynamicCharacters        block) )
-            --              ]
-            -- makeContentTuple :: a -> (String, Either String Element)
-            -- makeContentTuple bin = ("Char", bin, [], )
-
-            -- -- createXMLContent :: [(String, Either String Text.XML.Light.Types.Element)] -> [Content]
-            -- createXMLContent bin = xmlVecToElementList "Char" [] bin
