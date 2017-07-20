@@ -1,19 +1,25 @@
 -- |
 -- Module      :  Control.Alternative.Permutation
--- Copyright   :  © 2015–2017 Megaparsec contributors
---                © 2007 Paolo Martini
---                © 1999–2001 Daan Leijen
--- License     :  FreeBSD
 --
--- Maintainer  :  Mark Karpov <markkarpov92@gmail.com>
--- Stability   :  experimental
--- Portability :  non-portable
+-- This module is a generalization of the package @parsec-permutation@
+-- authored by Samuel Hoffstaetter:
 --
--- This module implements permutation parsers. The algorithm is described
+-- http://hackage.haskell.org/package/parsec-permutation
+--
+-- This module also takes inspiration from the algorithm is described
 -- in: /Parsing Permutation Phrases/, by Arthur Baars, Andres Loh and
 -- Doaitse Swierstra. Published as a functional pearl at the Haskell
 -- Workshop 2001.
-
+--
+-- From these two works we derive a flexible and general method for
+-- parsing permutations over an 'Applicative' strucuture. Quite useful
+-- in conjunction with \"Free\" constructions of Applicatives, Monads,
+-- etc.
+--
+-- Other permutation parsing libraries tend towards using special \"almost
+-- applicative\" combinators for constuction which denies the library user
+-- the ability to lift and unlift permutation parsing into any Applicative
+-- computational context.
 
 module Control.Alternative.Permutation
   ( Perm()
@@ -24,25 +30,6 @@ module Control.Alternative.Permutation
 
 
 import Control.Applicative (Alternative(..), optional)
-
-
--- |
--- \"Unlifts\" a permutation parser into a parser to be evaluated.
-runPermParser :: (Alternative m, Monad m) => Perm m a -> m a
-runPermParser (P value parser) = optional parser >>= f
-   where
-      f  Nothing = maybe empty pure value
-      f (Just p) = runPermParser p
-
-
--- |
--- \"Lifts\" a parser to a permutation parser.
-toPerm :: Alternative m => m a -> Perm m a 
-toPerm p = P Nothing $ pure <$> p
-
-
-toPermWithDefault :: Alternative m => a -> m a -> Perm m a 
-toPermWithDefault v p = P (Just v) $ pure <$> p
 
 
 data Perm m a = P (Maybe a) (m (Perm m a))
@@ -61,3 +48,27 @@ instance Alternative m => Applicative (Perm m) where
       where
         lhsAlt = (<*> rhs) <$> v
         rhsAlt = (lhs <*>) <$> w
+
+
+-- |
+-- \"Unlifts\" a permutation parser into a parser to be evaluated.
+runPermParser :: (Alternative m, Monad m) => Perm m a -> m a
+runPermParser (P value parser) = optional parser >>= f
+   where
+      f  Nothing = maybe empty pure value
+      f (Just p) = runPermParser p
+
+
+-- |
+-- \"Lifts\" a parser to a permutation parser.
+toPerm :: Alternative m => m a -> Perm m a 
+toPerm p = P Nothing $ pure <$> p
+
+
+-- |
+-- \"Lifts\" a parser with a default value to a permutation parser.
+--
+-- If no permutation containg the supplied parser can be parsed from the input,
+-- then the supplied defualt value is returned in lieu of a parse result.
+toPermWithDefault :: Alternative m => a -> m a -> Perm m a 
+toPermWithDefault v p = P (Just v) $ pure <$> p
