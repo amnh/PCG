@@ -285,7 +285,7 @@ runExpr = runPermParser . f
     f = runAp' commaP apRunner
 
 commaP :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => Perm m ()
-commaP = toPerm $ whitespace *> seperator *> whitespace
+commaP = trace "Comma" . toPerm $ whitespace *> seperator *> whitespace
       where
         seperator = char ',' <?> "',' seperating arguments"
 
@@ -293,15 +293,19 @@ commaP = toPerm $ whitespace *> seperator *> whitespace
 
 
 apRunner :: forall a e m s. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => Perm m () -> ZArgument a -> Perm m a
-apRunner effect (ZPrimativeArg p  ) = trace "Prim" . toPerm $ (runPermParser effect) *> F.iterM parsePrimative p
-apRunner effect (ZExactlyOneOf  xs) = toPerm $ (runPermParser effect) *> choice (runPermParser . runAp (apRunner voidEffect) <$> xs)
-apRunner effect (ZArgumentList p  ) = trace "ArgList" . toPerm $ (runPermParser effect) *> runPermParser (parseArgumentList p)
-apRunner effect (ZDefaultValue p v) = toPerm $ do
+apRunner effect (ZPrimativeArg p  ) = trace "Prim"    . toPerm . try $ (runPermParser effect) *> F.iterM parsePrimative p
+apRunner effect (ZExactlyOneOf  xs) = trace "PickOne" . toPerm . try $ (runPermParser effect) *> choice (runPermParser . runAp (apRunner voidEffect) <$> xs)
+apRunner effect (ZArgumentList p  ) = trace "ArgList" . toPerm . try $ (runPermParser effect) *> runPermParser (parseArgumentList p)
+apRunner effect (ZDefaultValue p v) = trace "Default" $
+    toPermWithDefault v . try $ (runPermParser effect) *> runPermParser (runAp (apRunner (toPerm voidEffect)) p)
+{-    
+apRunner effect (ZDefaultValue p v) = trace "Default" . toPerm $ do
     r <- runAlt (runPermParser . runAp (\x -> toPerm . try $ (runPermParser effect) *> runPermParser (apRunner voidEffect x))) . optional $ liftAlt p
     case r of
       Just x  -> pure x
       Nothing -> pure v
-apRunner effect (ZListIdNamedArg (ListId x) y) = trace "listId" . toPerm $ do
+-}
+apRunner effect (ZListIdNamedArg (ListId x) y) = trace "listId" . toPerm . try $ do
     _ <- string'' x <?> ("identifier '" <> x <> "'")
     _ <- whitespace <* char ':' <* whitespace
     runPermParser $ runAp (apRunner effect) y
@@ -315,7 +319,7 @@ parseArgumentList argList = trace "parseArgList" . toPerm $ begin *> datum <* cl
     close = bookend . label "')' ending the argument list"     $ char ')'
     datum = 
       case argList of
-        Exact e -> runExpr e -- (       Ap.Ap ZArgument  z)
+        Exact e -> trace "ExactList" $ runExpr e -- (       Ap.Ap ZArgument  z)
         SomeZ s -> runAlt' comma (runPermParser . runAp (apRunner voidEffect)) s
         ManyZ m -> runAlt' comma (runPermParser . runAp (apRunner voidEffect)) m
 

@@ -22,6 +22,7 @@ module Text.Megaparsec.Perm2
   ( Perm()
   , runPermParser
   , toPerm
+  , toPermWithDefault
   ) where
 
 
@@ -41,6 +42,10 @@ runPermParser (P value parser) = optional parser >>= f
 -- \"Lifts\" a parser to a permutation parser.
 toPerm :: Alternative m => m a -> Perm m a 
 toPerm p = P Nothing $ pure <$> p
+
+
+toPermWithDefault :: Alternative m => a -> m a -> Perm m a 
+toPermWithDefault v p = P (Just v) $ pure <$> p
 
 
 data Perm m a = P (Maybe a) (m (Perm m a))
