@@ -24,13 +24,13 @@
 module Control.Alternative.Permutation
   ( Perm()
   , runPermParser
+  , runPermParserWithSeperator
   , toPerm
   , toPermWithDefault
   ) where
 
 
 import Control.Applicative (Alternative(..), optional)
-
 
 data Perm m a = P (Maybe a) (m (Perm m a))
 
@@ -57,6 +57,18 @@ runPermParser (P value parser) = optional parser >>= f
    where
       f  Nothing = maybe empty pure value
       f (Just p) = runPermParser p
+
+
+-- |
+-- \"Unlifts\" a permutation parser into a parser to be evaluated.
+runPermParserWithSeperator :: (Alternative m, Monad m) => m b -> Perm m a -> m a
+runPermParserWithSeperator sep perm = run (pure ()) sep perm
+   where
+     run :: (Alternative m, Monad m) => m c -> m b -> Perm m a -> m a
+     run headSep tailSep (P value parser) = optional (headSep *> parser) >>= f
+       where
+         f  Nothing = maybe empty pure value
+         f (Just p) = run tailSep tailSep p
 
 
 -- |

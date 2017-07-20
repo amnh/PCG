@@ -141,10 +141,9 @@ withDefault arg def = liftAp $ DefaultValue arg def
 -- |
 -- Create a 'MonadParsec' parser matching the specified semantics of the command.
 runSyntax :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => Ap SyntacticArgument a -> m a
-runSyntax = runPermParser . f
+runSyntax = runPermParserWithSeperator comma . runAp' noEffect apRunner
   where
-    f :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => Ap SyntacticArgument a -> Perm m a
-    f = runAp' commaP apRunner
+    noEffect = toPerm voidEffect
 
 
 -- == Internal functions == --
@@ -189,12 +188,6 @@ comma :: (MonadParsec e s m,  Token s ~ Char) => m ()
 comma = whitespace *> seperator *> whitespace
   where
     seperator = char ',' <?> "',' seperating arguments"
-
-
--- |
--- The Applicative effect 'comma' nested within a permutation context.
-commaP :: (MonadParsec e s m, Token s ~ Char) => Perm m ()
-commaP = toPerm comma
 
 
 -- |
