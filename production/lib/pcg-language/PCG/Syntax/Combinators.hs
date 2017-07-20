@@ -1,5 +1,4 @@
-{-# LANGUAGE ApplicativeDo, ConstraintKinds, DeriveFunctor, ExistentialQuantification, FlexibleContexts, ScopedTypeVariables, TypeFamilies #-}
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, RankNTypes, TypeSynonymInstances #-}
+{-# LANGUAGE DeriveFunctor, FlexibleContexts, RankNTypes, ScopedTypeVariables, TypeFamilies #-}
 
 module PCG.Syntax.Combinators
   ( SyntacticArgument()
@@ -20,15 +19,13 @@ module PCG.Syntax.Combinators
   , withDefault
   -- ** MonadParsec based syntactic interpreter
   , runSyntax
-  )
-where
+  ) where
 
 
 import           Control.Applicative
-import           Control.Applicative.Free   hiding (Pure)
-import qualified Control.Applicative.Free   as Ap
+import           Control.Applicative.Free
 import           Control.Alternative.Free   hiding (Pure,Ap)
-import qualified Control.Alternative.Free   as A
+import qualified Control.Alternative.Free   as Alt
 import           Control.Alternative.Permutation
 import qualified Control.Monad.Free         as F
 import           Data.CaseInsensitive              (FoldCase)
@@ -44,17 +41,17 @@ import           Text.Megaparsec.Char
 
 
 data ArgList z
-    = Exact (       Ap.Ap SyntacticArgument  z)
-    | SomeZ (Alt   (Ap.Ap SyntacticArgument) z)
-    | ManyZ (Alt   (Ap.Ap SyntacticArgument) z)
+    = Exact (       Ap SyntacticArgument  z)
+    | SomeZ (Alt   (Ap SyntacticArgument) z)
+    | ManyZ (Alt   (Ap SyntacticArgument) z)
     deriving (Functor)
 
 
 data  SyntacticArgument z
     = PrimativeArg   (F.Free PrimativeValue z)
-    | DefaultValue   (Ap.Ap SyntacticArgument z) z
-    | ExactlyOneOf   (NonEmpty (Ap.Ap SyntacticArgument z))
-    | ListIdNamedArg ListIdentifier (Ap.Ap SyntacticArgument z)
+    | ListIdNamedArg (Ap SyntacticArgument z) ListIdentifier
+    | DefaultValue   (Ap SyntacticArgument z) z
+    | ExactlyOneOf   (NonEmpty (Ap SyntacticArgument z))
     | ArgumentList   (ArgList z)
     deriving (Functor)
 
@@ -64,13 +61,13 @@ newtype ListIdentifier = ListId String deriving (Show)
 
 -- |
 -- Define a boolean value as part of a command specification.
-bool :: Ap.Ap SyntacticArgument Bool
+bool :: Ap SyntacticArgument Bool
 bool = primative P.bool
 
 
 -- |
 -- Define a integer value as part of a command specification.
-int :: Ap.Ap SyntacticArgument Int
+int :: Ap SyntacticArgument Int
 int = primative P.int
 
 
@@ -81,36 +78,37 @@ int = primative P.int
 -- combinator. This can lead to ambiguity between `int` and 'real'. To avoid
 -- ambiguity, use 'listId' to require a disambiguating prefix on one or more of
 -- the command components.
-real :: Ap.Ap SyntacticArgument Double
+real :: Ap SyntacticArgument Double
 real = primative P.real
+
 
 -- |
 -- Define a textual value as part of a command specification.
-text :: Ap.Ap SyntacticArgument String
+text :: Ap SyntacticArgument String
 text = primative P.text
 
 
 -- |
 -- Define a temporal value in minutes as part of a command specification.
-time :: Ap.Ap SyntacticArgument DiffTime
+time :: Ap SyntacticArgument DiffTime
 time = primative P.time
 
 
 -- |
 -- Define a unique literal value as part of a command specification.
-value :: String -> Ap.Ap SyntacticArgument ()
+value :: String -> Ap SyntacticArgument ()
 value str = primative $ P.value str
 
 
 -- |
 -- A list of arguments as part of a command.
-argList :: Ap.Ap SyntacticArgument a -> Ap.Ap SyntacticArgument a
+argList :: Ap SyntacticArgument a -> Ap SyntacticArgument a
 argList = liftAp . ArgumentList . Exact
 
 
 -- |
 -- Matches exactly one of the provided arguments to be used in the command.
-choiceFrom :: [Ap.Ap SyntacticArgument a] -> Ap.Ap SyntacticArgument a
+choiceFrom :: [Ap SyntacticArgument a] -> Ap SyntacticArgument a
 choiceFrom    []  = error "You cannot construct an empty set of choices!"
 choiceFrom (x:xs) = liftAp . ExactlyOneOf $ x:|xs
 
@@ -118,34 +116,34 @@ choiceFrom (x:xs) = liftAp . ExactlyOneOf $ x:|xs
 -- |
 -- Require a prefix on an agrument value to disambiguate it from other argument
 -- values.
-listId :: String -> Ap.Ap SyntacticArgument a -> Ap.Ap SyntacticArgument a
-listId str x = liftAp $ ListIdNamedArg (ListId str) x
+listId :: String -> Ap SyntacticArgument a -> Ap SyntacticArgument a
+listId str x = liftAp $ ListIdNamedArg x (ListId str)
 
 
 -- |
 -- Produce zero or more of the provided argument for the command.
-manyOf :: Ap.Ap SyntacticArgument z -> Ap.Ap SyntacticArgument [z]
+manyOf :: Ap SyntacticArgument z -> Ap SyntacticArgument [z]
 manyOf = liftAp . ArgumentList . ManyZ . many . liftAlt
 
 
 -- |
 -- Produce one or more of the provided argument for the command.
-someOf :: Ap.Ap SyntacticArgument z -> Ap.Ap SyntacticArgument [z]
+someOf :: Ap SyntacticArgument z -> Ap SyntacticArgument [z]
 someOf = liftAp . ArgumentList . SomeZ . some . liftAlt
 
 
 -- |
 -- Provide a default value for the argument if it is missing from the user input.
-withDefault :: Ap.Ap SyntacticArgument a -> a -> Ap.Ap SyntacticArgument a
+withDefault :: Ap SyntacticArgument a -> a -> Ap SyntacticArgument a
 withDefault arg def = liftAp $ DefaultValue arg def
 
 
 -- |
 -- Create a 'MonadParsec' parser matching the specified semantics of the command.
-runSyntax :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => Ap.Ap SyntacticArgument a -> m a
+runSyntax :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => Ap SyntacticArgument a -> m a
 runSyntax = runPermParser . f
   where
-    f :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => Ap.Ap SyntacticArgument a -> Perm m a
+    f :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => Ap SyntacticArgument a -> Perm m a
     f = runAp' commaP apRunner
 
 
@@ -157,14 +155,14 @@ runSyntax = runPermParser . f
 -- 'MonadParsec' parser result.
 apRunner :: forall a e m s. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => Perm m () -> SyntacticArgument a -> Perm m a
 apRunner effect (PrimativeArg p  ) = toPerm . try $ runPermParser effect *> F.iterM parsePrimative p
-apRunner effect (ExactlyOneOf  xs) = toPerm . try $ runPermParser effect *> choice (runPermParser . runAp (apRunner voidEffect) <$> xs)
+apRunner effect (ExactlyOneOf ps ) = toPerm . try $ runPermParser effect *> choice (runPermParser . runAp (apRunner voidEffect) <$> ps)
 apRunner effect (ArgumentList p  ) = toPerm . try $ runPermParser effect *> runPermParser (parseArgumentList p)
 apRunner effect (DefaultValue p v) = toPermWithDefault v . try
                                    $ runPermParser effect *> runPermParser (runAp (apRunner (toPerm voidEffect)) p)
-apRunner effect (ListIdNamedArg (ListId x) y) = toPerm . try $ do
+apRunner effect (ListIdNamedArg p (ListId x)) = toPerm . try $ do
     _ <- string'' x <?> ("identifier '" <> x <> "'")
     _ <- whitespace <* char ':' <* whitespace
-    runPermParser $ runAp (apRunner effect) y
+    runPermParser $ runAp (apRunner effect) p
 
 
 -- |
@@ -201,7 +199,7 @@ commaP = toPerm comma
 
 -- |
 -- Lifts a primative value Free Monad into a 'SyntacticArgument' context.
-primative :: F.Free PrimativeValue a -> Ap.Ap SyntacticArgument a
+primative :: F.Free PrimativeValue a -> Ap SyntacticArgument a
 primative = liftAp . PrimativeArg
 
 
@@ -211,38 +209,38 @@ runAlt' :: forall f g a. Alternative g => g () -> (forall x. f x -> g x) -> Alt 
 runAlt' eff phi = go
   where
     go   :: Alt f b -> g b
-    go   (A.Alt xs) = foldr (\r a -> flo r <|> a) empty xs
+    go   (Alt.Alt xs) = foldr (\r a -> flo r <|> a) empty xs
 
     flo  :: AltF f b -> g b
-    flo  (A.Pure a) = pure a
-    flo  (A.Ap x f) = flip id <$> phi x <*> go' f
+    flo  (Alt.Pure a) = pure a
+    flo  (Alt.Ap x f) = flip id <$> phi x <*> go' f
 
     go'  :: Alt f b -> g b
-    go'  (A.Alt xs) = foldr (\r a -> flo' r <|> a) empty xs
+    go'  (Alt.Alt xs) = foldr (\r a -> flo' r <|> a) empty xs
 
     flo' :: AltF f b -> g b
-    flo' (A.Pure a) = pure a
-    flo' (A.Ap x f) = flip id <$> ((eff *>) . phi) x <*> go' f
+    flo' (Alt.Pure a) = pure a
+    flo' (Alt.Ap x f) = flip id <$> ((eff *>) . phi) x <*> go' f
 
 
 -- |
 -- Intercalates the effect when running the Free Applicative. Is carefult to not
 -- apply the effect before the first Applicative value, but before every
 -- Applicative value after the first.
-runAp' :: forall f g a. Applicative g => g () -> (forall x. g () -> f x -> g x) -> Ap.Ap f a -> g a
+runAp' :: forall f g a. Applicative g => g () -> (forall x. g () -> f x -> g x) -> Ap f a -> g a
 runAp' eff phi val =
     case val of
-      Ap.Pure x -> pure x
-      Ap.Ap f x -> flip id <$> phi voidEffect f <*> runAp'' eff phi x
+      Pure x -> pure x
+      Ap f x -> flip id <$> phi voidEffect f <*> runAp'' eff phi x
 
 
 -- |
 -- Applies the effect before every Applicative value.
-runAp'' :: forall f g a. Applicative g => g () -> (forall x. g () -> f x -> g x) -> Ap.Ap f a -> g a
+runAp'' :: forall f g a. Applicative g => g () -> (forall x. g () -> f x -> g x) -> Ap f a -> g a
 runAp'' eff phi val =
     case val of
-      Ap.Pure x -> pure x
-      Ap.Ap {}  -> runAp (phi eff) val
+      Pure x -> pure x
+      Ap {}  -> runAp (phi eff) val
 
 
 -- |
