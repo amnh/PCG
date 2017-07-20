@@ -20,24 +20,19 @@ import           Control.Monad.Free
 import           Data.CaseInsensitive              (FoldCase)
 import           Data.Functor                      (($>), void)
 import           Data.Key
---import           Data.List                         (intercalate)
 import           Data.List.NonEmpty                (NonEmpty(..))
 import qualified Data.List.NonEmpty         as NE
 import qualified Data.Map                   as M
 import           Data.Maybe                        (fromMaybe)
---import           Data.Ord
 import           Data.Proxy
 import           Data.Scientific            hiding (scientific)
 import           Data.Semigroup             hiding (option)
---import           Data.Set                          (Set)
 import qualified Data.Set                   as S
 import           Data.Time.Clock                   (DiffTime, secondsToDiffTime)
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 import           Text.Megaparsec.Char.Lexer        (decimal, scientific, signed)
 import qualified Text.Megaparsec.Char.Lexer as Lex
-
---import Debug.Trace
 
 
 data  PrimativeParseResult

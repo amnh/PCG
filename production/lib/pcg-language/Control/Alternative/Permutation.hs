@@ -1,5 +1,5 @@
 -- |
--- Module      :  Text.Megaparsec.Perm2
+-- Module      :  Control.Alternative.Permutation
 -- Copyright   :  © 2015–2017 Megaparsec contributors
 --                © 2007 Paolo Martini
 --                © 1999–2001 Daan Leijen
@@ -14,11 +14,8 @@
 -- Doaitse Swierstra. Published as a functional pearl at the Haskell
 -- Workshop 2001.
 
-{-# LANGUAGE CPP                       #-}
-{-# LANGUAGE DeriveFunctor             #-}
-{-# LANGUAGE ExistentialQuantification #-}
 
-module Text.Megaparsec.Perm2
+module Control.Alternative.Permutation
   ( Perm()
   , runPermParser
   , toPerm

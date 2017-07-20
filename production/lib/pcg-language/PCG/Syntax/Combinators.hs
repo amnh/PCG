@@ -4,22 +4,22 @@
 module PCG.Syntax.Combinators
   ( SyntacticArgument()
   , ListIdentifier(..)
-  -- ** Primative Free Monad constructors
+  -- ** Primative Free Applicaitve constructors
   , bool
   , int
   , real
   , text
   , time
   , value
-  -- ** Syntactic Free Monad constructors
+  -- ** Syntactic Free Applicative constructors
   , argList
   , choiceFrom
   , listId
   , manyOf
   , someOf
   , withDefault
-  -- ** MonadParsec based Free Monad interpreter
-  , runExpr
+  -- ** MonadParsec based syntactic interpreter
+  , runSyntax
   )
 where
 
@@ -42,11 +42,6 @@ import qualified PCG.Syntax.Primative       as P
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 
---import Debug.Trace
-
-
---type SyntaxParser f p a = FreeT f p a
-
 
 data ArgList z
     = Exact (       Ap.Ap SyntacticArgument  z)
@@ -59,9 +54,7 @@ data  SyntacticArgument z
     = PrimativeArg   (F.Free PrimativeValue z)
     | DefaultValue   (Ap.Ap SyntacticArgument z) z
     | ExactlyOneOf   (NonEmpty (Ap.Ap SyntacticArgument z))
---    | ListIdArg      ListIdentifier
     | ListIdNamedArg ListIdentifier (Ap.Ap SyntacticArgument z)
---    | CommandArg     SyntacticCommand
     | ArgumentList   (ArgList z)
     deriving (Functor)
 
@@ -69,71 +62,99 @@ data  SyntacticArgument z
 newtype ListIdentifier = ListId String deriving (Show)
 
 
-primative :: F.Free PrimativeValue a -> Ap.Ap SyntacticArgument a
-primative = liftAp . PrimativeArg
-
-
+-- |
+-- Define a boolean value as part of a command specification.
 bool :: Ap.Ap SyntacticArgument Bool
 bool = primative P.bool
 
 
+-- |
+-- Define a integer value as part of a command specification.
 int :: Ap.Ap SyntacticArgument Int
 int = primative P.int
 
 
+-- |
+-- Define a real value as part of a command specification.
+--
+-- Things that look like an integer can be captured as a real value by this
+-- combinator. This can lead to ambiguity between `int` and 'real'. To avoid
+-- ambiguity, use 'listId' to require a disambiguating prefix on one or more of
+-- the command components.
 real :: Ap.Ap SyntacticArgument Double
 real = primative P.real
 
-
+-- |
+-- Define a textual value as part of a command specification.
 text :: Ap.Ap SyntacticArgument String
 text = primative P.text
 
 
+-- |
+-- Define a temporal value in minutes as part of a command specification.
 time :: Ap.Ap SyntacticArgument DiffTime
 time = primative P.time
 
 
+-- |
+-- Define a unique literal value as part of a command specification.
 value :: String -> Ap.Ap SyntacticArgument ()
 value str = primative $ P.value str
 
 
-withDefault :: Ap.Ap SyntacticArgument a -> a -> Ap.Ap SyntacticArgument a
-withDefault arg def = liftAp $ DefaultValue arg def
+-- |
+-- A list of arguments as part of a command.
+argList :: Ap.Ap SyntacticArgument a -> Ap.Ap SyntacticArgument a
+argList = liftAp . ArgumentList . Exact
 
 
+-- |
+-- Matches exactly one of the provided arguments to be used in the command.
 choiceFrom :: [Ap.Ap SyntacticArgument a] -> Ap.Ap SyntacticArgument a
 choiceFrom    []  = error "You cannot construct an empty set of choices!"
 choiceFrom (x:xs) = liftAp . ExactlyOneOf $ x:|xs
 
 
+-- |
+-- Require a prefix on an agrument value to disambiguate it from other argument
+-- values.
 listId :: String -> Ap.Ap SyntacticArgument a -> Ap.Ap SyntacticArgument a
 listId str x = liftAp $ ListIdNamedArg (ListId str) x
 
 
-someOf :: Ap.Ap SyntacticArgument z -> Ap.Ap SyntacticArgument [z]
-someOf = liftAp . ArgumentList . SomeZ . some . liftAlt
-
-
+-- |
+-- Produce zero or more of the provided argument for the command.
 manyOf :: Ap.Ap SyntacticArgument z -> Ap.Ap SyntacticArgument [z]
 manyOf = liftAp . ArgumentList . ManyZ . many . liftAlt
 
 
-argList :: Ap.Ap SyntacticArgument a -> Ap.Ap SyntacticArgument a
-argList = liftAp . ArgumentList . Exact
+-- |
+-- Produce one or more of the provided argument for the command.
+someOf :: Ap.Ap SyntacticArgument z -> Ap.Ap SyntacticArgument [z]
+someOf = liftAp . ArgumentList . SomeZ . some . liftAlt
 
 
-runExpr :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => Ap.Ap SyntacticArgument a -> m a
-runExpr = runPermParser . f
+-- |
+-- Provide a default value for the argument if it is missing from the user input.
+withDefault :: Ap.Ap SyntacticArgument a -> a -> Ap.Ap SyntacticArgument a
+withDefault arg def = liftAp $ DefaultValue arg def
+
+
+-- |
+-- Create a 'MonadParsec' parser matching the specified semantics of the command.
+runSyntax :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => Ap.Ap SyntacticArgument a -> m a
+runSyntax = runPermParser . f
   where
     f :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => Ap.Ap SyntacticArgument a -> Perm m a
     f = runAp' commaP apRunner
 
-commaP :: (MonadParsec e s m, Token s ~ Char) => Perm m ()
-commaP = toPerm $ whitespace *> seperator *> whitespace
-      where
-        seperator = char ',' <?> "',' seperating arguments"
+
+-- == Internal functions == --
 
 
+-- |
+-- The \"natural transformation\" used to convert the Free Alternative to the
+-- 'MonadParsec' parser result.
 apRunner :: forall a e m s. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => Perm m () -> SyntacticArgument a -> Perm m a
 apRunner effect (PrimativeArg p  ) = toPerm . try $ runPermParser effect *> F.iterM parsePrimative p
 apRunner effect (ExactlyOneOf  xs) = toPerm . try $ runPermParser effect *> choice (runPermParser . runAp (apRunner voidEffect) <$> xs)
@@ -146,6 +167,9 @@ apRunner effect (ListIdNamedArg (ListId x) y) = toPerm . try $ do
     runPermParser $ runAp (apRunner effect) y
 
 
+-- |
+-- Part of the recursively defined evaluation where the argument permutations
+-- are enumerated and evaluated.
 parseArgumentList :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => ArgList a -> Perm m a
 parseArgumentList argListVal = toPerm $ begin *> datum <* close
   where
@@ -154,32 +178,35 @@ parseArgumentList argListVal = toPerm $ begin *> datum <* close
     close = bookend . label "')' ending the argument list"     $ char ')'
     datum = 
       case argListVal of
-        Exact e -> runExpr e
+        Exact e -> runSyntax e
         SomeZ s -> runAlt' comma (runPermParser . runAp (apRunner voidEffect)) s
         ManyZ m -> runAlt' comma (runPermParser . runAp (apRunner voidEffect)) m
 
 
-
-voidEffect :: Applicative f => f ()
-voidEffect = pure ()
+-- |
+-- The Applicative effect to be intercalated between components of the syntax.
+--
+-- Consumes a comma character with leading and training whitespace.
+comma :: (MonadParsec e s m,  Token s ~ Char) => m ()
+comma = whitespace *> seperator *> whitespace
+  where
+    seperator = char ',' <?> "',' seperating arguments"
 
 
 -- |
--- 
-runAp' :: forall f g a. Applicative g => g () -> (forall x. g () -> f x -> g x) -> Ap.Ap f a -> g a
-runAp' eff phi val =
-    case val of
-      Ap.Pure x -> pure x
-      Ap.Ap f x -> flip id <$> phi voidEffect f <*> runAp'' eff phi x
+-- The Applicative effect 'comma' nested within a permutation context.
+commaP :: (MonadParsec e s m, Token s ~ Char) => Perm m ()
+commaP = toPerm comma
 
 
-runAp'' :: forall f g a. Applicative g => g () -> (forall x. g () -> f x -> g x) -> Ap.Ap f a -> g a
-runAp'' eff phi val =
-    case val of
-      Ap.Pure x -> pure x
-      Ap.Ap {}  -> runAp (phi eff) val
+-- |
+-- Lifts a primative value Free Monad into a 'SyntacticArgument' context.
+primative :: F.Free PrimativeValue a -> Ap.Ap SyntacticArgument a
+primative = liftAp . PrimativeArg
 
 
+-- |
+-- Intercalates the effect when running the Free Alternative.
 runAlt' :: forall f g a. Alternative g => g () -> (forall x. f x -> g x) -> Alt f a -> g a
 runAlt' eff phi = go
   where
@@ -198,232 +225,38 @@ runAlt' eff phi = go
     flo' (A.Ap x f) = flip id <$> ((eff *>) . phi) x <*> go' f
 
 
+-- |
+-- Intercalates the effect when running the Free Applicative. Is carefult to not
+-- apply the effect before the first Applicative value, but before every
+-- Applicative value after the first.
+runAp' :: forall f g a. Applicative g => g () -> (forall x. g () -> f x -> g x) -> Ap.Ap f a -> g a
+runAp' eff phi val =
+    case val of
+      Ap.Pure x -> pure x
+      Ap.Ap f x -> flip id <$> phi voidEffect f <*> runAp'' eff phi x
+
+
+-- |
+-- Applies the effect before every Applicative value.
+runAp'' :: forall f g a. Applicative g => g () -> (forall x. g () -> f x -> g x) -> Ap.Ap f a -> g a
+runAp'' eff phi val =
+    case val of
+      Ap.Pure x -> pure x
+      Ap.Ap {}  -> runAp (phi eff) val
+
+
+-- |
+-- Takes a 'String' and consumes a case-insensitive match in from the stream.
+-- This is polymorphic over all streams where @Token ~ Char@.
 string'' :: forall e s m. (FoldCase (Tokens s), MonadParsec e s m,  Token s ~ Char) => String -> m ()
 string'' = void . string' . tokensToChunk (Proxy :: Proxy s)
 
 
 -- |
--- The monadic effect to be intercalated between components of the syntax.
+-- The side effect of *no* side effects.
 --
--- Consumes a comma character with leading and training whitespace.
-comma :: (MonadParsec e s m,  Token s ~ Char) => m ()
-comma = whitespace *> seperator *> whitespace
-  where
-    seperator = char ',' <?> "',' seperating arguments"
+-- Useful for when a side effect is expected, but none should be performed.
+voidEffect :: Applicative f => f ()
+voidEffect = pure ()
 
-
-{--
--- |
--- Intercalates a monadic effect between actions.
-iterM' :: (Monad m, Functor f) => m () -> (f (m a) -> m a) -> F.Free f a -> m a
-iterM' _   _   (F.Pure x) = pure x
-iterM' eff phi (F.Free f) = phi (F.iterM ((eff *>) . phi) <$> f)
-
-
--- |
--- Intercalates a monadic effect between actions.
-iterT' :: (Monad m, Functor f) => m () -> (f (m a) -> m a) -> FreeT f m a -> m a
-iterT' eff f (FreeT m) = do
-    val <- m
-    case fmap (iterT ((eff *>) . f)) val of
-      Pure x -> pure x
-      Free y -> f y
---}
-
-
-
-{--
-data TestStruct = TS Int String [Double] deriving (Show)
-
-tester :: MonadPlus p => SyntaxParser (ArgumentValue p) p TestStruct
-tester = do
-    age <- listId "age" int `withDefault` 42
-    str <- text
-    r   <- real
-    pure $ TS age str [r]
--}
-
-
-{--
-
--- |
--- 'SyntacticCommand' is "Stringly-Typed" and therefore inherently unsafe.
--- We will later consume a list of SyntacticCommand as a Script type and
--- convert these into thier less dubious, well-type counterpart of type Command,
--- or report an error explaing why the SyntacticCommand is not valid.
-data  SyntacticCommand
-    = SyntacticCommand ListIdentifier (NonEmpty Argument)
-    deriving (Show)
-
-
-data  Syntax
-    = Syntax (NonEmpty SyntacticCommand)
-    deriving (Show)
-
-
-data  Argument
-    = PrimativeArg   Primative
-    | ListIdArg      ListIdentifier
-    | ListIdNamedArg ListIdentifier Argument
-    | CommandArg     SyntacticCommand
-    | ArgumentList  (NonEmpty Argument)
-    deriving (Show)
-
-
-data  Primative
-    = WholeNum  Int
-    | RealNum   Double
-    | BitValue  Bool
-    | TextValue String
-    | TimeSpan  DiffTime
-    deriving (Show)
---}
-
-
-{-
-data ArgumentList a x = Perm (Maybe a) [Branch a x] x
-  deriving (Functor)
-
-
-data Branch a x = forall b. Branch (ArgumentList (b -> a) x) b x
-
-
-instance Functor (Branch a) where
-
-    fmap f (Branch args b x) = Branch (f <$> args) b $ f x
-
-
-newperm :: (a -> b) -> x -> ArgumentList (a -> b) x
-newperm f = Perm (Just f) [] 
-
-
-add :: ArgumentList (a -> b) x -> a -> ArgumentList b x
-add perm@(Perm _mf fs x) p = Perm Nothing (first : fmap insert fs) x
-  where
-    first = Branch perm  p  x
-    insert (Branch perm' p' x') = Branch (add (mapPerms flip perm') p) p' x'
-
-
-addopt
-  :: ArgumentList (a -> b) x
-  -> a
-  -> Free ArgumentValue a
-  -> ArgumentList b x
-addopt perm@(Perm mf fs x) v p = Perm (fmap ($ v) mf) (first : fmap insert fs) x
-  where
-    first = Branch perm  p  x
-    insert (Branch perm' p' x') = Branch (addopt (mapPerms flip -perm') x p) p' x'
-
-
-mapPerms
-  :: (a -> b)
-  -> ArgumentList a x
-  -> ArgumentList b x
-mapPerms f (Perm a as x) = Perm (fmap f a) (fmap mapBranch as) x
-  where
-    mapBranch (Branch perm p x') = Branch (mapPerms (f .) perm) p x'
-
-
-
-(<||>) :: (a -> b) -> Free ArgumentValue a -> ArgumentList a x
-(<||>) f p = newperm f <::> p
-
-
-(<::>) :: ArgumentList (a -> b) x -> Free ArgumentValue a -> ArgumentList b x
-(<::>) f p = add
-
-
--}
-
-{-
-
-data ReadCommandz = Read [FileSpec]
-
-data FileSpec
-   = Unspecified    String
-   | Nucleotide     String
-   | Chromosome     String
-   | CustomAlphabet String
-   deriving (Show)
-
-
-unspecified :: Free ArgumentValue FileSpec
-unspecified = Unspecified <$> text
-
-nucleotide :: Free ArgumentValue FileSpec
-nucleotide = listId "nucleotide" $ Nucleotide <$> text
--}
-
-
-{-
-customAlphabet :: Free ArgumentValue FileSpec
-customAlphabet = listId "custom_alphabet"
-  where
-    parameters = argList $ (,) </|)
--}
-
-
-{--
-newtype SyntaxParser a = SP { unSyntax :: Parsec Void String a }
-
-
-instance Functor SyntaxParser where
-
-    fmap f = SP . fmap f . (<* whitespace) . unSyntax
-
-
-instance Applicative SyntaxParser where
-
-    pure = SP . pure
-
-    (<*>) f = SP . ((unSyntax f) <*>) . (char ',' *> whitespace *>) . unSyntax
-
-
-instance Monad SyntaxParser where
-
-    (>>=) x f = SP $ unSyntax x >>= unSyntax . f
-
-    (>>)  f = SP . (unSyntax f >>) . unSyntax
-
-    return = pure
-
-    fail = SP . fail
-
-
-instance MonadPlus SyntaxParser where
-
-    mzero = SP mzero
-
-    mplus x y = SP $ unSyntax x `mplus` unSyntax y
-
-
-instance Alternative SyntaxParser where
-
-    empty = SP empty
-
-    (<|>) x y = SP $ unSyntax x <|> unSyntax y
-
-
-instance MonadParsec Void String SyntaxParser where
-
-    failure e es        = SP $ failure e es
-    fancyFailure es     = SP $ fancyFailure es
-    label str           = SP . label str . unSyntax
-    try                 = SP . try . unSyntax
-    lookAhead           = SP . lookAhead . unSyntax
-    notFollowedBy       = SP . notFollowedBy . unSyntax
-    withRecovery f      = SP . withRecovery (unSyntax . f) . unSyntax
-    observing           = SP . observing . unSyntax
-    eof                 = SP eof
-    token  f m          = SP $ token  f m
-    tokens f m          = SP $ tokens f m
-    takeWhileP  m f     = SP $ takeWhileP  m f
-    takeWhile1P m f     = SP $ takeWhile1P m f
-    takeP m i           = SP $ takeP m i
-    getParserState      = SP getParserState
-    updateParserState f = SP $ updateParserState f
-
-
-syntaxParse syn file str = parse (unSyntax syn) file str
---}
 

@@ -1,8 +1,8 @@
 module PCG.Syntax
   ( module PCG.Syntax.Parser
-  , module PCG.Syntax.Types
+  , module PCG.Syntax.Combinators
 --  , syntacticStreamParser
   ) where
 
 import PCG.Syntax.Parser
-import PCG.Syntax.Types
+import PCG.Syntax.Combinators
