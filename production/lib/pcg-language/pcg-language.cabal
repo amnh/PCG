@@ -109,12 +109,14 @@ library
 
   -- Modules exported by the library.
   exposed-modules:     PCG.Syntax
+                       PCG.Syntax.Combinators
 
 
   -- Modules included in this library but not exported.
-  other-modules:       PCG.Command.Read
-                       PCG.Syntax.Parser
+  other-modules:
+--                       PCG.Command.Read
+--                       PCG.Syntax.Parser
                        PCG.Syntax.Primative
-                       PCG.Syntax.Types
-                       Control.Monad.FreeAlt
-                       Text.Megaparsec.Perm2
+--                       PCG.Syntax.Types
+                       Control.Alternative.Permutation
+
