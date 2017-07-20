@@ -23,6 +23,7 @@ module Text.XML.Custom
   ) where
 
 
+import Data.Foldable
 import Text.XML.Class
 import Text.XML.Light.Types
 
@@ -33,10 +34,10 @@ import Text.XML.Light.Types
 --
 -- Wanted to make it take any Traversable sequence, but realized that wouldn't guarantee 'toList' was available.
 -- TODO: find a way around that?
-collapseElemList :: (ToXML a) => String -> [Attr] -> [a] -> Element
+collapseElemList :: (Foldable f, ToXML a) => String -> [Attr] -> f a -> Element
 collapseElemList name attrs lst = Element (xmlQName name) attrs contents Nothing
     where
-        contents = Elem . toXML <$> lst
+        contents = Elem . toXML <$> toList lst
 
 
 -- | Create an XML Attr, which is a key value pair (xmlQName, String).
@@ -49,12 +50,18 @@ xmlContent :: (String, String) -> Content
 xmlContent (key, val) = Elem $ Element (xmlQName key) [] [CRef val] Nothing
 
 
--- | Create an XML Element from a String, a list of attributes and a list of contents.
-xmlElement :: String -> [(String, String)] -> [(String, Either String Element)] -> Element
+-- |
+-- Create an XML Element from a String, a list of attributes and a list of contents.
+-- If the input is a tuple of strings, create an Element with the first as a tag and the second as content.
+-- Otherwise, return the Element val as Elem val (to create Content).
+xmlElement :: String -> [(String, String)] -> [Either (String, String) Element] -> Element
 xmlElement name attrs contLst = Element (xmlQName name) attributes contents Nothing
     where
-        attributes = xmlAttr                 <$> attrs
-        contents   = parseElemTupleToContent <$> contLst
+        attributes      = xmlAttr   <$> attrs
+        contents        = parseList <$> contLst
+        parseList conts = case conts of
+            Left  tuple   -> xmlContent tuple
+            Right element -> Elem element
 
 
 -- | Create a QName from a String.
@@ -62,7 +69,7 @@ xmlQName :: String -> QName
 xmlQName str = QName str mempty mempty
 
 
--- | Coerce an input of (String, Either String Element) into Content
-parseElemTupleToContent :: (String, Either String Element) -> Content
-parseElemTupleToContent  (tag, Left str    ) = xmlContent (tag, str)
-parseElemTupleToContent  (_  , Right inElem) = Elem inElem
+-- -- | Coerce an input of (String, Either String Element) into Content
+-- parseElemTupleToContent :: (String, Either String Element) -> Content
+-- parseElemTupleToContent  (tag, Left str    ) = xmlContent (tag, str)
+-- parseElemTupleToContent  (_  , Right inElem) = Elem inElem

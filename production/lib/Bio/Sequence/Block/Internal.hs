@@ -96,10 +96,10 @@ instance ( ToXML u
     toXML block = xmlElement "Character block" attributes contents
         where
             attributes = []
-            contents   = [ ("Fitch Characters"     , Right $ collapseElemList "Char" [] (toList (nonAdditiveCharacterBins block)) )
-                         , ("Additive Characters"  , Right $ collapseElemList "Char" [] (toList (additiveCharacterBins    block)) )
-                         , ("NonMetric Characters" , Right $ collapseElemList "Char" [] (toList (nonMetricCharacterBins   block)) )
-                         , ("Continuous Characters", Right $ collapseElemList "Char" [] (toList (continuousCharacterBins  block)) )
-                         , ("Metric Characters"    , Right $ collapseElemList "Char" [] (toList (nonMetricCharacterBins   block)) )
-                         , ("Dynamic Characters"   , Right $ collapseElemList "Char" [] (toList (dynamicCharacters        block)) )
+            contents   = [ (Right . collapseElemList "Fitch Characters"      [] $ nonAdditiveCharacterBins block )
+                         , (Right . collapseElemList "Additive Characters"   [] $ additiveCharacterBins    block )
+                         , (Right . collapseElemList "NonMetric Characters"  [] $ nonMetricCharacterBins   block )
+                         , (Right . collapseElemList "Continuous Characters" [] $ continuousCharacterBins  block )
+                         , (Right . collapseElemList "Metric Characters"     [] $ nonMetricCharacterBins   block )
+                         , (Right . collapseElemList "Dynamic Characters"    [] $ dynamicCharacters        block )
                          ]

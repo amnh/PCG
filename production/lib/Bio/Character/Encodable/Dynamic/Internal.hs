@@ -55,7 +55,7 @@ import           Test.Tasty.QuickCheck        hiding ((.&.))
 import           Test.QuickCheck.Arbitrary.Instances ()
 import           Text.XML.Custom
 
-import Debug.Trace
+-- import Debug.Trace
 
 -- TODO: Change DynamicChar/Sequences to DynamicCharacters
         -- Make a missing a null vector
@@ -189,7 +189,7 @@ instance MonoTraversable DynamicChar where
 instance EncodedAmbiguityGroupContainer DynamicChar where
 
     {-# INLINE symbolCount #-}
-    symbolCount (Missing n) = trace ("Missing: " <> show n) n
+    symbolCount (Missing n) = n
     symbolCount (DC c)      = numCols c
 
 
@@ -355,8 +355,8 @@ instance ToXML DynamicChar where
     toXML dynamicChar = xmlElement "DynamicChar" attributes contents
         where
             attributes            = []
-            contents              = contentTuple <$> otoList dynamicChar -- toXML on all dynamic character elements
-            contentTuple (DCE bv) = ("Character states", Left $ (\x -> if x then '1' else '0') <$> toBits bv) -- the value of this character
+            contents              = (Left . contentTuple) <$> otoList dynamicChar -- toXML on all dynamic character elements
+            contentTuple (DCE bv) = ("Character states", (\x -> if x then '1' else '0') <$> toBits bv) -- the value of this character
 
 {- Don't think I need this, since it's taken care of in ToXML DynamicChar
 instance ToXML DynamicCharacterElement where

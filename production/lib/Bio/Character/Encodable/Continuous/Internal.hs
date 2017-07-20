@@ -75,7 +75,7 @@ instance ToXML ContinuousChar where
     toXML continuousChar = xmlElement "ContinuousChar" attributes content
         where
             attributes = []
-            content    = [("Character states", Left $ show continuousChar)]
+            content    = [Left ("Character states", show continuousChar)]
 
 
 -- |

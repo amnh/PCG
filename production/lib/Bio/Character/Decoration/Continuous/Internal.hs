@@ -445,9 +445,9 @@ instance (Show c) => ToXML (ContinuousDecorationInitial c) where
     toXML (ContinuousDecorationInitial val metadata) = xmlElement "ContinuousDecorationInitial" attributes contents
         where
             attributes = []
-            contents   = [ ("Name"                   , Left . show $ metadata ^. characterName  )
-                         , ("Initial character state", Left $ show val                          )
-                         , ("Weight"                 , Left . show $ metadata ^. characterWeight)
+            contents   = [ Left ("Name"                   , show $ metadata ^. characterName  )
+                         , Left ("Initial character state", show val                          )
+                         , Left ("Weight"                 , show $ metadata ^. characterWeight)
                          ]
             --TODO: use ToXML instance in Bio/Metadat/General/Internal
             --meta = initialDecoration ^. continuousMetadataField
@@ -464,12 +464,12 @@ instance
     toXML optimizationDecoration = xmlElement "ContinuousOptimizationDecoration" attributes contents
         where
             attributes = []
-            contents   = [ ("Cost"                , Left . show $ optimizationDecoration ^. characterCost       )
-                         , ("Is Leaf Node?"       , Left . show $ optimizationDecoration ^. isLeaf              )
-                         , ("Continuous Character", Left . show $ optimizationDecoration ^. intervalCharacter   )
-                         , ("Preliminary Interval", Left . show $ optimizationDecoration ^. preliminaryInterval )
-                         , ("Child Intervals"     , Left . show $ optimizationDecoration ^. childPrelimIntervals)
-                         , ("Final Interval"      , Left . show $ optimizationDecoration ^. finalInterval       )
+            contents   = [ Left ("Cost"                , show $ optimizationDecoration ^. characterCost       )
+                         , Left ("Is Leaf Node?"       , show $ optimizationDecoration ^. isLeaf              )
+                         , Left ("Continuous Character", show $ optimizationDecoration ^. intervalCharacter   )
+                         , Left ("Preliminary Interval", show $ optimizationDecoration ^. preliminaryInterval )
+                         , Left ("Child Intervals"     , show $ optimizationDecoration ^. childPrelimIntervals)
+                         , Left ("Final Interval"      , show $ optimizationDecoration ^. finalInterval       )
                          ]
 
 
@@ -484,10 +484,10 @@ instance
     toXML postorderDecoration = xmlElement "ContinuousPostorderDecoration" attributes contents
         where
             attributes = []
-            contents   = [ ("Cost"                , Left . show $ postorderDecoration ^. characterCost       )
-                         , ("Is Leaf Node?"       , Left . show $ postorderDecoration ^. isLeaf              )
-                         , ("Continuous Character", Left . show $ postorderDecoration ^. intervalCharacter   )
-                         , ("Preliminary Interval", Left . show $ postorderDecoration ^. preliminaryInterval )
-                         , ("Child Intervals"     , Left . show $ postorderDecoration ^. childPrelimIntervals)
+            contents   = [ Left ("Cost"                , show $ postorderDecoration ^. characterCost       )
+                         , Left ("Is Leaf Node?"       , show $ postorderDecoration ^. isLeaf              )
+                         , Left ("Continuous Character", show $ postorderDecoration ^. intervalCharacter   )
+                         , Left ("Preliminary Interval", show $ postorderDecoration ^. preliminaryInterval )
+                         , Left ("Child Intervals"     , show $ postorderDecoration ^. childPrelimIntervals)
                          ]
 

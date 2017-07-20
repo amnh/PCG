@@ -208,8 +208,8 @@ instance (Show f) => ToXML (FitchOptimizationDecoration f) where
     toXML decoration = xmlElement "Fitch decoration" attributes contents
         where
             attributes = []
-            contents   = [ ("Min cost",           Left . show $ decoration ^. characterCost    )
-                         , ("Preliminary median", Left . show $ decoration ^. preliminaryMedian)
-                         , ("Final median",       Left . show $ decoration ^. finalMedian      )
-                         , ("Is a leaf",          Left . show $ decoration ^. isLeaf           )
+            contents   = [ Left ("Min cost",           show $ decoration ^. characterCost    )
+                         , Left ("Preliminary median", show $ decoration ^. preliminaryMedian)
+                         , Left ("Final median",       show $ decoration ^. finalMedian      )
+                         , Left ("Is a leaf",          show $ decoration ^. isLeaf           )
                          ]

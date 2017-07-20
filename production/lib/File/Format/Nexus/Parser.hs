@@ -63,7 +63,7 @@ parseNexus = nexusFileDefinition
 nexusFileDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m NexusParseResult
 nexusFileDefinition = {-do
     x <- getInput
-    trace ("nexusFileDefinition"  ++ show x) $ -}do
+    trace ("nexusFileDefinition"  ++ show x) $ -} do
     _           <- optional (string' "#NEXUS" <* space)
     _           <- optional . many $ commentDefinition <* space
     (v,w,x,y,z) <- partitionNexusBlocks <$> many nexusBlock
@@ -80,7 +80,7 @@ nexusFileDefinition = {-do
 ignoredBlockDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m IgnBlock
 ignoredBlockDefinition = {-do
     x <- getInput
-    trace ("ignoredBlockDefinition"  ++ show x) $ -}do
+    trace ("ignoredBlockDefinition"  ++ show x) $ -} do
     line  <- sourceLine . NE.head . statePos <$> getParserState
     title <- many letterChar
     _     <- symbol $ char ';'
@@ -117,7 +117,7 @@ nexusBlock = do
 characterBlockDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => String -> Bool -> m PhyloSequence
 characterBlockDefinition which isAlignedSequence = {-do
     x <- getInput
-    trace ("characterBlockDefinition "  ++ show x) $ -}do
+    trace ("characterBlockDefinition "  ++ show x) $ -} do
     _             <- symbol (string' $ which ++ ";")
     (v,w,x,y,z,a) <- partitionSequenceBlock <$> some seqSubBlock
     pure $ PhyloSequence isAlignedSequence v w x y z a which
@@ -133,7 +133,7 @@ taxaBlockDefinition = do
 taxaSubBlock :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m SeqSubBlock
 taxaSubBlock = {-do
     x <- getInput
-    trace ("many taxaSubBlock"  ++ show x) $ -}do
+    trace ("many taxaSubBlock"  ++ show x) $ -} do
         _      <- whitespace
         block' <- symbol block
         pure block'
@@ -147,7 +147,7 @@ taxaSubBlock = {-do
 assumptionsBlockDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m AssumptionBlock
 assumptionsBlockDefinition = {-do
     x <- getInput
-    trace ("assumptionsBlockDefinition"  ++ show x) $ -}do
+    trace ("assumptionsBlockDefinition"  ++ show x) $ -} do
         _                <- symbol (string' "assumptions;")
         (tcms,additives) <- partitionAssumptionBlock <$> many assumptionFieldDef
         pure $ AssumptionBlock tcms additives
@@ -173,7 +173,7 @@ assumptionFieldDef = {-do
 tcmMatrixDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m StepMatrix
 tcmMatrixDefinition = {-do
     x <- getInput
-    trace ("\n\ntcmMatrixDefinition "  ++ show x) $ -}do
+    trace ("\n\ntcmMatrixDefinition "  ++ show x) $ -} do
         _            <- symbol $ string' "usertype"
         matrixName   <- symbol $ somethingTill spaceChar
         _            <- symbol . optional $ try (string' "(stepmatrix)") <|> try (string' "(realmatrix)")
@@ -217,7 +217,7 @@ seqSubBlock = {-do
 dimensionsDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m DimensionsFormat
 dimensionsDefinition = {-do
         x         <- getInput
-        trace ("**dimensionsDefinition:  " ++ show x) $ -}do
+        trace ("**dimensionsDefinition:  " ++ show x) $ -} do
         _         <- symbol   $ string' "dimensions"
         newTaxa'  <- optional $ try (symbol (string' "newTaxa"))
         _         <- optional $ try (symbol (string' "nTax"))
@@ -241,7 +241,7 @@ dimensionsDefinition = {-do
 formatDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m CharacterFormat
 formatDefinition = {-do
         x <- getInput
-        trace ("\n\nmany formatDefinition "  ++ show x) $ -}do
+        trace ("\n\nmany formatDefinition "  ++ show x) $ -} do
         _                         <- symbol (string' "format")
         (o,p,q,r,s,t,u,v,w,x,y,z) <- partitionCharFormat <$> charFormatFieldDef
         _                         <- symbol $ char ';'
@@ -256,7 +256,7 @@ formatDefinition = {-do
 charFormatFieldDef :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m [CharFormatField]
 charFormatFieldDef = {-do
         x <- getInput
-        trace ("many charFormatFieldDef"  ++ show x) $ -}do
+        trace ("many charFormatFieldDef"  ++ show x) $ -} do
         block' <- many $ symbol block
         pure block'
     where
@@ -322,7 +322,7 @@ stringDefinition blockTitle = do
 quotedStringDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => String -> m (Either String [String])
 quotedStringDefinition blockTitle = {-do
     x <- getInput
-    trace (("some quotedStringDefinition " ++ blockTitle)  ++ show x) $ -}do
+    trace (("some quotedStringDefinition " ++ blockTitle)  ++ show x) $ -} do
     _     <- symbol $ string' blockTitle
     _     <- symbol $ char '='
     _     <- symbol $ char '"'
@@ -341,7 +341,7 @@ quotedStringDefinition blockTitle = {-do
 stringListDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => String -> m [String]
 stringListDefinition label = {-do
     x <- getInputs
-    trace (("many stringListDefinition " ++ label)  ++ show x) $ -}do
+    trace (("many stringListDefinition " ++ label)  ++ show x) $ -} do
     _        <- symbol (string' label)
     theItems <- many . symbol $ notKeywordWord ""
     _        <- symbol $ char ';'
@@ -355,7 +355,7 @@ stringListDefinition label = {-do
 delimitedStringListDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => String -> Char -> m [String]
 delimitedStringListDefinition label delimiter = {-do
     x <- getInput
-    trace (("delimitedStringListDefinition " ++ label)  ++ show x) $ -}do
+    trace (("delimitedStringListDefinition " ++ label)  ++ show x) $ -} do
     _        <- symbol (string' label)
     theItems <- many (noneOf $ delimiter : ";") `sepBy` trimmed (char delimiter)
     _        <- symbol $ char ';'
@@ -378,7 +378,7 @@ treeDefinition = do
 seqMatrixDefinition :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m [String]
 seqMatrixDefinition = {-do
     x <- getInput
-    trace ("\n\nseqMatrixDefinition "  ++ show x) $ -}do
+    trace ("\n\nseqMatrixDefinition "  ++ show x) $ -} do
     _         <- symbol $ string' "matrix"
     goodStuff <- some   $ somethingTill c <* c
     _         <- symbol $ char ';'
@@ -394,7 +394,7 @@ seqMatrixDefinition = {-do
 ignoredSubBlockDef :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => Char -> m String
 ignoredSubBlockDef endChar = {-do
     x <- getInput
-    trace (("\n\nignoredSubBlockDef endChar: " ++ [endChar] ++ " ")  ++ show x) $ -}do
+    trace (("\n\nignoredSubBlockDef endChar: " ++ [endChar] ++ " ")  ++ show x) $ -} do
     _     <- notFollowedBy (space *> blockend) <?> "something other than end of block"
     stuff <- somethingTill stopMark
     _     <- stopMark

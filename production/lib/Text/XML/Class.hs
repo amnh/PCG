@@ -12,6 +12,10 @@
 --
 -----------------------------------------------------------------------------
 
+
+{-# LANGUAGE FlexibleInstances #-}
+
+
 module Text.XML.Class where
 
 
@@ -24,3 +28,15 @@ class ToXML a where
     toXML :: a -> Element
 
 
+instance (ToXML a) => ToXML (Maybe a) where
+
+    toXML input = Element (QName "Maybe data" Nothing Nothing) [] [content] Nothing
+        where
+            content = case input of
+                          Nothing  -> CRef "No data"
+                          Just val -> Elem $ toXML val
+
+
+instance ToXML [Char] where
+
+    toXML val = Element (QName "Text value" Nothing Nothing) [] [CRef val] Nothing

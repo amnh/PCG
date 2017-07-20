@@ -849,8 +849,21 @@ instance (Show d) => ToXML (DynamicDecorationDirectOptimizationPostOrderResult d
     toXML decoration = xmlElement "Dynamic DO post order decoration result" attributes contents
         where
             attributes = []
-            contents   = [ ("Character cost", Left . show $ decoration ^. characterCost      )
-                         , ("Local cost"    , Left . show $ decoration ^. characterLocalCost )
-                         , ("Gapped char"   , Left . show $ decoration ^. preliminaryGapped  )    -- TODO: Call toXML here?
-                         , ("Ungapped char" , Left . show $ decoration ^. preliminaryUngapped)    -- TODO: Call toXML here?
+            contents   = [ Left ("Character cost", show $ decoration ^. characterCost      )
+                         , Left ("Local cost"    , show $ decoration ^. characterLocalCost )
+                         , Left ("Gapped char"   , show $ decoration ^. preliminaryGapped  )    -- TODO: Call toXML here?
+                         , Left ("Ungapped char" , show $ decoration ^. preliminaryUngapped)    -- TODO: Call toXML here?
+                         ]
+
+instance ToXML d => ToXML (DynamicDecorationDirectOptimization d) where
+
+    toXML decoration = xmlElement "Dynamic DO pre-order decoration result" attributes contents
+        where
+            attributes = []
+            contents   = [ Left  ("Character cost"           , show  $ decoration ^. characterCost     )
+                         , Left  ("Local cost"               , show  $ decoration ^. characterLocalCost)
+                         , Right . toXML $ decoration ^. preliminaryGapped
+                         , Right . toXML $ decoration ^. preliminaryUngapped
+                         , Right . toXML $ decoration ^. finalGapped
+                         , Right . toXML $ decoration ^. finalUngapped
                          ]

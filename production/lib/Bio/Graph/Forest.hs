@@ -10,7 +10,7 @@
 --
 -- The Phylogentic Graph types.
 --
--- 
+--
 --
 -----------------------------------------------------------------------------
 
@@ -27,6 +27,7 @@ import Data.Semigroup
 import Data.Semigroup.Foldable
 import Data.Semigroup.Traversable
 import Prelude                hiding (lookup)
+import Text.XML.Custom
 
 
 -- |
@@ -93,6 +94,11 @@ instance Lookup PhylogeneticForest where
 
     {-# INLINE lookup #-}
     lookup i = lookup i . unwrap
+
+
+instance (ToXML a) => ToXML (PhylogeneticForest a) where
+
+    toXML = collapseElemList "Forest" [] . unwrap
 
 
 instance Traversable1 PhylogeneticForest where

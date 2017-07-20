@@ -435,11 +435,11 @@ instance
     toXML decoration = xmlElement "Additive postorder decoration" attributes contents
         where
             attributes = []
-            contents   = [ ("Cost"                 , Left . show $ decoration ^. characterCost             )
-                         , ("Is leaf"              , Left . show $ decoration ^. isLeaf                    )
-                         , ("Discrete Character"   , Left $ showDiscreteCharacterElement        decoration )
-                         , ("Preliminary Interval" , Left . show $ additivePreliminaryInterval  decoration )
-                         , ("Child Intervals:"     , Left . show $ additiveChildPrelimIntervals decoration )
+            contents   = [ Left ("Cost"                 , show $ decoration ^. characterCost             )
+                         , Left ("Is leaf"              , show $ decoration ^. isLeaf                    )
+                         , Left ("Discrete Character"   , showDiscreteCharacterElement        decoration )
+                         , Left ("Preliminary Interval" , show $ additivePreliminaryInterval  decoration )
+                         , Left ("Child Intervals:"     , show $ additiveChildPrelimIntervals decoration )
                          ]
 
 
@@ -454,10 +454,10 @@ instance
     toXML decoration = xmlElement "Additive operation decoration" attributes contents
         where
             attributes = []
-            contents   = [ ("Final interval"       , Left . show $ decoration ^. finalInterval       )
-                         , ("Cost"                 , Left . show $ decoration ^. characterCost       )
-                         , ("Is leaf"              , Left . show $ decoration ^. isLeaf              )
-                         , ("Discrete Character"   , Left $ showDiscreteCharacterElement decoration  )
-                         , ("Preliminary Interval" , Left . show $ decoration ^. preliminaryInterval )
-                         , ("Child Intervals:"     , Left . show $ decoration ^. childPrelimIntervals)
+            contents   = [ Left ("Final interval"       , show $ decoration ^. finalInterval       )
+                         , Left ("Cost"                 , show $ decoration ^. characterCost       )
+                         , Left ("Is leaf"              , show $ decoration ^. isLeaf              )
+                         , Left ("Discrete Character"   , showDiscreteCharacterElement decoration  )
+                         , Left ("Preliminary Interval" , show $ decoration ^. preliminaryInterval )
+                         , Left ("Child Intervals:"     , show $ decoration ^. childPrelimIntervals)
                          ]

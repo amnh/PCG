@@ -653,10 +653,10 @@ instance ToXML (GraphData m) where
     toXML gData = xmlElement "Graph data" attrs contents
         where
             attrs = []
-            contents = [ ( "DAG total cost"        , Left (show $ dagCost         gData) )
-                       , ( "DAG network edge cost:", Left (show $ networkEdgeCost gData) )
-                       , ( "DAG root sequence costs:"
-                         , Left (unlines . toList $ (\k v -> "  Root #" <> show k <> ": " <> show v) <#$> rootSequenceCosts gData)
+            contents = [ Left ( "DAG total cost"        , show $ dagCost         gData)
+                       , Left ( "DAG network edge cost:", show $ networkEdgeCost gData)
+                       , Left ( "DAG root sequence costs:"
+                         , (unlines . toList $ (\k v -> "  Root #" <> show k <> ": " <> show v) <#$> rootSequenceCosts gData)
                          )
                        ]
 
@@ -665,6 +665,13 @@ instance ToXML (GraphData m) where
 instance (ToXML n) => ToXML (IndexData e n) where
     toXML indexData = toXML $ nodeDecoration indexData
 
+
+instance ToXML n => ToXML (ReferenceDAG d e n) where
+
+    toXML (RefDAG v _ g) = xmlElement "Directed Acyclic Graph" [] [meta, vect]
+      where
+          vect = Right $ collapseElemList "Nodes" [] v
+          meta = Right $ toXML g
 
 
 -- A test for unfoldDAG containing all node types!

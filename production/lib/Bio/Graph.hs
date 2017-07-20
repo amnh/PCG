@@ -10,7 +10,7 @@
 --
 -- The Phylogentic Graph types.
 --
--- 
+--
 --
 -----------------------------------------------------------------------------
 
@@ -28,9 +28,10 @@ import Bio.Graph.Forest
 --import Bio.Graph.Tree
 import Data.Key
 import Data.List
-import Data.List.NonEmpty            (NonEmpty)
+import Data.List.NonEmpty            (NonEmpty, toList)
 import Data.Semigroup
 import Prelude                hiding (lookup)
+import Text.XML.Custom
 
 
 -- |
@@ -69,5 +70,11 @@ instance Show a => Show (PhylogeneticSolution a) where
                 , ":\n\n"
                 , indent e
                 , "\n"
-                ]                
-        
+                ]
+
+
+instance (ToXML s) => ToXML (PhylogeneticSolution s) where
+
+    toXML (PhylogeneticSolution soln) = collapseElemList "Final graph" attrs (toList soln)
+        where
+            attrs = []

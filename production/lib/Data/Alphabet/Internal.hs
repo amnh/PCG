@@ -303,7 +303,7 @@ instance Show a => Show (Alphabet a) where
 -- | (✔)
 instance (Show a) => ToXML (Alphabet a) where
 
-    toXML alphabet = xmlElement "Alphabet" [] [("Symbols", Left $ show alphabet)]
+    toXML alphabet = xmlElement "Alphabet" [] [ Left ("Symbols", show alphabet)]
 
 
 

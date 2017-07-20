@@ -42,10 +42,10 @@ import Data.List.NonEmpty (NonEmpty( (:|) ))
 import Data.Word
 import Numeric.Extended.Natural
 import Prelude                   hiding (zip)
-import Text.XML.Custom
-import Text.XML.Light
+-- import Text.XML.Custom
+-- import Text.XML.Light
 
-import Debug.Trace
+-- import Debug.Trace
 
 
 -- |
@@ -70,7 +70,7 @@ sankoffPreOrder :: EncodableStaticCharacter c
                 => SankoffOptimizationDecoration c
                 -> [(Word, SankoffOptimizationDecoration c)]
                 -> SankoffOptimizationDecoration c
-sankoffPreOrder childDecoration [] = (trace $ ppTopElement (toXML childDecoration)) $ newDecoration       -- is a root
+sankoffPreOrder childDecoration [] = newDecoration       -- is a root
     where
         childMins     = childDecoration ^. characterCostVector
         overallMin    = childDecoration ^. characterCost
@@ -105,7 +105,7 @@ sankoffPreOrder childDecoration ((whichChild, parentDecoration):_) = resultDecor
 -- \[ cost(i_c) =
 --       \] \(i \elem s_x\), etc...
 initializeCostVector :: DiscreteCharacterDecoration d c => d -> SankoffOptimizationDecoration c
-initializeCostVector inputDecoration = trace (ppTopElement $ toXML returnChar) $ returnChar
+initializeCostVector inputDecoration = returnChar
     where
         -- assuming metricity
         inputChar = inputDecoration ^. discreteCharacter
@@ -144,7 +144,7 @@ updateCostVector :: DiscreteCharacterDecoration d c
                  -> NonEmpty (SankoffOptimizationDecoration c)
                  -> SankoffOptimizationDecoration c
 updateCostVector _parentDecoration (x:|[])                         = x                    -- Shouldn't be possible, but here for completion.
-updateCostVector _parentDecoration (leftChildDec:|rightChildDec:_) = trace (ppTopElement $ toXML returnNodeDecoration) $ returnNodeDecoration -- May? be able to amend this to use non-binary children.
+updateCostVector _parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDecoration -- May? be able to amend this to use non-binary children.
     where
         (cs, ds, minTransCost) = foldr findMins initialAccumulator range   -- sorry abut these shitty variable names. It was to shorten
                                                                            -- the extendDiscreteToSankoff call.

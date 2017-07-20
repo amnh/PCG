@@ -67,7 +67,7 @@ constructNode lhs rhs = directOptimizationPreOrder pairwiseFunction lhsDec [(0,r
 
 
 toLeafNode :: ( Show (Element c)
-              , Show c
+ --             , Show c
               , Integral (Element c)
               , SimpleDynamicDecoration d c
               )

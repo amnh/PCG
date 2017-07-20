@@ -95,34 +95,6 @@ newtype SubtreeLeafSet = LS BitVector
   deriving (Eq, Ord, Bits)
 
 
--- |
--- Adds an edge reference to an existing subtree resolution.
-addEdgeToEdgeSet :: (Int, Int) -> ResolutionInformation s -> ResolutionInformation s
-addEdgeToEdgeSet e r = r { subtreeEdgeSet = singletonEdgeSet e <> subtreeEdgeSet r }
-
-
--- |
--- A safe constructor of a 'PhylogeneticNode2'.
-pNode2 :: n -> ResolutionCache s -> PhylogeneticNode2 s n
-pNode2 = flip PNode2
-
-
--- |
--- Construct a singleton newick string with a unique identifier that can be
--- rendered to a string through it's 'Show' instance.
-singletonNewickSerialization :: Show i => i -> NewickSerialization
-singletonNewickSerialization i = NS $ show i
-
-
--- |
--- Construct a singleton leaf set by supplying the number of leaves and the
--- unique leaf index.
-singletonSubtreeLeafSet :: Int -- ^ Leaf count
-                        -> Int -- ^ Leaf index
-                        -> SubtreeLeafSet
-singletonSubtreeLeafSet n i = LS . (`setBit` i) $ n `bitVec` (0 :: Integer)
-
-
 instance Bifunctor PhylogeneticNode where
 
     bimap g f =
@@ -189,27 +161,55 @@ instance Show SubtreeLeafSet where
         f x = if x then "1" else "0"
 
 
-instance (ToXML s) => ToXML (ResolutionInformation s) where
-
-    toXML info = xmlElement "Resolution info" attrs contents
-        where
-            attrs         = []
-            contents      = [ ("Character sequence" , Right (toXML $ characterSequence info))
-                            , ("Total subtree cost" , Left  (show  $ totalSubtreeCost  info))
-                            , ("Local sequence cost", Left  (show  $ localSequenceCost info))
-                            , ("Subtree"            , Right subtree                         )
-                            ]
-            subtree       = xmlElement "Subtree fields" [] subtreeFields
-            subtreeFields = [ ("Subtree leaf set"      , Left (show $ leafSetRepresentation info))
-                            , ("Subtree representation", Left (show $ subtreeRepresentation info))
-                            , ("Subtree edge set"      , Left (show $ subtreeEdgeSet        info))
-                            ]
-
-
 instance (ToXML n) => ToXML (PhylogeneticNode2 n s) where
 
     toXML node = xmlElement "Phylogenetic node" nodeAttrs contents
         where
             nodeAttrs       = []
             resolutionAttrs = []
-            contents        = [ ("Decorations", Right $ collapseElemList "Resolutions" resolutionAttrs (toList $ resolutions node)) ]
+            contents        = [ Right ( collapseElemList "Resolutions" resolutionAttrs (resolutions node) ) ]
+
+
+instance (ToXML s) => ToXML (ResolutionInformation s) where
+
+    toXML info = xmlElement "Resolution info" attrs contents
+        where
+            attrs         = []
+            contents      = [ Right . toXML $ characterSequence info
+                            , Left  ("Total subtree cost" , (show  $ totalSubtreeCost  info))
+                            , Left  ("Local sequence cost", (show  $ localSequenceCost info))
+                            , Right subtree
+                            ]
+            subtree       = xmlElement "Subtree fields" [] subtreeFields
+            subtreeFields = [ Left ("Subtree leaf set"      , show $ leafSetRepresentation info)
+                            , Left ("Subtree representation", show $ subtreeRepresentation info)
+                            , Left ("Subtree edge set"      , show $ subtreeEdgeSet        info)
+                            ]
+
+
+-- |
+-- Adds an edge reference to an existing subtree resolution.
+addEdgeToEdgeSet :: (Int, Int) -> ResolutionInformation s -> ResolutionInformation s
+addEdgeToEdgeSet e r = r { subtreeEdgeSet = singletonEdgeSet e <> subtreeEdgeSet r }
+
+
+-- |
+-- A safe constructor of a 'PhylogeneticNode2'.
+pNode2 :: n -> ResolutionCache s -> PhylogeneticNode2 s n
+pNode2 = flip PNode2
+
+
+-- |
+-- Construct a singleton newick string with a unique identifier that can be
+-- rendered to a string through it's 'Show' instance.
+singletonNewickSerialization :: Show i => i -> NewickSerialization
+singletonNewickSerialization i = NS $ show i
+
+
+-- |
+-- Construct a singleton leaf set by supplying the number of leaves and the
+-- unique leaf index.
+singletonSubtreeLeafSet :: Int -- ^ Leaf count
+                        -> Int -- ^ Leaf index
+                        -> SubtreeLeafSet
+singletonSubtreeLeafSet n i = LS . (`setBit` i) $ n `bitVec` (0 :: Integer)

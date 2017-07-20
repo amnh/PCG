@@ -68,8 +68,8 @@ instance ToXML GeneralCharacterMetadataDec where
     toXML metadata = xmlElement "Metadata" attributes contents
         where
             attributes = []
-            contents   = [ ("Name"  , Left . show $ metadata ^. characterName  )
-                         , ("Weight", Left . show $ metadata ^. characterWeight)
+            contents   = [ Left ("Name"  , show $ metadata ^. characterName  )
+                         , Left ("Weight", show $ metadata ^. characterWeight)
                          ]
 
 -- |
