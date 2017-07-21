@@ -16,8 +16,8 @@ profiling     = --executable-profiling --library-profiling
 
 
 # Default build target
-#all: standard-build copy-haddock
-all: stack-build-profiling
+all: standard-build copy-haddock
+#all: stack-build-profiling
 
 # Rebuilds with profiling
 prof: stack-build-profiling
@@ -68,9 +68,9 @@ stack-build-test: phylocomgraph.cabal stack.yaml
 
 # Copies documentation director to local scope
 copy-haddock: set-dir-variables
-	rm -rf doc/haddock
+	rm -rf doc/haddock/*
 	rm -f  doc/haddock.html
-	cp -r .stack-work/dist/$(DIR_ONE)/$(DIR_TWO)/doc/html/phylocomgraph doc/haddock
+	cp -r .stack-work/dist/$(DIR_ONE)/$(DIR_TWO)/doc/html/phylocomgraph doc/haddock/phylocomgraph || cp -r lib/pcg-language/.stack-work/dist/$(DIR_ONE)/$(DIR_TWO)/doc/html/pcg-language doc/haddock/pcg-language
 	ln -s haddock/index.html doc/haddock.html
 
 # Sets up variables of path names that are subject to change.
