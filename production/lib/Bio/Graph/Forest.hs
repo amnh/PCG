@@ -18,8 +18,11 @@
 
 module Bio.Graph.Forest
   ( PhylogeneticForest(..)
+  , getLeavesGraphRep
+--  , HasLeafSet
   ) where
 
+import Control.Lens           hiding (Indexable)
 import Data.Key
 import Data.List.NonEmpty            (NonEmpty)
 import Data.Maybe
@@ -28,6 +31,7 @@ import Data.Semigroup.Foldable
 import Data.Semigroup.Traversable
 import Prelude                hiding (lookup)
 import Text.XML.Custom
+import Text.XML.Light.Types
 
 
 -- |
@@ -35,6 +39,14 @@ import Text.XML.Custom
 newtype PhylogeneticForest a
       = PhylogeneticForest (NonEmpty a)
       deriving (Foldable, Foldable1, Functor, Semigroup, Traversable)
+
+
+-- -- |
+-- -- A 'Lens' for the 'leafSet' field
+-- class HasLeafSet s a | s -> a where
+
+--     {-# MINIMAL leafSet #-}
+--     leafSet :: Lens' s a
 
 
 type instance Key PhylogeneticForest = Int
@@ -68,6 +80,16 @@ instance FoldableWithKey1 PhylogeneticForest where
 
     {-# INLINE foldMapWithKey1 #-}
     foldMapWithKey1 f = foldMapWithKey1 f . unwrap
+
+
+-- -- |
+-- -- A 'Lens' for the 'transitionCostMatrix' field
+-- instance HasLeafSet (PhylogeneticForest a) where
+
+--     leafSet = lens getter
+--       where
+--          getter e   = (head e) ^. leafSet
+--         -- setter e f = head e {  =  e & leafSet .~ f }
 
 
 instance Indexable PhylogeneticForest where
@@ -127,3 +149,8 @@ unwrap :: PhylogeneticForest a -> NonEmpty a
 unwrap (PhylogeneticForest x) = x
 
 
+-- | This sucks.
+getLeavesGraphRep :: PhylogeneticForest f -> (Element, Element)
+getLeavesGraphRep (PhylogeneticForest forest) = (leafSet, graphRepresentation)
+    where
+        (leafSet, graphRepresentation) = undefined -- getLeavesGraphRep $ head forest

@@ -78,6 +78,7 @@ library
                      -- >=3.4 required for corrected definition of (!) & index
                      , vector-instances >=3.4
                      , xml
+                     , blaze-html
 
   default-language:    Haskell2010
 
@@ -211,6 +212,8 @@ library
                        File.Format.VertexEdgeRoot
                        File.Format.TNT
                        File.Format.TransitionCostMatrix
+--                       Text.HTML.Class
+--                       Text.HTML.Custom
                        Text.XML.Class
                        Text.XML.Custom
 
@@ -342,6 +345,7 @@ executable pcg
                      , vector
                      , vector-instances >=3.4
                      , xml
+                     , blaze-html
 
   default-language:    Haskell2010
 

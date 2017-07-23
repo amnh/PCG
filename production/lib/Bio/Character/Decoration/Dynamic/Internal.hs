@@ -843,27 +843,28 @@ instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostOrderDecoratio
         }
 
 
--- | (✔)
-instance (Show d) => ToXML (DynamicDecorationDirectOptimizationPostOrderResult d) where
-
-    toXML decoration = xmlElement "Dynamic DO post order decoration result" attributes contents
-        where
-            attributes = []
-            contents   = [ Left ("Character cost", show $ decoration ^. characterCost      )
-                         , Left ("Local cost"    , show $ decoration ^. characterLocalCost )
-                         , Left ("Gapped char"   , show $ decoration ^. preliminaryGapped  )    -- TODO: Call toXML here?
-                         , Left ("Ungapped char" , show $ decoration ^. preliminaryUngapped)    -- TODO: Call toXML here?
-                         ]
-
-instance ToXML d => ToXML (DynamicDecorationDirectOptimization d) where
+instance Show d => ToXML (DynamicDecorationDirectOptimization d) where
 
     toXML decoration = xmlElement "Dynamic DO pre-order decoration result" attributes contents
         where
             attributes = []
-            contents   = [ Left  ("Character cost"           , show  $ decoration ^. characterCost     )
-                         , Left  ("Local cost"               , show  $ decoration ^. characterLocalCost)
-                         , Right . toXML $ decoration ^. preliminaryGapped
-                         , Right . toXML $ decoration ^. preliminaryUngapped
-                         , Right . toXML $ decoration ^. finalGapped
-                         , Right . toXML $ decoration ^. finalUngapped
+            contents   = [ Left ("Character cost"           , show $ decoration ^. characterCost      )
+                         , Left ("Local cost"               , show $ decoration ^. characterLocalCost )
+                         , Left ("Preliminary gapped char"  , show $ decoration ^. preliminaryGapped  )
+                         , Left ("Preliminary ungapped char", show $ decoration ^. preliminaryUngapped)
+                         , Left ("Final gapped char"        , show $ decoration ^. finalGapped        )
+                         , Left ("Final ungapped char"      , show $ decoration ^. finalUngapped      )
+                         ]
+
+
+-- | (✔)
+instance Show d => ToXML (DynamicDecorationDirectOptimizationPostOrderResult d) where
+
+    toXML decoration = xmlElement "Dynamic DO post-order decoration result" attributes contents
+        where
+            attributes = []
+            contents   = [ Left ("Character cost"           , show $ decoration ^. characterCost      )
+                         , Left ("Local cost"               , show $ decoration ^. characterLocalCost )
+                         , Left ("Preliminary gapped char"  , show $ decoration ^. preliminaryGapped  )    -- TODO: Call toXML here?
+                         , Left ("Preliminary ungapped char", show $ decoration ^. preliminaryUngapped)    -- TODO: Call toXML here?
                          ]

@@ -42,7 +42,7 @@ newtype PhylogeneticSolution a
 
 
 -- |
--- Retrieve the non-empty collection of phylogenetic forests  from the solution.
+-- Retrieve the non-empty collection of phylogenetic forests from the solution.
 {-# INLINE phylogeneticForests #-}
 phylogeneticForests :: PhylogeneticSolution a -> NonEmpty (PhylogeneticForest a)
 phylogeneticForests (PhylogeneticSolution x) = x
@@ -75,6 +75,14 @@ instance Show a => Show (PhylogeneticSolution a) where
 
 instance (ToXML s) => ToXML (PhylogeneticSolution s) where
 
-    toXML (PhylogeneticSolution soln) = collapseElemList "Final graph" attrs (toList soln)
+    toXML (PhylogeneticSolution soln) = xmlElement "Solution" attrs contents
         where
-            attrs = []
+            attrs    = []
+            contents = [ -- Right leafSet
+                       -- , Right graphRepresentation
+                        Right $ collapseElemList "Final graph" attrs soln
+                       ]
+            (PhylogeneticForest firstForest) = head $ toList soln
+            -- (PDAG2 refDag _e _n)    = head $ toList firstForest
+            -- (refDag )
+            (leafSet, graphRepresentation)     = getLeavesGraphRep . head $ toList soln

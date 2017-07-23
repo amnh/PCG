@@ -66,6 +66,16 @@ data PhylogeneticDAG2 e n u v w x y z
              )
 
 
+instance ( ToXML u
+         , ToXML v
+         , ToXML w
+         , ToXML y
+         , ToXML z
+         ) => ToXML (PhylogeneticDAG2 e n u v w x y z)  where
+
+    toXML (PDAG2 refDag) = toXML refDag
+
+
 type CharacterDAG =
        PhylogeneticDAG2
          EdgeLength
@@ -170,55 +180,6 @@ type UnRiefiedCharacterDAG =
          UnifiedDiscreteCharacter
          UnifiedDiscreteCharacter
          UnifiedDynamicCharacter
-
-
--- | (✔)
-instance ( Show e
-         , Show n
-         , Show u
-         , Show v
-         , Show w
-         , Show x
-         , Show y
-         , Show z
-         , HasBlockCost u v w x y z Word Double
-         ) => Show (PhylogeneticDAG e n u v w x y z) where
-
-    show (PDAG dag) = show dag <> "\n" <> foldMapWithKey f dag
-      where
-        f i (PNode n sek) = mconcat [ "Node {", show i, "}:\n\n", unlines [show n, show sek] ]
-
-
--- | (✔)
-instance ( Show e
-         , Show n
-         , Show u
-         , Show v
-         , Show w
-         , Show x
-         , Show y
-         , Show z
-         , HasBlockCost u v w x y z Word Double
-         ) => Show (PhylogeneticDAG2 e n u v w x y z) where
-
-    show p@(PDAG2 dag) = unlines
-        [ renderSummary p
-        , foldMapWithKey f dag
-        ]
-      where
---        f i (PNode2 n sek) = mconcat [ "Node {", show i, "}:\n\n", unlines [show n, show sek], "\n\n" ]
-        f i n = mconcat [ "Node {", show i, "}:\n\n", show n ]
-
-
--- | (✔)
-instance ( ToXML u
-         , ToXML v
-         , ToXML w
-         , ToXML y
-         , ToXML z
-         ) => ToXML (PhylogeneticDAG2 e n u v w x y z)  where
-
-    toXML (PDAG2 dag) = toXML dag
 
 
 applySoftwireResolutions :: [(ResolutionCache s, IntSet)] -> NonEmpty [ResolutionInformation s]
@@ -367,5 +328,37 @@ resolutionsDoNotOverlap :: ResolutionInformation a -> ResolutionInformation b ->
 resolutionsDoNotOverlap x y = leafSetRepresentation x .&. leafSetRepresentation y == zeroBits
 
 
+instance ( Show e
+         , Show n
+         , Show u
+         , Show v
+         , Show w
+         , Show x
+         , Show y
+         , Show z
+         , HasBlockCost u v w x y z Word Double
+         ) => Show (PhylogeneticDAG e n u v w x y z) where
+
+    show (PDAG dag) = show dag <> "\n" <> foldMapWithKey f dag
+      where
+        f i (PNode n sek) = mconcat [ "Node {", show i, "}:\n\n", unlines [show n, show sek] ]
 
 
+instance ( Show e
+         , Show n
+         , Show u
+         , Show v
+         , Show w
+         , Show x
+         , Show y
+         , Show z
+         , HasBlockCost u v w x y z Word Double
+         ) => Show (PhylogeneticDAG2 e n u v w x y z) where
+
+    show p@(PDAG2 dag) = unlines
+        [ renderSummary p
+        , foldMapWithKey f dag
+        ]
+      where
+--        f i (PNode2 n sek) = mconcat [ "Node {", show i, "}:\n\n", unlines [show n, show sek], "\n\n" ]
+        f i n = mconcat [ "Node {", show i, "}:\n\n", show n ]

@@ -67,7 +67,7 @@ instance ( Show u
          ) => Show (CharacterBlock u v w x y z) where
 
     show block = unlines
-        [ "Fitch Characters:"
+        [ "Non-additive Characters:"
         , niceRendering $ nonAdditiveCharacterBins block
         , "Additive Characters:"
         , niceRendering $ additiveCharacterBins block
@@ -96,10 +96,10 @@ instance ( ToXML u
     toXML block = xmlElement "Character block" attributes contents
         where
             attributes = []
-            contents   = [ (Right . collapseElemList "Fitch Characters"      [] $ nonAdditiveCharacterBins block )
-                         , (Right . collapseElemList "Additive Characters"   [] $ additiveCharacterBins    block )
-                         , (Right . collapseElemList "NonMetric Characters"  [] $ nonMetricCharacterBins   block )
-                         , (Right . collapseElemList "Continuous Characters" [] $ continuousCharacterBins  block )
-                         , (Right . collapseElemList "Metric Characters"     [] $ nonMetricCharacterBins   block )
-                         , (Right . collapseElemList "Dynamic Characters"    [] $ dynamicCharacters        block )
+            contents   = [ (Right . collapseElemList "Non-additive character block" [] $ nonAdditiveCharacterBins block )
+                         , (Right . collapseElemList "Additive character block"     [] $ additiveCharacterBins    block )
+                         , (Right . collapseElemList "NonMetric character block"    [] $ nonMetricCharacterBins   block )
+                         , (Right . collapseElemList "Continuous character block"   [] $ continuousCharacterBins  block )
+                         , (Right . collapseElemList "Metric character block"       [] $ nonMetricCharacterBins   block )
+                         , (Right . collapseElemList "Dynamic character block"      [] $ dynamicCharacters        block )
                          ]

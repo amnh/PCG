@@ -20,6 +20,7 @@ module Bio.Graph.Node
   , ResolutionCache
   , ResolutionInformation(..)
   , SubtreeLeafSet()
+--  , HasLeafSet(..)
   , addEdgeToEdgeSet
   , singletonEdgeSet
   , singletonNewickSerialization
@@ -28,6 +29,8 @@ module Bio.Graph.Node
   ) where
 
 
+-- import Bio.Graph.Node.Class
+import Control.Lens
 import Data.Bifunctor
 import Data.BitVector
 import Data.EdgeSet
@@ -114,6 +117,30 @@ instance Ord (ResolutionInformation s) where
         case leafSetRepresentation lhs `compare` leafSetRepresentation lhs of
           EQ -> subtreeRepresentation lhs `compare` subtreeRepresentation rhs
           c  -> c
+
+-- -- |
+-- -- A 'Lens' for the 'transitionCostMatrix' field
+-- instance (Element d ~ c) => HasSparseTransitionCostMatrix (DynamicDecorationDirectOptimization d) MemoizedCostMatrix where
+
+--     sparseTransitionCostMatrix = lens getter setter
+--       where
+--          getter e   = dynamicDecorationDirectOptimizationMetadata e ^. sparseTransitionCostMatrix
+--          setter e f = e { dynamicDecorationDirectOptimizationMetadata = dynamicDecorationDirectOptimizationMetadata e & sparseTransitionCostMatrix .~ f }
+
+
+-- -- | (✔)
+-- instance HasLeafSet (ResolutionCache r) where
+
+--     leafSet = lens getter setter
+--         where
+--             getter e   = e $ \e x -> (head e) { leafSetRepresentation = x }
+--             setter e f = (h)
+
+
+-- -- | (✔)
+-- instance HasLeafSet (ResolutionInformation s) SubtreeLeafSet where
+
+--     leafSet = lens leafSetRepresentation $ \e x -> e { leafSetRepresentation = x }
 
 
 instance Semigroup NewickSerialization where

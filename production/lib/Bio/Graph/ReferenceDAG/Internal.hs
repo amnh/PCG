@@ -81,6 +81,155 @@ data  GraphData d
 newtype NodeRef = NR Int deriving (Eq, Enum)
 
 
+-- | (✔)
+instance Bifunctor (ReferenceDAG d) where
+
+    bimap f g dag =
+        RefDAG
+        { references = h <$> references dag
+        , rootRefs   = rootRefs  dag
+        , graphData  = graphData dag
+        }
+      where
+        h (IndexData node parentRefs' childRefs') = IndexData (g node) parentRefs' $ f <$> childRefs'
+
+
+-- | (✔)
+instance Foldable (ReferenceDAG d e) where
+
+    foldMap f = foldMap (f . nodeDecoration) . references
+
+
+type instance Key (ReferenceDAG d e) = Int
+
+
+-- | (✔)
+instance FoldableWithKey (ReferenceDAG d e) where
+
+    {-# INLINE foldrWithKey #-}
+    foldrWithKey f e = V.ifoldr' (\i n a -> f i (nodeDecoration n) a) e . references
+
+    {-# INLINE foldlWithKey #-}
+    foldlWithKey f e = V.ifoldl' (\a i -> f a i . nodeDecoration) e . references
+
+
+-- | (✔)
+instance Functor (ReferenceDAG d e) where
+
+    fmap f dag =
+        RefDAG
+        { references = g <$> references dag
+        , rootRefs   = rootRefs  dag
+        , graphData  = graphData dag
+        }
+      where
+        g (IndexData node parentRefs' childRefs') = IndexData (f node) parentRefs' childRefs'
+
+
+-- | (✔)
+instance PhylogeneticComponent (ReferenceDAG d e n) NodeRef e n where
+
+    parents   i dag = fmap toEnum . otoList . parentRefs $ references dag ! fromEnum i
+
+    children  i dag = fmap toEnum . IM.keys . childRefs  $ references dag ! fromEnum i
+
+    roots           = fmap toEnum . rootRefs
+
+    leaves          = foldMapWithKey f . references
+      where
+        f i x
+          | null $ childRefs x = [toEnum i]
+          | otherwise          = mempty
+
+    nodeCount       = length . references
+
+    nodeDatum i dag = nodeDecoration $ references dag ! fromEnum i
+
+    edgeDatum (i,j) dag =  fromEnum j `lookup` childRefs (references dag ! fromEnum i)
+
+    -- TODO: Broken
+    isComponentNode i dag = olength ps > 2
+      where
+        ps = parentRefs $ references dag ! fromEnum i
+
+    -- TODO: Broken
+    isNetworkNode i dag = olength ps > 2
+      where
+        ps = parentRefs $ references dag ! fromEnum i
+
+    isTreeNode i dag = olength ps == 1 && length cs == 2
+      where
+        iPoint = references dag ! fromEnum i
+        ps = parentRefs iPoint
+        cs = childRefs  iPoint
+
+    isLeafNode i dag =  null . childRefs  $ references dag ! fromEnum i
+
+    isRootNode i dag = onull . parentRefs $ references dag ! fromEnum i
+
+    -- TODO: Broken
+    networkResolutions = pure
+
+
+-- | (✔)
+instance PhylogeneticNetwork (ReferenceDAG d e n) NodeRef e n where
+
+    root = toEnum . NE.head . rootRefs
+
+    -- TODO: Broken
+    treeResolutions = pure
+
+
+-- | (✔)
+instance PhylogeneticTree (ReferenceDAG d e n) NodeRef e n where
+
+    parent i dag = fmap toEnum . headMay . otoList . parentRefs $ references dag ! fromEnum i
+
+
+-- | (✔)
+instance Show (GraphData m) where
+
+    show x = unlines
+        [ "DAG total cost:          " <> show (dagCost x)
+        , "DAG network edge cost:   " <> show (networkEdgeCost x)
+        , "DAG root sequence costs:"
+        , unlines . toList $ (\k v -> "  Root #" <> show k <> ": " <> show v) <#$> rootSequenceCosts x
+        ]
+
+
+-- | (✔)
+instance {- (Show e, Show n) => -} Show (ReferenceDAG d e n) where
+
+    show dag = unlines [topologyRendering dag, "", referenceRendering dag]
+
+
+-- | (✔)
+instance ToXML (GraphData m) where
+
+    toXML gData = xmlElement "Graph data" attrs contents
+        where
+            attrs = []
+            contents = [ Left ( "DAG total cost"       , show $ dagCost         gData)
+                       , Left ( "DAG network edge cost", show $ networkEdgeCost gData)
+                       , Left ( "DAG root sequence costs"
+                              , init (unlines . toList $ (\k v -> "Root #" <> show k <> ": " <> show v) <#$> rootSequenceCosts gData)
+                              )
+                       ]
+
+
+-- | (✔)
+instance (ToXML n) => ToXML (IndexData e n) where
+    toXML indexData = toXML $ nodeDecoration indexData
+
+
+instance ToXML n => ToXML (ReferenceDAG d e n) where
+
+    toXML (RefDAG v _ g) = xmlElement "Directed Acyclic Graph" [] [meta, vect]
+      where
+          vect = Right $ collapseElemList "Nodes" [] v
+          meta = Right $ toXML g
+
+
 -- |
 -- /O(n*i)/ where /i/ is the number of missing indicies.
 -- Assuming all indicies in the input /x/ are positive, /i/ = 'findMax x - length x'.
@@ -525,153 +674,6 @@ unfoldDAG f origin =
           | otherwise            = mempty
 
 
--- | (✔)
-instance Bifunctor (ReferenceDAG d) where
-
-    bimap f g dag =
-        RefDAG
-        { references = h <$> references dag
-        , rootRefs   = rootRefs  dag
-        , graphData  = graphData dag
-        }
-      where
-        h (IndexData node parentRefs' childRefs') = IndexData (g node) parentRefs' $ f <$> childRefs'
-
-
--- | (✔)
-instance Foldable (ReferenceDAG d e) where
-
-    foldMap f = foldMap (f . nodeDecoration) . references
-
-
-type instance Key (ReferenceDAG d e) = Int
-
-
--- | (✔)
-instance FoldableWithKey (ReferenceDAG d e) where
-
-    {-# INLINE foldrWithKey #-}
-    foldrWithKey f e = V.ifoldr' (\i n a -> f i (nodeDecoration n) a) e . references
-
-    {-# INLINE foldlWithKey #-}
-    foldlWithKey f e = V.ifoldl' (\a i -> f a i . nodeDecoration) e . references
-
-
--- | (✔)
-instance Functor (ReferenceDAG d e) where
-
-    fmap f dag =
-        RefDAG
-        { references = g <$> references dag
-        , rootRefs   = rootRefs  dag
-        , graphData  = graphData dag
-        }
-      where
-        g (IndexData node parentRefs' childRefs') = IndexData (f node) parentRefs' childRefs'
-
-
--- | (✔)
-instance PhylogeneticComponent (ReferenceDAG d e n) NodeRef e n where
-
-    parents   i dag = fmap toEnum . otoList . parentRefs $ references dag ! fromEnum i
-
-    children  i dag = fmap toEnum . IM.keys . childRefs  $ references dag ! fromEnum i
-
-    roots           = fmap toEnum . rootRefs
-
-    leaves          = foldMapWithKey f . references
-      where
-        f i x
-          | null $ childRefs x = [toEnum i]
-          | otherwise          = mempty
-
-    nodeCount       = length . references
-
-    nodeDatum i dag = nodeDecoration $ references dag ! fromEnum i
-
-    edgeDatum (i,j) dag =  fromEnum j `lookup` childRefs (references dag ! fromEnum i)
-
-    -- TODO: Broken
-    isComponentNode i dag = olength ps > 2
-      where
-        ps = parentRefs $ references dag ! fromEnum i
-
-    -- TODO: Broken
-    isNetworkNode i dag = olength ps > 2
-      where
-        ps = parentRefs $ references dag ! fromEnum i
-
-    isTreeNode i dag = olength ps == 1 && length cs == 2
-      where
-        iPoint = references dag ! fromEnum i
-        ps = parentRefs iPoint
-        cs = childRefs  iPoint
-
-    isLeafNode i dag =  null . childRefs  $ references dag ! fromEnum i
-
-    isRootNode i dag = onull . parentRefs $ references dag ! fromEnum i
-
-    -- TODO: Broken
-    networkResolutions = pure
-
-
--- | (✔)
-instance PhylogeneticNetwork (ReferenceDAG d e n) NodeRef e n where
-
-    root = toEnum . NE.head . rootRefs
-
-    -- TODO: Broken
-    treeResolutions = pure
-
-
--- | (✔)
-instance PhylogeneticTree (ReferenceDAG d e n) NodeRef e n where
-
-    parent i dag = fmap toEnum . headMay . otoList . parentRefs $ references dag ! fromEnum i
-
-
--- | (✔)
-instance Show (GraphData m) where
-
-    show x = unlines
-        [ "DAG total cost:          " <> show (dagCost x)
-        , "DAG network edge cost:   " <> show (networkEdgeCost x)
-        , "DAG root sequence costs:"
-        , unlines . toList $ (\k v -> "  Root #" <> show k <> ": " <> show v) <#$> rootSequenceCosts x
-        ]
-
-
--- | (✔)
-instance {- (Show e, Show n) => -} Show (ReferenceDAG d e n) where
-
-    show dag = unlines [topologyRendering dag, "", referenceRendering dag]
-
-
--- | (✔)
-instance ToXML (GraphData m) where
-
-    toXML gData = xmlElement "Graph data" attrs contents
-        where
-            attrs = []
-            contents = [ Left ( "DAG total cost"        , show $ dagCost         gData)
-                       , Left ( "DAG network edge cost:", show $ networkEdgeCost gData)
-                       , Left ( "DAG root sequence costs:"
-                         , (unlines . toList $ (\k v -> "  Root #" <> show k <> ": " <> show v) <#$> rootSequenceCosts gData)
-                         )
-                       ]
-
-
--- | (✔)
-instance (ToXML n) => ToXML (IndexData e n) where
-    toXML indexData = toXML $ nodeDecoration indexData
-
-
-instance ToXML n => ToXML (ReferenceDAG d e n) where
-
-    toXML (RefDAG v _ g) = xmlElement "Directed Acyclic Graph" [] [meta, vect]
-      where
-          vect = Right $ collapseElemList "Nodes" [] v
-          meta = Right $ toXML g
 
 
 -- A test for unfoldDAG containing all node types!
