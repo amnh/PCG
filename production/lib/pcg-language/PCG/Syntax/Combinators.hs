@@ -25,7 +25,8 @@
 
 
 module PCG.Syntax.Combinators
-  ( SyntacticArgument()
+  ( CommandSpecification()
+  , SyntacticArgument()
   , ListIdentifier(..)
   -- ** Primative Free Applicaitve constructors
   , bool
@@ -36,12 +37,15 @@ module PCG.Syntax.Combinators
   , value
   -- ** Syntactic Free Applicative constructors
   , argList
+  , command
   , choiceFrom
   , listId
+  , listIds
   , manyOf
   , someOf
   , withDefault
   -- ** MonadParsec based syntactic interpreter
+  , parseCommand
   , runSyntax
   ) where
 
@@ -53,6 +57,7 @@ import qualified Control.Alternative.Free   as Alt
 import           Control.Alternative.Permutation
 import qualified Control.Monad.Free         as F
 import           Data.CaseInsensitive              (FoldCase)
+import           Data.Foldable
 import           Data.Functor                      (void)
 import           Data.List.NonEmpty                (NonEmpty(..))
 import           Data.Proxy
@@ -65,11 +70,17 @@ import           Text.Megaparsec
 import           Text.Megaparsec.Char
 
 
-data ArgList z
+data  ArgList z
     = Exact (       Ap SyntacticArgument  z)
     | SomeZ (Alt   (Ap SyntacticArgument) z)
     | ManyZ (Alt   (Ap SyntacticArgument) z)
     deriving (Functor)
+
+
+-- |
+-- Specifcation for a command in the PCG scripting language syntax.
+data  CommandSpecification z
+    = CommandSpec String (Ap SyntacticArgument z)
 
 
 -- |
@@ -146,10 +157,19 @@ argList = liftAp . ArgumentList . Exact
 
 
 -- |
+-- Specifies a command in the PCG scripting language defined by the command name
+-- and the argument structure.
+command :: String -> Ap SyntacticArgument a -> CommandSpecification a
+command = CommandSpec
+
+
+-- |
 -- Matches exactly one of the provided arguments to be used in the command.
-choiceFrom :: [Ap SyntacticArgument a] -> Ap SyntacticArgument a
-choiceFrom    []  = error "You cannot construct an empty set of choices!"
-choiceFrom (x:xs) = liftAp . ExactlyOneOf $ x:|xs
+choiceFrom :: Foldable f => f (Ap SyntacticArgument a) -> Ap SyntacticArgument a
+choiceFrom opts =
+    case toList opts of
+      []   -> error "You cannot construct an empty set of choices!"
+      x:xs -> liftAp . ExactlyOneOf $ x:|xs
 
 
 -- |
@@ -157,6 +177,14 @@ choiceFrom (x:xs) = liftAp . ExactlyOneOf $ x:|xs
 -- values.
 listId :: String -> Ap SyntacticArgument a -> Ap SyntacticArgument a
 listId str x = liftAp $ ListIdNamedArg x (ListId str)
+
+
+-- |
+-- Require a prefix on an agrument value to disambiguate it from other argument
+-- values. Accepts multiple aliases for the prefix used to disambiuate the
+-- argument.
+listIds :: Foldable f => f String -> Ap SyntacticArgument a -> Ap SyntacticArgument a
+listIds strs x = choiceFrom $ liftAp . ListIdNamedArg x . ListId <$> toList strs
 
 
 -- |
@@ -175,6 +203,12 @@ someOf = liftAp . ArgumentList . SomeZ . some . liftAlt
 -- Provide a default value for the argument if it is missing from the user input.
 withDefault :: Ap SyntacticArgument a -> a -> Ap SyntacticArgument a
 withDefault arg def = liftAp $ DefaultValue arg def
+
+
+-- |
+-- Parse a command specification.
+parseCommand :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => CommandSpecification a -> m a
+parseCommand (CommandSpec commandName defintion) = string'' commandName *> runSyntax defintion
 
 
 -- |

@@ -88,7 +88,7 @@ library
 
   -- Modules included in this library but not exported.
   other-modules:
---                       PCG.Command.Read
+                       PCG.Command.Read
                        PCG.Syntax.Parser
                        PCG.Syntax.Primative
                        Control.Alternative.Permutation
