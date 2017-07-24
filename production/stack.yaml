@@ -1,6 +1,6 @@
 allow-newer: true
 
-compiler: ghc-8.2.0.20170704
+compiler: ghc-8.2.1
 
 compiler-check: match-exact
 
@@ -112,25 +112,25 @@ packages:
  - location:  https://github.com/ekmett/semigroupoids/archive/c3297f9.zip
    extra-dep: true
 
-resolver: ghc-8.2.0.20170704
+resolver: ghc-8.2.1
 
 setup-info:
   ghc:
-
-    linux64:
-      8.2.0.20170704:
-        url: https://downloads.haskell.org/~ghc/8.2.1-rc3/ghc-8.2.0.20170704-x86_64-deb8-linux.tar.xz
-        content-length: 138482820
-        sha1: ac1598c21ea2936b091885a29a0f5725668aaed5
-
-    macosx:
-      8.2.0.20170704:
-        url: https://downloads.haskell.org/~ghc/8.2.1-rc3/ghc-8.2.0.20170704-x86_64-apple-darwin.tar.xz
-        content-length: 125197252
-        sha1: 81e3093b559b9aaf8af2a89f182539849539cbe1
-
     windows64:
-      8.2.0.20170704:
-        url: https://downloads.haskell.org/~ghc/8.2.1-rc3/ghc-8.2.0.20170704-x86_64-unknown-mingw32.tar.xz
-        content-length: 175463160
-        sha1: 3648302c66769d4aa0c3a9f82be4538f402f234f
+      8.2.1:
+        url: https://downloads.haskell.org/~ghc/8.2.1/ghc-8.2.1-x86_64-unknown-mingw32.tar.xz
+        sha1: bdede26c1a2cfcf4ebb08329853d285e32213b3d
+        content-length: 175053796
+    linux64:
+      8.2.1:
+        url: https://downloads.haskell.org/~ghc/8.2.1/ghc-8.2.1-x86_64-deb8-linux.tar.xz
+        sha1: 3e52527de6f1cad6d7f1c392ddde8148116d4e36
+        content-length: 126809836
+    macosx:
+      8.2.1:
+        url: https://downloads.haskell.org/~ghc/8.2.1/ghc-8.2.1-x86_64-apple-darwin.tar.xz
+        sha1: 101405b4fef87a44adf34e48bb63a1a4e945c5c9
+        content-length: 114088292
+
+
+
