@@ -1,4 +1,28 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  PCG.Syntax.Combinators
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Provides the syntactic combinators for specifying commands conforming to the
+-- PCG scripting language syntax. Allows for specifying commands which will be
+-- interpreted by the PCG scripting language syntax in a a context-free manner.
+-- Being context-free allows for permutations of command component as long as no
+-- two command components are ambiguously specified. Such ambiguity may lead to
+-- unexpected results when using the provided parser 'runSyntax'.
+--
+-- Commands must be specified using an 'Applicative' style so that a Free
+-- Applicative can be used as the syntactic & semantic parser.
+--
+-----------------------------------------------------------------------------
+
+
 {-# LANGUAGE DeriveFunctor, FlexibleContexts, RankNTypes, ScopedTypeVariables, TypeFamilies #-}
+
 
 module PCG.Syntax.Combinators
   ( SyntacticArgument()
@@ -33,6 +57,7 @@ import           Data.Functor                      (void)
 import           Data.List.NonEmpty                (NonEmpty(..))
 import           Data.Proxy
 import           Data.Semigroup             hiding (option)
+import           Data.String                       (IsString(..))
 import           Data.Time.Clock                   (DiffTime)
 import           PCG.Syntax.Primative              (PrimativeValue, parsePrimative, whitespace)
 import qualified PCG.Syntax.Primative       as P
@@ -47,6 +72,8 @@ data ArgList z
     deriving (Functor)
 
 
+-- |
+-- Component of a semantic command embedded in the PCG scripting language syntax.
 data  SyntacticArgument z
     = PrimativeArg   (F.Free PrimativeValue z)
     | ListIdNamedArg (Ap SyntacticArgument z) ListIdentifier
@@ -56,7 +83,19 @@ data  SyntacticArgument z
     deriving (Functor)
 
 
-newtype ListIdentifier = ListId String deriving (Show)
+-- |
+-- A identifier to disambiguate values of the same type.
+newtype ListIdentifier = ListId String
+
+
+instance IsString ListIdentifier where
+
+    fromString = ListId
+
+
+instance Show ListIdentifier where
+
+    show (ListId x) = show x
 
 
 -- |

@@ -1,5 +1,11 @@
 -- |
 -- Module      :  Control.Alternative.Permutation
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable  
 --
 -- This module is a generalization of the package @parsec-permutation@
 -- authored by Samuel Hoffstaetter:
@@ -32,6 +38,9 @@ module Control.Alternative.Permutation
 
 import Control.Applicative (Alternative(..), optional)
 
+
+-- |
+-- An Applicative wrapper-type for constructing permutation parsers.
 data Perm m a = P (Maybe a) (m (Perm m a))
 
 

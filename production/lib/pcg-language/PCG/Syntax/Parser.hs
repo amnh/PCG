@@ -1,3 +1,20 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  PCG.Syntax.Parser
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Provides the stream parser for interpreting a well-typed collection of
+-- commands to be evaluated from an input source.
+--
+-- Currently is not functional.
+--
+----------------------------------------------------------------------------- 
+
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 module PCG.Syntax.Parser where
@@ -19,11 +36,15 @@ data  SyntacticCommand
     deriving (Show)
 
 
+-- |
+-- Probably will eventually retro-fit this.
 data  Syntax
     = Syntax (NonEmpty SyntacticCommand)
     deriving (Show)
 
 
+-- |
+-- Again old, probable don't use.
 data  Argument
     = PrimativeArg   Primative
     | ListIdArg      ListIdentifier
@@ -33,6 +54,8 @@ data  Argument
     deriving (Show)
 
 
+-- |
+-- Again old, probable don't use.
 data  Primative
     = WholeNum  Int
     | RealNum   Double

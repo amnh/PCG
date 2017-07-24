@@ -1,3 +1,22 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  PCG.Syntax.Primative
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Provides the Primative values of the PCG scripting language that are
+-- embedded in the PCG scripting language syntax. Provides a contextual parser
+-- that reports type errors.
+--
+-- Contexts of this module are intended to be consumed by a syntactic parser
+-- in another module.
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE DeriveFunctor, FlexibleContexts, ScopedTypeVariables, TypeFamilies #-}
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, TypeSynonymInstances #-}
 
@@ -55,6 +74,8 @@ data  PrimativeType
     deriving (Eq)
 
 
+-- |
+-- A primative value in the PCG scripting language.
 data PrimativeValue a
    = PInt           (Int      -> a)
    | PReal          (Double   -> a)
@@ -63,9 +84,6 @@ data PrimativeValue a
    | PTime          (DiffTime -> a)
    | PValue String  (()       -> a)
    deriving (Functor)
-
-
-newtype ListIdentifier = ListId String deriving (Show)
 
 
 class HasPrimativeType a where
@@ -112,26 +130,38 @@ instance HasPrimativeType PrimativeParseResult where
           ResultValue v  -> TypeOfValue v
 
 
+-- |
+-- A boolean value embedded in a Free computational context
 bool :: MonadFree PrimativeValue m => m Bool
 bool = liftF $ PBool id
 
 
+-- |
+-- A integral value embedded in a Free computational context
 int :: MonadFree PrimativeValue m => m Int
 int = liftF $ PInt id
 
 
+-- |
+-- A real value embedded in a Free computational context
 real :: MonadFree PrimativeValue m => m Double
 real = liftF $ PReal id
 
 
+-- |
+-- A text value embedded in a Free computational context
 text :: MonadFree PrimativeValue m => m String
 text = liftF $ PText id
 
 
+-- |
+-- A temporal value embedded in a Free computational context
 time :: MonadFree PrimativeValue m => m DiffTime
 time = liftF $ PTime id
 
 
+-- |
+-- A literal value embedded in a Free computational context
 value :: MonadFree PrimativeValue m => String -> m ()
 value str = liftF $ PValue str id
 
@@ -151,6 +181,8 @@ whitespace = Lex.space single line block
     close  = tokensToChunk pxy "*)"
 
 
+-- |
+-- A contextual primative value parser that will return type errors.
 parsePrimative :: (FoldCase (Tokens s), MonadParsec e s m,  Token s ~ Char) => PrimativeValue (m a) -> m a
 parsePrimative (PBool      x) = typeMismatchContext boolValue TypeOfBool >>= x
 parsePrimative (PInt       x) = typeMismatchContext  intValue TypeOfInt  >>= x
