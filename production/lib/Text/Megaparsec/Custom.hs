@@ -26,6 +26,7 @@ module Text.Megaparsec.Custom
   , inlineSpace
   , nonEmpty
   , somethingTill
+  -- * Useful simplified stream parsers
   , runParserOnFile
   , parseWithDefaultErrorType
   ) where
@@ -36,7 +37,7 @@ import           Data.Functor             (($>))
 import           Data.List.NonEmpty       (NonEmpty(..))
 import qualified Data.List.NonEmpty as NE (fromList)
 import           Data.Semigroup
-import qualified Data.Set           as S  (fromList)
+import qualified Data.Set           as S
 import           Text.Megaparsec
 import           Text.Megaparsec.Prim     (MonadParsec)
 import           Text.Megaparsec.Lexer    (float,integer,signed)
@@ -81,6 +82,8 @@ somethingTill c = do
     anyToken <:> anythingTill c
 
 
+-- |
+-- Match any token. Fails only when the stream is empty.
 anyToken :: MonadParsec e s m => m (Token s)
 anyToken = token Right Nothing
 
@@ -94,8 +97,13 @@ double = try (signed space float) <|> fromIntegral <$> signed space integer
 -- |
 -- Custom 'eol' combinator to account for /very/ old Mac file formats ending
 -- lines in a single @\'\\r\'@.
-endOfLine :: (MonadParsec e s m, Token s ~ Char) => m Char
-endOfLine = (try eol <|> string "\r") $> '\n'
+endOfLine :: (Enum (Token s), MonadParsec e s m) => m (Token s)
+endOfLine = choice (try <$> [ nl, cr *> nl, cr ]) $> newLineChar
+  where
+    newLineChar  = enumCoerce '\n'
+    carriageChar = enumCoerce '\r'
+    nl = tokenMatch newLineChar  $> ()
+    cr = tokenMatch carriageChar $> ()
 
 
 -- |
@@ -106,15 +114,26 @@ fails = failure mempty mempty . S.fromList . fmap representFail
 
 -- |
 -- Consumes a whitespace character that is not a newline character.
-inlineSpaceChar :: (MonadParsec e s m, Token s ~ Char) => m Char
-inlineSpaceChar = satisfy $ \x -> isSpace x 
-                               && '\n' /= x
-                               && '\r' /= x
+inlineSpaceChar :: (Enum (Token s), MonadParsec e s m) => m (Token s)
+inlineSpaceChar = token captureToken Nothing
+  where
+    captureToken x
+      | isInlineSpace x = Right x
+      | otherwise       = Left (S.singleton (Tokens (x:|[])), mempty, mempty)
+        
+    isInlineSpace x = and $
+        [ isSpace . enumCoerce
+        , (newLineChar  /=)
+        , (carriageChar /=)
+        ] <*> [x]
+        
+    newLineChar  = enumCoerce '\n'
+    carriageChar = enumCoerce '\r'
 
 
 -- |
 -- Consumes zero or more whitespace characters that are not newline characters.
-inlineSpace :: (MonadParsec e s m, Token s ~ Char) => m ()
+inlineSpace :: (Enum (Token s), MonadParsec e s m) => m ()
 inlineSpace = skipMany inlineSpaceChar
 
 
@@ -170,7 +189,7 @@ parseWithDefaultErrorType :: Parsec Dec s a -> s -> Either (ParseError (Token s)
 parseWithDefaultErrorType c = parse c "" 
 
 
--- | Takes a 'Stream' of 'Char's and returns a String
+-- Takes a 'Stream' of 'Char's and returns a String
 -- with EOL sequences standardized to the Unix EOL sequence.
 --
 --  * @"\\r\\n"@ -> @\'\\n\'@ (Windows EOL sequence)
@@ -193,3 +212,20 @@ parseWithDefaultErrorType c = parse c ""
 --                     Just (x,y) -> (Just x, Just y)
 --                     Nothing    -> (Nothing,Nothing)
                      
+
+-- |
+-- Convert one Enum to another through the Int value.
+enumCoerce :: (Enum a, Enum b) => a -> b
+enumCoerce = toEnum . fromEnum
+
+
+-- |
+-- Matches a single token.
+tokenMatch :: (MonadParsec e s m) => Token s -> m (Token s)
+tokenMatch tok = token testToken Nothing
+  where
+    testToken x
+      | tok == x  = Right x
+      | otherwise = Left (S.singleton (Tokens (x:|[])), mempty, mempty)
+
+
