@@ -123,16 +123,16 @@ fileSpec = choiceFrom [ unspecified, customAlphabet, aminoAcids, nucleotides, an
     annotated      = AnnotatedFile  <$> oneOrManyWithIds text [ "annotated" ]
     chromosome     = ChromosomeFile <$> oneOrManyWithIds text [ "chromosome", "chromosomes", "chromosomal" ]
     genome         = GenomeFile     <$> oneOrManyWithIds text [ "genome", "genomes", "genomic", "genomics" ]
-    prealigned     = listId "prealigned"      . argList $ PrealignedFile <$> fileSpec <*> tcmReference
-    customAlphabet = listId "custom_alphabet" . argList $ CustomAlphabetFile <$> fileRefs <*> tcmReference <*> alphabetOpts
+    prealigned     = argId "prealigned"      . argList $ PrealignedFile <$> fileSpec <*> tcmReference
+    customAlphabet = argId "custom_alphabet" . argList $ CustomAlphabetFile <$> fileRefs <*> tcmReference <*> alphabetOpts
       where
         fileRefs     = oneOrMany text
         alphabetOpts = oneOrMany alphabetOpt `withDefault` []
         alphabetOpt  = choiceFrom [ initSpec, levelSpec, Ties <$> tiebreaker ]
           where
-            initSpec   = Init3D     <$> listId "init3d" bool
-            tiebreaker = Tiebreaker <$> listIds [ "tie_breaker", "tiebreaker" ] strategy
-            levelSpec  = listId "level" . argList $ Level <$> int <*> choiceFrom [ Left <$> strategy, Right <$> tiebreaker]
+            initSpec   = Init3D     <$> argId "init3d" bool
+            tiebreaker = Tiebreaker <$> argIds [ "tie_breaker", "tiebreaker" ] strategy
+            levelSpec  = argId "level" . argList $ Level <$> int <*> choiceFrom [ Left <$> strategy, Right <$> tiebreaker]
 
             strategy  = choiceFrom
                 [ value "first"     $> First
@@ -142,7 +142,7 @@ fileSpec = choiceFrom [ unspecified, customAlphabet, aminoAcids, nucleotides, an
                 , value "random"    $> AtRandom
                 ]
 
-    tcmReference   = (Just <$> listId "tcm" (argList text)) `withDefault` Nothing
+    tcmReference   = (Just <$> argId "tcm" (argList text)) `withDefault` Nothing
 
 
 -- |
@@ -156,4 +156,4 @@ oneOrMany v = choiceFrom [ pure <$> v, someOf v ]
 -- Makes file parsing even more flexible as a single file can be specified
 -- without parens or many files may be specified with parens.
 oneOrManyWithIds :: Foldable f => Ap SyntacticArgument a -> f String -> Ap SyntacticArgument [a]
-oneOrManyWithIds v strs = choiceFrom [pure <$> listIds strs v, listIds strs (someOf v)]
+oneOrManyWithIds v strs = choiceFrom [pure <$> argIds strs v, argIds strs (someOf v)]

@@ -27,7 +27,7 @@
 module PCG.Syntax.Combinators
   ( CommandSpecification()
   , SyntacticArgument()
-  , ListIdentifier(..)
+  , ArgumentIdentifier(..)
   -- ** Primative Free Applicaitve constructors
   , bool
   , int
@@ -39,8 +39,8 @@ module PCG.Syntax.Combinators
   , argList
   , command
   , choiceFrom
-  , listId
-  , listIds
+  , argId
+  , argIds
   , manyOf
   , someOf
   , withDefault
@@ -87,7 +87,7 @@ data  CommandSpecification z
 -- Component of a semantic command embedded in the PCG scripting language syntax.
 data  SyntacticArgument z
     = PrimativeArg   (F.Free PrimativeValue z)
-    | ListIdNamedArg (Ap SyntacticArgument z) ListIdentifier
+    | ArgIdNamedArg (Ap SyntacticArgument z) ArgumentIdentifier
     | DefaultValue   (Ap SyntacticArgument z) z
     | ExactlyOneOf   (NonEmpty (Ap SyntacticArgument z))
     | ArgumentList   (ArgList z)
@@ -96,17 +96,17 @@ data  SyntacticArgument z
 
 -- |
 -- A identifier to disambiguate values of the same type.
-newtype ListIdentifier = ListId String
+newtype ArgumentIdentifier = ArgId String
 
 
-instance IsString ListIdentifier where
+instance IsString ArgumentIdentifier where
 
-    fromString = ListId
+    fromString = ArgId
 
 
-instance Show ListIdentifier where
+instance Show ArgumentIdentifier where
 
-    show (ListId x) = show x
+    show (ArgId x) = show x
 
 
 -- |
@@ -126,7 +126,7 @@ int = primative P.int
 --
 -- Things that look like an integer can be captured as a real value by this
 -- combinator. This can lead to ambiguity between `int` and 'real'. To avoid
--- ambiguity, use 'listId' to require a disambiguating prefix on one or more of
+-- ambiguity, use 'argId' to require a disambiguating prefix on one or more of
 -- the command components.
 real :: Ap SyntacticArgument Double
 real = primative P.real
@@ -175,16 +175,16 @@ choiceFrom opts =
 -- |
 -- Require a prefix on an agrument value to disambiguate it from other argument
 -- values.
-listId :: String -> Ap SyntacticArgument a -> Ap SyntacticArgument a
-listId str x = liftAp $ ListIdNamedArg x (ListId str)
+argId :: String -> Ap SyntacticArgument a -> Ap SyntacticArgument a
+argId str x = liftAp $ ArgIdNamedArg x (ArgId str)
 
 
 -- |
 -- Require a prefix on an agrument value to disambiguate it from other argument
 -- values. Accepts multiple aliases for the prefix used to disambiuate the
 -- argument.
-listIds :: Foldable f => f String -> Ap SyntacticArgument a -> Ap SyntacticArgument a
-listIds strs x = choiceFrom $ liftAp . ListIdNamedArg x . ListId <$> toList strs
+argIds :: Foldable f => f String -> Ap SyntacticArgument a -> Ap SyntacticArgument a
+argIds strs x = choiceFrom $ liftAp . ArgIdNamedArg x . ArgId <$> toList strs
 
 
 -- |
@@ -231,7 +231,7 @@ apRunner effect (ExactlyOneOf ps ) = toPerm . try $ runPermParser effect *> choi
 apRunner effect (ArgumentList p  ) = toPerm . try $ runPermParser effect *> runPermParser (parseArgumentList p)
 apRunner effect (DefaultValue p v) = toPermWithDefault v . try
                                    $ runPermParser effect *> runPermParser (runAp (apRunner (toPerm voidEffect)) p)
-apRunner effect (ListIdNamedArg p (ListId x)) = toPerm . try $ do
+apRunner effect (ArgIdNamedArg p (ArgId x)) = toPerm . try $ do
     _ <- string'' x <?> ("identifier '" <> x <> "'")
     _ <- whitespace <* char ':' <* whitespace
     runPermParser $ runAp (apRunner effect) p

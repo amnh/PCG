@@ -32,7 +32,7 @@ import PCG.Syntax.Combinators
 -- convert these into thier less dubious, well-type counterpart of type Command,
 -- or report an error explaing why the SyntacticCommand is not valid.
 data  SyntacticCommand
-    = SyntacticCommand ListIdentifier (NonEmpty Argument)
+    = SyntacticCommand ArgumentIdentifier (NonEmpty Argument)
     deriving (Show)
 
 
@@ -47,8 +47,8 @@ data  Syntax
 -- Again old, probable don't use.
 data  Argument
     = PrimativeArg   Primative
-    | ListIdArg      ListIdentifier
-    | ListIdNamedArg ListIdentifier Argument
+    | ListIdArg      ArgumentIdentifier
+    | ListIdNamedArg ArgumentIdentifier Argument
     | CommandArg     SyntacticCommand
     | ArgumentList  (NonEmpty Argument)
     deriving (Show)
