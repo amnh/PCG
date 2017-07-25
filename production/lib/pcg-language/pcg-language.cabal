@@ -83,12 +83,13 @@ library
 
   -- Modules exported by the library.
   exposed-modules:     PCG.Syntax
+                       PCG.Command.Read
+                       PCG.Command.Report
                        PCG.Syntax.Combinators
 
 
   -- Modules included in this library but not exported.
   other-modules:
-                       PCG.Command.Read
                        PCG.Syntax.Parser
                        PCG.Syntax.Primative
                        Control.Alternative.Permutation

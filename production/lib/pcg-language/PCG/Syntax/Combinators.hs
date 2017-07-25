@@ -47,6 +47,8 @@ module PCG.Syntax.Combinators
   -- ** MonadParsec based syntactic interpreter
   , parseCommand
   , runSyntax
+  -- ** Whitespace definition of the syntax 
+  , P.whitespace
   ) where
 
 

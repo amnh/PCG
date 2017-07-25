@@ -28,14 +28,14 @@ module PCG.Command.Read
   , readCommandSpecification
   ) where
 
-import Control.Applicative.Free (Ap)
-import Data.Functor             (($>))
-import Data.Foldable
-import Data.List.NonEmpty       (NonEmpty())
+import           Control.Applicative.Free (Ap)
+import           Data.Functor             (($>))
+import           Data.Foldable
+import           Data.List.NonEmpty       (NonEmpty())
 import qualified Data.List.NonEmpty as NE
-import Data.Text                (Text) -- hiding (foldr, toLower, unlines)
-import PCG.Syntax.Combinators
-import Prelude
+import           Data.Semigroup           (Semigroup(..))
+import           Data.Text                (Text) -- hiding (foldr, toLower, unlines)
+import           PCG.Syntax.Combinators
 
 
 -- |
@@ -106,6 +106,11 @@ type  FileResult   = (FilePath, FileContent)
 -- An optional reference to a TCM file.
 type  TcmReference = Maybe FilePath
 
+
+instance Semigroup ReadCommand where
+
+    (ReadCommand lhs) <> (ReadCommand rhs) = ReadCommand $ lhs <> rhs
+  
 
 -- |
 -- Defines the semantics of interpreting a valid \"Read\" command from the PCG

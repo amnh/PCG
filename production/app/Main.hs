@@ -3,8 +3,9 @@ module Main (main) where
 
 import Control.Evaluation
 --import Data.Functor ((<$))
+import Data.Void
 import PCG.Computation.Internal
-import PCG.Script
+import PCG.Syntax
 --import System.Environment (getContents)
 import System.IO
 import Text.Megaparsec
@@ -15,11 +16,11 @@ import Text.Megaparsec
 main :: IO ()
 main = hSetBuffering stdout NoBuffering
    >>  getContents
-   >>= checkInput . parse' scriptStreamParser "STDIN stream"
+   >>= checkInput . parse' computationalStreamParser "STDIN stream"
    where
      checkInput (Left  err) = putStrLn $ parseErrorPretty err
-     checkInput (Right val) = --print =<< runEvaluation (evaluate =<< (state . evalEither . interpret) val)
-                              renderSearchState =<< runEvaluation (evaluate =<< (state . evalEither . interpret) val)
-     parse' :: Parsec Dec s a -> String -> s -> Either (ParseError (Token s) Dec) a
+     checkInput (Right val) = renderSearchState =<< runEvaluation (evaluate (optimizeComputation val))
+
+     parse' :: Parsec Void s a -> String -> s -> Either (ParseError (Token s) Void) a
      parse' = parse
       

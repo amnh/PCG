@@ -17,18 +17,19 @@ import           Control.Monad.IO.Class
 import           Control.Monad.Logger
 --import           Data.Foldable
 import           Data.List.NonEmpty
-import           PCG.Command.Types (Command(..))
+import           PCG.Command.Report
+import           PCG.Syntax (Command(..))
 --import           PCG.Command.Types.Report.DynamicCharacterTable
 --import           PCG.Command.Types.Report.GraphViz
 --import           PCG.Command.Types.Report.ImpliedAlignmentFasta
-import           PCG.Command.Types.Report.Internal
+--import           PCG.Command.Types.Report.Internal
 --import           PCG.Command.Types.Report.Metadata
 --import           PCG.Command.Types.Report.Newick
 --import           PCG.Command.Types.Report.TaxonMatrix
 
 
 evaluate :: Command -> SearchState -> SearchState
-evaluate (REPORT target format) old = do
+evaluate (REPORT (ReportCommand format target)) old = do
     stateValue <- old
     case generateOutput stateValue format of
      ErrorCase    errMsg  -> fail errMsg

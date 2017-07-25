@@ -2,8 +2,8 @@
 
 module PCG.Command.Types.Read
   ( evaluate
-  , validate
+--  , validate
   ) where
 
 import PCG.Command.Types.Read.Evaluate (evaluate)
-import PCG.Command.Types.Read.Validate (validate)
+--import PCG.Command.Types.Read.Validate (validate)

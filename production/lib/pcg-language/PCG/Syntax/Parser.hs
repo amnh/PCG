@@ -11,19 +11,49 @@
 -- Provides the stream parser for interpreting a well-typed collection of
 -- commands to be evaluated from an input source.
 --
--- Currently is not functional.
---
 ----------------------------------------------------------------------------- 
 
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 module PCG.Syntax.Parser where
 
-import Data.List.NonEmpty     (NonEmpty)
+import Data.CaseInsensitive   (FoldCase)
+import Data.List.NonEmpty     (NonEmpty, some1)
 import Data.Time.Clock        (DiffTime)
+import PCG.Command.Read
+import PCG.Command.Report
 import PCG.Syntax.Combinators
+import Text.Megaparsec
 
 
+-- |
+-- All the commands of the PCG scripting language.
+data  Command
+    = READ   ReadCommand
+    | REPORT ReportCommand
+    deriving (Show)
+
+
+newtype Computation = Computation (NonEmpty Command)
+    deriving (Show)
+
+
+-- |
+-- Parse a series of PCG commands. 
+computationalStreamParser :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m Computation
+computationalStreamParser = Computation <$> some1 commandStreamParser <* eof
+
+
+-- |
+-- Parse a single, well defined PCG command.
+commandStreamParser :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m Command
+commandStreamParser = whitespace *> choice
+    [ READ   <$> parseCommand   readCommandSpecification
+    , REPORT <$> parseCommand reportCommandSpecification
+    ] <* whitespace
+
+
+{-
 -- |
 -- This is old, probably don't use it, probably...
 --
@@ -63,3 +93,4 @@ data  Primative
     | TextValue String
     | TimeSpan  DiffTime
     deriving (Show)
+-}

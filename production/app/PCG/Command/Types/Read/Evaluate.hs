@@ -10,7 +10,7 @@ import           Bio.Graph
 import           Bio.Graph.Forest.Parsed
 import           Bio.Graph.PhylogeneticDAG
 import           Control.Evaluation
-import           Control.Monad                (when)
+import           Control.Monad                (liftM2, when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Either
 import           Control.Parallel.Strategies
@@ -34,8 +34,13 @@ import           Data.Monoid                  ((<>))
 import           Data.Ord                     (comparing)
 import           Data.TCM                     (TCMDiagnosis(..), TCMStructure(..), diagnoseTcm)
 import qualified Data.TCM              as TCM
+import           Data.Text                    (Text)
+import           Data.Text.IO                 (readFile)
 -- import           Data.Vector                  (Vector)
 -- import qualified Data.Vector           as V   (zipWith)
+import           Data.Void
+
+
 import           File.Format.Fasta   hiding   (FastaSequenceType(..))
 import qualified File.Format.Fasta   as Fasta (FastaSequenceType(..))
 import           File.Format.Fastc   hiding   (Identifier)
@@ -44,12 +49,16 @@ import           File.Format.Nexus            (nexusStreamParser)
 import           File.Format.TNT     hiding   (weight)
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
-import           PCG.Command.Types            (Command(..))
+import           PCG.Syntax                   (Command(..))
+import           PCG.Command.Read
 import           PCG.Command.Types.Read.DecorationInitialization
-import           PCG.Command.Types.Read.Internal
+--import           PCG.Command.Types.Read.Internal
+import           PCG.Command.Types.Read.ReadError
 import           PCG.Command.Types.Read.Unification.Master
 --import           PCG.SearchState
-import           Prelude             hiding   (lookup)
+import           Prelude             hiding   (lookup, readFile)
+import           System.Directory
+import           System.FilePath.Glob
 import           Text.Megaparsec
 
 import Debug.Trace (trace)
@@ -57,7 +66,7 @@ import Debug.Trace (trace)
 -- type SearchState = EvaluationT IO (Either TopologicalResult CharacterResult)
 
 
-parse' :: Parsec Dec s a -> String -> s -> Either (ParseError (Token s) Dec) a
+parse' :: Parsec Void s a -> String -> s -> Either (ParseError (Token s) Void) a
 parse' = parse
 
 
@@ -66,7 +75,7 @@ parse' = parse
 evaluate :: Command -> EvaluationT IO a -> SearchState -- EvaluationT IO (Either TopologicalResult CharacterResult)
 -- evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
 -- evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
-evaluate (READ fileSpecs) _old = do
+evaluate (READ (ReadCommand fileSpecs)) _old = do
     when (null fileSpecs) $ fail "No files specified in 'read()' command"
     result <- liftIO . runEitherT . eitherTValidation $ parmap rpar parseSpecifiedFile fileSpecs
     case result of
@@ -345,3 +354,65 @@ casei x = foldl f x $ assocs x
     f m (_    , _) = m
 -}
 
+
+getSpecifiedContent :: FileSpecification -> EitherT ReadError IO FileSpecificationContent
+getSpecifiedContent (UnspecifiedFile    xs      ) = getSpecifiedContentSimple xs
+getSpecifiedContent (AminoAcidFile      xs      ) = getSpecifiedContentSimple xs
+getSpecifiedContent (NucleotideFile     xs      ) = getSpecifiedContentSimple xs
+getSpecifiedContent (AnnotatedFile      xs      ) = getSpecifiedContentSimple xs
+getSpecifiedContent (ChromosomeFile     xs      ) = getSpecifiedContentSimple xs
+getSpecifiedContent (GenomeFile         xs      ) = getSpecifiedContentSimple xs
+getSpecifiedContent (CustomAlphabetFile xs tcm _) = liftM2 SpecContent (getSpecifiedFileContents xs) (getSpecifiedTcm tcm)
+getSpecifiedContent (PrealignedFile     fs tcm  ) = do 
+    specifiedContent <- getSpecifiedContent fs
+    case tcmFile specifiedContent of
+      Nothing -> SpecContent (dataFiles specifiedContent) <$> getSpecifiedTcm tcm
+      Just _  -> pure specifiedContent 
+
+
+getSpecifiedTcm :: Maybe FilePath -> EitherT ReadError IO (Maybe (FilePath, FileContent))
+getSpecifiedTcm tcmPath =
+    case tcmPath of
+      Nothing       -> pure Nothing
+      Just tcmPath' -> do
+        tcmFiles <- getFileContents tcmPath'
+        case tcmFiles of
+          [x] -> pure $ Just x
+          []  -> left $ unfindable tcmPath'
+          _   -> left $ ambiguous tcmPath' (fst <$> tcmFiles)
+
+
+getSpecifiedFileContents :: [FilePath] -> EitherT ReadError IO [FileResult]
+getSpecifiedFileContents = fmap concat . eitherTValidation . fmap getFileContents
+
+
+getSpecifiedContentSimple :: [FilePath] -> EitherT ReadError IO FileSpecificationContent
+getSpecifiedContentSimple = fmap (`SpecContent` Nothing) . getSpecifiedFileContents
+
+
+-- | Reads in the contents of the given FilePath, correctly interpolating glob paths
+getFileContents :: FilePath -> EitherT ReadError IO [(FilePath, FileContent)]
+getFileContents path = do
+    -- Check if the file exists exactly as specified
+    exists <- liftIO $ doesFileExist path
+    if   exists
+    -- If it exists exactly as specified, read it in
+    then pure <$> readFileContent path
+    else do
+    -- If the file does not exists exactly as specified
+    -- try to match other files to the given path
+    -- by interpreting the path as a 'glob'
+        matches <- liftIO $ glob path
+        case matches of
+          []  -> left $ unfindable path
+          [x] -> pure <$> readFileContent x
+          xs  -> eitherTValidation $ readFileContent <$> xs
+  where
+    readFileContent :: FilePath -> EitherT ReadError IO (FilePath, FileContent)
+    readFileContent foundPath = do
+        canRead <- liftIO $ readable <$> getPermissions foundPath
+        if   not canRead
+        then left $ unopenable foundPath
+        else do
+            content <- liftIO $ readFile foundPath
+            pure (foundPath, content)

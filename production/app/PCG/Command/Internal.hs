@@ -4,9 +4,10 @@ import Data.Int        (Int64)
 import Data.Time.Clock (DiffTime)
 import Prelude hiding  (lookup)
 
-import PCG.Script.Types
+import PCG.Syntax
 
-partitionArguments :: [Argument] -> ([Primative], [Lident], [(Lident,Argument)], [DubiousCommand], [[Argument]])
+{-
+payrtitionArguments :: [Argument] -> ([Primative], [Lident], [(Lident,Argument)], [DubiousCommand], [[Argument]])
 partitionArguments = foldr f ([],[],[],[],[])
   where
     f (PrimativeArg   x  ) (a,b,c,d,e) = (x:a,   b,       c,   d,   e)
@@ -23,3 +24,4 @@ partitionPrimatives = foldr f ([],[],[],[],[])
     f (BitValue   x) (a,b,c,d,e) = (  a,   b, x:c,   d,   e)
     f (TextValue  x) (a,b,c,d,e) = (  a,   b,   c, x:d,   e)
     f (TimeSpan   x) (a,b,c,d,e) = (  a,   b,   c,   d, x:e)
+-}
