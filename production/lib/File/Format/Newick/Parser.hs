@@ -30,6 +30,7 @@ import Text.Megaparsec      hiding (label)
 import Text.Megaparsec.Char hiding (space)
 import Text.Megaparsec.Char.Lexer  (skipBlockCommentNested, space)
 import Text.Megaparsec.Custom
+import Debug.Trace
 
 
 -- |
@@ -175,10 +176,9 @@ symbol x = x <* whitespace
 -- Definition of space between tokens which can be discarded. This includes
 -- spaces /and/ comments.
 whitespace :: forall e s m. (MonadParsec e s m, Token s ~ Char) => m ()
-whitespace = space single line block
+whitespace = skipMany $ choice [ hidden single, hidden block ]
   where
     single = void spaceChar
-    line   = pure ()
     block  = skipBlockCommentNested (tokenToChunk proxy '[') (tokenToChunk proxy ']')
     proxy  = Proxy :: Proxy s
 
