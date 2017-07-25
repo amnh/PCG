@@ -14,24 +14,23 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveTraversable, GeneralizedNewtypeDeriving, TypeFamilies #-}
+{-# LANGUAGE DeriveTraversable, FlexibleContexts, FlexibleInstances, FunctionalDependencies, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies, UndecidableInstances #-}
 
 module Bio.Graph.Forest
   ( PhylogeneticForest(..)
-  , getLeavesGraphRep
---  , HasLeafSet
   ) where
 
+import Bio.Graph.LeafSet
 import Control.Lens           hiding (Indexable)
 import Data.Key
-import Data.List.NonEmpty            (NonEmpty)
+import Data.List.NonEmpty            (NonEmpty(..))
 import Data.Maybe
 import Data.Semigroup
 import Data.Semigroup.Foldable
-import Data.Semigroup.Traversable
-import Prelude                hiding (lookup)
+-- import Data.Semigroup.Traversable
+import Prelude                hiding (head, lookup)
 import Text.XML.Custom
-import Text.XML.Light.Types
+-- import Text.XML.Light.Types
 
 
 -- |
@@ -39,14 +38,6 @@ import Text.XML.Light.Types
 newtype PhylogeneticForest a
       = PhylogeneticForest (NonEmpty a)
       deriving (Foldable, Foldable1, Functor, Semigroup, Traversable)
-
-
--- -- |
--- -- A 'Lens' for the 'leafSet' field
--- class HasLeafSet s a | s -> a where
-
---     {-# MINIMAL leafSet #-}
---     leafSet :: Lens' s a
 
 
 type instance Key PhylogeneticForest = Int
@@ -82,14 +73,14 @@ instance FoldableWithKey1 PhylogeneticForest where
     foldMapWithKey1 f = foldMapWithKey1 f . unwrap
 
 
--- -- |
--- -- A 'Lens' for the 'transitionCostMatrix' field
--- instance HasLeafSet (PhylogeneticForest a) where
+-- |
+-- A 'Lens' for the 'PhylogeneticForest' field
+instance HasLeafSet a (LeafSet b) => HasLeafSet (PhylogeneticForest a) (NonEmpty (LeafSet b)) where
 
---     leafSet = lens getter
---       where
---          getter e   = (head e) ^. leafSet
---         -- setter e f = head e {  =  e & leafSet .~ f }
+    leafSet = lens getter setter
+      where
+         getter e    = (^. leafSet) <$> unwrap e
+         setter e _f = id e            -- No setter method
 
 
 instance Indexable PhylogeneticForest where
@@ -147,10 +138,3 @@ instance TraversableWithKey1 PhylogeneticForest where
 {-# INLINE unwrap #-}
 unwrap :: PhylogeneticForest a -> NonEmpty a
 unwrap (PhylogeneticForest x) = x
-
-
--- | This sucks.
-getLeavesGraphRep :: PhylogeneticForest f -> (Element, Element)
-getLeavesGraphRep (PhylogeneticForest forest) = (leafSet, graphRepresentation)
-    where
-        (leafSet, graphRepresentation) = undefined -- getLeavesGraphRep $ head forest

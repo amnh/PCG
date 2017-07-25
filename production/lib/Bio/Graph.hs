@@ -14,7 +14,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving, UndecidableInstances #-}
 
 module Bio.Graph
   ( PhylogeneticSolution(..)
@@ -22,16 +22,19 @@ module Bio.Graph
   , phylogeneticForests
   ) where
 
---import Bio.Graph.Component
+-- import Bio.Graph.Component
 import Bio.Graph.Forest
---import Bio.Graph.Network
---import Bio.Graph.Tree
-import Data.Key
-import Data.List
-import Data.List.NonEmpty            (NonEmpty, toList)
-import Data.Semigroup
-import Prelude                hiding (lookup)
-import Text.XML.Custom
+import Bio.Graph.LeafSet
+-- import Bio.Graph.Network
+-- import Bio.Graph.Tree
+import           Control.Lens        hiding (Indexable)
+import           Data.Key
+import           Data.List
+import           Data.List.NonEmpty         (NonEmpty)
+-- import qualified Data.List.NonEmpty  as NE
+import           Data.Semigroup
+import           Prelude             hiding (lookup)
+import           Text.XML.Custom
 
 
 -- |
@@ -73,16 +76,18 @@ instance Show a => Show (PhylogeneticSolution a) where
                 ]
 
 
-instance (ToXML s) => ToXML (PhylogeneticSolution s) where
+instance (HasLeafSet s (LeafSet a), Show a, ToXML s) => ToXML (PhylogeneticSolution s) where
 
     toXML (PhylogeneticSolution soln) = xmlElement "Solution" attrs contents
         where
             attrs    = []
-            contents = [ -- Right leafSet
+            contents = [ Right leaves
                        -- , Right graphRepresentation
-                        Right $ collapseElemList "Final graph" attrs soln
+                       , Right $ collapseElemList "Final graph" attrs soln
                        ]
-            (PhylogeneticForest firstForest) = head $ toList soln
+            -- (PhylogeneticForest firstForest) = head $ toList soln
             -- (PDAG2 refDag _e _n)    = head $ toList firstForest
             -- (refDag )
-            (leafSet, graphRepresentation)     = getLeavesGraphRep . head $ toList soln
+            leaves = collapseElemList "Leaf sets" attrs leafSets
+
+            leafSets = fmap id . (^. leafSet) <$> soln

@@ -14,8 +14,10 @@
 
 module Bio.Graph.ReferenceDAG.Internal where
 
+import           Bio.Graph.LeafSet
 import           Bio.Graph.Component
 import           Control.Arrow              ((&&&),(***))
+import           Control.Lens               (lens)
 import           Data.Bifunctor
 import           Data.EdgeSet
 import           Data.Foldable
@@ -124,6 +126,16 @@ instance Functor (ReferenceDAG d e) where
         }
       where
         g (IndexData node parentRefs' childRefs') = IndexData (f node) parentRefs' childRefs'
+
+
+instance HasLeafSet (ReferenceDAG d e n) (LeafSet n) where
+
+    leafSet = lens getter undefined
+        where
+            getter (RefDAG v _ _) = LeafSet $ foldMap f v
+
+            f e | null (childRefs e) = [nodeDecoration e]
+                | otherwise          = mempty
 
 
 -- | (✔)

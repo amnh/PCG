@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, MonoLocalBinds #-}
+{-# LANGUAGE FlexibleContexts, MonoLocalBinds, MultiParamTypeClasses, ScopedTypeVariables #-}
 
 module Bio.Graph.PhylogeneticDAG.Internal where
 
@@ -23,31 +23,33 @@ import           Bio.Character.Decoration.Discrete
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Decoration.Fitch
 import           Bio.Character.Decoration.Metric
-import           Bio.Sequence
-import           Bio.Sequence.Block        (CharacterBlock)
 import           Bio.Graph
+import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG.Internal
-import           Control.Applicative       (liftA2)
+import           Bio.Sequence
+import           Bio.Sequence.Block               (CharacterBlock)
+import           Control.Applicative              (liftA2)
 import           Control.Evaluation
+import           Control.Lens
 import           Data.Bits
 import           Data.EdgeLength
 import           Data.Foldable
 --import           Data.Hashable
 --import           Data.Hashable.Memoize
-import           Data.IntSet               (IntSet)
-import qualified Data.IntSet        as IS
+import           Data.IntSet                      (IntSet)
+import qualified Data.IntSet               as IS
 import           Data.Key
-import           Data.List.NonEmpty        (NonEmpty( (:|) ))
-import qualified Data.List.NonEmpty as NE
+import           Data.List.NonEmpty               (NonEmpty( (:|) ))
+import qualified Data.List.NonEmpty        as NE
 import           Data.List.Utility
-import           Data.Map                  (Map)
+import           Data.Map                         (Map)
 import           Data.Maybe
 import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
-import           Data.Vector               (Vector)
-import           Prelude            hiding (zipWith)
+import           Data.Vector                      (Vector)
+import           Prelude                   hiding (zipWith)
 import           Text.XML.Custom
 
 
@@ -64,16 +66,6 @@ data PhylogeneticDAG2 e n u v w x y z
                  e
                  (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
              )
-
-
-instance ( ToXML u
-         , ToXML v
-         , ToXML w
-         , ToXML y
-         , ToXML z
-         ) => ToXML (PhylogeneticDAG2 e n u v w x y z)  where
-
-    toXML (PDAG2 refDag) = toXML refDag
 
 
 type CharacterDAG =
@@ -180,6 +172,60 @@ type UnRiefiedCharacterDAG =
          UnifiedDiscreteCharacter
          UnifiedDiscreteCharacter
          UnifiedDynamicCharacter
+
+
+instance HasLeafSet (PhylogeneticDAG2 e n u v w x y z) (LeafSet n) where
+
+    leafSet = lens getter undefined
+        where
+            getter :: (PhylogeneticDAG2 e n u v w x y z) -> (LeafSet n)
+            getter (PDAG2 e) = fmap nodeDecorationDatum2 $ e ^. leafSet
+
+
+instance ( Show e
+         , Show n
+         , Show u
+         , Show v
+         , Show w
+         , Show x
+         , Show y
+         , Show z
+         , HasBlockCost u v w x y z Word Double
+         ) => Show (PhylogeneticDAG e n u v w x y z) where
+
+    show (PDAG dag) = show dag <> "\n" <> foldMapWithKey f dag
+      where
+        f i (PNode n sek) = mconcat [ "Node {", show i, "}:\n\n", unlines [show n, show sek] ]
+
+
+instance ( Show e
+         , Show n
+         , Show u
+         , Show v
+         , Show w
+         , Show x
+         , Show y
+         , Show z
+         , HasBlockCost u v w x y z Word Double
+         ) => Show (PhylogeneticDAG2 e n u v w x y z) where
+
+    show p@(PDAG2 dag) = unlines
+        [ renderSummary p
+        , foldMapWithKey f dag
+        ]
+      where
+--        f i (PNode2 n sek) = mconcat [ "Node {", show i, "}:\n\n", unlines [show n, show sek], "\n\n" ]
+        f i n = mconcat [ "Node {", show i, "}:\n\n", show n ]
+
+
+instance ( ToXML u
+         , ToXML v
+         , ToXML w
+         , ToXML y
+         , ToXML z
+         ) => ToXML (PhylogeneticDAG2 e n u v w x y z)  where
+
+    toXML (PDAG2 refDag) = toXML refDag
 
 
 applySoftwireResolutions :: [(ResolutionCache s, IntSet)] -> NonEmpty [ResolutionInformation s]
@@ -326,39 +372,3 @@ renderSummary (PDAG2 dag) = unlines
 
 resolutionsDoNotOverlap :: ResolutionInformation a -> ResolutionInformation b -> Bool
 resolutionsDoNotOverlap x y = leafSetRepresentation x .&. leafSetRepresentation y == zeroBits
-
-
-instance ( Show e
-         , Show n
-         , Show u
-         , Show v
-         , Show w
-         , Show x
-         , Show y
-         , Show z
-         , HasBlockCost u v w x y z Word Double
-         ) => Show (PhylogeneticDAG e n u v w x y z) where
-
-    show (PDAG dag) = show dag <> "\n" <> foldMapWithKey f dag
-      where
-        f i (PNode n sek) = mconcat [ "Node {", show i, "}:\n\n", unlines [show n, show sek] ]
-
-
-instance ( Show e
-         , Show n
-         , Show u
-         , Show v
-         , Show w
-         , Show x
-         , Show y
-         , Show z
-         , HasBlockCost u v w x y z Word Double
-         ) => Show (PhylogeneticDAG2 e n u v w x y z) where
-
-    show p@(PDAG2 dag) = unlines
-        [ renderSummary p
-        , foldMapWithKey f dag
-        ]
-      where
---        f i (PNode2 n sek) = mconcat [ "Node {", show i, "}:\n\n", unlines [show n, show sek], "\n\n" ]
-        f i n = mconcat [ "Node {", show i, "}:\n\n", show n ]

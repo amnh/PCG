@@ -13,6 +13,10 @@
 --
 -----------------------------------------------------------------------------
 
+
+{-# LANGUAGE FlexibleInstances #-}
+
+
 module Text.XML.Custom
   ( ToXML (..)
   , collapseElemList
@@ -31,13 +35,10 @@ import Text.XML.Light.Types
 -- |
 -- Take in a list of ToXML items and return a single Element with XML'ed items as substructure.
 -- Used in ToXML instances when there are sequences of data.
---
--- Wanted to make it take any Traversable sequence, but realized that wouldn't guarantee 'toList' was available.
--- TODO: find a way around that?
 collapseElemList :: (Foldable f, ToXML a) => String -> [Attr] -> f a -> Element
 collapseElemList name attrs lst = Element (xmlQName name) attrs contents Nothing
     where
-        contents = Elem . toXML <$> toList lst
+        contents = (Elem . toXML) <$> toList lst
 
 
 -- | Create an XML Attr, which is a key value pair (xmlQName, String).
@@ -67,9 +68,3 @@ xmlElement name attrs contLst = Element (xmlQName name) attributes contents Noth
 -- | Create a QName from a String.
 xmlQName :: String -> QName
 xmlQName str = QName str mempty mempty
-
-
--- -- | Coerce an input of (String, Either String Element) into Content
--- parseElemTupleToContent :: (String, Either String Element) -> Content
--- parseElemTupleToContent  (tag, Left str    ) = xmlContent (tag, str)
--- parseElemTupleToContent  (_  , Right inElem) = Elem inElem
