@@ -363,32 +363,25 @@ executable pcg
   hs-source-dirs:      app
 
   other-modules:
-                       PCG.Command
---                       PCG.Command.Types
-                       PCG.Command.Types.Read
-                       PCG.Command.Types.Read.DecorationInitialization
-                       PCG.Command.Types.Read.Evaluate
---                       PCG.Command.Types.Read.Internal
-                       PCG.Command.Types.Read.ReadError
-                       PCG.Command.Types.Read.Unification.Master
-                       PCG.Command.Types.Read.Unification.UnificationError
---                       PCG.Command.Types.Read.Validate
-                       PCG.Command.Types.Report
---                       PCG.Command.Types.Report.CharacterMatrix
-                       PCG.Command.Types.Report.DynamicCharacterTable
-                       PCG.Command.Types.Report.Evaluate
---                       PCG.Command.Types.Report.GraphViz
---                       PCG.Command.Types.Report.ImpliedAlignmentFasta
---                       PCG.Command.Types.Report.Internal
---                       PCG.Command.Types.Report.Metadata
---                       PCG.Command.Types.Report.TaxonMatrix
---                       PCG.Command.Types.Report.Newick
---                       PCG.Command.Types.Report.Validate
+                       PCG.Command.Read.DecorationInitialization
+                       PCG.Command.Read.Evaluate
+                       PCG.Command.Read.ReadError
+                       PCG.Command.Read.Unification.Master
+                       PCG.Command.Read.Unification.UnificationError
+
+--                       PCG.Command.Report.CharacterMatrix
+                       PCG.Command.Report.DynamicCharacterTable
+                       PCG.Command.Report.Evaluate
+--                       PCG.Command.Report.GraphViz
+--                       PCG.Command.Report.ImpliedAlignmentFasta
+--                       PCG.Command.Report.Internal
+--                       PCG.Command.Report.Metadata
+--                       PCG.Command.Report.TaxonMatrix
+--                       PCG.Command.Report.Newick
+--                       PCG.Command.Report.Validate
+
                        PCG.Computation.Internal
---                       PCG.Script
---                       PCG.Script.Parser
---                       PCG.Script.Types
-                       PCG.SearchState
+
 
 
 executable fasta-differ

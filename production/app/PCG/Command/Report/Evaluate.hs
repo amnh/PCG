@@ -1,7 +1,7 @@
 
 {-# LANGUAGE FlexibleContexts #-}
 
-module PCG.Command.Types.Report.Evaluate
+module PCG.Command.Report.Evaluate
   ( evaluate
   ) where
 
@@ -18,14 +18,14 @@ import           Control.Monad.Logger
 --import           Data.Foldable
 import           Data.List.NonEmpty
 import           PCG.Command.Report
+--import           PCG.Command.Report.DynamicCharacterTable
+--import           PCG.Command.Report.GraphViz
+--import           PCG.Command.Report.ImpliedAlignmentFasta
+--import           PCG.Command.Report.Internal
+--import           PCG.Command.Report.Metadata
+--import           PCG.Command.Report.Newick
+--import           PCG.Command.Report.TaxonMatrix
 import           PCG.Syntax (Command(..))
---import           PCG.Command.Types.Report.DynamicCharacterTable
---import           PCG.Command.Types.Report.GraphViz
---import           PCG.Command.Types.Report.ImpliedAlignmentFasta
---import           PCG.Command.Types.Report.Internal
---import           PCG.Command.Types.Report.Metadata
---import           PCG.Command.Types.Report.Newick
---import           PCG.Command.Types.Report.TaxonMatrix
 
 
 evaluate :: Command -> SearchState -> SearchState

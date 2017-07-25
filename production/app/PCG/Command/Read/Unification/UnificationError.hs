@@ -1,4 +1,4 @@
-module PCG.Command.Types.Read.Unification.UnificationError where
+module PCG.Command.Read.Unification.UnificationError where
 
 import Data.Foldable
 import Data.List          (intercalate)

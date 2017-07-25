@@ -1,31 +1,14 @@
 module PCG.Computation.Internal where
 
-import Bio.Graph.PhylogeneticDAG
-import Control.Evaluation
-import Data.Char          (isSpace)
-import Data.Either        (partitionEithers)
-import Data.Foldable
-import Data.List.NonEmpty (NonEmpty(..))
-import Data.Semigroup
-import PCG.Command
-import PCG.Syntax
---import PCG.SearchState
-
-import qualified PCG.Command.Types.Read   as Read
-import qualified PCG.Command.Types.Report as Report
-
-
---data Computation = Computation [Command]
---  deriving (Show)
-
-
-{-
-interpret :: Script -> Either [String] Computation
-interpret (Script xs) =
-  case partitionEithers $ rebukeDubiousness <$> xs of
-    ([]    , actions) -> Right . optimizeComputation $ Computation actions
-    (errors, _      ) -> Left errors
--}
+import           Bio.Graph.PhylogeneticDAG
+import           Control.Evaluation
+import           Data.Char          (isSpace)
+import           Data.Foldable
+import           Data.List.NonEmpty (NonEmpty(..))
+import           Data.Semigroup
+import qualified PCG.Command.Read.Evaluate   as Read
+import qualified PCG.Command.Report.Evaluate as Report
+import           PCG.Syntax
 
 
 optimizeComputation :: Computation -> Computation
@@ -38,7 +21,7 @@ collapseReadCommands p@(x:|xs) =
      []   -> p
      y:ys ->
        case (x, y) of
-         (READ x1, READ x2) -> collapseReadCommands (READ (x1<>x2) :| xs)
+         (READ lhs, READ rhs) -> collapseReadCommands (READ (lhs<>rhs) :| ys)
          _ -> (x :|) . toList . collapseReadCommands $ y:|ys
 
                                                 
@@ -48,7 +31,7 @@ evaluate (Computation xs) = foldl' (flip f) mempty xs
     f :: Command -> SearchState -> SearchState
     f x@READ   {} = Read.evaluate   x
     f x@REPORT {} = Report.evaluate x
-    f _ = error "NOT YET IMPLEMENTED"
+--    f _ = error "NOT YET IMPLEMENTED"
 
 
 renderSearchState :: Evaluation a -> IO ()

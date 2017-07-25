@@ -1,12 +1,12 @@
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
-module PCG.Command.Types.Read.Evaluate
+module PCG.Command.Read.Evaluate
   ( evaluate
   ) where
 
 import           Bio.Character.Parsed
 import           Bio.Metadata.Parsed
-import           Bio.Graph
+--import           Bio.Graph
 import           Bio.Graph.Forest.Parsed
 import           Bio.Graph.PhylogeneticDAG
 import           Control.Evaluation
@@ -22,25 +22,21 @@ import           Data.Bifunctor               (bimap,first)
 import           Data.Either.Custom
 import           Data.Foldable
 import           Data.Functor
-import           Data.Key
-import           Data.List                    (intercalate)
+--import           Data.Key
+--import           Data.List                    (intercalate)
 -- import           Data.List.NonEmpty           (NonEmpty( (:|) ))
 -- import qualified Data.List.NonEmpty    as NE
 -- import           Data.List.Utility            (subsetOf)
 -- import           Data.Map                     (Map,assocs,insert,union)
 -- import qualified Data.Map              as M
 -- import           Data.Maybe                   (fromMaybe)
-import           Data.Monoid                  ((<>))
 import           Data.Ord                     (comparing)
 import           Data.TCM                     (TCMDiagnosis(..), TCMStructure(..), diagnoseTcm)
 import qualified Data.TCM              as TCM
-import           Data.Text                    (Text)
 import           Data.Text.IO                 (readFile)
 -- import           Data.Vector                  (Vector)
 -- import qualified Data.Vector           as V   (zipWith)
 import           Data.Void
-
-
 import           File.Format.Fasta   hiding   (FastaSequenceType(..))
 import qualified File.Format.Fasta   as Fasta (FastaSequenceType(..))
 import           File.Format.Fastc   hiding   (Identifier)
@@ -51,11 +47,9 @@ import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
 import           PCG.Syntax                   (Command(..))
 import           PCG.Command.Read
-import           PCG.Command.Types.Read.DecorationInitialization
---import           PCG.Command.Types.Read.Internal
-import           PCG.Command.Types.Read.ReadError
-import           PCG.Command.Types.Read.Unification.Master
---import           PCG.SearchState
+import           PCG.Command.Read.DecorationInitialization
+import           PCG.Command.Read.ReadError
+import           PCG.Command.Read.Unification.Master
 import           Prelude             hiding   (lookup, readFile)
 import           System.Directory
 import           System.FilePath.Glob
@@ -94,7 +88,7 @@ evaluate (READ (ReadCommand fileSpecs)) _old = do
 
 evaluate _ _ = fail "Invalid READ command binding"
 
-
+{-
 renderSequenceCosts :: Either t (PhylogeneticSolution (PhylogeneticDAG2 e n u v w x y z)) -> String
 renderSequenceCosts (Left    _) = "<Trees only>"
 renderSequenceCosts (Right sol) = outputStream
@@ -112,7 +106,7 @@ renderSequenceCosts (Right sol) = outputStream
         ]
     indent = intercalate "\n" . fmap ("  "<>) . lines
 --    unlines . toList . fmap (unlines . toList . fmap (unlines . fmap show . toList . rootCosts)) . phylogeneticForests
-
+-}
 
 
 parseSpecifiedFile  :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]

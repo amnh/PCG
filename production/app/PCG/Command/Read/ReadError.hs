@@ -1,4 +1,4 @@
-module PCG.Command.Types.Read.ReadError
+module PCG.Command.Read.ReadError
   ( ReadError()
   , ambiguous
   , multipleTCMs

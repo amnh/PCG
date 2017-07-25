@@ -1,6 +1,6 @@
 ----------------------------------------------------------------------------
 -- |
--- Module      :  PCG.Command.Types.Read.DecorationInitialization
+-- Module      :  PCG.Command.Read.DecorationInitialization
 -- Copyright   :  () 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -14,22 +14,22 @@
 
 {-# LANGUAGE BangPatterns, FlexibleContexts #-}
 
-module PCG.Command.Types.Read.DecorationInitialization where
+module PCG.Command.Read.DecorationInitialization where
 
 
-import           Analysis.Parsimony.Additive.Internal
-import           Analysis.Parsimony.Fitch.Internal
-import           Analysis.Parsimony.Sankoff.Internal
-import           Analysis.Parsimony.Dynamic.DirectOptimization
-import           Analysis.Parsimony.Dynamic.SequentialAlign
-import           Bio.Character
-import           Bio.Character.Decoration.Additive
-import           Bio.Character.Decoration.Dynamic
-import           Bio.Graph
-import           Bio.Graph.PhylogeneticDAG
-import           Control.Lens
-import           Data.MonoTraversable (Element)
-import           Prelude       hiding (lookup, zip, zipWith)
+import Analysis.Parsimony.Additive.Internal
+import Analysis.Parsimony.Fitch.Internal
+import Analysis.Parsimony.Sankoff.Internal
+import Analysis.Parsimony.Dynamic.DirectOptimization
+import Analysis.Parsimony.Dynamic.SequentialAlign
+import Bio.Character
+import Bio.Character.Decoration.Additive
+import Bio.Character.Decoration.Dynamic
+import Bio.Graph
+import Bio.Graph.PhylogeneticDAG
+import Control.Lens
+import Data.MonoTraversable (Element)
+import Prelude       hiding (lookup, zip, zipWith)
 
 -- import Debug.Trace
 

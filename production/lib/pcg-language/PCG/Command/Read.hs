@@ -30,11 +30,10 @@ module PCG.Command.Read
 
 import           Control.Applicative.Free (Ap)
 import           Data.Functor             (($>))
-import           Data.Foldable
 import           Data.List.NonEmpty       (NonEmpty())
 import qualified Data.List.NonEmpty as NE
 import           Data.Semigroup           (Semigroup(..))
-import           Data.Text                (Text) -- hiding (foldr, toLower, unlines)
+import           Data.Text                (Text)
 import           PCG.Syntax.Combinators
 
 
