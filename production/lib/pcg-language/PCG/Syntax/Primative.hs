@@ -46,6 +46,7 @@ import           Data.Maybe                        (fromMaybe)
 import           Data.Proxy
 import           Data.Scientific            hiding (scientific)
 import           Data.Semigroup             hiding (option)
+import           Data.Set                          (Set)
 import qualified Data.Set                   as S
 import           Data.Time.Clock                   (DiffTime, secondsToDiffTime)
 import           Text.Megaparsec
@@ -233,20 +234,29 @@ realValue = label (getPrimativeName TypeOfReal)
 textValue  :: (MonadParsec e s m, Token s ~ Char) => m String -- (Tokens s)
 textValue = openQuote *> many (escaped <|> nonEscaped) <* closeQuote
   where
-    openQuote   = char '"' <?> ("'\"' opening quote for " <> getPrimativeName TypeOfText)
-    closeQuote  = char '"' <?> ("'\"' closing quote for " <> getPrimativeName TypeOfText)
-    nonEscaped  = satisfy $ \x -> x /= '\\' && x /= '"'
-    escaped = do
+    openQuote  = char '"' <?> ("'\"' opening quote for " <> getPrimativeName TypeOfText)
+    closeQuote = char '"' <?> ("'\"' closing quote for " <> getPrimativeName TypeOfText)
+--  nonEscaped = noneOf lexicalChars
+    nonEscaped = satisfy $ \x -> x /= '\\' && x /= '"' && x /= '(' && x /= ')' && x /= '\n' && x /= '\t'
+    escaped    = do
         _ <- char '\\' <?> "'\\' beginning of character escape sequence"
         c <- region characterEscaping $ oneOf escapeChars
         pure $ mapping ! c
       where
-        -- all the characters which can be escaped after '\'
-        -- and thier unescaped literal character value
+        -- These characters must be escaped!
+        -- Requiring '(' & ')' to be escapsed in textual strings allows for
+        -- better error messages at the syntax parsing level.
+--        lexicalChars :: Set Char
+--        lexicalChars = S.fromList ['\\', '"', '(', ')']
+
+        -- all the characters which can be escaped after '\' and thier unescaped
+        -- literal character value
         escapeChars = M.keysSet mapping
         mapping = M.fromList
             [ ('\\', '\\')
             , ( '"',  '"')
+            , ( '(', '(' )
+            , ( ')', ')' )
             , ( '0', '\0')
             , ( 'n', '\n')
             , ( 'r', '\r')
