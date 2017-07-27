@@ -76,7 +76,7 @@ instance Show a => Show (PhylogeneticSolution a) where
                 ]
 
 
-instance (HasLeafSet s (LeafSet a), Show a, ToXML s) => ToXML (PhylogeneticSolution s) where
+instance (HasLeafSet s (LeafSet a), Show a, ToXML a, ToXML s) => ToXML (PhylogeneticSolution s) where
 
     toXML (PhylogeneticSolution soln) = xmlElement "Solution" attrs contents
         where

@@ -43,10 +43,11 @@ instance ToXML [Char] where
     toXML val = Element (QName "Text value" Nothing Nothing) [] [CRef val] Nothing
 
 
--- instance (Foldable f, ToXML a) => ToXML (f a) where
+instance {-# OVERLAPPABLE #-} (Foldable f, ToXML a) => ToXML (f a) where
 
---     toXML lst = Element name attrs contents Nothing
---         where
---             name     = QName "List" Nothing Nothing
---             attrs    = []
---             contents = Elem . toXML <$> toList lst
+    toXML lst = Element name attrs contents Nothing
+       where
+           name     = QName "List" Nothing Nothing
+           attrs    = []
+           contents = Elem . toXML <$> toList lst
+           
