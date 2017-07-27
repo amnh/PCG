@@ -61,7 +61,8 @@ import qualified Control.Monad.Free         as F
 import           Data.CaseInsensitive              (FoldCase)
 import           Data.Foldable
 import           Data.Functor                      (void)
-import           Data.List.NonEmpty                (NonEmpty(..))
+import           Data.List                         (intercalate)
+import           Data.List.NonEmpty                (NonEmpty(..), some1)
 import           Data.Proxy
 import           Data.Semigroup             hiding (option)
 import           Data.String                       (IsString(..))
@@ -89,7 +90,7 @@ data  CommandSpecification z
 -- Component of a semantic command embedded in the PCG scripting language syntax.
 data  SyntacticArgument z
     = PrimativeArg   (F.Free PrimativeValue z)
-    | ArgIdNamedArg (Ap SyntacticArgument z) ArgumentIdentifier
+    | ArgIdNamedArg  (Ap SyntacticArgument z) (NonEmpty ArgumentIdentifier)
     | DefaultValue   (Ap SyntacticArgument z) z
     | ExactlyOneOf   (NonEmpty (Ap SyntacticArgument z))
     | ArgumentList   (ArgList z)
@@ -178,7 +179,7 @@ choiceFrom opts =
 -- Require a prefix on an agrument value to disambiguate it from other argument
 -- values.
 argId :: String -> Ap SyntacticArgument a -> Ap SyntacticArgument a
-argId str x = liftAp $ ArgIdNamedArg x (ArgId str)
+argId str x = liftAp $ ArgIdNamedArg x (ArgId str :|[])
 
 
 -- |
@@ -186,7 +187,10 @@ argId str x = liftAp $ ArgIdNamedArg x (ArgId str)
 -- values. Accepts multiple aliases for the prefix used to disambiuate the
 -- argument.
 argIds :: Foldable f => f String -> Ap SyntacticArgument a -> Ap SyntacticArgument a
-argIds strs x = choiceFrom $ liftAp . ArgIdNamedArg x . ArgId <$> toList strs
+argIds strs arg = 
+    case toList strs of
+      []   -> error "You cannot construct an empty set of identifiers!"
+      x:xs -> liftAp . ArgIdNamedArg arg $ ArgId <$> (x:|xs)
 
 
 -- |
@@ -197,8 +201,8 @@ manyOf = liftAp . ArgumentList . ManyZ . many . liftAlt
 
 -- |
 -- Produce one or more of the provided argument for the command.
-someOf :: Ap SyntacticArgument z -> Ap SyntacticArgument [z]
-someOf = liftAp . ArgumentList . SomeZ . some . liftAlt
+someOf :: Ap SyntacticArgument z -> Ap SyntacticArgument (NonEmpty z)
+someOf = liftAp . ArgumentList . SomeZ . some1 . liftAlt
 
 
 -- |
@@ -228,15 +232,24 @@ runSyntax = runPermParserWithSeperator comma . runAp' noEffect apRunner
 -- The \"natural transformation\" used to convert the Free Alternative to the
 -- 'MonadParsec' parser result.
 apRunner :: forall a e m s. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => Perm m () -> SyntacticArgument a -> Perm m a
-apRunner effect (PrimativeArg p  ) = toPerm . try $ runPermParser effect *> F.iterM parsePrimative p
-apRunner effect (ExactlyOneOf ps ) = toPerm . try $ runPermParser effect *> choice (runPermParser . runAp (apRunner voidEffect) <$> ps)
-apRunner effect (ArgumentList p  ) = toPerm . try $ runPermParser effect *> runPermParser (parseArgumentList p)
-apRunner effect (DefaultValue p v) = toPermWithDefault v . try
+apRunner effect (PrimativeArg p  ) = toPerm $ runPermParser effect *> F.iterM parsePrimative p
+apRunner effect (ExactlyOneOf ps ) = toPerm $ runPermParser effect *> choice (runPermParser . runAp (apRunner voidEffect) <$> ps)
+apRunner effect (ArgumentList p  ) = toPerm $ runPermParser effect *> runPermParser (parseArgumentList p)
+apRunner effect (DefaultValue p v) = toPermWithDefault v
                                    $ runPermParser effect *> runPermParser (runAp (apRunner (toPerm voidEffect)) p)
-apRunner effect (ArgIdNamedArg p (ArgId x)) = toPerm . try $ do
-    _ <- string'' x <?> ("identifier '" <> x <> "'")
+apRunner effect (ArgIdNamedArg p ids) = toPerm $ do
+    _ <- (choice $ parseId <$> ids) <?> parseHint
     _ <- whitespace <* char ':' <* whitespace
     runPermParser $ runAp (apRunner effect) p
+  where
+    parseId  (ArgId x) = string'' x
+    parseHint =
+        case ids of
+          x:|[] -> "identifier " <> renderId x
+          _     -> "one of the following identifiers: " <> renderIds ids
+      where
+        renderId (ArgId x) = "'" <> x <> "'"
+        renderIds          = intercalate ", " . fmap renderId . toList
 
 
 -- |
