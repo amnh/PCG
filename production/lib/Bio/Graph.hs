@@ -14,7 +14,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving, UndecidableInstances #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses, UndecidableInstances #-}
 
 module Bio.Graph
   ( PhylogeneticSolution(..)
@@ -28,6 +28,7 @@ import Bio.Graph.LeafSet
 -- import Bio.Graph.Network
 -- import Bio.Graph.Tree
 import           Control.Lens        hiding (Indexable)
+import           Data.Foldable
 import           Data.Key
 import           Data.List
 import           Data.List.NonEmpty         (NonEmpty)
@@ -35,6 +36,7 @@ import           Data.List.NonEmpty         (NonEmpty)
 import           Data.Semigroup
 import           Prelude             hiding (lookup)
 import           Text.XML.Custom
+import           Text.XML.Light
 
 
 -- |
@@ -55,7 +57,7 @@ instance Show a => Show (PhylogeneticSolution a) where
 
     show = ("Solution:\n\n" <>) . indent . renderForests . fmap renderForest . phylogeneticForests
       where
-        indent = intercalate "\n" . fmap ("  "<>) . lines
+        indent = intercalate "\n" . fmap ("  " <>) . lines
         renderForest = indent . foldMapWithKey f
           where
             f k e = mconcat
@@ -76,18 +78,26 @@ instance Show a => Show (PhylogeneticSolution a) where
                 ]
 
 
-instance (HasLeafSet s (LeafSet a), Show a, ToXML s) => ToXML (PhylogeneticSolution s) where
+-- instance (Foldable s, HasLeafSet (s n) (LeafSet n), ToXML n) => ToXML (PhylogeneticSolution (s n)) where
 
-    toXML (PhylogeneticSolution soln) = xmlElement "Solution" attrs contents
+--     toXML (PhylogeneticSolution soln) = xmlElement "Solution" attrs contents
+--         where
+--             attrs    = []
+--             contents = [ Right $ collapseElemList "Leaf sets"   attrs leafSets
+--                        -- , Right graphRepresentation
+--                        , Right $ collapseElemList "Final graph" attrs soln
+--                        ]
+--             -- (PhylogeneticForest firstForest) = head $ toList soln
+--             -- (PDAG2 refDag _e _n)    = head $ toList firstForest
+--             -- (refDag )
+--             -- leaves   = collapseElemList "Leaf sets" attrs leafSets
+--             leafSets = (^. leafSets) <$> soln
+
+
+instance HasLeafSet a (LeafSet b) => HasLeafSet (PhylogeneticSolution a) (NonEmpty (PhylogeneticForest b)) where
+
+    leafSet = lens getter setter
         where
-            attrs    = []
-            contents = [ Right leaves
-                       -- , Right graphRepresentation
-                       , Right $ collapseElemList "Final graph" attrs soln
-                       ]
-            -- (PhylogeneticForest firstForest) = head $ toList soln
-            -- (PDAG2 refDag _e _n)    = head $ toList firstForest
-            -- (refDag )
-            leaves = collapseElemList "Leaf sets" attrs leafSets
-
-            leafSets = fmap id . (^. leafSet) <$> soln
+            getter e   = (^. leafSet) <$> (stuff e)
+            setter e _ = id e
+            stuff (PhylogeneticSolution thing)     = thing

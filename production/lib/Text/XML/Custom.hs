@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------
 -- |
--- Module      :  Text.XML.Class
+-- Module      :  Text.XML.Custom
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --

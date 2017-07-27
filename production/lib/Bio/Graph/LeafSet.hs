@@ -13,7 +13,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveFunctor, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses #-}
+{-# LANGUAGE AllowAmbiguousTypes, DeriveFunctor, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses, UndecidableInstances #-}
 
 
 module Bio.Graph.LeafSet
@@ -23,7 +23,13 @@ module Bio.Graph.LeafSet
 
 
 import Control.Lens
-import Text.XML.Custom
+import Data.Foldable
+-- import Data.List.NonEmpty
+import Data.Monoid
+-- import Text.XML.Custom
+
+
+{-# LANGUAGE UndecidableInstances #-}
 
 
 newtype LeafSet n = LeafSet [n] deriving (Functor, Show)
@@ -37,9 +43,21 @@ class HasLeafSet s a | s -> a where
     leafSet :: Lens' s a
 
 
-instance ToXML n => ToXML (LeafSet n) where
+-- instance ToXML (LeafSet (Maybe String)) where
 
-    toXML (LeafSet lst) = xmlElement "Leaf set" attrs contents
-        where
-            attrs    = []
-            contents = (Right . toXML) <$> lst
+--     toXML (LeafSet lst) = xmlElement "Leaf set" attrs contents
+--         where
+--             attrs    = []
+--             contents = [Left ("Leaves", foldr leafStr "" lst)]
+
+--             leafStr input accum = case input of Just item -> item <> ", " <> accum
+--                                                 Nothing   -> accum
+
+
+-- instance (Foldable f) => HasLeafSet (f a) (LeafSet a) where
+
+--     leafSet lst = lens getter setter
+--         where
+--             result = head $ foldMap (^. leafSet) (toList lst)
+--             getter e   =
+--             setter e _ = id e
