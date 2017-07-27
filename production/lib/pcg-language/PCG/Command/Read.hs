@@ -29,6 +29,7 @@ module PCG.Command.Read
   ) where
 
 import           Control.Applicative.Free (Ap)
+import           Data.Foldable
 import           Data.Functor             (($>))
 import           Data.List.NonEmpty       (NonEmpty())
 import qualified Data.List.NonEmpty as NE
@@ -55,13 +56,13 @@ data  FileSpecificationContent
 -- |
 -- The specification for a file to be read.
 data  FileSpecification
-    = UnspecifiedFile    [FilePath] --Try to parse them all?
-    | AminoAcidFile      [FilePath]
-    | NucleotideFile     [FilePath]
-    | AnnotatedFile      [FilePath]
-    | ChromosomeFile     [FilePath]
-    | GenomeFile         [FilePath]
-    | CustomAlphabetFile [FilePath] TcmReference [CustomAlphabetOptions]
+    = UnspecifiedFile    (NonEmpty FilePath) --Try to parse them all?
+    | AminoAcidFile      (NonEmpty FilePath)
+    | NucleotideFile     (NonEmpty FilePath)
+    | AnnotatedFile      (NonEmpty FilePath)
+    | ChromosomeFile     (NonEmpty FilePath)
+    | GenomeFile         (NonEmpty FilePath)
+    | CustomAlphabetFile (NonEmpty FilePath) TcmReference [CustomAlphabetOptions]
     | PrealignedFile     FileSpecification TcmReference
     deriving (Show)
 
@@ -115,23 +116,23 @@ instance Semigroup ReadCommand where
 -- Defines the semantics of interpreting a valid \"Read\" command from the PCG
 -- scripting language syntax.
 readCommandSpecification :: CommandSpecification ReadCommand
-readCommandSpecification = command "read" $ ReadCommand . NE.fromList <$> someOf fileSpec
+readCommandSpecification = command "read" $ ReadCommand <$> someOf fileSpec
 
 
 fileSpec :: Ap SyntacticArgument FileSpecification
 fileSpec = choiceFrom [ unspecified, customAlphabet, aminoAcids, nucleotides, annotated, chromosome, genome, prealigned  ]
   where
     unspecified    = UnspecifiedFile . pure <$> text
-    aminoAcids     = AminoAcidFile  <$> oneOrManyWithIds text [ "amino_acid", "amino_acids", "aminoacid", "aminoacids" ]
-    nucleotides    = NucleotideFile <$> oneOrManyWithIds text [ "nucleotide", "nucleotides" ]
-    annotated      = AnnotatedFile  <$> oneOrManyWithIds text [ "annotated" ]
-    chromosome     = ChromosomeFile <$> oneOrManyWithIds text [ "chromosome", "chromosomes", "chromosomal" ]
-    genome         = GenomeFile     <$> oneOrManyWithIds text [ "genome", "genomes", "genomic", "genomics" ]
+    aminoAcids     = AminoAcidFile  <$> oneOrSomeWithIds text [ "amino_acid", "amino_acids", "aminoacid", "aminoacids" ]
+    nucleotides    = NucleotideFile <$> oneOrSomeWithIds text [ "nucleotide", "nucleotides" ]
+    annotated      = AnnotatedFile  <$> oneOrSomeWithIds text [ "annotated" ]
+    chromosome     = ChromosomeFile <$> oneOrSomeWithIds text [ "chromosome", "chromosomes", "chromosomal" ]
+    genome         = GenomeFile     <$> oneOrSomeWithIds text [ "genome", "genomes", "genomic", "genomics" ]
     prealigned     = argId "prealigned"      . argList $ PrealignedFile <$> fileSpec <*> tcmReference
     customAlphabet = argId "custom_alphabet" . argList $ CustomAlphabetFile <$> fileRefs <*> tcmReference <*> alphabetOpts
       where
-        fileRefs     = oneOrMany text
-        alphabetOpts = oneOrMany alphabetOpt `withDefault` []
+        fileRefs     = oneOrSome text
+        alphabetOpts = (toList <$> oneOrSome alphabetOpt) `withDefault` []
         alphabetOpt  = choiceFrom [ initSpec, levelSpec, Ties <$> tiebreaker ]
           where
             initSpec   = Init3D     <$> argId "init3d" bool
@@ -152,12 +153,12 @@ fileSpec = choiceFrom [ unspecified, customAlphabet, aminoAcids, nucleotides, an
 -- |
 -- Makes file parsing even more flexible as a single file can be specified
 -- without parens or many files may be specified with parens.
-oneOrMany :: Ap SyntacticArgument a -> Ap SyntacticArgument [a]
-oneOrMany v = choiceFrom [ pure <$> v, someOf v ]
+oneOrSome :: Ap SyntacticArgument a -> Ap SyntacticArgument (NonEmpty a)
+oneOrSome v = choiceFrom [ pure <$> v, someOf v ]
 
 
 -- |
 -- Makes file parsing even more flexible as a single file can be specified
 -- without parens or many files may be specified with parens.
-oneOrManyWithIds :: Foldable f => Ap SyntacticArgument a -> f String -> Ap SyntacticArgument [a]
-oneOrManyWithIds v strs = choiceFrom [pure <$> argIds strs v, argIds strs (someOf v)]
+oneOrSomeWithIds :: Foldable f => Ap SyntacticArgument a -> f String -> Ap SyntacticArgument (NonEmpty a)
+oneOrSomeWithIds v strs = choiceFrom [pure <$> argIds strs v, argIds strs (someOf v)]

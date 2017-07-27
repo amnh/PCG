@@ -24,7 +24,7 @@ import           Data.Foldable
 import           Data.Functor
 --import           Data.Key
 --import           Data.List                    (intercalate)
--- import           Data.List.NonEmpty           (NonEmpty( (:|) ))
+import           Data.List.NonEmpty           (NonEmpty(..))
 -- import qualified Data.List.NonEmpty    as NE
 -- import           Data.List.Utility            (subsetOf)
 -- import           Data.Map                     (Map,assocs,insert,union)
@@ -244,7 +244,7 @@ expandIUPAC fpr = fpr { parsedChars = newTreeChars }
 progressiveParse :: FilePath -> EitherT ReadError IO FracturedParseResult
 progressiveParse _ | trace "STARTING PROGRESSIVE PARSE" False = undefined
 progressiveParse inputPath = do
-    (filePath, fileContent) <- head . dataFiles <$> getSpecifiedContent (UnspecifiedFile [inputPath])
+    (filePath, fileContent) <- head . dataFiles <$> getSpecifiedContent (UnspecifiedFile $ inputPath:|[])
     case trace "FASTA (Nucleiotide)" $ parse' nukeParser filePath fileContent of
       Right x    -> pure $ toFractured Nothing filePath x
       Left  err1 ->
@@ -376,11 +376,11 @@ getSpecifiedTcm tcmPath =
           _   -> left $ ambiguous tcmPath' (fst <$> tcmFiles)
 
 
-getSpecifiedFileContents :: [FilePath] -> EitherT ReadError IO [FileResult]
-getSpecifiedFileContents = fmap concat . eitherTValidation . fmap getFileContents
+getSpecifiedFileContents :: Foldable f => f FilePath -> EitherT ReadError IO [FileResult]
+getSpecifiedFileContents = fmap concat . eitherTValidation . fmap getFileContents . toList
 
 
-getSpecifiedContentSimple :: [FilePath] -> EitherT ReadError IO FileSpecificationContent
+getSpecifiedContentSimple :: Foldable f => f FilePath -> EitherT ReadError IO FileSpecificationContent
 getSpecifiedContentSimple = fmap (`SpecContent` Nothing) . getSpecifiedFileContents
 
 
