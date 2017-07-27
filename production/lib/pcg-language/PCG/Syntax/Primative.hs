@@ -237,7 +237,7 @@ textValue = openQuote *> many (escaped <|> nonEscaped) <* closeQuote
     openQuote  = char '"' <?> ("'\"' opening quote for " <> getPrimativeName TypeOfText)
     closeQuote = char '"' <?> ("'\"' closing quote for " <> getPrimativeName TypeOfText)
 --  nonEscaped = noneOf lexicalChars
-    nonEscaped = satisfy $ \x -> x /= '\\' && x /= '"' && x /= '(' && x /= ')' && x /= '\n' && x /= '\t'
+    nonEscaped = satisfy $ \x -> x /= '\\' && x /= '"' && x /= '(' && x /= ')' && x /= isControl x
     escaped    = do
         _ <- char '\\' <?> "'\\' beginning of character escape sequence"
         c <- region characterEscaping $ oneOf escapeChars
