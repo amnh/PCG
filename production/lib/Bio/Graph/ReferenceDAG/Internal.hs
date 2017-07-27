@@ -234,7 +234,7 @@ instance (ToXML n) => ToXML (IndexData e n) where
     toXML indexData = toXML $ nodeDecoration indexData
 
 
-instance ToXML n => ToXML (ReferenceDAG d e n) where
+instance (ToXML n) => ToXML (ReferenceDAG d e n) where
 
     toXML (RefDAG v _ g) = xmlElement "Directed Acyclic Graph" [] [meta, vect]
       where
