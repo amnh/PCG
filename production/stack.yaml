@@ -21,7 +21,7 @@ local-bin-path: bin
 packages:
   - '.'
   - lib/pcg-language
-  - location: https://github.com/mrkkrp/megaparsec/archive/3738661.zip
+  - location: https://github.com/mrkkrp/megaparsec/archive/ed9a823.zip
     extra-dep: true
   - location: https://github.com/mrkkrp/parser-combinators/archive/master.zip
     extra-dep: true

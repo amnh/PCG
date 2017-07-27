@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module Main (main) where
 
 
@@ -16,10 +18,10 @@ import Text.Megaparsec
 main :: IO ()
 main = hSetBuffering stdout NoBuffering
    >>  getContents
-   >>= checkInput . parse' computationalStreamParser "STDIN stream"
+   >>= (\str -> checkInput str $ parse' computationalStreamParser "STDIN stream" str)
    where
-     checkInput (Left  err) = putStrLn $ parseErrorPretty err
-     checkInput (Right val) = renderSearchState =<< runEvaluation (evaluate (optimizeComputation val))
+     checkInput str (Left  err) = putStrLn $ parseErrorPretty' str err
+     checkInput _   (Right val) = renderSearchState =<< runEvaluation (evaluate (optimizeComputation val))
 
      parse' :: Parsec Void s a -> String -> s -> Either (ParseError (Token s) Void) a
      parse' = parse
