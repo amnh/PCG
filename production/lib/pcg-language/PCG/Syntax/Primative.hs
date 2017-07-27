@@ -37,6 +37,7 @@ module PCG.Syntax.Primative
 import           Control.Applicative
 import           Control.Monad.Free
 import           Data.CaseInsensitive              (FoldCase)
+import           Data.Char                         (isControl)
 import           Data.Functor                      (($>), void)
 import           Data.Key
 import           Data.List.NonEmpty                (NonEmpty(..))
@@ -234,37 +235,37 @@ realValue = label (getPrimativeName TypeOfReal)
 textValue  :: (MonadParsec e s m, Token s ~ Char) => m String -- (Tokens s)
 textValue = openQuote *> many (escaped <|> nonEscaped) <* closeQuote
   where
+    -- These characters must be escaped!
+    -- Requiring '(' & ')' to be escapsed in textual strings allows for
+    -- better error messages at the syntax parsing level.
+    lexicalChars :: Set Char
+    lexicalChars = S.fromList ['\\', '"', '(', ')']
+
     openQuote  = char '"' <?> ("'\"' opening quote for " <> getPrimativeName TypeOfText)
     closeQuote = char '"' <?> ("'\"' closing quote for " <> getPrimativeName TypeOfText)
---  nonEscaped = noneOf lexicalChars
-    nonEscaped = satisfy $ \x -> x /= '\\' && x /= '"' && x /= '(' && x /= ')' && x /= isControl x
+    nonEscaped = satisfy $ \x -> x `notElem` lexicalChars && not (isControl x)
     escaped    = do
         _ <- char '\\' <?> "'\\' beginning of character escape sequence"
         c <- region characterEscaping $ oneOf escapeChars
         pure $ mapping ! c
       where
-        -- These characters must be escaped!
-        -- Requiring '(' & ')' to be escapsed in textual strings allows for
-        -- better error messages at the syntax parsing level.
---        lexicalChars :: Set Char
---        lexicalChars = S.fromList ['\\', '"', '(', ')']
-
         -- all the characters which can be escaped after '\' and thier unescaped
         -- literal character value
         escapeChars = M.keysSet mapping
-        mapping = M.fromList
-            [ ('\\', '\\')
-            , ( '"',  '"')
-            , ( '(', '(' )
-            , ( ')', ')' )
-            , ( '0', '\0')
-            , ( 'n', '\n')
-            , ( 'r', '\r')
-            , ( 'v', '\v')
-            , ( 't', '\t')
-            , ( 'b', '\b')
-            , ( 'f', '\f')
-            ]
+        mapping = lexMap <> escMap
+          where
+            -- All the lexical chars need to be escaped.
+            lexMap = foldMap (\x -> M.singleton x x) lexicalChars
+            -- Other escape sequence chars
+            escMap = M.fromList
+                [ ( '0', '\0')
+                , ( 'n', '\n')
+                , ( 'r', '\r')
+                , ( 'v', '\v')
+                , ( 't', '\t')
+                , ( 'b', '\b')
+                , ( 'f', '\f')
+                ]
         
         characterEscaping e@FancyError {} = e
         characterEscaping   (TrivialError pos uxpItems expItems) = TrivialError pos uxpItems' expItems'
