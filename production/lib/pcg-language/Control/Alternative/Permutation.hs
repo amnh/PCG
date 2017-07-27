@@ -74,10 +74,13 @@ runPermParserWithSeperator :: (Alternative m, Monad m) => m b -> Perm m a -> m a
 runPermParserWithSeperator sep perm = run (pure ()) sep perm
    where
      run :: (Alternative m, Monad m) => m c -> m b -> Perm m a -> m a
-     run headSep tailSep (P value parser) = optional (headSep *> parser) >>= f
+     run headSep tailSep (P value parser) = optional headSep >>= g
        where
          f  Nothing = maybe empty pure value
          f (Just p) = run tailSep tailSep p
+         g  Nothing = maybe empty pure value
+         g (Just p) = optional parser >>= f
+
 
 
 -- |
