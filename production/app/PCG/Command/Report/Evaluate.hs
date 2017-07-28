@@ -26,7 +26,8 @@ import           PCG.Command.Report
 --import           PCG.Command.Report.Newick
 --import           PCG.Command.Report.TaxonMatrix
 import           PCG.Syntax (Command(..))
-
+import           Text.XML.Class
+import           Text.XML.Light
 
 evaluate :: Command -> SearchState -> SearchState
 evaluate (REPORT (ReportCommand format target)) old = do
@@ -43,17 +44,21 @@ evaluate _ _ = fail "Invalid READ command binding"
 
 
 -- TODO: Redo reporting
-generateOutput :: t1 -> t -> FileStreamContext
+--generateOutput :: t1 -> t -> FileStreamContext
 {-
 generateOutput :: DirectOptimizationPostOrderDecoration z a
                => Either t (PhylogeneticSolution (PhylogeneticDAG e n u v w x y z))
                -> OutputFormat
                -> FileStreamContext
 -}
-
+generateOutput :: (Show c, Show t, ToXML c)
+               => Either t c
+               -> OutputFormat
+               -> FileStreamContext
 --generateOutput :: StandardSolution -> OutputFormat -> FileStreamContext
 --generateOutput g (CrossReferences fileNames)   = SingleStream $ taxonReferenceOutput g fileNames
---generateOutput g Data                       {} = SingleStream . newickReport $ addOptimization g
+generateOutput g Data                       {} = SingleStream $ either show show g
+generateOutput g XML                        {} = SingleStream $ either show (ppTopElement . toXML) g
 --generateOutput g DotFile                    {} = SingleStream $ dotOutput g
 --generateOutput (Right g) DynamicTable               {} = SingleStream $ outputDynamicCharacterTablularData g
 --generateOutput g Metadata                   {} = SingleStream $ metadataCsvOutput g

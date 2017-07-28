@@ -19,6 +19,7 @@ import Bio.Character.Encodable.Internal
 import Control.Arrow ((&&&))
 import Data.Range
 import Numeric.Extended.Real
+import Text.XML.Custom
 
 
 -- |
@@ -28,14 +29,15 @@ newtype ContinuousChar = CC (ExtendedReal, ExtendedReal)
   deriving (Eq)
 
 
--- | (✔)
-instance Show ContinuousChar where
+type instance Bound ContinuousChar = ExtendedReal
 
-    show (CC (lower, upper))
-      | lower == upper = show lower
-      | otherwise      = renderRange lower upper
+
+-- | (✔)
+instance ContinuousCharacter ContinuousChar where
+
+    toContinuousCharacter = CC . maybe missingRange (f &&& f)
       where
-        renderRange x y = mconcat [ "[", show x, ", ", show y, "]" ]
+        f = fromRational . toRational
 
 
 -- | (✔)
@@ -48,35 +50,6 @@ instance PossiblyMissingCharacter ContinuousChar where
     isMissing (CC c) = c == missingRange
 
 
--- |
--- The default range for "missing" continuous characters.
---
--- This value ensures that the scoring on th character produces correct results.
-missingRange :: (ExtendedReal, ExtendedReal)
-missingRange = (minBound, maxBound)
-
--- -- | (✔)
--- instance PossiblyMissingCharacter ContinuousChar where
-
---     {-# INLINE toMissing #-}
---     toMissing = const $ CC Nothing
-
---     {-# INLINE isMissing #-}
---     isMissing (CC Nothing) = True
---     isMissing _            = False
-
-
--- | (✔)
-instance ContinuousCharacter ContinuousChar where
-
-    toContinuousCharacter = CC . maybe missingRange (f &&& f)
-      where
-        f = fromRational . toRational
-
-
-type instance Bound ContinuousChar = ExtendedReal
-
-
 -- | (✔)
 instance Ranged ContinuousChar where
 
@@ -85,4 +58,30 @@ instance Ranged ContinuousChar where
     fromRange interval = CC (lowerBound interval, upperBound interval)
 
     zeroRange _ = fromTuple (0,0)
+
+
+-- | (✔)
+instance Show ContinuousChar where
+
+    show (CC (lower, upper))
+      | lower == upper = show lower
+      | otherwise      = renderRange lower upper
+        where
+            renderRange x y = mconcat [ "[", show x, ", ", show y, "]" ]
+
+-- | (✔)
+instance ToXML ContinuousChar where
+
+    toXML continuousChar = xmlElement "ContinuousChar" attributes content
+        where
+            attributes = []
+            content    = [Left ("Character states", show continuousChar)]
+
+
+-- |
+-- The default range for "missing" continuous characters.
+--
+-- This value ensures that the scoring on th character produces correct results.
+missingRange :: (ExtendedReal, ExtendedReal)
+missingRange = (minBound, maxBound)
 

@@ -65,7 +65,7 @@ data  ReportCommand
 -- Defines the semantics of interpreting a valid \"Report\" command from the PCG
 -- scripting language syntax.
 reportCommandSpecification :: CommandSpecification ReportCommand
-reportCommandSpecification = command "report" $ ReportCommand <$> outputFormat <*> outputTarget
+reportCommandSpecification = command "report" . argList $ ReportCommand <$> outputFormat <*> outputTarget
 
 
 outputTarget :: Ap SyntacticArgument OutputTarget
@@ -76,7 +76,7 @@ outputTarget = choiceFrom [ stdout, toFile ] `withDefault` OutputToStdout
 
 
 outputFormat :: Ap SyntacticArgument OutputFormat
-outputFormat = choiceFrom [ dataFormat ]
+outputFormat = choiceFrom [ dataFormat, xmlFormat ]
   where
     dataFormat = value "data" $> Data
     xmlFormat  = value "xml"  $> XML

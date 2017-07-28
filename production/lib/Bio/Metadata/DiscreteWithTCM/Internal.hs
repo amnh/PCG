@@ -36,7 +36,7 @@ import Data.List (intercalate)
 import Data.Monoid
 import Data.TCM
 import Data.TCM.Memoized
-
+import Text.XML.Custom
 
 -- |
 -- Represents a concrete type containing metadata fields shared across all
@@ -164,3 +164,7 @@ discreteMetadataWithTCM name weight alpha scm =
   where
     memoMatrixValue = generateMemoizedTransitionCostMatrix (toEnum $ length alpha) scm
 
+
+instance ToXML (DiscreteWithTCMCharacterMetadataDec c) where
+
+    toXML _ = xmlElement "Discrete with TCM" [] [ Left ("Nothing here", "") ]

@@ -28,14 +28,13 @@ module PCG.Command.Read
   , readCommandSpecification
   ) where
 
-import           Control.Applicative.Free (Ap)
-import           Data.Foldable
-import           Data.Functor             (($>))
-import           Data.List.NonEmpty       (NonEmpty())
-import qualified Data.List.NonEmpty as NE
-import           Data.Semigroup           (Semigroup(..))
-import           Data.Text                (Text)
-import           PCG.Syntax.Combinators
+import Control.Applicative.Free (Ap)
+import Data.Foldable
+import Data.Functor             (($>))
+import Data.List.NonEmpty       (NonEmpty())
+import Data.Semigroup           (Semigroup(..))
+import Data.Text                (Text)
+import PCG.Syntax.Combinators
 
 
 -- |

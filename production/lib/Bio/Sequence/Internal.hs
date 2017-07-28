@@ -9,7 +9,7 @@
 -- Portability :  portable
 --
 -- Data structures and instances for coded characters
--- Coded characters are dynamic characters recoded as 
+-- Coded characters are dynamic characters recoded as
 --
 -----------------------------------------------------------------------------
 
@@ -19,8 +19,8 @@
 -- cost variable 'r' doesn't appear on the right hand side of the double arrow.
 {-# LANGUAGE UndecidableInstances #-}
 
---TODO: Add instance of Functor 
---TODO: Add instance of BiFunctor 
+--TODO: Add instance of Functor
+--TODO: Add instance of BiFunctor
 
 module Bio.Sequence.Internal
   ( CharacterSequence()
@@ -43,12 +43,13 @@ import           Data.Bifunctor
 import           Data.Foldable
 import           Data.Key
 import           Data.List.NonEmpty             (NonEmpty)
-import qualified Data.List.NonEmpty      as NE    
+import qualified Data.List.NonEmpty      as NE
 import           Data.Monoid
 import           Data.MonoTraversable
 --import           Data.Semigroup.Foldable
 import           Data.Semigroup.Traversable
 import           Prelude                 hiding (zipWith)
+import           Text.XML.Custom
 
 
 -- |
@@ -65,12 +66,6 @@ newtype CharacterSequence u v w x y z
 
 
 type instance Element (CharacterSequence u v w x y z) = CharacterBlock u v w x y z
-
-
-instance MonoFunctor (CharacterSequence u v w x y z) where
-
-    {-# INLINE omap #-}
-    omap f = fromBlocks . fmap f . toBlocks
 
 
 instance MonoFoldable (CharacterSequence u v w x y z) where
@@ -97,6 +92,12 @@ instance MonoFoldable (CharacterSequence u v w x y z) where
     olength = length . toBlocks
 
 
+instance MonoFunctor (CharacterSequence u v w x y z) where
+
+    {-# INLINE omap #-}
+    omap f = fromBlocks . fmap f . toBlocks
+
+
 -- | Monomorphic containers that can be traversed from left to right.
 instance MonoTraversable (CharacterSequence u v w x y z) where
 
@@ -107,6 +108,7 @@ instance MonoTraversable (CharacterSequence u v w x y z) where
     omapM = otraverse
 
 
+-- | (✔)
 instance ( Show u
          , Show v
          , Show w
@@ -131,6 +133,17 @@ instance ( Show u
         indent = unlines . fmap ("  "<>) . lines
 
 
+-- | (✔)
+instance ( ToXML u
+         , ToXML v
+         , ToXML w
+         , ToXML y
+         , ToXML z
+         ) => ToXML (CharacterSequence u v w x y z) where
+
+    toXML (CharSeq val) = collapseElemList "Character sequence" [] (toList val)
+
+
 -- |
 -- Perform a six way map over the polymorphic types.
 hexmap :: (u -> u')
@@ -149,7 +162,7 @@ hexmap f1 f2 f3 f4 f5 f6 = fromBlocks . parmap rpar (Blk.hexmap f1 f2 f3 f4 f5 f
 -- values.
 --
 -- Assumes that the 'CharacterSequence' values in the 'Traversable' structure are
--- of equal length. If this assumtion is violated, the result will be truncated. 
+-- of equal length. If this assumtion is violated, the result will be truncated.
 hexTranspose :: Traversable1 t => t (CharacterSequence u v w x y z) -> CharacterSequence [u] [v] [w] [x] [y] [z]
 hexTranspose = fromBlocks . deepTranspose . fmap toBlocks . toList
   where

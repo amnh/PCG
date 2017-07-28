@@ -79,7 +79,7 @@ runPermParserWithSeperator sep perm = run (pure ()) sep perm
          f  Nothing = maybe empty pure value
          f (Just p) = run tailSep tailSep p
          g  Nothing = maybe empty pure value
-         g (Just p) = optional parser >>= f
+         g (Just _) = optional parser >>= f
 
 
 

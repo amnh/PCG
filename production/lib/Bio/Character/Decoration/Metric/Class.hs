@@ -29,9 +29,9 @@ class DiscreteCharacterDecoration s a => MetricCharacterDecoration s a | s -> a 
 -- |
 -- A decoration containing a character that has been scored using Sankoff's algorithm.
 class ( DiscreteCharacterDecoration s c
-      , HasCharacterCost        s Word
-      , HasCharacterCostVector  s  [ExtendedNatural]
-      , HasStateMinTuple s ([[Word]], [[Word]])
+      , HasCharacterCost            s Word
+      , HasCharacterCostVector      s [ExtendedNatural]
+      , HasStateMinTuple            s ([[Word]], [[Word]])
       ) => SankoffDecoration s c | s -> c where
 
 
@@ -45,11 +45,22 @@ class ( SankoffDecoration s c
     extendDiscreteToSankoff :: DiscreteCharacterDecoration x c
                             => x
                             -> [ExtendedNatural]
+                            -> [ExtendedNatural]
+                            -> [ExtendedNatural]
+                            -> [ExtendedNatural]
                             -> ([[Word]], [[Word]])
                             -> Word
                             -> c
                             -> Bool
                             -> s
+
+
+-- |
+-- A 'Lens' for the 'beta' field.
+class HasBeta s a | s -> a where
+
+    {-# MINIMAL beta #-}
+    beta :: Lens' s a
 
 
 -- |
@@ -61,9 +72,27 @@ class HasCharacterCostVector s a | s -> a where
 
 
 -- |
+-- A 'Lens' for the 'finalExtraCost' field.
+class HasFinalExtraCost s a | s -> a where
+
+    {-# MINIMAL finalExtraCost #-}
+    finalExtraCost :: Lens' s a
+
+
+-- |
+-- A 'Lens' for the 'preliminaryExtraCost' field.
+class HasPreliminaryExtraCost s a | s -> a where
+
+    {-# MINIMAL preliminaryExtraCost #-}
+    preliminaryExtraCost :: Lens' s a
+
+
+-- |
 -- A 'Lens' for the 'minStateTuple' field.
 class HasStateMinTuple s a | s -> a where
 
     {-# MINIMAL minStateTuple #-}
     minStateTuple :: Lens' s a
+
+
 

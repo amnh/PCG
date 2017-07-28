@@ -55,7 +55,7 @@ import           System.Directory
 import           System.FilePath.Glob
 import           Text.Megaparsec
 
-import Debug.Trace (trace)
+--import Debug.Trace (trace)
 
 -- type SearchState = EvaluationT IO (Either TopologicalResult CharacterResult)
 
@@ -79,12 +79,13 @@ evaluate (READ (ReadCommand fileSpecs)) _old = do
 --        case masterUnify $ transformation <$> concat xs of
           Left uErr -> fail $ show uErr -- Report unification errors here.
            -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
-          Right g   ->  (liftIO . putStrLn {- . take 500000 -} $ show g)
+          Right g   -> pure g
+                       -- (liftIO . putStrLn {- . take 500000 -} $ either show (ppTopElement . toXML) g)
                        -- (liftIO . putStrLn $ renderSequenceCosts g)
-                    $> g
+                       --  $> g
   where
     transformation = id -- expandIUPAC
-    decoration = fmap (fmap initializeDecorations2)
+    decoration     = fmap (fmap initializeDecorations2)
 
 evaluate _ _ = fail "Invalid READ command binding"
 
@@ -242,25 +243,25 @@ expandIUPAC fpr = fpr { parsedChars = newTreeChars }
 
 -- TODO: check file extension, to guess which parser to use first
 progressiveParse :: FilePath -> EitherT ReadError IO FracturedParseResult
-progressiveParse _ | trace "STARTING PROGRESSIVE PARSE" False = undefined
+--progressiveParse _ | trace "STARTING PROGRESSIVE PARSE" False = undefined
 progressiveParse inputPath = do
     (filePath, fileContent) <- head . dataFiles <$> getSpecifiedContent (UnspecifiedFile $ inputPath:|[])
-    case trace "FASTA (Nucleiotide)" $ parse' nukeParser filePath fileContent of
+    case parse' nukeParser filePath fileContent of
       Right x    -> pure $ toFractured Nothing filePath x
       Left  err1 ->
-        case trace "FASTA (Amino Acid)" $ parse' acidParser filePath fileContent of
+        case parse' acidParser filePath fileContent of
           Right x    -> pure $ toFractured Nothing filePath x
           Left  err2 ->
-            case trace "Newick" $ parse' newickStreamParser filePath fileContent of
+            case parse' newickStreamParser filePath fileContent of
               Right x    -> pure $ toFractured Nothing filePath x
               Left  err3 ->
-                case trace "VER" $ parse' verStreamParser filePath fileContent of
+                case parse' verStreamParser filePath fileContent of
                   Right x    -> pure $ toFractured Nothing filePath x
                   Left  err4 ->
-                    case trace "TNT" $ parse' tntStreamParser filePath fileContent of
+                    case parse' tntStreamParser filePath fileContent of
                       Right x    -> pure $ toFractured Nothing filePath x
                       Left  err5 ->
-                        case parse' nexusStreamParser filePath $ trace "Nexus" fileContent of
+                        case parse' nexusStreamParser filePath fileContent of
                           Right x    -> pure $ toFractured Nothing filePath x
                           Left  err6 ->
                             let previousErrors      = [(err1,"Fasta"),(err2,"Fasta"),(err3,"Newick tree"),(err4,"VER"),(err5,"Henning/TNT"),(err6,"Nexus")]

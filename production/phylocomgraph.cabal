@@ -78,6 +78,8 @@ library
                      , vector
                      -- >=3.4 required for corrected definition of (!) & index
                      , vector-instances >=3.4
+                     , xml
+                     , blaze-html
 
   default-language:    Haskell2010
 
@@ -186,6 +188,7 @@ library
                        Bio.Graph
                        Bio.Graph.Component
                        Bio.Graph.Forest.Parsed
+                       Bio.Graph.LeafSet
                        Bio.Graph.Node
                        Bio.Graph.PhylogeneticDAG
                        Bio.Graph.ReferenceDAG
@@ -211,8 +214,13 @@ library
                        File.Format.VertexEdgeRoot
                        File.Format.TNT
                        File.Format.TransitionCostMatrix
+--                       Text.HTML.Class
+--                       Text.HTML.Custom
+                       Text.XML.Class
+                       Text.XML.Custom
 
   -- probably can be moved to other-modules:
+--                       Bio.Graph.LeafSet
                        Data.List.Utility
                        Data.Matrix.NotStupid
                        Text.Megaparsec.Custom
@@ -268,6 +276,8 @@ library
                        Bio.Metadata.Dynamic.Class
                        Bio.Metadata.Dynamic.Internal
                        Bio.Graph.Forest
+                       Bio.Graph.Node.Class
+                       Bio.Graph.Node.Internal
                        Bio.Graph.PhylogeneticDAG.Class
                        Bio.Graph.PhylogeneticDAG.Internal
                        Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
@@ -340,6 +350,8 @@ executable pcg
                      , time
                      , vector
                      , vector-instances >=3.4
+                     , xml
+                     , blaze-html
 
   default-language:    Haskell2010
 
@@ -681,6 +693,7 @@ Test-Suite testsuite
                        Bio.Sequence.Block
                        Bio.Graph
                        Bio.Graph.Component
+                       Bio.Graph.LeafSet
                        Bio.Graph.Node
                        Bio.Graph.ReferenceDAG
                        Bio.Graph.ZipperDAG

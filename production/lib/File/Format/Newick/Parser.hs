@@ -27,10 +27,9 @@ import Data.String
 import File.Format.Newick.Internal
 import Prelude              hiding (lookup)
 import Text.Megaparsec      hiding (label)
-import Text.Megaparsec.Char hiding (space)
-import Text.Megaparsec.Char.Lexer  (skipBlockCommentNested, space)
+import Text.Megaparsec.Char
+import Text.Megaparsec.Char.Lexer  (skipBlockCommentNested)
 import Text.Megaparsec.Custom
-import Debug.Trace
 
 
 -- |

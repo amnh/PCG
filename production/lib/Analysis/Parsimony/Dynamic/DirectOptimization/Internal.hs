@@ -34,6 +34,8 @@ import           Data.Monoid
 import           Data.MonoTraversable
 import           Data.Word
 import           Prelude     hiding (lookup, zip, zipWith)
+-- import           Text.XML.Custom
+-- import           Text.XML.Light
 
 -- import Debug.Trace
 
@@ -59,7 +61,7 @@ type PairwiseAlignment s = s -> s -> (Word, s, s, s, s)
 -- Parameterized over a 'PairwiseAlignment' function to allow for different
 -- atomic alignments depending on the character's metadata.
 directOptimizationPostOrder
-  :: SimpleDynamicDecoration d c
+  :: (SimpleDynamicDecoration d c)
   => PairwiseAlignment c
   -> d
   -> [DynamicDecorationDirectOptimizationPostOrderResult c]
@@ -92,14 +94,14 @@ initializeLeaf =
 -- Use the decoration(s) of the descendant nodes to calculate the currect node
 -- decoration. The recursive logic of the post-order traversal.
 updateFromLeaves
-  :: EncodableDynamicCharacter c
+  :: (EncodableDynamicCharacter c)
   => PairwiseAlignment c
   -> NonEmpty (DynamicDecorationDirectOptimizationPostOrderResult c)
   -> DynamicDecorationDirectOptimizationPostOrderResult c
 updateFromLeaves _ (x:|[]) = x -- This shouldn't happen
-updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) =
-    extendDynamicToPostOrder leftChild localCost totalCost ungapped gapped lhsAlignment rhsAlignment
+updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) = resultDecoration
   where
+    resultDecoration = extendDynamicToPostOrder leftChild localCost totalCost ungapped gapped lhsAlignment rhsAlignment
     (localCost, ungapped, gapped, lhsAlignment, rhsAlignment) = pairwiseAlignment (leftChild ^. preliminaryUngapped) (rightChild ^. preliminaryUngapped)
     totalCost = localCost + leftChild ^. characterCost + rightChild ^. characterCost
 
@@ -110,7 +112,7 @@ updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) =
 -- Parameterized over a 'PairwiseAlignment' function to allow for different
 -- atomic alignments depending on the character's metadata.
 directOptimizationPreOrder
-  :: (DirectOptimizationPostOrderDecoration d c {- , Show c, Show (Element c)-})
+  :: (DirectOptimizationPostOrderDecoration d c {-, Show c , Show (Element c)-})
   => PairwiseAlignment c
   -> d
   -> [(Word, DynamicDecorationDirectOptimization c)]
@@ -140,13 +142,12 @@ initializeRoot =
 -- Use the decoration(s) of the ancestoral nodes to calculate the currect node
 -- decoration. The recursive logic of the pre-order traversal.
 updateFromParent
-  :: (EncodableDynamicCharacter c, DirectOptimizationPostOrderDecoration d c {- , Show c, Show (Element c)-})
+  :: (EncodableDynamicCharacter c, DirectOptimizationPostOrderDecoration d c {- , ToXML d, Show c, Show (Element c)-})
   => PairwiseAlignment c
   -> d
   -> DynamicDecorationDirectOptimization c
   -> DynamicDecorationDirectOptimization c
-updateFromParent pairwiseAlignment currentDecoration parentDecoration =
-    extendPostOrderToDirectOptimization currentDecoration ungapped gapped
+updateFromParent pairwiseAlignment currentDecoration parentDecoration = resultDecoration
   where
     -- If the current node has a missing character value representing it's
     -- preliminary median assignment, then we take the parent's final assingment
@@ -159,17 +160,18 @@ updateFromParent pairwiseAlignment currentDecoration parentDecoration =
     -- Lastly a three-way mean between the locally aligned parent assignment and
     -- the expanded left and right child alignments is used to calculate the
     -- final assignment of the current node.
+    resultDecoration = extendPostOrderToDirectOptimization currentDecoration ungapped gapped
     (ungapped, gapped)
       | isMissing $ currentDecoration ^. preliminaryGapped = (pUngapped, pGapped)
       | otherwise =  tripleComparison pairwiseAlignment currentDecoration pUngapped
-    pUngapped = parentDecoration ^. finalUngapped
-    pGapped   = parentDecoration ^. finalGapped
+    pUngapped        = parentDecoration ^. finalUngapped
+    pGapped          = parentDecoration ^. finalGapped
 
 
 -- |
 -- A three way comparison of characters used in the DO preorder traversal.
 tripleComparison
-  :: ( {- EncodableDynamicCharacter c, -} DirectOptimizationPostOrderDecoration d c {- , Show c, Show (Element c) -})
+  :: ( {- EncodableDynamicCharacter c, -} DirectOptimizationPostOrderDecoration d c {-, Show c, Show (Element c) -})
   => PairwiseAlignment c
   -> d
   -> c
@@ -240,7 +242,7 @@ newGapLocations unaligned aligned
           -- If a deletion event *DID* occur, we note the index in the unaligned
           -- character where deletion event occurred and *DO NOT* advance the
           -- "cursor" in our accumulator.
-          -- 
+          --
           -- If a deletion event *DID NOT* occur, we just advance the "cursor"
           -- in our accumulator.
           unalignedElement:tailUnalignedElements ->

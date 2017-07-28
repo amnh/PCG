@@ -19,9 +19,11 @@ module Bio.Sequence.Block.Internal
 
 import Data.Foldable
 import Data.Semigroup
-import Data.Vector           (Vector)
-import Data.Vector.Instances ()
-import Prelude        hiding (zipWith)
+import Data.Vector            (Vector)
+import Data.Vector.Instances  ()
+import Prelude         hiding (zipWith)
+import Text.XML.Custom
+-- import Text.XML.Light.Types
 
 
 -- |
@@ -41,6 +43,7 @@ data CharacterBlock u v w x y z
    } deriving (Eq)
 
 
+-- | (✔)
 instance Semigroup (CharacterBlock u v w x y z) where
 
     lhs <> rhs =
@@ -54,6 +57,7 @@ instance Semigroup (CharacterBlock u v w x y z) where
           }
 
 
+-- | (✔)
 instance ( Show u
          , Show v
          , Show w
@@ -63,7 +67,7 @@ instance ( Show u
          ) => Show (CharacterBlock u v w x y z) where
 
     show block = unlines
-        [ "Fitch Characters:"
+        [ "Non-additive Characters:"
         , niceRendering $ nonAdditiveCharacterBins block
         , "Additive Characters:"
         , niceRendering $ additiveCharacterBins block
@@ -80,3 +84,22 @@ instance ( Show u
         niceRendering :: (Foldable t, Show a) => t a -> String
         niceRendering = unlines . fmap (unlines . fmap ("  " <>) . lines . show) . toList
 
+
+-- | (✔)
+instance ( ToXML u
+         , ToXML v
+         , ToXML w
+         , ToXML y
+         , ToXML z
+         ) => ToXML (CharacterBlock u v w x y z) where
+
+    toXML block = xmlElement "Character block" attributes contents
+        where
+            attributes = []
+            contents   = [ (Right . collapseElemList "Non-additive character block" [] $ nonAdditiveCharacterBins block )
+                         , (Right . collapseElemList "Additive character block"     [] $ additiveCharacterBins    block )
+                         , (Right . collapseElemList "NonMetric character block"    [] $ nonMetricCharacterBins   block )
+                         , (Right . collapseElemList "Continuous character block"   [] $ continuousCharacterBins  block )
+                         , (Right . collapseElemList "Metric character block"       [] $ nonMetricCharacterBins   block )
+                         , (Right . collapseElemList "Dynamic character block"      [] $ dynamicCharacters        block )
+                         ]

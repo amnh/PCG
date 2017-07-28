@@ -18,7 +18,7 @@ module Bio.Sequence.Bin.NonAdditive
 
 
 import Bio.Character.Static
-import Bio.Sequence.SharedContinugousMetatdata
+import Bio.Sequence.SharedContiguousMetadata
 import Data.Monoid          (mappend)
 import Data.Semigroup
 

@@ -12,6 +12,10 @@
 --
 -----------------------------------------------------------------------------
 
+
+{-# LANGUAGE FunctionalDependencies, MultiParamTypeClasses #-}
+
+
 module Bio.Graph.PhylogeneticDAG.Class
   ( PhylogeneticDAGish(..)
   ) where
@@ -51,13 +55,13 @@ class PhylogeneticDAGish dag where
                          -> dag e n u  v  w  x  y  z
                          -> dag e n u' v' w' x' y' z'
     postorderSequence      = postorderDAG id' id'
-                         
+
 
     postorderEdge        :: (e -> [e'] -> e')
                          -> dag e  n u v w x y z
                          -> dag e' n u v w x y z
     postorderEdge        f = postorderDAG f id' id' id' id' id' id' id'
-                        
+
 
     postorderNode        :: (n -> [n'] -> n')
                          -> dag e n  u v w x y z
@@ -100,7 +104,7 @@ class PhylogeneticDAGish dag where
                          -> dag e n u v w x y z'
     postorderDynamic       = postorderDAG id' id' id' id' id' id' id'
 
-                 
+
 
 
 
@@ -138,13 +142,13 @@ class PhylogeneticDAGish dag where
                         -> dag e n u  v  w  x  y  z
                         -> dag e n u' v' w' x' y' z'
     preorderSequence     = preorderDAG id' id'
-                         
+
 
     preorderEdge        :: (e -> [(Word,e')] -> e')
                         -> dag e  n u v w x y z
                         -> dag e' n u v w x y z
     preorderEdge        f = preorderDAG f id' id' id' id' id' id' id'
-                        
+
 
     preorderNode        :: (n -> [(Word,n')] -> n')
                         -> dag e n  u v w x y z
