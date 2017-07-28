@@ -51,6 +51,7 @@ import           Data.Tuple                          (swap)
 import           Prelude                      hiding (lookup)
 import           Test.QuickCheck.Arbitrary.Instances ()
 import           Test.Tasty.QuickCheck        hiding ((.&.))
+import           Text.XML.Custom
 
 --import Debug.Trace
 
@@ -75,57 +76,19 @@ newtype StaticCharacterBlock
       deriving (Eq, Show)
 
 
+type instance Bound StaticCharacter = Word
+
+
 type instance Element StaticCharacterBlock = StaticCharacter
 
 
-instance EncodedAmbiguityGroupContainer StaticCharacter where
-
-    {-# INLINE symbolCount #-}
-    symbolCount = width . unwrap
-
-
-instance FiniteBits StaticCharacter where
-
-    {-# INLINE finiteBitSize #-}
-    finiteBitSize = symbolCount
-
-    -- Default implementation gets these backwards for no apparent reason.
-
-    {-# INLINE countLeadingZeros #-}
-    countLeadingZeros  = countLeadingZeros . unwrap
-
-    {-# INLINE countTrailingZeros #-}
-    countTrailingZeros = countTrailingZeros  . unwrap
-
-
-instance PossiblyMissingCharacter StaticCharacter where
-
-    {-# INLINE toMissing  #-}
-    toMissing c = complement $ c `xor` c
-
-    {-# INLINE isMissing  #-}
-    isMissing c = c == toMissing c
-
-
-instance EncodableStreamElement StaticCharacter where
-
-    decodeElement alphabet character = NE.fromList $ foldMapWithKey f alphabet
-      where
-        f i symbol
-          | character `testBit` i = [symbol]
-          | otherwise             = []
-
-    -- Use foldl here to do an implicit reversal of the alphabet!
-    -- The head element of the list is the most significant bit when calling fromBits.
-    -- We need the first element of the alphabet to correspond to the least significant bit.
-    -- Hence foldl, don't try foldMap or toList & fmap without careful thought.
-    encodeElement alphabet ambiguity = SC encoding
-      where
-        encoding
-          | containsMissing ambiguity = fromBits $ replicate (length alphabet) True
-          | otherwise                 = fromBits $ foldl' (\xs x -> (x `elem` ambiguity) : xs) [] alphabet
-          where
-            containsMissing = elem (fromString "?")
+instance Arbitrary StaticCharacterBlock where
+    arbitrary = do
+        alphabetLen  <- arbitrary `suchThat` (\x -> 0 < x && x <= 62) :: Gen Int
+        characterLen <- arbitrary `suchThat` (> 0) :: Gen Int
+        let randVal  =  choose (1, 2 ^ alphabetLen - 1) :: Gen Integer
+        bitRows      <- vectorOf characterLen randVal
+        pure . SCB . fromRows $ bitVec alphabetLen <$> bitRows
 
 
 instance EncodableStaticCharacter StaticCharacter where
@@ -134,60 +97,9 @@ instance EncodableStaticCharacter StaticCharacter where
     emptyStatic (SC x) = SC $ bitVec (width x) (0 :: Integer)
 
 
-instance MonoFunctor StaticCharacterBlock where
+instance EncodableStaticCharacterStream StaticCharacterBlock where
 
-    {-# INLINE omap #-}
-    omap f = SCB . omap (unwrap . f . SC) . unstream
-
-
-instance Semigroup StaticCharacterBlock where
-
-    (SCB lhs) <> (SCB rhs)
-      | m == n    = SCB . factorRows m $ expandRows lhs `mappend` expandRows rhs
-      | otherwise = error $ unwords ["Attempt to concatentate two StaticCharacterBlock of differing stateCounts:", show m, show n]
-      where
-        m = numCols lhs
-        n = numCols rhs
-
-
-instance MonoFoldable StaticCharacterBlock where
-
-    {-# INLINE ofoldMap #-}
-    ofoldMap f = ofoldMap (f . SC) . unstream
-
-    {-# INLINE ofoldr #-}
-    ofoldr f e = ofoldr (f . SC) e . unstream
-
-    {-# INLINE ofoldl' #-}
-    ofoldl' f e = ofoldl' (\acc x -> f acc (SC x)) e . unstream
-
-    {-# INLINE ofoldr1Ex #-}
-    ofoldr1Ex f = SC . ofoldr1Ex (\x y -> unwrap $ f (SC x) (SC y)) . unstream
-
-    {-# INLINE ofoldl1Ex' #-}
-    ofoldl1Ex' f = SC . ofoldl1Ex' (\x y -> unwrap $ f (SC x) (SC y)) . unstream
-
-    {-# INLINE onull #-}
-    onull = const False
-
-    {-# INLINE olength #-}
-    olength = numRows . unstream
-
-
--- | Monomorphic containers that can be traversed from left to right.
-instance MonoTraversable StaticCharacterBlock where
-
-    {-# INLINE otraverse #-}
-    otraverse f = fmap SCB . otraverse (fmap unwrap . f . SC) . unstream
-
-    {-# INLINE omapM #-}
-    omapM = otraverse
-
-
-instance EncodedAmbiguityGroupContainer StaticCharacterBlock where
-
-    {-# INLINE symbolCount #-}
-    symbolCount   = numCols . unstream
+    constructStaticStream = SCB . fromRows . fmap unwrap . toList
 
 
 instance EncodableStream StaticCharacterBlock where
@@ -232,18 +144,37 @@ instance EncodableStream StaticCharacterBlock where
     gapOfStream = bit . pred . symbolCount
 
 
-instance EncodableStaticCharacterStream StaticCharacterBlock where
+instance EncodableStreamElement StaticCharacter where
 
-    constructStaticStream = SCB . fromRows . fmap unwrap . toList
+    decodeElement alphabet character = NE.fromList $ foldMapWithKey f alphabet
+      where
+        f i symbol
+          | character `testBit` i = [symbol]
+          | otherwise             = []
+
+    -- Use foldl here to do an implicit reversal of the alphabet!
+    -- The head element of the list is the most significant bit when calling fromBits.
+    -- We need the first element of the alphabet to correspond to the least significant bit.
+    -- Hence foldl, don't try foldMap or toList & fmap without careful thought.
+    encodeElement alphabet ambiguity = SC encoding
+      where
+        encoding
+          | containsMissing ambiguity = fromBits $ replicate (length alphabet) True
+          | otherwise                 = fromBits $ foldl' (\xs x -> (x `elem` ambiguity) : xs) [] alphabet
+          where
+            containsMissing = elem (fromString "?")
 
 
-instance Arbitrary StaticCharacterBlock where
-    arbitrary = do
-        alphabetLen  <- arbitrary `suchThat` (\x -> 0 < x && x <= 62) :: Gen Int
-        characterLen <- arbitrary `suchThat` (> 0) :: Gen Int
-        let randVal  =  choose (1, 2 ^ alphabetLen - 1) :: Gen Integer
-        bitRows      <- vectorOf characterLen randVal
-        pure . SCB . fromRows $ bitVec alphabetLen <$> bitRows
+instance EncodedAmbiguityGroupContainer StaticCharacter where
+
+    {-# INLINE symbolCount #-}
+    symbolCount = width . unwrap
+
+
+instance EncodedAmbiguityGroupContainer StaticCharacterBlock where
+
+    {-# INLINE symbolCount #-}
+    symbolCount   = numCols . unstream
 
 
 instance Exportable StaticCharacterBlock where
@@ -260,7 +191,67 @@ instance Exportable StaticCharacterBlock where
     fromExportableElements = SCB . exportableCharacterElementsToBitMatrix
 
 
-type instance Bound StaticCharacter = Word
+instance FiniteBits StaticCharacter where
+
+    {-# INLINE finiteBitSize #-}
+    finiteBitSize = symbolCount
+
+    -- Default implementation gets these backwards for no apparent reason.
+
+    {-# INLINE countLeadingZeros #-}
+    countLeadingZeros  = countLeadingZeros . unwrap
+
+    {-# INLINE countTrailingZeros #-}
+    countTrailingZeros = countTrailingZeros  . unwrap
+
+
+instance MonoFoldable StaticCharacterBlock where
+
+    {-# INLINE ofoldMap #-}
+    ofoldMap f = ofoldMap (f . SC) . unstream
+
+    {-# INLINE ofoldr #-}
+    ofoldr f e = ofoldr (f . SC) e . unstream
+
+    {-# INLINE ofoldl' #-}
+    ofoldl' f e = ofoldl' (\acc x -> f acc (SC x)) e . unstream
+
+    {-# INLINE ofoldr1Ex #-}
+    ofoldr1Ex f = SC . ofoldr1Ex (\x y -> unwrap $ f (SC x) (SC y)) . unstream
+
+    {-# INLINE ofoldl1Ex' #-}
+    ofoldl1Ex' f = SC . ofoldl1Ex' (\x y -> unwrap $ f (SC x) (SC y)) . unstream
+
+    {-# INLINE onull #-}
+    onull = const False
+
+    {-# INLINE olength #-}
+    olength = numRows . unstream
+
+
+instance MonoFunctor StaticCharacterBlock where
+
+    {-# INLINE omap #-}
+    omap f = SCB . omap (unwrap . f . SC) . unstream
+
+
+-- | Monomorphic containers that can be traversed from left to right.
+instance MonoTraversable StaticCharacterBlock where
+
+    {-# INLINE otraverse #-}
+    otraverse f = fmap SCB . otraverse (fmap unwrap . f . SC) . unstream
+
+    {-# INLINE omapM #-}
+    omapM = otraverse
+
+
+instance PossiblyMissingCharacter StaticCharacter where
+
+    {-# INLINE toMissing  #-}
+    toMissing c = complement $ c `xor` c
+
+    {-# INLINE isMissing  #-}
+    isMissing c = c == toMissing c
 
 
 instance Ranged StaticCharacter where
@@ -279,6 +270,26 @@ instance Ranged StaticCharacter where
             boundaryBit = fromJust (precision x) - 1
 
     zeroRange sc = fromTupleWithPrecision (0,0) $ finiteBitSize sc
+
+
+instance Semigroup StaticCharacterBlock where
+
+    (SCB lhs) <> (SCB rhs)
+      | m == n    = SCB . factorRows m $ expandRows lhs `mappend` expandRows rhs
+      | otherwise = error $ unwords ["Attempt to concatentate two StaticCharacterBlock of differing stateCounts:", show m, show n]
+      where
+        m = numCols lhs
+        n = numCols rhs
+
+
+instance ToXML StaticCharacter where
+
+    toXML (SC bv) = xmlElement "StaticCharacter" attributes contents
+        where
+            attributes = []
+            contents   = [intRep, bitRep]
+            intRep     = Left ("Integer representation", show $ toInteger bv)
+            bitRep     = Left ("Bit representation"    , (\x -> if x then '1' else '0') <$> toBits bv)
 
 
 {-# INLINE unstream #-}

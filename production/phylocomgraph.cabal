@@ -33,7 +33,7 @@ cabal-version:       >= 1.22
 
 flag build-cpp-files
   description: Toggles the C++ files being successfully build.
-  default: True
+  default: False
 
 
 library
@@ -44,6 +44,7 @@ library
   build-depends:       base             >=4.8
                      , bimap
                      , bv
+                     , case-insensitive
                        -- >=0.5.8 Required for Data.Map.restrictKeys
                      , containers       >=0.5.8
                      , deepseq
@@ -77,6 +78,8 @@ library
                      , vector
                      -- >=3.4 required for corrected definition of (!) & index
                      , vector-instances >=3.4
+                     , xml
+                     , blaze-html
 
   default-language:    Haskell2010
 
@@ -185,6 +188,7 @@ library
                        Bio.Graph
                        Bio.Graph.Component
                        Bio.Graph.Forest.Parsed
+                       Bio.Graph.LeafSet
                        Bio.Graph.Node
                        Bio.Graph.PhylogeneticDAG
                        Bio.Graph.ReferenceDAG
@@ -210,8 +214,13 @@ library
                        File.Format.VertexEdgeRoot
                        File.Format.TNT
                        File.Format.TransitionCostMatrix
+--                       Text.HTML.Class
+--                       Text.HTML.Custom
+                       Text.XML.Class
+                       Text.XML.Custom
 
   -- probably can be moved to other-modules:
+--                       Bio.Graph.LeafSet
                        Data.List.Utility
                        Data.Matrix.NotStupid
                        Text.Megaparsec.Custom
@@ -267,6 +276,8 @@ library
                        Bio.Metadata.Dynamic.Class
                        Bio.Metadata.Dynamic.Internal
                        Bio.Graph.Forest
+                       Bio.Graph.Node.Class
+                       Bio.Graph.Node.Internal
                        Bio.Graph.PhylogeneticDAG.Class
                        Bio.Graph.PhylogeneticDAG.Internal
                        Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
@@ -332,12 +343,15 @@ executable pcg
                      , megaparsec       >=5.0
                      , mono-traversable >=1.0
                      , parallel
+                     , pcg-language
                      , semigroupoids
                      , semigroups
                      , text
                      , time
                      , vector
                      , vector-instances >=3.4
+                     , xml
+                     , blaze-html
 
   default-language:    Haskell2010
 
@@ -361,32 +375,25 @@ executable pcg
   hs-source-dirs:      app
 
   other-modules:
-                       PCG.Command
-                       PCG.Command.Types
-                       PCG.Command.Types.Read
-                       PCG.Command.Types.Read.DecorationInitialization
-                       PCG.Command.Types.Read.Evaluate
-                       PCG.Command.Types.Read.Internal
-                       PCG.Command.Types.Read.ReadError
-                       PCG.Command.Types.Read.Unification.Master
-                       PCG.Command.Types.Read.Unification.UnificationError
-                       PCG.Command.Types.Read.Validate
-                       PCG.Command.Types.Report
---                       PCG.Command.Types.Report.CharacterMatrix
-                       PCG.Command.Types.Report.DynamicCharacterTable
-                       PCG.Command.Types.Report.Evaluate
---                       PCG.Command.Types.Report.GraphViz
---                       PCG.Command.Types.Report.ImpliedAlignmentFasta
-                       PCG.Command.Types.Report.Internal
---                       PCG.Command.Types.Report.Metadata
---                       PCG.Command.Types.Report.TaxonMatrix
---                       PCG.Command.Types.Report.Newick
-                       PCG.Command.Types.Report.Validate
+                       PCG.Command.Read.DecorationInitialization
+                       PCG.Command.Read.Evaluate
+                       PCG.Command.Read.ReadError
+                       PCG.Command.Read.Unification.Master
+                       PCG.Command.Read.Unification.UnificationError
+
+--                       PCG.Command.Report.CharacterMatrix
+                       PCG.Command.Report.DynamicCharacterTable
+                       PCG.Command.Report.Evaluate
+--                       PCG.Command.Report.GraphViz
+--                       PCG.Command.Report.ImpliedAlignmentFasta
+--                       PCG.Command.Report.Internal
+--                       PCG.Command.Report.Metadata
+--                       PCG.Command.Report.TaxonMatrix
+--                       PCG.Command.Report.Newick
+--                       PCG.Command.Report.Validate
+
                        PCG.Computation.Internal
-                       PCG.Script
-                       PCG.Script.Parser
-                       PCG.Script.Types
-                       PCG.SearchState
+
 
 
 executable fasta-differ
@@ -686,6 +693,7 @@ Test-Suite testsuite
                        Bio.Sequence.Block
                        Bio.Graph
                        Bio.Graph.Component
+                       Bio.Graph.LeafSet
                        Bio.Graph.Node
                        Bio.Graph.ReferenceDAG
                        Bio.Graph.ZipperDAG

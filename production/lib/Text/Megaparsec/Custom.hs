@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts, ScopedTypeVariables, TypeFamilies #-}
 
 module Text.Megaparsec.Custom
   ( (<:>)
@@ -26,21 +26,26 @@ module Text.Megaparsec.Custom
   , inlineSpace
   , nonEmpty
   , somethingTill
+  , string''
   -- * Useful simplified stream parsers
   , runParserOnFile
   , parseWithDefaultErrorType
   ) where
 
-import           Data.Char                (isSpace)
-import           Data.Either              (either)
-import           Data.Functor             (($>))
-import           Data.List.NonEmpty       (NonEmpty(..))
-import qualified Data.List.NonEmpty as NE (fromList)
+import           Data.CaseInsensitive
+import           Data.Char                         (isSpace)
+import           Data.Either                       (either)
+import           Data.Functor                      (($>), void)
+import           Data.List.NonEmpty                (NonEmpty(..))
+import qualified Data.List.NonEmpty         as NE  (fromList)
+import           Data.Proxy
 import           Data.Semigroup
 import qualified Data.Set           as S
+--import qualified Data.Set                   as S   (fromList)
+import           Data.Void
 import           Text.Megaparsec
-import           Text.Megaparsec.Prim     (MonadParsec)
-import           Text.Megaparsec.Lexer    (float,integer,signed)
+import           Text.Megaparsec.Char
+import qualified Text.Megaparsec.Char.Lexer as LEX
 
 
 -- |
@@ -54,6 +59,12 @@ import           Text.Megaparsec.Lexer    (float,integer,signed)
 -- Concatenate the result of two list producing combinators.
 (<++>) :: (Applicative f, Semigroup a) => f a -> f a -> f a
 (<++>) a b = (<>) <$> a <*> b
+
+
+-- |
+-- Parse a string-like chunk.
+string'' :: forall e s m. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => String -> m (Tokens s)
+string'' = string' . tokensToChunk (Proxy :: Proxy s)
 
 
 -- |
@@ -91,7 +102,11 @@ anyToken = token Right Nothing
 -- |
 -- Flexibly parses a 'Double' value represented in a variety of forms.
 double :: (MonadParsec e s m, Token s ~ Char) => m Double
-double = try (signed space float) <|> fromIntegral <$> signed space integer
+double = try real <|> fromIntegral <$> int
+  where
+     int  :: (MonadParsec e s m, Token s ~ Char) => m Integer
+     int  = LEX.signed space LEX.decimal
+     real = LEX.signed space LEX.float
 
 
 -- |
@@ -109,7 +124,7 @@ endOfLine = choice (try <$> [ nl, cr *> nl, cr ]) $> newLineChar
 -- |
 -- Accepts zero or more Failure messages.
 fails :: MonadParsec e s m => [String] -> m a
-fails = failure mempty mempty . S.fromList . fmap representFail
+fails = undefined -- failure mempty mempty . S.fromList . fmap representFail
 
 
 -- |
@@ -119,7 +134,7 @@ inlineSpaceChar = token captureToken Nothing
   where
     captureToken x
       | isInlineSpace x = Right x
-      | otherwise       = Left (S.singleton (Tokens (x:|[])), mempty, mempty)
+      | otherwise       = Left (Just (Tokens (x:|[])), mempty)
         
     isInlineSpace x = and $
         [ isSpace . enumCoerce
@@ -178,14 +193,14 @@ comment start end = commentDefinition' False
 -- Tries to run a parser on a given file.
 -- On a parse success returns the Show value of the parsed result.
 -- On a parse failure the nice error string.
-runParserOnFile :: Show a => Parsec Dec String a -> FilePath -> IO String
-runParserOnFile parser filePath = either (parseErrorPretty :: ParseError Char Dec -> String) show . parse parser filePath <$> readFile filePath
+runParserOnFile :: Show a => Parsec Void String a -> FilePath -> IO String
+runParserOnFile parser filePath = either (parseErrorPretty :: ParseError Char Void -> String) show . parse parser filePath <$> readFile filePath
 
 
 -- |
 -- Runs the supplied parser on the input stream with default error types.
 -- Useful for quick tests in GHCi.
-parseWithDefaultErrorType :: Parsec Dec s a -> s -> Either (ParseError (Token s) Dec) a
+parseWithDefaultErrorType :: Parsec Void s a -> s -> Either (ParseError (Token s) Void) a
 parseWithDefaultErrorType c = parse c "" 
 
 
@@ -226,6 +241,4 @@ tokenMatch tok = token testToken Nothing
   where
     testToken x
       | tok == x  = Right x
-      | otherwise = Left (S.singleton (Tokens (x:|[])), mempty, mempty)
-
-
+      | otherwise = Left (Just (Tokens (x:|[])), mempty)

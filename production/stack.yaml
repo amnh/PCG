@@ -1,13 +1,19 @@
 allow-newer: true
 
+
 compiler: ghc-8.2.1
+
 
 compiler-check: match-exact
 
+
 flags: {}
+
 
 extra-deps:
 - containers-0.5.8.1
+- megaparsec-6.0.0
+- parser-combinators-0.1
 - pretty-tree-0.1.0.0
 - quickcheck-properties-0.1
 
@@ -33,7 +39,6 @@ extra-deps:
 - kan-extensions-5.0.2
 - keys-3.11
 - matrix-0.3.5.0
-- megaparsec-5.3.1
 - mono-traversable-1.0.2
 - mtl-2.2.1
 - parallel-3.2.1.1
@@ -85,6 +90,10 @@ extra-deps:
 - vector-algorithms-0.7.0.1
 
 - ansi-wl-pprint-0.6.7.3
+- blaze-html-0.9.0.1
+- blaze-builder-0.4.0.2
+- blaze-markup-0.8.0.0
+- case-insensitive-1.2.0.10
 - data-default-class-0.1.2.0
 - logict-0.6.0.2
 - mwc-random-0.13.6.0
@@ -92,45 +101,67 @@ extra-deps:
 - regex-base-0.93.2
 - math-functions-0.2.1.0
 - vector-th-unbox-0.2.1.6
-
+- xml-1.3.14
 
 ghc-options:
   "*": -j
 
+
 local-bin-path: bin
 
+
 packages:
- - '.'
- - location:  https://github.com/haskell/deepseq/archive/0b22c98.zip
-   extra-dep: true
- - location:  https://github.com/haskell/deepseq/archive/0b22c98.zip
-   extra-dep: true
- - location:  https://github.com/ekmett/distributive/archive/3f29260.zip
-   extra-dep: true
- - location:  https://github.com/ekmett/lens/archive/7031e00.zip
-   extra-dep: true
- - location:  https://github.com/ekmett/semigroupoids/archive/c3297f9.zip
-   extra-dep: true
+
+  - '.'
+  
+  - lib/pcg-language
+
+  - location: https://github.com/mrkkrp/megaparsec/archive/ed9a823.zip
+    extra-dep: true
+
+  - location: https://github.com/mrkkrp/parser-combinators/archive/master.zip
+    extra-dep: true
+
+  - location:  https://github.com/haskell/deepseq/archive/0b22c98.zip
+    extra-dep: true
+
+  - location:  https://github.com/haskell/deepseq/archive/0b22c98.zip
+    extra-dep: true
+
+  - location:  https://github.com/ekmett/distributive/archive/3f29260.zip
+    extra-dep: true
+
+  - location:  https://github.com/ekmett/lens/archive/7031e00.zip
+    extra-dep: true
+
+  - location:  https://github.com/ekmett/semigroupoids/archive/c3297f9.zip
+    extra-dep: true
+
 
 resolver: ghc-8.2.1
 
+
 setup-info:
+
   ghc:
+
     windows64:
       8.2.1:
         url: https://downloads.haskell.org/~ghc/8.2.1/ghc-8.2.1-x86_64-unknown-mingw32.tar.xz
         sha1: bdede26c1a2cfcf4ebb08329853d285e32213b3d
         content-length: 175053796
+
     linux64:
       8.2.1:
         url: https://downloads.haskell.org/~ghc/8.2.1/ghc-8.2.1-x86_64-deb8-linux.tar.xz
         sha1: 3e52527de6f1cad6d7f1c392ddde8148116d4e36
         content-length: 126809836
+
     macosx:
       8.2.1:
         url: https://downloads.haskell.org/~ghc/8.2.1/ghc-8.2.1-x86_64-apple-darwin.tar.xz
         sha1: 101405b4fef87a44adf34e48bb63a1a4e945c5c9
         content-length: 114088292
 
-
+    
 

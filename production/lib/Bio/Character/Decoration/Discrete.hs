@@ -42,6 +42,7 @@ import Control.Lens
 import Data.Alphabet
 import Data.Range
 import Numeric.Extended
+import Text.XML.Custom
 
 
 -- |
@@ -122,7 +123,7 @@ instance HasCharacterAlphabet (DiscreteDecoration c) (Alphabet String) where
     characterAlphabet = lens getter setter
       where
          getter e   = metadata e ^. characterAlphabet
-         setter e x = e { metadata = metadata e &  characterAlphabet .~ x }
+         setter e x = e { metadata = metadata e & characterAlphabet .~ x }
 
 
 -- | (✔)
@@ -131,7 +132,7 @@ instance HasCharacterName (DiscreteDecoration c) CharacterName where
     characterName = lens getter setter
       where
          getter e   = metadata e ^. characterName
-         setter e x = e { metadata = metadata e &  characterName .~ x }
+         setter e x = e { metadata = metadata e & characterName .~ x }
 
 
 -- | (✔)
@@ -191,3 +192,14 @@ instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (Discre
         { discreteDecorationCharacter = g symbolSet
         , metadata                    = discreteMetadataWithTCM name weight alphabet scm
         }
+
+
+-- | (✔)
+instance (EncodableStreamElement c) => ToXML (DiscreteDecoration c) where
+
+    toXML decoration = xmlElement "Discrete character decoration" attributes contents
+        where
+            attributes = []
+            contents   = [ Left ("Character", showDiscreteCharacterElement decoration)
+                         , Left ("Metadata" , "TCM not shown"                        )
+                         ]

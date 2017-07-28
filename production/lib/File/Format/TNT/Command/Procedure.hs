@@ -17,11 +17,12 @@
 module File.Format.TNT.Command.Procedure where
 
 
+import Data.CaseInsensitive
 import Data.Functor (($>))
 import File.Format.TNT.Internal
 import Text.Megaparsec
+import Text.Megaparsec.Char
 import Text.Megaparsec.Custom
-import Text.Megaparsec.Prim     (MonadParsec)
 
 
 -- |
@@ -32,7 +33,7 @@ import Text.Megaparsec.Prim     (MonadParsec)
 --  * Fasta file to read-in
 --
 --  * Command file to be interpreted
-procedureCommand :: (MonadParsec e s m, Token s ~ Char) => m ()
+procedureCommand :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m ()
 procedureCommand =  procHeader *> procBody
   where
     procBody = choice
@@ -44,7 +45,7 @@ procedureCommand =  procHeader *> procBody
 
 -- |
 -- Consumes the superflous heading for a PROCEDURE command.
-procHeader :: (MonadParsec e s m, Token s ~ Char) => m ()
+procHeader :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m ()
 procHeader = symbol $ keyword "procedure" 4
 
 

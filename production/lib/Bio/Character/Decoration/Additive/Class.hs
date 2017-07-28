@@ -10,7 +10,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FunctionalDependencies, MultiParamTypeClasses, TypeFamilies #-}
+-- TODO: remove UndecidableInstances
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses, TypeFamilies, UndecidableInstances #-}
 
 module Bio.Character.Decoration.Additive.Class where
 
@@ -20,6 +21,8 @@ import Bio.Character.Decoration.Shared
 import Control.Lens
 import Data.Range
 import Numeric.Extended
+-- import Text.XML.Class
+-- import Text.XML.Light.Types                (Content(..), Element(..), QName(..))
 
 
 -- |

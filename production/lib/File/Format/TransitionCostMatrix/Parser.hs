@@ -27,8 +27,8 @@ import qualified Data.Matrix.NotStupid as M  (fromList)
 import           Data.Maybe                  (catMaybes, fromJust)
 import           Data.Semigroup
 import           Text.Megaparsec
+import           Text.Megaparsec.Char
 import           Text.Megaparsec.Custom
-import           Text.Megaparsec.Prim        (MonadParsec)
 
 
 -- |

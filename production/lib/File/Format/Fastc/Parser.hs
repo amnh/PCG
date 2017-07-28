@@ -32,8 +32,8 @@ import qualified Data.List.NonEmpty as NE
 import qualified Data.Vector        as V
 import           File.Format.Fasta.Internal
 import           Text.Megaparsec
+import           Text.Megaparsec.Char
 import           Text.Megaparsec.Custom
-import           Text.Megaparsec.Prim      (MonadParsec)
 
 
 -- |

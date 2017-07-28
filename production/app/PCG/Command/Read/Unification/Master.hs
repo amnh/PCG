@@ -1,6 +1,6 @@
 ----------------------------------------------------------------------------
 -- |
--- Module      :  PCG.Command.Types.Read.Unification.Master
+-- Module      :  PCG.Command.Read.Unification.Master
 -- Copyright   :  () 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -14,7 +14,7 @@
 
 {-# LANGUAGE BangPatterns, FlexibleContexts #-}
 
-module PCG.Command.Types.Read.Unification.Master where
+module PCG.Command.Read.Unification.Master where
 
 import           Bio.Character
 import           Bio.Character.Encodable
@@ -26,8 +26,6 @@ import           Bio.Sequence                        hiding (hexmap)
 import           Bio.Sequence.Block
 import           Bio.Metadata.CharacterName          hiding (sourceFile)
 import           Bio.Metadata.Parsed
---import           Bio.PhyloGraph.Solution             hiding (parsedChars)
---import           Bio.PhyloGraph.DAG                  hiding (structure)
 import           Bio.Graph
 import           Bio.Graph.Component
 import           Bio.Graph.Forest.Parsed
@@ -58,8 +56,7 @@ import           Data.TCM                          (TCM, TCMStructure(..))
 import qualified Data.TCM                   as TCM
 --import           Data.MonoTraversable
 import           Data.Vector                       (Vector)
-import           PCG.Command.Types.Read.Unification.UnificationError
---import           PCG.SearchState 
+import           PCG.Command.Read.Unification.UnificationError
 import           Prelude                    hiding (lookup, zip, zipWith)
 
 -- import Debug.Trace

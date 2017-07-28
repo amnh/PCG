@@ -24,8 +24,8 @@ import Data.List.Utility
 import Data.Maybe                 (fromJust)
 import File.Format.Fasta.Internal
 import Text.Megaparsec
+import Text.Megaparsec.Char
 import Text.Megaparsec.Custom
-import Text.Megaparsec.Prim       (MonadParsec)
 
 
 -- |

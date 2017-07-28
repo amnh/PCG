@@ -1,16 +1,16 @@
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
-module PCG.Command.Types.Read.Evaluate
+module PCG.Command.Read.Evaluate
   ( evaluate
   ) where
 
 import           Bio.Character.Parsed
 import           Bio.Metadata.Parsed
-import           Bio.Graph
+--import           Bio.Graph
 import           Bio.Graph.Forest.Parsed
 import           Bio.Graph.PhylogeneticDAG
 import           Control.Evaluation
-import           Control.Monad                (when)
+import           Control.Monad                (liftM2, when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Either
 import           Control.Parallel.Strategies
@@ -22,20 +22,21 @@ import           Data.Bifunctor               (bimap,first)
 import           Data.Either.Custom
 import           Data.Foldable
 import           Data.Functor
-import           Data.Key
-import           Data.List                    (intercalate)
--- import           Data.List.NonEmpty           (NonEmpty( (:|) ))
+--import           Data.Key
+--import           Data.List                    (intercalate)
+import           Data.List.NonEmpty           (NonEmpty(..))
 -- import qualified Data.List.NonEmpty    as NE
 -- import           Data.List.Utility            (subsetOf)
 -- import           Data.Map                     (Map,assocs,insert,union)
 -- import qualified Data.Map              as M
 -- import           Data.Maybe                   (fromMaybe)
-import           Data.Monoid                  ((<>))
 import           Data.Ord                     (comparing)
 import           Data.TCM                     (TCMDiagnosis(..), TCMStructure(..), diagnoseTcm)
 import qualified Data.TCM              as TCM
+import           Data.Text.IO                 (readFile)
 -- import           Data.Vector                  (Vector)
 -- import qualified Data.Vector           as V   (zipWith)
+import           Data.Void
 import           File.Format.Fasta   hiding   (FastaSequenceType(..))
 import qualified File.Format.Fasta   as Fasta (FastaSequenceType(..))
 import           File.Format.Fastc   hiding   (Identifier)
@@ -44,20 +45,22 @@ import           File.Format.Nexus            (nexusStreamParser)
 import           File.Format.TNT     hiding   (weight)
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
-import           PCG.Command.Types            (Command(..))
-import           PCG.Command.Types.Read.DecorationInitialization
-import           PCG.Command.Types.Read.Internal
-import           PCG.Command.Types.Read.Unification.Master
---import           PCG.SearchState
-import           Prelude             hiding   (lookup)
+import           PCG.Syntax                   (Command(..))
+import           PCG.Command.Read
+import           PCG.Command.Read.DecorationInitialization
+import           PCG.Command.Read.ReadError
+import           PCG.Command.Read.Unification.Master
+import           Prelude             hiding   (lookup, readFile)
+import           System.Directory
+import           System.FilePath.Glob
 import           Text.Megaparsec
 
-import Debug.Trace (trace)
+--import Debug.Trace (trace)
 
 -- type SearchState = EvaluationT IO (Either TopologicalResult CharacterResult)
 
 
-parse' :: Parsec Dec s a -> String -> s -> Either (ParseError (Token s) Dec) a
+parse' :: Parsec Void s a -> String -> s -> Either (ParseError (Token s) Void) a
 parse' = parse
 
 
@@ -66,7 +69,7 @@ parse' = parse
 evaluate :: Command -> EvaluationT IO a -> SearchState -- EvaluationT IO (Either TopologicalResult CharacterResult)
 -- evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
 -- evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
-evaluate (READ fileSpecs) _old = do
+evaluate (READ (ReadCommand fileSpecs)) _old = do
     when (null fileSpecs) $ fail "No files specified in 'read()' command"
     result <- liftIO . runEitherT . eitherTValidation $ parmap rpar parseSpecifiedFile fileSpecs
     case result of
@@ -76,16 +79,17 @@ evaluate (READ fileSpecs) _old = do
 --        case masterUnify $ transformation <$> concat xs of
           Left uErr -> fail $ show uErr -- Report unification errors here.
            -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
-          Right g   ->  (liftIO . putStrLn {- . take 500000 -} $ show g)
+          Right g   -> pure g
+                       -- (liftIO . putStrLn {- . take 500000 -} $ either show (ppTopElement . toXML) g)
                        -- (liftIO . putStrLn $ renderSequenceCosts g)
-                    $> g
+                       --  $> g
   where
     transformation = id -- expandIUPAC
-    decoration = fmap (fmap initializeDecorations2)
+    decoration     = fmap (fmap initializeDecorations2)
 
 evaluate _ _ = fail "Invalid READ command binding"
 
-
+{-
 renderSequenceCosts :: Either t (PhylogeneticSolution (PhylogeneticDAG2 e n u v w x y z)) -> String
 renderSequenceCosts (Left    _) = "<Trees only>"
 renderSequenceCosts (Right sol) = outputStream
@@ -103,7 +107,7 @@ renderSequenceCosts (Right sol) = outputStream
         ]
     indent = intercalate "\n" . fmap ("  "<>) . lines
 --    unlines . toList . fmap (unlines . toList . fmap (unlines . fmap show . toList . rootCosts)) . phylogeneticForests
-
+-}
 
 
 parseSpecifiedFile  :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
@@ -239,25 +243,25 @@ expandIUPAC fpr = fpr { parsedChars = newTreeChars }
 
 -- TODO: check file extension, to guess which parser to use first
 progressiveParse :: FilePath -> EitherT ReadError IO FracturedParseResult
-progressiveParse _ | trace "STARTING PROGRESSIVE PARSE" False = undefined
+--progressiveParse _ | trace "STARTING PROGRESSIVE PARSE" False = undefined
 progressiveParse inputPath = do
-    (filePath, fileContent) <- head . dataFiles <$> getSpecifiedContent (UnspecifiedFile [inputPath])
-    case trace "FASTA (Nucleiotide)" $ parse' nukeParser filePath fileContent of
+    (filePath, fileContent) <- head . dataFiles <$> getSpecifiedContent (UnspecifiedFile $ inputPath:|[])
+    case parse' nukeParser filePath fileContent of
       Right x    -> pure $ toFractured Nothing filePath x
       Left  err1 ->
-        case trace "FASTA (Amino Acid)" $ parse' acidParser filePath fileContent of
+        case parse' acidParser filePath fileContent of
           Right x    -> pure $ toFractured Nothing filePath x
           Left  err2 ->
-            case trace "Newick" $ parse' newickStreamParser filePath fileContent of
+            case parse' newickStreamParser filePath fileContent of
               Right x    -> pure $ toFractured Nothing filePath x
               Left  err3 ->
-                case trace "VER" $ parse' verStreamParser filePath fileContent of
+                case parse' verStreamParser filePath fileContent of
                   Right x    -> pure $ toFractured Nothing filePath x
                   Left  err4 ->
-                    case trace "TNT" $ parse' tntStreamParser filePath fileContent of
+                    case parse' tntStreamParser filePath fileContent of
                       Right x    -> pure $ toFractured Nothing filePath x
                       Left  err5 ->
-                        case parse' nexusStreamParser filePath $ trace "Nexus" fileContent of
+                        case parse' nexusStreamParser filePath fileContent of
                           Right x    -> pure $ toFractured Nothing filePath x
                           Left  err6 ->
                             let previousErrors      = [(err1,"Fasta"),(err2,"Fasta"),(err3,"Newick tree"),(err4,"VER"),(err5,"Henning/TNT"),(err6,"Nexus")]
@@ -345,3 +349,65 @@ casei x = foldl f x $ assocs x
     f m (_    , _) = m
 -}
 
+
+getSpecifiedContent :: FileSpecification -> EitherT ReadError IO FileSpecificationContent
+getSpecifiedContent (UnspecifiedFile    xs      ) = getSpecifiedContentSimple xs
+getSpecifiedContent (AminoAcidFile      xs      ) = getSpecifiedContentSimple xs
+getSpecifiedContent (NucleotideFile     xs      ) = getSpecifiedContentSimple xs
+getSpecifiedContent (AnnotatedFile      xs      ) = getSpecifiedContentSimple xs
+getSpecifiedContent (ChromosomeFile     xs      ) = getSpecifiedContentSimple xs
+getSpecifiedContent (GenomeFile         xs      ) = getSpecifiedContentSimple xs
+getSpecifiedContent (CustomAlphabetFile xs tcm _) = liftM2 SpecContent (getSpecifiedFileContents xs) (getSpecifiedTcm tcm)
+getSpecifiedContent (PrealignedFile     fs tcm  ) = do 
+    specifiedContent <- getSpecifiedContent fs
+    case tcmFile specifiedContent of
+      Nothing -> SpecContent (dataFiles specifiedContent) <$> getSpecifiedTcm tcm
+      Just _  -> pure specifiedContent 
+
+
+getSpecifiedTcm :: Maybe FilePath -> EitherT ReadError IO (Maybe (FilePath, FileContent))
+getSpecifiedTcm tcmPath =
+    case tcmPath of
+      Nothing       -> pure Nothing
+      Just tcmPath' -> do
+        tcmFiles <- getFileContents tcmPath'
+        case tcmFiles of
+          [x] -> pure $ Just x
+          []  -> left $ unfindable tcmPath'
+          _   -> left $ ambiguous tcmPath' (fst <$> tcmFiles)
+
+
+getSpecifiedFileContents :: Foldable f => f FilePath -> EitherT ReadError IO [FileResult]
+getSpecifiedFileContents = fmap concat . eitherTValidation . fmap getFileContents . toList
+
+
+getSpecifiedContentSimple :: Foldable f => f FilePath -> EitherT ReadError IO FileSpecificationContent
+getSpecifiedContentSimple = fmap (`SpecContent` Nothing) . getSpecifiedFileContents
+
+
+-- | Reads in the contents of the given FilePath, correctly interpolating glob paths
+getFileContents :: FilePath -> EitherT ReadError IO [(FilePath, FileContent)]
+getFileContents path = do
+    -- Check if the file exists exactly as specified
+    exists <- liftIO $ doesFileExist path
+    if   exists
+    -- If it exists exactly as specified, read it in
+    then pure <$> readFileContent path
+    else do
+    -- If the file does not exists exactly as specified
+    -- try to match other files to the given path
+    -- by interpreting the path as a 'glob'
+        matches <- liftIO $ glob path
+        case matches of
+          []  -> left $ unfindable path
+          [x] -> pure <$> readFileContent x
+          xs  -> eitherTValidation $ readFileContent <$> xs
+  where
+    readFileContent :: FilePath -> EitherT ReadError IO (FilePath, FileContent)
+    readFileContent foundPath = do
+        canRead <- liftIO $ readable <$> getPermissions foundPath
+        if   not canRead
+        then left $ unopenable foundPath
+        else do
+            content <- liftIO $ readFile foundPath
+            pure (foundPath, content)

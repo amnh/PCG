@@ -25,8 +25,6 @@ module File.Format.Newick.Internal
 
 import           Data.Tree
 import           Data.Maybe
---import qualified Bio.PhyloGraph.Network as N
---import           Data.List
 import           Data.List.NonEmpty  (NonEmpty, toList)
 import           Data.Semigroup
 
@@ -111,34 +109,3 @@ newickNode nodes label length'
 isLeaf :: NewickNode -> Bool
 isLeaf node = (null . descendants) node && (isJust . newickLabel) node
 
-{-
-instance N.Network NewickNode NewickNode where
-
-    root     t   = t
-
-    children n _ = descendants n
-
-    nodeIsLeaf   n _ = isLeaf n
-
-    nodeIsRoot   n t = null $ N.parents n t
-
-    parents node tree 
-      | node `elem` descendants tree = nub $ tree : foldr (\n acc -> N.parents node n ++ acc) [] (descendants tree)
-      | otherwise = nub $ foldr (\n acc -> N.parents node n ++ acc) [] (descendants tree)
-
-    update tree new = 
-      let 
-          updateHere = foldr (\n acc -> if match n acc then upOne n acc else acc) tree new
-          updateRest = updateHere { descendants = (`N.update` new) <$> descendants updateHere }
-      in updateRest
-      where
-        match newNode t = newickLabel t == newickLabel newNode
-        upOne newNode t = t {descendants = descendants newNode, branchLength = branchLength newNode}
-
-    numNodes = tallyNodes
-      where
-        tallyNodes :: NewickNode -> Int
-        tallyNodes = succ . sum . fmap tallyNodes . descendants
-
-    addNode t n = t { descendants = n : descendants t }
--}

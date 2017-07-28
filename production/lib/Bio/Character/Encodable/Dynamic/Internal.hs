@@ -9,7 +9,7 @@
 -- Portability :  portable
 --
 -- Data structures and instances for coded characters
--- Coded characters are dynamic characters recoded as 
+-- Coded characters are dynamic characters recoded as
 --
 -----------------------------------------------------------------------------
 
@@ -34,7 +34,7 @@ import           Control.Arrow                       ((***))
 import           Control.Lens                 hiding (mapping)
 import           Data.Alphabet
 import           Data.BitMatrix
-import           Data.BitMatrix.Internal(BitMatrix(..))
+import           Data.BitMatrix.Internal             (BitMatrix(..))
 import           Data.Char                           (toLower)
 import           Data.Key
 import           Data.Bits
@@ -53,8 +53,9 @@ import           Data.Vector                         (Vector)
 import           Prelude                      hiding (lookup)
 import           Test.Tasty.QuickCheck        hiding ((.&.))
 import           Test.QuickCheck.Arbitrary.Instances ()
+import           Text.XML.Custom
 
-import Debug.Trace
+-- import Debug.Trace
 
 -- TODO: Change DynamicChar/Sequences to DynamicCharacters
         -- Make a missing a null vector
@@ -73,7 +74,7 @@ data  DynamicChar
 
 
 -- |
--- Represents a sinlge element of a dynamic character. 
+-- Represents a sinlge element of a dynamic character.
 newtype DynamicCharacterElement
       = DCE BitVector
       deriving (Bits, Eq, Enum, Integral, Num, Ord, Real, Show)
@@ -156,7 +157,7 @@ instance MonoFoldable DynamicChar where
     ofoldl' _ e Missing{} = e
     ofoldl' f e (DC c)   = ofoldl' (\acc x -> f acc (DCE x)) e c
 
-    {-# INLINE ofoldr1Ex #-} 
+    {-# INLINE ofoldr1Ex #-}
     ofoldr1Ex _ Missing{} = error "Trying to mono-morphically fold over an empty structure without supplying an inital accumulator!"
     ofoldr1Ex f (DC c)    = DCE . ofoldr1Ex (\x y -> unwrap $ f (DCE x) (DCE y)) $ c
 
@@ -188,14 +189,14 @@ instance MonoTraversable DynamicChar where
 instance EncodedAmbiguityGroupContainer DynamicChar where
 
     {-# INLINE symbolCount #-}
-    symbolCount (Missing n) = trace ("Missing: " <> show n) n
+    symbolCount (Missing n) = n
     symbolCount (DC c)      = numCols c
 
 
 instance EncodableStream DynamicChar where
 
     decodeStream alphabet char
-      | alphabet /= dnaAlphabet = rawResult 
+      | alphabet /= dnaAlphabet = rawResult
       | otherwise               = (dnaIUPAC !) <$> rawResult
       where
         rawResult   = NE.fromList . ofoldMap (pure . decodeElement alphabet) . otoList $ char
@@ -212,7 +213,7 @@ instance EncodableStream DynamicChar where
               , ('C', "C"   )
               , ('G', "G"   )
               , ('T', "T"   )
-              , ('M', "AC"  ) 
+              , ('M', "AC"  )
               , ('R', "AG"  )
               , ('W', "AT"  )
               , ('S', "CG"  )
@@ -233,13 +234,13 @@ instance EncodableStream DynamicChar where
     lookupStream _ _ = Nothing
 
     {-# INLINE gapOfStream #-}
-    gapOfStream = bit . pred . symbolCount 
+    gapOfStream = bit . pred . symbolCount
 
 
 instance EncodableDynamicCharacter DynamicChar where
 
     constructDynamic = DC . fromRows . fmap unwrap . toList
-    
+
     encodeDynamic alphabet = encodeStream alphabet . NE.fromList . fmap (NE.fromList . toList) . toList
 
 
@@ -292,12 +293,12 @@ instance Arbitrary DynamicCharacterElement where
     arbitrary = do
         alphabetLen <- arbitrary `suchThat` (\x -> 2 <= x && x <= 62) :: Gen Int
         DCE . bitVec alphabetLen <$> (choose (1, 2 ^ alphabetLen - 1) :: Gen Integer)
-      
+
 
 -- We restrict the DynamicChar values generated to be non-empty.
 -- Most algorithms assume a nonempty dynamic character.
 instance Arbitrary DynamicChar where
-    arbitrary = do 
+    arbitrary = do
         alphabetLen  <- arbitrary `suchThat` (\x -> 2 <= x && x <= 62) :: Gen Int
         characterLen <- arbitrary `suchThat` (> 0) :: Gen Int
         let randVal  =  choose (1, 2 ^ alphabetLen - 1) :: Gen Integer
@@ -316,8 +317,8 @@ instance Exportable DynamicChar where
     toExportableBuffer (DC bm@(BitMatrix _ bv)) = ExportableCharacterSequence x y $ bitVectorToBufferChunks x y bv
       where
         x = numRows bm
-        y = numCols bm 
-        
+        y = numCols bm
+
     fromExportableBuffer ecs = DC $ BitMatrix elemWidth newBitVec
       where
         newBitVec = bufferChunksToBitVector elemCount elemWidth $ exportedBufferChunks ecs
@@ -325,8 +326,8 @@ instance Exportable DynamicChar where
         elemWidth = ecs ^. exportedElementWidth
 
     toExportableElements = encodableStreamToExportableCharacterElements
-    
-    fromExportableElements = DC . exportableCharacterElementsToBitMatrix 
+
+    fromExportableElements = DC . exportableCharacterElementsToBitMatrix
 
 
 instance Exportable DynamicCharacterElement where
@@ -334,7 +335,7 @@ instance Exportable DynamicCharacterElement where
     toExportableBuffer e@(DCE bv) = ExportableCharacterSequence 1 widthValue $ bitVectorToBufferChunks 1 widthValue bv
       where
         widthValue = symbolCount e
-          
+
     fromExportableBuffer ecs = DCE newBitVec
       where
         newBitVec = bufferChunksToBitVector 1 elemWidth $ exportedBufferChunks ecs
@@ -348,6 +349,23 @@ instance Exportable DynamicCharacterElement where
 
     fromExportableElements = DCE . exportableCharacterElementsHeadToBitVector
 
+
+instance ToXML DynamicChar where
+
+    toXML dynamicChar = xmlElement "DynamicChar" attributes contents
+        where
+            attributes            = []
+            contents              = (Left . contentTuple) <$> otoList dynamicChar -- toXML on all dynamic character elements
+            contentTuple (DCE bv) = ("Character states", (\x -> if x then '1' else '0') <$> toBits bv) -- the value of this character
+
+{- Don't think I need this, since it's taken care of in ToXML DynamicChar
+instance ToXML DynamicCharacterElement where
+
+    toXML (DCE bv) = xmlElement "DynamicCharacterElement" attributes content
+        where
+            attributes = []
+            content    = [("Character states", (\x -> if x then '1' else '0') <$> toBits bv)] -- the value of this character
+-}
 
 {-
 {-# INLINE unstream #-}

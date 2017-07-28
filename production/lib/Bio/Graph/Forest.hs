@@ -10,23 +10,27 @@
 --
 -- The Phylogentic Graph types.
 --
--- 
+--
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveTraversable, GeneralizedNewtypeDeriving, TypeFamilies #-}
+{-# LANGUAGE DeriveTraversable, FlexibleContexts, FlexibleInstances, FunctionalDependencies, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies, UndecidableInstances #-}
 
 module Bio.Graph.Forest
   ( PhylogeneticForest(..)
   ) where
 
+import Bio.Graph.LeafSet
+import Control.Lens           hiding (Indexable)
 import Data.Key
-import Data.List.NonEmpty            (NonEmpty)
+import Data.List.NonEmpty            (NonEmpty(..))
 import Data.Maybe
 import Data.Semigroup
 import Data.Semigroup.Foldable
-import Data.Semigroup.Traversable
-import Prelude                hiding (lookup)
+-- import Data.Semigroup.Traversable
+import Prelude                hiding (head, lookup)
+import Text.XML.Custom
+-- import Text.XML.Light.Types
 
 
 -- |
@@ -69,6 +73,16 @@ instance FoldableWithKey1 PhylogeneticForest where
     foldMapWithKey1 f = foldMapWithKey1 f . unwrap
 
 
+-- |
+-- A 'Lens' for the 'PhylogeneticForest' field
+instance HasLeafSet a (LeafSet b) => HasLeafSet (PhylogeneticForest a) (NonEmpty (LeafSet b)) where
+
+    leafSet = lens getter setter
+      where
+         getter e    = (^. leafSet) <$> unwrap e
+         setter e _f = id e            -- No setter method
+
+
 instance Indexable PhylogeneticForest where
 
     {-# INLINE index #-}
@@ -95,6 +109,11 @@ instance Lookup PhylogeneticForest where
     lookup i = lookup i . unwrap
 
 
+instance (ToXML a) => ToXML (PhylogeneticForest a) where
+
+    toXML = collapseElemList "Forest" [] . unwrap
+
+
 instance Traversable1 PhylogeneticForest where
 
     {-# INLINE traverse1 #-}
@@ -119,5 +138,3 @@ instance TraversableWithKey1 PhylogeneticForest where
 {-# INLINE unwrap #-}
 unwrap :: PhylogeneticForest a -> NonEmpty a
 unwrap (PhylogeneticForest x) = x
-
-

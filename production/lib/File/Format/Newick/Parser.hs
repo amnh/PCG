@@ -12,20 +12,24 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts, ScopedTypeVariables, TypeFamilies #-}
 
 module File.Format.Newick.Parser where
 
-import Data.Char                  (isSpace)
-import Data.List                  (intercalate)
-import Data.Map            hiding (filter, foldl, foldr, null)
-import Data.Maybe                 (fromJust, fromMaybe, isJust)
+import Data.Char                   (isSpace)
+import Data.Functor                (void)
+import Data.List                   (intercalate)
+import Data.Map             hiding (filter, foldl, foldr, null)
+import Data.Maybe                  (fromJust, fromMaybe, isJust)
+import Data.Proxy
 import Data.Semigroup
+import Data.String
 import File.Format.Newick.Internal
-import Prelude             hiding (lookup)
-import Text.Megaparsec     hiding (label)
+import Prelude              hiding (lookup)
+import Text.Megaparsec      hiding (label)
+import Text.Megaparsec.Char
+import Text.Megaparsec.Char.Lexer  (skipBlockCommentNested)
 import Text.Megaparsec.Custom
-import Text.Megaparsec.Prim       (MonadParsec)
 
 
 -- |
@@ -163,14 +167,22 @@ trimmed x = whitespace *> x <* whitespace
 
 -- |
 -- Convinience combinator for stripping /trailing/ whitespace from a combinator.
-symbol  :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
-symbol  x = x <* whitespace
+symbol :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
+symbol x = x <* whitespace
 
 
 -- |
 -- Definition of space between tokens which can be discarded. This includes
 -- spaces /and/ comments.
-whitespace :: (MonadParsec e s m, Token s ~ Char) => m ()
+whitespace :: forall e s m. (MonadParsec e s m, Token s ~ Char) => m ()
+whitespace = skipMany $ choice [ hidden single, hidden block ]
+  where
+    single = void spaceChar
+    block  = skipBlockCommentNested (tokenToChunk proxy '[') (tokenToChunk proxy ']')
+    proxy  = Proxy :: Proxy s
+
+    
+{-
 whitespace = try commentDefinition <|> space
   where
     commentDefinition :: (MonadParsec e s m, Token s ~ Char) => m ()
@@ -178,7 +190,7 @@ whitespace = try commentDefinition <|> space
     commentStart, commentEnd :: (MonadParsec e s m, Token s ~ Char) => m String
     commentStart = string "[" <?> "\"[\" comment start"
     commentEnd   = string "]" <?> "\"]\" comment end"
-
+-}
 
 -- |
 -- Joins the nodes of an extended Newick tree which share the same label.

@@ -24,8 +24,8 @@ import qualified Data.Map                   as M   (fromList)
 import qualified Data.Vector                as V   (fromList)
 import           File.Format.Fasta.Internal
 import           File.Format.Fasta.Parser
+import           Text.Megaparsec                   (MonadParsec)
 import           Text.Megaparsec.Custom            (fails)
-import           Text.Megaparsec.Prim              (MonadParsec)
 
 
 -- |

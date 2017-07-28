@@ -8,6 +8,7 @@ import           Data.Key
 import           Data.Map            (Map, keys, singleton, unionWith)
 import           Data.Set            (difference, intersection)
 import qualified Data.Set     as Set (fromList)
+import           Data.Void
 import           File.Format.Fasta
 import           System.Environment  (getArgs)
 import           Text.Megaparsec    -- (parse, parseErrorPretty)
@@ -42,7 +43,7 @@ readFiles (path1, path2) = do
 parseFiles :: (FilePath, String, FilePath, String) -> Either String ([FastaSequence], [FastaSequence])
 parseFiles (path1, file1, path2, file2) = liftA2 (,) (parse' path1 file1) (parse' path2 file2)
   where
-    parse' path stream = first parseErrorPretty (parse fastaStreamParser path stream :: Either (ParseError Char Dec) [FastaSequence])
+    parse' path stream = first parseErrorPretty (parse fastaStreamParser path stream :: Either (ParseError Char Void) [FastaSequence])
 
 
 performFileDiff :: (FastaParseResult, FastaParseResult) -> Either String String

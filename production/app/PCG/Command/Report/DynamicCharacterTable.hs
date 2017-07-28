@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  PCG.Command.Types.Report.DynamicCharacterTable
+-- Module      :  PCG.Command.Report.DynamicCharacterTable
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -12,7 +12,7 @@
 
 {-# LANGUAGE FlexibleContexts #-}
 
-module PCG.Command.Types.Report.DynamicCharacterTable where
+module PCG.Command.Report.DynamicCharacterTable where
 
 import Bio.Character.Encodable
 import Bio.Character.Decoration.Dynamic

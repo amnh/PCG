@@ -12,51 +12,54 @@
 -- states for various character types.
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts, ScopedTypeVariables, TypeFamilies #-}
 
 module File.Format.TNT.Command.NStates where
 
 
+import Data.CaseInsensitive
 import Data.Functor (($>))
+import Data.Proxy
 import File.Format.TNT.Internal
 import Text.Megaparsec
-import Text.Megaparsec.Prim     (MonadParsec)
+import Text.Megaparsec.Char
 
 
 -- |
 -- Parses NSTATES command.
-nstatesCommand :: (MonadParsec e s m, Token s ~ Char) => m NStates
+nstatesCommand :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m NStates
 nstatesCommand =  nstatesHeader *> nstatesBody <* symbol (char ';')
   where
     nstatesBody = choice
-                [ nstatesDna
-                , nstatesNumeric
-                , nstatesProtein
-                , nstatesContinuous
-                ]
+        [ nstatesDna
+        , nstatesNumeric
+        , nstatesProtein
+        , nstatesContinuous
+        ]
 
 
 -- |
 -- Consumes the superflous heading for a NSTATES command.
-nstatesHeader :: (MonadParsec e s m, Token s ~ Char) => m ()
+nstatesHeader :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m ()
 nstatesHeader = symbol $ keyword "nstates" 2
 
 
 -- |
 -- Parses the specifaction for interpreting dna characters.
-nstatesDna :: (MonadParsec e s m, Token s ~ Char) => m NStates
+nstatesDna :: forall e s m. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m NStates
 nstatesDna = identifier *> dnaStates
   where
     identifier  = symbol $ keyword "dna" 3
-    gaps        = symbol $ string' "gaps"   $> True
-    nogaps      = symbol $ string' "nogaps" $> False
+    gaps        = symbol $ string' (tokensToChunk proxy "gaps"  ) $> True
+    nogaps      = symbol $ string' (tokensToChunk proxy "nogaps") $> False
     defaultGaps = pure True
     dnaStates   = DnaStates <$> (gaps <|> nogaps <|> defaultGaps)
+    proxy       = Proxy :: Proxy s
 
 
 -- |
 -- Parses the specification for interpreting numeric/discrete characters.
-nstatesNumeric :: (MonadParsec e s m, Token s ~ Char) => m NStates
+nstatesNumeric :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m NStates
 nstatesNumeric = identifier *> stateCount
   where
     identifier = symbol $ keyword "numeric" 3
@@ -65,7 +68,7 @@ nstatesNumeric = identifier *> stateCount
 
 -- |
 -- Parses the specifaction for interpreting protein characters.
-nstatesProtein :: (MonadParsec e s m, Token s ~ Char) => m NStates
+nstatesProtein :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m NStates
 nstatesProtein = identifier $> ProteinStates
   where
     identifier = symbol $ keyword "protein" 4
@@ -73,7 +76,7 @@ nstatesProtein = identifier $> ProteinStates
 
 -- |
 -- Parses the specifaction for interpreting continuous characters.
-nstatesContinuous :: (MonadParsec e s m, Token s ~ Char) => m NStates
+nstatesContinuous :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m NStates
 nstatesContinuous = identifier $> ContinuousStates
   where
     identifier  = symbol $ keyword "continuous" 4
