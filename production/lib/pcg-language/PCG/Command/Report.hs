@@ -41,6 +41,7 @@ data  OutputFormat
     | Terminals
     | TreeCosts
     | TreeStats
+    | XML
     deriving (Show)
 
 
@@ -78,3 +79,4 @@ outputFormat :: Ap SyntacticArgument OutputFormat
 outputFormat = choiceFrom [ dataFormat ]
   where
     dataFormat = value "data" $> Data
+    xmlFormat  = value "xml"  $> XML
