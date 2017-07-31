@@ -36,9 +36,10 @@ evaluate (REPORT (ReportCommand format target)) old = do
      ErrorCase    errMsg  -> fail errMsg
      MultiStream  streams -> old <* sequenceA (liftIO . uncurry writeFile <$> streams)
      SingleStream output  ->
-       case target of
-         OutputToStdout -> old <* info output
-         OutputToFile f -> old <* liftIO (writeFile f output)
+       let op = case target of
+                  OutputToStdout -> putStr
+                  OutputToFile f -> writeFile f
+       in  old <* liftIO (op output) 
 
 evaluate _ _ = fail "Invalid READ command binding"
 
