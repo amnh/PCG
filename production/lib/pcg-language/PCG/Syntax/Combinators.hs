@@ -57,7 +57,6 @@ import           Control.Applicative.Free
 import           Control.Applicative.Permutations
 import           Control.Alternative.Free   hiding (Pure,Ap)
 import qualified Control.Alternative.Free   as Alt
---import           Control.Alternative.Permutation
 import qualified Control.Monad.Free         as F
 import           Data.CaseInsensitive              (FoldCase)
 import           Data.Foldable

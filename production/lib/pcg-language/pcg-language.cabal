@@ -92,5 +92,5 @@ library
   other-modules:
                        PCG.Syntax.Parser
                        PCG.Syntax.Primative
-                       Control.Alternative.Permutation
+
 
