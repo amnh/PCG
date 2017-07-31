@@ -80,14 +80,14 @@ data MemoizedCostMatrix
    } deriving (Eq, Generic)
 
 
-{-
+{--
 -- | (✔)
-instance Arbitrary CBufferUnit where
+instance Arbitrary CULong where
 
     arbitrary = do
         num <- arbitrary :: Gen Integer
         pure $ fromIntegral num
--}
+--}
 
 
 -- | (✔)

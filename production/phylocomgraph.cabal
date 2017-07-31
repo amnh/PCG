@@ -33,7 +33,7 @@ cabal-version:       >= 1.22
 
 flag build-cpp-files
   description: Toggles the C++ files being successfully build.
-  default: False
+  default: True
 
 
 library
@@ -41,12 +41,12 @@ library
   other-extensions: MonadFailDesugaring
 
   -- Other library packages from which modules are imported.
-  build-depends:       base             >=4.8
+  build-depends:       base               >=4.8
                      , bimap
                      , bv
                      , case-insensitive
                        -- >=0.5.8 Required for Data.Map.restrictKeys
-                     , containers       >=0.5.8
+                     , containers         >=0.5.8
                      , deepseq
                      , dlist
                      , either
@@ -56,10 +56,11 @@ library
                      , keys
                      , lens
                      , matrix
-                     , megaparsec       >=5.0
-                     , mono-traversable >=1.0
+                     , megaparsec         >=6.0
+                     , mono-traversable   >=1.0
                      , mtl
                      , parallel
+                     , parser-combinators >=0.2
                      , pretty-tree
                      , primitive
                      , QuickCheck

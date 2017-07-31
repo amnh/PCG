@@ -36,16 +36,16 @@ library
   other-extensions: MonadFailDesugaring
 
   -- Other library packages from which modules are imported.
-  build-depends:       base             >=4.8
+  build-depends:       base               >=4.8
                      , case-insensitive
                        -- >=0.5.8 Required for Data.Map.restrictKeys
-                     , containers       >=0.5.8
+                     , containers         >=0.5.8
                      , either
                      , free
                      , keys
-                     , megaparsec       >=5.3.1
+                     , megaparsec         >=6.0.0
                      , mtl
-                     , parser-combinators
+                     , parser-combinators >=0.2.0
                      , safe
                      , scientific
                      , semigroupoids
