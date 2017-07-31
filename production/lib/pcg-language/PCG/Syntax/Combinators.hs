@@ -54,9 +54,10 @@ module PCG.Syntax.Combinators
 
 import           Control.Applicative
 import           Control.Applicative.Free
+import           Control.Applicative.Permutations
 import           Control.Alternative.Free   hiding (Pure,Ap)
 import qualified Control.Alternative.Free   as Alt
-import           Control.Alternative.Permutation
+--import           Control.Alternative.Permutation
 import qualified Control.Monad.Free         as F
 import           Data.CaseInsensitive              (FoldCase)
 import           Data.Foldable
@@ -220,9 +221,9 @@ parseCommand (CommandSpec commandName defintion) = string'' commandName *> runSy
 -- |
 -- Create a 'MonadParsec' parser matching the specified semantics of the command.
 runSyntax :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => Ap SyntacticArgument a -> m a
-runSyntax = runPermParserWithSeperator comma . runAp' noEffect apRunner
+runSyntax = intercalateEffect comma . runAp' noEffect apRunner
   where
-    noEffect = toPerm voidEffect
+    noEffect = toPermutation voidEffect
 
 
 -- == Internal functions == --
@@ -231,16 +232,16 @@ runSyntax = runPermParserWithSeperator comma . runAp' noEffect apRunner
 -- |
 -- The \"natural transformation\" used to convert the Free Alternative to the
 -- 'MonadParsec' parser result.
-apRunner :: forall a e m s. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => Perm m () -> SyntacticArgument a -> Perm m a
-apRunner effect (PrimativeArg p  ) = toPerm $ runPermParser effect *> F.iterM parsePrimative p
-apRunner effect (ExactlyOneOf ps ) = toPerm $ runPermParser effect *> choice (runPermParser . runAp (apRunner voidEffect) <$> ps)
-apRunner effect (ArgumentList p  ) = toPerm $ runPermParser effect *> runPermParser (parseArgumentList p)
-apRunner effect (DefaultValue p v) = toPermWithDefault v
-                                   $ runPermParser effect *> runPermParser (runAp (apRunner (toPerm voidEffect)) p)
-apRunner effect (ArgIdNamedArg p ids) = toPerm $ do
+apRunner :: forall a e m s. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => Permutation m () -> SyntacticArgument a -> Permutation m a
+apRunner effect (PrimativeArg p  ) = toPermutation $ runPermutation effect *> F.iterM parsePrimative p
+apRunner effect (ExactlyOneOf ps ) = toPermutation $ runPermutation effect *> choice (runPermutation . runAp (apRunner voidEffect) <$> ps)
+apRunner effect (ArgumentList p  ) = toPermutation $ runPermutation effect *> runPermutation (parseArgumentList p)
+apRunner effect (DefaultValue p v) = toPermutationWithDefault v
+                                   $ runPermutation effect *> runPermutation (runAp (apRunner (toPermutation voidEffect)) p)
+apRunner effect (ArgIdNamedArg p ids) = toPermutation $ do
     _ <- (choice $ parseId <$> ids) <?> parseHint
     _ <- whitespace <* char ':' <* whitespace
-    runPermParser $ runAp (apRunner effect) p
+    runPermutation $ runAp (apRunner effect) p
   where
     parseId  (ArgId x) = string'' x
     parseHint =
@@ -255,8 +256,8 @@ apRunner effect (ArgIdNamedArg p ids) = toPerm $ do
 -- |
 -- Part of the recursively defined evaluation where the argument permutations
 -- are enumerated and evaluated.
-parseArgumentList :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => ArgList a -> Perm m a
-parseArgumentList argListVal = toPerm $ begin *> datum <* close
+parseArgumentList :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => ArgList a -> Permutation m a
+parseArgumentList argListVal = toPermutation $ begin *> datum <* close
   where
     bookend p = void $ whitespace *> p <* whitespace
     begin = bookend . label "'(' starting a new argument list" $ char '('
@@ -264,8 +265,8 @@ parseArgumentList argListVal = toPerm $ begin *> datum <* close
     datum = 
       case argListVal of
         Exact e -> runSyntax e
-        SomeZ s -> runAlt' comma (runPermParser . runAp (apRunner voidEffect)) s
-        ManyZ m -> runAlt' comma (runPermParser . runAp (apRunner voidEffect)) m
+        SomeZ s -> runAlt' comma (runPermutation . runAp (apRunner voidEffect)) s
+        ManyZ m -> runAlt' comma (runPermutation . runAp (apRunner voidEffect)) m
 
 
 -- |
