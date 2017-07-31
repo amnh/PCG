@@ -35,13 +35,11 @@ module Text.Megaparsec.Custom
 import           Data.CaseInsensitive
 import           Data.Char                         (isSpace)
 import           Data.Either                       (either)
-import           Data.Functor                      (($>), void)
+import           Data.Functor                      (($>))
 import           Data.List.NonEmpty                (NonEmpty(..))
 import qualified Data.List.NonEmpty         as NE  (fromList)
 import           Data.Proxy
 import           Data.Semigroup
-import qualified Data.Set           as S
---import qualified Data.Set                   as S   (fromList)
 import           Data.Void
 import           Text.Megaparsec
 import           Text.Megaparsec.Char

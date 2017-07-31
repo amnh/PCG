@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 -- The name of the package.
-name:                pcg-language
+name:                pcg-utility
 
 -- The package version.  See the Haskell package versioning policy (PVP)
 -- for standards guiding when and how versions should be incremented.
@@ -37,20 +37,10 @@ library
 
   -- Other library packages from which modules are imported.
   build-depends:       base               >=4.8
-                     , case-insensitive
-                       -- >=0.5.8 Required for Data.Map.restrictKeys
                      , containers         >=0.5.8
-                     , either
-                     , free
                      , keys
-                     , megaparsec         >=6.0.0
-                     , mtl
-                     , parser-combinators >=0.2.0
-                     , safe
-                     , scientific
-                     , semigroupoids
-                     , text
-                     , time
+                     , matrix
+                     , vector
 
   default-language:    Haskell2010
 
@@ -70,11 +60,7 @@ library
                        -fwarn-missing-signatures
 --                       -fwarn-mrp-compat
                        -fwarn-overlapping-patterns
--- We comment out -fwarn-redundant-constraints so that we don't see the litany
--- of erroneous 'Redundant constraint: TypeFunction ParameterType ~ OtherType'
--- warnings. Maybe someday we can add this useful warning back when GHC is a bit
--- smarter in a newer version.
---                       -fwarn-redundant-constraints
+                       -fwarn-redundant-constraints
                        -fwarn-tabs
                        -fwarn-unrecognised-warning-flags
                        -fwarn-unused-binds
@@ -86,15 +72,8 @@ library
   hs-source-dirs:      
 
   -- Modules exported by the library.
-  exposed-modules:     PCG.Syntax
-                       PCG.Command.Read
-                       PCG.Command.Report
-                       PCG.Syntax.Combinators
-
+  exposed-modules:     Data.List.Utility
+                       Data.Matrix.NotStupid
 
   -- Modules included in this library but not exported.
-  other-modules:
-                       PCG.Syntax.Parser
-                       PCG.Syntax.Primative
-
-
+  other-modules:       
