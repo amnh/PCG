@@ -37,8 +37,8 @@ import           File.Format.Newick
 import           File.Format.Nexus                 hiding (TaxonSequenceMap)
 import           File.Format.TNT
 import           File.Format.TransitionCostMatrix
-import           File.Format.VertexEdgeRoot.Parser hiding (EdgeLength)
-import qualified File.Format.VertexEdgeRoot.Parser as VER
+import           File.Format.VertexEdgeRoot        hiding (EdgeLength)
+import qualified File.Format.VertexEdgeRoot        as VER
 import           Prelude                           hiding (lookup)
 
 -- import Debug.Trace

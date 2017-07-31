@@ -14,7 +14,8 @@
 -----------------------------------------------------------------------------
 
 module File.Format.VertexEdgeRoot
-  ( EdgeInfo()
+  ( EdgeInfo
+  , EdgeLength
   , VertexEdgeRoot(..)
   , VertexLabel
   , connectedVertex

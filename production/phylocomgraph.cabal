@@ -43,6 +43,7 @@ library
   -- Other library packages from which modules are imported.
   build-depends:       base               >=4.8
                      , bimap
+                     , blaze-html
                      , bv
                      , case-insensitive
                        -- >=0.5.8 Required for Data.Map.restrictKeys
@@ -55,32 +56,23 @@ library
                      , integer-gmp
                      , keys
                      , lens
-                     , matrix
-                     , megaparsec         >=6.0
                      , mono-traversable   >=1.0
                      , mtl
                      , parallel
-                     , parser-combinators >=0.2
+                     , pcg-file-parsers
+                     , pcg-utility
                      , pretty-tree
                      , primitive
                      , QuickCheck
-                     , quickcheck-properties
-                     , safe
                      , scientific
                      , semigroupoids
                      , semigroups
-                     , split
-                     , tasty
-                     , tasty-hunit
-                     , tasty-quickcheck
-                     , tasty-smallcheck
                      , transformers
                      , unordered-containers
                      , vector
                      -- >=3.4 required for corrected definition of (!) & index
                      , vector-instances >=3.4
                      , xml
-                     , blaze-html
 
   default-language:    Haskell2010
 
@@ -208,23 +200,12 @@ library
                        Data.ReplicatedSequence
                        Data.TCM
                        Data.TCM.Memoized
-                       File.Format.Fasta
-                       File.Format.Fastc
-                       File.Format.Newick
-                       File.Format.Nexus
-                       File.Format.VertexEdgeRoot
-                       File.Format.TNT
-                       File.Format.TransitionCostMatrix
 --                       Text.HTML.Class
 --                       Text.HTML.Custom
                        Text.XML.Class
                        Text.XML.Custom
 
   -- probably can be moved to other-modules:
---                       Bio.Graph.LeafSet
-                       Data.List.Utility
-                       Data.Matrix.NotStupid
-                       Text.Megaparsec.Custom
                        Test.Custom.NucleotideSequence
                        Test.Custom.DynamicCharacterNode
 
@@ -300,28 +281,6 @@ library
                        Data.Range
                        Data.TCM.Internal
                        Data.TCM.Memoized.FFI
-                       File.Format.TNT.Command.CCode
-                       File.Format.TNT.Command.CNames
-                       File.Format.TNT.Command.Cost
-                       File.Format.TNT.Command.NStates
-                       File.Format.TNT.Command.Procedure
-                       File.Format.TNT.Command.TRead
-                       File.Format.TNT.Command.XRead
-                       File.Format.TNT.Parser
-                       File.Format.TNT.Partitioning
-                       File.Format.TNT.Internal
-                       File.Format.Fasta.Converter
-                       File.Format.Fasta.Internal
-                       File.Format.Fasta.Parser
-                       File.Format.Fastc.Parser
-                       File.Format.Newick.Internal
-                       File.Format.Newick.Parser
-                       File.Format.Nexus.Data
-                       File.Format.Nexus.Parser
-                       File.Format.Nexus.Partition
-                       File.Format.Nexus.Validate
-                       File.Format.TransitionCostMatrix.Parser
-                       File.Format.VertexEdgeRoot.Parser
                        Numeric.Extended
                        Numeric.Extended.Internal
                        Numeric.Extended.Natural
@@ -344,7 +303,9 @@ executable pcg
                      , megaparsec       >=5.0
                      , mono-traversable >=1.0
                      , parallel
+                     , pcg-file-parsers
                      , pcg-language
+                     , pcg-utility
                      , semigroupoids
                      , semigroups
                      , text
@@ -405,6 +366,7 @@ executable fasta-differ
                      , base >=4.8
                      , bv
                      , containers
+                     , pcg-file-parsers
                      , keys
                      , megaparsec >=5.0
 

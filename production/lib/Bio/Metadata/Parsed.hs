@@ -36,7 +36,7 @@ import           File.Format.Fasta                       (FastaParseResult,Taxon
 import           File.Format.Fastc
 import           File.Format.Newick
 import           File.Format.Nexus                hiding (CharacterMetadata(..), DNA, RNA, Nucleotide, TaxonSequenceMap)
-import qualified File.Format.Nexus.Data           as Nex
+import qualified File.Format.Nexus                as Nex
 import qualified File.Format.TNT                  as TNT
 import qualified File.Format.TransitionCostMatrix as F
 import           File.Format.VertexEdgeRoot

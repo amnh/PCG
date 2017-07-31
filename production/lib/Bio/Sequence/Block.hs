@@ -35,7 +35,6 @@ import           Data.Semigroup
 import           Data.Vector.Instances                ()
 import qualified Data.Vector                   as V
 import           Prelude                       hiding (zipWith)
-import           Safe                                 (headMay)
 
 
 -- |
@@ -95,9 +94,9 @@ hexTranspose =
       <*> transposition dynamicCharacters
   where
     transposition f xs =
-        case maybe 0 length . headMay $ toList listOfVectors of
-          0 -> mempty
-          n -> V.generate n g
+        case toList listOfVectors of
+          [] -> mempty
+          ys -> V.generate (length ys) g
       where
         g i = (V.! i) <$> listOfVectors
         listOfVectors = fmap f xs

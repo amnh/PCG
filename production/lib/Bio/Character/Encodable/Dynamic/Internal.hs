@@ -51,7 +51,7 @@ import           Data.String                         (fromString)
 import           Data.Tuple                          (swap)
 import           Data.Vector                         (Vector)
 import           Prelude                      hiding (lookup)
-import           Test.Tasty.QuickCheck        hiding ((.&.))
+import           Test.QuickCheck              hiding ((.&.))
 import           Test.QuickCheck.Arbitrary.Instances ()
 import           Text.XML.Custom
 

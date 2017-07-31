@@ -18,7 +18,9 @@ local-bin-path: bin
 
 packages:
   - '.'
+  - lib/pcg-file-parsers
   - lib/pcg-language
+  - lib/pcg-utility
 
 resolver: nightly-2017-07-31
 
