@@ -30,6 +30,7 @@ import Control.Lens
 import Data.Alphabet
 import Data.List (intercalate)
 import Data.Monoid
+import Text.XML.Custom
 
 
 -- |
@@ -70,17 +71,17 @@ instance Show DiscreteCharacterMetadataDec where
 
 
 -- | (✔)
-instance GeneralCharacterMetadata DiscreteCharacterMetadataDec where
-
-    {-# INLINE extractGeneralCharacterMetadata #-}
-    extractGeneralCharacterMetadata = generalData
-
-
--- | (✔)
 instance DiscreteCharacterMetadata DiscreteCharacterMetadataDec where
 
     {-# INLINE extractDiscreteCharacterMetadata #-}
     extractDiscreteCharacterMetadata = id
+
+
+-- | (✔)
+instance GeneralCharacterMetadata DiscreteCharacterMetadataDec where
+
+    {-# INLINE extractGeneralCharacterMetadata #-}
+    extractGeneralCharacterMetadata = generalData
 
 
 -- | (✔)
@@ -101,6 +102,16 @@ instance HasCharacterWeight DiscreteCharacterMetadataDec Double where
 
     characterWeight = lens (\e -> generalData e ^. characterWeight)
                     $ \e x -> e { generalData = generalData e & characterWeight .~ x }
+
+
+instance ToXML DiscreteCharacterMetadataDec where
+
+    toXML xmlElem = xmlElement "Discrete_metadata" attrs contents
+        where
+            attrs    = []
+            contents = [ Left ("Alphabet", show $ xmlElem ^. characterAlphabet)
+                       , Right . toXML $ generalData xmlElem
+                       ]
 
 
 -- |

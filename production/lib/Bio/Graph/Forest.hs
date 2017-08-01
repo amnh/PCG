@@ -77,10 +77,10 @@ instance FoldableWithKey1 PhylogeneticForest where
 -- A 'Lens' for the 'PhylogeneticForest' field
 instance HasLeafSet a (LeafSet b) => HasLeafSet (PhylogeneticForest a) (NonEmpty (LeafSet b)) where
 
-    leafSet = lens getter setter
+    leafSet = lens getter undefined
       where
          getter e    = (^. leafSet) <$> unwrap e
-         setter e _f = id e            -- No setter method
+        --  setter e _f = id e            -- No setter method
 
 
 instance Indexable PhylogeneticForest where

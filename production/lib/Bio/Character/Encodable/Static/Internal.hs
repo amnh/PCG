@@ -284,12 +284,12 @@ instance Semigroup StaticCharacterBlock where
 
 instance ToXML StaticCharacter where
 
-    toXML (SC bv) = xmlElement "StaticCharacter" attributes contents
+    toXML (SC bv) = xmlElement "Static_character" attributes contents
         where
             attributes = []
             contents   = [intRep, bitRep]
-            intRep     = Left ("Integer representation", show $ toInteger bv)
-            bitRep     = Left ("Bit representation"    , (\x -> if x then '1' else '0') <$> toBits bv)
+            intRep     = Left ("Integer_representation", show $ toInteger bv)
+            bitRep     = Left ("Bit_representation"    , (\x -> if x then '1' else '0') <$> toBits bv)
 
 
 {-# INLINE unstream #-}

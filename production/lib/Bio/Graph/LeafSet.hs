@@ -42,7 +42,7 @@ class HasLeafSet s a | s -> a where
 
 -- instance ToXML (LeafSet (Maybe String)) where
 
---     toXML (LeafSet lst) = xmlElement "Leaf set" attrs contents
+--     toXML (LeafSet lst) = xmlElement "Leaf_set" attrs contents
 --         where
 --             attrs    = []
 --             contents = [Left ("Leaves", foldr leafStr "" lst)]

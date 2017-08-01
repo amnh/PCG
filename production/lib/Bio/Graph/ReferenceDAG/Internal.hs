@@ -218,12 +218,12 @@ instance {- (Show e, Show n) => -} Show (ReferenceDAG d e n) where
 -- | (✔)
 instance ToXML (GraphData m) where
 
-    toXML gData = xmlElement "Graph data" attrs contents
+    toXML gData = xmlElement "Graph_data" attrs contents
         where
             attrs = []
-            contents = [ Left ( "DAG total cost"       , show $ dagCost         gData)
-                       , Left ( "DAG network edge cost", show $ networkEdgeCost gData)
-                       , Left ( "DAG root sequence costs"
+            contents = [ Left ( "DAG_total_cost"       , show $ dagCost         gData)
+                       , Left ( "DAG_network_edge_cost", show $ networkEdgeCost gData)
+                       , Left ( "DAG_root_sequence_costs"
                               , init (unlines . toList $ (\k v -> "Root #" <> show k <> ": " <> show v) <#$> rootSequenceCosts gData)
                               )
                        ]
@@ -236,10 +236,13 @@ instance (ToXML n) => ToXML (IndexData e n) where
 
 instance (ToXML n) => ToXML (ReferenceDAG d e n) where
 
-    toXML (RefDAG v _ g) = xmlElement "Directed Acyclic Graph" [] [meta, vect]
+    toXML (RefDAG v _ g) = xmlElement "Directed_acyclic_graph" [] [{- leafs, tree, -} meta, vect]
       where
-          vect = Right $ collapseElemList "Nodes" [] v
-          meta = Right $ toXML g
+          -- leafs    = Right $ collapseElemList "Leaf set" [] [(dag ^. leafSet)]
+          -- fmap id . (^. leafSet) <$> forests
+
+          meta     = Right $ toXML g
+          vect     = Right $ collapseElemList "Nodes" [] v
 
 
 -- |

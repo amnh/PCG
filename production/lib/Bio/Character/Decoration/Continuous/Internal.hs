@@ -446,7 +446,7 @@ instance (Show c) => ToXML (ContinuousDecorationInitial c) where
         where
             attributes = []
             contents   = [ Left ("Name"                   , show $ metadata ^. characterName  )
-                         , Left ("Initial character state", show val                          )
+                         , Left ("Initial_character_state", show val                          )
                          , Left ("Weight"                 , show $ metadata ^. characterWeight)
                          ]
             --TODO: use ToXML instance in Bio/Metadat/General/Internal
@@ -465,11 +465,11 @@ instance
         where
             attributes = []
             contents   = [ Left ("Cost"                , show $ optimizationDecoration ^. characterCost       )
-                         , Left ("Is Leaf Node?"       , show $ optimizationDecoration ^. isLeaf              )
-                         , Left ("Continuous Character", show $ optimizationDecoration ^. intervalCharacter   )
-                         , Left ("Preliminary Interval", show $ optimizationDecoration ^. preliminaryInterval )
-                         , Left ("Child Intervals"     , show $ optimizationDecoration ^. childPrelimIntervals)
-                         , Left ("Final Interval"      , show $ optimizationDecoration ^. finalInterval       )
+                         , Left ("Is_leaf_node"       , show $ optimizationDecoration ^. isLeaf              )
+                         , Left ("Continuous_character", show $ optimizationDecoration ^. intervalCharacter   )
+                         , Left ("Preliminary_interval", show $ optimizationDecoration ^. preliminaryInterval )
+                         , Left ("Child_intervals"     , show $ optimizationDecoration ^. childPrelimIntervals)
+                         , Left ("Final_interval"      , show $ optimizationDecoration ^. finalInterval       )
                          ]
 
 
@@ -485,9 +485,9 @@ instance
         where
             attributes = []
             contents   = [ Left ("Cost"                , show $ postorderDecoration ^. characterCost       )
-                         , Left ("Is Leaf Node?"       , show $ postorderDecoration ^. isLeaf              )
-                         , Left ("Continuous Character", show $ postorderDecoration ^. intervalCharacter   )
-                         , Left ("Preliminary Interval", show $ postorderDecoration ^. preliminaryInterval )
-                         , Left ("Child Intervals"     , show $ postorderDecoration ^. childPrelimIntervals)
+                         , Left ("Is_leaf_node?"       , show $ postorderDecoration ^. isLeaf              )
+                         , Left ("Continuous_character", show $ postorderDecoration ^. intervalCharacter   )
+                         , Left ("Preliminary_interval", show $ postorderDecoration ^. preliminaryInterval )
+                         , Left ("Child_intervals"     , show $ postorderDecoration ^. childPrelimIntervals)
                          ]
 

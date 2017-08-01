@@ -352,19 +352,19 @@ instance Exportable DynamicCharacterElement where
 
 instance ToXML DynamicChar where
 
-    toXML dynamicChar = xmlElement "DynamicChar" attributes contents
+    toXML dynamicChar = xmlElement "Dynamic_character" attributes contents
         where
             attributes            = []
             contents              = (Left . contentTuple) <$> otoList dynamicChar -- toXML on all dynamic character elements
-            contentTuple (DCE bv) = ("Character states", (\x -> if x then '1' else '0') <$> toBits bv) -- the value of this character
+            contentTuple (DCE bv) = ("Character_states", (\x -> if x then '1' else '0') <$> toBits bv) -- the value of this character
 
 {- Don't think I need this, since it's taken care of in ToXML DynamicChar
 instance ToXML DynamicCharacterElement where
 
-    toXML (DCE bv) = xmlElement "DynamicCharacterElement" attributes content
+    toXML (DCE bv) = xmlElement "Dynamic_character_element" attributes content
         where
             attributes = []
-            content    = [("Character states", (\x -> if x then '1' else '0') <$> toBits bv)] -- the value of this character
+            content    = [("Character_states", (\x -> if x then '1' else '0') <$> toBits bv)] -- the value of this character
 -}
 
 {-

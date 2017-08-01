@@ -72,10 +72,10 @@ instance Show ContinuousChar where
 -- | (✔)
 instance ToXML ContinuousChar where
 
-    toXML continuousChar = xmlElement "ContinuousChar" attributes content
+    toXML continuousChar = xmlElement "Continuous_character" attributes content
         where
             attributes = []
-            content    = [Left ("Character states", show continuousChar)]
+            content    = [Left ("Character_states", show continuousChar)]
 
 
 -- |

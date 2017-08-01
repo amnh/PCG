@@ -31,16 +31,16 @@ class ToXML a where
 
 instance (ToXML a) => ToXML (Maybe a) where
 
-    toXML input = Element (QName "Maybe data" Nothing Nothing) [] [content] Nothing
+    toXML input = Element (QName "Maybe_data" Nothing Nothing) [] [content] Nothing
         where
             content = case input of
-                          Nothing  -> CRef "No data"
+                          Nothing  -> CRef "No_data"
                           Just val -> Elem $ toXML val
 
 
 instance ToXML [Char] where
 
-    toXML val = Element (QName "Text value" Nothing Nothing) [] [CRef val] Nothing
+    toXML val = Element (QName "Text_value" Nothing Nothing) [] [CRef val] Nothing
 
 
 instance {-# OVERLAPPABLE #-} (Foldable f, ToXML a) => ToXML (f a) where
@@ -50,4 +50,4 @@ instance {-# OVERLAPPABLE #-} (Foldable f, ToXML a) => ToXML (f a) where
            name     = QName "List" Nothing Nothing
            attrs    = []
            contents = Elem . toXML <$> toList lst
-           
+

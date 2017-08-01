@@ -205,11 +205,11 @@ instance EncodableStaticCharacter f => DiscreteExtensionFitchDecoration (FitchOp
 -- | (✔)
 instance (Show f) => ToXML (FitchOptimizationDecoration f) where
 
-    toXML decoration = xmlElement "Fitch decoration" attributes contents
+    toXML decoration = xmlElement "Fitch_decoration" attributes contents
         where
             attributes = []
-            contents   = [ Left ("Min cost",           show $ decoration ^. characterCost    )
-                         , Left ("Preliminary median", show $ decoration ^. preliminaryMedian)
-                         , Left ("Final median",       show $ decoration ^. finalMedian      )
-                         , Left ("Is a leaf",          show $ decoration ^. isLeaf           )
+            contents   = [ Left ("Min_cost",           show $ decoration ^. characterCost    )
+                         , Left ("Preliminary_median", show $ decoration ^. preliminaryMedian)
+                         , Left ("Final_median",       show $ decoration ^. finalMedian      )
+                         , Left ("Is_a_leaf",          show $ decoration ^. isLeaf           )
                          ]

@@ -141,7 +141,7 @@ instance ( ToXML u
          , ToXML z
          ) => ToXML (CharacterSequence u v w x y z) where
 
-    toXML (CharSeq val) = collapseElemList "Character sequence" [] (toList val)
+    toXML (CharSeq val) = collapseElemList "Character_sequence" [] (toList val)
 
 
 -- |

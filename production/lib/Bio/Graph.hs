@@ -55,39 +55,43 @@ instance Show a => Show (PhylogeneticSolution a) where
 
     show = ("Solution:\n\n" <>) . indent . renderForests . fmap renderForest . phylogeneticForests
       where
-        indent = intercalate "\n" . fmap ("  "<>) . lines
+        indent       = intercalate "\n" . fmap ("  " <>) . lines
         renderForest = indent . foldMapWithKey f
           where
             f k e = mconcat
-                [ "Component #"
-                , show k
-                , ":\n\n"
-                , indent $ show e
-                , "\n"
-                ]
+                  [ "Component #"
+                  , show k
+                  , ":\n\n"
+                  , indent $ show e
+                  , "\n"
+                  ]
         renderForests = indent . foldMapWithKey f
           where
             f k e = mconcat
-                [ "Forest #"
-                , show k
-                , ":\n\n"
-                , indent e
-                , "\n"
-                ]
+                  [ "Forest #"
+                  , show k
+                  , ":\n\n"
+                  , indent e
+                  , "\n"
+                  ]
 
 
 instance (HasLeafSet s (LeafSet a), ToXML a, ToXML s) => ToXML (PhylogeneticSolution s) where
 
-    toXML (PhylogeneticSolution soln) = xmlElement "Solution" attrs contents
+    toXML (PhylogeneticSolution forests) = xmlElement "Solution" attrs forestContents
         where
             attrs    = []
-            contents = [ Right leaves
-                       -- , Right graphRepresentation
-                       , Right $ collapseElemList "Final graph" attrs soln
-                       ]
+            forestContents = [ Right leaves
+                             -- , Right graphRepresentation
+                             , Right $ collapseElemList "Final_graph" attrs forests
+                             ]
             -- (PhylogeneticForest firstForest) = head $ toList soln
             -- (PDAG2 refDag _e _n)    = head $ toList firstForest
             -- (refDag )
-            leaves = collapseElemList "Leaf sets" attrs leafSets
+            leaves = collapseElemList "Leaf_sets" attrs leafSets
 
-            leafSets = fmap id . (^. leafSet) <$> soln
+            leafSets = fmap (^. leafSet) <$> forests
+
+            -- TODO: when the dot version is ready, it goes here:
+            -- graphRepresentation = xmlElement "Graph" attrs graphRepContents
+            -- graphRepContents    = (Right . toXML) <$> toList forests

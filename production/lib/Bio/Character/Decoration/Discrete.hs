@@ -197,7 +197,7 @@ instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (Discre
 -- | (✔)
 instance (EncodableStreamElement c) => ToXML (DiscreteDecoration c) where
 
-    toXML decoration = xmlElement "Discrete character decoration" attributes contents
+    toXML decoration = xmlElement "Discrete_character_decoration" attributes contents
         where
             attributes = []
             contents   = [ Left ("Character", showDiscreteCharacterElement decoration)

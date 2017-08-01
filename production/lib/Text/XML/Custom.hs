@@ -14,7 +14,7 @@
 -----------------------------------------------------------------------------
 
 
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
 
 
 module Text.XML.Custom
@@ -28,6 +28,8 @@ module Text.XML.Custom
 
 
 import Data.Foldable
+import Data.Key
+-- import Data.Monoid         ((<>))
 import Text.XML.Class
 import Text.XML.Light.Types
 
@@ -35,10 +37,14 @@ import Text.XML.Light.Types
 -- |
 -- Take in a list of ToXML items and return a single Element with XML'ed items as substructure.
 -- Used in ToXML instances when there are sequences of data.
-collapseElemList :: (Foldable f, ToXML a) => String -> [Attr] -> f a -> Element
+collapseElemList :: (Foldable f, Keyed f, Show (Key f), ToXML a) => String -> [Attr] -> f a -> Element
 collapseElemList name attrs lst = Element (xmlQName name) attrs contents Nothing
     where
-        contents = (Elem . toXML) <$> toList lst
+        -- contents = (Elem . toXML) <$> toList lst
+        contents = toList $ mapWithKey f lst
+        f i e    = Elem $ xmlElement name [] [ Left ("Number", show i)
+                                             , Right $ toXML e
+                                             ]
 
 
 -- | Create an XML Attr, which is a key value pair (xmlQName, String).

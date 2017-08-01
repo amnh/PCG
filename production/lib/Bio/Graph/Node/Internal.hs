@@ -128,34 +128,6 @@ instance Ord (ResolutionInformation s) where
 --          setter e f = e { dynamicDecorationDirectOptimizationMetadata = dynamicDecorationDirectOptimizationMetadata e & sparseTransitionCostMatrix .~ f }
 
 
-{-
--- | (✔)
-instance HasLeafSet (PhylogeneticNode2 n s) (ResolutionCache s) where
-
-    leafSet = lens getter setter
-        where
-            getter e    = e ^. leafSet
-            setter e _x = id e  -- There is no setter.
-
-
--- | (✔)
-instance HasLeafSet (ResolutionCache r) (ResolutionInformation r) where
-
-    leafSet = lens getter setter
-        where
-            getter e    = e ^. leafSet
-            setter e _x = id e  -- There is no setter.
-
-
--- | (✔)
-instance HasLeafSet (ResolutionInformation s) SubtreeLeafSet where
-
-    leafSet = lens leafSetRepresentation setter
-        where
-            setter e _x = id e  -- There is no setter.
--}
-
-
 instance Semigroup NewickSerialization where
 
     (NS lhs) <> (NS rhs) = NS $ "(" <> lhs <> "," <> rhs <> ")"
@@ -203,27 +175,29 @@ instance Show SubtreeLeafSet where
 
 instance (ToXML n) => ToXML (PhylogeneticNode2 n s) where
 
-    toXML node = xmlElement "Phylogenetic node" nodeAttrs contents
+    toXML node = xmlElement "Phylogenetic_node" nodeAttrs contents
         where
             nodeAttrs       = []
             resolutionAttrs = []
-            contents        = [ Right ( collapseElemList "Resolutions" resolutionAttrs (resolutions node) ) ]
+            contents        = [ -- Left ("Node_number", show number)
+                               Right ( collapseElemList "Resolutions" resolutionAttrs (resolutions node) )
+                              ]
 
 
 instance (ToXML s) => ToXML (ResolutionInformation s) where
 
-    toXML info = xmlElement "Resolution info" attrs contents
+    toXML info = xmlElement "Resolution_info" attrs contents
         where
             attrs         = []
             contents      = [ Right . toXML $ characterSequence info
-                            , Left  ("Total subtree cost" , (show  $ totalSubtreeCost  info))
-                            , Left  ("Local sequence cost", (show  $ localSequenceCost info))
+                            , Left  ("Total_subtree_cost" , (show  $ totalSubtreeCost  info))
+                            , Left  ("Local_sequence_cost", (show  $ localSequenceCost info))
                             , Right subtree
                             ]
-            subtree       = xmlElement "Subtree fields" [] subtreeFields
-            subtreeFields = [ Left ("Subtree leaf set"      , show $ leafSetRepresentation info)
-                            , Left ("Subtree representation", show $ subtreeRepresentation info)
-                            , Left ("Subtree edge set"      , show $ subtreeEdgeSet        info)
+            subtree       = xmlElement "Subtree_fields" [] subtreeFields
+            subtreeFields = [ Left ("Subtree_leaf_set"      , show $ leafSetRepresentation info)
+                            , Left ("Subtree_representation", show $ subtreeRepresentation info)
+                            , Left ("Subtree_edge_set"      , show $ subtreeEdgeSet        info)
                             ]
 
 

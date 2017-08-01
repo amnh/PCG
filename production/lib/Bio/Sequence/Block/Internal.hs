@@ -93,13 +93,13 @@ instance ( ToXML u
          , ToXML z
          ) => ToXML (CharacterBlock u v w x y z) where
 
-    toXML block = xmlElement "Character block" attributes contents
+    toXML block = xmlElement "Character_block" attributes contents
         where
             attributes = []
-            contents   = [ (Right . collapseElemList "Non-additive character block" [] $ nonAdditiveCharacterBins block )
-                         , (Right . collapseElemList "Additive character block"     [] $ additiveCharacterBins    block )
-                         , (Right . collapseElemList "NonMetric character block"    [] $ nonMetricCharacterBins   block )
-                         , (Right . collapseElemList "Continuous character block"   [] $ continuousCharacterBins  block )
-                         , (Right . collapseElemList "Metric character block"       [] $ nonMetricCharacterBins   block )
-                         , (Right . collapseElemList "Dynamic character block"      [] $ dynamicCharacters        block )
+            contents   = [ (Right . collapseElemList "Non-additive_character_block" [] $ nonAdditiveCharacterBins block )
+                         , (Right . collapseElemList "Additive_character_block"     [] $ additiveCharacterBins    block )
+                         , (Right . collapseElemList "NonMetric_character_block"    [] $ nonMetricCharacterBins   block )
+                         , (Right . collapseElemList "Continuous_character_block"   [] $ continuousCharacterBins  block )
+                         , (Right . collapseElemList "Metric_character_block"       [] $ nonMetricCharacterBins   block )
+                         , (Right . collapseElemList "Dynamic_character_block"      [] $ dynamicCharacters        block )
                          ]
