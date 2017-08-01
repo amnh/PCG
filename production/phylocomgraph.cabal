@@ -51,6 +51,7 @@ library
                      , deepseq
                      , dlist
                      , either
+                     , graphviz
                      , hashable
                      , hashtables
                      , integer-gmp

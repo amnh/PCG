@@ -231,6 +231,7 @@ instance ToXML (GraphData m) where
 
 -- | (✔)
 instance (ToXML n) => ToXML (IndexData e n) where
+
     toXML indexData = toXML $ nodeDecoration indexData
 
 
