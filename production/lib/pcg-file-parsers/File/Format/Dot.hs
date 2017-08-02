@@ -15,9 +15,11 @@
 module File.Format.Dot
   ( DotGraph
   , GraphID(..)
+  -- ** Parse a DOT file
+  , dotParse
+  -- ** Get useful representations from the DOT file
   , dotChildMap
   , dotParentMap
-  , dotStreamParser
   , dotNodeSet
   , dotEdgeSet
   , toIdentifier
@@ -29,15 +31,19 @@ import           Data.GraphViz.Parsing
 import           Data.GraphViz.Types
 import           Data.GraphViz.Types.Generalised
 import           Data.Key
-import           Data.Map                  (Map, fromSet, insert, insertWith, mergeWithKey, notMember)
-import qualified Data.Map           as M
+import           Data.Map                  (Map, fromSet, insertWith)
 import           Data.Maybe
 import           Data.Monoid
 import           Data.Set                  (Set)
 import qualified Data.Set           as S
-import           Data.Text.Lazy            (Text)
+import           Data.Text                 (Text)
+import qualified Data.Text.Lazy     as L
 import           Prelude            hiding (lookup)
 
+
+dotParse :: Text -> Either String (DotGraph GraphID)
+dotParse = fst . runParser parse . L.fromStrict
+        
 
 dotNodeSet :: Ord n => DotGraph n -> Set n
 dotNodeSet = foldMap (S.singleton . nodeID) . graphNodes
@@ -46,10 +52,6 @@ dotNodeSet = foldMap (S.singleton . nodeID) . graphNodes
 dotEdgeSet :: Ord n => DotGraph n -> Set (n, n)
 dotEdgeSet = foldMap (S.singleton . (fromNode &&& toNode)) . graphEdges
 
-
-dotStreamParser :: Text -> Either String (DotGraph GraphID)
-dotStreamParser = fst . runParser parse
-        
 
 dotChildMap :: Ord n => DotGraph n -> Map n (Set n)
 dotChildMap dot = fromSet getAdjacency nodes
@@ -82,6 +84,6 @@ dotParentMap dot = fromSet getAdjacency nodes
 
   
 toIdentifier :: GraphID -> String
-toIdentifier (Str x) = show x
+toIdentifier (Str x) = L.unpack x
 toIdentifier (Num x) = show x
 
