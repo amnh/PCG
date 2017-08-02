@@ -16,31 +16,35 @@ module Bio.Graph.ReferenceDAG.Internal where
 
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Component
-import           Control.Arrow              ((&&&),(***))
-import           Control.Lens               (lens)
+import           Control.Arrow                    ((&&&),(***))
+import           Control.Lens                     (lens)
 import           Data.Bifunctor
 import           Data.EdgeSet
 import           Data.Foldable
-import           Data.Hashable              (Hashable)
-import qualified Data.HashMap.Strict as HM
-import           Data.IntMap                (IntMap)
-import qualified Data.IntMap         as IM
-import           Data.IntSet                (IntSet)
-import qualified Data.IntSet         as IS
+import           Data.GraphViz.Printing    hiding ((<>)) -- Seriously, why is this redefined?
+import           Data.GraphViz.Types       hiding (attrs)
+import           Data.GraphViz.Types.Graph hiding (node)
+import           Data.Hashable                    (Hashable)
+import qualified Data.HashMap.Strict       as HM
+import           Data.IntMap                      (IntMap)
+import qualified Data.IntMap               as IM
+import           Data.IntSet                      (IntSet)
+import qualified Data.IntSet               as IS
 import           Data.Key
-import           Data.List                  (intercalate)
-import           Data.List.NonEmpty         (NonEmpty ((:|)))
-import qualified Data.List.NonEmpty  as NE
-import           Data.Monoid                ((<>))
+import           Data.List                        (intercalate)
+import           Data.List.NonEmpty               (NonEmpty ((:|)))
+import qualified Data.List.NonEmpty        as NE
+import           Data.Monoid                      ((<>))
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
-import           Data.Tree                  (unfoldTree)
-import           Data.Tree.Pretty           (drawVerticalTree)
-import           Data.Vector                (Vector)
-import qualified Data.Vector         as V
-import           Data.Vector.Instances      ()
+import           Data.String
+import           Data.Tree                        (unfoldTree)
+import           Data.Tree.Pretty                 (drawVerticalTree)
+import           Data.Vector                      (Vector)
+import qualified Data.Vector               as V
+import           Data.Vector.Instances            ()
 import           Numeric.Extended.Real
-import           Prelude             hiding (lookup)
+import           Prelude                   hiding (lookup)
 import           Text.XML.Custom
 
 --import           Debug.Trace
@@ -198,6 +202,17 @@ instance PhylogeneticTree (ReferenceDAG d e n) NodeRef e n where
     parent i dag = fmap toEnum . headMay . otoList . parentRefs $ references dag ! fromEnum i
 
 
+instance Foldable f => PrintDot (ReferenceDAG d e (f String)) where
+
+    unqtDot = unqtDot . uncurry mkGraph . getDotContext
+    
+    toDot = toDot . uncurry mkGraph . getDotContext
+
+    unqtListToDot = unqtDot . uncurry mkGraph . bimap mconcat mconcat . unzip . fmap getDotContext
+
+    listToDot = toDot . uncurry mkGraph . bimap mconcat mconcat . unzip . fmap getDotContext
+
+
 -- | (✔)
 instance Show (GraphData m) where
 
@@ -279,6 +294,14 @@ defaultGraphMetadata =
       <*> networkEdgeCost
       <*> rootSequenceCosts
       <*> const mempty
+
+
+defaultMetadata :: Monoid m => ReferenceDAG d e n -> ReferenceDAG m e n
+defaultMetadata =
+    RefDAG
+      <$> references
+      <*> rootRefs
+      <*> defaultGraphMetadata . graphData
 
 
 -- |
@@ -704,5 +727,25 @@ gen1 x = (pops, show x, kids)
         Nothing -> []
         Just xs -> (\y -> (-1,y)) <$> xs
 --}
+
+getDotContext :: Foldable f => ReferenceDAG d e (f String) -> ([DotNode GraphID], [DotEdge GraphID])
+getDotContext dag = second mconcat . unzip $ foldMapWithKey f vec
+  where
+    vec = references dag
+
+    toId :: Foldable f => Int -> f String -> GraphID
+    toId i x =
+      case toList x of
+        []  -> Num $ Int i
+        s:_ -> Str $ fromString s
+
+    f :: Foldable f => Int -> IndexData e (f String) -> [(DotNode GraphID, [DotEdge GraphID])]
+    f k v = [ (toDotNode, toDotEdge <$> kidRefs) ]
+      where
+        datum       = nodeDecoration v
+        nodeId      = toId k datum
+        kidRefs     = IM.keys $ childRefs v
+        toDotNode   = DotNode nodeId []
+        toDotEdge x = DotEdge (toId x (nodeDecoration $ vec ! x)) nodeId []
 
 

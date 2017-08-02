@@ -14,7 +14,7 @@ module PCG.Command.Report.Evaluate
 --import           Bio.Graph
 import           Bio.Graph.PhylogeneticDAG
 import           Control.Monad.IO.Class
-import           Control.Monad.Logger
+--import           Control.Monad.Logger
 --import           Data.Foldable
 import           Data.List.NonEmpty
 import           PCG.Command.Report
