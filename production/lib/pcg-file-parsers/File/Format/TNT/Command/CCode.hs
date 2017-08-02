@@ -16,10 +16,10 @@
 module File.Format.TNT.Command.CCode where
 
 import Data.CaseInsensitive
+import Data.List.NonEmpty       (some1)
 import File.Format.TNT.Internal
 import Text.Megaparsec
 import Text.Megaparsec.Char
-import Text.Megaparsec.Custom   (nonEmpty)
 
 
 -- |
@@ -29,13 +29,14 @@ import Text.Megaparsec.Custom   (nonEmpty)
 --
 --  * One or more character indicies or index ranges of affected characters
 ccodeCommand :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m CCode
-ccodeCommand = ccodeHeader *> nonEmpty ccodeAugment <* symbol (char ';')
+ccodeCommand = ccodeHeader *> some1 ccodeAugment <* symbol (char ';')
 
 
 -- |
 -- The header of a CCODE command.
 ccodeHeader :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m ()
 ccodeHeader = symbol $ keyword "ccode" 2
+
 
 -- |
 -- A 'CharacterMetadata' mutation specified by the CCODE command.
@@ -44,8 +45,8 @@ ccodeHeader = symbol $ keyword "ccode" 2
 -- Validates that mutulally exclusive metadata options are not specified.
 ccodeAugment :: (MonadParsec e s m, Token s ~ Char) => m CCodeAugment
 ccodeAugment = CCodeAugment
-           <$> (validateStates =<< nonEmpty ccodeCharacterState)
-           <*> nonEmpty characterIndicies
+           <$> (validateStates =<< some1 ccodeCharacterState)
+           <*> some1 characterIndicies
            <*  allowIncorrectSuffixes
   where
     makeError str = fail $ concat ["Specified both '",str,"' and 'non-",str,"' states for character set in CCODE command"]

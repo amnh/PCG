@@ -24,7 +24,6 @@ module Text.Megaparsec.Custom
   , fails
   , inlineSpaceChar 
   , inlineSpace
-  , nonEmpty
   , somethingTill
   , string''
   -- * Useful simplified stream parsers
@@ -36,10 +35,11 @@ import           Data.CaseInsensitive
 import           Data.Char                         (isSpace)
 import           Data.Either                       (either)
 import           Data.Functor                      (($>))
-import           Data.List.NonEmpty                (NonEmpty(..))
-import qualified Data.List.NonEmpty         as NE  (fromList)
+import           Data.List.NonEmpty                (NonEmpty(..), nonEmpty)
+import           Data.Maybe                        (catMaybes)
 import           Data.Proxy
 import           Data.Semigroup
+import qualified Data.Set                   as S
 import           Data.Void
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
@@ -63,12 +63,6 @@ import qualified Text.Megaparsec.Char.Lexer as LEX
 -- Parse a string-like chunk.
 string'' :: forall e s m. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => String -> m (Tokens s)
 string'' = string' . tokensToChunk (Proxy :: Proxy s)
-
-
--- |
--- Collects one or more of the arguments into a `NonEmpty` list.
-nonEmpty :: MonadParsec e s m => m a -> m (NonEmpty a)
-nonEmpty c = NE.fromList <$> some c
 
 
 -- |
@@ -122,7 +116,7 @@ endOfLine = choice (try <$> [ nl, cr *> nl, cr ]) $> newLineChar
 -- |
 -- Accepts zero or more Failure messages.
 fails :: MonadParsec e s m => [String] -> m a
-fails = undefined -- failure mempty mempty . S.fromList . fmap representFail
+fails = failure Nothing . S.fromList . fmap Label . catMaybes . fmap nonEmpty
 
 
 -- |

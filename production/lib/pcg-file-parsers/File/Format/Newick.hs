@@ -41,17 +41,16 @@ module File.Format.Newick
   ) where
 
 
-import Data.List.NonEmpty          (NonEmpty)
+import Data.List.NonEmpty          (NonEmpty, some1)
 import File.Format.Newick.Internal
 import File.Format.Newick.Parser
 import Text.Megaparsec
-import Text.Megaparsec.Custom
 
 
 -- |
 -- Parses an entire stream into a zero or more 'NewickForest's.
 newickStreamParser :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty NewickForest)
-newickStreamParser = nonEmpty forestDefinitions <* eof
+newickStreamParser = some1 forestDefinitions <* eof
 
 
 forestDefinitions :: (MonadParsec e s m, Token s ~ Char) => m NewickForest 
