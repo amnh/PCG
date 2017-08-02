@@ -37,6 +37,7 @@ import Data.EdgeSet
 import Data.Foldable
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Semigroup
+import Data.Set           (size)
 import Text.XML.Custom
 
 
@@ -87,7 +88,7 @@ newtype NewickSerialization = NS String
 
 
 -- |
--- An arbitraryily ordered collection of leaf nodes in a subtree. Leaves in the
+-- An arbitrarily ordered collection of leaf nodes in a subtree. Leaves in the
 -- tree are uniquely identified by an index across the entire DAG. Set bits
 -- represent a leaf uniquily identified by that index being present in the
 -- subtree.
@@ -179,8 +180,7 @@ instance (ToXML n) => ToXML (PhylogeneticNode2 n s) where
         where
             nodeAttrs       = []
             resolutionAttrs = []
-            contents        = [ -- Left ("Node_number", show number)
-                               Right ( collapseElemList "Resolutions" resolutionAttrs (resolutions node) )
+            contents        = [ Right ( collapseElemList "Resolutions" resolutionAttrs (resolutions node) )
                               ]
 
 
@@ -188,10 +188,15 @@ instance (ToXML s) => ToXML (ResolutionInformation s) where
 
     toXML info = xmlElement "Resolution_info" attrs contents
         where
+            (ES edgeSet)  = subtreeEdgeSet info
             attrs         = []
-            contents      = [ Right . toXML $ characterSequence info
-                            , Left  ("Total_subtree_cost" , (show  $ totalSubtreeCost  info))
-                            , Left  ("Local_sequence_cost", (show  $ localSequenceCost info))
+            contents      = [ Left ("Leaf_or_internal", if Data.Set.size edgeSet == 0
+                                                then "Leaf"
+                                                else "Internal"
+                                   )
+                            , Right . toXML $ characterSequence info
+                            , Left  ("Total_subtree_cost" , (show $ totalSubtreeCost  info))
+                            , Left  ("Local_sequence_cost", (show $ localSequenceCost info))
                             , Right subtree
                             ]
             subtree       = xmlElement "Subtree_fields" [] subtreeFields

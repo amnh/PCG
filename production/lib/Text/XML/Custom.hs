@@ -37,14 +37,13 @@ import Text.XML.Light.Types
 -- |
 -- Take in a list of ToXML items and return a single Element with XML'ed items as substructure.
 -- Used in ToXML instances when there are sequences of data.
-collapseElemList :: (Foldable f, Keyed f, Show (Key f), ToXML a) => String -> [Attr] -> f a -> Element
+collapseElemList :: (FoldableWithKey f, Show (Key f), ToXML a) => String -> [Attr] -> f a -> Element
 collapseElemList name attrs lst = Element (xmlQName name) attrs contents Nothing
     where
-        -- contents = (Elem . toXML) <$> toList lst
-        contents = toList $ mapWithKey f lst
-        f i e    = Elem $ xmlElement name [] [ Left ("Number", show i)
-                                             , Right $ toXML e
-                                             ]
+        -- contents     = (Elem numberElem) : ((Elem . toXML) <$> toList lst)
+        numberElem i = Element (xmlQName "Number") [] [CRef $ show i] Nothing
+        contents     = Elem <$> (toList $ foldMapWithKey f lst)
+        f i e        = [numberElem i, toXML e]
 
 
 -- | Create an XML Attr, which is a key value pair (xmlQName, String).
