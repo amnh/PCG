@@ -76,7 +76,8 @@ outputTarget = choiceFrom [ stdout, toFile ] `withDefault` OutputToStdout
 
 
 outputFormat :: Ap SyntacticArgument OutputFormat
-outputFormat = choiceFrom [ dataFormat, xmlFormat ]
+outputFormat = choiceFrom [ dataFormat, dotFormat, xmlFormat ]
   where
     dataFormat = value "data" $> Data
     xmlFormat  = value "xml"  $> XML
+    dotFormat  = choiceFrom [value "dot", value "graphviz"]  $> DotFile

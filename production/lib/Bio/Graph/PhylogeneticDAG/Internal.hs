@@ -86,10 +86,19 @@ type CharacterResult = PhylogeneticSolution CharacterDAG
 type Cost = Double
 
 
-type DecoratedCharacterResult = PhylogeneticSolution FinalDecorationDAG
-
-
 type EdgeReference = (Int, Int)
+
+
+type SearchState = EvaluationT IO GraphState
+
+
+type GraphState = Either TopologicalResult DecoratedCharacterResult
+
+
+type TopologicalResult = PhylogeneticSolution (ReferenceDAG () EdgeLength (Maybe String))
+
+
+type DecoratedCharacterResult = PhylogeneticSolution FinalDecorationDAG
 
 
 type FinalDecorationDAG =
@@ -125,12 +134,6 @@ type ReRootedEdgeContext u v w x y z =
    , ResolutionCache (CharacterSequence u v w x y z)
    , ResolutionCache (CharacterSequence u v w x y z)
    )
-
-
-type SearchState = EvaluationT IO (Either TopologicalResult DecoratedCharacterResult)
-
-
-type TopologicalResult = PhylogeneticSolution (ReferenceDAG () EdgeLength (Maybe String))
 
 
 type UnifiedCharacterBlock

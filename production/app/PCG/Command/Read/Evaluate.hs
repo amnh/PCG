@@ -261,7 +261,7 @@ progressiveParse inputPath = do
                   Left  err4 ->
                     case dotParse fileContent of
                       Right x    -> pure $ toFractured Nothing filePath x
-                      Left  err7 ->
+                      Left  _ ->
                         case parse' tntStreamParser filePath fileContent of
                           Right x    -> pure $ toFractured Nothing filePath x
                           Left  err5 ->

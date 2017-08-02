@@ -299,6 +299,7 @@ executable pcg
                      , directory
                      , either
                      , Glob
+                     , graphviz
                      , keys
                      , lens
                      , megaparsec       >=5.0
@@ -347,7 +348,7 @@ executable pcg
 --                       PCG.Command.Report.CharacterMatrix
                        PCG.Command.Report.DynamicCharacterTable
                        PCG.Command.Report.Evaluate
---                       PCG.Command.Report.GraphViz
+                       PCG.Command.Report.GraphViz
 --                       PCG.Command.Report.ImpliedAlignmentFasta
 --                       PCG.Command.Report.Internal
 --                       PCG.Command.Report.Metadata
