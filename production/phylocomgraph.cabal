@@ -293,6 +293,7 @@ executable pcg
 
   build-depends:       phylocomgraph
                      , base             >=4.8
+                     , blaze-html
                        -- Required for Data.Map.restrictKeys
                      , containers       >=0.5.8
                      , directory
@@ -313,7 +314,6 @@ executable pcg
                      , vector
                      , vector-instances >=3.4
                      , xml
-                     , blaze-html
 
   default-language:    Haskell2010
 
