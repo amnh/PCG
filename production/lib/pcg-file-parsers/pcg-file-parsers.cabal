@@ -27,7 +27,7 @@ maintainer:          wheeler@amnh.org
 
 category:            Biology
 build-type:          Simple
-extra-source-files:  README.md
+--extra-source-files:  README.md
 
 cabal-version:       >= 1.22
 
