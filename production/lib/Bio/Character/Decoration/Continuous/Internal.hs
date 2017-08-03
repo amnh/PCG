@@ -456,7 +456,7 @@ instance (Show c) => ToXML (ContinuousDecorationInitial c) where
 -- | Create xml instance for preorder decoration, which has a finalized state interval.
 instance
     ( Show c
-    , Show (Bound c)        -- This is NOT redundant. Won't copile without it.
+--    , Show (Bound c)        -- This is NOT redundant. Won't copile without it.
     , Show (Finite (Bound c))
     , Show (Range  (Bound c))
     ) => ToXML (ContinuousOptimizationDecoration c) where
@@ -476,7 +476,6 @@ instance
 -- | Create xml instance for postorder decoration, which has no final state interval set.
 instance
     ( Show c
-    -- , Show (Bound c)
     , Show (Finite (Bound c))
     , Show (Range  (Bound c))
     ) => ToXML (ContinuousPostorderDecoration c) where

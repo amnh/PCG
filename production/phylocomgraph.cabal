@@ -33,7 +33,7 @@ cabal-version:       >= 1.22
 
 flag build-cpp-files
   description: Toggles the C++ files being successfully build.
-  default: False
+  default: True
 
 
 library
@@ -41,44 +41,39 @@ library
   other-extensions: MonadFailDesugaring
 
   -- Other library packages from which modules are imported.
-  build-depends:       base             >=4.8
+  build-depends:       base               >=4.8
                      , bimap
+                     , blaze-html
                      , bv
+                     , case-insensitive
                        -- >=0.5.8 Required for Data.Map.restrictKeys
-                     , containers       >=0.5.8
+                     , containers         >=0.5.8
                      , deepseq
                      , dlist
                      , either
+                     , graphviz
                      , hashable
                      , hashtables
                      , integer-gmp
                      , keys
                      , lens
-                     , matrix
-                     , megaparsec       >=5.0
-                     , mono-traversable >=1.0
+                     , mono-traversable   >=1.0
                      , mtl
                      , parallel
+                     , pcg-file-parsers
+                     , pcg-utility
                      , pretty-tree
                      , primitive
                      , QuickCheck
-                     , quickcheck-properties
-                     , safe
                      , scientific
                      , semigroupoids
                      , semigroups
-                     , split
-                     , tasty
-                     , tasty-hunit
-                     , tasty-quickcheck
-                     , tasty-smallcheck
                      , transformers
                      , unordered-containers
                      , vector
                      -- >=3.4 required for corrected definition of (!) & index
                      , vector-instances >=3.4
                      , xml
-                     , blaze-html
 
   default-language:    Haskell2010
 
@@ -206,23 +201,12 @@ library
                        Data.ReplicatedSequence
                        Data.TCM
                        Data.TCM.Memoized
-                       File.Format.Fasta
-                       File.Format.Fastc
-                       File.Format.Newick
-                       File.Format.Nexus
-                       File.Format.VertexEdgeRoot
-                       File.Format.TNT
-                       File.Format.TransitionCostMatrix
 --                       Text.HTML.Class
 --                       Text.HTML.Custom
                        Text.XML.Class
                        Text.XML.Custom
 
   -- probably can be moved to other-modules:
---                       Bio.Graph.LeafSet
-                       Data.List.Utility
-                       Data.Matrix.NotStupid
-                       Text.Megaparsec.Custom
                        Test.Custom.NucleotideSequence
                        Test.Custom.DynamicCharacterNode
 
@@ -298,28 +282,6 @@ library
                        Data.Range
                        Data.TCM.Internal
                        Data.TCM.Memoized.FFI
-                       File.Format.TNT.Command.CCode
-                       File.Format.TNT.Command.CNames
-                       File.Format.TNT.Command.Cost
-                       File.Format.TNT.Command.NStates
-                       File.Format.TNT.Command.Procedure
-                       File.Format.TNT.Command.TRead
-                       File.Format.TNT.Command.XRead
-                       File.Format.TNT.Parser
-                       File.Format.TNT.Partitioning
-                       File.Format.TNT.Internal
-                       File.Format.Fasta.Converter
-                       File.Format.Fasta.Internal
-                       File.Format.Fasta.Parser
-                       File.Format.Fastc.Parser
-                       File.Format.Newick.Internal
-                       File.Format.Newick.Parser
-                       File.Format.Nexus.Data
-                       File.Format.Nexus.Parser
-                       File.Format.Nexus.Partition
-                       File.Format.Nexus.Validate
-                       File.Format.TransitionCostMatrix.Parser
-                       File.Format.VertexEdgeRoot.Parser
                        Numeric.Extended
                        Numeric.Extended.Internal
                        Numeric.Extended.Natural
@@ -332,16 +294,21 @@ executable pcg
 
   build-depends:       phylocomgraph
                      , base             >=4.8
+                     , blaze-html
                        -- Required for Data.Map.restrictKeys
                      , containers       >=0.5.8
                      , directory
                      , either
                      , Glob
+                     , graphviz
                      , keys
                      , lens
                      , megaparsec       >=5.0
                      , mono-traversable >=1.0
                      , parallel
+                     , pcg-file-parsers
+                     , pcg-language
+                     , pcg-utility
                      , semigroupoids
                      , semigroups
                      , text
@@ -349,7 +316,6 @@ executable pcg
                      , vector
                      , vector-instances >=3.4
                      , xml
-                     , blaze-html
 
   default-language:    Haskell2010
 
@@ -373,32 +339,25 @@ executable pcg
   hs-source-dirs:      app
 
   other-modules:
-                       PCG.Command
-                       PCG.Command.Types
-                       PCG.Command.Types.Read
-                       PCG.Command.Types.Read.DecorationInitialization
-                       PCG.Command.Types.Read.Evaluate
-                       PCG.Command.Types.Read.Internal
-                       PCG.Command.Types.Read.ReadError
-                       PCG.Command.Types.Read.Unification.Master
-                       PCG.Command.Types.Read.Unification.UnificationError
-                       PCG.Command.Types.Read.Validate
-                       PCG.Command.Types.Report
---                       PCG.Command.Types.Report.CharacterMatrix
-                       PCG.Command.Types.Report.DynamicCharacterTable
-                       PCG.Command.Types.Report.Evaluate
---                       PCG.Command.Types.Report.GraphViz
---                       PCG.Command.Types.Report.ImpliedAlignmentFasta
-                       PCG.Command.Types.Report.Internal
---                       PCG.Command.Types.Report.Metadata
---                       PCG.Command.Types.Report.TaxonMatrix
---                       PCG.Command.Types.Report.Newick
-                       PCG.Command.Types.Report.Validate
+                       PCG.Command.Read.DecorationInitialization
+                       PCG.Command.Read.Evaluate
+                       PCG.Command.Read.ReadError
+                       PCG.Command.Read.Unification.Master
+                       PCG.Command.Read.Unification.UnificationError
+
+--                       PCG.Command.Report.CharacterMatrix
+                       PCG.Command.Report.DynamicCharacterTable
+                       PCG.Command.Report.Evaluate
+                       PCG.Command.Report.GraphViz
+--                       PCG.Command.Report.ImpliedAlignmentFasta
+--                       PCG.Command.Report.Internal
+--                       PCG.Command.Report.Metadata
+--                       PCG.Command.Report.TaxonMatrix
+--                       PCG.Command.Report.Newick
+--                       PCG.Command.Report.Validate
+
                        PCG.Computation.Internal
-                       PCG.Script
-                       PCG.Script.Parser
-                       PCG.Script.Types
-                       PCG.SearchState
+
 
 
 executable fasta-differ
@@ -409,6 +368,7 @@ executable fasta-differ
                      , base >=4.8
                      , bv
                      , containers
+                     , pcg-file-parsers
                      , keys
                      , megaparsec >=5.0
 
@@ -588,7 +548,7 @@ Test-Suite testsuite
                      , bimap
                      , bv
                      , containers           >=0.5.8
-                     , criterion
+--                     , criterion
                      , deepseq
                      , directory
                      , dlist

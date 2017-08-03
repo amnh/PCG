@@ -432,7 +432,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
 (.!>.) s k = fromMaybe (error $ "Could not index: " <> show k) $ k `lookup` s
 
 
-newtype MinimalTopologyContext e c = MW { fromMinimalTopologyContext :: (NonEmpty (EdgeSet e, c, NonEmpty e)) }
+newtype MinimalTopologyContext e c = MW { fromMinimalTopologyContext :: NonEmpty (EdgeSet e, c, NonEmpty e) }
 
 
 instance (Ord e, Ord c) => Semigroup (MinimalTopologyContext e c) where

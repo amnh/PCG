@@ -22,6 +22,8 @@ module Bio.Graph.Forest
 
 import Bio.Graph.LeafSet
 import Control.Lens           hiding (Indexable)
+import Data.Foldable
+import Data.GraphViz.Printing
 import Data.Key
 import Data.List.NonEmpty            (NonEmpty(..))
 import Data.Maybe
@@ -107,6 +109,17 @@ instance Lookup PhylogeneticForest where
 
     {-# INLINE lookup #-}
     lookup i = lookup i . unwrap
+
+
+instance PrintDot a => PrintDot (PhylogeneticForest a) where
+
+    unqtDot       = unqtListToDot . toList . unwrap
+
+    toDot         = listToDot . toList . unwrap
+
+    unqtListToDot = fmap mconcat . sequenceA . fmap unqtDot
+
+    listToDot     = fmap mconcat . sequenceA . fmap toDot
 
 
 instance (ToXML a) => ToXML (PhylogeneticForest a) where

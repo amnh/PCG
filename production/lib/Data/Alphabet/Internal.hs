@@ -44,7 +44,7 @@ import           Data.Vector                  (Vector)
 import qualified Data.Vector           as V
 import           GHC.Generics                 (Generic)
 import           Prelude               hiding (lookup, zip)
-import           Test.Tasty.QuickCheck hiding (generate)
+import           Test.QuickCheck       hiding (generate)
 import           Test.QuickCheck.Arbitrary.Instances ()
 import           Text.XML.Custom
 
@@ -76,6 +76,7 @@ newtype AlphabetInputTuple  a = ASNI { toTuple  :: (a,a) } deriving (Eq,Ord)
 -- -   Supporting code and data structures:
 -- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 --
+
 newtype UnnamedSymbol a = Unnamed  a  deriving (Generic)
 newtype NamedSymbol   a = Named (a,a) deriving (Generic)
 

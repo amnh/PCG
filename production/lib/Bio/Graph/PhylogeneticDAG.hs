@@ -19,6 +19,7 @@ module Bio.Graph.PhylogeneticDAG
   , CharacterDAG
   , DecoratedCharacterResult
   , FinalDecorationDAG
+  , GraphState
   , PhylogeneticDAG(..)
   , PhylogeneticDAG2(..)
   , PhylogeneticDAGish(..)

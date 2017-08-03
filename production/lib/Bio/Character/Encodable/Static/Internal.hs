@@ -49,8 +49,8 @@ import           Data.Semigroup
 import           Data.String                         (fromString)
 import           Data.Tuple                          (swap)
 import           Prelude                      hiding (lookup)
+import           Test.QuickCheck              hiding ((.&.))
 import           Test.QuickCheck.Arbitrary.Instances ()
-import           Test.Tasty.QuickCheck        hiding ((.&.))
 import           Text.XML.Custom
 
 --import Debug.Trace

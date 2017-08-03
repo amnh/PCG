@@ -1,15 +1,15 @@
 allow-newer: true
 
-compiler: ghc-8.0.2
+compiler: ghc-8.2.1
 
 compiler-check: match-exact
 
-flags: {}
-
 extra-deps:
-  - containers-0.5.8.1
+  - megaparsec-6.0.2
   - pretty-tree-0.1.0.0
   - quickcheck-properties-0.1
+
+flags: {}
 
 ghc-options:
   "*": -j
@@ -18,6 +18,11 @@ local-bin-path: bin
 
 packages:
   - '.'
+  - lib/pcg-file-parsers
+  - lib/pcg-language
+  - lib/pcg-utility
 
-resolver: lts-8.15
+resolver: nightly-2017-07-31
+
+system-ghc: false
 

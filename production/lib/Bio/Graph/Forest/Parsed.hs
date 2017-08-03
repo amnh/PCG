@@ -14,31 +14,36 @@
 
 {-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
 
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Bio.Graph.Forest.Parsed where
 
 import           Bio.Graph.Forest
 import           Bio.Graph.ReferenceDAG
 -- import           Bio.Graph.ZipperDAG
+import           Control.Arrow                            ((&&&))
 import           Data.EdgeLength
 import           Data.Foldable
+import           Data.Hashable
 import           Data.IntMap                              (IntMap)
 import qualified Data.IntMap                       as IM
 import           Data.Key
 import           Data.List.NonEmpty                       (NonEmpty, nonEmpty)
 import qualified Data.List.NonEmpty                as NE
-import           Data.Map                                 (Map)
+import           Data.Map                                 (Map, findMin)
 import qualified Data.Map                          as Map
 import           Data.Maybe
 import           Data.Monoid
 import qualified Data.Set                          as Set
+import           File.Format.Dot
 import           File.Format.Fasta
 import           File.Format.Fastc                 hiding (Identifier)
 import           File.Format.Newick
 import           File.Format.Nexus                 hiding (TaxonSequenceMap)
 import           File.Format.TNT
 import           File.Format.TransitionCostMatrix
-import           File.Format.VertexEdgeRoot.Parser hiding (EdgeLength)
-import qualified File.Format.VertexEdgeRoot.Parser as VER
+import           File.Format.VertexEdgeRoot        hiding (EdgeLength)
+import qualified File.Format.VertexEdgeRoot        as VER
 import           Prelude                           hiding (lookup)
 
 -- import Debug.Trace
@@ -69,36 +74,67 @@ data NewickEnum   = NE !Int (Maybe String) (Maybe Double) [NewickEnum]
 -- | Represents a parser result type which can have a possibly empty forest
 --   extracted from it.
 class ParsedForest a where
+
     unifyGraph :: a -> ParserForestSet
 
 
 -- | (✔)
+instance Hashable GraphID where
+
+    hashWithSalt salt = hashWithSalt salt . show -- Lazy hash, should be fine
+
+
+-- | (✔)
+instance ParsedForest (DotGraph GraphID) where
+
+    unifyGraph dot = Just . pure . PhylogeneticForest . pure $ unfoldDAG f seed
+      where
+        (seed,_) = findMin cMapping
+        cMapping = dotChildMap  dot
+        pMapping = dotParentMap dot
+        
+        f x = (parents, marker, kids)
+           where
+            kids    = fmap (mempty &&& id) . toList $ cMapping ! x
+            parents = fmap (mempty &&& id) . toList $ pMapping ! x
+            marker
+              | null kids = Just $ toIdentifier x
+              | otherwise = Nothing
+
+
+-- | (✔)
 instance ParsedForest FastaParseResult where
+
     unifyGraph = const Nothing
 
 
 -- | (✔)
 instance ParsedForest FastcParseResult where
+
     unifyGraph = const Nothing
 
 
 -- | (✔)
 instance ParsedForest TaxonSequenceMap where
+
     unifyGraph = const Nothing
 
 
 -- | (✔)
 instance ParsedForest TCM where
+
     unifyGraph = const Nothing
 
 
 -- | (✔)
 instance ParsedForest Nexus where
+
     unifyGraph (Nexus _ forest) = unifyGraph =<< nonEmpty forest
 
 
 -- | (✔)
 instance ParsedForest (NonEmpty NewickForest) where
+
     unifyGraph = Just . fmap (PhylogeneticForest . fmap (coerceTree . relationMap . enumerate)) {- . (\x -> trace (unlines $ renderNewickForest <$> toList x) x) -}
       where
 
@@ -200,6 +236,7 @@ instance ParsedForest TntResult where
 {- -}
 -- | (✔)
 instance ParsedForest VER.VertexEdgeRoot where
+
     unifyGraph (VER vs es rs) = Just . pure . PhylogeneticForest . fmap convertToDAG . NE.fromList $ toList disconnectedRoots
       where
 
