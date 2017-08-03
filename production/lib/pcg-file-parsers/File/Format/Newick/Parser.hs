@@ -19,6 +19,7 @@ module File.Format.Newick.Parser where
 import Data.Char                   (isSpace)
 import Data.Functor                (void)
 import Data.List                   (intercalate)
+import Data.List.NonEmpty          (some1)
 import Data.Map             hiding (filter, foldl, foldr, null)
 import Data.Maybe                  (fromJust, fromMaybe, isJust)
 import Data.Proxy
@@ -48,7 +49,7 @@ newickExtendedDefinition = newickStandardDefinition >>= joinNonUniqueLabeledNode
 -- |
 -- Parses a stream producing a forest of extended Newick trees.
 newickForestDefinition :: (MonadParsec e s m, Token s ~ Char) => m NewickForest
-newickForestDefinition = whitespace *> symbol (char '<') *> nonEmpty newickExtendedDefinition <* symbol (char '>')
+newickForestDefinition = whitespace *> symbol (char '<') *> some1 newickExtendedDefinition <* symbol (char '>')
 
 
 -- |

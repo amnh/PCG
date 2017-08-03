@@ -41,6 +41,7 @@ library
                        -- >=0.5.8 Required for Data.Map.restrictKeys
                      , containers         >=0.5.8
                      , dlist
+                     , graphviz
                      , keys
                      , megaparsec         >=6.0.0
                      , parser-combinators >=0.2.0
@@ -49,6 +50,7 @@ library
                      , scientific
                      , semigroupoids
                      , split
+                     , text
                      , vector
 
   default-language:    Haskell2010
@@ -85,7 +87,8 @@ library
   hs-source-dirs:      
 
   -- Modules exported by the library.
-  exposed-modules:     File.Format.Fasta
+  exposed-modules:     File.Format.Dot
+                       File.Format.Fasta
                        File.Format.Fastc
                        File.Format.Newick
                        File.Format.Nexus

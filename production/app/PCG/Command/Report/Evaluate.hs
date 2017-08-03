@@ -14,12 +14,12 @@ module PCG.Command.Report.Evaluate
 --import           Bio.Graph
 import           Bio.Graph.PhylogeneticDAG
 import           Control.Monad.IO.Class
-import           Control.Monad.Logger
+--import           Control.Monad.Logger
 --import           Data.Foldable
 import           Data.List.NonEmpty
 import           PCG.Command.Report
 --import           PCG.Command.Report.DynamicCharacterTable
---import           PCG.Command.Report.GraphViz
+import           PCG.Command.Report.GraphViz
 --import           PCG.Command.Report.ImpliedAlignmentFasta
 --import           PCG.Command.Report.Internal
 --import           PCG.Command.Report.Metadata
@@ -39,7 +39,7 @@ evaluate (REPORT (ReportCommand format target)) old = do
        let op = case target of
                   OutputToStdout -> putStr
                   OutputToFile f -> writeFile f
-       in  old <* liftIO (op output) 
+       in  old <* liftIO (op output)
 
 evaluate _ _ = fail "Invalid READ command binding"
 
@@ -52,15 +52,21 @@ generateOutput :: DirectOptimizationPostOrderDecoration z a
                -> OutputFormat
                -> FileStreamContext
 -}
+{-
 generateOutput :: (Show c, Show t, ToXML c)
                => Either t c
                -> OutputFormat
                -> FileStreamContext
+-}
+generateOutput
+  :: GraphState
+  -> OutputFormat
+  -> FileStreamContext
 --generateOutput :: StandardSolution -> OutputFormat -> FileStreamContext
 --generateOutput g (CrossReferences fileNames)   = SingleStream $ taxonReferenceOutput g fileNames
 generateOutput g Data                       {} = SingleStream $ either show show g
 generateOutput g XML                        {} = SingleStream $ either show (ppTopElement . toXML) g
---generateOutput g DotFile                    {} = SingleStream $ dotOutput g
+generateOutput g DotFile                    {} = SingleStream $ generateDotFile g
 --generateOutput (Right g) DynamicTable               {} = SingleStream $ outputDynamicCharacterTablularData g
 --generateOutput g Metadata                   {} = SingleStream $ metadataCsvOutput g
 {-

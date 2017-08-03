@@ -20,14 +20,14 @@ module File.Format.TNT.Command.Cost where
 import Data.CaseInsensitive
 import Data.Foldable
 import Data.Functor             (($>))
-import Data.List.NonEmpty       (NonEmpty)
+import Data.List.NonEmpty       (NonEmpty, some1)
 import Data.Matrix.NotStupid    (Matrix,matrix)
 import Data.Maybe               (fromJust,fromMaybe)
 import Data.Vector              ((!))
 import File.Format.TNT.Internal
 import Text.Megaparsec
 import Text.Megaparsec.Char
-import Text.Megaparsec.Custom   (double, nonEmpty)
+import Text.Megaparsec.Custom   (double)
 
 
 -- |
@@ -65,7 +65,7 @@ costBody :: (MonadParsec e s m, Token s ~ Char) => m Cost
 costBody = do
       idx <- symbol characterIndicies
       _   <- symbol $ char '='
-      transitions <- nonEmpty costDefinition
+      transitions <- some1 costDefinition
       pure . Cost idx $ condenseToMatrix transitions
 
 
@@ -119,7 +119,7 @@ costDefinition = TransitionCost
     costStates = singleState <|> manyStates
       where
         singleState = pure <$> characterStateChar
-        manyStates  = between open close (nonEmpty characterStateChar)
+        manyStates  = between open close (some1 characterStateChar)
         open  = symbol $ char '['
         close = symbol $ char ']'
 

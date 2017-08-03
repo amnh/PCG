@@ -25,15 +25,18 @@ import           Data.Foldable
 import           Data.Key
 import           Data.List.NonEmpty        (NonEmpty(..))
 import qualified Data.List.NonEmpty as NE
-import           Data.Map                  (Map, insert, mergeWithKey)
+import           Data.Map                  (Map, fromSet, insert, keysSet, mergeWithKey)
 import qualified Data.Map           as M
 import           Data.Maybe
 import           Data.Monoid        hiding ((<>))
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
+import           Data.Set                  (Set)
+import qualified Data.Set           as S
 import           Data.Tree
 import qualified Data.Vector        as V
 import           Data.Vector.Instances()
+import           File.Format.Dot
 import           File.Format.Fasta
 import           File.Format.Fastc
 import           File.Format.Newick
@@ -80,6 +83,16 @@ type TaxonCharacters = Map String ParsedChars
 class ParsedCharacters a where
 
     unifyCharacters :: a -> TaxonCharacters
+
+
+-- | (✔)
+instance ParsedCharacters (DotGraph GraphID) where
+
+    unifyCharacters = fromSet (const mempty) . S.map toIdentifier . leafNodeSet
+      where
+        -- Get the set of all nodes with out degree 0.
+        leafNodeSet :: Ord n => DotGraph n -> Set n
+        leafNodeSet = keysSet . M.filter null . dotChildMap 
 
 
 -- | (✔)

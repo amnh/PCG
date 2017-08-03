@@ -22,16 +22,14 @@ module Bio.Graph
   , phylogeneticForests
   ) where
 
--- import Bio.Graph.Component
 import Bio.Graph.Forest
 import Bio.Graph.LeafSet
--- import Bio.Graph.Network
--- import Bio.Graph.Tree
 import           Control.Lens        hiding (Indexable)
+import           Data.Foldable
+import           Data.GraphViz.Printing hiding ((<>), indent) -- Seriously, why is this redefined?
 import           Data.Key
 import           Data.List
 import           Data.List.NonEmpty         (NonEmpty)
--- import qualified Data.List.NonEmpty  as NE
 import           Data.Semigroup
 import           Prelude             hiding (lookup)
 import           Text.XML.Custom
@@ -49,6 +47,17 @@ newtype PhylogeneticSolution a
 {-# INLINE phylogeneticForests #-}
 phylogeneticForests :: PhylogeneticSolution a -> NonEmpty (PhylogeneticForest a)
 phylogeneticForests (PhylogeneticSolution x) = x
+
+
+instance PrintDot a => PrintDot (PhylogeneticSolution a) where
+
+    unqtDot       = unqtListToDot . toList . phylogeneticForests
+
+    toDot         = listToDot . toList . phylogeneticForests
+
+    unqtListToDot = fmap mconcat . sequenceA . fmap unqtDot
+
+    listToDot     = fmap mconcat . sequenceA . fmap toDot
 
 
 instance Show a => Show (PhylogeneticSolution a) where

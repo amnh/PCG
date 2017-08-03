@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, MonoLocalBinds, MultiParamTypeClasses, ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, MonoLocalBinds, MultiParamTypeClasses, ScopedTypeVariables #-}
 
 module Bio.Graph.PhylogeneticDAG.Internal where
 
@@ -35,6 +35,7 @@ import           Control.Lens
 import           Data.Bits
 import           Data.EdgeLength
 import           Data.Foldable
+import           Data.GraphViz.Printing    hiding ((<>)) -- Seriously, why is this redefined?
 --import           Data.Hashable
 --import           Data.Hashable.Memoize
 import           Data.IntSet                      (IntSet)
@@ -86,10 +87,19 @@ type CharacterResult = PhylogeneticSolution CharacterDAG
 type Cost = Double
 
 
-type DecoratedCharacterResult = PhylogeneticSolution FinalDecorationDAG
-
-
 type EdgeReference = (Int, Int)
+
+
+type SearchState = EvaluationT IO GraphState
+
+
+type GraphState = Either TopologicalResult DecoratedCharacterResult
+
+
+type TopologicalResult = PhylogeneticSolution (ReferenceDAG () EdgeLength (Maybe String))
+
+
+type DecoratedCharacterResult = PhylogeneticSolution FinalDecorationDAG
 
 
 type FinalDecorationDAG =
@@ -125,12 +135,6 @@ type ReRootedEdgeContext u v w x y z =
    , ResolutionCache (CharacterSequence u v w x y z)
    , ResolutionCache (CharacterSequence u v w x y z)
    )
-
-
-type SearchState = EvaluationT IO (Either TopologicalResult DecoratedCharacterResult)
-
-
-type TopologicalResult = PhylogeneticSolution (ReferenceDAG () EdgeLength (Maybe String))
 
 
 type UnifiedCharacterBlock
@@ -180,6 +184,17 @@ instance HasLeafSet (PhylogeneticDAG2 e n u v w x y z) (LeafSet n) where
         where
             getter :: (PhylogeneticDAG2 e n u v w x y z) -> (LeafSet n)
             getter (PDAG2 e) = fmap nodeDecorationDatum2 $ e ^. leafSet
+
+
+instance Foldable f => PrintDot (PhylogeneticDAG2 e (f String) u v w x y z) where
+
+    unqtDot       = unqtDot . discardCharacters
+
+    toDot         = toDot . discardCharacters
+
+    unqtListToDot = unqtListToDot . fmap discardCharacters
+
+    listToDot     = listToDot . fmap discardCharacters
 
 
 instance ( Show e
@@ -372,3 +387,8 @@ renderSummary (PDAG2 dag) = unlines
 
 resolutionsDoNotOverlap :: ResolutionInformation a -> ResolutionInformation b -> Bool
 resolutionsDoNotOverlap x y = leafSetRepresentation x .&. leafSetRepresentation y == zeroBits
+
+
+discardCharacters :: PhylogeneticDAG2 e n u v w x y z -> ReferenceDAG () e n
+discardCharacters (PDAG2 x) = defaultMetadata $ nodeDecorationDatum2 <$> x
+

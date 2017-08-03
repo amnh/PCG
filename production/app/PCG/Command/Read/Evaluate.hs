@@ -37,6 +37,7 @@ import           Data.Text.IO                 (readFile)
 -- import           Data.Vector                  (Vector)
 -- import qualified Data.Vector           as V   (zipWith)
 import           Data.Void
+import           File.Format.Dot
 import           File.Format.Fasta   hiding   (FastaSequenceType(..))
 import qualified File.Format.Fasta   as Fasta (FastaSequenceType(..))
 import           File.Format.Fastc   hiding   (Identifier)
@@ -126,7 +127,7 @@ parseSpecifiedFile     (PrealignedFile x tcmRef) = do
       case tcmContent of
         Nothing              -> pure subContent
         Just (path, content) -> do
-          tcmMat <- hoistEither . first unparsable $ parse' tcmStreamParser path content
+          tcmMat <- hoistEither . first (unparsable content) $ parse' tcmStreamParser path content
           traverse (hoistEither . setTcm tcmMat path) subContent
 
 
@@ -155,7 +156,7 @@ fastaDNA spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedConten
     parse'' :: FileResult -> Either ReadError FracturedParseResult
     parse'' (path,content) = toFractured Nothing path <$> parseResult
       where
-        parseResult = {- (\x -> trace (show x) x) . -} first unparsable $ parse' combinator path content
+        parseResult = {- (\x -> trace (show x) x) . -} first (unparsable content) $ parse' combinator path content
         combinator  = (\x -> try (fastaStreamConverter Fasta.DNA x) <|> fastaStreamConverter Fasta.RNA x) =<< fastaStreamParser
 
 
@@ -166,7 +167,7 @@ fastaAminoAcid spec = getSpecifiedContent spec >>= (hoistEither . parseSpecified
     parse'' :: FileResult -> Either ReadError FracturedParseResult
     parse'' (path,content) = toFractured Nothing path <$> parseResult
       where
-        parseResult = first unparsable $ parse' combinator path content
+        parseResult = first (unparsable content) $ parse' combinator path content
         combinator  = fastaStreamConverter Fasta.AminoAcid =<< fastaStreamParser
 
 
@@ -183,14 +184,14 @@ parseCustomAlphabet spec = getSpecifiedContent spec >>= (hoistEither . parseSpec
           Just oldTCM -> setTcm oldTCM path =<< fracturedResult
       where
         fracturedResult = toFractured Nothing path <$> parseResult
-        parseResult     = first unparsable $ parse' fastcStreamParser path content
+        parseResult     = first (unparsable content) $ parse' fastcStreamParser path content
 
     parseSpecifiedContentWithTcm :: FileSpecificationContent -> Either ReadError [FracturedParseResult]
     parseSpecifiedContentWithTcm specContent = do
         tcmMay <-
           case tcmFile specContent of
             Nothing              -> pure Nothing
-            Just (path, content) -> bimap unparsable Just $ parse' tcmStreamParser path content
+            Just (path, content) -> bimap (unparsable content) Just $ parse' tcmStreamParser path content
         eitherValidation . fmap (parse'' tcmMay) $ dataFiles specContent
 
 {-
@@ -258,15 +259,18 @@ progressiveParse inputPath = do
                 case parse' verStreamParser filePath fileContent of
                   Right x    -> pure $ toFractured Nothing filePath x
                   Left  err4 ->
-                    case parse' tntStreamParser filePath fileContent of
+                    case dotParse fileContent of
                       Right x    -> pure $ toFractured Nothing filePath x
-                      Left  err5 ->
-                        case parse' nexusStreamParser filePath fileContent of
+                      Left  _ ->
+                        case parse' tntStreamParser filePath fileContent of
                           Right x    -> pure $ toFractured Nothing filePath x
-                          Left  err6 ->
-                            let previousErrors      = [(err1,"Fasta"),(err2,"Fasta"),(err3,"Newick tree"),(err4,"VER"),(err5,"Henning/TNT"),(err6,"Nexus")]
-                                (parseErr,_fileType) = maximumBy (comparing (farthestParseErr . fst)) previousErrors
-                            in  left $ unparsable parseErr
+                          Left  err5 ->
+                            case parse' nexusStreamParser filePath fileContent of
+                              Right x    -> pure $ toFractured Nothing filePath x
+                              Left  err6 ->
+                                let previousErrors      = [(err1,"Fasta"),(err2,"Fasta"),(err3,"Newick tree"),(err4,"VER"),(err5,"Henning/TNT"),(err6,"Nexus")]
+                                    (parseErr,_fileType) = maximumBy (comparing (farthestParseErr . fst)) previousErrors
+                                in  left $ unparsable fileContent parseErr
 {-
                                 fail $ mconcat [ "Could not parse '"
                                                , filePath

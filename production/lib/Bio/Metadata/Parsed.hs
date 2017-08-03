@@ -27,11 +27,12 @@ import           Data.Key
 import           Data.List                               (transpose)
 import           Data.List.NonEmpty                      (NonEmpty)
 import           Data.Monoid
-import           Data.TCM                                (TCM, TCMDiagnosis(..), TCMStructure(..), diagnoseTcm, )
+import           Data.TCM                                (TCM, TCMDiagnosis(..), TCMStructure(..), diagnoseTcm)
 import qualified Data.TCM                         as TCM
 import           Data.Vector                             (Vector)
 import qualified Data.Vector                      as V
 import           Data.Vector.Instances                   ()
+import           File.Format.Dot
 import           File.Format.Fasta                       (FastaParseResult,TaxonSequenceMap)
 import           File.Format.Fastc
 import           File.Format.Newick
@@ -43,10 +44,8 @@ import           File.Format.VertexEdgeRoot
 import           Prelude                          hiding (zip, zipWith)
 
 
--- import Debug.Trace
-
-
--- | An intermediate composite type for parse result coercion.
+-- |
+-- An intermediate composite type for parse result coercion.
 data ParsedCharacterMetadata
    = ParsedCharacterMetadata
    { alphabet      :: Alphabet String
@@ -58,11 +57,18 @@ data ParsedCharacterMetadata
    } deriving (Show)
 
 
--- | Represents a parser result type which can have a character metadata
---   structure extracted from it.
+-- |
+-- Represents a parser result type which can have a character metadata
+-- structure extracted from it.
 class ParsedMetadata a where
 
     unifyMetadata :: a -> Vector ParsedCharacterMetadata
+
+
+-- | (✔)
+instance ParsedMetadata (DotGraph n) where
+
+    unifyMetadata _ = mempty
 
 
 -- | (✔)
@@ -164,11 +170,6 @@ instance ParsedMetadata TNT.TntResult where
 -}
                           
 
-genAdditive, genFitch :: (Int, Int) -> Int
-genAdditive (i,j) = max i j - min i j
-genFitch    (i,j) = if i == j then 0 else 1
-
-
 -- | (✔)
 instance ParsedMetadata F.TCM where
     unifyMetadata (F.TCM alph mat) =
@@ -219,22 +220,8 @@ instance ParsedMetadata Nexus where
                     in  (fromIntegral coefficient * rationalWeight, Just (resultTCM, structure))
 
 
-
-disAlph, dnaAlph, aaAlph :: Vector String
--- | The acceptable DNA character values (with IUPAC codes).
-dnaAlph = V.fromList $ pure <$> addOtherCases "AGCTRMWSKTVDHBNX?-"
-
--- | The acceptable RNA character values (with IUPAC codes).
--- rnaAlph = V.fromList $ pure <$> addOtherCases "AGCURMWSKTVDHBNX?-"
-
--- | The acceptable amino acid/protein character values (with IUPAC codes).
-aaAlph  = V.fromList $ pure <$> addOtherCases "ABCDEFGHIKLMNPQRSTVWXYZ-"
-
--- | The acceptable discrete character values.
-disAlph = V.fromList $ pure <$> (['0'..'9'] <> ['A'..'Z'] <> ['a'..'z'] <> "-" <> "?")
-
-
--- | Adds case insensitive values to a 'String'.
+-- |
+-- Adds case insensitive values to a 'String'.
 addOtherCases :: String -> String
 addOtherCases [] = []
 addOtherCases (x:xs)
@@ -243,25 +230,8 @@ addOtherCases (x:xs)
   | otherwise = x : addOtherCases xs
 
 
--- | Functionality to make char info from tree seqs
-makeEncodeInfo :: TaxonCharacters -> Vector ParsedCharacterMetadata
-makeEncodeInfo = fmap makeOneInfo . developAlphabets
-
-
--- | Make a single info given an alphabet without state names
-makeOneInfo :: Alphabet String -> ParsedCharacterMetadata
-makeOneInfo alph =
-    ParsedCharacterMetadata
-    { alphabet      = alph
-    , characterName = ""
-    , weight        = 1
-    , parsedTCM     = Nothing 
-    , isDynamic     = True
-    , isIgnored     = False
-    }
-
-
--- | Internal function(s) to create alphabets
+-- |
+-- Internal function to create alphabets
 -- First is the new version. Following is the old version, which looks like it tosses the accumulator every once in a while.
 -- Notes on data types follow
 -- TreeChars :: Map String Maybe Vector [String]
@@ -276,3 +246,64 @@ developAlphabets = V.fromList . fmap (fromSymbols . foldMap f) . transpose . fma
     f (ParsedContinuousCharacter     _) = mempty
     f (ParsedDiscreteCharacter  static) = foldMap toList static
     f (ParsedDynamicCharacter  dynamic) = foldMap (foldMap toList) dynamic
+
+
+-- Alphabet values.
+-- TODO: Probably move to Data.Alphabet.Default at some point
+
+-- |
+-- The acceptable amino acid/protein character values (with IUPAC codes).
+aaAlph :: Vector String
+aaAlph  = V.fromList $ pure <$> addOtherCases "ABCDEFGHIKLMNPQRSTVWXYZ-"
+
+-- |
+-- The acceptable discrete character values.
+disAlph :: Vector String
+disAlph = V.fromList $ pure <$> (['0'..'9'] <> ['A'..'Z'] <> ['a'..'z'] <> "-" <> "?")
+
+
+-- |
+-- The acceptable DNA character values (with IUPAC codes).
+dnaAlph :: Vector String
+dnaAlph = V.fromList $ pure <$> addOtherCases "AGCTRMWSKTVDHBNX?-"
+
+
+{-
+-- |
+-- The acceptable RNA character values (with IUPAC codes).
+-- rnaAlph :: Vector String
+-- rnaAlph = V.fromList $ pure <$> addOtherCases "AGCURMWSKTVDHBNX?-"
+-}
+
+
+-- |
+-- Functionality to make char info from tree seqs
+makeEncodeInfo :: TaxonCharacters -> Vector ParsedCharacterMetadata
+makeEncodeInfo = fmap makeOneInfo . developAlphabets
+
+
+-- |
+-- Make a single info given an alphabet without state names
+makeOneInfo :: Alphabet String -> ParsedCharacterMetadata
+makeOneInfo alph =
+    ParsedCharacterMetadata
+    { alphabet      = alph
+    , characterName = ""
+    , weight        = 1
+    , parsedTCM     = Nothing 
+    , isDynamic     = True
+    , isIgnored     = False
+    }
+
+
+-- |
+-- Generate the norm metric function.
+genAdditive :: (Int, Int) -> Int
+genAdditive (i,j) = max i j - min i j
+
+
+-- |
+-- Generate the discrete metric function.
+genFitch :: (Int, Int) -> Int
+genFitch    (i,j) = if i == j then 0 else 1
+
