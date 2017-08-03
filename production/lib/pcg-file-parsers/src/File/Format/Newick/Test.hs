@@ -5,14 +5,15 @@ module File.Format.Newick.Test
   ( testSuite
   ) where
 
-import Data.Either.Combinators    (isRight,rightToMaybe)
+import Data.Either.Combinators    (rightToMaybe)
+import Data.Void
 import File.Format.Newick.Internal
 import File.Format.Newick.Parser
 import Test.Custom.Parse
-import Test.Tasty                 (TestTree,testGroup)
+import Test.Tasty                 (TestTree, testGroup)
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
-import Text.Megaparsec
+import Text.Megaparsec     hiding (failure)
 
 
 testSuite :: TestTree
@@ -102,7 +103,7 @@ newickLeaf' = testGroup "newickLeafDefinition'" [invariant]
     f (str,num) = validLabel ==> validLeaf
       where
         validLabel = parserSatisfies (newickLabelDefinition <* eof) str (const True)
-        labelValue = rightToMaybe $ parse (newickLabelDefinition <* eof :: Parsec Dec String String) "" str 
+        labelValue = rightToMaybe $ parse (newickLabelDefinition <* eof :: Parsec Void String String) "" str 
         validLeaf  = parserSatisfies newickLeafDefinition target (== NewickNode [] labelValue (Just num))
         target     = str ++ ":" ++ show num
 
