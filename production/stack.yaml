@@ -12,7 +12,7 @@ extra-deps:
 flags: {}
 
 ghc-options:
-  "*": -j
+  "*": -j -fdiagnostics-color=always
 
 local-bin-path: bin
 
