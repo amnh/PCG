@@ -211,6 +211,7 @@ Test-Suite unit-tests
                        File.Format.TNT.Internal
                        File.Format.TNT.Parser
                        File.Format.TNT.Partitioning
+                       File.Format.TNT.Test
                        File.Format.TransitionCostMatrix
                        File.Format.TransitionCostMatrix.Parser
                        File.Format.TransitionCostMatrix.Test
@@ -218,6 +219,7 @@ Test-Suite unit-tests
                        File.Format.VertexEdgeRoot.Parser
                        File.Format.VertexEdgeRoot.Test
                        Test.Custom.Parse
+                       Test.Custom.Types
                        Text.Megaparsec.Custom
                        Text.Megaparsec.Custom.Test
                        

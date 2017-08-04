@@ -6,11 +6,9 @@ module Test.Custom.Parse
   , parseSuccess
   , parserFalsifies
   , parserSatisfies
---  , module Test.Custom.Types
   ) where
 
 import Data.Void
---import Test.Custom.Types
 import Test.Tasty.HUnit
 import Text.Megaparsec       (Parsec, parse)
 import Text.Megaparsec.Error (parseErrorPretty)

@@ -4,14 +4,16 @@ module File.Format.TNT.Test
   ( testSuite
   ) where
 
-import           Control.Monad              (filterM,join)
+import           Control.Monad              (filterM, join)
+import           Data.Bifunctor
 import           Data.Char
-import           Data.Either.Combinators    (isLeft,isRight)
+import           Data.Either.Combinators    (isLeft, isRight)
 import           Data.Foldable
-import           Data.List                  (inits,nub)
+import           Data.List                  (inits, nub)
 import           Data.List.NonEmpty         (NonEmpty)
 import qualified Data.List.NonEmpty   as NE (fromList)
-import qualified Data.Map as M
+import qualified Data.Map             as M
+import           Data.Void
 import           Data.Semigroup
 import           File.Format.TNT.Parser
 import           File.Format.TNT.Command.CCode
@@ -21,10 +23,11 @@ import           File.Format.TNT.Command.TRead
 import           File.Format.TNT.Command.XRead
 import           File.Format.TNT.Internal
 import           Test.Custom.Parse
-import           Test.Tasty                 (TestTree,testGroup)
+import           Test.Custom.Types
+import           Test.Tasty                 (TestTree, testGroup)
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
-import           Text.Megaparsec            (eof, parse)
+import           Text.Megaparsec
 import           Text.Megaparsec.Char
 
 
@@ -48,22 +51,22 @@ internalCombinators = testGroup "General combinators used amongst TNT commands" 
         parsesInts = testProperty "Parses positive, signed Integer literals" f
           where
             f :: Int -> Bool
-            f x = (x >= 0) == isRight (parse (flexibleNonNegativeInt "") "" $ show x)
+            f x = (x >= 0) == isRight (parseInternal (flexibleNonNegativeInt "") $ show x)
         parsesIntegralDoubles = testProperty "Parses positive, signed integral valued Doubles" f
           where
             f :: Int -> Bool
-            f x = (x >= 0) == isRight (parse (flexibleNonNegativeInt "") "" $ show (fromIntegral x :: Double))
+            f x = (x >= 0) == isRight (parseInternal (flexibleNonNegativeInt "") $ show (fromIntegral x :: Double))
 
     flexiblePositiveInt' = testGroup "Positive Int parsed flexibly" [parsesInts, parsesIntegralDoubles]
       where
         parsesInts = testProperty "Parses positive, signed Integer literals" f
           where
             f :: Int -> Bool
-            f x = (x > 0) == isRight (parse (flexiblePositiveInt "") "" $ show x)
+            f x = (x > 0) == isRight (parseInternal (flexiblePositiveInt "") $ show x)
         parsesIntegralDoubles = testProperty "Parses positive, signed integral valued Doubles" f
           where
             f :: Int -> Bool
-            f x = (x > 0) == isRight (parse (flexiblePositiveInt "") "" $ show (fromIntegral x :: Double))
+            f x = (x > 0) == isRight (parseInternal (flexiblePositiveInt "") $ show (fromIntegral x :: Double))
 
     keyword' = testGroup "Kewords parsed flexibly" [prefixesMatching] 
       where
@@ -75,9 +78,9 @@ internalCombinators = testGroup "General combinators used amongst TNT commands" 
                 n               = getPositive pos
                 str             = getWordToken tok
                 propertyLogic x = matchesPadded x && failsOnDirty x
-                matchesPadded   = isRight . parse' . (<>" ")
-                failsOnDirty    = isLeft  . parse' . (<>"z")
-                parse'          = parse (keyword str n) ""
+                matchesPadded   = isRight . parseInternal' . (<>" ")
+                failsOnDirty    = isLeft  . parseInternal' . (<>"z")
+                parseInternal'  = parseInternal (keyword str n)
                 (req,rem)       = splitAt n str
                 targets         = (req<>) <$> inits rem
 
@@ -86,7 +89,7 @@ internalCombinators = testGroup "General combinators used amongst TNT commands" 
         parsesInts = testProperty "Parses non-negative, unsigned Integer literals" f
           where
             f :: Int -> Bool
-            f x = (x >= 0) == isRight (parse nonNegInt "" $ show x)
+            f x = (x >= 0) == (isRight . parseInternal nonNegInt . show) x
 
 
 testCommandCCode :: TestTree
@@ -271,13 +274,13 @@ testCommandProcedure = testGroup "PROCEDURE command tests" [shortProcedureHeader
     commandFile = testProperty "parses arbitrary command file reference" f
       where
          f :: NonEmptyList Char -> Bool
-         f x = isRight . parse procCommandFile "" $ fileName <> ";" 
+         f x = isRight . parseInternal procCommandFile $ fileName <> ";" 
            where fileName = takeWhile (not . isSpace) $ getNonEmpty x
 
     fastaFile = testProperty "parses arbitrary 'fasta' file reference" f
       where
          f :: NonEmptyList Char -> Bool
-         f x = isRight . parse procCommandFile "" $ "&" <> fileName <> ";" 
+         f x = isRight . parseInternal procCommandFile $ "&" <> fileName <> ";" 
            where fileName = takeWhile (not . isSpace) $ getNonEmpty x
 
 
@@ -294,21 +297,21 @@ testCommandTRead = testGroup "TREAD command tests" [treadHeader',treadLeaf',trea
         indexLeaf = testProperty "Index leaf format" f
           where
             f :: NonNegative Int -> Bool
-            f n = parse treadLeaf "" (show idx) == Right (Leaf (Index idx))
+            f n = parseInternal treadLeaf (show idx) == Right (Leaf (Index idx))
               where
                 idx = getNonNegative n
 
         prefixLeaf = testProperty "Prefix leaf format" f
           where
             f :: WordToken -> Bool
-            f tok = parse treadLeaf "" str == Right (Leaf (Prefix str))
+            f tok = parseInternal treadLeaf str == Right (Leaf (Prefix str))
               where
                 str = getWordToken tok <> "..."
 
         nameLeaf = testProperty "Name leaf format" f
           where
             f :: WordToken -> Bool
-            f tok = parse treadLeaf "" str == Right (Leaf (Name str))
+            f tok = parseInternal treadLeaf str == Right (Leaf (Name str))
               where
                 str = getWordToken tok
 
@@ -332,7 +335,7 @@ testCommandXRead = testGroup "XREAD command test" [xreadHeader',xreadDiscreteSeq
         possibleComment = testProperty "Possibly contains a comment" f
           where
             f :: NonEmptyList Char -> Bool
-            f x = isRight $ parse xreadHeader "" input
+            f x = isRight $ parseInternal xreadHeader input
               where
                 input   = "XREAD '" <> comment <> "'"
                 comment = filter (/= '\'') $ getNonEmpty x
@@ -342,7 +345,7 @@ testCommandXRead = testGroup "XREAD command test" [xreadHeader',xreadDiscreteSeq
         emptyAmbiguityGroup = testProperty "Fails to parse empty ambiguity group" f
           where
             f :: DiscreteCharacters -> Bool
-            f dcs = all isLeft $ parse discreteSequence "" <$> opts
+            f dcs = all isLeft $ parseInternal discreteSequence <$> opts
               where
                 str  = getDiscreteCharacters dcs
                 n    = length str
@@ -355,7 +358,7 @@ testCommandXRead = testGroup "XREAD command test" [xreadHeader',xreadDiscreteSeq
                        || any (`elem`    notAmbiguous) grp && all isLeft  res
               where
                 notAmbiguous = "-?"
-                res  = parse discreteSequence "" <$> opts
+                res  = parseInternal discreteSequence <$> opts
                 grp  = "[" <> nub (getDiscreteCharacters amb) <> "]"
                 str  = getDiscreteCharacters dcs
                 n    = length str
@@ -367,7 +370,7 @@ testCommandXRead = testGroup "XREAD command test" [xreadHeader',xreadDiscreteSeq
             f tok = all (`elem`    discreteStateValues) str && isRight res
                  || any (`notElem` discreteStateValues) str && isLeft  res
               where
-                res  = parse (discreteSequence <* eof) "" str
+                res  = parseInternal (discreteSequence <* eof) str
                 str  = getWordToken tok
 
     xreadDnaSequence = testGroup "XREAD dna sequence" [onlyDnaValues]
@@ -378,7 +381,7 @@ testCommandXRead = testGroup "XREAD command test" [xreadHeader',xreadDiscreteSeq
             f tok = all (`elem`    dnaStateValues) str && isRight res
                  || any (`notElem` dnaStateValues) str && isLeft  res
               where
-                res  = parse (dnaSequence <* eof) "" str
+                res  = parseInternal (dnaSequence <* eof) str
                 str  = getWordToken tok
 
     xreadProteinSequence = testGroup "XREAD protein sequence" [onlyProteinValues]
@@ -389,7 +392,7 @@ testCommandXRead = testGroup "XREAD command test" [xreadHeader',xreadDiscreteSeq
             f tok = (all (`elem`    proteinStateValues) str && isRight res)
                  || (any (`notElem` proteinStateValues) str && isLeft  res)
               where
-                res  = parse (proteinSequence <* eof) "" str
+                res  = parseInternal (proteinSequence <* eof) str
                 str  = getWordToken tok
         
         
@@ -406,3 +409,14 @@ getDiscreteCharacters (DC x) = toList x
 
 powerSet :: [a] -> [[a]]
 powerSet = filterM (const [False,True])
+
+
+parseInternal
+  :: ( LineToken (Token s)
+     , ShowToken (Token s)
+     , Stream s
+     )
+  => Parsec Void s a
+  -> s
+  -> Either String a
+parseInternal p s = first (parseErrorPretty' s) $ parse p "test-stream" s 
