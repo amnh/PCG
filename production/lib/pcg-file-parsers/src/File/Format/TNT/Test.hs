@@ -24,7 +24,8 @@ import           Test.Custom.Parse
 import           Test.Tasty                 (TestTree,testGroup)
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
-import           Text.Megaparsec            (char,eof,parse,string)
+import           Text.Megaparsec            (eof, parse)
+import           Text.Megaparsec.Char
 
 
 testSuite :: TestTree
