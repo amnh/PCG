@@ -92,9 +92,9 @@ library
                        File.Format.Fastc
                        File.Format.Newick
                        File.Format.Nexus
-                       File.Format.VertexEdgeRoot
                        File.Format.TNT
                        File.Format.TransitionCostMatrix
+                       File.Format.VertexEdgeRoot
 
   -- Modules included in this library but not exported.
   other-modules:       File.Format.TNT.Command.CCode
@@ -121,7 +121,7 @@ library
                        File.Format.VertexEdgeRoot.Parser
                        Text.Megaparsec.Custom
                        
-Test-Suite testsuite
+Test-Suite unit-tests
 
   type:                exitcode-stdio-1.0
 
@@ -131,7 +131,6 @@ Test-Suite testsuite
                      , case-insensitive
                        -- >=0.5.8 Required for Data.Map.restrictKeys
                      , containers         >=0.5.8
-                     , directory
                      , dlist
                      , either
                      , graphviz
@@ -218,14 +217,105 @@ Test-Suite testsuite
                        File.Format.VertexEdgeRoot
                        File.Format.VertexEdgeRoot.Parser
                        File.Format.VertexEdgeRoot.Test
---                       Test.Custom
---                       Test.Custom.Constructions
-                       Test.Custom.Types
---                       Test.Custom.Tree
---                       Test.Custom.Tree.Test
                        Test.Custom.Parse
---                       Test.QuickCheck.Arbitrary.Instances
---                       TestSuite.ExecutableTests
+                       Text.Megaparsec.Custom
+                       Text.Megaparsec.Custom.Test
+                       
+                       
+Test-Suite file-tests
+
+  type:                exitcode-stdio-1.0
+
+  main-is:             FileTests.hs
+
+  build-depends:       base               >=4.8
+                     , case-insensitive
+                       -- >=0.5.8 Required for Data.Map.restrictKeys
+                     , containers         >=0.5.8
+                     , directory
+                     , dlist
+                     , either
+                     , graphviz
+                     , keys
+                     , megaparsec         >=6.0.0
+                     , parser-combinators >=0.2.0
+                     , pcg-file-parsers
+                     , pcg-utility
+                     , safe
+                     , scientific
+                     , semigroupoids
+                     , smallcheck
+                     , split
+                     , tasty
+                     , tasty-hunit
+                     , tasty-quickcheck
+                     , tasty-smallcheck
+                     , text
+                     , vector
+
+  default-language:    Haskell2010
+
+  hs-source-dirs:      src test
+
+  ghc-options:         -O2
+                       -g
+                       -debug -optl-static
+                    -- Turns on *almost* all warnings
+                       -Wall
+                    -- Checks for future compatibility with predicted language changes
+                       -Wcompat
+                       -fwarn-dodgy-foreign-imports
+                       -fwarn-duplicate-exports
+                       -fwarn-incomplete-patterns
+                       -fwarn-incomplete-record-updates
+                       -fwarn-missing-fields
+                       -fwarn-missing-monadfail-instances
+                       -fwarn-missing-signatures
+--                       -fwarn-mrp-compat
+                       -fwarn-overlapping-patterns
+-- We comment out -fwarn-redundant-constraints so that we don't see the litany
+-- of erroneous 'Redundant constraint: TypeFunction ParameterType ~ OtherType'
+-- warnings. Maybe someday we can add this useful warning back when GHC is a bit
+-- smarter in a newer version.
+--                       -fwarn-redundant-constraints
+                       -fwarn-tabs
+                       -fwarn-unrecognised-warning-flags
+                       -fwarn-unused-binds
+                       -fwarn-unused-do-bind
+                       -fwarn-unused-imports
+                       -fwarn-unused-matches
+                       -Wincomplete-uni-patterns
+
+  other-modules:       File.Format.Fasta
+                       File.Format.Fasta.Converter
+                       File.Format.Fasta.Internal
+                       File.Format.Fasta.Parser
+                       File.Format.Fastc
+                       File.Format.Fastc.Parser
+                       File.Format.Newick
+                       File.Format.Newick.Internal
+                       File.Format.Newick.Parser
+                       File.Format.Nexus
+                       File.Format.Nexus.Data
+                       File.Format.Nexus.Parser
+                       File.Format.Nexus.Partition
+                       File.Format.Nexus.Validate
+                       File.Format.TNT
+                       File.Format.TNT.Command.CCode
+                       File.Format.TNT.Command.CNames
+                       File.Format.TNT.Command.Cost
+                       File.Format.TNT.Command.NStates
+                       File.Format.TNT.Command.Procedure
+                       File.Format.TNT.Command.TRead
+                       File.Format.TNT.Command.XRead
+                       File.Format.TNT.Internal
+                       File.Format.TNT.Parser
+                       File.Format.TNT.Partitioning
+                       File.Format.TransitionCostMatrix
+                       File.Format.TransitionCostMatrix.Parser
+                       File.Format.VertexEdgeRoot
+                       File.Format.VertexEdgeRoot.Parser
+                       Test.Custom.Parse
                        TestSuite.GeneratedTests
                        TestSuite.GeneratedTests.Fasta
                        TestSuite.GeneratedTests.Fastc
@@ -233,4 +323,4 @@ Test-Suite testsuite
                        TestSuite.GeneratedTests.Nexus
                        TestSuite.GeneratedTests.TNT
                        Text.Megaparsec.Custom
-                       Text.Megaparsec.Custom.Test
+
