@@ -17,6 +17,7 @@ module PCG.Command.Report
   ( ReportCommand(..)
   , OutputFormat(..)
   , OutputTarget(..)
+  , FileWriteMethod(..)
   , reportCommandSpecification
   ) where
 
@@ -53,7 +54,12 @@ data  OutputTarget
     deriving (Show)
 
 
-data FileWritingMethod = Append | Overwrite deriving (Eq,Show)
+-- |
+-- Defines the writing mode for how files should be written to disk.
+data  FileWriteMethod
+    = Append
+    | Overwrite
+    deriving (Eq, Show)
 
 
 -- |
@@ -86,4 +92,8 @@ outputFormat = choiceFrom [ dataFormat, dotFormat, xmlFormat ]
     dotFormat  = choiceFrom [value "dot", value "graphviz"]  $> DotFile
 
 
-fileWriteMethod = choiceFrom [ value "overwrite" $> Overwrite, value "append" $> Append ] `withDefault` Append
+fileWriteMethod :: Ap SyntacticArgument FileWriteMethod
+fileWriteMethod = choiceFrom
+    [ value "overwrite" $> Overwrite
+    , value "append"    $> Append
+    ] `withDefault` Append
