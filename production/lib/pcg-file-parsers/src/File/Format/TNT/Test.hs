@@ -4,7 +4,7 @@ module File.Format.TNT.Test
   ( testSuite
   ) where
 
-import           Control.Monad              (filterM, join)
+import           Control.Monad              (filterM)
 import           Data.Bifunctor
 import           Data.Char
 import           Data.Either.Combinators    (isLeft, isRight)
@@ -12,10 +12,8 @@ import           Data.Foldable
 import           Data.List                  (inits, nub)
 import           Data.List.NonEmpty         (NonEmpty)
 import qualified Data.List.NonEmpty   as NE (fromList)
-import qualified Data.Map             as M
 import           Data.Void
 import           Data.Semigroup
-import           File.Format.TNT.Parser
 import           File.Format.TNT.Command.CCode
 import           File.Format.TNT.Command.CNames
 import           File.Format.TNT.Command.Procedure
@@ -28,7 +26,6 @@ import           Test.Tasty                 (TestTree, testGroup)
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 import           Text.Megaparsec
-import           Text.Megaparsec.Char
 
 
 testSuite :: TestTree
@@ -81,8 +78,8 @@ internalCombinators = testGroup "General combinators used amongst TNT commands" 
                 matchesPadded   = isRight . parseInternal' . (<>" ")
                 failsOnDirty    = isLeft  . parseInternal' . (<>"z")
                 parseInternal'  = parseInternal (keyword str n)
-                (req,rem)       = splitAt n str
-                targets         = (req<>) <$> inits rem
+                (req,remaining) = splitAt n str
+                targets         = (req<>) <$> inits remaining
 
     nonNegInt'  = testGroup "Non-negative Int without flexibility" [parsesInts]
       where
@@ -201,7 +198,7 @@ testCommandCCode = testGroup "CCODE command tests" [ccodeHeader',ccodeIndicies',
     ccodeExamples = testGroup "Example CCODE commands" $ testExample <$> examples
       where
         testExample (desc,str) = testCase desc $ parseSuccess ccodeCommand str
-        examples = zip [ "CCODE example command #" <> show x | x <- [1..] ]
+        examples = zip [ "CCODE example command #" <> show x | x <- [(1::Int)..] ]
             [ "cc (.) ;"
             , "cc - 0.96;"
             , "cc - 0.1317;"
@@ -404,6 +401,7 @@ instance Arbitrary DiscreteCharacters where
     arbitrary = fmap (DC . NE.fromList) . listOf1 . elements $ toList discreteStateValues
 
 
+getDiscreteCharacters :: DiscreteCharacters -> [Char]
 getDiscreteCharacters (DC x) = toList x
 
 
