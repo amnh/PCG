@@ -49,8 +49,11 @@ data  OutputFormat
 -- Where the output stream should be directed.
 data  OutputTarget
     = OutputToStdout
-    | OutputToFile FilePath
+    | OutputToFile FilePath FileWriteMethod
     deriving (Show)
+
+
+data FileWritingMethod = Append | Overwrite deriving (Eq,Show)
 
 
 -- |
@@ -72,7 +75,7 @@ outputTarget :: Ap SyntacticArgument OutputTarget
 outputTarget = choiceFrom [ stdout, toFile ] `withDefault` OutputToStdout
   where
     stdout = value "stdout" $> OutputToStdout
-    toFile = OutputToFile <$> text  
+    toFile = OutputToFile <$> text <*> fileWriteMethod
 
 
 outputFormat :: Ap SyntacticArgument OutputFormat
@@ -81,3 +84,6 @@ outputFormat = choiceFrom [ dataFormat, dotFormat, xmlFormat ]
     dataFormat = value "data" $> Data
     xmlFormat  = value "xml"  $> XML
     dotFormat  = choiceFrom [value "dot", value "graphviz"]  $> DotFile
+
+
+fileWriteMethod = choiceFrom [ value "overwrite" $> Overwrite, value "append" $> Append ] `withDefault` Append
