@@ -223,10 +223,8 @@ Test-Suite unit-tests
                        Text.Megaparsec.Custom
                        Text.Megaparsec.Custom.Test
                        
-                       
-Test-Suite file-tests
 
-  type:                exitcode-stdio-1.0
+Executable file-tests
 
   main-is:             FileTests.hs
 
