@@ -271,7 +271,7 @@ library
                        Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
                        Bio.Graph.PhylogeneticDAG.Postorder
                        Bio.Graph.PhylogeneticDAG.Preorder
-                       Bio.Graph.PhylogeneticDAG.Riefication
+                       Bio.Graph.PhylogeneticDAG.Reification
                        Bio.Graph.ZipperDAG.Internal
                        Bio.Sequence.Internal
                        Bio.Sequence.Block.Builder

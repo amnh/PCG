@@ -18,7 +18,7 @@ import Bio.Character.Encodable
 import Bio.Character.Decoration.Dynamic
 import Bio.Sequence
 import Bio.Graph
-import Bio.Graph.PhylogeneticDAG
+-- import Bio.Graph.PhylogeneticDAG
 import Bio.Graph.Node
 import Bio.Graph.ReferenceDAG
 import Control.Lens
@@ -31,7 +31,7 @@ import qualified Data.List.NonEmpty as NE
 -- |
 -- Outputs tabluar data of the first dynamic character of the first network in
 -- the first forest of the solution.
-outputDynamicCharacterTablularData 
+outputDynamicCharacterTablularData
 --  :: DirectOptimizationDecoration z a
   :: DirectOptimizationPostOrderDecoration z a
   => PhylogeneticSolution (PhylogeneticDAG e n u v w x y z)
@@ -50,7 +50,7 @@ generateTabularData (PDAG dag) = header <> nodeFoldMap f dag
     f node =
       case take 1 . foldMap (toList . dynamicCharacters) . toBlocks $ sequenceDecoration node of
         []  -> "No Dynamic Characters!\n"
-        x:_ -> let alphabet           = x ^. characterAlphabet  
+        x:_ -> let alphabet           = x ^. characterAlphabet
                    localCost          = show $ x ^. characterLocalCost
                    subTreeCost        = show $ x ^. characterCost
                    preliminaryMedians = showStream alphabet $ x ^. preliminaryUngapped

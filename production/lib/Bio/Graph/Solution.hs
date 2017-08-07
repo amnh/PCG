@@ -96,7 +96,7 @@ instance (HasLeafSet s (LeafSet a), PrintDot s, ToXML a, ToXML s) => ToXML (Phyl
             attrs          = []
             forestContents = [ Right leaves
                              , Right graphRepresentations
-                             -- , character metadata here
+                             -- , Right characterMetadata
                              , Right $ collapseElemList "Final_graph" attrs forests
                              ]
 
@@ -112,14 +112,14 @@ instance (HasLeafSet s (LeafSet a), PrintDot s, ToXML a, ToXML s) => ToXML (Phyl
 
             getDOT :: PrintDot a => PhylogeneticSolution a -> String
             getDOT = L.unpack . renderDot . toDot
-{-
-            characterMeta    = xmlElement "Character_metadata" attrs metadataContents
-            metadataContents = Right $ toXML arbitraryCharSeq
 
-            arbitraryCharSeq = characterSequence . NE.head . resolutions . nodeDecoration $ arbitraryNode
-                where
-                    arbitraryNode = references arbitraryRefDAG ! arbitraryRootRef
-                    (PDAG2 arbitraryRefDAG) = NE.head . toNonEmpty $ NE.head forests
-                    arbitraryRootRef        = NE.head $ rootRefs arbitraryRefDAG
-                    -}
+            -- characterMetadata = xmlElement "Character_metadata" attrs metadataContents
+            -- metadataContents  = [Right $ toXML arbitraryCharSeq]
+
+            -- arbitraryCharSeq  = characterSequence . NE.head . resolutions . nodeDecoration $ arbitraryNode
+            --     where
+            --         arbitraryNode = references arbitraryRefDAG ! arbitraryRootRef
+            --         (PDAG2 arbitraryRefDAG) = NE.head . toNonEmpty $ NE.head forests
+            --         arbitraryRootRef        = NE.head $ rootRefs arbitraryRefDAG
+
 

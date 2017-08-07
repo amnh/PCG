@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Graph.PhylogeneticDAG.Riefication
+-- Module      :  Bio.Graph.PhylogeneticDAG.Reification
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -14,9 +14,9 @@
 
 {-# LANGUAGE FlexibleContexts #-}
 
-module Bio.Graph.PhylogeneticDAG.Riefication
-  ( riefiedSolution
-  , riefiedToCharacterDAG
+module Bio.Graph.PhylogeneticDAG.Reification
+  ( reifiedSolution
+  , reifiedToCharacterDAG
   ) where
 
 import           Bio.Graph.Constructions
@@ -42,15 +42,15 @@ import           Prelude            hiding (zipWith)
 -- |
 -- Riefies a solution, performing several initialization functions on each DAG
 -- before it's cost can be calculated.
-riefiedSolution :: PhylogeneticSolution UnRiefiedCharacterDAG -> CharacterResult
-riefiedSolution  = PhylogeneticSolution . fmap (fmap riefiedToCharacterDAG) . phylogeneticForests
+reifiedSolution :: PhylogeneticSolution UnRiefiedCharacterDAG -> CharacterResult
+reifiedSolution  = PhylogeneticSolution . fmap (fmap reifiedToCharacterDAG) . phylogeneticForests
 
 
 -- |
 -- Riefies a particular DAg so it has the requisite context for a post-order
 -- traversal.
-riefiedToCharacterDAG :: UnRiefiedCharacterDAG -> CharacterDAG
-riefiedToCharacterDAG (PDAG dag) = PDAG2
+reifiedToCharacterDAG :: UnRiefiedCharacterDAG -> CharacterDAG
+reifiedToCharacterDAG (PDAG dag) = PDAG2
     RefDAG
     { references = newRefs
     , rootRefs   = rootRefs  dag

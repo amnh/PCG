@@ -41,8 +41,8 @@ module Bio.Graph
   , preorderFromRooting
   , preorderSequence'
   , renderSummary
-  , riefiedSolution
-  , riefiedToCharacterDAG
+  , reifiedSolution
+  , reifiedToCharacterDAG
   , rootCosts
   , phylogeneticForests
   -- * Mapping over networks
@@ -67,7 +67,7 @@ import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
 import           Bio.Graph.PhylogeneticDAG.Postorder
 import           Bio.Graph.PhylogeneticDAG.Preorder
-import           Bio.Graph.PhylogeneticDAG.Riefication
+import           Bio.Graph.PhylogeneticDAG.Reification
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Graph.Solution
 import           Data.Key
