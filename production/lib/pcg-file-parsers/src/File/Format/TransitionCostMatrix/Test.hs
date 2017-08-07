@@ -6,7 +6,7 @@ module File.Format.TransitionCostMatrix.Test
   ) where
 
 
-import Data.Alphabet
+--import Data.Alphabet
 import Data.Foldable                           (toList)
 import Data.List.NonEmpty                      (fromList)
 import File.Format.TransitionCostMatrix.Parser

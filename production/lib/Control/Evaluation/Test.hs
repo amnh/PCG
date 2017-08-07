@@ -1,8 +1,11 @@
-{-# ANN module "HLint: error Functor law" #-}
+-- |
+-- This is where some tests are
 
 {-# LANGUAGE AllowAmbiguousTypes, ViewPatterns #-}
 
-module Control.Evaluation.Test where
+module Control.Evaluation.Test
+  ( testSuite
+  ) where
 
 import Control.Evaluation.Unit
 import Control.Evaluation.Internal

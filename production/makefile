@@ -16,8 +16,8 @@ profiling     = --executable-profiling --library-profiling
 
 
 # Default build target
-#all: standard-build copy-haddock
-all: stack-build-profiling
+all: standard-build copy-haddock
+#all: stack-build-profiling
 
 # Rebuilds with profiling
 prof: stack-build-profiling

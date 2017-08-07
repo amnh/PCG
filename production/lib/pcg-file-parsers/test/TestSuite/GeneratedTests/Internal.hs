@@ -1,4 +1,5 @@
 {-# LANGUAGE DoAndIfThenElse #-}
+
 module TestSuite.GeneratedTests.Internal where
 
 import Control.Arrow    ((&&&))
@@ -11,9 +12,9 @@ getFileContentsInDirectory path = do
     exists <- doesDirectoryExist path
     if not exists
     then pure mempty
-    else (do
+    else do
       files  <- filter isFile <$> getDirectoryContents path
-      sequence . fromList $ (id &&& readFile) . withPath <$> files)
+      sequence . fromList $ (id &&& readFile) . withPath <$> files
   where
     isFile = not . all (=='.')
     withPath file = if last path /= '/'

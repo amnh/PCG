@@ -5,14 +5,16 @@ module File.Format.Newick.Test
   ( testSuite
   ) where
 
-import Data.Either.Combinators    (isRight,rightToMaybe)
+import Data.Either.Combinators    (rightToMaybe)
+import Data.Semigroup
+import Data.Void
 import File.Format.Newick.Internal
 import File.Format.Newick.Parser
 import Test.Custom.Parse
-import Test.Tasty                 (TestTree,testGroup)
+import Test.Tasty                 (TestTree, testGroup)
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
-import Text.Megaparsec
+import Text.Megaparsec     hiding (failure)
 
 
 testSuite :: TestTree
@@ -45,7 +47,7 @@ invalidUnquotedLabels =
         ,  c    <- requiresQuotedLabelChars
         ,  i    <- [length e `div` 2]
         , (x,y) <- [i `splitAt` e]
-        ,  r    <- [x++[c]++y]
+        ,  r    <- [x<>[c]<>y]
     ]
 
 
@@ -68,22 +70,23 @@ quotedLabel' = testGroup "quotedLabel" [validSpecialChars,validEscaping,validEnd
 
     validSpecialLabels  =
         [ (r,s) | r <- filter ('\''`notElem`) invalidUnquotedLabels
-                , s <- ["'"++r++"'"]
+                , s <- ["'"<>r<>"'"]
         ]
 
     validEscapedLabels =
         [ (r,s) |  e    <- validUnquotedLabels
                 ,  i    <- [length e `div` 2]
                 , (x,y) <- [i `splitAt` e]
-                ,  r    <- [x ++"'"++ y]
-                ,  s    <- ["'"++x++"''"++y++"'"]
+                ,  r    <- [x <>"'"<> y]
+                ,  s    <- ["'"<>x<>"''"<>y<>"'"]
         ]
 
     enquotedInvariant :: TestTree
     enquotedInvariant = testProperty "Unquoted label ==> quoted label invariant" f 
       where
         f :: String -> Property
-        f x = parserSatisfies unquotedLabel x (const True) ==> parserSatisfies (quotedLabel <* eof) ("'"++x++"'") (const True)
+        f x = parserSatisfies (unquotedLabel <* eof)       x       (const True) ==>
+              parserSatisfies (  quotedLabel <* eof) ("'"<>x<>"'") (const True)
 
 
 newickBranchLength' :: TestTree
@@ -102,9 +105,9 @@ newickLeaf' = testGroup "newickLeafDefinition'" [invariant]
     f (str,num) = validLabel ==> validLeaf
       where
         validLabel = parserSatisfies (newickLabelDefinition <* eof) str (const True)
-        labelValue = rightToMaybe $ parse (newickLabelDefinition <* eof :: Parsec Dec String String) "" str 
+        labelValue = rightToMaybe $ parse (newickLabelDefinition <* eof :: Parsec Void String String) "" str 
         validLeaf  = parserSatisfies newickLeafDefinition target (== NewickNode [] labelValue (Just num))
-        target     = str ++ ":" ++ show num
+        target     = str <> ":" <> show num
 
     
 descendantList' :: TestTree

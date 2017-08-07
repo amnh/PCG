@@ -8,6 +8,7 @@ module File.Format.Fasta.Test
 import Control.Arrow              (second)
 import Data.Char                  (isSpace)
 import Data.Maybe                 (fromMaybe)
+import Data.Semigroup
 import File.Format.Fasta.Internal
 import File.Format.Fasta.Parser
 import Safe                       (headMay)
@@ -15,7 +16,7 @@ import Test.Custom.Parse          (parseEquals,parseFailure,parserSatisfies)
 import Test.Tasty                 (TestTree,testGroup)
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
-import Text.Megaparsec            (parse,eof)
+import Text.Megaparsec            (eof)
 
 
 testSuite :: TestTree
