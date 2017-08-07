@@ -33,7 +33,7 @@ cabal-version:       >= 1.22
 
 flag build-cpp-files
   description: Toggles the C++ files being successfully build.
-  default: True
+  default: False
 
 
 library
@@ -67,7 +67,9 @@ library
                      , QuickCheck
                      , scientific
                      , semigroupoids
-                     , semigroups
+                     -- required for Data.Semigroup.Foldable.toNonEmpty
+                     , semigroups         >=5.2.1
+                     , text
                      , transformers
                      , unordered-containers
                      , vector
@@ -187,6 +189,7 @@ library
                        Bio.Graph.PhylogeneticDAG
                        Bio.Graph.ReferenceDAG
                        Bio.Graph.ReferenceDAG.Internal
+                       Bio.Graph.Solution
                        Bio.Graph.ZipperDAG
                        Control.Evaluation
                        Control.Parallel.Custom
@@ -258,6 +261,7 @@ library
                        Bio.Metadata.DiscreteWithTCM.Internal
                        Bio.Metadata.Dynamic.Class
                        Bio.Metadata.Dynamic.Internal
+                       Bio.Graph.Constructions
                        Bio.Graph.Forest
                        Bio.Graph.Node.Class
                        Bio.Graph.Node.Internal

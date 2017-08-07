@@ -16,21 +16,13 @@
 
 module Bio.Graph.PhylogeneticDAG.Internal where
 
-import           Bio.Character
-import           Bio.Character.Decoration.Additive
-import           Bio.Character.Decoration.Continuous
-import           Bio.Character.Decoration.Discrete
-import           Bio.Character.Decoration.Dynamic
-import           Bio.Character.Decoration.Fitch
-import           Bio.Character.Decoration.Metric
-import           Bio.Graph
+-- import           Bio.Graph
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
 import           Bio.Sequence.Block               (CharacterBlock)
 import           Control.Applicative              (liftA2)
-import           Control.Evaluation
 import           Control.Lens
 import           Data.Bits
 import           Data.EdgeLength
@@ -69,113 +61,7 @@ data PhylogeneticDAG2 e n u v w x y z
              )
 
 
-type CharacterDAG =
-       PhylogeneticDAG2
-         EdgeLength
-         (Maybe String)
-         UnifiedContinuousCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDynamicCharacter
-
-
-type CharacterResult = PhylogeneticSolution CharacterDAG
-
-
-type Cost = Double
-
-
 type EdgeReference = (Int, Int)
-
-
-type SearchState = EvaluationT IO GraphState
-
-
-type GraphState = Either TopologicalResult DecoratedCharacterResult
-
-
-type TopologicalResult = PhylogeneticSolution (ReferenceDAG () EdgeLength (Maybe String))
-
-
-type DecoratedCharacterResult = PhylogeneticSolution FinalDecorationDAG
-
-
-type FinalDecorationDAG =
-       PhylogeneticDAG2
-         EdgeLength
-         (Maybe String)
-         (ContinuousOptimizationDecoration ContinuousChar)
-         (FitchOptimizationDecoration   StaticCharacter)
-         (AdditiveOptimizationDecoration StaticCharacter)
-         (SankoffOptimizationDecoration StaticCharacter)
-         (SankoffOptimizationDecoration StaticCharacter)
-         (DynamicDecorationDirectOptimization DynamicChar)
---         (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
-
-
-type IncidentEdges = [EdgeReference]
-
-
-type PostOrderDecorationDAG =
-       PhylogeneticDAG2
-         EdgeLength
-         (Maybe String)
-         (ContinuousPostorderDecoration  ContinuousChar)
-         (FitchOptimizationDecoration   StaticCharacter)
-         (AdditivePostorderDecoration   StaticCharacter)
-         (SankoffOptimizationDecoration StaticCharacter)
-         (SankoffOptimizationDecoration StaticCharacter)
-         (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
-
-
-type ReRootedEdgeContext u v w x y z =
-   ( ResolutionCache (CharacterSequence u v w x y z)
-   , ResolutionCache (CharacterSequence u v w x y z)
-   , ResolutionCache (CharacterSequence u v w x y z)
-   )
-
-
-type UnifiedCharacterBlock
-     = CharacterBlock
-         UnifiedContinuousCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDynamicCharacter
-
-
-type UnifiedCharacterSequence
-     = CharacterSequence
-         UnifiedContinuousCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDynamicCharacter
-
-
-type UnifiedContinuousCharacter = Maybe (ContinuousDecorationInitial ContinuousChar)
-
-
-type UnifiedDiscreteCharacter   = Maybe (DiscreteDecoration StaticCharacter)
-
-
-type UnifiedDynamicCharacter    = Maybe (DynamicDecorationInitial DynamicChar)
-
-
-type UnRiefiedCharacterDAG =
-       PhylogeneticDAG
-         EdgeLength
-         (Maybe String)
-         UnifiedContinuousCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDynamicCharacter
 
 
 instance HasLeafSet (PhylogeneticDAG2 e n u v w x y z) (LeafSet n) where

@@ -26,7 +26,6 @@ import Bio.Character
 import Bio.Character.Decoration.Additive
 import Bio.Character.Decoration.Dynamic
 import Bio.Graph
-import Bio.Graph.PhylogeneticDAG
 import Control.Lens
 import Data.MonoTraversable (Element)
 import Prelude       hiding (lookup, zip, zipWith)
@@ -114,14 +113,14 @@ initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ f
     performDecoration :: CharacterDAG -> FinalDecorationDAG
     performDecoration x = performPreOrderDecoration performPostOrderDecoration
       where
-    
+
         performPreOrderDecoration :: PostOrderDecorationDAG -> FinalDecorationDAG
         performPreOrderDecoration =
             preorderFromRooting
               adaptiveDirectOptimizationPreOrder
               edgeCostMapping
               contextualNodeDatum
-              
+
             . preorderSequence'
               additivePreOrder
               fitchPreOrder
@@ -133,10 +132,10 @@ initializeDecorations2 (PhylogeneticSolution forests) = PhylogeneticSolution $ f
             adaptiveDirectOptimizationPreOrder dec kidDecs = directOptimizationPreOrder pairwiseAlignmentFunction dec kidDecs
               where
                 pairwiseAlignmentFunction = chooseDirectOptimizationComparison2 dec kidDecs
-    
+
         performPostOrderDecoration :: PostOrderDecorationDAG
         performPostOrderDecoration = assignPunitiveNetworkEdgeCost post
-        
+
         (post, edgeCostMapping, contextualNodeDatum) =
              assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostOrder
              . postorderSequence'

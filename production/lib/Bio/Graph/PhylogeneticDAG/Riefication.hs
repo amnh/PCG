@@ -19,10 +19,11 @@ module Bio.Graph.PhylogeneticDAG.Riefication
   , riefiedToCharacterDAG
   ) where
 
-import           Bio.Graph
+import           Bio.Graph.Constructions
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
+import           Bio.Graph.Solution
 import           Control.Lens
 import           Control.Monad.State.Lazy
 import           Data.Bits
@@ -90,7 +91,7 @@ riefiedToCharacterDAG (PDAG dag) = PDAG2
                 , subtreeRepresentation = ns
                 , characterSequence     = sequenceDecoration $ nodeDecoration indexData
                 }
-            
+
             (bv, ns) =
               case buildLeafNodeAssignments ! i of
                 Just n  -> ( leafCount `singletonSubtreeLeafSet` n

@@ -82,6 +82,16 @@ data  GraphData d
     }
 
 
+-- | This will be used below to print the node type to XML.
+data NodeClassification
+    = NodeClassification
+    | LeafNode
+    | NetworkNode
+    | RootNode
+    | TreeNode
+   deriving (Eq, Show)
+
+
 -- |
 -- A reference to a node within the 'ReferenceDAG'.
 newtype NodeRef = NR Int deriving (Eq, Enum)
@@ -205,7 +215,7 @@ instance PhylogeneticTree (ReferenceDAG d e n) NodeRef e n where
 instance Foldable f => PrintDot (ReferenceDAG d e (f String)) where
 
     unqtDot = unqtDot . uncurry mkGraph . getDotContext
-    
+
     toDot = toDot . uncurry mkGraph . getDotContext
 
     unqtListToDot = unqtDot . uncurry mkGraph . bimap mconcat mconcat . unzip . fmap getDotContext
@@ -244,22 +254,31 @@ instance ToXML (GraphData m) where
                        ]
 
 
--- | (✔)
-instance (ToXML n) => ToXML (IndexData e n) where
+-- -- | (✔)
+-- instance (ToXML n) => ToXML (IndexData e n) where
 
-    toXML indexData = toXML $ nodeDecoration indexData
+--    toXML indexData = toXML $ nodeDecoration indexData
+--    ("Node_type", show $ getNodeType n)
 
 
-instance (ToXML n) => ToXML (ReferenceDAG d e n) where
+-- instance (ToXML n) => ToXML (ReferenceDAG d e n) where
 
-    toXML (RefDAG v _ g) = xmlElement "Directed_acyclic_graph" [] [{- leafs, tree, -} meta, vect]
-      where
-          -- leafs    = Right $ collapseElemList "Leaf set" [] [(dag ^. leafSet)]
-          -- fmap id . (^. leafSet) <$> forests
+--     toXML (RefDAG v _ g) = xmlElement "Directed_acyclic_graph" [] [{- leafs, tree, -} meta, vect]
+--       where
+--           -- leafs    = Right $ collapseElemList "Leaf set" [] [(dag ^. leafSet)]
+--           -- fmap id . (^. leafSet) <$> forests
 
-          meta     = Right $ toXML g
-          vect     = Right $ collapseElemList "Nodes" [] v
+--           meta     = Right $ toXML g
+--           vect     = Right $ collapseElemList "Nodes" [] v
 
+getNodeType :: IndexData e n -> NodeClassification
+getNodeType e =
+    case (olength $ parentRefs e, length $ childRefs e) of
+      (0,_) -> RootNode
+      (_,0) -> LeafNode
+      (1,2) -> TreeNode
+      (2,1) -> NetworkNode
+      (p,c) -> error $ "Incoherently constructed graph when determining NodeClassification: parents " <> show p <> " children " <> show c
 
 -- |
 -- /O(n*i)/ where /i/ is the number of missing indicies.

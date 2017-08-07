@@ -11,8 +11,7 @@ module PCG.Command.Report.Evaluate
 --import           Analysis.Parsimony.Binary.Optimization
 --import           Bio.Character.Decoration.Dynamic
 --import           Bio.Metadata
---import           Bio.Graph
-import           Bio.Graph.PhylogeneticDAG
+import           Bio.Graph
 import           Control.Monad.IO.Class
 --import           Control.Monad.Logger
 --import           Data.Foldable
@@ -96,7 +95,7 @@ generateOutput g ImpliedAlignmentCharacters {} =
                     [] -> ErrorCase "There were no Dynamic homology characters on which to perform an implied alignment."
                     zs -> MultiStream $ fromList zs
 -}
-  
+
 generateOutput _ _ = ErrorCase "Unrecognized 'report' command"
 
 

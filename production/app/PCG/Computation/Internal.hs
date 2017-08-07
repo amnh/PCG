@@ -1,6 +1,6 @@
 module PCG.Computation.Internal where
 
-import           Bio.Graph.PhylogeneticDAG
+import           Bio.Graph
 import           Control.Evaluation
 import           Data.Char          (isSpace)
 import           Data.Foldable
@@ -24,7 +24,7 @@ collapseReadCommands p@(x:|xs) =
          (READ lhs, READ rhs) -> collapseReadCommands (READ (lhs<>rhs) :| ys)
          _ -> (x :|) . toList . collapseReadCommands $ y:|ys
 
-                                                
+
 evaluate :: Computation -> SearchState
 evaluate (Computation xs) = foldl' (flip f) mempty xs
   where
