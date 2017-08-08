@@ -11,7 +11,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving, UndecidableInstances #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving, UndecidableInstances #-}
 
 module Bio.Graph.Solution
   ( PhylogeneticSolution(..)
@@ -22,8 +22,12 @@ module Bio.Graph.Solution
 import           Bio.Graph.Forest
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
+import           Bio.Metadata.Discrete
+import           Bio.Metadata.DiscreteWithTCM
+import           Bio.Metadata.General
 import           Bio.Graph.PhylogeneticDAG
 import           Bio.Graph.ReferenceDAG.Internal
+import           Bio.Sequence
 import           Control.Lens           hiding (Indexable)
 import           Data.Foldable
 import           Data.GraphViz.Printing hiding ((<>), indent) -- Seriously, why is this redefined?
@@ -34,6 +38,7 @@ import           Data.List.NonEmpty            (NonEmpty)
 import qualified Data.List.NonEmpty     as NE
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
+import           Data.TCM                      (generate)
 import qualified Data.Text.Lazy         as L
 import           Prelude                hiding (lookup)
 import           Text.XML.Custom
@@ -89,14 +94,35 @@ instance Show a => Show (PhylogeneticSolution a) where
                   ]
 
 
-instance (HasLeafSet s (LeafSet a), PrintDot s, ToXML a, ToXML s) => ToXML (PhylogeneticSolution s) where
+instance
+  ( ToXML n
+  , ToXML u
+  , ToXML v
+  , ToXML w
+  , ToXML x
+  , ToXML y
+  , ToXML z
+  , GeneralCharacterMetadata  u
+  , DiscreteCharacterMetadata v
+  , DiscreteCharacterMetadata w
+  , DiscreteCharacterMetadata x
+  , DiscreteCharacterMetadata y
+  , DiscreteCharacterMetadata z
+  , HasCharacterAlphabet x f
+  , HasCharacterAlphabet y f
+  , HasCharacterAlphabet z f
+  , HasSymbolChangeMatrix x (Word -> Word -> Word)
+  , HasSymbolChangeMatrix y (Word -> Word -> Word)
+  , HasSymbolChangeMatrix z (Word -> Word -> Word)
+  , PrintDot (PhylogeneticDAG2 e n u v w x y z)
+  ) => ToXML (PhylogeneticSolution (PhylogeneticDAG2 e n u v w x y z)) where
 
     toXML soln@(PhylogeneticSolution forests) = xmlElement "Solution" attrs forestContents
         where
             attrs          = []
             forestContents = [ Right leaves
                              , Right graphRepresentations
-                             -- , Right characterMetadata
+                             , Right characterMetadata
                              , Right $ collapseElemList "Final_graph" attrs forests
                              ]
 
@@ -107,19 +133,32 @@ instance (HasLeafSet s (LeafSet a), PrintDot s, ToXML a, ToXML s) => ToXML (Phyl
             graphContents        = [ Left ("DOT", getDOT soln)
                                    --, Right graphASCII
                                    ]
+            -- TODO: This no longer works. Can't remember what I changed; pretty sure it's something simple.
             -- graphASCII           = xmlElement "Graphical" attrs graphASCIIContents
             -- graphASCIIContents   = (Right . toXML) <$> toList forests
 
             getDOT :: PrintDot a => PhylogeneticSolution a -> String
             getDOT = L.unpack . renderDot . toDot
 
-            -- characterMetadata = xmlElement "Character_metadata" attrs metadataContents
-            -- metadataContents  = [Right $ toXML arbitraryCharSeq]
+            characterMetadata = xmlElement "Character_metadata" attrs metadataContents
+            metadataContents  = [Right $ toXML metadataSequence]
 
-            -- arbitraryCharSeq  = characterSequence . NE.head . resolutions . nodeDecoration $ arbitraryNode
-            --     where
-            --         arbitraryNode = references arbitraryRefDAG ! arbitraryRootRef
-            --         (PDAG2 arbitraryRefDAG) = NE.head . toNonEmpty $ NE.head forests
-            --         arbitraryRootRef        = NE.head $ rootRefs arbitraryRefDAG
+            metadataSequence = hexmap f1 f2 f3 f4 f5 f6 arbitraryCharSeq
+                where
+                    arbitraryCharSeq = characterSequence . NE.head . resolutions . nodeDecoration $ arbitraryNode
+                    arbitraryNode = (references arbitraryRefDAG) ! arbitraryRootRef
+                    arbitraryRootRef        = NE.head $ rootRefs arbitraryRefDAG
+                    (PDAG2 arbitraryRefDAG) = NE.head arbitraryPDAG
+                    arbitraryPDAG           = toNonEmpty $ NE.head forests
+                    f1 = extractGeneralCharacterMetadata
+                    f2 = extractDiscreteCharacterMetadata
+                    f3 = extractDiscreteCharacterMetadata
+                    f4 = g
+                    f5 = g
+                    f6 = g
+                    g x = (generate dim scm, extractDiscreteCharacterMetadata x)
+                        where
+                            scm = uncurry $ x ^. symbolChangeMatrix
+                            dim = length  $ x ^. characterAlphabet
 
 

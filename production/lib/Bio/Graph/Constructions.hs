@@ -31,7 +31,7 @@ module Bio.Graph.Constructions
   , UnifiedContinuousCharacter
   , UnifiedDiscreteCharacter
   , UnifiedDynamicCharacter
-  , UnRiefiedCharacterDAG
+  , UnReifiedCharacterDAG
   ) where
 
 
@@ -95,11 +95,11 @@ type FinalDecorationDAG =
        PhylogeneticDAG2
          EdgeLength
          (Maybe String)
-         (ContinuousOptimizationDecoration ContinuousChar)
-         (FitchOptimizationDecoration   StaticCharacter)
-         (AdditiveOptimizationDecoration StaticCharacter)
-         (SankoffOptimizationDecoration StaticCharacter)
-         (SankoffOptimizationDecoration StaticCharacter)
+         (ContinuousOptimizationDecoration    ContinuousChar)
+         (FitchOptimizationDecoration         StaticCharacter)
+         (AdditiveOptimizationDecoration      StaticCharacter)
+         (SankoffOptimizationDecoration       StaticCharacter)
+         (SankoffOptimizationDecoration       StaticCharacter)
          (DynamicDecorationDirectOptimization DynamicChar)
 --         (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
 
@@ -111,7 +111,7 @@ type PostOrderDecorationDAG =
        PhylogeneticDAG2
          EdgeLength
          (Maybe String)
-         (ContinuousPostorderDecoration  ContinuousChar)
+         (ContinuousPostorderDecoration ContinuousChar )
          (FitchOptimizationDecoration   StaticCharacter)
          (AdditivePostorderDecoration   StaticCharacter)
          (SankoffOptimizationDecoration StaticCharacter)
@@ -155,7 +155,7 @@ type UnifiedDiscreteCharacter   = Maybe (DiscreteDecoration StaticCharacter)
 type UnifiedDynamicCharacter    = Maybe (DynamicDecorationInitial DynamicChar)
 
 
-type UnRiefiedCharacterDAG =
+type UnReifiedCharacterDAG =
        PhylogeneticDAG
          EdgeLength
          (Maybe String)

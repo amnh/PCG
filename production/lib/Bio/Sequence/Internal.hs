@@ -137,11 +137,12 @@ instance ( Show u
 instance ( ToXML u
          , ToXML v
          , ToXML w
+         , ToXML x
          , ToXML y
          , ToXML z
          ) => ToXML (CharacterSequence u v w x y z) where
 
-    toXML (CharSeq val) = collapseElemList "Character_sequence" [] (toList val)
+    toXML = collapseElemList "Character_sequence" [] . toBlocks
 
 
 -- |

@@ -19,6 +19,7 @@
 
 module Text.XML.Custom
   ( ToXML (..)
+  , Content (CRef)
   , collapseElemList
   , xmlAttr
   , xmlContent

@@ -89,6 +89,7 @@ instance ( Show u
 instance ( ToXML u
          , ToXML v
          , ToXML w
+         , ToXML x
          , ToXML y
          , ToXML z
          ) => ToXML (CharacterBlock u v w x y z) where

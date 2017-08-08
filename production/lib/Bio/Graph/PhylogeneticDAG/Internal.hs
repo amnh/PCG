@@ -122,6 +122,7 @@ instance ( Show e
 instance ( ToXML u
          , ToXML v
          , ToXML w
+         , ToXML x
          , ToXML y
          , ToXML z
          ) => ToXML (PhylogeneticDAG2 e n u v w x y z)  where

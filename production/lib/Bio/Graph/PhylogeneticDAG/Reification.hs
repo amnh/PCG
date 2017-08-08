@@ -40,16 +40,16 @@ import           Prelude            hiding (zipWith)
 
 
 -- |
--- Riefies a solution, performing several initialization functions on each DAG
+-- Reifies a solution, performing several initialization functions on each DAG
 -- before it's cost can be calculated.
-reifiedSolution :: PhylogeneticSolution UnRiefiedCharacterDAG -> CharacterResult
+reifiedSolution :: PhylogeneticSolution UnReifiedCharacterDAG -> CharacterResult
 reifiedSolution  = PhylogeneticSolution . fmap (fmap reifiedToCharacterDAG) . phylogeneticForests
 
 
 -- |
--- Riefies a particular DAg so it has the requisite context for a post-order
+-- Reifies a particular DAg so it has the requisite context for a post-order
 -- traversal.
-reifiedToCharacterDAG :: UnRiefiedCharacterDAG -> CharacterDAG
+reifiedToCharacterDAG :: UnReifiedCharacterDAG -> CharacterDAG
 reifiedToCharacterDAG (PDAG dag) = PDAG2
     RefDAG
     { references = newRefs

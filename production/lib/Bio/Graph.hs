@@ -33,7 +33,7 @@ module Bio.Graph
   , UnifiedContinuousCharacter
   , UnifiedDiscreteCharacter
   , UnifiedDynamicCharacter
-  , UnRiefiedCharacterDAG
+  , UnReifiedCharacterDAG
   , assignOptimalDynamicCharacterRootEdges
   , assignPunitiveNetworkEdgeCost
   , generateLocalResolutions

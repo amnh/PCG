@@ -38,6 +38,11 @@ instance (ToXML a) => ToXML (Maybe a) where
                           Just val -> Elem $ toXML val
 
 
+instance (ToXML a, ToXML b) => ToXML (a, b) where
+
+    toXML (a, b) = Element (QName "Tuple" Nothing Nothing) [] [Elem $ toXML a, Elem $ toXML b] Nothing
+
+
 instance ToXML [Char] where
 
     toXML val = Element (QName "Text_value" Nothing Nothing) [] [CRef val] Nothing

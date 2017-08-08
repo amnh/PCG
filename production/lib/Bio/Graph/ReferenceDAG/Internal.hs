@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies #-}
 
 module Bio.Graph.ReferenceDAG.Internal where
 
@@ -254,22 +254,22 @@ instance ToXML (GraphData m) where
                        ]
 
 
--- -- | (✔)
--- instance (ToXML n) => ToXML (IndexData e n) where
+-- | (✔)
+instance (ToXML n) => ToXML (IndexData e n) where
 
---    toXML indexData = toXML $ nodeDecoration indexData
---    ("Node_type", show $ getNodeType n)
+   toXML indexData = toXML $ nodeDecoration indexData
+   -- ("Node_type", show $ getNodeType indexData)
 
 
--- instance (ToXML n) => ToXML (ReferenceDAG d e n) where
+instance (ToXML n) => ToXML (ReferenceDAG d e n) where
 
---     toXML (RefDAG v _ g) = xmlElement "Directed_acyclic_graph" [] [{- leafs, tree, -} meta, vect]
---       where
---           -- leafs    = Right $ collapseElemList "Leaf set" [] [(dag ^. leafSet)]
---           -- fmap id . (^. leafSet) <$> forests
+    toXML dag = xmlElement "Directed_acyclic_graph" [] [{- leafs, tree, -} meta, vect]
+      where
+          -- leafs    = Right $ collapseElemList "Leaf set" [] [(dag ^. leafSet)]
+          -- fmap id . (^. leafSet) <$> forests
+          meta = Right . toXML $ graphData dag
+          vect = Right $ collapseElemList "Nodes" [] dag
 
---           meta     = Right $ toXML g
---           vect     = Right $ collapseElemList "Nodes" [] v
 
 getNodeType :: IndexData e n -> NodeClassification
 getNodeType e =
