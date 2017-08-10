@@ -57,6 +57,7 @@ library
 
   ghc-options:         -O2
                        -g
+                       -threaded
 --                       -debug
                        -optl-static
                     -- Turns on *almost* all warnings
@@ -157,6 +158,7 @@ Test-Suite unit-tests
 
   ghc-options:         -O2
                        -g
+                       -threaded
 --                       -debug
                        -optl-static
                     -- Turns on *almost* all warnings
@@ -261,6 +263,7 @@ Executable file-tests
 
   ghc-options:         -O2
                        -g
+                       -threaded
 --                       -debug
                        -optl-static
                     -- Turns on *almost* all warnings
