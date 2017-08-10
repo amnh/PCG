@@ -24,7 +24,9 @@ module Bio.Graph.LeafSet
 
 import Control.Lens
 --import Data.Foldable
--- import Data.List.NonEmpty
+import Data.List (union)
+import Data.Semigroup
+--import Data.Set (Set)
 --import Data.Monoid
 -- import Text.XML.Custom
 
@@ -38,6 +40,11 @@ class HasLeafSet s a | s -> a where
 
     {-# MINIMAL leafSet #-}
     leafSet :: Lens' s a
+
+  
+instance Eq n => Semigroup (LeafSet n) where
+
+    (<>) (LeafSet lhs) (LeafSet rhs) = LeafSet $ union lhs rhs
 
 
 -- instance ToXML (LeafSet (Maybe String)) where

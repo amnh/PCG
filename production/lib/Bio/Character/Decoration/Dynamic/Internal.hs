@@ -51,7 +51,7 @@ data DynamicDecorationDirectOptimization d
    , dynamicDecorationDirectOptimizationLeftAlignmentField       :: d
    , dynamicDecorationDirectOptimizationRightAlignmentField      :: d
    , dynamicDecorationDirectOptimizationMetadata                 :: DynamicCharacterMetadataDec (Element d)
-   }
+   } deriving (Eq)
 
 
 -- |
@@ -448,6 +448,21 @@ instance HasFinalUngapped (DynamicDecorationImpliedAlignment d) d where
 instance HasFinalUngapped (DynamicDecorationDirectOptimization d) d where
 
     finalUngapped = lens dynamicDecorationDirectOptimizationFinalUngappedField (\e x -> e { dynamicDecorationDirectOptimizationFinalUngappedField = x })
+
+
+-- | (✔)
+instance Hashable d => Hashable (DynamicDecorationDirectOptimization d) where
+
+      hashWithSalt salt dec = foldr1 xor $
+          [ hashWithSalt salt . dynamicDecorationDirectOptimizationCharacterCost
+          , hashWithSalt salt . dynamicDecorationDirectOptimizationEncodedField 
+          , hashWithSalt salt . dynamicDecorationDirectOptimizationFinalGappedField
+          , hashWithSalt salt . dynamicDecorationDirectOptimizationFinalUngappedField
+          , hashWithSalt salt . dynamicDecorationDirectOptimizationPreliminaryGappedField
+          , hashWithSalt salt . dynamicDecorationDirectOptimizationPreliminaryUngappedField
+          , hashWithSalt salt . dynamicDecorationDirectOptimizationLeftAlignmentField
+          , hashWithSalt salt . dynamicDecorationDirectOptimizationRightAlignmentField
+          ] <*> [dec]
 
 
 -- | (✔)

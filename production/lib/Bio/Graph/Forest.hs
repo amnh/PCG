@@ -75,14 +75,12 @@ instance FoldableWithKey1 PhylogeneticForest where
     foldMapWithKey1 f = foldMapWithKey1 f . unwrap
 
 
--- |
--- A 'Lens' for the 'PhylogeneticForest' field
-instance HasLeafSet a (LeafSet b) => HasLeafSet (PhylogeneticForest a) (NonEmpty (LeafSet b)) where
+instance (HasLeafSet a b, Semigroup b) => HasLeafSet (PhylogeneticForest a) b where
 
     leafSet = lens getter setter
       where
-         getter e    = (^. leafSet) <$> unwrap e
-         setter e _f = id e            -- No setter method
+        setter e _ = id e
+        getter = (foldMap1 (^. leafSet)) . unwrap
 
 
 instance Indexable PhylogeneticForest where

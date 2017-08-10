@@ -178,12 +178,12 @@ type UnRiefiedCharacterDAG =
          UnifiedDynamicCharacter
 
 
-instance HasLeafSet (PhylogeneticDAG2 e n u v w x y z) (LeafSet n) where
+instance HasLeafSet (PhylogeneticDAG2 e n u v w x y z) (LeafSet (PhylogeneticNode2 (CharacterSequence u v w x y z) n)) where
 
     leafSet = lens getter undefined
         where
-            getter :: (PhylogeneticDAG2 e n u v w x y z) -> (LeafSet n)
-            getter (PDAG2 e) = fmap nodeDecorationDatum2 $ e ^. leafSet
+--            getter :: (PhylogeneticDAG2 e n u v w x y z) -> (LeafSet n)
+            getter (PDAG2 e) =  e ^. leafSet
 
 
 instance Foldable f => PrintDot (PhylogeneticDAG2 e (f String) u v w x y z) where

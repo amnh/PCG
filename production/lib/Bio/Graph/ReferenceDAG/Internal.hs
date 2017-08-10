@@ -250,12 +250,57 @@ instance (ToXML n) => ToXML (IndexData e n) where
     toXML indexData = toXML $ nodeDecoration indexData
 
 
+-- | (✔)
 instance (ToXML n) => ToXML (ReferenceDAG d e n) where
 
     toXML (RefDAG v _ g) = xmlElement "Directed Acyclic Graph" [] [meta, vect]
       where
           vect = Right $ collapseElemList "Nodes" [] v
           meta = Right $ toXML g
+
+
+referenceEdgeSet :: ReferenceDAG d e n -> [(Int, Int)]
+referenceEdgeSet = foldMapWithKey f . references
+  where
+    f i =  fmap (\e -> (i,e)) . IM.keys . childRefs
+
+
+invadeEdge
+  :: ReferenceDAG d e n
+  -> n
+  -> (Int, Int)
+  -> ReferenceDAG d e n
+invadeEdge dag node (oRef, iRef) = newDag
+  where
+    refs    = references dag
+    newEdge = childRefs newNode ! iRef
+    newNode = refs ! oRef
+    newRef  = length refs
+    newDag  =
+      RefDAG
+        <$> const newVec
+        <*> rootRefs
+        <*> graphData
+        $ dag
+
+    newVec = V.generate (length refs + 2) g
+      where
+        g i
+          | i <  length refs = f i $ refs ! i
+          | i == length refs = IndexData <$> nodeDecoration <*> const (IS.singleton oRef) <*> childRefs $ newNode
+          | otherwise        = IndexData node (IS.singleton newRef) mempty
+
+    f i x = IndexData (nodeDecoration x) pRefs cRefs
+      where
+        ps = parentRefs x
+        cs = childRefs  x
+        pRefs
+          | oRef `oelem` ps = IS.insert newRef $ IS.delete oRef ps
+          | otherwise       =  ps
+        cRefs =
+          case oRef `lookup` cs of
+            Just v  -> IM.insert newRef v $ IM.delete oRef cs
+            Nothing -> cs
 
 
 -- |
