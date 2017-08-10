@@ -83,9 +83,12 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
             newResolutions
               | i `notElem` rootRefs dag = localResolutions
               | otherwise =
-                  case NE.filter completeCoverage localResolutions of
-                    x:xs -> x:|xs
-                    _    -> error "Root Node with no complete coverage resolutions!!! This should be logically impossible."
+                  case localResolutions of
+                    x:|[] -> x:|[]
+                    _ ->
+                      case NE.filter completeCoverage localResolutions of
+                        x:xs -> x:|xs
+                        _    -> error "Root Node with no complete coverage resolutions!!! This should be logically impossible."
 
             completeCoverage = (completeLeafSet ==) . (completeLeafSet .&.) . leafSetRepresentation
             localResolutions = liftA2 (generateLocalResolutions f1 f2 f3 f4 f5 f6') datumResolutions childResolutions
