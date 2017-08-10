@@ -274,7 +274,7 @@ invadeEdge dag node (oRef, iRef) = newDag
   where
     refs    = references dag
     newEdge = childRefs newNode ! iRef
-    newNode = refs ! oRef
+    newNode = refs ! iRef
     newRef  = length refs
     newDag  =
       RefDAG
