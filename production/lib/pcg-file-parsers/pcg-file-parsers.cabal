@@ -57,7 +57,8 @@ library
 
   ghc-options:         -O2
                        -g
-                       -debug -optl-static
+--                       -debug
+                       -optl-static
                     -- Turns on *almost* all warnings
                        -Wall
                     -- Checks for future compatibility with predicted language changes
@@ -156,7 +157,8 @@ Test-Suite unit-tests
 
   ghc-options:         -O2
                        -g
-                       -debug -optl-static
+--                       -debug
+                       -optl-static
                     -- Turns on *almost* all warnings
                        -Wall
                     -- Checks for future compatibility with predicted language changes
@@ -259,7 +261,8 @@ Executable file-tests
 
   ghc-options:         -O2
                        -g
-                       -debug -optl-static
+--                       -debug
+                       -optl-static
                     -- Turns on *almost* all warnings
                        -Wall
                     -- Checks for future compatibility with predicted language changes
@@ -313,8 +316,6 @@ Executable file-tests
                        File.Format.TNT.Partitioning
                        File.Format.TransitionCostMatrix
                        File.Format.TransitionCostMatrix.Parser
-                       File.Format.VertexEdgeRoot
-                       File.Format.VertexEdgeRoot.Parser
                        Test.Custom.Parse
                        TestSuite.GeneratedTests
                        TestSuite.GeneratedTests.Fasta
