@@ -150,7 +150,7 @@ rectifyResults2 fprs =
 
         matchToChars :: Map String UnifiedCharacterSequence
                      -> PhylogeneticForest ParserTree
-                     -> PhylogeneticForest UnRiefiedCharacterDAG --CharacterDAG
+                     -> PhylogeneticForest UnReifiedCharacterDAG --CharacterDAG
         matchToChars charMapping = fmap (PDAG . fmap f)
           where
             f label = PNode label $ fromMaybe defaultCharacterSequenceDatum charLabelMay

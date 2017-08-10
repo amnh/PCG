@@ -146,16 +146,16 @@ instance
             metadataSequence = hexmap f1 f2 f3 f4 f5 f6 arbitraryCharSeq
                 where
                     arbitraryCharSeq = characterSequence . NE.head . resolutions . nodeDecoration $ arbitraryNode
-                    arbitraryNode = (references arbitraryRefDAG) ! arbitraryRootRef
+                    arbitraryNode    = (references arbitraryRefDAG) ! arbitraryRootRef
                     arbitraryRootRef        = NE.head $ rootRefs arbitraryRefDAG
                     (PDAG2 arbitraryRefDAG) = NE.head arbitraryPDAG
                     arbitraryPDAG           = toNonEmpty $ NE.head forests
-                    f1 = extractGeneralCharacterMetadata
-                    f2 = extractDiscreteCharacterMetadata
-                    f3 = extractDiscreteCharacterMetadata
-                    f4 = g
-                    f5 = g
-                    f6 = g
+                    f1  = extractGeneralCharacterMetadata
+                    f2  = extractDiscreteCharacterMetadata
+                    f3  = extractDiscreteCharacterMetadata
+                    f4  = g
+                    f5  = g
+                    f6  = g
                     g x = (generate dim scm, extractDiscreteCharacterMetadata x)
                         where
                             scm = uncurry $ x ^. symbolChangeMatrix

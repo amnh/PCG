@@ -54,11 +54,6 @@ data DiscreteDecoration c
    }
 
 
-instance EncodableStreamElement c => Show (DiscreteDecoration c) where
-
-    show = showDiscreteCharacterElement
-
-
 -- |
 -- Show an appropriate instance of 'HasDiscreteCharacter' that is also
 -- 'HasCharacterAlphabet' by decoding the 'EncodableStreamElement' over the 'Alphabet';
@@ -68,14 +63,6 @@ showDiscreteCharacterElement :: ( EncodableStreamElement a
                                 , HasDiscreteCharacter s a
                                 ) => s -> String
 showDiscreteCharacterElement = showStreamElement <$> (^. characterAlphabet) <*> (^. discreteCharacter)
-
-
--- | (✔)
-instance PossiblyMissingCharacter c => PossiblyMissingCharacter (DiscreteDecoration c) where
-
-    isMissing = isMissing . (^. discreteCharacter)
-
-    toMissing x = x & discreteCharacter %~ toMissing
 
 
 -- |
@@ -99,6 +86,11 @@ class DiscreteCharacterDecoration s a => SimpleDiscreteCharacterDecoration s a |
     toDiscreteCharacterDecoration :: CharacterName -> Double -> Alphabet String -> (Word -> Word -> Word) -> (x -> a) -> x -> s
     {-# MINIMAL toDiscreteCharacterDecoration #-}
 
+
+
+instance EncodableStreamElement c => Show (DiscreteDecoration c) where
+
+    show = showDiscreteCharacterElement
 
 
 -- | (✔)
@@ -203,3 +195,13 @@ instance (EncodableStreamElement c) => ToXML (DiscreteDecoration c) where
             contents   = [ Left ("Character", showDiscreteCharacterElement decoration)
                          , Left ("Metadata" , "TCM not shown"                        )
                          ]
+
+
+-- | (✔)
+instance PossiblyMissingCharacter c => PossiblyMissingCharacter (DiscreteDecoration c) where
+
+    isMissing = isMissing . (^. discreteCharacter)
+
+    toMissing x = x & discreteCharacter %~ toMissing
+
+

@@ -53,7 +53,7 @@ data PhylogeneticDAG e n u v w x y z
 
 data PhylogeneticDAG2 e n u v w x y z
      = PDAG2 ( ReferenceDAG
-                 ( Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
+                 (         Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
                  , Vector (Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
                  )
                  e
