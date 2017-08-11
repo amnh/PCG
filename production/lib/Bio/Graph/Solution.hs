@@ -142,6 +142,9 @@ instance
 
             characterMetadata = xmlElement "Character_metadata" attrs metadataContents
             metadataContents  = [Right $ toXML metadataSequence]
+                                -- [ Right . toXML $ fst metadataSequence
+                                -- , Right . toXML $ snd metadataSequence
+                                -- ]
 
             metadataSequence = hexmap f1 f2 f3 f4 f5 f6 arbitraryCharSeq
                 where

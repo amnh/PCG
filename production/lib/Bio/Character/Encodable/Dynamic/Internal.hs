@@ -87,103 +87,66 @@ type instance Element DynamicChar = DynamicCharacterElement
 type DynamicChars = Vector DynamicChar
 
 
-instance EncodedAmbiguityGroupContainer DynamicCharacterElement where
-
-    {-# INLINE symbolCount  #-}
-    symbolCount = width . unwrap
-
-
-instance FiniteBits DynamicCharacterElement where
-
-    {-# INLINE finiteBitSize #-}
-    finiteBitSize = symbolCount
+-- | Functionality to unencode many encoded sequences
+-- decodeMany :: DynamicChars -> Alphabet -> ParsedChars
+-- decodeMany seqs alph = fmap (Just . decodeOverAlphabet alph) seqs
 
 
-instance EncodableStreamElement DynamicCharacterElement where
-
-    decodeElement alphabet character =
-        case foldMapWithKey f alphabet of
-          []   -> gapSymbol alphabet :| [gapSymbol alphabet]
-          x:xs -> x:|xs
-      where
-        f i symbol
-          | character `testBit` i = [symbol]
-          | otherwise             = []
-
-    -- Use foldl here to do an implicit reversal of the alphabet!
-    -- The head element of the list is the most significant bit when calling fromBits.
-    -- We need the first element of the alphabet to correspond to the least significant bit.
-    -- Hence foldl, don't try foldMap or toList & fmap without careful thought.
-    encodeElement alphabet ambiguity = DCE . fromBits $ foldl' (\xs x -> (x `elem` ambiguity) : xs) [] alphabet
+-- We restrict the DynamicChar values generated to be non-empty.
+-- Most algorithms assume a nonempty dynamic character.
+instance Arbitrary DynamicChar where
+    arbitrary = do
+        alphabetLen  <- arbitrary `suchThat` (\x -> 2 <= x && x <= 62) :: Gen Int
+        characterLen <- arbitrary `suchThat` (> 0) :: Gen Int
+        let randVal  =  choose (1, 2 ^ alphabetLen - 1) :: Gen Integer
+        bitRows      <- vectorOf characterLen randVal
+        pure . DC . fromRows $ bitVec alphabetLen <$> bitRows
 
 
---instance NFData DynamicChar
+instance Arbitrary DynamicCharacterElement where
+    arbitrary = do
+        alphabetLen <- arbitrary `suchThat` (\x -> 2 <= x && x <= 62) :: Gen Int
+        DCE . bitVec alphabetLen <$> (choose (1, 2 ^ alphabetLen - 1) :: Gen Integer)
 
 
-instance Hashable DynamicChar where
+-- TODO: Probably remove?
+instance Bits DynamicChar where
 
-    hashWithSalt salt (Missing n) = salt `xor` n
-    hashWithSalt salt (DC (BitMatrix n bv)) = salt `xor` n `xor` hashWithSalt salt (toInteger bv)
+    (DC lhs)  .&.  (DC rhs) = DC $ lhs  .&.  rhs
+    lhs       .&.  rhs      = Missing $ max (symbolCount lhs) (symbolCount rhs)
 
+    (DC lhs)  .|.  (DC rhs) = DC $ lhs  .|.  rhs
+    lhs       .|.  rhs      = Missing $ max (symbolCount lhs) (symbolCount rhs)
 
-instance PossiblyMissingCharacter DynamicChar where
+    (DC lhs) `xor` (DC rhs) = DC $ lhs `xor` rhs
+    lhs      `xor` rhs      = Missing $ max (symbolCount lhs) (symbolCount rhs)
 
-    {-# INLINE toMissing  #-}
-    toMissing c = Missing $ symbolCount c
+    complement   (DC b)     = DC $ complement b
+    complement   x          = x
 
-    {-# INLINE isMissing  #-}
-    isMissing Missing{} = True
-    isMissing _         = False
+    shift        (DC b)   n = DC $ b `shift`  n
+    shift        x        _ = x
 
+    rotate       (DC b)   n = DC $ b `rotate` n
+    rotate       x        _ = x
 
-instance MonoFunctor DynamicChar where
+    setBit       (DC b)   i = DC $ b `setBit` i
+    setBit       x        _ = x
 
-    {-# INLINE omap #-}
-    omap _ e@Missing{} = e
-    omap f (DC c)      = DC . omap (unwrap . f . DCE) $ c
+    testBit      (DC b)   i = b `testBit` i
+    testBit      _        _ = False
 
+    bit i                   = DC $ fromRows [bit i]
 
-instance MonoFoldable DynamicChar where
+    bitSize                 = fromMaybe 0 . bitSizeMaybe
 
-    {-# INLINE ofoldMap #-}
-    ofoldMap _ Missing{} = mempty
-    ofoldMap f (DC c)    = ofoldMap (f . DCE) c
+    bitSizeMaybe (DC b)     = bitSizeMaybe b
+    bitSizeMaybe _          = Nothing
 
-    {-# INLINE ofoldr #-}
-    ofoldr _ e Missing{} = e
-    ofoldr f e (DC c)    = ofoldr (f . DCE) e c
+    isSigned     _          = False
 
-    {-# INLINE ofoldl' #-}
-    ofoldl' _ e Missing{} = e
-    ofoldl' f e (DC c)   = ofoldl' (\acc x -> f acc (DCE x)) e c
-
-    {-# INLINE ofoldr1Ex #-}
-    ofoldr1Ex _ Missing{} = error "Trying to mono-morphically fold over an empty structure without supplying an inital accumulator!"
-    ofoldr1Ex f (DC c)    = DCE . ofoldr1Ex (\x y -> unwrap $ f (DCE x) (DCE y)) $ c
-
-    {-# INLINE ofoldl1Ex' #-}
-    ofoldl1Ex' _ Missing{} = error "Trying to mono-morphically fold over an empty structure without supplying an inital accumulator!"
-    ofoldl1Ex' f (DC c)    = DCE . ofoldl1Ex' (\x y -> unwrap $ f (DCE x) (DCE y)) $ c
-
-    {-# INLINE onull #-}
---    onull = const False
-    onull Missing{} = True
-    onull _         = False
-
-    {-# INLINE olength #-}
-    olength Missing{} = 0
-    olength (DC c)    = numRows c
-
-
--- | Monomorphic containers that can be traversed from left to right.
-instance MonoTraversable DynamicChar where
-
-    {-# INLINE otraverse #-}
-    otraverse _ e@Missing{} = pure e
-    otraverse f (DC c)      = fmap DC . otraverse (fmap unwrap . f . DCE) $ c
-
-    {-# INLINE omapM #-}
-    omapM = otraverse
+    popCount     (DC b)     = popCount b
+    popCount     _          = 0
 
 
 instance EncodedAmbiguityGroupContainer DynamicChar where
@@ -191,6 +154,19 @@ instance EncodedAmbiguityGroupContainer DynamicChar where
     {-# INLINE symbolCount #-}
     symbolCount (Missing n) = n
     symbolCount (DC c)      = numCols c
+
+
+instance EncodedAmbiguityGroupContainer DynamicCharacterElement where
+
+    {-# INLINE symbolCount  #-}
+    symbolCount = width . unwrap
+
+
+instance EncodableDynamicCharacter DynamicChar where
+
+    constructDynamic = DC . fromRows . fmap unwrap . toList
+
+    encodeDynamic alphabet = encodeStream alphabet . NE.fromList . fmap (NE.fromList . toList) . toList
 
 
 instance EncodableStream DynamicChar where
@@ -237,78 +213,22 @@ instance EncodableStream DynamicChar where
     gapOfStream = bit . pred . symbolCount
 
 
-instance EncodableDynamicCharacter DynamicChar where
+instance EncodableStreamElement DynamicCharacterElement where
 
-    constructDynamic = DC . fromRows . fmap unwrap . toList
+    decodeElement alphabet character =
+        case foldMapWithKey f alphabet of
+          []   -> gapSymbol alphabet :| [gapSymbol alphabet]
+          x:xs -> x:|xs
+      where
+        f i symbol
+          | character `testBit` i = [symbol]
+          | otherwise             = []
 
-    encodeDynamic alphabet = encodeStream alphabet . NE.fromList . fmap (NE.fromList . toList) . toList
-
-
--- TODO: Probably remove?
-instance Bits DynamicChar where
-
-    (DC lhs)  .&.  (DC rhs) = DC $ lhs  .&.  rhs
-    lhs       .&.  rhs      = Missing $ max (symbolCount lhs) (symbolCount rhs)
-
-    (DC lhs)  .|.  (DC rhs) = DC $ lhs  .|.  rhs
-    lhs       .|.  rhs      = Missing $ max (symbolCount lhs) (symbolCount rhs)
-
-    (DC lhs) `xor` (DC rhs) = DC $ lhs `xor` rhs
-    lhs      `xor` rhs      = Missing $ max (symbolCount lhs) (symbolCount rhs)
-
-    complement   (DC b)     = DC $ complement b
-    complement   x          = x
-
-    shift        (DC b)   n = DC $ b `shift`  n
-    shift        x        _ = x
-
-    rotate       (DC b)   n = DC $ b `rotate` n
-    rotate       x        _ = x
-
-    setBit       (DC b)   i = DC $ b `setBit` i
-    setBit       x        _ = x
-
-    testBit      (DC b)   i = b `testBit` i
-    testBit      _        _ = False
-
-    bit i                   = DC $ fromRows [bit i]
-
-    bitSize                 = fromMaybe 0 . bitSizeMaybe
-
-    bitSizeMaybe (DC b)     = bitSizeMaybe b
-    bitSizeMaybe _          = Nothing
-
-    isSigned     _          = False
-
-    popCount     (DC b)     = popCount b
-    popCount     _          = 0
-
-
-{-
-instance Memoizable DynamicChar where
-    memoize f (DC bm) = memoize (f . DC) bm
--}
-
-instance Arbitrary DynamicCharacterElement where
-    arbitrary = do
-        alphabetLen <- arbitrary `suchThat` (\x -> 2 <= x && x <= 62) :: Gen Int
-        DCE . bitVec alphabetLen <$> (choose (1, 2 ^ alphabetLen - 1) :: Gen Integer)
-
-
--- We restrict the DynamicChar values generated to be non-empty.
--- Most algorithms assume a nonempty dynamic character.
-instance Arbitrary DynamicChar where
-    arbitrary = do
-        alphabetLen  <- arbitrary `suchThat` (\x -> 2 <= x && x <= 62) :: Gen Int
-        characterLen <- arbitrary `suchThat` (> 0) :: Gen Int
-        let randVal  =  choose (1, 2 ^ alphabetLen - 1) :: Gen Integer
-        bitRows      <- vectorOf characterLen randVal
-        pure . DC . fromRows $ bitVec alphabetLen <$> bitRows
-
-
--- | Functionality to unencode many encoded sequences
--- decodeMany :: DynamicChars -> Alphabet -> ParsedChars
--- decodeMany seqs alph = fmap (Just . decodeOverAlphabet alph) seqs
+    -- Use foldl here to do an implicit reversal of the alphabet!
+    -- The head element of the list is the most significant bit when calling fromBits.
+    -- We need the first element of the alphabet to correspond to the least significant bit.
+    -- Hence foldl, don't try foldMap or toList & fmap without careful thought.
+    encodeElement alphabet ambiguity = DCE . fromBits $ foldl' (\xs x -> (x `elem` ambiguity) : xs) [] alphabet
 
 
 instance Exportable DynamicChar where
@@ -349,6 +269,86 @@ instance Exportable DynamicCharacterElement where
 
     fromExportableElements = DCE . exportableCharacterElementsHeadToBitVector
 
+
+--instance NFData DynamicChar
+
+
+instance FiniteBits DynamicCharacterElement where
+
+    {-# INLINE finiteBitSize #-}
+    finiteBitSize = symbolCount
+
+
+instance Hashable DynamicChar where
+
+    hashWithSalt salt (Missing n) = salt `xor` n
+    hashWithSalt salt (DC (BitMatrix n bv)) = salt `xor` n `xor` hashWithSalt salt (toInteger bv)
+
+
+instance MonoFoldable DynamicChar where
+
+    {-# INLINE ofoldMap #-}
+    ofoldMap _ Missing{} = mempty
+    ofoldMap f (DC c)    = ofoldMap (f . DCE) c
+
+    {-# INLINE ofoldr #-}
+    ofoldr _ e Missing{} = e
+    ofoldr f e (DC c)    = ofoldr (f . DCE) e c
+
+    {-# INLINE ofoldl' #-}
+    ofoldl' _ e Missing{} = e
+    ofoldl' f e (DC c)   = ofoldl' (\acc x -> f acc (DCE x)) e c
+
+    {-# INLINE ofoldr1Ex #-}
+    ofoldr1Ex _ Missing{} = error "Trying to mono-morphically fold over an empty structure without supplying an inital accumulator!"
+    ofoldr1Ex f (DC c)    = DCE . ofoldr1Ex (\x y -> unwrap $ f (DCE x) (DCE y)) $ c
+
+    {-# INLINE ofoldl1Ex' #-}
+    ofoldl1Ex' _ Missing{} = error "Trying to mono-morphically fold over an empty structure without supplying an inital accumulator!"
+    ofoldl1Ex' f (DC c)    = DCE . ofoldl1Ex' (\x y -> unwrap $ f (DCE x) (DCE y)) $ c
+
+    {-# INLINE onull #-}
+--    onull = const False
+    onull Missing{} = True
+    onull _         = False
+
+    {-# INLINE olength #-}
+    olength Missing{} = 0
+    olength (DC c)    = numRows c
+
+
+instance MonoFunctor DynamicChar where
+
+    {-# INLINE omap #-}
+    omap _ e@Missing{} = e
+    omap f (DC c)      = DC . omap (unwrap . f . DCE) $ c
+
+
+-- | Monomorphic containers that can be traversed from left to right.
+instance MonoTraversable DynamicChar where
+
+    {-# INLINE otraverse #-}
+    otraverse _ e@Missing{} = pure e
+    otraverse f (DC c)      = fmap DC . otraverse (fmap unwrap . f . DCE) $ c
+
+    {-# INLINE omapM #-}
+    omapM = otraverse
+
+
+instance PossiblyMissingCharacter DynamicChar where
+
+    {-# INLINE toMissing  #-}
+    toMissing c = Missing $ symbolCount c
+
+    {-# INLINE isMissing  #-}
+    isMissing Missing{} = True
+    isMissing _         = False
+
+
+{-
+instance Memoizable DynamicChar where
+    memoize f (DC bm) = memoize (f . DC) bm
+-}
 
 instance ToXML DynamicChar where
 

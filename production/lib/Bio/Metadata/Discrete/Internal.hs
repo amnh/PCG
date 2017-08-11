@@ -109,8 +109,8 @@ instance ToXML DiscreteCharacterMetadataDec where
     toXML xmlElem = xmlElement "Discrete_metadata" attrs contents
         where
             attrs    = []
-            contents = [ Left ("Alphabet", show $ xmlElem ^. characterAlphabet)
-                       , Right . toXML $ generalData xmlElem
+            contents = [ Right . toXML $ generalData xmlElem
+                       , Left ("Alphabet", show $ xmlElem ^. characterAlphabet)
                        ]
 
 

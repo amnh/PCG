@@ -52,6 +52,16 @@ import           Text.XML.Custom
 
 -- |
 -- A constant time access representation of a directed acyclic graph.
+--
+-- d = graph metadata
+-- e =
+-- n = node decorations
+             --     (         Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
+             --     , Vector (Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
+             --     )
+             --     e
+             --     (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
+             -- )
 data  ReferenceDAG d e n
     = RefDAG
     { references :: Vector (IndexData e n)
