@@ -43,7 +43,7 @@ import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Data.Vector                      (Vector)
 import           Prelude                   hiding (zipWith)
-import           Text.XML.Custom
+import           Text.XML
 
 
 

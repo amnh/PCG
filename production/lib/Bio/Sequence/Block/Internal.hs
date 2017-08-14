@@ -22,7 +22,7 @@ import Data.Semigroup
 import Data.Vector            (Vector)
 import Data.Vector.Instances  ()
 import Prelude         hiding (zipWith)
-import Text.XML.Custom
+import Text.XML
 -- import Text.XML.Light.Types
 
 

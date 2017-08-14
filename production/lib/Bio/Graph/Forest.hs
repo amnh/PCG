@@ -31,7 +31,7 @@ import Data.Semigroup
 import Data.Semigroup.Foldable
 -- import Data.Semigroup.Traversable
 import Prelude                hiding (head, lookup)
-import Text.XML.Custom
+import Text.XML.Class
 -- import Text.XML.Light.Types
 
 

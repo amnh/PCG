@@ -206,8 +206,8 @@ library
                        Data.TCM.Memoized
 --                       Text.HTML.Class
 --                       Text.HTML.Custom
-                       Text.XML.Class
-                       Text.XML.Custom
+                       Text.XML
+--                       Text.XML.Custom
 
   -- probably can be moved to other-modules:
                        Test.Custom.NucleotideSequence
@@ -291,6 +291,7 @@ library
                        Numeric.Extended.Natural
                        Numeric.Extended.Real
                        Test.QuickCheck.Arbitrary.Instances
+                       Text.XML.Class
 
 
 executable pcg

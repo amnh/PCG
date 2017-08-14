@@ -38,7 +38,7 @@ import Data.Foldable
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Semigroup
 import Data.Set           (size)
-import Text.XML.Custom
+import Text.XML
 
 
 -- |

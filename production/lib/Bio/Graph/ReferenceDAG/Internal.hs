@@ -45,7 +45,7 @@ import qualified Data.Vector               as V
 import           Data.Vector.Instances            ()
 import           Numeric.Extended.Real
 import           Prelude                   hiding (lookup)
-import           Text.XML.Custom
+import           Text.XML.Class
 
 --import           Debug.Trace
 
@@ -677,7 +677,7 @@ unfoldDAG f origin =
           | onull v   = [k]
           | otherwise = []
 
-    initialAccumulator = (-1, -1, (Nothing,mempty), mempty, mempty)
+    initialAccumulator = (-1, -1, (Nothing, mempty), mempty, mempty)
     (_, _, _, _rootIndices, resultMap) = g initialAccumulator origin
     g (counter, _otherIndex, previousContext@(previousIndex, previousSeenSet), currentRoots, currentMap) currentValue =
         case currentValue `lookup` previousSeenSet of

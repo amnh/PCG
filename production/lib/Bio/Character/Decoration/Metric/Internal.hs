@@ -26,7 +26,7 @@ import Control.Lens
 import Data.Alphabet
 import Data.TCM
 import Numeric.Extended.Natural
-import Text.XML.Custom
+import Text.XML
 
 
 -- |

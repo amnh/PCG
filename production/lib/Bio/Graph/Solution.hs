@@ -41,7 +41,7 @@ import           Data.Semigroup.Foldable
 import           Data.TCM                      (generate)
 import qualified Data.Text.Lazy         as L
 import           Prelude                hiding (lookup)
-import           Text.XML.Custom
+import           Text.XML
 
 
 -- |

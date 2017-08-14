@@ -49,7 +49,7 @@ import           Data.MonoTraversable
 --import           Data.Semigroup.Foldable
 import           Data.Semigroup.Traversable
 import           Prelude                 hiding (zipWith)
-import           Text.XML.Custom
+import           Text.XML
 
 
 -- |

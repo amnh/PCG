@@ -42,7 +42,7 @@ import Control.Lens
 import Data.Alphabet
 import Data.Range
 import Numeric.Extended
-import Text.XML.Custom
+import Text.XML
 
 
 -- |

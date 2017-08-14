@@ -19,7 +19,7 @@ import Bio.Character.Encodable.Internal
 import Control.Arrow ((&&&))
 import Data.Range
 import Numeric.Extended.Real
-import Text.XML.Custom
+import Text.XML.Class
 
 
 -- |

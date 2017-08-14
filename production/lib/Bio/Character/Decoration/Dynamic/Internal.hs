@@ -29,7 +29,7 @@ import Data.Bits
 import Data.Hashable
 import Data.MonoTraversable
 import Data.Semigroup
-import Text.XML.Custom
+import Text.XML
 
 
 -- TODO:

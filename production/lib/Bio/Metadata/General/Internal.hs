@@ -22,7 +22,7 @@ module Bio.Metadata.General.Internal
 import Bio.Metadata.CharacterName
 import Bio.Metadata.General.Class
 import Control.Lens
-import Text.XML.Custom
+import Text.XML.Class
 
 
 -- |

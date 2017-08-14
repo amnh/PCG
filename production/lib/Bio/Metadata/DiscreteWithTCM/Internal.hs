@@ -36,7 +36,7 @@ import Data.List (intercalate)
 import Data.Monoid
 import Data.TCM
 import Data.TCM.Memoized
-import Text.XML.Custom
+import Text.XML
 
 -- |
 -- Represents a concrete type containing metadata fields shared across all

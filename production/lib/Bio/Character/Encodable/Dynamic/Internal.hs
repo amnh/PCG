@@ -53,7 +53,7 @@ import           Data.Vector                         (Vector)
 import           Prelude                      hiding (lookup)
 import           Test.QuickCheck              hiding ((.&.))
 import           Test.QuickCheck.Arbitrary.Instances ()
-import           Text.XML.Custom
+import           Text.XML
 
 -- import Debug.Trace
 

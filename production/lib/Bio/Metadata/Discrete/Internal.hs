@@ -30,7 +30,7 @@ import Control.Lens
 import Data.Alphabet
 import Data.List (intercalate)
 import Data.Monoid
-import Text.XML.Custom
+import Text.XML
 
 
 -- |
