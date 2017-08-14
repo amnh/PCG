@@ -145,10 +145,13 @@ data TCMDiagnosis
 
 
 -- |
--- Performs a element-wise monomporphic map over the 'TCM'.
-instance MonoFunctor TCM where
+-- Resulting TCMs will have at a dimension between 2 and 25.
+instance Arbitrary TCM where
 
-    omap f (TCM n v) = TCM n $ V.map f v
+    arbitrary = do
+        dimension  <- (arbitrary :: Gen Int) `suchThat` (\x -> 2 <= x && x <= 25)
+        dataVector <- V.fromList <$> vectorOf (dimension * dimension) arbitrary
+        pure $ TCM dimension dataVector
 
 
 -- |
@@ -204,6 +207,13 @@ instance MonoFoldable TCM where
 
 
 -- |
+-- Performs a element-wise monomporphic map over the 'TCM'.
+instance MonoFunctor TCM where
+
+    omap f (TCM n v) = TCM n $ V.map f v
+
+
+-- |
 -- Performs a row-major monomporphic traversal over ther 'TCM'.
 instance MonoTraversable TCM where
 
@@ -218,16 +228,6 @@ instance MonoTraversable TCM where
     -- these actions from left to right, and collect the results.
     {-# INLINE omapM #-}
     omapM = otraverse
-
-
--- |
--- Resulting TCMs will have at a dimension between 2 and 25.
-instance Arbitrary TCM where
-
-    arbitrary = do
-        dimension  <- (arbitrary :: Gen Int) `suchThat` (\x -> 2 <= x && x <= 25)
-        dataVector <- V.fromList <$> vectorOf (dimension * dimension) arbitrary
-        pure $ TCM dimension dataVector
 
 
 -- |
