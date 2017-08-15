@@ -859,33 +859,6 @@ instance EncodableStream d => ToXML (DynamicDecorationDirectOptimization d) wher
             alph = decoration ^. characterAlphabet
 
 
--- instance EncodableStream d => ToXML (DynamicDecorationDirectOptimization d) where
-
---     toXML dec = (shownEdge <>) . unlines . (shownAlphabet:) . (shownCost:) $ f <$> pairs
---       where
---         f (prefix, accessor) = prefix <> showStream (dec ^. characterAlphabet) (dec ^. accessor)
---         pairs =
---             [ ("Original Encoding   : ", encoded            )
---             , ("Final         Gapped: ", finalGapped        )
---             , ("Final       Ungapped: ", finalUngapped      )
---             , ("Preliminary   Gapped: ", preliminaryGapped  )
---             , ("Preliminary Ungapped: ", preliminaryUngapped)
---             , ("Left  Alignment     : ", leftAlignment      )
---             , ("Right Alignment     : ", rightAlignment     )
---             ]
-
---         shownAlphabet = show $ dec ^. characterAlphabet
-
---         shownEdge = maybe "" (\x -> "Locus Edges         : " <> show x <> "\n") . fmap (fmap fst) $ dec ^. traversalFoci
-
---         shownCost = unwords
---             [ "Cost                :"
---             , show (dec ^. characterCost)
---             , "{"
---             , show (dec ^. characterLocalCost)
---             , "}"
---             ]
-
 -- | (✔)
 instance EncodableStream d => ToXML (DynamicDecorationDirectOptimizationPostOrderResult d) where
 
@@ -898,31 +871,3 @@ instance EncodableStream d => ToXML (DynamicDecorationDirectOptimizationPostOrde
                          , Left ("Preliminary_ungapped_char", showStream alph (decoration ^. preliminaryUngapped))
                          ]
             alph = decoration ^. characterAlphabet
-
-
-
--- | (✔)
--- instance EncodableStream d => ToXML (DynamicDecorationDirectOptimizationPostOrderResult d) where
-
---     show dec = (shownEdge <>) . unlines . (shownAlphabet:) . (shownCost:) $ f <$> pairs
---       where
---         f (prefix, accessor) = prefix <> showStream (dec ^. characterAlphabet) (dec ^. accessor)
---         pairs =
---           [ ("Original Encoding   : ", encoded            )
---           , ("Preliminary   Gapped: ", preliminaryGapped  )
---           , ("Preliminary Ungapped: ", preliminaryUngapped)
---           , ("Left  Alignment     : ", leftAlignment      )
---           , ("Right Alignment     : ", rightAlignment     )
---           ]
-
---         shownAlphabet = show $ dec ^. characterAlphabet
-
---         shownEdge = maybe "" (\x -> "Locus Edges         : " <> show x <> "\n") . fmap (fmap fst) $ dec ^. traversalFoci
-
---         shownCost = unwords
---           [ "Cost                :"
---           , show (dec ^. characterCost)
---           , "{"
---           , show (dec ^. characterLocalCost)
---           , "}"
---           ]

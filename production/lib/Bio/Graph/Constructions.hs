@@ -45,18 +45,18 @@ import           Bio.Character.Decoration.Metric
 import           Bio.Sequence
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Class
-import           Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
+-- import           Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
 import           Bio.Graph.PhylogeneticDAG.Internal
-import           Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
-import           Bio.Graph.PhylogeneticDAG.Postorder
-import           Bio.Graph.PhylogeneticDAG.Preorder
+-- import           Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
+-- import           Bio.Graph.PhylogeneticDAG.Postorder
+-- import           Bio.Graph.PhylogeneticDAG.Preorder
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Graph.Solution
 import           Control.Evaluation
 import           Data.EdgeLength
-import           Data.Key
-import           Data.List.NonEmpty        (NonEmpty)
-import qualified Data.List.NonEmpty as NE
+-- import           Data.Key
+-- import           Data.List.NonEmpty        (NonEmpty)
+-- import qualified Data.List.NonEmpty as NE
 import           Prelude            hiding (zipWith)
 
 

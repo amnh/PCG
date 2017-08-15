@@ -21,7 +21,7 @@ module Bio.Graph.PhylogeneticDAG.Reification
 
 import           Bio.Graph.Constructions
 import           Bio.Graph.Node
-import           Bio.Graph.PhylogeneticDAG.Internal
+-- import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Graph.Solution
 import           Control.Lens

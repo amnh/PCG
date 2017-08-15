@@ -21,11 +21,11 @@ import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
-import           Bio.Sequence.Block               (CharacterBlock)
+-- import           Bio.Sequence.Block               (CharacterBlock)
 import           Control.Applicative              (liftA2)
 import           Control.Lens
 import           Data.Bits
-import           Data.EdgeLength
+-- import           Data.EdgeLength
 import           Data.Foldable
 import           Data.GraphViz.Printing    hiding ((<>)) -- Seriously, why is this redefined?
 --import           Data.Hashable
@@ -37,7 +37,7 @@ import           Data.List.NonEmpty               (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty        as NE
 import           Data.List.Utility
 import           Data.Map                         (Map)
-import           Data.Maybe
+-- import           Data.Maybe
 import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
@@ -46,22 +46,35 @@ import           Prelude                   hiding (zipWith)
 import           Text.XML
 
 
-
+-- |
+-- Wrapper for ReferenceDAG (deprecated)
+--
+-- Type annotations (metadata types):
+--
+-- * e = 'Data.EdgeLength'
+-- * n = nodes as 'Maybe'('String')
+-- * u = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Continuous' specified as 'ContinuousChar'  or 'Bio.Metadata.General'
+-- * v = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Fitch'      specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
+-- * w = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Additive'   specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
+-- * x = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
+-- * y = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
+-- * z = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Dynamic'    specified as 'DynamicChar'     or 'Bio.Metadata.DiscreteWithTCM'
 data PhylogeneticDAG e n u v w x y z
      = PDAG (ReferenceDAG () e (PhylogeneticNode n (CharacterSequence u v w x y z)))
 
 
 -- |
 -- Wrapper for ReferenceDAG
--- e = edges
--- n = nodes
--- Metadata types:
--- u = 'General'
--- v = 'Discrete'
--- w = 'Discrete'
--- x =
--- y =
--- z = 'DiscreteWithTCM'
+-- Type annotations (metadata types):
+--
+-- * e = 'Data.EdgeLength'
+-- * n = nodes as 'Maybe'('String')
+-- * u = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Continuous' specified as 'ContinuousChar'  or 'Bio.Metadata.General'
+-- * v = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Fitch'      specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
+-- * w = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Additive'   specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
+-- * x = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
+-- * y = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
+-- * z = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Dynamic'    specified as 'DynamicChar'     or 'Bio.Metadata.DiscreteWithTCM'
 data PhylogeneticDAG2 e n u v w x y z
      = PDAG2 ( ReferenceDAG
                  (         Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))

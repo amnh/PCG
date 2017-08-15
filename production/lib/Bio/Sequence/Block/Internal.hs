@@ -31,7 +31,13 @@ import Text.XML
 -- networks. The 'CharacterBlock' is polymorphic over static and dynamic character
 -- definitions.
 --
---
+-- Bin types:
+-- * u =
+-- * v =
+-- * w =
+-- * x =
+-- * y =
+-- * z =
 --
 -- Use '(<>)' to construct larger blocks.
 data CharacterBlock u v w x y z
@@ -88,7 +94,7 @@ instance ( Show u
 
 
 -- | (✔)
-instance ( ToXML u
+instance ( ToXML u -- This is NOT a redundant constraint.
          , ToXML v
          , ToXML w
          , ToXML x

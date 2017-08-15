@@ -206,6 +206,7 @@ library
                        Data.TCM.Memoized
 --                       Text.HTML.Class
 --                       Text.HTML.Custom
+                       Text.Newick.Class
                        Text.XML
 --                       Text.XML.Custom
 

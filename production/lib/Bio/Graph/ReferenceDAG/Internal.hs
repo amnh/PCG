@@ -45,7 +45,8 @@ import qualified Data.Vector               as V
 import           Data.Vector.Instances            ()
 import           Numeric.Extended.Real
 import           Prelude                   hiding (lookup)
-import           Text.XML.Class
+import           Text.Newick.Class
+import           Text.XML
 
 --import           Debug.Trace
 
@@ -53,15 +54,11 @@ import           Text.XML.Class
 -- |
 -- A constant time access representation of a directed acyclic graph.
 --
--- d = graph metadata
--- e = edge decorations
--- n = node decorations
-             --     (         Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
-             --     , Vector (Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
-             --     )
-             --     e
-             --     (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
-             -- )
+-- Type annotations:
+--
+-- * d = graph metadata
+-- * e = edge decorations
+-- * n = node decorations
 data  ReferenceDAG d e n
     = RefDAG
     { references :: Vector (IndexData e n)
@@ -73,6 +70,10 @@ data  ReferenceDAG d e n
 -- |
 -- A labeled record for each "node" in the graph containing the node decoration,
 -- a set of parent references, and a set of child references with edge decorations.
+--
+-- Type annotations:
+-- * e = edge decorations
+-- * n = node decoration
 data  IndexData e n
     = IndexData
     { nodeDecoration :: n
@@ -83,6 +84,9 @@ data  IndexData e n
 
 -- |
 -- Annotations which are global to the graph
+--
+-- -- Type annotations:
+-- * d = graph metadata
 data  GraphData d
     = GraphData
     { dagCost           :: ExtendedReal
@@ -250,6 +254,19 @@ instance {- (Show e, Show n) => -} Show (ReferenceDAG d e n) where
     show dag = unlines [topologyRendering dag, "", referenceRendering dag]
 
 
+instance ToNewick n => ToNewick (ReferenceDAG d e n) where
+
+    toNewick dag = foldMap toNewick dag
+
+
+instance ToNewick n => ToNewick (IndexData e n) where
+
+    toNewick node = case getNodeType node of
+        LeafNode    -> node ^. name
+        NetworkNode -> newickSiblingPair . IM.elems $ childRefs node
+        _           -> newickSiblingPair . IM.elems $ childRefs node
+
+
 -- | (✔)
 instance ToXML (GraphData m) where
 
@@ -273,22 +290,14 @@ instance (ToXML n) => ToXML (IndexData e n) where
 
 instance (ToXML n) => ToXML (ReferenceDAG d e n) where
 
-    toXML dag = xmlElement "Directed_acyclic_graph" [] [{- leafs, tree, -} meta, vect]
+    toXML dag = xmlElement "Directed_acyclic_graph" [] [newick meta, vect]
       where
           -- leafs    = Right $ collapseElemList "Leaf set" [] [(dag ^. leafSet)]
           -- fmap id . (^. leafSet) <$> forests
-          meta = Right . toXML $ graphData dag
-          vect = Right $ collapseElemList "Nodes" [] dag
+          meta   = Right . toXML $ graphData dag
+          newick = Left ("Newick_representation", toNewick dag)
+          vect   = Right $ collapseElemList "Nodes" [] dag
 
-
-getNodeType :: IndexData e n -> NodeClassification
-getNodeType e =
-    case (olength $ parentRefs e, length $ childRefs e) of
-      (0,_) -> RootNode
-      (_,0) -> LeafNode
-      (1,2) -> TreeNode
-      (2,1) -> NetworkNode
-      (p,c) -> error $ "Incoherently constructed graph when determining NodeClassification: parents " <> show p <> " children " <> show c
 
 -- |
 -- /O(n*i)/ where /i/ is the number of missing indicies.
@@ -534,6 +543,17 @@ getEdges dag = foldMap1 f $ rootRefs dag
         childKeys    = IM.keys . childRefs $ refs ! i
         currentEdges = foldMap (\x -> singletonEdgeSet (i,x)) childKeys
 
+
+-- |
+-- Takes in 'IndexData' and returns 'NodeClassification' based on number of parents and children of node.
+getNodeType :: IndexData e n -> NodeClassification
+getNodeType e =
+    case (olength $ parentRefs e, length $ childRefs e) of
+      (0,_) -> RootNode
+      (_,0) -> LeafNode
+      (1,2) -> TreeNode
+      (2,1) -> NetworkNode
+      (p,c) -> error $ "Incoherently constructed graph when determining NodeClassification: parents " <> show p <> " children " <> show c
 
 -- |
 -- Use the supplied transformation to fold the Node values of the DAG into a

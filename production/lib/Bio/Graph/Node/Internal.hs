@@ -37,13 +37,16 @@ import Data.EdgeSet
 import Data.Foldable
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Semigroup
-import Data.Set           (size)
+-- import Data.Set           (size)
 import Text.XML
 
 
 -- |
 -- This serves as a computation /invariant/ node decoration designed to hold node
 -- information such as name and later a subtree structure.
+--
+-- * n = node decoration
+-- * s = 'Bio.Sequence.CharacterSequence'
 data  PhylogeneticNode n s
     = PNode
     { nodeDecorationDatum :: n
@@ -54,6 +57,9 @@ data  PhylogeneticNode n s
 -- |
 -- This serves as a computation /dependant/ node decoration designed to hold node
 -- information for a a phylogenetic network (or tree).
+--
+-- * s = 'Bio.Sequence.CharacterSequence'
+-- * n = node decoration
 data  PhylogeneticNode2 s n
     = PNode2
     { resolutions          :: ResolutionCache s
@@ -63,6 +69,8 @@ data  PhylogeneticNode2 s n
 
 -- |
 -- A collection of information used to memoize network optimizations.
+--
+-- * s = 'Bio.Sequence.CharacterSequence'
 data  ResolutionInformation s
     = ResInfo
     { totalSubtreeCost      :: Double
@@ -77,6 +85,8 @@ data  ResolutionInformation s
 -- |
 -- A collection of subtree resolutions. Represents a non-deterministic collection
 -- of subtree choices.
+--
+-- * s = 'Bio.Sequence.CharacterSequence'
 type ResolutionCache s = NonEmpty (ResolutionInformation s)
 
 
@@ -188,13 +198,9 @@ instance (ToXML s) => ToXML (ResolutionInformation s) where
 
     toXML info = xmlElement "Resolution_info" attrs contents
         where
-            (ES edgeSet)  = subtreeEdgeSet info
+            -- (ES edgeSet)  = subtreeEdgeSet info
             attrs         = []
-            contents      = [ Left ("Leaf_or_internal", if Data.Set.size edgeSet == 0
-                                                then "Leaf"
-                                                else "Internal"
-                                   )
-                            , Right . toXML $ characterSequence info
+            contents      = [ Right . toXML $ characterSequence info
                             , Left  ("Total_subtree_cost" , (show $ totalSubtreeCost  info))
                             , Left  ("Local_sequence_cost", (show $ localSequenceCost info))
                             , Right subtree

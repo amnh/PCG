@@ -24,7 +24,7 @@ import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
 import           Bio.Metadata.Discrete
 import           Bio.Metadata.DiscreteWithTCM
-import           Bio.Metadata.General
+-- import           Bio.Metadata.General
 import           Bio.Graph.PhylogeneticDAG
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
@@ -108,9 +108,9 @@ instance
   , DiscreteCharacterMetadata x
   , DiscreteCharacterMetadata y
   , DiscreteCharacterMetadata z
-  , HasCharacterAlphabet x f
-  , HasCharacterAlphabet y f
-  , HasCharacterAlphabet z f
+  -- , HasCharacterAlphabet x f
+  -- , HasCharacterAlphabet y f
+  -- , HasCharacterAlphabet z f
   , HasSymbolChangeMatrix x (Word -> Word -> Word)
   , HasSymbolChangeMatrix y (Word -> Word -> Word)
   , HasSymbolChangeMatrix z (Word -> Word -> Word)
@@ -130,7 +130,7 @@ instance
             leafSets = fmap (^. leafSet) <$> forests
 
             graphRepresentations = xmlElement "Graph_representations" attrs graphContents
-            graphContents        = [ Left ("DOT", getDOT soln)
+            graphContents        = [ Left ("DOT"    , getDOT     soln)
                                    --, Right graphASCII
                                    ]
             -- TODO: This no longer works. Can't remember what I changed; pretty sure it's something simple.
