@@ -54,7 +54,7 @@ import           Text.XML.Class
 -- A constant time access representation of a directed acyclic graph.
 --
 -- d = graph metadata
--- e =
+-- e = edge decorations
 -- n = node decorations
              --     (         Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
              --     , Vector (Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))

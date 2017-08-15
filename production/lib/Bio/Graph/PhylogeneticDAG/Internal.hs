@@ -51,15 +51,17 @@ data PhylogeneticDAG e n u v w x y z
      = PDAG (ReferenceDAG () e (PhylogeneticNode n (CharacterSequence u v w x y z)))
 
 
--- | Wrapper for ReferenceDAG
---  e = edges
---  n = nodes
---  u = General Character Metadata
---  v = Discrete Character Metadata
---  w = Discrete Character Metadata
---  x =
---  y =
---  z = Discrete Character Metadata with TCM
+-- |
+-- Wrapper for ReferenceDAG
+-- e = edges
+-- n = nodes
+-- Metadata types:
+-- u = 'General'
+-- v = 'Discrete'
+-- w = 'Discrete'
+-- x =
+-- y =
+-- z = 'DiscreteWithTCM'
 data PhylogeneticDAG2 e n u v w x y z
      = PDAG2 ( ReferenceDAG
                  (         Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))

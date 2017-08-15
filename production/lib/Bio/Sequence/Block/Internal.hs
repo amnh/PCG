@@ -31,6 +31,8 @@ import Text.XML
 -- networks. The 'CharacterBlock' is polymorphic over static and dynamic character
 -- definitions.
 --
+--
+--
 -- Use '(<>)' to construct larger blocks.
 data CharacterBlock u v w x y z
    = CharacterBlock
