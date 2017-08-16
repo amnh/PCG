@@ -68,14 +68,16 @@ import           Prelude            hiding (lookup, zipWith)
 assignOptimalDynamicCharacterRootEdges
   :: ( HasBlockCost u v w x y z Word Double
      , HasTraversalFoci z (Maybe TraversalFoci)
-{-     
+{--
+     , Show e
+     , Show n
      , Show u
      , Show v
      , Show w
      , Show x
      , Show y
      , Show z
--}
+--}
      ) --x, Ord x, Show x)
   => (z -> [z] -> z)
   -> PhylogeneticDAG2 e n u v w x y z
@@ -83,8 +85,8 @@ assignOptimalDynamicCharacterRootEdges
      , Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
      , Vector (Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
      ) 
---assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) = undefined
-{--}
+--assignOptimalDynamicCharacterRootEdges extensionTransformation x | trace (L.unpack . renderDot $ toDot x) False = undefined
+--assignOptimalDynamicCharacterRootEdges extensionTransformation x | trace (show x) False = undefined
 assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) =
     (PDAG2 updatedDag, edgeCostMapping, contextualNodeDatum)
   where

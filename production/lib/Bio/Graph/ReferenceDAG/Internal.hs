@@ -266,12 +266,14 @@ referenceEdgeSet = foldMapWithKey f . references
 
 
 invadeEdge
-  :: ReferenceDAG d e n
+  :: Monoid e
+  => ReferenceDAG d e n
   -> n
   -> (Int, Int)
   -> ReferenceDAG d e n
 invadeEdge dag node (oRef, iRef) = newDag
   where
+    oldLen  = length refs
     refs    = references dag
     newEdge = childRefs newNode ! iRef
     newNode = refs ! iRef
@@ -283,23 +285,27 @@ invadeEdge dag node (oRef, iRef) = newDag
         <*> graphData
         $ dag
 
-    newVec = V.generate (length refs + 2) g
+    newVec = V.generate (oldLen + 2) g
       where
         g i
-          | i <  length refs = f i $ refs ! i
-          | i == length refs = IndexData <$> nodeDecoration <*> const (IS.singleton oRef) <*> childRefs $ newNode
-          | otherwise        = IndexData node (IS.singleton newRef) mempty
+          | i <  oldLen = f i $ refs ! i
+          | i == oldLen = IndexData
+                            <$> nodeDecoration
+                            <*> const (IS.singleton oRef)
+                            <*> const (IM.singleton iRef mempty <> IM.singleton (newRef + 1) mempty)
+                            $ newNode
+          | otherwise   = IndexData node (IS.singleton newRef) mempty
 
     f i x = IndexData (nodeDecoration x) pRefs cRefs
       where
         ps = parentRefs x
         cs = childRefs  x
         pRefs
-          | oRef `oelem` ps = IS.insert newRef $ IS.delete oRef ps
-          | otherwise       =  ps
+          | i == iRef && oRef `oelem` ps = IS.insert newRef $ IS.delete oRef ps
+          | otherwise = ps
         cRefs =
-          case oRef `lookup` cs of
-            Just v  -> IM.insert newRef v $ IM.delete oRef cs
+          case iRef `lookup` cs of
+            Just v  -> IM.insert newRef v $ IM.delete iRef cs
             Nothing -> cs
 
 
