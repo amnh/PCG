@@ -53,7 +53,7 @@ import           Data.Void
 import           PCG.Syntax                   (Command(..))
 import           Prelude             hiding   (lookup, readFile)
 
---import Debug.Trace (trace)
+import Debug.Trace (trace)
 
 
 --evaluate :: Command -> EvaluationT IO a -> EvaluationT IO (Either TopologicalResult DecoratedCharacterResult)
@@ -181,6 +181,7 @@ iterativeBuild
 --  -> [PhylogeneticNode2 (CharacterSequence u v w x y z) (Maybe String)]
   -> [DatNode]
   -> FinalDecorationDAG
+iterativeBuild currentTree _ | trace (show currentTree) False = undefined
 iterativeBuild currentTree [] = currentTree
 iterativeBuild currentTree (nextLeaf:remainingLeaves) = iterativeBuild nextTree remainingLeaves
   where
@@ -188,7 +189,11 @@ iterativeBuild currentTree (nextLeaf:remainingLeaves) = iterativeBuild nextTree 
     edgeSet     = NE.fromList $ referenceEdgeSet dag
 
     tryEdge :: (Int, Int) -> FinalDecorationDAG
-    tryEdge     = performDecoration . PDAG2 . invadeEdge (defaultMetadata dag) (wipeNode False nextLeaf)
+    tryEdge     = performDecoration . PDAG2 . invadeEdge (defaultMetadata dag) deriveInternalNode (wipeNode False nextLeaf)
     nextTree    = minimumBy (comparing getCost) $ fmap tryEdge edgeSet
 
     getCost (PDAG2 dag) = dagCost $ graphData dag
+
+    deriveInternalNode parentDatum oldChildDatum _newChildDatum =
+        PNode2 (resolutions oldChildDatum) (nodeDecorationDatum2 parentDatum)
+        

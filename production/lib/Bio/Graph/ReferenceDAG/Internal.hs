@@ -268,16 +268,15 @@ referenceEdgeSet = foldMapWithKey f . references
 invadeEdge
   :: Monoid e
   => ReferenceDAG d e n
+  -> (n -> n -> n -> n) -- ^ Function describing how to construct the new internal node, parent, old child, new child
   -> n
   -> (Int, Int)
   -> ReferenceDAG d e n
-invadeEdge dag node (oRef, iRef) = newDag
+invadeEdge dag transformation node (oRef, iRef) = newDag
   where
     oldLen  = length refs
+    newRef  = oldLen -- synonym
     refs    = references dag
-    newEdge = childRefs newNode ! iRef
-    newNode = refs ! iRef
-    newRef  = length refs
     newDag  =
       RefDAG
         <$> const newVec
@@ -285,15 +284,16 @@ invadeEdge dag node (oRef, iRef) = newDag
         <*> graphData
         $ dag
 
+    getDatum = nodeDecoration . (refs !)
+
     newVec = V.generate (oldLen + 2) g
       where
         g i
           | i <  oldLen = f i $ refs ! i
           | i == oldLen = IndexData
-                            <$> nodeDecoration
-                            <*> const (IS.singleton oRef)
-                            <*> const (IM.singleton iRef mempty <> IM.singleton (newRef + 1) mempty)
-                            $ newNode
+                            (transformation (getDatum oRef) (getDatum iRef) node)
+                            (IS.singleton oRef)
+                            (IM.singleton iRef mempty <> IM.singleton (newRef + 1) mempty)
           | otherwise   = IndexData node (IS.singleton newRef) mempty
 
     f i x = IndexData (nodeDecoration x) pRefs cRefs

@@ -41,7 +41,8 @@ import Prelude       hiding (lookup, zip, zipWith)
 
 
 wipeScoring
-  :: PhylogeneticDAG2 e n u v w x y z
+  :: Monoid n
+  => PhylogeneticDAG2 e n u v w x y z
   -> PhylogeneticDAG2 e n (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
 wipeScoring (PDAG2 dag) = PDAG2 wipedDAG
   where
@@ -53,7 +54,8 @@ wipeScoring (PDAG2 dag) = PDAG2 wipedDAG
           $ dag
     
     wipeDecorations
-      :: IndexData e (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
+      :: Monoid n
+      => IndexData e (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
       -> IndexData e (PhylogeneticNode2 (CharacterSequence (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)) n)
     wipeDecorations x =
           IndexData
@@ -66,11 +68,16 @@ wipeScoring (PDAG2 dag) = PDAG2 wipedDAG
 
 
 wipeNode
-  :: Bool -- ^ Do I wipe?
+  :: Monoid n
+  => Bool -- ^ Do I wipe?
   -> PhylogeneticNode2 (CharacterSequence        u         v         w         x         y         z ) n
   -> PhylogeneticNode2 (CharacterSequence (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)) n 
-wipeNode wipe = PNode2 <$> pure . g . NE.head . resolutions <*> nodeDecorationDatum2
+wipeNode wipe = PNode2 <$> pure . g . NE.head . resolutions <*> f . nodeDecorationDatum2
       where
+        f :: Monoid a => a -> a
+        f | wipe      = const mempty
+          | otherwise = id
+        
         g = ResInfo
               <$> totalSubtreeCost
               <*> localSequenceCost
@@ -81,6 +88,7 @@ wipeNode wipe = PNode2 <$> pure . g . NE.head . resolutions <*> nodeDecorationDa
         h :: a -> Maybe a
         h | wipe      = const Nothing
           | otherwise = Just
+        
 
 
 scoreSolution :: CharacterResult -> PhylogeneticSolution FinalDecorationDAG

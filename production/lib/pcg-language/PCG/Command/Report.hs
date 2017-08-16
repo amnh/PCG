@@ -77,19 +77,22 @@ reportCommandSpecification :: CommandSpecification ReportCommand
 reportCommandSpecification = command "report" . argList $ ReportCommand <$> outputFormat <*> outputTarget
 
 
-outputTarget :: Ap SyntacticArgument OutputTarget
-outputTarget = choiceFrom [ stdout, toFile ] `withDefault` OutputToStdout
-  where
-    stdout = value "stdout" $> OutputToStdout
-    toFile = OutputToFile <$> text <*> fileWriteMethod
-
-
 outputFormat :: Ap SyntacticArgument OutputFormat
 outputFormat = choiceFrom [ dataFormat, dotFormat, xmlFormat ]
   where
     dataFormat = value "data" $> Data
     xmlFormat  = value "xml"  $> XML
     dotFormat  = choiceFrom [value "dot", value "graphviz"]  $> DotFile
+
+
+outputTarget :: Ap SyntacticArgument OutputTarget
+outputTarget = choiceFrom [ stdout, toFile ] `withDefault` OutputToStdout
+  where
+    stdout = value "stdout" $> OutputToStdout
+    toFile = choiceFrom
+        [ argList $ OutputToFile <$> text <*> fileWriteMethod
+        ,           OutputToFile <$> text <*> pure Append
+        ]
 
 
 fileWriteMethod :: Ap SyntacticArgument FileWriteMethod
