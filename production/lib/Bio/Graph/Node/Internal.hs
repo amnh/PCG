@@ -38,6 +38,7 @@ import Data.Foldable
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Semigroup
 -- import Data.Set           (size)
+import Text.Newick.Class
 import Text.XML
 
 
@@ -45,7 +46,7 @@ import Text.XML
 -- This serves as a computation /invariant/ node decoration designed to hold node
 -- information such as name and later a subtree structure.
 --
--- * n = node decoration
+-- * n = node label: 'Maybe'('String')
 -- * s = 'Bio.Sequence.CharacterSequence'
 data  PhylogeneticNode n s
     = PNode
@@ -59,7 +60,7 @@ data  PhylogeneticNode n s
 -- information for a a phylogenetic network (or tree).
 --
 -- * s = 'Bio.Sequence.CharacterSequence'
--- * n = node decoration
+-- * n = node label: 'Maybe'('String')
 data  PhylogeneticNode2 s n
     = PNode2
     { resolutions          :: ResolutionCache s
@@ -182,6 +183,12 @@ instance Show SubtreeLeafSet where
     show (LS bv) = foldMap f $ toBits bv
       where
         f x = if x then "1" else "0"
+
+
+instance Show s => ToNewick (PhylogeneticNode2 n s) where
+    toNewick node = show $ nodeDecorationDatum2 node {- case nodeDecorationDatum2 node of
+                        Just str -> show str
+                        _        -> "" -}
 
 
 instance (ToXML n) => ToXML (PhylogeneticNode2 n s) where

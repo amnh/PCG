@@ -95,7 +95,8 @@ instance Show a => Show (PhylogeneticSolution a) where
 
 
 instance
-  ( ToXML n
+  ( Show n
+  , ToXML n
   , ToXML u
   , ToXML v
   , ToXML w

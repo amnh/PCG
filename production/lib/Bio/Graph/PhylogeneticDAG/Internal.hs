@@ -43,6 +43,7 @@ import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Data.Vector                      (Vector)
 import           Prelude                   hiding (zipWith)
+import           Text.Newick.Class
 import           Text.XML
 
 
@@ -52,7 +53,7 @@ import           Text.XML
 -- Type annotations (metadata types):
 --
 -- * e = 'Data.EdgeLength'
--- * n = nodes as 'Maybe'('String')
+-- * n = node labels: 'Maybe'('String')
 -- * u = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Continuous' specified as 'ContinuousChar'  or 'Bio.Metadata.General'
 -- * v = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Fitch'      specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * w = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Additive'   specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
@@ -67,8 +68,8 @@ data PhylogeneticDAG e n u v w x y z
 -- Wrapper for ReferenceDAG
 -- Type annotations (metadata types):
 --
--- * e = 'Data.EdgeLength'
--- * n = nodes as 'Maybe'('String')
+-- * e = edge info, as yet undetermined
+-- * n = node labels: 'Maybe'('String')
 -- * u = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Continuous' specified as 'ContinuousChar'  or 'Bio.Metadata.General'
 -- * v = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Fitch'      specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * w = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Additive'   specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
@@ -143,7 +144,13 @@ instance ( Show e
         f i n = mconcat [ "Node {", show i, "}:\n\n", show n ]
 
 
-instance ( ToXML u
+instance ToNewick (PhylogeneticDAG2 e n u v w x y z) where
+
+    toNewick (PDAG2 refDag) = toNewick refDag
+
+
+instance ( Show n
+         , ToXML u
          , ToXML v
          , ToXML w
          , ToXML x
