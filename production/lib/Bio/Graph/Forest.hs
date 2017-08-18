@@ -122,11 +122,11 @@ instance PrintDot a => PrintDot (PhylogeneticForest a) where
 
     listToDot     = fmap mconcat . sequenceA . fmap toDot
 
-{-
+
 instance ToNewick a => ToNewick (PhylogeneticForest a) where
 
-    toNewick = unlines . fmap . toNewick . unwrap
--}
+    toNewick forest = unlines . toList $ fmap toNewick (unwrap forest)
+
 
 instance (ToNewick a, ToXML a) => ToXML (PhylogeneticForest a) where
 

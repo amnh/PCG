@@ -97,7 +97,7 @@ instance Show a => Show (PhylogeneticSolution a) where
 
 instance ToNewick a => ToNewick (PhylogeneticSolution a) where
 
-    toNewick soln = fmap toNewick (toList $ phylogeneticForests soln)
+    toNewick soln = unlines $ fmap toNewick (toList $ phylogeneticForests soln)
 
 
 instance
@@ -124,7 +124,8 @@ instance
   , HasSymbolChangeMatrix y (Word -> Word -> Word)
   , HasSymbolChangeMatrix z (Word -> Word -> Word)
   , PrintDot (PhylogeneticDAG2 e (f String) u v w x y z)
-  , ToNewick (PhylogeneticDAG2 e (f String) u v w x y z)
+  , ToNewick (LeafSet (f String))
+  --, ToNewick (PhylogeneticDAG2 e (f String) u v w x y z)
   ) => ToXML (PhylogeneticSolution (PhylogeneticDAG2 e (f String) u v w x y z)) where
 
     toXML soln@(PhylogeneticSolution forests) = xmlElement "Solution" attrs forestContents

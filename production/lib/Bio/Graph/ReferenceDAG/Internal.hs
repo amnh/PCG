@@ -287,14 +287,13 @@ generateNewick refs idx acc = finalStr
                 NetworkNode -> "Network node" <> (generateNewick refs lhsIdx acc)
                     where
                         lhsIdx = head . toList $ IM.keys $ childRefs node
-                       -- lhs = refs ! lhsIdx
-                TreeNode    -> "(" <> ((generateNewick refs lhsIdx acc) <> (", " <> ((generateNewick refs (head rhsIdx) acc) <> ")))")))
+                _           -> "(" <> ((generateNewick refs lhsIdx acc) <> (", " <> ((generateNewick refs (head rhsIdx) acc) <> ")")))
                     where
                         lhsIdx : rhsIdx = toList . IM.keys $ childRefs node
                         _               = error $ "Tree node with number children /= 2."
                         -- lhs = refs ! lhsIdx
                         -- rhs = refs ! rhsIdx
-                _           -> error $ "There's been a terrible problem. DAGs shouldn't yet have multiple roots."
+               -- _           -> error $ "There's been a terrible problem. DAGs shouldn't yet have multiple roots."
         -- f = (\x acc -> acc <> generateNewick x)
         -- acc = (mempty, )
 

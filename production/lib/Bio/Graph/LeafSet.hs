@@ -26,6 +26,7 @@ import Control.Lens
 --import Data.Foldable
 -- import Data.List.NonEmpty
 --import Data.Monoid
+import Text.Newick.Class
 -- import Text.XML.Custom
 
 
@@ -40,21 +41,18 @@ class HasLeafSet s a | s -> a where
     leafSet :: Lens' s a
 
 
--- instance ToXML (LeafSet (Maybe String)) where
+{-
+instance ToXML (LeafSet (Maybe String)) where
 
---     toXML (LeafSet lst) = xmlElement "Leaf_set" attrs contents
---         where
---             attrs    = []
---             contents = [Left ("Leaves", foldr leafStr "" lst)]
+    toXML (LeafSet lst) = xmlElement "Leaf_set" attrs contents
+        where
+            attrs    = []
+            contents = [Left ("Leaves", foldr leafStr "" lst)]
 
---             leafStr input accum = case input of Just item -> item <> ", " <> accum
---                                                 Nothing   -> accum
+            leafStr input accum = case input of Just item -> item <> ", " <> accum
+                                                Nothing   -> accum
+-}
 
 
--- instance (Foldable f) => HasLeafSet (f a) (LeafSet a) where
-
---     leafSet lst = lens getter setter
---         where
---             result = head $ foldMap (^. leafSet) (toList lst)
---             getter e   =
---             setter e _ = id e
+instance ToNewick (LeafSet (Maybe String)) where
+   toNewick a = ""
