@@ -41,6 +41,7 @@ import           Data.Semigroup.Foldable
 import           Data.TCM                      (generate)
 import qualified Data.Text.Lazy         as L
 import           Prelude                hiding (lookup)
+import           Text.Newick.Class
 import           Text.XML
 
 
@@ -94,9 +95,15 @@ instance Show a => Show (PhylogeneticSolution a) where
                   ]
 
 
+instance ToNewick a => ToNewick (PhylogeneticSolution a) where
+
+    toNewick soln = fmap toNewick (toList $ phylogeneticForests soln)
+
+
 instance
-  ( Show n
-  , ToXML n
+  ( -- Show n
+   Show (f String)
+  , ToXML (f String)
   , ToXML u
   , ToXML v
   , ToXML w
@@ -109,14 +116,16 @@ instance
   , DiscreteCharacterMetadata x
   , DiscreteCharacterMetadata y
   , DiscreteCharacterMetadata z
+  , Foldable f
   -- , HasCharacterAlphabet x f
   -- , HasCharacterAlphabet y f
   -- , HasCharacterAlphabet z f
   , HasSymbolChangeMatrix x (Word -> Word -> Word)
   , HasSymbolChangeMatrix y (Word -> Word -> Word)
   , HasSymbolChangeMatrix z (Word -> Word -> Word)
-  , PrintDot (PhylogeneticDAG2 e n u v w x y z)
-  ) => ToXML (PhylogeneticSolution (PhylogeneticDAG2 e n u v w x y z)) where
+  , PrintDot (PhylogeneticDAG2 e (f String) u v w x y z)
+  , ToNewick (PhylogeneticDAG2 e (f String) u v w x y z)
+  ) => ToXML (PhylogeneticSolution (PhylogeneticDAG2 e (f String) u v w x y z)) where
 
     toXML soln@(PhylogeneticSolution forests) = xmlElement "Solution" attrs forestContents
         where
@@ -131,7 +140,8 @@ instance
             leafSets = fmap (^. leafSet) <$> forests
 
             graphRepresentations = xmlElement "Graph_representations" attrs graphContents
-            graphContents        = [ Left ("DOT"    , getDOT     soln)
+            graphContents        = [ Left ("DOT"   , getDOT   soln)
+                                   , Left ("Newick", toNewick soln)
                                    --, Right graphASCII
                                    ]
             -- TODO: This no longer works. Can't remember what I changed; pretty sure it's something simple.

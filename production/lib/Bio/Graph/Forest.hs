@@ -21,16 +21,17 @@ module Bio.Graph.Forest
   ) where
 
 import Bio.Graph.LeafSet
-import Control.Lens           hiding (Indexable)
+import Control.Lens              hiding (Indexable)
 import Data.Foldable
 import Data.GraphViz.Printing
 import Data.Key
-import Data.List.NonEmpty            (NonEmpty(..))
+import Data.List.NonEmpty               (NonEmpty(..))
 import Data.Maybe
 import Data.Semigroup
 import Data.Semigroup.Foldable
 -- import Data.Semigroup.Traversable
-import Prelude                hiding (head, lookup)
+import Prelude                   hiding (head, lookup)
+import Text.Newick.Class
 import Text.XML.Class
 -- import Text.XML.Light.Types
 
@@ -121,8 +122,13 @@ instance PrintDot a => PrintDot (PhylogeneticForest a) where
 
     listToDot     = fmap mconcat . sequenceA . fmap toDot
 
+{-
+instance ToNewick a => ToNewick (PhylogeneticForest a) where
 
-instance (ToXML a) => ToXML (PhylogeneticForest a) where
+    toNewick = unlines . fmap . toNewick . unwrap
+-}
+
+instance (ToNewick a, ToXML a) => ToXML (PhylogeneticForest a) where
 
     toXML = collapseElemList "Forest" [] . unwrap
 
