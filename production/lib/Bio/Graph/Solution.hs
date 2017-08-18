@@ -11,7 +11,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving, UndecidableInstances #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving #-}
 
 module Bio.Graph.Solution
   ( PhylogeneticSolution(..)
@@ -124,7 +124,7 @@ instance
   , HasSymbolChangeMatrix y (Word -> Word -> Word)
   , HasSymbolChangeMatrix z (Word -> Word -> Word)
   , PrintDot (PhylogeneticDAG2 e (f String) u v w x y z)
-  , ToNewick (LeafSet (f String))
+  --, ToNewick (LeafSet (f String))
   --, ToNewick (PhylogeneticDAG2 e (f String) u v w x y z)
   ) => ToXML (PhylogeneticSolution (PhylogeneticDAG2 e (f String) u v w x y z)) where
 

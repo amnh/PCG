@@ -128,7 +128,7 @@ instance ToNewick a => ToNewick (PhylogeneticForest a) where
     toNewick forest = unlines . toList $ fmap toNewick (unwrap forest)
 
 
-instance (ToNewick a, ToXML a) => ToXML (PhylogeneticForest a) where
+instance ToXML a => ToXML (PhylogeneticForest a) where
 
     toXML = collapseElemList "Forest" [] . unwrap
 

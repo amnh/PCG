@@ -31,7 +31,7 @@ module Text.XML.Custom
 import Data.Foldable
 import Data.Key
 -- import Data.Monoid         ((<>))
--- import Text.XML.Class
+import Text.XML.Class (ToXML(..))
 import Text.XML.Light.Types
 
 

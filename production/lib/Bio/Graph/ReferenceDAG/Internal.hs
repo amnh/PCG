@@ -272,7 +272,7 @@ getLabel :: Foldable f => f String -> Int -> String
 getLabel decoration idx =
     case toList decoration of
             []      -> show idx
-            label:_ -> show label
+            label:_ -> label
 
 
 -- |
@@ -287,7 +287,7 @@ generateNewick refs idx acc = finalStr
                 NetworkNode -> "Network node" <> (generateNewick refs lhsIdx acc)
                     where
                         lhsIdx = head . toList $ IM.keys $ childRefs node
-                _           -> "(" <> ((generateNewick refs lhsIdx acc) <> (", " <> ((generateNewick refs (head rhsIdx) acc) <> ")")))
+                _           -> mconcat ["(", generateNewick refs lhsIdx acc,  ", " , generateNewick refs (head rhsIdx) acc, ")"]
                     where
                         lhsIdx : rhsIdx = toList . IM.keys $ childRefs node
                         _               = error $ "Tree node with number children /= 2."

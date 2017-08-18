@@ -208,7 +208,7 @@ library
 --                       Text.HTML.Custom
                        Text.Newick.Class
                        Text.XML
---                       Text.XML.Custom
+                       Text.XML.Custom
 
   -- probably can be moved to other-modules:
                        Test.Custom.NucleotideSequence
