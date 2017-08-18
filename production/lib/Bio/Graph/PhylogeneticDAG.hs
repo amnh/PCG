@@ -40,7 +40,7 @@ module Bio.Graph.PhylogeneticDAG
   , preorderSequence'
   , renderSummary
   , riefiedSolution
-  , riefiedToCharacterDAG
+  , riefyForest
   , rootCosts
   -- * Mapping over networks
   , edgePreorderMap
