@@ -53,7 +53,7 @@ import           Data.Void
 import           PCG.Syntax                   (Command(..))
 import           Prelude             hiding   (lookup, readFile)
 
-import Debug.Trace (trace)
+--import Debug.Trace (trace)
 
 
 --evaluate :: Command -> EvaluationT IO a -> EvaluationT IO (Either TopologicalResult DecoratedCharacterResult)
@@ -182,7 +182,7 @@ iterativeBuild
   -> [DatNode]
   -> FinalDecorationDAG
 iterativeBuild currentTree [] = currentTree
-iterativeBuild currentTree (nextLeaf:_) | trace (show $ nodeDecorationDatum2 nextLeaf) False = undefined
+--iterativeBuild currentTree (nextLeaf:_) | trace (show $ nodeDecorationDatum2 nextLeaf) False = undefined
 iterativeBuild currentTree (nextLeaf:remainingLeaves) = iterativeBuild nextTree remainingLeaves
   where
     (PDAG2 dag) = wipeScoring currentTree
