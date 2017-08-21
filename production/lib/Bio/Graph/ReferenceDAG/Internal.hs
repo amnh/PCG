@@ -74,7 +74,7 @@ data  ReferenceDAG d e n
 -- a set of parent references, and a set of child references with edge decorations.
 --
 -- Type annotations:
--- * e = edge decorations
+-- * e = edge decorations, as yet unused
 -- * n = node label: 'Maybe'('String')
 data  IndexData e n
     = IndexData
@@ -98,7 +98,7 @@ data  GraphData d
     }
 
 
--- | This will be used below to print the node type to XML.
+-- | This will be used below to print the node type to XML and Newick.
 data NodeClassification
     = NodeClassification
     | LeafNode
@@ -260,68 +260,13 @@ instance Foldable f => ToNewick (ReferenceDAG d e (f String)) where
 
     toNewick refDag = finalStr
         where
+            finalStr = generateNewick namedVec rootRef ""
+            namedVec = mapWithKey nameIt (references refDag) -- all network nodes have "htu\d" as nodeDecoration
+            nameIt idx node = case getNodeType node of
+                NetworkNode -> node { nodeDecoration = Just $ "htu" <> (show idx) }
+                _           -> node
             rootRef  = NE.head $ rootRefs refDag
-            vec      = references refDag
-            finalStr = generateNewick vec rootRef ""
-
-
--- |
--- 'getLabel' takes in a 'Foldable' 'String' (expected to be a 'Maybe' 'String') and an 'Int'. Generates a 'String' which is either the
--- first value in f or the idx value.
-getLabel :: Foldable f => f String -> Int -> String
-getLabel decoration idx =
-    case toList decoration of
-            []      -> show idx
-            label:_ -> label
-
-
--- |
--- 'generateNewick' takes in
-generateNewick ::  Foldable f => Vector (IndexData e (f String)) -> Int -> String -> String
-generateNewick refs idx acc = finalStr
-    where
-        node     = refs ! idx
-        finalStr =
-            case getNodeType node of
-                LeafNode    -> getLabel (nodeDecoration node) idx
-                NetworkNode -> "Network node" <> (generateNewick refs lhsIdx acc)
-                    where
-                        lhsIdx = head . toList $ IM.keys $ childRefs node
-                _           -> mconcat ["(", generateNewick refs lhsIdx acc,  ", " , generateNewick refs (head rhsIdx) acc, ")"]
-                    where
-                        lhsIdx : rhsIdx = toList . IM.keys $ childRefs node
-                        _               = error $ "Tree node with number children /= 2."
-                        -- lhs = refs ! lhsIdx
-                        -- rhs = refs ! rhsIdx
-               -- _           -> error $ "There's been a terrible problem. DAGs shouldn't yet have multiple roots."
-        -- f = (\x acc -> acc <> generateNewick x)
-        -- acc = (mempty, )
-
-
-{-
-instance (Show n, ToNewick n) => ToNewick (IndexData e n) where
-    -- recursively call this, where if it's not a leaf we call toNewick on each child
-    -- if it a network node we need to use an accumulator to keep track of which network nodes have already been used
-    -- and reference those.
-
-    toNewick node = case getNodeType node of
-        LeafNode    -> trace (show $ getNodeType node) $ "Leaf " <> (show $ nodeDecoration node)
-        NetworkNode -> trace (show $ getNodeType node) $ newickSiblingPair . IM.elems $ childRefs node
-        _           -> trace (show $ getNodeType node) $ newickSiblingPair . IM.elems $ childRefs node
--}
-
-{-
--- |
--- Takes in a list containing instances of 'ToNewick'. Recursively constructs them into an eNewick tree representation.
-newickSiblingPair :: IndexData e n -> String
-                                   -- mconcat should use foldr, so be more efficient: n instead of n^2
-newickSiblingPair node =
-    let (IndexData label parents children) = node in
-        case children of
-            (lhs : rhs : []) -> mconcat ["(", toNewick lhs, ", ", toNewick rhs, ")"]
-            (lhs : [])       -> toNewick lhs
-            _                -> "Error: tree node with no children."
--}
+            -- vec      = references refDag
 
 
 instance ToXML (GraphData m) where
@@ -585,6 +530,30 @@ expandVertexMapping unexpandedMap = snd . foldl' expandEdges (initialCounter+1, 
 
             lhsRecursiveResult = expandEdges (counter+2, expandedMapping) counter
             rhsRecursiveResult = expandEdges lhsRecursiveResult (counter+1)
+
+
+-- |
+-- 'generateNewick' recursively  retrieves the node name at a given index in a 'IndexData' vector.
+generateNewick ::  Foldable f => Vector (IndexData e (f String)) -> Int -> String -> String
+generateNewick refs idx acc = finalStr
+    where
+        node     = refs ! idx
+        finalStr =
+            case getNodeType node of
+                LeafNode    -> case toList $ nodeDecoration node of -- getLabel (nodeDecoration node)
+                                   []      -> ""
+                                   label:_ -> label
+
+                NetworkNode -> "Network node" <> (generateNewick refs lhsIdx acc)
+                                   where
+                                       lhsIdx = head . toList $ IM.keys $ childRefs node
+
+                    -- Both root and tree node. Originally root was a separate case that resolved to an error,
+                    -- but the first call to this fn is always root, so...
+                _           -> mconcat ["(", generateNewick refs lhsIdx acc,  ", " , generateNewick refs (head rhsIdx) acc, ")"]
+                                   where
+                                       lhsIdx : rhsIdx = toList . IM.keys $ childRefs node
+                                       _               = error $ "Tree node with number children /= 2."
 
 
 -- |
