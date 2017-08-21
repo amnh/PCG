@@ -43,7 +43,7 @@ import           Data.Vector               (Vector)
 import qualified Data.Vector        as V
 import           Prelude            hiding (zipWith)
 
-import Debug.Trace
+-- import Debug.Trace
 
 
 -- |
@@ -64,7 +64,8 @@ riefyForest forest = zipWith (riefyDAGWithContext leavesInForest) leafMaskForest
 
 
 tabulateLeaves :: PhylogeneticForest UnRiefiedCharacterDAG -> (PhylogeneticForest (ReferenceDAG () () (Maybe Int)), Int)
-tabulateLeaves = (\v@(x,_) -> trace ("Tab Vector:\n\n"  <> foldMap1 (\y -> show $ toList y) x) v) . (`runState` 0) . traverse1 tabulateDAG
+tabulateLeaves = {- (\v@(x,_) -> trace ("Tab Vector:\n\n"  <> foldMap1 (\y -> show $ toList y) x) v) . -}
+                 (`runState` 0) . traverse1 tabulateDAG
   where
     tabulateDAG :: UnRiefiedCharacterDAG -> State Int (ReferenceDAG () () (Maybe Int))
     tabulateDAG (PDAG dag) = liftA3 RefDAG newRefs rootRefsContext graphDataContext

@@ -118,7 +118,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
     
     -- Step 2: Create a lazy memoized hashmap of the edge costs for each dynmaic character.
 
-    edgeCostMapping = (\x -> trace ("edgeCostMapping length: " <> show (length x)) x) $ referenceEdgeMapping
+    edgeCostMapping = {- (\x -> trace ("edgeCostMapping length: " <> show (length x)) x) $ -} referenceEdgeMapping
 
     -- Step 3: For each dynamic character, find the minimal cost edge(s).
     minimalCostSequence = sequenceOfEdgesWithMinimalCost
