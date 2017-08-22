@@ -89,7 +89,10 @@ evaluate
 evaluate (BUILD {}) oldState = do
     x <- oldState
     case x of
-      Right v -> fmap (Right . toSolution) . naiveWagnerBuild $ v ^. leafSet
+      Right v -> do
+         liftIO . print . fmap (fmap (\(PDAG2 y) -> candidateNetworkEdges y) . toList) $ phylogeneticForests v
+         liftIO $ print v
+         fmap (Right . toSolution) . naiveWagnerBuild $ v ^. leafSet
       Left  e -> pure $ Left e
   where
     toSolution = PhylogeneticSolution . pure . PhylogeneticForest . pure

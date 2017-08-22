@@ -26,6 +26,7 @@ module Bio.Graph.ReferenceDAG
   -- * Edgeset query and manipulation
   , referenceEdgeSet
   , invadeEdge
+  , candidateNetworkEdges
   ) where
 
 import Bio.Graph.ReferenceDAG.Internal

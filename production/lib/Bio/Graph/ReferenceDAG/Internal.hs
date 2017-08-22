@@ -21,6 +21,7 @@ import           Control.Lens                     (lens)
 import           Data.Bifunctor
 import           Data.EdgeSet
 import           Data.Foldable
+import           Data.Functor                     ((<$))
 import           Data.GraphViz.Printing    hiding ((<>)) -- Seriously, why is this redefined?
 import           Data.GraphViz.Types       hiding (attrs)
 import           Data.GraphViz.Types.Graph hiding (node)
@@ -37,6 +38,8 @@ import qualified Data.List.NonEmpty        as NE
 import           Data.Monoid                      ((<>))
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
+import           Data.Set                         (Set)
+import qualified Data.Set                  as S
 import           Data.String
 import           Data.Tree                        (unfoldTree)
 import           Data.Tree.Pretty                 (drawVerticalTree)
@@ -800,3 +803,47 @@ getDotContext dag = second mconcat . unzip $ foldMapWithKey f vec
         toDotEdge x = DotEdge (toId x (nodeDecoration $ vec ! x)) nodeId []
 
 
+-- |
+-- Generate the set of candidate network edges for a given DAG.
+candidateNetworkEdges :: ReferenceDAG d e n -> Set ( (Int, Int), (Int,Int) )
+candidateNetworkEdges dag = foldMapWithKey f $ references ancestoralEdgeSets
+  where
+    ancestoralEdgeSets  = tabulateAncestoralEdgesets dag
+    completeEdgeSet     = getEdges dag
+    f k     = foldMapWithKey (g k) . mapWithKey (h k) . childRefs
+    g j k   = foldMap (\x -> S.singleton ((j,k), x))
+    h j k v = possibleEdgeSet j k `difference` v
+    possibleEdgeSet i j = completeEdgeSet `difference` (singletonEdgeSet (i,j) <> singletonEdgeSet (j,i))
+      
+tabulateAncestoralEdgesets :: ReferenceDAG d e n -> ReferenceDAG () (EdgeSet (Int,Int)) ()
+tabulateAncestoralEdgesets dag =
+    RefDAG
+    { references = memo
+    , rootRefs   = rootRefs dag
+    , graphData  = defaultGraphMetadata $ graphData dag
+    }
+  where
+    refs = references dag
+    memo = V.generate (length refs) g
+    g i =
+        IndexData
+        { nodeDecoration = ()
+        , parentRefs     = parents
+        , childRefs      = ancestorDatum <$ children 
+        }
+      where
+        point    = refs ! i
+        parents  = parentRefs point
+        children = childRefs  point
+        ancestorDatum =
+            case otoList parents of
+              []    -> mempty
+              [x]   -> getPreviousDatums x i
+              x:y:_ -> getPreviousDatums x i `union` getPreviousDatums y i
+    
+    getPreviousDatums i j = childRefs point ! j <> other
+      where
+        point = memo ! i
+        -- This is the step where new information is added to the accumulator
+        other = ofoldMap (\x -> singletonEdgeSet (x,i)) $ parentRefs point
+        
