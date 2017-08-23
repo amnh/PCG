@@ -116,6 +116,7 @@ instance
   , DiscreteCharacterMetadata x
   , DiscreteCharacterMetadata y
   , DiscreteCharacterMetadata z
+  , Applicative f
   , Foldable f
   -- , HasCharacterAlphabet x f
   -- , HasCharacterAlphabet y f

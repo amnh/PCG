@@ -144,7 +144,7 @@ instance ( Show e
         f i n = mconcat [ "Node {", show i, "}:\n\n", show n ]
 
 
-instance ( Foldable f)=> ToNewick (PhylogeneticDAG2 e (f String) u v w x y z) where
+instance (Applicative f, Foldable f) => ToNewick (PhylogeneticDAG2 e (f String) u v w x y z) where
 
     toNewick = toNewick . discardCharacters
 
@@ -306,6 +306,8 @@ resolutionsDoNotOverlap :: ResolutionInformation a -> ResolutionInformation b ->
 resolutionsDoNotOverlap x y = leafSetRepresentation x .&. leafSetRepresentation y == zeroBits
 
 
+-- |
+-- Retrieve only 'ReferenceDAG' from 'PhylogeneticDAG2'.
 discardCharacters :: PhylogeneticDAG2 e n u v w x y z -> ReferenceDAG () e n
 discardCharacters (PDAG2 x) = defaultMetadata $ nodeDecorationDatum2 <$> x
 

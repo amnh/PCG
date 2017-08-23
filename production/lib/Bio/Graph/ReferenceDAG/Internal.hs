@@ -37,6 +37,7 @@ import qualified Data.List.NonEmpty        as NE
 import           Data.Monoid                      ((<>))
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
+import qualified Data.Set                  as S
 import           Data.String
 import           Data.Tree                        (unfoldTree)
 import           Data.Tree.Pretty                 (drawVerticalTree)
@@ -253,17 +254,17 @@ instance Show (GraphData m) where
 -- | (✔)
 instance {- (Show e, Show n) => -} Show (ReferenceDAG d e n) where
 
-    show dag = unlines [topologyRendering dag, "", referenceRendering dag]
+    show dag = intercalate "\n" [topologyRendering dag, "", referenceRendering dag]
 
 
-instance Foldable f => ToNewick (ReferenceDAG d e (f String)) where
+instance (Applicative f, Foldable f) => ToNewick (ReferenceDAG d e (f String)) where
 
-    toNewick refDag = finalStr
+    toNewick refDag = finalNewickStr
         where
-            finalStr = generateNewick namedVec rootRef ""
-            namedVec = mapWithKey nameIt (references refDag) -- all network nodes have "htu\d" as nodeDecoration
+            (_, finalNewickStr) = generateNewick namedVec rootRef (S.singleton "NaN") -- Have to initialize accumulator set.
+            namedVec = mapWithKey nameIt (references refDag) -- All network nodes have "htu\d" as nodeDecoration.
             nameIt idx node = case getNodeType node of
-                NetworkNode -> node { nodeDecoration = Just $ "htu" <> (show idx) }
+                NetworkNode -> node { nodeDecoration = pure $ "htu" <> (show idx) }
                 _           -> node
             rootRef  = NE.head $ rootRefs refDag
             -- vec      = references refDag
@@ -288,7 +289,7 @@ instance (ToXML n) => ToXML (IndexData e n) where
    -- ("Node_type", show $ getNodeType indexData)
 
 
-instance Foldable f => ToXML (ReferenceDAG d e (f String)) where
+instance (Applicative f, Foldable f) => ToXML (ReferenceDAG d e (f String)) where
 
     toXML dag = xmlElement "Directed_acyclic_graph" [] [newick, meta, vect]
       where
@@ -534,26 +535,65 @@ expandVertexMapping unexpandedMap = snd . foldl' expandEdges (initialCounter+1, 
 
 -- |
 -- 'generateNewick' recursively  retrieves the node name at a given index in a 'IndexData' vector.
-generateNewick ::  Foldable f => Vector (IndexData e (f String)) -> Int -> String -> String
-generateNewick refs idx acc = finalStr
+-- The set acts as an accumulator to remember which network nodes have been referenced thus far.
+-- Each network node has already been assigned an index. That index will be used as the node reference in the eNewick output.
+generateNewick ::  Foldable f => Vector (IndexData e (f String)) -> Int -> S.Set String -> (S.Set String, String)
+generateNewick refs idx htuNumSet = (finalNumSet, finalStr)
     where
         node     = refs ! idx
-        finalStr =
+        (finalNumSet, finalStr) =
             case getNodeType node of
-                LeafNode    -> case toList $ nodeDecoration node of -- getLabel (nodeDecoration node)
-                                   []      -> ""
-                                   label:_ -> label
+                LeafNode    ->
+                    case toList $ nodeDecoration node of -- getLabel (nodeDecoration node)
+                        []      -> (htuNumSet, "")       -- Make no changes to htuNumSet.
+                        label:_ -> (htuNumSet, label)
 
-                NetworkNode -> "Network node" <> (generateNewick refs lhsIdx acc)
-                                   where
-                                       lhsIdx = head . toList $ IM.keys $ childRefs node
+                NetworkNode ->
+                    let childIdx          = head . toList $ IM.keys $ childRefs node
+                        htuName           = toList $ nodeDecoration node
+                        updatedHtuNumSet  = S.insert htuNumberStr htuNumSet
+                        (updatedHtuNumSet', subtreeNewickStr) = generateNewick refs childIdx updatedHtuNumSet
+                        htuNumberStr     | htuName == [] = ""
+                                         | otherwise     = head htuName
+
+                    in  if   S.member htuNumberStr htuNumSet
+                        then ( htuNumSet                -- If the node is already a member, no update to htuNumberSet.
+                             , mconcat [ "#"
+                                       , htuNumberStr
+                                       ]
+                              )
+
+                        else ( updatedHtuNumSet'            -- Network node but not yet in set of traversed nodes, so update htuNumberSet.
+                             , mconcat [ subtreeNewickStr
+                                       , "#"
+                                       , htuNumberStr
+                                       ]
+                             )
 
                     -- Both root and tree node. Originally root was a separate case that resolved to an error,
-                    -- but the first call to this fn is always root, so...
-                _           -> mconcat ["(", generateNewick refs lhsIdx acc,  ", " , generateNewick refs (head rhsIdx) acc, ")"]
-                                   where
-                                       lhsIdx : rhsIdx = toList . IM.keys $ childRefs node
-                                       _               = error $ "Tree node with number children /= 2."
+                    -- but the first call to this fn is always root, so can't error out on that.
+                    -- In no case does the htuNumberSet update.
+                _           ->
+                    case toList . IM.keys $ childRefs node of
+                        lhsIdx:rhsIdx:_ -> ( updatedHtuNumSet'
+                                           , mconcat [ "("
+                                                     , lhsReturnString
+                                                     ,  ", " , rhsReturnString, ")"
+                                                     ]
+                                           )
+                            where
+                                (updatedHtuNumSet, lhsReturnString) = generateNewick refs lhsIdx htuNumSet
+                                (updatedHtuNumSet'  , rhsReturnString) = generateNewick refs rhsIdx updatedHtuNumSet
+                        -- Next should happen only under network node, but here for completion.
+                        [singleChild]   -> ( updatedHtuNumSet'
+                                           , mconcat [ "("
+                                                     , updatedNewickStr
+                                                     , ")"
+                                                     ]
+                                           )
+                            where
+                                (updatedHtuNumSet', updatedNewickStr) = generateNewick refs singleChild htuNumSet
+                        []              -> error $ "Graph construction should prevent a 'root' node or 'tree' node with no children."
 
 
 -- |

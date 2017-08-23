@@ -25,6 +25,7 @@ import Control.Lens              hiding (Indexable)
 import Data.Foldable
 import Data.GraphViz.Printing
 import Data.Key
+import Data.List                        (intercalate)
 import Data.List.NonEmpty               (NonEmpty(..))
 import Data.Maybe
 import Data.Semigroup
@@ -125,7 +126,7 @@ instance PrintDot a => PrintDot (PhylogeneticForest a) where
 
 instance ToNewick a => ToNewick (PhylogeneticForest a) where
 
-    toNewick forest = unlines . toList $ fmap toNewick (unwrap forest)
+    toNewick forest = intercalate "\n" (toList $ fmap toNewick (unwrap forest))
 
 
 instance ToXML a => ToXML (PhylogeneticForest a) where

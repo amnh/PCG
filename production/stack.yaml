@@ -21,6 +21,8 @@ packages:
   - lib/pcg-file-parsers
   - lib/pcg-language
   - lib/pcg-utility
+  - location:  https://github.com/recursion-ninja/graphviz/archive/d2c1283.zip
+    extra-dep: true
 
 resolver: nightly-2017-07-31
 
