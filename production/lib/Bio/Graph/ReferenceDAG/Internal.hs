@@ -47,10 +47,10 @@ import           Data.Vector                      (Vector)
 import qualified Data.Vector               as V
 import           Data.Vector.Instances            ()
 import           Numeric.Extended.Real
-import           Prelude                   hiding (lookup)
+import           Prelude                   hiding (lookup, zipWith)
 import           Text.XML.Custom
 
---import           Debug.Trace
+import           Debug.Trace
 
 
 -- |
@@ -266,6 +266,61 @@ referenceEdgeSet :: ReferenceDAG d e n -> [(Int, Int)]
 referenceEdgeSet = foldMapWithKey f . references
   where
     f i =  fmap (\e -> (i,e)) . IM.keys . childRefs
+
+
+connectEdge
+  :: Monoid e
+  => ReferenceDAG d e n
+  -> (n -> n -> n -> n) -- ^ Function describing how to construct the new origin internal node: parent, existing child, new child
+  -> (n -> n -> n) -- ^ Function describing how to construct the new target internal node: exisiting parent, exisiting child
+  -> (Int, Int) -- ^ Origin edge (coming from)
+  -> (Int, Int) -- ^ Target edge (going too)
+  -> ReferenceDAG d e n 
+connectEdge dag originTransform targetTransform (ooRef, otRef) (toRef, ttRef) = newDag
+  where
+    refs    = references dag
+    oldLen  = length refs
+    oNewRef = oldLen -- synonym
+    tNewRef = oldLen + 1
+    newDag  =
+      RefDAG
+        <$> const newVec
+        <*> rootRefs
+        <*> graphData
+        $ dag
+
+    getDatum = nodeDecoration . (refs !)
+
+    newVec = V.generate (oldLen + 2) g
+      where
+        g i
+          | i <  oldLen = f i $ refs ! i
+          -- This is the new node on the origin edge
+          | i == oldLen = IndexData
+                            (originTransform (getDatum ooRef) (getDatum otRef) (nodeDecoration $ newVec ! tNewRef))
+                            (IS.singleton ooRef)
+                            (IM.singleton otRef mempty <> IM.singleton tNewRef mempty)
+          -- This is the new node on the target edge
+          | otherwise   = IndexData
+                            (targetTransform (getDatum toRef) (getDatum ttRef))
+                            (IS.singleton toRef <> IS.singleton oNewRef)
+                            (IM.singleton ttRef mempty)
+
+    f i x = IndexData (nodeDecoration x) pRefs cRefs
+      where
+        ps = parentRefs x
+        cs = childRefs  x
+        pRefs
+          | i == otRef && ooRef `oelem` ps = IS.insert oNewRef $ IS.delete ooRef ps
+          | i == ttRef && toRef `oelem` ps = IS.insert tNewRef $ IS.delete toRef ps
+          | otherwise = ps
+        cRefs =
+          case otRef `lookup` cs of
+            Just v  -> IM.insert oNewRef v $ IM.delete otRef cs
+            Nothing ->
+              case ttRef `lookup` cs of
+                Just v  -> IM.insert tNewRef v $ IM.delete ttRef cs
+                Nothing -> cs
 
 
 invadeEdge
@@ -806,15 +861,34 @@ getDotContext dag = second mconcat . unzip $ foldMapWithKey f vec
 -- |
 -- Generate the set of candidate network edges for a given DAG.
 candidateNetworkEdges :: ReferenceDAG d e n -> Set ( (Int, Int), (Int,Int) )
-candidateNetworkEdges dag = foldMapWithKey f $ references ancestoralEdgeSets
+candidateNetworkEdges dag = foldMapWithKey f $ trace renderContext mergedVector
   where
-    ancestoralEdgeSets  = tabulateAncestoralEdgesets dag
+    mergedVector  = zipWith mergeThem ancestoralEdgeSets descendantEdgeSets
+    
+    mergeThem a d =
+        IndexData
+        { nodeDecoration = nodeDecoration a
+        , parentRefs     = parentRefs a
+        , childRefs      = zipWith (<>) (childRefs a) (childRefs d)
+        }
+        
+    ancestoralEdgeSets  = references $ tabulateAncestoralEdgesets dag
+    descendantEdgeSets  = references $ tabulateDescendantEdgesets dag
     completeEdgeSet     = getEdges dag
     f k     = foldMapWithKey (g k) . mapWithKey (h k) . childRefs
     g j k   = foldMap (\x -> S.singleton ((j,k), x))
     h j k v = possibleEdgeSet j k `difference` v
     possibleEdgeSet i j = completeEdgeSet `difference` (singletonEdgeSet (i,j) <> singletonEdgeSet (j,i))
-      
+    renderVector  = unlines . mapWithKey (\k v -> show k <> " " <> show (childRefs v)) . toList 
+
+    renderContext = unlines [refsStr, anstSet, descSet, edgeset]
+      where
+        refsStr = referenceRendering (dag { references = mergedVector })
+        edgeset = renderVector mergedVector
+        anstSet = renderVector ancestoralEdgeSets
+        descSet = renderVector descendantEdgeSets
+    
+
 tabulateAncestoralEdgesets :: ReferenceDAG d e n -> ReferenceDAG () (EdgeSet (Int,Int)) ()
 tabulateAncestoralEdgesets dag =
     RefDAG
@@ -829,7 +903,7 @@ tabulateAncestoralEdgesets dag =
         IndexData
         { nodeDecoration = ()
         , parentRefs     = parents
-        , childRefs      = ancestorDatum <$ children 
+        , childRefs      = zipWith (<>) (ancestorDatum <$ children) (getNetworkEdgeDatum i)
         }
       where
         point    = refs ! i
@@ -845,5 +919,52 @@ tabulateAncestoralEdgesets dag =
       where
         point = memo ! i
         -- This is the step where new information is added to the accumulator
-        other = ofoldMap (\x -> singletonEdgeSet (x,i)) $ parentRefs point
+        other = singletonEdgeSet (i,j)
+
+    -- We can't let a network edge form a new network edge with it's incident
+    -- network edge. Down that road lies infinite recursion.
+    getNetworkEdgeDatum i = mapWithKey f . childRefs $ refs ! i
+      where
+        f k _ =
+          case otoList . parentRefs $ refs ! k of
+            []  -> mempty
+            [x] -> mempty
+            xs  ->
+              case filter (/=i) xs of
+                []  -> mempty
+                x:_ -> singletonEdgeSet (x,k)
+--                x:_ -> foldMap (`getPreviousDatums` x) . otoList . parentRefs $ memo ! x
+
+        
+tabulateDescendantEdgesets :: ReferenceDAG d e n -> ReferenceDAG () (EdgeSet (Int,Int)) ()
+tabulateDescendantEdgesets dag =
+    RefDAG
+    { references = memo
+    , rootRefs   = rootRefs dag
+    , graphData  = defaultGraphMetadata $ graphData dag
+    }
+  where
+    refs = references dag
+    memo = V.generate (length refs) g
+    g i =
+        IndexData
+        { nodeDecoration = ()
+        , parentRefs     = parents
+        , childRefs      = descendantDatum <$ children 
+        }
+      where
+        point    = refs ! i
+        parents  = parentRefs point
+        children = childRefs  point
+        descendantDatum =
+            case IM.keys children of
+              []    -> mempty
+              [x]   -> getPreviousDatums i x
+              x:y:_ -> getPreviousDatums i x `union` getPreviousDatums i y
+    
+    getPreviousDatums i j = foldMap id (childRefs point) <> other
+      where
+        point = memo ! j
+        -- This is the step where new information is added to the accumulator
+        other = foldMap (\x -> singletonEdgeSet (j,x)) . IM.keys $ childRefs point
         

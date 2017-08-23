@@ -56,6 +56,19 @@ import           Prelude             hiding   (lookup, readFile)
 --import Debug.Trace (trace)
 
 
+type DatNode =
+  PhylogeneticNode2
+    (CharacterSequence
+      (ContinuousOptimizationDecoration ContinuousChar)
+      (FitchOptimizationDecoration   StaticCharacter)
+      (AdditiveOptimizationDecoration StaticCharacter)
+      (SankoffOptimizationDecoration StaticCharacter)
+      (SankoffOptimizationDecoration StaticCharacter)
+      (DynamicDecorationDirectOptimization DynamicChar)
+    )
+    (Maybe String)
+
+
 --evaluate :: Command -> EvaluationT IO a -> EvaluationT IO (Either TopologicalResult DecoratedCharacterResult)
 --evaluate :: Command -> EvaluationT IO a -> EvaluationT IO (Either TopologicalResult CharacterResult)
 evaluate
@@ -90,9 +103,9 @@ evaluate (BUILD {}) oldState = do
     x <- oldState
     case x of
       Right v -> do
-         liftIO . print . fmap (fmap (\(PDAG2 y) -> candidateNetworkEdges y) . toList) $ phylogeneticForests v
-         liftIO $ print v
-         fmap (Right . toSolution) . naiveWagnerBuild $ v ^. leafSet
+--         liftIO . print . fmap (fmap (\(PDAG2 y) -> candidateNetworkEdges y) . toList) $ phylogeneticForests v
+--         liftIO $ print v
+         fmap (Right . toSolution . iterativeNetworkBuild) . naiveWagnerBuild $ v ^. leafSet
       Left  e -> pure $ Left e
   where
     toSolution = PhylogeneticSolution . pure . PhylogeneticForest . pure
@@ -148,18 +161,6 @@ naiveWagnerBuild ns =
 
 
 
-type DatNode =
-  PhylogeneticNode2
-    (CharacterSequence
-      (ContinuousOptimizationDecoration ContinuousChar)
-      (FitchOptimizationDecoration   StaticCharacter)
-      (AdditiveOptimizationDecoration StaticCharacter)
-      (SankoffOptimizationDecoration StaticCharacter)
-      (SankoffOptimizationDecoration StaticCharacter)
-      (DynamicDecorationDirectOptimization DynamicChar)
-    )
-    (Maybe String)
-
 iterativeBuild
   ::
 {-    ( DiscreteCharacterMetadata u
@@ -200,4 +201,54 @@ iterativeBuild currentTree (nextLeaf:remainingLeaves) = iterativeBuild nextTree 
     deriveInternalNode parentDatum oldChildDatum _newChildDatum =
         PNode2 (resolutions oldChildDatum) (nodeDecorationDatum2 parentDatum)
         
+
+iterativeNetworkBuild
+  ::
+{-    ( DiscreteCharacterMetadata u
+     , DiscreteCharacterMetadata w
+     , DiscreteCharacterDecoration v StaticCharacter
+     , DiscreteCharacterDecoration x StaticCharacter
+     , DiscreteCharacterDecoration y StaticCharacter
+     , Eq z
+     , Hashable z
+     , RangedCharacterDecoration u ContinuousChar
+     , RangedCharacterDecoration w StaticCharacter
+     , SimpleDynamicDecoration z DynamicChar
+     , Show u
+     , Show v
+     , Show w
+     , Show x
+     , Show y
+     , Show z
+     )
+  => -}FinalDecorationDAG
+--  -> [PhylogeneticNode2 (CharacterSequence (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)) (Maybe String)]
+--  -> [PhylogeneticNode2 (CharacterSequence u v w x y z) (Maybe String)]
+  -> FinalDecorationDAG
+iterativeNetworkBuild currentNetwork@(PDAG2 inputDag) = 
+    case toList $ candidateNetworkEdges inputDag of
+      []   -> currentNetwork
+      x:xs ->
+        let edgesToTry     = x:|xs
+            bestNewNetwork = minimumBy (comparing getCost) $ fmap tryNetworkEdge edgesToTry
+        in  if getCost currentNetwork <= getCost bestNewNetwork
+            then currentNetwork
+            else iterativeNetworkBuild bestNewNetwork
+  where
+    (PDAG2 dag) = wipeScoring currentNetwork
+
+    tryNetworkEdge :: ((Int, Int), (Int, Int)) -> FinalDecorationDAG
+    tryNetworkEdge = performDecoration . PDAG2 . connectEdge'
+
+    getCost (PDAG2 dag) = dagCost $ graphData dag
+
+    connectEdge' = uncurry (connectEdge (defaultMetadata dag) deriveOriginEdgeNode deriveTargetEdgeNode)
+
+    deriveOriginEdgeNode parentDatum oldChildDatum _newChildDatum =
+        PNode2 (resolutions oldChildDatum) (nodeDecorationDatum2 parentDatum)
+
+    deriveTargetEdgeNode parentDatum oldChildDatum =
+        PNode2 (resolutions oldChildDatum) (nodeDecorationDatum2 parentDatum)
+        
+
 

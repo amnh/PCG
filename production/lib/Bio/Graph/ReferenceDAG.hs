@@ -24,9 +24,13 @@ module Bio.Graph.ReferenceDAG
   , defaultGraphMetadata
   , defaultMetadata
   -- * Edgeset query and manipulation
-  , referenceEdgeSet
+  , connectEdge
   , invadeEdge
   , candidateNetworkEdges
+  , referenceEdgeSet
+  -- * Rendering
+  , referenceRendering
+  , topologyRendering
   ) where
 
 import Bio.Graph.ReferenceDAG.Internal
