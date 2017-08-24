@@ -44,6 +44,7 @@ import qualified Data.List.NonEmpty    as NE
 -- import qualified Data.Map              as M
 -- import           Data.Maybe                   (fromMaybe)
 import           Data.Ord                     (comparing)
+import           Data.Semigroup.Foldable
 import           Data.TCM                     (TCMDiagnosis(..), TCMStructure(..), diagnoseTcm)
 import qualified Data.TCM              as TCM
 import           Data.Text.IO                 (readFile)
@@ -102,10 +103,14 @@ evaluate
 evaluate (BUILD {}) oldState = do
     x <- oldState
     case x of
-      Right v -> do
---         liftIO . print . fmap (fmap (\(PDAG2 y) -> candidateNetworkEdges y) . toList) $ phylogeneticForests v
---         liftIO $ print v
-         fmap (Right . toSolution . iterativeNetworkBuild) . naiveWagnerBuild $ v ^. leafSet
+      Right v ->
+        case toList $ v ^. leafSet of
+          []   -> fail "There are no nodes with which to build a tree."
+          y:ys ->
+            let bestTree     = naiveWagnerBuild $ y:|ys
+                bestNetwork  = iterativeNetworkBuild bestTree
+                bestSolution = Right $ toSolution bestNetwork
+            in  pure bestSolution
       Left  e -> pure $ Left e
   where
     toSolution = PhylogeneticSolution . pure . PhylogeneticForest . pure
@@ -133,20 +138,19 @@ naiveWagnerBuild
      , Show z
      )
   => -}
-  :: Foldable f
+  :: Foldable1 f
   => f DatNode -- (PhylogeneticNode2 (CharacterSequence u v w x y z) (Maybe String))
-  -> EvaluationT IO FinalDecorationDAG
+  -> FinalDecorationDAG
 naiveWagnerBuild ns =
-    case toList ns of
-      []       -> fail "There are no nodes with which to build a tree."
-      [x]      -> pure . fromRefDAG $ unfoldDAG (\_ -> ([], wipeNode False x, [])) ()
-      [x,y]    ->
+    case toNonEmpty ns of
+      x:|[]   -> fromRefDAG $ unfoldDAG (\_ -> ([], wipeNode False x, [])) ()
+      x:|[y]  ->
           let f e = case e of
                       0 -> ([]           , wipeNode True  x, [(mempty, 1), (mempty, 2)])
                       1 -> ([(mempty, 0)], wipeNode False x, [])
                       2 -> ([(mempty, 0)], wipeNode False y, [])
-          in  pure . fromRefDAG $ unfoldDAG f (0 :: Int)
-      x:y:z:xs ->
+          in  fromRefDAG $ unfoldDAG f (0 :: Int)
+      x:|y:z:xs ->
           let initTree = fromRefDAG $ unfoldDAG f (0 :: Int)
               f e = case e of
                       0 -> ([]           , wipeNode True  x, [(mempty, 1), (mempty, 4)])
@@ -154,7 +158,7 @@ naiveWagnerBuild ns =
                       2 -> ([(mempty, 1)], wipeNode False x, [])
                       3 -> ([(mempty, 1)], wipeNode False y, [])
                       4 -> ([(mempty, 0)], wipeNode False z, [])
-          in  pure $ iterativeBuild initTree xs
+          in  iterativeBuild initTree xs
 
   where
     fromRefDAG = performDecoration . PDAG2 . defaultMetadata

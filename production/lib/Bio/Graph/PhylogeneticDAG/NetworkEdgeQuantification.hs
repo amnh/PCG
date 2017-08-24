@@ -30,7 +30,7 @@ import           Data.Ord
 import           Numeric.Extended.Real
 import           Prelude            hiding (zipWith)
 
-import Debug.Trace
+--import Debug.Trace
 
 
 -- |
@@ -53,9 +53,9 @@ assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = PDAG2 $ dag { graphData = newG
 -- Calculate the punitive networkedge cost for the DAG.
 calculatePunitiveNetworkEdgeCost :: HasBlockCost u v w x y z i r => PhylogeneticDAG2 e n u v w x y z -> ExtendedReal
 calculatePunitiveNetworkEdgeCost inputDag
-  | cardinality extraneousEdges > 0 = trace ("Extraneous edges: " <> show extraneousEdges)
-                                    . trace ("Entire     edges: " <> show entireNetworkEdgeSet)
-                                    . trace ("Minimal Block edges: " <> show ((\(_,_,x) -> collapseToEdgeSet x) <$> minimalBlockNetworkDisplay)) $
+  | cardinality extraneousEdges > 0 = -- trace ("Extraneous edges: " <> show extraneousEdges)
+                                    -- . trace ("Entire     edges: " <> show entireNetworkEdgeSet)
+                                    -- . trace ("Minimal Block edges: " <> show ((\(_,_,x) -> collapseToEdgeSet x) <$> minimalBlockNetworkDisplay)) $
                                       infinity
   | otherwise                       = realToFrac numerator / realToFrac denominator
   where

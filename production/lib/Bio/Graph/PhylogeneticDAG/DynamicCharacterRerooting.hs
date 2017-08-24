@@ -48,7 +48,7 @@ import           Data.Vector               (Vector)
 import qualified Data.Vector        as V
 import           Prelude            hiding (lookup, zipWith)
 
-import Debug.Trace
+--import Debug.Trace
 
 
 -- |
@@ -87,7 +87,7 @@ assignOptimalDynamicCharacterRootEdges
      , Vector (Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
      ) 
 --assignOptimalDynamicCharacterRootEdges extensionTransformation x | trace (L.unpack . renderDot $ toDot x) False = undefined
-assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 x) | trace (referenceRendering x) False = undefined
+--assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 x) | trace (referenceRendering x) False = undefined
 assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 inputDag) =
     case toList inputDag of
       -- Degenarate cases
@@ -152,9 +152,15 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
 
     roots  = rootRefs   inputDag
 
-    isNetworkEdge (a,b) = parentCount > 1
+    isNetworkEdge (a,b)
+      | isRootEdgeOfDAG = parentCount b > 1
+      | otherwise       = parentCount y > 1
       where
-        parentCount = olength . parentRefs $ refVec ! y
+        isRootEdgeOfDAG = not . onull $ IS.intersection sharedParents rootRefSet
+        rootRefSet      = foldMap1 IS.singleton $ rootRefs inputDag
+        sharedParents   = IS.intersection (getParents a) (getParents b)
+        getParents      = parentRefs . (refVec !)
+        parentCount     = olength . getParents
         (_,y) =
           if   (b `elem`) . IM.keys . childRefs $ refVec ! a
           then (a,b)
@@ -269,7 +275,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
         --
         
 --        generateMemoizedDatum :: Int -> Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
-        generateMemoizedDatum n | trace ("Memo-gen: " <> show n) False = undefined
+--        generateMemoizedDatum n | trace ("Memo-gen: " <> show n) False = undefined
         generateMemoizedDatum n
           -- Root node case
           | n `elem` roots         = mempty
@@ -326,10 +332,11 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
             -- Given the three adjacent edges, generate the subtree resolutions
             -- defined by the first element of the tuple being an incomming edge.
 --            deriveDirectedEdgeDatum :: (Int, Int, Int) -> Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
+--            deriveDirectedEdgeDatum (i,j,k) | trace ("derive directional: " <> show (i,j,k)) False = undefined
             deriveDirectedEdgeDatum (i,j,k) = M.singleton (i, n) subtreeResolutions
               where
-                lhsMemo       = (contextualNodeDatum ! j) .!>. (trace ("lhsMEMO: " <> show (n, j)) (n, j))
-                rhsMemo       = (contextualNodeDatum ! k) .!>. (trace ("rhsMEMO: " <> show (n, k)) (n, k))
+                lhsMemo       = (contextualNodeDatum ! j) .!>. (n, j)
+                rhsMemo       = (contextualNodeDatum ! k) .!>. (n, k)
                 lhsContext    = edgeReferenceFilter [(k,n)] lhsMemo
                 rhsContext    = edgeReferenceFilter [(j,n)] rhsMemo
 
@@ -375,7 +382,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
             -- Filter from the resolution cache all resolutions that have any of
             -- the supplied edges in the subtree.
 --          edgeReferenceFilter :: [(Int,Int)] -> ResolutionCache (CharacterSequence u v w x y z) -> ResolutionCache (CharacterSequence u v w x y z)
-            edgeReferenceFilter es xs | trace (show es <> "  " <> show (fmap subtreeEdgeSet xs)) False = undefined
+--            edgeReferenceFilter es xs | trace (show es <> "  " <> show (fmap subtreeEdgeSet xs)) False = undefined
             edgeReferenceFilter es xs = filter (not . any (`elem` invalidEdges) . subtreeEdgeSet) $ toList xs
               where
                 invalidEdges       = toList es >>= getDirectedEdges 

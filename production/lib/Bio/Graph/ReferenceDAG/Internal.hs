@@ -50,7 +50,7 @@ import           Numeric.Extended.Real
 import           Prelude                   hiding (lookup, zipWith)
 import           Text.XML.Custom
 
-import           Debug.Trace
+--import           Debug.Trace
 
 
 -- |
@@ -838,6 +838,7 @@ gen1 x = (pops, show x, kids)
 --}
 
 getDotContext :: Foldable f => ReferenceDAG d e (f String) -> ([DotNode GraphID], [DotEdge GraphID])
+--getDotContext dag | trace ("About to render this to DOT:\n\n" <> show dag) False = undefined
 getDotContext dag = second mconcat . unzip $ foldMapWithKey f vec
   where
     vec = references dag
@@ -861,7 +862,7 @@ getDotContext dag = second mconcat . unzip $ foldMapWithKey f vec
 -- |
 -- Generate the set of candidate network edges for a given DAG.
 candidateNetworkEdges :: ReferenceDAG d e n -> Set ( (Int, Int), (Int,Int) )
-candidateNetworkEdges dag = foldMapWithKey f $ trace renderContext mergedVector
+candidateNetworkEdges dag = foldMapWithKey f mergedVector
   where
     mergedVector  = zipWith mergeThem ancestoralEdgeSets descendantEdgeSets
     
@@ -871,14 +872,16 @@ candidateNetworkEdges dag = foldMapWithKey f $ trace renderContext mergedVector
         , parentRefs     = parentRefs a
         , childRefs      = zipWith (<>) (childRefs a) (childRefs d)
         }
-        
+
+    rootEdges           = tabulateRootIncidentEdgeset dag
     ancestoralEdgeSets  = references $ tabulateAncestoralEdgesets dag
     descendantEdgeSets  = references $ tabulateDescendantEdgesets dag
-    completeEdgeSet     = getEdges dag
+    completeEdgeSet     = getEdges dag `difference` rootEdges
     f k     = foldMapWithKey (g k) . mapWithKey (h k) . childRefs
     g j k   = foldMap (\x -> S.singleton ((j,k), x))
     h j k v = possibleEdgeSet j k `difference` v
     possibleEdgeSet i j = completeEdgeSet `difference` (singletonEdgeSet (i,j) <> singletonEdgeSet (j,i))
+{-    
     renderVector  = unlines . mapWithKey (\k v -> show k <> " " <> show (childRefs v)) . toList 
 
     renderContext = unlines [refsStr, anstSet, descSet, edgeset]
@@ -887,8 +890,17 @@ candidateNetworkEdges dag = foldMapWithKey f $ trace renderContext mergedVector
         edgeset = renderVector mergedVector
         anstSet = renderVector ancestoralEdgeSets
         descSet = renderVector descendantEdgeSets
-    
+-}
 
+
+tabulateRootIncidentEdgeset :: ReferenceDAG d e n -> EdgeSet (Int,Int)
+tabulateRootIncidentEdgeset dag = foldMap f $ rootRefs dag
+  where
+    f i = foldMap (\e -> singletonEdgeSet (i,e)) kids
+      where
+        kids = IM.keys . childRefs $ references dag ! i
+
+    
 tabulateAncestoralEdgesets :: ReferenceDAG d e n -> ReferenceDAG () (EdgeSet (Int,Int)) ()
 tabulateAncestoralEdgesets dag =
     RefDAG
