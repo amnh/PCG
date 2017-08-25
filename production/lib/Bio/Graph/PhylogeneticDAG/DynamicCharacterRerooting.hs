@@ -325,8 +325,10 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                 f [i,j,k] = (i,j,k) :| [(j,k,i),(k,i,j)]
                 f xs = error $ unlines
                     [ "There were not exactly 3 adjacent nodes in a non-root, non-leaf re-rooting context."
+                    , "The node under inspection was index: " <> show n
                     , "Expected exactly 3 adjacent nodes."
                     , "Found: {" <> show (length xs) <> "} " <> show xs
+                    , referenceRendering inputDag
                     ]
 
             -- Given the three adjacent edges, generate the subtree resolutions
