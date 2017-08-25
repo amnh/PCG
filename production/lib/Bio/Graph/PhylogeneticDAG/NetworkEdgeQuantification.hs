@@ -30,7 +30,7 @@ import           Data.Ord
 import           Numeric.Extended.Real
 import           Prelude            hiding (zipWith)
 
---import Debug.Trace
+import Debug.Trace
 
 
 -- |
@@ -39,7 +39,7 @@ assignPunitiveNetworkEdgeCost :: HasBlockCost u v w x y z i r => PhylogeneticDAG
 assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = PDAG2 $ dag { graphData = newGraphData }
   where
     punativeCost  = calculatePunitiveNetworkEdgeCost input
-    sequenceCosts = minimum . fmap totalSubtreeCost . resolutions . nodeDecoration . (references dag !) <$> rootRefs dag
+    sequenceCosts = minimum . fmap totalSubtreeCost . (\x -> trace (renderResolutionContexts x) x) . resolutions . nodeDecoration . (references dag !) <$> rootRefs dag
     newGraphData  =
         GraphData        
         { dagCost           = punativeCost + realToFrac (sum sequenceCosts)
@@ -47,6 +47,12 @@ assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = PDAG2 $ dag { graphData = newG
         , rootSequenceCosts = sequenceCosts
         , graphMetadata     = graphMetadata $ graphData dag
         }
+    renderResolutionContexts = unlines . fmap renderContext . toList 
+      where
+        renderContext x = unwords
+            [ show $ totalSubtreeCost x
+            , show $ subtreeEdgeSet x
+            ]
         
 
 -- |

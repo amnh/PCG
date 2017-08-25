@@ -48,7 +48,7 @@ import           Data.Vector               (Vector)
 import qualified Data.Vector        as V
 import           Prelude            hiding (lookup, zipWith)
 
---import Debug.Trace
+import Debug.Trace
 
 
 -- |
@@ -83,7 +83,7 @@ assignOptimalDynamicCharacterRootEdges
   => (z -> [z] -> z)
   -> PhylogeneticDAG2 e n u v w x y z
   -> ( PhylogeneticDAG2 e n u v w x y z
-     , Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
+     ,         Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
      , Vector (Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
      ) 
 --assignOptimalDynamicCharacterRootEdges extensionTransformation x | trace (L.unpack . renderDot $ toDot x) False = undefined
@@ -117,7 +117,6 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
     unrootedEdges = rootEdgeReferences <> otherUnrootedEdges
     
     -- Step 2: Create a lazy memoized hashmap of the edge costs for each dynmaic character.
-
     edgeCostMapping = {- (\x -> trace ("edgeCostMapping length: " <> show (length x)) x) $ -} referenceEdgeMapping
 
     -- Step 3: For each dynamic character, find the minimal cost edge(s).
@@ -152,6 +151,9 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
 
     roots  = rootRefs   inputDag
 
+    -- We want to get the directionality of the edge in the original DAG to
+    -- determine if the target node had multiple parents, and hence is a network
+    -- edge.
     isNetworkEdge (a,b)
       | isRootEdgeOfDAG = parentCount b > 1
       | otherwise       = parentCount y > 1
@@ -261,7 +263,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
         -- on it's incident edges.
         --
         -- If the memoized point corresponds to a non-root vertex in the phylogentic
-        -- DAG component we will consider the subtree resolutions for enteing the
+        -- DAG component we will consider the subtree resolutions for entering the
         -- node on each edge.
         --
         -- There should only be 0, 1, or 3 directed subtree values at each
@@ -301,7 +303,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                   where
                     sibling = 
                       -- Kludge for single leaf forests with a surperfluous root node.
-                      -- Shouldbn't ever execute the empty list case, but here for safety.
+                      -- Shouldn't ever execute the empty list case, but here for safety.
                       case filter (/=n) . IM.keys .  childRefs $ refVec ! candidate of
                          []  -> candidate
                          x:_ -> x
@@ -423,9 +425,11 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
             -- 
             deriveMinimalCharacterContexts i = result
               where
-                result = fromMinimalTopologyContext . foldMap1 gatherMinimalLoci . NE.fromList $ M.assocs edgeIndexCostMapping
+                result = (\x -> trace (unlines ["The Selected Minimal Context of Block: " <> show k <> " Character: " <> show i, "Computed Context: " <> show x]) x)
+                       . fromMinimalTopologyContext . foldMap1 gatherMinimalLoci . NE.fromList $ M.assocs edgeIndexCostMapping
                 edgeIndexCostMapping   = fmap (fmap (((^. characterCost) . (! i) . dynamicCharacters . (! k) . toBlocks . characterSequence) &&& subtreeEdgeSet)) edgeCostMapping
-                gatherMinimalLoci (e, xs) = toMinimalTopologyContext $ (\(c, es) -> (es, c, e)) <$> xs
+                gatherMinimalLoci (e, xs) = (\x -> trace (unlines ["For Block: " <> show k, "For Character: " <> show i, "Computed Context: " <> show x]) x)
+                                          . toMinimalTopologyContext $ (\(c, es) -> (es, c, e)) <$> xs
 
 
     -- Step 4: Update the dynamic character decoration's cost & add an edge reference.
@@ -472,7 +476,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
 (.!>.) s k = fromMaybe (error $ "Could not index: " <> show k) $ k `lookup` s
 
 
-newtype MinimalTopologyContext e c = MW { fromMinimalTopologyContext :: NonEmpty (EdgeSet e, c, NonEmpty e) }
+newtype MinimalTopologyContext e c = MW { fromMinimalTopologyContext :: NonEmpty (EdgeSet e, c, NonEmpty e) } deriving (Show)
 
 
 instance (Ord e, Ord c) => Semigroup (MinimalTopologyContext e c) where
@@ -483,6 +487,7 @@ instance (Ord e, Ord c) => Semigroup (MinimalTopologyContext e c) where
         mergeMin    []     ys  = ys
         mergeMin    xs     []  = xs
         mergeMin (x:xs) (y:ys) =
+--            case comparing firstOfThree x y of
             case comparing firstOfThree x y of
               GT -> y : mergeMin (x:xs)    ys
               LT -> x : mergeMin    xs  (y:ys)
@@ -497,7 +502,7 @@ instance (Ord e, Ord c) => Semigroup (MinimalTopologyContext e c) where
             mergeFoci (es, c, a) (_, _, b) = (es, c, a <> b)
 
 
-toMinimalTopologyContext :: Ord e => NonEmpty (EdgeSet e, c, e) -> MinimalTopologyContext e c
+toMinimalTopologyContext :: (Ord e, Ord c) => NonEmpty (EdgeSet e, c, e) -> MinimalTopologyContext e c
 toMinimalTopologyContext = MW . fmap (\(x,y,z) -> (x, y, pure z)) . NE.sortWith firstOfThree 
 
 
