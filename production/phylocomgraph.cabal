@@ -298,6 +298,7 @@ executable pcg
                      , blaze-html
                        -- Required for Data.Map.restrictKeys
                      , containers       >=0.5.8
+                     , deepseq
                      , directory
                      , either
                      , Glob
@@ -311,6 +312,7 @@ executable pcg
                      , pcg-file-parsers
                      , pcg-language
                      , pcg-utility
+                     , random-shuffle
                      , semigroupoids
                      , semigroups
                      , text
