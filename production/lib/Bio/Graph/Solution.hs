@@ -70,11 +70,11 @@ instance PrintDot a => PrintDot (PhylogeneticSolution a) where
 
     unqtDot       = unqtListToDot . toList . phylogeneticForests
 
-    toDot         = listToDot . toList . phylogeneticForests
+    toDot         =     listToDot . toList . phylogeneticForests
 
     unqtListToDot = fmap mconcat . sequenceA . fmap unqtDot
 
-    listToDot     = fmap mconcat . sequenceA . fmap toDot
+    listToDot     = fmap mconcat . sequenceA . fmap   toDot
 
 
 instance Show a => Show (PhylogeneticSolution a) where
@@ -85,21 +85,21 @@ instance Show a => Show (PhylogeneticSolution a) where
         renderForest = indent . foldMapWithKey f
           where
             f k e = mconcat
-                  [ "Component #"
-                  , show k
-                  , ":\n\n"
-                  , indent $ show e
-                  , "\n"
-                  ]
+                [ "Component #"
+                , show k
+                , ":\n\n"
+                , indent $ show e
+                , "\n"
+                ]
         renderForests = indent . foldMapWithKey f
           where
             f k e = mconcat
-                  [ "Forest #"
-                  , show k
-                  , ":\n\n"
-                  , indent e
-                  , "\n"
-                  ]
+                [ "Forest #"
+                , show k
+                , ":\n\n"
+                , indent e
+                , "\n"
+                ]
 
 
 instance ToNewick a => ToNewick (PhylogeneticSolution a) where
