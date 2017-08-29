@@ -28,6 +28,7 @@ import           PCG.Syntax (Command(..))
 import           Text.XML
 -- import           Text.XML.Light
 
+
 evaluate :: Command -> SearchState -> SearchState
 evaluate (REPORT (ReportCommand format target)) old = do
     stateValue <- old
@@ -36,8 +37,11 @@ evaluate (REPORT (ReportCommand format target)) old = do
      MultiStream  streams -> old <* sequenceA (liftIO . uncurry writeFile <$> streams)
      SingleStream output  ->
        let op = case target of
-                  OutputToStdout -> putStr
-                  OutputToFile f -> writeFile f
+                  OutputToStdout   -> putStr
+                  OutputToFile f w ->
+                    case w of
+                      Append    -> appendFile f
+                      Overwrite ->  writeFile f
        in  old <* liftIO (op output)
 
 evaluate _ _ = fail "Invalid READ command binding"

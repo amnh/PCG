@@ -19,6 +19,7 @@ module PCG.Syntax.Parser where
 
 import Data.CaseInsensitive   (FoldCase)
 import Data.List.NonEmpty     (NonEmpty, some1)
+import PCG.Command.Build
 import PCG.Command.Read
 import PCG.Command.Report
 import PCG.Syntax.Combinators
@@ -28,7 +29,8 @@ import Text.Megaparsec
 -- |
 -- All the commands of the PCG scripting language.
 data  Command
-    = READ   ReadCommand
+    = BUILD   BuildCommand
+    | READ     ReadCommand
     | REPORT ReportCommand
     deriving (Show)
 
@@ -47,6 +49,7 @@ computationalStreamParser = Computation <$> some1 commandStreamParser <* eof
 -- Parse a single, well defined PCG command.
 commandStreamParser :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m Command
 commandStreamParser = whitespace *> choice
-    [ READ   <$> parseCommand   readCommandSpecification
+    [ BUILD  <$> parseCommand  buildCommandSpecification
+    , READ   <$> parseCommand   readCommandSpecification
     , REPORT <$> parseCommand reportCommandSpecification
     ] <* whitespace

@@ -6,6 +6,7 @@ module File.Format.Fastc.Test
   ) where
 
 import Control.Arrow            (first,second)
+import Data.List.NonEmpty       (NonEmpty)
 import qualified Data.List.NonEmpty as NE (fromList)
 import Data.Vector              (Vector,fromList)
 import File.Format.Fasta.Test   (validTaxonLines)
@@ -29,8 +30,8 @@ fastcSymbolSequence' = testGroup "fastcSymbolSequence" [valid]
     valid       = testGroup "Valid sequences" $ f <$> validSequences
 
 
-validSequences :: [(Vector [String],String)]
-validSequences = first fromList <$>
+validSequences :: [(Vector (NonEmpty String), String)]
+validSequences = first (fromList . fmap NE.fromList) <$>
     [ ([["wow"]]                                           , "wow\n"                         )
     , ([["wow"],["such"]]                                  , "wow such\n"                    )
     , ([["wow"],["such"],["very"]]                         , " wow such very \n"             )

@@ -17,6 +17,7 @@ module PCG.Command.Report
   ( ReportCommand(..)
   , OutputFormat(..)
   , OutputTarget(..)
+  , FileWriteMethod(..)
   , reportCommandSpecification
   ) where
 
@@ -49,8 +50,16 @@ data  OutputFormat
 -- Where the output stream should be directed.
 data  OutputTarget
     = OutputToStdout
-    | OutputToFile FilePath
+    | OutputToFile FilePath FileWriteMethod
     deriving (Show)
+
+
+-- |
+-- Defines the writing mode for how files should be written to disk.
+data  FileWriteMethod
+    = Append
+    | Overwrite
+    deriving (Eq, Show)
 
 
 -- |
@@ -68,16 +77,26 @@ reportCommandSpecification :: CommandSpecification ReportCommand
 reportCommandSpecification = command "report" . argList $ ReportCommand <$> outputFormat <*> outputTarget
 
 
-outputTarget :: Ap SyntacticArgument OutputTarget
-outputTarget = choiceFrom [ stdout, toFile ] `withDefault` OutputToStdout
-  where
-    stdout = value "stdout" $> OutputToStdout
-    toFile = OutputToFile <$> text  
-
-
 outputFormat :: Ap SyntacticArgument OutputFormat
 outputFormat = choiceFrom [ dataFormat, dotFormat, xmlFormat ]
   where
     dataFormat = value "data" $> Data
     xmlFormat  = value "xml"  $> XML
     dotFormat  = choiceFrom [value "dot", value "graphviz"]  $> DotFile
+
+
+outputTarget :: Ap SyntacticArgument OutputTarget
+outputTarget = choiceFrom [ stdout, toFile ] `withDefault` OutputToStdout
+  where
+    stdout = value "stdout" $> OutputToStdout
+    toFile = choiceFrom
+        [ argList $ OutputToFile <$> text <*> fileWriteMethod
+        ,           OutputToFile <$> text <*> pure Append
+        ]
+
+
+fileWriteMethod :: Ap SyntacticArgument FileWriteMethod
+fileWriteMethod = choiceFrom
+    [ value "overwrite" $> Overwrite
+    , value "append"    $> Append
+    ] `withDefault` Append

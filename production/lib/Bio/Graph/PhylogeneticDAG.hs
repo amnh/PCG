@@ -25,6 +25,8 @@ module Bio.Graph.PhylogeneticDAG
   , preorderFromRooting
   , preorderSequence'
   , renderSummary
+--  , riefiedSolution
+--  , riefyForest
   , rootCosts
   -- * Mapping over networks
   , edgePreorderMap

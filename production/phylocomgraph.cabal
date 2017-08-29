@@ -33,7 +33,7 @@ cabal-version:       >= 1.22
 
 flag build-cpp-files
   description: Toggles the C++ files being successfully build.
-  default: False
+  default: True
 
 
 library
@@ -160,6 +160,7 @@ library
                        Analysis.Parsimony.Dynamic.SequentialAlign
                        Analysis.Parsimony.Fitch.Internal
                        Analysis.Parsimony.Sankoff.Internal
+                       Analysis.Scoring
                        Bio.Character
                        Bio.Character.Decoration.Additive
                        Bio.Character.Decoration.Continuous
@@ -307,6 +308,7 @@ executable pcg
                      , either
                      , Glob
                      , graphviz
+                     , hashable
                      , keys
                      , lens
                      , megaparsec       >=5.0
@@ -345,6 +347,7 @@ executable pcg
   hs-source-dirs:      app
 
   other-modules:
+                       PCG.Command.Build.Evaluate
                        PCG.Command.Read.DecorationInitialization
                        PCG.Command.Read.Evaluate
                        PCG.Command.Read.ReadError
@@ -544,7 +547,6 @@ executable ukkonen-do-comparison
 
   hs-source-dirs:      utils
 
-
 Test-Suite testsuite
   type:                exitcode-stdio-1.0
 
@@ -561,12 +563,14 @@ Test-Suite testsuite
                      , hashable
                      , either
                      , keys
+                     , lens
                      , matrix
                      , megaparsec           >=5.0
                      , mtl
                      , mono-traversable     >=1.0
                      , parallel
                      , phylocomgraph
+                     , pcg-utility
                      , QuickCheck
                      , quickcheck-properties
                      , safe
@@ -585,6 +589,7 @@ Test-Suite testsuite
                      , unordered-containers
                      , vector
                      , vector-instances
+                     , xml
 
   default-language:    Haskell2010
 
@@ -601,154 +606,134 @@ Test-Suite testsuite
                        -fwarn-unused-imports
                        -fwarn-unused-matches
   other-modules:
-                       Analysis.ImpliedAlignment.AlignmentContext
-                       Analysis.ImpliedAlignment.DynamicProgramming
-                       Analysis.ImpliedAlignment.Internal
-                       Analysis.ImpliedAlignment.Standard
-                       Analysis.ImpliedAlignment.Test
-                       Analysis.ImpliedAlignment.Test.Trees
-                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
-                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Test
---                       Analysis.Parsimony.Binary.Internal
---                       Analysis.Parsimony.Binary.Test
-                       Analysis.Parsimony.Dynamic.DirectOptimization.DeletionEvents
-                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
-                       Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents
-                       Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Internal
-                       Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Test
---                       Analysis.Parsimony.Binary.Fitch
-                       Bio.Character
-                       Bio.Character.Decoration.Additive
-                       --Bio.Character.Decoration.Continuous
-                       Bio.Character.Decoration.Discrete
-                       Bio.Character.Decoration.Dynamic
-                       Bio.Character.Decoration.Fitch
-                       Bio.Character.Decoration.Metric
-                       Bio.Character.Decoration.NonMetric
-                       Bio.Character.Encodable
-                       Bio.Character.Exportable.Class
-                       Bio.Character.Parsed
-                       Bio.Character.Decoration.Additive.Class
-                       Bio.Character.Decoration.Additive.Internal
-                       --Bio.Character.Decoration.Continuous.Class
-                       --Bio.Character.Decoration.Continuous.Internal
-                       Bio.Character.Decoration.Dynamic.Class
-                       Bio.Character.Decoration.Dynamic.Internal
-                       Bio.Character.Decoration.Fitch.Class
-                       Bio.Character.Decoration.Fitch.Internal
-                       Bio.Character.Decoration.Metric.Class
-                       Bio.Character.Decoration.Metric.Internal
-                       Bio.Character.Decoration.NonMetric.Class
-                       Bio.Character.Decoration.NonMetric.Internal
+                       Control.Evaluation.Test
+                       Bio.Character.Encodable.Dynamic.Test
+                       Bio.Character.Encodable.Static.Test
+                       Data.BitMatrix.Test
+                       TestSuite.LibraryTests
                        Bio.Character.Encodable.Dynamic
                        Bio.Character.Encodable.Dynamic.Class
                        Bio.Character.Encodable.Dynamic.Internal
                        Bio.Character.Encodable.Internal
-                       Bio.Character.Encodable.Static
-                       Bio.Character.Encodable.Static.Class
-                       Bio.Character.Encodable.Static.Internal
                        Bio.Character.Encodable.Stream
-                       Bio.Character.Parsed.Class
-                       Bio.Character.Parsed.Internal
-                       Bio.Metadata
-                       Bio.Metadata.CharacterName
-                       --Bio.Metadata.Continuous
-                       Bio.Metadata.Discrete
-                       Bio.Metadata.Parsed
-                       Bio.Metadata.General
-                       Bio.Metadata.General.Class
-                       Bio.Metadata.General.Internal
-                       Bio.Metadata.Discrete.Class
-                       Bio.Metadata.Discrete.Internal
-                       Bio.Sequence
-                       Bio.Sequence.Block
-                       Bio.Graph
-                       Bio.Graph.Component
-                       Bio.Graph.LeafSet
-                       Bio.Graph.Node
-                       Bio.Graph.ReferenceDAG
-                       Bio.Graph.ZipperDAG
-                       Bio.Graph.Forest
-                       Bio.Graph.ReferenceDAG.Internal
-                       Bio.Graph.ZipperDAG.Internal
-                       Bio.Sequence.Internal
-
-
-
+                       Bio.Character.Exportable
+                       Bio.Character.Exportable.Class
                        Control.Evaluation.Internal
-                       Control.Evaluation.Test
                        Control.Evaluation.Unit
+                       Control.Monad.Logger
+                       Data.Alphabet
                        Data.Alphabet.IUPAC
+                       Data.Alphabet.Internal
+                       Data.BitMatrix
                        Data.BitMatrix.Internal
-                       Data.BitMatrix.Test
-                       Data.List.Utility
-                       Data.TCM
-                       Data.TCM.Internal
-                       File.Format.Fasta
-                       File.Format.Fasta.Converter
-                       File.Format.Fasta.Internal
-                       File.Format.Fasta.Parser
-                       File.Format.Fasta.Test
-                       File.Format.Fastc
-                       File.Format.Fastc.Parser
-                       File.Format.Fastc.Test
-                       File.Format.Newick
-                       File.Format.Newick.Internal
-                       File.Format.Newick.Parser
-                       File.Format.Newick.Test
-                       File.Format.Nexus
-                       File.Format.Nexus.Data
-                       File.Format.Nexus.Parser
-                       File.Format.Nexus.Partition
-                       File.Format.Nexus.Validate
-                       File.Format.TNT
-                       File.Format.TNT.Command.CCode
-                       File.Format.TNT.Command.CNames
-                       File.Format.TNT.Command.Cost
-                       File.Format.TNT.Command.NStates
-                       File.Format.TNT.Command.Procedure
-                       File.Format.TNT.Command.TRead
-                       File.Format.TNT.Command.XRead
-                       File.Format.TNT.Internal
-                       File.Format.TNT.Parser
-                       File.Format.TNT.Partitioning
-                       File.Format.TransitionCostMatrix
-                       File.Format.TransitionCostMatrix.Parser
-                       File.Format.TransitionCostMatrix.Test
-                       File.Format.VertexEdgeRoot
-                       File.Format.VertexEdgeRoot.Parser
-                       File.Format.VertexEdgeRoot.Test
-                       Test.Custom
-                       Test.Custom.Constructions
-                       Test.Custom.Types
-                       Test.Custom.Tree
-                       Test.Custom.Tree.Test
-                       Test.Custom.Parse
                        Test.QuickCheck.Arbitrary.Instances
                        TestSuite.ExecutableTests
-                       TestSuite.GeneratedTests
-                       TestSuite.GeneratedTests.Fasta
-                       TestSuite.GeneratedTests.Fastc
-                       TestSuite.GeneratedTests.Internal
-                       TestSuite.GeneratedTests.Nexus
-                       TestSuite.LibraryTests
-                       Text.Megaparsec.Custom
-                       Text.Megaparsec.Custom.Test
-
-                       Data.Matrix.NotStupid
-                       TestSuite.GeneratedTests.TNT
-                       Data.Alphabet
-                       Data.BitMatrix
-                       Control.Evaluation
-                       Control.Evaluation.Trans
-                       Control.Monad.Logger
-                       Analysis.Parsimony.Binary.Optimization
-                       Bio.PhyloGraph.Forest.Parsed
-                       Bio.Metadata.MaskGenerator
-                       Bio.PhyloGraph.DAG.Test
-                       Analysis.Parsimony.Binary.Constraints
-                       -- Analysis.Parsimony.Binary.SequentialAlign
-                       Analysis.Parsimony.Dynamic.SequentialAlign
-                       Bio.Character.Encodable.Static.Test
-                       -- Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
+                       Text.XML.Class
+                       Text.XML.Custom
+        
+--                       Analysis.ImpliedAlignment.AlignmentContext
+--                       Analysis.ImpliedAlignment.DynamicProgramming
+--                       Analysis.ImpliedAlignment.Internal
+--                       Analysis.ImpliedAlignment.Standard
+--                       Analysis.ImpliedAlignment.Test
+--                       Analysis.ImpliedAlignment.Test.Trees
+--                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
+--                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Test
+----                       Analysis.Parsimony.Binary.Internal
+----                       Analysis.Parsimony.Binary.Test
+--                       Analysis.Parsimony.Dynamic.DirectOptimization.DeletionEvents
+--                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
+--                       Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents
+--                       Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Internal
+--                       Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Test
+----                       Analysis.Parsimony.Binary.Fitch
+--                       Bio.Character
+--                       Bio.Character.Decoration.Additive
+--                       --Bio.Character.Decoration.Continuous
+--                       Bio.Character.Decoration.Discrete
+--                       Bio.Character.Decoration.Dynamic
+--                       Bio.Character.Decoration.Fitch
+--                       Bio.Character.Decoration.Metric
+--                       Bio.Character.Decoration.NonMetric
+--                       Bio.Character.Encodable
+--                       Bio.Character.Exportable.Class
+--                       Bio.Character.Parsed
+--                       Bio.Character.Decoration.Additive.Class
+--                       Bio.Character.Decoration.Additive.Internal
+--                       --Bio.Character.Decoration.Continuous.Class
+--                       --Bio.Character.Decoration.Continuous.Internal
+--                       Bio.Character.Decoration.Dynamic.Class
+--                       Bio.Character.Decoration.Dynamic.Internal
+--                       Bio.Character.Decoration.Fitch.Class
+--                       Bio.Character.Decoration.Fitch.Internal
+--                       Bio.Character.Decoration.Metric.Class
+--                       Bio.Character.Decoration.Metric.Internal
+--                       Bio.Character.Decoration.NonMetric.Class
+--                       Bio.Character.Decoration.NonMetric.Internal
+--                       Bio.Character.Encodable.Dynamic
+--                       Bio.Character.Encodable.Dynamic.Class
+--                       Bio.Character.Encodable.Dynamic.Internal
+--                       Bio.Character.Encodable.Internal
+--                       Bio.Character.Encodable.Static
+--                       Bio.Character.Encodable.Static.Class
+--                       Bio.Character.Encodable.Static.Internal
+--                       Bio.Character.Encodable.Stream
+--                       Bio.Character.Parsed.Class
+--                       Bio.Character.Parsed.Internal
+--                       Bio.Metadata
+--                       Bio.Metadata.CharacterName
+--                       --Bio.Metadata.Continuous
+--                       Bio.Metadata.Discrete
+--                       Bio.Metadata.Parsed
+--                       Bio.Metadata.General
+--                       Bio.Metadata.General.Class
+--                       Bio.Metadata.General.Internal
+--                       Bio.Metadata.Discrete.Class
+--                       Bio.Metadata.Discrete.Internal
+--                       Bio.Sequence
+--                       Bio.Sequence.Block
+--                       Bio.Graph
+--                       Bio.Graph.Component
+--                       Bio.Graph.LeafSet
+--                       Bio.Graph.Node
+--                       Bio.Graph.ReferenceDAG
+--                       Bio.Graph.ZipperDAG
+--                       Bio.Graph.Forest
+--                       Bio.Graph.ReferenceDAG.Internal
+--                       Bio.Graph.ZipperDAG.Internal
+--                       Bio.Sequence.Internal
+--
+--
+--
+--                       Control.Evaluation.Internal
+--                       Control.Evaluation.Test
+--                       Control.Evaluation.Unit
+--                       Data.Alphabet.IUPAC
+--                       Data.BitMatrix.Internal
+--                       Data.BitMatrix.Test
+--                       Data.List.Utility
+--                       Data.TCM
+--                       Data.TCM.Internal
+--                       Test.Custom
+--                       Test.Custom.Constructions
+--                       Test.Custom.Types
+--                       Test.Custom.Tree
+--                       Test.Custom.Tree.Test
+--                       Test.QuickCheck.Arbitrary.Instances
+--                       TestSuite.ExecutableTests
+--                       Data.Matrix.NotStupid
+--                       Data.Alphabet
+--                       Data.BitMatrix
+--                       Control.Evaluation
+--                       Control.Evaluation.Trans
+--                       Control.Monad.Logger
+--                       Analysis.Parsimony.Binary.Optimization
+--                       Bio.PhyloGraph.Forest.Parsed
+--                       Bio.Metadata.MaskGenerator
+--                       Bio.PhyloGraph.DAG.Test
+--                       Analysis.Parsimony.Binary.Constraints
+--                       -- Analysis.Parsimony.Binary.SequentialAlign
+--                       Analysis.Parsimony.Dynamic.SequentialAlign
+--                       Bio.Character.Encodable.Static.Test
+--                       -- Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
 

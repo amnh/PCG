@@ -89,12 +89,105 @@ data PhylogeneticDAG2 e n u v w x y z
 type EdgeReference = (Int, Int)
 
 
-instance HasLeafSet (PhylogeneticDAG2 e n u v w x y z) (LeafSet n) where
+{-
+type SearchState = EvaluationT IO GraphState
+
+
+type GraphState = Either TopologicalResult DecoratedCharacterResult
+
+
+type TopologicalResult = PhylogeneticSolution (ReferenceDAG () EdgeLength (Maybe String))
+
+
+type DecoratedCharacterResult = PhylogeneticSolution FinalDecorationDAG
+
+
+type FinalDecorationDAG =
+       PhylogeneticDAG2
+         EdgeLength
+         (Maybe String)
+         (ContinuousOptimizationDecoration ContinuousChar)
+         (FitchOptimizationDecoration   StaticCharacter)
+         (AdditiveOptimizationDecoration StaticCharacter)
+         (SankoffOptimizationDecoration StaticCharacter)
+         (SankoffOptimizationDecoration StaticCharacter)
+         (DynamicDecorationDirectOptimization DynamicChar)
+--         (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
+
+
+type IncidentEdges = [EdgeReference]
+
+
+type PostOrderDecorationDAG =
+       PhylogeneticDAG2
+         EdgeLength
+         (Maybe String)
+         (ContinuousPostorderDecoration  ContinuousChar)
+         (FitchOptimizationDecoration   StaticCharacter)
+         (AdditivePostorderDecoration   StaticCharacter)
+         (SankoffOptimizationDecoration StaticCharacter)
+         (SankoffOptimizationDecoration StaticCharacter)
+         (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
+
+
+type ReRootedEdgeContext u v w x y z =
+   ( ResolutionCache (CharacterSequence u v w x y z)
+   , ResolutionCache (CharacterSequence u v w x y z)
+   , ResolutionCache (CharacterSequence u v w x y z)
+   )
+
+
+type UnifiedCharacterBlock
+     = CharacterBlock
+         UnifiedContinuousCharacter
+         UnifiedDiscreteCharacter
+         UnifiedDiscreteCharacter
+         UnifiedDiscreteCharacter
+         UnifiedDiscreteCharacter
+         UnifiedDynamicCharacter
+
+
+type UnifiedCharacterSequence
+     = CharacterSequence
+         UnifiedContinuousCharacter
+         UnifiedDiscreteCharacter
+         UnifiedDiscreteCharacter
+         UnifiedDiscreteCharacter
+         UnifiedDiscreteCharacter
+         UnifiedDynamicCharacter
+
+
+type UnifiedContinuousCharacter = Maybe (ContinuousDecorationInitial ContinuousChar)
+
+
+type UnifiedDiscreteCharacter   = Maybe (DiscreteDecoration StaticCharacter)
+
+
+type UnifiedDynamicCharacter    = Maybe (DynamicDecorationInitial DynamicChar)
+
+
+type UnRiefiedCharacterDAG =
+       PhylogeneticDAG
+         EdgeLength
+         (Maybe String)
+         UnifiedContinuousCharacter
+         UnifiedDiscreteCharacter
+         UnifiedDiscreteCharacter
+         UnifiedDiscreteCharacter
+         UnifiedDiscreteCharacter
+         UnifiedDynamicCharacter
+
+
+-}
+
+
+--instance HasLeafSet (PhylogeneticDAG2 e n u v w x y z) (LeafSet n) where
+instance HasLeafSet (PhylogeneticDAG2 e n u v w x y z) (LeafSet (PhylogeneticNode2 (CharacterSequence u v w x y z) n)) where
 
     leafSet = lens getter undefined
         where
-            getter :: (PhylogeneticDAG2 e n u v w x y z) -> (LeafSet n)
-            getter (PDAG2 e) = fmap nodeDecorationDatum2 $ e ^. leafSet
+--            getter :: (PhylogeneticDAG2 e n u v w x y z) -> (LeafSet n)
+            getter (PDAG2 e) =  e ^. leafSet
 
 
 instance Foldable f => PrintDot (PhylogeneticDAG2 e (f String) u v w x y z) where

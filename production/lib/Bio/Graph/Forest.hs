@@ -31,9 +31,9 @@ import Data.Maybe
 import Data.Semigroup
 import Data.Semigroup.Foldable
 -- import Data.Semigroup.Traversable
-import Prelude                   hiding (head, lookup)
+import Prelude                hiding (head, lookup, zip, zipWith)
 import Text.Newick.Class
-import Text.XML.Class
+import Text.XML.Custom
 -- import Text.XML.Light.Types
 
 
@@ -77,14 +77,11 @@ instance FoldableWithKey1 PhylogeneticForest where
     foldMapWithKey1 f = foldMapWithKey1 f . unwrap
 
 
--- |
--- A 'Lens' for the 'PhylogeneticForest' field
-instance HasLeafSet a (LeafSet b) => HasLeafSet (PhylogeneticForest a) (NonEmpty (LeafSet b)) where
+instance (HasLeafSet a b, Semigroup b) => HasLeafSet (PhylogeneticForest a) b where
 
     leafSet = lens getter undefined
       where
-         getter e    = (^. leafSet) <$> unwrap e
-        --  setter e _f = id e            -- No setter method
+        getter = (foldMap1 (^. leafSet)) . unwrap
 
 
 instance Indexable PhylogeneticForest where
@@ -153,6 +150,27 @@ instance TraversableWithKey1 PhylogeneticForest where
 
     {-# INLINE traverseWithKey1 #-}
     traverseWithKey1 f = fmap PhylogeneticForest . traverseWithKey1 f . unwrap
+
+
+instance Zip PhylogeneticForest where
+
+    {-# INLINE zipWith #-}
+    zipWith f lhs rhs = PhylogeneticForest $ zipWith f (unwrap lhs) (unwrap rhs)
+
+    {-# INLINE zip #-}
+    zip lhs rhs = PhylogeneticForest $ zip (unwrap lhs) (unwrap rhs)
+
+    {-# INLINE zap #-}
+    zap lhs rhs = PhylogeneticForest $ zap (unwrap lhs) (unwrap rhs)
+
+
+instance ZipWithKey PhylogeneticForest where
+
+    {-# INLINE zipWithKey #-}
+    zipWithKey f lhs rhs = PhylogeneticForest $ zipWithKey f (unwrap lhs) (unwrap rhs)
+
+    {-# INLINE zapWithKey #-}
+    zapWithKey   lhs rhs = PhylogeneticForest $ zapWithKey (unwrap lhs) (unwrap rhs)
 
 
 {-# INLINE unwrap #-}

@@ -22,6 +22,7 @@ import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Sequence
 import           Bio.Graph.Node
+import           Bio.Graph.PhylogeneticDAG.Class
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
 import           Control.Applicative
@@ -68,14 +69,16 @@ import           Prelude            hiding (lookup, zipWith)
 assignOptimalDynamicCharacterRootEdges
   :: ( HasBlockCost u v w x y z Word Double
      , HasTraversalFoci z (Maybe TraversalFoci)
-{-     
+{--
+     , Show e
+     , Show n
      , Show u
      , Show v
      , Show w
      , Show x
      , Show y
      , Show z
--}
+--}
      ) --x, Ord x, Show x)
   => (z -> [z] -> z)
   -> PhylogeneticDAG2 e n u v w x y z
@@ -83,18 +86,39 @@ assignOptimalDynamicCharacterRootEdges
      , Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
      , Vector (Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
      ) 
---assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) = undefined
-{--}
-assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) =
-    (PDAG2 updatedDag, edgeCostMapping, contextualNodeDatum)
+--assignOptimalDynamicCharacterRootEdges extensionTransformation x | trace (L.unpack . renderDot $ toDot x) False = undefined
+--assignOptimalDynamicCharacterRootEdges extensionTransformation x | trace (show x) False = undefined
+assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 inputDag) =
+    case toList inputDag of
+      -- Degenarate cases
+      []      ->     (pdag, mempty, mempty)
+      [_]     ->     (pdag, mempty, mempty)
+      -- Trivial case
+      _:_:[]  -> let r = M.singleton (0,1) (getCache 1)
+                     c = M.singleton (1,0) (getCache 0)
+                     m = r <> c
+                 in  (PDAG2 $ fmap setDefaultFoci inputDag, m, V.generate 2 (const m))
+      -- Complex case, see four steps below.
+      _:_:_:_ ->     (PDAG2 updatedDag, edgeCostMapping, contextualNodeDatum)
   where
 
+    -- Used in the trivial case of single leaf component of a forest.
+    setDefaultFoci =
+        PNode2
+          <$> fmap (fmap (hexmap id id id id id f)) . resolutions
+          <*> nodeDecorationDatum2
+      where
+        f x = x & traversalFoci .~ (Just v :: Maybe TraversalFoci)
+        e = (0,1)
+        t = singletonEdgeSet e
+        v = pure (e,t)
+    
     -- Step 1: Construct a hashmap of all the edges.
     unrootedEdges = rootEdgeReferences <> otherUnrootedEdges
     
     -- Step 2: Create a lazy memoized hashmap of the edge costs for each dynmaic character.
 
-    edgeCostMapping = referenceEdgeMapping
+    edgeCostMapping = {- (\x -> trace ("edgeCostMapping length: " <> show (length x)) x) $ -} referenceEdgeMapping
 
     -- Step 3: For each dynamic character, find the minimal cost edge(s).
     minimalCostSequence = sequenceOfEdgesWithMinimalCost
@@ -121,7 +145,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
         f i =
           case IM.keys . childRefs $ refVec ! i of
             []    -> []
-            [_]   -> []
+            [x]   -> [(i,x)]
             x:y:_ -> [(x,y)]
 
     refVec = references inputDag
@@ -268,7 +292,12 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 inputDag) 
                   | candidate `notElem` rootRefs inputDag = candidate
                   | otherwise = sibling
                   where
-                    sibling   = head . filter (/=n) . IM.keys .  childRefs $ refVec ! candidate
+                    sibling = 
+                      -- Kludge for single leaf forests with a surperfluous root node.
+                      -- Shouldbn't ever execute the empty list case, but here for safety.
+                      case filter (/=n) . IM.keys .  childRefs $ refVec ! candidate of
+                         []  -> candidate
+                         x:_ -> x
 
             originalRootingParentRefs = parentRefs $ refVec ! n
 

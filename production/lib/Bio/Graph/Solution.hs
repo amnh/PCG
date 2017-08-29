@@ -11,7 +11,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses, UndecidableInstances #-}
 
 module Bio.Graph.Solution
   ( PhylogeneticSolution(..)
@@ -57,6 +57,13 @@ newtype PhylogeneticSolution a
 {-# INLINE phylogeneticForests #-}
 phylogeneticForests :: PhylogeneticSolution a -> NonEmpty (PhylogeneticForest a)
 phylogeneticForests (PhylogeneticSolution x) = x
+
+
+instance (HasLeafSet a b, Semigroup b) => HasLeafSet (PhylogeneticSolution a) b where
+
+    leafSet = lens getter undefined
+      where
+        getter = foldMap1 (^. leafSet) . phylogeneticForests
 
 
 instance PrintDot a => PrintDot (PhylogeneticSolution a) where

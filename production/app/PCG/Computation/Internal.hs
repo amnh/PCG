@@ -6,6 +6,7 @@ import           Data.Char          (isSpace)
 import           Data.Foldable
 import           Data.List.NonEmpty (NonEmpty(..))
 import           Data.Semigroup
+import qualified PCG.Command.Build.Evaluate  as Build
 import qualified PCG.Command.Read.Evaluate   as Read
 import qualified PCG.Command.Report.Evaluate as Report
 import           PCG.Syntax
@@ -29,6 +30,7 @@ evaluate :: Computation -> SearchState
 evaluate (Computation xs) = foldl' (flip f) mempty xs
   where
     f :: Command -> SearchState -> SearchState
+    f x@BUILD  {} = Build.evaluate  x
     f x@READ   {} = Read.evaluate   x
     f x@REPORT {} = Report.evaluate x
 --    f _ = error "NOT YET IMPLEMENTED"

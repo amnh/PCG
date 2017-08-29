@@ -289,7 +289,9 @@ instance (ToXML n) => ToXML (IndexData e n) where
    -- ("Node_type", show $ getNodeType indexData)
 
 
+-- | (✔)
 instance (Applicative f, Foldable f) => ToXML (ReferenceDAG d e (f String)) where
+--instance (ToXML n) => ToXML (ReferenceDAG d e n) where
 
     toXML dag = xmlElement "Directed_acyclic_graph" [] [newick, meta, vect]
       where
@@ -298,6 +300,56 @@ instance (Applicative f, Foldable f) => ToXML (ReferenceDAG d e (f String)) wher
           meta   = Right . toXML $ graphData dag
           newick = Left ("Newick_representation", toNewick dag)
           vect   = Right $ collapseElemList "Nodes" [] dag  -- Because ReferenceDAG is Foldable over Vector(IndexData)
+
+
+referenceEdgeSet :: ReferenceDAG d e n -> [(Int, Int)]
+referenceEdgeSet = foldMapWithKey f . references
+  where
+    f i =  fmap (\e -> (i,e)) . IM.keys . childRefs
+
+
+invadeEdge
+  :: Monoid e
+  => ReferenceDAG d e n
+  -> (n -> n -> n -> n) -- ^ Function describing how to construct the new internal node, parent, old child, new child
+  -> n
+  -> (Int, Int)
+  -> ReferenceDAG d e n
+invadeEdge dag transformation node (oRef, iRef) = newDag
+  where
+    oldLen  = length refs
+    newRef  = oldLen -- synonym
+    refs    = references dag
+    newDag  =
+      RefDAG
+        <$> const newVec
+        <*> rootRefs
+        <*> graphData
+        $ dag
+
+    getDatum = nodeDecoration . (refs !)
+
+    newVec = V.generate (oldLen + 2) g
+      where
+        g i
+          | i <  oldLen = f i $ refs ! i
+          | i == oldLen = IndexData
+                            (transformation (getDatum oRef) (getDatum iRef) node)
+                            (IS.singleton oRef)
+                            (IM.singleton iRef mempty <> IM.singleton (newRef + 1) mempty)
+          | otherwise   = IndexData node (IS.singleton newRef) mempty
+
+    f i x = IndexData (nodeDecoration x) pRefs cRefs
+      where
+        ps = parentRefs x
+        cs = childRefs  x
+        pRefs
+          | i == iRef && oRef `oelem` ps = IS.insert newRef $ IS.delete oRef ps
+          | otherwise = ps
+        cRefs =
+          case iRef `lookup` cs of
+            Just v  -> IM.insert newRef v $ IM.delete iRef cs
+            Nothing -> cs
 
 
 -- |

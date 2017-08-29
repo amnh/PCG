@@ -56,6 +56,10 @@ postorderSequence' :: ( Eq z, Eq z', Hashable z, Hashable z'
                    -> PhylogeneticDAG2 e n u' v' w' x' y' z'
 postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
   where
+    completeLeafSetForDAG = foldl' f zeroBits dag
+      where
+        f acc = (acc .|.) . leafSetRepresentation . NE.head . resolutions
+    
     f6' = memoize2 f6
 {-    
     newDAG
@@ -83,15 +87,15 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
             newResolutions
               | i `notElem` rootRefs dag = localResolutions
               | otherwise =
-                  case NE.filter completeCoverage localResolutions of
-                    x:xs -> x:|xs
-                    _    -> error "Root Node with no complete coverage resolutions!!! This should be logically impossible."
+                  case localResolutions of
+                    x:|[] -> x:|[]
+                    _ ->
+                      case NE.filter completeCoverage localResolutions of
+                        x:xs -> x:|xs
+                        _    -> error "Root Node with no complete coverage resolutions!!! This should be logically impossible."
 
-            completeCoverage = (completeLeafSet ==) . (completeLeafSet .&.) . leafSetRepresentation
+            completeCoverage = (completeLeafSetForDAG ==) . (completeLeafSetForDAG .&.) . leafSetRepresentation
             localResolutions = liftA2 (generateLocalResolutions f1 f2 f3 f4 f5 f6') datumResolutions childResolutions
-            completeLeafSet  = complement $ wlog `xor`wlog
-              where
-                wlog = leafSetRepresentation $ NE.head localResolutions
                 
             node             = references dag ! i
             childIndices     = IM.keys $ childRefs node

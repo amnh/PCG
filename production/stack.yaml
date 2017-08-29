@@ -12,7 +12,7 @@ extra-deps:
 flags: {}
 
 ghc-options:
-  "*": -j
+  "*": -j -fdiagnostics-color=always
 
 local-bin-path: bin
 
@@ -21,7 +21,8 @@ packages:
   - lib/pcg-file-parsers
   - lib/pcg-language
   - lib/pcg-utility
-  - location:  https://github.com/recursion-ninja/graphviz/archive/d2c1283.zip
+# We use this upstream commit until it is uploaded to hackage and stackage respectively.
+  - location:  https://github.com/ivan-m/graphviz/archive/a099a07.zip
     extra-dep: true
 
 resolver: nightly-2017-07-31

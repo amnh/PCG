@@ -16,7 +16,9 @@
 
 module Bio.Graph.PhylogeneticDAG.Reification
   ( reifiedSolution
-  , reifiedToCharacterDAG
+--  , reifiedToCharacterDAG
+  , reifyForest
+--  , reifiedToCharacterDAG
   ) where
 
 import           Bio.Graph.Constructions
@@ -24,40 +26,105 @@ import           Bio.Graph.Node
 -- import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Graph.Solution
+import           Control.Applicative
 import           Control.Lens
 import           Control.Monad.State.Lazy
 import           Data.Bits
 import           Data.Foldable
+import           Data.Functor              (($>))
+import           Data.IntMap               (IntMap)
 import qualified Data.IntMap        as IM
+import           Data.IntSet               (IntSet)
 import           Data.Key
 import           Data.List.NonEmpty        (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty as NE
 import           Data.Maybe
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
+import           Data.Vector               (Vector)
 import qualified Data.Vector        as V
 import           Prelude            hiding (zipWith)
+
+-- import Debug.Trace
 
 
 -- |
 -- Reifies a solution, performing several initialization functions on each DAG
 -- before it's cost can be calculated.
-reifiedSolution :: PhylogeneticSolution UnReifiedCharacterDAG -> CharacterResult
-reifiedSolution  = PhylogeneticSolution . fmap (fmap reifiedToCharacterDAG) . phylogeneticForests
+
+--reifiedSolution :: PhylogeneticSolution UnReifiedCharacterDAG -> CharacterResult
+--reifiedSolution  = PhylogeneticSolution . fmap (fmap reifiedToCharacterDAG) . phylogeneticForests
 
 
 -- |
--- Reifies a particular DAg so it has the requisite context for a post-order
+-- Reifies a particular DAG so it has the requisite context for a post-order
 -- traversal.
-reifiedToCharacterDAG :: UnReifiedCharacterDAG -> CharacterDAG
-reifiedToCharacterDAG (PDAG dag) = PDAG2
+--reifiedToCharacterDAG :: UnReifiedCharacterDAG -> CharacterDAG
+--reifiedToCharacterDAG (PDAG dag) = PDAG2
+
+
+reifiedSolution :: PhylogeneticSolution UnReifiedCharacterDAG -> CharacterResult
+reifiedSolution = PhylogeneticSolution . fmap reifyForest . phylogeneticForests
+
+
+-- |
+-- Reifies a Forest so it has the requisite context for a post-order traversal.
+-- Specifically each leaf in the forest has a unique bitvector index and subtree
+-- representation symbol.
+reifyForest :: PhylogeneticForest UnReifiedCharacterDAG -> PhylogeneticForest CharacterDAG
+reifyForest forest = zipWith (reifyDAGWithContext leavesInForest) leafMaskForest forest
+  where
+    (leafMaskForest, leavesInForest) = tabulateLeaves forest
+
+
+tabulateLeaves :: PhylogeneticForest UnReifiedCharacterDAG -> (PhylogeneticForest (ReferenceDAG () () (Maybe Int)), Int)
+tabulateLeaves = {- (\v@(x,_) -> trace ("Tab Vector:\n\n"  <> foldMap1 (\y -> show $ toList y) x) v) . -}
+                 (`runState` 0) . traverse1 tabulateDAG
+  where
+    tabulateDAG :: UnReifiedCharacterDAG -> State Int (ReferenceDAG () () (Maybe Int))
+    tabulateDAG (PDAG dag) = liftA3 RefDAG newRefs rootRefsContext graphDataContext
+      where
+        rootRefsContext  = pure $ rootRefs dag
+        graphDataContext = pure . defaultGraphMetadata $ graphData dag
+
+        getLeafIndex :: Int -> State Int (Maybe Int)
+        getLeafIndex i
+          | notLeafRef i = pure Nothing
+          | otherwise    = do
+              c <- get
+              modify (+1)
+              pure $ Just c
+
+        getParentRefs :: Applicative f => Int -> f IntSet
+        getParentRefs = pure . parentRefs . (refs !)
+
+        -- Gets the child refs for an index and replaces the edge datum with ().
+        getChildRefs :: Applicative f => Int -> f (IntMap ())
+        getChildRefs = pure . ($> ()) . childRefs . (refs !)
+
+        -- Nice stuff to have in scope.
+        refs       = references dag
+        dagSize    = length refs
+        notLeafRef = not . null . childRefs . (refs !)
+
+        newRefs :: State Int (Vector (IndexData () (Maybe Int)))
+        newRefs = V.generateM dagSize g
+          where
+            g :: Int -> State Int (IndexData () (Maybe Int))
+            g i = liftA3 IndexData (getLeafIndex i) (getParentRefs i) (getChildRefs i)
+
+
+reifyDAGWithContext :: Int -> (ReferenceDAG () () (Maybe Int)) -> UnReifiedCharacterDAG -> CharacterDAG
+reifyDAGWithContext leafCount maskDAG (PDAG dag) = PDAG2 $
     RefDAG
     { references = newRefs
-    , rootRefs   = rootRefs  dag
+    , rootRefs   = rootRefs dag
     , graphData  = defaultGraphMetadata $ graphData dag
     }
   where
-    dagSize   = length $ references dag
+    buildLeafNodeAssignments = fmap nodeDecoration $ references maskDAG
+    
+    dagSize = length $ references dag
 
     newRefs = V.generate dagSize g
       where
@@ -65,15 +132,6 @@ reifiedToCharacterDAG (PDAG dag) = PDAG2
 
     memo = V.generate dagSize g
       where
-        (buildLeafNodeAssignments, leafCount) = (`runState` 0) . traverse f $ references dag
-          where
-            f e
-              | (not . null) (childRefs e) = pure Nothing
-              | otherwise = do
-                  c <- get
-                  modify (+1)
-                  pure $ Just c
-
         g i = newNode -- IndexData <$> const newNode <*> parentRefs <*> childRefs $ indexData
           where
             indexData = references dag ! i
@@ -100,7 +158,6 @@ reifiedToCharacterDAG (PDAG dag) = PDAG2
                 Nothing ->
                   case IM.keys $ childRefs indexData of
                     x:xs -> ( foldr1 (.|.) $ leafSetRepresentation . NE.head . resolutions . (memo !) <$> (x:|xs)
-                            , foldMap1 (subtreeRepresentation . NE.head . resolutions . (memo !)) (x:|xs)
+                            , foldMap1      (subtreeRepresentation . NE.head . resolutions . (memo !)) (x:|xs)
                             )
                     []   -> error "Never occurs."
-
