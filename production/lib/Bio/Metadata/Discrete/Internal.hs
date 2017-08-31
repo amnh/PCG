@@ -30,6 +30,7 @@ import Control.Lens
 import Data.Alphabet
 import Data.List (intercalate)
 import Data.Monoid
+import Text.XML
 
 
 -- |
@@ -37,8 +38,8 @@ import Data.Monoid
 -- discrete different bins. Continous bins do not have Alphabets.
 data DiscreteCharacterMetadataDec
    = DiscreteCharacterMetadataDec
-   { alphabet       :: Alphabet String
-   , generalData    :: GeneralCharacterMetadataDec
+   { alphabet    :: Alphabet String
+   , generalData :: GeneralCharacterMetadataDec
    }
 
 
@@ -70,17 +71,17 @@ instance Show DiscreteCharacterMetadataDec where
 
 
 -- | (✔)
-instance GeneralCharacterMetadata DiscreteCharacterMetadataDec where
-
-    {-# INLINE extractGeneralCharacterMetadata #-}
-    extractGeneralCharacterMetadata = generalData
-
-
--- | (✔)
 instance DiscreteCharacterMetadata DiscreteCharacterMetadataDec where
 
     {-# INLINE extractDiscreteCharacterMetadata #-}
     extractDiscreteCharacterMetadata = id
+
+
+-- | (✔)
+instance GeneralCharacterMetadata DiscreteCharacterMetadataDec where
+
+    {-# INLINE extractGeneralCharacterMetadata #-}
+    extractGeneralCharacterMetadata = generalData
 
 
 -- | (✔)
@@ -101,6 +102,16 @@ instance HasCharacterWeight DiscreteCharacterMetadataDec Double where
 
     characterWeight = lens (\e -> generalData e ^. characterWeight)
                     $ \e x -> e { generalData = generalData e & characterWeight .~ x }
+
+
+instance ToXML DiscreteCharacterMetadataDec where
+
+    toXML xmlElem = xmlElement "Discrete_metadata" attrs contents
+        where
+            attrs    = []
+            contents = [ Right . toXML $ generalData xmlElem
+                       , Left ("Alphabet", show $ xmlElem ^. characterAlphabet)
+                       ]
 
 
 -- |

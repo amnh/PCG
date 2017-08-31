@@ -30,7 +30,7 @@ import Data.Alphabet
 import Data.Range
 import Data.Semigroup
 import Numeric.Extended
-import Text.XML.Custom
+import Text.XML
 
 
 -- |

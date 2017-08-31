@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies #-}
 
 module Bio.Graph.ReferenceDAG.Internal where
 
@@ -37,6 +37,7 @@ import qualified Data.List.NonEmpty        as NE
 import           Data.Monoid                      ((<>))
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
+import qualified Data.Set                  as S
 import           Data.String
 import           Data.Tree                        (unfoldTree)
 import           Data.Tree.Pretty                 (drawVerticalTree)
@@ -45,13 +46,22 @@ import qualified Data.Vector               as V
 import           Data.Vector.Instances            ()
 import           Numeric.Extended.Real
 import           Prelude                   hiding (lookup)
-import           Text.XML.Custom
+import           Text.Newick.Class
+import           Text.XML
 
---import           Debug.Trace
+import           Debug.Trace
 
 
 -- |
 -- A constant time access representation of a directed acyclic graph.
+--
+-- Type annotations:
+--
+-- * d = graph metadata (         Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
+         --        , Vector (Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
+         --        )
+-- * e = edge decorations, as yet indetermined
+-- * n = node labels: 'Maybe'('String')
 data  ReferenceDAG d e n
     = RefDAG
     { references :: Vector (IndexData e n)
@@ -63,6 +73,10 @@ data  ReferenceDAG d e n
 -- |
 -- A labeled record for each "node" in the graph containing the node decoration,
 -- a set of parent references, and a set of child references with edge decorations.
+--
+-- Type annotations:
+-- * e = edge decorations, as yet unused
+-- * n = node label: 'Maybe'('String')
 data  IndexData e n
     = IndexData
     { nodeDecoration :: n
@@ -73,6 +87,9 @@ data  IndexData e n
 
 -- |
 -- Annotations which are global to the graph
+--
+-- -- Type annotations:
+-- * d = graph metadata
 data  GraphData d
     = GraphData
     { dagCost           :: ExtendedReal
@@ -80,6 +97,16 @@ data  GraphData d
     , rootSequenceCosts :: NonEmpty Double
     , graphMetadata     :: d
     }
+
+
+-- | This will be used below to print the node type to XML and Newick.
+data NodeClassification
+    = NodeClassification
+    | LeafNode
+    | NetworkNode
+    | RootNode
+    | TreeNode
+   deriving (Eq, Show)
 
 
 -- |
@@ -204,13 +231,13 @@ instance PhylogeneticTree (ReferenceDAG d e n) NodeRef e n where
 
 instance Foldable f => PrintDot (ReferenceDAG d e (f String)) where
 
-    unqtDot = unqtDot . uncurry mkGraph . getDotContext
-    
-    toDot = toDot . uncurry mkGraph . getDotContext
+    unqtDot       = unqtDot . uncurry mkGraph . getDotContext
+
+    toDot         = toDot . uncurry mkGraph . getDotContext
 
     unqtListToDot = unqtDot . uncurry mkGraph . bimap mconcat mconcat . unzip . fmap getDotContext
 
-    listToDot = toDot . uncurry mkGraph . bimap mconcat mconcat . unzip . fmap getDotContext
+    listToDot     = toDot . uncurry mkGraph . bimap mconcat mconcat . unzip . fmap getDotContext
 
 
 -- | (✔)
@@ -227,36 +254,52 @@ instance Show (GraphData m) where
 -- | (✔)
 instance {- (Show e, Show n) => -} Show (ReferenceDAG d e n) where
 
-    show dag = unlines [topologyRendering dag, "", referenceRendering dag]
+    show dag = intercalate "\n" [topologyRendering dag, "", referenceRendering dag]
 
 
--- | (✔)
+instance (Applicative f, Foldable f) => ToNewick (ReferenceDAG d e (f String)) where
+
+    toNewick refDag = finalNewickStr
+        where
+            (_, finalNewickStr) = generateNewick namedVec rootRef (S.singleton "NaN") -- Have to initialize accumulator set.
+            namedVec = mapWithKey nameIt (references refDag) -- All network nodes have "htu\d" as nodeDecoration.
+            nameIt idx node = case getNodeType node of
+                NetworkNode -> node { nodeDecoration = pure $ "htu" <> (show idx) }
+                _           -> node
+            rootRef  = NE.head $ rootRefs refDag
+            -- vec      = references refDag
+
+
 instance ToXML (GraphData m) where
 
-    toXML gData = xmlElement "Graph data" attrs contents
+    toXML gData = xmlElement "Graph_data" attrs contents
         where
             attrs = []
-            contents = [ Left ( "DAG total cost"       , show $ dagCost         gData)
-                       , Left ( "DAG network edge cost", show $ networkEdgeCost gData)
-                       , Left ( "DAG root sequence costs"
+            contents = [ Left ( "DAG_total_cost"       , show $ dagCost         gData)
+                       , Left ( "DAG_network_edge_cost", show $ networkEdgeCost gData)
+                       , Left ( "DAG_root_sequence_costs"
                               , init (unlines . toList $ (\k v -> "Root #" <> show k <> ": " <> show v) <#$> rootSequenceCosts gData)
                               )
                        ]
 
 
--- | (✔)
 instance (ToXML n) => ToXML (IndexData e n) where
 
-    toXML indexData = toXML $ nodeDecoration indexData
+   toXML indexData = toXML $ nodeDecoration indexData
+   -- ("Node_type", show $ getNodeType indexData)
 
 
 -- | (✔)
-instance (ToXML n) => ToXML (ReferenceDAG d e n) where
+instance (Applicative f, Foldable f) => ToXML (ReferenceDAG d e (f String)) where
+--instance (ToXML n) => ToXML (ReferenceDAG d e n) where
 
-    toXML (RefDAG v _ g) = xmlElement "Directed Acyclic Graph" [] [meta, vect]
+    toXML dag = xmlElement "Directed_acyclic_graph" [] [newick, meta, vect]
       where
-          vect = Right $ collapseElemList "Nodes" [] v
-          meta = Right $ toXML g
+          -- leafs    = Right $ collapseElemList "Leaf set" [] [(dag ^. leafSet)]
+          -- fmap id . (^. leafSet) <$> forests
+          meta   = Right . toXML $ graphData dag
+          newick = Left ("Newick_representation", toNewick dag)
+          vect   = Right $ collapseElemList "Nodes" [] dag  -- Because ReferenceDAG is Foldable over Vector(IndexData)
 
 
 referenceEdgeSet :: ReferenceDAG d e n -> [(Int, Int)]
@@ -543,6 +586,92 @@ expandVertexMapping unexpandedMap = snd . foldl' expandEdges (initialCounter+1, 
 
 
 -- |
+-- 'generateNewick' recursively  retrieves the node name at a given index in a 'IndexData' vector.
+-- The set acts as an accumulator to remember which network nodes have been referenced thus far.
+-- Each network node has already been assigned an index. That index will be used as the node reference in the eNewick output.
+generateNewick ::  Foldable f => Vector (IndexData e (f String)) -> Int -> S.Set String -> (S.Set String, String)
+generateNewick refs idx htuNumSet = (finalNumSet, finalStr)
+    where
+        node     = refs ! idx
+        (finalNumSet, finalStr) =
+            case getNodeType node of
+                LeafNode    ->
+                    case toList $ nodeDecoration node of -- getLabel (nodeDecoration node)
+                        []      -> (htuNumSet, "")       -- Make no changes to htuNumSet.
+                        label:_ -> (htuNumSet, label)
+
+                NetworkNode ->
+                    let childIdx          = head . toList $ IM.keys $ childRefs node
+                        htuName           = toList $ nodeDecoration node
+                        updatedHtuNumSet  = S.insert htuNumberStr htuNumSet
+                        (updatedHtuNumSet', subtreeNewickStr) = generateNewick refs childIdx updatedHtuNumSet
+                        htuNumberStr     | htuName == [] = ""
+                                         | otherwise     = head htuName
+
+                    in  if   S.member htuNumberStr htuNumSet
+                        then ( htuNumSet                -- If the node is already a member, no update to htuNumberSet.
+                             , mconcat [ "#"
+                                       , htuNumberStr
+                                       ]
+                              )
+
+                        else ( updatedHtuNumSet'            -- Network node but not yet in set of traversed nodes, so update htuNumberSet.
+                             , mconcat [ subtreeNewickStr
+                                       , "#"
+                                       , htuNumberStr
+                                       ]
+                             )
+
+                    -- Both root and tree node. Originally root was a separate case that resolved to an error,
+                    -- but the first call to this fn is always root, so can't error out on that.
+                    -- In no case does the htuNumberSet update.
+                _           ->
+                    case toList . IM.keys $ childRefs node of
+                        lhsIdx:rhsIdx:_ -> ( updatedHtuNumSet'
+                                           , mconcat [ "("
+                                                     , lhsReturnString
+                                                     ,  ", " , rhsReturnString, ")"
+                                                     ]
+                                           )
+                            where
+                                (updatedHtuNumSet, lhsReturnString) = generateNewick refs lhsIdx htuNumSet
+                                (updatedHtuNumSet'  , rhsReturnString) = generateNewick refs rhsIdx updatedHtuNumSet
+                        -- Next should happen only under network node, but here for completion.
+                        [singleChild]   -> ( updatedHtuNumSet'
+                                           , mconcat [ "("
+                                                     , updatedNewickStr
+                                                     , ")"
+                                                     ]
+                                           )
+                            where
+                                (updatedHtuNumSet', updatedNewickStr) = generateNewick refs singleChild htuNumSet
+                        []              -> error $ "Graph construction should prevent a 'root' node or 'tree' node with no children."
+
+
+-- |
+--
+getDotContext :: Foldable f => ReferenceDAG d e (f String) -> ([DotNode GraphID], [DotEdge GraphID])
+getDotContext dag = second mconcat . unzip $ foldMapWithKey f vec
+  where
+    vec = references dag
+
+    toId :: Foldable f => Int -> f String -> GraphID
+    toId i x =
+      case toList x of
+        []  -> Num $ Int i
+        s:_ -> Str $ fromString s
+
+    f :: Foldable f => Int -> IndexData e (f String) -> [(DotNode GraphID, [DotEdge GraphID])]
+    f k v = [ (toDotNode, toDotEdge <$> kidRefs) ]
+      where
+        datum       = nodeDecoration v
+        nodeId      = toId k datum
+        kidRefs     = IM.keys $ childRefs v
+        toDotNode   = DotNode nodeId []
+        toDotEdge x = DotEdge (toId x (nodeDecoration $ vec ! x)) nodeId []
+
+
+-- |
 -- Get the edge set of the DAG. Includes edges to root nodes.
 getEdges :: ReferenceDAG d e n -> EdgeSet (Int, Int)
 getEdges dag = foldMap1 f $ rootRefs dag
@@ -553,6 +682,17 @@ getEdges dag = foldMap1 f $ rootRefs dag
         childKeys    = IM.keys . childRefs $ refs ! i
         currentEdges = foldMap (\x -> singletonEdgeSet (i,x)) childKeys
 
+
+-- |
+-- Takes in 'IndexData' and returns 'NodeClassification' based on number of parents and children of node.
+getNodeType :: IndexData e n -> NodeClassification
+getNodeType e =
+    case (olength $ parentRefs e, length $ childRefs e) of
+      (0,_) -> RootNode
+      (_,0) -> LeafNode
+      (1,2) -> TreeNode
+      (2,1) -> NetworkNode
+      (p,c) -> error $ "Incoherently constructed graph when determining NodeClassification: parents " <> show p <> " children " <> show c
 
 -- |
 -- Use the supplied transformation to fold the Node values of the DAG into a
@@ -696,7 +836,7 @@ unfoldDAG f origin =
           | onull v   = [k]
           | otherwise = []
 
-    initialAccumulator = (-1, -1, (Nothing,mempty), mempty, mempty)
+    initialAccumulator = (-1, -1, (Nothing, mempty), mempty, mempty)
     (_, _, _, _rootIndices, resultMap) = g initialAccumulator origin
     g (counter, _otherIndex, previousContext@(previousIndex, previousSeenSet), currentRoots, currentMap) currentValue =
         case currentValue `lookup` previousSeenSet of
@@ -778,25 +918,3 @@ gen1 x = (pops, show x, kids)
         Nothing -> []
         Just xs -> (\y -> (-1,y)) <$> xs
 --}
-
-getDotContext :: Foldable f => ReferenceDAG d e (f String) -> ([DotNode GraphID], [DotEdge GraphID])
-getDotContext dag = second mconcat . unzip $ foldMapWithKey f vec
-  where
-    vec = references dag
-
-    toId :: Foldable f => Int -> f String -> GraphID
-    toId i x =
-      case toList x of
-        []  -> Num $ Int i
-        s:_ -> Str $ fromString s
-
-    f :: Foldable f => Int -> IndexData e (f String) -> [(DotNode GraphID, [DotEdge GraphID])]
-    f k v = [ (toDotNode, toDotEdge <$> kidRefs) ]
-      where
-        datum       = nodeDecoration v
-        nodeId      = toId k datum
-        kidRefs     = IM.keys $ childRefs v
-        toDotNode   = DotNode nodeId []
-        toDotEdge x = DotEdge (toId x (nodeDecoration $ vec ! x)) nodeId []
-
-

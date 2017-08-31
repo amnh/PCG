@@ -37,12 +37,17 @@ import Data.EdgeSet
 import Data.Foldable
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Semigroup
-import Text.XML.Custom
+-- import Data.Set           (size)
+import Text.Newick.Class
+import Text.XML
 
 
 -- |
 -- This serves as a computation /invariant/ node decoration designed to hold node
 -- information such as name and later a subtree structure.
+--
+-- * n = node label: 'Maybe'('String')
+-- * s = 'Bio.Sequence.CharacterSequence'
 data  PhylogeneticNode n s
     = PNode
     { nodeDecorationDatum :: n
@@ -53,6 +58,9 @@ data  PhylogeneticNode n s
 -- |
 -- This serves as a computation /dependant/ node decoration designed to hold node
 -- information for a a phylogenetic network (or tree).
+--
+-- * s = 'Bio.Sequence.CharacterSequence'
+-- * n = node label: 'Maybe'('String')
 data  PhylogeneticNode2 s n
     = PNode2
     { resolutions          :: ResolutionCache s
@@ -62,6 +70,8 @@ data  PhylogeneticNode2 s n
 
 -- |
 -- A collection of information used to memoize network optimizations.
+--
+-- * s = 'Bio.Sequence.CharacterSequence'
 data  ResolutionInformation s
     = ResInfo
     { totalSubtreeCost      :: Double
@@ -76,6 +86,8 @@ data  ResolutionInformation s
 -- |
 -- A collection of subtree resolutions. Represents a non-deterministic collection
 -- of subtree choices.
+--
+-- * s = 'Bio.Sequence.CharacterSequence'
 type ResolutionCache s = NonEmpty (ResolutionInformation s)
 
 
@@ -87,7 +99,7 @@ newtype NewickSerialization = NS String
 
 
 -- |
--- An arbitraryily ordered collection of leaf nodes in a subtree. Leaves in the
+-- An arbitrarily ordered collection of leaf nodes in a subtree. Leaves in the
 -- tree are uniquely identified by an index across the entire DAG. Set bits
 -- represent a leaf uniquily identified by that index being present in the
 -- subtree.
@@ -126,34 +138,6 @@ instance Ord (ResolutionInformation s) where
 --       where
 --          getter e   = dynamicDecorationDirectOptimizationMetadata e ^. sparseTransitionCostMatrix
 --          setter e f = e { dynamicDecorationDirectOptimizationMetadata = dynamicDecorationDirectOptimizationMetadata e & sparseTransitionCostMatrix .~ f }
-
-
-{-
--- | (✔)
-instance HasLeafSet (PhylogeneticNode2 n s) (ResolutionCache s) where
-
-    leafSet = lens getter setter
-        where
-            getter e    = e ^. leafSet
-            setter e _x = id e  -- There is no setter.
-
-
--- | (✔)
-instance HasLeafSet (ResolutionCache r) (ResolutionInformation r) where
-
-    leafSet = lens getter setter
-        where
-            getter e    = e ^. leafSet
-            setter e _x = id e  -- There is no setter.
-
-
--- | (✔)
-instance HasLeafSet (ResolutionInformation s) SubtreeLeafSet where
-
-    leafSet = lens leafSetRepresentation setter
-        where
-            setter e _x = id e  -- There is no setter.
--}
 
 
 instance Semigroup NewickSerialization where
@@ -201,29 +185,37 @@ instance Show SubtreeLeafSet where
         f x = if x then "1" else "0"
 
 
+instance Show s => ToNewick (PhylogeneticNode2 n s) where
+    toNewick node = show $ nodeDecorationDatum2 node {- case nodeDecorationDatum2 node of
+                        Just str -> show str
+                        _        -> "" -}
+
+
 instance (ToXML n) => ToXML (PhylogeneticNode2 n s) where
 
-    toXML node = xmlElement "Phylogenetic node" nodeAttrs contents
+    toXML node = xmlElement "Phylogenetic_node" nodeAttrs contents
         where
             nodeAttrs       = []
             resolutionAttrs = []
-            contents        = [ Right ( collapseElemList "Resolutions" resolutionAttrs (resolutions node) ) ]
+            contents        = [ Right ( collapseElemList "Resolutions" resolutionAttrs (resolutions node) )
+                              ]
 
 
 instance (ToXML s) => ToXML (ResolutionInformation s) where
 
-    toXML info = xmlElement "Resolution info" attrs contents
+    toXML info = xmlElement "Resolution_info" attrs contents
         where
+            -- (ES edgeSet)  = subtreeEdgeSet info
             attrs         = []
             contents      = [ Right . toXML $ characterSequence info
-                            , Left  ("Total subtree cost" , (show  $ totalSubtreeCost  info))
-                            , Left  ("Local sequence cost", (show  $ localSequenceCost info))
+                            , Left  ("Total_subtree_cost" , (show $ totalSubtreeCost  info))
+                            , Left  ("Local_sequence_cost", (show $ localSequenceCost info))
                             , Right subtree
                             ]
-            subtree       = xmlElement "Subtree fields" [] subtreeFields
-            subtreeFields = [ Left ("Subtree leaf set"      , show $ leafSetRepresentation info)
-                            , Left ("Subtree representation", show $ subtreeRepresentation info)
-                            , Left ("Subtree edge set"      , show $ subtreeEdgeSet        info)
+            subtree       = xmlElement "Subtree_fields" [] subtreeFields
+            subtreeFields = [ Left ("Subtree_leaf_set"      , show $ leafSetRepresentation info)
+                            , Left ("Subtree_representation", show $ subtreeRepresentation info)
+                            , Left ("Subtree_edge_set"      , show $ subtreeEdgeSet        info)
                             ]
 
 

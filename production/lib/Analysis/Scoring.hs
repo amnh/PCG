@@ -40,6 +40,12 @@ import Data.Semigroup
 import Prelude       hiding (lookup, zip, zipWith)
 
 
+-- |
+-- sequentialAlignOverride, iff True forces seqAlign to run; otherwise, DO runs.
+sequentialAlignOverride :: Bool
+sequentialAlignOverride = False
+
+
 wipeScoring
   :: Monoid n
   => PhylogeneticDAG2 e n u v w x y z
@@ -158,12 +164,6 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
     adaptiveDirectOptimizationPostOrder dec kidDecs = directOptimizationPostOrder pairwiseAlignmentFunction dec kidDecs
       where
         pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec kidDecs
-
-
--- |
--- sequentialAlignOverride, iff True forces seqAlign to run; otherwise, DO runs.
-sequentialAlignOverride :: Bool
-sequentialAlignOverride = False
 
 
 chooseDirectOptimizationComparison :: ( SimpleDynamicDecoration d  c

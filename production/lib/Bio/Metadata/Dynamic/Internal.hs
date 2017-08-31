@@ -90,14 +90,6 @@ class ( DiscreteWithTcmCharacterMetadata s c
     extractDynamicCharacterMetadata :: s -> DynamicCharacterMetadataDec c
 
 
-instance NFData (DynamicCharacterMetadataDec a) where
-
-    rnf (DynamicCharacterMetadataDec d e _) = ()
-      where
-        !_ = rnf d
-        !_ = rnf e
-
-
 instance Eq (DynamicCharacterMetadataDec c) where
 
     lhs == rhs = lhs ^. characterAlphabet == rhs ^. characterAlphabet
@@ -110,6 +102,14 @@ instance Eq (DynamicCharacterMetadataDec c) where
       where
         dimension = length $ lhs ^. characterAlphabet
         range     = toEnum <$> [0 .. dimension - 1 ]
+
+
+instance NFData (DynamicCharacterMetadataDec a) where
+
+    rnf (DynamicCharacterMetadataDec d e _) = ()
+      where
+        !_ = rnf d
+        !_ = rnf e
 
 
 instance Show (DynamicCharacterMetadataDec c) where
@@ -128,13 +128,6 @@ instance Show (DynamicCharacterMetadataDec c) where
 
 
 -- | (✔)
-instance GeneralCharacterMetadata (DynamicCharacterMetadataDec c) where
-
-    {-# INLINE extractGeneralCharacterMetadata #-}
-    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . metadata
-
-
--- | (✔)
 instance DiscreteCharacterMetadata (DynamicCharacterMetadataDec c) where
 
     {-# INLINE extractDiscreteCharacterMetadata #-}
@@ -150,6 +143,13 @@ instance EncodableStreamElement c => DynamicCharacterMetadata (DynamicCharacterM
 
     {-# INLINE extractDynamicCharacterMetadata #-}
     extractDynamicCharacterMetadata = id
+
+
+-- | (✔)
+instance GeneralCharacterMetadata (DynamicCharacterMetadataDec c) where
+
+    {-# INLINE extractGeneralCharacterMetadata #-}
+    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . metadata
 
 
 -- | (✔)
@@ -180,9 +180,10 @@ instance HasDenseTransitionCostMatrix (DynamicCharacterMetadataDec c) (Maybe Den
 
 
 -- | (✔)
-instance HasTraversalFoci (DynamicCharacterMetadataDec c) (Maybe TraversalFoci) where
+instance HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec c) MemoizedCostMatrix where
 
-    traversalFoci = lens optimalTraversalFoci $ \e x -> e { optimalTraversalFoci = x }
+    sparseTransitionCostMatrix = lens (\e -> metadata e ^. sparseTransitionCostMatrix)
+                               $ \e x -> e { metadata = metadata e & sparseTransitionCostMatrix .~ x }
 
 
 -- | (✔)
@@ -193,17 +194,16 @@ instance HasSymbolChangeMatrix (DynamicCharacterMetadataDec c) (Word -> Word -> 
 
 
 -- | (✔)
-instance HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec c) MemoizedCostMatrix where
-
-    sparseTransitionCostMatrix = lens (\e -> metadata e ^. sparseTransitionCostMatrix)
-                               $ \e x -> e { metadata = metadata e & sparseTransitionCostMatrix .~ x }
-
-
--- | (✔)
 instance HasTransitionCostMatrix (DynamicCharacterMetadataDec c) (c -> c -> (c, Word)) where
 
     transitionCostMatrix = lens (\e -> metadata e ^. transitionCostMatrix)
                          $ \e x -> e { metadata = metadata e & transitionCostMatrix .~ x }
+
+
+-- | (✔)
+instance HasTraversalFoci (DynamicCharacterMetadataDec c) (Maybe TraversalFoci) where
+
+    traversalFoci = lens optimalTraversalFoci $ \e x -> e { optimalTraversalFoci = x }
 
 
 -- |

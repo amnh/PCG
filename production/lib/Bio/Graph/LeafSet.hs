@@ -24,8 +24,11 @@ module Bio.Graph.LeafSet
 
 import Control.Lens
 --import Data.Foldable
+-- import Data.List.NonEmpty
 import Data.List (union)
+import Text.Newick.Class
 import Data.Semigroup
+import Text.XML.Custom
 --import Data.Set (Set)
 --import Data.Monoid
 -- import Text.XML.Custom
@@ -47,21 +50,14 @@ instance Eq n => Semigroup (LeafSet n) where
     (<>) (LeafSet lhs) (LeafSet rhs) = LeafSet $ union lhs rhs
 
 
--- instance ToXML (LeafSet (Maybe String)) where
+{--
+instance ToXML (LeafSet (Maybe String)) where
 
---     toXML (LeafSet lst) = xmlElement "Leaf set" attrs contents
---         where
---             attrs    = []
---             contents = [Left ("Leaves", foldr leafStr "" lst)]
+    toXML (LeafSet lst) = xmlElement "Leaf_set" attrs contents
+        where
+            attrs    = []
+            contents = [Left ("Leaves", foldr leafStr "" lst)]
 
---             leafStr input accum = case input of Just item -> item <> ", " <> accum
---                                                 Nothing   -> accum
-
-
--- instance (Foldable f) => HasLeafSet (f a) (LeafSet a) where
-
---     leafSet lst = lens getter setter
---         where
---             result = head $ foldMap (^. leafSet) (toList lst)
---             getter e   =
---             setter e _ = id e
+            leafStr input accum = case input of Just item -> item <> ", " <> accum
+                                                Nothing   -> accum
+--}

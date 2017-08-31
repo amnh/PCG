@@ -6,9 +6,8 @@ module PCG.Command.Read.Evaluate
 
 import           Bio.Character.Parsed
 import           Bio.Metadata.Parsed
---import           Bio.Graph
+import           Bio.Graph
 import           Bio.Graph.Forest.Parsed
-import           Bio.Graph.PhylogeneticDAG
 import           Control.Evaluation
 import           Control.Monad                (liftM2, when)
 import           Control.Monad.IO.Class
@@ -362,11 +361,11 @@ getSpecifiedContent (AnnotatedFile      xs      ) = getSpecifiedContentSimple xs
 getSpecifiedContent (ChromosomeFile     xs      ) = getSpecifiedContentSimple xs
 getSpecifiedContent (GenomeFile         xs      ) = getSpecifiedContentSimple xs
 getSpecifiedContent (CustomAlphabetFile xs tcm _) = liftM2 SpecContent (getSpecifiedFileContents xs) (getSpecifiedTcm tcm)
-getSpecifiedContent (PrealignedFile     fs tcm  ) = do 
+getSpecifiedContent (PrealignedFile     fs tcm  ) = do
     specifiedContent <- getSpecifiedContent fs
     case tcmFile specifiedContent of
       Nothing -> SpecContent (dataFiles specifiedContent) <$> getSpecifiedTcm tcm
-      Just _  -> pure specifiedContent 
+      Just _  -> pure specifiedContent
 
 
 getSpecifiedTcm :: Maybe FilePath -> EitherT ReadError IO (Maybe (FilePath, FileContent))

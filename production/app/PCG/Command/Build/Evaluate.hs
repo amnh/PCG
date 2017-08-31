@@ -44,6 +44,7 @@ import qualified Data.List.NonEmpty    as NE
 -- import qualified Data.Map              as M
 -- import           Data.Maybe                   (fromMaybe)
 import           Data.Ord                     (comparing)
+import           Data.Semigroup.Foldable
 import           Data.TCM                     (TCMDiagnosis(..), TCMStructure(..), diagnoseTcm)
 import qualified Data.TCM              as TCM
 import           Data.Text.IO                 (readFile)
@@ -54,6 +55,19 @@ import           PCG.Syntax                   (Command(..))
 import           Prelude             hiding   (lookup, readFile)
 
 --import Debug.Trace (trace)
+
+
+type DatNode =
+  PhylogeneticNode2
+    (CharacterSequence
+      (ContinuousOptimizationDecoration ContinuousChar)
+      (FitchOptimizationDecoration   StaticCharacter)
+      (AdditiveOptimizationDecoration StaticCharacter)
+      (SankoffOptimizationDecoration StaticCharacter)
+      (SankoffOptimizationDecoration StaticCharacter)
+      (DynamicDecorationDirectOptimization DynamicChar)
+    )
+    (Maybe String)
 
 
 --evaluate :: Command -> EvaluationT IO a -> EvaluationT IO (Either TopologicalResult DecoratedCharacterResult)
@@ -84,17 +98,19 @@ evaluate
   -> SearchState
   -> SearchState
 -- EvaluationT IO (Either TopologicalResult CharacterResult)
--- evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
--- evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
+-- evaluate (READ fileSpecs) _old | trace "STARTING BUILD COMMAND" False = undefined
 evaluate (BUILD {}) oldState = do
-    x <- oldState
-    case x of
-      Right v -> fmap (Right . toSolution) . naiveWagnerBuild $ v ^. leafSet
+    g <- oldState
+    case g of
       Left  e -> pure $ Left e
+      Right v ->
+        case toList $ v ^. leafSet of
+          []   -> fail "There are no nodes with which to build a tree."
+          x:xs -> pure . Right . toSolution . naiveWagnerBuild $ x:|xs
   where
     toSolution = PhylogeneticSolution . pure . PhylogeneticForest . pure
 
-evaluate _ _ = fail "Invalid READ command binding"
+evaluate _ _ = fail "Invalid BUILD command binding"
 
 
 naiveWagnerBuild
@@ -117,20 +133,19 @@ naiveWagnerBuild
      , Show z
      )
   => -}
-  :: Foldable f
+  :: Foldable1 f
   => f DatNode -- (PhylogeneticNode2 (CharacterSequence u v w x y z) (Maybe String))
-  -> EvaluationT IO FinalDecorationDAG
+  -> FinalDecorationDAG
 naiveWagnerBuild ns =
-    case toList ns of
-      []       -> fail "There are no nodes with which to build a tree."
-      [x]      -> pure . fromRefDAG $ unfoldDAG (\_ -> ([], wipeNode False x, [])) ()
-      [x,y]    ->
+    case toNonEmpty ns of
+      x:|[]      -> fromRefDAG $ unfoldDAG (\_ -> ([], wipeNode False x, [])) ()
+      x:|[y]     ->
           let f e = case e of
                       0 -> ([]           , wipeNode True  x, [(mempty, 1), (mempty, 2)])
                       1 -> ([(mempty, 0)], wipeNode False x, [])
                       2 -> ([(mempty, 0)], wipeNode False y, [])
-          in  pure . fromRefDAG $ unfoldDAG f (0 :: Int)
-      x:y:z:xs ->
+          in  fromRefDAG $ unfoldDAG f (0 :: Int)
+      x:|(y:z:xs) ->
           let initTree = fromRefDAG $ unfoldDAG f (0 :: Int)
               f e = case e of
                       0 -> ([]           , wipeNode True  x, [(mempty, 1), (mempty, 4)])
@@ -138,24 +153,11 @@ naiveWagnerBuild ns =
                       2 -> ([(mempty, 1)], wipeNode False x, [])
                       3 -> ([(mempty, 1)], wipeNode False y, [])
                       4 -> ([(mempty, 0)], wipeNode False z, [])
-          in  pure $ iterativeBuild initTree xs
+          in  iterativeBuild initTree xs
 
   where
     fromRefDAG = performDecoration . PDAG2 . defaultMetadata
 
-
-
-type DatNode =
-  PhylogeneticNode2
-    (CharacterSequence
-      (ContinuousOptimizationDecoration ContinuousChar)
-      (FitchOptimizationDecoration   StaticCharacter)
-      (AdditiveOptimizationDecoration StaticCharacter)
-      (SankoffOptimizationDecoration StaticCharacter)
-      (SankoffOptimizationDecoration StaticCharacter)
-      (DynamicDecorationDirectOptimization DynamicChar)
-    )
-    (Maybe String)
 
 iterativeBuild
   ::
