@@ -39,12 +39,13 @@ assignPunitiveNetworkEdgeCost :: HasBlockCost u v w x y z i r => PhylogeneticDAG
 assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = PDAG2 $ dag { graphData = newGraphData }
   where
     punativeCost  = calculatePunitiveNetworkEdgeCost input
-    sequenceCosts = minimum . fmap totalSubtreeCost . resolutions . nodeDecoration . (references dag !) <$> rootRefs dag
+--    sequenceCosts = minimum . fmap totalSubtreeCost . resolutions . nodeDecoration . (references dag !) <$> rootRefs dag
+    sequenceCosts = sum . fmap minimum . sequenceA . fmap (fmap blockCost . toBlocks . characterSequence) . resolutions . nodeDecoration . (references dag !) <$> rootRefs dag
     newGraphData  =
         GraphData        
         { dagCost           = punativeCost + realToFrac (sum sequenceCosts)
         , networkEdgeCost   = punativeCost
-        , rootSequenceCosts = sequenceCosts
+        , rootSequenceCosts = realToFrac <$> sequenceCosts
         , graphMetadata     = graphMetadata $ graphData dag
         }
         
