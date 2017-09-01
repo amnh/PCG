@@ -26,6 +26,9 @@ import Data.Set           (insert, intersection)
   
 
 
+-- |
+-- Takes two nested, linear-dimentional structures and transposes thier dimensions.
+-- It's like performing a matrix transpose operation, but more general.
 transpose
   :: ( Applicative f
      , Applicative t
