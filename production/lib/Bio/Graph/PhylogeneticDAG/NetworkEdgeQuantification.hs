@@ -40,7 +40,7 @@ assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = PDAG2 $ dag { graphData = newG
   where
     punativeCost  = calculatePunitiveNetworkEdgeCost input
 --    sequenceCosts = minimum . fmap totalSubtreeCost . resolutions . nodeDecoration . (references dag !) <$> rootRefs dag
-    sequenceCosts = sum . fmap minimum . transpose . fmap (fmap blockCost . toBlocks . characterSequence) . resolutions . nodeDecoration . (references dag !) <$> rootRefs dag
+    sequenceCosts = sum . fmap minimum . NE.transpose . fmap (fmap blockCost . toBlocks . characterSequence) . resolutions . nodeDecoration . (references dag !) <$> rootRefs dag
     newGraphData  =
         GraphData        
         { dagCost           = punativeCost + realToFrac (sum sequenceCosts)
