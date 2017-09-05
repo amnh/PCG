@@ -159,13 +159,13 @@ typedef struct fsm_arrays_t {
 
 #ifdef FIXED_NUM_PLANES // see above
     alignment_mtx_t allocInit( size_t        elemSize
-                          , size_t        costSize
-                          , characters_t *globalCharacters
-                          );
+                             , size_t        costSize
+                             , characters_t *globalCharacters
+                             );
 #else
     alignment_mtx_t allocInit( size_t        elemSize
-                          , characters_t *globalCharacters
-                          );
+                             , characters_t *globalCharacters
+                             );
 #endif
 
 

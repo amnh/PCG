@@ -160,9 +160,9 @@ static inline void *allocPlane( alignment_mtx_t *a )
 
     retStruct.memAllocated += retStruct.baseAlloc * sizeof(void *);
 
-    retStruct.baseArrays = calloc( retStruct.baseAlloc, sizeof(void *) );
+    retStruct.matrix = calloc( retStruct.baseAlloc, sizeof(void *) );
 
-    if (retStruct.baseArrays == NULL) {
+    if (retStruct.matrix == NULL) {
         fprintf(stderr,"Unable to alloc memory\n");
         exit(-1);
     }
@@ -261,13 +261,13 @@ void deallocate_MtxCell( alignment_mtx_t *inputMtx
     //        cellsUsed  = 0;
 
     // long tblocksUsed;
-    void **baseArrays;
+    void **matrix;
 
     for (size_t i = 0; i < inputMtx->baseAlloc; i++) {
         // tblocksUsed = 0;
-        baseArrays = inputMtx->baseArrays[i];
+        matrix = inputMtx->matrix[i];
 
-        if (!baseArrays) {
+        if (!matrix) {
             continue;
         }
 
@@ -278,10 +278,10 @@ void deallocate_MtxCell( alignment_mtx_t *inputMtx
 
         for (size_t j = 0; j < inputMtx->lessLong_blocks * inputMtx->lessMidd_blocks; j++) {
             // tcellsUsed = 0;
-            // block      = baseArrays[j];
+            // block      = matrix[j];
             // blocksTotal++;
 
-            if (!baseArrays[j]) {
+            if (!matrix[j]) {
                 continue;
             }
 
@@ -298,12 +298,12 @@ void deallocate_MtxCell( alignment_mtx_t *inputMtx
             //         tcellsUsed++;
             //     }
             // }
-            free (baseArrays[j]);
+            free (matrix[j]);
         }
-        free (baseArrays);
+        free (matrix);
     }
-    free (inputMtx->baseArrays);
-    inputMtx->baseArrays = NULL;
+    free (inputMtx->matrix);
+    inputMtx->matrix = NULL;
 
 }
 
@@ -321,7 +321,7 @@ void *getPtr( alignment_mtx_t *inputMtx
             , size_t           numStates
             )
 {
-    void **baseArrays,
+    void **matrix,
           *this_baseArr;
 
     size_t index;
@@ -337,12 +337,12 @@ void *getPtr( alignment_mtx_t *inputMtx
         // Keep doubling size of allocation until edit distance is within (what I assume are) Ukkonnen barriers
         int oldSize           = inputMtx->baseAlloc;
         inputMtx->baseAlloc  *= 2;
-        inputMtx->baseArrays  = recalloc( inputMtx->baseArrays
+        inputMtx->matrix  = recalloc( inputMtx->matrix
                                          , oldSize             * sizeof(void *)
                                          , inputMtx->baseAlloc * sizeof(void *)
                                          );
 
-        if (inputMtx->baseArrays == NULL) {
+        if (inputMtx->matrix == NULL) {
             fprintf(stderr, "Unable to alloc memory\n");
             exit(-1);
         }
@@ -352,9 +352,9 @@ void *getPtr( alignment_mtx_t *inputMtx
 
     assert(editDist < inputMtx->baseAlloc);
 
-    if (inputMtx->baseArrays[editDist] == NULL)  inputMtx->baseArrays[editDist] = allocPlane( inputMtx );
+    if (inputMtx->matrix[editDist] == NULL)  inputMtx->matrix[editDist] = allocPlane( inputMtx );
 
-    baseArrays = inputMtx->baseArrays[editDist];
+    matrix = inputMtx->matrix[editDist];
 
     size_t i = (lessLong_idx_diff + inputMtx->lessLong_offset) / CELLS_PER_BLOCK;
     size_t j = (lessMidd_idx_diff + inputMtx->lessMidd_offset) / CELLS_PER_BLOCK;
@@ -362,11 +362,11 @@ void *getPtr( alignment_mtx_t *inputMtx
     assert(i < inputMtx->lessLong_blocks);
     assert(j < inputMtx->lessMidd_blocks);
 
-    if (baseArrays[(i * inputMtx->lessMidd_blocks) + j] == NULL) {
-        baseArrays[(i * inputMtx->lessMidd_blocks) + j] = allocEntry( inputMtx, numStates );
+    if (matrix[(i * inputMtx->lessMidd_blocks) + j] == NULL) {
+        matrix[(i * inputMtx->lessMidd_blocks) + j] = allocEntry( inputMtx, numStates );
     }
 
-    this_baseArr = baseArrays[(i * inputMtx->lessMidd_blocks) + j];
+    this_baseArr = matrix[(i * inputMtx->lessMidd_blocks) + j];
     assert(this_baseArr != NULL);
 
     index = allocGetSubIndex( inputMtx
