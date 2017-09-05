@@ -22,19 +22,20 @@ import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
-import           Control.Arrow             ((&&&))
-import           Control.Applicative       (liftA2)
+import           Control.Arrow               ((&&&))
+import           Control.Applicative         (liftA2)
 import           Control.Monad.State.Lazy
 import           Data.Bits
 import           Data.Foldable
 import           Data.Hashable
 import           Data.Hashable.Memoize
-import qualified Data.IntMap        as IM
+import qualified Data.IntMap          as IM
 import           Data.Key
-import           Data.List.NonEmpty        (NonEmpty( (:|) ))
-import qualified Data.List.NonEmpty as NE
-import qualified Data.Vector        as V
-import           Prelude            hiding (zipWith)
+import           Data.List.NonEmpty          (NonEmpty( (:|) ))
+import qualified Data.List.NonEmpty   as NE
+import           Data.MonoTraversable
+import qualified Data.Vector          as V
+import           Prelude              hiding (zipWith)
 
 
 -- |
@@ -104,4 +105,10 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
 --            childResolutions :: NonEmpty [a]
             childResolutions = applySoftwireResolutions $ extractResolutionContext <$> childIndices
             extractResolutionContext = getResolutions &&& parentRefs . (references dag !)
-            getResolutions j = fmap (addEdgeToEdgeSet (i,j)) . resolutions $ memo ! j
+            getResolutions j = fmap updateFunction . resolutions $ memo ! j
+              where
+                updateFunction =
+                    case otoList . parentRefs $ references dag ! j of
+                      -- In the network edge case, we add also update the topology representation
+                      _:_:_ -> addEdgeToEdgeSet (i,j) . addNetworkEdgeToTopology (i,j)
+                      _     -> addEdgeToEdgeSet (i,j)

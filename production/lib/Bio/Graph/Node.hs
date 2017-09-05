@@ -21,6 +21,7 @@ module Bio.Graph.Node
   , ResolutionInformation(..)
   , SubtreeLeafSet()
   , addEdgeToEdgeSet
+  , addNetworkEdgeToTopology
   , singletonEdgeSet
   , singletonNewickSerialization
   , singletonSubtreeLeafSet

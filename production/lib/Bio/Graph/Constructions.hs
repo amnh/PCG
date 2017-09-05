@@ -35,29 +35,22 @@ module Bio.Graph.Constructions
   ) where
 
 
-import           Bio.Character
-import           Bio.Character.Decoration.Additive
-import           Bio.Character.Decoration.Continuous
-import           Bio.Character.Decoration.Discrete
-import           Bio.Character.Decoration.Dynamic
-import           Bio.Character.Decoration.Fitch
-import           Bio.Character.Decoration.Metric
-import           Bio.Sequence
-import           Bio.Graph.Node
-import           Bio.Graph.PhylogeneticDAG.Class
--- import           Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
-import           Bio.Graph.PhylogeneticDAG.Internal
--- import           Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
--- import           Bio.Graph.PhylogeneticDAG.Postorder
--- import           Bio.Graph.PhylogeneticDAG.Preorder
-import           Bio.Graph.ReferenceDAG.Internal
-import           Bio.Graph.Solution
-import           Control.Evaluation
-import           Data.EdgeLength
--- import           Data.Key
--- import           Data.List.NonEmpty        (NonEmpty)
--- import qualified Data.List.NonEmpty as NE
-import           Prelude            hiding (zipWith)
+import Bio.Character
+import Bio.Character.Decoration.Additive
+import Bio.Character.Decoration.Continuous
+import Bio.Character.Decoration.Discrete
+import Bio.Character.Decoration.Dynamic
+import Bio.Character.Decoration.Fitch
+import Bio.Character.Decoration.Metric
+--import Bio.Graph.Node
+import Bio.Graph.PhylogeneticDAG.Class
+import Bio.Graph.PhylogeneticDAG.Internal
+import Bio.Graph.ReferenceDAG.Internal
+import Bio.Graph.Solution
+import Bio.Sequence
+import Control.Evaluation
+import Data.EdgeLength
+import Prelude            hiding (zipWith)
 
 
 
@@ -76,7 +69,7 @@ type CharacterDAG =
 type CharacterResult = PhylogeneticSolution CharacterDAG
 
 
-type Cost = Double
+--type Cost = Double
 
 
 type SearchState = EvaluationT IO GraphState
@@ -104,7 +97,7 @@ type FinalDecorationDAG =
 --         (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
 
 
-type IncidentEdges = [EdgeReference]
+--type IncidentEdges = [EdgeReference]
 
 
 type PostOrderDecorationDAG =
@@ -119,11 +112,13 @@ type PostOrderDecorationDAG =
          (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
 
 
+{-
 type ReRootedEdgeContext u v w x y z =
    ( ResolutionCache (CharacterSequence u v w x y z)
    , ResolutionCache (CharacterSequence u v w x y z)
    , ResolutionCache (CharacterSequence u v w x y z)
    )
+-}
 
 
 type UnifiedCharacterBlock

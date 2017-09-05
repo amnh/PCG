@@ -40,8 +40,8 @@ instance NFData e => NFData (TopologyRepresentation e) where
 
 
 -- |
--- Construct a singleton 'EdgeSet' value. Use the semigroup operator '(<>)' to
--- construct larger a 'EdgeSet'. This enforces the non-empty invariant of the
--- 'EdgeSet' data-structure.
+-- Construct a singleton 'TopologyRepresentation' value. Use the semigroup operator '(<>)' to
+-- construct larger a 'TopologyRepresentation'. This enforces the non-empty invariant of the
+-- 'TopologyRepresentation' data-structure.
 singleNetworkEdge :: e -> TopologyRepresentation e
 singleNetworkEdge = TR . singletonEdgeSet

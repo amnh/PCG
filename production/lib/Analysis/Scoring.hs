@@ -26,9 +26,7 @@ import Bio.Character
 import Bio.Character.Decoration.Additive
 import Bio.Character.Decoration.Dynamic
 import Bio.Graph
-import Bio.Graph.LeafSet
 import Bio.Graph.Node
-import Bio.Graph.PhylogeneticDAG
 import Bio.Graph.ReferenceDAG.Internal
 import Bio.Sequence
 import Control.Lens
@@ -90,6 +88,7 @@ wipeNode wipe = PNode2 <$> pure . g . NE.head . resolutions <*> f . nodeDecorati
               <*> leafSetRepresentation
               <*> subtreeRepresentation
               <*> subtreeEdgeSet
+              <*> topologyRepresentation
               <*> hexmap h h h h h h . characterSequence
         h :: a -> Maybe a
         h | wipe      = const Nothing

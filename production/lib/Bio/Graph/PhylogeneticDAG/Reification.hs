@@ -142,12 +142,13 @@ reifyDAGWithContext leafCount maskDAG (PDAG dag) = PDAG2 $
                 }
             res = pure
                 ResInfo
-                { totalSubtreeCost      = 0
-                , localSequenceCost     = 0
-                , subtreeEdgeSet        = mempty
-                , leafSetRepresentation = bv
-                , subtreeRepresentation = ns
-                , characterSequence     = sequenceDecoration $ nodeDecoration indexData
+                { totalSubtreeCost       = 0
+                , localSequenceCost      = 0
+                , subtreeEdgeSet         = mempty
+                , leafSetRepresentation  = bv
+                , subtreeRepresentation  = ns
+                , topologyRepresentation = mempty
+                , characterSequence      = sequenceDecoration $ nodeDecoration indexData
                 }
 
             (bv, ns) =

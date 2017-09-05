@@ -22,6 +22,7 @@ module Bio.Graph.Node.Internal
   , SubtreeLeafSet()
   -- , hasLeafSet
   , addEdgeToEdgeSet
+  , addNetworkEdgeToTopology
   , singletonEdgeSet
   , singletonNewickSerialization
   , singletonSubtreeLeafSet
@@ -30,6 +31,7 @@ module Bio.Graph.Node.Internal
 
 
 -- import Bio.Graph.LeafSet
+import Bio.Graph.TopologyRepresentation
 import Control.Lens
 -- import Data.Bifunctor
 import Data.BitVector
@@ -45,9 +47,6 @@ import Text.XML
 -- |
 -- This serves as a computation /invariant/ node decoration designed to hold node
 -- information such as name and later a subtree structure.
---
--- * n = node label: 'Maybe'('String')
--- * s = 'Bio.Sequence.CharacterSequence'
 data  PhylogeneticNode n s
     = PNode
     { nodeDecorationDatum :: n
@@ -58,9 +57,6 @@ data  PhylogeneticNode n s
 -- |
 -- This serves as a computation /dependant/ node decoration designed to hold node
 -- information for a a phylogenetic network (or tree).
---
--- * s = 'Bio.Sequence.CharacterSequence'
--- * n = node label: 'Maybe'('String')
 data  PhylogeneticNode2 s n
     = PNode2
     { resolutions          :: ResolutionCache s
@@ -70,24 +66,21 @@ data  PhylogeneticNode2 s n
 
 -- |
 -- A collection of information used to memoize network optimizations.
---
--- * s = 'Bio.Sequence.CharacterSequence'
 data  ResolutionInformation s
     = ResInfo
-    { totalSubtreeCost      :: Double
-    , localSequenceCost     :: Double
-    , leafSetRepresentation :: SubtreeLeafSet
-    , subtreeRepresentation :: NewickSerialization
-    , subtreeEdgeSet        :: EdgeSet (Int, Int)
-    , characterSequence     :: s
+    { totalSubtreeCost       :: Double
+    , localSequenceCost      :: Double
+    , leafSetRepresentation  :: SubtreeLeafSet
+    , subtreeRepresentation  :: NewickSerialization
+    , subtreeEdgeSet         :: EdgeSet (Int, Int)
+    , topologyRepresentation :: TopologyRepresentation (Int, Int)
+    , characterSequence      :: s
     } deriving (Functor)
 
 
 -- |
 -- A collection of subtree resolutions. Represents a non-deterministic collection
 -- of subtree choices.
---
--- * s = 'Bio.Sequence.CharacterSequence'
 type ResolutionCache s = NonEmpty (ResolutionInformation s)
 
 
@@ -226,6 +219,13 @@ addEdgeToEdgeSet e r = r { subtreeEdgeSet = singletonEdgeSet e <> subtreeEdgeSet
 
 
 -- |
+-- Updates the 'TopologyRepresentation' to include a new network edge present in
+-- to spanning tree the node is a subtree of.
+addNetworkEdgeToTopology :: (Int, Int) -> ResolutionInformation s -> ResolutionInformation s
+addNetworkEdgeToTopology e r = r { topologyRepresentation = singleNetworkEdge e <> topologyRepresentation r }
+
+
+-- |
 -- A safe constructor of a 'PhylogeneticNode2'.
 pNode2 :: n -> ResolutionCache s -> PhylogeneticNode2 s n
 pNode2 = flip PNode2
@@ -241,7 +241,8 @@ singletonNewickSerialization i = NS $ show i
 -- |
 -- Construct a singleton leaf set by supplying the number of leaves and the
 -- unique leaf index.
-singletonSubtreeLeafSet :: Int -- ^ Leaf count
-                        -> Int -- ^ Leaf index
-                        -> SubtreeLeafSet
+singletonSubtreeLeafSet
+  :: Int -- ^ Leaf count
+  -> Int -- ^ Leaf index
+  -> SubtreeLeafSet
 singletonSubtreeLeafSet n i = LS . (`setBit` i) $ n `bitVec` (0 :: Integer)

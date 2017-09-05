@@ -160,6 +160,7 @@ mockResInfo currentResolutions newSequence =
         <*> leafSetRepresentation
         <*> subtreeRepresentation
         <*> subtreeEdgeSet
+        <*> topologyRepresentation
         <*> const newSequence
       ) $ NE.head currentResolutions
 
