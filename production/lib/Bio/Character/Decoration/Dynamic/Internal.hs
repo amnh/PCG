@@ -29,7 +29,7 @@ import Data.Bits
 import Data.Hashable
 import Data.MonoTraversable
 import Data.Semigroup
-import Text.XML.Custom
+import Text.XML
 
 
 -- TODO:
@@ -858,28 +858,31 @@ instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostOrderDecoratio
         }
 
 
-instance Show d => ToXML (DynamicDecorationDirectOptimization d) where
+instance EncodableStream d => ToXML (DynamicDecorationDirectOptimization d) where
 
-    toXML decoration = xmlElement "Dynamic DO pre-order decoration result" attributes contents
+    toXML decoration = xmlElement "Dynamic_DO_pre-order_decoration_result" attributes contents
         where
             attributes = []
-            contents   = [ Left ("Character cost"           , show $ decoration ^. characterCost      )
-                         , Left ("Local cost"               , show $ decoration ^. characterLocalCost )
-                         , Left ("Preliminary gapped char"  , show $ decoration ^. preliminaryGapped  )
-                         , Left ("Preliminary ungapped char", show $ decoration ^. preliminaryUngapped)
-                         , Left ("Final gapped char"        , show $ decoration ^. finalGapped        )
-                         , Left ("Final ungapped char"      , show $ decoration ^. finalUngapped      )
+            -- f (prefix, accessor) = prefix <> showStream (dec ^. characterAlphabet) (dec ^. accessor)
+            contents   = [ Left ("Local_cost"               , show (decoration ^. characterLocalCost) )
+                         , Left ("Original_encoding"        , showStream alph (decoration ^. encoded)            )
+                         , Left ("Preliminary_gapped_char"  , showStream alph (decoration ^. preliminaryGapped)  )
+                         , Left ("Preliminary_ungapped_char", showStream alph (decoration ^. preliminaryUngapped))
+                         , Left ("Final_gapped_char"        , showStream alph (decoration ^. finalGapped)        )
+                         , Left ("Final_ungapped_char"      , showStream alph (decoration ^. finalUngapped)      )
                          ]
+            alph = decoration ^. characterAlphabet
 
 
 -- | (✔)
-instance Show d => ToXML (DynamicDecorationDirectOptimizationPostOrderResult d) where
+instance EncodableStream d => ToXML (DynamicDecorationDirectOptimizationPostOrderResult d) where
 
-    toXML decoration = xmlElement "Dynamic DO post-order decoration result" attributes contents
+    toXML decoration = xmlElement "Dynamic_DO_post-order_decoration_result" attributes contents
         where
             attributes = []
-            contents   = [ Left ("Character cost"           , show $ decoration ^. characterCost      )
-                         , Left ("Local cost"               , show $ decoration ^. characterLocalCost )
-                         , Left ("Preliminary gapped char"  , show $ decoration ^. preliminaryGapped  )    -- TODO: Call toXML here?
-                         , Left ("Preliminary ungapped char", show $ decoration ^. preliminaryUngapped)    -- TODO: Call toXML here?
+            contents   = [ Left ("Character_cost"           , show (decoration ^. characterCost)      )
+                         , Left ("Local_cost"               , show (decoration ^. characterLocalCost) )
+                         , Left ("Preliminary_gapped_char"  , showStream alph (decoration ^. preliminaryGapped)  )
+                         , Left ("Preliminary_ungapped_char", showStream alph (decoration ^. preliminaryUngapped))
                          ]
+            alph = decoration ^. characterAlphabet

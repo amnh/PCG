@@ -46,7 +46,7 @@ import           GHC.Generics                 (Generic)
 import           Prelude               hiding (lookup, zip)
 import           Test.QuickCheck       hiding (generate)
 import           Test.QuickCheck.Arbitrary.Instances ()
-import           Text.XML.Custom
+import           Text.XML
 
 
 -- |

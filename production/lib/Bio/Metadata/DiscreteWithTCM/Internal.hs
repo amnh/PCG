@@ -36,7 +36,7 @@ import Data.List (intercalate)
 import Data.Monoid
 import Data.TCM
 import Data.TCM.Memoized
-import Text.XML.Custom
+import Text.XML
 
 -- |
 -- Represents a concrete type containing metadata fields shared across all
@@ -50,6 +50,13 @@ data DiscreteWithTCMCharacterMetadataDec c
    }
 
 
+-- | (✔)
+instance DiscreteCharacterMetadata (DiscreteWithTCMCharacterMetadataDec c) where
+
+    {-# INLINE extractDiscreteCharacterMetadata #-}
+    extractDiscreteCharacterMetadata = discreteData
+
+
 instance Eq (DiscreteWithTCMCharacterMetadataDec c) where
 
     lhs == rhs = discreteData lhs == discreteData rhs
@@ -60,6 +67,55 @@ instance Eq (DiscreteWithTCMCharacterMetadataDec c) where
       where
         dimension = length $ lhs ^. characterAlphabet
         range     = toEnum <$> [ 0 .. dimension - 1 ]
+
+
+-- | (✔)
+instance HasCharacterAlphabet (DiscreteWithTCMCharacterMetadataDec c) (Alphabet String) where
+
+    characterAlphabet = lens (\e -> discreteData e ^. characterAlphabet)
+                      $ \e x -> e { discreteData = discreteData e & characterAlphabet .~ x }
+
+
+-- | (✔)
+instance GeneralCharacterMetadata (DiscreteWithTCMCharacterMetadataDec c) where
+
+    {-# INLINE extractGeneralCharacterMetadata #-}
+    extractGeneralCharacterMetadata =  extractGeneralCharacterMetadata . discreteData
+
+
+-- | (✔)
+instance HasCharacterName (DiscreteWithTCMCharacterMetadataDec c) CharacterName where
+
+    characterName = lens (\e -> discreteData e ^. characterName)
+                  $ \e x -> e { discreteData = discreteData e & characterName .~ x }
+
+
+-- | (✔)
+instance HasCharacterWeight (DiscreteWithTCMCharacterMetadataDec c) Double where
+
+    characterWeight = lens (\e -> discreteData e ^. characterWeight)
+                    $ \e x -> e { discreteData = discreteData e & characterWeight .~ x }
+
+
+-- |
+-- A 'Lens' for the 'symbolicTCMGenerator' field
+instance HasSparseTransitionCostMatrix (DiscreteWithTCMCharacterMetadataDec c) MemoizedCostMatrix where
+
+    sparseTransitionCostMatrix = lens foreignPointerData $ \e x -> e { foreignPointerData = x }
+
+
+-- |
+-- A 'Lens' for the 'symbolicTCMGenerator' field
+instance HasSymbolChangeMatrix (DiscreteWithTCMCharacterMetadataDec c) (Word -> Word -> Word) where
+
+    symbolChangeMatrix = lens symbolChangeMatrixData $ \e x -> e { symbolChangeMatrixData = x }
+
+
+-- |
+-- A 'Lens' for the 'transitionCostMatrix' field
+instance HasTransitionCostMatrix (DiscreteWithTCMCharacterMetadataDec c) (c -> c -> (c, Word)) where
+
+    transitionCostMatrix = lens transitionCostMatrixData $ \e x -> e { transitionCostMatrixData = x }
 
 
 instance Show (DiscreteWithTCMCharacterMetadataDec c) where
@@ -77,60 +133,14 @@ instance Show (DiscreteWithTCMCharacterMetadataDec c) where
         dimension = length $ e ^. characterAlphabet
 
 
--- | (✔)
-instance GeneralCharacterMetadata (DiscreteWithTCMCharacterMetadataDec c) where
+instance ToXML (DiscreteWithTCMCharacterMetadataDec c) where
 
-    {-# INLINE extractGeneralCharacterMetadata #-}
-    extractGeneralCharacterMetadata =  extractGeneralCharacterMetadata . discreteData
-
-
--- | (✔)
-instance DiscreteCharacterMetadata (DiscreteWithTCMCharacterMetadataDec c) where
-
-    {-# INLINE extractDiscreteCharacterMetadata #-}
-    extractDiscreteCharacterMetadata = discreteData
-
-
--- | (✔)
-instance HasCharacterAlphabet (DiscreteWithTCMCharacterMetadataDec c) (Alphabet String) where
-
-    characterAlphabet = lens (\e -> discreteData e ^. characterAlphabet)
-                      $ \e x -> e { discreteData = discreteData e & characterAlphabet .~ x }
-
-
--- | (✔)
-instance HasCharacterName (DiscreteWithTCMCharacterMetadataDec c) CharacterName where
-
-    characterName = lens (\e -> discreteData e ^. characterName)
-                  $ \e x -> e { discreteData = discreteData e & characterName .~ x }
-
-
--- |
--- A 'Lens' for the 'symbolicTCMGenerator' field
-instance HasSymbolChangeMatrix (DiscreteWithTCMCharacterMetadataDec c) (Word -> Word -> Word) where
-
-    symbolChangeMatrix = lens symbolChangeMatrixData $ \e x -> e { symbolChangeMatrixData = x }
-
-
--- |
--- A 'Lens' for the 'transitionCostMatrix' field
-instance HasTransitionCostMatrix (DiscreteWithTCMCharacterMetadataDec c) (c -> c -> (c, Word)) where
-
-    transitionCostMatrix = lens transitionCostMatrixData $ \e x -> e { transitionCostMatrixData = x }
-
-
--- |
--- A 'Lens' for the 'symbolicTCMGenerator' field
-instance HasSparseTransitionCostMatrix (DiscreteWithTCMCharacterMetadataDec c) MemoizedCostMatrix where
-
-    sparseTransitionCostMatrix = lens foreignPointerData $ \e x -> e { foreignPointerData = x }
-
-
--- | (✔)
-instance HasCharacterWeight (DiscreteWithTCMCharacterMetadataDec c) Double where
-
-    characterWeight = lens (\e -> discreteData e ^. characterWeight)
-                    $ \e x -> e { discreteData = discreteData e & characterWeight .~ x }
+    toXML input = xmlElement "Discrete_with_TCM" attrs contents
+        where
+            attrs    = []
+            contents = [ Right . toXML $ discreteData input
+                       , Left ("TCM", "Not yet renderable")
+                       ]
 
 
 -- |
@@ -163,8 +173,3 @@ discreteMetadataWithTCM name weight alpha scm =
     }
   where
     memoMatrixValue = generateMemoizedTransitionCostMatrix (toEnum $ length alpha) scm
-
-
-instance ToXML (DiscreteWithTCMCharacterMetadataDec c) where
-
-    toXML _ = xmlElement "Discrete with TCM" [] [ Left ("Nothing here", "") ]

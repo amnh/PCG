@@ -22,7 +22,7 @@ module Bio.Metadata.General.Internal
 import Bio.Metadata.CharacterName
 import Bio.Metadata.General.Class
 import Control.Lens
-import Text.XML.Custom
+import Text.XML.Class
 
 
 -- |
@@ -65,7 +65,7 @@ instance HasCharacterWeight GeneralCharacterMetadataDec Double where
 
 instance ToXML GeneralCharacterMetadataDec where
 
-    toXML metadata = xmlElement "Metadata" attributes contents
+    toXML metadata = xmlElement "General_metadata" attributes contents
         where
             attributes = []
             contents   = [ Left ("Name"  , show $ metadata ^. characterName  )

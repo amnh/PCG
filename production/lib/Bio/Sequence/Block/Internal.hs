@@ -22,7 +22,7 @@ import Data.Semigroup
 import Data.Vector            (Vector)
 import Data.Vector.Instances  ()
 import Prelude         hiding (zipWith)
-import Text.XML.Custom
+import Text.XML
 -- import Text.XML.Light.Types
 
 
@@ -30,6 +30,14 @@ import Text.XML.Custom
 -- Represents a block of charcters which are optimized atomically together across
 -- networks. The 'CharacterBlock' is polymorphic over static and dynamic character
 -- definitions.
+--
+-- Bin types:
+-- * u =
+-- * v =
+-- * w =
+-- * x =
+-- * y =
+-- * z =
 --
 -- Use '(<>)' to construct larger blocks.
 data CharacterBlock u v w x y z
@@ -86,20 +94,20 @@ instance ( Show u
 
 
 -- | (✔)
-instance ( ToXML u
+instance ( ToXML u -- This is NOT a redundant constraint.
          , ToXML v
          , ToXML w
          , ToXML y
          , ToXML z
          ) => ToXML (CharacterBlock u v w x y z) where
 
-    toXML block = xmlElement "Character block" attributes contents
+    toXML block = xmlElement "Character_block" attributes contents
         where
             attributes = []
-            contents   = [ (Right . collapseElemList "Non-additive character block" [] $ nonAdditiveCharacterBins block )
-                         , (Right . collapseElemList "Additive character block"     [] $ additiveCharacterBins    block )
-                         , (Right . collapseElemList "NonMetric character block"    [] $ nonMetricCharacterBins   block )
-                         , (Right . collapseElemList "Continuous character block"   [] $ continuousCharacterBins  block )
-                         , (Right . collapseElemList "Metric character block"       [] $ nonMetricCharacterBins   block )
-                         , (Right . collapseElemList "Dynamic character block"      [] $ dynamicCharacters        block )
+            contents   = [ (Right . collapseElemList "Non-additive_character_block" [] $ nonAdditiveCharacterBins block )
+                         , (Right . collapseElemList "Additive_character_block"     [] $ additiveCharacterBins    block )
+                         , (Right . collapseElemList "NonMetric_character_block"    [] $ nonMetricCharacterBins   block )
+                         , (Right . collapseElemList "Continuous_character_block"   [] $ continuousCharacterBins  block )
+                         , (Right . collapseElemList "Metric_character_block"       [] $ nonMetricCharacterBins   block )
+                         , (Right . collapseElemList "Dynamic_character_block"      [] $ dynamicCharacters        block )
                          ]

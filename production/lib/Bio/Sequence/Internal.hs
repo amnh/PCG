@@ -49,7 +49,7 @@ import           Data.MonoTraversable
 --import           Data.Semigroup.Foldable
 import           Data.Semigroup.Traversable
 import           Prelude                 hiding (zipWith)
-import           Text.XML.Custom
+import           Text.XML
 
 
 -- |
@@ -137,11 +137,12 @@ instance ( Show u
 instance ( ToXML u
          , ToXML v
          , ToXML w
+         , ToXML x
          , ToXML y
          , ToXML z
          ) => ToXML (CharacterSequence u v w x y z) where
 
-    toXML (CharSeq val) = collapseElemList "Character sequence" [] (toList val)
+    toXML = collapseElemList "Character_sequence" [] . toBlocks
 
 
 -- |

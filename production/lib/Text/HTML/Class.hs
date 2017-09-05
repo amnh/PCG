@@ -33,10 +33,10 @@ instance (ToHTML a) => ToHTML (Maybe a) where
     toHTML input = lazyText
         where
             content = case input of
-                          Nothing  -> CRef "No data"
+                          Nothing  -> CRef "No_data"
                           Just val -> Elem $ toXML val
 
 
 instance ToHTML [Char] where
 
-    toHTML val = Element (QName "Text value" Nothing Nothing) [] [CRef val] Nothing
+    toHTML val = Element (QName "Text_value" Nothing Nothing) [] [CRef val] Nothing
