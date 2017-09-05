@@ -274,6 +274,7 @@ library
                        Bio.Graph.PhylogeneticDAG.Postorder
                        Bio.Graph.PhylogeneticDAG.Preorder
                        Bio.Graph.PhylogeneticDAG.Reification
+                       Bio.Graph.TopologyRepresentation
                        Bio.Graph.ZipperDAG.Internal
                        Bio.Sequence.Internal
                        Bio.Sequence.Block.Builder
