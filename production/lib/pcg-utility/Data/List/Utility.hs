@@ -30,7 +30,6 @@ import Data.Set           (insert, intersection)
 transpose
   :: ( Applicative f
      , Applicative t
-     , Semigroup (f (t a))
      , Semigroup (t a)
      , Traversable t
      , Zip f

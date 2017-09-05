@@ -94,6 +94,8 @@ data  SyntacticArgument z
     | DefaultValue   (Ap SyntacticArgument z) z
     | ExactlyOneOf   (NonEmpty (Ap SyntacticArgument z))
     | ArgumentList   (ArgList z)
+-- TODO: add this
+--    | SuchThat       (Ap SyntacticArgument z) (z -> Bool) String
     deriving (Functor)
 
 

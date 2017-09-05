@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts, TypeFamilies, UndecidableInstances #-}
+{-# LANGUAGE BangPatterns, FlexibleContexts, TypeFamilies #-}
 
 module PCG.Command.Build.Evaluate
   ( evaluate
@@ -20,8 +20,8 @@ import           Bio.Graph.ReferenceDAG
 import           Bio.Sequence
 --import           Control.Evaluation
 import           Control.Lens
---import           Control.Monad                (liftM2, when)
---import           Control.Monad.IO.Class
+import           Control.Monad                (replicateM)
+import           Control.Monad.IO.Class
 --import           Control.Monad.Trans.Either
 --import           Control.Parallel.Strategies
 --import           Control.Parallel.Custom
@@ -50,9 +50,10 @@ import           Data.Semigroup.Foldable
 --import           Data.Vector                  (Vector)
 --import qualified Data.Vector           as V   (zipWith)
 --import           Data.Void
+import           PCG.Command.Build
 import           PCG.Syntax                   (Command(..))
 import           Prelude             hiding   (lookup, readFile)
-
+import           System.Random.Shuffle
 --import Debug.Trace (trace)
 
 
@@ -97,23 +98,47 @@ evaluate
   -> SearchState
   -> SearchState
 -- EvaluationT IO (Either TopologicalResult CharacterResult)
--- evaluate (READ fileSpecs) _old | trace "STARTING BUILD COMMAND" False = undefined
-evaluate (BUILD {}) oldState = do
+-- evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
+-- evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
+evaluate (BUILD (BuildCommand trajectoryCount buildType)) oldState = do
     x <- oldState
+    
     case x of
       Left  e -> pure $ Left e
       Right v ->
         case toList $ v ^. leafSet of
           []   -> fail "There are no nodes with which to build a tree."
           y:ys ->
-            let bestTree     = naiveWagnerBuild $ y:|ys
-                bestNetwork  = iterativeNetworkBuild bestTree
-                bestSolution = Right $ toSolution bestNetwork
-            in  pure bestSolution
+            if trajectoryCount < 1
+            then fail "A non-positive number was supplied to the number of BUILD trajectories."
+            else do
+                trajectories <- case trajectoryCount of
+                                1 -> pure $ (y:|ys):|[]
+                                n -> liftIO . fmap (NE.fromList . fmap NE.fromList) $ replicateM n (shuffleM (y:ys))
+                let !bestTrees = naiveWagnerParallelBuild trajectories
+                bestNetwork  <- case buildType of
+                                   WagnerTree     -> pure $ bestTrees
+                                   WheelerNetwork -> do liftIO $ putStrLn "Beginning network construction."
+--                                                        pure $ parmap rpar iterativeNetworkBuild bestTrees
+                                                        pure $ fmap iterativeNetworkBuild bestTrees
+                                   WheelerForest  -> fail "The BUILD command type 'Forest' is not yet implemented!"
+                let bestSolution = Right $ toSolution bestNetwork
+                pure bestSolution
   where
-    toSolution = PhylogeneticSolution . pure . PhylogeneticForest . pure
+    toSolution = PhylogeneticSolution . pure . PhylogeneticForest
 
 evaluate _ _ = fail "Invalid BUILD command binding"
+
+
+naiveWagnerParallelBuild
+  :: ( Foldable1 f
+     , Foldable1 t
+     , Traversable t
+     )
+  => t (f DatNode) -- (PhylogeneticNode2 (CharacterSequence u v w x y z) (Maybe String))
+  -> t FinalDecorationDAG
+--naiveWagnerParallelBuild = parmap rpar naiveWagnerBuild
+naiveWagnerParallelBuild = fmap naiveWagnerBuild
 
 
 naiveWagnerBuild
@@ -137,10 +162,10 @@ naiveWagnerBuild
      )
   => -}
   :: Foldable1 f
-  => f DatNode -- (PhylogeneticNode2 (CharacterSequence u v w x y z) (Maybe String))
+  => (f DatNode) -- (PhylogeneticNode2 (CharacterSequence u v w x y z) (Maybe String))
   -> FinalDecorationDAG
 naiveWagnerBuild ns =
-    case toNonEmpty ns of
+   case toNonEmpty ns of
       x:|[]   -> fromRefDAG $ unfoldDAG (\_ -> ([], wipeNode False x, [])) ()
       x:|[y]  ->
           let f e = case e of
