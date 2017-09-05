@@ -33,7 +33,7 @@ cabal-version:       >= 1.22
 
 flag build-cpp-files
   description: Toggles the C++ files being successfully build.
-  default: True
+  default: False
 
 
 library
@@ -630,7 +630,7 @@ Test-Suite testsuite
                        TestSuite.ExecutableTests
                        Text.XML.Class
                        Text.XML.Custom
-        
+
 --                       Analysis.ImpliedAlignment.AlignmentContext
 --                       Analysis.ImpliedAlignment.DynamicProgramming
 --                       Analysis.ImpliedAlignment.Internal
