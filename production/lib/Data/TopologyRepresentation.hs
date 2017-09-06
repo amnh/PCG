@@ -15,8 +15,9 @@
 {-# LANGUAGE DeriveGeneric, GeneralizedNewtypeDeriving #-}
 
 module Data.TopologyRepresentation
-  ( TopologyRepresentation(..)
+  ( TopologyRepresentation
   , singleNetworkEdge
+  , isCompatableSubtopologyOf
   ) where
 
 
@@ -30,18 +31,26 @@ import GHC.Generics    (Generic)
 -- Represents a collection of network edges.
 --
 -- Often used to represent a unique spanning tree in a phylogenetic DAG.
-newtype TopologyRepresentation e = TR (EdgeSet e)
+newtype TopologyRepresentation a = TR (EdgeSet a)
   deriving (Eq, Foldable, Generic, Monoid, Ord, Semigroup)
 
 
-instance NFData e => NFData (TopologyRepresentation e) where
+instance NFData a => NFData (TopologyRepresentation a) where
 
     rnf (TR x) = rnf x
 
 
+instance Show a => Show (TopologyRepresentation a) where
+
+    show (TR es) = "Network Edges of Topology: " <> show es
+
+
 -- |
 -- Construct a singleton 'TopologyRepresentation' value. Use the semigroup operator '(<>)' to
--- construct larger a 'TopologyRepresentation'. This enforces the non-empty invariant of the
--- 'TopologyRepresentation' data-structure.
-singleNetworkEdge :: e -> TopologyRepresentation e
+-- construct larger a 'TopologyRepresentation'.
+singleNetworkEdge :: a -> TopologyRepresentation a
 singleNetworkEdge = TR . singletonEdgeSet
+
+
+isCompatableSubtopologyOf :: Ord a => TopologyRepresentation a -> TopologyRepresentation a -> Bool
+isCompatableSubtopologyOf (TR x) (TR y) = isSubsetOf x y

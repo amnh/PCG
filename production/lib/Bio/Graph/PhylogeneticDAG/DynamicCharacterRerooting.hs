@@ -33,7 +33,7 @@ import           Data.Foldable
 import qualified Data.IntMap        as IM
 import qualified Data.IntSet        as IS
 import           Data.Key
-import           Data.List.NonEmpty        (NonEmpty( (:|) ))
+import           Data.List.NonEmpty        (NonEmpty(..))
 import qualified Data.List.NonEmpty as NE
 --import           Data.List.Utility
 import           Data.Map                  (Map)
@@ -43,6 +43,7 @@ import           Data.MonoTraversable
 import           Data.Ord                  (comparing)
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
+import           Data.TopologyRepresentation
 import           Data.Tuple                (swap)
 import           Data.Vector               (Vector)
 import qualified Data.Vector        as V
@@ -63,7 +64,7 @@ import           Prelude            hiding (lookup, zipWith)
 --
 -- The re-rooting candidate cost for that edge (for a character) is the minimum
 -- cost of the cartesian product of the resolutions of the adjacent nodes minus any
--- resolutions that contain the "incident" network edge contained on the current
+-- resolutions that contain the incident network edge contained on the current
 -- network edge.
 
 assignOptimalDynamicCharacterRootEdges
@@ -80,7 +81,7 @@ assignOptimalDynamicCharacterRootEdges
      , Show z
 --}
      ) --x, Ord x, Show x)
-  => (z -> [z] -> z)
+  => (z -> [z] -> z)  -- ^ Post-order traversal function for Dynamic Characters.
   -> PhylogeneticDAG2 e n u v w x y z
   -> ( PhylogeneticDAG2 e n u v w x y z
      , Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
@@ -101,23 +102,11 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
       -- Complex case, see four steps below.
       _:_:_:_ ->     (PDAG2 updatedDag, edgeCostMapping, contextualNodeDatum)
   where
-
-    -- Used in the trivial case of single leaf component of a forest.
-    setDefaultFoci =
-        PNode2
-          <$> fmap (fmap (hexmap id id id id id f)) . resolutions
-          <*> nodeDecorationDatum2
-      where
-        f x = x & traversalFoci .~ (Just v :: Maybe TraversalFoci)
-        e = (0,1)
-        t = singletonEdgeSet e
-        v = pure (e,t)
     
-    -- Step 1: Construct a hashmap of all the edges.
+    -- Step 1: Construct a hashmap of all the *unrooted* edges.
     unrootedEdges = rootEdgeReferences <> otherUnrootedEdges
     
-    -- Step 2: Create a lazy memoized hashmap of the edge costs for each dynmaic character.
-
+    -- Step 2: Create a lazy, memoized hashmap of the edge costs for each dynmaic character.
     edgeCostMapping = {- (\x -> trace ("edgeCostMapping length: " <> show (length x)) x) $ -} referenceEdgeMapping
 
     -- Step 3: For each dynamic character, find the minimal cost edge(s).
@@ -396,7 +385,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
     -- Here we calculate, for each character block, for each display tree in the
     -- phylogenetic DAG, the minimal traversal foci and the corresponding cost.
     -- Note that there could be many minimal traversal foci for each display tree.
- -- sequenceOfEdgesWithMinimalCost :: NonEmpty (NonEmpty (Topology, Minimal Cost, NonEmpty (Minimal Foci)))
+    sequenceOfEdgesWithMinimalCost :: NonEmpty (Vector (NonEmpty (TraversalTopology, Word, NonEmpty TraversalFocusEdge)))
     sequenceOfEdgesWithMinimalCost = -- (\x -> trace (show $ (fmap (fmap costOfFoci)) <$> x) x) $
                                      foldMapWithKey1 blockLogic sequenceWLOG
       where
@@ -424,8 +413,8 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
             deriveMinimalCharacterContexts i = result
               where
                 result = fromMinimalTopologyContext . foldMap1 gatherMinimalLoci . NE.fromList $ M.assocs edgeIndexCostMapping
-                edgeIndexCostMapping   = fmap (fmap (((^. characterCost) . (! i) . dynamicCharacters . (! k) . toBlocks . characterSequence) &&& subtreeEdgeSet)) edgeCostMapping
-                gatherMinimalLoci (e, xs) = toMinimalTopologyContext $ (\(c, es) -> (es, c, e)) <$> xs
+                edgeIndexCostMapping      = fmap (fmap (((^. characterCost) . (! i) . dynamicCharacters . (! k) . toBlocks . characterSequence) &&& topologyRepresentation)) edgeCostMapping
+                gatherMinimalLoci (e, xs) = toMinimalTopologyContext $ (\(c, topoRep) -> (topoRep, c, e)) <$> xs
 
 
     -- Step 4: Update the dynamic character decoration's cost & add an edge reference.
@@ -451,7 +440,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
             newTotalCost       = sequenceCost modifiedSequence
 --            newLocalCost       = newTotalCost - sum (totalSubtreeCost <$> childResolutionContext) 
             modifiedSequence   = fromBlocks . foldMapWithKey1 g . toBlocks $ characterSequence resInfo
-            resolutionTopology = subtreeEdgeSet resInfo
+            resolutionTopology = topologyRepresentation resInfo
             
             g k charBlock = pure $ charBlock { dynamicCharacters = modifiedDynamicChars }
               where
@@ -461,18 +450,37 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                       & characterCost .~ costVal
                       & traversalFoci .~ (Just foci :: Maybe TraversalFoci)
                   where
-                    (es, costVal, fociEdges) = fromJust $ find ((resolutionTopology ==) . firstOfThree) topologyContexts
-                    foci = (\x -> (x, es)) <$> fociEdges
+                    (topologyRep, costVal, fociEdges) = fromJust $ find ((resolutionTopology ==) . firstOfThree) topologyContexts
+                    foci = (\x -> (x, topologyRep)) <$> fociEdges
 --                    minimaContext   = NE.fromList $ minimaBy (comparing costOfFoci) topologyContexts
 --                    (_, costVal, _) = NE.head minimaContext
 
 {--}
 
+
+-- |
+-- Used in the trivial case of single leaf component of a forest.
+-- Updated the TraversalFoci to be the only edge in the DAG.
+setDefaultFoci
+  :: HasTraversalFoci z (Maybe TraversalFoci)
+  => PhylogeneticNode2 (CharacterSequence u v w x y z) a
+  -> PhylogeneticNode2 (CharacterSequence u v w x y z) a
+setDefaultFoci =
+    PNode2
+      <$> fmap (fmap (hexmap id id id id id f)) . resolutions
+      <*> nodeDecorationDatum2
+  where
+    f x = x & traversalFoci .~ (Just v :: Maybe TraversalFoci)
+    e = (0,1)  -- The only edge in the DAG.
+    t = mempty -- So there's no network edges in the DAG.
+    v = pure (e,t)
+
+
 (.!>.) :: (Lookup f, Show (Key f)) => f a -> Key f -> a
 (.!>.) s k = fromMaybe (error $ "Could not index: " <> show k) $ k `lookup` s
 
 
-newtype MinimalTopologyContext e c = MW { fromMinimalTopologyContext :: NonEmpty (EdgeSet e, c, NonEmpty e) }
+newtype MinimalTopologyContext e c = MW { fromMinimalTopologyContext :: NonEmpty (TopologyRepresentation e, c, NonEmpty e) }
 
 
 instance (Ord e, Ord c) => Semigroup (MinimalTopologyContext e c) where
@@ -497,12 +505,13 @@ instance (Ord e, Ord c) => Semigroup (MinimalTopologyContext e c) where
             mergeFoci (es, c, a) (_, _, b) = (es, c, a <> b)
 
 
-toMinimalTopologyContext :: Ord e => NonEmpty (EdgeSet e, c, e) -> MinimalTopologyContext e c
+toMinimalTopologyContext :: Ord e => NonEmpty (TopologyRepresentation e, c, e) -> MinimalTopologyContext e c
 toMinimalTopologyContext = MW . fmap (\(x,y,z) -> (x, y, pure z)) . NE.sortWith firstOfThree 
 
 
 costOfFoci :: (a, b, c) -> b
 costOfFoci (_,c,_) = c
+
 
 firstOfThree :: (a, b, c) -> a
 firstOfThree (x, _, _) = x

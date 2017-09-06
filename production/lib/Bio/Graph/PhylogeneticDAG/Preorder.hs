@@ -26,16 +26,10 @@ import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
 import qualified Bio.Sequence.Block as BLK
 import           Control.Arrow             ((&&&))
---import           Control.Applicative       (liftA2)
---import           Control.DeepSeq
 import           Control.Lens
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
---import           Data.Bits
-import           Data.EdgeSet
 import           Data.Foldable
---import           Data.Hashable
---import           Data.Hashable.Memoize
 --import           Data.IntMap               (IntMap)
 import qualified Data.IntMap        as IM
 import qualified Data.IntSet        as IS
@@ -48,7 +42,7 @@ import           Data.Maybe
 import           Data.MonoTraversable
 import           Data.Ord                  (comparing)
 import           Data.Semigroup
---import           Data.Semigroup.Foldable
+import           Data.TopologyRepresentation
 import           Data.Vector               (Vector)
 import qualified Data.Vector        as V
 import           Data.Vector.Instances     ()
@@ -57,7 +51,7 @@ import           Prelude            hiding (lookup, zip, zipWith)
 --import Debug.Trace
   
 
-type BlockTopologies = NonEmpty (EdgeSet (Int, Int))
+type BlockTopologies = NonEmpty TraversalTopology
 
 
 -- |
@@ -87,10 +81,10 @@ preorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
         g i = IndexData <$> const (snd $ memo ! i) <*> parentRefs <*> childRefs $ references dag ! i
 
     -- A "sequence" of the minimum topologies that correspond to each block.
-    sequenceOfBlockMinimumTopologies :: NonEmpty (EdgeSet (Int, Int))
+    sequenceOfBlockMinimumTopologies :: BlockTopologies
     sequenceOfBlockMinimumTopologies = getTopologies blockMinimalResolutions
       where
-        getTopologies = fmap subtreeEdgeSet
+        getTopologies = fmap topologyRepresentation
 
         blockMinimalResolutions = mapWithKey f $ toBlocks sequenceWLOG
 
@@ -204,9 +198,9 @@ computeOnApplicableResolution f1 f2 f3 f4 f5 f6 topologies currentResolutions pa
 
 
 
-selectApplicableResolutions :: EdgeSet (Int, Int) -> ResolutionCache s -> ResolutionInformation s
+selectApplicableResolutions :: TraversalTopology -> ResolutionCache s -> ResolutionInformation s
 selectApplicableResolutions topology cache =
-    case filter (\x -> subtreeEdgeSet x `isSubsetOf` topology) $ toList cache of
+    case filter (\x -> topologyRepresentation x `isCompatableSubtopologyOf` topology) $ toList cache of
       []  -> error $ unlines
                  [ "No applicable resolution found on pre-order traversal"
                  , "Input set:  " <> show topology
@@ -301,7 +295,7 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ 
 
 
     -- A "sequence" of the minimum topologies that correspond to each block.
-    sequenceOfBlockMinimumTopologies :: NonEmpty (EdgeSet (Int, Int), Vector (Int, Int))
+    sequenceOfBlockMinimumTopologies :: NonEmpty (TraversalTopology, Vector (Int, Int))
     sequenceOfBlockMinimumTopologies = --trace "after force" $ force (trace "before force" blockMinimalResolutions)
         blockMinimalResolutions
       where
@@ -311,7 +305,7 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ 
 
         datumResolutions = resolutions . nodeDecoration $ references dag ! rootWLOG
 
-        g key _block = (subtreeEdgeSet &&& grabTraversalFoci)
+        g key _block = (topologyRepresentation &&& grabTraversalFoci)
                      $ minimumBy (comparing extractedBlockCost) datumResolutions
           where
             getBlock           = (! key) . toBlocks . characterSequence
