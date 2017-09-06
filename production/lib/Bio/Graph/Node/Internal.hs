@@ -31,7 +31,6 @@ module Bio.Graph.Node.Internal
 
 
 -- import Bio.Graph.LeafSet
-import Bio.Graph.TopologyRepresentation
 import Control.Lens
 -- import Data.Bifunctor
 import Data.BitVector
@@ -39,7 +38,7 @@ import Data.EdgeSet
 import Data.Foldable
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Semigroup
--- import Data.Set           (size)
+import Data.TopologyRepresentation
 import Text.Newick.Class
 import Text.XML
 

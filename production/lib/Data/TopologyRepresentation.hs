@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Graph.TopologyRepresentation
+-- Module      :  Data.TopologyRepresentation
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -14,16 +14,16 @@
 
 {-# LANGUAGE DeriveGeneric, GeneralizedNewtypeDeriving #-}
 
-module Bio.Graph.TopologyRepresentation
+module Data.TopologyRepresentation
   ( TopologyRepresentation(..)
   , singleNetworkEdge
   ) where
 
 
-import           Control.DeepSeq
-import           Data.EdgeSet
-import           Data.Semigroup
-import           GHC.Generics       (Generic)
+import Control.DeepSeq
+import Data.EdgeSet
+import Data.Semigroup
+import GHC.Generics    (Generic)
 
 
 -- |

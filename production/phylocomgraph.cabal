@@ -274,7 +274,6 @@ library
                        Bio.Graph.PhylogeneticDAG.Postorder
                        Bio.Graph.PhylogeneticDAG.Preorder
                        Bio.Graph.PhylogeneticDAG.Reification
-                       Bio.Graph.TopologyRepresentation
                        Bio.Graph.ZipperDAG.Internal
                        Bio.Sequence.Internal
                        Bio.Sequence.Block.Builder
@@ -289,6 +288,7 @@ library
                        Data.Range
                        Data.TCM.Internal
                        Data.TCM.Memoized.FFI
+                       Data.TopologyRepresentation
                        Numeric.Extended
                        Numeric.Extended.Internal
                        Numeric.Extended.Natural

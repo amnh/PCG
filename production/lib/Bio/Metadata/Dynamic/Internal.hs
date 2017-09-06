@@ -41,17 +41,17 @@ import Bio.Metadata.Dynamic.Class
 import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
-import Data.EdgeSet
 import Data.List          (intercalate)
 import Data.List.NonEmpty (NonEmpty)
 import Data.Monoid
 import Data.TCM
+import Data.TopologyRepresentation
 import GHC.Generics       (Generic)
 
 --import Debug.Trace
 
 
-type TraversalTopology  = EdgeSet TraversalFocusEdge
+type TraversalTopology  = TopologyRepresentation TraversalFocusEdge
 
 
 -- |
