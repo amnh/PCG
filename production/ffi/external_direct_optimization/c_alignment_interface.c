@@ -12,155 +12,7 @@
 #include "ukkCheckPoint.h"
 #include "ukkCommon.h"
 
-/** Print an alignIO char. Assume char exists at end of buffer. */
-void alignIO_print( const alignIO_t *character )
-{
-    printf("\n");
-    printf("Length:   %zu\n", character->length);
-    printf("Capacity: %zu\n", character->capacity);
-    size_t charStart = character->capacity - character->length;
-    for(size_t i = charStart; i < character->capacity; i++) {
-        printf("%3d,", character->character[i]);
-        //if (character->character[i] == 0) continue;
-    }
-    printf("\n\n");
-    fflush(stdout);
-}
 
-/** Copy an array of elem_t into an input/output type. Array values should fill last `length` elements of character buffer. */
-void copyValsToAIO(alignIO_t *outChar, elem_t *vals, size_t length, size_t capacity) {
-    outChar->length   = length;
-    outChar->capacity = capacity;
-    // printf("here!\n");
-    // outChar->character = calloc(outChar->capacity, capacity);
-    // printf("here!!\n");
-    size_t offset = capacity - length;
-    // printf("\n");
-    memcpy(outChar->character + offset, vals, length * sizeof(elem_t));
-    // for(size_t i = 0; i < length; i++) {
-    //     //outChar->character[i + offset] = vals[i];
-    //     printf("copy %zu: %d, %d\n", i, vals[i], outChar->character[i + offset]);
-    // }
-    // printf("here!!!\n");
-}
-
-/** Reset an alignIO struct. Note: does not realloc or change capacity, so can only be reused if not changing allocation size. */
-void resetAlignIO(alignIO_t *inChar) {
-    memset(inChar->character, 0, inChar->capacity * sizeof(elem_t));
-    inChar->length = 0;
-    // for(size_t i = 0; i < inChar->capacity; i++) {
-    //     inChar->character[i] = 0;
-    // }
-}
-
-void allocAlignIO(alignIO_t *toAlloc, size_t capacity) {
-    toAlloc->length    = 0;
-    toAlloc->capacity  = capacity;
-    toAlloc->character = calloc(capacity, sizeof(elem_t));
-}
-
-void reallocAlignIO(alignIO_t *toAlloc, size_t capacity) {
-    toAlloc->length    = 0;
-    toAlloc->capacity  = capacity;
-    toAlloc->character = realloc(toAlloc->character, capacity * sizeof(elem_t));
-}
-
-
-/** Copy an input/output type into the char type needed by code ported forward from POY.
- *  The values in the last `length` elements in `input` get copied to the last `length` elements in the array in`retChar`.
- *  Ported code needs a gap character at beginning, so provide that.
- */
-void alignIOtoDynChar(       dyn_character_t *retChar
-                     , const alignIO_t       *input
-                     ,       size_t           alphabetSize
-                     )
-{
-    // printf("\n\nInput Length:        %2zu\n", input->length  );
-    // printf("Input Capacity:      %2zu\n", input->capacity);
-    // printf("Input alphabetSize:  %2zu\n", alphabetSize);
-
-    // assign character into character struct
-    size_t offset       = input->capacity - input->length;
-    retChar->len        = input->length;
-    retChar->cap        = input->capacity;
-    retChar->array_head = input->character;
-    retChar->end        = input->character + input->capacity - 1; // TODO: make sure this is correct.
-    retChar->char_begin = input->character + offset;
-
-    // printf("\nBefore duping struct:\n");
-    // printf("Input Length:      %2zu\n", input->length);
-    // printf("Input Capacity:    %2zu\n", input->capacity);
-    // printf("Input Array Head:  %2d\n",  input->character[0]);
-    // printf("Input First:       %2d\n",  input->character[input->capacity - input->length]);
-    // printf("Input Last:        %2d\n",  input->character[input->capacity - 1]);
-    // fflush(stdout);
-    // memcpy(retChar->char_begin, input->character + offset, input->length * sizeof(elem_t));
-    //printf("\nmemcpy completed\n");
-
-    // now add gap to beginning
-    retChar->char_begin--;   // Add another cell, prepended to the array
-    *retChar->char_begin = ((elem_t) 1) << (alphabetSize - 1);   //Prepend a gap to the array.
-    retChar->len++;
-
-    // printf("\nAfter duping struct:\n");
-    // printf("Output Length:     %2zu\n", retChar->len);
-    // printf("Output Capacity:   %2zu\n", retChar->cap);
-    // printf("Output Array Head: %2d\n",  retChar->array_head[0]);
-    // printf("Output First:      %2d\n",  retChar->char_begin[0] );
-    // printf("Output Last:       %2d\n",  retChar->end[0]       );
-    // //printf("Gap value:           %2d\n", ((elem_t) 1) << (alphabetSize - 1));
-    // fflush(stdout);
-
-}
-
-/** Takes in an alignIO and a char. *Copies* values of character from end of char to end of alignIO->character.
- *  Also eliminates extra gap needed by legacy code.
- */
-void dynCharToAlignIO(alignIO_t *output, dyn_character_t *input) {
-  /*
-    printf("Length:   %zu\n", input->len);
-    printf("Capacity: %zu\n", input->cap);
-    fflush(stdout);
-  */
-    // TODO: The length is ZERO, why?
-    size_t offset    = input->cap - input->len + 1; // How far in to output to start copying input character.
-                                                    // Extra 1 because of extraneous gap.
-
-    output->length   = input->len - 1; // (decrement because of the leading gap char?)
-    output->capacity = input->cap;     // this shouldn't change
-
-    // TODO: is this necessary? Is it calloc'ed, and if not do these values matter?
-    memset(output->character, 0, input->cap * sizeof(elem_t));
-    // for(size_t i = output->length; i < input->cap; i++) {
-    //     output->character[i] = 0;
-    // }
-
-    // Start copy after unnecessary gap char in input.
-    memcpy( output->character + offset, input->char_begin + 1, (input->len - 1) * sizeof(elem_t));
-    // for(size_t i = 0; i < input->len; i++) {
-    //     printf("Cur char: %zu %u\n", i, input->char_begin[i]);
-    //     fflush(stdout);
-    //     output->character[i] = input->char_begin[i];
-    //     // printf("After  dynCharToAlignIO[%d]\n", i);
-    //     // fflush(stdout);
-    // }
-
-}
-
-void freeAlignIO(alignIO_t *toFree) {
-    free(toFree->character);
-    free(toFree);
-}
-
-
-/** Do a 2d alignment. Depending on the values of last two inputs,
- *  | (0,0) = return only a cost
- *  | (0,1) = calculate gapped and ungapped characters
- *  | (1,0) = calculate union
- *  | (1,1) = calculate both union and ungapped characters.
- *
- *  In the last two cases the union will replace the gapped character placeholder.
- */
 int align2d( alignIO_t          *inputChar1_aio
            , alignIO_t          *inputChar2_aio
            , alignIO_t          *gappedOutput_aio
@@ -294,20 +146,20 @@ int align2d( alignIO_t          *inputChar1_aio
 
         }
         if (getGapped && !getUnion) {
-	    //printf("In here!\n"), fflush(stdout);
+        //printf("In here!\n"), fflush(stdout);
             dyn_character_t *gappedMedianChar   = malloc(sizeof(dyn_character_t));
 
-	    //printf("Before initialize character!\n"), fflush(stdout);
+        //printf("Before initialize character!\n"), fflush(stdout);
             initializeChar(gappedMedianChar, CHAR_CAPACITY);
-	    //printf("After  initialize character!\n"), fflush(stdout);
+        //printf("After  initialize character!\n"), fflush(stdout);
 
-	    //printf("Before algn_get_median\n"), fflush(stdout);
+        //printf("Before algn_get_median\n"), fflush(stdout);
             algn_get_median_2d_with_gaps (retShortChar, retLongChar, costMtx2d, gappedMedianChar);
-	    //printf("After  algn_get_median\n"), fflush(stdout);
+        //printf("After  algn_get_median\n"), fflush(stdout);
 
-	    //printf("Before dynCharToAlignIO\n"), fflush(stdout);
+        //printf("Before dynCharToAlignIO\n"), fflush(stdout);
             dynCharToAlignIO(gappedOutput_aio, gappedMedianChar);
-	    //printf("After  dynCharToAlignIO\n"),  fflush(stdout);
+        //printf("After  dynCharToAlignIO\n"),  fflush(stdout);
 
             freeChar(gappedMedianChar);
 
@@ -350,7 +202,7 @@ int align2d( alignIO_t          *inputChar1_aio
 
 }
 
-/** As align2d, but affine */
+
 int align2dAffine( alignIO_t          *inputChar1_aio
                  , alignIO_t          *inputChar2_aio
                  , alignIO_t          *gappedOutput_aio
@@ -546,9 +398,6 @@ int align2dAffine( alignIO_t          *inputChar1_aio
 }
 
 
-/** Aligns three characters using affine algorithm.
- *  Set `gap_open_cost` to 0 for non-affine.
- */
 int align3d( alignIO_t          *inputChar1_aio
            , alignIO_t          *inputChar2_aio
            , alignIO_t          *inputChar3_aio
@@ -694,16 +543,17 @@ int align3d( alignIO_t          *inputChar1_aio
 
     dyn_character_t *ungappedMedianChar = malloc(sizeof(dyn_character_t));
     dyn_character_t *gappedMedianChar   = malloc(sizeof(dyn_character_t));
+
     initializeChar(ungappedMedianChar, CHAR_CAPACITY);
     initializeChar(gappedMedianChar,   CHAR_CAPACITY);
 
-    algnCost = algn_get_cost_medians_3d( retLongChar
-                                       , retMiddleChar
-                                       , retShortChar
-                                       , costMtx3d
-                                       , ungappedMedianChar
-                                       , gappedMedianChar
-                                       );
+    algnCost = algn_get_cost_medians_3d ( retLongChar
+                                        , retMiddleChar
+                                        , retShortChar
+                                        , costMtx3d
+                                        , ungappedMedianChar
+                                        , gappedMedianChar
+                                        );
 
     // dyn_char_print(ungappedMedianChar);
     // dyn_char_print(gappedMedianChar);
@@ -723,4 +573,145 @@ int align3d( alignIO_t          *inputChar1_aio
     freeChar(retShortChar);
 
     return algnCost;
+}
+
+
+void alignIO_print( const alignIO_t *character )
+{
+    printf("\n");
+    printf("Length:   %zu\n", character->length);
+    printf("Capacity: %zu\n", character->capacity);
+    size_t charStart = character->capacity - character->length;
+    for(size_t i = charStart; i < character->capacity; i++) {
+        printf("%3d,", character->character[i]);
+        //if (character->character[i] == 0) continue;
+    }
+    printf("\n\n");
+    fflush(stdout);
+}
+
+
+void alignIOtoDynChar(       dyn_character_t *retChar
+                     , const alignIO_t       *input
+                     ,       size_t           alphabetSize
+                     )
+{
+    // printf("\n\nInput Length:        %2zu\n", input->length  );
+    // printf("Input Capacity:      %2zu\n", input->capacity);
+    // printf("Input alphabetSize:  %2zu\n", alphabetSize);
+
+    // assign character into character struct
+    size_t offset       = input->capacity - input->length;
+    retChar->len        = input->length;
+    retChar->cap        = input->capacity;
+    retChar->array_head = input->character;
+    retChar->end        = input->character + input->capacity - 1; // TODO: make sure this is correct.
+    retChar->char_begin = input->character + offset;
+
+    // printf("\nBefore duping struct:\n");
+    // printf("Input Length:      %2zu\n", input->length);
+    // printf("Input Capacity:    %2zu\n", input->capacity);
+    // printf("Input Array Head:  %2d\n",  input->character[0]);
+    // printf("Input First:       %2d\n",  input->character[input->capacity - input->length]);
+    // printf("Input Last:        %2d\n",  input->character[input->capacity - 1]);
+    // fflush(stdout);
+    // memcpy(retChar->char_begin, input->character + offset, input->length * sizeof(elem_t));
+    //printf("\nmemcpy completed\n");
+
+    // now add gap to beginning
+    retChar->char_begin--;   // Add another cell, prepended to the array
+    *retChar->char_begin = ((elem_t) 1) << (alphabetSize - 1);   //Prepend a gap to the array.
+    retChar->len++;
+
+    // printf("\nAfter duping struct:\n");
+    // printf("Output Length:     %2zu\n", retChar->len);
+    // printf("Output Capacity:   %2zu\n", retChar->cap);
+    // printf("Output Array Head: %2d\n",  retChar->array_head[0]);
+    // printf("Output First:      %2d\n",  retChar->char_begin[0] );
+    // printf("Output Last:       %2d\n",  retChar->end[0]       );
+    // //printf("Gap value:           %2d\n", ((elem_t) 1) << (alphabetSize - 1));
+    // fflush(stdout);
+
+}
+
+
+void allocAlignIO(alignIO_t *toAlloc, size_t capacity) {
+    toAlloc->length    = 0;
+    toAlloc->capacity  = capacity;
+    toAlloc->character = calloc(capacity, sizeof(elem_t));
+}
+
+
+void copyValsToAIO(alignIO_t *outChar, elem_t *vals, size_t length, size_t capacity) {
+    outChar->length   = length;
+    outChar->capacity = capacity;
+    // printf("here!\n");
+    // outChar->character = calloc(outChar->capacity, capacity);
+    // printf("here!!\n");
+    size_t offset = capacity - length;
+    // printf("\n");
+    memcpy(outChar->character + offset, vals, length * sizeof(elem_t));
+    // for(size_t i = 0; i < length; i++) {
+    //     //outChar->character[i + offset] = vals[i];
+    //     printf("copy %zu: %d, %d\n", i, vals[i], outChar->character[i + offset]);
+    // }
+    // printf("here!!!\n");
+}
+
+
+/** Takes in an alignIO and a char. *Copies* values of character from end of char to end of alignIO->character, so output must already
+ *  be alloc'ed.
+ *  Also eliminates extra gap needed by legacy code.
+ */
+void dynCharToAlignIO(alignIO_t *output, dyn_character_t *input) {
+  /*
+    printf("Length:   %zu\n", input->len);
+    printf("Capacity: %zu\n", input->cap);
+    fflush(stdout);
+  */
+    // TODO: The length is ZERO, why?
+    size_t offset    = input->cap - input->len + 1; // How far in to output to start copying input character.
+                                                    // Extra 1 because of extraneous gap.
+
+    output->length   = input->len - 1; // (decrement because of the leading gap char?)
+    output->capacity = input->cap;     // this shouldn't change
+
+    // TODO: is this necessary? Is it calloc'ed, and if not do these values matter?
+    memset(output->character, 0, input->cap * sizeof(elem_t));
+    // for(size_t i = output->length; i < input->cap; i++) {
+    //     output->character[i] = 0;
+    // }
+
+    // Start copy after unnecessary gap char in input.
+    memcpy( output->character + offset, input->char_begin + 1, (input->len - 1) * sizeof(elem_t) );
+    // for(size_t i = 0; i < input->len; i++) {
+    //     printf("Cur char: %zu %u\n", i, input->char_begin[i]);
+    //     fflush(stdout);
+    //     output->character[i] = input->char_begin[i];
+    //     // printf("After  dynCharToAlignIO[%d]\n", i);
+    //     // fflush(stdout);
+    // }
+
+}
+
+
+void freeAlignIO(alignIO_t *toFree) {
+    free(toFree->character);
+    free(toFree);
+}
+
+
+void reallocAlignIO(alignIO_t *toAlloc, size_t capacity) {
+    toAlloc->length    = 0;
+    toAlloc->capacity  = capacity;
+    toAlloc->character = realloc(toAlloc->character, capacity * sizeof(elem_t));
+}
+
+
+void resetAlignIO(alignIO_t *inChar) {
+    memset(inChar->character, 0, inChar->capacity * sizeof(elem_t));
+    inChar->length = 0;
+    // for(size_t i = 0; i < inChar->capacity; i++) {
+    //     inChar->character[i] = 0;
+    // }
 }

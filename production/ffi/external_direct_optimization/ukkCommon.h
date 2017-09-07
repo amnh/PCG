@@ -73,7 +73,7 @@ typedef struct alignment_mtx_t {
     #endif
 
     size_t baseAlloc;
-    void **matrix;         // 2D arrays of either Ukk or CheckP cells void because may point at U_cell_type or CPTye
+    void **matrix;         // 2D arrays of either Ukk or CheckP cells. Void because may point at U_cell_type or CPType.
 
     size_t memAllocated;   // total amount of memory allocated to `matrix`
 } alignment_mtx_t;

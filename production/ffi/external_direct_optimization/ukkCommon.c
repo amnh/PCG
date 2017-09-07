@@ -415,7 +415,7 @@ void copyCharacter ( char            *str
         } else if (char_begin[i] & 8) {
             str[i - 1] = 'T';
         } else {
-            printf ("This is impossible! %d !!", char_begin[i]);
+            printf ("This is impossible! The character is not an A, C, G or T. It's empty: %d !!", char_begin[i]);
             fflush(stdout);
             exit(1);
         }

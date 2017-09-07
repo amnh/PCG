@@ -5667,11 +5667,11 @@ algn_get_cost_medians_3d ( dyn_character_t    *char1
         }
 
         // NOTE that affine is not computed here.
-        curCost += cm_get_cost_3d ( costMatrix
-                                  , char1->char_begin[i]
-                                  , char2->char_begin[i]
-                                  , char3->char_begin[i]
-                                  );
+        curCost += cm_get_cost_3d( costMatrix
+                                 , char1->char_begin[i]
+                                 , char2->char_begin[i]
+                                 , char3->char_begin[i]
+                                 );
     }
 
     return curCost;

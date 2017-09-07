@@ -11,7 +11,7 @@
 #define SUB_COST         1
 #define GAP_OPEN_COST    2
 
-#define DEBUG_3D         0
+#define DEBUG_3D         1
 #define DEBUG_AFFINE     0
 #define DEBUG_ALGN       0
 #define DEBUG_BT         0

@@ -18,41 +18,6 @@ typedef struct alignIO_t {
 } alignIO_t;
 
 
-/**  prints an alignIO struct */
-void alignIO_print( const alignIO_t *character );
-
-/** Takes in an array of values. Copies those values into an already alloced alignIO struct. Then sets length to input length and
- *  capacity to input capacity. Does not allocate.
- */
-void copyValsToAIO(alignIO_t *outChar, elem_t *vals, size_t length, size_t capacity);
-
-/** resets an alignIO struct. Note: does not realloc or change capacity, so can only be reused if not changing allocation size. */
-void resetAlignIO(alignIO_t *inChar);
-
-void freeAlignIO(alignIO_t *toFree);
-
-/** Allocates alignIO, setting length to 0 and capacity to capacity */
-void allocAlignIO(alignIO_t *toAlloc, size_t capacity);
-
-/** As allocAlignIO, but reallocs character. */
-void reallocAlignIO(alignIO_t *toAlloc, size_t capacity);
-
-/** Takes in an alignIO struct and a dyn_character struct. Copies values of alignIO to dyn_character.
- *  Points dyn_character->char_begin, dyn_character->end to respective points in alignIO->character.
- *  Adds a gap character at the front of the array, to deal with old OCaml-forced interface.
- *
- *  Nota bene: assumes that retChar->character has already been allocated correctly.
- */
-void alignIOtoDynChar(       dyn_character_t *retChar
-                     , const alignIO_t       *input
-                     ,       size_t           alphabetSize
-                     );
-
-/** Takes in an alignIO and a dyn_character. *Copies* values of character from _end_ of dyn_character to _beginning_ of alignIO->character.
- *  Also eliminates extra gap needed by legacy code.
- */
-void dynCharToAlignIO(alignIO_t *output, dyn_character_t *input);
-
 /** Do a 2d alignment. Depending on the values of last two inputs,
  *  | (0,0) = return only a cost
  *  | (0,1) = calculate gapped and ungapped characters
@@ -72,6 +37,7 @@ int align2d( alignIO_t          *inputChar1_aio
            , int                 getUnion
            );
 
+
 /** As align2d, but affine */
 int align2dAffine( alignIO_t          *inputChar1_aio
                  , alignIO_t          *inputChar2_aio
@@ -82,8 +48,11 @@ int align2dAffine( alignIO_t          *inputChar1_aio
                  , int                 getMedians
                  );
 
+
 /** Aligns three characters using affine algorithm.
  *  Set `gap_open_cost` to 0 for non-affine.
+ *
+ *  Ordering of inputs by length does not matter, as they will be sorted inside the fn.
  */
 int align3d( alignIO_t          *inputChar1_aio
            , alignIO_t          *inputChar2_aio
@@ -95,5 +64,57 @@ int align3d( alignIO_t          *inputChar1_aio
            , unsigned int        gap_open_cost
            // , unsigned int        gap_extension_cost
            );
+
+
+/**  prints an alignIO struct */
+void alignIO_print( const alignIO_t *character );
+
+
+/** Takes in an alignIO struct and a dyn_character struct. Copies values of alignIO to dyn_character.
+ *  Points dyn_character->char_begin, dyn_character->end to respective points in alignIO->character.
+ *  Adds a gap character at the front of the array, to deal with old OCaml-forced interface.
+ *
+ *  The values in the last `length` elements in `input` get copied to the last `length` elements in the array in`retChar`.
+ *
+ *  Nota bene: assumes that retChar->character has already been allocated correctly.
+ */
+void alignIOtoDynChar(       dyn_character_t *retChar
+                     , const alignIO_t       *input
+                     ,       size_t           alphabetSize
+                     );
+
+
+/** Allocate the fields of an alignIO struct. Incoming pointer must already have space for the alignIO field pointers allocated. */
+void allocAlignIO(alignIO_t *toAlloc, size_t capacity);
+
+
+/** Copy an array of elem_t into an *already alloc'ed* alignIO struct. Then sets length to input length and
+ *  capacity to input capacity.
+ *
+ *  Array values should fill last `length` elements of character buffer.
+ *
+ *  Does not allocate.
+ */
+void copyValsToAIO(alignIO_t *outChar, elem_t *vals, size_t length, size_t capacity);
+
+
+/** Takes in an alignIO and a char. *Copies* values of character from end of char to end of alignIO->character, so output must already
+ *  be alloc'ed.
+ *  Also eliminates extra gap needed by legacy code.
+ */
+void dynCharToAlignIO(alignIO_t *output, dyn_character_t *input);
+
+
+void freeAlignIO(alignIO_t *toFree);
+
+
+/** resets an alignIO struct. Note: does not realloc or change capacity, so can only be reused if not changing allocation size. */
+void resetAlignIO(alignIO_t *inChar);
+
+
+/** As allocAlignIO, but reallocs character. */
+void reallocAlignIO(alignIO_t *toAlloc, size_t capacity);
+
+
 
 #endif // C_ALIGNMENT_INTERFACE_H
