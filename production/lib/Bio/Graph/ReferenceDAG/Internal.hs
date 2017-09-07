@@ -35,6 +35,7 @@ import           Data.Key
 import           Data.List                        (intercalate)
 import           Data.List.NonEmpty               (NonEmpty ((:|)))
 import qualified Data.List.NonEmpty        as NE
+import           Data.List.Utility                (isSingleton)
 import           Data.Monoid                      ((<>))
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
@@ -296,10 +297,72 @@ instance (Applicative f, Foldable f) => ToXML (ReferenceDAG d e (f String)) wher
           vect   = Right $ collapseElemList "Nodes" [] dag  -- Because ReferenceDAG is Foldable over Vector(IndexData)
 
 
-referenceEdgeSet :: ReferenceDAG d e n -> [(Int, Int)]
+-- |
+-- Produces a set of directed references representing all edges in the DAG.
+-- Equivelant to:
+--
+-- > referenceTreeEdgeSet dag `union` referenceTreeEdgeSet dag
+referenceEdgeSet :: ReferenceDAG d e n -> EdgeSet (Int, Int)
 referenceEdgeSet = foldMapWithKey f . references
   where
-    f i =  fmap (\e -> (i,e)) . IM.keys . childRefs
+    f i = foldMap (\e -> singletonEdgeSet (i,e)) . IM.keys . childRefs
+
+
+-- |
+-- Produces a set of directed references representing all /tree/ edges in the DAG.
+-- Omits /network/ edges in the DAG. The resulting 'EdgeSet' may not be connected.
+--
+-- Equivelant to:
+--
+-- > referenceEdgeSet dag `difference` referenceNetworkEdgeSet dag
+--
+-- The follwoing will always hold:
+--
+-- > null (referenceTreeEdgeSet dag `intersecttion` referenceTreeEdgeSet dag)
+referenceTreeEdgeSet :: ReferenceDAG d e n -> EdgeSet (Int, Int)
+referenceTreeEdgeSet dag = foldMapWithKey f refs
+  where
+    refs = references dag
+    f i = foldMap (\e -> singletonEdgeSet (i,e)) . filter childHasOnlyOneParent . IM.keys . childRefs
+    childHasOnlyOneParent = isSingleton . otoList . parentRefs . (refs !)
+
+
+-- |
+-- Produces a set of directed references representing all /Netowrk/ edges in the DAG.
+-- Omits /tree/ edges in the DAG. The resulting 'EdgeSet' *will not* be connected.
+--
+-- Equivelant to:
+--
+-- > referenceEdgeSet dag `difference` referenceTreeEdgeSet dag
+--
+-- The follwoing will always hold:
+--
+-- > null (referenceTreeEdgeSet dag `intersecttion` referenceTreeEdgeSet dag)
+referenceNetworkEdgeSet :: ReferenceDAG d e n -> EdgeSet (Int, Int)
+referenceNetworkEdgeSet dag = foldMapWithKey f refs
+  where
+    refs = references dag
+    f i = foldMap (\e -> singletonEdgeSet (i,e)) . filter childHasMoreThanOneParent . IM.keys . childRefs
+    childHasMoreThanOneParent = not . isSingleton . otoList . parentRefs . (refs !)
+
+
+-- |
+-- Produces a set of undirected references representing all undirected edges that
+-- have a root edges in the DAG, if the root(s) were removed an to create an
+-- undirected network. Omits all edges in the undirected network representation
+-- of the DAG that are not specified as a root of the DAG. The resulting 'EdgeSet'
+-- (unless of trivial cardinality) *will not* be connected.
+undirectedRootEdgeSet :: ReferenceDAG d e n -> EdgeSet (Int, Int)
+undirectedRootEdgeSet dag = foldMap f $ rootRefs dag
+  where
+    refs = references dag
+    f i  = makeRootEdge i . IM.keys . childRefs $ refs ! i
+    makeRootEdge r kids =
+        case kids of
+          []    -> mempty
+          [x]   -> singletonEdgeSet (r,x)
+          x:y:_ -> singletonEdgeSet (x,y)
+
 
 
 connectEdge

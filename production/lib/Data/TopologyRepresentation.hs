@@ -46,11 +46,18 @@ instance Show a => Show (TopologyRepresentation a) where
 
 
 -- |
+-- /O(1)/
+--
 -- Construct a singleton 'TopologyRepresentation' value. Use the semigroup operator '(<>)' to
 -- construct larger a 'TopologyRepresentation'.
 singleNetworkEdge :: a -> TopologyRepresentation a
 singleNetworkEdge = TR . singletonEdgeSet
 
 
+-- |
+-- /O(n + m)/
+--
+-- Perform a subsetting operation to determine is a sub-topology is compatable
+-- with another topology. 
 isCompatableSubtopologyOf :: Ord a => TopologyRepresentation a -> TopologyRepresentation a -> Bool
 isCompatableSubtopologyOf (TR x) (TR y) = isSubsetOf x y

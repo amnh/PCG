@@ -263,11 +263,14 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ 
                   -}
                     mapWithKey deriveParentVectors sequenceOfBlockMinimumTopologies
       where
+        rootEdges    = toList $ undirectedRootEdgeSet   dag
+        treeEdges    = toList $ referenceTreeEdgeSet    dag
+        networkEdges = toList $ referenceNetworkEdgeSet dag
         deriveParentVectors k (topo, dynchars) = mapWithKey h dynchars
           where
             h charIndex rootEdge@(lhsRootRef, rhsRootRef) = V.generate dagSize g
               where
---                g i | trace (show i) False = undefined
+--                g i | trace (unwords [show i, "/", show $ length dag, show rootEdge, show $ IM.keys parentalMapping]) False = undefined
                 g i = parentalMapping ! i
                 
                 parentalMapping = lhs <> rhs
@@ -278,7 +281,8 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ 
 --                    genMap _  j | trace (show j) False = undefined
                     genMap is j = foldMap (\x -> IM.singleton x $ Left j) kids <> foldMap (genMap (IS.insert j is)) kids
                       where
-                        kids = catMaybes $ nextEdges j is <$> toList topo
+                        kids  = catMaybes $ nextEdges j is <$> topoEdges
+                        topoEdges = toList topo <> treeEdges <> rootEdges
 
                     val = (! charIndex) . dynamicCharacters
                           -- Get the appropriate block from the resolution that contains this character

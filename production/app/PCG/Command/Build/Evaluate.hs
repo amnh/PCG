@@ -216,7 +216,7 @@ iterativeBuild currentTree [] = currentTree
 iterativeBuild currentTree (nextLeaf:remainingLeaves) = iterativeBuild nextTree remainingLeaves
   where
     (PDAG2 dag) = wipeScoring currentTree
-    edgeSet     = NE.fromList $ referenceEdgeSet dag
+    edgeSet     = NE.fromList . toList $ referenceEdgeSet dag
 
     tryEdge :: (Int, Int) -> FinalDecorationDAG
     tryEdge     = performDecoration . PDAG2 . invadeEdge (defaultMetadata dag) deriveInternalNode (wipeNode False nextLeaf)
