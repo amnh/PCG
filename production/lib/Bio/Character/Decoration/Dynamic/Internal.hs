@@ -26,7 +26,9 @@ import Bio.Metadata.Dynamic
 import Control.Lens
 import Data.Alphabet
 import Data.Bits
+import Data.Foldable
 import Data.Hashable
+import Data.List.NonEmpty (intersperse)
 import Data.MonoTraversable
 import Data.Semigroup
 import Text.XML
@@ -759,7 +761,7 @@ instance EncodableDynamicCharacter d => PostOrderExtensionDirectOptimizationDeco
 -- | (✔)
 instance EncodableStream d => Show (DynamicDecorationDirectOptimization d) where
 
-    show dec = (shownEdge <>) . unlines . (shownAlphabet:) . (shownCost:) $ f <$> pairs
+    show dec = (shownFoci <>) . unlines . (shownAlphabet:) . (shownCost:) $ f <$> pairs
       where
         f (prefix, accessor) = prefix <> showStream (dec ^. characterAlphabet) (dec ^. accessor)
         pairs =
@@ -774,7 +776,7 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimization d) where
 
         shownAlphabet = show $ dec ^. characterAlphabet
 
-        shownEdge = maybe "" (\x -> "Locus Edges         : " <> show x <> "\n") . fmap (fmap fst) $ dec ^. traversalFoci
+        shownFoci = maybe "" renderFoci $ dec ^. traversalFoci
 
         shownCost = unwords
             [ "Cost                :"
@@ -802,6 +804,8 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimizationPostOrder
         shownAlphabet = show $ dec ^. characterAlphabet
 
         shownEdge = maybe "" (\x -> "Locus Edges         : " <> show x <> "\n") . fmap (fmap fst) $ dec ^. traversalFoci
+
+        shownFoci = maybe "" renderFoci $ dec ^. traversalFoci
 
         shownCost = unwords
           [ "Cost                :"
@@ -886,3 +890,12 @@ instance EncodableStream d => ToXML (DynamicDecorationDirectOptimizationPostOrde
                          , Left ("Preliminary_ungapped_char", showStream alph (decoration ^. preliminaryUngapped))
                          ]
             alph = decoration ^. characterAlphabet
+
+
+renderFoci :: TraversalFoci -> String
+renderFoci foci = prefix <> body <> "\n"
+  where
+    prefix   = "Traversal Foci {" <> show (length foci) <> "}\n"
+    body     = sconcat . intersperse "\n" $ fmap g foci
+    g (e,te) = "  Traversal Focus Edge: " <> show e <> " with network edges in topology: " <> show (toList te)
+
