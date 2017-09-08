@@ -265,7 +265,6 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ 
       where
         rootEdges    = toList $ undirectedRootEdgeSet   dag
         treeEdges    = toList $ referenceTreeEdgeSet    dag
-        networkEdges = toList $ referenceNetworkEdgeSet dag
         deriveParentVectors k (topo, dynchars) = mapWithKey h dynchars
           where
             h charIndex rootEdge@(lhsRootRef, rhsRootRef) = V.generate dagSize g

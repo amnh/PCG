@@ -28,6 +28,8 @@ import Data.Semigroup
 --import Text.XML.Custom
 
 
+-- |
+-- Set of unique leaf labels.
 newtype LeafSet n = LeafSet [n]
     deriving (Foldable, Functor, Show)
 
@@ -40,6 +42,7 @@ class HasLeafSet s a | s -> a where
     leafSet :: Lens' s a
 
   
+-- | (✔)
 instance Eq n => Semigroup (LeafSet n) where
 
     (<>) (LeafSet lhs) (LeafSet rhs) = LeafSet $ union lhs rhs

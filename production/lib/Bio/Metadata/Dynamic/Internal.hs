@@ -52,6 +52,8 @@ import GHC.Generics       (Generic)
 --import Debug.Trace
 
 
+-- |
+-- A unique representation of a DAG topology.
 type TraversalTopology  = TopologyRepresentation TraversalFocusEdge
 
 

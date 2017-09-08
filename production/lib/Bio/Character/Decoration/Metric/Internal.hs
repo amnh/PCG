@@ -312,7 +312,7 @@ instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (Metric
         }
 
 
--- |
+-- | (✔)
 instance ToXML (SankoffOptimizationDecoration c) where
 
     toXML metricDecoration = xmlElement "Sankoff_optimization_decoration" attributes contents

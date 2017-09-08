@@ -33,12 +33,13 @@ import Data.Key
 import Text.XML.Light.Types
 
 
--- |
+-- | (✔)
 class ToXML a where
 
     toXML :: a -> Element
 
 
+-- | (✔)
 instance (ToXML a) => ToXML (Maybe a) where
 
     toXML input = result -- Element (QName "Maybe_data" Nothing Nothing) [] [content] Nothing
@@ -48,16 +49,19 @@ instance (ToXML a) => ToXML (Maybe a) where
                           Just val -> toXML val
 
 
+-- | (✔)
 instance (ToXML a, ToXML b) => ToXML (a, b) where
 
     toXML (a, b) = Element (QName "Tuple" Nothing Nothing) [] [Elem $ toXML a, Elem $ toXML b] Nothing
 
 
+-- | (✔)
 instance ToXML [Char] where
 
     toXML val = Element (QName "Text_value" Nothing Nothing) [] [CRef val] Nothing
 
 
+-- | (✔)
 instance {-# OVERLAPPABLE #-} (Foldable f, ToXML a) => ToXML (f a) where
 
     toXML lst = Element name attrs contents Nothing

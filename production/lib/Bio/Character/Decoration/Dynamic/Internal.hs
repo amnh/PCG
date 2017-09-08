@@ -643,7 +643,7 @@ instance HasSymbolChangeMatrix (DynamicDecorationInitial d) (Word -> Word -> Wor
          setter e f = e { metadata = metadata e & symbolChangeMatrix .~ f }
 
 
---- |
+-- |
 -- A 'Lens' for the 'transitionCostMatrix' field
 instance (Element d ~ c) => HasTransitionCostMatrix (DynamicDecorationDirectOptimization d) (c -> c -> (c, Word)) where
 
@@ -860,6 +860,7 @@ instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostOrderDecoratio
         }
 
 
+-- | (✔)
 instance EncodableStream d => ToXML (DynamicDecorationDirectOptimization d) where
 
     toXML decoration = xmlElement "Dynamic_DO_pre-order_decoration_result" attributes contents
@@ -890,6 +891,8 @@ instance EncodableStream d => ToXML (DynamicDecorationDirectOptimizationPostOrde
             alph = decoration ^. characterAlphabet
 
 
+-- |
+-- Render a traversal foci to a String.
 renderFoci :: TraversalFoci -> String
 renderFoci foci = prefix <> body <> "\n"
   where
