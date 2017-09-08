@@ -201,7 +201,6 @@ library
                        Data.BitMatrix
                        Data.DuplicateSet
                        Data.EdgeLength
-                       Data.Hashable.Memoize
                        Data.ReplicatedSequence
                        Data.TCM
                        Data.TCM.Memoized

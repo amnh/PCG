@@ -27,8 +27,6 @@ import           Control.Applicative         (liftA2)
 import           Control.Monad.State.Lazy
 import           Data.Bits
 import           Data.Foldable
-import           Data.Hashable
-import           Data.Hashable.Memoize
 import qualified Data.IntMap          as IM
 import           Data.Key
 import           Data.List.NonEmpty          (NonEmpty( (:|) ))
@@ -44,9 +42,7 @@ import           Prelude              hiding (zipWith)
 -- The logic function takes a current node decoration,
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
-postorderSequence' :: ( Eq z, Eq z', Hashable z, Hashable z'
-                      , HasBlockCost u' v' w' x' y' z' Word Double
-                      )
+postorderSequence' :: HasBlockCost u' v' w' x' y' z' Word Double
                    => (u -> [u'] -> u')
                    -> (v -> [v'] -> v')
                    -> (w -> [w'] -> w')
@@ -61,7 +57,6 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
       where
         f acc = (acc .|.) . leafSetRepresentation . NE.head . resolutions
     
-    f6' = memoize2 f6
 {-    
     newDAG
       :: ReferenceDAG d e x
@@ -96,7 +91,7 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
                         _    -> error "Root Node with no complete coverage resolutions!!! This should be logically impossible."
 
             completeCoverage = (completeLeafSetForDAG ==) . (completeLeafSetForDAG .&.) . leafSetRepresentation
-            localResolutions = liftA2 (generateLocalResolutions f1 f2 f3 f4 f5 f6') datumResolutions childResolutions
+            localResolutions = liftA2 (generateLocalResolutions f1 f2 f3 f4 f5 f6) datumResolutions childResolutions
                 
             node             = references dag ! i
             childIndices     = IM.keys $ childRefs node
