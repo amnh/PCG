@@ -790,7 +790,7 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimization d) where
 -- | (✔)
 instance EncodableStream d => Show (DynamicDecorationDirectOptimizationPostOrderResult d) where
 
-    show dec = (shownEdge <>) . unlines . (shownAlphabet:) . (shownCost:) $ f <$> pairs
+    show dec = (shownFoci <>) . unlines . (shownAlphabet:) . (shownCost:) $ f <$> pairs
       where
         f (prefix, accessor) = prefix <> showStream (dec ^. characterAlphabet) (dec ^. accessor)
         pairs =
@@ -802,8 +802,6 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimizationPostOrder
           ]
 
         shownAlphabet = show $ dec ^. characterAlphabet
-
-        shownEdge = maybe "" (\x -> "Locus Edges         : " <> show x <> "\n") . fmap (fmap fst) $ dec ^. traversalFoci
 
         shownFoci = maybe "" renderFoci $ dec ^. traversalFoci
 
