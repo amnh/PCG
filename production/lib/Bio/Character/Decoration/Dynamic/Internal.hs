@@ -26,10 +26,12 @@ import Bio.Metadata.Dynamic
 import Control.Lens
 import Data.Alphabet
 import Data.Bits
+import Data.Foldable
 import Data.Hashable
+import Data.List.NonEmpty (intersperse)
 import Data.MonoTraversable
 import Data.Semigroup
-import Text.XML.Custom
+import Text.XML
 
 
 -- TODO:
@@ -641,7 +643,7 @@ instance HasSymbolChangeMatrix (DynamicDecorationInitial d) (Word -> Word -> Wor
          setter e f = e { metadata = metadata e & symbolChangeMatrix .~ f }
 
 
---- |
+-- |
 -- A 'Lens' for the 'transitionCostMatrix' field
 instance (Element d ~ c) => HasTransitionCostMatrix (DynamicDecorationDirectOptimization d) (c -> c -> (c, Word)) where
 
@@ -759,7 +761,7 @@ instance EncodableDynamicCharacter d => PostOrderExtensionDirectOptimizationDeco
 -- | (✔)
 instance EncodableStream d => Show (DynamicDecorationDirectOptimization d) where
 
-    show dec = (shownEdge <>) . unlines . (shownAlphabet:) . (shownCost:) $ f <$> pairs
+    show dec = (shownFoci <>) . unlines . (shownAlphabet:) . (shownCost:) $ f <$> pairs
       where
         f (prefix, accessor) = prefix <> showStream (dec ^. characterAlphabet) (dec ^. accessor)
         pairs =
@@ -774,7 +776,7 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimization d) where
 
         shownAlphabet = show $ dec ^. characterAlphabet
 
-        shownEdge = maybe "" (\x -> "Locus Edges         : " <> show x <> "\n") . fmap (fmap fst) $ dec ^. traversalFoci
+        shownFoci = maybe "" renderFoci $ dec ^. traversalFoci
 
         shownCost = unwords
             [ "Cost                :"
@@ -788,7 +790,7 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimization d) where
 -- | (✔)
 instance EncodableStream d => Show (DynamicDecorationDirectOptimizationPostOrderResult d) where
 
-    show dec = (shownEdge <>) . unlines . (shownAlphabet:) . (shownCost:) $ f <$> pairs
+    show dec = (shownFoci <>) . unlines . (shownAlphabet:) . (shownCost:) $ f <$> pairs
       where
         f (prefix, accessor) = prefix <> showStream (dec ^. characterAlphabet) (dec ^. accessor)
         pairs =
@@ -801,7 +803,7 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimizationPostOrder
 
         shownAlphabet = show $ dec ^. characterAlphabet
 
-        shownEdge = maybe "" (\x -> "Locus Edges         : " <> show x <> "\n") . fmap (fmap fst) $ dec ^. traversalFoci
+        shownFoci = maybe "" renderFoci $ dec ^. traversalFoci
 
         shownCost = unwords
           [ "Cost                :"
@@ -858,28 +860,43 @@ instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostOrderDecoratio
         }
 
 
-instance Show d => ToXML (DynamicDecorationDirectOptimization d) where
+-- | (✔)
+instance EncodableStream d => ToXML (DynamicDecorationDirectOptimization d) where
 
-    toXML decoration = xmlElement "Dynamic DO pre-order decoration result" attributes contents
+    toXML decoration = xmlElement "Dynamic_DO_pre-order_decoration_result" attributes contents
         where
             attributes = []
-            contents   = [ Left ("Character cost"           , show $ decoration ^. characterCost      )
-                         , Left ("Local cost"               , show $ decoration ^. characterLocalCost )
-                         , Left ("Preliminary gapped char"  , show $ decoration ^. preliminaryGapped  )
-                         , Left ("Preliminary ungapped char", show $ decoration ^. preliminaryUngapped)
-                         , Left ("Final gapped char"        , show $ decoration ^. finalGapped        )
-                         , Left ("Final ungapped char"      , show $ decoration ^. finalUngapped      )
+            -- f (prefix, accessor) = prefix <> showStream (dec ^. characterAlphabet) (dec ^. accessor)
+            contents   = [ Left ("Local_cost"               , show (decoration ^. characterLocalCost) )
+                         , Left ("Original_encoding"        , showStream alph (decoration ^. encoded)            )
+                         , Left ("Preliminary_gapped_char"  , showStream alph (decoration ^. preliminaryGapped)  )
+                         , Left ("Preliminary_ungapped_char", showStream alph (decoration ^. preliminaryUngapped))
+                         , Left ("Final_gapped_char"        , showStream alph (decoration ^. finalGapped)        )
+                         , Left ("Final_ungapped_char"      , showStream alph (decoration ^. finalUngapped)      )
                          ]
+            alph = decoration ^. characterAlphabet
 
 
 -- | (✔)
-instance Show d => ToXML (DynamicDecorationDirectOptimizationPostOrderResult d) where
+instance EncodableStream d => ToXML (DynamicDecorationDirectOptimizationPostOrderResult d) where
 
-    toXML decoration = xmlElement "Dynamic DO post-order decoration result" attributes contents
+    toXML decoration = xmlElement "Dynamic_DO_post-order_decoration_result" attributes contents
         where
             attributes = []
-            contents   = [ Left ("Character cost"           , show $ decoration ^. characterCost      )
-                         , Left ("Local cost"               , show $ decoration ^. characterLocalCost )
-                         , Left ("Preliminary gapped char"  , show $ decoration ^. preliminaryGapped  )    -- TODO: Call toXML here?
-                         , Left ("Preliminary ungapped char", show $ decoration ^. preliminaryUngapped)    -- TODO: Call toXML here?
+            contents   = [ Left ("Character_cost"           , show (decoration ^. characterCost)      )
+                         , Left ("Local_cost"               , show (decoration ^. characterLocalCost) )
+                         , Left ("Preliminary_gapped_char"  , showStream alph (decoration ^. preliminaryGapped)  )
+                         , Left ("Preliminary_ungapped_char", showStream alph (decoration ^. preliminaryUngapped))
                          ]
+            alph = decoration ^. characterAlphabet
+
+
+-- |
+-- Render a traversal foci to a String.
+renderFoci :: TraversalFoci -> String
+renderFoci foci = prefix <> body <> "\n"
+  where
+    prefix   = "Traversal Foci {" <> show (length foci) <> "}\n"
+    body     = sconcat . intersperse "\n" $ fmap g foci
+    g (e,te) = "  Traversal Focus Edge: " <> show e <> " with network edges in topology: " <> show (toList te)
+

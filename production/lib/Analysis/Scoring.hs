@@ -26,9 +26,7 @@ import Bio.Character
 import Bio.Character.Decoration.Additive
 import Bio.Character.Decoration.Dynamic
 import Bio.Graph
-import Bio.Graph.LeafSet
 import Bio.Graph.Node
-import Bio.Graph.PhylogeneticDAG
 import Bio.Graph.ReferenceDAG.Internal
 import Bio.Sequence
 import Control.Lens
@@ -38,6 +36,12 @@ import qualified Data.List.NonEmpty as NE
 import Data.MonoTraversable (Element)
 import Data.Semigroup
 import Prelude       hiding (lookup, zip, zipWith)
+
+
+-- |
+-- sequentialAlignOverride, iff True forces seqAlign to run; otherwise, DO runs.
+sequentialAlignOverride :: Bool
+sequentialAlignOverride = False
 
 
 wipeScoring
@@ -84,6 +88,7 @@ wipeNode wipe = PNode2 <$> pure . g . NE.head . resolutions <*> f . nodeDecorati
               <*> leafSetRepresentation
               <*> subtreeRepresentation
               <*> subtreeEdgeSet
+              <*> topologyRepresentation
               <*> hexmap h h h h h h . characterSequence
         h :: a -> Maybe a
         h | wipe      = const Nothing
@@ -158,12 +163,6 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
     adaptiveDirectOptimizationPostOrder dec kidDecs = directOptimizationPostOrder pairwiseAlignmentFunction dec kidDecs
       where
         pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec kidDecs
-
-
--- |
--- sequentialAlignOverride, iff True forces seqAlign to run; otherwise, DO runs.
-sequentialAlignOverride :: Bool
-sequentialAlignOverride = False
 
 
 chooseDirectOptimizationComparison :: ( SimpleDynamicDecoration d  c

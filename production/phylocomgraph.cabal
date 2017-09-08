@@ -67,7 +67,9 @@ library
                      , QuickCheck
                      , scientific
                      , semigroupoids
-                     , semigroups
+                     -- required for Data.Semigroup.Foldable.toNonEmpty
+                     , semigroups         >=5.2.1
+                     , text
                      , transformers
                      , unordered-containers
                      , vector
@@ -188,6 +190,7 @@ library
                        Bio.Graph.PhylogeneticDAG
                        Bio.Graph.ReferenceDAG
                        Bio.Graph.ReferenceDAG.Internal
+                       Bio.Graph.Solution
                        Bio.Graph.ZipperDAG
                        Control.Evaluation
                        Control.Parallel.Custom
@@ -204,7 +207,8 @@ library
                        Data.TCM.Memoized
 --                       Text.HTML.Class
 --                       Text.HTML.Custom
-                       Text.XML.Class
+                       Text.Newick.Class
+                       Text.XML
                        Text.XML.Custom
 
   -- probably can be moved to other-modules:
@@ -259,6 +263,7 @@ library
                        Bio.Metadata.DiscreteWithTCM.Internal
                        Bio.Metadata.Dynamic.Class
                        Bio.Metadata.Dynamic.Internal
+                       Bio.Graph.Constructions
                        Bio.Graph.Forest
                        Bio.Graph.Node.Class
                        Bio.Graph.Node.Internal
@@ -268,7 +273,7 @@ library
                        Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
                        Bio.Graph.PhylogeneticDAG.Postorder
                        Bio.Graph.PhylogeneticDAG.Preorder
-                       Bio.Graph.PhylogeneticDAG.Riefication
+                       Bio.Graph.PhylogeneticDAG.Reification
                        Bio.Graph.ZipperDAG.Internal
                        Bio.Sequence.Internal
                        Bio.Sequence.Block.Builder
@@ -283,11 +288,13 @@ library
                        Data.Range
                        Data.TCM.Internal
                        Data.TCM.Memoized.FFI
+                       Data.TopologyRepresentation
                        Numeric.Extended
                        Numeric.Extended.Internal
                        Numeric.Extended.Natural
                        Numeric.Extended.Real
                        Test.QuickCheck.Arbitrary.Instances
+                       Text.XML.Class
 
 
 executable pcg
@@ -298,6 +305,7 @@ executable pcg
                      , blaze-html
                        -- Required for Data.Map.restrictKeys
                      , containers       >=0.5.8
+                     , deepseq
                      , directory
                      , either
                      , Glob
@@ -311,6 +319,7 @@ executable pcg
                      , pcg-file-parsers
                      , pcg-language
                      , pcg-utility
+                     , random-shuffle
                      , semigroupoids
                      , semigroups
                      , text

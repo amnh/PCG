@@ -265,7 +265,7 @@ Executable file-tests
                        -g
                        -threaded
 --                       -debug
-                       -optl-static
+--                       -optl-static
                     -- Turns on *almost* all warnings
                        -Wall
                     -- Checks for future compatibility with predicted language changes

@@ -26,7 +26,7 @@ import Control.Lens
 import Data.Alphabet
 import Data.TCM
 import Numeric.Extended.Natural
-import Text.XML.Custom
+import Text.XML
 
 
 -- |
@@ -312,13 +312,13 @@ instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (Metric
         }
 
 
--- |
+-- | (✔)
 instance ToXML (SankoffOptimizationDecoration c) where
 
-    toXML metricDecoration = xmlElement "SankoffOptimizationDecoration" attributes contents
+    toXML metricDecoration = xmlElement "Sankoff_optimization_decoration" attributes contents
         where
             attributes = []
-            contents   = [ Left ("Min cost vector", show $ metricDecoration ^. characterCost      )
-                         , Left ("Min cost"       , show $ metricDecoration ^. characterCostVector)
-                         , Left ("Is leaf"        , show $ metricDecoration ^. isLeaf             )
+            contents   = [ Left ("Min_cost_vector", show $ metricDecoration ^. characterCost      )
+                         , Left ("Min_cost"       , show $ metricDecoration ^. characterCostVector)
+                         , Left ("Is_leaf"        , show $ metricDecoration ^. isLeaf             )
                          ]

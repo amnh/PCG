@@ -21,16 +21,18 @@ module Bio.Graph.Forest
   ) where
 
 import Bio.Graph.LeafSet
-import Control.Lens           hiding (Indexable)
+import Control.Lens              hiding (Indexable)
 import Data.Foldable
 import Data.GraphViz.Printing
 import Data.Key
-import Data.List.NonEmpty            (NonEmpty(..))
+import Data.List                        (intercalate)
+import Data.List.NonEmpty               (NonEmpty(..))
 import Data.Maybe
 import Data.Semigroup
 import Data.Semigroup.Foldable
 -- import Data.Semigroup.Traversable
 import Prelude                hiding (head, lookup, zip, zipWith)
+import Text.Newick.Class
 import Text.XML.Custom
 -- import Text.XML.Light.Types
 
@@ -77,9 +79,8 @@ instance FoldableWithKey1 PhylogeneticForest where
 
 instance (HasLeafSet a b, Semigroup b) => HasLeafSet (PhylogeneticForest a) b where
 
-    leafSet = lens getter setter
+    leafSet = lens getter undefined
       where
-        setter e _ = id e
         getter = (foldMap1 (^. leafSet)) . unwrap
 
 
@@ -120,7 +121,12 @@ instance PrintDot a => PrintDot (PhylogeneticForest a) where
     listToDot     = fmap mconcat . sequenceA . fmap toDot
 
 
-instance (ToXML a) => ToXML (PhylogeneticForest a) where
+instance ToNewick a => ToNewick (PhylogeneticForest a) where
+
+    toNewick forest = intercalate "\n" (toList $ fmap toNewick (unwrap forest))
+
+
+instance ToXML a => ToXML (PhylogeneticForest a) where
 
     toXML = collapseElemList "Forest" [] . unwrap
 

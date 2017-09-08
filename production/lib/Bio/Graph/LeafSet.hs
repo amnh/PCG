@@ -23,15 +23,15 @@ module Bio.Graph.LeafSet
 
 
 import Control.Lens
---import Data.Foldable
 import Data.List (union)
 import Data.Semigroup
---import Data.Set (Set)
---import Data.Monoid
--- import Text.XML.Custom
+--import Text.XML.Custom
 
 
-newtype LeafSet n = LeafSet [n] deriving (Foldable, Functor, Show)
+-- |
+-- Set of unique leaf labels.
+newtype LeafSet n = LeafSet [n]
+    deriving (Foldable, Functor, Show)
 
 
 -- |
@@ -42,26 +42,20 @@ class HasLeafSet s a | s -> a where
     leafSet :: Lens' s a
 
   
+-- | (✔)
 instance Eq n => Semigroup (LeafSet n) where
 
     (<>) (LeafSet lhs) (LeafSet rhs) = LeafSet $ union lhs rhs
 
 
--- instance ToXML (LeafSet (Maybe String)) where
+{--
+instance ToXML (LeafSet (Maybe String)) where
 
---     toXML (LeafSet lst) = xmlElement "Leaf set" attrs contents
---         where
---             attrs    = []
---             contents = [Left ("Leaves", foldr leafStr "" lst)]
+    toXML (LeafSet lst) = xmlElement "Leaf_set" attrs contents
+        where
+            attrs    = []
+            contents = [Left ("Leaves", foldr leafStr "" lst)]
 
---             leafStr input accum = case input of Just item -> item <> ", " <> accum
---                                                 Nothing   -> accum
-
-
--- instance (Foldable f) => HasLeafSet (f a) (LeafSet a) where
-
---     leafSet lst = lens getter setter
---         where
---             result = head $ foldMap (^. leafSet) (toList lst)
---             getter e   =
---             setter e _ = id e
+            leafStr input accum = case input of Just item -> item <> ", " <> accum
+                                                Nothing   -> accum
+--}

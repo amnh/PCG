@@ -15,7 +15,7 @@
 {-# LANGUAGE DeriveGeneric, GeneralizedNewtypeDeriving #-}
 
 module Data.EdgeSet
-  ( EdgeSet()
+  ( EdgeSet(..)
   , NetworkDisplayEdgeSet(..)
   , SetLike(..)
   , collapseToEdgeSet

@@ -14,15 +14,45 @@
 
 module Data.List.Utility where
 
-import Data.Set      (insert, intersection)
 import Data.Foldable
-import Data.List     (sort, sortBy)
-import Data.Map      (assocs, empty, insertWith)
-import Data.Ord      (comparing)
-  
+import Data.Key           (Zip(..))
+import Data.List          (sort, sortBy)
+import Data.List.NonEmpty (NonEmpty(..))
+import Data.Map           (assocs, empty, insertWith)
+import Data.Semigroup
+import Data.Ord           (comparing)
+import Data.Set           (insert, intersection)
+
 
 -- |
--- Determines whether a foldable structure contains a single element.
+-- /O( n * k )/
+--
+-- Takes two nested, linear-dimentional structures and transposes thier dimensions.
+-- It's like performing a matrix transpose operation, but more general.
+transpose
+  :: ( Applicative f
+     , Applicative t
+     , Semigroup (t a)
+     , Traversable t
+     , Zip f
+     )
+  => t (f a) -> f (t a)
+transpose value =
+    case toList value of
+      []   -> sequenceA value
+      x:xs -> transpose' $ x:|xs
+  where
+    transpose' (e:|[])     = (pure <$> e)
+    transpose' (e:|(x:xs)) = (cons <$> e) `zap` (transpose' (x:|xs))
+
+    cons = (<>) . pure
+
+
+-- |
+-- /O( k )/ where /k/ is the cost to convert the structure to a list in weak head
+-- normal form.
+--
+-- Determines whether a 'Foldable' structure contains a single element.
 isSingleton :: Foldable t => t a -> Bool
 isSingleton = f . toList
   where
@@ -31,6 +61,8 @@ isSingleton = f . toList
 
 
 -- |
+-- /O(n * log(n) )/
+--
 -- Returns the list of elements which are not unique in the input list.
 duplicates :: (Foldable t, Ord a) => t a -> [a]
 duplicates = duplicates' . sort . toList
@@ -43,6 +75,8 @@ duplicates = duplicates' . sort . toList
 
 
 -- |
+-- /O( n * log(n) )/
+--
 -- Returns the element that occurs the most often in the list.
 mostCommon :: (Foldable t, Ord a) => t a -> Maybe a
 mostCommon xs
@@ -53,6 +87,8 @@ mostCommon xs
 
 
 -- |
+-- /O( n * log(n) )/
+--
 -- Returns a mapping of each unique element in the list paired with how often
 -- the element occurs in the list.
 occurances :: (Foldable t, Ord a) => t a -> [(a,Int)]
@@ -70,6 +106,8 @@ occurances = collateOccuranceMap . buildOccuranceMap
 
 
 -- |
+-- /O( n )/
+--
 -- chunksOf is based on Text.chunksOf, but is more general.
 chunksOf :: Foldable t => Int -> t a -> [[a]]
 chunksOf n = chunksOf' . toList
@@ -81,6 +119,8 @@ chunksOf n = chunksOf' . toList
 
 
 -- |
+-- /O( n * log(n) )/
+--
 -- Useful function to check subsets of lists.
 subsetOf :: (Foldable t, Foldable c, Ord a) => t a -> c a -> Bool
 subsetOf xs ys = xs' `intersection` ys' == xs'
@@ -90,6 +130,8 @@ subsetOf xs ys = xs' `intersection` ys' == xs'
 
 
 -- |
+-- /O( n )/
+--
 -- Applies a transformation to each element fo the structure and asserts that
 -- transformed values are equal for all elements of the structure.
 equalityOf :: (Eq b, Foldable t) => (a -> b) -> t a -> Bool
@@ -101,6 +143,8 @@ equalityOf f xs =
 
 
 -- |
+-- /O( n )/
+--
 -- Applies a transformation to each element fo the structure.
 -- If /every/ application of the transformation yeilds the same result value
 -- for each element of the structure then this function will return @Just v@
@@ -119,6 +163,8 @@ invariantTransformation f xs =
 
 
 -- |
+-- /O( n * m )/
+--
 -- Provide a pairwise predicate used to filter elements and a nested structure.
 -- Returns the "product" of elements across the inner Foldable structure. Each
 -- result must have all elements satisfy the predicate when compared to all
@@ -139,6 +185,8 @@ pairwiseSequence predicate structure = f [] $ toList <$> toList structure
 
 
 -- |
+-- /O( n )/
+--
 -- The largest elements of a possibly empty structure with respect to the given
 -- comparison function. If multiple elements are equal under the comparison
 -- function, then all the equally maximal elements are returned in the order
@@ -164,6 +212,8 @@ maximaBy cmp = foldr f []
 
 
 -- |
+-- /O( n )/
+--
 -- The smallest elements of a possibly empty structure with respect to the given
 -- comparison function. If multiple elements are equal under the comparison
 -- function, then all the equally minimal elements are returned in the order

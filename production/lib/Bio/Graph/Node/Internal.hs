@@ -22,6 +22,7 @@ module Bio.Graph.Node.Internal
   , SubtreeLeafSet()
   -- , hasLeafSet
   , addEdgeToEdgeSet
+  , addNetworkEdgeToTopology
   , singletonEdgeSet
   , singletonNewickSerialization
   , singletonSubtreeLeafSet
@@ -37,7 +38,9 @@ import Data.EdgeSet
 import Data.Foldable
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Semigroup
-import Text.XML.Custom
+import Data.TopologyRepresentation
+import Text.Newick.Class
+import Text.XML
 
 
 -- |
@@ -64,12 +67,13 @@ data  PhylogeneticNode2 s n
 -- A collection of information used to memoize network optimizations.
 data  ResolutionInformation s
     = ResInfo
-    { totalSubtreeCost      :: Double
-    , localSequenceCost     :: Double
-    , leafSetRepresentation :: SubtreeLeafSet
-    , subtreeRepresentation :: NewickSerialization
-    , subtreeEdgeSet        :: EdgeSet (Int, Int)
-    , characterSequence     :: s
+    { totalSubtreeCost       :: Double
+    , localSequenceCost      :: Double
+    , leafSetRepresentation  :: SubtreeLeafSet
+    , subtreeRepresentation  :: NewickSerialization
+    , subtreeEdgeSet         :: EdgeSet (Int, Int)
+    , topologyRepresentation :: TopologyRepresentation (Int, Int)
+    , characterSequence      :: s
     } deriving (Functor)
 
 
@@ -87,7 +91,7 @@ newtype NewickSerialization = NS String
 
 
 -- |
--- An arbitraryily ordered collection of leaf nodes in a subtree. Leaves in the
+-- An arbitrarily ordered collection of leaf nodes in a subtree. Leaves in the
 -- tree are uniquely identified by an index across the entire DAG. Set bits
 -- represent a leaf uniquily identified by that index being present in the
 -- subtree.
@@ -126,34 +130,6 @@ instance Ord (ResolutionInformation s) where
 --       where
 --          getter e   = dynamicDecorationDirectOptimizationMetadata e ^. sparseTransitionCostMatrix
 --          setter e f = e { dynamicDecorationDirectOptimizationMetadata = dynamicDecorationDirectOptimizationMetadata e & sparseTransitionCostMatrix .~ f }
-
-
-{-
--- | (✔)
-instance HasLeafSet (PhylogeneticNode2 n s) (ResolutionCache s) where
-
-    leafSet = lens getter setter
-        where
-            getter e    = e ^. leafSet
-            setter e _x = id e  -- There is no setter.
-
-
--- | (✔)
-instance HasLeafSet (ResolutionCache r) (ResolutionInformation r) where
-
-    leafSet = lens getter setter
-        where
-            getter e    = e ^. leafSet
-            setter e _x = id e  -- There is no setter.
-
-
--- | (✔)
-instance HasLeafSet (ResolutionInformation s) SubtreeLeafSet where
-
-    leafSet = lens leafSetRepresentation setter
-        where
-            setter e _x = id e  -- There is no setter.
--}
 
 
 instance Semigroup NewickSerialization where
@@ -201,29 +177,37 @@ instance Show SubtreeLeafSet where
         f x = if x then "1" else "0"
 
 
+instance Show s => ToNewick (PhylogeneticNode2 n s) where
+    toNewick node = show $ nodeDecorationDatum2 node {- case nodeDecorationDatum2 node of
+                        Just str -> show str
+                        _        -> "" -}
+
+
 instance (ToXML n) => ToXML (PhylogeneticNode2 n s) where
 
-    toXML node = xmlElement "Phylogenetic node" nodeAttrs contents
+    toXML node = xmlElement "Phylogenetic_node" nodeAttrs contents
         where
             nodeAttrs       = []
             resolutionAttrs = []
-            contents        = [ Right ( collapseElemList "Resolutions" resolutionAttrs (resolutions node) ) ]
+            contents        = [ Right ( collapseElemList "Resolutions" resolutionAttrs (resolutions node) )
+                              ]
 
 
 instance (ToXML s) => ToXML (ResolutionInformation s) where
 
-    toXML info = xmlElement "Resolution info" attrs contents
+    toXML info = xmlElement "Resolution_info" attrs contents
         where
+            -- (ES edgeSet)  = subtreeEdgeSet info
             attrs         = []
             contents      = [ Right . toXML $ characterSequence info
-                            , Left  ("Total subtree cost" , (show  $ totalSubtreeCost  info))
-                            , Left  ("Local sequence cost", (show  $ localSequenceCost info))
+                            , Left  ("Total_subtree_cost" , (show $ totalSubtreeCost  info))
+                            , Left  ("Local_sequence_cost", (show $ localSequenceCost info))
                             , Right subtree
                             ]
-            subtree       = xmlElement "Subtree fields" [] subtreeFields
-            subtreeFields = [ Left ("Subtree leaf set"      , show $ leafSetRepresentation info)
-                            , Left ("Subtree representation", show $ subtreeRepresentation info)
-                            , Left ("Subtree edge set"      , show $ subtreeEdgeSet        info)
+            subtree       = xmlElement "Subtree_fields" [] subtreeFields
+            subtreeFields = [ Left ("Subtree_leaf_set"      , show $ leafSetRepresentation info)
+                            , Left ("Subtree_representation", show $ subtreeRepresentation info)
+                            , Left ("Subtree_edge_set"      , show $ subtreeEdgeSet        info)
                             ]
 
 
@@ -231,6 +215,13 @@ instance (ToXML s) => ToXML (ResolutionInformation s) where
 -- Adds an edge reference to an existing subtree resolution.
 addEdgeToEdgeSet :: (Int, Int) -> ResolutionInformation s -> ResolutionInformation s
 addEdgeToEdgeSet e r = r { subtreeEdgeSet = singletonEdgeSet e <> subtreeEdgeSet r }
+
+
+-- |
+-- Updates the 'TopologyRepresentation' to include a new network edge present in
+-- to spanning tree the node is a subtree of.
+addNetworkEdgeToTopology :: (Int, Int) -> ResolutionInformation s -> ResolutionInformation s
+addNetworkEdgeToTopology e r = r { topologyRepresentation = singleNetworkEdge e <> topologyRepresentation r }
 
 
 -- |
@@ -249,7 +240,8 @@ singletonNewickSerialization i = NS $ show i
 -- |
 -- Construct a singleton leaf set by supplying the number of leaves and the
 -- unique leaf index.
-singletonSubtreeLeafSet :: Int -- ^ Leaf count
-                        -> Int -- ^ Leaf index
-                        -> SubtreeLeafSet
+singletonSubtreeLeafSet
+  :: Int -- ^ Leaf count
+  -> Int -- ^ Leaf index
+  -> SubtreeLeafSet
 singletonSubtreeLeafSet n i = LS . (`setBit` i) $ n `bitVec` (0 :: Integer)

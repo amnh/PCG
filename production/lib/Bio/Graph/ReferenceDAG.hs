@@ -23,11 +23,15 @@ module Bio.Graph.ReferenceDAG
   -- * Remove metadata information and replace with a default
   , defaultGraphMetadata
   , defaultMetadata
-  -- * Edgeset query and manipulation
-  , connectEdge
-  , invadeEdge
+  -- * Edgeset query
   , candidateNetworkEdges
   , referenceEdgeSet
+  , referenceTreeEdgeSet
+  , referenceNetworkEdgeSet
+  , undirectedRootEdgeSet
+  -- * Edgeset manipulation
+  , connectEdge
+  , invadeEdge
   -- * Rendering
   , referenceRendering
   , topologyRendering

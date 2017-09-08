@@ -30,6 +30,7 @@ import qualified Data.Vector.Unboxed  as V
 import           Data.Word
 import           Prelude              hiding   (lookup)
 import           Test.QuickCheck      hiding   (generate)
+import           Text.XML
 
 
 -- |
@@ -71,7 +72,7 @@ type instance Element TCM = Word32
 --        Symmetric
 --
 --           |
--- 
+--
 --         Metric
 --
 --         /    \\
@@ -144,10 +145,13 @@ data TCMDiagnosis
 
 
 -- |
--- Performs a element-wise monomporphic map over the 'TCM'.
-instance MonoFunctor TCM where
+-- Resulting TCMs will have at a dimension between 2 and 25.
+instance Arbitrary TCM where
 
-    omap f (TCM n v) = TCM n $ V.map f v
+    arbitrary = do
+        dimension  <- (arbitrary :: Gen Int) `suchThat` (\x -> 2 <= x && x <= 25)
+        dataVector <- V.fromList <$> vectorOf (dimension * dimension) arbitrary
+        pure $ TCM dimension dataVector
 
 
 -- |
@@ -203,6 +207,13 @@ instance MonoFoldable TCM where
 
 
 -- |
+-- Performs a element-wise monomporphic map over the 'TCM'.
+instance MonoFunctor TCM where
+
+    omap f (TCM n v) = TCM n $ V.map f v
+
+
+-- |
 -- Performs a row-major monomporphic traversal over ther 'TCM'.
 instance MonoTraversable TCM where
 
@@ -220,16 +231,6 @@ instance MonoTraversable TCM where
 
 
 -- |
--- Resulting TCMs will have at a dimension between 2 and 25.
-instance Arbitrary TCM where
-
-    arbitrary = do 
-        dimension  <- (arbitrary :: Gen Int) `suchThat` (\x -> 2 <= x && x <= 25) 
-        dataVector <- V.fromList <$> vectorOf (dimension * dimension) arbitrary
-        pure $ TCM dimension dataVector
-
-
--- |
 -- A pretty printed custom show instance for 'TCM'.
 instance Show TCM where
 
@@ -237,7 +238,7 @@ instance Show TCM where
       where
         renderRow i = ("  "<>) . unwords $ renderValue <$> [ tcm ! (i,j) | j <- rangeValues ]
         matrixLines = unlines $ renderRow   <$> rangeValues
-        rangeValues = [0 .. size tcm - 1] 
+        rangeValues = [0 .. size tcm - 1]
         headerLine  = '\n' : unwords [ "TCM:", show $ size tcm, "x", show $ size tcm, "\n"]
         maxValue    = maximumEx tcm
         padSpacing  = length $ show maxValue
@@ -245,11 +246,20 @@ instance Show TCM where
           where
             shown = show x
             pad   = (padSpacing - length shown) `replicate` ' '
-        
+
+
+-- | (✔)
+instance ToXML TCM where
+
+    toXML x = xmlElement "TCM" attrs contents
+        where
+            attrs = []
+            contents = [Left ("TCM", show x)]
+
 
 -- |
 -- /O(n^2)/
--- 
+--
 -- Removes the supplied columns/rows from the TCM.
 reduceTcm :: IntSet -> TCM -> TCM
 reduceTcm missingSymbolIndicies tcm = generate reducedDimension genFunction
@@ -358,13 +368,13 @@ fromCols xs
   | hasJaggedCols    = error jaggedColsErrorMsg
   | width /= height  = error notSquareErrorMsg
   | height < 2       = error "fromCols: A singleton structure was supplied. Cannot construct a TCM with dimension of 1, must have dimension of 2 or greater."
-  | otherwise        = fromListUnsafe . mconcat . transpose $ toList <$> toList xs 
+  | otherwise        = fromListUnsafe . mconcat . transpose $ toList <$> toList xs
   where
     width            = length xs
     height           = length . head $ toList xs
-    hasJaggedCols    = not . equalityOf length $ toList xs 
+    hasJaggedCols    = not . equalityOf length $ toList xs
 
-    jaggedColsErrorMsg = mconcat 
+    jaggedColsErrorMsg = mconcat
                        [ "fromCols: All the columns did not have the same height! "
                        , "Expected modal height of ("
                        , show mode
@@ -373,7 +383,7 @@ fromCols xs
                        ]
       where
         (mode, otherLengths) = modeAndOutlierLengths xs
-        
+
     notSquareErrorMsg = mconcat [ "fromRows: The number of rows ("
 
                                 , show height
@@ -402,13 +412,13 @@ fromRows xs
   | hasJaggedRows    = error jaggedRowsErrorMsg
   | width /= height  = error notSquareErrorMsg
   | height < 2       = error "fromRows: A singleton structure was supplied. Cannot construct a TCM with dimension of 1, must have dimension of 2 or greater."
-  | otherwise        = fromListUnsafe . foldMap toList $ toList xs 
+  | otherwise        = fromListUnsafe . foldMap toList $ toList xs
   where
     height           = length xs
     width            = length . head $  toList xs
     hasJaggedRows    = not $ equalityOf length xs
 
-    jaggedRowsErrorMsg = mconcat 
+    jaggedRowsErrorMsg = mconcat
                        [ "fromRows: All the rows did not have the same width! "
                        , "Expected modal width of ("
                        , show mode
@@ -417,7 +427,7 @@ fromRows xs
                        ]
       where
         (mode, otherLengths) = modeAndOutlierLengths xs
-        
+
     notSquareErrorMsg = mconcat [ "fromRows: The number of rows ("
                                 , show height
                                 ,") did not match the number of columns ("
@@ -677,11 +687,11 @@ coerce = toEnum . fromEnum . toInteger
 {-
 -- Modified greeatest common divisor algorithm applied to rational numbers.
 gcd' :: Rational -> Rational -> Maybe Rational
-gcd' x y 
+gcd' x y
   | result < 1 = Nothing
   | otherwise  = Just result
   where
-    result = gcd'' (abs x) (abs y) 
+    result = gcd'' (abs x) (abs y)
     gcd'' a 0  = a
     gcd'' a b
       | a < b     = gcd'' b  a
@@ -705,7 +715,7 @@ matrixGCD structure =
         streamProcessRow [x]      = Just x
         streamProcessRow [x,y]    = gcd' x y
         streamProcessRow (x:y:xs) = streamProcessRow' (gcd' x y) (y:xs)
-        
+
         streamProcessRow' z [x,y]    = coalesce z $ gcd' x y
         streamProcessRow' z (x:y:xs) = streamProcessRow' acc (y:xs)
           where

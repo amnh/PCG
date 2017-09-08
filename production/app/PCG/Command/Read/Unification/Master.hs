@@ -29,7 +29,6 @@ import           Bio.Metadata.Parsed
 import           Bio.Graph
 import           Bio.Graph.Component
 import           Bio.Graph.Forest.Parsed
-import           Bio.Graph.PhylogeneticDAG
 import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG
 import           Control.Arrow                     ((&&&))
@@ -73,7 +72,7 @@ data FracturedParseResult
 
 
 instance Show FracturedParseResult where
-    show fpr = unlines 
+    show fpr = unlines
         [ "FPR"
         , "  { parsedChars   = " <> show (parsedChars fpr)
         , "  , parsedMetas   = " <> show (parsedMetas fpr)
@@ -82,7 +81,7 @@ instance Show FracturedParseResult where
         , "  , sourceFile    = " <> show (sourceFile  fpr)
         , "  }"
         ]
-    
+
 
 masterUnify :: [FracturedParseResult] -> Either UnificationError (Either TopologicalResult CharacterResult)
 masterUnify = rectifyResults2
@@ -99,7 +98,7 @@ rectifyResults2 :: [FracturedParseResult]
 --rectifyResults2 fprs | trace (show fprs) False = undefined
 rectifyResults2 fprs =
     case errors of
-      []   -> fmap (fmap riefiedSolution) dagForest --      = undefined -- Right maskedSolution
+      []   -> fmap (fmap reifiedSolution) dagForest --      = undefined -- Right maskedSolution
       x:xs -> Left . sconcat $ x:|xs
   where
     -- Step 1: Gather data file contents
@@ -124,7 +123,7 @@ rectifyResults2 fprs =
     -- Step 8: Collect the parsed forests to be merged
     suppliedForests :: [PhylogeneticForest ParserTree]
     suppliedForests = foldMap toList . catMaybes $ parsedForests `parmap'` allForests
-      
+
     -- Step 9: Convert topological forests to DAGs (using reference indexing from #7 results)
     dagForest       =
         case (null suppliedForests, null charSeqs) of
@@ -142,7 +141,7 @@ rectifyResults2 fprs =
           where
             blockTransform = hexmap f f f f f f
             f = const Nothing
-        
+
         singletonComponent (label, datum) = PhylogeneticForest . pure . PDAG $ unfoldDAG rootLeafGen True
           where
             rootLeafGen x
@@ -151,7 +150,7 @@ rectifyResults2 fprs =
 
         matchToChars :: Map String UnifiedCharacterSequence
                      -> PhylogeneticForest ParserTree
-                     -> PhylogeneticForest UnRiefiedCharacterDAG --CharacterDAG
+                     -> PhylogeneticForest UnReifiedCharacterDAG --CharacterDAG
         matchToChars charMapping = fmap (PDAG . fmap f)
           where
             f label = PNode label $ fromMaybe defaultCharacterSequenceDatum charLabelMay
@@ -182,7 +181,7 @@ rectifyResults2 fprs =
         f (ys, fpr) = (\x -> (x, fpr)) <$> ys
 
 
--- | 
+-- |
 -- Joins the sequences of a fractured parse result. This requires several
 -- sequential steps. Each fractured parse result will be placed into a seperate
 -- character block by default. We collapse and merge these seperate parse results
@@ -196,7 +195,7 @@ rectifyResults2 fprs =
 --   character. We assume that the fractured parse result alphabet that is
 --   supplied is of equal length to the selected TCM dimension. This assumption
 --   should be safe, though it is the burden of the caller to ensure this input
---   invariant. 
+--   invariant.
 --
 -- * Afterwards we attempt to reduce the alphabet and TCMs by looking for
 --   symbols present in the alphabet that do not appear in any input character.
@@ -209,7 +208,7 @@ rectifyResults2 fprs =
 joinSequences2 :: Foldable t => t FracturedParseResult -> Map String UnifiedCharacterSequence
 joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorrectTCMs . deriveCharacterNames
   where
-    
+
     -- We do this to correctly construct the CharacterNames.
     deriveCharacterNames :: Foldable t
                          => t FracturedParseResult
@@ -268,11 +267,11 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
                              case structure of
                                TCM.Additive -> Set.fromList . toList $ alphabet m
                                _            -> foldMap f $ x:xs
-                         
+
                      in (seenSymbols, weighting, tcm', structure)
                      -- TCM structure won't change with columns removed!
 
-                 
+
                f (x,_,_,_) = foldMap (foldMap (Set.fromList . toList)) x
 
 
@@ -293,7 +292,7 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
                   |    v `notElem` observedSymbols
                     && v /= gapSymbol suppliedAlphabet = IS.singleton k
                   | otherwise = mempty
-                  
+
             suppliedAlphabet      = alphabet charMetadata
             reducedAlphabet       =
                 case alphabetStateNames suppliedAlphabet of
@@ -323,7 +322,7 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
                     case TCM.tcmStructure $ TCM.diagnoseTcm tcm of
                       TCM.Additive -> \(i,j) -> toEnum $ max i j - min i j
                       _            -> f
-                
+
                 f (i,j) = tcm TCM.! (i', j')
                   where
                     i' = i + iOffset
@@ -344,14 +343,14 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
             updatedMetadataTokens :: NonEmpty (Alphabet String, Word -> Word -> Word)
             updatedMetadataTokens = fmap generateMetadataToken . NE.fromList . transpose . fmap toList $ toList mapping
              where
-{-               
+{-
                gatherSymbols (x,_,_,_,_) =
                    case x of
                      ParsedContinuousCharacter     _ -> mempty
                      ParsedDiscreteCharacter  static -> foldMap (Set.fromList . toList) static
-                     ParsedDynamicCharacter  dynamic -> foldMap (foldMap (Set.fromList . toList)) dynamic 
+                     ParsedDynamicCharacter  dynamic -> foldMap (foldMap (Set.fromList . toList)) dynamic
 -}
-               
+
                generateMetadataToken                []  = error "Should never happen in reduceAlphabets.reduceFileBlock.observedSymbolSets.generateObservedSymbolSetForCharacter" -- mempty
                generateMetadataToken (_x@(_,m,tcm,structure,_):_xs) = (reducedAlphabet, reducedTCM)
                  where
@@ -381,14 +380,14 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
 -}
 
 --            observedSymbols       = observedSymbols' `Set.remove` "?"
-{-                   
+{-
                    missingSymbolIndicies = foldMapWithKey f suppliedAlphabet
                      where
                        f k v
                          |    v `notElem` seenSymbols
                            && v /= gapSymbol suppliedAlphabet = IS.singleton k
                          | otherwise = mempty
--}                  
+-}
                    suppliedAlphabet      = alphabet m
                    reducedAlphabet       = suppliedAlphabet
 {-
@@ -428,7 +427,7 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
         f = undefined
         g :: Foldable f => f (Map String (Map OptToken [OptValueWrapper])) -> Map String (f (Map OptToken [OptValueWrapper]))
         g = undefined
-        h :: Foldable f => Map String (f (Map OptToken [OptValueWrapper])) -> Map String UnifiedCharacterSequence 
+        h :: Foldable f => Map String (f (Map OptToken [OptValueWrapper])) -> Map String UnifiedCharacterSequence
         h = undefined
 -}
     collapseAndMerge = fmap fromBlocks . fst . foldl' f (mempty, [])
@@ -447,7 +446,7 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
             inBoth         = intersectionWith (<>) prevMapping currMapping-- oldTreeChars nextTreeChars
             inOnlyCurr     =  prepend prevPad  <$> getUnique currMapping prevMapping
             inOnlyPrev     = (<>      currPad) <$> getUnique prevMapping currMapping
-        
+
             getUnique x y = x `Map.restrictKeys` (lhs `Set.difference` rhs)
               where
                 lhs = Set.fromList $ keys x
@@ -479,7 +478,7 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
             prepend list ne =
               case list of
                 []   -> ne
-                x:xs -> x :| (xs <> toList ne) 
+                x:xs -> x :| (xs <> toList ne)
 
 
 fromTreeOnlyFile :: FracturedParseResult -> Bool

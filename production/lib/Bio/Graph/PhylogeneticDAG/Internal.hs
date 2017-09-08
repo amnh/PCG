@@ -16,24 +16,16 @@
 
 module Bio.Graph.PhylogeneticDAG.Internal where
 
-import           Bio.Character
-import           Bio.Character.Decoration.Additive
-import           Bio.Character.Decoration.Continuous
-import           Bio.Character.Decoration.Discrete
-import           Bio.Character.Decoration.Dynamic
-import           Bio.Character.Decoration.Fitch
-import           Bio.Character.Decoration.Metric
-import           Bio.Graph
+-- import           Bio.Graph
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
-import           Bio.Sequence.Block               (CharacterBlock)
+-- import           Bio.Sequence.Block               (CharacterBlock)
 import           Control.Applicative              (liftA2)
-import           Control.Evaluation
 import           Control.Lens
 import           Data.Bits
-import           Data.EdgeLength
+-- import           Data.EdgeLength
 import           Data.Foldable
 import           Data.GraphViz.Printing    hiding ((<>)) -- Seriously, why is this redefined?
 --import           Data.Hashable
@@ -45,23 +37,48 @@ import           Data.List.NonEmpty               (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty        as NE
 import           Data.List.Utility
 import           Data.Map                         (Map)
-import           Data.Maybe
+-- import           Data.Maybe
 import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Data.Vector                      (Vector)
 import           Prelude                   hiding (zipWith)
-import           Text.XML.Custom
+import           Text.Newick.Class
+import           Text.XML
 
 
-
+-- |
+-- Wrapper for ReferenceDAG (deprecated)
+--
+-- Type annotations (metadata types):
+--
+-- * e = 'Data.EdgeLength'
+-- * n = node labels: 'Maybe'('String')
+-- * u = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Continuous' specified as 'ContinuousChar'  or 'Bio.Metadata.General'
+-- * v = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Fitch'      specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
+-- * w = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Additive'   specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
+-- * x = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
+-- * y = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
+-- * z = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Dynamic'    specified as 'DynamicChar'     or 'Bio.Metadata.DiscreteWithTCM'
 data PhylogeneticDAG e n u v w x y z
      = PDAG (ReferenceDAG () e (PhylogeneticNode n (CharacterSequence u v w x y z)))
 
 
+-- |
+-- Wrapper for ReferenceDAG
+-- Type annotations (metadata types):
+--
+-- * e = edge info, as yet undetermined
+-- * n = node labels: 'Maybe'('String')
+-- * u = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Continuous' specified as 'ContinuousChar'  or 'Bio.Metadata.General'
+-- * v = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Fitch'      specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
+-- * w = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Additive'   specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
+-- * x = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
+-- * y = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
+-- * z = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Dynamic'    specified as 'DynamicChar'     or 'Bio.Metadata.DiscreteWithTCM'
 data PhylogeneticDAG2 e n u v w x y z
      = PDAG2 ( ReferenceDAG
-                 ( Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
+                 (         Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
                  , Vector (Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
                  )
                  e
@@ -69,27 +86,10 @@ data PhylogeneticDAG2 e n u v w x y z
              )
 
 
-type CharacterDAG =
-       PhylogeneticDAG2
-         EdgeLength
-         (Maybe String)
-         UnifiedContinuousCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDynamicCharacter
-
-
-type CharacterResult = PhylogeneticSolution CharacterDAG
-
-
-type Cost = Double
-
-
 type EdgeReference = (Int, Int)
 
 
+{-
 type SearchState = EvaluationT IO GraphState
 
 
@@ -178,6 +178,10 @@ type UnRiefiedCharacterDAG =
          UnifiedDynamicCharacter
 
 
+-}
+
+
+--instance HasLeafSet (PhylogeneticDAG2 e n u v w x y z) (LeafSet n) where
 instance HasLeafSet (PhylogeneticDAG2 e n u v w x y z) (LeafSet (PhylogeneticNode2 (CharacterSequence u v w x y z) n)) where
 
     leafSet = lens getter undefined
@@ -233,9 +237,15 @@ instance ( Show e
         f i n = mconcat [ "Node {", show i, "}:\n\n", show n ]
 
 
+instance (Applicative f, Foldable f) => ToNewick (PhylogeneticDAG2 e (f String) u v w x y z) where
+
+    toNewick = toNewick . discardCharacters
+
+
 instance ( ToXML u
          , ToXML v
          , ToXML w
+         , ToXML x
          , ToXML y
          , ToXML z
          ) => ToXML (PhylogeneticDAG2 e n u v w x y z)  where
@@ -317,12 +327,13 @@ generateLocalResolutions :: HasBlockCost u'' v'' w'' x'' y'' z'' Word Double
                          ->  ResolutionInformation (CharacterSequence u'' v'' w'' x'' y'' z'')
 generateLocalResolutions f1 f2 f3 f4 f5 f6 parentalResolutionContext childResolutionContext =
                 ResInfo
-                { totalSubtreeCost      = newTotalCost
-                , localSequenceCost     = newLocalCost
-                , subtreeEdgeSet        = newSubtreeEdgeSet
-                , leafSetRepresentation = newLeafSetRep
-                , subtreeRepresentation = newSubtreeRep
-                , characterSequence     = newCharacterSequence
+                { totalSubtreeCost       = newTotalCost
+                , localSequenceCost      = newLocalCost
+                , subtreeEdgeSet         = newSubtreeEdgeSet
+                , leafSetRepresentation  = newLeafSetRep
+                , subtreeRepresentation  = newSubtreeRep
+                , topologyRepresentation = newTopologyRep
+                , characterSequence      = newCharacterSequence
                 }
               where
                 newTotalCost = sequenceCost newCharacterSequence
@@ -332,10 +343,16 @@ generateLocalResolutions f1 f2 f3 f4 f5 f6 parentalResolutionContext childResolu
                 newCharacterSequence = transformation (characterSequence parentalResolutionContext) (characterSequence <$> childResolutionContext)
                 newSubtreeEdgeSet    = foldMap subtreeEdgeSet childResolutionContext
 
-                (newLeafSetRep, newSubtreeRep) =
+                (newLeafSetRep, newSubtreeRep, newTopologyRep) =
                     case childResolutionContext of
-                      []   -> (,) <$>          leafSetRepresentation <*>          subtreeRepresentation $ parentalResolutionContext
-                      x:xs -> (,) <$> foldMap1 leafSetRepresentation <*> foldMap1 subtreeRepresentation $ x:|xs
+                      []   -> (,,) <$>          leafSetRepresentation
+                                   <*>          subtreeRepresentation
+                                   <*>          topologyRepresentation
+                                   $ parentalResolutionContext
+                      x:xs -> (,,) <$> foldMap1 leafSetRepresentation
+                                   <*> foldMap1 subtreeRepresentation
+                                   <*> foldMap1 topologyRepresentation
+                                   $ x:|xs
 
                 transformation pSeq cSeqs = hexZipWith f1 f2 f3 f4 f5 f6 pSeq transposition
                   where
@@ -346,11 +363,12 @@ generateLocalResolutions f1 f2 f3 f4 f5 f6 parentalResolutionContext childResolu
                                   in hexmap c c c c c c pSeq
 
 
-localResolutionApplication :: HasBlockCost u v w x y d' Word Double
-                           => (d -> [d] -> d')
-                           -> NonEmpty (ResolutionInformation (CharacterSequence u v w x y d))
-                           -> ResolutionCache (CharacterSequence u v w x y d)
-                           -> NonEmpty (ResolutionInformation (CharacterSequence u v w x y d'))
+localResolutionApplication
+  :: HasBlockCost u v w x y d' Word Double
+  => (d -> [d] -> d')
+  -> NonEmpty (ResolutionInformation (CharacterSequence u v w x y d))
+  -> ResolutionCache (CharacterSequence u v w x y d)
+  -> NonEmpty (ResolutionInformation (CharacterSequence u v w x y d'))
 localResolutionApplication f x y =
     liftA2 (generateLocalResolutions id2 id2 id2 id2 id2 f) mutalatedChild relativeChildResolutions
   where
@@ -361,12 +379,13 @@ localResolutionApplication f x y =
     id2 z _ = z
     mutalatedChild = pure
         ResInfo
-        { totalSubtreeCost      = 0
-        , localSequenceCost     = 0
-        , subtreeEdgeSet        = mempty
-        , leafSetRepresentation = zeroBits
-        , subtreeRepresentation = singletonNewickSerialization (0 :: Word)
-        , characterSequence     = characterSequence $ NE.head x
+        { totalSubtreeCost       = 0
+        , localSequenceCost      = 0
+        , subtreeEdgeSet         = mempty
+        , leafSetRepresentation  = zeroBits
+        , subtreeRepresentation  = singletonNewickSerialization (0 :: Word)
+        , topologyRepresentation = mempty
+        , characterSequence      = characterSequence $ NE.head x
         }
 
 
@@ -389,6 +408,8 @@ resolutionsDoNotOverlap :: ResolutionInformation a -> ResolutionInformation b ->
 resolutionsDoNotOverlap x y = leafSetRepresentation x .&. leafSetRepresentation y == zeroBits
 
 
+-- |
+-- Retrieve only 'ReferenceDAG' from 'PhylogeneticDAG2'.
 discardCharacters :: PhylogeneticDAG2 e n u v w x y z -> ReferenceDAG () e n
 discardCharacters (PDAG2 x) = defaultMetadata $ nodeDecorationDatum2 <$> x
 

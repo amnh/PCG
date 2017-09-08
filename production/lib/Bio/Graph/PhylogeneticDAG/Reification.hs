@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Graph.PhylogeneticDAG.Riefication
+-- Module      :  Bio.Graph.PhylogeneticDAG.Reification
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -14,16 +14,18 @@
 
 {-# LANGUAGE FlexibleContexts #-}
 
-module Bio.Graph.PhylogeneticDAG.Riefication
-  ( riefiedSolution
-  , riefyForest
---  , riefiedToCharacterDAG
+module Bio.Graph.PhylogeneticDAG.Reification
+  ( reifiedSolution
+--  , reifiedToCharacterDAG
+  , reifyForest
+--  , reifiedToCharacterDAG
   ) where
 
-import           Bio.Graph
+import           Bio.Graph.Constructions
 import           Bio.Graph.Node
-import           Bio.Graph.PhylogeneticDAG.Internal
+-- import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
+import           Bio.Graph.Solution
 import           Control.Applicative
 import           Control.Lens
 import           Control.Monad.State.Lazy
@@ -47,27 +49,39 @@ import           Prelude            hiding (zipWith)
 
 
 -- |
--- Riefies a solution, performing several initialization functions on each DAG
+-- Reifies a solution, performing several initialization functions on each DAG
 -- before it's cost can be calculated.
-riefiedSolution :: PhylogeneticSolution UnRiefiedCharacterDAG -> CharacterResult
-riefiedSolution = PhylogeneticSolution . fmap riefyForest . phylogeneticForests
+
+--reifiedSolution :: PhylogeneticSolution UnReifiedCharacterDAG -> CharacterResult
+--reifiedSolution  = PhylogeneticSolution . fmap (fmap reifiedToCharacterDAG) . phylogeneticForests
 
 
 -- |
--- Riefies a Forest so it has the requisite context for a post-order traversal.
+-- Reifies a particular DAG so it has the requisite context for a post-order
+-- traversal.
+--reifiedToCharacterDAG :: UnReifiedCharacterDAG -> CharacterDAG
+--reifiedToCharacterDAG (PDAG dag) = PDAG2
+
+
+reifiedSolution :: PhylogeneticSolution UnReifiedCharacterDAG -> CharacterResult
+reifiedSolution = PhylogeneticSolution . fmap reifyForest . phylogeneticForests
+
+
+-- |
+-- Reifies a Forest so it has the requisite context for a post-order traversal.
 -- Specifically each leaf in the forest has a unique bitvector index and subtree
 -- representation symbol.
-riefyForest :: PhylogeneticForest UnRiefiedCharacterDAG -> PhylogeneticForest CharacterDAG
-riefyForest forest = zipWith (riefyDAGWithContext leavesInForest) leafMaskForest forest
+reifyForest :: PhylogeneticForest UnReifiedCharacterDAG -> PhylogeneticForest CharacterDAG
+reifyForest forest = zipWith (reifyDAGWithContext leavesInForest) leafMaskForest forest
   where
     (leafMaskForest, leavesInForest) = tabulateLeaves forest
 
 
-tabulateLeaves :: PhylogeneticForest UnRiefiedCharacterDAG -> (PhylogeneticForest (ReferenceDAG () () (Maybe Int)), Int)
+tabulateLeaves :: PhylogeneticForest UnReifiedCharacterDAG -> (PhylogeneticForest (ReferenceDAG () () (Maybe Int)), Int)
 tabulateLeaves = {- (\v@(x,_) -> trace ("Tab Vector:\n\n"  <> foldMap1 (\y -> show $ toList y) x) v) . -}
                  (`runState` 0) . traverse1 tabulateDAG
   where
-    tabulateDAG :: UnRiefiedCharacterDAG -> State Int (ReferenceDAG () () (Maybe Int))
+    tabulateDAG :: UnReifiedCharacterDAG -> State Int (ReferenceDAG () () (Maybe Int))
     tabulateDAG (PDAG dag) = liftA3 RefDAG newRefs rootRefsContext graphDataContext
       where
         rootRefsContext  = pure $ rootRefs dag
@@ -100,8 +114,8 @@ tabulateLeaves = {- (\v@(x,_) -> trace ("Tab Vector:\n\n"  <> foldMap1 (\y -> sh
             g i = liftA3 IndexData (getLeafIndex i) (getParentRefs i) (getChildRefs i)
 
 
-riefyDAGWithContext :: Int -> (ReferenceDAG () () (Maybe Int)) -> UnRiefiedCharacterDAG -> CharacterDAG
-riefyDAGWithContext leafCount maskDAG (PDAG dag) = PDAG2 $
+reifyDAGWithContext :: Int -> (ReferenceDAG () () (Maybe Int)) -> UnReifiedCharacterDAG -> CharacterDAG
+reifyDAGWithContext leafCount maskDAG (PDAG dag) = PDAG2 $
     RefDAG
     { references = newRefs
     , rootRefs   = rootRefs dag
@@ -128,14 +142,15 @@ riefyDAGWithContext leafCount maskDAG (PDAG dag) = PDAG2 $
                 }
             res = pure
                 ResInfo
-                { totalSubtreeCost      = 0
-                , localSequenceCost     = 0
-                , subtreeEdgeSet        = mempty
-                , leafSetRepresentation = bv
-                , subtreeRepresentation = ns
-                , characterSequence     = sequenceDecoration $ nodeDecoration indexData
+                { totalSubtreeCost       = 0
+                , localSequenceCost      = 0
+                , subtreeEdgeSet         = mempty
+                , leafSetRepresentation  = bv
+                , subtreeRepresentation  = ns
+                , topologyRepresentation = mempty
+                , characterSequence      = sequenceDecoration $ nodeDecoration indexData
                 }
-            
+
             (bv, ns) =
               case buildLeafNodeAssignments ! i of
                 Just n  -> ( leafCount `singletonSubtreeLeafSet` n
