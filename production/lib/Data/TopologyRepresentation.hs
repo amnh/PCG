@@ -16,17 +16,31 @@
 
 module Data.TopologyRepresentation
   ( TopologyRepresentation
-  , singleNetworkEdge
-  , isCompatableSubtopologyOf
+  -- * Construction
+  , isolatedNetworkEdgeContext
+  -- * Deconstruct
+  , excludedNetworkEdges
+  , includedNetworkEdges
+  , mutuallyExclusivePairs
+  -- * Comparison
+  , isCompatableWithTopology
   ) where
 
 
-import Control.DeepSeq
-import Data.EdgeSet
-import Data.Semigroup
-import GHC.Generics    (Generic)
+import           Control.DeepSeq
+import           Data.Bimap             (Bimap)
+import qualified Data.Bimap      as BM
+--import           Data.EdgeSet
+import           Data.Foldable
+import qualified Data.Map        as M
+import           Data.Monoid     hiding ((<>))
+import           Data.Semigroup
+import           Data.Set               (Set)
+import qualified Data.Set        as S   (fromDistinctAscList)
+import           GHC.Generics           (Generic)
 
 
+{-
 -- |
 -- Represents a collection of network edges.
 --
@@ -61,3 +75,102 @@ singleNetworkEdge = TR . singletonEdgeSet
 -- with another topology. 
 isCompatableSubtopologyOf :: Ord a => TopologyRepresentation a -> TopologyRepresentation a -> Bool
 isCompatableSubtopologyOf (TR x) (TR y) = isSubsetOf x y
+-}
+
+
+
+-- |
+-- Represents a collection of network edges and their mutually exclusive edges.
+--
+-- Often used to represent a unique spanning tree in a phylogenetic DAG.
+newtype TopologyRepresentation a = TR { unwrap :: Bimap a a }
+  deriving (Eq, Generic, Ord)
+
+
+instance Foldable TopologyRepresentation where
+
+    fold = fold . toList
+  
+    foldMap f = foldMap f . toList
+
+    toList = BM.keys . unwrap
+    
+
+instance Ord a => Monoid (TopologyRepresentation a) where
+
+    mappend = (<>)
+
+    mempty  = TR BM.empty
+    
+
+instance NFData a => NFData (TopologyRepresentation a) where
+
+    rnf (TR bm) = BM.fold f () bm `seq` ()
+      where
+        f x y _ = rnf x `seq` rnf y `seq` ()
+
+
+-- |
+-- /O(n + m)/
+instance Ord a => Semigroup (TopologyRepresentation a) where
+
+    (TR lhs) <> (TR rhs) = TR . BM.fromAscPairListUnchecked . M.toAscList $ M.unionWith (\x _ -> x) (BM.toMap lhs) (BM.toMap rhs)
+    
+
+instance Show a => Show (TopologyRepresentation a) where
+
+    show = ("Network Edges of Topology: " <>) . show . toList . includedNetworkEdges
+
+
+-- |
+-- /O(1)/
+--
+-- Construct a singleton 'TopologyRepresentation' value by supplying a network
+-- edge identifier representing an edge contained in the topology and a
+-- corresponding network edge identifier representing the mutually exclusive
+-- incident edge.
+--
+-- Use the semigroup operator '(<>)' to merge isolated network edge contexts into
+-- a larger 'TopologyRepresentation'.
+isolatedNetworkEdgeContext
+  :: a -- ^ Included network edge
+  -> a -- ^ Excluded incident network edge
+  -> TopologyRepresentation a
+isolatedNetworkEdgeContext x y = TR $ BM.singleton y x
+
+
+-- |
+-- /O(n)/
+--
+-- Retreive the list of network edge identifiers present in the topology.
+includedNetworkEdges :: TopologyRepresentation a -> Set a
+includedNetworkEdges = M.keysSet . BM.toMap . unwrap
+
+
+-- |
+-- /O(n)/
+--
+-- Retreive the list of network edge identifiers excluded from the topology.
+excludedNetworkEdges :: TopologyRepresentation a -> Set a
+excludedNetworkEdges = S.fromDistinctAscList . BM.keys . unwrap
+
+
+-- |
+-- /O(n)/
+--
+-- Retreive the list of network edge identifiers stored in the topology
+-- representation.
+mutuallyExclusivePairs :: TopologyRepresentation a -> [(a,a)]
+mutuallyExclusivePairs = BM.assocs . unwrap
+
+
+-- |
+-- /O(n + m)/
+--
+-- Perform a subsetting operation to determine is a sub-topology is compatable
+-- with another topology.
+isCompatableWithTopology :: (Foldable f, Ord a) => f a -> TopologyRepresentation a -> Bool
+isCompatableWithTopology ts topo = getAll $ foldMap f ts
+  where
+    f x = All $ x `notElem` badElems
+    badElems = excludedNetworkEdges topo

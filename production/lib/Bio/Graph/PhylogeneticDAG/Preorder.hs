@@ -60,8 +60,7 @@ type BlockTopologies = NonEmpty TraversalTopology
 -- The logic function takes a current node decoration,
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
-preorderSequence' :: (-- Eq z, Eq z', Hashable z, Hashable z'
-                       HasBlockCost u  v  w  x  y  z  Word Double
+preorderSequence' :: ( HasBlockCost u  v  w  x  y  z  Word Double
 --                     , HasBlockCost u' v' w' x' y' z' Word Double
                      )
                   => (u -> [(Word, u')] -> u')
@@ -197,14 +196,14 @@ computeOnApplicableResolution f1 f2 f3 f4 f5 f6 topologies currentResolutions pa
                               trs
 
 
-
 selectApplicableResolutions :: TraversalTopology -> ResolutionCache s -> ResolutionInformation s
 selectApplicableResolutions topology cache =
-    case filter (\x -> topologyRepresentation x `isCompatableSubtopologyOf` topology) $ toList cache of
+    case filter (\x -> topologyRepresentation x `isCompatableWithTopology` topology) $ toList cache of
       []  -> error $ unlines
                  [ "No applicable resolution found on pre-order traversal"
-                 , "Input set:  " <> show topology
-                 , "Local sets: " <> show (subtreeEdgeSet <$> cache)
+                 , "Input set:   " <> show topology
+                 , "Local sets:  " <> show (subtreeEdgeSet <$> cache)
+                 , "Local Topos: " <> show (topologyRepresentation <$> cache)
                  ]
       [x] -> x 
       xs  -> maximumBy (comparing (length . subtreeEdgeSet)) xs

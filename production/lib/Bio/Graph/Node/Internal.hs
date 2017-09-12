@@ -220,8 +220,12 @@ addEdgeToEdgeSet e r = r { subtreeEdgeSet = singletonEdgeSet e <> subtreeEdgeSet
 -- |
 -- Updates the 'TopologyRepresentation' to include a new network edge present in
 -- to spanning tree the node is a subtree of.
-addNetworkEdgeToTopology :: (Int, Int) -> ResolutionInformation s -> ResolutionInformation s
-addNetworkEdgeToTopology e r = r { topologyRepresentation = singleNetworkEdge e <> topologyRepresentation r }
+addNetworkEdgeToTopology
+  :: (Int, Int) -- ^ Applied network edge identifier
+  -> (Int, Int) -- ^ Excluded network edge identifier
+  -> ResolutionInformation s
+  -> ResolutionInformation s
+addNetworkEdgeToTopology e x r = r { topologyRepresentation = isolatedNetworkEdgeContext e x <> topologyRepresentation r }
 
 
 -- |
