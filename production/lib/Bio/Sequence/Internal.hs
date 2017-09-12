@@ -137,7 +137,7 @@ instance ( Show u
 instance ( ToXML u
          , ToXML v
          , ToXML w
-         , ToXML x
+--         , ToXML x
          , ToXML y
          , ToXML z
          ) => ToXML (CharacterSequence u v w x y z) where

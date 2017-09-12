@@ -511,7 +511,7 @@ instance (Ord e, Ord c) => Semigroup (MinimalTopologyContext e c) where
             mergeFoci (es, c, a) (_, _, b) = (es, c, a <> b)
 
 
-toMinimalTopologyContext :: (Ord e, Ord c) => NonEmpty (TopologyRepresentation e, c, e) -> MinimalTopologyContext e c
+toMinimalTopologyContext :: Ord e => NonEmpty (TopologyRepresentation e, c, e) -> MinimalTopologyContext e c
 toMinimalTopologyContext = MW . fmap (\(x,y,z) -> (x, y, pure z)) . NE.sortWith firstOfThree 
 
 
