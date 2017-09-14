@@ -124,20 +124,6 @@ int main() {
          }
     }
 
-    if(DO_2D) {
-        cost_matrices_2d_t *costMtx2d        = malloc(sizeof(struct cost_matrices_2d_t));
-        setUp2dCostMtx (costMtx2d, tcm, alphSize, 0);
-    }
-
-    if(DO_2D_AFF) {
-        cost_matrices_2d_t *costMtx2d_affine = malloc(sizeof(struct cost_matrices_2d_t));
-        setUp2dCostMtx (costMtx2d_affine, tcm, alphSize, GAP_OPEN_COST);
-    }
-
-    if(DO_3D) {
-        setUp3dCostMtx (costMtx3d, tcm, alphSize, 0);
-        cost_matrices_3d_t *costMtx3d        = malloc(sizeof(struct cost_matrices_3d_t));
-    }
 
 
 // /**************************************************** Do 2d alignment ********************************************************/
@@ -145,7 +131,8 @@ int main() {
 //     if (DO_2D) {
 //         printf("\n\n\n******************** Align 2 characters ********************\n");
 
-
+//            cost_matrices_2d_t *costMtx2d        = malloc(sizeof(struct cost_matrices_2d_t));
+//            setUp2dCostMtx (costMtx2d, tcm, alphSize, 0);
 
 
 //         for (i = 1; i <= 5; i++) { // run 30 tests
@@ -382,6 +369,7 @@ int main() {
 
 
 //         }
+//         freeCostMtx(costMtx2d,        1);
 //     } // Do 2D
 
 
@@ -391,6 +379,8 @@ int main() {
 //     /*** must have gap at start of character!!! ***/
 
 //     if (DO_2D_AFF) {
+//         cost_matrices_2d_t *costMtx2d_affine = malloc(sizeof(struct cost_matrices_2d_t));
+//         setUp2dCostMtx (costMtx2d_affine, tcm, alphSize, GAP_OPEN_COST);
 //         printf("\n\n\n***************** Align 2 characters affine ****************\n");
 //         printf("    \n******************** Alphabet Size: %zu ********************\n", alphSize);
 
@@ -496,6 +486,8 @@ int main() {
 //         freeAlignIO(gappedMedianChar);
 //         // freeAlignIO(unionMedianChar);
 
+//         freeCostMtx(costMtx2d_affine, 1);  // 1 is 2d
+
 //         // printf("LOOKS LIKE WE MADE IT!\n");
 
 //     }
@@ -504,6 +496,9 @@ int main() {
 /************************************************ Do 3d alignment *************************************************/
 
     if (DO_3D) {
+
+        cost_matrices_3d_t *costMtx3d = malloc(sizeof(struct cost_matrices_3d_t));
+        setUp3dCostMtx (costMtx3d, tcm, alphSize, 0);
 
         for (i = 0; i < 1; i++) { // run 30 tests
 
@@ -571,6 +566,8 @@ int main() {
 
             printf("\n\n\n");
         }
+
+        freeCostMtx(costMtx3d,        0);  // 0 is !2d
     }
 
 /*
@@ -642,10 +639,6 @@ int main() {
 
     // Next this: algn_get_median_3d (dyn_char_p inputChar1, dyn_char_p inputChar2, dyn_char_p char3,
     //                cost_matrices_3d_t *m, dyn_char_p sm)
-
-    if(DO_2D)     freeCostMtx(costMtx2d,        1);
-    if(DO_2D_AFF) freeCostMtx(costMtx2d_affine, 1);  // 1 is 2d
-    if(DO_3D)     freeCostMtx(costMtx3d,        0);  // 0 is !2d
 
     free(tcm);
 

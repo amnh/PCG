@@ -100,8 +100,8 @@ int align3d_ukk( dyn_character_t *retLesserChar
 
 
 /**  */
-int calcUkk( int             lessLong_idx_diff
-           , int             lessMidd_idx_diff
+int calcUkk( int             lessMidd_idx_diff
+           , int             lessLong_idx_diff
            , int             input_editDist
            , int             toState
            , affine_costs_t *affineCosts
@@ -120,8 +120,8 @@ int char_to_base (char v);
  *  All distances and costs are signed, as often initialized to -INFINITY
  */
 
-int doUkkInLimits( int             start_lessLong_idx_diff
-                 , int             start_lessMidd_idx_diff
+int doUkkInLimits( int             start_lessMidd_idx_diff
+                 , int             start_lessLong_idx_diff
                  , int             startCost
                  , int             startState
                  , int             start_editDist
@@ -140,8 +140,8 @@ int doUkkInLimits( int             start_lessLong_idx_diff
 /** Find the furthest distance at lessLong_idx_diff, lessMidd_idx_diff, input_editDistance. return_the_fsm_state selects whether the
  *  best distance is returned, or the best final fsm_state (needed for ukk.alloc traceback)
  */
-int findBest( int    lessLong_idx_diff
-            , int    lessMidd_idx_diff
+int findBest( int    lessMidd_idx_diff
+            , int    lessLong_idx_diff
             , int    input_editDist
             , int    return_the_fsm_state
             , size_t numStates
@@ -149,16 +149,16 @@ int findBest( int    lessLong_idx_diff
 
 
 /** For clarity, calls findBest with return_the_fsm_state = 0 */
-int find_bestDist( int    lessLong_idx_diff
-                 , int    lessMidd_idx_diff
+int find_bestDist( int    lessMidd_idx_diff
+                 , int    lessLong_idx_diff
                  , int    input_editDist
                  , size_t numStates
                  );
 
 
 /** For clarity, calls findBest with return_the_fsm_state = 1 */
-int find_bestState( int    lessLong_idx_diff
-                  , int    lessMidd_idx_diff
+int find_bestState( int    lessMidd_idx_diff
+                  , int    lessLong_idx_diff
                   , int    input_editDist
                   , size_t numStates
                   );
@@ -167,14 +167,14 @@ int find_bestState( int    lessLong_idx_diff
 /** Extracts info from the 'from' and CP info then recurses with doUkkInLimits for the two subparts.
  *  All distances and costs are signed, as often initialized to -INFINITY
  */
-int getSplitRecurse( int             start_lessLong_idx_diff
-                   , int             start_lessMidd_idx_diff
+int getSplitRecurse( int             start_lessMidd_idx_diff
+                   , int             start_lessLong_idx_diff
                    , int             startCost
                    , int             startState
                    , int             start_editDist
-                   , size_t          final_lessLong_idx_diff
-                   , size_t          final_lessMidd_idx_diff
-                   , int             finalCost
+                   , int             final_lessMidd_idx_diff
+                   , int             final_lessLong_idx_diff
+                   , size_t          finalCost
                    , int             finalState
                    , int             finalDist
                    , affine_costs_t *affineCosts
@@ -187,8 +187,8 @@ int getSplitRecurse( int             start_lessLong_idx_diff
 /** Recovers an alignment directly from the Ukkonnen matrix.
  *  Used for the base case of the check point recursion.
  */
-void traceBack( int           start_lessLong_idx_diff
-              , int           start_lessMidd_idx_diff
+void traceBack( int           start_lessMidd_idx_diff
+              , int           start_lessLong_idx_diff
               , int           startCost
               , int           startState
               , int           final_lessLong_idx_diff
@@ -200,8 +200,8 @@ void traceBack( int           start_lessLong_idx_diff
               );
 
 /**  */
-int Ukk( int             lessLong_idx_diff
-       , int             lessMidd_idx_diff
+int Ukk( int             lessMidd_idx_diff
+       , int             lessLong_idx_diff
        , int             editDistance
        , unsigned int    fsm_state
        , affine_costs_t *affineCosts

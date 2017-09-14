@@ -190,8 +190,8 @@ static inline void *allocEntry( alignment_mtx_t *a
 }
 
 static inline size_t allocGetSubIndex( alignment_mtx_t *inputMtx
-                                     , int              lessLong_idx_diff
                                      , int              lessMidd_idx_diff
+                                     , int              lessLong_idx_diff
                                      , int              fsm_state
                                      , size_t           numStates
                                      )
@@ -206,8 +206,8 @@ static inline size_t allocGetSubIndex( alignment_mtx_t *inputMtx
     int lessMidd_adjusted = lessMidd_idx_diff + inputMtx->lessMidd_offset - j * CELLS_PER_BLOCK;
     */
 
-    int lessLong_adjusted = (lessLong_idx_diff + inputMtx->lessLong_offset) % CELLS_PER_BLOCK;
     int lessMidd_adjusted = (lessMidd_idx_diff + inputMtx->lessMidd_offset) % CELLS_PER_BLOCK;
+    int lessLong_adjusted = (lessLong_idx_diff + inputMtx->lessLong_offset) % CELLS_PER_BLOCK;
 
     /*
     if (   lessLong_adjusted != lessLong_adjusted_2
@@ -231,17 +231,14 @@ static inline size_t allocGetSubIndex( alignment_mtx_t *inputMtx
 
     assert( fsm_state >= 0 && fsm_state < (int) numStates );
 
-    index = (index + lessLong_adjusted) * CELLS_PER_BLOCK;
-    index = (index + lessMidd_adjusted) * numStates;
+    index = (index + lessMidd_adjusted) * CELLS_PER_BLOCK;
+    index = (index + lessLong_adjusted) * numStates;
     index = (index + fsm_state);
 
     return index;
 }
 
 
-/** Deallocate either Ukkonnen or Check Point matrix.
- *  No idea what all of those extra accumulators were for, but they seemed to be unused.
- */
 void deallocate_MtxCell( alignment_mtx_t *inputMtx
                        // , void            *flag
                        // , void            *top
@@ -308,14 +305,9 @@ void deallocate_MtxCell( alignment_mtx_t *inputMtx
 }
 
 
-/** Checks to see if Ukkonnen or CheckPoint matrix needs to be reallocated. If so, continues to double it in size until
- *  the width is greater than current edit distance. Returns pointer to cell indicated by `ab_idx_diff`, `ac_idx_diff` and `editDist`.
- *
- *  May call functions to alloc new plane, then returns pointer to first cell in that plane.
- */
 void *getPtr( alignment_mtx_t *inputMtx
-            , int              lessLong_idx_diff
-            , int              lessMidd_idx_diff
+            , size_t           lessMidd_idx_diff
+            , size_t           lessLong_idx_diff
             , size_t           editDist
             , int              fsm_state
             , size_t           numStates
@@ -324,7 +316,11 @@ void *getPtr( alignment_mtx_t *inputMtx
     void **matrix,
           *this_baseArr;
 
-    size_t index;
+    int oldSize;
+
+    size_t index,
+           i,     // index into
+           j;     // index into
 
     #ifdef FIXED_NUM_PLANES
         // If doing a noalign or checkPoint,  remap 'editDist' into 0 .. costSize - 1.
@@ -335,7 +331,7 @@ void *getPtr( alignment_mtx_t *inputMtx
     while (editDist >= inputMtx->baseAlloc) {
 
         // Keep doubling size of allocation until edit distance is within (what I assume are) Ukkonnen barriers
-        int oldSize          = inputMtx->baseAlloc;
+        oldSize              = inputMtx->baseAlloc;
         inputMtx->baseAlloc *= 2;
         inputMtx->matrix     = recalloc( inputMtx->matrix
                                        , oldSize             * sizeof(void *)
@@ -356,11 +352,11 @@ void *getPtr( alignment_mtx_t *inputMtx
 
     matrix = inputMtx->matrix[editDist];
 
-    size_t i = (lessLong_idx_diff + inputMtx->lessLong_offset) / CELLS_PER_BLOCK;
-    size_t j = (lessMidd_idx_diff + inputMtx->lessMidd_offset) / CELLS_PER_BLOCK;
+    i = (lessMidd_idx_diff + inputMtx->lessMidd_offset) / CELLS_PER_BLOCK;
+    j = (lessLong_idx_diff + inputMtx->lessLong_offset) / CELLS_PER_BLOCK;
 
-    assert(i < inputMtx->lessLong_blocks);
-    assert(j < inputMtx->lessMidd_blocks);
+    assert(i >= 0 && i < inputMtx->lessMidd_blocks);
+    assert(j >= 0 && j < inputMtx->lessLong_blocks);
 
     if (matrix[(i * inputMtx->lessMidd_blocks) + j] == NULL) {
         matrix[(i * inputMtx->lessMidd_blocks) + j] = allocEntry( inputMtx, numStates );
@@ -370,8 +366,8 @@ void *getPtr( alignment_mtx_t *inputMtx
     assert(this_baseArr != NULL);
 
     index = allocGetSubIndex( inputMtx
-                            , lessLong_idx_diff
                             , lessMidd_idx_diff
+                            , lessLong_idx_diff
                             , fsm_state
                             , numStates
                             );

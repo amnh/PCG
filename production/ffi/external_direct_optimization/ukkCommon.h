@@ -283,7 +283,7 @@ void revCharArray( char   *arr
 
 
 /** Once three dynamic characters are aligned, step down the arrays and see when to
- *  add affine (deleted and instert) and mismatch costs.
+ *  add affine (deleted and insert) and mismatch costs.
  */
 unsigned int alignmentCost( int             fsm_states[]
                           , char           *al1
@@ -296,20 +296,22 @@ unsigned int alignmentCost( int             fsm_states[]
 
 
 /** Checks to see if Ukkonnen or CheckPoint matrix needs to be reallocated. If so, continues to double it in size until
- *  the width is less than current edit distance. Returns pointer to cell indicated by `ab_idx_diff`, `ac_idx_diff` and `editDist`.
+ *  the width is less than current edit distance. Returns pointer to cell indicated by `lessMidd_idx_diff`, `lessLong_idx_diff` and `editDist`.
  *
  *  May call functions to alloc new plane, then returns pointer to first cell in that plane.
  */
 void *getPtr( alignment_mtx_t *alignment_mtx_t
-            , int           ab_idx_diff
-            , int           ac_idx_diff
-            , size_t        editDist
-            , int           fsm_state
-            , size_t        numStates
+            , size_t           lessMidd_idx_diff
+            , size_t           lessLong_idx_diff
+            , size_t           editDist
+            , int              fsm_state
+            , size_t           numStates
             );
 
 
-/** Deallocate either Ukkonnen or Check Point matrix. */
+/** Deallocate either Ukkonnen or Check Point matrix.
+ *  No idea what all of those extra accumulators were for, but they seemed to be unused.
+ */
 void deallocate_MtxCell( alignment_mtx_t *inputMtx
                        // , void            *flag
                        // , void            *top

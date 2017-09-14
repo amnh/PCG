@@ -529,6 +529,8 @@ int align3d( alignIO_t          *inputChar1_aio
                                                                                          // It's also hard-coded in 3d ukk, so will have
                                                                                          // to change it there, too.
 
+    if (DEBUG_3D) printf("\n---Calling Powell\n\n");
+
     // Powell aligns three sequences.
     algnCost = powell_3D_align ( shortChar
                                , middleChar
