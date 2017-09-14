@@ -104,7 +104,7 @@ static inline void *recalloc( void   *p
 
     // Cast the void pointer to char pointer to suppress compiler warnings.
     // We assume that arithmetic takes place in terms of bytes.
-    memset( ( (char*) p ) + oldSize, 0, newSize - oldSize );
+    memset( ((char*) p) + oldSize, 0, newSize - oldSize );
     return p;
 }
 
@@ -309,7 +309,7 @@ void deallocate_MtxCell( alignment_mtx_t *inputMtx
 
 
 /** Checks to see if Ukkonnen or CheckPoint matrix needs to be reallocated. If so, continues to double it in size until
- *  the width is less than current edit distance. Returns pointer to cell indicated by `ab_idx_diff`, `ac_idx_diff` and `editDist`.
+ *  the width is greater than current edit distance. Returns pointer to cell indicated by `ab_idx_diff`, `ac_idx_diff` and `editDist`.
  *
  *  May call functions to alloc new plane, then returns pointer to first cell in that plane.
  */
@@ -335,12 +335,12 @@ void *getPtr( alignment_mtx_t *inputMtx
     while (editDist >= inputMtx->baseAlloc) {
 
         // Keep doubling size of allocation until edit distance is within (what I assume are) Ukkonnen barriers
-        int oldSize           = inputMtx->baseAlloc;
-        inputMtx->baseAlloc  *= 2;
-        inputMtx->matrix  = recalloc( inputMtx->matrix
-                                         , oldSize             * sizeof(void *)
-                                         , inputMtx->baseAlloc * sizeof(void *)
-                                         );
+        int oldSize          = inputMtx->baseAlloc;
+        inputMtx->baseAlloc *= 2;
+        inputMtx->matrix     = recalloc( inputMtx->matrix
+                                       , oldSize             * sizeof(void *)
+                                       , inputMtx->baseAlloc * sizeof(void *)
+                                       );
 
         if (inputMtx->matrix == NULL) {
             fprintf(stderr, "Unable to alloc memory\n");
@@ -425,8 +425,11 @@ void copyCharacter ( char            *str
 }
 
 
-/** Is this a match insertion insertion (MII), etc.?
- *  Matches return 0, subs (which are also coded as M) return 1, various transitions add gap open or gap continuation costs.
+/** Is this a Match Insertion Insertion (MII), etc.?
+ *  Matches return 0.
+ *  Subs (which are also coded as M), various transitions, add gap open, gap continuation all return 1.
+ *  Mismatches, or all different, return 2.
+ *  TODO: Is ^^^ that right?
  */
 int whichCharCost(char a, char b, char c)
 {
@@ -434,6 +437,7 @@ int whichCharCost(char a, char b, char c)
         printf("whichCharCost\n");
     }
     printf("a: %d, b: %d, c: %d\n", a, b, c);
+    // This would be all deletions, which doesn't really make any sense.
     assert(   a != 0
            && b != 0
            && c != 0
@@ -449,7 +453,7 @@ int whichCharCost(char a, char b, char c)
       return 0;
     }
     /* return 1 for any two the same, ie. the following
-         x-- -y- --x  <- two gaps
+         x-- -x- --x  <- two gaps
          xx- x-x -xx  <- two xs and a gap
          xxy xyx yxx  <- two xs and a y
     */
@@ -573,7 +577,6 @@ size_t countThisTransition( Trans fsmState_transitions[3]
 }
 
 
-/** Set up the Ukkonnen and check point matrices before running alignment. */
 void setup( affine_costs_t  *affineCosts
           , characters_t    *inputChars
           , characters_t    *resultChars

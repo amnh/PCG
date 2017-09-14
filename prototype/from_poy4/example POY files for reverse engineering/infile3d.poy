@@ -1,7 +1,8 @@
 read(nucleotides: ("./sample3d.fa"))
 read("./3d.tre")
-transform(tcm: "./sample2.mat")
 set(iterative:exact)
+transform(tcm: "./sample2.mat")
+
 report("ex3d.txt")
 
 exit()

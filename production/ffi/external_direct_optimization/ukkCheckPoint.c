@@ -64,7 +64,7 @@ alignment_mtx_t myUkk_allocInfo_global;
 alignment_mtx_t myCheckPt_allocInfo_global;
 
 
-// costOffset_global---added to the 'computed' field of each cell. `costOffset_global` is
+// `costOffset_global`---added to the `computed` field of each cell. `costOffset_global` is
 // recursive step of the check point algorithm. 'Tis really a hack so I don't
 // have to reinitialize the memory structures.
 long costOffset_global = 1;    // must be signed for future comparisons
@@ -78,15 +78,15 @@ int checkPoint_editDist_global;   // Flag for whether to use edit distance of co
 
 // Use these globals cause don't want to pass 'em around, and they're needed
 // by the withinMatrix func. Be nice to have closures :-)
-// must be signed; later used as possibly negative
+// Must be signed; later used as possibly negative.
 int start_lessLong_idx_diff_global = 0,
     start_lessMidd_idx_diff_global = 0,
-    startCost_global  = 0,
-    startState_global = 0;
+    startCost_global               = 0,
+    startState_global              = 0;
 
 
 // Set to 1 for base cases, so that the 'from' info that the alignment
-//  can be retrieved from is set.
+// can be retrieved from is set.
 int completeFromInfo_global = 0;
 
 int checkPoint_width_global;
@@ -146,11 +146,6 @@ static inline checkPoint_cell_t *get_checkPoint_cell( int    lessLong_idx_diff
 }
 
 
-/** This is the interface function to the alignment code. It takes in three characters, as well as a mismatch cost, a gap open cost and
- *  a gap extention cost (all of which might someday be replaced by a 3d cost matrix, although that's unlikely).
- *
- *  IMPORTANT!!! Order of input characters is short, long, middle, or at least short must be first.
- */
 int powell_3D_align( dyn_character_t *lesserChar
                    , dyn_character_t *middleChar
                    , dyn_character_t *longerChar
@@ -643,18 +638,19 @@ void traceBack( int           start_lessLong_idx_diff
               , characters_t *resultChars
               )
 {
-    int lessLong_idx_diff  = final_lessLong_idx_diff,
-        lessMidd_idx_diff  = final_lessMidd_idx_diff,
-        editDistance = finalCost_global,
-        fsm_state    = finalState;
+    int lessLong_idx_diff = final_lessLong_idx_diff,
+        lessMidd_idx_diff = final_lessMidd_idx_diff,
+        editDistance      = finalCost_global,
+        fsm_state         = finalState;
 
-    while (   lessLong_idx_diff  != start_lessLong_idx_diff
-           || lessMidd_idx_diff  != start_lessMidd_idx_diff
-           || editDistance != startCost
-           || fsm_state    != startState
+    while (   lessLong_idx_diff != start_lessLong_idx_diff
+           || lessMidd_idx_diff != start_lessMidd_idx_diff
+           || editDistance      != startCost
+           || fsm_state         != startState
           ) {
 
-        int a                  = get_ukk_cell( lessLong_idx_diff
+        int a1;
+        int a = a1             = get_ukk_cell( lessLong_idx_diff
                                              , lessMidd_idx_diff
                                              , editDistance
                                              , fsm_state
@@ -688,14 +684,12 @@ void traceBack( int           start_lessLong_idx_diff
                                              , fsm_state
                                              , inputChars->numStates
                                              )->from.fsm_state;
-
-        int a1                 = get_ukk_cell( nLessLong_idx_diff
-                                             , nLessMidd_idx_diff
-                                             , nEditDistance
-                                             , nFsmState
-                                             , inputChars->numStates
-                                             )->editDist;
-
+        // int a1                 = get_ukk_cell( nLessLong_idx_diff
+        //                                      , nLessMidd_idx_diff
+        //                                      , nEditDistance
+        //                                      , nFsmState
+        //                                      , inputChars->numStates
+        //                                      )->editDist;
 
         int b  = a  - lessLong_idx_diff,
             c  = a  - lessMidd_idx_diff,
@@ -747,8 +741,8 @@ nLessLong_idx_diff = %3d, nLessMidd_idx_diff = %3d, nEdit Distance = %3d, nFsm s
           resultChars->lesserStr[resultChars->lesserIdx++] = inputChars->lesserStr[a];
           resultChars->longerStr[resultChars->longerIdx++] = inputChars->longerStr[b];
           resultChars->middleStr[resultChars->middleIdx++] = inputChars->middleStr[c];
-          fsm_states_global[fsm_stateIdx_global++] = 0;        /* The match fsm_state */
-          cost_global[costIdx_global++]            = editDistance;
+          fsm_states_global[fsm_stateIdx_global++]         = 0;        /* The match fsm_state */
+          cost_global[costIdx_global++]                    = editDistance;
         }
 
         // The step for (nLessLong_idx_diff, nLessMidd_idx_diff, nEditDistance, nFsmState) -> (lessLong_idx_diff, lessMidd_idx_diff, editDistance, fsm_state)
@@ -773,10 +767,10 @@ nLessLong_idx_diff = %3d, nLessMidd_idx_diff = %3d, nEdit Distance = %3d, nFsm s
                 && b == b1
                 && c == c1);
 
-        lessLong_idx_diff  = nLessLong_idx_diff;
-        lessMidd_idx_diff  = nLessMidd_idx_diff;
-        editDistance = nEditDistance;
-        fsm_state    = nFsmState;
+        lessLong_idx_diff = nLessLong_idx_diff;
+        lessMidd_idx_diff = nLessMidd_idx_diff;
+        editDistance      = nEditDistance;
+        fsm_state         = nFsmState;
     }
 
     if (DEBUG_3D) {
@@ -785,17 +779,14 @@ nLessLong_idx_diff = %3d, nLessMidd_idx_diff = %3d, nEdit Distance = %3d, nFsm s
 
             fprintf(stderr,"Alignment so far\n");
 
-            for (i = resultChars->lesserIdx - 1; i >= 0; i--) {
-                fprintf(stderr, "%c", resultChars->lesserStr[i]);
-            }
+            for (i = resultChars->lesserIdx - 1; i >= 0; i--) fprintf(stderr, "%c", resultChars->lesserStr[i]);
             fprintf(stderr, "\n");
-            for (i = resultChars->longerIdx - 1; i >= 0; i--) {
-                fprintf(stderr, "%c", resultChars->longerStr[i]);
-            }
+
+            for (i = resultChars->longerIdx - 1; i >= 0; i--) fprintf(stderr, "%c", resultChars->longerStr[i]);
             fprintf(stderr, "\n");
-            for (i = resultChars->middleIdx - 1; i >= 0; i--) {
-                fprintf(stderr, "%c", resultChars->middleStr[i]);
-            }
+
+            for (i = resultChars->middleIdx - 1; i >= 0; i--) fprintf(stderr, "%c", resultChars->middleStr[i]);
+
             // Print fsm_state information
             // for (i = fsm_stateIdx_global - 1; i >= 0; i--) {
             //   fprintf(stderr, "%s ", fsm_state2str( fsm_states_global[i]
@@ -805,17 +796,15 @@ nLessLong_idx_diff = %3d, nLessMidd_idx_diff = %3d, nEdit Distance = %3d, nFsm s
             // }
             fprintf(stderr,"\n");
             // Print cost stuff
-            for (i = costIdx_global - 1; i >= 0; i--) {
-                fprintf(stderr, "%-2d  ", cost_global[i]);
-            }
+            for (i = costIdx_global - 1; i >= 0; i--) fprintf(stderr, "%-2d  ", cost_global[i]);
             fprintf(stderr, "\n");
         }
     }
 
-    assert(lessLong_idx_diff  == start_lessLong_idx_diff);
-    assert(lessMidd_idx_diff  == start_lessMidd_idx_diff);
-    assert(editDistance == startCost);
-    assert(fsm_state    == startState);
+    assert(lessLong_idx_diff == start_lessLong_idx_diff);
+    assert(lessMidd_idx_diff == start_lessMidd_idx_diff);
+    assert(editDistance      == startCost);
+    assert(fsm_state         == startState);
 }
 
 
@@ -991,8 +980,11 @@ int find_bestState( int    lessLong_idx_diff
 }
 
 
-/** Find the furthest distance at lessLong_idx_diff, lessMidd_idx_diff, input_editDistance. return_the_fsm_state selects whether the
- *  best distance is returned, or the best final fsm state (needed for ukk.alloc traceback)
+/**
+ *  Find the furthest distance at lessLong_idx_diff, lessMidd_idx_diff, input_editDistance. `return_the_fsm_state` defines
+ *  whether the best distance is returned, or the best final fsm state (needed for ukk.alloc traceback).
+ *
+ *  Mutates nothing.
  */
 int findBest( int    lessLong_idx_diff
             , int    lessMidd_idx_diff
@@ -1070,7 +1062,7 @@ int Ukk( int             lessLong_idx_diff
                       , inputChars->numStates
                       )->computed == editDistance + costOffset_global
         ) {
-        printf("Ukk: Don't update anything. Return edit dist.\n");
+        // printf("Ukk: Don't update anything. Return edit dist.\n");
         return  get_ukk_cell( lessLong_idx_diff
                             , lessMidd_idx_diff
                             , editDistance
@@ -1103,7 +1095,7 @@ int Ukk( int             lessLong_idx_diff
     if (     editDistance >= checkPoint_cost_global
          && (editDistance  < checkPoint_cost_global + checkPoint_width_global )
        ) {
-        printf("Ukk: Update checkpoint edit dist.\n");
+        // printf("Ukk: Update checkpoint edit dist.\n");
         get_checkPoint_cell( lessLong_idx_diff
                            , lessMidd_idx_diff
                            , editDistance
@@ -1116,7 +1108,7 @@ int Ukk( int             lessLong_idx_diff
                                                      , inputChars->numStates
                                                      )->editDist;
 
-        printf("Ukk: Update checkpoint cost.\n");
+        // printf("Ukk: Update checkpoint cost.\n");
         get_checkPoint_cell( lessLong_idx_diff
                            , lessMidd_idx_diff
                            , editDistance
@@ -1132,7 +1124,7 @@ int Ukk( int             lessLong_idx_diff
                      , inputChars->numStates
                      )->editDist > furthestReached_global
        ) {
-        printf("Ukk: Update furthestReached_global.\n");
+        // printf("Ukk: Update furthestReached_global.\n");
         furthestReached_global = get_ukk_cell( lessLong_idx_diff
                                              , lessMidd_idx_diff
                                              , editDistance
@@ -1140,7 +1132,7 @@ int Ukk( int             lessLong_idx_diff
                                              , inputChars->numStates
                                              )->editDist;
     }
-    printf("Ukk: Return edit dist.\n");
+    // printf("Ukk: Return edit dist.\n");
     return get_ukk_cell( lessLong_idx_diff
                        , lessMidd_idx_diff
                        , editDistance
@@ -1189,10 +1181,6 @@ void initializeGlobals( characters_t *inputChars )
     counts_global.innerLoop = 0;
 }
 
-/** Set up and then call functions that do actual affine Ukkonnen and CheckPoint algorithms, as well as traceback.
- *
- *  IMPORTANT!!! Order of input characters is short, long, middle.
- */
 int align3d_ukk( dyn_character_t *retLesserChar
                , dyn_character_t *retMiddleChar
                , dyn_character_t *retLongerChar
@@ -1251,12 +1239,17 @@ int align3d_ukk( dyn_character_t *retLesserChar
                     && inputChars->lesserStr[cur_editDist] == inputChars->middleStr[cur_editDist];
     }
     get_ukk_cell( 0, 0, 0, 0, inputChars->numStates )->editDist = cur_editDist;
-    get_ukk_cell( 0, 0, 0, 0, inputChars->numStates )->computed = 0 + costOffset_global;
+    get_ukk_cell( 0, 0, 0, 0, inputChars->numStates )->computed = (int) costOffset_global; // originally costOffset_global + 0??
 
     start_editDist = cur_editDist;
 
-    final_lessLong_idx_diff = inputChars->lesserLen - inputChars->longerLen; // So these two are negative.
     final_lessMidd_idx_diff = inputChars->lesserLen - inputChars->middleLen;
+    final_lessLong_idx_diff = inputChars->lesserLen - inputChars->longerLen; // So these two are negative.
+
+    // TODO: figure out where these are initialized.
+    // inputChars->lesserLen =
+    // inputChars->middleLen =
+    // inputChars->longerLen =
 
     do {
         cur_editDist++;
@@ -1308,6 +1301,7 @@ int align3d_ukk( dyn_character_t *retLesserChar
                                    , inputChars->numStates
                                    );
 
+    // If there's no cost, can't run algorithm. Probably first run. Start again.
     if ( get_ukk_cell( final_lessLong_idx_diff
                      , final_lessMidd_idx_diff
                      , finalCost_global
@@ -1397,10 +1391,10 @@ int calcUkk( int             lessLong_idx_diff
            , fsm_arrays_t   *fsmStateArrays
            )
 {
-    if (DEBUG_CALL_ORDER) {
-        printf("--ukk.check-point: calcUkk\n" );
+    // if (DEBUG_CALL_ORDER) {
+        printf("---calcUkk %d %d %d\n", lessLong_idx_diff, lessMidd_idx_diff, input_editDist);
         fflush(stdout);
-    }
+    // }
 
     // TODO: document all of these
     int neighbour = fsmStateArrays->neighbours[toState];
@@ -1499,9 +1493,9 @@ int calcUkk( int             lessLong_idx_diff
                           , fsmStateArrays
                           );
             if ( a1 >= 0 ) {
-                // printf("a1: %d, isDeleteState_A: %d, inputChars->lesserLen: %d\n", a1, isDeleteState_A, inputChars->lesserLen);
-                // printf("b1: %d, isDeleteState_B: %d, inputChars->longerLen: %d\n", a1, isDeleteState_B, inputChars->lesserLen);
-                // printf("c1: %d, isDeleteState_C: %d, inputChars->middleLen: %d\n", a1, isDeleteState_C, inputChars->lesserLen);
+                printf("a1: %d, isDeleteState_A: %d, inputChars->lesserLen: %d\n", a1, isDeleteState_A, inputChars->lesserLen);
+                printf("b1: %d, isDeleteState_B: %d, inputChars->longerLen: %d\n", a1, isDeleteState_B, inputChars->lesserLen);
+                printf("c1: %d, isDeleteState_C: %d, inputChars->middleLen: %d\n", a1, isDeleteState_C, inputChars->lesserLen);
                 printf("a1: %d, a1 - lessLong_idx_diff1: %d, a1 - lessMidd_idx_diff1: %d\n", a1, a1 - lessLong_idx_diff1, a1 - lessMidd_idx_diff1);
             }
 

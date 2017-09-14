@@ -124,20 +124,19 @@ int main() {
          }
     }
 
-    cost_matrices_2d_t *costMtx2d        = malloc(sizeof(struct cost_matrices_2d_t));
-    cost_matrices_2d_t *costMtx2d_affine = malloc(sizeof(struct cost_matrices_2d_t));
-    cost_matrices_3d_t *costMtx3d        = malloc(sizeof(struct cost_matrices_3d_t));
-
     if(DO_2D) {
+        cost_matrices_2d_t *costMtx2d        = malloc(sizeof(struct cost_matrices_2d_t));
         setUp2dCostMtx (costMtx2d, tcm, alphSize, 0);
     }
 
     if(DO_2D_AFF) {
+        cost_matrices_2d_t *costMtx2d_affine = malloc(sizeof(struct cost_matrices_2d_t));
         setUp2dCostMtx (costMtx2d_affine, tcm, alphSize, GAP_OPEN_COST);
     }
 
     if(DO_3D) {
         setUp3dCostMtx (costMtx3d, tcm, alphSize, 0);
+        cost_matrices_3d_t *costMtx3d        = malloc(sizeof(struct cost_matrices_3d_t));
     }
 
 
@@ -508,16 +507,16 @@ int main() {
 
         for (i = 0; i < 1; i++) { // run 30 tests
 
-            longCharLen   = 2; // rand() % CHAR_LENGTH + 1;
-            middleCharLen = 1; // rand() % CHAR_LENGTH + 1;
-            shortCharLen  = 1; // rand() % CHAR_LENGTH + 1;
+            longCharLen   = 6; // rand() % CHAR_LENGTH + 1;
+            middleCharLen = 6; // rand() % CHAR_LENGTH + 1;
+            shortCharLen  = 5; // rand() % CHAR_LENGTH + 1;
             maxLength     = longCharLen + middleCharLen + shortCharLen + 3; // extra 3 because there are three gaps added
                                                                             // (1 on beginning of each character)
 
             // need to realloc each time through the loop
-            elem_t longer_vals[2] = {3, 1};    // {3, 1, 9, 1, 8, 1}; // realloc( longer_vals,  longCharLen   * sizeof(elem_t) );
-            elem_t middle_vals[1] = {3}; // {3, 9, 9, 7, 5, 8}; // realloc( middle_vals,   middleCharLen * sizeof(elem_t) );
-            elem_t lesser_vals[1] = {7}; // {7, 9, 9, 4, 5};    // realloc( lesser_vals, shortCharLen  * sizeof(elem_t) );
+            elem_t longer_vals[6] = {3, 1, 9, 1, 8, 1}; // realloc( longer_vals,  longCharLen   * sizeof(elem_t) );
+            elem_t middle_vals[6] = {3, 9, 9, 7, 5, 8}; // realloc( middle_vals,   middleCharLen * sizeof(elem_t) );
+            elem_t lesser_vals[5] = {7, 9, 9, 4, 5};    // realloc( lesser_vals, shortCharLen  * sizeof(elem_t) );
 
             // set_vals( longer_vals,  longCharLen,   max_val);
             // set_vals( middle_vals,   middleCharLen, max_val);

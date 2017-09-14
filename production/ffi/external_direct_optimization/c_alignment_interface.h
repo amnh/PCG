@@ -8,7 +8,8 @@
 #include "alignmentMatrices.h"
 #include "alignCharacters.h"
 
-/** Input/output structure for Haskell FFI.
+/** Input/output structure for Haskell FFI. Essentially a cut down dyn_character_t.
+ *
  *  Note that the character will be in the last `length` elements of the array.
  */
 typedef struct alignIO_t {
@@ -51,6 +52,11 @@ int align2dAffine( alignIO_t          *inputChar1_aio
 
 /** Aligns three characters using affine algorithm.
  *  Set `gap_open_cost` to 0 for non-affine.
+ *
+ *  First declares, allocates and initializes data structures.
+ *  Calls ukkCheckPoint.powell_3D_align().
+ *  Calls alignCharacters.algn_get_cost_medians_3d().
+ *  Copies output to correct return structures.
  *
  *  Ordering of inputs by length does not matter, as they will be sorted inside the fn.
  */

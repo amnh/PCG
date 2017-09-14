@@ -244,6 +244,7 @@ size_t countThisTransition( Trans fsm_stateTransitions[3]
                           );
 
 /** Set up the Ukkonnen and check point matrices before running alignment.
+ *
  *  Finish setup of characters.
  */
 void setup( affine_costs_t  *globalCosts

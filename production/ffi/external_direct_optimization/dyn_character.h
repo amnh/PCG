@@ -47,20 +47,6 @@ void dyn_char_prepend( dyn_character_t *a
                      );
 
 
-/** Does allocation for a character struct. Also sets char pointers within array to correct positions.
- *
- *  resChar must be alloced before this call.
- */
-// dyn_character_t *initializeChar(dyn_character_t *retChar, size_t allocSize) {
-//     retChar->cap        = allocSize;                              // capacity
-//     retChar->array_head = calloc(allocSize, sizeof(elem_t));        // beginning of array that holds dynamic character
-
-//     retChar->end        = retChar->array_head + allocSize;        // end of array
-//     retChar->char_begin  = retChar->end;                           // position of first element in dynamic character
-//     retChar->len        = 0;                                      // number of elements in character
-// }
-
-
 void dyn_char_print( const dyn_character_t *inChar );
 
 

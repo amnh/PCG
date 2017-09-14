@@ -1,6 +1,6 @@
 ### Note that multiple calls to gcc to create .o files are needed, followed by multiple additional calls for linking and final compilation
 
-all : align
+all : debug_just_c
 
 clean :
 	rm -f *.o *.hi *.dSYM

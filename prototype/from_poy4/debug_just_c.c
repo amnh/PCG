@@ -440,8 +440,8 @@ int main() {
     int longSeqLen                  = 5;
     int middle_vals[SEQ_CAPACITY]   = {16, 1, 1, 1, 1}; // don't forget to change lengths!!!
     int middleSeqLen                = 5;
-    int shortest_vals[SEQ_CAPACITY] = {16, 1, 1, 1, 1}; // don't forget to change lengths!!!
-    int shortSeqLen                 = 5;
+    int shortest_vals[SEQ_CAPACITY] = {16, 1, 1, 1}; // don't forget to change lengths!!!
+    int shortSeqLen                 = 4;
 
 
     seq_p longSeq   = initializeSeq(SEQ_CAPACITY, longest_vals,  longSeqLen);
@@ -495,25 +495,29 @@ int main() {
     cost_matrices_2d_p costMtx2d_affine;
     cost_matrices_3d_p costMtx3d;
 
+    int n;  // for "pretty printing" of tcm, below.
+
     // tcm is tcm; alphSize includes gap; third param is gap opening cost; fourth is is_2d
     if (DO_2D) {
         costMtx2d = setupCostMtx (tcm, alphSize, 0, 1, longSeq);
         mat_setup_size (algn_mtxs2d, longSeq->len, longSeq->len, 0, 0, costMtx2d->lcm);
+        n = costMtx2d->lcm;
     }
     if (DO_AFF) {
         costMtx2d_affine = setupCostMtx (tcm, alphSize, GAP_OPEN_COST, 1, longSeq);
         mat_setup_size (algn_mtxs2dAffine, longSeq->len, longSeq->len, 0, 0, costMtx2d_affine->lcm);
+        n = costMtx2d_affine->lcm;
     }
     if (DO_3D) {
         costMtx3d = setupCostMtx (tcm, alphSize, 0, 0, longSeq);  // last argument means it's not 2d
         // penultimate parameter is ukk flag
         mat_setup_size (algn_mtxs3d, longSeq->len, mediumSeq->len, shortSeq->len, 0, costMtx3d->lcm);
+        n = costMtx3d->lcm;
     }
     int algnCost;
 
 
     // Print TCM in pretty format
-    const int n = costMtx2d->lcm;
     for (size_t i = 0; i < n; ++i) {
         for (size_t j = 0; j < n; ++j) {
             printf("%2d ", tcm[ n*i + j ]);
@@ -533,8 +537,10 @@ int main() {
     } else {
         deltawh = diff < lower_limit ? lower_limit / 2 : 2;
     }
-    cm_print_2d (costMtx2d);
-    cm_print_2d (costMtx2d_affine);
+    if (DO_2D) {
+        cm_print_2d (costMtx2d);
+        cm_print_2d (costMtx2d_affine);
+    }
 
     // cm_print_3d (costMtx3d);
 
@@ -799,13 +805,20 @@ int main() {
     // Next this: algn_get_median_3d (seq_p seq1, seq_p seq2, seq_p seq3,
     //                cost_matrices_3d_p m, seq_p sm)
 
-    freeCostMtx(costMtx2d,        1);  // 1 is 2d
-    freeCostMtx(costMtx2d_affine, 1);
-    freeCostMtx(costMtx3d,        0);  // 0 is !2d
+    if (DO_2D) {
+        freeCostMtx(costMtx2d, 1);  // 1 is 2d
+        freeNWMtx(algn_mtxs2d);
+    }
 
-    freeNWMtx(algn_mtxs2d);
-    freeNWMtx(algn_mtxs2dAffine);
-    freeNWMtx(algn_mtxs3d);
+    if (DO_AFF) {
+        freeCostMtx(costMtx2d_affine, 0);  // 1 is 2d
+        freeNWMtx(algn_mtxs2dAffine);
+    }
+
+    if (DO_3D) {
+        freeCostMtx(costMtx3d, 0);  // 0 is !2d
+        freeNWMtx(algn_mtxs3d);
+    }
 
     freeSeq(longSeq);
     freeSeq(shortSeq);

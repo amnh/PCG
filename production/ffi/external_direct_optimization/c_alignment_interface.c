@@ -555,10 +555,14 @@ int align3d( alignIO_t          *inputChar1_aio
                                         , gappedMedianChar
                                         );
 
-    // dyn_char_print(ungappedMedianChar);
-    // dyn_char_print(gappedMedianChar);
+    dyn_char_print(ungappedMedianChar);
+    dyn_char_print(gappedMedianChar);
+    // dyn_char_print(ungappedOutput_aio);
+    // dyn_char_print(gappedOutput_aio);
 
+    printf("ungapped\n");
     dynCharToAlignIO(ungappedOutput_aio, ungappedMedianChar);
+    printf("gapped\n");
     dynCharToAlignIO(gappedOutput_aio,   gappedMedianChar);
 
     dynCharToAlignIO(longIO,   retLongChar);
@@ -664,33 +668,38 @@ void copyValsToAIO(alignIO_t *outChar, elem_t *vals, size_t length, size_t capac
  *  Also eliminates extra gap needed by legacy code.
  */
 void dynCharToAlignIO(alignIO_t *output, dyn_character_t *input) {
-  /*
-    printf("Length:   %zu\n", input->len);
-    printf("Capacity: %zu\n", input->cap);
+
+    printf("input:\n");
+    printf("  Length:   %zu\n", input->len);
+    printf("  Capacity: %zu\n", input->cap);
+    printf("output:\n");
+    printf("  Length:   %zu\n", output->length);
+    printf("  Capacity: %zu\n", output->capacity);
     fflush(stdout);
-  */
-    // TODO: The length is ZERO, why?
-    size_t offset    = input->cap - input->len + 1; // How far in to output to start copying input character.
-                                                    // Extra 1 because of extraneous gap.
 
-    output->length   = input->len - 1; // (decrement because of the leading gap char?)
-    output->capacity = input->cap;     // this shouldn't change
+    size_t  copy_length;    // These two because ungapped characters will have their initial gaps removed, so may be length 0.
+    elem_t *input_begin;
 
-    // TODO: is this necessary? Is it calloc'ed, and if not do these values matter?
-    memset(output->character, 0, input->cap * sizeof(elem_t));
-    // for(size_t i = output->length; i < input->cap; i++) {
-    //     output->character[i] = 0;
-    // }
+    // Now set length to copy and copy initial read location.
+    // If input length > 0, Decrement because of the leading gap.
+    // Ungapped character already has had initial gap removed.
+    // Likewise, copy start has different setting for two conditions.
+    if (input->len == 0) {
+        copy_length = 0;
+        input_begin = input->char_begin;
+    } else {
+        copy_length = input->len - 1;
+        input_begin = input->char_begin + 1;
+    }
 
-    // Start copy after unnecessary gap char in input.
-    memcpy( output->character + offset, input->char_begin + 1, (input->len - 1) * sizeof(elem_t) );
-    // for(size_t i = 0; i < input->len; i++) {
-    //     printf("Cur char: %zu %u\n", i, input->char_begin[i]);
-    //     fflush(stdout);
-    //     output->character[i] = input->char_begin[i];
-    //     // printf("After  dynCharToAlignIO[%d]\n", i);
-    //     // fflush(stdout);
-    // }
+    output->length = copy_length;
+    // output->capacity = input->cap;     // this shouldn't change
+    size_t offset  = output->capacity - copy_length - 1; // How far into output to start copying input character.
+
+    memset( output->character, 0, output->capacity * sizeof(elem_t) );
+
+    // Start copy after unnecessary gap char in input, if it exists.
+    memcpy( output->character + offset, input_begin, copy_length * sizeof(elem_t) );
 
 }
 
@@ -705,6 +714,7 @@ void reallocAlignIO(alignIO_t *toAlloc, size_t capacity) {
     toAlloc->length    = 0;
     toAlloc->capacity  = capacity;
     toAlloc->character = realloc(toAlloc->character, capacity * sizeof(elem_t));
+    if (toAlloc->character == NULL) printf("Out of memory."), exit(1);
 }
 
 
