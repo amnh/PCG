@@ -1343,7 +1343,7 @@ int align3d_ukk( dyn_character_t *retLesserChar
                       // ,  inputChars->numStates
                       );
 
-    printf("align3d_ukk: current editDist: = %2d\n", cur_editDist);
+    if (DEBUG_EDIT_DIST) printf("align3d_ukk: current editDist: = %2d\n", cur_editDist);
     return (int) cur_editDist;
 }
 
@@ -1448,6 +1448,7 @@ int calcUkk( int             lessMidd_idx_diff
 
             fromCost = -INFINITY;
             editDist = -INFINITY;
+            if (DEBUG_EDIT_DIST) printf("calcUkk l. 1451 edit dist: -INFINITY\n");
 
             curCost      = input_editDist - start_transitionCost - fsmStateArrays->fsmState_continuationCost[toState];
             curEditDist  = -1;
@@ -1459,12 +1460,13 @@ int calcUkk( int             lessMidd_idx_diff
                               , inputChars
                               , fsmStateArrays
                               );
-            if ( prevEditDist >= 0 ) {
-                printf("prevEditDist: %d, isDeleteState_A: %d, inputChars->lesserLen: %d\n", prevEditDist, isDeleteState_A, inputChars->lesserLen);
-                printf("prevEditDist: %d, isDeleteState_B: %d, inputChars->middleLen: %d\n", prevEditDist, isDeleteState_B, inputChars->middleLen);
-                printf("prevEditDist: %d, isDeleteState_C: %d, inputChars->longerLen: %d\n", prevEditDist, isDeleteState_C, inputChars->longerLen);
-                printf("prevEditDist: %d, prevEditDist - lessLong_idx_diff1: %d, prevEditDist - lessMidd_idx_diff1: %d\n", prevEditDist, prevEditDist - lessLong_idx_diff1, prevEditDist - lessMidd_idx_diff1);
-            }
+            if (DEBUG_EDIT_DIST) printf("calcUkk l. 1463 curEditDist %d; prevEditDist: %d\n", curEditDist, prevEditDist);
+            // if ( prevEditDist >= 0 ) {
+            //     printf("prevEditDist: %d, isDeleteState_A: %d, inputChars->lesserLen: %d\n", prevEditDist, isDeleteState_A, inputChars->lesserLen);
+            //     printf("prevEditDist: %d, isDeleteState_B: %d, inputChars->middleLen: %d\n", prevEditDist, isDeleteState_B, inputChars->middleLen);
+            //     printf("prevEditDist: %d, isDeleteState_C: %d, inputChars->longerLen: %d\n", prevEditDist, isDeleteState_C, inputChars->longerLen);
+            //     printf("prevEditDist: %d, prevEditDist - lessLong_idx_diff1: %d, prevEditDist - lessMidd_idx_diff1: %d\n", prevEditDist, prevEditDist - lessLong_idx_diff1, prevEditDist - lessMidd_idx_diff1);
+            // }
 
             if (    okIndex( prevEditDist                     , isDeleteState_A, inputChars->lesserLen )
                  && okIndex( prevEditDist - lessMidd_idx_diff1, isDeleteState_B, inputChars->middleLen )
@@ -1479,6 +1481,7 @@ int calcUkk( int             lessMidd_idx_diff
                ) {
                 fromCost = curCost;
                 editDist = prevEditDist + isDeleteState_A;
+                if (DEBUG_EDIT_DIST) printf("calcUkk l. 1484 editDist: %d\n", editDist);
             } else {
                 if (!(fsmStateArrays->secondCost)[toState]) {
                     continue;
@@ -1492,6 +1495,7 @@ int calcUkk( int             lessMidd_idx_diff
                         , inputChars
                         , fsmStateArrays
                         );
+                if (DEBUG_EDIT_DIST) printf("calcUkk l. 1498 curEditDist; %d\n", curEditDist);
 
                 if (   okIndex(curEditDist,                      isDeleteState_A, inputChars->lesserLen)
                     && okIndex(curEditDist - lessMidd_idx_diff1, isDeleteState_B, inputChars->middleLen)
@@ -1499,6 +1503,7 @@ int calcUkk( int             lessMidd_idx_diff
                    ) {
                     fromCost = curCost - affineCosts->mismatchCost;
                     editDist = curEditDist + isDeleteState_A;
+                    if (DEBUG_EDIT_DIST) printf("calcUkk l. 1506 editDist; %d\n", editDist);
                 }
             }
 
@@ -1534,6 +1539,7 @@ int calcUkk( int             lessMidd_idx_diff
                   , fsmStateArrays
                   );
 
+    if (DEBUG_EDIT_DIST) printf("calcUkk l. 1542 editDist; %d\n", editDist);
     // Check if this is an improvment
     if (okIndex(editDist,                     0, inputChars->lesserLen) &&
         okIndex(editDist - lessMidd_idx_diff, 0, inputChars->middleLen) &&
@@ -1541,6 +1547,7 @@ int calcUkk( int             lessMidd_idx_diff
         best_editDist < editDist)
     {
         best_editDist = editDist;
+        if (DEBUG_EDIT_DIST) printf("calcUkk l. 1550 best_editDist; %d\n", best_editDist);
 
         if (completeFromInfo_global) {        // Do we need to store complete from information for a base case?
             from.lessLong_idx_diff = lessLong_idx_diff;
@@ -1569,8 +1576,8 @@ int calcUkk( int             lessMidd_idx_diff
         */
 
         // Get furthest of fsm states for this cost
-        int editDist       = -INFINITY;
-        int from_fsm_state = -1;
+        int editDist_furthest = -INFINITY;
+        int from_fsm_state    = -1;
 
         for (size_t curState = 0; curState < inputChars->numStates; curState++) {
             this_editDist = (curState == 0) ? best_editDist
@@ -1583,26 +1590,26 @@ int calcUkk( int             lessMidd_idx_diff
                                                  , fsmStateArrays
                                                  );
 
-            if (this_editDist > editDist) {
-                editDist       = this_editDist;
-                from_fsm_state = curState;
+            if (this_editDist > editDist_furthest) {
+                editDist_furthest = this_editDist;
+                from_fsm_state    = curState;
             }
         }
 
         // Try to extend to diagonal
-        while (   okIndex(editDist,                     1, inputChars->lesserLen)
-               && okIndex(editDist - lessMidd_idx_diff, 1, inputChars->middleLen)
-               && okIndex(editDist - lessLong_idx_diff, 1, inputChars->longerLen)
-               && (   inputChars->lesserStr[editDist] == inputChars->longerStr[editDist - lessLong_idx_diff]
-                   && inputChars->lesserStr[editDist] == inputChars->middleStr[editDist - lessMidd_idx_diff] )
+        while (   okIndex(editDist_furthest,                     1, inputChars->lesserLen)
+               && okIndex(editDist_furthest - lessMidd_idx_diff, 1, inputChars->middleLen)
+               && okIndex(editDist_furthest - lessLong_idx_diff, 1, inputChars->longerLen)
+               && (   inputChars->lesserStr[editDist_furthest] == inputChars->longerStr[editDist_furthest - lessLong_idx_diff]
+                   && inputChars->lesserStr[editDist_furthest] == inputChars->middleStr[editDist_furthest - lessMidd_idx_diff] )
               ) {
-          editDist++;
+          editDist_furthest++;
           counts_global.innerLoop++;
         }
 
         // Was there an improvement?
         if (editDist > best_editDist) {
-            best_editDist = editDist;  // Note: toState = MMM
+            best_editDist = editDist_furthest;  // Note: toState = MMM
 
             // Update 'from' information if the fsm state we extended from was
             // not the same fsm state we are in (the MMM fsm state).
@@ -1624,8 +1631,7 @@ int calcUkk( int             lessMidd_idx_diff
         }
     } // End attempt to extend diagonal on a run of matches
 
-    assert( nextUkkCell->computed < input_editDist + costOffset_global
-          );
+    assert( nextUkkCell->computed < input_editDist + costOffset_global );
 
     nextUkkCell->editDist = best_editDist;
 

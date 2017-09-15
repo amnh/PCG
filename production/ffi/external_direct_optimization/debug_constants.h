@@ -18,6 +18,7 @@
 #define DEBUG_CALL_ORDER 0
 #define DEBUG_COST_M     0
 #define DEBUG_DIR_M      0
+#define DEBUG_EDIT_DIST  1
 #define DEBUG_MAT        0
 #define DEBUG_NW         0
 
