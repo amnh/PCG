@@ -44,6 +44,13 @@
 // AllocInfo myUAllocInfo;
 // AllocInfo myCPAllocInfo;
 
+/**  */
+typedef struct checkPoint_cell_t {
+    int editDist;   // must be int because comparing to -INFINITY
+    int cost;
+} checkPoint_cell_t;
+
+
 // TODO: /** How many cells there are, and how wide ukk band is? */
 typedef struct counts_t {
     long cells;
@@ -67,13 +74,6 @@ typedef struct ukk_cell_t {
     long   computed;
     from_t from;            // previous fsm state
 } ukk_cell_t;
-
-
-/**  */
-typedef struct checkPoint_cell_t {
-    int editDist;   // must be int because comparing to -INFINITY
-    int cost;
-} checkPoint_cell_t;
 
 
 /** Sets up structs that will be passed through rest of process.
@@ -174,7 +174,7 @@ int getSplitRecurse( int             start_lessMidd_idx_diff
                    , int             start_editDist
                    , int             final_lessMidd_idx_diff
                    , int             final_lessLong_idx_diff
-                   , size_t          finalCost
+                   , long            finalCost
                    , int             finalState
                    , int             finalDist
                    , affine_costs_t *affineCosts
@@ -199,7 +199,10 @@ void traceBack( int           start_lessMidd_idx_diff
               , characters_t *resultChars
               );
 
-/**  */
+/** Return the edit distance of the ukk cell indicated by inputs.
+ *  Checks to see if edit distance is
+ *  Calls `calcUkk`.
+ */
 int Ukk( int             lessMidd_idx_diff
        , int             lessLong_idx_diff
        , int             editDistance
@@ -231,17 +234,17 @@ int powell_3D_align( dyn_character_t *lesserChar
 
 
 /**  */
-void printTraceBack( dyn_character_t *retLesserChar
-                   , dyn_character_t *retMiddleChar
-                   , dyn_character_t *retLongerChar
-                   , dyn_character_t *original_lesserChar
-                   , dyn_character_t *original_middleChar
-                   , dyn_character_t *original_longerChar
-                   , affine_costs_t  *affineCosts
-                   , characters_t    *inputChars
-                   , characters_t    *resultChars
-                   , fsm_arrays_t    *globalCostArrays
-                   );
+void doTraceBack( dyn_character_t *retLesserChar
+                , dyn_character_t *retMiddleChar
+                , dyn_character_t *retLongerChar
+                , dyn_character_t *original_lesserChar
+                , dyn_character_t *original_middleChar
+                , dyn_character_t *original_longerChar
+                , affine_costs_t  *affineCosts
+                , characters_t    *inputChars
+                , characters_t    *resultChars
+                , fsm_arrays_t    *globalCostArrays
+                );
 
 
 #endif // UKKCHECKP_H
