@@ -43,7 +43,7 @@ collapseElemList name attrs lst = Element (xmlQName name) attrs contents Nothing
     where
         -- contents     = (Elem numberElem) : ((Elem . toXML) <$> toList lst)
         numberElem i = Element (xmlQName "Number") [] [CRef $ show i] Nothing
-        contents     = Elem <$> (toList $ foldMapWithKey f lst)
+        contents     = Elem <$> toList (foldMapWithKey f lst)
         f i e        = [numberElem i, toXML e]
 
 

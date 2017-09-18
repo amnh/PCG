@@ -42,8 +42,8 @@ transpose value =
       []   -> sequenceA value
       x:xs -> transpose' $ x:|xs
   where
-    transpose' (e:|[])     = (pure <$> e)
-    transpose' (e:|(x:xs)) = (cons <$> e) `zap` (transpose' (x:|xs))
+    transpose' (e:|[])     =  pure <$> e
+    transpose' (e:|(x:xs)) = (cons <$> e) `zap` transpose' (x:|xs)
 
     cons = (<>) . pure
 

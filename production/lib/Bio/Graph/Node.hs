@@ -10,8 +10,6 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveFunctor, GeneralizedNewtypeDeriving #-}
-
 module Bio.Graph.Node
   ( EdgeSet
   , NewickSerialization()

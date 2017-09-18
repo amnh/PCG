@@ -104,10 +104,10 @@ instance ( ToXML u -- This is NOT a redundant constraint.
     toXML block = xmlElement "Character_block" attributes contents
         where
             attributes = []
-            contents   = [ (Right . collapseElemList "Non-additive_character_block" [] $ nonAdditiveCharacterBins block )
-                         , (Right . collapseElemList "Additive_character_block"     [] $ additiveCharacterBins    block )
-                         , (Right . collapseElemList "NonMetric_character_block"    [] $ nonMetricCharacterBins   block )
-                         , (Right . collapseElemList "Continuous_character_block"   [] $ continuousCharacterBins  block )
-                         , (Right . collapseElemList "Metric_character_block"       [] $ nonMetricCharacterBins   block )
-                         , (Right . collapseElemList "Dynamic_character_block"      [] $ dynamicCharacters        block )
+            contents   = [ Right . collapseElemList "Non-additive_character_block" [] $ nonAdditiveCharacterBins block
+                         , Right . collapseElemList "Additive_character_block"     [] $ additiveCharacterBins    block
+                         , Right . collapseElemList "NonMetric_character_block"    [] $ nonMetricCharacterBins   block
+                         , Right . collapseElemList "Continuous_character_block"   [] $ continuousCharacterBins  block
+                         , Right . collapseElemList "Metric_character_block"       [] $ nonMetricCharacterBins   block
+                         , Right . collapseElemList "Dynamic_character_block"      [] $ dynamicCharacters        block
                          ]

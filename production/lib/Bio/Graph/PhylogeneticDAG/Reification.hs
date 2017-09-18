@@ -114,15 +114,16 @@ tabulateLeaves = {- (\v@(x,_) -> trace ("Tab Vector:\n\n"  <> foldMap1 (\y -> sh
             g i = liftA3 IndexData (getLeafIndex i) (getParentRefs i) (getChildRefs i)
 
 
-reifyDAGWithContext :: Int -> (ReferenceDAG () () (Maybe Int)) -> UnReifiedCharacterDAG -> CharacterDAG
-reifyDAGWithContext leafCount maskDAG (PDAG dag) = PDAG2 $
-    RefDAG
-    { references = newRefs
-    , rootRefs   = rootRefs dag
-    , graphData  = defaultGraphMetadata $ graphData dag
-    }
+reifyDAGWithContext :: Int -> ReferenceDAG () () (Maybe Int) -> UnReifiedCharacterDAG -> CharacterDAG
+reifyDAGWithContext leafCount maskDAG (PDAG dag) = PDAG2 newDAG
   where
-    buildLeafNodeAssignments = fmap nodeDecoration $ references maskDAG
+    newDAG = RefDAG
+        { references = newRefs
+        , rootRefs   = rootRefs dag
+        , graphData  = defaultGraphMetadata $ graphData dag
+        }
+    
+    buildLeafNodeAssignments = nodeDecoration <$> references maskDAG
     
     dagSize = length $ references dag
 

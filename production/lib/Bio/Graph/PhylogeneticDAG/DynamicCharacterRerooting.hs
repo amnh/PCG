@@ -95,7 +95,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
       []      ->     (pdag, mempty, mempty)
       [_]     ->     (pdag, mempty, mempty)
       -- Trivial case
-      _:_:[]  -> let r = M.singleton (0,1) (getCache 1)
+      [_,_]   -> let r = M.singleton (0,1) (getCache 1)
                      c = M.singleton (1,0) (getCache 0)
                      m = r <> c
                  in  (PDAG2 $ fmap setDefaultFoci inputDag, m, V.generate 2 (const m))

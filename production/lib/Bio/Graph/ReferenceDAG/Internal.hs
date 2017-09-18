@@ -258,9 +258,10 @@ instance (Applicative f, Foldable f) => ToNewick (ReferenceDAG d e (f String)) w
         where
             (_, finalNewickStr) = generateNewick namedVec rootRef (S.singleton "NaN") -- Have to initialize accumulator set.
             namedVec = mapWithKey nameIt (references refDag) -- All network nodes have "htu\d" as nodeDecoration.
-            nameIt idx node = case getNodeType node of
-                NetworkNode -> node { nodeDecoration = pure $ "htu" <> (show idx) }
-                _           -> node
+            nameIt idx node =
+                case getNodeType node of
+                  NetworkNode -> node { nodeDecoration = pure $ "htu" <> show idx }
+                  _           -> node
             rootRef  = NE.head $ rootRefs refDag
             -- vec      = references refDag
 
@@ -713,12 +714,14 @@ generateNewick refs idx htuNumSet = (finalNumSet, finalStr)
                         label:_ -> (htuNumSet, label)
 
                 NetworkNode ->
-                    let childIdx          = head . toList $ IM.keys $ childRefs node
+                    let childIdx          = head . toList . IM.keys $ childRefs node
                         htuName           = toList $ nodeDecoration node
                         updatedHtuNumSet  = S.insert htuNumberStr htuNumSet
                         (updatedHtuNumSet', subtreeNewickStr) = generateNewick refs childIdx updatedHtuNumSet
-                        htuNumberStr     | htuName == [] = ""
-                                         | otherwise     = head htuName
+                        htuNumberStr =
+                            case htuName of
+                              []  -> ""
+                              x:_ -> x
 
                     in  if   S.member htuNumberStr htuNumSet
                         then ( htuNumSet                -- If the node is already a member, no update to htuNumberSet.
@@ -757,7 +760,7 @@ generateNewick refs idx htuNumSet = (finalNumSet, finalStr)
                                            )
                             where
                                 (updatedHtuNumSet', updatedNewickStr) = generateNewick refs singleChild htuNumSet
-                        []              -> error $ "Graph construction should prevent a 'root' node or 'tree' node with no children."
+                        []              -> error "Graph construction should prevent a 'root' node or 'tree' node with no children."
 
 
 -- |
@@ -1090,7 +1093,7 @@ tabulateAncestoralEdgesets dag =
         , childRefs      = zipWith (<>) childShape (getNetworkEdgeDatum i)
         }
       where
-        childShape = ancestorDatum <$ (childRefs point)
+        childShape = ancestorDatum <$ childRefs point
         point      = refs ! i
         parentVals = parentRefs point
         ancestorDatum =

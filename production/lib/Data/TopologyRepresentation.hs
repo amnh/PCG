@@ -113,7 +113,7 @@ instance NFData a => NFData (TopologyRepresentation a) where
 -- /O(n + m)/
 instance Ord a => Semigroup (TopologyRepresentation a) where
 
-    (TR lhs) <> (TR rhs) = TR . BM.fromAscPairListUnchecked . M.toAscList $ M.unionWith (\x _ -> x) (BM.toMap lhs) (BM.toMap rhs)
+    (TR lhs) <> (TR rhs) = TR . BM.fromAscPairListUnchecked . M.toAscList $ M.unionWith const (BM.toMap lhs) (BM.toMap rhs)
     
 
 instance Show a => Show (TopologyRepresentation a) where

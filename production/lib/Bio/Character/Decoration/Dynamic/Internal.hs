@@ -763,7 +763,10 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimization d) where
 
     show dec = (shownFoci <>) . unlines . (shownAlphabet:) . (shownCost:) $ f <$> pairs
       where
+        (shownAlphabet, shownCost, shownFoci) = renderingDecorationContext dec
+
         f (prefix, accessor) = prefix <> showStream (dec ^. characterAlphabet) (dec ^. accessor)
+
         pairs =
             [ ("Original Encoding   : ", encoded            )
             , ("Final         Gapped: ", finalGapped        )
@@ -774,43 +777,22 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimization d) where
             , ("Right Alignment     : ", rightAlignment     )
             ]
 
-        shownAlphabet = show $ dec ^. characterAlphabet
-
-        shownFoci = maybe "" renderFoci $ dec ^. traversalFoci
-
-        shownCost = unwords
-            [ "Cost                :"
-            , show (dec ^. characterCost)
-            , "{"
-            , show (dec ^. characterLocalCost)
-            , "}"
-            ]
-
 
 -- | (✔)
 instance EncodableStream d => Show (DynamicDecorationDirectOptimizationPostOrderResult d) where
 
     show dec = (shownFoci <>) . unlines . (shownAlphabet:) . (shownCost:) $ f <$> pairs
       where
+        (shownAlphabet, shownCost, shownFoci) = renderingDecorationContext dec
+
         f (prefix, accessor) = prefix <> showStream (dec ^. characterAlphabet) (dec ^. accessor)
+
         pairs =
           [ ("Original Encoding   : ", encoded            )
           , ("Preliminary   Gapped: ", preliminaryGapped  )
           , ("Preliminary Ungapped: ", preliminaryUngapped)
           , ("Left  Alignment     : ", leftAlignment      )
           , ("Right Alignment     : ", rightAlignment     )
-          ]
-
-        shownAlphabet = show $ dec ^. characterAlphabet
-
-        shownFoci = maybe "" renderFoci $ dec ^. traversalFoci
-
-        shownCost = unwords
-          [ "Cost                :"
-          , show (dec ^. characterCost)
-          , "{"
-          , show (dec ^. characterLocalCost)
-          , "}"
           ]
 
 
@@ -899,4 +881,30 @@ renderFoci foci = prefix <> body <> "\n"
     prefix   = "Traversal Foci {" <> show (length foci) <> "}\n"
     body     = sconcat . intersperse "\n" $ fmap g foci
     g (e,te) = "  Traversal Focus Edge: " <> show e <> " with network edges in topology: " <> show (toList te)
+
+
+-- renderingContext :: 
+renderingDecorationContext
+  :: ( HasCharacterAlphabet  s x
+     , HasCharacterCost      s y
+     , HasCharacterLocalCost s z
+     , HasTraversalFoci      s (Maybe TraversalFoci)
+     , Show x
+     , Show y
+     , Show z
+     ) => s -> (String, String, String)
+renderingDecorationContext dec = (shownAlphabet, shownCost, shownFoci)
+  where
+    shownAlphabet = show $ dec ^. characterAlphabet
+
+    shownFoci = maybe "" renderFoci $ dec ^. traversalFoci
+
+    shownCost = unwords
+        [ "Cost                :"
+        , show (dec ^. characterCost)
+        , "{"
+        , show (dec ^. characterLocalCost)
+        , "}"
+        ]
+
 

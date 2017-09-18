@@ -54,33 +54,26 @@ dotEdgeSet = foldMap (S.singleton . (fromNode &&& toNode)) . graphEdges
 
 
 dotChildMap :: Ord n => DotGraph n -> Map n (Set n)
-dotChildMap dot = fromSet getAdjacency nodes
+dotChildMap = sharedWork directionality
   where
-    getAdjacency = fromMaybe mempty . (`lookup` edges)
-    nodes = dotNodeSet dot 
-    edges = edgeMap dot
-
-    -- Get the map of directed edges.
-    -- Missing nodes with out degree 0.
-    edgeMap :: Ord n => DotGraph n -> Map n (Set n)
-    edgeMap = foldr mapFold mempty . dotEdgeSet
-      where
-        mapFold (k,v) m = insertWith (<>) k (S.singleton v) m
+    directionality (k,v) = insertWith (<>) k (S.singleton v)
 
   
 dotParentMap :: Ord n => DotGraph n -> Map n (Set n)
-dotParentMap dot = fromSet getAdjacency nodes
+dotParentMap = sharedWork directionality
   where
-    getAdjacency = fromMaybe mempty . (`lookup` edges)
-    nodes = dotNodeSet dot 
-    edges = edgeMap dot
+    directionality (k,v) = insertWith (<>) v (S.singleton k)
+    
 
+sharedWork :: Ord n => ((n, n) -> Map n (Set n) -> Map n (Set n)) -> DotGraph n -> Map n (Set n)
+sharedWork logic dot = fromSet getAdjacency setOfNodes
+  where
     -- Get the map of directed edges.
     -- Missing nodes with out degree 0.
-    edgeMap :: Ord n => DotGraph n -> Map n (Set n)
-    edgeMap = foldr mapFold mempty . dotEdgeSet
-      where
-        mapFold (k,v) m = insertWith (<>) v (S.singleton k) m
+    edgeMap      = foldr logic mempty . dotEdgeSet
+    getAdjacency = fromMaybe mempty . (`lookup` setOfEdges)
+    setOfEdges   = edgeMap    dot
+    setOfNodes   = dotNodeSet dot 
 
   
 toIdentifier :: GraphID -> String

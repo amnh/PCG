@@ -200,8 +200,8 @@ instance (ToXML s) => ToXML (ResolutionInformation s) where
             -- (ES edgeSet)  = subtreeEdgeSet info
             attrs         = []
             contents      = [ Right . toXML $ characterSequence info
-                            , Left  ("Total_subtree_cost" , (show $ totalSubtreeCost  info))
-                            , Left  ("Local_sequence_cost", (show $ localSequenceCost info))
+                            , Left  ("Total_subtree_cost" , show $ totalSubtreeCost  info)
+                            , Left  ("Local_sequence_cost", show $ localSequenceCost info)
                             , Right subtree
                             ]
             subtree       = xmlElement "Subtree_fields" [] subtreeFields

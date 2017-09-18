@@ -160,7 +160,7 @@ instance
             metadataSequence = hexmap f1 f2 f3 f4 f5 f6 arbitraryCharSeq
                 where
                     arbitraryCharSeq = characterSequence . NE.head . resolutions . nodeDecoration $ arbitraryNode
-                    arbitraryNode    = (references arbitraryRefDAG) ! arbitraryRootRef
+                    arbitraryNode    = references arbitraryRefDAG ! arbitraryRootRef
                     arbitraryRootRef        = NE.head $ rootRefs arbitraryRefDAG
                     (PDAG2 arbitraryRefDAG) = NE.head arbitraryPDAG
                     arbitraryPDAG           = toNonEmpty $ NE.head forests

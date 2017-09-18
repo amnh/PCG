@@ -401,7 +401,7 @@ instance Arbitrary DiscreteCharacters where
     arbitrary = fmap (DC . NE.fromList) . listOf1 . elements $ toList discreteStateValues
 
 
-getDiscreteCharacters :: DiscreteCharacters -> [Char]
+getDiscreteCharacters :: DiscreteCharacters -> String
 getDiscreteCharacters (DC x) = toList x
 
 
