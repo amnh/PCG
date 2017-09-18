@@ -17,25 +17,24 @@
 module Analysis.Scoring where
 
 
-import Analysis.Parsimony.Additive.Internal
-import Analysis.Parsimony.Fitch.Internal
-import Analysis.Parsimony.Sankoff.Internal
-import Analysis.Parsimony.Dynamic.DirectOptimization
-import Analysis.Parsimony.Dynamic.SequentialAlign
-import Bio.Character
-import Bio.Character.Decoration.Additive
-import Bio.Character.Decoration.Dynamic
-import Bio.Graph
-import Bio.Graph.Node
-import Bio.Graph.ReferenceDAG.Internal
-import Bio.Sequence
-import Control.Lens
-import Data.EdgeLength
-import Data.Hashable
+import           Analysis.Parsimony.Additive.Internal
+import           Analysis.Parsimony.Fitch.Internal
+import           Analysis.Parsimony.Sankoff.Internal
+import           Analysis.Parsimony.Dynamic.DirectOptimization
+import           Analysis.Parsimony.Dynamic.SequentialAlign
+import           Bio.Character
+import           Bio.Character.Decoration.Additive
+import           Bio.Character.Decoration.Dynamic
+import           Bio.Graph
+import           Bio.Graph.Node
+import           Bio.Graph.ReferenceDAG.Internal
+import           Bio.Sequence
+import           Control.Lens
+import           Data.EdgeLength
 import qualified Data.List.NonEmpty as NE
-import Data.MonoTraversable (Element)
-import Data.Semigroup
-import Prelude       hiding (lookup, zip, zipWith)
+import           Data.MonoTraversable      (Element)
+import           Data.Semigroup
+import           Prelude            hiding (lookup, zip, zipWith)
 
 
 -- |

@@ -245,7 +245,6 @@ instance (Applicative f, Foldable f) => ToNewick (PhylogeneticDAG2 e (f String) 
 instance ( ToXML u
          , ToXML v
          , ToXML w
-         , ToXML x
          , ToXML y
          , ToXML z
          ) => ToXML (PhylogeneticDAG2 e n u v w x y z)  where
