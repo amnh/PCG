@@ -78,7 +78,6 @@ isCompatableSubtopologyOf (TR x) (TR y) = isSubsetOf x y
 -}
 
 
-
 -- |
 -- Represents a collection of network edges and their mutually exclusive edges.
 --
@@ -93,7 +92,7 @@ instance Foldable TopologyRepresentation where
   
     foldMap f = foldMap f . toList
 
-    toList = BM.keys . unwrap
+    toList = BM.keysR . unwrap
     
 
 instance Ord a => Monoid (TopologyRepresentation a) where
@@ -119,7 +118,15 @@ instance Ord a => Semigroup (TopologyRepresentation a) where
 
 instance Show a => Show (TopologyRepresentation a) where
 
-    show = ("Network Edges of Topology: " <>) . show . toList . includedNetworkEdges
+    show x = unwords
+        [ "Network Edges of Topology:"
+        , showIncluded x
+        , "|"
+        , showExcluded x
+        ]
+      where
+        showIncluded = show . toList . includedNetworkEdges
+        showExcluded = show . toList . excludedNetworkEdges
 
 
 -- |
@@ -144,7 +151,7 @@ isolatedNetworkEdgeContext x y = TR $ BM.singleton y x
 --
 -- Retreive the list of network edge identifiers present in the topology.
 includedNetworkEdges :: TopologyRepresentation a -> Set a
-includedNetworkEdges = M.keysSet . BM.toMap . unwrap
+includedNetworkEdges = S.fromDistinctAscList . BM.keysR . unwrap
 
 
 -- |
@@ -152,7 +159,7 @@ includedNetworkEdges = M.keysSet . BM.toMap . unwrap
 --
 -- Retreive the list of network edge identifiers excluded from the topology.
 excludedNetworkEdges :: TopologyRepresentation a -> Set a
-excludedNetworkEdges = S.fromDistinctAscList . BM.keys . unwrap
+excludedNetworkEdges = M.keysSet . BM.toMap . unwrap
 
 
 -- |
@@ -161,7 +168,7 @@ excludedNetworkEdges = S.fromDistinctAscList . BM.keys . unwrap
 -- Retreive the list of network edge identifiers stored in the topology
 -- representation.
 mutuallyExclusivePairs :: TopologyRepresentation a -> [(a,a)]
-mutuallyExclusivePairs = BM.assocs . unwrap
+mutuallyExclusivePairs = BM.assocs . BM.twist . unwrap
 
 
 -- |
