@@ -106,6 +106,6 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
                     case otoList . parentRefs $ references dag ! j of
                       -- In the network edge case, we add also update the topology representation
                       x:y:_ ->
-                          let  mutuallyExclusiveIncidentEdge = if x == i then (x,j) else (y,j)
+                          let  mutuallyExclusiveIncidentEdge = if x == i then (y,j) else (x,j)
                           in   addEdgeToEdgeSet (i,j) . addNetworkEdgeToTopology (i,j) mutuallyExclusiveIncidentEdge
                       _     -> addEdgeToEdgeSet (i,j)

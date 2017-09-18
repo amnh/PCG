@@ -216,8 +216,8 @@ selectApplicableResolutions topology cache =
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
 preorderFromRooting
-  :: ( HasBlockCost u  v  w  x  y  z   Word Double
-     , HasBlockCost u' v' w' x' y' z'  Word Double
+  :: ( HasBlockCost u  v  w  x  y  z  Word Double
+     , HasBlockCost u' v' w' x' y' z' Word Double
      , HasTraversalFoci z  (Maybe TraversalFoci)
      , HasTraversalFoci z' (Maybe TraversalFoci)
 --     , Show z
