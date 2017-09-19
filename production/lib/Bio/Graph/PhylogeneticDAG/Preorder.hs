@@ -16,7 +16,9 @@
 
 module Bio.Graph.PhylogeneticDAG.Preorder
   ( preorderFromRooting
+  , preorderFromRooting''
   , preorderSequence'
+  , preorderSequence''
   ) where
 
 import           Bio.Character.Decoration.Dynamic
@@ -54,23 +56,150 @@ import           Prelude            hiding (lookup, zip, zipWith)
 type BlockTopologies = NonEmpty TraversalTopology
 
 
+type ParentalContext u v w x y z = NonEmpty (TraversalTopology, Word, Maybe (BLK.CharacterBlock u v w x y z))
+
+
 -- |
 -- Applies a traversal logic function over a 'ReferenceDAG' in a /pre-order/ manner.
 --
 -- The logic function takes a current node decoration,
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
-preorderSequence' :: ( HasBlockCost u  v  w  x  y  z  Word Double
---                     , HasBlockCost u' v' w' x' y' z' Word Double
-                     )
-                  => (u -> [(Word, u')] -> u')
-                  -> (v -> [(Word, v')] -> v')
-                  -> (w -> [(Word, w')] -> w')
-                  -> (x -> [(Word, x')] -> x')
-                  -> (y -> [(Word, y')] -> y')
-                  -> (z -> [(Word, z')] -> z')
-                  -> PhylogeneticDAG2 e n u  v  w  x  y  z
-                  -> PhylogeneticDAG2 e n u' v' w' x' y' z'
+--
+-- *The better version.*
+preorderSequence''
+  :: ( HasBlockCost u  v  w  x  y  z  Word Double
+--     , HasBlockCost u' v' w' x' y' z' Word Double
+     )
+  => (u -> [(Word, u')] -> u')
+  -> (v -> [(Word, v')] -> v')
+  -> (w -> [(Word, w')] -> w')
+  -> (x -> [(Word, x')] -> x')
+  -> (y -> [(Word, y')] -> y')
+  -> (z -> [(Word, z')] -> z')
+  -> PhylogeneticDAG2 e n u  v  w  x  y  z
+  -> PhylogeneticDAG2 e n u' v' w' x' y' z'
+preorderSequence'' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
+  where
+    refs          = references dag
+    dagSize       = length $ references dag
+    newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> defaultGraphMetadata . graphData
+    newReferences = V.generate dagSize g
+      where
+        g i = IndexData <$> const (memo ! i) <*> parentRefs <*> childRefs $ refs ! i
+
+    -- A "sequence" of the minimum topologies that correspond to each block.
+    sequenceOfBlockMinimumTopologies :: BlockTopologies
+    sequenceOfBlockMinimumTopologies = getTopologies blockMinimalResolutions
+      where
+        getTopologies = fmap topologyRepresentation
+
+        blockMinimalResolutions = mapWithKey f $ toBlocks sequenceWLOG
+
+        sequenceWLOG = characterSequence $ NE.head rootResolutions
+
+        f key _block = minimumBy (comparing extractedBlockCost)
+--                     $ (\x -> trace (show $ extractedBlockCost <$> toList x) x)
+                       rootResolutions
+          where
+            extractedBlockCost = blockCost . (! key) . toBlocks . characterSequence
+
+        rootResolutions = -- (\x -> trace ("Root resolutions: " <> show (length x)) x) $
+                          resolutions . nodeDecoration $ refs ! rootWLOG
+
+        rootWLOG = NE.head $ rootRefs dag
+
+--    memo :: Vector (PhylogeneticNode2 (CharacterSequence u' v' w' x' y' z') n)
+
+    -- Here we generate a memoized vector of the updated node decorations from
+    -- the pre-order traversal. This memoization technique relies on lazy
+    -- evaluation to compute the data for each vector index in the correct order
+    -- of dependancy with the root node(s) as the base case(es).
+    memo = V.generate dagSize g
+      where
+
+        -- This is the generating function.
+        -- It computes the updated node decoration for a given index of the vector.
+        g i = PNode2 newResolution nodeDatum
+          where
+
+            -- This is a singleton resolution cache to conform the the
+            -- PhylogeneticNode2 type requirements. It is the part of that gets
+            -- updated and requires a bunch of work to be performed.
+            newResolution    = mockResInfo datumResolutions newSequence
+
+            -- We just copy this value over from the previous decoration.
+            nodeDatum        = nodeDecorationDatum2 $ nodeDecoration node
+
+            -- The character sequence for the current index with the node decorations
+            -- updated to thier pre-order values with their final states assigned.
+            newSequence      = computeOnApplicableResolution'' f1 f2 f3 f4 f5 f6 parentalContext datumResolutions
+                
+            -- This is *really* important.
+            -- Here is where we collect the parental context for the current node.
+            --
+            -- In the root node context where there are no parents, this is easy.
+            -- We simply create the "sequence" with no information derived.
+            --
+            -- In the tree node case where there is only one parent, we grab the
+            -- parent context via memoization and match each parent block with
+            -- it's coresponding topology reprsentation.
+            --
+            -- In the network node case where there are two parents, we grab both
+            -- of the parent contexts via memoization and then select the block
+            -- from the parent that was connected to the current node on the
+            -- minimal display tree for that block.
+            parentalContext  = mapWithKey parentalAccessor sequenceOfBlockMinimumTopologies
+
+            parentalAccessor = 
+                case parentIndices of
+                  []    -> (\_ x -> (x, 0, Nothing))
+                  [p]   -> selectTopologyFromParentOptions $ (p, memo ! p):|[]
+                  x:y:_ -> selectTopologyFromParentOptions $ (x, memo ! x):|[(y, memo ! y)]
+            
+            datumResolutions = resolutions $ nodeDecoration node
+
+            node            = refs ! i
+            parentIndices   = otoList $ parentRefs node
+            -- In sparsely connected graphs (like ours) this will be effectively constant.
+            childPosition j = toEnum . length . takeWhile (/=i) . IM.keys . childRefs $ refs ! j
+
+            selectTopologyFromParentOptions
+              :: NonEmpty (Int, PhylogeneticNode2 (CharacterSequence u v w x y z) n)
+              -> Int
+              -> TraversalTopology
+              -> (TraversalTopology, Word, Maybe (BLK.CharacterBlock u v w x y z))
+            selectTopologyFromParentOptions nodeOptions key topology =
+                case NE.filter matchesTopology $ second (NE.head . resolutions) <$> nodeOptions of
+                  (x,y):_ -> (topology, childPosition x, Just $ toBlocks (characterSequence y) ! key)
+                  []      -> error $ unlines
+                                 [ unwords ["No Matching topology for Block", show key, "on Node", show i]
+                                 , "The minimal topologies for each block: " <> show sequenceOfBlockMinimumTopologies
+                                 , "And this was the problem topology: " <> show topology
+--                                 , "And these were our options: " <> show nodeOptions
+                                 ]
+              where
+                matchesTopology = (`isCompatableWithTopology` topology) . topologyRepresentation . snd
+              
+
+-- |
+-- Applies a traversal logic function over a 'ReferenceDAG' in a /pre-order/ manner.
+--
+-- The logic function takes a current node decoration,
+-- a list of parent node decorations with the logic function already applied,
+-- and returns the new decoration for the current node.
+preorderSequence'
+  :: ( HasBlockCost u  v  w  x  y  z  Word Double
+--     , HasBlockCost u' v' w' x' y' z' Word Double
+     )
+  => (u -> [(Word, u')] -> u')
+  -> (v -> [(Word, v')] -> v')
+  -> (w -> [(Word, w')] -> w')
+  -> (x -> [(Word, x')] -> x')
+  -> (y -> [(Word, y')] -> y')
+  -> (z -> [(Word, z')] -> z')
+  -> PhylogeneticDAG2 e n u  v  w  x  y  z
+  -> PhylogeneticDAG2 e n u' v' w' x' y' z'
 preorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
   where
     newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> defaultGraphMetadata . graphData
@@ -158,6 +287,72 @@ mockResInfo currentResolutions newSequence =
       ) $ NE.head currentResolutions
 
 
+computeOnApplicableResolution''
+  :: (u -> [(Word, u')] -> u')
+  -> (v -> [(Word, v')] -> v')
+  -> (w -> [(Word, w')] -> w')
+  -> (x -> [(Word, x')] -> x')
+  -> (y -> [(Word, y')] -> y')
+  -> (z -> [(Word, z')] -> z')
+  -> ParentalContext u' v' w' x' y' z'
+  -> ResolutionCache (CharacterSequence u v w x y z)
+--  -> [(Word, ResolutionInformation (CharacterSequence u' v' w' x' y' z'))]
+  -> CharacterSequence u' v' w' x' y' z'
+computeOnApplicableResolution'' f1 f2 f3 f4 f5 f6 parentalContexts currentResolutions = fromBlocks $ mapWithKey f parentalContexts
+  where
+    f key (topology, childRef, maybeParentBlock) = BLK.hexZipWith f1 f2 f3 f4 f5 f6 childBlock parentBlock
+      where
+        childBlock  = selectChildBlockByTopology currentResolutions key topology
+        parentBlock =
+            case maybeParentBlock of
+              Just v  -> BLK.hexmap g g g g g g v
+              Nothing -> BLK.hexmap h h h h h h childBlock
+
+        g :: a -> [(Word, a)]
+        g x = [(childRef, x)]
+
+        h :: a -> [(Word, b)]
+        h = const []
+
+
+{-        
+     -- We can't use this below because the monomorphism restriction is quite dumb at deduction.
+     -- getBlock = (! key) . toBlocks . characterSequence
+        currentBlock = ((! key) . toBlocks . characterSequence) $ selectApplicableResolutions es currentResolutions
+        parentBlocks =
+            case second ((! key) . toBlocks . characterSequence) <$> parentalResolutions of
+              []   -> let c = const []
+                      in  BLK.hexmap c c c c c c currentBlock
+              x:xs -> let
+                  -- We can't use this below because the monomorphism restriction is quite dumb at deduction.
+                  --      f   = zip (fst <$> (x:xs))
+                          val = snd <$> x:xs
+                          trs = BLK.hexTranspose val
+                      in  BLK.hexmap
+                            (zip (fst <$> (x:xs)))
+                            (zip (fst <$> (x:xs)))
+                            (zip (fst <$> (x:xs)))
+                            (zip (fst <$> (x:xs)))
+                            (zip (fst <$> (x:xs)))
+                            (zip (fst <$> (x:xs)))
+                              trs
+-}
+
+{--}
+    selectChildBlockByTopology
+              :: ResolutionCache (CharacterSequence u v w x y z) -- NonEmpty (Int, PhylogeneticNode2 (CharacterSequence u v w x y z) n)
+              -> Int
+              -> TraversalTopology 
+              -> BLK.CharacterBlock u v w x y z
+    selectChildBlockByTopology childOptions key topology =
+            case NE.filter matchesTopology childOptions of
+              x:_ -> toBlocks (characterSequence x) ! key
+              []  -> error "No Matching topology in the child!!!!!"
+          where
+            matchesTopology = (== topology) . topologyRepresentation
+{--}
+
+
 computeOnApplicableResolution
   :: (u -> [(Word, u')] -> u')
   -> (v -> [(Word, v')] -> v')
@@ -208,6 +403,20 @@ selectApplicableResolutions topology cache =
       [x] -> x 
       xs  -> maximumBy (comparing (length . subtreeEdgeSet)) xs
 
+
+preorderFromRooting''
+  :: ( HasBlockCost u  v  w  x  y  z  Word Double
+     , HasBlockCost u' v' w' x' y' z' Word Double
+     , HasTraversalFoci z  (Maybe TraversalFoci)
+     , HasTraversalFoci z' (Maybe TraversalFoci)
+     --     , Show z
+     )
+       => (z -> [(Word, z')] -> z')
+       -> Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
+       -> Vector (Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
+       -> PhylogeneticDAG2 e' n' u' v' w' x' y' z
+       -> PhylogeneticDAG2 e' n' u' v' w' x' y' z'
+preorderFromRooting'' = preorderFromRooting
 
 -- |
 -- Applies a traversal logic function over a 'ReferenceDAG' in a /pre-order/ manner.

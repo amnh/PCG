@@ -127,7 +127,7 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
           edgeCostMapping
           contextualNodeDatum
               
-        . preorderSequence'
+        . preorderSequence''
           additivePreOrder
           fitchPreOrder
           additivePreOrder
