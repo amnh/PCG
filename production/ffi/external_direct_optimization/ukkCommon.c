@@ -65,11 +65,11 @@ extern int sabG,
 extern size_t checkPoint_width;
 extern int    checkPoint_cost;
 
-extern size_t furthestReached;
-extern size_t checkPoint_onDist;
-extern size_t endA,
-              endB,
-              endC;
+// extern size_t furthestReached_global;
+// extern size_t checkPoint_onDist;
+// extern size_t endA,
+//               endB,
+//               endC;
 
 extern int    completeFromInfo;
 // extern Counts counts;
@@ -229,6 +229,7 @@ static inline size_t allocGetSubIndex( alignment_mtx_t *inputMtx
     assert(lessMidd_adjusted >= 0 && lessMidd_adjusted < CELLS_PER_BLOCK);
     */
 
+    printf("fsm_state %2d, numStates %2zu\n", fsm_state, numStates);
     assert( fsm_state >= 0 && fsm_state < (int) numStates );
 
     index = (index + lessMidd_adjusted) * CELLS_PER_BLOCK;
@@ -658,13 +659,9 @@ void setup( affine_costs_t  *affineCosts
     for (size_t fsm_state = 0; fsm_state < MAX_STATES; fsm_state++) {
         transitions( fsmState_transitions, fsm_state );
 
-        if (countThisTransition( fsmState_transitions, MATCH_SUB ) == 0) {
-            continue;     // Must be at least one match
-        }
-
-        if (countThisTransition( fsmState_transitions, INS ) > 1) {
-            continue;     // Can't be more than 1 insert fsm_state!  (7/7/1998)   // TODO: document why this makes sense
-        }
+        // TODO: document why this makes sense
+        if (countThisTransition( fsmState_transitions, MATCH_SUB ) == 0) continue; // Must be at least one match
+        if (countThisTransition( fsmState_transitions, INS       )  > 1) continue; // Can't be more than 1 insert fsm_state!  (7/7/1998)
 
 /* Not doing this
         #ifdef LIMIT_TO_GOTOH
@@ -675,9 +672,9 @@ void setup( affine_costs_t  *affineCosts
         #endif
 */
         fsmStateArrays->fsmState_num[fsmState_reindex_num] = fsm_state; // compacting possible fsm states into smaller set.
-                                                                          // From now on can just loop over fsmState_reindex_num,
-                                                                          // which means continuing to skip meaningless FSM
-                                                                          // states.
+                                                                        // From now on can just loop over fsmState_reindex_num,
+                                                                        // which means continuing to skip meaningless FSM
+                                                                        // states.
         printf("%zu %zu\n", fsmState_reindex_num, fsm_state);
 
         // Set up possible neighbours for fsm states (neighbours[])
@@ -703,7 +700,7 @@ void setup( affine_costs_t  *affineCosts
         //
         // TODO: Why not hard code these arrays? They could be brought back if we ever move to larger alphabet sizes.
         if (countThisTransition( fsmState_transitions, INS ) > 0) { // TODO: hasn't this already been eliminated by the continue above?
-            cost = affineCosts->gapExtendCost;           /* Can only continue 1 insert at a time. */ // TODO: looks this up
+            cost = affineCosts->gapExtendCost;           /* Can only continue 1 insert at a time. */ // TODO: look this up
             two_fsmStates_continuing = 0;
         } else if (countThisTransition( fsmState_transitions, MATCH_SUB ) == 3) {
             cost = affineCosts->mismatchCost;            /* No indel */
@@ -712,7 +709,7 @@ void setup( affine_costs_t  *affineCosts
             cost = affineCosts->gapExtendCost;        /* Continuing delete */ // Two fsm states must match
             two_fsmStates_continuing = 1;
         } else {
-            cost  = 2 * affineCosts->gapExtendCost;    /* Continuing 2 deletes */
+            cost = 2 * affineCosts->gapExtendCost;    /* Continuing 2 deletes */
             two_fsmStates_continuing = 0;
         }
 
@@ -731,7 +728,6 @@ void setup( affine_costs_t  *affineCosts
 
     for (size_t stateIdx1 = 0; stateIdx1 < inputChars->numStates; stateIdx1++) {
         for (size_t stateIdx2 = 0; stateIdx2 < inputChars->numStates; stateIdx2++) {
-
 
             cost = 0;
             transitions( from, fsmStateArrays->fsmState_num[stateIdx1] );

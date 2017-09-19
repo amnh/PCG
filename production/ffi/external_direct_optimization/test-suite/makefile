@@ -32,6 +32,8 @@ object_files      = c_alignment_interface.o \
 
 all : test_interface # test_initialization
 
+
+
 clean :
 	rm -f *.o *.hi *.out
 	rm -rf *.dSYM
@@ -56,6 +58,13 @@ test_interface : interface_driver.c $(necessary_c_files) $(necessary_h_files)
 	rm -f *.o
 	gcc -std=c11 $(sanity-warnings) -g -c  $(necessary_c_files)
 	gcc -std=c11 $(sanity-warnings) -o interface_driver -g interface_driver.c $(object_files)
+
+
+######### Test the actual C interface that Hakell interact with.
+test_interface_long : interface_driver_long_seqs.c $(necessary_c_files) $(necessary_h_files)
+	rm -f *.o
+	gcc -std=c11 $(sanity-warnings) -g -c  $(necessary_c_files)
+	gcc -std=c11 $(sanity-warnings) -o interface_driver_long -g interface_driver_long_seqs.c $(object_files)
 
 
 ######### Test the actual C interface that Hakell interact with.

@@ -18,27 +18,27 @@
  *
  * This program calculates the edit cost for optimally aligning three characters
  * under linear gap costs. It also determines an optimal alignment.
- * A generalisation of Ukkonen's algorithm to three character is used.
+ * A generalisation of Ukkonen's algorithm to three dynamic characters is used.
  * Check-pointing is used to recover the alignment.
  * Average time complexity O(n*log(d) + d^3), space complexity O(d^2).
  * For more details, see
  *
  *  D. R. Powell, L. Allison and T. I. Dix,
- *  "Fast, Optimal Alignment of Three Characters Using Linear Gap Costs"
+ *  "Fast, Optimal Alignment of Three Sequences Using Linear Gap Costs"
  *  Journal of Theoretical Biology, 207:3, pp 325-336.
  *
  *  D. R. Powell, L. Allison and T. I. Dix,
  *  "A Versatile Divide and Conquer Technique for Optimal String Alignment
  *  Information Processing Letters, 1999, 70:3, pp 127-139.
  *
- *  D. R. Powell, "Algorithms for Character Alignment",
+ *  D. R. Powell, "Algorithms for Sequence Alignment",
  *  PhD Thesis, Monash University, 2001, Chapter 4.
  */
 
 
 // Similar to ukk.alloc.new but uses % trick to use less memory, by
 // not retrieving the alignment. Note also, the 'computed' field is
-// used to store which cost (actually d + costOffset_global) the cell contains
+// used to store which cost (actually d + costOffset_global) the cell contains,
 // instead of simply whether the cell has been computed or not.
 
 // NOTE: all ab and ac refs below are actually lesser_longer and lesser_middle
@@ -71,23 +71,21 @@ long costOffset_global = 1;    // must be signed for future comparisons
 long finalCost_global;
 
 int furthestReached_global = -1;
-int checkPoint_editDist_global;   // Flag for whether to use edit distance of cost as the check pointing criterion.
-                                  // Check pointing on the edit distance is only done for first iteration, when the final
-                                  // cost is unknown.
+int useCP_editDist_global;   // Flag for whether to use edit distance of cost as the check pointing criterion.
+                             // Check pointing on the edit distance is only done for first iteration, when the final cost is unknown.
 
 
 // Use these globals cause don't want to pass 'em around, and they're needed
 // by the withinMatrix func. Be nice to have closures :-)
 // Must be signed; later used as possibly negative.
-int start_lessLong_idx_diff_global = 0,
-    start_lessMidd_idx_diff_global = 0,
+int start_lessMidd_idx_diff_global = 0,
+    start_lessLong_idx_diff_global = 0,
     startCost_global               = 0,
     startState_global              = 0;
 
 
-// Set to 1 for base cases, so that the 'from' info that the alignment
-// can be retrieved from is set.
-int completeFromInfo_global = 0;
+int completeFromInfo_global = 0; // Set to 1 for base cases, so that the `from` info for that alignment
+                                 // can be retrieved from is set.
 
 int checkPoint_width_global;
 int checkPoint_cost_global;
@@ -290,6 +288,7 @@ int doUkkInLimits( int             start_lessMidd_idx_diff
                  , fsm_arrays_t   *fsmStateArrays
                  )
 {
+    if(DEBUG_CALL_ORDER) printf("--doUkkInLimits\n");
     assert( startCost >= 0 && finalCost_local >= 0 );
 
     start_lessMidd_idx_diff_global = start_lessMidd_idx_diff;
@@ -386,6 +385,7 @@ int doUkkInLimits( int             start_lessMidd_idx_diff
                               , inputChars
                               , fsmStateArrays
                               );
+                printf("---Reentering doUkkInLimits\n");
             } while (editDist < finalDist);
 
             assert(editDist == finalDist);
@@ -413,6 +413,7 @@ int doUkkInLimits( int             start_lessMidd_idx_diff
                  , resultChars
                  );
 
+        if(DEBUG_CALL_ORDER) printf("---Ending doUkkInLimits\n");
         completeFromInfo_global = 0;
         return find_bestDist( final_lessLong_idx_diff
                             , final_lessMidd_idx_diff
@@ -451,6 +452,7 @@ int doUkkInLimits( int             start_lessMidd_idx_diff
                           , inputChars
                           , fsmStateArrays
                           );  // Need this (?) otherwise if finalState != 0 we may need larger than expected slice size.
+            if(DEBUG_CALL_ORDER) printf("---Reentering doUkkInLimits 2\n");
             editDist = Ukk( final_lessMidd_idx_diff
                           , final_lessLong_idx_diff
                           , curCost
@@ -459,6 +461,7 @@ int doUkkInLimits( int             start_lessMidd_idx_diff
                           , inputChars
                           , fsmStateArrays
                           );
+            if(DEBUG_CALL_ORDER) printf("---Reentering doUkkInLimits 3\n");
 
         } while (editDist < finalDist);
 
@@ -507,6 +510,7 @@ int getSplitRecurse( int             start_lessMidd_idx_diff
                    , fsm_arrays_t   *fsmStateArrays
                    )
 {
+    if(DEBUG_CALL_ORDER) printf("---getSplitRecurse\n");
     // Get 'from' and checkPoint data. Then recurse
     size_t finalLen;
     int    checkPoint_editDist_global;
@@ -518,6 +522,7 @@ int getSplitRecurse( int             start_lessMidd_idx_diff
                                                         , finalCell.fsm_state
                                                         , inputChars->numStates
                                                         );
+    if(DEBUG_CALL_ORDER) printf("---Reentering getSplitRecurse \n");
 
     ukk_cell_t *finalUkkCell = get_ukk_cell( final_lessMidd_idx_diff
                                            , final_lessLong_idx_diff
@@ -525,7 +530,7 @@ int getSplitRecurse( int             start_lessMidd_idx_diff
                                            , finalState
                                            , inputChars->numStates
                                            );
-
+    if(DEBUG_CALL_ORDER) printf("---Reentering getSplitRecurse 2\n");
     assert(    startCost       >= 0
             && finalCost_local >= 0 );
 
@@ -546,6 +551,7 @@ int getSplitRecurse( int             start_lessMidd_idx_diff
                                                     , finalCell.fsm_state
                                                     , inputChars->numStates
                                                     )->editDist;
+    if(DEBUG_CALL_ORDER) printf("---Reentering getSplitRecurse 2\n");
 
     assert(checkPoint_editDist_global >= 0);
 
@@ -626,6 +632,7 @@ void traceBack( int           start_lessMidd_idx_diff
               , characters_t *resultChars
               )
 {
+    if(DEBUG_CALL_ORDER) printf("traceback\n");
     int lessMidd_idx_diff = final_lessMidd_idx_diff,
         lessLong_idx_diff = final_lessLong_idx_diff,
         editDistance      = finalCost_local,
@@ -943,6 +950,7 @@ int find_bestDist( int    lessMidd_idx_diff
                  , size_t numStates
                  )
 {
+    if(DEBUG_CALL_ORDER) printf("---find_bestDist\n");
     return findBest( lessMidd_idx_diff
                    , lessLong_idx_diff
                    , input_editDist
@@ -959,6 +967,7 @@ int find_bestState( int    lessMidd_idx_diff
                   , size_t numStates
                   )
 {
+    if(DEBUG_CALL_ORDER) printf("---find_bestState\n");
     return findBest( lessMidd_idx_diff
                    , lessLong_idx_diff
                    , input_editDist
@@ -981,6 +990,7 @@ int findBest( int    lessMidd_idx_diff
             , size_t numStates
             )
 {
+    if(DEBUG_CALL_ORDER) printf("---findBest\n");
     int best_editDist = -INFINITY;
     int bestState     = -1;
 
@@ -1004,6 +1014,7 @@ int findBest( int    lessMidd_idx_diff
                                       , curState
                                       , numStates
                                       )->editDist;
+          if(DEBUG_CALL_ORDER) printf("---Reentering findBest\n");
           bestState = curState;
         }
     }
@@ -1035,12 +1046,7 @@ int Ukk( int             lessMidd_idx_diff
        , fsm_arrays_t   *fsmStateArrays
        )
 {
-    ukk_cell_t *currentUkkCell = get_ukk_cell( lessMidd_idx_diff
-                                             , lessLong_idx_diff
-                                             , editDistance
-                                             , fsm_state
-                                             , inputChars->numStates
-                                             );
+    if(DEBUG_CALL_ORDER) printf("---Ukk\n");
 
     // The current cell isn't in the matrix, return lowest possible edit distance.
     if ( !withinMatrix( lessMidd_idx_diff
@@ -1052,6 +1058,12 @@ int Ukk( int             lessMidd_idx_diff
         return -INFINITY;
     }
     // Recursion is done? Don't update anything and return edit distance of current cell.
+    ukk_cell_t *currentUkkCell = get_ukk_cell( lessMidd_idx_diff
+                                             , lessLong_idx_diff
+                                             , editDistance
+                                             , fsm_state
+                                             , inputChars->numStates
+                                             );
     if ( currentUkkCell->computed == editDistance + costOffset_global ) return currentUkkCell->editDist;
 
 /*
@@ -1067,8 +1079,6 @@ int Ukk( int             lessMidd_idx_diff
     // Recursion is not done.
     counts_global.cells++;
 
-    printf("---Calling calcUkk\n");
-
     calcUkk( lessMidd_idx_diff
            , lessLong_idx_diff
            , editDistance
@@ -1080,15 +1090,22 @@ int Ukk( int             lessMidd_idx_diff
 
     // Store away check point from info in necessary
     if (     editDistance >= checkPoint_cost_global
-         && (editDistance  < checkPoint_cost_global + checkPoint_width_global )
+         && (editDistance  < checkPoint_cost_global + checkPoint_width_global)
        ) {
         // Update checkpoint cell edit distance to match ukk matrix edit distance.
+        currentUkkCell = get_ukk_cell( lessMidd_idx_diff
+                                     , lessLong_idx_diff
+                                     , editDistance
+                                     , fsm_state
+                                     , inputChars->numStates
+                                     );
         get_checkPoint_cell( lessMidd_idx_diff
                            , lessLong_idx_diff
                            , editDistance
                            , fsm_state
                            , inputChars->numStates
                            )->editDist = currentUkkCell->editDist;
+        if(DEBUG_CALL_ORDER) printf("---Reentering Ukk\n");
 
         // Update checkpoint cell cost to be edit distance.
         get_checkPoint_cell( lessMidd_idx_diff
@@ -1096,14 +1113,19 @@ int Ukk( int             lessMidd_idx_diff
                            , editDistance
                            , fsm_state
                            , inputChars->numStates
-                           )->cost = editDistance + 1;          // Note adding 1 so cost ==0 signifies unused cell
+                           )->cost = editDistance + 1;          // Note: adding 1, so cost == 0 signifies unused cell.
+        if(DEBUG_CALL_ORDER) printf("---Reentering Ukk 2\n");
     }
 
     // If the current ukkonen matrix cell's edit distance > traversal point of alignment, then update furthest reached to be edit distance.
-    if ( currentUkkCell->editDist > furthestReached_global
-       ) {
-        furthestReached_global = currentUkkCell->editDist;
-    }
+    currentUkkCell = get_ukk_cell( lessMidd_idx_diff
+                                 , lessLong_idx_diff
+                                 , editDistance
+                                 , fsm_state
+                                 , inputChars->numStates
+                                 );
+    if (currentUkkCell->editDist > furthestReached_global) furthestReached_global = currentUkkCell->editDist;
+
     // printf("Ukk: Return edit dist.\n");
     return currentUkkCell->editDist;
 }
@@ -1127,7 +1149,7 @@ void initializeGlobals( characters_t *inputChars )
     startCost_global  = 0;
     startState_global = 0;
 
-    checkPoint_editDist_global = 1;
+    useCP_editDist_global = 1;
 
     checkPoint_width_global = inputChars->maxSingleStep;
 
@@ -1159,6 +1181,7 @@ int align3d_ukk( dyn_character_t *retLesserChar
                , fsm_arrays_t    *fsmStateArrays
                )
 {
+    if(DEBUG_CALL_ORDER) printf("---align3d_ukk\n");
     initializeGlobals( inputChars );
 
     // Set up check point matrix.
@@ -1175,14 +1198,14 @@ int align3d_ukk( dyn_character_t *retLesserChar
     ukk_dummyCell->from.cost      = 0;
     ukk_dummyCell->from.fsm_state = 0;
 
-    ukk_dummyCell->from.lessLong_idx_diff = 0;
     ukk_dummyCell->from.lessMidd_idx_diff = 0;
+    ukk_dummyCell->from.lessLong_idx_diff = 0;
 
     resultChars->lesserIdx = 0;
     resultChars->longerIdx = 0;
     resultChars->middleIdx = 0;
 
-    int cur_editDist = 0,        // signed for comparison with lesserLen
+    int cur_editDist = -1,       // signed for comparison with lesserLen
         start_editDist,          // signed because it gets assigned from cur_editDist
         final_lessLong_idx_diff, // signed because start as negative
         final_lessMidd_idx_diff, // signed because start as negative
@@ -1191,23 +1214,23 @@ int align3d_ukk( dyn_character_t *retLesserChar
 
 
     // Calculate starting position, where elements are no longer the same for all three characters
-    cur_editDist = 0;
-    are_equal    =    inputChars->lesserStr[cur_editDist] == inputChars->longerStr[cur_editDist]
-                   && inputChars->lesserStr[cur_editDist] == inputChars->middleStr[cur_editDist];
+    int temp_editDist = 0;
+    are_equal =    inputChars->lesserStr[temp_editDist] == inputChars->longerStr[temp_editDist]
+                && inputChars->lesserStr[temp_editDist] == inputChars->middleStr[temp_editDist];
 
-    while (   cur_editDist < inputChars->lesserLen
+    while (   temp_editDist < inputChars->lesserLen
            && are_equal
           ) {
-        cur_editDist++;
+        temp_editDist++;
         counts_global.innerLoop++;
 
-        are_equal =    inputChars->lesserStr[cur_editDist] == inputChars->longerStr[cur_editDist]
-                    && inputChars->lesserStr[cur_editDist] == inputChars->middleStr[cur_editDist];
+        are_equal =    inputChars->lesserStr[temp_editDist] == inputChars->longerStr[temp_editDist]
+                    && inputChars->lesserStr[temp_editDist] == inputChars->middleStr[temp_editDist];
     }
-    get_ukk_cell( 0, 0, 0, 0, inputChars->numStates )->editDist = cur_editDist;
-    get_ukk_cell( 0, 0, 0, 0, inputChars->numStates )->computed = (int) costOffset_global; // originally costOffset_global + 0??
+    get_ukk_cell( 0, 0, 0, 0, inputChars->numStates )->editDist = temp_editDist;
+    get_ukk_cell( 0, 0, 0, 0, inputChars->numStates )->computed = costOffset_global; // originally costOffset_global + 0??
 
-    start_editDist = cur_editDist;
+    start_editDist = temp_editDist;
 
     final_lessMidd_idx_diff = inputChars->lesserLen - inputChars->middleLen;
     final_lessLong_idx_diff = inputChars->lesserLen - inputChars->longerLen; // So these two are negative.
@@ -1216,6 +1239,9 @@ int align3d_ukk( dyn_character_t *retLesserChar
     // inputChars->lesserLen =
     // inputChars->middleLen =
     // inputChars->longerLen =
+
+    useCP_editDist_global  = 1;
+    checkPoint_cost_global = INFINITY;
 
     do {
         cur_editDist++;
@@ -1227,22 +1253,20 @@ int align3d_ukk( dyn_character_t *retLesserChar
            , inputChars
            , fsmStateArrays
            );
-
+        if(DEBUG_CALL_ORDER) printf("----Reentering align3d_ukk\n");
         if (DEBUG_3D) {
             fprintf(stderr, "Furthest reached for cost %2d is %2d.\n",
                     cur_editDist, furthestReached_global);
         }
 
         int half_lesserLen = inputChars->lesserLen / 2;
-        if (   checkPoint_editDist_global
+        if (   useCP_editDist_global
             && furthestReached_global >= half_lesserLen
            ) {
-            checkPoint_cost_global     = cur_editDist + 1;
-            checkPoint_editDist_global = 0;
+            checkPoint_cost_global = cur_editDist + 1;
+            useCP_editDist_global  = 0;
 
-            if (DEBUG_3D) {
-                fprintf(stderr, "Setting checkPoint_cost_global: %2d\n", checkPoint_cost_global);
-            }
+            if (DEBUG_3D) fprintf(stderr, "Setting checkPoint_cost_global: %2d\n", checkPoint_cost_global);
         }
     } while( find_bestDist( final_lessMidd_idx_diff
                           , final_lessLong_idx_diff
@@ -1257,15 +1281,13 @@ int align3d_ukk( dyn_character_t *retLesserChar
                          ) == inputChars->lesserLen
           );
 
-    checkPoint_editDist_global = 0;
-    finalCost_global           = cur_editDist;
-
     // Recurse for alignment
     int finalState = find_bestState( final_lessMidd_idx_diff
                                    , final_lessLong_idx_diff
                                    , finalCost_global
                                    , inputChars->numStates
                                    );
+    if(DEBUG_CALL_ORDER) printf("---Reentering align3d_ukk 2\n");
 
     // If there's no cost, can't run algorithm. Probably first run. Start again.
     if ( get_ukk_cell( final_lessMidd_idx_diff
@@ -1306,8 +1328,8 @@ int align3d_ukk( dyn_character_t *retLesserChar
                                   , 0
                                   , 0
                                   , start_editDist
-                                  , final_lessLong_idx_diff
                                   , final_lessMidd_idx_diff
+                                  , final_lessLong_idx_diff
                                   , finalCost_global
                                   , finalState
                                   , inputChars->lesserLen
@@ -1357,10 +1379,11 @@ int calcUkk( int             lessMidd_idx_diff
            , fsm_arrays_t   *fsmStateArrays
            )
 {
-    // if (DEBUG_CALL_ORDER) {
-        printf("calcUkk lessMidd_idx_diff: %d, lessLong_idx_diff: %d, input_editDist: %d\n", lessMidd_idx_diff, lessLong_idx_diff, input_editDist);
+    if (DEBUG_CALL_ORDER) {
+        printf("---calcUkk\n");
+        printf("lessMidd_idx_diff: %d, lessLong_idx_diff: %d, input_editDist: %d\n", lessMidd_idx_diff, lessLong_idx_diff, input_editDist);
         fflush(stdout);
-    // }
+    }
 
     // TODO: document all of these
     int neighbour = fsmStateArrays->neighbours[toState];
@@ -1375,9 +1398,13 @@ int calcUkk( int             lessMidd_idx_diff
         start_transitionCost,
         best_editDist,
         fromCost,
-        editDist,
+        editDist_tmp,
         curCost,
         this_editDist;
+
+    // Initialise from info if necessary
+    from_t previous;
+    previous.cost = -1;
 
     ukk_cell_t *nextUkkCell = get_ukk_cell( lessMidd_idx_diff
                                           , lessLong_idx_diff
@@ -1386,41 +1413,38 @@ int calcUkk( int             lessMidd_idx_diff
                                           , inputChars->numStates
                                           );
 
-    if (DEBUG_CALL_ORDER) {
-        int indent_globali_global = 0;
-        char indent_global[1000];
+    // if (DEBUG_CALL_ORDER) {
+    //     int indent_globali_global = 0;
+    //     char indent_global[1000];
 
-        indent_global[indent_globali_global] = 0;
+    //     indent_global[indent_globali_global] = 0;
 
-        fprintf( stderr
-               , "%s CalcUKK(lessLong_idx_diff = %2d, lessMidd_idx_diff = %2d, input_editDist = %2d, toState = %2d)\n"
-               , indent_global
-               , lessLong_idx_diff
-               , lessMidd_idx_diff
-               , input_editDist
-               , toState
-               );
+    //     fprintf( stderr
+    //            , "%s CalcUKK(lessLong_idx_diff = %2d, lessMidd_idx_diff = %2d, input_editDist = %2d, toState = %2d)\n"
+    //            , indent_global
+    //            , lessLong_idx_diff
+    //            , lessMidd_idx_diff
+    //            , input_editDist
+    //            , toState
+    //            );
 
-        indent_global[indent_globali_global++] = ' ';
-        indent_global[indent_globali_global++] = ' ';
-        indent_global[indent_globali_global]   = 0;
-    }
+    //     indent_global[indent_globali_global++] = ' ';
+    //     indent_global[indent_globali_global++] = ' ';
+    //     indent_global[indent_globali_global]   = 0;
+    // }
 
     assert( nextUkkCell->computed < input_editDist + costOffset_global );
 
     best_editDist = -INFINITY;
 
-    // Initialise from info if necessary
-    from_t from;
-    from.cost = -1;
 
     if (    input_editDist >= checkPoint_cost_global
          && input_editDist  < checkPoint_cost_global + checkPoint_width_global
        ) {
-        from.lessLong_idx_diff = lessLong_idx_diff;
-        from.lessMidd_idx_diff = lessMidd_idx_diff;
-        from.cost        = input_editDist;
-        from.fsm_state   = toState;
+        previous.lessLong_idx_diff = lessLong_idx_diff;
+        previous.lessMidd_idx_diff = lessMidd_idx_diff;
+        previous.cost              = input_editDist;
+        previous.fsm_state         = toState;
     }
 
     // Figure out which of the three transitions are deletes.
@@ -1430,8 +1454,8 @@ int calcUkk( int             lessMidd_idx_diff
         , &isDeleteState_C
         );
 
-    lessLong_idx_diff1 = lessLong_idx_diff - isDeleteState_A + isDeleteState_B;
     lessMidd_idx_diff1 = lessMidd_idx_diff - isDeleteState_A + isDeleteState_C;
+    lessLong_idx_diff1 = lessLong_idx_diff - isDeleteState_A + isDeleteState_B;
 
     // calculate if it's a valid diagonal
     if (    lessLong_idx_diff1 >= -inputChars->longerLen
@@ -1446,12 +1470,11 @@ int calcUkk( int             lessMidd_idx_diff
 
             start_transitionCost = (fsmStateArrays->transitionCost)[fromState * MAX_STATES + toState];
 
-            fromCost = -INFINITY;
-            editDist = -INFINITY;
+            fromCost     = -INFINITY;
+            editDist_tmp = -INFINITY;
             if (DEBUG_EDIT_DIST) printf("calcUkk l. 1451 edit dist: -INFINITY\n");
 
             curCost      = input_editDist - start_transitionCost - fsmStateArrays->fsmState_continuationCost[toState];
-            curEditDist  = -1;
             prevEditDist = Ukk( lessMidd_idx_diff1
                               , lessLong_idx_diff1
                               , curCost
@@ -1460,6 +1483,9 @@ int calcUkk( int             lessMidd_idx_diff
                               , inputChars
                               , fsmStateArrays
                               );
+            if(DEBUG_CALL_ORDER) printf("---Reentering calcUkk 2\n");
+            curEditDist  = -1;
+
             if (DEBUG_EDIT_DIST) printf("calcUkk l. 1463 curEditDist %d; prevEditDist: %d\n", curEditDist, prevEditDist);
             // if ( prevEditDist >= 0 ) {
             //     printf("prevEditDist: %d, isDeleteState_A: %d, inputChars->lesserLen: %d\n", prevEditDist, isDeleteState_A, inputChars->lesserLen);
@@ -1480,87 +1506,92 @@ int calcUkk( int             lessMidd_idx_diff
                                    ) == 1 )
                ) {
                 fromCost = curCost;
-                editDist = prevEditDist + isDeleteState_A;
-                if (DEBUG_EDIT_DIST) printf("calcUkk l. 1484 editDist: %d\n", editDist);
+                editDist_tmp = prevEditDist + isDeleteState_A;
+                if (DEBUG_EDIT_DIST) printf("calcUkk l. 1484 editDist_tmp: %d\n", editDist_tmp);
             } else {
-                if (!(fsmStateArrays->secondCost)[toState]) {
-                    continue;
-                }
+                if (!(fsmStateArrays->secondCost)[toState]) continue;
 
                 curEditDist = Ukk( lessMidd_idx_diff1
-                        , lessLong_idx_diff1
-                        , curCost - affineCosts->mismatchCost
-                        , fromState
-                        , affineCosts
-                        , inputChars
-                        , fsmStateArrays
-                        );
+                                 , lessLong_idx_diff1
+                                 , curCost - affineCosts->mismatchCost
+                                 , fromState
+                                 , affineCosts
+                                 , inputChars
+                                 , fsmStateArrays
+                                 );
+                if(DEBUG_CALL_ORDER) printf("---Reentering calcUkk 2\n");
                 if (DEBUG_EDIT_DIST) printf("calcUkk l. 1498 curEditDist; %d\n", curEditDist);
 
                 if (   okIndex(curEditDist,                      isDeleteState_A, inputChars->lesserLen)
                     && okIndex(curEditDist - lessMidd_idx_diff1, isDeleteState_B, inputChars->middleLen)
                     && okIndex(curEditDist - lessLong_idx_diff1, isDeleteState_C, inputChars->longerLen)
                    ) {
-                    fromCost = curCost - affineCosts->mismatchCost;
-                    editDist = curEditDist + isDeleteState_A;
-                    if (DEBUG_EDIT_DIST) printf("calcUkk l. 1506 editDist; %d\n", editDist);
+                    fromCost     = curCost - affineCosts->mismatchCost;
+                    editDist_tmp = curEditDist + isDeleteState_A;
+                    if (DEBUG_EDIT_DIST) printf("calcUkk l. 1506 editDist_tmp; %d\n", editDist_tmp);
                 }
             }
 
-            // Check if this is an improvment
-            if (best_editDist < editDist) {
-                best_editDist = editDist;
+            // Determine whether this is an improvment.
+            if (best_editDist < editDist_tmp) {
+                best_editDist = editDist_tmp;
 
                 if (completeFromInfo_global) {        // Do we need to store complete from information for a base case?
-                    from.lessLong_idx_diff = lessLong_idx_diff1;
-                    from.lessMidd_idx_diff = lessMidd_idx_diff1;
-                    from.cost              = fromCost;
-                    from.fsm_state         = fromState;
+                    previous.lessMidd_idx_diff = lessMidd_idx_diff1;
+                    previous.lessLong_idx_diff = lessLong_idx_diff1;
+                    previous.cost              = fromCost;
+                    previous.fsm_state         = fromState;
                 } else if (input_editDist >= checkPoint_cost_global + checkPoint_width_global) { // Store from info for checkPoint_
-                      from = get_ukk_cell( lessMidd_idx_diff1
-                                         , lessLong_idx_diff1
-                                         , fromCost
-                                         , fromState
-                                         , inputChars->numStates
-                                         )->from;
+                      previous = get_ukk_cell( lessMidd_idx_diff1
+                                             , lessLong_idx_diff1
+                                             , fromCost
+                                             , fromState
+                                             , inputChars->numStates
+                                             )->from;
                 }
             }
         } // End loop over from fsm_states_global
     } // End if valid neighbour
 
     // Ensure that we have how we can reach for AT MOST cost input_editDist
+    editDist_tmp = Ukk( lessMidd_idx_diff
+                      , lessLong_idx_diff
+                      , input_editDist - 1
+                      , toState
+                      , affineCosts
+                      , inputChars
+                      , fsmStateArrays
+                      );
 
-    editDist = Ukk( lessMidd_idx_diff
-                  , lessLong_idx_diff
-                  , input_editDist - 1
-                  , toState
-                  , affineCosts
-                  , inputChars
-                  , fsmStateArrays
-                  );
-
-    if (DEBUG_EDIT_DIST) printf("calcUkk l. 1542 editDist; %d\n", editDist);
+    if(DEBUG_CALL_ORDER) printf("---Reentering calcUkk 3\n");
+    if (DEBUG_EDIT_DIST) printf("calcUkk l. 1542 editDist_tmp; %d\n", editDist_tmp);
     // Check if this is an improvment
-    if (okIndex(editDist,                     0, inputChars->lesserLen) &&
-        okIndex(editDist - lessMidd_idx_diff, 0, inputChars->middleLen) &&
-        okIndex(editDist - lessLong_idx_diff, 0, inputChars->longerLen) &&
-        best_editDist < editDist)
+    if (okIndex(editDist_tmp,                     0, inputChars->lesserLen) &&
+        okIndex(editDist_tmp - lessMidd_idx_diff, 0, inputChars->middleLen) &&
+        okIndex(editDist_tmp - lessLong_idx_diff, 0, inputChars->longerLen) &&
+        best_editDist < editDist_tmp)
     {
-        best_editDist = editDist;
+        best_editDist = editDist_tmp;
         if (DEBUG_EDIT_DIST) printf("calcUkk l. 1550 best_editDist; %d\n", best_editDist);
 
         if (completeFromInfo_global) {        // Do we need to store complete from information for a base case?
-            from.lessLong_idx_diff = lessLong_idx_diff;
-            from.lessMidd_idx_diff = lessMidd_idx_diff;
-            from.cost              = input_editDist - 1;
-            from.fsm_state         = toState;
+            previous.lessMidd_idx_diff = lessMidd_idx_diff;
+            previous.lessLong_idx_diff = lessLong_idx_diff;
+            previous.cost              = input_editDist - 1;
+            previous.fsm_state         = toState;
 
         } else if (input_editDist >= checkPoint_cost_global + checkPoint_width_global) { // Store from info for checkPoint_
-            from = nextUkkCell->from;
+            nextUkkCell = get_ukk_cell( lessMidd_idx_diff
+                                      , lessLong_idx_diff
+                                      , input_editDist - 1
+                                      , toState
+                                      , inputChars->numStates
+                                      );
+            previous = nextUkkCell->from;
         }
     } // end insure that we have how we can reach for AT MOST cost input_editDist
 
-    if (toState == 0) {  // Is the toState == MMM
+    if (toState == 0) {  // Is the toState == MMM?
         // May be possible to extend the diagonal along a run of matches.
 
         /* Note: In the past have used 'extended' to only update this cell if
@@ -1589,6 +1620,7 @@ int calcUkk( int             lessMidd_idx_diff
                                                  , inputChars
                                                  , fsmStateArrays
                                                  );
+            if(DEBUG_CALL_ORDER) printf("---Reentering calcUkk 4\n");
 
             if (this_editDist > editDist_furthest) {
                 editDist_furthest = this_editDist;
@@ -1600,69 +1632,76 @@ int calcUkk( int             lessMidd_idx_diff
         while (   okIndex(editDist_furthest,                     1, inputChars->lesserLen)
                && okIndex(editDist_furthest - lessMidd_idx_diff, 1, inputChars->middleLen)
                && okIndex(editDist_furthest - lessLong_idx_diff, 1, inputChars->longerLen)
-               && (   inputChars->lesserStr[editDist_furthest] == inputChars->longerStr[editDist_furthest - lessLong_idx_diff]
-                   && inputChars->lesserStr[editDist_furthest] == inputChars->middleStr[editDist_furthest - lessMidd_idx_diff] )
+               && inputChars->lesserStr[editDist_furthest] == inputChars->middleStr[editDist_furthest - lessMidd_idx_diff]
+               && inputChars->lesserStr[editDist_furthest] == inputChars->longerStr[editDist_furthest - lessLong_idx_diff]
               ) {
           editDist_furthest++;
           counts_global.innerLoop++;
         }
 
         // Was there an improvement?
-        if (editDist > best_editDist) {
+        if (editDist_furthest > best_editDist) {
             best_editDist = editDist_furthest;  // Note: toState = MMM
 
             // Update 'from' information if the fsm state we extended from was
             // not the same fsm state we are in (the MMM fsm state).
             if (from_fsm_state != 0) {
                 if (completeFromInfo_global) {        // TODO: Do we need to store complete 'from' information for a base case?
-                    from.lessLong_idx_diff = lessLong_idx_diff;
-                    from.lessMidd_idx_diff = lessMidd_idx_diff;
-                    from.cost        = input_editDist;
-                    from.fsm_state   = from_fsm_state;
+                    previous.lessLong_idx_diff = lessLong_idx_diff;
+                    previous.lessMidd_idx_diff = lessMidd_idx_diff;
+                    previous.cost        = input_editDist;
+                    previous.fsm_state   = from_fsm_state;
                 } else if (input_editDist >= checkPoint_cost_global + checkPoint_width_global) { // Store from info for checkPoint_
-                    from = get_ukk_cell( lessMidd_idx_diff
-                                       , lessLong_idx_diff
-                                       , input_editDist
-                                       , from_fsm_state
-                                       , inputChars->numStates
-                                       )->from;
+                    previous = get_ukk_cell( lessMidd_idx_diff
+                                           , lessLong_idx_diff
+                                           , input_editDist
+                                           , from_fsm_state
+                                           , inputChars->numStates
+                                           )->from;
                 }
             }
         }
     } // End attempt to extend diagonal on a run of matches
 
+    // Set next cell in ukk matrix. So this cell will be previous for next cell.
+    nextUkkCell = get_ukk_cell( lessMidd_idx_diff
+                              , lessLong_idx_diff
+                              , input_editDist
+                              , toState
+                              , inputChars->numStates
+                              );
     assert( nextUkkCell->computed < input_editDist + costOffset_global );
 
     nextUkkCell->editDist = best_editDist;
 
     nextUkkCell->computed = input_editDist + costOffset_global;
 
-    nextUkkCell->from = from;
+    nextUkkCell->from = previous;
 
 
-    if (DEBUG_CALL_ORDER) {
-        int indent_globali_global = 0;
-        char indent_global[1000];
+    // if (DEBUG_CALL_ORDER) {
+    //     int indent_globali_global = 0;
+    //     char indent_global[1000];
 
-        indent_globali_global        -= 2;
-        indent_global[indent_globali_global] = 0;
-        fprintf( stderr, "%sCalcUKK(lessMidd_idx_diff = %2d, lessLong_idx_diff = %2d, d = %2d,    toState = %2d) = %2d\n"
-               , indent_global
-               , lessMidd_idx_diff
-               , lessLong_idx_diff
-               , input_editDist
-               , toState
-               , nextUkkCell->editDist
-               );
+    //     indent_globali_global        -= 2;
+    //     indent_global[indent_globali_global] = 0;
+    //     fprintf( stderr, "%sCalcUKK(lessMidd_idx_diff = %2d, lessLong_idx_diff = %2d, d = %2d,    toState = %2d) = %2d\n"
+    //            , indent_global
+    //            , lessMidd_idx_diff
+    //            , lessLong_idx_diff
+    //            , input_editDist
+    //            , toState
+    //            , nextUkkCell->editDist
+    //            );
 
-        fprintf( stderr, "%sFrom:   lessMidd_idx_diff = %2d, lessLong_idx_diff = %2d, cost = %2d, fsm_state = %2d\n",
-                 indent_global
-               , nextUkkCell->from.lessMidd_idx_diff
-               , nextUkkCell->from.lessLong_idx_diff
-               , nextUkkCell->from.cost
-               , nextUkkCell->from.fsm_state
-               );
-    }
+    //     fprintf( stderr, "%sFrom:   lessMidd_idx_diff = %2d, lessLong_idx_diff = %2d, cost = %2d, fsm_state = %2d\n",
+    //              indent_global
+    //            , nextUkkCell->from.lessMidd_idx_diff
+    //            , nextUkkCell->from.lessLong_idx_diff
+    //            , nextUkkCell->from.cost
+    //            , nextUkkCell->from.fsm_state
+    //            );
+    // }
 
     return nextUkkCell->editDist;
 }

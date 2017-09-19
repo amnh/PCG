@@ -524,7 +524,7 @@ int align3d( alignIO_t          *inputChar1_aio
     }
 
     // Adding initial gap in. Still should get rid of this. Sigh.
-    longChar->array_head[0] = middleChar->array_head[0] = shortChar->array_head[0] = 16; // TODO: Look up gap cost based on
+    // longChar->array_head[0] = middleChar->array_head[0] = shortChar->array_head[0] = 16; // TODO: Look up gap cost based on
                                                                                          // alphabet length?
                                                                                          // It's also hard-coded in 3d ukk, so will have
                                                                                          // to change it there, too.
@@ -625,9 +625,9 @@ void alignIOtoDynChar(       dyn_character_t *retChar
     //printf("\nmemcpy completed\n");
 
     // now add gap to beginning
-    retChar->char_begin--;   // Add another cell, prepended to the array
-    *retChar->char_begin = ((elem_t) 1) << (alphabetSize - 1);   //Prepend a gap to the array.
-    retChar->len++;
+    // retChar->char_begin--;   // Add another cell, prepended to the array
+    // *retChar->char_begin = ((elem_t) 1) << (alphabetSize - 1);   //Prepend a gap to the array.
+    // retChar->len++;
 
     // printf("\nAfter duping struct:\n");
     // printf("Output Length:     %2zu\n", retChar->len);

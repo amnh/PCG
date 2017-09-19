@@ -61,12 +61,12 @@ typedef enum { MATCH_SUB
  */
 typedef struct alignment_mtx_t {
     size_t elemSize;
-    size_t lessLong_size;
     size_t lessMidd_size;
-    size_t lessLong_offset;
+    size_t lessLong_size;
     size_t lessMidd_offset;
-    size_t lessLong_blocks;
+    size_t lessLong_offset;
     size_t lessMidd_blocks;
+    size_t lessLong_blocks;
 
     #ifdef FIXED_NUM_PLANES // See above
         size_t costSize;
