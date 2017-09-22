@@ -50,7 +50,7 @@ import qualified Data.Vector        as V
 import           Data.Vector.Instances     ()
 import           Prelude            hiding (lookup, zip, zipWith)
 
---import Debug.Trace
+import Debug.Trace
   
 
 type BlockTopologies = NonEmpty TraversalTopology
@@ -90,7 +90,7 @@ preorderSequence'' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
 
     -- A "sequence" of the minimum topologies that correspond to each block.
     sequenceOfBlockMinimumTopologies :: BlockTopologies
-    sequenceOfBlockMinimumTopologies = getTopologies blockMinimalResolutions
+    sequenceOfBlockMinimumTopologies = trace (topologyRendering dag <> referenceRendering dag) getTopologies blockMinimalResolutions
       where
         getTopologies = fmap topologyRepresentation
 
@@ -133,7 +133,7 @@ preorderSequence'' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
 
             -- The character sequence for the current index with the node decorations
             -- updated to thier pre-order values with their final states assigned.
-            newSequence      = computeOnApplicableResolution'' f1 f2 f3 f4 f5 f6 parentalContext datumResolutions
+            newSequence      = computeOnApplicableResolution'' f1 f2 f3 f4 f5 f6 parentalContext datumResolutions i
                 
             -- This is *really* important.
             -- Here is where we collect the parental context for the current node.
@@ -159,7 +159,7 @@ preorderSequence'' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
             
             datumResolutions = resolutions $ nodeDecoration node
 
-            node            = refs ! i
+            node            = refs ! (\x -> trace ("Node #" <> show x) x) i
             parentIndices   = otoList $ parentRefs node
             -- In sparsely connected graphs (like ours) this will be effectively constant.
             childPosition j = toEnum . length . takeWhile (/=i) . IM.keys . childRefs $ refs ! j
@@ -176,10 +176,11 @@ preorderSequence'' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
                                  [ unwords ["No Matching topology for Block", show key, "on Node", show i]
                                  , "The minimal topologies for each block: " <> show sequenceOfBlockMinimumTopologies
                                  , "And this was the problem topology: " <> show topology
---                                 , "And these were our options: " <> show nodeOptions
+                                 , "And these were our options: " <> show (topologyRepresentation . NE.head . resolutions . snd <$> nodeOptions)
                                  ]
               where
-                matchesTopology = (`isCompatableWithTopology` topology) . topologyRepresentation . snd
+--                matchesTopology = (`isCompatableWithTopology` topology) . topologyRepresentation . snd
+                matchesTopology = (`notElem` excludedNetworkEdges topology) . (\j -> (j,i)) . fst
               
 
 -- |
@@ -296,9 +297,10 @@ computeOnApplicableResolution''
   -> (z -> [(Word, z')] -> z')
   -> ParentalContext u' v' w' x' y' z'
   -> ResolutionCache (CharacterSequence u v w x y z)
+  -> Int
 --  -> [(Word, ResolutionInformation (CharacterSequence u' v' w' x' y' z'))]
   -> CharacterSequence u' v' w' x' y' z'
-computeOnApplicableResolution'' f1 f2 f3 f4 f5 f6 parentalContexts currentResolutions = fromBlocks $ mapWithKey f parentalContexts
+computeOnApplicableResolution'' f1 f2 f3 f4 f5 f6 parentalContexts currentResolutions nodeRef = fromBlocks $ mapWithKey f parentalContexts
   where
     f key (topology, childRef, maybeParentBlock) = BLK.hexZipWith f1 f2 f3 f4 f5 f6 childBlock parentBlock
       where
@@ -347,9 +349,17 @@ computeOnApplicableResolution'' f1 f2 f3 f4 f5 f6 parentalContexts currentResolu
     selectChildBlockByTopology childOptions key topology =
             case NE.filter matchesTopology childOptions of
               x:_ -> toBlocks (characterSequence x) ! key
-              []  -> error "No Matching topology in the child!!!!!"
+--              []  -> error "No Matching topology in the child!!!!!"
+              []  -> toBlocks (characterSequence $ NE.head childOptions) ! key
+{-              
+                     error $ unlines
+                         [ unwords ["No matching CHILD topology for Block", show key, "on Node", show nodeRef]
+                         , "And this was the problem topology we were resolving: " <> show topology
+                         , "And these were our CHILD resolutions: " <> show (topologyRepresentation <$> childOptions)
+                         ]
+-}
           where
-            matchesTopology = (== topology) . topologyRepresentation
+            matchesTopology = (`isCompatableWithTopology` topology) . topologyRepresentation
 {--}
 
 
