@@ -69,6 +69,7 @@ library
                      , semigroupoids
                      -- required for Data.Semigroup.Foldable.toNonEmpty
                      , semigroups         >=5.2.1
+                     , tcm-memo
                      , text
                      , transformers
                      , unordered-containers
@@ -127,12 +128,6 @@ library
     ffi/external_direct_optimization/alignCharacters.c
     ffi/external_direct_optimization/ukkCheckPoint.c
     ffi/external_direct_optimization/ukkCommon.c
-    -- ffi/memoized_tcm/dynamicCharacterOperations.h
-    ffi/memoized_tcm/dynamicCharacterOperations.c
-    -- ffi/memoized_tcm/costMatrix.h
-    ffi/memoized_tcm/costMatrix.cpp
-    -- ffi/memoized_tcm/costMatrixWrapper.h
-    ffi/memoized_tcm/costMatrixWrapper.c
     -- ffi/sequential_align/sequentialAlignInterface.h
     ffi/sequential_align/sequentialAlignInterface.c
     -- ffi/sequential_align/sequentialAlign.h
@@ -148,7 +143,6 @@ library
   -- The preprocesser will not recursively look in subdirectories for C header files!
   include-dirs:
     ffi/external_direct_optimization
-    ffi/memoized_tcm
     ffi/sequential_align
 
   -- Modules exported by the library.
@@ -251,7 +245,7 @@ library
                        Bio.Character.Encodable.Static.Class
                        Bio.Character.Encodable.Static.Internal
                        Bio.Character.Encodable.Stream
-                       Bio.Character.Exportable.Class
+--                       Bio.Character.Exportable.Class
                        Bio.Character.Parsed.Class
                        Bio.Character.Parsed.Internal
                        Bio.Metadata.General
@@ -288,7 +282,7 @@ library
                        Data.EdgeSet
                        Data.Range
                        Data.TCM.Internal
-                       Data.TCM.Memoized.FFI
+--                       Data.TCM.Memoized.FFI
                        Numeric.Extended
                        Numeric.Extended.Internal
                        Numeric.Extended.Natural
