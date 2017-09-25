@@ -60,6 +60,12 @@ import           Text.XML
 -- routines.
 --
 -- Blocks are optimized atomically with resepect to network resolutions.
+--
+-- Some blocks may not exist on a given node after performing a pre-order traversal.
+-- This occurs when the minimal display tree for a given block does not include
+-- all the nodes in the DAG. In this case the nodes not incldued in the topology
+-- will have "missing" final assignments for all blocks for which that topology
+-- was minimal.
 newtype CharacterSequence u v w x y z
     = CharSeq (NonEmpty (CharacterBlock u v w x y z))
     deriving (Eq)

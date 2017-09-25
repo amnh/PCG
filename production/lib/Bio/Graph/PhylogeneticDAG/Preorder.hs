@@ -428,6 +428,7 @@ preorderFromRooting''
        -> PhylogeneticDAG2 e' n' u' v' w' x' y' z'
 preorderFromRooting'' = preorderFromRooting
 
+
 -- |
 -- Applies a traversal logic function over a 'ReferenceDAG' in a /pre-order/ manner.
 --
