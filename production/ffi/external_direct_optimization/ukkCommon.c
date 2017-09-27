@@ -99,6 +99,8 @@ static inline void *recalloc( void   *p
                             , size_t  newSize
                             )
 {
+    printf("\nrecalloc\n");
+    printf("old size: %2zu new: %2zu\n", oldSize, newSize);
     p = realloc( p, newSize );
     if (!p || oldSize > newSize) return p;
 
@@ -128,13 +130,13 @@ static inline void *allocPlane( alignment_mtx_t *a )
 /** Always the previous. */
 #ifdef FIXED_NUM_PLANES
     alignment_mtx_t allocInit( size_t        elemSize
-                          , size_t        costSize
-                          , characters_t *inputChars
-                          )
+                             , size_t        costSize
+                             , characters_t *inputChars
+                             )
 #else
     alignment_mtx_t allocInit( size_t        elemSize
-                          , characters_t *inputChars
-                          )
+                             , characters_t *inputChars
+                             )
 #endif
 
 {
@@ -229,7 +231,7 @@ static inline size_t allocGetSubIndex( alignment_mtx_t *inputMtx
     assert(lessMidd_adjusted >= 0 && lessMidd_adjusted < CELLS_PER_BLOCK);
     */
 
-    printf("fsm_state %2d, numStates %2zu\n", fsm_state, numStates);
+    // printf("fsm_state %2d, numStates %2zu\n", fsm_state, numStates);
     assert( fsm_state >= 0 && fsm_state < (int) numStates );
 
     index = (index + lessMidd_adjusted) * CELLS_PER_BLOCK;
@@ -398,6 +400,7 @@ void copyCharacter ( char            *str
     }
     size_t len, i;
     elem_t *char_begin;
+
     len        = inChar->len;
     char_begin = inChar->char_begin;
 
@@ -418,7 +421,6 @@ void copyCharacter ( char            *str
         }
     }
     str[len - 1] = 0;
-    return;
 }
 
 
@@ -575,8 +577,8 @@ size_t countThisTransition( Trans fsmState_transitions[3]
 
 
 void setup( affine_costs_t  *affineCosts
-          , characters_t    *inputChars
-          , characters_t    *resultChars
+          , characters_t    *inputChars     // Input characters to Powell, rewritten into single struct
+          , characters_t    *resultChars    // Eventual return characters, from Powell, not from this fn
           , fsm_arrays_t    *fsmStateArrays
           , dyn_character_t *in_lesserChar
           , dyn_character_t *in_middleChar
@@ -609,9 +611,9 @@ void setup( affine_costs_t  *affineCosts
     copyCharacter( inputChars->middleStr, in_middleChar) ;
     copyCharacter( inputChars->longerStr, in_longerChar) ;
 
-    inputChars->lesserLen = in_lesserChar->len;
-    inputChars->middleLen = in_middleChar->len;
-    inputChars->longerLen = in_longerChar->len;
+    inputChars->lesserLen = in_lesserChar->len - 1;
+    inputChars->middleLen = in_middleChar->len - 1;
+    inputChars->longerLen = in_longerChar->len - 1;
 
     resultChars->lesserLen = 0;
     resultChars->middleLen = 0;

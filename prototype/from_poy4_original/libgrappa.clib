@@ -1,0 +1,14 @@
+uf.o
+invdist.o
+correction.o
+binencode.o
+lists.o
+med_util.o
+all_sorting_reversals.o
+vertex_factory.o
+hashtable.o
+priority_stack.o
+sorting_reversal_median.o
+inversion_median.o
+inversion_median_alberto.o
+grappa_interface.o

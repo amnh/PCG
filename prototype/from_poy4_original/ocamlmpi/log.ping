@@ -1,0 +1,6 @@
+PING circe207 (172.16.108.217) from 172.16.108.249 : 56(84) bytes of data.
+64 bytes from sugar (172.16.108.217): icmp_seq=1 ttl=255 time=0.467 ms
+
+--- circe207 ping statistics ---
+1 packets transmitted, 1 received, 0% loss, time 0ms
+rtt min/avg/max/mdev = 0.467/0.467/0.467/0.000 ms

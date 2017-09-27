@@ -46,7 +46,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "debug_just_c.h"
+#include "debug_constants.h"
 #include "seq.h"
 #include "ukkCheckp.h"
 #include "ukkCommon.h"
@@ -299,8 +299,7 @@ void traceBack(int sab, int sac, int sCost, int sState,
         assert( U(nab, nac, nd, ns)->computed == nd + costOffset);
 
         if (DEBUG_3D) {
-            fprintf(stderr, "ab = %3d, ac = %3d, d = %3d, s = %2d, dist = %3d, \n \
-                    nab = %3d, nac = %3d, nd = %3d, ns = %2d, ndist = %3d\n",
+            fprintf(stderr, " ab = %3d,  ac = %3d,  d = %3d,  s = %2d,  dist = %3d, \nnab = %3d, nac = %3d, nd = %3d, ns = %2d, ndist = %3d\n",
                     ab, ac, d, s, a,
                     nab, nac, nd, ns, a1);
         }
@@ -479,9 +478,17 @@ static inline void sort(int aval[], int len) {
 }
 
 static inline int withinMatrix(int ab, int ac, int d) {
+
+ /*
+    printf("\nwithinMatrix\n");
+    printf("lessMidd_idx_diff %2d\n", lessMidd_idx_diff);
+    printf("lessLong_idx_diff %2d\n", lessLong_idx_diff);
+*/
+    int aval[3];
+
+
     // The new method for checking the boundary condition.  Much tighter ~20%(?)  -- 28/02/1999
     int bc = ac - ab;
-    int aval[3];
     int g, h, cheapest;
 
     if (d < 0) {

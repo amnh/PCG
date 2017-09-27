@@ -1,0 +1,5 @@
+requires          = ""
+version           = "0.5.6"
+archive(byte)     = "gz.cma"
+archive(native)   = "gz.cmxa"
+browse_interfaces = "Gz Bz"

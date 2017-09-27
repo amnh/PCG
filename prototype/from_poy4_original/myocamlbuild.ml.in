@@ -1,0 +1,373 @@
+open Ocamlbuild_plugin
+open Command
+
+(* Configuration section *)
+let zlib_lib = "-lz"
+
+let static = true
+
+let cc = "@CC@"
+let cflags = "@CFLAGS@"
+let clibs = "@LIBS@"
+let interface =
+    if "@USEINTERFACE@" = "readline" then
+        "status_flat.ml"
+    else "status_@USEINTERFACE@.ml"
+
+let split string =
+    let len = String.length string in
+    let res = ref [] in
+    let cur = Buffer.create 29 in
+    for i = 0 to len - 1 do
+        if string.[i] = ' ' then begin
+            res := (Buffer.contents cur) :: !res;
+            Buffer.clear cur;
+        end else begin
+            Buffer.add_char cur string.[i];
+        end;
+    done;
+    res := (Buffer.contents cur) :: !res;
+    List.rev !res
+
+let process_flags ocaml_option cflags =
+    let cflags = split cflags in
+    let cflags = List.map (fun x -> A x) cflags in
+    let cflags =
+        let rec addcopt lst =
+            match lst with
+            | [] -> []
+            | h :: t -> A ocaml_option :: h :: (addcopt t)
+        in
+        addcopt cflags
+    in
+    cflags
+
+let ccompileflags = A"-cc" ::  A cc :: process_flags "-ccopt" cflags
+
+let clinkflags =
+    let flags = process_flags "-cclib" clibs in
+    if Sys.os_type = "Win32" then flags
+    else A"-cc" ::  A cc :: flags
+
+(* List of headers *)
+let headers =
+    [
+        "matrices.c";
+        "cm.c";
+        "seq.c";
+        "array_pool.c";
+        "union.c";
+        "add.h";
+        "algn.h";
+        "array_pool.h";
+        "avl.h";
+        "cm.h";
+        "config.h";
+        "grappa/all_inversion_medians.h";
+        "grappa/all_sorting_reversals.h";
+        "grappa/bbtsp.h";
+        "grappa/binencode.h";
+        "grappa/bitvector.h";
+        "grappa/cheaptsp.h";
+        "grappa/circ_order.h";
+        "grappa/circular_ordering.h";
+        "grappa/condense.h";
+        "grappa/condense3.h";
+        "grappa/const_tree.h";
+        "grappa/convert.h";
+        "grappa/correction.h";
+        "grappa/gen_tree.h";
+        "grappa/getopt3.h";
+        "grappa/greedy_median.h";
+        "grappa/growTree.h";
+        "grappa/hashtable.h";
+        "grappa/inittree.h";
+        "grappa/invdist.h";
+        "grappa/inversion_median.h";
+        "grappa/inversion_median_alberto.h";
+        "grappa/labeltree.h";
+        "grappa/lists.h";
+        "grappa/lk_main.h";
+        "grappa/med_util.h";
+        "grappa/mythread_rwlock.h";
+        "grappa/neighborj.h";
+        "grappa/priority_stack.h";
+        "grappa/randomBSD.h";
+        "grappa/read_input.h";
+        "grappa/simpleio.h";
+        "grappa/sorting_reversal_median.h";
+        "grappa/specialinit.h";
+        "grappa/specialtsp.h";
+        "grappa/structs.h";
+        "grappa/uf.h";
+        "grappa/vertex_factory.h";
+        "gz-0.5.7/io.h";
+        "matrices.h";
+        "memstack.h";
+        "nonaddCSc.h";
+        "seq.h";
+        (* "ukkCommon.h"; *)
+        "union.h";
+        "zarr.h";
+        "ocamlmpi/camlmpi.h"]
+;;
+
+dispatch begin function
+| After_rules ->
+
+    rule "version.tex generation"
+        ~prod:"version.tex"
+        ~dep:"makeVersion.native"
+        begin fun _ _ -> Cmd (S [A "./makeVersion.native"; Sh "> version.tex"]) end;
+
+    rule "VERSION generation"
+        ~prod:"VERSION"
+        ~dep:"makeVersion.native"
+        begin fun _ _ -> Cmd (S [A "./makeVersion.native"; Sh "> VERSION"]) end;
+
+    let halt = A "-halt-on-error" in
+    let interaction = A "-interaction=nonstopmode" in
+    rule "QuickStart.pdf generation"
+        ~prod:"doc/QuickStart.pdf"
+        ~dep:"doc/QuickStart.tex"
+        begin fun _ _ ->
+            Cmd (S[A "pdflatex"; halt; interaction; A "doc/QuickStart.tex"])
+        end;
+
+    rule "commands.pdf generation"
+        ~prod:"commands.pdf"
+        ~deps:["doc/commands.tex"; "doc/allcommands.tex";
+        "doc/poy3commands.tex"; "doc/QuickStart.tex"; "doc/poylibrary.bib";
+        "doc/poyheuristics.tex"; "version.tex"; "doc/poytutorials.tex";
+        "doc/figures/amnhlogoblue2.pdf";
+        "doc/figures/fig-poycommand1.jpg";
+        "doc/figures/fig-poycommand2.jpg";
+        "doc/figures/about_window.jpg";
+        "doc/figures/asciitree.jpg";
+        "doc/figures/bootstrap_menu.jpg";
+        "doc/figures/bootstrap_window.jpg";
+        "doc/figures/building1.jpg";
+        "doc/figures/building2.jpg";
+        "doc/figures/commandlist.jpg";
+        "doc/figures/create_script_window.jpg";
+        "doc/figures/create_script_menu.jpg";
+        "doc/figures/crossref.jpg";
+        "doc/figures/diagnose_menu.jpg";
+        "doc/figures/diagnose_window.jpg";
+        "doc/figures/exithelp.jpg";
+        "doc/figures/figerror1.jpg";
+        "doc/figures/figerror2.jpg";
+        "doc/figures/figinterface.jpg";
+        "doc/figures/figlogolinux.jpg";
+        "doc/figures/figlogomac.jpg";
+        "doc/figures/figlogowindows.jpg";
+        "doc/figures/figpoybook.jpg";
+        "doc/figures/figprelim1.jpg";
+        "doc/figures/figprelim2.jpg";
+        "doc/figures/figprocess.jpg";
+        "doc/figures/jackknife_menu.jpg";
+        "doc/figures/jackknife_window.jpg";
+        "doc/figures/menu_launcher_window.jpg";
+        "doc/figures/openpoyscript_menu.jpg";
+        "doc/figures/output_window.jpg";
+        "doc/figures/pstree.jpg";
+        "doc/figures/reading_example.jpg";
+        "doc/figures/reading_example2.jpg";
+        "doc/figures/report2.jpg";
+        "doc/figures/report3.jpg";
+        "doc/figures/reportbremer_window.jpg";
+        "doc/figures/runinteractive_menu.jpg";
+        "doc/figures/script.jpg";
+        "doc/figures/searchforbremer_menu.jpg";
+        "doc/figures/searchforbremer_window.jpg";
+        "doc/figures/searchwithperturb_menu.jpg";
+        "doc/figures/searchwithperturb_window.jpg";
+        "doc/figures/searchwithratchet_menu.jpg";
+        "doc/figures/searchwithratchet_window.jpg";
+        "doc/figures/select.jpg";
+        "doc/figures/simplesearch_menu.jpg";
+        "doc/figures/simplesearch_script.jpg";
+        "doc/figures/simplesearch_window.jpg";
+        "doc/figures/simplesearch_window_filled.jpg";
+        "doc/figures/swap1.jpg";
+        "doc/figures/swap2.jpg";
+        "doc/figures/timedsearch_menu.jpg";
+        "doc/figures/timedsearch_window.jpg";
+        "doc/figures/view_menu.jpg";
+        "doc/figures/genomeRearrangement.pdf";
+        "doc/figures/breakpointDis.pdf";
+        "doc/figures/chromfig1.jpg"]
+
+        begin fun _ _ ->
+            Seq [Cmd (S [A "pdflatex"; halt; interaction; A "doc/commands.tex"]);
+                Cmd (S [A "bibtex"; A "commands"]);
+                Cmd (S [A "pdflatex"; halt; interaction; A "doc/commands.tex"]);
+                Cmd (S [A "makeindex"; A "general"]);
+                Cmd (S [A "makeindex"; A "poy3"]);
+                Cmd (S [A "pdflatex"; halt; interaction; A "doc/commands.tex"])]
+        end;
+
+    rule "help.txt file generation"
+        ~prod:"help.txt"
+        ~deps:["latex.native"; "doc/allcommands.tex"]
+        begin fun env _build ->
+            Cmd (A "./latex.native")
+        end;
+
+    rule "poy.1 man page generation"
+        ~prod:"poy.1"
+        ~deps:["latex.native"; "doc/allcommands.tex"]
+        begin fun env _build ->
+            Cmd (A "./latex.native")
+        end;
+
+    rule "help.ml file generation"
+        ~prod:"help.ml"
+        ~deps:["helpRead.native"; "help.txt"]
+        begin fun env _build ->
+            Cmd (A "./helpRead.native")
+        end;
+
+    rule "help.html file generation"
+        ~prod:"help.html"
+        ~deps:["helpRead.native"; "help.txt"]
+        begin fun env _build ->
+            Cmd (S [A "./helpRead.native"; A "-html"])
+        end;
+
+    rule "OCaml native shared library"
+        ~prod:"%.cmxs"
+        ~dep:"%.cmx"
+        begin fun env _build ->
+            let cmx = env "%.cmx" and cmxs = env "%.cmxs" in
+            let tags = tags_of_pathname cmx++"shared"++"cmxs" in
+            Cmd(S[!(Options.ocamlopt); T tags; A"-o"; P cmxs; A "-shared"; P cmx ])
+        end;
+
+    rule "status.ml file generation"
+        ~prod:"status.ml"
+        ~deps:["config.h"; interface]
+        begin fun evn _build ->
+            cp interface "status.ml"
+        end;
+
+    let specialized_nonadd dep prod size =
+        let deps = [dep; "config.h"] in
+        rule (dep ^ " to " ^ prod) ~prod ~deps
+        begin fun evn _build ->
+            Cmd (S [A "sed"; A "-e"; A ("s/nonadd_/nonadd" ^ size ^ "_/g");
+                A "-e"; A ("s/NONADDSIZE/" ^ size ^ "/g");
+                Sh ("< " ^ dep); Sh ("> " ^ prod)])
+        end
+    in
+    specialized_nonadd "nonaddCS.ml" "nonaddCS8.ml" "8";
+    specialized_nonadd "nonaddCS.ml" "nonaddCS16.ml" "16";
+    specialized_nonadd "nonaddCS.ml" "nonaddCS32.ml" "32";
+    specialized_nonadd "nonaddCSc.c" "nonaddCSc8.c" "8";
+    specialized_nonadd "nonaddCSc.c" "nonaddCSc16.c" "16";
+    specialized_nonadd "nonaddCSc.c" "nonaddCSc32.c" "32";
+    (* When one make a C library that use the zlib with ocamlmklib,
+       then issue these flags. *)
+    flag ["ocamlmklib"; "c"; "use_zlib"]
+         (S[A zlib_lib]);
+
+    flag ["ocamlmklib"; "c"] (S (process_flags "-cclib" clibs));
+
+    (* When one compile C code using the zlib *)
+    flag ["link"; "ocaml"; "use_zlib"] (S[A"-cclib"; A zlib_lib]);
+
+    (* If `static' is true then every ocaml link in bytecode will add -custom *)
+    if static then flag ["link"; "ocaml"; "byte"] (A"-custom");
+
+    flag ["link"; "ocaml"; "use_poy"]
+         (S[A"-cclib"; A"-lpoycside"; A"-cclib"; A"-L."]);
+
+    flag ["c"] (S[A"-ccopt"; A"-I"; A"-ccopt"; A"/usr/include/malloc"]);
+    flag ["c"; "use_char8"] (S[A"-ccopt"; A"-DCHARSIZE=8"]);
+    flag ["c"; "use_char16"] (S[A"-ccopt"; A"-DCHARSIZE=16"]);
+    flag ["c"; "use_char32"] (S[A"-ccopt"; A"-DCHARSIZE=32"]);
+
+    dep  ["link"; "ocaml"; "use_poy"] ["libpoycside.a"];
+
+    dep ["ocaml"; "pp"; "use_extensions"] ["poyExtension.cmo"];
+    dep ["ocaml"; "ocamldep"; "use_extensions"] ["poyExtension.cmo"];
+
+    flag ["link"; "ocaml"; "byte"; "use_grappa"]
+         (S[A"-cclib"; A"-lgrappa"; A"-cclib"; A"-L."]);
+
+    flag ["link"; "library"; "ocaml"; "native"; "use_grappa"]
+         (S[A"-cclib"; A"-lgrappa"]);
+
+    dep  ["link"; "ocaml"; "use_grappa"] ["libgrappa.a"];
+
+    flag ["link"; "ocaml"; "use_camlp4o"] (S[A"-I"; A"+camlp4"]);
+    flag ["link"; "ocaml"; "native"; "use_camlp4o"] (A"camlp4o.cmxa");
+    flag ["link"; "ocaml"; "byte"; "use_camlp4o"] (A"camlp4o.cma");
+
+    flag ["ocaml"; "compile"; "use_camlp4o"] (S[(A"-I"); A"+camlp4"]);
+
+    flag ["link"; "ocaml"; "byte"; "use_gzcaml"]
+         (S[A"-dllib"; A"-lzlibstubs"; A"-cclib"; A"-lzlibstubs";
+         A"-dllib"; A"-lgzcaml"; A"-cclib"; A"-lgzcaml"]);
+
+    flag ["link"; "library"; "ocaml"; "native"; "use_gzcaml"]
+         (S[A"-cclib"; A"-lzlibstubs"; A"-cclib"; A"-lgzcaml"]);
+
+    flag ["c"; "compile"; "use_nativedynlink"]
+        (S[A"-ccopt"; A"-DUSE_NATIVEDYNLINK"]);
+
+    flag ["c"; "compile"; "use_xslt"]
+        (S[A"-ccopt"; A"-DUSE_XSLT"]);
+
+    flag ["c"; "compile"; "use_likelihood"]
+        (S[A"-ccopt"; A"-DUSE_LIKELIHOOD"]);
+
+    flag ["c"; "compile"; "use_readline"]
+        (S[A"-ccopt"; A"-DUSEREADLINE"]);
+
+    flag ["c"; "compile"; "use_ncurses"]
+        (S[A"-ccopt"; A"-DUSENCURSES"]);
+
+    flag ["c"; "compile"; "use_parallel"]
+        (S[A"-ccopt"; A"-DUSEPARALLEL"]);
+
+    flag ["link"; "ocaml"; "use_parallel"]
+        (S[A"-cclib"; A"-lmpicaml"]);
+
+    flag ["c"; "compile"; "use_nosharedhd"]
+        (S[A"-ccopt"; A"-DUSENOSHAREDHD"]);
+
+    flag ["c"; "compile"; "use_large_messages"]
+        (S[A"-ccopt"; A"-DUSE_LARGE_MESSAGES"]);
+
+    flag ["c"; "compile"; "use_long_sequences"]
+        (S[A"-ccopt"; A"-DUSE_LONG_SEQUENCES"]);
+
+    flag ["c"; "compile"; "use_large_alphabets"]
+        (S[A"-ccopt"; A"-DUSE_LARGE_ALPHABETS"]);
+
+    flag ["c"; "compile"; "use_verify_costs"]
+        (S[A"-ccopt"; A"-DUSE_VERIFY_COSTS"]);
+
+    flag ["c"; "compile"; "use_win32"]
+        (S[A"-ccopt"; A"-DUSEWIN32"]);
+
+    (* for GCC 4.5+ linker and ocamlbuild link order fix *)
+    if @CC_NOASNEEDED@ then
+        flag ["ocaml"; "link"]
+            (S [A"-cclib";A"-Wl,--no-as-needed"]);
+
+    flag ["c"; "compile"] (S ccompileflags);
+    flag ["c"; "link"] (S clinkflags);
+    flag ["ocaml"; "compile"] (S ccompileflags);
+    flag ["ocaml"; "link"] (S clinkflags);
+
+    dep  ["link"; "ocaml"; "use_gzcaml"] ["libgzcaml.a"; "libzlibstubs.a"];
+    dep  ["link"; "ocaml"; "use_parallel"] ["libmpicaml.a"];
+
+    (* As an approximation all our C files use the headers.
+       Note: This will import headers in the build directory. *)
+    dep  ["compile"; "c"] headers;
+| _ -> ()
+
+end

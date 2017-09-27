@@ -1,0 +1,47 @@
+export LIBDIRS = .
+export LIBS = unix bigarray str camlpdf
+export OCAMLOPT = ocamlopt
+export OCAMLLC = ocamlopt
+export OCAMLC = ocamlc
+#export OCAMLNCFLAGS = -g 
+#export OCAMLLDFLAGS = -g
+
+define PROJ_pdfhello
+  SOURCES=pdfhello.ml
+  RESULT=pdfhello
+endef
+export PROJ_pdfhello
+
+define PROJ_pdfdecomp
+  SOURCES=pdfdecomp.ml
+  RESULT=pdfdecomp
+endef
+export PROJ_pdfdecomp
+
+define PROJ_pdfmerge
+  SOURCES=pdfmerge.ml
+  RESULT=pdfmerge
+endef
+export PROJ_pdfmerge
+
+define PROJ_pdfdraft
+  SOURCES=pdfdraft.ml
+  RESULT=pdfdraft
+endef
+export PROJ_pdfdraft
+
+define PROJ_pdftest
+  SOURCES=pdftest.ml
+  RESULT=pdftest
+endef
+export PROJ_pdftest
+
+ifndef SUBPROJS
+  export SUBPROJS = pdfhello pdfdecomp pdfmerge pdfdraft pdftest
+endif
+
+all: native-code
+
+%:
+	@make -f OCamlMakefile subprojs SUBTARGET=$@
+

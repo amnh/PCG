@@ -1,0 +1,38 @@
+\documentclass{article}
+
+\begin{document}
+\section{Cost Matrix}
+\label{sec:costmatrix}
+
+Files \texttt{cm.c} and \texttt{cost\_matrix.ml} implement two- and
+three-dimensional cost matrices, as well as operations on them.
+
+\begin{itemize}
+\item \texttt{int a\_sz}\textemdash Alphabet size
+\item \texttt{int lcm}\textemdash Ceiling of $\log_2 |\Sigma|$
+\item \texttt{int gap}\textemdash Gap code
+\item \texttt{int cost\_model\_type}\textemdash Type of cost model:  1.~No alignment;
+  2.~Linear; 3.~Affine (defined  by gap opening and gap extension)
+\item \texttt{int combinations}\textemdash flag that determines whether the median
+  calculation will consider all the possible combinations of elements in the
+  original alphabet (true) or not (false)
+\item \texttt{int gap\_open}\textemdash cost of opening a gap in affine model
+\item \texttt{int gap\_extend}\textemdash cost of extending a gap in affine model
+\item \texttt{int *cost}
+\item \texttt{int *median}
+\item \texttt{int gc\_counter}\textemdash counter for garbage collection
+\end{itemize}
+
+Functions in the OCaml module (2d,3d):
+\begin{itemize}
+\item \texttt{cost x y cm} retrieves the cost of transforming $x$ into $y$.
+\item \texttt{median x y cm} finds the median for transforming $x$ into $y$.
+\item \texttt{create a com aff go ge} creates a new cost matrix for alphabet of
+  size $a$, possibly calculating combinations, using affine cost model aff with
+  costs $g_o$ and $g_e$ for opening and extending.
+\item \texttt{perturbe x y z} perturbs the cost matrix $x$ with severity $y$
+  and probability $z$.
+\end{itemize}
+
+\end{document}
+

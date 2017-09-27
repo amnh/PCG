@@ -1,0 +1,68 @@
+% Extra packages
+\usepackage{graphics} 
+\usepackage[pdftex]{graphicx} 
+%\usepackage{hyperref}
+
+%Get boldface sans
+\renewcommand{\bfdefault}{bx}
+
+% Import MetaPost files easily 
+\DeclareGraphicsRule{*}{mps}{*}{}
+
+% Changes to the formatting used by ocamlweb 
+\renewcommand{\ocwkw}[1]{{\sffamily\bfseries #1}}
+\renewcommand{\ocwupperid}[1]{\textsf{#1}}
+\renewcommand{\ocwmodule}[1]{} 
+\renewcommand{\ocwinterface}[1]{} 
+
+% For including a metapost diagram
+\newcommand{\diagram}[1]
+{\begin{center}\vspace{2mm}
+
+\includegraphics{#1.1}
+
+\vspace{4mm}\end{center}} 
+
+% Chapter titles
+\newcommand{\chaptertitle}[2]%
+  {\chapter[Module #1 \textmd{\textit{#2}}]%
+    [Module #1]{Module #1 \newline\textmd{\textit{#2}}}} 
+
+% Margin notes of various kinds
+\renewcommand{\marginparwidth}{2cm}
+
+\newcommand{\marginnote}[2]%
+  {\sidepar{\flushleft\scshape\bfseries #1\parnopar%
+                        \mdseries\upshape\footnotesize\itshape #2}}
+
+\newcommand{\marginnotenoheader}[1]%
+  {\sidepar{\flushleft\parnopar\mdseries\upshape\footnotesize\itshape #1}}
+
+\newcommand{\FIXME}[1]{\marginnote{To Fix:}{#1}}
+\newcommand{\SPEED}[1]{\marginnote{Speed:}{#1}}
+\newcommand{\EFFICIENCY}[1]{\marginnote{Efficiency:}{#1}}
+\newcommand{\TODO}[1]{\marginnote{To do:}{#1}}
+\newcommand{\NOTE}[1]{\marginnotenoheader{#1}}
+\newcommand{\REF}[1]{\NOTE{$\hookrightarrow$ #1}}
+
+% Interface indicators
+\newcommand{\intf}{\raisebox{0.2mm}{\hspace{-5mm}$\rhd$\hspace{2mm}}}
+\newcommand{\intfless}{\raisebox{0.2mm}{\hspace{-5mm}$\subset$\hspace{2mm}}}
+
+% Exception indicators
+\newcommand{\exceptions}{\raisebox{0.2mm}{\hspace{-5mm}!\hspace{3mm}}}
+
+% Paragraph gap for multiple comments preceding a block of code
+\newcommand{\smallgap}{\vspace{4mm}}
+
+% Pierre bezier's surname
+\newcommand{\bez}{b\'{e}zier}
+
+% O-notation
+\newcommand{\onsq}{$O(n^2)$}
+\newcommand{\on}{$O(n)$}
+\newcommand{\onlogn}{$O(n\log n)$}
+
+% Introduce an interface
+\newcommand{\interface}{\section{Interface}}
+

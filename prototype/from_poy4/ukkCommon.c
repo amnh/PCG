@@ -45,7 +45,7 @@
 #include <stdlib.h>
 
 //#define NO_ALLOC_ROUTINES 1
-#include "debug_just_c.h"
+#include "debug_constants.h"
 #include "seq.h"
 #include "ukkCheckp.h"
 #include "ukkCommon.h"
@@ -108,6 +108,8 @@ int  aLen, bLen, cLen;
 
 // recalloc - does a realloc() but sets any new memory to 0.
 static inline void *recalloc(void *p, size_t oldSize, size_t newSize) {
+    printf("\nrecalloc\n");
+    printf("old size: %2zu new: %2zu\n", oldSize, newSize);
     p = realloc(p, newSize);
     if (!p || oldSize>newSize) {
         return p;
@@ -325,7 +327,9 @@ void copySequence (seq_p s, char *str) {
             fflush(stdout);
             exit(1);
         }
+        printf("%c, ", str[i - 1]);
     }
+    printf("\n");
     str[len - 1] = 0;
     return;
 }
@@ -356,9 +360,10 @@ int powell_3D_align (seq_p seqA,    seq_p seqB,    seq_p seqC,
     copySequence (seqB, bStr);
     copySequence (seqC, cStr);
 
-    aLen = seq_get_len (seqA);
-    bLen = seq_get_len (seqB);
-    cLen = seq_get_len (seqC);
+    aLen = seq_get_len (seqA) - 1;
+    bLen = seq_get_len (seqB) - 1;
+    cLen = seq_get_len (seqC) - 1;
+    printf("Input lengths: %d %d %d\n", aLen, bLen, cLen);
 
     setup();
 
@@ -370,6 +375,9 @@ int whichCharCost(char a, char b, char c) {
     if (DEBUG_CALL_ORDER) {
         printf("whichCharCost\n");
     }
+    printf("a: %d, b: %d, c: %d\n", a, b, c);
+
+    // This would be all deletions, which doesn't really make any sense.
     assert(a!=0 && b!=0 && c!=0);
     /*
       When running as a ukk algorithm (ie. not the DPA), then
@@ -672,6 +680,8 @@ int alignmentCost(int states[], char *al1, char *al2, char *al3, int len) {
 
     return cost;
 }
+
+
 
 
 

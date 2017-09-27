@@ -20,9 +20,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "debug_just_c.h"
+#include "debug_constants.h"
 #include "matrices.h"
-// #include "cm.h"
+// #include "costMatrix.h"
 
 
 /*

@@ -1,0 +1,3238 @@
+2006-05-02  vinh  <vinh@ibomash>
+
+	* aliMap.ml, block.ml, chromAli.ml, chromAli.mli, utl.ml, utl.mli, utlGrappa.ml, utlPoy.ml, scripting.ml, block.mli, chromCS.ml, chromPam.ml, med.ml, medBlock.ml, seed.ml, staMat.ml, utlGrappa.mli:
+	*** empty log message ***
+
+2006-05-02  Illya Bomash  <ibomash@localhost.localdomain>
+
+	* Makefile, parallelScripting.ml, scripting.ml:
+	Modifications to compile on Demeter
+
+	* main.ml: Alpha build 1
+
+2006-04-28  Andres Varon  <andres@ibomash>
+
+	* parser.ml: Gave priority to Poy files in the parser.
+
+2006-04-28  Illya Bomash  <ibomash@localhost.localdomain>
+
+	* ChangeLog: shiny, new changelog
+
+	* support.ml: really fixed bug, which was far more insidious
+
+2006-04-28  vinh  <vinh@ibomash>
+
+	* aliMap.ml, aliMap.mli, alphabet.ml, alphabet.mli, block.ml, block.mli, chromAli.ml, chromAli.mli, chromCS.ml, chromPam.ml, chromPam.mli, ilist.ml, med.ml, med.mli, medBlock.ml, scripting.ml, seed.ml, sequence.ml, sequence.mli, staMat.ml, subseq.ml, subseq.mli, sufNode.ml, sufTree.ml, utl.ml, utl.mli, utlGrappa.ml, utlPoy.ml, utlPoy.mli:
+	The first version of chromosome data type with move
+
+2006-04-28  Illya Bomash  <ibomash@localhost.localdomain>
+
+	* scripting.ml, support.ml, support.mli:
+	fixed bug: bremer single_tbr support messing with existing character codes
+
+2006-04-28  Illya Bomash  <ibomash@localhost.localdomain>
+
+	* ChangeLog: shiny, new changelog
+
+	* support.ml: really fixed bug, which was far more insidious
+
+2006-04-28  vinh  <vinh@ibomash>
+
+	* aliMap.ml, aliMap.mli, alphabet.ml, alphabet.mli, block.ml, block.mli, chromAli.ml, chromAli.mli, chromCS.ml, chromPam.ml, chromPam.mli, ilist.ml, med.ml, med.mli, medBlock.ml, scripting.ml, seed.ml, sequence.ml, sequence.mli, staMat.ml, subseq.ml, subseq.mli, sufNode.ml, sufTree.ml, utl.ml, utl.mli, utlGrappa.ml, utlPoy.ml, utlPoy.mli:
+	The first version of chromosome data type with move
+
+2006-04-28  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* scripting.ml, support.ml, support.mli:
+	fixed bug: bremer single_tbr support messing with existing character codes
+
+2006-04-27  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* help.txt: Some tiny updates in the help.
+
+2006-04-27  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* chartree.ml: really fixed!
+
+	* chartree.ml, node.ml, node.mli: fix for Bremer?
+
+	* chartree.ml, node.ml, queues.ml, support.ml:
+	Bremer fixes, incremental optimization interaction with excluded clade costs fixes
+
+2006-04-27  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* chartree.ml, node.mli: Bugfix:
+
+	Part of the bugfix needed for Bremer support calculations. This version of
+	Chartree will include the Bremer sets from Node as part of the things it checks.
+	The Node interface now makes visible for Chartree the necessary functions.
+
+2006-04-26  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* status_ncurses.ml: turned off debugging feature
+
+	* scripting.ml, scripting.mli, sexpr.ml, sexpr.mli, support.ml:
+	* updates to status reporting (including status reporting for running loaded
+	scripts)
+	* small changes to support
+
+	* ptree.ml: debug trajectory
+
+	* nonaddCSc.c: removed old debugging
+
+	* help.ml: help.ml is auto-generated, it should not be in CVS
+
+	* queues.ml: new, correctly-working queues!
+
+	* tree.ml, tree.mli: string_of_jxn operation
+
+	* ptree.ml:
+	support for tracing the trajectory of a search (TBR only so far)
+
+2006-04-25  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* help.txt, methods.ml, poyCommand.ml, scripting.ml:
+	trivial, badly-implemented command to keep only a certain number of best trees
+
+	* Makefile: update status when config changes
+
+	* parser.ml: cleanup
+
+	* Makefile, help.ml, helpIndex.ml, helpRead.ml:
+	help file is integrated with source
+
+	* main.ml: stop doing a full garbage collection before exiting
+
+	* fstream.ml: documentation
+
+	* main.ml: stop doing a full garbage collection before exiting
+
+	* data.ml, data.mli, impliedAlignment.ml, parser.ml, parser.mli, scripting.ml:
+	allow for reading of trees in Hennig files (option "tread")
+
+	* chromAli.ml, chromAli.mli: disable debugging code by default
+
+	* parser.ml: fix for read error
+
+	* node.ml: noop
+
+	* add.c, add.h: fixes to MMX/SSE code (issue EMMS instructions)
+
+2006-04-25  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* help.txt, methods.ml, poyCommand.ml, scripting.ml: Improvements:
+
+	Added the clear_memory command to reduce memory usage upon user request.
+
+2006-04-24  vinh  <vinh@ren.pcc.amnh.org>
+
+	* aliMap.ml, block.ml, chromAli.ml, chromAli.mli, med.ml, seed.ml, subseq.ml, subseq.mli, sufNode.ml, sufTree.ml, utl.ml, utlGrappa.ml, utlPoy.ml:
+	Continuing with med2
+
+2006-04-24  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* support.ml: cleanup
+
+	* parser.ml: parsing of large Hennig files
+
+	* fstream.ml: safe match_prefix
+
+2006-04-24  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* parser.ml: Improvement:
+	Improved error messages in the tree parser.
+
+	* fstream.ml: Improvement:
+	Added a get_position method to get the current character number being processed
+	by a stream object. The character number ignores characters with code 10 and 13.
+
+2006-04-24  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* fstream.ml: new method: getch_safe
+
+2006-04-24  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* parser.ml, poyParser.ml, scripting.ml: Improvements:
+	Improved the tree parser to be able to handle the format the POY outputs in
+	binary trees. The new format includes the cost of each branch, and it couldn't
+	be read up to this update.
+
+2006-04-24  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* fstream.ml: more of a framework
+
+2006-04-24  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* algn.c: Bugfix:
+
+	Certainly, this branch of the alignment was never run before. Lack of updates
+	for other changes in the source code.
+
+	* algn.c: Bugfix:
+
+	I can't believe I always overlooked at the basic classification conditions of a
+	pairwise alignment. Trying this new ones again.
+
+2006-04-24  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* Makefile, fstream.ml: stream reading class
+
+2006-04-24  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* poyFile.ml: Bugfix:
+
+	Forgot to add the Sadman registration information at the beginning of the file.
+
+	* Makefile: Improvement:
+	Tiny improvement looking forward to have alpha testers working: the -unsafe
+	option is not passed to the camlp4 parsers at compile time to avoid possible
+	segfaults while reading input from the enduser.
+
+	* Makefile, help.txt, methods.ml, poyCommand.ml, poyFile.ml, poyFile.mli, scripting.ml, scripting.mli:
+	Improvements:
+
+	Added magic numbers for the version number of the fileformat to avoid crashing
+	POY upon attempting to read an invalid or out of date file. If some data
+	structure that is held in Scripting.run is modified, the major and or minor
+	version of the data structure of PoyFile has to be updated. POY will check that
+	the file versions and magic numbers match to the module's values before
+	attempting to read the data structure.
+
+	A brief description can be included in a file for future reference, check the
+	new help for save.
+
+	It is possible to inspect a file to gather it's description before loading it
+	using the new inspect_file command.
+
+2006-04-23  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* matrices.c: Improvement:
+	Fixed the allocation function for two dimensional alignments to reduce the
+	memory requirements.
+
+	* chromAli.ml, data.ml, parser.ml, parser.mli: Improvements:
+
+	The support for pipes to separate loci in the previous version of the parser was
+	rather convoluted, which rendered it basically unusable. This new version is
+	not more flexible, but more straightforward to use.
+
+	In chromAli.ml the modification is in a test routine. For this reason it only
+	selects the first loci of the sequence file.
+
+	The Parser.MOLECULAR.* functions changed to accomodate the new parser feature,
+	and Data changed to use these functions. Instead of returning one sequence per
+	taxon, Parser.Fasta.* will return a list of sequences per taxon.
+
+	* algn.c: Bugfix:
+
+	Fixed the case of a pairwise alignment where the Ukkonen barriers where used but
+	the middle part of the alignment matrix fills the rows completely. A previous
+	upted didn't fix the values of the limits of that area properly.
+
+	* diagnosis.ml: Bugfix:
+
+	The output of the implied alignments was messy due to the pretty printer attempt
+	to fix them. This has been modified so that all the sequences and taxa are
+	aligned and as close as possible to the left margin of the page.
+
+	* Makefile: Bugfix:
+
+	The dependency rules cause that make would always try to link again the main executable. This
+	was due to the dependency in the unexistant grappa file (actually a directory).
+	This was fixed by adding the actual file rather than the directory to the
+	rules.
+
+	* parallelScripting.ml: Bugfix:
+
+	The support for the character transformation methods was not present, causing a
+	compile time error. The support was added by simply calling the regular
+	Scripting function that supports it.
+
+	* Makefile: Bugfix:
+	Two libraries where independently providing the Methods module: parallels.cm*,
+	 and methods.cm*. Fixed the building rules for the parallels.cm* library so that
+	 methods is not included on it.
+
+2006-04-21  vinh  <vinh@ren.pcc.amnh.org>
+
+	* aliMap.ml, block.ml, block.mli, chromAli.ml, chromAli.mli, chromCS.ml, chromPam.ml, chromPam.mli, med.ml, utlPoy.ml, utlPoy.mli:
+	Basically chrom data type is integrated into POY.
+
+2006-04-21  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* build.ml, build.mli, charTransform.ml, charTransform.mli, impliedAlignment.ml, impliedAlignment.mli, scripting.ml:
+	Added support for static approximation in the build process, using the first
+	available tree that has been loaded.
+
+	* chartree.ml, grappa/grappa_interface.c, help.txt, main.ml, methods.ml, poyCommand.ml, scripting.ml:
+	Improvements:
+
+	Added the set_seed function for the end user to be able to set the seed of the
+	random number generator to some value.
+
+	Improved the efficiency of the incremental uppass by a tiny fraction.
+
+	* chartree.ml:
+	Added a workaround for a problem I left due to work in progress.
+
+2006-04-21  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* grappa/Makefile: support for grappa.cmx
+
+2006-04-21  vinh  <vinh@ren.pcc.amnh.org>
+
+	* grappa/grappa.ml, grappa/grappa.mli, grappa/grappa_interface.c:
+	delete the read and cal_num_genome functions, which are not needed
+	from poy.
+
+2006-04-21  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* chartree.ml:
+	Fixed some problems with the incremental optimization. Due to debugging and
+	changes  in the code, the aux_incremental_downpass was very messy. I rewrote it,
+	together with incremental_downpass_path_to_handle, to make them easier to follow
+	and also check their consistency. The problems we had, with missing vertices in
+	the incremental downpass has been resolved now.
+
+	* Makefile, grappa/Makefile, grappa/grappa_interface.c:
+	Fixed the grappa libraries compilation problems. In order to resolve an
+	unresolved symbol, a dummy global variable was added to grappa_interface.c to
+	fix outfile to the stderr file. The Makefiles where fixed to use the appropriate
+	libraries and share the appropriate environment variables as well as to
+	guarantee the call of grappa/Makefile from within the src/Makefile.
+
+2006-04-21  vinh  <vinh@ren.pcc.amnh.org>
+
+	* help.txt: Adding more help for transform command
+
+	* Makefile, charTransform.ml, charTransform.mli, characterScripting.ml, characterScripting.mli, data.ml, data.mli, methods.ml, node.ml, node.mli, poyCommand.ml, poyParser.ml, scripting.ml:
+	Adding hooks to chromosome data type
+
+	* help.txt: Adding help for transform command
+
+2006-04-20  vinh  <vinh@ren.pcc.amnh.org>
+
+	* sequence.ml:
+	Bug: in concat function, it used create fucntion to locate memory.
+	Which caused an segmentation fault. It must use init function instead.
+
+	* parser.ml, parser.mli: Change the Fasta conversion
+
+	* grappa/Makefile, grappa/binencode.c, grappa/grappa.ml, grappa/grappa.mli, grappa/grappa_interface.c, grappa/structs.h, grappa/test_grappa.ml:
+	The interface was corrected to call grappa's functions correctly from POY
+
+	* aliMap.ml, aliMap.mli, block.ml, block.mli, chromAli.ml, chromAli.mli, chromCS.ml, chromCS.mli, chromPam.mli, ilist.ml, ilist.mli, med.ml, med.mli, medBlock.ml, medBlock.mli, seed.ml, seed.mli, staMat.ml, staMat.mli, subseq.ml, subseq.mli, sufNode.ml, sufNode.mli, sufTree.ml, sufTree.mli, utl.ml, utl.mli, utlGrappa.ml, utlGrappa.mli, utlPoy.ml, utlPoy.mli:
+	The first time Vinh commit to mpoy project
+
+	* chromPam.ml: First time
+
+2006-04-20  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* charTransform.ml, chartree.ml, chartree.mli, metric.ml, ncursesML.ml, node.ml, node.mli, ptree.ml, ptree.mli, queues.ml, support.ml, tree.ml, tree.mli:
+	Changes:
+	* added sum_cost to keep track of cost of a given character in the tree (this is
+	_not_ weighted by that character's weight)
+	* added weighting support for certain characters that didn't seem to have it
+	...
+	* added special support for Bremer single-TBR mode; not 100% production code,
+	yet.
+
+2006-04-20  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* node.ml:
+	Freaking bug, by mistake in a previous change I was assigning the final
+	state to the preliminary state of the nodes.
+
+	* chartree.ml:
+	Removed an annoying unused variable jxn. This only affected the compilation, no
+	bug.
+
+	* scripting.ml: Bugfix:
+
+	If there are no character transformations in the local optimum search, no
+	rollback is performed. The program was performing a full downpass and uppass at
+	the end of a search, by replacing the tree leafs with the original leafs stored
+	in memory, but if no transformations are requested by the user, there is no need
+	to do this.
+
+	* add.c, algn.c, cm.c, cm.h, getrusage.c, matrices.c, noaddset.c, noaddset.h, nonaddCSc.c, nonaddCSc.h, sankoff.c, seq.c, seq.h, sleep.c, zarr.c, zarr.h:
+	Set of changes submitted by Veli-Pekka Kestil䠦or the windows port of POY. Most
+	of the changes involved replacing the inline keyword with __inline supported by
+	the Visual C++ compiler, and ensuring that all the variables where declared at
+	the beginning of the functions. The most important change occurred for the
+	sleep.c file that provides a completely different function for Windows.
+
+2006-04-20  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* main.ml:
+	emacs-friendly changes to output.xml (hope people don't mind)
+
+2006-04-20  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* chartree.ml: Improvements:
+
+	The uppass now has all the possible shortcuts from the downpass information.
+
+	* chartree.ml, chartree.mli, ptree.ml: Improvements:
+	Fixed the incremental downpass to be fully incremental, with all it's potential.
+	The uppass is still not fully incremental, I will fix that in the next commit.
+
+	* parallelScripting.ml, scripting.ml, scripting.mli:
+	Added the function Scripting.read_script_files to process files from the
+	mpoy_console. Another function I needed for debugging that might be useful for
+	the others.
+
+	* parallelScripting.ml:
+	Added support to the new run command in the parallel version, which was already
+	present from a previous commit.
+
+	* methods.ml, poyCommand.ml, scripting.ml, Makefile, help.txt, main.ml:
+	Improvements:
+
+	Added support to the run command from the enduser interface. This command allows
+	the users to run script files from within the POY console. To run tiny.poy
+	simply run ("tiny.poy")
+
+2006-04-19  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* main.ml, parallel.ml, parallel.mli, parallelScripting.ml, parser.ml, poyFormaters.ml, scripting.ml, tree.ml, tree.mli:
+	Fixed the POY file type detection.
+	Fixed a bug in the Tree.break operation that would leave in an unexpected
+	position the virtual root of a clade.
+	Added support in the parallel version to catch signals from the system to avoid
+	all the processes going down when a kill signal is received.
+
+	* charTransform.ml, data.ml, help.txt, impliedAlignment.ml, impliedAlignment.mli:
+	Fixed two bugs:
+
+	- If a character that is not a sequence is requested, POY will now filter it out
+	  and will output a warning, while continuing with the normal function
+	  requested.
+
+	- When all characters are requested from Data.get_chars, not only the sequence
+	  characters are returned as was happening before.
+
+	* charTransform.ml, scripting.ml:
+	Added the necessary status information for the static_approximation
+	calculations.
+
+	* charTransform.ml:
+	Missing semicolons that I didn't notice in my previous commit.
+
+	* help.txt: Fixed an error in the static_approximation help item.
+
+	* charTransform.ml, charTransform.mli, data.ml, data.mli, diagnosis.ml, impliedAlignment.ml, impliedAlignment.mli, node.mli, nonaddCS.ml, nonaddCS.mli, scripting.ml, treeSearch.ml:
+	Added support for static_approximation character transformation.
+
+2006-04-18  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* treeSearch.ml:
+	allow specifying of a queue (search) manager to use.  use the nicer progress printer.
+
+	* tree.mli:
+	allow others to use maps of clade fingerprints (though inefficient)
+
+	* Makefile, sexpr.ml: simple sexpr ETA feedback
+
+	* ncursesML.ml: described programs with mpiexec
+
+	* helpIndex.ml, poyCommand.ml: fixed wrong CVS tags
+
+2006-04-17  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile, chartree.ml, data.ml, helpIndex.ml, methods.ml, poyCommand.ml, ptree.ml, ptree.mli, seqCS.ml, status.mli, statusCommon.ml, status_flat.ml, status_ncurses.ml, treeSearch.ml:
+	Improvements:
+
+	- Added the spr_simple function to the Ptree module to perform a single spr step
+	  to find the next tree in a local search trajectory.
+
+	- Added the single_spr command from the end user command line to apply the
+	  previous search strategy.
+
+	- Added regular expression support for the command search (ok ok, Illya was
+	  right about search_forward).
+
+	- Added the StatusCommon module that will hold all the common functionality of
+	  the different end user interfaces.
+
+2006-04-17  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* parallelScripting.ml:
+	added fusing support to parallel scripting (strategy: do not parallelize)
+
+	* help.txt, helpIndex.ml: all help bases covered.
+
+2006-04-15  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* main.ml: Fixed some extra spaces in the welcome message.
+
+2006-04-14  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile, algn.c, alphabet.ml, characterScripting.ml, characterScripting.mli, data.ml, data.mli, diagnosis.ml, help.txt, impliedAlignment.ml, matrices.c, matrix.ml, matrix.mli, methods.ml, node.ml, node.mli, parallel.ml, parser.ml, parser.mli, poyCommand.ml, poyFormaters.ml, poyParser.ml, scripting.ml, seqCS.ml, sequence.ml, sequence.mli, status.mli, status_flat.ml, status_ncurses.ml, tree.ml, tree.mli:
+	Several bugfixes:
+
+	Alignment library:
+
+	- The two dimensional alignment procedure was treating wrongly a corner of the
+	 Ukkonen barrier - limit. For this reason, under certain circumstances, the
+	 alignment would fail or vary between runs, even in the same session.
+
+	Output in Ncurses:
+	- The user interface can now keep a pool of opened files and channels for the
+	  user to direct output as needed. The lack of this functionality was causing
+	  the diagnosis and other output to be incorrectly formatted as each file was
+	  being closed and opened to append again the new contents.
+
+	User Interface in Ncurses
+	- Backspace works again as expected.
+	- Changing in the middle of the command line and pressing enter doesn't delete
+	  the part of the command line after the cursor.
+	- The redraw command was fixed a little big.
+
+2006-04-14  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* help.txt: all help topics should be added...
+
+	* nonaddCSc.c: fixed pentium4 issues
+
+	* status_ncurses.ml: fix scrolling bugs
+
+	* help.txt, helpIndex.ml, main.ml, status_ncurses.ml, Makefile:
+	lots of help changes; partial fixes for scrolling
+
+	* add.h: compatibility with x86
+
+2006-04-13  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* status_flat.ml:
+	Added two phony functions to the flat interface, redraw_screen and
+	resize_history, only required by the ncurses interface.
+
+2006-04-12  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* help.txt: utility for emacs
+
+	* help.txt:
+	added stubs for missing help items, no descriptions or cross-references
+
+	* ptree.ml:
+	separate spr/tbr join functions in ptree.ml; clunky interface.  not currently in
+	the mli file.
+
+	* poyCommand.ml: identifiers without quotes work in certain places
+
+	* ncurses.c, ncursesML.ml, status_ncurses.ml:
+	changed ncurses code to compile on Linux (removed SIGWINCH references)
+
+2006-04-12  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* addCS.ml, help.txt, methods.ml, ncurses.c, ncursesML.ml, poyCommand.ml, poyFormaters.ml, scripting.ml, status.mli, status_ncurses.ml:
+	Added three end user functions:
+
+	History resizing.
+	Screen redrawing.
+	Diagnosis of a tree.
+
+	Also added the hooks for the signal handler for the screen resize, but failed to
+	make it work properly. Maybe Illya manage to make it go ... I will attack that
+	later again.
+
+2006-04-11  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* algn.c: Sorry, left debugging information in the last commit.
+
+	* algn.c: Bugfix:
+
+	The right Ukkonen barrier was being moved one cell, causing incorrect cost
+	calculation when the alignment path was close enough to this barrier. It only
+	required a small change in the offset of the barriers to be fixed.
+
+	* status_flat.ml:
+	Added a phony function to fill the output_table function required by status.mli
+
+2006-04-11  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* addCS.ml, addCS.mli, node.ml, node.mli, nonaddCS.ml, nonaddCS.mli, sankCS.ml, sankCS.mli, seqCS.ml:
+	support for making character sets in Node, including filtering out sets of
+	characters for the different character types
+
+	* charTransform.ml, characterScripting.ml, characterScripting.mli, node.ml, node.mli, tags.ml:
+	preliminary support for heterogeneous sets of characters
+
+	* status_ncurses.ml: fix annoying warning
+
+2006-04-10  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* addCS.ml, addCS.mli, charTransform.ml, character.ml, character.mli, characterScripting.ml, characterScripting.mli, charset.ml, charset.mli, node.ml, node.mli, support.ml:
+	fixer-upper related to getting Charset to work again, although we will be using
+	a different method for sets of characters
+
+2006-04-08  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile, asciiTree.ml, chartree.ml, chartree.mli, data.ml, data.mli, main.ml, methods.ml, ncurses.c, ncursesML.ml, node.ml, node.mli, parser.ml, parser.mli, poyCommand.ml, poyFormaters.ml, ptree.ml, ptree.mli, scripting.ml, status.mli, status_ncurses.ml, tags.ml:
+	Added support for the data () command in the poy console.
+
+2006-04-07  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* ptree.ml:
+	tree fusing: reroot on the Ptree side; nicer status messages
+
+2006-04-06  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* status_ncurses.ml: color scrolling
+
+	* methods.ml, poyCommand.ml, ptree.ml, ptree.mli, treeSearch.ml:
+	support for specifying min and max clade size
+
+	* charTransform.ml, sexpr.ml, sexpr.mli, support.ml:
+	more status feedback for processing over sexprs
+
+	* methods.ml, poyCommand.ml, ptree.ml, ptree.mli, sexpr.ml, sexpr.mli, treeSearch.ml:
+	fixes to tree fusing support; sexprs that keep you updated on their status
+
+	* chartree.ml, methods.ml, poyCommand.ml, ptree.ml, ptree.mli, scripting.ml, tree.ml, tree.mli, treeSearch.ml:
+	support for tree fusing and for null search (no_search)
+
+	* sexpr.ml, sexpr.mli: added singleton and choose_random
+
+	* help.txt: added more help
+
+	* hash_tbl.ml: change default safety
+
+	* Makefile: fix make docs
+
+2006-04-05  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile, addCS.ml, addCS.mli, node.ml, nonaddCS.ml, nonaddCS.mli, sankCS.ml, sankCS.mli, seqCS.ml, tags.ml:
+	Improvements:
+
+	- New Tags module holding all the tags information for IO.
+	- Added the barebones for diagnosis in the character types. This is work in
+	  progress.
+
+	* data.ml, data.mli:
+	Added the get_used_observed function for fast IO information access.
+
+	* ncurses.c, ncursesML.ml, status_ncurses.ml: Improvements:
+
+	Added support for left and right arrow for command line editing.
+
+2006-04-04  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* status_ncurses.ml: keybinding modifications
+
+	* poyCommand.ml: all cost calculation lists are now optional
+
+2006-04-04  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* chartree.ml, chartree.mli, ptree.ml, ptree.mli, queues.ml:
+	Improved the efficiency of the building process by using Lazy calculations.
+	Also improved the efficiency of TBR by avoiding a full uppass of the clade node
+	after the rerooting.
+
+2006-04-04  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* Makefile, ncurses.c, ncursesML.ml, status_ncurses.ml: scrolling!
+
+2006-04-03  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* status_ncurses.ml: tiny fixes
+
+2006-04-03  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* scripting.ml:
+	Checks weather or not there are trees to display in graph.
+
+	* methods.ml, parallelScripting.ml, poyCommand.ml, scripting.ml:
+	Added graphical trees to the user command line.
+
+2006-04-03  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* main.ml, status_ncurses.ml: fixing some output, new codename
+
+	* Makefile, ncurses.c, ncursesML.ml, status_ncurses.ml:
+	command history!
+
+	* dequeue.ml: added pop_back
+
+2006-04-03  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* main.ml, status.mli, status_flat.ml, status_ncurses.ml:
+	Added carets to show the position of an error in the command line.
+
+	* charTransform.ml, chartree.ml, chartree.mli, methods.ml, node.ml, node.mli, parallelScripting.ml, poyCommand.ml, ptree.ml, ptree.mli, queues.ml, scripting.ml, sequence.ml:
+	Improved speed of SPR, TBR is still vastly slower though it is very easy to fix.
+	That will come later!
+
+	Added wipe function for endusers to clear up the memory of the program
+
+	Fixed a bug in the support and perturbation methods.
+
+2006-04-02  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* algn.c, chartree.ml, seqCS.ml, sequence.ml:
+	Removed a forced downpass in the TBR that was making it slower than needed
+	(forgot to activate the incremental down and upppass in that one), and commited
+	some small changes in the alignment procedure.
+
+2006-04-01  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* dequeue.ml, main.ml, ptree.ml, ptree.mli, tree.ml, tree.mli, chartree.ml:
+	Fixed a bug in the tbr_step function. The tabu manager was not being cloned,
+	therefore, tbr was performing the same number of comparisons of the regular spr,
+	always failing to find something better. This was a hard one!
+
+	* poyCommand.ml:
+	Fixed an error in the parser for commands accepting an integer or a float.
+
+	* alphabet.ml: Added the '-' as a valid representation of a gap.
+
+	* methods.ml, parallel.ml, parallel.mli, parallelScripting.ml, ptree.ml:
+	Updated the Parallel interface to support all the regular commands.
+
+2006-04-01  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* data.ml, data.mli, dequeue.ml, main.ml, ncurses.c, ncursesML.ml, poyCommand.ml, searchInformation.ml:
+	more interface
+
+2006-03-31  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* parallelScripting.ml, queues.ml: Fixed the wagner tree construction.
+
+2006-03-31  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* main.ml, ncurses.c, ncursesML.ml, status_ncurses.ml: colorful ncurses
+
+	* help.txt, helpIndex.ml, main.ml, poyCommand.ml, status_ncurses.ml:
+	super-spiffy ncurses interface, phase 1
+
+	* ctree.mli: documentation
+
+2006-03-31  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile, algn.c, build.ml, build.mli, charTransform.ml, charTransform.mli, chartree.ml, chartree.mli, diagnosis.ml, node.ml, node.mli, parallelScripting.ml, poyCommand.ml, ptree.ml, ptree.mli, queues.ml, rtree.ml, scripting.ml, scripting.mli, searchInformation.ml, seqCS.ml, sequence.ml, sequence.mli, support.ml, support.mli, tree.ml, tree.mli, treeSearch.ml:
+	Improvements:
+
+	Several modifications, the incremental optimization now is in use. It has a
+	glitch in rerooting, but that will fixed in the next commit. This change implied
+	the modification of the interface of several functions, in particular in
+	Chartree and Ptree.
+
+	The cost of a connected component is not associated with a phantom vertex
+	anymore, but it's associated with the handle of the connected component, not in
+	the handle's data, but in the ptree itself.
+
+2006-03-30  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* help.txt, helpIndex.ml, status.mli: help works better
+
+2006-03-29  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* Makefile, addCS.ml, alphabet.ml, data.ml, data.mli, impliedAlignment.ml, node.ml, nonaddCS.ml, parser.ml, parser.mli, sankCS.ml, scripting.ml, searchInformation.ml, sequence.ml, sequence.mli:
+	initial support for user-unspecified flag
+
+2006-03-22  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* treeSearch.ml, queues.ml:
+	queues: threshold and number kept work correctly now.  also, keep all result trees.
+
+	* oper.ml, oper.mli: we don't use Oper anymore
+
+	* chartree.mli, ptree.ml, ptree.mli, tree.ml, tree.mli:
+	cleanups and documentation
+
+	* Makefile, charTransform.ml, chartree.ml, chartree.mli, graphTree.ml, node.ml, parallelScripting.ml, ptree.ml, ptree.mli, queues.ml, scripting.ml, scripting.mli, seq.c, seqCS.ml, sequence.ml, sequence.mli, sexpr.ml, support.ml, tabus.ml, tree.ml, tree.mli, treeSearch.ml:
+	new tree code commit, not yet including incremental passes
+
+2006-03-21  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* ptree.ml, ptree.mli, tabus.ml, tree.ml, tree.mli:
+	tree code works with SPR and TBR now
+
+2006-03-21  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile, helpIndex.ml, methods.ml, poyCommand.ml, scripting.ml:
+	Additions:
+	Now there is a help() command for online help in POY.
+
+	* arguments.ml: Also forgot this one ...
+
+	* diagnosis.ml: Forgot to add this in the previous commit ...
+
+	* Makefile, algn.c, charTransform.ml, charTransform.mli, cost_matrix.ml, cost_matrix.mli, data.ml, data.mli, impliedAlignment.ml, impliedAlignment.mli, main.ml, methods.ml, ncurses.c, ncursesML.ml, parallel.ml, parallelScripting.ml, parser.ml, parser.mli, poyCommand.ml, poyParser.ml, ptree.ml, ptree.mli, scripting.ml, scripting.mli, searchInformation.ml, status.mli, status_flat.ml, status_ncurses.ml, treeSearch.ml:
+	poyCommand.ml parses the command line for a simplified poy interface.
+	searchInformation.ml provides functionality to output the current state of a
+	stored search.
+	Improvements:
+	- Numerous changes in the ncurses interface, a new command line is supported for
+	  script running, and a window with the state of the current search has also
+	  been added.
+	- Implied alignments are now also supported in the input and also as
+	  perturbation technique.
+	- Some command line options (-e and -d and -help) are also supported.
+	- The Makefile now supports a single native code executable (mpoy.opt) or
+	  console (mpoy_console) for both parallel and non parallel, and ncurses
+	  or non-ncurses based interface, as well as the graphic environment.
+
+2006-03-21  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* chartree.ml, chartree.mli, ptree.ml, ptree.mli, queues.ml, scripting.ml, tabus.ml, tree.ml, tree.mli:
+	many changes to trees.  we can now break and join without moving the handle.
+
+2006-03-16  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile: Added a missing rule for mpoy_console
+
+	* methods.ml, parallelScripting.ml:
+	Added support for Ratchet local escape in parallel and updated the interface for
+	the latest usage of Bremer support in parallel.
+
+	* main.ml:
+	Sorry, a small change in main that wasn't intended for the repository.
+
+	* Makefile, charTransform.ml, charTransform.mli, chartree.ml, chartree.mli, main.ml, methods.ml, parallelScripting.ml, ptree.ml, ptree.mli, scripting.ml, scripting.mli, sequence.ml, sexpr.ml, sexpr.mli, treeSearch.ml:
+	Added support in the scripting language to perturbations using Ratchet and
+	local neighborhood escaping using one of the perturbation techniques.
+
+	* ncurses.c, ncursesML.ml, status_ncurses.ml:
+	Lines are now deleted whenever is necessary in the status window.
+
+2006-03-15  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile, charTransform.ml, chartree.ml, chartree.mli, graphTree.ml, main.ml, node.ml, parallelScripting.ml, ptree.ml, ptree.mli, queues.ml, scripting.ml, scripting.mli, seq.c, seqCS.ml, sequence.ml, sequence.mli, sexpr.ml, support.ml, tabus.ml, tree.ml, tree.mli, treeSearch.ml:
+	Modified the cost location to inside the tree, and it is now consistently
+	associated with each connected component rather than the node itself.
+	Added some functions for incremental optimization.
+	Added a binding to display an array of trees and navigate them using the
+	GraphTree.display command.
+
+2006-03-14  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* chartree.ml, chartree.mli, methods.ml, ptree.ml, ptree.mli, scripting.ml, support.ml, treeSearch.ml:
+	* fixed TBR: also check the null-reroot
+	* added SingleTbr search method
+
+	* asciiTree.ml: better breaking hints
+
+	* chartree.ml, main.ml, parser.ml, scripting.ml:
+	fixing long-standing parser bug, and fixing clade output support
+
+2006-03-09  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* methods.ml, ptree.ml, ptree.mli, scripting.ml, support.ml:
+	Support for outputting Hennig clade files
+
+2006-03-08  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* support.ml, support.mli: print taxon names
+
+	* asciiTree.ml: comments for docs
+
+	* node.ml, node.mli, ptree.ml, ptree.mli, support.ml, support.mli, tree.ml, treeSearch.ml:
+	exclusions support and Bremer
+
+	* chartree.ml: Chartree changes to work with exclusions
+
+2006-02-28  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* main.ml:
+	Fixed a stupid bug in the interface, there was no initialization call!
+
+2006-02-28  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* chartree.ml, methods.ml, ptree.ml, support.ml, support.mli:
+	more updates to bremer support
+
+	* charTransform.ml, charTransform.mli, chartree.ml, methods.ml, node.ml, node.mli, ptree.ml, ptree.mli, support.ml, support.mli:
+	partial support for Bremer support, etc.
+
+2006-02-24  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* Makefile, ptree.ml, tabus.ml, tree.ml, treeSearch.ml:
+	fixes; we now have a working subtree tabu manager
+
+2006-02-23  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* ftol.ml, methods.ml, parallel.ml, parallelScripting.ml: Improvements:
+
+	Added a debugging communication protocol with the slaves to retrieve their
+	current state for even easier test and usage of the parallel scripts.
+
+	* timer.ml: Improvements:
+
+	Added the System time (stime) and the wall time for the timing of a computation.
+
+	* sexpr.ml, sexpr.mli: Improvements:
+
+	Added the nth function to retrieve the nth leaf from a Sexpr.t
+
+	* build.ml: Bugfix:
+
+	Now the random_wagner tree generation return a more organized Sexpr.t without
+	dumb `Set nodes with only one element inside (which should be a `Single).
+
+2006-02-22  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* status_flat.ml: fixed typo
+
+2006-02-22  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* timer.ml: Sorry. left some crap in the code from the first test.
+
+	* Makefile, getrusage.c, timer.ml: Improvements:
+
+	- Fixed the process time calculation in the Time module. We are now using
+	  getrusage, which is a standard Unix function to do the job, the old times
+	  function is deprecated and therefore the terrible error we observed in some
+	  environments, specially in Mac OS X in more than one processor.
+
+	* ptree.ml, status_ncurses.ml:
+	Improved the messaging for status messages that don't have max or achieved
+	values.
+
+	* Makefile, ncurses.c, ncursesML.ml, status_ncurses.ml:
+	Added a small eye candy this morning.
+
+	* parallelScripting.ml: Cleaning up some garbage left behind.
+
+	* Makefile, addCS.ml, build.ml, ncurses.c, ncursesML.ml, parallel.ml, parallelScripting.ml, parser.ml, ptree.ml, queues.ml, status.mli, status_flat.ml, status_ncurses.ml, support.ml:
+	Because Illya wanted it, the stacking of the windows in the status section of
+	the console version of the program is now enabled.
+
+	* Makefile, methods.ml, parallel.ml, parallel.mli, parallelScripting.ml, scripting.ml, scripting.mli, sexpr.ml, sexpr.mli, support.ml, support.mli:
+	Bugfixes:
+	    Fixed several bugs in the parallel module. The lack of type in the distribute
+	    and n_tasks was leading to a false sense of type security, this flaw has been
+	    fixed now.
+	Improvements:
+	    Support for parallel Support values has been finally added, as the previous bug
+	    was making it hard to detect a support related bug.
+	    Added support for printing output trees in the scripting language.
+
+2006-02-21  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile, ncurses.c, ncursesML.ml, parallelScripting.ml, status.mli, status_flat.ml, status_ncurses.ml:
+	Added some functionality that was left out in previous debugging in the ncurses
+	interface.
+
+	* status_ncurses.ml: removed the threads.
+
+2006-02-21  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* ptree.ml: status messages for Alternate
+
+	* ptree.ml: alternate is now tail-recursive
+
+	* ptree.ml: modified alternate behavior
+
+2006-02-21  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* parallel.ml, parallelScripting.ml, status_flat.ml:
+	Fixed Status_flat IO to use the Format routines.
+	Multiple small bugfixes in the parallel code.
+
+	* build.ml, parallel.ml, parallelScripting.ml, sexpr.ml, status_flat.ml:
+	Fixed a stupid bug in status_flat that was causing an illegal update exception.
+
+2006-02-21  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* Makefile, charTransform.ml, charTransform.mli, main.ml, oper.ml, oper.mli, ptree.ml, ptree.mli, queues.ml, scripting.ml, scripting.mli, tabus.ml, treeSearch.ml:
+	new SPR and TBR, new tabus interface, and an untested "subtree" tabu manager
+
+2006-02-21  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile, ftol.ml, parallel.ml, parallelScripting.ml, process.ml, queues.ml:
+	Multiple commit fixes for the parallel environment.
+	One bug fix that was causing the system to build one extra wagner tree than
+	requested.
+
+2006-02-20  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* addCS.ml, data.ml, ftol.ml, main.ml, parallel.ml, parallelScripting.ml, parser.ml, process.ml, ptree.ml:
+	Improved the general program interface using the new ncurses library and the
+	Format module.
+
+	* matrices.c, matrix.ml, matrix.mli:
+	Added a memory flushing function for fault tolerance and better memory
+	management.
+
+	* Makefile, ncurses.c, status_ncurses.ml:
+	Completely reprogrammed Status_ncurses and added lots of new ncurses bindings in
+	the c interface. The interface now also uses the Threads module, therefore the
+	modifications in the Makefile.
+
+	* ncursesML.ml:
+	New and more complete file with ncurses bindings for Ocaml.
+
+	* asciiTree.ml: Improvements:
+
+	Added the for_formatter function that outputs a tree with proper hints for a
+	pretty printer Format.fprintf. See the Format module documentation for further
+	information.
+
+2006-02-17  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* scripting.mli: Forgot to commit this file.
+
+2006-02-17  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* support.ml, support.mli:
+	support in Support for adding together support trees
+
+2006-02-17  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile, methods.ml, parallelScripting.ml, scripting.ml, support.ml, support.mli:
+	Adding support for support in the scripting language with the support of other
+	fellow programmers.
+
+	* methods.ml:
+	Added the integer parameter to the Jakknife support method.
+
+	* support.ml: Something still missing in the previous commit?
+
+	* support.mli:
+	Frogot to commit this file in my latest support.ml commit.
+
+	* add.c, add.h: MMX will only be on in 32 bit environments.
+
+2006-02-16  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* characterScripting.ml, characterScripting.mli, parallelScripting.ml:
+	Added the necessary changes in the ParallelScripting module to fit in the latest
+	set of changes.
+
+	* Makefile, build.ml, build.mli, charTransform.ml, charTransform.mli, characterScripting.ml, characterScripting.mli, node.ml, node.mli, scripting.ml, scripting.mli, support.mli, treeSearch.ml:
+	Each function to handle the corresponding methods of the scripting language
+	is now inside the corresponding library. So the building methods are handled in
+	the Build module. For this reason the TreeSearch module is added in this commit
+	and is officialy inagurated :-)
+
+	* Makefile, methods.ml, parallel.ml, parallel.mli, parallelScripting.ml, sleep.c, status.mli, status_flat.ml, timer.ml:
+	Improvements:
+
+	- The parallel messaging works better now, with the slaves sending the IO to the
+	  master to take care of them.
+
+	- Also there is a level of verbosity that can be sent at any moment to the
+	  slaves to see more or less messages at runtime.
+
+	- Some debugging code was removed.
+
+	* graphTree.ml: Improvements:
+
+	- Added a tree array navigator function and the regular tree display will also
+	  display whatever information there is for the internal nodes, as opposed to
+	  only in a leaf.
+
+2006-02-15  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* ftol.ml, methods.ml, parallel.ml, parallel.mli, parallelScripting.ml, process.ml, register.ml, sexpr.ml, status.mli, status_flat.ml, status_ncurses.ml:
+	Improvements:
+
+	- Added support for messaging from the slaves to the master for better IO. Now
+	  only the master performs IO.
+
+2006-02-14  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* characterScripting.ml:
+	Removed the try ... with in the distance calculation that is outputing a (-1) as
+	opposed to a message with some proper information.
+
+	* parallel.ml:
+	Modified the usage of Queues with stacks to observe faster the effect of a
+	problematic set of tasks in the jobs.
+
+2006-02-13  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* sexpr.ml, sexpr.mli: Improvements:
+
+	- Added a function to convert a sexpr to array.
+
+	* alphabet.ml, alphabet.mli: Improvements:
+
+	- Added the nucleotide_annotations alphabet which should be used when the
+	  sequences hold annotations or are divided in subsequences using the pipe '|'
+	  as in regular POY files. The nucleotides alphabet doesn't contain this
+	  character anymore, for pure sequences parsing and error detection.
+
+	* cm.c, cm.h: Improvements:
+
+	- Removed all references to the pointer counters.
+
+	* seqCS.ml: Workaroud:
+
+	- Found a bug in some Ukkonen related function, so I am turning it off to
+	  continue with the tests until I find the source of the problem.
+
+2006-02-11  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* parallelScripting.ml: Sorry, left some test stuff in the module.
+
+	* characterScripting.ml, ftol.ml, parallelScripting.ml:
+	Some bugfixes and turned on some other debugging messages.
+
+	* sexpr.ml, sexpr.mli: - Improvement.
+
+	Added the leaf_iter function to the library.
+
+	* parallelScripting.ml: Improvements:
+
+	- Modified the `Distance and `Median operations on character sets to use the
+	  Sexpr.shallow_all_to_all function, which improves performance on large
+	  datasets and caused extremely large memory usage in the master.
+
+	* sexpr.ml, sexpr.mli: Bugfixes:
+
+	- Improved the definition of the shallow_all_to_all function and added it to the
+	  external interface.
+
+	* sexpr.mli: Forgot to add this before.
+
+	* sexpr.ml: Improvement:
+
+	- Added a shallow all to all operation for very large datasets.
+
+2006-02-10  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* ftol.ml, impliedAlignment.ml, impliedAlignment.mli, node.ml, parallel.ml, parallelScripting.ml, process.ml, seqCS.ml, sexpr.ml:
+	Bugfix:
+
+	- Removed the references to Matrix.t in all datastructures to reduce marshal
+	  size in parallel version.
+
+	- Fixed a boundary error in the Parallel.distribute_sexpr function.
+
+	* Makefile, comm.ml, comm.mli, parallel.ml, parallel.mli, parallelScripting.ml:
+	Bugfix:
+
+	- The slave will only send the dead signal to the master if it is not in
+	  response to the master's dead signal.
+
+	* parallel.ml, parallelScripting.ml: Bugfix:
+
+	- Removed some error messages that where left behind.
+
+	* characterScripting.ml, characterScripting.mli: Bugfix:
+
+	- Forgot to add these files to the repository for the previous commit.
+
+	* Makefile, data.ml, data.mli, ftol.ml, methods.ml, node.ml, node.mli, parallel.ml, parallel.mli, parallelScripting.ml, process.ml, process.mli, scripting.ml, scripting.mli, sexpr.ml:
+	Improvements:
+
+	- A new parallel interactive console can be compiled using make parconsole. This
+	  is useful for parallel debugging and parallel experimentation. It also lets
+	  you run native code POY with the flexibility of the interactive console to try
+	  things out.
+
+	- A parallel calculation of methods specified in the leafs of a 'a Sexpr.t was
+	  added, so matrix calculations or scripts can be parallelized using a Sexpr.t.
+
+2006-02-08  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* scripting.ml, scripting.mli: Improvement:
+
+	- Poy will now dump a file with the current state of the computation upon crash.
+	  This computation state can be reloaded to continue later from the same stage.
+
+2006-02-07  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile, addCS.mli, build.mli, charTransform.mli, data.ml, data.mli, methods.ml, node.ml, node.mli, nonaddCS.ml, nonaddCS.mli, oper.ml, oper.mli, parallelScripting.ml, poyParser.ml, poyParser.mli, ptree.ml, ptree.mli, queues.ml, sankCS.ml, sankCS.mli, scripting.ml, scripting.mli, seq.c, sequence.ml, support.ml, tree.ml, tree.mli:
+	Improvements:
+
+	- Preparing to add character operations in the POY language (and in parallel),
+	  moved the Data module outside of PoyParser to fix some circular dependencies.
+
+	- Activated marshaling of sequences.
+
+2006-02-07  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* status_ncurses.ml: fix: $ -> %
+
+2006-02-07  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* status_ncurses.ml: Forgot to update a match with output.
+
+	* Makefile, ftol.ml, messages.ml, parallel.ml, parallelScripting.ml, process.ml, register.ml, status.mli, status_flat.ml, status_ncurses.ml:
+	Improvements:
+
+	- Unified the Status and Messages libraries.
+
+2006-02-07  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* support.ml: preliminary support for parallelization
+
+2006-02-07  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* messages.ml, parallel.ml, parallelScripting.ml:
+	Minor bugfixes product of code that was added for debugging purposes (isn't it
+	ironic?)
+
+	* nonaddCSc.c, parallelScripting.ml, scripting.ml: Bugfixes:
+
+	- Eliminated a tabu manager inconsistency error between searches.
+	- Eliminated a nonadditive character Marshal error.
+
+2006-02-06  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* messages.ml, nonaddCSc.c: Fixed some bugs in the marshaling layer.
+
+2006-02-06  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* sankCS.ml, sankCS.mli: support for setting the TCM in Sankoff chars
+
+2006-02-06  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile, algn.c, asciiTree.ml, asynch.ml, asynch.mli, build.ml, build.mli, cm.c, comm.ml, comm.mli, cost_matrix.ml, ftol.ml, ftol.mli, gen_rtree.ml, graphTree.ml, main.ml, matrices.c, matrix.ml, messages.ml, methods.ml, node.ml, oper.ml, oper.mli, parallel.ml, parallel.mli, parallelScripting.ml, poyParser.ml, poyParser.mli, process.ml, process.mli, ptree.ml, ptree.mli, queues.ml, scripting.ml, scripting.mli, sexpr.ml, status_ncurses.ml, tree.ml, tree_graphics.ml:
+	Improvements:
+
+	- Parallel libraries changed, and fault tolerance has been modified using
+	  polymorphic variants to represent the computations (parallel.ml and ftol.ml)
+
+	- A parallel scripting implementation was added (parallelScripting.ml) using a
+	  master and slaves. Each slave can potentially have other slaves assigned to
+	  it, though this feature was not tested. If the parallel environment is not
+	  present, a simple run is performed.
+
+	- The tree_graphics library was splitted in two halves to reduce requirements in
+	  systems lacking the graphics library in ocaml (this is optional depending on
+	  X)(tree_graphics.ml, asciiTree.ml, graphicTree.ml).
+
+	- The basic structure of the build operations was modified to hold, instead of
+	  lists of lists of trees, a s-expression like structure, closer to just a tree
+	  (These are not s-expressions). This implied the modification of items in
+	  oper.ml[i] and main.ml.
+
+	- Marshaling bugs in matrices.c and cm.c where fixed.
+
+	- A parmpoy.opt target was added to the Makefile, and the new files where added
+	  in the proper locations.
+
+	* nonaddCSc.c: Bugfix:
+
+	- The name of the custom type didn't change according to the 8, 16 or 32 number
+	  of characters. This caused a segmentation fault when attempting to unmarshal
+	  this type which has been fixed.
+
+2006-02-03  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* gen_rtree.mli, hash_tbl.ml: Updateed documentation.
+
+	* ptree.mli, queues.ml, rtree.mli, tabus.ml, tree.mli, graphviz.mli, ptree.ml:
+	Updateed documamntation.
+
+2006-02-03  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* Makefile, addCS.ml, charTransform.ml, charTransform.mli, support.ml, support.mli:
+	support for supports
+
+	* hash_tbl.ml: updated interface for Hash_tbl
+
+2006-02-03  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* gen_rtree.ml, gen_rtree.mli:
+	Added function to convert a rooted tree into a generalized rooted tree.
+
+2006-02-02  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* scripting.ml: Minor modifications.
+
+2006-02-02  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* Makefile: Added bitSet.cmo and enum.cmo to TREES dependecies.
+
+	* bitSet.ml, bitSet.mli, enum.ml, enum.mli:
+	Files from extLib that implement BitSet functionality.
+
+	* gen_rtree.ml, gen_rtree.mli:
+	Updated semi-strict consensus to work with BitSets.
+
+2006-01-31  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* gen_rtree.ml, metric.ml, node.ml: fixes
+
+	* charTransform.ml, charTransform.mli:
+	transformations for bootstrapping and jackknifing
+
+	* Makefile, addCS.ml, addCS.mli, sankCS.ml, sankCS.mli:
+	added [codes] method for AddCS and SankCS, made AddCS compile (added Bigarray to makefile)
+
+2006-01-31  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* add.c, add.h, addCS.ml, addCS.mli, memstack.h, metric.ml:
+	Improvements:
+
+	- Removed the initialization routines for the additive character set. There is
+	  no global state for the library, so it is now safe for independent calls with
+	  different character size.
+
+	- Modified the character set data structure both in the Ocaml and C side. The
+	  codes are held in the Ocaml side rather than the C side to reduce memory
+	  allocations and array copying and duplication.
+
+2006-01-30  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* oper.ml, oper.mli, queues.ml:
+	queues to keep the [n] first / last / random trees while performing a first-best
+	search.  the results are not returned in sorted order currently.
+
+2006-01-30  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile, methods.ml, poyParser.ml, scripting.ml, scripting.mli:
+	Improvements:
+
+	- Added functionality for basic end-user scripts and support for the old Poy
+	  command line (at least the basic procedures for it).
+
+	* Makefile: Improvements:
+
+	- Included new files that where added in a previous commit.
+	- Wrapped sadman in a library
+
+	* oper.ml, oper.mli: Improvements:
+
+	- Added necesary support for threshold keeping queues.
+
+	* parser.ml, parser.mli: Improvements:
+
+	- Added functions to handle character weights in the encoding specification
+	  type.
+
+	* metric.ml: Improvement:
+
+	- Added necessary support for character weighting
+
+	* node.ml, node.mli, poyParser.ml, poyParser.mli: Improvements:
+
+	- Most of the data input functions where modified to support incremental or
+	  separate files loading. It also allows us to read any kind of data file from the
+	  command line as opposed to only poy scripts. For example, the Node.of_file
+	  function now also takes a PoyParser.Data.d parameter that will contain any
+	  previously loaded data that will be still present in the output
+	  PoyParser.Data.d.
+
+	* charTransform.ml, charTransform.mli: Improvements:
+
+	- Added ratchet and character sampling. Though the potential for taxon sampling
+	  is present, it is still not supported.
+
+	* methods.ml: Improvements:
+
+	- Added plan tbr and plain spr to the local_optimum and added support for files
+	  input.
+
+	* hashedFuncs.ml, hashedFuncs.mli: Improvements:
+
+	- Removed the necessity of the init () function to initialize the library. It
+	  now silently occur upon startup.
+
+	* chartree.ml, chartree.mli: Improvements:
+
+	- Added the features function the the necessary functors and interfaces so that
+	  the Ptree features protocol is properly supported.
+
+	* queues.ml: Improvements:
+
+	- Added a threshold handler queue manager that will keep the trees within
+	  certain threshold from the current optimum.
+
+	* timer.ml: Improvements:
+
+	- Added the timer module and removed it from the Ptree module, which was a
+	  rather unnatural place for it.
+
+	* ptree.ml, ptree.mli, tabus.ml: Improvements:
+
+	- Added the features method to the tabu lists protocol as well as to the TreeOps
+	  in the Ptree protocol. In this way the Sadman integration into Poy will
+	  clutter the code less.
+
+2006-01-27  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* Makefile: Added nums.cma to std-libs.
+
+	* gen_rtree.ml: Small fix.
+
+	* hash_tbl.ml: Hash_tbl used by the consensus tree.
+
+	* Makefile, gen_rtree.ml, gen_rtree.mli, primes.ml, primes.mli:
+	Gen_rtree:Added functionality to get clusters of rooted trees. Need to
+	implement semi-strict consensus.
+	Primes: Added functionality to get first n primes.
+
+2006-01-26  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* gen_rtree.ml, ptree.ml, ptree.mli, rtree.ml, rtree.mli:
+	ptree: Added interface to consensus trees.
+	rtree:changed index nodes to return index both ways
+	gen_rtree:update build_ctree to return both index tables.
+
+2006-01-26  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* sadmanOutput.ml:
+	don't create output.xml if we're sending stuff over the network
+
+2006-01-26  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* gen_rtree.ml, gen_rtree.mli, rtree.ml, rtree.mli, tree.ml, tree.mli:
+	Tree: Added is_leaf functionality.
+	Rtree: Wrapped of_tree with root_at
+	Gen_rtree: changed the get_num_nodes function.
+
+2006-01-26  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* addCS.ml, all_sets.ml, alphSpec.ml, array_ops.ml, asynch.ml, build.ml, charTransform.ml, characSpec.ml, character.ml, charset.ml, chartree.ml, comm.ml, cost_matrix.ml, ctree.ml, fingerPrint.ml, ftol.ml, gen_rtree.ml, graphviz.ml, hashedFuncs.ml, impliedAlignment.ml, intSpec.ml, lang.ml, lang4.ml, matrix.ml, messages.ml, methods.ml, metric.ml, node.ml, nonaddCS.ml, oper.ml, params.ml, parfunc.ml, paroper.ml, paroperas.ml, parparam.ml, parser.ml, poyParser.ml, primes.ml, process.ml, profiles.ml, ptree.ml, register.ml, rtree.ml, sadman.ml, sadmanOutput.ml, sankCS.ml, seqCS.ml, sequence.ml, specIndex.ml, status_flat.ml, status_ncurses.ml, tabus.ml, taxon.ml, tree.ml, tree_graphics.ml, wordSpec.ml:
+	adding Sadman revision number tags
+
+	* main.ml: more sadman output
+
+2006-01-25  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* main.ml: sadman client fixes
+
+	* Makefile, main.ml, metric.ml, queues.ml, sadmanOutput.ml, sadmanOutput.mli:
+	sadman client additions to work with new server
+
+2006-01-25  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* sadmanOutput.ml: Improvements:
+
+	- Now sadman will send the output to a port in a server for permanent storage.
+
+2006-01-24  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* main.ml, oper.ml: fixes
+
+2006-01-24  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* gen_rtree.ml, gen_rtree.mli:
+	Renamed ctree (consensus tree) to gen_rtree (Generalized Rooted Tree)
+	with polytomic interior nodes.
+
+2006-01-23  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* methods.ml: Bugfix:
+
+	- Added some methods that where missing
+
+	Improvements:
+
+	- Made the types polymorphic variants for later usage in other modules.
+
+2006-01-23  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* Makefile, main.ml, oper.ml, oper.mli, sadman.ml, sadman.mli, sadmanOutput.ml, sadmanOutput.mli:
+	change Sadman interface to allow for nested operations
+
+2006-01-23  ron  <ron@ren.pcc.amnh.org>
+
+	* parser.mli: Added code to handle phylip file formats
+
+	* parser.ml:
+	Added code to parse a Phylip file and convert it to hennig format and added
+	some comments for the dpread code
+
+2006-01-20  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* oper.ml, oper.mli, queues.ml:
+	changes to N best queue: different strategies for aborting the processing of the
+	current tree early
+
+	* ptree.ml, ptree.mli, tree.ml, tree.mli: added "the empty fingerprint"
+
+2006-01-20  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* ctree.mli, rtree.mli: Added mli files for rtree and ctree.
+
+2006-01-20  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile, build.ml, build.mli, graphviz.ml, main.ml, oper.ml, oper.mli, parser.ml, parser.mli, poyParser.ml, poyParser.mli, ptree.ml, ptree.mli, queues.ml, tabus.ml, tree.ml, tree.mli, tree_graphics.ml:
+	Improvements:
+
+	- Another side effect from the needs of my current work. The Parser.Tree.t type
+	  now can hold any kind of data, and so the functions to print and generate
+	  string Parser.Tree.t have to receive a function to convert any internal data
+	  into a string. For this reason, the signature of Ptree.build_tree(s) changed,
+	  and requires the string generation function, which will allow us to have a richer
+	  set of information in display or in the output with the tree. For the regular
+	  needs, Ptree.buid_tree_with_names was added, where the default is just to add
+	  as string the name of the terminals, and an empty string in the internal
+	  nodes.
+
+2006-01-19  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* poyParser.ml, rtree.ml, tree.ml, tree.mli:
+	Added functionality to convert a tree into an rtree. Made code_taxon
+	to return the string representation of the code as a default name for
+	the
+	taxon.
+
+2006-01-19  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* Makefile, charTransform.mli, char_nonadd.mli, charset.mli, chartree.ml, chartree.mli, main.ml, metric.ml, metric.mli, nonaddCS.mli, oper.mli, parser.ml, queues.ml, sadman.mli, sankCS.mli:
+	doc-a-thon!
+
+2006-01-19  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* tree_graphics.ml: Improvement:
+
+	- draw_screen now receives an optional event_handler that will allow you to have
+	  interactive behavior in using this function. The event handler has type
+	  (unit -> unit). The following code snippet shows what kind of behavior you can
+	  get:
+
+	    let rec my_event_handler j m () =
+	        match Graphics.wait_next_event [Graphics.Key_pressed] with
+	        | { Graphics.keypressed = true; key = v } ->
+	                begin match v with
+	                | 'j' -> display (max (j - 1) 0) m
+	                | 'k' -> display (min (j + 1) m) m
+	                | 'q' -> ()
+	                | _ -> my_event_handler j m ()
+	                end;
+	        | _ -> my_event_handler j m ()
+	    and display p m =
+	        let cost, t = all_trees.(p) in
+	        let _ = Tree_graphics.draw_screen ~event_handler:(my_event_handler p m)
+	        ~title:(string_of_int cost)t in
+	        ()
+
+	    let _ = display 0 ((Array.length all_trees) - 1)
+
+	  In this way, the trees are displayed and we can move back and forth over one
+	  array with trees using j and k, and we can exit by using the q key.
+
+	* Makefile: Bugfix:
+
+	- In the new menu based UI the menu library was needed. Following Ron's
+	  direction I modified the Makefile to include those libraries. A new
+	  environment called NCURSES_LIBRARIES holds the list of libraries needed to
+	  link the UI functionality.
+
+	* Makefile: Bugfix:
+
+	- The requirements changed since the last commit as other Modules use the
+	  Array_ops module.
+
+	* main.ml, oper.ml, oper.mli, queues.ml: Improvements:
+
+	- Added a tree queue manager that dumps every tree that is tested in a file.
+	  Check the hold_visited class in the Queues module. This change made also
+	  necessary to update the Oper and Main modules to receive lists of results as
+	  opposed to only one tree from each search procedure.
+
+	* specIndex.mli, wordSpec.mli: Improvements:
+
+	- Updated documentation.
+
+	* parser.ml, parser.mli: Improvements:
+
+	- Added functionality to load trees from files. Part of this functionality was
+	  commited in the previous changes of PoyParser.
+
+	* addCS.ml, addCS.mli, array_ops.ml, array_ops.mli, node.ml, node.mli, nonaddCS.ml, poyParser.ml, poyParser.mli, sankCS.ml, sankCS.mli, seqCS.ml:
+	Improvements:
+
+	- Added character filtering features at runtime. The changes involve adding the
+	  necessary filter in other character types and the functionality itself will be
+	  provided in an module that has not been commited yet.
+
+2006-01-18  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* Makefile, main.ml, test_illya.ml: illya -> mpoy
+
+2006-01-18  ron  <ron@ren.pcc.amnh.org>
+
+	* ncurses.c:
+	made main menu window more of a menu functionality in that you use arrows to
+	move up and down and hit enter to select an item
+
+2006-01-18  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* test_illya.ml: changed to work
+
+	* metric.ml: don't output as much
+
+	* oper.ml, oper.mli: more operations supported
+
+	* charTransform.ml: don't record null-transformations
+
+2006-01-18  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* Makefile, primes.ml, primes.mli:
+	Updated Makefile to include ctree and rtree. Exposed some of the helper
+	functions in prime.ml.
+
+	* ctree.ml, rtree.ml:
+	The implementation of rooted trees and consensus trees. We have a linear
+	time algorithm for the construction of consensus trees,
+
+2006-01-18  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* Makefile, charTransform.ml, charTransform.mli, oper.ml, oper.mli, queues.ml, sadman.ml, sadman.mli, test_illya.ml:
+	huge cleanups to test_illya, introduction of Oper module, and changes to
+	transformation queues (now stacks)
+
+2006-01-18  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* addCS.mli, all_sets.mli, alphSpec.mli, alphabet.ml, alphabet.mli, array_ops.mli, asynch.mli, characSpec.mli, comm.mli, cost_matrix.mli, fingerPrint.mli, ftol.mli, hashedFuncs.mli, impliedAlignment.mli, intSpec.mli, matrix.mli, parfunc.mli, paroper.mli, paroperas.mli, parparam.mli, primes.mli, process.mli, register.mli, sequence.ml, sequence.mli:
+	Improvements:
+
+	- General documentation update.
+
+2006-01-17  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* queues.ml, test_illya.ml: cull trees when using n-best
+
+2006-01-17  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* alphabet.ml: Bugfix:
+
+	- Added the character for a gap in the aminoacids alphabet.
+
+2006-01-17  ron  <ron@ren.pcc.amnh.org>
+
+	* alphabet.ml: added amino acids
+
+2006-01-17  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* parser.ml: Improvements:
+
+	- Turned on protein sequences loading.
+
+	* ptree.ml: Bugfix:
+
+	- Removed an assertion that appears not to be applicable anymore.
+
+	* add.c: Bugfix:
+
+	- The to_string function assumed that the character states being selected had
+	  only two characters (numbers with two digits). This is, obviously, not true.
+
+2006-01-17  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* metric.ml, metric.mli: some fixes
+
+	* queues.ml: remove warning
+
+	* charTransform.ml: discard old medians in post-transform downpass
+
+	* chartree.ml: added a downpass that discards previous median
+
+2006-01-17  ron  <ron@ren.pcc.amnh.org>
+
+	* status_ncurses.ml:
+	changed the position of some of the status and information messages
+
+	* ncurses.c:
+	Changed the positions of the menu window and information window
+
+	* poyParser.ml:
+	added test to see if file is NewSeq file format and if so convert it to fasta
+
+	* parser.ml: added NewSeq file format with a convert_to_fasta function
+
+	* parser.mli:
+	added Newseq file format with a convert_to_fasta function to put this file
+	in fasta format
+
+2006-01-17  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* build.mli: Improvements:
+
+	- Improved the documentation and added the necessary marks for proper ocamldoc
+	  parsing.
+
+	* Makefile, all_sets.ml, all_sets.mli, array_ops.ml, array_ops.mli, build.ml, build.mli:
+	Improvements:
+
+	- Added tree list loading instead of using a full Wagner build.
+	- Removed references to external counter generator in All_sets
+	- Changed references in the Array randomizer to use the Array_ops.randomize
+	  function.
+	- The Makefile has the latest changes to reflect the usage of Array_ops.
+
+2006-01-17  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* ptree.ml, ptree.mli, queues.ml, test_illya.ml, tree.ml, tree.mli:
+	preliminary fingerprinting use
+
+2006-01-17  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile: Improvements:
+
+	- The doc generator is ignoring now the poyParser module so that we don't need
+	  camlp4. camlp4 was causing a stack overflow due to the large size of the array
+	  holding the prime numbers in Primes.
+
+	* ptree.ml: Bugfix:
+
+	- Forgot to commit the changes in this file to allow the usage of multiple trees
+	  in the wagner tree construction.
+
+	* build.ml, build.mli, queues.ml, test_illya.ml: Improvements:
+
+	- Added the build module to provide the tree bulding functionality in it's
+	  variations.
+
+	- Modified the wagner tree manager class in the Queues module to provide maximum
+	  number of trees and threshold functionality in the wagner construction.
+
+	- Test_illya was modified to use this new functionality, it still uses a single
+	  wagner tree though, but as provided by the Build module.
+
+	* status.mli, status_flat.ml, status_ncurses.ml: Improvements:
+
+	- Added a get_achieved function to reduce the need of keeping track counters
+	  during advancement reporting in obvious functions.
+
+	* poyParser.ml: Improvement:
+
+	- Small improvement in the information output for the user during the parsing
+	  process of fixed state sequence characters.
+
+2006-01-16  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* parser.ml, parser.mli: Improvements:
+
+	- Added a of_file interface for most file types.
+
+	* Makefile: Improvements:
+
+	- Added impliedAlignment.ml to the necessary rules.
+
+	* poyParser.ml, poyParser.mli: Improvements:
+
+	- Simplified syntax for fixed states, making the name of the fixed states file
+	  optional.
+
+	* tree.mli, all_sets.mli, impliedAlignment.ml, impliedAlignment.mli, parser.ml, parser.mli, poyParser.ml, ptree.ml, ptree.mli, sequence.ml, sequence.mli, tree.ml:
+	Improvements:
+
+	- Added support for fixed states analysis and implied alignments. The
+	  functionality was added inthe ImpliedAlignment module.
+
+	- Added support to generate dpread files from sequence files to be used at
+	  runtime. Look at the Parser.FixedStatesDict.create_dp_read_file function for
+	  further information.
+
+	- Added a as rooted iterator for trees in post order, where the starting
+	  parameter is an edge of an unrooted tree, and the iterator will operate in
+	  postorder and assume that there is some edge (which is the target of the
+	  calculation), between the two vertices defining the edge.
+
+2006-01-16  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* ptree.ml, ptree.mli, tree.ml, tree.mli: basic tree fingerprinting
+
+2006-01-14  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* queues.ml: finalize the status
+
+	* Makefile, ptree.ml, queues.ml, test_illya.ml: n-best search manager
+
+2006-01-14  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* matrices.c:
+	Bugfix: If the three dimensional sequence alignment is not used at all,
+	the total amount of memory allocated is 0. This was causing an illegal
+	pointer request, for a memory location of length 0, that caused a NULL
+	pointer which looked like a memory error in Linux x86.
+
+2006-01-13  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* algn.c, cm.c, seq.c, sequence.ml:
+	Bugfix: Several bugfixes in the alignment with stitch function.
+
+2006-01-13  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* Makefile, charTransform.ml, charTransform.mli, metric.ml, metric.mli, node.ml, node.mli, test_illya.ml:
+	added (almost-final) support for character conversion, including specific
+	conversion for Sankoff characters using Bourgain embedding in Euclidean R^n
+
+	* sankCS.ml, sankCS.mli: added some useful Sankoff functions
+
+2006-01-13  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* algn.c: Bugfix:
+	- The algn_fill_row function was being called even for the first cell of the
+	  row under certain conditions, but the function requires that the previous cell
+	  from a particular row is already computer. This caused an illegal memory
+	  access.
+
+	* Makefile:
+	Improvement: The tags rule has been fixed and otags will now work to index the
+	source code.
+
+2006-01-12  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* algn.c, sequence.ml, sequence.mli:
+	Bugfixes: A hard bugfix in the backtrack was solved.
+	Improvements: Alignment using stitched sequences was implemented. See the
+	Sequence.Align.cost_2_stitched for further information.
+
+	* algn.c, sequence.ml, sequence.mli: Improvements:
+	Added subsequence alignment procedures. This is now supported by using the
+	cost_2_limit function. This allows the calculation of the cost of aligning two
+	slices of the passed sequences.
+
+2006-01-11  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile, algn.c, all_sets.ml, all_sets.mli, cm.c, sequence.ml, sequence.mli:
+	Bugfixes:
+	- Fixed an error in  the Ukkonen barriers when the length difference between two
+	  sequences is 0. In this case, the Ukkonen barriers would cause an endless loop
+	  as it would always be set to 0.
+
+	Improvements:
+	- Possible anchors are now detected using Karp-Rabi fingerprints. This was added
+	  as a new module in the Sequence module (Anchors)
+
+2006-01-10  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* primes.mli: Bugfix: Forgot to commit the latest interface.
+
+	* primes.ml:
+	Bugfixes: A couple of wrong indexes in when accessing the array using a valid
+	range.
+
+	* Makefile: Bugfix: Added the rules for fingerPrint.cmo and Primes.cmo
+
+	* fingerPrint.ml, fingerPrint.mli, primes.ml, primes.mli: Added:
+
+	- Functionality for fingerprinting serializable objects (hash values),
+	using the Karp-Rabi technique.
+
+	- A table of prime numbers was embeded in the new Primes module.
+
+2006-01-10  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* chartree.ml, node.ml, queues.ml, sankCS.ml, sankCS.mli, test_illya.ml:
+	Sankoff characters should be working now.  Note: part of the parsing process is
+	apparently printing things to standard output, which breaks the ncurses
+	interface.
+
+2006-01-09  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* queues.ml: added local flag to debug the cost function
+
+	* test_illya.ml: more status print statements, fix shuffling bug
+
+2006-01-06  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* algn.c, cm.c, parser.ml, seqCS.ml, sequence.ml, sequence.mli, test_illya.ml:
+	Bugfixes:
+
+	- More bugfixes for the pairwise and threewise alignments, in relation
+	to special conditions for Ukkonen barriers.
+
+	- Small bugfix in the Fasta file parser. This was introduced in a previous
+	  bugfix.
+
+	* test_illya.ml:
+	Bugfix: Forgot to commit this file in the previous commit.
+
+	* ptree.ml, ptree.mli, queues.ml, tabus.ml, tree.ml:
+	Improved: A small improvement in an error message from tree.ml
+	Additions: Several tabu managers that Andres has been trying today, and some
+	modifications in the tabu manager protocol. A reset_tbr and reset_spr is
+	required now, and the p_tree is part of the arguments of the init and update
+	methods.
+
+	* test_illya.ml:
+	Improvement: Error message added for the lack of stdin support after latest
+	commit of Ron.
+
+2006-01-05  ron  <ron@ren.pcc.amnh.org>
+
+	* poyParser.ml:
+	added code to process various dna files - asn1, genbank and some xml files by
+	converting to fasta format
+
+	* test_illya.ml: Made changes for ncurses functionality
+	1) changed stdin to use Sys.argv.(1) as when using stdin can't capture a key
+	press in ncurses window.
+	2) commented out 2 print_endlines as this messed up output of ncurses window
+
+	* ncurses.c:
+	Added three windows - information, error and status and put in code at end for
+	window to stay up until a key is hit
+
+	* status_ncurses.ml:
+	Added three windows - information, error and status windows to ncurses output
+	so changed the x, y positions of some message and also pass an int that tells
+	you what window the message goes to
+
+2006-01-05  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* sequence.ml:
+	Bug: There was a bug introduced in the previous commit. Upon finding a proper
+	fix, this will workaround the problem, otherwise the application will crash.
+
+	* algn.c, cm.c, matrices.c, matrices.h, methods.ml, node.ml, parser.ml, poyParser.ml, ptree.ml, ptree.mli, queues.ml, seq.c, seqCS.ml, sequence.ml, sequence.mli, tabus.ml, tree.ml, tree.mli:
+	Tabus: A couple of new tabu managers where added.
+	Sequences: Several bugfixes in the pairwise alignment.
+	Ptree and Tree: Maximum depth was added to the functionality of the
+	pre_order_edge_visitor function.
+
+	Improvements: This is the first official version supporting dynamic homologies.
+
+2006-01-04  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* tabus.ml:
+	Bugfix: The last class was not using a sorted list of edges (it promissed it would do
+	so).
+
+	* tabus.ml, test_illya.ml:
+	Improvements: Added some simple tabu list managers, just for fun. This also gave
+	me some first hand experience with the tabu lists and how flexible they are.
+
+2006-01-03  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* Makefile, chartree.ml, ptree.ml, ptree.mli, queues.ml, tabus.ml, test_illya.ml, tree.ml, tree.mli:
+	Makefile : changes to include tabus.cmo
+	chartree.ml: join_fn now returns tree_delta for the join. This is needed
+	to update the tabu.
+	ptree.mli, ptree.ml: we have tabu searching now. Two search managers,
+	one for wagner and another for spr_tbr.
+	queues.ml: fixed first_best search manager.
+	tabus.ml: Contains an implementation of circular_tabu_mgr.
+
+2006-01-03  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* sequence.mli:
+	Bugfix: Forgot to commit this file in the previous commit.
+
+	* Makefile:
+	Bugfix: Reset the default interface of illya.opt to the ncurses based one. I
+	left the old flat interface by default in my previous commit.
+
+	* Makefile, addCS.mli, algn.c, matrix.ml, matrix.mli, node.ml, node.mli, parser.ml, parser.mli, poyParser.ml, poyParser.mli, seqCS.ml, sequence.ml:
+	Improvements: Added new comments to the AddCS module.
+	Improvements: A complete sequence set module was added with functionality for
+	dynamic homologies analysis. This interface replaces the ad hoc interface using
+	directly sequence.ml previously used.
+
+2006-01-02  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* algn.c, cm.c, cm.h, matrices.h, sequence.ml, sequence.mli:
+	Bugfixes: Several bugfixes in the 3-dimensional sequence alignment and in the
+	OCaml - C bindings.
+
+	* Makefile: Bugfixes: A typo in the doc rule.
+	Improvements: Removed the lang4, lparser and llexer dependencies thinking on
+	their (near) future removal.
+
+2005-12-31  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* algn.c, cm.c:
+	Bugfix: Removed some debugging messages that left behind in the previous
+	commit. That is considered a bug by itself!
+
+	* algn.c, cm.c, cm.h, cost_matrix.ml:
+	Improvements: Made the default cost matrix for the alignments consistent with
+	the default matrix in the current POY (series 3.0).
+
+	Bugfixes: Several bugfixes in the two dimensional and three dimensional sequence
+	alignment.
+
+2005-12-30  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* algn.c, cm.c, matrices.c, matrices.h, sequence.ml, sequence.mli:
+	Bugfixes: Several bugfixes in the process of cleaning the alignment libraries.
+
+2005-12-29  ron  <ron@ren.pcc.amnh.org>
+
+	* node.ml:
+	added classify function and match_cost_matrix function - which are used for
+	sankoff characters to place all codes with the same cost matrix in the same
+	list
+
+2005-12-29  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* sankCS.ml: noop
+
+2005-12-29  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* algn.c:
+	Bugfixes: I left the wrong variables in the counters of the for loops, sorry, a
+	copy and paste error.
+
+	* Makefile, algn.c:
+	Improved alignment function and changed the order of the Makefile so that local
+	Makefiles can use the environments defined inside.
+
+	* algn.c, cm.c:
+	Improvements: Changed slightly the alignment code to improve the speed (50% of
+	the previous time in the full alignment).
+
+2005-12-28  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* sankCS.ml, sankCS.mli: fixed signature
+
+	* sankCS.mli: added interface for of_parser
+
+	* sankCS.ml: better names
+
+	* sankCS.ml, sankCS.mli: of_parser should be implemented now
+
+2005-12-28  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* parser.mli, poyParser.ml, poyParser.mli, status_ncurses.ml, node.ml, parser.ml:
+	New Functionality: Some features and modifications needed to prorperly handle
+	Sankoff files. This changes are unfinished, but Ron will add some other
+	necessary changes to commit the final version.
+
+2005-12-28  ron  <ron@ren.pcc.amnh.org>
+
+	* parser.mli: added is_sankoff function
+
+	* parser.ml:
+	Added is_sankoff function and put in code so for nexus data is written to a
+	file - either of Hennig or Fasta format depending if it is aligned or not
+
+2005-12-28  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* ptree.ml: output error using status
+
+	* Makefile, node.ml, sankCS.ml, sankCS.mli: Sankoff characters working
+
+2005-12-27  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* sankCS.ml: fix: canonize OTUs so they have e, beta arrays.
+
+	* test_illya.ml: minor printing change
+
+	* Makefile, test_unit.ml: some simple unit testing
+
+	* sankCS.ml: commented
+
+	* node.ml, ptree.ml, sankCS.ml, sankCS.mli:
+	added many functions to SankCS
+
+2005-12-23  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* Makefile, char_sank.ml, char_sank.mli, node.ml, node.mli, sankCS.ml, sankCS.mli:
+	renamed char_sank to SankCS
+
+	* chartree.ml, ptree.ml, status_ncurses.ml, test_illya.ml:
+	more ncurses things
+
+2005-12-23  ron  <ron@ren.pcc.amnh.org>
+
+	* tree_graphics.ml:
+	Added to draw_screen_from_xml the following features:
+	1)  Ability to draw the node with a color
+	2)  Ability to read non additive characters xml.
+
+	* parser.ml:
+	added code to read the following file formats XML, genbank, nexus, dpread, Tiny
+	seq xml, INDSseq xml
+
+2005-12-23  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* Makefile, queues.ml, sadman.ml, sadman.mli, test_illya.ml:
+	XML and Sadman support
+
+2005-12-23  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile, add.c, addCS.ml, chartree.ml, ncurses.c, node.ml, ptree.ml, ptree.mli, queues.ml, status.mli, status_flat.ml, status_ncurses.ml, test_illya.ml:
+	Bugfixes: Additive characters have several calculations corrections in the
+	vectorized version.
+
+	Additions: The status library was added to handle the interface with the user. A
+	flat and ncurses based implementations are provided. The Makefile was fixed for
+	these new libraries, and ptree.ml and test_illya.ml together with parser.ml
+	where modified to use this new status library.
+
+	* parser.ml: Bugfix: remove spaces from taxon names in Fasta files.
+
+2005-12-23  ron  <ron@ren.pcc.amnh.org>
+
+	* parser.mli:
+	Added parsers for the following file formats  ASN1, Genbank, INSDSeq XML, GBSeq XML, TinySeq XML, XML, Nexus and dpread
+
+2005-12-22  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* queues.ml: made things slightly clearer
+
+	* nonaddCS.ml: fixed nonadditive XML output
+
+	* Makefile, chartree.ml, queues.ml, test_illya.ml: moved queue code
+
+2005-12-22  ron  <ron@ren.pcc.amnh.org>
+
+	* tree_graphics.ml:
+	added writing the node (HTU) names to the tree produced from
+	draw_screen_from_xml function
+
+	* tree_graphics.ml:
+	changed the print_info function to finish with a semi-colon instead of a comma
+
+	* tree_graphics.ml:
+	added function to read from an xml file and draw a tree and when a node or
+	leaf is clicked on with the mouse the information for that node will display in
+	the terminal window.
+
+2005-12-22  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* add.c:
+	Bugfix: The to_string function in vectorized code could only output one
+	character.
+
+	* Makefile, add.c, add.h, addCS.ml, addCS.mli, chartree.ml, cm.c, memstack.c, memstack.h, node.ml, node.mli, nonaddCS.mli, parser.ml, ptree.ml:
+	Added a memory stack for the additive character. This stack needs probably to be
+	inlined in some parts of add.c. It keeps a stack of allocated characters so that
+	the allocation and free times are greatly reduced in run time.
+
+	Improvements: Simplified the VECTORIAL code and merged the code for MMX and
+	ALTIVEC. Also large chunks of normal code was merged with the VECTORIAL code in
+	additive characters.
+
+	Bugfixes:
+
+	The VECTORIAL code outputs the same results as the regular code, and
+	both are now giving the same results. This involved several bugfixes that are
+	unlisted.
+
+	The get_min and get_max functions where starting from the end of the array,
+	generating some errors in the vectorial code, this was fixed by starting from
+	the beginning of the vectors.
+
+2005-12-22  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* test_illya.ml:
+	changed another parameter ...  slower but more consistent
+
+	* chartree.ml, ptree.ml, test_illya.ml:
+	added a simulated annealing queue manager
+
+2005-12-21  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* chartree.ml, ptree.ml, ptree.mli, test_illya.ml:
+	Parametrized the logic of wagner_tree, spr and tbr to take a
+	search_mgr object. Implemented a simple wagner_srch_mgr and
+	first_best_srch_mgr.
+
+2005-12-21  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* add.c: fixed to compile with MMX optimizations
+
+	* test_illya.ml: this also fixes skipping
+
+	* chartree.ml, ptree.ml:
+	polymorphic terminals are handled correctly, now
+
+	* ptree.ml: finer-grained debugging flags
+
+	* nonaddCS.ml, nonaddCSc.c:
+	more speedups (joined the two loops in median_3); removed the debugging functions, as they caused problems with AltiVec
+
+	* nonaddCSc.c: * improved distance function
+	* made things a million times faster
+
+2005-12-20  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* node.ml, nonaddCS.ml, nonaddCS.mli, nonaddCSc.c:
+	made a sane dist_2 function for nonadditive chars
+
+2005-12-20  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* tree.ml, tree.mli:
+	Added function to convert a Parser.Tree.t to Tree.u_tree.
+
+2005-12-20  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* parser.ml:
+	Removed the spaces from the taxon names in the Hennig files.
+
+2005-12-20  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* Makefile: misc fixes.
+
+2005-12-20  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* poyParser.ml, poyParser.mli:
+	Added Data.taxon_code to retrieve the code of a taxon name.
+
+2005-12-20  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* chartree.ml, ptree.ml, ptree.mli, test_illya.ml:
+	count implicitly skipped trees in the tree count
+
+2005-12-19  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* chartree.ml, nonaddCS.ml, nonaddCSc.c, ptree.ml, ptree.mli:
+	big fixes: costs work properly.  (two bugs contributed: typo in nonaddCSc.c in
+	VCMP arguments, and incorrect pruning of uppass.)  also fixed bug of not
+	printing last element of non-additive sets in to_string.
+
+	* chartree.ml: don't calculate union if skipping
+
+2005-12-18  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* add.c:
+	Fixed small allocation bug. I was comparing a < b rather than a >= b.
+
+	* addCS.ml, addCS.mli, node.ml, node.mli, nonaddCS.ml, parser.ml, parser.mli, ptree.ml, ptree.mli, test_illya.ml:
+	Added XML output for the diagnosis, without an official schema assigned to it.
+
+2005-12-16  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile: Fixed a dependency error in the depend rule.
+
+2005-12-16  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* nonaddCS.ml, nonaddCS.mli: fixed a signature
+
+	* nonaddCS.ml, nonaddCS.mli: added XML printing code
+
+2005-12-16  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* poyParser.ml, poyParser.mli, test_illya.ml: Improved documentation.
+	Changed the name of PoyParser.preprocess_tree to PoyParser.process_tree.
+
+	* Makefile, node.ml, node.mli, parser.ml, parser.mli, poyParser.ml, poyParser.mli, ptree.ml, ptree.mli, sequence.ml, sequence.mli, test_illya.ml, tree_graphics.ml:
+	Included the full parser for the kinds of characters we will be handling in the
+	near future. This new parsers and node data generators hold data about the taxa
+	that is being used, synonyms, ignores, the characteristics of every character
+	being analyzed and is a nice basis for the diagnosis that we need and that I do
+	need to debug the code.
+
+	Additive and sankoff characters where broken worst after some changes I did
+	earlier this week, but hopefully I will clean that mess in the next couple of
+	days. There is no parser for Sankoff files, so it's impossible to test that one
+	properly.
+
+2005-12-15  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile, alphSpec.ml, alphSpec.mli, characSpec.ml, characSpec.mli, chartree.ml, cost_matrix.ml, cost_matrix.mli, hashedFuncs.ml, hashedFuncs.mli, intSpec.ml, intSpec.mli, parser.ml, parser.mli, poyParser.ml, poyParser.mli, specIndex.ml, specIndex.mli, wordSpec.ml, wordSpec.mli:
+	Full parser implemented and poy U language together with data loading
+	capabilities added. The basic function to parse and load data from files is
+	PoyParser.of_channel.
+
+2005-12-14  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* cost_matrix.ml: changed 9999 to max_int
+
+	* nonaddCSc.c: a few fixes
+
+	* chartree.ml, test_illya.ml:
+	integrated skipping and non-skipping cost_fn
+
+	* Makefile, nonaddCS.ml, test_unit.ml: revived unit testing
+
+2005-12-14  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* ptree.ml:
+	Renamed some internal fns and added comments to Search module in Ptree.
+
+2005-12-14  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* cost_matrix.ml: Fixed wrong implementation of of_list.
+
+	* cost_matrix.ml, cost_matrix.mli, parser.ml, parser.mli:
+	Added the of_list function to the cost_matrix library and the general parser.
+
+	* add.h: Forgot this file in the previous commit.
+
+	* add.c, addCS.ml, addCS.mli, node.ml:
+	Added some necessary functionality to the additive character to update it with
+	the latest updates in the non additive character.
+
+	* cost_matrix.ml, cost_matrix.mli, parser.ml, parser.mli, sequence.mli:
+	Added the transformation cost matrix parser.
+
+2005-12-14  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* ptree.ml:
+	factored all debug printing into fns that check for debug flag.
+
+2005-12-14  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* test_illya.ml: removed unneeded lines
+
+	* nonaddCSc.c: fixed unions
+
+2005-12-14  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* chartree.ml, ptree.ml, ptree.mli, test_illya.ml:
+	Moved all the search functions into a functor.
+
+2005-12-14  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* node.ml, node.mli, test_illya.ml:
+	new parsing options (untested FASTA parsing)
+
+2005-12-14  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* chartree.ml:
+	Have two cost_fns one with skip and one wo_skip to test SPR/TBR with
+	skips.
+
+	* ptree.ml, test_illya.ml, tree.ml, tree.mli:
+	Added print edge, jxn functionality to Trees. modified Ptrees to allow
+	for optional print fns during search.
+
+2005-12-14  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* node.ml, node.mli: * changed parser to ignore empty characters
+	* added fields for node height (from leaves) and number of child edges of node
+	* added character type annotations to to_string
+
+	* ptree.ml, ptree.mli:
+	another Timer function: reset counter and return elapsed user time
+
+2005-12-13  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* nonaddCSc.c:
+	fixing EMMS lacks; printing of pointers potentially supported
+
+2005-12-13  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile: Removed an intel flag that was commited by mistake.
+
+	* Makefile:
+	Removed the unnecessary parallel libraries from the current testing program.
+
+2005-12-12  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* Makefile, ptree.ml, ptree.mli, test_illya.ml, tree_graphics.ml:
+	Tree_graphics: Move build_tree/s and disp_trees functionality to Ptree to
+	break circular dependency.
+	Added optional print_fn argument to the search functions in Ptree module.
+	Updated test_illya.ml to call search with print fns.
+	Makefile. Update the link order for tree.cma.
+
+2005-12-12  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* Makefile: include CCOPT and DEBUG in some more places
+
+2005-12-10  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile, nonaddCSc.c:
+	Changed the compilation of the nonadditive characters to handle properly the
+	different number of states on each character. Previously, the linker was
+	selecting always the same library, that is able to handle characters with up to
+	32 states, but not the more efficient packings for 8 or 16 states (and more
+	common too).
+
+	I added a sed line to the Makefile to replace the names of the functions in both
+	the ml and the c files, and to change the names of the internal functions of the
+	c file to avoid linker errors (duplicated definitions). This also required a
+	change in the name of the functions in nonaddCSc.c.
+
+2005-12-09  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* tree_graphics.ml:
+	Added an newline after the parenthesis output of draw_parenthesis.
+
+	* tree_graphics.ml:
+	A simple little function to output in parenthetical notation (better for massive
+	tree output).
+
+2005-12-09  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* test_illya.ml, test_unit.ml: cleaned up the test_illya code
+
+	* Makefile, chartree.ml, test_illya.ml, tree_graphics.ml:
+	moved tree printing code and rearranged dependencies
+
+2005-12-09  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* tree.ml: Fixed Skip functionality in pre_order_node_visit.
+
+	* tree.ml: Fixed bug in pre_order_edge_visit's Skip functionality.
+
+2005-12-09  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* chartree.ml, node.ml, node.mli, nonaddCS.ml, nonaddCSc.c, ptree.ml, test_illya.ml:
+	added support for finding the minimum distance between a node and an entire
+	sub-branch.  currently commented out, because it leads to unexpected behavior.
+
+2005-12-09  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* add.c:
+	Improved vectorized support for MMX and ALTIVEC on distance test function for
+	SPR and TBR.
+
+	* node.ml:
+	Updated functionality for additive characters for correct distance calculation
+	during local search.
+
+	* add.c, addCS.ml, addCS.mli:
+	Added functions for proper distance calculation from a taxon to an edge using
+	the final states.
+
+2005-12-08  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* ptree.ml, ptree.mli, tree.ml, tree.mli:
+	Added Skip functionality to traverse operations in Tree module. Added
+	the clade_cost type to Ptree module.
+
+2005-12-08  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* chartree.ml: new interface for the cost function
+
+	* chartree.ml:
+	temporarily use full uppass and downpass instead of focusing on the tree and
+	clade (there is some bug that occurs if we only do part of it...)
+
+	* nonaddCSc.c:
+	fixed non-vectorized code by adding VGET() calls where missing
+
+	* chartree.ml: limited most up/down-passes to specific trees or clades
+
+2005-12-07  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* ptree.ml, ptree.mli, test_illya.ml: added additional time statistics
+
+	* node.ml, ptree.ml, ptree.mli, test_illya.ml:
+	changed TBR to use the reroot function, cleaned up and readablized ptree.mli
+
+2005-12-07  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* ptree.ml:
+	Fixed TBR to loop over clade's edges first and then over the trees
+	edges.
+
+2005-12-07  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* tree_graphics.ml:
+	print_newline () at the end of the ASCII display so that the buffer is flushed
+
+	* chartree.ml, node.ml, node.mli, nonaddCS.ml, nonaddCS.mli, nonaddCSc.c:
+	preliminary support for re-rooting a clade
+
+	* chartree.ml: eliminated global variables, re-coded cost_fn
+
+2005-12-06  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* chartree.ml, node.ml, node.mli, nonaddCS.ml, nonaddCSc.c, ptree.ml, ptree.mli, test_illya.ml:
+	many changes and fixes resulting in a probably-working cost_fn for nonadditive
+	characters
+
+2005-12-05  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* ptree.ml, ptree.mli: Fixed SPR and TBR to generate correct nbhds.
+
+2005-12-02  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* ptree.ml: added just one more print statement
+
+	* ptree.ml, ptree.mli, test_illya.ml:
+	initial function to alternate SPR and TBR
+
+	* ptree.ml, ptree.mli: small tweaks to SPR/TBR
+
+	* chartree.ml, ptree.ml, ptree.mli:
+	changes to cost_fn, might not be consistent, needs to be examined;  however,
+	necessary for TBR
+
+2005-12-01  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* ptree.ml, ptree.mli, test_illya.ml: changed to TBR, fixed interfaces
+
+2005-12-01  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* ptree.ml, ptree.mli:
+	Changed TBR to work with the latest interface of cost_fn and break_fn.
+
+2005-12-01  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* chartree.ml, ptree.ml: I think that SPR works!
+
+	* chartree.ml, node.ml, node.mli, ptree.ml, ptree.mli, test_illya.ml, tree_graphics.ml:
+	in the middle of debugging cost inconsistencies.  problem was:  cost of entire
+	forest (tree plus clade) was being taken as the cost of the new tree.  fixing
+	this now.
+
+2005-12-01  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* ptree.ml, ptree.mli, tree.ml, tree.mli:
+	Changed the interface of make_disjoint_tree to use the keys of the
+	leaf_node_data as starting ids.
+
+2005-11-30  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* ptree.ml, ptree.mli: Fixed small bug!
+
+	* Makefile, ptree.ml, ptree.mli:
+	Changed interface of break_fn and cost_fn to take clade node as extra
+	argument.
+
+	* ptree.ml, ptree.mli:
+	Changed the interface of TBR to confirm to the new cost function.
+
+	* ptree.ml, ptree.mli:
+	Changed the interface of SPR and Wagner Tree to work with the new
+	cost_fn interface.
+
+2005-11-30  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* addCS.ml, addCS.mli, chartree.ml, test_illya.ml: SPR search fixes
+
+	* node.ml, node.mli: added compare_data and set_median_cost
+
+	* tree_graphics.ml:
+	generic disp_tree function that displays either a graphical or an ASCII
+	(non-blocking) tree
+
+	* ptree.ml, ptree.mli, tree.ml:
+	changed tree code for consistency in calling join_fn and cost_fn
+
+2005-11-30  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* ptree.ml, ptree.mli, tree.ml:
+	Removed warnings in 3.09. Added TBR functionality to Ptree.
+
+2005-11-29  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* sequence.ml:
+	Latest and more important, correct calculation of parametric complexity. Slow,
+	but correct. This checkin occurs before a major improvement in the algorithm.
+
+2005-11-28  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile:
+	Removed the DEBUG option from the parser.cmx rule. ocamlopt doesn't support -g.
+
+	* sequence.ml, sequence.mli:
+	Added a pure Ocaml alignment module for expermentation and debugging purposes.
+
+2005-11-25  ron  <ron@ren.pcc.amnh.org>
+
+	* tree_graphics.ml:
+	added Graphics.close_graph to case of Graphics error so graph is closed and can
+	start another one without a problem
+
+2005-11-25  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile:
+	Fixed some missing dependencies in lparser.cmo and llexer.cmo. As these are
+	produced from llexer.mll and lparser.mly their dependencies didn't appear in the
+	.depend if make .depend is done right after clean.
+
+	* test_illya.ml:
+	Updated the name of the function to draw trees in the screen, in accordance to
+	the name in the Tree_graphics module.
+
+2005-11-24  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile:
+	Couple of minor notes for the rest of the development group.
+
+	* Makefile: A small reorganization of the Makefile.
+
+	* Makefile: Some garbage I left behind in the previous commit.
+
+	* Makefile:
+	Continued cleanup of the Makefile. This new version divides the
+	code in some libraries:
+
+	- sequences.cma, sequences.cmxa: sequence handling modules
+	- parsers.cma, parsers.cmxa: parsing modules
+	- trees.cma, trees.cmxa: tree operations and outputing
+	- distances.cma, distances.cmxa: all the distance calculations for the character
+	  type modules we have created.
+	- parallel.cma, parallel.cmxa: all the parallel modules
+
+	In this way the spec is much cleaner now and the dependencies have been
+	completely fixed. Enjoy!
+
+	* node.ml:
+	Removed the general matches in the module. The idea of having explicit matches
+	is to use the compiler to help someone modifying code to see where the pieces of
+	code should be added.
+
+	* tree_graphics.ml: A slight beautification with the edges.
+
+	* tree_graphics.ml:
+	Small character that left behind while trying to beautify it a little.
+
+	* tree_graphics.ml:
+	Changed the name of the on screen visualization function.
+
+	* tree_graphics.ml:
+	Added ascii tree representation. We needed it for debugging! And the users will
+	probably like it indeed.
+
+2005-11-23  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* Makefile: rearranged
+
+	* test_illya.ml: calling Wagner tree functions
+
+	* sequence.ml, sequence.mli:
+	added a sequence element type to facilitate interoperation
+
+	* ptree.ml: removed printing comments
+
+	* parser.mli, node.ml, node.mli:
+	added support for Sankoff and sequence characters
+
+	* chartree.ml: fixed a bug, re-implemented for new interface
+
+	* char_sank.ml, char_sank.mli:
+	Sankoff characters don't support 3-medians yet
+
+	* all_sets.ml, all_sets.mli: added a counter-function-maker
+
+	* Makefile: do not remove .depend on re-make
+
+2005-11-22  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* alphabet.mli, seq.c, sequence.ml, sequence.mli:
+	Fixed a bug in the seq_copy procedure and added some assertions checks in
+	sequence. ml.
+
+	* all_sets.ml: Fixed some duplicated module definitions.
+
+	* all_sets.ml, all_sets.mli:
+	Added some maps that are needed in the application.
+
+2005-11-22  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* ptree.ml, ptree.mli, tree.ml, tree.mli:
+	Added t1_jxn field to Tree.aux_data. Added make_join_fn make_break_fn to
+	Ptree module.
+
+	* all_sets.ml, all_sets.mli, ptree.ml, ptree.mli, tree.ml, tree.mli:
+	Cleaned the interface of Ptree and Tree modules. Moved IntSets and Maps
+	to All_sets module.
+
+2005-11-22  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* sequence.ml, sequence.mli:
+	Where was this functionality gone to? Adding the alignment bindings again.
+
+	* alphabet.ml, alphabet.mli, sequence.ml, sequence.mli:
+	Added random alphabet elements and random sequence generation.
+
+2005-11-22  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* chartree.ml, node.ml, node.mli, test_illya.ml:
+	* updated Node to store taxon codes and to use previous alignment hinting for
+	making medians
+	* brought back some older code to print trees using Tree_graphics
+
+2005-11-22  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* ptree.ml, ptree.mli:
+	Added make_disjoint_tree function to Ptree module.
+
+2005-11-22  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* ptree.ml, asynch.ml: removed some "unused variables" warnings
+
+2005-11-21  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* character.ml, character.mli, test_illya.ml:
+	* characters no longer need to have a "parse" function
+	* continue to test interface conformance
+
+	* nonaddCS.ml, nonaddCSc.c: some imperative feature support
+
+	* chartree.ml, test_illya.ml:
+	modifications to use new Tree and Ptree interfaces
+
+2005-11-21  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* tree.mli: Exposed get_handles.
+
+	* tree.mli: Exposed some get functions in the .mli.
+
+	* ptree.ml, ptree.mli, tree.ml, tree.mli:
+	Updated the interface of edge, node visitors in Tree module. Modified
+	Ptree module to use the new interfaces of the visitors.
+
+	* ptree.ml, ptree.mli, tree.ml, tree.mli:
+	Added make_wagner_tree to Ptree module. Changed the interface of the
+	visitors in Tree module to accept a scratch data (can be used to
+	compute the maximum of a fn over edges/nodes).
+
+2005-11-21  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* Makefile: fixed Makefile
+
+2005-11-20  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* parser.ml:
+	Fixed taxon name regex for hennig files to accept periods in the names.
+
+2005-11-18  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* chartree.ml, node.ml, node.mli, nonaddCSc.c, test_illya.ml:
+	stopgap fixes, things work pretty well.  hard-coded threshold for a given data
+	file in chartree.ml.
+
+	* nonaddCSc.c: fix stupid bug in vectorized counting
+
+2005-11-18  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* ptree.ml: Removed the prints.
+
+2005-11-18  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* Makefile, add.c, chartree.ml, test_illya.ml: SPR probably works!
+
+2005-11-18  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* ptree.ml, ptree.mli, tree.ml, tree.mli:
+	Added post_order_node_visit functionality.
+
+2005-11-18  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* Makefile, chartree.ml, node.ml, nonaddCS.mli, test_illya.ml:
+	SPR nearly works!
+
+2005-11-18  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* tree.ml:
+	Fixed a small bug in Tree.pre_order_node_visit. Was not visiting the
+	start node when the start node was a handle.
+
+2005-11-18  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* node.ml, node.mli, parser.ml, parser.mli, test_illya.ml, Makefile, chartree.ml:
+	Wrapping up all the characters in the node module.
+
+2005-11-18  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* test_illya.ml: modification for readability
+
+	* parser.mli, parser.ml:
+	function to categorize input characters by type
+
+2005-11-18  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* ptree.ml: Fixed a small type bug in Ptree.spr_simple.
+
+2005-11-18  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* ptree.mli: cost must return float
+
+	* Makefile, chartree.ml, nonaddCS.ml, nonaddCSc.c, test_illya.ml:
+	functions for down-passing / up-passing character trees
+
+	* tree.ml: updated error msg
+
+2005-11-18  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* ptree.ml, tree.ml, tree.mli:
+	Added pre_order_node_visit to tree. Placed a note on move_handle of
+	ptree module. This function involves updating data that may or may not
+	be present.
+
+2005-11-18  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* add.c, addCS.ml, addCS.mli:
+	Improved functionality and speed in memory copy.
+
+	* add.c, add.h, addCS.ml, addCS.mli:
+	Improved functionality for additive character sets.
+
+2005-11-17  ron  <ron@ren.pcc.amnh.org>
+
+	* tree_graphics.ml:
+	added the following optional arguments to draw_tree - title, size and leafColor
+
+	* parser.ml:
+	added code to take care of wildcard characters ? and - in Hennig files and
+	added functions character_additive_minmax, character_nonadditive_minmax,
+	character_active_minmax and character_inactive_minmax
+
+	* parser.mli:
+	Added function character_additive_minmax, character_inactive_minmax,
+	character_nonadditive_minmax and character_additive_minmax
+
+2005-11-16  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* Makefile: first attempt to fix Makefile
+
+2005-11-16  vamsi  <vamsi@ren.pcc.amnh.org>
+
+	* ptree.ml, ptree.mli, tree.ml, tree.mli:
+	Overwrote the old tree files with new tree files. Tree module handles
+	only topology.
+	Added module Ptree that provides both topology and data functionality.
+
+2005-11-16  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* nonaddCS.ml, nonaddCSc.c: fixed bug (gcc?) in MMX code
+
+	* nonaddCSc.c: fixed non-MMX, non-AltiVec code
+
+	* test_illya.ml, nonaddCS.ml, nonaddCSc.c: workaround for buggy gcc?
+
+2005-11-15  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* tree_graphics.ml: Added title to the window of the tree.
+
+2005-11-15  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* nonaddCS.ml, nonaddCSc.c:
+	* Added median_cost field (with calculation).  This remembers the cost of making
+	the median as the median is made.
+	* Documented with doxygen (partially).
+
+2005-11-15  ron  <ron@ren.pcc.amnh.org>
+
+	* tree_graphics.ml: Use the ocaml graphics library to draw trees
+
+2005-11-14  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* Makefile, nonaddCS.ml, nonaddCSc.c:
+	median_3 implemented for nonadditive up-pass (final pass)
+
+	* nonaddCS.ml, nonaddCSc.c, test_illya.ml:
+	small fixes and testing code for parsing (including median-taking)
+
+	* Makefile, addCS.mli, char_sank.mli, character.ml, character.mli, cm.c, nonaddCS.ml, nonaddCS.mli, nonaddCSc.c, nonaddCSc.h, parser.mli, seq.c, test_illya.ml:
+	* modified interface for "parse" operation (temporarily)
+	* fixed lack of CAMLreturn0; in some C files
+	* preliminary parsing code for nonadditive characters, C interface
+
+	* nonaddCSc.c:
+	use Intel compiler-compatible intrinsic names and aligned mallocs
+
+2005-11-14  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* parser.ml, parser.mli:
+	Updated the hennig parser to handle properly the encodings.
+
+2005-11-14  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* Makefile, nonaddCSc.c, test_illya.ml:
+	nonadditive should work across platforms with all character sizes
+
+2005-11-10  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* Makefile: compilation fixes
+
+	* Makefile: remove the right things
+
+	* Makefile, char_nonadd_c.ml, char_nonadd_c.mli, char_nonadd_ccode.c, char_nonadd_ccode.h, nonaddCS.ml, nonaddCS.mli, nonaddCSc.c, nonaddCSc.h, test_illya.ml:
+	automatic compilation of units for 8bit, 16bit, and 32bit nonadditive character
+	representations.
+
+	* char_nonadd_ccode.c, char_nonadd_ccode.dvi, char_nonadd_ccode.tex:
+	cleaning up code, documenting
+
+	* Makefile, char_nonadd_ccode.c, test_illya.ml:
+	nonadditive characters optimized for AltiVec and MMX with plain C fallback
+
+2005-11-07  ron  <ron@ren.pcc.amnh.org>
+
+	* graphviz.ml:
+	functions from ocaml to external c functions for graphviz and make_graph
+	function
+
+	* graphviz.mli: make_graph function - used to make a graph in graphviz
+
+	* graphviz_interface.c: File to use graphviz c library
+
+2005-11-07  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* char_nonadd_c.ml, char_nonadd_ccode.c, test_illya.ml:
+	optimizing the C code; new testing/profiling code
+
+2005-11-04  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* add.c, add.h, addCS.ml, addCS.mli: Added additive character sets.
+
+2005-11-04  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* char_nonadd_c.ml, char_nonadd_ccode.c, test_illya.ml:
+	test for proper marshaling and unmarshaling.  register unmarshaling of
+	nonadditive characters.
+
+	* test_illya.ml:
+	A character's distance to itself does not have to be zero, it can (in certain
+	cases) be positive.
+
+2005-11-03  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* char_add.ml, char_add.mli, char_nonadd.ml, char_nonadd.mli, char_nonadd_c.ml, char_nonadd_c.mli, char_nonadd_ccode.c, char_nonadd_ccode.dvi, char_nonadd_ccode.tex, char_sank.ml, char_sank.mli, character.ml, character.mli, charset.ml, charset.mli, test_illya.ml:
+	removed equal, split compare into compare_codes and compare_data
+
+	* char_add.ml, char_add.mli, char_nonadd.ml, char_nonadd.mli, char_nonadd_c.ml, char_nonadd_c.mli, char_nonadd_ccode.c, char_nonadd_ccode.dvi, char_nonadd_ccode.h, char_sank.ml, char_sank.mli, character.ml, character.mli, charset.ml, charset.mli, test_illya.ml:
+	changing interface to assign codes to all sets and elements;  we should be able
+	to change the code of a set
+
+	* Makefile: Fixed path to mpich
+
+2005-11-02  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* test_illya.ml: added much testing code
+
+	* Makefile, char_add.ml, char_nonadd_c.ml, char_nonadd_c.mli, char_nonadd_ccode.c, char_nonadd_ccode.dvi, char_nonadd_ccode.h, char_nonadd_ccode.tex:
+	nonadditive character type implemented in C
+
+	* character.ml, character.mli:
+	created "unique code" function.  made Exact heuristic default.
+
+	* char_sank.ml, char_sank.mli:
+	Changed median to take previous median; changed distance to return a float.
+
+2005-10-31  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* char_sank.ml, char_sank.mli:
+	Added commentaries for the sankoff character types.
+
+	* char_sank.ml, char_sank.mli: Sankoff character functionality added.
+
+2005-10-28  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* Makefile, async_gen.ml, async_gen.mli, asynch.ml, asynch.mli, charset.ml:
+	we no longer need the asynch / async_gen split.  both files have been combined
+	into asynch.ml.
+
+2005-10-27  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* char_add.ml, test_illya.ml:
+	additive characters work (OCaml implementation)
+
+	* Makefile, async_gen.ml, async_gen.mli, asynch.ml, asynch.mli, charset.ml, charset.mli, intset.ml, intset.mli, register.ml, register.mli, setpar.ml, setpar.mli, setpar_async.ml, setpar_async.mli, test_illya.ml:
+	Parallelization of character set operations, like taking medians!  Currently
+	performed one code at a time.
+
+2005-10-26  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* asynch.ml, asynch.mli, char_nonadd.ml, charset.ml, charset.mli, register.ml, setpar.ml, setpar.mli, setpar_async.ml, setpar_async.mli, test_illya.ml:
+	Parallel distances and medians work well.  Integration with Charset will take
+	some effort.
+
+2005-10-25  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* Makefile, async_gen.ml, async_gen.mli, char_nonadd.ml, character.ml, character.mli, charset.ml, charset.mli, setpar_async.ml, setpar_async.mli:
+	support for parallel set functions
+
+2005-10-25  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* async_gen.ml, async_gen.mli, asynch.ml, comm.ml, ftol.ml, process.ml, process.mli, setpar_async.ml:
+	Fixed some details in the fault tolerance and cleanedup some code. There are
+	still problems in the role handling due to the error in the freaking formula of
+	role partition, but that will be fixed in the next commit.
+
+2005-10-24  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* Makefile, async_gen.ml, asynch.ml, char_nonadd.ml, character.ml, character.mli, charset.ml, charset.mli, ftol.ml, messages.ml, process.ml, register.ml, register.mli, setpar_async.ml, setpar_async.mli, test_illya.ml:
+	parallel set processing works (initial results); but fault tolerance is not
+	working properly
+
+2005-10-24  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* asynch.ml, asynch.mli, comm.ml, ftol.ml, ftol.mli, messages.ml, process.ml, register.ml, register.mli:
+	Fixed some bugs in the parallel libraries and improved the message system for
+	output and debuging by adding the messages.ml library.
+
+2005-10-24  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* setpar.ml, setpar.mli:
+	updated interface to better interoperate with other files
+
+	* setpar_async.ml, setpar_async.mli, async_gen.ml, async_gen.mli, asynch.ml, asynch.mli, ftol.ml, paroperas.ml, parparam.ml, process.ml, process.mli, register.ml, register.mli:
+	commit to make Andres happy!
+
+2005-10-21  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* ftol.ml, ftol.mli: temporary commit: printing support
+
+2005-10-20  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* alphabet.ml:
+	Horrible error in the UPAC codes, one code had Uracile instead of Citosine.
+
+	* parser.ml, parser.mli, sequence.ml, sequence.mli:
+	Improde the Fasta file format parser. Full genome sequences are longer than the
+	longest string or array OCaml can handle in 32 bit machines, for this reason I
+	had to add the proper functionality to deal with them during the file parsing
+	process.
+
+2005-10-20  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* Makefile: oops, fixed C compilation issue
+
+2005-10-19  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* asynch.ml, asynch.mli:
+	initial framework support for set operations; made asynch.ml compile
+
+	* register.ml, register.mli:
+	initial framework support for set operations
+
+	* char_nonadd.ml, character.ml, character.mli, charset.ml, charset.mli:
+	support for set cardinality and use of external intset
+
+	* setpar.ml: utility functions for parallelizing sets
+
+	* intset.ml, intset.mli:
+	integer sets are used in a couple places; only define them once
+
+	* Makefile:
+	* OcamlMPI wasn't being included; added -I flags where appropriate
+	* Added a target to build the files that I'm working on
+
+2005-10-18  Illya Bomash  <ibomash@ren.pcc.amnh.org>
+
+	* cm.tex, algn.tex, seq.tex: LaTeX files to help document C code
+
+	* char_add.ml, char_add.mli, char_nonadd.ml, char_nonadd.mli, character.ml, character.mli, charset.ml, charset.mli:
+	Initial character code.  An almost-complete set of signatures, with
+	implementations for non-additive and additive characters and sets of
+	characters.
+
+	* algn.c, algn.h:
+	Converted notation from pointer arithmetic to array access.  Commented a few things.
+
+2005-10-18  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* lang4.ml: I was missing yet another file.
+
+	* lang.ml, lang.mli:
+	I forgot this files to complete the previous commit. I hope I don't miss
+	something else!
+
+	* llexer.mll, lparser.mly, sequence.ml, sequence.mli:
+	Added support for the poy language parser and added to_array functionality to
+	the sequences module.
+
+2005-10-03  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile: Fixed typo .depend.
+
+	* Makefile:
+	Improved structure in the Makefile for simplified setup in different
+	environments.
+
+2005-08-25  ron  <ron@ren.pcc.amnh.org>
+
+	* algn.c: Fixed problem with dm matrix pointer not being reset
+
+2005-08-22  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* zarr.c, zarr.h: Forgot to add these two files in the previous commit.
+
+2005-08-22  ron  <ron@ren.pcc.amnh.org>
+
+	* algn.h:
+	added prototypes for ukkonen functions - algn_fill_row_uk and algn_fill_plane_uk
+
+2005-08-22  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile: Removed some rules only available in my personal tree.
+
+	* Makefile, algn.c, algn.h, cm.c, cm.h, cost_matrix.ml, matrices.c, matrices.h, seq.c, seq.h, sequence.ml, sequence.mli:
+	Updated Makefile for easier compilation units usage (libraries).
+	Added a unique configuration file config
+	Updated the names of the data structures in the c files
+	Added a Myers 1986 based implementation of the alignment algorithm.
+
+2005-08-04  ron  <ron@ren.pcc.amnh.org>
+
+	* tree.ml: added mcs code and changed Character to Character2
+
+	* taxon.ml:
+	replaced Character.create_perturb and Character.set_position with
+	Perturb.create_perturb and Perturb.set_position and removed ref with tmp in
+	set_position call
+
+	* taxon.mli: changed Character.characters to Character2.characters
+
+	* sequence.mli, sequence.ml: added flag whether to do ukkonen or not
+
+	* algn.c:
+	Put in change to save space only keep 2 rows of edit distance matrix in
+	algn_fill_plane function also added ukkonen functions with suffix _uk
+
+	* cm.c:
+	change the assest in cm_calc_cost_position and in cm_calc_cost_position_3d from
+	a_sz <= 0 to a_sz >= 0
+
+	* cost_matrix.ml:
+	had code with the function output_int in it - there is no such function, to get
+	it to compile changed it to output_byte
+
+	* character2.mli: Added chromosome code
+
+	* character2.ml:
+	Changed name of c function calls to match pattern in other files
+
+	* chromosome.c:
+	Changed the names of the functions to match the pattern in other files
+
+2005-05-24  ron  <ron@ren.pcc.amnh.org>
+
+	* chromosome.h: Chromosome structure and uppass and downpass functions
+
+	* chromosome.c: C functions for Chromosome module
+
+	* character2.ml: Added Chromosome module
+
+2005-05-23  ron  <ron@ren.pcc.amnh.org>
+
+	* parser.ml: Added GrappaParser and type Genes of int array
+
+	* parser.mli:
+	Added to type t - Genes of int array and added GrappaParser
+
+2005-04-18  ron  <ron@ren.pcc.amnh.org>
+
+	* Makefile: Added grappa subdirectory
+
+	* grappa/Makefile: Initial version of Makefile for Grappa
+
+	* grappa/grappa_interface.c:
+	Got all the functions to work with new structure that has number of genomes
+
+2005-04-13  ron  <ron@ren.pcc.amnh.org>
+
+	* grappa/all_sorting_reversals.c, grappa/all_sorting_reversals.h, grappa/bbtsp.c, grappa/bbtsp.h, grappa/binencode.c, grappa/binencode.h, grappa/bitvector.c, grappa/bitvector.h, grappa/calc_medians.c, grappa/cheaptsp.c, grappa/cheaptsp.h, grappa/circ_order.c, grappa/circ_order.h, grappa/circular_ordering.c, grappa/circular_ordering.h, grappa/condense.c, grappa/condense.h, grappa/condense3.c, grappa/condense3.h, grappa/const_tree.c, grappa/const_tree.h, grappa/convert.c, grappa/convert.h, grappa/correction.c, grappa/correction.h, grappa/gen_tree.c, grappa/gen_tree.h, grappa/getopt3.c, grappa/getopt3.h, grappa/grappa.ml, grappa/grappa.mli, grappa/grappa_interface.c, grappa/greedy_median.c, grappa/greedy_median.h, grappa/growTree.c, grappa/growTree.h, grappa/hashtable.c, grappa/hashtable.h, grappa/inittree.c, grappa/inittree.h, grappa/invdist.c, grappa/invdist.h, grappa/inversion_median.c, grappa/inversion_median.h, grappa/inversion_median_alberto.c, grappa/inversion_median_alberto.h, grappa/labeltree.c, grappa/labeltree.h, grappa/lists.c, grappa/lists.h, grappa/lk_main.c, grappa/lk_main.h, grappa/main.c, grappa/med_util.c, grappa/med_util.h, grappa/mythread_rwlock.c, grappa/mythread_rwlock.h, grappa/neighborj.c, grappa/neighborj.h, grappa/priority_stack.c, grappa/priority_stack.h, grappa/randomBSD.c, grappa/randomBSD.h, grappa/read_input.c, grappa/read_input.h, grappa/simpleio.c, grappa/simpleio.h, grappa/sorting_reversal_median.c, grappa/sorting_reversal_median.h, grappa/specialinit.c, grappa/specialinit.h, grappa/specialtsp.c, grappa/specialtsp.h, grappa/structs.h, grappa/test_grappa.ml, grappa/uf.h, grappa/vertex_factory.c, grappa/vertex_factory.h, grappa/all_inversion_medians.h, grappa/all_inversion_medians.c:
+	Initial Version
+
+	* grappa/uf.c: Initial version
+
+2005-03-08  ron  <ron@ren.pcc.amnh.org>
+
+	* parser.ml:
+	Added code for Hennig file - to handle a title in the file, to handle if they
+	enter cc or ccode, and to handle the the . in the ccode denoting ranges
+
+2005-03-02  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* character2.ml, character2.mli, sankoff.c, sankoff.h:
+	Updating the Sankoff character support so that it's compilable while doing some
+	further changes.
+
+2005-03-01  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* character2.mli: Small typo in a function comment corrected.
+
+	* character2.ml, character2.mli:
+	Added support for Sankoff characters using precomputed best combinations in a
+	cost matrix.
+
+2005-02-28  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile:
+	Updated the Makefile for some of the latest additions in the repository.
+
+	* Makefile, add.c, add.h, algn.c, algn.h, array_ops.ml, array_ops.mli, asynch.ml, asynch.mli, cm.c, cm.h, cost_matrix.ml, cost_matrix.mli, ftol.ml, ftol.mli, matrices.c, matrices.h, matrix.ml, matrix.mli, methods.ml, params.ml, params.mli, parparam.ml, parser.ml, process.ml, seq.c, seq.h, taxon.ml, taxon.mli, tree.ml, tree.mli:
+	Adding files to synch with Andres's repository.
+
+	* all_sets.ml, all_sets.mli: Added modules for general purpose sets.
+
+	* character2.ml, character2.mli:
+	Bugfix in create functios for Nonadditive and Additive, and simplified the
+	interface for both (affecting Character2.mli)
+
+	* parser.ml, parser.mli:
+	Updated documentation, removed the useles min_max type and replaced it with a
+	simple tuple.
+
+	* character2.ml, character2.mli, parser.ml, parser.mli:
+	Added _ support in the taxon name for Hennig files, and added creation function
+	for additive and non additive sets from Hennig files.
+
+2005-02-25  ron  <ron@ren.pcc.amnh.org>
+
+	* character2.ml: Additive and Nonadditive routines
+
+	* character2.mli:
+	prototypes for additive and nonadditive and integer matrix
+
+	* add.c: Additive functions uppass and downpass
+
+	* add.h: Additive function prototypes downpass, uppass , etc
+
+	* noaddset.h: Non-Additive functions uppass, downpass etc.
+
+	* noaddset.c: File for performing Non-Additive downpass and uppass
+
+2005-02-25  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* alphabet.ml, alphabet.mli, parser.ml, parser.mli, sequence.ml, sequence.mli:
+	Initial version of the functionality for the file parser.
+
+2004-07-20  arman  <arman@ren.pcc.amnh.org>
+
+	* asynch.mli, asynch.ml: A: map and scan functions implemented.
+	A: master handles dead processes, as long as it is informed with a message.
+	A: master learns the processing time of individual processes and can shift the assignment of the jobs.
+
+	* parfunc.ml, parfunc.mli:
+	D: scan functions signature is changed as required.
+
+	* process.ml, process.mli: G: Hangover is added to the Condition type
+	A: time function returns the system time in seconds
+	A: hang_proc changes the condition of a process from busy to hangover
+	S: release_proc now returns the functions runtime in float.
+	A: earliest_busy_job either returns the process that began running the earliest, or if no process is running then the first process but with a checkpoint = "".
+
+	* register.mli, register.ml:
+	G: int_ref_bool is added to the all_parallel type
+
+2004-07-19  arman  <arman@ren.pcc.amnh.org>
+
+	* process.ml: :R max_num_proc now only counts the Alive processes.
+	:R rem_proc iterates thru the all_proc instead of copy_proc, which is the way it should be.
+
+2004-07-15  arman  <arman@ren.pcc.amnh.org>
+
+	* asynch.mli: A: register_functions introduced.
+	D: functions are modified to be passed using type Register.all_parallel
+
+	* asynch.ml:
+	A: gather_within_threshold, all_gather, all_compare, map and run_slave corrected.
+	A: register_function, _relevant_values added.
+	A: all tags are forwarded to Register module
+
+	* comm.mli: P: add signature of run_slave
+
+	* comm.ml:
+	P: init is modified to handle Ftol functions and proper initalizations.
+	A: run_slave is called not from Parfunc anymore but from Asynch directly.
+
+	* process.mli: A: init_proc and kill_proc added.
+	C: Mpi module calls are forwarded to Ftol module
+
+	* parfunc.ml: A: run_slave and tags are removed.
+	B: functions are passed with their datatypes i.e. Register.all_parallel type.
+	M: some parts are commented out because of a change in function datatype that is not introduced in other modules yet.
+
+	* parfunc.mli: A: run_slave and tags are removed.
+	B: functions are passed with their datatypes i.e. Register.all_parallel type.
+
+	* paroperas.ml: B: corrected < and > comparisons
+	A: index corrections for arrays in _break_arr_for_slaves
+	D: corrected the call for size of MPI comm before MPI intialization
+
+	* paroper.ml: B: corrected < and > comparisons
+
+	* register.ml, register.mli: A: first versions
+
+	* ftol.ml, ftol.mli: A: first version
+
+	* process.ml: R: try with type of argument checks introduced.
+	A: kill_proc is added. init_proc is modified
+	E: in get_position
+
+	* array_ops.ml:
+	A: _calculate_size and flatten_array had problems with the index values of arrays and corrected
+
+2004-06-23  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* parfunc.c: parfunc.c was added, was missing in the previous commit.
+
+	* Makefile, asynch.ml, ftol.ml, parfunc.ml, process.ml:
+	The previous files had some errors that would not allow the code to be
+	compiled. Fixed them all.
+
+2004-06-22  Andres Varon  <andres@ren.pcc.amnh.org>
+
+	* Makefile, array_ops.ml, array_ops.mli, asynch.ml, asynch.mli, comm.ml, comm.mli, ftol.ml, ftol.mli, parfunc.ml, parfunc.mli, paroper.ml, paroper.mli, paroperas.ml, paroperas.mli, parparam.ml, parparam.mli, process.ml, process.mli, profiles.ml:
+	Imported sources
+
+	* Makefile, array_ops.ml, array_ops.mli, asynch.ml, asynch.mli, comm.ml, comm.mli, ftol.ml, ftol.mli, parfunc.ml, parfunc.mli, paroper.ml, paroper.mli, paroperas.ml, paroperas.mli, parparam.ml, parparam.mli, process.ml, process.mli, profiles.ml:
+	New file.
+

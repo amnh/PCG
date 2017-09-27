@@ -25,7 +25,7 @@
 #define CM_H 1
 #define Cost_matrix_struct(a) ((struct cost_matrices_2d *) Data_custom_val(a))
 #define Cost_matrix_struct_3d(a) ((struct cost_matrices_3d *) Data_custom_val(a))
-#include "debug_just_c.h"
+#include "debug_constants.h"
 #include "matrices.h"
 #include "seq.h"
 

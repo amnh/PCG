@@ -15,7 +15,7 @@
 #define DEBUG_AFFINE     0
 #define DEBUG_ALGN       0
 #define DEBUG_BT         0
-#define DEBUG_CALL_ORDER 1
+#define DEBUG_CALL_ORDER 0
 #define DEBUG_COST_M     0
 #define DEBUG_DIR_M      0
 #define DEBUG_EDIT_DIST  0

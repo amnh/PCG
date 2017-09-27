@@ -515,11 +515,11 @@ int align3d( alignIO_t          *inputChar1_aio
     }
 
     if (DEBUG_3D) {
-        printf("\nafter copying, long (char 1):\n");
+        printf("\nafter initialization into correct data structs, long (char 1):\n");
         dyn_char_print(longChar);
-        printf("\nafter copying, middle (char 2):\n");
+        printf("\nafter initialization into correct data structs, middle (char 2):\n");
         dyn_char_print(middleChar);
-        printf("\nafter copying, short (char 3):\n");
+        printf("\nafter initialization into correct data structs, short (char 3):\n");
         dyn_char_print(shortChar);
     }
 
@@ -529,7 +529,7 @@ int align3d( alignIO_t          *inputChar1_aio
                                                                                          // It's also hard-coded in 3d ukk, so will have
                                                                                          // to change it there, too.
 
-    if (DEBUG_3D) printf("\n---Calling Powell\n\n");
+    if (DEBUG_CALL_ORDER) printf("\n---Calling Powell\n\n");
 
     // Powell aligns three sequences.
     algnCost = powell_3D_align ( shortChar
@@ -625,9 +625,9 @@ void alignIOtoDynChar(       dyn_character_t *retChar
     //printf("\nmemcpy completed\n");
 
     // now add gap to beginning
-    // retChar->char_begin--;   // Add another cell, prepended to the array
-    // *retChar->char_begin = ((elem_t) 1) << (alphabetSize - 1);   //Prepend a gap to the array.
-    // retChar->len++;
+    retChar->char_begin--;   // Add another cell, prepended to the array
+    *retChar->char_begin = ((elem_t) 1) << (alphabetSize - 1);   //Prepend a gap to the array.
+    retChar->len++;
 
     // printf("\nAfter duping struct:\n");
     // printf("Output Length:     %2zu\n", retChar->len);

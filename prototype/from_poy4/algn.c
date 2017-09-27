@@ -63,7 +63,7 @@
 
 
 #include "algn.h"
-#include "debug_just_c.h"
+#include "debug_constants.h"
 // #include "cm.h"
 // #include "matrices.h"
 // #include "seq.h"
@@ -4492,4 +4492,4 @@ algn_CAML_create_backtrack (value lsa, value lsb, value scm, value sres) {
     CAMLreturn(Val_unit);
 }
 */
-#include "union.c"
+// #include "union.c"

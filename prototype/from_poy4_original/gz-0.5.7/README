@@ -1,0 +1,31 @@
+
+This is an OCaml wrapper for the zlib and bzlib libraries.
+Gzip-compressed files can be read and written directly from OCaml
+programs.
+
+* INSTALLING
+- `./configure'
+- `make all' builds the bytecode and native-code libraries, and the stub code
+- `make install'
+
+** OPTIONS
+- for configure : 
+  CPPFLAGS="-I <location of zlib header>"
+  LIBS="-L <location of zlib library>"
+  --with-findlib : use findlib package system for installation.
+  --with-installdir : location to install to if not using findlib 
+- when installing:
+  if configure was given the `--with-findlib' option, ocamlfind
+  is used ; otherwise files are installed in the INSTALLDIR directory 
+  (defaults to $(OCAMLLIB)/site-lib/gz).
+
+* DOWNLOAD
+<http://sourceforge.net/projects/ocamlplot/ocamlplot.html#gz> 
+
+* LICENSING
+GNU LGPL. The file io.h is taken from the OCaml compiler source tree
+(the GPL'ed part of the tree). 
+
+* AUTHORS
+Olivier Andrieu <andrieu@ijm.jussieu.fr>
+Nicolas George  <nicolas.george@ens.fr> (gz in-memory compression)

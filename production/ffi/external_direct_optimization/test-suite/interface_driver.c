@@ -113,13 +113,13 @@ int main() {
             //tcm[i + j] = 2 * i + 2 * j;
             if ( i == j * alphSize ) {
                 tcm[i + j] = IDENTITY_COST;    // identity
-                printf("i: %zu, j: %zu, cost: %d\n", i, j, IDENTITY_COST);
+                // printf("i: %zu, j: %zu, cost: %d\n", i, j, IDENTITY_COST);
             } else if (i == (tcm_total_len - alphSize) || j == (alphSize - 1)) {
                 tcm[i + j] = INDEL_COST;       // indel cost
-                printf("i: %zu, j: %zu, cost: %d\n", i, j, INDEL_COST);
+                // printf("i: %zu, j: %zu, cost: %d\n", i, j, INDEL_COST);
             } else {
                 tcm[i + j] = SUB_COST;         // sub cost
-                printf("i: %zu, j: %zu, cost: %d\n", i, j, SUB_COST);
+                // printf("i: %zu, j: %zu, cost: %d\n", i, j, SUB_COST);
             }
          }
     }
@@ -529,10 +529,10 @@ int main() {
             copyValsToAIO(inputChar3, lesser_vals, shortCharLen,  maxLength);
 
             printf("\n\n\n******************** Align 3 characters **********************\n\n");
-            printf(      "*****************  Original 3d characters:  ******************\n");
-            alignIO_print(inputChar1);
-            alignIO_print(inputChar2);
-            alignIO_print(inputChar3);
+            // printf(      "*****************  Original 3d characters:  ******************\n");
+            // alignIO_print(inputChar1);
+            // alignIO_print(inputChar2);
+            // alignIO_print(inputChar3);
 
             algnCost = align3d( inputChar1
                               , inputChar2

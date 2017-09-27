@@ -63,10 +63,10 @@
 
 #include "algn.h"
 #include "cm.h"
-#include "debug_just_c.h"
+#include "debug_constants.h"
 #include "matrices.h"
 #include "seq.h"
-#include "zarr.h"
+// #include "zarr.h"
 
 // TODO: consider changing this number
 #define VERY_LARGE_NUMBER 100000 // large number, but as this gets added to itself repeatedly, small enough that it won't overflow.
