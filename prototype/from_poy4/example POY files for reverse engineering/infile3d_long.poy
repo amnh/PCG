@@ -1,0 +1,8 @@
+read(nucleotides: ("./longSeqs0.fa"))
+read("./3d.tre")
+set(iterative:exact)
+transform(tcm: "./sample2.mat")
+
+report("ex3d_long.txt")
+
+exit()

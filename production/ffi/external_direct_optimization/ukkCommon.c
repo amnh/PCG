@@ -435,7 +435,8 @@ int whichCharCost(char a, char b, char c)
     if (DEBUG_CALL_ORDER) {
         printf("whichCharCost\n");
     }
-    printf("a: %d, b: %d, c: %d\n", a, b, c);
+    // printf("a: %d, b: %d, c: %d\n", a, b, c);
+
     // This would be all deletions, which doesn't really make any sense.
     assert(   a != 0
            && b != 0

@@ -1,0 +1,1387 @@
+(I,(Z,J));
+          
+
+Tree
+    Tree cost: 9.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: I 5
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  2.,2.       0.                        -                -                 2AYT
+                                        ./sample3d.fa     Final        2.,2.       0.                        -                -                 2AYT
+                                        ./sample3d.fa     Single       0.,0.       0.                        -                -                 ATT
+                                        
+                                        
+                                        
+                                        I
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,3         0.                        -                -                 MTT
+                                        ./sample3d.fa     Final        0,2         0.                        -                -                 ATT
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 ATT
+                                        
+                                        
+                                        
+                                        5
+                                        Cost 7.
+                                        Rearrangement cost 0.
+                                        Children: Z J
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,9         0.                        -                -                 31C48AC481
+                                        ./sample3d.fa     Final        0,2         0.                        -                -                 CACT
+                                        ./sample3d.fa     Single       2,2         0.                        -                -                 CACT
+                                        
+                                        
+                                        
+                                        Z
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,7         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Final        0,6         0.                        -                -                 31C48AC4T1
+                                        ./sample3d.fa     Single       6,6         0.                        -                -                 AACGTACGTA
+                                        
+                                        
+                                        
+                                        J
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,8         0.                        -                -                 MAC
+                                        ./sample3d.fa     Final        0,1         0.                        -                -                 CAC8
+                                        ./sample3d.fa     Single       1,1         0.                        -                -                 CAC
+                                        
+                                        Tree with cost 9
+  |--I  
+  |     
+--| |J  
+  |-|   
+    |Z  
+(I,(Z,J));
+          
+
+Tree
+    Tree cost: 9.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: I 5
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  2.,2.       0.                        -                -                 2AYT
+                                        ./sample3d.fa     Final        2.,2.       0.                        -                -                 2AYT
+                                        ./sample3d.fa     Single       0.,0.       0.                        -                -                 ATT
+                                        
+                                        
+                                        
+                                        I
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,3         0.                        -                -                 MTT
+                                        ./sample3d.fa     Final        0,2         0.                        -                -                 ATT
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 ATT
+                                        
+                                        
+                                        
+                                        5
+                                        Cost 7.
+                                        Rearrangement cost 0.
+                                        Children: Z J
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,9         0.                        -                -                 31C48AC481
+                                        ./sample3d.fa     Final        0,2         0.                        -                -                 CACT
+                                        ./sample3d.fa     Single       2,2         0.                        -                -                 CACT
+                                        
+                                        
+                                        
+                                        Z
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,7         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Final        0,6         0.                        -                -                 31C48AC4T1
+                                        ./sample3d.fa     Single       6,6         0.                        -                -                 AACGTACGTA
+                                        
+                                        
+                                        
+                                        J
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,8         0.                        -                -                 MAC
+                                        ./sample3d.fa     Final        0,1         0.                        -                -                 CAC8
+                                        ./sample3d.fa     Single       1,1         0.                        -                -                 CAC
+                                        
+                                        Tree with cost 9
+  |--I  
+  |     
+--| |J  
+  |-|   
+    |Z  
+(I,(Z,J));
+          
+
+Tree
+    Tree cost: 9.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: I 5
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  2.,2.       0.                        -                -                 2AYT
+                                        ./sample3d.fa     Final        2.,2.       0.                        -                -                 2AYT
+                                        ./sample3d.fa     Single       0.,0.       0.                        -                -                 ATT
+                                        
+                                        
+                                        
+                                        I
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,3         0.                        -                -                 MTT
+                                        ./sample3d.fa     Final        0,2         0.                        -                -                 ATT
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 ATT
+                                        
+                                        
+                                        
+                                        5
+                                        Cost 7.
+                                        Rearrangement cost 0.
+                                        Children: Z J
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,9         0.                        -                -                 31C48AC481
+                                        ./sample3d.fa     Final        0,2         0.                        -                -                 CACT
+                                        ./sample3d.fa     Single       2,2         0.                        -                -                 CACT
+                                        
+                                        
+                                        
+                                        Z
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,7         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Final        0,6         0.                        -                -                 31C48AC4T1
+                                        ./sample3d.fa     Single       6,6         0.                        -                -                 AACGTACGTA
+                                        
+                                        
+                                        
+                                        J
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,8         0.                        -                -                 MAC
+                                        ./sample3d.fa     Final        0,1         0.                        -                -                 CAC8
+                                        ./sample3d.fa     Single       1,1         0.                        -                -                 CAC
+                                        
+                                        Tree with cost 9
+  |--I  
+  |     
+--| |J  
+  |-|   
+    |Z  
+(I,(Z,J));
+          
+
+Tree
+    Tree cost: 9.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: I 5
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  2.,2.       0.                        -                -                 2AYT
+                                        ./sample3d.fa     Final        2.,2.       0.                        -                -                 2AYT
+                                        ./sample3d.fa     Single       0.,0.       0.                        -                -                 ATT
+                                        
+                                        
+                                        
+                                        I
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,3         0.                        -                -                 MTT
+                                        ./sample3d.fa     Final        0,2         0.                        -                -                 ATT
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 ATT
+                                        
+                                        
+                                        
+                                        5
+                                        Cost 7.
+                                        Rearrangement cost 0.
+                                        Children: Z J
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,9         0.                        -                -                 31C48AC481
+                                        ./sample3d.fa     Final        0,2         0.                        -                -                 CACT
+                                        ./sample3d.fa     Single       2,2         0.                        -                -                 CACT
+                                        
+                                        
+                                        
+                                        Z
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,7         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Final        0,6         0.                        -                -                 31C48AC4T1
+                                        ./sample3d.fa     Single       6,6         0.                        -                -                 AACGTACGTA
+                                        
+                                        
+                                        
+                                        J
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,8         0.                        -                -                 MAC
+                                        ./sample3d.fa     Final        0,1         0.                        -                -                 CAC8
+                                        ./sample3d.fa     Single       1,1         0.                        -                -                 CAC
+                                        
+                                        Tree with cost 9
+  |--I  
+  |     
+--| |J  
+  |-|   
+    |Z  
+(I,(Z,J));
+          
+
+Tree
+    Tree cost: 9.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: I 5
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  2.,2.       0.                        -                -                 2AYT
+                                        ./sample3d.fa     Final        2.,2.       0.                        -                -                 2AYT
+                                        ./sample3d.fa     Single       0.,0.       0.                        -                -                 ATT
+                                        
+                                        
+                                        
+                                        I
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,3         0.                        -                -                 MTT
+                                        ./sample3d.fa     Final        0,2         0.                        -                -                 ATT
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 ATT
+                                        
+                                        
+                                        
+                                        5
+                                        Cost 7.
+                                        Rearrangement cost 0.
+                                        Children: Z J
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,9         0.                        -                -                 31C48AC481
+                                        ./sample3d.fa     Final        0,2         0.                        -                -                 CACT
+                                        ./sample3d.fa     Single       2,2         0.                        -                -                 CACT
+                                        
+                                        
+                                        
+                                        Z
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,7         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Final        0,6         0.                        -                -                 31C48AC4T1
+                                        ./sample3d.fa     Single       6,6         0.                        -                -                 AACGTACGTA
+                                        
+                                        
+                                        
+                                        J
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,8         0.                        -                -                 MAC
+                                        ./sample3d.fa     Final        0,1         0.                        -                -                 CAC8
+                                        ./sample3d.fa     Single       1,1         0.                        -                -                 CAC
+                                        
+                                        Tree with cost 9
+  |--I  
+  |     
+--| |J  
+  |-|   
+    |Z  
+(I,(Z,J));
+          
+
+Tree
+    Tree cost: 9.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: I 5
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  2.,2.       0.                        -                -                 2AYT
+                                        ./sample3d.fa     Final        2.,2.       0.                        -                -                 2AYT
+                                        ./sample3d.fa     Single       0.,0.       0.                        -                -                 ATT
+                                        
+                                        
+                                        
+                                        I
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,3         0.                        -                -                 MTT
+                                        ./sample3d.fa     Final        0,2         0.                        -                -                 ATT
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 ATT
+                                        
+                                        
+                                        
+                                        5
+                                        Cost 7.
+                                        Rearrangement cost 0.
+                                        Children: Z J
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,9         0.                        -                -                 31C48AC481
+                                        ./sample3d.fa     Final        0,2         0.                        -                -                 CACT
+                                        ./sample3d.fa     Single       2,2         0.                        -                -                 CACT
+                                        
+                                        
+                                        
+                                        Z
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,7         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Final        0,6         0.                        -                -                 31C48AC4T1
+                                        ./sample3d.fa     Single       6,6         0.                        -                -                 AACGTACGTA
+                                        
+                                        
+                                        
+                                        J
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,8         0.                        -                -                 MAC
+                                        ./sample3d.fa     Final        0,1         0.                        -                -                 CAC8
+                                        ./sample3d.fa     Single       1,1         0.                        -                -                 CAC
+                                        
+                                        Tree with cost 9
+  |--I  
+  |     
+--| |J  
+  |-|   
+    |Z  
+(I,(Z,J));
+          
+
+Tree
+    Tree cost: 9.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: I 5
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  2.,2.       0.                        -                -                 2AYT
+                                        ./sample3d.fa     Final        2.,2.       0.                        -                -                 2AYT
+                                        ./sample3d.fa     Single       0.,0.       0.                        -                -                 ATT
+                                        
+                                        
+                                        
+                                        I
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,3         0.                        -                -                 MTT
+                                        ./sample3d.fa     Final        0,2         0.                        -                -                 ATT
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 ATT
+                                        
+                                        
+                                        
+                                        5
+                                        Cost 7.
+                                        Rearrangement cost 0.
+                                        Children: Z J
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,9         0.                        -                -                 31C48AC481
+                                        ./sample3d.fa     Final        0,2         0.                        -                -                 CACT
+                                        ./sample3d.fa     Single       2,2         0.                        -                -                 CACT
+                                        
+                                        
+                                        
+                                        Z
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,7         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Final        0,6         0.                        -                -                 31C48AC4T1
+                                        ./sample3d.fa     Single       6,6         0.                        -                -                 AACGTACGTA
+                                        
+                                        
+                                        
+                                        J
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,8         0.                        -                -                 MAC
+                                        ./sample3d.fa     Final        0,1         0.                        -                -                 CAC8
+                                        ./sample3d.fa     Single       1,1         0.                        -                -                 CAC
+                                        
+                                        Tree with cost 9
+  |--I  
+  |     
+--| |J  
+  |-|   
+    |Z  
+(I,(Z,J));
+          
+
+Tree
+    Tree cost: 9.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: I 5
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  2.,2.       0.                        -                -                 2AYT
+                                        ./sample3d.fa     Final        2.,2.       0.                        -                -                 2AYT
+                                        ./sample3d.fa     Single       0.,0.       0.                        -                -                 ATT
+                                        
+                                        
+                                        
+                                        I
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,3         0.                        -                -                 MTT
+                                        ./sample3d.fa     Final        0,2         0.                        -                -                 ATT
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 ATT
+                                        
+                                        
+                                        
+                                        5
+                                        Cost 7.
+                                        Rearrangement cost 0.
+                                        Children: Z J
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,9         0.                        -                -                 31C48AC481
+                                        ./sample3d.fa     Final        0,2         0.                        -                -                 CACT
+                                        ./sample3d.fa     Single       2,2         0.                        -                -                 CACT
+                                        
+                                        
+                                        
+                                        Z
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,7         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Final        0,6         0.                        -                -                 31C48AC4T1
+                                        ./sample3d.fa     Single       6,6         0.                        -                -                 AACGTACGTA
+                                        
+                                        
+                                        
+                                        J
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,8         0.                        -                -                 MAC
+                                        ./sample3d.fa     Final        0,1         0.                        -                -                 CAC8
+                                        ./sample3d.fa     Single       1,1         0.                        -                -                 CAC
+                                        
+                                        Tree with cost 9
+  |--I  
+  |     
+--| |J  
+  |-|   
+    |Z  
+(I,(Z,J));
+          
+
+Tree
+    Tree cost: 9.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: I 5
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  2.,2.       0.                        -                -                 2AYT
+                                        ./sample3d.fa     Final        2.,2.       0.                        -                -                 2AYT
+                                        ./sample3d.fa     Single       0.,0.       0.                        -                -                 ATT
+                                        
+                                        
+                                        
+                                        I
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,3         0.                        -                -                 MTT
+                                        ./sample3d.fa     Final        0,2         0.                        -                -                 ATT
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 ATT
+                                        
+                                        
+                                        
+                                        5
+                                        Cost 7.
+                                        Rearrangement cost 0.
+                                        Children: Z J
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,9         0.                        -                -                 31C48AC481
+                                        ./sample3d.fa     Final        0,2         0.                        -                -                 CACT
+                                        ./sample3d.fa     Single       2,2         0.                        -                -                 CACT
+                                        
+                                        
+                                        
+                                        Z
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,7         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Final        0,6         0.                        -                -                 31C48AC4T1
+                                        ./sample3d.fa     Single       6,6         0.                        -                -                 AACGTACGTA
+                                        
+                                        
+                                        
+                                        J
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,8         0.                        -                -                 MAC
+                                        ./sample3d.fa     Final        0,1         0.                        -                -                 CAC8
+                                        ./sample3d.fa     Single       1,1         0.                        -                -                 CAC
+                                        
+                                        Tree with cost 9
+  |--I  
+  |     
+--| |J  
+  |-|   
+    |Z  
+(I,(Z,J));
+          
+
+Tree
+    Tree cost: 3.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: I 5
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  2.,2.       0.                        -                -                 3AWAKA
+                                        ./sample3d.fa     Final        2.,2.       0.                        -                -                 3AWAKA
+                                        ./sample3d.fa     Single       0.,0.       0.                        -                -                 AAAATA
+                                        
+                                        
+                                        
+                                        I
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,3         0.                        -                -                 MAWATA
+                                        ./sample3d.fa     Final        0,3         0.                        -                -                 MAWATA
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 AAAATA
+                                        
+                                        
+                                        
+                                        5
+                                        Cost 1.
+                                        Rearrangement cost 0.
+                                        Children: Z J
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,7         0.                        -                -                 MWWGR8
+                                        ./sample3d.fa     Final        0,3         0.                        -                -                 AWAGA
+                                        ./sample3d.fa     Single       2,2         0.                        -                -                 AAAGA
+                                        
+                                        
+                                        
+                                        Z
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,5         0.                        -                -                 VWWGR
+                                        ./sample3d.fa     Final        0,1         0.                        -                -                 AWAGA
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 AAAGA
+                                        
+                                        
+                                        
+                                        J
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,6         0.                        -                -                 MWWVRT
+                                        ./sample3d.fa     Final        0,2         0.                        -                -                 AWAGA8
+                                        ./sample3d.fa     Single       1,1         0.                        -                -                 AAAGAT
+                                        
+                                        Tree with cost 3
+  |--I  
+  |     
+--| |J  
+  |-|   
+    |Z  
+(I,(Z,J));
+          
+
+Tree
+    Tree cost: 10.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: I 5
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  7.,7.       0.                        -                -                 31C4T124T1
+                                        ./sample3d.fa     Final        7.,7.       0.                        -                -                 31C4T124T1
+                                        ./sample3d.fa     Single       0.,0.       0.                        -                -                 CTT
+                                        
+                                        
+                                        
+                                        I
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,8         0.                        -                -                 MTT
+                                        ./sample3d.fa     Final        0,7         0.                        -                -                 CTT
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 CTT
+                                        
+                                        
+                                        
+                                        5
+                                        Cost 3.
+                                        Rearrangement cost 0.
+                                        Children: Z J
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,10        0.                        -                -                 MACGTACGTA248
+                                        ./sample3d.fa     Final        0,7         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Single       7,7         0.                        -                -                 AACGTACGTA
+                                        
+                                        
+                                        
+                                        Z
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,4         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Final        0,1         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 AACGTACGTA
+                                        
+                                        
+                                        
+                                        J
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,4         0.                        -                -                 MACGTACGTACGT
+                                        ./sample3d.fa     Final        0,4         0.                        -                -                 MACGTACGTA248
+                                        ./sample3d.fa     Single       3,3         0.                        -                -                 AACGTACGTACGT
+                                        
+                                        Tree with cost 10
+  |--I  
+  |     
+--| |J  
+  |-|   
+    |Z  
+(I,(Z,J));
+          
+
+Tree
+    Tree cost: 10.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: I 5
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  7.,7.       0.                        -                -                 31C4T124T1
+                                        ./sample3d.fa     Final        7.,7.       0.                        -                -                 31C4T124T1
+                                        ./sample3d.fa     Single       0.,0.       0.                        -                -                 CTT
+                                        
+                                        
+                                        
+                                        I
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,8         0.                        -                -                 MTT
+                                        ./sample3d.fa     Final        0,7         0.                        -                -                 CTT
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 CTT
+                                        
+                                        
+                                        
+                                        5
+                                        Cost 3.
+                                        Rearrangement cost 0.
+                                        Children: Z J
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,10        0.                        -                -                 MACGTACGTA248
+                                        ./sample3d.fa     Final        0,7         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Single       7,7         0.                        -                -                 AACGTACGTA
+                                        
+                                        
+                                        
+                                        Z
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,4         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Final        0,1         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 AACGTACGTA
+                                        
+                                        
+                                        
+                                        J
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,4         0.                        -                -                 MACGTACGTACGT
+                                        ./sample3d.fa     Final        0,4         0.                        -                -                 MACGTACGTA248
+                                        ./sample3d.fa     Single       3,3         0.                        -                -                 AACGTACGTACGT
+                                        
+                                        Tree with cost 10
+  |--I  
+  |     
+--| |J  
+  |-|   
+    |Z  
+(I,(Z,J));
+          
+
+Tree
+    Tree cost: 10.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: I 5
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  7.,7.       0.                        -                -                 31C4T124T1
+                                        ./sample3d.fa     Final        7.,7.       0.                        -                -                 31C4T124T1
+                                        ./sample3d.fa     Single       0.,0.       0.                        -                -                 CTT
+                                        
+                                        
+                                        
+                                        I
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,8         0.                        -                -                 MTT
+                                        ./sample3d.fa     Final        0,7         0.                        -                -                 CTT
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 CTT
+                                        
+                                        
+                                        
+                                        5
+                                        Cost 3.
+                                        Rearrangement cost 0.
+                                        Children: Z J
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,10        0.                        -                -                 MACGTACGTA248
+                                        ./sample3d.fa     Final        0,7         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Single       7,7         0.                        -                -                 AACGTACGTA
+                                        
+                                        
+                                        
+                                        Z
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,4         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Final        0,1         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 AACGTACGTA
+                                        
+                                        
+                                        
+                                        J
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,4         0.                        -                -                 MACGTACGTACGT
+                                        ./sample3d.fa     Final        0,4         0.                        -                -                 MACGTACGTA248
+                                        ./sample3d.fa     Single       3,3         0.                        -                -                 AACGTACGTACGT
+                                        
+                                        Tree with cost 10
+  |--I  
+  |     
+--| |J  
+  |-|   
+    |Z  
+(I,(Z,J));
+          
+
+Tree
+    Tree cost: 10.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: I 5
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  7.,7.       0.                        -                -                 31C4T124T1
+                                        ./sample3d.fa     Final        7.,7.       0.                        -                -                 31C4T124T1
+                                        ./sample3d.fa     Single       0.,0.       0.                        -                -                 CTT
+                                        
+                                        
+                                        
+                                        I
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,8         0.                        -                -                 MTT
+                                        ./sample3d.fa     Final        0,7         0.                        -                -                 CTT
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 CTT
+                                        
+                                        
+                                        
+                                        5
+                                        Cost 3.
+                                        Rearrangement cost 0.
+                                        Children: Z J
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,10        0.                        -                -                 MACGTACGTA248
+                                        ./sample3d.fa     Final        0,7         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Single       7,7         0.                        -                -                 AACGTACGTA
+                                        
+                                        
+                                        
+                                        Z
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,4         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Final        0,1         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 AACGTACGTA
+                                        
+                                        
+                                        
+                                        J
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,4         0.                        -                -                 MACGTACGTACGT
+                                        ./sample3d.fa     Final        0,4         0.                        -                -                 MACGTACGTA248
+                                        ./sample3d.fa     Single       3,3         0.                        -                -                 AACGTACGTACGT
+                                        
+                                        Tree with cost 10
+  |--I  
+  |     
+--| |J  
+  |-|   
+    |Z  
+(I,(Z,J));
+          
+
+Tree
+    Tree cost: 10.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: I 5
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  7.,7.       0.                        -                -                 31C4T124T1
+                                        ./sample3d.fa     Final        7.,7.       0.                        -                -                 31C4T124T1
+                                        ./sample3d.fa     Single       0.,0.       0.                        -                -                 CTT
+                                        
+                                        
+                                        
+                                        I
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,8         0.                        -                -                 MTT
+                                        ./sample3d.fa     Final        0,7         0.                        -                -                 CTT
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 CTT
+                                        
+                                        
+                                        
+                                        5
+                                        Cost 3.
+                                        Rearrangement cost 0.
+                                        Children: Z J
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,10        0.                        -                -                 MACGTACGTA248
+                                        ./sample3d.fa     Final        0,7         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Single       7,7         0.                        -                -                 AACGTACGTA
+                                        
+                                        
+                                        
+                                        Z
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,4         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Final        0,1         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 AACGTACGTA
+                                        
+                                        
+                                        
+                                        J
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,4         0.                        -                -                 MACGTACGTACGT
+                                        ./sample3d.fa     Final        0,4         0.                        -                -                 MACGTACGTA248
+                                        ./sample3d.fa     Single       3,3         0.                        -                -                 AACGTACGTACGT
+                                        
+                                        Tree with cost 10
+  |--I  
+  |     
+--| |J  
+  |-|   
+    |Z  
+(I,(Z,J));
+          
+
+Tree
+    Tree cost: 10.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: I 5
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  7.,7.       0.                        -                -                 31C4T124T1
+                                        ./sample3d.fa     Final        7.,7.       0.                        -                -                 31C4T124T1
+                                        ./sample3d.fa     Single       0.,0.       0.                        -                -                 CTT
+                                        
+                                        
+                                        
+                                        I
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,8         0.                        -                -                 MTT
+                                        ./sample3d.fa     Final        0,7         0.                        -                -                 CTT
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 CTT
+                                        
+                                        
+                                        
+                                        5
+                                        Cost 3.
+                                        Rearrangement cost 0.
+                                        Children: Z J
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,10        0.                        -                -                 MACGTACGTA248
+                                        ./sample3d.fa     Final        0,7         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Single       7,7         0.                        -                -                 AACGTACGTA
+                                        
+                                        
+                                        
+                                        Z
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,4         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Final        0,1         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 AACGTACGTA
+                                        
+                                        
+                                        
+                                        J
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,4         0.                        -                -                 MACGTACGTACGT
+                                        ./sample3d.fa     Final        0,4         0.                        -                -                 MACGTACGTA248
+                                        ./sample3d.fa     Single       3,3         0.                        -                -                 AACGTACGTACGT
+                                        
+                                        Tree with cost 10
+  |--I  
+  |     
+--| |J  
+  |-|   
+    |Z  
+(I,(Z,J));
+          
+
+Tree
+    Tree cost: 10.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: I 5
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  7.,7.       0.                        -                -                 31C4T124T1
+                                        ./sample3d.fa     Final        7.,7.       0.                        -                -                 31C4T124T1
+                                        ./sample3d.fa     Single       0.,0.       0.                        -                -                 CTT
+                                        
+                                        
+                                        
+                                        I
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,8         0.                        -                -                 MTT
+                                        ./sample3d.fa     Final        0,7         0.                        -                -                 CTT
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 CTT
+                                        
+                                        
+                                        
+                                        5
+                                        Cost 3.
+                                        Rearrangement cost 0.
+                                        Children: Z J
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,10        0.                        -                -                 MACGTACGTA248
+                                        ./sample3d.fa     Final        0,7         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Single       7,7         0.                        -                -                 AACGTACGTA
+                                        
+                                        
+                                        
+                                        Z
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,4         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Final        0,1         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 AACGTACGTA
+                                        
+                                        
+                                        
+                                        J
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,4         0.                        -                -                 MACGTACGTACGT
+                                        ./sample3d.fa     Final        0,4         0.                        -                -                 MACGTACGTA248
+                                        ./sample3d.fa     Single       3,3         0.                        -                -                 AACGTACGTACGT
+                                        
+                                        Tree with cost 10
+  |--I  
+  |     
+--| |J  
+  |-|   
+    |Z  
+(I,(Z,J));
+          
+
+Tree
+    Tree cost: 10.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: I 5
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  7.,7.       0.                        -                -                 31C4T124T1
+                                        ./sample3d.fa     Final        7.,7.       0.                        -                -                 31C4T124T1
+                                        ./sample3d.fa     Single       0.,0.       0.                        -                -                 CTT
+                                        
+                                        
+                                        
+                                        I
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,8         0.                        -                -                 MTT
+                                        ./sample3d.fa     Final        0,7         0.                        -                -                 CTT
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 CTT
+                                        
+                                        
+                                        
+                                        5
+                                        Cost 3.
+                                        Rearrangement cost 0.
+                                        Children: Z J
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,10        0.                        -                -                 MACGTACGTA248
+                                        ./sample3d.fa     Final        0,7         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Single       7,7         0.                        -                -                 AACGTACGTA
+                                        
+                                        
+                                        
+                                        Z
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,4         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Final        0,1         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 AACGTACGTA
+                                        
+                                        
+                                        
+                                        J
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,4         0.                        -                -                 MACGTACGTACGT
+                                        ./sample3d.fa     Final        0,4         0.                        -                -                 MACGTACGTA248
+                                        ./sample3d.fa     Single       3,3         0.                        -                -                 AACGTACGTACGT
+                                        
+                                        Tree with cost 10
+  |--I  
+  |     
+--| |J  
+  |-|   
+    |Z  
+(I,(Z,J));
+          
+
+Tree
+    Tree cost: 9.
+               Tree rearrangement cost: 0.
+                                        
+                                        
+                                        
+                                        root
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children: 5 Z
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  2.,2.       0.                        -                -                 MACGTAC4T1
+                                        ./sample3d.fa     Final        2.,2.       0.                        -                -                 MACGTAC4T1
+                                        ./sample3d.fa     Single       0.,0.       0.                        -                -                 AACGTACT
+                                        
+                                        
+                                        
+                                        5
+                                        Cost 7.
+                                        Rearrangement cost 0.
+                                        Children: I J
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,9         0.                        -                -                 31C4T1112T
+                                        ./sample3d.fa     Final        0,3         0.                        -                -                 MACGTACT
+                                        ./sample3d.fa     Single       0,0         0.                        -                -                 AACGTACT
+                                        
+                                        
+                                        
+                                        I
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,8         0.                        -                -                 MTT
+                                        ./sample3d.fa     Final        0,5         0.                        -                -                 31C4T12T
+                                        ./sample3d.fa     Single       5,5         0.                        -                -                 CTT
+                                        
+                                        
+                                        
+                                        J
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,7         0.                        -                -                 MACGTAAACT
+                                        ./sample3d.fa     Final        0,3         0.                        -                -                 MACGT11ACT
+                                        ./sample3d.fa     Single       2,2         0.                        -                -                 AACGTAAACT
+                                        
+                                        
+                                        
+                                        Z
+                                        Cost 0.
+                                        Rearrangement cost 0.
+                                        Children:  
+                                                                                                                                                              
+                                        Characters        Class        Cost        Rearrangement Cost        Chrom Ref        Median Map        States
+                                        ./sample3d.fa     Preliminary  0,3         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Final        0,3         0.                        -                -                 MACGTACGTA
+                                        ./sample3d.fa     Single       2,2         0.                        -                -                 AACGTACGTA
+                                        
+                                        Tree with cost 9
+  |--I  
+  |     
+--| |J  
+  |-|   
+    |Z  
