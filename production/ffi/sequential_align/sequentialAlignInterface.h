@@ -1,7 +1,7 @@
 #ifndef SEQUENTIAL_ALIGN_INTERFACE
 #define SEQUENTIAL_ALIGN_INTERFACE
 
-#include "../memoized_tcm/dynamicCharacterOperations.h"
+#include "dynamicCharacterOperations.h"
 #include "sequentialAlignOutputTypes.h"
 
 /** Input dynamic characters are charA and charB.

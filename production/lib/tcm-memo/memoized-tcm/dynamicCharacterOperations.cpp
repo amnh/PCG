@@ -155,9 +155,9 @@ dcElement_t *getDCElement( const size_t whichChar, const dynChar_t *const inDynC
 
 dcElement_t *allocateDCElement( const size_t alphSize ) {
     // First create dynamic character with empty character field.
-    dcElement_t *output = malloc( sizeof(dcElement_t) );
+  dcElement_t *output = (dcElement_t *) malloc( sizeof(dcElement_t) );
     output->alphSize    = alphSize;
-    output->element     = calloc( dcElemSize(alphSize), INT_WIDTH );
+    output->element     = (packedChar*) calloc( dcElemSize(alphSize), INT_WIDTH );
     if (output->element == NULL) {
         printf("Out of memory.\n");
         fflush(stdout);
@@ -201,7 +201,7 @@ dcElement_t *makeDCElementCopy( dcElement_t *input ) {
  */
 dynChar_t *makeDynamicChar( size_t alphSize, size_t numElems, packedChar *values ) {
     // allocate dynamic character
-    dynChar_t *output = malloc( sizeof(dynChar_t) );
+  dynChar_t *output = (dynChar_t *) malloc( sizeof(dynChar_t) );
     if (output == NULL) {
         printf("Out of memory.\n");
         fflush(stdout);
@@ -210,7 +210,7 @@ dynChar_t *makeDynamicChar( size_t alphSize, size_t numElems, packedChar *values
     output->alphSize   = alphSize;
     output->numElems   = numElems;
     output->dynCharLen = dynCharSize( alphSize, numElems );
-    output->dynChar    = calloc( output->dynCharLen, INT_WIDTH );
+    output->dynChar    = (packedChar*) calloc( output->dynCharLen, INT_WIDTH );
     if (output->dynChar == NULL) {
         printf("Out of memory.\n");
         fflush(stdout);
@@ -267,7 +267,7 @@ packedChar *intArrToBitArr( size_t alphSize, size_t arrayLen, uint64_t *input ) 
 }
 
 packedChar *allocatePackedChar( size_t alphSize, size_t numElems ) {
-    packedChar *outChar = calloc( dynCharSize(alphSize, numElems), sizeof(packedChar) );
+    packedChar *outChar = (packedChar*) calloc( dynCharSize(alphSize, numElems), sizeof(packedChar) );
     if (outChar == NULL) {
         printf("Out of memory.\n");
         fflush(stdout);
@@ -297,7 +297,7 @@ packedChar *packedCharAnd( packedChar *lhs, packedChar *rhs, size_t alphSize, si
 }
 
 dcElement_t *dcElementOr( dcElement_t *lhs, dcElement_t *rhs ) {
-    dcElement_t *toReturn = malloc(sizeof(dcElement_t));        // not calling allocateDCElem because packedCharOr allocates.
+    dcElement_t *toReturn = (dcElement_t *) malloc(sizeof(dcElement_t));        // not calling allocateDCElem because packedCharOr allocates.
     toReturn->alphSize    = lhs->alphSize;
     toReturn->element     = packedCharOr(lhs->element, rhs->element, lhs->alphSize, 1);
     return toReturn;

@@ -33,7 +33,7 @@ cabal-version:       >= 1.22
 
 flag build-cpp-files
   description: Toggles the C++ files being successfully build.
-  default: True
+  default: False
 
 
 library
@@ -144,6 +144,7 @@ library
   include-dirs:
     ffi/external_direct_optimization
     ffi/sequential_align
+    lib/tcm-memo/memoized-tcm
 
   -- Modules exported by the library.
   exposed-modules:

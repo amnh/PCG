@@ -1,7 +1,7 @@
 #ifndef SEQ_ALIGN_OUTPUT_TYPES
 #define SEQ_ALIGN_OUTPUT_TYPES
 
-#include "../memoized_tcm/dynamicCharacterOperations.h"
+#include "dynamicCharacterOperations.h"
 
 /** alignResult_t is where results get put for return to Haskell. For further notes see retType_t */
 typedef struct alignResult_t {

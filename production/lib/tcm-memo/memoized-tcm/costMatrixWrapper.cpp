@@ -25,8 +25,8 @@ int getCost(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSiz
     }
 
 
-    packedChar *packedElemRet = malloc(sizeof(packedChar));
-    dcElement_t *retElem      = malloc(sizeof(dcElement_t));
+    packedChar *packedElemRet = (packedChar  *) malloc(sizeof(packedChar));
+    dcElement_t *retElem      = (dcElement_t *) malloc(sizeof(dcElement_t));
 
     *packedElemRet    = CANONICAL_ZERO;
     retElem->alphSize = alphSize;
@@ -42,14 +42,14 @@ int getCost(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSiz
 int getCostInternal(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSize, dcElement_t *retElem) {
     // Need to create new pointers, because of copying into cost matrix.
 
-    packedChar *packedElem1 = malloc(sizeof(packedChar));
-    packedChar *packedElem2 = malloc(sizeof(packedChar));
+    packedChar *packedElem1 = (packedChar *) malloc(sizeof(packedChar));
+    packedChar *packedElem2 = (packedChar *) malloc(sizeof(packedChar));
 
     *packedElem1 = elem1;    // should be okay, because elem1 and elem2 are just ints, so pass by copy
     *packedElem2 = elem2;
 
-    dcElement_t *dcElem1 = malloc(sizeof(dcElement_t));
-    dcElement_t *dcElem2 = malloc(sizeof(dcElement_t));
+    dcElement_t *dcElem1 = (dcElement_t *) malloc(sizeof(dcElement_t));
+    dcElement_t *dcElem2 = (dcElement_t *) malloc(sizeof(dcElement_t));
 
     dcElem1->alphSize = alphSize;
     dcElem2->alphSize = alphSize;
@@ -75,9 +75,9 @@ int getCostAndMedian(dcElement_t *elem1, dcElement_t *elem2, dcElement_t *retEle
     // dcElement_t *elem1copy = allocateDCElement( alphSize );
     // dcElement_t *elem2copy = allocateDCElement( alphSize );
     // Can't use allocateDCElement because makePackedCharCopy allocates
-    dcElement_t *elem1copy = malloc(sizeof(dcElement_t));
+    dcElement_t *elem1copy = (dcElement_t *) malloc(sizeof(dcElement_t));
     elem1copy->alphSize    = alphSize;
-    dcElement_t *elem2copy = malloc(sizeof(dcElement_t));
+    dcElement_t *elem2copy = (dcElement_t *) malloc(sizeof(dcElement_t));
     elem2copy->alphSize    = alphSize;
     //printf("We alloced!\n"), fflush(stdout);
 
