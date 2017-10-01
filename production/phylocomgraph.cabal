@@ -199,7 +199,6 @@ library
                        Data.Hashable.Memoize
                        Data.ReplicatedSequence
                        Data.TCM
-                       Data.TCM.Memoized
 --                       Text.HTML.Class
 --                       Text.HTML.Custom
                        Text.Newick.Class
@@ -307,7 +306,7 @@ executable pcg
                      , hashable
                      , keys
                      , lens
-                     , megaparsec       >=5.0
+                     , megaparsec       >=6.0
                      , mono-traversable >=1.0
                      , parallel
                      , pcg-file-parsers
@@ -375,7 +374,7 @@ executable fasta-differ
                      , containers
                      , pcg-file-parsers
                      , keys
-                     , megaparsec >=5.0
+                     , megaparsec >=6.0
 
   default-language:    Haskell2010
 
@@ -397,10 +396,11 @@ executable 2d-do-comparison
 
   main-is:             2d-do-comparison.hs
 
-  build-depends:       phylocomgraph
-                     , base >=4.8
+  build-depends:       base >=4.8
                      , bimap
+                     , phylocomgraph
                      , QuickCheck
+                     , tcm-memo
 
   default-language:    Haskell2010
 
@@ -422,10 +422,11 @@ executable 3d-do-comparison
 
   main-is:             3d-do-comparison.hs
 
-  build-depends:       phylocomgraph
-                     , base >=4.8
+  build-depends:       base >=4.8
                      , bimap
+                     , phylocomgraph
                      , QuickCheck
+                     , tcm-memo
 
   default-language:    Haskell2010
 
@@ -439,6 +440,7 @@ executable 3d-do-comparison
                        -fwarn-unused-do-bind
                        -fwarn-unused-imports
                        -fwarn-unused-matches
+                       -optl-ltcm-memo -optl-lstdc++
 
   hs-source-dirs:      utils
 
@@ -447,9 +449,9 @@ executable affine-safety
 
   main-is:             affine-safety.hs
 
-  build-depends:       phylocomgraph
-                     , base >=4.8
+  build-depends:       base >=4.8
                      , bimap
+                     , phylocomgraph
                      , QuickCheck
 
   default-language:    Haskell2010

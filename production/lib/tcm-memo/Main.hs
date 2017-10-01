@@ -36,7 +36,7 @@ main = do
        let (result, cost) = getMedianAndCost linearNormTCM (T [lhs]) (T [rhs])
        in  do
            putStrLn "Cost:"
-           print result
+           print cost
            putStrLn "Result:"
            print result
 

@@ -23,26 +23,10 @@ library
 
   -- Other library packages from which modules are imported.
   build-depends:    base
---                     , bv
-                  , containers
                   , deepseq
                   , hashable
---                     , hashtables
---                     , integer-gmp
---                     , keys
                   , lens
-                  , mono-traversable   >=1.0
---                     , mtl
                   , QuickCheck
---                  , semigroupoids
-                     -- required for Data.Semigroup.Foldable.toNonEmpty
---                  , semigroups
---                  , text
---                  , transformers
---                  , unordered-containers
---                  , vector
-                     -- >=3.4 required for corrected definition of (!) & index
---                  , vector-instances >=3.4
 
   -- We must provide the full relative path to every C file that the project depends on.
   c-sources:        memoized-tcm/costMatrix.cpp
@@ -54,6 +38,7 @@ library
 
   -- Modules exported by the library.
   exposed-modules:  Bio.Character.Exportable.Class
+                    Data.TCM.Memoized
                     Data.TCM.Memoized.FFI
 
   -- This library is required for the C++ standard template library.                    
@@ -84,6 +69,8 @@ library
                     -fwarn-unused-matches
                     -Wincomplete-uni-patterns
 
+  hs-source-dirs:   src
+                    
   -- Here we list all directories that contain C header files that the FFI tools will need
   -- to locate when preprocessing the C files. Without listing the directories containing
   -- the C header files here, the FFI preprocession (hsc2hs, c2hs,etc.) will fail to locate
@@ -96,25 +83,25 @@ library
   other-extensions: MonadFailDesugaring
 
 
---executable use-the-code
+executable use-the-code
 
---  main-is:             Main.hs
+  main-is:             Main.hs
 
---  build-depends:       tcm-memo
---                     , base
---                     , lens
---                     , safe
+  build-depends:       base
+                     , lens
+                     , safe
+                     , tcm-memo
                      
---  default-language:    Haskell2010
+  default-language:    Haskell2010
 
---  ghc-options:         -O2 -Wall
---                       -fwarn-duplicate-exports
---                       -fwarn-incomplete-patterns
---                       -fwarn-missing-signatures
---                       -fwarn-overlapping-patterns
---                       -fwarn-tabs
---                       -fwarn-unused-binds
---                       -fwarn-unused-do-bind
---                       -fwarn-unused-imports
---                       -fwarn-unused-matches
---
+  ghc-options:         -O2 -Wall
+                       -fwarn-duplicate-exports
+                       -fwarn-incomplete-patterns
+                       -fwarn-missing-signatures
+                       -fwarn-overlapping-patterns
+                       -fwarn-tabs
+                       -fwarn-unused-binds
+                       -fwarn-unused-do-bind
+                       -fwarn-unused-imports
+                       -fwarn-unused-matches
+
