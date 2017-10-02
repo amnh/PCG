@@ -29,12 +29,14 @@ library
                   , QuickCheck
 
   -- We must provide the full relative path to every C file that the project depends on.
-  c-sources:        memoized-tcm/costMatrix.cpp
-                    memoized-tcm/costMatrixWrapper.cpp
-                    memoized-tcm/dynamicCharacterOperations.cpp
-                    
+  c-sources:        memoized-tcm/costMatrixWrapper.c
+                    memoized-tcm/dynamicCharacterOperations.c
 
-  cc-options:       --std=c++11
+  cc-options:       --std=c11
+                     
+  cxx-sources:      memoized-tcm/costMatrix.cpp
+
+  cxx-options:      --std=c++11
 
   -- Modules exported by the library.
   exposed-modules:  Bio.Character.Exportable.Class
