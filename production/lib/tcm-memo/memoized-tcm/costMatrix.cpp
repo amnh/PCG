@@ -1,5 +1,11 @@
 #include <inttypes.h>
 
+/*
+#include <climits>
+#include <cstdlib>
+#include <unordered_map>
+*/
+
 #include "costMatrix.h"
 #include "dynamicCharacterOperations.h"
 #include <cstring> //for memcpy;
