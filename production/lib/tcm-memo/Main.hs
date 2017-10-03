@@ -51,10 +51,10 @@ parseArgs :: [String] -> Either String (CULong, CULong)
 parseArgs args =
   case args of
     []  -> Left "No arguments supplied!"
-    [_] -> Left "Only one argument was supplied,  expecting two arguments."
+    [_] -> Left "Only one argument was supplied, expecting two arguments."
     x:y:_ ->
       case liftA2 (,) (readMay x) (readMay y) of
-        Nothing           -> Left "An invalid input was supplied. Expecting 2 lists of positive integers."
+        Nothing           -> Left "An invalid input was supplied. Expecting two positive integers."
         Just r@(lhs, rhs) ->
           if      lhs > 31 then Left "First argument is above 31!"
           else if rhs > 31 then Left "Second argument is above 31!"
