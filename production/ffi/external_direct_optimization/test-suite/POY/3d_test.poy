@@ -1,0 +1,7 @@
+read ("3d_test.fas")
+read ("3d_test.tre")
+
+set (iterative:exact)
+
+report ("3d_test-output.txt", diagnosis, trees:(newick, total), ia)
+exit()
