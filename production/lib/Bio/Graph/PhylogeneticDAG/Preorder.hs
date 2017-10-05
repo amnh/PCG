@@ -26,29 +26,31 @@ import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
-import qualified Bio.Sequence.Block as BLK
-import           Control.Arrow             ((&&&))
+import qualified Bio.Sequence.Block    as BLK
+import           Control.Arrow                ((&&&))
 import           Control.Lens
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
 import           Data.Foldable
---import           Data.IntMap               (IntMap)
-import qualified Data.IntMap        as IM
-import qualified Data.IntSet        as IS
+--import           Data.IntMap                  (IntMap)
+import qualified Data.IntMap           as IM
+import qualified Data.IntSet           as IS
 import           Data.Key
-import           Data.List.NonEmpty        (NonEmpty( (:|) ))
-import qualified Data.List.NonEmpty as NE
-import           Data.Map                  (Map)
---import qualified Data.Map           as M
+import           Data.List.NonEmpty           (NonEmpty( (:|) ))
+import qualified Data.List.NonEmpty    as NE
+import           Data.Map                     (Map)
+--import qualified Data.Map              as M
+import           Data.Matrix.NotStupid        (Matrix)
+import qualified Data.Matrix.NotStupid as MAT
 import           Data.Maybe
 import           Data.MonoTraversable
-import           Data.Ord                  (comparing)
+import           Data.Ord                     (comparing)
 import           Data.Semigroup
 import           Data.TopologyRepresentation
-import           Data.Vector               (Vector)
-import qualified Data.Vector        as V
-import           Data.Vector.Instances     ()
-import           Prelude            hiding (lookup, zip, zipWith)
+import           Data.Vector                  (Vector)
+import qualified Data.Vector           as V
+import           Data.Vector.Instances        ()
+import           Prelude               hiding (lookup, zip, zipWith)
 
 import Debug.Trace
   
@@ -421,12 +423,47 @@ preorderFromRooting''
      , HasTraversalFoci z' (Maybe TraversalFoci)
      --     , Show z
      )
-       => (z -> [(Word, z')] -> z')
-       -> Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
-       -> Vector (Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
-       -> PhylogeneticDAG2 e' n' u' v' w' x' y' z
-       -> PhylogeneticDAG2 e' n' u' v' w' x' y' z'
-preorderFromRooting'' = preorderFromRooting
+  => (z -> [(Word, z')] -> z')
+  -> Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
+  -> Vector (Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
+  -> PhylogeneticDAG2 e' n' u' v' w' x' y' z
+  -> PhylogeneticDAG2 e' n' u' v' w' x' y' z'
+preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum (PDAG2 dag) = undefined
+  where
+    refs       = references dag
+    nodeCount  = length refs
+    blockCount = length . toBlocks . NE.head . resolutions . nodeDecoration $ refs ! NE.head (rootRefs dag)
+ 
+
+    -- A "sequence" of the minimum topologies that correspond to each block.
+    sequenceOfBlockMinimumTopologies :: BlockTopologies
+    sequenceOfBlockMinimumTopologies = getTopologies blockMinimalResolutions
+      where
+        getTopologies = fmap topologyRepresentation
+
+        blockMinimalResolutions = mapWithKey f $ toBlocks sequenceWLOG
+
+        sequenceWLOG = characterSequence $ NE.head rootResolutions
+
+        f key _block = minimumBy (comparing extractedBlockCost)
+--                     $ (\x -> trace (show $ extractedBlockCost <$> toList x) x)
+                       rootResolutions
+          where
+            extractedBlockCost = blockCost . (! key) . toBlocks . characterSequence
+
+        rootResolutions = -- (\x -> trace ("Root resolutions: " <> show (length x)) x) $
+                          resolutions . nodeDecoration $ refs ! rootWLOG
+
+        rootWLOG = NE.head $ rootRefs dag
+
+
+    -- |
+    -- For each block, for each dynamic character, a vector of parent ref indicies.
+--    parentVectors :: Matrix (Maybe Int)
+    parentVectors = MAT.matrix nodeCount blockCount g
+      where
+        g nodeIndex blockIndex = undefined
+
 
 
 -- |

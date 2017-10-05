@@ -41,6 +41,8 @@ import qualified Data.Map           as M
 import           Data.Maybe
 import           Data.MonoTraversable
 import           Data.Ord                  (comparing)
+import           Data.Set                  (Set)
+import qualified Data.Set           as S
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Data.TopologyRepresentation
@@ -86,6 +88,7 @@ assignOptimalDynamicCharacterRootEdges
   -> ( PhylogeneticDAG2 e n u v w x y z
      ,         Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
      , Vector (Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
+     , NonEmpty (TraversalFoci)
      ) 
 --assignOptimalDynamicCharacterRootEdges extensionTransformation x | trace (L.unpack . renderDot $ toDot x) False = undefined
 --assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 x) | trace (referenceRendering x) False = undefined
@@ -388,11 +391,12 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
     -- Here we calculate, for each character block, for each display tree in the
     -- phylogenetic DAG, the minimal traversal foci and the corresponding cost.
     -- Note that there could be many minimal traversal foci for each display tree.
+    -- sequenceOfEdgesWithMinimalCost :: NonEmpty (Word, TraversalTopology, Vector (NonEmpty TraversalFocusEdge))
     sequenceOfEdgesWithMinimalCost :: NonEmpty (Vector (NonEmpty (TraversalTopology, Word, NonEmpty TraversalFocusEdge)))
     sequenceOfEdgesWithMinimalCost = -- (\x -> trace (show $ (fmap (fmap costOfFoci)) <$> x) x) $
                                      foldMapWithKey1 blockLogic sequenceWLOG
       where
-
+        
         -- First we select an arbitrary character sequence from the DAG.
         -- We do this to produce a result that matches the structure of the
         -- character sequence in our DAG. Since all character sequences in the
@@ -407,22 +411,130 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
         -- dynamic characters are filtered from each character block.
         sequenceWLOG = fmap dynamicCharacters . toBlocks . characterSequence . NE.head $ getCache rootRefWLOG
 
-        -- Generate a vector of characters that mirrors the dynamic character
-        -- vector of the given block.
-        blockLogic k v = V.generate (length v) deriveMinimalCharacterContexts :| []
+
+        -- Second we collect the all the display trees obeserved in the DAG.
+        -- We do this by unioning all the display trees from the root nodes of
+        -- the DAG.
+        --
+        -- There is a chance that there may be a display tree observed in the
+        -- "Edge Cost Mapping" that was not observed on one of the root nodes
+        -- of the DAG. We hope that this isn't the case because we can save
+        -- a lot of time by not folding over the entirely of the "Edge Cost
+        -- Mapping" and instead folding over only the root nodes of the DAG.
+        --
+        -- The expected diffrence is between /O(n)/ and /O(e * n)/ where
+        -- /n/ is the number of network nodes in the DAG and /e/ is the number
+        -- of edges in the DAG.
+        displayTreeSet :: NonEmpty TraversalTopology
+        displayTreeSet = NE.fromList . toList $ foldMap (S.fromList . toList . fmap snd) rootEdgeInDAGToCostMapping
+
+        -- A map from root edges in the DAG to the display trees and thier cost.
+        -- This is used to comput the minimal display tree of a block in the
+        -- degenerative case where there are no dynamic characters in a block.
+        --
+        -- Also used to defined the display tree set which is in turn used for
+        -- the "outer" most fold in the non-degenerative case when dynamic
+        -- characters *are* present in a block.
+        rootEdgeInDAGToCostMapping :: Map (Int, Int) (NonEmpty (NonEmpty Double, TraversalTopology))
+        rootEdgeInDAGToCostMapping = foldMap1 f roots
+          where
+            f i = M.singleton <$> getUnrootedEdge <*> getRootResolutionContext $ references inputDag ! i
+
+            getUnrootedEdge          = undefined
+            getRootResolutionContext = fmap (getCostofEachBlock &&& topologyRepresentation) . resolutions . nodeDecoration
+            getCostofEachBlock       = fmap blockCost . toBlocks . characterSequence
+
+        -- For each block in the sequence of character we perform a
+        -- multi-dimensional minimization. We must determine the minimal spanning
+        -- tree (TopologyRepresentation) for each blockand it's corresponsing
+        -- cost.
+        --
+        -- The cost of a given spanning tree is defined by the sum of the costs
+        -- on the minimum rooting edger for each dynamic character in the block.
+        -- The minimimal rooting edge must be on the spanning tree we are
+        -- quantifying.
+        --
+        -- Using the above method of quantification, we take the minimum spanning
+        -- tree for each block and make note of the rooting edges for each
+        -- dynamic character in the block that was associated with the minimal
+        -- cost.
+        blockLogic blockIndex blockValue = minimumContext
           where
 
-            -- 
-            deriveMinimalCharacterContexts i = result
+            -- If the block has no dynamic characters, then we do the easy thing:
+            --
+            -- For each root node in the DAG,
+            --   Find the minimum cost resolution for that root
+            -- Select the root node with the minimum resolution.
+            --
+            -- If the block has one or more dynamic characters, we need to
+            -- perform the arduous, multi-dimensional minimization:
+            --
+            -- For each spanning tree (observed) in the network,
+            --   For each dynamic character in the current block,
+            --     For each edge in the spanning tree under consideration
+            --       Get the cost of placing the root on this edge for the
+            --       current dynamic character.
+            --     Take the minimum rooting edge for current dynamic character.
+            --   Sum the minimum cost rooting for each dynamic character.
+            -- Save the spanning tree context with the minimal cost.
+            -- This spanning tree is the minimal TopologyRepresentation for the
+            -- given block.
+            minimumContext =
+              case toList $ dynamicCharacters blockValue of
+                []   -> undefined
+                x:xs -> foldMap1 (deriveMinimalSpanningTreeContext (x:|xs)) displayTreeSet
+
+            -- For the given spanning tree and the characters in the current
+            -- block, we construct a 'MinimalTopologyContext' value and *will*
+            -- use the 'Semigroup' operator '(<>)' to accumulate the minimal
+            -- context for all the spanning trees in the 'foldMap1' call above.
+            deriveMinimalSpanningTreeContext blockDynamicCharacters spanningTree = toMinimalTopologyContext minimalBlockCost spanningTree minimalRootsPerCharacter
               where
-                result = (\x -> trace (unlines ["The Selected Minimal Context of Block: " <> show k <> " Character: " <> show i, "Computed Context: " <> show x]) x)
-                       . fromMinimalTopologyContext . foldMap1 gatherMinimalLoci . NE.fromList $ M.assocs edgeIndexCostMapping
-                edgeIndexCostMapping      = fmap (fmap (((^. characterCost) . (! i) . dynamicCharacters . (! k) . toBlocks . characterSequence) &&& topologyRepresentation)) edgeCostMapping
-                gatherMinimalLoci (e, xs) = (\x -> trace (unlines ["For Block: " <> show k, "For Character: " <> show i, "Computed Context: " <> show x]) x)
-                                          . toMinimalTopologyContext $ (\(c, topoRep) -> (topoRep, c, e)) <$> xs
+                minimalBlockCost               = sum $ fst <$> minimalCostAndRootPerCharacter
+                minimalRootsPerCharacter       = V.fromList . toList $ snd <$> minimalCostAndRootPerCharacter
+                minimalCostAndRootPerCharacter = mapWithKey getMinimalCharacterRootInSpanningTree blockDynamicCharacters
 
 
+                -- Determine the minimal rooting edge for the given dynamic
+                -- character in the spanning tree by first constructing a
+                -- 'MinimalDynamicCharacterRootContext' for each applicable edge
+                -- in the spanning tree and then minimizing the root edge
+                -- contexts using the 'Semigroup' instance of the
+                -- 'MinimalDynamicCharacterRootContext' values in the 'fold1'
+                -- call below.
+                --
+                -- We explicitly hande the "impossible" case that there was no
+                -- rooting edge for a character in the spanning tree. How this
+                -- could occur is currently beyond my comprehension, but it's
+                -- good to give an explict error message just in case.
+                -- 
+                -- getMinimalCharacterRootInSpanningTree :: (Cost, NonEmpty Edges)
+                getMinimalCharacterRootInSpanningTree characterIndex _ =
+                    case foldMapWithKey getEdgeCostInSpanningTree edgeCostMapping of
+                      x:xs -> fromMinimalDynamicCharacterRootContext . fold1 $ x:|xs
+                      []   -> error $ unwords
+                                  [ "A very peculiar impossiblity occurred!"
+                                  , "When determining the minimal rooting edge"
+                                  , "for a given dynamic character"
+                                  , "in a given display tree,"
+                                  , "no such edge was found!"
+                                  ]
+                                  
+                  where
+                    -- Possible construct a 'MinimalDynamicCharacterRootContext'
+                    -- value for a given edge. 
+                    getEdgeCostInSpanningTree rootingEdge cache =
+                      case NE.filter (\x -> spanningTree == topologyRepresentation x) cache of
+                        []  -> []
+                        x:_ -> [ toMinimalDynamicCharacterRootContext (toMinimalDynamicCharacterRootContext x) rootingEdge ]
+                      where
+                        getDynamicCharacterCost = (^. characterCost) . (! characterIndex) . dynamicCharacters . (! blockIndex) . toBlocks . characterSequence
+
+               
     -- Step 4: Update the dynamic character decoration's cost & add an edge reference.
+    modifiedRootRefs = undefined
+{-    
     modifiedRootRefs = (id &&& modifyRootCosts . (refVec !)) <$> rootRefs inputDag
       where
         modifyRootCosts idxData = idxData { nodeDecoration = nodeDatum }
@@ -460,7 +572,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
 --                    minimaContext   = NE.fromList $ minimaBy (comparing costOfFoci) topologyContexts
 --                    (_, costVal, _) = NE.head minimaContext
 
-{--}
+--}
 
 
 -- |
@@ -485,34 +597,64 @@ setDefaultFoci =
 (.!>.) s k = fromMaybe (error $ "Could not index: " <> show k) $ k `lookup` s
 
 
-newtype MinimalTopologyContext e c = MW { fromMinimalTopologyContext :: NonEmpty (TopologyRepresentation e, c, NonEmpty e) } deriving (Show)
 
 
-instance (Ord e, Ord c) => Semigroup (MinimalTopologyContext e c) where
 
-    (MW lhs) <> (MW rhs) = MW . NE.fromList $ mergeMin (toList lhs) (toList rhs)
-      where
-        mergeMin    []     []  = []
-        mergeMin    []     ys  = ys
-        mergeMin    xs     []  = xs
-        mergeMin (x:xs) (y:ys) =
---            case comparing firstOfThree x y of
-            case comparing firstOfThree x y of
-              GT -> y : mergeMin (x:xs)    ys
-              LT -> x : mergeMin    xs  (y:ys)
-              EQ ->
-                let mergedValue =
-                      case comparing costOfFoci x y of
-                        GT -> y
-                        LT -> x
-                        EQ -> mergeFoci x y
-                in mergedValue : mergeMin xs ys
-          where
-            mergeFoci (es, c, a) (_, _, b) = (es, c, a <> b)
+newtype MinimalDynamicCharacterRootContext c e = MDCRC (c, Set e) deriving (Show)
 
 
-toMinimalTopologyContext :: Ord e => NonEmpty (TopologyRepresentation e, c, e) -> MinimalTopologyContext e c
-toMinimalTopologyContext = MW . fmap (\(x,y,z) -> (x, y, pure z)) . NE.sortWith firstOfThree 
+instance (Ord c, Ord e) => Semigroup (MinimalDynamicCharacterRootContext c e) where
+
+    lhs@(MDCRC (lhsCost, lhsConext)) <> rhs@(MDCRC (rhsCost, rhsConext)) =
+        case lhsCost `compare` rhsCost of
+          GT -> rhs
+          LT -> lhs
+          EQ -> MDCRC (lhsCost, lhsConext <> rhsConext)
+
+
+fromMinimalDynamicCharacterRootContext :: MinimalDynamicCharacterRootContext c e -> (c, NonEmpty e)
+fromMinimalDynamicCharacterRootContext (MDCRC (cost, edges)) = (cost, NE.fromList $ toList edges)
+
+
+toMinimalDynamicCharacterRootContext :: Ord e => c -> e -> MinimalDynamicCharacterRootContext c e
+toMinimalDynamicCharacterRootContext cost edge = MDCRC (cost, S.singleton edge)
+
+
+-- |
+-- The representation of a topology context for a block in a 'ChracterSequence'.
+--
+-- This type is designed to simplify the minimzation routine between two contexts
+-- while preserving all relavent contextual infornmation.
+--
+-- Use the 'Semigroup' operator '(<>)' to perform a minimization between two
+-- contexts.
+data MinimalTopologyContext c e =
+    MW
+    { minimalContextCost :: c
+    , minimalTopologies  :: Map (TopologyRepresentation e) (Vector (Set e))
+    } deriving (Show)
+
+
+instance (Ord c, Ord e) => Semigroup (MinimalTopologyContext c e) where
+
+    lhs@(MW lhsCost lhsConext) <> rhs@(MW rhsCost rhsConext) =
+        case lhsCost `compare` rhsCost of
+          GT -> rhs
+          LT -> lhs
+          EQ -> MW lhsCost $ M.unionWith (zipWith (<>)) lhsConext rhsConext
+
+
+fromMinimalTopologyContext :: MinimalTopologyContext c e -> (c, NonEmpty (TopologyRepresentation e, Vector (NonEmpty e)))
+fromMinimalTopologyContext (MW cost context) = (cost, fmap nestedSetToNonEmptyList . NE.fromList $ M.assocs context)
+  where
+    -- fmap over the tuple, then over the vector, then coerce the Set to a NonEmpty list
+    nestedSetToNonEmptyList = fmap (fmap (NE.fromList . toList)) 
+
+
+-- |
+-- For our use cases /O(n)/ where /n/ is the length of the Vector.
+toMinimalTopologyContext :: Ord e => c -> TopologyRepresentation e -> Vector (NonEmpty e) -> MinimalTopologyContext c e
+toMinimalTopologyContext cost topoRep dynCharRootEdges = MW cost . M.singleton topoRep $ S.fromList . toList <$> dynCharRootEdges
 
 
 costOfFoci :: (a, b, c) -> b
