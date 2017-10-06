@@ -24,6 +24,7 @@ module Bio.Graph.PhylogeneticDAG
   , postorderSequence'
   , preorderFromRooting
   , preorderSequence'
+  , preorderSequence''
   , renderSummary
 --  , riefiedSolution
 --  , riefyForest

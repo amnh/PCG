@@ -245,7 +245,6 @@ instance (Applicative f, Foldable f) => ToNewick (PhylogeneticDAG2 e (f String) 
 instance ( ToXML u
          , ToXML v
          , ToXML w
-         , ToXML x
          , ToXML y
          , ToXML z
          ) => ToXML (PhylogeneticDAG2 e n u v w x y z)  where
@@ -327,12 +326,13 @@ generateLocalResolutions :: HasBlockCost u'' v'' w'' x'' y'' z'' Word Double
                          ->  ResolutionInformation (CharacterSequence u'' v'' w'' x'' y'' z'')
 generateLocalResolutions f1 f2 f3 f4 f5 f6 parentalResolutionContext childResolutionContext =
                 ResInfo
-                { totalSubtreeCost      = newTotalCost
-                , localSequenceCost     = newLocalCost
-                , subtreeEdgeSet        = newSubtreeEdgeSet
-                , leafSetRepresentation = newLeafSetRep
-                , subtreeRepresentation = newSubtreeRep
-                , characterSequence     = newCharacterSequence
+                { totalSubtreeCost       = newTotalCost
+                , localSequenceCost      = newLocalCost
+                , subtreeEdgeSet         = newSubtreeEdgeSet
+                , leafSetRepresentation  = newLeafSetRep
+                , subtreeRepresentation  = newSubtreeRep
+                , topologyRepresentation = newTopologyRep
+                , characterSequence      = newCharacterSequence
                 }
               where
                 newTotalCost = sequenceCost newCharacterSequence
@@ -342,10 +342,16 @@ generateLocalResolutions f1 f2 f3 f4 f5 f6 parentalResolutionContext childResolu
                 newCharacterSequence = transformation (characterSequence parentalResolutionContext) (characterSequence <$> childResolutionContext)
                 newSubtreeEdgeSet    = foldMap subtreeEdgeSet childResolutionContext
 
-                (newLeafSetRep, newSubtreeRep) =
+                (newLeafSetRep, newSubtreeRep, newTopologyRep) =
                     case childResolutionContext of
-                      []   -> (,) <$>          leafSetRepresentation <*>          subtreeRepresentation $ parentalResolutionContext
-                      x:xs -> (,) <$> foldMap1 leafSetRepresentation <*> foldMap1 subtreeRepresentation $ x:|xs
+                      []   -> (,,) <$>          leafSetRepresentation
+                                   <*>          subtreeRepresentation
+                                   <*>          topologyRepresentation
+                                   $ parentalResolutionContext
+                      x:xs -> (,,) <$> foldMap1 leafSetRepresentation
+                                   <*> foldMap1 subtreeRepresentation
+                                   <*> foldMap1 topologyRepresentation
+                                   $ x:|xs
 
                 transformation pSeq cSeqs = hexZipWith f1 f2 f3 f4 f5 f6 pSeq transposition
                   where
@@ -356,11 +362,12 @@ generateLocalResolutions f1 f2 f3 f4 f5 f6 parentalResolutionContext childResolu
                                   in hexmap c c c c c c pSeq
 
 
-localResolutionApplication :: HasBlockCost u v w x y d' Word Double
-                           => (d -> [d] -> d')
-                           -> NonEmpty (ResolutionInformation (CharacterSequence u v w x y d))
-                           -> ResolutionCache (CharacterSequence u v w x y d)
-                           -> NonEmpty (ResolutionInformation (CharacterSequence u v w x y d'))
+localResolutionApplication
+  :: HasBlockCost u v w x y d' Word Double
+  => (d -> [d] -> d')
+  -> NonEmpty (ResolutionInformation (CharacterSequence u v w x y d))
+  -> ResolutionCache (CharacterSequence u v w x y d)
+  -> NonEmpty (ResolutionInformation (CharacterSequence u v w x y d'))
 localResolutionApplication f x y =
     liftA2 (generateLocalResolutions id2 id2 id2 id2 id2 f) mutalatedChild relativeChildResolutions
   where
@@ -371,12 +378,13 @@ localResolutionApplication f x y =
     id2 z _ = z
     mutalatedChild = pure
         ResInfo
-        { totalSubtreeCost      = 0
-        , localSequenceCost     = 0
-        , subtreeEdgeSet        = mempty
-        , leafSetRepresentation = zeroBits
-        , subtreeRepresentation = singletonNewickSerialization (0 :: Word)
-        , characterSequence     = characterSequence $ NE.head x
+        { totalSubtreeCost       = 0
+        , localSequenceCost      = 0
+        , subtreeEdgeSet         = mempty
+        , leafSetRepresentation  = zeroBits
+        , subtreeRepresentation  = singletonNewickSerialization (0 :: Word)
+        , topologyRepresentation = mempty
+        , characterSequence      = characterSequence $ NE.head x
         }
 
 

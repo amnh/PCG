@@ -41,6 +41,7 @@ module Bio.Graph
   , postorderSequence'
   , preorderFromRooting
   , preorderSequence'
+  , preorderSequence''
   , renderSummary
   , reifiedSolution
 --  , reifiedToCharacterDAG

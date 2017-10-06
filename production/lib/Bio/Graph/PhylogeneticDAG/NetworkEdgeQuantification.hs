@@ -25,7 +25,7 @@ import           Data.Key
 import           Data.List.NonEmpty       (NonEmpty((:|)))
 import qualified Data.List.NonEmpty as NE
 import           Data.List.Utility
-import           Data.Semigroup
+--import           Data.Semigroup
 import           Data.Ord
 import           Numeric.Extended.Real
 import           Prelude            hiding (zipWith)
@@ -40,7 +40,9 @@ assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = PDAG2 $ dag { graphData = newG
   where
     punativeCost  = calculatePunitiveNetworkEdgeCost input
 --    sequenceCosts = minimum . fmap totalSubtreeCost . resolutions . nodeDecoration . (references dag !) <$> rootRefs dag
-    sequenceCosts = sum . fmap minimum . NE.transpose . fmap (fmap blockCost . toBlocks . characterSequence) . resolutions . nodeDecoration . (references dag !) <$> rootRefs dag
+    sequenceCosts = sum . fmap minimum . NE.transpose . fmap (fmap blockCost . toBlocks . characterSequence)
+                  . (\x -> trace (renderResolutionContexts x) x)
+                  . resolutions . nodeDecoration . (references dag !) <$> rootRefs dag
     newGraphData  =
         GraphData        
         { dagCost           = punativeCost + realToFrac (sum sequenceCosts)
@@ -48,15 +50,21 @@ assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = PDAG2 $ dag { graphData = newG
         , rootSequenceCosts = realToFrac <$> sequenceCosts
         , graphMetadata     = graphMetadata $ graphData dag
         }
+    renderResolutionContexts = unlines . fmap renderContext . toList 
+      where
+        renderContext x = unwords
+            [ show $ totalSubtreeCost x
+            , show $ subtreeEdgeSet x
+            ]
         
 
 -- |
 -- Calculate the punitive networkedge cost for the DAG.
 calculatePunitiveNetworkEdgeCost :: HasBlockCost u v w x y z i r => PhylogeneticDAG2 e n u v w x y z -> ExtendedReal
 calculatePunitiveNetworkEdgeCost inputDag
-  | cardinality extraneousEdges > 0 = trace ("Extraneous edges: " <> show extraneousEdges)
-                                    . trace ("Entire     edges: " <> show entireNetworkEdgeSet)
-                                    . trace ("Minimal Block edges: " <> show ((\(_,_,x) -> collapseToEdgeSet x) <$> minimalBlockNetworkDisplay)) $
+  | cardinality extraneousEdges > 0 = -- trace ("Extraneous edges: " <> show extraneousEdges)
+                                    -- . trace ("Entire     edges: " <> show entireNetworkEdgeSet)
+                                    -- . trace ("Minimal Block edges: " <> show ((\(_,_,x) -> collapseToEdgeSet x) <$> minimalBlockNetworkDisplay)) $
                                       infinity
   | otherwise                       = realToFrac numerator / realToFrac denominator
   where

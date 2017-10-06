@@ -48,7 +48,7 @@ import           Text.Megaparsec.Custom
 tntStreamParser :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m TntResult
 tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gatherCommands)
   where
-    colateResult :: (MonadParsec e s m, Token s ~ Char) => ([CCode],[CharacterName],[Cost],[NStates],[TReadTree],[XRead]) -> m TntResult
+    colateResult :: MonadParsec e s m => ([CCode],[CharacterName],[Cost],[NStates],[TReadTree],[XRead]) -> m TntResult
     colateResult (     _,     _,     _,      _,     _,  _:_:_) = fail "Multiple XREAD commands found in source, expecting a single XREAD command."
     colateResult (     _,     _,     _,      _,    [],     []) = fail "No XREAD command or TREAD command, expecting either a single XREAD command or one or more TRead commands."
     colateResult (     _,     _,    _,       _,treads,     []) = pure . Left $ NE.fromList treads
@@ -61,7 +61,7 @@ tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gathe
       where
         vectorizeTaxa   = V.fromList . toList . sequencesx
 
-        matchTaxaInTree :: (MonadParsec e s m, Token s ~ Char) => XRead -> [TReadTree] -> m [LeafyTree TaxonInfo]
+        matchTaxaInTree :: MonadParsec e s m => XRead -> [TReadTree] -> m [LeafyTree TaxonInfo]
         matchTaxaInTree xreadCommand = traverse interpolateLeafs
           where
             seqs  = sequencesx xreadCommand

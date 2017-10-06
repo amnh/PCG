@@ -11,7 +11,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses, UndecidableInstances #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving, MonoLocalBinds, MultiParamTypeClasses, UndecidableInstances #-}
 
 module Bio.Graph.Solution
   ( PhylogeneticSolution(..)
@@ -108,13 +108,9 @@ instance ToNewick a => ToNewick (PhylogeneticSolution a) where
 
 
 instance
-  ( -- Show n
---   Show (f String)
---  , ToXML (f String)
-    ToXML u
+  ( ToXML u
   , ToXML v
   , ToXML w
-  , ToXML x
   , ToXML y
   , ToXML z
   , GeneralCharacterMetadata  u
@@ -125,15 +121,10 @@ instance
   , DiscreteCharacterMetadata z
   , Applicative f
   , Foldable f
-  -- , HasCharacterAlphabet x f
-  -- , HasCharacterAlphabet y f
-  -- , HasCharacterAlphabet z f
   , HasSymbolChangeMatrix x (Word -> Word -> Word)
   , HasSymbolChangeMatrix y (Word -> Word -> Word)
   , HasSymbolChangeMatrix z (Word -> Word -> Word)
 --  , PrintDot (PhylogeneticDAG2 e (f String) u v w x y z)
-  --, ToNewick (LeafSet (f String))
-  --, ToNewick (PhylogeneticDAG2 e (f String) u v w x y z)
   ) => ToXML (PhylogeneticSolution (PhylogeneticDAG2 e (f String) u v w x y z)) where
 
     toXML soln@(PhylogeneticSolution forests) = xmlElement "Solution" attrs forestContents
@@ -169,7 +160,7 @@ instance
             metadataSequence = hexmap f1 f2 f3 f4 f5 f6 arbitraryCharSeq
                 where
                     arbitraryCharSeq = characterSequence . NE.head . resolutions . nodeDecoration $ arbitraryNode
-                    arbitraryNode    = (references arbitraryRefDAG) ! arbitraryRootRef
+                    arbitraryNode    = references arbitraryRefDAG ! arbitraryRootRef
                     arbitraryRootRef        = NE.head $ rootRefs arbitraryRefDAG
                     (PDAG2 arbitraryRefDAG) = NE.head arbitraryPDAG
                     arbitraryPDAG           = toNonEmpty $ NE.head forests

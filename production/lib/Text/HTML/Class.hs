@@ -22,19 +22,18 @@ module Text.HTML.Class where
 import Text.Blaze.Html
 
 
--- |
 class ToHTML a where
 
     ToHTML :: a -> Markup
 
 
-instance (ToHTML a) => ToHTML (Maybe a) where
+instance ToHTML a => ToHTML (Maybe a) where
 
     toHTML input = lazyText
-        where
-            content = case input of
-                          Nothing  -> CRef "No_data"
-                          Just val -> Elem $ toXML val
+      where
+        content = case input of
+                    Nothing  -> CRef "No_data"
+                    Just val -> Elem $ toXML val
 
 
 instance ToHTML [Char] where

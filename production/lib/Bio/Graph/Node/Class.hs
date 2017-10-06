@@ -10,8 +10,6 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses, TypeFamilies #-}
-
 module Bio.Graph.Node.Class where
     -- ( EdgeSet
     -- , NewickSerialization()

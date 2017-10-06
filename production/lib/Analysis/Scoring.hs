@@ -17,27 +17,24 @@
 module Analysis.Scoring where
 
 
-import Analysis.Parsimony.Additive.Internal
-import Analysis.Parsimony.Fitch.Internal
-import Analysis.Parsimony.Sankoff.Internal
-import Analysis.Parsimony.Dynamic.DirectOptimization
-import Analysis.Parsimony.Dynamic.SequentialAlign
-import Bio.Character
-import Bio.Character.Decoration.Additive
-import Bio.Character.Decoration.Dynamic
-import Bio.Graph
-import Bio.Graph.LeafSet
-import Bio.Graph.Node
-import Bio.Graph.PhylogeneticDAG
-import Bio.Graph.ReferenceDAG.Internal
-import Bio.Sequence
-import Control.Lens
-import Data.EdgeLength
-import Data.Hashable
+import           Analysis.Parsimony.Additive.Internal
+import           Analysis.Parsimony.Fitch.Internal
+import           Analysis.Parsimony.Sankoff.Internal
+import           Analysis.Parsimony.Dynamic.DirectOptimization
+import           Analysis.Parsimony.Dynamic.SequentialAlign
+import           Bio.Character
+import           Bio.Character.Decoration.Additive
+import           Bio.Character.Decoration.Dynamic
+import           Bio.Graph
+import           Bio.Graph.Node
+import           Bio.Graph.ReferenceDAG.Internal
+import           Bio.Sequence
+import           Control.Lens
+import           Data.EdgeLength
 import qualified Data.List.NonEmpty as NE
-import Data.MonoTraversable (Element)
-import Data.Semigroup
-import Prelude       hiding (lookup, zip, zipWith)
+import           Data.MonoTraversable      (Element)
+import           Data.Semigroup
+import           Prelude            hiding (lookup, zip, zipWith)
 
 
 -- |
@@ -90,6 +87,7 @@ wipeNode wipe = PNode2 <$> pure . g . NE.head . resolutions <*> f . nodeDecorati
               <*> leafSetRepresentation
               <*> subtreeRepresentation
               <*> subtreeEdgeSet
+              <*> topologyRepresentation
               <*> hexmap h h h h h h . characterSequence
         h :: a -> Maybe a
         h | wipe      = const Nothing
@@ -108,8 +106,6 @@ performDecoration
      , DiscreteCharacterDecoration v StaticCharacter
      , DiscreteCharacterDecoration x StaticCharacter
      , DiscreteCharacterDecoration y StaticCharacter
-     , Eq z
-     , Hashable z
      , RangedCharacterDecoration u ContinuousChar
      , RangedCharacterDecoration w StaticCharacter
      , SimpleDynamicDecoration z DynamicChar
@@ -131,7 +127,7 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
           edgeCostMapping
           contextualNodeDatum
               
-        . preorderSequence'
+        . preorderSequence''
           additivePreOrder
           fitchPreOrder
           additivePreOrder

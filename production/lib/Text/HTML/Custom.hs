@@ -16,10 +16,10 @@
 module Text.HTML.Custom
   ( ToHTML (..)
   , collapseElemList
-  , HTMLAttr
-  , HTMLContent
-  , HTMLElement
-  , HTMLQName
+  , hTMLAttr
+  , hTMLContent
+  , hTMLElement
+  , hTMLQName
   ) where
 
 
@@ -40,22 +40,24 @@ collapseElemList name attrs lst = Element (HTMLQName name) attrs contents Nothin
         contents = Elem . toHTML <$> toList lst
 
 
--- | Create an HTML Attr, which is a key value pair (HTMLQName, String).
-HTMLAttr :: (String, String) -> Attr
-HTMLAttr (name, val) = Attr (HTMLQName name) val
+-- |
+-- Create an HTML Attr, which is a key value pair (HTMLQName, String).
+hTMLAttr :: (String, String) -> Attr
+hTMLAttr (name, val) = Attr (HTMLQName name) val
 
 
--- | Create HTML Contents, which for our use is always an Element.
-HTMLContent :: (String, String) -> Content
-HTMLContent (key, val) = Elem $ Element (HTMLQName key) [] [CRef val] Nothing
+-- |
+-- Create HTML Contents, which for our use is always an Element.
+hTMLContent :: (String, String) -> Content
+hTMLContent (key, val) = Elem $ Element (HTMLQName key) [] [CRef val] Nothing
 
 
 -- |
 -- Create an HTML Element from a String, a list of attributes and a list of contents.
 -- If the input is a tuple of strings, create an Element with the first as a tag and the second as content.
 -- Otherwise, return the Element val as Elem val (to create Content).
-HTMLElement :: String -> [(String, String)] -> [Either (String, String) Element] -> Element
-HTMLElement name attrs contLst = Element (HTMLQName name) attributes contents Nothing
+hTMLElement :: String -> [(String, String)] -> [Either (String, String) Element] -> Element
+hTMLElement name attrs contLst = Element (HTMLQName name) attributes contents Nothing
     where
         attributes      = HTMLAttr   <$> attrs
         contents        = parseList <$> contLst
@@ -65,8 +67,8 @@ HTMLElement name attrs contLst = Element (HTMLQName name) attributes contents No
 
 
 -- | Create a QName from a String.
-HTMLQName :: String -> QName
-HTMLQName str = QName str mempty mempty
+hTMLQName :: String -> QName
+hTMLQName str = QName str mempty mempty
 
 
 -- -- | Coerce an input of (String, Either String Element) into Content

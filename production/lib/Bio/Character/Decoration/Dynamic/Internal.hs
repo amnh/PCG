@@ -26,7 +26,9 @@ import Bio.Metadata.Dynamic
 import Control.Lens
 import Data.Alphabet
 import Data.Bits
+import Data.Foldable
 import Data.Hashable
+import Data.List.NonEmpty (intersperse)
 import Data.MonoTraversable
 import Data.Semigroup
 import Text.XML
@@ -641,7 +643,7 @@ instance HasSymbolChangeMatrix (DynamicDecorationInitial d) (Word -> Word -> Wor
          setter e f = e { metadata = metadata e & symbolChangeMatrix .~ f }
 
 
---- |
+-- |
 -- A 'Lens' for the 'transitionCostMatrix' field
 instance (Element d ~ c) => HasTransitionCostMatrix (DynamicDecorationDirectOptimization d) (c -> c -> (c, Word)) where
 
@@ -759,9 +761,12 @@ instance EncodableDynamicCharacter d => PostOrderExtensionDirectOptimizationDeco
 -- | (✔)
 instance EncodableStream d => Show (DynamicDecorationDirectOptimization d) where
 
-    show dec = (shownEdge <>) . unlines . (shownAlphabet:) . (shownCost:) $ f <$> pairs
+    show dec = (shownFoci <>) . unlines . (shownAlphabet:) . (shownCost:) $ f <$> pairs
       where
+        (shownAlphabet, shownCost, shownFoci) = renderingDecorationContext dec
+
         f (prefix, accessor) = prefix <> showStream (dec ^. characterAlphabet) (dec ^. accessor)
+
         pairs =
             [ ("Original Encoding   : ", encoded            )
             , ("Final         Gapped: ", finalGapped        )
@@ -772,43 +777,22 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimization d) where
             , ("Right Alignment     : ", rightAlignment     )
             ]
 
-        shownAlphabet = show $ dec ^. characterAlphabet
-
-        shownEdge = maybe "" (\x -> "Locus Edges         : " <> show x <> "\n") . fmap (fmap fst) $ dec ^. traversalFoci
-
-        shownCost = unwords
-            [ "Cost                :"
-            , show (dec ^. characterCost)
-            , "{"
-            , show (dec ^. characterLocalCost)
-            , "}"
-            ]
-
 
 -- | (✔)
 instance EncodableStream d => Show (DynamicDecorationDirectOptimizationPostOrderResult d) where
 
-    show dec = (shownEdge <>) . unlines . (shownAlphabet:) . (shownCost:) $ f <$> pairs
+    show dec = (shownFoci <>) . unlines . (shownAlphabet:) . (shownCost:) $ f <$> pairs
       where
+        (shownAlphabet, shownCost, shownFoci) = renderingDecorationContext dec
+
         f (prefix, accessor) = prefix <> showStream (dec ^. characterAlphabet) (dec ^. accessor)
+
         pairs =
           [ ("Original Encoding   : ", encoded            )
           , ("Preliminary   Gapped: ", preliminaryGapped  )
           , ("Preliminary Ungapped: ", preliminaryUngapped)
           , ("Left  Alignment     : ", leftAlignment      )
           , ("Right Alignment     : ", rightAlignment     )
-          ]
-
-        shownAlphabet = show $ dec ^. characterAlphabet
-
-        shownEdge = maybe "" (\x -> "Locus Edges         : " <> show x <> "\n") . fmap (fmap fst) $ dec ^. traversalFoci
-
-        shownCost = unwords
-          [ "Cost                :"
-          , show (dec ^. characterCost)
-          , "{"
-          , show (dec ^. characterLocalCost)
-          , "}"
           ]
 
 
@@ -858,6 +842,7 @@ instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostOrderDecoratio
         }
 
 
+-- | (✔)
 instance EncodableStream d => ToXML (DynamicDecorationDirectOptimization d) where
 
     toXML decoration = xmlElement "Dynamic_DO_pre-order_decoration_result" attributes contents
@@ -886,3 +871,40 @@ instance EncodableStream d => ToXML (DynamicDecorationDirectOptimizationPostOrde
                          , Left ("Preliminary_ungapped_char", showStream alph (decoration ^. preliminaryUngapped))
                          ]
             alph = decoration ^. characterAlphabet
+
+
+-- |
+-- Render a traversal foci to a String.
+renderFoci :: TraversalFoci -> String
+renderFoci foci = prefix <> body <> "\n"
+  where
+    prefix   = "Traversal Foci {" <> show (length foci) <> "}\n"
+    body     = sconcat . intersperse "\n" $ fmap g foci
+    g (e,te) = "  Traversal Focus Edge: " <> show e <> " with network edges in topology: " <> show (toList te)
+
+
+-- renderingContext :: 
+renderingDecorationContext
+  :: ( HasCharacterAlphabet  s x
+     , HasCharacterCost      s y
+     , HasCharacterLocalCost s z
+     , HasTraversalFoci      s (Maybe TraversalFoci)
+     , Show x
+     , Show y
+     , Show z
+     ) => s -> (String, String, String)
+renderingDecorationContext dec = (shownAlphabet, shownCost, shownFoci)
+  where
+    shownAlphabet = show $ dec ^. characterAlphabet
+
+    shownFoci = maybe "" renderFoci $ dec ^. traversalFoci
+
+    shownCost = unwords
+        [ "Cost                :"
+        , show (dec ^. characterCost)
+        , "{"
+        , show (dec ^. characterLocalCost)
+        , "}"
+        ]
+
+

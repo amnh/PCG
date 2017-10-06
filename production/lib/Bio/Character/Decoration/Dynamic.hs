@@ -47,6 +47,7 @@ module Bio.Character.Decoration.Dynamic
   , PossiblyMissingCharacter(..)
   , TraversalFoci
   , TraversalFocusEdge
+  , TraversalTopology
   ) where
 
 import Bio.Character.Decoration.Dynamic.Class

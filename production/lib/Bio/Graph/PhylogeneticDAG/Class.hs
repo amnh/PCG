@@ -13,7 +13,7 @@
 -----------------------------------------------------------------------------
 
 
-{-# LANGUAGE FunctionalDependencies, MultiParamTypeClasses #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 
 module Bio.Graph.PhylogeneticDAG.Class
