@@ -29,7 +29,6 @@ import           Control.Applicative
 import           Control.Arrow             ((&&&))
 import           Control.Lens
 import           Control.Monad.State.Lazy
-import           Data.Bifunctor            (first)
 import           Data.Foldable
 import qualified Data.IntMap        as IM
 import qualified Data.IntSet        as IS
@@ -484,7 +483,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
             minimumContext =
               case toList $ dynamicCharacters blockValue of
                 []   -> degenerateBlockContext blockIndex
-                x:xs -> first fromIntegral . fromMinimalTopologyContext $ foldMap1 (deriveMinimalSpanningTreeContext (x:|xs)) displayTreeSet
+                x:xs -> fromMinimalTopologyContext $ foldMap1 (deriveMinimalSpanningTreeContext (x:|xs)) displayTreeSet
 
             -- In the case that there are no dynamic character in the block, we
             -- derive the degenerate block context.
@@ -493,13 +492,13 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                 -- Degenerate Step 1:
                 -- First collect the current block cost for each resolution at
                 -- each root.
---                mappingOfCost :: Map TraversalFocusEdge (NonEmpty (TraversalTopology, Double))
+                mappingOfCost :: Map TraversalFocusEdge (NonEmpty (TraversalTopology, Double))
                 mappingOfCost = fmap (fmap (fmap (! i))) rootEdgeInDAGToCostMapping
 
                 -- Degenerate Step 2:
                 -- Then find the minimum resolution for the current block at each
                 -- root.
---                mappingEdgeToMinTopo :: Map TraversalFocusEdge (TraversalTopology, Double)
+                mappingEdgeToMinTopo :: Map TraversalFocusEdge (TraversalTopology, Double)
                 mappingEdgeToMinTopo = minimumBy (comparing snd) <$> mappingOfCost
 
                 -- DegenerateStep 3:
@@ -548,7 +547,9 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                         []  -> []
                         x:_ -> [ toMinimalDynamicCharacterRootContext (getDynamicCharacterCost x) rootingEdge ]
                       where
-                        getDynamicCharacterCost = (^. characterCost) . (! characterIndex) . dynamicCharacters . (! blockIndex) . toBlocks . characterSequence
+                        getDynamicCharacterCost x = fromIntegral (charDec ^. characterCost) * (charDec ^. characterWeight)
+                          where
+                            charDec = (! characterIndex) . dynamicCharacters . (! blockIndex) . toBlocks $ characterSequence x
 
                
     -- Step 4: Update the dynamic character decoration's cost & add an edge reference.

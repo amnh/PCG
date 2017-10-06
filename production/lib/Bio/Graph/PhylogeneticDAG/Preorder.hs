@@ -432,7 +432,7 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum (PDAG2 
   where
     refs       = references dag
     nodeCount  = length refs
-    blockCount = length . toBlocks . NE.head . resolutions . nodeDecoration $ refs ! NE.head (rootRefs dag)
+    blockCount = length . toBlocks . characterSequence . NE.head . resolutions . nodeDecoration $ refs ! NE.head (rootRefs dag)
  
 
     -- A "sequence" of the minimum topologies that correspond to each block.
