@@ -52,8 +52,6 @@ import           Data.Vector               (Vector)
 import qualified Data.Vector        as V
 import           Prelude            hiding (lookup, zipWith)
 
-import Debug.Trace
-
 
 -- |
 -- For every edge in the component:
@@ -532,7 +530,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                 -- good to give an explict error message just in case.
                 getMinimalCharacterRootInSpanningTree characterIndex characterDecoration =
                     case foldMapWithKey getEdgeCostInSpanningTree edgeCostMapping of
-                      x:xs -> let r@(charCost, minEdges) = fromMinimalDynamicCharacterRootContext . fold1 $ x:|xs
+                      x:xs -> let r@(charCost, _) = fromMinimalDynamicCharacterRootContext . fold1 $ x:|xs
                               in  (charWeight * fromIntegral charCost, r)
                       []   -> error $ unwords
                                   [ "A very peculiar impossiblity occurred!"
@@ -583,10 +581,10 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
             , characterSequence = modifiedSequence
             }
           where
-            newTotalCost       = sequenceCost modifiedSequence
+--            resolutionTopology = topologyRepresentation resInfo
 --            newLocalCost       = newTotalCost - sum (totalSubtreeCost <$> childResolutionContext)
+            newTotalCost       = sequenceCost modifiedSequence
             modifiedSequence   = fromBlocks . zipWith g minimalCostSequence . toBlocks $ characterSequence resInfo
-            resolutionTopology = topologyRepresentation resInfo
 
             -- The "block-wise" transformation.
             --
@@ -663,7 +661,7 @@ fromMinimalDynamicCharacterRootContext :: MinimalDynamicCharacterRootContext c e
 fromMinimalDynamicCharacterRootContext (MDCRC (cost, edges)) = (cost, NE.fromList $ toList edges)
 
 
-toMinimalDynamicCharacterRootContext :: Ord e => c -> e -> MinimalDynamicCharacterRootContext c e
+toMinimalDynamicCharacterRootContext :: c -> e -> MinimalDynamicCharacterRootContext c e
 toMinimalDynamicCharacterRootContext cost edge = MDCRC (cost, S.singleton edge)
 
 
@@ -675,11 +673,9 @@ toMinimalDynamicCharacterRootContext cost edge = MDCRC (cost, S.singleton edge)
 --
 -- Use the 'Semigroup' operator '(<>)' to perform a minimization between two
 -- contexts.
-data MinimalTopologyContext c i e =
-    MW
-    { minimalContextCost :: c
-    , minimalTopologies  :: Map (TopologyRepresentation e) (Vector (i, Set e))
-    } deriving (Show)
+data MinimalTopologyContext c i e
+   = MW c (Map (TopologyRepresentation e) (Vector (i, Set e)))
+   deriving (Show)
 
 
 instance (Ord c, Ord e, Ord i) => Semigroup (MinimalTopologyContext c i e) where
