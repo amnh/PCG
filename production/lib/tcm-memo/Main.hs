@@ -10,7 +10,7 @@ import Safe                (readMay)
 import System.Environment  (getArgs)
 
 
-data MyStruct = T [CULong] deriving (Show)
+newtype MyStruct = T [CULong] deriving (Show)
 
 
 instance Exportable MyStruct where
@@ -55,8 +55,9 @@ parseArgs args =
     x:y:_ ->
       case liftA2 (,) (readMay x) (readMay y) of
         Nothing           -> Left "An invalid input was supplied. Expecting two positive integers."
-        Just r@(lhs, rhs) ->
-          if      lhs > 31 then Left "First argument is above 31!"
-          else if rhs > 31 then Left "Second argument is above 31!"
-          else Right r
+        Just r@(lhs, rhs)
+          | lhs > 31  -> Left "First argument is above 31!"
+          | rhs > 31  -> Left "Second argument is above 31!"
+          | otherwise -> Right r
+
 
