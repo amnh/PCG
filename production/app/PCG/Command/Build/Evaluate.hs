@@ -132,7 +132,7 @@ evaluate _ _ = fail "Invalid BUILD command binding"
 
 naiveWagnerParallelBuild
   :: ( Foldable1 f
-     , Foldable1 t
+--     , Foldable1 t
      , Traversable t
      )
   => t (f DatNode) -- (PhylogeneticNode2 (CharacterSequence u v w x y z) (Maybe String))

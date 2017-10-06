@@ -74,7 +74,7 @@ calculatePunitiveNetworkEdgeCost inputDag
 
     numerator   = punativeEdgeCost minResult
     denominator :: Word
-    denominator = fromIntegral $ cardinality minimalTotalNetworkDisplay --WLOG, all should be the same number of edges
+    denominator = cardinality minimalTotalNetworkDisplay --WLOG, all should be the same number of edges
     
     minResult@(minimalTotalNetworkDisplay, minimalBlockNetworkDisplay) = minimumBy (comparing punativeEdgeCost) minimalNetworkDisplaysWithMinimalBlocks
 

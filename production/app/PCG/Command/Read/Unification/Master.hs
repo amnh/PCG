@@ -175,7 +175,7 @@ rectifyResults2 fprs =
         transformFPR (x,y) = f (NE.fromList $ toList x) $ sourceFile y
 
     -- [([Set Identifier], FracturedParseResult)]
-    expandForestErrors :: Foldable t => [([t TaxaName], FracturedParseResult)] -> [[(t TaxaName, FracturedParseResult)]]
+    expandForestErrors :: [([t TaxaName], FracturedParseResult)] -> [[(t TaxaName, FracturedParseResult)]]
     expandForestErrors = fmap f
       where
         f (ys, fpr) = (\x -> (x, fpr)) <$> ys
