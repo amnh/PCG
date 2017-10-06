@@ -25,10 +25,10 @@ module Bio.Graph.LeafSet
 import Control.Lens
 --import Data.Foldable
 -- import Data.List.NonEmpty
-import Data.List (union)
-import Text.Newick.Class
+import Data.List         (union)
 import Data.Semigroup
-import Text.XML.Custom
+import Text.Newick.Class ()
+import Text.XML.Custom   ()
 --import Data.Set (Set)
 --import Data.Monoid
 -- import Text.XML.Custom

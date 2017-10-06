@@ -67,8 +67,7 @@ library
                      , QuickCheck
                      , scientific
                      , semigroupoids
-                     -- required for Data.Semigroup.Foldable.toNonEmpty
-                     , semigroups         >=5.2.1
+                     , semigroups
                      , text
                      , transformers
                      , unordered-containers

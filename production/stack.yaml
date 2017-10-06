@@ -1,6 +1,7 @@
 allow-newer: true
 
-compiler: ghc-8.2.1
+compiler: ghc-8.2.1.20170929
+#compiler: ghc-8.2.1
 
 compiler-check: match-exact
 
@@ -27,3 +28,22 @@ resolver: nightly-2017-09-29
 
 system-ghc: false
 
+
+setup-info:
+
+  ghc:
+    linux64:
+      8.2.1.20170929:
+        url: https://downloads.haskell.org/~ghc/8.2.2-rc1/ghc-8.2.1.20170929-x86_64-deb8-linux.tar.xz
+        content-length: 128418840
+        sha1: cd2905fcf3a1f40023ab956351bd2028464b09d1
+    macosx:
+      8.2.1.20170929:
+        url: https://downloads.haskell.org/~ghc/8.2.2-rc1/ghc-8.2.1.20170929-x86_64-apple-darwin.tar.xz
+        content-length: 115407160
+        sha1: 9ef2b8aeec92152fbd17dfeda877fc921422d099
+    windows64:
+      8.2.1.20170929:
+        url: https://downloads.haskell.org/~ghc/8.2.2-rc1/ghc-8.2.1.20170929-x86_64-unknown-mingw32.tar.xz
+        content-length: 176841664
+        sha1: 795ebec2749787e77f774c073635c5c0d9ec2125

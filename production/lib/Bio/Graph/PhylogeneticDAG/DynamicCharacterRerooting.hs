@@ -22,7 +22,7 @@ import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Sequence
 import           Bio.Graph.Node
-import           Bio.Graph.PhylogeneticDAG.Class
+--import           Bio.Graph.PhylogeneticDAG.Class
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
 import           Control.Applicative

@@ -49,8 +49,6 @@ import           Prelude                   hiding (lookup)
 import           Text.Newick.Class
 import           Text.XML
 
-import           Debug.Trace
-
 
 -- |
 -- A constant time access representation of a directed acyclic graph.

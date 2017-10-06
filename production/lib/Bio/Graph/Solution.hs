@@ -109,8 +109,8 @@ instance ToNewick a => ToNewick (PhylogeneticSolution a) where
 
 instance
   ( -- Show n
-   Show (f String)
-  , ToXML (f String)
+--   Show (f String)
+--  , ToXML (f String)
   , ToXML u
   , ToXML v
   , ToXML w
@@ -131,7 +131,7 @@ instance
   , HasSymbolChangeMatrix x (Word -> Word -> Word)
   , HasSymbolChangeMatrix y (Word -> Word -> Word)
   , HasSymbolChangeMatrix z (Word -> Word -> Word)
-  , PrintDot (PhylogeneticDAG2 e (f String) u v w x y z)
+--  , PrintDot (PhylogeneticDAG2 e (f String) u v w x y z)
   --, ToNewick (LeafSet (f String))
   --, ToNewick (PhylogeneticDAG2 e (f String) u v w x y z)
   ) => ToXML (PhylogeneticSolution (PhylogeneticDAG2 e (f String) u v w x y z)) where
