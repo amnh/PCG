@@ -223,7 +223,6 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
 -}
 
 
-    -- |
     -- Construct at each memoized datum index 'n' in the vector 'memo' such that
     -- for node 'n' the directed edge references '[(i,n),(j,n),(k,n)]' in the
     -- following undirected subgraph store the directed subtree resolutions  of
@@ -392,7 +391,6 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
     -- Here we calculate, for each character block, for each display tree in the
     -- phylogenetic DAG, the minimal traversal foci and the corresponding cost.
     -- Note that there could be many minimal traversal foci for each display tree.
-    -- sequenceOfEdgesWithMinimalCost :: NonEmpty (Word, TraversalTopology, Vector (NonEmpty TraversalFocusEdge))
     sequenceOfEdgesWithMinimalCost :: NonEmpty (Double, NonEmpty (TraversalTopology, Vector (NonEmpty TraversalFocusEdge)))
     sequenceOfEdgesWithMinimalCost = mapWithKey blockLogic sequenceWLOG -- (\x -> trace (show $ (fmap (fmap costOfFoci)) <$> x) x) $
                                      
@@ -435,7 +433,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
         -- Also used to defined the display tree set which is in turn used for
         -- the "outer" most fold in the non-degenerative case when dynamic
         -- characters *are* present in a block.
---        rootEdgeInDAGToCostMapping :: Map TraversalFocusEdge (NonEmpty (TraversalTopology, Vector Double))
+        rootEdgeInDAGToCostMapping :: Map TraversalFocusEdge (NonEmpty (TraversalTopology, Vector Double))
         rootEdgeInDAGToCostMapping = foldMap1 f roots
           where
             f i = M.singleton <$> getUnrootedEdge <*> getRootResolutionContext $ references inputDag ! i
@@ -481,9 +479,9 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
             -- This spanning tree is the minimal TopologyRepresentation for the
             -- given block.
             minimumContext =
-              case toList $ dynamicCharacters blockValue of
-                []   -> degenerateBlockContext blockIndex
-                x:xs -> fromMinimalTopologyContext $ foldMap1 (deriveMinimalSpanningTreeContext (x:|xs)) displayTreeSet
+                case toList $ dynamicCharacters blockValue of
+                  []   -> degenerateBlockContext blockIndex
+                  x:xs -> fromMinimalTopologyContext $ foldMap1 (deriveMinimalSpanningTreeContext (x:|xs)) displayTreeSet
 
             -- In the case that there are no dynamic character in the block, we
             -- derive the degenerate block context.
