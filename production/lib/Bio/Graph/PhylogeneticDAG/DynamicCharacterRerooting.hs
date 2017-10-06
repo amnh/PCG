@@ -89,7 +89,7 @@ assignOptimalDynamicCharacterRootEdges
   -> ( PhylogeneticDAG2 e n u v w x y z
      ,         Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
      , Vector (Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
-     , NonEmpty (TraversalFoci)
+--     , NonEmpty (TraversalFoci)
      ) 
 --assignOptimalDynamicCharacterRootEdges extensionTransformation x | trace (L.unpack . renderDot $ toDot x) False = undefined
 --assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 x) | trace (referenceRendering x) False = undefined
@@ -102,9 +102,10 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
       [_,_]   -> let r = M.singleton (0,1) (getCache 1)
                      c = M.singleton (1,0) (getCache 0)
                      m = r <> c
-                 in  (PDAG2 $ fmap setDefaultFoci inputDag, m, V.generate 2 (const m))
+                     d = setDefaultFoci <$> inputDag
+                 in  (PDAG2 d, m, V.generate 2 (const m))
       -- Complex case, see four steps below.
-      _:_:_:_ ->     (PDAG2 updatedDag, edgeCostMapping, contextualNodeDatum)
+      _:_:_:_ ->     (PDAG2 updatedDag, edgeCostMapping, contextualNodeDatum) 
   where
     
     -- Step 1: Construct a hashmap of all the *unrooted* edges.
@@ -135,11 +136,13 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
 
     rootEdgeReferences = foldMap f $ rootRefs inputDag
       where
-        f i =
-          case IM.keys . childRefs $ refVec ! i of
-            []    -> []
-            [x]   -> [(i,x)]
-            x:y:_ -> [(x,y)]
+        f = toList . rootIndexToUnrootedIndex
+
+    rootIndexToUnrootedIndex i = 
+        case IM.keys . childRefs $ refVec ! i of
+          []    -> Nothing
+          [x]   -> Just (i,x)
+          x:y:_ -> Just (x,y)
 
     refVec = references inputDag
 
@@ -437,11 +440,11 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
         rootEdgeInDAGToCostMapping :: Map TraversalFocusEdge (NonEmpty (TraversalTopology, Vector Double))
         rootEdgeInDAGToCostMapping = foldMap1 f roots
           where
-            f i = M.singleton <$> getUnrootedEdge <*> getRootResolutionContext $ references inputDag ! i
+            f = M.singleton <$> getUnrootedEdgeReference <*> getRootResolutionContext
 
-            getUnrootedEdge          = undefined
-            getRootResolutionContext = fmap (topologyRepresentation &&& getCostofEachBlock) . resolutions . nodeDecoration
-            getCostofEachBlock       = V.fromList . fmap blockCost . toList . toBlocks . characterSequence
+            getUnrootedEdgeReference i = fromMaybe (i,i) $ rootIndexToUnrootedIndex i
+            getRootResolutionContext   = fmap (topologyRepresentation &&& getCostofEachBlock) . resolutions . nodeDecoration . (references inputDag !)
+            getCostofEachBlock         = V.fromList . fmap blockCost . toList . toBlocks . characterSequence
 
         -- For each block in the sequence of character we perform a
         -- multi-dimensional minimization. We must determine the minimal spanning
@@ -527,10 +530,10 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                 -- rooting edge for a character in the spanning tree. How this
                 -- could occur is currently beyond my comprehension, but it's
                 -- good to give an explict error message just in case.
-                getMinimalCharacterRootInSpanningTree characterIndex _ =
+                getMinimalCharacterRootInSpanningTree characterIndex characterDecoration =
                     case foldMapWithKey getEdgeCostInSpanningTree edgeCostMapping of
                       x:xs -> let r@(charCost, minEdges) = fromMinimalDynamicCharacterRootContext . fold1 $ x:|xs
-                              in  (charWeight x * fromIntegral charCost, r)
+                              in  (charWeight * fromIntegral charCost, r)
                       []   -> error $ unwords
                                   [ "A very peculiar impossiblity occurred!"
                                   , "When determining the minimal rooting edge"
@@ -540,7 +543,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                                   ]
                                   
                   where
-                    charWeight = (^. characterWeight) . getDynamicCharaterDecoration
+                    charWeight = characterDecoration ^. characterWeight
                     getDynamicCharaterDecoration = (! characterIndex) . dynamicCharacters . (! blockIndex) . toBlocks . characterSequence
 
                     -- Possible construct a 'MinimalDynamicCharacterRootContext'
@@ -555,7 +558,6 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
 
                
     -- Step 4: Update the dynamic character decoration's cost & add an edge reference.
-{--}    
     modifiedRootRefs = (id &&& modifyRootCosts . (refVec !)) <$> rootRefs inputDag
       where
         modifyRootCosts idxData = idxData { nodeDecoration = nodeDatum }
@@ -576,24 +578,23 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
             }
           where
             newTotalCost       = sequenceCost modifiedSequence
---            newLocalCost       = newTotalCost - sum (totalSubtreeCost <$> childResolutionContext) 
-            modifiedSequence   = fromBlocks . foldMapWithKey1 g . toBlocks $ characterSequence resInfo
+--            newLocalCost       = newTotalCost - sum (totalSubtreeCost <$> childResolutionContext)
+            modifiedSequence   = fromBlocks . zipWith g minimalCostSequence . toBlocks $ characterSequence resInfo
             resolutionTopology = topologyRepresentation resInfo
-            
-            g k charBlock = pure $ charBlock { dynamicCharacters = modifiedDynamicChars }
+
+            g (_, minBlockContext) charBlock = charBlock { dynamicCharacters = modifiedDynamicChars }
               where
-                modifiedDynamicChars = zipWith h (minimalCostSequence ! k) $ dynamicCharacters charBlock
-                h topologyContexts originalDec =
+ 
+                vectorForZipping :: Vector (Word, NonEmpty (TraversalFocusEdge, TraversalTopology))
+                vectorForZipping = second (fmap (\e -> (e, topoWLOG))) <$> vec 
+                  where
+                    (topoWLOG, vec) = NE.head minBlockContext
+                
+                modifiedDynamicChars = zipWith h vectorForZipping $ dynamicCharacters charBlock
+                h (costVal, foci) originalDec =
                     originalDec
                       & characterCost .~ costVal
                       & traversalFoci .~ (Just foci :: Maybe TraversalFoci)
-                  where
-                    (topologyRep, costVal, fociEdges) = fromJust $ find ((resolutionTopology ==) . firstOfThree) topologyContexts
-                    foci = (\x -> (x, topologyRep)) <$> fociEdges
---                    minimaContext   = NE.fromList $ minimaBy (comparing costOfFoci) topologyContexts
---                    (_, costVal, _) = NE.head minimaContext
-
---}
 
 
 -- |
