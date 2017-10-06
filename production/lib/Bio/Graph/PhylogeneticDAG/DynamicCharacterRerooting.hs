@@ -570,6 +570,12 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                 }
 
         -- TODO: Only apply logic in the appropriate resolutions.
+
+        -- For each resolution we apply this transformation which update each
+        -- dynamic character in the resolution with the minimal cost and the
+        -- spanning tree and rooting edges (collectively named the traversal foci)
+        -- and also update the total cost of the resolution to reflect the lower
+        -- dynamic character cost.
         f resInfo =
             resInfo
             { totalSubtreeCost  = newTotalCost
@@ -582,19 +588,38 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
             modifiedSequence   = fromBlocks . zipWith g minimalCostSequence . toBlocks $ characterSequence resInfo
             resolutionTopology = topologyRepresentation resInfo
 
-            g (_, minBlockContext) charBlock = charBlock { dynamicCharacters = modifiedDynamicChars }
+            -- The "block-wise" transformation.
+            --
+            -- Expects a "context-block" containing the metadata of which
+            -- spanning tree was minimal for the block and for each dynamic
+            -- character in the block which rooting edges contributed to the
+            -- minimal block cost.
+            --
+            -- Also expects a "data-block" with the old block data to be updated
+            -- with information from the "context-block."
+            g (_, minBlockContexts) charBlock = charBlock { dynamicCharacters = modifiedDynamicChars }
               where
- 
+
+                -- We take the first of the minimal contexts and distribute the
+                -- associated spanning tree over the dynamic character vector
+                -- to create a vector of associated "traveral foci" for each
+                -- dynamic character in the block.
+                --
+                -- We use this vector to zip against the original dynamic
+                -- character vector from the "data-block," updating the dynamic
+                -- character decorations to contain the new minimal cost and
+                -- corresponding traversal foci.
                 vectorForZipping :: Vector (Word, NonEmpty (TraversalFocusEdge, TraversalTopology))
                 vectorForZipping = second (fmap (\e -> (e, topoWLOG))) <$> vec 
                   where
-                    (topoWLOG, vec) = NE.head minBlockContext
+                    (topoWLOG, vec) = NE.head minBlockContexts
                 
                 modifiedDynamicChars = zipWith h vectorForZipping $ dynamicCharacters charBlock
+                
                 h (costVal, foci) originalDec =
                     originalDec
                       & characterCost .~ costVal
-                      & traversalFoci .~ (Just foci :: Maybe TraversalFoci)
+                      & traversalFoci .~ Just foci
 
 
 -- |
