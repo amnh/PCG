@@ -19,7 +19,7 @@ import Text.Megaparsec
 -- The various ways in which a 'Read' 'Command' from a POY script can fail.
 -- A single 'Read' 'Command' can fail in multiple ways simultaneously.
 -- To account for this the 'ReadError' type is a composable 'Semigroup' to allow for the collection of possible sub errors to be coalesced into a single 'ReadError' value. The `show` definition will render the 'Read Error' as a human legible collection of errors that occured within the 'Read' 'Command'.
-data ReadError = ReadError (NonEmpty ReadErrorMessage)
+newtype ReadError = ReadError (NonEmpty ReadErrorMessage)
 
 
 data ReadErrorMessage

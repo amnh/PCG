@@ -117,7 +117,7 @@ evaluate (BUILD (BuildCommand trajectoryCount buildType)) oldState = do
                                 n -> liftIO . fmap (NE.fromList . fmap NE.fromList) $ replicateM n (shuffleM (y:ys))
                 let !bestTrees = naiveWagnerParallelBuild trajectories
                 bestNetwork  <- case buildType of
-                                   WagnerTree     -> pure $ bestTrees
+                                   WagnerTree     -> pure bestTrees
                                    WheelerNetwork -> do liftIO $ putStrLn "Beginning network construction."
 --                                                        pure $ parmap rpar iterativeNetworkBuild bestTrees
                                                         pure $ fmap iterativeNetworkBuild bestTrees
@@ -162,11 +162,11 @@ naiveWagnerBuild
      )
   => -}
   :: Foldable1 f
-  => (f DatNode) -- (PhylogeneticNode2 (CharacterSequence u v w x y z) (Maybe String))
+  => f DatNode -- (PhylogeneticNode2 (CharacterSequence u v w x y z) (Maybe String))
   -> FinalDecorationDAG
 naiveWagnerBuild ns =
    case toNonEmpty ns of
-      x:|[]   -> fromRefDAG $ unfoldDAG (\_ -> ([], wipeNode False x, [])) ()
+      x:|[]   -> fromRefDAG $ unfoldDAG (const ([], wipeNode False x, [])) ()
       x:|[y]  ->
           let f e = case e of
                       0 -> ([]           , wipeNode True  x, [(mempty, 1), (mempty, 2)])
