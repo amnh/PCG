@@ -144,7 +144,7 @@ instance Show CDynamicChar where
 
 instance Storable CDynamicChar where
 
-    sizeOf    _ = #size struct dynChar_t -- #size is a built-in that works with arrays, as are #peek and #poke, below
+    sizeOf    _ = (#size struct dynChar_t) -- #size is a built-in that works with arrays, as are #peek and #poke, below
 
     alignment _ = alignment (undefined :: CBufferUnit)
 
@@ -170,7 +170,7 @@ instance Storable CDynamicChar where
 -- | (✔)
 instance Storable DCElement where
 
-    sizeOf    _ = #size struct dcElement_t
+    sizeOf    _ = (#size struct dcElement_t)
 
     alignment _ = alignment (undefined :: CBufferUnit)
 
