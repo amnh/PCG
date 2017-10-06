@@ -111,7 +111,7 @@ instance
   ( -- Show n
 --   Show (f String)
 --  , ToXML (f String)
-  , ToXML u
+    ToXML u
   , ToXML v
   , ToXML w
   , ToXML x
