@@ -31,6 +31,8 @@ import           Control.Lens
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor            (second)
 import           Data.Foldable
+import           Data.HashMap.Lazy         (HashMap)
+import qualified Data.HashMap.Lazy  as HM
 import qualified Data.IntMap        as IM
 import qualified Data.IntSet        as IS
 import           Data.Key
@@ -117,7 +119,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
     
     -- Step 4: Update the dynamic character decoration's cost & add an edge reference.
     updatedDag = inputDag
-        { references = refVec V.// toList modifiedRootRefs
+        { references = refVec V.// toList modifiedRootRefs'
         , graphData  = (graphData inputDag) { graphMetadata = (edgeCostMapping, contextualNodeDatum) }
         }
 
@@ -390,6 +392,67 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
     rootRefWLOG  = NE.head $ rootRefs inputDag
 
 
+
+    -- Here we have the minimal rerroting mapped to each display tree.
+    displayTreeRerooting :: HashMap TraversalTopology (NonEmpty (Double, Vector (Word, NonEmpty TraversalFocusEdge)))
+    displayTreeRerooting = mapWithKey deriveMinimalSequenceForDisplayTree displayTreeMapping -- transposeDisplayTrees edgeCostMapping -- HM.fromList . fmap (id &&& deriveMinimalSequenceForTopology) . toList displayTreeSet
+      where
+
+        -- First we invert the Edge Cost Mapping to be keyed by display trees.
+        -- This allows us to effciently use the results of the minimization.
+        displayTreeMapping = HM.fromList . M.assocs $ transposeDisplayTrees edgeCostMapping
+
+
+        -- We can invert the each Resolution Cache element of the Edge Cost
+        -- Mapping by creating a new mapping with keys for each display tree in
+        -- the Resolution Cache and assigning as the corresponding value the
+        -- character sequence of the display tree with the rooting edge attached.
+        -- 
+        -- We could merge together the maps created by each element in the Edge
+        -- Cost Mapping into our new mapping. However, we must take care to
+        -- collect display tree key collisions into a list. To handle this
+        -- correctly we perform nested folds that make an 'insertWith' call.
+        transposeDisplayTrees :: Map TraversalFocusEdge (ResolutionCache s) -> Map TraversalTopology (NonEmpty (TraversalFocusEdge, s))
+        transposeDisplayTrees = foldlWithKey' f mempty
+          where
+            f mapping rootingEdge cache = foldl' g mapping cache
+              where
+                g mapping resInfo = M.insertWith (<>) key val mapping
+                  where
+                    key = topologyRepresentation resInfo
+                    val = pure (rootingEdge, characterSequence resInfo)
+
+        
+        deriveMinimalSequenceForDisplayTree
+          :: HasBlockCost u v w x y z Word Double
+          => TraversalTopology
+          -> NonEmpty (TraversalFocusEdge, CharacterSequence u v w x y z)
+          -> NonEmpty (Double, Vector (Word, NonEmpty TraversalFocusEdge))
+        deriveMinimalSequenceForDisplayTree topo = fmap recomputeCost . foldr1 (zipWith g) . fmap f
+          where
+            f (edge, sequence) = toMinimalBlockContext edge <$> toBlocks sequence
+            g (static, dynCharVect1) (_, dynCharVect2) = (static, zipWith h dynCharVect1 dynCharVect2)
+            h lhs@(c1, w, es1) rhs@(c2, _, es2) =
+                case c1 `compare` c2 of
+                  LT -> lhs
+                  GT -> rhs
+                  EQ -> (c1, w, es1 <> es2)
+
+        toMinimalBlockContext
+          :: HasBlockCost u v w x y z Word Double
+          => e
+          -> CharacterBlock u v w x y z
+          -> (Double, Vector (Word, Double, NonEmpty e))
+        toMinimalBlockContext edge block = (staticCost block, dynCharVect)
+          where
+            dynCharVect = (\dec -> (dec ^. characterCost, dec ^. characterWeight, pure edge)) <$> dynamicCharacters block
+
+        recomputeCost (staticCostVal, dynCharVect) = (staticCostVal + minDynCharCost, dynCharNoWeight)
+          where
+            minDynCharCost  = sum $ (\(c, w,  _) -> fromIntegral c * w) <$> dynCharVect
+            dynCharNoWeight =       (\(c, _, es) -> (c, es)           ) <$> dynCharVect
+
+
     -- Here we calculate, for each character block, for each display tree in the
     -- phylogenetic DAG, the minimal traversal foci and the corresponding cost.
     -- Note that there could be many minimal traversal foci for each display tree.
@@ -555,6 +618,69 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
 
 
                
+    -- Step 4: Update the dynamic character decoration's cost & add an edge reference.
+    modifiedRootRefs' = (id &&& modifyRootCosts . (refVec !)) <$> rootRefs inputDag
+      where
+        modifyRootCosts idxData = idxData { nodeDecoration = nodeDatum }
+          where
+            node = nodeDecoration idxData
+            nodeDatum =
+                PNode2
+                { resolutions          = f <$> resolutions node
+                , nodeDecorationDatum2 = nodeDecorationDatum2 node
+                }
+
+        -- For each resolution we apply this transformation which update each
+        -- dynamic character in the resolution with the minimal cost and the
+        -- spanning tree and rooting edges (collectively named the traversal foci)
+        -- and also update the total cost of the resolution to reflect the lower
+        -- dynamic character cost.
+        f resInfo =
+            resInfo
+            { totalSubtreeCost  = newTotalCost
+--            , localSequenceCost = newLocalCost
+            , characterSequence = modifiedSequence
+            }
+          where
+            resolutionTopology = topologyRepresentation resInfo
+            minimizedSequence  = displayTreeRerooting ! resolutionTopology
+--            newLocalCost       = newTotalCost - sum (totalSubtreeCost <$> childResolutionContext)
+            newTotalCost       = sequenceCost modifiedSequence
+            modifiedSequence   = fromBlocks . zipWith g minimizedSequence . toBlocks $ characterSequence resInfo
+
+            -- The "block-wise" transformation.
+            --
+            -- Expects a "context-block" containing the metadata of which
+            -- spanning tree was minimal for the block and for each dynamic
+            -- character in the block which rooting edges contributed to the
+            -- minimal block cost.
+            --
+            -- Also expects a "data-block" with the old block data to be updated
+            -- with information from the "context-block."
+--            g :: (Double, Vector (Word, NonEmpty TraversalFocusEdge)) -> CharacterBlock u v w x y z -> CharacterBlock u v w x y z
+            g (_, minBlockContexts) charBlock = charBlock { dynamicCharacters = modifiedDynamicChars }
+              where
+
+                -- We take the first of the minimal contexts and distribute the
+                -- associated spanning tree over the dynamic character vector
+                -- to create a vector of associated "traveral foci" for each
+                -- dynamic character in the block.
+                --
+                -- We use this vector to zip against the original dynamic
+                -- character vector from the "data-block," updating the dynamic
+                -- character decorations to contain the new minimal cost and
+                -- corresponding traversal foci.
+                vectorForZipping :: Vector (Word, NonEmpty (TraversalFocusEdge, TraversalTopology))
+                vectorForZipping = second (fmap (\e -> (e, resolutionTopology))) <$> minBlockContexts
+                
+                modifiedDynamicChars = zipWith h vectorForZipping $ dynamicCharacters charBlock
+                
+                h (costVal, foci) originalDec =
+                    originalDec
+                      & characterCost .~ costVal
+                      & traversalFoci .~ Just foci
+
+
     -- Step 4: Update the dynamic character decoration's cost & add an edge reference.
     modifiedRootRefs = (id &&& modifyRootCosts . (refVec !)) <$> rootRefs inputDag
       where

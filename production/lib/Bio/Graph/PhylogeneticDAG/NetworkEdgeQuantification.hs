@@ -58,8 +58,12 @@ import Debug.Trace
 --
 -- \[ \frac {\Sigma_{1}^{k} \; c_i \times | E_i \setminus E_{min} |} {2 \times \left( 2n -2 \right)} \]
 --
+-- For more detail, see:
+--
+-- Phylogenetic network analysis as a parsimony optimization problem, Wheeler 2015
+--
 -- This function performs this punative network edge cost calculation and updates
--- the DAG metadata to reflect the cost of the network context. 
+-- the DAG metadata to reflect the cost of the network context.
 assignPunitiveNetworkEdgeCost :: HasBlockCost u v w x y z i r => PhylogeneticDAG2 e n u v w x y z -> PhylogeneticDAG2 e n u v w x y z
 assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = PDAG2 $ dag { graphData = newGraphData }
   where
