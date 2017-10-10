@@ -32,6 +32,7 @@ import           Data.Bimap             (Bimap)
 import qualified Data.Bimap      as BM
 --import           Data.EdgeSet
 import           Data.Foldable
+import           Data.Hashable
 import qualified Data.Map        as M
 import           Data.Monoid     hiding ((<>))
 import           Data.Semigroup
@@ -95,6 +96,11 @@ instance Foldable TopologyRepresentation where
     toList = BM.keysR . unwrap
     
 
+instance Hashable a => Hashable (TopologyRepresentation a) where
+
+    hashWithSalt salt = foldl' hashWithSalt salt . mutuallyExclusivePairs
+  
+
 instance Ord a => Monoid (TopologyRepresentation a) where
 
     mappend = (<>)
@@ -106,7 +112,7 @@ instance NFData a => NFData (TopologyRepresentation a) where
 
     rnf (TR bm) = BM.fold f () bm `seq` ()
       where
-        f x y _ = rnf x `seq` rnf y `seq` ()
+        f x y t = t `seq` rnf x `seq` rnf y
 
 
 -- |
