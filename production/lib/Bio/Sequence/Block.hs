@@ -173,3 +173,26 @@ blockCost block = sum . fmap sum $
         cost   = dec ^. characterCost
         weight = dec ^. characterWeight
 
+
+-- |
+-- Calculates the cost of a 'CharacterBlock'. Performs some of the operation in
+-- parallel.
+staticCost :: HasBlockCost u v w x y z i r => CharacterBlock u v w x y z -> r
+staticCost block = sum . fmap sum $
+    [ parmap rpar floatingCost . continuousCharacterBins 
+    , parmap rpar integralCost . nonAdditiveCharacterBins
+    , parmap rpar integralCost . additiveCharacterBins   
+    , parmap rpar integralCost . metricCharacterBins     
+    , parmap rpar integralCost . nonMetricCharacterBins  
+    ] <*> [block]
+  where
+    integralCost dec = fromIntegral cost * weight
+      where
+        cost   = dec ^. characterCost
+        weight = dec ^. characterWeight
+
+    floatingCost dec = cost * weight
+      where
+        cost   = dec ^. characterCost
+        weight = dec ^. characterWeight
+
