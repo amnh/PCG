@@ -39,13 +39,13 @@ import Debug.Trace
 -- Consider a network \(N = (V, E)\), as commonly defined with an edge set \(E\)
 -- and vertex set \(V\).  Furthermore, consider the set of display trees \(T\),
 -- with individual display trees denoted as \(τ \in T\), derived from the
--- resolutions of network edges in \(E\) with \(n\) leaf taxa. For a set of
--- characters blocks \(C\), there is at least one most parsimonious display tree
--- \(τ^{min} \in T\) with a cost of \(cost \left(τ^{min} \right)\) with edge set
--- \(E^{min} \subseteq E\) and vertex set \(V^{min} \subseteq V\). We further
--- denote the display tree with minimum cost for a given character block
--- \(C_i \in C\) as \(τ_i \in T\) with the edge set \(E_i \subseteq E\) and
--- vertex set \(V_i \subseteq V\).
+-- resolutions of network edges in \(E\) with \(n\) leaf taxa. For a set of \(k\)
+-- characters blocks \(C = \(C_1, ... , C_k\)\), there is at least one most
+-- parsimonious display tree \(τ_{min} \in T\) with a cost of
+-- \(cost \left(τ_{min} \right)\) and with edge set \(E_{min} \subseteq E\) and
+-- vertex set \(V_{min} \subseteq V\). We further denote the display tree with
+-- minimum cost \(c_i\) for the character block \(C_i \in C\) as \(τ_i \in T\) with
+-- the corresponding edge set \(E_i \subseteq E\) and vertex set \(V_i \subseteq V\).
 --
 -- The network edge punative cost is \(\infty\) if there is an "unused" network
 -- edge in the DAG. There exists an "unused" edge in the DAG if and only if there
@@ -56,7 +56,7 @@ import Debug.Trace
 -- If there does not exist such a network edge we consider all the network edges
 -- in the DAG "used" and the punative network edge cost is defined as follows:
 --
--- \[ \frac {\Sigma_{i \in C} \; C_i \times | E^i \setminus E^{min} |} {2 \times \left( 2n -2 \right)} \]
+-- \[ \frac {\Sigma_{1}^{k} \; c_i \times | E_i \setminus E_{min} |} {2 \times \left( 2n -2 \right)} \]
 --
 -- This function performs this punative network edge cost calculation and updates
 -- the DAG metadata to reflect the cost of the network context. 
