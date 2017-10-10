@@ -459,7 +459,7 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum (PDAG2 
 
     -- |
     -- For each block, for each dynamic character, a vector of parent ref indicies.
---    parentVectors :: Matrix (Maybe Int)
+--    parentVectors :: Matrix (Vector (Maybe Int))
     parentVectors = MAT.matrix nodeCount blockCount g
       where
         g nodeIndex blockIndex = undefined
