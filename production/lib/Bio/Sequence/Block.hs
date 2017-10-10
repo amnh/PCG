@@ -16,6 +16,7 @@ module Bio.Sequence.Block
   ( CharacterBlock(..)
   , HasBlockCost
   , blockCost
+  , staticCost
   , toMissingCharacters
   , hexmap
   , hexTranspose
