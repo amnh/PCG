@@ -30,6 +30,7 @@ import           Data.Foldable
 import           Data.GraphViz.Printing    hiding ((<>)) -- Seriously, why is this redefined?
 --import           Data.Hashable
 --import           Data.Hashable.Memoize
+import           Data.HashMap.Lazy                (HashMap)
 import           Data.IntSet                      (IntSet)
 import qualified Data.IntSet               as IS
 import           Data.Key
@@ -78,8 +79,8 @@ data PhylogeneticDAG e n u v w x y z
 -- * z = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Dynamic'    specified as 'DynamicChar'     or 'Bio.Metadata.DiscreteWithTCM'
 data PhylogeneticDAG2 e n u v w x y z
      = PDAG2 ( ReferenceDAG
-                 (         Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
-                 , Vector (Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
+                 (         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
+                 , Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
                  )
                  e
                  (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
