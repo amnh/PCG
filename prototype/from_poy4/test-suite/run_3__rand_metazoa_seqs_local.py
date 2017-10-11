@@ -51,7 +51,7 @@ def main():
         intArrays = []
 
         for i in range(3):
-            intArrays.append( list(map( lambda x: iupacDict[x], charArr[i][:-1] )) )
+            intArrays.append( list(map( lambda x: iupacDict[x.capitalize()], charArr[i][:-1] )) )
 
         arr1Len = len(intArrays[0])
         arr2Len = len(intArrays[1])

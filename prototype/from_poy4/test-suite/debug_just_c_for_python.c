@@ -425,6 +425,7 @@ void freeCostMtx(void * input, int is_2d) {
     free (input);
 }
 
+/** First input is longest sequence, last is shortest. **/
 int wrapperFunction(int *firstSeq, int firstSeqLen, int *secondSeq, int secondSeqLen, int *thirdSeq, int thirdSeqLen) {
 
 

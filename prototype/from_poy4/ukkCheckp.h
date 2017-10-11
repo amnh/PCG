@@ -38,9 +38,9 @@
 // AllocInfo myCPAllocInfo;
 
 typedef struct {
-    long cells, 
+    long cells,
     innerLoop;
-} Counts;
+} counts;
 
 //typedef struct {int dist; long computed;} U_cell_type;
 typedef struct {
@@ -51,13 +51,13 @@ typedef struct {
 } fromType;
 
 typedef struct {
-    int dist; 
-    long computed; 
+    int dist;
+    long computed;
     fromType from;
 } U_cell_type;
 
 typedef struct {
-    int dist; 
+    int dist;
     int cost;
 } CPType;
 
@@ -82,7 +82,7 @@ int getSplitRecurse(int sab, int sac, int sCost, int sState, int sDist,
 
 // traceBack - recovers an alignment from the U matrix directly.  Used for the base case
 //             of the check point recursion
-void traceBack(int sab, int sac, int sCost, int sState, 
+void traceBack(int sab, int sac, int sCost, int sState,
                int fab, int fac, int fCost, int fState);
 
 

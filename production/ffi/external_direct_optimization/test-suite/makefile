@@ -39,8 +39,8 @@ clean :
 	rm -rf *.dSYM
 	rm -f initialization_driver interface_driver
 
-##########
-external_c_alignment : externalCAlignment.hsc $(necessary_c_files) $(necessary_h_files)
+########## Test compilation of Haskell-side ffi interface
+external_c_alignment_ffi : externalCAlignment.hsc $(necessary_c_files) $(necessary_h_files)
 	rm -f externalCAlignment.hs
 	hsc2hs externalCAlignment.hsc
 	gcc -std=c11  $(sanity-warnings) -c externalCAlignment.c
