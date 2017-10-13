@@ -200,8 +200,8 @@ blockCost block = sum . fmap sum $
         weight = dec ^. characterWeight
 
 
-rootCost :: HasRootCost u v w x y z r => CharacterBlock u v w x y z -> r
-rootCost block = (/2) . sum . fmap sum $
+rootCost :: (HasRootCost u v w x y z r, Integral i) => i -> CharacterBlock u v w x y z -> r
+rootCost rootCount block = (\x -> (fromIntegral rootCount * x) / 2) . sum . fmap sum $
     [ parmap rpar staticRootCost  . continuousCharacterBins 
     , parmap rpar staticRootCost  . nonAdditiveCharacterBins
     , parmap rpar staticRootCost  . additiveCharacterBins
