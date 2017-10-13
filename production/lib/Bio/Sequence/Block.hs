@@ -15,6 +15,7 @@
 module Bio.Sequence.Block
   ( CharacterBlock(..)
   , HasBlockCost
+  , HasRootCost
   , blockCost
   , rootCost
   , staticCost
