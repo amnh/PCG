@@ -292,6 +292,7 @@ library
                        Numeric.Extended.Internal
                        Numeric.Extended.Natural
                        Numeric.Extended.Real
+                       Numeric.PositiveAverage
                        Test.QuickCheck.Arbitrary.Instances
                        Text.XML.Class
 
