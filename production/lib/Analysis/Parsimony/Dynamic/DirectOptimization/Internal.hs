@@ -30,7 +30,7 @@ import           Data.IntMap        (IntMap)
 import qualified Data.IntMap as IM
 import           Data.Key    hiding ((!))
 import           Data.List.NonEmpty (NonEmpty( (:|) ))
-import           Data.Monoid
+import           Data.Semigroup
 import           Data.MonoTraversable
 import           Data.Word
 import           Prelude     hiding (lookup, zip, zipWith)
@@ -84,6 +84,7 @@ initializeLeaf =
       <$> id
       <*> const 0
       <*> const 0
+      <*> toEnum . olength . (^. encoded)
       <*> (^. encoded)
       <*> (^. encoded)
       <*> (^. encoded)
@@ -101,9 +102,10 @@ updateFromLeaves
 updateFromLeaves _ (x:|[]) = x -- This shouldn't happen
 updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) = resultDecoration
   where
-    resultDecoration = extendDynamicToPostOrder leftChild localCost totalCost ungapped gapped lhsAlignment rhsAlignment
+    resultDecoration = extendDynamicToPostOrder leftChild localCost totalCost combinedAverageLength ungapped gapped lhsAlignment rhsAlignment
     (localCost, ungapped, gapped, lhsAlignment, rhsAlignment) = pairwiseAlignment (leftChild ^. preliminaryUngapped) (rightChild ^. preliminaryUngapped)
     totalCost = localCost + leftChild ^. characterCost + rightChild ^. characterCost
+    combinedAverageLength = leftChild ^. averageLength <> rightChild ^. averageLength
 
 
 -- |

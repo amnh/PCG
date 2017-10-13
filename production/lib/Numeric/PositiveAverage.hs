@@ -14,7 +14,7 @@
 
 module Numeric.PositiveAverage
   ( PositiveAverage()
-  , toDouble
+  , fromPositiveAverage
   ) where
 
 import Data.Data
@@ -54,10 +54,11 @@ instance Semigroup PositiveAverage where
 
 instance Show PositiveAverage where
 
-    show = show . toDouble
+    show = show . (fromPositiveAverage :: PositiveAverage -> Double)
 
 
-toDouble (Avg avg) = num / den
+fromPositiveAverage :: Fractional r => PositiveAverage -> r
+fromPositiveAverage (Avg avg) = num / den
   where
-    num = fromIntegral (numerator   avg) :: Double
-    den = fromIntegral (denominator avg) :: Double
+    num = fromIntegral (numerator   avg)
+    den = fromIntegral (denominator avg)

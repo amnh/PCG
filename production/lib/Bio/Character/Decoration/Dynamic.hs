@@ -26,6 +26,7 @@ module Bio.Character.Decoration.Dynamic
   , DynamicCharacterMetadata()
   , SimpleDynamicExtensionPostOrderDecoration(..)
   , PostOrderExtensionDirectOptimizationDecoration(..)
+  , HasAverageLength(..)
   , HasCharacterAlphabet(..)
   , HasCharacterCost(..)
   , HasCharacterLocalCost(..)
@@ -45,6 +46,8 @@ module Bio.Character.Decoration.Dynamic
   , HasSparseTransitionCostMatrix(..)
   , HasDenseTransitionCostMatrix(..)
   , PossiblyMissingCharacter(..)
+  , AverageLength()
+  , getAverageLength
   , TraversalFoci
   , TraversalFocusEdge
   , TraversalTopology

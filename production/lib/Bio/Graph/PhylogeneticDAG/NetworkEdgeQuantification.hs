@@ -34,18 +34,19 @@ import Debug.Trace
 
 
 -- |
--- Calculate and assign the punitive networkedge cost for the DAG.
+-- Calculate and assign the punitive network edge cost for the DAG.
 --
 -- Consider a network \(N = (V, E)\), as commonly defined with an edge set \(E\)
--- and vertex set \(V\).  Furthermore, consider the set of display trees \(T\),
--- with individual display trees denoted as \(τ \in T\), derived from the
--- resolutions of network edges in \(E\) with \(n\) leaf taxa. For a set of \(k\)
--- characters blocks \(C = \(C_1, ... , C_k\)\), there is at least one most
--- parsimonious display tree \(τ_{min} \in T\) with a cost of
--- \(cost \left(τ_{min} \right)\) and with edge set \(E_{min} \subseteq E\) and
--- vertex set \(V_{min} \subseteq V\). We further denote the display tree with
--- minimum cost \(c_i\) for the character block \(C_i \in C\) as \(τ_i \in T\) with
--- the corresponding edge set \(E_i \subseteq E\) and vertex set \(V_i \subseteq V\).
+-- and vertex set \(V\). Let this network be a directed, acyclic graph (DAG) with
+-- a single root. Furthermore, consider the set of display trees \(T\), with
+-- individual display trees denoted as \(τ \in T\), derived from the resolutions
+-- of network edges in \(E\) with \(n\) leaf taxa. For a set of \(k\) character
+-- blocks \(C = \(C_1, ... , C_k\)\), there is at least one most parsimonious
+-- display tree \(τ_{min} \in T\) with a cost of \(cost \left(τ_{min} \right)\)
+-- and with edge set \(E_{min} \subseteq E\) and vertex set
+-- \(V_{min} \subseteq V\). We further denote the display tree with minimum cost
+-- \(c_i\) for the character block \(C_i \in C\) as \(τ_i \in T\) with the
+-- corresponding edge set \(E_i \subseteq E\) and vertex set \(V_i \subseteq V\).
 --
 -- The network edge punative cost is \(\infty\) if there is an "unused" network
 -- edge in the DAG. There exists an "unused" edge in the DAG if and only if there
@@ -58,9 +59,20 @@ import Debug.Trace
 --
 -- \[ \frac {\Sigma_{1}^{k} \; c_i \times | E_i \setminus E_{min} |} {2 \times \left( 2n -2 \right)} \]
 --
--- For more detail, see:
+-- For more detail on the quantification of a network with a single root, see:
 --
 -- Phylogenetic network analysis as a parsimony optimization problem, Wheeler 2015
+--
+-- We must also consider the cases of multi-rooted DAGs, extending the method
+-- described above. Unlike in the single rooted DAG context where we find a
+-- minimum display tree over all character blocks, in a multi-rooted DAG we find
+-- the "minimal display forest" over all character blocks. In the multi-rooted
+-- DAG, let \( \left{r_1, r_2, ... r_k \right} = \mathcal{R}\) be the set of
+-- \(k\) set roots.
+--
+-- The minimal display forest is the set
+--
+-- 
 --
 -- This function performs this punative network edge cost calculation and updates
 -- the DAG metadata to reflect the cost of the network context.
@@ -125,8 +137,12 @@ calculatePunitiveNetworkEdgeCost inputDag
 
 
 -- |
--- There is at least one most parsimonious (for all characters combined) display tree τ min min with edge set E min and vertex set V min .
-extractMostParsimoniusDisplayTree = undefined
+-- There is at least one most parsimonious (for all characters combined) display
+-- tree τ min min with edge set E min and vertex set V min.
+-- TODO: meditiate on this before fixing it. Consider multiple root scenarios.
+
+--extractMostParsimoniusDisplayTree :: HasBlockCost u v w x y z i r => PhylogeneticDAG2 e n u v w x y z -> NonEmpty TopologyRepresentation
+--extractMostParsimoniusDisplayTree (PDAG2 dag) = undefined
 
 
 -- |
