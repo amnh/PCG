@@ -20,8 +20,8 @@
 /* A library to handle the union offsets and their associated information */
 
 #include <stdio.h>
-#include "caml/bigarray.h"
-#include "caml/fail.h"
+#include <caml/bigarray.h>
+#include <caml/fail.h>
 #include <assert.h>
 #include "union.h"
 
@@ -45,7 +45,7 @@ union_prepend_item (unionofft source, unionofft target, SEQT or) {
     return;
 }
 
-int
+int 
 union_copy_single (unionofft a, unionofft c, UNION_OFFT it, SEQT or) {
     UNION_OFFT i;
     i = *(a->end);
@@ -60,7 +60,7 @@ union_copy_single (unionofft a, unionofft c, UNION_OFFT it, SEQT or) {
 int
 union_copy_non_homologous (unionofft au, unionofft bu, unionofft c, \
         UNION_OFFT items, SEQT gap) {
-    if (au->position != -1)
+    if (au->position != -1) 
         items = union_copy_single (au, c, items, gap);
     if (bu->position != -1)
         items = union_copy_single (bu, c, items, gap);
@@ -140,7 +140,7 @@ union_merge (seqt a, seqt b, seqt median, unionofft au, \
                     bpos = 0;
                     apos = au->position;
                     interm = interm | union_move_left (au);
-                }
+                } 
                 else {
                     bpos = bu->position;
                     apos = au->position;
@@ -195,7 +195,7 @@ union_CAML_unwrap (value a, unionofft u) {
     capacity = seq_get_cap (s);
     ca_offsets = (UNION_OFFT *) Data_bigarray_val(Field(a, 2));
     cb_offsets = (UNION_OFFT *) Data_bigarray_val(Field(a, 3));
-    if (length == 0)
+    if (length == 0) 
         union_CAML_produce (u, s, offset, (offset + capacity - 1), \
                 (ca_offsets + capacity - 1), (cb_offsets + capacity - 1),
                 length);
@@ -209,8 +209,8 @@ union_CAML_unwrap (value a, unionofft u) {
 value
 union_CAML_make (value s1, value s2, value smedian, value a, value b, \
         value c, value cm) {
-    // CAMLparam5 (s1, s2, a, b, c);
-    // CAMLxparam2 (smedian, cm);
+    CAMLparam5 (s1, s2, a, b, c);
+    CAMLxparam2 (smedian, cm);
     struct unionoff ua, ub, uc;
     seqt ss1, ss2, ssmedian;
     cmt cmc;
@@ -222,7 +222,7 @@ union_CAML_make (value s1, value s2, value smedian, value a, value b, \
     Seq_custom_val(ss2,s2);
     Seq_custom_val(ssmedian,smedian);
     union_merge (ss1, ss2, ssmedian, &ua, &ub, &uc, cmc);
-    return 0; // CAMLreturn(Val_unit);
+    CAMLreturn(Val_unit);
 }
 
 value

@@ -1,7 +1,0 @@
-(** automatically generated description of compile-time flags *)
-let cc = "@CC@ @CC_VERSION@"
-let ocamlc = "@OCAMLVERSION@"
-let ocamlopt = ocamlc
-let time = "@CONFIG_DATE@"
-let str_parallel = "@USEPARALLEL@"
-let str_interface = "@USEINTERFACE@"

@@ -1,6 +1,6 @@
-#include "caml/mlvalues.h"
-#include "caml/memory.h"
-#include "caml/fail.h"
+#include <caml/mlvalues.h>
+#include <caml/memory.h>
+#include <caml/fail.h>
 #include "config.h"
 #ifdef HAVE_XSLT
 #include <stdio.h>

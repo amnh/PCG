@@ -1,6 +1,0 @@
-ocamlmpi/collcomm.o
-ocamlmpi/comm.o
-ocamlmpi/groups.o
-ocamlmpi/init.o
-ocamlmpi/msgs.o
-ocamlmpi/utils.o

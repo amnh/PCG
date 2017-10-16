@@ -299,7 +299,7 @@ void traceBack(int sab, int sac, int sCost, int sState,
         assert( U(nab, nac, nd, ns)->computed == nd + costOffset);
 
         if (DEBUG_3D) {
-            fprintf(stderr, " ab = %3d,  ac = %3d,  d = %3d,  s = %2d,  dist = %3d, \nnab = %3d, nac = %3d, nd = %3d, ns = %2d, ndist = %3d\n",
+            fprintf(stderr, "ab = %3d, ac = %3d, d = %3d, s = %2d, dist = %3d, \n nab = %3d, nac = %3d, nd = %3d, ns = %2d, ndist = %3d\n",
                     ab, ac, d, s, a,
                     nab, nac, nd, ns, a1);
         }

@@ -23,22 +23,27 @@
 // used to store which cost (actually d+costOffset) the cell contains
 // instead of simply whether the cell has been computed or not.
 
-#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #define NDEBUG 1
 #include <assert.h>
 
-#define MAXINT INT_MAX
-// #define FIXED_NUM_PLANES
+#define MAXINT 10000
+#define FIXED_NUM_PLANES
 #include "seq.h"
 #include "ukkCommon.h"
-#include "ukk.checkp.h"
 
           // A given state can have come from 1 and only 1 neighbour
           // MMM, MMD, MDD, IMM, etc.  all have exactly one neighbour
           // Not possible to have more than 1 'I' state (eg. MII IMI)
 
+typedef struct {long cells, innerLoop;} Counts;
+
+//typedef struct {int dist; long computed;} U_cell_type;
+typedef struct {int ab,ac,cost,state;} fromType;
+typedef struct {int dist; long computed; fromType from;} U_cell_type;
+typedef struct {int dist; int cost;} CPType;
+//typedef struct {int from_ab,from_ac,from_cost,from_state;} From_type;
 
 // Functions to appear.
 AllocInfo myUAllocInfo;
@@ -47,10 +52,30 @@ AllocInfo myCPAllocInfo;
 U_cell_type UdummyCell;
 CPType CPdummyCell;
 
- U_cell_type *U(int ab, int ac, int d, int s) { return getPtr(&myUAllocInfo,ab,ac,d,s); };
- CPType *CP(int ab, int ac, int d, int s)     { return getPtr(&myCPAllocInfo,ab,ac,d,s); };
+inline U_cell_type *U(int ab, int ac, int d, int s) { return getPtr(&myUAllocInfo,ab,ac,d,s); };
+inline CPType *CP(int ab, int ac, int d, int s)     { return getPtr(&myCPAllocInfo,ab,ac,d,s); };
 
 
+// doUkkInLimits - for Ukkonen check point between to specified points in the U matrix
+int doUkkInLimits(int sab, int sac, int sCost, int sState, int sDist,
+		  int fab, int fac, int fCost, int fState, int fDist);
+// getSplitRecurse - extracts info from the 'from' and CP info then recurses with doUkkInLimits
+//                   for the two subparts
+int getSplitRecurse(int sab, int sac, int sCost, int sState, int sDist,
+		    int fab, int fac, int fCost, int fState, int fDist);
+// traceBack - recovers an alignment from the U matrix directly.  Used for the base case
+//             of the check point recursion
+void traceBack(int sab, int sac, int sCost, int sState, 
+	       int fab, int fac, int fCost, int fState);
+void printTraceBack();
+
+
+
+inline int Ukk(int ab,int ac,int d,int state);
+int best(int ab, int ac, int d, int wantState);
+int calcUkk(int ab, int ac, int d, int toState);
+int okIndex(int a, int da, int end);
+int whichCharCost(char a, char b, char c);
 
 
 Counts counts;
@@ -71,7 +96,7 @@ int CPonDist;			// Flag for whether to use distance of cost as the CP criteria
 // by the withinMatrix func.  Be nice to have closures :-)
 int sabG=0,sacG=0,sCostG=0,sStateG=0;
 
-int endA,endB,endC;		// Used to define where to end on the three strings in the
+int endA,endB,endC;		// Used to define where to end on the three strings in the 
                                 // checkp recursion.  So endA contains the distance the recursion
                                 // must finish on + 1.
 
@@ -87,7 +112,6 @@ int states[MAX_STR*2],cost[MAX_STR*2];
 
 int doUkk(struct seq *ra, struct seq *rb, struct seq *rc)
 {
-    printf("doUkk\n");
     CPdummyCell.dist = 0;
     CPdummyCell.cost = 0;
     UdummyCell.dist = 0;
@@ -99,7 +123,7 @@ int doUkk(struct seq *ra, struct seq *rb, struct seq *rc)
     finalCost=0;
     CPcost=0;
     CPwidth = 0, CPcost = 0;
-    completeFromInfo=0;
+    completeFromInfo=0;		
     ai=0,bi=0,ci=0,si=0,costi=0;
     costOffset=1;
     furthestReached=-1;
@@ -112,7 +136,7 @@ int doUkk(struct seq *ra, struct seq *rb, struct seq *rc)
   CPwidth = maxSingleStep;
   // Concern: what is the correct value to use for Umatrix depth.
   // Would think that maxSingleCost=maxSingleStep*2 would be enough
-  // but doesn't seem to be.  No idea why. *shrug* TODO: sloppy coding, that's exactly what he did!?!?
+  // but doesn't seem to be.  No idea why. *shrug*
   myUAllocInfo  = allocInit(sizeof(U_cell_type), maxSingleCost);
   myCPAllocInfo = allocInit(sizeof(CPType), CPwidth);
 
@@ -154,15 +178,15 @@ int doUkk(struct seq *ra, struct seq *rb, struct seq *rc)
       fprintf(stderr,"Setting CPcost=%d\n", CPcost);
 #endif
     }
-
-
+    
+    
   } while (best(finalab,finalac,d,0)<Alen);
 
   assert(best(finalab,finalac,d,0) == Alen);
 
   CPonDist = 0;
   finalCost = d;
-
+  
   {
     // Recurse for alignment
     int fState = best(finalab,finalac,finalCost,1);
@@ -179,13 +203,13 @@ int doUkk(struct seq *ra, struct seq *rb, struct seq *rc)
       dist=getSplitRecurse(0,0,0,0,startDist, finalab, finalac, finalCost,
 			   fState, Alen);
     }
-
+    
     assert(dist == Alen);
     printTraceBack(ra, rb, rc);
   }
   allocFinal(&myUAllocInfo, (&UdummyCell.computed),(&UdummyCell));
   allocFinal(&myCPAllocInfo, (&CPdummyCell.cost),(&CPdummyCell));
-  printf("---doUkk dist: %2d\n", d);
+  printf("ukk distance: %2d", d);
   return d;
 }
 
@@ -194,11 +218,11 @@ int doUkkInLimits(int sab, int sac, int sCost, int sState, int sDist,
 {
 
   assert(sCost>=0 && fCost>=0);
-
+  
   sabG=sab; sacG=sac; sCostG=sCost; sStateG=sState;
   endA = fDist; endB = fDist-fab; endC = fDist-fac;
 
-#ifdef DEBUG
+#ifdef DEBUG  
   fprintf(stderr,"Doing(sab=%d,sac=%d,sCost=%d,sState=%d,sDist=%d,\n",sab,sac,sCost,sState,sDist);
   fprintf(stderr,"      fab=%d,fac=%d,fCost=%d,fState=%d,fDist=%d\n", fab,fac,fCost,fState,fDist);
   {
@@ -208,10 +232,10 @@ int doUkkInLimits(int sab, int sac, int sCost, int sState, int sDist,
     for (i=sDist-sab; i<fDist-fab; i++) fprintf(stderr,"%c",Bstr[i]); fprintf(stderr,"\n");
     for (i=sDist-sac; i<fDist-fac; i++) fprintf(stderr,"%c",Cstr[i]); fprintf(stderr,"\n");
   }
-#endif
-
+#endif  
+  
   completeFromInfo=0;
-
+  
   costOffset += finalCost+1;
   assert(costOffset>0 && "Oops, overflow in costOffset");
 
@@ -247,8 +271,8 @@ int doUkkInLimits(int sab, int sac, int sCost, int sState, int sDist,
       }
     }
 #endif
-
-
+      
+    
 #ifdef DEBUG
     fprintf(stderr,"Tracing back in base case.\n");
 #endif
@@ -283,7 +307,7 @@ int doUkkInLimits(int sab, int sac, int sCost, int sState, int sDist,
       dist = Ukk(fab,fac,i,0);      // Need this (?) otherwise if fState!=0 we may need larger than expected slice size.
       dist = Ukk(fab,fac,i,fState);
     } while (dist<fDist);
-
+    
     assert(dist == fDist);
     if (i!=fCost) {
       fprintf(stderr, "Dist reached for cost %d (old cost %d)\n",i,fCost);
@@ -313,7 +337,7 @@ int getSplitRecurse(int sab, int sac, int sCost, int sState, int sDist,
 
   if (CP(f.ab,f.ac,f.cost,f.state)->cost == 0)
     CP(f.ab,f.ac,f.cost,f.state)->cost = 1;
-
+  
   assert(CP(f.ab,f.ac,f.cost,f.state)->cost == f.cost+1);   // Use cost+1 so can tell if not used (cost==0)
   CPdist = CP(f.ab,f.ac,f.cost,f.state)->dist;
   assert(CPdist>=0);
@@ -330,20 +354,20 @@ int getSplitRecurse(int sab, int sac, int sCost, int sState, int sDist,
   // making it easy to print out.
   finalLen = doUkkInLimits(f.ab, f.ac, f.cost, f.state, CPdist,
 			   fab, fac, fCost, fState, fDist);
-
+  
   doUkkInLimits(sab, sac, sCost, sState, sDist,
 		f.ab, f.ac, f.cost, f.state, CPdist);
-
+  
 #ifdef DEBUG
   fprintf(stderr,"Done.\n");
 #endif
-
+  
   //  return best(fab,fac,fCost,0);
   return finalLen;
 }
 
 // -- Traceback routines --------------------------------------------------------------
-void traceBack(int sab, int sac, int sCost, int sState,
+void traceBack(int sab, int sac, int sCost, int sState, 
 	       int fab, int fac, int fCost, int fState)
 {
   int ab,ac,d,s;
@@ -351,7 +375,7 @@ void traceBack(int sab, int sac, int sCost, int sState,
   ac = fac;
   d = fCost;
   s = fState;
-
+  
   while(ab!=sab || ac!=sac || d!=sCost || s!=sState) {
     int a=U(ab,ac,d,s)->dist;
     int nab=U(ab,ac,d,s)->from.ab;
@@ -371,7 +395,7 @@ void traceBack(int sab, int sac, int sCost, int sState,
 	    ab,ac,d,s,a,
 	    nab,nac,nd,ns,a1);
 #endif
-
+    
     // Run of matches
     while (a>a1 && b>b1 && c>c1) {
       a--; b--; c--;
@@ -399,7 +423,7 @@ void traceBack(int sab, int sac, int sCost, int sState,
 #ifdef DEBUG
   {
     int i;
-
+    
     fprintf(stderr,"Alignment so far\n");
     for (i=ai-1; i>=0; i--) fprintf(stderr,"%c",Ares[i]); fprintf(stderr,"\n");
     for (i=bi-1; i>=0; i--) fprintf(stderr,"%c",Bres[i]); fprintf(stderr,"\n");
@@ -435,7 +459,7 @@ void printTraceBack(struct seq *ra, struct seq *rb, struct seq *rc)
   {
     // Add the first run of matches to the alignment
     // NB. The first run of matches must be added in reverse order.
-
+    
     int endRun, i=0;
     while (i<Alen && (Astr[i]==Bstr[i] && Astr[i]==Cstr[i]))
       i++;
@@ -469,7 +493,7 @@ void printTraceBack(struct seq *ra, struct seq *rb, struct seq *rc)
   seq_prepend (ra, 16);
   seq_prepend (rb, 16);
   seq_prepend (rc, 16);
-
+  
   assert(ai==bi && ai==ci && ai==si && ai==costi);
 
   checkAlign(Ares,ai,Astr,Alen);
@@ -502,7 +526,7 @@ int best(int ab, int ac, int d, int wantState)
     return best;
 }
 
- void sort(int aval[], int len)
+inline void sort(int aval[], int len)
 {
   int i,j;
 
@@ -518,15 +542,15 @@ int best(int ab, int ac, int d, int wantState)
   }
 }
 
- int withinMatrix(int ab, int ac, int d)
+inline int withinMatrix(int ab, int ac, int d)
 {
   // The new method for checking the boundary condition.  Much tighter ~20%(?)  -- 28/02/1999
   int bc=ac-ab;
   int aval[3];
   int g,h,cheapest;
-
+  
   if (d<0) return 0;
-
+  
   aval[0]=abs(sabG-ab);
   aval[1]=abs(sacG-ac);
   aval[2]=abs((sacG-sabG)-bc);
@@ -551,17 +575,18 @@ int best(int ab, int ac, int d, int wantState)
     return 1;
 }
 
- int Ukk(int ab,int ac,int d,int state)
+inline int Ukk(int ab,int ac,int d,int state) 
 {
-  // printf("---Ukk %d %d %d\n", ab, ac, d);
+    printf("--Ukk\n");
+  
   if (!withinMatrix(ab,ac,d)) return -INFINITY;
-  if (U(ab,ac,d,state)->computed==d+costOffset) return  U(ab,ac,d,state)->dist;
+  if (U(ab,ac,d,state)->computed==d+costOffset) return U(ab,ac,d,state)->dist;
 
 /*
   fprintf(stderr,"Calculating U(%d,%d,%d,%d)",ab,ac,d,state);
 */
   counts.cells++;
-
+ 
   calcUkk(ab,ac,d,state);
 
   // Store away CP from info in necessary
@@ -572,22 +597,20 @@ int best(int ab, int ac, int d, int wantState)
 
   if (U(ab,ac,d,state)->dist > furthestReached)
     furthestReached = U(ab,ac,d,state)->dist;
-
+    printf("--Ukk: dist %2d\n", U(ab,ac,d,state)->dist);
   return U(ab,ac,d,state)->dist;
 }
 
-#ifdef DEBUGTRACE
+#ifdef DEBUGTRACE  
 int indenti = 0;
 char indent[1000];
 #endif
 
 int calcUkk(int ab, int ac, int d, int toState)
 {
-   // printf("---calcUkk %d %d %d\n", ab, ac, d);
-    // fflush(stdout);
   int neighbour = neighbours[toState];
   int da,db,dc,ab1,ac1;
-
+  
   fromType from;
   int bestDist;
 
@@ -614,14 +637,14 @@ int calcUkk(int ab, int ac, int d, int toState)
     from.state = toState;
   }
 
-  step(neighbour,&da,&db,&dc);
+  step(neighbour,&da,&db,&dc);     
   ab1 = ab-da+db;
   ac1 = ac-da+dc;
-
+    
   // calculate if its a valid diagonal
   if (ab1>=-endB && ab1<=endA && ac1>=-endC && ac1<=endA) {
     int fromState;
-
+    
     // Loop over possible state we are moving from
     //   May be possible to limit this?
     for (fromState=0; fromState<numStates; fromState++) {
@@ -631,20 +654,20 @@ int calcUkk(int ab, int ac, int d, int toState)
       int cost = d-transCost-contCost[toState];
       int a1 = Ukk(ab1,ac1,cost,fromState);
       int a2 = -1;
-      // printf("edit distance%d, cost: %d\n", dist, cost);
+
       if (okIndex(a1,da,endA) &&
 	  okIndex(a1-ab1,db,endB) &&
 	  okIndex(a1-ac1,dc,endC) &&
 	  (whichCharCost(da ? Astr[a1] : '-',
-			 db ? Bstr[a1-ab1] : '-',
+			 db ? Bstr[a1-ab1] : '-', 
 			 dc ? Cstr[a1-ac1] : '-')==1) ) {
 	fromCost = cost;
 	dist = a1+da;
       } else {
 	if (!secondCost[toState]) continue;
-
+	
 	a2 = Ukk(ab1,ac1,cost-misCost,fromState);
-
+	
 	if (okIndex(a2,da,endA) &&
 	    okIndex(a2-ab1,db,endB) &&
 	    okIndex(a2-ac1,dc,endC)) {
@@ -652,11 +675,11 @@ int calcUkk(int ab, int ac, int d, int toState)
 	  dist = a2+da;
 	}
       }
-
+      
       // Check if this is an improvment
       if (bestDist<dist) {
         bestDist = dist;
-
+	
 	if (completeFromInfo) {        // Do we need to store complete from information for a base case?
 	  from.ab = ab1;
 	  from.ac = ac1;
@@ -665,7 +688,7 @@ int calcUkk(int ab, int ac, int d, int toState)
 	} else if (d>=CPcost+CPwidth)  // Store from info for CP
 	  from = U(ab1,ac1,fromCost,fromState)->from;
       }
-    } // End loop over from states
+    } // End loop over from states 
   } // End if valid neighbour
 
   // Insure that we have how we can reach for AT MOST cost d
@@ -677,7 +700,7 @@ int calcUkk(int ab, int ac, int d, int toState)
 	okIndex(dist-ac,0,endC) &&
 	bestDist<dist) {
       bestDist = dist;
-
+	
       if (completeFromInfo) {        // Do we need to store complete from information for a base case?
 	from.ab = ab;
 	from.ac = ac;
@@ -693,8 +716,8 @@ int calcUkk(int ab, int ac, int d, int toState)
 
     /* Note: In the past have used 'extended' to only update this cell if
        we actually extend a diagonal.  This is WRONG.  The reason is that
-       if we pick the furthest along and try to extend that only, it may
-       not extend, and thus this cell will not be updated.  Whereas a
+       if we pick the furthest along and try to extend that only, it may 
+       not extend, and thus this cell will not be updated.  Whereas a 
        cell less far along may have been able to extend as further than
        the current cell value.
 
@@ -702,7 +725,7 @@ int calcUkk(int ab, int ac, int d, int toState)
        is actually a run of matches, causes some descrepencies between the
        U matrix and the D matrix.
     */
-
+       
     // Get furthest of states for this cost
     int dist=-INFINITY;
     int from_state=-1,s;
@@ -722,11 +745,11 @@ int calcUkk(int ab, int ac, int d, int toState)
       dist++;
       counts.innerLoop++;
     }
-
+      
     // Was there an improvement?
     if (dist > bestDist) {
       bestDist = dist;  // Note: toState=MMM
-
+      
       // Update 'from' information if the state we extended from was
       // not the same state we are in (the MMM state).
       if (from_state!=0) {
@@ -745,10 +768,10 @@ int calcUkk(int ab, int ac, int d, int toState)
   U(ab,ac,d,toState)->dist = bestDist;
   U(ab,ac,d,toState)->computed = d+costOffset;
   U(ab,ac,d,toState)->from = from;
-
-#ifdef DEBUGTRACE
+  
+#ifdef DEBUGTRACE  
   indenti-=2;
-  indent[indenti]=0;
+  indent[indenti]=0;  
   fprintf(stderr,"%sCalcUKK(ab=%d,ac=%d,d=%d,toState=%d)=%d\n",
 	  indent,
 	  ab,ac,d,toState,U(ab,ac,d,toState)->dist);

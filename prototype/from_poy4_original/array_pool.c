@@ -17,11 +17,11 @@
 /* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301   */
 /* USA                                                                        */
 
-#include "caml/custom.h"
-#include "caml/intext.h"
-#include "caml/mlvalues.h"
-#include "caml/memory.h"
-#include "caml/fail.h"
+#include <caml/custom.h>
+#include <caml/intext.h>
+#include <caml/mlvalues.h>
+#include <caml/memory.h>
+#include <caml/fail.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "seq.h"
@@ -78,7 +78,7 @@ llist_remove (void *searchfor, struct llist *in, struct llist **res, \
     struct llist *tmp_res;
     int final;
     if (NULL == in) {
-        *res = NULL;
+        *res = NULL; 
         *rem = NULL;
         return (POOL_FAILED);
     }
@@ -169,7 +169,7 @@ pool_available (struct pool *p, void *item) {
     wrapper.item = item;
 /*    printf ("Deallocated %u\n", item); fflush (stdout);*/
     new_available = (struct llist *) avl_delete (p->in_use, &wrapper);
-    // if (NULL == new_available) failwith ("Huh?");
+    if (NULL == new_available) failwith ("Huh?");
     llist_prepend (new_available, p->available);
     ((struct seq *) (new_available->update_item))->my_pool = NULL;
     new_available->update_item = NULL;
@@ -213,8 +213,8 @@ pool_CAML_serialize (value c, unsigned long *wsize_32, \
         unsigned long *wsize_64) {
     struct pool *pv;
     pv = Pool_custom_val(c);
-    // caml_serialize_int_4 (pv->size);
-    // caml_serialize_int_4 (pv->grow_rate);
+    caml_serialize_int_4 (pv->size);
+    caml_serialize_int_4 (pv->grow_rate);
     *wsize_64 = *wsize_32 = sizeof (struct pool *);
     return;
 }
@@ -225,9 +225,9 @@ pool_CAML_deserialize (void *v) {
     tmp = (struct pool **) v;
     p = malloc (sizeof (struct pool));
     *tmp = p;
-    // if (NULL == p) failwith ("Memory error");
-    // p->size = (size_t) caml_deserialize_uint_4();
-    // p->grow_rate = (size_t) caml_deserialize_uint_4();
+    if (NULL == p) failwith ("Memory error");
+    p->size = (size_t) caml_deserialize_uint_4();
+    p->grow_rate = (size_t) caml_deserialize_uint_4();
     p->available = NULL;
     p->in_use = avl_create (&pool_pointer_compare, NULL, NULL);
     pool_add_item (p);
@@ -248,8 +248,8 @@ static struct custom_operations pool_custom_ops = {
     &pool_CAML_free,
     custom_compare_default,
     custom_hash_default,
-    // pool_CAML_serialize,
-    // pool_CAML_deserialize
+    pool_CAML_serialize,
+    pool_CAML_deserialize
 };
 
 value

@@ -19,12 +19,12 @@
 
 #include <stdio.h>
 #include <assert.h>
-#include "caml/memory.h"
-#include "caml/mlvalues.h"
-#include "caml/bigarray.h"
-#include "caml/custom.h"
-#include "caml/intext.h"
-#include "caml/fail.h"
+#include <caml/memory.h>
+#include <caml/mlvalues.h>
+#include <caml/bigarray.h>
+#include <caml/custom.h>
+#include <caml/intext.h>
+#include <caml/fail.h>
 #include "cm.h"
 #include "noaddset.h"
 #include "sankoff.h"
@@ -33,16 +33,16 @@
 #define MAX_INT 2147483647
 #endif
 
-/*
+/* 
  * In Sankoff characters, the metric can actually make no sense at all, so we
- * can't assume much about the properties of the transformation cost matrix.
+ * can't assume much about the properties of the transformation cost matrix. 
  * We can actually evaluate several parameters from this matrix to improve the
  * computational cost (for example, if the transformation cost matrix is
  * actually a constant, we can treat them as non-additive characters!);
  * In this version of the function, no assumptions can be done; all we know is
  * that the intermediate and the cost between states has been precomputed in a
- * transformation cost matrix that can be easily handled using the cm library.
- * So here are the functions needed.
+ * transformation cost matrix that can be easily handled using the cm library. 
+ * So here are the functions needed. 
  * When a certain pair of children characters are to be evaluated, the cost of
  * each possible state for the character should be calculated. This function
  * stores the cost of each of the possible combinations. The ss in the function
@@ -72,9 +72,9 @@ sankoff_sc_down_pre (const int *ch1, const int *ch2, int *p, \
         const int *tcm, int a_sz) {
     int i, j, k;
     int *tmp_row, tmp_cost;
-    for (i = 0; i < a_sz; i++) {
+    for (i = 0; i < a_sz; i++) { 
         *(p + i) = MAX_INT; /* 1. */
-        for (j = 0; j < a_sz; j++) {
+        for (j = 0; j < a_sz; j++) { 
             tmp_row = cm_get_row_3d (tcm, i, j, a_sz);
             for (k = 0; k < a_sz; k++) {  /* 2. */
                 tmp_cost = *(tmp_row + k) + *(ch1 + j) + *(ch2 + k);
@@ -87,12 +87,12 @@ sankoff_sc_down_pre (const int *ch1, const int *ch2, int *p, \
     return;
 }
 
-/*
+/* 
  * Each character has a total of a_sz possible states, therefore, the array is
  * compossed of small subarrays of size a_sz. For this reason, each subarray is
  * processed in the sankoff_sc_down_pre function, while in this function the
  * each character is processed. Therefore, the step of the for loop is of size
- * a_sz instead of the probably expected length 1.
+ * a_sz instead of the probably expected length 1. 
  */
 #ifdef _WIN32
 __inline void
@@ -107,7 +107,7 @@ sankoff_down_pre (struct storage ch1, struct storage ch2, struct storage p, \
     cur_ch2 = ch2.prel;
     cur_p = p.prel;
     cur_best = p.best;
-    for (i = 0; i < n; i++) {
+    for (i = 0; i < n; i++) { 
         sankoff_sc_down_pre (cur_ch1, cur_ch2, cur_p, tcm, a_sz);
         cur_p += a_sz;
         cur_ch1 += a_sz;
@@ -117,7 +117,7 @@ sankoff_down_pre (struct storage ch1, struct storage ch2, struct storage p, \
 }
 
 /* CAML bindings (see character2.ml documentation) */
-value
+value 
 sankoff_CAML_downpass (value ch1, value ch2, value p, value mtx, value n) {
     CAMLparam5(ch1, ch2, p, cm, n);
     struct storage cch1, cch2, cp;

@@ -4,13 +4,13 @@
 #ifndef _WIN32
 #include <stdint.h>
 #endif
-#include "caml/mlvalues.h"
-#include "caml/memory.h"
-#include "caml/bigarray.h"
-#include "caml/fail.h"
-#include "caml/custom.h"
-#include "caml/alloc.h"
-#include "caml/intext.h"
+#include <caml/mlvalues.h>
+#include <caml/memory.h>
+#include <caml/bigarray.h>
+#include <caml/fail.h>
+#include <caml/custom.h>
+#include <caml/alloc.h>
+#include <caml/intext.h>
 #define NDEBUG 1
 #include <assert.h>
 #include "nonaddCSc.h"
@@ -169,7 +169,7 @@ typedef vector CHARTYPE vect;
  * length;  and they can operate on two longs, four shorts, or eight chars. */
 
 #include <xmmintrin.h>
-#include <stdlib.h>
+#include <malloc.h>
 
 /* in bits */
 #define VECT_SIZE 64
@@ -609,31 +609,31 @@ nonadd_nacat_compare (value v1, value v2)
     @{
     We need to use the correct serialization functions for our element types.
  */
-// #if __LP64__
-// #define caml_serialize_long caml_serialize_int_8
-// #define caml_deserialize_long caml_deserialize_sint_8
-// #else
-// #define caml_serialize_long caml_serialize_int_4
-// #define caml_deserialize_long caml_deserialize_sint_4
-// #endif
+#if __LP64__
+#define caml_serialize_long caml_serialize_int_8
+#define caml_deserialize_long caml_deserialize_sint_8
+#else
+#define caml_serialize_long caml_serialize_int_4
+#define caml_deserialize_long caml_deserialize_sint_4
+#endif
 
-// #if CHARSIZE == 8
-// #define caml_serialize_int caml_serialize_int_1
-// #define caml_serialize_block caml_serialize_block_1
-// #define caml_deserialize_uint caml_deserialize_uint_1
-// #define caml_deserialize_block caml_deserialize_block_1
+#if CHARSIZE == 8
+#define caml_serialize_int caml_serialize_int_1
+#define caml_serialize_block caml_serialize_block_1
+#define caml_deserialize_uint caml_deserialize_uint_1
+#define caml_deserialize_block caml_deserialize_block_1
 
-// #elif CHARSIZE == 16
-// #define caml_serialize_int caml_serialize_int_2
-// #define caml_serialize_block caml_serialize_block_2
-// #define caml_deserialize_uint caml_deserialize_uint_2
-// #define caml_deserialize_block caml_deserialize_block_2
+#elif CHARSIZE == 16
+#define caml_serialize_int caml_serialize_int_2
+#define caml_serialize_block caml_serialize_block_2
+#define caml_deserialize_uint caml_deserialize_uint_2
+#define caml_deserialize_block caml_deserialize_block_2
 
-// #elif CHARSIZE == 32
-// #define caml_serialize_int caml_serialize_int_4
-// #define caml_serialize_block caml_serialize_block_4
-// #define caml_deserialize_uint caml_deserialize_uint_4
-// #define caml_deserialize_block caml_deserialize_block_4
+#elif CHARSIZE == 32
+#define caml_serialize_int caml_serialize_int_4
+#define caml_serialize_block caml_serialize_block_4
+#define caml_deserialize_uint caml_deserialize_uint_4
+#define caml_deserialize_block caml_deserialize_block_4
 
 #endif
 
@@ -653,12 +653,12 @@ nonadd_nacat_serialize (value v,
 
     /* We always write the same size */
     *wsize_32 = *wsize_64 = compute_size(n->len);
-    // caml_serialize_long (n->len);
-    // caml_serialize_long (n->heur);
-    // caml_serialize_long (n->code);
-    // caml_serialize_long (n->added_cost);
-    // if (n->len > 0)
-    //     caml_serialize_block_1 (data, (sizeof(vect) * ((n->len / BLOCK_LEN) + 1)));
+    caml_serialize_long (n->len);
+    caml_serialize_long (n->heur);
+    caml_serialize_long (n->code);
+    caml_serialize_long (n->added_cost);
+    if (n->len > 0) 
+        caml_serialize_block_1 (data, (sizeof(vect) * ((n->len / BLOCK_LEN) + 1)));
     return;
 }
 
@@ -670,13 +670,13 @@ nonadd_nacat_deserialize (void *dst)
     nac *data;
 
     n = (nacat) dst;
-    // n->len = caml_deserialize_long();
-    // n->heur = caml_deserialize_long();
-    // n->code = caml_deserialize_long();
-    // n->added_cost = caml_deserialize_long();
+    n->len = caml_deserialize_long();
+    n->heur = caml_deserialize_long();
+    n->code = caml_deserialize_long();
+    n->added_cost = caml_deserialize_long();
     n->data = (vect *) ((struct _naca_t *) (n + 1));
-    // if (n->len > 0)
-    //     caml_deserialize_block_1 (n->data, (sizeof(vect) * ((n->len / BLOCK_LEN) + 1)));
+    if (n->len > 0)
+        caml_deserialize_block_1 (n->data, (sizeof(vect) * ((n->len / BLOCK_LEN) + 1)));
     else n->data = NULL;
     return (compute_size(n->len));
 }
@@ -689,8 +689,8 @@ static struct custom_operations naca_custom = {
     custom_finalize_default,
     nonadd_nacat_compare,
     custom_hash_default,
-    // nonadd_nacat_serialize,
-    // nonadd_nacat_deserialize
+    nonadd_nacat_serialize,
+    nonadd_nacat_deserialize
 };
 
 
@@ -713,9 +713,9 @@ nonadd_make_new_unsafe (int len, value v)
     art->len = len;
     art->heur = 0;
     art->added_cost = 0;
-    if(len != 0)
+    if(len != 0) 
         art->data = (vect *) ((struct _naca_t *) (art + 1));
-    else
+    else 
         art->data = NULL;
     return;
 }
@@ -727,14 +727,14 @@ value
 char_nonadd_CAML_make_new (value len, value code)
 {
     CAMLparam2 (len, code);
-    // CAMLlocal1 (v);
+    CAMLlocal1 (v);
     long ilen, icode, i;
     nacat art;
     nac *data;
 
     ilen = Long_val (len);
     icode = Long_val (code);
-    // v = caml_alloc_custom (&naca_custom, (compute_size(ilen)), 1, 45000);
+    v = caml_alloc_custom (&naca_custom, (compute_size(ilen)), 1, 45000);
     nonadd_make_new_unsafe (ilen, v);
 
     Nonadd_Custom_val(v,art);
@@ -750,13 +750,13 @@ value
 char_nonadd_CAML_make_new_unsafe (value len, value code)
 {
     CAMLparam2 (len, code);
-    // CAMLlocal1 (v);
+    CAMLlocal1 (v);
     long ilen, icode;
     nacat art;
 
     ilen = Long_val (len);
     icode = Long_val (code);
-    // v = caml_alloc_custom (&naca_custom, (compute_size(ilen)), 1, 45000);
+    v = caml_alloc_custom (&naca_custom, (compute_size(ilen)), 1, 45000);
     nonadd_make_new_unsafe (ilen, v);
 
     Nonadd_Custom_val(v,art);
@@ -816,7 +816,7 @@ char_nonadd_CAML_set_elt_code (value v, value vi, value vcode)
     CAMLparam3 (v, vi, vcode);
     nacat art;
 
-    // failwith ("We don't support codes in nonadditive characters");
+    failwith ("We don't support codes in nonadditive characters");
     Nonadd_Custom_val(v,art);
 
     CAMLreturn0;
@@ -832,7 +832,7 @@ char_nonadd_CAML_set_elt_bit (value v, value loc, value val)
     nac *data;
 
     /* We don't update the union set right now ... */
-    // failwith ("char_nonadd_CAML_set_elt_bit no longer supported");
+    failwith ("char_nonadd_CAML_set_elt_bit no longer supported");
 
     iloc = Long_val (loc);
     ival = Long_val (val);
@@ -1106,8 +1106,8 @@ value
 char_nonadd_CAML_distance_list (value a, value b)
 {
     CAMLparam2 (a, b);
-    // CAMLlocal3 (list, temp_pair, temp_list);
-    // CAMLlocal2 (d_one, d_zero);
+    CAMLlocal3 (list, temp_pair, temp_list);
+    CAMLlocal2 (d_one, d_zero);
     long i;
     nacat na, nb;
     nac *adata, *bdata;
@@ -1150,7 +1150,7 @@ value
 char_nonadd_CAML_median_cost (value a)
 {
     CAMLparam1 (a);
-    // CAMLlocal1 (temp);
+    CAMLlocal1 (temp);
     nacat art;
     long ltemp;
     double dtemp;
@@ -1193,7 +1193,7 @@ value
 char_nonadd_CAML_elt_to_list (value va, value vindex)
 {
     CAMLparam2 (va, vindex);
-    // CAMLlocal2 (res, temp_val);
+    CAMLlocal2 (res, temp_val);
     long i, index;
     unsigned long val;
     nacat a;
@@ -1244,7 +1244,7 @@ value
 char_nonadd_CAML_to_list (value va)
 {
     CAMLparam1 (va);
-    // CAMLlocal5 (res, temp_list, temp_val, temp_elt, d_zero);
+    CAMLlocal5 (res, temp_list, temp_val, temp_elt, d_zero);
     nacat a;
     long i;
     nac *adata;
@@ -1289,7 +1289,7 @@ char_nonadd_CAML_poly_items (value c, value pol) {
     int res = 0, i, j;
     int counter, tmp;
     int pol_counter;
-
+    
     pol_counter = Int_val(pol);
     Nonadd_Custom_val(c,art);
     data = GET_DATA (art);
@@ -1314,7 +1314,7 @@ char_nonadd_CAML_of_list_helper (value v, value list, value vlen)
     long len, i;
     nacat art;
     nac *adata;
-    // CAMLlocal1 (elt);
+    CAMLlocal1 (elt);
 
     len = Int_val (vlen);
     Nonadd_Custom_val(v,art);

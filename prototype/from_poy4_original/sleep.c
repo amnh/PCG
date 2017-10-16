@@ -17,9 +17,9 @@
 /* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301   */
 /* USA                                                                        */
 
-#include "caml/memory.h"
-#include "caml/custom.h"
-#include "caml/mlvalues.h"
+#include <caml/memory.h>
+#include <caml/custom.h>
+#include <caml/mlvalues.h>
 #include <time.h>
 #ifdef _WIN32
 #include <windows.h>

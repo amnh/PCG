@@ -17,6 +17,38 @@
 /* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301   */
 /* USA                                                                        */
 
+/* Alignment libray in C */
+
+#include <stdio.h>
+#include <malloc.h>
+#include <stdio.h>
+#include <limits.h>
+#define NDEBUG 1
+#include <assert.h>
+#include <caml/mlvalues.h>
+#include <caml/memory.h>
+#include <caml/custom.h>
+#include <caml/fail.h>
+#include "zarr.h"
+#include "matrices.h"
+#include "array_pool.h"
+#include "seq.h"
+#include "cm.h"
+
+#define HIGH_NUM 1000000
+#define NPRINT_DM 1
+#define NPRINT_CM 1
+#define NDEBUG_BT 1
+
+#include "matrices.c"
+#include "cm.c"
+#include "seq.c"
+#include "array_pool.c"
+
+#ifdef DEBUG_ALL_ASSERTIONS
+int *_algn_max_matrix = NULL;
+DIRECTION_MATRIX *_algn_max_direction = NULL;
+#endif
 /******************************************************************************/
 /*                        Pairwise Standard Alignment                         */
 /******************************************************************************/
@@ -25,122 +57,76 @@
  * name>
  */
 
-/** Fill a row in a two dimentional alignment
+/* Fill a row in a two dimentional alignment
  *
- *  When pairwise alignment is performed, two sequences are compared over a
- *  transformation cost matrix. Let's call them sequences x and y written over
- *  some alphabet a of length |a|. Each base of x
- *  is represented by a column in the transformation cost matrix and each base of
- *  y by a row. However, note that the actual values that are added during the
- *  alignment are produced by comparing every single base of x with only |a|
- *  elements. Now, in order to to make these operations vectorizable, we perform
- *  the comparisons with |a| precalculated vectors. This puts in context the
- *  explanation of each parameter in the function.
+ * When pairwise alignment is performed, two sequences are compared over a
+ * transformation cost matrix. Let's call them sequences x and y written over
+ * some alphabet a of length |a|. Each base of x
+ * is represented by a column in the transformation cost matrix and each base of
+ * y by a row. However, note that the actual values that are added during the
+ * alignment are produced by comparing every single base of x with only |a|
+ * elements. Now, in order to to make these operations vectorizable, we perform
+ * the comparisons with |a| precalculated vectors. This puts in context the
+ * explanation of each parameter in the function.
  *
- *  @param curRow is the cost matrix row to be filled with values.
- *  @param prevRow is the row above curRow in the cost matrix being filled.
- *  @param gap_row is the cost of aligning each base in x with a gap.
- *  @param alg_row is the cost of aligning each base in x with the base
- *      represented by the base of the row of curRow in y.
- *  @param dirMtx is the directional matrix for the backtrack
- *  @param c is the cost of an insertion. An insertion can only occur for one
- *      particular base in the alphabet, corresponding to the base in y represented
- *      by the row that is being filled.
- *  @param st is the starting cell to be filled.
- *  @param end is the final cell to be filled.
- *
- *  If you modify this code check algn_fill_cube as there is similar code there
- *  used in the first plane of the alignment. I didn't use this function because
- *  the direction codes are different for three dimensional alignments.
+ * @param mm is the cost matrix row to be filled with values.
+ * @param pm is the row above mm in the cost matrix being filled.
+ * @param gap_row is the cost of aligning each base in x with a gap.
+ * @param alg_row is the cost of aligning each base in x wit hthe base
+ * represented by the base of the row of mm in y.
+ * @param dm is the directional matrix for the backtrack
+ * @param c is the cost of an insertion. As an insertion can only occur for one
+ * particular base in the alphabet, corresponding to the base in y represented
+ * by the row that is being filled.
+ * @param st is the starting cell for the filling.
+ * @param end is the final cell for the filling.
+ * If you modify this code check algn_fill_cube as there is simmilar code there
+ * used in the first plane of the alignment. It didn't use this function because
+ * the direction codes are different for three dimensional alignments.
  */
-
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <limits.h>
-#include <assert.h>
-#include "caml/mlvalues.h"
-#include "caml/memory.h"
-#include "caml/custom.h"
-#include "caml/fail.h"
-#include "caml/compatibility.h"
-#include <locale.h>
-#include <wchar.h>
-#include "zarr.h"
-#include "matrices.h"
-//#include "array_pool.h"
-#include "seq.h"
-#include "cm.h"
-
-#define HIGH_NUM 1000000
-#define DEBUG            0
-#define DEBUG_ALGN       0
-#define DEBUG_BT         1
-#define DEBUG_CALL_ORDER 0
-#define DEBUG_CM         0
-#define PRINT_COST_M      0
-#define PRINT_DIR_M      0
-#define DEBUG_NW         0
-#define DEBUG_AFFINE     1
-
-// #include "matrices.c"
-// #include "cm.c"
-// #include "seq.c"
-//#include "array_pool.c"
-
-#ifdef DEBUG_ALL_ASSERTIONS
-int *_algn_max_matrix = NULL;
-DIRECTION_MATRIX *_algn_max_direction = NULL;
-#endif
-
-int iteration = 0;
-
 #if ( __GNUC__ && __MMX__ )
- void
-algn_fill_row (int *curRow, const int *prevRow, const int *gap_row, \
-        const int *alg_row, DIRECTION_MATRIX *dirMtx, int c, int i, int end) {
+#ifdef _WIN32
+__inline void 
+#else
+inline void 
+#endif
+algn_fill_row (int *mm, const int *pm, const int *gap_row, \
+
+        const int *alg_row, DIRECTION_MATRIX *dm, int c, int i, int end) {
 
 
     register int aa, bb, cc;
-    register const int TWO = 0x200;
+    register const int TWO = 0x200; 
     register const int ZERO = 0;
 
-    bb = curRow[i - 1];
+    bb = mm[i - 1];
 
     for (; i <= end - 7; i+=8) {
 
 
-        aa = prevRow[i - 1] + alg_row[i]; // aka tmp3
+        aa = pm[i - 1] + alg_row[i]; // aka tmp3
         bb += gap_row[i]; // aka tmp2
-        cc = prevRow[i] + c; // aka tmp1
-        /**
-         *  The algorithm has not changed. Only the conditional branches been eliminated for
-         *  better performance.
-         *
-         *  Since gcc (4.0.3 at least) didn't generate cmov's, we changed the code manually.
-         *  Things that have been done to optimize this function:
-         *      - assembly code for determining min(aa, bb, cc) and getting the bit pattern
-         *        loop unrolling with a factor of 8, to still keep this function d
-         *      - rearrangement of expressions => better register usage and (probably)
-         *        fewer cache misses
+        cc = pm[i] + c; // aka tmp1
+        /*
+            The algorithm has not changed. Only have the conditional branches been eliminated for better performance.
+            Since gcc (4.0.3 atleast) didn't generate cmov's, we changed the code manually.
+            Things that have been done for optimizing this function:
+                - assembly code for determining min(aa, bb, cc) and getting the bit pattern
+                - loop unrolling with a factor of 8, to still keep this function inlined
+                - rearrangement of expressions => better register usage and (probably) less cache misses
 
-         *  Restrictions:
-         *  ALIGN is bound to the value 4, INSERT to 2 and DELETE to 1
-         *  If these constants change, there will be problems with the assembler code,
-         *  since it is really optimized for this purpose
+            Restrictions:
+            ALIGN is bound to the value 4, INSERT to 2 and DELETE to 1
+            If these constants changes, there are problems with the assembler code,
+            since they are really optimized for this purpose
 
-         *  Furthermore, this code only works with the gnu compiler (but shouldn't be
-         *  hard to switch to icc), so add
-         *  #ifdef __GNUC__ as a macro for this section. I also suppose that cmov's
-         *  can be handled by most of the computers used today
-         *  (of those using this program at least).
+            Furthermore, this code does only work with the gnu compiler (but shouldn't be hard to switch to icc), so add
+            #ifdef __GNUC__ as a macro for this section. I also suppose that cmov's can be handled by most
+            of the computers used today (of those using this program at least).
 
-         *  I have also removed the debug sections. These can of course be added if
-         *  a debug is needed.
-         *  I recommend that debugging is only used with the original function,
-         *  since this one generates exactly same results.
-         */
+            I have also removed the debug sections. These can of course be added if a debug is needed.
+            I recommend that debugging is only used with the original function, since this one generates exactly same results.
+        */
 
 
         __asm__(
@@ -153,20 +139,20 @@ algn_fill_row (int *curRow, const int *prevRow, const int *gap_row, \
             "cmovl %2, %1\n\t"  // if cc < bb was flagged in the 2nd comparison, then move cc into bb. min(aa, bb, cc) is now stored in bb.
             "mov $0x4, %2\n\t"  // put a 4 (ALIGN) in register 2 (cc) since cc is trash.
             "cmovl %3, %0\n\t"  // if cc < bb was flagged in the 2nd comparison, then clear register 0.
-            "cmovg %3, %2\n\t"  // if cc > bb was flagged, then clean the register. (Note that you can only move register->register with a cmov.)
+            "cmovg %3, %2\n\t"  // if cc > bb was flagged, then clean the register. (Note that you can only move register->register with a cmov.) 
             "add %b0, %h0\n\t"  // finally, add low byte and high byte of register 0 into register 0's low byte.
             "add %h0, %b2\n\t"  // add high byte from reg.0 to low byte in reg.2 (cc) and we are done. cc contains now the bitpattern.
             : "+Q" (aa), "+r" (bb), "+Q" (cc)   // registers: aa = %0, bb = %1, cc = %2
             : "r" (ZERO), "r" (TWO)         // ZERO = %3, TWO = %4
         );
 
-        curRow[i] = bb; // bb is min(aa, bb, cc)
-        dirMtx[i] = cc; // cc is the bitpattern
+        mm[i] = bb; // bb is min(aa, bb, cc)
+        dm[i] = cc; // cc is the bitpattern
 
 
-        aa = prevRow[i] + alg_row[i + 1];
+        aa = pm[i] + alg_row[i + 1];
         bb += gap_row[i + 1]; // bb is already assigned the minimum value of the three to be compared, so loading bb from memory would be waste.
-        cc = prevRow[i + 1] + c;
+        cc = pm[i + 1] + c;
 
 
         __asm__(
@@ -176,22 +162,22 @@ algn_fill_row (int *curRow, const int *prevRow, const int *gap_row, \
             "cmovle %4, %0\n\t"
             "setge %b0\n\t"
             "cmp %1, %2\n\t"
-            "cmovl %2, %1\n\t"
-            "mov $0x4, %2\n\t"
-            "cmovl %3, %0\n\t"
-            "cmovg %3, %2\n\t"
-            "add %b0, %h0\n\t"
-            "add %h0, %b2\n\t"
+            "cmovl %2, %1\n\t" 
+            "mov $0x4, %2\n\t" 
+            "cmovl %3, %0\n\t" 
+            "cmovg %3, %2\n\t" 
+            "add %b0, %h0\n\t" 
+            "add %h0, %b2\n\t" 
             : "+Q" (aa), "+r" (bb), "+Q" (cc)
             : "r" (ZERO), "r" (TWO)
         );
 
-        curRow[i + 1] = bb;
-        dirMtx[i + 1] = cc;
+        mm[i + 1] = bb;
+        dm[i + 1] = cc;
 
-        aa = prevRow[i + 1] + alg_row[i + 2];
+        aa = pm[i + 1] + alg_row[i + 2];
         bb += gap_row[i + 2];
-        cc = prevRow[i + 2] + c;
+        cc = pm[i + 2] + c;
 
 
         __asm__(
@@ -203,20 +189,20 @@ algn_fill_row (int *curRow, const int *prevRow, const int *gap_row, \
             "cmp %1, %2\n\t"
             "cmovl %2, %1\n\t"
             "mov $0x4, %2\n\t"
-            "cmovl %3, %0\n\t"
+            "cmovl %3, %0\n\t" 
             "cmovg %3, %2\n\t"
-            "add %b0, %h0\n\t"
-            "add %h0, %b2\n\t"
+            "add %b0, %h0\n\t" 
+            "add %h0, %b2\n\t" 
             : "+Q" (aa), "+r" (bb), "+Q" (cc)
             : "r" (ZERO), "r" (TWO)
         );
 
-        curRow[i + 2] = bb;
-        dirMtx[i + 2] = cc;
+        mm[i + 2] = bb;
+        dm[i + 2] = cc;
 
-        aa = prevRow[i + 2] + alg_row[i + 3];
+        aa = pm[i + 2] + alg_row[i + 3];
         bb += gap_row[i + 3];
-        cc = prevRow[i + 3] + c;
+        cc = pm[i + 3] + c;
 
 
         __asm__(
@@ -228,22 +214,22 @@ algn_fill_row (int *curRow, const int *prevRow, const int *gap_row, \
             "cmp %1, %2\n\t"
             "cmovl %2, %1\n\t"
             "mov $0x4, %2\n\t"
-            "cmovl %3, %0\n\t"
+            "cmovl %3, %0\n\t" 
             "cmovg %3, %2\n\t"
-            "add %b0, %h0\n\t"
+            "add %b0, %h0\n\t" 
             "add %h0, %b2\n\t"
             : "+Q" (aa), "+r" (bb), "+Q" (cc)
             : "r" (ZERO), "r" (TWO)
         );
 
-        curRow[i + 3] = bb;
-        dirMtx[i + 3] = cc;
+        mm[i + 3] = bb;
+        dm[i + 3] = cc;
 
 
 
-        aa = prevRow[i + 3] + alg_row[i + 4];
+        aa = pm[i + 3] + alg_row[i + 4];
         bb += gap_row[i + 4];
-        cc = prevRow[i + 4] + c;
+        cc = pm[i + 4] + c;
 
 
         __asm__(
@@ -253,23 +239,23 @@ algn_fill_row (int *curRow, const int *prevRow, const int *gap_row, \
             "cmovle %4, %0\n\t"
             "setge %b0\n\t"
             "cmp %1, %2\n\t"
-            "cmovl %2, %1\n\t"
+            "cmovl %2, %1\n\t" 
             "mov $0x4, %2\n\t"
-            "cmovl %3, %0\n\t"
+            "cmovl %3, %0\n\t" 
             "cmovg %3, %2\n\t"
-            "add %b0, %h0\n\t"
+            "add %b0, %h0\n\t" 
             "add %h0, %b2\n\t"
             : "+Q" (aa), "+r" (bb), "+Q" (cc)
             : "r" (ZERO), "r" (TWO)
         );
 
-        curRow[i + 4] = bb;
-        dirMtx[i + 4] = cc;
+        mm[i + 4] = bb;
+        dm[i + 4] = cc;
 
 
-        aa = prevRow[i + 4] + alg_row[i + 5];
+        aa = pm[i + 4] + alg_row[i + 5];
         bb += gap_row[i + 5];
-        cc = prevRow[i + 5] + c;
+        cc = pm[i + 5] + c;
 
 
         __asm__(
@@ -281,20 +267,20 @@ algn_fill_row (int *curRow, const int *prevRow, const int *gap_row, \
             "cmp %1, %2\n\t"
             "cmovl %2, %1\n\t"
             "mov $0x4, %2\n\t"
-            "cmovl %3, %0\n\t"
+            "cmovl %3, %0\n\t" 
             "cmovg %3, %2\n\t"
-            "add %b0, %h0\n\t"
+            "add %b0, %h0\n\t" 
             "add %h0, %b2\n\t"
             : "+Q" (aa), "+r" (bb), "+Q" (cc)
             : "r" (ZERO), "r" (TWO)
         );
 
-        curRow[i + 5] = bb;
-        dirMtx[i + 5] = cc;
+        mm[i + 5] = bb;
+        dm[i + 5] = cc;
 
-        aa = prevRow[i + 5] + alg_row[i + 6];
+        aa = pm[i + 5] + alg_row[i + 6];
         bb += gap_row[i + 6];
-        cc = prevRow[i + 6] + c;
+        cc = pm[i + 6] + c;
 
 
         __asm__(
@@ -306,20 +292,20 @@ algn_fill_row (int *curRow, const int *prevRow, const int *gap_row, \
             "cmp %1, %2\n\t"
             "cmovl %2, %1\n\t"
             "mov $0x4, %2\n\t"
-            "cmovl %3, %0\n\t"
+            "cmovl %3, %0\n\t" 
             "cmovg %3, %2\n\t"
-            "add %b0, %h0\n\t"
+            "add %b0, %h0\n\t" 
             "add %h0, %b2\n\t"
             : "+Q" (aa), "+r" (bb), "+Q" (cc)
             : "r" (ZERO), "r" (TWO)
         );
 
-        curRow[i + 6] = bb;
-        dirMtx[i + 6] = cc;
+        mm[i + 6] = bb;
+        dm[i + 6] = cc;
 
-        aa = prevRow[i + 6] + alg_row[i + 7];
+        aa = pm[i + 6] + alg_row[i + 7];
         bb += gap_row[i + 7];
-        cc = prevRow[i + 7] + c;
+        cc = pm[i + 7] + c;
 
 
         __asm__(
@@ -331,16 +317,16 @@ algn_fill_row (int *curRow, const int *prevRow, const int *gap_row, \
             "cmp %1, %2\n\t"
             "cmovl %2, %1\n\t"
             "mov $0x4, %2\n\t"
-            "cmovl %3, %0\n\t"
+            "cmovl %3, %0\n\t" 
             "cmovg %3, %2\n\t"
-            "add %b0, %h0\n\t"
+            "add %b0, %h0\n\t" 
             "add %h0, %b2\n\t"
             : "+Q" (aa), "+r" (bb), "+Q" (cc)
             : "r" (ZERO), "r" (TWO)
         );
 
-        curRow[i + 7] = bb;
-        dirMtx[i + 7] = cc;
+        mm[i + 7] = bb;
+        dm[i + 7] = cc;
 
 
     }
@@ -349,9 +335,9 @@ algn_fill_row (int *curRow, const int *prevRow, const int *gap_row, \
 
     for (; i <= end; i++) {
 
-        aa = prevRow[i - 1] + alg_row[i];
+        aa = pm[i - 1] + alg_row[i];
         bb += gap_row[i];
-        cc = prevRow[i] + c;
+        cc = pm[i] + c;
 
 
         __asm__(
@@ -363,16 +349,16 @@ algn_fill_row (int *curRow, const int *prevRow, const int *gap_row, \
             "cmp %1, %2\n\t"
             "cmovl %2, %1\n\t"
             "mov $0x4, %2\n\t"
-            "cmovl %3, %0\n\t"
+            "cmovl %3, %0\n\t" 
             "cmovg %3, %2\n\t"
-            "add %b0, %h0\n\t"
+            "add %b0, %h0\n\t" 
             "add %h0, %b2\n\t"
             : "+Q" (aa), "+r" (bb), "+Q" (cc)
             : "r" (ZERO), "r" (TWO)
         );
 
-        curRow[i] = bb;
-        dirMtx[i] = cc;
+        mm[i] = bb;
+        dm[i] = cc;
 
 
     }
@@ -381,81 +367,85 @@ algn_fill_row (int *curRow, const int *prevRow, const int *gap_row, \
 }
 #else /* __GNUC__ */
 
- void
-algn_fill_row (int *curRow, const int *prevRow, const int *gap_row, \
-        const int *alg_row, DIRECTION_MATRIX *dirMtx, int c, int st, int end) {
+#ifdef _WIN32
+__inline void 
+#else
+inline void 
+#endif
+algn_fill_row (int *mm, const int *pm, const int *gap_row, \
+        const int *alg_row, DIRECTION_MATRIX *dm, int c, int st, int end) {
     int i, tmp1, tmp2, tmp3;
 
     for (i = st; i <= end; i++) {
         /* try align with substitution */
-        tmp1 = prevRow[i] + c;
-        tmp2 = curRow[i - 1] + gap_row[i];
-        tmp3 = prevRow[i - 1] + alg_row[i];
+        tmp1 = pm[i] + c;
+        tmp2 = mm[i - 1] + gap_row[i];
+        tmp3 = pm[i - 1] + alg_row[i];
         /* check whether insertion is better */
         /* This option will allow all the possible optimal paths to be stored
          * concurrently on the same backtrack matrix. This is important for the
          * sequences being able to choose the appropriate direction while
          * keeping the algorithm that assumes that s2 is at most as long as s1.
          * */
-        if (tmp1 < tmp3) {
+        if (tmp1 < tmp3) { 
             if (tmp1 < tmp2) {
-                curRow[i] = tmp1;
-                dirMtx[i] = DELETE;
+                mm[i] = tmp1;
+                dm[i] = DELETE;
             }
             else if (tmp2 < tmp1) {
-                curRow[i] = tmp2;
-                dirMtx[i] = INSERT;
+                mm[i] = tmp2;
+                dm[i] = INSERT;
             }
             else {
-                curRow[i] = tmp2;
-                dirMtx[i] = (INSERT | DELETE);
+                mm[i] = tmp2;
+                dm[i] = (INSERT | DELETE);
             }
         }
         else if (tmp3 < tmp1) {
             if (tmp3 < tmp2) {
-                curRow[i] = tmp3;
-                dirMtx[i] = ALIGN;
-            }
+                mm[i] = tmp3;
+                dm[i] = ALIGN;
+            } 
             else if (tmp2 < tmp3) {
-                curRow[i] = tmp2;
-                dirMtx[i] = INSERT;
+                mm[i] = tmp2;
+                dm[i] = INSERT;
             }
             else {
-                curRow[i] = tmp2;
-                dirMtx[i] = (ALIGN | INSERT);
+                mm[i] = tmp2;
+                dm[i] = (ALIGN | INSERT);
             }
         }
         else { /* tmp3 == tmp1 */
             if (tmp3 < tmp2) {
-                curRow[i] = tmp3;
-                dirMtx[i] = (ALIGN | DELETE);
+                mm[i] = tmp3;
+                dm[i] = (ALIGN | DELETE);
             }
             else if (tmp2 < tmp3) {
-                curRow[i] = tmp2;
-                dirMtx[i] = INSERT;
+                mm[i] = tmp2; 
+                dm[i] = INSERT;
             }
             else {
-                curRow[i] = tmp2;
-                dirMtx[i] = (DELETE | INSERT | ALIGN);
+                mm[i] = tmp2;
+                dm[i] = (DELETE | INSERT | ALIGN);
             }
         }
-        if (DEBUG && PRINT_DIR_M) {
+        if (!NDEBUG && !NPRINT_DM) {
             /* Print the alignment matrix */
-            if (INSERT & dirMtx[i])
+            if (INSERT & dm[i]) 
                 printf ("I");
-            if (DELETE & dirMtx[i])
+            if (DELETE & dm[i])
                 printf ("D");
-            if (ALIGN & dirMtx[i])
+            if (ALIGN & dm[i])
                 printf ("A");
             printf ("\t");
         }
-        if (DEBUG && PRINT_COST_M) {
+        if (!NDEBUG &&!NPRINT_CM) {
             /* Print the cost matrix */
-            printf ("%d\t", curRow[i]);
+            printf ("%d\t", mm[i]);
             fflush (stdout);
         }
     }
-    if (DEBUG && (PRINT_COST_M || PRINT_DIR_M))  {
+    if (!NDEBUG && (!NPRINT_CM || !NPRINT_DM))  {
         printf ("\n");
         fflush (stdout);
     }
@@ -463,138 +453,153 @@ algn_fill_row (int *curRow, const int *prevRow, const int *gap_row, \
 }
 #endif /* __GNUC__ */
 
- void
-algn_fill_ukk_right_cell (int *curRow, const int *prevRow, const int *gap_row, \
-        const int *alg_row, DIRECTION_MATRIX *dirMtx, int c, int pos) {
+#ifdef _WIN32
+__inline void 
+#else
+inline void 
+#endif
+algn_fill_ukk_right_cell (int *mm, const int *pm, const int *gap_row, \
+        const int *alg_row, DIRECTION_MATRIX *dm, int c, int pos) {
     int tmp2, tmp3;
     /* try align with substitution */
-    tmp2 = curRow[pos - 1] + gap_row[pos];
-    tmp3 = prevRow[pos - 1] + alg_row[pos];
+    tmp2 = mm[pos - 1] + gap_row[pos];
+    tmp3 = pm[pos - 1] + alg_row[pos];
     /* check whether insertion is better */
     if (tmp2 < tmp3) {
-        curRow[pos] = tmp2;
-        dirMtx[pos] = INSERT;
+        mm[pos] = tmp2;
+        dm[pos] = INSERT;
     }
     else if (tmp3 < tmp2) {
-        curRow[pos] = tmp3;
-        dirMtx[pos] = ALIGN;
+        mm[pos] = tmp3;
+        dm[pos] = ALIGN;
     }
     else {
-        curRow[pos] = tmp3;
-        dirMtx[pos] = INSERT | ALIGN;
+        mm[pos] = tmp3;
+        dm[pos] = INSERT | ALIGN;
     }
-    if (DEBUG && PRINT_DIR_M) {
+    if (!NDEBUG && !NPRINT_DM) {
         /* Print the alignment matrix */
-        if (INSERT & dirMtx[pos])
+        if (INSERT & dm[pos]) 
             printf ("I");
-        if (DELETE & dirMtx[pos])
+        if (DELETE & dm[pos])
             printf ("D");
-        if (ALIGN & dirMtx[pos])
+        if (ALIGN & dm[pos])
             printf ("A");
         printf ("\t");
     }
-    if (DEBUG &&PRINT_COST_M) {
+    if (!NDEBUG &&!NPRINT_CM) {
         /* Print the cost matrix */
-        printf ("%d\t", curRow[pos]);
+        printf ("%d\t", mm[pos]);
         fflush (stdout);
     }
-    if (DEBUG && (PRINT_COST_M || PRINT_DIR_M)) {
+    if (!NDEBUG && (!NPRINT_CM || !NPRINT_DM)) {
         printf ("\n");
         fflush (stdout);
     }
     return;
 }
 
- void
-algn_fill_ukk_left_cell (int *curRow, const int *prevRow, const int *gap_row, \
-        const int *alg_row, DIRECTION_MATRIX *dirMtx, int c, int pos) {
+#ifdef _WIN32
+__inline void 
+#else
+inline void 
+#endif
+algn_fill_ukk_left_cell (int *mm, const int *pm, const int *gap_row, \
+        const int *alg_row, DIRECTION_MATRIX *dm, int c, int pos) {
     int tmp1, tmp3;
     /* try align with substitution */
-    tmp1 = prevRow[pos] + c;
-    tmp3 = prevRow[pos - 1] + alg_row[pos];
+    tmp1 = pm[pos] + c;
+    tmp3 = pm[pos - 1] + alg_row[pos];
         if (tmp1 < tmp3) {
-            curRow[pos] = tmp1;
-            dirMtx[pos] = DELETE;
-        }
+            mm[pos] = tmp1;
+            dm[pos] = DELETE;
+        } 
         else if (tmp3 < tmp1) {
-            curRow[pos] = tmp3;
-            dirMtx[pos] = ALIGN;
-        }
+            mm[pos] = tmp3;
+            dm[pos] = ALIGN;
+        } 
         else {
-            curRow[pos] = tmp1;
-            dirMtx[pos] = ALIGN | DELETE;
+            mm[pos] = tmp1;
+            dm[pos] = ALIGN | DELETE;
         }
-    if (DEBUG && PRINT_DIR_M) {
+    if (!NDEBUG && !NPRINT_DM) {
         /* Print the alignment matrix */
-        if (INSERT & dirMtx[pos])
+        if (INSERT & dm[pos]) 
             printf ("I");
-        if (DELETE & dirMtx[pos])
+        if (DELETE & dm[pos])
             printf ("D");
-        if (ALIGN & dirMtx[pos])
+        if (ALIGN & dm[pos])
             printf ("A");
         printf ("\t");
     }
-    if (DEBUG &&PRINT_COST_M) {
+    if (!NDEBUG &&!NPRINT_CM) {
         /* Print the cost matrix */
-        printf ("%d\t", curRow[pos]);
+        printf ("%d\t", mm[pos]);
         fflush (stdout);
     }
     return;
 }
 
- void
-algn_fill_last_column (int *curRow, const int *prevRow, int tlc, int l, DIRECTION_MATRIX *dirMtx) {
+#ifdef _WIN32
+__inline void
+#else
+inline void
+#endif
+algn_fill_last_column (int *mm, const int *pm, int tlc, int l, DIRECTION_MATRIX *dm) {
     int cst;
     if (l > 0) {
-        cst = tlc + prevRow[l];
-        if (cst < curRow[l]) {
-            curRow[l] = cst;
-            dirMtx[l] = DELETE;
-        }
-        else if (cst == curRow[l])
-            dirMtx[l] = dirMtx[l] | DELETE;
+        cst = tlc + pm[l];
+        if (cst < mm[l]) {
+            mm[l] = cst;
+            dm[l] = DELETE;
+        } 
+        else if (cst == mm[l])
+            dm[l] = dm[l] | DELETE;
     }
     return;
 }
 
- void
-algn_fill_full_row (int *curRow, const int *prevRow, const int *gap_row, \
-        const int *alg_row, DIRECTION_MATRIX *dirMtx, int c, int tlc, int l) {
+#ifdef _WIN32
+__inline void
+#else
+inline void
+#endif
+algn_fill_full_row (int *mm, const int *pm, const int *gap_row, \
+        const int *alg_row, DIRECTION_MATRIX *dm, int c, int tlc, int l) {
     /* first entry is delete */
-    curRow[0] = c + prevRow[0];
-    dirMtx[0] = DELETE;
-    if ((DEBUG) && (PRINT_COST_M)) {
-        printf ("%d\t", curRow[0]);
+    mm[0] = c + pm[0];
+    dm[0] = DELETE;
+    if ((!NDEBUG) && (!NPRINT_CM)) {
+        printf ("%d\t", mm[0]);
         fflush (stdout);
     }
-    if ((DEBUG) && (PRINT_DIR_M)) {
+    if ((!NDEBUG) && (!NPRINT_DM))
         printf ("D\t");
-    }
-    algn_fill_row (curRow, prevRow, gap_row, alg_row, dirMtx, c, 1, l - 1);
-    algn_fill_last_column (curRow, prevRow, tlc, l - 1, dirMtx);
+    algn_fill_row (mm, pm, gap_row, alg_row, dm, c, 1, l - 1);
+    algn_fill_last_column (mm, pm, tlc, l - 1, dm);
     return;
 }
 
 void
-algn_fill_first_row (int *curRow, DIRECTION_MATRIX *dirMtx, int len, int const *gap_row) {
+algn_fill_first_row (int *mm, DIRECTION_MATRIX *dm, int len, int const *gap_row) {
     int i;
     /* We fill the first cell to start with */
-    curRow[0] = 0;
-    dirMtx[0] = ALIGN;
+    mm[0] = 0;
+    dm[0] = ALIGN;
     /* Now the rest of the row */
-    if (DEBUG && PRINT_DIR_M)
+    if ((!NDEBUG) && (!NPRINT_DM))
         printf ("A\t");
-    if (DEBUG && PRINT_DIR_M) {
-        printf ("%d\t", curRow[0]);
+    if ((!NDEBUG) && (!NPRINT_CM)) {
+        printf ("%d\t", mm[0]);
         fflush (stdout);
     }
     for (i = 1; i < len; i++) {
-        curRow[i] = curRow[i - 1] + gap_row[i];
-        dirMtx[i] = INSERT;
-        if (DEBUG && PRINT_DIR_M)
+        mm[i] = mm[i - 1] + gap_row[i];
+        dm[i] = INSERT;
+        if ((!NDEBUG) && (!NPRINT_DM))
             printf ("I\t");
-        if (DEBUG && PRINT_DIR_M) {
-            printf ("%d\t", curRow[i]);
+        if ((!NDEBUG) && (!NPRINT_CM)) {
+            printf ("%d\t", mm[i]);
             fflush (stdout);
         }
     }
@@ -602,13 +607,13 @@ algn_fill_first_row (int *curRow, DIRECTION_MATRIX *dirMtx, int len, int const *
 }
 
 void
-algn_fill_first_cell (int *curRow, int prevRow, DIRECTION_MATRIX *dirMtx, int gap) {
-    *curRow = prevRow + gap;
-    *dirMtx = DELETE;
-    if (DEBUG && PRINT_DIR_M)
+algn_fill_first_cell (int *mm, int pm, DIRECTION_MATRIX *dm, int gap) {
+    *mm = pm + gap;
+    *dm = DELETE;
+    if ((!NDEBUG) && (!NPRINT_DM))
         printf ("D\t");
-    if (DEBUG && PRINT_DIR_M) {
-        printf ("%d\t", *curRow);
+    if ((!NDEBUG) && (!NPRINT_CM)) {
+        printf ("%d\t", *mm);
         fflush (stdout);
     }
     return;
@@ -616,11 +621,11 @@ algn_fill_first_cell (int *curRow, int prevRow, DIRECTION_MATRIX *dirMtx, int ga
 
 /* In the following three functions, we maintain the following invariants in
  * each loop:
- * 1. curRow is a row that has not been filled and is the next to be.
- * 4. dirMtx is the current row of the direction matrix
- * 2. prevRow is the previous row, located right above curRow, which has been filled
+ * 1. mm is a row that has not been filled and is the next to be.
+ * 4. dm is the current row of the direction matrix
+ * 2. pm is the previous row, located right above mm, which has been filled
  * already.
- * 3. i is the number of the row of curRow in its containing matrix
+ * 3. i is the number of the row of mm in its containing matrix
  * 5. gap_row is the cost of aligning each base of s2 with a gap. This is
  * constant for all the loop.
  * 6. cur_s1 is the i'th base of s1
@@ -629,125 +634,125 @@ algn_fill_first_cell (int *curRow, int prevRow, DIRECTION_MATRIX *dirMtx, int ga
  */
 
 int *
-algn_fill_extending_right (const seqt s1, int *precalcMtx, int s1_len, int s2_len,  \
-        int *curRow, int *prevRow, DIRECTION_MATRIX *dirMtx, const cmt c, int start_row, int end_row, int len) {
+algn_fill_extending_right (const seqt s1, int *prec, int s1_len, int s2_len,  \
+        int *mm, int *pm, DIRECTION_MATRIX *dm, const cmt c, int start_row, int end_row, int len) {
     int i;
     int *tmp, cur_s1, const_val;
     const int *gap_row, *alg_row;
-    /** Invariants block
+    /** Invariants block 
      * len is the number of items in the row to be filled **/
     i = start_row;
     /* This is what we will perform conceptually, I will stop using the
-     * cm_get_precal_row function to speed this up a little bit
-    gap_row = cm_get_precal_row (precalcMtx, cm_get_gap (c), s2_len);
+     * cm_get_precal_row function to speed this up a little bit 
+    gap_row = cm_get_precal_row (prec, cm_get_gap (c), s2_len);
     */
-    gap_row = precalcMtx + (c->gap * s2_len);
+    gap_row = prec + (c->gap * s2_len);
     while (i < end_row) {
         /** Invariants block */
         cur_s1 = s1->begin[i];
         const_val = cm_calc_cost (c->cost, cur_s1, c->gap, c->lcm);
-        /* This is conceptually what we do in the next line
-        alg_row = cm_get_precal_row (precalcMtx, cur_s1, s2_len);
+        /* This is conceptually what we do in the next line 
+        alg_row = cm_get_precal_row (prec, cur_s1, s2_len);
         */
-        alg_row = precalcMtx + (cur_s1 * s2_len);
+        alg_row = prec + (cur_s1 * s2_len);
         /* Align! */
-        algn_fill_first_cell (curRow, prevRow[0], dirMtx, alg_row[0]);
-        algn_fill_row (curRow, prevRow, gap_row, alg_row, dirMtx, const_val, 1, len - 2);
-        algn_fill_ukk_right_cell (curRow, prevRow, gap_row, alg_row, dirMtx, const_val, \
+        algn_fill_first_cell (mm, pm[0], dm, alg_row[0]);
+        algn_fill_row (mm, pm, gap_row, alg_row, dm, const_val, 1, len - 2);
+        algn_fill_ukk_right_cell (mm, pm, gap_row, alg_row, dm, const_val, \
                 len - 1);
         /** Invariants block */
-        tmp = curRow;
-        curRow = prevRow;
-        prevRow = tmp;
+        tmp = mm;
+        mm = pm;
+        pm = tmp;
         i++;
-        dirMtx += s2_len;
+        dm += s2_len;
         len++;
     }
-    return (curRow);
+    return (mm);
 }
 
 int *
-algn_fill_extending_left_right (const seqt s1, int *precalcMtx, int s1_len, \
-        int s2_len,  int *curRow, int *prevRow, DIRECTION_MATRIX *dirMtx, const cmt c, int start_row, \
+algn_fill_extending_left_right (const seqt s1, int *prec, int s1_len, \
+        int s2_len,  int *mm, int *pm, DIRECTION_MATRIX *dm, const cmt c, int start_row, \
         int end_row, int start_column, int len) {
     int i;
     int *tmp, cur_s1, const_val;
     const int *gap_row, *alg_row;
-    /** Invariants block
+    /** Invariants block 
      * len is the number of cells to fill in the current row minus 1
      * start_column is the first cell to fill in the row */
     i = start_row;
-    /* Conceptually
-    gap_row = cm_get_precal_row (precalcMtx, cm_get_gap (c), s2_len);
+    /* Conceptually 
+    gap_row = cm_get_precal_row (prec, cm_get_gap (c), s2_len);
     */
-    gap_row = precalcMtx + (c->gap * s2_len);
+    gap_row = prec + (c->gap * s2_len);
     len--;
     while (i < end_row) {
         /** Invariants block */
         cur_s1 = s1->begin[i];
         const_val = cm_calc_cost (c->cost, cur_s1, c->gap, c->lcm);
-        /* Conceptually
-        alg_row = cm_get_precal_row (precalcMtx, cur_s1, s2_len);
+        /* Conceptually 
+        alg_row = cm_get_precal_row (prec, cur_s1, s2_len);
         */
-        alg_row = precalcMtx + (cur_s1 * s2_len);
+        alg_row = prec + (cur_s1 * s2_len);
         /* Align! */
-        algn_fill_ukk_left_cell (curRow, prevRow, gap_row, alg_row, dirMtx, const_val, \
+        algn_fill_ukk_left_cell (mm, pm, gap_row, alg_row, dm, const_val, \
                 start_column);
-        algn_fill_row (curRow, prevRow, gap_row, alg_row, dirMtx, const_val, \
+        algn_fill_row (mm, pm, gap_row, alg_row, dm, const_val, \
                 start_column + 1, start_column + (len - 2));
-        algn_fill_ukk_right_cell (curRow, prevRow, gap_row, alg_row, dirMtx, const_val, \
+        algn_fill_ukk_right_cell (mm, pm, gap_row, alg_row, dm, const_val, \
                 start_column + len - 1);
         /** Invariants block */
-        tmp = curRow;
-        curRow = prevRow;
-        prevRow = tmp;
+        tmp = mm;
+        mm = pm;
+        pm = tmp;
         i++;
-        dirMtx += s2_len;
+        dm += s2_len;
         start_column++;
     }
-    return (curRow);
+    return (mm);
 }
 
 int *
-algn_fill_extending_left (const seqt s1, int *precalcMtx, int s1_len, \
-        int s2_len,  int *curRow, int *prevRow, DIRECTION_MATRIX *dirMtx, const cmt c, int start_row, \
+algn_fill_extending_left (const seqt s1, int *prec, int s1_len, \
+        int s2_len,  int *mm, int *pm, DIRECTION_MATRIX *dm, const cmt c, int start_row, \
         int end_row, int start_column, int len) {
     int i;
     int *tmp, cur_s1, const_val, const_val_tail;
     const int *gap_row, *alg_row;
-    /** Invariants block
-     * start_column is the first cell to fill in the row
+    /** Invariants block 
+     * start_column is the first cell to fill in the row 
      * len is the number of cells to fill in the current row minus 1 */
     i = start_row;
-    /* Conceptually
-    gap_row = cm_get_precal_row (precalcMtx, cm_get_gap (c), s2_len);
+    /* Conceptually 
+    gap_row = cm_get_precal_row (prec, cm_get_gap (c), s2_len);
     */
-    gap_row = precalcMtx + (c->gap * s2_len);
+    gap_row = prec + (c->gap * s2_len);
     while (i < end_row) {
         /** Invariants block */
         cur_s1 = s1->begin[i];
         const_val = cm_calc_cost (c->cost, cur_s1, c->gap, c->lcm);
         const_val_tail = (cm_get_tail_cost (c))[cur_s1];
-        /* Conceptually
-        alg_row = cm_get_precal_row (precalcMtx, cur_s1, s2_len);
+        /* Conceptually 
+        alg_row = cm_get_precal_row (prec, cur_s1, s2_len);
         */
-        alg_row = precalcMtx + (cur_s1 * s2_len);
+        alg_row = prec + (cur_s1 * s2_len);
         /* Align! */
-        algn_fill_ukk_left_cell (curRow, prevRow, gap_row, alg_row, dirMtx, const_val, \
+        algn_fill_ukk_left_cell (mm, pm, gap_row, alg_row, dm, const_val, \
                 start_column);
-        algn_fill_row (curRow, prevRow, gap_row, alg_row, dirMtx, const_val, \
+        algn_fill_row (mm, pm, gap_row, alg_row, dm, const_val, \
                 start_column + 1, start_column + len - 1);
-        algn_fill_last_column (curRow, prevRow, const_val_tail, start_column + len - 1, dirMtx);
+        algn_fill_last_column (mm, pm, const_val_tail, start_column + len - 1, dm);
         /** Invariants block */
-        tmp = curRow;
-        curRow = prevRow;
-        prevRow = tmp;
+        tmp = mm;
+        mm = pm;
+        pm = tmp;
         i++;
-        dirMtx += s2_len;
+        dm += s2_len;
         start_column++;
         len--;
     }
-    if (DEBUG && PRINT_COST_M) {
+    if (!NDEBUG && !NPRINT_CM) {
         printf ("S2 gap cost\n");
         fflush (stdout);
         for (i = 0; i < s2_len; i++) {
@@ -759,205 +764,207 @@ algn_fill_extending_left (const seqt s1, int *precalcMtx, int s1_len, \
         fflush (stdout);
     }
 
-    return (curRow);
+    return (mm);
 }
 
 int *
-algn_fill_no_extending (const seqt s1, int *precalcMtx, int s1_len, \
-        int s2_len,  int *curRow, int *prevRow, DIRECTION_MATRIX *dirMtx, const cmt c, int start_row, \
+algn_fill_no_extending (const seqt s1, int *prec, int s1_len, \
+        int s2_len,  int *mm, int *pm, DIRECTION_MATRIX *dm, const cmt c, int start_row, \
         int end_row) {
     int i;
     int *tmp, cur_s1, const_val, const_val_tail;
     const int *gap_row, *alg_row;
     /** Invariants block */
     i = start_row;
-    /* Conceptually
-    gap_row = cm_get_precal_row (precalcMtx, cm_get_gap (c), s2_len);
+    /* Conceptually 
+    gap_row = cm_get_precal_row (prec, cm_get_gap (c), s2_len);
     */
-    gap_row = precalcMtx + (c->gap * s2_len);
+    gap_row = prec + (c->gap * s2_len);
     while (i < end_row) {
         /** Invariants block */
         cur_s1 = s1->begin[i];
         const_val = cm_calc_cost (c->cost, cur_s1, c->gap, c->lcm);
         const_val_tail = (cm_get_tail_cost (c))[cur_s1];
-        /* Conceptually
-        alg_row = cm_get_precal_row (precalcMtx, cur_s1, s2_len);
+        /* Conceptually 
+        alg_row = cm_get_precal_row (prec, cur_s1, s2_len);
         */
-        alg_row = precalcMtx + (cur_s1 * s2_len);
+        alg_row = prec + (cur_s1 * s2_len);
         /* Align! */
-        algn_fill_first_cell (curRow, prevRow[0], dirMtx, alg_row[0]);
-        algn_fill_row (curRow, prevRow, gap_row, alg_row, dirMtx, const_val, 1, s2_len - 1);
-        algn_fill_last_column (curRow, prevRow, const_val_tail, s2_len - 1, dirMtx);
+        algn_fill_first_cell (mm, pm[0], dm, alg_row[0]);
+        algn_fill_row (mm, pm, gap_row, alg_row, dm, const_val, 1, s2_len - 1);
+        algn_fill_last_column (mm, pm, const_val_tail, s2_len - 1, dm);
         /** Invariants block */
-        tmp = curRow;
-        curRow = prevRow;
-        prevRow = tmp;
+        tmp = mm;
+        mm = pm;
+        pm = tmp;
         i++;
-        dirMtx += s2_len;
+        dm += s2_len;
     }
-    return (curRow);
+    return (mm);
 }
 
-/* SicurRowilar to the previous but when no barriers are set */
- int
-algn_fill_plane (const seqt s1, int *precalcMtx, int s1_len, \
-        int s2_len, int *curRow, DIRECTION_MATRIX *dirMtx, const cmt c) {
+/* Simmilar to the previous but when no barriers are set */
+#ifdef _WIN32
+__inline int
+#else
+inline int
+#endif
+algn_fill_plane (const seqt s1, int *prec, int s1_len, \
+        int s2_len, int *mm, DIRECTION_MATRIX *dm, const cmt c) {
     int i;
     const int *alg_row;
-    int const_val, const_val_tail, *newNWMtx, *tmp;
+    int const_val, const_val_tail, *nm, *tmp;
     const int *gap_row, *first_gap_row;
     int gapcode;
     /* A precalculated cost of a gap aligned with each base in the array */
     gapcode = cm_get_gap (c);
-    gap_row = cm_get_precal_row (precalcMtx, gapcode, s2_len);
-    first_gap_row = cm_get_precal_row (precalcMtx, 0, s2_len);
-    newNWMtx = curRow;
-    curRow[0] = 0;
-    dirMtx[0] = ALIGN;
-    if ((DEBUG) && (PRINT_COST_M)) {
-        printf ("%d\t", curRow[0]);
-    }
-    if ((DEBUG) && (PRINT_DIR_M)) {
+    gap_row = cm_get_precal_row (prec, gapcode, s2_len);
+    first_gap_row = cm_get_precal_row (prec, 0, s2_len);
+    nm = mm;
+    mm[0] = 0;
+    dm[0] = ALIGN;
+    if ((!NDEBUG) && (!NPRINT_CM))
+        printf ("%d\t", mm[0]);
+    if ((!NDEBUG) && (!NPRINT_DM))
         printf ("A\t");
-    }
     /* We fill the first row to start with */
     for (i = 1; i < s2_len; i++) {
-        curRow[i] = curRow[i - 1] + first_gap_row[i];
-        dirMtx[i] = INSERT;
-        if ((DEBUG) && (PRINT_COST_M)) {
-            printf ("%d\t", curRow[i]);
-        }
-        if ((DEBUG) && (PRINT_DIR_M)) {
+        mm[i] = mm[i - 1] + first_gap_row[i];
+        dm[i] = INSERT;
+        if ((!NDEBUG) && (!NPRINT_CM))
+            printf ("%d\t", mm[i]);
+        if ((!NDEBUG) && (!NPRINT_DM))
             printf ("I\t");
-        }
     }
-    if (DEBUG && (PRINT_DIR_M || PRINT_COST_M)) {
+    if (!NDEBUG && (!NPRINT_DM || !NPRINT_CM))
         printf ("\n");
-    }
-    curRow += s2_len;
+    mm += s2_len;
     /* Now we fill the rest of the matrix */
-    for (i = 1, dirMtx += s2_len; i < s1_len; i++, dirMtx += s2_len) {
-        const_val_tail = (cm_get_tail_cost(c))[seq_get(s1, i)]; // get tail cost in c at pointer
-                                                                // at position i in s1
+    for (i = 1, dm += s2_len; i < s1_len; i++, dm += s2_len) {
+        const_val_tail = (cm_get_tail_cost (c))[seq_get(s1, i)];
         const_val = cm_calc_cost (c->cost, seq_get(s1, i), c->gap, c->lcm);
-        alg_row = cm_get_precal_row (precalcMtx, seq_get (s1, i), s2_len);
-        algn_fill_full_row (curRow, newNWMtx, gap_row, alg_row, dirMtx, const_val, \
-                            const_val_tail, s2_len);
-        /* We swap curRow and newNWMtx for the next round */
-        tmp      = curRow;
-        curRow    = newNWMtx;
-        newNWMtx = tmp;
+        alg_row = cm_get_precal_row (prec, seq_get (s1, i), s2_len);
+        algn_fill_full_row (mm, nm, gap_row, alg_row, dm, const_val, \
+                const_val_tail, s2_len);
+        /* We swap mm and nm for the next round */
+        tmp = mm;
+        mm = nm;
+        nm = tmp;
     }
-    return (newNWMtx[s2_len - 1]);
+    return (nm[s2_len - 1]);
 }
 
- int *
+#ifdef _WIN32
+__inline int *
+#else
+inline int *
+#endif
 choose_other (int *compare, int *a, int *b) {
     if (a == compare) return b;
     else return a;
 }
 
- int
-algn_fill_plane_2 (const seqt s1, int *precalcMtx, int s1_len, int s2_len, int *curRow, \
-        DIRECTION_MATRIX *dirMtx, const cmt c, int width, int height, int dwidth_height) {
-    // printf("\n\n---algn_fill_plane_2, iteration %d\n", iteration);
-    fflush(stdout);
+#ifdef _WIN32
+__inline int
+#else
+inline int
+#endif
+algn_fill_plane_2 (const seqt s1, int *prec, int s1_len, int s2_len, int *mm, \
+        DIRECTION_MATRIX *dm, const cmt c, int width, int height, int dwidth_height) {
     int *next_row;
-    int *next_prevRow;
+    int *next_pm;
     int *a, *b;
     int const *gap_row;
     int start_row, final_row, start_column, length;
-    DIRECTION_MATRIX *to_go_dirMtx;
+    DIRECTION_MATRIX *to_go_dm;
     width = width + dwidth_height;
-    if (width > s2_len) width = s2_len; // width is at most s2_len
+    if (width > s2_len) width = s2_len;
     height = height + dwidth_height;
-    if (height > s1_len) height = s1_len; // likewise, height is at most s1_len
-    a = curRow;
-    b = curRow + s2_len;
-    gap_row = cm_get_precal_row (precalcMtx, 0, s2_len); // We want the first horizontal row
-
+    if (height > s1_len) height = s1_len;
+    a = mm;
+    b = mm + s2_len;
+    gap_row = cm_get_precal_row (prec, 0, s2_len); /* We want the horizontal row */
     /* We have to consider three cases in this new alignment procedure (much
-     * cleaner than the previous):
-     *
+     * cleaner than the previous): 
+     * 
      * Case 1:
-     * If s1_len >= 1.5 * s2_len, there is no point in using the
-     * barriers. Rather, we fill the full matrix in one shot */
-    if (s1_len >= 1.5 * s2_len) // deleted a bunch of casts here
-        return (algn_fill_plane (s1, precalcMtx, s1_len, s2_len, curRow, dirMtx, c));
+     * If s1 is much longer than s2, then there is no point on using the
+     * barriers, we rather fill the full matrix in one shot */
+    if (((float) s1_len) >= (((float) ((float) 3 / (float) 2) * (float) s2_len)))
+        return (algn_fill_plane (s1, prec, s1_len, s2_len, mm, dm, c));
     /* Case 2:
      * There are no full rows to be filled, therefore we have to break the
-     * procedure into three different subsets */
-    else if (2 * height < s1_len) {
-        algn_fill_first_row (a, dirMtx, width, gap_row);
+     * procedure in three different subsets */
+    else if ((2 * height) < s1_len) {
+        algn_fill_first_row (a, dm, width, gap_row);
         start_row = 1;
         final_row = height;
-        start_column = 0;
+        start_column = 0; 
         length = width + 1;
-        to_go_dirMtx = dirMtx + (start_row * s2_len);
+        to_go_dm = dm + (start_row * s2_len);
         /* Now we fill that space */
-        next_row = algn_fill_extending_right (s1, precalcMtx, s1_len, s2_len, b, a, \
-                to_go_dirMtx, c, start_row, final_row, length);
-        next_prevRow = choose_other (next_row, a, b);
+        next_row = algn_fill_extending_right (s1, prec, s1_len, s2_len, b, a, \
+                to_go_dm, c, start_row, final_row, length);
+        next_pm = choose_other (next_row, a, b);
         /* Next group */
         start_row = final_row;
         final_row = s1_len - (height - 1);
         start_column = 1;
         length = width + height;
-        to_go_dirMtx = dirMtx + (start_row * s2_len);
-        next_row = algn_fill_extending_left_right (s1, precalcMtx, s1_len, \
-                s2_len, next_row, next_prevRow, to_go_dirMtx, c, start_row, \
+        to_go_dm = dm + (start_row * s2_len);
+        next_row = algn_fill_extending_left_right (s1, prec, s1_len, \
+                s2_len, next_row, next_pm, to_go_dm, c, start_row, \
                 final_row, start_column, length);
-        next_prevRow = choose_other (next_row, a, b);
+        next_pm = choose_other (next_row, a, b);
         /* The final group */
         start_row = final_row;
         final_row = s1_len;
         length = length - 2;
         start_column = s2_len - length;
-        to_go_dirMtx = dirMtx + (start_row * s2_len);
-        next_row = algn_fill_extending_left (s1, precalcMtx, s1_len, s2_len, \
-                next_row, next_prevRow, to_go_dirMtx, c, start_row, final_row, \
+        to_go_dm = dm + (start_row * s2_len);
+        next_row = algn_fill_extending_left (s1, prec, s1_len, s2_len, \
+                next_row, next_pm, to_go_dm, c, start_row, final_row, \
                 start_column, length);
-        next_prevRow = choose_other (next_row, a, b);
+        next_pm = choose_other (next_row, a, b);
     }
     /* Case 3: (final case)
-     * There is a block in the middle with full rows that have to be filled
-     */
+     * There is a block in the middle of with full rows that have to be filled
+     * */
     else {
-        /* We will simplify this case even further: If the size of the leftover
-         * is too small, don't use the barriers at all, just fill it all up
-         */
+        /* We will simplify this case even further, if the size of the leftover
+         * is too small, don't use the barriers at all, just fill it up all */
         if (8 >= (s1_len - height))
-            return (algn_fill_plane (s1, precalcMtx, s1_len, s2_len, curRow, dirMtx, c));
+            return (algn_fill_plane (s1, prec, s1_len, s2_len, mm, dm, c));
         else {
-            algn_fill_first_row (curRow, dirMtx, width, gap_row);
+            algn_fill_first_row (mm, dm, width, gap_row);
             start_row = 1;
             final_row = (s2_len - width) + 1;
             start_column = 0;
             length = width + 1;
-            to_go_dirMtx = dirMtx + (s2_len * start_row);
-            next_row = algn_fill_extending_right (s1, precalcMtx, s1_len, s2_len, b, a, \
-                    to_go_dirMtx, c, start_row, final_row, length);
-            next_prevRow = choose_other (next_row, a, b);
+            to_go_dm = dm + (s2_len * start_row);
+            next_row = algn_fill_extending_right (s1, prec, s1_len, s2_len, b, a, \
+                    to_go_dm, c, start_row, final_row, length);
+            next_pm = choose_other (next_row, a, b);
             start_row = final_row;
             final_row = s1_len - (s2_len - width) + 1;
             length = s2_len;
-            to_go_dirMtx = dirMtx + (s2_len * start_row);
-            next_row = algn_fill_no_extending (s1, precalcMtx, s1_len, s2_len, \
-                    next_row, next_prevRow, to_go_dirMtx, c, start_row, \
+            to_go_dm = dm + (s2_len * start_row);
+            next_row = algn_fill_no_extending (s1, prec, s1_len, s2_len, \
+                    next_row, next_pm, to_go_dm, c, start_row, \
                     final_row);
-            next_prevRow = choose_other (next_row, a, b);
+            next_pm = choose_other (next_row, a, b);
             start_row = final_row;
             final_row = s1_len;
             start_column = 1;
             length = s2_len - 1;
-            to_go_dirMtx = dirMtx + (s2_len * start_row);
-            next_row = algn_fill_extending_left (s1, precalcMtx, s1_len, s2_len, \
-                    next_row, next_prevRow, to_go_dirMtx, \
+            to_go_dm = dm + (s2_len * start_row);
+            next_row = algn_fill_extending_left (s1, prec, s1_len, s2_len, \
+                    next_row, next_pm, to_go_dm, \
                     c, start_row, final_row, start_column, length);
-            next_prevRow = choose_other (next_row, a, b);
+            next_pm = choose_other (next_row, a, b);
         }
     }
-    return (next_prevRow[s2_len - 1]);
+    return (next_pm[s2_len - 1]);
 }
 /******************************************************************************/
 
@@ -971,416 +978,411 @@ algn_fill_plane_2 (const seqt s1, int *precalcMtx, int s1_len, int s2_len, int *
  * here must also go there.
  */
 
-#define algn_assign_dirMtx(dirMtx,pos,v) dirMtx[pos] = dirMtx[pos] | v
+#define algn_assign_dm(dm,pos,v) dm[pos] = dm[pos] | v
 
- void
-algn_fill_row_aff (int *curRow, const int *prevRow, const int *gap_row, \
-        const int *alg_row, DIRECTION_MATRIX *dirMtx, int c, int cprev, int st, \
-        int end, int *dncurRow, const int *pdncurRow, int *htcurRow, int open_gap) {
-    if (DEBUG_AFFINE) {
-        printf("algn_fill_row_aff\n");
-        fflush(stdout);
-    }
+#ifdef _WIN32
+__inline void 
+#else
+inline void 
+#endif
+algn_fill_row_aff (int *mm, const int *pm, const int *gap_row, \
+        const int *alg_row, DIRECTION_MATRIX *dm, int c, int cprev, int st, \
+        int end, int *dnmm, const int *pdnmm, int *htmm, int open_gap) {
     int i, tmp1, tmp2, tmp3, tmp4, tmp5;
 
     for (i = st; i <= end; i++) {
         /* try align with substitution */
-#ifdef DEBUG_ALL_ASSERTIONS
-        assert ((curRow + i) < _algn_max_matrix);
-        assert ((prevRow + i) < _algn_max_matrix);
-        assert ((dirMtx + i) < _algn_max_direction);
-        assert ((dncurRow + i) < _algn_max_matrix);
-        assert ((pdncurRow + i) < _algn_max_matrix);
-        assert ((htcurRow + i) < _algn_max_matrix);
+#ifdef DEBUG_ALL_ASSERTIONS 
+        assert ((mm + i) < _algn_max_matrix);
+        assert ((pm + i) < _algn_max_matrix);
+        assert ((dm + i) < _algn_max_direction);
+        assert ((dnmm + i) < _algn_max_matrix);
+        assert ((pdnmm + i) < _algn_max_matrix);
+        assert ((htmm + i) < _algn_max_matrix);
 #endif
-        dirMtx[i] = 0;
-        { /* We deal with the difficultness of using an opening gap as
+        dm[i] = 0;
+        { /* We deal with the difficultness of using an opening gap as 
              another DIRECTION_MATRIX */
             if ((0 == cprev) && (0 != c)) {
-                tmp1 = pdncurRow[i] + open_gap + c;
-                tmp4 = prevRow[i] + open_gap + c;
+                tmp1 = pdnmm[i] + open_gap + c;
+                tmp4 = pm[i] + open_gap + c;
             }
             else if ((0 != cprev) && (0 == c)) {
-                tmp1 = pdncurRow[i] + open_gap + c;
-                tmp4 = prevRow[i];
+                tmp1 = pdnmm[i] + open_gap + c;
+                tmp4 = pm[i];
             }
             else {
-                tmp1 = pdncurRow[i] + c;
-                tmp4 = prevRow[i] + open_gap + c;
+                tmp1 = pdnmm[i] + c;
+                tmp4 = pm[i] + open_gap + c;
             }
 
             if ((0 == gap_row[i - 1]) && (0 != gap_row[i])) {
-                tmp5 = htcurRow[i - 1] + open_gap + gap_row[i];
-                tmp2 = curRow[i - 1] + open_gap + gap_row[i];
-            }
+                tmp5 = htmm[i - 1] + open_gap + gap_row[i];
+                tmp2 = mm[i - 1] + open_gap + gap_row[i];
+            } 
             else if ((0 != gap_row[i - 1]) && (0 == gap_row[i])) {
-                tmp5 = htcurRow[i - 1] + open_gap + gap_row[i];
-                tmp2 = curRow[i - 1];
+                tmp5 = htmm[i - 1] + open_gap + gap_row[i];
+                tmp2 = mm[i - 1];
             }
             else {
-                tmp2 = curRow[i - 1] + open_gap + gap_row[i];
-                tmp5 = htcurRow[i - 1] + gap_row[i];
+                tmp2 = mm[i - 1] + open_gap + gap_row[i];
+                tmp5 = htmm[i - 1] + gap_row[i];
             }
 
             if ((((0 == gap_row[i]) && (0 != c)) ||
                     ((0 != gap_row[i]) && (0 == c))) &&
                     ((0 == gap_row[i - 1]) || (0 == cprev)))
-                tmp3 = prevRow[i - 1] + open_gap + alg_row[i];
+                tmp3 = pm[i - 1] + open_gap + alg_row[i];
             else
-                tmp3 = prevRow[i - 1] + alg_row[i];
+                tmp3 = pm[i - 1] + alg_row[i];
         }
         if (tmp1 < tmp4)
-            algn_assign_dirMtx(dirMtx,i,DELETE_V);
+            algn_assign_dm(dm,i,DELETE_V);
         else {
-            algn_assign_dirMtx(dirMtx,i,ALIGN_V);
+            algn_assign_dm(dm,i,ALIGN_V);
             tmp1 = tmp4;
         }
 
         if (tmp2 <= tmp5) {
-            algn_assign_dirMtx(dirMtx,i,ALIGN_H);
+            algn_assign_dm(dm,i,ALIGN_H);
         }
         else {
             tmp2 = tmp5;
-            algn_assign_dirMtx(dirMtx,i,INSERT_H);
+            algn_assign_dm(dm,i,INSERT_H);
         }
-        dncurRow[i] = tmp1;
-        htcurRow[i] = tmp2;
+        dnmm[i] = tmp1;
+        htmm[i] = tmp2;
         /* check whether insertion is better */
         /* This option will allow all the possible optimal paths to be stored
          * concurrently on the same backtrack matrix. This is important for the
          * sequences being able to choose the appropriate direction while
          * keeping the algorithm that assumes that s2 is at most as long as s1.
          * */
-        if (tmp1 < tmp3) {
+        if (tmp1 < tmp3) { 
             if (tmp1 < tmp2) {
-                curRow[i] = tmp1;
-                algn_assign_dirMtx(dirMtx,i,DELETE);
+                mm[i] = tmp1;
+                algn_assign_dm(dm,i,DELETE);
             }
             else if (tmp2 < tmp1) {
-                curRow[i] = tmp2;
-                algn_assign_dirMtx(dirMtx,i,INSERT);
+                mm[i] = tmp2;
+                algn_assign_dm(dm,i,INSERT);
             }
             else {
-                curRow[i] = tmp2;
-                algn_assign_dirMtx(dirMtx,i,(DELETE | INSERT));
+                mm[i] = tmp2;
+                algn_assign_dm(dm,i,(DELETE | INSERT));
             }
         }
         else if (tmp3 < tmp1) {
             if (tmp3 < tmp2) {
-                curRow[i] = tmp3;
-                algn_assign_dirMtx(dirMtx,i,(ALIGN));
-            }
+                mm[i] = tmp3;
+                algn_assign_dm(dm,i,(ALIGN));
+            } 
             else if (tmp2 < tmp3) {
-                curRow[i] = tmp2;
-                algn_assign_dirMtx(dirMtx,i,(INSERT));
+                mm[i] = tmp2;
+                algn_assign_dm(dm,i,(INSERT));
             }
             else {
-                curRow[i] = tmp2;
-                algn_assign_dirMtx(dirMtx,i,((ALIGN | INSERT)));
+                mm[i] = tmp2;
+                algn_assign_dm(dm,i,((ALIGN | INSERT)));
             }
         }
         else { /* tmp3 == tmp1 */
             if (tmp3 < tmp2) {
-                curRow[i] = tmp3;
-                algn_assign_dirMtx(dirMtx,i,((ALIGN | DELETE)));
+                mm[i] = tmp3;
+                algn_assign_dm(dm,i,((ALIGN | DELETE)));
             }
             else if (tmp2 < tmp3) {
-                curRow[i] = tmp2;
-                algn_assign_dirMtx(dirMtx,i,(INSERT));
+                mm[i] = tmp2; 
+                algn_assign_dm(dm,i,(INSERT));
             }
             else {
-                curRow[i] = tmp2;
-                algn_assign_dirMtx(dirMtx,i,((DELETE | INSERT | ALIGN)));
+                mm[i] = tmp2;
+                algn_assign_dm(dm,i,((DELETE | INSERT | ALIGN)));
             }
         }
-        if (DEBUG && PRINT_DIR_M) {
+        if (!NDEBUG && !NPRINT_DM) {
             /* Print the alignment matrix */
-            if (INSERT & dirMtx[i])
+            if (INSERT & dm[i]) 
                 printf ("I");
-            if (DELETE & dirMtx[i])
+            if (DELETE & dm[i])
                 printf ("D");
-            if (ALIGN & dirMtx[i])
+            if (ALIGN & dm[i])
                 printf ("A");
             printf ("\t");
         }
-        if (DEBUG &&PRINT_COST_M) {
+        if (!NDEBUG &&!NPRINT_CM) {
             /* Print the cost matrix */
-            printf ("(%d,%d,%d)\t", curRow[i], htcurRow[i], dncurRow[i]);
+            printf ("(%d,%d,%d)\t", mm[i], htmm[i], dnmm[i]);
             fflush (stdout);
         }
     }
-    if (DEBUG && PRINT_DIR_M) {
+    if (!NDEBUG && !NPRINT_DM) {
         printf ("\n");
         fflush (stdout);
     }
     return;
 }
 
- void
-algn_fill_ukk_right_cell_aff (int *curRow, const int *prevRow, const int *gap_row, \
-        const int *alg_row, DIRECTION_MATRIX *dirMtx, int c, int cprev, int pos, int *dncurRow, int *htcurRow, \
+#ifdef _WIN32
+__inline void 
+#else
+inline void 
+#endif
+algn_fill_ukk_right_cell_aff (int *mm, const int *pm, const int *gap_row, \
+        const int *alg_row, DIRECTION_MATRIX *dm, int c, int cprev, int pos, int *dnmm, int *htmm, \
         int open_gap) {
-    if (DEBUG_AFFINE) {
-        printf("algn_fill_ukk_right_cell_aff\n");
-        fflush(stdout);
-    }
     int tmp2, tmp3, tmp4;
     /* try align with substitution */
-#ifdef DEBUG_ALL_ASSERTIONS
-        assert ((curRow + pos) < _algn_max_matrix);
-        assert ((prevRow + pos) < _algn_max_matrix);
-        assert ((dirMtx + pos) < _algn_max_direction);
-        assert ((htcurRow + pos) < _algn_max_matrix);
+#ifdef DEBUG_ALL_ASSERTIONS 
+        assert ((mm + pos) < _algn_max_matrix);
+        assert ((pm + pos) < _algn_max_matrix);
+        assert ((dm + pos) < _algn_max_direction);
+        assert ((htmm + pos) < _algn_max_matrix);
 #endif
-    dirMtx[pos] = 0;
+    dm[pos] = 0;
     { /* Affine gap difficultness */
         if ((0 != gap_row[pos - 1]) && (0 == gap_row[pos]))
-            tmp2 = curRow[pos - 1];
+            tmp2 = mm[pos - 1];
         else
-            tmp2 = curRow[pos - 1] + open_gap + gap_row[pos];
+            tmp2 = mm[pos - 1] + open_gap + gap_row[pos];
 
         if (((0 == gap_row[pos - 1]) && (0 != gap_row[pos])) ||
             ((0 != gap_row[pos - 1]) && (0 == gap_row[pos])))
-            tmp4 = htcurRow[pos - 1] + open_gap + gap_row[pos];
+            tmp4 = htmm[pos - 1] + open_gap + gap_row[pos];
         else
-            tmp4 = htcurRow[pos - 1] + gap_row[pos];
+            tmp4 = htmm[pos - 1] + gap_row[pos];
 
         if ((((0 == gap_row[pos]) && (0 != c)) ||
                 ((0 != gap_row[pos]) && (0 == c))) &&
                 ((0 == gap_row[pos - 1]) || (0 == cprev)))
-            tmp3 = prevRow[pos - 1] + open_gap + alg_row[pos];
+            tmp3 = pm[pos - 1] + open_gap + alg_row[pos];
         else
-            tmp3 = prevRow[pos - 1] + alg_row[pos];
+            tmp3 = pm[pos - 1] + alg_row[pos];
     }
-    if (tmp2 <= tmp4)
-        algn_assign_dirMtx(dirMtx,pos,ALIGN_H);
+    if (tmp2 <= tmp4) 
+        algn_assign_dm(dm,pos,ALIGN_H);
     else {
         tmp2 = tmp4;
-        algn_assign_dirMtx(dirMtx,pos,INSERT_H);
+        algn_assign_dm(dm,pos,INSERT_H);
     }
-    htcurRow[pos] = tmp2;
-    dncurRow[pos] = HIGH_NUM;
+    htmm[pos] = tmp2;
+    dnmm[pos] = HIGH_NUM;
     /* check whether insertion is better */
     if (tmp2 < tmp3) {
-        curRow[pos] = tmp2;
-        algn_assign_dirMtx(dirMtx,pos,(INSERT));
+        mm[pos] = tmp2;
+        algn_assign_dm(dm,pos,(INSERT));
     }
     else if (tmp3 < tmp2) {
-        curRow[pos] = tmp3;
-        algn_assign_dirMtx(dirMtx,pos,(ALIGN));
+        mm[pos] = tmp3;
+        algn_assign_dm(dm,pos,(ALIGN));
     }
     else {
-        curRow[pos] = tmp3;
-        algn_assign_dirMtx(dirMtx,pos,(INSERT | ALIGN));
+        mm[pos] = tmp3;
+        algn_assign_dm(dm,pos,(INSERT | ALIGN));
     }
-    if (DEBUG && PRINT_DIR_M) {
+    if (!NDEBUG && !NPRINT_DM) {
         /* Print the alignment matrix */
-        if (INSERT & dirMtx[pos])
+        if (INSERT & dm[pos]) 
             printf ("I");
-        if (DELETE & dirMtx[pos])
+        if (DELETE & dm[pos])
             printf ("D");
-        if (ALIGN & dirMtx[pos])
+        if (ALIGN & dm[pos])
             printf ("A");
         printf ("\t");
     }
-    if (DEBUG &&PRINT_COST_M) {
+    if (!NDEBUG &&!NPRINT_CM) {
         /* Print the cost matrix */
-        printf ("(%d,%d)\t", curRow[pos], htcurRow[pos]);
+        printf ("(%d,%d)\t", mm[pos], htmm[pos]);
     }
-    if (DEBUG && (PRINT_DIR_M || PRINT_COST_M))
+    if (!NDEBUG && (!NPRINT_DM || !NPRINT_CM))
         printf ("\n");
     return;
 }
 
- void
-algn_fill_ukk_left_cell_aff (int *curRow, const int *prevRow, const int *gap_row, \
-        const int *alg_row, DIRECTION_MATRIX *dirMtx, int c, int cprev, int pos, int *dncurRow, \
-        int *pdncurRow, int *htcurRow, int open_gap) {
-    if (DEBUG_AFFINE) {
-        printf("algn_fill_ukk_left_cell_aff\n");
-        fflush(stdout);
-    }
+#ifdef _WIN32
+__inline void 
+#else
+inline void 
+#endif
+algn_fill_ukk_left_cell_aff (int *mm, const int *pm, const int *gap_row, \
+        const int *alg_row, DIRECTION_MATRIX *dm, int c, int cprev, int pos, int *dnmm, \
+        int *pdnmm, int *htmm, int open_gap) {
     int tmp1, tmp3, tmp5;
     /* try align with substitution */
-#ifdef DEBUG_ALL_ASSERTIONS
-        assert ((curRow + pos) < _algn_max_matrix);
-        assert ((prevRow + pos) < _algn_max_matrix);
-        assert ((dirMtx + pos) < _algn_max_direction);
-        assert ((dncurRow + pos) < _algn_max_matrix);
-        assert ((pdncurRow + pos) < _algn_max_matrix);
+#ifdef DEBUG_ALL_ASSERTIONS 
+        assert ((mm + pos) < _algn_max_matrix);
+        assert ((pm + pos) < _algn_max_matrix);
+        assert ((dm + pos) < _algn_max_direction);
+        assert ((dnmm + pos) < _algn_max_matrix);
+        assert ((pdnmm + pos) < _algn_max_matrix);
 #endif
-    dirMtx[pos] = 0;
+    dm[pos] = 0;
     { /* Affine gap difficultness */
         if ((0 != cprev) && (0 == c))
-            tmp1 = prevRow[pos];
+            tmp1 = pm[pos];
         else
-            tmp1 = prevRow[pos] + open_gap + c;
+            tmp1 = pm[pos] + open_gap + c;
 
         if (((0 == cprev) && (0 != c)) ||
             ((0 != cprev) && (0 == c)))
-            tmp5 = pdncurRow[pos] + open_gap + c;
+            tmp5 = pdnmm[pos] + open_gap + c;
         else
-            tmp5 = pdncurRow[pos] + c;
+            tmp5 = pdnmm[pos] + c;
 
         if ((((0 == gap_row[pos]) && (0 != c)) ||
                 ((0 != gap_row[pos]) && (0 == c))) &&
                     ((0 == gap_row[pos - 1]) || (0 == cprev)))
-            tmp3 = prevRow[pos - 1] + open_gap + alg_row[pos];
+            tmp3 = pm[pos - 1] + open_gap + alg_row[pos];
         else
-            tmp3 = prevRow[pos - 1] + alg_row[pos];
+            tmp3 = pm[pos - 1] + alg_row[pos];
     }
-    if (tmp1 <= tmp5)
-        algn_assign_dirMtx(dirMtx,pos,ALIGN_V);
+    if (tmp1 <= tmp5) 
+        algn_assign_dm(dm,pos,ALIGN_V);
     if (tmp5 < tmp1) {
-        algn_assign_dirMtx(dirMtx,pos,DELETE_V);
+        algn_assign_dm(dm,pos,DELETE_V);
         tmp1 = tmp5;
     }
-    dncurRow[pos] = tmp1;
-    htcurRow[pos] = HIGH_NUM;
+    dnmm[pos] = tmp1;
+    htmm[pos] = HIGH_NUM;
         if (tmp1 < tmp3) {
-            curRow[pos] = tmp1;
-            algn_assign_dirMtx(dirMtx,pos,(DELETE));
-        }
+            mm[pos] = tmp1;
+            algn_assign_dm(dm,pos,(DELETE));
+        } 
         else if (tmp3 < tmp1) {
-            curRow[pos] = tmp3;
-            algn_assign_dirMtx(dirMtx,pos,(ALIGN));
-        }
+            mm[pos] = tmp3;
+            algn_assign_dm(dm,pos,(ALIGN));
+        } 
         else {
-            curRow[pos] = tmp1;
-            algn_assign_dirMtx(dirMtx,pos,(ALIGN | DELETE));
+            mm[pos] = tmp1;
+            algn_assign_dm(dm,pos,(ALIGN | DELETE));
         }
-    if (DEBUG && PRINT_DIR_M) {
+    if (!NDEBUG && !NPRINT_DM) {
         /* Print the alignment matrix */
-        if (INSERT & dirMtx[pos])
+        if (INSERT & dm[pos]) 
             printf ("I");
-        if (DELETE & dirMtx[pos])
+        if (DELETE & dm[pos])
             printf ("D");
-        if (ALIGN & dirMtx[pos])
+        if (ALIGN & dm[pos])
             printf ("A");
         printf ("\t");
     }
-    if (DEBUG &&PRINT_COST_M) {
+    if (!NDEBUG &&!NPRINT_CM) {
         /* Print the cost matrix */
-        printf ("(%d,,%d)\t", curRow[pos], dncurRow[pos]);
+        printf ("(%d,,%d)\t", mm[pos], dnmm[pos]);
     }
     return;
 }
 
- void
-algn_fill_last_column_aff (int *curRow, const int *prevRow, int tlc, int tlcprev, \
-        int l, DIRECTION_MATRIX *dirMtx, int *dncurRow, const int *pdncurRow, int open_gap) {
-    if (DEBUG_AFFINE) {
-        printf("algn_fill_last_column_aff\n");
-        fflush(stdout);
-    }
-    int cst, tmp2;
-#ifdef DEBUG_ALL_ASSERTIONS
-        assert ((curRow + l) < _algn_max_matrix);
-        assert ((prevRow + l) < _algn_max_matrix);
-        assert ((dirMtx + l) < _algn_max_direction);
-        assert ((dncurRow + l) < _algn_max_matrix);
-        assert ((pdncurRow + l) < _algn_max_matrix);
+#ifdef _WIN32
+__inline void
+#else
+inline void
 #endif
-    tmp2 = prevRow[l] + tlc + open_gap;
+algn_fill_last_column_aff (int *mm, const int *pm, int tlc, int tlcprev, \
+        int l, DIRECTION_MATRIX *dm, int *dnmm, const int *pdnmm, int open_gap) {
+    int cst, tmp2;
+#ifdef DEBUG_ALL_ASSERTIONS 
+        assert ((mm + l) < _algn_max_matrix);
+        assert ((pm + l) < _algn_max_matrix);
+        assert ((dm + l) < _algn_max_direction);
+        assert ((dnmm + l) < _algn_max_matrix);
+        assert ((pdnmm + l) < _algn_max_matrix);
+#endif
+    tmp2 = pm[l] + tlc + open_gap;
     { /* Affine gap difficultness */
         if (((0 == tlcprev) && (0 != tlc)) ||
             ((0 != tlcprev) && (0 == tlc)))
-            cst = pdncurRow[l] + open_gap + tlc;
+            cst = pdnmm[l] + open_gap + tlc;
         else
-            cst = pdncurRow[l] + tlc;
+            cst = pdnmm[l] + tlc;
     }
     if (cst < tmp2)
-        algn_assign_dirMtx(dirMtx,l,DELETE_V);
+        algn_assign_dm(dm,l,DELETE_V);
     else {
         cst = tmp2;
-        algn_assign_dirMtx(dirMtx,l,ALIGN_V);
+        algn_assign_dm(dm,l,ALIGN_V);
     }
-    dncurRow[l] = cst;
-    if (cst < curRow[l]) {
-        curRow[l] = cst;
-        algn_assign_dirMtx(dirMtx,l,(DELETE));
-    }
-    else if (cst == curRow[l])
-        algn_assign_dirMtx(dirMtx,l,DELETE);
+    dnmm[l] = cst;
+    if (cst < mm[l]) {
+        mm[l] = cst;
+        algn_assign_dm(dm,l,(DELETE));
+    } 
+    else if (cst == mm[l])
+        algn_assign_dm(dm,l,DELETE);
     return;
 }
 
- void
-algn_fill_full_row_aff (int *curRow, const int *prevRow, const int *gap_row, \
-        const int *alg_row, DIRECTION_MATRIX *dirMtx, int c, int cprev, int tlc, \
-        int tlcprev, int l, int *dncurRow, const int *pdncurRow, int *htcurRow, \
+#ifdef _WIN32
+__inline void
+#else
+inline void
+#endif
+algn_fill_full_row_aff (int *mm, const int *pm, const int *gap_row, \
+        const int *alg_row, DIRECTION_MATRIX *dm, int c, int cprev, int tlc, \
+        int tlcprev, int l, int *dnmm, const int *pdnmm, int *htmm, \
         int open_gap) {
-    if (DEBUG_AFFINE) {
-        printf("algn_fill_full_row_aff\n");
-        fflush(stdout);
-    }
-
     /* first entry is delete */
-    htcurRow[0] = HIGH_NUM;
-    curRow[0] += c;
-    dirMtx[0] = DELETE | DELETE_V;
-    dncurRow[0] = c + pdncurRow[0];
-    if ((DEBUG) && (PRINT_COST_M))
-        printf ("%d\t", curRow[0]);
-    if ((DEBUG) && (PRINT_DIR_M))
+    htmm[0] = HIGH_NUM;
+    mm[0] += c;
+    dm[0] = DELETE | DELETE_V;
+    dnmm[0] = c + pdnmm[0];
+    if ((!NDEBUG) && (!NPRINT_CM))
+        printf ("%d\t", mm[0]);
+    if ((!NDEBUG) && (!NPRINT_DM))
         printf ("D\t");
-    algn_fill_row_aff (curRow, prevRow, gap_row, alg_row, dirMtx, c, cprev, 1, l - 1, \
-            dncurRow, pdncurRow, htcurRow, open_gap);
-    algn_fill_last_column_aff (curRow, prevRow, tlc, tlcprev, l - 1, dirMtx, dncurRow, pdncurRow, \
+    algn_fill_row_aff (mm, pm, gap_row, alg_row, dm, c, cprev, 1, l - 1, \
+            dnmm, pdnmm, htmm, open_gap);
+    algn_fill_last_column_aff (mm, pm, tlc, tlcprev, l - 1, dm, dnmm, pdnmm, \
             open_gap);
     return;
 }
 
 void
-algn_fill_first_row_aff (int *curRow, DIRECTION_MATRIX *dirMtx, int len, int const *gap_row, \
-        int *dncurRow, int *htcurRow, int open_gap) {
-    if (DEBUG_AFFINE) {
-        printf("algn_fill_first_row_aff\n");
-        fflush(stdout);
-    }
+algn_fill_first_row_aff (int *mm, DIRECTION_MATRIX *dm, int len, int const *gap_row, \
+        int *dnmm, int *htmm, int open_gap) {
     int i;
     /* We fill the first cell to start with */
-    curRow[0] = open_gap;
-    dncurRow[0] = htcurRow[0] = HIGH_NUM;
-    dirMtx[0] = ALIGN | ALIGN_V | ALIGN_H;
+    mm[0] = open_gap;
+    dnmm[0] = htmm[0] = HIGH_NUM;
+    dm[0] = ALIGN | ALIGN_V | ALIGN_H;
     /* Now the rest of the row */
-    if ((DEBUG) && (PRINT_DIR_M))
+    if ((!NDEBUG) && (!NPRINT_DM))
         printf ("A\t");
-    if ((DEBUG) && (PRINT_COST_M))
-        printf ("%d\t", curRow[0]);
+    if ((!NDEBUG) && (!NPRINT_CM))
+        printf ("%d\t", mm[0]);
     for (i = 1; i < len; i++) {
-        dncurRow[i] = HIGH_NUM;
-        curRow[i] = curRow[i - 1] + gap_row[i];
-        dirMtx[i] = INSERT | (INSERT_H);
-        if ((DEBUG) && (PRINT_DIR_M))
+        dnmm[i] = HIGH_NUM;
+        mm[i] = mm[i - 1] + gap_row[i];
+        dm[i] = INSERT | (INSERT_H);
+        if ((!NDEBUG) && (!NPRINT_DM))
             printf ("I\t");
-        if ((DEBUG) && (PRINT_COST_M))
-            printf ("%d\t", curRow[i]);
+        if ((!NDEBUG) && (!NPRINT_CM))
+            printf ("%d\t", mm[i]);
     }
     return;
 }
 
 void
-algn_fill_first_cell_aff (int *curRow, int prevRow, DIRECTION_MATRIX *dirMtx, int gap, int *dncurRow, \
-        int *pdncurRow, int *htcurRow) {
-    htcurRow[0] = HIGH_NUM;
-    curRow[0] += gap;
-    *dirMtx = DELETE | DELETE_V;
-    dncurRow[0] = gap + pdncurRow[0];
-    if ((DEBUG) && (PRINT_DIR_M))
+algn_fill_first_cell_aff (int *mm, int pm, DIRECTION_MATRIX *dm, int gap, int *dnmm, \
+        int *pdnmm, int *htmm) {
+    htmm[0] = HIGH_NUM;
+    mm[0] += gap;
+    *dm = DELETE | DELETE_V;
+    dnmm[0] = gap + pdnmm[0];
+    if ((!NDEBUG) && (!NPRINT_DM))
         printf ("D\t");
-    if ((DEBUG) && (PRINT_COST_M))
-        printf ("%d\t", *curRow);
+    if ((!NDEBUG) && (!NPRINT_CM))
+        printf ("%d\t", *mm);
     return;
 }
 
 /* In the following three functions, we maintain the following invariants in
  * each loop:
- * 1. curRow is a row that has not been filled and is the next to be.
- * 4. dirMtx is the current row of the direction matrix
- * 2. prevRow is the previous row, located right above curRow, which has been filled
+ * 1. mm is a row that has not been filled and is the next to be.
+ * 4. dm is the current row of the direction matrix
+ * 2. pm is the previous row, located right above mm, which has been filled
  * already.
- * 3. i is the number of the row of curRow in its containing matrix
+ * 3. i is the number of the row of mm in its containing matrix
  * 5. gap_row is the cost of aligning each base of s2 with a gap. This is
  * constant for all the loop.
  * 6. cur_s1 is the i'th base of s1
@@ -1389,20 +1391,20 @@ algn_fill_first_cell_aff (int *curRow, int prevRow, DIRECTION_MATRIX *dirMtx, in
  */
 
 int *
-algn_fill_extending_right_aff (const seqt s1, int *precalcMtx, int s1_len, \
-        int s2_len, int *curRow, int *prevRow, DIRECTION_MATRIX *dirMtx, const cmt c, int start_row, \
-        int end_row, int len, int *dncurRow, int *pdncurRow, int *htcurRow, int open_gap) {
+algn_fill_extending_right_aff (const seqt s1, int *prec, int s1_len, \
+        int s2_len, int *mm, int *pm, DIRECTION_MATRIX *dm, const cmt c, int start_row, \
+        int end_row, int len, int *dnmm, int *pdnmm, int *htmm, int open_gap) {
     int i;
     int *tmp, *tmp1, cur_s1, const_val, prev_s1, prev_const_val;
     const int *gap_row, *alg_row;
-    /** Invariants block
+    /** Invariants block 
      * len is the number of items in the row to be filled **/
     i = start_row;
     /* This is what we will perform conceptually, I will stop using the
-     * cm_get_precal_row function to speed this up a little bit
-    gap_row = cm_get_precal_row (precalcMtx, cm_get_gap (c), s2_len);
+     * cm_get_precal_row function to speed this up a little bit 
+    gap_row = cm_get_precal_row (prec, cm_get_gap (c), s2_len);
     */
-    gap_row = precalcMtx + (c->gap * s2_len);
+    gap_row = prec + (c->gap * s2_len);
     while (i < end_row) {
         /** Invariants block */
         assert (i > 0);
@@ -1410,47 +1412,47 @@ algn_fill_extending_right_aff (const seqt s1, int *precalcMtx, int s1_len, \
         cur_s1 = s1->begin[i];
         const_val = cm_calc_cost (c->cost, cur_s1, c->gap, c->lcm);
         prev_const_val = cm_calc_cost (c->cost, prev_s1, c->gap, c->lcm);
-        /* This is conceptually what we do in the next line
-        alg_row = cm_get_precal_row (precalcMtx, cur_s1, s2_len);
+        /* This is conceptually what we do in the next line 
+        alg_row = cm_get_precal_row (prec, cur_s1, s2_len);
         */
-        alg_row = precalcMtx + (cur_s1 * s2_len);
+        alg_row = prec + (cur_s1 * s2_len);
         /* Align! */
-        algn_fill_first_cell_aff (curRow, prevRow[0], dirMtx, alg_row[0], dncurRow, pdncurRow, htcurRow);
-        algn_fill_row_aff (curRow, prevRow, gap_row, alg_row, dirMtx, const_val, \
-                prev_const_val, 1, len - 2, dncurRow, pdncurRow, htcurRow, open_gap);
-        algn_fill_ukk_right_cell_aff (curRow, prevRow, gap_row, alg_row, dirMtx, \
-                const_val, prev_const_val, len - 1, dncurRow, htcurRow, open_gap);
+        algn_fill_first_cell_aff (mm, pm[0], dm, alg_row[0], dnmm, pdnmm, htmm);
+        algn_fill_row_aff (mm, pm, gap_row, alg_row, dm, const_val, \
+                prev_const_val, 1, len - 2, dnmm, pdnmm, htmm, open_gap);
+        algn_fill_ukk_right_cell_aff (mm, pm, gap_row, alg_row, dm, \
+                const_val, prev_const_val, len - 1, dnmm, htmm, open_gap);
         /** Invariants block */
-        tmp = curRow;
-        tmp1 = dncurRow;
-        curRow = prevRow;
-        dncurRow = pdncurRow;
-        prevRow = tmp;
-        pdncurRow = tmp1;
+        tmp = mm;
+        tmp1 = dnmm;
+        mm = pm;
+        dnmm = pdnmm;
+        pm = tmp;
+        pdnmm = tmp1;
         i++;
-        dirMtx += s2_len;
+        dm += s2_len;
         len++;
-        curRow[0] = prevRow[0];
+        mm[0] = pm[0];
     }
-    return (curRow);
+    return (mm);
 }
 
 int *
-algn_fill_extending_left_right_aff (const seqt s1, int *precalcMtx, int s1_len, \
-        int s2_len,  int *curRow, int *prevRow, DIRECTION_MATRIX *dirMtx, const cmt c, int start_row, \
-        int end_row, int start_column, int len, int *dncurRow, int *pdncurRow, \
-        int *htcurRow, int open_gap) {
+algn_fill_extending_left_right_aff (const seqt s1, int *prec, int s1_len, \
+        int s2_len,  int *mm, int *pm, DIRECTION_MATRIX *dm, const cmt c, int start_row, \
+        int end_row, int start_column, int len, int *dnmm, int *pdnmm, \
+        int *htmm, int open_gap) {
     int i;
     int *tmp, *tmp1, cur_s1, const_val, prev_s1, prev_const_val;
     const int *gap_row, *alg_row;
-    /** Invariants block
+    /** Invariants block 
      * len is the number of cells to fill in the current row minus 1
      * start_column is the first cell to fill in the row */
     i = start_row;
-    /* Conceptually
-    gap_row = cm_get_precal_row (precalcMtx, cm_get_gap (c), s2_len);
+    /* Conceptually 
+    gap_row = cm_get_precal_row (prec, cm_get_gap (c), s2_len);
     */
-    gap_row = precalcMtx + (c->gap * s2_len);
+    gap_row = prec + (c->gap * s2_len);
     len--;
     while (i < end_row) {
         /** Invariants block */
@@ -1459,51 +1461,51 @@ algn_fill_extending_left_right_aff (const seqt s1, int *precalcMtx, int s1_len, 
         cur_s1 = s1->begin[i];
         const_val = cm_calc_cost (c->cost, cur_s1, c->gap, c->lcm);
         prev_const_val = cm_calc_cost (c->cost, prev_s1, c->gap, c->lcm);
-        /* Conceptually
-        alg_row = cm_get_precal_row (precalcMtx, cur_s1, s2_len);
+        /* Conceptually 
+        alg_row = cm_get_precal_row (prec, cur_s1, s2_len);
         */
-        alg_row = precalcMtx + (cur_s1 * s2_len);
+        alg_row = prec + (cur_s1 * s2_len);
         /* Align! */
-        algn_fill_ukk_left_cell_aff (curRow, prevRow, gap_row, alg_row, dirMtx, const_val, \
-                prev_const_val, start_column, dncurRow, pdncurRow, htcurRow, open_gap);
-        algn_fill_row_aff (curRow, prevRow, gap_row, alg_row, dirMtx, const_val, \
+        algn_fill_ukk_left_cell_aff (mm, pm, gap_row, alg_row, dm, const_val, \
+                prev_const_val, start_column, dnmm, pdnmm, htmm, open_gap);
+        algn_fill_row_aff (mm, pm, gap_row, alg_row, dm, const_val, \
                 prev_const_val, start_column + 1, start_column + (len - 2), \
-                dncurRow, pdncurRow, htcurRow, open_gap);
-        algn_fill_ukk_right_cell_aff (curRow, prevRow, gap_row, alg_row, dirMtx, const_val, \
-                prev_const_val, start_column + len - 1, dncurRow, htcurRow, open_gap);
+                dnmm, pdnmm, htmm, open_gap);
+        algn_fill_ukk_right_cell_aff (mm, pm, gap_row, alg_row, dm, const_val, \
+                prev_const_val, start_column + len - 1, dnmm, htmm, open_gap);
         /** Invariants block */
-        tmp = curRow;
-        tmp1 = dncurRow;
-        curRow = prevRow;
-        dncurRow = pdncurRow;
-        prevRow = tmp;
-        pdncurRow = tmp1;
+        tmp = mm;
+        tmp1 = dnmm;
+        mm = pm;
+        dnmm = pdnmm;
+        pm = tmp;
+        pdnmm = tmp1;
         i++;
-        dirMtx += s2_len;
+        dm += s2_len;
         start_column++;
     }
-    return (curRow);
+    return (mm);
 }
 
 int *
-algn_fill_extending_left_aff (const seqt s1, int *precalcMtx, int s1_len, \
-        int s2_len,  int *curRow, int *prevRow, DIRECTION_MATRIX *dirMtx, const cmt c, int start_row, \
-        int end_row, int start_column, int len, int *dncurRow, int *pdncurRow, \
-        int *htcurRow, int open_gap) {
+algn_fill_extending_left_aff (const seqt s1, int *prec, int s1_len, \
+        int s2_len,  int *mm, int *pm, DIRECTION_MATRIX *dm, const cmt c, int start_row, \
+        int end_row, int start_column, int len, int *dnmm, int *pdnmm, \
+        int *htmm, int open_gap) {
     int i;
     int *tmp, *tmp1, cur_s1, const_val, prev_s1, prev_const_val, \
         const_val_tail, prev_const_val_tail;
     const int *gap_row, *alg_row;
-    /** Invariants block
-     * start_column is the first cell to fill in the row
+    /** Invariants block 
+     * start_column is the first cell to fill in the row 
      * len is the number of cells to fill in the current row minus 1 */
     i = start_row;
-    /* Conceptually
-    gap_row = cm_get_precal_row (precalcMtx, cm_get_gap (c), s2_len);
+    /* Conceptually 
+    gap_row = cm_get_precal_row (prec, cm_get_gap (c), s2_len);
     */
-    gap_row = precalcMtx + (c->gap * s2_len);
+    gap_row = prec + (c->gap * s2_len);
     while (i < end_row) {
-        /** Invariants block */
+        /** Invariants block */ 
         assert (i > 0);
         prev_s1 = s1->begin[i - 1];
         cur_s1 = s1->begin[i];
@@ -1511,31 +1513,31 @@ algn_fill_extending_left_aff (const seqt s1, int *precalcMtx, int s1_len, \
         const_val = cm_calc_cost (c->cost, cur_s1, c->gap, c->lcm);
         const_val_tail = (cm_get_tail_cost (c))[cur_s1];
         prev_const_val_tail = (cm_get_tail_cost (c))[prev_s1];
-        /* Conceptually
-        alg_row = cm_get_precal_row (precalcMtx, cur_s1, s2_len);
+        /* Conceptually 
+        alg_row = cm_get_precal_row (prec, cur_s1, s2_len);
         */
-        alg_row = precalcMtx + (cur_s1 * s2_len);
+        alg_row = prec + (cur_s1 * s2_len);
         /* Align! */
-        algn_fill_ukk_left_cell_aff (curRow, prevRow, gap_row, alg_row, dirMtx, const_val, \
-                prev_const_val, start_column, dncurRow, pdncurRow, htcurRow, open_gap);
-        algn_fill_row_aff (curRow, prevRow, gap_row, alg_row, dirMtx, const_val, prev_const_val, \
-                start_column + 1, start_column + len - 1, dncurRow, pdncurRow, htcurRow, \
+        algn_fill_ukk_left_cell_aff (mm, pm, gap_row, alg_row, dm, const_val, \
+                prev_const_val, start_column, dnmm, pdnmm, htmm, open_gap);
+        algn_fill_row_aff (mm, pm, gap_row, alg_row, dm, const_val, prev_const_val, \
+                start_column + 1, start_column + len - 1, dnmm, pdnmm, htmm, \
                 open_gap);
-        algn_fill_last_column_aff (curRow, prevRow, const_val_tail, prev_const_val_tail, \
-                start_column + len - 1, dirMtx, dncurRow, pdncurRow, open_gap);
+        algn_fill_last_column_aff (mm, pm, const_val_tail, prev_const_val_tail, \
+                start_column + len - 1, dm, dnmm, pdnmm, open_gap);
         /** Invariants block */
-        tmp = curRow;
-        tmp1 = dncurRow;
-        curRow = prevRow;
-        dncurRow = pdncurRow;
-        prevRow = tmp;
-        pdncurRow = tmp1;
+        tmp = mm;
+        tmp1 = dnmm;
+        mm = pm;
+        dnmm = pdnmm;
+        pm = tmp;
+        pdnmm = tmp1;
         i++;
-        dirMtx += s2_len;
+        dm += s2_len;
         start_column++;
         len--;
     }
-    if (DEBUG && PRINT_COST_M) {
+    if (!NDEBUG && !NPRINT_CM) {
         printf ("S2 gap cost\n");
         fflush (stdout);
         for (i = 0; i < s2_len; i++) {
@@ -1545,23 +1547,23 @@ algn_fill_extending_left_aff (const seqt s1, int *precalcMtx, int s1_len, \
         fflush (stdout);
     }
 
-    return (curRow);
+    return (mm);
 }
 
 int *
-algn_fill_no_extending_aff (const seqt s1, int *precalcMtx, int s1_len, \
-        int s2_len,  int *curRow, int *prevRow, DIRECTION_MATRIX *dirMtx, const cmt c, int start_row, \
-        int end_row, int *dncurRow, int *pdncurRow, int *htcurRow, int open_gap) {
+algn_fill_no_extending_aff (const seqt s1, int *prec, int s1_len, \
+        int s2_len,  int *mm, int *pm, DIRECTION_MATRIX *dm, const cmt c, int start_row, \
+        int end_row, int *dnmm, int *pdnmm, int *htmm, int open_gap) {
     int i;
     int *tmp, cur_s1, const_val, const_val_tail, prev_s1, prev_const_val, \
         prev_const_val_tail, *tmp1;
     const int *gap_row, *alg_row;
     /** Invariants block */
     i = start_row;
-    /* Conceptually
-    gap_row = cm_get_precal_row (precalcMtx, cm_get_gap (c), s2_len);
+    /* Conceptually 
+    gap_row = cm_get_precal_row (prec, cm_get_gap (c), s2_len);
     */
-    gap_row = precalcMtx + (c->gap * s2_len);
+    gap_row = prec + (c->gap * s2_len);
     while (i < end_row) {
         /** Invariants block */
         assert (i > 0);
@@ -1571,119 +1573,124 @@ algn_fill_no_extending_aff (const seqt s1, int *precalcMtx, int s1_len, \
         prev_const_val = cm_calc_cost (c->cost, prev_s1, c->gap, c->lcm);
         const_val_tail = (cm_get_tail_cost (c))[cur_s1];
         prev_const_val_tail = (cm_get_tail_cost (c))[prev_s1];
-        /* Conceptually
-        alg_row = cm_get_precal_row (precalcMtx, cur_s1, s2_len);
+        /* Conceptually 
+        alg_row = cm_get_precal_row (prec, cur_s1, s2_len);
         */
-        alg_row = precalcMtx + (cur_s1 * s2_len);
+        alg_row = prec + (cur_s1 * s2_len);
         /* Align! */
-        algn_fill_first_cell_aff (curRow, prevRow[0], dirMtx, open_gap, dncurRow, pdncurRow, htcurRow);
-        algn_fill_row_aff (curRow, prevRow, gap_row, alg_row, dirMtx, const_val, \
-                prev_const_val, 1, s2_len - 1, dncurRow, pdncurRow, htcurRow, open_gap);
-        algn_fill_last_column_aff (curRow, prevRow, const_val_tail, \
-                prev_const_val_tail, s2_len - 1, dirMtx, dncurRow, \
-                pdncurRow, open_gap);
+        algn_fill_first_cell_aff (mm, pm[0], dm, open_gap, dnmm, pdnmm, htmm);
+        algn_fill_row_aff (mm, pm, gap_row, alg_row, dm, const_val, \
+                prev_const_val, 1, s2_len - 1, dnmm, pdnmm, htmm, open_gap);
+        algn_fill_last_column_aff (mm, pm, const_val_tail, \
+                prev_const_val_tail, s2_len - 1, dm, dnmm, \
+                pdnmm, open_gap);
         /** Invariants block */
-        tmp = curRow;
-        tmp1 = dncurRow;
-        curRow = prevRow;
-        dncurRow = pdncurRow;
-        prevRow = tmp;
-        pdncurRow = tmp1;
+        tmp = mm;
+        tmp1 = dnmm;
+        mm = pm;
+        dnmm = pdnmm;
+        pm = tmp;
+        pdnmm = tmp1;
         i++;
-        dirMtx += s2_len;
+        dm += s2_len;
     }
-    return (curRow);
+    return (mm);
 }
 
-/* SicurRowilar to the previous but when no barriers are set */
- int
-algn_fill_plane_aff (const seqt s1, int *precalcMtx, int s1_len, \
-        int s2_len, int *curRow, DIRECTION_MATRIX *dirMtx, const cmt c, int *dncurRow, int *htcurRow, \
+/* Simmilar to the previous but when no barriers are set */
+#ifdef _WIN32
+__inline int
+#else
+inline int
+#endif
+algn_fill_plane_aff (const seqt s1, int *prec, int s1_len, \
+        int s2_len, int *mm, DIRECTION_MATRIX *dm, const cmt c, int *dnmm, int *htmm, \
         int open_gap) {
-    if (DEBUG_AFFINE) {
-        printf("algn_fill_plane_aff\n");
-        fflush(stdout);
-
-    }
     int i;
     const int *alg_row;
     int const_val, const_val_tail, prev_const_val, prev_const_val_tail, \
-        *newNWMtx, *tmp, *tmp1, *pdncurRow;
+        *nm, *tmp, *tmp1, *pdnmm;
     const int *gap_row, *first_gap_row;
     int gapcode;
     /* A precalculated cost of a gap aligned with each base in the array */
     gapcode = cm_get_gap (c);
-    gap_row = cm_get_precal_row (precalcMtx, gapcode, s2_len);
-    first_gap_row = cm_get_precal_row (precalcMtx, 0, s2_len);
-    newNWMtx = curRow;
-    pdncurRow = dncurRow;
-    curRow[0] = open_gap;
-    dirMtx[0] = ALIGN | ALIGN_H | ALIGN_V;
-    htcurRow[0] = HIGH_NUM;
-    dncurRow[0] = HIGH_NUM;
-    if ((DEBUG) && (PRINT_COST_M))
-        printf ("%d\t", curRow[0]);
-    if ((DEBUG) && (PRINT_DIR_M))
+    gap_row = cm_get_precal_row (prec, gapcode, s2_len);
+    first_gap_row = cm_get_precal_row (prec, 0, s2_len);
+    nm = mm;
+    pdnmm = dnmm;
+    mm[0] = open_gap;
+    dm[0] = ALIGN | ALIGN_H | ALIGN_V;
+    htmm[0] = HIGH_NUM;
+    dnmm[0] = HIGH_NUM;
+    if ((!NDEBUG) && (!NPRINT_CM))
+        printf ("%d\t", mm[0]);
+    if ((!NDEBUG) && (!NPRINT_DM))
         printf ("A\t");
     /* We fill the first row to start with */
     for (i = 1; i < s2_len; i++) {
-        dncurRow[i] = HIGH_NUM;
-        curRow[i] = curRow[i - 1] + first_gap_row[i];
-        dirMtx[i] = INSERT | INSERT_H;
-        if ((DEBUG) && (PRINT_COST_M)) {
-            printf ("%d\t", curRow[i]);
+        dnmm[i] = HIGH_NUM;
+        mm[i] = mm[i - 1] + first_gap_row[i];
+        dm[i] = INSERT | INSERT_H;
+        if ((!NDEBUG) && (!NPRINT_CM)) {
+            printf ("%d\t", mm[i]);
             fflush (stdout);
         }
-        if ((DEBUG) && (PRINT_DIR_M))
+        if ((!NDEBUG) && (!NPRINT_DM))
             printf ("I\t");
     }
-    curRow += s2_len;
-    curRow[0] = newNWMtx[0];
-    newNWMtx[0] = 0;
-    if (DEBUG && (PRINT_DIR_M || PRINT_COST_M)) {
+    mm += s2_len;
+    mm[0] = nm[0];
+    nm[0] = 0;
+    if (!NDEBUG && (!NPRINT_DM || !NPRINT_CM)) {
         printf ("\n");
         fflush (stdout);
     }
-    dncurRow += s2_len;
+    dnmm += s2_len;
     /* Now we fill the rest of the matrix */
-    for (i = 1, dirMtx += s2_len; i < s1_len; i++, dirMtx += s2_len) {
+    for (i = 1, dm += s2_len; i < s1_len; i++, dm += s2_len) {
         prev_const_val_tail = (cm_get_tail_cost (c))[seq_get(s1, i - 1)];
         prev_const_val = cm_calc_cost (c->cost, seq_get(s1, i - 1), c->gap, c->lcm);
         const_val_tail = (cm_get_tail_cost (c))[seq_get(s1, i)];
         const_val = cm_calc_cost (c->cost, seq_get(s1, i), c->gap, c->lcm);
-        alg_row = cm_get_precal_row (precalcMtx, seq_get (s1, i), s2_len);
-        algn_fill_full_row_aff (curRow, newNWMtx, gap_row, alg_row, dirMtx, const_val, \
+        alg_row = cm_get_precal_row (prec, seq_get (s1, i), s2_len);
+        algn_fill_full_row_aff (mm, nm, gap_row, alg_row, dm, const_val, \
                 prev_const_val, const_val_tail, prev_const_val_tail, s2_len, \
-                dncurRow, pdncurRow, htcurRow, open_gap);
-        if (DEBUG && PRINT_COST_M) {
+                dnmm, pdnmm, htmm, open_gap);
+        if (!NDEBUG && !NPRINT_CM) {
             printf ("\n");
             fflush (stdout);
         }
-        /* We swap curRow and newNWMtx for the next round */
-        tmp = curRow;
-        tmp1 = dncurRow;
-        curRow = newNWMtx;
-        dncurRow = pdncurRow;
-        newNWMtx = tmp;
-        pdncurRow = tmp1;
-        curRow[0] = newNWMtx[0];
+        /* We swap mm and nm for the next round */
+        tmp = mm;
+        tmp1 = dnmm;
+        mm = nm;
+        dnmm = pdnmm;
+        nm = tmp;
+        pdnmm = tmp1;
+        mm[0] = nm[0];
     }
-    return (newNWMtx[s2_len - 1]);
+    return (nm[s2_len - 1]);
 }
 
- void
-algn_choose_aff_other (int *next_row, int *curRow, int **next_dncurRow, \
-        int **next_pdncurRow, int *dncurRow, int *pdncurRow) {
-    if (next_row == curRow) {
-        *next_dncurRow = dncurRow;
-        *next_pdncurRow = pdncurRow;
+#ifdef _WIN32
+__inline void
+#else
+inline void
+#endif
+algn_choose_aff_other (int *next_row, int *mm, int **next_dnmm, \
+        int **next_pdnmm, int *dnmm, int *pdnmm) {
+    if (next_row == mm) {
+        *next_dnmm = dnmm;
+        *next_pdnmm = pdnmm;
     }
     else {
-        *next_dncurRow = pdncurRow;
-        *next_pdncurRow = dncurRow;
+        *next_dnmm = pdnmm;
+        *next_pdnmm = dnmm;
     }
     return;
 }
+
+#define DEBUG_AFFINE 0
 
 #define ALIGN_TO_ALIGN 1
 #define ALIGN_TO_VERTICAL 2
@@ -1698,7 +1705,7 @@ algn_choose_aff_other (int *next_row, int *curRow, int **next_dncurRow, \
 #define DO_ALIGN 1024
 #define DO_VERTICAL 2048
 #define DO_HORIZONTAL 4096
-#define DO_DIAGONAL 8192
+#define DO_DIAGONAL 8192 
 // DO_DIAGONAL MUST BE THE LAST ONE
 
 #define TMPGAP 16
@@ -1706,49 +1713,65 @@ algn_choose_aff_other (int *next_row, int *curRow, int **next_dncurRow, \
 
 #define LOR_WITH_DIRECTION_MATRIX(mask,direction_matrix) direction_matrix |= mask
 
- int
+#ifdef _WIN32
+__inline int
+#else
+inline int
+#endif
 HAS_GAP_EXTENSION (SEQT base, const cmt c) {
     return (cm_calc_cost(c->cost,base,c->gap,c->lcm));
 }
 
- int
+#ifdef _WIN32
+__inline int
+#else
+inline int
+#endif
 HAS_GAP_OPENING (SEQT prev, SEQT curr, int gap, int gap_open) {
     if ((!(gap & prev)) && (gap & curr)) return 0;
     else return gap_open;
 }
 
- void
+#ifdef _WIN32
+__inline void
+#else
+inline void
+#endif
 FILL_EXTEND_HORIZONTAL_NOBT (int sj_horizontal_extension, int sj_gap_extension, int sj_gap_opening, int j, \
         int *extend_horizontal, const cmt c, \
         const int *close_block_diagonal) {
     int ext_cost, open_cost;
     ext_cost = extend_horizontal[j - 1] + sj_horizontal_extension;
-    open_cost = close_block_diagonal[j - 1] +
+    open_cost = close_block_diagonal[j - 1] + 
                 sj_gap_opening + sj_gap_extension;
-    if (0 && DEBUG_AFFINE)
+    if (0 && DEBUG_AFFINE) 
         printf ("The ext cost is %d and the open_cost is %d with gap_extension %d \
-            and gap opening %d, and sj_horizontal_extension %d\n", ext_cost, open_cost, sj_gap_extension,
+            and gap opening %d, and sj_horizontal_extension %d\n", ext_cost, open_cost, sj_gap_extension, 
                 sj_gap_opening, sj_horizontal_extension);
-    if (ext_cost < open_cost)
+    if (ext_cost < open_cost) 
         extend_horizontal[j] = ext_cost;
-    else
+    else 
         extend_horizontal[j] = open_cost;
-    if (0 && DEBUG_AFFINE)
+    if (0 && DEBUG_AFFINE) 
         printf ("The final cost is %d\n", extend_horizontal[j]);
     return;
 }
 
- DIRECTION_MATRIX
+#ifdef _WIN32
+__inline DIRECTION_MATRIX
+#else
+inline DIRECTION_MATRIX
+#endif
 FILL_EXTEND_HORIZONTAL (int sj_horizontal_extension, int sj_gap_extension, int sj_gap_opening, int j, \
         int *extend_horizontal, const cmt c, \
         const int *close_block_diagonal, DIRECTION_MATRIX direction_matrix) {
     int ext_cost, open_cost;
     ext_cost = extend_horizontal[j - 1] + sj_horizontal_extension;
-    open_cost = close_block_diagonal[j - 1] +
+    open_cost = close_block_diagonal[j - 1] + 
                 sj_gap_opening + sj_gap_extension;
-    if (0 && DEBUG_AFFINE)
+    if (0 && DEBUG_AFFINE) 
         printf ("The ext cost is %d and the open_cost is %d with gap_extension %d \
-            and gap opening %d, and sj_horizontal_extension %d\n", ext_cost, open_cost, sj_gap_extension,
+            and gap opening %d, and sj_horizontal_extension %d\n", ext_cost, open_cost, sj_gap_extension, 
                 sj_gap_opening, sj_horizontal_extension);
     if (ext_cost < open_cost) {
         LOR_WITH_DIRECTION_MATRIX(BEGIN_HORIZONTAL,direction_matrix);
@@ -1758,12 +1781,16 @@ FILL_EXTEND_HORIZONTAL (int sj_horizontal_extension, int sj_gap_extension, int s
         LOR_WITH_DIRECTION_MATRIX(END_HORIZONTAL,direction_matrix);
         extend_horizontal[j] = open_cost;
     }
-    if (0 && DEBUG_AFFINE)
+    if (0 && DEBUG_AFFINE) 
         printf ("The final cost is %d\n", extend_horizontal[j]);
     return (direction_matrix);
 }
 
- void
+#ifdef _WIN32
+__inline void
+#else
+inline void
+#endif
 FILL_EXTEND_VERTICAL_NOBT (int si_vertical_extension, int si_gap_extension, int si_gap_opening, int j, \
         int *extend_vertical, const int *prev_extend_vertical, const cmt c, \
         const int *prev_close_block_diagonal) {
@@ -1771,14 +1798,18 @@ FILL_EXTEND_VERTICAL_NOBT (int si_vertical_extension, int si_gap_extension, int 
     ext_cost = prev_extend_vertical[j] + si_vertical_extension;
     open_cost = prev_close_block_diagonal[j] +
         si_gap_opening + si_gap_extension;
-    if (ext_cost < open_cost)
+    if (ext_cost < open_cost) 
         extend_vertical[j] = ext_cost;
-    else
+    else 
         extend_vertical[j] = open_cost;
     return;
 }
 
- DIRECTION_MATRIX
+#ifdef _WIN32
+__inline DIRECTION_MATRIX
+#else
+inline DIRECTION_MATRIX
+#endif
 FILL_EXTEND_VERTICAL (int si_vertical_extension, int si_gap_extension, int si_gap_opening, int j, \
         int *extend_vertical, const int *prev_extend_vertical, const cmt c, \
         const int *prev_close_block_diagonal, \
@@ -1798,10 +1829,14 @@ FILL_EXTEND_VERTICAL (int si_vertical_extension, int si_gap_extension, int si_ga
     return (direction_matrix);
 }
 
- void
-FILL_EXTEND_BLOCK_DIAGONAL_NOBT (SEQT si_base, SEQT sj_base, SEQT si_prev_base,
+#ifdef _WIN32
+__inline void
+#else
+inline void
+#endif
+FILL_EXTEND_BLOCK_DIAGONAL_NOBT (SEQT si_base, SEQT sj_base, SEQT si_prev_base, 
         SEQT sj_prev_base, int gap_open, int j, \
-        int *extend_block_diagonal, const int *prev_extend_block_diagonal,
+        int *extend_block_diagonal, const int *prev_extend_block_diagonal, 
         const int *prev_close_block_diagonal) {
     int ext_cost, open_cost;
     int diag, open_diag, flag, flag2;
@@ -1811,17 +1846,21 @@ FILL_EXTEND_BLOCK_DIAGONAL_NOBT (SEQT si_base, SEQT sj_base, SEQT si_prev_base,
     open_diag = flag?(flag2?0:(2 * gap_open)):HIGH_NUM;
     ext_cost = prev_extend_block_diagonal[j - 1] + diag;
     open_cost = prev_close_block_diagonal[j - 1] + open_diag;
-    if (ext_cost < open_cost)
+    if (ext_cost < open_cost) 
         extend_block_diagonal[j] = ext_cost;
-    else
+    else 
         extend_block_diagonal[j] = open_cost;
     return;
 }
 
- DIRECTION_MATRIX
+#ifdef _WIN32
+__inline DIRECTION_MATRIX
+#else
+inline DIRECTION_MATRIX
+#endif
 FILL_EXTEND_BLOCK_DIAGONAL (SEQT si_base, SEQT sj_base, SEQT si_prev_base, SEQT sj_prev_base, \
         int gap_open, int j, \
-        int *extend_block_diagonal, const int *prev_extend_block_diagonal,
+        int *extend_block_diagonal, const int *prev_extend_block_diagonal, 
         const int *prev_close_block_diagonal, \
         DIRECTION_MATRIX direction_matrix) {
     int ext_cost, open_cost;
@@ -1842,7 +1881,7 @@ FILL_EXTEND_BLOCK_DIAGONAL (SEQT si_base, SEQT sj_base, SEQT si_prev_base, SEQT 
     return (direction_matrix);
 }
 
- void
+inline void
 FILL_CLOSE_BLOCK_DIAGONAL_NOBT(SEQT si_base, SEQT sj_base, SEQT si_no_gap, \
         SEQT sj_no_gap, int si_gap_opening, int sj_gap_opening, int j, \
         const int *c, int *close_block_diagonal, \
@@ -1854,7 +1893,7 @@ FILL_CLOSE_BLOCK_DIAGONAL_NOBT(SEQT si_base, SEQT sj_base, SEQT si_no_gap, \
     /*
     diag = cm_calc_cost(c->cost,si_no_gap,sj_no_gap,c->lcm);
     */
-    extra_gap_opening =
+    extra_gap_opening = 
         (sj_gap_opening < si_gap_opening)?si_gap_opening:sj_gap_opening;
     if (0 && DEBUG_AFFINE) {
         printf ("Between %d and %d: Diag : %d, Extra gap opening: %d\n", si_no_gap, sj_no_gap, diag, extra_gap_opening);
@@ -1871,16 +1910,16 @@ FILL_CLOSE_BLOCK_DIAGONAL_NOBT(SEQT si_base, SEQT sj_base, SEQT si_no_gap, \
         from_horizontal = prev_extend_horizontal[j - 1] + diag + si_gap_opening;
     from_diagonal = prev_extend_block_diagonal[j - 1] + diag + extra_gap_opening;
     close_block_diagonal[j] = algn;
-    if (close_block_diagonal[j] > from_vertical)
+    if (close_block_diagonal[j] > from_vertical) 
         close_block_diagonal[j] = from_vertical;
-    if (close_block_diagonal[j] > from_horizontal)
+    if (close_block_diagonal[j] > from_horizontal) 
             close_block_diagonal[j] = from_horizontal;
-    if (close_block_diagonal[j] > from_diagonal)
+    if (close_block_diagonal[j] > from_diagonal) 
             close_block_diagonal[j] = from_diagonal;
     return;
 }
 
- DIRECTION_MATRIX
+inline DIRECTION_MATRIX
 FILL_CLOSE_BLOCK_DIAGONAL(SEQT si_base, SEQT sj_base, SEQT si_no_gap, \
         SEQT sj_no_gap, int si_gap_opening, int sj_gap_opening, int j, \
         const int *c, int *close_block_diagonal, \
@@ -1894,7 +1933,7 @@ FILL_CLOSE_BLOCK_DIAGONAL(SEQT si_base, SEQT sj_base, SEQT si_no_gap, \
     /*
         cm_calc_cost(c->cost,si_no_gap,sj_no_gap,c->lcm);
         */
-    extra_gap_opening =
+    extra_gap_opening = 
         (sj_gap_opening < si_gap_opening)?si_gap_opening:sj_gap_opening;
     if (0 && DEBUG_AFFINE) {
         printf ("Between %d and %d: Diag : %d, Extra gap opening: %d\n", si_no_gap, sj_no_gap, diag, extra_gap_opening);
@@ -1976,7 +2015,7 @@ backtrace_affine (DIRECTION_MATRIX *direction_matrix, const seqt si, const seqt 
             if (!(ic & TMPGAP)) {
                 seq_prepend (median, (ic | TMPGAP));
                 seq_prepend (medianwg, (ic | TMPGAP));
-            }
+            } 
             else seq_prepend (medianwg, TMPGAP);
             seq_prepend(resi, ic);
             seq_prepend(resj, TMPGAP);
@@ -2000,7 +2039,7 @@ backtrace_affine (DIRECTION_MATRIX *direction_matrix, const seqt si, const seqt 
             seq_prepend(resi, ic);
             seq_prepend(resj, jc);
             seq_prepend(medianwg, TMPGAP);
-            i--;
+            i--; 
             j--;
             direction_matrix -= (lenj + 2);
             jc = seq_get(sj, j);
@@ -2015,7 +2054,7 @@ backtrace_affine (DIRECTION_MATRIX *direction_matrix, const seqt si, const seqt 
             seq_prepend(medianwg, prep);
             seq_prepend(resi, ic);
             seq_prepend(resj, jc);
-            i--;
+            i--; 
             j--;
             direction_matrix -= (lenj + 2);
             jc = seq_get(sj, j);
@@ -2062,7 +2101,7 @@ print_array (char *title, int *arr, int max) {
     int i;
     printf ("%s", title);
     for (i = 0; i <= max; i++) {
-        printf ("%3d ", arr[i]);
+        printf ("%d ", arr[i]);
     }
     printf ("\n");
     fflush (stdout);
@@ -2070,11 +2109,11 @@ print_array (char *title, int *arr, int max) {
 }
 
 void
-print_dirMtx (char *title, DIRECTION_MATRIX *arr, int max) {
+print_dm (char *title, DIRECTION_MATRIX *arr, int max) {
     int i;
     printf ("%s", title);
     for (i = 0; i <= max; i++) {
-        printf ("%3d ", arr[i]);
+        printf ("%d ", arr[i]);
     }
     printf ("\n");
     fflush (stdout);
@@ -2083,16 +2122,12 @@ print_dirMtx (char *title, DIRECTION_MATRIX *arr, int max) {
 
 void
 initialize_matrices_affine_nobt (int go, const seqt si, const seqt sj, \
-                                 const cmt c, \
-                                 int *close_block_diagonal, int *extend_block_diagonal, \
-                                 int *extend_vertical, int *extend_horizontal, \
-                                 const int *precalcMtx) {
-    if (DEBUG_AFFINE) {
-        printf("initialize_matrices_affine_nobt\n");
-        fflush(stdout);
-    }
+        const cmt c, \
+        int *close_block_diagonal, int *extend_block_diagonal, \
+        int *extend_vertical, int *extend_horizontal, \
+        const int *prec) {
     int leni, lenj, i = 1, j = 1, r;
-    int *prev_extend_vertical;
+    int *prev_extend_vertical; 
     const int *gap_row;
     SEQT jc, jp, ic, ip;
     leni = seq_get_len(si) - 1;
@@ -2101,16 +2136,14 @@ initialize_matrices_affine_nobt (int go, const seqt si, const seqt sj, \
     extend_block_diagonal[0] = 0;
     extend_horizontal[0] = go;
     extend_vertical[0] = go;
-    gap_row = cm_get_precal_row(precalcMtx,0,lenj);
-    // if (DEBUG_AFFINE) {
-        printf ("\nThe gap opening parameter is %d\n", go);
-        print_array ("EH: ", extend_horizontal, lenj);
-        print_array ("EV: ", extend_vertical, lenj);
-        print_array ("EB: ", extend_block_diagonal, lenj);
-        print_array ("CB: ", close_block_diagonal, lenj);
-        // print_dirMtx ("DM: ", direction_matrix, lenj); nobt, so no dir matrix
-        printf("\n\n");
-    // }
+    gap_row = cm_get_precal_row(prec,0,lenj);
+    if (DEBUG_AFFINE) {
+        printf ("The gap opening parameter is %d\n", go);
+        print_array ("EH:", extend_horizontal, lenj);
+        print_array ("EV:", extend_vertical, lenj);
+        print_array ("EB:", extend_block_diagonal, lenj);
+        print_array ("CB:", close_block_diagonal, lenj);
+    }
     for (; j <= lenj; j++) {
         jc = seq_get(sj,j);
         jp = seq_get(sj,j - 1);
@@ -2121,13 +2154,11 @@ initialize_matrices_affine_nobt (int go, const seqt si, const seqt sj, \
         extend_vertical[j] = HIGH_NUM;
     }
     if (DEBUG_AFFINE) {
-        printf ("\n\nJust initialized\n");
-        print_array ("EH: ", extend_horizontal, lenj);
-        print_array ("EV: ", extend_vertical, lenj);
-        print_array ("EB: ", extend_block_diagonal, lenj);
-        print_array ("CB: ", close_block_diagonal, lenj);
-        // print_dirMtx ("DM: ", direction_matrix, lenj); nobt, so no dir matrix
-        printf("\n\n");
+        printf ("Just initialized\n");
+        print_array ("EH:", extend_horizontal, lenj);
+        print_array ("EV:", extend_vertical, lenj);
+        print_array ("EB:", extend_block_diagonal, lenj);
+        print_array ("CB:", close_block_diagonal, lenj);
         printf ("Finished initialized\n");
     }
     /* for (; i <= leni; i++) { */
@@ -2153,15 +2184,9 @@ initialize_matrices_affine (int go, const seqt si, const seqt sj, \
         const cmt c, \
         int *close_block_diagonal, int *extend_block_diagonal, \
         int *extend_vertical, int *extend_horizontal, int *final_cost_matrix, \
-        DIRECTION_MATRIX *direction_matrix, const int *precalcMtx) {
-    if (DEBUG_AFFINE) {
-        printf("initialize_matrices_affine\n");
-        printf("short (i): %2d\n", si->len);
-        printf("long (j): %2d\n", sj->len);
-        fflush(stdout);
-    }
+        DIRECTION_MATRIX *direction_matrix, const int *prec) {
     int leni, lenj, i = 1, j = 1, r;
-    int *prev_extend_vertical;
+    int *prev_extend_vertical; 
     const int *gap_row;
     SEQT jc, jp, ic, ip;
     leni = seq_get_len(si) - 1;
@@ -2172,16 +2197,14 @@ initialize_matrices_affine (int go, const seqt si, const seqt sj, \
     extend_horizontal[0] = go;
     extend_vertical[0] = go;
     direction_matrix[0] = 0xFFFF;
-    gap_row = cm_get_precal_row(precalcMtx,0,lenj);
+    gap_row = cm_get_precal_row(prec,0,lenj);
     if (DEBUG_AFFINE) {
-        printf ("\nThe gap opening parameter is %d\n", go);
-        print_array ("EH: ", extend_horizontal, lenj);
-        print_array ("EV: ", extend_vertical, lenj);
-        print_array ("EB: ", extend_block_diagonal, lenj);
-        print_array ("CB: ", close_block_diagonal, lenj);
-        print_array ("FC: ", final_cost_matrix, lenj);
-        print_dirMtx ("DM: ", direction_matrix, lenj);
-        printf("\n\nprecalc matrix first line: \n");
+        printf ("The gap opening parameter is %d\n", go);
+        print_array ("EH:", extend_horizontal, lenj);
+        print_array ("EV:", extend_vertical, lenj);
+        print_array ("EB:", extend_block_diagonal, lenj);
+        print_array ("CB:", close_block_diagonal, lenj);
+        print_array ("FC:", final_cost_matrix, lenj);
     }
     for (; j <= lenj; j++) {
         jc = seq_get(sj,j);
@@ -2193,21 +2216,15 @@ initialize_matrices_affine (int go, const seqt si, const seqt sj, \
         extend_block_diagonal[j] = HIGH_NUM;
         extend_vertical[j] = HIGH_NUM;
         direction_matrix[j] = DO_HORIZONTAL | END_HORIZONTAL;
-        if (DEBUG_AFFINE) {
-            printf("address: %p", &gap_row[j]);
-            printf("%3d", gap_row[j]);
-        }
     }
-
     if (DEBUG_AFFINE) {
-        printf ("\n\n\nJust initialized\n");
-        print_array ("EH: ", extend_horizontal, lenj);
-        print_array ("EV: ", extend_vertical, lenj);
-        print_array ("EB: ", extend_block_diagonal, lenj);
-        print_array ("CB: ", close_block_diagonal, lenj);
-        print_array ("FC: ", final_cost_matrix, lenj);
-        print_dirMtx ("DM: ", direction_matrix, lenj);
-        printf ("\nFinished initialization\n");
+        printf ("Just initialized\n");
+        print_array ("EH:", extend_horizontal, lenj);
+        print_array ("EV:", extend_vertical, lenj);
+        print_array ("EB:", extend_block_diagonal, lenj);
+        print_array ("CB:", close_block_diagonal, lenj);
+        print_array ("FC:", final_cost_matrix, lenj);
+        printf ("Finished initialized\n");
     }
     /* for (; i <= leni; i++) { */
         prev_extend_vertical = extend_vertical;
@@ -2230,7 +2247,7 @@ initialize_matrices_affine (int go, const seqt si, const seqt sj, \
     return;
 }
 
- DIRECTION_MATRIX
+inline DIRECTION_MATRIX
 ASSIGN_MINIMUM (int *final_cost_matrix, int extend_horizontal, \
         int extend_vertical, int extend_block_diagonal, \
         int close_block_diagonal, DIRECTION_MATRIX direction_matrix) {
@@ -2262,21 +2279,19 @@ ASSIGN_MINIMUM (int *final_cost_matrix, int extend_horizontal, \
     return (direction_matrix);
 }
 
- int
+#ifdef _WIN32
+__inline int
+#else
+inline int
+#endif
 algn_fill_plane_3_aff_nobt (const seqt si, const seqt sj, int leni, int lenj, \
         const cmt c, int *extend_horizontal, int *extend_vertical, \
-        int *close_block_diagonal, int *extend_block_diagonal, const int *precalcMtx, \
+        int *close_block_diagonal, int *extend_block_diagonal, const int *prec, \
         int *gap_open_prec, int *sj_horizontal_extension) {
-    if (DEBUG_AFFINE) {
-        printf("algn_fill_plane_3_aff_nobt\n");
-        printf("short seq (i): %2d\n", si->len);
-        printf("short seq (j): %2d\n", sj->len);
-        fflush(stdout);
-    }
     int start_pos = 1, end_pos, start_v = 40, i=1, j, res;
-    int *prev_extend_horizontal, *prev_extend_vertical, *prev_close_block_diagonal,
+    int *prev_extend_horizontal, *prev_extend_vertical, *prev_close_block_diagonal, 
         *prev_extend_block_diagonal;
-    int *init_extend_horizontal, *init_extend_vertical, *init_close_block_diagonal,
+    int *init_extend_horizontal, *init_extend_vertical, *init_close_block_diagonal, 
         *init_extend_block_diagonal;
     const int *si_no_gap_vector;
     int si_gap_opening, si_gap_extension, sj_gap_opening, sj_gap_extension;
@@ -2290,15 +2305,13 @@ algn_fill_plane_3_aff_nobt (const seqt si, const seqt sj, int leni, int lenj, \
     init_extend_vertical = extend_vertical;
     init_extend_block_diagonal = extend_block_diagonal;
     init_close_block_diagonal = close_block_diagonal;
-    gap_row = cm_get_precal_row(precalcMtx,0,lenj);
+    gap_row = cm_get_precal_row(prec,0,lenj);
     end_pos = (lenj - leni) + 8;
     if (DEBUG_AFFINE) {
-        print_array ("EH: ", extend_horizontal, lenj);
-        print_array ("EV: ", extend_vertical, lenj);
-        print_array ("EB: ", extend_block_diagonal, lenj);
-        print_array ("CB: ", close_block_diagonal, lenj);
-        // print_dirMtx ("DM: ", direction_matrix, lenj); nobt, so no dir matrix
-        printf("\n\n");
+        print_array ("EH:", extend_horizontal, lenj);
+        print_array ("EV:", extend_vertical, lenj);
+        print_array ("EB:", extend_block_diagonal, lenj);
+        print_array ("CB:", close_block_diagonal, lenj);
     }
     if (end_pos < 40) end_pos = 40;
     if (end_pos > lenj) end_pos = lenj;
@@ -2320,13 +2333,13 @@ algn_fill_plane_3_aff_nobt (const seqt si, const seqt sj, int leni, int lenj, \
             (((i - 1) % 2) * (lenj + 1));
         prev_extend_vertical = init_extend_vertical +
             ((lenj + 1) * ((i - 1) % 2));
-        prev_extend_block_diagonal =
+        prev_extend_block_diagonal = 
             init_extend_block_diagonal + ((lenj + 1) * ((i - 1) % 2));
         prev_close_block_diagonal = init_close_block_diagonal +
             ((lenj + 1) * ((i - 1) % 2));
         extend_horizontal = init_extend_horizontal + ((i % 2) * (lenj + 1));
         extend_vertical = init_extend_vertical + ((lenj + 1) * (i % 2));
-        extend_block_diagonal =
+        extend_block_diagonal = 
             init_extend_block_diagonal + ((lenj + 1) * (i % 2));
         close_block_diagonal = init_close_block_diagonal + ((lenj + 1) * (i % 2));
         if (i > start_v) start_pos++;
@@ -2359,13 +2372,13 @@ algn_fill_plane_3_aff_nobt (const seqt si, const seqt sj, int leni, int lenj, \
             FILL_EXTEND_VERTICAL_NOBT(si_vertical_extension, si_gap_extension,si_gap_opening,j, \
                     extend_vertical,prev_extend_vertical,c, \
                     prev_close_block_diagonal);
-            FILL_EXTEND_BLOCK_DIAGONAL_NOBT(ic,jc,ip,jp,gap_open,j,extend_block_diagonal,
+            FILL_EXTEND_BLOCK_DIAGONAL_NOBT(ic,jc,ip,jp,gap_open,j,extend_block_diagonal, 
                     prev_extend_block_diagonal, \
                     prev_close_block_diagonal);
             FILL_CLOSE_BLOCK_DIAGONAL_NOBT(ic,jc,si_no_gap,sj_no_gap, \
-                    si_gap_opening, sj_gap_opening,j,si_no_gap_vector,close_block_diagonal,
+                    si_gap_opening, sj_gap_opening,j,si_no_gap_vector,close_block_diagonal, 
                     prev_close_block_diagonal, \
-                    prev_extend_vertical, prev_extend_horizontal,
+                    prev_extend_vertical, prev_extend_horizontal, 
                     prev_extend_block_diagonal);
         }
         if (end_pos < lenj) {
@@ -2376,12 +2389,10 @@ algn_fill_plane_3_aff_nobt (const seqt si, const seqt sj, int leni, int lenj, \
             extend_block_diagonal[end_pos] = HIGH_NUM;
         }
         if (DEBUG_AFFINE) {
-            print_array ("EH: ", extend_horizontal, lenj);
-            print_array ("EV: ", extend_vertical, lenj);
-            print_array ("EB: ", extend_block_diagonal, lenj);
-            print_array ("CB: ", close_block_diagonal, lenj);
-            // print_dirMtx ("DM: ", direction_matrix, lenj); nobt, so no dir matrix
-            printf("\n\n");
+            print_array ("EH:", extend_horizontal, lenj);
+            print_array ("EV:", extend_vertical, lenj);
+            print_array ("EB:", extend_block_diagonal, lenj);
+            print_array ("CB:", close_block_diagonal, lenj);
         }
     }
     res = extend_horizontal[lenj];
@@ -2392,20 +2403,20 @@ algn_fill_plane_3_aff_nobt (const seqt si, const seqt sj, int leni, int lenj, \
 }
 
 
- int
+#ifdef _WIN32
+__inline int
+#else
+inline int
+#endif
 algn_fill_plane_3_aff (const seqt si, const seqt sj, int leni, int lenj, \
-                       int *final_cost_matrix, DIRECTION_MATRIX *direction_matrix, \
-                       const cmt c, int *extend_horizontal, int *extend_vertical, \
-                       int *close_block_diagonal, int *extend_block_diagonal, const int *precalcMtx, \
-                       int *gap_open_prec, int *sj_horizontal_extension) {
-    if (DEBUG_AFFINE) {
-        printf("algn_fill_plane_3_aff\n");
-        fflush(stdout);
-    }
+        int *final_cost_matrix, DIRECTION_MATRIX *direction_matrix, \
+        const cmt c, int *extend_horizontal, int *extend_vertical, \
+        int *close_block_diagonal, int *extend_block_diagonal, const int *prec, \
+        int *gap_open_prec, int *sj_horizontal_extension) {
     int start_pos = 1, end_pos, start_v = 40, i=1, j, res;
-    int *prev_extend_horizontal, *prev_extend_vertical, *prev_close_block_diagonal,
+    int *prev_extend_horizontal, *prev_extend_vertical, *prev_close_block_diagonal, 
         *prev_extend_block_diagonal;
-    int *init_extend_horizontal, *init_extend_vertical, *init_close_block_diagonal,
+    int *init_extend_horizontal, *init_extend_vertical, *init_close_block_diagonal, 
         *init_extend_block_diagonal;
     const int *si_no_gap_vector;
     int si_gap_opening, si_gap_extension, sj_gap_opening, sj_gap_extension;
@@ -2420,16 +2431,15 @@ algn_fill_plane_3_aff (const seqt si, const seqt sj, int leni, int lenj, \
     init_extend_vertical = extend_vertical;
     init_extend_block_diagonal = extend_block_diagonal;
     init_close_block_diagonal = close_block_diagonal;
-    gap_row = cm_get_precal_row(precalcMtx,0,lenj);
+    gap_row = cm_get_precal_row(prec,0,lenj);
     end_pos = (lenj - leni) + 8;
     if (DEBUG_AFFINE) {
-        print_array ("EH: ", extend_horizontal, lenj);
-        print_array ("EV: ", extend_vertical, lenj);
-        print_array ("EB: ", extend_block_diagonal, lenj);
-        print_array ("CB: ", close_block_diagonal, lenj);
-        print_array ("FC: ", final_cost_matrix, lenj);
-        print_dirMtx ("DM: ", direction_matrix, lenj);
-        printf("\n\n");
+        print_array ("EH:", extend_horizontal, lenj);
+        print_array ("EV:", extend_vertical, lenj);
+        print_array ("EB:", extend_block_diagonal, lenj);
+        print_array ("CB:", close_block_diagonal, lenj);
+        print_array ("FC:", final_cost_matrix, lenj);
+        print_dm ("DM:", direction_matrix, lenj);
     }
     if (end_pos < 40) end_pos = 40;
     if (end_pos > lenj) end_pos = lenj;
@@ -2452,13 +2462,13 @@ algn_fill_plane_3_aff (const seqt si, const seqt sj, int leni, int lenj, \
             (((i - 1) % 2) * (lenj + 1));
         prev_extend_vertical = init_extend_vertical +
             ((lenj + 1) * ((i - 1) % 2));
-        prev_extend_block_diagonal =
+        prev_extend_block_diagonal = 
             init_extend_block_diagonal + ((lenj + 1) * ((i - 1) % 2));
         prev_close_block_diagonal = init_close_block_diagonal +
             ((lenj + 1) * ((i - 1) % 2));
         extend_horizontal = init_extend_horizontal + ((i % 2) * (lenj + 1));
         extend_vertical = init_extend_vertical + ((lenj + 1) * (i % 2));
-        extend_block_diagonal =
+        extend_block_diagonal = 
             init_extend_block_diagonal + ((lenj + 1) * (i % 2));
         close_block_diagonal = init_close_block_diagonal + ((lenj + 1) * (i % 2));
         direction_matrix = direction_matrix + (lenj + 1);
@@ -2499,14 +2509,14 @@ algn_fill_plane_3_aff (const seqt si, const seqt sj, int leni, int lenj, \
                     extend_vertical,prev_extend_vertical,c, \
                     prev_close_block_diagonal,tmp_direction_matrix);
             tmp_direction_matrix =
-                FILL_EXTEND_BLOCK_DIAGONAL(ic,jc,ip,jp,gap_open,j,extend_block_diagonal,
+                FILL_EXTEND_BLOCK_DIAGONAL(ic,jc,ip,jp,gap_open,j,extend_block_diagonal, 
                     prev_extend_block_diagonal, \
                     prev_close_block_diagonal, tmp_direction_matrix);
             tmp_direction_matrix =
                 FILL_CLOSE_BLOCK_DIAGONAL(ic,jc,si_no_gap,sj_no_gap, \
-                    si_gap_opening, sj_gap_opening,j,si_no_gap_vector,close_block_diagonal,
+                    si_gap_opening, sj_gap_opening,j,si_no_gap_vector,close_block_diagonal, 
                     prev_close_block_diagonal, \
-                    prev_extend_vertical, prev_extend_horizontal,
+                    prev_extend_vertical, prev_extend_horizontal, 
                     prev_extend_block_diagonal, \
                     tmp_direction_matrix);
             tmp_direction_matrix =
@@ -2525,13 +2535,12 @@ algn_fill_plane_3_aff (const seqt si, const seqt sj, int leni, int lenj, \
             extend_block_diagonal[end_pos] = HIGH_NUM;
         }
         if (DEBUG_AFFINE) {
-            print_array ("EH: ", extend_horizontal, lenj);
-            print_array ("EV: ", extend_vertical, lenj);
-            print_array ("EB: ", extend_block_diagonal, lenj);
-            print_array ("CB: ", close_block_diagonal, lenj);
-            print_array ("FC: ", final_cost_matrix, lenj);
-            print_dirMtx ("DM: ", direction_matrix, lenj);
-            printf("\n\n");
+            print_array ("EH:", extend_horizontal, lenj);
+            print_array ("EV:", extend_vertical, lenj);
+            print_array ("EB:", extend_block_diagonal, lenj);
+            print_array ("CB:", close_block_diagonal, lenj);
+            print_array ("FC:", final_cost_matrix, lenj);
+            print_dm ("DM:", direction_matrix, lenj);
         }
     }
     res = final_cost_matrix[lenj];
@@ -2539,14 +2548,10 @@ algn_fill_plane_3_aff (const seqt si, const seqt sj, int leni, int lenj, \
 }
 
 value
-algn_CAML_align_affine_3 (value si, value sj, value cm, value am, value resi,
+algn_CAML_align_affine_3 (value si, value sj, value cm, value am, value resi, 
         value resj, value median, value medianwg) {
-    if (DEBUG_AFFINE) {
-        printf("algn_CAML_align_affine_3\n");
-        fflush(stdout);
-    }
-    // CAMLcparam4(si,sj,cm,am);
-    // CAMLxparam4(resi,resj,median,medianwg);
+    CAMLparam4(si,sj,cm,am);
+    CAMLxparam4(resi,resj,median,medianwg);
     seqt csi, csj;
     seqt cresj, cresi, cmedian, cmedianwg;
     cmt ccm;
@@ -2558,7 +2563,7 @@ algn_CAML_align_affine_3 (value si, value sj, value cm, value am, value resi,
     int *extend_vertical;
     int *extend_horizontal;
     int *final_cost_matrix;
-    int *precalcMtx;
+    int *prec;
     int *gap_open_prec;
     int *s_horizontal_gap_extension;
     int res, largest;
@@ -2578,17 +2583,7 @@ algn_CAML_align_affine_3 (value si, value sj, value cm, value am, value resi,
     else largest = lenj;
     mat_setup_size (cam, largest, largest, 0, 0, cm_get_lcm(ccm));
     matrix = mat_get_2d_matrix(cam);
-    precalcMtx = mat_get_2d_prec(cam);
-    const int* gap_row;
-    printf("address: %p\n", precalcMtx);
-    for (size_t i = 0; i < leni; i++) {
-        gap_row = cm_get_precal_row(precalcMtx,i,lenj);
-        for (size_t j = 1; j <= lenj; j++ ) {
-            printf("address: %p\n", &gap_row[j]);
-            printf("%15d", (gap_row[j]));
-        }
-        printf("\n");
-    }
+    prec = mat_get_2d_prec(cam);
     close_block_diagonal = (int *) matrix;
     extend_block_diagonal = (int *) (matrix + (2 * largest));
     extend_vertical = (int *) (matrix + (4 * largest));
@@ -2599,31 +2594,31 @@ algn_CAML_align_affine_3 (value si, value sj, value cm, value am, value resi,
     direction_matrix =  mat_get_2d_direct(cam);
     if (leni <= lenj) {
         cm_precalc_4algn(ccm,cam,csj);
-        initialize_matrices_affine(ccm->gap_open,csi,csj,ccm,close_block_diagonal,
-                extend_block_diagonal, extend_vertical, extend_horizontal,
-                final_cost_matrix, direction_matrix, precalcMtx);
+        initialize_matrices_affine(ccm->gap_open,csi,csj,ccm,close_block_diagonal, 
+                extend_block_diagonal, extend_vertical, extend_horizontal, 
+                final_cost_matrix, direction_matrix, prec);
         res = algn_fill_plane_3_aff (csi, csj, leni - 1, lenj - 1, final_cost_matrix,
-            direction_matrix, ccm, extend_horizontal, extend_vertical,
-            close_block_diagonal, extend_block_diagonal, precalcMtx, gap_open_prec,
+            direction_matrix, ccm, extend_horizontal, extend_vertical, 
+            close_block_diagonal, extend_block_diagonal, prec, gap_open_prec, 
             s_horizontal_gap_extension);
         backtrace_affine(direction_matrix, csi, csj, cmedian, cmedianwg, \
                 cresi, cresj, ccm);
     } else {
         cm_precalc_4algn(ccm,cam,csi);
-        initialize_matrices_affine(ccm->gap_open,csj,csi,ccm,close_block_diagonal,
-                extend_block_diagonal, extend_vertical, extend_horizontal,
-                final_cost_matrix, direction_matrix, precalcMtx);
+        initialize_matrices_affine(ccm->gap_open,csj,csi,ccm,close_block_diagonal, 
+                extend_block_diagonal, extend_vertical, extend_horizontal, 
+                final_cost_matrix, direction_matrix, prec);
         res = algn_fill_plane_3_aff (csj, csi, lenj - 1, leni - 1, final_cost_matrix,
-            direction_matrix, ccm, extend_horizontal, extend_vertical,
-            close_block_diagonal, extend_block_diagonal, precalcMtx, gap_open_prec,
+            direction_matrix, ccm, extend_horizontal, extend_vertical, 
+            close_block_diagonal, extend_block_diagonal, prec, gap_open_prec, 
             s_horizontal_gap_extension);
         backtrace_affine(direction_matrix, csj, csi, cmedian, cmedianwg, \
                 cresj, cresi, ccm);
     }
-    return 0; // return 0; // CAMLreturn(Val_int(res));
+    CAMLreturn(Val_int(res));
 }
 
-value
+value 
 algn_CAML_align_affine_3_bc (value *argv, int argn) {
     return (algn_CAML_align_affine_3 (argv[0], argv[1], argv[2], argv[3], argv[4], \
                 argv[5], argv[6], argv[7]));
@@ -2631,11 +2626,7 @@ algn_CAML_align_affine_3_bc (value *argv, int argn) {
 
 value
 algn_CAML_cost_affine_3 (value si, value sj, value cm, value am) {
-    if (DEBUG_AFFINE) {
-        printf("algn_CAML_cost_affine_3\n");
-        fflush(stdout);
-    }
-    // CAMLcparam4(si,sj,cm,am);
+    CAMLparam4(si,sj,cm,am);
     seqt csi, csj;
     cmt ccm;
     matricest cam;
@@ -2645,7 +2636,7 @@ algn_CAML_cost_affine_3 (value si, value sj, value cm, value am) {
     int *extend_block_diagonal;
     int *extend_vertical;
     int *extend_horizontal;
-    int *precalcMtx;
+    int *prec;
     int *gap_open_prec;
     int *s_horizontal_gap_extension;
     int res, largest;
@@ -2666,102 +2657,102 @@ algn_CAML_cost_affine_3 (value si, value sj, value cm, value am) {
     extend_horizontal = (int *) (matrix + (6 * largest));
     gap_open_prec = (int *) (matrix + (10 * largest));
     s_horizontal_gap_extension = (int *) (matrix + (11 * largest));
-    precalcMtx = mat_get_2d_prec(cam);
+    prec = mat_get_2d_prec(cam);
     if (leni <= lenj) {
         cm_precalc_4algn(ccm,cam,csj);
-        initialize_matrices_affine_nobt(ccm->gap_open,csi,csj,ccm,close_block_diagonal,
-                extend_block_diagonal, extend_vertical, extend_horizontal,
-                precalcMtx);
-        res = algn_fill_plane_3_aff_nobt (csi, csj, leni - 1, lenj - 1,
-            ccm, extend_horizontal, extend_vertical,
-            close_block_diagonal, extend_block_diagonal, precalcMtx, gap_open_prec,
+        initialize_matrices_affine_nobt(ccm->gap_open,csi,csj,ccm,close_block_diagonal, 
+                extend_block_diagonal, extend_vertical, extend_horizontal, 
+                prec);
+        res = algn_fill_plane_3_aff_nobt (csi, csj, leni - 1, lenj - 1, 
+            ccm, extend_horizontal, extend_vertical, 
+            close_block_diagonal, extend_block_diagonal, prec, gap_open_prec, 
             s_horizontal_gap_extension);
     } else {
         cm_precalc_4algn(ccm,cam,csi);
-        initialize_matrices_affine_nobt(ccm->gap_open,csj,csi,ccm,close_block_diagonal,
-                extend_block_diagonal, extend_vertical, extend_horizontal, precalcMtx);
-        res = algn_fill_plane_3_aff_nobt (csj, csi, lenj - 1, leni - 1,
-            ccm, extend_horizontal, extend_vertical,
-            close_block_diagonal, extend_block_diagonal, precalcMtx, gap_open_prec,
+        initialize_matrices_affine_nobt(ccm->gap_open,csj,csi,ccm,close_block_diagonal, 
+                extend_block_diagonal, extend_vertical, extend_horizontal, prec);
+        res = algn_fill_plane_3_aff_nobt (csj, csi, lenj - 1, leni - 1, 
+            ccm, extend_horizontal, extend_vertical, 
+            close_block_diagonal, extend_block_diagonal, prec, gap_open_prec, 
             s_horizontal_gap_extension);
     }
-    return 0; // return 0; // CAMLreturn(Val_int(res));
+    CAMLreturn(Val_int(res));
 }
 
 
- int
-algn_fill_plane_2_aff (const seqt s1, int *precalcMtx, int s1_len, int s2_len, int *curRow, \
-        DIRECTION_MATRIX *dirMtx, const cmt c, int width, int height, int dwidth_height, \
-        int *dncurRow, int *htcurRow) {
-    if (DEBUG_AFFINE) {
-        printf("algn_fill_plane_2_aff %d\n", iteration);
-        fflush(stdout);
-    }
-    int *next_row, *next_prevRow, *next_dncurRow, *next_pdncurRow;
+#ifdef _WIN32
+__inline int
+#else
+inline int
+#endif
+algn_fill_plane_2_aff (const seqt s1, int *prec, int s1_len, int s2_len, int *mm, \
+        DIRECTION_MATRIX *dm, const cmt c, int width, int height, int dwidth_height, \
+        int *dnmm, int *htmm) {
+    int *next_row, *next_pm, *next_dnmm, *next_pdnmm;
     int *a, *b, *d, *e, open_gap;
     int const *gap_row;
     int start_row, final_row, start_column, length;
-    DIRECTION_MATRIX *to_go_dirMtx;
+    DIRECTION_MATRIX *to_go_dm;
     open_gap = cm_get_gap_opening_parameter (c);
     width = width + dwidth_height;
     if (width > s2_len) width = s2_len;
     height = height + dwidth_height;
     if (height > s1_len) height = s1_len;
-    a = curRow;
-    b = curRow + s2_len;
-    d = dncurRow;
-    e = dncurRow + s2_len;
-    gap_row = cm_get_precal_row (precalcMtx, 0, s2_len); /* We want the horizontal row */
+    a = mm;
+    b = mm + s2_len;
+    d = dnmm;
+    e = dnmm + s2_len;
+    gap_row = cm_get_precal_row (prec, 0, s2_len); /* We want the horizontal row */
     /* We have to consider three cases in this new alignment procedure (much
-     * cleaner than the previous):
-     *
+     * cleaner than the previous): 
+     * 
      * Case 1:
      * If s1 is much longer than s2, then there is no point on using the
      * barriers, we rather fill the full matrix in one shot */
     if (((float) s1_len) >= (((float) ((float) 3 / (float) 2) * (float) s2_len)))
-        return (algn_fill_plane_aff (s1, precalcMtx, s1_len, s2_len, curRow, dirMtx, c, d, \
-                    htcurRow, open_gap));
+        return (algn_fill_plane_aff (s1, prec, s1_len, s2_len, mm, dm, c, d, \
+                    htmm, open_gap));
     /* Case 2:
      * There are no full rows to be filled, therefore we have to break the
      * procedure in three different subsets */
     else if ((2 * height) < s1_len) {
-        algn_fill_first_row_aff (a, dirMtx, width, gap_row, d, htcurRow, open_gap);
+        algn_fill_first_row_aff (a, dm, width, gap_row, d, htmm, open_gap);
         b[0] = a[0];
         a[0] = 0;
         start_row = 1;
         final_row = height;
-        start_column = 0;
+        start_column = 0; 
         length = width + 1;
-        to_go_dirMtx = dirMtx + (start_row * s2_len);
+        to_go_dm = dm + (start_row * s2_len);
         /* Now we fill that space */
-        next_row = algn_fill_extending_right_aff (s1, precalcMtx, s1_len, s2_len, b, a, \
-                to_go_dirMtx, c, start_row, final_row, length, e, d, htcurRow, open_gap);
-        next_prevRow = choose_other (next_row, a, b);
-        algn_choose_aff_other (next_row, curRow, &next_dncurRow, &next_pdncurRow, d, e);
+        next_row = algn_fill_extending_right_aff (s1, prec, s1_len, s2_len, b, a, \
+                to_go_dm, c, start_row, final_row, length, e, d, htmm, open_gap);
+        next_pm = choose_other (next_row, a, b);
+        algn_choose_aff_other (next_row, mm, &next_dnmm, &next_pdnmm, d, e);
         /* Next group */
         start_row = final_row;
         final_row = s1_len - (height - 1);
         start_column = 1;
         length = width + height;
-        to_go_dirMtx = dirMtx + (start_row * s2_len);
-        next_row =
-            algn_fill_extending_left_right_aff (s1, precalcMtx, s1_len, \
-                    s2_len, next_row, next_prevRow, to_go_dirMtx, c, start_row, \
-                    final_row, start_column, length, next_dncurRow, next_pdncurRow, \
-                    htcurRow, open_gap);
-        next_prevRow = choose_other (next_row, a, b);
-        algn_choose_aff_other (next_row, curRow, &next_dncurRow, &next_pdncurRow, d, e);
+        to_go_dm = dm + (start_row * s2_len);
+        next_row = 
+            algn_fill_extending_left_right_aff (s1, prec, s1_len, \
+                    s2_len, next_row, next_pm, to_go_dm, c, start_row, \
+                    final_row, start_column, length, next_dnmm, next_pdnmm, \
+                    htmm, open_gap);
+        next_pm = choose_other (next_row, a, b);
+        algn_choose_aff_other (next_row, mm, &next_dnmm, &next_pdnmm, d, e);
         /* The final group */
         start_row = final_row;
         final_row = s1_len;
         length = length - 2;
         start_column = s2_len - length;
-        to_go_dirMtx = dirMtx + (start_row * s2_len);
-        next_row = algn_fill_extending_left_aff (s1, precalcMtx, s1_len, s2_len, \
-                next_row, next_prevRow, to_go_dirMtx, c, start_row, final_row, \
-                start_column, length, next_dncurRow, next_pdncurRow, htcurRow, open_gap);
-        next_prevRow = choose_other (next_row, a, b);
-        algn_choose_aff_other (next_row, curRow, &next_dncurRow, &next_pdncurRow, d, e);
+        to_go_dm = dm + (start_row * s2_len);
+        next_row = algn_fill_extending_left_aff (s1, prec, s1_len, s2_len, \
+                next_row, next_pm, to_go_dm, c, start_row, final_row, \
+                start_column, length, next_dnmm, next_pdnmm, htmm, open_gap);
+        next_pm = choose_other (next_row, a, b);
+        algn_choose_aff_other (next_row, mm, &next_dnmm, &next_pdnmm, d, e);
     }
     /* Case 3: (final case)
      * There is a block in the middle of with full rows that have to be filled
@@ -2770,112 +2761,112 @@ algn_fill_plane_2_aff (const seqt s1, int *precalcMtx, int s1_len, int s2_len, i
         /* We will simplify this case even further, if the size of the leftover
          * is too small, don't use the barriers at all, just fill it up all */
         if (8 >= (s1_len - height))
-            return (algn_fill_plane_aff (s1, precalcMtx, s1_len, s2_len, curRow, dirMtx, c, \
-                        d, htcurRow, open_gap));
+            return (algn_fill_plane_aff (s1, prec, s1_len, s2_len, mm, dm, c, \
+                        d, htmm, open_gap));
         else {
-            algn_fill_first_row_aff (curRow, dirMtx, width, gap_row, dncurRow, htcurRow, open_gap);
-            b[0] = curRow[0];
-            curRow[0] = 0;
+            algn_fill_first_row_aff (mm, dm, width, gap_row, dnmm, htmm, open_gap);
+            b[0] = mm[0];
+            mm[0] = 0;
             start_row = 1;
             final_row = (s2_len - width) + 1;
             start_column = 0;
             length = width + 1;
-            to_go_dirMtx = dirMtx + (s2_len * start_row);
-            next_row = algn_fill_extending_right_aff (s1, precalcMtx, s1_len, s2_len, \
-                    b, a, to_go_dirMtx, c, start_row, final_row, length, e, d, htcurRow, \
+            to_go_dm = dm + (s2_len * start_row);
+            next_row = algn_fill_extending_right_aff (s1, prec, s1_len, s2_len, \
+                    b, a, to_go_dm, c, start_row, final_row, length, e, d, htmm, \
                     open_gap);
-            next_prevRow = choose_other (next_row, a, b);
-            algn_choose_aff_other (next_row, curRow, &next_dncurRow, &next_pdncurRow, d, e);
+            next_pm = choose_other (next_row, a, b);
+            algn_choose_aff_other (next_row, mm, &next_dnmm, &next_pdnmm, d, e);
             start_row = final_row;
             final_row = s1_len - (s2_len - width) + 1;
             length = s2_len;
-            to_go_dirMtx = dirMtx + (s2_len * start_row);
-            next_row = algn_fill_no_extending_aff (s1, precalcMtx, s1_len, s2_len, \
-                    next_row, next_prevRow, to_go_dirMtx, c, start_row, \
-                    final_row, next_dncurRow, next_pdncurRow, htcurRow, open_gap);
-            next_prevRow = choose_other (next_row, a, b);
-            algn_choose_aff_other (next_row, curRow, &next_dncurRow, &next_pdncurRow, d, e);
+            to_go_dm = dm + (s2_len * start_row);
+            next_row = algn_fill_no_extending_aff (s1, prec, s1_len, s2_len, \
+                    next_row, next_pm, to_go_dm, c, start_row, \
+                    final_row, next_dnmm, next_pdnmm, htmm, open_gap);
+            next_pm = choose_other (next_row, a, b);
+            algn_choose_aff_other (next_row, mm, &next_dnmm, &next_pdnmm, d, e);
             start_row = final_row;
             final_row = s1_len;
             start_column = 1;
             length = s2_len - 1;
-            to_go_dirMtx = dirMtx + (s2_len * start_row);
-            next_row =
-                algn_fill_extending_left_aff (s1, precalcMtx, s1_len, s2_len, \
-                    next_row, next_prevRow, to_go_dirMtx, c, start_row, final_row, \
-                    start_column, length, next_dncurRow, next_pdncurRow, htcurRow, \
+            to_go_dm = dm + (s2_len * start_row);
+            next_row = 
+                algn_fill_extending_left_aff (s1, prec, s1_len, s2_len, \
+                    next_row, next_pm, to_go_dm, c, start_row, final_row, \
+                    start_column, length, next_dnmm, next_pdnmm, htmm, \
                     open_gap);
-            next_prevRow = choose_other (next_row, a, b);
+            next_pm = choose_other (next_row, a, b);
         }
     }
-    return (next_prevRow[s2_len - 1]);
+    return (next_pm[s2_len - 1]);
 }
 /******************************************************************************/
 
 /** Fill parallel must have been called before */
-  void
+#ifdef _WIN32
+static __inline void
+#else
+static inline void
+#endif
 fill_moved (int s3_len, const int *prev_m, const int *upper_m, \
-            const int *diag_m, const int *s1gs3, const int *gs2s3, \
-            const int *s1s2s3, int *curRow, DIRECTION_MATRIX *dirMtx) {
-    // failwith("fill_moved");
-    printf("fill_moved\n");
-    fflush(stdout);
-    exit(1);
+        const int *diag_m, const int *s1gs3, const int *gs2s3, \
+        const int *s1s2s3, int *mm, DIRECTION_MATRIX *dm) {
     int k, tmp0, tmp1, tmp;
     for (k = 1; k < s3_len; k++) {
         tmp0 = upper_m[k] + s1gs3[k];
-        if (tmp0 < curRow[k]) {
-            curRow[k] = tmp0;
-            dirMtx[k] = S3;
+        if (tmp0 < mm[k]) {
+            mm[k] = tmp0;
+            dm[k] = S3;
         }
         tmp = prev_m[k] + gs2s3[k];
-        if (tmp < curRow[k]) {
-            curRow[k] = tmp;
-            dirMtx[k] = S1;
+        if (tmp < mm[k]) {
+            mm[k] = tmp;
+            dm[k] = S1;
         }
         tmp1 = diag_m[k] + s1s2s3[k];
-        if (tmp1 < curRow[k]) {
-            curRow[k] = tmp1;
-            dirMtx[k] = S2;
+        if (tmp1 < mm[k]) {
+            mm[k] = tmp1;
+            dm[k] = S2;
         }
     }
 }
 
- void
+#ifdef _WIN32
+__inline void
+#else
+inline void
+#endif
 fill_parallel (int s3_len, const int *prev_m, const int *upper_m, \
-               const int *diag_m, int s1gg, int gs2g, int s1s2g, int *curRow, \
-               DIRECTION_MATRIX *dirMtx) {
-    // failwith("fill_parallel");
-    printf("fill_parallel\n");
-    fflush(stdout);
-    exit(1);
+        const int *diag_m, int s1gg, int gs2g, int s1s2g, int *mm, \
+        DIRECTION_MATRIX *dm) {
     int k, tmp1, tmp;
     for (k = 0; k < s3_len; k++) {
-        curRow[k] = upper_m[k] + s1gg;
-        dirMtx[k] = P3;
+        mm[k] = upper_m[k] + s1gg;
+        dm[k] = P3;
         tmp = prev_m[k] + gs2g;
-        if (tmp < curRow[k]) {
-            curRow[k] = tmp;
-            dirMtx[k] = P1;
+        if (tmp < mm[k]) {
+            mm[k] = tmp;
+            dm[k] = P1;
         }
         tmp1 = diag_m[k] + s1s2g;
-        if (tmp1 < curRow[k]) {
-            curRow[k] = tmp1;
-            dirMtx[k] = P2;
+        if (tmp1 < mm[k]) {
+            mm[k] = tmp1;
+            dm[k] = P2;
         }
     }
 }
 
 /*
  * s1 is a pointer to the sequence s1 (vertical), and s2 (horizontal 1) defined
- * in the same way. precalcMtx is a pointer to the three dimensional matrix that holds
+ * in the same way. prec is a pointer to the three dimensional matrix that holds
  * the alignment values for all the combinations of the alphabet of sequences
  * s1, s2 and s3, with the sequence s3 (see cm_precalc_4algn_3d for more
  * information). s1_len, s2_len and s3_len is the length of the three sequences
- * to be aligned, and *curRow is the first element of the alignment cube that will
- * cold the matrix of the dynamic programming algorithm, while dirMtx does the same
+ * to be aligned, and *mm is the first element of the alignment cube that will
+ * cold the matrix of the dynamic programming algorithm, while dm does the same
  * job, holding the direction information for the backtrack. uk is the value of
- * the Ukkonen barriers (not used in this version of the program
+ * the Ukkonen barriers (not used in this version of the program 
  * conside all combinations
  * s1, g, g -> const for plane
  * g, s2, g -> const const per row
@@ -2886,15 +2877,14 @@ fill_parallel (int s3_len, const int *prev_m, const int *upper_m, \
  * g, g, s3 -> vector (the last one to be done, not parallelizable
  *
  */
- int
-algn_fill_cube (const seqt s1, const seqt s2, const int *precalcMtx, \
-                int s1_len, int s2_len, int s3_len, int *curRow, DIRECTION_MATRIX *dirMtx, \
-                int uk, int gap, int alphSize) {
-    // failwith("algn_fill_cube");
-    printf("algn_fill_cube\n");
-    fflush(stdout);
-    exit(1);
-
+#ifdef _WIN32
+__inline int
+#else
+inline int
+#endif
+algn_fill_cube (const seqt s1, const seqt s2, const int *prec, \
+        int s1_len, int s2_len, int s3_len, int *mm, DIRECTION_MATRIX *dm, int uk, \
+        int gap, int a_sz) {
     SEQT *s1p, *s2p;
     /* Each of the following arrays hold some precalculated value for the
      * sequence s3 which is not passed as argument. */
@@ -2904,81 +2894,80 @@ algn_fill_cube (const seqt s1, const seqt s2, const int *precalcMtx, \
     const int *ggs3;      /** Align two gaps with s3 */
     /* Each of the following arrays hold the arrays of the three dimensional
      * matrix that are located around the row that is filled on each iteration.
-     * These rows are already filled in some previous iteration and used in
+     * These rows are already filled in some previous iteration and used in 
      * the dynamic programming matrix. */
     int *upper_m;       /** The row in the upper plane of the cube */
     int *prev_m;        /** The row behind the current row in the same plane */
     int *diag_m;        /** The upper_m relative to prev_m */
-    int *tmp_curRow;        /** A temporary pointer to the row that is being filled
+    int *tmp_mm;        /** A temporary pointer to the row that is being filled 
                         currently */
-    DIRECTION_MATRIX *tmp_dirMtx;       /** Same as previous for dirMtx */
+    DIRECTION_MATRIX *tmp_dm;       /** Same as previous for dm */
     int i, j, k, tmp;
 
     s1p = seq_get_begin (s1);
     s2p = seq_get_begin (s2);
-    tmp_dirMtx = dirMtx;
-    tmp_curRow = curRow;
-    upper_m = curRow + s3_len;
-    diag_m = curRow;
-    if (DEBUG) {
+    tmp_dm = dm;
+    tmp_mm = mm;
+    upper_m = mm + s3_len;
+    diag_m = mm;
+    if (!NDEBUG) 
         printf ("Three dimensional sequence alignment matrix.\n");
-    }
     /* Fill the first plane only at the beginning, this is special */
     {
-        curRow[0] = 0;              /* Fill the first cell, of course to 0 */
-        dirMtx[0] = S2;
+        mm[0] = 0;              /* Fill the first cell, of course to 0 */
+        dm[0] = S2;
 
         /* Fill first row based on precalculated row.
          * The first row consists of aligning s3 with gaps, we have that
          * precalculated, so all we really need is to add up that vector.*/
-        ggs3 = cm_get_row_precalc_3d (precalcMtx, s3_len, alphSize, gap, gap);
+        ggs3 = cm_get_row_precalc_3d (prec, s3_len, a_sz, gap, gap);
         for (i = 1; i < s3_len; i++) {
-            curRow[i] = curRow[i - 1] + ggs3[i];
-            dirMtx[i] = SS;
+            mm[i] = mm[i - 1] + ggs3[i];
+            dm[i] = SS;
         }
 
-        prev_m = curRow;
-        curRow += s3_len;
-        dirMtx += s3_len;
+        prev_m = mm;
+        mm += s3_len;
+        dm += s3_len;
 
         /* Finish filling the first plane.
          * In this plane filling, all we really need to deal with is aligning s2
          * and s3, as the first plane holds the inital gap of s1. */
-        for (i = 1; i < s2_len; i++, prev_m += s3_len, curRow += s3_len, dirMtx += s3_len) {
-            gs2s3 = cm_get_row_precalc_3d (precalcMtx, s3_len, alphSize, gap, s2p[i]);
+        for (i = 1; i < s2_len; i++, prev_m += s3_len, mm += s3_len, dm += s3_len) {
+            gs2s3 = cm_get_row_precalc_3d (prec, s3_len, a_sz, gap, s2p[i]);
 
             /** Fill the first cell with the cost of extending the gap from the
              * previous row */
-            curRow[0] = prev_m[0] + gs2s3[0];
-            dirMtx[0] = P1;
+            mm[0] = prev_m[0] + gs2s3[0];
+            dm[0] = P1;
             /* Everyone else requires the three comparisons we used when filling
              * rows as usual in a two dimensional alignment. Note that this code
              * is almost the same as algn_fill_row, so if something is modified
              * there, there will be need of modifying it in the same way here. */
             /* TODO: Add the ukkonen barriers */
             for (j = 1; j < s3_len; j++) {
-                curRow[j] = prev_m[j] + gs2s3[0];
-                dirMtx[j] = P1;
+                mm[j] = prev_m[j] + gs2s3[0];
+                dm[j] = P1;
                 tmp = prev_m[j - 1] + gs2s3[j];
-                if (tmp < curRow[j]) {
-                    curRow[j] = tmp;
-                    dirMtx[j] = S1;
+                if (tmp < mm[j]) {
+                    mm[j] = tmp;
+                    dm[j] = S1;
                 }
-                tmp = curRow[j - 1] + ggs3[j];
-                if (tmp < curRow[j]) {
-                    curRow[j] = tmp;
-                    dirMtx[j] = SS;
+                tmp = mm[j - 1] + ggs3[j];
+                if (tmp < mm[j]) {
+                    mm[j] = tmp;
+                    dm[j] = SS;
                 }
             }
         }
-        if (DEBUG && PRINT_COST_M) {  /* Printing the cost matrix */
-            int *tmp_curRow_debug;
-            tmp_curRow_debug = tmp_curRow;
+        if (!NDEBUG && !NPRINT_CM) {  /* Printing the cost matrix */
+            int *tmp_mm_debug;
+            tmp_mm_debug = tmp_mm;
             printf ("\n");
             for (i = 0; i < s2_len; i++) {
                 for (j = 0; j < s3_len; j++)
-                    printf ("%d\t", tmp_curRow_debug[j]);
-                tmp_curRow_debug += s2_len;
+                    printf ("%d\t", tmp_mm_debug[j]);
+                tmp_mm_debug += s2_len;
                 printf ("\n");
             }
             printf ("\n");
@@ -2986,90 +2975,83 @@ algn_fill_cube (const seqt s1, const seqt s2, const int *precalcMtx, \
     } /* Finished the first plane filling */
 
     /* Fill plane by plane */
-    curRow = tmp_curRow + (s3_len * s2_len);
-    dirMtx = tmp_dirMtx + (s3_len * s2_len);
-    diag_m = tmp_curRow;
-    upper_m = tmp_curRow + s3_len;
-    prev_m = curRow - s3_len;
+    mm = tmp_mm + (s3_len * s2_len);
+    dm = tmp_dm + (s3_len * s2_len);
+    diag_m = tmp_mm;
+    upper_m = tmp_mm + s3_len;
+    prev_m = mm - s3_len;
     for (i = 1; i < s1_len; i++) { /* For each plane */
         int s1_it; /* The element in s1 represented by this plane */
         s1_it = s1p[i];
-        s1gs3 = cm_get_row_precalc_3d (precalcMtx, s3_len, alphSize, s1_it, gap);
+        s1gs3 = cm_get_row_precalc_3d (prec, s3_len, a_sz, s1_it, gap);
         /* Filling the first row of the current plane. */
-        {
+        {   
             /* This requires only three operations, equivalent to the
              2-dimensional alignment (the three for loops) */
-            curRow[0] = diag_m[0] + s1gs3[0]; /* diag is upper in this step */
-            dirMtx[0] = P3;
-            if (DEBUG && PRINT_COST_M) {
-                printf ("%d\t", curRow[0]);
-            }
+            mm[0] = diag_m[0] + s1gs3[0]; /* diag is upper in this step */
+            dm[0] = P3;
+            if (!NDEBUG && !NPRINT_CM)
+                printf ("%d\t", mm[0]);
             for (j = 1, k = 0; j < s3_len; j++, k++) {
-                curRow[j] = diag_m[j] + s1gs3[0];
-                dirMtx[j] = P3;
+                mm[j] = diag_m[j] + s1gs3[0];
+                dm[j] = P3;
                 tmp = diag_m[k] + s1gs3[j];
-                if (tmp < curRow[j]) {
-                    curRow[j] = tmp;
-                    dirMtx[j] = S3;
+                if (tmp < mm[j]) {
+                    mm[j] = tmp;
+                    dm[j] = S3;
                 }
-                tmp = ggs3[j] + curRow[k];
-                if (tmp < curRow[j]) {
-                    curRow[j] = tmp;
-                    dirMtx[j] = SS;
+                tmp = ggs3[j] + mm[k];
+                if (tmp < mm[j]) {
+                    mm[j] = tmp;
+                    dm[j] = SS;
                 }
-                if (DEBUG && PRINT_COST_M) {
-                    printf ("%d\t", curRow[j]);
-                }
+                if (!NDEBUG && !NPRINT_CM) 
+                    printf ("%d\t", mm[j]);
             }
-            if (DEBUG) {
+            if (!NDEBUG)
                 printf ("\n");
-            }
             /* Now we should move to the next row to continue filling the matrix
              * */
-            dirMtx += s3_len;
-            curRow += s3_len;
+            dm += s3_len;
+            mm += s3_len;
         }
-        /* Now, go on with the rest of the rows.  On each row, curRow is the row
+        /* Now, go on with the rest of the rows.  On each row, mm is the row
          * being constructed, prev_m is the previous row in the same horizontal
          * plane, upper_m is the previous row in the vertical plane and diag_m
          * is the row in the previous planes (vertical and horizontal).
          */
-        for (j = 1; j < s2_len; j++, diag_m += s3_len,
-                upper_m += s3_len, prev_m += s3_len, curRow += s3_len,
-                dirMtx += s3_len) {
+        for (j = 1; j < s2_len; j++, diag_m += s3_len, 
+                upper_m += s3_len, prev_m += s3_len, mm += s3_len, 
+                dm += s3_len) {
             /* We first set the vectors that are needed */
             int s2_it;
             s2_it = s2p[j];
-            gs2s3 = cm_get_row_precalc_3d (precalcMtx, s3_len, alphSize, gap, s2_it);
-            s1s2s3 = cm_get_row_precalc_3d (precalcMtx, s3_len, alphSize, s1_it, s2_it);
-            fill_parallel (s3_len, prev_m, upper_m, diag_m, s1gs3[0], gs2s3[0],
-                    s1s2s3[0], curRow, dirMtx);
+            gs2s3 = cm_get_row_precalc_3d (prec, s3_len, a_sz, gap, s2_it);
+            s1s2s3 = cm_get_row_precalc_3d (prec, s3_len, a_sz, s1_it, s2_it);
+            fill_parallel (s3_len, prev_m, upper_m, diag_m, s1gs3[0], gs2s3[0], 
+                    s1s2s3[0], mm, dm);
             fill_moved (s3_len, prev_m - 1, upper_m - 1, diag_m - 1, s1gs3, \
-                    gs2s3, s1s2s3, curRow, dirMtx);
+                    gs2s3, s1s2s3, mm, dm);
             /* In the final step we run over the array filling the self check.
              * */
-            if (DEBUG) {
-                printf ("%d\t", curRow[0]);
-            }
+            if (!NDEBUG)
+                printf ("%d\t", mm[0]);
             for (k = 1; k < s3_len; k++) {
-                tmp = curRow[k - 1] + ggs3[k];
-                if (tmp < curRow[k]) {
-                    curRow[k] = tmp;
-                    dirMtx[k] = SS;
+                tmp = mm[k - 1] + ggs3[k];
+                if (tmp < mm[k]) {
+                    mm[k] = tmp;
+                    dm[k] = SS;
                 }
-                if (DEBUG) {
-                    printf ("%d\t", curRow[k]);
-                }
+                if (!NDEBUG)
+                    printf ("%d\t", mm[k]);
             }
-            if (DEBUG) {
+            if (!NDEBUG)
                 printf ("\n");
-            }
         }
-        if (DEBUG) {
+        if (!NDEBUG)
             printf ("\n");
-        }
     }
-    return (curRow[-1]); /** We return the last item in the previous row */
+    return (mm[-1]); /** We return the last item in the previous row */
 }
 
 /* Same as the previous function but with Ukkonen barriers turned on. The
@@ -3080,14 +3062,14 @@ algn_fill_cube (const seqt s1, const seqt s2, const int *precalcMtx, \
  * TODO: Finish this implementation, I will stop now to test the sequence
  * analysis procedures in the rest of POY.
  * */
- int
-algn_fill_cube_ukk (const seqt s1, const seqt s2, const int *precalcMtx, \
-        int s1_len, int s2_len, int s3_len, int *curRow, DIRECTION_MATRIX *dirMtx, int uk, \
-        int gap, int alphSize, int w, int d, int h) {
-    // failwith("algn_fill_cube_ukk");
-    printf("algn_fill_cube_ukk\n");
-    fflush(stdout);
-    exit(1);
+#ifdef _WIN32
+__inline int
+#else
+inline int
+#endif
+algn_fill_cube_ukk (const seqt s1, const seqt s2, const int *prec, \
+        int s1_len, int s2_len, int s3_len, int *mm, DIRECTION_MATRIX *dm, int uk, \
+        int gap, int a_sz, int w, int d, int h) {
     SEQT *s1p, *s2p;
     /* Each of the following arrays hold some precalculated value for the
      * sequence s3 which is not passed as argument. */
@@ -3097,79 +3079,79 @@ algn_fill_cube_ukk (const seqt s1, const seqt s2, const int *precalcMtx, \
     const int *ggs3;      /** Align two gaps with s3 */
     /* Each of the following arrays hold the arrays of the three dimensional
      * matrix that are located around the row that is filled on each iteration.
-     * These rows are already filled in some previous iteration and used in
-     * the dynamic progracurRowing matrix. */
+     * These rows are already filled in some previous iteration and used in 
+     * the dynamic programming matrix. */
     int *upper_m;       /** The row in the upper plane of the cube */
     int *prev_m;        /** The row behind the current row in the same plane */
     int *diag_m;        /** The upper_m relative to prev_m */
-    int *tmp_curRow;        /** A temporary pointer to the row that is being filled
+    int *tmp_mm;        /** A temporary pointer to the row that is being filled 
                         currently */
-    DIRECTION_MATRIX *tmp_dirMtx;       /** Same as previous for dirMtx */
+    DIRECTION_MATRIX *tmp_dm;       /** Same as previous for dm */
     int i, j, k, tmp;
 
     s1p = seq_get_begin (s1);
     s2p = seq_get_begin (s2);
-    tmp_dirMtx = dirMtx;
-    tmp_curRow = curRow;
-    upper_m = curRow + s3_len;
-    diag_m = curRow;
-    if (DEBUG)
+    tmp_dm = dm;
+    tmp_mm = mm;
+    upper_m = mm + s3_len;
+    diag_m = mm;
+    if (!NDEBUG) 
         printf ("Three dimensional sequence alignment matrix.\n");
     /* Fill the first plane only at the beginning, this is special */
     {
-        curRow[0] = 0;              /* Fill the first cell, of course to 0 */
-        dirMtx[0] = S2;
+        mm[0] = 0;              /* Fill the first cell, of course to 0 */
+        dm[0] = S2;
 
         /* Fill first row based on precalculated row.
          * The first row consists of aligning s3 with gaps, we have that
          * precalculated, so all we really need is to add up that vector.*/
-        ggs3 = cm_get_row_precalc_3d (precalcMtx, s3_len, alphSize, gap, gap);
+        ggs3 = cm_get_row_precalc_3d (prec, s3_len, a_sz, gap, gap);
         for (i = 1; i < s3_len; i++) {
-            curRow[i] = curRow[i - 1] + ggs3[i];
-            dirMtx[i] = SS;
+            mm[i] = mm[i - 1] + ggs3[i];
+            dm[i] = SS;
         }
 
-        prev_m = curRow;
-        curRow += s3_len;
-        dirMtx += s3_len;
+        prev_m = mm;
+        mm += s3_len;
+        dm += s3_len;
 
         /* Finish filling the first plane.
          * In this plane filling, all we really need to deal with is aligning s2
          * and s3, as the first plane holds the inital gap of s1. */
-        for (i = 1; i < s2_len; i++, prev_m += s3_len, curRow += s3_len, dirMtx += s3_len) {
-            gs2s3 = cm_get_row_precalc_3d (precalcMtx, s3_len, alphSize, gap, s2p[i]);
+        for (i = 1; i < s2_len; i++, prev_m += s3_len, mm += s3_len, dm += s3_len) {
+            gs2s3 = cm_get_row_precalc_3d (prec, s3_len, a_sz, gap, s2p[i]);
 
             /** Fill the first cell with the cost of extending the gap from the
              * previous row */
-            curRow[0] = prev_m[0] + gs2s3[0];
-            dirMtx[0] = P1;
+            mm[0] = prev_m[0] + gs2s3[0];
+            dm[0] = P1;
             /* Everyone else requires the three comparisons we used when filling
              * rows as usual in a two dimensional alignment. Note that this code
              * is almost the same as algn_fill_row, so if something is modified
              * there, there will be need of modifying it in the same way here. */
             /* TODO: Add the ukkonen barriers */
             for (j = 1; j < s3_len; j++) {
-                curRow[j] = prev_m[j] + gs2s3[0];
-                dirMtx[j] = P1;
+                mm[j] = prev_m[j] + gs2s3[0];
+                dm[j] = P1;
                 tmp = prev_m[j - 1] + gs2s3[j];
-                if (tmp < curRow[j]) {
-                    curRow[j] = tmp;
-                    dirMtx[j] = S1;
+                if (tmp < mm[j]) {
+                    mm[j] = tmp;
+                    dm[j] = S1;
                 }
-                tmp = curRow[j - 1] + ggs3[j];
-                if (tmp < curRow[j]) {
-                    curRow[j] = tmp;
-                    dirMtx[j] = SS;
+                tmp = mm[j - 1] + ggs3[j];
+                if (tmp < mm[j]) {
+                    mm[j] = tmp;
+                    dm[j] = SS;
                 }
             }
         }
-        if (DEBUG) {  /* Printing the cost matrix */
-            int *tmp_curRow_debug;
-            tmp_curRow_debug = tmp_curRow;
+        if (!NDEBUG) {  /* Printing the cost matrix */
+            int *tmp_mm_debug;
+            tmp_mm_debug = tmp_mm;
             for (i = 0; i < s2_len; i++) {
                 for (j = 0; j < s3_len; j++)
-                    printf ("%d\t", tmp_curRow_debug[j]);
-                tmp_curRow_debug += s2_len;
+                    printf ("%d\t", tmp_mm_debug[j]);
+                tmp_mm_debug += s2_len;
                 printf ("\n");
             }
             printf ("\n");
@@ -3177,312 +3159,156 @@ algn_fill_cube_ukk (const seqt s1, const seqt s2, const int *precalcMtx, \
     } /* Finished the first plane filling */
 
     /* Fill plane by plane */
-    curRow = tmp_curRow + (s3_len * s2_len);
-    dirMtx = tmp_dirMtx + (s3_len * s2_len);
-    diag_m = tmp_curRow;
-    upper_m = tmp_curRow + s3_len;
-    prev_m = curRow - s3_len;
+    mm = tmp_mm + (s3_len * s2_len);
+    dm = tmp_dm + (s3_len * s2_len);
+    diag_m = tmp_mm;
+    upper_m = tmp_mm + s3_len;
+    prev_m = mm - s3_len;
     for (i = 1; i < s1_len; i++) { /* For each plane */
         int s1_it; /* The element in s1 represented by this plane */
         s1_it = s1p[i];
-        s1gs3 = cm_get_row_precalc_3d (precalcMtx, s3_len, alphSize, s1_it, gap);
+        s1gs3 = cm_get_row_precalc_3d (prec, s3_len, a_sz, s1_it, gap);
         /* Filling the first row of the current plane. */
-        {
+        {   
             /* This requires only three operations, equivalent to the
              2-dimensional alignment (the three for loops) */
-            curRow[0] = diag_m[0] + s1gs3[0]; /* diag is upper in this step */
-            dirMtx[0] = P3;
-            if (DEBUG)
-                printf ("%d\t", curRow[0]);
+            mm[0] = diag_m[0] + s1gs3[0]; /* diag is upper in this step */
+            dm[0] = P3;
+            if (!NDEBUG)
+                printf ("%d\t", mm[0]);
             for (j = 1, k = 0; j < s3_len; j++, k++) {
-                curRow[j] = diag_m[j] + s1gs3[0];
-                dirMtx[j] = P3;
+                mm[j] = diag_m[j] + s1gs3[0];
+                dm[j] = P3;
                 tmp = diag_m[k] + s1gs3[j];
-                if (tmp < curRow[j]) {
-                    curRow[j] = tmp;
-                    dirMtx[j] = S3;
+                if (tmp < mm[j]) {
+                    mm[j] = tmp;
+                    dm[j] = S3;
                 }
-                tmp = ggs3[j] + curRow[k];
-                if (tmp < curRow[j]) {
-                    curRow[j] = tmp;
-                    dirMtx[j] = SS;
+                tmp = ggs3[j] + mm[k];
+                if (tmp < mm[j]) {
+                    mm[j] = tmp;
+                    dm[j] = SS;
                 }
-                if (DEBUG)
-                    printf ("%d\t", curRow[j]);
+                if (!NDEBUG) 
+                    printf ("%d\t", mm[j]);
             }
-            if (DEBUG)
+            if (!NDEBUG)
                 printf ("\n");
             /* Now we should move to the next row to continue filling the matrix
              * */
-            dirMtx += s3_len;
-            curRow += s3_len;
+            dm += s3_len;
+            mm += s3_len;
         }
-        /* Now, go on with the rest of the rows.  On each row, curRow is the row
+        /* Now, go on with the rest of the rows.  On each row, mm is the row
          * being constructed, prev_m is the previous row in the same horizontal
          * plane, upper_m is the previous row in the vertical plane and diag_m
          * is the row in the previous planes (vertical and horizontal).
          */
-        for (j = 1; j < s2_len; j++, diag_m += s3_len,
-                upper_m += s3_len, prev_m += s3_len, curRow += s3_len,
-                dirMtx += s3_len) {
+        for (j = 1; j < s2_len; j++, diag_m += s3_len, 
+                upper_m += s3_len, prev_m += s3_len, mm += s3_len, 
+                dm += s3_len) {
             /* We first set the vectors that are needed */
             int s2_it;
             s2_it = s2p[j];
-            gs2s3 = cm_get_row_precalc_3d (precalcMtx, s3_len, alphSize, gap, s2_it);
-            s1s2s3 = cm_get_row_precalc_3d (precalcMtx, s3_len, alphSize, s1_it, s2_it);
-            fill_parallel (s3_len, prev_m, upper_m, diag_m, s1gs3[0], gs2s3[0],
-                    s1s2s3[0], curRow, dirMtx);
+            gs2s3 = cm_get_row_precalc_3d (prec, s3_len, a_sz, gap, s2_it);
+            s1s2s3 = cm_get_row_precalc_3d (prec, s3_len, a_sz, s1_it, s2_it);
+            fill_parallel (s3_len, prev_m, upper_m, diag_m, s1gs3[0], gs2s3[0], 
+                    s1s2s3[0], mm, dm);
             fill_moved (s3_len, prev_m - 1, upper_m - 1, diag_m - 1, s1gs3, \
-                    gs2s3, s1s2s3, curRow, dirMtx);
+                    gs2s3, s1s2s3, mm, dm);
             /* In the final step we run over the array filling the self check.
              * */
-            if (DEBUG)
-                printf ("%d\t", curRow[0]);
+            if (!NDEBUG)
+                printf ("%d\t", mm[0]);
             for (k = 1; k < s3_len; k++) {
-                tmp = curRow[k - 1] + ggs3[k];
-                if (tmp < curRow[k]) {
-                    curRow[k] = tmp;
-                    dirMtx[k] = SS;
+                tmp = mm[k - 1] + ggs3[k];
+                if (tmp < mm[k]) {
+                    mm[k] = tmp;
+                    dm[k] = SS;
                 }
-                if (DEBUG)
-                    printf ("%d\t", curRow[k]);
+                if (!NDEBUG)
+                    printf ("%d\t", mm[k]);
             }
-            if (DEBUG)
+            if (!NDEBUG)
                 printf ("\n");
         }
-        if (DEBUG)
+        if (!NDEBUG)
             printf ("\n");
     }
-    return (curRow[-1]); /** We return the last item in the previous row */
+    return (mm[-1]); /** We return the last item in the previous row */
 }
 
-/*
-void
-print_dynmtrx (const seqt s1, const seqt s2, \
-        matricest m) {
-    int i, j;
-    int *d;
-    d = mat_get_2d_matrix (m);
-    for (i = 0; i < seq_get_len (s1); i++) {
-        for (j = 0; j < seq_get_len (s2); j++)
-            printf ("%d", (int) *(d + j));
-        d += j;
-        printf ("\n");
-    }
-    return;
-}
-*/
-
-void
-algn_print_dynmtrx_2d (const seqt seq1, const seqt seq2, matricest matrices) {
-    int i, j;
-
-    const int seqLen1 = seq_get_len (seq1);
-    const int seqLen2 = seq_get_len (seq2);
-
-    const seqt longerSeq  = seqLen1 > seqLen2 ? seq1 : seq2;
-    const seqt lesserSeq  = seqLen1 > seqLen2 ? seq2 : seq1;
-
-    const int longerSeqLen = seqLen1 > seqLen2 ? seqLen1 : seqLen2;
-    const int lesserSeqLen = seqLen1 > seqLen2 ? seqLen2 : seqLen1;
-
-    const int n       = longerSeqLen + 1;
-    const int m       = lesserSeqLen + 1;
-    int *nw_costMtx;
-    nw_costMtx = mat_get_2d_matrix (matrices);
-    DIRECTION_MATRIX *nw_dirMtx  = mat_get_2d_direct (matrices);
-
-    printf ("Sequence 1 length: %d\n", seqLen1);
-    printf ("Sequence 2 length: %d\n", seqLen2);
-    printf ("Length    Product: %d\n", seqLen1 * seqLen2);
-    printf ("Length +1 Product: %d\n", n * m);
-    printf ("Allocated space  : %d\n\n", matrices->len);
-
-    printf("Cost matrix:\n");
-    // print column heads
-    printf("  x |       * ");
-    for (i = 1; i < lesserSeqLen; i++) {
-        printf("%7d ", lesserSeq->begin[i]);
-    }
-    printf("\n");
-    printf(" ---+-");
-    for (i = 1; i < lesserSeqLen + 1; i++) {
-      printf("--------");
-    }
-    printf("\n");
-
-    for (i = 0; i < longerSeqLen; i++) {
-        if (i == 0) printf ("  * | ");
-        else        printf (" %2d | ", longerSeq->begin[i]);
-
-        for (j = 0; j < lesserSeqLen; j++) {
-            // if (j == 0 && i == 0) {
-            //     printf("%7d ", 0);
-            // } else {
-                printf ("%7d ", (int) nw_costMtx[lesserSeqLen * i + j]);
-            // }
-        }
-        printf ("\n");
-    }
-
-    // Print direction matrix
-    setlocale(LC_CTYPE, "en_US.UTF-8");
-
-    wchar_t *name;
-    printf("\n\nDirection matrix:\n");
-    // print column heads
-    printf("  x |       * ");
-    for (i = 1; i < longerSeqLen; i++) {
-        printf("%7d ", lesserSeq->begin[i]);
-    }
-    printf("\n");
-    printf(" ---+-");
-    for (i = 1; i < longerSeqLen + 1; i++) {
-      printf("--------");
-    }
-    printf("\n");
-
-
-    for (i = 0; i < lesserSeqLen; i++) {
-        if (i == 0) printf ("  * | ");
-        else        printf (" %2d | ", lesserSeq->begin[i]);
-
-        for (j = 0; j < longerSeqLen; j++) {
-            int dirToken = (int) nw_dirMtx[longerSeqLen * i + j];
-            if (dirToken == INSERT) {
-                wprintf(L"%7s ", (wchar_t *) "\u2190");
-            } else if (dirToken == DELETE) {
-                wprintf(L"%7s ", (wchar_t *) "\u2191");
-            } else if (dirToken == ALIGN) {
-                wprintf(L"%7s ", (wchar_t *) "\u2191");
-            } else {
-                printf("       ? ");
-            }
-            //wprintf(L"name is %ls\n", name);
-            // if (j == 0 && i == 0) {
-            //     printf("%7d ", 0);
-            // } else {
-                // printf ("%7d ", (int) nw_dirMtx[lesserSeqLen * i + j]);
-            // }
-        }
-        printf ("\n");
-    }
-
-
-      return;
-}
-
-/** [algn_nw_limit performs a pairwise
- *  alignment of the subsequences of s1 and s2 starting in position st_s1
- *  and st_s2, respectively, with length len_s1 and len_s2 using the
- *  transformation cost matrix cstMtx and the alignment matrix m.
- */
-/** TODO: st_s1 and st_s2 are unused???  */
- int
-algn_nw_limit (const seqt s1, const seqt s2, const cmt costMtx, \
-               matricest m, int deltawh, int st_s1, int len_s1, \
-               int st_s2, int len_s2) {
-    // printf("algn_nw_limit %d\n", iteration);
-    // fflush(stdout);
+#ifdef _WIN32
+__inline int
+#else
+inline int
+#endif
+algn_nw_limit (const seqt s1, const seqt s2, const cmt c, \
+        matricest m, int deltawh, int st_s1, int len_s1, \
+        int st_s2, int len_s2) {
     const SEQT *ss1, *ss2;
-    int *curRow, *precalcMtx, s1_len, s2_len;
-    DIRECTION_MATRIX *dirMtx;
+    int *mm, *prec, s1_len, s2_len;
+    DIRECTION_MATRIX *dm;
     ss1 = seq_get_begin (s1);
     ss2 = seq_get_begin (s2);
-    curRow = mat_get_2d_matrix (m);
-    dirMtx = mat_get_2d_direct (m);
+    mm = mat_get_2d_matrix (m);
+    dm = mat_get_2d_direct (m);
     s1_len = seq_get_len (s1);
     s2_len = seq_get_len (s2);
-    precalcMtx = mat_get_2d_prec (m);
-    cm_precalc_4algn (costMtx, m, s2); // returns cm computed using sequence from s2
-                                 // s2 will be columns of cost matrix
-    int retVal;
-    if (cm_get_affine_flag (costMtx)) {
-        retVal = algn_fill_plane_2_aff (s1, precalcMtx, s1_len, s2_len, curRow, dirMtx, costMtx, 50, \
-                               (len_s1 - len_s2) + 50, deltawh, curRow + (2 * s2_len), \
-                               curRow + (4 * s2_len));
-            // why all the 50s here and below? It looks like it's a default
-            // starting value for the matrix width/height
-
-    } else {
-        //print_dynmtrx( s1, s2, m );
-        retVal = algn_fill_plane_2 (s1, precalcMtx, s1_len, s2_len, curRow, dirMtx, costMtx, 50,
-                              (len_s1 - len_s2) + 50, deltawh);
-    }
-    // algn_print_dynmtrx_2d (s1, s2, m);
-    iteration++;
-
-    return retVal;
+    prec = mat_get_2d_prec (m);
+    cm_precalc_4algn (c, m, s2);
+    if (cm_get_affine_flag (c))
+        return 
+            (algn_fill_plane_2_aff (s1, prec, s1_len, s2_len, mm, dm, c, 50, \
+                (len_s1 - len_s2) + 50, deltawh, mm + (2 * s2_len), \
+                mm + (4 * s2_len)));
+    else
+    return (algn_fill_plane_2 (s1, prec, s1_len, s2_len, mm, dm, c, 50, 
+                (len_s1 - len_s2) + 50, deltawh));
 }
 
-/** TODO: can probably eliminate either this or algn_nw_limit, since
- *  both seem to be doing the same thing
- */
- int
-algn_nw (const seqt s1, const seqt s2, const cmt costMtx, \
-         matricest m, int deltawh) {
-    // printf("\nalgn_nw %d\n", iteration);
-    // fflush(stdout);
-    // deltawh is the size of the direction matrix, and was determined by the following algorithm:
-    // let dif = s1len - s2len
-    // let lower_limit = s1len * .1
-    // if deltawh has no value
-    //    then if dif < lower_limit
-    //            then (lower_limit / 2)
-    //            else 2
-    //    else if dif < lower_limit
-    //            then lower_limit
-    //            else v
 
-    // m and costMtx come from OCAML, so much be allocated in Haskell. Must
-    // Determine correct size.
-
-    // at this point, gap is already set at beginning of seq
-    // bases are set as bit streams, with gap as most-significant bit.
-    // if(DEBUG_NW) {
-        // printf("---algn_nw\n");
-        // print_seq(s1, 1);
-        // print_seq(s2, 2);
-        // // print_matrices(m, costMtx->lcm);
-        // fflush(stdout);
-    // }
-
-
+#ifdef _WIN32
+__inline int
+#else
+inline int
+#endif
+algn_nw (const seqt s1, const seqt s2, const cmt c, \
+        matricest m, int deltawh) {
     int s1_len, s2_len;
     s1_len = seq_get_len (s1);
     s2_len = seq_get_len (s2);
     assert (s1_len >= s2_len);
-    return (algn_nw_limit (s1, s2, costMtx, m, deltawh, 0, s1_len, 0, s2_len));
+    return (algn_nw_limit (s1, s2, c, m, deltawh, 0, s1_len, 0, s2_len));
 }
 
- int
+#ifdef _WIN32
+__inline int
+#else
+inline int
+#endif
 algn_nw_3d (const seqt s1, const seqt s2, const seqt s3,
         const cm_3dt c, matricest m, int w) {
-    // failwith("algn_nw_3d");
-    printf("algn_nw_3d\n");
-    fflush(stdout);
-    exit(1);
-
     const SEQT *ss1, *ss2, *ss3;
-    int *curRow, *precalcMtx, s1_len, s2_len, s3_len, gap, res;
-    DIRECTION_MATRIX *dirMtx;
+    int *mm, *prec, s1_len, s2_len, s3_len, gap, res;
+    DIRECTION_MATRIX *dm;
     ss1 = seq_get_begin (s1);
     ss2 = seq_get_begin (s2);
     ss3 = seq_get_begin (s3);
     mat_setup_size (m, seq_get_len (s2), seq_get_len (s3), seq_get_len (s1), \
-                    w, c->lcm);
-    curRow     = mat_get_3d_matrix (m);
-    dirMtx = mat_get_3d_direct (m);
-    precalcMtx   = mat_get_3d_prec (m);
+            w, c->lcm);
+    mm = mat_get_3d_matrix (m);
+    dm = mat_get_3d_direct (m);
+    prec = mat_get_3d_prec (m);
     s1_len = seq_get_len (s1);
     s2_len = seq_get_len (s2);
     s3_len = seq_get_len (s3);
-    gap    = cm_get_gap_3d (c);
-    cm_precalc_4algn_3d (c, precalcMtx, s3);
+    gap = cm_get_gap_3d (c);
+    cm_precalc_4algn_3d (c, prec, s3);
     /* TODO Check how is this ukkonen barrier affecting this fill cube, the w
      * was called uk */
-    res = algn_fill_cube (s1, s2, precalcMtx, s1_len, s2_len, s3_len, curRow, dirMtx, w, \
-                          gap, c->alphSize);
+    res = algn_fill_cube (s1, s2, prec, s1_len, s2_len, s3_len, mm, dm, w, \
+            gap, c->a_sz);
     return res;
 }
 
@@ -3504,33 +3330,33 @@ algn_calculate_from_2_aligned (seqt s1, seqt s2, cmt c, int *matrix) {
         s1b = seq_get (s1, i);
         s2b = seq_get (s2, i);
         if (0 == gap_row) { /* We have no gaps */
-            if ((c->combinations && (s1b & gap) && !(s2b & gap)) ||
+            if ((c->combinations && (s1b & gap) && !(s2b & gap)) || 
                         ((!c->combinations) && (s1b == gap)))
             {
                 res += gap_opening;
                 gap_row = 1;
-            } else if ((c->combinations && (s2b & gap) && !(s1b & gap)) ||
+            } else if ((c->combinations && (s2b & gap) && !(s1b & gap)) || 
                         ((!c->combinations) && (s2b == gap))) {
                 res += gap_opening;
                 gap_row = 2;
             }
         }
         else if (1 == gap_row) { /* We are in s1's block of gaps */
-            if ((c->combinations && !(s1b & gap)) ||
+            if ((c->combinations && !(s1b & gap)) || 
                         ((!c->combinations) && (s1b != gap))) {
-                if ((c->combinations && (s2b & gap) && !(s1b & gap)) ||
+                if ((c->combinations && (s2b & gap) && !(s1b & gap)) || 
                         ((!c->combinations) && (s2b == gap))) {
                     res += gap_opening;
                     gap_row = 2;
                 }
                 else gap_row = 0;
             }
-        }
+        } 
         else { /* We are in s2's block of gaps */
             assert (2 == gap_row);
-            if ((c->combinations && !(s2b & gap)) ||
+            if ((c->combinations && !(s2b & gap)) || 
                         ((!c->combinations) && (s2b != gap))) {
-                if ((c->combinations && (s1b & gap)) ||
+                if ((c->combinations && (s1b & gap)) || 
                         ((!c->combinations) && (s1b == gap))) {
                     res += gap_opening;
                     gap_row = 1;
@@ -3555,7 +3381,7 @@ algn_verify_2 (seqt s1, seqt s2, cmt c) {
 
 value
 algn_CAML_worst_2 (value s1, value s2, value c) {
-    // CAMLcparam3(s1, s2, c);
+    CAMLparam3(s1, s2, c);
     cmt tc;
     int res;
     seqt s1p, s2p;
@@ -3563,12 +3389,12 @@ algn_CAML_worst_2 (value s1, value s2, value c) {
     Seq_custom_val(s2p,s2);
     tc = Cost_matrix_struct(c);
     res = algn_worst_2 (s1p, s2p, tc);
-    return 0; // return 0; // CAMLreturn(Val_int(res));
+    CAMLreturn(Val_int(res));
 }
 
-value
+value 
 algn_CAML_verify_2 (value s1, value s2, value c) {
-    // CAMLcparam3(s1, s2, c);
+    CAMLparam3(s1, s2, c);
     cmt tc;
     int res;
     seqt s1p, s2p;
@@ -3576,24 +3402,17 @@ algn_CAML_verify_2 (value s1, value s2, value c) {
     Seq_custom_val(s2p,s2);
     tc = Cost_matrix_struct(c);
     res = algn_verify_2 (s1p, s2p, tc);
-    return 0; // return 0; // CAMLreturn(Val_int(res));
+    CAMLreturn(Val_int(res));
 }
 
-value
+value 
 algn_CAML_simple_2 (value s1, value s2, value c, value a, value deltawh) {
-    // CAMLcparam5(s1, s2, c, a, deltawh);
-    // if (DEBUG_CALL_ORDER) {
-        // printf("\n\n---algn_CAML_simple_2\n");
-    // }
-
+    CAMLparam5(s1, s2, c, a, deltawh);
     seqt s1p, s2p;
     int res;
     cmt tc;
     matricest ta;
     tc = Cost_matrix_struct(c);
-    // if (DEBUG_CM) {
-    //    cm_print (tc);
-    // }
     ta = Matrices_struct(a);
     Seq_custom_val(s1p,s1);
     Seq_custom_val(s2p,s2);
@@ -3604,16 +3423,14 @@ algn_CAML_simple_2 (value s1, value s2, value c, value a, value deltawh) {
     _algn_max_direction = ta->matrix_d + ta->len;
 #endif
     res = algn_nw (s1p, s2p, tc, ta, Int_val(deltawh));
-    return 0; // return 0; // CAMLreturn(Val_int(res));
+    CAMLreturn(Val_int(res));
 }
 
-value
+value 
 algn_CAML_limit_2 (value s1, value s2, value c, value a, value w, value h, \
         value s1_st, value s2_st, value s1_len, value s2_len) {
-    printf("---algn_CAML_limit_2\n");
-    fflush(stdout);
-    // CAMLcparam5(s1, s2, c, a, w);
-    // CAMLxparam5(h, s1_st, s2_st, s1_len, s2_len);
+    CAMLparam5(s1, s2, c, a, w);
+    CAMLxparam5(h, s1_st, s2_st, s1_len, s2_len);
     seqt s1p, s2p;
     int res, cw;
     cmt tc;
@@ -3626,13 +3443,12 @@ algn_CAML_limit_2 (value s1, value s2, value c, value a, value w, value h, \
     mat_setup_size (ta, seq_get_len(s1p), seq_get_len(s2p), 0, 0, \
             cm_get_lcm(tc));
     /* TODO: Fix this deltaw binding */
-    res = algn_nw_limit (s1p, s2p, tc, ta, Int_val(w),
+    res = algn_nw_limit (s1p, s2p, tc, ta, Int_val(w), 
             Int_val(s1_st), Int_val(s1_len), Int_val(s2_st), Int_val(s2_len));
-    return 0; // return 0; // CAMLreturn(Val_int(res));
+    CAMLreturn(Val_int(res));
 }
 
-
-value
+value 
 algn_CAML_limit_2_bc (value *argv, int argn) {
     return (algn_CAML_limit_2 (argv[0], argv[1], argv[2], argv[3], argv[4], \
                 argv[5], argv[6], argv[7], argv[8], argv[9]));
@@ -3640,13 +3456,8 @@ algn_CAML_limit_2_bc (value *argv, int argn) {
 
 value
 algn_CAML_simple_3 (value s1, value s2, value s3, value c, value a, value uk) {
-    // failwith("algn_CAML_simple_3");
-
-    printf("algn_CAML_simple_3\n");
-    fflush(stdout);
-    exit(1);
-    // CAMLcparam5(s1, s2, s3, c, a);
-    // CAMLxparam1(uk);
+    CAMLparam5(s1, s2, s3, c, a);
+    CAMLxparam1(uk);
     seqt s1p, s2p, s3p;
     int res;
     cm_3dt tc;
@@ -3657,7 +3468,7 @@ algn_CAML_simple_3 (value s1, value s2, value s3, value c, value a, value uk) {
     Seq_custom_val(s2p,s2);
     Seq_custom_val(s3p,s3);
     res = algn_nw_3d (s1p, s2p, s3p, tc, ta, Int_val(uk));
-    return 0; // return 0; // CAMLreturn(Val_int(res));
+    CAMLreturn(Val_int(res));
 }
 
 value
@@ -3689,17 +3500,30 @@ print_bcktrck (const seqt s1, const seqt s2, \
 
 value
 algn_CAML_print_bcktrck (value s1, value s2, value matrix) {
-    // CAMLcparam3(s1, s2, matrix);
+    CAMLparam3(s1, s2, matrix);
     seqt s1c, s2c;
     matricest m;
     Seq_custom_val(s1c,s1);
     Seq_custom_val(s2c,s2);
     m = Matrices_struct(matrix);
     print_bcktrck (s1c, s2c, m);
-    return 0; // return 0; // CAMLreturn (Val_unit);
+    CAMLreturn (Val_unit);
 }
 
-
+void
+print_dynmtrx (const seqt s1, const seqt s2, \
+        matricest m) {
+    int i, j;
+    int *d;
+    d = mat_get_2d_matrix (m);
+    for (i = 0; i < seq_get_len (s1); i++) {
+        for (j = 0; j < seq_get_len (s2); j++) 
+            printf ("%d", (int) *(d + j));
+        d += j;
+        printf ("\n");
+    }
+    return;
+}
 
 void
 algn_string_of_2d_direction (DIRECTION_MATRIX v) {
@@ -3719,17 +3543,16 @@ algn_string_of_2d_direction (DIRECTION_MATRIX v) {
 
 #define my_get(a,b) ((a)->begin)[b]
 
- void
+#ifdef _WIN32
+__inline void
+#else
+inline void
+#endif
 backtrack_2d (const seqt s1, const seqt s2, seqt r1, \
         seqt r2, const matricest m, const cmt c, int st_s1, \
-        int st_s2, int algn_s1, int algn_s2, int swaped) {
+        int st_s2, int algn_s1, int algn_s2, int swaped, \
+        value a, value b) {
     int l, l1, l2;
-    if (DEBUG_CALL_ORDER) {
-        fprintf(stdout, "---BACKTRACK_2D\n");
-        printf("s1_len: %d, s2_len: %d, r1_len: %d, r2_len: %d\n", s1->len, s2->len, r1->len, r2->len);
-        fflush(stdout);
-    }
-
     DIRECTION_MATRIX *beg, *end;
     int new_item_for_r1 = 0;
     int new_item_for_r2 = 0;
@@ -3738,54 +3561,44 @@ backtrack_2d (const seqt s1, const seqt s2, seqt r1, \
     l2 = seq_get_len (s2);
     l = l1 * l2;
     beg = st_s2 + mat_get_2d_direct (m);
-    // TODO: figure out what the fuck this means:
-    /* Stitching goes to hell now
+    /* Stitching goes to hell now 
     end = beg + (l2 * algn_s1) + algn_s2 - 1;
     */
     end = beg + (l1 * l2) - 1;
     l = l2;
 
-    if (DEBUG_ALGN) {
-        printf("\nst_s1: %d\n", st_s1);
-        printf("st_s2: %d\n", st_s2);
-        printf("algn_s1: %d\n", algn_s1);
-        printf("algn_s2: %d\n", algn_s2);
-
-        if (DEBUG_ALGN && PRINT_DIR_M) {
-            printf("\n");
-            DIRECTION_MATRIX *beg_debug;
-            int i, j;
-            beg_debug = beg;
-
-            printf ("Printing a two dimensional direction matrix.\n");
-            for (i = 0; i < algn_s1; i++, beg_debug += l2) {
-                for (j  = 0; j < algn_s2; j++) {
-                    algn_string_of_2d_direction (beg_debug[j]);
-                    fprintf (stdout, "\t");
-                    fflush (stdout);
-                    end = beg_debug + j;
-                }
-                fprintf (stdout,"\n");
+    if (!NDEBUG && !NPRINT_DM) {
+        DIRECTION_MATRIX *beg_debug;
+        int i, j;
+        beg_debug = beg;
+        printf ("Printing a two dimensional direction matrix.\n");
+        for (i = 0; i < algn_s1; i++, beg_debug += l2) {
+            for (j  = 0; j < algn_s2; j++) {
+                algn_string_of_2d_direction (beg_debug[j]);
+                printf ("\t");
                 fflush (stdout);
+                end = beg_debug + j;
             }
-            fprintf (stdout,"\n");
+            printf ("\n");
             fflush (stdout);
         }
+        printf ("\n");
+        fflush (stdout);
     }
 
     end = beg + (l2 * (algn_s1 - 1)) + algn_s2 - 1;
 
     algn_s1 = algn_s1 + st_s1;
     algn_s2 = algn_s2 + st_s2;
-    /* The following pair of while loops are the same lines of code, each
-     * has swaped INSERT and DELETE procedures, so that depending on the ordering
-     * of the two sequences (swap) either INSERTING or DELETING will be preferred.
+    /* The following pair of while loops are the same lines of code, each 
+     * has swaped INSERT and DELETE procedures, so that depending on the ordering 
+     * of the two sequences (swap) either INSERTING or DELETING will be preferred. 
      * During the downpass and all the optimization procedures, keeping the same
      * ordering for the medians output is important to keep consistency in the
      * diagnosis at every step. In other words, if a join is performed starting
      * in any position of the tree, it is necessary to make sure that the very
      * same median would be produced if the calculation started in any of it's
-     * children.
+     * children. 
      * Note that this two lines could be defined as macros, but we (I?) have
      * decided not to do so to keep it readable. Besides, once correct, there is
      * nothing (or very few things) to do here. */
@@ -3800,7 +3613,7 @@ backtrack_2d (const seqt s1, const seqt s2, seqt r1, \
                     new_item_for_r2 = my_get(s2,algn_s2);
                     my_prepend(r2,new_item_for_r2);
                     end -= l + 1;
-                }
+                } 
                 else if (*end & INSERT) {
                     new_item_for_r1 = cm_get_gap (c);
                     my_prepend(r1,new_item_for_r1);
@@ -3808,7 +3621,7 @@ backtrack_2d (const seqt s1, const seqt s2, seqt r1, \
                     new_item_for_r2 = my_get(s2,algn_s2);
                     my_prepend(r2,new_item_for_r2);
                     end -= 1;
-                }
+                } 
                 else {
                     assert (*end & DELETE);
                     algn_s1--;
@@ -3830,7 +3643,7 @@ backtrack_2d (const seqt s1, const seqt s2, seqt r1, \
                     new_item_for_r2 = my_get(s2,algn_s2);
                     my_prepend(r2,new_item_for_r2);
                     end -= l + 1;
-                }
+                } 
                 else if (*end & DELETE) {
                     algn_s1--;
                     new_item_for_r1 = my_get(s1,algn_s1);
@@ -3838,7 +3651,7 @@ backtrack_2d (const seqt s1, const seqt s2, seqt r1, \
                     new_item_for_r2 = cm_get_gap (c);
                     my_prepend(r2,new_item_for_r2);
                     end -= l;
-                }
+                } 
                 else {
                     assert (*end & INSERT);
                     new_item_for_r1 = cm_get_gap (c);
@@ -3856,7 +3669,7 @@ backtrack_2d (const seqt s1, const seqt s2, seqt r1, \
             while (end >= beg) {
                 if (*end & (ALIGN << shifter)) {
                     if (0 == shifter) {
-                        if (DEBUG_BT) printf ("1\t");
+                        if (!NDEBUG_BT) printf ("1\t");
                         algn_s1--;
                         new_item_for_r1 = my_get(s1,algn_s1);
                         my_prepend(r1,new_item_for_r1);
@@ -3865,7 +3678,7 @@ backtrack_2d (const seqt s1, const seqt s2, seqt r1, \
                         my_prepend(r2,new_item_for_r2);
                         end -= l + 1;
                     } else if (SHIFT_V == shifter) {
-                        if (DEBUG_BT) printf ("2\t");
+                        if (!NDEBUG_BT) printf ("2\t");
                         algn_s1--;
                         new_item_for_r1 = my_get (s1,algn_s1);
                         my_prepend(r1,new_item_for_r1);
@@ -3874,7 +3687,7 @@ backtrack_2d (const seqt s1, const seqt s2, seqt r1, \
                         end -= l;
                         shifter = 0;
                     } else {
-                        if (DEBUG_BT) printf ("3\t");
+                        if (!NDEBUG_BT) printf ("3\t");
                         assert (SHIFT_H == shifter);
                         new_item_for_r1 = cm_get_gap (c);
                         my_prepend(r1,new_item_for_r1);
@@ -3884,14 +3697,14 @@ backtrack_2d (const seqt s1, const seqt s2, seqt r1, \
                         end -= 1;
                         shifter = 0;
                     }
-                }
+                } 
                 else if (*end & (INSERT << shifter)) {
                     if (0 == shifter) {
-                        if (DEBUG_BT) printf ("4\t");
+                        if (!NDEBUG_BT) printf ("4\t");
                         shifter = SHIFT_H;
                     }
                     else if (SHIFT_H == shifter) {
-                        if (DEBUG_BT) printf ("5\t");
+                        if (!NDEBUG_BT) printf ("5\t");
                         new_item_for_r1 = cm_get_gap (c);
                         my_prepend(r1,new_item_for_r1);
                         algn_s2--;
@@ -3900,27 +3713,27 @@ backtrack_2d (const seqt s1, const seqt s2, seqt r1, \
                         end -= 1;
                     }
                     else {
-                        if (DEBUG_BT) printf ("6\t");
+                        if (!NDEBUG_BT) printf ("6\t");
                         assert (0);
                     }
-                }
+                } 
                 else {
                     assert (*end & (DELETE << shifter));
                     if (0 == shifter) {
-                        if (DEBUG_BT) printf ("7\t");
+                        if (!NDEBUG_BT) printf ("7\t");
                         shifter = SHIFT_V;
                     }
                     else if (SHIFT_V == shifter) {
-                        if (DEBUG_BT) printf ("8\t");
+                        if (!NDEBUG_BT) printf ("8\t");
                         algn_s1--;
                         new_item_for_r1 = my_get (s1,algn_s1);
                         my_prepend(r1,new_item_for_r1);
                         new_item_for_r2 = cm_get_gap (c);
                         my_prepend(r2,new_item_for_r2);
                         end -= l;
-                    }
+                    } 
                     else {
-                        if (DEBUG_BT) printf ("9\t");
+                        if (!NDEBUG_BT) printf ("9\t");
                         assert (0);
                     }
                 }
@@ -3955,9 +3768,9 @@ backtrack_2d (const seqt s1, const seqt s2, seqt r1, \
                         end -= 1;
                         shifter = 0;
                     }
-                }
+                } 
                 else if (*end & (DELETE << shifter)) {
-                    if (0 == shifter)
+                    if (0 == shifter) 
                         shifter = SHIFT_V;
                     else if (SHIFT_V == shifter) {
                         algn_s1--;
@@ -3966,14 +3779,14 @@ backtrack_2d (const seqt s1, const seqt s2, seqt r1, \
                         new_item_for_r2 = cm_get_gap (c);
                         my_prepend(r2,new_item_for_r2);
                         end -= l;
-                    }
+                    } 
                     else {
                         assert (0);
                     }
                 }
                 else {
                     assert (*end & (INSERT << shifter));
-                    if (0 == shifter)
+                    if (0 == shifter) 
                         shifter = SHIFT_H;
                     else if (SHIFT_H == shifter) {
                         new_item_for_r1 = cm_get_gap (c);
@@ -3986,7 +3799,7 @@ backtrack_2d (const seqt s1, const seqt s2, seqt r1, \
                     else {
                         assert (0);
                     }
-                }
+                } 
             }
         }
     }
@@ -4008,14 +3821,14 @@ algn_string_of_3d_direction (char v) {
     return "Empty";
 }
 
- void
+#ifdef _WIN32
+__inline void
+#else
+inline void
+#endif
 backtrack_3d (const seqt s1, const seqt s2, seqt s3, \
         seqt r1, seqt r2, seqt r3, matricest m, \
         const cm_3dt c) {
-    // failwith("backtrack_3d");
-    printf("backtrack_3d\n");
-    fflush(stdout);
-    exit(1);
     int l, l1, l2, l3;
     int a_plane, a_line, a_cell = 1;
     DIRECTION_MATRIX *beg, *end;
@@ -4026,7 +3839,7 @@ backtrack_3d (const seqt s1, const seqt s2, seqt s3, \
     a_plane = l2 * l3;
     a_line = l3;
     beg = mat_get_3d_direct (m);
-    if (DEBUG) {
+    if (!NDEBUG) {
         char *toprint;
         DIRECTION_MATRIX *beg_debug;
         int i, j, k;
@@ -4091,12 +3904,11 @@ backtrack_3d (const seqt s1, const seqt s2, seqt s3, \
     return;
 }
 
-// a is nw matrices
 value
 algn_CAML_backtrack_2d (value s1, value s2, value s1p, value s2p, value a, \
         value c, value swap) {
-    // CAMLcparam5(s1, s2, s1p, s2p, a);
-    // CAMLxparam2(c, swap);
+    CAMLparam5(s1, s2, s1p, s2p, a);
+    CAMLxparam2(c, swap);
     seqt ss1, ss2, ss1p, ss2p;
     matricest ta;
     cmt cc;
@@ -4107,23 +3919,23 @@ algn_CAML_backtrack_2d (value s1, value s2, value s1p, value s2p, value a, \
     Seq_custom_val(ss2p,s2p);
     cc = Cost_matrix_struct(c);
     backtrack_2d (ss1, ss2, ss1p, ss2p, ta, cc, 0, 0, seq_get_len(ss1), \
-            seq_get_len(ss2), Bool_val(swap));
-    return 0; // return 0; // CAMLreturn(Val_unit);
+            seq_get_len(ss2), Bool_val(swap), s1, s2);
+    CAMLreturn(Val_unit);
 }
 
-value
+value 
 algn_CAML_backtrack_2d_bc (value *argv, int argn) {
     return (algn_CAML_backtrack_2d (argv[0], argv[1], argv[2], argv[3], \
                 argv[4], argv[5], argv[6]));
 }
 
-value
+value 
 algn_CAML_backtrack_2d_limit (value s1, value s2, value s1p, \
         value s2p, value a, value c, value st_s1, value st_s2, \
         value algn_s1, value algn_s2, value swaped) {
-    // CAMLcparam5 (s1, s2, s1p, s2p, a);
-    // CAMLxparam5 (c, st_s1, st_s2, algn_s1, algn_s2);
-    // CAMLxparam1 (swaped);
+    CAMLparam5 (s1, s2, s1p, s2p, a);
+    CAMLxparam5 (c, st_s1, st_s2, algn_s1, algn_s2);
+    CAMLxparam1 (swaped);
     seqt ss1, ss2, ss1p, ss2p;
     matricest ta;
     cmt cc;
@@ -4134,12 +3946,12 @@ algn_CAML_backtrack_2d_limit (value s1, value s2, value s1p, \
     Seq_custom_val(ss2p,s2p);
     cc = Cost_matrix_struct(c);
     backtrack_2d (ss1, ss2, ss1p, ss2p, ta, cc, Int_val(st_s1), \
-            Int_val(st_s2), Int_val(algn_s1), Int_val(algn_s2),
-            Bool_val(swaped));
-    return 0; // return 0; // CAMLreturn (Val_unit);
+            Int_val(st_s2), Int_val(algn_s1), Int_val(algn_s2), 
+            Bool_val(swaped), s1, s2);
+    CAMLreturn (Val_unit);
 }
 
-value
+value 
 algn_CAML_backtrack_2d_limit_bc (value *argv, int argn) {
     return (algn_CAML_backtrack_2d_limit (argv[0], argv[1], argv[2], argv[3], \
                 argv[4], argv[5], argv[6], argv[7], argv[8], argv[9], argv[10]));
@@ -4148,12 +3960,8 @@ algn_CAML_backtrack_2d_limit_bc (value *argv, int argn) {
 value
 algn_CAML_backtrack_3d (value s1, value s2, value s3, value s1p, value s2p, \
         value s3p, value a, value c) {
-    // failwith("algn_CAML_backtrack_3d");
-    printf("algn_CAML_backtrack_3d\n");
-    fflush(stdout);
-    exit(1);
-    // CAMLcparam5(s1, s2, s1p, s2p, a);
-    // CAMLxparam2(s3, s3p);
+    CAMLparam5(s1, s2, s1p, s2p, a);
+    CAMLxparam2(s3, s3p);
     seqt ss1, ss2, ss3, ss1p, ss2p, ss3p;
     matricest ta;
     cm_3dt tc;
@@ -4166,7 +3974,7 @@ algn_CAML_backtrack_3d (value s1, value s2, value s3, value s1p, value s2p, \
     Seq_custom_val(ss3p,s3p);
     tc = Cost_matrix_struct_3d(c);
     backtrack_3d (ss1, ss2, ss3, ss1p, ss2p, ss3p, ta, tc);
-    return 0; // return 0; // CAMLreturn(Val_unit);
+    CAMLreturn(Val_unit);
 }
 
 value
@@ -4175,47 +3983,44 @@ algn_CAML_backtrack_3d_bc (value *argv, int argc) {
                 argv[4], argv[5], argv[6], argv[7]));
 }
 
-value
+value 
 algn_CAML_align_2d (value s1, value s2, value c, value a, value s1p, \
         value s2p, value deltawh, value swaped)
 {
-    printf("algn_CAML_align_2d\n");
-    fflush(stdout);
-    // CAMLcparam5(s1, s2, c, a, s1p);
-    // CAMLxparam3(s2p, deltawh, swaped);
-    // CAMLlocal1(res);
-    // res = algn_CAML_simple_2 (s1, s2, c, a, deltawh);
+    CAMLparam5(s1, s2, c, a, s1p);
+    CAMLxparam3(s2p, deltawh, swaped);
+    CAMLlocal1(res);
+    res = algn_CAML_simple_2 (s1, s2, c, a, deltawh);
     algn_CAML_backtrack_2d (s1, s2, s1p, s2p, a, c, swaped);
-    return 0; // return 0; // CAMLreturn(res);
+    CAMLreturn(res);
 }
 
 value
 algn_CAML_align_2d_bc (value *argv, int argn) {
     return (algn_CAML_align_2d (argv[0], argv[1], argv[2], argv[3], argv[4], \
-                argv[5], argv[6], argv[7]));
+                argv[5], argv[6], argv[7])); 
 }
 
-value
+value 
 algn_CAML_align_3d (value s1, value s2, value s3, value c, value a, \
         value s1p, value s2p, value s3p, value uk) {
-    // failwith("algn_CAML_align_3d");
-    printf("algn_CAML_align_3d\n");
-    fflush(stdout);
-    exit(1);
-
-    // CAMLlocal1(res);
-    // res = algn_CAML_simple_3 (s1, s2, s3, c, a, uk);
+    CAMLlocal1(res);
+    res = algn_CAML_simple_3 (s1, s2, s3, c, a, uk);
     algn_CAML_backtrack_3d (s1, s2, s3, s1p, s2p, s3p, a, c);
-    return 0; //(res);
+    return (res);
 }
 
 value
 algn_CAML_align_3d_bc (value *argv, int argn) {
     return (algn_CAML_align_3d (argv[0], argv[1], argv[2], argv[3], argv[4], \
-                argv[5], argv[6], argv[7], argv[8]));
+                argv[5], argv[6], argv[7], argv[8])); 
 }
 
- void
+#ifdef _WIN32
+__inline void
+#else
+inline void
+#endif
 algn_get_median_2d_with_gaps (seqt s1, seqt s2, cmt m, seqt sm) {
     SEQT *begin1, *begin2;
     int interm;
@@ -4229,7 +4034,11 @@ algn_get_median_2d_with_gaps (seqt s1, seqt s2, cmt m, seqt sm) {
     return;
 }
 
- void
+#ifdef _WIN32
+__inline void
+#else
+inline void
+#endif
 algn_get_median_2d_no_gaps (seqt s1, seqt s2, cmt m, seqt sm) {
     SEQT *begin1, *begin2;
     int interm;
@@ -4250,7 +4059,7 @@ algn_remove_gaps (int gap, seqt s) {
     int i, len;
     len = seq_get_len (s);
     SEQT *source, *destination;
-    int newlen = 0;
+    int newlen = 0; 
     source = destination = s->end;
     for (i = len - 1; i >= 0; i--) {
         if (gap != *source) {
@@ -4269,7 +4078,7 @@ algn_remove_gaps (int gap, seqt s) {
 
 void
 algn_correct_blocks_affine (int gap, seqt s, seqt a, seqt b) {
-    int i, len, ab, bb, sb, extending_gap,
+    int i, len, ab, bb, sb, extending_gap, 
         inside_block = 0, prev_block = 0;
     len = seq_get_len (s);
     extending_gap = 0;
@@ -4287,13 +4096,13 @@ algn_correct_blocks_affine (int gap, seqt s, seqt a, seqt b) {
             inside_block = 0;
         else if (((ab & gap) || (bb & gap)) && ((ab != gap) || (bb != gap)))
             inside_block = 1;
-        else
+        else 
             inside_block = 0;
         if (((gap & ab) || (gap & bb)) && (!(sb & gap)) && !extending_gap) {
             prev_block = inside_block;
             extending_gap = 1;
         }
-        else if ((gap & ab) && (gap & bb) && (sb & gap) && (sb != gap) &&
+        else if ((gap & ab) && (gap & bb) && (sb & gap) && (sb != gap) && 
                 extending_gap && inside_block && !prev_block) {
             sb = (~gap) & sb;
             prev_block = 0;
@@ -4309,7 +4118,11 @@ algn_correct_blocks_affine (int gap, seqt s, seqt a, seqt b) {
     return;
 }
 
- void
+#ifdef _WIN32
+__inline void
+#else
+inline void
+#endif
 algn_ancestor_2 (seqt s1, seqt s2, cmt m, seqt sm ) {
     SEQT *begin1, *begin2;
     int interm;
@@ -4335,17 +4148,17 @@ algn_ancestor_2 (seqt s1, seqt s2, cmt m, seqt sm ) {
 
 
 
-/*
+/* 
  * Given three aligned sequences s1, s2, and s3, the median between them is
  * returned in the sequence sm, using the cost matrix stored in m.
  */
- void
+#ifdef _WIN32
+__inline void
+#else
+inline void
+#endif
 algn_get_median_3d (seqt s1, seqt s2, seqt s3, \
         cm_3dt m, seqt sm) {
-    // failwith("algn_get_median_3d");
-    printf("algn_get_median_3d\n");
-    fflush(stdout);
-    exit(1);
     SEQT *end1, *end2, *end3;
     int interm;
     int i;
@@ -4370,20 +4183,20 @@ algn_union (seqt s1, seqt s2, seqt su) {
     return;
 }
 
-value
+value 
 algn_CAML_union (value s1, value s2, value su) {
-    // CAMLcparam3(s1, s2, su);
+    CAMLparam3(s1, s2, su);
     seqt ss1, ss2, ssu;
     Seq_custom_val(ss1,s1);
     Seq_custom_val(ss2,s2);
     Seq_custom_val(ssu,su);
     algn_union (ss1, ss2, ssu);
-    return 0; // return 0; // CAMLreturn(Val_unit);
+    CAMLreturn(Val_unit);
 }
 
 value
 algn_CAML_median_2_no_gaps (value s1, value s2, value m, value sm) {
-    // CAMLcparam4(s1, s2, m, sm);
+    CAMLparam4(s1, s2, m, sm);
     seqt ss1, ss2, ssm;
     cmt tm;
     Seq_custom_val(ss1,s1);
@@ -4391,12 +4204,12 @@ algn_CAML_median_2_no_gaps (value s1, value s2, value m, value sm) {
     Seq_custom_val(ssm,sm);
     tm = Cost_matrix_struct(m);
     algn_get_median_2d_no_gaps (ss1, ss2, tm, ssm);
-    return 0; // return 0; // CAMLreturn(Val_unit);
+    CAMLreturn(Val_unit);
 }
 
 value
 algn_CAML_median_2_with_gaps (value s1, value s2, value m, value sm) {
-    // CAMLcparam4(s1, s2, m, sm);
+    CAMLparam4(s1, s2, m, sm);
     seqt ss1, ss2, ssm;
     cmt tm;
     Seq_custom_val(ss1,s1);
@@ -4404,16 +4217,12 @@ algn_CAML_median_2_with_gaps (value s1, value s2, value m, value sm) {
     Seq_custom_val(ssm,sm);
     tm = Cost_matrix_struct(m);
     algn_get_median_2d_with_gaps (ss1, ss2, tm, ssm);
-    return 0; // return 0; // CAMLreturn(Val_unit);
+    CAMLreturn(Val_unit);
 }
 
-value
+value 
 algn_CAML_median_3 (value s1, value s2, value s3, value m, value sm) {
-    // failwith("algn_CAML_median_3");
-    printf("algn_CAML_median_3\n");
-    fflush(stdout);
-    exit(1);
-    // CAMLcparam5(s1, s2, s3, m, sm);
+    CAMLparam5(s1, s2, s3, m, sm);
     seqt ss1, ss2, ss3, ssm;
     cm_3dt tm;
     Seq_custom_val(ss1,s1);
@@ -4422,7 +4231,7 @@ algn_CAML_median_3 (value s1, value s2, value s3, value m, value sm) {
     Seq_custom_val(ssm,sm);
     tm = Cost_matrix_struct_3d(m);
     algn_get_median_3d (ss1, ss2, ss3, tm, ssm);
-    return 0; // return 0; // CAMLreturn(Val_unit);
+    CAMLreturn(Val_unit);
 }
 
 /* Alignment following the algorithm of Myers , 1986. */
@@ -4458,26 +4267,26 @@ algn_myers (zarrt v, seqt a, seqt b, int max) {
 
 value
 algn_CAML_myers (value sa, value sb) {
-    // CAMLcparam0();
+    CAMLparam0();
     seqt a, b;
     int res, max;
     Seq_custom_val(a,sa);
     Seq_custom_val(b,sb);
-    max = seq_get_len (a) + seq_get_len (b);
+    max = seq_get_len (a) + seq_get_len (b); 
     if (max > zarr_length (v)) {
-        // if ((v != NULL) && (zarr_realloc (v, max))) failwith ("Allocation error.");
-        // else {
-        //     v = zarr_alloc (max);
-        //     // if (v == NULL) failwith ("Allocation error.");
-        // }
+        if ((v != NULL) && (zarr_realloc (v, max))) failwith ("Allocation error.");
+        else {
+            v = zarr_alloc (max);
+            if (v == NULL) failwith ("Allocation error.");
+        }
     }
     res = algn_myers (v, a, b, max);
-    return 0; // return 0; // CAMLreturn (Val_int (res));
+    CAMLreturn (Val_int (res));
 }
 
-value
+value 
 algn_CAML_ancestor_2 (value sa, value sb, value cm, value sab) {
-    // CAMLcparam4(sa, sb, cm, sab);
+    CAMLparam4(sa, sb, cm, sab);
     seqt a, b, ab;
     cmt tm;
 
@@ -4486,7 +4295,7 @@ algn_CAML_ancestor_2 (value sa, value sb, value cm, value sab) {
     Seq_custom_val(ab,sab);
     tm = Cost_matrix_struct(cm);
     algn_ancestor_2 (a, b, tm, ab);
-    return 0; // return 0; // CAMLreturn (Val_unit);
+    CAMLreturn (Val_unit);
 }
 
 void
@@ -4496,10 +4305,10 @@ algn_copy_backtrack (int s1, int s2, const matricest m, value res) {
     DIRECTION_MATRIX *d;
     d = mat_get_2d_direct (m);
     for (i = 0; i < s1; i++) {
-        // row = Field(res, i);
-        // for (j = 0; j < s2; j++) {
-        //     Store_field(row, j, Val_int (*(d + j)));
-        // }
+        row = Field(res, i);
+        for (j = 0; j < s2; j++) {
+            Store_field(row, j, Val_int (*(d + j)));
+        }
         d += j;
     }
     return;
@@ -4507,7 +4316,7 @@ algn_copy_backtrack (int s1, int s2, const matricest m, value res) {
 
 value
 algn_CAML_create_backtrack (value lsa, value lsb, value scm, value sres) {
-    // CAMLcparam4(lsa, lsb, scm, sres);
+    CAMLparam4(lsa, lsb, scm, sres);
     int la, lb;
     matricest m;
 
@@ -4515,7 +4324,7 @@ algn_CAML_create_backtrack (value lsa, value lsb, value scm, value sres) {
     lb = Int_val(lsb);
     m = Matrices_struct(scm);
     algn_copy_backtrack (la, lb, m, sres);
-    return 0; // return 0; // CAMLreturn(Val_unit);
+    CAMLreturn(Val_unit);
 }
 
 #include "union.c"

@@ -1,11 +1,11 @@
 #include <stdio.h>
-#include "caml/mlvalues.h"
-#include "caml/memory.h"
-#include "caml/bigarray.h"
-#include "caml/fail.h"
-#include "caml/custom.h"
-#include "caml/intext.h"
-#include "caml/alloc.h"
+#include <caml/mlvalues.h>
+#include <caml/memory.h>
+#include <caml/bigarray.h>
+#include <caml/fail.h>
+#include <caml/custom.h>
+#include <caml/intext.h>
+#include <caml/alloc.h>
 #include "config.h"
 #ifdef HAVE_LIBREADLINE
 #include <readline/readline.h>
@@ -20,7 +20,7 @@ char * rl_gets (void) {
 
     line_read = readline ("poy> ");
 
-    if (line_read && *line_read)
+    if (line_read && *line_read) 
         add_history (line_read);
     return (line_read);
 }

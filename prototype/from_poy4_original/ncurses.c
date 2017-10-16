@@ -17,14 +17,14 @@
 /* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301   */
 /* USA                                                                        */
 
-#include "caml/mlvalues.h"
-#include "caml/memory.h"
-#include "caml/bigarray.h"
-#include "caml/fail.h"
-#include "caml/custom.h"
-#include "caml/intext.h"
-#include "caml/alloc.h"
-#include "caml/callback.h"
+#include <caml/mlvalues.h>
+#include <caml/memory.h>
+#include <caml/bigarray.h>
+#include <caml/fail.h>
+#include <caml/custom.h>
+#include <caml/intext.h>
+#include <caml/alloc.h>
+#include <caml/callback.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -51,7 +51,7 @@ static struct custom_operations windows = {
     "http://www.amnh.org/poy/ncurses/windows0.1",
     &ncurs_CAML_window_free,
     custom_compare_default,
-    custom_hash_default,
+    custom_hash_default, 
     custom_serialize_default,
     custom_deserialize_default
 };
@@ -81,7 +81,7 @@ ncurs_CAML_idlok (value vw, value vb) {
 value
 ncurs_CAML_create (value vp, value vh, value vw, value vy, value vx) {
     CAMLparam5(vp, vh, vw, vy, vx);
-    // CAMLlocal1(res);
+    CAMLlocal1(res);
     WINDOW **tmp;
     res = alloc_custom (&windows, sizeof (WINDOW *), 1, 1000000);
     tmp = (WINDOW **) Data_custom_val(res);
@@ -100,7 +100,7 @@ ncurs_CAML_delete (value vp) {
 value
 ncurs_CAML_getyx (value vwin) {
     CAMLparam1(vwin);
-    // CAMLlocal1(res);
+    CAMLlocal1(res);
     int y, x;
     getyx(Win_custom(vwin), y, x);
     res = caml_alloc_tuple(2);
@@ -112,7 +112,7 @@ ncurs_CAML_getyx (value vwin) {
 value
 ncurs_CAML_getparyx (value vwin) {
     CAMLparam1(vwin);
-    // CAMLlocal1(res);
+    CAMLlocal1(res);
     int x, y;
     getparyx(Win_custom(vwin), y, x);
     res = caml_alloc_tuple(2);
@@ -124,7 +124,7 @@ ncurs_CAML_getparyx (value vwin) {
 value
 ncurs_CAML_getbegyx (value vwin) {
     CAMLparam1(vwin);
-    // CAMLlocal1(res);
+    CAMLlocal1(res);
     int x, y;
     getbegyx(Win_custom(vwin), y, x);
     res = caml_alloc_tuple(2);
@@ -136,7 +136,7 @@ ncurs_CAML_getbegyx (value vwin) {
 value
 ncurs_CAML_getmaxyx (value vwin) {
     CAMLparam1(vwin);
-    // CAMLlocal1(res);
+    CAMLlocal1(res);
     int x, y;
     getmaxyx(Win_custom(vwin), y, x);
     res = caml_alloc_tuple(2);
@@ -217,14 +217,14 @@ ncurs_CAML_cbreak (value v) {
     CAMLreturn(Val_unit);
 }
 
-value
+value 
 ncurs_CAML_meta (value vwin, value vb) {
     CAMLparam2(vwin, vb);
     meta(Win_custom(vwin), Bool_val(vb));
     CAMLreturn(Val_unit);
 }
 
-value
+value 
 ncurs_CAML_keypad (value vwin, value vb) {
     CAMLparam2(vwin, vb);
     keypad(Win_custom(vwin), Bool_val(vb));
@@ -348,7 +348,7 @@ void resizeHandler (int sig) {
 value
 ncurs_CAML_init (value unit) {
     CAMLparam1(unit);
-    // CAMLlocal1(res);
+    CAMLlocal1(res);
     WINDOW **tmp;
     initscr();
     res = alloc_custom (&windows, sizeof (WINDOW *), 1, 1000000);
@@ -395,7 +395,7 @@ ncurs_CAML_wresize (value vw, value vl, value vc) {
     CAMLreturn(Val_unit);
 }
 
-value
+value 
 ncurs_CAML_mvwin (value vw, value vl, value vc) {
     CAMLparam3(vw, vl, vc);
     mvderwin (Win_custom(vw), Int_val(vl), Int_val(vc));
@@ -409,7 +409,7 @@ ncurs_CAML_wmove (value vw, value vl, value vc) {
     CAMLreturn(Val_unit);
 }
 
-value
+value 
 ncurs_CAML_wgetch (value vw) {
     CAMLparam1(vw);
     int res;
@@ -440,7 +440,7 @@ ncurs_CAML_has_colors (value unit) {
     CAMLreturn(Val_bool(v));
 }
 
-value
+value 
 ncurs_CAML_start_color (value unit) {
     CAMLparam1(unit);
     start_color();
@@ -582,16 +582,16 @@ ncurs_CAML_sigwinch_supported (value unit) {
     CAMLreturn(Val_bool (0));
 #endif
 }
-value
-ncurs_CAML_sigwinch (value unit) {
-    CAMLparam1(unit);
+value 
+ncurs_CAML_sigwinch (value unit) { 
+    CAMLparam1(unit); 
 #ifdef SIGWINCH
-    CAMLreturn(Val_int (SIGWINCH));
-#else
-    // failwith ("Compiled without SIGWINCH support");
+    CAMLreturn(Val_int (SIGWINCH)); 
+#else 
+    failwith ("Compiled without SIGWINCH support");
     CAMLreturn (Val_int (0));
 #endif
-}
+} 
 
 value
 ncurs_CAML_wdelch (value vw) {

@@ -24,7 +24,7 @@
  * required operations for a fast analysis doesn't require a large number of
  * operaations (as opposed to dynamic homology characters). For this reason, a
  * special kind of  structure in C is used for the caculations that allows us a
- * much larger number of character optimizations.
+ * much larger number of character optimizations. 
  */
 #ifndef ADD_H
 
@@ -39,12 +39,12 @@
 /* Are we using a 64 bit environment? */
 #ifdef __LP64__
 #define native_int long
-// #define serialize_native serialize_int_8
-// #define deserialize_native deserialize_sint_8
+#define serialize_native serialize_int_8
+#define deserialize_native deserialize_sint_8
 #else
 #define native_int int
-// #define serialize_native serialize_int_4
-// #define deserialize_native deserialize_sint_4
+#define serialize_native serialize_int_4
+#define deserialize_native deserialize_sint_4
 #endif
 
 /* Are we using vectorization ? */
@@ -87,7 +87,7 @@ typedef __m64 vUInt32;
  * character is defined by a range of valid integers. In the application, each
  * homologous character is assigned a unique code; for this reason, inside each
  * set, there is a code assigned, and for this same reason, no two characters in
- * a set can have the same code, as they can't be homologous.
+ * a set can have the same code, as they can't be homologous. 
  *
  * Finally, each set is either generated from the input (the observed taxonomic
  * units), or it's produced as a median of two children nodes, and therefore,
@@ -121,12 +121,12 @@ struct add_st {
 #define ADD_NUM_VECTORS 5   /**< The number of ucv vectors in struct add_st */
 
 /** A pointer to the additive set structure */
-typedef struct add_st * add_stt;
+typedef struct add_st * add_stt; 
 
 /** Allocate
  *
  * Allocates a new additive character set structure.
- * @param len is the number of characters the set contains.
+ * @param len is the number of characters the set contains. 
  * @return a pointer to the freshly allocated structure. If the allocation
  * fails, a NULL pointer is returned. */
 add_stt
@@ -134,7 +134,7 @@ add_alloc (native_int len, native_int true_len);
 
 /**Deallocate
  *
- * Deallocates an additive character set.
+ * Deallocates an additive character set. 
  * @param a is the additive character set to be deallocated. */
 void
 add_free (add_stt a);
@@ -154,7 +154,7 @@ add_dup (add_stt x);
  * Copies the contents of one additive character set to another addtive
  * character set. The two character sets must have the same len (this condition
  * is checked in an assertion, and therefore it's non-recoverable).
- * @param src is the source of the information being copied.
+ * @param src is the source of the information being copied. 
  * @param dst is the target structure where the information of src is being
  * copied. */
 void
@@ -171,7 +171,7 @@ add_copy (add_stt dst, add_stt src);
  * @param b is the second character set to be compared.
  * @param res is the resulting character set where the medians of all the
  * homologous characters of a and b will be stored (remember that homologous
- * means characters with a shared code).
+ * means characters with a shared code). 
  */
 void
 add_downpass (add_stt a, add_stt b, add_stt res);
@@ -179,10 +179,10 @@ add_downpass (add_stt a, add_stt b, add_stt res);
 /**Median of two character sets.
  *
  * Calculates the median of two character sets. Both sets should have the same
- * conditions established in add_downpass.
+ * conditions established in add_downpass. 
  * @param a is the first additive character set being compared.
  * @param b is the second additive character set being compared.
- * @return a fresh additive character set x that guarantees that
+ * @return a fresh additive character set x that guarantees that 
  * add_distance (x, a) + add_distance (x, b) <= add_distance (a, b). If an error
  * occurs return a NULL pointer.
  * @see add_downpass
@@ -199,7 +199,7 @@ add_median (add_stt a, add_stt b);
  * @param a is the first additive character set being compared.
  * @param b is the second additive character set being compared.
  * @return the distance between the character sets. This value must be a Natural
- * number, if an error occurs, (-1) is returned.
+ * number, if an error occurs, (-1) is returned. 
  * @see add_downpass
  */
 int

@@ -30,13 +30,13 @@
 #include <stdint.h>
 #endif
 
-#include "caml/mlvalues.h"
-#include "caml/memory.h"
-#include "caml/bigarray.h"
-#include "caml/fail.h"
-#include "caml/custom.h"
-#include "caml/alloc.h"
-#include "caml/intext.h"
+#include <caml/mlvalues.h>
+#include <caml/memory.h>
+#include <caml/bigarray.h>
+#include <caml/fail.h>
+#include <caml/custom.h>
+#include <caml/alloc.h>
+#include <caml/intext.h>
 #include <assert.h>
 #include <stdio.h>
 

@@ -18,22 +18,24 @@
 /* USA                                                                        */
 
 #include <stdio.h>
-#include "caml/memory.h"
-#include "caml/mlvalues.h"
-#include "caml/custom.h"
-#include "caml/fail.h"
+#include <caml/memory.h>
+#include <caml/mlvalues.h>
+#include <caml/custom.h>
+#include <caml/fail.h>
 #include "matrices.h"
 
-#define DEBUG_CALL_ORDER 0
 
-
-/*
+/* 
  * For memory management efficiency, I will keep all the matrices in one big
  * chunck of memory, that I can reallocate as a whole, and reduce fragmentation
  * a lot if possible, all the alignment calculations and all the matrices that
- * are precomputed to speedup the alignments are held here.
+ * are precomputed to speedup the alignments are hold here.
  */
+#ifdef _WIN32
+__inline int
+#else
 inline int
+#endif
 mat_size_of_3d_matrix (int w, int d, int h, int k) {
     /*
     int basic_cube;
@@ -48,24 +50,11 @@ mat_size_of_3d_matrix (int w, int d, int h, int k) {
     return (w * d * h);
 }
 
-void print_matrices(matricest m, int alphSize) {
-    printf("\nMatrices:\n");
-    printf("    NW Matrix len:         %d\n", m->len);
-    printf("    Efficiency mtx len:    %d\n", m->len_eff);
-    printf("    Precalc mtx len:       %d\n", m->len_pre);
-
-    printf("\n  Precalculated nw matrix:\n");
-    for( size_t i = 0; i < m->len_pre; i+=12) {
-        printf("    ");
-        for( size_t j = 0; j < 12; j++) {
-            printf("%4d", m->precalc[i + j]);
-        }
-        printf("\n");
-    }
-
-}
-
+#ifdef _WIN32
+__inline int
+#else
 inline int
+#endif
 mat_size_of_2d_matrix (int w, int h) {
     if (w > h) return (w * 12);
     else return (h * 12);
@@ -75,16 +64,17 @@ void
 mat_clean_direction_matrix (matricest m) {
     int len = m->len;
     int i;
-    for (i = 0; i < len; i++)
+    for (i = 0; i < len; i++) 
         m->matrix_d[i] = (DIRECTION_MATRIX) 0;
     return;
 }
 
+#ifdef _WIN32
+__inline int
+#else
 inline int
+#endif
 mat_setup_size (matricest m, int w, int d, int h, int k, int lcm) {
-    if (DEBUG_CALL_ORDER) {
-        printf("\n---mat_setup_size\n");
-    }
     int len, len_2d, len_precalc, len_dir;
     if (h == 0) {           /* If the size setup is only for 2d */
         len = mat_size_of_2d_matrix (w, d);
@@ -98,19 +88,19 @@ mat_setup_size (matricest m, int w, int d, int h, int k, int lcm) {
         len_dir = len_2d * h;
     }
     if (m->len_eff < len) { /* If the 3d or 2d matrix is not enough */
-        m->cube = m->matrix =
+        m->cube = m->matrix = 
             (int *) realloc (m->matrix, (len * sizeof(int)));
         m->len_eff = len;
     }
     if (m->len < len_dir) { /* If the other matrices are not enough */
-        m->cube_d = m->matrix_d =
-            (DIRECTION_MATRIX *)
+        m->cube_d = m->matrix_d = 
+            (DIRECTION_MATRIX *) 
             realloc (m->matrix_d, (len_dir * sizeof(DIRECTION_MATRIX)));
         if (0 != len_2d) {
-            m->pointers_3d =
+            m->pointers_3d = 
                 (int **) realloc (m->pointers_3d, len_2d * sizeof(int));
-            // if (m->pointers_3d == NULL)
-                // failwith ("Memory allocation problem in pointers 3d.");
+            if (m->pointers_3d == NULL)
+                failwith ("Memory allocation problem in pointers 3d.");
         }
         m->len = len_dir;
     }
@@ -119,12 +109,12 @@ mat_setup_size (matricest m, int w, int d, int h, int k, int lcm) {
         m->len_pre = len_precalc;
     }
     /* Check if there is an allocation error then abort program */
-    // if ((len > 0) && (m->cube == NULL))
-    //     // failwith ("Memory allocation problem in cube.");
-    // if ((len_dir > 0) && (m->matrix_d == NULL))
-    //     // failwith ("Memory allocation problem in matrix_d");
-    // if ((len_precalc > 0) && (m->precalc == NULL))
-        // failwith ("Memory allocation problem in precalc");
+    if ((len > 0) && (m->cube == NULL))
+        failwith ("Memory allocation problem in cube.");
+    if ((len_dir > 0) && (m->matrix_d == NULL))
+        failwith ("Memory allocation problem in matrix_d");
+    if ((len_precalc > 0) && (m->precalc == NULL))
+        failwith ("Memory allocation problem in precalc");
     return 0;
 }
 
@@ -177,9 +167,9 @@ mat_CAML_free (value m) {
 void
 mat_CAML_serialize (value c, unsigned long *wsize_32, \
         unsigned long *wsize_64) {
-    // // CAMLparam1(c);
+    CAMLparam1(c);
     *wsize_64 = *wsize_32 = sizeof (struct matrices);
-    // return 0; // CAMLreturn (0);
+    CAMLreturn0;
 }
 
 unsigned long
@@ -202,19 +192,19 @@ static struct custom_operations alignment_matrix = {
     custom_deserialize_default
 };
 
-value
+value 
 mat_CAML_create_general (value a) {
-    // // CAMLparam1(a);
-    // CAMLlocal1(res);
+    CAMLparam1(a);
+    CAMLlocal1(res);
     matricest m;
-    // res =
-    //     alloc_custom (&alignment_matrix, sizeof(struct matrices), 1, 1000);
-    // m = Matrices_struct(res);
+    res = 
+        alloc_custom (&alignment_matrix, sizeof(struct matrices), 1, 1000);
+    m = Matrices_struct(res);
     m->len_pre = m->len_eff = m->len = 0;
     m->matrix = m->cube = m->precalc = NULL;
     m->matrix_d = m->cube_d = NULL;
     m->pointers_3d = NULL;
-    return 0; // CAMLreturn(res);
+    CAMLreturn(res);
 }
 
 void
@@ -233,21 +223,21 @@ mat_print_algn_2d (matricest m, int w, int h) {
 
 value
 mat_CAML_print_algn_2d (value res, value mw, value mh) {
-    // CAMLparam3(res, mw, mh);
+    CAMLparam3(res, mw, mh);
     matricest m;
     int w, h;
     m = Matrices_struct(res);
     w = Int_val(mw);
     h = Int_val(mh);
     mat_print_algn_2d (m, w, h);
-    return 0; // CAMLreturn (Val_unit);
+    CAMLreturn (Val_unit);
 }
 
 value
 mat_CAML_get_value (value res, value mw, value mh, value vrow, value vcolumn) {
-    // CAMLparam5(res, mw, mh, vrow, vcolumn);
+    CAMLparam5(res, mw, mh, vrow, vcolumn);
     matricest m;
-    int w, h, row, column;
+    int w, h, row, column; 
     DIRECTION_MATRIX *mm;
     m = Matrices_struct(res);
     w = Int_val(mw);
@@ -255,7 +245,7 @@ mat_CAML_get_value (value res, value mw, value mh, value vrow, value vcolumn) {
     row = Int_val(vrow);
     column = Int_val(vcolumn);
     mm = mat_get_2d_direct(m);
-    return 0; // CAMLreturn (Val_int(*(mm + (row * w) + column)));
+    CAMLreturn (Val_int(*(mm + (row * w) + column)));
 }
 
 void
@@ -279,7 +269,7 @@ mat_print_algn_3d (matricest m, int w, int h, int d) {
 
 value
 mat_CAML_print_algn_3d (value res, value mw, value mh, value md) {
-    // CAMLparam4(res, mw, mh, md);
+    CAMLparam4(res, mw, mh, md);
     matricest m;
     int w, h, d;
     m = Matrices_struct(res);
@@ -287,19 +277,19 @@ mat_CAML_print_algn_3d (value res, value mw, value mh, value md) {
     h = Int_val(mh);
     d = Int_val(md);
     mat_print_algn_3d (m, w, h, d);
-    return 0; // CAMLreturn (Val_unit);
+    CAMLreturn (Val_unit);
 }
 
-value
+value 
 mat_CAML_initialize (value unit) {
-    // // CAMLparam1(unit);
-    // caml_register_custom_operations (&alignment_matrix);
-    return 0; // CAMLreturn(Val_unit);
+    CAMLparam1(unit);
+    caml_register_custom_operations (&alignment_matrix);
+    CAMLreturn(Val_unit);
 }
 
-value
+value 
 mat_CAML_flush_memory (value vm) {
-    // // CAMLparam1(vm);
+    CAMLparam1(vm);
     matricest m;
     m = Matrices_struct(vm);
     free (m->matrix);
@@ -309,14 +299,14 @@ mat_CAML_flush_memory (value vm) {
     m->matrix = m->cube = m->precalc = NULL;
     m->matrix_d = m->cube_d = NULL;
     m->pointers_3d = NULL;
-    return 0; // CAMLreturn(Val_unit);
+    CAMLreturn(Val_unit);
 }
 
 value
 mat_CAML_clear_direction (value vm) {
-    // // CAMLparam1(vm);
+    CAMLparam1(vm);
     matricest m;
     m = Matrices_struct(vm);
     mat_clean_direction_matrix (m);
-    return 0; // CAMLreturn(Val_unit);
+    CAMLreturn(Val_unit);
 }

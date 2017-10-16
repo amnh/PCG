@@ -17,14 +17,14 @@
 /* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301   */
 /* USA                                                                        */
 
-#include "caml/mlvalues.h"
-#include "caml/memory.h"
-#include "caml/bigarray.h"
-#include "caml/fail.h"
-#include "caml/custom.h"
-#include "caml/intext.h"
-#include "caml/alloc.h"
-#include "caml/callback.h"
+#include <caml/mlvalues.h>
+#include <caml/memory.h>
+#include <caml/bigarray.h>
+#include <caml/fail.h>
+#include <caml/custom.h>
+#include <caml/intext.h>
+#include <caml/alloc.h>
+#include <caml/callback.h>
 
 #ifndef _WIN32
 #include <sys/time.h>
@@ -37,8 +37,8 @@ CAML_getrusage (value v) {
     struct rusage holder;
     float ru_utime, ru_stime;
     getrusage(Int_val(v), &holder);
-    ru_utime =
-        ((float) holder.ru_utime.tv_sec) +
+    ru_utime = 
+        ((float) holder.ru_utime.tv_sec) + 
         ((float) holder.ru_utime.tv_usec / ((float) 1000000));
     ru_stime = holder.ru_stime.tv_sec + (holder.ru_stime.tv_usec / 10000);
     res = caml_alloc_tuple(16);

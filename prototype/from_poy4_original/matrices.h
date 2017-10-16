@@ -18,7 +18,6 @@
 /* USA                                                                        */
 
 #ifndef MATRICES_H
-
 #define MATRICES_H 1
 #define DIAGONAL (1 << 0)
 #define BEHIND (1 << 1)
@@ -45,20 +44,18 @@
 #define Matrices_struct(a) ((struct matrices *) Data_custom_val(a))
 
 struct matrices {
-    int len;                    /* Total length of available memory allocated */
-    int len_eff;                /* Length of the 3d efficient matrix */
-    int len_pre;                /* Length of the precalculated matrix */
-    int *matrix;                /* Matrix for regular alignment */
-    DIRECTION_MATRIX *matrix_d; /* Matrix for directions in a 2d alignment */
-    int **pointers_3d;          /* Matrix of pointers to each rwo in a 3d align */
-    int *cube;                  /* Matrix for 3d alignment */
-    DIRECTION_MATRIX *cube_d;   /* Matrix for directions in a 3d alignment */
-    int *precalc;               /* Matrix of precalculated arrays */
+    int len;            /* Total length of available memory allocated */
+    int len_eff;        /* Length of the 3d efficient matrix */
+    int len_pre;        /* Length of the precalculated matrix */
+    int *matrix;        /* Matrix for regular alignment */
+    DIRECTION_MATRIX *matrix_d;     /* Matrix for directions in a 2d alignment */
+    int **pointers_3d;  /* Matrix of pointers to each rwo in a 3d align */
+    int *cube;          /* Matrix for 3d alignment */
+    DIRECTION_MATRIX *cube_d;       /* Matrix for directions in a 3d alignment */
+    int *precalc;       /* Matrix of precalculated arrays */
 };
 
 typedef struct matrices * matricest;
-
-void print_matrices(matricest m, int lcm);
 
 /* 
  * Calculates the amount of memory required to perform a three dimensional
@@ -121,5 +118,4 @@ mat_print_algn_2d (matricest m, int w, int h);
 
 void
 mat_print_algn_3d (matricest m, int w, int h, int d);
-
 #endif /* MATRICES_H */

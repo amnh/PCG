@@ -69,7 +69,6 @@ AC_SUBST(NATIVEDYNLINK)
 AC_SUBST(USE_NATIVEDYNLINK)
 AC_SUBST(OCAMLVERSION)
 AC_SUBST(CONFIG_DATE)
-AC_SUBST(CC_NOASNEEDED)
 
 CONFIG_DATE=`date`
 
@@ -206,31 +205,6 @@ AC_MSG_CHECKING([for OCaml version])
 OCAMLVERSION=`$OCAMLOPT -version`
 AC_MSG_RESULT([$OCAMLVERSION])
 
-# This is a bugfix for OCAMLBUILD; in recent versions of gcc the order of the
-# link arguments matters --the default changes from below to include libraries
-# as needed. OCAMLBUILD just throws them in the constructed command.
-#       Bug reported : http://caml.inria.fr/mantis/view.php?id=5441
-case ${OS_INFORMATION} in
-    *-cygwin*)
-        AC_MSG_CHECKING([whether we need to add --no-as-needed linking option])
-        CC_NOASNEEDED="false"
-        AC_MSG_RESULT([not needed for flexlink]);
-        ;;
-    *)
-        oCFLAGS="$CFLAGS"
-        CFLAGS="$FLAGS -Wl,--no-as-needed"
-        AC_MSG_CHECKING([whether we need to add --no-as-needed linking option])
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], 
-                                             [[ 
-                                                int main(){ return 0; } 
-                                            ]])], 
-                          [AC_MSG_RESULT([yes]); CC_NOASNEEDED="true"],
-                          [AC_MSG_RESULT([no]); CC_NOASNEEDED="false"]) 
-        CFLAGS=$oCFLAGS
-        ;;
-esac
-
-
 case $OCAMLVERSION in 
     3.10.2*)
         case ${OS_INFORMATION} in
@@ -243,11 +217,7 @@ case $OCAMLVERSION in
             ;;
         esac
         ;;
-    3.\(0*\)|\(10\).*)
-        AC_MSG_RESULT([no])
-        AC_MSG_FAILURE([POY requires OCaml version 3.10.2 or later to compile.  Please upgrade to the latest version. (You can get it from http://www.ocaml.org)])
-        ;;
-    *)
+    3.11.*)
         NATIVEDYNLINK="dynlink.cmxa"
         AC_MSG_CHECKING([if OCaml supports dynamic linking in this architecture])
         if ${OCAMLOPT} -shared -o str.cmxs str.cmxa ; then
@@ -259,8 +229,11 @@ case $OCAMLVERSION in
             AC_MSG_RESULT([no])
             NATIVEDYNLINK=""
         fi
-        rm -f str.cmxs*
-        ;;
+        rm -f str.cmxs*;;
+    *)
+    AC_MSG_RESULT([no])
+    AC_MSG_FAILURE([POY requires OCaml version 3.10.2 or later to compile.  Please upgrade to the latest version. (You can get it from http://www.ocaml.org and follow their compilation instructions. It's really easy.)])
+    ;;
 esac
 
 # Final fix to compile in windows
@@ -289,7 +262,6 @@ AC_PROG_GCC_TRADITIONAL
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_FUNC_STAT
-AC_SEARCH_LIBS([zlibVersion],[z])
 AC_CHECK_FUNCS([floor gettimeofday memset pow sqrt sin exp])
 
 CC_VERSION="`$CC --version`"

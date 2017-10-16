@@ -1,0 +1,11 @@
+Run number 0 time: 2162.29057074
+Run number 1 time: 1572.68239307
+Run number 2 time: 2511.65114903
+Run number 3 time: 5564.79642105
+Run number 4 time: 691.591691732
+Run number 5 time: 3511.18189406
+Run number 6 time: 5204.94570112
+Run number 7 time: 1853.22776413
+Run number 8 time: 986.987879038
+Run number 9 time: 3284.57427597
+Average: 2734.392974

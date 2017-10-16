@@ -17,11 +17,11 @@
 /* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301   */
 /* USA                                                                        */
 
-#include "caml/mlvalues.h"
-#include "caml/memory.h"
-#include "caml/bigarray.h"
-#include "caml/fail.h"
-#include "caml/alloc.h"
+#include <caml/mlvalues.h>
+#include <caml/memory.h>
+#include <caml/bigarray.h>
+#include <caml/fail.h>
+#include <caml/alloc.h>
 #include <assert.h>
 #include "noaddset.h"
 #include <stdio.h>
@@ -56,7 +56,7 @@ noaddset_downpass (struct storage ch1, struct storage ch2, struct storage p) {
     int tmp;
     int total_cost = 0;
     assert (ch1.num_chrs == ch2.num_chrs && ch2.num_chrs == p.num_chrs);
-
+    
     for (i = 1; i < ch1.num_chrs; i++) {
         tmp = intersection(*(ch1.preliminary + i), *(ch2.preliminary + i));
         if (tmp) {
@@ -65,10 +65,10 @@ noaddset_downpass (struct storage ch1, struct storage ch2, struct storage p) {
             *(p.my_cost + i) = 0;
         }
         else {
-            *(p.preliminary + i) =
+            *(p.preliminary + i) = 
                 unio (*(ch1.preliminary + i), *(ch2.preliminary + i));
             total_cost += *(p.my_cost + i) = *(p.my_weight + i);
-            *(p.total_cost + i) = *(p.my_weight + i) + *(ch1.total_cost + i) +
+            *(p.total_cost + i) = *(p.my_weight + i) + *(ch1.total_cost + i) + 
                 *(ch2.total_cost + i);
         }
     }
@@ -76,8 +76,8 @@ noaddset_downpass (struct storage ch1, struct storage ch2, struct storage p) {
 }
 
 /* Using algorithm defined in Systematic Zoology Vol 20 NO 4 Dec 1971 p406-416
- * Toward Defining the course of evolution ... by Walter Finch
- * - Note - Important - For the root: uppass should not be called but
+ * Toward Defining the course of evolution ... by Walter Finch 
+ * - Note - Important - For the root: uppass should not be called but 
  *   preliminary_is_final should be called to set its final row = to its prel */
 #ifdef _WIN32
 __inline void
@@ -87,14 +87,14 @@ inline void
 noaddset_uppass (struct storage ch1, struct storage ch2, struct storage gp, \
         struct storage p){
     int i, tmp, tmp2, tmp3;
-    assert (   ch1.num_chrs == ch2.num_chrs && ch2.num_chrs == p.num_chrs
+    assert (   ch1.num_chrs == ch2.num_chrs && ch2.num_chrs == p.num_chrs 
             && p.num_chrs == gp.num_chrs);
     for (i = 1; i < ch1.num_chrs; i++) {
         tmp = intersection(*(gp.final + i), *(p.preliminary + i));
-        if (tmp == *(gp.final + i) )
+        if (tmp == *(gp.final + i) ) 
             *(p.final + i) = tmp;
         else {
-            if ( *(p.preliminary +i) ==
+            if ( *(p.preliminary +i) == 
                     unio( *(ch1.preliminary + i), *(ch2.preliminary + i) ) )
                 *(p.final + i) = unio( *(p.preliminary + i), *(gp.final + i) );
             else {
@@ -115,15 +115,15 @@ inline void
 #endif
 noaddset_set_preliminary_as_final (struct storage it) {
     int i;
-    for (i = 1; i < it.num_chrs; i++)
+    for (i = 1; i < it.num_chrs; i++) 
         *(it.final + i) = *(it.preliminary + i);
     return;
 }
 
 #ifdef _WIN32
-__inline struct storage
+__inline struct storage 
 #else
-inline struct storage
+inline struct storage 
 #endif
 noaddset_create_structure (value mtx, value number) {
     struct storage tmp;

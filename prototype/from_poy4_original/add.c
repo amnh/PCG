@@ -22,7 +22,7 @@
  * performance requirements of this kind of characters. This are the following
  * characteristics that constraint it's usage:
  * - Before starting any run, the contents of the library have to be initialized
- *   using the add_memstack_initialize and the add_all_codes_inititalize
+ *   using the add_memstack_initialize and the add_all_codes_inititalize 
  *   functions. These operations will allocate memory in two static internal
  *   structures, and assume that every character set used from then and on will
  *   correspond to the type and with codes assigned in the
@@ -32,13 +32,13 @@
  *
  *   Enjoy!
 ******************************************************************************/
-#include "caml/mlvalues.h"
-#include "caml/memory.h"
-#include "caml/bigarray.h"
-#include "caml/fail.h"
-#include "caml/custom.h"
-#include "caml/intext.h"
-#include "caml/alloc.h"
+#include <caml/mlvalues.h>
+#include <caml/memory.h>
+#include <caml/bigarray.h>
+#include <caml/fail.h>
+#include <caml/custom.h>
+#include <caml/intext.h>
+#include <caml/alloc.h>
 #define NDEBUG 1
 #define TESTER 1
 #include <assert.h>
@@ -71,7 +71,7 @@ static memstack_t ucv_mem = NULL;
  * items elements, and every vector capable of handling len elements. */
 void
 add_memstack_initialize (int items, int len) {
-    /* Allocate the structures and then the vectors themselves, ADD_NUM_VECTORS
+    /* Allocate the structures and then the vectors themselves, ADD_NUM_VECTORS 
      * times the number of items, as each add_st holds 5 of those vectors */
     if (NULL == add_st_mem) {
         add_st_mem = mem_create (items, sizeof (struct add_st));
@@ -90,7 +90,7 @@ add_array_length (native_int len) {
     return ((len + (CAPACITY_CHAR - 1)) / CAPACITY_CHAR);
 }
 
-int
+int 
 add_true_array_length (native_int len) {
     return (len * CAPACITY_CHAR);
 }
@@ -120,7 +120,7 @@ print_vector (char *msg, vUInt8 b, int hex) {
             a.c[0], a.c[1], a.c[2], a.c[3], a.c[4], a.c[5], a.c[6], a.c[7], \
             a.c[8], a.c[9], a.c[10], a.c[11], a.c[12], a.c[13], a.c[14], \
             a.c[15]);
-    else
+    else 
     printf ("%s %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\n", msg, \
             a.c[0], a.c[1], a.c[2], a.c[3], a.c[4], a.c[5], a.c[6], a.c[7], \
             a.c[8], a.c[9], a.c[10], a.c[11], a.c[12], a.c[13], a.c[14], \
@@ -128,7 +128,7 @@ print_vector (char *msg, vUInt8 b, int hex) {
 #elif defined __MMX__ && ! defined __LP64__
     printf ("%s %x %x %x %x %x %x %x %x\n", msg, \
             a.c[0], a.c[1], a.c[2], a.c[3], a.c[4], a.c[5], a.c[6], a.c[7]);
-    else
+    else 
     printf ("%s %d %d %d %d %d %d %d %d\n", msg, \
             a.c[0], a.c[1], a.c[2], a.c[3], a.c[4], a.c[5], a.c[6], a.c[7]);
 #endif
@@ -141,7 +141,7 @@ print_vector (char *msg, vUInt8 b, int hex) {
 
 /* Allocating structures with len elements and assigned code for the set. */
 add_stt
-add_alloc (native_int len, native_int true_len) {
+add_alloc (native_int len, native_int true_len) { 
     add_stt res;
     assert (len >= 0);
     assert (add_st_mem->len == sizeof (struct add_st));
@@ -157,7 +157,7 @@ add_alloc (native_int len, native_int true_len) {
         res->union_min = (ucv *) mem_malloc (ucv_mem, len * sizeof (ucv));
         res->union_max = (ucv *) mem_malloc (ucv_mem, len * sizeof (ucv));
         if ((NULL != res->cost) && (NULL != res->min) && (NULL != res->max) &&
-                (NULL != res->union_min) && (NULL != res->union_max))
+                (NULL != res->union_min) && (NULL != res->union_max)) 
             return res; /* Allocation ok */
     }
     return NULL;
@@ -174,7 +174,7 @@ add_free (add_stt x) {
     return;
 }
 
-void
+void 
 add_CAML_free (value v) {
     add_stt c;
     c = *(Add_st_struct(v));
@@ -191,15 +191,15 @@ add_CAML_serialize (value c, unsigned long *wsize_32, \
     nc = *(Add_st_struct(c));
     *wsize_64 = *wsize_32 = sizeof (add_stt);
     real_allocated_len = add_true_array_length(nc->len);
-    // serialize_native(nc->len);
-    // serialize_native(nc->true_len);
-    // serialize_int_4(nc->total);
-    // serialize_int_4(nc->scode);
-    // serialize_block_1(nc->min, real_allocated_len);
-    // serialize_block_1(nc->max, real_allocated_len);
-    // serialize_block_1(nc->cost, real_allocated_len);
-    // serialize_block_1(nc->union_min, real_allocated_len);
-    // serialize_block_1(nc->union_max, real_allocated_len);
+    serialize_native(nc->len);
+    serialize_native(nc->true_len);
+    serialize_int_4(nc->total);
+    serialize_int_4(nc->scode);
+    serialize_block_1(nc->min, real_allocated_len);
+    serialize_block_1(nc->max, real_allocated_len);
+    serialize_block_1(nc->cost, real_allocated_len);
+    serialize_block_1(nc->union_min, real_allocated_len);
+    serialize_block_1(nc->union_max, real_allocated_len);
     return;
 }
 
@@ -208,19 +208,19 @@ add_CAML_deserialize (void *v) {
     add_stt *res, final;
     native_int len, true_len, real_allocated_len;
     res = (add_stt *) v;
-    // len = deserialize_native();
-    // true_len = deserialize_native();
+    len = deserialize_native();
+    true_len = deserialize_native();
     real_allocated_len = add_true_array_length(len);
     final = *res = add_alloc (len, true_len);
     final->len=len;
     final->true_len=true_len;
-    // final->total = deserialize_sint_4();
-    // final->scode = deserialize_sint_4();
-    // deserialize_block_1(final->min, real_allocated_len);
-    // deserialize_block_1(final->max, real_allocated_len);
-    // deserialize_block_1(final->cost, real_allocated_len);
-    // deserialize_block_1(final->union_min, real_allocated_len);
-    // deserialize_block_1(final->union_max, real_allocated_len);
+    final->total = deserialize_sint_4();
+    final->scode = deserialize_sint_4();
+    deserialize_block_1(final->min, real_allocated_len);
+    deserialize_block_1(final->max, real_allocated_len);
+    deserialize_block_1(final->cost, real_allocated_len);
+    deserialize_block_1(final->union_min, real_allocated_len);
+    deserialize_block_1(final->union_max, real_allocated_len);
     return (sizeof(add_stt));
 }
 
@@ -260,8 +260,8 @@ static struct custom_operations additive = {
     &add_CAML_free,
     &add_CAML_compare,
     custom_hash_default,
-    // add_CAML_serialize,
-    // add_CAML_deserialize
+    add_CAML_serialize,
+    add_CAML_deserialize
 };
 
 /*****************************************************************************/
@@ -293,9 +293,9 @@ add_to_string (add_stt a) {
 
 #ifdef VECTORIZE
 #define VECTOR vUInt8
-#else
+#else 
 #define VECTOR ucv
-#endif
+#endif 
 void
 add_copy (add_stt res, add_stt src) {
     size_t len1;
@@ -370,7 +370,7 @@ add_intersection (unsigned char x_min, unsigned char x_max, \
                 printf ("(%d, %d) - 0\n", *z_min, *z_max);
             }
             return 1;
-        }
+        } 
         else return 0;
     }
     else return (add_intersection (y_min, y_max, x_min, x_max, z_min, z_max));
@@ -388,16 +388,16 @@ add_union (unsigned char x_min, unsigned char x_max, unsigned char y_min, \
         *z_max = y_min;
         if (!NDEBUG) printf ("(%d, %d) - %d\n", x_max, y_min, y_min - x_max);
         return 1;
-    }
+    } 
     else {
         *z_min = y_min;
         *z_max = x_max;
         return 0;
-    }
+    } 
 }
 #endif
 
-/* A function that sorts the elements in a and b so that
+/* A function that sorts the elements in a and b so that 
  * res_a->min <= res_b->min */
 #ifdef VECTORIZE
 #ifdef _WIN32
@@ -431,9 +431,9 @@ add_sort (vUInt8 mina, vUInt8 minb, vUInt8 maxa, vUInt8 maxb, \
     /* For this addition we use the parallelization to get the total in log 16
      * steps. */
 #ifdef _WIN32
-__inline vUInt8
+__inline vUInt8 
 #else
-inline vUInt8
+inline vUInt8 
 #endif
 add_vector_sum (vUInt8 total) {
     if (!NDEBUG) print_vector ("Total : ", total, 0);
@@ -443,7 +443,7 @@ add_vector_sum (vUInt8 total) {
     tmp2 = vec_add (tmp1, total);
     if (!NDEBUG) print_vector ("Total : ", tmp2, 0);
     /* Add up positions separated at distance 2 */
-    tmp1 = vec_perm (tmp2, tmp2,
+    tmp1 = vec_perm (tmp2, tmp2, 
             (vUInt8) (2, 1, 0, 3, 6, 5 ,4, 7, 10, 9, 8, 11, 14, 13, 12, 15));
     total = vec_add (tmp1, tmp2);
     if (!NDEBUG) print_vector ("Total : ", total, 0);
@@ -464,9 +464,9 @@ add_vector_sum (vUInt8 total) {
     /* We can't use the nice permutations of altivec, so we better use the
      * serial addition. */
 #ifdef _WIN32
-__inline vUInt8
+__inline vUInt8 
 #else
-inline vUInt8
+inline vUInt8 
 #endif
 add_vector_sum (vUInt8 total) {
     if (!NDEBUG) print_vector ("Total : ", total, 0);
@@ -520,8 +520,8 @@ add_item  (vUInt8 mina, vUInt8 minb, vUInt8 maxa, vUInt8 maxb, \
     /* If the maxa is greater than minb then they intersect */
     /* If maxb is less than maxa then b is contained in a */
     /* To find the intersection:
-     * - if they intersect, minb is the lower limit of the intersection,
-     *   otherwise it's maxa the lower limit.
+     * - if they intersect, minb is the lower limit of the intersection, 
+     *   otherwise it's maxa the lower limit. 
      * - if they intersect, the maximum is either maxa or maxb (if b is
      *   contained in a), otherwise minb. We store maxa by default.
      * - If b is contained in a, then replace maxa with maxb in the
@@ -563,7 +563,7 @@ add_item (unsigned char mina, unsigned char minb, unsigned char maxa, \
                 *fin_min = minb;
                 *fin_max = maxa;
                 return 0;
-            }
+            } 
             else { /* b is contained in a */
                 *fin_min = minb;
                 *fin_max = maxb;
@@ -594,9 +594,9 @@ add_downpass (add_stt a, add_stt b, add_stt res) {
 #ifdef VECTORIZE
         tmp.v = add_item ((*(a->min + i)).v, (*(b->min + i)).v, \
                 (*(a->max + i)).v, (*(b->max + i)).v, (vUInt8 *) \
-                (res->min + i), (vUInt8 *) (res->max + i), (vUInt8 *)
+                (res->min + i), (vUInt8 *) (res->max + i), (vUInt8 *) 
                 (res->cost + i));
-        tmp_total = tmp.c[0]; /* Doing this directly in the next line
+        tmp_total = tmp.c[0]; /* Doing this directly in the next line 
                                  was the source of a bug in MMX */
         if (!NDEBUG) printf ("The total I see is %d\n", tmp_total);
         res->total = res->total + (int) tmp_total;
@@ -709,7 +709,7 @@ add_true_union (unsigned char amin, unsigned char amax, unsigned char bmin, \
         *minres = amin;
         if (amax <= bmax) *maxres = bmax;
         else *maxres = amax;
-    }
+    } 
     else {
         *minres = bmin;
         if (amax <= bmax) *maxres = bmax;
@@ -733,11 +733,11 @@ add_full_union (add_stt a, add_stt b, add_stt c) {
     maxa = (vUInt8 *) a->max;
     maxb = (vUInt8 *) b->max;
     maxc = (vUInt8 *) c->max;
-    for (i = 0; i < len; i++)
+    for (i = 0; i < len; i++) 
         add_true_union (mina[i], maxa[i], minb[i], maxb[i], minc + i, maxc + i);
     vec_emms();
 #else
-    for (i = 0; i < len; i++)
+    for (i = 0; i < len; i++) 
         add_true_union (a->min[i], a->max[i], b->min[i], b->max[i], \
                 c->min + i, c->max + i);
 #endif
@@ -756,7 +756,7 @@ add_is_contained (unsigned char parmin, unsigned char parmax, \
         *resmin = parmin;
         *resmax = parmax;
         return 1;
-    }
+    } 
     else return 0;
 }
 
@@ -807,7 +807,7 @@ add_median_3 (add_stt p, add_stt n, add_stt c1, add_stt c2, add_stt res) {
         u12min = vec_min (nmin1, nmin2);
         u12max = vec_max (nmax1, nmax2);
         add_sort (pmin[i], u12min, pmax[i], u12max, &upmin, &upmax, &uu12min, \
-                &uu12max);
+                &uu12max); 
         ipn2 = vec_or (vec_cmpgt (pmin[i], nmin[i]), vec_cmpeq (pmin[i], nmin[i]));
         ipn = vec_or (vec_cmplt (pmax[i], nmax[i]), vec_cmpeq (pmax[i], nmax[i]));
         ipn = vec_and (ipn2, ipn);
@@ -839,7 +839,7 @@ add_median_3 (add_stt p, add_stt n, add_stt c1, add_stt c2, add_stt res) {
 void
 add_median_3 (add_stt p, add_stt n, add_stt c1, add_stt c2, add_stt res) {
     native_int len, i;
-    int inter1, inter2;
+    int inter1, inter2; 
     unsigned char tmpmin, tmpmax;
     /* Check the assertions: all the characters must have the same length and
      * must have the same general code. */
@@ -861,10 +861,10 @@ add_median_3 (add_stt p, add_stt n, add_stt c1, add_stt c2, add_stt res) {
             inter2 = add_intersection (tmpmin, tmpmax, p->min[i], p->max[i], \
                     res->min + i, res->max + i);
             if (0 == inter2) { /* Uff, there is no intersection now ... */
-                if (p->min[i] < tmpmin)
+                if (p->min[i] < tmpmin) 
                     add_union (p->min[i], p->max[i], tmpmin, tmpmax, \
                             res->min + i, res->max + i);
-                else
+                else 
                     add_union (tmpmin, tmpmax, p->min[i], p->max[i], \
                             res->min + i, res->max + i);
                 add_intersection (res->min[i], res->max[i], n->min[i], n->max[i], \
@@ -877,24 +877,24 @@ add_median_3 (add_stt p, add_stt n, add_stt c1, add_stt c2, add_stt res) {
 #endif
 
 /* CAML bindings */
-value
+value 
 add_CAML_distance_and_median (value a, value b) {
-    // CAMLparam2(a, b);
-    // CAMLlocal2(res, final);
+    CAMLparam2(a, b);
+    CAMLlocal2(res, final);
     add_stt tmp, *tmp2, na, nb;
     na = *(Add_st_struct(a));
     nb = *(Add_st_struct(b));
     tmp = add_median (na, nb);
     if (NULL != tmp) {
         final = caml_alloc_tuple(2);
-        // res = caml_alloc_custom (&additive, sizeof (add_stt), 1, 1000000);
+        res = caml_alloc_custom (&additive, sizeof (add_stt), 1, 1000000);
         tmp2 = Add_st_struct(res);
         *tmp2 = tmp;
         Store_field(final, 0, caml_copy_double ((double) add_total(tmp)));
         Store_field(final, 1, res);
         CAMLreturn (final);
-    }
-    // else caml_failwith ("Out of memory.");
+    } 
+    else caml_failwith ("Out of memory.");
     CAMLreturn(final); /* This condition is never reached! */
 }
 
@@ -905,17 +905,17 @@ add_CAML_total (value a) {
     res = *(Add_st_struct(a));
     CAMLreturn(caml_copy_double ((double) res->total));
 }
-
+                               
 value
 add_CAML_median (value a, value b) {
     CAMLparam2(a, b);
-     (tmp);
-    // add_stt nCAMLlocal1a, nb, nres;
+    CAMLlocal1 (tmp);
+    add_stt na, nb, nres;
     add_stt *tmp2;
     na = *(Add_st_struct(a));
     nb = *(Add_st_struct(b));
     nres = add_median (na, nb);
-    // tmp = caml_alloc_custom (&additive, sizeof (add_stt), 1, 1000000);
+    tmp = caml_alloc_custom (&additive, sizeof (add_stt), 1, 1000000);
     tmp2 = Add_st_struct (tmp);
     *tmp2 = nres;
     CAMLreturn(tmp);
@@ -930,7 +930,7 @@ add_CAML_distance (value a, value b) {
     nb = *(Add_st_struct(b));
     res = add_distance (na, nb);
     if (-1 != res) CAMLreturn(caml_copy_double ((double) res));
-    // else caml_failwith ("Out of memory.");
+    else caml_failwith ("Out of memory.");
 }
 
 value
@@ -943,13 +943,13 @@ add_CAML_distance_2 (value n, value a, value b) {
     nb = *(Add_st_struct(b));
     res = add_distance_2 (nn, na, nb);
     if (-1 != res) CAMLreturn(caml_copy_double ((double) res));
-    // else caml_failwith ("Out of memory.");
+    else caml_failwith ("Out of memory.");
 }
 
 value
 add_CAML_create (value min, value max) {
     CAMLparam2(min, max);
-    // CAMLlocal1(final);  /* The result of the operations */
+    CAMLlocal1(final);  /* The result of the operations */
     native_int len;     /* Length of the set of characters being loaded */
     native_int i;
     add_stt res, *tmp;
@@ -963,7 +963,7 @@ add_CAML_create (value min, value max) {
         mmin = (unsigned char *) res->min;
         mmax = (unsigned char *) res->max;
         mcost = (unsigned char *) res->cost;
-        for (i = 0; i < len; i++) {
+        for (i = 0; i < len; i++) { 
             /* Copy the arrays excepting the last subvector */
             mmin[i] = (unsigned char) Int_val (Field(min, i));
             mmax[i] = (unsigned char) Int_val (Field(max, i));
@@ -977,7 +977,7 @@ add_CAML_create (value min, value max) {
         }
 #endif
         /* Allocate the caml type and return it */
-        // final = caml_alloc_custom (&additive, sizeof (add_stt), 1, 1000000);
+        final = caml_alloc_custom (&additive, sizeof (add_stt), 1, 1000000);
         tmp = Add_st_struct(final);
 /*         if (!NDEBUG) { */
 /*             printf ("Observed characters min:\n"); */
@@ -990,7 +990,7 @@ add_CAML_create (value min, value max) {
         *tmp = res;
         CAMLreturn (final);
     } /* Hum, we couldn't allocate the memory, we fail in the ocaml side. */
-    // else caml_failwith ("Out of memory.");
+    else caml_failwith ("Out of memory.");
 }
 
 value
@@ -1006,11 +1006,11 @@ add_CAML_copy (value dst, value src) {
 value
 add_CAML_dup (value src) {
     CAMLparam1(src);
-    // CAMLlocal1(res);
+    CAMLlocal1(res);
     add_stt tmp, nsrc;
     nsrc = *(Add_st_struct(src));
     tmp = add_dup (nsrc);
-    // res = caml_alloc_custom (&additive, sizeof(add_stt), 1, 1000000);
+    res = caml_alloc_custom (&additive, sizeof(add_stt), 1, 1000000);
     *(Add_st_struct(res)) = tmp;
     CAMLreturn(res);
 }
@@ -1097,7 +1097,7 @@ add_CAML_register (value a) {
     CAMLreturn(Val_unit);
 }
 
-value
+value 
 add_CAML_median_imp (value a, value b, value res) {
     CAMLparam3(a, b, res);
     add_stt na, nb, nres;
@@ -1108,10 +1108,10 @@ add_CAML_median_imp (value a, value b, value res) {
     CAMLreturn(Val_unit);
 }
 
-value
+value 
 add_CAML_median_3 (value p, value n, value c1, value c2) {
     CAMLparam4(p, n, c1, c2);
-    // CAMLlocal1(nres);
+    CAMLlocal1(nres);
     add_stt tmp, np, nn, nc1, nc2, *res;
     np = *(Add_st_struct(p));
     nn = *(Add_st_struct(n));
@@ -1121,7 +1121,7 @@ add_CAML_median_3 (value p, value n, value c1, value c2) {
     memcpy (tmp->union_min, nn->union_min, nn->len);
     memcpy (tmp->union_max, nn->union_max, nn->len);
     memcpy (tmp->cost, nn->cost, nn->len);
-    // nres = caml_alloc_custom (&additive, sizeof(add_stt), 1, 1000000);
+    nres = caml_alloc_custom (&additive, sizeof(add_stt), 1, 1000000);
     res = Add_st_struct(nres);
     add_median_3 (np, nn, nc1, nc2, tmp);
     *res = tmp;
@@ -1142,7 +1142,7 @@ add_CAML_full_union (value a, value b, value c) {
 value
 add_CAML_to_string (value a) {
     CAMLparam1(a);
-    // CAMLlocal1(resv);
+    CAMLlocal1(resv);
     add_stt na;
     char *res;
     na = *(Add_st_struct(a));

@@ -17,9 +17,9 @@
 /* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301   */
 /* USA                                                                        */
 
-#include "caml/custom.h"
-#include "caml/mlvalues.h"
-#include "caml/memory.h"
+#include <caml/custom.h>
+#include <caml/mlvalues.h>
+#include <caml/memory.h>
 #include "seq.h"
 #include "cm.h"
 
@@ -33,19 +33,19 @@ struct unionoff {
     seqt s;         /* A pointer to the sequence that holds the union */
     UNION_OFFT *offsets;   /* A pointer to the array of offsets */
     UNION_OFFT *begin;     /* The current position where the sequence starts */
-    UNION_OFFT *end;       /* The end of the offset array. This is after the
+    UNION_OFFT *end;       /* The end of the offset array. This is after the 
                        first writtable memory position */
     UNION_OFFT *ca_offsets;
     UNION_OFFT *cb_offsets;
     UNION_OFFT counter;    /* A convenient counter for the merging operations */
     UNION_OFFT length;     /* The current number of items it holds */
-    UNION_OFFT position;   /* The location of the current position in some
+    UNION_OFFT position;   /* The location of the current position in some 
                        internal operations */
 };
 
 typedef struct unionoff *unionofft;
 
-/* Take the counter prepend consecutive, numbers from counter to 0,
+/* Take the counter prepend consecutive, numbers from counter to 0, 
  * to u->begin, then set counter to 0. */
 void
 union_prepend_counter (unionofft u);
