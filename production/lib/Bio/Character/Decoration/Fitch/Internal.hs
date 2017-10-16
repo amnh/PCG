@@ -25,6 +25,7 @@ import Bio.Metadata.DiscreteWithTCM
 import Control.Lens
 import Data.Alphabet
 import Data.Semigroup
+import Text.XML
 
 
 -- |
@@ -157,7 +158,7 @@ instance GeneralCharacterMetadata (FitchOptimizationDecoration f) where
 instance DiscreteCharacterMetadata (FitchOptimizationDecoration f) where
 
     extractDiscreteCharacterMetadata = fitchMetadataField
-  
+
 
 -- | (✔)
 instance EncodableStaticCharacter f => DiscreteWithTcmCharacterMetadata (FitchOptimizationDecoration f) f
@@ -201,3 +202,14 @@ instance EncodableStaticCharacter f => DiscreteExtensionFitchDecoration (FitchOp
             $ subDecoration
 
 
+-- | (✔)
+instance (Show f) => ToXML (FitchOptimizationDecoration f) where
+
+    toXML decoration = xmlElement "Fitch_decoration" attributes contents
+        where
+            attributes = []
+            contents   = [ Left ("Min_cost",           show $ decoration ^. characterCost    )
+                         , Left ("Preliminary_median", show $ decoration ^. preliminaryMedian)
+                         , Left ("Final_median",       show $ decoration ^. finalMedian      )
+                         , Left ("Is_a_leaf",          show $ decoration ^. isLeaf           )
+                         ]

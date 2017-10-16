@@ -15,22 +15,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module Bio.Graph.PhylogeneticDAG
-  ( CharacterResult
-  , CharacterDAG
-  , DecoratedCharacterResult
-  , FinalDecorationDAG
-  , PhylogeneticDAG(..)
+  ( PhylogeneticDAG(..)
   , PhylogeneticDAG2(..)
   , PhylogeneticDAGish(..)
-  , PostOrderDecorationDAG
-  , SearchState
-  , TopologicalResult
-  , UnifiedCharacterSequence
-  , UnifiedCharacterBlock
-  , UnifiedContinuousCharacter
-  , UnifiedDiscreteCharacter
-  , UnifiedDynamicCharacter
-  , UnRiefiedCharacterDAG
   , assignOptimalDynamicCharacterRootEdges
   , assignPunitiveNetworkEdgeCost
   , generateLocalResolutions
@@ -38,8 +25,8 @@ module Bio.Graph.PhylogeneticDAG
   , preorderFromRooting
   , preorderSequence'
   , renderSummary
-  , riefiedSolution
-  , riefiedToCharacterDAG
+--  , riefiedSolution
+--  , riefyForest
   , rootCosts
   -- * Mapping over networks
   , edgePreorderMap
@@ -61,7 +48,6 @@ import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
 import           Bio.Graph.PhylogeneticDAG.Postorder
 import           Bio.Graph.PhylogeneticDAG.Preorder
-import           Bio.Graph.PhylogeneticDAG.Riefication
 import           Bio.Graph.ReferenceDAG.Internal
 import           Data.Key
 import           Data.List.NonEmpty        (NonEmpty)

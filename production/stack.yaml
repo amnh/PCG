@@ -1,20 +1,29 @@
 allow-newer: true
 
-compiler: ghc-8.0.2
+compiler: ghc-8.2.1
 
 compiler-check: match-exact
 
+extra-deps:
+  - pretty-tree-0.1.0.0
+
 flags: {}
 
-extra-deps:
-- containers-0.5.8.1
-- pretty-tree-0.1.0.0
-- quickcheck-properties-0.1
+ghc-options:
+  "*": -j -fdiagnostics-color=always
 
 local-bin-path: bin
 
 packages:
- - '.'
+  - '.'
+  - lib/pcg-file-parsers
+  - lib/pcg-language
+  - lib/pcg-utility
+# We use this upstream commit until it is uploaded to hackage and stackage respectively.
+  - location:  https://github.com/ivan-m/graphviz/archive/a099a07.zip
+    extra-dep: true
 
-resolver: lts-8.15
+resolver: nightly-2017-09-29
+
+system-ghc: false
 

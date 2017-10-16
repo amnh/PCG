@@ -41,47 +41,41 @@ library
   other-extensions: MonadFailDesugaring
 
   -- Other library packages from which modules are imported.
-  build-depends:       base             >=4.8
+  build-depends:       base               >=4.8
                      , bimap
+                     , blaze-html
                      , bv
+                     , case-insensitive
                        -- >=0.5.8 Required for Data.Map.restrictKeys
-                     , containers       >=0.5.8
-                     , criterion
+                     , containers         >=0.5.8
                      , deepseq
                      , dlist
                      , either
+                     , graphviz
                      , hashable
                      , hashtables
---                     , integer-logarithms
                      , integer-gmp
                      , keys
                      , lens
-                     , matrix
-                     , megaparsec       >=5.0
-                     , mono-traversable >=1.0
+                     , mono-traversable   >=1.0
                      , mtl
---                     , memoize
                      , parallel
+                     , pcg-file-parsers
+                     , pcg-utility
                      , pretty-tree
                      , primitive
                      , QuickCheck
-                     , quickcheck-properties
-                     , safe
                      , scientific
                      , semigroupoids
-                     , semigroups
-                     , smallcheck
-                     , split
-                     , tasty
-                     , tasty-hunit
-                     , tasty-quickcheck
-                     , tasty-smallcheck
+                     -- required for Data.Semigroup.Foldable.toNonEmpty
+                     , semigroups         >=5.2.1
                      , text
                      , transformers
                      , unordered-containers
                      , vector
                      -- >=3.4 required for corrected definition of (!) & index
                      , vector-instances >=3.4
+                     , xml
 
   default-language:    Haskell2010
 
@@ -163,10 +157,10 @@ library
                        Analysis.Parsimony.Additive.Internal
                        Analysis.Parsimony.Dynamic.DirectOptimization
                        Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
-                       Analysis.Parsimony.Dynamic.DirectOptimization.Ukkonen
                        Analysis.Parsimony.Dynamic.SequentialAlign
                        Analysis.Parsimony.Fitch.Internal
                        Analysis.Parsimony.Sankoff.Internal
+                       Analysis.Scoring
                        Bio.Character
                        Bio.Character.Decoration.Additive
                        Bio.Character.Decoration.Continuous
@@ -191,10 +185,12 @@ library
                        Bio.Graph
                        Bio.Graph.Component
                        Bio.Graph.Forest.Parsed
+                       Bio.Graph.LeafSet
                        Bio.Graph.Node
                        Bio.Graph.PhylogeneticDAG
                        Bio.Graph.ReferenceDAG
                        Bio.Graph.ReferenceDAG.Internal
+                       Bio.Graph.Solution
                        Bio.Graph.ZipperDAG
                        Control.Evaluation
                        Control.Parallel.Custom
@@ -209,33 +205,28 @@ library
                        Data.ReplicatedSequence
                        Data.TCM
                        Data.TCM.Memoized
-                       File.Format.Fasta
-                       File.Format.Fastc
-                       File.Format.Newick
-                       File.Format.Nexus
-                       File.Format.VertexEdgeRoot
-                       File.Format.TNT
-                       File.Format.TransitionCostMatrix
+--                       Text.HTML.Class
+--                       Text.HTML.Custom
+                       Text.Newick.Class
+                       Text.XML
+                       Text.XML.Custom
 
   -- probably can be moved to other-modules:
-                       Data.List.Utility
-                       Data.Matrix.NotStupid
-                       Text.Megaparsec.Custom
                        Test.Custom.NucleotideSequence
                        Test.Custom.DynamicCharacterNode
 
   -- Modules included in this library but not exported.
   other-modules:
-                    --   Analysis.ImpliedAlignment.AlignmentContext
-                    --   Analysis.ImpliedAlignment.DynamicProgramming
-                    --   Analysis.ImpliedAlignment.Internal
                        Analysis.Parsimony.Dynamic.DirectOptimization.DeletionEvents
-                       Analysis.Parsimony.Dynamic.DirectOptimization.FFI
                        Analysis.Parsimony.Dynamic.DirectOptimization.Internal
                        Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents
                        Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Internal
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
                        Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
-                       Analysis.Parsimony.Dynamic.DirectOptimization.Ukkonen.Internal
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Internal
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
                        Analysis.Parsimony.Dynamic.SequentialAlign.FFI
                        Bio.Character.Decoration.Additive.Class
                        Bio.Character.Decoration.Additive.Internal
@@ -272,14 +263,18 @@ library
                        Bio.Metadata.DiscreteWithTCM.Internal
                        Bio.Metadata.Dynamic.Class
                        Bio.Metadata.Dynamic.Internal
+                       Bio.Graph.Constructions
                        Bio.Graph.Forest
+                       Bio.Graph.Node.Class
+                       Bio.Graph.Node.Internal
                        Bio.Graph.PhylogeneticDAG.Class
                        Bio.Graph.PhylogeneticDAG.Internal
                        Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
                        Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
                        Bio.Graph.PhylogeneticDAG.Postorder
                        Bio.Graph.PhylogeneticDAG.Preorder
-                       Bio.Graph.PhylogeneticDAG.Riefication
+                       Bio.Graph.PhylogeneticDAG.Reification
+                       Bio.Graph.TopologyRepresentation
                        Bio.Graph.ZipperDAG.Internal
                        Bio.Sequence.Internal
                        Bio.Sequence.Block.Builder
@@ -294,33 +289,12 @@ library
                        Data.Range
                        Data.TCM.Internal
                        Data.TCM.Memoized.FFI
-                       File.Format.TNT.Command.CCode
-                       File.Format.TNT.Command.CNames
-                       File.Format.TNT.Command.Cost
-                       File.Format.TNT.Command.NStates
-                       File.Format.TNT.Command.Procedure
-                       File.Format.TNT.Command.TRead
-                       File.Format.TNT.Command.XRead
-                       File.Format.TNT.Parser
-                       File.Format.TNT.Partitioning
-                       File.Format.TNT.Internal
-                       File.Format.Fasta.Converter
-                       File.Format.Fasta.Internal
-                       File.Format.Fasta.Parser
-                       File.Format.Fastc.Parser
-                       File.Format.Newick.Internal
-                       File.Format.Newick.Parser
-                       File.Format.Nexus.Data
-                       File.Format.Nexus.Parser
-                       File.Format.Nexus.Partition
-                       File.Format.Nexus.Validate
-                       File.Format.TransitionCostMatrix.Parser
-                       File.Format.VertexEdgeRoot.Parser
                        Numeric.Extended
                        Numeric.Extended.Internal
                        Numeric.Extended.Natural
                        Numeric.Extended.Real
                        Test.QuickCheck.Arbitrary.Instances
+                       Text.XML.Class
 
 
 executable pcg
@@ -328,43 +302,29 @@ executable pcg
 
   build-depends:       phylocomgraph
                      , base             >=4.8
-                     , bimap
-                     , bv
+                     , blaze-html
                        -- Required for Data.Map.restrictKeys
                      , containers       >=0.5.8
-                     , criterion
-                     , deepseq
                      , directory
-                     , dlist
                      , either
                      , Glob
+                     , graphviz
                      , hashable
                      , keys
                      , lens
-                     , matrix
                      , megaparsec       >=5.0
                      , mono-traversable >=1.0
-                     , mtl
---                     , memoize
                      , parallel
-                     , QuickCheck
-                     , quickcheck-properties
-                     , safe
-                     , scientific
+                     , pcg-file-parsers
+                     , pcg-language
+                     , pcg-utility
                      , semigroupoids
                      , semigroups
-                     , smallcheck
-                     , split
-                     , tasty
-                     , tasty-hunit
-                     , tasty-quickcheck
-                     , tasty-smallcheck
                      , text
                      , time
-                     , transformers
-                     , unordered-containers
                      , vector
                      , vector-instances >=3.4
+                     , xml
 
   default-language:    Haskell2010
 
@@ -388,72 +348,39 @@ executable pcg
   hs-source-dirs:      app
 
   other-modules:
-                       PCG.Command
-                       PCG.Command.Types
-                       PCG.Command.Types.Read
-                       PCG.Command.Types.Read.DecorationInitialization
-                       PCG.Command.Types.Read.Evaluate
-                       PCG.Command.Types.Read.Internal
-                       PCG.Command.Types.Read.ReadError
-                       PCG.Command.Types.Read.Unification.Master
-                       PCG.Command.Types.Read.Unification.UnificationError
-                       PCG.Command.Types.Read.Validate
-                       PCG.Command.Types.Report
---                       PCG.Command.Types.Report.CharacterMatrix
-                       PCG.Command.Types.Report.DynamicCharacterTable
-                       PCG.Command.Types.Report.Evaluate
---                       PCG.Command.Types.Report.GraphViz
---                       PCG.Command.Types.Report.ImpliedAlignmentFasta
-                       PCG.Command.Types.Report.Internal
---                       PCG.Command.Types.Report.Metadata
---                       PCG.Command.Types.Report.TaxonMatrix
---                       PCG.Command.Types.Report.Newick
-                       PCG.Command.Types.Report.Validate
+                       PCG.Command.Build.Evaluate
+                       PCG.Command.Read.DecorationInitialization
+                       PCG.Command.Read.Evaluate
+                       PCG.Command.Read.ReadError
+                       PCG.Command.Read.Unification.Master
+                       PCG.Command.Read.Unification.UnificationError
+
+--                       PCG.Command.Report.CharacterMatrix
+                       PCG.Command.Report.DynamicCharacterTable
+                       PCG.Command.Report.Evaluate
+                       PCG.Command.Report.GraphViz
+--                       PCG.Command.Report.ImpliedAlignmentFasta
+--                       PCG.Command.Report.Internal
+--                       PCG.Command.Report.Metadata
+--                       PCG.Command.Report.TaxonMatrix
+--                       PCG.Command.Report.Newick
+--                       PCG.Command.Report.Validate
+
                        PCG.Computation.Internal
-                       PCG.Script
-                       PCG.Script.Parser
-                       PCG.Script.Types
-                       PCG.SearchState
+
 
 
 executable fasta-differ
 
   main-is:             fasta-differ.hs
 
-  build-depends:       base                  >=4.8
-                     , bv                    -any
-                     , containers            -any
-                     , criterion             -any
-                     , deepseq               -any
-                     , directory             -any
-                     , dlist                 -any
-                     , either                -any
-                     , Glob                  -any
-                     , hashable              -any
-                     , keys                  -any
-                     , matrix                -any
-                     , megaparsec            >=5.0
-                     , mtl                   -any
---                     , memoize               -any
-                     , mono-traversable      -any
-                     , parallel              -any
-                     , phylocomgraph         -any
-                     , QuickCheck            -any
-                     , safe                  -any
-                     , scientific            -any
-                     , semigroups            -any
-                     , smallcheck            -any
-                     , split                 -any
-                     , tasty                 -any
-                     , tasty-hunit           -any
-                     , tasty-quickcheck      -any
-                     , tasty-smallcheck      -any
-                     , text                  -any
-                     , time                  -any
-                     , transformers          -any
-                     , unordered-containers  -any
-                     , vector                -any
-                     , vector-instances      -any
+  build-depends:       phylocomgraph
+                     , base >=4.8
+                     , bv
+                     , containers
+                     , pcg-file-parsers
+                     , keys
+                     , megaparsec >=5.0
 
   default-language:    Haskell2010
 
@@ -475,97 +402,10 @@ executable 2d-do-comparison
 
   main-is:             2d-do-comparison.hs
 
-  build-depends:       base                  >=4.8
+  build-depends:       phylocomgraph
+                     , base >=4.8
                      , bimap
-                     , bv                    -any
-                     , containers            -any
-                     , criterion             -any
-                     , deepseq               -any
-                     , directory             -any
-                     , dlist                 -any
-                     , either                -any
-                     , Glob                  -any
-                     , hashable              -any
-                     , keys                  -any
-                     , matrix                -any
-                     , megaparsec            >=5.0
-                     , mtl                   -any
---                     , memoize               -any
-                     , mono-traversable      -any
-                     , parallel              -any
-                     , phylocomgraph         -any
-                     , QuickCheck            -any
-                     , safe                  -any
-                     , scientific            -any
-                     , semigroups            -any
-                     , smallcheck            -any
-                     , split                 -any
-                     , tasty                 -any
-                     , tasty-hunit           -any
-                     , tasty-quickcheck      -any
-                     , tasty-smallcheck      -any
-                     , text                  -any
-                     , time                  -any
-                     , transformers          -any
-                     , unordered-containers  -any
-                     , vector                -any
-                     , vector-instances      -any
-
-  default-language:    Haskell2010
-
-  ghc-options:         -O2 -Wall
-                       -fwarn-duplicate-exports
-                       -fwarn-incomplete-patterns
-                       -fwarn-missing-signatures
-                       -fwarn-overlapping-patterns
-                       -fwarn-tabs
-                       -fwarn-unused-binds
-                       -fwarn-unused-do-bind
-                       -fwarn-unused-imports
-                       -fwarn-unused-matches
-
-  hs-source-dirs:      utils
-
-
-executable ukkonen-do-comparison
-
-  main-is:             ukkonen-do-comparison.hs
-
-  build-depends:       base                  >=4.8
-                     , bimap
-                     , bv                    -any
-                     , containers            -any
-                     , criterion             -any
-                     , deepseq               -any
-                     , directory             -any
-                     , dlist                 -any
-                     , either                -any
-                     , Glob                  -any
-                     , hashable              -any
-                     , keys                  -any
-                     , matrix                -any
-                     , megaparsec            >=5.0
-                     , mtl                   -any
---                     , memoize               -any
-                     , mono-traversable      -any
-                     , parallel              -any
-                     , phylocomgraph         -any
-                     , QuickCheck            -any
-                     , safe                  -any
-                     , scientific            -any
-                     , semigroups            -any
-                     , smallcheck            -any
-                     , split                 -any
-                     , tasty                 -any
-                     , tasty-hunit           -any
-                     , tasty-quickcheck      -any
-                     , tasty-smallcheck      -any
-                     , text                  -any
-                     , time                  -any
-                     , transformers          -any
-                     , unordered-containers  -any
-                     , vector                -any
-                     , vector-instances      -any
+                     , QuickCheck
 
   default-language:    Haskell2010
 
@@ -587,41 +427,10 @@ executable 3d-do-comparison
 
   main-is:             3d-do-comparison.hs
 
-  build-depends:       base                  >=4.8
+  build-depends:       phylocomgraph
+                     , base >=4.8
                      , bimap
-                     , bv                    -any
-                     , containers            -any
-                     , criterion             -any
-                     , deepseq               -any
-                     , directory             -any
-                     , dlist                 -any
-                     , either                -any
-                     , Glob                  -any
-                     , hashable              -any
-                     , keys                  -any
-                     , matrix                -any
-                     , megaparsec            >=5.0
-                     , mtl                   -any
---                     , memoize               -any
-                     , mono-traversable      -any
-                     , parallel              -any
-                     , phylocomgraph         -any
-                     , QuickCheck            -any
-                     , safe                  -any
-                     , scientific            -any
-                     , semigroups            -any
-                     , smallcheck            -any
-                     , split                 -any
-                     , tasty                 -any
-                     , tasty-hunit           -any
-                     , tasty-quickcheck      -any
-                     , tasty-smallcheck      -any
-                     , text                  -any
-                     , time                  -any
-                     , transformers          -any
-                     , unordered-containers  -any
-                     , vector                -any
-                     , vector-instances      -any
+                     , QuickCheck
 
   default-language:    Haskell2010
 
@@ -643,41 +452,10 @@ executable affine-safety
 
   main-is:             affine-safety.hs
 
-  build-depends:       base                  >=4.8
+  build-depends:       phylocomgraph
+                     , base >=4.8
                      , bimap
-                     , bv                    -any
-                     , containers            -any
-                     , criterion             -any
-                     , deepseq               -any
-                     , directory             -any
-                     , dlist                 -any
-                     , either                -any
-                     , Glob                  -any
-                     , hashable              -any
-                     , keys                  -any
-                     , matrix                -any
-                     , megaparsec            >=5.0
-                     , mtl                   -any
---                     , memoize               -any
-                     , mono-traversable      -any
-                     , parallel              -any
-                     , phylocomgraph         -any
-                     , QuickCheck            -any
-                     , safe                  -any
-                     , scientific            -any
-                     , semigroups            -any
-                     , smallcheck            -any
-                     , split                 -any
-                     , tasty                 -any
-                     , tasty-hunit           -any
-                     , tasty-quickcheck      -any
-                     , tasty-smallcheck      -any
-                     , text                  -any
-                     , time                  -any
-                     , transformers          -any
-                     , unordered-containers  -any
-                     , vector                -any
-                     , vector-instances      -any
+                     , QuickCheck
 
   default-language:    Haskell2010
 
@@ -699,41 +477,10 @@ executable sequential-alignment-invariants
 
   main-is:             sequential-alignment-invariants.hs
 
-  build-depends:       base                  >=4.8
+  build-depends:       phylocomgraph
+                     , base >=4.8
                      , bimap
-                     , bv                    -any
-                     , containers            -any
-                     , criterion             -any
-                     , deepseq               -any
-                     , directory             -any
-                     , dlist                 -any
-                     , either                -any
-                     , Glob                  -any
-                     , hashable              -any
-                     , keys                  -any
-                     , matrix                -any
-                     , megaparsec            >=5.0
-                     , mtl                   -any
---                     , memoize               -any
-                     , mono-traversable      -any
-                     , parallel              -any
-                     , phylocomgraph         -any
-                     , QuickCheck            -any
-                     , safe                  -any
-                     , scientific            -any
-                     , semigroups            -any
-                     , smallcheck            -any
-                     , split                 -any
-                     , tasty                 -any
-                     , tasty-hunit           -any
-                     , tasty-quickcheck      -any
-                     , tasty-smallcheck      -any
-                     , text                  -any
-                     , time                  -any
-                     , transformers          -any
-                     , unordered-containers  -any
-                     , vector                -any
-                     , vector-instances      -any
+                     , QuickCheck
 
   default-language:    Haskell2010
 
@@ -755,42 +502,11 @@ executable three-way-mean-check
 
   main-is:             three-way-mean-check.hs
 
-  build-depends:       base                  >=4.8
+  build-depends:       phylocomgraph
+                     , base >=4.8
                      , bimap
-                     , bv                    -any
-                     , containers            -any
-                     , criterion             -any
-                     , deepseq               -any
-                     , directory             -any
-                     , dlist                 -any
-                     , either                -any
-                     , Glob                  -any
-                     , hashable              -any
-                     , keys                  -any
                      , lens
-                     , matrix                -any
-                     , megaparsec            >=5.0
-                     , mtl                   -any
---                     , memoize               -any
-                     , mono-traversable      -any
-                     , parallel              -any
-                     , phylocomgraph         -any
-                     , QuickCheck            -any
-                     , safe                  -any
-                     , scientific            -any
-                     , semigroups            -any
-                     , smallcheck            -any
-                     , split                 -any
-                     , tasty                 -any
-                     , tasty-hunit           -any
-                     , tasty-quickcheck      -any
-                     , tasty-smallcheck      -any
-                     , text                  -any
-                     , time                  -any
-                     , transformers          -any
-                     , unordered-containers  -any
-                     , vector                -any
-                     , vector-instances      -any
+                     , QuickCheck
 
   default-language:    Haskell2010
 
@@ -808,47 +524,73 @@ executable three-way-mean-check
   hs-source-dirs:      utils
 
 
+executable ukkonen-do-comparison
+
+  main-is:             ukkonen-do-comparison.hs
+
+  build-depends:       phylocomgraph
+                     , base >=4.8
+                     , bimap
+                     , QuickCheck
+
+  default-language:    Haskell2010
+
+  ghc-options:         -O2 -Wall
+                       -fwarn-duplicate-exports
+                       -fwarn-incomplete-patterns
+                       -fwarn-missing-signatures
+                       -fwarn-overlapping-patterns
+                       -fwarn-tabs
+                       -fwarn-unused-binds
+                       -fwarn-unused-do-bind
+                       -fwarn-unused-imports
+                       -fwarn-unused-matches
+
+  hs-source-dirs:      utils
+
 Test-Suite testsuite
   type:                exitcode-stdio-1.0
 
   main-is:             TestAll.hs
 
   build-depends:       base                 >=4.8
-                     , bimap                -any
-                     , bv                   -any
+                     , bimap
+                     , bv
                      , containers           >=0.5.8
-                     , criterion            -any
-                     , deepseq              -any
-                     , directory            -any
-                     , dlist                -any
-                     , hashable             -any
-                     , either               -any
-                     , keys                 -any
-                     , matrix               -any
+--                     , criterion
+                     , deepseq
+                     , directory
+                     , dlist
+                     , hashable
+                     , either
+                     , keys
+                     , lens
+                     , matrix
                      , megaparsec           >=5.0
-                     , mtl                  -any
---                     , memoize              -any
+                     , mtl
                      , mono-traversable     >=1.0
-                     , parallel             -any
-                     , phylocomgraph        -any
-                     , QuickCheck           -any
-                     , quickcheck-properties -any
-                     , safe                 -any
-                     , scientific           -any
-                     , semigroupoids        -any
-                     , semigroups           -any
-                     , smallcheck           -any
-                     , split                -any
-                     , tasty                -any
-                     , tasty-hunit          -any
-                     , tasty-quickcheck     -any
-                     , tasty-smallcheck     -any
-                     , text                 -any
-                     , time                 -any
-                     , transformers         -any
-                     , unordered-containers -any
-                     , vector               -any
-                     , vector-instances     -any
+                     , parallel
+                     , phylocomgraph
+                     , pcg-utility
+                     , QuickCheck
+                     , quickcheck-properties
+                     , safe
+                     , scientific
+                     , semigroupoids
+                     , semigroups
+                     , smallcheck
+                     , split
+                     , tasty
+                     , tasty-hunit
+                     , tasty-quickcheck
+                     , tasty-smallcheck
+                     , text
+                     , time
+                     , transformers
+                     , unordered-containers
+                     , vector
+                     , vector-instances
+                     , xml
 
   default-language:    Haskell2010
 
@@ -865,153 +607,134 @@ Test-Suite testsuite
                        -fwarn-unused-imports
                        -fwarn-unused-matches
   other-modules:
-                       Analysis.ImpliedAlignment.AlignmentContext
-                       Analysis.ImpliedAlignment.DynamicProgramming
-                       Analysis.ImpliedAlignment.Internal
-                       Analysis.ImpliedAlignment.Standard
-                       Analysis.ImpliedAlignment.Test
-                       Analysis.ImpliedAlignment.Test.Trees
-                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
-                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Test
---                       Analysis.Parsimony.Binary.Internal
---                       Analysis.Parsimony.Binary.Test
-                       Analysis.Parsimony.Dynamic.DirectOptimization.DeletionEvents
-                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
-                       Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents
-                       Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Internal
-                       Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Test
---                       Analysis.Parsimony.Binary.Fitch
-                       Bio.Character
-                       Bio.Character.Decoration.Additive
-                       --Bio.Character.Decoration.Continuous
-                       Bio.Character.Decoration.Discrete
-                       Bio.Character.Decoration.Dynamic
-                       Bio.Character.Decoration.Fitch
-                       Bio.Character.Decoration.Metric
-                       Bio.Character.Decoration.NonMetric
-                       Bio.Character.Encodable
-                       Bio.Character.Exportable.Class
-                       Bio.Character.Parsed
-                       Bio.Character.Decoration.Additive.Class
-                       Bio.Character.Decoration.Additive.Internal
-                       --Bio.Character.Decoration.Continuous.Class
-                       --Bio.Character.Decoration.Continuous.Internal
-                       Bio.Character.Decoration.Dynamic.Class
-                       Bio.Character.Decoration.Dynamic.Internal
-                       Bio.Character.Decoration.Fitch.Class
-                       Bio.Character.Decoration.Fitch.Internal
-                       Bio.Character.Decoration.Metric.Class
-                       Bio.Character.Decoration.Metric.Internal
-                       Bio.Character.Decoration.NonMetric.Class
-                       Bio.Character.Decoration.NonMetric.Internal
+                       Control.Evaluation.Test
+                       Bio.Character.Encodable.Dynamic.Test
+                       Bio.Character.Encodable.Static.Test
+                       Data.BitMatrix.Test
+                       TestSuite.LibraryTests
                        Bio.Character.Encodable.Dynamic
                        Bio.Character.Encodable.Dynamic.Class
                        Bio.Character.Encodable.Dynamic.Internal
                        Bio.Character.Encodable.Internal
-                       Bio.Character.Encodable.Static
-                       Bio.Character.Encodable.Static.Class
-                       Bio.Character.Encodable.Static.Internal
                        Bio.Character.Encodable.Stream
-                       Bio.Character.Parsed.Class
-                       Bio.Character.Parsed.Internal
-                       Bio.Metadata
-                       Bio.Metadata.CharacterName
-                       --Bio.Metadata.Continuous
-                       Bio.Metadata.Discrete
-                       Bio.Metadata.Parsed
-                       Bio.Metadata.General
-                       Bio.Metadata.General.Class
-                       Bio.Metadata.General.Internal
-                       Bio.Metadata.Discrete.Class
-                       Bio.Metadata.Discrete.Internal
-                       Bio.Sequence
-                       Bio.Sequence.Block
-                       Bio.Graph
-                       Bio.Graph.Component
-                       Bio.Graph.Node
-                       Bio.Graph.ReferenceDAG
-                       Bio.Graph.ZipperDAG
-                       Bio.Graph.Forest
-                       Bio.Graph.ReferenceDAG.Internal
-                       Bio.Graph.ZipperDAG.Internal
-                       Bio.Sequence.Internal
-
-
-
+                       Bio.Character.Exportable
+                       Bio.Character.Exportable.Class
                        Control.Evaluation.Internal
-                       Control.Evaluation.Test
                        Control.Evaluation.Unit
+                       Control.Monad.Logger
+                       Data.Alphabet
                        Data.Alphabet.IUPAC
+                       Data.Alphabet.Internal
+                       Data.BitMatrix
                        Data.BitMatrix.Internal
-                       Data.BitMatrix.Test
-                       Data.List.Utility
-                       Data.TCM
-                       Data.TCM.Internal
-                       File.Format.Fasta
-                       File.Format.Fasta.Converter
-                       File.Format.Fasta.Internal
-                       File.Format.Fasta.Parser
-                       File.Format.Fasta.Test
-                       File.Format.Fastc
-                       File.Format.Fastc.Parser
-                       File.Format.Fastc.Test
-                       File.Format.Newick
-                       File.Format.Newick.Internal
-                       File.Format.Newick.Parser
-                       File.Format.Newick.Test
-                       File.Format.Nexus
-                       File.Format.Nexus.Data
-                       File.Format.Nexus.Parser
-                       File.Format.Nexus.Partition
-                       File.Format.Nexus.Validate
-                       File.Format.TNT
-                       File.Format.TNT.Command.CCode
-                       File.Format.TNT.Command.CNames
-                       File.Format.TNT.Command.Cost
-                       File.Format.TNT.Command.NStates
-                       File.Format.TNT.Command.Procedure
-                       File.Format.TNT.Command.TRead
-                       File.Format.TNT.Command.XRead
-                       File.Format.TNT.Internal
-                       File.Format.TNT.Parser
-                       File.Format.TNT.Partitioning
-                       File.Format.TransitionCostMatrix
-                       File.Format.TransitionCostMatrix.Parser
-                       File.Format.TransitionCostMatrix.Test
-                       File.Format.VertexEdgeRoot
-                       File.Format.VertexEdgeRoot.Parser
-                       File.Format.VertexEdgeRoot.Test
-                       Test.Custom
-                       Test.Custom.Constructions
-                       Test.Custom.Types
-                       Test.Custom.Tree
-                       Test.Custom.Tree.Test
-                       Test.Custom.Parse
                        Test.QuickCheck.Arbitrary.Instances
                        TestSuite.ExecutableTests
-                       TestSuite.GeneratedTests
-                       TestSuite.GeneratedTests.Fasta
-                       TestSuite.GeneratedTests.Fastc
-                       TestSuite.GeneratedTests.Internal
-                       TestSuite.GeneratedTests.Nexus
-                       TestSuite.LibraryTests
-                       Text.Megaparsec.Custom
-                       Text.Megaparsec.Custom.Test
+                       Text.XML.Class
+                       Text.XML.Custom
 
-                       Data.Matrix.NotStupid
-                       TestSuite.GeneratedTests.TNT
-                       Data.Alphabet
-                       Data.BitMatrix
-                       Control.Evaluation
-                       Control.Evaluation.Trans
-                       Control.Monad.Logger
-                       Analysis.Parsimony.Binary.Optimization
-                       Bio.PhyloGraph.Forest.Parsed
-                       Bio.Metadata.MaskGenerator
-                       Bio.PhyloGraph.DAG.Test
-                       Analysis.Parsimony.Binary.Constraints
-                       -- Analysis.Parsimony.Binary.SequentialAlign
-                       Analysis.Parsimony.Dynamic.SequentialAlign
-                       Bio.Character.Encodable.Static.Test
-                       -- Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
+--                       Analysis.ImpliedAlignment.AlignmentContext
+--                       Analysis.ImpliedAlignment.DynamicProgramming
+--                       Analysis.ImpliedAlignment.Internal
+--                       Analysis.ImpliedAlignment.Standard
+--                       Analysis.ImpliedAlignment.Test
+--                       Analysis.ImpliedAlignment.Test.Trees
+--                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
+--                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Test
+----                       Analysis.Parsimony.Binary.Internal
+----                       Analysis.Parsimony.Binary.Test
+--                       Analysis.Parsimony.Dynamic.DirectOptimization.DeletionEvents
+--                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
+--                       Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents
+--                       Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Internal
+--                       Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Test
+----                       Analysis.Parsimony.Binary.Fitch
+--                       Bio.Character
+--                       Bio.Character.Decoration.Additive
+--                       --Bio.Character.Decoration.Continuous
+--                       Bio.Character.Decoration.Discrete
+--                       Bio.Character.Decoration.Dynamic
+--                       Bio.Character.Decoration.Fitch
+--                       Bio.Character.Decoration.Metric
+--                       Bio.Character.Decoration.NonMetric
+--                       Bio.Character.Encodable
+--                       Bio.Character.Exportable.Class
+--                       Bio.Character.Parsed
+--                       Bio.Character.Decoration.Additive.Class
+--                       Bio.Character.Decoration.Additive.Internal
+--                       --Bio.Character.Decoration.Continuous.Class
+--                       --Bio.Character.Decoration.Continuous.Internal
+--                       Bio.Character.Decoration.Dynamic.Class
+--                       Bio.Character.Decoration.Dynamic.Internal
+--                       Bio.Character.Decoration.Fitch.Class
+--                       Bio.Character.Decoration.Fitch.Internal
+--                       Bio.Character.Decoration.Metric.Class
+--                       Bio.Character.Decoration.Metric.Internal
+--                       Bio.Character.Decoration.NonMetric.Class
+--                       Bio.Character.Decoration.NonMetric.Internal
+--                       Bio.Character.Encodable.Dynamic
+--                       Bio.Character.Encodable.Dynamic.Class
+--                       Bio.Character.Encodable.Dynamic.Internal
+--                       Bio.Character.Encodable.Internal
+--                       Bio.Character.Encodable.Static
+--                       Bio.Character.Encodable.Static.Class
+--                       Bio.Character.Encodable.Static.Internal
+--                       Bio.Character.Encodable.Stream
+--                       Bio.Character.Parsed.Class
+--                       Bio.Character.Parsed.Internal
+--                       Bio.Metadata
+--                       Bio.Metadata.CharacterName
+--                       --Bio.Metadata.Continuous
+--                       Bio.Metadata.Discrete
+--                       Bio.Metadata.Parsed
+--                       Bio.Metadata.General
+--                       Bio.Metadata.General.Class
+--                       Bio.Metadata.General.Internal
+--                       Bio.Metadata.Discrete.Class
+--                       Bio.Metadata.Discrete.Internal
+--                       Bio.Sequence
+--                       Bio.Sequence.Block
+--                       Bio.Graph
+--                       Bio.Graph.Component
+--                       Bio.Graph.LeafSet
+--                       Bio.Graph.Node
+--                       Bio.Graph.ReferenceDAG
+--                       Bio.Graph.ZipperDAG
+--                       Bio.Graph.Forest
+--                       Bio.Graph.ReferenceDAG.Internal
+--                       Bio.Graph.ZipperDAG.Internal
+--                       Bio.Sequence.Internal
+--
+--
+--
+--                       Control.Evaluation.Internal
+--                       Control.Evaluation.Test
+--                       Control.Evaluation.Unit
+--                       Data.Alphabet.IUPAC
+--                       Data.BitMatrix.Internal
+--                       Data.BitMatrix.Test
+--                       Data.List.Utility
+--                       Data.TCM
+--                       Data.TCM.Internal
+--                       Test.Custom
+--                       Test.Custom.Constructions
+--                       Test.Custom.Types
+--                       Test.Custom.Tree
+--                       Test.Custom.Tree.Test
+--                       Test.QuickCheck.Arbitrary.Instances
+--                       TestSuite.ExecutableTests
+--                       Data.Matrix.NotStupid
+--                       Data.Alphabet
+--                       Data.BitMatrix
+--                       Control.Evaluation
+--                       Control.Evaluation.Trans
+--                       Control.Monad.Logger
+--                       Analysis.Parsimony.Binary.Optimization
+--                       Bio.PhyloGraph.Forest.Parsed
+--                       Bio.Metadata.MaskGenerator
+--                       Bio.PhyloGraph.DAG.Test
+--                       Analysis.Parsimony.Binary.Constraints
+--                       -- Analysis.Parsimony.Binary.SequentialAlign
+--                       Analysis.Parsimony.Dynamic.SequentialAlign
+--                       Bio.Character.Encodable.Static.Test
+--                       -- Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
 

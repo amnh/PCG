@@ -17,7 +17,7 @@ module Bio.Sequence.Bin.Additive
   ) where
 
 import Bio.Character.Static
-import Bio.Sequence.SharedContinugousMetatdata
+import Bio.Sequence.SharedContiguousMetadata
 import Data.Semigroup
 import Data.Monoid               (mappend)
 
@@ -39,7 +39,7 @@ instance EncodedAmbiguityGroupContainer s => EncodedAmbiguityGroupContainer (Add
 
     {-# INLINE symbolCount #-}
     symbolCount = symbolCount . characterDecoration
-    
+
 
 instance Semigroup s => Semigroup (AdditiveBin s) where
 

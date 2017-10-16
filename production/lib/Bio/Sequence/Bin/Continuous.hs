@@ -18,7 +18,7 @@ module Bio.Sequence.Bin.Continuous
   ) where
 
 
-import           Bio.Sequence.SharedContinugousMetatdata hiding (singleton)
+import           Bio.Sequence.SharedContiguousMetadata hiding (singleton)
 import           Data.Foldable
 import           Data.List.NonEmpty                      hiding (length,toList)
 import           Data.Monoid                                    (mappend)

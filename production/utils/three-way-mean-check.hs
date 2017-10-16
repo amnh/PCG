@@ -44,11 +44,12 @@ counterExampleCheck node = value == value
   where
     value = getDynamicCharacterDecoration node ^. finalUngapped
 
+
 performImplementationComparison :: String -> String -> IO ()
 performImplementationComparison lhs rhs = do
     putStrLn "Attempting construction:"
     let !value = constructNode (readSequence lhs) (readSequence rhs)
-    putStrLn $ show value
+    print $ show value
     pure ()
   where
     alphabet = fromSymbols ["A","C","G","T"]

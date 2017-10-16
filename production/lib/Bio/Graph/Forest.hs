@@ -10,23 +10,31 @@
 --
 -- The Phylogentic Graph types.
 --
--- 
+--
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveTraversable, GeneralizedNewtypeDeriving, TypeFamilies #-}
+{-# LANGUAGE DeriveTraversable, FlexibleContexts, FlexibleInstances, FunctionalDependencies, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies, UndecidableInstances #-}
 
 module Bio.Graph.Forest
   ( PhylogeneticForest(..)
   ) where
 
+import Bio.Graph.LeafSet
+import Control.Lens              hiding (Indexable)
+import Data.Foldable
+import Data.GraphViz.Printing
 import Data.Key
-import Data.List.NonEmpty            (NonEmpty)
+import Data.List                        (intercalate)
+import Data.List.NonEmpty               (NonEmpty(..))
 import Data.Maybe
 import Data.Semigroup
 import Data.Semigroup.Foldable
-import Data.Semigroup.Traversable
-import Prelude                hiding (lookup)
+-- import Data.Semigroup.Traversable
+import Prelude                hiding (head, lookup, zip, zipWith)
+import Text.Newick.Class
+import Text.XML.Custom
+-- import Text.XML.Light.Types
 
 
 -- |
@@ -69,6 +77,13 @@ instance FoldableWithKey1 PhylogeneticForest where
     foldMapWithKey1 f = foldMapWithKey1 f . unwrap
 
 
+instance (HasLeafSet a b, Semigroup b) => HasLeafSet (PhylogeneticForest a) b where
+
+    leafSet = lens getter undefined
+      where
+        getter = (foldMap1 (^. leafSet)) . unwrap
+
+
 instance Indexable PhylogeneticForest where
 
     {-# INLINE index #-}
@@ -95,6 +110,27 @@ instance Lookup PhylogeneticForest where
     lookup i = lookup i . unwrap
 
 
+instance PrintDot a => PrintDot (PhylogeneticForest a) where
+
+    unqtDot       = unqtListToDot . toList . unwrap
+
+    toDot         = listToDot . toList . unwrap
+
+    unqtListToDot = fmap mconcat . sequenceA . fmap unqtDot
+
+    listToDot     = fmap mconcat . sequenceA . fmap toDot
+
+
+instance ToNewick a => ToNewick (PhylogeneticForest a) where
+
+    toNewick forest = intercalate "\n" (toList $ fmap toNewick (unwrap forest))
+
+
+instance ToXML a => ToXML (PhylogeneticForest a) where
+
+    toXML = collapseElemList "Forest" [] . unwrap
+
+
 instance Traversable1 PhylogeneticForest where
 
     {-# INLINE traverse1 #-}
@@ -116,8 +152,27 @@ instance TraversableWithKey1 PhylogeneticForest where
     traverseWithKey1 f = fmap PhylogeneticForest . traverseWithKey1 f . unwrap
 
 
+instance Zip PhylogeneticForest where
+
+    {-# INLINE zipWith #-}
+    zipWith f lhs rhs = PhylogeneticForest $ zipWith f (unwrap lhs) (unwrap rhs)
+
+    {-# INLINE zip #-}
+    zip lhs rhs = PhylogeneticForest $ zip (unwrap lhs) (unwrap rhs)
+
+    {-# INLINE zap #-}
+    zap lhs rhs = PhylogeneticForest $ zap (unwrap lhs) (unwrap rhs)
+
+
+instance ZipWithKey PhylogeneticForest where
+
+    {-# INLINE zipWithKey #-}
+    zipWithKey f lhs rhs = PhylogeneticForest $ zipWithKey f (unwrap lhs) (unwrap rhs)
+
+    {-# INLINE zapWithKey #-}
+    zapWithKey   lhs rhs = PhylogeneticForest $ zapWithKey (unwrap lhs) (unwrap rhs)
+
+
 {-# INLINE unwrap #-}
 unwrap :: PhylogeneticForest a -> NonEmpty a
 unwrap (PhylogeneticForest x) = x
-
-

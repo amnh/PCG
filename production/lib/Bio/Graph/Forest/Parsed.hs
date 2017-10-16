@@ -14,31 +14,36 @@
 
 {-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
 
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Bio.Graph.Forest.Parsed where
 
 import           Bio.Graph.Forest
 import           Bio.Graph.ReferenceDAG
 -- import           Bio.Graph.ZipperDAG
+import           Control.Arrow                            ((&&&))
 import           Data.EdgeLength
 import           Data.Foldable
+import           Data.Hashable
 import           Data.IntMap                              (IntMap)
 import qualified Data.IntMap                       as IM
 import           Data.Key
 import           Data.List.NonEmpty                       (NonEmpty, nonEmpty)
 import qualified Data.List.NonEmpty                as NE
-import           Data.Map                                 (Map)
+import           Data.Map                                 (Map, findMin)
 import qualified Data.Map                          as Map
 import           Data.Maybe
 import           Data.Monoid
 import qualified Data.Set                          as Set
+import           File.Format.Dot
 import           File.Format.Fasta
 import           File.Format.Fastc                 hiding (Identifier)
 import           File.Format.Newick
 import           File.Format.Nexus                 hiding (TaxonSequenceMap)
 import           File.Format.TNT
 import           File.Format.TransitionCostMatrix
-import           File.Format.VertexEdgeRoot.Parser hiding (EdgeLength)
-import qualified File.Format.VertexEdgeRoot.Parser as VER
+import           File.Format.VertexEdgeRoot        hiding (EdgeLength)
+import qualified File.Format.VertexEdgeRoot        as VER
 import           Prelude                           hiding (lookup)
 
 -- import Debug.Trace
@@ -63,42 +68,73 @@ type ParserForestSet = Maybe (NonEmpty (PhylogeneticForest ParserTree))
 
 -- |
 -- An internal type for representing a node with a unique numeric identifier.
-data NewickEnum   = NE !Int (Maybe String) (Maybe Double) [NewickEnum] 
-   
+data NewickEnum   = NE !Int (Maybe String) (Maybe Double) [NewickEnum]
+
 
 -- | Represents a parser result type which can have a possibly empty forest
 --   extracted from it.
 class ParsedForest a where
+
     unifyGraph :: a -> ParserForestSet
 
 
 -- | (✔)
+instance Hashable GraphID where
+
+    hashWithSalt salt = hashWithSalt salt . show -- Lazy hash, should be fine
+
+
+-- | (✔)
+instance ParsedForest (DotGraph GraphID) where
+
+    unifyGraph dot = Just . pure . PhylogeneticForest . pure $ unfoldDAG f seed
+      where
+        (seed,_) = findMin cMapping
+        cMapping = dotChildMap  dot
+        pMapping = dotParentMap dot
+
+        f x = (parents, marker, kids)
+           where
+            kids    = fmap (mempty &&& id) . toList $ cMapping ! x
+            parents = fmap (mempty &&& id) . toList $ pMapping ! x
+            marker
+              | null kids = Just $ toIdentifier x
+              | otherwise = Nothing
+
+
+-- | (✔)
 instance ParsedForest FastaParseResult where
+
     unifyGraph = const Nothing
 
 
 -- | (✔)
 instance ParsedForest FastcParseResult where
+
     unifyGraph = const Nothing
 
 
 -- | (✔)
 instance ParsedForest TaxonSequenceMap where
+
     unifyGraph = const Nothing
 
 
 -- | (✔)
 instance ParsedForest TCM where
+
     unifyGraph = const Nothing
 
 
 -- | (✔)
 instance ParsedForest Nexus where
+
     unifyGraph (Nexus _ forest) = unifyGraph =<< nonEmpty forest
 
 
 -- | (✔)
 instance ParsedForest (NonEmpty NewickForest) where
+
     unifyGraph = Just . fmap (PhylogeneticForest . fmap (coerceTree . relationMap . enumerate)) {- . (\x -> trace (unlines $ renderNewickForest <$> toList x) x) -}
       where
 
@@ -143,7 +179,7 @@ instance ParsedForest (NonEmpty NewickForest) where
                 case ref `lookup` prevMap of
                   Just (xs, datum, ys) -> IM.insert ref ((fromDoubleMay costMay, fromJust parentMay):xs, datum, ys) prevMap
                   Nothing              ->
-                    let parentRefs = 
+                    let parentRefs =
                           case parentMay of
                             Nothing -> []
                             Just x  -> [(fromDoubleMay costMay,x)]
@@ -151,8 +187,8 @@ instance ParsedForest (NonEmpty NewickForest) where
                     in  foldr (subCall (Just ref)) currMap children
               where
                 f (NE x _ y _) = (fromDoubleMay y,x)
-                
-              
+
+
 
 -- | (✔)
 instance ParsedForest TntResult where
@@ -180,7 +216,7 @@ instance ParsedForest TntResult where
             f parentRef n node =
                 case node of
                   Leaf   x  -> (n, n + 1, IM.singleton n (parentRef, Just $ toLabel x, []))
-                  Branch xs -> 
+                  Branch xs ->
                     let recursiveResult = NE.scanr (\e (_,x,_) -> f (Just n) x e) (undefined, n + 1, undefined) xs
                         (_, counter, _) = NE.head recursiveResult
                         childrenRefs    = (\(x,_,_) -> x) <$> NE.init recursiveResult
@@ -191,7 +227,7 @@ instance ParsedForest TntResult where
         -- | Conversion function for NodeType to string
         getTNTName :: NodeType -> String
         getTNTName node =
-            case node of 
+            case node of
               Index  i -> show i
               Name   n -> n
               Prefix s -> s
@@ -200,6 +236,7 @@ instance ParsedForest TntResult where
 {- -}
 -- | (✔)
 instance ParsedForest VER.VertexEdgeRoot where
+
     unifyGraph (VER vs es rs) = Just . pure . PhylogeneticForest . fmap convertToDAG . NE.fromList $ toList disconnectedRoots
       where
 
@@ -228,10 +265,10 @@ instance ParsedForest VER.VertexEdgeRoot where
                   | node `elem` seen           = mempty
                   | otherwise                  = foldMap (g seen') children
                   where
-                    seen' = seen 
+                    seen' = seen
                     children = Set.mapMonotonic snd (childMapping ! node) `Set.difference` seen
 
-        convertToDAG = unfoldDAG f 
+        convertToDAG = unfoldDAG f
           where
             f label = (pValues, Just label, cValues)
               where
@@ -243,11 +280,11 @@ instance ParsedForest VER.VertexEdgeRoot where
                     case label `lookup` childMapping of
                        Nothing -> []
                        Just xs -> toList xs
-        
+
 {- -}
 
 {-
--- | Convert the referential forests defined by sets of verticies, edges, and
+-- | Convert the referential forests defined by sets of vertices, edges, and
 --   roots into a forest of topological tree structure.
 convertVerToNewick :: VertexEdgeRoot -> Forest NewickNode
 convertVerToNewick (VER _ e r) = buildNewickTree Nothing <$> toList r
@@ -268,7 +305,7 @@ convertTntToNewick f (Branch xs) = fromJust $ newickNode (convertTntToNewick f <
 
 -- | Conversion function for NodeType to string
 getTNTName :: NodeType -> String
-getTNTName node = case node of 
+getTNTName node = case node of
     (Index i) -> show i
     (Name n) -> n
     (Prefix s) -> s

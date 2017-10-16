@@ -23,16 +23,20 @@ import           Control.Arrow             ((&&&))
 import           Data.Bifunctor            (second)
 import           Data.Foldable
 import           Data.Key
-import           Data.List.NonEmpty        (NonEmpty)
+import           Data.List.NonEmpty        (NonEmpty(..))
 import qualified Data.List.NonEmpty as NE
-import           Data.Map                  (Map, insert, mergeWithKey)
+import           Data.Map                  (Map, fromSet, insert, keysSet, mergeWithKey)
 import qualified Data.Map           as M
 import           Data.Maybe
-import           Data.Monoid
+import           Data.Monoid        hiding ((<>))
+import           Data.Semigroup
 import           Data.Semigroup.Foldable
+import           Data.Set                  (Set)
+import qualified Data.Set           as S
 import           Data.Tree
 import qualified Data.Vector        as V
 import           Data.Vector.Instances()
+import           File.Format.Dot
 import           File.Format.Fasta
 import           File.Format.Fastc
 import           File.Format.Newick
@@ -42,7 +46,6 @@ import qualified File.Format.TNT    as TNT
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
 import           Prelude            hiding (zipWith)
-import           Safe                      (headMay)
   
 
 {-
@@ -80,6 +83,16 @@ type TaxonCharacters = Map String ParsedChars
 class ParsedCharacters a where
 
     unifyCharacters :: a -> TaxonCharacters
+
+
+-- | (✔)
+instance ParsedCharacters (DotGraph GraphID) where
+
+    unifyCharacters = fromSet (const mempty) . S.map toIdentifier . leafNodeSet
+      where
+        -- Get the set of all nodes with out degree 0.
+        leafNodeSet :: Ord n => DotGraph n -> Set n
+        leafNodeSet = keysSet . M.filter null . dotChildMap 
 
 
 -- | (✔)
@@ -125,9 +138,14 @@ instance ParsedCharacters Nexus where
 
         f = zipWith g metadataVector
 
+        g :: CharacterMetadata -> Character -> ParsedCharacter
         g m e
-          | isAligned m = ParsedDiscreteCharacter $  NE.fromList <$> (headMay . toList =<< e)
-          | otherwise   = ParsedDynamicCharacter  $ fmap NE.fromList . NE.fromList . toList <$> e
+          | not $ isAligned m = ParsedDynamicCharacter  $ fmap NE.fromList . NE.fromList . toList <$> e
+          | otherwise         = ParsedDiscreteCharacter $ do
+              v <- e                      -- Check if the element is empty
+              w <- NE.nonEmpty $ toList v -- If not, coerce the Vector to a NonEmpty list
+              NE.nonEmpty $ NE.head w     -- Then grab the first element of the Vector,
+                                          -- making sure it is also a NonEmpty list
 
 
 -- | (✔)

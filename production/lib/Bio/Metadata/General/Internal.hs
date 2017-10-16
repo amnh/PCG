@@ -19,9 +19,10 @@ module Bio.Metadata.General.Internal
   ) where
 
 
-import           Bio.Metadata.CharacterName
-import           Bio.Metadata.General.Class
-import           Control.Lens
+import Bio.Metadata.CharacterName
+import Bio.Metadata.General.Class
+import Control.Lens
+import Text.XML.Class
 
 
 -- |
@@ -31,14 +32,14 @@ data GeneralCharacterMetadataDec
    = GeneralCharacterMetadataDec
    { name     :: CharacterName
    , weight   :: Double
-   } deriving (Eq, Show) 
+   } deriving (Eq, Show)
 
 
 -- |
 -- A constraint for type containing metadata.
 class ( HasCharacterName   s CharacterName
       , HasCharacterWeight s Double
-      ) => GeneralCharacterMetadata s where  
+      ) => GeneralCharacterMetadata s where
 
     extractGeneralCharacterMetadata :: s -> GeneralCharacterMetadataDec
 
@@ -61,6 +62,15 @@ instance HasCharacterWeight GeneralCharacterMetadataDec Double where
 
     characterWeight = lens weight $ \e x -> e { weight = x }
 
+
+instance ToXML GeneralCharacterMetadataDec where
+
+    toXML metadata = xmlElement "General_metadata" attributes contents
+        where
+            attributes = []
+            contents   = [ Left ("Name"  , show $ metadata ^. characterName  )
+                         , Left ("Weight", show $ metadata ^. characterWeight)
+                         ]
 
 -- |
 -- A smart constructor for 'GeneralCharacterMetadata'.

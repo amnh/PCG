@@ -30,6 +30,16 @@ import Data.Alphabet
 import Data.Range
 import Data.Semigroup
 import Numeric.Extended
+import Text.XML
+
+
+-- |
+-- Represents the finalized character decoration after a pre-order traversal.
+data AdditiveOptimizationDecoration a
+   = AdditiveOptimizationDecoration
+   { additiveFinalInterval :: Range (Bound a)
+   , postorderDecoration   :: AdditivePostorderDecoration a
+   }
 
 
 -- |
@@ -44,23 +54,6 @@ data AdditivePostorderDecoration a
    , additiveCharacterField       :: a
    , additiveMetadataField        :: DiscreteCharacterMetadataDec
    }
-
-
--- | (✔)
-instance
-  ( EncodableStreamElement c
-  , Show (Bound c)
-  , Show (Finite (Bound c))
-  , Show (Range  (Bound c))
-  ) => Show (AdditivePostorderDecoration c) where
-
-    show c = unlines
-        [ "Cost = "                 <> show (c ^. characterCost)
-        , "Is Leaf Node?        : " <> show (c ^. isLeaf)
-        , "Discrete Character   : " <> showDiscreteCharacterElement c
-        , "Preliminary Interval : " <> show (additivePreliminaryInterval c)
-        , "Child       Intervals: " <> show (additiveChildPrelimIntervals c)
-        ]
 
 
 -- | (✔)
@@ -194,9 +187,9 @@ class ( RangedCharacterDecoration s c
 
 class ( RangedCharacterDecoration s c
       , HasFinalInterval s (Range (Bound c))
-      ) => RangedDecorationOptimization s c | s -> c where 
+      ) => RangedDecorationOptimization s c | s -> c where
 -}
-  
+
 
 -- | (✔)
 instance ( DiscreteCharacterMetadata   (AdditivePostorderDecoration a)
@@ -216,15 +209,6 @@ instance ( DiscreteCharacterMetadata   (AdditivePostorderDecoration a)
 
 
 
-
-
--- |
--- Represents the finalized character decoration after a pre-order traversal.
-data AdditiveOptimizationDecoration a
-   = AdditiveOptimizationDecoration
-   { additiveFinalInterval :: Range (Bound a)
-   , postorderDecoration   :: AdditivePostorderDecoration a
-   }
 
 
 -- | (✔)
@@ -383,23 +367,12 @@ instance RangedCharacterDecoration (AdditiveOptimizationDecoration c) c => Range
 --n| (✔)
 --instance RangedCharacterDecoration (AdditiveOptimizationDecoration c) c => RangedExtensionPostorder (AdditiveOptimizationDecoration c) c where
 
-
-{--
--- | (✔)
-instance ( RangedPostorderDecoration   (AdditiveOptimizationDecoration a) a
-         ) => RangedExtensionPostorder (AdditiveOptimizationDecoration a) a where
-
-    extendRangedToPostorder subDecoration cost prelimInterval childMedianTup isLeafVal =
-        subDecoration { postorderDecoration = extendRangedToPostorder (postorderDecoration subDecoration) cost prelimInterval childMedianTup isLeafVal }
---}
-  
-
 -- | (✔)
 instance ( RangedCharacterDecoration (AdditiveOptimizationDecoration c) c
          , HasFinalInterval (AdditiveOptimizationDecoration c) (Range (Bound c))
-         ) => RangedDecorationOptimization (AdditiveOptimizationDecoration c) c where 
+         ) => RangedDecorationOptimization (AdditiveOptimizationDecoration c) c where
 
-  
+
 -- | (✔)
 instance ( DiscreteCharacterMetadata    (AdditiveOptimizationDecoration a)
          , RangedDecorationOptimization (AdditiveOptimizationDecoration a) a
@@ -422,3 +395,69 @@ instance ( DiscreteCharacterMetadata    (AdditiveOptimizationDecoration a)
             , additivePreliminaryInterval  = subDecoration ^. preliminaryInterval
             , additiveCharacterField       = fromRange interval
             }
+
+
+{--
+-- | (✔)
+instance ( RangedPostorderDecoration   (AdditiveOptimizationDecoration a) a
+         ) => RangedExtensionPostorder (AdditiveOptimizationDecoration a) a where
+
+    extendRangedToPostorder subDecoration cost prelimInterval childMedianTup isLeafVal =
+        subDecoration { postorderDecoration = extendRangedToPostorder (postorderDecoration subDecoration) cost prelimInterval childMedianTup isLeafVal }
+--}
+
+
+-- | (✔)
+instance
+  ( EncodableStreamElement c
+  , Show (Bound c)
+  , Show (Finite (Bound c))
+  , Show (Range  (Bound c))
+  ) => Show (AdditivePostorderDecoration c) where
+
+    show c = unlines
+        [ "Cost = "                 <> show (c ^. characterCost)
+        , "Is Leaf Node?        : " <> show (c ^. isLeaf)
+        , "Discrete Character   : " <> showDiscreteCharacterElement c
+        , "Preliminary Interval : " <> show (additivePreliminaryInterval c)
+        , "Child       Intervals: " <> show (additiveChildPrelimIntervals c)
+        ]
+
+
+-- | (✔)
+instance
+    ( EncodableStreamElement c
+    -- , Show (Bound c)
+    , Show (Finite (Bound c))
+    , Show (Range  (Bound c))
+    ) => ToXML (AdditivePostorderDecoration c) where
+
+    toXML decoration = xmlElement "Additive postorder decoration" attributes contents
+        where
+            attributes = []
+            contents   = [ Left ("Cost"                 , show $ decoration ^. characterCost             )
+                         , Left ("Is leaf"              , show $ decoration ^. isLeaf                    )
+                         , Left ("Discrete Character"   , showDiscreteCharacterElement        decoration )
+                         , Left ("Preliminary Interval" , show $ additivePreliminaryInterval  decoration )
+                         , Left ("Child Intervals:"     , show $ additiveChildPrelimIntervals decoration )
+                         ]
+
+
+-- | (✔)
+instance
+    ( EncodableStreamElement c
+    -- , Show (Bound c)
+    , Show (Finite (Bound c))
+    , Show (Range  (Bound c))
+    ) => ToXML (AdditiveOptimizationDecoration c) where
+
+    toXML decoration = xmlElement "Additive operation decoration" attributes contents
+        where
+            attributes = []
+            contents   = [ Left ("Final interval"       , show $ decoration ^. finalInterval       )
+                         , Left ("Cost"                 , show $ decoration ^. characterCost       )
+                         , Left ("Is leaf"              , show $ decoration ^. isLeaf              )
+                         , Left ("Discrete Character"   , showDiscreteCharacterElement decoration  )
+                         , Left ("Preliminary Interval" , show $ decoration ^. preliminaryInterval )
+                         , Left ("Child Intervals:"     , show $ decoration ^. childPrelimIntervals)
+                         ]

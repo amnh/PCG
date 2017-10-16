@@ -22,8 +22,8 @@ module Bio.Character.Encodable.Dynamic
   , EncodableStream(..)
   ) where
 
-import Bio.Character.Encodable.Dynamic.Internal
 import Bio.Character.Encodable.Dynamic.Class
+import Bio.Character.Encodable.Dynamic.Internal
 import Bio.Character.Encodable.Internal
 import Bio.Character.Encodable.Stream
 

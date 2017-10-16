@@ -15,7 +15,7 @@
 {-# LANGUAGE DeriveGeneric, GeneralizedNewtypeDeriving #-}
 
 module Data.EdgeSet
-  ( EdgeSet()
+  ( EdgeSet(..)
   , NetworkDisplayEdgeSet(..)
   , SetLike(..)
   , collapseToEdgeSet
@@ -24,7 +24,7 @@ module Data.EdgeSet
   ) where
 
 
-import           Control.DeepSeq 
+import           Control.DeepSeq
 import           Data.Foldable
 import           Data.Key
 import           Data.List.NonEmpty (NonEmpty(..))
@@ -41,7 +41,7 @@ import           Prelude     hiding (zipWith)
 --
 -- Often used to represent a spanning tree in a DAG.
 newtype EdgeSet e = ES (Set e)
-  deriving (Eq, Foldable, Generic, Monoid, Ord, Semigroup, Show)
+  deriving (Eq, Foldable, Generic, Monoid, Ord, Semigroup)
 
 
 -- |
@@ -87,31 +87,31 @@ instance Ord a => SetLike (EdgeSet a) where
 
     cardinality  (ES x) = cardinality x
 
-    difference   (ES x) (ES y) = ES $ difference x y 
+    difference   (ES x) (ES y) = ES $ difference x y
 
-    intersection (ES x) (ES y) = ES $ intersection x y 
+    intersection (ES x) (ES y) = ES $ intersection x y
 
-    isSubsetOf   (ES x) (ES y) = isSubsetOf x y 
+    isSubsetOf   (ES x) (ES y) = isSubsetOf x y
 
-    union        (ES x) (ES y) = ES $ union x y 
+    union        (ES x) (ES y) = ES $ union x y
 
 
 instance Ord a => SetLike (NetworkDisplayEdgeSet a) where
 
     cardinality  (NDES x) = sum $ cardinality <$> x
 
-    difference   (NDES x) (NDES y) = NDES $ zipWith difference x y 
+    difference   (NDES x) (NDES y) = NDES $ zipWith difference x y
 
-    intersection (NDES x) (NDES y) = NDES $ zipWith intersection x y 
+    intersection (NDES x) (NDES y) = NDES $ zipWith intersection x y
 
-    isSubsetOf   (NDES x) (NDES y) = and  $ zipWith isSubsetOf x y 
+    isSubsetOf   (NDES x) (NDES y) = and  $ zipWith isSubsetOf x y
 
-    union        (NDES x) (NDES y) = NDES $ zipWith union x y 
+    union        (NDES x) (NDES y) = NDES $ zipWith union x y
 
 
 instance Ord a => SetLike (Set a) where
 
-    cardinality  = toEnum . length 
+    cardinality  = toEnum . length
 
     difference   = Set.difference
 
@@ -120,6 +120,11 @@ instance Ord a => SetLike (Set a) where
     isSubsetOf   = Set.isSubsetOf
 
     union        = Set.union
+
+
+instance Show a => Show (EdgeSet a) where
+
+  show (ES xs) = show (toList xs)
 
 
 -- |

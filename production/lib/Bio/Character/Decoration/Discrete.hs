@@ -42,6 +42,7 @@ import Control.Lens
 import Data.Alphabet
 import Data.Range
 import Numeric.Extended
+import Text.XML
 
 
 -- |
@@ -53,11 +54,6 @@ data DiscreteDecoration c
    }
 
 
-instance EncodableStreamElement c => Show (DiscreteDecoration c) where
-
-    show = showDiscreteCharacterElement
-
-
 -- |
 -- Show an appropriate instance of 'HasDiscreteCharacter' that is also
 -- 'HasCharacterAlphabet' by decoding the 'EncodableStreamElement' over the 'Alphabet';
@@ -67,14 +63,6 @@ showDiscreteCharacterElement :: ( EncodableStreamElement a
                                 , HasDiscreteCharacter s a
                                 ) => s -> String
 showDiscreteCharacterElement = showStreamElement <$> (^. characterAlphabet) <*> (^. discreteCharacter)
-
-
--- | (✔)
-instance PossiblyMissingCharacter c => PossiblyMissingCharacter (DiscreteDecoration c) where
-
-    isMissing = isMissing . (^. discreteCharacter)
-
-    toMissing x = x & discreteCharacter %~ toMissing
 
 
 -- |
@@ -100,6 +88,11 @@ class DiscreteCharacterDecoration s a => SimpleDiscreteCharacterDecoration s a |
 
 
 
+instance EncodableStreamElement c => Show (DiscreteDecoration c) where
+
+    show = showDiscreteCharacterElement
+
+
 -- | (✔)
 instance HasDiscreteCharacter (DiscreteDecoration c) c where
 
@@ -122,7 +115,7 @@ instance HasCharacterAlphabet (DiscreteDecoration c) (Alphabet String) where
     characterAlphabet = lens getter setter
       where
          getter e   = metadata e ^. characterAlphabet
-         setter e x = e { metadata = metadata e &  characterAlphabet .~ x }
+         setter e x = e { metadata = metadata e & characterAlphabet .~ x }
 
 
 -- | (✔)
@@ -131,7 +124,7 @@ instance HasCharacterName (DiscreteDecoration c) CharacterName where
     characterName = lens getter setter
       where
          getter e   = metadata e ^. characterName
-         setter e x = e { metadata = metadata e &  characterName .~ x }
+         setter e x = e { metadata = metadata e & characterName .~ x }
 
 
 -- | (✔)
@@ -191,3 +184,24 @@ instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (Discre
         { discreteDecorationCharacter = g symbolSet
         , metadata                    = discreteMetadataWithTCM name weight alphabet scm
         }
+
+
+-- | (✔)
+instance (EncodableStreamElement c) => ToXML (DiscreteDecoration c) where
+
+    toXML decoration = xmlElement "Discrete_character_decoration" attributes contents
+        where
+            attributes = []
+            contents   = [ Left ("Character", showDiscreteCharacterElement decoration)
+                         , Left ("Metadata" , "TCM not shown"                        )
+                         ]
+
+
+-- | (✔)
+instance PossiblyMissingCharacter c => PossiblyMissingCharacter (DiscreteDecoration c) where
+
+    isMissing = isMissing . (^. discreteCharacter)
+
+    toMissing x = x & discreteCharacter %~ toMissing
+
+
