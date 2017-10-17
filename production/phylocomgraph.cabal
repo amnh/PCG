@@ -33,7 +33,7 @@ cabal-version:       >= 1.22
 
 flag build-cpp-files
   description: Toggles the C++ files being successfully build.
-  default: False
+  default: True
 
 
 library
@@ -104,7 +104,7 @@ library
                        -fwarn-unused-matches
                        -Wincomplete-uni-patterns
 
-  hs-source-dirs:      lib, ffi
+  hs-source-dirs:      src, ffi
 
 --  ld-options: -lstdc++
 
