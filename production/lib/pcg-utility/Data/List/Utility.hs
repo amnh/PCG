@@ -163,6 +163,23 @@ invariantTransformation f xs =
 
 
 -- |
+-- /O( n )/
+--
+-- Applies a transitive relation over a list and asserts that the relation holds
+-- for all elements.
+transitivePropertyHolds :: Foldable f => (a -> a -> Bool) -> f a -> Bool
+transitivePropertyHolds f xs =
+    case toList xs of
+      []   -> True
+      [x]  -> True
+      x:xs -> all (uncurry f) $ g x xs
+  where
+    g _    []  = []
+    g e   [x]  = [(e,x)]
+    g e (x:xs) = (e,x) : g e xs
+
+
+-- |
 -- /O( n * m )/
 --
 -- Provide a pairwise predicate used to filter elements and a nested structure.
