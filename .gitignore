@@ -56,3 +56,4 @@ TAGS
 *.ss
 .*
 production/bin
+production/doc/haddock*
