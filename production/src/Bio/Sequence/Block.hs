@@ -15,7 +15,10 @@
 module Bio.Sequence.Block
   ( CharacterBlock(..)
   , HasBlockCost
+  , HasRootCost
   , blockCost
+  , rootCost
+  , staticCost
   , toMissingCharacters
   , hexmap
   , hexTranspose
@@ -25,6 +28,8 @@ module Bio.Sequence.Block
 
 import           Bio.Character.Encodable
 import           Bio.Character.Decoration.Continuous
+import           Bio.Character.Decoration.Discrete
+import           Bio.Character.Decoration.Dynamic
 import           Bio.Sequence.Block.Internal
 import           Control.Lens
 import           Control.Parallel.Custom
@@ -53,6 +58,27 @@ type HasBlockCost u v w x y z i r =
     , HasCharacterWeight y r
     , HasCharacterWeight z r
     , Integral i
+    , Real     r
+    )
+
+
+-- |
+-- CharacterBlocks satisfying this constraint have a calculable cost.
+type HasRootCost u v w x y z r =
+    ( HasCharacterWeight   u r
+    , HasCharacterWeight   v r
+    , HasCharacterWeight   w r
+    , HasCharacterWeight   x r
+    , HasCharacterWeight   y r
+    , HasCharacterWeight   z r
+    , HasAverageLength     z AverageLength
+    , PossiblyMissingCharacter u
+    , PossiblyMissingCharacter v
+    , PossiblyMissingCharacter w
+    , PossiblyMissingCharacter x
+    , PossiblyMissingCharacter y
+    , PossiblyMissingCharacter z
+    , Floating r
     , Real     r
     )
 
@@ -161,6 +187,53 @@ blockCost block = sum . fmap sum $
     , parmap rpar integralCost . metricCharacterBins     
     , parmap rpar integralCost . nonMetricCharacterBins  
     , parmap rpar integralCost . dynamicCharacters       
+    ] <*> [block]
+  where
+    integralCost dec = fromIntegral cost * weight
+      where
+        cost   = dec ^. characterCost
+        weight = dec ^. characterWeight
+
+    floatingCost dec = cost * weight
+      where
+        cost   = dec ^. characterCost
+        weight = dec ^. characterWeight
+
+
+rootCost :: (HasRootCost u v w x y z r, Integral i) => i -> CharacterBlock u v w x y z -> r
+rootCost rootCount block = (\x -> (fromIntegral rootCount * x) / 2) . sum . fmap sum $
+    [ parmap rpar staticRootCost  . continuousCharacterBins 
+    , parmap rpar staticRootCost  . nonAdditiveCharacterBins
+    , parmap rpar staticRootCost  . additiveCharacterBins
+    , parmap rpar staticRootCost  . metricCharacterBins     
+    , parmap rpar staticRootCost  . nonMetricCharacterBins  
+    , parmap rpar dynamicRootCost . dynamicCharacters       
+    ] <*> [block]
+  where
+    staticRootCost dec
+      | isMissing dec = 0
+      | otherwise     = weight
+      where
+        weight = dec ^. characterWeight
+
+    dynamicRootCost dec
+      | isMissing dec = 0
+      | otherwise     = weight * getAverageLength avgLen
+      where
+        avgLen = dec ^. averageLength
+        weight = dec ^. characterWeight
+
+
+-- |
+-- Calculates the cost of a 'CharacterBlock'. Performs some of the operation in
+-- parallel.
+staticCost :: HasBlockCost u v w x y z i r => CharacterBlock u v w x y z -> r
+staticCost block = sum . fmap sum $
+    [ parmap rpar floatingCost . continuousCharacterBins 
+    , parmap rpar integralCost . nonAdditiveCharacterBins
+    , parmap rpar integralCost . additiveCharacterBins   
+    , parmap rpar integralCost . metricCharacterBins     
+    , parmap rpar integralCost . nonMetricCharacterBins  
     ] <*> [block]
   where
     integralCost dec = fromIntegral cost * weight

@@ -13,10 +13,6 @@
 --
 -----------------------------------------------------------------------------
 
--- TODO: Remove all commented-out code.
-
--- TODO: are all of these necessary?
-
 module Bio.Sequence
   ( CharacterSequence()
   , CharacterBlock(..)
@@ -34,6 +30,7 @@ module Bio.Sequence
   , hexZipWith
   , sequenceCost
   , blockCost
+  , staticCost
   ) where
 
 import Bio.Sequence.Internal

@@ -45,6 +45,7 @@ data DynamicDecorationDirectOptimization d
    = DynamicDecorationDirectOptimization
    { dynamicDecorationDirectOptimizationCharacterCost            :: Word
    , dynamicDecorationDirectOptimizationCharacterLocalCost       :: Word
+   , dynamicDecorationDirectOptimizationCharacterAverageLength   :: AverageLength
    , dynamicDecorationDirectOptimizationEncodedField             :: d
    , dynamicDecorationDirectOptimizationFinalGappedField         :: d
    , dynamicDecorationDirectOptimizationFinalUngappedField       :: d
@@ -62,6 +63,7 @@ data DynamicDecorationDirectOptimizationPostOrderResult d
    = DynamicDecorationDirectOptimizationPostOrderResult
    { dynamicDecorationDirectOptimizationPostOrderCharacterCost            :: Word
    , dynamicDecorationDirectOptimizationPostOrderCharacterLocalCost       :: Word
+   , dynamicDecorationDirectOptimizationPostOrderCharacterAverageLength   :: AverageLength
    , dynamicDecorationDirectOptimizationPostOrderEncodedField             :: d
    , dynamicDecorationDirectOptimizationPostOrderPreliminaryGappedField   :: d
    , dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField :: d
@@ -78,6 +80,7 @@ data DynamicDecorationImpliedAlignment d
    = DynamicDecorationImpliedAlignment
    { dynamicDecorationImpliedAlignmentCharacterCost            :: Word
    , dynamicDecorationImpliedAlignmentCharacterLocalCost       :: Word
+   , dynamicDecorationImpliedAlignmentCharacterAverageLength   :: AverageLength
    , dynamicDecorationImpliedAlignmentEncodedField             :: d
    , dynamicDecorationImpliedAlignmentFinalGappedField         :: d
    , dynamicDecorationImpliedAlignmentFinalUngappedField       :: d
@@ -95,8 +98,9 @@ data DynamicDecorationImpliedAlignment d
 -- type.
 data DynamicDecorationInitial d
    = DynamicDecorationInitial
-   { dynamicDecorationInitialEncodedField :: d
-   , metadata                             :: DynamicCharacterMetadataDec (Element d)
+   { dynamicDecorationInitialEncodedField           :: d
+   , dynamicDecorationInitialCharacterAverageLength :: AverageLength
+   , metadata                                       :: DynamicCharacterMetadataDec (Element d)
    } deriving (Eq)
 
 
@@ -267,6 +271,30 @@ instance HasCharacterAlphabet (DynamicDecorationInitial d) (Alphabet String) whe
       where
          getter e   = metadata e ^. characterAlphabet
          setter e x = e { metadata = metadata e &  characterAlphabet .~ x }
+
+
+-- | (✔)
+instance HasAverageLength (DynamicDecorationInitial d) AverageLength where
+
+    averageLength = lens dynamicDecorationInitialCharacterAverageLength (\e x -> e { dynamicDecorationInitialCharacterAverageLength = x })
+
+
+-- | (✔)
+instance HasAverageLength (DynamicDecorationDirectOptimization d) AverageLength where
+
+    averageLength = lens dynamicDecorationDirectOptimizationCharacterAverageLength (\e x -> e { dynamicDecorationDirectOptimizationCharacterAverageLength = x })
+
+
+-- | (✔)
+instance HasAverageLength (DynamicDecorationImpliedAlignment d) AverageLength where
+
+    averageLength = lens dynamicDecorationImpliedAlignmentCharacterAverageLength (\e x -> e { dynamicDecorationImpliedAlignmentCharacterAverageLength = x })
+
+
+-- | (✔)
+instance HasAverageLength (DynamicDecorationDirectOptimizationPostOrderResult d) AverageLength where
+
+    averageLength = lens dynamicDecorationDirectOptimizationPostOrderCharacterAverageLength (\e x -> e { dynamicDecorationDirectOptimizationPostOrderCharacterAverageLength = x })
 
 
 -- | (✔)
@@ -747,6 +775,7 @@ instance EncodableDynamicCharacter d => PostOrderExtensionDirectOptimizationDeco
         DynamicDecorationDirectOptimization
         { dynamicDecorationDirectOptimizationCharacterCost            = subDecoration ^. characterCost
         , dynamicDecorationDirectOptimizationCharacterLocalCost       = subDecoration ^. characterLocalCost
+        , dynamicDecorationDirectOptimizationCharacterAverageLength   = subDecoration ^. averageLength
         , dynamicDecorationDirectOptimizationEncodedField             = subDecoration ^. encoded
         , dynamicDecorationDirectOptimizationFinalGappedField         = gapped
         , dynamicDecorationDirectOptimizationFinalUngappedField       = ungapped
@@ -829,10 +858,11 @@ instance EncodableDynamicCharacter d => SimpleDynamicDecoration (DynamicDecorati
 -- | (✔)
 instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostOrderDecoration (DynamicDecorationDirectOptimizationPostOrderResult d) d where
 
-    extendDynamicToPostOrder subDecoration localCost totalCost ungapped gapped lhsAlignment rhsAlignment =
+    extendDynamicToPostOrder subDecoration localCost totalCost subTreeAvgLength ungapped gapped lhsAlignment rhsAlignment =
         DynamicDecorationDirectOptimizationPostOrderResult
         { dynamicDecorationDirectOptimizationPostOrderCharacterCost            = totalCost
         , dynamicDecorationDirectOptimizationPostOrderCharacterLocalCost       = localCost
+        , dynamicDecorationDirectOptimizationPostOrderCharacterAverageLength   = subTreeAvgLength
         , dynamicDecorationDirectOptimizationPostOrderEncodedField             = subDecoration ^. encoded
         , dynamicDecorationDirectOptimizationPostOrderPreliminaryGappedField   = gapped
         , dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField = ungapped

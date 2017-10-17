@@ -32,6 +32,7 @@ import           Control.Lens
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
 import           Data.Foldable
+import           Data.HashMap.Lazy            (HashMap)
 --import           Data.IntMap                  (IntMap)
 import qualified Data.IntMap           as IM
 import qualified Data.IntSet           as IS
@@ -459,7 +460,7 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum (PDAG2 
 
     -- |
     -- For each block, for each dynamic character, a vector of parent ref indicies.
---    parentVectors :: Matrix (Maybe Int)
+--    parentVectors :: Matrix (Vector (Maybe Int))
     parentVectors = MAT.matrix nodeCount blockCount g
       where
         g nodeIndex blockIndex = undefined
@@ -480,8 +481,8 @@ preorderFromRooting
 --     , Show z
      )
   => (z -> [(Word, z')] -> z')
-  -> Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
-  -> Vector (Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
+  ->         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
+  -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
   -> PhylogeneticDAG2 e' n' u' v' w' x' y' z
   -> PhylogeneticDAG2 e' n' u' v' w' x' y' z'
 preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ newDAG dag

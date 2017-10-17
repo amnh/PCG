@@ -31,11 +31,12 @@ module Bio.Sequence.Internal
   , hexTranspose
   , hexZipWith
   , sequenceCost
+  , sequenceRootCost
   ) where
 
 
 --import           Bio.Character.Decoration.Continuous
-import           Bio.Sequence.Block             (CharacterBlock, HasBlockCost)
+import           Bio.Sequence.Block             (CharacterBlock, HasBlockCost, HasRootCost)
 import qualified Bio.Sequence.Block      as Blk
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
@@ -216,7 +217,14 @@ fromBlocks = CharSeq
 
 
 -- |
--- Calculates the cost of a 'CharacterSequence'. Performs some of the operation
--- in parallel.
+-- Calculates the cumulative cost of a 'CharacterSequence'. Performs some of the
+-- operation in parallel.
 sequenceCost :: HasBlockCost u v w x y z i r => CharacterSequence u v w x y z -> r
 sequenceCost = sum . parmap rpar Blk.blockCost . toBlocks
+
+
+-- |
+-- Calculates the root cost of a 'CharacterSequence'. Performs some of the
+-- operation in parallel.
+sequenceRootCost :: (HasRootCost u v w x y z r, Integral i) => i -> CharacterSequence u v w x y z -> r
+sequenceRootCost rootCount = sum . parmap rpar (Blk.rootCost rootCount) . toBlocks
