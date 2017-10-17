@@ -2,13 +2,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../algn.h"
-#include "../debug_constants.h"
+#include "algn.h"
+#include "debug_constants.h"
 // #include "array_pool.h"
 // #include "cm.h"
-#include "../matrices.h"
-#include "../ukkCheckp.h"
-#include "../ukkCommon.h"
+#include "matrices.h"
+#include "ukkCheckp.h"
+#include "ukkCommon.h"
 
 #define SEQ_CAPACITY 64
 

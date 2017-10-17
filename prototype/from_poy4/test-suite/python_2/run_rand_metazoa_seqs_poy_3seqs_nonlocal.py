@@ -47,7 +47,7 @@ def main():
         randFile  = open('../data/randseeds.txt')
 
         # skip to correct line in random number file (always 3 seqs)
-        startLine = whichProcessor + runNum * numRuns * 3
+        startLine = (whichProcessor * numRuns * 3) + (runNum * 3)
         for i in range(0, startLine):
             x = randFile.readline()
 

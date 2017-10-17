@@ -2,23 +2,23 @@
 
 sanity-warnings   = -Wall -Wextra -pedantic -fdiagnostics-color
 
-necessary_c_files = ../c_alignment_interface.c \
-                    ../c_code_alloc_setup.c \
-                    ../costMatrix.c \
-                    ../alignmentMatrices.c \
-                    ../dyn_character.c \
-                    ../alignCharacters.c \
-                    ../ukkCheckPoint.c \
-                    ../ukkCommon.c
+necessary_c_files = c_alignment_interface.c \
+                    c_code_alloc_setup.c \
+                    costMatrix.c \
+                    alignmentMatrices.c \
+                    dyn_character.c \
+                    alignCharacters.c \
+                    ukkCheckPoint.c \
+                    ukkCommon.c
 
-necessary_h_files = ../c_alignment_interface.h \
-                    ../c_code_alloc_setup.h \
-                    ../costMatrix.h \
-                    ../alignmentMatrices.h \
-                    ../dyn_character.h \
-                    ../alignCharacters.h \
-                    ../ukkCheckPoint.h \
-                    ../ukkCommon.h
+necessary_h_files = /c_alignment_interface.h \
+                    /c_code_alloc_setup.h \
+                    /costMatrix.h \
+                    /alignmentMatrices.h \
+                    /dyn_character.h \
+                    /alignCharacters.h \
+                    /ukkCheckPoint.h \
+                    /ukkCommon.h
 
 object_files      = c_alignment_interface.o \
                     c_code_alloc_setup.o \
@@ -35,7 +35,7 @@ all : debug_just_c # test_initialization
 
 
 clean :
-	rm -f *.o *.hi *.out
+	rm -f *.o *.hi *.out *.so
 	rm -rf *.dSYM
 	rm -f initialization_driver interface_driver debug_just_c
 
@@ -84,21 +84,21 @@ align : debug_just_c.c algn.c algn.h avl.c avl.h cm.c cm.h \
 
 
 ######### Test just the C code, without the C interface to Haskell.
-debug_just_c : debug_just_c.c ../algn.c ../algn.h ../cm.c ../cm.h \
-			   ../matrices.c ../matrices.h ../seq.c ../seq.h ../ukkCheckp.c ../ukkCheckp.h \
-			   ../ukkCommon.c ../ukkCommon.h
+debug_just_c : debug_just_c.c algn.c algn.h cm.c cm.h \
+			   matrices.c matrices.h seq.c seq.h ukkCheckp.c ukkCheckp.h \
+			   ukkCommon.c ukkCommon.h
 	rm -f *.o
-	gcc -g -c ../algn.c ../cm.c ../matrices.c ../seq.c ../ukkCheckp.c ../ukkCommon.c
+	gcc -g -c algn.c cm.c matrices.c seq.c ukkCheckp.c ukkCommon.c
 	gcc -o debug_just_c -g debug_just_c.c algn.o cm.o matrices.o seq.o ukkCheckp.o ukkCommon.o
 
 
 ######### Test just the C code, without the C interface to Haskell. Send in multiple arrays from Python,
 ######### to avoid C IO. Also, just wanted to learn Python FFI.
-debug_just_c_for_python : debug_just_c_for_python.c ../algn.c ../algn.h ../cm.c ../cm.h \
-						  ../matrices.c ../matrices.h ../seq.c ../seq.h ../ukkCheckp.c ../ukkCheckp.h \
-						  ../ukkCommon.c ../ukkCommon.h
+debug_just_c_for_python : debug_just_c_for_python.c algn.c algn.h cm.c cm.h \
+						  matrices.c matrices.h seq.c seq.h ukkCheckp.c ukkCheckp.h \
+						  ukkCommon.c ukkCommon.h
 	rm -f *.o *.a
-	gcc -fPIC -O3 -c ../algn.c ../cm.c ../matrices.c ../seq.c ../ukkCheckp.c ../ukkCommon.c
+	gcc -fPIC -O3 -c algn.c cm.c matrices.c seq.c ukkCheckp.c ukkCommon.c
 	gcc -fPIC -O3 -c debug_just_c_for_python.c -o intermediate_lib.o
 	# ar rvs combined_deps.a algn.o cm.o matrices.o seq.o ukkCheckp.o ukkCommon.o
 	# ld intermediate_lib.o -l combined_deps.a -o debug_just_c_for_python.o

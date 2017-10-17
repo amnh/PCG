@@ -161,11 +161,11 @@ int powell_3D_align( dyn_character_t *lesserChar
     printf("short: %zu, medium: %zu, long: %zu\n", lesserChar->len, middleChar->len, longerChar->len);
 
     // Allocate global costs, characters and cost arrays. These will be initialized in setup().
-    affine_costs_t *affineCosts    = malloc( sizeof(affine_costs_t) );
+    affine_costs_t *affineCosts  = malloc( sizeof(affine_costs_t) );
 
-    characters_t *inputChars       = malloc( sizeof(characters_t) );
+    characters_t *inputChars     = malloc( sizeof(characters_t) );
 
-    characters_t *resultChars      = malloc( sizeof(characters_t) );
+    characters_t *resultChars    = malloc( sizeof(characters_t) );
 
     fsm_arrays_t *fsmStateArrays = malloc( sizeof(fsm_arrays_t) );
 

@@ -3,8 +3,8 @@
 ''' A script to run POY on twice on three DO characters. First run regular DO, then run 3d (iterative: exact) DO on the same three characters. This is to be able to compare the times for the runs of each. These times can then be compared to just the C 3d DO
 code to see if the times are comparable.'''
 
-# from cffi import FFI
-# ffi = FFI()           # bind all FFI calls to ffi variable
+from cffi import FFI
+ffi = FFI()           # bind all FFI calls to ffi variable
 
 from random import randrange
 from subprocess import check_output
@@ -35,10 +35,10 @@ def main():
 
     iupacDict = {'A': 1, 'C': 2, 'G': 4, 'T': 8, 'U': 8, 'M': 3, 'R': 5, 'S': 6, 'V': 7, 'W': 9, 'Y': 10, 'H': 11, 'K': 12, 'D': 13, 'B': 14, 'N': 15, '.': 16, '-': 16}
 
-    # ffi.cdef("""
-    #        int wrapperFunction(int *firstSeq, int firstSeqLen, int *secondSeq, int secondSeqLen, int *thirdSeq, int thirdSeqLen);
-    #     """)
-    # lib = ffi.dlopen("../C_source/debug_just_c_for_python.so")
+    ffi.cdef("""
+           int wrapperFunction(int *firstSeq, int firstSeqLen, int *secondSeq, int secondSeqLen, int *thirdSeq, int thirdSeqLen);
+        """)
+    lib = ffi.dlopen("../C_source/debug_just_c_for_python.so")
 
     timesFile = open("../data/times_just_C_run_{}.txt".format(whichProcessor), "w")
 
@@ -48,10 +48,10 @@ def main():
         randFile = open('../data/randseeds.txt')
 
         # skip to correct line in random number file (always 3 seqs)
-        startLine = (whichProcessor + runNum) * 3
+        startLine = (whichProcessor * numRuns * 3) + (runNum * 3)
         for i in range(0, startLine):
             x = randFile.readline()
-        print "run number: {} startLine: {}".format(runNum, startLine)
+        # print "run number: {} startLine: {}".format(runNum, startLine)
         # get next 3 seqs
         whatlines = []
         for i in range(3): # there are always three seqs being sent in
@@ -59,15 +59,16 @@ def main():
             whatlines.append(int(randFile.readline()) * 2 + 1) # Extra math because we're not getting that line, but that _sequence_
         randFile.close()
         whatlines.sort()
-        print "whatlines: ", whatlines
+        # print "whatlines: ", whatlines
 
         inputSeqFile = open(seqFileName)
         charArr      = picklines(inputSeqFile, whatlines) # need to translate this to ints
         charArr.sort(key=lambda a: len(a))
-        print charArr
-        for i in range(3):
-            print "character {}: length: {}".format(i, len(charArr[i]))
-        print "\n"
+
+        # print charArr
+        # for i in range(3):
+        #     print "character {}: length: {}".format(i, len(charArr[i]))
+        # print "\n"
         # print charArr
 
         intArrays = []
@@ -88,7 +89,7 @@ def main():
         start = time()
 
         # They go in long, short middle order for use in driver, which also serves to drive 2D code.
-        # lib.wrapperFunction(intArrays[2], longLen, intArrays[0], shortLen, intArrays[1], middleLen)
+        lib.wrapperFunction(intArrays[2], longLen, intArrays[0], shortLen, intArrays[1], middleLen)
 
         end = time()
 

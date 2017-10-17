@@ -765,22 +765,35 @@ int wrapperFunction(int *firstSeq, int firstSeqLen, int *secondSeq, int secondSe
         // printf("Final alignment matrix: \n");
         // algn_print_dynmtrx_2d_2d( longSeq, shortSeq, algn_mtxs3d );
 
-        printf("Original 3d sequences:\n");
-        seq_print(longSeq,   1);
-        seq_print(mediumSeq, 2);
-        seq_print(shortSeq,  3);
-        printf("\n");
+        // printf("Original 3d sequences:\n");
+//         seq_print(longSeq,   1);
+//         seq_print(mediumSeq, 2);
+//         seq_print(shortSeq,  3);
+//         printf("\n");
 
         // short input, medium input, long input
         // short return, medium return, long return
         // sub, gap open, gap extend
-        // algnCost = powell_3D_align (shortSeq,    mediumSeq,    longSeq,
-        //                             retLongSeq, retMediumSeq, retShortSeq,
-        //                             1, 2, 1);
+        algnCost = powell_3D_align( shortSeq
+                                  , longSeq
+                                  , mediumSeq
+                                  , retShortSeq
+                                  , retLongSeq
+                                  , retMediumSeq
+                                  , 1
+                                  , 2
+                                  , 1
+                                  );
 
-        // algn_backtrace_3d(shortSeq, mediumSeq, longSeq,
-        //                   retShortSeq, retMediumSeq, retLongSeq
-        //                   costMtx3d, algn_nw_3d);
+        // algn_backtrace_3d( shortSeq
+        //                  , mediumSeq
+        //                  , longSeq
+        //                  , retShortSeq
+        //                  , retMediumSeq
+        //                  , retLongSeq
+        //                  , costMtx3d
+        //                  , algn_nw_3d
+        //                  );
 
         //algn_backtrace_3d (longSeq, mediumSeq, shortSeq, retLongSeq, retMediumSeq, retShortSeq, costMtx3d, algn_mtxs3d);
 

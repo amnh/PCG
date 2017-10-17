@@ -49,7 +49,7 @@
 #include "debug_constants.h"
 #include "seq.h"
 #include "ukkCheckp.h"
-#include "ukkCommon.h"
+// #include "ukkCommon.h"
 
 #define MAXINT INT_MAX
 // #define FIXED_NUM_PLANES TODO: this is also defined in ukkCommon.h; it was commented out, but then allocInit() failed to compile
