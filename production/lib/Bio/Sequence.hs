@@ -29,6 +29,7 @@ module Bio.Sequence
   , hexTranspose
   , hexZipWith
   , sequenceCost
+  , sequenceRootCost
   , blockCost
   , staticCost
   ) where
