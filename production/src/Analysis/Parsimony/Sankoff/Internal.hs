@@ -95,15 +95,14 @@ sankoffPreOrder childDecoration ((whichChild, parentDecoration):_) = resultDecor
 -- as such:
 --
 -- Given \(n\) character states, for a given character \(i_c\) on leaf \(i\),
--- there are \(2^n - 1) possible characters, including ambiguous characters. For
--- extant character states \(i_c_x\) on the leaf, and for each possible character
--- state, if that character state is extant on the leaf, give in an initial cost
--- of 0, otherwise, a cost of ∞
---
--- TODO: finish comment nicely once MathJax is working:
--- \(i\)
+-- there are \(2^n - 1\) possible characters, including ambiguous characters. For
+-- extant character states \(i_{c_x}\) on the leaf, and for each possible character
+-- state, if that character state is extant on the leaf, give it an initial cost
+-- of 0, otherwise, ∞.
+
+-- TODO: What’s this? \(i\)
 -- \[ cost(i_c) =
---       \] \(i \elem s_x\), etc...
+--       \] \(i \exists s_x\), etc...
 initializeCostVector :: DiscreteCharacterDecoration d c => d -> SankoffOptimizationDecoration c
 initializeCostVector inputDecoration = returnChar
     where
@@ -114,31 +113,34 @@ initializeCostVector inputDecoration = returnChar
             where
                 f i
                     | inputChar `testBit` i = minBound
-                    | otherwise             = infinity -- Change this if it's actually Doubles.
+                    | otherwise             = infinity -- Change this if it’s actually Doubles.
 
         -- On leaves preliminary costs are same as min costs for each state.
         returnChar = extendDiscreteToSankoff inputDecoration costList costList [] [] ([],[]) minBound inputChar True
 
 
 -- |
--- Given current node and its children, does actual calculation of new node value
--- for each character state.
+-- Used on the post-order (i.e. first) traversal, moving from leaves to root.
 --
--- That is, folds over character states, and for each state, a, find:
---     • for each state, b, min [transition cost (a, b) + left child min cost (b) + right child min cost (b)],
---       stored as a tuple of lists
---     •
---     • overall lowest min over all states
--- state from the characters on each of the left and right children. Stores those mins as a tuple of lists.
--- Likewise, for each state calculates its min (min_left + min_right)
+-- Given current node and its children, does actual calculation of new node values
+-- for each character state:
 --
--- Finally, in order to run Goloboff's Sankoff traversal optimizations, computes:
---    • preliminary min for each character state: cost of this to this state - overall minimum
---    • beta for each state: for each state, a, for each state, b, min [transition cost (a,b) + preliminary extra cost(b)]
+--    * \(\forall a, minCosts_a = \forall b, \(min (transitionCost(a, b) + leftChild_{minCost(b)} + rightChild_{minCost(b)}\).
+--    (This is a tuple of lists), where
+--    * \(\forall a, minCost(a) = min(minCosts_a)\).
+--    * \(nodeMin = min(minCost)\)
 --
--- Used on the post-order (i.e. first) traversal.
+-- In order to run Goloboff’s Sankoff traversal optimizations, computes:
+--
+--    * \(\forall a, preliminaryExtraCost(a) = \(minCost(a) - nodeMin\)
+--    * \(\beta(a, b) = min_{a,b} (transitionCost (a, b) + preliminaryExtraCost(b))\)
 --
 -- This node is not a leaf node. Assumes binary tree.
+
+-- TODO: Do I need this, or is it redundant: Likewise, for each state calculates its min: \(min_{left} + min_{right}\)
+-- state from the characters on each of the left and right children. Stores those mins as a tuple of lists.
+--
+--
 updateCostVector :: DiscreteCharacterDecoration d c
                  => d
                  -> NonEmpty (SankoffOptimizationDecoration c)
@@ -194,10 +196,10 @@ updateCostVector _parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeD
 -- based on whether that character state in the child is on one of the min-cost
 -- paths from the root to the leaves. It relies on dynamic programming to do so,
 -- using the minimum tuple in the parent to determine whether that character
--- state can participate in the final median. Using the left child as a template,
--- the character state is part of the median if, for some state in the parent,
+-- state can participate in the final median. Without loss of generality, for the left child,
+-- the character state \(a\) is part of the median if, for some character \(b\) in the child,
 --
--- parCharState_characterCost_left == childCharState_characterCost + TCM(parCharState, childCharState).
+-- \[cost(a_{parent_{leftChild}}) == cost(b_{child}) + transitionCost(a, b).\]
 --
 -- Used on second, pre-order, pass.
 updateDirectionalMins :: EncodableStaticCharacter c -- ERIC: I made this more restrictive to resolve the 'Cannot deduce
@@ -230,12 +232,12 @@ updateDirectionalMins parentDecoration childDecoration childStateMinsFromParent 
         setState newMedian charState = newMedian `setBit` (fromIntegral charState :: Int)
 
 
--- | Take in a single character state as a Word---which represents an unambiguous character state on the parent---
+-- | Take in a single character state as a `Word`---which represents an unambiguous character state on the parent---
 -- and two decorations: the decorations of the two child states.
 -- Return the minimum costs of transitioning from the input character to each of those two child decorations.
--- These mins will be saved for use at the next post-order call, to the current parent node's parent.
+-- These mins will be saved for use at the next post-order call, to the current parent node’s parent.
 --
--- Note: We can throw away the medians that come back from the tcm here because we're building medians:
+-- Note: We can throw away the medians that come back from the tcm here because we’re building medians:
 -- the possible character is looped over all available characters, and there's an outer loop which sends in each possible character.
 calcCostPerState :: Word
                  -> SankoffOptimizationDecoration c

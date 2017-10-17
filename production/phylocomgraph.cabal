@@ -101,7 +101,7 @@ library
                        -Wunused-matches
                        -Wwrong-do-bind
 
-  hs-source-dirs:      lib, ffi
+  hs-source-dirs:      src, ffi
 
 --  ld-options: -lstdc++
 
@@ -816,7 +816,7 @@ Test-Suite testsuite
                        TestSuite.ExecutableTests
                        Text.XML.Class
                        Text.XML.Custom
-        
+
 --                       Analysis.ImpliedAlignment.AlignmentContext
 --                       Analysis.ImpliedAlignment.DynamicProgramming
 --                       Analysis.ImpliedAlignment.Internal
