@@ -1,5 +1,7 @@
 # Phylogenetic Component Graph
 
+[![BSD3 license](https://img.shields.io/badge/license-BSD3-blue.svg)](https://github.com/amnh/PCG/blob/master/LICENSE)
+
  * `app`   is where binaries are build from.
  * `bin`   is where binaries are placed.
  * `doc`   is where Haddock & PDF documentation are placed.
