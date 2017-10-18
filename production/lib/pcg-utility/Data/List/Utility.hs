@@ -171,12 +171,12 @@ transitivePropertyHolds :: Foldable f => (a -> a -> Bool) -> f a -> Bool
 transitivePropertyHolds f xs =
     case toList xs of
       []   -> True
-      [x]  -> True
+      [_]  -> True
       x:xs -> all (uncurry f) $ g x xs
   where
     g _    []  = []
-    g e   [x]  = [(e,x)]
-    g e (x:xs) = (e,x) : g e xs
+    g e   [y]  = [(e,y)]
+    g e (y:ys) =  (e,y) : g e ys
 
 
 -- |
