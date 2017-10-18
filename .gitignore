@@ -4,7 +4,7 @@
 *.gch
 *.hi
 *.o
+*.so
 *.ss
 .*
 production/bin
-

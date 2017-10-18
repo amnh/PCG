@@ -433,8 +433,8 @@ int main() {
         // short input, middle input, long input
         // short return, middle return, long return
         // sub, gap open, gap extend
-        algnCost = powell_3D_align (shortChar,   longChar, middleChar,
-                                    retShortChar,retLongChar, retMiddleChar,
+        algnCost = powell_3D_align (shortChar,    middleChar,    longChar,
+                                    retLongChar, retMiddleChar, retShortChar,
                                     1, 2, 1);
 
         // algn_backtrace_3d(shortChar, middleChar, longChar,
