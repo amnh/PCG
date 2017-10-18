@@ -168,8 +168,8 @@ invariantTransformation f xs =
 -- Applies a transitive relation over a list and asserts that the relation holds
 -- for all elements.
 transitivePropertyHolds :: Foldable f => (a -> a -> Bool) -> f a -> Bool
-transitivePropertyHolds f xs =
-    case toList xs of
+transitivePropertyHolds f es =
+    case toList es of
       []   -> True
       [_]  -> True
       x:xs -> all (uncurry f) $ g x xs
