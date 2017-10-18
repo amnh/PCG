@@ -61,13 +61,13 @@ import Debug.Trace
 --
 -- For more detail on the quantification of a network with a single root, see:
 --
--- Phylogenetic network analysis as a parsimony optimization problem, Wheeler 2015
+-- /Phylogenetic network analysis as a parsimony optimization problem/, Wheeler 2015
 --
 -- We must also consider the cases of multi-rooted DAGs, extending the method
 -- described above. Unlike in the single rooted DAG context where we find a
 -- minimum display tree over all character blocks, in a multi-rooted DAG we find
 -- the "minimal display forest" over all character blocks. In the multi-rooted
--- DAG, let \( \left{r_1, r_2, ... r_k \right} = \mathcal{R}\) be the set of
+-- DAG, let \( \left\{r_1, r_2, ... r_k \right\} = \mathcal{R}\) be the set of
 -- \(k\) set roots.
 --
 -- The minimal display forest is the set
