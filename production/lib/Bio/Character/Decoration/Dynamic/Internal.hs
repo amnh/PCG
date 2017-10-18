@@ -457,6 +457,14 @@ instance HasEncoded (DynamicDecorationInitial d) d where
 
 
 -- | (✔)
+instance (HasEncoded d c, PossiblyMissingCharacter c) => PossiblyMissingCharacter d where
+
+    isMissing = isMissing . (^. encoded)
+
+    toMissing x = x & encoded %~ toMissing
+
+
+-- | (✔)
 instance HasFinalGapped (DynamicDecorationImpliedAlignment d) d where
 
     finalGapped = lens dynamicDecorationImpliedAlignmentFinalGappedField (\e x -> e { dynamicDecorationImpliedAlignmentFinalGappedField = x })
@@ -758,14 +766,6 @@ instance HasTraversalFoci (DynamicDecorationInitial c) (Maybe TraversalFoci) whe
 
 -- | (✔)
 instance EncodableDynamicCharacter d => ImpliedAlignmentDecoration   (DynamicDecorationImpliedAlignment d) d where
-
-
--- | (✔)
-instance PossiblyMissingCharacter d => PossiblyMissingCharacter (DynamicDecorationInitial d) where
-
-    isMissing = isMissing . (^. encoded)
-
-    toMissing x = x & encoded %~ toMissing
 
 
 -- | (✔)

@@ -198,7 +198,7 @@ instance (EncodableStreamElement c) => ToXML (DiscreteDecoration c) where
 
 
 -- | (✔)
-instance PossiblyMissingCharacter c => PossiblyMissingCharacter (DiscreteDecoration c) where
+instance (HasDiscreteCharacter s c, PossiblyMissingCharacter c) => PossiblyMissingCharacter s where
 
     isMissing = isMissing . (^. discreteCharacter)
 

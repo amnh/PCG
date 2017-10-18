@@ -89,7 +89,8 @@ data  GraphData d
     = GraphData
     { dagCost           :: ExtendedReal
     , networkEdgeCost   :: ExtendedReal
-    , rootSequenceCosts :: NonEmpty Double
+    , rootingCost       :: Double
+    , totalBlockCost    :: Double
     , graphMetadata     :: d
     }
 
@@ -239,10 +240,10 @@ instance Foldable f => PrintDot (ReferenceDAG d e (f String)) where
 instance Show (GraphData m) where
 
     show x = unlines
-        [ "DAG total cost:          " <> show (dagCost x)
-        , "DAG network edge cost:   " <> show (networkEdgeCost x)
-        , "DAG root sequence costs:"
-        , unlines . toList $ (\k v -> "  Root #" <> show k <> ": " <> show v) <#$> rootSequenceCosts x
+        [ "DAG total cost:           " <> show (dagCost x)
+        , "DAG network edge cost:    " <> show (networkEdgeCost x)
+        , "DAG mutli-rooting cost:   " <> show (rootingCost     x)
+        , "DAG character block cost: " <> show (totalBlockCost  x)
         ]
 
 
@@ -271,11 +272,10 @@ instance ToXML (GraphData m) where
     toXML gData = xmlElement "Graph_data" attrs contents
         where
             attrs = []
-            contents = [ Left ( "DAG_total_cost"       , show $ dagCost         gData)
-                       , Left ( "DAG_network_edge_cost", show $ networkEdgeCost gData)
-                       , Left ( "DAG_root_sequence_costs"
-                              , init (unlines . toList $ (\k v -> "Root #" <> show k <> ": " <> show v) <#$> rootSequenceCosts gData)
-                              )
+            contents = [ Left ( "DAG_total_cost"          , show $ dagCost         gData)
+                       , Left ( "DAG_network_edge_cost"   , show $ networkEdgeCost gData)
+                       , Left ( "DAG_rooting_cost"        , show $ rootingCost     gData)
+                       , Left ( "DAG_character_block_cost", show $ totalBlockCost  gData)
                        ]
 
 
@@ -499,7 +499,8 @@ defaultGraphMetadata =
     GraphData
       <$> dagCost
       <*> networkEdgeCost
-      <*> rootSequenceCosts
+      <*> rootingCost
+      <*> totalBlockCost
       <*> const mempty
 
 
@@ -904,7 +905,7 @@ unfoldDAG f origin =
     RefDAG
     { references = referenceVector
     , rootRefs   = NE.fromList roots2 -- otoList rootIndices
-    , graphData  = GraphData 0 0 (0:|[]) ()
+    , graphData  = GraphData 0 0 0 0 ()
     }
   where
     referenceVector = V.fromList . fmap h $ toList expandedMap
