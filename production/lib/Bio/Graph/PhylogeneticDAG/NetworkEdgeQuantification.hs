@@ -19,6 +19,7 @@ import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
 import           Control.Arrow            ((&&&))
+import           Data.Bits
 import           Data.EdgeSet
 import           Data.Foldable
 import           Data.Key
@@ -26,6 +27,7 @@ import           Data.List.NonEmpty       (NonEmpty((:|)))
 import qualified Data.List.NonEmpty as NE
 import           Data.List.Utility
 --import           Data.Semigroup
+import           Data.Semigroup.Foldable
 import           Data.Ord
 import           Numeric.Extended.Real
 import           Prelude            hiding (zipWith)
@@ -99,6 +101,88 @@ assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = PDAG2 $ dag { graphData = newG
             ]
         
 
+-- BEGIN NEW
+
+
+-- |
+-- There is at least one most parsimonious (for all characters combined) display
+-- forest. This display forest is analogous to the most parsimonious display tree
+-- \(τ_min\) described in /Wheeler 2015/, with the following additional
+-- constraints:
+--
+-- * For each root node in the input DAG, there is a corresponding display tree
+--   with that root.
+--
+-- * Each diplay tree in the display forest is not connected to anothe display
+--   tree. Equivelently, no two roots on the input DAG are connected.
+--
+-- * Each taxa in the input DAG is connected to exactly one root.
+--
+-- The most parsimonious display forest is the set of display trees which has
+-- the minimal cost over all character blocks when adding together the cost of
+-- each display tree *and* adding the root cost for each character block.
+
+extractMostParsimoniusDisplayForest
+  :: ( Foldable1 f
+     , HasBlockCost u v w x y z Word Double
+     , HasRootCost  u v w x y z      Double 
+     )
+  => f (ResolutionCache (CharacterSequence u v w x y z))
+  -> ResolutionCache (CharacterSequence u v w x y z)
+extractMostParsimoniusDisplayForest displayForests = NE.head minDisplayForests
+  where
+    minDisplayForests = NE.fromList $ minimaBy (comparing displayForestCost) displayForests
+
+    displayForestCost dis = sum $ displayTreeCost <$> dis
+      where
+        displayTreeCost x = totalSubtreeCost x + sequenceRootCost rootCount (characterSequence x)
+        rootCount         = length dis
+
+
+-- |
+-- /O(r * 2^d)/ where /r/ is the number of roots and /d/ is the number of network
+-- nodes in the DAG.
+-- 
+-- Gathers the vlid display forests present in the input DAG.
+--
+-- A valid display forest satifies the following constraints:
+--
+-- * For each root node in the input DAG, there is a corresponding display tree
+--   with that root.
+--
+-- * Each diplay tree in the display forest is not connected to anothe display
+--   tree. Equivelently, no two roots on the input DAG are connected.
+--
+-- * Each taxa in the input DAG is connected to exactly one root.
+--
+gatherDisplayForests :: PhylogeneticDAG2 e n u v w x y z -> [ResolutionCache (CharacterSequence u v w x y z)]
+gatherDisplayForests (PDAG2 dag) = result
+  where
+    -- First we collect all resolutions for each root node
+    rootResolutions = resolutions . nodeDecoration . (refs !) <$> rootRefs dag
+    refs = references dag
+
+    -- Second we collect the valid root combinations.
+    result = filterResolutionCombinationsBy formsValidDisplayForest rootResolutions
+
+
+-- |
+-- Takes the non-empty set of valid display forests and returns the display
+-- forest that is minimal for each character block. 
+extractMinimalDisplayTreePerBlock
+  :: Foldable1 f
+  => f (ResolutionCache (CharacterSequence u v w x y z)) -- ^ Set of valid display forests
+  -> NonEmpty (ResolutionCache (CharacterSequence u v w x y z))  -- ^ Valid display forest for each character block
+extractMinimalDisplayTreePerBlock = undefined
+    
+
+-- END NEW
+
+
+
+
+
+
 -- |
 -- Calculate the punitive networkedge cost for the DAG.
 calculatePunitiveNetworkEdgeCost :: HasBlockCost u v w x y z i r => PhylogeneticDAG2 e n u v w x y z -> ExtendedReal
@@ -134,15 +218,6 @@ calculatePunitiveNetworkEdgeCost inputDag
           where
             (edgeDifference, minDifferenceDisplayEdgeSet) = minimumBy (comparing fst) $ (cardinality . (displayEdgeSet `difference`) &&& id) <$> minDisplayEdgeSets
 
-
-
--- |
--- There is at least one most parsimonious (for all characters combined) display
--- tree τ min min with edge set E min and vertex set V min.
--- TODO: meditiate on this before fixing it. Consider multiple root scenarios.
-
---extractMostParsimoniusDisplayTree :: HasBlockCost u v w x y z i r => PhylogeneticDAG2 e n u v w x y z -> NonEmpty TopologyRepresentation
---extractMostParsimoniusDisplayTree (PDAG2 dag) = undefined
 
 
 -- |
@@ -191,3 +266,24 @@ extractBlocksMinimalEdgeSets (PDAG2 dag) = foldMapWithKey1 f sequenceBlocksWLOG
       where
         minimaValues = minimaBy (comparing fst) $ focusOnBlockIndex k <$> rootingResolutions
 
+
+-- |
+-- /O( n * m )/
+--
+filterResolutionCombinationsBy
+  :: ( Applicative f
+     , Foldable f
+     , Traversable t
+     )
+  => (t a -> Bool)
+  -> t (f a)
+  -> [t a]
+filterResolutionCombinationsBy predicate = filter predicate . toList . sequenceA
+
+
+formsValidDisplayForest :: Foldable1 f => f (ResolutionInformation s) -> Bool
+formsValidDisplayForest xs = notContradictory && completeLeafCoverage
+  where
+    notContradictory     = transitivePropertyHolds resolutionsDoNotOverlap xs
+    completeLeafCoverage = let bitVal = foldMap1 leafSetRepresentation xs
+                           in  complement (bitVal `xor` bitVal) == bitVal

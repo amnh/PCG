@@ -17,6 +17,7 @@ module Bio.Sequence
   ( CharacterSequence()
   , CharacterBlock(..)
   , HasBlockCost
+  , HasRootCost
   , PartialCharacterBlock()
   , continuousSingleton
   , discreteSingleton
@@ -29,6 +30,7 @@ module Bio.Sequence
   , hexTranspose
   , hexZipWith
   , sequenceCost
+  , sequenceRootCost
   , blockCost
   , staticCost
   ) where
