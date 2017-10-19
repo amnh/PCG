@@ -255,12 +255,13 @@ instance HasContinuousCharacter (ContinuousDecorationInitial c) c where
 -}
 
 
-{-
-instance HasDiscreteCharacter (ContinuousDecorationInitial a) a where
+{--}
+-- WE LIE HERE FOR REASONS I DO NOT UNDERSTAND.
+-- WE SHOULD USE ROW-POLYMORPHIC RECORDS.
+instance HasDiscreteCharacter (ContinuousOptimizationDecoration a) a where
 
-    discreteCharacter = lens continuousDecorationInitialCharacter
-                      $ \e x -> e { continuousDecorationInitialCharacter = x }
--}
+    discreteCharacter = lensCOptD discreteCharacter discreteCharacter
+{--}
 
 
 -- | (✔)
@@ -314,6 +315,14 @@ instance (Bound a ~ c) => HasPreliminaryInterval (ContinuousPostorderDecoration 
 
 -- | (✔)
 instance PossiblyMissingCharacter c => PossiblyMissingCharacter (ContinuousDecorationInitial c) where
+
+    isMissing = isMissing . (^. intervalCharacter)
+
+    toMissing x = x & intervalCharacter %~ toMissing
+
+
+-- | (✔)
+instance PossiblyMissingCharacter c => PossiblyMissingCharacter (ContinuousPostorderDecoration c) where
 
     isMissing = isMissing . (^. intervalCharacter)
 

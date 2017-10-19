@@ -457,7 +457,31 @@ instance HasEncoded (DynamicDecorationInitial d) d where
 
 
 -- | (✔)
-instance (HasEncoded d c, PossiblyMissingCharacter c) => PossiblyMissingCharacter d where
+instance PossiblyMissingCharacter c => PossiblyMissingCharacter (DynamicDecorationInitial c) where
+
+    isMissing = isMissing . (^. encoded)
+
+    toMissing x = x & encoded %~ toMissing
+
+
+-- | (✔)
+instance PossiblyMissingCharacter c => PossiblyMissingCharacter (DynamicDecorationDirectOptimization c) where
+
+    isMissing = isMissing . (^. encoded)
+
+    toMissing x = x & encoded %~ toMissing
+
+
+-- | (✔)
+instance PossiblyMissingCharacter c => PossiblyMissingCharacter (DynamicDecorationDirectOptimizationPostOrderResult c) where
+
+    isMissing = isMissing . (^. encoded)
+
+    toMissing x = x & encoded %~ toMissing
+
+
+-- | (✔)
+instance PossiblyMissingCharacter c => PossiblyMissingCharacter (DynamicDecorationImpliedAlignment c) where
 
     isMissing = isMissing . (^. encoded)
 
