@@ -21,13 +21,12 @@ import qualified Bio.Sequence.Block as BLK
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
-import           Control.Arrow             ((&&&))
 import           Data.Bits
 --import           Data.EdgeSet
 import           Data.Foldable
 import           Data.Key
 import           Data.List.NonEmpty        (NonEmpty((:|)))
-import qualified Data.List.NonEmpty as NE
+--import qualified Data.List.NonEmpty as NE
 import           Data.List.Utility
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
@@ -38,7 +37,7 @@ import           Data.Ord
 import           Numeric.Extended.Real
 import           Prelude            hiding (zipWith)
 
-import Debug.Trace
+--import Debug.Trace
 
 
 -- |
@@ -90,7 +89,7 @@ assignPunitiveNetworkEdgeCost
      )
   => PhylogeneticDAG2 e n u v w x y z
   -> PhylogeneticDAG2 e n u v w x y z
-assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = undefined -- PDAG2 $ dag { graphData = newGraphData }
+assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = PDAG2 $ dag { graphData = newGraphData }
   where
     -- First grab all the valid display forests present in the DAG.
     displayForests =
@@ -294,7 +293,7 @@ calculatePunitiveNetworkEdgeCost edgeSetCardinality networkEdgeSet parsimoniousC
     mostParsimoniousNetworkEdgeSet = includedNetworkEdges parimoniousTopology
 
     -- We gather the punative network edge cost for a block.
-    punativeEdgeCost (topo, _, blockCost) = blockCost * fromIntegral differingNetworkEdgeCount
+    punativeEdgeCost (topo, _, costOfBlock) = costOfBlock * fromIntegral differingNetworkEdgeCount
       where
         differingNetworkEdgeCount = length differenceEdgeSet
         differenceEdgeSet         = minimalBlockEdgeSet `difference` mostParsimoniousNetworkEdgeSet
