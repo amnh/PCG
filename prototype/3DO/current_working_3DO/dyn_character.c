@@ -34,22 +34,26 @@ void dyn_char_print( const dyn_character_t *inChar )
     printf("\n");
 }
 
-inline size_t
+size_t
 char_begin (size_t cap, size_t len) {
     return (cap - len);
 }
 
 
 void
-dyn_char_set (dyn_character_t *inChar, size_t pos, elem_t val)
+dyn_char_set ( dyn_character_t *inChar
+             , size_t           position
+             , elem_t           value
+             )
 {
     if (inChar->len == 0) {
-        assert (pos == 0);
+        assert (position == 0);
         inChar->len++;
     } else {
-        assert (pos < inChar->len);
+        assert (position < inChar->len);
+        assert (position >= 0);
     }
-    *(inChar->char_begin + pos) = val;
+    *(inChar->char_begin + position) = value;
 }
 
 inline void

@@ -50,7 +50,7 @@ cm_combinations_of_alphabet (const int alphSize)
 static inline size_t
 cm_calc_cost_position_2d (elem_t a, elem_t b, size_t alphSize)
 {
-    assert(alphSize >= 0); alphSize is size_t, always >= 0
+    assert(alphSize >= 0); // alphSize is size_t, always >= 0
     return ((((size_t) a) << alphSize) + (size_t) b);
 }
 

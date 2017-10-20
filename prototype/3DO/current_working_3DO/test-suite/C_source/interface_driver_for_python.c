@@ -37,7 +37,8 @@ void set_vals( elem_t *vals, size_t vals_length, size_t max_val) {
 }
 
 
-int main() {
+/** First input is longest sequence, second is shortest. This order for use in 2D. **/
+int wrapperFunction(int *firstSeq, int firstSeqLen, int *secondSeq, int secondSeqLen, int *thirdSeq, int thirdSeqLen) {
 
 
 /******************************** set up and allocate all variables and structs ************************************/
@@ -500,74 +501,73 @@ int main() {
         cost_matrices_3d_t *costMtx3d = malloc(sizeof(struct cost_matrices_3d_t));
         setUp3dCostMtx (costMtx3d, tcm, alphSize, 0);
 
-        for (i = 0; i < 1; i++) { // run 30 tests
+        longCharLen   = 6; // rand() % CHAR_LENGTH + 1;
+        middleCharLen = 5; // rand() % CHAR_LENGTH + 1;
+        shortCharLen  = 4; // rand() % CHAR_LENGTH + 1;
+        maxLength     = longCharLen + middleCharLen + shortCharLen + 3; // extra 3 because there are three gaps added
+                                                                        // (1 on beginning of each character)
 
-            longCharLen   = 6; // rand() % CHAR_LENGTH + 1;
-            middleCharLen = 5; // rand() % CHAR_LENGTH + 1;
-            shortCharLen  = 4; // rand() % CHAR_LENGTH + 1;
-            maxLength     = longCharLen + middleCharLen + shortCharLen + 3; // extra 3 because there are three gaps added
-                                                                            // (1 on beginning of each character)
+        /*
+        // need to realloc each time through the loop
+        elem_t longer_vals[6] = {3, 1, 9, 1, 8, 1}; // realloc( longer_vals,  longCharLen   * sizeof(elem_t) );
+        elem_t middle_vals[5] = {3, 9, 9, 7, 5}; // realloc( middle_vals,   middleCharLen * sizeof(elem_t) );
+        elem_t lesser_vals[4] = {7, 9, 9, 4};    // realloc( lesser_vals, shortCharLen  * sizeof(elem_t) );
+        */
 
-            // need to realloc each time through the loop
-            elem_t longer_vals[6] = {3, 1, 9, 1, 8, 1}; // realloc( longer_vals,  longCharLen   * sizeof(elem_t) );
-            elem_t middle_vals[5] = {3, 9, 9, 7, 5}; // realloc( middle_vals,   middleCharLen * sizeof(elem_t) );
-            elem_t lesser_vals[4] = {7, 9, 9, 4};    // realloc( lesser_vals, shortCharLen  * sizeof(elem_t) );
+        // set_vals( longer_vals,  longCharLen,   max_val);
+        // set_vals( middle_vals,   middleCharLen, max_val);
+        // set_vals( lesser_vals, shortCharLen,  max_val);
 
-            // set_vals( longer_vals,  longCharLen,   max_val);
-            // set_vals( middle_vals,   middleCharLen, max_val);
-            // set_vals( lesser_vals, shortCharLen,  max_val);
+        reallocAlignIO(inputChar1, maxLength);
+        reallocAlignIO(inputChar2, maxLength);
+        reallocAlignIO(inputChar3, maxLength);
 
-            reallocAlignIO(inputChar1, maxLength);
-            reallocAlignIO(inputChar2, maxLength);
-            reallocAlignIO(inputChar3, maxLength);
+        reallocAlignIO(ungappedMedianChar, maxLength);
+        reallocAlignIO(gappedMedianChar,   maxLength);
 
-            reallocAlignIO(ungappedMedianChar, maxLength);
-            reallocAlignIO(gappedMedianChar,   maxLength);
+        copyValsToAIO(inputChar1, longer_vals, longCharLen,   maxLength);
+        copyValsToAIO(inputChar2, middle_vals, middleCharLen, maxLength);
+        copyValsToAIO(inputChar3, lesser_vals, shortCharLen,  maxLength);
 
-            copyValsToAIO(inputChar1, longer_vals, longCharLen,   maxLength);
-            copyValsToAIO(inputChar2, middle_vals, middleCharLen, maxLength);
-            copyValsToAIO(inputChar3, lesser_vals, shortCharLen,  maxLength);
+        printf("\n\n\n******************** Align 3 characters **********************\n\n");
+        printf(      "*****************  Original 3d characters:  ******************\n");
+        alignIO_print(inputChar1);
+        alignIO_print(inputChar2);
+        alignIO_print(inputChar3);
 
-            printf("\n\n\n******************** Align 3 characters **********************\n\n");
-            printf(      "*****************  Original 3d characters:  ******************\n");
-            alignIO_print(inputChar1);
-            alignIO_print(inputChar2);
-            alignIO_print(inputChar3);
+        algnCost = align3d( inputChar1
+                          , inputChar2
+                          , inputChar3
+                          , ungappedMedianChar
+                          , gappedMedianChar
+                          , costMtx3d
+                          , 2        // gap open cost
+                          // , 1        // gap extension cost
+                          );
+        // if (DEBUG_MAT) {
+        //     printf("\n\nFinal alignment matrix: \n\n");
+        //     algn_print_dynmtrx_2d( longChar, shortChar, algn_mtxs2d );
+        // }
 
-            algnCost = align3d( inputChar1
-                              , inputChar2
-                              , inputChar3
-                              , ungappedMedianChar
-                              , gappedMedianChar
-                              , costMtx3d
-                              , 2        // gap open cost
-                              // , 1        // gap extension cost
-                              );
-            // if (DEBUG_MAT) {
-            //     printf("\n\nFinal alignment matrix: \n\n");
-            //     algn_print_dynmtrx_2d( longChar, shortChar, algn_mtxs2d );
-            // }
+        printf("\nAligned 3d characters\n");
+        alignIO_print(inputChar1);
+        alignIO_print(inputChar2);
+        alignIO_print(inputChar3);
 
-            printf("\nAligned 3d characters\n");
-            alignIO_print(inputChar1);
-            alignIO_print(inputChar2);
-            alignIO_print(inputChar3);
+        printf("Alignment cost: %d\n", algnCost);
 
-            printf("Alignment cost: %d\n", algnCost);
+        printf("\nGapped median\n  ");
+        alignIO_print(gappedMedianChar);
 
-            printf("\nGapped median\n  ");
-            alignIO_print(gappedMedianChar);
+        printf("alphSize: %zu\n", alphSize);
+        printf("gap char: %u\n",  gap_char);
 
-            printf("alphSize: %zu\n", alphSize);
-            printf("gap char: %u\n",  gap_char);
+        printf("\nUngapped median\n  ");
+        alignIO_print(ungappedMedianChar);
 
-            printf("\nUngapped median\n  ");
-            alignIO_print(ungappedMedianChar);
+        printf("\n\n\n");
 
-            printf("\n\n\n");
-        }
-
-        freeCostMtx(costMtx3d,        0);  // 0 is !2d
+        freeCostMtx(costMtx3d, 0);  // 0 is !2d
     }
 
 /*

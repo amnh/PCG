@@ -20,17 +20,17 @@ necessary_h_files = ../../c_alignment_interface.h \
                     ../../ukkCheckPoint.h \
                     ../../ukkCommon.h
 
-object_files      = ../../c_alignment_interface.o \
-                    ../../c_code_alloc_setup.o \
-                    ../../costMatrix.o \
-                    ../../alignmentMatrices.o \
-                    ../../dyn_character.o \
-                    ../../alignCharacters.o \
-                    ../../ukkCheckPoint.o \
-                    ../../ukkCommon.o
+object_files      = c_alignment_interface.o \
+                    c_code_alloc_setup.o \
+                    costMatrix.o \
+                    alignmentMatrices.o \
+                    dyn_character.o \
+                    alignCharacters.o \
+                    ukkCheckPoint.o \
+                    ukkCommon.o
 
 
-all : debug_just_c # test_initialization
+all : test_interface_for_python # debug_just_c # test_initialization
 
 
 
@@ -48,6 +48,7 @@ external_c_alignment : externalCAlignment.hsc $(necessary_c_files) $(necessary_h
 	gcc -std=c11  $(sanity-warnings) -c externalCAlignment.c
 	ghc -O --make externalCAlignment.hs $(object_files)
 
+
 ######### Test only c functions that allocate and initialize various
 ######### internal structs. c_alignment_interface.c relies on these.
 test_initialization : initialization_driver.c $(necessary_c_files) $(necessary_h_files)
@@ -55,11 +56,21 @@ test_initialization : initialization_driver.c $(necessary_c_files) $(necessary_h
 	gcc -std=c11 $(sanity-warnings) -g -c $(necessary_c_files)
 	gcc -std=c11 $(sanity-warnings) -o initialization_driver -g initialization_driver.c $(object_files)
 
+
 ######### Test the actual C interface that Hakell interact with.
 test_interface : interface_driver.c $(necessary_c_files) $(necessary_h_files)
 	rm -f *.o
-	gcc -std=c11 $(sanity-warnings) -g -c  $(necessary_c_files)
+	gcc -std=c11 $(sanity-warnings) -g -c $(necessary_c_files)
 	gcc -std=c11 $(sanity-warnings) -o interface_driver -g interface_driver.c $(object_files)
+
+
+######### Test the actual C interface that Hakell interact with.
+test_interface_for_python : interface_driver.c $(necessary_c_files) $(necessary_h_files)
+	rm -f *.o
+	rm -f *.so
+	gcc -fPIC -O3 -std=c11 $(sanity-warnings) -g -c  $(necessary_c_files)
+	gcc -fPIC -O3 -std=c11 $(sanity-warnings) -o intermediate_lib.o -g interface_driver_3d_for_python.c
+	gcc -shared -O3 intermediate_lib.o $(object_files) -o test_interface_driver_3d_for_python.so
 
 
 ######### Test the actual C interface that Hakell interact with.
@@ -94,13 +105,11 @@ debug_just_c : debug_just_c.c ../../algn.c ../../algn.h ../../cm.c ../../cm.h \
 	gcc -o debug_just_c -g debug_just_c.c algn.o cm.o matrices.o seq.o ukkCheckp.o ukkCommon.o
 
 
-######### Test just the C code, without the C interface to Haskell. Send in multiple arrays from Python,
-######### to avoid C IO. Also, just wanted to learn Python FFI.
-debug_just_c_for_python : debug_just_c_for_python.c ../../algn.c ../../algn.h ../../cm.c ../../cm.h \
-						  ../../matrices.c ../../matrices.h ../../seq.c ../../seq.h ../../ukkCheckp.c ../../ukkCheckp.h \
-						  ../../ukkCommon.c ../../ukkCommon.h
-	rm -f *.o *.a
-	gcc -fPIC -O3 -c ../../algn.c ../../cm.c ../../matrices.c ../../seq.c ../../ukkCheckp.c ../../ukkCommon.c
+######### Test just the C code, without the C interface to Haskell. Create .so in order to use Python ffi.
+######### Send in multiple arrays from Python to avoid C IO. Also, just wanted to learn Python FFI.
+debug_just_c_for_python : debug_just_c_for_python.c $(necessary_c_files) $(necessary_h_files)
+	rm -f *.o *.a *.so
+	gcc -fPIC -O3 -c $(necessary_c_files)
 	gcc -fPIC -O3 -c debug_just_c_for_python.c -o intermediate_lib.o
 		# ar rvs combined_deps.a algn.o cm.o matrices.o seq.o ukkCheckp.o ukkCommon.o
 		# ld intermediate_lib.o -l combined_deps.a -o debug_just_c_for_python.o

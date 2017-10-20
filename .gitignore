@@ -1,10 +1,14 @@
 *.*~
 *.*#
 *.dSYM
+*.fa
+*.fasta
+*.tre
 *.gch
 *.hi
 *.o
 *.so
 *.ss
+*.xml
 .*
 production/bin

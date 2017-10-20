@@ -41,16 +41,16 @@ typedef struct dyn_character_t {
 } dyn_character_t;
 
 
-/** Adds v to the front of the character array inside a. Increments the length of a and decrements the head of the character. */
-void dyn_char_prepend( dyn_character_t *a
-                     , elem_t           v
+/** Adds value to the front of character. Increments the length of a and decrements the head of the character. */
+void dyn_char_prepend( dyn_character_t *character
+                     , elem_t           value
                      );
 
 
 void dyn_char_print( const dyn_character_t *inChar );
 
 
-/* Stores the value v in the position p of character a. */
+/* Stores value in position on character. */
 void dyn_char_set( dyn_character_t *character
                  , size_t           position
                  , elem_t           value

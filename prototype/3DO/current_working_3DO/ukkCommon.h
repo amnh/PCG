@@ -34,8 +34,8 @@
 #include <limits.h>
 #include <string.h>
 
-#include "seq.h"
-#include "ukkCheckp.h"
+#include "dyn_character.h"
+#include "ukkCheckPoint.h"
 
 #define MAX_STR 100000
 
@@ -115,8 +115,8 @@ int  alignmentCost(int states[], char *al1, char *al2, char *al3, int len);
 
 void *getPtr(AllocInfo *a, int ab, int ac, int d, int s);
 
-int powell_3D_align (seq_p seqA,    seq_p seqB,    seq_p seqC,
-                     seq_p retSeqA, seq_p retSeqB, seq_p retSeqC,
+int powell_3D_align (dyn_character_t *seqA,    dyn_character_t *seqB,    dyn_character_t *seqC,
+                     dyn_character_t *retSeqA, dyn_character_t *retSeqB, dyn_character_t *retSeqC,
                      int mismatchCost, int gapOpenCost, int gapExtendCost);
 
 // allocation routines. Were previously commented out.

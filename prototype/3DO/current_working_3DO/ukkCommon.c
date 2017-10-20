@@ -46,8 +46,8 @@
 
 //#define NO_ALLOC_ROUTINES 1
 #include "debug_constants.h"
-#include "seq.h"
-#include "ukkCheckp.h"
+#include "dyn_character.h"
+#include "ukkCheckPoint.h"
 #include "ukkCommon.h"
 
 // extern variable (all from ukkCheckp.c)
@@ -92,7 +92,7 @@ char bStr[MAX_STR];
 char cStr[MAX_STR];
 int  aLen, bLen, cLen;
 
-//extern int doUkk(seq_p retSeqA, seq_p retSeqB, seq_p retSeqC);    // Main driver function
+//extern int doUkk(dyn_character_t *retSeqA, dyn_character_t *retSeqB, dyn_character_t *retSeqC);    // Main driver function
 
 
 #ifndef NO_ALLOC_ROUTINES
@@ -106,16 +106,20 @@ int  aLen, bLen, cLen;
 //  Umatrix = (U_cell_type **)allocMatrix(sizeof(U_cell_type *));
 //}
 
-// recalloc - does a realloc() but sets any new memory to 0.
-static inline void *recalloc(void *p, size_t oldSize, size_t newSize) {
+/** recalloc - does a realloc() but sets any new memory to 0. */
+static inline void *recalloc( void   *p
+                            , size_t  oldSize
+                            , size_t  newSize
+                            )
+{
     printf("\nrecalloc\n");
     printf("old size: %2zu new: %2zu\n", oldSize, newSize);
-    p = realloc(p, newSize);
-    if (!p || oldSize>newSize) {
-        return p;
-    }
+    p = realloc( p, newSize );
+    if (!p || oldSize > newSize) return p;
 
-    memset(p+oldSize, 0, newSize-oldSize);
+    // Cast the void pointer to char pointer to suppress compiler warnings.
+    // We assume that arithmetic takes place in terms of bytes.
+    memset( ((char*) p) + oldSize, 0, newSize - oldSize );
     return p;
 }
 
@@ -170,6 +174,7 @@ static inline void *allocPlane(AllocInfo *a) {
     return a;
 }
 
+
 static inline void *allocEntry(AllocInfo *a) {
     void *p;
 
@@ -184,7 +189,8 @@ static inline void *allocEntry(AllocInfo *a) {
     }
 
     return p;
-};
+}
+
 
 static inline long allocGetSubIndex(AllocInfo *a, int ab,int ac,int s) {
     long index=0;
@@ -206,11 +212,11 @@ static inline long allocGetSubIndex(AllocInfo *a, int ab,int ac,int s) {
     index = (index + s);
 
     return index;
-};
+}
 
 
 void allocFinal(AllocInfo *a, void *flag, void *top) {
-    int usedFlag = flag-top;
+    int usedFlag = flag - top;
 
     int i, j, cIndex;
     long planesUsed = 0;
@@ -245,8 +251,8 @@ void allocFinal(AllocInfo *a, void *flag, void *top) {
     }
     free (a->basePtr);
     a->basePtr = NULL;
+}
 
-};
 
 void *getPtr(AllocInfo *a, int ab, int ac, int d, int s) {
     int i, j;
@@ -297,21 +303,20 @@ void *getPtr(AllocInfo *a, int ab, int ac, int d, int s) {
     //    ab,ac,d,s,
     //    base,index);
 
-    return base + (index * a->elemSize);
+    return ( (char*) base ) + index * a->elemSize;
 }
 
 
 #endif // NO_ALLOC_ROUTINES
 
 
-void copySequence (seq_p s, char *str) {
-    if (DEBUG_CALL_ORDER) {
-        printf("copySequence\n");
-    }
+void copySequence (dyn_character_t *s, char *str) {
+    if (DEBUG_CALL_ORDER) printf("copySequence\n");
+
     int len, i;
-    SEQT *begin;
-    len   = seq_get_len (s);
-    begin = seq_get_begin(s);
+    elem_t *begin;
+    len   = s->len;
+    begin = s->char_begin;
 
     for (i = 1; i < len; i++) {
         if (begin[i] & 1) {
@@ -327,19 +332,18 @@ void copySequence (seq_p s, char *str) {
             fflush(stdout);
             exit(1);
         }
-        printf("%c, ", str[i - 1]);
+        // printf("%c, ", str[i - 1]);
     }
-    printf("\n");
+    // printf("\n");
     str[len - 1] = 0;
     return;
 }
 
-int powell_3D_align (seq_p seqA,    seq_p seqB,    seq_p seqC,
-                     seq_p retSeqA, seq_p retSeqB, seq_p retSeqC,
+
+int powell_3D_align (dyn_character_t *seqA,    dyn_character_t *seqB,    dyn_character_t *seqC,
+                     dyn_character_t *retSeqA, dyn_character_t *retSeqB, dyn_character_t *retSeqC,
                      int mismatch, int gapOpen, int gapExtend) {
-    if (DEBUG_CALL_ORDER) {
-        printf("powell_3D_align\n");
-    }
+    if (DEBUG_CALL_ORDER) printf("powell_3D_align\n");
 
     gapOpenCost      = gapOpen;
     gapExtendCost    = gapExtend;
@@ -360,9 +364,9 @@ int powell_3D_align (seq_p seqA,    seq_p seqB,    seq_p seqC,
     copySequence (seqB, bStr);
     copySequence (seqC, cStr);
 
-    aLen = seq_get_len (seqA) - 1;
-    bLen = seq_get_len (seqB) - 1;
-    cLen = seq_get_len (seqC) - 1;
+    aLen = seqA->len - 1;
+    bLen = seqB->len - 1;
+    cLen = seqC->len - 1;
     printf("Input lengths: %d %d %d\n", aLen, bLen, cLen);
 
     setup();
@@ -427,6 +431,7 @@ int stateTransitionCost(int from, int to) {
     return transCost[from][to];
 }
 
+
 // --------------------------------------------------
 void step(int n, int *a, int *b, int *c) {
     assert(n>0 && n<=7);
@@ -435,9 +440,11 @@ void step(int n, int *a, int *b, int *c) {
     *c=(n>>2)&1;
 }
 
+
 int neighbourNum(int i, int j, int k) {
     return (i*1)+(j*2)+(k*4);
 }
+
 
 // --------------------------------------------------
 
@@ -446,6 +453,7 @@ void transitions(int s, Trans st[3]) {
     st[1] = (s / 3) % 3;
     st[2] = (s / 9) % 3;
 }
+
 
 char *state2str(int s)  {
     static char str[4];
@@ -458,6 +466,7 @@ char *state2str(int s)  {
     return str;
 }
 
+
 int countTrans(Trans st[3], Trans t) {
     int i, n = 0;
     for (i = 0; i < 3; i++) {
@@ -465,6 +474,7 @@ int countTrans(Trans st[3], Trans t) {
     }
     return n;
 }
+
 
 void setup() {
     maxSingleStep = numStates = 0;
@@ -590,6 +600,7 @@ void checkAlign(char *al, int alLen, char *str, int strLen)  {
     assert(j==strLen && "Output alignment not equal length to input string");
 }
 
+
 void revIntArray(int *arr, int start, int end) {
     int i;
     if (end<=start) {
@@ -602,6 +613,7 @@ void revIntArray(int *arr, int start, int end) {
     }
 }
 
+
 void revCharArray(char *arr, int start, int end) {
     int i;
     if (end<=start) {
@@ -613,6 +625,7 @@ void revCharArray(char *arr, int start, int end) {
         arr[end-i+start-1] = t;
     }
 }
+
 
 int alignmentCost(int states[], char *al1, char *al2, char *al3, int len) {
     int i;
@@ -681,11 +694,6 @@ int alignmentCost(int states[], char *al1, char *al2, char *al3, int len) {
     return cost;
 }
 
-
-
-
-
 /* ---------------------------------------------------------------------- */
 
 // End of ukkCommon.c
-

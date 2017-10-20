@@ -47,8 +47,8 @@
 #include <stdlib.h>
 
 #include "debug_constants.h"
-#include "seq.h"
-#include "ukkCheckp.h"
+#include "dyn_character.h"
+#include "ukkCheckPoint.h"
 #include "ukkCommon.h"
 
 #define MAXINT INT_MAX
@@ -389,7 +389,7 @@ int char_to_base (char v) {
     else return -1;
 }
 
-void printTraceBack(seq_p retSeqA, seq_p retSeqB, seq_p retSeqC) {
+void printTraceBack(dyn_character_t *retSeqA, dyn_character_t *retSeqB, dyn_character_t *retSeqC) {
     // Print out the alignment
 
     // Add the first run of matches to the alignment
@@ -421,13 +421,13 @@ void printTraceBack(seq_p retSeqA, seq_p retSeqB, seq_p retSeqC) {
 
     // Print out the alignment
     for (int i = aSeqIdx - 1; i >= 0; i--) {
-      seq_prepend (retSeqA, char_to_base (resultA[i]));
-      seq_prepend (retSeqB, char_to_base (resultB[i]));
-      seq_prepend (retSeqC, char_to_base (resultC[i]));
+      dyn_char_prepend (retSeqA, char_to_base (resultA[i]));
+      dyn_char_prepend (retSeqB, char_to_base (resultB[i]));
+      dyn_char_prepend (retSeqC, char_to_base (resultC[i]));
     }
-    seq_prepend (retSeqA, 16);
-    seq_prepend (retSeqB, 16);
-    seq_prepend (retSeqC, 16);
+    dyn_char_prepend (retSeqA, 16);
+    dyn_char_prepend (retSeqB, 16);
+    dyn_char_prepend (retSeqC, 16);
 
     assert(aSeqIdx==bSeqIdx && aSeqIdx==cSeqIdx && aSeqIdx==stateIdx && aSeqIdx==costIdx);
 
@@ -554,7 +554,7 @@ int Ukk(int ab,int ac,int d,int state) {
     char indent[1000];
 
 
-int doUkk(seq_p retSeqA, seq_p retSeqB, seq_p retSeqC) {
+int doUkk(dyn_character_t *retSeqA, dyn_character_t *retSeqB, dyn_character_t *retSeqC) {
     CPdummyCell.dist      = 0;
     CPdummyCell.cost      = 0;
     UdummyCell.dist       = 0;
