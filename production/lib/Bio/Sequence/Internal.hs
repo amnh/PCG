@@ -25,8 +25,12 @@
 module Bio.Sequence.Internal
   ( CharacterSequence()
   , HasBlockCost
+  -- * Construction / Decomposition
   , toBlocks
   , fromBlocks
+  , toBlockVector
+  , fromBlockVector
+  -- * Other
   , hexmap
   , hexTranspose
   , hexZipWith
@@ -50,7 +54,7 @@ import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Data.Semigroup.Traversable
-import           Data.Vector.NonEmpty
+import           Data.Vector.NonEmpty           (Vector)
 import qualified Data.Vector.NonEmpty    as V
 import           Prelude                 hiding (zipWith)
 import           Text.XML
@@ -227,7 +231,21 @@ toBlocks (CharSeq x) = toNonEmpty x
 -- Constructs a 'CharacterSequence' from a non-empty colection of blocks.
 {-# INLINE fromBlocks #-}
 fromBlocks :: NonEmpty (CharacterBlock u v w x y z) -> CharacterSequence u v w x y z
-fromBlocks = CharSeq . fromNonEmpty
+fromBlocks = CharSeq . V.fromNonEmpty
+
+
+-- |
+-- Destructs a 'CharacterSequence' to it's composite blocks.
+{-# INLINE toBlockVector #-}
+toBlockVector :: CharacterSequence u v w x y z -> Vector (CharacterBlock u v w x y z)
+toBlockVector (CharSeq x) =  x
+
+
+-- |
+-- Destructs a 'CharacterSequence' to it's composite blocks.
+{-# INLINE fromBlockVector #-}
+fromBlockVector :: Vector (CharacterBlock u v w x y z) -> CharacterSequence u v w x y z
+fromBlockVector = CharSeq
 
 
 -- |
