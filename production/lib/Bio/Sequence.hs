@@ -26,6 +26,8 @@ module Bio.Sequence
   , toMissingCharacters
   , toBlocks
   , fromBlocks
+  , toBlockVector
+  , fromBlockVector
   , hexmap
   , hexTranspose
   , hexZipWith
