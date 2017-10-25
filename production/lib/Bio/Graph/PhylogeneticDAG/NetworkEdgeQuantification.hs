@@ -15,25 +15,28 @@
 module Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification where
 
 
-import           Bio.Metadata.Dynamic      (TraversalTopology)
+import           Bio.Metadata.Dynamic     --(TraversalFoci, TraversalFocusEdge, TraversalTopology, traversalFoci)
 import           Bio.Sequence
 import qualified Bio.Sequence.Block as BLK
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
+import           Control.Lens
 import           Data.Bits
 --import           Data.EdgeSet
 import           Data.Foldable
 import           Data.Key
 import           Data.List.NonEmpty        (NonEmpty((:|)))
---import qualified Data.List.NonEmpty as NE
+import qualified Data.List.NonEmpty as NE
 import           Data.List.Utility
+import           Data.Maybe                (fromJust)
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Data.Set                  (difference)
 import qualified Data.Set           as S
 import           Data.TopologyRepresentation
 import           Data.Ord
+import           Data.Vector               (Vector)
 import           Numeric.Extended.Real
 import           Prelude            hiding (zipWith)
 
@@ -86,10 +89,11 @@ import           Prelude            hiding (zipWith)
 assignPunitiveNetworkEdgeCost
   :: ( HasBlockCost u v w x y z i r
      , HasRootCost  u v w x y z   r
+     , HasTraversalFoci z (Maybe TraversalFoci)
      )
   => PhylogeneticDAG2 e n u v w x y z
-  -> PhylogeneticDAG2 e n u v w x y z
-assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = PDAG2 $ dag { graphData = newGraphData }
+  -> (NonEmpty (TraversalTopology, r, r, Vector (NonEmpty TraversalFocusEdge)), PhylogeneticDAG2 e n u v w x y z)
+assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = (minimalDisplayForestPerBlockContext, PDAG2 $ dag { graphData = newGraphData })
   where
     -- First grab all the valid display forests present in the DAG.
     displayForests =
@@ -103,8 +107,9 @@ assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = PDAG2 $ dag { graphData = newG
     --
     --  * The most parsimonious display forest for /each/ characters.
     --
-    mostParsimoniousDisplayForest = extractMostParsimoniusDisplayForest displayForests
-    minimalDisplayForestPerBlock  = extractMinimalDisplayForestPerBlock displayForests
+    mostParsimoniousDisplayForest       = extractMostParsimoniusDisplayForest displayForests
+    minimalDisplayForestPerBlockContext = extractMinimalDisplayForestPerBlock displayForests
+    minimalDisplayForestPerBlock        = ignoreDynamicCharacterTraversalFoci minimalDisplayForestPerBlockContext
 
     -- We need the collection of network edges in the DAG to calculate the
     -- numerator of the network edge cost.
@@ -208,6 +213,7 @@ extractMostParsimoniusDisplayForest
   :: ( Foldable1 f
      , HasBlockCost u v w x y z i r
      , HasRootCost  u v w x y z   r
+     , HasTraversalFoci z (Maybe TraversalFoci)
      )
   => f (ResolutionCache (CharacterSequence u v w x y z))
   -> (TraversalTopology, r, r)
@@ -229,9 +235,9 @@ extractMostParsimoniusDisplayForest displayForests = (topo, rCost, bCost)
     -- context for it.
     (topo, costs)  = createForestContext minDisplayForestWLOG
 
-    -- Since we don't need the block-by-block contexts patriioned, we accumulate
+    -- Since we don't need the block-by-block contexts partitioned, we accumulate
     -- the costs of the forest context.
-    (rCost, bCost) = foldr1 (\(a,b) (c,d) -> (a+c, b+d)) costs
+    (rCost, bCost) = foldr1 (\(a,b) (c,d) -> (a+c, b+d)) $ (\(a,b,_) -> (a,b)) <$> costs
 
 
 -- |
@@ -242,14 +248,16 @@ extractMinimalDisplayForestPerBlock
      , Functor   f
      , HasBlockCost u v w x y z i r
      , HasRootCost  u v w x y z   r
+     , HasTraversalFoci z (Maybe TraversalFoci)
      )
-  => f (ResolutionCache (CharacterSequence u v w x y z)) -- ^ Set of valid display forests
-  -> NonEmpty (TraversalTopology, r, r)                  -- ^ Valid display forest for each character block
+  => f (ResolutionCache (CharacterSequence u v w x y z))                      -- ^ Set of valid display forests
+  -> NonEmpty (TraversalTopology, r, r, Vector (NonEmpty TraversalFocusEdge)) -- ^ Valid display forest for each character block
+                                                                              --   And the dynamic character rooting edges.
 extractMinimalDisplayForestPerBlock displayForests = minimalBlockContexts
   where
     minimalBlockContexts = foldr1 (zipWith minimizeBlockContext) validBlockContexts
       where
-        minimizeBlockContext lhs@(_, rCost1, bCost1) rhs@(_, rCost2, bCost2)
+        minimizeBlockContext lhs@(_, rCost1, bCost1, _) rhs@(_, rCost2, bCost2,_)
           | cost1 <= cost2 = lhs
           | otherwise      = rhs
           where
@@ -313,41 +321,50 @@ createForestContext
   :: ( Foldable1 f
      , HasBlockCost u v w x y z i r
      , HasRootCost  u v w x y z   r
+     , HasTraversalFoci z (Maybe TraversalFoci)
      )
   => f (ResolutionInformation (CharacterSequence u v w x y z))
-  -> (TraversalTopology, NonEmpty (r, r))
+  -> (TraversalTopology, NonEmpty (r, r, Vector (NonEmpty TraversalFocusEdge)))
 createForestContext displayForest = fromBlockMinimizationContext $ foldMap1 blockContext displayForest
   where
-    rootCount    = length displayForest
-    blockContext = toBlockMinimizationContext <$> topologyRepresentation <*> blockCosts
+    rootCount      = length displayForest
+    getRootingEdge = fst . NE.head . fromJust . (^. traversalFoci)
+    blockContext   = toBlockMinimizationContext <$> topologyRepresentation <*> blockCosts
       where
-        blockCosts = fmap (\x -> (BLK.rootCost rootCount x, BLK.blockCost x)) . toBlocks . characterSequence
-            
+        blockCosts = fmap (\x -> (BLK.rootCost rootCount x, BLK.blockCost x, getRootingEdge <$> dynamicCharacters x)) . toBlocks . characterSequence
+
+
 -- |
--- Take a display forest context and push the topology inforation through to
+-- Take a display forest context and push the topology information through to
 -- every block in the associated sequence. This creates a "linear" context
 -- suitable for zipping.
-linearizeContext :: (TraversalTopology, NonEmpty (r, r)) -> NonEmpty (TraversalTopology, r, r)
+linearizeContext :: (TraversalTopology, NonEmpty (a, b, c)) -> NonEmpty (TraversalTopology, a, b, c)
 linearizeContext (topo, costs) = squashTopologyIntoContext <$> costs
   where
-    squashTopologyIntoContext (x,y) = (topo, x, y)
+    squashTopologyIntoContext (x,y,z) = (topo, x, y, z)
+
+
+ignoreDynamicCharacterTraversalFoci :: Functor f => f (a,b,c,d) -> f (a,b,c)
+ignoreDynamicCharacterTraversalFoci = fmap (\(a,b,c,_) -> (a,b,c))
+
+  
 
 
 -- | Used for convient accumulation.
-data BlockMinimizationContext c = BMC TraversalTopology (NonEmpty (c, c))
+data BlockMinimizationContext c = BMC TraversalTopology (NonEmpty (c, c, Vector (NonEmpty TraversalFocusEdge)))
   deriving (Eq)
 
 
 instance Num c => Semigroup (BlockMinimizationContext c) where
 
-  (<>) (BMC topo1 costs1) (BMC topo2 costs2) = BMC (topo1 <> topo2) $ zipWith (\(a,b) (c,d) -> (a+c, b+d)) costs1 costs2
+  (<>) (BMC topo1 costs1) (BMC topo2 costs2) = BMC (topo1 <> topo2) $ zipWith (\(a,b,c) (d,e,f) -> (a+d, b+e, zipWith (<>) c f)) costs1 costs2
 
 
-toBlockMinimizationContext :: TraversalTopology -> NonEmpty (c, c) -> BlockMinimizationContext c
-toBlockMinimizationContext = BMC
+toBlockMinimizationContext :: TraversalTopology -> NonEmpty (c, c, Vector TraversalFocusEdge) -> BlockMinimizationContext c
+toBlockMinimizationContext x = BMC x . fmap (\(a,b,c) -> (a,b, pure <$> c))
 
   
-fromBlockMinimizationContext :: BlockMinimizationContext c -> (TraversalTopology, NonEmpty (c, c))
+fromBlockMinimizationContext :: BlockMinimizationContext c -> (TraversalTopology, NonEmpty (c, c, Vector (NonEmpty TraversalFocusEdge)))
 fromBlockMinimizationContext (BMC topo costs) = (topo, costs)
 
 

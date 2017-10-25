@@ -33,7 +33,7 @@ import           Control.Monad.State.Lazy
 import           Data.Bifunctor
 import           Data.Foldable
 import           Data.HashMap.Lazy            (HashMap)
---import           Data.IntMap                  (IntMap)
+import           Data.IntMap                  (IntMap)
 import qualified Data.IntMap           as IM
 import qualified Data.IntSet           as IS
 import           Data.Key
@@ -47,9 +47,12 @@ import           Data.Maybe
 import           Data.MonoTraversable
 import           Data.Ord                     (comparing)
 import           Data.Semigroup
+import           Data.Semigroup.Foldable
 import           Data.TopologyRepresentation
 import           Data.Vector                  (Vector)
-import qualified Data.Vector           as V
+import qualified Data.Vector           as VE
+import qualified Data.Vector.NonEmpty  as VNE
+import           Data.Vector.Instances        ()
 import           Data.Vector.Instances        ()
 import           Prelude               hiding (lookup, zip, zipWith)
 
@@ -87,7 +90,7 @@ preorderSequence'' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
     refs          = references dag
     dagSize       = length $ references dag
     newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> defaultGraphMetadata . graphData
-    newReferences = V.generate dagSize g
+    newReferences = VE.generate dagSize g
       where
         g i = IndexData <$> const (memo ! i) <*> parentRefs <*> childRefs $ refs ! i
 
@@ -118,7 +121,7 @@ preorderSequence'' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
     -- the pre-order traversal. This memoization technique relies on lazy
     -- evaluation to compute the data for each vector index in the correct order
     -- of dependancy with the root node(s) as the base case(es).
-    memo = V.generate dagSize g
+    memo = VE.generate dagSize g
       where
 
         -- This is the generating function.
@@ -208,7 +211,7 @@ preorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
   where
     newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> defaultGraphMetadata . graphData
     dagSize       = length $ references dag
-    newReferences = V.generate dagSize g
+    newReferences = VE.generate dagSize g
       where
         g i = IndexData <$> const (snd $ memo ! i) <*> parentRefs <*> childRefs $ references dag ! i
 
@@ -235,7 +238,7 @@ preorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
 
 
 --    memo :: Vector (BlockTopologies, PhylogeneticNode2 n (CharacterSequence u' v' w' x' y' z'))
-    memo = V.generate dagSize g
+    memo = VE.generate dagSize g
       where
         g i = (inheritedToplogies,
             PNode2
@@ -425,16 +428,33 @@ preorderFromRooting''
      --     , Show z
      )
   => (z -> [(Word, z')] -> z')
-  -> Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
+  ->         Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
   -> Vector (Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
+  -> NonEmpty (TraversalTopology, r, r, Vector (NonEmpty TraversalFocusEdge))
   -> PhylogeneticDAG2 e' n' u' v' w' x' y' z
   -> PhylogeneticDAG2 e' n' u' v' w' x' y' z'
-preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum (PDAG2 dag) = undefined
+preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopologyContextPerBlock (PDAG2 dag) = undefined
   where
+    rootSet    = IS.fromList . toList $ rootRefs dag
     refs       = references dag
     nodeCount  = length refs
     blockCount = length . toBlocks . characterSequence . NE.head . resolutions . nodeDecoration $ refs ! NE.head (rootRefs dag)
- 
+
+    getCache = resolutions . nodeDecoration . (refs !)
+
+    getDynCharSeq = fmap dynamicCharacters . toBlockVector . characterSequence
+
+    rootResolutions = getCache <$> rootRefs dag
+
+    getAdjacentNodes i = foldMap f $ otoList ns
+      where
+        f j
+          | j `oelem` rootSet = toList . headMay . filter (/=i) . IM.keys . childRefs $ refs ! j
+          | otherwise         = [j]
+        v  = refs ! i
+        ns = ps <> cs
+        ps = parentRefs v
+        cs = IM.keysSet $ childRefs v
 
     -- A "sequence" of the minimum topologies that correspond to each block.
     sequenceOfBlockMinimumTopologies :: BlockTopologies
@@ -459,12 +479,49 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum (PDAG2 
 
 
     -- |
-    -- For each block, for each dynamic character, a vector of parent ref indicies.
---    parentVectors :: Matrix (Vector (Maybe Int))
+    -- For each Node, for each block, for each dynamic character, parent ref index or root datum.
+--    parentVectors :: Matrix (Vector (Either c Int))
     parentVectors = MAT.matrix nodeCount blockCount g
       where
-        g nodeIndex blockIndex = undefined
+        g (nodeIndex, blockIndex) = (! nodeIndex) <$> dynCharVec
+          where
+            dynCharVec = mapping ! blockIndex
 
+        mapping = {- foldr1 (zipWith gamma) $ -} delta minTopologyContextPerBlock
+
+        -- Takes a list of blocks, each containing a vectors of dynamic characters
+        -- and returns the mapping of nodes to their parents under the rerooting
+        -- assignment.
+        --
+        -- Gives either a virtual node, that is, the root for the lowest cost for this dynamic character or
+        -- when the current node is a child of the root, 
+        --
+        -- Left is the virtual root node for a dynamic character given this topology, because the _node's_ root isn't another
+        -- node in the DAG because it is directly connected to the rooting
+        -- edge.
+        --
+        -- Right is a reference to the parent index in the DAG.
+--        delta :: (Keyed f, Keyed v, Foldable r) => f (TraversalTopology, v (r TraversalFocusEdge)) -> f (v (IntMap (Either c Int)))
+        delta = mapWithKey (\k (topo, _, _, v) -> mapWithKey (f topo k) v)
+          where
+            f topo blockIndex charIndex rootEdges = foldMap epsilon rootEdges
+              where
+                epsilon rootingEdge@(r1,r2) = lhs <> rhs <> gen (r1,r2) <> gen (r2,r1)
+                  where
+                    lhs = IM.singleton r1 $ Left virtualRootDatum
+                    rhs = IM.singleton r2 $ Left virtualRootDatum
+                    virtualRootDatum = (! charIndex) . (! blockIndex) $ getDynCharSeq virtualRoot
+                    virtualRoot = head . NE.filter (\x -> topologyRepresentation x == topo) $ edgeCostMapping ! rootingEdge
+--                    (rootingEdge@(n1, n2), topo) = NE.head . fromJust $ dec ^. traversalFoci
+                    gen (n1,n2) = (currentVal <>) . foldMap toMap . filter (/=n1) $ getAdjacentNodes n2
+                      where
+                        currentVal = IM.singleton n2 $ Right n1
+                        toMap v = gen (n2,v)
+
+        gamma :: Vector (IntMap (Either c Int))
+              -> Vector (IntMap (Either c Int))
+              -> Vector (IntMap (Either c Int))
+        gamma = zipWith (<>)
 
 
 -- |
@@ -490,7 +547,7 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ 
     newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> defaultGraphMetadata . graphData
     dagSize       = length $ references dag
     roots         = rootRefs dag
-    newReferences = V.generate dagSize g
+    newReferences = VE.generate dagSize g
       where
         g i =
             IndexData
@@ -524,7 +581,7 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ 
         treeEdges    = toList $ referenceTreeEdgeSet    dag
         deriveParentVectors k (topo, dynchars) = mapWithKey h dynchars
           where
-            h charIndex rootEdge@(lhsRootRef, rhsRootRef) = V.generate dagSize g
+            h charIndex rootEdge@(lhsRootRef, rhsRootRef) = VE.generate dagSize g
               where
 --                g i | trace (unwords [show i, "/", show $ length dag, show rootEdge, show $ IM.keys parentalMapping]) False = undefined
                 g i = parentalMapping ! i
@@ -589,7 +646,7 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ 
     
       
 --    memo :: Vector (NonEmpty (Vector z'))
-    memo = V.generate dagSize generateDatum
+    memo = VE.generate dagSize generateDatum
       where
         generateDatum i
           | i `notElem` rootRefs dag = applyMetadata $ zipWith (zipWith f) childCharSeqOnlyDynChars parentCharSeqOnlyDynChars
