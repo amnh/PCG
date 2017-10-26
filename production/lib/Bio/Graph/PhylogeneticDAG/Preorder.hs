@@ -428,8 +428,8 @@ preorderFromRooting''
      --     , Show z
      )
   => (z -> [(Word, z')] -> z')
-  ->         Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
-  -> Vector (Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
+  ->         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
+  -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
   -> NonEmpty (TraversalTopology, r, r, Vector (NonEmpty TraversalFocusEdge))
   -> PhylogeneticDAG2 e' n' u' v' w' x' y' z
   -> PhylogeneticDAG2 e' n' u' v' w' x' y' z'

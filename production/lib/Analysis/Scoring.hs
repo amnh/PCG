@@ -123,10 +123,11 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
   where
     performPreOrderDecoration :: PostOrderDecorationDAG -> FinalDecorationDAG
     performPreOrderDecoration =
-        preorderFromRooting
+        preorderFromRooting''
           adaptiveDirectOptimizationPreOrder
           edgeCostMapping
           contextualNodeDatum
+          minBlockConext
               
         . preorderSequence''
           additivePreOrder
@@ -141,8 +142,9 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
             pairwiseAlignmentFunction = chooseDirectOptimizationComparison2 dec kidDecs
     
     performPostOrderDecoration :: PostOrderDecorationDAG
-    performPostOrderDecoration = assignPunitiveNetworkEdgeCost post
-        
+    performPostOrderDecoration = postOrderResult
+
+    (minBlockConext, postOrderResult) = assignPunitiveNetworkEdgeCost post
     (post, edgeCostMapping, contextualNodeDatum) =
          assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostOrder
          . postorderSequence'
