@@ -420,6 +420,11 @@ selectApplicableResolutions topology cache =
       xs  -> maximumBy (comparing (length . subtreeEdgeSet)) xs
 
 
+data  PreorderContext c
+    = NormalNode   Int
+    | SetRootNode  Int
+    | FociEdgeNode Int c
+
 preorderFromRooting''
   :: ( HasBlockCost u  v  w  x  y  z  Word Double
      , HasBlockCost u' v' w' x' y' z' Word Double
@@ -456,7 +461,7 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
       where
 --        f j | trace ("In getAdjacentNodes.f ("<> show j <>")") False  = undefined
         f j
-          | j `oelem` rootSet = toList . headMay . filter (/=i) . IM.keys . childRefs $ refs ! j
+          | j `oelem` rootSet = [j] -- toList . headMay . filter (/=i) . IM.keys . childRefs $ refs ! j
           | otherwise         = [j]
         v  = refs ! i
         ns = ps <> cs
@@ -492,17 +497,20 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
           where
             f topo blockIndex charIndex rootEdges = foldMap epsilon rootEdges
               where
-                epsilon rootingEdge@(r1,r2) = lhs <> rhs <> gen (r1,r2) <> gen (r2,r1)
+                epsilon rootingEdge@(r1,r2) = lhs <> rhs <> gen mempty (r1,r2) <> gen mempty (r2,r1)
                   where
-                    lhs = IM.singleton r1 $ Left (virtualRootDatum, r2)
-                    rhs = IM.singleton r2 $ Left (virtualRootDatum, r1)
+                    lhs = IM.singleton r1 $ FociEdgeNode r2 virtualRootDatum
+                    rhs = IM.singleton r2 $ FociEdgeNode r1 virtualRootDatum 
                     virtualRootDatum = (! charIndex) . (! blockIndex) $ getDynCharSeq virtualRoot
                     virtualRoot = head . NE.filter (\x -> topologyRepresentation x == topo) $ edgeCostMapping ! rootingEdge
-                    gen (n1,n2) = (currentVal <>) . foldMap toMap . filter (/=n1) $ nearbyNodes n2 -- getAdjacentNodes n2
+                    gen seenSet (n1,n2) = (currentVal <>) . foldMap toMap . filter (`onotElem` seenSet') $ nearbyNodes n2 -- getAdjacentNodes n2
                       where
-                        nearbyNodes = {- traceShowId . -} getAdjacentNodes
-                        currentVal  = IM.singleton n2 $ Right n1
-                        toMap v     = gen (n2,v)
+                        nearbyNodes x = (\ns -> trace (unwords [show x, ":", show ns]) ns) $ getAdjacentNodes x
+                        currentVal
+                          | n2 `oelem` rootSet = IM.singleton n2 $ SetRootNode n1
+                          | otherwise          = IM.singleton n2 $ NormalNode  n1
+                        toMap v     = gen seenSet' (n2, v)
+                        seenSet'    = IS.insert n1 seenSet
 
 
     -- Here we generate a memoized vector of the updated node decorations from
@@ -544,23 +552,29 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
                   where
                     (topology,_,_,_) = minTopologyContextPerBlock ! j
                     updatedDynamicCharacters = mapWithKey dynCharGen $ dynamicCharacters block
-                    dynCharGen k _ = transformation currentDecoration [(0, parentalDecoration)]
+                    dynCharGen k _ = 
+                        case parentRefContext of
+                          SetRootNode  p   -> getDynCharDecoration . selectApplicableResolutions topology . resolutions $ memo ! p
+                          FociEdgeNode p x ->
+                            let currentContext     = selectApplicableResolutions topology $ (contextualNodeDatum .!>. p) .!>. (i,p) 
+                                currentDecoration  = (!k) . dynamicCharacters . (!j) . toBlockVector . characterSequence $ currentContext
+--                                currentDecoration  = getDynCharDecoration currentContext
+                                parentalDecoration = transformation x []
+                            in  transformation currentDecoration [(0, parentalDecoration)]
+                          NormalNode   p   ->
+                            let currentContext     = selectApplicableResolutions topology $ (contextualNodeDatum .!>. p) .!>. (i,p)
+                                currentDecoration  = (!k) . dynamicCharacters . (!j) . toBlockVector . characterSequence $ currentContext
+                                parentalDecoration = getDynCharDecoration . selectApplicableResolutions topology . resolutions $ memo ! p
+                            in  transformation currentDecoration [(0, parentalDecoration)]
                       where
-                        parentalDecoration   = parentalContext
-                        currentDecoration    = (\x -> trace (unwords ["Preorder - Node", show i, "Block", show j, "DynChar", show k]) x)
-                                             . (!k) . dynamicCharacters . (!j) . toBlockVector . characterSequence $ currentContext
-                        getDynCharDecoration = (!k) . dynamicCharacters . (!j) . toBlockVector . characterSequence
                         parentRefContext     = (parentVectors ! (i,j)) ! k
-                        
-                        parentalContext =
-                          case parentRefContext of
-                            Left (x,_) -> transformation x []
-                            Right p    -> getDynCharDecoration . selectApplicableResolutions topology . resolutions $ memo ! p
-                        currentContext  = selectApplicableResolutions topology $ (contextualNodeDatum ! pDirectionalRef) ! (pDirectionalRef, i)
-                        pDirectionalRef =
-                          case parentRefContext of
-                            Left (_,p) -> p
-                            Right p    -> p
+                        -- Stupid monomorphisms prevent elegant code reuse
+                        getDynCharDecoration = (\x -> trace (unwords ["Preorder - Node", show i, "Block", show j, "DynChar", show k] <> "\n" <> renderedcontextualNodeDatum) x)
+                                             . (!k) . dynamicCharacters . (!j) . toBlockVector . characterSequence
+
+                        renderedcontextualNodeDatum = unlines $ foldMapWithKey zeta contextualNodeDatum
+                          where
+                            zeta k = pure . ((show k <> ": ") <>) . show . foldMapWithKey (\x _ -> [show x])
 
 
 -- |
