@@ -451,8 +451,10 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
 
     rootResolutions = getCache <$> rootRefs dag
 
+--    getAdjacentNodes i | trace ("In getAdjacentNodes("<> show i <>")") False  = undefined
     getAdjacentNodes i = foldMap f $ otoList ns
       where
+--        f j | trace ("In getAdjacentNodes.f ("<> show j <>")") False  = undefined
         f j
           | j `oelem` rootSet = toList . headMay . filter (/=i) . IM.keys . childRefs $ refs ! j
           | otherwise         = [j]
@@ -496,10 +498,11 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
                     rhs = IM.singleton r2 $ Left (virtualRootDatum, r1)
                     virtualRootDatum = (! charIndex) . (! blockIndex) $ getDynCharSeq virtualRoot
                     virtualRoot = head . NE.filter (\x -> topologyRepresentation x == topo) $ edgeCostMapping ! rootingEdge
-                    gen (n1,n2) = (currentVal <>) . foldMap toMap . filter (/=n1) $ getAdjacentNodes n2
+                    gen (n1,n2) = (currentVal <>) . foldMap toMap . filter (/=n1) $ nearbyNodes n2 -- getAdjacentNodes n2
                       where
-                        currentVal = IM.singleton n2 $ Right n1
-                        toMap v = gen (n2,v)
+                        nearbyNodes = {- traceShowId . -} getAdjacentNodes
+                        currentVal  = IM.singleton n2 $ Right n1
+                        toMap v     = gen (n2,v)
 
 
     -- Here we generate a memoized vector of the updated node decorations from
@@ -529,7 +532,7 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
 
             datumResolutions = resolutions $ nodeDecoration node
 
-            node             = refs ! {- (\x -> trace ("Node #" <> show x) x) -} i
+            node             = refs ! (\x -> trace ("Preorder - Node #" <> show x) x) i
                 
 --          updateDynamicCharactersInSequence
 --            :: ResolutionInfomation (CharacterSequence u v w x y z )
@@ -544,7 +547,8 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
                     dynCharGen k _ = transformation currentDecoration [(0, parentalDecoration)]
                       where
                         parentalDecoration   = parentalContext
-                        currentDecoration    = (!k) . dynamicCharacters . (!j) . toBlockVector . characterSequence $ currentContext
+                        currentDecoration    = (\x -> trace (unwords ["Preorder - Node", show i, "Block", show j, "DynChar", show k]) x)
+                                             . (!k) . dynamicCharacters . (!j) . toBlockVector . characterSequence $ currentContext
                         getDynCharDecoration = (!k) . dynamicCharacters . (!j) . toBlockVector . characterSequence
                         parentRefContext     = (parentVectors ! (i,j)) ! k
                         
