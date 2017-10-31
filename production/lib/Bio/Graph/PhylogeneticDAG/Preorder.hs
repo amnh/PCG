@@ -56,7 +56,7 @@ import           Data.Vector.Instances        ()
 import           Data.Vector.Instances        ()
 import           Prelude               hiding (lookup, zip, zipWith)
 
-import Debug.Trace
+-- import Debug.Trace
   
 
 type BlockTopologies = NonEmpty TraversalTopology
@@ -96,7 +96,7 @@ preorderSequence'' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
 
     -- A "sequence" of the minimum topologies that correspond to each block.
     sequenceOfBlockMinimumTopologies :: BlockTopologies
-    sequenceOfBlockMinimumTopologies = trace (topologyRendering dag <> referenceRendering dag) getTopologies blockMinimalResolutions
+    sequenceOfBlockMinimumTopologies = getTopologies blockMinimalResolutions
       where
         getTopologies = fmap topologyRepresentation
 
@@ -165,7 +165,7 @@ preorderSequence'' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
             
             datumResolutions = resolutions $ nodeDecoration node
 
-            node            = refs ! (\x -> trace ("Node #" <> show x) x) i
+            node            = refs ! i
             parentIndices   = otoList $ parentRefs node
             -- In sparsely connected graphs (like ours) this will be effectively constant.
             childPosition j = toEnum . length . takeWhile (/=i) . IM.keys . childRefs $ refs ! j
@@ -510,7 +510,7 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
                       | otherwise      = (currentVal <>) . foldMap toMap . filter (`onotElem` seenSet') $ nearbyNodes n2 -- getAdjacentNodes n2
                       where
                         isExcludedEdge = (n1,n2) `elem` excludedEdges || (n2,n1) `elem` excludedEdges
-                        nearbyNodes x = (\ns -> trace (unwords [show x, ":", show ns]) ns) $ getAdjacentNodes x
+                        nearbyNodes x  = getAdjacentNodes x
                         currentVal
                           | n2 `oelem` rootSet = IM.singleton n2 $ SetRootNode n1
                           | n1 `oelem` rootSet =
@@ -549,7 +549,7 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
 
             datumResolutions = resolutions $ nodeDecoration node
 
-            node             = refs ! (\x -> trace ("Preorder - Node #" <> show x) x) i
+            node             = refs ! i
 
             kids             = IM.keys $ childRefs node
 
@@ -565,6 +565,7 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
                     excludedEdges = excludedNetworkEdges topology
                     updatedDynamicCharacters = mapWithKey dynCharGen $ dynamicCharacters block
 
+{-
                     dynCharGen k _ | trace renderedIndexingContext False = undefined
                       where
                         renderedIndexingContext = unlines [ unwords [ "Preorder - Node", show i, "Block", show j, "DynChar", show k]
@@ -578,13 +579,13 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
                         renderedminTopologyContextPerBlock = unlines $ foldMapWithKey zeta minTopologyContextPerBlock
                           where
                             zeta k = pure . ((show k <> ": ") <>) . show 
-
+-}
 
                     dynCharGen k _ =
                         case parentRefContext of
-                          SetRootNode  p   -> getDynCharDecoration . NE.head . resolutions . (trace "In SetRootNode") $ memo ! p
+                          SetRootNode  p   -> getDynCharDecoration . NE.head . resolutions $ memo ! p
                           FociEdgeNode p x ->
-                            let currentContext     = selectApplicableResolutions topology . (trace "In FociEdgeNode") $ (contextualNodeDatum .!>. i) .!>. (p,i)
+                            let currentContext     = selectApplicableResolutions topology $ (contextualNodeDatum .!>. i) .!>. (p,i)
                                 currentDecoration  = (!k) . dynamicCharacters . (!j) . toBlockVector . characterSequence $ currentContext
 --                                currentDecoration  = getDynCharDecoration currentContext
                                 parentalDecoration = transformation x []
@@ -594,7 +595,7 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
                                   case kids of
                                     [c] -> (c,i) `elem` excludedEdges || (i,c) `elem` excludedEdges
                                     _   -> False
-                                currentContext     = selectApplicableResolutions topology . (trace (unwords ["In NormalNode", show p,"-->", show i])) $ (contextualNodeDatum .!>. i) .!>. (p,i)
+                                currentContext     = selectApplicableResolutions topology $ (contextualNodeDatum .!>. i) .!>. (p,i)
                                 currentDecoration  = (!k) . dynamicCharacters . (!j) . toBlockVector . characterSequence $ currentContext
                                 parentalDecoration = getDynCharDecoration . NE.head . resolutions $ memo ! p
                             in  if   isDeadEndNode
