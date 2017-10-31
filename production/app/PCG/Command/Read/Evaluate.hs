@@ -30,6 +30,7 @@ import           Data.List.NonEmpty           (NonEmpty(..))
 -- import qualified Data.Map              as M
 -- import           Data.Maybe                   (fromMaybe)
 import           Data.Ord                     (comparing)
+import           Data.Semigroup
 import           Data.TCM                     (TCMDiagnosis(..), TCMStructure(..), diagnoseTcm)
 import qualified Data.TCM              as TCM
 import           Data.Text.IO                 (readFile)
@@ -79,10 +80,11 @@ evaluate (READ (ReadCommand fileSpecs)) _old = do
 --        case masterUnify $ transformation <$> concat xs of
           Left uErr -> fail $ show uErr -- Report unification errors here.
            -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
-          Right g   -> pure g
+          Right g   -> -- pure g
                        -- (liftIO . putStrLn {- . take 500000 -} $ either show (ppTopElement . toXML) g)
                        -- (liftIO . putStrLn $ renderSequenceCosts g)
-                       --  $> g
+                       (liftIO . putStrLn $ show g)
+                       $> g
   where
     transformation = id -- expandIUPAC
     decoration     = fmap (fmap initializeDecorations2)
@@ -182,8 +184,13 @@ parseCustomAlphabet spec = getSpecifiedContent spec >>= (hoistEither . parseSpec
           Nothing     -> fracturedResult
           Just oldTCM -> setTcm oldTCM path =<< fracturedResult
       where
-        fracturedResult = toFractured Nothing path <$> parseResult
-        parseResult     = first (unparsable content) $ parse' fastcStreamParser path content
+        fracturedResult = first (unparsable content) $ parse' (try fastcCombinator <|> fastaCombinator) path content
+        fastcCombinator = fmap (toFractured Nothing path) fastcStreamParser
+        fastaCombinator = fmap (toFractured Nothing path) $
+                          fastaStreamParser >>=
+                          (\x -> try (fastaStreamConverter Fasta.DNA  x)
+                             <|> try (fastaStreamConverter Fasta.RNA  x)
+                             <|> fastaStreamConverter Fasta.AminoAcid x)
 
     parseSpecifiedContentWithTcm :: FileSpecificationContent -> Either ReadError [FracturedParseResult]
     parseSpecifiedContentWithTcm specContent = do
