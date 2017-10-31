@@ -431,6 +431,7 @@ preorderFromRooting''
      , HasTraversalFoci z  (Maybe TraversalFoci)
      , HasTraversalFoci z' (Maybe TraversalFoci)
      --     , Show z
+     , Show r
      )
   => (z -> [(Word, z')] -> z')
   ->         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
@@ -503,12 +504,20 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
                     rhs = IM.singleton r2 $ FociEdgeNode r1 virtualRootDatum 
                     virtualRootDatum = (! charIndex) . (! blockIndex) $ getDynCharSeq virtualRoot
                     virtualRoot = head . NE.filter (\x -> topologyRepresentation x == topo) $ edgeCostMapping ! rootingEdge
-                    gen seenSet (n1,n2) = (currentVal <>) . foldMap toMap . filter (`onotElem` seenSet') $ nearbyNodes n2 -- getAdjacentNodes n2
+                    excludedEdges = excludedNetworkEdges topo
+                    gen seenSet (n1,n2)
+                      | isExcludedEdge = mempty
+                      | otherwise      = (currentVal <>) . foldMap toMap . filter (`onotElem` seenSet') $ nearbyNodes n2 -- getAdjacentNodes n2
                       where
+                        isExcludedEdge = (n1,n2) `elem` excludedEdges || (n2,n1) `elem` excludedEdges
                         nearbyNodes x = (\ns -> trace (unwords [show x, ":", show ns]) ns) $ getAdjacentNodes x
                         currentVal
                           | n2 `oelem` rootSet = IM.singleton n2 $ SetRootNode n1
-                          | otherwise          = IM.singleton n2 $ NormalNode  n1
+                          | n1 `oelem` rootSet =
+                                         case toList . headMay . filter (/=n2) . IM.keys . childRefs $ refs ! n1 of
+                                           x:_ -> IM.singleton n2 $ NormalNode x
+                                           []  -> IM.singleton n2 $ NormalNode n1 -- I guess it's just the root and a single leaf...?
+                          | otherwise          =  IM.singleton n2 $ NormalNode n1
                         toMap v     = gen seenSet' (n2, v)
                         seenSet'    = IS.insert n1 seenSet
 
@@ -541,7 +550,9 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
             datumResolutions = resolutions $ nodeDecoration node
 
             node             = refs ! (\x -> trace ("Preorder - Node #" <> show x) x) i
-                
+
+            kids             = IM.keys $ childRefs node
+
 --          updateDynamicCharactersInSequence
 --            :: ResolutionInfomation (CharacterSequence u v w x y z )
 --            -> ResolutionInfomation (CharacterSequence u v w x y z')
@@ -551,30 +562,48 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
                 blockGen j block = block { dynamicCharacters = updatedDynamicCharacters }
                   where
                     (topology,_,_,_) = minTopologyContextPerBlock ! j
+                    excludedEdges = excludedNetworkEdges topology
                     updatedDynamicCharacters = mapWithKey dynCharGen $ dynamicCharacters block
-                    dynCharGen k _ = 
+
+                    dynCharGen k _ | trace renderedIndexingContext False = undefined
+                      where
+                        renderedIndexingContext = unlines [ unwords [ "Preorder - Node", show i, "Block", show j, "DynChar", show k]
+                                                          , renderedcontextualNodeDatum
+                                                          , renderedminTopologyContextPerBlock
+                                                          ]
+                        renderedcontextualNodeDatum = unlines $ foldMapWithKey zeta contextualNodeDatum
+                          where
+                            zeta k = pure . ((show k <> ": ") <>) . show . foldMapWithKey (\x v -> [unwords [show x, ":", show (length v)]])
+
+                        renderedminTopologyContextPerBlock = unlines $ foldMapWithKey zeta minTopologyContextPerBlock
+                          where
+                            zeta k = pure . ((show k <> ": ") <>) . show 
+
+
+                    dynCharGen k _ =
                         case parentRefContext of
-                          SetRootNode  p   -> getDynCharDecoration . selectApplicableResolutions topology . resolutions $ memo ! p
+                          SetRootNode  p   -> getDynCharDecoration . NE.head . resolutions . (trace "In SetRootNode") $ memo ! p
                           FociEdgeNode p x ->
-                            let currentContext     = selectApplicableResolutions topology $ (contextualNodeDatum .!>. p) .!>. (i,p) 
+                            let currentContext     = selectApplicableResolutions topology . (trace "In FociEdgeNode") $ (contextualNodeDatum .!>. i) .!>. (p,i)
                                 currentDecoration  = (!k) . dynamicCharacters . (!j) . toBlockVector . characterSequence $ currentContext
 --                                currentDecoration  = getDynCharDecoration currentContext
                                 parentalDecoration = transformation x []
                             in  transformation currentDecoration [(0, parentalDecoration)]
                           NormalNode   p   ->
-                            let currentContext     = selectApplicableResolutions topology $ (contextualNodeDatum .!>. p) .!>. (i,p)
+                            let isDeadEndNode = -- This only checks one edge away, probably should be transitive.
+                                  case kids of
+                                    [c] -> (c,i) `elem` excludedEdges || (i,c) `elem` excludedEdges
+                                    _   -> False
+                                currentContext     = selectApplicableResolutions topology . (trace (unwords ["In NormalNode", show p,"-->", show i])) $ (contextualNodeDatum .!>. i) .!>. (p,i)
                                 currentDecoration  = (!k) . dynamicCharacters . (!j) . toBlockVector . characterSequence $ currentContext
-                                parentalDecoration = getDynCharDecoration . selectApplicableResolutions topology . resolutions $ memo ! p
-                            in  transformation currentDecoration [(0, parentalDecoration)]
+                                parentalDecoration = getDynCharDecoration . NE.head . resolutions $ memo ! p
+                            in  if   isDeadEndNode
+                                then parentalDecoration
+                                else transformation currentDecoration [(0, parentalDecoration)]
                       where
                         parentRefContext     = (parentVectors ! (i,j)) ! k
                         -- Stupid monomorphisms prevent elegant code reuse
-                        getDynCharDecoration = (\x -> trace (unwords ["Preorder - Node", show i, "Block", show j, "DynChar", show k] <> "\n" <> renderedcontextualNodeDatum) x)
-                                             . (!k) . dynamicCharacters . (!j) . toBlockVector . characterSequence
-
-                        renderedcontextualNodeDatum = unlines $ foldMapWithKey zeta contextualNodeDatum
-                          where
-                            zeta k = pure . ((show k <> ": ") <>) . show . foldMapWithKey (\x _ -> [show x])
+                        getDynCharDecoration = (!k) . dynamicCharacters . (!j) . toBlockVector . characterSequence
 
 
 -- |
