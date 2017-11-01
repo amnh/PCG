@@ -185,16 +185,27 @@ handleMissingCharacter lhs rhs v =
 
 
 -- |
+-- /O(1)/ for input characters of differing length
+--
+-- /O(k)/ for input characters of equal length, where /k/ is the shared prefix of
+-- both characters.
+--
 -- Returns the dynamic character that is longer first, shorter second, and notes
 -- whether or not the inputs were swapped to place the characters in this ordering.
 --
--- Handles equal length characters by /not/ swapping characters.
-measureCharacters :: MonoFoldable s => s -> s -> (Bool, s, s)
-measureCharacters lhs rhs =
-    case comparing olength lhs rhs of
-      EQ -> (False, lhs, rhs)
-      GT -> (False, lhs, rhs)
-      LT -> ( True, rhs, lhs)
+-- Handles equal length characters by considering the lexicographically larger
+-- character as longer.
+--
+-- Handles equality of inputs by /not/ swapping.
+measureCharacters :: (MonoFoldable s, Ord (Element s)) => s -> s -> (Bool, s, s)
+measureCharacters lhs rhs
+  | lhsOrdering == LT = ( True, rhs, lhs)
+  | otherwise         = (False, lhs, rhs)
+  where
+    lhsOrdering = 
+        case comparing olength lhs rhs of
+          EQ -> otoList lhs `compare` otoList rhs
+          x  -> x
 
 
 -- |
