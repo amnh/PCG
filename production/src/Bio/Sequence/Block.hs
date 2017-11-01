@@ -200,7 +200,7 @@ blockCost block = sum . fmap sum $
 
 
 rootCost :: (HasRootCost u v w x y z r, Integral i) => i -> CharacterBlock u v w x y z -> r
-rootCost rootCount block = (\x -> (fromIntegral rootCount * x) / 2) . sum . fmap sum $
+rootCost rootCount block = rootMultiplier . sum . fmap sum $
     [ parmap rpar staticRootCost  . continuousCharacterBins 
     , parmap rpar staticRootCost  . nonAdditiveCharacterBins
     , parmap rpar staticRootCost  . additiveCharacterBins
@@ -209,6 +209,10 @@ rootCost rootCount block = (\x -> (fromIntegral rootCount * x) / 2) . sum . fmap
     , parmap rpar dynamicRootCost . dynamicCharacters       
     ] <*> [block]
   where
+    rootMultiplier x = (otherRoots * x) / 2
+      where
+        otherRoots = max 0 (fromIntegral rootCount - 1)
+    
     staticRootCost dec
       | isMissing dec = 0
       | otherwise     = weight

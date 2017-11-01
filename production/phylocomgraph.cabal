@@ -50,6 +50,7 @@ library
                      , parallel
                      , pcg-file-parsers
                      , pcg-utility
+                     , pointed
                      , pretty-tree
                      , primitive
                      , QuickCheck
@@ -201,6 +202,7 @@ library
                        Data.ReplicatedSequence
                        Data.TCM
                        Data.TCM.Memoized
+                       Data.Vector.NonEmpty
 --                       Text.HTML.Class
 --                       Text.HTML.Custom
                        Text.Newick.Class

@@ -122,10 +122,11 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
   where
     performPreOrderDecoration :: PostOrderDecorationDAG -> FinalDecorationDAG
     performPreOrderDecoration =
-        preorderFromRooting
+        preorderFromRooting''
           adaptiveDirectOptimizationPreOrder
           edgeCostMapping
           contextualNodeDatum
+          minBlockConext
               
         . preorderSequence''
           additivePreOrder
@@ -140,8 +141,9 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
             pairwiseAlignmentFunction = chooseDirectOptimizationComparison2 dec kidDecs
     
     performPostOrderDecoration :: PostOrderDecorationDAG
-    performPostOrderDecoration = assignPunitiveNetworkEdgeCost post
-        
+    performPostOrderDecoration = postOrderResult
+
+    (minBlockConext, postOrderResult) = assignPunitiveNetworkEdgeCost post
     (post, edgeCostMapping, contextualNodeDatum) =
          assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostOrder
          . postorderSequence'
@@ -162,18 +164,18 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
         pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec kidDecs
 
 
-chooseDirectOptimizationComparison :: ( SimpleDynamicDecoration d  c
-                                      , SimpleDynamicDecoration d' c
-                                      , Exportable c
-                                      , Show c
-                                      , Show (Element c)
-                                      , Integral (Element c)
-                                      )
-                                   => d
-                                   -> [d']
-                                   -> c
-                                   -> c
-                                   -> (Word, c, c, c, c)
+chooseDirectOptimizationComparison
+  :: ( SimpleDynamicDecoration d  c
+     , SimpleDynamicDecoration d' c
+     , Exportable c
+     , Show c
+     , Integral (Element c)
+     )
+  => d
+  -> [d']
+  -> c
+  -> c
+  -> (Word, c, c, c, c)
 chooseDirectOptimizationComparison dec decs =
     case decs of
       []  -> selectBranch dec
@@ -190,18 +192,18 @@ chooseDirectOptimizationComparison dec decs =
               in \x y -> naiveDO x y scm
 
 
-chooseDirectOptimizationComparison2 :: ( SimpleDynamicDecoration d  c
-                                      , SimpleDynamicDecoration d' c
-                                      , Exportable c
-                                      , Show c
-                                      , Show (Element c)
-                                      , Integral (Element c)
-                                      )
-                                   => d
-                                   -> [(a,d')]
-                                   -> c
-                                   -> c
-                                   -> (Word, c, c, c, c)
+chooseDirectOptimizationComparison2
+  :: ( SimpleDynamicDecoration d  c
+     , SimpleDynamicDecoration d' c
+     , Exportable c
+     , Show c
+     , Integral (Element c)
+     )
+  => d
+  -> [(a,d')]
+  -> c
+  -> c
+  -> (Word, c, c, c, c)
 chooseDirectOptimizationComparison2 dec decs =
     case decs of
       []  -> selectBranch dec

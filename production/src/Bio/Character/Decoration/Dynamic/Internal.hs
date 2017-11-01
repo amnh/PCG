@@ -231,7 +231,7 @@ instance (EncodableDynamicCharacter d) => DynamicCharacterDecoration (DynamicDec
     toDynamicCharacterDecoration name weight alphabet scm g symbolSet =
         DynamicDecorationInitial
         { dynamicDecorationInitialEncodedField           = charValue
-        , dynamicDecorationInitialCharacterAverageLength = fromEnum $ olength charValue
+        , dynamicDecorationInitialCharacterAverageLength = toEnum $ olength charValue
         , metadata                                       = dynamicMetadata name weight alphabet scm denseMay
         }
       where
@@ -456,6 +456,38 @@ instance HasEncoded (DynamicDecorationDirectOptimizationPostOrderResult d) d whe
 instance HasEncoded (DynamicDecorationInitial d) d where
 
     encoded = lens dynamicDecorationInitialEncodedField (\e x -> e { dynamicDecorationInitialEncodedField = x })
+
+
+-- | (✔)
+instance PossiblyMissingCharacter c => PossiblyMissingCharacter (DynamicDecorationInitial c) where
+
+    isMissing = isMissing . (^. encoded)
+
+    toMissing x = x & encoded %~ toMissing
+
+
+-- | (✔)
+instance PossiblyMissingCharacter c => PossiblyMissingCharacter (DynamicDecorationDirectOptimization c) where
+
+    isMissing = isMissing . (^. encoded)
+
+    toMissing x = x & encoded %~ toMissing
+
+
+-- | (✔)
+instance PossiblyMissingCharacter c => PossiblyMissingCharacter (DynamicDecorationDirectOptimizationPostOrderResult c) where
+
+    isMissing = isMissing . (^. encoded)
+
+    toMissing x = x & encoded %~ toMissing
+
+
+-- | (✔)
+instance PossiblyMissingCharacter c => PossiblyMissingCharacter (DynamicDecorationImpliedAlignment c) where
+
+    isMissing = isMissing . (^. encoded)
+
+    toMissing x = x & encoded %~ toMissing
 
 
 -- | (✔)
@@ -760,14 +792,6 @@ instance HasTraversalFoci (DynamicDecorationInitial c) (Maybe TraversalFoci) whe
 
 -- | (✔)
 instance EncodableDynamicCharacter d => ImpliedAlignmentDecoration   (DynamicDecorationImpliedAlignment d) d where
-
-
--- | (✔)
-instance PossiblyMissingCharacter d => PossiblyMissingCharacter (DynamicDecorationInitial d) where
-
-    isMissing = isMissing . (^. encoded)
-
-    toMissing x = x & encoded %~ toMissing
 
 
 -- | (✔)

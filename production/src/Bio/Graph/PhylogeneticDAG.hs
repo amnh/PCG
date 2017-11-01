@@ -23,6 +23,7 @@ module Bio.Graph.PhylogeneticDAG
   , generateLocalResolutions
   , postorderSequence'
   , preorderFromRooting
+  , preorderFromRooting''
   , preorderSequence'
   , preorderSequence''
   , renderSummary

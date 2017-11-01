@@ -163,6 +163,24 @@ invariantTransformation f xs =
 
 
 -- |
+-- /O( n )/
+--
+-- Applies a transitive relation over a list and asserts that the relation holds
+-- for all pairs of elements. By applying the transitive property, we can assert
+-- that the relation hold in liner rather than quadratic time for the collection.
+transitivePropertyHolds :: Foldable f => (a -> a -> Bool) -> f a -> Bool
+transitivePropertyHolds p es =
+    case toList es of
+      []   -> True
+      x:xs -> go x xs
+  where
+    go _    []  = True
+    go e   [y]  = p e y
+    go e (y:ys) = let !v = p e y
+                  in   v && go y ys
+
+
+-- |
 -- /O( n * m )/
 --
 -- Provide a pairwise predicate used to filter elements and a nested structure.
