@@ -16,20 +16,15 @@
 
 module Bio.Graph.PhylogeneticDAG.Internal where
 
--- import           Bio.Graph
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
--- import           Bio.Sequence.Block               (CharacterBlock)
 import           Control.Applicative              (liftA2)
 import           Control.Lens
 import           Data.Bits
--- import           Data.EdgeLength
 import           Data.Foldable
 import           Data.GraphViz.Printing    hiding ((<>)) -- Seriously, why is this redefined?
---import           Data.Hashable
---import           Data.Hashable.Memoize
 import           Data.HashMap.Lazy                (HashMap)
 import           Data.IntSet                      (IntSet)
 import qualified Data.IntSet               as IS
@@ -37,8 +32,6 @@ import           Data.Key
 import           Data.List.NonEmpty               (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty        as NE
 import           Data.List.Utility
-import           Data.Map                         (Map)
--- import           Data.Maybe
 import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Semigroup.Foldable

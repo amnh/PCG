@@ -230,11 +230,13 @@ instance (EncodableDynamicCharacter d) => DynamicCharacterDecoration (DynamicDec
 --    toDynamicCharacterDecoration :: CharacterName -> Double -> Alphabet String -> TCM -> (x -> a) -> x -> s
     toDynamicCharacterDecoration name weight alphabet scm g symbolSet =
         DynamicDecorationInitial
-        { dynamicDecorationInitialEncodedField = g symbolSet
-        , metadata                             = dynamicMetadata name weight alphabet scm denseMay
+        { dynamicDecorationInitialEncodedField           = charValue
+        , dynamicDecorationInitialCharacterAverageLength = fromEnum $ olength charValue
+        , metadata                                       = dynamicMetadata name weight alphabet scm denseMay
         }
       where
-        denseMay = maybeConstructDenseTransitionCostMatrix alphabet scm
+        charValue = g symbolSet 
+        denseMay  = maybeConstructDenseTransitionCostMatrix alphabet scm
 
 
 -- | (✔)

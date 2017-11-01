@@ -41,7 +41,7 @@ import           Data.List.NonEmpty           (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty    as NE
 import           Data.Map                     (Map)
 --import qualified Data.Map              as M
-import           Data.Matrix.NotStupid        (Matrix)
+--import           Data.Matrix.NotStupid        (Matrix)
 import qualified Data.Matrix.NotStupid as MAT
 import           Data.Maybe
 import           Data.MonoTraversable
@@ -136,7 +136,7 @@ preorderSequence'' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
 
             -- The character sequence for the current index with the node decorations
             -- updated to thier pre-order values with their final states assigned.
-            newSequence      = computeOnApplicableResolution'' f1 f2 f3 f4 f5 f6 parentalContext datumResolutions i
+            newSequence      = computeOnApplicableResolution'' f1 f2 f3 f4 f5 f6 parentalContext datumResolutions
                 
             -- This is *really* important.
             -- Here is where we collect the parental context for the current node.
@@ -300,10 +300,8 @@ computeOnApplicableResolution''
   -> (z -> [(Word, z')] -> z')
   -> ParentalContext u' v' w' x' y' z'
   -> ResolutionCache (CharacterSequence u v w x y z)
-  -> Int
---  -> [(Word, ResolutionInformation (CharacterSequence u' v' w' x' y' z'))]
   -> CharacterSequence u' v' w' x' y' z'
-computeOnApplicableResolution'' f1 f2 f3 f4 f5 f6 parentalContexts currentResolutions nodeRef = fromBlocks $ mapWithKey f parentalContexts
+computeOnApplicableResolution'' f1 f2 f3 f4 f5 f6 parentalContexts currentResolutions = fromBlocks $ mapWithKey f parentalContexts
   where
     f key (topology, childRef, maybeParentBlock) = BLK.hexZipWith f1 f2 f3 f4 f5 f6 childBlock parentBlock
       where
@@ -420,9 +418,6 @@ selectApplicableResolutions topology cache =
 preorderFromRooting''
   :: ( HasBlockCost u  v  w  x  y  z  Word Double
      , HasBlockCost u' v' w' x' y' z' Word Double
-     , HasTraversalFoci z  (Maybe TraversalFoci)
-     , HasTraversalFoci z' (Maybe TraversalFoci)
-     --     , Show z
      )
   => (z -> [(Word, z')] -> z')
   -> Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))

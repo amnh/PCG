@@ -28,7 +28,6 @@ module Bio.Sequence.Block
 
 import           Bio.Character.Encodable
 import           Bio.Character.Decoration.Continuous
-import           Bio.Character.Decoration.Discrete
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Sequence.Block.Internal
 import           Control.Lens
