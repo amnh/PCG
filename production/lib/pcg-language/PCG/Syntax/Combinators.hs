@@ -275,7 +275,7 @@ parseArgumentList argListVal = toPermutation $ begin *> datum <* close
 --
 -- Consumes a comma character with leading and training whitespace.
 comma :: (MonadParsec e s m,  Token s ~ Char) => m ()
-comma = whitespace *> seperator *> whitespace
+comma = try (whitespace *> seperator *> whitespace)
   where
     seperator = char ',' <?> "',' seperating arguments"
 
