@@ -16,7 +16,7 @@
 -- TODO: Remove all commented-out code.
 
 -- TODO: are all of these necessary?
-{-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies #-}
 -- TODO: fix and remove this ghc option (is it needed for Arbitrary?):
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -30,6 +30,7 @@ import           Bio.Character.Encodable.Static.Class
 import           Bio.Character.Encodable.Stream
 import           Bio.Character.Exportable.Class
 import           Control.Arrow                       ((***))
+import           Control.DeepSeq
 import           Data.Alphabet
 import           Data.Bits
 import           Data.BitMatrix
@@ -48,6 +49,7 @@ import           Data.Range
 import           Data.Semigroup
 import           Data.String                         (fromString)
 import           Data.Tuple                          (swap)
+import           GHC.Generics
 import           Prelude                      hiding (lookup)
 import           Test.QuickCheck              hiding ((.&.))
 import           Test.QuickCheck.Arbitrary.Instances ()
@@ -63,7 +65,7 @@ import           Text.XML
 -- Represents an encoded static character. Supports binary and numeric operations.
 newtype StaticCharacter
       = SC BitVector
-      deriving (Bits, Eq, Enum, Integral, Num, Ord, Real, Show)
+      deriving (Bits, Eq, Enum, Generic, Integral, Num, Ord, Real, Show)
 
 
 -- |
@@ -73,7 +75,7 @@ newtype StaticCharacter
 -- character stream.
 newtype StaticCharacterBlock
       = SCB BitMatrix
-      deriving (Eq, Show)
+      deriving (Eq, Generic, Show)
 
 
 type instance Bound StaticCharacter = Word
@@ -243,6 +245,12 @@ instance MonoTraversable StaticCharacterBlock where
 
     {-# INLINE omapM #-}
     omapM = otraverse
+
+
+instance NFData StaticCharacter
+
+
+instance NFData StaticCharacterBlock
 
 
 instance PossiblyMissingCharacter StaticCharacter where

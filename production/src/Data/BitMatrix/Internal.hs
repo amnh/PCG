@@ -10,19 +10,22 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns, TypeFamilies #-}
+{-# LANGUAGE BangPatterns, DeriveGeneric, TypeFamilies #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Data.BitMatrix.Internal where
 
+import Control.DeepSeq
 import Data.Bifunctor
-import Data.BitVector  hiding (foldl, foldr)
-import Data.List.Utility      (equalityOf)
+import Data.BitVector    hiding (foldl, foldr)
+import Data.BitVector.Instances ()
+import Data.List.Utility        (equalityOf)
 import Data.Foldable
-import Data.Maybe             (fromMaybe)
+import Data.Maybe               (fromMaybe)
 import Data.Monoid
 import Data.MonoTraversable
-import Test.QuickCheck hiding ((.&.))
+import GHC.Generics
+import Test.QuickCheck   hiding ((.&.))
 
 
 -- |
@@ -39,7 +42,7 @@ import Test.QuickCheck hiding ((.&.))
 --
 data BitMatrix
    = BitMatrix !Int BitVector
-   deriving (Eq)
+   deriving (Eq, Generic)
 
 
 -- |
@@ -151,6 +154,9 @@ instance MonoTraversable BitMatrix where
     -- collect the results.
     {-# INLINE omapM #-}
     omapM = otraverse
+
+
+instance NFData BitMatrix
 
 
 -- | (✔)

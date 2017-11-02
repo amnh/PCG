@@ -14,7 +14,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric, TypeFamilies #-}
 
 module Numeric.Extended.Real
   ( ExtendedReal()
@@ -22,9 +22,11 @@ module Numeric.Extended.Real
   , Finite
   ) where
 
+import Control.DeepSeq
 import Control.Applicative       (liftA2)
 import Data.Ratio
 import Data.Maybe                (fromMaybe)
+import GHC.Generics
 import Numeric.Extended.Internal
 
 
@@ -34,9 +36,24 @@ import Numeric.Extended.Internal
 -- > infinity == maxBound
 --
 newtype ExtendedReal = Cost (Maybe Double)
+    deriving (Eq, Generic)
 
 
 type instance Finite ExtendedReal = Double
+
+
+instance Bounded ExtendedReal where
+
+    maxBound = Cost Nothing
+
+    minBound = Cost $ Just 0.0
+
+
+instance Enum ExtendedReal where
+
+    fromEnum (Cost x) = maybe (maxBound :: Int) fromEnum x
+
+    toEnum = Cost . Just . toEnum
 
 
 instance ExtendedNumber ExtendedReal where
@@ -48,16 +65,20 @@ instance ExtendedNumber ExtendedReal where
     infinity = maxBound
 
 
-instance Show ExtendedReal where
+instance Fractional ExtendedReal where
 
-    show (Cost input) = maybe "∞" show input
+    (Cost lhs) / (Cost rhs) =
+        case (lhs, rhs) of
+          (Nothing,       _) -> Cost Nothing
+          (Just _ , Nothing) -> Cost $ Just 0.0
+          (Just x , Just y ) -> Cost . Just $ x / y
+
+    recip (Cost x) = Cost $ recip <$> x
+    
+    fromRational = Cost . Just . fromRational
 
 
-instance Bounded ExtendedReal where
-
-    maxBound = Cost Nothing
-
-    minBound = Cost $ Just 0.0
+instance NFData ExtendedReal
 
 
 instance Num ExtendedReal where
@@ -76,11 +97,6 @@ instance Num ExtendedReal where
     fromInteger = Cost . Just . fromInteger
 
     negate = id
-
-
-instance Eq ExtendedReal where
-
-    (Cost lhs) == (Cost rhs) = lhs == rhs
 
 
 instance Ord ExtendedReal where
@@ -109,29 +125,14 @@ instance Ord ExtendedReal where
                     Just y  -> x > y
 
 
-instance Enum ExtendedReal where
-
-    fromEnum (Cost x) = maybe (maxBound :: Int) fromEnum x
-
-    toEnum = Cost . Just . toEnum
-
-
 instance Real ExtendedReal where
 
     toRational (Cost x) = maybe (1%0) toRational x
 
 
-instance Fractional ExtendedReal where
+instance Show ExtendedReal where
 
-    (Cost lhs) / (Cost rhs) =
-        case (lhs, rhs) of
-          (Nothing,       _) -> Cost Nothing
-          (Just _ , Nothing) -> Cost $ Just 0.0
-          (Just x , Just y ) -> Cost . Just $ x / y
-
-    recip (Cost x) = Cost $ recip <$> x
-    
-    fromRational = Cost . Just . fromRational
+    show (Cost input) = maybe "∞" show input
 
 
 {-# INLINE toDouble #-}

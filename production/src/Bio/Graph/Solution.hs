@@ -11,7 +11,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving, MonoLocalBinds, MultiParamTypeClasses, UndecidableInstances #-}
+{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MonoLocalBinds, MultiParamTypeClasses, UndecidableInstances #-}
 
 module Bio.Graph.Solution
   ( PhylogeneticSolution(..)
@@ -28,6 +29,7 @@ import           Bio.Metadata.DiscreteWithTCM
 import           Bio.Graph.PhylogeneticDAG
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
+import           Control.DeepSeq
 import           Control.Lens           hiding (Indexable)
 import           Data.Foldable
 import           Data.GraphViz.Printing hiding ((<>), indent) -- Seriously, why is this redefined?
@@ -41,6 +43,7 @@ import           Data.Semigroup.Foldable
 import           Data.TCM                      (generate)
 import qualified Data.Text.Lazy         as L
 import           Prelude                hiding (lookup)
+import           GHC.Generics
 import           Text.Newick.Class
 import           Text.XML
 
@@ -49,7 +52,7 @@ import           Text.XML
 -- A solution that contains one or more equally costly forests.
 newtype PhylogeneticSolution a
       = PhylogeneticSolution (NonEmpty (PhylogeneticForest a))
-      deriving (Semigroup)
+      deriving (Generic, Semigroup)
 
 
 -- |
@@ -64,6 +67,9 @@ instance (HasLeafSet a b, Semigroup b) => HasLeafSet (PhylogeneticSolution a) b 
     leafSet = lens getter undefined
       where
         getter = foldMap1 (^. leafSet) . phylogeneticForests
+
+
+instance NFData a => NFData (PhylogeneticSolution a)
 
 
 instance PrintDot a => PrintDot (PhylogeneticSolution a) where

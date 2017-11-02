@@ -10,17 +10,19 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses #-}
 
 module Bio.Sequence.Block.Internal
   ( CharacterBlock(..)
   ) where
 
 
+import Control.DeepSeq
 import Data.Foldable
 import Data.Semigroup
 import Data.Vector            (Vector)
 import Data.Vector.Instances  ()
+import GHC.Generics
 import Prelude         hiding (zipWith)
 import Text.XML
 -- import Text.XML.Light.Types
@@ -48,7 +50,10 @@ data CharacterBlock u v w x y z
    , metricCharacterBins      :: Vector x
    , nonMetricCharacterBins   :: Vector y
    , dynamicCharacters        :: Vector z
-   } deriving (Eq)
+   } deriving (Eq, Generic)
+
+
+instance (NFData u, NFData v, NFData w, NFData x, NFData y, NFData z) => NFData (CharacterBlock u v w x y z)
 
 
 -- | (✔)

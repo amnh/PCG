@@ -16,7 +16,7 @@
 -- TODO: Remove all commented-out code.
 
 -- TODO: are all of these necessary?
-{-# LANGUAGE FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies, TypeSynonymInstances, UndecidableInstances #-}
+{-# LANGUAGE DeriveGeneric, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies, TypeSynonymInstances, UndecidableInstances #-}
 -- TODO: fix and remove this ghc option (is it needed for Arbitrary?):
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -31,6 +31,7 @@ import           Bio.Character.Encodable.Internal
 import           Bio.Character.Encodable.Stream
 import           Bio.Character.Exportable.Class
 import           Control.Arrow                       ((***))
+import           Control.DeepSeq
 import           Control.Lens                 hiding (mapping)
 import           Data.Alphabet
 import           Data.BitMatrix
@@ -50,6 +51,7 @@ import           Data.MonoTraversable
 import           Data.String                         (fromString)
 import           Data.Tuple                          (swap)
 import           Data.Vector                         (Vector)
+import           GHC.Generics
 import           Prelude                      hiding (lookup)
 import           Test.QuickCheck              hiding ((.&.))
 import           Test.QuickCheck.Arbitrary.Instances ()
@@ -70,14 +72,14 @@ import           Text.XML
 data  DynamicChar
     = Missing Int
     | DC BitMatrix
-    deriving (Eq, Show)
+    deriving (Eq, Generic, Show)
 
 
 -- |
 -- Represents a sinlge element of a dynamic character.
 newtype DynamicCharacterElement
       = DCE BitVector
-      deriving (Bits, Eq, Enum, Integral, Num, Ord, Real, Show)
+      deriving (Bits, Eq, Enum, Generic, Integral, Num, Ord, Real, Show)
 
 
 type instance Element DynamicChar = DynamicCharacterElement
@@ -333,6 +335,12 @@ instance MonoTraversable DynamicChar where
 
     {-# INLINE omapM #-}
     omapM = otraverse
+
+
+instance NFData DynamicChar
+
+
+instance NFData DynamicCharacterElement
 
 
 instance PossiblyMissingCharacter DynamicChar where

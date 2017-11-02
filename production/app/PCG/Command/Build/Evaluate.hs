@@ -19,6 +19,7 @@ import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG
 import qualified Bio.Graph.ReferenceDAG as DAG
 import           Bio.Sequence
+import           Control.DeepSeq
 --import           Control.Evaluation
 import           Control.Lens
 import           Control.Monad                 (replicateM)
@@ -104,7 +105,7 @@ evaluate
 -- evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
 -- evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
 evaluate (BUILD (BuildCommand trajectoryCount buildType)) oldState = do
-    x <- oldState
+    x <- force oldState
     
     case x of
       Left  e -> pure $ Left e

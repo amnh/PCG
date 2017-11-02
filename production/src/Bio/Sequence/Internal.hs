@@ -13,7 +13,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric, FlexibleContexts, TypeFamilies #-}
 
 -- This is so that the Show instance compiles, even though the "real valued"
 -- cost variable 'r' doesn't appear on the right hand side of the double arrow.
@@ -42,6 +42,7 @@ module Bio.Sequence.Internal
 --import           Bio.Character.Decoration.Continuous
 import           Bio.Sequence.Block             (CharacterBlock, HasBlockCost, HasRootCost)
 import qualified Bio.Sequence.Block      as Blk
+import           Control.DeepSeq
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Bifunctor
@@ -56,6 +57,7 @@ import           Data.Semigroup.Foldable
 import           Data.Semigroup.Traversable
 import           Data.Vector.NonEmpty           (Vector)
 import qualified Data.Vector.NonEmpty    as V
+import           GHC.Generics
 import           Prelude                 hiding (zipWith)
 import           Text.XML
 
@@ -76,7 +78,7 @@ import           Text.XML
 -- was minimal.
 newtype CharacterSequence u v w x y z
     = CharSeq (Vector (CharacterBlock u v w x y z))
-    deriving (Eq)
+    deriving (Eq, Generic)
 
 
 type instance Element (CharacterSequence u v w x y z) = CharacterBlock u v w x y z
@@ -120,6 +122,9 @@ instance MonoTraversable (CharacterSequence u v w x y z) where
 
     {-# INLINE omapM #-}
     omapM = otraverse
+
+
+instance (NFData u, NFData v, NFData w, NFData x, NFData y, NFData z) => NFData (CharacterSequence u v w x y z)
 
 
 -- | (✔)

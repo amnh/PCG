@@ -10,17 +10,19 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveDataTypeable, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveDataTypeable, DeriveGeneric, GeneralizedNewtypeDeriving #-}
 
 module Numeric.PositiveAverage
   ( PositiveAverage()
   , fromPositiveAverage
   ) where
 
+import Control.DeepSeq
 import Data.Data
 import Data.Ratio
 import Data.Semigroup
 import Foreign.Storable
+import GHC.Generics
 
 
 -- |
@@ -34,7 +36,7 @@ import Foreign.Storable
 --
 -- All instance operations are /O(1)/.
 newtype PositiveAverage = Avg (Ratio Word)
-  deriving (Data, Enum, Eq, Ord, Storable)
+  deriving (Data, Enum, Eq, Generic, Ord, Storable)
 
 
 instance Bounded PositiveAverage where
@@ -42,6 +44,9 @@ instance Bounded PositiveAverage where
     maxBound = Avg $ maxBound % 1
 
     minBound = Avg $ 1 % maxBound
+
+
+instance NFData PositiveAverage
 
 
 instance Semigroup PositiveAverage where

@@ -14,6 +14,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DeriveTraversable          #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -27,17 +28,19 @@ module Bio.Graph.Forest
   ) where
 
 import Bio.Graph.LeafSet
-import Control.Lens              hiding (Indexable)
+import Control.DeepSeq
+import Control.Lens           hiding (Indexable)
 import Data.Foldable
 import Data.GraphViz.Printing
 import Data.Key
-import Data.List                        (intercalate)
-import Data.List.NonEmpty               (NonEmpty(..))
+import Data.List                     (intercalate)
+import Data.List.NonEmpty            (NonEmpty(..))
 import Data.Maybe
 import Data.Semigroup
 import Data.Semigroup.Foldable
 -- import Data.Semigroup.Traversable
 import Prelude                hiding (head, lookup, zip, zipWith)
+import GHC.Generics
 import Text.Newick.Class
 import Text.XML.Custom
 -- import Text.XML.Light.Types
@@ -47,7 +50,7 @@ import Text.XML.Custom
 -- A newtype wrapper for a 'NonEmpty' collection of forests.
 newtype PhylogeneticForest a
       = PhylogeneticForest (NonEmpty a)
-      deriving (Foldable, Foldable1, Functor, Semigroup, Traversable)
+      deriving (Foldable, Foldable1, Functor, Generic, Semigroup, Traversable)
 
 
 type instance Key PhylogeneticForest = Int
@@ -114,6 +117,9 @@ instance Lookup PhylogeneticForest where
 
     {-# INLINE lookup #-}
     lookup i = lookup i . unwrap
+
+
+instance NFData a => NFData (PhylogeneticForest a)
 
 
 instance PrintDot a => PrintDot (PhylogeneticForest a) where

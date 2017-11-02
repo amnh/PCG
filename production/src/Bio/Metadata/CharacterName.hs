@@ -66,12 +66,12 @@ data CharacterName
    deriving (Eq, Generic)
 
 
-instance NFData CharacterName
-
-
 instance IsString CharacterName where
 
     fromString = UserDefined "Unspecified Path"
+
+
+instance NFData CharacterName
 
 
 -- A custom 'Show' instance for more legible rendering of lists

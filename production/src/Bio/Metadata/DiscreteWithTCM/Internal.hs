@@ -11,7 +11,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveGeneric, FlexibleInstances, MultiParamTypeClasses #-}
 
 module Bio.Metadata.DiscreteWithTCM.Internal
   ( DiscreteCharacterMetadata(..)
@@ -30,12 +30,14 @@ module Bio.Metadata.DiscreteWithTCM.Internal
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM.Class
+import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
 import Data.List (intercalate)
 import Data.Monoid
 import Data.TCM
 import Data.TCM.Memoized
+import GHC.Generics
 import Text.XML
 
 -- |
@@ -47,7 +49,7 @@ data DiscreteWithTCMCharacterMetadataDec c
    , transitionCostMatrixData :: c -> c -> (c, Word)
    , foreignPointerData       :: MemoizedCostMatrix
    , discreteData             :: DiscreteCharacterMetadataDec
-   }
+   } deriving (Generic)
 
 
 -- | (✔)
@@ -117,6 +119,13 @@ instance HasTransitionCostMatrix (DiscreteWithTCMCharacterMetadataDec c) (c -> c
 
     transitionCostMatrix = lens transitionCostMatrixData $ \e x -> e { transitionCostMatrixData = x }
 
+
+instance NFData (DiscreteWithTCMCharacterMetadataDec c) where
+
+    rnf val = rnf (foreignPointerData val)
+        `seq` rnf (discreteData val)
+        `seq` ()
+  
 
 instance Show (DiscreteWithTCMCharacterMetadataDec c) where
 

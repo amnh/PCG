@@ -11,12 +11,16 @@
 -- The core monoidal state of an 'Evaluation' monad.
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveGeneric #-}
+
 module Control.Evaluation.Unit where
 
 import Control.Applicative
+import Control.DeepSeq
 import Control.Monad (MonadPlus(mzero, mplus))
 import Data.Monoid   ()
 import Data.Semigroup
+import GHC.Generics
 import Test.QuickCheck
 
 
@@ -27,7 +31,7 @@ data EvalUnit a
    = NoOp
    | Error String 
    | Value a
-   deriving (Eq,Show)
+   deriving (Eq, Generic, Show)
 
 
 -- | (✔)
@@ -62,6 +66,9 @@ instance Functor EvalUnit where
     _ `fmap` NoOp    = NoOp
     _ `fmap` Error x = Error x
     f `fmap` Value x = Value $ f x
+
+
+instance NFData a => NFData (EvalUnit a)
 
 
 -- | (✔)

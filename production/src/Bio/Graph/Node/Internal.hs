@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveFunctor, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveFunctor, DeriveGeneric, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses #-}
 
 module Bio.Graph.Node.Internal
   ( EdgeSet
@@ -31,14 +31,17 @@ module Bio.Graph.Node.Internal
 
 
 -- import Bio.Graph.LeafSet
+import Control.DeepSeq
 import Control.Lens
 -- import Data.Bifunctor
 import Data.BitVector
+import Data.BitVector.Instances ()
 import Data.EdgeSet
 import Data.Foldable
-import Data.List.NonEmpty (NonEmpty(..))
+import Data.List.NonEmpty       (NonEmpty(..))
 import Data.Semigroup
 import Data.TopologyRepresentation
+import GHC.Generics
 import Text.Newick.Class
 import Text.XML
 
@@ -50,7 +53,7 @@ data  PhylogeneticNode n s
     = PNode
     { nodeDecorationDatum :: n
     , sequenceDecoration  :: s
-    } deriving (Eq, Functor, Show)
+    } deriving (Eq, Functor, Generic, Show)
 
 
 -- |
@@ -60,7 +63,7 @@ data  PhylogeneticNode2 s n
     = PNode2
     { resolutions          :: ResolutionCache s
     , nodeDecorationDatum2 :: n
-    } deriving (Eq, Functor)
+    } deriving (Eq, Functor, Generic)
 
 
 -- |
@@ -74,7 +77,7 @@ data  ResolutionInformation s
     , subtreeEdgeSet         :: EdgeSet (Int, Int)
     , topologyRepresentation :: TopologyRepresentation (Int, Int)
     , characterSequence      :: s
-    } deriving (Functor)
+    } deriving (Functor, Generic)
 
 
 -- |
@@ -87,7 +90,7 @@ type ResolutionCache s = NonEmpty (ResolutionInformation s)
 -- A newick representation of a subtree. Semigroup instance used for subtree
 -- joining.
 newtype NewickSerialization = NS String
-  deriving (Eq, Ord)
+  deriving (Eq, Generic, Ord)
 
 
 -- |
@@ -99,7 +102,7 @@ newtype NewickSerialization = NS String
 -- Use the 'Semigroup' operation '(<>)' to union the leaves included in a leaf
 -- set.
 newtype SubtreeLeafSet = LS BitVector
-  deriving (Eq, Ord, Bits)
+  deriving (Bits, Eq, Generic, Ord)
 
 
 instance Bifunctor PhylogeneticNode where
@@ -113,6 +116,21 @@ instance Eq  (ResolutionInformation s) where
 
     lhs == rhs = leafSetRepresentation lhs == leafSetRepresentation rhs
               && subtreeRepresentation lhs == subtreeRepresentation rhs
+
+
+instance (NFData n, NFData s) => NFData (PhylogeneticNode n s)
+
+
+instance (NFData s, NFData n) => NFData (PhylogeneticNode2 s n)
+
+
+instance NFData NewickSerialization
+
+
+instance NFData s => NFData (ResolutionInformation s)
+
+
+instance NFData SubtreeLeafSet
 
 
 instance Ord (ResolutionInformation s) where

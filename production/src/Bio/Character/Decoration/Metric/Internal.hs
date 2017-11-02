@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
 
 module Bio.Character.Decoration.Metric.Internal where
 
@@ -22,9 +22,11 @@ import Bio.Character.Encodable
 import Bio.Metadata.CharacterName
 --import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
+import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
 import Data.TCM
+import GHC.Generics
 import Numeric.Extended.Natural
 import Text.XML
 
@@ -36,7 +38,8 @@ data MetricDecorationInitial c
    = MetricDecorationInitial
    { metricDecorationInitialCharacter :: c
    , metadata                         :: DiscreteWithTCMCharacterMetadataDec c
-   }
+   } deriving (Generic)
+
 
 -- |
 -- A concrete type representing the results of performing Sankoff's algorithm.
@@ -61,13 +64,18 @@ data SankoffOptimizationDecoration c
    , sankoffMetadataField         :: DiscreteWithTCMCharacterMetadataDec c
    , sankoffCharacterField        :: c                                           -- Bit Vector version of median character
    , sankoffIsLeaf                :: Bool
-   }
+   } deriving (Generic)
 
 
 -- | A list of states on the child that contribute to the lowest score on each state in the parent
 -- Used to simplify? SankoffOptimizationDecoration
 type StateContributionList = [Word]
 
+
+instance NFData c => NFData (MetricDecorationInitial c)
+
+
+instance NFData c => NFData (SankoffOptimizationDecoration c)
 
 
 -- | (✔)

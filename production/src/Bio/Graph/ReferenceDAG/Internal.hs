@@ -10,13 +10,15 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies #-}
 
 module Bio.Graph.ReferenceDAG.Internal where
 
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Component
 import           Control.Arrow                    ((&&&),(***))
+import           Control.DeepSeq
 import           Control.Lens                     (lens)
 import           Data.Bifunctor
 import           Data.EdgeSet
@@ -47,6 +49,7 @@ import           Data.Tree.Pretty                 (drawVerticalTree)
 import           Data.Vector                      (Vector)
 import qualified Data.Vector               as V
 import           Data.Vector.Instances            ()
+import           GHC.Generics
 import           Numeric.Extended.Real
 import           Prelude                   hiding (lookup, zipWith)
 import           Text.Newick.Class
@@ -62,7 +65,7 @@ data  ReferenceDAG d e n
     { references :: Vector (IndexData e n)
     , rootRefs   :: NonEmpty Int
     , graphData  :: GraphData d
-    }
+    } deriving (Generic)
 
 
 -- |
@@ -77,7 +80,7 @@ data  IndexData e n
     { nodeDecoration :: n
     , parentRefs     :: IntSet
     , childRefs      :: IntMap e
-    } deriving (Show)
+    } deriving (Generic, Show)
 
 
 -- |
@@ -92,7 +95,7 @@ data  GraphData d
     , rootingCost       :: Double
     , totalBlockCost    :: Double
     , graphMetadata     :: d
-    }
+    } deriving (Generic)
 
 
 -- | This will be used below to print the node type to XML and Newick.
@@ -108,6 +111,9 @@ data NodeClassification
 -- |
 -- A reference to a node within the 'ReferenceDAG'.
 newtype NodeRef = NR Int deriving (Eq, Enum)
+
+
+type instance Key (ReferenceDAG d e) = Int
 
 
 -- | (✔)
@@ -127,9 +133,6 @@ instance Bifunctor (ReferenceDAG d) where
 instance Foldable (ReferenceDAG d e) where
 
     foldMap f = foldMap (f . nodeDecoration) . references
-
-
-type instance Key (ReferenceDAG d e) = Int
 
 
 -- | (✔)
@@ -163,6 +166,15 @@ instance HasLeafSet (ReferenceDAG d e n) (LeafSet n) where
 
             f e | null (childRefs e) = [nodeDecoration e]
                 | otherwise          = mempty
+
+
+instance (NFData d, NFData e, NFData n) => NFData (ReferenceDAG d e n)
+
+
+instance (NFData e, NFData n) => NFData (IndexData e n)
+
+
+instance (NFData d) => NFData (GraphData d)
 
 
 -- | (✔)

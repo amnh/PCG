@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE MagicHash, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric, MagicHash, TypeFamilies #-}
 
 module Numeric.Extended.Natural
   ( ExtendedNatural()
@@ -18,9 +18,11 @@ module Numeric.Extended.Natural
   , Finite
   ) where
 
+import Control.DeepSeq
 import Data.Bits
 import GHC.Exts
 import GHC.Integer.Logarithms
+import GHC.Generics
 import Numeric.Extended.Internal
 
 
@@ -54,7 +56,7 @@ import Numeric.Extended.Internal
 --     @infinity@ as the denominator.
 -- 
 newtype ExtendedNatural = Cost Word
-  deriving (Eq, Ord)
+  deriving (Eq, Generic, Ord)
 
 
 type instance Finite ExtendedNatural = Word
@@ -81,6 +83,9 @@ instance ExtendedNumber ExtendedNatural where
     fromFinite = fromWord
 
     infinity = Cost maxBound
+
+
+instance NFData ExtendedNatural
 
 
 instance Num ExtendedNatural where
