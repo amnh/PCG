@@ -23,18 +23,15 @@ module Bio.Graph.LeafSet
 
 
 import Control.Lens
---import Data.Foldable
--- import Data.List.NonEmpty
 import Data.List (union)
-import Text.Newick.Class
 import Data.Semigroup
-import Text.XML.Custom
---import Data.Set (Set)
---import Data.Monoid
--- import Text.XML.Custom
+--import Text.XML.Custom
 
 
-newtype LeafSet n = LeafSet [n] deriving (Foldable, Functor, Show)
+-- |
+-- Set of unique leaf labels.
+newtype LeafSet n = LeafSet [n]
+    deriving (Foldable, Functor, Show)
 
 
 -- |
@@ -45,6 +42,7 @@ class HasLeafSet s a | s -> a where
     leafSet :: Lens' s a
 
   
+-- | (✔)
 instance Eq n => Semigroup (LeafSet n) where
 
     (<>) (LeafSet lhs) (LeafSet rhs) = LeafSet $ union lhs rhs

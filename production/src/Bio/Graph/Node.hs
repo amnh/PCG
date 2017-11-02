@@ -10,8 +10,6 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveFunctor, GeneralizedNewtypeDeriving #-}
-
 module Bio.Graph.Node
   ( EdgeSet
   , NewickSerialization()
@@ -21,6 +19,7 @@ module Bio.Graph.Node
   , ResolutionInformation(..)
   , SubtreeLeafSet()
   , addEdgeToEdgeSet
+  , addNetworkEdgeToTopology
   , singletonEdgeSet
   , singletonNewickSerialization
   , singletonSubtreeLeafSet

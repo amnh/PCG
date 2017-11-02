@@ -44,11 +44,13 @@ import Data.Bits
 import Data.DList            (snoc)
 import Data.Foldable
 import Data.Key
+import Data.List.NonEmpty    (NonEmpty(..), fromList)
 import Data.Matrix.NotStupid (Matrix)
 import Data.Maybe            (fromMaybe)
 import Data.MonoTraversable
 import Data.Ord
 import Data.Semigroup
+import Data.Semigroup.Foldable
 import Numeric.Extended.Natural
 import Prelude        hiding (lookup, zipWith)
 
@@ -102,7 +104,7 @@ type NeedlemanWunchMatrix s = Matrix (Cost, Direction, s)
 -- |
 -- Constraints on the input dynamic characters that direct optimization requires
 -- to operate.
-type DOCharConstraint c = (EncodableDynamicCharacter c, {- Show c, -} Show (Element c), Integral (Element c))
+type DOCharConstraint c = (EncodableDynamicCharacter c, {- Show c, Show (Element c), -} Integral (Element c))
 
 
 -- |
@@ -183,16 +185,27 @@ handleMissingCharacter lhs rhs v =
 
 
 -- |
+-- /O(1)/ for input characters of differing length
+--
+-- /O(k)/ for input characters of equal length, where /k/ is the shared prefix of
+-- both characters.
+--
 -- Returns the dynamic character that is longer first, shorter second, and notes
 -- whether or not the inputs were swapped to place the characters in this ordering.
 --
--- Handles equal length characters by /not/ swapping characters.
-measureCharacters :: MonoFoldable s => s -> s -> (Bool, s, s)
-measureCharacters lhs rhs =
-    case comparing olength lhs rhs of
-      EQ -> (False, lhs, rhs)
-      GT -> (False, lhs, rhs)
-      LT -> ( True, rhs, lhs)
+-- Handles equal length characters by considering the lexicographically larger
+-- character as longer.
+--
+-- Handles equality of inputs by /not/ swapping.
+measureCharacters :: (MonoFoldable s, Ord (Element s)) => s -> s -> (Bool, s, s)
+measureCharacters lhs rhs
+  | lhsOrdering == LT = ( True, rhs, lhs)
+  | otherwise         = (False, lhs, rhs)
+  where
+    lhsOrdering = 
+        case comparing olength lhs rhs of
+          EQ -> otoList lhs `compare` otoList rhs
+          x  -> x
 
 
 -- |
@@ -207,30 +220,30 @@ needlemanWunschDefinition
   -> (Int, Int)
   -> (Cost, Direction, Element s)
 needlemanWunschDefinition topChar leftChar overlapFunction memo p@(row, col)
-    | p == (0,0) = (      0, DiagArrow,      gap)
-    | otherwise  = (minCost,    minDir, minState)
-    where
+  | p == (0,0) = (      0, DiagArrow,      gap)
+  | otherwise  = (minCost,    minDir, minState)
+  where
 
-      -- | Lookup with a default value of infinite cost.
-      {-# INLINE (!?) #-}
-      (!?) m k = fromMaybe (infinity, DiagArrow, gap) $ k `lookup` m
+    -- | Lookup with a default value of infinite cost.
+    {-# INLINE (!?) #-}
+    (!?) m k = fromMaybe (infinity, DiagArrow, gap) $ k `lookup` m
         
-      gap                           = gapOfStream topChar
-      topElement                    = fromMaybe gap $  topChar `lookupStream` (col - 1)
-      leftElement                   = fromMaybe gap $ leftChar `lookupStream` (row - 1)
-      (leftwardValue, _, _)         = memo !? (row    , col - 1)
-      (diagonalValue, _, _)         = memo !? (row - 1, col - 1)
-      (  upwardValue, _, _)         = memo !? (row - 1, col    )
-      (rightChar, rightOverlapCost) = fromFinite <$> overlapFunction topElement  gap
-      ( diagChar,  diagOverlapCost) = fromFinite <$> overlapFunction topElement  leftElement 
-      ( downChar,  downOverlapCost) = fromFinite <$> overlapFunction gap         leftElement
-      rightCost                     = rightOverlapCost + leftwardValue
-      diagCost                      =  diagOverlapCost + diagonalValue
-      downCost                      =  downOverlapCost +   upwardValue
-      (minCost, minState, minDir)   = getMinimalCostDirection
-                                        ( diagCost,  diagChar)
-                                        (rightCost, rightChar)
-                                        ( downCost,  downChar)
+    gap                           = gapOfStream topChar
+    topElement                    = fromMaybe gap $  topChar `lookupStream` (col - 1)
+    leftElement                   = fromMaybe gap $ leftChar `lookupStream` (row - 1)
+    (leftwardValue, _, _)         = memo !? (row    , col - 1)
+    (diagonalValue, _, _)         = memo !? (row - 1, col - 1)
+    (  upwardValue, _, _)         = memo !? (row - 1, col    )
+    (rightChar, rightOverlapCost) = fromFinite <$> overlapFunction topElement  gap
+    ( diagChar,  diagOverlapCost) = fromFinite <$> overlapFunction topElement  leftElement 
+    ( downChar,  downOverlapCost) = fromFinite <$> overlapFunction gap         leftElement
+    rightCost                     = rightOverlapCost + leftwardValue
+    diagCost                      =  diagOverlapCost + diagonalValue
+    downCost                      =  downOverlapCost +   upwardValue
+    (minCost, minState, minDir)   = getMinimalCostDirection
+                                      ( diagCost,  diagChar)
+                                      (rightCost, rightChar)
+                                      ( downCost,  downChar)
 
 
 -- |
@@ -371,8 +384,8 @@ traceback alignMatrix longerChar lesserChar =
 -- Memoized wrapper of the overlap function
 getOverlap :: EncodableStreamElement c => c -> c -> (Word -> Word -> Word) -> (c, Word)
 getOverlap inChar1 inChar2 costStruct = result
-    where
-        result = overlap costStruct inChar1 inChar2
+  where
+    result = overlap costStruct inChar1 inChar2
 
         
 -- |
@@ -388,17 +401,17 @@ getOverlap inChar1 inChar2 costStruct = result
 -- value is A,C,G,T.
 overlap :: (EncodableStreamElement c {- , Show c -}) => (Word -> Word -> Word) -> c -> c -> (c, Word)
 overlap costStruct char1 char2
-    | intersectionStates == zeroBits = minimalChoice $ allPossibleBaseCombosCosts costStruct char1 char2
-    | otherwise                      = (intersectionStates, 0)
-    where
-      intersectionStates = char1 .&. char2
+  | intersectionStates == zeroBits = minimalChoice $ allPossibleBaseCombosCosts costStruct char1 char2
+  | otherwise                      = (intersectionStates, 0)
+  where
+    intersectionStates = char1 .&. char2
 
 
 -- |
 -- Given a structure of character elements and costs, calculates the least
 -- costly intersection of character elements and the cost of that intersection
--- of chaarcter elements.
-minimalChoice :: (Bits c, Foldable t, Ord n) => t (c, n) -> (c, n)
+-- of character elements.
+minimalChoice :: (Bits c, Foldable1 t, Ord n) => t (c, n) -> (c, n)
 minimalChoice = foldr1 f
   where
     f (val1, cost1) (val2, cost2)
@@ -414,12 +427,11 @@ minimalChoice = foldr1 f
 -- character and returns a list of tuples of all possible unambiguous pairings,
 -- along with the cost of each pairing. The resulting elements each have exactly
 -- two bits set. 
-allPossibleBaseCombosCosts :: EncodableStreamElement s => (Word -> Word -> Word) -> s -> s -> [(s, Word)]
-allPossibleBaseCombosCosts costStruct char1 char2 =
-    [ (x .|. y, costStruct i j)
-    | (i, x) <- getSubChars char1
-    , (j, y) <- getSubChars char2
-    ]
+allPossibleBaseCombosCosts :: EncodableStreamElement s => (Word -> Word -> Word) -> s -> s -> NonEmpty (s, Word)
+allPossibleBaseCombosCosts costStruct char1 char2 = do
+    (i, x) <- getSubChars char1
+    (j, y) <- getSubChars char2
+    pure (x .|. y, costStruct i j)
 
 
 -- |
@@ -429,8 +441,8 @@ allPossibleBaseCombosCosts costStruct char1 char2 =
 -- tuple with an 'Word', @ x @, giving the location of the set bit, as well as an
 -- 'EncodableStreamElement' of the same length as the input, but with only the
 -- bit at location @ x @ set.
-getSubChars :: EncodableStreamElement s => s -> [(Word, s)]
-getSubChars fullChar = foldMap f [0 .. symbolCount fullChar - 1]
+getSubChars :: EncodableStreamElement s => s -> NonEmpty (Word, s)
+getSubChars fullChar = fromList $ foldMap f [0 .. symbolCount fullChar - 1]
   where
     f i
       | fullChar `testBit` i = pure (toEnum i,  z `setBit` i)

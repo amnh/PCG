@@ -24,6 +24,7 @@ module Bio.Metadata.Dynamic
     , MemoizedCostMatrix()
     , TraversalFoci
     , TraversalFocusEdge
+    , TraversalTopology
     , dynamicMetadata
     , dynamicMetadataFromTCM
     , maybeConstructDenseTransitionCostMatrix

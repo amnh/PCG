@@ -22,19 +22,18 @@ import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
-import           Control.Arrow             ((&&&))
-import           Control.Applicative       (liftA2)
+import           Control.Arrow               ((&&&))
+import           Control.Applicative         (liftA2)
 import           Control.Monad.State.Lazy
 import           Data.Bits
 import           Data.Foldable
-import           Data.Hashable
-import           Data.Hashable.Memoize
-import qualified Data.IntMap        as IM
+import qualified Data.IntMap          as IM
 import           Data.Key
-import           Data.List.NonEmpty        (NonEmpty( (:|) ))
-import qualified Data.List.NonEmpty as NE
-import qualified Data.Vector        as V
-import           Prelude            hiding (zipWith)
+import           Data.List.NonEmpty          (NonEmpty( (:|) ))
+import qualified Data.List.NonEmpty   as NE
+import           Data.MonoTraversable
+import qualified Data.Vector          as V
+import           Prelude              hiding (zipWith)
 
 
 -- |
@@ -43,9 +42,7 @@ import           Prelude            hiding (zipWith)
 -- The logic function takes a current node decoration,
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
-postorderSequence' :: ( Eq z, Eq z', Hashable z, Hashable z'
-                      , HasBlockCost u' v' w' x' y' z' Word Double
-                      )
+postorderSequence' :: HasBlockCost u' v' w' x' y' z' Word Double
                    => (u -> [u'] -> u')
                    -> (v -> [v'] -> v')
                    -> (w -> [w'] -> w')
@@ -60,7 +57,6 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
       where
         f acc = (acc .|.) . leafSetRepresentation . NE.head . resolutions
     
-    f6' = memoize2 f6
 {-    
     newDAG
       :: ReferenceDAG d e x
@@ -95,7 +91,7 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
                         _    -> error "Root Node with no complete coverage resolutions!!! This should be logically impossible."
 
             completeCoverage = (completeLeafSetForDAG ==) . (completeLeafSetForDAG .&.) . leafSetRepresentation
-            localResolutions = liftA2 (generateLocalResolutions f1 f2 f3 f4 f5 f6') datumResolutions childResolutions
+            localResolutions = liftA2 (generateLocalResolutions f1 f2 f3 f4 f5 f6) datumResolutions childResolutions
                 
             node             = references dag ! i
             childIndices     = IM.keys $ childRefs node
@@ -104,4 +100,12 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
 --            childResolutions :: NonEmpty [a]
             childResolutions = applySoftwireResolutions $ extractResolutionContext <$> childIndices
             extractResolutionContext = getResolutions &&& parentRefs . (references dag !)
-            getResolutions j = fmap (addEdgeToEdgeSet (i,j)) . resolutions $ memo ! j
+            getResolutions j = fmap updateFunction . resolutions $ memo ! j
+              where
+                updateFunction =
+                    case otoList . parentRefs $ references dag ! j of
+                      -- In the network edge case, we add also update the topology representation
+                      x:y:_ ->
+                          let  mutuallyExclusiveIncidentEdge = if x == i then (y,j) else (x,j)
+                          in   addEdgeToEdgeSet (i,j) . addNetworkEdgeToTopology (i,j) mutuallyExclusiveIncidentEdge
+                      _     -> addEdgeToEdgeSet (i,j)

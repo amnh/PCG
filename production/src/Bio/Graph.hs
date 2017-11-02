@@ -40,7 +40,9 @@ module Bio.Graph
   , generateLocalResolutions
   , postorderSequence'
   , preorderFromRooting
+  , preorderFromRooting''
   , preorderSequence'
+  , preorderSequence''
   , renderSummary
   , reifiedSolution
 --  , reifiedToCharacterDAG

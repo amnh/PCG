@@ -62,6 +62,7 @@ library
                      , parallel
                      , pcg-file-parsers
                      , pcg-utility
+                     , pointed
                      , pretty-tree
                      , primitive
                      , QuickCheck
@@ -201,10 +202,10 @@ library
                        Data.BitMatrix
                        Data.DuplicateSet
                        Data.EdgeLength
-                       Data.Hashable.Memoize
                        Data.ReplicatedSequence
                        Data.TCM
                        Data.TCM.Memoized
+                       Data.Vector.NonEmpty
 --                       Text.HTML.Class
 --                       Text.HTML.Custom
                        Text.Newick.Class
@@ -274,7 +275,6 @@ library
                        Bio.Graph.PhylogeneticDAG.Postorder
                        Bio.Graph.PhylogeneticDAG.Preorder
                        Bio.Graph.PhylogeneticDAG.Reification
-                       Bio.Graph.TopologyRepresentation
                        Bio.Graph.ZipperDAG.Internal
                        Bio.Sequence.Internal
                        Bio.Sequence.Block.Builder
@@ -289,10 +289,12 @@ library
                        Data.Range
                        Data.TCM.Internal
                        Data.TCM.Memoized.FFI
+                       Data.TopologyRepresentation
                        Numeric.Extended
                        Numeric.Extended.Internal
                        Numeric.Extended.Natural
                        Numeric.Extended.Real
+                       Numeric.PositiveAverage
                        Test.QuickCheck.Arbitrary.Instances
                        Text.XML.Class
 
@@ -305,6 +307,7 @@ executable pcg
                      , blaze-html
                        -- Required for Data.Map.restrictKeys
                      , containers       >=0.5.8
+                     , deepseq
                      , directory
                      , either
                      , Glob
@@ -318,6 +321,7 @@ executable pcg
                      , pcg-file-parsers
                      , pcg-language
                      , pcg-utility
+                     , random-shuffle
                      , semigroupoids
                      , semigroups
                      , text

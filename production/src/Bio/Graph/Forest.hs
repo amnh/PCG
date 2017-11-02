@@ -14,7 +14,13 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveTraversable, FlexibleContexts, FlexibleInstances, FunctionalDependencies, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies, UndecidableInstances #-}
+{-# LANGUAGE DeriveTraversable          #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 module Bio.Graph.Forest
   ( PhylogeneticForest(..)
@@ -81,7 +87,7 @@ instance (HasLeafSet a b, Semigroup b) => HasLeafSet (PhylogeneticForest a) b wh
 
     leafSet = lens getter undefined
       where
-        getter = (foldMap1 (^. leafSet)) . unwrap
+        getter = foldMap1 (^. leafSet) . unwrap
 
 
 instance Indexable PhylogeneticForest where

@@ -42,7 +42,7 @@ evaluate (REPORT (ReportCommand format target)) old = do
                     case w of
                       Append    -> appendFile f
                       Overwrite ->  writeFile f
-       in  old <* liftIO (op output)
+       in  liftIO (op output) *> old
 
 evaluate _ _ = fail "Invalid READ command binding"
 

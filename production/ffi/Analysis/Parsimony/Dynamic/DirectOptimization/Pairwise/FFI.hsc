@@ -136,6 +136,7 @@ data CostMatrix3d
    } deriving (Eq, Generic)
 
 
+-- TODO: StablePtr here maybe?
 -- |
 -- Exposed wrapper for C allocated cost matrix structs.
 data DenseTransitionCostMatrix

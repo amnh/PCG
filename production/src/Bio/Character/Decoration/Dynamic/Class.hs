@@ -10,7 +10,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, FunctionalDependencies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses #-}
 
 -- For derived instance of PossiblyMissingCharacter
 {-# LANGUAGE UndecidableInstances #-}
@@ -26,12 +27,29 @@ import Bio.Metadata.Dynamic
 import Control.Lens
 import Data.Alphabet
 import Data.MonoTraversable
+import Data.Semigroup
+import Numeric.PositiveAverage
+
+
+-- |
+-- The average length of all the sequences in the subtree.
+--
+-- Forms a 'Semigroup' for effcient, recursive post-order acumulation on the
+-- tree.
+newtype AverageLength = AL PositiveAverage
+  deriving (Enum, Eq, Ord, Semigroup)
+
+
+instance Show AverageLength where
+
+    show (AL x) = show x
 
 
 -- |
 -- A decoration of an initial encoding of a dynamic character which has the
 -- appropriate 'Lens' & character class constraints.
-class ( HasEncoded s a
+class ( HasAverageLength           s AverageLength
+      , HasEncoded                 s a
       , EncodableDynamicCharacter  a
       , DynamicCharacterMetadata   s (Element a)
       ) => SimpleDynamicDecoration s a | s -> a where
@@ -91,14 +109,15 @@ class ( SimpleDynamicDecoration s c
       ) => SimpleDynamicExtensionPostOrderDecoration s c | s -> c where
 
     extendDynamicToPostOrder :: SimpleDynamicDecoration x c
-                             => x    -- ^ Original decoration
-                             -> Word -- ^ The cost of the alignment
-                             -> Word -- ^ The cost of the alignment and the child subtrees
-                             -> c    -- ^ Preliminary /ungapped/ dynamic character
-                             -> c    -- ^ Preliminary   /gapped/ dynamic character
-                             -> c    -- ^ Left  alignment dynamic character
-                             -> c    -- ^ Right alignment dynamic character
-                             -> s    -- ^ Resulting decoration
+                             => x             -- ^ Original decoration
+                             -> Word          -- ^ The cost of the alignment
+                             -> Word          -- ^ The cost of the alignment and the child subtrees
+                             -> AverageLength -- ^ The average length of the dynamic character in the subtree
+                             -> c             -- ^ Preliminary /ungapped/ dynamic character
+                             -> c             -- ^ Preliminary   /gapped/ dynamic character
+                             -> c             -- ^ Left  alignment dynamic character
+                             -> c             -- ^ Right alignment dynamic character
+                             -> s             -- ^ Resulting decoration
 
 
 -- |
@@ -197,3 +216,14 @@ class HasImpliedAlignment s a | s -> a where
     impliedAlignment :: Lens' s a
     {-# MINIMAL impliedAlignment #-}
 
+
+-- |
+-- A 'Lens' for the 'impliedAlignment' field
+class HasAverageLength s a | s -> a where
+
+    averageLength :: Lens' s a
+    {-# MINIMAL averageLength #-}
+
+
+getAverageLength :: Fractional a => AverageLength -> a
+getAverageLength (AL x) = fromPositiveAverage x

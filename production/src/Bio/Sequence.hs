@@ -13,14 +13,11 @@
 --
 -----------------------------------------------------------------------------
 
--- TODO: Remove all commented-out code.
-
--- TODO: are all of these necessary?
-
 module Bio.Sequence
   ( CharacterSequence()
   , CharacterBlock(..)
   , HasBlockCost
+  , HasRootCost
   , PartialCharacterBlock()
   , continuousSingleton
   , discreteSingleton
@@ -29,11 +26,15 @@ module Bio.Sequence
   , toMissingCharacters
   , toBlocks
   , fromBlocks
+  , toBlockVector
+  , fromBlockVector
   , hexmap
   , hexTranspose
   , hexZipWith
   , sequenceCost
+  , sequenceRootCost
   , blockCost
+  , staticCost
   ) where
 
 import Bio.Sequence.Internal

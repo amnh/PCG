@@ -30,12 +30,11 @@ import           Data.IntMap        (IntMap)
 import qualified Data.IntMap as IM
 import           Data.Key    hiding ((!))
 import           Data.List.NonEmpty (NonEmpty( (:|) ))
-import           Data.Monoid
+import           Data.List.Utility  (invariantTransformation)
+import           Data.Semigroup
 import           Data.MonoTraversable
 import           Data.Word
 import           Prelude     hiding (lookup, zip, zipWith)
--- import           Text.XML.Custom
--- import           Text.XML.Light
 
 -- import Debug.Trace
 
@@ -84,6 +83,7 @@ initializeLeaf =
       <$> id
       <*> const 0
       <*> const 0
+      <*> toEnum . olength . (^. encoded)
       <*> (^. encoded)
       <*> (^. encoded)
       <*> (^. encoded)
@@ -101,9 +101,10 @@ updateFromLeaves
 updateFromLeaves _ (x:|[]) = x -- This shouldn't happen
 updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) = resultDecoration
   where
-    resultDecoration = extendDynamicToPostOrder leftChild localCost totalCost ungapped gapped lhsAlignment rhsAlignment
+    resultDecoration = extendDynamicToPostOrder leftChild localCost totalCost combinedAverageLength ungapped gapped lhsAlignment rhsAlignment
     (localCost, ungapped, gapped, lhsAlignment, rhsAlignment) = pairwiseAlignment (leftChild ^. preliminaryUngapped) (rightChild ^. preliminaryUngapped)
     totalCost = localCost + leftChild ^. characterCost + rightChild ^. characterCost
+    combinedAverageLength = leftChild ^. averageLength <> rightChild ^. averageLength
 
 
 -- |
@@ -112,7 +113,7 @@ updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) = resultDecoration
 -- Parameterized over a 'PairwiseAlignment' function to allow for different
 -- atomic alignments depending on the character's metadata.
 directOptimizationPreOrder
-  :: (DirectOptimizationPostOrderDecoration d c {-, Show c , Show (Element c)-})
+  :: (DirectOptimizationPostOrderDecoration d c {- , Show c , Show (Element c)-})
   => PairwiseAlignment c
   -> d
   -> [(Word, DynamicDecorationDirectOptimization c)]
@@ -142,7 +143,7 @@ initializeRoot =
 -- Use the decoration(s) of the ancestoral nodes to calculate the currect node
 -- decoration. The recursive logic of the pre-order traversal.
 updateFromParent
-  :: (EncodableDynamicCharacter c, DirectOptimizationPostOrderDecoration d c {- , ToXML d, Show c, Show (Element c)-})
+  :: (EncodableDynamicCharacter c, DirectOptimizationPostOrderDecoration d c {- , Show c, Show (Element c)-})
   => PairwiseAlignment c
   -> d
   -> DynamicDecorationDirectOptimization c
@@ -171,7 +172,7 @@ updateFromParent pairwiseAlignment currentDecoration parentDecoration = resultDe
 -- |
 -- A three way comparison of characters used in the DO preorder traversal.
 tripleComparison
-  :: ( {- EncodableDynamicCharacter c, -} DirectOptimizationPostOrderDecoration d c {-, Show c, Show (Element c) -})
+  :: ( {- EncodableDynamicCharacter c, -} DirectOptimizationPostOrderDecoration d c {- , Show c, Show (Element c) -})
   => PairwiseAlignment c
   -> d
   -> c
@@ -277,16 +278,17 @@ threeWayMean
   -> c
   -> c
   -> (Word, c, c)
-threeWayMean costStructure char1 char2 char3
-  | not uniformLength = error $ unwords [ "Three sequences supplied to 'threeWayMean' function did not have uniform length.", show (olength char1), show (olength char2), show (olength char3) ]
-  | otherwise         = (sum costValues, constructDynamic $ filter (/= gap) meanStates, constructDynamic meanStates)
+threeWayMean costStructure char1 char2 char3 =
+  case invariantTransformation olength [char1, char2, char3] of
+    Nothing -> error $ unwords [ "Three sequences supplied to 'threeWayMean' function did not have uniform length.", show (olength char1), show (olength char2), show (olength char3) ]
+    Just 0  -> (0, char2, char3)
+    Just _  -> (sum costValues, constructDynamic $ filter (/= gap) meanStates, constructDynamic meanStates)
   where
-    gap                 = getGapElement $ char1 `indexStream` 0
-    uniformLength       = olength char1 == olength char2 && olength char2 == olength char3
+    gap = getGapElement $ char1 `indexStream` 0
     (meanStates, costValues) = unzip $ zipWith3 f (otoList char1) (otoList char2) (otoList char3)
-    f a b c = minimalChoice -- minimumBy (comparing snd)
-            [ getOverlap a b costStructure
-            , getOverlap a c costStructure
+    f a b c = minimalChoice $ -- minimumBy (comparing snd)
+              getOverlap a b costStructure :|
+            [ getOverlap a c costStructure
             , getOverlap b c costStructure
             ]
 

@@ -16,7 +16,7 @@
 module Text.Newick.Class where
 
 
--- |
+-- | (✔)
 class ToNewick a where
 
     toNewick :: a -> String

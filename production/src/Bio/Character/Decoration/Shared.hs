@@ -55,4 +55,3 @@ class HasIntervalCharacter s a | s -> a where
 
     {-# MINIMAL intervalCharacter #-}
     intervalCharacter :: Lens' s a
-

@@ -25,29 +25,37 @@
 module Bio.Sequence.Internal
   ( CharacterSequence()
   , HasBlockCost
+  -- * Construction / Decomposition
   , toBlocks
   , fromBlocks
+  , toBlockVector
+  , fromBlockVector
+  -- * Other
   , hexmap
   , hexTranspose
   , hexZipWith
   , sequenceCost
+  , sequenceRootCost
   ) where
 
 
 --import           Bio.Character.Decoration.Continuous
-import           Bio.Sequence.Block             (CharacterBlock, HasBlockCost)
+import           Bio.Sequence.Block             (CharacterBlock, HasBlockCost, HasRootCost)
 import qualified Bio.Sequence.Block      as Blk
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Bifunctor
+import           Data.DList              hiding (foldr,toList)
 import           Data.Foldable
 import           Data.Key
 import           Data.List.NonEmpty             (NonEmpty)
-import qualified Data.List.NonEmpty      as NE
-import           Data.Monoid
+--import qualified Data.List.NonEmpty      as NE
 import           Data.MonoTraversable
---import           Data.Semigroup.Foldable
+import           Data.Semigroup
+import           Data.Semigroup.Foldable
 import           Data.Semigroup.Traversable
+import           Data.Vector.NonEmpty           (Vector)
+import qualified Data.Vector.NonEmpty    as V
 import           Prelude                 hiding (zipWith)
 import           Text.XML
 
@@ -60,8 +68,14 @@ import           Text.XML
 -- routines.
 --
 -- Blocks are optimized atomically with resepect to network resolutions.
+--
+-- Some blocks may not exist on a given node after performing a pre-order traversal.
+-- This occurs when the minimal display tree for a given block does not include
+-- all the nodes in the DAG. In this case the nodes not incldued in the topology
+-- will have "missing" final assignments for all blocks for which that topology
+-- was minimal.
 newtype CharacterSequence u v w x y z
-    = CharSeq (NonEmpty (CharacterBlock u v w x y z))
+    = CharSeq (Vector (CharacterBlock u v w x y z))
     deriving (Eq)
 
 
@@ -137,7 +151,7 @@ instance ( Show u
 instance ( ToXML u
          , ToXML v
          , ToXML w
-         , ToXML x
+--         , ToXML x
          , ToXML y
          , ToXML z
          ) => ToXML (CharacterSequence u v w x y z) where
@@ -158,6 +172,8 @@ hexmap :: (u -> u')
 hexmap f1 f2 f3 f4 f5 f6 = fromBlocks . parmap rpar (Blk.hexmap f1 f2 f3 f4 f5 f6) . toBlocks
 
 
+-- TODO: Make sure the inner dimension's ordering is not reversed during the transpose.
+--
 -- |
 -- Performs a 2D transform on the 'Traversable' structure of 'CharacterSequence'
 -- values.
@@ -165,15 +181,24 @@ hexmap f1 f2 f3 f4 f5 f6 = fromBlocks . parmap rpar (Blk.hexmap f1 f2 f3 f4 f5 f
 -- Assumes that the 'CharacterSequence' values in the 'Traversable' structure are
 -- of equal length. If this assumtion is violated, the result will be truncated.
 hexTranspose :: Traversable1 t => t (CharacterSequence u v w x y z) -> CharacterSequence [u] [v] [w] [x] [y] [z]
-hexTranspose = fromBlocks . deepTranspose . fmap toBlocks . toList
+hexTranspose = toNList . invert . fmap toDList . toNonEmpty
   where
---    deepTranspose :: [(NonEmpty (CharacterBlock m i c f a d))] -> NonEmpty (CharacterBlock (t m) (t i) (t c) (t f) (t a) (t d))
-    deepTranspose val =
-      let beta = NE.unfoldr f val -- :: NonEmpty [CharacterBlock m i c f a d]
-        in  fmap Blk.hexTranspose beta
-      where
---        f :: [NonEmpty (CharacterBlock m i c f a d)] -> ([CharacterBlock m i c f a d], Maybe [NonEmpty (CharacterBlock m i c f a d)])
-        f = second sequenceA . unzip . fmap NE.uncons
+    toDList :: CharacterSequence u v w x y z -> CharacterSequence (DList u) (DList v) (DList w) (DList x) (DList y) (DList z)
+    toDList = hexmap pure pure pure pure pure pure
+
+    invert :: ( Foldable f
+              , Semigroup u
+              , Semigroup v
+              , Semigroup w
+              , Semigroup x
+              , Semigroup y
+              , Semigroup z
+              )
+           => f (CharacterSequence u v w x y z)
+           -> CharacterSequence u v w x y z
+    invert = foldr1 (hexZipWith (<>) (<>) (<>) (<>) (<>) (<>))
+
+    toNList = hexmap toList toList toList toList toList toList
 
 
 -- |
@@ -199,18 +224,39 @@ hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = fromBlocks $ parZipWith rpar (Blk.hexZipW
 -- Destructs a 'CharacterSequence' to it's composite blocks.
 {-# INLINE toBlocks #-}
 toBlocks :: CharacterSequence u v w x y z -> NonEmpty (CharacterBlock u v w x y z)
-toBlocks (CharSeq x) = x
+toBlocks (CharSeq x) = toNonEmpty x
 
 
 -- |
 -- Constructs a 'CharacterSequence' from a non-empty colection of blocks.
 {-# INLINE fromBlocks #-}
 fromBlocks :: NonEmpty (CharacterBlock u v w x y z) -> CharacterSequence u v w x y z
-fromBlocks = CharSeq
+fromBlocks = CharSeq . V.fromNonEmpty
 
 
 -- |
--- Calculates the cost of a 'CharacterSequence'. Performs some of the operation
--- in parallel.
+-- Destructs a 'CharacterSequence' to it's composite blocks.
+{-# INLINE toBlockVector #-}
+toBlockVector :: CharacterSequence u v w x y z -> Vector (CharacterBlock u v w x y z)
+toBlockVector (CharSeq x) =  x
+
+
+-- |
+-- Destructs a 'CharacterSequence' to it's composite blocks.
+{-# INLINE fromBlockVector #-}
+fromBlockVector :: Vector (CharacterBlock u v w x y z) -> CharacterSequence u v w x y z
+fromBlockVector = CharSeq
+
+
+-- |
+-- Calculates the cumulative cost of a 'CharacterSequence'. Performs some of the
+-- operation in parallel.
 sequenceCost :: HasBlockCost u v w x y z i r => CharacterSequence u v w x y z -> r
 sequenceCost = sum . parmap rpar Blk.blockCost . toBlocks
+
+
+-- |
+-- Calculates the root cost of a 'CharacterSequence'. Performs some of the
+-- operation in parallel.
+sequenceRootCost :: (HasRootCost u v w x y z r, Integral i) => i -> CharacterSequence u v w x y z -> r
+sequenceRootCost rootCount = sum . parmap rpar (Blk.rootCost rootCount) . toBlocks

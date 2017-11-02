@@ -156,7 +156,7 @@ updateCostVector _parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeD
         numAlphStates        = toEnum (length $ leftChildDec ^. characterAlphabet)
         preliminaryMins      = foldr         computeExtraMin [] cs
         bs                   = foldrWithKey' computeBetas    [] range      -- bs  = betas
-        omc                  = (unsafeToFinite minTransCost)               -- omc = overall min cost (min for all states)
+        omc                  = unsafeToFinite minTransCost                 -- omc = overall min cost (min for all states)
         scm                  = leftChildDec ^. symbolChangeMatrix
 
         initialAccumulator   = ([], ([],[]), infinity)                   -- (min cost per state, (leftMin, rightMin), overall minimum)
