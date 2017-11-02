@@ -309,7 +309,7 @@ calculatePunitiveNetworkEdgeCost edgeSetCardinality networkEdgeSet parsimoniousC
 
     -- The numerator is the sum of the punative network edge cost for each block.
     numerator   = sum $ punativeEdgeCost <$> minimalContexts
-    denominator = edgeSetCardinality
+    denominator = 2 * edgeSetCardinality
     
 
 -- |
