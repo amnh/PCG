@@ -17,42 +17,45 @@ import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
 --import           Bio.Graph.PhylogeneticDAG
 import           Bio.Graph.ReferenceDAG
+import qualified Bio.Graph.ReferenceDAG as DAG
 import           Bio.Sequence
 --import           Control.Evaluation
 import           Control.Lens
-import           Control.Monad                (replicateM)
+import           Control.Monad                 (replicateM)
 import           Control.Monad.IO.Class
 --import           Control.Monad.Trans.Either
 --import           Control.Parallel.Strategies
 --import           Control.Parallel.Custom
---import           Data.Alphabet   --    hiding (AmbiguityGroup)
+--import           Data.Alphabet   --     hiding (AmbiguityGroup)
 --import           Data.Alphabet.IUPAC
---import           Data.Bifunctor               (bimap,first)
---import           Data.Char                    (isLower,toLower,isUpper,toUpper)
+--import           Data.Bifunctor                (bimap,first)
+--import           Data.Char                     (isLower,toLower,isUpper,toUpper)
 --import           Data.EdgeLength
 --import           Data.Either.Custom
 import           Data.Foldable
 --import           Data.Functor
 --import           Data.Hashable
+import qualified Data.IntMap            as IM
+import qualified Data.IntSet            as IS
 --import           Data.Key
---import           Data.List                    (intercalate)
-import           Data.List.NonEmpty           (NonEmpty(..))
-import qualified Data.List.NonEmpty    as NE
---import           Data.List.Utility            (subsetOf)
---import           Data.Map                     (Map,assocs,insert,union)
---import qualified Data.Map              as M
---import           Data.Maybe                   (fromMaybe)
+--import           Data.List                     (intercalate)
+import           Data.List.NonEmpty             (NonEmpty(..))
+import qualified Data.List.NonEmpty     as NE
+--import           Data.List.Utility             (subsetOf)
+--import           Data.Map                      (Map,assocs,insert,union)
+--import qualified Data.Map               as M
+--import           Data.Maybe                    (fromMaybe)
 import           Data.Ord                     (comparing)
 import           Data.Semigroup.Foldable
---import           Data.TCM                     (TCMDiagnosis(..), TCMStructure(..), diagnoseTcm)
---import qualified Data.TCM              as TCM
---import           Data.Text.IO                 (readFile)
---import           Data.Vector                  (Vector)
---import qualified Data.Vector           as V   (zipWith)
+--import           Data.TCM                      (TCMDiagnosis(..), TCMStructure(..), diagnoseTcm)
+--import qualified Data.TCM               as TCM
+--import           Data.Text.IO                  (readFile)
+--import           Data.Vector                   (Vector)
+--import qualified Data.Vector            as V   (zipWith)
 --import           Data.Void
 import           PCG.Command.Build
-import           PCG.Syntax                   (Command(..))
-import           Prelude             hiding   (lookup, readFile)
+import           PCG.Syntax                    (Command(..))
+import           Prelude                hiding (lookup, readFile)
 import           System.Random.Shuffle
 --import Debug.Trace (trace)
 
@@ -166,21 +169,22 @@ naiveWagnerBuild
   -> FinalDecorationDAG
 naiveWagnerBuild ns =
    case toNonEmpty ns of
-      x:|[]   -> fromRefDAG $ unfoldDAG (\_ -> ([], wipeNode False x, [])) ()
-      x:|[y]  ->
-          let f e = case e of
-                      0 -> ([]           , wipeNode True  x, [(mempty, 1), (mempty, 2)])
-                      1 -> ([(mempty, 0)], wipeNode False x, [])
-                      _ -> ([(mempty, 0)], wipeNode False y, [])
-          in  fromRefDAG $ unfoldDAG f (0 :: Int)
+      x:|[]   -> fromRefDAG $ DAG.fromList
+                   [ ( mempty        , wipeNode False x, mempty )
+                   ]
+      x:|[y]  -> fromRefDAG $ DAG.fromList
+                   [ ( mempty        , wipeNode True  x, IM.fromList [(1,mempty), (2,mempty)] )
+                   , ( IS.singleton 0, wipeNode False x, mempty )
+                   , ( IS.singleton 0, wipeNode False y, mempty )
+                   ]
       x:|(y:z:xs) ->
-          let initTree = fromRefDAG $ unfoldDAG f (0 :: Int)
-              f e = case e of
-                      0 -> ([]           , wipeNode True  x, [(mempty, 1), (mempty, 4)])
-                      1 -> ([(mempty, 0)], wipeNode True  x, [(mempty, 2), (mempty, 3)])
-                      2 -> ([(mempty, 1)], wipeNode False x, [])
-                      3 -> ([(mempty, 1)], wipeNode False y, [])
-                      _ -> ([(mempty, 0)], wipeNode False z, [])
+          let initTree = fromRefDAG $ DAG.fromList
+                   [ ( mempty        , wipeNode True  x, IM.fromList [(1,mempty), (4,mempty)] )
+                   , ( IS.singleton 0, wipeNode True  x, IM.fromList [(2,mempty), (3,mempty)] )
+                   , ( IS.singleton 1, wipeNode False x, mempty )
+                   , ( IS.singleton 1, wipeNode False y, mempty )
+                   , ( IS.singleton 0, wipeNode False z, mempty )
+                   ]
           in  iterativeBuild initTree xs
 
   where

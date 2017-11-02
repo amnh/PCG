@@ -19,6 +19,7 @@ module Bio.Graph.ReferenceDAG
   , nodePostOrder
   , nodePreOrder
   -- * Effciently construct a DAG
+  , fromList
   , unfoldDAG
   -- * Remove metadata information and replace with a default
   , defaultGraphMetadata

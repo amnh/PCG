@@ -526,7 +526,7 @@ defaultMetadata =
 --   - In-degree 2, out degree 1
 --
 -- Expand or contract edges as necessary to enforce the above invariant.
-expandVertexMapping :: Monoid a => IntMap (IntSet, t, IntMap a) -> IntMap (IntSet, t, IntMap a)
+expandVertexMapping :: (Monoid a, Monoid t) => IntMap (IntSet, t, IntMap a) -> IntMap (IntSet, t, IntMap a)
 expandVertexMapping unexpandedMap = snd . foldl' expandEdges (initialCounter+1, unexpandedMap) $ IM.keys unexpandedMap
   where
     (initialCounter, _) = IM.findMax unexpandedMap
@@ -579,7 +579,7 @@ expandVertexMapping unexpandedMap = snd . foldl' expandEdges (initialCounter+1, 
 
         expandOutVertexToChild = (counter + 1, expandedMapping)
           where
-            ancestoralVertex = (            iSet, nDatum, IM.singleton counter mempty)
+            ancestoralVertex = (            iSet, mempty, IM.singleton counter mempty)
             descendentVertex = (IS.singleton key, nDatum,                        iMap)
 
             updateParent = flip (adjust setParent)
@@ -595,7 +595,7 @@ expandVertexMapping unexpandedMap = snd . foldl' expandEdges (initialCounter+1, 
         expandOutExtraChild  = (counter + 1, expandedMapping)
           where
             ancestoralVertex = (            iSet, nDatum, singledChildMap)
-            descendentVertex = (IS.singleton key, nDatum, reducedChildMap)
+            descendentVertex = (IS.singleton key, mempty, reducedChildMap)
 
             singledChildMap  = IM.singleton counter mempty <> IM.singleton minChildKey edgeValue
             reducedChildMap  = IM.delete minChildKey iMap
@@ -617,8 +617,8 @@ expandVertexMapping unexpandedMap = snd . foldl' expandEdges (initialCounter+1, 
             (lhsChildMap, rhsChildMap) = (IM.fromList *** IM.fromList) . splitAt (childCount `div` 2) $ toKeyedList iMap
 
             ancestoralVertex = (            iSet, nDatum, newChildMap)
-            lhsNewVertex     = (IS.singleton key, nDatum, lhsChildMap)
-            rhsNewVertex     = (IS.singleton key, nDatum, rhsChildMap)
+            lhsNewVertex     = (IS.singleton key, mempty, lhsChildMap)
+            rhsNewVertex     = (IS.singleton key, mempty, rhsChildMap)
 
             newChildMap      = IM.singleton counter mempty <> IM.singleton (counter+1) mempty
 
@@ -649,7 +649,7 @@ expandVertexMapping unexpandedMap = snd . foldl' expandEdges (initialCounter+1, 
             ancestoralVertex = (reducedParentMap, nDatum, singledChildMap)
             -- Should pointed at by the current node and the pruned parent
             -- Sholud point   to the original subtree
-            descendentVertex = (singledParentMap, nDatum,            iMap)
+            descendentVertex = (singledParentMap, mempty, iMap)
 
             singledChildMap  = IM.singleton counter mempty
             singledParentMap = IS.fromList [key, maxParentKey]
@@ -675,8 +675,8 @@ expandVertexMapping unexpandedMap = snd . foldl' expandEdges (initialCounter+1, 
             (lhsParentSet, rhsParentSet) = (IS.fromList *** IS.fromList) . splitAt (parentCount `div` 2) $ otoList iSet
 
             descendantVertex = (newParentSet, nDatum, iMap)
-            lhsNewVertex     = (lhsParentSet, nDatum, IM.singleton key mempty)
-            rhsNewVertex     = (rhsParentSet, nDatum, IM.singleton key mempty)
+            lhsNewVertex     = (lhsParentSet, mempty, IM.singleton key mempty)
+            rhsNewVertex     = (rhsParentSet, mempty, IM.singleton key mempty)
 
             newParentSet = IS.fromList [counter, counter+1]
 
@@ -886,6 +886,36 @@ topologyRendering dag = drawVerticalTree . unfoldTree f . NE.head $ rootRefs dag
 
 
 -- |
+-- /O(n)/
+--
+-- Constructs a 'ReferenceDAG' from a "list" of references.
+--
+-- Generally regarded as *UNSAFE*! Prefer 'unfoldDAG'.
+--
+-- * Does not check for connectivity of the DAG.
+--
+-- * Does not check for the lack of cycles.
+--
+-- * Does not normalize nodes for propper in-degree values.
+--
+-- * Does not normalize nodes for propper out-degree values.
+fromList :: Foldable f => f (IntSet, n, IntMap e) -> ReferenceDAG () e n
+fromList xs =
+    RefDAG
+    { references = referenceVector
+    , rootRefs   = rootSet
+    , graphData  = GraphData 0 0 0 0 ()
+    }
+  where
+    listValue = toList xs
+    referenceVector = V.fromList $ (\(pSet, datum, cMap) -> IndexData datum pSet cMap) <$> listValue
+    rootSet =
+      case foldMapWithKey (\k (pSet,_,_) -> if onull pSet then [k] else []) listValue of
+        []   -> error "No root nodes supplied in call to ReferenceDAG.fromList"
+        x:xs -> x:|xs
+
+
+-- |
 -- Probably, hopefully /O(n)/.
 --
 -- Build the graph functionally from a generating function.
@@ -897,9 +927,9 @@ topologyRendering dag = drawVerticalTree . unfoldTree f . NE.head $ rootRefs dag
 -- 2. The node decoration for the input value
 --
 -- 3. A list of child edge decorations and corresponding descendent values
-unfoldDAG :: (Eq a, Hashable a, Monoid e)
-          => (a -> ([(e,a)], n, [(e,a)]))
-          -> a
+unfoldDAG :: (Eq a, Hashable a, Monoid e, Monoid n)
+          => (a -> ([(e,a)], n, [(e,a)])) -- ^ Unfolding function
+          -> a                            -- ^ Seed value
           -> ReferenceDAG () e n
 unfoldDAG f origin =
     RefDAG
