@@ -105,7 +105,7 @@ evaluate
 -- evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
 -- evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
 evaluate (BUILD (BuildCommand trajectoryCount buildType)) oldState = do
-    x <- force oldState
+    x <- oldState
     
     case x of
       Left  e -> pure $ Left e

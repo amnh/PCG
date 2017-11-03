@@ -11,13 +11,15 @@
 -- The core monoidal state of an 'Evaluation' monad.
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric #-} -- , Strict, StrictData #-}
 
 module Control.Evaluation.Unit where
 
 import Control.Applicative
 import Control.DeepSeq
 import Control.Monad (MonadPlus(mzero, mplus))
+import Data.Foldable
+import Data.List.NonEmpty
 import Data.Monoid   ()
 import Data.Semigroup
 import GHC.Generics
@@ -101,6 +103,8 @@ instance Monoid (EvalUnit a) where
 
     mappend = (<>)
 
+--    mconcat = foldl' (<>) mempty
+
 
 -- | (✔)
 instance Semigroup (EvalUnit a) where
@@ -110,4 +114,5 @@ instance Semigroup (EvalUnit a) where
     Error x <> _    = Error x
     Value _ <> e    = e
 
+--    sconcat (x:|xs) = foldl' (<>) x xs
 
