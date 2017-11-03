@@ -94,6 +94,8 @@ data  SyntacticArgument z
     | DefaultValue   (Ap SyntacticArgument z) z
     | ExactlyOneOf   (NonEmpty (Ap SyntacticArgument z))
     | ArgumentList   (ArgList z)
+-- TODO: add this
+--    | SuchThat       (Ap SyntacticArgument z) (z -> Bool) String
     deriving (Functor)
 
 
@@ -238,7 +240,7 @@ apRunner effect (ArgumentList p  ) = toPermutation $ runPermutation effect *> ru
 apRunner effect (DefaultValue p v) = toPermutationWithDefault v
                                    $ runPermutation effect *> runPermutation (runAp (apRunner (toPermutation voidEffect)) p)
 apRunner effect (ArgIdNamedArg p ids) = toPermutation $ do
-    _ <- (choice $ parseId <$> ids) <?> parseHint
+    _ <- choice (parseId <$> ids) <?> parseHint
     _ <- whitespace <* char ':' <* whitespace
     runPermutation $ runAp (apRunner effect) p
   where
@@ -273,7 +275,7 @@ parseArgumentList argListVal = toPermutation $ begin *> datum <* close
 --
 -- Consumes a comma character with leading and training whitespace.
 comma :: (MonadParsec e s m,  Token s ~ Char) => m ()
-comma = whitespace *> seperator *> whitespace
+comma = try (whitespace *> seperator *> whitespace)
   where
     seperator = char ',' <?> "',' seperating arguments"
 

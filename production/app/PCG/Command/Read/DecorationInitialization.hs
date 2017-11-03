@@ -17,18 +17,18 @@
 module PCG.Command.Read.DecorationInitialization where
 
 import Analysis.Scoring
-import Bio.Character.Decoration.Additive
-import Bio.Character.Decoration.Continuous
-import Bio.Character.Decoration.Discrete
-import Bio.Character.Decoration.Dynamic
-import Bio.Character.Decoration.Fitch
-import Bio.Character.Decoration.Metric
-import Bio.Character.Decoration.NonMetric
-import Bio.Character.Exportable
+--import Bio.Character.Decoration.Additive
+--import Bio.Character.Decoration.Continuous
+--import Bio.Character.Decoration.Discrete
+--import Bio.Character.Decoration.Dynamic
+--import Bio.Character.Decoration.Fitch
+--import Bio.Character.Decoration.Metric
+--import Bio.Character.Decoration.NonMetric
+--import Bio.Character.Exportable
 import Bio.Graph
 -- import Bio.Graph.PhylogeneticDAG
-import Control.Lens
-import Data.MonoTraversable (Element)
+--import Control.Lens
+--import Data.MonoTraversable (Element)
 import Prelude       hiding (lookup, zip, zipWith)
 
 -- import Debug.Trace
