@@ -55,7 +55,7 @@ import           Prelude                   hiding (lookup, zipWith)
 import           Text.Newick.Class
 import           Text.XML.Custom
 
---import           Debug.Trace
+import           Debug.Trace
 
 
 -- |
@@ -386,7 +386,8 @@ connectEdge
   -> (Int, Int) -- ^ Origin edge (coming from)
   -> (Int, Int) -- ^ Target edge (going too)
   -> ReferenceDAG d e n 
-connectEdge dag originTransform targetTransform (ooRef, otRef) (toRef, ttRef) = newDag
+connectEdge dag _ _ origin target | trace (unlines  ["Origin: " <> show origin, "Target: " <> show target, "Input:", show dag ]) False = undefined
+connectEdge dag originTransform targetTransform (ooRef, otRef) (toRef, ttRef) = (\x -> trace ("Output:\n"<>show x) x) newDag
   where
     refs    = references dag
     oldLen  = length refs
@@ -1080,7 +1081,7 @@ getDotContext dag = second mconcat . unzip $ foldMapWithKey f vec
 -- |
 -- Generate the set of candidate network edges for a given DAG.
 candidateNetworkEdges :: ReferenceDAG d e n -> Set ( (Int, Int), (Int,Int) )
-candidateNetworkEdges dag = foldMapWithKey f mergedVector
+candidateNetworkEdges dag = S.filter correctnessCriterion $ foldMapWithKey f mergedVector
   where
     mergedVector  = zipWith mergeThem ancestoralEdgeSets descendantEdgeSets
     
@@ -1090,6 +1091,15 @@ candidateNetworkEdges dag = foldMapWithKey f mergedVector
         , parentRefs     = parentRefs a
         , childRefs      = zipWith (<>) (childRefs a) (childRefs d)
         }
+
+    correctnessCriterion x = doesNotShareNode x && notNetworkEdges x
+
+    doesNotShareNode ((a,b),(c,d)) = a /= c && a /= d && b /= c && b /= d
+
+    notNetworkEdges  ((a,b),(c,d)) = isNotNetworkNode b && isNotNetworkNode d
+      where
+        isNotNetworkNode i = (<=1) . olength . parentRefs $ refs ! i
+        refs = references ! dag
 
     rootEdges           = tabulateRootIncidentEdgeset dag
     ancestoralEdgeSets  = references $ tabulateAncestoralEdgesets dag
