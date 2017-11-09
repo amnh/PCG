@@ -48,7 +48,6 @@ void freeNWMtx(alignment_matrices_t *input);
 void initializeAlignmentMtx( alignment_matrices_t *retMtx
                            , size_t                cap_char1
                            , size_t                cap_char2
-                           , size_t                cap_char3
                            , size_t                alphSize
                            );
 

@@ -106,6 +106,72 @@ int  aLen, bLen, cLen;
 //  Umatrix = (U_cell_type **)allocMatrix(sizeof(U_cell_type *));
 //}
 
+void copySequence (seq_p s, char *str) {
+    if (DEBUG_CALL_ORDER) {
+        printf("copySequence\n");
+    }
+    int len, i;
+    SEQT *begin;
+    len   = seq_get_len (s);
+    begin = seq_get_begin(s);
+
+    for (i = 1; i < len; i++) {
+        if (begin[i] & 1) {
+            str[i - 1] = 'A';
+        } else if (begin[i] & 2) {
+            str[i - 1] = 'C';
+        } else if (begin[i] & 4) {
+            str[i - 1] = 'G';
+        } else if (begin[i] & 8) {
+            str[i - 1] = 'T';
+        } else {
+            printf ("This is impossible!");
+            fflush(stdout);
+            exit(1);
+        }
+        printf("%c, ", str[i - 1]);
+    }
+    str[len - 1] = 0;
+    return;
+}
+
+int powell_3D_align (seq_p seqA,    seq_p seqB,    seq_p seqC,
+                     seq_p retSeqA, seq_p retSeqB, seq_p retSeqC,
+                     int mismatch, int gapOpen, int gapExtend) {
+    if (DEBUG_CALL_ORDER) {
+        printf("powell_3D_align\n");
+    }
+
+    gapOpenCost      = gapOpen;
+    gapExtendCost    = gapExtend;
+    deleteOpenCost   = gapOpenCost;
+    deleteExtendCost = gapExtendCost;
+    mismatchCost     = mismatch;
+    /* Seq_custom_val(seqA,sa);
+    Seq_custom_val(seqB,sb);
+    Seq_custom_val(seqC,sc);
+    Seq_custom_val(retSeqA,retSeqA);
+    Seq_custom_val(retSeqB,retSeqB);
+    Seq_custom_val(retSeqC,retSeqC);
+    */
+    assert (mismatchCost != 0 && gapOpenCost >= 0 && gapExtendCost > 0);
+
+
+    copySequence (seqA, aStr);
+    copySequence (seqB, bStr);
+    copySequence (seqC, cStr);
+
+    aLen = seq_get_len (seqA) - 1;
+    bLen = seq_get_len (seqB) - 1;
+    cLen = seq_get_len (seqC) - 1;
+    printf("Input lengths: %d %d %d\n", aLen, bLen, cLen);
+
+    setup();
+
+    return doUkk (retSeqA, retSeqB, retSeqC);
+}
+
+
 // recalloc - does a realloc() but sets any new memory to 0.
 static inline void *recalloc(void *p, size_t oldSize, size_t newSize) {
     printf("\nrecalloc\n");
@@ -302,73 +368,6 @@ void *getPtr(AllocInfo *a, int ab, int ac, int d, int s) {
 
 
 #endif // NO_ALLOC_ROUTINES
-
-
-void copySequence (seq_p s, char *str) {
-    if (DEBUG_CALL_ORDER) {
-        printf("copySequence\n");
-    }
-    int len, i;
-    SEQT *begin;
-    len   = seq_get_len (s);
-    begin = seq_get_begin(s);
-
-    for (i = 1; i < len; i++) {
-        if (begin[i] & 1) {
-            str[i - 1] = 'A';
-        } else if (begin[i] & 2) {
-            str[i - 1] = 'C';
-        } else if (begin[i] & 4) {
-            str[i - 1] = 'G';
-        } else if (begin[i] & 8) {
-            str[i - 1] = 'T';
-        } else {
-            printf ("This is impossible!");
-            fflush(stdout);
-            exit(1);
-        }
-        printf("%c, ", str[i - 1]);
-    }
-    printf("\n");
-    str[len - 1] = 0;
-    return;
-}
-
-int powell_3D_align (seq_p seqA,    seq_p seqB,    seq_p seqC,
-                     seq_p retSeqA, seq_p retSeqB, seq_p retSeqC,
-                     int mismatch, int gapOpen, int gapExtend) {
-    if (DEBUG_CALL_ORDER) {
-        printf("powell_3D_align\n");
-    }
-
-    gapOpenCost      = gapOpen;
-    gapExtendCost    = gapExtend;
-    deleteOpenCost   = gapOpenCost;
-    deleteExtendCost = gapExtendCost;
-    mismatchCost     = mismatch;
-    /* Seq_custom_val(seqA,sa);
-    Seq_custom_val(seqB,sb);
-    Seq_custom_val(seqC,sc);
-    Seq_custom_val(retSeqA,retSeqA);
-    Seq_custom_val(retSeqB,retSeqB);
-    Seq_custom_val(retSeqC,retSeqC);
-    */
-    assert (mismatchCost != 0 && gapOpenCost >= 0 && gapExtendCost > 0);
-
-
-    copySequence (seqA, aStr);
-    copySequence (seqB, bStr);
-    copySequence (seqC, cStr);
-
-    aLen = seq_get_len (seqA) - 1;
-    bLen = seq_get_len (seqB) - 1;
-    cLen = seq_get_len (seqC) - 1;
-    printf("Input lengths: %d %d %d\n", aLen, bLen, cLen);
-
-    setup();
-
-    return doUkk (retSeqA, retSeqB, retSeqC);
-}
 
 
 int whichCharCost(char a, char b, char c) {

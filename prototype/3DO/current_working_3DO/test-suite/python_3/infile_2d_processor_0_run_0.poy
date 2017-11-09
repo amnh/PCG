@@ -1,5 +1,0 @@
-read("../data/2metazoa_cutdown_processor_0_run_0.fasta")
-transform(tcm:(1,1))
-read("../data/sample_3_taxa.tre")
-report("../data/poy_output_2d_run.txt", trees:(total))
-exit()

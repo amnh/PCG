@@ -440,8 +440,8 @@ int main() {
     int longSeqLen                  = 7;
     int middle_vals[SEQ_CAPACITY]   = {16, 3, 9, 9, 7, 5}; // don't forget to change lengths!!!
     int middleSeqLen                = 6;
-    int shortest_vals[SEQ_CAPACITY] = {16, 7, 9, 9, 4}; // don't forget to change lengths!!!
-    int shortSeqLen                 = 5;
+    int shortest_vals[SEQ_CAPACITY] = {16, 3, 9, 9, 7, 5}; // don't forget to change lengths!!!
+    int shortSeqLen                 = 6;
 
     seq_p longSeq   = initializeSeq(SEQ_CAPACITY, longest_vals,  longSeqLen);
     seq_p shortSeq  = initializeSeq(SEQ_CAPACITY, shortest_vals, shortSeqLen);

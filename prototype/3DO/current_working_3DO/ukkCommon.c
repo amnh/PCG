@@ -328,7 +328,8 @@ void copySequence (dyn_character_t *s, char *str) {
         } else if (begin[i] & 8) {
             str[i - 1] = 'T';
         } else {
-            printf ("This is impossible!");
+            // printf("index: %d, base: %c\n", i - 1, str[i - 1]);
+            printf ("This is impossible! At index %d the character is not an A, C, G or T. It's %u!!", i, begin[i]);
             fflush(stdout);
             exit(1);
         }
@@ -369,6 +370,9 @@ int powell_3D_align (dyn_character_t *seqA,    dyn_character_t *seqB,    dyn_cha
     cLen = seqC->len - 1;
     printf("Input lengths: %d %d %d\n", aLen, bLen, cLen);
 
+    dyn_char_print(seqA);
+    dyn_char_print(seqB);
+    dyn_char_print(seqC);
     setup();
 
     return doUkk (retSeqA, retSeqB, retSeqC);

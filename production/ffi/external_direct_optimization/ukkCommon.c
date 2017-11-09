@@ -27,7 +27,7 @@
 // Created:      Tue May 11 13:22:07 1999
 // Author:       David Powell
 
-// ContaINS the common routines for ukk.alloc, ukk.noalign, ukk.checkp and ukk.dpa
+// Contains the common routines for ukk.alloc, ukk.noalign, ukk.checkp and ukk.dpa
 // Also see ukkCommon.h
 // Compile with -DSYSTEM_INFO to print system information of
 // every run. Useful to timing runs where cpu info is important.
@@ -172,24 +172,6 @@ static inline void *allocPlane( alignment_mtx_t *a )
     return retStruct;
 }
 
-static inline void *allocEntry( alignment_mtx_t *a
-                              , size_t        numStates
-                              )
-{
-    void *p;
-
-    size_t entries = CELLS_PER_BLOCK * CELLS_PER_BLOCK * numStates;
-    a->memAllocated += entries * a->elemSize;
-
-    p = calloc(entries, a->elemSize);
-
-    if (p == NULL) {
-        fprintf(stderr,"Unable to alloc memory\n");
-        exit(-1);
-    }
-
-    return p;
-}
 
 static inline size_t allocGetSubIndex( alignment_mtx_t *inputMtx
                                      , int              lessMidd_idx_diff

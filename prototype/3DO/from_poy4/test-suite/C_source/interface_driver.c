@@ -9,14 +9,14 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "../alignCharacters.h"
-#include "../c_alignment_interface.h"
-#include "../c_code_alloc_setup.h"
-#include "../debug_constants.h"
-#include "../costMatrix.h"
-#include "../alignmentMatrices.h"
-#include "../ukkCheckPoint.h"
-#include "../ukkCommon.h"
+#include "../../alignCharacters.h"
+#include "../../c_alignment_interface.h"
+#include "../../c_code_alloc_setup.h"
+#include "../../debug_constants.h"
+#include "../../costMatrix.h"
+#include "../../alignmentMatrices.h"
+#include "../../ukkCheckPoint.h"
+#include "../../ukkCommon.h"
 
 // #define SEQ_CAPACITY 64
 

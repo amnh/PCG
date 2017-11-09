@@ -116,11 +116,6 @@ algnMat_setup_size ( alignment_matrices_t *alignMtx
         alignMtx->cap_pre         = cap_precalcMtx;
     }
     /* Check if there is an allocation error then abort program */
-    if ((cap > 0) && alignMtx->algn_costMtx3d == NULL) {
-        printf("Capacity: %zu:\n", cap);
-        printf("Memory allocation problem in cost matrix.\n");
-        exit(1);
-    }
     if ((cap_dir > 0) && (alignMtx->algn_dirMtx == NULL)) {
         printf("Memory allocation problem in direction matrix\n");
         exit(1);

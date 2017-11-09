@@ -426,9 +426,10 @@ foreign import ccall unsafe "c_alignment_interface.h align3d"
                 -> Ptr AlignIO -- ^ character3, input & output
                 -> Ptr AlignIO -- ^ gapped median output
                 -> Ptr AlignIO -- ^ ungapped median output
-                -> Ptr CostMatrix3d
+--                -> Ptr CostMatrix3d
+                -> CInt        -- ^ substitution cost
                 -> CInt        -- ^ gap open cost
-                -> CInt        -- ^ cost
+                -> CInt        -- ^ indel cost
 
 
 {- Exported Functions -}
@@ -530,7 +531,7 @@ performMatrixAllocation openningCost alphabetSize costFn = unsafePerformIO . wit
 -- Takes in two characters to run DO on and a metadata object
 -- Returns an assignment character, the cost of that assignment, the assignment character with gaps included,
 -- the aligned version of the first input character, and the aligned version of the second input character
--- The process for this algorithm is to generate a traversal matrix, then perform a traceback.
+-- The process for this algorithm is to generate a traversal matrix then perform a traceback.
 algn2d :: ( EncodableDynamicCharacter s
           , Exportable s
 --          , Show s
@@ -553,7 +554,7 @@ algn2d :: ( EncodableDynamicCharacter s
 algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacter char1 char2 $
     case (toExportableElements char1, toExportableElements char2) of
       (Just x, Just y) -> f x y
-      (     _,      _) -> error "Sadness, such sadness"
+      (     _,      _) -> error "2DO: There's a dynamic character missing!"
     where
         f exportedChar1 exportedChar2 = unsafePerformIO $
             do
@@ -655,7 +656,7 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
                         paddedArr = replicate (max 0 (fromEnum (maxAllocLen - elemCount))) 0 <> elemArr
 
                 -- Used for debugging
-{-                
+{-
                 renderBuffer buf = "[" <> intercalate "," (fmap pad shownElems) <> "]"
                   where
                     maxElemChars = maximum $ fmap length shownElems
@@ -675,7 +676,10 @@ algn3d :: ( EncodableDynamicCharacter s
        => s                         -- ^ First  dynamic character
        -> s                         -- ^ Second dynamic character
        -> s                         -- ^ Third  dynamic character
-       -> DenseTransitionCostMatrix -- ^ Structure defining the transition costs between character states
+       -> Int                       -- ^ Mismatch cost
+       -> Int                       -- ^ Gap open cost
+       -> Int                       -- ^ Indel cost
+--       -> DenseTransitionCostMatrix -- ^ Structure defining the transition costs between character states
        -> (Word, s, s, s, s, s)     -- ^ The cost of the alignment
                                     --
                                     --   The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
@@ -688,8 +692,56 @@ algn3d :: ( EncodableDynamicCharacter s
                                     --
                                     --   The gapped alignment of the /third/ input character when aligned with the first & second character
                                     --
-algn3d char1 char2 char3 denseTCMs = undefined -- TODO: implement once C code is in place! Remember to add gap open cost.
+algn3d char1 char2 char3 mismatchCost gapOpenCost indelCost {- denseTCMs -} = handleMissingCharacter char1 char2 char3 $
+    case (toExportableElements char1, toExportableElements char2, toExportableElements char3) of
+      (Just x, Just y, Just z) -> f x y z
+      (     _,      _,      _) -> error "3DO: There's a dynamic character missing!"
+    where
+        f exportedChar1 exportedChar2 exportedChar3 = unsafePerformIO $
 
+   where
+        f exportedChar1 exportedChar2 = unsafePerformIO $
+            do
+--                !_ <- trace ("char 1: " <> show char1) $ pure ()
+--                !_ <- trace ("char 2: " <> show char2) $ pure ()
+                char1ToSend <- allocInitAlignIO exportedChar1Len . fmap coerceEnum $ exportedCharacterElements exportedChar1
+                char2ToSend <- allocInitAlignIO exportedChar2Len . fmap coerceEnum $ exportedCharacterElements exportedChar2
+                char3ToSend <- allocInitAlignIO exportedChar3Len . fmap coerceEnum $ exportedCharacterElements exportedChar3
+                retGapped   <- allocInitAlignIO 0 []
+                retUngapped <- allocInitAlignIO 0 []
+                -- retUnion    <- allocInitALignIO 0 []
+
+                let !cost = align3dFn_c char1ToSend char2ToSend char3ToSend retGapped retUngapped mismatchCost gapOpenCost indelCost
+
+                resultingAlignedChar1 <- extractFromAlignIO elemWidth char1ToSend
+                resultingAlignedChar2 <- extractFromAlignIO elemWidth char2ToSend
+                resultingAlignedChar3 <- extractFromAlignIO elemWidth char3ToSend
+                resultingGapped       <- extractFromAlignIO elemWidth retGapped
+                resultingUngapped     <- extractFromAlignIO elemWidth retUngapped
+
+                pure (fromIntegral cost, resultingUngapped, resultingGapped, resultingAlignedChar1 resultingAlignedChar2, resultingAlignedChar3)
+
+            where
+--                costStruct = costMatrix3D denseTCMs -- TODO: get memoized matrix wedged in here
+                neverComputeOnlyGapped = 0
+
+                elemWidth        = exportedChar1 ^. exportedElementWidth
+
+                exportedChar1Len = toEnum $ exportedChar1 ^. exportedElementCount
+                exportedChar2Len = toEnum $ exportedChar2 ^. exportedElementCount
+                exportedChar3Len = toEnum $ exportedChar3 ^. exportedElementCount
+
+                maxAllocLen      = exportedChar1Len + exportedChar2Len + exportedChar3Len
+
+                allocInitAlignIO :: CSize -> [CUInt] -> IO (Ptr AlignIO)
+                allocInitAlignIO elemCount elemArr  =
+                    do
+                        output   <- malloc :: IO (Ptr AlignIO)
+                        outArray <- newArray paddedArr
+                        poke output $ AlignIO outArray elemCount maxAllocLen
+                        pure output
+                    where
+                        paddedArr = replicate (max 0 (fromEnum (maxAllocLen - elemCount))) 0 <> elemArr
 
 {-
 -- | A C binding that computes only the cost of a 2d alignment
@@ -749,7 +801,7 @@ align2dGappedUngapped c1 c2 cm = algn2d c1 c2 cm ComputeUnions ComputeMedians
 
 
 -- |
--- Coercing one 'Enum' to another through thier corresponding 'Int' values.
+-- Coercing one 'Enum' to another through their corresponding 'Int' values.
 coerceEnum :: (Enum a, Enum b) => a -> b
 coerceEnum = toEnum . fromEnum
 

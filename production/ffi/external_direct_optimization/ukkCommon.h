@@ -28,8 +28,8 @@
 // Use the NO_ALLOC_ROUTINES flag to compile without alloc routines.
 // Use the FIXED_NUM_PLANES flag to make routines allocate on d^2 memory.
 
-#ifndef UKKCOMMON_H
-#define UKKCOMMON_H
+#ifndef __UKKCOMMON_H__
+#define __UKKCOMMON_H__
 
 #include <limits.h>
 #include <string.h>

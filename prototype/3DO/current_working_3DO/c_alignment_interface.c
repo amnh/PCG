@@ -91,7 +91,7 @@ int align2d( alignIO_t          *inputChar1_aio
     //printf("Before NW init.\n");
     //fflush(stdout);
     alignment_matrices_t *algnMtxs2d = malloc( sizeof(alignment_matrices_t) );
-    initializeAlignmentMtx(algnMtxs2d, longChar->len, shortChar->len, 0, costMtx2d->costMatrixDimension);
+    initializeAlignmentMtx(algnMtxs2d, longChar->len, shortChar->len, costMtx2d->costMatrixDimension);
     //printf("After  NW init.\n");
     //fflush(stdout);
 
@@ -286,14 +286,14 @@ int align2dAffine( alignIO_t          *inputChar1_aio
     unsigned int *final_cost_matrix;          //
     unsigned int *precalcMtx;                 //
     unsigned int *matrix_2d;                  //
-    unsigned int *precalc_gap_open_cost;              // precalculated gap opening value (top row of nw matrix)
+    unsigned int *precalc_gap_open_cost;      // precalculated gap opening value (top row of nw matrix)
     unsigned int *s_horizontal_gap_extension; //
     size_t        lenLongerChar;              //
 
     DIR_MTX_ARROW_t  *direction_matrix;
 
     alignment_matrices_t *algnMtxs2dAffine = malloc( sizeof(alignment_matrices_t) );
-    initializeAlignmentMtx(algnMtxs2dAffine, longChar->len, shortChar->len, 0, costMtx2d_affine->costMatrixDimension);
+    initializeAlignmentMtx(algnMtxs2dAffine, longChar->len, shortChar->len, costMtx2d_affine->costMatrixDimension);
     // printf("Jut initialized alignment matrices.\n");
     lenLongerChar = longChar->len;
 
@@ -310,13 +310,13 @@ int align2dAffine( alignIO_t          *inputChar1_aio
 
     /** 2 through 11 below are offsets into various "matrices" in the alignment matrices, of which there are four
         of length 2 * longer_character and two of longer_character */
-    close_block_diagonal            =  matrix_2d;
-    extend_block_diagonal           = (matrix_2d + ( lenLongerChar *  2 ));
-    extend_vertical                 = (matrix_2d + ( lenLongerChar *  4 ));
-    extend_horizontal               = (matrix_2d + ( lenLongerChar *  6 ));
-    final_cost_matrix               = (matrix_2d + ( lenLongerChar *  8 ));
-    precalc_gap_open_cost                   = (matrix_2d + ( lenLongerChar * 10 ));
-    s_horizontal_gap_extension      = (matrix_2d + ( lenLongerChar * 11 ));
+    close_block_diagonal       =  matrix_2d;
+    extend_block_diagonal      = (matrix_2d + ( lenLongerChar *  2 ));
+    extend_vertical            = (matrix_2d + ( lenLongerChar *  4 ));
+    extend_horizontal          = (matrix_2d + ( lenLongerChar *  6 ));
+    final_cost_matrix          = (matrix_2d + ( lenLongerChar *  8 ));
+    precalc_gap_open_cost      = (matrix_2d + ( lenLongerChar * 10 ));
+    s_horizontal_gap_extension = (matrix_2d + ( lenLongerChar * 11 ));
 
 
     // TODO: empty_medianChar might not be necessary, as it's unused in ml code:
@@ -348,21 +348,21 @@ int align2dAffine( alignIO_t          *inputChar1_aio
                                     , precalcMtx
                                     );
 
-    int algnCost = algn_fill_plane_2d_affine ( shortChar
-                                             , longChar
-                                             , shortChar->len - 1  // -1 because of a loop condition in algn_fill_plane_2d_affine
-                                             , longChar->len  - 1  // -1 because of a loop condition in algn_fill_plane_2d_affine
-                                             , final_cost_matrix
-                                             , direction_matrix
-                                             , costMtx2d_affine
-                                             , extend_horizontal
-                                             , extend_vertical
-                                             , close_block_diagonal
-                                             , extend_block_diagonal
-                                             , precalcMtx
-                                             , precalc_gap_open_cost
-                                             , s_horizontal_gap_extension
-                                             );
+    int algnCost = algn_fill_plane_2d_affine( shortChar
+                                            , longChar
+                                            , shortChar->len - 1  // -1 because of a loop condition in algn_fill_plane_2d_affine
+                                            , longChar->len  - 1  // -1 because of a loop condition in algn_fill_plane_2d_affine
+                                            , final_cost_matrix
+                                            , direction_matrix
+                                            , costMtx2d_affine
+                                            , extend_horizontal
+                                            , extend_vertical
+                                            , close_block_diagonal
+                                            , extend_block_diagonal
+                                            , precalcMtx
+                                            , precalc_gap_open_cost
+                                            , s_horizontal_gap_extension
+                                            );
 
     if(getMedians) {
         dyn_character_t *ungappedMedianChar = malloc(sizeof(dyn_character_t));
@@ -403,7 +403,6 @@ int align3d( alignIO_t          *inputChar1_aio
            , alignIO_t          *inputChar3_aio
            , alignIO_t          *ungappedOutput_aio
            , alignIO_t          *gappedOutput_aio
-           // , alignment_matrices_t *algn_mtxs3d
            , cost_matrices_3d_t *costMtx3d
            , unsigned int        gap_open_cost
            //, unsigned int        gap_extension_cost <-- This comes from tcm so is not necessary. TODO: no tcm; add this back in?
@@ -411,7 +410,7 @@ int align3d( alignIO_t          *inputChar1_aio
 {
 
     if (DEBUG_ALGN) {
-        printf("\n\nalign2d char1 input:\n");
+        printf("\n\nalign3d char1 input:\n");
         printf("\ninput char 1:");
         alignIO_print(inputChar1_aio);
         printf("input char 2:");
@@ -448,6 +447,7 @@ int align3d( alignIO_t          *inputChar1_aio
     // Now sort inputs into appropriate structs by name.
     // This will allow us to send inputs in in correct order by length and also get them back in the order
     // that corresponds to inputs.
+    if (DEBUG_3D) printf("char lengths: %lu, %lu, %lu\n", inputChar1_aio->length, inputChar2_aio->length, inputChar3_aio->length);
     if (inputChar1_aio->length >= inputChar2_aio->length) {
 
         if (inputChar3_aio->length >= inputChar1_aio->length) {        // input 3 is longest, 2 is shortest
@@ -515,11 +515,11 @@ int align3d( alignIO_t          *inputChar1_aio
     }
 
     if (DEBUG_3D) {
-        printf("\nafter initialization into correct data structs, long (char 1):\n");
+        printf("\nAfter initialization into correct data structs, long (char 1):\n");
         dyn_char_print(longChar);
-        printf("\nafter initialization into correct data structs, middle (char 2):\n");
+        printf("\nAfter initialization into correct data structs, middle (char 2):\n");
         dyn_char_print(middleChar);
-        printf("\nafter initialization into correct data structs, short (char 3):\n");
+        printf("\nAfter initialization into correct data structs, short (char 3):\n");
         dyn_char_print(shortChar);
     }
 
@@ -532,9 +532,9 @@ int align3d( alignIO_t          *inputChar1_aio
     if (DEBUG_CALL_ORDER) printf("\n---Calling Powell\n\n");
 
     // Powell aligns three sequences.
-    algnCost = powell_3D_align ( shortChar
+    algnCost = powell_3D_align ( longChar
+                               , shortChar
                                , middleChar
-                               , longChar
                                , retLongChar
                                , retShortChar
                                , retMiddleChar
@@ -549,13 +549,15 @@ int align3d( alignIO_t          *inputChar1_aio
     initializeChar(ungappedMedianChar, CHAR_CAPACITY);
     initializeChar(gappedMedianChar,   CHAR_CAPACITY);
 
-    algnCost = algn_get_cost_medians_3d ( retLongChar
-                                        , retMiddleChar
-                                        , retShortChar
-                                        , costMtx3d
-                                        , ungappedMedianChar
-                                        , gappedMedianChar
-                                        );
+    algnCost = algn_get_cost_medians_3d( retLongChar
+                                       , retShortChar
+                                       , retMiddleChar
+                                       , costMtx3d
+                                       , ungappedMedianChar
+                                       , gappedMedianChar
+                                       );
+
+
 
     dyn_char_print(ungappedMedianChar);
     dyn_char_print(gappedMedianChar);
@@ -611,7 +613,7 @@ void alignIOtoDynChar(       dyn_character_t *retChar
     retChar->len        = input->length;
     retChar->cap        = input->capacity;
     retChar->array_head = input->character;
-    retChar->end        = input->character + input->capacity - 1; // TODO: make sure this is correct.
+    retChar->end        = input->character + input->capacity - 1;
     retChar->char_begin = input->character + offset;
 
     // printf("\nBefore duping struct:\n");
@@ -652,7 +654,7 @@ void copyValsToAIO(alignIO_t *outChar, elem_t *vals, size_t length, size_t capac
     outChar->length   = length;
     outChar->capacity = capacity;
     // printf("here!\n");
-    // outChar->character = calloc(outChar->capacity, capacity);
+    outChar->character = malloc( outChar->capacity * sizeof(elem_t) );
     // printf("here!!\n");
     size_t offset = capacity - length;
     // printf("\n");
@@ -667,7 +669,8 @@ void copyValsToAIO(alignIO_t *outChar, elem_t *vals, size_t length, size_t capac
 
 /** Takes in an alignIO and a char. *Copies* values of character from end of char to end of alignIO->character, so output must already
  *  be alloc'ed.
- *  Also eliminates extra gap needed by legacy code.
+ *  Also eliminates extra gap at beginning of character that was needed by legacy code, as well as 0 that Powell appends to end of
+ *  character.
  */
 void dynCharToAlignIO(alignIO_t *output, dyn_character_t *input) {
 
@@ -696,9 +699,9 @@ void dynCharToAlignIO(alignIO_t *output, dyn_character_t *input) {
 
     output->length = copy_length;
     // output->capacity = input->cap;     // this shouldn't change
-    size_t offset  = output->capacity - copy_length - 1; // How far into output to start copying input character.
+    size_t offset  = output->capacity - copy_length; // How far into output to start copying input character.
 
-    memset( output->character, 0, output->capacity * sizeof(elem_t) );
+    output->character = malloc( output->capacity * sizeof(elem_t) );
 
     // Start copy after unnecessary gap char in input, if it exists.
     memcpy( output->character + offset, input_begin, copy_length * sizeof(elem_t) );

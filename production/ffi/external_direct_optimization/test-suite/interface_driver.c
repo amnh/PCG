@@ -124,253 +124,258 @@ int main() {
          }
     }
 
+    if (DO_2D) {
+        do2D_nonAffine( tcm )
+    }
+
 
 
 // /**************************************************** Do 2d alignment ********************************************************/
 
-//     if (DO_2D) {
-//         printf("\n\n\n******************** Align 2 characters ********************\n");
+void do2D_nonAffine( unsigned int * tcm )
+{
+    printf("\n\n\n******************** Align 2 characters ********************\n");
 
-//            cost_matrices_2d_t *costMtx2d        = malloc(sizeof(struct cost_matrices_2d_t));
-//            setUp2dCostMtx (costMtx2d, tcm, alphSize, 0);
+   cost_matrices_2d_t *costMtx2d        = malloc(sizeof(struct cost_matrices_2d_t));
+   setUp2dCostMtx (costMtx2d, tcm, alphSize, 0);
 
 
-//         for (i = 1; i <= 5; i++) { // run 30 tests
+    for (i = 1; i <= 5; i++) { // run 30 tests
 
-//             longCharLen  = rand() % CHAR_LENGTH + 1;
-//             shortCharLen = rand() % CHAR_LENGTH + 1;
-//             maxLength    = longCharLen + shortCharLen + 2; // 2 because there are two gaps added (1 on beginning of each character)
+        longCharLen  = rand() % CHAR_LENGTH + 1;
+        shortCharLen = rand() % CHAR_LENGTH + 1;
+        maxLength    = longCharLen + shortCharLen + 2; // 2 because there are two gaps added (1 on beginning of each character)
 
-//             // need to realloc each time through the loop
-//             longer_vals  = realloc( longer_vals,   longCharLen  * sizeof(elem_t) );
-//             lesser_vals = realloc( lesser_vals,  shortCharLen * sizeof(elem_t) );
+        // need to realloc each time through the loop
+        longer_vals = realloc( longer_vals,  longCharLen  * sizeof(elem_t) );
+        lesser_vals = realloc( lesser_vals,  shortCharLen * sizeof(elem_t) );
 
-//             set_vals( longer_vals,  longCharLen,  max_val);
-//             set_vals( lesser_vals, shortCharLen, max_val);
+        set_vals( longer_vals, longCharLen,  max_val);
+        set_vals( lesser_vals, shortCharLen, max_val);
 
-//             // need to allocate space for return alignIOs, as they're no longer alloc'ed in c_alignment_interface
-//             reallocAlignIO(inputChar1, maxLength);
-//             reallocAlignIO(inputChar2, maxLength);
+        // need to allocate space for return alignIOs, as they're no longer alloc'ed in c_alignment_interface
+        reallocAlignIO(inputChar1, maxLength);
+        reallocAlignIO(inputChar2, maxLength);
 
-//             reallocAlignIO(ungappedMedianChar, maxLength);
-//             reallocAlignIO(gappedMedianChar,   maxLength);
+        reallocAlignIO(ungappedMedianChar, maxLength);
+        reallocAlignIO(gappedMedianChar,   maxLength);
 
-//             copyValsToAIO(inputChar1, longer_vals,  longCharLen,  maxLength);
-//             copyValsToAIO(inputChar2, lesser_vals, shortCharLen, maxLength);
+        copyValsToAIO(inputChar1, longer_vals,  longCharLen,  maxLength);
+        copyValsToAIO(inputChar2, lesser_vals, shortCharLen, maxLength);
 
-//             allocAlignIO(unionMedianChar,    maxLength);
+        allocAlignIO(unionMedianChar,    maxLength);
 
 
-//             printf("\n\n********** Cost only (all chars should be empty): **********\n");
-//             printf("  \n***************** Original 2d characters: ******************\n");
-//             printf("  \n******************** Alphabet Size: %zu ********************\n", alphSize);
-//             alignIO_print(inputChar1);
-//             alignIO_print(inputChar2);
+        printf("\n\n********** Cost only (all chars should be empty): **********\n");
+        printf("  \n***************** Original 2d characters: ******************\n");
+        printf("  \n******************** Alphabet Size: %zu ********************\n", alphSize);
+        alignIO_print(inputChar1);
+        alignIO_print(inputChar2);
 
-//             algnCost = align2d( inputChar1
-//                               , inputChar2
-//                               , gappedMedianChar
-//                               , ungappedMedianChar
-//                               // , unionMedianChar
-//                               , costMtx2d
-//                               , 0                    // do ungapped
-//                               , 0                    // do gapped
-//                               , 0                    // do union
-//                               );
-//             // if (DEBUG_MAT) {
-//             //     printf("\n\nFinal alignment matrix: \n\n");
-//             //     algn_print_dynmtrx_2d( longChar, shortChar, algn_mtxs2d );
-//             // }
+        algnCost = align2d( inputChar1
+                          , inputChar2
+                          , gappedMedianChar
+                          , ungappedMedianChar
+                          // , unionMedianChar
+                          , costMtx2d
+                          , 0                    // do ungapped
+                          , 0                    // do gapped
+                          , 0                    // do union
+                          );
+        // if (DEBUG_MAT) {
+        //     printf("\n\nFinal alignment matrix: \n\n");
+        //     algn_print_dynmtrx_2d( longChar, shortChar, algn_mtxs2d );
+        // }
 
-//             printf("Alignment cost: %d\n", algnCost);
+        printf("Alignment cost: %d\n", algnCost);
 
-//             printf("\nAligned 2d characters (should be the same as inputs, as no backtrace has been performed)\n");
-//             alignIO_print(inputChar1);
-//             alignIO_print(inputChar2);
+        printf("\nAligned 2d characters (should be the same as inputs, as no backtrace has been performed)\n");
+        alignIO_print(inputChar1);
+        alignIO_print(inputChar2);
 
-//             printf("\n  Gapped character  ");
-//             alignIO_print(gappedMedianChar);
+        printf("\n  Gapped character  ");
+        alignIO_print(gappedMedianChar);
 
-//             printf("\n  Ungapped character  ");
-//             alignIO_print(ungappedMedianChar);
+        printf("\n  Ungapped character  ");
+        alignIO_print(ungappedMedianChar);
 
-//             // union:
-//             // algn_union (retShortChar, retLongChar, algnChar);
-//             // printf("  Unioned character\n  ");
-//             // alignIO_print(unionMedianChar);
-//             // printf("here.\n");
+        // union:
+        // algn_union (retShortChar, retLongChar, algnChar);
+        // printf("  Unioned character\n  ");
+        // alignIO_print(unionMedianChar);
+        // printf("here.\n");
 
-//             resetAlignIO(inputChar1);
-//             resetAlignIO(inputChar2);
-//             resetAlignIO(ungappedMedianChar);
-//             resetAlignIO(gappedMedianChar);
-//             // resetAlignIO(unionMedianChar);
+        resetAlignIO(inputChar1);
+        resetAlignIO(inputChar2);
+        resetAlignIO(ungappedMedianChar);
+        resetAlignIO(gappedMedianChar);
+        // resetAlignIO(unionMedianChar);
 
 
 
-//             // printf("\n\n********** Ungapped only (gapped should be empty): **********\n");
-
-//             printf("  \n****************** Original 2d characters: ******************\n");
-//             printf("Alphabet size: %zu\n", alphSize);
-//             printf("gap character: %u\n", gap_char);
-
-//             alignIO_print(inputChar1);
-//             alignIO_print(inputChar2);
-
-//             algnCost = align2d( inputChar1
-//                               , inputChar2
-//                               , gappedMedianChar
-//                               , ungappedMedianChar
-//                               // , unionMedianChar
-//                               , costMtx2d
-//                               , 1                    // do ungapped
-//                               , 1                    // do gapped
-//                               , 0                   // do union
-//                               );
+        // printf("\n\n********** Ungapped only (gapped should be empty): **********\n");
+
+        printf("  \n****************** Original 2d characters: ******************\n");
+        printf("Alphabet size: %zu\n", alphSize);
+        printf("gap character: %u\n", gap_char);
+
+        alignIO_print(inputChar1);
+        alignIO_print(inputChar2);
+
+        algnCost = align2d( inputChar1
+                          , inputChar2
+                          , gappedMedianChar
+                          , ungappedMedianChar
+                          // , unionMedianChar
+                          , costMtx2d
+                          , 1                    // do ungapped
+                          , 1                    // do gapped
+                          , 0                   // do union
+                          );
 
-//             printf("\nAligned 2d characters\n");
-//             alignIO_print(inputChar1);
-//             alignIO_print(inputChar2);
-
-//             printf("Alignment cost: %d\n", algnCost);
-
-//             printf("\nGapped character  ");
-//             alignIO_print(gappedMedianChar);
+        printf("\nAligned 2d characters\n");
+        alignIO_print(inputChar1);
+        alignIO_print(inputChar2);
 
-//             printf("\nUngapped character  ");
-//             alignIO_print(ungappedMedianChar);
+        printf("Alignment cost: %d\n", algnCost);
 
-//             resetAlignIO(inputChar1);
-//             resetAlignIO(inputChar2);
-//             resetAlignIO(ungappedMedianChar);
-//             resetAlignIO(gappedMedianChar);
+        printf("\nGapped character  ");
+        alignIO_print(gappedMedianChar);
 
-//             copyValsToAIO(inputChar1, longer_vals, longCharLen, maxLength);
-//             copyValsToAIO(inputChar2, lesser_vals, shortCharLen, maxLength);
+        printf("\nUngapped character  ");
+        alignIO_print(ungappedMedianChar);
 
-//             printf("\n\n********** Gapped only (ungapped should be empty): **********\n");
-//             printf("  \n*******************Original 2d characters:*******************\n");
-//             printf("Alphabet size: %zu\n", alphSize);
-//             printf("gap character: %u\n", gap_char);
+        resetAlignIO(inputChar1);
+        resetAlignIO(inputChar2);
+        resetAlignIO(ungappedMedianChar);
+        resetAlignIO(gappedMedianChar);
 
-//             alignIO_print(inputChar1);
-//             alignIO_print(inputChar2);
+        copyValsToAIO(inputChar1, longer_vals, longCharLen, maxLength);
+        copyValsToAIO(inputChar2, lesser_vals, shortCharLen, maxLength);
 
-//             algnCost = align2d(inputChar1,
-//                                inputChar2,
-//                                gappedMedianChar,
-//                                ungappedMedianChar,
-//                                // unionMedianChar,
-//                                costMtx2d,
-//                                0,                    // do ungapped
-//                                1,                    // do gapped
-//                                0);                   // do union
+        printf("\n\n********** Gapped only (ungapped should be empty): **********\n");
+        printf("  \n*******************Original 2d characters:*******************\n");
+        printf("Alphabet size: %zu\n", alphSize);
+        printf("gap character: %u\n", gap_char);
 
-//             printf("Alignment cost: %d\n", algnCost);
+        alignIO_print(inputChar1);
+        alignIO_print(inputChar2);
 
-//             printf("\nAligned 2d characters\n");
-//             alignIO_print(inputChar1);
-//             alignIO_print(inputChar2);
+        algnCost = align2d(inputChar1,
+                           inputChar2,
+                           gappedMedianChar,
+                           ungappedMedianChar,
+                           // unionMedianChar,
+                           costMtx2d,
+                           0,                    // do ungapped
+                           1,                    // do gapped
+                           0);                   // do union
 
-//             printf("\nGapped character  ");
-//             alignIO_print(gappedMedianChar);
+        printf("Alignment cost: %d\n", algnCost);
 
-//             printf("\nUngapped character  ");
-//             alignIO_print(ungappedMedianChar);
+        printf("\nAligned 2d characters\n");
+        alignIO_print(inputChar1);
+        alignIO_print(inputChar2);
 
-//             resetAlignIO(inputChar1);
-//             resetAlignIO(inputChar2);
-//             resetAlignIO(ungappedMedianChar);
-//             resetAlignIO(gappedMedianChar);
+        printf("\nGapped character  ");
+        alignIO_print(gappedMedianChar);
 
-//             copyValsToAIO(inputChar1, longer_vals,  longCharLen,  maxLength);
-//             copyValsToAIO(inputChar2, lesser_vals, shortCharLen, maxLength);
+        printf("\nUngapped character  ");
+        alignIO_print(ungappedMedianChar);
 
-//             resetAlignIO(inputChar1);
-//             resetAlignIO(inputChar2);
-//             resetAlignIO(ungappedMedianChar);
-//             resetAlignIO(gappedMedianChar);
+        resetAlignIO(inputChar1);
+        resetAlignIO(inputChar2);
+        resetAlignIO(ungappedMedianChar);
+        resetAlignIO(gappedMedianChar);
 
-//             copyValsToAIO(inputChar1, longer_vals,  longCharLen,  maxLength);
-//             copyValsToAIO(inputChar2, lesser_vals, shortCharLen, maxLength);
+        copyValsToAIO(inputChar1, longer_vals,  longCharLen,  maxLength);
+        copyValsToAIO(inputChar2, lesser_vals, shortCharLen, maxLength);
 
-//             printf("\n\n******************** Gapped and ungapped: ******************\n");
-//             printf(  "\n****************** Original 2d characters: *****************\n");
-//             printf("Alphabet size: %zu\n", alphSize);
-//             printf("gap character: %u\n",  gap_char);
+        resetAlignIO(inputChar1);
+        resetAlignIO(inputChar2);
+        resetAlignIO(ungappedMedianChar);
+        resetAlignIO(gappedMedianChar);
 
-//             alignIO_print(inputChar1);
-//             alignIO_print(inputChar2);
+        copyValsToAIO(inputChar1, longer_vals,  longCharLen,  maxLength);
+        copyValsToAIO(inputChar2, lesser_vals, shortCharLen, maxLength);
 
-//             algnCost = align2d(inputChar1,
-//                                inputChar2,
-//                                gappedMedianChar,
-//                                ungappedMedianChar,
-//                                // unionMedianChar,
-//                                costMtx2d,
-//                                1,                    // do ungapped
-//                                1,                    // do gapped
-//                                0);                   // do union
+        printf("\n\n******************** Gapped and ungapped: ******************\n");
+        printf(  "\n****************** Original 2d characters: *****************\n");
+        printf("Alphabet size: %zu\n", alphSize);
+        printf("gap character: %u\n",  gap_char);
 
-//             printf("\nAligned 2d characters\n");
-//             alignIO_print(inputChar1);
-//             alignIO_print(inputChar2);
-//             printf("Alignment cost: %d\n", algnCost);
+        alignIO_print(inputChar1);
+        alignIO_print(inputChar2);
 
+        algnCost = align2d(inputChar1,
+                           inputChar2,
+                           gappedMedianChar,
+                           ungappedMedianChar,
+                           // unionMedianChar,
+                           costMtx2d,
+                           1,                    // do ungapped
+                           1,                    // do gapped
+                           0);                   // do union
 
-//             printf("\nGapped character  ");
-//             alignIO_print(gappedMedianChar);
+        printf("\nAligned 2d characters\n");
+        alignIO_print(inputChar1);
+        alignIO_print(inputChar2);
+        printf("Alignment cost: %d\n", algnCost);
 
-//             printf("alphSize: %zu\n", alphSize);
-//             printf("gap char: %u\n", gap_char);
 
-//             printf("\nUngapped character  ");
-//             alignIO_print(ungappedMedianChar);
+        printf("\nGapped character  ");
+        alignIO_print(gappedMedianChar);
 
-//             resetAlignIO(inputChar1);
-//             resetAlignIO(inputChar2);
-//             resetAlignIO(ungappedMedianChar);
-//             resetAlignIO(gappedMedianChar);
+        printf("alphSize: %zu\n", alphSize);
+        printf("gap char: %u\n", gap_char);
 
-//             copyValsToAIO(inputChar1, longer_vals, longCharLen, maxLength);
-//             copyValsToAIO(inputChar2, lesser_vals, shortCharLen, maxLength);
+        printf("\nUngapped character  ");
+        alignIO_print(ungappedMedianChar);
 
-//             printf("\n\n********** Gapped and union (ungapped should be empty, union should override ungapped): **********\n");
-//             printf(  "\n************************************ Original 2d characters: *************************************\n");
-//             printf("  \n*************************************** Alphabet Size: %zu ***************************************\n", alphSize);
+        resetAlignIO(inputChar1);
+        resetAlignIO(inputChar2);
+        resetAlignIO(ungappedMedianChar);
+        resetAlignIO(gappedMedianChar);
 
+        copyValsToAIO(inputChar1, longer_vals, longCharLen, maxLength);
+        copyValsToAIO(inputChar2, lesser_vals, shortCharLen, maxLength);
 
-//             alignIO_print(inputChar1);
-//             alignIO_print(inputChar2);
+        printf("\n\n********** Gapped and union (ungapped should be empty, union should override ungapped): **********\n");
+        printf(  "\n************************************ Original 2d characters: *************************************\n");
+        printf("  \n*************************************** Alphabet Size: %zu ***************************************\n", alphSize);
 
 
-//             algnCost = align2d(inputChar1,
-//                                inputChar2,
-//                                gappedMedianChar,
-//                                ungappedMedianChar,
-//                                // unionMedianChar,
-//                                costMtx2d,
-//                                0,                    // do ungapped
-//                                1,                    // do gapped
-//                                0);                   // do union
+        alignIO_print(inputChar1);
+        alignIO_print(inputChar2);
 
 
-//             printf("\nAligned 2d characters\n");
-//             alignIO_print(inputChar1);
-//             alignIO_print(inputChar2);
-//             printf("Alignment cost: %d\n", algnCost);
+        algnCost = align2d(inputChar1,
+                           inputChar2,
+                           gappedMedianChar,
+                           ungappedMedianChar,
+                           // unionMedianChar,
+                           costMtx2d,
+                           0,                    // do ungapped
+                           1,                    // do gapped
+                           0);                   // do union
 
 
-//             printf("\n  Union character  ");
-//             alignIO_print(gappedMedianChar);
+        printf("\nAligned 2d characters\n");
+        alignIO_print(inputChar1);
+        alignIO_print(inputChar2);
+        printf("Alignment cost: %d\n", algnCost);
 
-//             printf("\n  Ungapped character  ");
-//             alignIO_print(ungappedMedianChar);
 
+        printf("\n  Union character  ");
+        alignIO_print(gappedMedianChar);
 
-//         }
-//         freeCostMtx(costMtx2d,        1);
-//     } // Do 2D
+        printf("\n  Ungapped character  ");
+        alignIO_print(ungappedMedianChar);
+
+
+    }
+    freeCostMtx(costMtx2d,        1);
+} // Do 2D
 
 
 

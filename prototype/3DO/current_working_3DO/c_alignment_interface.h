@@ -65,7 +65,6 @@ int align3d( alignIO_t          *inputChar1_aio
            , alignIO_t          *inputChar3_aio
            , alignIO_t          *ungappedOutput_aio
            , alignIO_t          *gappedOutput_aio
-           // , alignment_matrices_t *algn_mtxs3d
            , cost_matrices_3d_t *costMtx3d
            , unsigned int        gap_open_cost
            // , unsigned int        gap_extension_cost

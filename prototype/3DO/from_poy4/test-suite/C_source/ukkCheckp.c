@@ -52,7 +52,7 @@
 #include "ukkCommon.h"
 
 #define MAXINT INT_MAX
-// #define FIXED_NUM_PLANES TODO: this is also defined in ukkCommon.h; it was commented out, but then allocInit() failed to compile
+// #define FIXED_NUM_PLANES // TODO: this is also defined in ukkCommon.h; it was commented out, but then allocInit() failed to compile
 
 AllocInfo myUAllocInfo;
 AllocInfo myCPAllocInfo;

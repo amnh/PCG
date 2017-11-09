@@ -31,13 +31,11 @@
 /* Dynamic character structure to be used inside ocaml custom types. */
 /********************* CHARACTER AS IT COMES IN MUST BE IN LAST X SPACES IN ARRAY! *********************/
 typedef struct dyn_character_t {
-//    int magic_number;
-    size_t cap;         // Capacity of the character memory structure.
-    size_t len;         // Total length of the character stored.
+    size_t  cap;        // Capacity of the character memory structure.
+    size_t  len;        // Total length of the character stored.
     elem_t *array_head; // beginning of the allocated array
     elem_t *char_begin; // Position where the first element of the character is actually stored.
     elem_t *end;        // End of both array and character.
-    //struct pool *my_pool; ARRAY_POOL_DELETE
 } dyn_character_t;
 
 

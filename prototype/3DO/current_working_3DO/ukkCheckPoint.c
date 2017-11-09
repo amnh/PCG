@@ -175,7 +175,7 @@ int doUkkInLimits(int sab, int sac, int sCost, int sState, int sDist,
             if (i != fCost) {
                 fprintf(stderr, "Dist reached for cost %2d (old cost %2d)\n",i,fCost);
                 fCost = i;
-                assert(0);
+                // assert(0);
             }
         }
         #endif
