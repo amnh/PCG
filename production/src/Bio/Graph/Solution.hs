@@ -182,3 +182,15 @@ instance
                             dim = length  $ x ^. characterAlphabet
 
 
+
+getSolutionDotContext
+    ( Foldable f
+    , FoldableWithKey1 t
+    )
+  => t (PhylogeneticDAG2 e (f String) u v w x y z)
+  -> ([DotNode GraphID], [DotEdge GraphID])
+getSolutionDotContext xs = foldMapWithKey1 g xs
+  where
+    g = getDotContextWithBaseAndIndex baseValue
+    baseValue = maximum $ f <$> xs
+    f (PDAG2 xs) = length xs

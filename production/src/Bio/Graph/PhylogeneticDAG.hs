@@ -30,6 +30,7 @@ module Bio.Graph.PhylogeneticDAG
 --  , riefiedSolution
 --  , riefyForest
   , rootCosts
+  , getDotContextWithBaseAndIndex
   -- * Mapping over networks
   , edgePreorderMap
   , edgePostorderMap

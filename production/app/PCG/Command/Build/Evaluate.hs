@@ -19,16 +19,15 @@ import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG
 import qualified Bio.Graph.ReferenceDAG as DAG
 import           Bio.Sequence
+import           Control.Arrow                 ((&&&))
 import           Control.DeepSeq
 --import           Control.Evaluation
 import           Control.Lens
 import           Control.Monad                 (replicateM)
 import           Control.Monad.IO.Class
 --import           Control.Monad.Trans.Either
---import           Control.Parallel.Strategies
---import           Control.Parallel.Custom
---import           Data.Alphabet   --     hiding (AmbiguityGroup)
---import           Data.Alphabet.IUPAC
+import           Control.Parallel.Strategies
+import           Control.Parallel.Custom
 --import           Data.Bifunctor                (bimap,first)
 --import           Data.Char                     (isLower,toLower,isUpper,toUpper)
 --import           Data.EdgeLength
@@ -40,25 +39,23 @@ import qualified Data.IntMap            as IM
 import qualified Data.IntSet            as IS
 --import           Data.Key
 --import           Data.List                     (intercalate)
-import           Data.List.NonEmpty             (NonEmpty(..))
+import           Data.List.NonEmpty            (NonEmpty(..))
 import qualified Data.List.NonEmpty     as NE
 --import           Data.List.Utility             (subsetOf)
 --import           Data.Map                      (Map,assocs,insert,union)
 --import qualified Data.Map               as M
 --import           Data.Maybe                    (fromMaybe)
-import           Data.Ord                     (comparing)
+import           Data.Ord                      (comparing)
+import           Data.Semigroup
 import           Data.Semigroup.Foldable
---import           Data.TCM                      (TCMDiagnosis(..), TCMStructure(..), diagnoseTcm)
---import qualified Data.TCM               as TCM
---import           Data.Text.IO                  (readFile)
 --import           Data.Vector                   (Vector)
 --import qualified Data.Vector            as V   (zipWith)
---import           Data.Void
 import           PCG.Command.Build
 import           PCG.Syntax                    (Command(..))
 import           Prelude                hiding (lookup, readFile)
 import           System.Random.Shuffle
---import Debug.Trace (trace)
+
+import Debug.Trace
 
 
 type DatNode =
@@ -141,8 +138,8 @@ naiveWagnerParallelBuild
      )
   => t (f DatNode) -- (PhylogeneticNode2 (CharacterSequence u v w x y z) (Maybe String))
   -> t FinalDecorationDAG
---naiveWagnerParallelBuild = parmap rpar naiveWagnerBuild
-naiveWagnerParallelBuild = fmap naiveWagnerBuild
+naiveWagnerParallelBuild = parmap rpar naiveWagnerBuild
+--naiveWagnerParallelBuild = fmap naiveWagnerBuild
 
 
 naiveWagnerBuild
@@ -186,11 +183,13 @@ naiveWagnerBuild ns =
                    , ( IS.singleton 1, wipeNode False y, mempty )
                    , ( IS.singleton 0, wipeNode False z, mempty )
                    ]
-          in  iterativeBuild initTree xs
+          in  (\a -> trace ("Starting tree cost: " <> show (getCost a)) a) $ iterativeBuild initTree xs
 
   where
     fromRefDAG = performDecoration . PDAG2 . defaultMetadata
 
+    getCost (PDAG2 v) = dagCost $ graphData v
+ 
 
 iterativeBuild
   ::
@@ -225,7 +224,7 @@ iterativeBuild currentTree (nextLeaf:remainingLeaves) = iterativeBuild nextTree 
 
     tryEdge :: (Int, Int) -> FinalDecorationDAG
     tryEdge     = performDecoration . PDAG2 . invadeEdge (defaultMetadata dag) deriveInternalNode (wipeNode False nextLeaf)
-    nextTree    = minimumBy (comparing getCost) $ fmap tryEdge edgeSet
+    nextTree    = minimumBy (comparing getCost) $ parmap rpar tryEdge edgeSet
 
     getCost (PDAG2 v) = dagCost $ graphData v
 
@@ -260,13 +259,15 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag) =
     case toList $ candidateNetworkEdges inputDag of
       []   -> currentNetwork
       x:xs ->
-        let edgesToTry     = x:|xs
-            bestNewNetwork = minimumBy (comparing getCost) $ fmap tryNetworkEdge edgesToTry
-        in  if getCost currentNetwork <= getCost bestNewNetwork
-            then currentNetwork
-            else iterativeNetworkBuild bestNewNetwork
+        let !edgesToTry = traceShowId $ x:|xs
+            (minNewCost, !bestNewNetwork) = minimumBy (comparing fst)
+                                          . parmap (rparWith rdeepseq) (getCost &&& id)
+                                          $ tryNetworkEdge <$> edgesToTry
+        in  if   getCost currentNetwork <= minNewCost
+            then trace "No new network edge was less costly." currentNetwork
+            else (\x -> trace ("Improved With New Cost:" <> show minNewCost) x) $ iterativeNetworkBuild bestNewNetwork
   where
-    (PDAG2 dag) = wipeScoring currentNetwork
+    (PDAG2 dag) = force $ wipeScoring currentNetwork
 
     tryNetworkEdge :: ((Int, Int), (Int, Int)) -> FinalDecorationDAG
     tryNetworkEdge = performDecoration . PDAG2 . connectEdge'
@@ -281,5 +282,3 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag) =
     deriveTargetEdgeNode parentDatum oldChildDatum =
         PNode2 (resolutions oldChildDatum) (nodeDecorationDatum2 parentDatum)
         
-
-

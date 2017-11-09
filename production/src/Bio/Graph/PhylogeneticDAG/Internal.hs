@@ -259,6 +259,16 @@ instance ( ToXML u
     toXML (PDAG2 refDag) = toXML refDag
 
 
+
+getDotContextWithBaseAndIndex
+  :: Foldable f
+  => Int -- ^ Base over which the Unique
+  -> Int
+  -> (PhylogeneticDAG2 e (f String) u v w x y z)
+  -> ([DotNode GraphID], [DotEdge GraphID])
+getDotContextWithBaseAndIndex (PDAG2 dag) = getDotContext dag
+
+
 applySoftwireResolutions :: [(ResolutionCache s, IntSet)] -> NonEmpty [ResolutionInformation s]
 applySoftwireResolutions inputContexts =
     case inputContexts of

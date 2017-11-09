@@ -36,6 +36,7 @@ module Bio.Graph.ReferenceDAG
   -- * Rendering
   , referenceRendering
   , topologyRendering
+  , getDotContext
   ) where
 
 import Bio.Graph.ReferenceDAG.Internal

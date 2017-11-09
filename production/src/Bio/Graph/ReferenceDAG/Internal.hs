@@ -24,6 +24,7 @@ import           Data.Bifunctor
 import           Data.EdgeSet
 import           Data.Foldable
 import           Data.Functor                     ((<$))
+import           Data.GraphViz.Attributes
 import           Data.GraphViz.Printing    hiding ((<>)) -- Seriously, why is this redefined?
 import           Data.GraphViz.Types       hiding (attrs)
 import           Data.GraphViz.Types.Graph hiding (node)
@@ -239,13 +240,13 @@ instance PhylogeneticTree (ReferenceDAG d e n) NodeRef e n where
 
 instance Foldable f => PrintDot (ReferenceDAG d e (f String)) where
 
-    unqtDot       = unqtDot . uncurry mkGraph . getDotContext
+    unqtDot       = unqtDot . uncurry mkGraph . getDotContext 0 0
 
-    toDot         = toDot . uncurry mkGraph . getDotContext
+    toDot         = toDot   . uncurry mkGraph . getDotContext 0 0
 
-    unqtListToDot = unqtDot . uncurry mkGraph . bimap mconcat mconcat . unzip . fmap getDotContext
+    unqtListToDot = unqtDot . uncurry mkGraph . bimap mconcat mconcat . unzip . fmap getDotContext 0 0
 
-    listToDot     = toDot . uncurry mkGraph . bimap mconcat mconcat . unzip . fmap getDotContext
+    listToDot     = toDot   . uncurry mkGraph . bimap mconcat mconcat . unzip . fmap getDotContext 0 0
 
 
 -- | (✔)
@@ -386,8 +387,8 @@ connectEdge
   -> (Int, Int) -- ^ Origin edge (coming from)
   -> (Int, Int) -- ^ Target edge (going too)
   -> ReferenceDAG d e n 
-connectEdge dag _ _ origin target | trace (unlines  ["Origin: " <> show origin, "Target: " <> show target, "Input:", show dag ]) False = undefined
-connectEdge dag originTransform targetTransform (ooRef, otRef) (toRef, ttRef) = (\x -> trace ("Output:\n"<>show x) x) newDag
+--connectEdge dag _ _ origin target | trace (unlines  ["Origin: " <> show origin, "Target: " <> show target, "Input:", show dag ]) False = undefined
+connectEdge dag originTransform targetTransform (ooRef, otRef) (toRef, ttRef) = {- (\x -> trace ("Output:\n"<>show x) x) -} newDag
   where
     refs    = references dag
     oldLen  = length refs
@@ -1056,26 +1057,39 @@ gen1 x = (pops, show x, kids)
 --}
 
 
-getDotContext :: Foldable f => ReferenceDAG d e (f String) -> ([DotNode GraphID], [DotEdge GraphID])
+getDotContext
+  :: Foldable f
+  => Int -- ^ Base over which the Unique
+  -> Int
+  -> ReferenceDAG d e (f String)
+  -> ([DotNode GraphID], [DotEdge GraphID])
 --getDotContext dag | trace ("About to render this to DOT:\n\n" <> show dag) False = undefined
-getDotContext dag = second mconcat . unzip $ foldMapWithKey f vec
+getDotContext uniqueIdentifierBase mostSignificantDigit dag = second mconcat . unzip $ foldMapWithKey f vec
   where
+    idOffest = uniqueIdentifierBase * mostSignificantDigit
+    
     vec = references dag
 
-    toId :: Foldable f => Int -> f String -> GraphID
-    toId i x =
+    toId :: Int -> GraphID
+    toId = (+ idOffest) . Num . Int
+
+    toAttributes :: Foldable f => f String -> Attributes
+    toAttributes x =
       case toList x of
-        []  -> Num $ Int i
-        s:_ -> Str $ fromString s
+        []  -> []
+        s:_ -> [ toLabel s ]
+
+    
 
     f :: Foldable f => Int -> IndexData e (f String) -> [(DotNode GraphID, [DotEdge GraphID])]
     f k v = [ (toDotNode, toDotEdge <$> kidRefs) ]
       where
         datum       = nodeDecoration v
-        nodeId      = toId k datum
+        nodeId      = toId k
+        nodeAttrs   = toAttributes datum
         kidRefs     = IM.keys $ childRefs v
-        toDotNode   = DotNode nodeId []
-        toDotEdge x = DotEdge (toId x (nodeDecoration $ vec ! x)) nodeId []
+        toDotNode   = DotNode nodeId nodeAttrs
+        toDotEdge x = DotEdge (toId x) nodeId nodeAttrs
 
 
 -- |
