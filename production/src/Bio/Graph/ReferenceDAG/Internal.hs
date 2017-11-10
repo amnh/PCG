@@ -924,7 +924,7 @@ fromList xs =
     rootSet =
       case foldMapWithKey (\k (pSet,_,_) -> if onull pSet then [k] else []) listValue of
         []   -> error "No root nodes supplied in call to ReferenceDAG.fromList"
-        x:xs -> x:|xs
+        y:ys -> y:|ys
 
 
 -- |
@@ -1108,7 +1108,7 @@ candidateNetworkEdges dag = S.filter correctnessCriterion $ foldMapWithKey f mer
 
     doesNotShareNode ((a,b),(c,d)) = a /= c && a /= d && b /= c && b /= d
 
-    notNetworkEdges  ((a,b),(c,d)) = isNotNetworkNode b && isNotNetworkNode d
+    notNetworkEdges  ((_,b),(_,d)) = isNotNetworkNode b && isNotNetworkNode d
       where
         isNotNetworkNode i = (<=1) . olength . parentRefs $ refs ! i
         refs = references ! dag

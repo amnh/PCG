@@ -12,8 +12,6 @@ import qualified PCG.Command.Read.Evaluate   as Read
 import qualified PCG.Command.Report.Evaluate as Report
 import           PCG.Syntax
 
-import Debug.Trace
-
 
 optimizeComputation :: Computation -> Computation
 optimizeComputation (Computation commands) = Computation $ collapseReadCommands commands
@@ -33,9 +31,9 @@ evaluate :: Computation -> SearchState
 evaluate (Computation xs) = foldl' f mempty xs
   where
     f :: SearchState -> Command ->  SearchState
-    f state x@BUILD  {} = Build.evaluate  x (force state)
-    f state x@READ   {} = Read.evaluate   x (force state)
-    f state x@REPORT {} = Report.evaluate x (force state)
+    f v c@BUILD  {} = Build.evaluate  c $ force v
+    f v c@READ   {} = Read.evaluate   c $ force v
+    f v c@REPORT {} = Report.evaluate c $ force v
 --    f _ = error "NOT YET IMPLEMENTED"
 
 

@@ -18,8 +18,6 @@ module Control.Evaluation.Unit where
 import Control.Applicative
 import Control.DeepSeq
 import Control.Monad (MonadPlus(mzero, mplus))
-import Data.Foldable
-import Data.List.NonEmpty
 import Data.Monoid   ()
 import Data.Semigroup
 import GHC.Generics

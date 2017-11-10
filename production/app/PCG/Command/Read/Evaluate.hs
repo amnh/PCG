@@ -8,7 +8,7 @@ import           Bio.Character.Parsed
 import           Bio.Metadata.Parsed
 import           Bio.Graph
 import           Bio.Graph.Forest.Parsed
-import           Control.DeepSeq
+--import           Control.DeepSeq
 import           Control.Evaluation
 import           Control.Monad                (liftM2, when)
 import           Control.Monad.IO.Class
@@ -31,7 +31,7 @@ import           Data.List.NonEmpty           (NonEmpty(..))
 -- import qualified Data.Map              as M
 -- import           Data.Maybe                   (fromMaybe)
 import           Data.Ord                     (comparing)
-import           Data.Semigroup
+--import           Data.Semigroup
 import           Data.TCM                     (TCMDiagnosis(..), TCMStructure(..), diagnoseTcm)
 import qualified Data.TCM              as TCM
 import           Data.Text.IO                 (readFile)
