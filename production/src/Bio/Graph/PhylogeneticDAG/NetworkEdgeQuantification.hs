@@ -486,8 +486,11 @@ filterResolutionCombinationsBy predicate = filter predicate . toList . sequenceA
 -- invariants of the 'ResolutionInformation' construction in an earlier
 -- computation.
 formsValidDisplayForest :: Foldable1 f => f (ResolutionInformation s) -> Bool
-formsValidDisplayForest xs = notContradictory && completeLeafCoverage
+formsValidDisplayForest resSet =
+    case toNonEmpty resSet of
+      _:|[] -> True
+      _     -> notContradictory && completeLeafCoverage
   where
-    notContradictory     = transitivePropertyHolds resolutionsDoNotOverlap xs
-    completeLeafCoverage = let bitVal = foldMap1 leafSetRepresentation xs
+    notContradictory     = transitivePropertyHolds resolutionsDoNotOverlap resSet
+    completeLeafCoverage = let bitVal = foldMap1 leafSetRepresentation resSet
                            in  complement (bitVal `xor` bitVal) == bitVal

@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
 
 module Bio.Metadata.Continuous
   ( ContinuousCharacterMetadataDec()
@@ -23,12 +23,15 @@ module Bio.Metadata.Continuous
 
 import Bio.Metadata.CharacterName
 import Bio.Metadata.General
+import Control.DeepSeq
 import Control.Lens
+import GHC.Generics
 
 
 -- |
 -- Metadata type for a continuous character.
 newtype ContinuousCharacterMetadataDec = CCM GeneralCharacterMetadataDec
+  deriving (Generic)
 
 
 -- | (✔)
@@ -48,6 +51,9 @@ instance HasCharacterName ContinuousCharacterMetadataDec CharacterName where
 instance HasCharacterWeight ContinuousCharacterMetadataDec Double where
 
     characterWeight = lens (\(CCM e) -> e ^. characterWeight) $ \(CCM e) x -> CCM (e & characterWeight .~ x)
+
+
+instance NFData ContinuousCharacterMetadataDec
 
 
 -- |

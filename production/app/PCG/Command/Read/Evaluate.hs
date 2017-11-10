@@ -8,6 +8,7 @@ import           Bio.Character.Parsed
 import           Bio.Metadata.Parsed
 import           Bio.Graph
 import           Bio.Graph.Forest.Parsed
+--import           Control.DeepSeq
 import           Control.Evaluation
 import           Control.Monad                (liftM2, when)
 import           Control.Monad.IO.Class

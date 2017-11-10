@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies, UndecidableInstances #-}
+{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies, UndecidableInstances #-}
 
 module Bio.Character.Decoration.Continuous.Internal
   ( ContinuousDecorationInitial(..)
@@ -26,10 +26,12 @@ import Bio.Character.Encodable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Continuous
 import Bio.Metadata.Discrete
+import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
 import Data.Range
 import Data.Semigroup
+import GHC.Generics
 import Numeric.Extended
 import Text.XML
 
@@ -41,7 +43,7 @@ data ContinuousDecorationInitial c
    = ContinuousDecorationInitial
    { continuousDecorationInitialCharacter :: c
    , continuousMetadataField              :: ContinuousCharacterMetadataDec
-   }
+   } deriving (Generic)
 
 
 -- |
@@ -57,12 +59,14 @@ continuousDecorationInitial name weight value =
 -- |
 -- Represents a character decoration after a pre-order traversal.
 newtype ContinuousOptimizationDecoration  c = COptD (AdditiveOptimizationDecoration c)
+    deriving (Generic)
 
 
 -- |
 -- Represents the partially complete character decoration after a post-order
 -- traversal.
 newtype ContinuousPostorderDecoration c = CPostD (AdditivePostorderDecoration c)
+    deriving (Generic)
 
 
 lensCOptD :: Functor f
@@ -311,6 +315,15 @@ instance (Bound a ~ c) => HasPreliminaryInterval (ContinuousOptimizationDecorati
 instance (Bound a ~ c) => HasPreliminaryInterval (ContinuousPostorderDecoration a) (Range c) where
 
     preliminaryInterval = lensCPostD preliminaryInterval preliminaryInterval
+
+
+instance NFData c => NFData (ContinuousDecorationInitial c)
+
+
+instance (NFData c, NFData (Finite (Bound c)), NFData (Range (Bound c))) => NFData (ContinuousOptimizationDecoration c)
+
+
+instance (NFData c, NFData (Finite (Bound c)), NFData (Range (Bound c))) => NFData (ContinuousPostorderDecoration c) 
 
 
 -- | (✔)

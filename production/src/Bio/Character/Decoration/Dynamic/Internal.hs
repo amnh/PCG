@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
 
 {-# LANGUAGE UndecidableInstances #-}
 
@@ -23,6 +23,7 @@ import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
 import Bio.Metadata.Dynamic
+import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
 import Data.Bits
@@ -31,6 +32,7 @@ import Data.Hashable
 import Data.List.NonEmpty (intersperse)
 import Data.MonoTraversable
 import Data.Semigroup
+import GHC.Generics
 import Text.XML
 
 
@@ -54,7 +56,7 @@ data DynamicDecorationDirectOptimization d
    , dynamicDecorationDirectOptimizationLeftAlignmentField       :: d
    , dynamicDecorationDirectOptimizationRightAlignmentField      :: d
    , dynamicDecorationDirectOptimizationMetadata                 :: DynamicCharacterMetadataDec (Element d)
-   } deriving (Eq)
+   } deriving (Eq, Generic)
 
 
 -- |
@@ -70,7 +72,7 @@ data DynamicDecorationDirectOptimizationPostOrderResult d
    , dynamicDecorationDirectOptimizationPostOrderLeftAlignmentField       :: d
    , dynamicDecorationDirectOptimizationPostOrderRightAlignmentField      :: d
    , dynamicDecorationDirectOptimizationPostOrderMetadata                 :: DynamicCharacterMetadataDec (Element d)
-   } deriving (Eq)
+   } deriving (Eq, Generic)
 
 
 -- |
@@ -90,7 +92,7 @@ data DynamicDecorationImpliedAlignment d
    , dynamicDecorationImpliedAlignmentRightAlignmentField      :: d
    , dynamicDecorationImpliedAlignmentImpliedAlignmentField    :: d
    , dynamicDecorationImpliedAlignmentMetadata                 :: DynamicCharacterMetadataDec (Element d)
-   }
+   } deriving (Eq, Generic)
 
 
 -- |
@@ -101,7 +103,19 @@ data DynamicDecorationInitial d
    { dynamicDecorationInitialEncodedField           :: d
    , dynamicDecorationInitialCharacterAverageLength :: AverageLength
    , metadata                                       :: DynamicCharacterMetadataDec (Element d)
-   } deriving (Eq)
+   } deriving (Eq, Generic)
+
+
+instance NFData d => NFData (DynamicDecorationInitial d)
+
+
+instance NFData d => NFData (DynamicDecorationDirectOptimization d)
+
+
+instance NFData d => NFData (DynamicDecorationDirectOptimizationPostOrderResult d)
+
+
+instance NFData d => NFData (DynamicDecorationImpliedAlignment d)
 
 
 -- | (✔)

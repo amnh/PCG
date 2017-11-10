@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses #-}
 
 module Bio.Metadata.Discrete.Internal
   ( DiscreteCharacterMetadataDec()
@@ -26,10 +26,12 @@ module Bio.Metadata.Discrete.Internal
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete.Class
 import Bio.Metadata.General
+import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
 import Data.List (intercalate)
 import Data.Monoid
+import GHC.Generics
 import Text.XML
 
 
@@ -40,7 +42,7 @@ data DiscreteCharacterMetadataDec
    = DiscreteCharacterMetadataDec
    { alphabet    :: Alphabet String
    , generalData :: GeneralCharacterMetadataDec
-   }
+   } deriving (Generic)
 
 
 -- |
@@ -59,6 +61,9 @@ instance Eq DiscreteCharacterMetadataDec where
               && generalData lhs == generalData    rhs
 
 
+instance NFData DiscreteCharacterMetadataDec
+
+
 instance Show DiscreteCharacterMetadataDec where
 
     show e = intercalate "\n"
@@ -67,7 +72,6 @@ instance Show DiscreteCharacterMetadataDec where
       , "  Alphabet:      " <> show (e ^. characterAlphabet)
       , "  Weight:        " <> show (e ^. characterWeight  )
       ]
-
 
 
 -- | (✔)

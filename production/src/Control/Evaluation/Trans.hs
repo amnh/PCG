@@ -12,11 +12,12 @@
 --
 ----------------------------------------------------------------------------- 
 
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveGeneric, FlexibleInstances, MultiParamTypeClasses #-}
 
 module Control.Evaluation.Trans where
 
 import           Control.Applicative
+import           Control.DeepSeq
 import           Control.Evaluation.Internal
 import           Control.Evaluation.Unit
 import           Control.Monad           (MonadPlus(..), join, liftM2)
@@ -27,6 +28,7 @@ import           Control.Monad.Logger
 import           Control.Monad.Trans.Class
 import           Data.Monoid             ()
 import           Data.Semigroup
+import           GHC.Generics
 
 
 -- |
@@ -35,7 +37,7 @@ newtype EvaluationT m a
       = EvaluationT
       { -- | Run the 'EvaluationT' monad transformer
         runEvaluation :: m (Evaluation a)
-      } 
+      } deriving (Generic)
 
 
 -- | (✔)
@@ -68,6 +70,11 @@ instance Monad m => Logger (EvaluationT m) a where
     info = state . info
 
     warn = state . warn
+
+
+instance (Monad m, NFData a) => NFData (EvaluationT m a) where
+
+    rnf (EvaluationT x) = (force <$> x) `seq` ()
 
 
 -- | (✔)

@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
 
 module Bio.Character.Decoration.Fitch.Internal where
 
@@ -22,9 +22,11 @@ import Bio.Character.Encodable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
+import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
 import Data.Semigroup
+import GHC.Generics
 import Text.XML
 
 
@@ -43,7 +45,7 @@ data FitchOptimizationDecoration f
    , fitchIsLeaf            :: Bool                          -- need this in preorder
    , fitchCharacterField    :: f
    , fitchMetadataField     :: DiscreteCharacterMetadataDec
-   }
+   } deriving (Generic)
 
 
 -- | (✔)
@@ -200,6 +202,9 @@ instance EncodableStaticCharacter f => DiscreteExtensionFitchDecoration (FitchOp
             <*> const alphabetValue
 --            <*> const tcmValue
             $ subDecoration
+
+
+instance NFData f => NFData (FitchOptimizationDecoration f)
 
 
 -- | (✔)

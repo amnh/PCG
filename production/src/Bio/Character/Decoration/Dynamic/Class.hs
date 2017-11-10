@@ -10,8 +10,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, FunctionalDependencies #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances #-}
+{-# LANGUAGE FunctionalDependencies, GeneralizedNewtypeDeriving, MultiParamTypeClasses #-}
 
 -- For derived instance of PossiblyMissingCharacter
 {-# LANGUAGE UndecidableInstances #-}
@@ -24,10 +24,12 @@ import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Dynamic
+import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
 import Data.MonoTraversable
 import Data.Semigroup
+import GHC.Generics
 import Numeric.PositiveAverage
 
 
@@ -37,7 +39,10 @@ import Numeric.PositiveAverage
 -- Forms a 'Semigroup' for effcient, recursive post-order acumulation on the
 -- tree.
 newtype AverageLength = AL PositiveAverage
-  deriving (Enum, Eq, Ord, Semigroup)
+  deriving (Enum, Eq, Generic, Ord, Semigroup)
+
+
+instance NFData AverageLength
 
 
 instance Show AverageLength where

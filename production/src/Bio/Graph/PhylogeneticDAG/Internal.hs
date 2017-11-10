@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, MonoLocalBinds, MultiParamTypeClasses, ScopedTypeVariables #-}
+{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, MonoLocalBinds, MultiParamTypeClasses, ScopedTypeVariables #-}
 
 module Bio.Graph.PhylogeneticDAG.Internal where
 
@@ -21,10 +21,12 @@ import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
 import           Control.Applicative              (liftA2)
+import           Control.DeepSeq
 import           Control.Lens
 import           Data.Bits
 import           Data.Foldable
 import           Data.GraphViz.Printing    hiding ((<>)) -- Seriously, why is this redefined?
+import           Data.GraphViz.Types       hiding (attrs)
 import           Data.HashMap.Lazy                (HashMap)
 import           Data.IntSet                      (IntSet)
 import qualified Data.IntSet               as IS
@@ -36,6 +38,7 @@ import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Data.Vector                      (Vector)
+import           GHC.Generics
 import           Prelude                   hiding (zipWith)
 import           Text.Newick.Class
 import           Text.XML
@@ -78,6 +81,7 @@ newtype PhylogeneticDAG2 e n u v w x y z
                  e
                  (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
              )
+     deriving (Generic)
 
 
 type EdgeReference = (Int, Int)
@@ -184,6 +188,9 @@ instance HasLeafSet (PhylogeneticDAG2 e n u v w x y z) (LeafSet (PhylogeneticNod
             getter (PDAG2 e) =  e ^. leafSet
 
 
+instance (NFData e, NFData n, NFData u, NFData v, NFData w, NFData x, NFData y, NFData z) => NFData (PhylogeneticDAG2 e n u v w x y z)
+
+
 instance Foldable f => PrintDot (PhylogeneticDAG2 e (f String) u v w x y z) where
 
     unqtDot       = unqtDot . discardCharacters
@@ -244,6 +251,16 @@ instance ( ToXML u
          ) => ToXML (PhylogeneticDAG2 e n u v w x y z)  where
 
     toXML (PDAG2 refDag) = toXML refDag
+
+
+
+getDotContextWithBaseAndIndex
+  :: Foldable f
+  => Int -- ^ Base over which the Unique
+  -> Int
+  -> (PhylogeneticDAG2 e (f String) u v w x y z)
+  -> ([DotNode GraphID], [DotEdge GraphID])
+getDotContextWithBaseAndIndex i j (PDAG2 dag) = getDotContext i j $ nodeDecorationDatum2 <$> dag
 
 
 applySoftwireResolutions :: [(ResolutionCache s, IntSet)] -> NonEmpty [ResolutionInformation s]

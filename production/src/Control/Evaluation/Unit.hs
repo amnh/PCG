@@ -11,14 +11,18 @@
 -- The core monoidal state of an 'Evaluation' monad.
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveGeneric #-} -- , Strict, StrictData #-}
+
 module Control.Evaluation.Unit where
 
 import           Control.Applicative
+import           Control.DeepSeq
 import           Control.Monad           (MonadPlus(..))
 import           Control.Monad.Fail      (MonadFail) 
 import qualified Control.Monad.Fail as F
 import           Data.Monoid             ()
 import           Data.Semigroup
+import           GHC.Generics
 import           Test.QuickCheck
 
 
@@ -29,7 +33,7 @@ data EvalUnit a
    = NoOp
    | Error String 
    | Value a
-   deriving (Eq, Show)
+   deriving (Eq, Generic, Show)
 
 
 -- | (✔)
@@ -82,6 +86,9 @@ instance Functor EvalUnit where
     f `fmap` Value x = Value $ f x
 
 
+instance NFData a => NFData (EvalUnit a)
+
+
 -- | (✔)
 instance Monad EvalUnit where
 
@@ -115,6 +122,8 @@ instance Monoid (EvalUnit a) where
 
     mappend = (<>)
 
+--    mconcat = foldl' (<>) mempty
+
 
 -- | (✔)
 instance Semigroup (EvalUnit a) where
@@ -124,4 +133,5 @@ instance Semigroup (EvalUnit a) where
     Error x <> _    = Error x
     Value _ <> e    = e
 
+--    sconcat (x:|xs) = foldl' (<>) x xs
 

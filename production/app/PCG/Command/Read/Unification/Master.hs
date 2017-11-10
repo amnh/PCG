@@ -31,6 +31,7 @@ import           Bio.Graph.Component
 import           Bio.Graph.Forest.Parsed
 import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG
+import qualified Bio.Graph.ReferenceDAG     as DAG
 import           Control.Arrow                     ((&&&))
 import           Control.Applicative               ((<|>))
 import           Control.Parallel.Custom
@@ -38,7 +39,8 @@ import           Control.Parallel.Strategies
 import           Data.Alphabet
 import           Data.Bifunctor                    (first)
 import           Data.Foldable
---import qualified Data.IntSet                as IS
+import qualified Data.IntMap                as IM
+import qualified Data.IntSet                as IS
 import           Data.Key
 import           Data.List                         (transpose, zip4)
 import           Data.List.NonEmpty                (NonEmpty( (:|) ))
@@ -142,11 +144,10 @@ rectifyResults2 fprs =
             blockTransform = hexmap f f f f f f
             f = const Nothing
 
-        singletonComponent (label, datum) = PhylogeneticForest . pure . PDAG $ unfoldDAG rootLeafGen True
-          where
-            rootLeafGen x
-              | x         = (               [], PNode (Just "Trivial Root") defaultCharacterSequenceDatum, [(mempty, not x)])
-              | otherwise = ([(mempty, not x)], PNode (Just label         )                         datum, []               )
+        singletonComponent (label, datum) = PhylogeneticForest . pure . PDAG $ DAG.fromList
+            [ (        mempty, PNode (Just "Trivial Root") defaultCharacterSequenceDatum, IM.singleton 1 mempty)
+            , (IS.singleton 0, PNode (Just label         )                         datum, mempty               )
+            ]
 
         matchToChars :: Map String UnifiedCharacterSequence
                      -> PhylogeneticForest ParserTree

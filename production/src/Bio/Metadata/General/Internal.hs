@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
 
 module Bio.Metadata.General.Internal
   ( GeneralCharacterMetadataDec()
@@ -21,7 +21,9 @@ module Bio.Metadata.General.Internal
 
 import Bio.Metadata.CharacterName
 import Bio.Metadata.General.Class
+import Control.DeepSeq
 import Control.Lens
+import GHC.Generics
 import Text.XML.Class
 
 
@@ -32,7 +34,7 @@ data GeneralCharacterMetadataDec
    = GeneralCharacterMetadataDec
    { name     :: CharacterName
    , weight   :: Double
-   } deriving (Eq, Show)
+   } deriving (Eq, Generic, Show)
 
 
 -- |
@@ -63,6 +65,9 @@ instance HasCharacterWeight GeneralCharacterMetadataDec Double where
     characterWeight = lens weight $ \e x -> e { weight = x }
 
 
+instance NFData GeneralCharacterMetadataDec
+
+
 instance ToXML GeneralCharacterMetadataDec where
 
     toXML metadata = xmlElement "General_metadata" attributes contents
@@ -71,6 +76,7 @@ instance ToXML GeneralCharacterMetadataDec where
             contents   = [ Left ("Name"  , show $ metadata ^. characterName  )
                          , Left ("Weight", show $ metadata ^. characterWeight)
                          ]
+
 
 -- |
 -- A smart constructor for 'GeneralCharacterMetadata'.

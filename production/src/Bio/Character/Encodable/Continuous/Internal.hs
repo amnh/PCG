@@ -10,14 +10,16 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
 
 module Bio.Character.Encodable.Continuous.Internal where
 
 import Bio.Character.Encodable.Continuous.Class
 import Bio.Character.Encodable.Internal
 import Control.Arrow ((&&&))
+import Control.DeepSeq
 import Data.Range
+import GHC.Generics
 import Numeric.Extended.Real
 import Text.XML.Class
 
@@ -26,7 +28,7 @@ import Text.XML.Class
 -- Represents a real-valued range with a minimum lower bound of zero and a
 -- maximum upper bound of infinity.
 newtype ContinuousChar = CC (ExtendedReal, ExtendedReal)
-  deriving (Eq)
+  deriving (Eq, Generic)
 
 
 type instance Bound ContinuousChar = ExtendedReal
@@ -38,6 +40,9 @@ instance ContinuousCharacter ContinuousChar where
     toContinuousCharacter = CC . maybe missingRange (f &&& f)
       where
         f = fromRational . toRational
+
+
+instance NFData ContinuousChar
 
 
 -- | (✔)

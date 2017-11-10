@@ -189,7 +189,9 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
             lhsContext = (i `lookup` contextualNodeDatum) >>= ((j,i) `lookup`)
             rhsContext = (j `lookup` contextualNodeDatum) >>= ((i,j) `lookup`)
             errorContext = unlines
-                [ show e
+                [ "Could not find one or more of the contexts:"
+                , show inputDag
+                , "Rooting Edge " <> show e
                 , show $ HM.keys <$> contextualNodeDatum
                 ]
     

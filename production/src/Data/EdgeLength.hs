@@ -13,7 +13,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveGeneric, GeneralizedNewtypeDeriving #-}
 
 module Data.EdgeLength
   ( EdgeLength()
@@ -23,8 +23,10 @@ module Data.EdgeLength
 
 
 import Control.Applicative (liftA2)
+import Control.DeepSeq
 import Data.Monoid hiding ((<>))
 import Data.Semigroup
+import GHC.Generics
 
 
 -- |
@@ -39,7 +41,7 @@ import Data.Semigroup
 -- operation returns a specified edge length if possible, satifying the monoid
 -- laws regarding the identity element.
 newtype EdgeLength = C (Maybe (Sum Double))
-  deriving(Eq, Ord, Semigroup, Monoid)
+  deriving(Eq, Generic, NFData, Ord, Semigroup, Monoid)
 
 
 instance Num EdgeLength where

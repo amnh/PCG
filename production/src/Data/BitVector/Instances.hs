@@ -17,6 +17,7 @@
 
 module Data.BitVector.Instances () where
 
+import Control.DeepSeq
 import Data.Bits
 import Data.BitVector
 import Data.Primitive.ByteArray
@@ -24,6 +25,7 @@ import Data.Word
 import GHC.Exts
 import GHC.Integer.GMP.Internals
 import GHC.Integer.Logarithms
+
 
 instance FiniteBits BV where
 
@@ -64,6 +66,11 @@ instance FiniteBits BV where
                 case r of
                   0 -> q
                   v -> q + v
+
+
+instance NFData BV where
+
+    rnf val = rnf (size val) `seq` rnf (nat val) `seq` ()
 
 
 deconstruct :: BitVector -> (Int,Integer)

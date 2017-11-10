@@ -11,11 +11,12 @@
 -- The 'Evaluation' monad definition.
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveGeneric, FlexibleInstances, MultiParamTypeClasses #-}
 
 module Control.Evaluation.Internal where
 
 import           Control.Applicative
+import           Control.DeepSeq
 import           Control.Evaluation.Unit
 import           Control.Monad           (MonadPlus(..))
 import           Control.Monad.Fail      (MonadFail)
@@ -24,6 +25,7 @@ import           Control.Monad.Logger
 import           Data.DList    (DList, toList)
 import           Data.Monoid   ()
 import           Data.Semigroup
+import           GHC.Generics
 import           Test.QuickCheck
 
 
@@ -33,7 +35,7 @@ import           Test.QuickCheck
 data Notification
    = Warning String
    | Information String
-   deriving (Eq,Show)
+   deriving (Eq, Generic, Show)
 
 
 -- |
@@ -42,7 +44,7 @@ data Notification
 -- 'notifications'. Holds the evaluation state 'a' retrievable 'evaluationResult'.
 data Evaluation a
    = Evaluation (DList Notification) (EvalUnit a)
-   deriving (Eq)
+   deriving (Eq, Generic)
 
 
 -- |
@@ -98,6 +100,12 @@ instance Logger Evaluation a where
     info s = Evaluation (pure $ Information s) mempty
 
     warn s = Evaluation (pure $ Warning     s) mempty
+
+
+instance (NFData a) => NFData (Evaluation a)
+
+
+instance NFData Notification
 
 
 -- | (✔)

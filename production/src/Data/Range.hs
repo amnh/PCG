@@ -11,7 +11,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric, FlexibleContexts, TypeFamilies #-}
 
 module Data.Range
   ( Bound()
@@ -36,16 +36,22 @@ module Data.Range
   ) where
 
 
+import Control.DeepSeq
+import GHC.Generics
+
 -- |
 -- A range between two bounds. The lower bound will always be less that or equal
 -- to the upper bound.
 newtype Range r = Range (r, r, Maybe Int)
-  deriving (Eq)
+  deriving (Eq, Generic)
 
 
 -- |
 -- The bound of a 'Ranged' type.
 type family Bound (f :: *)
+
+
+instance NFData r => NFData (Range r)
 
 
 -- |
