@@ -56,8 +56,6 @@ import           Prelude                   hiding (lookup, zipWith)
 import           Text.Newick.Class
 import           Text.XML.Custom
 
-import           Debug.Trace
-
 
 -- |
 -- A constant time access representation of a directed acyclic graph.

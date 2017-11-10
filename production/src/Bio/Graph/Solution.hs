@@ -49,8 +49,6 @@ import           GHC.Generics
 import           Text.Newick.Class
 import           Text.XML
 
-import Debug.Trace
-
 
 -- |
 -- A solution that contains one or more equally costly forests.
@@ -207,6 +205,6 @@ getSolutionDotContext
   -> ([DotNode GraphID], [DotEdge GraphID])
 getSolutionDotContext xs = foldMapWithKey1 g xs
   where
-    g i = getDotContextWithBaseAndIndex baseValue (traceShowId i)
+    g = getDotContextWithBaseAndIndex baseValue
     baseValue = maximum $ f <$> xs
     f (PDAG2 dag) = length dag

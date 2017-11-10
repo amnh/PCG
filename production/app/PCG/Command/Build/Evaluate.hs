@@ -55,8 +55,6 @@ import           PCG.Syntax                    (Command(..))
 import           Prelude                hiding (lookup, readFile)
 import           System.Random.Shuffle
 
-import Debug.Trace
-
 
 type DatNode =
   PhylogeneticNode2
@@ -183,7 +181,7 @@ naiveWagnerBuild ns =
                    , ( IS.singleton 1, wipeNode False y, mempty )
                    , ( IS.singleton 0, wipeNode False z, mempty )
                    ]
-          in  (\a -> trace ("Starting tree cost: " <> show (getCost a)) a) $ iterativeBuild initTree xs
+          in  iterativeBuild initTree xs
 
   where
     fromRefDAG = performDecoration . PDAG2 . defaultMetadata
@@ -259,13 +257,13 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag) =
     case toList $ candidateNetworkEdges inputDag of
       []   -> currentNetwork
       x:xs ->
-        let !edgesToTry = traceShowId $ x:|xs
+        let !edgesToTry = x:|xs
             (minNewCost, !bestNewNetwork) = minimumBy (comparing fst)
                                           . parmap (rparWith rdeepseq) (getCost &&& id)
                                           $ tryNetworkEdge <$> edgesToTry
         in  if   getCost currentNetwork <= minNewCost
-            then trace "No new network edge was less costly." currentNetwork
-            else (\x -> trace ("Improved With New Cost:" <> show minNewCost) x) $ iterativeNetworkBuild bestNewNetwork
+            then currentNetwork
+            else iterativeNetworkBuild bestNewNetwork
   where
     (PDAG2 dag) = force $ wipeScoring currentNetwork
 
