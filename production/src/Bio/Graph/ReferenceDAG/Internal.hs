@@ -244,9 +244,9 @@ instance Foldable f => PrintDot (ReferenceDAG d e (f String)) where
 
     toDot         = toDot   . uncurry mkGraph . getDotContext 0 0
 
-    unqtListToDot = unqtDot . uncurry mkGraph . bimap mconcat mconcat . unzip . fmap getDotContext 0 0
+    unqtListToDot = unqtDot . uncurry mkGraph . bimap mconcat mconcat . unzip . fmap (getDotContext 0 0)
 
-    listToDot     = toDot   . uncurry mkGraph . bimap mconcat mconcat . unzip . fmap getDotContext 0 0
+    listToDot     = toDot   . uncurry mkGraph . bimap mconcat mconcat . unzip . fmap (getDotContext 0 0)
 
 
 -- | (✔)
@@ -1071,7 +1071,7 @@ getDotContext uniqueIdentifierBase mostSignificantDigit dag = second mconcat . u
     vec = references dag
 
     toId :: Int -> GraphID
-    toId = (+ idOffest) . Num . Int
+    toId = Num . Int . (+ idOffest)
 
     toAttributes :: Foldable f => f String -> Attributes
     toAttributes x =

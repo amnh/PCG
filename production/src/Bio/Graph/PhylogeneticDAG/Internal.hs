@@ -29,6 +29,8 @@ import           Data.Bits
 -- import           Data.EdgeLength
 import           Data.Foldable
 import           Data.GraphViz.Printing    hiding ((<>)) -- Seriously, why is this redefined?
+import           Data.GraphViz.Types       hiding (attrs)
+import           Data.GraphViz.Types.Graph hiding (node) 
 --import           Data.Hashable
 --import           Data.Hashable.Memoize
 import           Data.HashMap.Lazy                (HashMap)
@@ -266,7 +268,7 @@ getDotContextWithBaseAndIndex
   -> Int
   -> (PhylogeneticDAG2 e (f String) u v w x y z)
   -> ([DotNode GraphID], [DotEdge GraphID])
-getDotContextWithBaseAndIndex (PDAG2 dag) = getDotContext dag
+getDotContextWithBaseAndIndex i j (PDAG2 dag) = getDotContext i j $ nodeDecorationDatum2 <$> dag
 
 
 applySoftwireResolutions :: [(ResolutionCache s, IntSet)] -> NonEmpty [ResolutionInformation s]
