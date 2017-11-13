@@ -12,6 +12,7 @@ module PCG.Command.Report.Evaluate
 --import           Bio.Character.Decoration.Dynamic
 --import           Bio.Metadata
 import           Bio.Graph
+import           Control.DeepSeq
 import           Control.Monad.IO.Class
 --import           Control.Monad.Logger
 --import           Data.Foldable
@@ -31,7 +32,7 @@ import           Text.XML
 
 evaluate :: Command -> SearchState -> SearchState
 evaluate (REPORT (ReportCommand format target)) old = do
-    stateValue <- old
+    stateValue <- force old
     case generateOutput stateValue format of
      ErrorCase    errMsg  -> fail errMsg
      MultiStream  streams -> old <* sequenceA (liftIO . uncurry writeFile <$> streams)
@@ -42,7 +43,7 @@ evaluate (REPORT (ReportCommand format target)) old = do
                     case w of
                       Append    -> appendFile f
                       Overwrite ->  writeFile f
-       in  old <* liftIO (op output)
+       in  liftIO (op output) *> old
 
 evaluate _ _ = fail "Invalid READ command binding"
 

@@ -1,6 +1,7 @@
 module PCG.Computation.Internal where
 
 import           Bio.Graph
+import           Control.DeepSeq
 import           Control.Evaluation
 import           Data.Char          (isSpace)
 import           Data.Foldable
@@ -27,12 +28,12 @@ collapseReadCommands p@(x:|xs) =
 
 
 evaluate :: Computation -> SearchState
-evaluate (Computation xs) = foldl' (flip f) mempty xs
+evaluate (Computation xs) = foldl' f mempty xs
   where
-    f :: Command -> SearchState -> SearchState
-    f x@BUILD  {} = Build.evaluate  x
-    f x@READ   {} = Read.evaluate   x
-    f x@REPORT {} = Report.evaluate x
+    f :: SearchState -> Command ->  SearchState
+    f v c@BUILD  {} = Build.evaluate  c $ force v
+    f v c@READ   {} = Read.evaluate   c $ force v
+    f v c@REPORT {} = Report.evaluate c $ force v
 --    f _ = error "NOT YET IMPLEMENTED"
 
 
