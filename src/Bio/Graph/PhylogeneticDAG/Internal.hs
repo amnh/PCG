@@ -241,7 +241,7 @@ instance ( Show e
         f i n = mconcat [ "Node {", show i, "}:\n\n", show n ]
 
 
-instance (Applicative f, Foldable f) => ToNewick (PhylogeneticDAG2 e (f String) u v w x y z) where
+instance Foldable f => ToNewick (PhylogeneticDAG2 e (f String) u v w x y z) where
 
     toNewick = toNewick . discardCharacters
 
