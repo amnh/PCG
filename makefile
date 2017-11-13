@@ -10,6 +10,8 @@ haddock       = --haddock --haddock-deps
               # --haddock-arguments --mathjax=https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML
 profiling     = --executable-profiling --library-profiling
 
+code-dirs     = app ffi lib src test utils
+
 
 # Target aliases for easy CLI use
 ################################################################################
@@ -33,6 +35,7 @@ rebuild-full: clean rebuild
 
 # Rebuilds with optimizations and runs tests
 test: stack-build-test
+
 
 # Target Definitions
 ################################################################################
@@ -86,12 +89,12 @@ set-dir-variables:
 # Cleans up artefact files after a build
 clean: phylocomgraph.cabal stack.yaml
 	stack clean
-	mv .stack-work ../
-	find . -type f -name '*.o'  -delete
-	find . -type f -name '*.hi' -delete
-	find . -type f -name '*.*~' -delete
-	find . -type f -name '#*.*' -delete
-	mv ../.stack-work .
+	for dir in $(code-dirs); do \
+	  find $$dir -type f -name '*.o'  -delete; \
+	  find $$dir -type f -name '*.hi' -delete; \
+	  find $$dir -type f -name '*.*~' -delete; \
+	  find $$dir -type f -name '#*.*' -delete; \
+	done
 
 # Calls other make files to pre-process FFI files
 ffi-code-cleaning: ffi/Analysis/Parsimony/Binary/SequentialAlign/makefile
