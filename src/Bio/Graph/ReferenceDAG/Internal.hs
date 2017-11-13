@@ -267,29 +267,31 @@ instance {- (Show e, Show n) => -} Show (ReferenceDAG d e n) where
 
 instance Foldable f => ToNewick (ReferenceDAG d e (f String)) where
 
-    toNewick refDag = snd $ generateNewick namedVec rootRef mempty
-        where
-            rootRef  = NE.head $ rootRefs refDag
-            vec      = references refDag
+    toNewick refDag = [ newickString, "[", show cost, "]" ]
+      where
+        (_,newickString) = generateNewick namedVec rootRef mempty
+        cost     = dagCost $ graphData refDag
+        rootRef  = NE.head $ rootRefs refDag
+        vec      = references refDag
             
-            namedVec = zipWith (\x n -> n { nodeDecoration = x }) labelVec vec
-            labelVec = (`evalState` (1,1,1)) $ mapM deriveLabel vec -- All network nodes have "htu\d" as nodeDecoration.
-            deriveLabel :: Foldable f => IndexData e (f String) -> State (Int,Int,Int) String
-            deriveLabel node =
-                case toList $ nodeDecoration node of
-                  x:_ -> pure x
-                  []  -> do
-                      (lC, nC, tC) <- get
-                      case getNodeType node of
-                        LeafNode    -> do
-                            put (lC+1, nC, tC)
-                            pure $ "Leaf_" <> show lC
-                        NetworkNode -> do
-                            put (lC, nC+1, tC)
-                            pure $ "HTU_"  <> show nC
-                        _           -> do
-                            put (lC, nC, tC+1)
-                            pure $ "Node_" <> show tC
+        namedVec = zipWith (\x n -> n { nodeDecoration = x }) labelVec vec
+        labelVec = (`evalState` (1,1,1)) $ mapM deriveLabel vec -- All network nodes have "htu\d" as nodeDecoration.
+        deriveLabel :: Foldable f => IndexData e (f String) -> State (Int,Int,Int) String
+        deriveLabel node =
+            case toList $ nodeDecoration node of
+              x:_ -> pure x
+              []  -> do
+                  (lC, nC, tC) <- get
+                  case getNodeType node of
+                    LeafNode    -> do
+                        put (lC+1, nC, tC)
+                        pure $ "Leaf_" <> show lC
+                    NetworkNode -> do
+                        put (lC, nC+1, tC)
+                        pure $ "HTU_"  <> show nC
+                    _           -> do
+                        put (lC, nC, tC+1)
+                        pure $ "Node_" <> show tC
 
 
 instance ToXML (GraphData m) where
