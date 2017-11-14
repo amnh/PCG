@@ -267,7 +267,7 @@ instance {- (Show e, Show n) => -} Show (ReferenceDAG d e n) where
 
 instance Foldable f => ToNewick (ReferenceDAG d e (f String)) where
 
-    toNewick refDag = [ newickString, "[", show cost, "]" ]
+    toNewick refDag = mconcat [ newickString, "[", show cost, "]" ]
       where
         (_,newickString) = generateNewick namedVec rootRef mempty
         cost     = dagCost $ graphData refDag
