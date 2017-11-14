@@ -7,6 +7,7 @@ import qualified Control.Evaluation.Test              as Evaluation
 import qualified Bio.Character.Encodable.Dynamic.Test as DynamicChar
 import qualified Bio.Character.Encodable.Static.Test  as StaticChar
 import qualified Data.BitMatrix.Test                  as BitMatrix
+import qualified Numeric.Extended.Natural.Test        as ExtendedNatural
 --import qualified Test.Custom.Tree.Test                             as MockTree
 
 import           Test.Tasty
@@ -20,6 +21,7 @@ testSuite = testGroup "Library Test Suite"
   , DynamicChar.testSuite
   , StaticChar.testSuite
   , BitMatrix.testSuite
+  , ExtendedNatural.testSuite
 --  , MockTree.testSuite
   ]
 

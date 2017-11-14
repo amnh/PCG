@@ -75,6 +75,10 @@ instance Enum ExtendedNatural where
 
     toEnum   = Cost . toEnum
 
+    succ     = (+ 1)
+
+    pred x   = x - 1
+
 
 instance ExtendedNumber ExtendedNatural where
 

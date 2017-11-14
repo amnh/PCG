@@ -667,6 +667,9 @@ Test-Suite testsuite
                        Data.BitMatrix.Internal
                        Data.BitMatrix.Test
                        Data.BitVector.Instances
+                       Numeric.Extended.Internal
+                       Numeric.Extended.Natural
+                       Numeric.Extended.Natural.Test
                        Test.QuickCheck.Arbitrary.Instances
                        TestSuite.ExecutableTests
                        TestSuite.LibraryTests
