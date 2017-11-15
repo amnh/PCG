@@ -56,9 +56,7 @@ library
   default-language:    Haskell2010
 
   ghc-options:         -O2
-                       -g
-                       -threaded
---                       -debug
+--                     -g -debug
                        -optl-static
                     -- Turns on *almost* all warnings
                        -Wall
