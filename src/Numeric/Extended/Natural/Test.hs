@@ -23,6 +23,7 @@ testInvariants :: TestTree
 testInvariants = testGroup "Invariant corner cases"
     [ maxBoundCases
     , minBoundCases
+    , infinityCases
     ]
 
 
@@ -66,7 +67,31 @@ minBoundCases = testGroup "'minBound' specific cases"
       unsafeToFinite (minBound :: ExtendedNatural) @?= (minBound :: Word)
 
     successorCase =
-      succ (maxBound :: ExtendedNatural) @?= (maxBound :: ExtendedNatural) + 1
+      succ (minBound :: ExtendedNatural) @?= (minBound :: ExtendedNatural) + 1
 
     predecessorCase =
-      pred (maxBound :: ExtendedNatural) @?= (maxBound :: ExtendedNatural)
+      pred (minBound :: ExtendedNatural) @?= (minBound :: ExtendedNatural)
+
+
+infinityCases :: TestTree
+infinityCases = testGroup "'infinity' specific cases"
+    [ testCase "succ function does not increment 'infinity'" successorCase
+    , testCase "pred function does not decrement 'infinity'" predecessorCase
+    , testCase "'infinity' == 'infinity'" identityComparison
+    , testCase "'infinity' >  'maxBound'" maxBoundComparison
+    ]
+  where
+    inf = infinity :: ExtendedNatural
+
+    successorCase =
+      succ inf @?= inf
+
+    predecessorCase =
+      pred inf @?= inf
+
+    identityComparison =
+      inf `compare` inf @?= EQ
+
+    maxBoundComparison =
+      inf `compare` (maxBound :: ExtendedNatural) @?= GT
+
