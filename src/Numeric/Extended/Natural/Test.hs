@@ -28,7 +28,7 @@ testInvariants = testGroup "Invariant corner cases"
 
 
 testProperties :: TestTree
-testProperties = testGroup "Invariant corner cases"
+testProperties = testGroup "Invariant properties"
     [ orderingProperties
     , additionProperties
     , multiplicationProperties

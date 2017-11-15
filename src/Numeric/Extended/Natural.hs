@@ -90,7 +90,7 @@ instance Enum ExtendedNatural where
 
     succ     = (+ 1)
 
-    pred x   = x - 1
+    pred     = subtract 1
 
 
 instance ExtendedNumber ExtendedNatural where
@@ -179,7 +179,6 @@ toWord (Cost x)
 {-# INLINE fromWord #-}
 fromWord :: Word -> ExtendedNatural
 fromWord = Cost
-
 
 
 -- |
