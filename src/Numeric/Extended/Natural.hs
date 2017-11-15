@@ -24,6 +24,7 @@ import GHC.Exts
 import GHC.Integer.Logarithms
 import GHC.Generics
 import Numeric.Extended.Internal
+import Test.QuickCheck
 
 
 -- |
@@ -60,6 +61,18 @@ newtype ExtendedNatural = Cost Word
 
 
 type instance Finite ExtendedNatural = Word
+
+
+instance Arbitrary ExtendedNatural where
+
+    arbitrary = do
+        n <- choose weightForInfinity
+        if n == 1
+        then pure infinity
+        else Cost <$> arbitrary
+      where
+        -- We generate the 'infinity' value 1 in 20 times.
+        weightForInfinity = (1, 20) :: (Int, Int)
 
 
 instance Bounded ExtendedNatural where
@@ -112,13 +125,13 @@ instance Num ExtendedNatural where
     lhs@(Cost x) * rhs@ (Cost y)
       | lhs    == infinity   = infinity
       | rhs    == infinity   = infinity
-      | zBits  >= wordWidth  = maxBound
+      | zBits  >  wordWidth  = maxBound
       | otherwise            = Cost $ x * y
       where
         wordWidth = finiteBitSize (minBound :: Word)
         zBits = xBits + yBits
-        xBits = wordLog2 x
-        yBits = wordLog2 y
+        xBits = bitsUsed x
+        yBits = bitsUsed y
 
     abs = id
 
@@ -170,8 +183,8 @@ fromWord = Cost
 -- Calculate the integer logarithm of a 'Word' to base 2 using efficient compiler
 -- builtins. This should translate into an assembly primative on CISC chipsets.
 -- Might be slightly more expensive on RISC chipsets.
-{-# INLINE wordLog2  #-}
-wordLog2 :: Word -> Int
-wordLog2 (W# w#)
-  | isTrue# (w# `eqWord#` 0##) = 0 -- technically incorrect, but useful for us.
-  | otherwise                  = I# (wordLog2# w#)
+{-# INLINE bitsUsed  #-}
+bitsUsed :: Word -> Int
+bitsUsed (W# w#)
+  |  isTrue# (w# `eqWord#` 0##) || isTrue# (w# `eqWord#` 1##) = 0 -- technically incorrect, but useful for us.
+  | otherwise = I# (wordLog2# w#) + 1
