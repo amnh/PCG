@@ -154,6 +154,8 @@ instance Integral ExtendedNatural where
       | otherwise       = let (q,r) = x `quotRem` y
                           in  (Cost q, Cost r)
 
+    divMod = quotRem
+
 
 instance Real ExtendedNatural where
 
@@ -177,6 +179,7 @@ toWord (Cost x)
 {-# INLINE fromWord #-}
 fromWord :: Word -> ExtendedNatural
 fromWord = Cost
+
 
 
 -- |

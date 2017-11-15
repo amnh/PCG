@@ -32,6 +32,7 @@ testProperties = testGroup "Invariant corner cases"
     [ orderingProperties
     , additionProperties
     , multiplicationProperties
+    , divisionProperties
     ]
 
 
@@ -105,7 +106,8 @@ infinityCases = testGroup "'infinity' specific cases"
       inf `compare` (maxBound :: ExtendedNatural) @?= GT
 
     zeroMultiplication =
-      inf * 0 @?= inf 
+      inf * 0 @?= inf
+
 
 
 orderingProperties :: TestTree
@@ -178,3 +180,24 @@ multiplicationProperties = testGroup "Properties of multiplication"
 
     multiplicativeCeiling :: (ExtendedNatural, ExtendedNatural) -> Bool
     multiplicativeCeiling (a, b) = a * b <= maxBound || a == infinity || b == infinity
+
+
+divisionProperties :: TestTree
+divisionProperties = testGroup "Properties of division"
+    [ testProperty "division identity holds"                    divisionIdentity
+    , testProperty "division of infinite numerator is infinity" divisionInfiniteNumerator
+    , testProperty "division by infinite denominator zero"      divisionInfiniteDenominator
+    , testProperty "division by zero denominator is infinity"   divisionZeroDenominator
+    ]
+  where
+    divisionIdentity :: ExtendedNatural -> Bool
+    divisionIdentity val = val `div` val == 1 || val == 0 || val == infinity
+
+    divisionInfiniteNumerator :: ExtendedNatural -> Bool
+    divisionInfiniteNumerator val = infinity `div` val == infinity
+
+    divisionInfiniteDenominator :: ExtendedNatural -> Bool
+    divisionInfiniteDenominator val = val `div` infinity == 0 || val == infinity
+
+    divisionZeroDenominator :: ExtendedNatural -> Bool
+    divisionZeroDenominator val = val `div` 0 == infinity
