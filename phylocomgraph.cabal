@@ -294,7 +294,7 @@ library
                        Data.TCM.Memoized.FFI
                        Data.TopologyRepresentation
                        Numeric.Extended.Internal
-                       Numeric.PositiveAverage
+                       Numeric.NonNegativeAverage
                        Test.QuickCheck.Arbitrary.Instances
                        Text.XML.Class
 

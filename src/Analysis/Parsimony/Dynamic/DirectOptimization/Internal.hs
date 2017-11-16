@@ -83,7 +83,7 @@ initializeLeaf =
       <$> id
       <*> const 0
       <*> const 0
-      <*> toEnum . olength . (^. encoded)
+      <*> toAverageLength . toEnum . olength . (^. encoded)
       <*> (^. encoded)
       <*> (^. encoded)
       <*> (^. encoded)
