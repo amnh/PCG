@@ -163,6 +163,7 @@ fromDouble x
 nan :: Double
 nan = (0/0)
 
+
 epsilon :: ExtendedReal
 epsilon = Cost 2.2204460492503131e-16
 
