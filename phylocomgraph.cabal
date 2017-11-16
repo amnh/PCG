@@ -206,6 +206,9 @@ library
                        Data.TCM
                        Data.TCM.Memoized
                        Data.Vector.NonEmpty
+                       Numeric.Extended
+                       Numeric.Extended.Natural
+                       Numeric.Extended.Real
 --                       Text.HTML.Class
 --                       Text.HTML.Custom
                        Text.Newick.Class
@@ -290,10 +293,7 @@ library
                        Data.TCM.Internal
                        Data.TCM.Memoized.FFI
                        Data.TopologyRepresentation
-                       Numeric.Extended
                        Numeric.Extended.Internal
-                       Numeric.Extended.Natural
-                       Numeric.Extended.Real
                        Numeric.PositiveAverage
                        Test.QuickCheck.Arbitrary.Instances
                        Text.XML.Class
@@ -670,6 +670,8 @@ Test-Suite testsuite
                        Numeric.Extended.Internal
                        Numeric.Extended.Natural
                        Numeric.Extended.Natural.Test
+                       Numeric.Extended.Real
+                       Numeric.Extended.Real.Test
                        Test.QuickCheck.Arbitrary.Instances
                        TestSuite.ExecutableTests
                        TestSuite.LibraryTests

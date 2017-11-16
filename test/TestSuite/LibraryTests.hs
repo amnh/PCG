@@ -8,6 +8,7 @@ import qualified Bio.Character.Encodable.Dynamic.Test as DynamicChar
 import qualified Bio.Character.Encodable.Static.Test  as StaticChar
 import qualified Data.BitMatrix.Test                  as BitMatrix
 import qualified Numeric.Extended.Natural.Test        as ExtendedNatural
+import qualified Numeric.Extended.Real.Test           as ExtendedReal
 --import qualified Test.Custom.Tree.Test                             as MockTree
 
 import           Test.Tasty
@@ -17,11 +18,12 @@ main = defaultMain testSuite
 
 testSuite :: TestTree
 testSuite = testGroup "Library Test Suite" 
-  [ Evaluation.testSuite
-  , DynamicChar.testSuite
-  , StaticChar.testSuite
-  , BitMatrix.testSuite
-  , ExtendedNatural.testSuite
---  , MockTree.testSuite
-  ]
+    [ Evaluation.testSuite
+    , DynamicChar.testSuite
+    , StaticChar.testSuite
+    , BitMatrix.testSuite
+    , ExtendedNatural.testSuite
+    , ExtendedReal.testSuite
+--    , MockTree.testSuite
+    ]
 
