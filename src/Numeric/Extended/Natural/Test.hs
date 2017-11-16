@@ -9,8 +9,6 @@ import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
---import Debug.Trace
-
 
 testSuite :: TestTree
 testSuite = testGroup "ExtendedNatural tests"
@@ -31,6 +29,7 @@ testProperties :: TestTree
 testProperties = testGroup "Invariant properties"
     [ orderingProperties
     , additionProperties
+    , subtractionProperties
     , multiplicationProperties
     , divisionProperties
     ]
@@ -151,6 +150,23 @@ additionProperties = testGroup "Properties of addition"
 
     additiveCeiling :: (ExtendedNatural, ExtendedNatural) -> Bool
     additiveCeiling (a, b) = a + b <= maxBound || a == infinity || b == infinity
+
+
+subtractionProperties :: TestTree
+subtractionProperties = testGroup "Properties of subtraction"
+    [ testProperty "subtracting additive identity is indempotent" subtractionIdentity
+    , testProperty "subtraction on minBound is indempotent" subtractionLowerBound
+    , testProperty "subtraction of finite values never exceeds maxBound" subtractionFloor
+    ]
+  where
+    subtractionIdentity :: ExtendedNatural -> Bool
+    subtractionIdentity val = val - 0 == val
+
+    subtractionLowerBound :: ExtendedNatural -> Bool
+    subtractionLowerBound val = minBound - val == minBound
+
+    subtractionFloor :: (ExtendedNatural, ExtendedNatural) -> Bool
+    subtractionFloor (a, b) = a - b >= minBound
 
 
 multiplicationProperties :: TestTree
