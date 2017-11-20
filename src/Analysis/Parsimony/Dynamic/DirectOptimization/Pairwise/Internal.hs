@@ -185,6 +185,34 @@ handleMissingCharacter lhs rhs v =
 
 
 -- |
+-- A generalized function to handle missing dynamic characters.
+--
+-- Intended to be resued by multiple, differing implementations.
+handleMissingCharacterThreeway
+  :: PossiblyMissingCharacter s
+  => (s -> s -> (Word, s, s, s, s))
+  -> s
+  -> s
+  -> s
+  -> (Word, s, s, s, s, s)
+  -> (Word, s, s, s, s, s) 
+handleMissingCharacterThreeway f a b c v =
+    -- Appropriately handle missing data:
+    case (isMissing a, isMissing b, isMissing c) of
+      (True , True , True ) -> (0, a, a, a, b, c) --WLOG
+      (True , True , False) -> (0, c, c, c, c, c)
+      (True , False, True ) -> (0, b, b, b, b, b)
+      (True , False, False) -> let (cost, ungapd, gapd, lhs, rhs) = f b c
+                               in  (cost, ungapd, gapd, undefined, lhs, rhs)
+      (False, True , True ) -> (0, a, a, a, a, a) 
+      (False, True , False) -> let (cost, ungapd, gapd, lhs, rhs) = f a c
+                               in  (cost, ungapd, gapd, lhs, undefined, rhs)
+      (False, False, True ) -> let (cost, ungapd, gapd, lhs, rhs) = f a b
+                               in  (cost, ungapd, gapd, lhs, rhs, undefined)
+      (False, False, False) -> v
+
+
+-- |
 -- /O(1)/ for input characters of differing length
 --
 -- /O(k)/ for input characters of equal length, where /k/ is the shared prefix of

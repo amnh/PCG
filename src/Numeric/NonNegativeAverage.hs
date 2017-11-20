@@ -24,7 +24,8 @@ import Data.Ratio
 import Data.Semigroup
 import Foreign.Storable
 import GHC.Generics
-
+import Test.QuickCheck
+  
 
 -- |
 -- Defines an average of non-negative numbers.
@@ -41,6 +42,14 @@ import GHC.Generics
 -- All instance operations are /O(1)/.
 newtype NonNegativeAverage = Avg (Ratio Word)
   deriving (Data, Eq, Generic, Ord, Storable)
+
+
+instance Arbitrary NonNegativeAverage where
+
+    arbitrary = do
+      num <- arbitrary
+      den <- arbitrary
+      pure . Avg $ num % getPositive den
 
 
 instance Bounded NonNegativeAverage where

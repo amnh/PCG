@@ -9,6 +9,7 @@ import qualified Bio.Character.Encodable.Static.Test  as StaticChar
 import qualified Data.BitMatrix.Test                  as BitMatrix
 import qualified Numeric.Extended.Natural.Test        as ExtendedNatural
 import qualified Numeric.Extended.Real.Test           as ExtendedReal
+import qualified Numeric.NonNegativeAverage.Test      as NonNegativeAverage
 --import qualified Test.Custom.Tree.Test                             as MockTree
 
 import           Test.Tasty
@@ -24,6 +25,7 @@ testSuite = testGroup "Library Test Suite"
     , BitMatrix.testSuite
     , ExtendedNatural.testSuite
     , ExtendedReal.testSuite
+    , NonNegativeAverage.testSuite
 --    , MockTree.testSuite
     ]
 

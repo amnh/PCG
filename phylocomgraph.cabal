@@ -672,6 +672,8 @@ Test-Suite testsuite
                        Numeric.Extended.Natural.Test
                        Numeric.Extended.Real
                        Numeric.Extended.Real.Test
+                       Numeric.NonNegativeAverage
+                       Numeric.NonNegativeAverage.Test
                        Test.QuickCheck.Arbitrary.Instances
                        TestSuite.ExecutableTests
                        TestSuite.LibraryTests
