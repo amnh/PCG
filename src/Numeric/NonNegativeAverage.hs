@@ -20,6 +20,7 @@ module Numeric.NonNegativeAverage
 
 import Control.DeepSeq
 import Data.Data
+import Data.Hashable
 import Data.Semigroup
 import GHC.Generics
 import Test.QuickCheck
@@ -55,6 +56,11 @@ instance Bounded NonNegativeAverage where
     maxBound = Avg maxBound 1
 
     minBound = Avg 0 1
+
+
+instance Hashable NonNegativeAverage where
+
+    hashWithSalt salt (Avg d n) = hashWithSalt salt (d, n)
 
 
 instance NFData NonNegativeAverage
