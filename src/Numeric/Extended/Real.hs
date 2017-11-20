@@ -48,7 +48,7 @@ instance Arbitrary ExtendedReal where
         n <- choose weightForInfinity
         if n == 1
         then pure infinity
-        else Cost <$> (arbitrary `suchThat` (\x -> x >= 0))
+        else Cost <$> (arbitrary `suchThat` (>= 0))
       where
         -- We generate the 'infinity' value 1 in 20 times.
         weightForInfinity = (1, 20) :: (Int, Int)
@@ -161,7 +161,7 @@ fromDouble x
 
 
 nan :: Double
-nan = (0/0)
+nan = 0 / 0
 
 
 epsilon :: ExtendedReal

@@ -53,7 +53,6 @@ import           Data.Vector                  (Vector)
 import qualified Data.Vector           as VE
 import qualified Data.Vector.NonEmpty  as VNE
 import           Data.Vector.Instances        ()
-import           Data.Vector.Instances        ()
 import           Prelude               hiding (lookup, zip, zipWith)
 
 -- import Debug.Trace
@@ -159,7 +158,7 @@ preorderSequence'' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
 
             parentalAccessor = 
                 case parentIndices of
-                  []    -> (\_ x -> (x, 0, Nothing))
+                  []    -> \_ x -> (x, 0, Nothing)
                   [p]   -> selectTopologyFromParentOptions $ (p, memo ! p):|[]
                   x:y:_ -> selectTopologyFromParentOptions $ (x, memo ! x):|[(y, memo ! y)]
             
@@ -496,7 +495,7 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
 --        delta :: (Keyed f, Keyed v, Foldable r) => f (TraversalTopology, v (r TraversalFocusEdge)) -> f (v (IntMap (Either (c, Int) Int)))
         delta = mapWithKey (\k (topo, _, _, v) -> mapWithKey (f topo k) v)
           where
-            f topo blockIndex charIndex rootEdges = foldMap epsilon rootEdges
+            f topo blockIndex charIndex = foldMap epsilon
               where
                 epsilon rootingEdge@(r1,r2) = lhs <> rhs <> gen mempty (r1,r2) <> gen mempty (r2,r1)
                   where
@@ -507,10 +506,9 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
                     excludedEdges = excludedNetworkEdges topo
                     gen seenSet (n1,n2)
                       | isExcludedEdge = mempty
-                      | otherwise      = (currentVal <>) . foldMap toMap . filter (`onotElem` seenSet') $ nearbyNodes n2 -- getAdjacentNodes n2
+                      | otherwise      = (currentVal <>) . foldMap toMap . filter (`onotElem` seenSet') $ getAdjacentNodes n2
                       where
                         isExcludedEdge = (n1,n2) `elem` excludedEdges || (n2,n1) `elem` excludedEdges
-                        nearbyNodes x  = getAdjacentNodes x
                         currentVal
                           | n2 `oelem` rootSet = IM.singleton n2 $ SetRootNode n1
                           | n1 `oelem` rootSet =

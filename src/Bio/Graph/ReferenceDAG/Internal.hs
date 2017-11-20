@@ -916,7 +916,7 @@ fromList xs =
     listValue = toList xs
     referenceVector = V.fromList $ (\(pSet, datum, cMap) -> IndexData datum pSet cMap) <$> listValue
     rootSet =
-      case foldMapWithKey (\k (pSet,_,_) -> if onull pSet then [k] else []) listValue of
+      case foldMapWithKey (\k (pSet,_,_) -> [ k | onull pSet ]) listValue of
         []   -> error "No root nodes supplied in call to ReferenceDAG.fromList"
         y:ys -> y:|ys
 
