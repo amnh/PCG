@@ -20,9 +20,7 @@ module Numeric.NonNegativeAverage
 
 import Control.DeepSeq
 import Data.Data
-import Data.Ratio
 import Data.Semigroup
-import Foreign.Storable
 import GHC.Generics
 import Test.QuickCheck
   
@@ -40,8 +38,8 @@ import Test.QuickCheck
 -- to compute the /possibly/ non-integer average as a 'Fractional' value.
 --
 -- All instance operations are /O(1)/.
-newtype NonNegativeAverage = Avg (Ratio Word)
-  deriving (Data, Eq, Generic, Ord, Storable)
+data NonNegativeAverage = Avg !Word !Word
+  deriving (Data, Eq, Generic, Ord)
 
 
 instance Arbitrary NonNegativeAverage where
@@ -49,14 +47,14 @@ instance Arbitrary NonNegativeAverage where
     arbitrary = do
       num <- arbitrary
       den <- arbitrary
-      pure . Avg $ num % getPositive den
+      pure . Avg num $ getPositive den
 
 
 instance Bounded NonNegativeAverage where
 
-    maxBound = Avg $ maxBound % 1
+    maxBound = Avg maxBound 1
 
-    minBound = Avg $ 0 % 1
+    minBound = Avg 0 1
 
 
 instance NFData NonNegativeAverage
@@ -64,24 +62,21 @@ instance NFData NonNegativeAverage
 
 instance Semigroup NonNegativeAverage where
 
-    (<>) (Avg lhs) (Avg rhs) = Avg $ num % den
-      where
-        num = numerator   lhs + numerator   rhs
-        den = denominator lhs + denominator rhs
+    (Avg n d) <> (Avg n' d') = Avg (n + n') (d + d')
 
 
 instance Show NonNegativeAverage where
 
-    show = show . (fromNonNegativeAverage :: NonNegativeAverage -> Double)
+    show = show . (fromNonNegativeAverage :: NonNegativeAverage -> Rational)
 
 
 {-# INLINE fromNonNegativeValue #-}
 fromNonNegativeValue :: Word -> NonNegativeAverage
-fromNonNegativeValue = Avg . (% 1)
+fromNonNegativeValue x = Avg x 1
 
 
 fromNonNegativeAverage :: Fractional r => NonNegativeAverage -> r
-fromNonNegativeAverage (Avg avg) = num / den
+fromNonNegativeAverage (Avg n d) = num / den
   where
-    num = fromIntegral (numerator   avg)
-    den = fromIntegral (denominator avg)
+    num = fromIntegral n
+    den = fromIntegral d
