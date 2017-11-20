@@ -106,7 +106,9 @@ instance NFData ExtendedReal
 -- @x - y@ where @y > x@ results in @0@
 instance Num ExtendedReal where
 
-    (Cost x) - (Cost y) = max (Cost (x - y)) minBound
+    lhs@(Cost x) - (Cost y)
+      | lhs == infinity = infinity
+      | otherwise       = max (Cost (x - y)) minBound
 
     lhs@(Cost x) + rhs@(Cost y) =
         case (lhs == infinity, rhs == infinity) of

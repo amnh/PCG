@@ -37,8 +37,9 @@ infinityCases :: TestTree
 infinityCases = testGroup "'infinity' specific cases"
     [ testCase "succ function does not increment 'infinity'" successorCase
     , testCase "pred function does not decrement 'infinity'" predecessorCase
-    , testCase "'infinity'     == 'infinity'" identityComparison
-    , testCase "'infinity' * 0 == 'infinity'" zeroMultiplication
+    , testCase "'infinity' == 'infinity'" identityComparison
+    , testCase "'infinity' == 'infinity' * 0" zeroMultiplication
+    , testCase "'infinity' == 'infinity' - 'infinity'" infiniteSubtraction
     ]
   where
     inf = infinity :: ExtendedReal
@@ -55,6 +56,8 @@ infinityCases = testGroup "'infinity' specific cases"
     zeroMultiplication =
       inf * 0 @?= inf
 
+    infiniteSubtraction =
+      inf - inf @?= inf
 
 
 orderingProperties :: TestTree
@@ -105,7 +108,7 @@ subtractionProperties :: TestTree
 subtractionProperties = testGroup "Properties of subtraction"
     [ testProperty "subtracting additive identity is indempotent" subtractionIdentity
     , testProperty "subtraction on minBound is indempotent" subtractionLowerBound
-    , testProperty "subtraction of finite values never exceeds maxBound" subtractionFloor
+    , testProperty "subtraction of finite values is never negative." subtractionFloor
     ]
   where
     subtractionIdentity :: ExtendedReal -> Bool
