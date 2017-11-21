@@ -4,11 +4,12 @@
 #include <string.h>
 
 #include "alignCharacters.h"
+#include "alignmentMatrices.h"
 #include "c_alignment_interface.h"
 #include "c_code_alloc_setup.h"
 #include "debug_constants.h"
+#include "dyn_character.h"
 // #include "costMatrix.h"
-#include "alignmentMatrices.h"
 #include "ukkCheckPoint.h"
 #include "ukkCommon.h"
 
@@ -34,7 +35,7 @@ int align2d( alignIO_t          *inputChar1_aio
     }
 
     const size_t CHAR_CAPACITY = inputChar1_aio->length + inputChar2_aio->length + 2; // 2 to account for gaps,
-                                                                                      // which will be added in initializeChar()
+                                                                                      // which will be added in dyn_char_initialize()
 
     alignIO_t *longIO,
               *shortIO;
@@ -46,8 +47,8 @@ int align2d( alignIO_t          *inputChar1_aio
 
     /*** Most character allocation is now done on Haskell side, but these two are local. ***/
     /*** longChar and shortChar will both have pointers into the input characters, so don't need to be initialized separately ***/
-    initializeChar(retLongChar,  CHAR_CAPACITY);
-    initializeChar(retShortChar, CHAR_CAPACITY);
+    dyn_char_initialize(retLongChar,  CHAR_CAPACITY);
+    dyn_char_initialize(retShortChar, CHAR_CAPACITY);
 
     // NOTE: We do not set the swapped flag, regardless of whether we swap the inputs.
     //       Doing so causes the C algorithm to return inconsistent reult inputs
@@ -124,7 +125,7 @@ int align2d( alignIO_t          *inputChar1_aio
 
         if (getUngapped) {
             dyn_character_t *ungappedMedianChar = malloc(sizeof(dyn_character_t));
-            initializeChar(ungappedMedianChar, CHAR_CAPACITY);
+            dyn_char_initialize(ungappedMedianChar, CHAR_CAPACITY);
 
             algn_get_median_2d_no_gaps (retShortChar, retLongChar, costMtx2d, ungappedMedianChar);
             // printf("\n\nUngapped median:\n"), fflush(stdout);
@@ -150,7 +151,7 @@ int align2d( alignIO_t          *inputChar1_aio
             dyn_character_t *gappedMedianChar   = malloc(sizeof(dyn_character_t));
 
         //printf("Before initialize character!\n"), fflush(stdout);
-            initializeChar(gappedMedianChar, CHAR_CAPACITY);
+            dyn_char_initialize(gappedMedianChar, CHAR_CAPACITY);
         //printf("After  initialize character!\n"), fflush(stdout);
 
         //printf("Before algn_get_median\n"), fflush(stdout);
@@ -170,7 +171,7 @@ int align2d( alignIO_t          *inputChar1_aio
         if (getUnion) {
             dyn_character_t *gappedMedianChar = malloc(sizeof(dyn_character_t));
 
-            initializeChar(gappedMedianChar, CHAR_CAPACITY);
+            dyn_char_initialize(gappedMedianChar, CHAR_CAPACITY);
 
             algn_union (retShortChar, retLongChar, gappedMedianChar);
 
@@ -180,7 +181,7 @@ int align2d( alignIO_t          *inputChar1_aio
 
             /*** following once union has its own output field again ***/
             // dyn_character_t *unionChar = malloc(sizeof(dyn_character_t));
-            // initializeChar(unionChar, CHAR_CAPACITY);
+            // dyn_char_initialize(unionChar, CHAR_CAPACITY);
             // algn_union(retShortChar, retLongChar, gappedMedianChar);
 
             // dynCharToAlignIO(unionChar, unionOutputChar);
@@ -222,7 +223,7 @@ int align2dAffine( alignIO_t          *inputChar1_aio
     }
 
     const size_t CHAR_CAPACITY = inputChar1_aio->length + inputChar2_aio->length + 2; // 2 to account for gaps,
-                                                                                      // which will be added in initializeChar()
+                                                                                      // which will be added in dyn_char_initialize()
     // printf("capacity%zu\n", CHAR_CAPACITY);
     alignIO_t *longIO,
               *shortIO;
@@ -235,8 +236,8 @@ int align2dAffine( alignIO_t          *inputChar1_aio
 
     /*** Most character allocation is now done on Haskell side, but these two are local. ***/
     /*** longChar and shortChar will both have pointers into the input characters, so don't need to be initialized separately ***/
-    initializeChar(retLongChar,  CHAR_CAPACITY);
-    initializeChar(retShortChar, CHAR_CAPACITY);
+    dyn_char_initialize(retLongChar,  CHAR_CAPACITY);
+    dyn_char_initialize(retShortChar, CHAR_CAPACITY);
 
     // NOTE: We do not set the swapped flag, regardless of whether we swap the inputs.
     //       Doing so causes the C algorithm to return inconsistent reult inputs
@@ -367,8 +368,8 @@ int align2dAffine( alignIO_t          *inputChar1_aio
     if(getMedians) {
         dyn_character_t *ungappedMedianChar = malloc(sizeof(dyn_character_t));
         dyn_character_t *gappedMedianChar   = malloc(sizeof(dyn_character_t));
-        initializeChar(ungappedMedianChar, CHAR_CAPACITY);
-        initializeChar(gappedMedianChar,   CHAR_CAPACITY);
+        dyn_char_initialize(ungappedMedianChar, CHAR_CAPACITY);
+        dyn_char_initialize(gappedMedianChar,   CHAR_CAPACITY);
 
         algn_backtrace_affine( shortChar
                              , longChar
@@ -421,7 +422,7 @@ int align3d( alignIO_t          *inputChar1_aio
 
     const size_t CHAR_CAPACITY = inputChar1_aio->length + inputChar2_aio->length + inputChar3_aio->length + 3; // 3 to account for gaps,
                                                                                                                // which will be added in
-                                                                                                               // initializeChar()
+                                                                                                               // dyn_char_initialize()
     unsigned int algnCost;
 
     alignIO_t *longIO,
@@ -438,9 +439,9 @@ int align3d( alignIO_t          *inputChar1_aio
 
     /*** Most character allocation is now done on Haskell side, but these three are local. ***/
     /*** longChar, middleChar and shortChar will have pointers into the input characters, so don't need to be initialized separately ***/
-    initializeChar(retLongChar,   CHAR_CAPACITY);
-    initializeChar(retMiddleChar, CHAR_CAPACITY);
-    initializeChar(retShortChar,  CHAR_CAPACITY);
+    dyn_char_initialize(retLongChar,   CHAR_CAPACITY);
+    dyn_char_initialize(retMiddleChar, CHAR_CAPACITY);
+    dyn_char_initialize(retShortChar,  CHAR_CAPACITY);
 
 
     size_t alphabetSize = costMtx3d->costMatrixDimension;
@@ -546,8 +547,8 @@ int align3d( alignIO_t          *inputChar1_aio
     dyn_character_t *ungappedMedianChar = malloc(sizeof(dyn_character_t));
     dyn_character_t *gappedMedianChar   = malloc(sizeof(dyn_character_t));
 
-    initializeChar(ungappedMedianChar, CHAR_CAPACITY);
-    initializeChar(gappedMedianChar,   CHAR_CAPACITY);
+    dyn_char_initialize(ungappedMedianChar, CHAR_CAPACITY);
+    dyn_char_initialize(gappedMedianChar,   CHAR_CAPACITY);
 
     algnCost = algn_get_cost_medians_3d ( retLongChar
                                         , retMiddleChar

@@ -120,3 +120,13 @@ dyn_char_compare (dyn_character_t *char1, dyn_character_t *char2) {
     }
     return 0;
 }
+
+
+void dyn_char_initialize(dyn_character_t *retChar, size_t allocSize) {
+    retChar->cap        = allocSize;                              // capacity
+    retChar->array_head = calloc(allocSize, sizeof(elem_t));      // beginning of array that holds dynamic character
+
+    retChar->end        = retChar->array_head + allocSize - 1;    // end of array
+    retChar->char_begin = 0;                                      /* position of first element in dynamic character, 0 so prepend works. */
+    retChar->len        = 0;                                      // number of elements in character
+}

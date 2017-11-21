@@ -29,7 +29,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
   , generateDenseTransitionCostMatrix
   ) where
 
-import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (filterGaps, handleMissingCharacter)
+import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (filterGaps, handleMissingCharacter, handleMissingCharacterThreeway)
 import Bio.Character.Encodable
 import Bio.Character.Exportable.Class
 import Control.DeepSeq
@@ -62,8 +62,8 @@ import System.IO.Unsafe (unsafePerformIO)
 -- |
 -- Input/output data type for C alignment code to avoid having to write the
 -- whole seq type.
-data AlignIO
-   = AlignIO
+data Align_io
+   = Align_io
    { character :: Ptr CUInt
    , charLen   :: CSize     -- Total length of the character stored
    , arrCap    :: CSize     -- Total capacity of allocated array
@@ -152,7 +152,7 @@ data UnionContext  = ComputeUnions  | DoNotComputeUnions
 
 
 -- | Because we're using a struct we need to make a Storable instance
-instance Storable AlignIO where
+instance Storable Align_io where
 
     sizeOf    _  = (#size struct alignIO_t)
 
@@ -163,13 +163,13 @@ instance Storable AlignIO where
         len  <- (#peek struct alignIO_t, length)    ptr
         cap  <- (#peek struct alignIO_t, capacity)  ptr
 
-        pure AlignIO
+        pure Align_io
             { character = arr
             , charLen   = len
             , arrCap    = cap
             }
 
-    poke ptr (AlignIO arr len cap) = do
+    poke ptr (Align_io arr len cap) = do
         (#poke struct alignIO_t, character) ptr arr
         (#poke struct alignIO_t, length)    ptr len
         (#poke struct alignIO_t, capacity)  ptr cap
@@ -392,10 +392,10 @@ foreign import ccall unsafe "c_code_alloc_setup.h setUp3dCostMtx"
 
 foreign import ccall unsafe "c_alignment_interface.h align2d"
 
-    align2dFn_c :: Ptr AlignIO -- ^ character1, input & output
-                -> Ptr AlignIO -- ^ character2, input & output
-                -> Ptr AlignIO -- ^ gapped median output
-                -> Ptr AlignIO -- ^ ungapped median output
+    align2dFn_c :: Ptr Align_io -- ^ character1, input & output
+                -> Ptr Align_io -- ^ character2, input & output
+                -> Ptr Align_io -- ^ gapped median output
+                -> Ptr Align_io -- ^ ungapped median output
                 -> Ptr CostMatrix2d
                 -> CInt        -- ^ compute ungapped & not   gapped medians
                 -> CInt        -- ^ compute   gapped & not ungapped medians
@@ -405,10 +405,10 @@ foreign import ccall unsafe "c_alignment_interface.h align2d"
 
 foreign import ccall unsafe "c_alignment_interface.h align2dAffine"
 
-    align2dAffineFn_c :: Ptr AlignIO -- ^ character1, input & output
-                      -> Ptr AlignIO -- ^ character2, input & output
-                      -> Ptr AlignIO -- ^ gapped median output
-                      -> Ptr AlignIO -- ^ ungapped median output
+    align2dAffineFn_c :: Ptr Align_io -- ^ character1, input & output
+                      -> Ptr Align_io -- ^ character2, input & output
+                      -> Ptr Align_io -- ^ gapped median output
+                      -> Ptr Align_io -- ^ ungapped median output
                       -> Ptr CostMatrix2d
                       -> CInt        -- ^ compute medians
                       -> CInt        -- ^ cost
@@ -421,21 +421,25 @@ foreign import ccall unsafe "c_alignment_interface.h align2dAffine"
 -- It is therefore indexed not by powers of two, but by cardinal integer.
 foreign import ccall unsafe "c_alignment_interface.h align3d"
 
-    align3dFn_c :: Ptr AlignIO -- ^ character1, input & output
-                -> Ptr AlignIO -- ^ character2, input & output
-                -> Ptr AlignIO -- ^ character3, input & output
-                -> Ptr AlignIO -- ^ gapped median output
-                -> Ptr AlignIO -- ^ ungapped median output
---                -> Ptr CostMatrix3d
+    align3dFn_c :: Ptr Align_io -- ^ character1, input
+                -> Ptr Align_io -- ^ character2, input
+                -> Ptr Align_io -- ^ character3, input
+                -> Ptr Align_io -- ^ character1, output
+                -> Ptr Align_io -- ^ character2, output
+                -> Ptr Align_io -- ^ character3, output
+                -> Ptr Align_io -- ^ gapped median output
+                -> Ptr Align_io -- ^ ungapped median output
+                -> Ptr CostMatrix3d
                 -> CInt        -- ^ substitution cost
                 -> CInt        -- ^ gap open cost
                 -> CInt        -- ^ indel cost
+                -> CInt        -- ^ alignment cost
 
 
 {- Exported Functions -}
 
 
--- TODO: Collapse this definition and defere branching tothe C side of the FFI call.
+-- TODO: Collapse this definition and defer branching to the C side of the FFI call.
 
 -- |
 -- Generate the 2D and 3D dense TCM matricies used for FFI calls to
@@ -470,7 +474,7 @@ foreignPairwiseDO lhs rhs costMatrix = algn2d lhs rhs costMatrix DoNotComputeUni
 
 -- |
 -- Align three dynamic characters using an FFI call for more efficient computation
--- on small alphabet sizes.
+-- on small (or smallish) alphabet sizes.
 --
 -- Requires a pre-generated 'DenseTransitionCostMatrix' from a call to
 -- 'generateDenseTransitionCostMatrix' defining the alphabet and transition costs.
@@ -481,6 +485,9 @@ foreignThreeWayDO :: ( EncodableDynamicCharacter s
                   => s                         -- ^ First  dynamic character
                   -> s                         -- ^ Second dynamic character
                   -> s                         -- ^ Third  dynamic character
+                  -> Int                       -- ^ Mismatch cost
+                  -> Int                       -- ^ Gap open cost
+                  -> Int                       -- ^ Indel cost
                   -> DenseTransitionCostMatrix -- ^ Structure defining the transition costs between character states
                   -> (Word, s, s, s, s, s)     -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
 foreignThreeWayDO char1 char2 char3 costMatrix = algn3d char1 char2 char3 costMatrix
@@ -560,15 +567,15 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
             do
 --                !_ <- trace ("char 1: " <> show char1) $ pure ()
 --                !_ <- trace ("char 2: " <> show char2) $ pure ()
-                char1ToSend <- allocInitAlignIO exportedChar1Len . fmap coerceEnum $ exportedCharacterElements exportedChar1
-                char2ToSend <- allocInitAlignIO exportedChar2Len . fmap coerceEnum $ exportedCharacterElements exportedChar2
-                retGapped   <- allocInitAlignIO 0 []
-                retUngapped <- allocInitAlignIO 0 []
+                char1ToSend <- allocInitAlign_io maxAllocLen exportedChar1Len . fmap coerceEnum $ exportedCharacterElements exportedChar1
+                char2ToSend <- allocInitAlign_io maxAllocLen exportedChar2Len . fmap coerceEnum $ exportedCharacterElements exportedChar2
+                retGapped   <- allocInitAlign_io maxAllocLen 0 []
+                retUngapped <- allocInitAlign_io maxAllocLen 0 []
                 -- retUnion    <- allocInitALignIO 0 []
 
 {--
-                AlignIO char1Ptr char1Len buffer1Len <- peek char1ToSend
-                AlignIO char2Ptr char2Len buffer2Len <- peek char2ToSend
+                Align_io char1Ptr char1Len buffer1Len <- peek char1ToSend
+                Align_io char2Ptr char2Len buffer2Len <- peek char2ToSend
                 input1CharArr <- peekArray (fromEnum buffer1Len) char1Ptr
                 input2CharArr <- peekArray (fromEnum buffer2Len) char2Ptr
                 !_ <- trace (mconcat [" Input LHS : { ", show char1Len, " / ", show buffer1Len, " } ", renderBuffer input1CharArr]) $ pure ()
@@ -581,11 +588,11 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
                               _      -> align2dFn_c       char1ToSend char2ToSend retGapped retUngapped costStruct neverComputeOnlyGapped (coerceEnum computeMedians) (coerceEnum computeUnion)
 
 {-
-                AlignIO ungappedCharArr ungappedLen _ <- peek retUngapped
-                AlignIO gappedCharArr   gappedLen   _ <- peek retGapped
-                AlignIO retChar1CharArr char1Len    _ <- peek char1ToSend
-                AlignIO retChar2CharArr char2Len    _ <- peek char2ToSend
-                -- AlignIO unionCharArr    unionLen    _ <- peek retUnion
+                Align_io ungappedCharArr ungappedLen _ <- peek retUngapped
+                Align_io gappedCharArr   gappedLen   _ <- peek retGapped
+                Align_io retChar1CharArr char1Len    _ <- peek char1ToSend
+                Align_io retChar2CharArr char2Len    _ <- peek char2ToSend
+                -- Align_io unionCharArr    unionLen    _ <- peek retUnion
 
                 -- A sanity check to ensure that the sequences were aligned
                 _ <- if gappedLen == char1Len && gappedLen == char2Len
@@ -608,17 +615,17 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
 -}
 
 {-
-                AlignIO char1Ptr' char1Len' buffer1Len' <- peek char1ToSend
-                AlignIO char2Ptr' char2Len' buffer2Len' <- peek char2ToSend
+                Align_io char1Ptr' char1Len' buffer1Len' <- peek char1ToSend
+                Align_io char2Ptr' char2Len' buffer2Len' <- peek char2ToSend
                 output1Buffer <- peekArray (fromEnum buffer1Len') char1Ptr'
                 output2Buffer <- peekArray (fromEnum buffer2Len') char2Ptr'
                 !_ <- trace (mconcat [" Output LHS : { ", show char1Len', " / ", show buffer1Len', " } ", renderBuffer output1Buffer]) $ pure ()
                 !_ <- trace (mconcat [" Output RHS : { ", show char2Len', " / ", show buffer2Len', " } ", renderBuffer output2Buffer]) $ pure ()
 -}
 
-                resultingAlignedChar1 <- extractFromAlignIO elemWidth char1ToSend
-                resultingAlignedChar2 <- extractFromAlignIO elemWidth char2ToSend
-                resultingGapped       <- extractFromAlignIO elemWidth retGapped
+                resultingAlignedChar1 <- extractFromAlign_io elemWidth char1ToSend
+                resultingAlignedChar2 <- extractFromAlign_io elemWidth char2ToSend
+                resultingGapped       <- extractFromAlign_io elemWidth retGapped
                 let resultingUngapped = filterGaps resultingGapped
 
 {--
@@ -645,15 +652,15 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
                 -- Forgetting to do this will eventually corrupt the heap memory
                 maxAllocLen      = exportedChar1Len + exportedChar2Len + 2
 
-                allocInitAlignIO :: CSize -> [CUInt] -> IO (Ptr AlignIO)
-                allocInitAlignIO elemCount elemArr  =
-                    do
-                        output   <- malloc :: IO (Ptr AlignIO)
-                        outArray <- newArray paddedArr
-                        poke output $ AlignIO outArray elemCount maxAllocLen
-                        pure output
-                    where
-                        paddedArr = replicate (max 0 (fromEnum (maxAllocLen - elemCount))) 0 <> elemArr
+                -- allocInitAlign_io :: CSize -> [CUInt] -> IO (Ptr Align_io)
+                -- allocInitAlign_io elemCount elemArr  =
+                --     do
+                --         output   <- malloc :: IO (Ptr Align_io)
+                --         outArray <- newArray paddedArr
+                --         poke output $ Align_io outArray elemCount maxAllocLen
+                --         pure output
+                --     where
+                --         paddedArr = replicate (max 0 (fromEnum (maxAllocLen - elemCount))) 0 <> elemArr
 
                 -- Used for debugging
 {-
@@ -666,9 +673,9 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
 
 -- |
 -- Performs a naive direct optimization
--- Takes in two characters to run DO on and a metadata object
+-- Takes in three characters to run DO on and a metadata object.
 -- Returns an assignment character, the cost of that assignment, the assignment character with gaps included,
--- the aligned version of the first input character, and the aligned version of the second input character
+-- the aligned versions of the three input characters.
 -- The process for this algorithm is to generate a traversal matrix, then perform a traceback.
 algn3d :: ( EncodableDynamicCharacter s
           , Exportable s
@@ -679,7 +686,7 @@ algn3d :: ( EncodableDynamicCharacter s
        -> Int                       -- ^ Mismatch cost
        -> Int                       -- ^ Gap open cost
        -> Int                       -- ^ Indel cost
---       -> DenseTransitionCostMatrix -- ^ Structure defining the transition costs between character states
+       -> DenseTransitionCostMatrix -- ^ Structure defining the transition costs between character states
        -> (Word, s, s, s, s, s)     -- ^ The cost of the alignment
                                     --
                                     --   The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
@@ -692,38 +699,50 @@ algn3d :: ( EncodableDynamicCharacter s
                                     --
                                     --   The gapped alignment of the /third/ input character when aligned with the first & second character
                                     --
-algn3d char1 char2 char3 mismatchCost gapOpenCost indelCost {- denseTCMs -} = handleMissingCharacter char1 char2 char3 $
+algn3d char1 char2 char3 mismatchCost gapOpenCost indelCost denseTCMs = handleMissingCharacterThreeway someFun char1 char2 char3 $
     case (toExportableElements char1, toExportableElements char2, toExportableElements char3) of
       (Just x, Just y, Just z) -> f x y z
       (     _,      _,      _) -> error "3DO: There's a dynamic character missing!"
     where
+        someFun = undefined
         f exportedChar1 exportedChar2 exportedChar3 = unsafePerformIO $
-
-   where
-        f exportedChar1 exportedChar2 = unsafePerformIO $
             do
 --                !_ <- trace ("char 1: " <> show char1) $ pure ()
 --                !_ <- trace ("char 2: " <> show char2) $ pure ()
-                char1ToSend <- allocInitAlignIO exportedChar1Len . fmap coerceEnum $ exportedCharacterElements exportedChar1
-                char2ToSend <- allocInitAlignIO exportedChar2Len . fmap coerceEnum $ exportedCharacterElements exportedChar2
-                char3ToSend <- allocInitAlignIO exportedChar3Len . fmap coerceEnum $ exportedCharacterElements exportedChar3
-                retGapped   <- allocInitAlignIO 0 []
-                retUngapped <- allocInitAlignIO 0 []
+                char1ToSend <- allocInitAlign_io maxAllocLen exportedChar1Len . fmap coerceEnum $ exportedCharacterElements exportedChar1
+                char2ToSend <- allocInitAlign_io maxAllocLen exportedChar2Len . fmap coerceEnum $ exportedCharacterElements exportedChar2
+                char3ToSend <- allocInitAlign_io maxAllocLen exportedChar3Len . fmap coerceEnum $ exportedCharacterElements exportedChar3
+                char1Return <- allocInitAlign_io maxAllocLen 0 []    -- Note that the next six can be empty as their C-side
+                char2Return <- allocInitAlign_io maxAllocLen 0 []    -- internal arrays are alloc'ed
+                char3Return <- allocInitAlign_io maxAllocLen 0 []
+                retGapped   <- allocInitAlign_io maxAllocLen 0 []
+                retUngapped <- allocInitAlign_io maxAllocLen 0 []
                 -- retUnion    <- allocInitALignIO 0 []
 
-                let !cost = align3dFn_c char1ToSend char2ToSend char3ToSend retGapped retUngapped mismatchCost gapOpenCost indelCost
+                let !cost = align3dFn_c char1ToSend char2ToSend char3ToSend
+                                        char1Return char2Return char3Return
+                                        retGapped   retUngapped
+                                        costStruct
+                                        (coerceEnum mismatchCost)
+                                        (coerceEnum gapOpenCost)
+                                        (coerceEnum indelCost)
 
-                resultingAlignedChar1 <- extractFromAlignIO elemWidth char1ToSend
-                resultingAlignedChar2 <- extractFromAlignIO elemWidth char2ToSend
-                resultingAlignedChar3 <- extractFromAlignIO elemWidth char3ToSend
-                resultingGapped       <- extractFromAlignIO elemWidth retGapped
-                resultingUngapped     <- extractFromAlignIO elemWidth retUngapped
+                resultingAlignedChar1 <- extractFromAlign_io elemWidth char1Return
+                resultingAlignedChar2 <- extractFromAlign_io elemWidth char2Return
+                resultingAlignedChar3 <- extractFromAlign_io elemWidth char3Return
+                resultingGapped       <- extractFromAlign_io elemWidth retGapped
+                resultingUngapped     <- extractFromAlign_io elemWidth retUngapped
 
-                pure (fromIntegral cost, resultingUngapped, resultingGapped, resultingAlignedChar1 resultingAlignedChar2, resultingAlignedChar3)
+                pure ( fromIntegral cost
+                     , resultingUngapped
+                     , resultingGapped
+                     , resultingAlignedChar1
+                     , resultingAlignedChar2
+                     , resultingAlignedChar3
+                     )
 
             where
---                costStruct = costMatrix3D denseTCMs -- TODO: get memoized matrix wedged in here
-                neverComputeOnlyGapped = 0
+                costStruct       = costMatrix3D denseTCMs -- TODO: get memoized matrix wedged in here
 
                 elemWidth        = exportedChar1 ^. exportedElementWidth
 
@@ -733,15 +752,18 @@ algn3d char1 char2 char3 mismatchCost gapOpenCost indelCost {- denseTCMs -} = ha
 
                 maxAllocLen      = exportedChar1Len + exportedChar2Len + exportedChar3Len
 
-                allocInitAlignIO :: CSize -> [CUInt] -> IO (Ptr AlignIO)
-                allocInitAlignIO elemCount elemArr  =
-                    do
-                        output   <- malloc :: IO (Ptr AlignIO)
-                        outArray <- newArray paddedArr
-                        poke output $ AlignIO outArray elemCount maxAllocLen
-                        pure output
-                    where
-                        paddedArr = replicate (max 0 (fromEnum (maxAllocLen - elemCount))) 0 <> elemArr
+
+-- |
+-- Allocates space for an align_io struct to be sent to C.
+allocInitAlign_io :: CSize -> CSize -> [CUInt] -> IO (Ptr Align_io)
+allocInitAlign_io maxAllocLen elemCount elemArr  =
+    do
+        output   <- malloc :: IO (Ptr Align_io)
+        outArray <- newArray paddedArr
+        poke output $ Align_io outArray elemCount maxAllocLen
+        pure output
+    where
+        paddedArr = replicate (max 0 (fromEnum (maxAllocLen - elemCount))) 0 <> elemArr
 
 {-
 -- | A C binding that computes only the cost of a 2d alignment
@@ -807,10 +829,10 @@ coerceEnum = toEnum . fromEnum
 
 
 -- |
--- Converts the data behind an 'AlignIO' pointer to an 'Exportable' type.
-extractFromAlignIO :: Exportable s => Int -> Ptr AlignIO -> IO s
-extractFromAlignIO elemWidth ptr = do
-    AlignIO bufferPtr charLenC bufferLenC <- peek ptr
+-- Converts the data behind an 'Align_io' pointer to an 'Exportable' type.
+extractFromAlign_io :: Exportable s => Int -> Ptr Align_io -> IO s
+extractFromAlign_io elemWidth ptr = do
+    Align_io bufferPtr charLenC bufferLenC <- peek ptr
     let    charLength = fromEnum   charLenC
     let  bufferLength = fromEnum bufferLenC
     buffer <- peekArray bufferLength bufferPtr
@@ -825,5 +847,3 @@ extractFromAlignIO elemWidth ptr = do
 -- Determine the alignment strategy encoded for the matrix.
 getAlignmentStrategy :: CostMatrix2d -> AlignmentStrategy
 getAlignmentStrategy = toEnum . fromEnum . costModelType
-
-

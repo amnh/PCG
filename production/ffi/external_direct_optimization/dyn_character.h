@@ -39,6 +39,15 @@ typedef struct dyn_character_t {
 } dyn_character_t;
 
 
+/** Does internal allocation for a character struct. Also sets character pointers within array to correct positions.
+ *
+ *  resChar must be alloced before this call. This is because allocation must be done on other side of FFI for pass
+ *  by ref to be correct.
+ */
+void dyn_char_initialize( dyn_character_t *retChar
+                        , size_t           allocSize );
+
+
 /** Adds value to the front of character. Increments the length of a and decrements the head of the character. */
 void dyn_char_prepend( dyn_character_t *character
                      , elem_t           value
@@ -46,6 +55,13 @@ void dyn_char_prepend( dyn_character_t *character
 
 
 void dyn_char_print( const dyn_character_t *inChar );
+
+
+/** Resets character array to all 0s.
+ *  Makes length 0.
+ *  Points beginning of character to end of character array.
+ */
+void dyn_char_resetValues( dyn_character_t *retChar );
 
 
 /* Stores value in position on character. */

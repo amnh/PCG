@@ -32,7 +32,7 @@ parseArgs args =
 
 
 performCounterExampleSearch :: IO ()
-performCounterExampleSearch = do 
+performCounterExampleSearch = do
     putStrLn "Performing stocastic counter-example search:"
     quickCheckWith stdArgs { maxSuccess = 10000 } counterExampleCheck
 
@@ -41,7 +41,7 @@ counterExampleCheck :: (NucleotideSequence, NucleotideSequence) -> Bool
 counterExampleCheck (NS lhs, NS rhs) = nativeDOResult == foreignDOResult
   where
     nativeDOResult  =         naiveDOMemo       lhs rhs (getMedianAndCost memoMatrixValue)
-    foreignDOResult = chomp $ foreignThreeWayDO lhs rhs rhs denseMatrixValue
+    foreignDOResult = chomp $ foreignThreeWayDO lhs rhs rhs 1 1 1 denseMatrixValue
 
 
 performImplementationComparison :: String -> String -> IO ()
@@ -57,14 +57,14 @@ performImplementationComparison lhs rhs = do
     nativeMessage    = renderResult nativeDOResult
     foreignMessage   = renderResult foreignDOResult
     nativeDOResult   =         naiveDOMemo       char1 char2 (getMedianAndCost memoMatrixValue)
-    foreignDOResult  = chomp $ foreignThreeWayDO char1 char2 char2 denseMatrixValue
+    foreignDOResult  = chomp $ foreignThreeWayDO char1 char2 char2 1 1 1 denseMatrixValue
     char1 = readSequence lhs
     char2 = readSequence rhs
     alphabet = fromSymbols ["A","C","G","T"]
     readSequence :: String -> DynamicChar
     readSequence = encodeStream alphabet . fmap ((iupacToDna BM.!) . pure . pure) . NE.fromList
     renderResult  (c, w, x, y, z) = unlines
-        [ "Cost           : " <> show c 
+        [ "Cost           : " <> show c
         , "Median ungapped: " <> showStream alphabet w
         , "Median   gapped: " <> showStream alphabet x
         , "LHS   alignment: " <> showStream alphabet y
@@ -76,8 +76,8 @@ chomp :: (a,b,c,d,e,f) -> (a,b,c,d,e)
 chomp (a,b,c,d,e,_) = (a,b,c,d,e)
 
 costStructure :: (Ord a, Num a) => a -> a -> a
---costStructure i j = if i /= j then 1 else 0
-costStructure i j = max i j - min i j
+costStructure i j = if i /= j then 1 else 0
+--costStructure i j = max i j - min i j
 
 
 denseMatrixValue :: DenseTransitionCostMatrix

@@ -169,6 +169,9 @@ typedef struct fsm_arrays_t {
 #endif
 
 
+void *allocEntry(AllocInfo_t *a);
+
+
 /** Is this a match insertion insertion (MII), etc.?
  *  Matches return 0, subs (which are also coded as M) return 1, various transitions add gap open or gap continuation costs.
  */

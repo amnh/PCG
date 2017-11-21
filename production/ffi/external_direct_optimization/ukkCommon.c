@@ -93,6 +93,24 @@ extern int    completeFromInfo;
 //}
 
 
+void *allocEntry(AllocInfo_t *a)
+{
+    void *p;
+
+    long entries     = CellsPerBlock * CellsPerBlock * numStates_g;
+    a->memAllocated += entries * a->elemSize;
+
+    p = calloc(entries, a->elemSize);
+
+    if (p == NULL) {
+        fprintf(stderr, "Unable to alloc memory\n");
+        exit(-1);
+    }
+
+    return p;
+}
+
+
 /** recalloc - does a realloc() but sets any new memory to 0. */
 static inline void *recalloc( void   *p
                             , size_t  oldSize
@@ -896,4 +914,3 @@ unsigned int alignmentCost( int             fsm_states[]
 /* ---------------------------------------------------------------------- */
 
 // End of ukkCommon.c
-
