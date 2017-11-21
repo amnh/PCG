@@ -15,13 +15,15 @@
 
 module Control.Evaluation.Unit where
 
-import Control.Applicative
-import Control.DeepSeq
-import Control.Monad (MonadPlus(mzero, mplus))
-import Data.Monoid   ()
-import Data.Semigroup
-import GHC.Generics
-import Test.QuickCheck
+import           Control.Applicative
+import           Control.DeepSeq
+import           Control.Monad (MonadPlus(mzero, mplus))
+import           Control.Monad.Fail      (MonadFail)
+import qualified Control.Monad.Fail as F
+import           Data.Monoid   ()
+import           Data.Semigroup
+import           GHC.Generics
+import           Test.QuickCheck
 
 
 -- |
@@ -76,7 +78,7 @@ instance Monad EvalUnit where
 
     return = pure
 
-    fail   = Error
+    fail   = F.fail
 
     Error x >>  _ = Error x
     _       >>  e = e
@@ -84,6 +86,12 @@ instance Monad EvalUnit where
     NoOp    >>= _ = NoOp
     Error x >>= _ = Error x
     Value x >>= f = f x
+
+
+-- | (✔)
+instance MonadFail EvalUnit where
+
+    fail = Error
 
 
 -- | (✔)
