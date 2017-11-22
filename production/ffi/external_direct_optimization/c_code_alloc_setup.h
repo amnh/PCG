@@ -48,9 +48,22 @@ void freeNWMtx(alignment_matrices_t *input);
 void initializeAlignmentMtx( alignment_matrices_t *retMtx
                            , size_t                cap_char1
                            , size_t                cap_char2
-                           , size_t                cap_char3
                            , size_t                alphSize
                            );
+
+/** Does internal allocation for a character struct. Also sets character pointers within array to correct positions.
+ *
+ *  resChar must be alloced before this call. This is because allocation must be done on other side of FFI for pass
+ *  by ref to be correct.
+ */
+void initializeChar( dyn_character_t *retChar
+                   , size_t           allocSize );
+
+/** Resets character array to all 0s.
+ *  Makes length 0.
+ *  Points beginning of character to end of character array.
+ */
+void resetCharValues( dyn_character_t *retChar );
 
 
 /** Take in a cost_matrices_2d, the struct for which has already allocated. Internal arrays are allocated

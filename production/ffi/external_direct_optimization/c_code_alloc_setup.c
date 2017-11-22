@@ -10,6 +10,17 @@
 #include "alignmentMatrices.h"
 
 
+/** Find distance between an ambiguous nucleotide and an unambiguous ambElem. Return that value and the median.
+ *  @param ambElem is ambiguous input.
+ *  @param nucleotide is unambiguous.
+ *  @param median is used to return the calculated median value.
+ *
+ *  This fn is necessary because there isn't yet a cost matrix set up, so it's not possible to
+ *  look up ambElems, therefore we must loop over possible values of the ambElem
+ *  and find the lowest cost median.
+ *
+ *  Requires symmetric, if not metric, matrix.
+ */
 int distance( unsigned int const *tcm
             , size_t              alphSize
             , elem_t              nucleotide
@@ -17,8 +28,8 @@ int distance( unsigned int const *tcm
             )
 {
     int min     = INT_MAX;
-    // int max     = 0;
     int curCost = 0;
+
     for (size_t pos = 0; pos < alphSize; pos++) {
         if (1 << pos & ambElem) { // if pos is set in ambElem, meaning pos is possible value of ambElem
             curCost = tcm[pos * alphSize + nucleotide - 1];
@@ -61,8 +72,6 @@ void freeCostMtx(void * input, int is_2d) {
 void freeNWMtx(alignment_matrices_t *input) {
     free (input->algn_costMtx);
     free (input->algn_dirMtx);
-    // free (input->cube);    // don't have to deallocate these two,
-    // free (input->cube_d);  // because they're just pointing to algn_costMtx and algn_dirMtx
     free (input->algn_precalcMtx);
 
     free(input);
@@ -72,7 +81,6 @@ void freeNWMtx(alignment_matrices_t *input) {
 void initializeAlignmentMtx( alignment_matrices_t *retMtx
                            , size_t                len_char1
                            , size_t                len_char2
-                           , size_t                len_char3
                            , size_t                alphSize
                            )
 {
@@ -88,26 +96,7 @@ void initializeAlignmentMtx( alignment_matrices_t *retMtx
     // retMtx->cube          = malloc ( sizeof( int* ) );  // don't have to allocate these two,
     // retMtx->cube_d        = malloc ( sizeof( int* ) );  // because they're just pointing to algn_costMtx and algn_dirMtx
 
-    algnMat_setup_size (retMtx, len_char1, len_char2, len_char3, alphSize);
-}
-
-
-void initializeChar(dyn_character_t *retChar, size_t allocSize) {
-    retChar->cap        = allocSize;                              // capacity
-    retChar->array_head = calloc(allocSize, sizeof(elem_t));      // beginning of array that holds dynamic character
-
-    retChar->end        = retChar->array_head + allocSize - 1;    // end of array
-    retChar->char_begin = retChar->end;                           // position of first element in dynamic character, starts at end because
-                                                                  // we'll be prepending
-    retChar->len        = 0;                                      // number of elements in character
-}
-
-
-void resetCharValues(dyn_character_t *retChar) {
-    //retChar->end   = retChar->begin + retChar->len;
-    memset(retChar->array_head, 0, retChar->cap * sizeof(elem_t));
-    retChar->char_begin = retChar->end;
-    retChar->len       = 0;
+    algnMat_setup_size (retMtx, len_char1, len_char2, alphSize);
 }
 
 
@@ -232,8 +221,7 @@ void setUp3dCostMtx( cost_matrices_3d_t *retMtx
                , combinations
                , do_aff
                , gap_open
-               , all_elements
-               );
+               , all_elements );
     retMtx->gap_char = 1 << (alphSize - 1);
 
     for (elem_t ambElem1 = 1; ambElem1 <= all_elements; ambElem1++) { // for every possible value of ambElem1, ambElem2, ambElem3

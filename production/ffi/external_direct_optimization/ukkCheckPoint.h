@@ -30,7 +30,7 @@
 // Created:      Thu 10/20/16
 // Author:       Eric Ford, based on .c file by David Powell
 
-// TODO: document all of this?
+// TODO: document all of this. Sigh.
 
 
 /**** NOTE: All edit distances and costs are signed, as often initialized to -INFINITY ****/
@@ -60,9 +60,9 @@ typedef struct counts_t {
 
 /** The previous finite state machine state. */
 typedef struct from_t {
-    int lessLong_idx_diff;  // This and next are used to map into Ukkonnen matrix, where each cell, (ab, d) is (_idx_diff, edit distance).
-    int lessMidd_idx_diff;  // From Powell, et al. 2000: that's the length of a (top character) for a given edit distance.
-                            // So row in Ukk is diagonal in distance matrix and column is a cost "contour".
+    int ac;                 // This and next are used to map into Ukkonnen matrix, where each cell, (ab, d) is (_idx_diff, edit distance).
+    int ab;                 /* From Powell, et al. 2000: that's the length of a (top character) for a given edit distance.
+                             * So row in Ukk is diagonal in distance matrix and column is a cost "contour". */
     int cost;               // Must be signed, as is sometimes initialized as negative
     int fsm_state;
 } from_t;
@@ -83,8 +83,7 @@ typedef struct ukk_cell_t {
  *  Loop until the best distance == length of shortest input character:
  *      Ukk()
  *
- *
- *  IMPORTANT!!! Order of input characters is short, long, middle.
+ *  TODO: no longer true --> IMPORTANT!!! Order of input characters is short, long, middle.
  */
 int align3d_ukk( dyn_character_t *retLesserChar
                , dyn_character_t *retMiddleChar
@@ -92,21 +91,21 @@ int align3d_ukk( dyn_character_t *retLesserChar
                , dyn_character_t *original_lesserChar
                , dyn_character_t *original_middleChar
                , dyn_character_t *original_longerChar
-               , affine_costs_t  *affineCosts
+               // , affine_costs_t  *affineCosts
                , characters_t    *inputChars
                , characters_t    *resultChars
-               , fsm_arrays_t    *globalCostArrays
+               // , fsm_arrays_t    *globalCostArrays
                );
 
 
 /**  */
-int calcUkk( int             lessMidd_idx_diff
-           , int             lessLong_idx_diff
+int calcUkk( int             ab
+           , int             ac
            , int             input_editDist
            , int             toState
-           , affine_costs_t *affineCosts
+           // , affine_costs_t *affineCosts
            , characters_t   *inputChars
-           , fsm_arrays_t   *fsmArrays
+           // , fsm_arrays_t   *fsmArrays
            );
 
 
@@ -116,32 +115,36 @@ int calcUkk( int             lessMidd_idx_diff
 int char_to_base (char v);
 
 
+int doUkk( characters_t *inputs
+         , characters_t *outputs
+         );
+
+
 /** For Ukkonen check point between to specified points in the U matrix... TODO: ...?
  *  All distances and costs are signed, as often initialized to -INFINITY
  */
-
-int doUkkInLimits( int             start_lessMidd_idx_diff
-                 , int             start_lessLong_idx_diff
+int doUkkInLimits( int             start_ab
+                 , int             start_ac
                  , int             startCost
                  , int             startState
                  , int             start_editDist
-                 , int             final_lessLong_idx_diff
-                 , int             final_lessMidd_idx_diff
+                 , int             final_ac
+                 , int             final_ab
                  , int             finalCost
                  , int             finalState
                  , int             finalDist
-                 , affine_costs_t *affineCosts
+                 // , affine_costs_t *affineCosts
                  , characters_t   *inputChars
                  , characters_t   *resultChars
-                 , fsm_arrays_t   *globalCostArrays
+                 // , fsm_arrays_t   *globalCostArrays
                  );
 
 
-/** Find the furthest distance at lessLong_idx_diff, lessMidd_idx_diff, input_editDistance. return_the_fsm_state selects whether the
+/** Find the furthest distance at ac, ab, input_editDistance. return_the_fsm_state selects whether the
  *  best distance is returned, or the best final fsm_state (needed for ukk.alloc traceback)
  */
-int findBest( int    lessMidd_idx_diff
-            , int    lessLong_idx_diff
+int findBest( int    ab
+            , int    ac
             , int    input_editDist
             , int    return_the_fsm_state
             , size_t numStates
@@ -149,16 +152,16 @@ int findBest( int    lessMidd_idx_diff
 
 
 /** For clarity, calls findBest with return_the_fsm_state = 0 */
-int find_bestDist( int    lessMidd_idx_diff
-                 , int    lessLong_idx_diff
+int find_bestDist( int    ab
+                 , int    ac
                  , int    input_editDist
                  , size_t numStates
                  );
 
 
 /** For clarity, calls findBest with return_the_fsm_state = 1 */
-int find_bestState( int    lessMidd_idx_diff
-                  , int    lessLong_idx_diff
+int find_bestState( int    ab
+                  , int    ac
                   , int    input_editDist
                   , size_t numStates
                   );
@@ -167,34 +170,34 @@ int find_bestState( int    lessMidd_idx_diff
 /** Extracts info from the 'from' and CP info then recurses with doUkkInLimits for the two subparts.
  *  All distances and costs are signed, as often initialized to -INFINITY
  */
-int getSplitRecurse( int             start_lessMidd_idx_diff
-                   , int             start_lessLong_idx_diff
+int getSplitRecurse( int             start_ab
+                   , int             start_ac
                    , int             startCost
                    , int             startState
                    , int             start_editDist
-                   , int             final_lessMidd_idx_diff
-                   , int             final_lessLong_idx_diff
-                   , long            finalCost
+                   , int             final_ab
+                   , int             final_ac
+                   , int             finalCost
                    , int             finalState
                    , int             finalDist
-                   , affine_costs_t *affineCosts
+                   // , affine_costs_t *affineCosts
                    , characters_t   *inputChars
                    , characters_t   *resultChars
-                   , fsm_arrays_t   *globalCostArrays
+                   // , fsm_arrays_t   *globalCostArrays
                    );
 
 
 /** Recovers an alignment directly from the Ukkonnen matrix.
  *  Used for the base case of the check point recursion.
  */
-void traceBack( int           start_lessMidd_idx_diff
-              , int           start_lessLong_idx_diff
+void traceBack( int           start_ab
+              , int           start_ac
               , int           startCost
               , int           startState
-              , int           final_lessLong_idx_diff
-              , int           final_lessMidd_idx_diff
+              , int           final_ac
+              , int           final_ab
               , int           finalCost
-              , unsigned int  finalState
+              , int           finalState
               , characters_t *inputChars
               , characters_t *resultChars
               );
@@ -203,34 +206,14 @@ void traceBack( int           start_lessMidd_idx_diff
  *  Checks to see if edit distance is
  *  Calls `calcUkk`.
  */
-int Ukk( int             lessMidd_idx_diff
-       , int             lessLong_idx_diff
+int Ukk( int             ab
+       , int             ac
        , int             editDistance
        , unsigned int    fsm_state
-       , affine_costs_t *affineCosts
+       // , affine_costs_t *affineCosts
        , characters_t   *inputChars
-       , fsm_arrays_t   *fsmArrays
+       // , fsm_arrays_t   *fsmArrays
        );
-
-
-// TODO: unsigned ints for costs? Probably shouldn't be, actually.
-/** This is the interface function to the alignment code. It takes in three characters, as well as a mismatch cost, a gap open cost and
- *  a gap extention cost (all of which should be replaced by a 3d cost matrix).
- *
- *  Calls ukkCommon.setup() then align3d_ukk().
- *
- *  IMPORTANT!!! Order of input characters is short, long, middle, or at least short must be first.
- */
-int powell_3D_align( dyn_character_t *lesserChar
-                   , dyn_character_t *middleChar
-                   , dyn_character_t *longerChar
-                   , dyn_character_t *retLesserChar
-                   , dyn_character_t *retMiddleChar
-                   , dyn_character_t *retLongerChar
-                   , unsigned int     mismatchCost
-                   , unsigned int     gapOpenCost
-                   , unsigned int     gapExtendCost
-                   );
 
 
 /**  */
@@ -240,10 +223,10 @@ void doTraceBack( dyn_character_t *retLesserChar
                 , dyn_character_t *original_lesserChar
                 , dyn_character_t *original_middleChar
                 , dyn_character_t *original_longerChar
-                , affine_costs_t  *affineCosts
+                // , affine_costs_t  *affineCosts
                 , characters_t    *inputChars
                 , characters_t    *resultChars
-                , fsm_arrays_t    *globalCostArrays
+                // , fsm_arrays_t    *globalCostArrays
                 );
 
 

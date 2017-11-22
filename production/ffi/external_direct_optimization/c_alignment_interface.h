@@ -2,11 +2,10 @@
 #define C_ALIGNMENT_INTERFACE_H
 
 #include "alignCharacters.h"
-#include "c_code_alloc_setup.h"
-#include "debug_constants.h"
-#include "costMatrix.h"
 #include "alignmentMatrices.h"
-#include "alignCharacters.h"
+#include "c_code_alloc_setup.h"
+#include "costMatrix.h"
+#include "debug_constants.h"
 
 /** Input/output structure for Haskell FFI. Essentially a cut down dyn_character_t.
  *
@@ -25,7 +24,7 @@ typedef struct alignIO_t {
  *  | (1,0) = calculate union
  *  | (1,1) = calculate both union and ungapped characters.
  *
- *  In the last two cases the union will replace the gapped character placeholder.
+ *  In the last case the union will replace the gapped character placeholder.
  */
 int align2d( alignIO_t          *inputChar1_aio
            , alignIO_t          *inputChar2_aio
@@ -39,7 +38,10 @@ int align2d( alignIO_t          *inputChar1_aio
            );
 
 
-/** As align2d, but affine */
+/** As align2d, but affine.
+ *
+ *  If `getMedians` gapped & ungapped outputs will be medians.
+ */
 int align2dAffine( alignIO_t          *inputChar1_aio
                  , alignIO_t          *inputChar2_aio
                  , alignIO_t          *gappedOutput_aio
@@ -51,7 +53,7 @@ int align2dAffine( alignIO_t          *inputChar1_aio
 
 
 /** Aligns three characters using affine algorithm.
- *  Set `gap_open_cost` to 0 for non-affine.
+ *  Set `gap_open_cost` to equal `gap_extension_cost` for non-affine.
  *
  *  First declares, allocates and initializes data structures.
  *  Calls ukkCheckPoint.powell_3D_align().
@@ -63,12 +65,15 @@ int align2dAffine( alignIO_t          *inputChar1_aio
 int align3d( alignIO_t          *inputChar1_aio
            , alignIO_t          *inputChar2_aio
            , alignIO_t          *inputChar3_aio
+           , alignIO_t          *outputChar1_aio
+           , alignIO_t          *outputChar2_aio
+           , alignIO_t          *outputChar3_aio
            , alignIO_t          *ungappedOutput_aio
            , alignIO_t          *gappedOutput_aio
-           // , alignment_matrices_t *algn_mtxs3d
            , cost_matrices_3d_t *costMtx3d
+           , unsigned int        substitution_cost
            , unsigned int        gap_open_cost
-           // , unsigned int        gap_extension_cost
+           , unsigned int        gap_extension_cost
            );
 
 
@@ -76,11 +81,30 @@ int align3d( alignIO_t          *inputChar1_aio
 void alignIO_print( const alignIO_t *character );
 
 
-/** Takes in an alignIO struct and a dyn_character struct. Copies values of alignIO to dyn_character.
- *  Points dyn_character->char_begin, dyn_character->end to respective points in alignIO->character.
+/** For use in 3D alignment.
+ *
+ *  Takes in three `alignIO` structs and a `characters_t`.
+ *  _Copies_ respective characters from inputs to arrays in `output`. Must copy because characters start at end of `align_io` struct but
+ *  at beginning of `characters_t` structs.
+ *
+ *  Nota bene: assumes that all arrays in `output` have already been allocated correctly.
+ */
+void alignIOtoCharacters_t( characters_t *output
+                          , alignIO_t    *inputChar1_aio
+                          , alignIO_t    *inputChar2_aio
+                          , alignIO_t    *inputChar3_aio
+                          );
+
+
+/** For use in 2D alignment.
+ *
+ *  Takes in an `alignIO` struct and a `dyn_character` struct. Points interior pointers to input `alignIO`.
+ *  Points `dyn_character->char_begin`, `dyn_character->end` to respective points in `alignIO->character`.
  *  Adds a gap character at the front of the array, to deal with old OCaml-forced interface.
  *
- *  The values in the last `length` elements in `input` get copied to the last `length` elements in the array in`retChar`.
+ *  The values in the last `length` elements in `input` get copied to the _last_ `length` elements in the array in`retChar`.
+ *
+ *  This _does not_ allocate of copy values.
  *
  *  Nota bene: assumes that retChar->character has already been allocated correctly.
  */
@@ -91,36 +115,49 @@ void alignIOtoDynChar(       dyn_character_t *retChar
 
 
 /** Allocate the fields of an alignIO struct. Incoming pointer must already have space for the alignIO field pointers allocated. */
-void allocAlignIO(alignIO_t *toAlloc, size_t capacity);
+void allocAlignIO( alignIO_t *toAlloc, size_t capacity );
 
 
-/** Copy an array of elem_t into an *already alloc'ed* alignIO struct. Then sets length to input length and
+/** For use in 3DO and for testing.
+ *
+ *  Copy an array of elem_t into an *already alloc'ed* (but see note below) alignIO struct. Then sets length to input length and
  *  capacity to input capacity.
  *
- *  Array values should fill last `length` elements of character buffer.
+ *  Array values should fill *last* `length` elements of character buffer.
+ *
+ *  Allocates array that holds dynamic character of length capacity.
+ */
+void copyValsToAIO( alignIO_t *outChar, elem_t *vals, size_t length, size_t capacity );
+
+
+/** For use in 3DO and for testing.
+ *
+ *  Copy section of character array that actually holds the character from alignIO to an *already alloc'ed* char array.
  *
  *  Does not allocate.
  */
-void copyValsToAIO(alignIO_t *outChar, elem_t *vals, size_t length, size_t capacity);
+void copyAioToVals( elem_t *vals, alignIO_t *inChar );
 
 
-/** Takes in an alignIO and a char. *Copies* values of character from end of char to end of alignIO->character, so output must already
- *  be alloc'ed.
+/** For use in 2D alignment code.
+ *
+ *  Takes in an alignIO and a dynamic character. *Copies* values of character from end of dynamic character to end of alignIO->character,
+ *  so output must already be alloc'ed.
+ *
  *  Also eliminates extra gap needed by legacy code.
  */
-void dynCharToAlignIO(alignIO_t *output, dyn_character_t *input);
+void dynCharToAlignIO( alignIO_t *output, dyn_character_t *input, int delete_initial_gap );
 
 
-void freeAlignIO(alignIO_t *toFree);
+void freeAlignIO( alignIO_t *toFree );
 
 
 /** resets an alignIO struct. Note: does not realloc or change capacity, so can only be reused if not changing allocation size. */
-void resetAlignIO(alignIO_t *inChar);
+void resetAlignIO( alignIO_t *inChar );
 
 
 /** As allocAlignIO, but reallocs character. */
-void reallocAlignIO(alignIO_t *toAlloc, size_t capacity);
-
+void reallocAlignIO( alignIO_t *toAlloc, size_t capacity );
 
 
 #endif // C_ALIGNMENT_INTERFACE_H

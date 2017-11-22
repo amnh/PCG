@@ -64,6 +64,7 @@
 #include "debug_constants.h"
 #include "alignmentMatrices.h"
 #include "dyn_character.h"
+#include "ukkCommon.h"
 
 // TODO: consider changing this number
 #define VERY_LARGE_NUMBER 100000 // large number, but as this gets added to itself repeatedly, small enough that it won't overflow.
@@ -263,9 +264,7 @@ algn_get_median_2d (dyn_character_t *char1, dyn_character_t *char2, cost_matrice
  * returned in the character sm, using the cost matrix stored in m.
  */
 unsigned int
-algn_get_cost_medians_3d ( dyn_character_t    *char1
-                         , dyn_character_t    *char2
-                         , dyn_character_t    *char3
+algn_get_cost_medians_3d ( characters_t       *input
                          , cost_matrices_3d_t *costMatrix
                          , dyn_character_t    *ungapped_median
                          , dyn_character_t    *gapped_median
@@ -273,18 +272,18 @@ algn_get_cost_medians_3d ( dyn_character_t    *char1
 
 // TODO: document following four fns
 void
-algn_initialize_matrices_affine (       unsigned int        gap_open_cost
-                                , const dyn_character_t    *shortChar
-                                , const dyn_character_t    *longChar
-                                , const cost_matrices_2d_t *costMatrix
-                                ,       unsigned int       *close_block_diagonal
-                                ,       unsigned int       *extend_block_diagonal
-                                ,       unsigned int       *extend_vertical
-                                ,       unsigned int       *extend_horizontal
-                                ,       unsigned int       *final_cost_matrix
-                                ,       DIR_MTX_ARROW_t    *direction_matrix
-                                ,       unsigned int       *precalcMtx
-                                );
+algn_initialize_matrices_affine(       unsigned int        gap_open_cost
+                               , const dyn_character_t    *shortChar
+                               , const dyn_character_t    *longerChar
+                               , const cost_matrices_2d_t *costMatrix
+                               ,       unsigned int       *close_block_diagonal
+                               ,       unsigned int       *extend_block_diagonal
+                               ,       unsigned int       *extend_vertical
+                               ,       unsigned int       *extend_horizontal
+                               ,       unsigned int       *final_cost_matrix
+                               ,       DIR_MTX_ARROW_t    *direction_matrix
+                               ,       unsigned int       *algn_precalcMtx
+                               );
 
 // TODO: what is nobt? no backtrace? And why the 3? It's not 3d. Maybe third iteration of fn? In that case remove 3, as it's confusing.
 unsigned int

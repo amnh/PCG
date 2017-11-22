@@ -53,7 +53,7 @@ alignIO_t* read_dynamic_character(size_t buffer_capacity, char * str) {
 	  case 'A': element_buffer[valid_chars++] = BASE_A; break;
           case 'C': element_buffer[valid_chars++] = BASE_C; break;
           case 'G': element_buffer[valid_chars++] = BASE_G; break;
-          case 'T': 
+          case 'T':
           case 'U': element_buffer[valid_chars++] = BASE_T; break;
 
           case 'R': element_buffer[valid_chars++] = BASE_A | BASE_G; break;
@@ -74,7 +74,7 @@ alignIO_t* read_dynamic_character(size_t buffer_capacity, char * str) {
 	  case 'a': element_buffer[valid_chars++] = BASE_A | BASE_GAP; break;
           case 'c': element_buffer[valid_chars++] = BASE_C | BASE_GAP; break;
           case 'g': element_buffer[valid_chars++] = BASE_G | BASE_GAP; break;
-          case 't': 
+          case 't':
           case 'u': element_buffer[valid_chars++] = BASE_T | BASE_GAP; break;
 
           case 'r': element_buffer[valid_chars++] = BASE_A | BASE_G | BASE_GAP; break;
@@ -121,12 +121,12 @@ alignIO_t* read_dynamic_character(size_t buffer_capacity, char * str) {
 int main(int argc, char* argv[]) {
 
     char* progName = argv[0];
-      
+
     if (argc < 3) {
         printf("ERROR:\n  Less than 3 parameters supplied!\n");
         print_usage(progName);
     }
-  
+
     size_t gap_open_cost;
     int read_success;
 
@@ -144,7 +144,7 @@ int main(int argc, char* argv[]) {
     size_t length2 = strlen(argv[3]);
     size_t length3 = (!is_3d_alignment) ? 0 : strlen(argv[4]);
     size_t buffer_capacity = length1 + length2 + length3;
-    
+
     // Get the "dynamic character" parameters
     alignIO_t *align_value_1 = read_dynamic_character (buffer_capacity, argv[2]);
     alignIO_t *align_value_2 = read_dynamic_character (buffer_capacity, argv[3]);
@@ -156,7 +156,7 @@ int main(int argc, char* argv[]) {
     allocAlignIO(align_value_gapped  , buffer_capacity);
     allocAlignIO(align_value_ungapped, buffer_capacity);
 
-   
+
     /************  Allocate cost matrices  **************/
 
     /** TCM is only for non-ambiguous nucleotides, and it used to generate
@@ -183,7 +183,7 @@ int main(int argc, char* argv[]) {
     }
 
     /************  Perform Alignment  **************/
-    
+
     int algnCost;
 
     // Print inputs
@@ -195,7 +195,7 @@ int main(int argc, char* argv[]) {
 
     // Perform 2D alignment
     if( !is_3d_alignment ) {
-        cost_matrices_2d_t *costMtx2d = malloc(sizeof(struct cost_matrices_2d_t));
+        cost_matrices_2d_p *costMtx2d = malloc(sizeof(struct cost_matrices_2d_p));
         setUp2dCostMtx (costMtx2d, tcm, ALPHABET_SIZE, gap_open_cost);
 
         // Non-affine alignment
@@ -219,7 +219,7 @@ int main(int argc, char* argv[]) {
                                     , 0                 // compute medians
                                     );
     }
-    
+
     // Perform 3D, maybe affine alignment
     else {
         cost_matrices_3d_t *costMtx3d = malloc(sizeof(struct cost_matrices_3d_t));
@@ -243,7 +243,7 @@ int main(int argc, char* argv[]) {
     alignIO_print(align_value_2);
     if (is_3d_alignment)
         alignIO_print(align_value_3);
-    
+
     printf("\n  Gapped character  ");
     alignIO_print(align_value_gapped);
 

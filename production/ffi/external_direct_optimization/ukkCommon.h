@@ -31,295 +31,364 @@
 #ifndef __UKKCOMMON_H__
 #define __UKKCOMMON_H__
 
-#include <limits.h>
+#include <assert.h>
+// #include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include "costMatrix.h"
 #include "dyn_character.h"
-// #include "ukkCheckPoint.h"
+
+#define MAX_STATES 27                 // Maximum number of possible states, 3^3
 
 #define MAX_STR    100000   // TODO: can I get rid of this?
-
-#define MAX_STATES 27      // Maximum number of possible fsm_states where fsm_states are {insert, delete, substitute}, so 3^3. See enum below
-
 #define MAX_COST   (2 * MAX_STR)
 #define INFINITY   INT_MAX / 2
 
-#define FULL_ALLOC_INFO  0  // Use the NO_ALLOC_ROUTINES flag to compile without alloc routines.
+typedef enum {match, del, ins} Trans;  // The 3 possible state-machine states
 
-#define FIXED_NUM_PLANES 1  // Use the FIXED_NUM_PLANES flag to make routines allocate on d^2 memory.
+#ifndef __UKKCOMMON_C__
 
-#define CELLS_PER_BLOCK  10
+extern int misCost_g;
+extern int startInsert_g;
+extern int continueInsert_g;
+extern int startDelete_g;
+extern int continueDelete_g;
 
-typedef enum { MATCH_SUB
-             , DEL
-             , INS
-             } Trans;  // The 3 possible finite fsm_state machine fsm_states
+extern int neighbours[MAX_STATES];
+extern int contCost[MAX_STATES];
+extern int secondCost[MAX_STATES];
+extern int transCost[MAX_STATES][MAX_STATES];
+extern int stateNum[MAX_STATES];
 
-/** Matrix of either Ukkonnen or CheckPoint cells.
- *  Also includes information on element size and amount of space currently allocated for the cells.
- */
-typedef struct alignment_mtx_t {
-    size_t elemSize;
-    size_t lessMidd_size;
-    size_t lessLong_size;
-    size_t lessMidd_offset;
-    size_t lessLong_offset;
-    size_t lessMidd_blocks;
-    size_t lessLong_blocks;
+extern int numStates_g;
+extern int maxSingleStep_g;
 
-    #ifdef FIXED_NUM_PLANES // See above
-        size_t costSize;
-    #endif
+extern elem_t gap_char_g;
 
-    size_t baseAlloc;
-    void **matrix;         // 2D arrays of either Ukk or CheckP cells. Void because may point at U_cell_type or CPType.
+// extern char Astr[MAX_STR];
+// extern char Bstr[MAX_STR];
+// extern char Cstr[MAX_STR];
+// extern int Alen, Blen, Clen;
+#endif // __UKKCOMMON_C_
 
-    size_t memAllocated;   // total amount of memory allocated to `matrix`
-} alignment_mtx_t;
+#define maxSingleCost  (maxSingleStep_g * 2)
 
 
-// This is a persistent set of costs needed throughout the code.
-// I moved these costs all into this struct so I could remove global variables.
-typedef struct affine_costs_t {
-    unsigned int mismatchCost;        // Note that this is the substitution cost, so forces sub cost to be constant.
-    unsigned int gapOpenCost;
-    unsigned int gapExtendCost;
-
-    // unsigned int deleteOpenCost;   // This was the cost for reverting a gap opening. It was only ever used to
-                                      // assert that it was the same as gapOpenCost, and neither of those values ever mutate.
-    // unsigned int deleteExtendCost; // Likewise, this was used where gapExtendCost could have been, as a delete is actually
-                                      // a gap insertion, and an insertion in one character is a gap intertion in another.
-} affine_costs_t;
-
-
-/** Struct to hold persistant dynamic characters used throughout the code. Generally, it's the original inputs and the
- *  eventual outputs.
+/** Holds arrays of characters along with their respective weights.
+ *  Used for both input and output types for Ukkonnen alignment.
  */
 typedef struct characters_t {
-    size_t numStates;           // How many possible FSM fsm_states there are. You would expect this to be 27 (3^3), but
-                                // if each of three FSMs is in one of {INS, DEL, MATCH_SUB}
-                                // and given that one can't have all gap or more than one insertion it is---always---16.
-
-    size_t maxSingleStep;       // The largest
-
-    char *lesserStr;            // string representation of shortest character
-    char *middleStr;            // string representation of middle character
-    char *longerStr;            // string representation of longest character
-
-    int lesserIdx;              // current index into shortest character; signed to avoid compiler warnings
-    int middleIdx;              // current index into middle character; signed to avoid compiler warnings
-    int longerIdx;              // current index into longest character; signed to avoid compiler warnings
-
-    int lesserLen;              // length of respective string representation  <-- Used to define where to end on the three strings in the
-    int middleLen;              // length of respective string representation  <-- check-point recursion.
-    int longerLen;              // length of respective string representation  <-- So inputChars->lesserLen contains the edit distance the
-                                                                                // recursion must finish on + 1.
-                                                                                // int because their negatives are used in ukkCheckPoint
+    elem_t *seq1;  // string representation inputs
+    elem_t *seq2;  // string representation inputs
+    elem_t *seq3;  // string representation inputs
+    int     lenSeq1;  // lengths of A, B and Cstr. Have to be signed because compared to `furthestReached` in `ukkCheckPoint.c`
+    int     lenSeq2;  // lengths of A, B and Cstr. Have to be signed because compared to `furthestReached` in `ukkCheckPoint.c`
+    int     lenSeq3;  // lengths of A, B and Cstr. Have to be signed because compared to `furthestReached` in `ukkCheckPoint.c`
+    int     idxSeq1;  // current location of pointer into Astr
+    int     idxSeq2;  // current location of pointer into Bstr
+    int     idxSeq3;  // current location of pointer into Cstr
 } characters_t;
 
 
-/** Holds arrays of fsm states. For each state it stores the previous possible state as well as
- *  the cost to transition from the previous to the current state and the cost to stay in that state.
- *
- *  In this context, and fsm state is actually the combined states of three fsms, one for each character to be aligned,
- *  where the possible fsm states are Insert, Delete, and Match/Sub, i.e. insert a gap in some sequence or don't insert, where
- *  "some" is determined by the value: MDM, IMM, etc. Note that some states are not possible.
- *
- *  This is all calculated ahead of time, which begs the question, why is there only one previous state?
- */
-typedef struct fsm_arrays_t {
-    int *neighbours;                // array of neighbor fsm_states for each possible fsm state
-    int *fsmState_continuationCost; // as with transition cost, the cost to extend one or two gaps. (You can't extend three gaps.)
-    int *secondCost;                //
-    int *transitionCost;            // cost to transition from one fsm_state to another (i.e. start or end a gap)
-    int *fsmState_num;              // number that corresponds to a given fsm_state, i.e. 0 is all match/subs and 1 is [m/s m/s del]
-} fsm_arrays_t;
+int whichCharCost( int a, int b, int c );
+int okIndex( int a, int da, int end );
 
-// #ifndef UKKCOMMON_C
-
-//     extern int neighbours[MAX_STATES];
-//     extern int fsm_stateContinuationCost  [MAX_STATES];
-//     extern int secondCost[MAX_STATES];
-//     extern int transitionCost [MAX_STATES][MAX_STATES];
-//     extern int fsm_stateNum  [MAX_STATES];
-
-//     extern size_t numStates;
-//     extern size_t maxSingleStep;
-
-//     extern char lesserStr[MAX_STR];
-//     extern char longerStr[MAX_STR];
-//     extern char middleStr[MAX_STR];
-//     extern size_t  lesserLen, longerLen, middleLen;
-
-// #endif
-
-// #define MAX_SINGLE_COST (maxSingleStep * 2)
-
-
-#ifdef FIXED_NUM_PLANES // see above
-    alignment_mtx_t allocInit( size_t        elemSize
-                             , size_t        costSize
-                             , characters_t *globalCharacters
-                             );
-#else
-    alignment_mtx_t allocInit( size_t        elemSize
-                             , characters_t *globalCharacters
-                             );
-#endif
-
-
-void *allocEntry(AllocInfo_t *a);
-
-
-/** Is this a match insertion insertion (MII), etc.?
- *  Matches return 0, subs (which are also coded as M) return 1, various transitions add gap open or gap continuation costs.
- */
-int whichCharCost( char a
-                 , char b
-                 , char c
-                 );
-
-
-/** Make sure that index a is valid for a given set of array indices */
-int okIndex( int a
-           , int da
-           , int end
-           );
-
-
-/******** Setup routines ********/
-
-/*
-int fsm_stateTransitionCost( int from
-                       , int to
-                       , int *transitionCost
-                       );
-*/
-
-
-void copyCharacter ( char            *str
-                   , dyn_character_t *inChar
-                   );
+// Setup routines
+int stateTransitionCost( int from, int to );
 
 
 /** Mutates a, b, and c such that each is true or false if the least significant first, second or third digit, respectively,
  *  of neighbour is 1.
- *  I.e., if a given fsm state of `neighbour` is delete, set that state to true; otherwise, set to 0.
+ *  I.e., if one of the transitions of the `neighbor` fsm is `delete`, set that state to true; otherwise, set to 0.
  */
-void step( int  neighbour
-         , int *a
-         , int *b
-         , int *c
-         );
+void exists_neighbor_in_delete_state( int n, int *a, int *b, int *c );
+int neighbourNum( int i, int j, int k );
+void transitions( int s, Trans st[3] );
+char *state2str( int s );
+int countTrans( Trans st[3], Trans t );
+void setup();
+
+// Alignment checking routines
+void checkAlign( elem_t *al, int alLen, elem_t *str, int strLen );
+
+/** As it says, reverses an array of `int`s */
+void revIntArray( int *arr, int start, int end );
 
 
-/** Returns the value of the neighbor fsm state where the current fsm state is ijk, and each of i, j, k can be 1 or 0.
- *  Creates a binary number where i is the least significant bit and k is the most.
- */
-int neighbourNum( int i
-                , int j
-                , int k
-                );
+/** As it says, reverses an array of `elem_t`s */
+void revElem_tArray( elem_t *arr, int start, int end );
 
 
-/** Resets a transition array that holds the transition fsm_states for three fsm state-transition FSMs. There are 27 possible fsm states.
- *  For instance, if the fsm state is 1, then the FSMs are in the cumulative fsm state [DEL, MATCH_SUB, MATCH_SUB],
- *  whereas if the fsm state were 22, the cumulative fsm state would be [DEL, DEL, INS] (which is actually not possible,
- *  as it signifies a gap in all three dynamic characters, which is meaningless).
- */
-void transitions( Trans  fsm_stateTransition[3]
-                , size_t fsm_state
-                );
+/** As it says, reverses an array of `char`s */
+// TODO: This should be deprecated now, as we've switched entirely from chars to elem_ts
+// void revCharArray( char *arr, int start, int end );
 
 
-/** Takes an array of fsm_states by value and returns a string of those fsm_states as match, delete, insert.
- *  Used only in printing of fsm_state array if DEBUG_3D is set.
- */
-char *fsm_state2str( size_t  fsm_state
-                   , int    *fsm_stateNum
-                   );
+int alignmentCost( int     states[]
+                 , elem_t *al1
+                 , elem_t *al2
+                 , elem_t *al3
+                 , int     len );
 
 
-/** Count number of times whichTransition appears in fsm_stateTransitions, where MATCH_SUB = 0, DEL = 1, INS = 2. */
-size_t countThisTransition( Trans fsm_stateTransitions[3]
-                          , Trans whichTransition
-                          );
+// typedef struct cost_state_vector_t
+// {
 
-/** Set up the Ukkonnen and check point matrices before running alignment.
+// } cost_state_vector_t;
+
+
+// #ifndef NO_ALLOC_ROUTINES
+// Allocation stuff routines.  All inline -----------------------------------------
+
+/*
+  Memory organisation:
+
+  basePtr -> pointer to array of pointers.  Array is indexed by edit cost,
+             and contains a pointer to the plane for that cost.
+
+  A Block is square containing CellsPerBlock x CellsPerBlock cells
+    (note: each cell contains numStates_g states)
+
+  A plane is 2d array of pointers to Blocks.  Enough pointers to cover
+  from ab = - |B|..|A| and ac = - |C|..|A|.  Each block is only allocated as needed.
+
+*/
+
+//#define FIXED_NUM_PLANES
+
+#define FULL_ALLOC_INFO 0
+
+#define CellsPerBlock   10
+
+typedef struct allocInfo_t {
+    int    elemSize;
+    int    abSize;
+    int    acSize;
+    int    abOffset;
+    int    acOffset;
+    long   abBlocks;
+    int    acBlocks;
+    int    costSize;
+    long   baseAlloc;
+    void **basePtr;
+    long   memAllocated;
+} AllocInfo_t;
+
+//U_cell_type **Umatrix;        /* 2 dimensional */
+
+// aInfo = allocMatrix(sizeof(U_cell_type));
+//void allocUmatrix() {
+//  UcostSize = maxSingleCost*2;
+//  Umatrix = (U_cell_type **)allocMatrix(sizeof(U_cell_type *));
+//}
+
+
+void *allocEntry( AllocInfo_t *a );
+
+
+static inline AllocInfo_t allocInit( int elemSize, int costSize, characters_t *inputs )
+{
+    AllocInfo_t a;
+
+    a.memAllocated = 0;
+    a.elemSize     = elemSize;
+
+    a.abSize   = inputs->lenSeq1 + inputs->lenSeq2 + 1;
+    a.acSize   = inputs->lenSeq1 + inputs->lenSeq3 + 1;
+    a.abOffset = inputs->lenSeq2;
+    a.acOffset = inputs->lenSeq3;
+
+    a.abBlocks = a.abSize / CellsPerBlock + 1;
+    a.acBlocks = a.acSize / CellsPerBlock + 1;
+
+// #ifdef FIXED_NUM_PLANES
+    a.costSize  = costSize;
+    a.baseAlloc = costSize;
+// #else
+//     a.baseAlloc = 20;        // Whatever not really important, will increase as needed
+// #endif
+
+    a.memAllocated += a.baseAlloc * sizeof(void *);
+    a.basePtr       = calloc( a.baseAlloc, sizeof(void *) );
+
+    if (a.basePtr == NULL) {
+        fprintf(stderr, "AllocInit: Unable to alloc memory.\n");
+        exit(-1);
+    }
+
+    return a;
+}
+
+
+static inline long allocGetSubIndex( AllocInfo_t *a, int ab, int ac, int s )
+{
+    long index = 0;
+
+    int i = (ab + a->abOffset) / CellsPerBlock;
+    int j = (ac + a->acOffset) / CellsPerBlock;
+    int abAdjusted = ab + a->abOffset - i * CellsPerBlock;
+    int acAdjusted = ac + a->acOffset - j * CellsPerBlock;
+
+    //  fprintf(stderr, "ab = %d ac = %d abA = %d acA = %d abO = %d acO = %d i = %d j = %d\n",
+    //      ab, ac, abAdjusted, acAdjusted, a->abOffset, a->acOffset, i, j);
+
+    assert( abAdjusted >= 0 && abAdjusted < CellsPerBlock );
+    assert( acAdjusted >= 0 && acAdjusted < CellsPerBlock );
+    assert( s >= 0  && s < numStates_g );
+
+    index = (index + abAdjusted) * CellsPerBlock;
+    index = (index + acAdjusted) * numStates_g;
+    index = (index + s);
+
+    return index;
+}
+
+
+static inline void *allocPlane(AllocInfo_t *a)
+{
+    void *p;
+
+    a->memAllocated += a->abBlocks * a->acBlocks * sizeof(void*);
+    p = calloc(a->abBlocks * a->acBlocks, sizeof(void*));
+    if (p == NULL) {
+        fprintf(stderr, "allocPlane: Unable to alloc memory.\n");
+        exit(-1);
+    }
+
+    return p;
+}
+
+
+// /** Main driver function */
+// int doUkk( characters_t *inputs
+//          , characters_t *outputs
+//          );
+
+
+/** recalloc - does a realloc() but sets any new memory to 0. */
+static inline void *recalloc(void *p, size_t oldSize, size_t newSize)
+{
+    p = realloc(p, newSize);
+    if (!p || oldSize > newSize) return p;
+
+    memset( ((char*) p) + oldSize, 0, newSize - oldSize );
+    return p;
+}
+
+
+static inline void *getPtr(AllocInfo_t *a, int ab, int ac, int d, int s)
+{
+    int    i, j;
+    void **bPtr;
+    void  *base;
+    int    index;
+
+// #ifdef FIXED_NUM_PLANES
+    // If doing a noalign or checkp,  remap 'd' into 0 .. costSize-1
+    d = d % a->costSize;
+// #endif
+
+  // Increase the base array as needed
+    while (d >= a->baseAlloc) {
+        int oldSize = a->baseAlloc;
+        a->baseAlloc *= 2;
+        a->basePtr = recalloc(a->basePtr, oldSize*sizeof(void *), a->baseAlloc*sizeof(void*));
+        if (a->basePtr == NULL) {
+            fprintf(stderr, "getPtr: Unable to alloc memory.\n");
+            exit(-1);
+        }
+        a->memAllocated += oldSize * sizeof(void*);
+    }
+    assert(d >= 0 && d < a->baseAlloc);
+
+    if (a->basePtr[d] == NULL) {
+        a->basePtr[d] = allocPlane(a);
+    }
+    bPtr = a->basePtr[d];
+
+    i = (ab + a->abOffset) / CellsPerBlock;
+    j = (ac + a->acOffset) / CellsPerBlock;
+    assert(i >= 0 && i < a->abBlocks);
+    assert(j >= 0 && j < a->acBlocks);
+
+    if (bPtr[(i * a->acBlocks) + j] == NULL) {
+        bPtr[(i * a->acBlocks) + j] = allocEntry(a);
+    }
+
+    base = bPtr[(i * a->acBlocks) + j];
+    assert(base != NULL);
+
+    index = allocGetSubIndex(a, ab, ac, s);
+    assert(index >= 0);
+
+    //  fprintf(stderr, "getPtr(ab = %d, ac = %d, d = %d, s = %d): base = %p index = %d\n",
+    //          ab, ac, d, s,
+    //          base, index);
+
+    return ((char*) base) + (index * a->elemSize);
+}
+
+static inline void allocFinal(AllocInfo_t *a, void *flag, void *top)
+{
+    int usedFlag = (char *) flag - (char *) top;
+    {
+        int i, j, cIndex;
+        long planesUsed  = 0;
+        long blocksTotal = 0, blocksUsed = 0;
+        long cellsTotal  = 0, cellsUsed = 0;
+        for (i = 0; i < a->baseAlloc; i++) {
+            long tblocksUsed = 0;
+            void **p = a->basePtr[i];
+            if (!p) continue;
+            planesUsed++;
+            for (j = 0; j<a->abBlocks * a->acBlocks; j++) {
+                long tcellsUsed = 0;
+                void *block = p[j];
+                blocksTotal++;
+                if (!block) continue;
+                blocksUsed++;
+                tblocksUsed++;
+                for (cIndex = 0; cIndex < CellsPerBlock * CellsPerBlock * numStates_g; cIndex++) {
+                    cellsTotal++;
+                    if ( *(int *) ( ((char *) block) + (cIndex * a->elemSize) + usedFlag) ) {
+                        cellsUsed++;
+                        tcellsUsed++;
+                    }
+                }
+#if FULL_ALLOC_INFO
+                printf("Block %d. Cells = %d Used = %ld\n", j, CellsPerBlock * CellsPerBlock * numStates_g, tcellsUsed);
+#endif
+            }
+#if FULL_ALLOC_INFO
+      printf("Plane %d. Blocks = %ld Used = %ld\n", i, a->abBlocks * a->acBlocks, tblocksUsed);
+#endif
+        }
+        printf("Total planes %ld, used %ld (used %ld bytes)\n", a->baseAlloc, planesUsed,
+               planesUsed * a->abBlocks * a->acBlocks * sizeof(void*));
+        printf("Total blocks %ld, used %ld (%.2f%%) (used %ld bytes)\n",
+               blocksTotal, blocksUsed, (100.0 * blocksUsed / blocksTotal),
+               blocksUsed * CellsPerBlock * CellsPerBlock * numStates_g * a->elemSize);
+        printf("Total cells %ld, used %ld (%.2f%%)\n",
+               cellsTotal, cellsUsed, (100.0 * cellsUsed / cellsTotal));
+        printf("Total memory allocated = %ld bytes\n", a->memAllocated);
+        printf("Approximation of actual mem used = %ld bytes\n",
+               (planesUsed * a->abBlocks * a->acBlocks * sizeof(void*)) + (cellsUsed * a->elemSize));
+    }
+}
+// #endif // NO_ALLOC_ROUTINES
+
+
+/** This is entrance fn for Powell's 3d alignment code.
  *
- *  Finish setup of characters.
+ *  Note that alphabet size does not include gap.
  */
-void setup( affine_costs_t  *globalCosts
-          , characters_t    *inputChars
-          , characters_t    *resultChars
-          , fsm_arrays_t    *fsmStateArrays
-          , dyn_character_t *in_lesserChar
-          , dyn_character_t *in_middleChar
-          , dyn_character_t *in_longerChar
-          , unsigned int     mismatch_cost
-          , unsigned int     gapOpen
-          , unsigned int     gapExtend
-          );
+int powell_3D_align ( characters_t *inputSeqs     // lengths set correctly; idices set to 0
+                    , characters_t *outputSeqs    // lengths set correctly; idices set to 0
+                    , size_t        alphabetSize  // not including gap
+                    , int           mm            // mismatch cost, must be > 0
+                    , int           go            // gap open cost, must be >= 0
+                    , int           ge            // gap extension cost, must be > 0
+                    );
 
-
-/* Ensure that output characters are aligned. */
-void checkAlign( char   *al
-               , size_t  alLen
-               , char   *str
-               , size_t  strLen
-               );
-
-
-/** Reverses an array of ints. */
-void revIntArray( int    *arr
-                , size_t  start
-                , size_t  end
-                );
-
-
-/** Reverses an array of chars. */
-void revCharArray( char   *arr
-                 , size_t  start
-                 , size_t  end
-                 );
-
-
-/** Once three dynamic characters are aligned, step down the arrays and see when to
- *  add affine (deleted and insert) and mismatch costs.
- */
-unsigned int alignmentCost( int             fsm_states[]
-                          , char           *al1
-                          , char           *al2
-                          , char           *al3
-                          , size_t          len
-                          , affine_costs_t *globalCosts
-                          , fsm_arrays_t   *fsmArrays
-                          );
-
-
-/** Checks to see if Ukkonnen or CheckPoint matrix needs to be reallocated. If so, continues to double it in size until
- *  the width is less than current edit distance. Returns pointer to cell indicated by `lessMidd_idx_diff`, `lessLong_idx_diff` and `editDist`.
- *
- *  May call functions to alloc new plane, then returns pointer to first cell in that plane.
- */
-void *getPtr( alignment_mtx_t *alignment_mtx_t
-            , size_t           lessMidd_idx_diff
-            , size_t           lessLong_idx_diff
-            , size_t           editDist
-            , int              fsm_state
-            , size_t           numStates
-            );
-
-
-/** Deallocate either Ukkonnen or Check Point matrix.
- *  No idea what all of those extra accumulators were for, but they seemed to be unused.
- */
-void deallocate_MtxCell( alignment_mtx_t *inputMtx
-                       // , void            *flag
-                       // , void            *top
-                       // , size_t           numStates
-                       );
-
-
-#endif // UKKCOMMON_H
+#endif // __UKK_COMMON_H__

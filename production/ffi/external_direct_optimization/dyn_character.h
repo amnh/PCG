@@ -31,11 +31,13 @@
 /* Dynamic character structure to be used inside ocaml custom types. */
 /********************* CHARACTER AS IT COMES IN MUST BE IN LAST X SPACES IN ARRAY! *********************/
 typedef struct dyn_character_t {
-    size_t  cap;        // Capacity of the character memory structure.
-    size_t  len;        // Total length of the character stored.
+//    int magic_number;
+    size_t cap;         // Capacity of the character memory structure.
+    size_t len;         // Total length of the character stored.
     elem_t *array_head; // beginning of the allocated array
     elem_t *char_begin; // Position where the first element of the character is actually stored.
-    elem_t *end;        // End of both array and character.
+    elem_t *end;        // End of array. Last element in character is at end - 1 so that prepending works correctly.
+    //struct pool *my_pool; ARRAY_POOL_DELETE
 } dyn_character_t;
 
 
@@ -43,28 +45,25 @@ typedef struct dyn_character_t {
  *
  *  resChar must be alloced before this call. This is because allocation must be done on other side of FFI for pass
  *  by ref to be correct.
+ *
+ *  Note that it allocates allocSize + 1, because prepending won't work if array end == character end.
  */
 void dyn_char_initialize( dyn_character_t *retChar
                         , size_t           allocSize );
 
 
-/** Adds value to the front of character. Increments the length of a and decrements the head of the character. */
-void dyn_char_prepend( dyn_character_t *character
-                     , elem_t           value
+/** Adds v to the front of the character array inside a. Increments the length of a and decrements the pointer to the head of
+ *  the character.
+ */
+void dyn_char_prepend( dyn_character_t *a
+                     , elem_t           v
                      );
 
 
 void dyn_char_print( const dyn_character_t *inChar );
 
 
-/** Resets character array to all 0s.
- *  Makes length 0.
- *  Points beginning of character to end of character array.
- */
-void dyn_char_resetValues( dyn_character_t *retChar );
-
-
-/* Stores value in position on character. */
+/* Stores the value v in the position p of character a. */
 void dyn_char_set( dyn_character_t *character
                  , size_t           position
                  , elem_t           value
