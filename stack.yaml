@@ -1,7 +1,7 @@
 allow-newer: true
 
-compiler: ghc-8.2.1.20171108
-#compiler: ghc-8.2.1
+compiler: ghc-8.2.2
+#compiler: ghc-8.2.
 
 compiler-check: match-exact
 
@@ -33,17 +33,20 @@ setup-info:
 
   ghc:
     linux64:
-      8.2.1.20171108:
-        url: https://downloads.haskell.org/~ghc/8.2.2-rc3/ghc-8.2.1.20171108-x86_64-deb8-linux.tar.xz
+      8.2.2:
+        url: https://downloads.haskell.org/~ghc/8.2.2/ghc-8.2.2-x86_64-deb8-linux.tar.xz
+#        url: https://downloads.haskell.org/~ghc/8.2.2-rc3/ghc-8.2.1.20171108-x86_64-deb8-linux.tar.xz
 #        content-length: 127074124
 #        sha1: 1bf4bf40f18dc62965d6a61f38a80f27b2aec0ec
     macosx:
-      8.2.1.20171108:
-        url: https://downloads.haskell.org/~ghc/8.2.2-rc3/ghc-8.2.1.20171108-x86_64-apple-darwin.tar.xz
+      8.2.2:
+        url: https://downloads.haskell.org/~ghc/8.2.2/ghc-8.2.2-x86_64-apple-darwin.tar.xz
+#        url: https://downloads.haskell.org/~ghc/8.2.2-rc3/ghc-8.2.1.20171108-x86_64-apple-darwin.tar.xz
 #        content-length: 114066524
 #        sha1: d99127a42b07efb57c381865395caeb457360733
     windows64:
-      8.2.1.20171101:
-        url: https://downloads.haskell.org/~ghc/8.2.2-rc3/ghc-8.2.1.20171108-x86_64-unknown-mingw32.tar.xz
+      8.2.2:
+        url: https://downloads.haskell.org/~ghc/8.2.2/ghc-8.2.2-x86_64-unknown-mingw32.tar.xz
+#        url: https://downloads.haskell.org/~ghc/8.2.2-rc3/ghc-8.2.1.20171108-x86_64-unknown-mingw32.tar.xz
 #        content-length: 175160992
 #        sha1: 3696c1077ff0d2832f0e594381c7679e2bf3babe
