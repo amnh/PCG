@@ -12,6 +12,8 @@ profiling     = --executable-profiling --library-profiling
 
 code-dirs     = app ffi lib src test utils
 
+sub-libs      = pcg-file-parsers pcg-language pcg-utility
+
 
 # Target aliases for easy CLI use
 ################################################################################
@@ -68,15 +70,14 @@ stack-build-profiling: phylocomgraph.cabal stack.yaml
 stack-build-test: phylocomgraph.cabal stack.yaml
 	stack build --test
 
-
 # Copies documentation director to local scope
 copy-haddock: set-dir-variables
 	rm -rf doc/haddock/*
 	rm -f  doc/haddock.html
 	mkdir doc/haddock/phylocomgraph    && cp -r .stack-work/dist/$(DIR_ONE)/$(DIR_TWO)/doc/html/phylocomgraph doc/haddock/phylocomgraph
-	mkdir doc/haddock/pcg-file-parsers && cp -r lib/pcg-file-parsers/.stack-work/dist/$(DIR_ONE)/$(DIR_TWO)/doc/html/pcg-file-parsers doc/haddock/pcg-file-parsers
-	mkdir doc/haddock/pcg-language     && cp -r lib/pcg-language/.stack-work/dist/$(DIR_ONE)/$(DIR_TWO)/doc/html/pcg-language doc/haddock/pcg-language
-	mkdir doc/haddock/pcg-utility      && cp -r lib/pcg-utility/.stack-work/dist/$(DIR_ONE)/$(DIR_TWO)/doc/html/pcg-utility doc/haddock/pcg-utility
+	for lib in $(sub-libs); do \
+	  mkdir doc/haddock/$$lib && cp -r lib/$$lib/.stack-work/dist/$(DIR_ONE)/$(DIR_TWO)/doc/html/$$lib doc/haddock/$$lib; \
+	done
 	ln -s haddock/index.html doc/haddock.html
 
 # Sets up variables of path names that are subject to change.
@@ -103,7 +104,6 @@ ffi-code-cleaning: ffi/Analysis/Parsimony/Binary/SequentialAlign/makefile
 # Legacy cabal build option
 cabal-build: phylocomgraph.cabal
 	cabal install --dependencies-only && cabal configure --enable-tests --enable-profiling && cabal build && cabal haddock --executables --html --hyperlink-source && cabal test
-
 
 # Legacy cabal build option
 cabal-sandbox: phylocomgraph.cabal
