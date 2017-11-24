@@ -45,7 +45,7 @@ import qualified Bio.Sequence.Block      as Blk
 import           Control.DeepSeq
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
-import           Data.Bifunctor
+--import           Data.Bifunctor
 import           Data.DList              hiding (foldr,toList)
 import           Data.Foldable
 import           Data.Key

@@ -16,17 +16,19 @@
 
 module Control.Evaluation.Trans where
 
-import Control.Applicative
-import Control.DeepSeq
-import Control.Evaluation.Internal
-import Control.Evaluation.Unit
-import Control.Monad (MonadPlus(mzero, mplus), join, liftM2)
-import Control.Monad.IO.Class
-import Control.Monad.Logger
-import Control.Monad.Trans.Class
-import Data.Monoid   ()
-import Data.Semigroup
-import GHC.Generics
+import           Control.Applicative
+import           Control.DeepSeq
+import           Control.Evaluation.Internal
+import           Control.Evaluation.Unit
+import           Control.Monad           (MonadPlus(..), join, liftM2)
+import           Control.Monad.Fail      (MonadFail)
+import qualified Control.Monad.Fail as F
+import           Control.Monad.IO.Class
+import           Control.Monad.Logger
+import           Control.Monad.Trans.Class
+import           Data.Monoid             ()
+import           Data.Semigroup
+import           GHC.Generics
 
 
 -- |
@@ -53,6 +55,8 @@ instance Applicative m => Applicative (EvaluationT m) where
 
     f <*> x = EvaluationT $ liftA2 (<*>) (runEvaluation f) (runEvaluation x)
   
+    x  *> y = EvaluationT $ liftA2 (*>) (runEvaluation x) (runEvaluation y)
+
 
 -- | (✔)
 instance Functor m => Functor (EvaluationT m) where
@@ -76,17 +80,22 @@ instance (Monad m, NFData a) => NFData (EvaluationT m a) where
 -- | (✔)
 instance Monad m => Monad (EvaluationT m) where
 
+    fail    = F.fail
+
     return  = pure
 
-    fail    = EvaluationT . pure . fail
-
-    x >>  y = EvaluationT $ liftM2 (>>) (runEvaluation x) (runEvaluation y)
     x >>= f = EvaluationT $ do
                 y <- runEvaluation x
                 case y of
                   Evaluation ns  NoOp     -> pure . Evaluation ns $ NoOp
                   Evaluation ns (Error e) -> pure . Evaluation ns $ Error e
                   Evaluation ns (Value v) -> (`prependNotifications` ns) <$> runEvaluation (f v)
+
+
+-- | (✔)
+instance Monad m => MonadFail (EvaluationT m) where
+
+    fail = EvaluationT . pure . fail
 
 
 -- | (✔)

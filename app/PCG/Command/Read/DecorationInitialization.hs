@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns, FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module PCG.Command.Read.DecorationInitialization where
 

@@ -231,7 +231,7 @@ joinNonUniqueLabeledNodes root = joinNonUniqueLabeledNodes' [] root
         label      = newickLabel node
         joinedList = label >>= (`lookup` joinedNodes)
         children   = fromMaybe (descendants node) joinedList
-        gatherList = sequence . fmap (joinNonUniqueLabeledNodes' stack')
+        gatherList = traverse (joinNonUniqueLabeledNodes' stack')
         resultNode = fmap newNode . gatherList
         newNode x  = NewickNode x label (branchLength node)
         stack'     = label : stack

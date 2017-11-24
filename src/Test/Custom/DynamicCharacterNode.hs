@@ -87,7 +87,6 @@ toRootNode x y = directOptimizationPreOrder pairwiseFunction z []
 
 
 pairwiseFunction :: ( Integral (Element s)
-                    , Show (Element s)
                     , EncodableDynamicCharacter s
                     ) => s -> s -> (Word, s, s, s, s)
 pairwiseFunction x y = naiveDO x y scm

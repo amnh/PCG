@@ -16,17 +16,14 @@
 
 module Bio.Graph.PhylogeneticDAG.Internal where
 
--- import           Bio.Graph
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
--- import           Bio.Sequence.Block               (CharacterBlock)
 import           Control.Applicative              (liftA2)
 import           Control.DeepSeq
 import           Control.Lens
 import           Data.Bits
--- import           Data.EdgeLength
 import           Data.Foldable
 import           Data.GraphViz.Printing    hiding ((<>)) -- Seriously, why is this redefined?
 import           Data.GraphViz.Types       hiding (attrs)
@@ -60,7 +57,7 @@ import           Text.XML
 -- * x = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * y = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * z = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Dynamic'    specified as 'DynamicChar'     or 'Bio.Metadata.DiscreteWithTCM'
-data PhylogeneticDAG e n u v w x y z
+newtype PhylogeneticDAG e n u v w x y z
      = PDAG (ReferenceDAG () e (PhylogeneticNode n (CharacterSequence u v w x y z)))
 
 
@@ -76,7 +73,7 @@ data PhylogeneticDAG e n u v w x y z
 -- * x = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * y = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * z = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Dynamic'    specified as 'DynamicChar'     or 'Bio.Metadata.DiscreteWithTCM'
-data PhylogeneticDAG2 e n u v w x y z
+newtype PhylogeneticDAG2 e n u v w x y z
      = PDAG2 ( ReferenceDAG
                  (         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
                  , Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
