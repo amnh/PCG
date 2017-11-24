@@ -258,7 +258,7 @@ getDotContextWithBaseAndIndex
   :: Foldable f
   => Int -- ^ Base over which the Unique
   -> Int
-  -> (PhylogeneticDAG2 e (f String) u v w x y z)
+  -> PhylogeneticDAG2 e (f String) u v w x y z
   -> ([DotNode GraphID], [DotEdge GraphID])
 getDotContextWithBaseAndIndex i j (PDAG2 dag) = getDotContext i j $ nodeDecorationDatum2 <$> dag
 

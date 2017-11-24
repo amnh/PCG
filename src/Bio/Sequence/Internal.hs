@@ -19,9 +19,6 @@
 -- cost variable 'r' doesn't appear on the right hand side of the double arrow.
 {-# LANGUAGE UndecidableInstances #-}
 
---TODO: Add instance of Functor
---TODO: Add instance of BiFunctor
-
 module Bio.Sequence.Internal
   ( CharacterSequence()
   , HasBlockCost
@@ -45,7 +42,7 @@ import qualified Bio.Sequence.Block      as Blk
 import           Control.DeepSeq
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
---import           Data.Bifunctor
+import           Data.Bifunctor
 import           Data.DList              hiding (foldr,toList)
 import           Data.Foldable
 import           Data.Key
@@ -82,6 +79,22 @@ newtype CharacterSequence u v w x y z
 
 
 type instance Element (CharacterSequence u v w x y z) = CharacterBlock u v w x y z
+
+
+instance Bifunctor (CharacterSequence u v w x) where
+
+    bimap f g = fromBlocks . fmap (bimap f g) . toBlocks
+
+    first f   = fromBlocks . fmap (first f  ) . toBlocks
+
+    second = fmap
+
+
+instance Functor (CharacterSequence u v w x y) where
+
+    fmap f = fromBlocks . fmap (fmap f) . toBlocks
+
+    (<$) v = fromBlocks . fmap (v <$) . toBlocks
 
 
 instance MonoFoldable (CharacterSequence u v w x y z) where

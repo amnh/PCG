@@ -30,7 +30,7 @@ import Data.Alphabet
 import Data.MonoTraversable
 import Data.Semigroup
 import GHC.Generics
-import Numeric.PositiveAverage
+import Numeric.NonNegativeAverage
 
 
 -- |
@@ -38,8 +38,8 @@ import Numeric.PositiveAverage
 --
 -- Forms a 'Semigroup' for effcient, recursive post-order acumulation on the
 -- tree.
-newtype AverageLength = AL PositiveAverage
-  deriving (Enum, Eq, Generic, Ord, Semigroup)
+newtype AverageLength = AL NonNegativeAverage
+  deriving (Eq, Generic, Ord, Semigroup)
 
 
 instance NFData AverageLength
@@ -230,5 +230,8 @@ class HasAverageLength s a | s -> a where
     {-# MINIMAL averageLength #-}
 
 
+toAverageLength :: Word -> AverageLength
+toAverageLength = AL . fromNonNegativeValue
+
 getAverageLength :: Fractional a => AverageLength -> a
-getAverageLength (AL x) = fromPositiveAverage x
+getAverageLength (AL x) = fromNonNegativeAverage x

@@ -20,40 +20,60 @@ module Numeric.Extended.Real
   ( ExtendedReal()
   , ExtendedNumber(..)
   , Finite
+  , (~==)
   ) where
 
 import Control.DeepSeq
-import Control.Applicative       (liftA2)
-import Data.Ratio
-import Data.Maybe                (fromMaybe)
 import GHC.Generics
 import Numeric.Extended.Internal
+import Test.QuickCheck
 
 
 -- |
--- A non-negative real number extended to include infinity, where:
+-- A /non-negative/, real number extended to include infinity where:
 --
--- > infinity == maxBound
+-- > infinity > maxBound
 --
-newtype ExtendedReal = Cost (Maybe Double)
-    deriving (Eq, Generic)
+-- @maxBound@ is defined as the largest representable finite value.
+newtype ExtendedReal = Cost Double
+    deriving (Eq, Generic, Ord)
 
 
 type instance Finite ExtendedReal = Double
 
 
+instance Arbitrary ExtendedReal where
+
+    arbitrary = do
+        n <- choose weightForInfinity
+        if n == 1
+        then pure infinity
+        else Cost <$> (arbitrary `suchThat` (>= 0))
+      where
+        -- We generate the 'infinity' value 1 in 20 times.
+        weightForInfinity = (1, 20) :: (Int, Int)
+
+
 instance Bounded ExtendedReal where
 
-    maxBound = Cost Nothing
+    maxBound = Cost 1.7976931348623157e+308
 
-    minBound = Cost $ Just 0.0
+    minBound = Cost 0.0
 
 
 instance Enum ExtendedReal where
 
-    fromEnum (Cost x) = maybe (maxBound :: Int) fromEnum x
+    fromEnum (Cost x)
+      | x >= v    = maxBound :: Int
+      | otherwise = fromEnum x
+      where
+        v = toEnum (maxBound :: Int)
 
-    toEnum = Cost . Just . toEnum
+    toEnum = Cost . toEnum
+
+    succ   = (+ 1)
+
+    pred   = subtract 1
 
 
 instance ExtendedNumber ExtendedReal where
@@ -62,86 +82,110 @@ instance ExtendedNumber ExtendedReal where
 
     fromFinite = fromDouble
 
-    infinity = maxBound
+    infinity   = Cost $ 1 / 0
 
 
 instance Fractional ExtendedReal where
 
-    (Cost lhs) / (Cost rhs) =
-        case (lhs, rhs) of
-          (Nothing,       _) -> Cost Nothing
-          (Just _ , Nothing) -> Cost $ Just 0.0
-          (Just x , Just y ) -> Cost . Just $ x / y
+    lhs@(Cost x) / rhs@(Cost y) =
+        case (lhs == infinity, rhs == infinity) of
+          ( True,    _) -> infinity
+          (False, True) -> minBound
+          (False,False) -> Cost $ x / y
 
-    recip (Cost x) = Cost $ recip <$> x
+    recip (Cost x) = Cost $ recip x
     
-    fromRational = Cost . Just . fromRational
+    fromRational = Cost . fromRational
 
 
 instance NFData ExtendedReal
 
 
+-- |
+-- Subtraction will never result in a negative value:
+-- @x - y@ where @y > x@ results in @0@
 instance Num ExtendedReal where
 
-    (Cost lhs) + (Cost rhs) = Cost $ liftA2 (+) lhs rhs
+    lhs@(Cost x) - (Cost y)
+      | lhs == infinity = infinity
+      | otherwise       = max (Cost (x - y)) minBound
 
-    (Cost lhs) - (Cost rhs) = Cost $ liftA2 (-) lhs rhs
+    lhs@(Cost x) + rhs@(Cost y) =
+        case (lhs == infinity, rhs == infinity) of
+          ( True,    _) -> infinity
+          (    _, True) -> infinity
+          (    _,    _) -> let v = Cost $ x + y
+                           in if   v == infinity
+                              then maxBound
+                              else v
 
-    (Cost lhs) * (Cost rhs) = Cost $ liftA2 (*) lhs rhs
+    lhs@(Cost x) * rhs@(Cost y) =
+        case (lhs == infinity, rhs == infinity) of
+          ( True,    _) -> infinity
+          (    _, True) -> infinity
+          (    _,    _) -> let v = Cost $ x * y
+                           in if   v == infinity
+                              then maxBound
+                              else v
 
     abs = id
 
-    signum (Cost (Just x)) = Cost . Just $ signum x -- the second signum is Double.signum
-    signum               _ = 1
+    signum (Cost x) = Cost $ signum x -- the second signum is Double.signum
 
-    fromInteger = Cost . Just . fromInteger
+    fromInteger = Cost . fromInteger
 
     negate = id
 
 
-instance Ord ExtendedReal where
-
-    (Cost lhs) <= (Cost rhs) =
-        case (lhs, rhs) of
-            (Nothing, Nothing) -> True
-            (Nothing, Just _ ) -> False
-            (Just _,  Nothing) -> True
-            (Just x,  Just y ) -> x <= y
-
-    (Cost lhs) < (Cost rhs) =
-        case lhs of
-            Nothing -> False
-            Just x  ->
-                case rhs of
-                    Nothing -> True
-                    Just y  -> x < y
-
-    (Cost lhs) > (Cost rhs) =
-        case rhs of
-            Nothing -> False
-            Just x  ->
-                case lhs of
-                    Nothing -> True
-                    Just y  -> x > y
-
-
 instance Real ExtendedReal where
 
-    toRational (Cost x) = maybe (1%0) toRational x
+    toRational (Cost x) = toRational x
 
 
 instance Show ExtendedReal where
 
-    show (Cost input) = maybe "∞" show input
+    show value@(Cost x)
+      | value == infinity = "∞"
+      | otherwise         = show x
 
 
 {-# INLINE toDouble #-}
 toDouble :: ExtendedReal -> Double
-toDouble (Cost x) = fromMaybe (read "infinity" :: Double) x
+toDouble (Cost x) = x
 
 
 {-# INLINE fromDouble #-}
 fromDouble :: Double -> ExtendedReal
-fromDouble = Cost . Just
+fromDouble x
+  | x == nan  = infinity
+  | x <    0  = minBound
+  | otherwise = Cost x
 
 
+nan :: Double
+nan = 0 / 0
+
+
+epsilon :: ExtendedReal
+epsilon = Cost 2.2204460492503131e-16
+
+
+infix 4 ~==
+
+
+-- |
+-- Approximate equality.
+--
+-- Two ExtendedNatural values \(x\) & \(y\) are /approximately/ equal iff:
+--
+-- \(\left( x \leq y \land x + \varepsilon \geq y \right) \lor \left( x \geq y \land x - \varepsilon \leq y \right) \)
+--
+-- Where \(\varepsilon\) is defined as the smallest IEEE representable positive value \(x\) such that \(1 + x \not = 1\).
+--
+(~==) :: ExtendedReal -> ExtendedReal -> Bool
+(~==) lhs rhs =
+    case lhs `compare` rhs  of
+      EQ -> True
+      LT -> lhs + epsilon >= rhs
+      GT -> lhs - epsilon <= rhs
+    

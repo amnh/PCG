@@ -132,7 +132,7 @@ subsetOf xs ys = xs' `intersection` ys' == xs'
 -- |
 -- /O( n )/
 --
--- Applies a transformation to each element fo the structure and asserts that
+-- Applies a transformation to each element of the structure and asserts that
 -- transformed values are equal for all elements of the structure.
 equalityOf :: (Eq b, Foldable t) => (a -> b) -> t a -> Bool
 equalityOf f xs =
@@ -145,10 +145,10 @@ equalityOf f xs =
 -- |
 -- /O( n )/
 --
--- Applies a transformation to each element fo the structure.
--- If /every/ application of the transformation yeilds the same result value
+-- Applies a transformation to each element of the structure.
+-- If /every/ application of the transformation yields the same result value
 -- for each element of the structure then this function will return @Just v@
--- where @v@ is the invariant value accross the transformation.
+-- where @v@ is the invariant value across the transformation.
 -- If the transformation does not produce an invariant value accross the
 -- structure, or the structure is empty, this function returns @Nothing@.
 invariantTransformation :: (Eq b, Foldable t) => (a -> b) -> t a -> Maybe b

@@ -245,7 +245,7 @@ instance (EncodableDynamicCharacter d) => DynamicCharacterDecoration (DynamicDec
     toDynamicCharacterDecoration name weight alphabet scm g symbolSet =
         DynamicDecorationInitial
         { dynamicDecorationInitialEncodedField           = charValue
-        , dynamicDecorationInitialCharacterAverageLength = toEnum $ olength charValue
+        , dynamicDecorationInitialCharacterAverageLength = toAverageLength . toEnum $ olength charValue
         , metadata                                       = dynamicMetadata name weight alphabet scm denseMay
         }
       where

@@ -22,8 +22,8 @@ import           Control.Monad           (MonadPlus(..))
 import           Control.Monad.Fail      (MonadFail)
 import qualified Control.Monad.Fail as F
 import           Control.Monad.Logger
-import           Data.DList    (DList, toList)
-import           Data.Monoid   ()
+import           Data.DList              (DList, toList)
+import           Data.Monoid             ()
 import           Data.Semigroup
 import           GHC.Generics
 import           Test.QuickCheck
@@ -115,6 +115,8 @@ instance Monad Evaluation where
   
     return = pure
 
+    (>>)  (Evaluation ms x) (Evaluation ns y) = Evaluation (ms <> ns) (x>>y)
+
     (>>=) (Evaluation ms  NoOp    ) _ = Evaluation ms NoOp
     (>>=) (Evaluation ms (Error x)) _ = Evaluation ms $ Error x
     (>>=) (Evaluation ms (Value x)) f = f x `prependNotifications` ms
@@ -125,7 +127,7 @@ instance MonadFail Evaluation where
 
     fail = Evaluation mempty . Error
 
-      
+
 -- | (✔)
 instance MonadPlus Evaluation where
 
