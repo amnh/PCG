@@ -153,6 +153,7 @@ Test-Suite unit-tests
 
   ghc-options:         -O2
                        -optl-static
+                       -threaded
 
                     -- Sanity check warnings
                        -Wall

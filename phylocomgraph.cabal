@@ -799,6 +799,7 @@ Test-Suite testsuite
   hs-source-dirs:      test, src, app, ffi
 
   ghc-options:         -O2
+                       -threaded
                        -Wall
                        -Wcompat
                        -Wdodgy-foreign-imports
