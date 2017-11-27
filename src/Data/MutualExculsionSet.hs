@@ -35,6 +35,7 @@ module Data.MutualExculsionSet
 
 import           Control.DeepSeq
 import           Data.Foldable
+import           Data.Functor.Classes
 import           Data.Hashable
 import           Data.Key
 import           Data.List                (nub)
@@ -86,6 +87,18 @@ instance (Arbitrary a, Ord a) => Arbitrary (MutualExculsionSet a) where
         pure $ MES included excluded
 
 
+instance Eq1 MutualExculsionSet where
+
+    liftEq eq (MES a b) (MES c d) =
+        length a == length c && liftEq eq (M.keysSet a) (M.keysSet c)
+
+
+instance Ord1 MutualExculsionSet where
+
+    liftCompare cmp (MES a b) (MES c d) =
+        liftCompare cmp (M.keysSet a) (M.keysSet c)
+
+
 -- |
 -- Fold over the /included/ elements of the mutual exclusion set.
 --
@@ -102,16 +115,16 @@ instance Foldable MutualExculsionSet where
     foldMap f  = foldMap f . excludedKeyedMap
 
     {-# INLINE foldl #-}
-    foldl   f x = foldl   f x . excludedKeyedMap
+    foldl   f x = foldl  f x . excludedKeyedMap
 
     {-# INLINE foldr #-}
-    foldr   f x = foldr   f x . excludedKeyedMap
+    foldr   f x = foldr  f x . excludedKeyedMap
 
     {-# INLINE foldl' #-}
-    foldl'  f x = foldl'  f x . excludedKeyedMap
+    foldl'  f x = foldl' f x . excludedKeyedMap
 
     {-# INLINE foldr' #-}
-    foldr'  f x = foldr'  f x . excludedKeyedMap
+    foldr'  f x = foldr' f x . excludedKeyedMap
 
     {-# INLINE length #-}
     length      = length . excludedKeyedMap
@@ -151,7 +164,7 @@ instance NFData a => NFData (MutualExculsionSet a)
 
 
 -- |
--- /O(m*log(n/m + 1) + n + m), m <= n/
+-- \( \mathcal{O} \left( m * \log_2 ( \frac {n}{m + 1} ) + n + m \right), m \leq n \)
 --
 -- Perfoms an "inner union."
 instance Ord a => Semigroup (MutualExculsionSet a) where
@@ -200,7 +213,7 @@ instance Show a => Show (MutualExculsionSet a) where
 
 
 -- |
--- /O(1)/
+-- \( \mathcal{O} \left( 1 \right) \)
 --
 -- Construct a singleton 'MutualExculsionSet' value by supplying an included
 -- element and the corresponding, mutually exclusive element.
@@ -215,7 +228,7 @@ singleton x y = MES (M.singleton x y) (M.singleton y x)
 
 
 -- |
--- /O(1)/
+-- \( \mathcal{O} \left( 1 \right) \)
 --
 -- inverts the included and excluded elements of the 'MutualExculsionSet'. The
 -- previously included elements become the excluded elements and the previously
@@ -230,7 +243,7 @@ invert (MES i e) = MES e i
 
 
 -- |
--- /O(n)/
+-- \( \mathcal{O} \left( n \right) \)
 --
 -- Retreive the list of included elements in the 'MutualExculsionSet'.
 includedSet :: MutualExculsionSet a -> Set a
@@ -238,15 +251,15 @@ includedSet = M.keysSet . includedKeyedMap
 
 
 -- |
--- /O(n)/
+-- \( \mathcal{O} \left( n \right) \)
 --
 -- Retreive the list of excluded elements in the 'MutualExculsionSet'.
 excludedSet :: MutualExculsionSet a -> Set a
-excludedSet = M.keysSet . includedKeyedMap
+excludedSet = M.keysSet . excludedKeyedMap
 
 
 -- |
--- /O( log(n) )/
+-- \( \mathcal{O} \left( \log_2 n \right) \)
 --
 -- Lookup an /included/ key in the 'MutualExculsionSet'.
 --
@@ -259,7 +272,7 @@ includedLookup k = lookup k . includedKeyedMap
 
   
 -- |
--- /O( log(n) )/
+-- \( \mathcal{O} \left( \log_2 n \right) \)
 --
 -- Lookup an /excluded/ key in the 'MutualExculsionSet'.
 --
@@ -272,7 +285,7 @@ excludedLookup k = lookup k . excludedKeyedMap
 
 
 -- |
--- /O( log(n) )/
+-- \( \mathcal{O} \left( \log_2 n \right) \)
 --
 -- Query the 'MutualExculsionSet' to determine if the provided element is /included./
 isIncluded :: Ord a => a -> MutualExculsionSet a -> Bool
@@ -280,7 +293,7 @@ isIncluded k = M.member k . includedKeyedMap
 
   
 -- |
--- /O( log(n) )/
+-- \( \mathcal{O} \left( \log_2 n \right) \)
 --
 -- Query the 'MutualExculsionSet' to determine if the provided element is /excluded./
 isExcluded :: Ord a => a -> MutualExculsionSet a -> Bool
@@ -288,7 +301,7 @@ isExcluded k = M.member k . excludedKeyedMap
 
 
 -- |
--- /O(n)/
+-- \( \mathcal{O} \left( n \right) \)
 --
 -- Retreive the list of mutually exclusive elements stored in the
 -- 'MutualExculsionSet'.
@@ -300,7 +313,7 @@ mutuallyExclusivePairs = S.fromDistinctAscList . M.toAscList . includedKeyedMap
 
 
 -- |
--- /O(n + m)/
+-- \( \mathcal{O} \left( n + m \right) \)
 --
 -- Perform an operation to determine if a collection of elements is "permitted"
 -- by 'MutualExculsionSet', ie that the collection does not contain any elements
