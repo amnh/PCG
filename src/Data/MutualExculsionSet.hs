@@ -37,14 +37,17 @@ import           Control.DeepSeq
 import           Data.Foldable
 import           Data.Hashable
 import           Data.Key
+import           Data.List                (nub)
 import qualified Data.Map          as M
 import qualified Data.Map.Internal as M
 import           Data.Monoid       hiding ((<>))
 import           Data.Semigroup
 import           Data.Set                 (Set)
-import qualified Data.Set          as S   (fromDistinctAscList)
+import qualified Data.Set          as S
+import           Data.Tuple
 import           GHC.Generics             (Generic)
-import           Prelude           hiding (lookup)
+import           Prelude           hiding (lookup, zip)
+import           Test.QuickCheck
 
 
 -- |
@@ -62,6 +65,25 @@ data  MutualExculsionSet a
     , excludedKeyedMap :: !(M.Map a a)
     }
     deriving (Eq, Generic, Ord)
+
+
+instance (Arbitrary a, Ord a) => Arbitrary (MutualExculsionSet a) where
+
+    arbitrary = do
+        -- Generate some number of unique elements
+        is  <- S.fromList <$> arbitrary
+        let n = length is
+        -- Try our best to generate the same number of new unique elements
+        es  <- S.fromList <$> vectorOf n (arbitrary `suchThat` (`notElem` is))
+        -- Randomize the ordering of the second collection
+        es' <- shuffle $ toList es
+        -- Zip the two collections of universally unique elements together
+        -- to create a unique bijection between mutually exclusive pairs.
+        let tuples   = zip (S.toAscList is) es'
+        let included = M.fromDistinctAscList tuples
+        let excluded = M.fromList $ swap <$> tuples
+        -- Build the MutualExculsionSet from the two maps
+        pure $ MES included excluded
 
 
 -- |
@@ -125,12 +147,7 @@ instance Ord a => Monoid (MutualExculsionSet a) where
     mempty  = MES mempty mempty
     
 
-instance NFData a => NFData (MutualExculsionSet a) {- where
-
-    rnf (MES bm) = BM.fold f () bm `seq` ()
-      where
-        f x y t = t `seq` rnf x `seq` rnf y
--}
+instance NFData a => NFData (MutualExculsionSet a)
 
 
 -- |
