@@ -199,6 +199,7 @@ library
                        Data.BitMatrix
                        Data.DuplicateSet
                        Data.EdgeLength
+                       Data.MutualExculsionSet
                        Data.ReplicatedSequence
                        Data.TCM
                        Data.TCM.Memoized
