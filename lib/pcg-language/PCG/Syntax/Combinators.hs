@@ -21,7 +21,8 @@
 -----------------------------------------------------------------------------
 
 
-{-# LANGUAGE DeriveFunctor, FlexibleContexts, RankNTypes, ScopedTypeVariables, TypeFamilies #-}
+{-# LANGUAGE DeriveFunctor, FlexibleContexts, RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables, TypeFamilies #-}
 
 
 module PCG.Syntax.Combinators
@@ -244,7 +245,13 @@ apRunner effect (ArgIdNamedArg p ids) = toPermutation $ do
     _ <- whitespace <* char ':' <* whitespace
     runPermutation $ runAp (apRunner effect) p
   where
+    parseId
+      :: forall s' e' (m' :: * -> *)
+      .  (Token s' ~ Char, MonadParsec e' s' m', FoldCase (Tokens s'))
+      => ArgumentIdentifier
+      -> m' ()
     parseId  (ArgId x) = string'' x
+    
     parseHint =
         case ids of
           x:|[] -> "identifier " <> renderId x
@@ -260,7 +267,13 @@ apRunner effect (ArgIdNamedArg p ids) = toPermutation $ do
 parseArgumentList :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => ArgList a -> Permutation m a
 parseArgumentList argListVal = toPermutation $ begin *> datum <* close
   where
+    bookend
+      :: forall e s (f :: * -> *) a
+      .  (Token s ~ Char, MonadParsec e s f)
+      => f a
+      -> f ()
     bookend p = void $ whitespace *> p <* whitespace
+    
     begin = bookend . label "'(' starting a new argument list" $ char '('
     close = bookend . label "')' ending the argument list"     $ char ')'
     datum = 
