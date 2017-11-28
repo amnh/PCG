@@ -130,11 +130,15 @@ orderingProperties = testGroup "Properties of ordering"
 
 additionProperties :: TestTree
 additionProperties = testGroup "Properties of addition"
-    [ testProperty "additive identity holds" additiveIdentity
-    , testProperty "addition is associative" additiveAssocativity
-    , testProperty "addition is commutive"   additiveCommutivity
-    , testProperty "addition on maxBound is indempotent" additiveUpperBound
-    , testProperty "addition of finite values never exceeds maxBound" additiveCeiling
+    [ testGroup "abelian group under addition"
+        [ testProperty "additive identity holds" additiveIdentity
+        , testProperty "addition is associative" additiveAssocativity
+        , testProperty "addition is commutive"   additiveCommutivity
+        ]
+    , testGroup "other properties"
+        [ testProperty "addition on maxBound is indempotent" additiveUpperBound
+        , testProperty "addition of finite values never exceeds maxBound" additiveCeiling
+        ]
     ]
   where
     additiveIdentity :: ExtendedNatural -> Bool
@@ -155,11 +159,15 @@ additionProperties = testGroup "Properties of addition"
 
 subtractionProperties :: TestTree
 subtractionProperties = testGroup "Properties of subtraction"
-    [ testProperty "subtracting additive identity is indempotent" subtractionIdentity
+    [ testProperty "subtraction is the additive inverse" subtractionIsInverse
+    , testProperty "subtracting additive identity is indempotent" subtractionIdentity
     , testProperty "subtraction on minBound is indempotent" subtractionLowerBound
     , testProperty "subtraction of finite values never exceeds maxBound" subtractionFloor
     ]
   where
+    subtractionIsInverse :: ExtendedNatural -> Bool
+    subtractionIsInverse val = val - val == 0 || val == infinity
+    
     subtractionIdentity :: ExtendedNatural -> Bool
     subtractionIdentity val = val - 0 == val
 
@@ -172,18 +180,30 @@ subtractionProperties = testGroup "Properties of subtraction"
 
 multiplicationCases :: TestTree
 multiplicationCases = testGroup "specific multiplication cases"
-    [ testGroup "exemplary commutivity cases"
-        [ assertCommutivity  3326996  4906009 1029418
-        , assertCommutivity  2621538  1442243 4131011
-        , assertCommutivity 10387400  6746207  415092
-        , assertCommutivity  7013604  6385785  529584
-        , assertCommutivity   446349 13935261 9720841
+    [ testGroup "exemplary associativity cases"
+        [ assertAssociativity         3326996    4906009    1029418
+        , assertAssociativity         2621538    1442243    4131011
+        , assertAssociativity        10387400    6746207     415092
+        , assertAssociativity         7013604    6385785     529584
+        , assertAssociativity          446349   13935261    9720841
+        ]
+    , testGroup "exemplary distributivity cases"
+        [ assertLeftDistributivity 2704487822 3914703344 3465260413
+        , assertLeftDistributivity 8252883412 7850920647 5879309961
         ]
     ]
   where
-    assertCommutivity :: ExtendedNatural -> ExtendedNatural -> ExtendedNatural -> TestTree
-    assertCommutivity a b c = testCase (unwords [show a, "*", show b, "*", show c])
-                            $ a * (b * c) @?= (a * b) * c
+    assertAssociativity :: ExtendedNatural -> ExtendedNatural -> ExtendedNatural -> TestTree
+    assertAssociativity a b c =
+        testCase (unwords [show a, "*", show b, "*", show c])
+          $ a * (b * c) @?= (a * b) * c
+
+    assertLeftDistributivity :: ExtendedNatural -> ExtendedNatural -> ExtendedNatural -> TestTree
+    assertLeftDistributivity a b c =
+        testCase (unwords [show a, "* (", show b, "+", show c, ")"])
+          $ a * (b + c) @?= (a * b) + (a * c)
+
+    
 
 
 multiplicationProperties :: TestTree
@@ -192,6 +212,8 @@ multiplicationProperties = testGroup "Properties of multiplication"
     , testProperty "multiplicative annihilation holds" multiplicativeAnnihilation
     , testProperty "multiplication is associative" multiplicativeAssocativity
     , testProperty "multiplication is commutive" multiplicativeCommutivity
+    , testProperty "multiplication is left-distibutive"  multiplicativeLeftDistributivity
+    , testProperty "multiplication is right-distibutive" multiplicativeRightDistributivity
     , testProperty "multiplication on maxBound is indempotent (except 0 & infinity)" multiplicativeUpperBound
     , testProperty "multiplication of finite values never exceeds maxBound" multiplicativeCeiling
     ]
@@ -207,6 +229,12 @@ multiplicationProperties = testGroup "Properties of multiplication"
 
     multiplicativeCommutivity :: (ExtendedNatural, ExtendedNatural) -> Bool
     multiplicativeCommutivity (a, b) = a * b == b * a
+
+    multiplicativeLeftDistributivity :: (ExtendedNatural, ExtendedNatural, ExtendedNatural) -> Bool
+    multiplicativeLeftDistributivity (a, b, c) = a * (b + c) == (a * b) + (a * c)
+
+    multiplicativeRightDistributivity :: (ExtendedNatural, ExtendedNatural, ExtendedNatural) -> Bool
+    multiplicativeRightDistributivity (a, b, c) = (b + c) * a == (b * a) + (c * a)
 
     multiplicativeUpperBound :: ExtendedNatural -> Bool
     multiplicativeUpperBound val = maxBound * val == maxBound || val == infinity || val == 0
