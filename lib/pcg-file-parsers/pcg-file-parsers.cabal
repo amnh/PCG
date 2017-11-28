@@ -45,7 +45,6 @@ library
   hs-source-dirs:      src
 
   ghc-options:         -O2
-                       -optl-static
 
                     -- Sanity check warnings
                        -Wall
@@ -116,7 +115,7 @@ library
 
   other-extensions:    MonadFailDesugaring
 
-                       
+
 Test-Suite unit-tests
 
   type:                exitcode-stdio-1.0
@@ -152,7 +151,6 @@ Test-Suite unit-tests
   hs-source-dirs:      src, test
 
   ghc-options:         -O2
-                       -optl-static
 
                     -- Sanity check warnings
                        -Wall
@@ -225,7 +223,7 @@ Test-Suite unit-tests
                        Test.Custom.Types
                        Text.Megaparsec.Custom
                        Text.Megaparsec.Custom.Test
-                       
+
 
 Executable file-tests
 
@@ -261,7 +259,6 @@ Executable file-tests
   hs-source-dirs:      src, test
 
   ghc-options:         -O2
-                       -optl-static
                        -threaded
 
                     -- Sanity check warnings
@@ -331,4 +328,3 @@ Executable file-tests
                        TestSuite.GeneratedTests.Nexus
                        TestSuite.GeneratedTests.TNT
                        Text.Megaparsec.Custom
-

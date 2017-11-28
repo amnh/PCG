@@ -42,7 +42,6 @@ library
   default-language:    Haskell2010
 
   ghc-options:         -O2
-                       -optl-static
 
                     -- Sanity check warnings
                        -Wall
@@ -86,4 +85,3 @@ library
                        PCG.Syntax.Primative
 
   other-extensions:    MonadFailDesugaring
-  

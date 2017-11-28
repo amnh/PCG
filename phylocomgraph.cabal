@@ -23,7 +23,7 @@ cabal-version:       >= 1.22
 
 flag build-cpp-files
   description: Toggles the C++ files being successfully build.
-  default: True
+  default: False
 
 
 library
@@ -970,4 +970,3 @@ Test-Suite testsuite
 --                       Analysis.Parsimony.Dynamic.SequentialAlign
 --                       Bio.Character.Encodable.Static.Test
 --                       -- Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI
-
