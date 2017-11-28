@@ -27,6 +27,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
  , directOptimization
  , filterGaps
  , handleMissingCharacter
+ , handleMissingCharacterThreeway
  , measureCharacters
  , needlemanWunschDefinition
  , renderCostMatrix
@@ -154,7 +155,7 @@ directOptimization char1 char2 overlapFunction matrixFunction =
 
 -- |
 -- Strips the gap elements from the supplied character.
--- 
+--
 -- If the character contains /only/ gaps, a missing character is returned.
 filterGaps :: EncodableDynamicCharacter c => c -> c
 filterGaps char =
@@ -168,13 +169,13 @@ filterGaps char =
 -- |
 -- A generalized function to handle missing dynamic characters.
 --
--- Intended to be resued by multiple, differing implementations.
+-- Intended to be reused by multiple, differing implementations.
 handleMissingCharacter
   :: PossiblyMissingCharacter s
   => s
   -> s
   -> (Word, s, s, s, s)
-  -> (Word, s, s, s, s) 
+  -> (Word, s, s, s, s)
 handleMissingCharacter lhs rhs v =
     -- Appropriately handle missing data:
     case (isMissing lhs, isMissing rhs) of
@@ -185,26 +186,26 @@ handleMissingCharacter lhs rhs v =
 
 
 -- |
--- A generalized function to handle missing dynamic characters.
+-- As `handleMissingCharacter`, but with three inputs.
 --
--- Intended to be resued by multiple, differing implementations.
+-- For use in FFI 3D calls to C.
 handleMissingCharacterThreeway
   :: PossiblyMissingCharacter s
-  => (s -> s -> (Word, s, s, s, s))
+  => (s -> s -> (Word, s, s, s, s)) -- fn takes two inputs, gives back cost, ungapped, gapped, two alignments
   -> s
   -> s
   -> s
   -> (Word, s, s, s, s, s)
-  -> (Word, s, s, s, s, s) 
+  -> (Word, s, s, s, s, s)
 handleMissingCharacterThreeway f a b c v =
     -- Appropriately handle missing data:
     case (isMissing a, isMissing b, isMissing c) of
-      (True , True , True ) -> (0, a, a, a, b, c) --WLOG
+      (True , True , True ) -> (0, a, a, a, b, c) --WLOG. return cost = 0
       (True , True , False) -> (0, c, c, c, c, c)
       (True , False, True ) -> (0, b, b, b, b, b)
       (True , False, False) -> let (cost, ungapd, gapd, lhs, rhs) = f b c
                                in  (cost, ungapd, gapd, undefined, lhs, rhs)
-      (False, True , True ) -> (0, a, a, a, a, a) 
+      (False, True , True ) -> (0, a, a, a, a, a)
       (False, True , False) -> let (cost, ungapd, gapd, lhs, rhs) = f a c
                                in  (cost, ungapd, gapd, lhs, undefined, rhs)
       (False, False, True ) -> let (cost, ungapd, gapd, lhs, rhs) = f a b
@@ -230,7 +231,7 @@ measureCharacters lhs rhs
   | lhsOrdering == LT = ( True, rhs, lhs)
   | otherwise         = (False, lhs, rhs)
   where
-    lhsOrdering = 
+    lhsOrdering =
         case comparing olength lhs rhs of
           EQ -> otoList lhs `compare` otoList rhs
           x  -> x
@@ -251,11 +252,10 @@ needlemanWunschDefinition topChar leftChar overlapFunction memo p@(row, col)
   | p == (0,0) = (      0, DiagArrow,      gap)
   | otherwise  = (minCost,    minDir, minState)
   where
-
     -- | Lookup with a default value of infinite cost.
     {-# INLINE (!?) #-}
     (!?) m k = fromMaybe (infinity, DiagArrow, gap) $ k `lookup` m
-        
+
     gap                           = gapOfStream topChar
     topElement                    = fromMaybe gap $  topChar `lookupStream` (col - 1)
     leftElement                   = fromMaybe gap $ leftChar `lookupStream` (row - 1)
@@ -263,7 +263,7 @@ needlemanWunschDefinition topChar leftChar overlapFunction memo p@(row, col)
     (diagonalValue, _, _)         = memo !? (row - 1, col - 1)
     (  upwardValue, _, _)         = memo !? (row - 1, col    )
     (rightChar, rightOverlapCost) = fromFinite <$> overlapFunction topElement  gap
-    ( diagChar,  diagOverlapCost) = fromFinite <$> overlapFunction topElement  leftElement 
+    ( diagChar,  diagOverlapCost) = fromFinite <$> overlapFunction topElement  leftElement
     ( downChar,  downOverlapCost) = fromFinite <$> overlapFunction gap         leftElement
     rightCost                     = rightOverlapCost + leftwardValue
     diagCost                      =  diagOverlapCost + diagonalValue
@@ -318,7 +318,7 @@ renderCostMatrix lhs rhs mtx = unlines
         , "X"
         , show colCount
         ]
-    
+
     headerRow = mconcat
         [ " "
         , pad maxPrefixWidth "\\"
@@ -393,7 +393,7 @@ traceback alignMatrix longerChar lesserChar =
                        )
         where
           (previousMedianCharElements, previousLongerCharElements, previousLesserCharElements) = go (row', col')
-              
+
           (_, directionArrow, medianElement) = alignMatrix ! p
 
           (row', col', longerElement, lesserElement) =
@@ -415,13 +415,13 @@ getOverlap inChar1 inChar2 costStruct = result
   where
     result = overlap costStruct inChar1 inChar2
 
-        
+
 -- |
 -- Takes two 'EncodableStreamElement' and a symbol change cost function and
 -- returns a tuple of a new character, along with the cost of obtaining that
 -- character. The return character may be (or is even likely to be) ambiguous.
 -- Will attempt to intersect the two characters, but will union them if that is
--- not possible, based on the symbol change cost function. 
+-- not possible, based on the symbol change cost function.
 --
 -- To clarify, the return character is an intersection of all possible least-cost
 -- combinations, so for instance, if @ char1 == A,T @ and @ char2 == G,C @, and
@@ -454,7 +454,7 @@ minimalChoice = foldr1 f
 -- Takes in a symbol change cost function and two ambiguous elements of a dynamic
 -- character and returns a list of tuples of all possible unambiguous pairings,
 -- along with the cost of each pairing. The resulting elements each have exactly
--- two bits set. 
+-- two bits set.
 allPossibleBaseCombosCosts :: EncodableStreamElement s => (Word -> Word -> Word) -> s -> s -> NonEmpty (s, Word)
 allPossibleBaseCombosCosts costStruct char1 char2 = do
     (i, x) <- getSubChars char1
@@ -489,7 +489,7 @@ overlapConst lhs rhs
 
 
 getMinimalCostDirection :: (EncodableStreamElement e, Ord c) => (c, e) -> (c, e) -> (c, e) -> (c, e, Direction)
-getMinimalCostDirection (diagCost, diagChar) (rightCost, rightChar) (downCost,  downChar) = 
+getMinimalCostDirection (diagCost, diagChar) (rightCost, rightChar) (downCost,  downChar) =
     minimumBy (comparing (\(c,_,d) -> (c,d)))
       [ (diagCost ,  diagChar        , DiagArrow)
       , (rightCost, rightChar .|. gap, LeftArrow)
@@ -505,9 +505,9 @@ getMinimalCostDirection (diagCost, diagChar) (rightCost, rightChar) (downCost,  
 -- unambiguous 'EncodableStreamElement', determines the cost of a pairing
 -- (intersection) of those characters into an ambiguous character. The 'Word's
 -- are the set bits in each character and are used as lookup into the symbol
--- change cost function. 
+-- change cost function.
 getCost :: EncodableStreamElement s => (Word -> Word -> Word) -> (Word, s) -> (Word, s) -> (s, Word)
-getCost costStruct seqTup1 seqTup2 = 
+getCost costStruct seqTup1 seqTup2 =
     case (seqTup1, seqTup2) of
         ((pos1, c1), (pos2, c2)) -> (c1 .|. c2, costStruct pos1 pos2)
 -}

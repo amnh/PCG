@@ -99,10 +99,10 @@ ignoredBlockDefinition = {-do
 -- some point by someone. There is a test in the test suite.
 blockend :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char {- , Show s -}) => m (Tokens s)
 blockend = do
-  v <- string'' "end"
-  _ <- optional . try $ string'' "block"
-  _ <- void $ char ';'
-  pure v
+    v <- string'' "end"
+    _ <- optional . try $ string'' "block"
+    _ <- void $ char ';'
+    pure v
 
 
 nexusBlock :: forall e s m. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m NexusBlock
@@ -157,8 +157,8 @@ assumptionsBlockDefinition :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~
 assumptionsBlockDefinition = {-do
     x <- getInput
     trace ("assumptionsBlockDefinition"  ++ show x) $ -}do
-        _                <- symbol $ string'' "assumptions;"
-        (tcms,additives) <- partitionAssumptionBlock <$> many assumptionFieldDef
+        _                 <- symbol $ string'' "assumptions;"
+        (tcms, additives) <- partitionAssumptionBlock <$> many assumptionFieldDef
         pure $ AssumptionBlock tcms additives
 
 
@@ -187,7 +187,7 @@ tcmMatrixDefinition = {-do
         matrixName   <- symbol $ somethingTill spaceChar
         _            <- symbol . optional . choice $ try . string'' <$> ["(stepmatrix)","(realmatrix)"]
         _            <- symbol $ char '='
-        cardinality  <- symbol   decimal 
+        cardinality  <- symbol   decimal
         mtxAlphabet  <- symbol $ alphabetLine whitespaceNoNewlines
         assumpMatrix <- symbol $ matrixBlock whitespaceNoNewlines
         _            <- symbol $ char ';'

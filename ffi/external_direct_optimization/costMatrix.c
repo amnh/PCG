@@ -50,8 +50,8 @@ cm_combinations_of_alphabet (const int alphSize)
 static inline size_t
 cm_calc_cost_position_2d (elem_t a, elem_t b, size_t alphSize)
 {
-    // assert(alphSize >= 0); alphSize is size_t, always >= 0
-    return ((((size_t) a) << alphSize) + (size_t) b);
+    // assert(alphSize >= 0); // alphSize is size_t, always >= 0
+    return ( (((size_t) a) << alphSize) + (size_t) b );
 }
 
 
@@ -138,9 +138,8 @@ cm_alloc_2d ( cost_matrices_2d_t *res
             , size_t              num_elements
             )
 {
-    if(DEBUG_COST_M) {
-        printf("\n---cm_alloc_set_costs_2d\n");
-    }
+    if (DEBUG_COST_M)  printf("\n---cm_alloc_set_costs_2d\n");
+
 #ifndef USE_LARGE_ALPHABETS
     if (alphSize > 255) {
         // TODO: update this error message from POY
@@ -148,7 +147,7 @@ cm_alloc_2d ( cost_matrices_2d_t *res
                 of PCG was compiled without the --enable-large-alphabets option. \
                 To run this analysis you need to enable that option at compile time. \
                 Either recompile the program yourself or request a version suited \
-                for your needs in the POY mailing list (poy4@googlegroups.com). Thanks!");
+                for your needs in the PCG mailing list. Thanks!");
         exit(1);
     }
 #endif
@@ -200,17 +199,7 @@ cm_alloc_2d ( cost_matrices_2d_t *res
         printf("Memory error during cost matrix allocation.\n");
         exit(1);
     }
-
-    //printf("cm_get%d\n", );
 }
-
-
-
-// int
-// cm_calc_cost_position_2d (int a, int b, int alphSize) {
-//     assert(alphSize >= 0);
-//     return ((a << alphSize) + b);
-// }
 
 
 static inline elem_t
@@ -223,9 +212,9 @@ cm_calc_median_2d ( unsigned int *tcm
     elem_t *res;
     unsigned int one        = 1;
     unsigned int upperBound = one << alphSize;
-    assert (alphSize >= 0);
-    assert (upperBound > a);
-    assert (upperBound > b);
+    assert (alphSize   >= 0);
+    assert (upperBound >  a);
+    assert (upperBound >  b);
     res = tcm + cm_calc_cost_position_2d(a, b, alphSize);
     return (*res);
 }
@@ -269,11 +258,6 @@ void
 cm_set_value_2d (elem_t a, elem_t b, elem_t v, elem_t *p, int alphSize) {
     p[ cm_calc_cost_position_2d (a, b, alphSize) ] = v;
 }
-
-// void
-// cm_set_value (elem_t a, elem_t b, unsigned int v, unsigned int *p, size_t alphSize) {
-//     p[ cm_calc_cost_position_2d (a, b, alphSize) ] = v;
-// }
 
 unsigned int
 cm_get_value_2d (elem_t a, elem_t b, unsigned int *p, size_t alphSize) {
