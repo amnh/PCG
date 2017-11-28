@@ -4,6 +4,7 @@ module Numeric.Extended.Natural.Test
   ( testSuite
   ) where
 
+
 import Numeric.Extended.Natural
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -30,6 +31,7 @@ testProperties = testGroup "Invariant properties"
     [ orderingProperties
     , additionProperties
     , subtractionProperties
+    , multiplicationCases
     , multiplicationProperties
     , divisionProperties
     ]
@@ -108,7 +110,6 @@ infinityCases = testGroup "'infinity' specific cases"
       inf * 0 @?= inf
 
 
-
 orderingProperties :: TestTree
 orderingProperties = testGroup "Properties of ordering"
     [ testProperty "The 'compare'  function is reflexively consistent" reflexivity
@@ -131,7 +132,7 @@ additionProperties :: TestTree
 additionProperties = testGroup "Properties of addition"
     [ testProperty "additive identity holds" additiveIdentity
     , testProperty "addition is associative" additiveAssocativity
-    , testProperty "addition is commutive" additiveCommutivity
+    , testProperty "addition is commutive"   additiveCommutivity
     , testProperty "addition on maxBound is indempotent" additiveUpperBound
     , testProperty "addition of finite values never exceeds maxBound" additiveCeiling
     ]
@@ -167,6 +168,22 @@ subtractionProperties = testGroup "Properties of subtraction"
 
     subtractionFloor :: (ExtendedNatural, ExtendedNatural) -> Bool
     subtractionFloor (a, b) = a - b >= minBound
+
+
+multiplicationCases :: TestTree
+multiplicationCases = testGroup "specific multiplication cases"
+    [ testGroup "exemplary commutivity cases"
+        [ assertCommutivity  3326996  4906009 1029418
+        , assertCommutivity  2621538  1442243 4131011
+        , assertCommutivity 10387400  6746207  415092
+        , assertCommutivity  7013604  6385785  529584
+        , assertCommutivity   446349 13935261 9720841
+        ]
+    ]
+  where
+    assertCommutivity :: ExtendedNatural -> ExtendedNatural -> ExtendedNatural -> TestTree
+    assertCommutivity a b c = testCase (unwords [show a, "*", show b, "*", show c])
+                            $ a * (b * c) @?= (a * b) * c
 
 
 multiplicationProperties :: TestTree

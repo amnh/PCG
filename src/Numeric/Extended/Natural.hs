@@ -10,12 +10,13 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, MagicHash, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric, MagicHash, Strict, TypeFamilies #-}
 
 module Numeric.Extended.Natural
   ( ExtendedNatural()
   , ExtendedNumber(..)
   , Finite
+  , bitsUsed
   ) where
 
 import Control.DeepSeq
@@ -108,11 +109,11 @@ instance NFData ExtendedNatural
 instance Num ExtendedNatural where
 
     lhs@(Cost x) + rhs@(Cost y)
-      | lhs    == infinity   = infinity
-      | rhs    == infinity   = infinity
-      | result >= infinity   = maxBound
-      | result <  maxima     = maxBound
-      | otherwise            = Cost result
+      | lhs    == infinity  = infinity
+      | rhs    == infinity  = infinity
+      | result >= infinity  = maxBound
+      | result <  maxima    = maxBound
+      | otherwise           = Cost result
       where
         maxima = max x y 
         result = x + y
@@ -123,15 +124,19 @@ instance Num ExtendedNatural where
       | otherwise       = Cost $ x - y
 
     lhs@(Cost x) * rhs@ (Cost y)
-      | lhs    == infinity   = infinity
-      | rhs    == infinity   = infinity
-      | zBits  >  wordWidth  = maxBound
-      | otherwise            = Cost $ x * y
+      | lhs    == infinity      = infinity
+      | rhs    == infinity      = infinity
+      | lhs    == minBound      = minBound
+      | rhs    == minBound      = minBound
+      | result <  x             = maxBound
+      | result <  y             = maxBound
+      | zBits  >  wordWidth + 3 = maxBound
+      | otherwise               = Cost result
       where
-        wordWidth = finiteBitSize (minBound :: Word)
-        zBits = xBits + yBits
-        xBits = bitsUsed x
-        yBits = bitsUsed y
+        result    = x * y
+        zBits     = xBits + yBits
+        xBits     = bitsUsed x
+        yBits     = bitsUsed y
 
     abs = id
 
@@ -179,6 +184,11 @@ toWord (Cost x)
 {-# INLINE fromWord #-}
 fromWord :: Word -> ExtendedNatural
 fromWord = Cost
+
+
+{-# INLINE wordWidth #-}
+wordWidth :: Int
+wordWidth = finiteBitSize (minBound :: Word)
 
 
 -- |
