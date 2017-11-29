@@ -91,9 +91,9 @@ instance Foldable f => PrintDot (PhylogeneticSolution (PhylogeneticDAG2 e (f Str
 
     toDot         =   toDot . uncurry mkGraph . foldMap1 getSolutionDotContext . phylogeneticForests
 
-    unqtListToDot = fmap mconcat . sequenceA . fmap unqtDot
+    unqtListToDot = fmap mconcat . traverse unqtDot
 
-    listToDot     = fmap mconcat . sequenceA . fmap   toDot
+    listToDot     = fmap mconcat . traverse   toDot
 
 
 instance Show a => Show (PhylogeneticSolution a) where

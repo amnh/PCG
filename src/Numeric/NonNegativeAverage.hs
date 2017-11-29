@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveDataTypeable, DeriveGeneric, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveDataTypeable, DeriveGeneric #-}
 
 module Numeric.NonNegativeAverage
   ( NonNegativeAverage()

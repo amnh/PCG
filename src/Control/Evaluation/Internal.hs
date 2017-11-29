@@ -115,7 +115,7 @@ instance Monad Evaluation where
   
     return = pure
 
-    (>>)  (Evaluation ms x) (Evaluation ns y) = Evaluation (ms <> ns) (x>>y)
+    (>>)   = (*>)
 
     (>>=) (Evaluation ms  NoOp    ) _ = Evaluation ms NoOp
     (>>=) (Evaluation ms (Error x)) _ = Evaluation ms $ Error x

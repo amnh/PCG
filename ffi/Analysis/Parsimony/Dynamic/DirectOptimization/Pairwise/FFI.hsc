@@ -464,7 +464,7 @@ generateDenseTransitionCostMatrix affineCost alphabetSize costFunction =
 -- 'generateDenseTransitionCostMatrix' defining the alphabet and transition costs.
 foreignPairwiseDO :: ( EncodableDynamicCharacter s
                      , Exportable s
-                     , Show s
+--                     , Show s
                      )
                   => s                         -- ^ First  dynamic character
                   -> s                         -- ^ Second dynamic character
@@ -481,7 +481,7 @@ foreignPairwiseDO lhs rhs costMatrix = algn2d lhs rhs costMatrix DoNotComputeUni
 -- 'generateDenseTransitionCostMatrix' defining the alphabet and transition costs.
 foreignThreeWayDO :: ( EncodableDynamicCharacter s
                      , Exportable s
-                     , Show s
+--                     , Show s
                      )
                   => s                         -- ^ First  dynamic character
                   -> s                         -- ^ Second dynamic character
@@ -700,7 +700,7 @@ algn3d :: ( EncodableDynamicCharacter s
                                     --
                                     --   The gapped alignment of the /third/ input character when aligned with the first & second character
                                     --
-algn3d char1 char2 char3 mismatchCost gapOpenCost indelCost denseTCMs = handleMissingCharacterThreeway someFun char1 char2 char3 $
+algn3d char1 char2 char3 mismatchCost openningGapCost indelCost denseTCMs = handleMissingCharacterThreeway someFun char1 char2 char3 $
     case (toExportableElements char1, toExportableElements char2, toExportableElements char3) of
       (Just x, Just y, Just z) -> f x y z
       (     _,      _,      _) -> error "3DO: There's a dynamic character missing!"
@@ -725,7 +725,7 @@ algn3d char1 char2 char3 mismatchCost gapOpenCost indelCost denseTCMs = handleMi
                                         retGapped   retUngapped
                                         costStruct
                                         (coerceEnum mismatchCost)
-                                        (coerceEnum gapOpenCost)
+                                        (coerceEnum openningGapCost)
                                         (coerceEnum indelCost)
 
                 resultingAlignedChar1 <- extractFromAlign_io elemWidth char1Return

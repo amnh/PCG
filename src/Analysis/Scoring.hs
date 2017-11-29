@@ -168,7 +168,7 @@ chooseDirectOptimizationComparison
   :: ( SimpleDynamicDecoration d  c
      , SimpleDynamicDecoration d' c
      , Exportable c
-     , Show c
+--     , Show c
      , Integral (Element c)
      )
   => d
@@ -196,7 +196,7 @@ chooseDirectOptimizationComparison2
   :: ( SimpleDynamicDecoration d  c
      , SimpleDynamicDecoration d' c
      , Exportable c
-     , Show c
+--     , Show c
      , Integral (Element c)
      )
   => d

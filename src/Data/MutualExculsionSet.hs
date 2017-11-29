@@ -38,7 +38,6 @@ import           Data.Foldable
 import           Data.Functor.Classes
 import           Data.Hashable
 import           Data.Key
-import           Data.List                (nub)
 import qualified Data.Map          as M
 import qualified Data.Map.Internal as M
 import           Data.Monoid       hiding ((<>))
@@ -89,13 +88,13 @@ instance (Arbitrary a, Ord a) => Arbitrary (MutualExculsionSet a) where
 
 instance Eq1 MutualExculsionSet where
 
-    liftEq eq (MES a b) (MES c d) =
+    liftEq eq (MES a _) (MES c _) =
         length a == length c && liftEq eq (M.keysSet a) (M.keysSet c)
 
 
 instance Ord1 MutualExculsionSet where
 
-    liftCompare cmp (MES a b) (MES c d) =
+    liftCompare cmp (MES a _) (MES c _) =
         liftCompare cmp (M.keysSet a) (M.keysSet c)
 
 
