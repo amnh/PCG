@@ -350,13 +350,19 @@ testCommandXRead = testGroup "XREAD command test" [xreadHeader',xreadDiscreteSeq
 
         nonEmptyAmbiguityGroup = testProperty "Parses non-empty ambiguity group" f
           where
-            f :: (DiscreteCharacters, DiscreteCharacters) -> Bool
-            f (dcs,amb) = all (`notElem` notAmbiguous) grp && all isRight res
-                       || any (`elem`    notAmbiguous) grp && all isLeft  res
+            f :: (DiscreteCharacters, DiscreteCharacters) -> Property
+            f (dcs,amb) = (predicate ==> all isRight res)
+                 .||. (not predicate ==> all isLeft  res)
               where
-                notAmbiguous = "-?"
+                predicate = ambiguityGroupIsSingleton || ambiguityGroupContainsNoBadChars
+                
+                ambiguityGroupIsSingleton      = length toks == 1
+                ambiguityGroupContainsNoBadChars = all (`notElem` badChars) toks
+                
+                badChars = "-?"
                 res  = parseInternal discreteSequence <$> opts
-                grp  = "[" <> nub (getDiscreteCharacters amb) <> "]"
+                toks = nub (getDiscreteCharacters amb)
+                grp  = "[" <> toks <> "]"
                 str  = getDiscreteCharacters dcs
                 n    = length str
                 opts = [ p <> grp <> s | i <- [0..n], (p,s) <- pure $ splitAt i str ]

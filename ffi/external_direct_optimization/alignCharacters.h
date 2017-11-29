@@ -27,7 +27,7 @@
 
 /** Fill a row in a two dimentional alignment
  *
- *  When pairwise alignment is performed, two characters are compared over a
+ *  When pairwise alignment is performed, two dynamic characters are compared over a
  *  transformation cost matrix. Let's call them characters x and y written over
  *  some alphabet a of length |a|. Each base of x
  *  is represented by a column in the transformation cost matrix and each base of
@@ -60,11 +60,11 @@
 #include <stdlib.h>
 #include <assert.h>
 
-//#include "alignCharacters.h"
 #include "costMatrix.h"
 #include "debug_constants.h"
 #include "alignmentMatrices.h"
 #include "dyn_character.h"
+#include "ukkCommon.h"
 
 // TODO: consider changing this number
 #define VERY_LARGE_NUMBER 100000 // large number, but as this gets added to itself repeatedly, small enough that it won't overflow.
@@ -145,7 +145,7 @@ fill_parallel (       size_t           char3_len
  *
  *  @param precalcMtx is a pointer to the precalculated_cost_matrices, a
  *    three-dimensional matrix that holds
- *    the transitionn costs for the entire alphabet (of all three characters)
+ *    the transition costs for the entire alphabet (of all three characters)
  *    with the character char3. The columns are the bases of char3, and the rows are
  *    each of the alphabet characters (possibly including ambiguities). See
  *    cm_precalc_4algn_3d for more information).
@@ -158,11 +158,11 @@ fill_parallel (       size_t           char3_len
  *
  * TODO: figure out wtf this means:
  *  consider all combinations:
- *  char1, gap, gap   -> const for plane
- *  gap, char2, gap   -> const const per row
- *  char1, char2, gap  -> const const per row
- *  gap, char2, char3  -> vector (changes on each row)
- *  char1, gap, char3  -> vector (change per plane)
+ *  char1, gap,   gap   -> const for plane
+ *  gap,   char2, gap   -> const const per row
+ *  char1, char2, gap   -> const const per row
+ *  gap,   char2, char3 -> vector (changes on each row)
+ *  char1, gap,   char3 -> vector (change per plane)
  *  char1, char2, char3 -> vector (changes on each row)
  *  gap, gap, char3   -> vector (the last one to be done, not parallelizable)
  *
@@ -239,6 +239,7 @@ algn_backtrace_2d ( const dyn_character_t      *char1
                   ,       int                   swapped
                   );
 
+
 /** As backtrace_2d, but for three characters */
 void
 algn_backtrace_3d ( const dyn_character_t      *char1
@@ -251,6 +252,7 @@ algn_backtrace_3d ( const dyn_character_t      *char1
                   ,       alignment_matrices_t *nwMatrix
                   );
 
+
 /* replaced with gaps and no gaps versions below
 inline void
 algn_get_median_2d (dyn_character_t *char1, dyn_character_t *char2, cost_matrices_2d_t *m, dyn_character_t *sm);
@@ -262,9 +264,7 @@ algn_get_median_2d (dyn_character_t *char1, dyn_character_t *char2, cost_matrice
  * returned in the character sm, using the cost matrix stored in m.
  */
 unsigned int
-algn_get_cost_medians_3d ( dyn_character_t    *char1
-                         , dyn_character_t    *char2
-                         , dyn_character_t    *char3
+algn_get_cost_medians_3d ( characters_t       *input
                          , cost_matrices_3d_t *costMatrix
                          , dyn_character_t    *ungapped_median
                          , dyn_character_t    *gapped_median
@@ -272,18 +272,18 @@ algn_get_cost_medians_3d ( dyn_character_t    *char1
 
 // TODO: document following four fns
 void
-algn_initialize_matrices_affine (       unsigned int        gap_open_cost
-                                , const dyn_character_t    *shortChar
-                                , const dyn_character_t    *longChar
-                                , const cost_matrices_2d_t *costMatrix
-                                ,       unsigned int       *close_block_diagonal
-                                ,       unsigned int       *extend_block_diagonal
-                                ,       unsigned int       *extend_vertical
-                                ,       unsigned int       *extend_horizontal
-                                ,       unsigned int       *final_cost_matrix
-                                ,       DIR_MTX_ARROW_t    *direction_matrix
-                                ,       unsigned int       *precalcMtx
-                                );
+algn_initialize_matrices_affine(       unsigned int        gap_open_cost
+                               , const dyn_character_t    *shortChar
+                               , const dyn_character_t    *longerChar
+                               , const cost_matrices_2d_t *costMatrix
+                               ,       unsigned int       *close_block_diagonal
+                               ,       unsigned int       *extend_block_diagonal
+                               ,       unsigned int       *extend_vertical
+                               ,       unsigned int       *extend_horizontal
+                               ,       unsigned int       *final_cost_matrix
+                               ,       DIR_MTX_ARROW_t    *direction_matrix
+                               ,       unsigned int       *algn_precalcMtx
+                               );
 
 // TODO: what is nobt? no backtrace? And why the 3? It's not 3d. Maybe third iteration of fn? In that case remove 3, as it's confusing.
 unsigned int

@@ -33,26 +33,25 @@ import           Control.Monad.State.Lazy
 import           Data.Bifunctor
 import           Data.Foldable
 import           Data.HashMap.Lazy            (HashMap)
-import           Data.IntMap                  (IntMap)
+--import           Data.IntMap                  (IntMap)
 import qualified Data.IntMap           as IM
 import qualified Data.IntSet           as IS
 import           Data.Key
 import           Data.List.NonEmpty           (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty    as NE
-import           Data.Map                     (Map)
+--import           Data.Map                     (Map)
 --import qualified Data.Map              as M
-import           Data.Matrix.NotStupid        (Matrix)
+--import           Data.Matrix.NotStupid        (Matrix)
 import qualified Data.Matrix.NotStupid as MAT
 import           Data.Maybe
 import           Data.MonoTraversable
 import           Data.Ord                     (comparing)
 import           Data.Semigroup
-import           Data.Semigroup.Foldable
+--import           Data.Semigroup.Foldable
 import           Data.TopologyRepresentation
 import           Data.Vector                  (Vector)
 import qualified Data.Vector           as VE
-import qualified Data.Vector.NonEmpty  as VNE
-import           Data.Vector.Instances        ()
+--import qualified Data.Vector.NonEmpty  as VNE
 import           Data.Vector.Instances        ()
 import           Prelude               hiding (lookup, zip, zipWith)
 
@@ -139,7 +138,7 @@ preorderSequence'' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
 
             -- The character sequence for the current index with the node decorations
             -- updated to thier pre-order values with their final states assigned.
-            newSequence      = computeOnApplicableResolution'' f1 f2 f3 f4 f5 f6 parentalContext datumResolutions i
+            newSequence      = computeOnApplicableResolution'' f1 f2 f3 f4 f5 f6 parentalContext datumResolutions
                 
             -- This is *really* important.
             -- Here is where we collect the parental context for the current node.
@@ -159,7 +158,7 @@ preorderSequence'' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
 
             parentalAccessor = 
                 case parentIndices of
-                  []    -> (\_ x -> (x, 0, Nothing))
+                  []    -> \_ x -> (x, 0, Nothing)
                   [p]   -> selectTopologyFromParentOptions $ (p, memo ! p):|[]
                   x:y:_ -> selectTopologyFromParentOptions $ (x, memo ! x):|[(y, memo ! y)]
             
@@ -303,10 +302,8 @@ computeOnApplicableResolution''
   -> (z -> [(Word, z')] -> z')
   -> ParentalContext u' v' w' x' y' z'
   -> ResolutionCache (CharacterSequence u v w x y z)
-  -> Int
---  -> [(Word, ResolutionInformation (CharacterSequence u' v' w' x' y' z'))]
   -> CharacterSequence u' v' w' x' y' z'
-computeOnApplicableResolution'' f1 f2 f3 f4 f5 f6 parentalContexts currentResolutions nodeRef = fromBlocks $ mapWithKey f parentalContexts
+computeOnApplicableResolution'' f1 f2 f3 f4 f5 f6 parentalContexts currentResolutions = fromBlocks $ mapWithKey f parentalContexts
   where
     f key (topology, childRef, maybeParentBlock) = BLK.hexZipWith f1 f2 f3 f4 f5 f6 childBlock parentBlock
       where
@@ -420,20 +417,22 @@ selectApplicableResolutions topology cache =
       xs  -> maximumBy (comparing (length . subtreeEdgeSet)) xs
 
 
+-- |
+-- Different contexts used to mediate an effcient multidimensional traversal.
 data  PreorderContext c
     = NormalNode   Int
     | SetRootNode  Int
     | FociEdgeNode Int c
 
+
+-- |
+-- Applies a traversal logic function over a 'ReferenceDAG' in a /pre-order/ manner.
+--
+-- The logic function takes a current node decoration,
+-- a list of parent node decorations with the logic function already applied,
+-- and returns the new decoration for the current node.
 preorderFromRooting''
-  :: ( HasBlockCost u  v  w  x  y  z  Word Double
-     , HasBlockCost u' v' w' x' y' z' Word Double
-     , HasTraversalFoci z  (Maybe TraversalFoci)
-     , HasTraversalFoci z' (Maybe TraversalFoci)
-     --     , Show z
-     , Show r
-     )
-  => (z -> [(Word, z')] -> z')
+  :: (z -> [(Word, z')] -> z')
   ->         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
   -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
   -> NonEmpty (TraversalTopology, r, r, Vector (NonEmpty TraversalFocusEdge))
@@ -451,11 +450,11 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
     nodeCount  = length refs
     blockCount = length . toBlocks . characterSequence . NE.head . resolutions . nodeDecoration $ refs ! NE.head (rootRefs dag)
 
-    getCache = resolutions . nodeDecoration . (refs !)
+--    getCache = resolutions . nodeDecoration . (refs !)
 
     getDynCharSeq = fmap dynamicCharacters . toBlockVector . characterSequence
 
-    rootResolutions = getCache <$> rootRefs dag
+--    rootResolutions = getCache <$> rootRefs dag
 
 --    getAdjacentNodes i | trace ("In getAdjacentNodes("<> show i <>")") False  = undefined
     getAdjacentNodes i = foldMap f $ otoList ns
@@ -477,9 +476,9 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
       where
         g (nodeIndex, blockIndex) = (! nodeIndex) <$> dynCharVec
           where
-            dynCharVec = mapping ! blockIndex
+            dynCharVec = parentMapping ! blockIndex
 
-        mapping = delta minTopologyContextPerBlock
+        parentMapping = delta minTopologyContextPerBlock
 
         -- Takes a list of blocks, each containing a vectors of dynamic characters
         -- and returns the mapping of nodes to their parents under the rerooting
@@ -496,7 +495,7 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
 --        delta :: (Keyed f, Keyed v, Foldable r) => f (TraversalTopology, v (r TraversalFocusEdge)) -> f (v (IntMap (Either (c, Int) Int)))
         delta = mapWithKey (\k (topo, _, _, v) -> mapWithKey (f topo k) v)
           where
-            f topo blockIndex charIndex rootEdges = foldMap epsilon rootEdges
+            f topo blockIndex charIndex = foldMap epsilon
               where
                 epsilon rootingEdge@(r1,r2) = lhs <> rhs <> gen mempty (r1,r2) <> gen mempty (r2,r1)
                   where
@@ -507,10 +506,9 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
                     excludedEdges = excludedNetworkEdges topo
                     gen seenSet (n1,n2)
                       | isExcludedEdge = mempty
-                      | otherwise      = (currentVal <>) . foldMap toMap . filter (`onotElem` seenSet') $ nearbyNodes n2 -- getAdjacentNodes n2
+                      | otherwise      = (currentVal <>) . foldMap toMap . filter (`onotElem` seenSet') $ getAdjacentNodes n2
                       where
                         isExcludedEdge = (n1,n2) `elem` excludedEdges || (n2,n1) `elem` excludedEdges
-                        nearbyNodes x  = getAdjacentNodes x
                         currentVal
                           | n2 `oelem` rootSet = IM.singleton n2 $ SetRootNode n1
                           | n1 `oelem` rootSet =

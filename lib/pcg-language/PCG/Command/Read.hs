@@ -78,7 +78,7 @@ data  CustomAlphabetOptions
 -- |
 -- Describes how ties are to be broken. In what context ties are occuring, I'm
 -- not sure.
-data Tiebreaker = Tiebreaker CustomAlphabetStrategy
+newtype Tiebreaker = Tiebreaker CustomAlphabetStrategy
     deriving (Show)
 
 

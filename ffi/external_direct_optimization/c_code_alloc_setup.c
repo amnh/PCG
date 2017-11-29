@@ -8,50 +8,6 @@
 #include "debug_constants.h"
 #include "costMatrix.h"
 #include "alignmentMatrices.h"
-//#include "ukkCheckp.h"
-//#include "ukkCommon.h"
-
-// int* tcm, int alphSize, int gap_open, int is_2d, dyn_character_t *longChar
-
-/** Allocate algn_matrices struct. Assigns initial values where necessary. Calls
- *  algnMat_setup_size to allocate all internal arrays.
- *
- *  Order of character lengths doesn't matter
- */
-void initializeAlignmentMtx( alignment_matrices_t *retMtx
-                           , size_t                len_char1
-                           , size_t                len_char2
-                           , size_t                len_char3
-                           , size_t                alphSize
-                           )
-{
-    // printf("initializeAlignmentMtx\n");
-    // in six following allocations all matrices are set to their shortest length because they get realloced in algnMat_setup_size
-    retMtx->cap_nw          =  0; // a suitably small number to trigger realloc, but be larger than len_eff
-    retMtx->cap_eff         =  0; // cap_eff was -1 so that cap_eff < cap, triggering the realloc
-    retMtx->cap_pre         =  0; // again, trigger realloc
-
-    retMtx->algn_costMtx    = malloc ( sizeof( unsigned int    ) );
-    retMtx->algn_dirMtx     = malloc ( sizeof( DIR_MTX_ARROW_t ) );
-    retMtx->algn_precalcMtx = malloc ( sizeof( unsigned int     ) );
-    // retMtx->cube          = malloc ( sizeof( int* ) );  // don't have to allocate these two,
-    // retMtx->cube_d        = malloc ( sizeof( int* ) );  // because they're just pointing to algn_costMtx and algn_dirMtx
-
-    algnMat_setup_size (retMtx, len_char1, len_char2, len_char3, alphSize);
-}
-
-/** Does allocation for a character struct. Also sets char pointers within array to correct positions.
- *
- *  resChar must be alloced before this call.
- */
-void initializeChar(dyn_character_t *retChar, size_t allocSize) {
-    retChar->cap        = allocSize;                              // capacity
-    retChar->array_head = calloc(allocSize, sizeof(elem_t));        // beginning of array that holds dynamic character
-
-    retChar->end        = retChar->array_head + allocSize - 1;    // end of array
-    retChar->char_begin = retChar->end;                           // position of first element in dynamic character
-    retChar->len        = 0;                                      // number of elements in character
-}
 
 
 /** Find distance between an ambiguous nucleotide and an unambiguous ambElem. Return that value and the median.
@@ -72,8 +28,8 @@ int distance( unsigned int const *tcm
             )
 {
     int min     = INT_MAX;
-    // int max     = 0;
     int curCost = 0;
+
     for (size_t pos = 0; pos < alphSize; pos++) {
         if (1 << pos & ambElem) { // if pos is set in ambElem, meaning pos is possible value of ambElem
             curCost = tcm[pos * alphSize + nucleotide - 1];
@@ -85,13 +41,65 @@ int distance( unsigned int const *tcm
     return min;
 }
 
-/** Take in a cost_matrices_2d, the struct for which has already allocated. Internal arrays are allocated
- *  in call to cm_alloc_seet_costs_2d.
+
+void freeChar(dyn_character_t *toFree) {
+    free(toFree->array_head);
+    free(toFree);
+}
+
+
+void freeCostMtx(void * input, int is_2d) {
+
+    if (is_2d) {
+        free( ( (cost_matrices_2d_t *) input )->cost);
+        free( ( (cost_matrices_2d_t *) input )->median);
+        free( ( (cost_matrices_2d_t *) input )->worst);
+        free( ( (cost_matrices_2d_t *) input )->prepend_cost);
+        free( ( (cost_matrices_2d_t *) input )->tail_cost);
+    } else {
+        free( ( (cost_matrices_3d_t *) input )->cost);
+        free( ( (cost_matrices_3d_t *) input )->median);
+    }
+
+    free (input);
+}
+
+
+/**
  *
- *  Nota bene:
- *  No longer setting max, as algorithm to do so is unclear: see note below.
- *  Not sure which of two loops to set prepend and tail arrays is correct.
+ * TODO: make sure I'm actually deallocing right here.
  */
+void freeNWMtx(alignment_matrices_t *input) {
+    free (input->algn_costMtx);
+    free (input->algn_dirMtx);
+    free (input->algn_precalcMtx);
+
+    free(input);
+}
+
+
+void initializeAlignmentMtx( alignment_matrices_t *retMtx
+                           , size_t                len_char1
+                           , size_t                len_char2
+                           , size_t                alphSize
+                           )
+{
+    // printf("initializeAlignmentMtx\n");
+    // in six following allocations all matrices are set to their shortest length because they get realloced in algnMat_setup_size
+    retMtx->cap_nw          =  0; // a suitably small number to trigger realloc, but be larger than len_eff
+    retMtx->cap_eff         =  0; // cap_eff was -1 so that cap_eff < cap, triggering the realloc
+    retMtx->cap_pre         =  0; // again, trigger realloc
+
+    retMtx->algn_costMtx    = malloc ( sizeof( unsigned int    ) );
+    retMtx->algn_dirMtx     = malloc ( sizeof( DIR_MTX_ARROW_t ) );
+    retMtx->algn_precalcMtx = malloc ( sizeof( unsigned int     ) );
+    // retMtx->cube          = malloc ( sizeof( int* ) );  // don't have to allocate these two,
+    // retMtx->cube_d        = malloc ( sizeof( int* ) );  // because they're just pointing to algn_costMtx and algn_dirMtx
+
+    algnMat_setup_size (retMtx, len_char1, len_char2, alphSize);
+}
+
+
 void setUp2dCostMtx( cost_matrices_2d_t *retCostMtx
                    , unsigned int       *tcm
                    , size_t              alphSize
@@ -190,10 +198,6 @@ void setUp2dCostMtx( cost_matrices_2d_t *retCostMtx
 }
 
 
-/** Nearly identical to setUp2dCostMtx. Code duplication necessary in order to have two different return types.
- *  I attempted to do with with a return of void *, but was having trouble with allocation, and was forced to move
- *  it outside this fn.
- */
 void setUp3dCostMtx( cost_matrices_3d_t *retMtx
                    , unsigned int       *tcm
                    , size_t              alphSize
@@ -217,8 +221,7 @@ void setUp3dCostMtx( cost_matrices_3d_t *retMtx
                , combinations
                , do_aff
                , gap_open
-               , all_elements
-               );
+               , all_elements );
     retMtx->gap_char = 1 << (alphSize - 1);
 
     for (elem_t ambElem1 = 1; ambElem1 <= all_elements; ambElem1++) { // for every possible value of ambElem1, ambElem2, ambElem3
@@ -253,47 +256,3 @@ void setUp3dCostMtx( cost_matrices_3d_t *retMtx
     }
 
 }
-/*** Folowing functions free alloc'ed all space allocated in above fns. ***/
-
-void freeCostMtx(void * input, int is_2d) {
-
-    if (is_2d) {
-        free( ( (cost_matrices_2d_t *) input )->cost);
-        free( ( (cost_matrices_2d_t *) input )->median);
-        free( ( (cost_matrices_2d_t *) input )->worst);
-        free( ( (cost_matrices_2d_t *) input )->prepend_cost);
-        free( ( (cost_matrices_2d_t *) input )->tail_cost);
-    } else {
-        free( ( (cost_matrices_3d_t *) input )->cost);
-        free( ( (cost_matrices_3d_t *) input )->median);
-    }
-
-    free (input);
-}
-
-/**
- *
- * TODO: make sure I'm actually deallocing right here.
- */
-void freeNWMtx(alignment_matrices_t *input) {
-    free (input->algn_costMtx);
-    free (input->algn_dirMtx);
-    // free (input->cube);    // don't have to deallocate these two,
-    // free (input->cube_d);  // because they're just pointing to algn_costMtx and algn_dirMtx
-    free (input->algn_precalcMtx);
-
-    free(input);
-}
-
-void freeChar(dyn_character_t *toFree) {
-    free(toFree->array_head);
-    free(toFree);
-}
-
-void resetCharValues(dyn_character_t *retChar) {
-    //retChar->end   = retChar->begin + retChar->len;
-    memset(retChar->array_head, 0, retChar->cap * sizeof(elem_t));
-    retChar->char_begin = retChar->end;
-    retChar->len       = 0;
-}
-

@@ -9,8 +9,8 @@ import Data.Semigroup
 type TaxaName = String
 
 
-data UnificationError
-   = UnificationError (NonEmpty UnificationErrorMessage)
+newtype UnificationError
+      = UnificationError (NonEmpty UnificationErrorMessage)
 
 
 data UnificationErrorMessage

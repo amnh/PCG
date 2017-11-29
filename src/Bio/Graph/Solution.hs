@@ -80,9 +80,9 @@ instance {-# OVERLAPPABLE #-} PrintDot a => PrintDot (PhylogeneticSolution a) wh
 
     toDot         =     listToDot . toList . phylogeneticForests
 
-    unqtListToDot = fmap mconcat . sequenceA . fmap unqtDot
+    unqtListToDot = fmap mconcat . traverse unqtDot
 
-    listToDot     = fmap mconcat . sequenceA . fmap   toDot
+    listToDot     = fmap mconcat . traverse   toDot
 
 
 instance Foldable f => PrintDot (PhylogeneticSolution (PhylogeneticDAG2 e (f String) u v w x y z)) where
@@ -91,9 +91,9 @@ instance Foldable f => PrintDot (PhylogeneticSolution (PhylogeneticDAG2 e (f Str
 
     toDot         =   toDot . uncurry mkGraph . foldMap1 getSolutionDotContext . phylogeneticForests
 
-    unqtListToDot = fmap mconcat . sequenceA . fmap unqtDot
+    unqtListToDot = fmap mconcat . traverse unqtDot
 
-    listToDot     = fmap mconcat . sequenceA . fmap   toDot
+    listToDot     = fmap mconcat . traverse   toDot
 
 
 instance Show a => Show (PhylogeneticSolution a) where
@@ -138,12 +138,11 @@ instance
   , DiscreteCharacterMetadata x
   , DiscreteCharacterMetadata y
   , DiscreteCharacterMetadata z
-  , Applicative f
   , Foldable f
   , HasSymbolChangeMatrix x (Word -> Word -> Word)
   , HasSymbolChangeMatrix y (Word -> Word -> Word)
   , HasSymbolChangeMatrix z (Word -> Word -> Word)
-  , PrintDot (PhylogeneticDAG2 e (f String) u v w x y z)
+--  , PrintDot (PhylogeneticDAG2 e (f String) u v w x y z)
   ) => ToXML (PhylogeneticSolution (PhylogeneticDAG2 e (f String) u v w x y z)) where
 
     toXML soln@(PhylogeneticSolution forests) = xmlElement "Solution" attrs forestContents

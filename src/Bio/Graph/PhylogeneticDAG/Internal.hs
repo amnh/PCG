@@ -16,17 +16,14 @@
 
 module Bio.Graph.PhylogeneticDAG.Internal where
 
--- import           Bio.Graph
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
--- import           Bio.Sequence.Block               (CharacterBlock)
 import           Control.Applicative              (liftA2)
 import           Control.DeepSeq
 import           Control.Lens
 import           Data.Bits
--- import           Data.EdgeLength
 import           Data.Foldable
 import           Data.GraphViz.Printing    hiding ((<>)) -- Seriously, why is this redefined?
 import           Data.GraphViz.Types       hiding (attrs)
@@ -60,7 +57,7 @@ import           Text.XML
 -- * x = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * y = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * z = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Dynamic'    specified as 'DynamicChar'     or 'Bio.Metadata.DiscreteWithTCM'
-data PhylogeneticDAG e n u v w x y z
+newtype PhylogeneticDAG e n u v w x y z
      = PDAG (ReferenceDAG () e (PhylogeneticNode n (CharacterSequence u v w x y z)))
 
 
@@ -76,7 +73,7 @@ data PhylogeneticDAG e n u v w x y z
 -- * x = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * y = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * z = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Dynamic'    specified as 'DynamicChar'     or 'Bio.Metadata.DiscreteWithTCM'
-data PhylogeneticDAG2 e n u v w x y z
+newtype PhylogeneticDAG2 e n u v w x y z
      = PDAG2 ( ReferenceDAG
                  (         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
                  , Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
@@ -183,6 +180,7 @@ type UnRiefiedCharacterDAG =
 
 
 --instance HasLeafSet (PhylogeneticDAG2 e n u v w x y z) (LeafSet n) where
+-- | (✔)
 instance HasLeafSet (PhylogeneticDAG2 e n u v w x y z) (LeafSet (PhylogeneticNode2 (CharacterSequence u v w x y z) n)) where
 
     leafSet = lens getter undefined
@@ -191,9 +189,11 @@ instance HasLeafSet (PhylogeneticDAG2 e n u v w x y z) (LeafSet (PhylogeneticNod
             getter (PDAG2 e) =  e ^. leafSet
 
 
+-- | (✔)
 instance (NFData e, NFData n, NFData u, NFData v, NFData w, NFData x, NFData y, NFData z) => NFData (PhylogeneticDAG2 e n u v w x y z)
 
 
+-- | (✔)
 instance Foldable f => PrintDot (PhylogeneticDAG2 e (f String) u v w x y z) where
 
     unqtDot       = unqtDot . discardCharacters
@@ -205,6 +205,7 @@ instance Foldable f => PrintDot (PhylogeneticDAG2 e (f String) u v w x y z) wher
     listToDot     = listToDot . fmap discardCharacters
 
 
+-- | (✔)
 instance ( Show e
          , Show n
          , Show u
@@ -221,6 +222,7 @@ instance ( Show e
         f i (PNode n sek) = mconcat [ "Node {", show i, "}:\n\n", unlines [show n, show sek] ]
 
 
+-- | (✔)
 instance ( Show e
          , Show n
          , Show u
@@ -241,11 +243,13 @@ instance ( Show e
         f i n = mconcat [ "Node {", show i, "}:\n\n", show n ]
 
 
-instance (Applicative f, Foldable f) => ToNewick (PhylogeneticDAG2 e (f String) u v w x y z) where
+-- | (✔)
+instance Foldable f => ToNewick (PhylogeneticDAG2 e (f String) u v w x y z) where
 
     toNewick = toNewick . discardCharacters
 
 
+-- | (✔)
 instance ( ToXML u
          , ToXML v
          , ToXML w
@@ -261,7 +265,7 @@ getDotContextWithBaseAndIndex
   :: Foldable f
   => Int -- ^ Base over which the Unique
   -> Int
-  -> (PhylogeneticDAG2 e (f String) u v w x y z)
+  -> PhylogeneticDAG2 e (f String) u v w x y z
   -> ([DotNode GraphID], [DotEdge GraphID])
 getDotContextWithBaseAndIndex i j (PDAG2 dag) = getDotContext i j $ nodeDecorationDatum2 <$> dag
 

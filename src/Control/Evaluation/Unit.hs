@@ -15,13 +15,15 @@
 
 module Control.Evaluation.Unit where
 
-import Control.Applicative
-import Control.DeepSeq
-import Control.Monad (MonadPlus(mzero, mplus))
-import Data.Monoid   ()
-import Data.Semigroup
-import GHC.Generics
-import Test.QuickCheck
+import           Control.Applicative
+import           Control.DeepSeq
+import           Control.Monad           (MonadPlus(..))
+import           Control.Monad.Fail      (MonadFail) 
+import qualified Control.Monad.Fail as F
+import           Data.Monoid             ()
+import           Data.Semigroup
+import           GHC.Generics
+import           Test.QuickCheck
 
 
 -- |
@@ -49,9 +51,25 @@ instance Applicative EvalUnit where
 
     pure = Value
 
-    NoOp    <*> _ = NoOp
-    Error x <*> _ = Error x
-    Value f <*> x = f <$> x
+    NoOp    <*> _      = NoOp
+    Error x <*> _      = Error x
+    Value f <*> x      = f <$> x
+
+    Error x  *>  _     = Error x
+    _        *>  e     = e
+
+    _       <* Error x = Error x
+    e       <* _       = e
+
+    liftA2 op lhs rhs =
+      case lhs of
+        NoOp    -> NoOp
+        Error e -> Error e
+        Value x ->
+            case rhs of
+              NoOp      -> NoOp
+              Error e -> Error e
+              Value y -> Value $ x `op` y
 
 
 -- | (✔)
@@ -68,22 +86,26 @@ instance Functor EvalUnit where
     f `fmap` Value x = Value $ f x
 
 
+-- | (✔)
 instance NFData a => NFData (EvalUnit a)
 
 
 -- | (✔)
 instance Monad EvalUnit where
 
+    fail   = F.fail
+
     return = pure
-
-    fail   = Error
-
-    Error x >>  _ = Error x
-    _       >>  e = e
 
     NoOp    >>= _ = NoOp
     Error x >>= _ = Error x
     Value x >>= f = f x
+
+
+-- | (✔)
+instance MonadFail EvalUnit where
+
+    fail = Error
 
 
 -- | (✔)

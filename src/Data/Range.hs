@@ -40,7 +40,7 @@ import Control.DeepSeq
 import GHC.Generics
 
 -- |
--- A range between two bounds. The lower bound will always be less that or equal
+-- A range between two bounds. The lower bound will always be less than or equal
 -- to the upper bound.
 newtype Range r = Range (r, r, Maybe Int)
   deriving (Eq, Generic)
@@ -193,7 +193,7 @@ largestClosed interval value = Range (newLowerBound, newUpperBound, precision in
 -- |
 -- /O(1)/
 --
--- Perform a fancy three-way operation used in a special case fo the additive
+-- Perform a fancy three-way operation used in a special case of the additive
 -- character scoring logic.
 threeWayRange :: Ord r => Range r -> Range r -> Range r -> Range r
 threeWayRange ancestoralInterval selfInterval descendantInterval = Range (newLowerBound, newUpperBound, precision selfInterval) 

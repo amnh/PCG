@@ -9,15 +9,22 @@
 -- Portability :  portable
 --
 -- A monadic extension classs that enables the support of logging.
--- TODO: Should be combined with MonadFail when GHC 8.0 is released
 --
 -----------------------------------------------------------------------------
+
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
+
 module Control.Monad.Logger
   ( Logger(..)
   ) where
 
+
+import Control.Monad.Fail
+
 {- |
+
+  A 'MonadFail' that has been extended to support "information" and "warning"
+  level messages.
 
   Typeclass Laws:
 
@@ -32,7 +39,7 @@ module Control.Monad.Logger
  > warn x >> (warn y >> warn z) === (warn x >> warn y) >> warn z
 
 -}
-class Monad m => Logger m a where
+class MonadFail m => Logger m a where
   
     info, warn   :: String -> m a
 

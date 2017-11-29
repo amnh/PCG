@@ -172,7 +172,7 @@ data DimensionsFormat
    , numChars :: Int
    } deriving (Show)
 
-data IgnBlock = IgnBlock {ignoredName :: String} deriving (Show)
+newtype IgnBlock = IgnBlock {ignoredName :: String} deriving (Show)
 
 -- | The collection of information extracted from blocks in the Nexus file.
 data Nexus

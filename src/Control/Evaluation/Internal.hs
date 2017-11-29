@@ -15,16 +15,18 @@
 
 module Control.Evaluation.Internal where
 
-import Control.Applicative
-import Control.DeepSeq
-import Control.Evaluation.Unit
-import Control.Monad (MonadPlus(mzero, mplus))
-import Control.Monad.Logger
-import Data.DList    (DList, toList)
-import Data.Monoid   ()
-import Data.Semigroup
-import GHC.Generics
-import Test.QuickCheck
+import           Control.Applicative
+import           Control.DeepSeq
+import           Control.Evaluation.Unit
+import           Control.Monad           (MonadPlus(..))
+import           Control.Monad.Fail      (MonadFail)
+import qualified Control.Monad.Fail as F
+import           Control.Monad.Logger
+import           Data.DList              (DList, toList)
+import           Data.Monoid             ()
+import           Data.Semigroup
+import           GHC.Generics
+import           Test.QuickCheck
 
 
 -- |
@@ -77,6 +79,8 @@ instance Applicative Evaluation where
 
     (<*>) (Evaluation ms x) (Evaluation ns y) = Evaluation (ms <> ns) (x <*> y)
 
+    (*>)  (Evaluation ms x) (Evaluation ns y) = Evaluation (ms <> ns) (x  *> y)
+
 
 -- | (✔)
 instance Arbitrary a => Arbitrary (Evaluation a) where
@@ -98,24 +102,32 @@ instance Logger Evaluation a where
     warn s = Evaluation (pure $ Warning     s) mempty
 
 
+-- | (✔)
 instance (NFData a) => NFData (Evaluation a)
 
 
+-- | (✔)
 instance NFData Notification
 
 
 -- | (✔)
 instance Monad Evaluation where
 
+    fail   = F.fail
+  
     return = pure
 
-    fail   = Evaluation mempty . Error
-
-    (>>)  (Evaluation ms x) (Evaluation ns y) = Evaluation (ms <> ns) (x>>y)
+    (>>)   = (*>)
 
     (>>=) (Evaluation ms  NoOp    ) _ = Evaluation ms NoOp
     (>>=) (Evaluation ms (Error x)) _ = Evaluation ms $ Error x
     (>>=) (Evaluation ms (Value x)) f = f x `prependNotifications` ms
+
+
+-- | (✔)
+instance MonadFail Evaluation where
+
+    fail = Evaluation mempty . Error
 
 
 -- | (✔)

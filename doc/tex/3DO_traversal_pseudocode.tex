@@ -1,0 +1,67 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+
+% \makeatletter
+% \def\BState{\State\hskip-\ALG@thistlm}
+% \makeatother
+
+\begin{document}
+\begin{algorithm}
+\caption{3DO refinement}\label{euclid}
+\begin{algorithmic}[1]
+\Require $\forall \; v \in graph \quad v.updated \gets \text{True} $
+\Require $\forall \; v \in graph \quad v.unambiguousFinal \neq \text{NULL}$
+\State $\textit{order} \gets \mathcal{S}(V)$
+
+\State $\textit{graph}           \gets (V,E)$
+\State $\textit{maxTimes}        \gets$ ??
+\State $\textit{metaconvergence} \gets$ False
+\State $\textit{stateStack}      \gets$ empty
+\State $\textit{times}           \gets 0$
+
+\Repeat
+    \State $convergence \gets$ True
+    \For {$v \in graph$}
+
+        \If {$v$ is a leaf node}
+            \State \textbf{continue}
+        \ElsIf {$\not \exists \; n \in v.neighbors \; S.T. \; n.updated = True$}
+            \State \textbf{continue}
+        \Else 
+            \State $prevValue \gets v.unambiguousFinal$ 
+            \State \Comment {remember current value for later comparison}
+            \State $(v.unambiguousFinal, v.ambiguousFinal) \gets$ 
+            \State \quad \quad \quad \quad $3DO ( neighbor1.unambiguousFinal$
+            \State \quad \quad \quad \quad \quad \quad , $neighbor2.unambiguousFinal$ 
+            \State \quad \quad \quad \quad \quad \quad , $neighbor3.unambiguousFinal )$ 
+
+            \If {$prevValue = v.unambiguousFinal$}
+                \State $v.updated \gets False$
+            \Else 
+                \State $v.updated \gets$ \; True
+                \State $convergence \gets$ \; False
+            \EndIf
+        \EndIf
+        \State $times \gets time + 1$
+    \EndFor
+
+    \If {convergence}
+        \State textbf{break}
+    \Else
+        \State stateStack.push ( graph )
+            \If {prefix cycle in stateStack}
+            \Comment Metaconvergence defined as cycle through one or more previous states
+                \State $metaconvergence \gets$ \; True
+            \Else
+                \State $metaconvergence \gets$ \; False
+            \EndIf
+    \EndIf
+
+\Until {$times = maxTimes$ \textbf{or} $metaconvergence$}
+
+\end{algorithmic}
+\end{algorithm}
+
+\end{document}

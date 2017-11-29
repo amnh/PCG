@@ -28,7 +28,6 @@ module Bio.Sequence.Block
 
 import           Bio.Character.Encodable
 import           Bio.Character.Decoration.Continuous
-import           Bio.Character.Decoration.Discrete
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Sequence.Block.Internal
 import           Control.Lens
@@ -200,7 +199,16 @@ blockCost block = sum . fmap sum $
         weight = dec ^. characterWeight
 
 
-rootCost :: (HasRootCost u v w x y z r, Integral i) => i -> CharacterBlock u v w x y z -> r
+-- |
+-- Calculate the "rooting cost" of a 'CharacterBlock' by applying a "rooting-
+-- multiplier" based on the number of other roots in the DAG.
+rootCost
+  :: ( HasRootCost u v w x y z r
+     , Integral i
+     )
+  => i
+  -> CharacterBlock u v w x y z
+  -> r
 rootCost rootCount block = rootMultiplier . sum . fmap sum $
     [ parmap rpar staticRootCost  . continuousCharacterBins 
     , parmap rpar staticRootCost  . nonAdditiveCharacterBins

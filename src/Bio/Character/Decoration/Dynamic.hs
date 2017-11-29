@@ -47,6 +47,7 @@ module Bio.Character.Decoration.Dynamic
   , HasDenseTransitionCostMatrix(..)
   , PossiblyMissingCharacter(..)
   , AverageLength()
+  , toAverageLength
   , getAverageLength
   , TraversalFoci
   , TraversalFocusEdge

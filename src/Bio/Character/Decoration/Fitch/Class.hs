@@ -34,7 +34,7 @@ class ( DiscreteCharacterDecoration s c
       , HasChildMedians s (c, c)
       , HasIsLeaf s Bool
       , HasCharacterCost s Word
-      , HasPreliminaryMedian s (c)
+      , HasPreliminaryMedian s c
       , HasFinalMedian s c
       
       ) => FitchDecoration s c | s -> c where

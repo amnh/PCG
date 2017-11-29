@@ -8,7 +8,7 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Provides the types fot the Report command allong with a semantic definition
+-- Provides the types for the Build command along with a semantic definition
 -- to be consumed by the stream parser.
 --
 -----------------------------------------------------------------------------
@@ -26,19 +26,19 @@ import PCG.Syntax.Combinators
 
 
 -- |
--- The REPORT command specifying what information should be output and where the
+-- The BUILD command specifying how a component graph should be constructed.
 -- output should be directed.
 data  BuildCommand
     = BuildCommand Int ConstructionType
     deriving (Show)
 
-
+-- |
+-- Different possible types of component graph construction.
 data  ConstructionType
     = WagnerTree
     | WheelerNetwork
     | WheelerForest
     deriving (Eq, Show)
-
 
 
 -- |

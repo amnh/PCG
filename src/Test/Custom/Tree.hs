@@ -104,7 +104,7 @@ createBinary leafCharacters = TT . setRefIds . createBinary' $ createCherry' <$>
         f ys  = Node def ys
     
 
-data SimpleTree = TT (Tree TestingDecoration)
+newtype SimpleTree = TT (Tree TestingDecoration)
   deriving (Eq)
 
 data TestingDecoration

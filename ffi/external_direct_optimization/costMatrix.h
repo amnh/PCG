@@ -276,7 +276,7 @@ void cm_print_matrix_3d (elem_t *costMatrix, size_t costMatrixDimension);
 
 
 void
-cm_set_cost_3d (cost_matrices_3d_t * costMtx, elem_t elem1, elem_t elem2, elem_t elem3, unsigned int v);
+cm_set_cost_3d (cost_matrices_3d_t *costMtx, elem_t elem1, elem_t elem2, elem_t elem3, unsigned int v);
 
 
 /** As with 2d, but doesn't compute worst, prepend or tail */
