@@ -9,7 +9,6 @@ import Data.Ratio
 import Data.Semigroup
 import Numeric.NonNegativeAverage
 import Test.Tasty
-import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
 
