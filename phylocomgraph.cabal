@@ -199,6 +199,7 @@ library
                        Data.BitMatrix
                        Data.DuplicateSet
                        Data.EdgeLength
+                       Data.MutualExculsionSet
                        Data.ReplicatedSequence
                        Data.TCM
                        Data.TCM.Memoized
@@ -799,6 +800,7 @@ Test-Suite testsuite
   hs-source-dirs:      test, src, app, ffi
 
   ghc-options:         -O2
+                       -threaded
                        -Wall
                        -Wcompat
                        -Wdodgy-foreign-imports
