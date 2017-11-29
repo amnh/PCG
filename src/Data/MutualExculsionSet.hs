@@ -201,7 +201,7 @@ instance Ord a => Semigroup (MutualExculsionSet a) where
 instance Show a => Show (MutualExculsionSet a) where
 
     show x = unwords
-        [ "MutualExclusionSet "
+        [ "MutualExclusionSet"
         , shownIncluded
         , "|"
         , shownExcluded
