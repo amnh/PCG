@@ -72,9 +72,11 @@ data SankoffOptimizationDecoration c
 type StateContributionList = [Word]
 
 
+-- | (✔)
 instance NFData c => NFData (MetricDecorationInitial c)
 
 
+-- | (✔)
 instance NFData c => NFData (SankoffOptimizationDecoration c)
 
 

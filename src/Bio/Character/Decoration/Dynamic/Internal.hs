@@ -106,15 +106,19 @@ data DynamicDecorationInitial d
    } deriving (Eq, Generic)
 
 
+-- | (✔)
 instance NFData d => NFData (DynamicDecorationInitial d)
 
 
+-- | (✔)
 instance NFData d => NFData (DynamicDecorationDirectOptimization d)
 
 
+-- | (✔)
 instance NFData d => NFData (DynamicDecorationDirectOptimizationPostOrderResult d)
 
 
+-- | (✔)
 instance NFData d => NFData (DynamicDecorationImpliedAlignment d)
 
 
@@ -954,6 +958,10 @@ renderFoci foci = prefix <> body <> "\n"
 
 
 -- renderingContext :: 
+
+-- |
+-- Generic rendering function for a dynamic character decoration with descriptive
+-- fields for determining the result of a network traversal.
 renderingDecorationContext
   :: ( HasCharacterAlphabet  s x
      , HasCharacterCost      s y

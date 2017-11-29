@@ -42,9 +42,11 @@ newtype AverageLength = AL NonNegativeAverage
   deriving (Eq, Generic, Ord, Semigroup)
 
 
+-- | (✔)
 instance NFData AverageLength
 
 
+-- | (✔)
 instance Show AverageLength where
 
     show (AL x) = show x
@@ -230,8 +232,14 @@ class HasAverageLength s a | s -> a where
     {-# MINIMAL averageLength #-}
 
 
+
+-- |
+-- Safely construct an 'AverageLength' from a non-negative value.
 toAverageLength :: Word -> AverageLength
 toAverageLength = AL . fromNonNegativeValue
 
+
+-- |
+-- Safely convert an 'AverageLength' to a 'Fractional' representation.
 getAverageLength :: Fractional a => AverageLength -> a
 getAverageLength (AL x) = fromNonNegativeAverage x

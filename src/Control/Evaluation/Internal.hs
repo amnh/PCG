@@ -102,9 +102,11 @@ instance Logger Evaluation a where
     warn s = Evaluation (pure $ Warning     s) mempty
 
 
+-- | (✔)
 instance (NFData a) => NFData (Evaluation a)
 
 
+-- | (✔)
 instance NFData Notification
 
 
@@ -115,7 +117,7 @@ instance Monad Evaluation where
   
     return = pure
 
-    (>>)  (Evaluation ms x) (Evaluation ns y) = Evaluation (ms <> ns) (x>>y)
+    (>>)   = (*>)
 
     (>>=) (Evaluation ms  NoOp    ) _ = Evaluation ms NoOp
     (>>=) (Evaluation ms (Error x)) _ = Evaluation ms $ Error x

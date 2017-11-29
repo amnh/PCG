@@ -42,6 +42,7 @@ instance ContinuousCharacter ContinuousChar where
         f = fromRational . toRational
 
 
+-- | (✔)
 instance NFData ContinuousChar
 
 

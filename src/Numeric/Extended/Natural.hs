@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, MagicHash, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric, MagicHash, Strict, TypeFamilies #-}
 
 module Numeric.Extended.Natural
   ( ExtendedNatural()
@@ -77,8 +77,10 @@ instance Arbitrary ExtendedNatural where
 
 instance Bounded ExtendedNatural where
 
+    {-# INLINE maxBound #-}
     maxBound = Cost $ maxBound - 1
 
+    {-# INLINE minBound #-}
     minBound = Cost minBound
 
 
@@ -88,9 +90,18 @@ instance Enum ExtendedNatural where
 
     toEnum   = Cost . toEnum
 
-    succ     = (+ 1)
+    {-# INLINE succ #-}
+    succ val@(Cost x)
+      | val == infinity = infinity
+      | val == maxBound = maxBound
+      | otherwise       = Cost $ x + 1
 
-    pred     = subtract 1
+    {-# INLINE pred #-}
+    pred  val@(Cost x)
+      | val == infinity = infinity
+      | val == minBound = minBound
+      | otherwise       = Cost $ x - 1
+
 
 
 instance ExtendedNumber ExtendedNatural where
@@ -108,11 +119,11 @@ instance NFData ExtendedNatural
 instance Num ExtendedNatural where
 
     lhs@(Cost x) + rhs@(Cost y)
-      | lhs    == infinity   = infinity
-      | rhs    == infinity   = infinity
-      | result >= infinity   = maxBound
-      | result <  maxima     = maxBound
-      | otherwise            = Cost result
+      | lhs    == infinity  = infinity
+      | rhs    == infinity  = infinity
+      | result >= infinity  = maxBound
+      | result <  maxima    = maxBound
+      | otherwise           = Cost result
       where
         maxima = max x y 
         result = x + y
@@ -123,23 +134,52 @@ instance Num ExtendedNatural where
       | otherwise       = Cost $ x - y
 
     lhs@(Cost x) * rhs@ (Cost y)
-      | lhs    == infinity   = infinity
-      | rhs    == infinity   = infinity
-      | zBits  >  wordWidth  = maxBound
-      | otherwise            = Cost $ x * y
-      where
-        wordWidth = finiteBitSize (minBound :: Word)
-        zBits = xBits + yBits
-        xBits = bitsUsed x
-        yBits = bitsUsed y
+      -- If either value is infinite,
+      -- then the product is infinite
+      | lhs    == infinity  = infinity
+      | rhs    == infinity  = infinity
 
+      -- If both values are finite,
+      -- then we consider the minimum number
+      -- of possible bits in the product,
+      -- and compare that to the number
+      -- of bits in this machine's Word width.
+      | otherwise =
+          let minProductBits = bitsUsed x + bitsUsed y - 1
+          in  case minProductBits `compare` wordWidth of
+
+                -- If the minimum possible number of bits to
+                -- represent the product is less than the Word width,
+                -- then we compute the product directly.
+                LT -> Cost $ x * y
+
+                -- If the minimum possible number of bits to
+                -- represent the product is exceeds the Word width,
+                -- then an overflow definately occured and
+                -- the product is the upper finite bound. 
+                GT -> maxBound
+               
+                -- If the minimum possible number of bits to
+                -- represent the product equals the Word width,
+                -- then great care must be taken!
+                -- First we compute the product directly.
+                -- Then we perform an expensive division operation
+                -- to determine if overflow occured.
+                EQ -> let result = x * y
+                      in  if   result `quotRem` x /= (y,0)
+                          then maxBound
+                          else Cost result
+
+    {-# INLINE abs #-}
     abs = id
 
+    {-# INLINE signum #-}
     signum (Cost 0) = 0
     signum        _ = 1
 
     fromInteger = Cost . fromInteger
 
+    {-# INLINE negate #-}
     negate = const 0
 
 
@@ -179,6 +219,11 @@ toWord (Cost x)
 {-# INLINE fromWord #-}
 fromWord :: Word -> ExtendedNatural
 fromWord = Cost
+
+
+{-# INLINE wordWidth #-}
+wordWidth :: Int
+wordWidth = finiteBitSize (minBound :: Word)
 
 
 -- |

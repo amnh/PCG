@@ -151,6 +151,7 @@ Test-Suite unit-tests
   hs-source-dirs:      src, test
 
   ghc-options:         -O2
+                       -threaded
 
                     -- Sanity check warnings
                        -Wall

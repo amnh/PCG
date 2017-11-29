@@ -185,8 +185,6 @@ naiveWagnerBuild ns =
 
   where
     fromRefDAG = performDecoration . PDAG2 . defaultMetadata
-
-    getCost (PDAG2 v) = dagCost $ graphData v
  
 
 iterativeBuild

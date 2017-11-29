@@ -161,9 +161,11 @@ instance EncodableStaticCharacter a => DiscreteWithTcmCharacterMetadata (Additiv
 instance EncodableStaticCharacter a => DiscreteCharacterDecoration (AdditivePostorderDecoration a) a where
 
 
+-- | (✔)
 instance (NFData a, NFData (Finite (Bound a)), NFData (Range (Bound a))) => NFData (AdditiveOptimizationDecoration a)
 
   
+-- | (✔)
 instance (NFData a, NFData (Finite (Bound a)), NFData (Range (Bound a))) => NFData (AdditivePostorderDecoration a)
 
   

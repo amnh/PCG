@@ -72,6 +72,7 @@ instance Monad m => Logger (EvaluationT m) a where
     warn = state . warn
 
 
+-- | (✔)
 instance (Monad m, NFData a) => NFData (EvaluationT m a) where
 
     rnf (EvaluationT x) = (force <$> x) `seq` ()
