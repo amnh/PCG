@@ -132,8 +132,10 @@ additionProperties :: TestTree
 additionProperties = testGroup "Properties of addition"
     [ testGroup "abelian group under addition"
         [ testProperty "additive identity holds" additiveIdentity
-        , testProperty "addition is associative" additiveAssocativity
-        , testProperty "addition is commutive"   additiveCommutivity
+        , localOption (QuickCheckTests 1000000)
+            $ testProperty "addition is associative" additiveAssocativity
+        , localOption (QuickCheckTests 1000000)
+            $ testProperty "addition is commutive"   additiveCommutivity
         ]
     , testGroup "other properties"
         [ testProperty "addition on maxBound is indempotent" additiveUpperBound
@@ -210,10 +212,14 @@ multiplicationProperties :: TestTree
 multiplicationProperties = testGroup "Properties of multiplication"
     [ testProperty "multiplicative identity holds" multiplicativeIdentity
     , testProperty "multiplicative annihilation holds" multiplicativeAnnihilation
-    , testProperty "multiplication is associative" multiplicativeAssocativity
-    , testProperty "multiplication is commutive" multiplicativeCommutivity
-    , testProperty "multiplication is left-distibutive"  multiplicativeLeftDistributivity
-    , testProperty "multiplication is right-distibutive" multiplicativeRightDistributivity
+    , localOption (QuickCheckTests 1000000)
+        $ testProperty "multiplication is associative" multiplicativeAssocativity
+    , localOption (QuickCheckTests 1000000)
+        $ testProperty "multiplication is commutive" multiplicativeCommutivity
+    ,  localOption (QuickCheckTests 1000000)
+        $ testProperty "multiplication is left-distibutive"  multiplicativeLeftDistributivity
+    ,  localOption (QuickCheckTests 1000000)
+        $ testProperty "multiplication is right-distibutive" multiplicativeRightDistributivity
     , testProperty "multiplication on maxBound is indempotent (except 0 & infinity)" multiplicativeUpperBound
     , testProperty "multiplication of finite values never exceeds maxBound" multiplicativeCeiling
     ]
