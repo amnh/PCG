@@ -417,11 +417,20 @@ selectApplicableResolutions topology cache =
       xs  -> maximumBy (comparing (length . subtreeEdgeSet)) xs
 
 
+-- |
+-- Different contexts used to mediate an effcient multidimensional traversal.
 data  PreorderContext c
     = NormalNode   Int
     | SetRootNode  Int
     | FociEdgeNode Int c
 
+
+-- |
+-- Applies a traversal logic function over a 'ReferenceDAG' in a /pre-order/ manner.
+--
+-- The logic function takes a current node decoration,
+-- a list of parent node decorations with the logic function already applied,
+-- and returns the new decoration for the current node.
 preorderFromRooting''
   :: (z -> [(Word, z')] -> z')
   ->         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))

@@ -156,6 +156,7 @@ instance MonoTraversable BitMatrix where
     omapM = otraverse
 
 
+-- | (✔)
 instance NFData BitMatrix
 
 

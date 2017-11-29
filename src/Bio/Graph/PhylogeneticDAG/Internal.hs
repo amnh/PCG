@@ -180,6 +180,7 @@ type UnRiefiedCharacterDAG =
 
 
 --instance HasLeafSet (PhylogeneticDAG2 e n u v w x y z) (LeafSet n) where
+-- | (✔)
 instance HasLeafSet (PhylogeneticDAG2 e n u v w x y z) (LeafSet (PhylogeneticNode2 (CharacterSequence u v w x y z) n)) where
 
     leafSet = lens getter undefined
@@ -188,9 +189,11 @@ instance HasLeafSet (PhylogeneticDAG2 e n u v w x y z) (LeafSet (PhylogeneticNod
             getter (PDAG2 e) =  e ^. leafSet
 
 
+-- | (✔)
 instance (NFData e, NFData n, NFData u, NFData v, NFData w, NFData x, NFData y, NFData z) => NFData (PhylogeneticDAG2 e n u v w x y z)
 
 
+-- | (✔)
 instance Foldable f => PrintDot (PhylogeneticDAG2 e (f String) u v w x y z) where
 
     unqtDot       = unqtDot . discardCharacters
@@ -202,6 +205,7 @@ instance Foldable f => PrintDot (PhylogeneticDAG2 e (f String) u v w x y z) wher
     listToDot     = listToDot . fmap discardCharacters
 
 
+-- | (✔)
 instance ( Show e
          , Show n
          , Show u
@@ -218,6 +222,7 @@ instance ( Show e
         f i (PNode n sek) = mconcat [ "Node {", show i, "}:\n\n", unlines [show n, show sek] ]
 
 
+-- | (✔)
 instance ( Show e
          , Show n
          , Show u
@@ -238,11 +243,13 @@ instance ( Show e
         f i n = mconcat [ "Node {", show i, "}:\n\n", show n ]
 
 
+-- | (✔)
 instance Foldable f => ToNewick (PhylogeneticDAG2 e (f String) u v w x y z) where
 
     toNewick = toNewick . discardCharacters
 
 
+-- | (✔)
 instance ( ToXML u
          , ToXML v
          , ToXML w

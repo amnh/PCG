@@ -86,6 +86,7 @@ instance Functor EvalUnit where
     f `fmap` Value x = Value $ f x
 
 
+-- | (✔)
 instance NFData a => NFData (EvalUnit a)
 
 

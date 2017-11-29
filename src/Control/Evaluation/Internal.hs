@@ -102,9 +102,11 @@ instance Logger Evaluation a where
     warn s = Evaluation (pure $ Warning     s) mempty
 
 
+-- | (✔)
 instance (NFData a) => NFData (Evaluation a)
 
 
+-- | (✔)
 instance NFData Notification
 
 

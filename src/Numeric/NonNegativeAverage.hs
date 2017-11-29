@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveDataTypeable, DeriveGeneric #-}
+{-# LANGUAGE DeriveDataTypeable, DeriveGeneric, Safe #-}
 
 module Numeric.NonNegativeAverage
   ( NonNegativeAverage()
@@ -76,11 +76,15 @@ instance Show NonNegativeAverage where
     show = show . (fromNonNegativeAverage :: NonNegativeAverage -> Rational)
 
 
+-- |
+-- Safely construct a 'NonNegativeAverage' from a 'Word'.
 {-# INLINE fromNonNegativeValue #-}
 fromNonNegativeValue :: Word -> NonNegativeAverage
 fromNonNegativeValue x = Avg x 1
 
 
+-- |
+-- Safely convert a 'NonNegativeAverage' to a 'Fractional' representation.
 fromNonNegativeAverage :: Fractional r => NonNegativeAverage -> r
 fromNonNegativeAverage (Avg n d) = num / den
   where
