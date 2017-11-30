@@ -140,17 +140,17 @@ cm_alloc_2d ( cost_matrices_2d_t *res
 {
     if (DEBUG_COST_M)  printf("\n---cm_alloc_set_costs_2d\n");
 
-#ifndef USE_LARGE_ALPHABETS
-    if (alphSize > 255) {
-        // TODO: update this error message from POY
-        printf("Apparently you are analyzing large alphabets. This version \
-                of PCG was compiled without the --enable-large-alphabets option. \
-                To run this analysis you need to enable that option at compile time. \
-                Either recompile the program yourself or request a version suited \
-                for your needs in the PCG mailing list. Thanks!");
-        exit(1);
-    }
-#endif
+// #ifndef USE_LARGE_ALPHABETS
+//     if (alphSize > 255) {
+//         // TODO: update this error message from POY
+//         printf("Apparently you are analyzing large alphabets. This version \
+//                 of PCG was compiled without the --enable-large-alphabets option. \
+//                 To run this analysis you need to enable that option at compile time. \
+//                 Either recompile the program yourself or request a version suited \
+//                 for your needs in the PCG mailing list. Thanks!");
+//         exit(1);
+//     }
+// #endif
     if (combinations) {
         res->gap_char            = 1 << (alphSize - 1);
         res->alphSize            = cm_combinations_of_alphabet (alphSize); // 2 ^ alphSize - 1 is |power set of alphSize|
@@ -650,4 +650,3 @@ cm_set_median_3d( const cost_matrices_3d_t *costMtx
 {
     cm_set_value_3d (costMtx->median, elem1, elem2, elem3, val, costMtx->costMatrixDimension);
 }
-

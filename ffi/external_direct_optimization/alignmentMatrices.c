@@ -17,6 +17,7 @@
 /* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301   */
 /* USA                                                                        */
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -116,14 +117,9 @@ algnMat_setup_size ( alignment_matrices_t *alignMtx
         alignMtx->cap_pre         = cap_precalcMtx;
     }
     /* Check if there is an allocation error then abort program */
-    if ((cap_dir > 0) && (alignMtx->algn_dirMtx == NULL)) {
-        printf("Memory allocation problem in direction matrix\n");
-        exit(1);
-    }
-    if ((cap_precalcMtx > 0) && (alignMtx->algn_precalcMtx == NULL)) {
-        printf("Memory allocation problem in precalc matrix\n");
-        exit(1);
-    }
+    assert( !(cap_dir        > 0 && alignMtx->algn_dirMtx     == NULL) && "Memory allocation problem in direction matrix\n" );
+    assert( !(cap_precalcMtx > 0 && alignMtx->algn_precalcMtx == NULL) && "Memory allocation problem in precalc matrix\n" );
+
     if (DEBUG_MAT) {
         printf("\nFinal allocated size of matrices:\n" );
         printf("    efficiency: %zu\n", alignMtx->cap_eff);

@@ -21,7 +21,7 @@
 #define DYN_CHAR_H
 
 
-#define USE_LARGE_ALPHABETS
+// #define USE_LARGE_ALPHABETS
 
 
 // #ifdef USE_LARGE_ALPHABETS

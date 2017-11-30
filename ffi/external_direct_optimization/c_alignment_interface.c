@@ -577,7 +577,7 @@ void reallocAlignIO(alignIO_t *toAlloc, size_t capacity )
     toAlloc->length    = 0;
     toAlloc->capacity  = capacity;
     toAlloc->character = realloc(toAlloc->character, capacity * sizeof(elem_t));
-    if (toAlloc->character == NULL) printf("Out of memory."), exit(1);
+    assert (toAlloc->character != NULL && "OOM: can't allocate aligntIO_t character.");
 }
 
 
