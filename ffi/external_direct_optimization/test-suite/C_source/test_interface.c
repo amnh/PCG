@@ -68,6 +68,8 @@ int main() {
      *  symmetric. Metricity is decided by PCG application.
      */
     unsigned int *tcm = calloc(tcm_total_len, sizeof(int)); // this is the input tcm, not the generated one
+    assert( tcm != NULL && "Couldn't allocate simple tcm in interface test." );
+
     for (i = 0; i < tcm_total_len; i += alphSize) {
         //printf("i: %zu\n", i);
         for (j = 0; j < alphSize; j++) {
@@ -106,6 +108,8 @@ void do2D_nonAffine( unsigned int * tcm, size_t alphSize )
     printf("\n\n\n******************** Align 2 characters ********************\n");
 
     cost_matrices_2d_t *costMtx2d = malloc(sizeof(struct cost_matrices_2d_t));
+    assert( costMtx2d != NULL && "Couldn't allocate 2D cost matrix in interface test." );
+
     setUp2dCostMtx (costMtx2d, tcm, alphSize, 0);
 
     elem_t one      = 1;
@@ -116,6 +120,9 @@ void do2D_nonAffine( unsigned int * tcm, size_t alphSize )
 
     elem_t *longer_vals = malloc(sizeof(elem_t)),
            *lesser_vals = malloc(sizeof(elem_t));
+    assert(   longer_vals != NULL
+           && lesser_vals != NULL
+           && "Couldn't allocate input character values in 2D interface test." );
 
     size_t longerLen,
            lesserLen,
@@ -127,6 +134,13 @@ void do2D_nonAffine( unsigned int * tcm, size_t alphSize )
     alignIO_t *ungappedMedianChar = malloc( sizeof(struct alignIO_t) );
     alignIO_t *gappedMedianChar   = malloc( sizeof(struct alignIO_t) );
     alignIO_t *unionMedianChar    = malloc( sizeof(struct alignIO_t) );
+
+    assert(   lesserInputChar    != NULL
+           && longerInputChar    != NULL
+           && ungappedMedianChar != NULL
+           && gappedMedianChar   != NULL
+           && unionMedianChar    != NULL
+           && "Couldn't allocate input or median characters structs in 2D interface test." );
 
     // set to 1 so I can realloc later:
     allocAlignIO(lesserInputChar,    1);
@@ -145,6 +159,9 @@ void do2D_nonAffine( unsigned int * tcm, size_t alphSize )
         // need to realloc each time through the loop
         longer_vals = realloc( longer_vals, longerLen * sizeof(elem_t) );
         lesser_vals = realloc( lesser_vals, lesserLen * sizeof(elem_t) );
+        assert(   longer_vals    != NULL
+               && lesser_vals    != NULL
+               && "Couldn't reallocate input character vals in 2D interface test." );
 
         set_vals( longer_vals, longerLen, max_val );
         set_vals( lesser_vals, lesserLen, max_val );
@@ -391,6 +408,9 @@ void do2D_affine( unsigned int * tcm, size_t alphSize )
 
     elem_t *longer_vals = malloc( sizeof(elem_t) ),
            *lesser_vals = malloc( sizeof(elem_t) );
+    assert(   longer_vals    != NULL
+            && lesser_vals    != NULL
+            && "Couldn't reallocate input character vals in 2D affine interface test." );
 
     size_t longerLen,
            lesserLen,
@@ -401,6 +421,12 @@ void do2D_affine( unsigned int * tcm, size_t alphSize )
 
     alignIO_t *ungappedMedianChar = malloc( sizeof(struct alignIO_t) );
     alignIO_t *gappedMedianChar   = malloc( sizeof(struct alignIO_t) );
+
+    assert(   lesserInputChar    != NULL
+           && longerInputChar    != NULL
+           && ungappedMedianChar != NULL
+           && gappedMedianChar   != NULL
+           && "Couldn't allocate input or median characters structs in 2D affine interface test." );
 
     // set to 1 so I can realloc later:
     allocAlignIO(lesserInputChar,    1);
@@ -423,6 +449,9 @@ void do2D_affine( unsigned int * tcm, size_t alphSize )
 
             longer_vals = realloc( longer_vals, longerLen * sizeof(elem_t) );
             lesser_vals = realloc( lesser_vals, lesserLen * sizeof(elem_t) );
+            assert(   longer_vals    != NULL
+                   && lesser_vals    != NULL
+                   && "Couldn't reallocate input character vals in 2D affine interface test." );
 
             set_vals( longer_vals, longerLen, max_val);
             set_vals( lesser_vals, lesserLen, max_val);
@@ -538,6 +567,14 @@ void do3D( unsigned int *tcm, size_t alphSize )
     alignIO_t *returnChar2 = malloc( sizeof(struct alignIO_t) );    //
     alignIO_t *returnChar3 = malloc( sizeof(struct alignIO_t) );    //
 
+    assert(   inputChar1  != NULL
+           && inputChar2  != NULL
+           && inputChar3  != NULL
+           && returnChar1 != NULL
+           && returnChar2 != NULL
+           && returnChar3 != NULL
+           && "Couldn't allocate input or output structs in 3D interface test." );
+
     // set to 1 so I can realloc later:
     allocAlignIO( inputChar1, 1 );
     allocAlignIO( inputChar2, 1 );
@@ -549,6 +586,9 @@ void do3D( unsigned int *tcm, size_t alphSize )
 
     alignIO_t *ungappedMedianChar = malloc( sizeof(struct alignIO_t) );
     alignIO_t *gappedMedianChar   = malloc( sizeof(struct alignIO_t) );
+    assert(   ungappedMedianChar != NULL
+           && gappedMedianChar   != NULL
+           && "Couldn't allocate input or median characters structs in 3D interface test." );
 
     allocAlignIO( ungappedMedianChar, 1 );
     allocAlignIO( gappedMedianChar,   1 );

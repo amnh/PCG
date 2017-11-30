@@ -21,10 +21,7 @@ int main() {
 
     int tcm[TCM_LENGTH] = {0,1,1,1,2, 1,0,1,1,2, 1,1,0,1,2, 1,1,1,0,2, 2,2,2,2,0};
     size_t alphabetSize = 5;
-    if ( TCM_LENGTH != alphabetSize * alphabetSize ) {
-        printf("tcm wrong size\n");
-        exit(1);
-    }
+    assert( TCM_LENGTH == alphabetSize * alphabetSize && "tcm wrong size." );
 
     costMatrix_p costMatrix = matrixInit(alphabetSize, tcm);
 

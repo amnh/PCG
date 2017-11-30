@@ -66,14 +66,14 @@ algnMat_clean_direction_matrix (alignment_matrices_t *alignMtx) {
  */
 inline void
 algnMat_setup_size ( alignment_matrices_t *alignMtx
-                   , size_t len_char1
-                   , size_t len_char2
-                   , size_t alphabetSize
+                   , size_t                len_char1
+                   , size_t                len_char2
+                   , size_t                alphabetSize
                    )
 {
     if(DEBUG_MAT) {
-        printf("\n---algnMat_setup_size\n");
-        printf("capacity: %zu\nefficiency: %zu\nprecalc: %zu\n", alignMtx->cap_nw, alignMtx->cap_eff, alignMtx->cap_pre);
+        printf( "\n---algnMat_setup_size\n" );
+        printf( "capacity: %zu\nefficiency: %zu\nprecalc: %zu\n", alignMtx->cap_nw, alignMtx->cap_eff, alignMtx->cap_pre );
     }
     size_t cap,
            cap_2d = 0,
@@ -84,6 +84,9 @@ algnMat_setup_size ( alignment_matrices_t *alignMtx
     cap            = algnMat_size_of_2d_matrix (len_char1, len_char2);
     cap_precalcMtx = (1 << alphabetSize) * len_char1;
     cap_dir        = (len_char1 + 1) * (len_char2 + 1);
+    assert( cap_precalcMtx > 0 && "Capacity of precalc matrix is 0." );
+    assert( cap_dir        > 0 && "Capacity of direction matrix is 0." );
+
     if (DEBUG_MAT) {
         printf("cap_eff: %zu, \ncap_nw: %zu\n", alignMtx->cap_eff, cap);
     }
@@ -91,16 +94,16 @@ algnMat_setup_size ( alignment_matrices_t *alignMtx
         if (DEBUG_MAT) {
             printf("The current capacity of the efficiency matrix is too small. New allocation: %zu\n", cap);
         }
-        alignMtx->algn_costMtx =
-            realloc (alignMtx->algn_costMtx, (cap * sizeof(int)));
+        alignMtx->algn_costMtx = realloc( alignMtx->algn_costMtx, cap * sizeof(int) );
+        assert( alignMtx->algn_costMtx != NULL && "Memory allocation problem in cost matrix.");
         alignMtx->cap_eff = cap;
     }
     if (alignMtx->cap_nw < cap_dir) {         /* If the other matrices are not large enough */
         if (DEBUG_MAT) {
             printf("The current capacity of the NW matrix is too small. New allocation: %zu\n", cap_dir);
         }
-        alignMtx->algn_dirMtx =
-                realloc (alignMtx->algn_dirMtx, cap_dir * sizeof(DIR_MTX_ARROW_t) );
+        alignMtx->algn_dirMtx = realloc( alignMtx->algn_dirMtx, cap_dir * sizeof(DIR_MTX_ARROW_t) );
+        assert( alignMtx->algn_dirMtx != NULL && "Memory allocation problem in direction matrix\n" );
 
         if (cap_2d) {
             if (DEBUG_MAT) {
@@ -113,12 +116,11 @@ algnMat_setup_size ( alignment_matrices_t *alignMtx
         if (DEBUG_MAT) {
             printf("precalc matrix too small. New allocation: %zu\n", cap_precalcMtx);
         }
-        alignMtx->algn_precalcMtx = realloc (alignMtx->algn_precalcMtx, cap_precalcMtx * sizeof(int));
+        alignMtx->algn_precalcMtx = realloc( alignMtx->algn_precalcMtx, cap_precalcMtx * sizeof(int) );
+        assert( alignMtx->algn_precalcMtx != NULL && "Memory allocation problem in precalc matrix." );
+
         alignMtx->cap_pre         = cap_precalcMtx;
     }
-    /* Check if there is an allocation error then abort program */
-    assert( !(cap_dir        > 0 && alignMtx->algn_dirMtx     == NULL) && "Memory allocation problem in direction matrix\n" );
-    assert( !(cap_precalcMtx > 0 && alignMtx->algn_precalcMtx == NULL) && "Memory allocation problem in precalc matrix\n" );
 
     if (DEBUG_MAT) {
         printf("\nFinal allocated size of matrices:\n" );

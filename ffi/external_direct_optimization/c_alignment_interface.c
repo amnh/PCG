@@ -43,6 +43,11 @@ int align2d( alignIO_t          *inputChar1_aio
     dyn_character_t *shortChar    = malloc(sizeof(dyn_character_t)); // input to algn_nw_2d
     dyn_character_t *retShortChar = malloc(sizeof(dyn_character_t)); // aligned character outputs from backtrace (not medians)
     dyn_character_t *retLongChar  = malloc(sizeof(dyn_character_t)); // aligned character outputs from backtrace (not medians)
+    assert(   longChar     != NULL
+           && shortChar    != NULL
+           && retShortChar != NULL
+           && retLongChar  != NULL
+           && "Can't allocate input or output characters in 2D affine." );
 
     /*** Most character allocation is now done on Haskell side, but these two are local. ***/
     /*** longChar and shortChar will both have pointers into the input characters, so don't need to be initialized separately ***/
@@ -89,6 +94,7 @@ int align2d( alignIO_t          *inputChar1_aio
         dyn_char_print(shortChar);
     }
     alignment_matrices_t *algnMtxs2d = malloc( sizeof(alignment_matrices_t) );
+    assert( algnMtxs2d != NULL && "Can't allocate alignment matrices." );
 
     initializeAlignmentMtx( algnMtxs2d, longChar->len, shortChar->len, costMtx2d->costMatrixDimension );
 
@@ -113,6 +119,7 @@ int align2d( alignIO_t          *inputChar1_aio
 
         if (getUngapped) {
             dyn_character_t *ungappedMedianChar = malloc( sizeof(dyn_character_t) );
+            assert( ungappedMedianChar != NULL && "Can't allocate ungapped median character." );
             dyn_char_initialize( ungappedMedianChar, CHAR_CAPACITY );
 
             algn_get_median_2d_no_gaps( retShortChar, retLongChar, costMtx2d, ungappedMedianChar );
@@ -124,10 +131,11 @@ int align2d( alignIO_t          *inputChar1_aio
             freeChar( ungappedMedianChar );
         }
         if (getGapped && !getUnion) {
-            dyn_character_t *gappedMedianChar = malloc(sizeof(dyn_character_t));
-            dyn_char_initialize(gappedMedianChar, CHAR_CAPACITY);
+            dyn_character_t *gappedMedianChar = malloc( sizeof(dyn_character_t) );
+            assert( gappedMedianChar != NULL && "Can't allocate gapped median character." );
+            dyn_char_initialize( gappedMedianChar, CHAR_CAPACITY );
 
-            algn_get_median_2d_with_gaps (retShortChar, retLongChar, costMtx2d, gappedMedianChar);
+            algn_get_median_2d_with_gaps( retShortChar, retLongChar, costMtx2d, gappedMedianChar );
 
             dynCharToAlignIO( gappedOutput_aio, gappedMedianChar, 1 );
             dynCharToAlignIO( longIO,  retLongChar, 1 );
@@ -136,15 +144,16 @@ int align2d( alignIO_t          *inputChar1_aio
             freeChar( gappedMedianChar );
         }
         if (getUnion) {
-            dyn_character_t *gappedMedianChar = malloc(sizeof(dyn_character_t));
+            dyn_character_t *unionMedianChar = malloc( sizeof(dyn_character_t) );
+            assert( unionMedianChar != NULL && "Can't allocate union median character." );
 
-            dyn_char_initialize(gappedMedianChar, CHAR_CAPACITY);
+            dyn_char_initialize(unionMedianChar, CHAR_CAPACITY);
 
-            algn_union (retShortChar, retLongChar, gappedMedianChar);
+            algn_union( retShortChar, retLongChar, unionMedianChar );
 
-            dynCharToAlignIO( gappedOutput_aio, gappedMedianChar, 1 );
+            dynCharToAlignIO( gappedOutput_aio, unionMedianChar, 1 );
 
-            freeChar(gappedMedianChar);
+            freeChar( unionMedianChar );
 
             /*** following once union has its own output field again ***/
             // dyn_character_t *unionChar = malloc(sizeof(dyn_character_t));
@@ -154,14 +163,14 @@ int align2d( alignIO_t          *inputChar1_aio
             // dynCharToAlignIO(unionChar, unionOutputChar);
             // freeChar(unionChar);
 
-            dynCharToAlignIO( longIO,  retLongChar, 1 );
+            dynCharToAlignIO( longIO,  retLongChar,  1 );
             dynCharToAlignIO( shortIO, retShortChar, 1 );
         }
     }
 
-    freeNWMtx(algnMtxs2d);
-    freeChar(retLongChar);
-    freeChar(retShortChar);
+    freeNWMtx( algnMtxs2d );
+    freeChar( retLongChar );
+    freeChar( retShortChar );
 
     return algnCost;
 
@@ -196,6 +205,11 @@ int align2dAffine( alignIO_t          *inputChar1_aio
     dyn_character_t *shortChar    = malloc(sizeof(dyn_character_t)); // input to algn_nw_2d
     dyn_character_t *retShortChar = malloc(sizeof(dyn_character_t)); // aligned character outputs from backtrace (not medians)
     dyn_character_t *retLongChar  = malloc(sizeof(dyn_character_t)); // aligned character outputs from backtrace (not medians)
+    assert(   longChar     != NULL
+           && shortChar    != NULL
+           && retShortChar != NULL
+           && retLongChar  != NULL
+           && "Can't allocate input or output characters in 2D affine." );
 
     /*** Most character allocation is now done on Haskell side, but these two are local. ***/
     /*** longChar and shortChar will both have pointers into the input characters, so don't need to be initialized separately ***/
@@ -257,6 +271,8 @@ int align2dAffine( alignIO_t          *inputChar1_aio
     DIR_MTX_ARROW_t  *direction_matrix;
 
     alignment_matrices_t *algnMtxs2dAffine = malloc( sizeof(alignment_matrices_t) );
+    assert( algnMtxs2dAffine != NULL && "Can't allocate 2D affine alignment matrices." );
+
     initializeAlignmentMtx(algnMtxs2dAffine, longChar->len, shortChar->len, costMtx2d_affine->costMatrixDimension);
     // printf("Jut initialized alignment matrices.\n");
     lenLongerChar = longChar->len;
@@ -318,6 +334,9 @@ int align2dAffine( alignIO_t          *inputChar1_aio
     if(getMedians) {
         dyn_character_t *ungappedMedianChar = malloc(sizeof(dyn_character_t));
         dyn_character_t *gappedMedianChar   = malloc(sizeof(dyn_character_t));
+        assert(   gappedMedianChar   != NULL
+               && ungappedMedianChar != NULL
+               && "Can't allocate median characters." );
 
         dyn_char_initialize(ungappedMedianChar, CHAR_CAPACITY);
         dyn_char_initialize(gappedMedianChar,   CHAR_CAPACITY);
@@ -391,14 +410,24 @@ int align3d( alignIO_t          *inputChar1_aio
 
     // powellInputs will be sent to Powell 3D alignment, powellOutputs will be returned.
     characters_t *powellInputs = malloc( sizeof(characters_t) );
-    powellInputs->seq1 = malloc( alignmentInChar1Len * sizeof(elem_t) );
-    powellInputs->seq2 = malloc( alignmentInChar2Len * sizeof(elem_t) );
-    powellInputs->seq3 = malloc( alignmentInChar3Len * sizeof(elem_t) );
+    powellInputs->seq1         = malloc( alignmentInChar1Len * sizeof(elem_t) );
+    powellInputs->seq2         = malloc( alignmentInChar2Len * sizeof(elem_t) );
+    powellInputs->seq3         = malloc( alignmentInChar3Len * sizeof(elem_t) );
+    assert(   powellInputs       != NULL
+           && powellInputs->seq1 != NULL
+           && powellInputs->seq2 != NULL
+           && powellInputs->seq3 != NULL
+           && "Can't allocate inputs to Powell 3DO." );
 
     characters_t *powellOutputs = malloc( sizeof(characters_t) );
-    powellOutputs->seq1 = malloc( CHAR_CAPACITY * sizeof(elem_t) );
-    powellOutputs->seq2 = malloc( CHAR_CAPACITY * sizeof(elem_t) );
-    powellOutputs->seq3 = malloc( CHAR_CAPACITY * sizeof(elem_t) );
+    powellOutputs->seq1         = malloc( CHAR_CAPACITY * sizeof(elem_t) );
+    powellOutputs->seq2         = malloc( CHAR_CAPACITY * sizeof(elem_t) );
+    powellOutputs->seq3         = malloc( CHAR_CAPACITY * sizeof(elem_t) );
+    assert(   powellOutputs       != NULL
+           && powellOutputs->seq1 != NULL
+           && powellOutputs->seq2 != NULL
+           && powellOutputs->seq3 != NULL
+           && "Can't allocate outputs from Powell 3DO." );
 
     alignIOtoCharacters_t( powellInputs, inputChar1_aio, inputChar2_aio, inputChar3_aio );
 
@@ -415,6 +444,10 @@ int align3d( alignIO_t          *inputChar1_aio
 
     dyn_character_t *ungappedMedianChar = malloc( sizeof(dyn_character_t) );
     dyn_character_t *gappedMedianChar   = malloc( sizeof(dyn_character_t) );
+    assert(   gappedMedianChar   != NULL
+           && ungappedMedianChar != NULL
+           && "Can't allocate median characters." );
+
 
     dyn_char_initialize( ungappedMedianChar, powellOutputs->idxSeq1 );
     dyn_char_initialize( gappedMedianChar,   powellOutputs->idxSeq1 );
@@ -426,7 +459,7 @@ int align3d( alignIO_t          *inputChar1_aio
                                        );
 
     dynCharToAlignIO( ungappedOutput_aio, ungappedMedianChar, 0 );
-    dynCharToAlignIO( gappedOutput_aio,   gappedMedianChar, 0 );
+    dynCharToAlignIO( gappedOutput_aio,   gappedMedianChar,   0 );
 
     copyValsToAIO( outputChar1_aio, powellOutputs->seq1, powellOutputs->lenSeq1, powellOutputs->lenSeq1 );
     copyValsToAIO( outputChar2_aio, powellOutputs->seq2, powellOutputs->lenSeq1, powellOutputs->lenSeq1 );
@@ -442,6 +475,7 @@ void alignIO_print( const alignIO_t *character )
     printf("Length:   %zu\n", character->length);
     printf("Capacity: %zu\n", character->capacity);
     size_t charStart = character->capacity - character->length;
+
     for(size_t i = charStart; i < character->capacity; i++) {
         printf("%3d,", character->character[i]);
         //if (character->character[i] == 0) continue;
@@ -497,6 +531,7 @@ void allocAlignIO( alignIO_t *toAlloc, size_t capacity )
     toAlloc->length    = 0;
     toAlloc->capacity  = capacity;
     toAlloc->character = calloc(capacity, sizeof(elem_t));
+    assert( toAlloc->character != NULL && "Can't allocate alignIO character field." );
 }
 
 
@@ -514,6 +549,8 @@ void copyValsToAIO( alignIO_t *outChar, elem_t *vals, size_t length, size_t capa
     outChar->length   = length;
     outChar->capacity = capacity;
     outChar->character = malloc( outChar->capacity * sizeof(elem_t) );
+    assert( outChar->character != NULL && "Can't allocate alignIO character field." );
+
     size_t offset = capacity - length;
     memcpy(outChar->character + offset, vals, length * sizeof(elem_t));
 }
@@ -558,6 +595,7 @@ void dynCharToAlignIO( alignIO_t *output, dyn_character_t *input, int delete_ini
     size_t offset  = output->capacity - copy_length; // How far into output to start copying input character.
 
     output->character = malloc( output->capacity * sizeof(elem_t) );
+    assert( output->character != NULL && "Can't allocate alignIO character field." );
 
     // Start copy after unnecessary gap char in input, if it exists.
     memcpy( output->character + offset, input_begin, copy_length * sizeof(elem_t) );

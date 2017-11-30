@@ -22,8 +22,13 @@ int performSequentialAlignment(dynChar_t *seqA, dynChar_t *seqB, costMatrix_p co
     size_t alphSize     = seqA->alphSize;
 
     retType_t *retAlign       = malloc( sizeof(retType_t) );
-    retAlign->char1            = calloc(length, sizeof(uint64_t));
-    retAlign->char2            = calloc(length, sizeof(uint64_t));
+    retAlign->char1           = calloc(length, sizeof(uint64_t));
+    retAlign->char2           = calloc(length, sizeof(uint64_t));
+    assert(   retAlign          != NULL
+           && retAlign->char1 != NULL
+           && retAlign->char2 != NULL
+           && "Can't allocate return sequential alignments." );
+
     retAlign->alignmentLength = 0;
 
     if( retAlign->char1 == NULL || retAlign->char2 == NULL ) {
@@ -54,10 +59,15 @@ int performSequentialAlignment(dynChar_t *seqA, dynChar_t *seqB, costMatrix_p co
 packedChar *getMedian(const packedChar *const lhs, const packedChar *const rhs, const size_t length, const size_t alphSize, costMatrix_p costMatrix)
 {
     dcElement_t *median = malloc(sizeof(dcElement_t));
-    median->alphSize    = alphSize;
     median->element     = calloc(length, sizeof(packedChar));
+    assert(   median          != NULL
+           && median->element != NULL
+           && "Can't allocate median in sequential alignment." );
+    median->alphSize    = alphSize;
 
-    uint64_t *integralStateBuffer = calloc(length, sizeof(packedChar));
+    uint64_t *integralStateBuffer = calloc( length, sizeof(packedChar) );
+    assert(   integralStateBuffer != NULL
+           && "Can't allocate state buffer in sequential alignment." );
 
     for( size_t i = 0; i < length; i++ ) {
         getCostInternal(lhs[i], rhs[i], costMatrix, alphSize, median);
