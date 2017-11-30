@@ -12,16 +12,21 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveAnyClass, DeriveGeneric, FlexibleContexts #-}
 
 module Data.MutualExculsionSet.Internal where
 
 
 import           Control.DeepSeq
+import           Data.DList               (DList)
+import qualified Data.DList        as DL
 import           Data.Foldable
 import           Data.Functor.Classes
 import           Data.Hashable
 import           Data.Key
+import           Data.List.NonEmpty       (NonEmpty(..))
+import           Data.Ord
+import           Data.Map                 (Map)
 import qualified Data.Map          as M
 import qualified Data.Map.Internal as M
 import           Data.Monoid       hiding ((<>))
@@ -45,9 +50,12 @@ import           Test.QuickCheck
 -- typeclass instance modifications.
 data  MutualExculsionSet a
     = MES
-    { includedKeyedMap :: !(M.Map a a)
-    , excludedKeyedMap :: !(M.Map a a)
-    } deriving (Generic, Ord)
+    { includedKeyedMap    :: !(Map a a)
+    , excludedKeyedMap    :: !(Map a a)
+    , includedFullMap     :: !(Map a (Set a))
+    , excludedFullMap     :: !(Map a (Set a))
+    , includedAndExcluded :: !(Set a)
+    } deriving (Eq, Eq1, Generic, Ord1)
 
 
 instance (Arbitrary a, Ord a) => Arbitrary (MutualExculsionSet a) where
@@ -63,27 +71,25 @@ instance (Arbitrary a, Ord a) => Arbitrary (MutualExculsionSet a) where
         -- Zip the two collections of universally unique elements together
         -- to create a unique bijection between mutually exclusive pairs.
         let tuples   = zip (S.toAscList is) es'
-        let included = M.fromDistinctAscList tuples
-        let excluded = M.fromList $ swap <$> tuples
-        -- Build the MutualExculsionSet from the two maps
-        pure $ MES included excluded
+        pure $ unsafeFromList tuples
 
 
+{-
+-- Faster Eq when interface is stable
 instance Eq a => Eq (MutualExculsionSet a) where
 
-    (MES a _) == (MES c _) = a == c
+    (MES _ _ a b _) == (MES _ _ c d _) = [ a == c && b == d ]
+-}
 
-
+{-
 instance Eq1 MutualExculsionSet where
 
-    liftEq eq (MES a _) (MES c _) =
-        length a == length c && liftEq eq (M.keysSet a) (M.keysSet c)
-
-
-instance Ord1 MutualExculsionSet where
-
-    liftCompare cmp (MES a _) (MES c _) =
-        liftCompare cmp (M.keysSet a) (M.keysSet c)
+    liftEq eq (MES a _ x) (MES c _ y) = and
+        [ length a == length c
+        , liftEq eq a c 
+        , x == y
+        ]
+-}
 
 
 -- |
@@ -144,73 +150,45 @@ instance Ord a => Monoid (MutualExculsionSet a) where
 
     mappend = (<>)
 
-    mempty  = MES mempty mempty
+    mempty  = MES mempty mempty mempty mempty mempty
     
 
 instance NFData a => NFData (MutualExculsionSet a)
 
 
--- |
--- \( \mathcal{O} \left( m * \log_2 ( \frac {n}{m + 1} ) + n + m \right), m \leq n \)
---
--- Perfoms an "inner union."
+instance Ord a => Ord (MutualExculsionSet a) where
+
+    x `compare` y =
+        case comparing includedFullMap x y of
+          EQ -> comparing excludedFullMap x y
+          v  -> v
+
+
 instance Ord a => Semigroup (MutualExculsionSet a) where
 
-    (MES lhsIKM lhsEKM) <> (MES rhsIKM rhsEKM) = MES ikm'' ekm''
-      where
-        -- /O( n + m )/
-        ikm = mergeLogic lhsIKM rhsIKM
-
-        -- /O( n + m )/
-        ekm = mergeLogic lhsEKM rhsEKM
-
-        -- Key Seys for filtering
-        ikmMergeKS = M.keysSet ikm
-        ekmMergeKS = M.keysSet ekm
-        ikmInputKS = M.keysSet lhsIKM <> M.keysSet rhsIKM
-        ekmInputKS = M.keysSet lhsEKM <> M.keysSet rhsEKM
-
-        -- /O( m*log(n/m + 1) + n ), m <= n/
-        ikm' = M.withoutKeys ikm ekmInputKS
-
-        -- /O( m*log(n/m + 1) + n ), m <= n/
-        ekm' = M.withoutKeys ekm ikmInputKS
-
-        -- /O( n * log n )/
-        ikm'' = M.filter (`elem` ekmMergeKS) ikm'
-
-        -- /O( n * log n )/
-        ekm'' = M.filter (`elem` ikmMergeKS) ekm'
-
-        -- When a key *is not* present in both maps,
-        -- preserve the key and it's corresponding value.
-        --
-        -- When a key *is* present in both maps but the values are not equal,
-        -- discard the key and both of the values. Otherwise preserve the key
-        -- and the shared value.
-        mergeLogic = M.merge M.preserveMissing M.preserveMissing discardDifferentValues
-          where
-            discardDifferentValues = M.zipWithMaybeMatched conditionalUnion
-              where
-                conditionalUnion _ v1 v2
-                  | v1 == v2  = Just v1
-                  | otherwise = Nothing
-
-
+    (<>) = merge
+  
+  
 instance Show a => Show (MutualExculsionSet a) where
 
-    show x = unwords [render x, "<->", render (invert x)]
+    show x = unlines
+        [ "MutualExclusionSet"
+        , render $ includedKeyedMap x
+        , render $ excludedKeyedMap x 
+        , show . M.assocs $ includedFullMap x
+        , show . M.assocs $ excludedFullMap x
+        , show $ includedAndExcluded x
+        ]
       where
-        render y = unwords
-            [ "MutualExclusionSet"
-            , shownIncluded
+        render a = unwords
+            [ shownIncluded
             , "|"
             , shownExcluded
             ]
           where
             shownIncluded = show included
             shownExcluded = show excluded
-            (included, excluded) = unzip . M.toAscList $ includedKeyedMap y
+            (included, excluded) = unzip $ M.toAscList a
 
 
 -- |
@@ -222,10 +200,22 @@ instance Show a => Show (MutualExculsionSet a) where
 -- Use the semigroup operator '(<>)' to merge singleton contexts into
 -- a larger 'MutualExculsionSet'.
 singleton
-  :: a -- ^ Included element
+  :: Eq a
+  => a -- ^ Included element
   -> a -- ^ Excluded element
   -> MutualExculsionSet a
-singleton x y = MES (M.singleton x y) (M.singleton y x)
+singleton x y =
+    MES
+    { includedKeyedMap    = included
+    , excludedKeyedMap    = excluded
+    , includedFullMap     = M.singleton x (S.singleton y)
+    , excludedFullMap     = M.singleton y (S.singleton x)
+    , includedAndExcluded = both
+    }
+  where
+    (included, excluded, both)
+      | x == y    = (M.empty        , M.empty        , S.singleton x)
+      | otherwise = (M.singleton x y, M.singleton y x, S.empty      )
 
 
 -- |
@@ -240,7 +230,61 @@ singleton x y = MES (M.singleton x y) (M.singleton y x)
 --
 -- > invert . invert === id
 invert :: MutualExculsionSet a -> MutualExculsionSet a 
-invert (MES i e) = MES e i
+invert (MES i e x y b) = MES e i y x b
+
+
+-- |
+-- Merge Sets
+-- |
+-- \( \mathcal{O} \left( m * \log_2 ( \frac {n}{m + 1} ) + n + m \right), m \leq n \)
+--
+-- Perfoms an "union-like" operation.
+merge :: Ord a => MutualExculsionSet a -> MutualExculsionSet a -> MutualExculsionSet a
+merge (MES lhsIKM lhsEKM lhsIFM lhsEFM lhsBoth) (MES rhsIKM rhsEKM rhsIFM rhsEFM rhsBoth) =
+    MES ikmBi' ekmBi' ikmFull ekmFull both
+  where
+    -- /O( m + n )/
+    (ikmBi, ikmFull) = mergeLogic lhsIFM rhsIFM
+    -- /O( m + n )/
+    (ekmBi, ekmFull) = mergeLogic lhsEFM rhsEFM
+
+    both = M.keysSet ikmFull `S.intersection` M.keysSet ekmFull
+
+    ikmBi' = M.withoutKeys ikmBi both
+
+    ekmBi' = M.withoutKeys ekmBi both
+
+    -- When a key *is not* present in both maps,
+    -- preserve the key and it's corresponding value.
+    --
+    -- When a key *is* present in both maps but the values are not equal,
+    -- discard the key and both of the values. Otherwise preserve the key
+    -- and the shared value.
+    mergeLogic :: Ord a => Map a (Set a) -> Map a (Set a) -> (Map a a, Map a (Set a))
+    mergeLogic x y = (M.fromDistinctAscList $ toList bijectives, full)
+      where
+        (bijectives, full) = go x y
+
+        go = M.mergeA preserveMissingValues preserveMissingValues accumulateDifferentValues
+        
+        isBijective x y =
+          case (toList x, toList y) of
+            ([x], [y]) -> if x == y then Just x else Nothing
+            _          -> Nothing
+        
+        preserveMissingValues = M.traverseMaybeMissing conditionalPreservation
+          where
+            conditionalPreservation k v =
+              case toList v of
+                [x] -> (DL.singleton (k, x), Just v)
+                _   -> pure $ Just v
+
+        accumulateDifferentValues = M.zipWithMaybeAMatched conditionalUnion
+          where
+            conditionalUnion k v1 v2 =
+                case isBijective v1 v2 of
+                  Just v  -> (DL.singleton (k, v), Just v1)
+                  Nothing -> pure . Just $ v1 <> v2
 
 
 -- |
@@ -331,32 +375,12 @@ isPermissible xs mes = getAll $ foldMap f xs
 --
 -- Assumed to be well constructed. No validation is performed.
 unsafeFromList :: (Foldable f, Ord a) => f (a, a) -> MutualExculsionSet a
-unsafeFromList xs = MES (M.fromList inc) (M.fromList exc)
+unsafeFromList xs = MES incMap' excMap' (S.singleton <$> incMap) (S.singleton <$> excMap) both
   where
-    exc = swap <$> inc
-    inc = toList xs
-
-
-data  Inconsistency a
-    = IncludedKeyNotExcludedValue a
-    | IncludedValueNotExcludedKey a
-    | ExcludedKeyNotIncludedValue a
-    | ExcludedValueNotIncludedKey a
-    deriving (Eq, Show)
-
-
-findInconsistencies :: Ord a => MutualExculsionSet a -> [Inconsistency a]
-findInconsistencies (MES inc exc) = foldMapWithKey f inc <> foldMapWithKey g exc
-  where
-    f key val =
-      case val `lookup` exc of
-        Nothing -> [IncludedValueNotExcludedKey val]
-        Just x  -> if   x /= key
-                   then [IncludedKeyNotExcludedValue key]
-                   else []
-    g key val =
-      case val `lookup` inc of
-        Nothing -> [ExcludedValueNotIncludedKey val]
-        Just x  -> if   x /= key
-                   then [ExcludedKeyNotIncludedValue key]
-                   else []
+    incMap  = M.fromList inc
+    excMap  = M.fromList exc
+    incMap' = M.withoutKeys incMap both
+    excMap' = M.withoutKeys excMap both
+    exc     = swap <$> inc
+    inc     = toList xs
+    both    = M.keysSet incMap `S.intersection` M.keysSet excMap

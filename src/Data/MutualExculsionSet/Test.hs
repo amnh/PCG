@@ -15,7 +15,8 @@ import Test.Tasty.QuickCheck
 
 testSuite :: TestTree
 testSuite = testGroup "MutualExcludionSet semigroup tests"
-    [ semigroupCases
+    [ orderingProperties
+    , semigroupCases
     , semigroupProperties
     ]
 
@@ -40,46 +41,99 @@ testProperties = testGroup "Invariant properties"
 
 semigroupCases :: TestTree
 semigroupCases = testGroup "semigroup operator specific cases"
-    [ testCase "sanity construction" sanityConstruction
-    , testCase "simple semigroup operation"   simpleConstruction
-    , testCase "symetric annihilation semigroup operation" symetricAnnihilation
-    , testCase "left annihilation semigroup operation"     leftAnnihilation
-    , testCase "left consistency"                          leftConsistency
-    , testCase "right annihilation semigroup operation"    rightAnnihilation
-    , testCase "right consistency"                         rightConsistency
-    , assertAssociativity (singleton 1 2) (singleton 1 3) $ unsafeFromList [ (1, 0), (2, 3) ]
-    , testCase "right bias" $ (singleton 1 3) <> unsafeFromList [ (1, 0), (2, 3) ] @?= mempty
-    , testCase "left bias"  $ singleton 1 2 <> singleton 1 3 @?= mempty
+    [ testGroup "constructions"
+      [ testCase "sanity construction"        sanityConstruction
+      , testCase "indempotent construction"   indempotentConstruction
+      , testCase "simple semigroup operation" simpleConstruction
+      ]
+    , testGroup "paradoxes"
+      [ testCase "paradox singleton"          paradoxSingleton
+      , testCase "paradox construction"       paradoxConstruction
+      , testCase "paradox in join"            paradoxPermissible
+      ]
+--    , testGroup "surjectivity violations"
+--      [ testCase "inclusion set surjectivity violation" inclusionSetViolation
+--      , testCase "exclusion set surjectivity violation" exclusionSetViolation
+--      ]
+{-
+    , assertAssociativity
+        (unsafeFromList [ (-2,  3), ( 1,  2) ])
+        (unsafeFromList [ ( 0,  2), ( 1, -3), ( 4,  3) ])
+        (unsafeFromList [ (-3, -2), ( 0,  3), ( 4, -1) ])
+-}
+    , assertAssociativity
+        (unsafeFromList [ ( 0, -2) ])
+        (unsafeFromList [ ( 1,  0) ])
+        (unsafeFromList [ ( 2,  0) ])
+{-
+    , assertAssociativity
+        (unsafeFromList [ ( 1, -1) ])
+        (unsafeFromList [ ( 0, -2), ( 1, -3) ])
+        (unsafeFromList [ (-1,  3), ( 1, -5) ])
+-}        
+{-
+    , assertAssociativity
+        (unsafeFromList [ (-6, -1), ( 0,  4) ])
+        (unsafeFromList [ (-1,  5), (-6,  0) ])
+        (unsafeFromList $ zip [-7,-1,1,4,9] [0,5,2,-5,6])
+-}
+{-        
+    , assertAssociativity
+        (unsafeFromList [ (-2,  0), (-1, -3) ])
+        (unsafeFromList [ (-3, -2), ( 2, -1) ])
+        (unsafeFromList [ (-1, -2) ])
+-}
+{-      
+    , assertAssociativity
+        (unsafeFromList [ (-8, -1), (-7,  8), (-4, 1)])
+        (unsafeFromList [ (-4,  5)])
+        (unsafeFromList [ (-8,  5), (-4, -1), ( 1, 8) ])
+-}
+{-
+    , assertAssociativity
+        (unsafeFromList [ (-8, -1), (-7,  8), (-4,  1), ( 4, 7) ])
+        (unsafeFromList [ (-6, -3), (-5,  0), (-4,  5), (-2, 4) ])
+        (unsafeFromList [ (-8,  5), (-4, -1), (-3, -2), ( 1, 8) ])
+-}
     ]
   where
     sanityConstruction =
       singleton True False @?= unsafeFromList [ (True, False) ]
     
     simpleConstruction =
-      singleton 1 12 <> singleton 2 21 @?= unsafeFromList [ (1, 12), (2, 21) ]
-    
-    symetricAnnihilation = 
-      singleton 1 2 <> singleton 2 1 @?= mempty
-    
-    leftAnnihilation =
-      singleton 1 2 <> singleton 1 3 @?= mempty
+      singleton 1 2 <> singleton 3 4 @?= unsafeFromList [ (1, 2), (3, 4) ]
 
-    leftConsistency = findInconsistencies (singleton 1 2 <> singleton 1 3) @?= []
+    indempotentConstruction =
+      singleton 1 2 <> singleton 1 2 @?= singleton 1 2
+
+    paradoxSingleton =
+      singleton 1 1 @?= unsafeFromList [ (1, 1) ]
     
-    rightAnnihilation =
-      singleton 1 3 <> singleton 2 3 @?= mempty
+    paradoxConstruction = 
+      singleton 1 2  <> singleton 2 1 @?= unsafeFromList [ (1, 2), (2, 1) ]
     
-    rightConsistency = findInconsistencies (singleton 1 3 <> singleton 2 3) @?= []
+    paradoxPermissible = lhs <> rhs @?= unsafeFromList [ (1, 2), (2, 1), (3, 4), (5, 6) ]
+      where
+        lhs = (singleton 1 2 <> singleton 3 4)
+        rhs = (singleton 2 1 <> singleton 5 6)
+
+    inclusionSetViolation =
+      (singleton 1 2 <> singleton 1 3) @?= unsafeFromList [ (1, 3) ]
+
+    exclusionSetViolation =
+      (singleton 1 3 <> singleton 2 3) @?= unsafeFromList [ (2, 3) ]
 
     assertAssociativity a b c =
-        testCase (unlines [show a, "<>", show b, "<>", show c])
+        testCase (unlines [show a, "<>", show b, "<>", show c, "", show (b <> c), show (a <> b)])
                   $ a <> (b <> c) @?= (a <> b) <> c
 
 
 semigroupProperties :: TestTree
 semigroupProperties = testGroup "Properties of this semigroup opperator"
-    [ testProperty "op is associative" operationAssocativity
-    , testProperty "op is commutive"   operationCommutivity
+    [ localOption (QuickCheckTests 10000)
+        $ testProperty "op is associative" operationAssocativity
+    , localOption (QuickCheckTests  1000)
+        $ testProperty "op is commutive"   operationCommutivity
     ]
   where
     operationAssocativity :: (MutualExculsionSet Int, MutualExculsionSet Int, MutualExculsionSet Int) -> Bool
@@ -140,20 +194,21 @@ infinityCases = testGroup "'infinity' specific cases"
 
 orderingProperties :: TestTree
 orderingProperties = testGroup "Properties of ordering"
-    [ testProperty "The 'compare'  function is reflexively consistent" reflexivity
-    , testProperty "The 'infinity' > all finite values" infinityOrdering
+    [ testProperty "order preserving projection" orderPreserving
+    , testProperty "ordering preserves symetry"  symetry
     ]
   where
-    reflexivity :: (ExtendedNatural, ExtendedNatural) -> Bool
-    reflexivity (lhs, rhs) =
+    orderPreserving :: ((Word, Word), (Word, Word)) -> Bool
+    orderPreserving (lhs@(a, b), rhs@(c, d)) =
+      lhs `compare` rhs == singleton a b `compare` singleton c d
+
+    symetry :: (ExtendedNatural, ExtendedNatural) -> Bool
+    symetry (lhs, rhs) =
       case (lhs `compare` rhs, rhs `compare` lhs) of
         (EQ, EQ) -> True
         (GT, LT) -> True
         (LT, GT) -> True
         _        -> False
-
-    infinityOrdering :: ExtendedNatural -> Bool
-    infinityOrdering val = val == infinity || infinity > val
 
 
 additionProperties :: TestTree
