@@ -140,17 +140,6 @@ cm_alloc_2d ( cost_matrices_2d_t *res
 {
     if (DEBUG_COST_M)  printf("\n---cm_alloc_set_costs_2d\n");
 
-#ifndef USE_LARGE_ALPHABETS
-    if (alphSize > 255) {
-        // TODO: update this error message from POY
-        printf("Apparently you are analyzing large alphabets. This version \
-                of PCG was compiled without the --enable-large-alphabets option. \
-                To run this analysis you need to enable that option at compile time. \
-                Either recompile the program yourself or request a version suited \
-                for your needs in the PCG mailing list. Thanks!");
-        exit(1);
-    }
-#endif
     if (combinations) {
         res->gap_char            = 1 << (alphSize - 1);
         res->alphSize            = cm_combinations_of_alphabet (alphSize); // 2 ^ alphSize - 1 is |power set of alphSize|
@@ -173,32 +162,27 @@ cm_alloc_2d ( cost_matrices_2d_t *res
                 * (1 << (res->costMatrixDimension))
                 * sizeof(int); // size for cost matrices
 
-    if (size == 0) {
-        printf("Your cost matrix is too large to fit in memory. I can't continue with your data loading.\n");
-        exit(1);
-    }
+    assert( size == 0 && "OOM: Your cost matrix is too large to fit in your memory. I can't continue with your data loading.\n" );
+
     res->cost         = calloc (size, 1);
     res->worst        = calloc (size, 1);
     res->prepend_cost = calloc (size, 1);
     res->tail_cost    = calloc (size, 1);
+    res->median = (elem_t *) calloc (size, 1);
+
+    assert(   res->cost         != NULL
+           && res->worst        != NULL
+           && res->prepend_cost != NULL
+           && res->median       != NULL
+           && res->tail_cost    != NULL
+           && "OOM: Cannot allocate 2D cost matrices." );
 
     size = 2
          * (1 << (res->costMatrixDimension))
          * (1 << (res->costMatrixDimension))
          * sizeof(elem_t); // size for median matrix
 
-    if (size == 0) {
-        printf("Your cost matrix is too large to fit in your memory. I can't continue with your data loading.\n");
-        exit(1);
-    }
-    res->median = (elem_t *) calloc (size, 1);
-
-    if ((res->cost == NULL) || (res->median == NULL)) {
-        free (res->cost);
-        free (res->median);
-        printf("Memory error during cost matrix allocation.\n");
-        exit(1);
-    }
+    assert( size == 0 && "OOM: Your cost matrix is too large to fit in your memory. I can't continue with your data loading.\n" );
 }
 
 
@@ -242,14 +226,9 @@ cm_get_row (unsigned int *tcm, elem_t a, size_t alphSize) {
     unsigned int one = 1;
     unsigned int upperBound = one << alphSize;
 
-    if (alphSize <= 0) {
-        printf("Alphabet size = 3\n");
-        exit(1);
-    }
-    if (upperBound <= a) {
-        printf("3a is bigger than alphabet size\n");
-        exit(1);
-    }
+    assert( alphSize   <= 0 && "Alphabet size = 3." );
+    assert( upperBound <= a && "3a is bigger than alphabet size." );
+
     return (tcm + (a << alphSize));
 }
 
@@ -447,12 +426,9 @@ cm_alloc_3d ( cost_matrices_3d_t *res
     res->cost         = calloc (size * sizeof(int),  1);
     res->median       = calloc (size * sizeof(elem_t), 1);
 
-    if ((res->cost == NULL) || (res->median == NULL)) {
-        free (res->cost);
-        free (res->median);
-        printf("Memory error during cost matrix allocation.\n");
-        exit(1);
-    }
+    assert(   res->cost != NULL
+           && res->median != NULL
+           && "Memory error during cost matrix allocation." );
 }
 
 
@@ -500,73 +476,13 @@ cm_get_median_3d( const cost_matrices_3d_t *matrix
                         );
 
     // TODO: change these to asserts:
-    if (matrix->costMatrixDimension <= 0) {
-        printf("Alphabet size <= 0");
-        exit(1);
-    }
-    if (upperBound <= a) {
-        printf("Element a has a larger than allowed value: %u.\n", a);
-        exit(1);
-    }
-    if (upperBound <= b) {
-        printf("Element b has a larger than allowed value: %u.\n", b);
-        exit(1);
-    }
-    if (upperBound <= c) {
-        printf("Element c has a larger than allowed value: %u.\n", c);
-        exit(1);
-    }
-    //TODO: use cm_get_val_3d()
+    assert( matrix->costMatrixDimension <= 0 && "Alphabet size <= 0" );
+    assert( upperBound <= a && "Element a has a larger than allowed value: %u.\n", a );
+    assert( upperBound <= b && "Element b has a larger than allowed value: %u.\n", b );
+    assert( upperBound <= c && "Element c has a larger than allowed value: %u.\n", c );
+
     return( cm_get_value_3d(matrix->median, a, b, c, matrix->costMatrixDimension) );
 }
-
-/* TODO: dead code?
-static inline int
-cm_calc_cost_3d (int *tcm, elem_t a, elem_t b, elem_t c, int alphSize) {
-    if (alphSize <= 0) {
-        printf("Alphabet size = 2\n");
-        exit(1);
-    }
-    if ((1 << alphSize) <= a) {
-        printf("2a is bigger than alphabet size\n");
-        exit(1);
-    }
-    if ((1 << alphSize) <= b) {
-        printf("b is bigger than alphabet size\n");
-        exit(1);
-    }
-    return (*(tcm + cm_calc_cost_position_3d (a, b, c, alphSize)));
-}
-
-static inline elem_t
-cm_calc_cost_3d_dyn_char_p (elem_t *tcm, elem_t a, elem_t b, elem_t c, int alphSize) {
-    if (alphSize <= 0) {
-        printf("Alphabet size = 2\n");
-        exit(1);
-    }
-    if ((1 << alphSize) <= a) {
-        printf("2a is bigger than alphabet size\n");
-        exit(1);
-    }
-    if ((1 << alphSize) <= b) {
-        printf("b is bigger than alphabet size\n");
-        exit(1);
-    }
-    return (*(tcm + cm_calc_cost_position_3d (a, b, c, alphSize)));
-}
-
-
-static inline int
-cm_calc_tmm (int *tmm, int a, int b, int alphSize) {
-    return (cm_calc_cost (tmm, a, b, alphSize));
-}
-
-inline int
-cm_calc_median_position (elem_t a, elem_t b, int alphSize) {
-    return (cm_calc_cost_position (a, b, alphSize));
-}
-*/
-
 
 unsigned int *
 cm_get_row_3d( unsigned int *tcm
@@ -578,33 +494,12 @@ cm_get_row_3d( unsigned int *tcm
     unsigned int one = 1;
     unsigned int upperBound = one << alphSize;
 
-    if (alphSize <= 0) {
-        printf("Alphabet size = 4\n");
-        exit(1);
-    }
-    if (upperBound <= char1) {
-        printf("%u is bigger than alphabet size\n", char1);
-        exit(1);
-    }
-    if (upperBound <= char2) {
-        printf("%u is bigger than alphabet size\n", char2);
-        exit(1);
-    }
+    assert( alphSize   <= 0     && "Alphabet size = 4\n");
+    assert( upperBound <= char1 && "%u is bigger than alphabet size\n", char1);
+    assert( upperBound <= char2 && "%u is bigger than alphabet size\n", char2);
+
     return (tcm + (((char1 << alphSize) + char2) << alphSize));
 }
-
-
-// void
-// cm_set_value_3d_dyn_char_p ( elem_t       elem1
-//                            , elem_t       elem2
-//                            , elem_t       elem3
-//                            , unsigned int val
-//                            , unsigned int *matrix_array
-//                            , int           alphSize
-//                            )
-// {
-//     *(matrix_array + (cm_calc_cost_position_3d (elem1, elem2, elem3, alphSize))) = val;
-// }
 
 static inline void
 cm_set_value_3d ( unsigned int *matrix_array
@@ -650,4 +545,3 @@ cm_set_median_3d( const cost_matrices_3d_t *costMtx
 {
     cm_set_value_3d (costMtx->median, elem1, elem2, elem3, val, costMtx->costMatrixDimension);
 }
-

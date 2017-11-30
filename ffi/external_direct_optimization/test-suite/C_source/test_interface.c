@@ -9,12 +9,12 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "../alignCharacters.h"
-#include "../alignmentMatrices.h"
-#include "../c_alignment_interface.h"
-#include "../c_code_alloc_setup.h"
-#include "../costMatrix.h"
-#include "../debug_constants.h"
+#include "../../alignCharacters.h"
+#include "../../alignmentMatrices.h"
+#include "../../c_alignment_interface.h"
+#include "../../c_code_alloc_setup.h"
+#include "../../costMatrix.h"
+#include "../../debug_constants.h"
 
 #define CHAR_LENGTH 100
 

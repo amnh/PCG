@@ -1044,6 +1044,7 @@ algn_fill_plane ( const dyn_character_t    *longerCharacter
     if (LOCAL_DEBUG_COST_M) {
         //Allocate space to store cost matrix proper as it is continually overwritten in the algorithm below.
         debugCostMatrixBuffer = malloc(longerCharacterLength * lesserCharacterLength * sizeof(int));
+        assert( debugCostMatrixBuffer != NULL && "OOM allocing debug cost matrix buffer." );
     }
     if (DEBUG_DIR_M) {
         printf ("A\t");

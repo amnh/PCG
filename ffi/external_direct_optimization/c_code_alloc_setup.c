@@ -1,13 +1,14 @@
+#include <assert.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "alignCharacters.h"
-#include "c_code_alloc_setup.h"
-#include "debug_constants.h"
-#include "costMatrix.h"
 #include "alignmentMatrices.h"
+#include "c_code_alloc_setup.h"
+#include "costMatrix.h"
+#include "debug_constants.h"
 
 
 /** Find distance between an ambiguous nucleotide and an unambiguous ambElem. Return that value and the median.
@@ -95,6 +96,12 @@ void initializeAlignmentMtx( alignment_matrices_t *retMtx
     retMtx->algn_precalcMtx = malloc ( sizeof( unsigned int     ) );
     // retMtx->cube          = malloc ( sizeof( int* ) );  // don't have to allocate these two,
     // retMtx->cube_d        = malloc ( sizeof( int* ) );  // because they're just pointing to algn_costMtx and algn_dirMtx
+    assert(   retMtx->algn_costMtx    != NULL
+           && retMtx->algn_dirMtx     != NULL
+           && retMtx->algn_precalcMtx != NULL
+           // && retMtx->cube         != NULL
+           // && retMtx->cube_d       != NULL
+           && "Unable to initialize alignment matrix." );
 
     algnMat_setup_size (retMtx, len_char1, len_char2, alphSize);
 }
