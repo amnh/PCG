@@ -265,9 +265,9 @@ invert (MES i e x y b) = MES e i y x b
 
 
 -- |
--- Merge Sets
--- |
 -- \( \mathcal{O} \left( m * \log_2 ( \frac {n}{m + 1} ) + n + m \right), m \leq n \)
+--
+-- Merge two mutual exclusion sets.
 --
 -- Perfoms an "union-like" operation.
 merge :: Ord a => MutualExculsionSet a -> MutualExculsionSet a -> MutualExculsionSet a
