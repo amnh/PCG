@@ -8,7 +8,36 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Set-like structures for collection of edges.
+-- Set-like structure for a collection of elements where each included element
+-- implies the exclusion of another element.
+--
+-- The MutualExclusionSet holds a /bijective/ mapping between a set of included
+-- elements and their corresponding mutually exclusive element. The construction
+-- allows for efficient access to included and excluded elements.
+--
+-- The following properties will always hold:
+--
+--  * > invert . invert === id
+--
+--  * @isIncluded ==> not . isExcluded@
+--
+--  * @isExcluded ==> not . isIncluded@
+--
+--  * @isIncluded e === isExcluded e . invert@
+--
+--  * @isExcluded e === isIncluded e . invert@
+--
+--  * > includedSet === excludedSet . invert
+--
+--  * > excludedSet === includedSet . invert
+--
+--  * toList === toList . includedSet
+--
+--  * toList . invert === toList . excludedSet
+--
+--  * \(\exists k\) isIncluded e ==> excludedLookup k == Just e
+--
+--  * \(\exists k\) isExcluded e ==> includedLookup k == Just e
 --
 -----------------------------------------------------------------------------
 
@@ -18,13 +47,11 @@ module Data.MutualExculsionSet.Internal where
 
 
 import           Control.DeepSeq
-import           Data.DList               (DList)
 import qualified Data.DList        as DL
 import           Data.Foldable
 import           Data.Functor.Classes
 import           Data.Hashable
 import           Data.Key
-import           Data.List.NonEmpty       (NonEmpty(..))
 import           Data.Ord
 import           Data.Map                 (Map)
 import qualified Data.Map          as M
@@ -99,46 +126,46 @@ instance Eq1 MutualExculsionSet where
 instance Foldable MutualExculsionSet where
 
     {-# INLINE elem #-}
-    elem x     = elem x . excludedKeyedMap
+    elem x     = elem x . toList
   
     {-# INLINABLE fold #-}
-    fold       = fold . excludedKeyedMap
+    fold       = fold . toList
 
     {-# INLINE foldMap #-}
-    foldMap f  = foldMap f . excludedKeyedMap
+    foldMap f  = foldMap f . toList
 
     {-# INLINE foldl #-}
-    foldl   f x = foldl  f x . excludedKeyedMap
+    foldl   f x = foldl  f x . toList
 
     {-# INLINE foldr #-}
-    foldr   f x = foldr  f x . excludedKeyedMap
+    foldr   f x = foldr  f x . toList
 
     {-# INLINE foldl' #-}
-    foldl'  f x = foldl' f x . excludedKeyedMap
+    foldl'  f x = foldl' f x . toList
 
     {-# INLINE foldr' #-}
-    foldr'  f x = foldr' f x . excludedKeyedMap
+    foldr'  f x = foldr' f x . toList
 
     {-# INLINE length #-}
-    length      = length . excludedKeyedMap
+    length      = length . toList
 
     {-# INLINABLE maximum #-}
-    maximum     = maximum . excludedKeyedMap
+    maximum     = maximum . toList
 
     {-# INLINABLE minimum #-}
-    minimum     = minimum . excludedKeyedMap
+    minimum     = minimum . toList
 
     {-# INLINE null #-}
-    null        = null . excludedKeyedMap
+    null        = null . toList
 
     {-# INLINABLE product #-}
-    product     = product . excludedKeyedMap
+    product     = product . toList
 
     {-# INLINABLE sum #-}
-    sum         = sum . excludedKeyedMap
+    sum         = sum . toList
 
     {-# INLINE toList #-}
-    toList      = toList . excludedKeyedMap
+    toList      = M.keys . includedKeyedMap
     
 
 instance Hashable a => Hashable (MutualExculsionSet a) where
@@ -163,12 +190,16 @@ instance Ord a => Ord (MutualExculsionSet a) where
           EQ -> comparing excludedFullMap x y
           v  -> v
 
-
+-- |
+-- See 'merge' for behavior
 instance Ord a => Semigroup (MutualExculsionSet a) where
 
     (<>) = merge
-  
-  
+
+    {-# INLINE stimes #-}
+    stimes _ x = x
+
+
 instance Show a => Show (MutualExculsionSet a) where
 
     show x = unlines
@@ -240,7 +271,7 @@ invert (MES i e x y b) = MES e i y x b
 --
 -- Perfoms an "union-like" operation.
 merge :: Ord a => MutualExculsionSet a -> MutualExculsionSet a -> MutualExculsionSet a
-merge (MES lhsIKM lhsEKM lhsIFM lhsEFM lhsBoth) (MES rhsIKM rhsEKM rhsIFM rhsEFM rhsBoth) =
+merge (MES _ _ lhsIFM lhsEFM _) (MES _ _ rhsIFM rhsEFM _) =
     MES ikmBi' ekmBi' ikmFull ekmFull both
   where
     -- /O( m + n )/
@@ -261,15 +292,15 @@ merge (MES lhsIKM lhsEKM lhsIFM lhsEFM lhsBoth) (MES rhsIKM rhsEKM rhsIFM rhsEFM
     -- discard the key and both of the values. Otherwise preserve the key
     -- and the shared value.
     mergeLogic :: Ord a => Map a (Set a) -> Map a (Set a) -> (Map a a, Map a (Set a))
-    mergeLogic x y = (M.fromDistinctAscList $ toList bijectives, full)
+    mergeLogic lhs rhs = (M.fromDistinctAscList $ toList bijectives, full)
       where
-        (bijectives, full) = go x y
+        (bijectives, full) = go lhs rhs
 
         go = M.mergeA preserveMissingValues preserveMissingValues accumulateDifferentValues
         
         isBijective x y =
           case (toList x, toList y) of
-            ([x], [y]) -> if x == y then Just x else Nothing
+            ([a], [b]) -> if a == b then Just a else Nothing
             _          -> Nothing
         
         preserveMissingValues = M.traverseMaybeMissing conditionalPreservation
