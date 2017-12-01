@@ -129,18 +129,18 @@ semigroupCases = testGroup "semigroup operator specific cases"
 
 
 semigroupProperties :: TestTree
-semigroupProperties = testGroup "Properties of this semigroup opperator"
+semigroupProperties = testGroup "Properties of this semigroup operator"
     [ localOption (QuickCheckTests 10000)
-        $ testProperty "op is associative" operationAssocativity
+        $ testProperty "(<>) is associative" operationAssocativity
     , localOption (QuickCheckTests  1000)
-        $ testProperty "op is commutive"   operationCommutivity
+        $ testProperty "(<>) is commutative" operationCommutativity
     ]
   where
     operationAssocativity :: (MutualExculsionSet Int, MutualExculsionSet Int, MutualExculsionSet Int) -> Bool
     operationAssocativity (a, b, c) = a <> (b <> c) == (a <> b) <> c
 
-    operationCommutivity :: (MutualExculsionSet Int, MutualExculsionSet Int) -> Bool
-    operationCommutivity (a, b) = a <> b == b <> a
+    operationCommutativity :: (MutualExculsionSet Int, MutualExculsionSet Int) -> Bool
+    operationCommutativity (a, b) = a <> b == b <> a
 
 
 
@@ -218,7 +218,7 @@ additionProperties = testGroup "Properties of addition"
         , localOption (QuickCheckTests 1000000)
             $ testProperty "addition is associative" additiveAssocativity
         , localOption (QuickCheckTests 1000000)
-            $ testProperty "addition is commutive"   additiveCommutivity
+            $ testProperty "addition is commutative"   additiveCommutativity
         ]
     , testGroup "other properties"
         [ testProperty "addition on maxBound is indempotent" additiveUpperBound
@@ -232,8 +232,8 @@ additionProperties = testGroup "Properties of addition"
     additiveAssocativity :: (ExtendedNatural, ExtendedNatural, ExtendedNatural) -> Bool
     additiveAssocativity (a, b, c) = a + (b + c) == (a + b) + c
 
-    additiveCommutivity :: (ExtendedNatural, ExtendedNatural) -> Bool
-    additiveCommutivity (a, b) = a + b == b + a
+    additiveCommutativity :: (ExtendedNatural, ExtendedNatural) -> Bool
+    additiveCommutativity (a, b) = a + b == b + a
 
     additiveUpperBound :: ExtendedNatural -> Bool
     additiveUpperBound val = maxBound + val == maxBound || val == infinity
@@ -298,7 +298,7 @@ multiplicationProperties = testGroup "Properties of multiplication"
     , localOption (QuickCheckTests 1000000)
         $ testProperty "multiplication is associative" multiplicativeAssocativity
     , localOption (QuickCheckTests 1000000)
-        $ testProperty "multiplication is commutive" multiplicativeCommutivity
+        $ testProperty "multiplication is commutative" multiplicativeCommutativity
     ,  localOption (QuickCheckTests 1000000)
         $ testProperty "multiplication is left-distibutive"  multiplicativeLeftDistributivity
     ,  localOption (QuickCheckTests 1000000)
@@ -316,8 +316,8 @@ multiplicationProperties = testGroup "Properties of multiplication"
     multiplicativeAssocativity :: (ExtendedNatural, ExtendedNatural, ExtendedNatural) -> Bool
     multiplicativeAssocativity (a, b, c) = a * (b * c) == (a * b) * c
 
-    multiplicativeCommutivity :: (ExtendedNatural, ExtendedNatural) -> Bool
-    multiplicativeCommutivity (a, b) = a * b == b * a
+    multiplicativeCommutativity :: (ExtendedNatural, ExtendedNatural) -> Bool
+    multiplicativeCommutativity (a, b) = a * b == b * a
 
     multiplicativeLeftDistributivity :: (ExtendedNatural, ExtendedNatural, ExtendedNatural) -> Bool
     multiplicativeLeftDistributivity (a, b, c) = a * (b + c) == (a * b) + (a * c)
