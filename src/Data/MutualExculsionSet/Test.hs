@@ -15,14 +15,15 @@ import Test.Tasty.QuickCheck
 
 testSuite :: TestTree
 testSuite = testGroup "MutualExcludionSet semigroup tests"
-    [ orderingProperties
-    , semigroupCases
+    [ constructionCases
+    , orderingProperties
     , semigroupProperties
+    , monoidProperties
     ]
 
 
-semigroupCases :: TestTree
-semigroupCases = testGroup "semigroup operator specific cases"
+constructionCases :: TestTree
+constructionCases = testGroup "construction specific cases"
     [ testGroup "constructions"
       [ testCase "sanity construction"        sanityConstruction
       , testCase "indempotent construction"   indempotentConstruction
@@ -55,26 +56,13 @@ semigroupCases = testGroup "semigroup operator specific cases"
         lhs = (singleton 1 2 <> singleton 3 4)
         rhs = (singleton 2 1 <> singleton 5 6)
 
+{-
     inclusionSetViolation =
       (singleton 1 2 <> singleton 1 3) @?= unsafeFromList [ (1, 3) ]
 
     exclusionSetViolation =
       (singleton 1 3 <> singleton 2 3) @?= unsafeFromList [ (2, 3) ]
-
-
-semigroupProperties :: TestTree
-semigroupProperties = testGroup "Properties of this semigroup operator"
-    [ localOption (QuickCheckTests 10000)
-        $ testProperty "(<>) is associative" operationAssocativity
-    , localOption (QuickCheckTests  1000)
-        $ testProperty "(<>) is commutative" operationCommutativity
-    ]
-  where
-    operationAssocativity :: (MutualExculsionSet Int, MutualExculsionSet Int, MutualExculsionSet Int) -> Bool
-    operationAssocativity (a, b, c) = a <> (b <> c) == (a <> b) <> c
-
-    operationCommutativity :: (MutualExculsionSet Int, MutualExculsionSet Int) -> Bool
-    operationCommutativity (a, b) = a <> b == b <> a
+-}
 
 
 orderingProperties :: TestTree
@@ -94,3 +82,31 @@ orderingProperties = testGroup "Properties of ordering"
         (GT, LT) -> True
         (LT, GT) -> True
         _        -> False
+
+
+semigroupProperties :: TestTree
+semigroupProperties = testGroup "Properties of this semigroup operator"
+    [ localOption (QuickCheckTests 10000)
+        $ testProperty "(<>) is associative" operationAssocativity
+    , localOption (QuickCheckTests  1000)
+        $ testProperty "(<>) is commutative" operationCommutativity
+    ]
+  where
+    operationAssocativity :: (MutualExculsionSet Int, MutualExculsionSet Int, MutualExculsionSet Int) -> Bool
+    operationAssocativity (a, b, c) = a <> (b <> c) == (a <> b) <> c
+
+    operationCommutativity :: (MutualExculsionSet Int, MutualExculsionSet Int) -> Bool
+    operationCommutativity (a, b) = a <> b == b <> a
+
+
+monoidProperties :: TestTree
+monoidProperties = testGroup "Properties of this semigroup operator"
+    [ testProperty "left identity" leftIdentity
+    , testProperty "right identity" rightIdentity
+    ]
+  where
+    leftIdentity :: MutualExculsionSet Int -> Bool
+    leftIdentity a = mempty <> a == a
+
+    rightIdentity :: MutualExculsionSet Int -> Bool
+    rightIdentity a = a <> mempty == a
