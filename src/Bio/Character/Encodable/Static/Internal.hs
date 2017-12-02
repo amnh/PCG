@@ -34,7 +34,6 @@ import           Control.DeepSeq
 import           Data.Alphabet
 import           Data.Bits
 import           Data.BitMatrix
-import           Data.BitMatrix.Internal             (BitMatrix(..))
 import           Data.BitVector               hiding (foldr, join, not, replicate)
 import           Data.BitVector.Instances            ()
 import           Data.Char                           (toLower)
@@ -181,7 +180,7 @@ instance EncodedAmbiguityGroupContainer StaticCharacterBlock where
 
 instance Exportable StaticCharacterBlock where
 
-    toExportableBuffer (SCB bm@(BitMatrix _ bv)) = ExportableCharacterSequence x y $ bitVectorToBufferChunks x y bv
+    toExportableBuffer (SCB bm) = ExportableCharacterSequence x y $ bitVectorToBufferChunks x y $ expandRows bm
       where
         x = numRows bm
         y = numCols bm

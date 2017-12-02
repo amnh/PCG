@@ -40,23 +40,23 @@ constructionCases = testGroup "construction specific cases"
   where
     sanityConstruction =
       singleton True False @?= unsafeFromList [ (True, False) ]
-    
+
     simpleConstruction =
-      singleton 1 2 <> singleton 3 4 @?= unsafeFromList [ (1, 2), (3, 4) ]
+      singleton 1 2 <> singleton 3 4 @?= unsafeFromList [ (1, 2), (3, 4 :: Word) ]
 
     indempotentConstruction =
-      singleton 1 2 <> singleton 1 2 @?= singleton 1 2
+      singleton 1 2 <> singleton 1 2 @?= singleton 1 (2 :: Word)
 
     paradoxSingleton =
-      singleton 1 1 @?= unsafeFromList [ (1, 1) ]
+      singleton 1 1 @?= unsafeFromList [ (1, 1 :: Word) ]
     
     paradoxConstruction = 
-      singleton 1 2  <> singleton 2 1 @?= unsafeFromList [ (1, 2), (2, 1) ]
+      singleton 1 2  <> singleton 2 1 @?= unsafeFromList [ (1, 2), (2, 1 :: Word) ]
     
-    paradoxPermissible = lhs <> rhs @?= unsafeFromList [ (1, 2), (2, 1), (3, 4), (5, 6) ]
+    paradoxPermissible = lhs <> rhs @?= unsafeFromList [ (1, 2), (2, 1), (3, 4), (5, 6 :: Word) ]
       where
-        lhs = singleton 1 2 <> singleton 3 4
-        rhs = singleton 2 1 <> singleton 5 6
+        lhs = singleton 1 2 <> singleton 3 4 :: MutualExculsionSet Word
+        rhs = singleton 2 1 <> singleton 5 6 :: MutualExculsionSet Word
 
 {-
     inclusionSetViolation =
@@ -94,10 +94,10 @@ semigroupProperties = testGroup "Properties of this semigroup operator"
         $ testProperty "(<>) is commutative" operationCommutativity
     ]
   where
-    operationAssocativity :: (MutualExculsionSet Int, MutualExculsionSet Int, MutualExculsionSet Int) -> Property
+    operationAssocativity :: (MutualExculsionSet Word, MutualExculsionSet Word, MutualExculsionSet Word) -> Property
     operationAssocativity (a, b, c) = a <> (b <> c) === (a <> b) <> c
 
-    operationCommutativity :: (MutualExculsionSet Int, MutualExculsionSet Int) -> Property
+    operationCommutativity :: (MutualExculsionSet Word, MutualExculsionSet Word) -> Property
     operationCommutativity (a, b) = a <> b === b <> a
 
 
@@ -107,10 +107,10 @@ monoidProperties = testGroup "Properties of this semigroup operator"
     , testProperty "right identity" rightIdentity
     ]
   where
-    leftIdentity :: MutualExculsionSet Int -> Property
+    leftIdentity :: MutualExculsionSet Word -> Property
     leftIdentity a = mempty <> a === a
 
-    rightIdentity :: MutualExculsionSet Int -> Property
+    rightIdentity :: MutualExculsionSet Word -> Property
     rightIdentity a = a <> mempty === a
 
 
@@ -129,43 +129,43 @@ structuralProperties = testGroup "data-structure invariants"
     , testProperty "∀ e, ∃ k, S.T. isExcluded e ==> includedLookup k == Just e" excludedImpliesExistsIncludedValue
     ]
   where
-    inversionIdentity :: MutualExculsionSet Int -> Property
+    inversionIdentity :: MutualExculsionSet Word -> Property
     inversionIdentity mes =
         invert (invert mes) === mes
 
-    inclusionImpliesNotExcluded :: (MutualExculsionSet Int, Int) -> Property
+    inclusionImpliesNotExcluded :: (MutualExculsionSet Word, Word) -> Property
     inclusionImpliesNotExcluded (mes, e) =
         e `isIncluded` mes ==> not (e `isExcluded` mes)
 
-    exclusionImpliesNotIncluded :: (MutualExculsionSet Int, Int) -> Property
+    exclusionImpliesNotIncluded :: (MutualExculsionSet Word, Word) -> Property
     exclusionImpliesNotIncluded (mes, e) =
         e `isIncluded` mes ==> not (e `isExcluded` mes)
 
-    inclusionInvertedExclusion :: (MutualExculsionSet Int, Int) -> Property
+    inclusionInvertedExclusion :: (MutualExculsionSet Word, Word) -> Property
     inclusionInvertedExclusion (mes, e) =
         e `isIncluded` mes === e `isExcluded` invert mes
 
-    exclusionInvertedInclusion :: (MutualExculsionSet Int, Int) -> Property
+    exclusionInvertedInclusion :: (MutualExculsionSet Word, Word) -> Property
     exclusionInvertedInclusion (mes, e) =
         e `isExcluded` mes === e `isIncluded` invert mes
 
-    inclusionSetInvertedExclusionSet :: MutualExculsionSet Int -> Property
+    inclusionSetInvertedExclusionSet :: MutualExculsionSet Word -> Property
     inclusionSetInvertedExclusionSet mes =
         includedSet mes === excludedSet (invert mes)
 
-    exclusionSetInvertedInclusionSet :: MutualExculsionSet Int -> Property
+    exclusionSetInvertedInclusionSet :: MutualExculsionSet Word -> Property
     exclusionSetInvertedInclusionSet mes =
         excludedSet mes === includedSet (invert mes)
 
-    inclusionSetIsFoldableList :: MutualExculsionSet Int -> Property
+    inclusionSetIsFoldableList :: MutualExculsionSet Word -> Property
     inclusionSetIsFoldableList mes =
         toList mes  === toList (includedSet mes)
 
-    exclusionSetIsInvertedFoldableList :: MutualExculsionSet Int -> Property
+    exclusionSetIsInvertedFoldableList :: MutualExculsionSet Word -> Property
     exclusionSetIsInvertedFoldableList mes =
         toList (invert mes)  === toList (excludedSet mes)
 
-    includedImpliesExistsExcludedValue :: (MutualExculsionSet Int, Int) -> Property
+    includedImpliesExistsExcludedValue :: (MutualExculsionSet Word, Word) -> Property
     includedImpliesExistsExcludedValue (mes, e) =
         e `isIncluded` mes  ==> getAny (foldMap f (excludedSet mes))
       where
@@ -174,7 +174,7 @@ structuralProperties = testGroup "data-structure invariants"
             Nothing -> Any False
             Just v  -> Any $ v == e
 
-    excludedImpliesExistsIncludedValue :: (MutualExculsionSet Int, Int) -> Property
+    excludedImpliesExistsIncludedValue :: (MutualExculsionSet Word, Word) -> Property
     excludedImpliesExistsIncludedValue (mes, e) =
         e `isExcluded` mes ==> getAny (foldMap f (includedSet mes))
       where
