@@ -8,36 +8,8 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Set-like structure for a collection of elements where each included element
--- implies the exclusion of another element.
---
--- The MutualExclusionSet holds a /bijective/ mapping between a set of included
--- elements and their corresponding mutually exclusive element. The construction
--- allows for efficient access to included and excluded elements.
---
--- The following properties will always hold:
---
---  * > invert . invert === id
---
---  * @isIncluded ==> not . isExcluded@
---
---  * @isExcluded ==> not . isIncluded@
---
---  * @isIncluded e === isExcluded e . invert@
---
---  * @isExcluded e === isIncluded e . invert@
---
---  * > includedSet === excludedSet . invert
---
---  * > excludedSet === includedSet . invert
---
---  * toList === toList . includedSet
---
---  * toList . invert === toList . excludedSet
---
---  * \(\exists k\) isIncluded e ==> excludedLookup k == Just e
---
---  * \(\exists k\) isExcluded e ==> includedLookup k == Just e
+-- Internal functions for constucting, amnipulating, and deconstructing a
+-- 'MutualExculsionSet'.
 --
 -----------------------------------------------------------------------------
 
@@ -82,7 +54,7 @@ data  MutualExculsionSet a
     , includedFullMap     :: !(Map a (Set a))
     , excludedFullMap     :: !(Map a (Set a))
     , includedAndExcluded :: !(Set a)
-    } deriving (Eq, Eq1, Generic, Ord1)
+    } deriving (Generic)
 
 
 instance (Arbitrary a, Ord a) => Arbitrary (MutualExculsionSet a) where
@@ -101,22 +73,19 @@ instance (Arbitrary a, Ord a) => Arbitrary (MutualExculsionSet a) where
         pure $ unsafeFromList tuples
 
 
-{-
--- Faster Eq when interface is stable
 instance Eq a => Eq (MutualExculsionSet a) where
 
-    (MES _ _ a b _) == (MES _ _ c d _) = [ a == c && b == d ]
--}
+    (MES _ _ a b _) == (MES _ _ c d _) = a == c && b == d
 
-{-
+
 instance Eq1 MutualExculsionSet where
 
-    liftEq eq (MES a _ x) (MES c _ y) = and
+    liftEq eq (MES _ _ a b _) (MES _ _ c d _) = and
         [ length a == length c
-        , liftEq eq a c 
-        , x == y
+        , length b == length d
+        , liftEq2 eq (liftEq eq) a c 
+        , liftEq2 eq (liftEq eq) b d 
         ]
--}
 
 
 -- |
@@ -190,6 +159,14 @@ instance Ord a => Ord (MutualExculsionSet a) where
           EQ -> comparing excludedFullMap x y
           v  -> v
 
+instance Ord1 MutualExculsionSet where
+
+    liftCompare cmp (MES _ _ a b _) (MES _ _ c d _) =
+        case liftCompare2 cmp (liftCompare cmp) a c of
+          EQ -> liftCompare2 cmp (liftCompare cmp) b d
+          v  -> v
+
+
 -- |
 -- See 'merge' for behavior
 instance Ord a => Semigroup (MutualExculsionSet a) where
@@ -202,24 +179,48 @@ instance Ord a => Semigroup (MutualExculsionSet a) where
 
 instance Show a => Show (MutualExculsionSet a) where
 
-    show x = unlines
-        [ "MutualExclusionSet"
-        , render $ includedKeyedMap x
-        , render $ excludedKeyedMap x 
-        , show . M.assocs $ includedFullMap x
-        , show . M.assocs $ excludedFullMap x
-        , show $ includedAndExcluded x
-        ]
+    show = ("MutualExclusionSet " <>) . show . M.toAscList . includedKeyedMap
+
+
+prettyPrintMutualExclusionSet :: (Ord a, Show a) => MutualExculsionSet a -> String
+prettyPrintMutualExclusionSet mes = mconcat
+    [ "MutualExclusionSet\n"
+    , bijectiveValues
+    , violationValues
+    ]
+  where
+    bijectiveValues = unlines . fmap indent . ("Bijective map":)
+                    $ bijectiveRender <$> toList (mutuallyExclusivePairs mes)
       where
-        render a = unwords
-            [ shownIncluded
-            , "|"
-            , shownExcluded
+        bijectiveRender (k,v) = unwords [ " ", show k, "<-->", show v ]
+
+    violationValues = unlines . fmap indent . ("Violations":)
+                    $ mconcat [ tooManyExcluded, inBoth, tooManyIncluded ]
+
+    tooManyExcluded = foldMapWithKey renderTooManyExcluded
+                    . M.withoutKeys (includedFullMap mes)
+                    $ M.keysSet (includedKeyedMap mes) <> bothSet
+      where
+        renderTooManyExcluded k v = [unwords [ " ", show k, "--->", show (toList v) ]]
+
+    tooManyIncluded = foldMapWithKey renderTooManyIncluded
+                    . M.withoutKeys (excludedFullMap mes)
+                    $ M.keysSet (excludedKeyedMap mes) <> bothSet
+      where
+        renderTooManyIncluded k v = [unwords [ " ", show (toList v), "<---", show k ]]
+
+    inBoth = rendingInBoth <$> toList bothSet
+      where
+        rendingInBoth x = unwords
+            [ " "
+            , show . toList $ excludedFullMap mes ! x
+            , "<-->"
+            , show . toList $ includedFullMap mes ! x
             ]
-          where
-            shownIncluded = show included
-            shownExcluded = show excluded
-            (included, excluded) = unzip $ M.toAscList a
+
+    bothSet = includedAndExcluded mes
+
+    indent = ("  " <>)
 
 
 -- |
@@ -389,7 +390,7 @@ mutuallyExclusivePairs = S.fromDistinctAscList . M.toAscList . includedKeyedMap
 
 
 -- |
--- \( \mathcal{O} \left( n + m \right) \)
+-- \( \mathcal{O} \left( n * \log_2 m \right) \)
 --
 -- Perform an operation to determine if a collection of elements is "permitted"
 -- by 'MutualExculsionSet', ie that the collection does not contain any elements
@@ -399,6 +400,18 @@ isPermissible xs mes = getAll $ foldMap f xs
   where
     f x = All $ x `notElem` badElems
     badElems = excludedSet mes
+
+
+-- |
+-- \( \mathcal{O} \left( 1\right) \)
+--
+-- Determines if the MutualExclusionSet has a coherent construction.
+--
+-- * There must be a bijective mapping between included and excluded elements.
+--
+-- * No included element is also excluded
+isCoherent :: MutualExculsionSet a -> Bool
+isCoherent (MES a b c d e) = length a == length c && length b == length d 
 
 
 -- |

@@ -54,9 +54,11 @@ module Data.MutualExculsionSet
   -- * Manipulation
   , invert
   , merge
+  , prettyPrintMutualExclusionSet
   -- * Comparison / Queries
   , excludedLookup
   , includedLookup
+  , isCoherent
   , isExcluded
   , isIncluded
   , isPermissible
