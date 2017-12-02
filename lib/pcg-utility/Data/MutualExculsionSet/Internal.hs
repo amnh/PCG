@@ -254,15 +254,18 @@ merge (MES _ _ lhsIFM lhsEFM _) (MES _ _ rhsIFM rhsEFM _) =
     MES ikmBi' ekmBi' ikmFull ekmFull both
   where
     -- /O( m + n )/
-    (ikmBi, ikmFull) = mergeLogic lhsIFM rhsIFM
+    (ikmBi, ikmNotBi, ikmFull) = mergeLogic lhsIFM rhsIFM
     -- /O( m + n )/
-    (ekmBi, ekmFull) = mergeLogic lhsEFM rhsEFM
+    (ekmBi, ekmNotBi, ekmFull) = mergeLogic lhsEFM rhsEFM
 
-    both = M.keysSet ikmFull `S.intersection` M.keysSet ekmFull
+    keyIntersection  = M.intersectionWith (<>) ikmFull ekmFull
 
-    ikmBi' = M.withoutKeys ikmBi both
+    both   = M.keysSet keyIntersection
+    notBi  = both <> fold keyIntersection <> ikmNotBi <> ekmNotBi
 
-    ekmBi' = M.withoutKeys ekmBi both
+    ikmBi' = M.withoutKeys ikmBi notBi
+
+    ekmBi' = M.withoutKeys ekmBi notBi
 
     -- When a key *is not* present in both maps,
     -- preserve the key and it's corresponding value.
@@ -270,10 +273,10 @@ merge (MES _ _ lhsIFM lhsEFM _) (MES _ _ rhsIFM rhsEFM _) =
     -- When a key *is* present in both maps but the values are not equal,
     -- discard the key and both of the values. Otherwise preserve the key
     -- and the shared value.
-    mergeLogic :: Ord a => Map a (Set a) -> Map a (Set a) -> (Map a a, Map a (Set a))
-    mergeLogic lhs rhs = (M.fromDistinctAscList $ toList bijectives, full)
+    mergeLogic :: Ord a => Map a (Set a) -> Map a (Set a) -> (Map a a, Set a, Map a (Set a))
+    mergeLogic lhs rhs = (M.fromDistinctAscList $ toList bijectives, notBijectives, full)
       where
-        (bijectives, full) = go lhs rhs
+        ((bijectives, notBijectives), full) = go lhs rhs
 
         go = M.mergeA preserveMissingValues preserveMissingValues accumulateDifferentValues
         
@@ -286,15 +289,16 @@ merge (MES _ _ lhsIFM lhsEFM _) (MES _ _ rhsIFM rhsEFM _) =
           where
             conditionalPreservation k v =
               case toList v of
-                [x] -> (DL.singleton (k, x), Just v)
-                _   -> pure $ Just v
+                [x] -> ((DL.singleton (k, x), mempty), Just v)
+                _   -> ((mempty, v), Just v)
 
         accumulateDifferentValues = M.zipWithMaybeAMatched conditionalUnion
           where
             conditionalUnion k v1 v2 =
                 case isBijective v1 v2 of
-                  Just v  -> (DL.singleton (k, v), Just v1)
-                  Nothing -> pure . Just $ v1 <> v2
+                  Just v  -> ((DL.singleton (k, v), mempty), Just v1)
+                  Nothing -> let vs = v1 <> v2
+                             in  ((mempty, vs), Just vs)
 
 
 -- |
@@ -323,7 +327,7 @@ excludedSet = M.keysSet . excludedKeyedMap
 --  * If the provided element *is* included, the result will be @Just value@,
 --    where @value@ is corresponding excluded element.
 includedLookup :: Ord a => a -> MutualExculsionSet a -> Maybe a
-includedLookup k = lookup k . includedKeyedMap
+includedLookup k = M.lookup k . includedKeyedMap
 
   
 -- |
@@ -336,7 +340,7 @@ includedLookup k = lookup k . includedKeyedMap
 --  * If the provided element *is* excluded, the result will be @Just value@,
 --    where @value@ is corresponding included element.
 excludedLookup :: Ord a => a -> MutualExculsionSet a -> Maybe a
-excludedLookup k = lookup k . excludedKeyedMap
+excludedLookup k = M.lookup k . excludedKeyedMap
 
 
 -- |

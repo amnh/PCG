@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances, GeneralizedNewtypeDeriving #-}
 
 module Data.MutualExculsionSet.Test
   ( testSuite
@@ -8,14 +8,32 @@ module Data.MutualExculsionSet.Test
 import Data.Foldable
 import Data.Semigroup
 import Data.MutualExculsionSet.Internal
-import Numeric.Extended.Natural
+import Data.Word
+import Test.QuickCheck
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
 
+-- |
+-- An arbitrary 'MutualExculsionSet' and a value that is included 20% likely in
+-- the set.
+newtype ProbablyIncluded a = PI { getProbablyIncluded :: (MutualExculsionSet a, a) }
+    deriving (Eq, Ord, Show)
+
+
+instance (Arbitrary a, Ord a) => Arbitrary (ProbablyIncluded a) where
+
+    arbitrary = do
+        mes <- arbitrary
+        inc <- case toList mes of
+               [] -> arbitrary
+               xs -> frequency [ (1, arbitrary), (4, elements xs) ]
+        pure $ PI (mes, inc)
+
+
 testSuite :: TestTree
-testSuite = testGroup "MutualExcludionSet semigroup tests"
+testSuite = testGroup "MutualExclusionSet semigroup tests"
     [ constructionCases
     , orderingProperties
     , semigroupProperties
@@ -51,12 +69,12 @@ constructionCases = testGroup "construction specific cases"
       singleton 1 1 @?= unsafeFromList [ (1, 1 :: Word) ]
     
     paradoxConstruction = 
-      singleton 1 2  <> singleton 2 1 @?= unsafeFromList [ (1, 2), (2, 1 :: Word) ]
+      singleton 1 2  <> singleton 2 1 @?= unsafeFromList [ (1, 2), (2, 1 :: Word8) ]
     
-    paradoxPermissible = lhs <> rhs @?= unsafeFromList [ (1, 2), (2, 1), (3, 4), (5, 6 :: Word) ]
+    paradoxPermissible = lhs <> rhs @?= unsafeFromList [ (1, 2), (2, 1), (3, 4), (5, 6 :: Word8) ]
       where
-        lhs = singleton 1 2 <> singleton 3 4 :: MutualExculsionSet Word
-        rhs = singleton 2 1 <> singleton 5 6 :: MutualExculsionSet Word
+        lhs = singleton 1 2 <> singleton 3 4 :: MutualExculsionSet Word8
+        rhs = singleton 2 1 <> singleton 5 6 :: MutualExculsionSet Word8
 
 {-
     inclusionSetViolation =
@@ -73,11 +91,11 @@ orderingProperties = testGroup "Properties of ordering"
     , testProperty "ordering preserves symetry"  symetry
     ]
   where
-    orderPreserving :: ((Word, Word), (Word, Word)) -> Property
+    orderPreserving :: ((Word8, Word8), (Word8, Word8)) -> Property
     orderPreserving (lhs@(a, b), rhs@(c, d)) =
       lhs `compare` rhs === singleton a b `compare` singleton c d
 
-    symetry :: (ExtendedNatural, ExtendedNatural) -> Bool
+    symetry :: (MutualExculsionSet Word8, MutualExculsionSet Word8) -> Bool
     symetry (lhs, rhs) =
       case (lhs `compare` rhs, rhs `compare` lhs) of
         (EQ, EQ) -> True
@@ -94,10 +112,10 @@ semigroupProperties = testGroup "Properties of this semigroup operator"
         $ testProperty "(<>) is commutative" operationCommutativity
     ]
   where
-    operationAssocativity :: (MutualExculsionSet Word, MutualExculsionSet Word, MutualExculsionSet Word) -> Property
+    operationAssocativity :: (MutualExculsionSet Word8, MutualExculsionSet Word8, MutualExculsionSet Word8) -> Property
     operationAssocativity (a, b, c) = a <> (b <> c) === (a <> b) <> c
 
-    operationCommutativity :: (MutualExculsionSet Word, MutualExculsionSet Word) -> Property
+    operationCommutativity :: (MutualExculsionSet Word8, MutualExculsionSet Word8) -> Property
     operationCommutativity (a, b) = a <> b === b <> a
 
 
@@ -107,10 +125,10 @@ monoidProperties = testGroup "Properties of this semigroup operator"
     , testProperty "right identity" rightIdentity
     ]
   where
-    leftIdentity :: MutualExculsionSet Word -> Property
+    leftIdentity :: MutualExculsionSet Word8 -> Property
     leftIdentity a = mempty <> a === a
 
-    rightIdentity :: MutualExculsionSet Word -> Property
+    rightIdentity :: MutualExculsionSet Word8 -> Property
     rightIdentity a = a <> mempty === a
 
 
@@ -129,57 +147,64 @@ structuralProperties = testGroup "data-structure invariants"
     , testProperty "∀ e, ∃ k, S.T. isExcluded e ==> includedLookup k == Just e" excludedImpliesExistsIncludedValue
     ]
   where
-    inversionIdentity :: MutualExculsionSet Word -> Property
+    inversionIdentity :: MutualExculsionSet Word8 -> Property
     inversionIdentity mes =
         invert (invert mes) === mes
 
-    inclusionImpliesNotExcluded :: (MutualExculsionSet Word, Word) -> Property
-    inclusionImpliesNotExcluded (mes, e) =
+    inclusionImpliesNotExcluded :: ProbablyIncluded Word8 -> Property
+    inclusionImpliesNotExcluded input =
         e `isIncluded` mes ==> not (e `isExcluded` mes)
+      where
+        (mes, e) = getProbablyIncluded input
 
-    exclusionImpliesNotIncluded :: (MutualExculsionSet Word, Word) -> Property
-    exclusionImpliesNotIncluded (mes, e) =
+    exclusionImpliesNotIncluded :: ProbablyIncluded Word8 -> Property
+    exclusionImpliesNotIncluded input =
         e `isIncluded` mes ==> not (e `isExcluded` mes)
+      where
+        (mes, e) = getProbablyIncluded input
 
-    inclusionInvertedExclusion :: (MutualExculsionSet Word, Word) -> Property
+    inclusionInvertedExclusion :: (MutualExculsionSet Word8, Word8) -> Property
     inclusionInvertedExclusion (mes, e) =
         e `isIncluded` mes === e `isExcluded` invert mes
 
-    exclusionInvertedInclusion :: (MutualExculsionSet Word, Word) -> Property
+    exclusionInvertedInclusion :: (MutualExculsionSet Word8, Word8) -> Property
     exclusionInvertedInclusion (mes, e) =
         e `isExcluded` mes === e `isIncluded` invert mes
 
-    inclusionSetInvertedExclusionSet :: MutualExculsionSet Word -> Property
+    inclusionSetInvertedExclusionSet :: MutualExculsionSet Word8 -> Property
     inclusionSetInvertedExclusionSet mes =
         includedSet mes === excludedSet (invert mes)
 
-    exclusionSetInvertedInclusionSet :: MutualExculsionSet Word -> Property
+    exclusionSetInvertedInclusionSet :: MutualExculsionSet Word8 -> Property
     exclusionSetInvertedInclusionSet mes =
         excludedSet mes === includedSet (invert mes)
 
-    inclusionSetIsFoldableList :: MutualExculsionSet Word -> Property
+    inclusionSetIsFoldableList :: MutualExculsionSet Word8 -> Property
     inclusionSetIsFoldableList mes =
         toList mes  === toList (includedSet mes)
 
-    exclusionSetIsInvertedFoldableList :: MutualExculsionSet Word -> Property
+    exclusionSetIsInvertedFoldableList :: MutualExculsionSet Word8 -> Property
     exclusionSetIsInvertedFoldableList mes =
-        toList (invert mes)  === toList (excludedSet mes)
+        toList (invert mes) === toList (excludedSet mes)
 
-    includedImpliesExistsExcludedValue :: (MutualExculsionSet Word, Word) -> Property
-    includedImpliesExistsExcludedValue (mes, e) =
+    includedImpliesExistsExcludedValue :: ProbablyIncluded Word8 -> Property
+    includedImpliesExistsExcludedValue input =
         e `isIncluded` mes  ==> getAny (foldMap f (excludedSet mes))
       where
+        (mes, e) = getProbablyIncluded input
         f k =
-          case k `excludedLookup` mes of
-            Nothing -> Any False
-            Just v  -> Any $ v == e
-
-    excludedImpliesExistsIncludedValue :: (MutualExculsionSet Word, Word) -> Property
-    excludedImpliesExistsIncludedValue (mes, e) =
-        e `isExcluded` mes ==> getAny (foldMap f (includedSet mes))
+            case k `excludedLookup` mes of
+              Nothing -> Any False
+              Just v  -> Any $ v == e
+        
+    excludedImpliesExistsIncludedValue :: ProbablyIncluded Word8 -> Property
+    excludedImpliesExistsIncludedValue input =
+         e `isExcluded` mes ==> getAny (foldMap f (includedSet mes))
       where
+        (mes, e) = (\(x,y) -> (invert x, y))
+                 $ getProbablyIncluded input
         f k =
-          case k `includedLookup` mes of
-            Nothing -> Any False
-            Just v  -> Any $ v == e
-
+            case k `includedLookup` mes of
+              Nothing -> Any False
+              Just v -> Any $ v == e
+        
