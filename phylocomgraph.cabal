@@ -197,10 +197,9 @@ library
                        Data.Alphabet
                        Data.Alphabet.IUPAC
                        Data.BitMatrix
-                       Data.DuplicateSet
                        Data.EdgeLength
                        Data.MutualExculsionSet
-                       Data.ReplicatedSequence
+--                       Data.ReplicatedSequence
                        Data.TCM
                        Data.TCM.Memoized
                        Data.Vector.NonEmpty
