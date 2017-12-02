@@ -13,7 +13,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveAnyClass, DeriveGeneric, FlexibleContexts #-}
+{-# LANGUAGE DeriveGeneric, FlexibleContexts #-}
 
 module Data.MutualExculsionSet.Internal where
 

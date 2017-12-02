@@ -41,8 +41,6 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric #-}
-
 module Data.MutualExculsionSet
   ( MutualExculsionSet
   -- * Construction

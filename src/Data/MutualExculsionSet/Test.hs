@@ -55,8 +55,8 @@ constructionCases = testGroup "construction specific cases"
     
     paradoxPermissible = lhs <> rhs @?= unsafeFromList [ (1, 2), (2, 1), (3, 4), (5, 6) ]
       where
-        lhs = (singleton 1 2 <> singleton 3 4)
-        rhs = (singleton 2 1 <> singleton 5 6)
+        lhs = singleton 1 2 <> singleton 3 4
+        rhs = singleton 2 1 <> singleton 5 6
 
 {-
     inclusionSetViolation =
@@ -143,11 +143,11 @@ structuralProperties = testGroup "data-structure invariants"
 
     inclusionInvertedExclusion :: (MutualExculsionSet Int, Int) -> Property
     inclusionInvertedExclusion (mes, e) =
-        e `isIncluded` mes === e `isExcluded` (invert mes)
+        e `isIncluded` mes === e `isExcluded` invert mes
 
     exclusionInvertedInclusion :: (MutualExculsionSet Int, Int) -> Property
     exclusionInvertedInclusion (mes, e) =
-        e `isExcluded` mes === e `isIncluded` (invert mes)
+        e `isExcluded` mes === e `isIncluded` invert mes
 
     inclusionSetInvertedExclusionSet :: MutualExculsionSet Int -> Property
     inclusionSetInvertedExclusionSet mes =
