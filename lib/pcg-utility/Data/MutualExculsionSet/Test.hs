@@ -1,10 +1,11 @@
-{-# LANGUAGE FlexibleInstances, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Data.MutualExculsionSet.Test
   ( testSuite
   ) where
 
 
+import Control.Arrow
 import Data.Foldable
 import Data.Semigroup
 import Data.MutualExculsionSet.Internal
@@ -201,8 +202,7 @@ structuralProperties = testGroup "data-structure invariants"
     excludedImpliesExistsIncludedValue input =
          e `isExcluded` mes ==> getAny (foldMap f (includedSet mes))
       where
-        (mes, e) = (\(x,y) -> (invert x, y))
-                 $ getProbablyIncluded input
+        (mes, e) = first invert $ getProbablyIncluded input
         f k =
             case k `includedLookup` mes of
               Nothing -> Any False
