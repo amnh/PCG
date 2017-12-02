@@ -94,6 +94,7 @@ instance Eq1 MutualExculsionSet where
 -- To fold over the /excluded/ elements of the set, first call 'invert'.
 instance Foldable MutualExculsionSet where
 
+    -- We don't use isIncluded here because that would force an Ord constraint.
     {-# INLINE elem #-}
     elem x     = elem x . toList
   
@@ -116,16 +117,22 @@ instance Foldable MutualExculsionSet where
     foldr'  f x = foldr' f x . toList
 
     {-# INLINE length #-}
-    length      = length . toList
+    length      = length . includedKeyedMap
 
     {-# INLINABLE maximum #-}
-    maximum     = maximum . toList
+    maximum mes  =
+        case M.lookupMax $ includedKeyedMap mes of
+            Just (k,_) -> k
+            Nothing    -> error "maximum called on empty MutualExclusionSet"
 
     {-# INLINABLE minimum #-}
-    minimum     = minimum . toList
+    minimum mes  =
+        case M.lookupMin $ includedKeyedMap mes of
+            Just (k,_) -> k
+            Nothing    -> error "minimum called on empty MutualExclusionSet"
 
     {-# INLINE null #-}
-    null        = null . toList
+    null        = null . includedKeyedMap
 
     {-# INLINABLE product #-}
     product     = product . toList
@@ -139,7 +146,9 @@ instance Foldable MutualExculsionSet where
 
 instance Hashable a => Hashable (MutualExculsionSet a) where
 
-    hashWithSalt salt = foldl' hashWithSalt salt . mutuallyExclusivePairs
+    hashWithSalt salt (MES _ _ inc exc _) = foldl' hashWithSalt (foldl' hashWithSalt salt (f inc)) $ f exc
+      where
+        f = toList . fmap toList
   
 
 instance Ord a => Monoid (MutualExculsionSet a) where
