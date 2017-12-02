@@ -57,6 +57,7 @@ data  MutualExculsionSet a
     } deriving (Generic)
 
 
+-- | (✔)
 instance (Arbitrary a, Ord a) => Arbitrary (MutualExculsionSet a) where
 
     arbitrary = do
@@ -73,11 +74,13 @@ instance (Arbitrary a, Ord a) => Arbitrary (MutualExculsionSet a) where
         pure $ unsafeFromList tuples
 
 
+-- | (✔)
 instance Eq a => Eq (MutualExculsionSet a) where
 
     (MES _ _ a b _) == (MES _ _ c d _) = a == c && b == d
 
 
+-- | (✔)
 instance Eq1 MutualExculsionSet where
 
     liftEq eq (MES _ _ a b _) (MES _ _ c d _) = and
@@ -144,6 +147,7 @@ instance Foldable MutualExculsionSet where
     toList      = M.keys . includedKeyedMap
     
 
+-- | (✔)
 instance Hashable a => Hashable (MutualExculsionSet a) where
 
     hashWithSalt salt (MES _ _ inc exc _) = foldl' hashWithSalt (foldl' hashWithSalt salt (f inc)) $ f exc
@@ -151,6 +155,7 @@ instance Hashable a => Hashable (MutualExculsionSet a) where
         f = toList . fmap toList
   
 
+-- | (✔)
 instance Ord a => Monoid (MutualExculsionSet a) where
 
     mappend = (<>)
@@ -158,9 +163,11 @@ instance Ord a => Monoid (MutualExculsionSet a) where
     mempty  = MES mempty mempty mempty mempty mempty
     
 
+-- | (✔)
 instance NFData a => NFData (MutualExculsionSet a)
 
 
+-- | (✔)
 instance Ord a => Ord (MutualExculsionSet a) where
 
     x `compare` y =
@@ -168,6 +175,8 @@ instance Ord a => Ord (MutualExculsionSet a) where
           EQ -> comparing excludedFullMap x y
           v  -> v
 
+
+-- | (✔)
 instance Ord1 MutualExculsionSet where
 
     liftCompare cmp (MES _ _ a b _) (MES _ _ c d _) =
@@ -176,60 +185,20 @@ instance Ord1 MutualExculsionSet where
           v  -> v
 
 
--- |
--- See 'merge' for behavior
+-- | (✔)
 instance Ord a => Semigroup (MutualExculsionSet a) where
 
+    -- | Alias for 'merge'
     (<>) = merge
 
     {-# INLINE stimes #-}
     stimes _ x = x
 
 
+-- | (✔)
 instance Show a => Show (MutualExculsionSet a) where
 
     show = ("MutualExclusionSet " <>) . show . M.toAscList . includedKeyedMap
-
-
-prettyPrintMutualExclusionSet :: (Ord a, Show a) => MutualExculsionSet a -> String
-prettyPrintMutualExclusionSet mes = mconcat
-    [ "MutualExclusionSet\n"
-    , bijectiveValues
-    , violationValues
-    ]
-  where
-    bijectiveValues = unlines . fmap indent . ("Bijective map":)
-                    $ bijectiveRender <$> toList (mutuallyExclusivePairs mes)
-      where
-        bijectiveRender (k,v) = unwords [ " ", show k, "<-->", show v ]
-
-    violationValues = unlines . fmap indent . ("Violations":)
-                    $ mconcat [ tooManyExcluded, inBoth, tooManyIncluded ]
-
-    tooManyExcluded = foldMapWithKey renderTooManyExcluded
-                    . M.withoutKeys (includedFullMap mes)
-                    $ M.keysSet (includedKeyedMap mes) <> bothSet
-      where
-        renderTooManyExcluded k v = [unwords [ " ", show k, "--->", show (toList v) ]]
-
-    tooManyIncluded = foldMapWithKey renderTooManyIncluded
-                    . M.withoutKeys (excludedFullMap mes)
-                    $ M.keysSet (excludedKeyedMap mes) <> bothSet
-      where
-        renderTooManyIncluded k v = [unwords [ " ", show (toList v), "<---", show k ]]
-
-    inBoth = rendingInBoth <$> toList bothSet
-      where
-        rendingInBoth x = unwords
-            [ " "
-            , show . toList $ excludedFullMap mes ! x
-            , "<-->"
-            , show . toList $ includedFullMap mes ! x
-            ]
-
-    bothSet = includedAndExcluded mes
-
-    indent = ("  " <>)
 
 
 -- |
@@ -420,7 +389,7 @@ isPermissible xs mes = getAll $ foldMap f xs
 --
 -- * No included element is also excluded
 isCoherent :: MutualExculsionSet a -> Bool
-isCoherent (MES a b c d e) = length a == length c && length b == length d 
+isCoherent (MES a b c d _) = length a == length c && length b == length d 
 
 
 -- |
@@ -437,3 +406,49 @@ unsafeFromList xs = MES incMap' excMap' (S.singleton <$> incMap) (S.singleton <$
     exc     = swap <$> inc
     inc     = toList xs
     both    = M.keysSet incMap `S.intersection` M.keysSet excMap
+
+
+-- |
+-- Nicely render the 'Data.MutualExculsionSet' in a multi-line 'String'.
+--
+-- Shows the internal state inluding bijectivity and mutual exclusivity
+-- violations.
+prettyPrintMutualExclusionSet :: (Ord a, Show a) => MutualExculsionSet a -> String
+prettyPrintMutualExclusionSet mes = mconcat
+    [ "MutualExclusionSet\n"
+    , bijectiveValues
+    , violationValues
+    ]
+  where
+    bijectiveValues = unlines . fmap indent . ("Bijective map":)
+                    $ bijectiveRender <$> toList (mutuallyExclusivePairs mes)
+      where
+        bijectiveRender (k,v) = unwords [ " ", show k, "<-->", show v ]
+
+    violationValues = unlines . fmap indent . ("Violations":)
+                    $ mconcat [ tooManyExcluded, inBoth, tooManyIncluded ]
+
+    tooManyExcluded = foldMapWithKey renderTooManyExcluded
+                    . M.withoutKeys (includedFullMap mes)
+                    $ M.keysSet (includedKeyedMap mes) <> bothSet
+      where
+        renderTooManyExcluded k v = [unwords [ " ", show k, "--->", show (toList v) ]]
+
+    tooManyIncluded = foldMapWithKey renderTooManyIncluded
+                    . M.withoutKeys (excludedFullMap mes)
+                    $ M.keysSet (excludedKeyedMap mes) <> bothSet
+      where
+        renderTooManyIncluded k v = [unwords [ " ", show (toList v), "<---", show k ]]
+
+    inBoth = rendingInBoth <$> toList bothSet
+      where
+        rendingInBoth x = unwords
+            [ " "
+            , show . toList $ excludedFullMap mes ! x
+            , "<-->"
+            , show . toList $ includedFullMap mes ! x
+            ]
+
+    bothSet = includedAndExcluded mes
+
+    indent = ("  " <>)
