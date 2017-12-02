@@ -368,7 +368,7 @@ mutuallyExclusivePairs = S.fromDistinctAscList . M.toAscList . includedKeyedMap
 
 
 -- |
--- \( \mathcal{O} \left( n * \log_2 m \right) \)
+-- \( \mathcal{O} \left( m + n * \log_2 m \right) \)
 --
 -- Perform an operation to determine if a collection of elements is "permitted"
 -- by 'MutualExculsionSet', ie that the collection does not contain any elements
@@ -376,7 +376,9 @@ mutuallyExclusivePairs = S.fromDistinctAscList . M.toAscList . includedKeyedMap
 isPermissible :: (Foldable f, Ord a) => f a -> MutualExculsionSet a -> Bool
 isPermissible xs mes = getAll $ foldMap f xs
   where
+    -- O(log m)
     f x = All $ x `notElem` badElems
+    -- O(m)
     badElems = excludedSet mes
 
 

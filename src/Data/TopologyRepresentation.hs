@@ -31,49 +31,13 @@ import           Control.DeepSeq
 import           Data.Foldable
 import           Data.Functor.Classes
 import           Data.Hashable
-import qualified Data.Map                as M
-import           Data.Monoid             hiding ((<>))
 import           Data.MutualExculsionSet        (MutualExculsionSet)
 import qualified Data.MutualExculsionSet as MES
 import           Data.Semigroup
 import           Data.Set                       (Set)
-import qualified Data.Set                as S   (fromDistinctAscList)
-import           GHC.Generics                   (Generic)
-
+import           GHC.Generics
 
 {-
--- |
--- Represents a collection of network edges.
---
--- Often used to represent a unique spanning tree in a phylogenetic DAG.
-newtype TopologyRepresentation a = TR (EdgeSet a)
-  deriving (Eq, Foldable, Generic, Monoid, Ord, Semigroup)
-
-
-instance NFData a => NFData (TopologyRepresentation a) where
-
-    rnf (TR x) = rnf x
-
-
-instance Show a => Show (TopologyRepresentation a) where
-
-    show (TR es) = "Network Edges of Topology: " <> show es
-
-
--- |
--- /O(1)/
---
--- Construct a singleton 'TopologyRepresentation' value. Use the semigroup operator '(<>)' to
--- construct larger a 'TopologyRepresentation'.
-singleNetworkEdge :: a -> TopologyRepresentation a
-singleNetworkEdge = TR . singletonEdgeSet
-
-
--- |
--- /O(n + m)/
---
--- Perform a subsetting operation to determine is a sub-topology is compatable
--- with another topology. 
 isCompatableSubtopologyOf :: Ord a => TopologyRepresentation a -> TopologyRepresentation a -> Bool
 isCompatableSubtopologyOf (TR x) (TR y) = isSubsetOf x y
 -}
@@ -136,7 +100,7 @@ instance Show a => Show (TopologyRepresentation a) where
 
 
 -- |
--- /O(1)/
+-- \( \mathcal{O} \left( 1 \right) \)
 --
 -- Construct a singleton 'TopologyRepresentation' value by supplying a network
 -- edge identifier representing an edge contained in the topology and a
@@ -183,7 +147,7 @@ mutuallyExclusivePairs = MES.mutuallyExclusivePairs . unwrap
 
 
 -- |
--- /O(n + m)/
+-- \( \mathcal{O} \left( m + n * \log_2 m \right) \)
 --
 -- Perform a subsetting operation to determine is a sub-topology is compatable
 -- with another topology.

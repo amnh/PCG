@@ -201,6 +201,7 @@ library
                        Data.MutualExculsionSet
                        Data.TCM
                        Data.TCM.Memoized
+                       Data.TopologyRepresentation
                        Data.Vector.NonEmpty
                        Numeric.Extended
                        Numeric.Extended.Natural
@@ -288,7 +289,6 @@ library
                        Data.Range
                        Data.TCM.Internal
                        Data.TCM.Memoized.FFI
-                       Data.TopologyRepresentation
                        Numeric.Extended.Internal
                        Numeric.NonNegativeAverage
                        Test.QuickCheck.Arbitrary.Instances
