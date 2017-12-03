@@ -152,8 +152,9 @@ newtype AlphabetAndTwoAmbiguityGroups
 instance Arbitrary AlphabetAndTwoAmbiguityGroups where
   arbitrary = do
     (alphabet, xs) <- alphabetAndAmbiguityGroups 2
-    let [x,y] = NE.take 2 xs
-    pure $ AlphabetAndTwoAmbiguityGroups (alphabet, x, y)
+    pure $ case xs of
+             x:|[]  -> AlphabetAndTwoAmbiguityGroups (alphabet, x, x)
+             x:|y:_ -> AlphabetAndTwoAmbiguityGroups (alphabet, x, y)
 
 newtype AlphabetAndCharacter
       = AlphabetAndCharacter

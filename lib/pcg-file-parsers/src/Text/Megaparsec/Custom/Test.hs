@@ -55,7 +55,7 @@ decimalProperties = testGroup "Arbitrary Double Tests"
 
 
 -- |
--- Ensure that all Ints represented as Strings are correctly parsed as Ints.
+-- Ensure that all Doubles represented as Strings are correctly parsed as Doubles.
 -- The parser should never fail to testingParse a String representation of an Int.
 -- NOTE: This doesn't work due to the strangeness of decimal's precision
 decimalSurjection :: Double -> Bool 
@@ -63,13 +63,14 @@ decimalSurjection x = Right x  == testingParse double "" (show x)
 
 
 -- |
--- Ensure that all Strings which can be `read` as an Int are parsed as Ints.
--- The parser should always fail to testingParse a String that cannot be read as an Int.
+-- Ensure that all Strings which can be `read` as a Double are parsed as Double.
+-- The parser should always fail to testingParse a String that cannot be read as
+-- an Double.
 decimalInjection :: String -> Bool 
 decimalInjection x =
     case readMay x :: Maybe Double of
       Nothing  -> True
-      Just res -> testingParse (space *> double <* eof) "" x == Right res
+      Just res -> testingParse (space *> double <* space <* eof) "" x == Right res
 
 
 inlineSpaceCharAssertions :: TestTree

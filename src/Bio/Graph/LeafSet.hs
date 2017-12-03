@@ -23,9 +23,10 @@ module Bio.Graph.LeafSet
 
 
 import Control.Lens
-import Data.List (union)
+import Data.List         (union)
 import Data.Semigroup
---import Text.XML.Custom
+import Text.Newick.Class ()
+import Text.XML.Custom   ()
 
 
 -- |

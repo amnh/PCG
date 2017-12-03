@@ -35,6 +35,8 @@ data  Command
     deriving (Show)
 
 
+-- |
+-- A non-empty list of Commands to be sequentially evaluated.
 newtype Computation = Computation (NonEmpty Command)
     deriving (Show)
 

@@ -134,19 +134,25 @@ instance HasPrimativeType PrimativeParseResult where
 
 -- |
 -- A boolean value embedded in a Free computational context
-bool :: MonadFree PrimativeValue m => m Bool
+bool
+  :: MonadFree PrimativeValue m
+  => m Bool
 bool = liftF $ PBool id
 
 
 -- |
 -- A integral value embedded in a Free computational context
-int :: MonadFree PrimativeValue m => m Int
+int
+  :: MonadFree PrimativeValue m
+  => m Int
 int = liftF $ PInt id
 
 
 -- |
 -- A real value embedded in a Free computational context
-real :: MonadFree PrimativeValue m => m Double
+real
+  :: MonadFree PrimativeValue m
+  => m Double
 real = liftF $ PReal id
 
 
@@ -158,13 +164,18 @@ text = liftF $ PText id
 
 -- |
 -- A temporal value embedded in a Free computational context
-time :: MonadFree PrimativeValue m => m DiffTime
+time
+  :: MonadFree PrimativeValue m
+  => m DiffTime
 time = liftF $ PTime id
 
 
 -- |
 -- A literal value embedded in a Free computational context
-value :: MonadFree PrimativeValue m => String -> m ()
+value
+  :: MonadFree PrimativeValue m
+  => String
+  -> m ()
 value str = liftF $ PValue str id
 
 
@@ -172,7 +183,10 @@ value str = liftF $ PValue str id
 -- Defines the whitespace for the syntax.
 --
 -- Exported for reuse by other MonadParsec based Free Monad interpreters.
-whitespace :: forall e s m. (MonadParsec e s m, Token s ~ Char) => m ()
+whitespace
+  :: forall e s m
+  .  (MonadParsec e s m, Token s ~ Char)
+  => m ()
 whitespace = Lex.space single line block
   where
     pxy    = Proxy :: Proxy s
@@ -185,7 +199,10 @@ whitespace = Lex.space single line block
 
 -- |
 -- A contextual primative value parser that will return type errors.
-parsePrimative :: (FoldCase (Tokens s), MonadParsec e s m,  Token s ~ Char) => PrimativeValue (m a) -> m a
+parsePrimative
+  :: (FoldCase (Tokens s), MonadParsec e s m,  Token s ~ Char)
+  => PrimativeValue (m a)
+  -> m a
 parsePrimative (PBool      x) = typeMismatchContext boolValue TypeOfBool >>= x
 parsePrimative (PInt       x) = typeMismatchContext  intValue TypeOfInt  >>= x
 parsePrimative (PReal      x) = typeMismatchContext realValue TypeOfReal >>= x
@@ -196,7 +213,10 @@ parsePrimative (PValue str x) = valueParser >>= x
     valueParser = typeMismatchContext (valueValue str) (TypeOfValue str)
 
 
-boolValue :: forall e s m. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m Bool
+boolValue
+  :: forall e s m
+  .  (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char)
+  => m Bool
 boolValue = (truthhood <|> falsehood) <?> "boolean value"
   where
     truthhood = string' (tokensToChunk proxy "true" ) $> True
@@ -204,9 +224,15 @@ boolValue = (truthhood <|> falsehood) <?> "boolean value"
     proxy     = Proxy :: Proxy s
 
 
-intValue :: (MonadParsec e s m, Token s ~ Char) => m Int
+intValue
+  :: (MonadParsec e s m, Token s ~ Char)
+  => m Int
 intValue  = label intLabel $ numValue >>= convertToInt
   where
+    convertToInt
+      :: forall a (f :: * -> *) e s
+      .  (MonadParsec e s f, Integral a, Bounded a)
+      => Scientific -> f a
     convertToInt  s
       | isInteger s = pure . fromMaybe boundedValue $ toBoundedInteger s
       | otherwise   = failure unexpMsg expctMsg
@@ -215,24 +241,33 @@ intValue  = label intLabel $ numValue >>= convertToInt
           | signum s > 0 = maxBound
           | otherwise    = minBound
 
+    unexpMsg :: forall t. Maybe (ErrorItem t)
     unexpMsg  = Just . Label $ NE.fromList realLabel
+
+    expctMsg :: forall t. Set (ErrorItem t)
     expctMsg  = S.singleton . Label $ NE.fromList  intLabel
     intLabel  = getPrimativeName TypeOfInt
     realLabel = getPrimativeName TypeOfReal
 
 
-numValue :: (MonadParsec e s m,  Token s ~ Char) => m Scientific
+numValue
+  :: (MonadParsec e s m,  Token s ~ Char)
+  => m Scientific
 numValue = hidden signedNum <?> "number"
   where
     signedNum = signed whitespace scientific
 
 
-realValue :: (MonadParsec e s m, Token s ~ Char) => m Double
+realValue
+  :: (MonadParsec e s m, Token s ~ Char)
+  => m Double
 realValue = label (getPrimativeName TypeOfReal)
           $ either id id . toBoundedRealFloat <$> numValue
 
 
-textValue  :: (MonadParsec e s m, Token s ~ Char) => m String -- (Tokens s)
+textValue
+  :: (MonadParsec e s m, Token s ~ Char)
+  => m String -- (Tokens s)
 textValue = openQuote *> many (escaped <|> nonEscaped) <* closeQuote
   where
     -- These characters must be escaped!
@@ -266,18 +301,30 @@ textValue = openQuote *> many (escaped <|> nonEscaped) <* closeQuote
                 , ( 'b', '\b')
                 , ( 'f', '\f')
                 ]
-        
+
+        characterEscaping
+          :: forall e
+          .  ParseError Char e
+          -> ParseError Char e
         characterEscaping e@FancyError {} = e
         characterEscaping   (TrivialError pos uxpItems expItems) = TrivialError pos uxpItems' expItems'
           where
             uxpItems' = f <$> uxpItems
             expItems' = S.map (Tokens . pure) escapeChars <> expItems
+
+            f
+              :: forall a t
+              .  ShowToken a
+              => ErrorItem a
+              -> ErrorItem t
             f  EndOfInput     = EndOfInput
             f (Tokens    ts ) = Label . NE.fromList $ "invalid escape sequence character: " <> showTokens ts
             f (Label (x:|xs)) = Label $ x :| xs <> " (not a valid escape sequence character)"
 
 
-timeValue  :: (MonadParsec e s m, Token s ~ Char) => m DiffTime
+timeValue
+  :: (MonadParsec e s m, Token s ~ Char)
+  => m DiffTime
 timeValue = do
     days    <- decimal
     _       <- char ':'
@@ -290,11 +337,20 @@ timeValue = do
     pure $ secondsToDiffTime totalSeconds
 
 
-valueValue :: forall e s m. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => String -> m ()
+valueValue
+  :: forall e s m
+  .  (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char)
+  => String
+  -> m ()
 valueValue = void . string' . tokensToChunk (Proxy :: Proxy s)
 
 
-typeMismatchContext :: forall e s m a. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m a -> PrimativeType -> m a
+typeMismatchContext
+  :: forall e s m a
+  .  (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char)
+  => m a
+  -> PrimativeType
+  -> m a
 typeMismatchContext p targetType = do
     parsedPrimative <- primatives
     case parsedPrimative of

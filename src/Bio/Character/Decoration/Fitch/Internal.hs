@@ -204,6 +204,7 @@ instance EncodableStaticCharacter f => DiscreteExtensionFitchDecoration (FitchOp
             $ subDecoration
 
 
+-- | (✔)
 instance NFData f => NFData (FitchOptimizationDecoration f)
 
 

@@ -6,7 +6,7 @@ import Data.List.NonEmpty (NonEmpty)
 import qualified Data.List.NonEmpty as NE
 
 
-data RRead = Read (NonEmpty FileSpec) deriving (Show)
+newtype RRead = Read (NonEmpty FileSpec) deriving (Show)
 
 data FileSpec
     = Unspecified String

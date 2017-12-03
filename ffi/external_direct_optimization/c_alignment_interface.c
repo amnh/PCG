@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -49,6 +50,12 @@ int align2d( alignIO_t          *inputChar1_aio
            && retLongChar  != NULL
            && "Can't allocate input or output characters in 2D affine." );
 
+    assert(   longChar     != NULL
+           && shortChar    != NULL
+           && retShortChar != NULL
+           && retLongChar  != NULL
+           && "OOM. Can't allocate space for characters in 2D alignment." );
+
     /*** Most character allocation is now done on Haskell side, but these two are local. ***/
     /*** longChar and shortChar will both have pointers into the input characters, so don't need to be initialized separately ***/
     dyn_char_initialize(retLongChar,  CHAR_CAPACITY);
@@ -94,7 +101,7 @@ int align2d( alignIO_t          *inputChar1_aio
         dyn_char_print(shortChar);
     }
     alignment_matrices_t *algnMtxs2d = malloc( sizeof(alignment_matrices_t) );
-    assert( algnMtxs2d != NULL && "Can't allocate alignment matrices." );
+    assert( algnMtxs2d != NULL && "2D alignment matrices could not be allocated." );
 
     initializeAlignmentMtx( algnMtxs2d, longChar->len, shortChar->len, costMtx2d->costMatrixDimension );
 
@@ -119,7 +126,7 @@ int align2d( alignIO_t          *inputChar1_aio
 
         if (getUngapped) {
             dyn_character_t *ungappedMedianChar = malloc( sizeof(dyn_character_t) );
-            assert( ungappedMedianChar != NULL && "Can't allocate ungapped median character." );
+            assert( ungappedMedianChar != NULL && "Can't allocate 2D ungapped median character." );
             dyn_char_initialize( ungappedMedianChar, CHAR_CAPACITY );
 
             algn_get_median_2d_no_gaps( retShortChar, retLongChar, costMtx2d, ungappedMedianChar );
@@ -210,6 +217,12 @@ int align2dAffine( alignIO_t          *inputChar1_aio
            && retShortChar != NULL
            && retLongChar  != NULL
            && "Can't allocate input or output characters in 2D affine." );
+
+    assert(   longChar     != NULL
+           && shortChar    != NULL
+           && retShortChar != NULL
+           && retLongChar  != NULL
+           && "OOM. Can't allocate space for characters in 2D alignment." );
 
     /*** Most character allocation is now done on Haskell side, but these two are local. ***/
     /*** longChar and shortChar will both have pointers into the input characters, so don't need to be initialized separately ***/
@@ -429,6 +442,16 @@ int align3d( alignIO_t          *inputChar1_aio
            && powellOutputs->seq3 != NULL
            && "Can't allocate outputs from Powell 3DO." );
 
+    assert(   powellInputs        != NULL
+           && powellInputs->seq1  != NULL
+           && powellInputs->seq2  != NULL
+           && powellInputs->seq3  != NULL
+           && powellOutputs       != NULL
+           && powellOutputs->seq1 != NULL
+           && powellOutputs->seq2 != NULL
+           && powellOutputs->seq3 != NULL
+           && "OOM. Can't allocate space for characters in 3D alignment." );
+
     alignIOtoCharacters_t( powellInputs, inputChar1_aio, inputChar2_aio, inputChar3_aio );
 
     if (DEBUG_CALL_ORDER) printf("\n---Calling Powell\n\n");
@@ -446,8 +469,7 @@ int align3d( alignIO_t          *inputChar1_aio
     dyn_character_t *gappedMedianChar   = malloc( sizeof(dyn_character_t) );
     assert(   gappedMedianChar   != NULL
            && ungappedMedianChar != NULL
-           && "Can't allocate median characters." );
-
+           && "Can't allocate 3D median characters." );
 
     dyn_char_initialize( ungappedMedianChar, powellOutputs->idxSeq1 );
     dyn_char_initialize( gappedMedianChar,   powellOutputs->idxSeq1 );

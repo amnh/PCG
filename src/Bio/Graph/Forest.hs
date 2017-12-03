@@ -128,9 +128,9 @@ instance PrintDot a => PrintDot (PhylogeneticForest a) where
 
     toDot         = listToDot . toList . unwrap
 
-    unqtListToDot = fmap mconcat . sequenceA . fmap unqtDot
+    unqtListToDot = fmap mconcat . traverse unqtDot
 
-    listToDot     = fmap mconcat . sequenceA . fmap toDot
+    listToDot     = fmap mconcat . traverse toDot
 
 
 instance ToNewick a => ToNewick (PhylogeneticForest a) where

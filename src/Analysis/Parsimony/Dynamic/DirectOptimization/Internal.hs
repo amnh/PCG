@@ -83,7 +83,7 @@ initializeLeaf =
       <$> id
       <*> const 0
       <*> const 0
-      <*> toEnum . olength . (^. encoded)
+      <*> toAverageLength . toEnum . olength . (^. encoded)
       <*> (^. encoded)
       <*> (^. encoded)
       <*> (^. encoded)
@@ -118,8 +118,8 @@ directOptimizationPreOrder
   -> d
   -> [(Word, DynamicDecorationDirectOptimization c)]
   ->  DynamicDecorationDirectOptimization c
-directOptimizationPreOrder pairwiseAlignment charDecoration xs =
-    case xs of
+directOptimizationPreOrder pairwiseAlignment charDecoration parents =
+    case parents of
         []            -> initializeRoot charDecoration
         (_, parent):_ -> updateFromParent pairwiseAlignment charDecoration parent
 
@@ -150,23 +150,26 @@ updateFromParent
   -> DynamicDecorationDirectOptimization c
 updateFromParent pairwiseAlignment currentDecoration parentDecoration = resultDecoration
   where
-    -- If the current node has a missing character value representing it's
-    -- preliminary median assignment, then we take the parent's final assingment
-    -- values and assign them to the current node as it's own final assignments.
+    -- If the current node has a missing character value representing its
+    -- preliminary median assignment, then we take the parent's final assignment
+    -- values and assign them to the current node as its own final assignments.
     --
-    -- Otherwise we perform a local alignmnet between the parent's *UNGAPPED*
-    -- final assignments and the current node's *GAPPED* preliminary assignment.
-    -- Afterwards we calculate the indicies of the new gaps in the alignment,
-    -- insert them into the current node's left and right child alignments.
-    -- Lastly a three-way mean between the locally aligned parent assignment and
+    -- Otherwise we perform a local alignment between the parent's *UNGAPPED*
+    -- final assignment and the current node's *GAPPED* preliminary assignment.
+    -- Afterwards we calculate the indices of the new gaps in the alignment and
+    -- insert these gaps into the current node's left and right child alignments.
+    -- Lastly, a three-way mean between the locally-aligned parent assignment and
     -- the expanded left and right child alignments is used to calculate the
     -- final assignment of the current node.
+    --
+    -- We do these convoluted operations to account for deletion events in the
+    -- parent assignment when comparing to child assignments.
     resultDecoration = extendPostOrderToDirectOptimization currentDecoration ungapped gapped
     (ungapped, gapped)
       | isMissing $ currentDecoration ^. preliminaryGapped = (pUngapped, pGapped)
       | otherwise =  tripleComparison pairwiseAlignment currentDecoration pUngapped
-    pUngapped        = parentDecoration ^. finalUngapped
-    pGapped          = parentDecoration ^. finalGapped
+    pUngapped     = parentDecoration ^. finalUngapped
+    pGapped       = parentDecoration ^. finalGapped
 
 
 -- |

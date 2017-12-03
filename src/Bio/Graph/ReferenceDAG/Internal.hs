@@ -158,6 +158,7 @@ instance Functor (ReferenceDAG d e) where
         g (IndexData node parentRefs' childRefs') = IndexData (f node) parentRefs' childRefs'
 
 
+-- | (✔)
 instance HasLeafSet (ReferenceDAG d e n) (LeafSet n) where
 
     leafSet = lens getter undefined
@@ -168,12 +169,15 @@ instance HasLeafSet (ReferenceDAG d e n) (LeafSet n) where
                 | otherwise          = mempty
 
 
+-- | (✔)
 instance (NFData d, NFData e, NFData n) => NFData (ReferenceDAG d e n)
 
 
+-- | (✔)
 instance (NFData e, NFData n) => NFData (IndexData e n)
 
 
+-- | (✔)
 instance (NFData d) => NFData (GraphData d)
 
 
@@ -237,6 +241,7 @@ instance PhylogeneticTree (ReferenceDAG d e n) NodeRef e n where
     parent i dag = fmap toEnum . headMay . otoList . parentRefs $ references dag ! fromEnum i
 
 
+-- | (✔)
 instance Foldable f => PrintDot (ReferenceDAG d e (f String)) where
 
     unqtDot       = unqtDot . uncurry mkGraph . getDotContext 0 0
@@ -265,6 +270,7 @@ instance {- (Show e, Show n) => -} Show (ReferenceDAG d e n) where
     show dag = intercalate "\n" [topologyRendering dag, "", referenceRendering dag]
 
 
+-- | (✔)
 instance Foldable f => ToNewick (ReferenceDAG d e (f String)) where
 
     toNewick refDag = mconcat [ newickString, "[", show cost, "]" ]
@@ -294,6 +300,7 @@ instance Foldable f => ToNewick (ReferenceDAG d e (f String)) where
                         pure $ "Node_" <> show tC
 
 
+-- | (✔)
 instance ToXML (GraphData m) where
 
     toXML gData = xmlElement "Graph_data" attrs contents
@@ -306,6 +313,7 @@ instance ToXML (GraphData m) where
                        ]
 
 
+-- | (✔)
 instance (ToXML n) => ToXML (IndexData e n) where
 
    toXML indexData = toXML $ nodeDecoration indexData
@@ -916,7 +924,7 @@ fromList xs =
     listValue = toList xs
     referenceVector = V.fromList $ (\(pSet, datum, cMap) -> IndexData datum pSet cMap) <$> listValue
     rootSet =
-      case foldMapWithKey (\k (pSet,_,_) -> if onull pSet then [k] else []) listValue of
+      case foldMapWithKey (\k (pSet,_,_) -> [ k | onull pSet ]) listValue of
         []   -> error "No root nodes supplied in call to ReferenceDAG.fromList"
         y:ys -> y:|ys
 

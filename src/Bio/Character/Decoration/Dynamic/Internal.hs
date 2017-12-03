@@ -106,15 +106,19 @@ data DynamicDecorationInitial d
    } deriving (Eq, Generic)
 
 
+-- | (✔)
 instance NFData d => NFData (DynamicDecorationInitial d)
 
 
+-- | (✔)
 instance NFData d => NFData (DynamicDecorationDirectOptimization d)
 
 
+-- | (✔)
 instance NFData d => NFData (DynamicDecorationDirectOptimizationPostOrderResult d)
 
 
+-- | (✔)
 instance NFData d => NFData (DynamicDecorationImpliedAlignment d)
 
 
@@ -244,11 +248,13 @@ instance (EncodableDynamicCharacter d) => DynamicCharacterDecoration (DynamicDec
 --    toDynamicCharacterDecoration :: CharacterName -> Double -> Alphabet String -> TCM -> (x -> a) -> x -> s
     toDynamicCharacterDecoration name weight alphabet scm g symbolSet =
         DynamicDecorationInitial
-        { dynamicDecorationInitialEncodedField = g symbolSet
-        , metadata                             = dynamicMetadata name weight alphabet scm denseMay
+        { dynamicDecorationInitialEncodedField           = charValue
+        , dynamicDecorationInitialCharacterAverageLength = toAverageLength . toEnum $ olength charValue
+        , metadata                                       = dynamicMetadata name weight alphabet scm denseMay
         }
       where
-        denseMay = maybeConstructDenseTransitionCostMatrix alphabet scm
+        charValue = g symbolSet 
+        denseMay  = maybeConstructDenseTransitionCostMatrix alphabet scm
 
 
 -- | (✔)
@@ -952,6 +958,10 @@ renderFoci foci = prefix <> body <> "\n"
 
 
 -- renderingContext :: 
+
+-- |
+-- Generic rendering function for a dynamic character decoration with descriptive
+-- fields for determining the result of a network traversal.
 renderingDecorationContext
   :: ( HasCharacterAlphabet  s x
      , HasCharacterCost      s y

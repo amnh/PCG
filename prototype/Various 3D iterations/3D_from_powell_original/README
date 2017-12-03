@@ -1,0 +1,77 @@
+Copyright (c) David Powell <david@drp.id.au>
+
+  This package is provided under he GNU Public License v2 and
+  comes with ABSOLUTELY NO WARRANTY, or details see file COPYRIGHT
+
+
+----------------------------------------------------------------------
+
+This package contains 4 programs that implement three
+sequence alignment under linear gap costs.  All programs use
+'tree-costs'.  Tree-costs can be seen as computing the
+pairwise costs between the consensus sequence and each of
+the input sequences.  All programs calculate the minimum
+edit cost.  The cost of the edit operations can be specified
+on the commandline, but all costs must be a positive
+integer, and the cost of a match is always zero.  Each
+program has differing time/space complexity, some program
+return an optimal alignment, other just compute the best
+edit cost.
+
+ukk.dpa:      Based on the standard DPA.  Space and time
+              complexity is O(n^3).  Recovers an optimal
+              alignment.
+
+ukk.noalign:  Modification of Ukkonen's algorithm to 3
+              sequence with linear gap costs.  This program
+              calculates the edit cost, but _not_ recover an
+              alignment.  Average time complexity: O(n + d^3),
+              space complexity: O(d^2)
+
+ukk.alloc:    Similar to ukk.noalign, in fact uses mostly
+              the same code.  This program _does_ recover an
+              alignment, but has larger space complexity.
+              Average time complexity: O(n + d^3), space
+              complexity: O(d^3)
+
+ukk.checkp:   Similar to ukk.alloc, but uses the
+              check-pointing method to recover an alignment
+              which maintaining quadratic space complexity.
+              Average time complexity:  O(n*log(d) + d^3),
+              space complexity: O(d^2)
+
+
+----------------------------------------------------------------------
+
+PAPERS
+
+For info on Ukkonen's algorithm:
+    E. Ukkonen,
+    "On Approximate String Matching",
+    Foundations of Computation Theory, 158, pp 487-495
+
+For info generalising Ukkonen to three sequences:
+    L. Allison,
+    "A fast algorithm for the optimal alignment of three strings.",
+    Journal of Theoretical Biology, 164:2, pp 261-269
+
+For info on generalising Ukkonen to linear gap costs:
+    E. W. Myers and W. Miller,
+    "Row Replacement Algorithms for Screen Editors",
+    ACM Transactions on Programming Languages and Systems, 11:1, pp 33-56
+
+For info on Ukkonen generalised to three sequences and linear-gap costs:
+    D. R. Powell, L. Allison and T. I. Dix,
+    "Fast, Optimal Alignment of Three Sequences Using Linear Gap Costs",
+    Journal of Theoretical Biology, 207:3, pp 325-336
+
+For info on the check-pointing technique:
+    D. R. Powell, L. Allison and T. I. Dix,
+    "A Versatile Divide and Conquer Technique for Optimal String Alignment",
+    Information Processing Letters, 1999, 70:3, pp 127-139
+
+For info of 3-way Ukkonen algorithm with linear gap costs:
+    D. R. Powell, "Algorithms for Sequence Alignment",
+    PhD Thesis, Monash University, 2001, Chapter 4.
+
+

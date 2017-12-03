@@ -4,6 +4,7 @@
 //  Created by Yu Xiang on 11/1/22.
 //  Copyright © 2016 Yu Xiang. All rights reserved.
 
+#include <assert.h>
 #include <inttypes.h>
 #include <math.h>
 #include <stdio.h>

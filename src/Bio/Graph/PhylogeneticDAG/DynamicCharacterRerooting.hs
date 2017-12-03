@@ -99,8 +99,8 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
       []      ->     (pdag, mempty, mempty)
       [_]     ->     (pdag, mempty, mempty)
       -- Trivial case
-      [_,_]   -> let r = ((0,1), (getCache 1))
-                     c = ((1,0), (getCache 0))
+      [_,_]   -> let r = ((0,1), getCache 1)
+                     c = ((1,0), getCache 0)
                      m = HM.fromList [r, c]
                      d = setDefaultFoci <$> inputDag
                  in  (PDAG2 d, m, V.generate 2 (const m))
@@ -402,7 +402,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
         transposeDisplayTrees :: HashMap TraversalFocusEdge (ResolutionCache s) -> HashMap TraversalTopology (NonEmpty (TraversalFocusEdge, s))
         transposeDisplayTrees = foldlWithKey' f mempty
           where
-            f outerMapRef rootingEdge cache = foldl' g outerMapRef cache
+            f outerMapRef rootingEdge = foldl' g outerMapRef
               where
                 g innerMapRef resInfo = HM.insertWith (<>) key val innerMapRef
                   where

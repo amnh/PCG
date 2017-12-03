@@ -169,6 +169,14 @@ cm_alloc_2d ( cost_matrices_2d_t *res
     res->worst        = calloc (size, 1);
     res->prepend_cost = calloc (size, 1);
     res->tail_cost    = calloc (size, 1);
+    res->median       = calloc (size, 1);
+
+    assert(   res->cost         != NULL
+           && res->worst        != NULL
+           && res->prepend_cost != NULL
+           && res->median       != NULL
+           && res->tail_cost    != NULL
+           && "OOM: Cannot allocate 2D cost matrices." );
 
     assert(   res->cost         != NULL
            && res->worst        != NULL
@@ -182,9 +190,6 @@ cm_alloc_2d ( cost_matrices_2d_t *res
          * sizeof(elem_t); // size for median matrix
 
     assert( 0 != size && "Your cost matrix is too large to fit in memory. I can't continue with your data loading." );
-
-    res->median = (elem_t *) calloc( size, 1 );
-    assert( res->median != NULL && "OOM: can't allocate cost matrix." );
 }
 
 
@@ -495,24 +500,11 @@ cm_get_row_3d( unsigned int *tcm
     unsigned int one = 1;
     unsigned int upperBound = one << alphSize;
 
-    assert( alphSize > 0 && "Alphabet size should be > 0.");
+    assert( alphSize   > 0     && "Alphabet size should be > 0.");
     assert( upperBound > char1 && "Character 1 is bigger than alphabet size." );
     assert( upperBound > char2 && "Character 2 is bigger than alphabet size." );
     return (tcm + (((char1 << alphSize) + char2) << alphSize));
 }
-
-
-// void
-// cm_set_value_3d_dyn_char_p ( elem_t       elem1
-//                            , elem_t       elem2
-//                            , elem_t       elem3
-//                            , unsigned int val
-//                            , unsigned int *matrix_array
-//                            , int           alphSize
-//                            )
-// {
-//     *(matrix_array + (cm_calc_cost_position_3d (elem1, elem2, elem3, alphSize))) = val;
-// }
 
 static inline void
 cm_set_value_3d ( unsigned int *matrix_array

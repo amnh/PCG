@@ -1,6 +1,6 @@
 allow-newer: true
 
-compiler: ghc-8.2.1
+compiler: ghc-8.2.2
 
 compiler-check: match-exact
 
@@ -23,7 +23,7 @@ packages:
   - location:  https://github.com/ivan-m/graphviz/archive/a099a07.zip
     extra-dep: true
 
-resolver: nightly-2017-09-29
+resolver: nightly-2017-11-23
+#resolver: nightly-2017-09-29
 
 system-ghc: false
-

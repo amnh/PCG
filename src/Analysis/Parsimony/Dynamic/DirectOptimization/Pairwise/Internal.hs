@@ -197,18 +197,18 @@ handleMissingCharacterThreeway
   -> s
   -> (Word, s, s, s, s, s)
   -> (Word, s, s, s, s, s)
-handleMissingCharacterThreeway f char1 char2 char3 v =
+handleMissingCharacterThreeway f a b c v =
     -- Appropriately handle missing data:
-    case (isMissing char1, isMissing char2, isMissing char3) of
-      (True , True , True ) -> (0, char1, char1, char1, char2, char3) --WLOG. return cost = 0
-      (True , True , False) -> (0, char3, char3, char3, char3, char3)
-      (True , False, True ) -> (0, char2, char2, char2, char2, char2)
-      (True , False, False) -> let (cost, ungapd, gapd, lhs, rhs) = f char2 char3
+    case (isMissing a, isMissing b, isMissing c) of
+      (True , True , True ) -> (0, a, a, a, b, c) --WLOG. return cost = 0
+      (True , True , False) -> (0, c, c, c, c, c)
+      (True , False, True ) -> (0, b, b, b, b, b)
+      (True , False, False) -> let (cost, ungapd, gapd, lhs, rhs) = f b c
                                in  (cost, ungapd, gapd, undefined, lhs, rhs)
-      (False, True , True ) -> (0, char1, char1, char1, char1, char1)
-      (False, True , False) -> let (cost, ungapd, gapd, lhs, rhs) = f char1 char3
+      (False, True , True ) -> (0, a, a, a, a, a)
+      (False, True , False) -> let (cost, ungapd, gapd, lhs, rhs) = f a c
                                in  (cost, ungapd, gapd, lhs, undefined, rhs)
-      (False, False, True ) -> let (cost, ungapd, gapd, lhs, rhs) = f char1 char2
+      (False, False, True ) -> let (cost, ungapd, gapd, lhs, rhs) = f a b
                                in  (cost, ungapd, gapd, lhs, rhs, undefined)
       (False, False, False) -> v
 
@@ -231,7 +231,7 @@ measureCharacters lhs rhs
   | lhsOrdering == LT = ( True, rhs, lhs)
   | otherwise         = (False, lhs, rhs)
   where
-    lhsOrdering = 
+    lhsOrdering =
         case comparing olength lhs rhs of
           EQ -> otoList lhs `compare` otoList rhs
           x  -> x
@@ -454,7 +454,7 @@ minimalChoice = foldr1 f
 -- Takes in a symbol change cost function and two ambiguous elements of a dynamic
 -- character and returns a list of tuples of all possible unambiguous pairings,
 -- along with the cost of each pairing. The resulting elements each have exactly
--- two bits set. 
+-- two bits set.
 allPossibleBaseCombosCosts :: EncodableStreamElement s => (Word -> Word -> Word) -> s -> s -> NonEmpty (s, Word)
 allPossibleBaseCombosCosts costStruct char1 char2 = do
     (i, x) <- getSubChars char1

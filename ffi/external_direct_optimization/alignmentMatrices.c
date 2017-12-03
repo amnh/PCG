@@ -79,7 +79,6 @@ algnMat_setup_size ( alignment_matrices_t *alignMtx
            cap_2d = 0,
            cap_precalcMtx,
            cap_dir;
-    //cap_dir     = (len_char1 + 1) * (len_char2 + 1);
 
     cap            = algnMat_size_of_2d_matrix (len_char1, len_char2);
     cap_precalcMtx = (1 << alphabetSize) * len_char1;
@@ -114,12 +113,12 @@ algnMat_setup_size ( alignment_matrices_t *alignMtx
     }
     if (alignMtx->cap_pre < cap_precalcMtx) {
         if (DEBUG_MAT) {
-            printf("precalc matrix too small. New allocation: %zu\n", cap_precalcMtx);
+            printf( "precalc matrix too small. New allocation: %zu\n", cap_precalcMtx );
         }
         alignMtx->algn_precalcMtx = realloc( alignMtx->algn_precalcMtx, cap_precalcMtx * sizeof(int) );
         assert( alignMtx->algn_precalcMtx != NULL && "Memory allocation problem in precalc matrix." );
 
-        alignMtx->cap_pre         = cap_precalcMtx;
+        alignMtx->cap_pre = cap_precalcMtx;
     }
 
     if (DEBUG_MAT) {

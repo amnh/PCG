@@ -55,4 +55,4 @@ eitherValidation xs =
 -- |
 -- Works similarly to 'eitherValidation' but within the 'MonadTrans' context.
 eitherTValidation :: (Foldable t, Monad m, Semigroup e) => t (EitherT e m a) -> EitherT e m [a]
-eitherTValidation = EitherT . fmap eitherValidation . sequence . fmap runEitherT . toList
+eitherTValidation = EitherT . fmap eitherValidation . traverse runEitherT . toList
