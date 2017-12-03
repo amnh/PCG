@@ -54,6 +54,7 @@ TAGS
 .DS_Store
 *.dSYM
 *.fa
+*.fas
 *.fasta
 *.gch
 *.log
