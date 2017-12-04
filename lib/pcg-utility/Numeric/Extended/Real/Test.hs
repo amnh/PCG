@@ -82,7 +82,7 @@ additionProperties :: TestTree
 additionProperties = testGroup "Properties of addition"
     [ testProperty "additive identity holds" additiveIdentity
 --    , testProperty "addition is associative" additiveAssocativity
-    , testProperty "addition is commutive" additiveCommutivity
+    , testProperty "addition is commutative" additiveCommutivity
     , testProperty "addition on maxBound is indempotent" additiveUpperBound
     , testProperty "addition of finite values never exceeds maxBound" additiveCeiling
     ]
@@ -126,7 +126,7 @@ multiplicationProperties = testGroup "Properties of multiplication"
     [ testProperty "multiplicative identity holds" multiplicativeIdentity
     , testProperty "multiplicative annihilation holds" multiplicativeAnnihilation
 --    , testProperty "multiplication is associative" multiplicativeAssocativity
-    , testProperty "multiplication is commutive" multiplicativeCommutivity
+    , testProperty "multiplication is commutative" multiplicativeCommutivity
     , testProperty "multiplication of finite values with maxBound is non-increasing" multiplicativeUpperBound
     , testProperty "multiplication of finite values never exceeds maxBound" multiplicativeCeiling
     ]

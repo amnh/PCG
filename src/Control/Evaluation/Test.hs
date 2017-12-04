@@ -96,7 +96,7 @@ applicativeIdentity :: (Applicative f, Eq (f a)) => f a -> Bool
 applicativeIdentity x = (pure id <*> x) == x
 
 
-applicativeComposition :: (Applicative f, Eq (f a), Eq (f c)) => Blind (f (b -> c)) -> Blind (f (a -> b)) -> f a -> Bool
+applicativeComposition :: (Applicative f, Eq (f c)) => Blind (f (b -> c)) -> Blind (f (a -> b)) -> f a -> Bool
 applicativeComposition x' y' z = (pure (.) <*> x <*> y <*> z) == (x <*> (y <*> z))
   where
     x = getBlind x'

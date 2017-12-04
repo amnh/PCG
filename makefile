@@ -74,11 +74,11 @@ stack-build-test: phylocomgraph.cabal stack.yaml
 copy-haddock: set-dir-variables
 	rm -rf doc/haddock/*
 	rm -f  doc/haddock.html
-	mkdir doc/haddock/phylocomgraph    && cp -r .stack-work/dist/$(DIR_ONE)/$(DIR_TWO)/doc/html/phylocomgraph doc/haddock/phylocomgraph
+	mkdir doc/haddock/phylocomgraph && cp -r .stack-work/dist/$(DIR_ONE)/$(DIR_TWO)/doc/html/phylocomgraph doc/haddock/phylocomgraph
 	for lib in $(sub-libs); do \
 	  mkdir doc/haddock/$$lib && cp -r lib/$$lib/.stack-work/dist/$(DIR_ONE)/$(DIR_TWO)/doc/html/$$lib doc/haddock/$$lib; \
 	done
-	ln -s haddock/index.html doc/haddock.html
+	ln -s haddock/phylocomgraph/phylocomgraph/index.html doc/haddock.html
 
 # Sets up variables of path names that are subject to change.
 # Finds the most recently modified file in the directory

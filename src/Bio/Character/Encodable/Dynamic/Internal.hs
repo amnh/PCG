@@ -35,7 +35,6 @@ import           Control.DeepSeq
 import           Control.Lens                 hiding (mapping)
 import           Data.Alphabet
 import           Data.BitMatrix
-import           Data.BitMatrix.Internal             (BitMatrix(..))
 import           Data.Char                           (toLower)
 import           Data.Key
 import           Data.Bits
@@ -236,12 +235,12 @@ instance EncodableStreamElement DynamicCharacterElement where
 instance Exportable DynamicChar where
 
     toExportableBuffer Missing {} = error "Attempted to 'Export' a missing dynamic character to foreign functions."
-    toExportableBuffer (DC bm@(BitMatrix _ bv)) = ExportableCharacterSequence x y $ bitVectorToBufferChunks x y bv
+    toExportableBuffer (DC bm) = ExportableCharacterSequence x y . bitVectorToBufferChunks x y $ expandRows bm
       where
         x = numRows bm
         y = numCols bm
 
-    fromExportableBuffer ecs = DC $ BitMatrix elemWidth newBitVec
+    fromExportableBuffer ecs = DC $ factorRows elemWidth newBitVec
       where
         newBitVec = bufferChunksToBitVector elemCount elemWidth $ exportedBufferChunks ecs
         elemCount = ecs ^. exportedElementCount
@@ -284,7 +283,7 @@ instance FiniteBits DynamicCharacterElement where
 instance Hashable DynamicChar where
 
     hashWithSalt salt (Missing n) = salt `xor` n
-    hashWithSalt salt (DC (BitMatrix n bv)) = salt `xor` n `xor` hashWithSalt salt (toInteger bv)
+    hashWithSalt salt (DC bm) = salt `xor` (numRows bm) `xor` hashWithSalt salt (toInteger (expandRows bm))
 
 
 instance MonoFoldable DynamicChar where
