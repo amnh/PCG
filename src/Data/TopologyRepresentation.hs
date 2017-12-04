@@ -31,8 +31,8 @@ import           Control.DeepSeq
 import           Data.Foldable
 import           Data.Functor.Classes
 import           Data.Hashable
-import           Data.MutualExculsionSet        (MutualExculsionSet)
-import qualified Data.MutualExculsionSet as MES
+import           Data.MutualExclusionSet        (MutualExclusionSet)
+import qualified Data.MutualExclusionSet as MES
 import           Data.Semigroup
 import           Data.Set                       (Set)
 import           GHC.Generics
@@ -47,7 +47,7 @@ isCompatableSubtopologyOf (TR x) (TR y) = isSubsetOf x y
 -- Represents a collection of network edges and their mutually exclusive edges.
 --
 -- Often used to represent a unique spanning tree in a phylogenetic DAG.
-newtype TopologyRepresentation a = TR { unwrap :: MutualExculsionSet a }
+newtype TopologyRepresentation a = TR { unwrap :: MutualExclusionSet a }
   deriving (Eq, Eq1, Foldable, Hashable, Generic, Monoid, NFData, Ord, Ord1, Semigroup)
 
 {-
