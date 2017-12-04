@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.MutualExculsionSet.Internal
+-- Module      :  Data.MutualExclusionSet.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -9,13 +9,13 @@
 -- Portability :  portable
 --
 -- Internal functions for constucting, amnipulating, and deconstructing a
--- 'MutualExculsionSet'.
+-- 'MutualExclusionSet'.
 --
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveGeneric, FlexibleContexts #-}
 
-module Data.MutualExculsionSet.Internal where
+module Data.MutualExclusionSet.Internal where
 
 
 import           Control.DeepSeq
@@ -47,7 +47,7 @@ import           Test.QuickCheck
 -- This is an efficient representation for construction and manipulation of a
 -- collection of mutually exclusive elements using an newtyped 'Bimap' with some
 -- typeclass instance modifications.
-data  MutualExculsionSet a
+data  MutualExclusionSet a
     = MES
     { includedKeyedMap    :: !(Map a a)
     , excludedKeyedMap    :: !(Map a a)
@@ -58,7 +58,7 @@ data  MutualExculsionSet a
 
 
 -- | (✔)
-instance (Arbitrary a, Ord a) => Arbitrary (MutualExculsionSet a) where
+instance (Arbitrary a, Ord a) => Arbitrary (MutualExclusionSet a) where
 
     arbitrary = do
         -- Generate some number of unique elements
@@ -75,13 +75,13 @@ instance (Arbitrary a, Ord a) => Arbitrary (MutualExculsionSet a) where
 
 
 -- | (✔)
-instance Eq a => Eq (MutualExculsionSet a) where
+instance Eq a => Eq (MutualExclusionSet a) where
 
     (MES _ _ a b _) == (MES _ _ c d _) = a == c && b == d
 
 
 -- | (✔)
-instance Eq1 MutualExculsionSet where
+instance Eq1 MutualExclusionSet where
 
     liftEq eq (MES _ _ a b _) (MES _ _ c d _) = and
         [ length a == length c
@@ -95,7 +95,7 @@ instance Eq1 MutualExculsionSet where
 -- Fold over the /included/ elements of the mutual exclusion set.
 --
 -- To fold over the /excluded/ elements of the set, first call 'invert'.
-instance Foldable MutualExculsionSet where
+instance Foldable MutualExclusionSet where
 
     -- We don't use isIncluded here because that would force an Ord constraint.
     {-# INLINE elem #-}
@@ -148,7 +148,7 @@ instance Foldable MutualExculsionSet where
     
 
 -- | (✔)
-instance Hashable a => Hashable (MutualExculsionSet a) where
+instance Hashable a => Hashable (MutualExclusionSet a) where
 
     hashWithSalt salt (MES _ _ inc exc _) = foldl' hashWithSalt (foldl' hashWithSalt salt (f inc)) $ f exc
       where
@@ -156,7 +156,7 @@ instance Hashable a => Hashable (MutualExculsionSet a) where
   
 
 -- | (✔)
-instance Ord a => Monoid (MutualExculsionSet a) where
+instance Ord a => Monoid (MutualExclusionSet a) where
 
     mappend = (<>)
 
@@ -164,11 +164,11 @@ instance Ord a => Monoid (MutualExculsionSet a) where
     
 
 -- | (✔)
-instance NFData a => NFData (MutualExculsionSet a)
+instance NFData a => NFData (MutualExclusionSet a)
 
 
 -- | (✔)
-instance Ord a => Ord (MutualExculsionSet a) where
+instance Ord a => Ord (MutualExclusionSet a) where
 
     x `compare` y =
         case comparing includedFullMap x y of
@@ -177,7 +177,7 @@ instance Ord a => Ord (MutualExculsionSet a) where
 
 
 -- | (✔)
-instance Ord1 MutualExculsionSet where
+instance Ord1 MutualExclusionSet where
 
     liftCompare cmp (MES _ _ a b _) (MES _ _ c d _) =
         case liftCompare2 cmp (liftCompare cmp) a c of
@@ -186,7 +186,7 @@ instance Ord1 MutualExculsionSet where
 
 
 -- | (✔)
-instance Ord a => Semigroup (MutualExculsionSet a) where
+instance Ord a => Semigroup (MutualExclusionSet a) where
 
     -- | Alias for 'merge'
     (<>) = merge
@@ -196,7 +196,7 @@ instance Ord a => Semigroup (MutualExculsionSet a) where
 
 
 -- | (✔)
-instance Show a => Show (MutualExculsionSet a) where
+instance Show a => Show (MutualExclusionSet a) where
 
     show = ("MutualExclusionSet " <>) . show . M.toAscList . includedKeyedMap
 
@@ -204,16 +204,16 @@ instance Show a => Show (MutualExculsionSet a) where
 -- |
 -- \( \mathcal{O} \left( 1 \right) \)
 --
--- Construct a singleton 'MutualExculsionSet' value by supplying an included
+-- Construct a singleton 'MutualExclusionSet' value by supplying an included
 -- element and the corresponding, mutually exclusive element.
 --
 -- Use the semigroup operator '(<>)' to merge singleton contexts into
--- a larger 'MutualExculsionSet'.
+-- a larger 'MutualExclusionSet'.
 singleton
   :: Eq a
   => a -- ^ Included element
   -> a -- ^ Excluded element
-  -> MutualExculsionSet a
+  -> MutualExclusionSet a
 singleton x y =
     MES
     { includedKeyedMap    = included
@@ -231,15 +231,15 @@ singleton x y =
 -- |
 -- \( \mathcal{O} \left( 1 \right) \)
 --
--- inverts the included and excluded elements of the 'MutualExculsionSet'. The
+-- inverts the included and excluded elements of the 'MutualExclusionSet'. The
 -- previously included elements become the excluded elements and the previously
 -- excluded elements become included elements.
 --
 -- This inversion function preserves the bijective relationship of the elements
--- within 'MutualExculsionSet' so that the following will always hold:
+-- within 'MutualExclusionSet' so that the following will always hold:
 --
 -- > invert . invert === id
-invert :: MutualExculsionSet a -> MutualExculsionSet a 
+invert :: MutualExclusionSet a -> MutualExclusionSet a 
 invert (MES i e x y b) = MES e i y x b
 
 
@@ -249,7 +249,7 @@ invert (MES i e x y b) = MES e i y x b
 -- Merge two mutual exclusion sets.
 --
 -- Perfoms an "union-like" operation.
-merge :: Ord a => MutualExculsionSet a -> MutualExculsionSet a -> MutualExculsionSet a
+merge :: Ord a => MutualExclusionSet a -> MutualExclusionSet a -> MutualExclusionSet a
 merge (MES _ _ lhsIFM lhsEFM _) (MES _ _ rhsIFM rhsEFM _) =
     MES ikmBi' ekmBi' ikmFull ekmFull both
   where
@@ -304,58 +304,58 @@ merge (MES _ _ lhsIFM lhsEFM _) (MES _ _ rhsIFM rhsEFM _) =
 -- |
 -- \( \mathcal{O} \left( n \right) \)
 --
--- Retreive the list of included elements in the 'MutualExculsionSet'.
-includedSet :: MutualExculsionSet a -> Set a
+-- Retreive the list of included elements in the 'MutualExclusionSet'.
+includedSet :: MutualExclusionSet a -> Set a
 includedSet = M.keysSet . includedKeyedMap
 
 
 -- |
 -- \( \mathcal{O} \left( n \right) \)
 --
--- Retreive the list of excluded elements in the 'MutualExculsionSet'.
-excludedSet :: MutualExculsionSet a -> Set a
+-- Retreive the list of excluded elements in the 'MutualExclusionSet'.
+excludedSet :: MutualExclusionSet a -> Set a
 excludedSet = M.keysSet . excludedKeyedMap
 
 
 -- |
 -- \( \mathcal{O} \left( \log_2 n \right) \)
 --
--- Lookup an /included/ key in the 'MutualExculsionSet'.
+-- Lookup an /included/ key in the 'MutualExclusionSet'.
 --
 --  * If the provided element *is not* included, the result will be @Nothing@.
 --
 --  * If the provided element *is* included, the result will be @Just value@,
 --    where @value@ is corresponding excluded element.
-includedLookup :: Ord a => a -> MutualExculsionSet a -> Maybe a
+includedLookup :: Ord a => a -> MutualExclusionSet a -> Maybe a
 includedLookup k = M.lookup k . includedKeyedMap
 
   
 -- |
 -- \( \mathcal{O} \left( \log_2 n \right) \)
 --
--- Lookup an /excluded/ key in the 'MutualExculsionSet'.
+-- Lookup an /excluded/ key in the 'MutualExclusionSet'.
 --
 --  * If the provided element *is not* excluded, the result will be @Nothing@.
 --
 --  * If the provided element *is* excluded, the result will be @Just value@,
 --    where @value@ is corresponding included element.
-excludedLookup :: Ord a => a -> MutualExculsionSet a -> Maybe a
+excludedLookup :: Ord a => a -> MutualExclusionSet a -> Maybe a
 excludedLookup k = M.lookup k . excludedKeyedMap
 
 
 -- |
 -- \( \mathcal{O} \left( \log_2 n \right) \)
 --
--- Query the 'MutualExculsionSet' to determine if the provided element is /included./
-isIncluded :: Ord a => a -> MutualExculsionSet a -> Bool
+-- Query the 'MutualExclusionSet' to determine if the provided element is /included./
+isIncluded :: Ord a => a -> MutualExclusionSet a -> Bool
 isIncluded k = M.member k . includedKeyedMap
 
   
 -- |
 -- \( \mathcal{O} \left( \log_2 n \right) \)
 --
--- Query the 'MutualExculsionSet' to determine if the provided element is /excluded./
-isExcluded :: Ord a => a -> MutualExculsionSet a -> Bool
+-- Query the 'MutualExclusionSet' to determine if the provided element is /excluded./
+isExcluded :: Ord a => a -> MutualExclusionSet a -> Bool
 isExcluded k = M.member k . excludedKeyedMap
 
 
@@ -363,11 +363,11 @@ isExcluded k = M.member k . excludedKeyedMap
 -- \( \mathcal{O} \left( n \right) \)
 --
 -- Retreive the list of mutually exclusive elements stored in the
--- 'MutualExculsionSet'.
+-- 'MutualExclusionSet'.
 --
 -- The first element of the pair is the included element and the second element
 -- of pair is the excluded element.
-mutuallyExclusivePairs :: MutualExculsionSet a -> Set (a, a)
+mutuallyExclusivePairs :: MutualExclusionSet a -> Set (a, a)
 mutuallyExclusivePairs = S.fromDistinctAscList . M.toAscList . includedKeyedMap
 
 
@@ -375,9 +375,9 @@ mutuallyExclusivePairs = S.fromDistinctAscList . M.toAscList . includedKeyedMap
 -- \( \mathcal{O} \left( m + n * \log_2 m \right) \)
 --
 -- Perform an operation to determine if a collection of elements is "permitted"
--- by 'MutualExculsionSet', ie that the collection does not contain any elements
--- which are excluded by the 'MutualExculsionSet'.
-isPermissible :: (Foldable f, Ord a) => f a -> MutualExculsionSet a -> Bool
+-- by 'MutualExclusionSet', ie that the collection does not contain any elements
+-- which are excluded by the 'MutualExclusionSet'.
+isPermissible :: (Foldable f, Ord a) => f a -> MutualExclusionSet a -> Bool
 isPermissible xs mes = getAll $ foldMap f xs
   where
     -- O(log m)
@@ -394,7 +394,7 @@ isPermissible xs mes = getAll $ foldMap f xs
 -- * There must be a bijective mapping between included and excluded elements.
 --
 -- * No included element is also excluded
-isCoherent :: MutualExculsionSet a -> Bool
+isCoherent :: MutualExclusionSet a -> Bool
 isCoherent (MES a b c d _) = length a == length c && length b == length d 
 
 
@@ -402,7 +402,7 @@ isCoherent (MES a b c d _) = length a == length c && length b == length d
 -- \( \mathcal{O} \left( n * \log_2 n \right) \)
 --
 -- Assumed to be well constructed. No validation is performed.
-unsafeFromList :: (Foldable f, Ord a) => f (a, a) -> MutualExculsionSet a
+unsafeFromList :: (Foldable f, Ord a) => f (a, a) -> MutualExclusionSet a
 unsafeFromList xs = MES incMap' excMap' (S.singleton <$> incMap) (S.singleton <$> excMap) both
   where
     incMap  = M.fromList inc
@@ -415,11 +415,11 @@ unsafeFromList xs = MES incMap' excMap' (S.singleton <$> incMap) (S.singleton <$
 
 
 -- |
--- Nicely render the 'Data.MutualExculsionSet' in a multi-line 'String'.
+-- Nicely render the 'Data.MutualExclusionSet' in a multi-line 'String'.
 --
 -- Shows the internal state inluding bijectivity and mutual exclusivity
 -- violations.
-prettyPrintMutualExclusionSet :: (Ord a, Show a) => MutualExculsionSet a -> String
+prettyPrintMutualExclusionSet :: (Ord a, Show a) => MutualExclusionSet a -> String
 prettyPrintMutualExclusionSet mes = mconcat
     [ "MutualExclusionSet\n"
     , bijectiveValues

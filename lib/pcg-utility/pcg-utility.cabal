@@ -83,14 +83,14 @@ library
                        Data.Either.Custom
                        Data.List.Utility
                        Data.Matrix.NotStupid
-                       Data.MutualExculsionSet
+                       Data.MutualExclusionSet
                        Numeric.Extended
                        Numeric.Extended.Natural
                        Numeric.Extended.Real
                        Numeric.NonNegativeAverage
 
   other-modules:       Data.BitMatrix.Internal
-                       Data.MutualExculsionSet.Internal
+                       Data.MutualExclusionSet.Internal
                        Numeric.Extended.Internal
 
                        
@@ -159,8 +159,8 @@ Test-Suite testsuite
                        Data.BitVector.Instances
                        Data.List.Utility
                        Data.Matrix.NotStupid
-                       Data.MutualExculsionSet.Internal
-                       Data.MutualExculsionSet.Test
+                       Data.MutualExclusionSet.Internal
+                       Data.MutualExclusionSet.Test
                        Numeric.Extended.Internal
                        Numeric.Extended.Natural
                        Numeric.Extended.Natural.Test
