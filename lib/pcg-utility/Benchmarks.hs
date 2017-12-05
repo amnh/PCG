@@ -22,7 +22,7 @@ main = defaultMain
     , includedSetBench
     , mutualExclusivePairsBench
     , mergeBench
-    , isPermissibleBench
+--    , isPermissibleBench
     ]
 
 
@@ -38,8 +38,8 @@ isCoherentBench :: Benchmark
 isCoherentBench = bench "MutualExclusiveSet isCoherent is constant-time" $ whnf isCoherent $ force (ofSize 50)
 
 
-isPermissibleBench :: Benchmark
-isPermissibleBench = linearBenchmark "MutualExclusiveSet mutuallyExclusivePairs linear access" (force . ofSize) (const isPermissible)
+--isPermissibleBench :: Benchmark
+--isPermissibleBench = linearBenchmark "MutualExclusiveSet mutuallyExclusivePairs linear access" (force . ofSize) (const isPermissible)
 
 
 isExcludedBench :: Benchmark
@@ -120,6 +120,7 @@ logBenchmark label f g = bgroup label $ generateBenchmark <$> [0 .. 9]
 
 ofSize :: Int -> MutualExclusionSet Int
 ofSize n = unsafeFromList $ (\x -> (x, negate x)) <$> [1..n]
+
 
 ofSizeEven :: Int -> MutualExclusionSet Int
 ofSizeEven n = unsafeFromList $ (\x -> (x, negate x)) <$> [2,4..2*n]

@@ -18,6 +18,7 @@
 module Data.MutualExclusionSet.Internal where
 
 
+import           Control.Arrow
 import           Control.DeepSeq
 import qualified Data.DList        as DL
 import           Data.Foldable
@@ -49,11 +50,9 @@ import           Test.QuickCheck
 -- typeclass instance modifications.
 data  MutualExclusionSet a
     = MES
-    { includedKeyedMap    :: !(Map a a)
-    , excludedKeyedMap    :: !(Map a a)
-    , includedFullMap     :: !(Map a (Set a))
-    , excludedFullMap     :: !(Map a (Set a))
-    , includedAndExcluded :: !(Set a)
+    { includedFullMap :: !(Map a (Set a))
+    , excludedFullMap :: !(Map a (Set a))
+    , nonBijective    :: !(Set a)
     } deriving (Generic)
 
 
@@ -77,13 +76,13 @@ instance (Arbitrary a, Ord a) => Arbitrary (MutualExclusionSet a) where
 -- | (✔)
 instance Eq a => Eq (MutualExclusionSet a) where
 
-    (MES _ _ a b _) == (MES _ _ c d _) = a == c && b == d
+    (MES a b _) == (MES c d _) = a == c && b == d
 
 
 -- | (✔)
 instance Eq1 MutualExclusionSet where
 
-    liftEq eq (MES _ _ a b _) (MES _ _ c d _) = and
+    liftEq eq (MES a b _) (MES c d _) = and
         [ length a == length c
         , length b == length d
         , liftEq2 eq (liftEq eq) a c 
@@ -91,6 +90,7 @@ instance Eq1 MutualExclusionSet where
         ]
 
 
+{-
 -- |
 -- Fold over the /included/ elements of the mutual exclusion set.
 --
@@ -120,22 +120,22 @@ instance Foldable MutualExclusionSet where
     foldr'  f x = foldr' f x . toList
 
     {-# INLINE length #-}
-    length      = length . includedKeyedMap
+    length x     = M.size (includedFullMap x) - S.size (nonBijective x)
 
     {-# INLINABLE maximum #-}
     maximum mes  =
-        case M.lookupMax $ includedKeyedMap mes of
-            Just (k,_) -> k
-            Nothing    -> error "maximum called on empty MutualExclusionSet"
+        case S.lookupMax $ includedSet mes of
+            Just k  -> k
+            Nothing -> error "maximum called on empty MutualExclusionSet"
 
     {-# INLINABLE minimum #-}
     minimum mes  =
-        case M.lookupMin $ includedKeyedMap mes of
-            Just (k,_) -> k
-            Nothing    -> error "minimum called on empty MutualExclusionSet"
+        case S.lookupMin $ includedSet mes of
+            Just k  -> k
+            Nothing -> error "minimum called on empty MutualExclusionSet"
 
     {-# INLINE null #-}
-    null        = null . includedKeyedMap
+    null        = (0 ==) . length
 
     {-# INLINABLE product #-}
     product     = product . toList
@@ -144,13 +144,14 @@ instance Foldable MutualExclusionSet where
     sum         = sum . toList
 
     {-# INLINE toList #-}
-    toList      = M.keys . includedKeyedMap
-    
+    toList      = toIncludedList
+-}
+
 
 -- | (✔)
 instance Hashable a => Hashable (MutualExclusionSet a) where
 
-    hashWithSalt salt (MES _ _ inc exc _) = foldl' hashWithSalt (foldl' hashWithSalt salt (f inc)) $ f exc
+    hashWithSalt salt (MES inc exc _) = foldl' hashWithSalt (foldl' hashWithSalt salt (f inc)) $ f exc
       where
         f = toList . fmap toList
   
@@ -160,7 +161,7 @@ instance Ord a => Monoid (MutualExclusionSet a) where
 
     mappend = (<>)
 
-    mempty  = MES mempty mempty mempty mempty mempty
+    mempty  = MES mempty mempty mempty
     
 
 -- | (✔)
@@ -179,7 +180,7 @@ instance Ord a => Ord (MutualExclusionSet a) where
 -- | (✔)
 instance Ord1 MutualExclusionSet where
 
-    liftCompare cmp (MES _ _ a b _) (MES _ _ c d _) =
+    liftCompare cmp (MES a b _) (MES c d _) =
         case liftCompare2 cmp (liftCompare cmp) a c of
           EQ -> liftCompare2 cmp (liftCompare cmp) b d
           v  -> v
@@ -196,9 +197,9 @@ instance Ord a => Semigroup (MutualExclusionSet a) where
 
 
 -- | (✔)
-instance Show a => Show (MutualExclusionSet a) where
+instance (Ord a, Show a) => Show (MutualExclusionSet a) where
 
-    show = ("MutualExclusionSet " <>) . show . M.toAscList . includedKeyedMap
+    show = ("MutualExclusionSet " <>) . show . S.toAscList . mutuallyExclusivePairs
 
 
 -- |
@@ -216,16 +217,10 @@ singleton
   -> MutualExclusionSet a
 singleton x y =
     MES
-    { includedKeyedMap    = included
-    , excludedKeyedMap    = excluded
-    , includedFullMap     = M.singleton x (S.singleton y)
-    , excludedFullMap     = M.singleton y (S.singleton x)
-    , includedAndExcluded = both
+    { includedFullMap = M.singleton x (S.singleton y)
+    , excludedFullMap = M.singleton y (S.singleton x)
+    , nonBijective    = if x == y then S.singleton x else S.empty
     }
-  where
-    (included, excluded, both)
-      | x == y    = (M.empty        , M.empty        , S.singleton x)
-      | otherwise = (M.singleton x y, M.singleton y x, S.empty      )
 
 
 -- |
@@ -240,7 +235,7 @@ singleton x y =
 --
 -- > invert . invert === id
 invert :: MutualExclusionSet a -> MutualExclusionSet a 
-invert (MES i e x y b) = MES e i y x b
+invert (MES x y b) = MES y x b
 
 
 -- |
@@ -250,8 +245,8 @@ invert (MES i e x y b) = MES e i y x b
 --
 -- Perfoms an "union-like" operation.
 merge :: Ord a => MutualExclusionSet a -> MutualExclusionSet a -> MutualExclusionSet a
-merge (MES _ _ lhsIFM lhsEFM _) (MES _ _ rhsIFM rhsEFM _) =
-    MES ikmBi' ekmBi' ikmFull ekmFull both
+merge (MES lhsIFM lhsEFM _) (MES rhsIFM rhsEFM _) =
+    MES ikmFull ekmFull both
   where
     -- /O( m + n )/
     (ikmBi, ikmNotBi, ikmFull) = mergeLogic lhsIFM rhsIFM
@@ -305,16 +300,22 @@ merge (MES _ _ lhsIFM lhsEFM _) (MES _ _ rhsIFM rhsEFM _) =
 -- \( \mathcal{O} \left( n \right) \)
 --
 -- Retreive the list of included elements in the 'MutualExclusionSet'.
-includedSet :: MutualExclusionSet a -> Set a
-includedSet = M.keysSet . includedKeyedMap
+includedSet :: Ord a => MutualExclusionSet a -> Set a
+includedSet x = allIncluded `S.difference` badElements
+  where
+    badElements = nonBijective x
+    allIncluded = M.keysSet $ includedFullMap x
 
 
 -- |
 -- \( \mathcal{O} \left( n \right) \)
 --
 -- Retreive the list of excluded elements in the 'MutualExclusionSet'.
-excludedSet :: MutualExclusionSet a -> Set a
-excludedSet = M.keysSet . excludedKeyedMap
+excludedSet :: Ord a => MutualExclusionSet a -> Set a
+excludedSet x = allExcluded `S.difference` badElements
+  where
+    badElements = nonBijective x
+    allExcluded = M.keysSet $ excludedFullMap x
 
 
 -- |
@@ -327,7 +328,7 @@ excludedSet = M.keysSet . excludedKeyedMap
 --  * If the provided element *is* included, the result will be @Just value@,
 --    where @value@ is corresponding excluded element.
 includedLookup :: Ord a => a -> MutualExclusionSet a -> Maybe a
-includedLookup k = M.lookup k . includedKeyedMap
+includedLookup k = valueLookup k <$> nonBijective <*> includedFullMap
 
   
 -- |
@@ -340,7 +341,7 @@ includedLookup k = M.lookup k . includedKeyedMap
 --  * If the provided element *is* excluded, the result will be @Just value@,
 --    where @value@ is corresponding included element.
 excludedLookup :: Ord a => a -> MutualExclusionSet a -> Maybe a
-excludedLookup k = M.lookup k . excludedKeyedMap
+excludedLookup k = valueLookup k <$> nonBijective <*> excludedFullMap
 
 
 -- |
@@ -348,7 +349,7 @@ excludedLookup k = M.lookup k . excludedKeyedMap
 --
 -- Query the 'MutualExclusionSet' to determine if the provided element is /included./
 isIncluded :: Ord a => a -> MutualExclusionSet a -> Bool
-isIncluded k = M.member k . includedKeyedMap
+isIncluded k = valueMember k <$> nonBijective <*> includedFullMap
 
   
 -- |
@@ -356,7 +357,7 @@ isIncluded k = M.member k . includedKeyedMap
 --
 -- Query the 'MutualExclusionSet' to determine if the provided element is /excluded./
 isExcluded :: Ord a => a -> MutualExclusionSet a -> Bool
-isExcluded k = M.member k . excludedKeyedMap
+isExcluded k = valueMember k <$> nonBijective <*> excludedFullMap
 
 
 -- |
@@ -367,8 +368,13 @@ isExcluded k = M.member k . excludedKeyedMap
 --
 -- The first element of the pair is the included element and the second element
 -- of pair is the excluded element.
-mutuallyExclusivePairs :: MutualExclusionSet a -> Set (a, a)
-mutuallyExclusivePairs = S.fromDistinctAscList . M.toAscList . includedKeyedMap
+mutuallyExclusivePairs :: Ord a => MutualExclusionSet a -> Set (a, a)
+mutuallyExclusivePairs x = S.fromDistinctAscList $ second S.findMax <$> M.toAscList goodMap
+  where
+    goodMap      = M.withoutKeys allIncluded badElements
+    isSingleton  = (1 ==) . S.size
+    badElements  = nonBijective x
+    allIncluded  = includedFullMap x
 
 
 -- |
@@ -394,8 +400,9 @@ isPermissible xs mes = getAll $ foldMap f xs
 -- * There must be a bijective mapping between included and excluded elements.
 --
 -- * No included element is also excluded
+{-# INLINE isCoherent #-}
 isCoherent :: MutualExclusionSet a -> Bool
-isCoherent (MES a b c d _) = length a == length c && length b == length d 
+isCoherent (MES _ _ x) = null x
 
 
 -- |
@@ -403,12 +410,10 @@ isCoherent (MES a b c d _) = length a == length c && length b == length d
 --
 -- Assumed to be well constructed. No validation is performed.
 unsafeFromList :: (Foldable f, Ord a) => f (a, a) -> MutualExclusionSet a
-unsafeFromList xs = MES incMap' excMap' (S.singleton <$> incMap) (S.singleton <$> excMap) both
+unsafeFromList xs = MES (S.singleton <$> incMap) (S.singleton <$> excMap) both
   where
     incMap  = M.fromList inc
     excMap  = M.fromList exc
-    incMap' = M.withoutKeys incMap both
-    excMap' = M.withoutKeys excMap both
     exc     = swap <$> inc
     inc     = toList xs
     both    = M.keysSet incMap `S.intersection` M.keysSet excMap
@@ -420,6 +425,8 @@ unsafeFromList xs = MES incMap' excMap' (S.singleton <$> incMap) (S.singleton <$
 -- Shows the internal state inluding bijectivity and mutual exclusivity
 -- violations.
 prettyPrintMutualExclusionSet :: (Ord a, Show a) => MutualExclusionSet a -> String
+prettyPrintMutualExclusionSet = undefined
+{-
 prettyPrintMutualExclusionSet mes = mconcat
     [ "MutualExclusionSet\n"
     , bijectiveValues
@@ -455,6 +462,38 @@ prettyPrintMutualExclusionSet mes = mconcat
             , show . toList $ includedFullMap mes ! x
             ]
 
-    bothSet = includedAndExcluded mes
+    bothSet = nonBijective mes
 
     indent = ("  " <>)
+-}
+
+
+{-# INLINE valueLookup #-}
+valueLookup :: Ord a => a -> Set a -> Map a (Set a) -> Maybe a
+valueLookup key notThese space
+  | key `S.member` notThese = Nothing
+  | otherwise               = key `M.lookup` space >>= S.lookupMax
+
+
+{-# INLINE valueMember #-}
+valueMember :: Ord a => a -> Set a -> Map a b -> Bool
+valueMember key notThese space = key `S.notMember` notThese && key `M.member` space
+
+
+toIncludedList :: Eq a => MutualExclusionSet a -> [a]
+toIncludedList x = go allIncluded badElements
+  where
+    badElements = toList $ nonBijective x
+    allIncluded = M.keys $ includedFullMap x
+    go    []  [] = []
+    go    []  ys = []
+    go    xs  [] = xs
+    go (x:xs) ys =
+      case go' x ys of
+        Nothing -> x : go xs ys
+        Just zs ->     go xs zs
+      where
+        go' e    []  = Nothing
+        go' e (z:zs)
+          | e == z    = Just zs
+          | otherwise = go' e zs
