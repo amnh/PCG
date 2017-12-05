@@ -195,6 +195,9 @@ instance Ord a => Semigroup (MutualExclusionSet a) where
     {-# INLINE stimes #-}
     stimes _ x = x
 
+    {-# INLINABLE sconcat #-}
+    sconcat = mergeMany
+
 
 -- | (✔)
 instance (Ord a, Show a) => Show (MutualExclusionSet a) where
@@ -236,64 +239,6 @@ singleton x y =
 -- > invert . invert === id
 invert :: MutualExclusionSet a -> MutualExclusionSet a 
 invert (MES x y b) = MES y x b
-
-
--- |
--- \( \mathcal{O} \left( m * \log_2 ( \frac {n}{m + 1} ) + n + m \right), m \leq n \)
---
--- Merge two mutual exclusion sets.
---
--- Perfoms an "union-like" operation.
-merge :: Ord a => MutualExclusionSet a -> MutualExclusionSet a -> MutualExclusionSet a
-merge (MES lhsIFM lhsEFM _) (MES rhsIFM rhsEFM _) =
-    MES ikmFull ekmFull both
-  where
-    -- /O( m + n )/
-    (ikmBi, ikmNotBi, ikmFull) = mergeLogic lhsIFM rhsIFM
-    -- /O( m + n )/
-    (ekmBi, ekmNotBi, ekmFull) = mergeLogic lhsEFM rhsEFM
-
-    keyIntersection  = M.intersectionWith (<>) ikmFull ekmFull
-
-    both   = M.keysSet keyIntersection
-    notBi  = both <> fold keyIntersection <> ikmNotBi <> ekmNotBi
-
-    ikmBi' = M.withoutKeys ikmBi notBi
-
-    ekmBi' = M.withoutKeys ekmBi notBi
-
-    -- When a key *is not* present in both maps,
-    -- preserve the key and it's corresponding value.
-    --
-    -- When a key *is* present in both maps but the values are not equal,
-    -- discard the key and both of the values. Otherwise preserve the key
-    -- and the shared value.
-    mergeLogic :: Ord a => Map a (Set a) -> Map a (Set a) -> (Map a a, Set a, Map a (Set a))
-    mergeLogic lhs rhs = (M.fromDistinctAscList $ toList bijectives, notBijectives, full)
-      where
-        ((bijectives, notBijectives), full) = go lhs rhs
-
-        go = M.mergeA preserveMissingValues preserveMissingValues accumulateDifferentValues
-        
-        isBijective x y =
-          case (toList x, toList y) of
-            ([a], [b]) -> if a == b then Just a else Nothing
-            _          -> Nothing
-        
-        preserveMissingValues = M.traverseMaybeMissing conditionalPreservation
-          where
-            conditionalPreservation k v =
-              case toList v of
-                [x] -> ((DL.singleton (k, x), mempty), Just v)
-                _   -> ((mempty, v), Just v)
-
-        accumulateDifferentValues = M.zipWithMaybeAMatched conditionalUnion
-          where
-            conditionalUnion k v1 v2 =
-                case isBijective v1 v2 of
-                  Just v  -> ((DL.singleton (k, v), mempty), Just v1)
-                  Nothing -> let vs = v1 <> v2
-                             in  ((mempty, vs), Just vs)
 
 
 -- |
@@ -378,18 +323,19 @@ mutuallyExclusivePairs x = S.fromDistinctAscList $ second S.findMax <$> M.toAscL
 
 
 -- |
--- \( \mathcal{O} \left( m + n * \log_2 m \right) \)
+-- \( \mathcal{O} \left( m * \log_2 ( \frac {n}{m + 1} ) \right), m \leq n \)
 --
 -- Perform an operation to determine if a collection of elements is "permitted"
 -- by 'MutualExclusionSet', ie that the collection does not contain any elements
 -- which are excluded by the 'MutualExclusionSet'.
-isPermissible :: (Foldable f, Ord a) => f a -> MutualExclusionSet a -> Bool
-isPermissible xs mes = getAll $ foldMap f xs
+isPermissible :: Ord a => MutualExclusionSet a -> MutualExclusionSet a -> Bool
+isPermissible (MES lhsInc lhsExc x) (MES rhsInc rhsExc y) =
+    null (a `M.intersection` d) && null (b `M.intersection` c)
   where
-    -- O(log m)
-    f x = All $ x `notElem` badElems
-    -- O(m)
-    badElems = excludedSet mes
+    a = M.withoutKeys lhsInc x
+    b = M.withoutKeys lhsExc x
+    c = M.withoutKeys rhsInc y
+    d = M.withoutKeys rhsExc y
 
 
 -- |
@@ -497,3 +443,79 @@ toIncludedList x = go allIncluded badElements
         go' e (z:zs)
           | e == z    = Just zs
           | otherwise = go' e zs
+
+
+-- |
+-- \( \mathcal{O} \left( m * \log_2 ( \frac {n}{m + 1} ) + n + m \right), m \leq n \)
+--
+-- Merge two mutual exclusion sets.
+--
+-- Perfoms an "union-like" operation.
+merge :: Ord a => MutualExclusionSet a -> MutualExclusionSet a -> MutualExclusionSet a
+merge (MES lhsIFM lhsEFM _) (MES rhsIFM rhsEFM _) = mergePostProcess (inc, exc)
+  where
+    -- /O( m + n )/
+    inc = mergeLogic lhsIFM rhsIFM
+    -- /O( m + n )/
+    exc = mergeLogic lhsEFM rhsEFM
+
+
+-- |
+-- Efficiently merge multiple mutual exclusion sets.
+mergeMany :: (Foldable f, Ord a) => f (MutualExclusionSet a) -> MutualExclusionSet a
+mergeMany = mergePostProcess . foldr f mempty
+  where
+    f :: Ord a
+      => MutualExclusionSet a
+      -> ( (Set a, Map a (Set a)), (Set a, Map a (Set a)) )
+      -> ( (Set a, Map a (Set a)), (Set a, Map a (Set a)) )
+    f mes (lhs, rhs) = (lhs >>= mergeLogic inc, rhs >>= mergeLogic exc)
+      where
+        inc = includedFullMap mes 
+        exc = excludedFullMap mes 
+
+
+-- |
+-- When a key *is not* present in both maps,
+-- preserve the key and it's corresponding value.
+--
+-- When a key *is* present in both maps but the values are not equal,
+-- discard the key and both of the values. Otherwise preserve the key
+-- and the shared value.
+mergeLogic :: Ord a => Map a (Set a) -> Map a (Set a) -> (Set a, Map a (Set a))
+mergeLogic = M.mergeA preserveMissingValues preserveMissingValues accumulateDifferentValues
+  where
+    isBijective x y =
+      case (toList x, toList y) of
+        ([a], [b]) -> if a == b then Just a else Nothing
+        _          -> Nothing
+        
+    preserveMissingValues = M.traverseMaybeMissing conditionalPreservation
+      where
+        conditionalPreservation k v =
+          case toList v of
+            [x] -> pure $ Just v
+            _   -> (v, Just v)
+
+    accumulateDifferentValues = M.zipWithMaybeAMatched conditionalUnion
+      where
+        conditionalUnion k v1 v2 =
+            case isBijective v1 v2 of
+              Just v  -> pure $ Just v1
+              Nothing -> let vs = v1 <> v2
+                         in  (vs, Just vs)
+
+
+-- |
+-- Record non-bijective elements in a set.
+--
+-- Construct the the mutual exclusion set from the context.
+mergePostProcess :: Ord a => ( (Set a, Map a (Set a)), (Set a, Map a (Set a)) ) -> MutualExclusionSet a
+mergePostProcess ((incNotBi, incFull), (excNotBi, excFull)) = MES incFull excFull notBi
+  where
+    both   = M.keysSet keyIntersection
+    notBi  = both <> fold keyIntersection <> incNotBi <> excNotBi
+    keyIntersection  = M.intersectionWith (<>) incFull excFull
+
+
+

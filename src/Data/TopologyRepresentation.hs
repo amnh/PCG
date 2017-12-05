@@ -48,7 +48,7 @@ isCompatableSubtopologyOf (TR x) (TR y) = isSubsetOf x y
 --
 -- Often used to represent a unique spanning tree in a phylogenetic DAG.
 newtype TopologyRepresentation a = TR { unwrap :: MutualExclusionSet a }
-  deriving (Eq, Eq1, Foldable, Hashable, Generic, Monoid, NFData, Ord, Ord1, Semigroup)
+  deriving (Eq, Eq1, Hashable, Generic, Monoid, NFData, Ord, Ord1, Semigroup)
 
 {-
 instance Foldable TopologyRepresentation where
@@ -86,7 +86,7 @@ instance Ord a => Semigroup (TopologyRepresentation a) where
     (TR lhs) <> (TR rhs) = TR . BM.fromAscPairListUnchecked . M.toAscList $ M.unionWith const (BM.toMap lhs) (BM.toMap rhs)
 -}
 
-instance Show a => Show (TopologyRepresentation a) where
+instance (Ord a, Show a) => Show (TopologyRepresentation a) where
 
     show x = unwords
         [ "Network Edges of Topology:"
@@ -123,7 +123,7 @@ isolatedNetworkEdgeContext x y = TR $ MES.singleton x y
 --
 -- Retreive the list of network edge identifiers present in the topology.
 {-# INLINE includedNetworkEdges #-}
-includedNetworkEdges :: TopologyRepresentation a -> Set a
+includedNetworkEdges :: Ord a => TopologyRepresentation a -> Set a
 includedNetworkEdges = MES.includedSet . unwrap
 
 
@@ -132,7 +132,7 @@ includedNetworkEdges = MES.includedSet . unwrap
 --
 -- Retreive the list of network edge identifiers excluded from the topology.
 {-# INLINE excludedNetworkEdges #-}
-excludedNetworkEdges :: TopologyRepresentation a -> Set a
+excludedNetworkEdges :: Ord a => TopologyRepresentation a -> Set a
 excludedNetworkEdges = MES.excludedSet . unwrap
 
 
@@ -142,7 +142,7 @@ excludedNetworkEdges = MES.excludedSet . unwrap
 -- Retreive the list of network edge identifiers stored in the topology
 -- representation.
 {-# INLINE mutuallyExclusivePairs #-}
-mutuallyExclusivePairs :: TopologyRepresentation a -> Set (a,a)
+mutuallyExclusivePairs :: Ord a => TopologyRepresentation a -> Set (a,a)
 mutuallyExclusivePairs = MES.mutuallyExclusivePairs . unwrap
 
 
@@ -152,5 +152,5 @@ mutuallyExclusivePairs = MES.mutuallyExclusivePairs . unwrap
 -- Perform a subsetting operation to determine is a sub-topology is compatable
 -- with another topology.
 {-# INLINE isCompatableWithTopology #-}
-isCompatableWithTopology :: (Foldable f, Ord a) => f a -> TopologyRepresentation a -> Bool
-isCompatableWithTopology ts = MES.isPermissible ts . unwrap
+isCompatableWithTopology :: Ord a => TopologyRepresentation a -> TopologyRepresentation a -> Bool
+isCompatableWithTopology ts = MES.isPermissible (unwrap ts) . unwrap

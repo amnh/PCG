@@ -32,6 +32,7 @@ import Data.Hashable
 import Data.List.NonEmpty (intersperse)
 import Data.MonoTraversable
 import Data.Semigroup
+import Data.TopologyRepresentation
 import GHC.Generics
 import Text.XML
 
@@ -954,7 +955,7 @@ renderFoci foci = prefix <> body <> "\n"
   where
     prefix   = "Traversal Foci {" <> show (length foci) <> "}\n"
     body     = sconcat . intersperse "\n" $ fmap g foci
-    g (e,te) = "  Traversal Focus Edge: " <> show e <> " with network edges in topology: " <> show (toList te)
+    g (e,te) = "  Traversal Focus Edge: " <> show e <> " with network edges in topology: " <> show (toList $ includedNetworkEdges te)
 
 
 -- renderingContext :: 
