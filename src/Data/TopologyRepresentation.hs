@@ -147,7 +147,7 @@ mutuallyExclusivePairs = MES.mutuallyExclusivePairs . unwrap
 
 
 -- |
--- \( \mathcal{O} \left( m + n * \log_2 m \right) \)
+-- \( \mathcal{O} \left( m * \log_2 ( \frac {n}{m + 1} ) \right), m \leq n \)
 --
 -- Perform a subsetting operation to determine is a sub-topology is compatable
 -- with another topology.

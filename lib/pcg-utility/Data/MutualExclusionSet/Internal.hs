@@ -23,6 +23,7 @@ import           Data.Foldable
 import           Data.Functor.Classes
 import           Data.Hashable
 import           Data.Key
+import           Data.List.NonEmpty       (NonEmpty(..))
 import           Data.Ord
 import           Data.Map                 (Map)
 import qualified Data.Map          as M
@@ -122,15 +123,15 @@ instance Foldable MutualExclusionSet where
 
     {-# INLINABLE maximum #-}
     maximum mes  =
-        case S.lookupMax $ includedSet mes of
-            Just k  -> k
-            Nothing -> error "maximum called on empty MutualExclusionSet"
+        case M.lookupMax $ includedElemMap mes of
+          Just (k,_) -> k
+          Nothing    -> error "maximum called on empty MutualExclusionSet"
 
     {-# INLINABLE minimum #-}
     minimum mes  =
-        case S.lookupMin $ includedSet mes of
-            Just k  -> k
-            Nothing -> error "minimum called on empty MutualExclusionSet"
+        case M.lookupMin $ includedElemMap mes of
+          Just (k,_) -> k
+          Nothing    -> error "minimum called on empty MutualExclusionSet"
 
     {-# INLINE null #-}
     null        = null . includedElemMap
@@ -158,8 +159,14 @@ instance Ord a => Monoid (MutualExclusionSet a) where
 
     mappend = (<>)
 
+    {-# INLINABLE mconcat #-}
+    mconcat x =
+      case x of
+        []   -> mempty
+        x:xs -> sconcat $ x:|xs
+
     mempty  = MES mempty mempty mempty mempty
-    
+
 
 -- | (✔)
 instance NFData a => NFData (MutualExclusionSet a)
@@ -190,7 +197,7 @@ instance Ord a => Semigroup (MutualExclusionSet a) where
     (<>) = merge
 
     {-# INLINE stimes #-}
-    stimes _ x = x
+    stimes = stimesIdempotentMonoid
 
     {-# INLINABLE sconcat #-}
     sconcat = mergeMany
@@ -292,7 +299,7 @@ excludedLookup k = valueLookup k . excludedElemMap
 --
 -- Query the 'MutualExclusionSet' to determine if the provided element is /included./
 isIncluded :: Ord a => a -> MutualExclusionSet a -> Bool
-isIncluded k = valueMember k . includedElemMap
+isIncluded k = M.member k . includedElemMap
 
   
 -- |
@@ -300,7 +307,7 @@ isIncluded k = valueMember k . includedElemMap
 --
 -- Query the 'MutualExclusionSet' to determine if the provided element is /excluded./
 isExcluded :: Ord a => a -> MutualExclusionSet a -> Bool
-isExcluded k = valueMember k . excludedElemMap
+isExcluded k = M.member k . excludedElemMap
 
 
 -- |
@@ -327,7 +334,7 @@ isPermissible lhs rhs = null (includedElemMap lhs `M.intersection` excludedElemM
 
 
 -- |
--- \( \mathcal{O} \left( 1\right) \)
+-- \( \mathcal{O} \left( 1 \right) \)
 --
 -- Determines if the MutualExclusionSet has a coherent construction.
 --
@@ -351,8 +358,10 @@ unsafeFromList xs = MES incMap' excMap' incMap excMap
 
     incMap  = S.singleton <$> M.fromList inc
     excMap  = S.singleton <$> M.fromList exc
+
     exc     = swap <$> inc
     inc     = toList xs
+
     both    = M.keysSet incMap `S.intersection` M.keysSet excMap
 
 
@@ -403,14 +412,11 @@ prettyPrintMutualExclusionSet mes = mconcat
     indent = ("  " <>)
 
 
+-- |
+-- This should only be called on singleton sets.
 {-# INLINE valueLookup #-}
 valueLookup :: Ord a => a -> Map a (Set a) -> Maybe a
 valueLookup key space = key `M.lookup` space >>= S.lookupMax
-
-
-{-# INLINE valueMember #-}
-valueMember :: Ord a => a -> Map a b -> Bool
-valueMember key space = key `M.member` space
 
 
 -- |

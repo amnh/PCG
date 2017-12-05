@@ -111,6 +111,7 @@ semigroupProperties = testGroup "Properties of this semigroup operator"
         $ testProperty "(<>) is associative" operationAssocativity
     , localOption (QuickCheckTests  1000)
         $ testProperty "(<>) is commutative" operationCommutativity
+    , testProperty "stimes is indempotent" operationIsIndempotent
     ]
   where
     operationAssocativity :: (MutualExclusionSet Word8, MutualExclusionSet Word8, MutualExclusionSet Word8) -> Property
@@ -118,6 +119,11 @@ semigroupProperties = testGroup "Properties of this semigroup operator"
 
     operationCommutativity :: (MutualExclusionSet Word8, MutualExclusionSet Word8) -> Property
     operationCommutativity (a, b) = a <> b === b <> a
+
+    operationIsIndempotent :: (Word, MutualExclusionSet Word8) -> Bool
+    operationIsIndempotent (n, x) = (n == 0 && result == mempty) || result == x
+      where
+        result = stimes n x
 
 
 monoidProperties :: TestTree
