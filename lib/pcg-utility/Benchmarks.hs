@@ -11,46 +11,60 @@ import Data.Semigroup
 
 main :: IO ()
 main = defaultMain
-    [ isExcludedBench 
+    [ singletonBench
+    , invertBench
+    , isCoherentBench
+    , isExcludedBench 
     , isIncludedBench
+    , excludedLookupBench 
+    , includedLookupBench
     , excludedSetBench
     , includedSetBench
     , mutualExclusivePairsBench
     , mergeBench
+    , isPermissibleBench
     ]
 
 
-firstBench :: Benchmark
-firstBench = bgroup "MutualExclusiveSet access" 
-    [ bench     "1" . whnf (includedLookup   1) $ ofSize     1
-    , bench     "2" . whnf (includedLookup   2) $ ofSize     2
-    , bench     "4" . whnf (includedLookup   3) $ ofSize     4
-    , bench     "8" . whnf (includedLookup   5) $ ofSize     8
-    , bench    "16" . whnf (includedLookup   9) $ ofSize    16
-    , bench    "32" . whnf (includedLookup   7) $ ofSize    32
-    , bench    "64" . whnf (includedLookup  47) $ ofSize    64
-    , bench   "128" . whnf (includedLookup  29) $ ofSize   128
-    , bench   "265" . whnf (includedLookup 127) $ ofSize   256
-    , bench   "512" . whnf (includedLookup  67) $ ofSize   512
-    , bench  "1024" . whnf (includedLookup 789) $ ofSize  1024
-    , bench  "2048" . whnf (includedLookup  67) $ ofSize  2048
-    , bench  "4096" . whnf (includedLookup 789) $ ofSize  4096
-    , bench  "8192" . whnf (includedLookup 789) $ ofSize  8192
-    , bench "16384" . whnf (includedLookup  67) $ ofSize 16384
-    , bench "32768" . whnf (includedLookup 789) $ ofSize 32768
-    , bench "65536" . whnf (includedLookup 789) $ ofSize 65536
-    ]
+singletonBench :: Benchmark
+singletonBench = bench "MutualExclusiveSet singleton is constant-time construction" . nf (singleton 42) $ (1 :: Int)
+
+
+invertBench :: Benchmark
+invertBench = bench "MutualExclusiveSet invert is constant-time" $ whnf invert $ force (ofSize 50)
+
+
+isCoherentBench :: Benchmark
+isCoherentBench = bench "MutualExclusiveSet isCoherent is constant-time" $ whnf isCoherent $ force (ofSize 50)
+
+
+isPermissibleBench :: Benchmark
+isPermissibleBench = linearBenchmark "MutualExclusiveSet mutuallyExclusivePairs linear access" (force . ofSize) (const isPermissible)
 
 
 isExcludedBench :: Benchmark
 isExcludedBench = logBenchmark "MutualExclusiveSet isExcluded log-access" ofSize f
   where
     -- We negate i to consider both the included and excluded cases
-    f i xs = (i `excludedLookup` xs) `seq` (negate i) `excludedLookup` xs
+    f i xs = (i `isExcluded` xs) `seq` (negate i) `isExcluded` xs
 
 
 isIncludedBench :: Benchmark
 isIncludedBench = logBenchmark "MutualExclusiveSet isIncluded log-access" ofSize f
+  where
+    -- We negate i to consider both the included and excluded cases
+    f i xs = (i `isIncluded` xs) `seq` (negate i) `isIncluded` xs
+
+
+excludedLookupBench :: Benchmark
+excludedLookupBench = logBenchmark "MutualExclusiveSet excludedLookup log-access" ofSize f
+  where
+    -- We negate i to consider both the included and excluded cases
+    f i xs = (i `excludedLookup` xs) `seq` (negate i) `excludedLookup` xs
+
+
+includedLookupBench :: Benchmark
+includedLookupBench = logBenchmark "MutualExclusiveSet includedLookup log-access" ofSize f
   where
     -- We negate i to consider both the included and excluded cases
     f i xs = (i `includedLookup` xs) `seq` (negate i) `includedLookup` xs
@@ -65,7 +79,7 @@ includedSetBench = linearBenchmark "MutualExclusiveSet includedSet linear access
 
 
 mutualExclusivePairsBench :: Benchmark
-mutualExclusivePairsBench = linearBenchmark "MutualExclusiveSet includedSet linear access" (force . ofSize) (const includedSet)
+mutualExclusivePairsBench = linearBenchmark "MutualExclusiveSet mutuallyExclusivePairs linear access" (force . ofSize) (const mutuallyExclusivePairs)
 
 
 mergeBench :: Benchmark
@@ -94,7 +108,7 @@ linearBenchmark2  label f g h = bgroup label $ generateBenchmark <$> [0 .. 9]
     
 
 logBenchmark :: String -> (Int -> a) -> (Int -> a -> b) -> Benchmark
-logBenchmark label f g = bgroup label $ generateBenchmark <$> [0 .. 17]
+logBenchmark label f g = bgroup label $ generateBenchmark <$> [0 .. 9]
   where
     generateBenchmark exp = bench (show domainSize) $ whnf app target
       where
