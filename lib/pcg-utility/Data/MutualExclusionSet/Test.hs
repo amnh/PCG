@@ -142,8 +142,8 @@ structuralProperties = testGroup "data-structure invariants"
     , testProperty "isExcluded e === isIncluded e . invert" exclusionInvertedInclusion
     , testProperty "includedSet === excludedSet . invert" inclusionSetInvertedExclusionSet
     , testProperty "excludedSet === includedSet . invert" exclusionSetInvertedInclusionSet
---    , testProperty "toList === toList . includedSet" inclusionSetIsFoldableList
---    , testProperty "toList . invert === toList . excludedSet" exclusionSetIsInvertedFoldableList
+    , testProperty "toList === toList . includedSet" inclusionSetIsFoldableList
+    , testProperty "toList . invert === toList . excludedSet" exclusionSetIsInvertedFoldableList
     , testProperty "∀ e, ∃ k, S.T. isIncluded e ==> excludedLookup k == Just e" includedImpliesExistsExcludedValue
     , testProperty "∀ e, ∃ k, S.T. isExcluded e ==> includedLookup k == Just e" excludedImpliesExistsIncludedValue
     ]
@@ -180,7 +180,6 @@ structuralProperties = testGroup "data-structure invariants"
     exclusionSetInvertedInclusionSet mes =
         excludedSet mes === includedSet (invert mes)
 
-{-
     inclusionSetIsFoldableList :: MutualExclusionSet Word8 -> Property
     inclusionSetIsFoldableList mes =
         toList mes  === toList (includedSet mes)
@@ -188,7 +187,6 @@ structuralProperties = testGroup "data-structure invariants"
     exclusionSetIsInvertedFoldableList :: MutualExclusionSet Word8 -> Property
     exclusionSetIsInvertedFoldableList mes =
         toList (invert mes) === toList (excludedSet mes)
--}
 
     includedImpliesExistsExcludedValue :: ProbablyIncluded Word8 -> Property
     includedImpliesExistsExcludedValue input =

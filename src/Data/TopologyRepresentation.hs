@@ -123,7 +123,7 @@ isolatedNetworkEdgeContext x y = TR $ MES.singleton x y
 --
 -- Retreive the list of network edge identifiers present in the topology.
 {-# INLINE includedNetworkEdges #-}
-includedNetworkEdges :: Ord a => TopologyRepresentation a -> Set a
+includedNetworkEdges :: TopologyRepresentation a -> Set a
 includedNetworkEdges = MES.includedSet . unwrap
 
 
@@ -132,7 +132,7 @@ includedNetworkEdges = MES.includedSet . unwrap
 --
 -- Retreive the list of network edge identifiers excluded from the topology.
 {-# INLINE excludedNetworkEdges #-}
-excludedNetworkEdges :: Ord a => TopologyRepresentation a -> Set a
+excludedNetworkEdges :: TopologyRepresentation a -> Set a
 excludedNetworkEdges = MES.excludedSet . unwrap
 
 
@@ -142,7 +142,7 @@ excludedNetworkEdges = MES.excludedSet . unwrap
 -- Retreive the list of network edge identifiers stored in the topology
 -- representation.
 {-# INLINE mutuallyExclusivePairs #-}
-mutuallyExclusivePairs :: Ord a => TopologyRepresentation a -> Set (a,a)
+mutuallyExclusivePairs :: TopologyRepresentation a -> Set (a,a)
 mutuallyExclusivePairs = MES.mutuallyExclusivePairs . unwrap
 
 
