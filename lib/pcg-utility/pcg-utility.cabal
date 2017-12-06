@@ -27,7 +27,6 @@ library
                     , bv
                     , containers       >=0.5.8
                     , deepseq
-                    , dlist
                     , either
                     , hashable
                     , integer-gmp
@@ -104,7 +103,6 @@ Test-Suite test-suite
                     , bv
                     , containers         >=0.5.8
                     , deepseq
-                    , dlist
                     , hashable
                     , integer-gmp
                     , keys
@@ -181,7 +179,6 @@ benchmark benchmark-suite
                     , containers         >=0.5.8
                     , criterion
                     , deepseq
-                    , dlist
                     , either
                     , ghc-prim
                     , hashable
@@ -199,6 +196,39 @@ benchmark benchmark-suite
                     -fmax-simplifier-iterations=10
                     -fdicts-cheap
                     -fspec-constr-count=6
+                    -threaded
+
+                    -- Sanity check warnings
+                    -Wall
+                    -Wcompat
+                    -Wdodgy-foreign-imports
+                    -Wduplicate-exports
+                    -Wempty-enumerations
+                    -Widentities
+                    -Wincomplete-patterns
+                    -Wincomplete-record-updates
+                    -Wincomplete-uni-patterns
+                    -Wmissing-fields
+                    -Wmissing-home-modules
+                    -Wmissing-monadfail-instances
+                    -Wmissing-monadfail-instances
+                    -Wmissing-signatures
+                    -Wnoncanonical-monadfail-instances
+                    -Wnoncanonical-monad-instances
+                    -Wnoncanonical-monoid-instances
+                    -Woverflowed-literals
+                    -Woverlapping-patterns
+                    -Wredundant-constraints
+                    -Wsemigroup
+                    -Wtabs
+                    -Wunrecognised-warning-flags
+                    -Wunrecognised-warning-flags
+                    -Wunused-binds
+                    -Wunused-do-bind
+                    -Wunused-foralls
+                    -Wunused-imports
+                    -Wunused-matches
+                    -Wwrong-do-bind
 
   other-modules:    Data.BitMatrix
                     Data.BitMatrix.Internal
@@ -206,13 +236,15 @@ benchmark benchmark-suite
                     Data.Either.Custom
                     Data.List.Utility
                     Data.Matrix.NotStupid
-                    Data.MutualExclusionSet
+                    Data.MutualExclusionSet.Bench
                     Data.MutualExclusionSet.Internal
                     Numeric.Extended
+                    Numeric.Extended.Internal
                     Numeric.Extended.Natural
+                    Numeric.Extended.Natural.Bench
                     Numeric.Extended.Real
                     Numeric.NonNegativeAverage
-                    Numeric.Extended.Internal
+
 
 
                        

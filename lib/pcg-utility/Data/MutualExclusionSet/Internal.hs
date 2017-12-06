@@ -160,8 +160,8 @@ instance Ord a => Monoid (MutualExclusionSet a) where
     mappend = (<>)
 
     {-# INLINABLE mconcat #-}
-    mconcat x =
-      case x of
+    mconcat v =
+      case v of
         []   -> mempty
         x:xs -> sconcat $ x:|xs
 
@@ -461,8 +461,8 @@ mergeLogic = M.mergeA preserveMissingValues preserveMissingValues accumulateDiff
   where
     isBijective x y =
       case (toList x, toList y) of
-        ([a], [b]) -> if a == b then Just a else Nothing
-        _          -> Nothing
+        ([a], [b]) -> a == b
+        _          -> False
         
     preserveMissingValues = M.traverseMaybeMissing conditionalPreservation
       where
@@ -473,11 +473,10 @@ mergeLogic = M.mergeA preserveMissingValues preserveMissingValues accumulateDiff
 
     accumulateDifferentValues = M.zipWithMaybeAMatched conditionalUnion
       where
-        conditionalUnion _ v1 v2 =
-            case isBijective v1 v2 of
-              Just v  -> pure $ Just v1
-              Nothing -> let vs = v1 <> v2
-                         in  (vs, Just vs)
+        conditionalUnion _ v1 v2
+          | isBijective v1 v2 = pure $ Just v1
+          | otherwise         = let vs = v1 <> v2
+                                in  (vs, Just vs)
 
 
 -- |

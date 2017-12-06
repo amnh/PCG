@@ -65,14 +65,9 @@ type instance Finite ExtendedNatural = Word
 
 instance Arbitrary ExtendedNatural where
 
-    arbitrary = do
-        n <- choose weightForInfinity
-        if n == 1
-        then pure infinity
-        else Cost <$> arbitrary
+    arbitrary = frequency [ (1, pure infinity), (19, Cost <$> finiteValue)]
       where
-        -- We generate the 'infinity' value 1 in 20 times.
-        weightForInfinity = (1, 20) :: (Int, Int)
+        finiteValue = arbitrary `suchThat` (not . (== maxBound))
 
 
 instance Bounded ExtendedNatural where
