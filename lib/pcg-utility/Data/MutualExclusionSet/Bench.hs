@@ -83,39 +83,39 @@ mutualExclusivePairsBench = linearBenchmark "MutualExclusionSet mutuallyExclusiv
 
 
 mergeBench :: Benchmark
-mergeBench = linearBenchmark2 "merge (<>) is linear" (force . ofSize) (force . ofSize) (const (<>))
+mergeBench = linearBenchmark2 "merge (<>) is linear" (force . ofSize) (force . ofSizeEven) (const (<>))
 
 
 linearBenchmark :: (NFData a, NFData b) => String -> (Int -> a) -> (Int -> a -> b) -> Benchmark
 linearBenchmark  label f g = bgroup label $ generateBenchmark <$> [0 .. 9]
   where
-    generateBenchmark exp = bench (show domainSize) $ nf app target
+    generateBenchmark expVal = bench (show domainSize) $ nf app target
       where
         !target    = force $ f domainSize
-        !app       = g exp
-        domainSize = 10 * (exp + 1)
+        !app       = g expVal
+        domainSize = 10 * (expVal + 1)
     
 
 linearBenchmark2 :: (NFData a, NFData b, NFData c) => String -> (Int -> a) -> (Int -> b) -> (Int -> a -> b -> c) -> Benchmark
 linearBenchmark2  label f g h = bgroup label $ generateBenchmark <$> [0 .. 9]
   where
-    generateBenchmark exp = bench (show domainSize) $ nf app rhs
+    generateBenchmark expVal = bench (show domainSize) $ nf app rhs
       where
         !lhs       = force $ f domainSize
         !rhs       = force $ g domainSize
-        !app       = h exp lhs
-        domainSize = 10 * (exp + 1)
+        !app       = h expVal lhs
+        domainSize = 10 * (expVal + 1)
     
 
 logBenchmark :: String -> (Int -> a) -> (Int -> a -> b) -> Benchmark
 logBenchmark label f g = bgroup label $ generateBenchmark <$> [0 .. 9]
   where
-    generateBenchmark exp = bench (show domainSize) $ whnf app target
+    generateBenchmark expVal = bench (show domainSize) $ whnf app target
       where
-        !app       = g indexProd
+        !app       = g indexpValrod
         !target    = f domainSize
-        indexProd  = product [1..exp] `mod` domainSize
-        domainSize = 2 `shiftL` exp
+        indexpValrod  = product [1..expVal] `mod` domainSize
+        domainSize = 2 `shiftL` expVal
 
 
 ofSize :: Int -> MutualExclusionSet Int
