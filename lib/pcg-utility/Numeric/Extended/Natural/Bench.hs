@@ -12,31 +12,33 @@ benchmarks :: Benchmark
 benchmarks = bgroup "ExtendedNatural" $
     [ fromProjectionBench
     , toProjectionBench
-    ] <> interlace wordBench extendedNaturalBench
-
-
-wordBench :: [Benchmark]
-wordBench =
-    [ binaryOperationBenchmark "Word addition"         "+"    (+)
-    , binaryOperationBenchmark "Word subtraction"      "-"    (-)
-    , binaryOperationBenchmark "Word multiplication"   "*"    (*)
-    , binaryOperationBenchmark "Word division"         "/"    div
-    , unaryOperationBenchmark  "Word absolute value" "abs"    abs
-    , unaryOperationBenchmark  "Word sign value"  "signum" signum
-    , unaryOperationBenchmark  "Word negation"    "negate" negate
-    ] <*> [ wordValues ]
+    ] <> extendedNaturalBench
 
 
 extendedNaturalBench :: [Benchmark]
 extendedNaturalBench =
-    [ binaryOperationBenchmark "ExtendedNatural addition"         "+"    (+)
-    , binaryOperationBenchmark "ExtendedNatural subtraction"      "-"    (-)
-    , binaryOperationBenchmark "ExtendedNatural multiplication"   "*"    (*)
-    , binaryOperationBenchmark "ExtendedNatural division"         "/"    div
-    , unaryOperationBenchmark  "ExtendedNatural absolute value" "abs"    abs
-    , unaryOperationBenchmark  "ExtendedNatural sign value"  "signum" signum
-    , unaryOperationBenchmark  "ExtendedNatural negation"    "negate" negate
-    ] <*> [ extendedNaturalValues ]
+    [ bgroup "addition" $ interlace
+        ( binaryOperationBenchmark      "+"    (+) "ExtendedNatural" extendedNaturalValues)
+        $ binaryOperationBenchmark      "+"    (+) "Word"            wordValues
+    , bgroup "subtraction" $ interlace
+        ( binaryOperationBenchmark      "-"    (-) "ExtendedNatural" extendedNaturalValues)
+        $ binaryOperationBenchmark      "-"    (-) "Word"            wordValues
+    , bgroup "multiplication" $ interlace
+        ( binaryOperationBenchmark      "*"    (*) "ExtendedNatural" extendedNaturalValues)
+        $ binaryOperationBenchmark      "*"    (*) "Word"            wordValues
+    , bgroup "division" . interlace
+        ( binaryOperationBenchmark      "/"    div "ExtendedNatural" extendedNaturalValues)
+        $ binaryOperationBenchmark      "/"    div "Word"            wordValues
+    , bgroup "absolute value" . interlace
+        ( unaryOperationBenchmark    "abs"    abs "ExtendedNatural" extendedNaturalValues)
+        $ unaryOperationBenchmark    "abs"    abs "Word"            wordValues
+    , bgroup "sign number" . interlace
+        ( unaryOperationBenchmark "signum" signum "ExtendedNatural" extendedNaturalValues)
+        $ unaryOperationBenchmark "signum" signum "Word"            wordValues
+    , bgroup "negation" . interlace 
+        ( unaryOperationBenchmark "negate" negate "ExtendedNatural" extendedNaturalValues)
+        $ unaryOperationBenchmark "negate" negate "WordValue"       wordValues
+    ]
 
 
 fromProjectionBench :: Benchmark
@@ -52,17 +54,17 @@ toProjectionBench = bgroup "ExtendedNatural unsafeToFinite" $ generateBenchmark 
     generateBenchmark x = bench (unwords ["unsafeToFinite", show x]) $ nf unsafeToFinite x
 
 
-binaryOperationBenchmark :: (NFData a, Ord a, Show a) => String -> String -> (a -> a -> a) -> [a] -> Benchmark
-binaryOperationBenchmark label str op values = bgroup label $ generateBenchmark <$> valuePairs
+binaryOperationBenchmark :: (NFData a, Ord a, Show a) => String -> (a -> a -> a) -> String -> [a] -> [Benchmark]
+binaryOperationBenchmark opStr op typeStr values = generateBenchmark typeStr <$> valuePairs
   where
-    generateBenchmark (x, y) = bench (unwords [show x, str, show y]) $ nf (op x) y
+    generateBenchmark z (x, y) = bench (unwords [z, show x, opStr, show y]) $ nf (op x) y
     valuePairs = [ (x, y) | x <- values, y <- values, x < y ]
 
 
-unaryOperationBenchmark :: (NFData a, Show a) => String -> String -> (a -> a) -> [a] -> Benchmark
-unaryOperationBenchmark label str op values = bgroup label $ generateBenchmark <$> values
+unaryOperationBenchmark :: (NFData a, Show a) => String -> (a -> a) -> String -> [a] -> [Benchmark]
+unaryOperationBenchmark opStr op typeStr values = generateBenchmark typeStr <$> values
   where
-    generateBenchmark x = bench (unwords [str, show x]) $ nf op x
+    generateBenchmark y x = bench (unwords [y, opStr, show x]) $ nf op x
 
 
 extendedNaturalValues :: [ExtendedNatural]
