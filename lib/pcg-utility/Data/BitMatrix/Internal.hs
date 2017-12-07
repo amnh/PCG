@@ -157,13 +157,14 @@ instance MonoFunctor BitMatrix where
 instance MonoTraversable BitMatrix where
 
     -- |
-    --Map each element of a monomorphic container to an action,
+    -- Map each element of a monomorphic container to an action,
     -- evaluate these actions from left to right, and
     -- collect the results.
     {-# INLINE otraverse #-}
     otraverse f bm = fmap (BitMatrix (numCols bm) . mconcat) . traverse f $ rows bm
 
-    -- | Map each element of a monomorphic container to a monadic action,
+    -- |
+    -- Map each element of a monomorphic container to a monadic action,
     -- evaluate these actions from left to right, and
     -- collect the results.
     {-# INLINE omapM #-}
@@ -191,7 +192,7 @@ instance Show BitMatrix where
 
 
 -- |
--- /O(m + n)/
+-- \( \mathcal{O} \left( m + n \right) \)
 --
 -- A generating function for a 'BitMatrix'. Efficiently constructs a
 -- 'BitMatrix' of the specified dimensions with each bit defined by the result
@@ -257,6 +258,8 @@ col = undefined -- bit twiddle or math
 
 
 -- |
+-- \( \mathcal{O} \left( 1 \right) \)
+--
 -- Extracts a bitvector with all cells concatenated in a row-major manner.
 {-# INLINE expandRows #-}
 expandRows :: BitMatrix -> BitVector
@@ -264,6 +267,8 @@ expandRows (BitMatrix _ bv) = bv
 
 
 -- |
+-- \( \mathcal{O} \left( 1 \right) \)
+--
 -- Constructs a 'BitMatrix' from a 'BitVector' with all cells wrapped in a
 -- row-major manner.
 {-# INLINE factorRows #-}
@@ -283,7 +288,7 @@ factorRows n bv
 
 
 -- |
--- /O(m)/
+-- \( \mathcal{O} \left( m \right) \)
 --
 -- Construct a 'BitMatrix' from a list of rows.
 fromRows :: Foldable t => t BitVector -> BitMatrix
@@ -307,7 +312,7 @@ fromRows xs
 
 
 -- | 
--- /O(1)/
+-- \( \mathcal{O} \left( 1 \right) \)
 --
 -- Test if a bit is set at the given indices.
 isSet :: BitMatrix -> (Int, Int) -> Bool
@@ -315,14 +320,15 @@ isSet (BitMatrix n bv) (i,j) = bv `testBit` (n*i + j)
 
 
 -- |
--- /O(1)/
+-- \( \mathcal{O} \left( 1 \right) \)
+-- 
 -- Determines if there are no set bits in the 'BitMatrix'
 isZeroMatrix :: BitMatrix -> Bool
 isZeroMatrix (BitMatrix _ bv) = nat bv == 0
 
 
 -- |
--- /O(1)/
+-- \( \mathcal{O} \left( 1 \right) \)
 --
 -- The number of columns in the 'BitMatrix'
 numCols :: BitMatrix -> Int
@@ -330,7 +336,7 @@ numCols (BitMatrix n _) = n
 
 
 -- |
--- /O(1)/
+-- \( \mathcal{O} \left( 1 \right) \)
 --
 -- The number of rows in the 'BitMatrix'
 numRows :: BitMatrix -> Int
@@ -340,7 +346,7 @@ numRows (BitMatrix n bv)
 
 
 -- |
--- /O(1)/
+-- \( \mathcal{O} \left( 1 \right) \)
 --
 -- Retreives a single row of the 'BitMatrix'. Allows for unsafe indexing.
 row :: BitMatrix -> Int -> BitVector
@@ -357,7 +363,7 @@ row bm@(BitMatrix nCols bv) i
 
 
 -- |
--- /O(m)/
+-- \( \mathcal{O} \left( m \right) \)
 --
 -- The rows of the 'BitMatrix'
 rows :: BitMatrix -> [BitVector]
