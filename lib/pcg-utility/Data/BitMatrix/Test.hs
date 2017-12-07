@@ -5,8 +5,9 @@ module Data.BitMatrix.Test
   ) where
 
 import Data.BitMatrix
-import Data.BitVector hiding (foldr)
+import Data.BitVector hiding (foldr, not, reverse)
 import Data.Foldable
+import Data.MonoTraversable
 import Test.Tasty
 import Test.Tasty.QuickCheck
 
@@ -14,6 +15,12 @@ import Test.Tasty.QuickCheck
 newtype DependantFromRowsParameters
       = DependantFromRowsParameters
       { getParameters :: (Int, Int, [BitVector])
+      } deriving (Eq, Show)
+
+
+newtype FactoredBitVector
+      = FactoredBitVector
+      { getFactoredBitVector :: (Int, Int, BitVector)
       } deriving (Eq, Show)
 
 
@@ -27,12 +34,28 @@ instance Arbitrary DependantFromRowsParameters where
         pure $ DependantFromRowsParameters (rowCount, colCount, bitVectors)
 
 
+instance Arbitrary FactoredBitVector where
+
+    arbitrary = do
+        rowCount  <- getPositive <$> arbitrary
+        colCount  <- getPositive <$> arbitrary
+        bitVector <- fromBits    <$> vectorOf (colCount * rowCount) (arbitrary :: Gen Bool)
+        pure $ FactoredBitVector (rowCount, colCount, bitVector)
+
+
 testSuite :: TestTree
 testSuite = testGroup "BitMatrix tests"
     [ testRowsFromRows
     , testBitMatrix
     , testFromRows
     , testConsistentIndexing
+    , testIsZeroMatrix
+    , testRowsToList
+    , testRowCountConsistency
+    , testRowIndexConsistency
+    , testExpandRows
+    , testFactorRows
+    , testExpandFactorIdentity
     ]
 
 
@@ -151,3 +174,64 @@ testConsistentIndexing = testProperty "Indexing and generation consistency" f
         pure $ all (\x -> g x == bm `isSet` x) indices
       where
         g = getBlind blindFunction
+
+
+testIsZeroMatrix :: TestTree
+testIsZeroMatrix = testProperty "isZeroMatrix bm <===> ∀ i, not (bm `isSet` i)" f
+  where
+    -- The generating function always returns false if and only if
+    -- the BitMatrix contains only zeros.
+    f :: BitMatrix -> Bool
+    f bm = all (not . isSet bm) indices == isZeroMatrix bm
+      where
+        indices = [ (i, j) | i <- [ 0 .. numRows bm - 1 ], j <- [ 0 .. numCols bm - 1 ] ]
+
+
+testRowsToList :: TestTree
+testRowsToList = testProperty "otoList === rows" f
+  where
+    f :: BitMatrix -> Property
+    f bm = otoList bm === rows bm
+
+
+testRowCountConsistency :: TestTree
+testRowCountConsistency = testProperty "numRows === length . rows" f
+  where
+    f :: BitMatrix -> Property
+    f bm = numRows bm === length (rows bm)
+
+
+testRowIndexConsistency :: TestTree
+testRowIndexConsistency = testProperty "∀ i, (`row` i) === (! i) . rows" f
+  where
+    f :: BitMatrix -> Property
+    f bm = conjoin $ g <$> [ 0 .. numRows bm - 1 ]
+      where
+        g i = bm `row` i === rows bm !! i
+
+
+testExpandRows :: TestTree
+testExpandRows = testProperty "toBits . expandRows === fmap (isSet bm)" f
+  where
+    f :: BitMatrix -> Property
+    f bm = (reverse . toBits . expandRows) bm === (isSet bm <$> indices)
+      where
+        indices = [ (i, j) | i <- [ 0 .. numRows bm - 1 ], j <- [ 0 .. numCols bm - 1 ] ]
+
+
+testFactorRows :: TestTree
+testFactorRows = testProperty "toBits === fmap (isSet bm) . factorRows n" f
+  where
+    f :: FactoredBitVector -> Property
+    f input = (reverse . toBits) bv === (isSet bm <$> indices)
+      where
+        bm = factorRows colCount bv
+        indices = [ (i, j) | i <- [ 0 .. numRows bm - 1 ], j <- [ 0 .. numCols bm - 1 ] ]
+        (_, colCount, bv) = getFactoredBitVector input
+
+          
+testExpandFactorIdentity :: TestTree
+testExpandFactorIdentity = testProperty "factorRows numCols . expandRows === id" f
+  where
+    f :: BitMatrix -> Property
+    f bm = factorRows (numCols bm) (expandRows bm) === bm
