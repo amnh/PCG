@@ -53,6 +53,7 @@ type instance Element BitMatrix = BitVector
 -- |
 -- Resulting matricies will have at /least/ one row and one column.
 instance Arbitrary BitMatrix where
+
     arbitrary = do 
         colCount <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 20) 
         rowCount <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 20)
@@ -65,18 +66,31 @@ instance Arbitrary BitMatrix where
 -- For binary operations we (perhaps erroneously) assume equal column and row
 -- dimensions.
 instance Bits BitMatrix where
+
     (.&.)        (BitMatrix c lhs) (BitMatrix _ rhs) = BitMatrix c $ lhs  .&.  rhs
+
     (.|.)        (BitMatrix c lhs) (BitMatrix _ rhs) = BitMatrix c $ lhs  .|.  rhs
+
     xor          (BitMatrix c lhs) (BitMatrix _ rhs) = BitMatrix c $ lhs `xor` rhs
+
     complement   (BitMatrix c b)                     = BitMatrix c $ complement b
+
     shift        (BitMatrix c b) n                   = BitMatrix c $ b `shift`  n
+
     rotate       (BitMatrix c b) n                   = BitMatrix c $ b `rotate` n
+
     setBit       (BitMatrix c b) i                   = BitMatrix c $ b `setBit` i
+
     testBit      (BitMatrix _ b) i                   = b `testBit` i -- (width b - i + 1)
+
     bit i                                            = BitMatrix 1 $ bit i
+
     bitSize                                          = fromMaybe 0 . bitSizeMaybe
+
     bitSizeMaybe (BitMatrix _ b)                     = bitSizeMaybe b
+
     isSigned     (BitMatrix _ b)                     = isSigned b
+
     popCount     (BitMatrix _ b)                     = popCount b
 
 
@@ -162,6 +176,7 @@ instance NFData BitMatrix
 
 -- | (✔)
 instance Show BitMatrix where
+
     show bm = headerLine <> matrixLines
       where
         renderRow   = foldl (\acc e -> (if e then '1' else '0') : acc) "" . toBits
@@ -259,12 +274,12 @@ factorRows n bv
   where
     len = width bv
     erroMsg = mconcat
-      [ "The supplied BitVector length ("
-      , show len
-      , ") cannot be evenly divided by the supplied column count ("
-      , show n
-      , ")."
-      ]
+        [ "The supplied BitVector length ("
+        , show len
+        , ") cannot be evenly divided by the supplied column count ("
+        , show n
+        , ")."
+        ]
 
 
 -- |
@@ -283,6 +298,7 @@ fromRows xs
         m = width rhs
         a = nat   lhs
         b = nat   rhs
+
     result = case toList xs of
                []   -> BitMatrix 0 $ bitVec 0 (0 :: Integer)
                y:ys -> BitMatrix (width y) (if width y == 0 
@@ -295,7 +311,7 @@ fromRows xs
 --
 -- Test if a bit is set at the given indices.
 isSet :: BitMatrix -> (Int, Int) -> Bool
-(BitMatrix n bv) `isSet` (i,j) = bv `testBit` (n*i + j)
+isSet (BitMatrix n bv) (i,j) = bv `testBit` (n*i + j)
 
 
 -- |
