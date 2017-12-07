@@ -53,6 +53,7 @@ type instance Element BitMatrix = BitVector
 -- |
 -- Resulting matricies will have at /least/ one row and one column.
 instance Arbitrary BitMatrix where
+
     arbitrary = do 
         colCount <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 20) 
         rowCount <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 20)
@@ -65,18 +66,31 @@ instance Arbitrary BitMatrix where
 -- For binary operations we (perhaps erroneously) assume equal column and row
 -- dimensions.
 instance Bits BitMatrix where
+
     (.&.)        (BitMatrix c lhs) (BitMatrix _ rhs) = BitMatrix c $ lhs  .&.  rhs
+
     (.|.)        (BitMatrix c lhs) (BitMatrix _ rhs) = BitMatrix c $ lhs  .|.  rhs
+
     xor          (BitMatrix c lhs) (BitMatrix _ rhs) = BitMatrix c $ lhs `xor` rhs
+
     complement   (BitMatrix c b)                     = BitMatrix c $ complement b
+
     shift        (BitMatrix c b) n                   = BitMatrix c $ b `shift`  n
+
     rotate       (BitMatrix c b) n                   = BitMatrix c $ b `rotate` n
+
     setBit       (BitMatrix c b) i                   = BitMatrix c $ b `setBit` i
+
     testBit      (BitMatrix _ b) i                   = b `testBit` i -- (width b - i + 1)
+
     bit i                                            = BitMatrix 1 $ bit i
+
     bitSize                                          = fromMaybe 0 . bitSizeMaybe
+
     bitSizeMaybe (BitMatrix _ b)                     = bitSizeMaybe b
+
     isSigned     (BitMatrix _ b)                     = isSigned b
+
     popCount     (BitMatrix _ b)                     = popCount b
 
 
@@ -143,13 +157,14 @@ instance MonoFunctor BitMatrix where
 instance MonoTraversable BitMatrix where
 
     -- |
-    --Map each element of a monomorphic container to an action,
+    -- Map each element of a monomorphic container to an action,
     -- evaluate these actions from left to right, and
     -- collect the results.
     {-# INLINE otraverse #-}
     otraverse f bm = fmap (BitMatrix (numCols bm) . mconcat) . traverse f $ rows bm
 
-    -- | Map each element of a monomorphic container to a monadic action,
+    -- |
+    -- Map each element of a monomorphic container to a monadic action,
     -- evaluate these actions from left to right, and
     -- collect the results.
     {-# INLINE omapM #-}
@@ -162,6 +177,7 @@ instance NFData BitMatrix
 
 -- | (✔)
 instance Show BitMatrix where
+
     show bm = headerLine <> matrixLines
       where
         renderRow   = foldl (\acc e -> (if e then '1' else '0') : acc) "" . toBits
@@ -176,7 +192,7 @@ instance Show BitMatrix where
 
 
 -- |
--- /O(m + n)/
+-- \( \mathcal{O} \left( m + n \right) \)
 --
 -- A generating function for a 'BitMatrix'. Efficiently constructs a
 -- 'BitMatrix' of the specified dimensions with each bit defined by the result
@@ -242,6 +258,8 @@ col = undefined -- bit twiddle or math
 
 
 -- |
+-- \( \mathcal{O} \left( 1 \right) \)
+--
 -- Extracts a bitvector with all cells concatenated in a row-major manner.
 {-# INLINE expandRows #-}
 expandRows :: BitMatrix -> BitVector
@@ -249,6 +267,8 @@ expandRows (BitMatrix _ bv) = bv
 
 
 -- |
+-- \( \mathcal{O} \left( 1 \right) \)
+--
 -- Constructs a 'BitMatrix' from a 'BitVector' with all cells wrapped in a
 -- row-major manner.
 {-# INLINE factorRows #-}
@@ -259,16 +279,16 @@ factorRows n bv
   where
     len = width bv
     erroMsg = mconcat
-      [ "The supplied BitVector length ("
-      , show len
-      , ") cannot be evenly divided by the supplied column count ("
-      , show n
-      , ")."
-      ]
+        [ "The supplied BitVector length ("
+        , show len
+        , ") cannot be evenly divided by the supplied column count ("
+        , show n
+        , ")."
+        ]
 
 
 -- |
--- /O(m)/
+-- \( \mathcal{O} \left( m \right) \)
 --
 -- Construct a 'BitMatrix' from a list of rows.
 fromRows :: Foldable t => t BitVector -> BitMatrix
@@ -283,6 +303,7 @@ fromRows xs
         m = width rhs
         a = nat   lhs
         b = nat   rhs
+
     result = case toList xs of
                []   -> BitMatrix 0 $ bitVec 0 (0 :: Integer)
                y:ys -> BitMatrix (width y) (if width y == 0 
@@ -291,22 +312,23 @@ fromRows xs
 
 
 -- | 
--- /O(1)/
+-- \( \mathcal{O} \left( 1 \right) \)
 --
 -- Test if a bit is set at the given indices.
 isSet :: BitMatrix -> (Int, Int) -> Bool
-(BitMatrix n bv) `isSet` (i,j) = bv `testBit` (n*i + j)
+isSet (BitMatrix n bv) (i,j) = bv `testBit` (n*i + j)
 
 
 -- |
--- /O(1)/
+-- \( \mathcal{O} \left( 1 \right) \)
+-- 
 -- Determines if there are no set bits in the 'BitMatrix'
 isZeroMatrix :: BitMatrix -> Bool
 isZeroMatrix (BitMatrix _ bv) = nat bv == 0
 
 
 -- |
--- /O(1)/
+-- \( \mathcal{O} \left( 1 \right) \)
 --
 -- The number of columns in the 'BitMatrix'
 numCols :: BitMatrix -> Int
@@ -314,7 +336,7 @@ numCols (BitMatrix n _) = n
 
 
 -- |
--- /O(1)/
+-- \( \mathcal{O} \left( 1 \right) \)
 --
 -- The number of rows in the 'BitMatrix'
 numRows :: BitMatrix -> Int
@@ -324,7 +346,7 @@ numRows (BitMatrix n bv)
 
 
 -- |
--- /O(1)/
+-- \( \mathcal{O} \left( 1 \right) \)
 --
 -- Retreives a single row of the 'BitMatrix'. Allows for unsafe indexing.
 row :: BitMatrix -> Int -> BitVector
@@ -341,7 +363,7 @@ row bm@(BitMatrix nCols bv) i
 
 
 -- |
--- /O(m)/
+-- \( \mathcal{O} \left( m \right) \)
 --
 -- The rows of the 'BitMatrix'
 rows :: BitMatrix -> [BitVector]

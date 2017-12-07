@@ -2,7 +2,7 @@ module Main ( main ) where
 
 
 import qualified Data.BitMatrix.Test                  as BitMatrix
-import qualified Data.MutualExculsionSet.Test         as MutualExculsionSet
+import qualified Data.MutualExclusionSet.Test         as MutualExclusionSet
 import qualified Numeric.Extended.Natural.Test        as ExtendedNatural
 import qualified Numeric.Extended.Real.Test           as ExtendedReal
 import qualified Numeric.NonNegativeAverage.Test      as NonNegativeAverage
@@ -20,6 +20,6 @@ testSuite = testGroup "Library Test Suite"
     , ExtendedNatural.testSuite
     , ExtendedReal.testSuite
     , NonNegativeAverage.testSuite
-    , MutualExculsionSet.testSuite
+    , MutualExclusionSet.testSuite
     ]
 

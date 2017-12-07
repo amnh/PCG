@@ -81,8 +81,10 @@ orderingProperties = testGroup "Properties of ordering"
 additionProperties :: TestTree
 additionProperties = testGroup "Properties of addition"
     [ testProperty "additive identity holds" additiveIdentity
---    , testProperty "addition is associative" additiveAssocativity
-    , testProperty "addition is commutative" additiveCommutivity
+--    , localOption (QuickCheckTests 10000)
+--        $ testProperty "addition is associative" additiveAssocativity
+    , localOption (QuickCheckTests  1000)
+        $ testProperty "addition is commutative" additiveCommutivity
     , testProperty "addition on maxBound is indempotent" additiveUpperBound
     , testProperty "addition of finite values never exceeds maxBound" additiveCeiling
     ]
@@ -106,11 +108,15 @@ additionProperties = testGroup "Properties of addition"
 
 subtractionProperties :: TestTree
 subtractionProperties = testGroup "Properties of subtraction"
-    [ testProperty "subtracting additive identity is indempotent" subtractionIdentity
+    [ testProperty "subtraction is the additive inverse" subtractionIsInverse
+    , testProperty "subtracting additive identity is indempotent" subtractionIdentity
     , testProperty "subtraction on minBound is indempotent" subtractionLowerBound
     , testProperty "subtraction of finite values is never negative." subtractionFloor
     ]
   where
+    subtractionIsInverse :: ExtendedReal -> Bool
+    subtractionIsInverse val = val - val == 0 || val == infinity
+                                       
     subtractionIdentity :: ExtendedReal -> Bool
     subtractionIdentity val = val - 0 == val
 
@@ -125,8 +131,14 @@ multiplicationProperties :: TestTree
 multiplicationProperties = testGroup "Properties of multiplication"
     [ testProperty "multiplicative identity holds" multiplicativeIdentity
     , testProperty "multiplicative annihilation holds" multiplicativeAnnihilation
---    , testProperty "multiplication is associative" multiplicativeAssocativity
-    , testProperty "multiplication is commutative" multiplicativeCommutivity
+--    , localOption (QuickCheckTests 10000)
+--        $ testProperty "multiplication is associative" multiplicativeAssocativity
+    , localOption (QuickCheckTests  1000)
+        $ testProperty "multiplication is commutative" multiplicativeCommutivity
+--    , localOption (QuickCheckTests 10000)
+--            $ testProperty "multiplication is left-distibutive"  multiplicativeLeftDistributivity
+--    , localOption (QuickCheckTests 10000)
+--            $ testProperty "multiplication is right-distibutive" multiplicativeRightDistributivity
     , testProperty "multiplication of finite values with maxBound is non-increasing" multiplicativeUpperBound
     , testProperty "multiplication of finite values never exceeds maxBound" multiplicativeCeiling
     ]
@@ -143,6 +155,13 @@ multiplicationProperties = testGroup "Properties of multiplication"
 
     multiplicativeCommutivity :: (ExtendedReal, ExtendedReal) -> Bool
     multiplicativeCommutivity (a, b) = a * b == b * a
+
+-- Can't test left or right distributivity because of rounding errors
+--    multiplicativeLeftDistributivity :: (ExtendedReal, ExtendedReal, ExtendedReal) -> Bool
+--    multiplicativeLeftDistributivity (a, b, c) = a * (b + c) == (a * b) + (a * c)
+
+--    multiplicativeRightDistributivity :: (ExtendedReal, ExtendedReal, ExtendedReal) -> Bool
+--    multiplicativeRightDistributivity (a, b, c) = (b + c) * a == (b * a) + (c * a)
 
     multiplicativeUpperBound :: ExtendedReal -> Bool
     multiplicativeUpperBound val = maxBound * val <= maxBound || val == infinity

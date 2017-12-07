@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.MutualExculsionSet
+-- Module      :  Data.MutualExclusionSet
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -41,8 +41,8 @@
 --
 -----------------------------------------------------------------------------
 
-module Data.MutualExculsionSet
-  ( MutualExculsionSet
+module Data.MutualExclusionSet
+  ( MutualExclusionSet
   -- * Construction
   , singleton
   -- * Deconstruct
@@ -62,4 +62,4 @@ module Data.MutualExculsionSet
   , isPermissible
   ) where
 
-import Data.MutualExculsionSet.Internal
+import Data.MutualExclusionSet.Internal

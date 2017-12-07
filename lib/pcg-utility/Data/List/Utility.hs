@@ -25,10 +25,27 @@ import Data.Set           (insert, intersection)
 
 
 -- |
--- /O( n * k )/
+-- \( \mathcal{O} \left( n * k \right) \)
 --
 -- Takes two nested, linear-dimentional structures and transposes thier dimensions.
 -- It's like performing a matrix transpose operation, but more general.
+--
+-- ==_Example==
+--
+-- >>> transpose []
+-- []
+--
+-- >>> transpose [[1]]
+-- [[1]]
+--
+-- >>> transpose [ [ 1, 2 ], [ 3, 4 ] ]
+-- [[1,3],[2,4]]
+--
+-- >>> transpose [ [ 1, 2, 3 ], [ 4, 5, 6 ], [ 7, 8, 9] ]
+-- [[1,4,7],[2,5,8],[3,6,9]]
+--
+-- >>> transpose [ [ 1, 2, 3, 0, 0 ], [ 4, 5, 6, 0 ], [ 7, 8, 9] ]
+-- [[1,4,7],[2,5,8],[3,6,9]]
 transpose
   :: ( Applicative f
      , Applicative t
@@ -49,10 +66,21 @@ transpose value =
 
 
 -- |
--- /O( k )/ where /k/ is the cost to convert the structure to a list in weak head
+-- \( \mathcal{O} \left( n * k \right) \) where \( k \) is the cost to convert the structure to a list in weak head
 -- normal form.
 --
 -- Determines whether a 'Foldable' structure contains a single element.
+--
+-- ==_Example==
+--
+-- >>> isSingleton []
+-- False
+--
+-- >>> isSingleton [ () ]
+-- True
+--
+-- >>> isSingleton [ (), () ]
+-- False
 isSingleton :: Foldable t => t a -> Bool
 isSingleton = f . toList
   where
@@ -61,9 +89,20 @@ isSingleton = f . toList
 
 
 -- |
--- /O(n * log(n) )/
+-- \( \mathcal{O} \left( n * \log_2 n \right) \)
 --
 -- Returns the list of elements which are not unique in the input list.
+--
+-- ==_Example==
+--
+-- >>> duplicates "duplicate string"
+-- "it"
+--
+-- >>> duplicates "GATACACATCAGATT"
+-- "ACGT"
+--
+-- >>> duplicates [ 'A' .. 'Z' ]
+-- []
 duplicates :: (Foldable t, Ord a) => t a -> [a]
 duplicates = duplicates' . sort . toList
   where 
@@ -75,9 +114,17 @@ duplicates = duplicates' . sort . toList
 
 
 -- |
--- /O( n * log(n) )/
+-- \( \mathcal{O} \left( n * \log_2 n \right) \)
 --
 -- Returns the element that occurs the most often in the list.
+--
+-- ==_Example==
+--
+-- >>> mostCommon "GATACACATCAGATT"
+-- Just 'A'
+--
+-- >>> mostCommon "AABCDDDEFGGT"
+-- Just 'D'
 mostCommon :: (Foldable t, Ord a) => t a -> Maybe a
 mostCommon xs
   | null xs   = Nothing
@@ -87,10 +134,20 @@ mostCommon xs
 
 
 -- |
--- /O( n * log(n) )/
+-- \( \mathcal{O} \left( n * \log_2 n \right) \)
 --
 -- Returns a mapping of each unique element in the list paired with how often
 -- the element occurs in the list.
+--
+-- The elements are in descending order of occurance.
+--
+-- ==_Example==
+--
+-- >>> occurances "GATACACATCAGATT"
+-- [('A',6),('T',4),('C',3),('G',2)]
+--
+-- >>> occurances "AABCDDDEFGGT"
+-- [('D',3),('A',2),('G',2),('B',1),('C',1),('E',1),('F',1),('T',1)]
 occurances :: (Foldable t, Ord a) => t a -> [(a,Int)]
 occurances = collateOccuranceMap . buildOccuranceMap
   where
@@ -106,9 +163,17 @@ occurances = collateOccuranceMap . buildOccuranceMap
 
 
 -- |
--- /O( n )/
+-- \( \mathcal{O} \left( n * \right) \)
 --
--- chunksOf is based on Text.chunksOf, but is more general.
+-- 'chunksOf' is based on Text.chunksOf, but is more general.
+--
+-- ==_Example==
+--
+-- >>> chunksOf 3 [ 1 .. 13 ]
+-- [[1,2,3],[4,5,6],[7,8,9],[10,11,12],[13]]
+--
+-- >>> chunksOf 5 [ 1 .. 13 ]
+-- [[1,2,3,4,5],[6,7,8,9,10],[11,12,13]]
 chunksOf :: Foldable t => Int -> t a -> [[a]]
 chunksOf n = chunksOf' . toList
   where
@@ -119,9 +184,17 @@ chunksOf n = chunksOf' . toList
 
 
 -- |
--- /O( n * log(n) )/
+-- \( \mathcal{O} \left( n * \log_2 n \right) \)
 --
 -- Useful function to check subsets of lists.
+--
+-- ==_Example==
+--
+-- >>> [  5 .. 10 ] `subsetOf` [ 1 .. 13 ] 
+-- True
+--
+-- >>> [ 11 .. 15 ] `subsetOf` [ 1 .. 13 ]
+-- False
 subsetOf :: (Foldable t, Foldable c, Ord a) => t a -> c a -> Bool
 subsetOf xs ys = xs' `intersection` ys' == xs'
   where
@@ -130,10 +203,20 @@ subsetOf xs ys = xs' `intersection` ys' == xs'
 
 
 -- |
--- /O( n )/
+-- \( \mathcal{O} \left( n \right) \)
 --
 -- Applies a transformation to each element of the structure and asserts that
 -- transformed values are equal for all elements of the structure.
+--
+-- See 'invariantTransformation' if you need the equal value returned.
+--
+-- ==_Example==
+--
+-- >>> equalityOf (`mod` 10) [ 9, 19, 29, 39, 49 ]
+-- True
+--
+-- >>> equalityOf (`mod`  7) [ 9, 19, 29, 39, 49 ]
+-- False
 equalityOf :: (Eq b, Foldable t) => (a -> b) -> t a -> Bool
 equalityOf f xs =
   case toList xs of
@@ -143,7 +226,7 @@ equalityOf f xs =
 
 
 -- |
--- /O( n )/
+-- \( \mathcal{O} \left( n \right) \)
 --
 -- Applies a transformation to each element of the structure.
 -- If /every/ application of the transformation yields the same result value
@@ -151,6 +234,16 @@ equalityOf f xs =
 -- where @v@ is the invariant value across the transformation.
 -- If the transformation does not produce an invariant value accross the
 -- structure, or the structure is empty, this function returns @Nothing@.
+--
+-- See 'equalityOf' if you want to discard the @Just@ value.
+--
+-- ==_Example==
+--
+-- >>> invariantTransformation (`mod` 10) [ 9, 19, 29, 39, 49 ]
+-- Just 9
+--
+-- >>> invariantTransformation (`mod`  7) [ 9, 19, 29, 39, 49 ]
+-- Nothing
 invariantTransformation :: (Eq b, Foldable t) => (a -> b) -> t a -> Maybe b
 invariantTransformation f xs =
   case toList xs of
@@ -163,11 +256,16 @@ invariantTransformation f xs =
 
 
 -- |
--- /O( n )/
+-- \( \mathcal{O} \left( n \right) \)
 --
 -- Applies a transitive relation over a list and asserts that the relation holds
 -- for all pairs of elements. By applying the transitive property, we can assert
 -- that the relation hold in liner rather than quadratic time for the collection.
+--
+-- ==_Example==
+--
+-- >>> transitivePropertyHolds (\x y -> snd x >= fst y) [ (9,9), (8,7), (6,6), (6,5), (3,4), (3,0) ]
+-- True 
 transitivePropertyHolds :: Foldable f => (a -> a -> Bool) -> f a -> Bool
 transitivePropertyHolds p es =
     case toList es of
@@ -181,7 +279,7 @@ transitivePropertyHolds p es =
 
 
 -- |
--- /O( n * m )/
+-- \( \mathcal{O} \left( m * n \right) \)
 --
 -- Provide a pairwise predicate used to filter elements and a nested structure.
 -- Returns the "product" of elements across the inner Foldable structure. Each
@@ -190,7 +288,7 @@ transitivePropertyHolds p es =
 --
 -- ==_Example==
 --
--- >>> pairwiseSequence (\x y = snd x /= snd y) [[('A',1),('B',2)],[('X',1),('Y',2),('Z',3)],[('I',1),('J',2),('K',3),('L',4)]]
+-- >>> pairwiseSequence (\x y -> snd x /= snd y) [[('A',1),('B',2)],[('X',1),('Y',2),('Z',3)],[('I',1),('J',2),('K',3),('L',4)]]
 -- [[('A',1),('Y',2),('K',3)],[('A',1),('Y',2),('L',4)],[('A',1),('Z',3),('J',2)],[('A',1),('Z',3),('L',4)],[('B',2),('X',1),('K',3)],[('B',2),('X',1),('L',4)],[('B',2),('Z',3),('I',1)],[('B',2),('Z',3),('L',4)]]
 --
 pairwiseSequence :: (Foldable t, Foldable t') => (a -> a -> Bool) -> t (t' a) -> [[a]]
@@ -203,7 +301,7 @@ pairwiseSequence predicate structure = f [] $ toList <$> toList structure
 
 
 -- |
--- /O( n )/
+-- \( \mathcal{O} \left( n \right) \)
 --
 -- The largest elements of a possibly empty structure with respect to the given
 -- comparison function. If multiple elements are equal under the comparison
@@ -230,7 +328,7 @@ maximaBy cmp = foldr f []
 
 
 -- |
--- /O( n )/
+-- \( \mathcal{O} \left( n \right) \)
 --
 -- The smallest elements of a possibly empty structure with respect to the given
 -- comparison function. If multiple elements are equal under the comparison

@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module Data.MutualExculsionSet.Test
+module Data.MutualExclusionSet.Test
   ( testSuite
   ) where
 
@@ -8,7 +8,7 @@ module Data.MutualExculsionSet.Test
 import Control.Arrow
 import Data.Foldable
 import Data.Semigroup
-import Data.MutualExculsionSet.Internal
+import Data.MutualExclusionSet.Internal
 import Data.Word
 import Test.QuickCheck
 import Test.Tasty
@@ -17,9 +17,9 @@ import Test.Tasty.QuickCheck
 
 
 -- |
--- An arbitrary 'MutualExculsionSet' and a value that is included 20% likely in
+-- An arbitrary 'MutualExclusionSet' and a value that is included 20% likely in
 -- the set.
-newtype ProbablyIncluded a = PI { getProbablyIncluded :: (MutualExculsionSet a, a) }
+newtype ProbablyIncluded a = PI { getProbablyIncluded :: (MutualExclusionSet a, a) }
     deriving (Eq, Ord, Show)
 
 
@@ -27,7 +27,7 @@ instance (Arbitrary a, Ord a) => Arbitrary (ProbablyIncluded a) where
 
     arbitrary = do
         mes <- arbitrary
-        inc <- case toList mes of
+        inc <- case toList $ includedSet mes of
                [] -> arbitrary
                xs -> frequency [ (1, arbitrary), (4, elements xs) ]
         pure $ PI (mes, inc)
@@ -74,8 +74,8 @@ constructionCases = testGroup "construction specific cases"
     
     paradoxPermissible = lhs <> rhs @?= unsafeFromList [ (1, 2), (2, 1), (3, 4), (5, 6 :: Word8) ]
       where
-        lhs = singleton 1 2 <> singleton 3 4 :: MutualExculsionSet Word8
-        rhs = singleton 2 1 <> singleton 5 6 :: MutualExculsionSet Word8
+        lhs = singleton 1 2 <> singleton 3 4 :: MutualExclusionSet Word8
+        rhs = singleton 2 1 <> singleton 5 6 :: MutualExclusionSet Word8
 
 {-
     inclusionSetViolation =
@@ -96,7 +96,7 @@ orderingProperties = testGroup "Properties of ordering"
     orderPreserving (lhs@(a, b), rhs@(c, d)) =
       lhs `compare` rhs === singleton a b `compare` singleton c d
 
-    symetry :: (MutualExculsionSet Word8, MutualExculsionSet Word8) -> Bool
+    symetry :: (MutualExclusionSet Word8, MutualExclusionSet Word8) -> Bool
     symetry (lhs, rhs) =
       case (lhs `compare` rhs, rhs `compare` lhs) of
         (EQ, EQ) -> True
@@ -111,13 +111,19 @@ semigroupProperties = testGroup "Properties of this semigroup operator"
         $ testProperty "(<>) is associative" operationAssocativity
     , localOption (QuickCheckTests  1000)
         $ testProperty "(<>) is commutative" operationCommutativity
+    , testProperty "stimes is indempotent" operationIsIndempotent
     ]
   where
-    operationAssocativity :: (MutualExculsionSet Word8, MutualExculsionSet Word8, MutualExculsionSet Word8) -> Property
+    operationAssocativity :: (MutualExclusionSet Word8, MutualExclusionSet Word8, MutualExclusionSet Word8) -> Property
     operationAssocativity (a, b, c) = a <> (b <> c) === (a <> b) <> c
 
-    operationCommutativity :: (MutualExculsionSet Word8, MutualExculsionSet Word8) -> Property
+    operationCommutativity :: (MutualExclusionSet Word8, MutualExclusionSet Word8) -> Property
     operationCommutativity (a, b) = a <> b === b <> a
+
+    operationIsIndempotent :: (Word, MutualExclusionSet Word8) -> Bool
+    operationIsIndempotent (n, x) = (n == 0 && result == mempty) || result == x
+      where
+        result = stimes n x
 
 
 monoidProperties :: TestTree
@@ -126,10 +132,10 @@ monoidProperties = testGroup "Properties of this semigroup operator"
     , testProperty "right identity" rightIdentity
     ]
   where
-    leftIdentity :: MutualExculsionSet Word8 -> Property
+    leftIdentity :: MutualExclusionSet Word8 -> Property
     leftIdentity a = mempty <> a === a
 
-    rightIdentity :: MutualExculsionSet Word8 -> Property
+    rightIdentity :: MutualExclusionSet Word8 -> Property
     rightIdentity a = a <> mempty === a
 
 
@@ -148,7 +154,7 @@ structuralProperties = testGroup "data-structure invariants"
     , testProperty "∀ e, ∃ k, S.T. isExcluded e ==> includedLookup k == Just e" excludedImpliesExistsIncludedValue
     ]
   where
-    inversionIdentity :: MutualExculsionSet Word8 -> Property
+    inversionIdentity :: MutualExclusionSet Word8 -> Property
     inversionIdentity mes =
         invert (invert mes) === mes
 
@@ -164,27 +170,27 @@ structuralProperties = testGroup "data-structure invariants"
       where
         (mes, e) = getProbablyIncluded input
 
-    inclusionInvertedExclusion :: (MutualExculsionSet Word8, Word8) -> Property
+    inclusionInvertedExclusion :: (MutualExclusionSet Word8, Word8) -> Property
     inclusionInvertedExclusion (mes, e) =
         e `isIncluded` mes === e `isExcluded` invert mes
 
-    exclusionInvertedInclusion :: (MutualExculsionSet Word8, Word8) -> Property
+    exclusionInvertedInclusion :: (MutualExclusionSet Word8, Word8) -> Property
     exclusionInvertedInclusion (mes, e) =
         e `isExcluded` mes === e `isIncluded` invert mes
 
-    inclusionSetInvertedExclusionSet :: MutualExculsionSet Word8 -> Property
+    inclusionSetInvertedExclusionSet :: MutualExclusionSet Word8 -> Property
     inclusionSetInvertedExclusionSet mes =
         includedSet mes === excludedSet (invert mes)
 
-    exclusionSetInvertedInclusionSet :: MutualExculsionSet Word8 -> Property
+    exclusionSetInvertedInclusionSet :: MutualExclusionSet Word8 -> Property
     exclusionSetInvertedInclusionSet mes =
         excludedSet mes === includedSet (invert mes)
 
-    inclusionSetIsFoldableList :: MutualExculsionSet Word8 -> Property
+    inclusionSetIsFoldableList :: MutualExclusionSet Word8 -> Property
     inclusionSetIsFoldableList mes =
         toList mes  === toList (includedSet mes)
 
-    exclusionSetIsInvertedFoldableList :: MutualExculsionSet Word8 -> Property
+    exclusionSetIsInvertedFoldableList :: MutualExclusionSet Word8 -> Property
     exclusionSetIsInvertedFoldableList mes =
         toList (invert mes) === toList (excludedSet mes)
 

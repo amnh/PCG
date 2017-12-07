@@ -31,8 +31,8 @@ import           Control.DeepSeq
 import           Data.Foldable
 import           Data.Functor.Classes
 import           Data.Hashable
-import           Data.MutualExculsionSet        (MutualExculsionSet)
-import qualified Data.MutualExculsionSet as MES
+import           Data.MutualExclusionSet        (MutualExclusionSet)
+import qualified Data.MutualExclusionSet as MES
 import           Data.Semigroup
 import           Data.Set                       (Set)
 import           GHC.Generics
@@ -47,8 +47,8 @@ isCompatableSubtopologyOf (TR x) (TR y) = isSubsetOf x y
 -- Represents a collection of network edges and their mutually exclusive edges.
 --
 -- Often used to represent a unique spanning tree in a phylogenetic DAG.
-newtype TopologyRepresentation a = TR { unwrap :: MutualExculsionSet a }
-  deriving (Eq, Eq1, Foldable, Hashable, Generic, Monoid, NFData, Ord, Ord1, Semigroup)
+newtype TopologyRepresentation a = TR { unwrap :: MutualExclusionSet a }
+  deriving (Eq, Eq1, Hashable, Generic, Monoid, NFData, Ord, Ord1, Semigroup)
 
 {-
 instance Foldable TopologyRepresentation where
@@ -86,7 +86,7 @@ instance Ord a => Semigroup (TopologyRepresentation a) where
     (TR lhs) <> (TR rhs) = TR . BM.fromAscPairListUnchecked . M.toAscList $ M.unionWith const (BM.toMap lhs) (BM.toMap rhs)
 -}
 
-instance Show a => Show (TopologyRepresentation a) where
+instance (Ord a, Show a) => Show (TopologyRepresentation a) where
 
     show x = unwords
         [ "Network Edges of Topology:"
@@ -147,10 +147,10 @@ mutuallyExclusivePairs = MES.mutuallyExclusivePairs . unwrap
 
 
 -- |
--- \( \mathcal{O} \left( m + n * \log_2 m \right) \)
+-- \( \mathcal{O} \left( m * \log_2 ( \frac {n}{m + 1} ) \right), m \leq n \)
 --
 -- Perform a subsetting operation to determine is a sub-topology is compatable
 -- with another topology.
 {-# INLINE isCompatableWithTopology #-}
-isCompatableWithTopology :: (Foldable f, Ord a) => f a -> TopologyRepresentation a -> Bool
-isCompatableWithTopology ts = MES.isPermissible ts . unwrap
+isCompatableWithTopology :: Ord a => TopologyRepresentation a -> TopologyRepresentation a -> Bool
+isCompatableWithTopology ts = MES.isPermissible (unwrap ts) . unwrap
