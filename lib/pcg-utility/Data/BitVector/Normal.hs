@@ -237,8 +237,8 @@ instance MonoTraversable BitVector where
 
 instance NFData BitVector where
 
-    -- Already a strict data type
-    -- Always in normal form.
+    -- Already a strict data type,
+    -- always in normal form.
     {-# INLINE rnf #-}
     rnf = const ()
 
@@ -303,6 +303,7 @@ toSignedNumber (BV w n) = fromInteger v
 {-# INLINE toUnsignedNumber #-}
 toUnsignedNumber :: Num a => BitVector -> a
 toUnsignedNumber = fromInteger . nat
+
 
 {-# INLINE dimension #-}
 dimension :: BitVector -> Word
