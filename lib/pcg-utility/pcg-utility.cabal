@@ -79,6 +79,7 @@ library
 
   exposed-modules:  Data.BitMatrix
                     Data.BitVector.Instances
+                    Data.BitVector.Normal
                     Data.Either.Custom
                     Data.List.Utility
                     Data.Matrix.NotStupid

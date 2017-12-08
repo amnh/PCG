@@ -46,28 +46,28 @@ isExcludedBench :: Benchmark
 isExcludedBench = logBenchmark "MutualExclusionSet isExcluded log-access" ofSize f
   where
     -- We negate i to consider both the included and excluded cases
-    f i xs = (i `isExcluded` xs) `seq` (negate i) `isExcluded` xs
+    f i xs = (i `isExcluded` xs) `seq` negate i `isExcluded` xs
 
 
 isIncludedBench :: Benchmark
 isIncludedBench = logBenchmark "MutualExclusionSet isIncluded log-access" ofSize f
   where
     -- We negate i to consider both the included and excluded cases
-    f i xs = (i `isIncluded` xs) `seq` (negate i) `isIncluded` xs
+    f i xs = (i `isIncluded` xs) `seq` negate i `isIncluded` xs
 
 
 excludedLookupBench :: Benchmark
 excludedLookupBench = logBenchmark "MutualExclusionSet excludedLookup log-access" ofSize f
   where
     -- We negate i to consider both the included and excluded cases
-    f i xs = (i `excludedLookup` xs) `seq` (negate i) `excludedLookup` xs
+    f i xs = (i `excludedLookup` xs) `seq` negate i `excludedLookup` xs
 
 
 includedLookupBench :: Benchmark
 includedLookupBench = logBenchmark "MutualExclusionSet includedLookup log-access" ofSize f
   where
     -- We negate i to consider both the included and excluded cases
-    f i xs = (i `includedLookup` xs) `seq` (negate i) `includedLookup` xs
+    f i xs = (i `includedLookup` xs) `seq` negate i `includedLookup` xs
 
 
 excludedSetBench :: Benchmark

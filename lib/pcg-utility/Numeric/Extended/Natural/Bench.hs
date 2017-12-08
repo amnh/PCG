@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns, FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Numeric.Extended.Natural.Bench (benchmarks) where
 

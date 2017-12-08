@@ -67,7 +67,7 @@ instance Arbitrary ExtendedNatural where
 
     arbitrary = frequency [ (1, pure infinity), (19, Cost <$> finiteValue)]
       where
-        finiteValue = arbitrary `suchThat` (not . (== maxBound))
+        finiteValue = arbitrary `suchThat` (/= maxBound)
 
 
 instance Bounded ExtendedNatural where
