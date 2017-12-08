@@ -26,7 +26,8 @@
 {-# LANGUAGE BangPatterns, DeriveDataTypeable, MagicHash, TypeFamilies #-}
 
 module Data.BitVector.Normal
-  ( toSignedNumber
+  ( BitVector()
+  , toSignedNumber
   , toUnsignedNumber
   , dimension
   -- * Construction from values
@@ -52,6 +53,7 @@ import Data.Word
 import GHC.Exts
 import GHC.Integer.GMP.Internals
 import GHC.Integer.Logarithms
+import Test.QuickCheck (Arbitrary(..), NonNegative(..))
 
 
 data  BitVector
@@ -62,6 +64,12 @@ data  BitVector
 
 
 type instance Element BitVector = Bool
+
+
+instance Arbitrary BitVector where
+
+    arbitrary = BV <$> (getNonNegative <$> arbitrary)
+                   <*> (getNonNegative <$> arbitrary)
 
 
 instance Bits BitVector where
@@ -325,7 +333,7 @@ bitvector
   => Word  -- ^ Bit vector dimension
   -> v     -- ^ Bit vector integral value, /little-endian/
   -> BitVector
-bitvector dimValue intValue = BV w $ 2^w - 1 .&. toInteger intValu
+bitvector dimValue intValue = BV w $ 2^w - 1 .&. toInteger intValue
   where
     !w = fromEnum dimValue
 
@@ -333,7 +341,7 @@ bitvector dimValue intValue = BV w $ 2^w - 1 .&. toInteger intValu
 -- | 
 -- Create a bit-vector from a /little-endian/ list of bits.
 --
--- >>> fromBits [True, False, Falsesy]
+-- >>> fromBits [True, False, False]
 -- [3]1
 {-# INLINE fromBits #-}
 fromBits :: Foldable f => f Bool -> BitVector

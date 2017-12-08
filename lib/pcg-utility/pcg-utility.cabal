@@ -156,6 +156,8 @@ Test-Suite test-suite
                     Data.BitMatrix.Internal
                     Data.BitMatrix.Test
                     Data.BitVector.Instances
+                    Data.BitVector.Normal
+                    Data.BitVector.Test
                     Data.List.Utility
                     Data.Matrix.NotStupid
                     Data.MutualExclusionSet.Internal
