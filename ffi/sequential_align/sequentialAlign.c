@@ -4,6 +4,7 @@
 //  Created by Yu Xiang on 11/1/22.
 //  Copyright © 2016 Yu Xiang. All rights reserved.
 
+#include <assert.h>
 #include <inttypes.h>
 #include <math.h>
 #include <stdio.h>
@@ -81,11 +82,9 @@ int aligner( uint64_t     *inChar1
 
     uint64_t *charA = calloc( lengthCharA, sizeof(uint64_t) );
     uint64_t *charB = calloc( lengthCharB, sizeof(uint64_t) );
-
-    // Now, test for allocation. Return 1 if it fails.
-    if( charA == NULL || charB == NULL ) {
-        return 1;
-    }
+    assert(   charA != NULL
+           && charB != NULL
+           && "Can't allocate characters." );
 
     // This looks good, making sure not to clobber your input
     memcpy( charA, inChar1, sizeof(uint64_t) * (lengthCharA) );
@@ -105,9 +104,9 @@ int aligner( uint64_t     *inChar1
 
     uint64_t *alignFinalA = calloc( SEQ_MAX_LEN, sizeof(uint64_t) );
     uint64_t *alignFinalB = calloc( SEQ_MAX_LEN, sizeof(uint64_t) );
-    if (alignFinalA == NULL || alignFinalB == NULL) {
-        return 1;
-    }
+    assert(   alignFinalA != NULL
+           && alignFinalB != NULL
+           && "Can't allocate final alignments." );
 
     int iFirst  = 0,
         iSecond = 0;
@@ -819,11 +818,7 @@ alignment_t *initAlignment( int    in_partialCost
                           , size_t initLength )
 {
     alignment_t *output   = malloc( sizeof(alignment_t) );
-    if( output == NULL || output == NULL ) {
-        printf("Out of memory\n");
-        fflush(stdout);
-        exit(1);
-    }
+    assert( output != NULL && "Out of memory initializing alignment." );
 
     output->gapped_partialCost     = in_partialCost;
     output->ungapped_partialCost   = in_ungapped_partialCost;
@@ -836,11 +831,10 @@ alignment_t *initAlignment( int    in_partialCost
     output->partialAlign_A = calloc( initLength, sizeof(uint64_t) );
     output->partialAlign_B = calloc( initLength, sizeof(uint64_t) );
 
-    if( output->partialAlign_A == NULL || output->partialAlign_B == NULL ) {
-        printf("Out of memory\n");
-        fflush(stdout);
-        exit(1);
-    }
+    assert(   output->partialAlign_A != NULL
+           && output->partialAlign_B != NULL
+           && "Out of memory initializing alignment." );
+
     return output;
 }
 

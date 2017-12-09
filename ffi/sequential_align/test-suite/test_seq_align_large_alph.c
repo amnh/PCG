@@ -88,10 +88,7 @@ int main() {
 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 2,
 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0};
 
-    if ( TCM_LENGTH != ALPHABET_SIZE * ALPHABET_SIZE ) {
-        printf("tcm wrong size\n");
-        exit(1);
-    }
+    assert( TCM_LENGTH == ALPHABET_SIZE * ALPHABET_SIZE && "tcm wrong size." );
 
     uint64_t s1[SEQ_A_LEN] = { 36028797018963968
                              , 18155135997837824
@@ -114,6 +111,7 @@ int main() {
     costMatrix_p costMatrix = matrixInit(ALPHABET_SIZE, tcm);
 
     dynChar_t *seqA  = malloc( sizeof(dynChar_t) );
+    assert( seqA != NULL );
     seqA->alphSize   = ALPHABET_SIZE;
     seqA->numElems   = SEQ_A_LEN;
     seqA->dynCharLen = dynCharSize(ALPHABET_SIZE, seqA->numElems);
@@ -121,6 +119,8 @@ int main() {
 
 
     dynChar_t *seqB  = malloc( sizeof(dynChar_t) );
+    assert( seqB != NULL );
+
     seqB->alphSize   = ALPHABET_SIZE;
     seqB->numElems   = SEQ_B_LEN;
     seqB->dynCharLen = dynCharSize(ALPHABET_SIZE, seqB->numElems);
@@ -137,9 +137,10 @@ int main() {
 
     if (success == 0) {
         printf("\nSuccess!\n\n");
-	dynChar_t *seqARes = malloc(sizeof(dynChar_t));
-	dynChar_t *seqBRes = malloc(sizeof(dynChar_t));
-	dynChar_t *median  = malloc(sizeof(dynChar_t));
+    dynChar_t *seqARes = malloc(sizeof(dynChar_t));
+    dynChar_t *seqBRes = malloc(sizeof(dynChar_t));
+    dynChar_t *median  = malloc(sizeof(dynChar_t));
+    assert( seqARes != NULL ** seqBRes != NULL && seqCRes != NULL );
 
         seqARes->alphSize = ALPHABET_SIZE;
         seqBRes->alphSize = ALPHABET_SIZE;
@@ -157,9 +158,9 @@ int main() {
         seqBRes->dynChar = result->finalChar2;
         median ->dynChar = result->medianChar;
 
-	printf("Resulting Character 1 Alignment:\n");
+    printf("Resulting Character 1 Alignment:\n");
         printDynChar(seqARes);
-	printf("Resulting Character 2 Alignment:\n");
+    printf("Resulting Character 2 Alignment:\n");
         printDynChar(seqBRes);
         printf("Median    Character   Alignment:\n");
         printDynChar(median );

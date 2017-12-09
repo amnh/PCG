@@ -93,10 +93,12 @@ testEncodableStaticCharacterInstanceBitVector = testGroup "BitVector instance of
                 rhs   = sxs `Set.intersection` sys
                 (alphabet, sxs, sys) = gatherAlphabetAndAmbiguitySets input
 
+
 gatherAlphabetAndAmbiguitySets :: AlphabetAndTwoAmbiguityGroups -> (Alphabet String, Set String, Set String)
 gatherAlphabetAndAmbiguitySets input = (alphabet, Set.fromList $ toList xs, Set.fromList $ toList ys)
   where
     (alphabet, xs, ys) = getAlphabetAndTwoAmbiguityGroups input
+
 
 {- LAWS:
  - decodeMany alphabet . encodeMany alphabet == fmap toList . toList
@@ -113,8 +115,8 @@ testEncodableDynamicCharacterInstanceDynamicChar = testGroup "DynamicChar instan
             f :: AlphabetAndCharacter -> Bool
             f alphabetAndDynamicChar = lhs dynamicChar == rhs dynamicChar
               where
-                enc :: (Foldable t) => t (t String) -> DynamicChar
-                enc = encodeDynamic alphabet
+                enc :: NonEmpty (AmbiguityGroup String) -> DynamicChar
+                enc = encodeStream alphabet
                 lhs = fmap (Set.fromList . toList) . toList . decodeStream alphabet . enc
                 rhs = fmap (Set.fromList . toList) . toList
                 (alphabet, dynamicChar) = getAlphabetAndCharacter alphabetAndDynamicChar
@@ -124,9 +126,11 @@ testEncodableDynamicCharacterInstanceDynamicChar = testGroup "DynamicChar instan
 
 type ParsedChar' = Vector (NonEmptyList (NonEmptyList Char))
 
+
 newtype ParsedCharacterWithAlphabet
       = ParsedCharacterWithAlphabet (ParsedChar', Alphabet String)
       deriving (Eq, Show)
+
 
 instance Arbitrary ParsedCharacterWithAlphabet where
     arbitrary = do
@@ -134,31 +138,37 @@ instance Arbitrary ParsedCharacterWithAlphabet where
         vectorVal <- fmap (fmap (NonEmpty . (:[]) . NonEmpty) . fromList) . listOf1 . elements . toList $ alphabet
         pure $ ParsedCharacterWithAlphabet (vectorVal, alphabet)
 
+
 newtype AlphabetAndSingleAmbiguityGroup
       = AlphabetAndSingleAmbiguityGroup
       { getAlphabetAndSingleAmbiguityGroup :: (Alphabet String, NonEmpty String)
       } deriving (Eq, Show)
+
 
 instance Arbitrary AlphabetAndSingleAmbiguityGroup where
   arbitrary = do
     (alphabet, x :| _) <- alphabetAndAmbiguityGroups 1
     pure $ AlphabetAndSingleAmbiguityGroup (alphabet, x)
 
+
 newtype AlphabetAndTwoAmbiguityGroups
       = AlphabetAndTwoAmbiguityGroups
       { getAlphabetAndTwoAmbiguityGroups :: (Alphabet String, NonEmpty String, NonEmpty String)
       } deriving (Eq, Show)
 
+
 instance Arbitrary AlphabetAndTwoAmbiguityGroups where
   arbitrary = do
     (alphabet, xs) <- alphabetAndAmbiguityGroups 2
-    let [x,y] = NE.take 2 xs
-    pure $ AlphabetAndTwoAmbiguityGroups (alphabet, x, y)
+    pure $ case xs of
+             x:|[]  -> AlphabetAndTwoAmbiguityGroups (alphabet, x, x)
+             x:|y:_ -> AlphabetAndTwoAmbiguityGroups (alphabet, x, y)
 
 newtype AlphabetAndCharacter
       = AlphabetAndCharacter
       { getAlphabetAndCharacter :: (Alphabet String, NonEmpty (NonEmpty String))
       } deriving (Eq, Show)
+
 
 instance Arbitrary AlphabetAndCharacter where
   arbitrary = do
@@ -167,12 +177,14 @@ instance Arbitrary AlphabetAndCharacter where
     dynamicChar        <- NE.fromList <$> listOf1 ambiguityGroup
     pure $ AlphabetAndCharacter (alphabet, dynamicChar)
 
+
 alphabetAndAmbiguityGroups :: Int -> Gen (Alphabet String, NonEmpty (NonEmpty String))
 alphabetAndAmbiguityGroups n = do
    alphabet           <- arbitrary :: Gen (Alphabet String)
    let ambiguityGroup =  fmap NE.fromList . listOf1 . elements $ toList alphabet -- list can be empty, can have duplicates!
    ambiguityGroups    <- NE.fromList <$> vectorOf n ambiguityGroup
    pure (fromSymbols alphabet, ambiguityGroups)
+
 
 fromFoldable :: Set a -> NonEmpty a
 fromFoldable = NE.fromList . toList

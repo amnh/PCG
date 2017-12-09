@@ -61,6 +61,10 @@ int wrapperFunction( elem_t *input_vals1
     alignIO_t *powellInput1 = malloc( sizeof(struct alignIO_t) );    // inputs to align2d fn.
     alignIO_t *powellInput2 = malloc( sizeof(struct alignIO_t) );    // inputs to align2d fn.
     alignIO_t *powellInput3 = malloc( sizeof(struct alignIO_t) );    // additional input to align3d fn.
+    assert(   powellInput1 != NULL
+           && powellInput2 != NULL
+           && powellInput3 != NULL
+           && "Couldn't allocate powell inputs in 3D interface test." );
 
    // set to 1 so I can realloc later
     allocAlignIO( powellInput1, 1 );
@@ -71,6 +75,10 @@ int wrapperFunction( elem_t *input_vals1
     alignIO_t *powellOutput1 = malloc( sizeof(struct alignIO_t) );    // Outputs from 3d alignment
     alignIO_t *powellOutput2 = malloc( sizeof(struct alignIO_t) );    //
     alignIO_t *powellOutput3 = malloc( sizeof(struct alignIO_t) );    //
+    assert(   powellOutput1 != NULL
+           && powellOutput2 != NULL
+           && powellOutput3 != NULL
+           && "Couldn't allocate powell outputs in 3D interface test." );
 
     allocAlignIO( powellOutput1, 1 );
     allocAlignIO( powellOutput2, 1 );
@@ -79,6 +87,9 @@ int wrapperFunction( elem_t *input_vals1
     // medians
     alignIO_t *ungappedMedianChar = malloc( sizeof(struct alignIO_t) );
     alignIO_t *gappedMedianChar   = malloc( sizeof(struct alignIO_t) );
+    assert(   ungappedMedianChar != NULL
+           && gappedMedianChar != NULL
+           && "Couldn't allocate median characters in 3D interface test." );
     // alignIO_t *unionMedianChar    = malloc( sizeof(struct alignIO_t) );
 
     allocAlignIO( ungappedMedianChar, 1 );
@@ -101,6 +112,7 @@ int wrapperFunction( elem_t *input_vals1
      *  symmetric. Metricity is decided by PCG application.
      */
     unsigned int *tcm = calloc(tcm_total_len, sizeof(int)); // this is the input tcm, not the generated one
+    assert( tcm != NULL && "Couldn't allocate simple tcm." );
     for (i = 0; i < tcm_total_len; i += alphSize) {
         //printf("i: %zu\n", i);
         for (j = 0; j < alphSize; j++) {
@@ -122,6 +134,7 @@ int wrapperFunction( elem_t *input_vals1
     elem_t gap_char = one << (alphSize - 1);
 
     cost_matrices_3d_t *costMtx3d = malloc(sizeof(struct cost_matrices_3d_t));
+    assert( costMtx3d != NULL && "Couldn't allocate simple costMtx3d." );
     setUp3dCostMtx (costMtx3d, tcm, alphSize, 0);
 
 

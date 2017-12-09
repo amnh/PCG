@@ -44,13 +44,14 @@ alignIO_t* read_dynamic_character(size_t buffer_capacity, char * str) {
     size_t valid_chars     = 0;
     size_t input_length    = strlen(str);
     elem_t *element_buffer = malloc( sizeof(*element_buffer) * buffer_capacity );
+    assert( element_buffer != NULL && "Unable to allocate buffer in read_dynamic_character.")
 
     // Infer ambiguous elements from IUPAC codes
     for (i = valid_chars = 0; i < input_length; ++i) {
         switch (str[i]) {
           case '-': element_buffer[valid_chars++] = BASE_GAP; break;
 
-	  case 'A': element_buffer[valid_chars++] = BASE_A; break;
+          case 'A': element_buffer[valid_chars++] = BASE_A; break;
           case 'C': element_buffer[valid_chars++] = BASE_C; break;
           case 'G': element_buffer[valid_chars++] = BASE_G; break;
           case 'T':
@@ -63,15 +64,15 @@ alignIO_t* read_dynamic_character(size_t buffer_capacity, char * str) {
           case 'K': element_buffer[valid_chars++] = BASE_G | BASE_T; break;
           case 'M': element_buffer[valid_chars++] = BASE_A | BASE_C; break;
 
-	  case 'B': element_buffer[valid_chars++] = BASE_C | BASE_G | BASE_T; break;
+          case 'B': element_buffer[valid_chars++] = BASE_C | BASE_G | BASE_T; break;
           case 'D': element_buffer[valid_chars++] = BASE_A | BASE_G | BASE_T; break;
           case 'H': element_buffer[valid_chars++] = BASE_A | BASE_C | BASE_T; break;
           case 'V': element_buffer[valid_chars++] = BASE_A | BASE_C | BASE_G; break;
 
           case 'N': element_buffer[valid_chars++] = BASE_A | BASE_C | BASE_G | BASE_T; break;
 
-	  // Lower case means include gap
-	  case 'a': element_buffer[valid_chars++] = BASE_A | BASE_GAP; break;
+          // Lower case means include gap
+          case 'a': element_buffer[valid_chars++] = BASE_A | BASE_GAP; break;
           case 'c': element_buffer[valid_chars++] = BASE_C | BASE_GAP; break;
           case 'g': element_buffer[valid_chars++] = BASE_G | BASE_GAP; break;
           case 't':
@@ -84,21 +85,21 @@ alignIO_t* read_dynamic_character(size_t buffer_capacity, char * str) {
           case 'k': element_buffer[valid_chars++] = BASE_G | BASE_T | BASE_GAP; break;
           case 'm': element_buffer[valid_chars++] = BASE_A | BASE_C | BASE_GAP; break;
 
-	  case 'b': element_buffer[valid_chars++] = BASE_C | BASE_G | BASE_T | BASE_GAP; break;
+          case 'b': element_buffer[valid_chars++] = BASE_C | BASE_G | BASE_T | BASE_GAP; break;
           case 'd': element_buffer[valid_chars++] = BASE_A | BASE_G | BASE_T | BASE_GAP; break;
           case 'h': element_buffer[valid_chars++] = BASE_A | BASE_C | BASE_T | BASE_GAP; break;
           case 'v': element_buffer[valid_chars++] = BASE_A | BASE_C | BASE_G | BASE_GAP; break;
 
           case 'n':
-	  case '?': element_buffer[valid_chars++] = BASE_A | BASE_C | BASE_G | BASE_T | BASE_GAP; break;
-	}
+          case '?': element_buffer[valid_chars++] = BASE_A | BASE_C | BASE_G | BASE_T | BASE_GAP; break;
+    }
         /*
         printf("str[%zu]: '%c' ", i, str[i]);
         printf("element_buffer: [ ");
-	for(size_t j = 0; j < valid_chars; ++j) {
+    for(size_t j = 0; j < valid_chars; ++j) {
             printf("%d ", element_buffer[j]);
-	}
-	printf("]\n");
+    }
+    printf("]\n");
         */
     }
 
@@ -111,6 +112,8 @@ alignIO_t* read_dynamic_character(size_t buffer_capacity, char * str) {
 
     // Initialize structure
     alignIO_t *input_character = malloc( sizeof(*input_character) );
+    assert( input_character != NULL && "Couldn't allocate space for alignIO_t." );
+
     input_character->character = element_buffer;
     input_character->length    = valid_chars;
     input_character->capacity  = buffer_capacity;
@@ -153,6 +156,8 @@ int main(int argc, char* argv[]) {
     // Allocate space for the output values.
     alignIO_t *align_value_gapped   = malloc( sizeof(*align_value_gapped  ) );
     alignIO_t *align_value_ungapped = malloc( sizeof(*align_value_ungapped) );
+    assert( align_value_ungapped != NULL && align_value_gapped != NULL && "Couldn't allocate space for outputs from character test." );
+
     allocAlignIO(align_value_gapped  , buffer_capacity);
     allocAlignIO(align_value_ungapped, buffer_capacity);
 
@@ -168,6 +173,8 @@ int main(int argc, char* argv[]) {
      */
     size_t tcm_total_len  = ALPHABET_SIZE * ALPHABET_SIZE; // the size of the input tcm
     unsigned int *tcm = calloc(tcm_total_len, sizeof(int)); // this is the input tcm, not the generated one
+    assert( tcm != NULL && "Couldn't allocate simple TCM in character test module." );
+
     for (size_t i = 0; i < tcm_total_len; i += ALPHABET_SIZE) {
         //printf("i: %zu\n", i);
         for (size_t j = 0; j < ALPHABET_SIZE; j++) {
@@ -196,10 +203,12 @@ int main(int argc, char* argv[]) {
     // Perform 2D alignment
     if( !is_3d_alignment ) {
         cost_matrices_2d_p *costMtx2d = malloc(sizeof(struct cost_matrices_2d_p));
+        assert( costMtx2d != NULL && "Couldn't allocate space for 2D cost matrix in character test." );
+
         setUp2dCostMtx (costMtx2d, tcm, ALPHABET_SIZE, gap_open_cost);
 
         // Non-affine alignment
-	if( gap_open_cost == 0 )
+    if( gap_open_cost == 0 )
             algnCost = align2d( align_value_1
                               , align_value_2
                               , align_value_gapped
@@ -208,9 +217,9 @@ int main(int argc, char* argv[]) {
                               , 0                    // do ungapped
                               , 0                    // do gapped
                               , 0                    // do union
-		              );
+                      );
         // Affine alignment
-	else
+    else
             algnCost = align2dAffine( align_value_1
                                     , align_value_2
                                     , align_value_gapped
@@ -223,6 +232,8 @@ int main(int argc, char* argv[]) {
     // Perform 3D, maybe affine alignment
     else {
         cost_matrices_3d_t *costMtx3d = malloc(sizeof(struct cost_matrices_3d_t));
+        assert( costMtx2d != NULL && "Couldn't allocate space for 3D cost matrix in character test." );
+
         setUp3dCostMtx (costMtx3d, tcm, ALPHABET_SIZE, 0);
         algnCost = align3d( align_value_1
                           , align_value_2

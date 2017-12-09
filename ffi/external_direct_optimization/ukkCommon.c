@@ -433,11 +433,7 @@ void *allocEntry( AllocInfo_t *a )
     a->memAllocated += entries * a->elemSize;
 
     p = calloc(entries, a->elemSize);
-
-    if (p == NULL) {
-        fprintf(stderr, "allocEntry: Unable to alloc memory.\n");
-        exit(-1);
-    }
+    assert( p != NULL && "allocEntry: Unable to alloc memory." );
 
     return p;
 }

@@ -24,7 +24,7 @@ import           Bio.Character.Encodable
 import           Bio.Metadata
 import           Bio.PhyloGraph.Forest
 import           Bio.PhyloGraph.Network
-import           Bio.PhyloGraph.Node     hiding  (Node,children,name)
+import           Bio.PhyloGraph.Node     hiding  (Node, children)
 import           Bio.PhyloGraph.Solution
 import           Control.Arrow                   ((&&&))
 import           Data.Foldable
@@ -42,8 +42,9 @@ import           Data.Ord                        (comparing)
 import           Data.Vector                     (Vector)
 import qualified Data.Vector             as V
 import           Data.Vector.Instances           ()
-import           Prelude                 hiding  (lookup,zip,zipWith)
+import           Prelude                 hiding  (zip)
 import           Safe                            (tailMay)
+
 
 -- |
 -- Memoized data points on the edges of the post order traversal.
@@ -52,6 +53,7 @@ data IndelEvents e
    { edgeInsertionEvents :: InsertionEvents e
    , edgeDeletionEvents  :: DeletionEvents
    } deriving (Show)
+
 
 -- |
 -- The referencial precomputation tree structure used for the tree traversals.
@@ -63,20 +65,26 @@ data TreeReferences n
    , childRefs  :: Vector IntSet
    }
 
--- | Top level wrapper to do an IA over an entire solution
+
+-- |
+-- Top level wrapper to do an IA over an entire solution
 -- takes a solution
 -- returns an AlignmentSolution
 iaSolution :: (SolutionConstraint r m f t n e s, IANode' n s) => r -> r
 iaSolution inSolution = inSolution `setForests` fmap (`iaForest` getMetadata inSolution) (getForests inSolution)
 
--- | Simple wrapper to do an IA over a forest
+
+-- |
+-- Simple wrapper to do an IA over a forest
 -- takes in a forest and some metadata
 -- returns an alignment forest
 iaForest :: (FoldableWithKey k, ForestConstraint f t n e s, IANode' n s, Metadata m s, Key k ~ Int) => f -> k m -> f
 iaForest inForest inMeta = inForest `setTrees` fmap (deriveImpliedAlignments inMeta) (trees inForest)
 
+
 -- TODO: make sure a sequence always ends up in FinalGapped to avoid this decision tree
--- | Simple function to get a sequence for alignment purposes
+-- |
+-- Simple function to get a sequence for alignment purposes
 getForAlign :: NodeConstraint n s => n -> Vector s
 getForAlign n 
 --    | not . null $ getFinalGapped         n = getFinalGapped n
@@ -85,8 +93,9 @@ getForAlign n
     | not . null $ getEncoded     n         = getEncoded n 
     | otherwise = mempty {-error "No sequence at node for IA to numerate"-}
 
--- | Decorates a tree with implied alignments of the leaf nodes given a tree
---   decorated with direct optimization annotations, along with suporting metadata.
+-- |
+-- Decorates a tree with implied alignments of the leaf nodes given a tree
+-- decorated with direct optimization annotations, along with suporting metadata.
 deriveImpliedAlignments :: (FoldableWithKey f, TreeConstraint t n e s, IANode' n s, Metadata m s, Key f ~ Int)
                         => f m -> t -> t 
 deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMetadatas
@@ -95,7 +104,9 @@ deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMe
       | getType m /= DirectOptimization = t
       | otherwise                       = numeration k (getCosts m) t
 
--- | The core derivation of an implied alignment for a given character on a tree.
+
+-- |
+-- The core derivation of an implied alignment for a given character on a tree.
 --
 --   Requires:
 --
@@ -124,9 +135,10 @@ numeration sequenceIndex costStructure tree = tree `update` (snd <$> updatedLeaf
             childCharacter  = getForAlign    (enumeratedNodes V.! j) V.! sequenceIndex
             (deletes, !inserts, _, _) = comparativeIndelEvents e parentCharacter childCharacter costStructure
 
-    -- | The root 'AlignmentContext'.
-    --   Defines how 'InserionEvents' are accumulated in a post-order traversal
-    --   to encapsulate the require global state information of the implied alignment.
+    -- |
+    -- The root 'AlignmentContext'.
+    -- Defines how 'InserionEvents' are accumulated in a post-order traversal
+    -- to encapsulate the require global state information of the implied alignment.
     rootContext = deriveContextFromCharacter rootCharacter totalInsertionEvents
       where
         rootCharacter            = getForAlign rootNode V.! sequenceIndex
@@ -135,10 +147,11 @@ numeration sequenceIndex costStructure tree = tree `update` (snd <$> updatedLeaf
           where
             (IndelEvents ins del) = edgeIndels ! (i, j)
 
-    -- | The 'AlignmentContext' for each node in the tree.
-    --   Constructed using a recursive, memoized generating function
-    --   with the root node as the base case.
-    --   The generating function will implicitly perform a parralelizable pre-order traversal
+    -- |
+    -- The 'AlignmentContext' for each node in the tree.
+    -- Constructed using a recursive, memoized generating function
+    -- with the root node as the base case.
+    -- The generating function will implicitly perform a parralelizable pre-order traversal
     nodeContexts = V.generate (length enumeratedNodes) f
       where
         f nodeIndex
@@ -151,19 +164,22 @@ numeration sequenceIndex costStructure tree = tree `update` (snd <$> updatedLeaf
             deletes       = edgeDeletionEvents $ edgeIndels ! edgeKey
             nodeContext   = applyLocalEventsToAlignment edgeKey deletes parentContext
 
-    -- | We mutate the original nodes from the input tree to contain
-    --    the implied alignment for each node.
+    -- |
+    -- We mutate the original nodes from the input tree to contain
+    -- the implied alignment for each node.
     updatedNodes = foldMapWithKey f enumeratedNodes
       where
         f i n = [(i, deriveImpliedAlignment sequenceIndex (pseudoCharacter $ nodeContexts V.! i) n)]
 
-    -- | We filter the 'updatedNodes' to only include the leaf nodes.
-    --   We do this beacuse implied alignments on internal nodes doesn't make sense... or does it?
+    -- |
+    -- We filter the 'updatedNodes' to only include the leaf nodes.
+    -- We do this beacuse implied alignments on internal nodes doesn't make sense... or does it?
     updatedLeafNodes = filter ((`nodeIsLeaf` tree) . snd) updatedNodes
 
 
--- | Performs a preorder traversal to generate referential indexing structures
---   for refrencing actions to perform a tree.
+-- |
+-- Performs a preorder traversal to generate referential indexing structures
+-- for refrencing actions to perform a tree.
 precomputeTreeReferences :: TreeConstraint t n e s  => t -> TreeReferences n
 precomputeTreeReferences tree =
      TreeRefs
@@ -239,7 +255,8 @@ comparativeIndelEvents edgeIdentifier ancestorCharacterUnaligned descendantChara
           where
             g = const succ
 
--- | Transforms a node's decorations to include the implied alignment given a 'PsuedoCharacter' and sequence index.
+-- |
+--Transforms a node's decorations to include the implied alignment given a 'PsuedoCharacter' and sequence index.
 deriveImpliedAlignment :: (EncodableDynamicCharacter s2, Foldable t, IANode' n s2, NodeConstraint n s1, Element s1 ~ Element s2)
                        => Int -> t PseudoIndex -> n -> n
 deriveImpliedAlignment sequenceIndex psuedoCharacterVal node = node `setHomologies'` leafHomologies

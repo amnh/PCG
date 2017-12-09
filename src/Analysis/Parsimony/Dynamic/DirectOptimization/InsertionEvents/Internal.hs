@@ -29,7 +29,7 @@ import           Data.MonoTraversable
 import           Data.Semigroup         (Semigroup(..))
 import           Data.Sequence          (Seq)
 import qualified Data.Sequence   as Seq
-import           Prelude         hiding (lookup,splitAt,zip,zipWith)
+import           Prelude         hiding (lookup, zipWith)
 import           Test.QuickCheck hiding (output)
 
 

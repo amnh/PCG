@@ -50,8 +50,6 @@ import Bio.Graph.Solution
 import Bio.Sequence
 import Control.Evaluation
 import Data.EdgeLength
-import Prelude            hiding (zipWith)
-
 
 
 type CharacterDAG =

@@ -26,7 +26,7 @@ import           Control.Lens
 import           Data.Bits
 import           Data.Foldable
 import           Data.GraphViz.Printing    hiding ((<>)) -- Seriously, why is this redefined?
-import           Data.GraphViz.Types       hiding (attrs)
+import           Data.GraphViz.Types
 import           Data.HashMap.Lazy                (HashMap)
 import           Data.IntSet                      (IntSet)
 import qualified Data.IntSet               as IS
@@ -39,7 +39,6 @@ import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Data.Vector                      (Vector)
 import           GHC.Generics
-import           Prelude                   hiding (zipWith)
 import           Text.Newick.Class
 import           Text.XML
 

@@ -446,7 +446,7 @@ algn_fill_row (       unsigned int    *currRow
             }
         }
         if (DEBUG_DIR_M) {
-	    // Print the alignment matrix
+        // Print the alignment matrix
             if (INSERT & dirVect[i])
                 printf ("I");
             if (DELETE & dirVect[i])
@@ -565,11 +565,11 @@ algn_fill_last_column (       unsigned int    *curRow
     if (lastColumnIndex > 0) {
         cost = prevRow[lastColumnIndex] + const_val_tail; // Gotta add some tender loving care to the cost!
         if (cost < curRow[lastColumnIndex]) {
-	    curRow[lastColumnIndex] = cost;
+        curRow[lastColumnIndex] = cost;
             dirMtx[lastColumnIndex] = DELETE;
         }
         else if (cost == curRow[lastColumnIndex])
-	    dirMtx[lastColumnIndex] = dirMtx[lastColumnIndex] | DELETE;
+        dirMtx[lastColumnIndex] = dirMtx[lastColumnIndex] | DELETE;
     }
 }
 
@@ -1044,6 +1044,7 @@ algn_fill_plane ( const dyn_character_t    *longerCharacter
     if (LOCAL_DEBUG_COST_M) {
         //Allocate space to store cost matrix proper as it is continually overwritten in the algorithm below.
         debugCostMatrixBuffer = malloc(longerCharacterLength * lesserCharacterLength * sizeof(int));
+        assert( debugCostMatrixBuffer != NULL && "OOM allocing debug cost matrix buffer." );
     }
     if (DEBUG_DIR_M) {
         printf ("A\t");
@@ -1079,14 +1080,14 @@ algn_fill_plane ( const dyn_character_t    *longerCharacter
         curChar1_elem  = longerCharacter->char_begin[i];
         const_val_tail = costMatrix->tail_cost[curChar1_elem]; // get tail cost in costMatrix for value at
                                                                // position i in char1
-	    // printf("const_val_tail: %d\n",const_val_tail);
+        // printf("const_val_tail: %d\n",const_val_tail);
         const_val = cm_calc_cost_2d ( costMatrix->cost
                                     , longerCharacter->char_begin[i]
                                     , costMatrix->gap_char
                                     , costMatrix->costMatrixDimension);
 
         align_row = algnMtx_get_precal_row ( algn_precalcMtx
-   				                           , longerCharacter->char_begin[i]
+                                              , longerCharacter->char_begin[i]
                                            , lesserCharacterLength
                                            );
 
@@ -1128,10 +1129,10 @@ algn_fill_plane ( const dyn_character_t    *longerCharacter
         }
         printf("\n");
 
-	// Print cost matrix rows
+    // Print cost matrix rows
         for (i = 0; i < lesserCharacterLength; i++) {
 
-	    // Print cost matrix row header
+        // Print cost matrix row header
             if (i == 0) printf ("  * | ");
             else        printf ("  ? | "); // Character not in scope!
 

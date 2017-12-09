@@ -23,15 +23,17 @@ import           Data.Foldable
 import qualified Data.HashMap.Strict as HM
 import           Data.Key
 import           Data.List
-import           Data.Matrix.NotStupid hiding (trace, toList)
+import           Data.Matrix.NotStupid hiding (toList)
 import           Data.Maybe
 import           Data.Vector (cons, ifoldr)
 import qualified Data.Vector as V
 
---import Debug.Trace
 
 type Presence = Matrix Bool
+
+
 type TaxaPresence = (Presence, [String], [String])
+
 
 taxonReferenceOutput :: StandardSolution -> [FilePath] -> String
 taxonReferenceOutput sol files = printIt $ makeRef sol files
@@ -55,6 +57,7 @@ taxonReferenceOutput sol files = printIt $ makeRef sol files
                 allSeqs = parsedChars inSolution
                 allNodes = V.fromList $ HM.keys allSeqs
 --                oneRow curNode = ifoldr (\i s acc -> if i `elem` checkPos then isJust s `cons` acc else acc) mempty (allSeqs ! curNode)
+
 
 printIt :: TaxaPresence -> String
 printIt (mat, taxa, files) = header ++ ifoldr (\i taxaName acc -> acc ++ "\n" ++ taxaName ++ printRow (getRow i mat)) mempty (V.fromList taxa)

@@ -102,25 +102,6 @@ int powell_3D_align ( // dyn_character_t *longChar
     startDelete    = go;    // note that these are same as insert
     continueDelete = ge;    // note that these are same as insert
 
-    // printf("Enter 3 strings:\n");
-    // fgets(Astr, MAX_STR, stdin);
-    // fgets(Bstr, MAX_STR, stdin);
-    // fgets(Cstr, MAX_STR, stdin);
-
-    /* Remove the \n's */
-    // if (Astr[strlen(Astr) - 1] != '\n') {
-    //     fprintf(stderr, "String1 too long (max = %d)\n", MAX_STR - 2);
-    //     exit( - 1);                      // MAX_STR - 2 cause need room for \n & \0
-    // }
-    // if (Bstr[strlen(Bstr) - 1] != '\n') {
-    //     fprintf(stderr, "String2 too long (max = %d)\n", MAX_STR - 2);
-    //     exit( - 1);
-    // }
-    // if (Cstr[strlen(Cstr) - 1] != '\n') {
-    //     fprintf(stderr, "String3 too long (max = %d)\n", MAX_STR - 2);
-    //     exit( - 1);
-    // }
-
     for (int i = 0; i < inputs->Alen; i++) {
         printf("%c %c %c\n", inputs->Astr[i], inputs->Bstr[i], inputs->Cstr[i]);
     }
@@ -437,4 +418,3 @@ int alignmentCost(int states[], char *al1, char *al2, char *al3, int len)
 /*-- -------------------------------------------------------------------- */
 
 // End of ukkCommon.c
-

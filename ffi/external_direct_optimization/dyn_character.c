@@ -63,6 +63,7 @@ dyn_char_compare (dyn_character_t *char1, dyn_character_t *char2) {
 void dyn_char_initialize(dyn_character_t *retChar, size_t allocSize) {
     retChar->cap        = allocSize;                              // capacity
     retChar->array_head = calloc(allocSize, sizeof(elem_t));      // beginning of array that holds dynamic character
+    assert( retChar->array_head != NULL && "Couldn't initialize dynamic character." );
 
     retChar->end        = retChar->array_head + allocSize - 1;    // end of array
     retChar->char_begin = 0;                                      /* position of first element in dynamic character, 0 so prepend works. */
@@ -78,11 +79,9 @@ void dyn_char_resetValues(dyn_character_t *retChar) {
 
 
 void dyn_char_prepend (dyn_character_t *a, elem_t v) {
-    if (a->cap <= a->len) {
-        printf("Failing values: capacity: %zu, length: %zu\n", a->cap, a->len);
-        assert(a->cap > a->len);
-        exit(1);                     // in case asserts get removed at compile time.
-    } else if (a->char_begin == 0) {
+    assert( a->cap > a->len && "Failing values: capacity <= length when attempting to prepend to character." );
+
+    if (a->char_begin == 0) {
         a->char_begin = a->end;
     } else {
         a->char_begin--;

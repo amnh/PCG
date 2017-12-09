@@ -56,24 +56,30 @@ int main() {
 
 
     dyn_char_p shortChar     = malloc(sizeof(dyn_character_t));
+    assert( Char != NULL && "Couldn't allocate space for input and output characters for initialization tests." );
     initializeChar(shortChar, CHAR_CAPACITY);
     setChar(shortest_vals, shortCharLen, shortChar);
 
     dyn_char_p middleChar    = malloc(sizeof(dyn_character_t));
+    assert( Char != NULL && "Couldn't allocate space for input and output characters for initialization tests." );
     initializeChar(middleChar, CHAR_CAPACITY);
     setChar(middle_vals, middleCharLen, middleChar);
 
     dyn_char_p longChar      = malloc(sizeof(dyn_character_t));
+    assert( Char != NULL && "Couldn't allocate space for input and output characters for initialization tests." );
     initializeChar(longChar, CHAR_CAPACITY);
     setChar(longest_vals, longCharLen, longChar);
 
     dyn_char_p retShortChar  = malloc( sizeof(dyn_character_t) );
+    assert( Char != NULL && "Couldn't allocate space for input and output characters for initialization tests." );
     initializeChar(retShortChar,  CHAR_CAPACITY);
 
     dyn_char_p retMiddleChar = malloc( sizeof(dyn_character_t) );
+    assert( Char != NULL && "Couldn't allocate space for input and output characters for initialization tests." );
     initializeChar(retMiddleChar, CHAR_CAPACITY);
 
     dyn_char_p retLongChar   = malloc( sizeof(dyn_character_t) );
+    assert( Char != NULL && "Couldn't allocate space for input and output characters for initialization tests." );
     initializeChar(retLongChar,   CHAR_CAPACITY);
 
 
@@ -124,6 +130,11 @@ int main() {
     cost_matrices_2d_p costMtx2d_affine = malloc(sizeof(struct cost_matrices_2d));
     cost_matrices_3d_p costMtx3d        = malloc(sizeof(struct cost_matrices_3d));
     cost_matrices_3d_p costMtx3d_affine = malloc(sizeof(struct cost_matrices_3d));
+    assert(   costMtx2d        != NULL
+           && costMtx2d_affine != NULL
+           && costMtx3d        != NULL
+           && costMtx3d_affine != NULL
+           && "Couldn't allocate cost matrices." );
 
     // tcm is tcm; alphSize includes gap; third param is gap opening cost
     setUp2dCostMtx (tcm, alphSize, 0,             costMtx2d);
@@ -138,6 +149,11 @@ int main() {
     nw_matrices_p algn_mtxs2dAffine = malloc( sizeof(alignmentMatrices_t) );
     nw_matrices_p algn_mtxs3d       = malloc( sizeof(alignmentMatrices_t) );
     nw_matrices_p algn_mtxs3dAffine = malloc( sizeof(alignmentMatrices_t) );
+    assert(   algn_mtxs2d       != NULL
+           && algn_mtxs2dAffine != NULL
+           && algn_mtxs3d       != NULL
+           && algn_mtxs3dAffine != NULL
+           && "Couldn't allocate alignment matrices." );
 
     if (DO_2D) {
         initializeNWMtx(algn_mtxs2d,       longChar->len, shortChar->len,  0,             costMtx2d->costMatrixDimension);
@@ -211,7 +227,9 @@ int main() {
 
         printf("\nAligned characters:\n");
         //int *algnCharVals = calloc(retLongChar->len, sizeof(int));
-        dyn_char_p algnChar = malloc( sizeof(dyn_character_t) );;
+        dyn_char_p algnChar = malloc( sizeof(dyn_character_t) );
+        assert( algnChar != NULL && "Couldn't allocate aligned character for print out of 2D." );
+
         initializeChar(algnChar, CHAR_CAPACITY);
         //free (algnCharVals);
         resetCharValues(algnChar);
@@ -286,17 +304,25 @@ int main() {
 
         // TODO: ungappedMedChar might not be necessary, as it's unused in ml code:
         size_t medianCharLen       = lenLongChar + lenShortChar + 2;  // 2 because that's how it is in ML code
-        dyn_char_p gappedMedChar        = malloc( sizeof(dyn_character_t) );
+        dyn_char_p gappedMedChar   = malloc( sizeof(dyn_character_t) );
+        assert( gappedMedChar != NULL && "Couldn't allocate gapped median character struct in 2D affine test." );
+
         gappedMedChar->cap         = medianCharLen;
         gappedMedChar->array_head  = calloc( medianCharLen, sizeof(elem_t));
-        gappedMedChar->len         = 0;
-        gappedMedChar->char_begin   = gappedMedChar->end = gappedMedChar->array_head + medianCharLen;
+        assert( gappedMedChar->array_head != NULL && "Couldn't allocate gapped median character array in 2D affine test." );
 
-        dyn_char_p ungappedMedChar       = malloc( sizeof(dyn_character_t) );
+        gappedMedChar->len         = 0;
+        gappedMedChar->char_begin  = gappedMedChar->end = gappedMedChar->array_head + medianCharLen;
+
+        dyn_char_p ungappedMedChar  = malloc( sizeof(dyn_character_t) );
+        assert( ungappedMedChar != NULL && "Couldn't allocate ungapped median character struct in 2D affine test." );
+
         ungappedMedChar->cap        = medianCharLen;
         ungappedMedChar->array_head = calloc( medianCharLen, sizeof(elem_t));
+        assert( ungappedMedChar->array_head != NULL && "Couldn't allocate ungapped median character array in 2D affine test." );
+
         ungappedMedChar->len        = 0;
-        ungappedMedChar->char_begin  = ungappedMedChar->end = ungappedMedChar->array_head + medianCharLen;
+        ungappedMedChar->char_begin = ungappedMedChar->end = ungappedMedChar->array_head + medianCharLen;
 
         direction_matrix            = algn_mtxs2dAffine->nw_dirMtx;
 

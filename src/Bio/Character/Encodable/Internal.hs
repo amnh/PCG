@@ -15,7 +15,7 @@ module Bio.Character.Encodable.Internal where
 import Bio.Character.Exportable
 import Control.Lens
 import Data.Bifunctor          (bimap)
-import Data.BitMatrix.Internal (BitMatrix, fromRows)
+import Data.BitMatrix          (BitMatrix, fromRows)
 import Data.Bits
 import Data.BitVector
 import Data.Foldable

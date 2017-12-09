@@ -13,12 +13,7 @@
 --
 -----------------------------------------------------------------------------
 
--- TODO: Remove all commented-out code.
-
--- TODO: are all of these necessary?
 {-# LANGUAGE DeriveGeneric, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies, TypeSynonymInstances, UndecidableInstances #-}
--- TODO: fix and remove this ghc option (is it needed for Arbitrary?):
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Bio.Character.Encodable.Dynamic.Internal
   ( DynamicChar (DC,Missing)
@@ -35,11 +30,10 @@ import           Control.DeepSeq
 import           Control.Lens                 hiding (mapping)
 import           Data.Alphabet
 import           Data.BitMatrix
-import           Data.BitMatrix.Internal             (BitMatrix(..))
 import           Data.Char                           (toLower)
 import           Data.Key
 import           Data.Bits
-import           Data.BitVector               hiding (foldr, join, not, replicate)
+import           Data.BitVector
 import           Data.Foldable
 import           Data.Hashable
 import           Data.List.NonEmpty                  (NonEmpty(..))
@@ -52,16 +46,11 @@ import           Data.String                         (fromString)
 import           Data.Tuple                          (swap)
 import           Data.Vector                         (Vector)
 import           GHC.Generics
-import           Prelude                      hiding (lookup)
 import           Test.QuickCheck              hiding ((.&.))
 import           Test.QuickCheck.Arbitrary.Instances ()
 import           Text.XML
 
--- import Debug.Trace
-
 -- TODO: Change DynamicChar/Sequences to DynamicCharacters
-        -- Make a missing a null vector
-        -- Think about a nonempty type class or a refinement type for this
 
 -- |
 -- Represents an encoded dynamic character, consisting of one or more static
@@ -85,11 +74,13 @@ newtype DynamicCharacterElement
 type instance Element DynamicChar = DynamicCharacterElement
 
 
--- | A sequence of many dynamic characters. Probably should be asserted as non-empty.
+-- |
+-- A sequence of many dynamic characters. Probably should be asserted as non-empty.
 type DynamicChars = Vector DynamicChar
 
 
--- | Functionality to unencode many encoded sequences
+-- |
+-- Functionality to unencode many encoded sequences
 -- decodeMany :: DynamicChars -> Alphabet -> ParsedChars
 -- decodeMany seqs alph = fmap (Just . decodeOverAlphabet alph) seqs
 
@@ -97,6 +88,7 @@ type DynamicChars = Vector DynamicChar
 -- We restrict the DynamicChar values generated to be non-empty.
 -- Most algorithms assume a nonempty dynamic character.
 instance Arbitrary DynamicChar where
+
     arbitrary = do
         alphabetLen  <- arbitrary `suchThat` (\x -> 2 <= x && x <= 62) :: Gen Int
         characterLen <- arbitrary `suchThat` (> 0) :: Gen Int
@@ -106,6 +98,7 @@ instance Arbitrary DynamicChar where
 
 
 instance Arbitrary DynamicCharacterElement where
+
     arbitrary = do
         alphabetLen <- arbitrary `suchThat` (\x -> 2 <= x && x <= 62) :: Gen Int
         DCE . bitVec alphabetLen <$> (choose (1, 2 ^ alphabetLen - 1) :: Gen Integer)
@@ -236,12 +229,12 @@ instance EncodableStreamElement DynamicCharacterElement where
 instance Exportable DynamicChar where
 
     toExportableBuffer Missing {} = error "Attempted to 'Export' a missing dynamic character to foreign functions."
-    toExportableBuffer (DC bm@(BitMatrix _ bv)) = ExportableCharacterSequence x y $ bitVectorToBufferChunks x y bv
+    toExportableBuffer (DC bm) = ExportableCharacterSequence x y . bitVectorToBufferChunks x y $ expandRows bm
       where
         x = numRows bm
         y = numCols bm
 
-    fromExportableBuffer ecs = DC $ BitMatrix elemWidth newBitVec
+    fromExportableBuffer ecs = DC $ factorRows elemWidth newBitVec
       where
         newBitVec = bufferChunksToBitVector elemCount elemWidth $ exportedBufferChunks ecs
         elemCount = ecs ^. exportedElementCount
@@ -272,9 +265,6 @@ instance Exportable DynamicCharacterElement where
     fromExportableElements = DCE . exportableCharacterElementsHeadToBitVector
 
 
---instance NFData DynamicChar
-
-
 instance FiniteBits DynamicCharacterElement where
 
     {-# INLINE finiteBitSize #-}
@@ -284,7 +274,7 @@ instance FiniteBits DynamicCharacterElement where
 instance Hashable DynamicChar where
 
     hashWithSalt salt (Missing n) = salt `xor` n
-    hashWithSalt salt (DC (BitMatrix n bv)) = salt `xor` n `xor` hashWithSalt salt (toInteger bv)
+    hashWithSalt salt (DC bm) = salt `xor` numRows bm `xor` hashWithSalt salt (toInteger (expandRows bm))
 
 
 instance MonoFoldable DynamicChar where
@@ -310,7 +300,6 @@ instance MonoFoldable DynamicChar where
     ofoldl1Ex' f (DC c)    = DCE . ofoldl1Ex' (\x y -> unwrap $ f (DCE x) (DCE y)) $ c
 
     {-# INLINE onull #-}
---    onull = const False
     onull Missing{} = True
     onull _         = False
 
@@ -352,11 +341,6 @@ instance PossiblyMissingCharacter DynamicChar where
     isMissing Missing{} = True
     isMissing _         = False
 
-
-{-
-instance Memoizable DynamicChar where
-    memoize f (DC bm) = memoize (f . DC) bm
--}
 
 instance ToXML DynamicChar where
 

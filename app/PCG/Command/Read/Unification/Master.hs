@@ -58,9 +58,7 @@ import qualified Data.TCM                   as TCM
 --import           Data.MonoTraversable
 import           Data.Vector                       (Vector)
 import           PCG.Command.Read.Unification.UnificationError
-import           Prelude                    hiding (lookup, zip, zipWith)
-
--- import Debug.Trace
+import           Prelude                    hiding (lookup, zipWith)
 
 
 data FracturedParseResult

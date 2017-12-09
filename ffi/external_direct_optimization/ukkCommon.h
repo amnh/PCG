@@ -211,11 +211,7 @@ static inline AllocInfo_t allocInit( int elemSize, int costSize, characters_t *i
 
     a.memAllocated += a.baseAlloc * sizeof(void *);
     a.basePtr       = calloc( a.baseAlloc, sizeof(void *) );
-
-    if (a.basePtr == NULL) {
-        fprintf(stderr, "AllocInit: Unable to alloc memory.\n");
-        exit(-1);
-    }
+    assert( a.basePtr != NULL && "AllocInit: Unable to alloc memory." );
 
     return a;
 }
@@ -251,10 +247,7 @@ static inline void *allocPlane(AllocInfo_t *a)
 
     a->memAllocated += a->abBlocks * a->acBlocks * sizeof(void*);
     p = calloc(a->abBlocks * a->acBlocks, sizeof(void*));
-    if (p == NULL) {
-        fprintf(stderr, "allocPlane: Unable to alloc memory.\n");
-        exit(-1);
-    }
+    assert( p != NULL && "allocPlane: Unable to alloc memory." );
 
     return p;
 }
@@ -269,7 +262,10 @@ static inline void *allocPlane(AllocInfo_t *a)
 /** recalloc - does a realloc() but sets any new memory to 0. */
 static inline void *recalloc(void *p, size_t oldSize, size_t newSize)
 {
-    p = realloc(p, newSize);
+    void *ptr = realloc(p, newSize);
+    assert( ptr != NULL && "Failure in recalloc." );
+
+    p = ptr;
     if (!p || oldSize > newSize) return p;
 
     memset( ((char*) p) + oldSize, 0, newSize - oldSize );
@@ -294,10 +290,7 @@ static inline void *getPtr(AllocInfo_t *a, int ab, int ac, int d, int s)
         int oldSize = a->baseAlloc;
         a->baseAlloc *= 2;
         a->basePtr = recalloc(a->basePtr, oldSize*sizeof(void *), a->baseAlloc*sizeof(void*));
-        if (a->basePtr == NULL) {
-            fprintf(stderr, "getPtr: Unable to alloc memory.\n");
-            exit(-1);
-        }
+        assert( a->basePtr != NULL && "getPtr: Unable to alloc memory." );
         a->memAllocated += oldSize * sizeof(void*);
     }
     assert(d >= 0 && d < a->baseAlloc);

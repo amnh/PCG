@@ -35,7 +35,7 @@ import           Data.Foldable
 import           Data.GraphViz.Printing    hiding ((<>), indent) -- Seriously, why is this redefined?
 import           Data.GraphViz.Printing           (renderDot, toDot)
 import           Data.GraphViz.Types       hiding (attrs)
-import           Data.GraphViz.Types.Graph hiding (node)
+import           Data.GraphViz.Types.Graph
 import           Data.Key
 import           Data.List
 import           Data.List.NonEmpty               (NonEmpty)
@@ -44,7 +44,6 @@ import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Data.TCM                         (generate)
 import qualified Data.Text.Lazy            as L
-import           Prelude                   hiding (lookup)
 import           GHC.Generics
 import           Text.Newick.Class
 import           Text.XML
