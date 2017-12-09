@@ -22,7 +22,7 @@ import           Bio.Metadata          hiding (alphabet)
 import           Data.Alphabet
 --import           Data.BitMatrix
 import           Data.Bits
-import           Data.BitVector        hiding (and, foldr)
+import           Data.BitVector        hiding (and)
 import qualified Data.List.NonEmpty    as NE
 import           Data.Matrix.NotStupid        (getRow, fromLists)
 import           Data.MonoTraversable
@@ -36,20 +36,26 @@ import           Debug.Trace
 standardAlph :: Alphabet String
 standardAlph =  fromSymbols $ V.fromList ["A", "C", "G", "T", "-"]
 
+
 sampleMeta :: CharacterMetadata DynamicChar             
 sampleMeta =  CharMeta DirectOptimization standardAlph "" False False 1 mempty (constructDynamic [], constructDynamic []) 0 uniformCostStructure
+
 
 defaultCostStructure :: CostStructure
 defaultCostStructure = GeneralCost 2 1
 
+
 uniformCostStructure :: CostStructure
 uniformCostStructure = GeneralCost 1 1
+
 
 alphabet :: Alphabet String
 alphabet = fromSymbols $ pure <$> "ACGT-"
 
+
 makeElem :: [String] -> DynamicCharacterElement
 makeElem = encodeElement alphabet . NE.fromList
+
 
 -- This is needed to align AC(GT)(AT) with ACT. Taked from Wheeler '96, fig. 2, HTU just below root.
 matrixForTesting :: DOAlignMatrix BV
@@ -61,6 +67,7 @@ matrixForTesting =  trace (show finalMatrix) finalMatrix
                    ]
         finalMatrix = initMatrix
 
+
 testSuite :: TestTree
 testSuite =  testGroup "DO functionality"
     [ directOptimizationProperties
@@ -69,6 +76,7 @@ testSuite =  testGroup "DO functionality"
     , getCostTest
     , overlapTest
     ]
+
 
 directOptimizationProperties :: TestTree
 directOptimizationProperties = testGroup "General properties of direct optimization"
@@ -108,7 +116,6 @@ directOptimizationProperties = testGroup "General properties of direct optimizat
                  |  outputLength <- [olength leftAlignment, olength rightAlignment, olength derivedAlignment]
                  ,  inputLength  <- [olength char1, olength char2]
                  ]
-
 
 
 alignDOProperties :: TestTree

@@ -3,7 +3,7 @@
 
 module File.Format.Fasta.Translator where
 
-import           Data.Map                   hiding (foldr,fromList,partition, (!))
+import           Data.Map
 import           Data.Key                          ((!), lookup)
 import qualified Data.Map                   as M   (fromList)
 import qualified Data.Vector                as V   (fromList)

@@ -22,7 +22,6 @@ import qualified Analysis.ImpliedAlignment.InsertionEvents.Test as IE (testSuite
 import           Bio.Character.Encodable
 import           Bio.Character.Parsed
 import           Bio.Metadata
-import           Bio.PhyloGraph     hiding (name)
 import           Data.Alphabet
 import           Data.Foldable
 import           Data.Function             (on)

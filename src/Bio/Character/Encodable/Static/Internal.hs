@@ -13,12 +13,7 @@
 --
 -----------------------------------------------------------------------------
 
--- TODO: Remove all commented-out code.
-
--- TODO: are all of these necessary?
 {-# LANGUAGE DeriveGeneric, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies #-}
--- TODO: fix and remove this ghc option (is it needed for Arbitrary?):
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Bio.Character.Encodable.Static.Internal
   ( StaticCharacter()
@@ -34,7 +29,7 @@ import           Control.DeepSeq
 import           Data.Alphabet
 import           Data.Bits
 import           Data.BitMatrix
-import           Data.BitVector               hiding (foldr, join, not, replicate)
+import           Data.BitVector               hiding (replicate)
 import           Data.BitVector.Instances            ()
 import           Data.Char                           (toLower)
 import           Data.Foldable
@@ -49,16 +44,10 @@ import           Data.Semigroup
 import           Data.String                         (fromString)
 import           Data.Tuple                          (swap)
 import           GHC.Generics
-import           Prelude                      hiding (lookup)
-import           Test.QuickCheck              hiding ((.&.))
+import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances ()
 import           Text.XML
 
---import Debug.Trace
-
--- TODO: Change DynamicChar/Sequences to DynamicCharacters
-        -- Make a missing a null vector
-        -- Think about a nonempty type class or a refinement type for this
 
 -- |
 -- Represents an encoded static character. Supports binary and numeric operations.
@@ -84,6 +73,7 @@ type instance Element StaticCharacterBlock = StaticCharacter
 
 
 instance Arbitrary StaticCharacterBlock where
+
     arbitrary = do
         alphabetLen  <- arbitrary `suchThat` (\x -> 0 < x && x <= 62) :: Gen Int
         characterLen <- arbitrary `suchThat` (> 0) :: Gen Int
@@ -175,7 +165,7 @@ instance EncodedAmbiguityGroupContainer StaticCharacter where
 instance EncodedAmbiguityGroupContainer StaticCharacterBlock where
 
     {-# INLINE symbolCount #-}
-    symbolCount   = numCols . unstream
+    symbolCount = numCols . unstream
 
 
 instance Exportable StaticCharacterBlock where
@@ -236,7 +226,8 @@ instance MonoFunctor StaticCharacterBlock where
     omap f = SCB . omap (unwrap . f . SC) . unstream
 
 
--- | Monomorphic containers that can be traversed from left to right.
+-- |
+-- Monomorphic containers that can be traversed from left to right.
 instance MonoTraversable StaticCharacterBlock where
 
     {-# INLINE otraverse #-}

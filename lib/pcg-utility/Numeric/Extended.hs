@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE MagicHash, TypeFamilies #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Numeric.Extended
   ( ExtendedNatural()

@@ -34,7 +34,6 @@ import           Data.EdgeLength
 import qualified Data.List.NonEmpty as NE
 import           Data.MonoTraversable      (Element)
 import           Data.Semigroup
-import           Prelude            hiding (lookup, zip, zipWith)
 
 
 -- |

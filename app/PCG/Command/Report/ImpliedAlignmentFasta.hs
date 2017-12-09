@@ -31,10 +31,12 @@ import Data.Map               (Map, singleton)
 import Data.Monoid            ((<>))
 import Data.Vector            (Vector)
 import Data.Vector.Instances  ()
-import Prelude         hiding (lookup,zipWith)
+import Prelude         hiding (lookup)
+
 
 outputHUTs :: Bool
 outputHUTs = False
+
 
 --iaOutput :: (MetadataSolution s m, GeneralSolution s f) => AlignmentSolution DynamicChar -> s -> [(FilePath, String)]
 iaOutput :: StandardSolution -> [(FilePath, String)]
@@ -104,6 +106,7 @@ iaOutput solution = {- (\x -> trace (intercalate "\n\n"
                 renderAmbiguityGroup [x] = x
                 renderAmbiguityGroup xs  = "[" <> concat xs <> "]"
 
+
 integrityCheckSolution :: StandardSolution -> String
 integrityCheckSolution sol = ("Solution:\n" <>) . unlines' $ f <#$> getForests sol
       where
@@ -124,6 +127,7 @@ integrityCheckSolution sol = ("Solution:\n" <>) . unlines' $ f <#$> getForests s
                                         , show (nodeIdx e) : xs
                                         )
                 wrap x = "[" <> x <> "]"
+
 
 unlines' :: [String] -> String
 unlines' = intercalate "\n"

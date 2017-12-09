@@ -40,6 +40,7 @@ module Bio.Character.Decoration.Dynamic
   , HasLeftAlignment(..)
   , HasRightAlignment(..)
   , HasImpliedAlignment(..)
+  , HasSingleDisambiguation(..)
   , HasSymbolChangeMatrix(..)
   , HasTransitionCostMatrix(..)
   , HasTraversalFoci(..)

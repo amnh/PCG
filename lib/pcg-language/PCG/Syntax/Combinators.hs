@@ -65,7 +65,7 @@ import           Data.Functor                      (void)
 import           Data.List                         (intercalate)
 import           Data.List.NonEmpty                (NonEmpty(..), some1)
 import           Data.Proxy
-import           Data.Semigroup             hiding (option)
+import           Data.Semigroup
 import           Data.String                       (IsString(..))
 import           Data.Time.Clock                   (DiffTime)
 import           PCG.Syntax.Primative              (PrimativeValue, parsePrimative, whitespace)

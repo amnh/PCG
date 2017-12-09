@@ -55,7 +55,7 @@ import           Bio.Graph.ReferenceDAG.Internal
 import           Data.Key
 import           Data.List.NonEmpty        (NonEmpty)
 import qualified Data.List.NonEmpty as NE
-import           Prelude            hiding (zipWith)
+
 
 -- HasBlockCost u v w x y z i r
 {-

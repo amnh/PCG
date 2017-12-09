@@ -17,10 +17,11 @@
 module File.Format.Newick.Parser where
 
 import Data.Char                   (isSpace)
+import Data.Foldable
 import Data.Functor                (void)
 import Data.List                   (intercalate)
 import Data.List.NonEmpty          (some1)
-import Data.Map             hiding (filter, foldl, foldr, null)
+import Data.Map             hiding (filter, foldl', null)
 import Data.Maybe                  (fromJust, fromMaybe, isJust)
 import Data.Proxy
 import Data.Semigroup
@@ -206,7 +207,7 @@ joinNonUniqueLabeledNodes root = joinNonUniqueLabeledNodes' [] root
     -- combined descendant lists for substituting labeled node descendants
     -- in a second pass over the Newick Tree.
     joinedNodes :: Map String [NewickNode]
-    joinedNodes = foldl joinNodes mempty labeledNodes
+    joinedNodes = foldl' joinNodes mempty labeledNodes
       where
         labeledNodes           = filter (isJust . newickLabel) $ toList' root 
         joinNodes :: Map String [NewickNode] -> NewickNode -> Map String [NewickNode]

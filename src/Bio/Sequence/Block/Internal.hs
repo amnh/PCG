@@ -24,7 +24,6 @@ import Data.Semigroup
 import Data.Vector            (Vector)
 import Data.Vector.Instances  ()
 import GHC.Generics
-import Prelude         hiding (zipWith)
 import Text.XML
 -- import Text.XML.Light.Types
 

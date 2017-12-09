@@ -34,7 +34,7 @@ import           Data.Set                 (Set)
 import qualified Data.Set          as S
 import           Data.Tuple
 import           GHC.Generics             (Generic)
-import           Prelude           hiding (lookup, zip)
+import           Prelude           hiding (zip)
 import           Test.QuickCheck
 
 

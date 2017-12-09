@@ -23,7 +23,7 @@ cabal-version:       >= 1.22
 
 library
 
-  build-depends:       base               >=4.8
+  build-depends:       base               >=4.10
                      , case-insensitive
                        -- >=0.5.8 Required for Data.Map.restrictKeys
                      , containers         >=0.5.8
