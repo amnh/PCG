@@ -52,7 +52,6 @@ import           Data.Semigroup.Foldable
 --import qualified Data.Vector            as V   (zipWith)
 import           PCG.Command.Build
 import           PCG.Syntax                    (Command(..))
-import           Prelude                hiding (lookup, readFile)
 import           System.Random.Shuffle
 
 

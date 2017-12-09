@@ -34,7 +34,7 @@ import           Data.Set                 (Set)
 import qualified Data.Set          as S
 import           Data.Tuple
 import           GHC.Generics             (Generic)
-import           Prelude           hiding (lookup, zip)
+import           Prelude           hiding (zip)
 import           Test.QuickCheck
 
 
@@ -319,7 +319,7 @@ isExcluded k = M.member k . excludedElemMap
 -- The first element of the pair is the included element and the second element
 -- of pair is the excluded element.
 mutuallyExclusivePairs :: MutualExclusionSet a -> Set (a, a)
-mutuallyExclusivePairs = S.fromDistinctAscList . M.toAscList . fmap (S.findMax) . includedElemMap
+mutuallyExclusivePairs = S.fromDistinctAscList . M.toAscList . fmap S.findMax . includedElemMap
 
 
 -- |

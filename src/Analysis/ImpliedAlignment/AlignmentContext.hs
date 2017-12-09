@@ -37,10 +37,9 @@ import           Data.MonoTraversable
 import           Data.Sequence                  (Seq)
 import qualified Data.Sequence           as Seq
 import           Data.Vector.Instances          ()
-import           Prelude                 hiding (lookup,zip,zipWith)
+import           Prelude                 hiding (lookup)
 import           Text.Show                      (showListWith)
 
--- import           Debug.Trace                  (trace)
 
 -- |
 -- The contextual type of a base in a character.

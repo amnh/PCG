@@ -28,7 +28,6 @@ import           Data.Ratio
 import           Data.Vector.Unboxed           (Vector)
 import qualified Data.Vector.Unboxed  as V
 import           Data.Word
-import           Prelude              hiding   (lookup)
 import           Test.QuickCheck      hiding   (generate)
 import           Text.XML
 

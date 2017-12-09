@@ -5,7 +5,7 @@ module Data.BitMatrix.Test
   ) where
 
 import Data.BitMatrix
-import Data.BitVector hiding (foldr, not, reverse)
+import Data.BitVector hiding (not, reverse)
 import Data.Foldable
 import Data.MonoTraversable
 import Test.Tasty

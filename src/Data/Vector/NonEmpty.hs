@@ -38,7 +38,6 @@ import           Data.Semigroup.Foldable
 import           Data.Semigroup.Traversable
 import qualified Data.Vector                as V
 import           Data.Vector.Instances             ()
-import           Prelude                    hiding (lookup)
 import           Test.QuickCheck
 
 

@@ -33,7 +33,7 @@ import           Data.BitMatrix
 import           Data.Char                           (toLower)
 import           Data.Key
 import           Data.Bits
-import           Data.BitVector               hiding (foldr, join, not, replicate)
+import           Data.BitVector
 import           Data.Foldable
 import           Data.Hashable
 import           Data.List.NonEmpty                  (NonEmpty(..))
@@ -46,7 +46,6 @@ import           Data.String                         (fromString)
 import           Data.Tuple                          (swap)
 import           Data.Vector                         (Vector)
 import           GHC.Generics
-import           Prelude                      hiding (lookup)
 import           Test.QuickCheck              hiding ((.&.))
 import           Test.QuickCheck.Arbitrary.Instances ()
 import           Text.XML

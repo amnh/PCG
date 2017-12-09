@@ -29,7 +29,7 @@ import           Control.DeepSeq
 import           Data.Alphabet
 import           Data.Bits
 import           Data.BitMatrix
-import           Data.BitVector               hiding (foldr, join, not, replicate)
+import           Data.BitVector               hiding (replicate)
 import           Data.BitVector.Instances            ()
 import           Data.Char                           (toLower)
 import           Data.Foldable
@@ -44,8 +44,7 @@ import           Data.Semigroup
 import           Data.String                         (fromString)
 import           Data.Tuple                          (swap)
 import           GHC.Generics
-import           Prelude                      hiding (lookup)
-import           Test.QuickCheck              hiding ((.&.))
+import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances ()
 import           Text.XML
 

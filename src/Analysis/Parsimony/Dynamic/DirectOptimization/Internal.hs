@@ -29,13 +29,13 @@ import           Data.Bits
 import           Data.Foldable
 import           Data.IntMap        (IntMap)
 import qualified Data.IntMap as IM
-import           Data.Key    hiding ((!))
+import           Data.Key
 import           Data.List.NonEmpty (NonEmpty( (:|) ))
 import           Data.List.Utility  (invariantTransformation)
 import           Data.Semigroup
 import           Data.MonoTraversable
 import           Data.Word
-import           Prelude     hiding (lookup, zip, zipWith)
+import           Prelude     hiding (lookup, zipWith)
 
 -- import Debug.Trace
 

@@ -37,7 +37,6 @@ import           Data.Ord                                (comparing)
 import qualified Data.Set                         as S
 import           Data.Tree
 import           Data.Vector                             (Vector)
-import           Prelude                          hiding (lookup)
 import           Safe                                    (tailMay)
 import           Test.QuickCheck
 import           Test.Tasty.HUnit

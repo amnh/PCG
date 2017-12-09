@@ -55,7 +55,6 @@ import           Data.Semigroup.Traversable
 import           Data.Vector.NonEmpty           (Vector)
 import qualified Data.Vector.NonEmpty    as V
 import           GHC.Generics
-import           Prelude                 hiding (zipWith)
 import           Text.XML
 
 
