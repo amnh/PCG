@@ -49,8 +49,6 @@ import Data.TCM
 import Data.TopologyRepresentation
 import GHC.Generics       (Generic)
 
---import Debug.Trace
-
 
 -- |
 -- A unique representation of a DAG topology.
@@ -213,7 +211,6 @@ instance HasTraversalFoci (DynamicCharacterMetadataDec c) (Maybe TraversalFoci) 
 -- Construct a concrete typed 'DynamicCharacterMetadataDec' value from the supplied inputs.
 dynamicMetadata :: CharacterName -> Double -> Alphabet String -> (Word -> Word -> Word) -> Maybe DenseTransitionCostMatrix -> DynamicCharacterMetadataDec c
 dynamicMetadata name weight alpha scm denseMay =
-    -- TODO: Maybe don't force here.
     force DynamicCharacterMetadataDec
     { dataDenseTransitionCostMatrix = denseMay
     , optimalTraversalFoci          = Nothing
@@ -225,7 +222,6 @@ dynamicMetadata name weight alpha scm denseMay =
 -- Construct a concrete typed 'DynamicCharacterMetadataDec' value from the supplied inputs.
 dynamicMetadataFromTCM :: CharacterName -> Double -> Alphabet String -> TCM -> DynamicCharacterMetadataDec c
 dynamicMetadataFromTCM name weight alpha tcm =
-    -- TODO: Maybe don't force here.
     force DynamicCharacterMetadataDec
     { dataDenseTransitionCostMatrix = denseTCM
     , optimalTraversalFoci          = Nothing

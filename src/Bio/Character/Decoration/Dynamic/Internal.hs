@@ -37,8 +37,7 @@ import GHC.Generics
 import Text.XML
 
 
--- TODO:
--- Make a polymorpic pre-order constructor.
+-- TODO: Make a polymorpic pre-order constructor.
 
 
 -- |
