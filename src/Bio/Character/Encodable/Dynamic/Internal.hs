@@ -283,7 +283,7 @@ instance FiniteBits DynamicCharacterElement where
 instance Hashable DynamicChar where
 
     hashWithSalt salt (Missing n) = salt `xor` n
-    hashWithSalt salt (DC bm) = salt `xor` (numRows bm) `xor` hashWithSalt salt (toInteger (expandRows bm))
+    hashWithSalt salt (DC bm) = salt `xor` numRows bm `xor` hashWithSalt salt (toInteger (expandRows bm))
 
 
 instance MonoFoldable DynamicChar where

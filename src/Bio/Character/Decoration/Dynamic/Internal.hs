@@ -49,6 +49,7 @@ data DynamicDecorationDirectOptimization d
    { dynamicDecorationDirectOptimizationCharacterCost            :: Word
    , dynamicDecorationDirectOptimizationCharacterLocalCost       :: Word
    , dynamicDecorationDirectOptimizationCharacterAverageLength   :: AverageLength
+   , dynamicDecorationDirectOptimizationSingleDisambiguation     :: d
    , dynamicDecorationDirectOptimizationEncodedField             :: d
    , dynamicDecorationDirectOptimizationFinalGappedField         :: d
    , dynamicDecorationDirectOptimizationFinalUngappedField       :: d
@@ -478,6 +479,12 @@ instance HasEncoded (DynamicDecorationInitial d) d where
 
 
 -- | (✔)
+instance HasSingleDisambiguation (DynamicDecorationDirectOptimization d) d where
+
+    singleDisambiguation = lens dynamicDecorationDirectOptimizationSingleDisambiguation (\e x -> e { dynamicDecorationDirectOptimizationSingleDisambiguation = x })
+
+
+-- | (✔)
 instance PossiblyMissingCharacter c => PossiblyMissingCharacter (DynamicDecorationInitial c) where
 
     isMissing = isMissing . (^. encoded)
@@ -816,7 +823,7 @@ instance EncodableDynamicCharacter d => ImpliedAlignmentDecoration   (DynamicDec
 -- | (✔)
 instance EncodableDynamicCharacter d => PostOrderExtensionDirectOptimizationDecoration (DynamicDecorationDirectOptimization d) d where
 
-    extendPostOrderToDirectOptimization subDecoration ungapped gapped =
+    extendPostOrderToDirectOptimization subDecoration ungapped gapped single =
         DynamicDecorationDirectOptimization
         { dynamicDecorationDirectOptimizationCharacterCost            = subDecoration ^. characterCost
         , dynamicDecorationDirectOptimizationCharacterLocalCost       = subDecoration ^. characterLocalCost
@@ -824,6 +831,7 @@ instance EncodableDynamicCharacter d => PostOrderExtensionDirectOptimizationDeco
         , dynamicDecorationDirectOptimizationEncodedField             = subDecoration ^. encoded
         , dynamicDecorationDirectOptimizationFinalGappedField         = gapped
         , dynamicDecorationDirectOptimizationFinalUngappedField       = ungapped
+        , dynamicDecorationDirectOptimizationSingleDisambiguation     = single
         , dynamicDecorationDirectOptimizationPreliminaryGappedField   = subDecoration ^. preliminaryGapped
         , dynamicDecorationDirectOptimizationPreliminaryUngappedField = subDecoration ^. preliminaryUngapped
         , dynamicDecorationDirectOptimizationLeftAlignmentField       = subDecoration ^. leftAlignment
@@ -842,13 +850,14 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimization d) where
         f (prefix, accessor) = prefix <> showStream (dec ^. characterAlphabet) (dec ^. accessor)
 
         pairs =
-            [ ("Original Encoding   : ", encoded            )
-            , ("Final         Gapped: ", finalGapped        )
-            , ("Final       Ungapped: ", finalUngapped      )
-            , ("Preliminary   Gapped: ", preliminaryGapped  )
-            , ("Preliminary Ungapped: ", preliminaryUngapped)
-            , ("Left  Alignment     : ", leftAlignment      )
-            , ("Right Alignment     : ", rightAlignment     )
+            [ ("Original Encoding    : ", encoded             )
+            , ("Final          Gapped: ", finalGapped         )
+            , ("Final        Ungapped: ", finalUngapped       )
+            , ("Single Disambiguation: ", singleDisambiguation)
+            , ("Preliminary    Gapped: ", preliminaryGapped   )
+            , ("Preliminary  Ungapped: ", preliminaryUngapped )
+            , ("Left  Alignment      : ", leftAlignment       )
+            , ("Right Alignment      : ", rightAlignment      )
             ]
 
 
