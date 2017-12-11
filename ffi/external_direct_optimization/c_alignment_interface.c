@@ -586,14 +586,16 @@ void copyValsToAIO( alignIO_t *outChar, elem_t *vals, size_t length, size_t capa
 void dynCharToAlignIO( alignIO_t *output, dyn_character_t *input, int delete_initial_gap )
 {
 
-    printf("input:\n");
-    printf("  Length:   %zu\n", input->len);
-    printf("  Capacity: %zu\n", input->cap);
-    printf("output:\n");
-    printf("  Length:   %zu\n", output->length);
-    printf("  Capacity: %zu\n", output->capacity);
-    fflush(stdout);
-
+    if (DEBUG_ALGN) {
+        printf("input:\n");
+        printf("  Length:   %zu\n", input->len);
+        printf("  Capacity: %zu\n", input->cap);
+        printf("output:\n");
+        printf("  Length:   %zu\n", output->length);
+        printf("  Capacity: %zu\n", output->capacity);
+        fflush(stdout);
+    }
+    
     size_t  copy_length;    // These two because ungapped characters will have their initial gaps removed, so may be length 0.
     elem_t *input_begin;
 
