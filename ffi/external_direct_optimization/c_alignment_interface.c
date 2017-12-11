@@ -79,7 +79,26 @@ int align2d( alignIO_t          *inputChar1_aio
     // size_t alphabetSize = costMtx2d->alphSize;
     size_t alphabetSize = costMtx2d->costMatrixDimension;
 
-    if (inputChar1_aio->length >= inputChar2_aio->length) {
+    int firstCharIsLongerOrBothAreIdenticalInValue = 1;
+    if (inputChar1_aio->length < inputChar2_aio->length)
+	firstCharIsLongerOrBothAreIdenticalInValue = 0;
+    else if (inputChar1_aio->length > inputChar2_aio->length)
+        firstCharIsLongerOrBothAreIdenticalInValue = 1;
+    else { // Length is equal!
+        // Use lexical ordering to determine "length" in the case of equal length dynamic characters
+        // Two dynamic chanracters will *only* be equal in length if they contain the same sequence of elements.
+        // By doing this we ensure that the alignment operation is commutative.
+        elem_t *p1 = inputChar1_aio->character + (inputChar1_aio->capacity - inputChar1_aio->length);
+        elem_t *p2 = inputChar2_aio->character + (inputChar2_aio->capacity - inputChar2_aio->length);
+        for (size_t i = 0; i < inputChar1_aio->length; ++i) {
+            if (p1[i] != p2[i]) {
+	        firstCharIsLongerOrBothAreIdenticalInValue = p1[i] > p2[i];
+	        break;
+	    }
+        }
+    }
+      
+    if (firstCharIsLongerOrBothAreIdenticalInValue) {
         alignIOtoDynChar(longChar, inputChar1_aio, alphabetSize);
         longIO = inputChar1_aio;
 
