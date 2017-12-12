@@ -1,22 +1,25 @@
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 module PCG.Command.Report.Evaluate
   ( evaluate
   ) where
 
 
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
 --import           Analysis.ImpliedAlignment.Standard
 --import           Analysis.ImpliedAlignment
 --import           Analysis.Parsimony.Binary.Optimization
 --import           Bio.Character.Decoration.Dynamic
 --import           Bio.Metadata
 import           Bio.Graph
+import           Bio.Graph.PhylogeneticDAG
 import           Control.DeepSeq
 import           Control.Monad.IO.Class
 --import           Control.Monad.Logger
 --import           Data.Foldable
 import           Data.List.NonEmpty
+import           Data.Semigroup.Foldable
 import           PCG.Command.Report
 --import           PCG.Command.Report.DynamicCharacterTable
 import           PCG.Command.Report.GraphViz
@@ -68,7 +71,7 @@ generateOutput
   -> FileStreamContext
 --generateOutput :: StandardSolution -> OutputFormat -> FileStreamContext
 --generateOutput g (CrossReferences fileNames)   = SingleStream $ taxonReferenceOutput g fileNames
-generateOutput g Data                       {} = SingleStream $ either show show g
+generateOutput g Data                       {} = SingleStream $ either show showWithTotalEdgeCost g
 generateOutput g XML                        {} = SingleStream $ either show (ppTopElement . toXML) g
 generateOutput g DotFile                    {} = SingleStream $ generateDotFile g
 --generateOutput (Right g) DynamicTable               {} = SingleStream $ outputDynamicCharacterTablularData g
@@ -102,6 +105,12 @@ generateOutput g ImpliedAlignmentCharacters {} =
 -}
 
 generateOutput _ _ = ErrorCase "Unrecognized 'report' command"
+
+
+showWithTotalEdgeCost x = unlines
+    [ show $ fmap (totalEdgeCosts naiveDOMemo) . toNonEmpty <$> phylogeneticForests x
+    , show x
+    ]
 
 
 type FileContent = String

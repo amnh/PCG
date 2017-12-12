@@ -18,6 +18,8 @@ module Bio.Graph.PhylogeneticDAG.TotalEdgeCost
   ( totalEdgeCosts
   ) where
 
+
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
 import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Sequence
@@ -44,19 +46,20 @@ import           Prelude            hiding (lookup, zipWith)
 totalEdgeCosts
   :: ( HasCharacterWeight z r
      , HasSingleDisambiguation z c
+     , HasTransitionCostMatrix z (OverlapFunction (Element c))
      , Integral i
      , NFData i
      , NFData r
      , Num r
      )
-  => (c -> c -> (i, c, c, c, c))
+  => (c -> c -> OverlapFunction (Element c) -> (i, c, c, c, c))
   -> PhylogeneticDAG2 e n u v w x y z
   -> NonEmpty [r]
 totalEdgeCosts pariwiseFunction (PDAG2 dag) = applyWeights $ foldlWithKey f initAcc refVec
   where
     refVec = references dag
 
-    pariwiseFunction' lhs rhs = (\(!x,_,_,_,_) -> x) $ pariwiseFunction lhs rhs
+    pariwiseFunction' lhs rhs tcm = (\(!x,_,_,_,_) -> x) $ pariwiseFunction lhs rhs tcm
 
     initAcc = fmap ((0 <$) . toList . dynamicCharacters) . getSequence . NE.head $ rootRefs dag
 
@@ -65,6 +68,10 @@ totalEdgeCosts pariwiseFunction (PDAG2 dag) = applyWeights $ foldlWithKey f init
     getFields = fmap (fmap (^. singleDisambiguation) . toList . dynamicCharacters) . getSequence
 
     weightSequence = fmap (fmap (^. characterWeight) . toList . dynamicCharacters) . getSequence . NE.head $ rootRefs dag
+
+    tcmSequence = fmap (fmap (^. transitionCostMatrix) . toList . dynamicCharacters) . getSequence . NE.head $ rootRefs dag
+
+    functionSequence = (fmap (\tcm x y -> pariwiseFunction' x y tcm)) <$> tcmSequence 
 
     applyWeights = force . zipWith (zipWith (\d w -> d * fromIntegral w)) weightSequence
 
@@ -78,5 +85,8 @@ totalEdgeCosts pariwiseFunction (PDAG2 dag) = applyWeights $ foldlWithKey f init
         nodeSequence    = getFields key
 
         -- Folding function for adjacent nodes. Should apply the sum strictly.
-        g seqAcc = force . zipWith (zipWith (+)) seqAcc . zipWith (zipWith pariwiseFunction') nodeSequence . getFields
+--        g seqAcc = force . zipWith (zipWith (+)) seqAcc . zipWith (zipWith pariwiseFunction') . nodeSequence . getFields
+        g seqAcc = force . zipWith (zipWith (+)) seqAcc .
+                           zipWith (zipWith ($)) (zipWith (zipWith ($)) functionSequence nodeSequence) . getFields
+        
         
