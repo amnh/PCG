@@ -141,10 +141,15 @@ initializeRoot =
       <*> lexicallyDisambiguate . (^. preliminaryUngapped)
 
 
+-- |
+-- Disambiguate the elements of a Dynamic Character using only lexical ordering
+-- of the alphabet.
 lexicallyDisambiguate :: (MonoFunctor f, FiniteBits (Element f)) => f -> f
 lexicallyDisambiguate = omap disambiguateElement
 
 
+-- |
+-- Disambiguate a single element of a Dynamic Character.
 disambiguateElement :: FiniteBits b => b -> b
 disambiguateElement x = zed `setBit` idx
   where
@@ -152,6 +157,9 @@ disambiguateElement x = zed `setBit` idx
     zed = x `xor` x
 
 
+-- |
+-- Disambiguate the elements of a Dynamic Character so that they are consistent
+-- with the ancestoral disambiguation.
 disambiguateFromParent
   :: EncodableDynamicCharacter c
   => c -- ^ parent single disambiguation field
