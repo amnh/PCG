@@ -46,13 +46,13 @@ import           Prelude            hiding (lookup, zipWith)
 totalEdgeCosts
   :: ( HasCharacterWeight z r
      , HasSingleDisambiguation z c
-     , HasTransitionCostMatrix z (OverlapFunction (Element c))
+     , HasSymbolChangeMatrix z (Word -> Word -> Word)
      , Integral i
      , NFData i
      , NFData r
      , Num r
      )
-  => (c -> c -> OverlapFunction (Element c) -> (i, c, c, c, c))
+  => (c -> c -> (Word -> Word -> Word) -> (i, c, c, c, c))
   -> PhylogeneticDAG2 e n u v w x y z
   -> NonEmpty [r]
 totalEdgeCosts pariwiseFunction (PDAG2 dag) = applyWeights $ foldlWithKey f initAcc refVec
@@ -69,7 +69,7 @@ totalEdgeCosts pariwiseFunction (PDAG2 dag) = applyWeights $ foldlWithKey f init
 
     weightSequence = fmap (fmap (^. characterWeight) . toList . dynamicCharacters) . getSequence . NE.head $ rootRefs dag
 
-    tcmSequence = fmap (fmap (^. transitionCostMatrix) . toList . dynamicCharacters) . getSequence . NE.head $ rootRefs dag
+    tcmSequence = fmap (fmap (^. symbolChangeMatrix) . toList . dynamicCharacters) . getSequence . NE.head $ rootRefs dag
 
     functionSequence = (fmap (\tcm x y -> pariwiseFunction' x y tcm)) <$> tcmSequence 
 

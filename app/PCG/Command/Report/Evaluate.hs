@@ -108,7 +108,7 @@ generateOutput _ _ = ErrorCase "Unrecognized 'report' command"
 
 
 showWithTotalEdgeCost x = unlines
-    [ show $ fmap (totalEdgeCosts naiveDOMemo) . toNonEmpty <$> phylogeneticForests x
+    [ show $ fmap (totalEdgeCosts naiveDO) . toNonEmpty <$> phylogeneticForests x
     , show x
     ]
 
