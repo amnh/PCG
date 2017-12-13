@@ -169,7 +169,7 @@ disambiguateFromParent pSingle cFinal = constructDynamic $ zipWith f (otoList pS
   where
     f pS cF = if val /= 0 then val else disambiguateElement cF
       where
-        val = pS .&. pS
+        val = pS .&. cF
 
 
 -- |
