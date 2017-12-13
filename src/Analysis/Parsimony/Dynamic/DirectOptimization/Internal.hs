@@ -167,8 +167,10 @@ disambiguateFromParent
   -> c -- ^ child  single disambiguation field
 disambiguateFromParent pSingle cFinal = constructDynamic $ zipWith f (otoList pSingle) (otoList cFinal)
   where
-    f pS cF = if val /= 0 then val else disambiguateElement cF
+    f pS cF = if val /= zeroBits then val else disambiguateElement cF
       where
+        -- Since pS will have only one bit set,
+        -- there can only ever be an symbol intersection of size 1
         val = pS .&. cF
 
 
