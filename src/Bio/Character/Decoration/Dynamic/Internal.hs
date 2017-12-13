@@ -842,7 +842,7 @@ instance EncodableDynamicCharacter d => PostOrderExtensionDirectOptimizationDeco
 -- | (✔)
 instance EncodableStream d => Show (DynamicDecorationDirectOptimization d) where
 
-    show dec = (shownFoci <>) . unlines . (shownAlphabet:) . (shownCost:) $ f <$> pairs
+    show dec = unlines . (shownFoci :) . (shownAlphabet:) . (shownCost:) $ f <$> pairs
       where
         (shownAlphabet, shownCost, shownFoci) = renderingDecorationContext dec
 
@@ -863,7 +863,7 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimization d) where
 -- | (✔)
 instance EncodableStream d => Show (DynamicDecorationDirectOptimizationPostOrderResult d) where
 
-    show dec = (shownFoci <>) . unlines . (shownAlphabet:) . (shownCost:) $ f <$> pairs
+    show dec = unlines . (shownFoci :) . (shownAlphabet:) . (shownCost:) $ f <$> pairs
       where
         (shownAlphabet, shownCost, shownFoci) = renderingDecorationContext dec
 
@@ -984,10 +984,12 @@ renderingDecorationContext dec = (shownAlphabet, shownCost, shownFoci)
   where
     shownAlphabet = show $ dec ^. characterAlphabet
 
-    shownFoci = maybe "" renderFoci $ dec ^. traversalFoci
+--    shownFoci = maybe "" renderFoci $ dec ^. traversalFoci
+
+    shownFoci = show . fmap renderFoci $ dec ^. traversalFoci
 
     shownCost = unwords
-        [ "Cost                :"
+        [ "Cost                 :"
         , show (dec ^. characterCost)
         , "{"
         , show (dec ^. characterLocalCost)
