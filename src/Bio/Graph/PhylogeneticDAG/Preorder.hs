@@ -432,7 +432,8 @@ data  PreorderContext c
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
 preorderFromRooting''
-  :: (z -> [(Word, z')] -> z')
+  :: HasTraversalFoci z' (Maybe TraversalFoci)
+  => (z -> [(Word, z')] -> z')
   ->         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
   -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
   -> NonEmpty (TraversalTopology, r, r, Vector (NonEmpty TraversalFocusEdge))
@@ -559,7 +560,7 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
                 updatedCharacterSequence = fromBlockVector . mapWithKey blockGen . toBlockVector $ characterSequence resInfo
                 blockGen j block = block { dynamicCharacters = updatedDynamicCharacters }
                   where
-                    (topology,_,_,_) = minTopologyContextPerBlock ! j
+                    (topology,_,_,minEdgesVector) = minTopologyContextPerBlock ! j
                     excludedEdges = excludedNetworkEdges topology
                     updatedDynamicCharacters = mapWithKey dynCharGen $ dynamicCharacters block
 
@@ -581,13 +582,13 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
 
                     dynCharGen k _ =
                         case parentRefContext of
-                          SetRootNode  p   -> getDynCharDecoration . NE.head . resolutions $ memo ! p
+                          SetRootNode  p   -> updateDynCharWithFoci . getDynCharDecoration . NE.head . resolutions $ memo ! p
                           FociEdgeNode p x ->
                             let currentContext     = selectApplicableResolutions topology $ (contextualNodeDatum .!>. i) .!>. (p,i)
                                 currentDecoration  = (!k) . dynamicCharacters . (!j) . toBlockVector . characterSequence $ currentContext
 --                                currentDecoration  = getDynCharDecoration currentContext
                                 parentalDecoration = transformation x []
-                            in  transformation currentDecoration [(0, parentalDecoration)]
+                            in  updateDynCharWithFoci $ transformation currentDecoration [(0, parentalDecoration)]
                           NormalNode   p   ->
                             let isDeadEndNode = -- This only checks one edge away, probably should be transitive.
                                   case kids of
@@ -598,11 +599,14 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
                                 parentalDecoration = getDynCharDecoration . NE.head . resolutions $ memo ! p
                             in  if   isDeadEndNode
                                 then parentalDecoration
-                                else transformation currentDecoration [(0, parentalDecoration)]
+                                else updateDynCharWithFoci $ transformation currentDecoration [(0, parentalDecoration)]
                       where
                         parentRefContext     = (parentVectors ! (i,j)) ! k
                         -- Stupid monomorphisms prevent elegant code reuse
                         getDynCharDecoration = (!k) . dynamicCharacters . (!j) . toBlockVector . characterSequence
+                        updateDynCharWithFoci dec = dec & traversalFoci .~ charFoci
+                        charFoci = Just $ (\x -> (x, topology)) <$> rootingEdges
+                        rootingEdges = minEdgesVector ! k
 
 
 -- |
