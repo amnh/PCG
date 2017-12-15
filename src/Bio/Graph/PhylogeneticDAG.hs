@@ -30,6 +30,7 @@ module Bio.Graph.PhylogeneticDAG
 --  , riefiedSolution
 --  , riefyForest
   , rootCosts
+  , totalEdgeCosts
   , getDotContextWithBaseAndIndex
   -- * Mapping over networks
   , edgePreorderMap
@@ -51,6 +52,7 @@ import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
 import           Bio.Graph.PhylogeneticDAG.Postorder
 import           Bio.Graph.PhylogeneticDAG.Preorder
+import           Bio.Graph.PhylogeneticDAG.TotalEdgeCost
 import           Bio.Graph.ReferenceDAG.Internal
 import           Data.Key
 import           Data.List.NonEmpty        (NonEmpty)

@@ -37,7 +37,7 @@ import           Data.Key
 import qualified Data.List.NonEmpty           as NE
 import qualified Data.Map                     as M
 import           Data.Maybe
-import           Data.Monoid                  hiding ((<>))
+import           Data.Monoid                         ()
 import           Data.MonoTraversable
 import           Data.Range
 import           Data.Semigroup
