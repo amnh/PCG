@@ -69,7 +69,7 @@ test_interface : test_interface.c $(necessary_c_files) $(necessary_h_files)
 
 
 ######### Create a .so file that can be called from a Python script, thereby allowing batch scripting
-test_interface_3d_for_python : test_interface_3d_for_python.c $(necessary_c_files) $(necessary_h_files)
+test_interface_3D_for_python : test_interface_3d_for_python.c $(necessary_c_files) $(necessary_h_files)
 	gcc -std=c11 -fPIC -O3 -c $(sanity-warnings) $(necessary_c_files)
 	gcc -std=c11 -fPIC -O3 -c $(sanity-warnings) test_interface_3d_for_python.c -o intermediate_lib.o
 	# Next, build .so files for Python ffi. Note that we need -fPIC in gcc calls above if this is going to work correctly.

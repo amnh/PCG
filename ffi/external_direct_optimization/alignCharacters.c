@@ -4404,6 +4404,7 @@ algn_string_of_2d_direction (DIR_MTX_ARROW_t v) {
 }
 
 #define my_prepend(a, b) assert (a->cap > a->len); \
+                        if (a->char_begin == NULL) { a->char_begin = a->array_head + a->cap; } \
                         a->char_begin = (a->char_begin) - 1; \
                         a->len = 1 + a->len; \
                         *(a->char_begin) = b

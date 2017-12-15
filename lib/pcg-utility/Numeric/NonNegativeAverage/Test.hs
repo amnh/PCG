@@ -9,7 +9,6 @@ import Data.Ratio
 import Data.Semigroup
 import Numeric.NonNegativeAverage
 import Test.Tasty
-import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
 
@@ -45,10 +44,12 @@ orderingProperties = testGroup "Properties of ordering"
 
 
 semigroupProperties :: TestTree
-semigroupProperties = testGroup "Properties of this semigroup opperator"
-    [ testProperty "op identity holds" projectionIdentity
-    , testProperty "op is associative" operationAssocativity
-    , testProperty "op is commutive"   operationCommutivity
+semigroupProperties = testGroup "Properties of this semigroup operator"
+    [ testProperty "projection identity holds" projectionIdentity
+    , localOption (QuickCheckTests 10000)
+        $ testProperty "(<>) is associative" operationAssocativity
+    , localOption (QuickCheckTests  1000)
+        $ testProperty "(<>) is commutative" operationCommutativity
     ]
   where
     projectionIdentity :: Word -> Bool
@@ -63,5 +64,5 @@ semigroupProperties = testGroup "Properties of this semigroup opperator"
     operationAssocativity :: (NonNegativeAverage, NonNegativeAverage, NonNegativeAverage) -> Bool
     operationAssocativity (a, b, c) = a <> (b <> c) == (a <> b) <> c
 
-    operationCommutivity :: (NonNegativeAverage, NonNegativeAverage) -> Bool
-    operationCommutivity (a, b) = a <> b == b <> a
+    operationCommutativity :: (NonNegativeAverage, NonNegativeAverage) -> Bool
+    operationCommutativity (a, b) = a <> b == b <> a

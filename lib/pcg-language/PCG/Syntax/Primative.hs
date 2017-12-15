@@ -46,7 +46,7 @@ import qualified Data.Map                   as M
 import           Data.Maybe                        (fromMaybe)
 import           Data.Proxy
 import           Data.Scientific            hiding (scientific)
-import           Data.Semigroup             hiding (option)
+import           Data.Semigroup
 import           Data.Set                          (Set)
 import qualified Data.Set                   as S
 import           Data.Time.Clock                   (DiffTime, secondsToDiffTime)

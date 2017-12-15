@@ -18,7 +18,6 @@ module Analysis.ImpliedAlignment.Test.Trees where
 import           Analysis.Parsimony.Binary.Internal
 import           Analysis.ImpliedAlignment.DynamicProgramming
 import           Bio.Metadata
-import           Bio.PhyloGraph            hiding (name)
 import           Data.Vector             (Vector)
 import           Test.Custom
 import           Test.Tasty

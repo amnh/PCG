@@ -25,16 +25,17 @@ import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
 import           Control.Lens
+import           Data.Bits
 import           Data.Foldable
 import           Data.IntMap        (IntMap)
 import qualified Data.IntMap as IM
-import           Data.Key    hiding ((!))
+import           Data.Key
 import           Data.List.NonEmpty (NonEmpty( (:|) ))
 import           Data.List.Utility  (invariantTransformation)
 import           Data.Semigroup
 import           Data.MonoTraversable
 import           Data.Word
-import           Prelude     hiding (lookup, zip, zipWith)
+import           Prelude     hiding (lookup, zipWith)
 
 -- import Debug.Trace
 
@@ -137,6 +138,30 @@ initializeRoot =
       <$> id
       <*> (^. preliminaryUngapped)
       <*> (^. preliminaryGapped)
+      <*> lexicallyDisambiguate . (^. preliminaryUngapped)
+
+
+lexicallyDisambiguate :: (MonoFunctor f, FiniteBits (Element f)) => f -> f
+lexicallyDisambiguate = omap disambiguateElement
+
+
+disambiguateElement :: FiniteBits b => b -> b
+disambiguateElement x = zed `setBit` idx
+  where
+    idx = countLeadingZeros x
+    zed = x `xor` x
+
+
+disambiguateFromParent
+  :: EncodableDynamicCharacter c
+  => c -- ^ parent single disambiguation field
+  -> c -- ^ child  final gapped
+  -> c -- ^ child  single disambiguation field
+disambiguateFromParent pSingle cFinal = constructDynamic $ zipWith f (otoList pSingle) (otoList cFinal)
+  where
+    f pS cF = if val /= 0 then val else disambiguateElement cF
+      where
+        val = pS .&. pS
 
 
 -- |
@@ -164,12 +189,13 @@ updateFromParent pairwiseAlignment currentDecoration parentDecoration = resultDe
     --
     -- We do these convoluted operations to account for deletion events in the
     -- parent assignment when comparing to child assignments.
-    resultDecoration = extendPostOrderToDirectOptimization currentDecoration ungapped gapped
-    (ungapped, gapped)
-      | isMissing $ currentDecoration ^. preliminaryGapped = (pUngapped, pGapped)
-      | otherwise =  tripleComparison pairwiseAlignment currentDecoration pUngapped
+    resultDecoration = extendPostOrderToDirectOptimization currentDecoration ungapped gapped single
+    (ungapped, gapped, single)
+      | isMissing $ currentDecoration ^. preliminaryGapped = (pUngapped, pGapped, pSingle)
+      | otherwise = tripleComparison pairwiseAlignment currentDecoration pUngapped pSingle
     pUngapped     = parentDecoration ^. finalUngapped
     pGapped       = parentDecoration ^. finalGapped
+    pSingle       = parentDecoration ^. singleDisambiguation
 
 
 -- |
@@ -179,17 +205,22 @@ tripleComparison
   => PairwiseAlignment c
   -> d
   -> c
-  -> (c, c)
-tripleComparison pairwiseAlignment childDecoration parentCharacter = (ungapped, gapped)
+  -> c
+  -> (c, c, c)
+tripleComparison pairwiseAlignment childDecoration parentCharacter parentSingle = (ungapped, gapped, single)
   where
     costStructure     = childDecoration ^. symbolChangeMatrix
     childCharacter    = childDecoration ^. preliminaryGapped
     childLeftAligned  = childDecoration ^. leftAlignment
     childRightAligned = childDecoration ^. rightAlignment
 
-    (_, _, derivedAlignment, _parentAlignment, childAlignment) = pairwiseAlignment parentCharacter childCharacter
-    newGapIndicies         = newGapLocations childCharacter childAlignment
+    single = disambiguateFromParent extendedParentSingle ungapped
+
+    (_, _, derivedAlignment, parentAlignment, childAlignment) = pairwiseAlignment parentCharacter childCharacter
+    newGapIndicies         = newGapLocations  childCharacter  childAlignment
+    newGapIndiciesInParent = newGapLocations parentCharacter parentAlignment
 --    newGapIndicies         = toInsertionCounts . snd . traceShowId $ comparativeIndelEvents () childAlignment parentAlignment
+    extendedParentSingle   = insertNewGaps newGapIndiciesInParent parentSingle
     extendedLeftCharacter  = insertNewGaps newGapIndicies childLeftAligned
     extendedRightCharacter = insertNewGaps newGapIndicies childRightAligned
     (_, ungapped, gapped)  = {- trace context $ -} threeWayMean costStructure derivedAlignment extendedLeftCharacter extendedRightCharacter
@@ -294,4 +325,3 @@ threeWayMean costStructure char1 char2 char3 =
             [ getOverlap a c costStructure
             , getOverlap b c costStructure
             ]
-

@@ -44,7 +44,7 @@ import           Data.Vector                  (Vector)
 import qualified Data.Vector           as V
 import           GHC.Generics                 (Generic)
 import           Prelude               hiding (lookup, zip)
-import           Test.QuickCheck       hiding (generate)
+import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances ()
 import           Text.XML
 

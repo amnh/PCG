@@ -39,7 +39,7 @@ import Data.Maybe
 import Data.Semigroup
 import Data.Semigroup.Foldable
 -- import Data.Semigroup.Traversable
-import Prelude                hiding (head, lookup, zip, zipWith)
+import Prelude                hiding (lookup, zip, zipWith)
 import GHC.Generics
 import Text.Newick.Class
 import Text.XML.Custom

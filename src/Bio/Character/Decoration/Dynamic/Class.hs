@@ -139,6 +139,7 @@ class ( DirectOptimizationPostOrderDecoration s c
                                         => x -- ^ Original decoration
                                         -> c -- ^ Final /ungapped/ dynamic character
                                         -> c -- ^ Final   /gapped/ dynamic character
+                                        -> c -- ^ Final   /single/ dynamic character
                                         -> s -- ^ Resulting decoration
 
 {-
@@ -182,6 +183,14 @@ class HasFinalUngapped s a | s -> a where
 
     finalUngapped :: Lens' s a
     {-# MINIMAL finalUngapped #-}
+
+
+-- |
+-- A 'Lens' for the 'singleDisambiguation' field
+class HasSingleDisambiguation s a | s -> a where
+
+    singleDisambiguation :: Lens' s a
+    {-# MINIMAL singleDisambiguation #-}
 
 
 -- |

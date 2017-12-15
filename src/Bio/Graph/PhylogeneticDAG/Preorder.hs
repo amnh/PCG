@@ -676,7 +676,7 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ 
                     genMap is j = foldMap (\x -> IM.singleton x $ Left j) kids <> foldMap (genMap (IS.insert j is)) kids
                       where
                         kids  = catMaybes $ nextEdges j is <$> topoEdges
-                        topoEdges = toList topo <> treeEdges <> rootEdges
+                        topoEdges = toList (includedNetworkEdges topo) <> treeEdges <> rootEdges
 
                     val = (! charIndex) . dynamicCharacters
                           -- Get the appropriate block from the resolution that contains this character

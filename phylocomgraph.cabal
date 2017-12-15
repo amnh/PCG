@@ -23,7 +23,7 @@ cabal-version:       >= 1.22
 
 flag build-cpp-files
   description: Toggles the C++ files being successfully build.
-  default: False
+  default: True
 
 
 library
@@ -193,20 +193,12 @@ library
                        Control.Evaluation
                        Control.Parallel.Custom
                        Control.Monad.Logger
-                       Data.Either.Custom
                        Data.Alphabet
                        Data.Alphabet.IUPAC
-                       Data.BitMatrix
-                       Data.DuplicateSet
                        Data.EdgeLength
-                       Data.MutualExculsionSet
-                       Data.ReplicatedSequence
                        Data.TCM
                        Data.TCM.Memoized
-                       Data.Vector.NonEmpty
-                       Numeric.Extended
-                       Numeric.Extended.Natural
-                       Numeric.Extended.Real
+                       Data.TopologyRepresentation
 --                       Text.HTML.Class
 --                       Text.HTML.Custom
                        Text.Newick.Class
@@ -283,15 +275,11 @@ library
                        Control.Evaluation.Internal
                        Control.Evaluation.Trans
                        Data.Alphabet.Internal
-                       Data.BitMatrix.Internal
-                       Data.BitVector.Instances
                        Data.EdgeSet
                        Data.Range
                        Data.TCM.Internal
                        Data.TCM.Memoized.FFI
-                       Data.TopologyRepresentation
-                       Numeric.Extended.Internal
-                       Numeric.NonNegativeAverage
+                       Data.Vector.NonEmpty
                        Test.QuickCheck.Arbitrary.Instances
                        Text.XML.Class
 
@@ -833,7 +821,6 @@ Test-Suite testsuite
                        -Wwrong-do-bind
 
   other-modules:
-                       Control.Evaluation.Test
                        Bio.Character.Encodable.Dynamic.Test
                        Bio.Character.Encodable.Static.Test
                        Bio.Character.Encodable.Dynamic
@@ -844,22 +831,12 @@ Test-Suite testsuite
                        Bio.Character.Exportable
                        Bio.Character.Exportable.Class
                        Control.Evaluation.Internal
+                       Control.Evaluation.Test
                        Control.Evaluation.Unit
                        Control.Monad.Logger
                        Data.Alphabet
                        Data.Alphabet.IUPAC
                        Data.Alphabet.Internal
-                       Data.BitMatrix
-                       Data.BitMatrix.Internal
-                       Data.BitMatrix.Test
-                       Data.BitVector.Instances
-                       Numeric.Extended.Internal
-                       Numeric.Extended.Natural
-                       Numeric.Extended.Natural.Test
-                       Numeric.Extended.Real
-                       Numeric.Extended.Real.Test
-                       Numeric.NonNegativeAverage
-                       Numeric.NonNegativeAverage.Test
                        Test.QuickCheck.Arbitrary.Instances
                        TestSuite.ExecutableTests
                        TestSuite.LibraryTests

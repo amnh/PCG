@@ -16,12 +16,15 @@
 module Data.Either.Custom where
 
 import Control.Monad.Trans.Either
-import Data.Either                (partitionEithers)
+import Data.Either        (partitionEithers)
 import Data.Foldable
+import Data.List.NonEmpty (NonEmpty((:|)))
 import Data.Semigroup
 
 
 -- |
+-- \( \mathcal{O} \left( n \right) \)
+--
 -- Allows for the coalescence of 'Left' values that form a 'Semigroup'.
 -- Overrides short-circuiting behaviour of the standard monadic 'sequence'
 -- definition. The validation context will evaluate the entire
@@ -48,11 +51,13 @@ import Data.Semigroup
 eitherValidation :: (Foldable t, Semigroup e) => t (Either e a) -> Either e [a]
 eitherValidation xs =
   case partitionEithers $ toList xs of
-    ([] , r) -> Right r
-    (err, _) -> Left $ foldl1 (<>) err
+    ([]  , r) -> Right r
+    (e:es, _) -> Left . sconcat $ e:|es
 
 
 -- |
+-- \( \mathcal{O} \left( n \right) \)
+--
 -- Works similarly to 'eitherValidation' but within the 'MonadTrans' context.
 eitherTValidation :: (Foldable t, Monad m, Semigroup e) => t (EitherT e m a) -> EitherT e m [a]
 eitherTValidation = EitherT . fmap eitherValidation . traverse runEitherT . toList
