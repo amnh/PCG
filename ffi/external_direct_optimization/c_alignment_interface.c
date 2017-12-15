@@ -454,7 +454,7 @@ int align3d( alignIO_t          *inputChar1_aio
 
     alignIOtoCharacters_t( powellInputs, inputChar1_aio, inputChar2_aio, inputChar3_aio );
 
-    if (DEBUG_CALL_ORDER) printf("\n---Calling Powell\n\n");
+    if (DEBUG_CALL_ORDER) printf( "\n---Calling Powell\n\n" );
 
     // Powell aligns three sequences.
     algnCost = powell_3D_align ( powellInputs

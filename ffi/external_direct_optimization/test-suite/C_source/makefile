@@ -1,5 +1,3 @@
-### To make just C testing executables. To make
-
 ### Note that multiple calls to gcc to create .o files are needed, followed by multiple additional calls for linking and final compilation
 
 sanity-warnings   = -Wall -Wextra -pedantic -fdiagnostics-color
@@ -19,7 +17,6 @@ necessary_h_files = ../../alignCharacters.h \
                     ../../c_code_alloc_setup.h \
                     ../../costMatrix.h \
                     ../../dyn_character.h \
-                    ../../ukkCheckPoint.h \
                     ../../ukkCommon.h
 
 object_files      = alignCharacters.o \
@@ -31,17 +28,19 @@ object_files      = alignCharacters.o \
                     ukkCheckPoint.o \
                     ukkCommon.o
 
-executables       = test_character \
-                    test_initialization \
+executables       = test_initialization \
                     test_interface \
                     test_interface_3d \
                     test_interface_long \
+                    test_character \
                     test_just_c \
-                    test_powell_for_python \
-                    test_powell_only \
                     POYalign.hs
 
-all : test_powell_for_python # test_interface # test_initialization
+
+
+
+all : test_interface_for_python # test_just_c # test_initialization
+
 
 clean :
 	rm -f *.o *.hi *.out *.so
@@ -69,19 +68,12 @@ test_interface : test_interface.c $(necessary_c_files) $(necessary_h_files)
 	gcc -std=c11 -g $(sanity-warnings) test_interface.c $(object_files) -o test_interface
 
 
-######### Test the actual C interface that Hakell interact with.
-character_test : character_test.c $(necessary_c_files) $(necessary_h_files)
-	rm -f *.o
-	gcc -std=c11 $(sanity-warnings) -g -c  $(necessary_c_files)
-	gcc -std=c11 $(sanity-warnings) -o character_test -g character_test.c $(object_files)
-
-
 ######### Create a .so file that can be called from a Python script, thereby allowing batch scripting
-test_interface_3D_for_python : test_interface_3D_for_python.c $(necessary_c_files) $(necessary_h_files)
+test_interface_3d_for_python : test_interface_3d_for_python.c $(necessary_c_files) $(necessary_h_files)
 	gcc -std=c11 -fPIC -O3 -c $(sanity-warnings) $(necessary_c_files)
-	gcc -std=c11 -fPIC -O3 -c $(sanity-warnings) test_interface_3D_for_python.c -o intermediate_lib.o
+	gcc -std=c11 -fPIC -O3 -c $(sanity-warnings) test_interface_3d_for_python.c -o intermediate_lib.o
 	# Next, build .so files for Python ffi. Note that we need -fPIC in gcc calls above if this is going to work correctly.
-	gcc -shared -O3 $(sanity-warnings) intermediate_lib.o $(object_files) -o test_interface_3D_for_python.so
+	gcc -shared -O3 $(sanity-warnings) intermediate_lib.o $(object_files) -o test_interface_3d_for_python.so
 
 
 ########################## The following are  for testing only the Powell 3D, and not the interface ################################

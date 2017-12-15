@@ -22,8 +22,9 @@ def charToInt(inArr, conversionDict):
 
 
 def main():
-    if len(argv) < 4:
-        print("First arg is data file (metazoa or chel), second is # processors, third is which processor this is running on, starting at 0.")
+    errorMsg = "\nFirst arg is data file (metazoa or chel); \nSecond is # processors; \nThird is number of runs per processor; \nFourth is which processor this is running on, starting at 0.\n"
+    if len(argv) < 5:
+        print(errorMsg)
         exit()
 
     dataFile = argv[1]
@@ -34,12 +35,11 @@ def main():
 
     try:
         howManyProcessors = int(argv[2])
-        whichProcessor    = int(argv[3])
+        numRuns           = int(argv[3])
+        whichProcessor    = int(argv[4])
     except:
-        print("First arg is data file, second is # processors, third is which processor this is running on, starting at 0.")
+        print(errorMsg)
         exit()
-
-    numRuns = 10
 
     seqFileName = "../data/" + possible_files[dataFile][0]
 
@@ -57,24 +57,31 @@ def main():
 
     average = 0
 
-    for runNum in range(numRuns):
-        randFile = open('../data/randseeds.txt')
+    # set up seeds list
+    randFile = open('../data/randseeds.txt')
+    seeds    = randFile.readlines()
+    randFile.close()
 
-        # skip to correct line in random number file (always 3 seqs)
-        startLine = whichProcessor * numRuns * 3
-        for i in range(0, startLine):
-            x = randFile.readline()
+    curIdx   = whichProcessor * numRuns * 3  # current index into seeds list
+    # print("Start index:", curIdx)
+
+    for runNum in range(numRuns):
 
         # get next 3 seqs
         whatlines = []
         for i in range(3): # there are always three seqs being sent in
             # get 3 random numbers from random number file
-            whatlines.append(int(randFile.readline()) * 2 + 1) # Extra math because we're not getting that line, but that _sequence_
-        randFile.close()
+            try:
+                thisLine = seeds[curIdx]
+                # print(thisLine, end="")
+                whatlines.append(int(thisLine) * 2 + 1) # Extra math because we're not getting that line, but that _sequence_
+                curIdx += 1
+            except:
+                print("Randseed read failed. Run number:", runNum, "read number:", i, " value:", thisLine)
 
         whatlines.sort() # so picklines() works
         print("Sequence filename: ", seqFileName)
-        print("whatlines: ", whatlines)
+        print("whatlines: "        , whatlines)
 
         inputSeqFile = open(seqFileName)
         charArr      = picklines(inputSeqFile, whatlines) # need to translate this to ints
@@ -104,14 +111,13 @@ def main():
 
         lib.wrapperFunction(intArrays[0], shortLen, intArrays[1], middleLen, intArrays[2], longLen)
 
-        end = time()
-
+        end      = time()
         current  = end - start
         average += current
         timesFile.write("Run number {} time: {}\n".format(runNum, current)) # total time the C code ran
         timesFile.flush()
 
-    average = average / numRuns
+    average /= numRuns
     timesFile.write("Average: {}".format(average))
     timesFile.close()
 

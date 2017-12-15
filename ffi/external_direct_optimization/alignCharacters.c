@@ -4036,8 +4036,9 @@ algn_nw_limit_2d ( const dyn_character_t      *shorterChar
 
     // printf("before pre-calc alignment\n");
     // fflush(stdout);
-    algnMtx_precalc_4algn_2d( algnMats, costMatrix, shorterChar ); // returns precalculated cost matrix (in matrices) computed using character from shorterChar.
-                                               // shorterChar bases will be column heads of that matrix
+    algnMtx_precalc_4algn_2d( algnMats, costMatrix, shorterChar ); // returns precalculated cost matrix (in matrices) computed using
+                                                                   // character from shorterChar.
+                                                                   // shorterChar bases will be column heads of that matrix
     //printf("after  pre-calc alignment\n");
     //fflush(stdout);
 
@@ -4102,12 +4103,12 @@ algn_nw_2d ( const dyn_character_t      *shorterChar
     // at this point, gap is already set at beginning of char
     // bases are set as bit streams, with gap as most-significant bit.
     if(DEBUG_NW) {
-        printf("---algn_nw_2d\n");
-        printf("first character\n");
-        dyn_char_print(longerChar);
-        dyn_char_print(shorterChar);
-        printf("second character\n");
-        algnMtx_print(algnMats, costMatrix->costMatrixDimension);
+        printf( "---algn_nw_2d\n" );
+        printf( "first character\n" );
+        dyn_char_print( longerChar );
+        dyn_char_print( shorterChar );
+        printf( "second character\n" );
+        algnMtx_print( algnMats, costMatrix->costMatrixDimension );
     }
 
 

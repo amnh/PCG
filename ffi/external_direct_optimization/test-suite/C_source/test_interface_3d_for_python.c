@@ -88,7 +88,7 @@ int wrapperFunction( elem_t *input_vals1
     alignIO_t *ungappedMedianChar = malloc( sizeof(struct alignIO_t) );
     alignIO_t *gappedMedianChar   = malloc( sizeof(struct alignIO_t) );
     assert(   ungappedMedianChar != NULL
-           && gappedMedianChar != NULL
+           && gappedMedianChar   != NULL
            && "Couldn't allocate median characters in 3D interface test." );
     // alignIO_t *unionMedianChar    = malloc( sizeof(struct alignIO_t) );
 
@@ -99,7 +99,7 @@ int wrapperFunction( elem_t *input_vals1
 
     size_t alphSize = 5;   // includes gap
 
-    size_t tcm_total_len     = alphSize * alphSize;
+    size_t tcm_total_len = alphSize * alphSize;
     // const size_t CHAR_LENGTH = 100;
 
     int algnCost;
@@ -148,8 +148,8 @@ int wrapperFunction( elem_t *input_vals1
     reallocAlignIO( gappedMedianChar,   MAXLENGTH );
 
     copyValsToAIO( powellInput1, input_vals1, lenChar1, MAXLENGTH );
-    copyValsToAIO( powellInput2, input_vals3, lenChar3, MAXLENGTH );
-    copyValsToAIO( powellInput3, input_vals2, lenChar2, MAXLENGTH );
+    copyValsToAIO( powellInput2, input_vals2, lenChar2, MAXLENGTH );
+    copyValsToAIO( powellInput3, input_vals3, lenChar3, MAXLENGTH );
 
     printf("\n\n\n******************** Align 3 characters **********************\n\n");
     printf(      "*****************  Original 3d characters:  ******************\n");
@@ -171,25 +171,25 @@ int wrapperFunction( elem_t *input_vals1
                       , 1        // gap extension cost
                       );
 
-    printf("alphSize: %zu\n", alphSize);
-    printf("gap char: %u\n",  gap_char);
+    printf( "alphSize: %zu\n", alphSize );
+    printf( "gap char: %u\n",  gap_char );
 
-    printf("\nAligned 3d characters\n");
-    alignIO_print(powellInput1);
-    alignIO_print(powellInput2);
-    alignIO_print(powellInput3);
+    printf( "\nAligned 3d characters\n" );
+    alignIO_print( powellOutput1 );
+    alignIO_print( powellOutput2 );
+    alignIO_print( powellOutput3 );
 
-    printf("Alignment cost: %d\n", algnCost);
+    printf( "Alignment cost: %d\n", algnCost );
 
-    printf("\nGapped median\n  ");
-    alignIO_print(gappedMedianChar);
+    printf( "\nGapped median\n  " );
+    alignIO_print( gappedMedianChar );
 
-    printf("\nUngapped median\n  ");
-    alignIO_print(ungappedMedianChar);
+    printf( "\nUngapped median\n  " );
+    alignIO_print( ungappedMedianChar );
 
     printf("\n\n\n");
 
-    freeCostMtx(costMtx3d, 0);  // 0 is !2d
+    freeCostMtx( costMtx3d, 0 );  // 0 is !2d
 
     return 0;
 }

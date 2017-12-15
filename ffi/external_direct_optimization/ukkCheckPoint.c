@@ -605,33 +605,33 @@ void printTraceBack( characters_t *inputs, characters_t *outputs )
     }
     if (DEBUG_3D) {
         // Print out the alignment
-        printf("ALIGNMENT\n");
+        printf( "ALIGNMENT\n" );
         {
             int i;
 
-            for (i = 0; i < outputs->idxSeq1; i++)   printf("%6u", outputs->seq1[i]);
-            printf("\n");
+            for (i = 0; i < outputs->idxSeq1; i++)   printf( "%6u", outputs->seq1[i] );
+            printf( "\n" );
 
-            for (i = 0; i < outputs->idxSeq2; i++)   printf("%6u", outputs->seq2[i]);
-            printf("\n");
+            for (i = 0; i < outputs->idxSeq2; i++)   printf( "%6u", outputs->seq2[i] );
+            printf( "\n" );
 
-            for (i = 0; i < outputs->idxSeq3; i++)   printf("%6u", outputs->seq3[i]);
-            printf("\n\n");
+            for (i = 0; i < outputs->idxSeq3; i++)   printf( "%6u", outputs->seq3[i] );
+            printf( "\n\n" );
 
             // Print state information
-            for (i = 0; i < si; i++)   printf("%s ", state2str(state_vector[i]));
-            printf("\n");
+            for (i = 0; i < si; i++)    printf( "%s ", state2str(state_vector[i]) );
+            printf( "\n" );
 
             // Print cost stuff
-            for (i = 0; i < costi; i++)    printf("%-2d  ", cost_vector[i]);
-            printf("\n");
+            for (i = 0; i < costi; i++) printf( "%-2d  ", cost_vector[i] );
+            printf( "\n" );
         }
     }
 
-    assert(   outputs->idxSeq1 == outputs->idxSeq2
-           && outputs->idxSeq1 == outputs->idxSeq3
-           && outputs->idxSeq1 == si
-           && outputs->idxSeq1 == costi );
+    assert( outputs->idxSeq1 == outputs->idxSeq2 );
+    assert( outputs->idxSeq1 == outputs->idxSeq3 );
+    assert( outputs->idxSeq1 == si );
+    assert( outputs->idxSeq1 == costi );
 
     checkAlign( outputs->seq1, outputs->idxSeq1, inputs->seq1, inputs->lenSeq1 );
     checkAlign( outputs->seq2, outputs->idxSeq2, inputs->seq2, inputs->lenSeq2 );
