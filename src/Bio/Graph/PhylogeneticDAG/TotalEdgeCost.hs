@@ -40,6 +40,8 @@ import           Data.MonoTraversable
 import           Data.Semigroup
 import           Prelude            hiding (lookup, zipWith)
 
+import Debug.Trace
+
 
 -- |
 -- Computes the total edge cost over all the disambiguated final assignments.
@@ -59,17 +61,21 @@ totalEdgeCosts pariwiseFunction (PDAG2 dag) = applyWeights $ foldlWithKey f init
   where
     refVec = references dag
 
+    roots  = rootRefs dag
+
     pariwiseFunction' lhs rhs tcm = (\(!x,_,_,_,_) -> x) $ pariwiseFunction lhs rhs tcm
 
-    initAcc = fmap ((0 <$) . toList . dynamicCharacters) . getSequence . NE.head $ rootRefs dag
+    initAcc = ((0 <$) . toList . dynamicCharacters) <$> sequencesWLOG
+
+    sequencesWLOG = getSequence $ NE.head roots
 
     getSequence = NE.fromList . otoList . characterSequence . NE.head . resolutions . nodeDecoration . (refVec !)
 
     getFields = fmap (fmap (^. singleDisambiguation) . toList . dynamicCharacters) . getSequence
 
-    weightSequence = fmap (fmap (^. characterWeight) . toList . dynamicCharacters) . getSequence . NE.head $ rootRefs dag
+    weightSequence = (fmap (^. characterWeight) . toList . dynamicCharacters) <$> sequencesWLOG
 
-    tcmSequence = fmap (fmap (^. symbolChangeMatrix) . toList . dynamicCharacters) . getSequence . NE.head $ rootRefs dag
+    tcmSequence = (fmap (^. symbolChangeMatrix) . toList . dynamicCharacters) <$> sequencesWLOG
 
     functionSequence = (fmap (\tcm x y -> pariwiseFunction' x y tcm)) <$> tcmSequence 
 
@@ -78,10 +84,12 @@ totalEdgeCosts pariwiseFunction (PDAG2 dag) = applyWeights $ foldlWithKey f init
     -- For each node in the DAG, fold over the connected edges that have not yet been traversed
     -- and accumulate the total edge cost of each dynamic character.
 --    f :: NonEmpty [i] -> Int -> IndexData e n -> NonEmpty [i]
-    f acc key node = ofoldl' g acc applicableNodes
+    f acc key node
+      | key `elem` roots = acc
+      | otherwise = ofoldl' g acc applicableNodes
       where
-        adjacentNodes   = parentRefs node <> IM.keysSet (childRefs node)
-        applicableNodes = IS.filter (> key) adjacentNodes
+        adjacentNodes   = IS.map collapseRootEdge $ parentRefs node <> IM.keysSet (childRefs node)
+        applicableNodes = IS.map (\x -> trace (show (key, x)) x) $ IS.filter (> key) adjacentNodes
         nodeSequence    = getFields key
 
         -- Folding function for adjacent nodes. Should apply the sum strictly.
@@ -89,4 +97,7 @@ totalEdgeCosts pariwiseFunction (PDAG2 dag) = applyWeights $ foldlWithKey f init
         g seqAcc = force . zipWith (zipWith (+)) seqAcc .
                            zipWith (zipWith ($)) (zipWith (zipWith ($)) functionSequence nodeSequence) . getFields
         
-        
+        collapseRootEdge i
+          | i `notElem` roots = i
+          | otherwise = head . filter (/= i) .  IM.keys . childRefs $ refVec ! i
+            
