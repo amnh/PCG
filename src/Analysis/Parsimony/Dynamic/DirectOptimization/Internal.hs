@@ -334,7 +334,7 @@ threeWayMean costStructure char1 char2 char3 =
   where
     gap = getGapElement $ char1 `indexStream` 0
     (meanStates, costValues) = unzip $ zipWith3 f (otoList char1) (otoList char2) (otoList char3)
-    f a b c = minimalChoice $ -- minimumBy (comparing snd)
+    f a b c = minimalChoice $
               getOverlap a b costStructure :|
             [ getOverlap a c costStructure
             , getOverlap b c costStructure
