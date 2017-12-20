@@ -12,12 +12,18 @@
 -- Endianness reversed. This module defines /Little-endian/ pseudo 
 -- size-polymorphic bit-vectors.
 --
--- The least significant bit of the 'BitVector' is index @0@ not index @width - 1@
+-- Little-endian bit vectors are isomorphic to a @[Bool]@ with the /least/
+-- significant bit at the head of the list and the /most/ significant bit at the
+-- tail of the list.
 --
--- Also exports many useful type-class instances, such as MonoTraversable and
--- FiniteBits.
+-- Consequently, the endian-ness of a bit vector affects the 'Bits', 'FiniteBits',
+-- 'Semigroup', 'Monoid', 'MonoFoldable', and 'MonoTraversable' instances. 
 --
--- This module does /not/ define numeric instanes for 'BitVector', this is 
+-- If you want Bitvectors which are isomorphic to a @[Bool]@ with the /most/
+-- significant bit at the head of the list and the /least/ significant bit at the
+-- tail of the list, then you should use the @bv@ package and /not/ @bv-little@.
+--
+-- This module does /not/ define numeric instances for 'BitVector'. This is 
 -- intentional! If you want to interact with a bit vector as an 'Integral' value,
 -- convert the 'BitVector' using either 'toSignedNumber' or 'toUnsignedNumber'.
 --
@@ -27,12 +33,14 @@
 
 module Data.BitVector.Normal
   ( BitVector()
-  , toSignedNumber
-  , toUnsignedNumber
-  , dimension
   -- * Construction from values
   , bitvector
-  -- * Construction from Bits
+  -- * Queries
+  , dimension
+  -- * Numeric conversion
+  , toSignedNumber
+  , toUnsignedNumber
+  -- * Bit stream conversion
   , fromBits
   , toBits
   ) where
@@ -285,6 +293,36 @@ instance Show BitVector where
 
 
 -- |
+-- Create a bit-vector of non-negative dimension from an integral value.
+-- The integral value will be interpreted as /little-endian/ so that the least
+-- significant bit of the integral value will be the value of the 0th index of 
+-- the resulting bit-vector, and the most significant bit of the inegral value
+-- will be the largest index @i@ such that @bv `testBit` i@ is @True@.
+--
+-- Note that if the integral value exceeds the dimension, the set bits in the
+-- integral value that exceed the provided bit-vector dimension will be ignored.
+{-# INLINE bitvector #-}
+bitvector 
+  :: Integral v 
+  => Word  -- ^ Bit vector dimension
+  -> v     -- ^ Bit vector integral value, /little-endian/
+  -> BitVector
+bitvector dimValue intValue = BV w $ 2^w - 1 .&. toInteger intValue
+  where
+    !w = fromEnum dimValue
+
+
+-- |
+-- /O(1)/
+--
+-- Get the dimension of a 'BitVector'. Preferable over 'finiteBitSize' as it
+-- returns a type which cannot represent a non-negative value.
+{-# INLINE dimension #-}
+dimension :: BitVector -> Word
+dimension = toEnum . dim
+
+
+-- |
 -- 2's complement value of a bit-vector.
 --
 -- >>> int [2]3
@@ -311,31 +349,6 @@ toSignedNumber (BV w n) = fromInteger v
 {-# INLINE toUnsignedNumber #-}
 toUnsignedNumber :: Num a => BitVector -> a
 toUnsignedNumber = fromInteger . nat
-
-
-{-# INLINE dimension #-}
-dimension :: BitVector -> Word
-dimension = toEnum . dim
-
-
--- |
--- Create a bit-vector of non-negative dimension from an integral value.
--- The integral value will be interpreted as /little-endian/ so that the least
--- significant bit of the integral value will be the value of the 0th index of 
--- the resulting bit-vector, and the most significant bit of the inegral value
--- will be the largest index @i@ such that @bv `testBit` i@ is @True@.
---
--- Note that if the integral value exceeds the dimension, the set bits in the
--- integral value that exceed the provided bit-vector dimension will be ignored.
-{-# INLINE bitvector #-}
-bitvector 
-  :: Integral v 
-  => Word  -- ^ Bit vector dimension
-  -> v     -- ^ Bit vector integral value, /little-endian/
-  -> BitVector
-bitvector dimValue intValue = BV w $ 2^w - 1 .&. toInteger intValue
-  where
-    !w = fromEnum dimValue
 
 
 -- | 
