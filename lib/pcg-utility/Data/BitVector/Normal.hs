@@ -293,6 +293,8 @@ instance Show BitVector where
 
 
 -- |
+-- \( \mathcal{O} \left( 1 \right) \)
+--
 -- Create a bit-vector of non-negative dimension from an integral value.
 -- The integral value will be interpreted as /little-endian/ so that the least
 -- significant bit of the integral value will be the value of the 0th index of 
@@ -301,6 +303,9 @@ instance Show BitVector where
 --
 -- Note that if the integral value exceeds the dimension, the set bits in the
 -- integral value that exceed the provided bit-vector dimension will be ignored.
+--
+-- >>> bitvector 7 96
+-- [7]96
 {-# INLINE bitvector #-}
 bitvector 
   :: Integral v 
@@ -313,22 +318,30 @@ bitvector dimValue intValue = BV w $ 2^w - 1 .&. toInteger intValue
 
 
 -- |
--- /O(1)/
+-- \( \mathcal{O} \left( 1 \right) \)
 --
 -- Get the dimension of a 'BitVector'. Preferable over 'finiteBitSize' as it
 -- returns a type which cannot represent a non-negative value.
+--
+-- >>> dimension [2]3
+-- 2
+--
+-- >>> dimension [4]12
+-- 4
 {-# INLINE dimension #-}
 dimension :: BitVector -> Word
 dimension = toEnum . dim
 
 
 -- |
+-- \( \mathcal{O} \left( 1 \right) \)
+--
 -- 2's complement value of a bit-vector.
 --
--- >>> int [2]3
+-- >>> toSignedNumber [2]3
 -- -1
 --
--- >>> int [4]12
+-- >>> toSignedNumber [4]12
 -- -4
 {-# INLINE toSignedNumber #-}
 toSignedNumber :: Num a => BitVector -> a
@@ -339,12 +352,14 @@ toSignedNumber (BV w n) = fromInteger v
 
 
 -- | 
+-- \( \mathcal{O} \left( 1 \right) \)
+--
 -- Unsigned value of a bit-vector.
 --
--- >>> int [2]3
+-- >>> toUnsignedNumber [2]3
 -- 3
 --
--- >>> int [4]12
+-- >>> toUnsignedNumber [4]12
 -- 12
 {-# INLINE toUnsignedNumber #-}
 toUnsignedNumber :: Num a => BitVector -> a
@@ -352,6 +367,8 @@ toUnsignedNumber = fromInteger . nat
 
 
 -- | 
+-- \( \mathcal{O} \left( n \right) \)
+--
 -- Create a bit-vector from a /little-endian/ list of bits.
 --
 -- >>> fromBits [True, False, False]
@@ -368,6 +385,8 @@ fromBits bs = BV n k
 
 
 -- | 
+-- \( \mathcal{O} \left( n \right) \)
+--
 -- Create a /little-endian/ list of bits from a bit-vector.
 --
 -- >>> toBits [4]11
