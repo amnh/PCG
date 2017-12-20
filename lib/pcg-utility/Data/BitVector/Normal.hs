@@ -312,9 +312,10 @@ bitvector
   => Word  -- ^ Bit vector dimension
   -> v     -- ^ Bit vector integral value, /little-endian/
   -> BitVector
-bitvector dimValue intValue = BV w $ 2^w - 1 .&. toInteger intValue
+bitvector !dimValue !intValue = BV width $ mask .&. toInteger intValue
   where
-    !w = fromEnum dimValue
+    !width = fromEnum dimValue
+    !mask  = 2 ^ dimValue - 1
 
 
 -- |
