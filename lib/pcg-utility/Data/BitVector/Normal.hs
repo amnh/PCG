@@ -348,7 +348,7 @@ dimension = toEnum . dim
 toSignedNumber :: Num a => BitVector -> a
 toSignedNumber (BV w n) = fromInteger v
   where
-    v | n `testBit` (w-1) = negate $ 2^w - 1 - n
+    v | n `testBit` (w-1) = negate $ 2^w - n
       | otherwise         = n
 
 
