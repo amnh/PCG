@@ -379,10 +379,10 @@ fromBits :: Foldable f => f Bool -> BitVector
 fromBits bs = BV n k
   -- NB: 'setBit' is a GMP function, faster than regular addition.
   where
-    (n, k) = foldl' go (0,0) bs 
+    (!n, !k) = foldl' go (0, 0) bs 
     go (!i, !v) b
-      | b         = (i+1,setBit v i)
-      | otherwise = (i+1,v)
+      | b         = (i+1, setBit v i)
+      | otherwise = (i+1, v)
 
 
 -- | 
@@ -394,5 +394,5 @@ fromBits bs = BV n k
 -- [True, True, False, True]
 {-# INLINE toBits #-}
 toBits :: BitVector -> [Bool]
-toBits (BV w n) = testBit n <$> [ 0, w - 1 ]
+toBits (BV w n) = testBit n <$> [ 0 .. w - 1 ]
 
