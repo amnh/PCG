@@ -183,12 +183,16 @@ chooseDirectOptimizationComparison dec decs =
     selectBranch candidate
       | sequentialAlignOverride = sequentialAlign (candidate ^. sparseTransitionCostMatrix)
       | otherwise =
+              let !scm = (candidate ^. symbolChangeMatrix)
+              in \x y -> naiveDO x y scm
+{-
           case candidate ^. denseTransitionCostMatrix of
             Just  d -> \x y -> foreignPairwiseDO x y d
             Nothing ->
               let !scm = (candidate ^. symbolChangeMatrix)
               in \x y -> naiveDO x y scm
-
+-}
+        
 
 chooseDirectOptimizationComparison2
   :: ( SimpleDynamicDecoration d  c
