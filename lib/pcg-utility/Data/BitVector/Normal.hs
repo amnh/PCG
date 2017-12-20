@@ -167,32 +167,30 @@ instance FiniteBits BitVector where
         lastSetBit = I# (integerLog2# n)
 
     {-# INLINE countLeadingZeros #-}
-    countLeadingZeros (BV 0 _) = 0
-    countLeadingZeros (BV n 0) = n
-    countLeadingZeros bv =
-        case nat bv of
-          S#       v  -> countLeadingZeros $ I# v
+    countLeadingZeros (BV w intVal) =
+        case intVal of
+          S#       v  -> countTrailingZeros $ iMask .|. (I# v)
           Jp# (BN# v) -> f $ ByteArray v
           Jn# (BN# v) -> f $ ByteArray v
       where
+        iMask = (complement zeroBits) `xor` (2 ^ w - 1)
+
         f :: ByteArray -> Int
-        f byteArr = g 0 limit
+        f byteArr = g q
           where
-            g :: Int -> Int -> Int
-            g i 1 = countLeadingZeros (byteArr `indexByteArray` i :: Word64)
-            g i o =
-              case countLeadingZeros value of
-                64 -> g (i+1) (o-1)
-                v  -> v
+            (q, r) = w `quotRem` 64
+            wMask  = (complement zeroBits) `xor` (2 ^ r - 1) :: Word64
+
+            g :: Int -> Int
+            g !i
+              | i <= 0 = countTrailingZeros $ wMask .|. value
+              | otherwise = 
+                  case countTrailingZeros value of
+                    64 -> 64 + g (i-1)
+                    v  -> v
               where
                 value :: Word64
                 value = byteArr `indexByteArray` i
-
-            (q, r) = sizeofByteArray byteArr `quotRem` 8
-            limit  =
-                case r of
-                  0 -> q
-                  v -> q + v
 
 
 instance Monoid BitVector where
