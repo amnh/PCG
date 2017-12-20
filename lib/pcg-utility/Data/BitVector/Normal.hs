@@ -61,7 +61,7 @@ import Data.Word
 import GHC.Exts
 import GHC.Integer.GMP.Internals
 import GHC.Integer.Logarithms
-import Test.QuickCheck (Arbitrary(..), NonNegative(..))
+import Test.QuickCheck (Arbitrary(..), NonNegative(..), suchThat)
 
 
 data  BitVector
@@ -76,8 +76,11 @@ type instance Element BitVector = Bool
 
 instance Arbitrary BitVector where
 
-    arbitrary = BV <$> (getNonNegative <$> arbitrary)
-                   <*> (getNonNegative <$> arbitrary)
+    arbitrary = do
+      dimVal <- (getNonNegative <$> arbitrary)
+      let upperBound = 2^dimVal
+      intVal <- (getNonNegative <$> arbitrary) `suchThat` (< upperBound)
+      pure $ BV dimVal intVal
 
 
 instance Bits BitVector where
@@ -159,14 +162,16 @@ instance FiniteBits BitVector where
     finiteBitSize = dim
 
     {-# INLINE countTrailingZeros #-}
-    countTrailingZeros (BV w n) = w - lastSetBit - 1
+    countTrailingZeros (BV w n) = max 0 $ w - lastSetBit - 1
       where
         lastSetBit = I# (integerLog2# n)
 
     {-# INLINE countLeadingZeros #-}
+    countLeadingZeros (BV 0 _) = 0
+    countLeadingZeros (BV n 0) = n
     countLeadingZeros bv =
         case nat bv of
-          S#       v  -> countTrailingZeros $ I# v
+          S#       v  -> countLeadingZeros $ I# v
           Jp# (BN# v) -> f $ ByteArray v
           Jn# (BN# v) -> f $ ByteArray v
       where
@@ -174,9 +179,9 @@ instance FiniteBits BitVector where
         f byteArr = g 0 limit
           where
             g :: Int -> Int -> Int
-            g i 1 = countTrailingZeros (byteArr `indexByteArray` i :: Word64)
+            g i 1 = countLeadingZeros (byteArr `indexByteArray` i :: Word64)
             g i o =
-              case countTrailingZeros value of
+              case countLeadingZeros value of
                 64 -> g (i+1) (o-1)
                 v  -> v
               where
@@ -339,11 +344,23 @@ dimension = toEnum . dim
 --
 -- 2's complement value of a bit-vector.
 --
--- >>> toSignedNumber [2]3
--- -1
+-- >>> toSignedNumber [4]0
+-- 0
+--
+-- >>> toSignedNumber [4]3
+-- 3
+--
+-- >>> toSignedNumber [4]7
+-- 7
+--
+-- >>> toSignedNumber [4]8
+-- -8
 --
 -- >>> toSignedNumber [4]12
 -- -4
+--
+-- >>> toSignedNumber [4]15
+-- -1
 {-# INLINE toSignedNumber #-}
 toSignedNumber :: Num a => BitVector -> a
 toSignedNumber (BV w n) = fromInteger v
@@ -357,11 +374,23 @@ toSignedNumber (BV w n) = fromInteger v
 --
 -- Unsigned value of a bit-vector.
 --
--- >>> toUnsignedNumber [2]3
+-- >>> toSignedNumber [4]0
+-- 0
+--
+-- >>> toSignedNumber [4]3
 -- 3
 --
--- >>> toUnsignedNumber [4]12
+-- >>> toSignedNumber [4]7
+-- 7
+--
+-- >>> toSignedNumber [4]8
+-- 8
+--
+-- >>> toSignedNumber [4]12
 -- 12
+--
+-- >>> toSignedNumber [4]15
+-- 15
 {-# INLINE toUnsignedNumber #-}
 toUnsignedNumber :: Num a => BitVector -> a
 toUnsignedNumber = fromInteger . nat
@@ -371,6 +400,12 @@ toUnsignedNumber = fromInteger . nat
 -- \( \mathcal{O} \left( n \right) \)
 --
 -- Create a bit-vector from a /little-endian/ list of bits.
+--
+-- The following will hold:
+--
+-- > length . takeWhile not === countLeadingZeros . fromBits
+--
+-- > length . takeWhile not . reverse === countTrailingZeros . fromBits
 --
 -- >>> fromBits [True, False, False]
 -- [3]1
@@ -389,6 +424,12 @@ fromBits bs = BV n k
 -- \( \mathcal{O} \left( n \right) \)
 --
 -- Create a /little-endian/ list of bits from a bit-vector.
+--
+-- The following will hold:
+--
+-- > length . takeWhile not . toBits === countLeadingZeros
+--
+-- > length . takeWhile not . reverse . toBits === countTrailingZeros
 --
 -- >>> toBits [4]11
 -- [True, True, False, True]
