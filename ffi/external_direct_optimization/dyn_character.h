@@ -20,6 +20,8 @@
 #ifndef DYN_CHAR_H
 #define DYN_CHAR_H
 
+#include <stddef.h>
+
 
 // #define USE_LARGE_ALPHABETS
 

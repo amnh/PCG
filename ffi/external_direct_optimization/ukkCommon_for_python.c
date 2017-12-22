@@ -1,4 +1,4 @@
-/*
+/* from 3DO repo
  * Copyright (c) David Powell <david@drp.id.au>
  *
  * This program is free software; you can redistribute it and/or modify it under
@@ -15,6 +15,12 @@
  * this program; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place - Suite 330, Boston, MA 02111-1307, USA.
  *
+ * Copyright (C) David Powell <david@drp.id.au>
+ * This program comes with ABSOLUTELY NO WARRANTY, and is provided
+ * under the GNU Public License v2.
+ *
+ * Additional edits by Eric Ford at AMNH <eford@amnh.org>
+ *
  */
 
 
@@ -26,15 +32,24 @@
 // Contains the common routines for ukk.alloc, ukk.noalign, ukk.checkp and ukk.dpa
 // Also see ukkCommon.h
 // Compile with -DSYSTEM_INFO to print system information of
-// every run.  Useful to timing runs where cpu info is
-// important.
+// every run. Useful to timing runs where cpu info is important.
 
-#define __UKKCOMMON_C__
+/**
+ *  Usage: [m a b]
+ *  where m is the cost of a mismatch_cost,
+ *      a is the cost to start a gap,
+ *      b is the cost to extend a gap.
+ */
+
+// #define UKKCOMMON_C
+#include <assert.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 
 #define NO_ALLOC_ROUTINES
+#include "dyn_character.h"
+#include "ukkCheckPoint.h"
 #include "ukkCommon.h"
 
 int neighbours[MAX_STATES];
@@ -43,90 +58,70 @@ int secondCost[MAX_STATES];
 int transCost[MAX_STATES][MAX_STATES];
 int stateNum[MAX_STATES];
 
-int misCost        = 1;
-int startInsert    = 3;             // a: w(k) = a + b * k
-int continueInsert = 1;             // b:
-int startDelete    = 3;
-int continueDelete = 1;
+int misCost_g        = 1;
+int startInsert_g    = 3;             // a: w(k) = a + b * k
+int continueInsert_g = 1;             // b:
+int startDelete_g    = 3;
+int continueDelete_g = 1;
 
-int numStates;
-int maxSingleStep;
+elem_t gap_char_g;
 
-// char Astr[10000];
-// char Bstr[10000];
-// char Cstr[10000];
-// int Alen, Blen, Clen;
-
-int doUkk();            // Main driver function
+int numStates_g;
+int maxSingleStep_g;
 
 
-int powell_3D_align ( // dyn_character_t *longChar
-//                  , dyn_character_t *shortChar
-//                  , dyn_character_t *middleChar
-//                  , dyn_character_t *retLongChar
-//                  , dyn_character_t *retShortChar
-//                  , dyn_character_t *retMiddleChar
-//                  ,
-                      char   *longChar
-                    , size_t  longCharLen
-                    , char   *middleChar
-                    , size_t  middleCharLen
-                    , char   *shortChar
-                    , size_t  shortCharLen
-                    , int     mm          // mismatch cost, must be > 0
-                    , int     go          // gap open cost, must be >= 0
-                    , int     ge          // gap extension cost, must be > 0
+int powell_3D_align ( characters_t *inputSeqs     // lengths set correctly; idices set to 0
+                    , characters_t *outputSeqs    // lengths set correctly; idices set to 0
+                    , size_t        alphabetSize  // not including gap
+                    , int           mm            // mismatch cost, must be > 0
+                    , int           go            // gap open cost, must be >= 0
+                    , int           ge            // gap extension cost, must be > 0
                     )
 {
-    characters_t *inputs = malloc(sizeof (characters_t));
+    gap_char_g = 1 << alphabetSize;
 
-    inputs->Alen = longCharLen;
-    inputs->Blen = shortCharLen;
-    inputs->Clen = middleCharLen;
+    outputSeqs->idxSeq1 = 0;
+    outputSeqs->idxSeq2 = 0;
+    outputSeqs->idxSeq3 = 0;
 
-    size_t maxLength = inputs->Alen + inputs->Blen + inputs->Clen;
+    misCost_g        = mm;
+    startInsert_g    = go;
+    continueInsert_g = ge;
+    startDelete_g    = go;    // note that these are same as insert
+    continueDelete_g = ge;    // note that these are same as insert
 
-    inputs->Astr = malloc(maxLength * sizeof(char));
-    memcpy( inputs->Astr, longChar, longCharLen * sizeof(char) );
-    // inputs->Alen = longCharLen;
-    inputs->Bstr = malloc(maxLength * sizeof(char));
-    memcpy( inputs->Bstr, middleChar, middleCharLen * sizeof(char) );
-    // inputs->Blen = middleCharLen;
-    inputs->Cstr = malloc(maxLength * sizeof(char));
-    memcpy( inputs->Cstr, shortChar, shortCharLen * sizeof(char) );
-    // inputs->Clen = shortCharLen;
-
-    misCost        = mm;
-    startInsert    = go;
-    continueInsert = ge;
-    startDelete    = go;    // note that these are same as insert
-    continueDelete = ge;    // note that these are same as insert
-
-    for (int i = 0; i < inputs->Alen; i++) {
-        printf("%c %c %c\n", inputs->Astr[i], inputs->Bstr[i], inputs->Cstr[i]);
+    if (DEBUG_3D) {
+        int i;
+        for (i = 0; i < inputSeqs->lenSeq1; i++) {
+            printf( "%d  ", inputSeqs->seq1[i] );
+        }
+        printf("\n");
+        for (i = 0; i < inputSeqs->lenSeq2; i++) {
+            printf( "%d  ", inputSeqs->seq2[i] );
+        }
+        printf("\n");
+        for (i = 0; i < inputSeqs->lenSeq3; i++) {
+            printf( "%d  ", inputSeqs->seq3[i] );
+        }
+        printf("\n");
     }
 
-
-    // TODO: Not sure why I need this. Only for print statements below?
-    inputs->Astr[inputs->Alen] = 0;
-    inputs->Bstr[inputs->Blen] = 0;
-    inputs->Cstr[inputs->Clen] = 0;
-
-    // printf("A = %s  Length = %d\n", inputs->Astr, inputs->Alen);
-    // printf("B = %s  Length = %d\n", inputs->Bstr, inputs->Blen);
-    // printf("C = %s  Length = %d\n", inputs->Cstr, inputs->Clen);
-
     setup();
-    doUkk(inputs);
-
-    return 0;
+    return doUkk( inputSeqs, outputSeqs );
 }
 
-/*-- -------------------------------------------------------------------- */
 
-int whichCharCost(char a, char b, char c)
+
+/* ---------------------------------------------------------------------- */
+
+int whichCharCost( int a, int b, int c )
 {
-    assert(a != 0 && b != 0 && c != 0);
+    // This because it was calloc'ed, so a 0 means we've run past the end of the array.
+    // TODO: This prevents us from using A == 0. What to do?
+    // Ah, actually this might be because of null-terminated strings. Testing must happen.
+    assert(   a != 0
+           && b != 0
+           && c != 0 );
 
     /*
       When running as a ukk algorithm (ie. not the DPA), then
@@ -134,12 +129,9 @@ int whichCharCost(char a, char b, char c)
       and since we are moving to a MMM state, this cost will NEVER be used,
       so it doesn't matter what we return
 
-      When running as the DPA, it can occur at a = b = c, return 0 in this case
-    */
-    if (a == b && a == c) return 0;
+      When running as the DPA, it can occur at a == b == c, return 0 in this case.
 
-
-    /* return 1 for the following
+      Return 1 for the following
          x-- -x--- x
          xx- x - x -xx
          xxy xyx yxx
@@ -148,20 +140,22 @@ int whichCharCost(char a, char b, char c)
          xy- x - y -xy
          xyz
     */
+    if (a == b && a == c)    return 0;
 
     // Take care of any 2 the same
-    if (a == b || a == c || b == c) return 1;
+    if (a == b || a == c || b == c)    return 1;
+
     return 2;
 }
 
 
-int okIndex(int a, int da, int end) {
+int okIndex( int a, int da, int end)
+{
     if (a < 0)           return 0;
     if (da && a < end)   return 1;
     if (!da && a <= end) return 1;
 
     return 0;
-    //  return (a < 0 ? 0 : (da == 0 ? 1 : a < end));
 }
 
 
@@ -170,18 +164,15 @@ int okIndex(int a, int da, int end) {
 /*-- -------------------------------------------------------------------- */
 /* Common setup routines */
 
-int stateTransitionCost(int from, int to)
+int stateTransitionCost( int from, int to )
 {
   return transCost[from][to];
 }
 
-/** Mutates a, b, and c such that each is true or false if the least significant first, second or third digit, respectively,
- *  of neighbour is 1.
- *  I.e., if one of the transitions of the `neighbor` fsm is `delete`, set that state to true; otherwise, set to 0.
- */
-void exists_neighbor_in_delete_state(int n, int *a, int *b, int *c)
+void exists_neighbor_in_delete_state( int n, int *a, int *b, int *c )
 {
-  assert(n > 0 && n <= 7);
+  assert( n > 0 && n <= 7 );
+
   *a = (n >> 0) & 1;
   *b = (n >> 1) & 1;
   *c = (n >> 2) & 1;
@@ -207,7 +198,9 @@ char *state2str(int s)
     int i;
     transitions(stateNum[s], st);
     for (i = 0; i < 3; i++) {
-        str[i] = (st[i] == match ? 'M' : (st[i] == del ? 'D' : 'I'));
+        str[i] = ( st[i] == match ? 'M'
+                                  : ( st[i] == del ? 'D'
+                                                   : 'I' ) );
     }
     return str;
 }
@@ -226,22 +219,23 @@ int countTrans(Trans st[3], Trans t)
 // Also, see my update of this using mod.
 void setup()
 {
-    int s, ns = 0;
+    int s,
+        ns = 0;
 
-    assert(startInsert    == startDelete    && "Need to rewrite setup routine");
-    assert(continueInsert == continueDelete && "Need to rewrite setup routine");
+    assert( startInsert_g    == startDelete_g    && "Need to rewrite setup routine" );
+    assert( continueInsert_g == continueDelete_g && "Need to rewrite setup routine" );
 
     for (s = 0; s < MAX_STATES; s++) {
         Trans st[3];
         transitions(s, st);
 
-        if (countTrans(st, match) == 0)  continue;     // Must be at least one match
+        if (countTrans(st, match) == 0)    continue;     // Must be at least one match
 
-        if (countTrans(st, ins) > 1) continue;     // Can't be more than 1 insert state!  (7/7/1998)
+        if (countTrans(st, ins) > 1)       continue;     // Can't be more than 1 insert state!  (7/7/1998)
 
 #ifdef LIMIT_TO_GOTOH
         // Gotoh86 only allowed states that had a least 2 match states. (Total of 7 possible)
-        if (countTrans(st, ins) + countTrans(st, del) > 1) continue;
+        if (countTrans(st, ins) + countTrans(st, del) > 1)    continue;
 #endif
 
         stateNum[ns] = s;
@@ -263,158 +257,169 @@ void setup()
         { // Setup cost for continuing a state (contCost[])
             int cost, cont2;
             if (countTrans(st, ins) > 0) {
-                cost = continueInsert;    /* Can only continue 1 insert at a time */
+                cost  = continueInsert_g;        /* Can only continue 1 insert at a time */
                 cont2 = 0;
             } else if (countTrans(st, match) == 3) {
-                cost = misCost;        /* All match states */
+                cost  = misCost_g;               /* All match states */
                 cont2 = 1;
             } else if (countTrans(st, del) == 1) {
-                cost = continueDelete;    /* Continuing a delete */
+                cost  = continueDelete_g;        /* Continuing a delete */
                 cont2 = 1;
             } else {
-                cost = 2 * continueDelete;    /* Continuing 2 deletes */
+                cost = 2 * continueDelete_g;     /* Continuing 2 deletes */
                 cont2 = 0;
             }
-            contCost[ns] = cost;
+            contCost[ns]   = cost;
             secondCost[ns] = cont2;
         } // End setup of contCost[]
 
       ns++;
     } // end MAX STATES assignments
 
-    numStates = ns;
+    numStates_g = ns;
 
     { // Setup state transition costs (transCost[][])
         int s1, s2;
         int maxCost = 0;
 
-        assert(startInsert == startDelete && "Need to rewrite setup routine");
-        for (s1 = 0; s1 < numStates; s1++) {
-            for (s2 = 0; s2 < numStates; s2++) {
+        assert( startInsert_g == startDelete_g && "Need to rewrite setup routine" );
+        for (s1 = 0; s1 < numStates_g; s1++) {
+            for (s2 = 0; s2 < numStates_g; s2++) {
                 Trans from[3], to[3];
-                int cost = 0, i;
+                int cost = 0;
+
                 transitions(stateNum[s1], from);
                 transitions(stateNum[s2], to);
 
-                for (i = 0; i < 3; i++) {
-                    if ((to[i] == ins || to[i] == del) && (to[i] != from[i]))  cost += startInsert;
+                for (int i = 0; i < 3; i++) {
+                    if (     (to[i] == ins || to[i] == del)
+                          && (to[i] != from[i]) ) {
+                        cost += startInsert_g;
+                    }
                 }
                 transCost[s1][s2] = cost;
 
                 { // Determine biggest single step cost
                     int thisCost = cost + contCost[s2];
                     Trans st[3];
-                    transitions(stateNum[s2], st);
-                    thisCost += misCost * (countTrans(st, match) - 1);
-                    maxCost = (maxCost < thisCost ? thisCost : maxCost);
-                }
+                    transitions( stateNum[s2], st );
+                    thisCost += misCost_g * (countTrans(st, match) - 1);
+                    maxCost   = (maxCost < thisCost ? thisCost
+                                                    : maxCost);
+                } // biggest single step cost
             }
         }
-
-      maxSingleStep = maxCost;
-      fprintf(stderr, "Maximum single step cost = %d\n", maxSingleStep);
+        maxSingleStep_g = maxCost;
+        fprintf(stderr, "Maximum single step cost = %d\n", maxSingleStep_g);
     } // End setup of transition costs
 }
 
 
-
-
-/*-- -------------------------------------------------------------------- */
+/* ---------------------------------------------------------------------- */
 /* Some alignment checking routines */
-void checkAlign(char *al, int alLen, char *str, int strLen)
+void checkAlign( elem_t *al, int alLen, elem_t *str, int strLen )
 {
-  int i, j = 0;
-  for (i = 0; i < alLen; i++) {
-    if (al[i] == '-') continue;
-    assert(al[i] == str[j] && "Output alignment not equal to input string");
-    j++;
-  }
-  assert(j == strLen && "Output alignment not equal length to input string");
+    int i,
+        j = 0;
+
+    for (i = 0; i < alLen; i++) {
+        if (al[i] == gap_char_g)    continue;
+
+        assert( al[i] == str[j] && "Output alignment not equal to input string" );
+        j++;
+    }
+    assert( j == strLen && "Output alignment not equal length to input string" );
 }
 
-void revIntArray(int *arr, int start, int end)
+
+void revIntArray( int *arr, int start, int end )
 {
-  int i;
-  if (end <= start) return;
-  for (i = start; i < (end + start) / 2; i++) {
-    int t = arr[i];
-    arr[i] = arr[end - i + start - 1];
-    arr[end - i + start - 1] = t;
-  }
+    if (end <= start)    return;
+
+    for (int i = start; i < (end + start) / 2; i++) {
+        int t  = arr[i];
+        arr[i] = arr[end - i + start - 1];
+        arr[end - i + start - 1] = t;
+    }
 }
 
-void revCharArray(char *arr, int start, int end)
+
+void revElem_tArray( elem_t *arr, int start, int end )
 {
-  int i;
-  if (end <= start) return;
-  for (i = start; i < (end + start) / 2; i++) {
-    char t = arr[i];
-    arr[i] = arr[end - i + start - 1];
-    arr[end - i + start - 1] = t;
-  }
+    if (end <= start)    return;
+
+    for (int i = start; i < (end + start) / 2; i++) {
+        elem_t t                 = arr[i];
+        arr[i]                   = arr[end - i + start - 1];
+        arr[end - i + start - 1] = t;
+    }
 }
 
-int alignmentCost(int states[], char *al1, char *al2, char *al3, int len)
+
+int alignmentCost(          int  states[]
+                 , unsigned int *al1
+                 , unsigned int *al2
+                 , unsigned int *al3
+                 ,          int  len
+                 )
 {
-  int i;
-  int cost = 0;
-  Trans last_st[3] = {match, match, match};
+    int cost = 0;
+    Trans last_st[3] = { match, match, match };
 
-  assert(startInsert == startDelete);
+    assert( startInsert_g == startDelete_g );
 
-  for (i = 0; i < len; i++) {
-    int s;
-    Trans st[3];
-    transitions(stateNum[states[i]], st);
+    for (int i = 0; i < len; i++) {
+        int s;
+        Trans st[3];
+        transitions(stateNum[states[i]], st);
 
 //    if (i > 0) fprintf(stderr, "% - 2d  ", cost);
 
-    // Pay for begining of gaps.
-    for (s = 0; s < 3; s++)
-      if (st[s] != match && st[s] != last_st[s])
-    cost += startInsert;
+        // Pay for begining of gaps.
+        for (s = 0; s < 3; s++) {
+            if (st[s] != match && st[s] != last_st[s])   cost += startInsert_g;
+        }
 
-    for (s = 0; s < 3; s++)
-      last_st[s] = st[s];
+        for (s = 0; s < 3; s++)   last_st[s] = st[s];
 
-    // Pay for continuing an insert
-    if (countTrans(st, ins) > 0) {
-      assert(countTrans(st, ins) == 1);
-      cost += continueInsert;
-      continue;
+        // Pay for continuing an insert
+        if (countTrans(st, ins) > 0) {
+            assert(countTrans(st, ins) == 1);
+            cost += continueInsert_g;
+            continue;
+        }
+
+        // Pay for continuing deletes
+        cost += continueDelete_g * countTrans(st, del);
+
+        // Pay for mismatches
+        {
+            int ch[3];
+            int ci = 0;
+            if (st[0] == match) {
+                assert( al1[i] != gap_char_g );
+                ch[ci++] = al1[i];
+            }
+            if (st[1] == match) {
+                assert( al2[i] != gap_char_g );
+                ch[ci++] = al2[i];
+            }
+            if (st[2] == match) {
+                assert( al3[i] != gap_char_g );
+                ch[ci++] = al3[i];
+            }
+            ci--;
+            for (; ci > 0; ci--) {
+                if (ch[ci - 1] != ch[ci])    cost += misCost_g;
+            }
+            if (     countTrans(st, match) == 3
+                  && ch[0] == ch[2]
+                  && ch[0] != ch[1]) {
+                cost -= misCost_g;
+            }
+        }
+
     }
 
-    // Pay for continuing deletes
-    cost += continueDelete * countTrans(st, del);
-
-    // Pay for mismatches
-    {
-      char ch[3];
-      int ci = 0;
-      if (st[0] == match) {
-          assert(al1[i] != '-');
-          ch[ci++] = al1[i];
-      }
-      if (st[1] == match) {
-          assert(al2[i] != '-');
-          ch[ci++] = al2[i];
-      }
-      if (st[2] == match) {
-          assert(al3[i] != '-');
-          ch[ci++] = al3[i];
-      }
-      ci--;
-      for (; ci > 0; ci--) {
-    if (ch[ci - 1] != ch[ci]) cost+=misCost;
-      }
-      if (countTrans(st, match) == 3 && ch[0] == ch[2] && ch[0] != ch[1]) cost -= misCost;
-    }
-
-  }
-//  fprintf(stderr, "% - 2d\n", cost);
-
-  return cost;
-}
-/*-- -------------------------------------------------------------------- */
-
-// End of ukkCommon.c
+    return cost;
+} // End of ukkCommon.c

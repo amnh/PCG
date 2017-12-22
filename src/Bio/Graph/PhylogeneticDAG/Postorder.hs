@@ -24,7 +24,6 @@ import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
 import           Control.Arrow               ((&&&))
 import           Control.Applicative         (liftA2)
-import           Control.Monad.State.Lazy
 import           Data.Bits
 import           Data.Foldable
 import qualified Data.IntMap          as IM

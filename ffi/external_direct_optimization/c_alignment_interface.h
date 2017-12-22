@@ -13,8 +13,8 @@
  */
 typedef struct alignIO_t {
     elem_t *character;
-    size_t length;
-    size_t capacity;
+    size_t  length;
+    size_t  capacity;
 } alignIO_t;
 
 

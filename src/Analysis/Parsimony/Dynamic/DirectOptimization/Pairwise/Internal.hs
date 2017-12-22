@@ -13,7 +13,7 @@
 -- two dynamic characters.
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE ConstraintKinds, FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE BangPatterns, ConstraintKinds, FlexibleContexts, TypeFamilies #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
  ( Cost
@@ -440,9 +440,9 @@ overlap costStruct char1 char2
 -- costly intersection of character elements and the cost of that intersection
 -- of character elements.
 minimalChoice :: (Bits c, Foldable1 t, Ord n) => t (c, n) -> (c, n)
-minimalChoice = foldr1 f
+minimalChoice = foldl1 f
   where
-    f (val1, cost1) (val2, cost2)
+    f (!val1, !cost1) (!val2, !cost2)
       | cost1 == cost2 = (val1 .|. val2, cost1)
       | cost1 < cost2  = (val1         , cost1)
       | otherwise      = (val2         , cost2)

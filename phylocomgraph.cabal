@@ -23,7 +23,7 @@ cabal-version:       >= 1.22
 
 flag build-cpp-files
   description: Toggles the C++ files being successfully build.
-  default: True
+  default: False
 
 
 library
@@ -267,6 +267,7 @@ library
                        Bio.Graph.PhylogeneticDAG.Postorder
                        Bio.Graph.PhylogeneticDAG.Preorder
                        Bio.Graph.PhylogeneticDAG.Reification
+                       Bio.Graph.PhylogeneticDAG.TotalEdgeCost
                        Bio.Graph.ZipperDAG.Internal
                        Bio.Sequence.Internal
                        Bio.Sequence.Block.Builder

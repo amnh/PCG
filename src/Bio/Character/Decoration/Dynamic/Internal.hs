@@ -984,10 +984,12 @@ renderingDecorationContext dec = (shownAlphabet, shownCost, shownFoci)
   where
     shownAlphabet = show $ dec ^. characterAlphabet
 
-    shownFoci = maybe "" renderFoci $ dec ^. traversalFoci
+    shownFoci = maybe "No Foci exist\n" renderFoci $ dec ^. traversalFoci
+
+--    shownFoci = show . fmap renderFoci $ dec ^. traversalFoci
 
     shownCost = unwords
-        [ "Cost                :"
+        [ "Cost                 :"
         , show (dec ^. characterCost)
         , "{"
         , show (dec ^. characterLocalCost)
