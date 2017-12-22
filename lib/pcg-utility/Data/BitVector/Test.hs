@@ -7,16 +7,157 @@ module Data.BitVector.Test
 import Data.Bits
 import Data.BitVector.Normal
 import Data.Foldable
+import Data.Monoid ()
 import Data.MonoTraversable
+import Data.Semigroup
 import Test.Tasty
-import Test.Tasty.QuickCheck
+import Test.Tasty.QuickCheck hiding ((.&.))
 
 
 testSuite :: TestTree
 testSuite = testGroup "BitVector tests"
     [ otoListTest
     , finiteBitsTests
+    , monoFunctorProperties
+    , monoFoldableProperties
+    , monoidProperties
+    , orderingProperties
+    , semigroupProperties
     ]
+
+
+monoFunctorProperties :: TestTree
+monoFunctorProperties = testGroup "Properites of a MonoFunctor"
+    [ testProperty "omap id === id" omapId
+    , testProperty "omap (f . g)  === omap f . omap g" omapComposition
+    ]
+  where
+    omapId :: BitVector -> Property
+    omapId bv = omap id bv === id bv
+    
+    omapComposition :: (Blind (Bool -> Bool), Blind (Bool -> Bool), BitVector) -> Property
+    omapComposition (Blind f, Blind g, bv) = omap (f . g) bv ===  (omap f . omap g) bv
+
+
+monoFoldableProperties :: TestTree
+monoFoldableProperties = testGroup "Properties of MonoFoldable"
+    [ testProperty "ofoldr f z t === appEndo (ofoldMap (Endo . f) t ) z" testFoldrFoldMap
+    , testProperty "ofoldl' f z t === appEndo (getDual (ofoldMap (Dual . Endo . flip f) t)) z" testFoldlFoldMap
+    , testProperty "ofoldr f z === ofoldr f z . otoList" testFoldr
+    , testProperty "ofoldl' f z === ofoldl' f z . otoList" testFoldl
+    , testProperty "ofoldr1Ex f z === ofoldr1Ex f z . otoList" testFoldr1
+    , testProperty "ofoldl1Ex' f z === ofoldl1Ex' f z . otoList" testFoldl1
+    , testProperty "oall f === getAll . ofoldMap (All . f)" testAll
+    , testProperty "oany f === getAny . ofoldMap (Any . f)" testAny
+    , testProperty "olength === length . otoList" testLength
+    , testProperty "onull === (0 ==) . olength" testNull
+    , testProperty "headEx === getFirst . ofoldMap1Ex First" testHead
+    , testProperty "lastEx === getLast . ofoldMap1Ex Last" testTail
+    , testProperty "elem e /== notElem e" testInclusionConsistency
+    ]
+  where
+    testFoldrFoldMap :: (Blind (Bool -> Word -> Word), Word, BitVector) -> Property
+    testFoldrFoldMap (Blind f, z, bv) =
+        ofoldr f z bv === appEndo (ofoldMap (Endo . f) bv) z
+
+    testFoldlFoldMap :: (Blind (Word -> Bool -> Word), Word, BitVector) -> Property
+    testFoldlFoldMap (Blind f, z, bv) =
+        ofoldl' f z bv === appEndo (getDual (ofoldMap (Dual . Endo . flip f) bv)) z
+
+    testFoldr :: (Blind (Bool -> Word -> Word), Word, BitVector) -> Property
+    testFoldr (Blind f, z, bv) =
+        ofoldr f z bv === (ofoldr f z . otoList) bv
+    
+    testFoldl :: (Blind (Word -> Bool -> Word), Word, BitVector) -> Property
+    testFoldl (Blind f, z, bv) =
+        ofoldl' f z bv === (ofoldl' f z . otoList) bv
+    
+    testFoldr1 :: (Blind (Bool -> Bool -> Bool), BitVector) -> Property
+    testFoldr1 (Blind f, bv) =
+        (not . onull) bv  ==> ofoldr1Ex f bv === (ofoldr1Ex f . otoList) bv
+    
+    testFoldl1 :: (Blind (Bool -> Bool -> Bool), BitVector) -> Property
+    testFoldl1 (Blind f, bv) =
+        (not . onull) bv  ==> ofoldl1Ex' f bv === (ofoldl1Ex' f . otoList) bv
+
+    testAll :: (Blind (Bool -> Bool), BitVector) -> Property
+    testAll (Blind f, bv) =
+        oall f bv === (getAll . ofoldMap (All . f)) bv
+
+    testAny :: (Blind (Bool -> Bool), BitVector) -> Property
+    testAny (Blind f, bv) =
+        oany f bv === (getAny . ofoldMap (Any . f)) bv
+
+    testLength :: BitVector -> Property
+    testLength bv =
+        olength bv === (length . otoList) bv
+
+    testNull :: BitVector -> Property
+    testNull bv =
+        onull bv === ((0 ==) . olength) bv
+
+    testHead :: BitVector -> Property
+    testHead bv =
+        (not . onull) bv ==> headEx bv === (getFirst . ofoldMap1Ex First) bv
+    
+    testTail :: BitVector -> Property
+    testTail bv =
+        (not . onull) bv ==> lastEx bv === (getLast . ofoldMap1Ex Last) bv
+
+    testInclusionConsistency :: (Bool, BitVector) -> Property
+    testInclusionConsistency (e, bv) =
+        elem e bv === (not . notElem e) bv
+        
+    
+--    testMaximumEx :: BitVector -> Property
+--    testMaximumEx f bv = omaximumBy f bv === (getMax . ofoldMap Max) bv
+
+--    testMinimumEx :: BitVector -> Property
+--    testMinimumEx f bv = ominimumBy f bv === (getMin . ofoldMap Min) bv
+
+
+monoidProperties :: TestTree
+monoidProperties = testGroup "Properties of a monoid"
+    [ testProperty "left identity" leftIdentity
+    , testProperty "right identity" rightIdentity
+    ]
+  where
+    leftIdentity :: BitVector -> Property
+    leftIdentity a = mempty <> a === a
+
+    rightIdentity :: BitVector -> Property
+    rightIdentity a = a <> mempty === a
+
+
+orderingProperties :: TestTree
+orderingProperties = testGroup "Properties of ordering"
+    [ testProperty "ordering preserves symetry"  symetry
+    , testProperty "ordering is transitive (total)" transitivity
+    ]
+  where
+    symetry :: (BitVector, BitVector) -> Bool
+    symetry (lhs, rhs) =
+        case (lhs `compare` rhs, rhs `compare` lhs) of
+          (EQ, EQ) -> True
+          (GT, LT) -> True
+          (LT, GT) -> True
+          _        -> False
+
+    transitivity :: (BitVector, BitVector, BitVector) -> Property
+    transitivity (a, b, c) = caseOne .||. caseTwo
+      where
+        caseOne = (a <= b && b <= c) ==> a <= c
+        caseTwo = (a >= b && b >= c) ==> a >= c
+
+
+semigroupProperties :: TestTree
+semigroupProperties = testGroup "Properties of this semigroup operator"
+    [ localOption (QuickCheckTests 10000)
+        $ testProperty "(<>) is associative" operationAssocativity
+    ]
+  where
+    operationAssocativity :: (BitVector, BitVector, BitVector) -> Property
+    operationAssocativity (a, b, c) = a <> (b <> c) === (a <> b) <> c
 
 
 finiteBitsTests :: TestTree
