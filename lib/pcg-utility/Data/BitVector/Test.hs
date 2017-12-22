@@ -23,10 +23,8 @@ finiteBitsTests :: TestTree
 finiteBitsTests = testGroup "FiniteBits instance consistency"
     [ testProperty "fromEnum . dimension === finiteBitSize" finiteBitSizeIsDimension 
     , testProperty "length . toBits === finiteBitSize" finiteBitSizeIsBitLength 
-    , localOption (QuickCheckTests  100000)
-       $ testProperty "length . takeWhile not === countLeadingZeros . fromBits" countLeadingZeroAndFromBits
-    , localOption (QuickCheckTests  100000)
-       $ testProperty "length . takeWhile not . toBits === countLeadingZeros" countLeadingZeroAndToBits
+    , testProperty "length . takeWhile not === countLeadingZeros . fromBits" countLeadingZeroAndFromBits
+    , testProperty "length . takeWhile not . toBits === countLeadingZeros" countLeadingZeroAndToBits
     , testProperty "length . takeWhile not . reverse === countTrailingZeros . fromBits" countTrailingZeroAndFromBits
     , testProperty "length . takeWhile not . reverse . toBits === countTrailingZeros" countTrailingZeroAndToBits
     ]
