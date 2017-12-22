@@ -788,6 +788,49 @@ Test-Suite testsuite
 
   hs-source-dirs:      test, src, app, ffi
 
+  extra-libraries: stdc++
+
+  if  flag(build-cpp-files)
+    cc-options: --std=c++11 -g
+  else
+    cc-options: --std=c11
+
+  -- We must provide the full relative path to every C file that the project depends on.
+  c-sources:
+    -- ffi/Analysis/Parsimony/Binary/SequentialAlign/sequentialAlign.c
+    -- ffi/Analysis/Parsimony/Binary/SequentialAlign/dynamicCharacterOperations.c
+    ffi/external_direct_optimization/c_alignment_interface.c
+    ffi/external_direct_optimization/c_code_alloc_setup.c
+    ffi/external_direct_optimization/costMatrix.c
+    ffi/external_direct_optimization/alignmentMatrices.c
+    ffi/external_direct_optimization/dyn_character.c
+    ffi/external_direct_optimization/alignCharacters.c
+    ffi/external_direct_optimization/ukkCheckPoint.c
+    ffi/external_direct_optimization/ukkCommon.c
+    -- ffi/memoized_tcm/dynamicCharacterOperations.h
+    ffi/memoized_tcm/dynamicCharacterOperations.c
+    -- ffi/memoized_tcm/costMatrix.h
+    ffi/memoized_tcm/costMatrix.cpp
+    -- ffi/memoized_tcm/costMatrixWrapper.h
+    ffi/memoized_tcm/costMatrixWrapper.c
+    -- ffi/sequential_align/sequentialAlignInterface.h
+    ffi/sequential_align/sequentialAlignInterface.c
+    -- ffi/sequential_align/sequentialAlign.h
+    ffi/sequential_align/sequentialAlign.c
+    -- ffi/sequential_align/sequentialAlignOutputTypes.h
+
+
+  -- Here we list all directories that contain C header files that the FFI tools will need
+  -- to locate when preprocessing the C files. Without listing the directories containing
+  -- the C header files here, the FFI preprocession (hsc2hs, c2hs,etc.) will fail to locate
+  -- the requisite files.
+  -- Note also, that the parent directory of the nessicary C header files must be specified.
+  -- The preprocesser will not recursively look in subdirectories for C header files!
+  include-dirs:
+    ffi/external_direct_optimization
+    ffi/memoized_tcm
+    ffi/sequential_align
+
   ghc-options:         -O2
                        -threaded
                        -Wall
@@ -822,23 +865,49 @@ Test-Suite testsuite
                        -Wwrong-do-bind
 
   other-modules:
-                       Bio.Character.Encodable.Dynamic.Test
-                       Bio.Character.Encodable.Static.Test
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Test
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Internal
+                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
+                       Bio.Character
+                       Bio.Character.Encodable
+                       Bio.Character.Encodable.Continuous
+                       Bio.Character.Encodable.Continuous.Class
+                       Bio.Character.Encodable.Continuous.Internal
                        Bio.Character.Encodable.Dynamic
                        Bio.Character.Encodable.Dynamic.Class
                        Bio.Character.Encodable.Dynamic.Internal
+                       Bio.Character.Encodable.Dynamic.Test
+                       Bio.Character.Encodable.Static
+                       Bio.Character.Encodable.Static.Class
+                       Bio.Character.Encodable.Static.Internal
+                       Bio.Character.Encodable.Static.Test
                        Bio.Character.Encodable.Internal
                        Bio.Character.Encodable.Stream
                        Bio.Character.Exportable
                        Bio.Character.Exportable.Class
+                       Bio.Character.Parsed
+                       Bio.Character.Parsed.Class
+                       Bio.Character.Parsed.Internal
+                       Bio.Metadata
+                       Bio.Metadata.Parsed
                        Control.Evaluation.Internal
                        Control.Evaluation.Test
-                       Control.Evaluation.Unit
+                       Control.Evaluation.Unit 
                        Control.Monad.Logger
                        Data.Alphabet
                        Data.Alphabet.IUPAC
                        Data.Alphabet.Internal
+                       Data.Range
+                       Data.TCM
+                       Data.TCM.Memoized
+                       Data.TCM.Memoized.FFI
+                       Data.TCM.Internal
                        Test.QuickCheck.Arbitrary.Instances
+                       Test.Custom.NucleotideSequence
                        TestSuite.ExecutableTests
                        TestSuite.LibraryTests
                        Text.XML
