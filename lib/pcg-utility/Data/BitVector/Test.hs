@@ -53,7 +53,7 @@ monoFoldableProperties = testGroup "Properties of MonoFoldable"
     , testProperty "onull === (0 ==) . olength" testNull
     , testProperty "headEx === getFirst . ofoldMap1Ex First" testHead
     , testProperty "lastEx === getLast . ofoldMap1Ex Last" testTail
-    , testProperty "elem e /== notElem e" testInclusionConsistency
+    , testProperty "oelem e /== onotElem e" testInclusionConsistency
     ]
   where
     testFoldrFoldMap :: (Blind (Bool -> Word -> Word), Word, BitVector) -> Property
@@ -106,7 +106,7 @@ monoFoldableProperties = testGroup "Properties of MonoFoldable"
 
     testInclusionConsistency :: (Bool, BitVector) -> Property
     testInclusionConsistency (e, bv) =
-        elem e bv === (not . notElem e) bv
+        oelem e bv === (not . onotElem e) bv
         
     
 --    testMaximumEx :: BitVector -> Property

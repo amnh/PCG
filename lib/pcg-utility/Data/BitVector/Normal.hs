@@ -235,15 +235,17 @@ instance MonoFoldable BitVector where
 
 instance MonoFunctor BitVector where
 
-    omap f (BV w n) = BV w $ go w 0
+    omap f (BV w n) = BV w . go w $ n `xor` n
     -- NB: 'setBit' is a GMP function, faster than regular addition.
       where 
-        go  0  acc = acc 
-        go !i !acc                     
-          | f (testBit n i') = acc `setBit` i'
-          | otherwise        = acc
+        go  0 !acc = acc 
+        go !i !acc = go i' acc'
           where
-            !i' = i - 1
+            i' = i - 1
+            acc'
+              | f (testBit n i') = acc `setBit` i'
+              | otherwise        = acc
+            
 
 
 instance MonoTraversable BitVector where
