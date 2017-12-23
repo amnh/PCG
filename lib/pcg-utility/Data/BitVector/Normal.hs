@@ -103,8 +103,20 @@ instance Bits BitVector where
     {-# INLINE bit #-}
     bit i = BV (i+1) (2^i)
 
+    {-# INLINE clearBit #-}
+    clearBit bv@(BV w n) i
+      | i < 0 || i >= w = bv
+      | otherwise       = BV w $ n `clearBit` i
+  
+{-
+    {-# INLINE setBit #-}
+    setBit bv@(BV w n) i
+      | i < 0 || i >= w = bv
+      | otherwise       = BV w $ n `setBit` i
+-}
+
     {-# INLINE testBit #-}
-    testBit (BV w n) i = i < w && n `testBit` i
+    testBit (BV w n) i = i >= 0 && i < w && n `testBit` i
   
     bitSize = undefined
 
