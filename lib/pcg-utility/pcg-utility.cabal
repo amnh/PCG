@@ -236,6 +236,8 @@ benchmark benchmark-suite
   other-modules:    Data.BitMatrix
                     Data.BitMatrix.Internal
                     Data.BitVector.Instances
+                    Data.BitVector.Bench
+                    Data.BitVector.Normal
                     Data.Either.Custom
                     Data.List.Utility
                     Data.Matrix.NotStupid
