@@ -6,7 +6,9 @@ module Data.BitVector.Test
 
 import Data.Bits
 import Data.BitVector.Normal
-import Data.Foldable
+import Data.Functor.Compose
+import Data.Functor.Identity
+--import Data.Foldable
 import Data.Monoid ()
 import Data.MonoTraversable
 import Data.Semigroup
@@ -21,10 +23,46 @@ testSuite = testGroup "BitVector tests"
     , monoFunctorProperties
     , monoFoldableProperties
     , monoidProperties
+    , monoTraversableProperties
     , orderingProperties
     , semigroupProperties
     ]
 
+
+finiteBitsTests :: TestTree
+finiteBitsTests = testGroup "FiniteBits instance consistency"
+    [ testProperty "fromEnum . dimension === finiteBitSize" finiteBitSizeIsDimension 
+    , testProperty "length . toBits === finiteBitSize" finiteBitSizeIsBitLength 
+    , testProperty "length . takeWhile not === countLeadingZeros . fromBits" countLeadingZeroAndFromBits
+    , testProperty "length . takeWhile not . toBits === countLeadingZeros" countLeadingZeroAndToBits
+    , testProperty "length . takeWhile not . reverse === countTrailingZeros . fromBits" countTrailingZeroAndFromBits
+    , testProperty "length . takeWhile not . reverse . toBits === countTrailingZeros" countTrailingZeroAndToBits
+    ]
+  where
+    finiteBitSizeIsDimension :: BitVector -> Property
+    finiteBitSizeIsDimension bv =
+      (fromEnum . dimension) bv === finiteBitSize bv
+      
+    finiteBitSizeIsBitLength :: BitVector -> Property
+    finiteBitSizeIsBitLength bv =
+      (length . toBits) bv === finiteBitSize bv
+      
+    countLeadingZeroAndFromBits :: [Bool] -> Property
+    countLeadingZeroAndFromBits bs =
+      (length . takeWhile not) bs === (countLeadingZeros . fromBits) bs
+
+    countLeadingZeroAndToBits :: BitVector -> Property
+    countLeadingZeroAndToBits bv =
+      (length . takeWhile not . toBits) bv === countLeadingZeros bv
+
+    countTrailingZeroAndFromBits :: [Bool] -> Property
+    countTrailingZeroAndFromBits bs = 
+      (length . takeWhile not . reverse) bs === (countTrailingZeros . fromBits) bs
+      
+    countTrailingZeroAndToBits :: BitVector -> Property
+    countTrailingZeroAndToBits bv =
+      (length . takeWhile not . reverse . toBits) bv === countTrailingZeros bv
+    
 
 monoFunctorProperties :: TestTree
 monoFunctorProperties = testGroup "Properites of a MonoFunctor"
@@ -129,6 +167,26 @@ monoidProperties = testGroup "Properties of a monoid"
     rightIdentity a = a <> mempty === a
 
 
+monoTraversableProperties :: TestTree
+monoTraversableProperties = testGroup "Properties of MonoTraversable"
+    [ testProperty "t . otraverse f === otraverse (t . f)" testNaturality
+    , testProperty "otraverse Identity === Identity" testIdentity
+    , testProperty "otraverse (Compose . fmap g . f) === Compose . fmap (otraverse g) . otraverse f" testComposition
+    ]
+  where
+    testNaturality :: (Blind (Bool -> [Bool]), BitVector) -> Property
+    testNaturality (Blind f, bv) =
+        (headMay . otraverse f) bv === otraverse (headMay . f) bv
+
+    testIdentity :: BitVector -> Property
+    testIdentity bv =
+        otraverse Identity bv === Identity bv
+
+    testComposition :: (Blind (Bool -> [Bool]), Blind (Bool -> Maybe Bool), BitVector) -> Property
+    testComposition (Blind f, Blind g, bv) =
+        otraverse (Compose . fmap g . f) bv === (Compose . fmap (otraverse g) . otraverse f) bv
+
+
 orderingProperties :: TestTree
 orderingProperties = testGroup "Properties of ordering"
     [ testProperty "ordering preserves symetry"  symetry
@@ -159,41 +217,6 @@ semigroupProperties = testGroup "Properties of this semigroup operator"
     operationAssocativity :: (BitVector, BitVector, BitVector) -> Property
     operationAssocativity (a, b, c) = a <> (b <> c) === (a <> b) <> c
 
-
-finiteBitsTests :: TestTree
-finiteBitsTests = testGroup "FiniteBits instance consistency"
-    [ testProperty "fromEnum . dimension === finiteBitSize" finiteBitSizeIsDimension 
-    , testProperty "length . toBits === finiteBitSize" finiteBitSizeIsBitLength 
-    , testProperty "length . takeWhile not === countLeadingZeros . fromBits" countLeadingZeroAndFromBits
-    , testProperty "length . takeWhile not . toBits === countLeadingZeros" countLeadingZeroAndToBits
-    , testProperty "length . takeWhile not . reverse === countTrailingZeros . fromBits" countTrailingZeroAndFromBits
-    , testProperty "length . takeWhile not . reverse . toBits === countTrailingZeros" countTrailingZeroAndToBits
-    ]
-  where
-    finiteBitSizeIsDimension :: BitVector -> Property
-    finiteBitSizeIsDimension bv =
-      (fromEnum . dimension) bv === finiteBitSize bv
-      
-    finiteBitSizeIsBitLength :: BitVector -> Property
-    finiteBitSizeIsBitLength bv =
-      (length . toBits) bv === finiteBitSize bv
-      
-    countLeadingZeroAndFromBits :: [Bool] -> Property
-    countLeadingZeroAndFromBits bs =
-      (length . takeWhile not) bs === (countLeadingZeros . fromBits) bs
-
-    countLeadingZeroAndToBits :: BitVector -> Property
-    countLeadingZeroAndToBits bv =
-      (length . takeWhile not . toBits) bv === countLeadingZeros bv
-
-    countTrailingZeroAndFromBits :: [Bool] -> Property
-    countTrailingZeroAndFromBits bs = 
-      (length . takeWhile not . reverse) bs === (countTrailingZeros . fromBits) bs
-      
-    countTrailingZeroAndToBits :: BitVector -> Property
-    countTrailingZeroAndToBits bv =
-      (length . takeWhile not . reverse . toBits) bv === countTrailingZeros bv
-    
 
 otoListTest :: TestTree
 otoListTest = testProperty "otoList === toBits" f
