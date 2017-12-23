@@ -13,12 +13,14 @@ import Data.Monoid ()
 import Data.MonoTraversable
 import Data.Semigroup
 import Test.Tasty
+import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck hiding ((.&.))
 
 
 testSuite :: TestTree
 testSuite = testGroup "BitVector tests"
     [ otoListTest
+    , bitsTests
     , finiteBitsTests
     , monoFunctorProperties
     , monoFoldableProperties
@@ -28,6 +30,31 @@ testSuite = testGroup "BitVector tests"
     , semigroupProperties
     ]
 
+
+bitsTests :: TestTree
+bitsTests = testGroup "Bits instance properties"
+    [ testProperty "∀ n, clearBit zeroBits n === zeroBits" zeroBitsAndClearBit
+    , testProperty "∀ n, setBit   zeroBits n === bit n" zeroBitsAndSetBit
+    , testProperty "∀ n, testBit  zeroBits n === False" zeroBitsAndTestBit
+    , testCase     "     popCount zeroBits   === 0" zeroBitsAndPopCount
+    ]
+  where
+    zeroBitsAndClearBit :: Int -> Property
+    zeroBitsAndClearBit n =
+      clearBit (zeroBits :: BitVector) n === zeroBits
+
+    zeroBitsAndSetBit :: Int -> Property
+    zeroBitsAndSetBit n =
+      setBit   (zeroBits :: BitVector) n === bit n
+      
+    zeroBitsAndTestBit :: Int -> Property
+    zeroBitsAndTestBit n =
+      testBit  (zeroBits :: BitVector) n === False
+      
+    zeroBitsAndPopCount :: Assertion
+    zeroBitsAndPopCount =
+      popCount (zeroBits :: BitVector) @?= 0
+      
 
 finiteBitsTests :: TestTree
 finiteBitsTests = testGroup "FiniteBits instance consistency"
