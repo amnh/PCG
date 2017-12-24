@@ -37,6 +37,7 @@ module Data.BitVector.Normal
   , bitvector
   -- * Queries
   , dimension
+  , subRange
   -- * Numeric conversion
   , toSignedNumber
   , toUnsignedNumber
@@ -350,6 +351,20 @@ bitvector !dimValue !intValue = BV width $ mask .&. toInteger intValue
 {-# INLINE dimension #-}
 dimension :: BitVector -> Word
 dimension = toEnum . dim
+
+
+-- |
+-- \( \mathcal{O} \left( 1 \right) \)
+--
+-- Get the /inclusive/ range of bits in 'BitVector' as a new 'BitVector'.
+{-# INLINE subRange #-}
+subRange :: (Word, Word) -> BitVector -> BitVector
+subRange (!lower, !upper) (BV _ n)
+  | lower > upper = zeroBits
+  | otherwise     = BV m $ (n `shiftR` i) `mod` 2^m
+  where
+    i = fromEnum lower
+    m = fromEnum $ upper - lower + 1
 
 
 -- |
