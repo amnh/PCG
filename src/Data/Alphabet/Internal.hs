@@ -31,19 +31,20 @@ module Data.Alphabet.Internal
 
 import           Control.DeepSeq              (NFData)
 import           Control.Monad.State.Strict
-import           Data.Bifunctor               (first)
+import           Data.Bifunctor               (bimap)
 import           Data.Foldable
 import           Data.Key
 import           Data.List                    (elemIndex, intercalate, sort)
-import           Data.List.NonEmpty           (NonEmpty)
+import           Data.List.NonEmpty           (NonEmpty(..), unzip)
 import           Data.Maybe
 import           Data.Monoid
+import           Data.Semigroup.Foldable
 import qualified Data.Set              as Set
 import           Data.String
-import           Data.Vector                  (Vector)
-import qualified Data.Vector           as V
+import           Data.Vector.NonEmpty         (Vector)
+import qualified Data.Vector.NonEmpty  as NEV
 import           GHC.Generics                 (Generic)
-import           Prelude               hiding (lookup, zip)
+import           Prelude               hiding (lookup, unzip, zip)
 import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances ()
 import           Text.XML
@@ -67,8 +68,8 @@ type instance Key Alphabet = Int
 
 
 -- Newtypes for corecing and consolidation of alphabet input processing logic
-newtype AlphabetInputSingle a = ASI  { toSingle ::  a    } deriving (Eq,Ord)
-newtype AlphabetInputTuple  a = ASNI { toTuple  :: (a,a) } deriving (Eq,Ord)
+newtype AlphabetInputSingle a = ASI  { toSingle ::  a    } deriving (Eq, Ord)
+newtype AlphabetInputTuple  a = ASNI { toTuple  :: (a,a) } deriving (Eq, Ord)
 
 
 -- |
@@ -88,10 +89,15 @@ class InternalClass a where
   isMissingSymboled :: a -> Bool
 
 
-alphabetPreprocessing :: (Ord a, InternalClass a, Foldable t) => t a ->  [a]
+-- |
+-- \( \mathcal{O} \left( n * \log_2 n \right) \)
+alphabetPreprocessing :: (Ord a, InternalClass a, Foldable t) => t a -> NonEmpty a
 alphabetPreprocessing = appendGapSymbol . removeSpecialSymbolsAndDuplicates . toList
   where
-    appendGapSymbol       = (<> [gapSymbol'])
+    appendGapSymbol xs =
+        case xs of
+          []   -> gapSymbol':|[]
+          x:xs -> x:|(xs <> [gapSymbol'])
     removeSpecialSymbolsAndDuplicates = (`evalState` mempty) . filterM f
       where
         f x
@@ -104,7 +110,7 @@ alphabetPreprocessing = appendGapSymbol . removeSpecialSymbolsAndDuplicates . to
 
 
 -- |
--- /O(n)/
+-- \( \mathcal{O} \left( n \right) \)
 --
 -- Retreives the state names for the symbols of the 'Alphabet'.
 --
@@ -115,7 +121,7 @@ alphabetStateNames = stateNames
 
 
 -- |
--- /O(n)/
+-- \( \mathcal{O} \left( n \right) \)
 --
 -- Retreives the symbols of the 'Alphabet'. Synonym for 'toList'.
 alphabetSymbols :: Alphabet a -> [a]
@@ -127,18 +133,18 @@ fromSingle = ASI
 
 
 -- |
--- /O(n * log n)/
+-- \( \mathcal{O} \left( n * \log_2 n \right) \)
 --
 -- Constructs an 'Alphabet' from a 'Foldable' structure of symbols which are
 -- 'IsString' values.
 fromSymbols :: (Ord a, IsString a, Foldable t) => t a -> Alphabet a
 fromSymbols inputSymbols = Alphabet symbols []
   where
-    symbols = V.fromList . fmap toSingle . alphabetPreprocessing . fmap fromSingle $ toList inputSymbols
+    symbols = NEV.fromNonEmpty . fmap toSingle . alphabetPreprocessing . fmap fromSingle $ toList inputSymbols
 
 
 -- |
--- /O(n * log n)/
+-- \( \mathcal{O} \left( n * \log_2 n \right) \)
 --
 -- Constructs an 'Alphabet' from a 'Foldable' structure of symbols and
 -- coresponding state names, both of which a are 'IsString' values.
@@ -147,7 +153,7 @@ fromSymbols inputSymbols = Alphabet symbols []
 fromSymbolsWithStateNames :: (Ord a, IsString a, Foldable t) => t (a,a) -> Alphabet a
 fromSymbolsWithStateNames inputSymbols = Alphabet symbols names
   where
-    (symbols, names) = first V.fromList . unzip . fmap toTuple . alphabetPreprocessing . fmap fromTuple $ toList inputSymbols
+    (symbols, names) = bimap NEV.fromNonEmpty toList . unzip . fmap toTuple . alphabetPreprocessing . fmap fromTuple $ toList inputSymbols
 
 
 fromTuple :: (a, a) -> AlphabetInputTuple a
@@ -155,7 +161,7 @@ fromTuple  = ASNI
 
 
 -- |
--- /O(1)/
+-- \( \mathcal{O} \left( 1 \right) \)
 --
 -- Retreives the "gap character" from the alphabet.
 gapSymbol :: Alphabet a -> a
@@ -163,7 +169,7 @@ gapSymbol alphabet = alphabet ! (length alphabet - 1)
 
 
 -- |
--- /O(n*log(n)/
+-- \( \mathcal{O} \left( n * \log_2 n \right) \)
 --
 -- Attempts to find the symbol in the Alphabet.
 -- If the symbol exists, returns an alphabet with all the symbols occuring
@@ -181,7 +187,7 @@ truncateAtSymbol symbol alphabet =
 
 
 -- |
--- /O(n*log(n)/
+-- \( \mathcal{O} \left( n * \log_2 n \right) \)
 --
 -- Attempts to find the maximum provided symbol in the Alphabet.
 -- If the any of the provided symbols exists, returns an alphabet including all
@@ -206,10 +212,6 @@ truncateAtMaxSymbol symbols alphabet =
           Just  i -> Just $ max k i
 
 
-instance NFData a => NFData (UnnamedSymbol a)
-instance NFData a => NFData (  NamedSymbol a)
-
-
 instance (Ord a, IsString a) => Arbitrary (Alphabet a) where
 
     arbitrary = do
@@ -221,7 +223,7 @@ instance (Ord a, IsString a) => Arbitrary (Alphabet a) where
 
 
 -- |
--- /O(n * log n)/
+-- \( \mathcal{O} \left( n * \log_2 n \right) \)
 instance Ord a => Eq (Alphabet a) where
 
     lhs == rhs =  length lhs == length rhs
@@ -231,28 +233,46 @@ instance Ord a => Eq (Alphabet a) where
 instance Foldable Alphabet where
 
     {-# INLINE foldr #-}
-    foldr  f e = V.foldr  f e . symbolVector
+    foldr  f e = foldr  f e . symbolVector
 
     {-# INLINE foldl #-}
-    foldl  f e = V.foldl  f e . symbolVector
+    foldl  f e = foldl  f e . symbolVector
 
     {-# INLINE foldr1 #-}
-    foldr1 f   = V.foldr1 f   . symbolVector
+    foldr1 f   = foldr1 f   . symbolVector
 
     {-# INLINE foldl1 #-}
-    foldl1 f   = V.foldl1 f   . symbolVector
+    foldl1 f   = foldl1 f   . symbolVector
 
     {-# INLINE length #-}
-    length = V.length . symbolVector
+    length = length . symbolVector
+
+
+instance Foldable1 Alphabet where
+
+    {-# INLINE fold1 #-}
+    fold1      = fold1 . symbolVector
+
+    {-# INLINE foldMap1 #-}
+    foldMap1 f = foldMap1 f . symbolVector
+
+    {-# INLINE toNonEmpty #-}
+    toNonEmpty = toNonEmpty . symbolVector
 
 
 instance FoldableWithKey Alphabet where
 
     {-# INLINE foldrWithKey #-}
-    foldrWithKey f e = V.ifoldr' f e . symbolVector
+    foldrWithKey f e = foldrWithKey f e . symbolVector
 
     {-# INLINE foldlWithKey #-}
-    foldlWithKey f e = V.ifoldl' f e . symbolVector
+    foldlWithKey f e = foldlWithKey f e . symbolVector
+
+
+instance FoldableWithKey1 Alphabet where
+
+    {-# INLINE foldMapWithKey1 #-}
+    foldMapWithKey1 f = foldMapWithKey1 f . symbolVector
 
 
 instance Indexable Alphabet where
@@ -286,10 +306,16 @@ instance (Eq a, IsString a) => InternalClass (AlphabetInputTuple a) where
 instance Lookup Alphabet where
 
     {-# INLINE lookup #-}
-    lookup i alphabet = symbolVector alphabet V.!? i
+    lookup i = lookup i . symbolVector
 
 
 instance NFData a => NFData (Alphabet a)
+
+
+instance NFData a => NFData (UnnamedSymbol a)
+
+
+instance NFData a => NFData (  NamedSymbol a)
 
 
 instance Show a => Show (Alphabet a) where
@@ -339,6 +365,6 @@ constructAlphabetWithTCM symbols originalTcm = (alphabet, permutedTcm)
     len         = length alphabet
     oldOrdering = generate len (\x -> fromJust $ (alphabet ! x) `elemIndex` toList symbols)
     permutedTcm = matrix len len f
-    f (i,j) =  originalTcm ! (oldOrdering V.! i, oldOrdering V.! j)
+    f (i,j) =  originalTcm ! (oldOrdering NEV.! i, oldOrdering NEV.! j)
 
 -}
