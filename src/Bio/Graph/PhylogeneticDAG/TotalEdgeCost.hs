@@ -40,8 +40,6 @@ import           Data.MonoTraversable
 import           Data.Semigroup
 import           Prelude            hiding (lookup, zipWith)
 
-import Debug.Trace
-
 
 -- |
 -- Computes the total edge cost over all the disambiguated final assignments.
@@ -89,7 +87,7 @@ totalEdgeCosts pariwiseFunction (PDAG2 dag) = applyWeights $ foldlWithKey f init
       | otherwise = ofoldl' g acc applicableNodes
       where
         adjacentNodes   = IS.map collapseRootEdge $ parentRefs node <> IM.keysSet (childRefs node)
-        applicableNodes = IS.map (\x -> trace (show (key, x)) x) $ IS.filter (> key) adjacentNodes
+        applicableNodes = IS.filter (> key) adjacentNodes
         nodeSequence    = getFields key
 
         -- Folding function for adjacent nodes. Should apply the sum strictly.
