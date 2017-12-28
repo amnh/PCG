@@ -11,12 +11,11 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE BangPatterns, DeriveGeneric, TypeFamilies #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Data.BitMatrix.Internal where
 
 import Control.DeepSeq
-import Data.Bifunctor
+--import Data.Bifunctor
 import Data.Bits
 import Data.BitVector.LittleEndian
 import Data.List.Utility        (equalityOf)

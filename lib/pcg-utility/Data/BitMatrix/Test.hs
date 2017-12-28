@@ -29,9 +29,9 @@ instance Arbitrary DependantFromRowsParameters where
     arbitrary = do
         rowCount   <- getPositive <$> arbitrary
         colCount   <- getPositive <$> arbitrary
-        let bvGen  =  fromBits    <$> vectorOf (fromEnum colCount) (arbitrary :: Gen Bool)
-        bitVectors <- vectorOf (fromEnum rowCount) bvGen
-        pure $ DependantFromRowsParameters (rowCount, colCount, bitVectors)
+        let bvGen  =  fromBits    <$> vectorOf colCount (arbitrary :: Gen Bool)
+        bitVectors <- vectorOf rowCount bvGen
+        pure $ DependantFromRowsParameters (toEnum rowCount, toEnum colCount, bitVectors)
 
 
 instance Arbitrary FactoredBitVector where
@@ -39,8 +39,8 @@ instance Arbitrary FactoredBitVector where
     arbitrary = do
         rowCount  <- getPositive <$> arbitrary
         colCount  <- getPositive <$> arbitrary
-        bitVector <- fromBits    <$> vectorOf (fromEnum (colCount * rowCount)) (arbitrary :: Gen Bool)
-        pure $ FactoredBitVector (rowCount, colCount, bitVector)
+        bitVector <- fromBits    <$> vectorOf (colCount * rowCount) (arbitrary :: Gen Bool)
+        pure $ FactoredBitVector (toEnum rowCount, toEnum colCount, bitVector)
 
 
 testSuite :: TestTree
@@ -80,37 +80,37 @@ testBitMatrix = testGroup "bitMatrix generating function"
   where
     testValue = testProperty "Internal BitVector value is correct" f
       where
-        f :: Positive Word -> Positive Word -> Property
+        f :: Positive Int -> Positive Int -> Property
         f rowCt colCt = testBM === controlBM
           where
             testBM    = mconcat $ rows (bitMatrix numChars alphLen $ const True)
             controlBM = bitvector (alphLen * numChars) (2 ^ (alphLen * numChars) - 1 :: Integer)
-            numChars  = getPositive rowCt
-            alphLen   = getPositive colCt
+            numChars  = toEnum $ getPositive rowCt
+            alphLen   = toEnum $ getPositive colCt
 
     testWidth = testProperty "Number of columns is correct" f
       where
-        f :: Positive Word -> Positive Word -> Property
+        f :: Positive Int -> Positive Int -> Property
         f rowCt colCt = expectedCols === numCols testBM
           where
             (_, expectedCols, testBM) = constructMatrixFromPositives rowCt colCt
 
     testHeight = testProperty "Number of rows is correct" f
       where
-        f :: Positive Word -> Positive Word -> Property
+        f :: Positive Int -> Positive Int -> Property
         f rowCt colCt = expectedRows === numRows testBM
           where
             (expectedRows, _, testBM) = constructMatrixFromPositives rowCt colCt
 
 
 constructMatrixFromPositives
-  :: Positive Word         -- ^ Number of rows
-  -> Positive Word         -- ^ Number of columns
+  :: Positive Int         -- ^ Number of rows
+  -> Positive Int         -- ^ Number of columns
   -> (Word, Word, BitMatrix) -- ^ Extracted Int values and resulting zero matrix
 constructMatrixFromPositives rowCt colCt = (numRows', numCols', bitMatrix numRows' numCols' $ const False)
   where
-    numRows' = getPositive rowCt
-    numCols' = getPositive colCt
+    numRows' = toEnum $ getPositive rowCt
+    numCols' = toEnum $ getPositive colCt
 
 
 testFromRows :: TestTree
@@ -165,8 +165,8 @@ testConsistentIndexing = testProperty "Indexing and generation consistency" f
   where
     f :: Blind ((Word, Word) -> Bool) -> Gen Bool
     f (Blind g) = do
-        rowCount    <- getPositive <$> (arbitrary :: Gen (Positive Word))
-        colCount    <- getPositive <$> (arbitrary :: Gen (Positive Word))
+        rowCount    <- toEnum . getPositive <$> (arbitrary :: Gen (Positive Int))
+        colCount    <- toEnum . getPositive <$> (arbitrary :: Gen (Positive Int))
         let bm      =  bitMatrix rowCount colCount g
         let indices =  [ (i,j) | i <- [0..rowCount-1], j <- [0..colCount-1] ]
         -- The generating function at a given index is the same as
@@ -212,7 +212,7 @@ testExpandRows :: TestTree
 testExpandRows = testProperty "toBits . expandRows === fmap (isSet bm)" f
   where
     f :: BitMatrix -> Property
-    f bm = (reverse . toBits . expandRows) bm === (isSet bm <$> indices)
+    f bm = (toBits . expandRows) bm === (isSet bm <$> indices)
       where
         indices = [ (i, j) | i <- [ 0 .. numRows bm - 1 ], j <- [ 0 .. numCols bm - 1 ] ]
 
@@ -221,7 +221,7 @@ testFactorRows :: TestTree
 testFactorRows = testProperty "toBits === fmap (isSet bm) . factorRows n" f
   where
     f :: FactoredBitVector -> Property
-    f input = (reverse . toBits) bv === (isSet bm <$> indices)
+    f input = toBits bv === (isSet bm <$> indices)
       where
         bm = factorRows colCount bv
         indices = [ (i, j) | i <- [ 0 .. numRows bm - 1 ], j <- [ 0 .. numCols bm - 1 ] ]
