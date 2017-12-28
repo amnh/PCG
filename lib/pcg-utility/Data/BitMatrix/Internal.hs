@@ -17,8 +17,8 @@ module Data.BitMatrix.Internal where
 
 import Control.DeepSeq
 import Data.Bifunctor
-import Data.BitVector    hiding (foldl, foldr)
-import Data.BitVector.Instances ()
+import Data.Bits
+import Data.BitVector.LittleEndian
 import Data.List.Utility        (equalityOf)
 import Data.Foldable
 import Data.Maybe               (fromMaybe)
@@ -59,7 +59,7 @@ instance Arbitrary BitMatrix where
         rowCount <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 20)
         let rVal = choose (0, 2 ^ colCount -1) :: Gen Integer
         bitRows  <- vectorOf rowCount rVal
-        pure . fromRows $ bitVec colCount <$> bitRows
+        pure . fromRows $ bitvector (toEnum colCount) <$> bitRows
 
 
 -- |
@@ -142,14 +142,14 @@ instance MonoFoldable BitMatrix where
     onull  _              = False
 
     {-# INLINE olength #-}
-    olength = numRows
+    olength = fromEnum . numRows
 
 
 -- |
 -- Performs a row-wise monomporphic map over ther 'BitMatrix'.
 instance MonoFunctor BitMatrix where
 
-    omap f bm = BitMatrix (numCols bm) . mconcat . Prelude.reverse $ f <$> rows bm
+    omap f bm@(BitMatrix n _) = BitMatrix n . foldMap f $ rows bm
 
 
 -- |
@@ -161,7 +161,7 @@ instance MonoTraversable BitMatrix where
     -- evaluate these actions from left to right, and
     -- collect the results.
     {-# INLINE otraverse #-}
-    otraverse f bm = fmap (BitMatrix (numCols bm) . mconcat) . traverse f $ rows bm
+    otraverse f bm@(BitMatrix n _) = fmap (BitMatrix n . mconcat) . traverse f $ rows bm
 
     -- |
     -- Map each element of a monomorphic container to a monadic action,
@@ -180,8 +180,8 @@ instance Show BitMatrix where
 
     show bm = headerLine <> matrixLines
       where
-        renderRow   = foldl (\acc e -> (if e then '1' else '0') : acc) "" . toBits
-        matrixLines = unlines $ renderRow <$> rows bm          
+        renderRow   = foldr (\e acc -> (if e then '1' else '0') : acc) "" . toBits
+        matrixLines = unlines $ renderRow <$> rows bm
         headerLine  = '\n' : unwords
                     [ "BitMatrix:"
                     , show $ numRows bm
@@ -192,7 +192,7 @@ instance Show BitMatrix where
 
 
 -- |
--- \( \mathcal{O} \left( m + n \right) \)
+-- \( \mathcal{O} \left( m * n \right) \)
 --
 -- A generating function for a 'BitMatrix'. Efficiently constructs a
 -- 'BitMatrix' of the specified dimensions with each bit defined by the result
@@ -221,22 +221,24 @@ instance Show BitMatrix where
 -- 0101010101
 -- 1010101010
 --
-bitMatrix :: Int                 -- ^ Number of rows in the BitMatrix.
-          -> Int                 -- ^ Number of columns in the BitMatrix.
-          -> ((Int,Int) -> Bool) -- ^ Function to determine if a given index has a set bit.
+bitMatrix :: Word                   -- ^ Number of rows in the BitMatrix.
+          -> Word                   -- ^ Number of columns in the BitMatrix.
+          -> ((Word, Word) -> Bool) -- ^ Function to determine if a given index has a set bit.
           -> BitMatrix
 bitMatrix m n f =
   case errorMsg of
     Just msg -> error msg
-    Nothing  -> BitMatrix n . bitVec (m * n) . snd . foldl' g initialAccumulator $ [(i,j) | i <- [0..m-1], j <- [0..n-1]]
+    Nothing  -> BitMatrix (fromEnum n) . bitvector (m * n) . snd . foldl' g initialAccumulator $ [(i,j) | i <- [0..m-1], j <- [0..n-1]]
   where
     initialAccumulator :: (Integer, Integer)
     initialAccumulator = (1,0)
+
     g (!shiftRegister, !summation) i
       | f i       = (shiftRegister `shiftL` 1, shiftRegister + summation)
       | otherwise = (shiftRegister `shiftL` 1,                 summation)
+      
     errorMsg
-      | m <  0 && n <  0 = Just $ unwords [errorPrefix, errorRowCount, "also", errorColCount] <> "."
+      | m <  0 && n <  0 = Just $ unwords [errorPrefix, errorRowCount, ". Also, ", errorColCount] <> "."
       | m <  0           = Just $ unwords [errorPrefix, errorRowCount] <> "."
       | n <  0           = Just $ unwords [errorPrefix, errorColCount] <> "."
       | m == 0 && n /= 0 = Just $ unwords [errorPrefix, errorZeroRows, errorZeroSuffix] <> "."
@@ -272,12 +274,12 @@ expandRows (BitMatrix _ bv) = bv
 -- Constructs a 'BitMatrix' from a 'BitVector' with all cells wrapped in a
 -- row-major manner.
 {-# INLINE factorRows #-}
-factorRows :: Int -> BitVector -> BitMatrix
+factorRows :: Word -> BitVector -> BitMatrix
 factorRows n bv
-  | len `mod` n == 0 = BitMatrix n bv
+  | len `mod` n == 0 = BitMatrix (fromEnum n) bv
   | otherwise        = error erroMsg
   where
-    len = width bv
+    len = dimension bv
     erroMsg = mconcat
         [ "The supplied BitVector length ("
         , show len
@@ -293,30 +295,21 @@ factorRows n bv
 -- Construct a 'BitMatrix' from a list of rows.
 fromRows :: Foldable t => t BitVector -> BitMatrix
 fromRows xs
-  | equalityOf width xs = result
-  | otherwise           = error "fromRows: All the rows did not have the same width!"
+  | equalityOf finiteBitSize xs = result
+  | otherwise                   = error "fromRows: All the rows did not have the same width!"
   where
-    -- concatenate the right way, dumb monoid instance of BV
-    lhs `bvCat` rhs = bitVec (n + m) ((b `shiftL` n) + a)
-      where
-        n = width lhs
-        m = width rhs
-        a = nat   lhs
-        b = nat   rhs
-
-    result = case toList xs of
-               []   -> BitMatrix 0 $ bitVec 0 (0 :: Integer)
-               y:ys -> BitMatrix (width y) (if width y == 0 
-                                            then bitVec (length xs) (0 :: Integer)
-                                            else foldr1 bvCat $ y:ys)
+    result =
+        case toList xs of
+          []  -> BitMatrix 0 zeroBits
+          y:_ -> BitMatrix (finiteBitSize y) $ fold xs
 
 
 -- | 
 -- \( \mathcal{O} \left( 1 \right) \)
 --
 -- Test if a bit is set at the given indices.
-isSet :: BitMatrix -> (Int, Int) -> Bool
-isSet (BitMatrix n bv) (i,j) = bv `testBit` (n*i + j)
+isSet :: BitMatrix -> (Word, Word) -> Bool
+isSet (BitMatrix n bv) (i, j) = bv `testBit` (n * fromEnum i + fromEnum j)
 
 
 -- |
@@ -324,39 +317,39 @@ isSet (BitMatrix n bv) (i,j) = bv `testBit` (n*i + j)
 -- 
 -- Determines if there are no set bits in the 'BitMatrix'
 isZeroMatrix :: BitMatrix -> Bool
-isZeroMatrix (BitMatrix _ bv) = nat bv == 0
+isZeroMatrix (BitMatrix _ bv) = (toUnsignedNumber bv :: Integer) == 0
 
 
 -- |
 -- \( \mathcal{O} \left( 1 \right) \)
 --
 -- The number of columns in the 'BitMatrix'
-numCols :: BitMatrix -> Int
-numCols (BitMatrix n _) = n
+numCols :: BitMatrix -> Word
+numCols (BitMatrix n _) = toEnum n
 
 
 -- |
 -- \( \mathcal{O} \left( 1 \right) \)
 --
 -- The number of rows in the 'BitMatrix'
-numRows :: BitMatrix -> Int
+numRows :: BitMatrix -> Word
 numRows (BitMatrix n bv)
   | n == 0    = 0
-  | otherwise = width bv `div` n
+  | otherwise = dimension bv `div` toEnum n
 
 
 -- |
 -- \( \mathcal{O} \left( 1 \right) \)
 --
 -- Retreives a single row of the 'BitMatrix'. Allows for unsafe indexing.
-row :: BitMatrix -> Int -> BitVector
+row :: BitMatrix -> Word -> BitVector
 row bm@(BitMatrix nCols bv) i
-  | 0 <= i && i < nRows = bv @@ (left, right)
-  | otherwise           = error errorMsg
+  | i < nRows = (lower, upper) `subRange` bv
+  | otherwise = error errorMsg
   where
     -- It couldn't be more clear
-    left     = nCols * (i + 1) - 1 -- BitVector is big-endian, so left is most-significant. 
-    right    = left - nCols + 1
+    upper    = toEnum nCols * (i + 1) - 1
+    lower    = upper - toEnum nCols + 1
     nRows    = numRows bm
     errorMsg = unwords ["Index", show i, "is outside the range", rangeStr]
     rangeStr = mconcat ["[0..", show nRows, "]."]
@@ -368,10 +361,19 @@ row bm@(BitMatrix nCols bv) i
 -- The rows of the 'BitMatrix'
 rows :: BitMatrix -> [BitVector]
 rows bm@(BitMatrix nCols bv)
-    |  nRows == 0 || nCols == 0 = []
-    |  nRows == 1               = [bv]
-    |  otherwise                = (bv @@) <$> slices
+    | nRows == 0 || nCols == 0 = []
+    | nRows == 1               = [bv]
+    | otherwise                = go nRows initAcc -- (`subRange` bv) <$> slices
     where
-      nRows  = numRows bm
-      slices = take nRows $ iterate ((nCols +) `bimap` (nCols +)) (nCols - 1, 0) --(start, end)
+      nRows   = numRows bm
+      dim     = toEnum nCols
+{-
+      slices  = take (fromEnum nRows) $ iterate ((dim +) `bimap` (dim +)) (0, dim - 1)
+-}
+      
+      mask    = (2^dim) - 1 :: Integer
 
+      initAcc = (toUnsignedNumber bv, []) :: (Integer, [BitVector])
+
+      go 0 (   _, xs) = reverse xs
+      go n (!val, xs) = go (n-1) (val `shiftR` nCols, bitvector dim (val .&. mask) : xs)

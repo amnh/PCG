@@ -5,7 +5,7 @@ module Data.BitMatrix.Test
   ) where
 
 import Data.BitMatrix
-import Data.BitVector hiding (not, reverse)
+import Data.BitVector.LittleEndian
 import Data.Foldable
 import Data.MonoTraversable
 import Test.Tasty
@@ -14,13 +14,13 @@ import Test.Tasty.QuickCheck
 
 newtype DependantFromRowsParameters
       = DependantFromRowsParameters
-      { getParameters :: (Int, Int, [BitVector])
+      { getParameters :: (Word, Word, [BitVector])
       } deriving (Eq, Show)
 
 
 newtype FactoredBitVector
       = FactoredBitVector
-      { getFactoredBitVector :: (Int, Int, BitVector)
+      { getFactoredBitVector :: (Word, Word, BitVector)
       } deriving (Eq, Show)
 
 
@@ -29,8 +29,8 @@ instance Arbitrary DependantFromRowsParameters where
     arbitrary = do
         rowCount   <- getPositive <$> arbitrary
         colCount   <- getPositive <$> arbitrary
-        let bvGen  =  fromBits    <$> vectorOf colCount (arbitrary :: Gen Bool)
-        bitVectors <- vectorOf rowCount bvGen
+        let bvGen  =  fromBits    <$> vectorOf (fromEnum colCount) (arbitrary :: Gen Bool)
+        bitVectors <- vectorOf (fromEnum rowCount) bvGen
         pure $ DependantFromRowsParameters (rowCount, colCount, bitVectors)
 
 
@@ -39,7 +39,7 @@ instance Arbitrary FactoredBitVector where
     arbitrary = do
         rowCount  <- getPositive <$> arbitrary
         colCount  <- getPositive <$> arbitrary
-        bitVector <- fromBits    <$> vectorOf (colCount * rowCount) (arbitrary :: Gen Bool)
+        bitVector <- fromBits    <$> vectorOf (fromEnum (colCount * rowCount)) (arbitrary :: Gen Bool)
         pure $ FactoredBitVector (rowCount, colCount, bitVector)
 
 
@@ -80,33 +80,33 @@ testBitMatrix = testGroup "bitMatrix generating function"
   where
     testValue = testProperty "Internal BitVector value is correct" f
       where
-        f :: Positive Int -> Positive Int -> Property
+        f :: Positive Word -> Positive Word -> Property
         f rowCt colCt = testBM === controlBM
           where
-            testBM = Data.BitVector.concat $ rows (bitMatrix numChars alphLen $ const True)
-            controlBM = bitVec (alphLen * numChars) (2 ^ (alphLen * numChars) - 1 :: Integer)
+            testBM    = mconcat $ rows (bitMatrix numChars alphLen $ const True)
+            controlBM = bitvector (alphLen * numChars) (2 ^ (alphLen * numChars) - 1 :: Integer)
             numChars  = getPositive rowCt
             alphLen   = getPositive colCt
 
     testWidth = testProperty "Number of columns is correct" f
       where
-        f :: Positive Int -> Positive Int -> Property
+        f :: Positive Word -> Positive Word -> Property
         f rowCt colCt = expectedCols === numCols testBM
           where
             (_, expectedCols, testBM) = constructMatrixFromPositives rowCt colCt
 
     testHeight = testProperty "Number of rows is correct" f
       where
-        f :: Positive Int -> Positive Int -> Property
+        f :: Positive Word -> Positive Word -> Property
         f rowCt colCt = expectedRows === numRows testBM
           where
             (expectedRows, _, testBM) = constructMatrixFromPositives rowCt colCt
 
 
 constructMatrixFromPositives
-  :: Positive Int          -- ^ Number of rows
-  -> Positive Int          -- ^ Number of columns
-  -> (Int, Int, BitMatrix) -- ^ Extracted Int values and resulting zero matrix
+  :: Positive Word         -- ^ Number of rows
+  -> Positive Word         -- ^ Number of columns
+  -> (Word, Word, BitMatrix) -- ^ Extracted Int values and resulting zero matrix
 constructMatrixFromPositives rowCt colCt = (numRows', numCols', bitMatrix numRows' numCols' $ const False)
   where
     numRows' = getPositive rowCt
@@ -163,17 +163,15 @@ testRow = testProperty "row returns correct value" f
 testConsistentIndexing :: TestTree
 testConsistentIndexing = testProperty "Indexing and generation consistency" f
   where
-    f :: Blind ((Int,Int) -> Bool) -> Gen Bool
-    f blindFunction = do
-        rowCount    <- getPositive <$> (arbitrary :: Gen (Positive Int))
-        colCount    <- getPositive <$> (arbitrary :: Gen (Positive Int))
+    f :: Blind ((Word, Word) -> Bool) -> Gen Bool
+    f (Blind g) = do
+        rowCount    <- getPositive <$> (arbitrary :: Gen (Positive Word))
+        colCount    <- getPositive <$> (arbitrary :: Gen (Positive Word))
         let bm      =  bitMatrix rowCount colCount g
         let indices =  [ (i,j) | i <- [0..rowCount-1], j <- [0..colCount-1] ]
         -- The generating function at a given index is the same as
         -- the bit tester at that index anfter bitMatrix generation.
         pure $ all (\x -> g x == bm `isSet` x) indices
-      where
-        g = getBlind blindFunction
 
 
 testIsZeroMatrix :: TestTree
@@ -198,7 +196,7 @@ testRowCountConsistency :: TestTree
 testRowCountConsistency = testProperty "numRows === length . rows" f
   where
     f :: BitMatrix -> Property
-    f bm = numRows bm === length (rows bm)
+    f bm = numRows bm === (toEnum . length . rows) bm
 
 
 testRowIndexConsistency :: TestTree
@@ -207,7 +205,7 @@ testRowIndexConsistency = testProperty "∀ i, (`row` i) === (! i) . rows" f
     f :: BitMatrix -> Property
     f bm = conjoin $ g <$> [ 0 .. numRows bm - 1 ]
       where
-        g i = bm `row` i === rows bm !! i
+        g i = bm `row` i === rows bm !! (fromEnum i)
 
 
 testExpandRows :: TestTree
