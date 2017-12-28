@@ -19,8 +19,7 @@ import Test.Tasty.QuickCheck hiding ((.&.))
 
 testSuite :: TestTree
 testSuite = testGroup "BitVector tests"
-    [ otoListTest
-    , bitsTests
+    [ bitsTests
     , finiteBitsTests
     , monoFunctorProperties
     , monoFoldableProperties
@@ -28,6 +27,7 @@ testSuite = testGroup "BitVector tests"
     , monoTraversableProperties
     , orderingProperties
     , semigroupProperties
+    , bitVectorProperties
     ]
 
 
@@ -215,7 +215,7 @@ monoFoldableProperties = testGroup "Properties of MonoFoldable"
 
 
 monoidProperties :: TestTree
-monoidProperties = testGroup "Properties of a monoid"
+monoidProperties = testGroup "Properties of a Monoid"
     [ testProperty "left identity" leftIdentity
     , testProperty "right identity" rightIdentity
     ]
@@ -248,7 +248,7 @@ monoTraversableProperties = testGroup "Properties of MonoTraversable"
 
 
 orderingProperties :: TestTree
-orderingProperties = testGroup "Properties of ordering"
+orderingProperties = testGroup "Properties of an Ordering"
     [ testProperty "ordering preserves symetry"  symetry
     , testProperty "ordering is transitive (total)" transitivity
     ]
@@ -269,7 +269,7 @@ orderingProperties = testGroup "Properties of ordering"
 
 
 semigroupProperties :: TestTree
-semigroupProperties = testGroup "Properties of this semigroup operator"
+semigroupProperties = testGroup "Properties of a Semigroup"
     [ localOption (QuickCheckTests 10000)
         $ testProperty "(<>) is associative" operationAssocativity
     ]
@@ -278,11 +278,29 @@ semigroupProperties = testGroup "Properties of this semigroup operator"
     operationAssocativity (a, b, c) = a <> (b <> c) === (a <> b) <> c
 
 
-otoListTest :: TestTree
-otoListTest = testProperty "otoList === toBits" f
+bitVectorProperties :: TestTree
+bitVectorProperties = testGroup "BitVector properties"
+    [ testProperty "otoList === toBits" otoListTest
+    , testProperty "dimension === length . toBits" dimensionAndToBits
+    , testProperty "dimension === finiteBitSize" dimensionAndFiniteBitSize
+    , testProperty "fromBits . toBits === id" toBitsFromBits
+    ]
   where
-    f :: BitVector -> Property
-    f bv = otoList bv === toBits bv
+    otoListTest :: BitVector -> Property
+    otoListTest bv =
+        otoList bv === toBits bv
+
+    dimensionAndToBits :: BitVector -> Property
+    dimensionAndToBits bv =
+        (fromEnum . dimension) bv === (length . toBits) bv
+
+    dimensionAndFiniteBitSize :: BitVector -> Property
+    dimensionAndFiniteBitSize bv =
+        (fromEnum . dimension) bv === finiteBitSize bv
+
+    toBitsFromBits :: BitVector -> Property
+    toBitsFromBits bv =
+        (fromBits . toBits) bv === bv
 
 
 {-
