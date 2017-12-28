@@ -14,7 +14,6 @@
 
 module Test.QuickCheck.Arbitrary.Instances where
 
-import           Data.BitVector
 import           Data.Vector      (Vector)
 import qualified Data.Vector as V (fromList)
 import           Test.QuickCheck
@@ -24,9 +23,3 @@ import           Test.QuickCheck
 instance Arbitrary a => Arbitrary (Vector a) where
 
     arbitrary = V.fromList <$> listOf arbitrary
-
-
--- | A 'BitVector' of arbitrary, positive length containing arbitrary set or unset values at each 'BitVector' index.
-instance Arbitrary BV where
-
-    arbitrary = fromInteger . getPositive <$> (arbitrary :: Gen (Positive Integer))

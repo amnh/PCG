@@ -24,7 +24,6 @@ cabal-version:      >= 1.22
 library
 
   build-depends:      base             >=4.8
-                    , bv
                     , containers       >=0.5.8
                     , deepseq
                     , either
@@ -78,7 +77,6 @@ library
                     -Wwrong-do-bind
 
   exposed-modules:  Data.BitMatrix
-                    Data.BitVector.Instances
                     Data.BitVector.LittleEndian
                     Data.Either.Custom
                     Data.List.Utility
@@ -101,7 +99,6 @@ Test-Suite test-suite
   main-is:          TestSuite.hs
 
   build-depends:      base               >=4.8
-                    , bv
                     , containers         >=0.5.8
                     , deepseq
                     , hashable
@@ -155,7 +152,6 @@ Test-Suite test-suite
   other-modules:    Data.BitMatrix
                     Data.BitMatrix.Internal
                     Data.BitMatrix.Test
-                    Data.BitVector.Instances
                     Data.BitVector.LittleEndian
                     Data.BitVector.Test
                     Data.List.Utility
@@ -178,7 +174,6 @@ benchmark benchmark-suite
   main-is:          Benchmarks.hs
                       
   build-depends:      base               >=4.8
-                    , bv
                     , containers         >=0.5.8
                     , criterion
                     , deepseq
@@ -235,9 +230,8 @@ benchmark benchmark-suite
 
   other-modules:    Data.BitMatrix
                     Data.BitMatrix.Internal
-                    Data.BitVector.Instances
                     Data.BitVector.Bench
-                    Data.BitVector.Normal
+                    Data.BitVector.LitteEndian
                     Data.Either.Custom
                     Data.List.Utility
                     Data.Matrix.NotStupid

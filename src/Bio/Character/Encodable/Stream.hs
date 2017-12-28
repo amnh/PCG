@@ -22,7 +22,8 @@ import           Bio.Character.Exportable
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
 import qualified Data.Bimap         as BM
-import           Data.BitVector     hiding (concat)
+import           Data.Bits
+import           Data.BitVector.LittleEndian
 import           Data.Foldable
 import           Data.List.NonEmpty        (NonEmpty)
 import qualified Data.List.NonEmpty as NE
@@ -55,7 +56,7 @@ import           Foreign.C.Types
 -}
 class ( FiniteBits b
       , EncodedAmbiguityGroupContainer b
-      , Num b -- Required for bit twiddling hacks
+--      , Num b -- Required for bit twiddling hacks
       ) => EncodableStreamElement b where
 
     decodeElement :: Eq a => Alphabet a -> b -> AmbiguityGroup a
@@ -64,7 +65,7 @@ class ( FiniteBits b
 
     {-# INLINE getGapElement #-}
     getGapElement :: b -> b
-    getGapElement = bit . pred . symbolCount
+    getGapElement = bit . fromEnum . pred . symbolCount
 
     getGapChar    :: b -> b
     getGapChar    = getGapElement
@@ -112,9 +113,7 @@ showStreamElement alphabet element
   |  allBits == element = "?"
   | otherwise           = renderAmbiguity $ toIUPAC symbols
   where
-    allBits = fromIntegral . continuousBits $ length alphabet
-    continuousBits :: Int -> Integer
-    continuousBits = pred . (2^)
+    allBits = complement $ element `xor` element
     symbols = decodeElement alphabet element
     renderAmbiguity amb =
         case toList amb of
@@ -152,18 +151,18 @@ showStream alphabet = ofoldMap (showStreamElement alphabet)
 
 -- |
 -- Number of bits in a `Word` or `Int` type on this machine, derived at compile time.
-bitsInLocalWord :: Int
-bitsInLocalWord  = finiteBitSize (undefined :: CULong)
+bitsInLocalWord :: Word
+bitsInLocalWord  = toEnum $ finiteBitSize (undefined :: CULong)
 
 
 -- |
 -- Convert an encobale stream to a concrete 'ExportableCharacterElements' value.
-encodableStreamToExportableCharacterElements :: (EncodableStream s, EncodedAmbiguityGroupContainer s, Integral (Element s))
+encodableStreamToExportableCharacterElements :: (EncodableStream s, EncodedAmbiguityGroupContainer s, Enum (Element s))
                                              => s -> Maybe ExportableCharacterElements
 encodableStreamToExportableCharacterElements dc
   | bitsInElement > bitsInLocalWord = Nothing
   | otherwise                       = Just $ ExportableCharacterElements numberOfElements bitsInElement integralElements
   where
     bitsInElement    = symbolCount dc
-    numberOfElements = olength dc
-    integralElements = ofoldMap (pure . fromIntegral) dc 
+    numberOfElements = toEnum $ olength dc
+    integralElements = ofoldMap (pure . toEnum . fromEnum) dc 

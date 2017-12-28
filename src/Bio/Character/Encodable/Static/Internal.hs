@@ -29,8 +29,7 @@ import           Control.DeepSeq
 import           Data.Alphabet
 import           Data.Bits
 import           Data.BitMatrix
-import           Data.BitVector               hiding (replicate)
-import           Data.BitVector.Instances            ()
+import           Data.BitVector.LittleEndian
 import           Data.Char                           (toLower)
 import           Data.Foldable
 import           Data.Key
@@ -53,7 +52,7 @@ import           Text.XML
 -- Represents an encoded static character. Supports binary and numeric operations.
 newtype StaticCharacter
       = SC BitVector
-      deriving (Bits, Eq, Enum, Generic, Integral, Num, Ord, Real, Show)
+      deriving (Bits, Eq, Generic, Ord, Show)
 
 
 -- |
@@ -79,13 +78,13 @@ instance Arbitrary StaticCharacterBlock where
         characterLen <- arbitrary `suchThat` (> 0) :: Gen Int
         let randVal  =  choose (1, 2 ^ alphabetLen - 1) :: Gen Integer
         bitRows      <- vectorOf characterLen randVal
-        pure . SCB . fromRows $ bitVec alphabetLen <$> bitRows
+        pure . SCB . fromRows $ bitvector (toEnum alphabetLen) <$> bitRows
 
 
 instance EncodableStaticCharacter StaticCharacter where
 
     {-# INLINE emptyStatic #-}
-    emptyStatic (SC x) = SC $ bitVec (width x) (0 :: Integer)
+    emptyStatic (SC x) = SC $ bitvector (dimension x) (0 :: Integer)
 
 
 instance EncodableStaticCharacterStream StaticCharacterBlock where
@@ -128,11 +127,14 @@ instance EncodableStream StaticCharacterBlock where
     encodeStream alphabet = SCB . fromRows . fmap (unwrap . encodeElement alphabet) . toList
 
     lookupStream (SCB bm) i
-      | 0 <= i && i < numRows bm = Just . SC $ bm `row` i
-      | otherwise                = Nothing
+      | 0 <= i = let j = toEnum i
+                 in  if j < numRows bm
+                     then Just . SC $ bm `row` j
+                     else Nothing
+      | otherwise = Nothing
 
     {-# INLINE gapOfStream #-}
-    gapOfStream = bit . pred . symbolCount
+    gapOfStream = bit . fromEnum . pred . symbolCount
 
 
 instance EncodableStreamElement StaticCharacter where
@@ -159,13 +161,22 @@ instance EncodableStreamElement StaticCharacter where
 instance EncodedAmbiguityGroupContainer StaticCharacter where
 
     {-# INLINE symbolCount #-}
-    symbolCount = width . unwrap
+    symbolCount = dimension . unwrap
 
 
 instance EncodedAmbiguityGroupContainer StaticCharacterBlock where
 
     {-# INLINE symbolCount #-}
     symbolCount = numCols . unstream
+
+
+instance Enum StaticCharacter where
+
+    fromEnum = toUnsignedNumber . unwrap
+
+    toEnum i = SC $ bitvector dim i
+      where
+        dim = toEnum $ finiteBitSize i - countLeadingZeros i
 
 
 instance Exportable StaticCharacterBlock where
@@ -185,7 +196,7 @@ instance Exportable StaticCharacterBlock where
 instance FiniteBits StaticCharacter where
 
     {-# INLINE finiteBitSize #-}
-    finiteBitSize = symbolCount
+    finiteBitSize = finiteBitSize . unwrap
 
     -- Default implementation gets these backwards for no apparent reason.
 
@@ -217,7 +228,7 @@ instance MonoFoldable StaticCharacterBlock where
     onull = const False
 
     {-# INLINE olength #-}
-    olength = numRows . unstream
+    olength = fromEnum . numRows . unstream
 
 
 instance MonoFunctor StaticCharacterBlock where
@@ -262,8 +273,8 @@ instance Ranged StaticCharacter where
 
     fromRange x = zeroVector .|. (allBitsUpperBound `xor` allBitsLowerBound)
         where
-            allBitsUpperBound = 2 ^ upperBound x - 1
-            allBitsLowerBound = 2 ^ lowerBound x - 1
+            allBitsUpperBound = SC . bitvector (toEnum boundaryBit) $ (2 ^ upperBound x - 1 :: Integer)
+            allBitsLowerBound = SC . bitvector (toEnum boundaryBit) $ (2 ^ lowerBound x - 1 :: Integer)
             zeroVector  = (zeroBits `setBit` boundaryBit) `clearBit` boundaryBit
             boundaryBit = fromJust (precision x) - 1
 
@@ -286,7 +297,7 @@ instance ToXML StaticCharacter where
         where
             attributes = []
             contents   = [intRep, bitRep]
-            intRep     = Left ("Integer_representation", show $ toInteger bv)
+            intRep     = Left ("Integer_representation", show (toUnsignedNumber bv :: Integer))
             bitRep     = Left ("Bit_representation"    , (\x -> if x then '1' else '0') <$> toBits bv)
 
 

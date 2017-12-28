@@ -49,8 +49,8 @@ testEncodableStaticCharacterInstanceBitVector = testGroup "BitVector instance of
       where
         encodeDecodeIdentity = testProperty "Set.fromList . decodeElement alphabet . encodeChar alphabet . Set.fromList . toList == Set.fromList . toList" f
           where
-            f :: AlphabetAndSingleAmbiguityGroup -> Bool
-            f alphabetAndAmbiguityGroup = lhs ambiguityGroup == rhs ambiguityGroup
+            f :: AlphabetAndSingleAmbiguityGroup -> Property
+            f alphabetAndAmbiguityGroup = lhs ambiguityGroup === rhs ambiguityGroup
               where
                 lhs = Set.fromList . toList . decodeElement alphabet . encodeChar' alphabet . NE.fromList . toList . Set.fromList . toList
                 rhs = Set.fromList . toList
@@ -58,15 +58,15 @@ testEncodableStaticCharacterInstanceBitVector = testGroup "BitVector instance of
 
         singleBitConstruction = testProperty "encodeChar alphabet [alphabet ! i] == bit i" f
           where
-            f :: Alphabet String -> NonNegative Int -> Bool
-            f alphabet (NonNegative n) = encodeChar' alphabet (pure $ alphabet ! i) == bit i
+            f :: Alphabet String -> NonNegative Int -> Property
+            f alphabet (NonNegative n) = countTrailingZeros (encodeChar' alphabet (pure $ alphabet ! i)) === countTrailingZeros (bit i :: DynamicCharacterElement)
               where
                 i = n `mod` length alphabet
 
         totalBitConstruction = testProperty "encodeChar alphabet alphabet == complement (bit (length alphabet - 1) `clearBit` (bit (length alphabet - 1))" f
           where
-            f :: Alphabet String -> Bool
-            f alphabet = encodeChar' alphabet allSymbols == e
+            f :: Alphabet String -> Property
+            f alphabet = encodeChar' alphabet allSymbols === e
               where
                 allSymbols = NE.fromList $ toList alphabet
                 e = complement $ bit i `clearBit` i
@@ -74,8 +74,8 @@ testEncodableStaticCharacterInstanceBitVector = testGroup "BitVector instance of
 
         logicalOrIsomorphismWithSetUnion = testProperty "Set.fromList (decodeElement alphabet (encodeChar alphabet xs .|. encodeChar alphabet ys)) == Set.fromList (toList alphabet) `Set.intersect` (toList xs `Set.union` toList ys)" f
           where
-            f :: AlphabetAndTwoAmbiguityGroups -> Bool
-            f input = lhs == rhs
+            f :: AlphabetAndTwoAmbiguityGroups -> Property
+            f input = lhs === rhs
               where
                 lhs = Set.fromList . toList $ decodeElement alphabet (encodeChar' alphabet (fromFoldable sxs) .|. encodeChar' alphabet (fromFoldable sys))
                 rhs = sxs `Set.union` sys
@@ -83,10 +83,9 @@ testEncodableStaticCharacterInstanceBitVector = testGroup "BitVector instance of
 
         logicalAndIsomorphismWithSetIntersection = testProperty "Set.fromList (decodeElement alphabet (encodeChar alphabet xs .&. encodeChar alphabet ys)) == Set.fromList (toList alphabet) `Set.intersect` (toList xs `Set.intersection` toList ys)" f
           where
-            f :: AlphabetAndTwoAmbiguityGroups -> Bool
-            f input
-              | zeroBits == anded = null rhs
-              | otherwise         = lhs == rhs
+            f :: AlphabetAndTwoAmbiguityGroups -> Property
+            f input =
+              (zeroBits == anded ==> property (null rhs)) .&&. (zeroBits /= anded ==> lhs === rhs)
               where
                 lhs   = Set.fromList . toList $ decodeElement alphabet anded
                 anded = encodeChar' alphabet (fromFoldable sxs) .&. encodeChar' alphabet (fromFoldable sys)

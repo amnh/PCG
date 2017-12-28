@@ -33,7 +33,7 @@ import           Data.BitMatrix
 import           Data.Char                           (toLower)
 import           Data.Key
 import           Data.Bits
-import           Data.BitVector
+import           Data.BitVector.LittleEndian
 import           Data.Foldable
 import           Data.Hashable
 import           Data.List.NonEmpty                  (NonEmpty(..))
@@ -59,7 +59,7 @@ import           Text.XML
 -- the encoding of the individual static characters to defined the encoding of
 -- the entire dynamic character.
 data  DynamicChar
-    = Missing Int
+    = Missing Word
     | DC BitMatrix
     deriving (Eq, Generic, Show)
 
@@ -68,7 +68,7 @@ data  DynamicChar
 -- Represents a sinlge element of a dynamic character.
 newtype DynamicCharacterElement
       = DCE BitVector
-      deriving (Bits, Eq, Enum, Generic, Integral, Num, Ord, Real, Show)
+      deriving (Bits, Eq, Generic, Ord, Show)
 
 
 type instance Element DynamicChar = DynamicCharacterElement
@@ -94,14 +94,14 @@ instance Arbitrary DynamicChar where
         characterLen <- arbitrary `suchThat` (> 0) :: Gen Int
         let randVal  =  choose (1, 2 ^ alphabetLen - 1) :: Gen Integer
         bitRows      <- vectorOf characterLen randVal
-        pure . DC . fromRows $ bitVec alphabetLen <$> bitRows
+        pure . DC . fromRows $ bitvector (toEnum alphabetLen) <$> bitRows
 
 
 instance Arbitrary DynamicCharacterElement where
 
     arbitrary = do
         alphabetLen <- arbitrary `suchThat` (\x -> 2 <= x && x <= 62) :: Gen Int
-        DCE . bitVec alphabetLen <$> (choose (1, 2 ^ alphabetLen - 1) :: Gen Integer)
+        DCE . bitvector (toEnum alphabetLen) <$> (choose (1, 2 ^ alphabetLen - 1) :: Gen Integer)
 
 
 -- TODO: Probably remove?
@@ -154,7 +154,7 @@ instance EncodedAmbiguityGroupContainer DynamicChar where
 instance EncodedAmbiguityGroupContainer DynamicCharacterElement where
 
     {-# INLINE symbolCount  #-}
-    symbolCount = width . unwrap
+    symbolCount = dimension . unwrap
 
 
 instance EncodableDynamicCharacter DynamicChar where
@@ -200,12 +200,15 @@ instance EncodableStream DynamicChar where
     encodeStream alphabet = DC . fromRows . fmap (unwrap . encodeElement alphabet) . toList
 
     lookupStream (DC bm) i
-      | 0 <= i && i < numRows bm = Just . DCE $ bm `row` i
-      | otherwise                = Nothing
+      | 0 <= i    = let j = toEnum i
+                    in  if j < numRows bm
+                        then Just . DCE $ bm `row` j
+                        else Nothing
+      | otherwise = Nothing
     lookupStream _ _ = Nothing
 
     {-# INLINE gapOfStream #-}
-    gapOfStream = bit . pred . symbolCount
+    gapOfStream = bit . fromEnum . pred . symbolCount
 
 
 instance EncodableStreamElement DynamicCharacterElement where
@@ -223,7 +226,16 @@ instance EncodableStreamElement DynamicCharacterElement where
     -- The head element of the list is the most significant bit when calling fromBits.
     -- We need the first element of the alphabet to correspond to the least significant bit.
     -- Hence foldl, don't try foldMap or toList & fmap without careful thought.
-    encodeElement alphabet ambiguity = DCE . fromBits $ foldl' (\xs x -> (x `elem` ambiguity) : xs) [] alphabet
+    encodeElement alphabet ambiguity = DCE . fromBits $ foldr (\x xs -> (x `elem` ambiguity) : xs) [] alphabet
+
+
+instance Enum DynamicCharacterElement where
+
+    fromEnum = toUnsignedNumber . unwrap
+
+    toEnum i = DCE $ bitvector dim i
+      where
+        dim = toEnum $ finiteBitSize i - countLeadingZeros i
 
 
 instance Exportable DynamicChar where
@@ -258,7 +270,7 @@ instance Exportable DynamicCharacterElement where
 
     toExportableElements e@(DCE bv)
       | bitsInElement > bitsInLocalWord = Nothing
-      | otherwise                       = Just $ ExportableCharacterElements 1 bitsInElement [fromIntegral bv]
+      | otherwise                       = Just $ ExportableCharacterElements 1 bitsInElement [toUnsignedNumber bv]
       where
         bitsInElement   = symbolCount e
 
@@ -268,13 +280,13 @@ instance Exportable DynamicCharacterElement where
 instance FiniteBits DynamicCharacterElement where
 
     {-# INLINE finiteBitSize #-}
-    finiteBitSize = symbolCount
+    finiteBitSize = finiteBitSize . unwrap
 
 
 instance Hashable DynamicChar where
 
-    hashWithSalt salt (Missing n) = salt `xor` n
-    hashWithSalt salt (DC bm) = salt `xor` numRows bm `xor` hashWithSalt salt (toInteger (expandRows bm))
+    hashWithSalt salt (Missing n) = salt `xor` fromEnum n
+    hashWithSalt salt (DC bm) = salt `xor` fromEnum (numRows bm) `xor` hashWithSalt salt (toUnsignedNumber (expandRows bm) :: Integer)
 
 
 instance MonoFoldable DynamicChar where
@@ -305,7 +317,7 @@ instance MonoFoldable DynamicChar where
 
     {-# INLINE olength #-}
     olength Missing{} = 0
-    olength (DC c)    = numRows c
+    olength (DC c)    = olength c
 
 
 instance MonoFunctor DynamicChar where
