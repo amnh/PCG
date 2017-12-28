@@ -79,7 +79,7 @@ library
 
   exposed-modules:  Data.BitMatrix
                     Data.BitVector.Instances
-                    Data.BitVector.Normal
+                    Data.BitVector.LittleEndian
                     Data.Either.Custom
                     Data.List.Utility
                     Data.Matrix.NotStupid
@@ -156,7 +156,7 @@ Test-Suite test-suite
                     Data.BitMatrix.Internal
                     Data.BitMatrix.Test
                     Data.BitVector.Instances
-                    Data.BitVector.Normal
+                    Data.BitVector.LittleEndian
                     Data.BitVector.Test
                     Data.List.Utility
                     Data.Matrix.NotStupid

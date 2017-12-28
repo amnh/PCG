@@ -5,7 +5,7 @@ module Data.BitVector.Test
   ) where
 
 import Data.Bits
-import Data.BitVector.Normal
+import Data.BitVector.LittleEndian
 import Data.Functor.Compose
 import Data.Functor.Identity
 --import Data.Foldable

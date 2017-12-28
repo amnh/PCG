@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.BitVector.Normal
+-- Module      :  Data.BitVector.LittleEndian
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -31,7 +31,7 @@
 
 {-# LANGUAGE BangPatterns, DeriveDataTypeable, MagicHash, TypeFamilies #-}
 
-module Data.BitVector.Normal
+module Data.BitVector.LittleEndian
   ( BitVector()
   -- * Construction from values
   , bitvector
