@@ -85,7 +85,7 @@ testEncodableStaticCharacterInstanceBitVector = testGroup "BitVector instance of
           where
             f :: AlphabetAndTwoAmbiguityGroups -> Property
             f input =
-              (zeroBits == anded ==> property (null rhs)) .&&. (zeroBits /= anded ==> lhs === rhs)
+                lhs === rhs
               where
                 lhs   = Set.fromList . toList $ decodeElement alphabet anded
                 anded = encodeChar' alphabet (fromFoldable sxs) .&. encodeChar' alphabet (fromFoldable sys)
