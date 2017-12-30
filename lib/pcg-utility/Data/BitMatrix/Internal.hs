@@ -85,6 +85,13 @@ instance Bits BitMatrix where
 
     bit i                                            = BitMatrix 1 $ bit i
 
+    {-# INLINE clearBit #-}
+    clearBit bm@(BitMatrix c bv) i
+      | i < 0 || i >= w = bm
+      | otherwise       = BitMatrix c $ bv `clearBit` i
+      where
+        w = finiteBitSize bv
+
     bitSize                                          = fromMaybe 0 . bitSizeMaybe
 
     bitSizeMaybe (BitMatrix _ b)                     = bitSizeMaybe b
