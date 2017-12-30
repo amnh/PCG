@@ -4,13 +4,18 @@ module Data.BitMatrix.Test
   ( testSuite
   ) where
 
+
+
+import Control.Exception
 import Data.Bits
 import Data.BitMatrix
 import Data.BitVector.LittleEndian
+import Data.Either
 import Data.Foldable
 import Data.Monoid ()
 import Data.MonoTraversable
 import Data.Semigroup
+import Test.QuickCheck.Monadic
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck hiding ((.&.))
@@ -51,6 +56,7 @@ testSuite :: TestTree
 testSuite = testGroup "BitMatrix tests"
     [ bitsTests
     , monoFoldableProperties
+    , monoFunctorProperties
     , orderingProperties
     , datastructureTests
     ]
@@ -183,6 +189,20 @@ monoFoldableProperties = testGroup "Properties of MonoFoldable"
     testInclusionConsistency :: (BitVector, BitMatrix) -> Property
     testInclusionConsistency (bv, bm) =
         oelem bv bm === (not . onotElem bv) bm
+
+
+monoFunctorProperties :: TestTree
+monoFunctorProperties = testGroup "Properites of a MonoFunctor"
+    [ testProperty "omap id === id" omapId
+    , testProperty "omap (f . g)  === omap f . omap g" omapComposition
+    ]
+  where
+    omapId :: BitMatrix -> Property
+    omapId bm = omap id bm === id bm
+
+    omapComposition :: (Blind (BitVector -> BitVector), Blind (BitVector -> BitVector), BitMatrix) -> Property
+    omapComposition (Blind f, Blind g, bm) =
+         (omap f . omap g) bm `exceptionOr` (=== omap (f . g) bm)
 
 
 orderingProperties :: TestTree
@@ -396,3 +416,12 @@ testExpandFactorIdentity = testProperty "factorRows numCols . expandRows === id"
   where
     f :: BitMatrix -> Property
     f bm = factorRows (numCols bm) (expandRows bm) === bm
+
+
+-- |
+-- Should either pass the test or throw an exception.
+exceptionOr :: a -> (a -> Property) -> Property
+exceptionOr x p = monadicIO . run . fmap (either anyException p) . try . evaluate $ x
+  where
+    anyException :: SomeException -> Property
+    anyException = const (1===1)

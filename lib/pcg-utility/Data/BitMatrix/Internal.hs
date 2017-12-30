@@ -18,7 +18,7 @@ import Control.DeepSeq
 --import Data.Bifunctor
 import Data.Bits
 import Data.BitVector.LittleEndian
-import Data.List.Utility        (equalityOf)
+import Data.List.Utility        (equalityOf, invariantTransformation)
 import Data.Foldable
 import Data.Maybe               (fromMaybe)
 import Data.Monoid
@@ -168,6 +168,16 @@ instance MonoFoldable BitMatrix where
 
     {-# INLINE olength #-}
     olength = fromEnum . numRows
+
+
+instance MonoFunctor BitMatrix where
+
+    omap f bm =
+        case invariantTransformation finiteBitSize rows' of
+            Just i  -> BitMatrix i $ fold rows'
+            Nothing -> error "The mapping function over the bit matrix did not return *all* bit vectors of equal length."
+      where
+        rows' = f <$> rows bm
 
 
 -- | (✔)
