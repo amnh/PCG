@@ -123,7 +123,7 @@ instance Bits BitVector where
     bitSize = undefined
 
     {-# INLINE bitSizeMaybe #-}
-    bitSizeMaybe = const Nothing
+    bitSizeMaybe (BV w _) = Just w
 
     {-# INLINE isSigned #-}
     isSigned = const False
