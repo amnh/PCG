@@ -23,6 +23,7 @@ import Data.Foldable
 import Data.Maybe               (fromMaybe)
 import Data.Monoid
 import Data.MonoTraversable
+import Data.Ord
 import GHC.Generics
 import Test.QuickCheck   hiding ((.&.))
 
@@ -173,6 +174,16 @@ instance MonoTraversable BitMatrix where
 -- | (✔)
 instance NFData BitMatrix
 
+
+instance Ord BitMatrix where
+
+  compare lhs rhs =
+     case comparing numRows lhs rhs of
+       EQ ->
+           case comparing numCols lhs rhs of
+             EQ -> comparing expandRows lhs rhs
+             v  -> v
+       v  -> v
 
 -- | (✔)
 instance Show BitMatrix where
