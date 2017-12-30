@@ -8,8 +8,6 @@ import Data.Bits
 import Data.BitMatrix
 import Data.BitVector.LittleEndian
 import Data.Foldable
-import Data.Functor.Compose
-import Data.Functor.Identity
 import Data.Monoid ()
 import Data.MonoTraversable
 import Data.Semigroup
@@ -52,9 +50,7 @@ instance Arbitrary FactoredBitVector where
 testSuite :: TestTree
 testSuite = testGroup "BitMatrix tests"
     [ bitsTests
-    , monoFunctorProperties
     , monoFoldableProperties
-    , monoTraversableProperties
     , orderingProperties
     , datastructureTests
     ]
@@ -66,7 +62,7 @@ bitsTests = testGroup "Bits instance properties"
     , testProperty "∀ n ≥ 0, setBit   zeroBits n === bit n" zeroBitsAndSetBit
     , testProperty "∀ n ≥ 0, testBit  zeroBits n === False" zeroBitsAndTestBit
     , testCase     "         popCount zeroBits   === 0" zeroBitsAndPopCount
-    , testProperty "complement === omap complement" complementOmapNot
+    , testProperty "(`testBit` i) . complement === not . (`testBit` i)" complementTestBit
     , testProperty "(`setBit` n) === (.|. bit n)" setBitDefinition
     , testProperty "(`clearBit` n) === (.&. complement (bit n))" clearBitDefinition
     , testProperty "(`complementBit` n) === (`xor` bit n)" complementBitDefinition
@@ -90,9 +86,10 @@ bitsTests = testGroup "Bits instance properties"
     zeroBitsAndPopCount =
         popCount (zeroBits :: BitMatrix) @?= 0
 
-    complementOmapNot :: BitMatrix -> Property
-    complementOmapNot bm =
-        complement bm === omap complement bm
+    complementTestBit :: Positive Int -> BitMatrix -> Property
+    complementTestBit (Positive i) bm =
+        Just i < bitSizeMaybe bm ==>
+          ((`testBit` i) . complement) bm === (not . (`testBit` i)) bm
 
     setBitDefinition :: (NonNegative Int, BitMatrix) -> Property
     setBitDefinition (NonNegative n, bm) =
@@ -109,27 +106,14 @@ bitsTests = testGroup "Bits instance properties"
     complementBitDefinition (NonNegative n, bm) =
         bm `complementBit` n === bm `xor` bit n
 
-    testBitAndSetBit :: (NonNegative Int, BitMatrix) -> Bool
+    testBitAndSetBit :: (NonNegative Int, BitMatrix) -> Property
     testBitAndSetBit (NonNegative n, bm) =
-        ((`testBit` n) . (`setBit` n)) bm
+        Just n < bitSizeMaybe bm ==> ((`testBit` n) . (`setBit` n)) bm
 
     testBitAndClearBit :: (NonNegative Int, BitMatrix) -> Bool
     testBitAndClearBit (NonNegative n, bm) =
         (not  . (`testBit` n) . (`clearBit` n)) bm
     
-
-monoFunctorProperties :: TestTree
-monoFunctorProperties = testGroup "Properites of a MonoFunctor"
-    [ testProperty "omap id === id" omapId
-    , testProperty "omap (f . g)  === omap f . omap g" omapComposition
-    ]
-  where
-    omapId :: BitMatrix -> Property
-    omapId bm = omap id bm === id bm
-    
-    omapComposition :: (Blind (BitVector -> BitVector), Blind (BitVector -> BitVector), BitMatrix) -> Property
-    omapComposition (Blind f, Blind g, bm) = omap (f . g) bm ===  (omap f . omap g) bm
-
 
 monoFoldableProperties :: TestTree
 monoFoldableProperties = testGroup "Properties of MonoFoldable"
@@ -199,26 +183,6 @@ monoFoldableProperties = testGroup "Properties of MonoFoldable"
     testInclusionConsistency :: (BitVector, BitMatrix) -> Property
     testInclusionConsistency (bv, bm) =
         oelem bv bm === (not . onotElem bv) bm
-
-
-monoTraversableProperties :: TestTree
-monoTraversableProperties = testGroup "Properties of MonoTraversable"
-    [ testProperty "t . otraverse f === otraverse (t . f)" testNaturality
-    , testProperty "otraverse Identity === Identity" testIdentity
-    , testProperty "otraverse (Compose . fmap g . f) === Compose . fmap (otraverse g) . otraverse f" testComposition
-    ]
-  where
-    testNaturality :: (Blind (BitVector -> [BitVector]), BitMatrix) -> Property
-    testNaturality (Blind f, bv) =
-        (headMay . otraverse f) bv === otraverse (headMay . f) bv
-
-    testIdentity :: BitMatrix -> Property
-    testIdentity bm =
-        otraverse Identity bm === Identity bm
-
-    testComposition :: (Blind (BitVector -> Either Word BitVector), Blind (BitVector -> Maybe BitVector), BitMatrix) -> Property
-    testComposition (Blind f, Blind g, bv) =
-        otraverse (Compose . fmap g . f) bv === (Compose . fmap (otraverse g) . otraverse f) bv
 
 
 orderingProperties :: TestTree

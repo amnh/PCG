@@ -67,38 +67,56 @@ instance Arbitrary BitMatrix where
 -- dimensions.
 instance Bits BitMatrix where
 
+    {-# INLINE (.&.) #-}
     (.&.)        (BitMatrix c lhs) (BitMatrix _ rhs) = BitMatrix c $ lhs  .&.  rhs
 
+    {-# INLINE (.|.) #-}
     (.|.)        (BitMatrix c lhs) (BitMatrix _ rhs) = BitMatrix c $ lhs  .|.  rhs
 
+    {-# INLINE xor #-}
     xor          (BitMatrix c lhs) (BitMatrix _ rhs) = BitMatrix c $ lhs `xor` rhs
 
+    {-# INLINE complement #-}
     complement   (BitMatrix c b)                     = BitMatrix c $ complement b
 
+    {-# INLINE shift #-}
     shift        (BitMatrix c b) n                   = BitMatrix c $ b `shift`  n
 
+    {-# INLINE rotate #-}
     rotate       (BitMatrix c b) n                   = BitMatrix c $ b `rotate` n
 
-    setBit       (BitMatrix c b) i                   = BitMatrix c $ b `setBit` i
-
-    testBit      (BitMatrix _ b) i                   = b `testBit` i -- (width b - i + 1)
-
-    bit i                                            = BitMatrix 1 $ bit i
-
-    {-# INLINE clearBit #-}
-    clearBit bm@(BitMatrix c bv) i
+{-
+    {-# INLINE setBit #-}
+    setBit    bm@(BitMatrix c bv) i
       | i < 0 || i >= w = bm
-      | otherwise       = BitMatrix c $ bv `clearBit` i
+      | otherwise       = BitMatrix c $ bv `setBit` i
       where
         w = finiteBitSize bv
+-}
 
+    {-# INLINE clearBit #-}
+    clearBit     (BitMatrix c bv) i = BitMatrix c $ bv `clearBit` i
+
+    {-# INLINE testBit #-}
+    testBit      (BitMatrix _ bv) i = bv `testBit` i
+
+    {-# INLINE bit #-}
+    bit i = BitMatrix 1 $ bit i
+
+    {-# INLINE bitSize #-}
     bitSize                                          = fromMaybe 0 . bitSizeMaybe
 
+    {-# INLINE bitSizeMaybe #-}
     bitSizeMaybe (BitMatrix _ b)                     = bitSizeMaybe b
 
+    {-# INLINE isSigned #-}
     isSigned     (BitMatrix _ b)                     = isSigned b
 
+    {-# INLINE popCount #-}
     popCount     (BitMatrix _ b)                     = popCount b
+
+    {-# INLINE zeroBits #-}
+    zeroBits = BitMatrix 0 $ bitvector 0 (0 :: Integer)
 
 
 -- |
@@ -150,32 +168,6 @@ instance MonoFoldable BitMatrix where
 
     {-# INLINE olength #-}
     olength = fromEnum . numRows
-
-
--- |
--- Performs a row-wise monomporphic map over ther 'BitMatrix'.
-instance MonoFunctor BitMatrix where
-
-    omap f bm@(BitMatrix n _) = BitMatrix n . foldMap f $ rows bm
-
-
--- |
--- Performs a row-wise monomporphic traversal over ther 'BitMatrix'.
-instance MonoTraversable BitMatrix where
-
-    -- |
-    -- Map each element of a monomorphic container to an action,
-    -- evaluate these actions from left to right, and
-    -- collect the results.
-    {-# INLINE otraverse #-}
-    otraverse f bm@(BitMatrix n _) = fmap (BitMatrix n . mconcat) . traverse f $ rows bm
-
-    -- |
-    -- Map each element of a monomorphic container to a monadic action,
-    -- evaluate these actions from left to right, and
-    -- collect the results.
-    {-# INLINE omapM #-}
-    omapM = otraverse
 
 
 -- | (✔)
