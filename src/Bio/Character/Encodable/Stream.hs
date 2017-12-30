@@ -79,7 +79,8 @@ class ( FiniteBits b
 
 -}
 class ( EncodableStreamElement (Element s)
-      , MonoTraversable s
+      , MonoFoldable s
+      , MonoFunctor  s
       ) => EncodableStream s where
   
     decodeStream :: (Ord a, IsString a) => Alphabet a -> s -> NonEmpty (AmbiguityGroup a)

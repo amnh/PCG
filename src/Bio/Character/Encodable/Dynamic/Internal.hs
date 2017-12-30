@@ -61,7 +61,7 @@ import           Text.XML
 data  DynamicChar
     = Missing Word
     | DC BitMatrix
-    deriving (Eq, Generic, Show)
+    deriving (Eq, Generic, Ord, Show)
 
 
 -- |
@@ -142,6 +142,9 @@ instance Bits DynamicChar where
 
     popCount     (DC b)     = popCount b
     popCount     _          = 0
+
+
+instance CoArbitrary DynamicCharacterElement
 
 
 instance EncodedAmbiguityGroupContainer DynamicChar where
@@ -322,20 +325,8 @@ instance MonoFoldable DynamicChar where
 
 instance MonoFunctor DynamicChar where
 
-    {-# INLINE omap #-}
-    omap _ e@Missing{} = e
-    omap f (DC c)      = DC . omap (unwrap . f . DCE) $ c
-
-
--- | Monomorphic containers that can be traversed from left to right.
-instance MonoTraversable DynamicChar where
-
-    {-# INLINE otraverse #-}
-    otraverse _ e@Missing{} = pure e
-    otraverse f (DC c)      = fmap DC . otraverse (fmap unwrap . f . DCE) $ c
-
-    {-# INLINE omapM #-}
-    omapM = otraverse
+    omap f (DC c)  = DC $ omap (unwrap . f . DCE) c
+    omap _ missing = missing
 
 
 instance NFData DynamicChar

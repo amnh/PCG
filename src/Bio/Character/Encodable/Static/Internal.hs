@@ -233,20 +233,9 @@ instance MonoFoldable StaticCharacterBlock where
 
 instance MonoFunctor StaticCharacterBlock where
 
-    {-# INLINE omap #-}
-    omap f = SCB . omap (unwrap . f . SC) . unstream
-
-
--- |
--- Monomorphic containers that can be traversed from left to right.
-instance MonoTraversable StaticCharacterBlock where
-
-    {-# INLINE otraverse #-}
-    otraverse f = fmap SCB . otraverse (fmap unwrap . f . SC) . unstream
-
-    {-# INLINE omapM #-}
-    omapM = otraverse
-
+    omap f (SCB c)  = SCB $ omap (unwrap . f . SC) c
+    omap _ missing = missing
+                           
 
 instance NFData StaticCharacter
 
