@@ -29,7 +29,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns, DeriveDataTypeable, MagicHash, TypeFamilies #-}
+{-# LANGUAGE BangPatterns, DeriveDataTypeable, DeriveGeneric, MagicHash, TypeFamilies #-}
 
 module Data.BitVector.LittleEndian
   ( BitVector()
@@ -60,16 +60,17 @@ import Data.Semigroup
 --import Data.Semigroup.Foldable
 import Data.Word
 import GHC.Exts
+import GHC.Generics
 import GHC.Integer.GMP.Internals
 import GHC.Integer.Logarithms
-import Test.QuickCheck (Arbitrary(..), NonNegative(..), suchThat)
+import Test.QuickCheck (Arbitrary(..), CoArbitrary(..), NonNegative(..), suchThat)
 
 
 data  BitVector
     = BV
     { dim :: !Int     -- ^ The /dimension/ of a bit-vector.
     , nat :: !Integer -- ^ The value of a bit-vector, as a natural number.
-    } deriving (Data, Typeable)
+    } deriving (Data, Generic, Typeable)
 
 
 type instance Element BitVector = Bool
@@ -161,6 +162,9 @@ instance Bits BitVector where
   
     {-# INLINE popCount #-}
     popCount = popCount . nat
+
+
+instance CoArbitrary BitVector
 
 
 instance Eq BitVector where
