@@ -5,8 +5,10 @@ module Bio.Character.Encodable.Dynamic.Test
   ) where
 
 import           Bio.Character.Encodable.Dynamic
+import           Control.Exception
 import           Data.Alphabet
 import           Data.Bits
+import           Data.Either
 import           Data.Foldable
 import           Data.Key                  ((!))
 import           Data.List.NonEmpty        (NonEmpty((:|)))
@@ -16,6 +18,7 @@ import           Data.Semigroup
 import           Data.Set                  (Set)
 import qualified Data.Set           as Set (fromList,intersection,union)
 import           Data.Vector               (Vector, fromList)
+import           Test.QuickCheck.Monadic
 import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck hiding ((.&.))
@@ -24,6 +27,7 @@ testSuite :: TestTree
 testSuite = testGroup "Dynamic Character tests"
     [ bitsTests
     , monoFoldableProperties
+    , monoFunctorProperties
     , orderingProperties
     , datastructureTests
     ]
@@ -156,7 +160,25 @@ monoFoldableProperties = testGroup "Properties of MonoFoldable"
     testInclusionConsistency :: (DynamicCharacterElement, DynamicChar) -> Property
     testInclusionConsistency (e, bv) =
         oelem e bv === (not . onotElem e) bv
-        
+
+
+monoFunctorProperties :: TestTree
+monoFunctorProperties = testGroup "Properites of a MonoFunctor"
+    [ testProperty "omap id === id" omapId
+    , testProperty "omap (f . g)  === omap f . omap g" omapComposition
+    ]
+  where
+    omapId :: DynamicChar -> Property
+    omapId bm = omap id bm === id bm
+
+    omapComposition
+      :: Blind (DynamicCharacterElement -> DynamicCharacterElement)
+      -> Blind (DynamicCharacterElement -> DynamicCharacterElement)
+      -> DynamicChar
+      -> Property
+    omapComposition (Blind f) (Blind g) bm =
+        (omap f . omap g) bm `exceptionOr` (=== omap (f . g) bm)
+
 
 orderingProperties :: TestTree
 orderingProperties = testGroup "Properties of an Ordering"
@@ -348,6 +370,14 @@ alphabetAndAmbiguityGroups n = do
 fromFoldable :: Set a -> NonEmpty a
 fromFoldable = NE.fromList . toList
 
+
+-- |
+-- Should either pass the test or throw an exception.
+exceptionOr :: a -> (a -> Property) -> Property
+exceptionOr x p = monadicIO . run . fmap (either anyException p) . try . evaluate $ x
+  where
+    anyException :: SomeException -> Property
+    anyException = const (1===1) 
 
 
 
