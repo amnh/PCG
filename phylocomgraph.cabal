@@ -825,6 +825,9 @@ Test-Suite testsuite
                        Bio.Character.Encodable.Dynamic.Class
                        Bio.Character.Encodable.Dynamic.Internal
                        Bio.Character.Encodable.Internal
+                       Bio.Character.Encodable.Static
+                       Bio.Character.Encodable.Static.Class
+                       Bio.Character.Encodable.Static.Internal
                        Bio.Character.Encodable.Stream
                        Bio.Character.Exportable
                        Bio.Character.Exportable.Class
@@ -835,6 +838,7 @@ Test-Suite testsuite
                        Data.Alphabet
                        Data.Alphabet.IUPAC
                        Data.Alphabet.Internal
+                       Data.Range
                        Test.QuickCheck.Arbitrary.Instances
                        TestSuite.ExecutableTests
                        TestSuite.LibraryTests

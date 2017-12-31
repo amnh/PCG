@@ -52,7 +52,7 @@ import           Text.XML
 -- Represents an encoded static character. Supports binary and numeric operations.
 newtype StaticCharacter
       = SC BitVector
-      deriving (Bits, Eq, Generic, Ord, Show)
+     deriving (Arbitrary, Bits, Eq, Generic, MonoFunctor, MonoFoldable, Ord, Show)
 
 
 -- |
@@ -68,6 +68,9 @@ newtype StaticCharacterBlock
 type instance Bound StaticCharacter = Word
 
 
+type instance Element StaticCharacter = Bool
+
+
 type instance Element StaticCharacterBlock = StaticCharacter
 
 
@@ -79,6 +82,9 @@ instance Arbitrary StaticCharacterBlock where
         let randVal  =  choose (1, 2 ^ alphabetLen - 1) :: Gen Integer
         bitRows      <- vectorOf characterLen randVal
         pure . SCB . fromRows $ bitvector (toEnum alphabetLen) <$> bitRows
+
+
+instance CoArbitrary StaticCharacter
 
 
 instance EncodableStaticCharacter StaticCharacter where
@@ -153,7 +159,7 @@ instance EncodableStreamElement StaticCharacter where
       where
         encoding
           | containsMissing ambiguity = fromBits $ replicate (length alphabet) True
-          | otherwise                 = fromBits $ foldl' (\xs x -> (x `elem` ambiguity) : xs) [] alphabet
+          | otherwise                 = fromBits $ foldr (\x xs -> (x `elem` ambiguity) : xs) [] alphabet
           where
             containsMissing = elem (fromString "?")
 
@@ -198,8 +204,6 @@ instance FiniteBits StaticCharacter where
     {-# INLINE finiteBitSize #-}
     finiteBitSize = finiteBitSize . unwrap
 
-    -- Default implementation gets these backwards for no apparent reason.
-
     {-# INLINE countLeadingZeros #-}
     countLeadingZeros  = countLeadingZeros . unwrap
 
@@ -236,6 +240,16 @@ instance MonoFunctor StaticCharacterBlock where
     omap f (SCB c)  = SCB $ omap (unwrap . f . SC) c
     omap _ missing = missing
                            
+
+
+instance MonoTraversable StaticCharacter where
+
+    {-# INLINE otraverse #-}
+    otraverse f = fmap (SC . fromBits) . traverse f . otoList
+
+    {-# INLINE omapM #-}
+    omapM = otraverse
+
 
 instance NFData StaticCharacter
 
