@@ -199,7 +199,7 @@ elementBitsTests = testGroup "Bits instance properties"
 
     clearBitDefinition :: (NonNegative Int, DynamicCharacterElement) -> Property
     clearBitDefinition (NonNegative n, bv) =
-        n < (fromEnum (symbolCount bv) * olength bv) ==>
+        Just n < (bitSizeMaybe bv) ==>
           (bv `clearBit` n === bv .&. complement  (zed .|. bit n))
       where
         zed = bv `xor` bv
