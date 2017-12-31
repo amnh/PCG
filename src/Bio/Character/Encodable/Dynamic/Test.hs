@@ -395,7 +395,7 @@ testEncodableStaticCharacterInstanceDynamicChar = testGroup "DynamicChar instanc
         singleBitConstruction = testProperty "encodeChar alphabet [alphabet ! i] == bit i" f
           where
             f :: Alphabet String -> NonNegative Int -> Property
-            f alphabet (NonNegative n) = countTrailingZeros (encodeChar' alphabet (pure $ alphabet ! i)) === countTrailingZeros (bit i :: DynamicCharacterElement)
+            f alphabet (NonNegative n) = countLeadingZeros (encodeChar' alphabet (pure $ alphabet ! i)) === countLeadingZeros (bit i :: DynamicCharacterElement)
               where
                 i = n `mod` length alphabet
 
@@ -421,11 +421,13 @@ testEncodableStaticCharacterInstanceDynamicChar = testGroup "DynamicChar instanc
           where
             f :: AlphabetAndTwoAmbiguityGroups -> Property
             f input =
-                lhs === rhs
+                (not . null) rhs ==> lhs === rhs
               where
-                lhs   = Set.fromList . toList $ decodeElement alphabet anded
-                anded = encodeChar' alphabet (fromFoldable sxs) .&. encodeChar' alphabet (fromFoldable sys)
                 rhs   = sxs `Set.intersection` sys
+                lhs   = Set.fromList . toList $ decodeElement alphabet anded
+                anded = xs' .&. ys'
+                xs'   = encodeChar' alphabet (fromFoldable sxs)
+                ys'   = encodeChar' alphabet (fromFoldable sys)
                 (alphabet, sxs, sys) = gatherAlphabetAndAmbiguitySets input
 
 

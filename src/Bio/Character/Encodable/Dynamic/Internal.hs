@@ -180,7 +180,7 @@ instance EncodableStreamElement DynamicCharacterElement where
 
     decodeElement alphabet character =
         case foldMapWithKey f alphabet of
-          []   -> gapSymbol alphabet :| [gapSymbol alphabet]
+          []   -> error "Attempting to decode an empty dynamic character element."
           x:xs -> x:|xs
       where
         f i symbol
