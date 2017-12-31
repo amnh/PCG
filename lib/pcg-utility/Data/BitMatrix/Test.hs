@@ -4,8 +4,6 @@ module Data.BitMatrix.Test
   ( testSuite
   ) where
 
-
-
 import Control.Exception
 import Data.Bits
 import Data.BitMatrix
@@ -54,72 +52,12 @@ instance Arbitrary FactoredBitVector where
 
 testSuite :: TestTree
 testSuite = testGroup "BitMatrix tests"
-    [ bitsTests
-    , monoFoldableProperties
+    [ monoFoldableProperties
     , monoFunctorProperties
     , orderingProperties
     , datastructureTests
     ]
 
-
-bitsTests :: TestTree
-bitsTests = testGroup "Bits instance properties"
-    [ testProperty "∀ n ≥ 0, clearBit zeroBits n === zeroBits" zeroBitsAndClearBit
-    , testProperty "∀ n ≥ 0, setBit   zeroBits n === bit n" zeroBitsAndSetBit
-    , testProperty "∀ n ≥ 0, testBit  zeroBits n === False" zeroBitsAndTestBit
-    , testCase     "         popCount zeroBits   === 0" zeroBitsAndPopCount
-    , testProperty "(`testBit` i) . complement === not . (`testBit` i)" complementTestBit
-    , testProperty "(`setBit` n) === (.|. bit n)" setBitDefinition
-    , testProperty "(`clearBit` n) === (.&. complement (bit n))" clearBitDefinition
-    , testProperty "(`complementBit` n) === (`xor` bit n)" complementBitDefinition
-    , testProperty "(`testBit` n) . (`setBit` n)" testBitAndSetBit
-    , testProperty "not  . (`testBit` n) . (`clearBit` n)" testBitAndClearBit
-    ]
-  where
-    zeroBitsAndClearBit :: NonNegative Int -> Property
-    zeroBitsAndClearBit (NonNegative n) =
-        clearBit (zeroBits :: BitMatrix) n === zeroBits
-
-    zeroBitsAndSetBit :: NonNegative Int -> Property
-    zeroBitsAndSetBit (NonNegative n) =
-        setBit   (zeroBits :: BitMatrix) n === bit n
-      
-    zeroBitsAndTestBit :: NonNegative Int -> Property
-    zeroBitsAndTestBit (NonNegative n) =
-        testBit  (zeroBits :: BitMatrix) n === False
-      
-    zeroBitsAndPopCount :: Assertion
-    zeroBitsAndPopCount =
-        popCount (zeroBits :: BitMatrix) @?= 0
-
-    complementTestBit :: Positive Int -> BitMatrix -> Property
-    complementTestBit (Positive i) bm =
-        Just i < bitSizeMaybe bm ==>
-          ((`testBit` i) . complement) bm === (not . (`testBit` i)) bm
-
-    setBitDefinition :: (NonNegative Int, BitMatrix) -> Property
-    setBitDefinition (NonNegative n, bm) =
-        bm `setBit` n === bm .|. bit n
-
-    clearBitDefinition :: (NonNegative Int, BitMatrix) -> Property
-    clearBitDefinition (NonNegative n, bm) =
-        toEnum n < (numCols bm * numRows bm) ==>
-          (bm `clearBit` n === bm .&. complement  (zed .|. bit n))
-      where
-        zed = bm `xor` bm
-
-    complementBitDefinition :: (NonNegative Int, BitMatrix) -> Property
-    complementBitDefinition (NonNegative n, bm) =
-        bm `complementBit` n === bm `xor` bit n
-
-    testBitAndSetBit :: (NonNegative Int, BitMatrix) -> Property
-    testBitAndSetBit (NonNegative n, bm) =
-        Just n < bitSizeMaybe bm ==> ((`testBit` n) . (`setBit` n)) bm
-
-    testBitAndClearBit :: (NonNegative Int, BitMatrix) -> Bool
-    testBitAndClearBit (NonNegative n, bm) =
-        (not  . (`testBit` n) . (`clearBit` n)) bm
-    
 
 monoFoldableProperties :: TestTree
 monoFoldableProperties = testGroup "Properties of MonoFoldable"
