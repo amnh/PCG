@@ -133,8 +133,8 @@ monoFunctorProperties = testGroup "Properites of a MonoFunctor"
       -> Blind (DynamicCharacterElement -> DynamicCharacterElement)
       -> DynamicChar
       -> Property
-    omapComposition (Blind f) (Blind g) bm =
-        (omap f . omap g) bm `exceptionOr` (=== omap (f . g) bm)
+    omapComposition (Blind f) (Blind g) bm = exceptionsAllowed $
+        (omap f . omap g) bm === omap (f . g) bm
 
 
 orderingProperties :: TestTree
@@ -327,7 +327,7 @@ elementMonoFunctorProperties = testGroup "Properites of a MonoFunctor"
       -> DynamicCharacterElement
       -> Property
     omapComposition (Blind f) (Blind g) bm =
-        (omap f . omap g) bm `exceptionOr` (=== omap (f . g) bm)
+        (omap f . omap g) bm === omap (f . g) bm
 
 
 elementOrderingProperties :: TestTree
@@ -527,8 +527,8 @@ fromFoldable = NE.fromList . toList
 
 -- |
 -- Should either pass the test or throw an exception.
-exceptionOr :: a -> (a -> Property) -> Property
-exceptionOr x p = monadicIO . run . fmap (either anyException p) . try . evaluate $ x
+exceptionsAllowed :: Property -> Property
+exceptionsAllowed = monadicIO . run . fmap (either anyException id) . try . evaluate
   where
     anyException :: SomeException -> Property
     anyException = const (1===1) 

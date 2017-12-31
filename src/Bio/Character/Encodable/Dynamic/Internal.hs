@@ -38,6 +38,7 @@ import           Data.Foldable
 import           Data.Hashable
 import           Data.List.NonEmpty                  (NonEmpty(..))
 import qualified Data.List.NonEmpty           as NE
+import           Data.List.Utility                   (invariantTransformation)
 import qualified Data.Map                     as M
 import           Data.Monoid
 import           Data.MonoTraversable
@@ -280,7 +281,12 @@ instance MonoFoldable DynamicChar where
 
 instance MonoFunctor DynamicChar where
 
-    omap f (DC c)  = DC $ omap (unwrap . f . DCE) c
+    omap f (DC bm) = DC $ omap (unwrap . f . DCE) bm
+    omap f bm =
+       let dces = f <$> otoList bm
+       in  case invariantTransformation finiteBitSize dces of
+             Just i  -> DC . factorRows (toEnum i) $ foldMap unwrap dces
+             Nothing -> error "The mapping function over the Dynamic Character did not return *all* all elements of equal length."
     omap _ missing = missing
 
 
@@ -294,7 +300,6 @@ instance MonoTraversable DynamicCharacterElement where
 
 
 instance NFData DynamicChar
-
 
 instance NFData DynamicCharacterElement
 
