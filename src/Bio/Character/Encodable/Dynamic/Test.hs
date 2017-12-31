@@ -26,8 +26,8 @@ import           Test.Tasty.QuickCheck hiding ((.&.))
 
 testSuite :: TestTree
 testSuite = testGroup "Dynamic Character tests"
-    [ dynamicCharacterTests
-    , dynamicCharacterElementTests
+    [ dynamicCharacterElementTests
+    , dynamicCharacterTests
     ]
 
 
