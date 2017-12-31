@@ -23,73 +23,30 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck hiding ((.&.))
 
+
 testSuite :: TestTree
 testSuite = testGroup "Dynamic Character tests"
-    [ bitsTests
-    , monoFoldableProperties
+    [ dynamicCharacterTests
+    , dynamicCharacterElementTests
+    ]
+
+
+dynamicCharacterTests :: TestTree
+dynamicCharacterTests = testGroup "Dynamic Character tests"
+    [ monoFoldableProperties
     , monoFunctorProperties
     , orderingProperties
     , datastructureTests
     ]
 
-
-bitsTests :: TestTree
-bitsTests = testGroup "Bits instance properties"
-    [ testProperty "∀ n ≥ 0, clearBit zeroBits n === zeroBits" zeroBitsAndClearBit
-    , testProperty "∀ n ≥ 0, setBit   zeroBits n === bit n" zeroBitsAndSetBit
-    , testProperty "∀ n ≥ 0, testBit  zeroBits n === False" zeroBitsAndTestBit
-    , testCase     "         popCount zeroBits   === 0" zeroBitsAndPopCount
-    , testProperty "(`testBit` i) . complement === not . (`testBit` i)" complementTestBit
-    , testProperty "(`setBit` n) === (.|. bit n)" setBitDefinition
-    , testProperty "(`clearBit` n) === (.&. complement (bit n))" clearBitDefinition
-    , testProperty "(`complementBit` n) === (`xor` bit n)" complementBitDefinition
-    , testProperty "(`testBit` n) . (`setBit` n)" testBitAndSetBit
-    , testProperty "not  . (`testBit` n) . (`clearBit` n)" testBitAndClearBit
+dynamicCharacterElementTests :: TestTree
+dynamicCharacterElementTests = testGroup "Dynamic Character Element tests"
+    [ elementBitsTests
+    , elementFiniteBitsTests
+    , elementMonoFoldableProperties
+    , elementMonoFunctorProperties
+    , elementOrderingProperties
     ]
-  where
-    zeroBitsAndClearBit :: NonNegative Int -> Property
-    zeroBitsAndClearBit (NonNegative n) =
-        clearBit (zeroBits :: DynamicChar) n === zeroBits
-
-    zeroBitsAndSetBit :: NonNegative Int -> Property
-    zeroBitsAndSetBit (NonNegative n) =
-        setBit   (zeroBits :: DynamicChar) n === bit n
-      
-    zeroBitsAndTestBit :: NonNegative Int -> Property
-    zeroBitsAndTestBit (NonNegative n) =
-        testBit  (zeroBits :: DynamicChar) n === False
-      
-    zeroBitsAndPopCount :: Assertion
-    zeroBitsAndPopCount =
-        popCount (zeroBits :: DynamicChar) @?= 0
-
-    complementTestBit :: Positive Int -> DynamicChar -> Property
-    complementTestBit (Positive i) bm =
-        Just i < bitSizeMaybe bm ==>
-          ((`testBit` i) . complement) bm === (not . (`testBit` i)) bm
-
-    setBitDefinition :: (NonNegative Int, DynamicChar) -> Property
-    setBitDefinition (NonNegative n, bv) =
-        bv `setBit` n === bv .|. bit n
-
-    clearBitDefinition :: (NonNegative Int, DynamicChar) -> Property
-    clearBitDefinition (NonNegative n, bv) =
-        n < (fromEnum (symbolCount bv) * olength bv) ==>
-          (bv `clearBit` n === bv .&. complement  (zed .|. bit n))
-      where
-        zed = bv `xor` bv
-
-    complementBitDefinition :: (NonNegative Int, DynamicChar) -> Property
-    complementBitDefinition (NonNegative n, bv) =
-        bv `complementBit` n === bv `xor` bit n
-
-    testBitAndSetBit :: (NonNegative Int, DynamicChar) -> Bool
-    testBitAndSetBit (NonNegative n, bv) =
-        ((`testBit` n) . (`setBit` n)) bv
-
-    testBitAndClearBit :: (NonNegative Int, DynamicChar) -> Bool
-    testBitAndClearBit (NonNegative n, bv) =
-        (not  . (`testBit` n) . (`clearBit` n)) bv
 
 
 monoFoldableProperties :: TestTree
@@ -196,6 +153,203 @@ orderingProperties = testGroup "Properties of an Ordering"
 
     transitivity :: (DynamicChar, DynamicChar, DynamicChar) -> Property
     transitivity (a, b, c) = caseOne .||. caseTwo
+      where
+        caseOne = (a <= b && b <= c) ==> a <= c
+        caseTwo = (a >= b && b >= c) ==> a >= c
+
+
+elementBitsTests :: TestTree
+elementBitsTests = testGroup "Bits instance properties"
+    [ testProperty "∀ n ≥ 0, clearBit zeroBits n === zeroBits" zeroBitsAndClearBit
+    , testProperty "∀ n ≥ 0, setBit   zeroBits n === bit n" zeroBitsAndSetBit
+    , testProperty "∀ n ≥ 0, testBit  zeroBits n === False" zeroBitsAndTestBit
+    , testCase     "         popCount zeroBits   === 0" zeroBitsAndPopCount
+    , testProperty "(`testBit` i) . complement === not . (`testBit` i)" complementTestBit
+    , testProperty "(`setBit` n) === (.|. bit n)" setBitDefinition
+    , testProperty "(`clearBit` n) === (.&. complement (bit n))" clearBitDefinition
+    , testProperty "(`complementBit` n) === (`xor` bit n)" complementBitDefinition
+    , testProperty "(`testBit` n) . (`setBit` n)" testBitAndSetBit
+    , testProperty "not  . (`testBit` n) . (`clearBit` n)" testBitAndClearBit
+    ]
+  where
+    zeroBitsAndClearBit :: NonNegative Int -> Property
+    zeroBitsAndClearBit (NonNegative n) =
+        clearBit (zeroBits :: DynamicCharacterElement) n === zeroBits
+
+    zeroBitsAndSetBit :: NonNegative Int -> Property
+    zeroBitsAndSetBit (NonNegative n) =
+        setBit   (zeroBits :: DynamicCharacterElement) n === bit n
+      
+    zeroBitsAndTestBit :: NonNegative Int -> Property
+    zeroBitsAndTestBit (NonNegative n) =
+        testBit  (zeroBits :: DynamicCharacterElement) n === False
+      
+    zeroBitsAndPopCount :: Assertion
+    zeroBitsAndPopCount =
+        popCount (zeroBits :: DynamicCharacterElement) @?= 0
+
+    complementTestBit :: Positive Int -> DynamicCharacterElement -> Property
+    complementTestBit (Positive i) bm =
+        Just i < bitSizeMaybe bm ==>
+          ((`testBit` i) . complement) bm === (not . (`testBit` i)) bm
+
+    setBitDefinition :: (NonNegative Int, DynamicCharacterElement) -> Property
+    setBitDefinition (NonNegative n, bv) =
+        bv `setBit` n === bv .|. bit n
+
+    clearBitDefinition :: (NonNegative Int, DynamicCharacterElement) -> Property
+    clearBitDefinition (NonNegative n, bv) =
+        n < (fromEnum (symbolCount bv) * olength bv) ==>
+          (bv `clearBit` n === bv .&. complement  (zed .|. bit n))
+      where
+        zed = bv `xor` bv
+
+    complementBitDefinition :: (NonNegative Int, DynamicCharacterElement) -> Property
+    complementBitDefinition (NonNegative n, bv) =
+        bv `complementBit` n === bv `xor` bit n
+
+    testBitAndSetBit :: (NonNegative Int, DynamicCharacterElement) -> Bool
+    testBitAndSetBit (NonNegative n, bv) =
+        ((`testBit` n) . (`setBit` n)) bv
+
+    testBitAndClearBit :: (NonNegative Int, DynamicCharacterElement) -> Bool
+    testBitAndClearBit (NonNegative n, bv) =
+        (not  . (`testBit` n) . (`clearBit` n)) bv
+
+
+elementFiniteBitsTests :: TestTree
+elementFiniteBitsTests = testGroup "FiniteBits instance consistency"
+    [ testProperty "fromEnum . symbolCount === finiteBitSize" finiteBitSizeIsDimension 
+    , testProperty "length . otoList === finiteBitSize" finiteBitSizeIsBitLength 
+    , testProperty "length . takeWhile not . otoList === countLeadingZeros" countLeadingZeroAndToBits
+    , testProperty "length . takeWhile not . reverse . otoList === countTrailingZeros" countTrailingZeroAndToBits
+    ]
+  where
+    finiteBitSizeIsDimension :: DynamicCharacterElement -> Property
+    finiteBitSizeIsDimension x =
+      (fromEnum . symbolCount) x === finiteBitSize x
+      
+    finiteBitSizeIsBitLength :: DynamicCharacterElement -> Property
+    finiteBitSizeIsBitLength x =
+      (length . otoList) x === finiteBitSize x
+      
+    countLeadingZeroAndToBits :: DynamicCharacterElement -> Property
+    countLeadingZeroAndToBits x =
+      (length . takeWhile not . otoList) x === countLeadingZeros x
+      
+    countTrailingZeroAndToBits :: DynamicCharacterElement -> Property
+    countTrailingZeroAndToBits x =
+      (length . takeWhile not . reverse . otoList) x === countTrailingZeros x
+
+
+elementMonoFoldableProperties :: TestTree
+elementMonoFoldableProperties = testGroup "Properties of MonoFoldable"
+    [ testProperty "ofoldr f z t === appEndo (ofoldMap (Endo . f) t ) z" testFoldrFoldMap
+    , testProperty "ofoldl' f z t === appEndo (getDual (ofoldMap (Dual . Endo . flip f) t)) z" testFoldlFoldMap
+    , testProperty "ofoldr f z === ofoldr f z . otoList" testFoldr
+    , testProperty "ofoldl' f z === ofoldl' f z . otoList" testFoldl
+    , testProperty "ofoldr1Ex f z === ofoldr1Ex f z . otoList" testFoldr1
+    , testProperty "ofoldl1Ex' f z === ofoldl1Ex' f z . otoList" testFoldl1
+    , testProperty "oall f === getAll . ofoldMap (All . f)" testAll
+    , testProperty "oany f === getAny . ofoldMap (Any . f)" testAny
+    , testProperty "olength === length . otoList" testLength
+    , testProperty "onull === (0 ==) . olength" testNull
+    , testProperty "headEx === getFirst . ofoldMap1Ex First" testHead
+    , testProperty "lastEx === getLast . ofoldMap1Ex Last" testTail
+    , testProperty "oelem e /== onotElem e" testInclusionConsistency
+    ]
+  where
+    testFoldrFoldMap :: (Blind (Bool -> Word -> Word), Word, DynamicCharacterElement) -> Property
+    testFoldrFoldMap (Blind f, z, bv) =
+        ofoldr f z bv === appEndo (ofoldMap (Endo . f) bv) z
+
+    testFoldlFoldMap :: (Blind (Word -> Bool -> Word), Word, DynamicCharacterElement) -> Property
+    testFoldlFoldMap (Blind f, z, bv) =
+        ofoldl' f z bv === appEndo (getDual (ofoldMap (Dual . Endo . flip f) bv)) z
+
+    testFoldr :: (Blind (Bool -> Word -> Word), Word, DynamicCharacterElement) -> Property
+    testFoldr (Blind f, z, bv) =
+        ofoldr f z bv === (ofoldr f z . otoList) bv
+    
+    testFoldl :: (Blind (Word -> Bool -> Word), Word, DynamicCharacterElement) -> Property
+    testFoldl (Blind f, z, bv) =
+        ofoldl' f z bv === (ofoldl' f z . otoList) bv
+    
+    testFoldr1 :: (Blind (Bool -> Bool -> Bool), DynamicCharacterElement) -> Property
+    testFoldr1 (Blind f, bv) =
+        (not . onull) bv  ==> ofoldr1Ex f bv === (ofoldr1Ex f . otoList) bv
+    
+    testFoldl1 :: (Blind (Bool -> Bool -> Bool), DynamicCharacterElement) -> Property
+    testFoldl1 (Blind f, bv) =
+        (not . onull) bv  ==> ofoldl1Ex' f bv === (ofoldl1Ex' f . otoList) bv
+
+    testAll :: (Blind (Bool -> Bool), DynamicCharacterElement) -> Property
+    testAll (Blind f, bv) =
+        oall f bv === (getAll . ofoldMap (All . f)) bv
+
+    testAny :: (Blind (Bool -> Bool), DynamicCharacterElement) -> Property
+    testAny (Blind f, bv) =
+        oany f bv === (getAny . ofoldMap (Any . f)) bv
+
+    testLength :: DynamicCharacterElement -> Property
+    testLength bv =
+        olength bv === (length . otoList) bv
+
+    testNull :: DynamicCharacterElement -> Property
+    testNull bv =
+        onull bv === ((0 ==) . olength) bv
+
+    testHead :: DynamicCharacterElement -> Property
+    testHead bv =
+        (not . onull) bv ==> headEx bv === (getFirst . ofoldMap1Ex First) bv
+    
+    testTail :: DynamicCharacterElement -> Property
+    testTail bv =
+        (not . onull) bv ==> lastEx bv === (getLast . ofoldMap1Ex Last) bv
+
+    testInclusionConsistency :: (Bool, DynamicCharacterElement) -> Property
+    testInclusionConsistency (e, bv) =
+        oelem e bv === (not . onotElem e) bv
+
+
+elementMonoFunctorProperties :: TestTree
+elementMonoFunctorProperties = testGroup "Properites of a MonoFunctor"
+    [ testProperty "omap id === id" omapId
+    , testProperty "omap (f . g)  === omap f . omap g" omapComposition
+    ]
+  where
+    omapId :: DynamicCharacterElement -> Property
+    omapId bm = omap id bm === id bm
+
+    omapComposition
+      :: Blind (Bool -> Bool)
+      -> Blind (Bool -> Bool)
+      -> DynamicCharacterElement
+      -> Property
+    omapComposition (Blind f) (Blind g) bm =
+        (omap f . omap g) bm `exceptionOr` (=== omap (f . g) bm)
+
+
+elementOrderingProperties :: TestTree
+elementOrderingProperties = testGroup "Properties of an Ordering"
+    [ testProperty "ordering preserves symetry"  symetry
+    , testProperty "ordering is transitive (total)" transitivity
+    ]
+  where
+    symetry :: DynamicCharacterElement -> DynamicCharacterElement -> Bool
+    symetry lhs rhs =
+        case (lhs `compare` rhs, rhs `compare` lhs) of
+          (EQ, EQ) -> True
+          (GT, LT) -> True
+          (LT, GT) -> True
+          _        -> False
+
+    transitivity 
+      :: DynamicCharacterElement
+      -> DynamicCharacterElement
+      -> DynamicCharacterElement
+      -> Property
+    transitivity a b c = caseOne .||. caseTwo
       where
         caseOne = (a <= b && b <= c) ==> a <= c
         caseTwo = (a >= b && b >= c) ==> a >= c

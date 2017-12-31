@@ -39,7 +39,6 @@ import           Data.Hashable
 import           Data.List.NonEmpty                  (NonEmpty(..))
 import qualified Data.List.NonEmpty           as NE
 import qualified Data.Map                     as M
-import           Data.Maybe                          (fromMaybe)
 import           Data.Monoid
 import           Data.MonoTraversable
 import           Data.String                         (fromString)
@@ -68,11 +67,13 @@ data  DynamicChar
 -- Represents a sinlge element of a dynamic character.
 newtype DynamicCharacterElement
       = DCE BitVector
-      deriving (Bits, Eq, Generic, Ord, Show)
+      deriving (Bits, Eq, FiniteBits, Generic, MonoFoldable, MonoFunctor, Ord, Show)
 
 
 type instance Element DynamicChar = DynamicCharacterElement
 
+
+type instance Element DynamicCharacterElement = Bool
 
 -- |
 -- A sequence of many dynamic characters. Probably should be asserted as non-empty.
@@ -102,46 +103,6 @@ instance Arbitrary DynamicCharacterElement where
     arbitrary = do
         alphabetLen <- arbitrary `suchThat` (\x -> 2 <= x && x <= 62) :: Gen Int
         DCE . bitvector (toEnum alphabetLen) <$> (choose (1, 2 ^ alphabetLen - 1) :: Gen Integer)
-
-
--- TODO: Probably remove?
-instance Bits DynamicChar where
-
-    (DC lhs)  .&.  (DC rhs) = DC $ lhs  .&.  rhs
-    lhs       .&.  rhs      = Missing $ max (symbolCount lhs) (symbolCount rhs)
-
-    (DC lhs)  .|.  (DC rhs) = DC $ lhs  .|.  rhs
-    lhs       .|.  rhs      = Missing $ max (symbolCount lhs) (symbolCount rhs)
-
-    (DC lhs) `xor` (DC rhs) = DC $ lhs `xor` rhs
-    lhs      `xor` rhs      = Missing $ max (symbolCount lhs) (symbolCount rhs)
-
-    complement   (DC b)     = DC $ complement b
-    complement   x          = x
-
-    shift        (DC b)   n = DC $ b `shift`  n
-    shift        x        _ = x
-
-    rotate       (DC b)   n = DC $ b `rotate` n
-    rotate       x        _ = x
-
-    setBit       (DC b)   i = DC $ b `setBit` i
-    setBit       x        _ = x
-
-    testBit      (DC b)   i = b `testBit` i
-    testBit      _        _ = False
-
-    bit i                   = DC $ fromRows [bit i]
-
-    bitSize                 = fromMaybe 0 . bitSizeMaybe
-
-    bitSizeMaybe (DC b)     = bitSizeMaybe b
-    bitSizeMaybe _          = Nothing
-
-    isSigned     _          = False
-
-    popCount     (DC b)     = popCount b
-    popCount     _          = 0
 
 
 instance CoArbitrary DynamicCharacterElement
@@ -280,12 +241,6 @@ instance Exportable DynamicCharacterElement where
     fromExportableElements = DCE . exportableCharacterElementsHeadToBitVector
 
 
-instance FiniteBits DynamicCharacterElement where
-
-    {-# INLINE finiteBitSize #-}
-    finiteBitSize = finiteBitSize . unwrap
-
-
 instance Hashable DynamicChar where
 
     hashWithSalt salt (Missing n) = salt `xor` fromEnum n
@@ -327,6 +282,15 @@ instance MonoFunctor DynamicChar where
 
     omap f (DC c)  = DC $ omap (unwrap . f . DCE) c
     omap _ missing = missing
+
+
+instance MonoTraversable DynamicCharacterElement where
+
+    {-# INLINE otraverse #-}
+    otraverse f = fmap (DCE . fromBits) . traverse f . otoList
+
+    {-# INLINE omapM #-}
+    omapM = otraverse
 
 
 instance NFData DynamicChar
