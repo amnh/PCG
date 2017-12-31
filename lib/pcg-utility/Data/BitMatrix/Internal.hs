@@ -123,6 +123,16 @@ instance MonoFunctor BitMatrix where
         rows' = f <$> rows bm
 
 
+instance MonoTraversable BitMatrix where
+
+    otraverse f = fmap correction . traverse f . rows
+      where
+        correction xs =
+          case invariantTransformation finiteBitSize xs of
+            Just i  -> BitMatrix i $ fold xs
+            Nothing -> error "The mapping function over the bit matrix did not return *all* bit vectors of equal length."
+
+
 -- | (✔)
 instance NFData BitMatrix
 

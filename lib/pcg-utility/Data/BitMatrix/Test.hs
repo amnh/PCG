@@ -10,6 +10,8 @@ import Data.BitMatrix
 import Data.BitVector.LittleEndian
 import Data.Either
 import Data.Foldable
+import Data.Functor.Compose
+import Data.Functor.Identity
 import Data.Monoid ()
 import Data.MonoTraversable
 import Data.Semigroup
@@ -54,6 +56,7 @@ testSuite :: TestTree
 testSuite = testGroup "BitMatrix tests"
     [ monoFoldableProperties
     , monoFunctorProperties
+    , monoTraversableProperties
     , orderingProperties
     , datastructureTests
     ]
@@ -142,6 +145,30 @@ monoFunctorProperties = testGroup "Properites of a MonoFunctor"
     omapComposition (Blind f, Blind g, bm) =
          (omap f . omap g) bm `exceptionOr` (=== omap (f . g) bm)
 
+
+monoTraversableProperties :: TestTree
+monoTraversableProperties = testGroup "Properties of MonoTraversable"
+    [ testProperty "t . otraverse f === otraverse (t . f)" testNaturality
+    , testProperty "otraverse Identity === Identity" testIdentity
+    , testProperty "otraverse (Compose . fmap g . f) === Compose . fmap (otraverse g) . otraverse f" testComposition
+    ]
+  where
+    testNaturality :: Blind (BitVector -> [BitVector]) -> BitMatrix -> Property
+    testNaturality (Blind f) bm =
+        (headMay . otraverse f) bm `exceptionOr` (=== otraverse (headMay . f) bm)
+
+    testIdentity :: BitMatrix -> Property
+    testIdentity bm =
+        otraverse Identity bm === Identity bm
+
+    testComposition 
+      :: Blind (BitVector -> Either Word BitVector)
+      -> Blind (BitVector -> Maybe BitVector)
+      -> BitMatrix
+      -> Property
+    testComposition (Blind f) (Blind g) bm =
+        (Compose . fmap (otraverse g) . otraverse f) bm `exceptionOr` (=== otraverse (Compose . fmap g . f) bm)
+        
 
 orderingProperties :: TestTree
 orderingProperties = testGroup "Properties of an Ordering"
