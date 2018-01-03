@@ -838,7 +838,7 @@ extractFromAlign_io elemWidth ptr = do
     let  bufferLength = fromEnum bufferLenC
     buffer <- peekArray bufferLength bufferPtr
     let !charElems = drop (bufferLength - charLength) buffer
-    let  exportVal = ExportableCharacterElements charLength elemWidth $ reverse charElems
+    let  exportVal = ExportableCharacterElements charLength elemWidth charElems
     _ <- free bufferPtr
     _ <- free ptr
     pure $ fromExportableElements exportVal
