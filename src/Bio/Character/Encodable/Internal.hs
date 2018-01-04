@@ -17,7 +17,7 @@ import Control.Lens
 import Data.Bifunctor          (bimap)
 import Data.BitMatrix          (BitMatrix, fromRows)
 import Data.Bits
-import Data.BitVector
+import Data.BitVector.LittleEndian
 import Data.Foldable
 import Data.Semigroup
 import Foreign.C.Types
@@ -29,7 +29,7 @@ import Foreign.C.Types
 -- ambiguity group.
 class EncodedAmbiguityGroupContainer w where
 
-    symbolCount :: w -> Int
+    symbolCount :: w -> Word
 
 
 -- |
@@ -53,8 +53,8 @@ instance PossiblyMissingCharacter c => PossiblyMissingCharacter (Maybe c) where
 -- |
 -- A local compile time constant defining the width of the 'CULong' type. Useful
 -- for ensuring a safe exporting to C or C++ code over the FFI interface.
-longWidth :: Int
-longWidth = finiteBitSize (minBound :: CULong)
+longWidth :: Word
+longWidth = toEnum $ finiteBitSize (minBound :: CULong)
 
 
 -- |
@@ -63,31 +63,33 @@ longWidth = finiteBitSize (minBound :: CULong)
 --
 -- The inverse of 'bufferChunksToBitVector'.
 --
-bitVectorToBufferChunks :: Int -> Int -> BitVector -> [CULong]
-bitVectorToBufferChunks elemWidth elemCount bv = fmap fromIntegral $ ((bv @@) <$> slices) <> tailWord
+bitVectorToBufferChunks :: Word -> Word -> BitVector -> [CULong]
+bitVectorToBufferChunks elemWidth elemCount bv = fmap toUnsignedNumber $ ((`subRange` bv) <$> slices) <> tailWord
   where
     totalBits = elemWidth * elemCount
     (fullWords, remainingBits) = totalBits `divMod` longWidth
-    slices   = take fullWords $ iterate ((longWidth +) `bimap` (longWidth +)) ((longWidth - 1, 0) :: (Int,Int))
+    slices   = take (fromEnum fullWords) $ iterate ((longWidth +) `bimap` (longWidth +)) ((0, longWidth - 1) :: (Word, Word))
     tailWord = if   remainingBits == 0
                then []
-               else [ bv @@ (totalBits - 1, totalBits - remainingBits) ]
+               else [ (totalBits - remainingBits, totalBits - 1) `subRange` bv ]
 
 
 -- |
 -- Converts a collection of 'CULong' values to a 'BitVector'.
 --
--- The inverse of 'bitVectorToBufferChunks'.
+-- The inverse of 'bitvectortorToBufferChunks'.
 --
-bufferChunksToBitVector :: Foldable t => Int -> Int -> t CULong -> BitVector
-bufferChunksToBitVector elemWidth elemCount chunks = bitVec totalBits . fst $ foldl' f initialAccumulator chunks
+bufferChunksToBitVector :: Foldable t => Word -> Word -> t CULong -> BitVector
+bufferChunksToBitVector elemWidth elemCount chunks = bitvector totalBits . fst $ foldl' f initialAccumulator chunks
   where
     initialAccumulator :: (Integer, Int)
     initialAccumulator = (0,0)
 
     totalBits = elemWidth * elemCount
 
-    f (summation, shiftDistance) e = (summation + addend, shiftDistance + longWidth)
+    longWidth' = fromEnum longWidth
+
+    f (summation, shiftDistance) e = (summation + addend, shiftDistance + longWidth')
       where
         addend = fromIntegral e `shift` shiftDistance
     
@@ -97,7 +99,7 @@ bufferChunksToBitVector elemWidth elemCount chunks = bitVec totalBits . fst $ fo
 -- |
 -- Converts a exportable character context to a 'BitMatrix'.
 exportableCharacterElementsToBitMatrix :: ExportableCharacterElements -> BitMatrix
-exportableCharacterElementsToBitMatrix ece = fromRows $ bitVec elementWidth <$> integralValues
+exportableCharacterElementsToBitMatrix ece = fromRows $ bitvector elementWidth <$> integralValues
   where
     elementWidth   = ece ^. exportedElementWidth
     integralValues = exportedCharacterElements ece
@@ -106,7 +108,7 @@ exportableCharacterElementsToBitMatrix ece = fromRows $ bitVec elementWidth <$> 
 -- |
 -- Converts a exportable character context to a 'BitVector'.
 exportableCharacterElementsHeadToBitVector :: ExportableCharacterElements -> BitVector
-exportableCharacterElementsHeadToBitVector ece = bitVec elementWidth $ head integralValues
+exportableCharacterElementsHeadToBitVector ece = bitvector elementWidth $ head integralValues
   where
     elementWidth   = ece ^. exportedElementWidth
     integralValues = exportedCharacterElements ece
