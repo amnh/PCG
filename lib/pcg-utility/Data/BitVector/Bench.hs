@@ -1,5 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
-
 module Data.BitVector.Bench (benchmarks) where
 
 import Control.DeepSeq

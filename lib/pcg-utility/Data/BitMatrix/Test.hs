@@ -4,8 +4,8 @@ module Data.BitMatrix.Test
   ( testSuite
   ) where
 
+import Control.DeepSeq
 import Control.Exception
-import Data.Bits
 import Data.BitMatrix
 import Data.BitVector.LittleEndian
 import Data.Either
@@ -17,8 +17,7 @@ import Data.MonoTraversable
 import Data.Semigroup
 import Test.QuickCheck.Monadic
 import Test.Tasty
-import Test.Tasty.HUnit
-import Test.Tasty.QuickCheck hiding ((.&.))
+import Test.Tasty.QuickCheck
 
 
 newtype DependantFromRowsParameters
@@ -143,7 +142,7 @@ monoFunctorProperties = testGroup "Properites of a MonoFunctor"
 
     omapComposition :: (Blind (BitVector -> BitVector), Blind (BitVector -> BitVector), BitMatrix) -> Property
     omapComposition (Blind f, Blind g, bm) =
-         (omap f . omap g) bm `exceptionOr` (=== omap (f . g) bm)
+         (omap f . omap g) bm `equalityWithExceptions` omap (f . g) bm
 
 
 monoTraversableProperties :: TestTree
@@ -155,7 +154,7 @@ monoTraversableProperties = testGroup "Properties of MonoTraversable"
   where
     testNaturality :: Blind (BitVector -> [BitVector]) -> BitMatrix -> Property
     testNaturality (Blind f) bm =
-        (headMay . otraverse f) bm `exceptionOr` (=== otraverse (headMay . f) bm)
+        (headMay . otraverse f) bm `equalityWithExceptions` otraverse (headMay . f) bm
 
     testIdentity :: BitMatrix -> Property
     testIdentity bm =
@@ -167,7 +166,7 @@ monoTraversableProperties = testGroup "Properties of MonoTraversable"
       -> BitMatrix
       -> Property
     testComposition (Blind f) (Blind g) bm =
-        (Compose . fmap (otraverse g) . otraverse f) bm `exceptionOr` (=== otraverse (Compose . fmap g . f) bm)
+        (Compose . fmap (otraverse g) . otraverse f) bm `equalityWithExceptions` otraverse (Compose . fmap g . f) bm
         
 
 orderingProperties :: TestTree
@@ -353,7 +352,7 @@ testRowIndexConsistency = testProperty "∀ i, (`row` i) === (! i) . rows" f
     f :: BitMatrix -> Property
     f bm = conjoin $ g <$> [ 0 .. numRows bm - 1 ]
       where
-        g i = bm `row` i === rows bm !! (fromEnum i)
+        g i = bm `row` i === rows bm !! fromEnum i
 
 
 testExpandRows :: TestTree
@@ -385,8 +384,19 @@ testExpandFactorIdentity = testProperty "factorRows numCols . expandRows === id"
 
 -- |
 -- Should either pass the test or throw an exception.
-exceptionOr :: a -> (a -> Property) -> Property
-exceptionOr x p = monadicIO . run . fmap (either anyException p) . try . evaluate $ x
+equalityWithExceptions :: (Eq a, NFData a, Show a) => a -> a -> Property
+equalityWithExceptions x y = monadicIO $ do
+    lhs <- supressException x
+    rhs <- supressException y
+    pure $ case lhs of
+            Left  _ -> anyException
+            Right a ->
+              case rhs of
+                Left  _ -> anyException
+                Right b -> a === b
   where
-    anyException :: SomeException -> Property
-    anyException = const (1===1)
+    supressException :: NFData a => a -> PropertyM IO (Either SomeException a)
+    supressException = run . try . evaluate . force
+
+    anyException :: Property
+    anyException = True === True

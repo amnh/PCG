@@ -159,7 +159,7 @@ instance EncodableStreamElement StaticCharacter where
       where
         encoding
           | containsMissing ambiguity = fromBits $ replicate (length alphabet) True
-          | otherwise                 = fromBits $ foldr (\x xs -> (x `elem` ambiguity) : xs) [] alphabet
+          | otherwise                 = fromBits $ (`elem` ambiguity) <$> alphabet
           where
             containsMissing = elem (fromString "?")
 

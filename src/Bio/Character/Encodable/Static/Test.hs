@@ -79,7 +79,7 @@ bitsTests = testGroup "Bits instance properties"
 
     clearBitDefinition :: (NonNegative Int, StaticCharacter) -> Property
     clearBitDefinition (NonNegative n, bv) =
-        Just n < (bitSizeMaybe bv) ==>
+        Just n < bitSizeMaybe bv ==>
           (bv `clearBit` n === bv .&. complement  (zed .|. bit n))
       where
         zed = bv `xor` bv

@@ -46,7 +46,7 @@ import           Data.String                         (fromString)
 import           Data.Tuple                          (swap)
 import           Data.Vector                         (Vector)
 import           GHC.Generics
-import           Test.QuickCheck              hiding ((.&.))
+import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances ()
 import           Text.XML
 
@@ -191,7 +191,7 @@ instance EncodableStreamElement DynamicCharacterElement where
     -- The head element of the list is the most significant bit when calling fromBits.
     -- We need the first element of the alphabet to correspond to the least significant bit.
     -- Hence foldl, don't try foldMap or toList & fmap without careful thought.
-    encodeElement alphabet ambiguity = DCE . fromBits $ foldr (\x xs -> (x `elem` ambiguity) : xs) [] alphabet
+    encodeElement alphabet ambiguity = DCE . fromBits $ (`elem` ambiguity) <$> alphabet
 
 
 instance Enum DynamicCharacterElement where

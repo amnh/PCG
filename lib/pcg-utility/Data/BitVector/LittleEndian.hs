@@ -187,17 +187,17 @@ instance FiniteBits BitVector where
     countLeadingZeros (BV w      0) = w
     countLeadingZeros (BV w intVal) =
         case intVal of
-          S#       v  -> countTrailingZeros $ iMask .|. (I# v)
+          S#       v  -> countTrailingZeros $ iMask .|. I# v
           Jp# (BN# v) -> f $ ByteArray v
           Jn# (BN# v) -> f $ ByteArray v
       where
-        iMask = (complement zeroBits) `xor` (2 ^ w - 1)
+        iMask = complement zeroBits `xor` (2 ^ w - 1)
 
         f :: ByteArray -> Int
         f byteArr = g 0
           where
             (q, r) = w `quotRem` 64
-            wMask  = (complement zeroBits) `xor` (2 ^ r - 1) :: Word64
+            wMask  = complement zeroBits `xor` (2 ^ r - 1) :: Word64
 
             g :: Int -> Int
             g !i

@@ -5,6 +5,7 @@ module Bio.Character.Encodable.Dynamic.Test
   ) where
 
 import           Bio.Character.Encodable.Dynamic
+import           Control.DeepSeq
 import           Control.Exception
 import           Data.Alphabet
 import           Data.Bits
@@ -133,8 +134,8 @@ monoFunctorProperties = testGroup "Properites of a MonoFunctor"
       -> Blind (DynamicCharacterElement -> DynamicCharacterElement)
       -> DynamicChar
       -> Property
-    omapComposition (Blind f) (Blind g) bm = exceptionsAllowed $
-        (omap f . omap g) bm === omap (f . g) bm
+    omapComposition (Blind f) (Blind g) bm =
+        (omap f . omap g) bm `equalityWithExceptions` omap (f . g) bm
 
 
 orderingProperties :: TestTree
@@ -199,7 +200,7 @@ elementBitsTests = testGroup "Bits instance properties"
 
     clearBitDefinition :: (NonNegative Int, DynamicCharacterElement) -> Property
     clearBitDefinition (NonNegative n, bv) =
-        Just n < (bitSizeMaybe bv) ==>
+        Just n < bitSizeMaybe bv ==>
           (bv `clearBit` n === bv .&. complement  (zed .|. bit n))
       where
         zed = bv `xor` bv
@@ -529,8 +530,19 @@ fromFoldable = NE.fromList . toList
 
 -- |
 -- Should either pass the test or throw an exception.
-exceptionsAllowed :: Property -> Property
-exceptionsAllowed = monadicIO . run . fmap (either anyException id) . try . evaluate
+equalityWithExceptions :: (Eq a, NFData a, Show a) => a -> a -> Property
+equalityWithExceptions x y = monadicIO $ do
+    lhs <- supressException x
+    rhs <- supressException y
+    pure $ case lhs of
+             Left  _ -> anyException
+             Right a ->
+               case rhs of
+                 Left  _ -> anyException
+                 Right b -> a === b
   where
-    anyException :: SomeException -> Property
-    anyException = const (1===1) 
+    supressException :: NFData a => a -> PropertyM IO (Either SomeException a)
+    supressException = run . try . evaluate . force
+
+    anyException :: Property
+    anyException = True === True
