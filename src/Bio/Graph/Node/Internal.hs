@@ -34,8 +34,8 @@ module Bio.Graph.Node.Internal
 import Control.DeepSeq
 import Control.Lens
 -- import Data.Bifunctor
-import Data.BitVector
-import Data.BitVector.Instances ()
+import Data.Bits
+import Data.BitVector.LittleEndian
 import Data.EdgeSet
 import Data.Foldable
 import Data.List.NonEmpty       (NonEmpty(..))
@@ -266,4 +266,4 @@ singletonSubtreeLeafSet
   :: Int -- ^ Leaf count
   -> Int -- ^ Leaf index
   -> SubtreeLeafSet
-singletonSubtreeLeafSet n i = LS . (`setBit` i) $ n `bitVec` (0 :: Integer)
+singletonSubtreeLeafSet n i = LS . (`setBit` i) $ toEnum n `bitvector` (0 :: Integer)

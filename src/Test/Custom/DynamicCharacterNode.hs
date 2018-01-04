@@ -66,7 +66,7 @@ constructNode lhs rhs = directOptimizationPreOrder pairwiseFunction lhsDec [(0,r
     rootDec = toRootNode lhsDec rhsDec
 
 
-toLeafNode :: ( Integral (Element c)
+toLeafNode :: ( Ord (Element c)
               , SimpleDynamicDecoration d c
 --              , Show (Element c)
 --              , Show c
@@ -86,7 +86,7 @@ toRootNode x y = directOptimizationPreOrder pairwiseFunction z []
     e = undefined
 
 
-pairwiseFunction :: ( Integral (Element s)
+pairwiseFunction :: ( Ord (Element s)
                     , EncodableDynamicCharacter s
                     ) => s -> s -> (Word, s, s, s, s)
 pairwiseFunction x y = naiveDO x y scm

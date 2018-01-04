@@ -464,7 +464,7 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
                       ParsedDiscreteCharacter     discreteMay ->   discreteSingleton structure . Just $ toDiscreteCharacterDecoration charName charWeight specifiedAlphabet scm  staticTransform discreteMay
                       ParsedDynamicCharacter       dynamicMay ->    dynamicSingleton           . Just $  toDynamicCharacterDecoration charName charWeight specifiedAlphabet scm dynamicTransform  dynamicMay
                   where
-                    alphabetLength    = length specifiedAlphabet
+                    alphabetLength    = toEnum $ length specifiedAlphabet
                     charWeight        = weight   charMeta
                     specifiedAlphabet = alphabet charMeta
                     missingCharValue  = NE.fromList $ toList specifiedAlphabet

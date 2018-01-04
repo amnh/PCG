@@ -1,4 +1,4 @@
------------------------------------------------------------------------------
+ -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Character.Exportable.Class
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
@@ -40,8 +40,8 @@ class Exportable c where
 -- 'bufferChunks' contains the bit-packed representation of the character sequence.
 data ExportableCharacterSequence
    = ExportableCharacterSequence
-   { exportedElementCountSequence :: Int
-   , exportedElementWidthSequence :: Int
+   { exportedElementCountSequence :: Word
+   , exportedElementWidthSequence :: Word
    , exportedBufferChunks :: [CULong]
    } deriving (Eq, Show)   
 
@@ -51,8 +51,8 @@ data ExportableCharacterSequence
 -- 'characterElements' contains the integral value for each character element.
 data ExportableCharacterElements
    = ExportableCharacterElements
-   { exportedElementCountElements :: Int
-   , exportedElementWidthElements :: Int 
+   { exportedElementCountElements :: Word
+   , exportedElementWidthElements :: Word
    , exportedCharacterElements :: [CUInt]
    } deriving (Eq, Show)   
 
@@ -66,13 +66,13 @@ class HasExportedElementCount s a | s -> a where
 
 
 -- | (✔)
-instance HasExportedElementCount ExportableCharacterSequence Int where
+instance HasExportedElementCount ExportableCharacterSequence Word where
 
     exportedElementCount = lens exportedElementCountSequence (\e x -> e { exportedElementCountSequence = x })
 
 
 -- | (✔)
-instance HasExportedElementCount ExportableCharacterElements Int where
+instance HasExportedElementCount ExportableCharacterElements Word where
 
     exportedElementCount = lens exportedElementCountElements (\e x -> e { exportedElementCountElements = x })
 
@@ -86,13 +86,13 @@ class HasExportedElementWidth s a | s -> a where
 
 
 -- | (✔)
-instance HasExportedElementWidth ExportableCharacterSequence Int where
+instance HasExportedElementWidth ExportableCharacterSequence Word where
 
     exportedElementWidth = lens exportedElementWidthSequence (\e x -> e { exportedElementWidthSequence = x })
 
 
 -- | (✔)
-instance HasExportedElementWidth ExportableCharacterElements Int where
+instance HasExportedElementWidth ExportableCharacterElements Word where
 
     exportedElementWidth = lens exportedElementWidthElements (\e x -> e { exportedElementWidthElements = x })
 
