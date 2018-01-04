@@ -13,7 +13,7 @@
 -- two dynamic characters.
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE ConstraintKinds, FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE BangPatterns, ConstraintKinds, FlexibleContexts, TypeFamilies #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
  ( Cost
@@ -105,7 +105,7 @@ type NeedlemanWunchMatrix s = Matrix (Cost, Direction, s)
 -- |
 -- Constraints on the input dynamic characters that direct optimization requires
 -- to operate.
-type DOCharConstraint c = (EncodableDynamicCharacter c, {- Show c, Show (Element c), -} Integral (Element c))
+type DOCharConstraint c = (EncodableDynamicCharacter c, Ord (Element c) {- , Show c, Show (Element c), Integral (Element c) -})
 
 
 -- |
@@ -281,6 +281,7 @@ needlemanWunschDefinition topChar leftChar overlapFunction memo p@(row, col)
 -- Useful for debugging purposes.
 renderCostMatrix
   :: ( DOCharConstraint s
+     , Enum (Element s)
      , Foldable f
      , Functor f
      , Indexable f
@@ -302,7 +303,7 @@ renderCostMatrix lhs rhs mtx = unlines
     (_,longer,lesser) = measureCharacters lhs rhs
     longerTokens      = toShownIntegers longer
     lesserTokens      = toShownIntegers lesser
-    toShownIntegers   = fmap (show . (fromIntegral :: Integral a => a -> Integer)) . otoList
+    toShownIntegers   = fmap (show . fromEnum) . otoList
     matrixTokens      = showCell <$> mtx
     showCell (c,d,_)  = show c <> show d
     maxPrefixWidth    = maxLengthOf lesserTokens
@@ -440,9 +441,9 @@ overlap costStruct char1 char2
 -- costly intersection of character elements and the cost of that intersection
 -- of character elements.
 minimalChoice :: (Bits c, Foldable1 t, Ord n) => t (c, n) -> (c, n)
-minimalChoice = foldr1 f
+minimalChoice = foldl1 f
   where
-    f (val1, cost1) (val2, cost2)
+    f (!val1, !cost1) (!val2, !cost2)
       | cost1 == cost2 = (val1 .|. val2, cost1)
       | cost1 < cost2  = (val1         , cost1)
       | otherwise      = (val2         , cost2)
@@ -470,7 +471,7 @@ allPossibleBaseCombosCosts costStruct char1 char2 = do
 -- 'EncodableStreamElement' of the same length as the input, but with only the
 -- bit at location @ x @ set.
 getSubChars :: EncodableStreamElement s => s -> NonEmpty (Word, s)
-getSubChars fullChar = fromList $ foldMap f [0 .. symbolCount fullChar - 1]
+getSubChars fullChar = fromList $ foldMap f [0 .. finiteBitSize fullChar - 1]
   where
     f i
       | fullChar `testBit` i = pure (toEnum i,  z `setBit` i)

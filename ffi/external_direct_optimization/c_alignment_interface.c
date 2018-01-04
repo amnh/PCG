@@ -79,7 +79,26 @@ int align2d( alignIO_t          *inputChar1_aio
     // size_t alphabetSize = costMtx2d->alphSize;
     size_t alphabetSize = costMtx2d->costMatrixDimension;
 
-    if (inputChar1_aio->length >= inputChar2_aio->length) {
+    int firstCharIsLongerOrBothAreIdenticalInValue = 1;
+    if (inputChar1_aio->length < inputChar2_aio->length)
+	firstCharIsLongerOrBothAreIdenticalInValue = 0;
+    else if (inputChar1_aio->length > inputChar2_aio->length)
+        firstCharIsLongerOrBothAreIdenticalInValue = 1;
+    else { // Length is equal!
+        // Use lexical ordering to determine "length" in the case of equal length dynamic characters
+        // Two dynamic chanracters will *only* be equal in length if they contain the same sequence of elements.
+        // By doing this we ensure that the alignment operation is commutative.
+        elem_t *p1 = inputChar1_aio->character + (inputChar1_aio->capacity - inputChar1_aio->length);
+        elem_t *p2 = inputChar2_aio->character + (inputChar2_aio->capacity - inputChar2_aio->length);
+        for (size_t i = 0; i < inputChar1_aio->length; ++i) {
+            if (p1[i] != p2[i]) {
+	        firstCharIsLongerOrBothAreIdenticalInValue = p1[i] > p2[i];
+	        break;
+	    }
+        }
+    }
+      
+    if (firstCharIsLongerOrBothAreIdenticalInValue) {
         alignIOtoDynChar(longChar, inputChar1_aio, alphabetSize);
         longIO = inputChar1_aio;
 
@@ -454,7 +473,7 @@ int align3d( alignIO_t          *inputChar1_aio
 
     alignIOtoCharacters_t( powellInputs, inputChar1_aio, inputChar2_aio, inputChar3_aio );
 
-    if (DEBUG_CALL_ORDER) printf("\n---Calling Powell\n\n");
+    if (DEBUG_CALL_ORDER) printf( "\n---Calling Powell\n\n" );
 
     // Powell aligns three sequences.
     algnCost = powell_3D_align ( powellInputs
@@ -586,14 +605,16 @@ void copyValsToAIO( alignIO_t *outChar, elem_t *vals, size_t length, size_t capa
 void dynCharToAlignIO( alignIO_t *output, dyn_character_t *input, int delete_initial_gap )
 {
 
-    printf("input:\n");
-    printf("  Length:   %zu\n", input->len);
-    printf("  Capacity: %zu\n", input->cap);
-    printf("output:\n");
-    printf("  Length:   %zu\n", output->length);
-    printf("  Capacity: %zu\n", output->capacity);
-    fflush(stdout);
-
+    if (DEBUG_ALGN) {
+        printf("input:\n");
+        printf("  Length:   %zu\n", input->len);
+        printf("  Capacity: %zu\n", input->cap);
+        printf("output:\n");
+        printf("  Length:   %zu\n", output->length);
+        printf("  Capacity: %zu\n", output->capacity);
+        fflush(stdout);
+    }
+    
     size_t  copy_length;    // These two because ungapped characters will have their initial gaps removed, so may be length 0.
     elem_t *input_begin;
 

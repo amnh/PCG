@@ -46,7 +46,6 @@ import qualified Data.List.NonEmpty     as NE
 --import qualified Data.Map               as M
 --import           Data.Maybe                    (fromMaybe)
 import           Data.Ord                      (comparing)
-import           Data.Semigroup
 import           Data.Semigroup.Foldable
 --import           Data.Vector                   (Vector)
 --import qualified Data.Vector            as V   (zipWith)

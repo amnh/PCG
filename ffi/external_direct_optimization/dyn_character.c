@@ -102,12 +102,12 @@ void dyn_char_print( const dyn_character_t *inChar )
 {
     elem_t *start = inChar->char_begin;
     elem_t *end   = inChar->end;
-    printf("Char length   %3zu\n", inChar->len);
-    printf("Char capacity %3zu\n", inChar->cap);
-    for( ; start <= end; start++) {
-        printf("%2d, ", *start);
-    }
-    printf("\n");
+//    printf("Char length   %3zu\n", inChar->len);
+//    printf("Char capacity %3zu\n", inChar->cap);
+//    for( ; start <= end; start++) {
+//        printf("%2d, ", *start);
+//    }
+//    printf("\n");
 }
 
 

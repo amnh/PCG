@@ -14,6 +14,7 @@
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
   ( DenseTransitionCostMatrix
+  , OverlapFunction
   , filterGaps
   , foreignPairwiseDO
   , foreignThreeWayDO

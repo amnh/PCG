@@ -122,7 +122,7 @@ ukkonenDO char1 char2 overlapFunction
     coefficient = minimum $ indelCost <$> nonGapElements
       where
         gap            = gapOfStream char1
-        alphabetSize   = symbolCount gap
+        alphabetSize   = fromEnum $ symbolCount gap
         nonGapElements = [ 0 .. alphabetSize - 2 ]
         indelCost i    =  min (snd (overlapFunction (bit i)  gap    ))
                               (snd (overlapFunction  gap    (bit i) ))

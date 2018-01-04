@@ -109,8 +109,13 @@ alphabet = fromSymbols ["A","C","G","T"]
 
 
 costStructure :: (Ord a, Num a) => a -> a -> a
-costStructure i j = if i /= j then 1 else 0
+--costStructure i j = if i /= j then 1 else 0
 --costStructure i j = max i j - min i j
+costStructure i j
+  | i == j    = 0
+  | i == 4    = 1
+  | j == 4    = 1
+  | otherwise = 2
 
 
 denseMatrixValue :: DenseTransitionCostMatrix

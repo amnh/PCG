@@ -24,7 +24,7 @@ packages:
   - location:  https://github.com/ivan-m/graphviz/archive/a099a07.zip
     extra-dep: true
 
-resolver: nightly-2017-11-23
-#resolver: nightly-2017-09-29
+resolver: lts-10.0
+#resolver: nightly-2017-11-23
 
 system-ghc: false

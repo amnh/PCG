@@ -33,7 +33,6 @@ import           Control.Lens
 import           Data.EdgeLength
 import qualified Data.List.NonEmpty as NE
 import           Data.MonoTraversable      (Element)
-import           Data.Semigroup
 
 
 -- |
@@ -168,7 +167,7 @@ chooseDirectOptimizationComparison
      , SimpleDynamicDecoration d' c
      , Exportable c
 --     , Show c
-     , Integral (Element c)
+     , Ord (Element c)
      )
   => d
   -> [d']
@@ -196,7 +195,7 @@ chooseDirectOptimizationComparison2
      , SimpleDynamicDecoration d' c
      , Exportable c
 --     , Show c
-     , Integral (Element c)
+     , Ord (Element c)
      )
   => d
   -> [(a,d')]
