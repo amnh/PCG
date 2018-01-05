@@ -15,12 +15,10 @@
 module Data.BitMatrix.Internal where
 
 import Control.DeepSeq
---import Data.Bifunctor
 import Data.Bits
 import Data.BitVector.LittleEndian
 import Data.List.Utility        (equalityOf, invariantTransformation)
 import Data.Foldable
-import Data.Maybe               (fromMaybe)
 import Data.Monoid
 import Data.MonoTraversable
 import Data.Ord
@@ -335,14 +333,10 @@ rows :: BitMatrix -> [BitVector]
 rows bm@(BitMatrix nCols bv)
     | nRows == 0 || nCols == 0 = []
     | nRows == 1               = [bv]
-    | otherwise                = go nRows initAcc -- (`subRange` bv) <$> slices
+    | otherwise                = go nRows initAcc
     where
       nRows   = numRows bm
       dim     = toEnum nCols
-{-
-      slices  = take (fromEnum nRows) $ iterate ((dim +) `bimap` (dim +)) (0, dim - 1)
--}
-      
       mask    = (2^dim) - 1 :: Integer
 
       initAcc = (toUnsignedNumber bv, []) :: (Integer, [BitVector])

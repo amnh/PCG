@@ -15,7 +15,7 @@
 
 module Data.Either.Custom where
 
-import Control.Monad.Trans.Either
+import Control.Monad.Trans.Except
 import Data.Either        (partitionEithers)
 import Data.Foldable
 import Data.List.NonEmpty (NonEmpty((:|)))
@@ -59,5 +59,5 @@ eitherValidation xs =
 -- \( \mathcal{O} \left( n \right) \)
 --
 -- Works similarly to 'eitherValidation' but within the 'MonadTrans' context.
-eitherTValidation :: (Foldable t, Monad m, Semigroup e) => t (EitherT e m a) -> EitherT e m [a]
-eitherTValidation = EitherT . fmap eitherValidation . traverse runEitherT . toList
+eitherTValidation :: (Foldable t, Monad m, Semigroup e) => t (ExceptT e m a) -> ExceptT e m [a]
+eitherTValidation = ExceptT . fmap eitherValidation . traverse runExceptT . toList
