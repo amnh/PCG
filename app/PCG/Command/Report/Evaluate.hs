@@ -10,7 +10,8 @@ import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
 --import           Analysis.ImpliedAlignment.Standard
 --import           Analysis.ImpliedAlignment
 --import           Analysis.Parsimony.Binary.Optimization
---import           Bio.Character.Decoration.Dynamic
+import           Bio.Character.Decoration.Dynamic
+import           Bio.Character.Encodable
 --import           Bio.Metadata
 import           Bio.Graph
 import           Bio.Graph.PhylogeneticDAG
@@ -19,6 +20,7 @@ import           Control.Monad.IO.Class
 --import           Control.Monad.Logger
 --import           Data.Foldable
 import           Data.List.NonEmpty
+import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
 import           PCG.Command.Report
 --import           PCG.Command.Report.DynamicCharacterTable
@@ -107,6 +109,27 @@ generateOutput g ImpliedAlignmentCharacters {} =
 generateOutput _ _ = ErrorCase "Unrecognized 'report' command"
 
 
+showWithTotalEdgeCost 
+  :: ( HasSingleDisambiguation z c
+     , HasSymbolChangeMatrix   z (Word -> Word -> Word)
+     , EncodableDynamicCharacter c
+     , Ord (Element c), Show e, Show n, Show u
+     , Show v, Show w, Show x, Show y, Show z
+     , HasCharacterCost   u Double
+     , HasCharacterCost   v Word
+     , HasCharacterCost   w Word
+     , HasCharacterCost   x Word
+     , HasCharacterCost   y Word
+     , HasCharacterCost   z Word
+     , HasCharacterWeight u Double
+     , HasCharacterWeight v Double
+     , HasCharacterWeight w Double
+     , HasCharacterWeight x Double
+     , HasCharacterWeight y Double
+     , HasCharacterWeight z Double
+     ) 
+  => PhylogeneticSolution (PhylogeneticDAG2 e n u v w x y z) 
+  -> String
 showWithTotalEdgeCost x = unlines
     [ show $ fmap (totalEdgeCosts naiveDO) . toNonEmpty <$> phylogeneticForests x
     , show x
