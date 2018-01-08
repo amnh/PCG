@@ -40,20 +40,21 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
  ) where
 
 
-import Bio.Character.Encodable
-import Data.Bits
-import Data.DList            (snoc)
-import Data.Foldable
-import Data.Key
-import Data.List.NonEmpty    (NonEmpty(..), fromList)
-import Data.Matrix.NotStupid (Matrix)
-import Data.Maybe            (fromMaybe)
-import Data.MonoTraversable
-import Data.Ord
-import Data.Semigroup
-import Data.Semigroup.Foldable
-import Numeric.Extended.Natural
-import Prelude        hiding (lookup, zipWith)
+import           Bio.Character.Encodable
+import           Data.Bits
+import           Data.DList               (snoc)
+import           Data.Foldable
+import           Data.Key
+import           Data.List.NonEmpty       (NonEmpty(..))
+import qualified Data.List.NonEmpty as NE
+import           Data.Matrix.NotStupid    (Matrix)
+import           Data.Maybe               (fromMaybe)
+import           Data.MonoTraversable
+import           Data.Ord
+import           Data.Semigroup
+import           Data.Semigroup.Foldable
+import           Numeric.Extended.Natural
+import           Prelude            hiding (lookup, zipWith)
 
 
 -- |
@@ -241,7 +242,7 @@ measureCharacters lhs rhs
 -- Internal generator function for the matrices based on the Needleman-Wunsch
 -- definition described in their paper.
 needlemanWunschDefinition
-  :: (DOCharConstraint s, Indexable f, Key f ~ (Int,Int))
+  :: (DOCharConstraint s, Indexable f, Key f ~ (Int, Int))
   => s
   -> s
   -> OverlapFunction (Element s)
@@ -430,53 +431,56 @@ getOverlap inChar1 inChar2 costStruct = result
 -- value is A,C,G,T.
 overlap :: (EncodableStreamElement c {- , Show c -}) => (Word -> Word -> Word) -> c -> c -> (c, Word)
 overlap costStruct char1 char2
-  | intersectionStates == zeroBits = minimalChoice $ allPossibleBaseCombosCosts costStruct char1 char2
-  | otherwise                      = (intersectionStates, 0)
+  | intersectionStates == zero = minimalChoice $ symbolDistances costStruct char1 char2
+  | otherwise                  = (intersectionStates, 0)
   where
     intersectionStates = char1 .&. char2
+    zero = char1 `xor` char1
 
 
 -- |
--- Given a structure of character elements and costs, calculates the least
--- costly intersection of character elements and the cost of that intersection
--- of character elements.
+-- Given a structure of unambiguous character elements and costs, calculates the
+-- least costly intersection of unambiguous character elements and the cost of
+-- that intersection.
 minimalChoice :: (Bits c, Foldable1 t, Ord n) => t (c, n) -> (c, n)
 minimalChoice = foldl1 f
   where
-    f (!val1, !cost1) (!val2, !cost2)
-      | cost1 == cost2 = (val1 .|. val2, cost1)
-      | cost1 < cost2  = (val1         , cost1)
-      | otherwise      = (val2         , cost2)
+    f (!symbol1, !cost1) (!symbol2, !cost2)
+      | cost1 == cost2 = (symbol1 .|. symbol2, cost1)
+      | cost1 <  cost2 = (symbol1            , cost1)
+      | otherwise      = (symbol2            , cost2)
 
 
 -- |
--- Finds the cost of a pairing of two static characters.
+-- Finds the cost between all single, unambiguous symbols and two dynamic
+-- character elements.
 --
 -- Takes in a symbol change cost function and two ambiguous elements of a dynamic
 -- character and returns a list of tuples of all possible unambiguous pairings,
 -- along with the cost of each pairing. The resulting elements each have exactly
 -- two bits set.
-allPossibleBaseCombosCosts :: EncodableStreamElement s => (Word -> Word -> Word) -> s -> s -> NonEmpty (s, Word)
-allPossibleBaseCombosCosts costStruct char1 char2 = do
-    (i, x) <- getSubChars char1
-    (j, y) <- getSubChars char2
-    pure (x .|. y, costStruct i j)
-
-
--- |
--- Takes in a 'EncodableStreamElement', possibly with more than one bit set, and
--- returns a list of tuples of 'Word's and 'EncodableStreamElement's, such that,
--- for each set bit in the input, there is one element in the output list, a
--- tuple with an 'Word', @ x @, giving the location of the set bit, as well as an
--- 'EncodableStreamElement' of the same length as the input, but with only the
--- bit at location @ x @ set.
-getSubChars :: EncodableStreamElement s => s -> NonEmpty (Word, s)
-getSubChars fullChar = fromList $ foldMap f [0 .. finiteBitSize fullChar - 1]
+symbolDistances
+  :: EncodableStreamElement s
+  => (Word -> Word -> Word)
+  -> s
+  -> s
+  -> NonEmpty (s, Word)
+symbolDistances costStruct char1 char2 = costAndSymbol <$> allSymbols
   where
-    f i
-      | fullChar `testBit` i = pure (toEnum i,  z `setBit` i)
-      | otherwise            = mempty
-    z = fullChar `xor` fullChar
+    costAndSymbol (i, x) = (x, cost1 + cost2)
+      where
+        cost1 = getDistance i char1
+        cost2 = getDistance i char2
+
+    symbolIndices = NE.fromList [0 .. finiteBitSize char1 - 1]
+    allSymbols    = (\i -> (toEnum i, zero `setBit` i)) <$> symbolIndices
+    zero          = char1 `xor` char1
+
+    getDistance :: FiniteBits b => Word -> b -> Word
+    getDistance i e = minimum $ costStruct i <$> getSetBits e
+
+    getSetBits :: FiniteBits b => b -> NonEmpty Word
+    getSetBits x = fmap toEnum . NE.fromList . filter (x `testBit`) $ [0 .. finiteBitSize x - 1]
 
 
 -- |
