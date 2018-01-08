@@ -49,7 +49,7 @@ data FitchOptimizationDecoration f
 
 
 -- | (✔)
-instance EncodableStreamElement c => Show (FitchOptimizationDecoration c) where
+instance (EncodableStreamElement c, Enum c) => Show (FitchOptimizationDecoration c) where
 
     show c = unlines
         [ {- "Cost = " <> show (fitchMinCost c)
@@ -62,7 +62,7 @@ instance EncodableStreamElement c => Show (FitchOptimizationDecoration c) where
       where
         alphabet = c ^. characterAlphabet
         showStatic x
-          | x == 0    = "<Empty Character>"
+          | fromEnum x == 0 = "<Empty Character>"
           | otherwise = showStreamElement alphabet x
 
 

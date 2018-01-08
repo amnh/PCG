@@ -23,15 +23,14 @@ import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
 
 import Bio.Character.Encodable
-import Bio.Metadata          hiding (alphabet)
+import Bio.Metadata
 import Data.Alphabet
 import Data.MonoTraversable
 import Data.Semigroup
 import Data.TCM.Memoized
 import Test.Custom.NucleotideSequence
 import Test.Tasty
---import Test.Tasty.HUnit
-import Test.Tasty.QuickCheck hiding ((.&.))
+import Test.Tasty.QuickCheck
 
 
 

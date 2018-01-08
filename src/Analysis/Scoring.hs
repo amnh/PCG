@@ -167,7 +167,7 @@ chooseDirectOptimizationComparison
      , SimpleDynamicDecoration d' c
      , Exportable c
 --     , Show c
-     , Integral (Element c)
+     , Ord (Element c)
      )
   => d
   -> [d']
@@ -195,7 +195,7 @@ chooseDirectOptimizationComparison2
      , SimpleDynamicDecoration d' c
      , Exportable c
 --     , Show c
-     , Integral (Element c)
+     , Ord (Element c)
      )
   => d
   -> [(a,d')]

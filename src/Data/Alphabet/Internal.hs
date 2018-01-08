@@ -97,7 +97,7 @@ alphabetPreprocessing = appendGapSymbol . removeSpecialSymbolsAndDuplicates . to
     appendGapSymbol xs =
         case xs of
           []   -> gapSymbol':|[]
-          x:xs -> x:|(xs <> [gapSymbol'])
+          y:ys -> y:|(ys <> [gapSymbol'])
     removeSpecialSymbolsAndDuplicates = (`evalState` mempty) . filterM f
       where
         f x

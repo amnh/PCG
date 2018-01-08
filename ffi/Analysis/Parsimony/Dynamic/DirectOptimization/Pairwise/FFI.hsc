@@ -647,8 +647,8 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
 
                 elemWidth        = exportedChar1 ^. exportedElementWidth
 
-                exportedChar1Len = toEnum $ exportedChar1 ^. exportedElementCount
-                exportedChar2Len = toEnum $ exportedChar2 ^. exportedElementCount
+                exportedChar1Len = coerceEnum $ exportedChar1 ^. exportedElementCount
+                exportedChar2Len = coerceEnum $ exportedChar2 ^. exportedElementCount
                 -- Add two because the C code needs stupid gap prepended to each character.
                 -- Forgetting to do this will eventually corrupt the heap memory
                 maxAllocLen      = exportedChar1Len + exportedChar2Len + 2
@@ -747,9 +747,9 @@ algn3d char1 char2 char3 mismatchCost openningGapCost indelCost denseTCMs = hand
 
                 elemWidth        = exportedChar1 ^. exportedElementWidth
 
-                exportedChar1Len = toEnum $ exportedChar1 ^. exportedElementCount
-                exportedChar2Len = toEnum $ exportedChar2 ^. exportedElementCount
-                exportedChar3Len = toEnum $ exportedChar3 ^. exportedElementCount
+                exportedChar1Len = coerceEnum $ exportedChar1 ^. exportedElementCount
+                exportedChar2Len = coerceEnum $ exportedChar2 ^. exportedElementCount
+                exportedChar3Len = coerceEnum $ exportedChar3 ^. exportedElementCount
 
                 maxAllocLen      = exportedChar1Len + exportedChar2Len + exportedChar3Len
 
@@ -831,14 +831,14 @@ coerceEnum = toEnum . fromEnum
 
 -- |
 -- Converts the data behind an 'Align_io' pointer to an 'Exportable' type.
-extractFromAlign_io :: Exportable s => Int -> Ptr Align_io -> IO s
+extractFromAlign_io :: Exportable s => Word -> Ptr Align_io -> IO s
 extractFromAlign_io elemWidth ptr = do
     Align_io bufferPtr charLenC bufferLenC <- peek ptr
     let    charLength = fromEnum   charLenC
     let  bufferLength = fromEnum bufferLenC
     buffer <- peekArray bufferLength bufferPtr
     let !charElems = drop (bufferLength - charLength) buffer
-    let  exportVal = ExportableCharacterElements charLength elemWidth charElems
+    let  exportVal = ExportableCharacterElements (toEnum charLength) elemWidth charElems
     _ <- free bufferPtr
     _ <- free ptr
     pure $ fromExportableElements exportVal

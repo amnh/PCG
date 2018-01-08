@@ -32,13 +32,11 @@ library
   build-depends:       base               >=4.8
                      , bimap
                      , blaze-html
-                     , bv
                      , case-insensitive
                        -- >=0.5.8 Required for Data.Map.restrictKeys
                      , containers         >=0.5.8
                      , deepseq
                      , dlist
-                     , either
                      , graphviz
                      , hashable
                      , hashtables
@@ -295,7 +293,6 @@ executable pcg
                      , containers       >=0.5.8
                      , deepseq
                      , directory
-                     , either
                      , Glob
                      , graphviz
                      , hashable
@@ -313,6 +310,7 @@ executable pcg
                      , semigroups
                      , text
                      , time
+                     , transformers
                      , vector
                      , vector-instances >=3.4
                      , xml
@@ -385,7 +383,6 @@ executable fasta-differ
 
   build-depends:       phylocomgraph
                      , base >=4.8
-                     , bv
                      , containers
                      , pcg-file-parsers
                      , keys
@@ -481,6 +478,7 @@ executable 3d-do-comparison
   build-depends:       phylocomgraph
                      , base >=4.8
                      , bimap
+                     , deepseq
                      , QuickCheck
 
   default-language:    Haskell2010
@@ -713,7 +711,6 @@ Test-Suite testsuite
   build-depends:       base               >=4.8
                      , bimap
                      , blaze-html
-                     , bv
                      , case-insensitive
                        -- >=0.5.8 Required for Data.Map.restrictKeys
                      , containers         >=0.5.8
@@ -886,6 +883,9 @@ Test-Suite testsuite
                        Bio.Character.Encodable.Static.Internal
                        Bio.Character.Encodable.Static.Test
                        Bio.Character.Encodable.Internal
+                       Bio.Character.Encodable.Static
+                       Bio.Character.Encodable.Static.Class
+                       Bio.Character.Encodable.Static.Internal
                        Bio.Character.Encodable.Stream
                        Bio.Character.Exportable
                        Bio.Character.Exportable.Class
@@ -906,6 +906,7 @@ Test-Suite testsuite
                        Data.TCM.Memoized
                        Data.TCM.Memoized.FFI
                        Data.TCM.Internal
+                       Data.Vector.NonEmpty
                        Test.QuickCheck.Arbitrary.Instances
                        Test.Custom.NucleotideSequence
                        TestSuite.ExecutableTests

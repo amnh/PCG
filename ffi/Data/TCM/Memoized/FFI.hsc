@@ -264,12 +264,12 @@ getMedianAndCost memo lhs rhs = unsafePerformIO $ do
 --
 -- Calculate the buffer length based on the element count and element bit width.
 calculateBufferLength :: Enum b
-                      => Int -- ^ Element count
-                      -> Int -- ^ Element bit width
+                      => Word -- ^ Element count
+                      -> Word -- ^ Element bit width
                       -> b
 calculateBufferLength count width = coerceEnum $ q + if r == 0 then 0 else 1
    where
-    (q,r)  = (count * width) `divMod` finiteBitSize (undefined :: CULong)
+    (q,r)  = (count * width) `divMod` toEnum (finiteBitSize (undefined :: CULong))
 
 
 -- |
@@ -323,7 +323,7 @@ constructElementFromExportable exChar = do
 --
 -- Malloc and populate a pointer to a C representation of a dynamic character.
 -- The buffer of the resulting value is intentially zeroed out.
-constructEmptyElement :: Int -- ^ Bit width of a dynamic character element.
+constructEmptyElement :: Word -- ^ Bit width of a dynamic character element.
                       -> IO (Ptr DCElement)
 constructEmptyElement alphabetSize = do
     elementPointer <- malloc :: IO (Ptr DCElement)
