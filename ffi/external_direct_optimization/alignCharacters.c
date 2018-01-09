@@ -780,7 +780,7 @@ algn_fill_extending_left_right ( const dyn_character_t    *char1
         const_val = cm_calc_cost_2d( costMtx->cost
                                    , cur_char1
                                    , costMtx->gap_char
-                                   , costMtx->costMatrixDimension
+                                   , costMtx->alphSize
                                    );
         /* Conceptually,
            align_row = algnMtx_get_precal_row (algn_precalcMtx, cur_char1, char2_len);
@@ -2738,9 +2738,8 @@ FILL_CLOSE_BLOCK_DIAGONAL_NOBT(       elem_t        original_lesserChar
 
     diag = c[longerChar_no_gap];
 
-    /*
-    diag = cm_calc_cost_2d(c->cost, lesserChar_no_gap, longerChar_no_gap, c->costMatrixDimension);
-    */
+    // diag = cm_calc_cost_2d(c->cost, lesserChar_no_gap, longerChar_no_gap, c->alphSize);
+
     extra_gap_opening = (longerChar_gap_open_cost < lesserChar_gap_open_cost) ? lesserChar_gap_open_cost : longerChar_gap_open_cost;
 
     if (DEBUG_AFFINE) {
@@ -2791,9 +2790,7 @@ FILL_CLOSE_BLOCK_DIAGONAL(       elem_t           original_lesserChar
     DIR_MTX_ARROW_t mask;
 
     diag = c[longerChar_no_gap];
-    /*
-        cm_calc_cost_2d(c->cost, lesserChar_no_gap, longerChar_no_gap, c->costMatrixDimension);
-        */
+    // cm_calc_cost_2d(c->cost, lesserChar_no_gap, longerChar_no_gap, c->alphSize);
     extra_gap_opening =
         (longerChar_gap_open_cost < lesserChar_gap_open_cost)?lesserChar_gap_open_cost:longerChar_gap_open_cost;
     if (DEBUG_AFFINE) {
