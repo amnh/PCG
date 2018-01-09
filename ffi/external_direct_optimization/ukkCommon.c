@@ -310,7 +310,7 @@ void setup()
             }
         }
         maxSingleStep_g = maxCost;
-        fprintf(stderr, "Maximum single step cost = %d\n", maxSingleStep_g);
+        if (DEBUG_3D)   fprintf(stderr, "Maximum single step cost = %d\n", maxSingleStep_g);
     } // End setup of transition costs
 }
 
@@ -322,15 +322,14 @@ void checkAlign( elem_t *al, int alLen, elem_t *str, int strLen )
     int i,
         j = 0;
     // char errorMsg[1024]; // for assertion outputs
-
     for (i = 0; i < alLen; i++) {
         if (al[i] == gap_char_g)    continue;
-        printf( "Element in output alignment equals element in input string. a[i]: %2u, str[j]: %2u\n", al[i], str[j] );
+        if (DEBUG_3D)    printf( "Element in output alignment equals element in input string. a[i]: %2u, str[j]: %2u\n", al[i], str[j] );
         // assert( al[i] == str[j] );
         j++;
     }
     // sprintf( errorMsg, "Output alignment not equal length to input string. Index: %d, character length: %d", j, strLen);
-    // assert( j == strLen );
+    assert( j == strLen );
 }
 
 

@@ -19,9 +19,9 @@ def main():
              """)
     lib = ffi.dlopen( "../C_source/test_interface_3d_for_python.so" )
 
-    intArrays = [ [4,   4,  1],
-                  [8,   2, 13, 8, 1],
-                  [16, 13,  8]
+    intArrays = [ [26, 8],
+                  [15, 24],
+                  [15, 24]
                 ]
 
     inLen1 = len( intArrays[0] )

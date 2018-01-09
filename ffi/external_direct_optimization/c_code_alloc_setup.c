@@ -32,7 +32,7 @@ int distance( unsigned int const *tcm
     int curCost = 0;
 
     for (size_t pos = 0; pos < alphSize; pos++) {
-        if (1 << pos & ambElem) { // if pos is set in ambElem, meaning pos is possible value of ambElem
+        if ((1 << pos) & ambElem) { // if pos is set in ambElem, meaning pos is possible value of ambElem
             curCost = tcm[pos * alphSize + nucleotide - 1];
             if (curCost < min) {
                 min = curCost;
@@ -219,8 +219,8 @@ void setUp3dCostMtx( cost_matrices_3d_t *retMtx
     // int is_metric    = 1;
     elem_t all_elements = (1 << alphSize) - 1;   // Given data is DNA (plus gap), for instance, there are 2^5 - 1 possible character states
 
-    int minCost    = INT_MAX;
-    elem_t median    = 0;        // and 3d; combos of median1, etc., below
+    int minCost   = INT_MAX;
+    elem_t median = 0;        // and 3d; combos of median1, etc., below
     int curCost;
 
     cm_alloc_3d( retMtx
@@ -250,9 +250,8 @@ void setUp3dCostMtx( cost_matrices_3d_t *retMtx
                     }
                 } // nucleotide
                 // printf("%2u %2u %2u %2d %2u\n", ambElem1, ambElem2, ambElem3, minCost, median);
-                cm_set_cost_3d   (retMtx, ambElem1, ambElem2, ambElem3, minCost);
-                cm_set_median_3d (retMtx, ambElem1, ambElem2, ambElem3, median);
-                // cm_set_worst     (ambElem1, ambElem2, max_2d,    (cost_matrices_2d_t *) retMtx);    // no worst in 3d
+                cm_set_cost_3d(   retMtx, ambElem1, ambElem2, ambElem3, minCost );
+                cm_set_median_3d( retMtx, ambElem1, ambElem2, ambElem3, median  );
             } // ambElem3
         } // ambElem2
     } // ambElem1

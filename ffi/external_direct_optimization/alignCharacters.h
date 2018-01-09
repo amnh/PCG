@@ -236,7 +236,6 @@ algn_backtrace_2d ( const dyn_character_t      *char1
                   , const cost_matrices_2d_t   *costMatrix
                   ,       int                   st_char1
                   ,       int                   st_char2
-                  ,       int                   swapped
                   );
 
 

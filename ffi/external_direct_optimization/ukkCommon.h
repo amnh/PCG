@@ -326,47 +326,47 @@ static inline void allocFinal(AllocInfo_t *a, void *flag, void *top)
 {
     int usedFlag = (char *) flag - (char *) top;
     {
-        int i, j, cIndex;
         long planesUsed  = 0;
         long blocksTotal = 0, blocksUsed = 0;
         long cellsTotal  = 0, cellsUsed = 0;
-        for (i = 0; i < a->baseAlloc; i++) {
+        for (size_t i = 0; i < a->baseAlloc; i++) {
             long tblocksUsed = 0;
             void **p = a->basePtr[i];
-            if (!p) continue;
+
+            if (!p)   continue;
+
             planesUsed++;
-            for (j = 0; j<a->abBlocks * a->acBlocks; j++) {
+
+            for (size_t j = 0; j<a->abBlocks * a->acBlocks; j++) {
                 long tcellsUsed = 0;
                 void *block = p[j];
                 blocksTotal++;
                 if (!block) continue;
                 blocksUsed++;
                 tblocksUsed++;
-                for (cIndex = 0; cIndex < CellsPerBlock * CellsPerBlock * numStates_g; cIndex++) {
+                for (size_t cIndex = 0; cIndex < CellsPerBlock * CellsPerBlock * numStates_g; cIndex++) {
                     cellsTotal++;
                     if ( *(int *) ( ((char *) block) + (cIndex * a->elemSize) + usedFlag) ) {
                         cellsUsed++;
                         tcellsUsed++;
                     }
                 }
-#if FULL_ALLOC_INFO
-                printf("Block %d. Cells = %d Used = %ld\n", j, CellsPerBlock * CellsPerBlock * numStates_g, tcellsUsed);
-#endif
+                if (OUTPUT_FINAL_ALLOC)  printf("Block %d. Cells = %d Used = %ld\n", j, CellsPerBlock * CellsPerBlock * numStates_g, tcellsUsed);
             }
-#if FULL_ALLOC_INFO
-      printf("Plane %d. Blocks = %ld Used = %ld\n", i, a->abBlocks * a->acBlocks, tblocksUsed);
-#endif
+            if (OUTPUT_FINAL_ALLOC)  printf("Plane %d. Blocks = %ld Used = %ld\n", i, a->abBlocks * a->acBlocks, tblocksUsed);
         }
-        printf("Total planes %ld, used %ld (used %ld bytes)\n", a->baseAlloc, planesUsed,
-               planesUsed * a->abBlocks * a->acBlocks * sizeof(void*));
-        printf("Total blocks %ld, used %ld (%.2f%%) (used %ld bytes)\n",
-               blocksTotal, blocksUsed, (100.0 * blocksUsed / blocksTotal),
-               blocksUsed * CellsPerBlock * CellsPerBlock * numStates_g * a->elemSize);
-        printf("Total cells %ld, used %ld (%.2f%%)\n",
-               cellsTotal, cellsUsed, (100.0 * cellsUsed / cellsTotal));
-        printf("Total memory allocated = %ld bytes\n", a->memAllocated);
-        printf("Approximation of actual mem used = %ld bytes\n",
-               (planesUsed * a->abBlocks * a->acBlocks * sizeof(void*)) + (cellsUsed * a->elemSize));
+        if (OUTPUT_FINAL_ALLOC) {
+            printf("Total planes %ld, used %ld (used %ld bytes)\n", a->baseAlloc, planesUsed,
+                   planesUsed * a->abBlocks * a->acBlocks * sizeof(void*));
+            printf("Total blocks %ld, used %ld (%.2f%%) (used %ld bytes)\n",
+                   blocksTotal, blocksUsed, (100.0 * blocksUsed / blocksTotal),
+                   blocksUsed * CellsPerBlock * CellsPerBlock * numStates_g * a->elemSize);
+            printf("Total cells %ld, used %ld (%.2f%%)\n",
+                   cellsTotal, cellsUsed, (100.0 * cellsUsed / cellsTotal));
+            printf("Total memory allocated = %ld bytes\n", a->memAllocated);
+            printf("Approximation of actual mem used = %ld bytes\n",
+                   (planesUsed * a->abBlocks * a->acBlocks * sizeof(void*)) + (cellsUsed * a->elemSize));
+        }
     }
 }
 // #endif // NO_ALLOC_ROUTINES

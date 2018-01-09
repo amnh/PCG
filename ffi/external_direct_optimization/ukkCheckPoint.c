@@ -147,18 +147,18 @@ int doUkk( characters_t *inputs
     counts.cells     = 0;
     counts.innerLoop = 0;
 
-    { // Calculate starting position
-        startDist = 0;  //TODO: fix this shadowing variable
-        while (   startDist < inputs->lenSeq1
-               && (   inputs->seq1[startDist] == inputs->seq2[startDist]
-                   && inputs->seq1[startDist] == inputs->seq3[startDist]) ) {
-            startDist++;
-            counts.innerLoop++;
-        }
-        U(0, 0, 0, 0)->dist     = startDist;
-        U(0, 0, 0, 0)->computed = 0 + costOffset;
-        // startDist = startDist;
+    // Calculate starting position
+    startDist = 0;
+    while (   startDist < inputs->lenSeq1
+           && (   inputs->seq1[startDist] == inputs->seq2[startDist]
+               && inputs->seq1[startDist] == inputs->seq3[startDist]) ) {
+        startDist++;
+        counts.innerLoop++;
     }
+    U(0, 0, 0, 0)->dist     = startDist;
+    U(0, 0, 0, 0)->computed = 0 + costOffset;
+    // startDist = startDist;
+
     finalab = inputs->lenSeq1 - inputs->lenSeq2;
     finalac = inputs->lenSeq1 - inputs->lenSeq3;
     endA    = inputs->lenSeq1;
@@ -584,8 +584,10 @@ void printTraceBack( characters_t *inputs, characters_t *outputs )
         endRun = i;
 
         for (i = endRun - 1; i >= 0; i--)  {
-            printf("Aidx: %6d", outputs->idxSeq1);
-            printf("\n");
+            if (DEBUG_3D) {
+                printf("Aidx: %6d", outputs->idxSeq1);
+                printf("\n");
+            }
             outputs->seq1[outputs->idxSeq1++] = inputs->seq1[i];
             outputs->seq2[outputs->idxSeq2++] = inputs->seq2[i];
             outputs->seq3[outputs->idxSeq3++] = inputs->seq3[i];
@@ -606,26 +608,25 @@ void printTraceBack( characters_t *inputs, characters_t *outputs )
     if (DEBUG_3D) {
         // Print out the alignment
         printf( "ALIGNMENT\n" );
-        {
-            int i;
 
-            for (i = 0; i < outputs->idxSeq1; i++)   printf( "%6u", outputs->seq1[i] );
-            printf( "\n" );
+        int print_idx;
 
-            for (i = 0; i < outputs->idxSeq2; i++)   printf( "%6u", outputs->seq2[i] );
-            printf( "\n" );
+        for (print_idx = 0; print_idx < outputs->idxSeq1; print_idx++)   printf( "%6u", outputs->seq1[print_idx] );
+        printf( "\n" );
 
-            for (i = 0; i < outputs->idxSeq3; i++)   printf( "%6u", outputs->seq3[i] );
-            printf( "\n\n" );
+        for (print_idx = 0; print_idx < outputs->idxSeq2; print_idx++)   printf( "%6u", outputs->seq2[print_idx] );
+        printf( "\n" );
 
-            // Print state information
-            for (i = 0; i < si; i++)    printf( "%s ", state2str(state_vector[i]) );
-            printf( "\n" );
+        for (print_idx = 0; print_idx < outputs->idxSeq3; print_idx++)   printf( "%6u", outputs->seq3[print_idx] );
+        printf( "\n\n" );
 
-            // Print cost stuff
-            for (i = 0; i < costi; i++) printf( "%-2d  ", cost_vector[i] );
-            printf( "\n" );
-        }
+        // Print state information
+        for (print_idx = 0; print_idx < si; print_idx++)    printf( "%s ", state2str(state_vector[print_idx]) );
+        printf( "\n" );
+
+        // Print cost stuff
+        for (print_idx = 0; print_idx < costi; print_idx++) printf( "%-2d  ", cost_vector[print_idx] );
+        printf( "\n" );
     }
 
     assert( outputs->idxSeq1 == outputs->idxSeq2 );

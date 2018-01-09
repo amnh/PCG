@@ -77,14 +77,16 @@ int main() {
             if ( i == j * alphSize ) {
                 tcm[i + j] = IDENTITY_COST;    // identity
                 printf("i: %zu, j: %zu, cost: %d\n", i, j, IDENTITY_COST);
-            } else if (i == (tcm_total_len - alphSize) || j == (alphSize - 1)) {
+            }
+            else if (i == (tcm_total_len - alphSize) || j == (alphSize - 1)) {
                 tcm[i + j] = INDEL_COST;       // indel cost
                 printf("i: %zu, j: %zu, cost: %d\n", i, j, INDEL_COST);
-            } else {
+            }
+            else {
                 tcm[i + j] = SUB_COST;         // sub cost
                 printf("i: %zu, j: %zu, cost: %d\n", i, j, SUB_COST);
             }
-         }
+        }
     }
     if (DO_2D)     do2D_nonAffine( tcm, alphSize );
 
@@ -150,7 +152,7 @@ void do2D_nonAffine( unsigned int * tcm, size_t alphSize )
     allocAlignIO(gappedMedianChar,   1);
 
 
-    for (size_t i = 1; i <= 5; i++) { // run 30 tests
+    for (size_t i = 1; i <= 30; i++) { // run 30 tests
 
         longerLen = rand() % CHAR_LENGTH + 1;
         lesserLen = rand() % CHAR_LENGTH + 1;
@@ -556,8 +558,8 @@ void do3D( unsigned int *tcm, size_t alphSize )
     elem_t one      = 1;
     elem_t gap_char = one << (alphSize - 1);
 
-    cost_matrices_3d_t *costMtx3d = malloc(sizeof(struct cost_matrices_3d_t));
-    setUp3dCostMtx (costMtx3d, tcm, alphSize, 0);
+    cost_matrices_3d_t *costMtx3d = malloc( sizeof(struct cost_matrices_3d_t) );
+    setUp3dCostMtx( costMtx3d, tcm, alphSize, 0 );
 
     alignIO_t *inputChar1 = malloc( sizeof(struct alignIO_t) );    // Inputs to 3d alignment
     alignIO_t *inputChar2 = malloc( sizeof(struct alignIO_t) );    //
@@ -600,12 +602,12 @@ void do3D( unsigned int *tcm, size_t alphSize )
 
     int algnCost;
 
-    elem_t inputVals1[7] = {2, 4, 4, 8, 1, 2, 1};
-    inChar1Len = 7;
-    elem_t inputVals2[8] = {8, 2, 4, 4, 1, 2, 1, 4};
-    inChar2Len = 8;
-    elem_t inputVals3[6] = {8, 2, 4, 8, 4, 6};
-    inChar3Len = 6;
+    elem_t inputVals1[1] = {30};
+    inChar1Len = 1;
+    elem_t inputVals2[1] = {1};
+    inChar2Len = 1;
+    elem_t inputVals3[1] = {1};
+    inChar3Len = 1;
 
     maxLength  = inChar1Len + inChar2Len + inChar3Len;
 

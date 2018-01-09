@@ -33,11 +33,13 @@
  * structure for two dimensional character alignment.
  */
 typedef struct cost_matrices_2d_t {
-        // TODO: remove alphSize? I think it's the same as num_elements or costMatrixDimension
     size_t alphSize;            /* alphabet size including gap, and including ambiguities if
                                  * combinations == True
                                  */
-    size_t costMatrixDimension; // n in an n x n matrix, so alphabet size including gap
+    size_t costMatrixDimension; /* n in an n x n matrix;
+                                 * n is the powerset of the alphabet size (including gap), minus the empty set.
+                                 * or 2 ^ alphSize - 1.
+                                 */
     elem_t gap_char;            // gap character value (1 << (alphSize - 1))
     int cost_model_type;        /* The type of cost model to be used in the alignment,
                                  * i.e. affine or not.
@@ -98,8 +100,11 @@ typedef struct cost_matrices_2d_t {
  * on a particular alphabet.
  */
 typedef struct cost_matrices_3d_t {
-    size_t alphSize;             /** The number of elements in the alphabet */ // TODO: remove this? I think it's the same as costMatrixDimension
-    size_t costMatrixDimension;  /** n in an n x n matrix, so alphabet size including gap */
+    size_t alphSize;             /** The number of symbols in the alphabet */
+    size_t costMatrixDimension;  /** n in an n x n matrix;
+                                  *  n is the powerset of the alphabet size (including gap), minus the empty set.
+                                  *  or 2 ^ alphSize - 1.
+                                  */
     elem_t gap_char;             /** The integer representing a gap character in the alphabet */
     int cost_model_type;         /** The type of cost model to be used in the alignment */
     int include_ambiguities;     /** This is a flag set to true if we are going to accept
@@ -341,5 +346,11 @@ void
 cm_print_median (elem_t *m, size_t w, size_t h);
 
 
-#endif /* COSTMATRIX_H */
+#define max(a,b) (a > b) ? (a) : (b)
 
+#define min(a,b) (a < b) ? (a) : (b)
+
+void
+printVolumeOfMedianValues(const cost_matrices_3d_t *matrix, size_t dimension, elem_t i, elem_t j, elem_t k);
+
+#endif /* COSTMATRIX_H */

@@ -704,7 +704,7 @@ algn_fill_extending_right ( const dyn_character_t   *char1
         const_val = cm_calc_cost_2d( costMatrix->cost
                                    , cur_char1
                                    , costMatrix->gap_char
-                                   , costMatrix->costMatrixDimension
+                                   , costMatrix->alphSize
                                    );
         /* This is conceptually what we do in the next line
         align_row = algnMtx_get_precal_row (algn_precalcMtx, cur_char1, char2_len);
@@ -859,7 +859,7 @@ algn_fill_extending_left ( const dyn_character_t    *char1
         const_val      = cm_calc_cost_2d ( costMatrix->cost
                                          , cur_char1
                                          , costMatrix->gap_char
-                                         , costMatrix->costMatrixDimension
+                                         , costMatrix->alphSize
                                          );
 
         const_val_tail = costMatrix->tail_cost[cur_char1];
@@ -956,7 +956,7 @@ algn_fill_no_extending ( const dyn_character_t    *char1
         const_val      = cm_calc_cost_2d ( costMatrix->cost
                                          , cur_char1
                                          , costMatrix->gap_char
-                                         , costMatrix->costMatrixDimension
+                                         , costMatrix->alphSize
                                          );
 
         const_val_tail = costMatrix->tail_cost[cur_char1];
@@ -1084,10 +1084,11 @@ algn_fill_plane ( const dyn_character_t    *longerCharacter
         const_val = cm_calc_cost_2d ( costMatrix->cost
                                     , longerCharacter->char_begin[i]
                                     , costMatrix->gap_char
-                                    , costMatrix->costMatrixDimension);
+                                    , costMatrix->alphSize
+                                    );
 
         align_row = algnMtx_get_precal_row ( algn_precalcMtx
-                                              , longerCharacter->char_begin[i]
+                                           , longerCharacter->char_begin[i]
                                            , lesserCharacterLength
                                            );
 
@@ -1920,12 +1921,12 @@ algn_fill_extending_right_affine ( const dyn_character_t     *char1
         const_val      = cm_calc_cost_2d( costMatrix->cost
                                         , cur_char1
                                         , costMatrix->gap_char
-                                        , costMatrix->costMatrixDimension
+                                        , costMatrix->alphSize
                                         );
         prev_const_val = cm_calc_cost_2d( costMatrix->cost
                                         , prev_char1
                                         , costMatrix->gap_char
-                                        , costMatrix->costMatrixDimension
+                                        , costMatrix->alphSize
                                         );
 
         /* This is conceptually what we do in the next line
@@ -2035,8 +2036,8 @@ algn_fill_extending_left_right_affine ( const dyn_character_t    *char1
         assert (i > 0);
         prev_char1     = char1->char_begin[i - 1];
         cur_char1      = char1->char_begin[i];
-        const_val      = cm_calc_cost_2d (costMatrix->cost, cur_char1,  costMatrix->gap_char, costMatrix->costMatrixDimension);
-        prev_const_val = cm_calc_cost_2d (costMatrix->cost, prev_char1, costMatrix->gap_char, costMatrix->costMatrixDimension);
+        const_val      = cm_calc_cost_2d (costMatrix->cost, cur_char1,  costMatrix->gap_char, costMatrix->alphSize);
+        prev_const_val = cm_calc_cost_2d (costMatrix->cost, prev_char1, costMatrix->gap_char, costMatrix->alphSize);
         /* Conceptually,
          * align_row = algnMtx_get_precal_row (algn_precalcMtx, cur_char1, char2_len);
          */
@@ -2147,12 +2148,12 @@ algn_fill_extending_left_affine( const dyn_character_t    *char1
         prev_const_val      = cm_calc_cost_2d ( costMatrix->cost
                                               , prev_char1
                                               , costMatrix->gap_char
-                                              , costMatrix->costMatrixDimension
+                                              , costMatrix->alphSize
                                               );
         const_val           = cm_calc_cost_2d ( costMatrix->cost
                                               , cur_char1
                                               , costMatrix->gap_char
-                                              , costMatrix->costMatrixDimension
+                                              , costMatrix->alphSize
                                               );
 
         const_val_tail      = costMatrix->tail_cost[cur_char1];
@@ -2266,8 +2267,8 @@ algn_fill_no_extending_affine ( const dyn_character_t    *char1
         assert (i > 0);
         prev_char1           = char1->char_begin[i - 1];
         cur_char1            = char1->char_begin[i];
-        const_val           = cm_calc_cost_2d (costMatrix->cost, cur_char1,  costMatrix->gap_char, costMatrix->costMatrixDimension);
-        prev_const_val      = cm_calc_cost_2d (costMatrix->cost, prev_char1, costMatrix->gap_char, costMatrix->costMatrixDimension);
+        const_val           = cm_calc_cost_2d (costMatrix->cost, cur_char1,  costMatrix->gap_char, costMatrix->alphSize);
+        prev_const_val      = cm_calc_cost_2d (costMatrix->cost, prev_char1, costMatrix->gap_char, costMatrix->alphSize);
         const_val_tail      = costMatrix->tail_cost[cur_char1];
         const_val_tail_prev = costMatrix->tail_cost[prev_char1];
         /* Conceptually,
@@ -2402,14 +2403,14 @@ algn_fill_plane_affine ( const dyn_character_t    *char1
         prev_const_val      = cm_calc_cost_2d( costMatrix->cost
                                              , char1->char_begin[i - 1]
                                              , costMatrix->gap_char
-                                             , costMatrix->costMatrixDimension
+                                             , costMatrix->alphSize
                                              );
         const_val_tail      = (costMatrix->tail_cost)[char1->char_begin[i]];
 
         const_val           = cm_calc_cost_2d( costMatrix->cost
                                              , char1->char_begin[i]
                                              , costMatrix->gap_char
-                                             , costMatrix->costMatrixDimension
+                                             , costMatrix->alphSize
                                              );
         align_row           = algnMtx_get_precal_row ( algn_precalcMtx
                                                 , char1->char_begin[i]
@@ -2474,7 +2475,7 @@ HAS_GAP_EXTENSION (       elem_t              base
     return (cm_calc_cost_2d( costMatrix->cost
                            , base
                            , costMatrix->gap_char
-                           , costMatrix->costMatrixDimension
+                           , costMatrix->alphSize
                            )
             );
 }
@@ -3149,9 +3150,9 @@ algn_initialize_matrices_affine(       unsigned int        gap_open_cost
 
     const unsigned int *gap_row;
     elem_t /* longerCharElem, longerCharPrevElem, shortCharPrevElem, */ shortCharElem;
-//    shortChar_len    = shortChar->len - 1; //TODO: is this for deleting opening gap? This is currently unused
+//    shortChar_len    = shortChar->len - 1; // This seems to be for deleting opening gap? This is currently unused
 
-    longerChar_len           = longerChar->len - 1; //TODO: is this for deleting opening gap?
+    longerChar_len           = longerChar->len - 1; // This also seems to be for deleting opening gap?
     final_cost_matrix[0]     = 0;
     close_block_diagonal[0]  = 0;
     extend_block_diagonal[0] = 0;
@@ -4043,6 +4044,7 @@ algn_nw_limit_2d ( const dyn_character_t      *shorterChar
     //fflush(stdout);
 
     // cost_model_type is 1 for affine, 0 for non-affine
+    // 50s here and below seems to be a default starting value for the matrix width/height
     if (costMatrix->cost_model_type) {
         return algn_fill_plane_2_affine ( longerChar
                                         , algn_precalcMtx
@@ -4057,8 +4059,6 @@ algn_nw_limit_2d ( const dyn_character_t      *shorterChar
                                         , curRow + (2 * len_shorterChar)
                                         , curRow + (4 * len_shorterChar)
                                         );
-                // TODO: why all the 50s here and below? It looks like it's a default
-                // starting value for the matrix width/height
     } else {
         return algn_fill_plane_2 ( longerChar
                                  , algn_precalcMtx
@@ -4097,11 +4097,10 @@ algn_nw_2d ( const dyn_character_t      *shorterChar
     //            then lower_limit
     //            else v
 
-    // m and costMatrix come from OCAML, so much be allocated in Haskell. Must
-    // Determine correct size.
+    // m and costMatrix must be allocated on other side of FFI.
 
-    // at this point, gap is already set at beginning of char
-    // bases are set as bit streams, with gap as most-significant bit.
+    // At this point, gap is already set at beginning of char.
+    // Bases are set as bit streams, with gap as most-significant bit.
     if(DEBUG_NW) {
         printf( "---algn_nw_2d\n" );
         printf( "first character\n" );
@@ -4224,7 +4223,7 @@ algn_calculate_from_2_aligned ( dyn_character_t    *char1
         res += cm_calc_cost_2d ( matrix
                                , char1->char_begin[i]
                                , char2->char_begin[i]
-                               , costMatrix->costMatrixDimension
+                               , costMatrix->alphSize
                                );
     }
     return (res);
@@ -4421,7 +4420,6 @@ algn_backtrace_2d ( const dyn_character_t *shorterChar
                   , const cost_matrices_2d_t *costMatrix
                   , int st_longerChar
                   , int st_shorterChar
-                  , int swapped
                   )
 {
     int l,
@@ -4432,15 +4430,15 @@ algn_backtrace_2d ( const dyn_character_t *shorterChar
         shifter                     = 0;
 
     DIR_MTX_ARROW_t  *beg, *end;
-    idx_longerChar                   = longerChar->len;
-    idx_shorterChar                  = shorterChar->len;
-    l                               = idx_longerChar * idx_shorterChar;
-    beg                             = alignMatrix->algn_dirMtx + st_shorterChar; // offset by limit into matrix
+    idx_longerChar  = longerChar->len;
+    idx_shorterChar = shorterChar->len;
+    l               = idx_longerChar * idx_shorterChar;
+    beg             = alignMatrix->algn_dirMtx + st_shorterChar; // offset by limit into matrix
     // TODO: figure out wtf this means:
     /* Stitching goes to hell now
     end = beg + (idx_shorterChar * idx_longerChar) + idx_shorterChar - 1;
     */
-    end = beg + (idx_longerChar * idx_shorterChar) - 1; // TODO: These were just initialized. Why change them already?
+    end = beg + (idx_longerChar * idx_shorterChar) - 1;
     l   = idx_shorterChar;
 
     if (DEBUG_ALGN) {
@@ -4475,22 +4473,43 @@ algn_backtrace_2d ( const dyn_character_t *shorterChar
 
     idx_longerChar  += st_longerChar;
     idx_shorterChar += st_shorterChar;
-    // The following pair of while loops are the same lines of code, each
-    // has swapped INSERT and DELETE procedures, so that depending on the ordering
-    // of the two characters (swap) either INSERTING or DELETING will be preferred.
-    // During the downpass and all the optimization procedures, keeping the same
-    // ordering for the medians output is important to keep consistency in the
-    // diagnosis at every step. In other words, if a join is performed starting
-    // in any position of the tree, it is necessary to make sure that the very
-    // same median would be produced if the calculation started in any of its
-    // children.
-    // Note that these two lines could be defined as macros, but we (Andres?) have
+    // Note that these two lines could be defined as macros, but we (Andrés?) have
     // decided not to do so to keep it readable. Besides, once correct, there is
     // nothing (or very few things) to do here.
     if (!(costMatrix->cost_model_type)) { // not affine
-        if (swapped) {               // swapped
-            while (end >= beg) {
-                if (*end & ALIGN) {
+        while (end >= beg) {
+            if (*end & ALIGN) {
+                idx_longerChar--;
+                new_item_for_ret_longerChar = my_get(longerChar, idx_longerChar);
+                my_prepend(ret_longerChar, new_item_for_ret_longerChar);
+                idx_shorterChar--;
+                new_item_for_ret_shorterChar = my_get(shorterChar, idx_shorterChar);
+                my_prepend(ret_shorterChar, new_item_for_ret_shorterChar);
+                end -= l + 1;
+            }
+            else if (*end & DELETE) {
+                idx_longerChar--;
+                new_item_for_ret_longerChar = my_get(longerChar, idx_longerChar);
+                my_prepend(ret_longerChar, new_item_for_ret_longerChar);
+                new_item_for_ret_shorterChar = costMatrix->gap_char;
+                my_prepend(ret_shorterChar, new_item_for_ret_shorterChar);
+                end -= l;
+            }
+            else {
+                assert (*end & INSERT);
+                new_item_for_ret_longerChar = costMatrix->gap_char;
+                my_prepend(ret_longerChar, new_item_for_ret_longerChar);
+                idx_shorterChar--;
+                new_item_for_ret_shorterChar = my_get(shorterChar, idx_shorterChar);
+                my_prepend(ret_shorterChar, new_item_for_ret_shorterChar);
+                end -= 1;
+            }
+        }
+    }
+    else {             // affine
+        while (end >= beg) {
+            if (*end & (ALIGN << shifter)) {
+                if (0 == shifter) {
                     idx_longerChar--;
                     new_item_for_ret_longerChar = my_get(longerChar, idx_longerChar);
                     my_prepend(ret_longerChar, new_item_for_ret_longerChar);
@@ -4498,75 +4517,49 @@ algn_backtrace_2d ( const dyn_character_t *shorterChar
                     new_item_for_ret_shorterChar = my_get(shorterChar, idx_shorterChar);
                     my_prepend(ret_shorterChar, new_item_for_ret_shorterChar);
                     end -= l + 1;
-                    if (DEBUG_ALGN) {
-                        printf("Align:\n");
-                        printf("  idx_longerChar:    %d, idx_shorterChar:    %d\n", idx_longerChar, idx_shorterChar);
-                        printf("  new item a: %d, new item b: %d\n", *ret_longerChar->char_begin, *ret_shorterChar->char_begin);
-                    }
                 }
-                else if (*end & INSERT) {
-                    new_item_for_ret_longerChar = costMatrix->gap_char;
-                    my_prepend(ret_longerChar, new_item_for_ret_longerChar);
-                    idx_shorterChar--;
-                    new_item_for_ret_shorterChar = my_get(shorterChar, idx_shorterChar);
-                    my_prepend(ret_shorterChar, new_item_for_ret_shorterChar);
-                    end -= 1;
-                    if (DEBUG_ALGN) {
-                        printf("Insert:\n");
-                        printf("  idx_longerChar:    %d, idx_shorterChar:    %d\n", idx_longerChar, idx_shorterChar);
-                        printf("  new item a: %d, new item b: %d\n", new_item_for_ret_longerChar, new_item_for_ret_shorterChar);
-                    }
-                }
-                else if (*end & DELETE) {
+                else if (SHIFT_V == shifter) {
                     idx_longerChar--;
                     new_item_for_ret_longerChar = my_get (longerChar, idx_longerChar);
                     my_prepend(ret_longerChar, new_item_for_ret_longerChar);
                     new_item_for_ret_shorterChar = costMatrix->gap_char;
                     my_prepend(ret_shorterChar, new_item_for_ret_shorterChar);
                     end -= l;
-                    if (DEBUG_ALGN) {
-                        printf("Delete:\n");
-                        printf("  idx_longerChar:    %d, idx_shorterChar:    %d\n", idx_longerChar, idx_shorterChar);
-                        printf("  new item a: %d, new item b: %d\n", new_item_for_ret_longerChar, new_item_for_ret_shorterChar);
-                    }
+                    shifter = 0;
                 }
-                else { // something terrible has happened!!!!
-                    printf("Error. Alignment cost matrix:\n");
-                    algn_print_dynmtrx_2d (longerChar, shorterChar, alignMatrix);
-                    printf("*beg: %d\n", *beg);
-                    printf("*end: %d\n", *end);
-                    printf("beg: 0x%p\n", (void*) beg);
-                    printf("end: 0x%p\n", (void*) end);
-                    int limit = end - beg;
-                    for (int i = 0; i <= limit; i++)
-                    {
-                         printf("%d, ", (beg[i]));
-                    }
-                    printf("\n");
-                    assert (*end & (ALIGN | INSERT | DELETE));
-                }
-            }
-        } else { // not affine, not swapped
-            while (end >= beg) {
-                if (*end & ALIGN) {
-                    idx_longerChar--;
-                    new_item_for_ret_longerChar = my_get(longerChar, idx_longerChar);
+                else {
+                    assert (SHIFT_H == shifter);
+                    new_item_for_ret_longerChar = costMatrix->gap_char;
                     my_prepend(ret_longerChar, new_item_for_ret_longerChar);
                     idx_shorterChar--;
                     new_item_for_ret_shorterChar = my_get(shorterChar, idx_shorterChar);
                     my_prepend(ret_shorterChar, new_item_for_ret_shorterChar);
-                    end -= l + 1;
+                    end -= 1;
+                    shifter = 0;
                 }
-                else if (*end & DELETE) {
+            }
+            else if (*end & (DELETE << shifter)) {
+                if (0 == shifter) {
+                    shifter = SHIFT_V;
+                }
+                else if (SHIFT_V == shifter) {
                     idx_longerChar--;
-                    new_item_for_ret_longerChar = my_get(longerChar, idx_longerChar);
+                    new_item_for_ret_longerChar = my_get (longerChar, idx_longerChar);
                     my_prepend(ret_longerChar, new_item_for_ret_longerChar);
                     new_item_for_ret_shorterChar = costMatrix->gap_char;
                     my_prepend(ret_shorterChar, new_item_for_ret_shorterChar);
                     end -= l;
                 }
                 else {
-                    assert (*end & INSERT);
+                    assert (0);
+                }
+            }
+            else {
+                assert (*end & (INSERT << shifter));
+                if (0 == shifter) {
+                    shifter = SHIFT_H;
+                }
+                else if (SHIFT_H == shifter) {
                     new_item_for_ret_longerChar = costMatrix->gap_char;
                     my_prepend(ret_longerChar, new_item_for_ret_longerChar);
                     idx_shorterChar--;
@@ -4574,137 +4567,11 @@ algn_backtrace_2d ( const dyn_character_t *shorterChar
                     my_prepend(ret_shorterChar, new_item_for_ret_shorterChar);
                     end -= 1;
                 }
+                else {
+                    assert (0);
+                }
             }
-        }
-    } else {             // affine
-        if (swapped) {   // swapped
-            while (end >= beg) {
-                if (*end & (ALIGN << shifter)) {
-                    if (0 == shifter) {
-                        if (DEBUG_BT) printf ("1\t");
-                        idx_longerChar--;
-                        new_item_for_ret_longerChar = my_get(longerChar, idx_longerChar);
-                        my_prepend(ret_longerChar, new_item_for_ret_longerChar);
-                        idx_shorterChar--;
-                        new_item_for_ret_shorterChar = my_get(shorterChar, idx_shorterChar);
-                        my_prepend(ret_shorterChar, new_item_for_ret_shorterChar);
-                        end -= l + 1;
-                    } else if (SHIFT_V == shifter) {
-                        if (DEBUG_BT) printf ("2\t");
-                        idx_longerChar--;
-                        new_item_for_ret_longerChar = my_get (longerChar, idx_longerChar);
-                        my_prepend(ret_longerChar, new_item_for_ret_longerChar);
-                        new_item_for_ret_shorterChar = costMatrix->gap_char;
-                        my_prepend(ret_shorterChar, new_item_for_ret_shorterChar);
-                        end -= l;
-                        shifter = 0;
-                    } else {
-                        if (DEBUG_BT) printf ("3\t");
-                        assert (SHIFT_H == shifter);
-                        new_item_for_ret_longerChar = costMatrix->gap_char;
-                        my_prepend(ret_longerChar, new_item_for_ret_longerChar);
-                        idx_shorterChar--;
-                        new_item_for_ret_shorterChar = my_get(shorterChar, idx_shorterChar);
-                        my_prepend(ret_shorterChar, new_item_for_ret_shorterChar);
-                        end -= 1;
-                        shifter = 0;
-                    }
-                }
-                else if (*end & (INSERT << shifter)) {
-                    if (0 == shifter) {
-                        if (DEBUG_BT) printf ("4\t");
-                        shifter = SHIFT_H;
-                    } else if (SHIFT_H == shifter) {
-                        if (DEBUG_BT) printf ("5\t");
-                        new_item_for_ret_longerChar = costMatrix->gap_char;
-                        my_prepend(ret_longerChar, new_item_for_ret_longerChar);
-                        idx_shorterChar--;
-                        new_item_for_ret_shorterChar = my_get(shorterChar, idx_shorterChar);
-                        my_prepend(ret_shorterChar, new_item_for_ret_shorterChar);
-                        end -= 1;
-                    } else {
-                        if (DEBUG_BT) printf ("6\t");
-                        assert (0);
-                    }
-                } else {
-                    assert (*end & (DELETE << shifter));
-                    if (0 == shifter) {
-                        if (DEBUG_BT) printf ("7\t");
-                        shifter = SHIFT_V;
-                    } else if (SHIFT_V == shifter) {
-                        if (DEBUG_BT) printf ("8\t");
-                        idx_longerChar--;
-                        new_item_for_ret_longerChar = my_get (longerChar, idx_longerChar);
-                        my_prepend(ret_longerChar, new_item_for_ret_longerChar);
-                        new_item_for_ret_shorterChar = costMatrix->gap_char;
-                        my_prepend(ret_shorterChar, new_item_for_ret_shorterChar);
-                        end -= l;
-                    } else {
-                        if (DEBUG_BT) printf ("9\t");
-                        assert (0);
-                    }
-                }
-            } // end while
-        } else { // affine, not swapped
-            while (end >= beg) {
-                if (*end & (ALIGN << shifter)) {
-                    if (0 == shifter) {
-                        idx_longerChar--;
-                        new_item_for_ret_longerChar = my_get(longerChar, idx_longerChar);
-                        my_prepend(ret_longerChar, new_item_for_ret_longerChar);
-                        idx_shorterChar--;
-                        new_item_for_ret_shorterChar = my_get(shorterChar, idx_shorterChar);
-                        my_prepend(ret_shorterChar, new_item_for_ret_shorterChar);
-                        end -= l + 1;
-                    } else if (SHIFT_V == shifter) {
-                        idx_longerChar--;
-                        new_item_for_ret_longerChar = my_get (longerChar, idx_longerChar);
-                        my_prepend(ret_longerChar, new_item_for_ret_longerChar);
-                        new_item_for_ret_shorterChar = costMatrix->gap_char;
-                        my_prepend(ret_shorterChar, new_item_for_ret_shorterChar);
-                        end -= l;
-                        shifter = 0;
-                    } else {
-                        assert (SHIFT_H == shifter);
-                        new_item_for_ret_longerChar = costMatrix->gap_char;
-                        my_prepend(ret_longerChar, new_item_for_ret_longerChar);
-                        idx_shorterChar--;
-                        new_item_for_ret_shorterChar = my_get(shorterChar, idx_shorterChar);
-                        my_prepend(ret_shorterChar, new_item_for_ret_shorterChar);
-                        end -= 1;
-                        shifter = 0;
-                    }
-                } else if (*end & (DELETE << shifter)) {
-                    if (0 == shifter) {
-                        shifter = SHIFT_V;
-                    } else if (SHIFT_V == shifter) {
-                        idx_longerChar--;
-                        new_item_for_ret_longerChar = my_get (longerChar, idx_longerChar);
-                        my_prepend(ret_longerChar, new_item_for_ret_longerChar);
-                        new_item_for_ret_shorterChar = costMatrix->gap_char;
-                        my_prepend(ret_shorterChar, new_item_for_ret_shorterChar);
-                        end -= l;
-                    } else {
-                        assert (0);
-                    }
-                } else {
-                    assert (*end & (INSERT << shifter));
-                    if (0 == shifter)
-                        shifter = SHIFT_H;
-                    else if (SHIFT_H == shifter) {
-                        new_item_for_ret_longerChar = costMatrix->gap_char;
-                        my_prepend(ret_longerChar, new_item_for_ret_longerChar);
-                        idx_shorterChar--;
-                        new_item_for_ret_shorterChar = my_get(shorterChar, idx_shorterChar);
-                        my_prepend(ret_shorterChar, new_item_for_ret_shorterChar);
-                        end -= 1;
-                    }
-                    else {
-                        assert (0);
-                    }
-                }
-            } // end while
-        }
+        } // end while
     }
 }
 
@@ -4898,7 +4765,7 @@ algn_ancestor_2 ( dyn_character_t *char1
 /*
  * Given three aligned dynamic characters char1, char2, and char3, the medians between them are
  * returned in the characters gapped_median and ungapped_median, using the cost matrix stored in costMatrix.
- * TODO: Affine costs are currently not computed.
+ * Affine costs are currently not computed.
  */
 unsigned int
 algn_get_cost_medians_3d ( characters_t       *input
@@ -4923,6 +4790,8 @@ algn_get_cost_medians_3d ( characters_t       *input
                                   , input->seq3[i]
                                   );
         // if (DEBUG_3D)    printf("%d   %u\n", i, interim);
+
+        printVolumeOfMedianValues(costMatrix, 3, input->seq1[i], input->seq2[i], input->seq3[i]);
 
         dyn_char_prepend(gapped_median, interim);
 
