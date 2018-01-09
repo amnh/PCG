@@ -421,7 +421,7 @@ renderSummary (PDAG2 dag) = unlines
 
 
 resolutionsDoNotOverlap :: ResolutionInformation a -> ResolutionInformation b -> Bool
-resolutionsDoNotOverlap x y = leafSetRepresentation x .&. leafSetRepresentation y == zeroBits
+resolutionsDoNotOverlap x y = popCount (leafSetRepresentation x .&. leafSetRepresentation y) == 0
 
 
 -- |
