@@ -222,9 +222,11 @@ cm_calc_cost_2d ( unsigned int *tcm
 {
     unsigned int one = 1;
     unsigned int upperBound = one << alphSize;
-    assert (alphSize   >  0); // alphSize is size_t, always > 0
-    assert (upperBound >= a);
-    assert (upperBound >= b);
+    unsigned int boundBound = 8 * sizeof(unsigned int); // Otherwise we rotate the bits over
+    assert (alphSize   >  0);
+    assert (alphSize   < boundBound);
+    assert (upperBound > a);
+    assert (upperBound > b);
     return tcm[ cm_calc_cost_position_2d(a, b, alphSize) ];
 }
 
@@ -327,7 +329,7 @@ cm_get_median_2d ( const cost_matrices_2d_t *t
                  ,       elem_t             a
                  ,       elem_t             b
                  ) {
-    return (cm_calc_median_2d( (t->median), a, b, t->alphSize ));
+    return cm_calc_median_2d( t->median, a, b, t->alphSize );
 }
 
 

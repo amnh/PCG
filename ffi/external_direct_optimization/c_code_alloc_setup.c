@@ -115,18 +115,18 @@ void setUp2dCostMtx( cost_matrices_2d_t *retCostMtx
 {
 
     // first allocate retMatrix
-    int combinations  = 1;                     // false if matrix is sparse. In this case, it's DNA, so not sparse.
-    int do_aff        = gap_open == 0 ? 0 : 3; // The 3 is because affine's cost_model_type is 3, according to my reading of ML code.
-                                               // (Actually, I changed that; it used to be 2, now it's 3.)
-                                               // This value set in cm_set_affine().
-    int is_metric     = 1;
+    int    combinations = 1;                     // false if matrix is sparse. In this case, it's DNA, so not sparse.
+    int    do_aff       = gap_open == 0 ? 0 : 3; // The 3 is because affine's cost_model_type is 3, according to my reading of ML code.
+                                                 // (Actually, I changed that; it used to be 2, now it's 3.)
+                                                 // This value set in cm_set_affine().
+    int    is_metric    = 1;
     elem_t all_elements = (1 << alphSize) - 1;   // Given data is DNA (plus gap), there are 2^5 - 1 possible character states
 
-    int minCost       = INT_MAX;
+    int    minCost      = INT_MAX;
     elem_t median       = 0;                     // cumulative median for 2d; combo of median1, etc., below
-    int curCost;
+    int    curCost;
 
-    // int median1, median2;                      // median of a given nucleotide and current ambElem, for each ambElem
+    // int    median1, median2;                    // median of a given nucleotide and current ambElem, for each ambElem
 
     //    int tcm2[25] = {0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,0};
 
