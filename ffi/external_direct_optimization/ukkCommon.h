@@ -329,7 +329,7 @@ static inline void allocFinal(AllocInfo_t *a, void *flag, void *top)
         long planesUsed  = 0;
         long blocksTotal = 0, blocksUsed = 0;
         long cellsTotal  = 0, cellsUsed = 0;
-        for (size_t i = 0; i < a->baseAlloc; i++) {
+        for (long i = 0; i < a->baseAlloc; i++) {
             long tblocksUsed = 0;
             void **p = a->basePtr[i];
 
@@ -337,14 +337,14 @@ static inline void allocFinal(AllocInfo_t *a, void *flag, void *top)
 
             planesUsed++;
 
-            for (size_t j = 0; j<a->abBlocks * a->acBlocks; j++) {
+            for (long j = 0; j<a->abBlocks * a->acBlocks; j++) {
                 long tcellsUsed = 0;
                 void *block = p[j];
                 blocksTotal++;
                 if (!block) continue;
                 blocksUsed++;
                 tblocksUsed++;
-                for (size_t cIndex = 0; cIndex < CellsPerBlock * CellsPerBlock * numStates_g; cIndex++) {
+                for (int cIndex = 0; cIndex < CellsPerBlock * CellsPerBlock * numStates_g; cIndex++) {
                     cellsTotal++;
                     if ( *(int *) ( ((char *) block) + (cIndex * a->elemSize) + usedFlag) ) {
                         cellsUsed++;

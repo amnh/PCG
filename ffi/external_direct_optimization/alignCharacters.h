@@ -69,61 +69,18 @@
 // TODO: consider changing this number
 #define VERY_LARGE_NUMBER 100000 // large number, but as this gets added to itself repeatedly, small enough that it won't overflow.
 
-/*
- * As standard, all the caml binding functions are called algn_CAML_<function
- * name>
- */
-/*
-static inline void
-algn_fill_row (       int *curRow
-              , const int *prevRow
-              , const int *gap_row
-              , const int *alg_row
-              ,       DIR_MTX_ARROW_t *dirMtx
-              ,       int c
-              ,       int i
-              ,       int end
-              );
-*/
 
-/*
-static inline int
-algn_fill_plane ( const dyn_character_t * char1
-                ,       int *precalcMtx
-                ,       size_t char1_len
-                ,       size_t char2_len
-                ,       int *curRow
-                ,       DIR_MTX_ARROW_t *dirMtx
-                , const cost_matrices_2d_t *c
-                );
-*/
+/** Prepend the character b to the character a. */
+#define prepend_an_element(a, b) assert (a->cap > a->len); \
+                                 if (a->char_begin == NULL) { a->char_begin = a->array_head + a->cap; } \
+                                 a->char_begin = (a->char_begin) - 1; \
+                                 a->len = 1 + a->len; \
+                                 *(a->char_begin) = b
 
 
-/* These two seem to be missing in .c file:
-inline void
-algn_fill_row_uk (int *nwMtx, const int *pm, const int *gap_row,
-                  const int *alg_row, unsigned char *dm, int c, int l, int lowerbound,
-                  int upperbound);
+/** Get the element of character a at position b */
+#define get_elem(a, b) (a->char_begin)[b]
 
-inline int
-algn_fill_plane_uk (const dyn_character_t *char1, int *prec, int char1_len,
-                    int char2_len, int *nwMtx, unsigned char *dm, int uk, const struct cost_matrices_2d *c);
-*/
-
-
-/*
-static inline void
-fill_moved (       size_t char3_len
-           , const int *prev_m
-           , const int *upper_m
-           , const int *diag_m
-           , const int *char1_gap_char3
-           , const int *gap_char2_char3
-           , const int *char1_char2_char3
-           ,       int *curRow
-           ,       DIR_MTX_ARROW_t *dirMtx
-           );
-*/
 
 
 void
@@ -183,6 +140,7 @@ algn_fill_3dMtx ( const dyn_character_t *lChar
                 ,       size_t           alphSize
                 );
 
+
 unsigned int
 algn_nw_2d ( const dyn_character_t      *char1
            , const dyn_character_t      *char2
@@ -190,6 +148,7 @@ algn_nw_2d ( const dyn_character_t      *char1
            ,       alignment_matrices_t *nwMtxs
            ,       int                   uk
            );
+
 
 /** Creates N-W matrices, then does alignment
  *  deltawh is width of ukkonnen barrier
@@ -203,11 +162,13 @@ algn_nw_3d ( const dyn_character_t      *char1
         // , int deltawh
            );
 
+
 void
 algn_print_bcktrck_2d( const dyn_character_t      *char1
                      , const dyn_character_t      *char2
                      , const alignment_matrices_t *m
                      );
+
 
 void
 algn_print_dynmtrx_2d( const dyn_character_t      *char1
@@ -252,15 +213,8 @@ algn_backtrace_3d ( const dyn_character_t      *char1
                   );
 
 
-/* replaced with gaps and no gaps versions below
-inline void
-algn_get_median_2d (dyn_character_t *char1, dyn_character_t *char2, cost_matrices_2d_t *m, dyn_character_t *sm);
-*/
-
-
-/*
- * Given three aligned characters char1, char2, and char3, the median between them is
- * returned in the character sm, using the cost matrix stored in m.
+/** Given three aligned characters char1, char2, and char3, the median between them is
+ *  returned in the character sm, using the cost matrix stored in m.
  */
 unsigned int
 algn_get_cost_medians_3d ( characters_t       *input
@@ -269,7 +223,7 @@ algn_get_cost_medians_3d ( characters_t       *input
                          , dyn_character_t    *gapped_median
                          );
 
-// TODO: document following four fns
+
 void
 algn_initialize_matrices_affine(       unsigned int        gap_open_cost
                                , const dyn_character_t    *shortChar
@@ -284,7 +238,8 @@ algn_initialize_matrices_affine(       unsigned int        gap_open_cost
                                ,       unsigned int       *algn_precalcMtx
                                );
 
-// TODO: what is nobt? no backtrace? And why the 3? It's not 3d. Maybe third iteration of fn? In that case remove 3, as it's confusing.
+
+// TODO: what is nobt? no backtrace?
 unsigned int
 algn_fill_plane_2d_affine_nobt ( const dyn_character_t   *si
                                , const dyn_character_t   *sj
@@ -300,6 +255,7 @@ algn_fill_plane_2d_affine_nobt ( const dyn_character_t   *si
                                ,       unsigned int       *sj_horizontal_extension
                                );
 
+
 void
 algn_backtrace_affine ( const dyn_character_t    *shortChar
                       , const dyn_character_t    *longChar
@@ -310,6 +266,7 @@ algn_backtrace_affine ( const dyn_character_t    *shortChar
                       ,       dyn_character_t    *resultLong
                       , const cost_matrices_2d_t *costMatrix
                       );
+
 
 unsigned int
 algn_fill_plane_2d_affine ( const dyn_character_t    *shortChar
@@ -328,12 +285,14 @@ algn_fill_plane_2d_affine ( const dyn_character_t    *shortChar
                           ,       unsigned int       *longChar_horizontal_extension
                           );
 
+
 void
 algn_get_median_2d_no_gaps ( dyn_character_t    *char1
                            , dyn_character_t    *char2
                            , cost_matrices_2d_t *costMatrix
                            , dyn_character_t    *sm
                            );
+
 
 void
 algn_get_median_2d_with_gaps ( dyn_character_t    *char1
@@ -342,10 +301,12 @@ algn_get_median_2d_with_gaps ( dyn_character_t    *char1
                              , dyn_character_t    *sm
                              );
 
+
 void
 algn_union ( dyn_character_t *char1
            , dyn_character_t *char2
            , dyn_character_t *unionChar
            );
+
 
 #endif /* ALIGN_CHARACTERS_H */

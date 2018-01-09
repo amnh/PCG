@@ -97,7 +97,7 @@ void dyn_char_prepend (dyn_character_t *a, elem_t v) {
     }
 }
 
-
+/*
 void dyn_char_print( const dyn_character_t *inChar )
 {
     elem_t *start = inChar->char_begin;
@@ -109,7 +109,7 @@ void dyn_char_print( const dyn_character_t *inChar )
 //    }
 //    printf("\n");
 }
-
+*/
 
 inline void
 dyn_char_reverse (dyn_character_t *target, dyn_character_t *source) {
