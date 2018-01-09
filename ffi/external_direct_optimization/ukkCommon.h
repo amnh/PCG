@@ -351,9 +351,9 @@ static inline void allocFinal(AllocInfo_t *a, void *flag, void *top)
                         tcellsUsed++;
                     }
                 }
-                if (OUTPUT_FINAL_ALLOC)  printf("Block %d. Cells = %d Used = %ld\n", j, CellsPerBlock * CellsPerBlock * numStates_g, tcellsUsed);
+                if (OUTPUT_FINAL_ALLOC)  printf("Block %zu. Cells = %d Used = %ld\n", j, CellsPerBlock * CellsPerBlock * numStates_g, tcellsUsed);
             }
-            if (OUTPUT_FINAL_ALLOC)  printf("Plane %d. Blocks = %ld Used = %ld\n", i, a->abBlocks * a->acBlocks, tblocksUsed);
+            if (OUTPUT_FINAL_ALLOC)  printf("Plane %zu. Blocks = %ld Used = %ld\n", i, a->abBlocks * a->acBlocks, tblocksUsed);
         }
         if (OUTPUT_FINAL_ALLOC) {
             printf("Total planes %ld, used %ld (used %ld bytes)\n", a->baseAlloc, planesUsed,

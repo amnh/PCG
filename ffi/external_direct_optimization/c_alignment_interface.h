@@ -160,4 +160,7 @@ void resetAlignIO( alignIO_t *inChar );
 void reallocAlignIO( alignIO_t *toAlloc, size_t capacity );
 
 
+void reverseCharacterElements ( const alignIO_t *aio );
+
+
 #endif // C_ALIGNMENT_INTERFACE_H

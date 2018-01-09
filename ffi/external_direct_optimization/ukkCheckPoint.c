@@ -559,6 +559,7 @@ void traceBack( int           sab
 
 void printTraceBack( characters_t *inputs, characters_t *outputs )
 {
+    printf("Yes, we actually do traceback!");
     // Print out the alignment
     {
         // Add the first run of matches to the alignment
@@ -598,9 +599,9 @@ void printTraceBack( characters_t *inputs, characters_t *outputs )
 
     {
         // Reverse the alignments
-        revElem_tArray( outputs->seq1, 0, outputs->idxSeq1 );
-        revElem_tArray( outputs->seq2, 0, outputs->idxSeq2 );
-        revElem_tArray( outputs->seq3, 0, outputs->idxSeq3 );
+        //revElem_tArray( outputs->seq1, 0, outputs->idxSeq1 );
+        //revElem_tArray( outputs->seq2, 0, outputs->idxSeq2 );
+        //revElem_tArray( outputs->seq3, 0, outputs->idxSeq3 );
 
         revIntArray( state_vector,  0, si    );
         revIntArray( cost_vector,   0, costi );

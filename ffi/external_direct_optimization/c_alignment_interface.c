@@ -378,8 +378,8 @@ int align3d( alignIO_t          *inputChar1_aio
            , alignIO_t          *outputChar1_aio
            , alignIO_t          *outputChar2_aio
            , alignIO_t          *outputChar3_aio
-           , alignIO_t          *ungappedOutput_aio
            , alignIO_t          *gappedOutput_aio
+           , alignIO_t          *ungappedOutput_aio
            , cost_matrices_3d_t *costMtx3d
            , unsigned int        substitution_cost
            , unsigned int        gap_open_cost      // Set `gap_open_cost` == `gap_extension_cost` for non-affine. TODO: check this.
@@ -475,9 +475,21 @@ int align3d( alignIO_t          *inputChar1_aio
     copyValsToAIO( outputChar2_aio, powellOutputs->seq2, powellOutputs->lenSeq1, powellOutputs->lenSeq1 );
     copyValsToAIO( outputChar3_aio, powellOutputs->seq3, powellOutputs->lenSeq1, powellOutputs->lenSeq1 );
 
+    reverseCharacterElements(outputChar1_aio);
+    reverseCharacterElements(outputChar2_aio);
+    reverseCharacterElements(outputChar3_aio);
+    reverseCharacterElements(gappedOutput_aio);
+    reverseCharacterElements(ungappedOutput_aio);
+
     return algnCost;
 }
 
+
+void reverseCharacterElements ( const alignIO_t *aio )
+{
+    size_t offset = aio->capacity - aio->length;
+    revElem_tArray(aio->character, offset, aio->capacity - 1);
+}
 
 void alignIO_print( const alignIO_t *character )
 {

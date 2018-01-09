@@ -4791,7 +4791,7 @@ algn_get_cost_medians_3d ( characters_t       *input
                                   );
         // if (DEBUG_3D)    printf("%d   %u\n", i, interim);
 
-        printVolumeOfMedianValues(costMatrix, 3, input->seq1[i], input->seq2[i], input->seq3[i]);
+        // printVolumeOfMedianValues(costMatrix, 3, input->seq1[i], input->seq2[i], input->seq3[i]);
 
         dyn_char_prepend(gapped_median, interim);
 

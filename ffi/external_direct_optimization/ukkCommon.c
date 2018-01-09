@@ -337,22 +337,31 @@ void revIntArray( int *arr, int start, int end )
 {
     if (end <= start)    return;
 
-    for (int i = start; i < (end + start) / 2; i++) {
-        int t  = arr[i];
-        arr[i] = arr[end - i + start - 1];
-        arr[end - i + start - 1] = t;
+    int bound = (end - start) / 2;
+
+    for (int i = 0; i <= bound; i++) {
+        int j  = start + i;
+        int k  = end   - i;
+        int t  = arr[j];
+        arr[j] = arr[k];
+        arr[k] = t;
     }
 }
 
 
 void revElem_tArray( elem_t *arr, int start, int end )
 {
+
     if (end <= start)    return;
 
-    for (int i = start; i < (end + start) / 2; i++) {
-        elem_t t                 = arr[i];
-        arr[i]                   = arr[end - i + start - 1];
-        arr[end - i + start - 1] = t;
+    int bound = (end - start) / 2;
+
+    for (int i = 0; i <= bound; i++) {
+        int j    = start + i;
+        int k    = end   - i;
+        elem_t t = arr[j];
+        arr[j]   = arr[k];
+        arr[k]   = t;
     }
 }
 
