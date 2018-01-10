@@ -154,7 +154,7 @@ disambiguateElement :: FiniteBits b => b -> b
 disambiguateElement x = zed `setBit` idx
   where
     -- we do this because of big endianness shenanigans
-    idx = len - led - 1
+    idx = led -- len - led - 1
     len = finiteBitSize x
     led = countLeadingZeros x
     zed = x `xor` x
@@ -171,7 +171,7 @@ disambiguateFromParent
   -> c -- ^ child  single disambiguation field
 disambiguateFromParent pSingle cFinal = constructDynamic $ zipWith f (otoList pSingle) (otoList cFinal)
   where
-    f pS cF = if val /= zeroBits then val else disambiguateElement cF
+    f pS cF = if popCount val == 0 then val else disambiguateElement cF
       where
         -- Since pS will have only one bit set,
         -- there can only ever be an symbol intersection of size 1
