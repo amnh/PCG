@@ -79,7 +79,7 @@ type instance Element BitVector = Bool
 instance Arbitrary BitVector where
 
     arbitrary = do
-        dimVal <- (getNonNegative <$> arbitrary)
+        dimVal <- getNonNegative <$> arbitrary
         let upperBound = 2^dimVal
         intVal <- (getNonNegative <$> arbitrary) `suchThat` (< upperBound)
         pure $ BV dimVal intVal

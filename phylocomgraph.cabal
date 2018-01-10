@@ -37,7 +37,6 @@ library
                      , containers         >=0.5.8
                      , deepseq
                      , dlist
-                     , either
                      , graphviz
                      , hashable
                      , hashtables
@@ -294,7 +293,6 @@ executable pcg
                      , containers       >=0.5.8
                      , deepseq
                      , directory
-                     , either
                      , Glob
                      , graphviz
                      , hashable
@@ -312,6 +310,7 @@ executable pcg
                      , semigroups
                      , text
                      , time
+                     , transformers
                      , vector
                      , vector-instances >=3.4
                      , xml
@@ -479,6 +478,7 @@ executable 3d-do-comparison
   build-depends:       phylocomgraph
                      , base >=4.8
                      , bimap
+                     , deepseq
                      , QuickCheck
 
   default-language:    Haskell2010
@@ -896,7 +896,7 @@ Test-Suite testsuite
                        Bio.Metadata.Parsed
                        Control.Evaluation.Internal
                        Control.Evaluation.Test
-                       Control.Evaluation.Unit 
+                       Control.Evaluation.Unit
                        Control.Monad.Logger
                        Data.Alphabet
                        Data.Alphabet.IUPAC

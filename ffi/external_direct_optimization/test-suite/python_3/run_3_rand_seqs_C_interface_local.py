@@ -55,7 +55,7 @@ def main():
 
     timesFile = open("../data/times_C_interface_run_{}.txt".format(whichProcessor), "w")
 
-    average = 0
+    averageTime = 0
 
     # set up seeds list
     randFile = open('../data/randseeds.txt')
@@ -113,12 +113,12 @@ def main():
 
         end      = time()
         current  = end - start
-        average += current
+        averageTime += current
         timesFile.write("Run number {} time: {}\n".format(runNum, current)) # total time the C code ran
         timesFile.flush()
 
-    average /= numRuns
-    timesFile.write("Average: {}".format(average))
+    averageTime /= numRuns
+    timesFile.write("Average: {}".format(averageTime))
     timesFile.close()
 
 if __name__ == '__main__' : main()

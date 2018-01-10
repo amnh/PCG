@@ -61,23 +61,7 @@ int align2d( alignIO_t          *inputChar1_aio
     dyn_char_initialize(retLongChar,  CHAR_CAPACITY);
     dyn_char_initialize(retShortChar, CHAR_CAPACITY);
 
-    // NOTE: We do not set the swapped flag, regardless of whether we swap the inputs.
-    //       Doing so causes the C algorithm to return inconsistent reult inputs
-    //       which create an NW matrix that contains a cell with equally costly
-    //       left-arrow (INSERT) and up-arrow (DELETE) directions but a more
-    //       costly diagonal-arrow (ALIGN) direction. This is because internally
-    //       the algn_backtrace_2d function will check the 'swapped' flag and
-    //       conditionally change the bias preference between left-arrow (INSERT)
-    //       and up-arrow (DELETE) directions. For our use of the C code, we do
-    //       not require this conditional biasing. We handle all swapping in this
-    //       C interface.
-    //
-    //       TODO: I believe that the swapped flag is superfluous for our interface and
-    //       the swapped != 0 code branches in algn_backtrace_2d is all dead code.
-    const int swapped = 0;
-
-    // size_t alphabetSize = costMtx2d->alphSize;
-    size_t alphabetSize = costMtx2d->costMatrixDimension;
+    size_t alphabetSize = costMtx2d->alphSize;
 
     int firstCharIsLongerOrBothAreIdenticalInValue = 1;
     if (inputChar1_aio->length < inputChar2_aio->length)
@@ -97,7 +81,7 @@ int align2d( alignIO_t          *inputChar1_aio
 	    }
         }
     }
-      
+
     if (firstCharIsLongerOrBothAreIdenticalInValue) {
         alignIOtoDynChar(longChar, inputChar1_aio, alphabetSize);
         longIO = inputChar1_aio;
@@ -122,7 +106,7 @@ int align2d( alignIO_t          *inputChar1_aio
     alignment_matrices_t *algnMtxs2d = malloc( sizeof(alignment_matrices_t) );
     assert( algnMtxs2d != NULL && "2D alignment matrices could not be allocated." );
 
-    initializeAlignmentMtx( algnMtxs2d, longChar->len, shortChar->len, costMtx2d->costMatrixDimension );
+    initializeAlignmentMtx( algnMtxs2d, longChar->len, shortChar->len, alphabetSize );
 
     // deltawh is for use in Ukonnen, it gives the current necessary width of the Ukk matrix.
     // The following calculation to compute deltawh, which increases the matrix height or width in algn_nw_2d,
@@ -141,7 +125,7 @@ int align2d( alignIO_t          *inputChar1_aio
 
     if (getGapped || getUngapped || getUnion) {
         //printf("Before backtrace.\n"), fflush(stdout);
-        algn_backtrace_2d( shortChar, longChar, retShortChar, retLongChar, algnMtxs2d, costMtx2d, 0, 0, swapped );
+        algn_backtrace_2d( shortChar, longChar, retShortChar, retLongChar, algnMtxs2d, costMtx2d, 0, 0 );
 
         if (getUngapped) {
             dyn_character_t *ungappedMedianChar = malloc( sizeof(dyn_character_t) );
@@ -248,22 +232,7 @@ int align2dAffine( alignIO_t          *inputChar1_aio
     dyn_char_initialize(retLongChar,  CHAR_CAPACITY);
     dyn_char_initialize(retShortChar, CHAR_CAPACITY);
 
-    // NOTE: We do not set the swapped flag, regardless of whether we swap the inputs.
-    //       Doing so causes the C algorithm to return inconsistent reult inputs
-    //       which create an NW matrix that contains a cell with equally costly
-    //       left-arrow (INSERT) and up-arrow (DELETE) directions but a more
-    //       costly diagonal-arrow (ALIGN) direction. This is because internally
-    //       the algn_backtrace_2d function will check the 'swapped' flag and
-    //       conditionally change the bias preference between left-arrow (INSERT)
-    //       and up-arrow (DELETE) directions. For our use of the C code, we do
-    //       not require this conditional biasing. We handle all swapping in this
-    //       C interface.
-    //
-    //       TODO: I believe that the swapped flag is superfluous for our interface and
-    //       the swapped != 0 code branches in algn_backtrace_2d are all dead code.
-    // const int swapped = 0;
-
-    size_t alphabetSize = costMtx2d_affine->costMatrixDimension;
+    size_t alphabetSize = costMtx2d_affine->alphSize;
 
     if (inputChar1_aio->length >= inputChar2_aio->length) {
         alignIOtoDynChar(longChar, inputChar1_aio, alphabetSize);
@@ -305,7 +274,7 @@ int align2dAffine( alignIO_t          *inputChar1_aio
     alignment_matrices_t *algnMtxs2dAffine = malloc( sizeof(alignment_matrices_t) );
     assert( algnMtxs2dAffine != NULL && "Can't allocate 2D affine alignment matrices." );
 
-    initializeAlignmentMtx(algnMtxs2dAffine, longChar->len, shortChar->len, costMtx2d_affine->costMatrixDimension);
+    initializeAlignmentMtx(algnMtxs2dAffine, longChar->len, shortChar->len, alphabetSize );
     // printf("Jut initialized alignment matrices.\n");
     lenLongerChar = longChar->len;
 
@@ -409,8 +378,8 @@ int align3d( alignIO_t          *inputChar1_aio
            , alignIO_t          *outputChar1_aio
            , alignIO_t          *outputChar2_aio
            , alignIO_t          *outputChar3_aio
-           , alignIO_t          *ungappedOutput_aio
            , alignIO_t          *gappedOutput_aio
+           , alignIO_t          *ungappedOutput_aio
            , cost_matrices_3d_t *costMtx3d
            , unsigned int        substitution_cost
            , unsigned int        gap_open_cost      // Set `gap_open_cost` == `gap_extension_cost` for non-affine. TODO: check this.
@@ -506,9 +475,21 @@ int align3d( alignIO_t          *inputChar1_aio
     copyValsToAIO( outputChar2_aio, powellOutputs->seq2, powellOutputs->lenSeq1, powellOutputs->lenSeq1 );
     copyValsToAIO( outputChar3_aio, powellOutputs->seq3, powellOutputs->lenSeq1, powellOutputs->lenSeq1 );
 
+    reverseCharacterElements(outputChar1_aio);
+    reverseCharacterElements(outputChar2_aio);
+    reverseCharacterElements(outputChar3_aio);
+    reverseCharacterElements(gappedOutput_aio);
+    reverseCharacterElements(ungappedOutput_aio);
+
     return algnCost;
 }
 
+
+void reverseCharacterElements ( const alignIO_t *aio )
+{
+    size_t offset = aio->capacity - aio->length;
+    revElem_tArray(aio->character, offset, aio->capacity - 1);
+}
 
 void alignIO_print( const alignIO_t *character )
 {
@@ -614,7 +595,7 @@ void dynCharToAlignIO( alignIO_t *output, dyn_character_t *input, int delete_ini
         printf("  Capacity: %zu\n", output->capacity);
         fflush(stdout);
     }
-    
+
     size_t  copy_length;    // These two because ungapped characters will have their initial gaps removed, so may be length 0.
     elem_t *input_begin;
 
