@@ -22,7 +22,7 @@ module Bio.Graph.PhylogeneticDAG.TotalEdgeCost
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
 import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Dynamic
-import           Bio.Character.Encodable.Stream
+-- import           Bio.Character.Encodable.Stream
 import           Bio.Sequence
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
@@ -31,7 +31,7 @@ import           Control.Applicative
 import           Control.DeepSeq
 import           Control.Lens
 import           Control.Monad.State.Lazy
-import qualified Data.Alphabet      as A
+-- import qualified Data.Alphabet      as A
 import           Data.Foldable
 import qualified Data.IntMap        as IM
 import qualified Data.IntSet        as IS
@@ -80,11 +80,11 @@ totalEdgeCosts pariwiseFunction (PDAG2 dag) = applyWeights $ foldlWithKey f init
 
     tcmSequence = (fmap (^. symbolChangeMatrix) . toList . dynamicCharacters) <$> sequencesWLOG
 
-    functionSequence = (fmap (\tcm x y -> trace (showChar x) () `seq` trace (showChar y) () `seq` pariwiseFunction' x y tcm)) <$> tcmSequence 
+    functionSequence = (fmap (\tcm x y -> pariwiseFunction' x y tcm)) <$> tcmSequence 
 
-    showChar = showStream alphabet
+--    showChar = showStream alphabet
 
-    alphabet = A.fromSymbols ["A","C","G","T"]
+--    alphabet = A.fromSymbols ["A","C","G","T"]
 
     applyWeights = force . zipWith (zipWith (\d w -> d * fromIntegral w)) weightSequence
 
