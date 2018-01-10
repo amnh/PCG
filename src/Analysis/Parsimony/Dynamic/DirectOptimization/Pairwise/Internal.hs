@@ -456,7 +456,7 @@ minimalChoice = foldl1 f
 
 -- |
 -- Finds the cost between all single, unambiguous symbols and two dynamic
--- character elements.
+-- character elements (ambiguity groups of symbols)xsy.
 --
 -- Takes in a symbol change cost function and two ambiguous elements of a dynamic
 -- character and returns a list of tuples of all possible unambiguous pairings,
@@ -483,7 +483,11 @@ symbolDistances costStruct char1 char2 = costAndSymbol <$> allSymbols
     getDistance i e = minimum $ costStruct i <$> getSetBits e
 
     getSetBits :: FiniteBits b => b -> NonEmpty Word
-    getSetBits x = fmap toEnum . NE.fromList . filter (x `testBit`) $ [0 .. finiteBitSize x - 1]
+    getSetBits x =
+        case filter (x `testBit`) $ [0 .. finiteBitSize x - 1] of
+          x:xs -> toEnum <$> x:|xs
+          []   -> error $ "There were no bits set in the character: " <>
+                    show (foldMap (\b -> if x `testBit` b then "1" else "0") [0 .. finiteBitSize x - 1])
 
 
 -- |
