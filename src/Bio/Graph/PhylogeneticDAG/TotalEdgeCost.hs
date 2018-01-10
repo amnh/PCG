@@ -22,6 +22,7 @@ module Bio.Graph.PhylogeneticDAG.TotalEdgeCost
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
 import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Dynamic
+import           Bio.Character.Encodable.Stream
 import           Bio.Sequence
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
@@ -30,6 +31,7 @@ import           Control.Applicative
 import           Control.DeepSeq
 import           Control.Lens
 import           Control.Monad.State.Lazy
+import qualified Data.Alphabet      as A
 import           Data.Foldable
 import qualified Data.IntMap        as IM
 import qualified Data.IntSet        as IS
@@ -40,11 +42,14 @@ import           Data.MonoTraversable
 import           Data.Semigroup
 import           Prelude            hiding (lookup, zipWith)
 
+import Debug.Trace
+
 
 -- |
 -- Computes the total edge cost over all the disambiguated final assignments.
 totalEdgeCosts
-  :: ( HasCharacterWeight z r
+  :: ( EncodableStream c
+     , HasCharacterWeight z r
      , HasSingleDisambiguation z c
      , HasSymbolChangeMatrix z (Word -> Word -> Word)
      , Integral i
@@ -75,7 +80,11 @@ totalEdgeCosts pariwiseFunction (PDAG2 dag) = applyWeights $ foldlWithKey f init
 
     tcmSequence = (fmap (^. symbolChangeMatrix) . toList . dynamicCharacters) <$> sequencesWLOG
 
-    functionSequence = (fmap (\tcm x y -> pariwiseFunction' x y tcm)) <$> tcmSequence 
+    functionSequence = (fmap (\tcm x y -> trace (showChar x) () `seq` trace (showChar y) () `seq` pariwiseFunction' x y tcm)) <$> tcmSequence 
+
+    showChar = showStream alphabet
+
+    alphabet = A.fromSymbols ["A","C","G","T"]
 
     applyWeights = force . zipWith (zipWith (\d w -> d * fromIntegral w)) weightSequence
 
@@ -87,7 +96,7 @@ totalEdgeCosts pariwiseFunction (PDAG2 dag) = applyWeights $ foldlWithKey f init
       | otherwise = ofoldl' g acc applicableNodes
       where
         adjacentNodes   = IS.map collapseRootEdge $ parentRefs node <> IM.keysSet (childRefs node)
-        applicableNodes = IS.filter (> key) adjacentNodes
+        applicableNodes = IS.map (\x -> trace (show (key, x)) x) $ IS.filter (> key) adjacentNodes
         nodeSequence    = getFields key
 
         -- Folding function for adjacent nodes. Should apply the sum strictly.
