@@ -37,6 +37,7 @@ module Data.BitVector.LittleEndian
   , bitvector
   -- * Queries
   , dimension
+  , isZeroVector
   , subRange
   -- * Numeric conversion
   , toSignedNumber
@@ -355,6 +356,22 @@ bitvector !dimValue !intValue = BV width $ mask .&. toInteger intValue
 {-# INLINE dimension #-}
 dimension :: BitVector -> Word
 dimension = toEnum . dim
+
+
+-- |
+-- \( \mathcal{O} \left( 1 \right) \)
+--
+-- Determine if _any_ bits are set in the 'BitVector'.
+-- Preferable over '(0 ==) . popCount' as it is faster.
+--
+-- >>> isZeroVector [2]3
+-- False
+--
+-- >>> isZeroVector [4]0
+-- True
+{-# INLINE isZeroVector #-}
+isZeroVector :: BitVector -> Bool
+isZeroVector = (0 ==) . nat
 
 
 -- |
