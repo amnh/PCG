@@ -220,7 +220,6 @@ cm_calc_cost_2d ( unsigned int *tcm
                 , size_t        alphSize
                 )
 {
-    unsigned int *res;
     unsigned int one = 1;
     unsigned int upperBound = one << alphSize;
     unsigned int boundBound = 8 * sizeof(unsigned int); // Otherwise we rotate the bits over
@@ -572,7 +571,6 @@ void printVolumeOfMedianValues(const cost_matrices_3d_t *matrix, size_t dimensio
     elem_t aBound = min (bound, i + right_offset);
     elem_t bBound = min (bound, j + right_offset);
     elem_t cBound = min (bound, k + right_offset);
-    elem_t total_tabs;
 
     assert(aBound < matrix->costMatrixDimension);
     assert(bBound < matrix->costMatrixDimension);
@@ -582,7 +580,8 @@ void printVolumeOfMedianValues(const cost_matrices_3d_t *matrix, size_t dimensio
     printf("Range: [%d, %d] X [%d, %d] X [%d, %d] \n\n", aStart, aBound - 1, bStart, bBound - 1, cStart, cBound - 1);
 
     for (elem_t a = aStart; a < aBound; ++a) {
-        for (elem_t b = bStart, total_tabs = 1; b < bBound; ++b, ++total_tabs) {
+        elem_t total_tabs = 1;
+        for (elem_t b = bStart; b < bBound; ++b, ++total_tabs) {
             for (elem_t c = cStart; c < cBound; ++c) {
                 printf ("%4d", matrix->median[ cm_calc_cost_position_3d(a, b, c, matrix->alphSize)]);
             }
