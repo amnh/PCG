@@ -48,8 +48,7 @@ import Debug.Trace
 -- |
 -- Computes the total edge cost over all the disambiguated final assignments.
 totalEdgeCosts
-  :: ( EncodableStream c
-     , HasCharacterWeight z r
+  :: ( HasCharacterWeight z r
      , HasSingleDisambiguation z c
      , HasSymbolChangeMatrix z (Word -> Word -> Word)
      , Integral i
@@ -106,5 +105,13 @@ totalEdgeCosts pariwiseFunction (PDAG2 dag) = applyWeights $ foldlWithKey f init
         
         collapseRootEdge i
           | i `notElem` roots = i
-          | otherwise = head . filter (/= i) .  IM.keys . childRefs $ refVec ! i
+          | otherwise = (\x-> trace (unwords [ show i
+                                             , " is a root index, so the edge"
+                                             , show (i, key)
+                                             , "is invalid!"
+                                             , show x
+                                             , "is the indicen node index, so the replacement edge is"
+                                             , show (x, key)
+                                             ]) x) .
+                        head . filter (/= key) .  IM.keys . childRefs $ refVec ! i
             
