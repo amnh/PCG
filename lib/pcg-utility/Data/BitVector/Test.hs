@@ -52,11 +52,11 @@ bitsTests = testGroup "Bits instance properties"
     zeroBitsAndSetBit :: NonNegative Int -> Property
     zeroBitsAndSetBit (NonNegative n) =
         setBit   (zeroBits :: BitVector) n === bit n
-      
+
     zeroBitsAndTestBit :: NonNegative Int -> Property
     zeroBitsAndTestBit (NonNegative n) =
         testBit  (zeroBits :: BitVector) n === False
-      
+
     zeroBitsAndPopCount :: Assertion
     zeroBitsAndPopCount =
         popCount (zeroBits :: BitVector) @?= 0
@@ -91,8 +91,8 @@ bitsTests = testGroup "Bits instance properties"
 
 finiteBitsTests :: TestTree
 finiteBitsTests = testGroup "FiniteBits instance consistency"
-    [ testProperty "fromEnum . dimension === finiteBitSize" finiteBitSizeIsDimension 
-    , testProperty "length . toBits === finiteBitSize" finiteBitSizeIsBitLength 
+    [ testProperty "fromEnum . dimension === finiteBitSize" finiteBitSizeIsDimension
+    , testProperty "length . toBits === finiteBitSize" finiteBitSizeIsBitLength
     , testProperty "length . takeWhile not === countLeadingZeros . fromBits" countLeadingZeroAndFromBits
     , testProperty "length . takeWhile not . toBits === countLeadingZeros" countLeadingZeroAndToBits
     , testProperty "length . takeWhile not . reverse === countTrailingZeros . fromBits" countTrailingZeroAndFromBits
@@ -102,11 +102,11 @@ finiteBitsTests = testGroup "FiniteBits instance consistency"
     finiteBitSizeIsDimension :: BitVector -> Property
     finiteBitSizeIsDimension bv =
       (fromEnum . dimension) bv === finiteBitSize bv
-      
+
     finiteBitSizeIsBitLength :: BitVector -> Property
     finiteBitSizeIsBitLength bv =
       (length . toBits) bv === finiteBitSize bv
-      
+
     countLeadingZeroAndFromBits :: [Bool] -> Property
     countLeadingZeroAndFromBits bs =
       (length . takeWhile not) bs === (countLeadingZeros . fromBits) bs
@@ -116,13 +116,13 @@ finiteBitsTests = testGroup "FiniteBits instance consistency"
       (length . takeWhile not . toBits) bv === countLeadingZeros bv
 
     countTrailingZeroAndFromBits :: [Bool] -> Property
-    countTrailingZeroAndFromBits bs = 
+    countTrailingZeroAndFromBits bs =
       (length . takeWhile not . reverse) bs === (countTrailingZeros . fromBits) bs
-      
+
     countTrailingZeroAndToBits :: BitVector -> Property
     countTrailingZeroAndToBits bv =
       (length . takeWhile not . reverse . toBits) bv === countTrailingZeros bv
-    
+
 
 monoFunctorProperties :: TestTree
 monoFunctorProperties = testGroup "Properites of a MonoFunctor"
@@ -132,7 +132,7 @@ monoFunctorProperties = testGroup "Properites of a MonoFunctor"
   where
     omapId :: BitVector -> Property
     omapId bv = omap id bv === id bv
-    
+
     omapComposition :: (Blind (Bool -> Bool), Blind (Bool -> Bool), BitVector) -> Property
     omapComposition (Blind f, Blind g, bv) = omap (f . g) bv ===  (omap f . omap g) bv
 
@@ -165,15 +165,15 @@ monoFoldableProperties = testGroup "Properties of MonoFoldable"
     testFoldr :: (Blind (Bool -> Word -> Word), Word, BitVector) -> Property
     testFoldr (Blind f, z, bv) =
         ofoldr f z bv === (ofoldr f z . otoList) bv
-    
+
     testFoldl :: (Blind (Word -> Bool -> Word), Word, BitVector) -> Property
     testFoldl (Blind f, z, bv) =
         ofoldl' f z bv === (ofoldl' f z . otoList) bv
-    
+
     testFoldr1 :: (Blind (Bool -> Bool -> Bool), BitVector) -> Property
     testFoldr1 (Blind f, bv) =
         (not . onull) bv  ==> ofoldr1Ex f bv === (ofoldr1Ex f . otoList) bv
-    
+
     testFoldl1 :: (Blind (Bool -> Bool -> Bool), BitVector) -> Property
     testFoldl1 (Blind f, bv) =
         (not . onull) bv  ==> ofoldl1Ex' f bv === (ofoldl1Ex' f . otoList) bv
@@ -197,7 +197,7 @@ monoFoldableProperties = testGroup "Properties of MonoFoldable"
     testHead :: BitVector -> Property
     testHead bv =
         (not . onull) bv ==> headEx bv === (getFirst . ofoldMap1Ex First) bv
-    
+
     testTail :: BitVector -> Property
     testTail bv =
         (not . onull) bv ==> lastEx bv === (getLast . ofoldMap1Ex Last) bv
@@ -205,7 +205,7 @@ monoFoldableProperties = testGroup "Properties of MonoFoldable"
     testInclusionConsistency :: (Bool, BitVector) -> Property
     testInclusionConsistency (e, bv) =
         oelem e bv === (not . onotElem e) bv
-        
+
 
 monoidProperties :: TestTree
 monoidProperties = testGroup "Properties of a Monoid"
@@ -277,6 +277,10 @@ bitVectorProperties = testGroup "BitVector properties"
     , testProperty "dimension === length . toBits" dimensionAndToBits
     , testProperty "dimension === finiteBitSize" dimensionAndFiniteBitSize
     , testProperty "fromBits . toBits === id" toBitsFromBits
+    , testProperty "isZeroVector === (0 ==) . popCount" popCountAndZeroVector
+    , testProperty "isZeroVector === all not . toBits" zeroVectorAndAllBitsOff
+    , testProperty "(0 ==) . toUnsignedNumber ==> isZeroVector" toUnsignedNumImpliesZeroVector
+    , testCase     "isZeroVector zeroBits" zeroBitsIsZeroVector
     ]
   where
     otoListTest :: BitVector -> Property
@@ -294,3 +298,18 @@ bitVectorProperties = testGroup "BitVector properties"
     toBitsFromBits :: BitVector -> Property
     toBitsFromBits bv =
         (fromBits . toBits) bv === bv
+
+    popCountAndZeroVector :: BitVector -> Property
+    popCountAndZeroVector bv =
+        isZeroVector bv === ((0 ==) . popCount) bv
+
+    zeroVectorAndAllBitsOff :: BitVector -> Property
+    zeroVectorAndAllBitsOff bv =
+        isZeroVector bv === (all not . toBits) bv
+
+    toUnsignedNumImpliesZeroVector :: BitVector -> Property
+    toUnsignedNumImpliesZeroVector bv =
+        ((0 ==) . (toUnsignedNumber :: BitVector -> Integer)) bv ==> isZeroVector bv
+
+    zeroBitsIsZeroVector :: Assertion
+    zeroBitsIsZeroVector = assertBool "zeroBits is not a 'zero vector'" $ isZeroVector zeroBits
