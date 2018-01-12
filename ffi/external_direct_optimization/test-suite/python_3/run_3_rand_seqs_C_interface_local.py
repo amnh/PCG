@@ -22,13 +22,24 @@ def charToInt(inArr, conversionDict):
 
 
 def main():
+    # First set up necessary ffi hooks, as well as IUPAC dictionary that will be needed to convert
+    # input to appropriate input for C interface. Putting this here to attempt to normalize code
+    # between POY script and C-only script
+    iupacDict = {'A': 1, 'C': 2, 'G': 4, 'T': 8, 'U': 8, 'M': 3, 'R': 5, 'S': 6, 'V': 7, 'W': 9, 'Y': 10, 'H': 11, 'K': 12, 'D': 13, 'B': 14, 'N': 15, '.': 16, '-': 16}
+
+    ffi.cdef("""
+           int wrapperFunction(int *firstSeq, int firstSeqLen, int *secondSeq, int secondSeqLen, int *thirdSeq, int thirdSeqLen);
+        """)
+    lib = ffi.dlopen("../C_source/test_interface_3d_for_python.so")
+
+    # Starting here follows POY script much more closely.
     errorMsg = "\nFirst arg is data file (metazoa or chel); \nSecond is # processors; \nThird is number of runs per processor; \nFourth is which processor this is running on, starting at 0.\n"
     if len(argv) < 5:
         print(errorMsg)
         exit()
 
     dataFile = argv[1]
-    possible_files = {"metazoa": ["2metazoa18s-short.fasta", "208"], "chel": ["chel.fasta", "17"]}
+    possible_files = {"metazoa": ["2metazoa18s-short", "208"], "chel": ["chel", "17"]}
     if dataFile not in possible_files:
         print("Data file must be one of the following:", possible_files)
         exit()
@@ -41,19 +52,8 @@ def main():
         print(errorMsg)
         exit()
 
-    seqFileName = "../data/" + possible_files[dataFile][0]
-
-    # print('python', '-u', 'generateConsistentRandomIntSeqs.py', str(howManyProcessors), str(whichProcessor), possible_files[dataFile][1])
-    # check_output(['python', '-u', 'generateConsistentRandomIntSeqs.py', str(howManyProcessors), str(numRuns), possible_files[dataFile][1]])
-
-    iupacDict = {'A': 1, 'C': 2, 'G': 4, 'T': 8, 'U': 8, 'M': 3, 'R': 5, 'S': 6, 'V': 7, 'W': 9, 'Y': 10, 'H': 11, 'K': 12, 'D': 13, 'B': 14, 'N': 15, '.': 16, '-': 16}
-
-    ffi.cdef("""
-           int wrapperFunction(int *firstSeq, int firstSeqLen, int *secondSeq, int secondSeqLen, int *thirdSeq, int thirdSeqLen);
-        """)
-    lib = ffi.dlopen("../C_source/test_interface_3d_for_python.so")
-
-    timesFile = open("../data/times_C_interface_run_{}.txt".format(whichProcessor), "w")
+    seqFileName = possible_files[dataFile][0]
+    timesFile   = open("../data/times_C_interface_processor_{}.txt".format(whichProcessor), "w")
 
     averageTime = 0
 
@@ -66,13 +66,12 @@ def main():
     # print("Start index:", curIdx)
 
     for runNum in range(numRuns):
-
         # get next 3 seqs
         whatlines = []
         for i in range(3): # there are always three seqs being sent in
             # get 3 random numbers from random number file
+            thisLine = seeds[curIdx]
             try:
-                thisLine = seeds[curIdx]
                 # print(thisLine, end="")
                 whatlines.append(int(thisLine) * 2 + 1) # Extra math because we're not getting that line, but that _sequence_
                 curIdx += 1
@@ -83,15 +82,13 @@ def main():
         print("Sequence filename: ", seqFileName)
         print("whatlines: "        , whatlines)
 
-        inputSeqFile = open(seqFileName)
+        inputSeqFile = open("../data/" + seqFileName + ".fasta")
         charArr      = picklines(inputSeqFile, whatlines) # need to translate this to ints
         inputSeqFile.close()
 
-        # charArr.sort( key = lambda a: len(a) )   # no longer need to sort by length
-        # print(charArr)
-        # for i in range(3):
-        #     print( "character {}: length: {}".format(i, len(charArr[i])))
-        # print()
+        # suffixes for input .fasta files, output .txt files and .poy files
+        filesuffix = "{}_processor_{}_run_{}".format(seqFileName, whichProcessor, runNum)
+
         intArrays = []
         for i in range(3):
             intArrays.append( list(map( lambda x: iupacDict[x.capitalize()], charArr[i] )) )
@@ -116,6 +113,7 @@ def main():
         averageTime += current
         timesFile.write("Run number {} time: {}\n".format(runNum, current)) # total time the C code ran
         timesFile.flush()
+        averageTime += current
 
     averageTime /= numRuns
     timesFile.write("Average: {}".format(averageTime))
