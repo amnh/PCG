@@ -153,10 +153,7 @@ lexicallyDisambiguate = omap disambiguateElement
 disambiguateElement :: FiniteBits b => b -> b
 disambiguateElement x = zed `setBit` idx
   where
-    -- we do this because of big endianness shenanigans
-    idx = led -- len - led - 1
-    len = finiteBitSize x
-    led = countLeadingZeros x
+    idx = countLeadingZeros x
     zed = x `xor` x
     
 
