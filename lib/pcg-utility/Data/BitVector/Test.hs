@@ -277,10 +277,11 @@ bitVectorProperties = testGroup "BitVector properties"
     , testProperty "dimension === length . toBits" dimensionAndToBits
     , testProperty "dimension === finiteBitSize" dimensionAndFiniteBitSize
     , testProperty "fromBits . toBits === id" toBitsFromBits
+    , testCase     "isZeroVector zeroBits" zeroBitsIsZeroVector
     , testProperty "isZeroVector === (0 ==) . popCount" popCountAndZeroVector
     , testProperty "isZeroVector === all not . toBits" zeroVectorAndAllBitsOff
     , testProperty "(0 ==) . toUnsignedNumber ==> isZeroVector" toUnsignedNumImpliesZeroVector
-    , testCase     "isZeroVector zeroBits" zeroBitsIsZeroVector
+    , testProperty "toUnsignedNumber . bitvector === id" bitVectorUnsignedNumIdentity
     ]
   where
     otoListTest :: BitVector -> Property
@@ -313,3 +314,9 @@ bitVectorProperties = testGroup "BitVector properties"
 
     zeroBitsIsZeroVector :: Assertion
     zeroBitsIsZeroVector = assertBool "zeroBits is not a 'zero vector'" $ isZeroVector zeroBits
+
+    bitVectorUnsignedNumIdentity :: NonNegative Integer -> Property
+    bitVectorUnsignedNumIdentity (NonNegative num) =
+        (toUnsignedNumber . bitvector width) num === num
+      where
+        width = succ . ceiling . logBase (2.0 :: Double) $ fromIntegral num
