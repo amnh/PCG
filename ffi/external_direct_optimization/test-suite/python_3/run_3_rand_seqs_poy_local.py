@@ -3,13 +3,12 @@
 ''' A script to run POY on twice on three DO characters. First run regular DO, then run 3d (iterative: exact) DO on the same three characters. This is to be able to compare the times for the runs of each. These times can then be compared to just the C 3d DO
 code to see if the times are comparable.'''
 
-from cffi import FFI
-ffi = FFI()           # bind all FFI calls to ffi variable
 
-from random     import randrange
-from subprocess import check_output
-from sys        import argv
-from time       import time
+
+from random import randrange
+from subprocess import call
+from sys import argv
+from time import time
 
 
 # this will fail if `whatlines` isn't sorted _and_ monotonically increasing.
@@ -17,22 +16,23 @@ def picklines(thefile, whatlines):
   return [x[:-1] for i, x in enumerate(thefile) if i in whatlines]
 
 
-def charToInt(inArr, conversionDict):
-    return map(inArr, lambda x: conversionDict(x))
+''' Output a POY file. Only one file needs to be created for each variation. They can be used for muliple runs.
+    Get infile, which is already a file handle. Write out to that file.'''
+def createPOYfileText(poyFile, filesuffix, version):
+    #calls POY and runs it for time. Writes best trees out to outfilename
 
+    outputFile_name = "../data/poy_{}_output_{}.txt".format(version, filesuffix)
+
+    poyFile.write( 'read("../data/{}.fasta")\n'.format(filesuffix) )
+    poyFile.write( "transform(tcm:(1,1))\n" )
+    poyFile.write( 'read("../data/sample_3_taxa.tre")\n' )
+    if version == 3:
+        poyFile.write('set(iterative: exact)\n' )
+    poyFile.write( 'report("' + outputFile_name + '")\n' )
+    poyFile.write( 'exit()' )
+    return poyFile
 
 def main():
-    # First set up necessary ffi hooks, as well as IUPAC dictionary that will be needed to convert
-    # input to appropriate input for C interface. Putting this here to attempt to normalize code
-    # between POY script and C-only script
-    iupacDict = {'A': 1, 'C': 2, 'G': 4, 'T': 8, 'U': 8, 'M': 3, 'R': 5, 'S': 6, 'V': 7, 'W': 9, 'Y': 10, 'H': 11, 'K': 12, 'D': 13, 'B': 14, 'N': 15, '.': 16, '-': 16}
-
-    ffi.cdef("""
-           int wrapperFunction(int *firstSeq, int firstSeqLen, int *secondSeq, int secondSeqLen, int *thirdSeq, int thirdSeqLen);
-        """)
-    lib = ffi.dlopen("../C_source/test_interface_3d_for_python.so")
-
-    # Starting here follows POY script much more closely.
     errorMsg = "\nFirst arg is data file (metazoa or chel); \nSecond is # processors; \nThird is number of runs per processor; \nFourth is which processor this is running on, starting at 0.\n"
     if len(argv) < 5:
         print(errorMsg)
@@ -53,7 +53,7 @@ def main():
         exit()
 
     seqFileName = possible_files[dataFile][0]
-    timesFile   = open("../data/times_C_interface_processor_{}.txt".format(whichProcessor), "w")
+    timesFile   = open("../data/times_poy_processor_{}.txt".format(whichProcessor), "w")
 
     averageTime = 0
 
@@ -82,36 +82,51 @@ def main():
         print("Sequence filename: ", seqFileName)
         print("whatlines: "        , whatlines)
 
+        # create input fasta file for POY
         inputSeqFile = open("../data/" + seqFileName + ".fasta")
-        charArr      = picklines(inputSeqFile, whatlines) # need to translate this to ints
+        charArr      = picklines(inputSeqFile, whatlines)
         inputSeqFile.close()
 
         # suffixes for input .fasta files, output .txt files and .poy files
         filesuffix = "{}_processor_{}_run_{}".format(seqFileName, whichProcessor, runNum)
+        outputFastaFile = open("../data/{}.fasta".format(filesuffix), "w")
 
-        intArrays = []
         for i in range(3):
-            intArrays.append( list(map( lambda x: iupacDict[x.capitalize()], charArr[i] )) )
+            # print("{}\n".format(lineNum))
+            outputFastaFile.write(">{}\n{}\n".format(i, charArr[i]))
+            # print(">{}\n{}\n".format(i, charArr[i]))
 
-        shortLen  = len(intArrays[0])
-        middleLen = len(intArrays[1])
-        longLen   = len(intArrays[2])
-        # print("seq lengths: {}, {}, {}".format(shortLen, middleLen, longLen))
+        outputFastaFile.close()
 
-    #     # don't need these, because [int] translates directly to C int[]
-    #     # inputArray1 = ffi.new( "int[]", shortLen )
-    #     # inputArray2 = ffi.new( "int[]", middleLen )
-    #     # inputArray3 = ffi.new( "int[]", longLen )
+        poy_file_2d = open( "../POY/infile_2d_{}.poy".format(filesuffix), "w" )
+        poy_file_3d = open( "../POY/infile_3d_{}.poy".format(filesuffix), "w" )
 
-    ##### Now start ffi call
-        start = time()
+        poy_file_2d = createPOYfileText( poy_file_2d
+                                       , filesuffix
+                                       , 2
+                                       )
+        poy_file_3d = createPOYfileText( poy_file_3d
+                                       , filesuffix
+                                       , 3
+                                       )
 
-        lib.wrapperFunction(intArrays[0], shortLen, intArrays[1], middleLen, intArrays[2], longLen)
+        poy_file_2d.close()
+        poy_file_3d.close()
 
-        end      = time()
-        current  = end - start
-        averageTime += current
-        timesFile.write("Run number {} time: {}\n".format(runNum, current)) # total time the C code ran
+        # note that in subprocess.call, arguments is list of strings
+
+        # non-3d run
+        start_2d = time()
+        call(['poy5', "../POY/infile_2d_{}.poy".format(filesuffix)])
+        end_2d = time()
+
+        # 3d (iterative: exact) run
+        start_3d = time()
+        call(['poy5', "../POY/infile_3d_{}.poy".format(filesuffix)])
+        end_3d = time()
+        current = (end_3d - start_3d) - (end_2d - start_2d)
+        timesFile.write("Run number {} time: {}\n".format(runNum, current)) # total time the POY code ran, which is
+                                                                            # 3d run - 2d run, to eliminate input and setup time.
         timesFile.flush()
         averageTime += current
 

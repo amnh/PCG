@@ -16,6 +16,7 @@
 #include "../../costMatrix.h"
 #include "../../debug_constants.h"
 
+// Gives an arbitrary limit on the lengths of the input characters, which will later be randomized.
 #define CHAR_LENGTH 100
 
 
@@ -24,11 +25,14 @@ void do2D_affine( unsigned int *tcm, size_t alphSize );
 void do3D( unsigned int *tcm, size_t alphSize );
 
 
-int power_2 (int input) {
+int power_2 (int input)
+{
     return (__builtin_popcount(input) == 1);
 }
 
-void set_vals( elem_t *vals, size_t vals_length, size_t max_val) {
+
+void set_vals( elem_t *vals, size_t vals_length, size_t max_val)
+{
     elem_t curVal;
     for (size_t k = 0; k < vals_length; k++ ) {
         curVal = rand() % (max_val);
@@ -39,7 +43,8 @@ void set_vals( elem_t *vals, size_t vals_length, size_t max_val) {
     }
 }
 
-int main() {
+int main()
+{
 
 /******************************** set up and allocate all variables and structs ************************************/
 
