@@ -15,10 +15,6 @@
 #include "../../c_code_alloc_setup.h"
 #include "../../costMatrix.h"
 #include "../../debug_constants.h"
-#include "../../ukkCheckPoint.h"
-#include "../../ukkCommon.h"
-
-// #define SEQ_CAPACITY 64
 
 
 int power_2 (int input)
@@ -41,14 +37,13 @@ void set_vals( elem_t *vals, size_t vals_length, size_t max_val)
 
 
 int wrapperFunction( elem_t *input_vals1
-                   , size_t lenChar1
+                   , size_t  lenChar1
                    , elem_t *input_vals2
-                   , size_t lenChar2
+                   , size_t  lenChar2
                    , elem_t *input_vals3
-                   , size_t lenChar3
+                   , size_t  lenChar3
                    )
 {
-
 
 /******************************** set up and allocate all variables and structs ************************************/
 

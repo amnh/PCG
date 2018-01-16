@@ -120,8 +120,8 @@ void allocAlignIO( alignIO_t *toAlloc, size_t capacity );
 
 /** For use in 3DO and for testing.
  *
- *  Copy an array of elem_t into an *already alloc'ed* (but see note below) alignIO struct. Then sets length to input length and
- *  capacity to input capacity.
+ *  Copy an array of elem_t into an *already alloc'ed* (but see note below) alignIO struct. Then sets length of input length and
+ *  capacity to `capacity`.
  *
  *  Array values should fill *last* `length` elements of character buffer.
  *
@@ -132,7 +132,7 @@ void copyValsToAIO( alignIO_t *outChar, elem_t *vals, size_t length, size_t capa
 
 /** For use in 3DO and for testing.
  *
- *  Copy section of character array that actually holds the character from alignIO to an *already alloc'ed* char array.
+ *  Copy section of character array that actually holds the character from alignIO to an *already alloc'ed* elem_t array.
  *
  *  Does not allocate.
  */
