@@ -52,6 +52,7 @@ totalEdgeCosts
      , HasSingleDisambiguation z c
      , HasSymbolChangeMatrix z (Word -> Word -> Word)
      , Integral i
+     , Show i
      , NFData i
      , NFData r
      , Num r
@@ -65,7 +66,7 @@ totalEdgeCosts pariwiseFunction (PDAG2 dag) = applyWeights $ foldlWithKey f init
 
     roots  = rootRefs dag
 
-    pariwiseFunction' lhs rhs tcm = (\(!x,_,_,_,_) -> x) $ pariwiseFunction lhs rhs tcm
+    pariwiseFunction' lhs rhs tcm = (\(!x,_,_,_,_) -> traceShowId x) $ pariwiseFunction lhs rhs tcm
 
     initAcc = ((0 <$) . toList . dynamicCharacters) <$> sequencesWLOG
 
