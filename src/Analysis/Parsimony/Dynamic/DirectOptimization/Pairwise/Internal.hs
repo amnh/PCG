@@ -106,7 +106,7 @@ type NeedlemanWunchMatrix s = Matrix (Cost, Direction, s)
 -- |
 -- Constraints on the input dynamic characters that direct optimization requires
 -- to operate.
-type DOCharConstraint c = (EncodableDynamicCharacter c, Ord (Element c) {- , Show c, Show (Element c), Integral (Element c) -})
+type DOCharConstraint s = (EncodableDynamicCharacter s, Ord (Element s) {- , Show s, Show (Element s), Integral (Element s) -})
 
 
 -- |
@@ -124,7 +124,7 @@ type MatrixFunction m s = s -> s -> OverlapFunction (Element s) -> m (Cost, Dire
 -- A generalized function represention the "overlap" between dynamic character
 -- elements, supplying the corresponding median and cost to align the two
 -- characters.
-type OverlapFunction c = c -> c -> (c, Word)
+type OverlapFunction e = e -> e -> (e, Word)
 
 
 -- |
@@ -158,7 +158,7 @@ directOptimization char1 char2 overlapFunction matrixFunction =
 -- Strips the gap elements from the supplied character.
 --
 -- If the character contains /only/ gaps, a missing character is returned.
-filterGaps :: EncodableDynamicCharacter c => c -> c
+filterGaps :: EncodableDynamicCharacter s => s -> s
 filterGaps char =
     case filter (/= gap) $ otoList char of
       [] -> toMissing char
@@ -242,7 +242,10 @@ measureCharacters lhs rhs
 -- Internal generator function for the matrices based on the Needleman-Wunsch
 -- definition described in their paper.
 needlemanWunschDefinition
-  :: (DOCharConstraint s, Indexable f, Key f ~ (Int, Int))
+  :: ( DOCharConstraint s
+     , Indexable f
+     , Key f ~ (Int, Int)
+     )
   => s
   -> s
   -> OverlapFunction (Element s)
@@ -286,7 +289,7 @@ renderCostMatrix
      , Foldable f
      , Functor f
      , Indexable f
-     , Key f ~ (Int,Int)
+     , Key f ~ (Int, Int)
      , Show a
      , Show b
      )
@@ -366,7 +369,7 @@ renderCostMatrix lhs rhs mtx = unlines
 -- dynamic characters.
 traceback :: ( DOCharConstraint s
              , Indexable f
-             , Key f ~ (Int,Int)
+             , Key f ~ (Int, Int)
              )
           => f (Cost, Direction, Element s)
           -> s
@@ -412,7 +415,7 @@ traceback alignMatrix longerChar lesserChar =
 
 -- |
 -- Memoized wrapper of the overlap function
-getOverlap :: EncodableStreamElement c => c -> c -> (Word -> Word -> Word) -> (c, Word)
+getOverlap :: EncodableStreamElement e => e -> e -> (Word -> Word -> Word) -> (e, Word)
 getOverlap inChar1 inChar2 costStruct = result
   where
     result = overlap costStruct inChar1 inChar2
@@ -429,7 +432,7 @@ getOverlap inChar1 inChar2 costStruct = result
 -- combinations, so for instance, if @ char1 == A,T @ and @ char2 == G,C @, and
 -- the two (non-overlapping) least cost pairs are A,C and T,G, then the return
 -- value is A,C,G,T.
-overlap :: (EncodableStreamElement c {- , Show c -}) => (Word -> Word -> Word) -> c -> c -> (c, Word)
+overlap :: (EncodableStreamElement e {- , Show e -}) => (Word -> Word -> Word) -> e -> e -> (e, Word)
 overlap costStruct char1 char2
   | intersectionStates == zero = minimalChoice $ symbolDistances costStruct char1 char2
   | otherwise                  = (intersectionStates, 0)
@@ -442,7 +445,7 @@ overlap costStruct char1 char2
 -- Given a structure of unambiguous character elements and costs, calculates the
 -- least costly intersection of unambiguous character elements and the cost of
 -- that intersection.
-minimalChoice :: (Bits c, Foldable1 t, Ord n) => t (c, n) -> (c, n)
+minimalChoice :: (Bits b, Foldable1 t, Ord c) => t (b, c) -> (b, c)
 minimalChoice = foldl1 f
   where
     f (!symbol1, !cost1) (!symbol2, !cost2)
@@ -453,18 +456,18 @@ minimalChoice = foldl1 f
 
 -- |
 -- Finds the cost between all single, unambiguous symbols and two dynamic
--- character elements.
+-- character elements (ambiguity groups of symbols)xsy.
 --
 -- Takes in a symbol change cost function and two ambiguous elements of a dynamic
 -- character and returns a list of tuples of all possible unambiguous pairings,
 -- along with the cost of each pairing. The resulting elements each have exactly
 -- two bits set.
 symbolDistances
-  :: EncodableStreamElement s
+  :: EncodableStreamElement e
   => (Word -> Word -> Word)
-  -> s
-  -> s
-  -> NonEmpty (s, Word)
+  -> e
+  -> e
+  -> NonEmpty (e, Word)
 symbolDistances costStruct char1 char2 = costAndSymbol <$> allSymbols
   where
     costAndSymbol (i, x) = (x, cost1 + cost2)
@@ -480,12 +483,16 @@ symbolDistances costStruct char1 char2 = costAndSymbol <$> allSymbols
     getDistance i e = minimum $ costStruct i <$> getSetBits e
 
     getSetBits :: FiniteBits b => b -> NonEmpty Word
-    getSetBits x = fmap toEnum . NE.fromList . filter (x `testBit`) $ [0 .. finiteBitSize x - 1]
+    getSetBits x =
+        case filter (x `testBit`) $ [0 .. finiteBitSize x - 1] of
+          x:xs -> toEnum <$> x:|xs
+          []   -> error $ "There were no bits set in the character: " <>
+                    show (foldMap (\b -> if x `testBit` b then "1" else "0") [0 .. finiteBitSize x - 1])
 
 
 -- |
 -- An overlap function that applies the discrete metric to aligning two elements.
-overlapConst :: (EncodableStreamElement c {- , Show c -}) => c -> c -> (c, Word)
+overlapConst :: (EncodableStreamElement e {- , Show e -}) => e -> e -> (e, Word)
 overlapConst lhs rhs
   | intersect == zeroBits = (lhs .|. rhs, 1)
   | otherwise             = (intersect  , 0)
