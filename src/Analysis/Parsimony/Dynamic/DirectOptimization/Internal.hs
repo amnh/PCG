@@ -35,9 +35,9 @@ import           Data.List.Utility  (invariantTransformation)
 import           Data.Semigroup
 import           Data.MonoTraversable
 import           Data.Word
-import           Prelude     hiding (lookup, zipWith)
+import           Prelude     hiding (lookup, zip, zipWith)
 
--- import Debug.Trace
+import Debug.Trace
 
 
 -- |
@@ -114,7 +114,7 @@ updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) = resultDecoration
 -- Parameterized over a 'PairwiseAlignment' function to allow for different
 -- atomic alignments depending on the character's metadata.
 directOptimizationPreOrder
-  :: (DirectOptimizationPostOrderDecoration d c {- , Show c , Show (Element c)-})
+  :: (DirectOptimizationPostOrderDecoration d c {- , Show c -} , Show (Element c))
   => PairwiseAlignment c
   -> d
   -> [(Word, DynamicDecorationDirectOptimization c)]
@@ -157,18 +157,42 @@ disambiguateElement x = zed `setBit` idx
     zed = x `xor` x
     
 
-
 -- |
 -- Disambiguate the elements of a dynamic Character so that they are consistent
 -- with the ancestoral disambiguation.
 disambiguateFromParent
-  :: EncodableDynamicCharacter c
-  => c -- ^ parent single disambiguation field
-  -> c -- ^ child  final gapped
-  -> c -- ^ child  single disambiguation field
-disambiguateFromParent pSingle cFinal = constructDynamic $ zipWith f (otoList pSingle) (otoList cFinal)
+  :: (EncodableDynamicCharacter c, Show (Element c))
+  => {-IntMap Int -- ^ parent gap locations
+  -> IntMap Int -- ^ child  gap locations 
+  -> -} c          -- ^ parent single disambiguation field
+  -> c          -- ^ child  final gapped
+  -> c          -- ^ child  single disambiguation field
+disambiguateFromParent {- pGaps cGaps -} pSingle cFinal = result
   where
-    f pS cF = if popCount val /= 0 then val else disambiguateElement cF
+    result = constructDynamic $ zipWith f (otoList pSingle) (otoList cFinal)
+    {-
+--    gap = gapOfStream pSingle
+
+    -- |
+    -- We zip shittily.
+    shittyZip :: (FiniteBits b, Show b) => Int -> [b] -> [b] -> [b]
+    shittyZip i xs ys = go xs' ys'
+      where
+        go    []     []  = []
+        go    []     bs  = error $ unwords [ "Didn't end cleanly, too many child  states: ", show i, show pGaps, show cGaps, show bs ]
+        go    as     []  = error $ unwords [ "Didn't end cleanly, too many parent states: ", show i, show pGaps, show cGaps, show as ]
+        go (a:as) (b:bs) = f a b : shittyZip (i+1) as bs
+        
+        xs' = case i `lookup` pGaps of
+                Nothing -> xs
+                Just v  -> drop v xs
+        ys' = case i `lookup` cGaps of
+                Nothing -> ys
+                Just v  -> drop v ys
+-}
+    f pS cF
+      | popCount val /= 0 = val
+      | otherwise         = disambiguateElement cF
       where
         -- Since pS will have only one bit set,
         -- there can only ever be an symbol intersection of size 1
@@ -179,7 +203,7 @@ disambiguateFromParent pSingle cFinal = constructDynamic $ zipWith f (otoList pS
 -- Use the decoration(s) of the ancestoral nodes to calculate the currect node
 -- decoration. The recursive logic of the pre-order traversal.
 updateFromParent
-  :: (EncodableDynamicCharacter c, DirectOptimizationPostOrderDecoration d c {- , Show c, Show (Element c)-})
+  :: (EncodableDynamicCharacter c, DirectOptimizationPostOrderDecoration d c , {-- Show c, --} Show (Element c))
   => PairwiseAlignment c
   -> d
   -> DynamicDecorationDirectOptimization c
@@ -212,46 +236,71 @@ updateFromParent pairwiseAlignment currentDecoration parentDecoration = resultDe
 -- |
 -- A three way comparison of characters used in the DO preorder traversal.
 tripleComparison
-  :: ( {- EncodableDynamicCharacter c, -} DirectOptimizationPostOrderDecoration d c {- , Show c, Show (Element c) -})
+  :: ( {- EncodableDynamicCharacter c, -} DirectOptimizationPostOrderDecoration d c, {- Show c, -} Show (Element c))
   => PairwiseAlignment c
   -> d
   -> c
   -> c
   -> (c, c, c)
-tripleComparison pairwiseAlignment childDecoration parentCharacter parentSingle = (ungapped, gapped, single)
+tripleComparison pairwiseAlignment childDecoration parentCharacter parentSingle =
+    trace context (ungapped, gapped, single)
   where
     costStructure     = childDecoration ^. symbolChangeMatrix
     childCharacter    = childDecoration ^. preliminaryGapped
     childLeftAligned  = childDecoration ^. leftAlignment
     childRightAligned = childDecoration ^. rightAlignment
 
-    single = disambiguateFromParent extendedParentSingle ungapped
+    single = lexicallyDisambiguate $ filterGaps almostSingle
+--    (_, ungapped, gapped)  = {- trace context $ -} threeWayMean costStructure derivedAlignment extendedLeftCharacter extendedRightCharacter
+--    (_, almostSingle, _)   = {- trace context $ -} threeWayMean costStructure anotherField     extendedLeftCharacter extendedRightCharacter
+    (_, ungapped, gapped)  = {- trace context $ -} threeWayMean costStructure extendedParentFinal  extendedLeftCharacter extendedRightCharacter
+    (_, almostSingle, _)   = {- trace context $ -} threeWayMean costStructure extendedParentSingle extendedLeftCharacter extendedRightCharacter
+
 
     (_, _, derivedAlignment, parentAlignment, childAlignment) = pairwiseAlignment parentCharacter childCharacter
+    (_, _,     anotherField, singleAlignment, finalAlignment) = pairwiseAlignment parentSingle    childCharacter
+
+--    single = filterGaps $ disambiguateFromParent extendedParentSingle gapped
+--    single = disambiguateFromParent newGapIndiciesInFinal newGapIndiciesInSingle parentSingle gapped
+--    single = disambiguateFromParent parentSingle ungapped
+
+
     newGapIndicies         = newGapLocations  childCharacter  childAlignment
-    newGapIndiciesInParent = newGapLocations parentCharacter parentAlignment
+    newGapIndiciesInFinal  = newGapLocations  parentCharacter parentAlignment
+    newGapIndiciesInSingle = newGapLocations  parentSingle    singleAlignment
+    
 --    newGapIndicies         = toInsertionCounts . snd . traceShowId $ comparativeIndelEvents () childAlignment parentAlignment
-    extendedParentSingle   = insertNewGaps newGapIndiciesInParent parentSingle
+    extendedParentSingle   = insertNewGaps newGapIndiciesInSingle parentSingle
+    extendedParentFinal    = insertNewGaps newGapIndiciesInFinal  parentCharacter
     extendedLeftCharacter  = insertNewGaps newGapIndicies childLeftAligned
     extendedRightCharacter = insertNewGaps newGapIndicies childRightAligned
-    (_, ungapped, gapped)  = {- trace context $ -} threeWayMean costStructure derivedAlignment extendedLeftCharacter extendedRightCharacter
-    {--
+
+    {--}
     context = unlines
         [ "New Gap indices: |" <> show (sum newGapIndicies) <> "| " <> show newGapIndicies
         , "Parent:"
-        , show ( parentCharacter)
-        , show (_parentAlignment)
+        , showStream alph parentSingle
+        , showStream alph parentCharacter
+        , showStream alph parentAlignment
+        , mconcat [showStream alph extendedParentFinal, " (", show (olength extendedParentFinal), ")"]
         , "Center char:"
-        , show (childCharacter)
-        , show (childAlignment)
+        , showStream alph childCharacter
+        , showStream alph childAlignment
+        , "Single char:"
+        , showStream alph single
+        , showStream alph parentSingle
+        , showStream alph singleAlignment
+        , mconcat [showStream alph extendedParentSingle, " (", show (olength extendedParentSingle), ")"]
         , "Left  chars:"
-        , show (olength childLeftAligned)
-        , show (olength extendedLeftCharacter)
+        , mconcat [showStream alph childLeftAligned, " (", show (olength childLeftAligned), ")"]
+        , mconcat [showStream alph extendedLeftCharacter, " (", show (olength extendedLeftCharacter), ")"]
         , "Right chars:"
-        , show (olength childRightAligned)
-        , show (olength extendedRightCharacter)
+        , mconcat [showStream alph childRightAligned, " (", show (olength childRightAligned), ")"]
+        , mconcat [showStream alph extendedRightCharacter, " (", show (olength extendedRightCharacter), ")"]
         ]
-    --}
+      where
+        alph = childDecoration ^. characterAlphabet
+    {--}
 
 
 -- |

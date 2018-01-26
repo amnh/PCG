@@ -850,11 +850,11 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimization d) where
 
         pairs =
             [ ("Original Encoding    : ", encoded             )
-            , ("Final          Gapped: ", finalGapped         )
-            , ("Final        Ungapped: ", finalUngapped       )
             , ("Single Disambiguation: ", singleDisambiguation)
-            , ("Preliminary    Gapped: ", preliminaryGapped   )
+            , ("Final        Ungapped: ", finalUngapped       )
+            , ("Final          Gapped: ", finalGapped         )
             , ("Preliminary  Ungapped: ", preliminaryUngapped )
+            , ("Preliminary    Gapped: ", preliminaryGapped   )
             , ("Left  Alignment      : ", leftAlignment       )
             , ("Right Alignment      : ", rightAlignment      )
             ]
@@ -871,8 +871,8 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimizationPostOrder
 
         pairs =
           [ ("Original Encoding   : ", encoded            )
-          , ("Preliminary   Gapped: ", preliminaryGapped  )
           , ("Preliminary Ungapped: ", preliminaryUngapped)
+          , ("Preliminary   Gapped: ", preliminaryGapped  )
           , ("Left  Alignment     : ", leftAlignment      )
           , ("Right Alignment     : ", rightAlignment     )
           ]
