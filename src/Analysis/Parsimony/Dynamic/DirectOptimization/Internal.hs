@@ -243,7 +243,7 @@ tripleComparison
   -> c
   -> (c, c, c)
 tripleComparison pairwiseAlignment childDecoration parentCharacter parentSingle =
-    trace context (ungapped, gapped, single)
+    trace context () `seq` (ungapped, gapped, single)
   where
     costStructure     = childDecoration ^. symbolChangeMatrix
     childCharacter    = childDecoration ^. preliminaryGapped
@@ -251,56 +251,65 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter parentSingle 
     childRightAligned = childDecoration ^. rightAlignment
 
     single = lexicallyDisambiguate $ filterGaps almostSingle
---    (_, ungapped, gapped)  = {- trace context $ -} threeWayMean costStructure derivedAlignment extendedLeftCharacter extendedRightCharacter
---    (_, almostSingle, _)   = {- trace context $ -} threeWayMean costStructure anotherField     extendedLeftCharacter extendedRightCharacter
-    (_, ungapped, gapped)  = {- trace context $ -} threeWayMean costStructure extendedParentFinal  extendedLeftCharacter extendedRightCharacter
-    (_, almostSingle, _)   = {- trace context $ -} threeWayMean costStructure extendedParentSingle extendedLeftCharacter extendedRightCharacter
+    (_, ungapped, gapped)  = threeWayMean costStructure extendedParentFinal  extendedLeftCharacter1 extendedRightCharacter1
+    (_, almostSingle, _)   = threeWayMean costStructure extendedParentSingle extendedLeftCharacter2 extendedRightCharacter2
 
-
-    (_, _, derivedAlignment, parentAlignment, childAlignment) = pairwiseAlignment parentCharacter childCharacter
-    (_, _,     anotherField, singleAlignment, finalAlignment) = pairwiseAlignment parentSingle    childCharacter
-
---    single = filterGaps $ disambiguateFromParent extendedParentSingle gapped
---    single = disambiguateFromParent newGapIndiciesInFinal newGapIndiciesInSingle parentSingle gapped
---    single = disambiguateFromParent parentSingle ungapped
-
-
-    newGapIndicies         = newGapLocations  childCharacter  childAlignment
-    newGapIndiciesInFinal  = newGapLocations  parentCharacter parentAlignment
-    newGapIndiciesInSingle = newGapLocations  parentSingle    singleAlignment
-    
---    newGapIndicies         = toInsertionCounts . snd . traceShowId $ comparativeIndelEvents () childAlignment parentAlignment
-    extendedParentSingle   = insertNewGaps newGapIndiciesInSingle parentSingle
-    extendedParentFinal    = insertNewGaps newGapIndiciesInFinal  parentCharacter
-    extendedLeftCharacter  = insertNewGaps newGapIndicies childLeftAligned
-    extendedRightCharacter = insertNewGaps newGapIndicies childRightAligned
+    (extendedParentFinal , extendedLeftCharacter1, extendedRightCharacter1) = alignAroundCurrentNode pairwiseAlignment childCharacter parentCharacter childLeftAligned childRightAligned
+    (extendedParentSingle, extendedLeftCharacter2, extendedRightCharacter2) = alignAroundCurrentNode pairwiseAlignment childCharacter parentSingle    childLeftAligned childRightAligned
 
     {--}
     context = unlines
-        [ "New Gap indices: |" <> show (sum newGapIndicies) <> "| " <> show newGapIndicies
+        [ "Center char:"
+        , showStream alph childCharacter
+--        , showStream alph childAlignment
+        , ""
         , "Parent:"
         , showStream alph parentSingle
         , showStream alph parentCharacter
-        , showStream alph parentAlignment
+--        , showStream alph parentAlignment
         , mconcat [showStream alph extendedParentFinal, " (", show (olength extendedParentFinal), ")"]
-        , "Center char:"
-        , showStream alph childCharacter
-        , showStream alph childAlignment
+        , "Left  chars:"
+        , mconcat [showStream alph childLeftAligned, " (", show (olength childLeftAligned), ")"]
+        , mconcat [showStream alph extendedLeftCharacter1, " (", show (olength extendedLeftCharacter1), ")"]
+        , "Right chars:"
+        , mconcat [showStream alph childRightAligned, " (", show (olength childRightAligned), ")"]
+        , mconcat [showStream alph extendedRightCharacter1, " (", show (olength extendedRightCharacter1), ")"]
+        , ""
         , "Single char:"
-        , showStream alph single
         , showStream alph parentSingle
-        , showStream alph singleAlignment
+--        , showStream alph singleAlignment
         , mconcat [showStream alph extendedParentSingle, " (", show (olength extendedParentSingle), ")"]
         , "Left  chars:"
         , mconcat [showStream alph childLeftAligned, " (", show (olength childLeftAligned), ")"]
-        , mconcat [showStream alph extendedLeftCharacter, " (", show (olength extendedLeftCharacter), ")"]
+        , mconcat [showStream alph extendedLeftCharacter2, " (", show (olength extendedLeftCharacter2), ")"]
         , "Right chars:"
         , mconcat [showStream alph childRightAligned, " (", show (olength childRightAligned), ")"]
-        , mconcat [showStream alph extendedRightCharacter, " (", show (olength extendedRightCharacter), ")"]
+        , mconcat [showStream alph extendedRightCharacter2, " (", show (olength extendedRightCharacter2), ")"]
         ]
       where
         alph = childDecoration ^. characterAlphabet
     {--}
+
+
+alignAroundCurrentNode
+  :: EncodableDynamicCharacter c
+  => PairwiseAlignment c
+  -> c -- ^ local character
+  -> c -- ^ parent character
+  -> c -- ^ one child character
+  -> c -- ^ other child character
+  -> (c, c, c) -- ^ parent & child characters aligned with respect to the current node
+alignAroundCurrentNode pairwiseAlignment current parent child1 child2 =
+    (extendedParent, extendedChild1, extendedChild2)
+  where
+    (_, _, _, parentAlignment, currentAlignment) = pairwiseAlignment parent current
+
+    newGapIndiciesInParent  = newGapLocations parent  parentAlignment
+    newGapIndiciesInCurrent = newGapLocations current currentAlignment
+
+    extendedParent = insertNewGaps newGapIndiciesInParent  parent
+    extendedChild1 = insertNewGaps newGapIndiciesInCurrent child1
+    extendedChild2 = insertNewGaps newGapIndiciesInCurrent child2
 
 
 -- |
