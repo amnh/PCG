@@ -83,6 +83,8 @@ newtype PhylogeneticDAG2 e n u v w x y z
      deriving (Generic)
 
 
+-- |
+-- Reference to a edge in the DAG
 type EdgeReference = (Int, Int)
 
 
@@ -259,7 +261,8 @@ instance ( ToXML u
     toXML (PDAG2 refDag) = toXML refDag
 
 
-
+-- |
+-- Get the dot context of a 'PhylogeneticDAG' with useful internal node decorations.
 getDotContextWithBaseAndIndex
   :: Foldable f
   => Int -- ^ Base over which the Unique
@@ -269,6 +272,8 @@ getDotContextWithBaseAndIndex
 getDotContextWithBaseAndIndex i j (PDAG2 dag) = getDotContext i j $ nodeDecorationDatum2 <$> dag
 
 
+-- |
+-- Generate all the possible, consistent combinatorial patterns of the subtree.
 applySoftwireResolutions :: [(ResolutionCache s, IntSet)] -> NonEmpty [ResolutionInformation s]
 applySoftwireResolutions inputContexts =
     case inputContexts of
@@ -331,6 +336,9 @@ applySoftwireResolutions inputContexts =
 -}
 
 
+-- |
+-- Given a pre-order transformation for each type parameter, apply the
+-- transformations to each possible resolution that is not inconsistent.
 generateLocalResolutions :: HasBlockCost u'' v'' w'' x'' y'' z'' Word Double
                          => (u -> [u'] -> u'')
                          -> (v -> [v'] -> v'')
@@ -379,6 +387,9 @@ generateLocalResolutions f1 f2 f3 f4 f5 f6 parentalResolutionContext childResolu
                                   in hexmap c c c c c c pSeq
 
 
+-- |
+-- Given a transformation for the last type parameter, and two resolution caches,
+-- apply the transformation to all possible resolution combinations.
 localResolutionApplication
   :: HasBlockCost u v w x y d' Word Double
   => (d -> [d] -> d')
@@ -405,6 +416,9 @@ localResolutionApplication f x y =
         }
 
 
+-- |
+-- Given a foldable structure, generate a list of all possible pairs in the
+-- structure. Does not check for uniqueness of elements.
 pairs :: Foldable f => f a -> [(a, a)]
 pairs = f . toList
   where
@@ -413,6 +427,8 @@ pairs = f . toList
     f (x:xs) = ((\y -> (x, y)) <$> xs) <> f xs
 
 
+-- |
+-- Nicely show the DAG information.
 renderSummary :: PhylogeneticDAG2 e n u v w x y z -> String
 renderSummary (PDAG2 dag) = unlines
     [ show dag
@@ -420,6 +436,8 @@ renderSummary (PDAG2 dag) = unlines
     ]
 
 
+-- |
+-- Assert that two resolutions do not overlap.
 resolutionsDoNotOverlap :: ResolutionInformation a -> ResolutionInformation b -> Bool
 resolutionsDoNotOverlap x y = popCount (leafSetRepresentation x .&. leafSetRepresentation y) == 0
 
