@@ -1,20 +1,26 @@
 ----------------------------------------------------------------------------
 -- |
 -- Module      :  Analysis.Scoring
--- Copyright   :  () 2015-2015 Ward Wheeler
+-- Copyright   :  () 2015-2018 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Containing the master command for unifying all input types: tree, metadata, and sequence
---
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE BangPatterns, FlexibleContexts #-}
 
-module Analysis.Scoring where
+module Analysis.Scoring
+  (
+  -- * Decoration
+    performDecoration
+  , scoreSolution
+  -- * Decoration Removal
+  , wipeNode
+  , wipeScoring
+  ) where
 
 
 import           Analysis.Parsimony.Additive.Internal
@@ -41,6 +47,8 @@ sequentialAlignOverride :: Bool
 sequentialAlignOverride = False
 
 
+-- |
+-- Remove all scoring data from nodes.
 wipeScoring
   :: Monoid n
   => PhylogeneticDAG2 e n u v w x y z
@@ -68,6 +76,8 @@ wipeScoring (PDAG2 dag) = PDAG2 wipedDAG
         shouldWipe = not . null $ childRefs x
 
 
+-- |
+-- Conditionally wipe the scoring of a single node.
 wipeNode
   :: Monoid n
   => Bool -- ^ Do I wipe?
@@ -93,11 +103,15 @@ wipeNode wipe = PNode2 <$> pure . g . NE.head . resolutions <*> f . nodeDecorati
         
 
 
+-- |
+-- Take a solution of one or more undecorated trees and assign peliminary and
+-- final states to all nodes.
 scoreSolution :: CharacterResult -> PhylogeneticSolution FinalDecorationDAG
 scoreSolution (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
 
-    
---performDecoration :: CharacterDAG -> FinalDecorationDAG
+
+-- |
+-- Take an undecorated tree and assign peliminary and final states to all nodes.
 performDecoration 
   :: ( DiscreteCharacterMetadata u
      , DiscreteCharacterMetadata w
@@ -162,6 +176,9 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
         pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec kidDecs
 
 
+-- |
+-- Contextually select the direct optimization method to perform on dynamic
+-- characters.
 chooseDirectOptimizationComparison
   :: ( SimpleDynamicDecoration d  c
      , SimpleDynamicDecoration d' c
@@ -222,8 +239,10 @@ chooseDirectOptimizationComparison2 dec decs =
               in \x y -> naiveDO x y scm
 
 
+-- |
+-- An identety function which ignores the second parameter.
 id2 :: a -> b -> a
-id2 x _ = x
+id2 = const
 
 
 {-
