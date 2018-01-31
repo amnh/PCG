@@ -278,12 +278,13 @@ applySoftwireResolutions :: [(ResolutionCache s, IntSet)] -> NonEmpty [Resolutio
 applySoftwireResolutions inputContexts =
     case inputContexts of
       []   -> pure []
-      [x]  ->
+      [x]  -> pure <$> fst x
+{-
           let y = pure <$> fst x
-          -- TODO: review this logic thouroughly
           in  if   multipleParents x
-              then y -- <> pure []
+              then y <> pure []
               else y
+-}
       x:y:_ -> pairingLogic (x,y)
   where
     multipleParents = not . isSingleton . otoList . snd
