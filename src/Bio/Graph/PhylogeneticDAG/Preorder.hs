@@ -421,7 +421,7 @@ selectApplicableResolutions topology cache =
 -- Different contexts used to mediate an effcient multidimensional traversal.
 data  PreorderContext c
     = NormalNode   Int
-    | SetRootNode  Int
+    | SetRootNode  c
     | FociEdgeNode Int c
 
 
@@ -511,7 +511,7 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
                       where
                         isExcludedEdge = (n1,n2) `elem` excludedEdges || (n2,n1) `elem` excludedEdges
                         currentVal
-                          | n2 `oelem` rootSet = IM.singleton n2 $ SetRootNode n1
+                          | n2 `oelem` rootSet = IM.singleton n2 $ SetRootNode virtualRootDatum
                           | n1 `oelem` rootSet =
                                          case toList . headMay . filter (/=n2) . IM.keys . childRefs $ refs ! n1 of
                                            x:_ -> IM.singleton n2 $ NormalNode x
@@ -582,7 +582,8 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
 
                     dynCharGen k _ =
                         case parentRefContext of
-                          SetRootNode  p   -> updateDynCharWithFoci . getDynCharDecoration . NE.head . resolutions $ memo ! p
+--                          SetRootNode  p   -> updateDynCharWithFoci . getDynCharDecoration . NE.head . resolutions $ memo ! p
+                          SetRootNode  x -> updateDynCharWithFoci $ transformation x []
                           FociEdgeNode p x ->
                             let currentContext     = selectApplicableResolutions topology $ (contextualNodeDatum .!>. i) .!>. (p,i)
                                 currentDecoration  = (!k) . dynamicCharacters . (!j) . toBlockVector . characterSequence $ currentContext
