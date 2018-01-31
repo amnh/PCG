@@ -40,7 +40,7 @@ import           Data.List.NonEmpty        (NonEmpty(..))
 import qualified Data.List.NonEmpty as NE
 import           Data.MonoTraversable
 import           Data.Semigroup
-import           Prelude            hiding (lookup, zipWith)
+import           Prelude            hiding (zipWith)
 
 import Debug.Trace
 
@@ -80,7 +80,7 @@ totalEdgeCosts pariwiseFunction (PDAG2 dag) = applyWeights $ foldlWithKey f init
 
     tcmSequence = (fmap (^. symbolChangeMatrix) . toList . dynamicCharacters) <$> sequencesWLOG
 
-    functionSequence = (fmap (\tcm x y -> pariwiseFunction' x y tcm)) <$> tcmSequence 
+    functionSequence = fmap (\tcm x y -> pariwiseFunction' x y tcm) <$> tcmSequence 
 
 --    showChar = showStream alphabet
 

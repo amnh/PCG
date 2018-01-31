@@ -35,7 +35,7 @@ import           Data.List.Utility  (invariantTransformation)
 import           Data.Semigroup
 import           Data.MonoTraversable
 import           Data.Word
-import           Prelude     hiding (lookup, zip, zipWith)
+import           Prelude     hiding (lookup, zipWith)
 
 import Debug.Trace
 

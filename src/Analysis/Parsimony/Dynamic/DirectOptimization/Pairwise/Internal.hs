@@ -41,6 +41,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
 
 
 import           Bio.Character.Encodable
+import           Control.Arrow            ((&&&))
 import           Data.Bits
 import           Data.DList               (snoc)
 import           Data.Foldable
@@ -476,7 +477,7 @@ symbolDistances costStruct char1 char2 = costAndSymbol <$> allSymbols
         cost2 = getDistance i char2
 
     symbolIndices = NE.fromList [0 .. finiteBitSize char1 - 1]
-    allSymbols    = (\i -> (toEnum i, zero `setBit` i)) <$> symbolIndices
+    allSymbols    = (toEnum &&& setBit zero) <$> symbolIndices
     zero          = char1 `xor` char1
 
     getDistance :: FiniteBits b => Word -> b -> Word
