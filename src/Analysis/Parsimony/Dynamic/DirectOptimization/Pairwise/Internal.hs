@@ -483,11 +483,13 @@ symbolDistances costStruct char1 char2 = costAndSymbol <$> allSymbols
     getDistance i e = minimum $ costStruct i <$> getSetBits e
 
     getSetBits :: FiniteBits b => b -> NonEmpty Word
-    getSetBits x =
-        case filter (x `testBit`) $ [0 .. finiteBitSize x - 1] of
+    getSetBits b =
+        case filter (b `testBit`) indices of
           x:xs -> toEnum <$> x:|xs
           []   -> error $ "There were no bits set in the character: " <>
-                    show (foldMap (\b -> if x `testBit` b then "1" else "0") [0 .. finiteBitSize x - 1])
+                    show (foldMap (\i -> if b `testBit` i then "1" else "0") indices)
+      where
+        indices = [0 .. finiteBitSize b - 1]
 
 
 -- |
