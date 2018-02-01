@@ -279,7 +279,7 @@ instance Foldable f => ToNewick (ReferenceDAG d e (f String)) where
         cost     = dagCost $ graphData refDag
         rootRef  = NE.head $ rootRefs refDag
         vec      = references refDag
-            
+
         namedVec = zipWith (\x n -> n { nodeDecoration = x }) labelVec vec
         labelVec = (`evalState` (1,1,1)) $ mapM deriveLabel vec -- All network nodes have "htu\d" as nodeDecoration.
         deriveLabel :: Foldable f => IndexData e (f String) -> State (Int,Int,Int) String
@@ -400,7 +400,8 @@ undirectedRootEdgeSet dag = foldMap f $ rootRefs dag
           x:y:_ -> singletonEdgeSet (x,y)
 
 
-
+-- |
+--
 connectEdge
   :: Monoid e
   => ReferenceDAG d e n
@@ -408,7 +409,7 @@ connectEdge
   -> (n -> n -> n) -- ^ Function describing how to construct the new target internal node: exisiting parent, exisiting child
   -> (Int, Int) -- ^ Origin edge (coming from)
   -> (Int, Int) -- ^ Target edge (going too)
-  -> ReferenceDAG d e n 
+  -> ReferenceDAG d e n
 --connectEdge dag _ _ origin target | trace (unlines  ["Origin: " <> show origin, "Target: " <> show target, "Input:", show dag ]) False = undefined
 connectEdge dag originTransform targetTransform (ooRef, otRef) (toRef, ttRef) = {- (\x -> trace ("Output:\n"<>show x) x) -} newDag
   where
@@ -743,7 +744,7 @@ generateNewick :: Vector (IndexData e String) -> Int -> S.Set String -> (S.Set S
 generateNewick refs idx htuNumSet = (finalNumSet, finalStr)
   where
     node = refs ! idx
-    
+
     (finalNumSet, finalStr) =
         case getNodeType node of
           LeafNode    -> (htuNumSet, nodeDecoration node)
@@ -1067,7 +1068,7 @@ getDotContext
 getDotContext uniqueIdentifierBase mostSignificantDigit dag = second mconcat . unzip $ foldMapWithKey f vec
   where
     idOffest = uniqueIdentifierBase * mostSignificantDigit
-    
+
     vec = references dag
 
     toId :: Int -> GraphID
@@ -1079,7 +1080,7 @@ getDotContext uniqueIdentifierBase mostSignificantDigit dag = second mconcat . u
         []  -> []
         s:_ -> [ toLabel s ]
 
-    
+
 
     f :: Foldable f => Int -> IndexData e (f String) -> [(DotNode GraphID, [DotEdge GraphID])]
     f k v = [ (toDotNode, toDotEdge <$> kidRefs) ]
@@ -1098,7 +1099,7 @@ candidateNetworkEdges :: ReferenceDAG d e n -> Set ( (Int, Int), (Int,Int) )
 candidateNetworkEdges dag = S.filter correctnessCriterion $ foldMapWithKey f mergedVector
   where
     mergedVector  = zipWith mergeThem ancestoralEdgeSets descendantEdgeSets
-    
+
     mergeThem a d =
         IndexData
         { nodeDecoration = nodeDecoration a
@@ -1123,8 +1124,8 @@ candidateNetworkEdges dag = S.filter correctnessCriterion $ foldMapWithKey f mer
     g j k   = foldMap (\x -> S.singleton ((j,k), x))
     h j k v = possibleEdgeSet j k `difference` v
     possibleEdgeSet i j = completeEdgeSet `difference` (singletonEdgeSet (i,j) <> singletonEdgeSet (j,i))
-{-    
-    renderVector  = unlines . mapWithKey (\k v -> show k <> " " <> show (childRefs v)) . toList 
+{-
+    renderVector  = unlines . mapWithKey (\k v -> show k <> " " <> show (childRefs v)) . toList
 
     renderContext = unlines [refsStr, anstSet, descSet, edgeset]
       where
@@ -1142,7 +1143,7 @@ tabulateRootIncidentEdgeset dag = foldMap f $ rootRefs dag
       where
         kids = IM.keys . childRefs $ references dag ! i
 
-    
+
 tabulateAncestoralEdgesets :: ReferenceDAG d e n -> ReferenceDAG () (EdgeSet (Int,Int)) ()
 tabulateAncestoralEdgesets dag =
     RefDAG
@@ -1168,7 +1169,7 @@ tabulateAncestoralEdgesets dag =
               []    -> mempty
               [x]   -> getPreviousDatums x i
               x:y:_ -> getPreviousDatums x i `union` getPreviousDatums y i
-    
+
     getPreviousDatums i j = childRefs point ! j <> other
       where
         point = memo ! i
@@ -1189,7 +1190,7 @@ tabulateAncestoralEdgesets dag =
                 x:_ -> singletonEdgeSet (x,k)
 --                x:_ -> foldMap (`getPreviousDatums` x) . otoList . parentRefs $ memo ! x
 
-        
+
 tabulateDescendantEdgesets :: ReferenceDAG d e n -> ReferenceDAG () (EdgeSet (Int,Int)) ()
 tabulateDescendantEdgesets dag =
     RefDAG
@@ -1214,10 +1215,9 @@ tabulateDescendantEdgesets dag =
               []    -> mempty
               [x]   -> getPreviousDatums i x
               x:y:_ -> getPreviousDatums i x `union` getPreviousDatums i y
-    
+
     getPreviousDatums _ j = foldMap id (childRefs point) <> other
       where
         point = memo ! j
         -- This is the step where new information is added to the accumulator
         other = foldMap (\x -> singletonEdgeSet (j,x)) . IM.keys $ childRefs point
-        
