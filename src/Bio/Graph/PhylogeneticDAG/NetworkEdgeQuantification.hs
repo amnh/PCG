@@ -12,7 +12,12 @@
 
 {-# LANGUAGE FlexibleContexts #-}
 
-module Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification where
+module Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
+  ( assignPunitiveNetworkEdgeCost
+  , extractMostParsimoniusDisplayForest
+  , extractMinimalDisplayForestPerBlock
+  , gatherDisplayForests
+  ) where
 
 
 import           Bio.Metadata.Dynamic     --(TraversalFoci, TraversalFocusEdge, TraversalTopology, traversalFoci)

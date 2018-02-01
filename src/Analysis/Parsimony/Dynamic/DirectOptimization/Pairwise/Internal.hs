@@ -41,6 +41,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
 
 
 import           Bio.Character.Encodable
+import           Control.Arrow            ((&&&))
 import           Data.Bits
 import           Data.DList               (snoc)
 import           Data.Foldable
@@ -476,7 +477,7 @@ symbolDistances costStruct char1 char2 = costAndSymbol <$> allSymbols
         cost2 = getDistance i char2
 
     symbolIndices = NE.fromList [0 .. finiteBitSize char1 - 1]
-    allSymbols    = (\i -> (toEnum i, zero `setBit` i)) <$> symbolIndices
+    allSymbols    = (toEnum &&&  setBit zero) <$> symbolIndices
     zero          = char1 `xor` char1
 
     getDistance :: FiniteBits b => Word -> b -> Word
@@ -484,7 +485,7 @@ symbolDistances costStruct char1 char2 = costAndSymbol <$> allSymbols
 
     getSetBits :: FiniteBits b => b -> NonEmpty Word
     getSetBits x =
-        case filter (x `testBit`) $ [0 .. finiteBitSize x - 1] of
+        case filter (x `testBit`) [0 .. finiteBitSize x - 1] of
           x:xs -> toEnum <$> x:|xs
           []   -> error $ "There were no bits set in the character: " <>
                     show (foldMap (\b -> if x `testBit` b then "1" else "0") [0 .. finiteBitSize x - 1])

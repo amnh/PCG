@@ -138,11 +138,11 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
         multipleTaxaBlocks = case taxas of
                              (_:_:_) -> Just "Multiple taxa blocks supplied. This is unclear input, and not allowed.\n"  -- error 1
                              _       -> Nothing
-        seqMatrixDimsErrors = foldr (\x acc -> seqMatrixMissing x : acc) [] inputSeqBlocks ++  -- Note that seqMatrixDimsErrors will be [] if
+        seqMatrixDimsErrors = fmap seqMatrixMissing inputSeqBlocks ++  -- Note that seqMatrixDimsErrors will be [] if
                                                                                                -- there are no character, unaligned or data blocks.
                                                                                                -- This allows us to do tree manipulations in their absence.
 
-                              foldr (\x acc -> seqDimsMissing x : acc) [] inputSeqBlocks
+                              fmap seqDimsMissing inputSeqBlocks
         -- wrongDataTypeErrors = foldr (\x acc -> wrongDataType x : acc) [] inputSeqBlocks
 
       -- Dependent errors
@@ -161,7 +161,7 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
           --where
           --   f (PhyloSequence _ mat _ dim _ _ _) = mat
         missingCloseQuotes  = fmap Just (lefts equates) ++ fmap Just (lefts symbols') -- error 19
-        seqTaxaCountErrors  = foldr (\x acc -> checkForNewTaxa x : acc) [] inputSeqBlocks -- errors 7, 8, 16b
+        seqTaxaCountErrors  = fmap checkForNewTaxa inputSeqBlocks -- errors 7, 8, 16b
 
 --        DEFINED BUT NOT USED: (mtxTaxonCountErrors)
 --        mtxTaxonCountErrors = foldr (\x acc -> getMatrixTaxonRecurrenceErrors x ++ acc) [] inputSeqBlocks -- errors 12, 22
@@ -171,8 +171,8 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
 --              It needs to take place at a different point in the process.
 
       -- dependencies for dependent errors
-        equates  = foldr (\x acc -> getEquates x : acc) [] inputSeqBlocks
-        symbols' = foldr (\x acc -> getSymbols x : acc) [] inputSeqBlocks
+        equates  = fmap getEquates inputSeqBlocks
+        symbols' = fmap getSymbols inputSeqBlocks
         taxaLst  = if not $ null taxas
                       then V.fromList . taxaLabels $ head taxas
                       else mempty
@@ -508,7 +508,7 @@ getCharMetadata mayMtx seqBlock =
             Just fm -> f $ symbols fm
         f (Right x) = x
         f _         = [""] -- Shouldn't be possible, but leaving it in for completeness.
-        g (Just s)  = foldr (\x acc -> [x] : acc) [] s
+        g (Just s)  = pure <$> s
         g Nothing   = [""]
         form        = headMay $ format seqBlock
         len         = numChars . head $ charDims seqBlock
@@ -554,7 +554,7 @@ getTaxaFromMatrix seq' = {-trace (show taxa) $ -}
         (_, noLabels, _interleaved, _tkns, _type, _matchChar') = getFormatInfo seq'
         mtx     = head $ seqMatrix seq' -- I've already checked to make sure there's a matrix
         taxaMap = foldr (\x acc -> M.insert x (succ (M.findWithDefault 0 x acc)) acc) M.empty taxa
-        taxa    = foldr (\x acc -> takeWhile (`notElem` " \t") x : acc) [] mtx
+        taxa    = takeWhile (`notElem` " \t") <$> mtx
 
 -- TODO: This is too similar to getEquates, above. Can they be combined?
 getSymbols :: PhyloSequence -> Either String [String]

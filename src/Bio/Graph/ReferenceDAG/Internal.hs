@@ -90,10 +90,10 @@ data  IndexData e n
 -- * d = graph metadata
 data  GraphData d
     = GraphData
-    { dagCost           :: ExtendedReal
-    , networkEdgeCost   :: ExtendedReal
-    , rootingCost       :: Double
-    , totalBlockCost    :: Double
+    { dagCost           :: {-# UNPACK #-} !ExtendedReal
+    , networkEdgeCost   :: {-# UNPACK #-} !ExtendedReal
+    , rootingCost       :: {-# UNPACK #-} !Double
+    , totalBlockCost    :: {-# UNPACK #-} !Double
     , graphMetadata     :: d
     } deriving (Generic)
 
@@ -402,6 +402,9 @@ undirectedRootEdgeSet dag = foldMap f $ rootRefs dag
 
 -- |
 --
+-- Given two edges, and two functions describing the way to construct new node
+-- values, adds a new edge between the two supplied edges and constructs two
+-- intermediary nodes.
 connectEdge
   :: Monoid e
   => ReferenceDAG d e n
@@ -458,6 +461,8 @@ connectEdge dag originTransform targetTransform (ooRef, otRef) (toRef, ttRef) = 
                 Nothing -> cs
 
 
+-- |
+-- Add a node on the supplied edge, creating two new incident edges.
 invadeEdge
   :: Monoid e
   => ReferenceDAG d e n
@@ -528,9 +533,9 @@ contractToContiguousVertexMapping inputMap = foldMapWithKey contractIndices inpu
 
 
 -- |
--- Overwrite the current graph metadata with a default value.
+-- Set the metadata to a "default" value.
 --
--- Defualt in the function's name is used as a verb, not a noun.
+-- Default in the function's name is used as a verb, not a noun.
 defaultGraphMetadata :: Monoid m => GraphData d -> GraphData m
 defaultGraphMetadata =
     GraphData
@@ -541,6 +546,10 @@ defaultGraphMetadata =
       <*> const mempty
 
 
+-- |
+-- Overwrite the current graph metadata with a default value.
+--
+-- Default in the function's name is used as a verb, not a noun.
 defaultMetadata :: Monoid m => ReferenceDAG d e n -> ReferenceDAG m e n
 defaultMetadata =
     RefDAG
@@ -802,12 +811,14 @@ getNodeType e =
       (2,1) -> NetworkNode
       (p,c) -> error $ "Incoherently constructed graph when determining NodeClassification: parents " <> show p <> " children " <> show c
 
+
 -- |
 -- Use the supplied transformation to fold the Node values of the DAG into a
 -- 'Monoid' result. The fold is *loosely* ordered from *a* root node towards the
 -- leaves.
 nodeFoldMap :: Monoid m => (n -> m) -> ReferenceDAG d e n -> m
 nodeFoldMap f = foldMap f . fmap nodeDecoration . references
+
 
 -- |
 -- Applies a traversal logic function over a 'ReferenceDAG' in a /post-order/ manner.
@@ -1058,6 +1069,9 @@ gen1 x = (pops, show x, kids)
 --}
 
 
+-- |
+-- Exctract a context from the 'ReferenceDAG' that can be used to create a dot
+-- context for rendering.
 getDotContext
   :: Foldable f
   => Int -- ^ Base over which the Unique
@@ -1136,6 +1150,8 @@ candidateNetworkEdges dag = S.filter correctnessCriterion $ foldMapWithKey f mer
 -}
 
 
+-- |
+-- Find all edges adjacent to root nodes.
 tabulateRootIncidentEdgeset :: ReferenceDAG d e n -> EdgeSet (Int,Int)
 tabulateRootIncidentEdgeset dag = foldMap f $ rootRefs dag
   where
@@ -1144,6 +1160,8 @@ tabulateRootIncidentEdgeset dag = foldMap f $ rootRefs dag
         kids = IM.keys . childRefs $ references dag ! i
 
 
+-- |
+-- Gather all paths from a root node to each node in the graph.
 tabulateAncestoralEdgesets :: ReferenceDAG d e n -> ReferenceDAG () (EdgeSet (Int,Int)) ()
 tabulateAncestoralEdgesets dag =
     RefDAG
@@ -1191,6 +1209,8 @@ tabulateAncestoralEdgesets dag =
 --                x:_ -> foldMap (`getPreviousDatums` x) . otoList . parentRefs $ memo ! x
 
 
+-- |
+-- Gather all paths from a leaf node to each node in the graph.
 tabulateDescendantEdgesets :: ReferenceDAG d e n -> ReferenceDAG () (EdgeSet (Int,Int)) ()
 tabulateDescendantEdgesets dag =
     RefDAG
