@@ -449,10 +449,11 @@ overlap costStruct char1 char2
 minimalChoice :: (Bits b, Foldable1 t, Ord c) => t (b, c) -> (b, c)
 minimalChoice = foldl1 f
   where
-    f (!symbol1, !cost1) (!symbol2, !cost2)
-      | cost1 == cost2 = (symbol1 .|. symbol2, cost1)
-      | cost1 <  cost2 = (symbol1            , cost1)
-      | otherwise      = (symbol2            , cost2)
+    f (!symbol1, !cost1) (!symbol2, !cost2) =
+        case cost1 `compare` cost2 of
+          EQ -> (symbol1 .|. symbol2, cost1)
+          LT -> (symbol1            , cost1)
+          GT -> (symbol2            , cost2)
 
 
 -- |
