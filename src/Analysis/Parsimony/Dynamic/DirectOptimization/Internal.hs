@@ -243,7 +243,7 @@ tripleComparison
   -> c
   -> (c, c, c)
 tripleComparison pairwiseAlignment childDecoration parentCharacter parentSingle =
-    trace context () `seq` (ungapped, gapped, single)
+    {- trace context () `seq` -} (ungapped, gapped, single)
   where
     costStructure     = childDecoration ^. symbolChangeMatrix
     childCharacter    = childDecoration ^. preliminaryGapped
@@ -259,12 +259,12 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter parentSingle 
 
     {--}
     context = unlines
-        [ "Center char:"
+        [ ""
+        , "Center char:"
         , showStream alph childCharacter
 --        , showStream alph childAlignment
         , ""
-        , "Parent:"
-        , showStream alph parentSingle
+        , "Parent Final Char:"
         , showStream alph parentCharacter
 --        , showStream alph parentAlignment
         , mconcat [showStream alph extendedParentFinal, " (", show (olength extendedParentFinal), ")"]
@@ -275,7 +275,7 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter parentSingle 
         , mconcat [showStream alph childRightAligned, " (", show (olength childRightAligned), ")"]
         , mconcat [showStream alph extendedRightCharacter1, " (", show (olength extendedRightCharacter1), ")"]
         , ""
-        , "Single char:"
+        , "Parent Single char:"
         , showStream alph parentSingle
 --        , showStream alph singleAlignment
         , mconcat [showStream alph extendedParentSingle, " (", show (olength extendedParentSingle), ")"]

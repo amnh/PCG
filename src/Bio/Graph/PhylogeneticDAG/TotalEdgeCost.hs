@@ -60,13 +60,13 @@ totalEdgeCosts
   => (c -> c -> (Word -> Word -> Word) -> (i, c, c, c, c))
   -> PhylogeneticDAG2 e n u v w x y z
   -> NonEmpty [r]
-totalEdgeCosts pariwiseFunction (PDAG2 dag) = applyWeights $ foldlWithKey f initAcc refVec
+totalEdgeCosts pariwiseFunction (PDAG2 dag) = applyWeights $ foldlWithKey f initAcc (trace (referenceRendering dag) refVec)
   where
     refVec = references dag
 
     roots  = rootRefs dag
 
-    pariwiseFunction' lhs rhs tcm = (\(!x,_,_,_,_) -> traceShowId x) $ pariwiseFunction lhs rhs tcm
+    pariwiseFunction' lhs rhs tcm = (\(!x,_,_,_,_) -> {- trace ("Cost " <> show x) -} x) $ pariwiseFunction lhs rhs tcm
 
     initAcc = ((0 <$) . toList . dynamicCharacters) <$> sequencesWLOG
 
@@ -95,8 +95,10 @@ totalEdgeCosts pariwiseFunction (PDAG2 dag) = applyWeights $ foldlWithKey f init
       | key `elem` roots = acc
       | otherwise = ofoldl' g acc applicableNodes
       where
-        adjacentNodes   = IS.map collapseRootEdge $ parentRefs node <> IM.keysSet (childRefs node)
-        applicableNodes = IS.map (\x -> trace (show (key, x)) x) $ IS.filter (> key) adjacentNodes
+        adjacentNodes   = IS.map collapseRootEdge $
+                              ((\x -> trace (unwords ["For Node", show key, "parentRefs", show x]) x) (parentRefs node)) <>
+                              ((\x -> trace (unwords ["For Node", show key,  "childRefs", show x]) x) $ IM.keysSet (childRefs node))
+        applicableNodes = IS.map (\x -> trace ("Edge: " <> show (key, x)) x) $ IS.filter (> key) adjacentNodes
         nodeSequence    = getFields key
 
         -- Folding function for adjacent nodes. Should apply the sum strictly.
@@ -111,7 +113,7 @@ totalEdgeCosts pariwiseFunction (PDAG2 dag) = applyWeights $ foldlWithKey f init
                                              , show (i, key)
                                              , "is invalid!"
                                              , show x
-                                             , "is the indicen node index, so the replacement edge is"
+                                             , "is the incident node index, so the replacement edge is"
                                              , show (x, key)
                                              ]) x) .
                         head . filter (/= key) .  IM.keys . childRefs $ refVec ! i

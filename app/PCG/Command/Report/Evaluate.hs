@@ -127,13 +127,23 @@ showWithTotalEdgeCost
      , HasCharacterWeight x Double
      , HasCharacterWeight y Double
      , HasCharacterWeight z Double
+     , NFData e
+     , NFData n
+     , NFData u
+     , NFData v
+     , NFData w
+     , NFData x
+     , NFData y
+     , NFData z
      ) 
   => PhylogeneticSolution (PhylogeneticDAG2 e n u v w x y z) 
   -> String
 showWithTotalEdgeCost x = unlines
-    [ show $ fmap (totalEdgeCosts naiveDO) . toNonEmpty <$> phylogeneticForests x
-    , show x
+    [ show $ fmap (totalEdgeCosts naiveDO) . toNonEmpty <$> phylogeneticForests x'
+    , show x'
     ]
+  where
+    x' = force x
 
 
 type FileContent = String
