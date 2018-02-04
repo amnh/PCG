@@ -2,13 +2,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../alignCharacters.h"
-#include "../c_code_alloc_setup.h"
-#include "../debug_constants.h"
+#include "../../alignCharacters.h"
+#include "../../c_code_alloc_setup.h"
+#include "../../debug_constants.h"
 // #include "../costMatrix.h"
-#include "../alignmentMatrices.h"
-#include "../ukkCheckp.h"
-#include "../ukkCommon.h"
+#include "../../alignmentMatrices.h"
+#include "../../ukkCheckPoint.h"
+#include "../../ukkCommon.h"
 
 // #define CHAR_CAPACITY 64
 
