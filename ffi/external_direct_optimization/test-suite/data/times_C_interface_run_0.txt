@@ -1,2 +1,0 @@
-Run number 0 time: 9.53674316406e-07
-Average: 9.53674316406e-07
