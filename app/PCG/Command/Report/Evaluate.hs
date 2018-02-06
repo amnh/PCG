@@ -6,12 +6,13 @@ module PCG.Command.Report.Evaluate
   ) where
 
 
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
+import           Analysis.Parsimony.Dynamic.DirectOptimization
 --import           Analysis.ImpliedAlignment.Standard
 --import           Analysis.ImpliedAlignment
 --import           Analysis.Parsimony.Binary.Optimization
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
+import           Bio.Character.Exportable
 --import           Bio.Metadata
 import           Bio.Graph
 import           Bio.Graph.PhylogeneticDAG
@@ -22,6 +23,7 @@ import           Control.Monad.IO.Class
 import           Data.List.NonEmpty
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
+import           Data.TCM.Memoized
 import           PCG.Command.Report
 --import           PCG.Command.Report.DynamicCharacterTable
 import           PCG.Command.Report.GraphViz
@@ -115,10 +117,20 @@ generateOutput _ _ = ErrorCase "Unrecognized 'report' command"
 
 showWithTotalEdgeCost 
   :: ( HasSingleDisambiguation z c
-     , HasSymbolChangeMatrix   z (Word -> Word -> Word)
+     , HasDenseTransitionCostMatrix  z (Maybe DenseTransitionCostMatrix)
+     , HasSparseTransitionCostMatrix z MemoizedCostMatrix
      , EncodableDynamicCharacter c
-     , Ord (Element c), Show e, Show n, Show u
-     , Show v, Show w, Show x, Show y, Show z
+     , Exportable c
+     , Exportable (Element c)
+     , Ord (Element c)
+     , Show e
+     , Show n
+     , Show u
+     , Show v
+     , Show w
+     , Show x
+     , Show y
+     , Show z
      , HasCharacterCost   u Double
      , HasCharacterCost   v Word
      , HasCharacterCost   w Word
@@ -151,7 +163,7 @@ showWithTotalEdgeCost x | trace ("Before Report Rendering: " <>
                                 ) False = undefined
 -}
 showWithTotalEdgeCost x = unlines
-    [ show $ fmap (totalEdgeCosts naiveDO) . toNonEmpty <$> phylogeneticForests x
+    [ show $ fmap totalEdgeCosts . toNonEmpty <$> phylogeneticForests x
     , show x
     ]
 

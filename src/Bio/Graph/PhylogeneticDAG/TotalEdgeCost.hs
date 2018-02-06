@@ -19,10 +19,11 @@ module Bio.Graph.PhylogeneticDAG.TotalEdgeCost
   ) where
 
 
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
+import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Dynamic
--- import           Bio.Character.Encodable.Stream
+import           Bio.Character.Encodable
+import           Bio.Character.Exportable
 import           Bio.Sequence
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
@@ -31,7 +32,6 @@ import           Control.Applicative
 import           Control.DeepSeq
 import           Control.Lens
 import           Control.Monad.State.Lazy
--- import qualified Data.Alphabet      as A
 import           Data.Foldable
 import qualified Data.IntMap        as IM
 import qualified Data.IntSet        as IS
@@ -40,6 +40,7 @@ import           Data.List.NonEmpty        (NonEmpty(..))
 import qualified Data.List.NonEmpty as NE
 import           Data.MonoTraversable
 import           Data.Semigroup
+import           Data.TCM.Memoized
 import           Prelude            hiding (zipWith)
 
 import Debug.Trace
@@ -48,26 +49,30 @@ import Debug.Trace
 -- |
 -- Computes the total edge cost over all the disambiguated final assignments.
 totalEdgeCosts
-  :: ( HasCharacterWeight z r
-     , HasSingleDisambiguation z c
-     , HasSymbolChangeMatrix z (Word -> Word -> Word)
-     , Integral i
-     , Show i
-     , NFData i
+  :: ( EncodableDynamicCharacter c
+     , Exportable c
+     , Exportable (Element c)
+     , HasCharacterWeight            z r
+     , HasDenseTransitionCostMatrix  z (Maybe DenseTransitionCostMatrix)
+     , HasSingleDisambiguation       z c
+     , HasSparseTransitionCostMatrix z MemoizedCostMatrix
+--     , Integral i
+--     , Show i
+--     , NFData i
      , NFData r
      , Num r
+     , Ord (Element c)
      )
-  => (c -> c -> (Word -> Word -> Word) -> (i, c, c, c, c))
-  -> PhylogeneticDAG2 e n u v w x y z
+  => PhylogeneticDAG2 e n u v w x y z
   -> NonEmpty [r]
 --totalEdgeCosts _ (PDAG2 dag) | trace ("Before Total Edge Cost: " <> referenceRendering dag) False = undefined
-totalEdgeCosts pariwiseFunction (PDAG2 dag) = applyWeights $ foldlWithKey f initAcc (trace (referenceRendering dag) refVec)
+totalEdgeCosts (PDAG2 dag) = applyWeights $ foldlWithKey f initAcc (trace (referenceRendering dag) refVec)
   where
     refVec = references dag
 
     roots  = rootRefs dag
 
-    pariwiseFunction' lhs rhs tcm = (\(!x,_,_,_,_) -> {- trace ("Cost " <> show x) -} x) $ pariwiseFunction lhs rhs tcm
+--    pariwiseFunction' lhs rhs tcm = (\(!x,_,_,_,_) -> {- trace ("Cost " <> show x) -} x) $ pariwiseFunction lhs rhs tcm
 
     initAcc = ((0 <$) . toList . dynamicCharacters) <$> sequencesWLOG
 
@@ -79,9 +84,12 @@ totalEdgeCosts pariwiseFunction (PDAG2 dag) = applyWeights $ foldlWithKey f init
 
     weightSequence = (fmap (^. characterWeight) . toList . dynamicCharacters) <$> sequencesWLOG
 
-    tcmSequence = (fmap (^. symbolChangeMatrix) . toList . dynamicCharacters) <$> sequencesWLOG
+--    tcmSequence = (fmap (^. symbolChangeMatrix) . toList . dynamicCharacters) <$> sequencesWLOG
+--    functionSequence = fmap (\tcm x y -> pariwiseFunction' x y tcm) <$> tcmSequence 
 
-    functionSequence = fmap (\tcm x y -> pariwiseFunction' x y tcm) <$> tcmSequence 
+    functionSequence = (fmap getDynamicMetric . toList . dynamicCharacters) <$> sequencesWLOG
+      where
+        getDynamicMetric dec x y = let (!c,_,_,_,_) = selectDynamicMetric dec x y in c
 
 --    showChar = showStream alphabet
 
