@@ -8,8 +8,6 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Containing the master command for unifying all input types: tree, metadata, and sequence
---
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE FlexibleContexts, MonoLocalBinds #-}
@@ -409,13 +407,13 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                     key = topologyRepresentation resInfo
                     val = pure (rootingEdge, characterSequence resInfo)
 
-        -- Once we have invereted the Edge Cost Mapping to be keyed by the
+        -- Once we have inverted the Edge Cost Mapping to be keyed by the
         -- display trees, we can perform a minimization on each display tree
         -- to determine which the minimal rooting edge for each dynamic character
         -- in each block.
         --
         -- It is important to rememebr that since this minimization is performed
-        -- independantly on each display tree, the rooting edges on the display
+        -- independently on each display tree, the rooting edges on the display
         -- tree can all be choosen independantly also.
         deriveMinimalSequenceForDisplayTree
           :: HasBlockCost u v w x y z Word Double
