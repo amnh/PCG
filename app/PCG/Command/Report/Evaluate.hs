@@ -34,21 +34,25 @@ import           PCG.Syntax (Command(..))
 import           Text.XML
 -- import           Text.XML.Light
 
+--import Bio.Graph.ReferenceDAG
+--import Data.Semigroup
+--import Debug.Trace
+
 
 evaluate :: Command -> SearchState -> SearchState
 evaluate (REPORT (ReportCommand format target)) old = do
     stateValue <- force old
     case generateOutput stateValue format of
-     ErrorCase    errMsg  -> fail errMsg
-     MultiStream  streams -> old <* sequenceA (liftIO . uncurry writeFile <$> streams)
-     SingleStream output  ->
-       let op = case target of
-                  OutputToStdout   -> putStr
-                  OutputToFile f w ->
-                    case w of
-                      Append    -> appendFile f
-                      Overwrite ->  writeFile f
-       in  liftIO (op output) *> old
+      ErrorCase    errMsg  -> fail errMsg
+      MultiStream  streams -> old <* sequenceA (liftIO . uncurry writeFile <$> streams)
+      SingleStream output  ->
+        let op = case target of
+                   OutputToStdout   -> putStr
+                   OutputToFile f w ->
+                     case w of
+                       Append    -> appendFile f
+                       Overwrite ->  writeFile f
+        in  liftIO (op output) *> old
 
 evaluate _ _ = fail "Invalid READ command binding"
 
@@ -138,12 +142,18 @@ showWithTotalEdgeCost
      ) 
   => PhylogeneticSolution (PhylogeneticDAG2 e n u v w x y z) 
   -> String
+{-
+showWithTotalEdgeCost x | trace ("Before Report Rendering: " <>
+                                   (unlines . fmap
+                                      (unlines . fmap (\(PDAG2 dag) -> referenceRendering dag) . toList
+                                      ) $ toList (toNonEmpty <$> phylogeneticForests x)
+                                   )
+                                ) False = undefined
+-}
 showWithTotalEdgeCost x = unlines
-    [ show $ fmap (totalEdgeCosts naiveDO) . toNonEmpty <$> phylogeneticForests x'
-    , show x'
+    [ show $ fmap (totalEdgeCosts naiveDO) . toNonEmpty <$> phylogeneticForests x
+    , show x
     ]
-  where
-    x' = force x
 
 
 type FileContent = String

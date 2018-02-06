@@ -55,7 +55,7 @@ import qualified Data.Vector           as VE
 import           Data.Vector.Instances        ()
 import           Prelude               hiding (lookup, zip, zipWith)
 
--- import Debug.Trace
+--import Debug.Trace
   
 
 type BlockTopologies = NonEmpty TraversalTopology
@@ -84,6 +84,7 @@ preorderSequence''
   -> (z -> [(Word, z')] -> z')
   -> PhylogeneticDAG2 e n u  v  w  x  y  z
   -> PhylogeneticDAG2 e n u' v' w' x' y' z'
+--preorderSequence'' _ _ _ _ _ _ (PDAG2 dag) | trace ("Before Pre-order: " <> referenceRendering dag) False = undefined
 preorderSequence'' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
   where
     refs          = references dag
@@ -439,6 +440,7 @@ preorderFromRooting''
   -> NonEmpty (TraversalTopology, r, r, Vector (NonEmpty TraversalFocusEdge))
   -> PhylogeneticDAG2 e' n' u' v' w' x' y' z
   -> PhylogeneticDAG2 e' n' u' v' w' x' y' z'
+--preorderFromRooting'' _ _ _ _ (PDAG2 dag) | trace ("Before Pre-order From Rooting: " <> referenceRendering dag) False = undefined
 preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopologyContextPerBlock (PDAG2 dag) = PDAG2 $ newDAG dag
   where
     newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> defaultGraphMetadata . graphData

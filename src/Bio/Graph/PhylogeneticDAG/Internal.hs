@@ -356,3 +356,4 @@ resolutionsDoNotOverlap x y = popCount (leafSetRepresentation x .&. leafSetRepre
 discardCharacters :: PhylogeneticDAG2 e n u v w x y z -> ReferenceDAG () e n
 discardCharacters (PDAG2 x) = defaultMetadata $ nodeDecorationDatum2 <$> x
 
+

@@ -279,7 +279,7 @@ instance Foldable f => ToNewick (ReferenceDAG d e (f String)) where
 
         namedVec = zipWith (\x n -> n { nodeDecoration = x }) labelVec vec
         labelVec = (`evalState` (1,1,1)) $ mapM deriveLabel vec -- All network nodes have "htu\d" as nodeDecoration.
-        deriveLabel :: Foldable f => IndexData e (f String) -> State (Int,Int,Int) String
+        deriveLabel :: Foldable f => IndexData e (f String) -> State (Int, Int, Int) String
         deriveLabel node =
             case toList $ nodeDecoration node of
               x:_ -> pure x
@@ -311,7 +311,7 @@ instance ToXML (GraphData m) where
 
 
 -- | (✔)
-instance (ToXML n) => ToXML (IndexData e n) where
+instance ToXML n => ToXML (IndexData e n) where
 
    toXML indexData = toXML $ nodeDecoration indexData
    -- ("Node_type", show $ getNodeType indexData)

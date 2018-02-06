@@ -60,6 +60,7 @@ totalEdgeCosts
   => (c -> c -> (Word -> Word -> Word) -> (i, c, c, c, c))
   -> PhylogeneticDAG2 e n u v w x y z
   -> NonEmpty [r]
+--totalEdgeCosts _ (PDAG2 dag) | trace ("Before Total Edge Cost: " <> referenceRendering dag) False = undefined
 totalEdgeCosts pariwiseFunction (PDAG2 dag) = applyWeights $ foldlWithKey f initAcc (trace (referenceRendering dag) refVec)
   where
     refVec = references dag
@@ -96,8 +97,8 @@ totalEdgeCosts pariwiseFunction (PDAG2 dag) = applyWeights $ foldlWithKey f init
       | otherwise = ofoldl' g acc applicableNodes
       where
         adjacentNodes   = IS.map collapseRootEdge $
-                              ((\x -> trace (unwords ["For Node", show key, "parentRefs", show x]) x) (parentRefs node)) <>
-                              ((\x -> trace (unwords ["For Node", show key,  "childRefs", show x]) x) $ IM.keysSet (childRefs node))
+                              ({- (\x -> trace (unwords ["For Node", show key, "parentRefs", show x]) x) -} (parentRefs node)) <>
+                              ({- (\x -> trace (unwords ["For Node", show key,  "childRefs", show x]) x) $ -} IM.keysSet (childRefs node))
         applicableNodes = IS.map (\x -> trace ("Edge: " <> show (key, x)) x) $ IS.filter (> key) adjacentNodes
         nodeSequence    = getFields key
 
