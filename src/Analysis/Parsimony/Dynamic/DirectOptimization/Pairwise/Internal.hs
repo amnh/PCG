@@ -101,7 +101,7 @@ type Cost = ExtendedNatural
 -- A representation of an alignment matrix for DO.
 -- The matrix itself stores tuples of the cost and direction at that position.
 -- We also store a vector of characters that are generated.
-type NeedlemanWunchMatrix s = Matrix (Cost, Direction, s)
+type NeedlemanWunchMatrix e = Matrix (Cost, Direction, e)
 
 
 -- |

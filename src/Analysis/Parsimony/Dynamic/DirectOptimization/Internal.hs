@@ -22,8 +22,10 @@
 module Analysis.Parsimony.Dynamic.DirectOptimization.Internal where
 
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
+import           Analysis.Parsimony.Dynamic.SequentialAlign
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
+import           Bio.Character.Exportable
 import           Control.Lens
 import           Data.Bits
 import           Data.Foldable
@@ -33,6 +35,7 @@ import           Data.Key
 import           Data.List.NonEmpty (NonEmpty( (:|) ))
 import           Data.List.Utility  (invariantTransformation)
 import           Data.Semigroup
+import           Data.TCM.Memoized
 import           Data.MonoTraversable
 import           Data.Word
 import           Prelude     hiding (lookup, zipWith)
@@ -53,6 +56,38 @@ import Debug.Trace
 --
 -- The fifth  result in the tuple is the second input aligned with respect to the first.
 type PairwiseAlignment s = s -> s -> (Word, s, s, s, s)
+
+
+
+-- |
+-- sequentialAlignOverride, iff True forces seqAlign to run; otherwise, DO runs.
+sequentialAlignOverride :: Bool
+sequentialAlignOverride = False
+
+
+-- |
+-- Select the most appropriate direct optimization metric implementation.
+selectDynamicMetric
+  :: ( EncodableDynamicCharacter c
+     , Exportable c
+     , Exportable (Element c)
+     , HasDenseTransitionCostMatrix  dec (Maybe DenseTransitionCostMatrix)
+     , HasSparseTransitionCostMatrix dec MemoizedCostMatrix
+     , Ord (Element c)
+     )
+  => dec
+  -> c
+  -> c
+  -> (Word, c, c, c, c)
+selectDynamicMetric candidate
+  | sequentialAlignOverride = sequentialAlign sTCM
+  | otherwise =
+      case candidate ^. denseTransitionCostMatrix of
+        Just dm -> \x y -> foreignPairwiseDO x y dm
+        Nothing -> let !sTCM' = getMedianAndCost sTCM
+                   in  \x y -> ukkonenDO x y sTCM'
+  where
+    !sTCM = candidate ^. sparseTransitionCostMatrix
 
 
 -- |
@@ -243,7 +278,7 @@ tripleComparison
   -> c
   -> (c, c, c)
 tripleComparison pairwiseAlignment childDecoration parentCharacter parentSingle =
-    {- trace context () `seq` -} (ungapped, gapped, single)
+    trace context () `seq` (ungapped, gapped, single)
   where
     costStructure     = childDecoration ^. symbolChangeMatrix
     childCharacter    = childDecoration ^. preliminaryGapped

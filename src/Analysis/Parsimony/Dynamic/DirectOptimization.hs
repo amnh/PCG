@@ -29,6 +29,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization
   , naiveDO
   , naiveDOConst
   , naiveDOMemo
+  , selectDynamicMetric
   , ukkonenDO
   ) where
 
