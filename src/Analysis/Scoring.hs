@@ -39,6 +39,7 @@ import           Control.Lens
 import           Data.EdgeLength
 import qualified Data.List.NonEmpty as NE
 import           Data.MonoTraversable      (Element)
+import           Data.TCM.Memoized
 
 
 -- |
@@ -183,6 +184,7 @@ chooseDirectOptimizationComparison
   :: ( SimpleDynamicDecoration d  c
      , SimpleDynamicDecoration d' c
      , Exportable c
+     , Exportable (Element c)
 --     , Show c
      , Ord (Element c)
      )
@@ -193,24 +195,15 @@ chooseDirectOptimizationComparison
   -> (Word, c, c, c, c)
 chooseDirectOptimizationComparison dec decs =
     case decs of
-      []  -> selectBranch dec
-      x:_ -> selectBranch x
-  where
---    selectBranch x | trace (show . length $ x ^. characterAlphabet) False = undefined
-    selectBranch candidate
-      | sequentialAlignOverride = sequentialAlign (candidate ^. sparseTransitionCostMatrix)
-      | otherwise =
-          case candidate ^. denseTransitionCostMatrix of
-            Just  d -> \x y -> foreignPairwiseDO x y d
-            Nothing ->
-              let !scm = (candidate ^. symbolChangeMatrix)
-              in \x y -> naiveDO x y scm
+      []  -> selectDynamicMetric dec
+      x:_ -> selectDynamicMetric x
 
 
 chooseDirectOptimizationComparison2
   :: ( SimpleDynamicDecoration d  c
      , SimpleDynamicDecoration d' c
      , Exportable c
+     , Exportable (Element c)
 --     , Show c
      , Ord (Element c)
      )
@@ -221,18 +214,8 @@ chooseDirectOptimizationComparison2
   -> (Word, c, c, c, c)
 chooseDirectOptimizationComparison2 dec decs =
     case decs of
-      []  -> selectBranch dec
-      (_,x):_ -> selectBranch x
-  where
---    selectBranch x | trace (show . length $ x ^. characterAlphabet) False = undefined
-    selectBranch candidate
-      | sequentialAlignOverride = sequentialAlign (candidate ^. sparseTransitionCostMatrix)
-      | otherwise =
-          case candidate ^. denseTransitionCostMatrix of
-            Just  d -> \x y -> foreignPairwiseDO x y d
-            Nothing ->
-              let !scm = (candidate ^. symbolChangeMatrix)
-              in \x y -> naiveDO x y scm
+      []      -> selectDynamicMetric dec
+      (_,x):_ -> selectDynamicMetric x
 
 
 -- |

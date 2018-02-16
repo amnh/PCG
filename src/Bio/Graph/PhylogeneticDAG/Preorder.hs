@@ -55,7 +55,7 @@ import qualified Data.Vector           as VE
 import           Data.Vector.Instances        ()
 import           Prelude               hiding (lookup, zip, zipWith)
 
--- import Debug.Trace
+--import Debug.Trace
   
 
 type BlockTopologies = NonEmpty TraversalTopology
@@ -84,6 +84,7 @@ preorderSequence''
   -> (z -> [(Word, z')] -> z')
   -> PhylogeneticDAG2 e n u  v  w  x  y  z
   -> PhylogeneticDAG2 e n u' v' w' x' y' z'
+--preorderSequence'' _ _ _ _ _ _ (PDAG2 dag) | trace ("Before Pre-order: " <> referenceRendering dag) False = undefined
 preorderSequence'' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
   where
     refs          = references dag
@@ -421,7 +422,7 @@ selectApplicableResolutions topology cache =
 -- Different contexts used to mediate an effcient multidimensional traversal.
 data  PreorderContext c
     = NormalNode   Int
-    | SetRootNode  Int
+    | SetRootNode  c
     | FociEdgeNode Int c
 
 
@@ -439,6 +440,7 @@ preorderFromRooting''
   -> NonEmpty (TraversalTopology, r, r, Vector (NonEmpty TraversalFocusEdge))
   -> PhylogeneticDAG2 e' n' u' v' w' x' y' z
   -> PhylogeneticDAG2 e' n' u' v' w' x' y' z'
+--preorderFromRooting'' _ _ _ _ (PDAG2 dag) | trace ("Before Pre-order From Rooting: " <> referenceRendering dag) False = undefined
 preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopologyContextPerBlock (PDAG2 dag) = PDAG2 $ newDAG dag
   where
     newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> defaultGraphMetadata . graphData
@@ -511,7 +513,7 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
                       where
                         isExcludedEdge = (n1,n2) `elem` excludedEdges || (n2,n1) `elem` excludedEdges
                         currentVal
-                          | n2 `oelem` rootSet = IM.singleton n2 $ SetRootNode n1
+                          | n2 `oelem` rootSet = IM.singleton n2 $ SetRootNode virtualRootDatum
                           | n1 `oelem` rootSet =
                                          case toList . headMay . filter (/=n2) . IM.keys . childRefs $ refs ! n1 of
                                            x:_ -> IM.singleton n2 $ NormalNode x
@@ -582,7 +584,8 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
 
                     dynCharGen k _ =
                         case parentRefContext of
-                          SetRootNode  p   -> updateDynCharWithFoci . getDynCharDecoration . NE.head . resolutions $ memo ! p
+--                          SetRootNode  p   -> updateDynCharWithFoci . getDynCharDecoration . NE.head . resolutions $ memo ! p
+                          SetRootNode  x -> updateDynCharWithFoci $ transformation x []
                           FociEdgeNode p x ->
                             let currentContext     = selectApplicableResolutions topology $ (contextualNodeDatum .!>. i) .!>. (p,i)
                                 currentDecoration  = (!k) . dynamicCharacters . (!j) . toBlockVector . characterSequence $ currentContext

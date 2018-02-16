@@ -92,12 +92,13 @@ class InternalClass a where
 -- |
 -- \( \mathcal{O} \left( n * \log_2 n \right) \)
 alphabetPreprocessing :: (Ord a, InternalClass a, Foldable t) => t a -> NonEmpty a
-alphabetPreprocessing = appendGapSymbol . removeSpecialSymbolsAndDuplicates . toList
+alphabetPreprocessing = appendGapSymbol . sort . removeSpecialSymbolsAndDuplicates . toList
   where
     appendGapSymbol xs =
         case xs of
           []   -> gapSymbol':|[]
           y:ys -> y:|(ys <> [gapSymbol'])
+
     removeSpecialSymbolsAndDuplicates = (`evalState` mempty) . filterM f
       where
         f x
@@ -231,6 +232,12 @@ instance Ord a => Eq (Alphabet a) where
 
 
 instance Foldable Alphabet where
+
+    {-# INLINE toList #-}
+    toList = toList . symbolVector
+
+    {-# INLINE foldMap #-}
+    foldMap f = foldMap f . symbolVector
 
     {-# INLINE foldr #-}
     foldr  f e = foldr  f e . symbolVector
