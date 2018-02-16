@@ -17,7 +17,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Internal where
 
@@ -34,10 +34,12 @@ import qualified Data.IntMap as IM
 import           Data.Key
 import           Data.List.NonEmpty (NonEmpty( (:|) ))
 import           Data.List.Utility  (invariantTransformation)
+import           Data.Ord           (comparing)
 import           Data.Semigroup
 import           Data.TCM.Memoized
 import           Data.MonoTraversable
 import           Data.Word
+import           Numeric.Extended.Natural
 import           Prelude     hiding (lookup, zipWith)
 
 import Debug.Trace
@@ -96,7 +98,7 @@ selectDynamicMetric candidate
 -- Parameterized over a 'PairwiseAlignment' function to allow for different
 -- atomic alignments depending on the character's metadata.
 directOptimizationPostOrder
-  :: (SimpleDynamicDecoration d c)
+  :: SimpleDynamicDecoration d c
   => PairwiseAlignment c
   -> d
   -> [DynamicDecorationDirectOptimizationPostOrderResult c]
@@ -130,7 +132,8 @@ initializeLeaf =
 -- Use the decoration(s) of the descendant nodes to calculate the currect node
 -- decoration. The recursive logic of the post-order traversal.
 updateFromLeaves
-  :: (EncodableDynamicCharacter c)
+  :: ( EncodableDynamicCharacter c
+     )
   => PairwiseAlignment c
   -> NonEmpty (DynamicDecorationDirectOptimizationPostOrderResult c)
   -> DynamicDecorationDirectOptimizationPostOrderResult c
@@ -149,7 +152,12 @@ updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) = resultDecoration
 -- Parameterized over a 'PairwiseAlignment' function to allow for different
 -- atomic alignments depending on the character's metadata.
 directOptimizationPreOrder
-  :: (DirectOptimizationPostOrderDecoration d c {- , Show c -} , Show (Element c))
+  :: ( DirectOptimizationPostOrderDecoration d c
+     , EncodedAmbiguityGroupContainer c
+     , Exportable (Element c)
+     , Show c
+     , Show (Element c)
+     )
   => PairwiseAlignment c
   -> d
   -> [(Word, DynamicDecorationDirectOptimization c)]
@@ -238,7 +246,13 @@ disambiguateFromParent {- pGaps cGaps -} pSingle cFinal = result
 -- Use the decoration(s) of the ancestoral nodes to calculate the currect node
 -- decoration. The recursive logic of the pre-order traversal.
 updateFromParent
-  :: (EncodableDynamicCharacter c, DirectOptimizationPostOrderDecoration d c , {-- Show c, --} Show (Element c))
+  :: ( DirectOptimizationPostOrderDecoration d c
+     , EncodableDynamicCharacter c
+     , EncodedAmbiguityGroupContainer c
+     , Exportable (Element c)
+   --  , Show c
+     , Show (Element c)
+     )
   => PairwiseAlignment c
   -> d
   -> DynamicDecorationDirectOptimization c
@@ -271,19 +285,32 @@ updateFromParent pairwiseAlignment currentDecoration parentDecoration = resultDe
 -- |
 -- A three way comparison of characters used in the DO preorder traversal.
 tripleComparison
-  :: ( {- EncodableDynamicCharacter c, -} DirectOptimizationPostOrderDecoration d c, {- Show c, -} Show (Element c))
+  :: ( {- EncodableDynamicCharacter c, -}Exportable (Element c), DirectOptimizationPostOrderDecoration d c, EncodedAmbiguityGroupContainer c, {- Show c, -} Show (Element c))
   => PairwiseAlignment c
   -> d
   -> c
   -> c
   -> (c, c, c)
 tripleComparison pairwiseAlignment childDecoration parentCharacter parentSingle =
-    trace context () `seq` (ungapped, gapped, single)
+   {-  trace context () `seq` -} (ungapped, gapped, single)
   where
-    costStructure     = childDecoration ^. symbolChangeMatrix
     childCharacter    = childDecoration ^. preliminaryGapped
     childLeftAligned  = childDecoration ^. leftAlignment
     childRightAligned = childDecoration ^. rightAlignment
+
+    -- We conditionally decide how to get derive the metric
+    -- If we are working with large alphabets we use the memoized TCM.
+    -- Otherwise with a small alphabet, we use the naive calcualtions.
+    --
+    -- We do this so that we don't allocate and begin using a memoized TCM
+    -- for all characters regardless of alphabet size on the pre-order.
+    -- If we have a small alphabet, there will not have been a call to
+    -- initialize a memoized TCM. We certainly don't want to force that here!
+    costStructure =
+      case childDecoration ^. denseTransitionCostMatrix of
+        Nothing -> getMedianAndCost (childDecoration ^. sparseTransitionCostMatrix)
+        Just _  -> let !scm = childDecoration ^. symbolChangeMatrix
+                   in \x y -> getOverlap x y scm
 
     single = lexicallyDisambiguate $ filterGaps almostSingle
     (_, ungapped, gapped)  = threeWayMean costStructure extendedParentFinal  extendedLeftCharacter1 extendedRightCharacter1
@@ -295,8 +322,10 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter parentSingle 
     {--}
     context = unlines
         [ ""
-        , "Center char:"
+        , "Center char (prelim/final/single):"
         , showStream alph childCharacter
+        , showStream alph ungapped
+        , showStream alph single
 --        , showStream alph childAlignment
         , ""
         , "Parent Final Char:"
@@ -410,22 +439,38 @@ insertNewGaps insertionIndicies character = constructDynamic . (<> trailingGaps)
 -- |
 -- Calculates the mean character and cost between three supplied characters.
 threeWayMean
-  :: EncodableDynamicCharacter c
-  => (Word -> Word -> Word)
+  :: ( EncodableDynamicCharacter c
+     , EncodedAmbiguityGroupContainer c
+     )
+  => (Element c -> Element c -> (Element c, Word))
   -> c
   -> c
   -> c
   -> (Word, c, c)
-threeWayMean costStructure char1 char2 char3 =
+threeWayMean sigma char1 char2 char3 =
   case invariantTransformation olength [char1, char2, char3] of
     Nothing -> error $ unwords [ "Three sequences supplied to 'threeWayMean' function did not have uniform length.", show (olength char1), show (olength char2), show (olength char3) ]
-    Just 0  -> (0, char2, char3)
-    Just _  -> (sum costValues, constructDynamic $ filter (/= gap) meanStates, constructDynamic meanStates)
+    Just 0  -> (0, char1, char1)
+    Just _  -> (unsafeToFinite $ sum costValues, constructDynamic $ filter (/= gap) meanStates, constructDynamic meanStates)
   where
-    gap = getGapElement $ char1 `indexStream` 0
+    gap = gapOfStream char1
+    zed = gap `xor` gap
+    singletonStates = (zed `setBit`) <$> [0 .. fromEnum (symbolCount char1) - 1]
     (meanStates, costValues) = unzip $ zipWith3 f (otoList char1) (otoList char2) (otoList char3)
-    f a b c = minimalChoice $
-              getOverlap a b costStructure :|
-            [ getOverlap a c costStructure
-            , getOverlap b c costStructure
+    f a b c = foldl' g (zed, infinity :: ExtendedNatural) singletonStates
+      where
+        g acc@(combinedState, curentMinCost) singleState =
+            case combinedCost `compare` curentMinCost of
+              EQ -> (combinedState .|. singleState, curentMinCost)
+              LT -> (                  singleState, combinedCost)
+              GT -> acc
+          where
+            combinedCost = fromFinite . sum $ (snd . sigma singleState) <$> [a, b, c]
+      
+{-
+f a b c = minimalChoice $
+              sigma a b  :|
+            [ sigma a c
+            , sigma b c
             ]
+-}
