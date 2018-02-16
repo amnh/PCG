@@ -89,7 +89,7 @@ totalEdgeCosts (PDAG2 dag) = applyWeights $ foldlWithKey f initAcc (trace (refer
 
     functionSequence = (fmap getDynamicMetric . toList . dynamicCharacters) <$> sequencesWLOG
       where
-        getDynamicMetric dec x y = let (!c,_,_,_,_) = selectDynamicMetric dec x y in c
+        getDynamicMetric dec x y = let (!c,_,_,_,_) = selectDynamicMetric dec x y in trace ("Cost " <> show c) c
 
 --    showChar = showStream alphabet
 
