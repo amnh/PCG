@@ -43,7 +43,7 @@ import           Data.Semigroup
 import           Data.TCM.Memoized
 import           Prelude            hiding (zipWith)
 
-import Debug.Trace
+--import Debug.Trace
 
 
 -- |
@@ -66,7 +66,7 @@ totalEdgeCosts
   => PhylogeneticDAG2 e n u v w x y z
   -> NonEmpty [r]
 --totalEdgeCosts _ (PDAG2 dag) | trace ("Before Total Edge Cost: " <> referenceRendering dag) False = undefined
-totalEdgeCosts (PDAG2 dag) = applyWeights $ foldlWithKey f initAcc (trace (referenceRendering dag) refVec)
+totalEdgeCosts (PDAG2 dag) = applyWeights $ foldlWithKey f initAcc refVec
   where
     refVec = references dag
 
@@ -89,7 +89,7 @@ totalEdgeCosts (PDAG2 dag) = applyWeights $ foldlWithKey f initAcc (trace (refer
 
     functionSequence = (fmap getDynamicMetric . toList . dynamicCharacters) <$> sequencesWLOG
       where
-        getDynamicMetric dec x y = let (!c,_,_,_,_) = selectDynamicMetric dec x y in trace ("Cost " <> show c) c
+        getDynamicMetric dec x y = let (!c,_,_,_,_) = selectDynamicMetric dec x y in {- trace ("Cost " <> show c) -} c
 
 --    showChar = showStream alphabet
 
@@ -107,7 +107,7 @@ totalEdgeCosts (PDAG2 dag) = applyWeights $ foldlWithKey f initAcc (trace (refer
         adjacentNodes   = IS.map collapseRootEdge $
                               ({- (\x -> trace (unwords ["For Node", show key, "parentRefs", show x]) x) -} (parentRefs node)) <>
                               ({- (\x -> trace (unwords ["For Node", show key,  "childRefs", show x]) x) $ -} IM.keysSet (childRefs node))
-        applicableNodes = IS.map (\x -> trace ("Edge: " <> show (key, x)) x) $ IS.filter (> key) adjacentNodes
+        applicableNodes = {- IS.map (\x -> trace ("Edge: " <> show (key, x)) x) $ -} IS.filter (> key) adjacentNodes
         nodeSequence    = getFields key
 
         -- Folding function for adjacent nodes. Should apply the sum strictly.
@@ -117,7 +117,7 @@ totalEdgeCosts (PDAG2 dag) = applyWeights $ foldlWithKey f initAcc (trace (refer
         
         collapseRootEdge i
           | i `notElem` roots = i
-          | otherwise = (\x-> trace (unwords [ show i
+          | otherwise = {- (\x-> trace (unwords [ show i
                                              , " is a root index, so the edge"
                                              , show (i, key)
                                              , "is invalid!"
@@ -125,5 +125,6 @@ totalEdgeCosts (PDAG2 dag) = applyWeights $ foldlWithKey f initAcc (trace (refer
                                              , "is the incident node index, so the replacement edge is"
                                              , show (x, key)
                                              ]) x) .
+                        -}
                         head . filter (/= key) .  IM.keys . childRefs $ refVec ! i
             

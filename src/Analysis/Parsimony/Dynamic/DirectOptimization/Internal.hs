@@ -42,7 +42,7 @@ import           Data.Word
 import           Numeric.Extended.Natural
 import           Prelude     hiding (lookup, zipWith)
 
-import Debug.Trace
+-- import Debug.Trace
 
 
 -- |
