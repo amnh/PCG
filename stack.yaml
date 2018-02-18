@@ -30,7 +30,7 @@ packages:
   - location:  https://github.com/ekmett/reflection/archive/eaa190c.zip
     extra-dep: true
 
-resolver: lts-10.0
+resolver: lts-10.5
 #resolver: nightly-2017-11-23
 
 system-ghc: false
