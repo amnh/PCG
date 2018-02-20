@@ -6,12 +6,13 @@ module PCG.Command.Report.Evaluate
   ) where
 
 
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
+import           Analysis.Parsimony.Dynamic.DirectOptimization
 --import           Analysis.ImpliedAlignment.Standard
 --import           Analysis.ImpliedAlignment
 --import           Analysis.Parsimony.Binary.Optimization
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
+import           Bio.Character.Exportable
 --import           Bio.Metadata
 import           Bio.Graph
 import           Bio.Graph.PhylogeneticDAG
@@ -22,6 +23,7 @@ import           Control.Monad.IO.Class
 import           Data.List.NonEmpty
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
+import           Data.TCM.Memoized
 import           PCG.Command.Report
 --import           PCG.Command.Report.DynamicCharacterTable
 import           PCG.Command.Report.GraphViz
@@ -34,21 +36,25 @@ import           PCG.Syntax (Command(..))
 import           Text.XML
 -- import           Text.XML.Light
 
+--import Bio.Graph.ReferenceDAG
+--import Data.Semigroup
+--import Debug.Trace
+
 
 evaluate :: Command -> SearchState -> SearchState
 evaluate (REPORT (ReportCommand format target)) old = do
     stateValue <- force old
     case generateOutput stateValue format of
-     ErrorCase    errMsg  -> fail errMsg
-     MultiStream  streams -> old <* sequenceA (liftIO . uncurry writeFile <$> streams)
-     SingleStream output  ->
-       let op = case target of
-                  OutputToStdout   -> putStr
-                  OutputToFile f w ->
-                    case w of
-                      Append    -> appendFile f
-                      Overwrite ->  writeFile f
-       in  liftIO (op output) *> old
+      ErrorCase    errMsg  -> fail errMsg
+      MultiStream  streams -> old <* sequenceA (liftIO . uncurry writeFile <$> streams)
+      SingleStream output  ->
+        let op = case target of
+                   OutputToStdout   -> putStr
+                   OutputToFile f w ->
+                     case w of
+                       Append    -> appendFile f
+                       Overwrite ->  writeFile f
+        in  liftIO (op output) *> old
 
 evaluate _ _ = fail "Invalid READ command binding"
 
@@ -111,10 +117,20 @@ generateOutput _ _ = ErrorCase "Unrecognized 'report' command"
 
 showWithTotalEdgeCost 
   :: ( HasSingleDisambiguation z c
-     , HasSymbolChangeMatrix   z (Word -> Word -> Word)
+     , HasDenseTransitionCostMatrix  z (Maybe DenseTransitionCostMatrix)
+     , HasSparseTransitionCostMatrix z MemoizedCostMatrix
      , EncodableDynamicCharacter c
-     , Ord (Element c), Show e, Show n, Show u
-     , Show v, Show w, Show x, Show y, Show z
+     , Exportable c
+     , Exportable (Element c)
+     , Ord (Element c)
+     , Show e
+     , Show n
+     , Show u
+     , Show v
+     , Show w
+     , Show x
+     , Show y
+     , Show z
      , HasCharacterCost   u Double
      , HasCharacterCost   v Word
      , HasCharacterCost   w Word
@@ -127,11 +143,27 @@ showWithTotalEdgeCost
      , HasCharacterWeight x Double
      , HasCharacterWeight y Double
      , HasCharacterWeight z Double
+     , NFData e
+     , NFData n
+     , NFData u
+     , NFData v
+     , NFData w
+     , NFData x
+     , NFData y
+     , NFData z
      ) 
   => PhylogeneticSolution (PhylogeneticDAG2 e n u v w x y z) 
   -> String
+{-
+showWithTotalEdgeCost x | trace ("Before Report Rendering: " <>
+                                   (unlines . fmap
+                                      (unlines . fmap (\(PDAG2 dag) -> referenceRendering dag) . toList
+                                      ) $ toList (toNonEmpty <$> phylogeneticForests x)
+                                   )
+                                ) False = undefined
+-}
 showWithTotalEdgeCost x = unlines
-    [ show $ fmap (totalEdgeCosts naiveDO) . toNonEmpty <$> phylogeneticForests x
+    [ show $ fmap totalEdgeCosts . toNonEmpty <$> phylogeneticForests x
     , show x
     ]
 

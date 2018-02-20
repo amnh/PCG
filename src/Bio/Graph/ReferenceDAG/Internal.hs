@@ -202,15 +202,13 @@ instance PhylogeneticComponent (ReferenceDAG d e n) NodeRef e n where
 
     edgeDatum (i,j) dag =  fromEnum j `lookup` childRefs (references dag ! fromEnum i)
 
-    -- TODO: Broken
-    isComponentNode i dag = olength ps > 2
-      where
-        ps = parentRefs $ references dag ! fromEnum i
+    isComponentNode = isNetworkNode 
 
-    -- TODO: Broken
-    isNetworkNode i dag = olength ps > 2
+    isNetworkNode i dag = olength ps == 2 && length cs == 1
       where
-        ps = parentRefs $ references dag ! fromEnum i
+        iPoint = references dag ! fromEnum i
+        ps = parentRefs iPoint
+        cs = childRefs  iPoint
 
     isTreeNode i dag = olength ps == 1 && length cs == 2
       where
@@ -222,7 +220,6 @@ instance PhylogeneticComponent (ReferenceDAG d e n) NodeRef e n where
 
     isRootNode i dag = onull . parentRefs $ references dag ! fromEnum i
 
-    -- TODO: Broken
     networkResolutions = pure
 
 
@@ -282,7 +279,7 @@ instance Foldable f => ToNewick (ReferenceDAG d e (f String)) where
 
         namedVec = zipWith (\x n -> n { nodeDecoration = x }) labelVec vec
         labelVec = (`evalState` (1,1,1)) $ mapM deriveLabel vec -- All network nodes have "htu\d" as nodeDecoration.
-        deriveLabel :: Foldable f => IndexData e (f String) -> State (Int,Int,Int) String
+        deriveLabel :: Foldable f => IndexData e (f String) -> State (Int, Int, Int) String
         deriveLabel node =
             case toList $ nodeDecoration node of
               x:_ -> pure x
@@ -314,7 +311,7 @@ instance ToXML (GraphData m) where
 
 
 -- | (✔)
-instance (ToXML n) => ToXML (IndexData e n) where
+instance ToXML n => ToXML (IndexData e n) where
 
    toXML indexData = toXML $ nodeDecoration indexData
    -- ("Node_type", show $ getNodeType indexData)
@@ -954,8 +951,8 @@ fromList xs =
 --
 -- 3. A list of child edge decorations and corresponding descendent values
 unfoldDAG :: (Eq a, Hashable a, Monoid e, Monoid n)
-          => (a -> ([(e,a)], n, [(e,a)])) -- ^ Unfolding function
-          -> a                            -- ^ Seed value
+          => (a -> ([(e, a)], n, [(e, a)])) -- ^ Unfolding function
+          -> a                              -- ^ Seed value
           -> ReferenceDAG () e n
 unfoldDAG f origin =
     RefDAG

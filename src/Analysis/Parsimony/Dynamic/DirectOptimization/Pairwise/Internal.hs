@@ -101,7 +101,7 @@ type Cost = ExtendedNatural
 -- A representation of an alignment matrix for DO.
 -- The matrix itself stores tuples of the cost and direction at that position.
 -- We also store a vector of characters that are generated.
-type NeedlemanWunchMatrix s = Matrix (Cost, Direction, s)
+type NeedlemanWunchMatrix e = Matrix (Cost, Direction, e)
 
 
 -- |
@@ -449,10 +449,11 @@ overlap costStruct char1 char2
 minimalChoice :: (Bits b, Foldable1 t, Ord c) => t (b, c) -> (b, c)
 minimalChoice = foldl1 f
   where
-    f (!symbol1, !cost1) (!symbol2, !cost2)
-      | cost1 == cost2 = (symbol1 .|. symbol2, cost1)
-      | cost1 <  cost2 = (symbol1            , cost1)
-      | otherwise      = (symbol2            , cost2)
+    f (!symbol1, !cost1) (!symbol2, !cost2) =
+        case cost1 `compare` cost2 of
+          EQ -> (symbol1 .|. symbol2, cost1)
+          LT -> (symbol1            , cost1)
+          GT -> (symbol2            , cost2)
 
 
 -- |
@@ -477,18 +478,20 @@ symbolDistances costStruct char1 char2 = costAndSymbol <$> allSymbols
         cost2 = getDistance i char2
 
     symbolIndices = NE.fromList [0 .. finiteBitSize char1 - 1]
-    allSymbols    = (toEnum &&&  setBit zero) <$> symbolIndices
+    allSymbols    = (toEnum &&& setBit zero) <$> symbolIndices
     zero          = char1 `xor` char1
 
     getDistance :: FiniteBits b => Word -> b -> Word
     getDistance i e = minimum $ costStruct i <$> getSetBits e
 
     getSetBits :: FiniteBits b => b -> NonEmpty Word
-    getSetBits x =
-        case filter (x `testBit`) [0 .. finiteBitSize x - 1] of
+    getSetBits b =
+        case filter (b `testBit`) indices of
           x:xs -> toEnum <$> x:|xs
           []   -> error $ "There were no bits set in the character: " <>
-                    show (foldMap (\b -> if x `testBit` b then "1" else "0") [0 .. finiteBitSize x - 1])
+                    show (foldMap (\i -> if b `testBit` i then "1" else "0") indices)
+      where
+        indices = [0 .. finiteBitSize b - 1]
 
 
 -- |
