@@ -172,6 +172,7 @@ data DimensionsFormat
    , numChars :: Int
    } deriving (Show)
 
+-- | Where any information that should be ignored is stored.
 newtype IgnBlock = IgnBlock {ignoredName :: String} deriving (Show)
 
 -- | The collection of information extracted from blocks in the Nexus file.
@@ -193,6 +194,7 @@ data NexusBlock
    | AssumptionsBlock AssumptionBlock
    deriving (Show)
 
+-- | The output type of the Nexus parser, containing the results of each block in the file, sorted by type.
 data NexusParseResult
    = NexusParseResult
    { pSeqs   :: [PhyloSequence]
@@ -246,9 +248,13 @@ data TaxaSpecification
    , taxaLabels :: [String]
    } deriving (Show)
 
+-- |
 type TreeName       = String
+
+-- |
 type SerializedTree = String
 
+-- |
 data TreeBlock
    = TreeBlock
    { translate :: [[String]]

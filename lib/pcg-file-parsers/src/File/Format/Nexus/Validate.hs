@@ -116,6 +116,8 @@ import           Text.Megaparsec.Custom
 -- • check for gap treatment, possibly replace with missing
 -- • symbol order in TCM should be the same as symbol order in alphabet representation
 
+--|
+
 validateNexusParseResult :: (MonadParsec e s m {- , Show s, Token s ~ Char -}) => NexusParseResult -> m Nexus
 validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumptions _ignored)
   | null inputSeqBlocks && null taxas && null treeSet = fails ["There are no usable blocks in this file."] -- error 1
