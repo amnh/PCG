@@ -97,7 +97,7 @@ instance Ord CharacterName where
   lhs `compare` rhs = strCmp lhs rhs
 
 
--- Used internally for orderign logic after special cases are checked.
+-- Used internally for ordering logic after special cases are checked.
 strCmp :: Show a => a -> a -> Ordering
 strCmp lhs rhs = show lhs `compare` show rhs
 
