@@ -13,7 +13,7 @@ import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
 import           Bio.Character.Exportable
---import           Bio.Metadata
+import           Bio.Metadata.CharacterName
 import           Bio.Graph
 import           Bio.Graph.PhylogeneticDAG
 import           Control.DeepSeq
@@ -137,12 +137,19 @@ showWithTotalEdgeCost
      , HasCharacterCost   x Word
      , HasCharacterCost   y Word
      , HasCharacterCost   z Word
+     , HasCharacterName   u CharacterName
+     , HasCharacterName   v CharacterName
+     , HasCharacterName   w CharacterName
+     , HasCharacterName   x CharacterName
+     , HasCharacterName   y CharacterName
+     , HasCharacterName   z CharacterName
      , HasCharacterWeight u Double
      , HasCharacterWeight v Double
      , HasCharacterWeight w Double
      , HasCharacterWeight x Double
      , HasCharacterWeight y Double
      , HasCharacterWeight z Double
+     , HasTraversalFoci   z (Maybe TraversalFoci)
      , NFData e
      , NFData n
      , NFData u

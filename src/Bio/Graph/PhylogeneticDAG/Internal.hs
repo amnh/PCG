@@ -14,11 +14,18 @@
 
 {-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, MonoLocalBinds, MultiParamTypeClasses, ScopedTypeVariables #-}
 
+-- Because I'm sick of dealing with the typechecker.
+{-# LANGUAGE UndecidableInstances #-}
+
 module Bio.Graph.PhylogeneticDAG.Internal where
 
+import           Bio.Character.Decoration.Shared
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG.Internal
+import           Bio.Metadata
+import           Bio.Metadata.CharacterName
+import           Bio.Metadata.Dynamic
 import           Bio.Sequence
 import           Control.Applicative              (liftA2)
 import           Control.DeepSeq
@@ -132,7 +139,15 @@ instance ( Show e
 
 
 -- | (✔)
-instance ( Show e
+instance ( HasBlockCost u v w x y z Word Double
+         , HasCharacterName u CharacterName
+         , HasCharacterName v CharacterName
+         , HasCharacterName w CharacterName
+         , HasCharacterName x CharacterName
+         , HasCharacterName y CharacterName
+         , HasCharacterName z CharacterName
+         , HasTraversalFoci z (Maybe TraversalFoci)
+         , Show e
          , Show n
          , Show u
          , Show v
@@ -140,7 +155,6 @@ instance ( Show e
          , Show x
          , Show y
          , Show z
-         , HasBlockCost u v w x y z Word Double
          ) => Show (PhylogeneticDAG2 e n u v w x y z) where
 
     show p@(PDAG2 dag) = unlines
@@ -338,13 +352,100 @@ pairs = f . toList
 
 -- |
 -- Nicely show the DAG information.
-renderSummary :: PhylogeneticDAG2 e n u v w x y z -> String
-renderSummary (PDAG2 dag) = unlines
+renderSummary
+  :: ( HasBlockCost u v w x y z Word Double
+     , HasCharacterName u CharacterName
+     , HasCharacterName v CharacterName
+     , HasCharacterName w CharacterName
+     , HasCharacterName x CharacterName
+     , HasCharacterName y CharacterName
+     , HasCharacterName z CharacterName
+     , HasTraversalFoci z (Maybe TraversalFoci)
+     )
+  => PhylogeneticDAG2 e n u v w x y z
+  -> String
+renderSummary pdag@(PDAG2 dag) = unlines
     [ show dag
     , show $ graphData dag
+    , renderSequenceSummary pdag
     ]
 
 
+renderSequenceSummary
+  :: ( HasBlockCost u v w x y z Word Double
+     , HasCharacterName u CharacterName
+     , HasCharacterName v CharacterName
+     , HasCharacterName w CharacterName
+     , HasCharacterName x CharacterName
+     , HasCharacterName y CharacterName
+     , HasCharacterName z CharacterName
+     , HasTraversalFoci z (Maybe TraversalFoci)
+     )
+  => PhylogeneticDAG2 e n u v w x y z
+  -> String
+renderSequenceSummary pdag@(PDAG2 dag) = ("Sequence Summary\n\n" <>) . unlines $ mapWithKey (renderBlockSummary pdag) sequenceWLOG
+  where
+    refVec = references dag
+    roots  = rootRefs dag
+    
+    sequenceWLOG = getSequence $ NE.head roots
+    getSequence  = otoList . characterSequence . NE.head . resolutions . nodeDecoration . (refVec !)
+    
+
+renderBlockSummary
+  :: ( HasBlockCost u v w x y z Word Double
+     , HasCharacterName u CharacterName
+     , HasCharacterName v CharacterName
+     , HasCharacterName w CharacterName
+     , HasCharacterName x CharacterName
+     , HasCharacterName y CharacterName
+     , HasCharacterName z CharacterName
+     , HasTraversalFoci z (Maybe TraversalFoci)
+     )
+  => PhylogeneticDAG2 e n u v w x y z
+  -> Int
+  -> CharacterBlock u v w x y z
+  -> String
+renderBlockSummary (PDAG2 dag) key block = mconcat . (renderedPrefix:) $
+    [ renderBlockMeta
+    , unlines . fmap renderStaticCharacterSummary  . toList . continuousCharacterBins
+    , unlines . fmap renderStaticCharacterSummary  . toList . nonAdditiveCharacterBins
+    , unlines . fmap renderStaticCharacterSummary  . toList . additiveCharacterBins
+    , unlines . fmap renderStaticCharacterSummary  . toList . metricCharacterBins
+    , unlines . fmap renderStaticCharacterSummary  . toList . nonMetricCharacterBins
+    , unlines . fmap renderDynamicCharacterSummary . toList . dynamicCharacters
+    ] <*> [block]
+  where
+    renderedPrefix = "Block " <> show key <> "\n\n"
+    
+    renderBlockMeta bValue = unlines
+        [ "  Rooting Cost: <Out of scope>"
+        , "  Network Cost: <Out of scope>"
+        , "  Block   Cost: " <> show (blockCost bValue)
+        , "  Total   Cost: " <> show (blockCost bValue) <> " (at least)"
+        , "  Display Tree: " <> inferDisplayTree bValue
+        , ""
+        ]
+        
+    renderStaticCharacterSummary sc = unlines
+        [ "    Name:   " <> show (sc ^. characterName)
+        , "    Weight: " <> show (sc ^. characterWeight)
+        , "    Cost:   " <> show (sc ^. characterCost)
+        ]
+
+    renderDynamicCharacterSummary dc = unlines
+        [ "    Name:   " <> show (dc ^. characterName)
+        , "    Weight: " <> show (dc ^. characterWeight)
+        , "    Cost:   " <> show (dc ^. characterCost)
+        , "    Foci:   " <> (maybe "<Unavailible>" renderFoci $ dc ^. traversalFoci)
+        ]
+      where
+        renderFoci (x:|[]) = show $ fst x
+        renderFoci xs      = show . fmap fst $ toList xs
+
+    inferDisplayTree = const "<To be defined>"
+
+  
 -- |
 -- Assert that two resolutions do not overlap.
 resolutionsDoNotOverlap :: ResolutionInformation a -> ResolutionInformation b -> Bool
