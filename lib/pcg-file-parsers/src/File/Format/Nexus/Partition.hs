@@ -22,7 +22,7 @@ import File.Format.Newick
 import File.Format.Nexus.Data
 
 -- |
--- Takes an 'AssumptionField' list and returns a tuple of of the step matricies
+-- Takes an 'AssumptionField' list and returns a tuple of the step matrices
 -- contained in the input list along with additive boolean flags.
 partitionAssumptionBlock :: [AssumptionField] -> ([StepMatrix],[Bool])
 partitionAssumptionBlock = foldr f ([],[])
@@ -33,7 +33,7 @@ partitionAssumptionBlock = foldr f ([],[])
 
 
 -- |
--- Takes a 'SeqSubBlock' list and partitions the colletive parse results into a
+-- Takes a 'SeqSubBlock' list and partitions the collective parse results into a
 -- 6-tuple of possible result types.
 partitionSequenceBlock :: [SeqSubBlock]
                        -> ( [[String]]         -- A "Stringly-typed" matrix
@@ -66,7 +66,7 @@ partitionTaxaBlock = foldr f (0,[])
 
 
 -- |
--- High level partiotioning function which takes a 'NexusBlock' list and returns
+-- High level partitioning function which takes a 'NexusBlock' list and returns
 -- a 5-tuple containing the well-typed values present in the parsed results.
 partitionNexusBlocks :: [NexusBlock] -> ([PhyloSequence], [TaxaSpecification], [TreeBlock], [AssumptionBlock], [IgnBlock])
 partitionNexusBlocks = foldr f ([],[],[],[],[])
@@ -116,7 +116,7 @@ partitionCharFormat = foldr f (Standard, Right [""], Right [""], "", "", "", "",
 
 -- |
 -- Partitions tree block results into translation and forest results.
-partitionTreeBlock :: [TreeField] -> ([[String]], [(String,NewickNode)])
+partitionTreeBlock :: [TreeField] -> ([[String]], [(String, NewickNode)])
 partitionTreeBlock = foldr f ([],[])
     where
         f (Translation n) (ys,zs) = (n:ys,   zs)

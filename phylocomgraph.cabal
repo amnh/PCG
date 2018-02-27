@@ -107,7 +107,7 @@ library
   extra-libraries: stdc++
 
   if  flag(build-cpp-files)
-    cc-options: --std=c++11 -g 
+    cc-options: --std=c++11 -g
   else
     cc-options: --std=c11
                 -pedantic
