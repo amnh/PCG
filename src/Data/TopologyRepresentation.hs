@@ -24,6 +24,7 @@ module Data.TopologyRepresentation
   , mutuallyExclusivePairs
   -- * Comparison
   , isCompatableWithTopology
+  , isEdgePermissibleWith
   ) where
 
 
@@ -154,3 +155,11 @@ mutuallyExclusivePairs = MES.mutuallyExclusivePairs . unwrap
 {-# INLINE isCompatableWithTopology #-}
 isCompatableWithTopology :: Ord a => TopologyRepresentation a -> TopologyRepresentation a -> Bool
 isCompatableWithTopology ts = MES.isPermissible (unwrap ts) . unwrap
+
+
+-- |
+-- \( \mathcal{O} \left( \log_2 ( n ) \right) \)
+--
+-- Determine if an edge is compatible with a topology.
+isEdgePermissibleWith :: Ord a => a -> TopologyRepresentation a -> Bool
+isEdgePermissibleWith e = not . (e `MES.isExcluded`) . unwrap

@@ -355,6 +355,9 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter parentSingle 
     {--}
 
 
+-- |
+-- Given a node, it's parent, and it's children; this function aligns the dynamic
+-- characters around the current node.
 alignAroundCurrentNode
   :: EncodableDynamicCharacter c
   => PairwiseAlignment c

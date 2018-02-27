@@ -97,8 +97,8 @@ assignPunitiveNetworkEdgeCost
      , HasTraversalFoci z (Maybe TraversalFoci)
      )
   => PhylogeneticDAG2 e n u v w x y z
-  -> (NonEmpty (TraversalTopology, r, r, Vector (NonEmpty TraversalFocusEdge)), PhylogeneticDAG2 e n u v w x y z)
-assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = (minimalDisplayForestPerBlockContext, PDAG2 $ dag { graphData = newGraphData })
+  -> (NonEmpty (TraversalTopology, r, r, r, Vector (NonEmpty TraversalFocusEdge)), PhylogeneticDAG2 e n u v w x y z)
+assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = (outputContext, PDAG2 $ dag { graphData = newGraphData })
   where
     -- First grab all the valid display forests present in the DAG.
     displayForests =
@@ -126,11 +126,12 @@ assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = (minimalDisplayForestPerBlockC
 
     -- With all the requisite information in scope we can now compute the
     -- punative network edge cost for the DAG.
-    punativeCost = calculatePunitiveNetworkEdgeCost
-                     edgeSetSize
-                     networkEdgeSet
-                     mostParsimoniousDisplayForest
-                     minimalDisplayForestPerBlock
+    (punativeCost, splitPunativeCosts) =
+        calculatePunitiveNetworkEdgeCost
+          edgeSetSize
+          networkEdgeSet
+          mostParsimoniousDisplayForest
+          minimalDisplayForestPerBlock
 
     -- We also accumulate the cost of all the character blocks accros the display forests.
     cumulativeCharacterCost = sum $ (\(_,_,c) -> c) <$> minimalDisplayForestPerBlock
@@ -140,6 +141,11 @@ assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = (minimalDisplayForestPerBlockC
 
     -- And lastly the total DAG cost
     totalCost = punativeCost + realToFrac cumulativeCharacterCost + realToFrac cumulativeRootCost
+
+    -- And store all the minimization work in a context to be returned.
+    outputContext = zipWith f splitPunativeCosts minimalDisplayForestPerBlockContext
+      where
+        f x (a, b, c, d) = (a, b, x, c, d)
 
     newGraphData  =
         GraphData        
@@ -277,6 +283,7 @@ extractMinimalDisplayForestPerBlock displayForests = minimalBlockContexts
 calculatePunitiveNetworkEdgeCost
   :: ( Foldable f
 --     , Num r
+     , Floating r
      , Real r
      , Ord e
      )
@@ -284,13 +291,13 @@ calculatePunitiveNetworkEdgeCost
   -> f e                                       -- ^ Complete collection of network edges in the DAG
   -> (TopologyRepresentation e, r, r)          -- ^ Most parsimonious display forest context
   -> NonEmpty (TopologyRepresentation e, r, r) -- ^ Minimal display forest context for each character block
-  -> ExtendedReal
+  -> (ExtendedReal, NonEmpty r)
 calculatePunitiveNetworkEdgeCost edgeSetCardinality networkEdgeSet parsimoniousContext minimalContexts
   | not (null extraneousEdges) = -- trace ("Extraneous edges: " <> show extraneousEdges)
                                  -- . trace ("Entire     edges: " <> show entireNetworkEdgeSet)
                                  -- . trace ("Minimal Block edges: " <> show ((\(_,_,x) -> collapseToEdgeSet x) <$> minimalBlockNetworkDisplay)) $
-                                  infinity
-  | otherwise                  = realToFrac numerator / realToFrac denominator
+                                 (infinity, 0 <$ minimalContexts)
+  | otherwise                  = (realToFrac $ sum punativeCostPerBlock, punativeCostPerBlock)
   where
     -- First we determine if there are extraneous network edges in the DAG
     -- 
@@ -312,9 +319,14 @@ calculatePunitiveNetworkEdgeCost edgeSetCardinality networkEdgeSet parsimoniousC
         differenceEdgeSet         = minimalBlockEdgeSet `difference` mostParsimoniousNetworkEdgeSet
         minimalBlockEdgeSet       = includedNetworkEdges topo
 
+    -- Then we apply the punative edge cost to each character block
+    punativeCostPerBlock = (/ divisor) . punativeEdgeCost <$> minimalContexts
+      where
+        divisor = realToFrac $ 2 * edgeSetCardinality
+
     -- The numerator is the sum of the punative network edge cost for each block.
-    numerator   = sum $ punativeEdgeCost <$> minimalContexts
-    denominator = 2 * edgeSetCardinality
+--    numerator   = sum $ punativeEdgeCost <$> minimalContexts
+--    denominator = 2 * edgeSetCardinality
     
 
 -- |

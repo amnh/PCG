@@ -13,7 +13,7 @@ import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
 import           Bio.Character.Exportable
---import           Bio.Metadata
+import           Bio.Metadata.CharacterName
 import           Bio.Graph
 import           Bio.Graph.PhylogeneticDAG
 import           Control.DeepSeq
@@ -122,9 +122,10 @@ showWithTotalEdgeCost
      , EncodableDynamicCharacter c
      , Exportable c
      , Exportable (Element c)
+     , Foldable f
      , Ord (Element c)
      , Show e
-     , Show n
+     , Show (f String)
      , Show u
      , Show v
      , Show w
@@ -137,14 +138,21 @@ showWithTotalEdgeCost
      , HasCharacterCost   x Word
      , HasCharacterCost   y Word
      , HasCharacterCost   z Word
+     , HasCharacterName   u CharacterName
+     , HasCharacterName   v CharacterName
+     , HasCharacterName   w CharacterName
+     , HasCharacterName   x CharacterName
+     , HasCharacterName   y CharacterName
+     , HasCharacterName   z CharacterName
      , HasCharacterWeight u Double
      , HasCharacterWeight v Double
      , HasCharacterWeight w Double
      , HasCharacterWeight x Double
      , HasCharacterWeight y Double
      , HasCharacterWeight z Double
+     , HasTraversalFoci   z (Maybe TraversalFoci)
      , NFData e
-     , NFData n
+     , NFData (f String)
      , NFData u
      , NFData v
      , NFData w
@@ -152,7 +160,7 @@ showWithTotalEdgeCost
      , NFData y
      , NFData z
      ) 
-  => PhylogeneticSolution (PhylogeneticDAG2 e n u v w x y z) 
+  => PhylogeneticSolution (PhylogeneticDAG2 e (f String) u v w x y z) 
   -> String
 {-
 showWithTotalEdgeCost x | trace ("Before Report Rendering: " <>
