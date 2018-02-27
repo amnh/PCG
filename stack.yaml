@@ -1,6 +1,6 @@
 allow-newer: true
 
-compiler: ghc-8.4.0.20180118
+compiler: ghc-8.4.0.20180224
 
 compiler-check: match-exact
 
@@ -24,26 +24,41 @@ packages:
   - location:  https://github.com/ivan-m/graphviz/archive/a099a07.zip
     extra-dep: true
 
-  - location:  https://github.com/haskell/primitive/archive/53f72ce.zip
-    extra-dep: true
+#  - location:  https://github.com/haskell/primitive/archive/53f72ce.zip
+#    extra-dep: true
 
-  - location:  https://github.com/ekmett/reflection/archive/eaa190c.zip
-    extra-dep: true
+#  - location:  https://github.com/ekmett/reflection/archive/eaa190c.zip
+#    extra-dep: true
 
-resolver: lts-10.5
-#resolver: nightly-2017-11-23
+resolver: ghc-8.4.0.20180224
 
 system-ghc: false
 
 setup-info:
   ghc:
-    linux64:
-      8.4.0.20180118:
-        url: https://downloads.haskell.org/~ghc/8.4.1-alpha2/ghc-8.4.0.20180118-x86_64-deb8-linux.tar.xz
-    macosx:
-      8.4.0.20180118:
-        url: https://downloads.haskell.org/~ghc/8.4.1-alpha2/ghc-8.4.0.20180118-x86_64-apple-darwin.tar.xz
     windows64:
-      8.4.0.20180118:
-        url: https://downloads.haskell.org/~ghc/8.4.1-alpha2/ghc-8.4.0.20180118-x86_64-apple-darwin.tar.xz
+      8.4.0.20180224:
+        url: https://downloads.haskell.org/~ghc/8.4.1-rc1/ghc-8.4.0.20180224-x86_64-unknown-mingw32.tar.xz
+        sha256: 7d125b3bbaa2ec4022215787a259a41bf944ec02736c9555f2a19432eef21cad
+    linux64:
+      8.4.0.20180224:
+        url: https://downloads.haskell.org/~ghc/8.4.1-rc1/ghc-8.4.0.20180224-x86_64-unknown-linux.tar.xz
+        sha256: 34240b8055e81f78a58becd1351ce03235e1bb3fd14c419a7e97631514a780ad
+    macosx:
+      8.4.0.20180224:
+        url: https://downloads.haskell.org/~ghc/8.4.1-rc1/ghc-8.4.0.20180224-x86_64-apple-darwin.tar.xz
+        sha256: 4cf1afc5c6672e4628ba84c775a081fc4cf08bddd07f30fcc57d909fc5939c06
+    windows32:
+      8.4.0.20180224:
+        url: https://downloads.haskell.org/~ghc/8.4.1-rc1/ghc-8.4.0.20180224-i386-unknown-mingw32.tar.xz
+        sha256: 28799a8ceee197a050fa1ef0740a78b01bf93b13f5a7b8e7ef5061b231c270dc
+
+#    linux32-nopie:
+#      8.4.0.20180224:
+#        url: https://downloads.haskell.org/~ghc/8.4.1-rc1/ghc-8.4.0.20180224-i386-deb8-linux.tar.xz
+#        sha256: ce2f7583c64b700b22281a488e9a950ee50ec756a83520e3360748f67e14bfa2
+#    linux64-nopie:
+#      8.4.0.20180224:
+#        url: https://downloads.haskell.org/~ghc/8.4.1-rc1/ghc-8.4.0.20180224-x86_64-deb8-linux.tar.xz
+#        sha256: a83b57a600b513f689716e98b53badfb2e2aa1117bff7c5bab12c07854eecb07
 
