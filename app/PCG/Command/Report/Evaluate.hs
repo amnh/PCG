@@ -122,9 +122,10 @@ showWithTotalEdgeCost
      , EncodableDynamicCharacter c
      , Exportable c
      , Exportable (Element c)
+     , Foldable f
      , Ord (Element c)
      , Show e
-     , Show n
+     , Show (f String)
      , Show u
      , Show v
      , Show w
@@ -151,7 +152,7 @@ showWithTotalEdgeCost
      , HasCharacterWeight z Double
      , HasTraversalFoci   z (Maybe TraversalFoci)
      , NFData e
-     , NFData n
+     , NFData (f String)
      , NFData u
      , NFData v
      , NFData w
@@ -159,7 +160,7 @@ showWithTotalEdgeCost
      , NFData y
      , NFData z
      ) 
-  => PhylogeneticSolution (PhylogeneticDAG2 e n u v w x y z) 
+  => PhylogeneticSolution (PhylogeneticDAG2 e (f String) u v w x y z) 
   -> String
 {-
 showWithTotalEdgeCost x | trace ("Before Report Rendering: " <>

@@ -35,6 +35,7 @@ import           Data.Foldable
 import           Data.GraphViz.Printing    hiding ((<>)) -- Seriously, why is this redefined?
 import           Data.GraphViz.Types
 import           Data.HashMap.Lazy                (HashMap)
+import qualified Data.IntMap               as IM
 import           Data.IntSet                      (IntSet)
 import qualified Data.IntSet               as IS
 import           Data.Key
@@ -46,6 +47,7 @@ import           Data.Maybe                       (fromMaybe)
 import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
+import           Data.TopologyRepresentation
 import           Data.Vector                      (Vector)
 import           GHC.Generics
 import           Text.Newick.Class
@@ -142,7 +144,8 @@ instance ( Show e
 
 
 -- | (✔)
-instance ( HasBlockCost u v w x y z Word Double
+instance ( Foldable f
+         , HasBlockCost u v w x y z Word Double
          , HasCharacterName u CharacterName
          , HasCharacterName v CharacterName
          , HasCharacterName w CharacterName
@@ -151,14 +154,14 @@ instance ( HasBlockCost u v w x y z Word Double
          , HasCharacterName z CharacterName
          , HasTraversalFoci z (Maybe TraversalFoci)
          , Show e
-         , Show n
+         , Show (f String)
          , Show u
          , Show v
          , Show w
          , Show x
          , Show y
          , Show z
-         ) => Show (PhylogeneticDAG2 e n u v w x y z) where
+         ) => Show (PhylogeneticDAG2 e (f String) u v w x y z) where
 
     show p@(PDAG2 dag) = unlines
         [ renderSummary p
@@ -356,7 +359,8 @@ pairs = f . toList
 -- |
 -- Nicely show the DAG information.
 renderSummary
-  :: ( HasBlockCost u v w x y z Word Double
+  :: ( Foldable f
+     , HasBlockCost u v w x y z Word Double
      , HasCharacterName u CharacterName
      , HasCharacterName v CharacterName
      , HasCharacterName w CharacterName
@@ -365,7 +369,7 @@ renderSummary
      , HasCharacterName z CharacterName
      , HasTraversalFoci z (Maybe TraversalFoci)
      )
-  => PhylogeneticDAG2 e n u v w x y z
+  => PhylogeneticDAG2 e (f String) u v w x y z
   -> String
 renderSummary pdag@(PDAG2 dag) = unlines
     [ show dag
@@ -377,7 +381,8 @@ renderSummary pdag@(PDAG2 dag) = unlines
 -- |
 -- Render a "summary" of a sequence consisting of a summary for each block
 renderSequenceSummary
-  :: ( HasBlockCost u v w x y z Word Double
+  :: ( Foldable f
+     , HasBlockCost u v w x y z Word Double
      , HasCharacterName u CharacterName
      , HasCharacterName v CharacterName
      , HasCharacterName w CharacterName
@@ -386,7 +391,7 @@ renderSequenceSummary
      , HasCharacterName z CharacterName
      , HasTraversalFoci z (Maybe TraversalFoci)
      )
-  => PhylogeneticDAG2 e n u v w x y z
+  => PhylogeneticDAG2 e (f String) u v w x y z
   -> String
 renderSequenceSummary pdag@(PDAG2 dag) = ("Sequence Summary\n\n" <>) . unlines $ mapWithKey (renderBlockSummary pdag) sequenceContext
   where
@@ -421,7 +426,8 @@ renderSequenceSummary pdag@(PDAG2 dag) = ("Sequence Summary\n\n" <>) . unlines $
 --   * brief summary of each character in the block
 --
 renderBlockSummary
-  :: ( HasBlockCost u v w x y z Word Double
+  :: ( Foldable f
+     , HasBlockCost u v w x y z Word Double
      , HasCharacterName u CharacterName
      , HasCharacterName v CharacterName
      , HasCharacterName w CharacterName
@@ -430,7 +436,7 @@ renderBlockSummary
      , HasCharacterName z CharacterName
      , HasTraversalFoci z (Maybe TraversalFoci)
      )
-  => PhylogeneticDAG2 e n u v w x y z
+  => PhylogeneticDAG2 e (f String) u v w x y z
   -> Int
   -> (Maybe Double, Maybe Double, Maybe TraversalTopology, CharacterBlock u v w x y z)
   -> String
@@ -451,7 +457,7 @@ renderBlockSummary (PDAG2 dag) key (rootingCost, networkingCost, displayMay, blo
         , "  Network Cost: " <> maybe "<Unavailible>" show networkingCost
         , "  Block   Cost: " <> show (blockCost bValue)
         , "  Total   Cost: " <> show totalCost
-        , "  Display Tree: " <> inferDisplayForest bValue
+        , "  Display Tree: " <> inferDisplayForest
         , ""
         ]
       where
@@ -477,10 +483,39 @@ renderBlockSummary (PDAG2 dag) key (rootingCost, networkingCost, displayMay, blo
         renderFoci (x:|[]) = show $ fst x
         renderFoci xs      = show . fmap fst $ toList xs
 
-    inferDisplayForest =
-        case displayMay of
-          Nothing -> const "<Unavailible>"
-          Just df -> const "<Not yet rendered>"
+    inferDisplayForest = maybe "<Unavailible>" renderFunction displayMay
+
+    renderFunction = renderDisplayForestNewick (nodeDecorationDatum2 <$> dag)
+
+
+-- |
+-- Render a display forest to a newick string.
+renderDisplayForestNewick :: Foldable f => ReferenceDAG d e (f String) -> TraversalTopology -> String
+renderDisplayForestNewick dag topo = unlines $ renderDisplayTree <$> toList (rootRefs dag)
+  where
+    refVec = references dag
+    
+    renderDisplayTree :: Int -> String
+    renderDisplayTree nodeIdx =
+      case kidRefs of
+        []    -> renderLeaf nodeIdx $ nodeDecoration nodeVal
+        [x]   -> renderDisplayTree x
+        x:y:_ -> let x' = renderDisplayTree x
+                     y' = renderDisplayTree y
+                     (l, r) -- Do this to bias parens right
+                       | openParensIn x' > openParensIn y' = (y', x')
+                       | otherwise                         = (x', y')
+                 in mconcat ["(", l, ",", r, ")"]
+      where
+        nodeVal = refVec ! nodeIdx
+        kidRefs = filter (\i -> (nodeIdx, i) `isEdgePermissibleWith` topo) . IM.keys $ childRefs nodeVal
+
+        openParensIn = length . filter (== '(')
+
+    renderLeaf k v =
+        case toList v of
+          []  -> show k
+          [x] -> x
 
   
 -- |
