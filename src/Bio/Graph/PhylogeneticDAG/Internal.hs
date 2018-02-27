@@ -38,9 +38,11 @@ import           Data.HashMap.Lazy                (HashMap)
 import           Data.IntSet                      (IntSet)
 import qualified Data.IntSet               as IS
 import           Data.Key
+import           Data.List                        (zip4)
 import           Data.List.NonEmpty               (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty        as NE
 import           Data.List.Utility
+import           Data.Maybe                       (fromMaybe)
 import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
@@ -372,6 +374,8 @@ renderSummary pdag@(PDAG2 dag) = unlines
     ]
 
 
+-- |
+-- Render a "summary" of a sequence consisting of a summary for each block
 renderSequenceSummary
   :: ( HasBlockCost u v w x y z Word Double
      , HasCharacterName u CharacterName
@@ -391,15 +395,31 @@ renderSequenceSummary pdag@(PDAG2 dag) = ("Sequence Summary\n\n" <>) . unlines $
     
     sequenceWLOG   = getSequence $ NE.head roots
     getSequence    = otoList . characterSequence . NE.head . resolutions . nodeDecoration . (refVec !)
-    displayForests = (\(_,_,x) -> fmap (fmap (\(y,_,_,_) -> y)) x) . graphMetadata $ graphData dag
+    displayForests = (\(_,_,x) -> fmap (fmap (\(y,r,n,_) -> (r,n,y))) x) . graphMetadata $ graphData dag
 
     sequenceContext =
         case displayForests of
-          Nothing -> (\x -> (Nothing, x)) <$> sequenceWLOG
-          Just x  -> zip (Just <$> toList x) sequenceWLOG
+          Nothing  -> (\x -> (Nothing, Nothing, Nothing, x)) <$> sequenceWLOG
+          Just ctx -> let (a,b,c) = unzip3 $ toList ctx
+                      in  zip4 (Just <$> a) (Just <$> b) (Just <$> c) sequenceWLOG
       
     
-
+-- |
+-- Render a block's "summary" in a legible manner.
+-- Includes:
+--
+--   * cost incurred from the rooting context
+--
+--   * cost incurred from the network context
+--
+--   * cumulative cost of all characters in the block
+--
+--   * total cost of the block
+--
+--   * display forest of the block
+--
+--   * brief summary of each character in the block
+--
 renderBlockSummary
   :: ( HasBlockCost u v w x y z Word Double
      , HasCharacterName u CharacterName
@@ -412,9 +432,9 @@ renderBlockSummary
      )
   => PhylogeneticDAG2 e n u v w x y z
   -> Int
-  -> (Maybe TraversalTopology, CharacterBlock u v w x y z)
+  -> (Maybe Double, Maybe Double, Maybe TraversalTopology, CharacterBlock u v w x y z)
   -> String
-renderBlockSummary (PDAG2 dag) key (displayMay, block) = mconcat . (renderedPrefix:) $
+renderBlockSummary (PDAG2 dag) key (rootingCost, networkingCost, displayMay, block) = mconcat . (renderedPrefix:) $
     [ renderBlockMeta
     , unlines . fmap renderStaticCharacterSummary  . toList . continuousCharacterBins
     , unlines . fmap renderStaticCharacterSummary  . toList . nonAdditiveCharacterBins
@@ -425,15 +445,21 @@ renderBlockSummary (PDAG2 dag) key (displayMay, block) = mconcat . (renderedPref
     ] <*> [block]
   where
     renderedPrefix = "Block " <> show key <> "\n\n"
-    
+
     renderBlockMeta bValue = unlines
-        [ "  Rooting Cost: <Out of scope>"
-        , "  Network Cost: <Out of scope>"
+        [ "  Rooting Cost: " <> maybe "<Unavailible>" show rootingCost
+        , "  Network Cost: " <> maybe "<Unavailible>" show networkingCost
         , "  Block   Cost: " <> show (blockCost bValue)
-        , "  Total   Cost: " <> show (blockCost bValue) <> " (at least)"
+        , "  Total   Cost: " <> show totalCost
         , "  Display Tree: " <> inferDisplayForest bValue
         , ""
         ]
+      where
+        totalCost = sum
+          [ fromMaybe 0 rootingCost
+          , fromMaybe 0 networkingCost
+          , blockCost bValue
+          ]
         
     renderStaticCharacterSummary sc = unlines
         [ "    Name:   " <> show (sc ^. characterName)
