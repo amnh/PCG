@@ -85,7 +85,7 @@ newtype PhylogeneticDAG2 e n u v w x y z
      = PDAG2 ( ReferenceDAG
                  (         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
                  , Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
-                 , Maybe  (NonEmpty (TraversalTopology, Double, Double, Vector (NonEmpty TraversalFocusEdge)))
+                 , Maybe  (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge)))
                  )
                  e
                  (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
@@ -395,7 +395,7 @@ renderSequenceSummary pdag@(PDAG2 dag) = ("Sequence Summary\n\n" <>) . unlines $
     
     sequenceWLOG   = getSequence $ NE.head roots
     getSequence    = otoList . characterSequence . NE.head . resolutions . nodeDecoration . (refVec !)
-    displayForests = (\(_,_,x) -> fmap (fmap (\(y,r,n,_) -> (r,n,y))) x) . graphMetadata $ graphData dag
+    displayForests = (\(_,_,x) -> fmap (fmap (\(y,r,n,_,_) -> (r,n,y))) x) . graphMetadata $ graphData dag
 
     sequenceContext =
         case displayForests of

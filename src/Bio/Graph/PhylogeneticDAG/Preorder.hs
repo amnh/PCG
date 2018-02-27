@@ -437,7 +437,7 @@ preorderFromRooting''
   => (z -> [(Word, z')] -> z')
   ->         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
   -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
-  -> NonEmpty (TraversalTopology, Double, Double, Vector (NonEmpty TraversalFocusEdge))
+  -> NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge))
   -> PhylogeneticDAG2 e' n' u' v' w' x' y' z
   -> PhylogeneticDAG2 e' n' u' v' w' x' y' z'
 --preorderFromRooting'' _ _ _ _ (PDAG2 dag) | trace ("Before Pre-order From Rooting: " <> referenceRendering dag) False = undefined
@@ -506,7 +506,7 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
         --
         -- Right is a reference to the parent index in the DAG.
 --        delta :: (Keyed f, Keyed v, Foldable r) => f (TraversalTopology, v (r TraversalFocusEdge)) -> f (v (IntMap (Either (c, Int) Int)))
-        delta = mapWithKey (\k (topo, _, _, v) -> mapWithKey (f topo k) v)
+        delta = mapWithKey (\k (topo, _, _, _, v) -> mapWithKey (f topo k) v)
           where
             f topo blockIndex charIndex = foldMap epsilon
               where
@@ -572,7 +572,7 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
                 updatedCharacterSequence = fromBlockVector . mapWithKey blockGen . toBlockVector $ characterSequence resInfo
                 blockGen j block = block { dynamicCharacters = updatedDynamicCharacters }
                   where
-                    (topology,_,_,minEdgesVector) = minTopologyContextPerBlock ! j
+                    (topology,_,_,_,minEdgesVector) = minTopologyContextPerBlock ! j
                     excludedEdges = excludedNetworkEdges topology
                     updatedDynamicCharacters = mapWithKey dynCharGen $ dynamicCharacters block
 
