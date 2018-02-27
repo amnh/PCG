@@ -48,7 +48,7 @@ import           Data.Vector                      (Vector)
 import           GHC.Generics
 import           Text.Newick.Class
 import           Text.XML
-
+import           Prelude                   hiding (zip)
 
 -- |
 -- Wrapper for ReferenceDAG (deprecated)
@@ -384,13 +384,20 @@ renderSequenceSummary
      )
   => PhylogeneticDAG2 e n u v w x y z
   -> String
-renderSequenceSummary pdag@(PDAG2 dag) = ("Sequence Summary\n\n" <>) . unlines $ mapWithKey (renderBlockSummary pdag) sequenceWLOG
+renderSequenceSummary pdag@(PDAG2 dag) = ("Sequence Summary\n\n" <>) . unlines $ mapWithKey (renderBlockSummary pdag) sequenceContext
   where
     refVec = references dag
     roots  = rootRefs dag
     
-    sequenceWLOG = getSequence $ NE.head roots
-    getSequence  = otoList . characterSequence . NE.head . resolutions . nodeDecoration . (refVec !)
+    sequenceWLOG   = getSequence $ NE.head roots
+    getSequence    = otoList . characterSequence . NE.head . resolutions . nodeDecoration . (refVec !)
+    displayForests = (\(_,_,x) -> fmap (fmap (\(y,_,_,_) -> y)) x) . graphMetadata $ graphData dag
+
+    sequenceContext =
+        case displayForests of
+          Nothing -> (\x -> (Nothing, x)) <$> sequenceWLOG
+          Just x  -> zip (Just <$> toList x) sequenceWLOG
+      
     
 
 renderBlockSummary
@@ -405,9 +412,9 @@ renderBlockSummary
      )
   => PhylogeneticDAG2 e n u v w x y z
   -> Int
-  -> CharacterBlock u v w x y z
+  -> (Maybe TraversalTopology, CharacterBlock u v w x y z)
   -> String
-renderBlockSummary (PDAG2 dag) key block = mconcat . (renderedPrefix:) $
+renderBlockSummary (PDAG2 dag) key (displayMay, block) = mconcat . (renderedPrefix:) $
     [ renderBlockMeta
     , unlines . fmap renderStaticCharacterSummary  . toList . continuousCharacterBins
     , unlines . fmap renderStaticCharacterSummary  . toList . nonAdditiveCharacterBins
@@ -424,7 +431,7 @@ renderBlockSummary (PDAG2 dag) key block = mconcat . (renderedPrefix:) $
         , "  Network Cost: <Out of scope>"
         , "  Block   Cost: " <> show (blockCost bValue)
         , "  Total   Cost: " <> show (blockCost bValue) <> " (at least)"
-        , "  Display Tree: " <> inferDisplayTree bValue
+        , "  Display Tree: " <> inferDisplayForest bValue
         , ""
         ]
         
@@ -444,7 +451,10 @@ renderBlockSummary (PDAG2 dag) key block = mconcat . (renderedPrefix:) $
         renderFoci (x:|[]) = show $ fst x
         renderFoci xs      = show . fmap fst $ toList xs
 
-    inferDisplayTree = const "<To be defined>"
+    inferDisplayForest =
+        case displayMay of
+          Nothing -> const "<Unavailible>"
+          Just df -> const "<Not yet rendered>"
 
   
 -- |
