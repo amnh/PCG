@@ -89,7 +89,7 @@ preorderSequence'' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
   where
     refs          = references dag
     dagSize       = length $ references dag
-    newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> defaultGraphMetadata . graphData
+    newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> constructDefaultMetadata
     newReferences = VE.generate dagSize g
       where
         g i = IndexData <$> const (memo ! i) <*> parentRefs <*> childRefs $ refs ! i
@@ -209,7 +209,7 @@ preorderSequence'
   -> PhylogeneticDAG2 e n u' v' w' x' y' z'
 preorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
   where
-    newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> defaultGraphMetadata . graphData
+    newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> constructDefaultMetadata
     dagSize       = length $ references dag
     newReferences = VE.generate dagSize g
       where
@@ -437,17 +437,27 @@ preorderFromRooting''
   => (z -> [(Word, z')] -> z')
   ->         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
   -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
-  -> NonEmpty (TraversalTopology, r, r, Vector (NonEmpty TraversalFocusEdge))
+  -> NonEmpty (TraversalTopology, Double, Double, Vector (NonEmpty TraversalFocusEdge))
   -> PhylogeneticDAG2 e' n' u' v' w' x' y' z
   -> PhylogeneticDAG2 e' n' u' v' w' x' y' z'
 --preorderFromRooting'' _ _ _ _ (PDAG2 dag) | trace ("Before Pre-order From Rooting: " <> referenceRendering dag) False = undefined
 preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopologyContextPerBlock (PDAG2 dag) = PDAG2 $ newDAG dag
   where
-    newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> defaultGraphMetadata . graphData
+    newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> reconstructMetadata
     newReferences = VE.generate nodeCount g
       where
         g i = IndexData <$> const (memo ! i) <*> parentRefs <*> childRefs $ refs ! i
 
+    reconstructMetadata = buildMetaData . graphData
+      where
+        buildMetaData =
+          GraphData
+            <$> dagCost
+            <*> networkEdgeCost
+            <*> rootingCost
+            <*> totalBlockCost
+            <*> const (mempty, mempty, Just minTopologyContextPerBlock)
+    
     rootSet    = IS.fromList . toList $ rootRefs dag
     refs       = references dag
     nodeCount  = length refs
@@ -632,7 +642,7 @@ preorderFromRooting
   -> PhylogeneticDAG2 e' n' u' v' w' x' y' z'
 preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ newDAG dag
   where
-    newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> defaultGraphMetadata . graphData
+    newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> constructDefaultMetadata
     dagSize       = length $ references dag
     roots         = rootRefs dag
     newReferences = VE.generate dagSize g
@@ -819,3 +829,7 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ 
 
 (.!>.) :: (Lookup f, Show (Key f)) => f a -> Key f -> a
 (.!>.) s k = fromMaybe (error $ "Could not index: " <> show k) $ k `lookup` s
+
+
+constructDefaultMetadata :: (Monoid a, Monoid b) => ReferenceDAG d e n -> GraphData (a, b, Maybe c)
+constructDefaultMetadata = ((mempty, mempty, Nothing) <$) . graphData

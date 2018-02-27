@@ -83,6 +83,7 @@ newtype PhylogeneticDAG2 e n u v w x y z
      = PDAG2 ( ReferenceDAG
                  (         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
                  , Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
+                 , Maybe  (NonEmpty (TraversalTopology, Double, Double, Vector (NonEmpty TraversalFocusEdge)))
                  )
                  e
                  (PhylogeneticNode2 (CharacterSequence u v w x y z) n)

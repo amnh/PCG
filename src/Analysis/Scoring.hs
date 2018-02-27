@@ -60,7 +60,7 @@ wipeScoring (PDAG2 dag) = PDAG2 wipedDAG
         RefDAG
           <$> fmap wipeDecorations . references
           <*> rootRefs
-          <*> defaultGraphMetadata . graphData
+          <*> ((mempty, mempty, Nothing) <$) . graphData
           $ dag
     
     wipeDecorations

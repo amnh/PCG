@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances #-}
+{-# LANGUAGE DeriveFunctor, DeriveGeneric, FlexibleContexts, FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies #-}
 
 module Bio.Graph.ReferenceDAG.Internal where
@@ -95,7 +95,7 @@ data  GraphData d
     , rootingCost       :: {-# UNPACK #-} !Double
     , totalBlockCost    :: {-# UNPACK #-} !Double
     , graphMetadata     :: d
-    } deriving (Generic)
+    } deriving (Functor, Generic)
 
 
 -- | This will be used below to print the node type to XML and Newick.
