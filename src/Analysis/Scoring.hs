@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns, FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Analysis.Scoring
   (
@@ -27,7 +27,6 @@ import           Analysis.Parsimony.Additive.Internal
 import           Analysis.Parsimony.Fitch.Internal
 import           Analysis.Parsimony.Sankoff.Internal
 import           Analysis.Parsimony.Dynamic.DirectOptimization
-import           Analysis.Parsimony.Dynamic.SequentialAlign
 import           Bio.Character
 import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Dynamic
@@ -35,17 +34,9 @@ import           Bio.Graph
 import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
-import           Control.Lens
 import           Data.EdgeLength
 import qualified Data.List.NonEmpty as NE
 import           Data.MonoTraversable      (Element)
-import           Data.TCM.Memoized
-
-
--- |
--- sequentialAlignOverride, iff True forces seqAlign to run; otherwise, DO runs.
-sequentialAlignOverride :: Bool
-sequentialAlignOverride = False
 
 
 -- |
@@ -60,7 +51,7 @@ wipeScoring (PDAG2 dag) = PDAG2 wipedDAG
         RefDAG
           <$> fmap wipeDecorations . references
           <*> rootRefs
-          <*> defaultGraphMetadata . graphData
+          <*> ((mempty, mempty, Nothing) <$) . graphData
           $ dag
     
     wipeDecorations

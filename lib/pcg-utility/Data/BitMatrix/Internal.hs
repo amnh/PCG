@@ -111,6 +111,7 @@ instance MonoFoldable BitMatrix where
     olength = fromEnum . numRows
 
 
+-- | (✔)
 instance MonoFunctor BitMatrix where
 
     omap f bm =
@@ -121,6 +122,7 @@ instance MonoFunctor BitMatrix where
         rows' = f <$> rows bm
 
 
+-- | (✔)
 instance MonoTraversable BitMatrix where
 
     otraverse f = fmap correction . traverse f . rows
@@ -135,6 +137,7 @@ instance MonoTraversable BitMatrix where
 instance NFData BitMatrix
 
 
+-- | (✔)
 instance Ord BitMatrix where
 
   compare lhs rhs =
@@ -144,6 +147,7 @@ instance Ord BitMatrix where
              EQ -> comparing expandRows lhs rhs
              v  -> v
        v  -> v
+
 
 -- | (✔)
 instance Show BitMatrix where

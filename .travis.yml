@@ -1,25 +1,42 @@
-# Use new container infrastructure to enable caching
-sudo: false
-
 # Choose a lightweight base image; we provide our own build tools.
 language: c
 
-# GHC depends on GMP. You can add other dependencies here as well.
+os:
+  - linux
+  - osx
+
+sudo: false
+
 addons:
   apt:
     packages:
-    - libgmp-dev
+    - libgmp-dev # GHC depends on system GMP (maybe?).
 
 before_install:
-# Download and unpack the stack executable
-- mkdir -p ~/.local/bin
-- export PATH=$HOME/.local/bin:$PATH
-- travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+  # Download and unpack the stack executable
+  - mkdir -p ~/.local/bin
+  - export PATH=$HOME/.local/bin:$PATH
+  - travis_retry wget -qO- https://get.haskellstack.org/ | sh
+  # - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
 
-# This line does all of the work: installs GHC if necessary, builds the
-# library, executables, and test suites, and runs the test suites.
-# `--no-terminal works` around some quirks in Travis's terminal implementation.
-script: stack --no-terminal --install-ghc test
+  # Install code linting tool
+  - stack install hlint
+
+script:
+  - stack update
+  - stack setup
+  - stack --version
+  - stack ghc -- --version
+  - stack build --coverage --fast --haddock --no-terminal --test
+  - stack hpc report
+  - stack exec hlint app src lib
+
+after_script:
+  - hpc-coveralls --coverage-mode=StrictlyFullLines
+                  --exclude-dir=prototype
+                  --exclude-dir=test
+                  --exclude-dir=utils
+                  testsuite
 
 # Caching so the next build will be fast too.
 cache:
