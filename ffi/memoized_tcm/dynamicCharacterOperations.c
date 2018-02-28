@@ -31,33 +31,7 @@
  *  Maintainer  :  Eric Ford <eford@amnh.org>
  *  Stability   :  Interface is stable.
  *  Portability :  Should be portable.
- *
- *  Contains various helper fns for using bit arrays to implement packed dynamic characters.
- *  Individual dynamic character elements are represented using bit arrays, where each bit marks whether
- *  a given character state is present in that element, so [1,0,0,1] would imply that the element is
- *  ambiguously an A or a T.
- *  The length of each element is thus the length of number of possible character states (the alphabet).
- *
- *  To clarify the nomenclature used in this file,
- *  • A dynamic character element (DCElement) is a single, possibly ambiguous phylogenetic character, e.g.,
- *    in the case of DNA, A or {A,G}.
- *  • A series of DCElements are "packed" if they are concatenated directly,
- *    and not stored one to each array position. Each array position might therefore hold many elements.
- *    For instance, one might store characters with alphabet size 4 in an array of int64s.
- *    In that case 16 elements would fit in each int in the array.
- *    Likewise, it's possible that only the first part of an element might fit into a single
- *    position in the array.
- *  • A dynamic character is a packed series of elements. (This isn't the _actual_ definition
- *    of a dynamic character, but will do for our purposes.)
- *
- *  TODO: for this to be useable on |alphabet including gap| > 64, various uint64_t types below will have to be
- *        exchanged out for packedChar *(i.e. arrays of 64-bit ints).
- *
- *  For function documentation see the header file.
- *  Please don't modify the implementation without consulting library maintainer.
  */
-
-// TODO: NULL check after all callocs/mallocs
 
 #include <inttypes.h>
 #include <stdint.h>
@@ -156,6 +130,11 @@ dcElement_t *getDCElement( const size_t whichChar, const dynChar_t *const inDynC
 dcElement_t *allocateDCElement( const size_t alphSize ) {
     // First create dynamic character with empty character field.
     dcElement_t *output = malloc( sizeof(dcElement_t) );
+    if (output == NULL) {
+        printf("Out of memory.\n");
+        fflush(stdout);
+        exit(1);
+    }
     output->alphSize    = alphSize;
     output->element     = calloc( dcElemSize(alphSize), INT_WIDTH );
     if (output->element == NULL) {
@@ -297,9 +276,15 @@ packedChar *packedCharAnd( packedChar *lhs, packedChar *rhs, size_t alphSize, si
 }
 
 dcElement_t *dcElementOr( dcElement_t *lhs, dcElement_t *rhs ) {
-    dcElement_t *toReturn = malloc(sizeof(dcElement_t));        // not calling allocateDCElem because packedCharOr allocates.
-    toReturn->alphSize    = lhs->alphSize;
-    toReturn->element     = packedCharOr(lhs->element, rhs->element, lhs->alphSize, 1);
+    dcElement_t *toReturn = malloc(sizeof(dcElement_t));        // not calling allocateDCElem
+                                                                // because packedCharOr allocates.
+    if (toReturn == NULL) {
+        printf("Out of memory.\n");
+        fflush(stdout);
+        exit(1);
+    }
+    toReturn->alphSize = lhs->alphSize;
+    toReturn->element  = packedCharOr(lhs->element, rhs->element, lhs->alphSize, 1);
     return toReturn;
 }
 

@@ -1,6 +1,7 @@
 #include <inttypes.h>
 
 #include "costMatrix.h"
+#include "costMatrix_3d.h"
 #include "dynamicCharacterOperations.h"
 #include <cstring> //for memcpy;
 
@@ -8,109 +9,123 @@
 
 // TODO: I'll need this for the Haskell side of things: https://hackage.haskell.org/package/base-4.9.0.0/docs/Foreign-StablePtr.html
 
-costMatrix_p construct_CostMatrix_C(size_t alphSize, int* tcm)
+
+costMatrix_p construct_CostMatrix_3d_C( size_t alphSize, int* tcm )
 {
-    return new CostMatrix(alphSize, tcm);
+    return new CostMatrix_3d( alphSize, tcm );
 }
 
 
-void destruct_CostMatrix_C(costMatrix_p untyped_self)
+void destruct_CostMatrix_3d_C( costMatrix_p untyped_self )
 {
-    delete static_cast<CostMatrix*> (untyped_self);
+    delete static_cast<CostMatrix_3d*> (untyped_self);
 }
 
 
-int call_getSetCost_C(costMatrix_p untyped_self, dcElement_t* left, dcElement_t* right, dcElement_t* retMedian)
+// TODO: this needs to do some Sankoff stuff, no?
+int call_getSetCost_3d_C ( costMatrix_p untyped_self
+                         , dcElement_t* first
+                         , dcElement_t* second
+                         , dcElement_t* third
+                         , dcElement_t* retMedian
+                         )
 {
-
-    CostMatrix* thisMtx = static_cast<CostMatrix*> (untyped_self);
-    return thisMtx->getSetCostMedian(left, right, retMedian);
+    CostMatrix_3d* thisMtx = static_cast<CostMatrix_3d*> (untyped_self);
+    return thisMtx->getSetCostMedian(first, second, third, retMedian);
 }
-
-
-// costMatrix_p get_CostMatrixPtr_C(costMatrix_p untyped_self);
 
 
 costMedian_t* allocCostMedian_t (size_t alphabetSize)
 {
     costMedian_t* toReturn = (costMedian_t*) malloc( sizeof(costMedian_t) );
-    toReturn->first        = 0;
-    toReturn->second       = (uint64_t*) calloc(dcElemSize(alphabetSize), INT_WIDTH);
+    std::get<0>(*toReturn)  = 0;
+    std::get<1>(*toReturn)  = (uint64_t*) calloc(dcElemSize(alphabetSize), INT_WIDTH);
     return toReturn;
 }
 
 
 void freeCostMedian_t (costMedian_t* toFree)
 {
-    free(toFree->second);
+    free(std::get<1>(*toFree));
     // free(toFree);
 }
 
 
-keys_t* allocKeys_t (size_t alphSize)
+keys_3d_t* allockeys_3d_t (size_t alphSize)
 {
-    keys_t* toReturn   = (keys_t*) malloc(sizeof(std::pair<dcElement_t, dcElement_t>));
+    keys_3d_t* toReturn = (keys_3d_t*) malloc(sizeof(std::tuple<dcElement_t, dcElement_t, dcElement_t>));
 
-    dcElement_t* left  = allocateDCElement(alphSize);
-    dcElement_t* right = allocateDCElement(alphSize);
-    left->alphSize     = right->alphSize = alphSize;
+    dcElement_t* first   = allocateDCElement(alphSize);
+    dcElement_t* second  = allocateDCElement(alphSize);
+    dcElement_t* third   = allocateDCElement(alphSize);
 
-    toReturn->first    = *left;
-    toReturn->second   = *right;
+    first->alphSize = second->alphSize = third->alphSize = alphSize;
+
+    std::get<0>(*toReturn) = *first;
+    std::get<1>(*toReturn) = *second;
+    std::get<2>(*toReturn) = *third;
 
     return toReturn;
 }
 
-// TODO: since keys_t is Pair<dcElement_t, dcElement_t>, there are no pointers, and nothing
+
+// TODO: since keys_3d_t is Pair<dcElement_t, dcElement_t>, there are no pointers, and nothing
 // to free?? How is this right?
-void freeKeys_t ( const keys_t* toFree)
+void freekeys_3d_t( const keys_3d_t* toFree )
 {
-    freeDCElem(&toFree->first);
-    freeDCElem(&toFree->second);
+    freeDCElem( &std::get<0>(*toFree) );
+    freeDCElem( &std::get<1>(*toFree) );
+    freeDCElem( &std::get<2>(*toFree) );
 }
 
 
-mapAccessPair_t* allocateMapAccessPair (size_t alphSize)
+mapAccessTuple_3d_t* allocateMapAccessPair( size_t alphSize )
 {
-    mapAccessPair_t* toReturn;
-    toReturn = (mapAccessPair_t*) malloc( sizeof(mapAccessPair_t) );
-    toReturn->first  = *allocKeys_t(alphSize);
-    toReturn->second = *allocCostMedian_t(alphSize);
+    mapAccessTuple_3d_t* toReturn;
+    toReturn = (mapAccessTuple_3d_t*) malloc( sizeof(mapAccessTuple_3d_t) );
+    std::get<0>(*toReturn) = *allockeys_3d_t(alphSize);
+    std::get<1>(*toReturn) = *allocCostMedian_t(alphSize);
     return toReturn;
 }
 
 
-CostMatrix::CostMatrix(size_t alphSize, int* inTcm)
+CostMatrix_3d::CostMatrix_3d( size_t alphSize, int* inTcm )
 {
     alphabetSize = alphSize;
-    size_t space = alphabetSize * alphabetSize * sizeof(int);
+    size_t space = alphabetSize * alphabetSize * alphabetSize * sizeof(int);
     tcm = (int*) malloc(space);
     memcpy(tcm, inTcm, space);
     initializeMatrix();
 }
 
 
-CostMatrix::~CostMatrix()
+CostMatrix_3d::~CostMatrix_3d()
 {
     for ( auto& thing: myMatrix ) {
     // for ( mapIterator thing = myMatrix.begin(); thing != myMatrix.end(); thing++ ) {
-        freeCostMedian_t(&thing.second);
+        freeCostMedian_t(&std::get<1>(thing));
 
-        // TODO: since keys_t is Pair<dcElement_t, dcElement_t>, there are no pointers, and nothing
+        // TODO: since keys_3d_t is tuple<dcElement_t, dcElement_t, dcElement_t>, there are no pointers, and nothing
         // to free?? How is this right? Anyway, skipping next line.
-        // freeKeys_t(&thing.first);
+        // freekeys_3d_t(&thing.first);
     }
     myMatrix.clear();
     hasher.clear();
+
 }
 
 
-int CostMatrix::getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian)
+int CostMatrix_3d::getCostMedian( dcElement_t* first
+                                , dcElement_t* second
+                                , dcElement_t* third
+                                , dcElement_t* retMedian
+                                )
 {
-    keys_t toLookup;
-    toLookup.first  = *left;
-    toLookup.second = *right;
-    mapIterator found;
+    keys_3d_t toLookup;
+    std::get<0>(toLookup) = *first;
+    std::get<1>(toLookup) = *second;
+    std::get<2>(toLookup) = *third;
+    mapIterator_3d found;
     int foundCost;
 
     found = myMatrix.find(toLookup);
@@ -118,29 +133,32 @@ int CostMatrix::getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t
     if ( found == myMatrix.end() ) {
         return -1;
     } else {
-        foundCost          = found->second.first;
-        retMedian->element = found->second.second;
+        foundCost          = std::get<0>(std::get<1>(*found));
+        retMedian->element = std::get<1>(std::get<1>(*found));
     }
 
     return foundCost;
 }
 
 
-int CostMatrix::getSetCostMedian( dcElement_t* left
-                                , dcElement_t* right
-                                , dcElement_t* retMedian
-                                )
+int CostMatrix_3d::getSetCostMedian( dcElement_t* first
+                                   , dcElement_t* second
+                                   , dcElement_t* third
+                                   , dcElement_t* retMedian
+                                   )
 {
-    // not using allocKeys_t because we're making a copy of the packed characters _if we need to_
-    keys_t* toLookup = (keys_t*) malloc( sizeof(keys_t) );
-    toLookup->first  = *left;
-    toLookup->second = *right;
-    mapIterator found;
+    // not using allockeys_3d_t because we're making a copy of the packed characters _if we need to_
+    keys_3d_t* toLookup = (keys_3d_t*) malloc( sizeof(keys_3d_t) );
+    std::get<0>(*toLookup) = *first;
+    std::get<1>(*toLookup) = *second;
+    std::get<2>(*toLookup) = *third;
+    mapIterator_3d found;
     int foundCost;
 
     if(DEBUG) {
-        printf("1st: {%zu}: %" PRIu64 "\n", toLookup->first.alphSize , *toLookup->first.element ), fflush(stdout);
-        printf("2nd: {%zu}: %" PRIu64 "\n", toLookup->second.alphSize, *toLookup->second.element), fflush(stdout);
+        printf("1st: {%zu}: %" PRIu64 "\n", std::get<0>(*toLookup).alphSize, *std::get<0>(*toLookup).element ), fflush(stdout);
+        printf("2nd: {%zu}: %" PRIu64 "\n", std::get<1>(*toLookup).alphSize, *std::get<1>(*toLookup).element), fflush(stdout);
+        printf("2nd: {%zu}: %" PRIu64 "\n", std::get<2>(*toLookup).alphSize, *std::get<2>(*toLookup).element), fflush(stdout);
     }
 
     found = myMatrix.find(*toLookup);
@@ -150,63 +168,74 @@ int CostMatrix::getSetCostMedian( dcElement_t* left
     // }
 
     if ( found == myMatrix.end() ) {
-        if(DEBUG) printf("\ngetSetCost didn't find %" PRIu64 " %" PRIu64 ".\n", left->element[0], right->element[0]);
+        if(DEBUG)  printf( "\ngetSetCost didn't find %" PRIu64 " %" PRIu64 " %" PRIu64 ".\n"
+                         , first->element[0], second->element[0], third->element[0] );
 
         costMedian_t* computedCostMed = computeCostMedian(*toLookup);
         //costMedian_t* computedCostMed = computeCostMedianFitchy(*toLookup);
 
-        if(DEBUG) printf("computed cost, median: %2i %" PRIu64 "\n", computedCostMed->first, computedCostMed->second[0]);
+        if(DEBUG) printf( "computed cost, median: %2i %" PRIu64 "\n"
+                        , std::get<0>(*computedCostMed), std::get<1>(*computedCostMed)[0] );
 
-        foundCost          = computedCostMed->first;
-        retMedian->element = makePackedCharCopy( computedCostMed->second, alphabetSize, 1 );
+        foundCost          = std::get<0>(*computedCostMed);
+        retMedian->element = makePackedCharCopy( std::get<1>(*computedCostMed), alphabetSize, 1 );
 
         // Can't use allocateDCElement here, because makePackedCharCopy() allocates.
-        toLookup->first           = *(dcElement_t*) malloc( sizeof(dcElement_t) );
-        toLookup->first.alphSize  = left->alphSize;
-        toLookup->first.element   = makePackedCharCopy( left->element , alphabetSize, 1 );
+        // TODO: can I use tie() here? http://www.cplusplus.com/reference/tuple/tie/
+        std::get<0>(*toLookup)          = *(dcElement_t*) malloc( sizeof(dcElement_t) );
+        std::get<0>(*toLookup).alphSize = first->alphSize;
+        std::get<0>(*toLookup).element  = makePackedCharCopy( first->element , alphabetSize, 1 );
 
-        toLookup->second          = *(dcElement_t*) malloc( sizeof(dcElement_t) );
-        toLookup->second.alphSize = left->alphSize;
-        toLookup->second.element  = makePackedCharCopy( right->element, alphabetSize, 1 );
+        std::get<1>(*toLookup)          = *(dcElement_t*) malloc( sizeof(dcElement_t) );
+        std::get<1>(*toLookup).alphSize = first->alphSize;
+        std::get<1>(*toLookup).element  = makePackedCharCopy( second->element, alphabetSize, 1 );
+
+        std::get<2>(*toLookup)          = *(dcElement_t*) malloc( sizeof(dcElement_t) );
+        std::get<2>(*toLookup).alphSize = first->alphSize;
+        std::get<2>(*toLookup).element  = makePackedCharCopy( third->element, alphabetSize, 1 );
 
         setValue (toLookup, computedCostMed);
     } else {
         // because in the next two lines, I get back a pair<keys, costMedian_t>
-        foundCost          = found->second.first;
-        retMedian->element = makePackedCharCopy( found->second.second, alphabetSize, 1 );
+        foundCost          = std::get<0>(found->second);
+        retMedian->element = makePackedCharCopy( std::get<1>(found->second), alphabetSize, 1 );
     }
 
     return foundCost;
 }
 
 
-costMedian_t* CostMatrix::computeCostMedian(keys_t keys)
+costMedian_t* CostMatrix_3d::computeCostMedian(keys_3d_t keys)
 {
     int curCost, minCost;
 
     size_t        elemArrLen = dcElemSize(alphabetSize);
 //    packedChar*   median     = (packedChar*) calloc( elemArrLen, sizeof(uint64_t) );
-    dcElement_t*  firstKey   = &keys.first;
-    dcElement_t*  secondKey  = &keys.second;
+    dcElement_t*  firstKey   = &std::get<0>(keys);
+    dcElement_t*  secondKey  = &std::get<1>(keys);
+    dcElement_t*  thirdKey   = &std::get<2>(keys);
     packedChar*   curMedian  = (packedChar*  ) calloc(elemArrLen, INT_WIDTH);  // don't free, it's going into toReturn
     costMedian_t* toReturn   = (costMedian_t*) malloc(sizeof(costMedian_t));   // array is alloc'ed above
-    keys_t*       searchKey  = allocKeys_t(alphabetSize);
+    keys_t*       searchKey  = allockeys_t(alphabetSize);                      // This will be used for _2d_ lookup
 
-    dcElement_t* singleNucleotide = &searchKey->second;
+    dcElement_t* singleNucleotide = &std::get<2>(*searchKey); // TODO: this is using third key. Check it.
 
     if(DEBUG) {
         for ( auto& thing: myMatrix ) {
-            printf("%" PRIu64 " %" PRIu64 "\n", thing.first.first.element[0], thing.first.second.element[0]);
-            printElemBits(&thing.first.first);
-            printElemBits(&thing.first.second);
+            printf("%" PRIu64 " %" PRIu64 "\n", std::get<0>(thing.first).element[0], std::get<1>(thing.first).element[0]);
+            printElemBits(&std::get<0>(thing.first));
+            printElemBits(&std::get<1>(thing.first));
         }
     }
 
     curCost = minCost = INT_MAX;
     for (size_t curNucleotideIdx = 0; curNucleotideIdx < alphabetSize; ++curNucleotideIdx) {
         SetBit(singleNucleotide->element, curNucleotideIdx);
-        curCost = findDistance(searchKey, firstKey)
-                + findDistance(searchKey, secondKey);
+
+        // TODO: These need to be 2d lookups.
+        curCost = CostMatrix::findDistance(searchKey, firstKey)
+                + CostMatrix::findDistance(searchKey, secondKey)
+                + CostMatrix::findDistance(searchKey, thirdKey);
 
         // now seemingly recreating logic in findDistance(). However, that was to get the cost for the
         // ambElem on each child; now we're combining those costs get overall cost and median
@@ -232,10 +261,10 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys)
         }
         ClearBit(singleNucleotide->element, curNucleotideIdx);
     } // curNucleotideIdx
-    toReturn->first  = minCost;
-    toReturn->second = curMedian;
+    std::get<0>(*toReturn) = minCost;
+    std::get<1>(*toReturn) = curMedian;
 
-    freeKeys_t(searchKey);
+    freekeys_3d_t(searchKey);
     free(searchKey);
     // freeDCElem(singleNucleotide);
 
@@ -246,60 +275,67 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys)
 /** Find minimum substitution cost from one nucleotide (searchKey->second) to ambElem.
  *  Does so by setting a bit in searchKey->first, then doing a lookup in the cost matrix.
  */
-int CostMatrix::findDistance (keys_t* searchKey, dcElement_t* ambElem)
+int CostMatrix_3d::findDistance (keys_3d_t* searchKey, dcElement_t* ambElem)
 {
-    mapIterator found;
-    int    minCost, curCost;
+    mapIterator_3d found;
+    int    minCost,
+           curCost;
     size_t unambElemIdx;
 
     curCost = minCost = INT_MAX;
 
     for (size_t pos = 0; pos < alphabetSize; pos++) {
-        if ( TestBit(ambElem->element, pos) ) {
-            SetBit(searchKey->first.element, pos);
+        if (TestBit( ambElem->element, pos )) {
+
+            SetBit( std::get<0>(*searchKey).element, pos );
             found = myMatrix.find(*searchKey);
+
             if ( found == myMatrix.end() ) {
                 // do unambiguous calculation here
                 if( !isAmbiguous(ambElem->element, dcElemSize(alphabetSize)) ) {
                     unambElemIdx = 0;
-                    while( unambElemIdx < alphabetSize && !TestBit(searchKey->second.element, unambElemIdx) ) {
+                    while( unambElemIdx < alphabetSize && !TestBit(std::get<1>(*searchKey).element, unambElemIdx) ) {
                         unambElemIdx++;
                     }
                     curCost = tcm[pos * alphabetSize + unambElemIdx];
                     // printf("\n--findDistance-- \n    ambElemIdx: %zu, nucleotide: %zu, cost: %d\n", unambElemIdx, pos, curCost);
                 } else {
                     printf("Something went wrong in the memoized cost matrix.\n");
-                    printf("missing key: %" PRIu64 " %" PRIu64 "\n", *searchKey->first.element, *searchKey->second.element);
+                    printf("missing key: %" PRIu64 " %" PRIu64 "\n", *std::get<0>(*searchKey).element, *std::get<1>(*searchKey).element);
                     exit(1);
                 }
             } else {
-	    // We found the memoized cost for the elements in the TCM.
-                curCost = found->second.first;
+        // We found the memoized cost for the elements in the TCM.
+                curCost = std::get<0>(found->second);
             }
-            if (curCost < minCost) {
-                minCost = curCost;
-            }
-            ClearBit(searchKey->first.element, pos);
+            if (curCost < minCost) { minCost = curCost; }
+
+            ClearBit( std::get<0>(*searchKey).element, pos );
         }
     }
 
     if (DEBUG) {
-        printf("distance ambElem: %" PRIu64 ", nucleotide: %" PRIu64 "\n", ambElem->element[0], *searchKey->second.element);
-        printf("cost: %i\n", minCost);
+        printf( "distance ambElem: %" PRIu64 ", nucleotide: %" PRIu64 "\n"
+              , ambElem->element[0]
+              , *std::get<1>(*searchKey).element
+              );
+
+        printf( "cost: %i\n", minCost );
     }
 
     return minCost;
 }
 
 
-void CostMatrix::initializeMatrix ()
+void CostMatrix_3d::initializeMatrix ()
 {
-   // keys_t* keys;
+   // keys_3d_t* keys;
    // costMedian_t* costMedian;
-   // mapAccessPair_t* toInsert;
+   // mapAccessTuple_3d_t* toInsert;
 
     dcElement_t* firstKey  = allocateDCElement( alphabetSize );
     dcElement_t* secondKey = allocateDCElement( alphabetSize );
+    dcElement_t* thirdKey  = allocateDCElement( alphabetSize );
     dcElement_t* retMedian = allocateDCElement( alphabetSize );
     // packedChar*  median;
 //    int cost;
@@ -323,7 +359,7 @@ void CostMatrix::initializeMatrix ()
             SetBit(secondKey->element, key2);
             // SetBit(median, key2);
 
-            CostMatrix::getSetCostMedian(firstKey, secondKey, retMedian);
+            CostMatrix_3d::getSetCostMedian(firstKey, secondKey, thirdKey, retMedian);
             // cost = CostMatrix::getSetCostMedian(firstKey, secondKey, retMedian);
 
             // if(DEBUG) {
@@ -342,14 +378,14 @@ void CostMatrix::initializeMatrix ()
 }
 
 
-void CostMatrix::setValue(keys_t* key, costMedian_t* median)
+void CostMatrix_3d::setValue(keys_3d_t* key, costMedian_t* median)
 {
     myMatrix.insert(std::make_pair(*key, *median));
 }
 
 /******* !!DEPRECATED!! *******/
 /*
-costMedian_t* CostMatrix::computeCostMedianFitchy(keys_t keys) {
+costMedian_t* CostMatrix::computeCostMedianFitchy(keys_3d_t keys) {
 
     size_t elemArrLen = dcElemSize(alphabetSize);
 

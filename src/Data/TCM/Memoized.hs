@@ -30,8 +30,8 @@ import qualified Data.TCM.Memoized.FFI as FFI
 -- lazy, memoized manner.
 --
 -- *Note:* The collection of ambiguous symbols set transitions is the powerset of
--- the collection of unambiguous, singleton symbol sets. The lazy, memoization is
--- a requisite for efficient computation on any non-trivial alphabet size.
+-- the collection of unambiguous, singleton symbol sets. Laziness and memoization is
+-- requisite for efficient computation on any non-trivial alphabet size.
 generateMemoizedTransitionCostMatrix
   :: Word                   -- ^ Alphabet size
   -> (Word -> Word -> Word) -- ^ Generating function
