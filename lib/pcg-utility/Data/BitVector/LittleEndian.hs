@@ -67,6 +67,8 @@ import GHC.Integer.Logarithms
 import Test.QuickCheck (Arbitrary(..), CoArbitrary(..), NonNegative(..), suchThat)
 
 
+-- |
+-- A little-endian bit-vector of non-negative dimension.
 data  BitVector
     = BV
     { dim :: !Int     -- ^ The /dimension/ of a bit-vector.

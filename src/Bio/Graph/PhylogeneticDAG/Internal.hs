@@ -51,7 +51,7 @@ import           Data.Vector                      (Vector)
 import           GHC.Generics
 import           Text.Newick.Class
 import           Text.XML
-import           Prelude                   hiding (zip)
+
 
 -- |
 -- Wrapper for ReferenceDAG (deprecated)
@@ -476,7 +476,7 @@ renderBlockSummary (PDAG2 dag) key (costOfRooting, costOfNetworking, displayMay,
         [ "    Name:   " <> show (dc ^. characterName)
         , "    Weight: " <> show (dc ^. characterWeight)
         , "    Cost:   " <> show (dc ^. characterCost)
-        , "    Foci:   " <> (maybe "<Unavailible>" renderFoci $ dc ^. traversalFoci)
+        , "    Foci:   " <> maybe "<Unavailible>" renderFoci (dc ^. traversalFoci)
         ]
       where
         renderFoci (x:|[]) = show $ fst x

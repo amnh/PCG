@@ -105,8 +105,8 @@ totalEdgeCosts (PDAG2 dag) = applyWeights $ foldlWithKey f initAcc refVec
       | otherwise = ofoldl' g acc applicableNodes
       where
         adjacentNodes   = IS.map collapseRootEdge $
-                              ({- (\x -> trace (unwords ["For Node", show key, "parentRefs", show x]) x) -} (parentRefs node)) <>
-                              ({- (\x -> trace (unwords ["For Node", show key,  "childRefs", show x]) x) $ -} IM.keysSet (childRefs node))
+                              parentRefs node <>
+                              IM.keysSet (childRefs node)
         applicableNodes = {- IS.map (\x -> trace ("Edge: " <> show (key, x)) x) $ -} IS.filter (> key) adjacentNodes
         nodeSequence    = getFields key
 

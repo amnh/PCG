@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns, FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Analysis.Scoring
   (
