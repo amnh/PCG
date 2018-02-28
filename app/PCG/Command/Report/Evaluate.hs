@@ -151,14 +151,6 @@ showWithTotalEdgeCost
      , HasCharacterWeight y Double
      , HasCharacterWeight z Double
      , HasTraversalFoci   z (Maybe TraversalFoci)
-     , NFData e
-     , NFData (f String)
-     , NFData u
-     , NFData v
-     , NFData w
-     , NFData x
-     , NFData y
-     , NFData z
      ) 
   => PhylogeneticSolution (PhylogeneticDAG2 e (f String) u v w x y z) 
   -> String

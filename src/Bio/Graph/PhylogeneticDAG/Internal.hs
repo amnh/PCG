@@ -23,7 +23,6 @@ import           Bio.Character.Decoration.Shared
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG.Internal
-import           Bio.Metadata
 import           Bio.Metadata.CharacterName
 import           Bio.Metadata.Dynamic
 import           Bio.Sequence
@@ -440,7 +439,7 @@ renderBlockSummary
   -> Int
   -> (Maybe Double, Maybe Double, Maybe TraversalTopology, CharacterBlock u v w x y z)
   -> String
-renderBlockSummary (PDAG2 dag) key (rootingCost, networkingCost, displayMay, block) = mconcat . (renderedPrefix:) $
+renderBlockSummary (PDAG2 dag) key (costOfRooting, costOfNetworking, displayMay, block) = mconcat . (renderedPrefix:) $
     [ renderBlockMeta
     , unlines . fmap renderStaticCharacterSummary  . toList . continuousCharacterBins
     , unlines . fmap renderStaticCharacterSummary  . toList . nonAdditiveCharacterBins
@@ -453,8 +452,8 @@ renderBlockSummary (PDAG2 dag) key (rootingCost, networkingCost, displayMay, blo
     renderedPrefix = "Block " <> show key <> "\n\n"
 
     renderBlockMeta bValue = unlines
-        [ "  Rooting Cost: " <> maybe "<Unavailible>" show rootingCost
-        , "  Network Cost: " <> maybe "<Unavailible>" show networkingCost
+        [ "  Rooting Cost: " <> maybe "<Unavailible>" show costOfRooting
+        , "  Network Cost: " <> maybe "<Unavailible>" show costOfNetworking
         , "  Block   Cost: " <> show (blockCost bValue)
         , "  Total   Cost: " <> show totalCost
         , "  Display Tree: " <> inferDisplayForest
@@ -462,8 +461,8 @@ renderBlockSummary (PDAG2 dag) key (rootingCost, networkingCost, displayMay, blo
         ]
       where
         totalCost = sum
-          [ fromMaybe 0 rootingCost
-          , fromMaybe 0 networkingCost
+          [ fromMaybe 0 costOfRooting
+          , fromMaybe 0 costOfNetworking
           , blockCost bValue
           ]
         
@@ -515,7 +514,7 @@ renderDisplayForestNewick dag topo = unlines $ renderDisplayTree <$> toList (roo
     renderLeaf k v =
         case toList v of
           []  -> show k
-          [x] -> x
+          x:_ -> x
 
   
 -- |

@@ -34,7 +34,6 @@ import qualified Data.IntMap as IM
 import           Data.Key
 import           Data.List.NonEmpty (NonEmpty( (:|) ))
 import           Data.List.Utility  (invariantTransformation)
-import           Data.Ord           (comparing)
 import           Data.Semigroup
 import           Data.TCM.Memoized
 import           Data.MonoTraversable
@@ -155,7 +154,6 @@ directOptimizationPreOrder
   :: ( DirectOptimizationPostOrderDecoration d c
      , EncodedAmbiguityGroupContainer c
      , Exportable (Element c)
-     , Show c
      , Show (Element c)
      )
   => PairwiseAlignment c
@@ -204,35 +202,13 @@ disambiguateElement x = zed `setBit` idx
 -- Disambiguate the elements of a dynamic Character so that they are consistent
 -- with the ancestoral disambiguation.
 disambiguateFromParent
-  :: (EncodableDynamicCharacter c, Show (Element c))
-  => {-IntMap Int -- ^ parent gap locations
-  -> IntMap Int -- ^ child  gap locations 
-  -> -} c          -- ^ parent single disambiguation field
-  -> c          -- ^ child  final gapped
-  -> c          -- ^ child  single disambiguation field
+  :: EncodableDynamicCharacter c
+  => c -- ^ parent single disambiguation field
+  -> c -- ^ child  final gapped
+  -> c -- ^ child  single disambiguation field
 disambiguateFromParent {- pGaps cGaps -} pSingle cFinal = result
   where
     result = constructDynamic $ zipWith f (otoList pSingle) (otoList cFinal)
-    {-
---    gap = gapOfStream pSingle
-
-    -- |
-    -- We zip shittily.
-    shittyZip :: (FiniteBits b, Show b) => Int -> [b] -> [b] -> [b]
-    shittyZip i xs ys = go xs' ys'
-      where
-        go    []     []  = []
-        go    []     bs  = error $ unwords [ "Didn't end cleanly, too many child  states: ", show i, show pGaps, show cGaps, show bs ]
-        go    as     []  = error $ unwords [ "Didn't end cleanly, too many parent states: ", show i, show pGaps, show cGaps, show as ]
-        go (a:as) (b:bs) = f a b : shittyZip (i+1) as bs
-        
-        xs' = case i `lookup` pGaps of
-                Nothing -> xs
-                Just v  -> drop v xs
-        ys' = case i `lookup` cGaps of
-                Nothing -> ys
-                Just v  -> drop v ys
--}
     f pS cF
       | popCount val /= 0 = val
       | otherwise         = disambiguateElement cF
@@ -247,11 +223,8 @@ disambiguateFromParent {- pGaps cGaps -} pSingle cFinal = result
 -- decoration. The recursive logic of the pre-order traversal.
 updateFromParent
   :: ( DirectOptimizationPostOrderDecoration d c
-     , EncodableDynamicCharacter c
      , EncodedAmbiguityGroupContainer c
      , Exportable (Element c)
-   --  , Show c
-     , Show (Element c)
      )
   => PairwiseAlignment c
   -> d
@@ -285,7 +258,10 @@ updateFromParent pairwiseAlignment currentDecoration parentDecoration = resultDe
 -- |
 -- A three way comparison of characters used in the DO preorder traversal.
 tripleComparison
-  :: ( {- EncodableDynamicCharacter c, -}Exportable (Element c), DirectOptimizationPostOrderDecoration d c, EncodedAmbiguityGroupContainer c, {- Show c, -} Show (Element c))
+  :: ( Exportable (Element c)
+     , DirectOptimizationPostOrderDecoration d c
+     , EncodedAmbiguityGroupContainer c
+     )
   => PairwiseAlignment c
   -> d
   -> c
@@ -319,7 +295,7 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter parentSingle 
     (extendedParentFinal , extendedLeftCharacter1, extendedRightCharacter1) = alignAroundCurrentNode pairwiseAlignment childCharacter parentCharacter childLeftAligned childRightAligned
     (extendedParentSingle, extendedLeftCharacter2, extendedRightCharacter2) = alignAroundCurrentNode pairwiseAlignment childCharacter parentSingle    childLeftAligned childRightAligned
 
-    {--}
+    {-
     context = unlines
         [ ""
         , "Center char (prelim/final/single):"
@@ -352,7 +328,7 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter parentSingle 
         ]
       where
         alph = childDecoration ^. characterAlphabet
-    {--}
+    -}
 
 
 -- |
