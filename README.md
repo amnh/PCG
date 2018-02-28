@@ -26,6 +26,6 @@ Haskell program and library for general phylogenetic graph search
 
   * [American Museum of Natural History](https://www.amnh.org/our-research/computational-sciences)
 
-  * [Memorial Sloan Kettering](https://www.mskcc.org/research-areas)
-
   * [DARPA SIMPLEX](https://www.darpa.mil/program/simplifying-complexity-in-scientific-discovery)
+
+  * [Memorial Sloan Kettering](https://www.mskcc.org/research-areas)
