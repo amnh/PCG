@@ -80,7 +80,7 @@ bitVectorToBufferChunks elemWidth elemCount bv = fmap toUnsignedNumber $ ((`subR
 -- The inverse of 'bitvectortorToBufferChunks'.
 --
 bufferChunksToBitVector :: Foldable t => Word -> Word -> t CULong -> BitVector
-bufferChunksToBitVector elemWidth elemCount chunks = bitvector totalBits . fst $ foldl' f initialAccumulator chunks
+bufferChunksToBitVector elemWidth elemCount chunks = fromNumber totalBits . fst $ foldl' f initialAccumulator chunks
   where
     initialAccumulator :: (Integer, Int)
     initialAccumulator = (0,0)
@@ -99,7 +99,7 @@ bufferChunksToBitVector elemWidth elemCount chunks = bitvector totalBits . fst $
 -- |
 -- Converts a exportable character context to a 'BitMatrix'.
 exportableCharacterElementsToBitMatrix :: ExportableCharacterElements -> BitMatrix
-exportableCharacterElementsToBitMatrix ece = fromRows $ bitvector elementWidth <$> integralValues
+exportableCharacterElementsToBitMatrix ece = fromRows $ fromNumber elementWidth <$> integralValues
   where
     elementWidth   = ece ^. exportedElementWidth
     integralValues = exportedCharacterElements ece
@@ -108,7 +108,7 @@ exportableCharacterElementsToBitMatrix ece = fromRows $ bitvector elementWidth <
 -- |
 -- Converts a exportable character context to a 'BitVector'.
 exportableCharacterElementsHeadToBitVector :: ExportableCharacterElements -> BitVector
-exportableCharacterElementsHeadToBitVector ece = bitvector elementWidth $ head integralValues
+exportableCharacterElementsHeadToBitVector ece = fromNumber elementWidth $ head integralValues
   where
     elementWidth   = ece ^. exportedElementWidth
     integralValues = exportedCharacterElements ece

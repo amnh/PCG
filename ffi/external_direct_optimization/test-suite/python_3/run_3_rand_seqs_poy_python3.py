@@ -1,4 +1,4 @@
-#! /usr/bin/env python2
+#! /usr/bin/env python
 
 ''' A script to run POY on twice on three DO characters. First run regular DO, then run 3d (iterative: exact) DO on the same three characters. This is to be able to compare the times for the runs of each. These times can then be compared to just the C 3d DO
 code to see if the times are comparable.'''
@@ -28,7 +28,7 @@ def createPOYfileText(poyFile, filesuffix, version):
     poyFile.write( 'read("../data/sample_3_taxa.tre")\n' )
     if version == 3:
         poyFile.write('set(iterative: exact)\n' )
-    poyFile.write( 'report("' + outputFile_name + '")\n' )
+    poyFile.write( 'report("' + outputFile_name + '", ia)\n' )
     poyFile.write( 'exit()' )
     return poyFile
 
@@ -58,7 +58,7 @@ def main():
     averageTime = 0
 
     # set up seeds list
-    randFile = open('../data/randseeds.txt')
+    randFile = open('../data/' + dataFile + '_randseeds.txt')
     seeds    = randFile.readlines()
     randFile.close()
 

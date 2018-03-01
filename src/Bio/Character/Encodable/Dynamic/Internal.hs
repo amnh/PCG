@@ -96,14 +96,14 @@ instance Arbitrary DynamicChar where
         characterLen <- arbitrary `suchThat` (> 0) :: Gen Int
         let randVal  =  choose (1, 2 ^ alphabetLen - 1) :: Gen Integer
         bitRows      <- vectorOf characterLen randVal
-        pure . DC . fromRows $ bitvector (toEnum alphabetLen) <$> bitRows
+        pure . DC . fromRows $ fromNumber (toEnum alphabetLen) <$> bitRows
 
 
 instance Arbitrary DynamicCharacterElement where
 
     arbitrary = do
         alphabetLen <- arbitrary `suchThat` (\x -> 2 <= x && x <= 62) :: Gen Int
-        DCE . bitvector (toEnum alphabetLen) <$> (choose (1, 2 ^ alphabetLen - 1) :: Gen Integer)
+        DCE . fromNumber (toEnum alphabetLen) <$> (choose (1, 2 ^ alphabetLen - 1) :: Gen Integer)
 
 
 instance CoArbitrary DynamicCharacterElement
@@ -198,7 +198,7 @@ instance Enum DynamicCharacterElement where
 
     fromEnum = toUnsignedNumber . unwrap
 
-    toEnum i = DCE $ bitvector dim i
+    toEnum i = DCE $ fromNumber dim i
       where
         dim = toEnum $ finiteBitSize i - countLeadingZeros i
 

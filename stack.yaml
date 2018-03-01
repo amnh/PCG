@@ -5,6 +5,7 @@ compiler: ghc-8.4.0.20180224
 compiler-check: match-exact
 
 extra-deps:
+  - bv-little-0.1.0.0
   - pretty-tree-0.1.0.0
 
 flags: {}

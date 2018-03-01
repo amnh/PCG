@@ -1,27 +1,32 @@
 ----------------------------------------------------------------------------
 -- |
 -- Module      :  Analysis.Scoring
--- Copyright   :  () 2015-2015 Ward Wheeler
+-- Copyright   :  () 2015-2018 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Containing the master command for unifying all input types: tree, metadata, and sequence
---
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns, FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts #-}
 
-module Analysis.Scoring where
+module Analysis.Scoring
+  (
+  -- * Decoration
+    performDecoration
+  , scoreSolution
+  -- * Decoration Removal
+  , wipeNode
+  , wipeScoring
+  ) where
 
 
 import           Analysis.Parsimony.Additive.Internal
 import           Analysis.Parsimony.Fitch.Internal
 import           Analysis.Parsimony.Sankoff.Internal
 import           Analysis.Parsimony.Dynamic.DirectOptimization
-import           Analysis.Parsimony.Dynamic.SequentialAlign
 import           Bio.Character
 import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Dynamic
@@ -29,18 +34,13 @@ import           Bio.Graph
 import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
-import           Control.Lens
 import           Data.EdgeLength
 import qualified Data.List.NonEmpty as NE
 import           Data.MonoTraversable      (Element)
 
 
 -- |
--- sequentialAlignOverride, iff True forces seqAlign to run; otherwise, DO runs.
-sequentialAlignOverride :: Bool
-sequentialAlignOverride = False
-
-
+-- Remove all scoring data from nodes.
 wipeScoring
   :: Monoid n
   => PhylogeneticDAG2 e n u v w x y z
@@ -51,7 +51,7 @@ wipeScoring (PDAG2 dag) = PDAG2 wipedDAG
         RefDAG
           <$> fmap wipeDecorations . references
           <*> rootRefs
-          <*> defaultGraphMetadata . graphData
+          <*> ((mempty, mempty, Nothing) <$) . graphData
           $ dag
     
     wipeDecorations
@@ -68,6 +68,8 @@ wipeScoring (PDAG2 dag) = PDAG2 wipedDAG
         shouldWipe = not . null $ childRefs x
 
 
+-- |
+-- Conditionally wipe the scoring of a single node.
 wipeNode
   :: Monoid n
   => Bool -- ^ Do I wipe?
@@ -93,11 +95,15 @@ wipeNode wipe = PNode2 <$> pure . g . NE.head . resolutions <*> f . nodeDecorati
         
 
 
+-- |
+-- Take a solution of one or more undecorated trees and assign peliminary and
+-- final states to all nodes.
 scoreSolution :: CharacterResult -> PhylogeneticSolution FinalDecorationDAG
 scoreSolution (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
 
-    
---performDecoration :: CharacterDAG -> FinalDecorationDAG
+
+-- |
+-- Take an undecorated tree and assign peliminary and final states to all nodes.
 performDecoration 
   :: ( DiscreteCharacterMetadata u
      , DiscreteCharacterMetadata w
@@ -162,10 +168,14 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
         pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec kidDecs
 
 
+-- |
+-- Contextually select the direct optimization method to perform on dynamic
+-- characters.
 chooseDirectOptimizationComparison
   :: ( SimpleDynamicDecoration d  c
      , SimpleDynamicDecoration d' c
      , Exportable c
+     , Exportable (Element c)
 --     , Show c
      , Ord (Element c)
      )
@@ -176,24 +186,15 @@ chooseDirectOptimizationComparison
   -> (Word, c, c, c, c)
 chooseDirectOptimizationComparison dec decs =
     case decs of
-      []  -> selectBranch dec
-      x:_ -> selectBranch x
-  where
---    selectBranch x | trace (show . length $ x ^. characterAlphabet) False = undefined
-    selectBranch candidate
-      | sequentialAlignOverride = sequentialAlign (candidate ^. sparseTransitionCostMatrix)
-      | otherwise =
-          case candidate ^. denseTransitionCostMatrix of
-            Just  d -> \x y -> foreignPairwiseDO x y d
-            Nothing ->
-              let !scm = (candidate ^. symbolChangeMatrix)
-              in \x y -> naiveDO x y scm
+      []  -> selectDynamicMetric dec
+      x:_ -> selectDynamicMetric x
 
 
 chooseDirectOptimizationComparison2
   :: ( SimpleDynamicDecoration d  c
      , SimpleDynamicDecoration d' c
      , Exportable c
+     , Exportable (Element c)
 --     , Show c
      , Ord (Element c)
      )
@@ -204,22 +205,14 @@ chooseDirectOptimizationComparison2
   -> (Word, c, c, c, c)
 chooseDirectOptimizationComparison2 dec decs =
     case decs of
-      []  -> selectBranch dec
-      (_,x):_ -> selectBranch x
-  where
---    selectBranch x | trace (show . length $ x ^. characterAlphabet) False = undefined
-    selectBranch candidate
-      | sequentialAlignOverride = sequentialAlign (candidate ^. sparseTransitionCostMatrix)
-      | otherwise =
-          case candidate ^. denseTransitionCostMatrix of
-            Just  d -> \x y -> foreignPairwiseDO x y d
-            Nothing ->
-              let !scm = (candidate ^. symbolChangeMatrix)
-              in \x y -> naiveDO x y scm
+      []      -> selectDynamicMetric dec
+      (_,x):_ -> selectDynamicMetric x
 
 
+-- |
+-- An identety function which ignores the second parameter.
 id2 :: a -> b -> a
-id2 x _ = x
+id2 = const
 
 
 {-

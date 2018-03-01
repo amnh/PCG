@@ -194,6 +194,7 @@ tcmMatrixDefinition = {-do
         pure $ StepMatrix matrixName cardinality (TCM mtxAlphabet assumpMatrix)
 
 
+-- | treeBlockDefinition captures the contents of a tree block, which is defined as starting with "TREES;"
 treeBlockDefinition :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char {- , Show s -}) => m TreeBlock
 treeBlockDefinition = do
         _     <- symbol $ string'' "trees;"
@@ -312,6 +313,7 @@ booleanDefinition blockTitle = {-do
         trace (("booleanDefinition " ++ blockTitle)  ++ show x) $-}
     symbol (string'' blockTitle) $> True
 
+
 -- | stringDefinition takes a string of format TITLE=value;
 -- and returns the value. The semicolon is not captured by this fn.
 -- A test exists in the test suite.
@@ -384,6 +386,8 @@ treeDefinition = do
     pure (label, newick)
 
 
+-- | seqMatrixDefinition takes a 'String' that starts with "MATRIX" and ends with ";" and parses it into a list of
+-- 'String's where each string in the list is a row in a cost matrix.
 seqMatrixDefinition :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char {- , Show s -}) => m [String]
 seqMatrixDefinition = {-do
     x <- getInput
@@ -551,4 +555,3 @@ nexusKeywords = S.fromList
     , "usertype"
     , "wtset"
     ]
-
