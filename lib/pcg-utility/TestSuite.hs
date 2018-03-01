@@ -2,7 +2,6 @@ module Main ( main ) where
 
 
 import qualified Data.BitMatrix.Test             as BitMatrix
-import qualified Data.BitVector.Test             as BitVector
 import qualified Data.MutualExclusionSet.Test    as MutualExclusionSet
 import qualified Numeric.Extended.Natural.Test   as ExtendedNatural
 import qualified Numeric.Extended.Real.Test      as ExtendedReal
@@ -18,7 +17,6 @@ main = defaultMain testSuite
 testSuite :: TestTree
 testSuite = testGroup "Library Test Suite" 
     [ BitMatrix.testSuite
-    , BitVector.testSuite
     , ExtendedNatural.testSuite
     , ExtendedReal.testSuite
     , NonNegativeAverage.testSuite

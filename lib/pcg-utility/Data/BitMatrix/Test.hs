@@ -231,7 +231,7 @@ testBitMatrix = testGroup "bitMatrix generating function"
         f rowCt colCt = testBM === controlBM
           where
             testBM    = mconcat $ rows (bitMatrix numChars alphLen $ const True)
-            controlBM = bitvector (alphLen * numChars) (2 ^ (alphLen * numChars) - 1 :: Integer)
+            controlBM = fromNumber (alphLen * numChars) (2 ^ (alphLen * numChars) - 1 :: Integer)
             numChars  = toEnum $ getPositive rowCt
             alphLen   = toEnum $ getPositive colCt
 

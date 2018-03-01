@@ -57,7 +57,7 @@ instance Arbitrary BitMatrix where
         rowCount <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 20)
         let rVal = choose (0, 2 ^ colCount -1) :: Gen Integer
         bitRows  <- vectorOf rowCount rVal
-        pure . fromRows $ bitvector (toEnum colCount) <$> bitRows
+        pure . fromRows $ fromNumber (toEnum colCount) <$> bitRows
 
 
 -- |
@@ -202,7 +202,7 @@ bitMatrix :: Word                   -- ^ Number of rows in the BitMatrix.
 bitMatrix m n f =
   case errorMsg of
     Just msg -> error msg
-    Nothing  -> BitMatrix (fromEnum n) . bitvector (m * n) . snd . foldl' g initialAccumulator $ [(i,j) | i <- [0..m-1], j <- [0..n-1]]
+    Nothing  -> BitMatrix (fromEnum n) . fromNumber (m * n) . snd . foldl' g initialAccumulator $ [(i,j) | i <- [0..m-1], j <- [0..n-1]]
   where
     initialAccumulator :: (Integer, Integer)
     initialAccumulator = (1,0)
@@ -346,4 +346,4 @@ rows bm@(BitMatrix nCols bv)
       initAcc = (toUnsignedNumber bv, []) :: (Integer, [BitVector])
 
       go 0 (   _, xs) = reverse xs
-      go n (!val, xs) = go (n-1) (val `shiftR` nCols, bitvector dim (val .&. mask) : xs)
+      go n (!val, xs) = go (n-1) (val `shiftR` nCols, fromNumber dim (val .&. mask) : xs)

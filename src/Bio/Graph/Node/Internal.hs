@@ -266,4 +266,4 @@ singletonSubtreeLeafSet
   :: Int -- ^ Leaf count
   -> Int -- ^ Leaf index
   -> SubtreeLeafSet
-singletonSubtreeLeafSet n i = LS . (`setBit` i) $ toEnum n `bitvector` (0 :: Integer)
+singletonSubtreeLeafSet n i = LS . (`setBit` i) $ toEnum n `fromNumber` (0 :: Integer)
