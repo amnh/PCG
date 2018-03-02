@@ -93,6 +93,8 @@ CostMatrix::CostMatrix(size_t alphSize, int* inTcm)
 
 CostMatrix::~CostMatrix()
 {
+    // We occasionally invalid free pointers that were already freed with this loop
+    /*
     for ( auto& thing: myMatrix ) {
     // for ( mapIterator thing = myMatrix.begin(); thing != myMatrix.end(); thing++ ) {
         freeCostMedian_t(&std::get<1>(thing));
@@ -101,6 +103,7 @@ CostMatrix::~CostMatrix()
         // to free?? How is this right? Anyway, skipping next line.
         // freeKeys_t( &std::get<0>(thing) );
     }
+    */
     myMatrix.clear();
     hasher.clear();
 }
