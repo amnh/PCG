@@ -81,7 +81,7 @@ instance Arbitrary StaticCharacterBlock where
         characterLen <- arbitrary `suchThat` (> 0) :: Gen Int
         let randVal  =  choose (1, 2 ^ alphabetLen - 1) :: Gen Integer
         bitRows      <- vectorOf characterLen randVal
-        pure . SCB . fromRows $ bitvector (toEnum alphabetLen) <$> bitRows
+        pure . SCB . fromRows $ fromNumber (toEnum alphabetLen) <$> bitRows
 
 
 instance CoArbitrary StaticCharacter
@@ -90,7 +90,7 @@ instance CoArbitrary StaticCharacter
 instance EncodableStaticCharacter StaticCharacter where
 
     {-# INLINE emptyStatic #-}
-    emptyStatic (SC x) = SC $ bitvector (dimension x) (0 :: Integer)
+    emptyStatic (SC x) = SC $ fromNumber (dimension x) (0 :: Integer)
 
 
 instance EncodableStaticCharacterStream StaticCharacterBlock where
@@ -180,7 +180,7 @@ instance Enum StaticCharacter where
 
     fromEnum = toUnsignedNumber . unwrap
 
-    toEnum i = SC $ bitvector dim i
+    toEnum i = SC $ fromNumber dim i
       where
         dim = toEnum $ finiteBitSize i - countLeadingZeros i
 
@@ -274,8 +274,8 @@ instance Ranged StaticCharacter where
 
     fromRange x = zeroVector .|. (allBitsUpperBound `xor` allBitsLowerBound)
         where
-            allBitsUpperBound = SC . bitvector (toEnum boundaryBit) $ (2 ^ upperBound x - 1 :: Integer)
-            allBitsLowerBound = SC . bitvector (toEnum boundaryBit) $ (2 ^ lowerBound x - 1 :: Integer)
+            allBitsUpperBound = SC . fromNumber (toEnum boundaryBit) $ (2 ^ upperBound x - 1 :: Integer)
+            allBitsLowerBound = SC . fromNumber (toEnum boundaryBit) $ (2 ^ lowerBound x - 1 :: Integer)
             zeroVector  = (zeroBits `setBit` boundaryBit) `clearBit` boundaryBit
             boundaryBit = fromJust (precision x) - 1
 
