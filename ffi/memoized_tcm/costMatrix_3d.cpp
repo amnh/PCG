@@ -50,8 +50,6 @@ keys_3d_t* allockeys_3d_t( size_t alphabetSize )
 }
 
 
-// TODO: since keys_3d_t is Pair<dcElement_t, dcElement_t>, there are no pointers, and nothing
-// to free?? How is this right?
 void freeKeys_3d_t( const keys_3d_t* toFree )
 {
     freeDCElem( &std::get<0>(*toFree) );
@@ -73,12 +71,8 @@ CostMatrix_3d::CostMatrix_3d( size_t alphSize, int* inTcm )
 CostMatrix_3d::~CostMatrix_3d()
 {
     for ( auto& thing: myMatrix ) {
-    // for ( mapIterator thing = myMatrix.begin(); thing != myMatrix.end(); thing++ ) {
+        freeKeys_3d_t(&std::get<0>(thing));
         freeCostMedian_t(&std::get<1>(thing));
-
-        // TODO: since keys_3d_t is tuple<dcElement_t, dcElement_t, dcElement_t>, there are no pointers, and nothing
-        // to free?? How is this right? Anyway, skipping next line.
-        // freekeys_3d_t(&thing.first);
     }
     myMatrix.clear();
     hasher.clear();
