@@ -120,4 +120,10 @@ int main() {
     //     printf("Fail!\n");
     // }
 
+
+
+    //Free everything we have alocated as to not mess with valgrind's leak diognostics.
+    freeDCElem(firstKey);
+    freeDCElem(secondKey);
+    freeDCElem(retMedian);
 }
