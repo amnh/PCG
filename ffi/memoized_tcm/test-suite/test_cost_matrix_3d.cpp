@@ -145,4 +145,9 @@ int main() {
     //     printf("Fail!\n");
     // }
 
+    //Free objects the test suite creates to help with Valgrin's memory leak diagnostics.
+    freeDCElem( firstKey  );
+    freeDCElem( secondKey );
+    freeDCElem( thirdKey  );
+    freeDCElem( retMedian );
 }

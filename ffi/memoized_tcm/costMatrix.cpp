@@ -101,7 +101,7 @@ CostMatrix::~CostMatrix()
     /**/
     for ( auto& thing: myMatrix ) {
     // for ( mapIterator thing = myMatrix.begin(); thing != myMatrix.end(); thing++ ) {
-        freeCostMedian_t(&std::get<1>(thing));
+        //freeCostMedian_t(&std::get<1>(thing));
         // TODO: since keys_t is tuple<dcElement_t, dcElement_t>, there are no pointers, and nothing
         // to free?? How is this right? Anyway, skipping next line.
         // freeKeys_t( &std::get<0>(thing) );
