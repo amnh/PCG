@@ -46,8 +46,12 @@ costMedian_t* allocCostMedian_t (size_t alphabetSize)
 
 void freeCostMedian_t (costMedian_t* toFree)
 {
-    free(std::get<1>(*toFree));
-    // free(toFree);
+    packedChar* medianValue = std::get<1>(*toFree);
+    if (medianValue == NULL)
+      return;
+    
+    free(medianValue);
+    std::get<1>(*toFree) = NULL;
 }
 
 
@@ -94,16 +98,15 @@ CostMatrix::CostMatrix(size_t alphSize, int* inTcm)
 CostMatrix::~CostMatrix()
 {
     // We occasionally invalid free pointers that were already freed with this loop
-    /*
+    /**/
     for ( auto& thing: myMatrix ) {
     // for ( mapIterator thing = myMatrix.begin(); thing != myMatrix.end(); thing++ ) {
         freeCostMedian_t(&std::get<1>(thing));
-
         // TODO: since keys_t is tuple<dcElement_t, dcElement_t>, there are no pointers, and nothing
         // to free?? How is this right? Anyway, skipping next line.
         // freeKeys_t( &std::get<0>(thing) );
     }
-    */
+    /**/
     myMatrix.clear();
     hasher.clear();
 }
