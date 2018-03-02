@@ -11,8 +11,8 @@
  *  Any such checks should be done exterior to this library.
  */
 
-#ifndef _COSTMATRIX_H
-#define _COSTMATRIX_H
+#ifndef _COSTMATRIX_3D_H
+#define _COSTMATRIX_3D_H
 
 #define DEBUG 0
 
@@ -22,12 +22,14 @@
 #include <cstdlib>
 #include <unordered_map>
 
+#include "costMatrix.h"        // This is for lookup in `computeCostMedian()`. TODO: Wrap this crap in. Tonight?
+
+
 /********************* Next three fns defined here to use on C side. *********************/
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "costMatrix.h"        // This is for lookup in `computeCostMedian()`. TODO: Wrap this crap in. Tonight?
 #include "dynamicCharacterOperations.h"
 
 costMatrix_p construct_CostMatrix_3d_C (size_t alphSize, int* tcm);
@@ -51,18 +53,9 @@ int call_getSetCost_3d_C ( costMatrix_p untyped_self
 /******************************** End of C interface fns ********************************/
 
 typedef std::tuple<dcElement_t, dcElement_t, dcElement_t> keys_3d_t;
-typedef std::tuple<int,         packedChar*>              costMedian_t;
 typedef std::tuple<keys_3d_t,   costMedian_t>             mapAccessTuple_3d_t;
 
 typedef void* costMatrix_p;
-
-
-/** Allocate room for a costMedian_t. Assumes alphabetSize is already initialized. */
-costMedian_t* allocCostMedian_t (size_t alphabetSize);
-
-
-/** dealloc costMedian_t. */
-void freeCostMedian_t (costMedian_t* toFree);
 
 
 /** Allocate room for a keys_3d_t. */
@@ -71,10 +64,6 @@ keys_3d_t* allockeys_3d_t (size_t alphSize);
 
 /** dealloc keys_3d_t. Calls various other free fns. */
 void freekeys_3d_t (const keys_3d_t* toFree);
-
-
-/** Allocate space for Pair<keys_3d_t, costMedian_t>, calling allocators for both types. */
-mapAccessTuple_3d_t* allocateMapAccessPair (size_t alphSize);
 
 
 /***************************************************************************************** *
@@ -100,9 +89,9 @@ struct KeyHash_3d
                              , const dcElement_t second
                              , const dcElement_t third ) const
     {
-        std::size_t first_seed  = 3141592653; // π used as arbitrarily random seed
-        std::size_t second_seed = 2718281828; // e used as arbitrarily random seed
-        std::size_t third_seed  = 6022140857; // Avogado's # used as arbitrarily random seed
+        std::size_t first_seed  = 3141592653; // π used as arbitrary random seed
+        std::size_t second_seed = 2718281828; // e used as arbitrary random seed
+        std::size_t third_seed  = 6022140857; // Avogadro's # used as arbitrary random seed
 
         std::hash<uint64_t> hasher;
         size_t elemArrCount = dcElemSize(first.alphSize);
@@ -143,23 +132,21 @@ struct KeyEqual_3d
 {
     // Return true if every `uint64_t` in key1->element and key2->element and key3->element
     // is equal, else false.
-    bool operator()(const keys_3d_t& key1, const keys_3d_t& key2, const keys_3d_t& key3) const
+    bool operator()(const keys_3d_t& key1, const keys_3d_t& key2) const
     {
-      // Assert that all key components share the same alphSize value
-      if (   std::get<0>(key1).alphSize != std::get<1>(key1).alphSize    // all
-          || std::get<1>(key1).alphSize != std::get<2>(key1).alphSize    // alph
-          || std::get<0>(key2).alphSize != std::get<1>(key2).alphSize    // sizes
-          || std::get<1>(key2).alphSize != std::get<2>(key2).alphSize    // match
-          || std::get<0>(key3).alphSize != std::get<1>(key3).alphSize    // in
-          || std::get<1>(key3).alphSize != std::get<2>(key3).alphSize    // all keys
+        // Assert that all key components share the same alphSize value.
+        // There are two keys, with three values in each. They all need to have the same size alphabet.
+        if (   std::get<0>(key1).alphSize != std::get<1>(key1).alphSize
+            || std::get<1>(key1).alphSize != std::get<2>(key1).alphSize     // key1 is consistent
+            || std::get<0>(key2).alphSize != std::get<1>(key2).alphSize
+            || std::get<1>(key2).alphSize != std::get<2>(key2).alphSize     // key2 is consistent
 
-          || std::get<0>(key1).alphSize != std::get<0>(key2).alphSize    // the keys match each other
-          || std::get<0>(key2).alphSize != std::get<0>(key3).alphSize ) {
+            || std::get<0>(key1).alphSize != std::get<0>(key2).alphSize ) { // the keys match each other
           return false;
-      }
+        }
 
-      //Assert that the left key elements match the right key elements
-      size_t elemArrWidth = dcElemSize(std::get<0>(key1).alphSize);
+        //Assert that the left key elements match the right key elements
+        size_t elemArrWidth = dcElemSize(std::get<0>(key1).alphSize);
         // printf("operator equal ()\n");
         // printPackedChar(key1.first.element, 1, key1.first.alphSize);
         // printPackedChar(key2.first.element, 1, key2.first.alphSize);
@@ -167,12 +154,8 @@ struct KeyEqual_3d
         // printPackedChar(key2.second.element, 1, key2.second.alphSize);
         for (size_t i = 0; i < elemArrWidth; i++) {
             if (   std::get<0>(key1).element[i] != std::get<0>(key2).element[i]
-                || std::get<0>(key2).element[i] != std::get<0>(key3).element[i] ) {
-                // printf("equal: false\n");
-                return false;
-            }
-            if (   std::get<1>(key1).element[i] != std::get<1>(key2).element[i]
-                || std::get<1>(key2).element[i] != std::get<1>(key3).element[i] ) {
+                || std::get<1>(key1).element[i] != std::get<1>(key2).element[i]
+                || std::get<2>(key1).element[i] != std::get<2>(key2).element[i] ) {
                 // printf("equal: false\n");
                 return false;
             }
@@ -220,6 +203,8 @@ class CostMatrix_3d
     private:
         std::unordered_map <keys_3d_t, costMedian_t, KeyHash_3d, KeyEqual_3d> myMatrix;
 
+        CostMatrix yourMatrix;
+
         std::unordered_map <keys_3d_t, costMedian_t, KeyHash_3d, KeyEqual_3d> hasher;
 
         size_t alphabetSize;
@@ -242,7 +227,7 @@ class CostMatrix_3d
          *  bases are included in the cost and median calculations. That means a base might appear
          *  in the median that is not present in either of the two elements being compared.
          */
-        costMedian_t* computeCostMedian(keys_3d_t key);
+        costMedian_t* computeCostMedian(keys_3d_t keys);
 
 
         /** Find distance between an ambiguous nucleotide and an unambiguous ambElem. Return
@@ -271,4 +256,4 @@ class CostMatrix_3d
 
 };
 
-#endif // COSTMATRIX_H
+#endif // COSTMATRIX_3D_H

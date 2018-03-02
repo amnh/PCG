@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "../costMatrix.h"
+#include "../costMatrix_3d.h"
 #include "../dynamicCharacterOperations.h"
 
 #define __STDC_FORMAT_MACROS
@@ -19,6 +20,7 @@ int main() {
         exit(1);
     }
 
+    // TODO: I can't remember why these are different lengths.
     const size_t SEQ_A_LEN = 15;
     packedChar seqA_main[SEQ_A_LEN];
     for (size_t i = 0; i < SEQ_A_LEN; i++) {
@@ -30,18 +32,23 @@ int main() {
         seqB_main[i] = i;
     }
 
+    const size_t SEQ_C_LEN = 10;
+    packedChar seqC_main[SEQ_C_LEN];
+    for (size_t i = 0; i < SEQ_C_LEN; i++) {
+        seqC_main[i] = (10 - i) / 2;
+    }
 
-    CostMatrix myMatrix = CostMatrix(alphabetSize, tcm);
+    CostMatrix_3d myMatrix = CostMatrix_3d(alphabetSize, tcm);
 
+    auto firstKey  = makeDCElement( alphabetSize, 1 );
+    auto secondKey = makeDCElement( alphabetSize, 1 );
+    auto thirdKey  = makeDCElement( alphabetSize, 1 );
+    auto retMedian = makeDCElement( alphabetSize, 1 );
+    auto cost{0},
+         foundCost{0};
 
-    dcElement_t* firstKey  = makeDCElement( alphabetSize, 1 );
-    dcElement_t* secondKey = makeDCElement( alphabetSize, 1 );
-    dcElement_t* retMedian = makeDCElement( alphabetSize, 1 );
-    int cost,
-        foundCost;
-
-    packedChar median;        // just a test: alphabet size == 4, so don't need packedChar*
-    median = CANONICAL_ZERO;
+    // just a test: alphabet size == 4, so don't need packedChar*
+    auto median = CANONICAL_ZERO;
 
     // First, test constructor, i.e. that unambiguous characters have been inserted.
     printf("\n\n\n******* Testing constructor: insertion of unambiguous characters. ******\n");
@@ -52,33 +59,27 @@ int main() {
 
         for (size_t key2 = 0; key2 < alphabetSize; ++key2) { // no longer assumes 0 diagonal
             SetBit(secondKey->element, key2);
+            // TODO: How does this work in 3d?
             cost = tcm[key1 * alphabetSize + key2];
             SetBit(&median, key2);
 
-            foundCost = myMatrix.getCostMedian(firstKey, secondKey, retMedian);
-	    fflush(stdout);
-            printf("key 1 set: %zu\n", key1);
-            printf("key 2 set: %zu\n", key2);
-            printf("found median:\n");
-            printPackedChar(retMedian->element, 1, alphabetSize);
-            printf("found cost:    %d\n", foundCost);
-	    /*
-            if(median != *retMedian->element || cost != foundCost) {
-                printf("****** Median/cost retrieval failed! ******\n");
+            for (size_t key3 = 0; key3 < alphabetSize; ++key3) { // no longer assumes 0 diagonal
+                SetBit(thirdKey->element, key3);
+                // TODO: How does this work in 3d?
+                cost = tcm[key1 * alphabetSize + key3];
+                SetBit(&median, key3);
+
+                foundCost = myMatrix.getCostMedian(firstKey, secondKey, thirdKey, retMedian);
+                fflush(stdout);
                 printf("key 1 set: %zu\n", key1);
                 printf("key 2 set: %zu\n", key2);
-                printf("computed median:\n");
-                printPackedChar(&median, 1, alphabetSize);
+                printf("key 3 set: %zu\n", key3);
                 printf("found median:\n");
                 printPackedChar(retMedian->element, 1, alphabetSize);
-                printf("computed cost: %d\n", cost);
                 printf("found cost:    %d\n", foundCost);
-		exit(1);
+
+                if(key3 != key1) ClearBit(&median, key3); // the key1 bit needs to persist on the median
             }
-            else {
-                printf("Unambiguous success! key1: %zu, key2: %zu, cost: %i, median: %" PRIu64 " \n", key1, key2, cost, median);
-            }
-	    */
             if(key2 != key1) ClearBit(&median, key2); // the key1 bit needs to persist on the median
             ClearBit(secondKey->element, key2);
         } // key2
@@ -89,7 +90,7 @@ int main() {
 
     printf("\n\n\n******* Testing ambiguous characters: get/set of ambiguous characters. ******\n");
     size_t numSetInKey;
-    for(size_t i = 0; i < 25; ++i) {
+    for (size_t i = 0; i < 25; ++i) {
         printf("\n\niteration %2zu\n", i + 1);
         numSetInKey = rand() % alphabetSize + 1;
         for(size_t setIdx = 0; setIdx < numSetInKey; ++setIdx) {
@@ -99,26 +100,34 @@ int main() {
         for(size_t setIdx = 0; setIdx < numSetInKey; ++setIdx) {
             SetBit(secondKey->element, rand() % alphabetSize);
         }
-        printf("key1: %2" PRIu64 ", key2: %2" PRIu64 "\n", *firstKey->element, *secondKey->element);
-        foundCost = myMatrix.getSetCostMedian(firstKey, secondKey, retMedian);
+        numSetInKey = rand() % alphabetSize + 1;
+        for(size_t setIdx = 0; setIdx < numSetInKey; ++setIdx) {
+            SetBit(thirdKey->element, rand() % alphabetSize);
+        }
+        printf( "key1: %2" PRIu64 ", key2: %2" PRIu64 ", key3: %2" PRIu64 "\n"
+              , *firstKey->element
+              , *secondKey->element
+              , *thirdKey->element
+              );
+        foundCost = myMatrix.getSetCostMedian(firstKey, secondKey, thirdKey, retMedian);
         printf("***Final cost: %i median: %" PRIu64 "\n", foundCost, *retMedian->element);
         printPackedChar(retMedian->element, 1, alphabetSize);
-        ClearAll( firstKey->element, dynCharSize(alphabetSize, 1) );
-        ClearAll(secondKey->element, dynCharSize(alphabetSize, 1) );
+        ClearAll( firstKey->element,  dynCharSize(alphabetSize, 1) );
+        ClearAll( secondKey->element, dynCharSize(alphabetSize, 1) );
+        ClearAll( thirdKey->element,  dynCharSize(alphabetSize, 1) );
     }
-    packedChar *first, *second, *third, *result, *result2;
-    packedChar firstVal  = 1,
-               secondVal = 4,
-               thirdVal  = 16;
 
-    first  = &firstVal;
-    second = &secondVal;
-    third  = &thirdVal;
-    result = packedCharOr( first, second, alphabetSize, 1 );
+    // TODO: Right now this isn't doing anything. It only works for 2d.
+    // For 3d something more fancier will need to be done.
+    auto first   = new packedChar{1},
+         second  = new packedChar{4},
+         third   = new packedChar{16},
+         result  = packedCharOr( first, second, alphabetSize, 1 ),
+         result2 = packedCharOr( result, third, alphabetSize, 1 );
+
 
     printf("%" PRIu64 "\n", *result);
     //free(result);
-    result2 = packedCharOr( result, third, alphabetSize, 1 );
     printf("%" PRIu64 "\n", *result2);
 
     /****** This next to test Yu Xiang's code, once you can. ******/

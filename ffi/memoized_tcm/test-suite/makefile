@@ -12,7 +12,8 @@ costMatrix     = ../costMatrix.h \
                  ../costMatrix.cpp
 
 costMatrix_3d  = ../costMatrix_3d.h \
-                 ../costMatrix_3d.cpp
+                 ../costMatrix_3d.cpp \
+                 $(costMatrix)
 
 wrapper        = ../costMatrixWrapper.h \
                  ../costMatrixWrapper.c
@@ -35,6 +36,8 @@ clean :
 	rm -rf *.dSYM
 	rm -f $(exe_matrix)
 	rm -f $(exe_interface)
+	rm -f $(exe_matrix_3d)
+	rm -f $(exe_interface_3d)
 
 # compiler flags:
 #  -g    adds debugging information to the executable file
@@ -44,7 +47,6 @@ clean :
 test_cost_matrix : test_cost_matrix.cpp ../costMatrix.cpp ../dynamicCharacterOperations.c
 	gcc -std=c11   $(sanityWarnings) -c -g ../dynamicCharacterOperations.c
 	g++ -std=c++14 $(sanityWarnings) -c -g ../costMatrix.cpp
-	# g++ -std=c++14 -c test_costMtx.cpp
 	g++ -std=c++14 $(sanityWarnings) -g -Wall -o $(exe_matrix) test_cost_matrix.cpp dynamicCharacterOperations.o costMatrix.o
 
 
@@ -60,11 +62,11 @@ test_c_interface : test_c_interface.c $(costMatrix) $(dynamicChar) $(wrapper)
 	# ld -demangle -dynamic -arch x86_64 -o test_c_interface test_c_interface.o dynamicCharacterOperations.o costMatrix.o costMatrixWrapper.o -lc++ -lSystem
 
 
-test_cost_matrix_3d : test_cost_matrix_3d.cpp ../costMatrix_3d.cpp ../dynamicCharacterOperations.c
+test_cost_matrix_3d : test_cost_matrix_3d.cpp ../costMatrix.cpp ../costMatrix_3d.cpp ../dynamicCharacterOperations.c
 	gcc -std=c11   $(sanityWarnings) -c -g ../dynamicCharacterOperations.c
+	g++ -std=c++14 $(sanityWarnings) -c -g ../costMatrix.cpp
 	g++ -std=c++14 $(sanityWarnings) -c -g ../costMatrix_3d.cpp
-	# g++ -std=c++14 -c test_costMtx.cpp
-	g++ -std=c++14 $(sanityWarnings) -g -Wall -o $(exe_matrix_3d) test_cost_matrix_3d.cpp dynamicCharacterOperations.o costMatrix_3d.o
+	g++ -std=c++14 $(sanityWarnings) -g -Wall -o $(exe_matrix_3d) test_cost_matrix_3d.cpp dynamicCharacterOperations.o costMatrix.o costMatrix_3d.o
 
 
 test_c_interface_3d : test_c_interface_3d.c $(costMatrix_3d) $(dynamicChar) $(wrapper_3d)

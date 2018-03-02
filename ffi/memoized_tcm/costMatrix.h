@@ -39,9 +39,9 @@ int call_getSetCost_C (costMatrix_p untyped_self, dcElement_t* left, dcElement_t
 #endif
 
 // #include "CostMedPair.h"
-typedef std::pair<dcElement_t, dcElement_t>  keys_t;
-typedef std::pair<int,         packedChar*>  costMedian_t;
-typedef std::pair<keys_t,      costMedian_t> mapAccessPair_t;
+typedef std::tuple<dcElement_t, dcElement_t>  keys_t;
+typedef std::tuple<int,         packedChar*>  costMedian_t;
+typedef std::tuple<keys_t,      costMedian_t> mapAccessTuple_t;
 
 typedef void* costMatrix_p;
 
@@ -50,17 +50,18 @@ typedef void* costMatrix_p;
 /** Allocate room for a costMedian_t. Assumes alphabetSize is already initialized. */
 costMedian_t* allocCostMedian_t (size_t alphabetSize);
 
+
 /** dealloc costMedian_t. */
 void freeCostMedian_t (costMedian_t* toFree);
+
 
 /** Allocate room for a keys_t. */
 keys_t* allocKeys_t (size_t alphSize);
 
+
 /** dealloc keys_t. Calls various other free fns. */
 void freeKeys_t (const keys_t* toFree);
 
-/** Allocate space for Pair<keys_t, costMedian_t>, calling allocators for both types. */
-mapAccessPair_t* allocateMapAccessPair (size_t alphSize);
 
 /** Hashes two `dcElement`s, and returns an order-dependent hash value. In this case
  *  "order dependent" means that the order of the arrays within the `dcElement`s matter,
@@ -80,7 +81,7 @@ struct KeyHash {
         std::size_t right_seed = 2718281828; // E  used as arbitrarily random seed
 
         std::hash<uint64_t> hasher;
-        size_t elemArrCount = dcElemSize(lhs.alphSize);
+        auto elemArrCount = dcElemSize(lhs.alphSize);
         //printf("alphabetSize: %d\n", lhs.alphSize);
         //printf("elemArrCount: %d\n", elemArrCount);
         for (size_t i = 0; i < elemArrCount; i++) {
@@ -97,34 +98,35 @@ struct KeyHash {
         // printf("operator hash ()\n");
         // printPackedChar(k.first.element, 1, k.first.alphSize);
         // printPackedChar(k.second.element, 1, k.second.alphSize);
-        return hash_combine (k.first, k.second);
+        return hash_combine (std::get<0>(k), std::get<1>(k));
     }
 };
+
 
 struct KeyEqual {
     // Return true if every `uint64_t` in lhs->element and rhs->element is equal, else false.
     bool operator()(const keys_t& lhs, const keys_t& rhs) const
     {
       // Assert that all key components share the same alphSize value
-      if (   lhs.first.alphSize  != rhs.first.alphSize
-          || lhs.first.alphSize  != lhs.second.alphSize
-          || lhs.second.alphSize != rhs.second.alphSize) {
+      if (   std::get<0>(lhs).alphSize  != std::get<0>(rhs).alphSize
+          || std::get<0>(lhs).alphSize  != std::get<1>(lhs).alphSize
+          || std::get<1>(lhs).alphSize != std::get<1>(rhs).alphSize) {
           return false;
       }
 
       //Assert that the left key elements match the right key elements
-      size_t elemArrWidth = dcElemSize(lhs.first.alphSize);
+      auto elemArrWidth = dcElemSize(std::get<0>(lhs).alphSize);
         // printf("operator equal ()\n");
-        // printPackedChar(lhs.first.element, 1, lhs.first.alphSize);
-        // printPackedChar(rhs.first.element, 1, rhs.first.alphSize);
-        // printPackedChar(lhs.second.element, 1, lhs.second.alphSize);
-        // printPackedChar(rhs.second.element, 1, rhs.second.alphSize);
+        // printPackedChar(std::get<0>(lhs).element, 1, std::get<0>(lhs).alphSize);
+        // printPackedChar(std::get<0>(rhs).element, 1, std::get<0>(rhs).alphSize);
+        // printPackedChar(std::get<1>(lhs).element, 1, std::get<1>(lhs).alphSize);
+        // printPackedChar(std::get<1>(rhs).element, 1, std::get<1>(rhs).alphSize);
         for (size_t i = 0; i < elemArrWidth; i++) {
-            if (lhs.first.element[i] != rhs.first.element[i]) {
+            if (std::get<0>(lhs).element[i] != std::get<0>(rhs).element[i]) {
                 // printf("equal: false\n");
                 return false;
             }
-            if (lhs.second.element[i] != rhs.second.element[i]) {
+            if (std::get<1>(lhs).element[i] != std::get<1>(rhs).element[i]) {
                 // printf("equal: false\n");
                 return false;
             }
@@ -140,11 +142,28 @@ typedef std::unordered_map<keys_t, costMedian_t, KeyHash, KeyEqual>::const_itera
 class CostMatrix
 {
     public:
-//        CostMatrix();
+
+        /** Default constructor. Settings: alphabet size: 5, indel cost: 2, substitution cost: 1 */
+        CostMatrix();
 
         CostMatrix(size_t alphSize, int* tcm);
 
         ~CostMatrix();
+
+        /** Find distance between an ambiguous nucleotide and an unambiguous ambElem. Return that value and the median.
+         *  @param ambElem is ambiguous input.
+         *  @param nucleotide is unambiguous.
+         *  @param median is used to return the calculated median value.
+         *
+         *  This fn is necessary because there isn't yet a cost matrix set up, so it's not possible to
+         *  look up ambElems, therefore we must loop over possible values of the ambElem
+         *  and find the lowest cost median.
+         *
+         *  Public because gets called in CostMatrix_3d
+         *
+         *  Nota bene: Requires symmetric, if not metric, matrix. TODO: Is this true? If so fix it?
+         */
+        int findDistance (keys_t* searchKey, dcElement_t* ambElem);
 
         /** Getter only for cost. Necessary for testing, to insure that particular
          *  key pair has, in fact, already been inserted into lookup table.
@@ -169,8 +188,8 @@ class CostMatrix
 
         size_t alphabetSize;
 
-        /** Stored unambiguous tcm, necessary to do first calls to findDistance() without having to rewrite findDistance()
-         *  and computeCostMedian()
+        /** Stored unambiguous tcm, necessary to do first calls to findDistance() without having to rewrite
+         *  findDistance() and computeCostMedian()
          */
         int *tcm;
 
@@ -186,19 +205,6 @@ class CostMatrix
          */
         costMedian_t* computeCostMedian(keys_t key);
 
-        /** Find distance between an ambiguous nucleotide and an unambiguous ambElem. Return that value and the median.
-         *  @param ambElem is ambiguous input.
-         *  @param nucleotide is unambiguous.
-         *  @param median is used to return the calculated median value.
-         *
-         *  This fn is necessary because there isn't yet a cost matrix set up, so it's not possible to
-         *  look up ambElems, therefore we must loop over possible values of the ambElem
-         *  and find the lowest cost median.
-         *
-         *  Nota bene: Requires symmetric, if not metric, matrix. TODO: Is this true? If so fix it?
-         */
-        int findDistance (keys_t* searchKey, dcElement_t* ambElem);
-
         /** Takes in an initial TCM, which is actually just a row-major array, creates hash table of costs
          *  where cost is least cost between two elements, and medians, where median is union of characters.
          *
@@ -206,14 +212,6 @@ class CostMatrix
          *  Can only be called once this.alphabetSize has been set.
          */
         void initializeMatrix ();
-
-        // DEPRECATED!!!
-        /** Takes in a pair of keys_t (each of which is a single `dcElement`) and computes their lowest-cost median.
-         *  Contrast with computeCostMedian(). In this algorithm only bases which are present in at least one of
-         *  the two elements being compared are considered.
-         */
-        /* costMedian_t* computeCostMedianFitchy(keys_t keys); */
-
 };
 
 #endif // COSTMATRIX_H
