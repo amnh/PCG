@@ -316,11 +316,15 @@ void CostMatrix::initializeMatrix()
     }
     // printf("finished initializing\n");
     // printf("freed keys\n");
+    freeDCElem( firstKey  );
+    freeDCElem( secondKey );
+    freeDCElem( retMedian );
 }
 
 
 void CostMatrix::setValue(keys_t* key, costMedian_t* median)
 {
     // This has to be a pair. Clang is okay with make_tuple() or forward_as_tuple(), but gcc doesn't like it.
+    // TODO: We might want a deep copy of key & median here to help with mempory management.
     myMatrix.insert(std::make_pair(*key, *median));
 }
