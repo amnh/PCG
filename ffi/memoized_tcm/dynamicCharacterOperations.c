@@ -374,7 +374,11 @@ void freeDynChar( dynChar_t *p )
 
 void freeDCElem( const dcElement_t *p )
 {
+    if(p == NULL)
+        return;
     free( p->element );
+    free( p );
+    // No p = NULL; because we need a const pointer for some reason in C++ land.
 }
 
 
