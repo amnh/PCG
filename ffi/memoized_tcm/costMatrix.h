@@ -196,8 +196,9 @@ class CostMatrix
         /** Takes in a `keys_t` and a `costMedian_t` and updates myMap to store the new values,
          *  with @key as a key, and @median as the value.
          */
-        void setValue(keys_t* key, costMedian_t* median);
-
+	//        void setValue(keys_t* key, costMedian_t* median);
+	void setValue(const keys_t* const key, const costMedian_t* const median);
+	  
         /** Takes in a pair of keys_t (each of which is a single `dcElement`) and computes their lowest-cost median.
          *  Uses a Sankoff-like algorithm, where all bases are considered, and the lowest cost bases are included in the
          *  cost and median calculations. That means a base might appear in the median that is not present in either of
