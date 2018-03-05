@@ -69,10 +69,11 @@ keys_t* allocKeys_t (size_t alphabetSize)
 
 // TODO: since keys_t is Pair<dcElement_t, dcElement_t>, there are no pointers, and nothing
 // to free?? How is this right?
-void freeKeys_t ( const keys_t* toFree)
+void freeKeys_t ( const keys_t* toFree )
 {
     freeDCElem(&std::get<0>(*toFree));
     freeDCElem(&std::get<1>(*toFree));
+    // C++ memory Manager will free toFree
 }
 
 
@@ -174,9 +175,11 @@ int CostMatrix::getSetCostMedian( dcElement_t* left
         std::get<1>(*toLookup)          = *(dcElement_t*) malloc( sizeof(dcElement_t) );
         std::get<1>(*toLookup).alphSize = right->alphSize;
         std::get<1>(*toLookup).element  = makePackedCharCopy( right->element, alphabetSize, 1 );
-
+	
         setValue (toLookup, computedCostMed);
-    } else {
+	// freeCostMedian_t(computedCostMed);
+    }
+    else {
         // because in the next two lines, I get back a tuple<keys, costMedian_t>
         foundCost          = std::get<0>(std::get<1>(*found));
         if(retMedian->element != NULL)
@@ -231,7 +234,8 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys)
             minCost = curCost;
             ClearAll(curMedian, elemArrLen);
             SetBit(curMedian, curNucleotideIdx);
-        } else if (curCost == minCost) {
+        }
+	else if (curCost == minCost) {
       /*
             printf("\nSame cost, new median.\n");
             printf("current nucleotide: %" PRIu64 " \n", *std::get<1>(searchKey).element);
@@ -248,6 +252,7 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys)
     std::get<1>(*toReturn) = curMedian;
 
     freeKeys_t(searchKey);
+    delete searchKey;
 
     return toReturn;
 }
@@ -277,12 +282,14 @@ int CostMatrix::findDistance (keys_t* searchKey, dcElement_t* ambElem)
                     }
                     curCost = tcm[pos * alphabetSize + unambElemIdx];
                     // printf("\n--findDistance-- \n    ambElemIdx: %zu, nucleotide: %zu, cost: %d\n", unambElemIdx, pos, curCost);
-                } else {
+                }
+		else {
                     printf("Something went wrong in the memoized cost matrix.\n");
                     printf("missing key: %" PRIu64 " %" PRIu64 "\n", *std::get<0>(*searchKey).element, *std::get<1>(*searchKey).element);
                     exit(1);
                 }
-            } else {  // We found the memoized cost for the elements in the TCM.
+            }
+	    else {  // We found the memoized cost for the elements in the TCM.
                 curCost = std::get<0>(std::get<1>(*found));
             }
             if (curCost < minCost) {
