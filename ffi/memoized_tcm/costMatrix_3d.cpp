@@ -34,6 +34,7 @@ int call_getSetCost_3d_C( costMatrix_p untyped_self
     return thisMtx->getSetCostMedian(first, second, third, retMedian);
 }
 
+
 keys_3d_t* allockeys_3d_t( size_t alphabetSize )
 {
     auto toReturn = new keys_3d_t;
@@ -72,7 +73,7 @@ CostMatrix_3d::~CostMatrix_3d()
 {
     for ( auto& thing: myMatrix ) {
         freeKeys_3d_t(&std::get<0>(thing));
-        freeCostMedian_t(&std::get<1>(thing));
+        // freeCostMedian_t(&std::get<1>(thing));
     }
     myMatrix.clear();
     hasher.clear();
@@ -86,13 +87,13 @@ int CostMatrix_3d::getCostMedian( dcElement_t* first
                                 , dcElement_t* retMedian
                                 )
 {
-    keys_3d_t toLookup;
-    std::get<0>(toLookup) = *first;
-    std::get<1>(toLookup) = *second;
-    std::get<2>(toLookup) = *third;
+    auto toLookup = new keys_3d_t;
+    std::get<0>(*toLookup) = *first;
+    std::get<1>(*toLookup) = *second;
+    std::get<2>(*toLookup) = *third;
     auto foundCost{0};
 
-    auto found = myMatrix.find(toLookup);
+    auto found = myMatrix.find(*toLookup);
 
     if ( found == myMatrix.end() ) {
         return -1;
@@ -101,6 +102,7 @@ int CostMatrix_3d::getCostMedian( dcElement_t* first
         retMedian->element = std::get<1>(std::get<1>(*found));
     }
 
+    // don't need to free toLookup because it only contains pointers to incoming dc_Elements which will be dealloc'ed elsewhere
     return foundCost;
 }
 
@@ -163,14 +165,15 @@ int CostMatrix_3d::getSetCostMedian( dcElement_t* first
         retMedian->element = makePackedCharCopy( std::get<1>(found->second), alphabetSize, 1 );
     }
 
+    // don't need to free toLookup because it only contains pointers to input dc_Elements which will be dealloc'ed elsewhere
     return foundCost;
 }
 
 
 costMedian_t* CostMatrix_3d::computeCostMedian(keys_3d_t keys)
 {
-    auto curCost = INT_MAX,
-         minCost = INT_MAX;
+    auto curCost{INT_MAX},
+         minCost{INT_MAX};
 
     auto elemArrLen = dcElemSize(alphabetSize);
 //    packedChar*   median     = (packedChar*) calloc( elemArrLen, sizeof(uint64_t) );
@@ -242,8 +245,8 @@ costMedian_t* CostMatrix_3d::computeCostMedian(keys_3d_t keys)
 int CostMatrix_3d::findDistance (keys_3d_t* searchKey, dcElement_t* ambElem)
 {
     mapIterator_3d found;
-    auto minCost = INT_MAX,
-         curCost = INT_MAX;
+    auto minCost{INT_MAX},
+         curCost{INT_MAX};
     size_t unambElemIdx;
 
     for (size_t pos = 0; pos < alphabetSize; pos++) {
@@ -315,7 +318,12 @@ void CostMatrix_3d::initializeMatrix ()
     }
     // printf("finished initializing\n");
     // TODO: do I need to free keys?
+    freeDCElem(firstKey);
+    freeDCElem(secondKey);
+    freeDCElem(thirdKey);
+    freeDCElem(retMedian);
     // printf("freed keys\n");
+
 }
 
 

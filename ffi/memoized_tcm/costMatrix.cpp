@@ -49,7 +49,7 @@ void freeCostMedian_t (costMedian_t* toFree)
     packedChar* medianValue = std::get<1>(*toFree);
     if (medianValue == NULL)
       return;
-    
+
     free(medianValue);
     std::get<1>(*toFree) = NULL;
 }
@@ -98,8 +98,8 @@ CostMatrix::CostMatrix(size_t alphSize, int* inTcm)
 
 CostMatrix::~CostMatrix()
 {
-    // We occasionally invalid free pointers that were already freed with this loop
-    /**/
+    // We occasionally invalid free pointers that were already freed with this loop. TODO: Occasionally?
+    /*
     for ( auto& thing: myMatrix ) {
     // for ( mapIterator thing = myMatrix.begin(); thing != myMatrix.end(); thing++ ) {
         //freeCostMedian_t(&std::get<1>(thing));
@@ -107,7 +107,7 @@ CostMatrix::~CostMatrix()
         // to free?? How is this right? Anyway, skipping next line.
         // freeKeys_t( &std::get<0>(thing) );
     }
-    /**/
+    */
     myMatrix.clear();
     hasher.clear();
 }
@@ -184,14 +184,15 @@ int CostMatrix::getSetCostMedian( dcElement_t* left
 	retMedian->element = makePackedCharCopy( std::get<1>(std::get<1>(*found)), alphabetSize, 1 );
     }
 
+    freeKeys_t(toLookup);
     return foundCost;
 }
 
 
 costMedian_t* CostMatrix::computeCostMedian(keys_t keys)
 {
-    auto curCost = INT_MAX,
-         minCost = INT_MAX;
+    auto curCost{INT_MAX},
+         minCost{INT_MAX};
 
     auto elemArrLen = dcElemSize(alphabetSize);
 //    packedChar*   median     = (packedChar*) calloc( elemArrLen, sizeof(uint64_t) );
@@ -201,7 +202,7 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys)
 
     // TODO: I need the alloc here, `new` won't work. Why?
     packedChar* curMedian = (packedChar*) calloc(elemArrLen, INT_WIDTH);  // don't free, it's going into toReturn
-    auto searchKey = allocKeys_t(alphabetSize);
+    auto searchKey        = allocKeys_t(alphabetSize);
     auto singleNucleotide = &std::get<1>(*searchKey);
 
     if(DEBUG) {
@@ -258,8 +259,8 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys)
 int CostMatrix::findDistance (keys_t* searchKey, dcElement_t* ambElem)
 {
     mapIterator found;
-    auto minCost = INT_MAX,
-         curCost = INT_MAX;
+    auto minCost{INT_MAX},
+         curCost{INT_MAX};
     size_t unambElemIdx;
 
     for (size_t pos = 0; pos < alphabetSize; pos++) {
@@ -318,6 +319,9 @@ void CostMatrix::initializeMatrix()
         } // key2
         ClearBit(firstKey->element, key1);
     }
+    freeDCElem(firstKey);
+    freeDCElem(secondKey);
+    freeDCElem(retMedian);
     // printf("finished initializing\n");
     // printf("freed keys\n");
     freeDCElem( firstKey  );
