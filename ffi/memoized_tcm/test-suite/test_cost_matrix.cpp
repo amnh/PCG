@@ -19,6 +19,7 @@ int main() {
         exit(1);
     }
 
+    /*
     const size_t SEQ_A_LEN = 15;
     packedChar seqA_main[SEQ_A_LEN];
 
@@ -31,6 +32,7 @@ int main() {
     for (size_t i = 0; i < SEQ_B_LEN; i++) {
         seqB_main[i] = i;
     }
+    */
 
 
     CostMatrix myMatrix = CostMatrix(alphabetSize, tcm);
@@ -120,7 +122,8 @@ int main() {
     //     printf("Fail!\n");
     // }
 
-
+    // free(seqA_main);
+    // free(seqB_main);
 
     //Free everything we have alocated as to not mess with valgrind's leak diognostics.
     freeDCElem(firstKey);

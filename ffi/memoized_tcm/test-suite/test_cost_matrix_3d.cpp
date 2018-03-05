@@ -14,29 +14,29 @@ int main() {
     const size_t tcmLen       = 25;
     const size_t alphabetSize = 5;
 
-    int tcm [tcmLen] = {0,1,2,3,4, 1,0,1,2,3, 2,1,0,1,2, 3,2,1,0,1, 4,3,2,1,0};
+    int tcm [tcmLen] = {0,1,1,1,1, 1,0,1,1,1, 1,1,0,1,1, 1,1,1,0,1, 1,1,1,1,0};
     if ( tcmLen != alphabetSize * alphabetSize ) {
         printf("tcm wrong size\n");
         exit(1);
     }
 
     // TODO: I can't remember why these are different lengths.
-    const size_t SEQ_A_LEN = 15;
-    packedChar seqA_main[SEQ_A_LEN];
-    for (size_t i = 0; i < SEQ_A_LEN; i++) {
-        seqA_main[i] = 15 - i;
-    }
-    const size_t SEQ_B_LEN = 10;
-    packedChar seqB_main[SEQ_B_LEN];
-    for (size_t i = 0; i < SEQ_B_LEN; i++) {
-        seqB_main[i] = i;
-    }
+    // const size_t SEQ_A_LEN = 15;
+    // packedChar seqA_main[SEQ_A_LEN];
+    // for (size_t i = 0; i < SEQ_A_LEN; i++) {
+    //     seqA_main[i] = 15 - i;
+    // }
+    // const size_t SEQ_B_LEN = 10;
+    // packedChar seqB_main[SEQ_B_LEN];
+    // for (size_t i = 0; i < SEQ_B_LEN; i++) {
+    //     seqB_main[i] = i;
+    // }
 
-    const size_t SEQ_C_LEN = 10;
-    packedChar seqC_main[SEQ_C_LEN];
-    for (size_t i = 0; i < SEQ_C_LEN; i++) {
-        seqC_main[i] = (10 - i) / 2;
-    }
+    // const size_t SEQ_C_LEN = 10;
+    // packedChar seqC_main[SEQ_C_LEN];
+    // for (size_t i = 0; i < SEQ_C_LEN; i++) {
+    //     seqC_main[i] = (10 - i) / 2;
+    // }
 
     CostMatrix_3d myMatrix = CostMatrix_3d(alphabetSize, tcm);
 
@@ -71,12 +71,14 @@ int main() {
 
                 foundCost = myMatrix.getCostMedian(firstKey, secondKey, thirdKey, retMedian);
                 fflush(stdout);
-                printf("key 1 set: %zu\n", key1);
-                printf("key 2 set: %zu\n", key2);
-                printf("key 3 set: %zu\n", key3);
+                printf("key 1 set bit: %zu\n", key1);
+                printf("key 2 set bit: %zu\n", key2);
+                printf("key 3 set bit: %zu\n", key3);
+                printf("computed median:\n");
+                printPackedChar(&median, 1, alphabetSize);
                 printf("found median:\n");
                 printPackedChar(retMedian->element, 1, alphabetSize);
-                printf("found cost:    %d\n", foundCost);
+                printf("found cost:    %d\n\n", foundCost);
 
                 if(key3 != key1) ClearBit(&median, key3); // the key1 bit needs to persist on the median
             }
@@ -88,34 +90,34 @@ int main() {
     }
     printf("Passed!\n\n\n");
 
-    printf("\n\n\n******* Testing ambiguous characters: get/set of ambiguous characters. ******\n");
-    size_t numSetInKey;
-    for (size_t i = 0; i < 25; ++i) {
-        printf("\n\niteration %2zu\n", i + 1);
-        numSetInKey = rand() % alphabetSize + 1;
-        for(size_t setIdx = 0; setIdx < numSetInKey; ++setIdx) {
-            SetBit(firstKey->element, rand() % alphabetSize);
-        }
-        numSetInKey = rand() % alphabetSize + 1;
-        for(size_t setIdx = 0; setIdx < numSetInKey; ++setIdx) {
-            SetBit(secondKey->element, rand() % alphabetSize);
-        }
-        numSetInKey = rand() % alphabetSize + 1;
-        for(size_t setIdx = 0; setIdx < numSetInKey; ++setIdx) {
-            SetBit(thirdKey->element, rand() % alphabetSize);
-        }
-        printf( "key1: %2" PRIu64 ", key2: %2" PRIu64 ", key3: %2" PRIu64 "\n"
-              , *firstKey->element
-              , *secondKey->element
-              , *thirdKey->element
-              );
-        foundCost = myMatrix.getSetCostMedian(firstKey, secondKey, thirdKey, retMedian);
-        printf("***Final cost: %i median: %" PRIu64 "\n", foundCost, *retMedian->element);
-        printPackedChar(retMedian->element, 1, alphabetSize);
-        ClearAll( firstKey->element,  dynCharSize(alphabetSize, 1) );
-        ClearAll( secondKey->element, dynCharSize(alphabetSize, 1) );
-        ClearAll( thirdKey->element,  dynCharSize(alphabetSize, 1) );
-    }
+    // printf("\n\n\n******* Testing ambiguous characters: get/set of ambiguous characters. ******\n");
+    // size_t numSetInKey;
+    // for (size_t i = 0; i < 25; ++i) {
+    //     printf("\n\niteration %2zu\n", i + 1);
+    //     numSetInKey = rand() % alphabetSize + 1;
+    //     for(size_t setIdx = 0; setIdx < numSetInKey; ++setIdx) {
+    //         SetBit(firstKey->element, rand() % alphabetSize);
+    //     }
+    //     numSetInKey = rand() % alphabetSize + 1;
+    //     for(size_t setIdx = 0; setIdx < numSetInKey; ++setIdx) {
+    //         SetBit(secondKey->element, rand() % alphabetSize);
+    //     }
+    //     numSetInKey = rand() % alphabetSize + 1;
+    //     for(size_t setIdx = 0; setIdx < numSetInKey; ++setIdx) {
+    //         SetBit(thirdKey->element, rand() % alphabetSize);
+    //     }
+    //     printf( "key1: %2" PRIu64 ", key2: %2" PRIu64 ", key3: %2" PRIu64 "\n"
+    //           , *firstKey->element
+    //           , *secondKey->element
+    //           , *thirdKey->element
+    //           );
+    //     foundCost = myMatrix.getSetCostMedian(firstKey, secondKey, thirdKey, retMedian);
+    //     printf("***Final cost: %i median: %" PRIu64 "\n", foundCost, *retMedian->element);
+    //     printPackedChar(retMedian->element, 1, alphabetSize);
+    //     ClearAll( firstKey->element,  dynCharSize(alphabetSize, 1) );
+    //     ClearAll( secondKey->element, dynCharSize(alphabetSize, 1) );
+    //     ClearAll( thirdKey->element,  dynCharSize(alphabetSize, 1) );
+    // }
 
     // TODO: Right now this isn't doing anything. It only works for 2d.
     // For 3d something more fancier will need to be done.
