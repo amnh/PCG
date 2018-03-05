@@ -188,6 +188,11 @@ class CostMatrix
 
         size_t alphabetSize;
 
+	/** Always equal to alphabetSize % sizeof ( packedChar )
+         *  Calculated once and stored for efficincy.
+         */
+        size_t elementSize; 
+
         /** Stored unambiguous tcm, necessary to do first calls to findDistance() without having to rewrite
          *  findDistance() and computeCostMedian()
          */

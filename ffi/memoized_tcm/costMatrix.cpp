@@ -69,10 +69,11 @@ keys_t* allocKeys_t (size_t alphabetSize)
 
 // TODO: since keys_t is Pair<dcElement_t, dcElement_t>, there are no pointers, and nothing
 // to free?? How is this right?
-void freeKeys_t ( const keys_t* toFree)
+void freeKeys_t ( const keys_t* toFree )
 {
     freeDCElem(&std::get<0>(*toFree));
     freeDCElem(&std::get<1>(*toFree));
+    // C++ memory Manager will free toFree
 }
 
 
@@ -89,6 +90,7 @@ CostMatrix::CostMatrix()
 CostMatrix::CostMatrix(size_t alphSize, int* inTcm)
 {
     alphabetSize = alphSize;
+    elementSize  = alphabetSize % sizeof(packedChar);
     tcm = new int[alphabetSize * alphabetSize];
     memcpy(tcm, inTcm, alphabetSize * alphabetSize * sizeof(int));
     initializeMatrix();
@@ -125,6 +127,8 @@ int CostMatrix::getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t
         return -1;
     } else {
         foundCost          = std::get<0>(std::get<1>(*found));
+    if(retMedian->element != NULL)
+       free(retMedian->element);
         retMedian->element = std::get<1>(std::get<1>(*found));
     }
 
@@ -149,10 +153,6 @@ int CostMatrix::getSetCostMedian( dcElement_t* left
         printf("2nd: {%zu}: %" PRIu64 "\n", std::get<1>(*toLookup).alphSize, *std::get<1>(*toLookup).element), fflush(stdout);
     }
 
-    // if (retMedian->element == NULL) {
-    //     retMedian->element = (packedChar*) calloc( dcElemSize(alphabetSize), sizeof(packedChar) );
-    // }
-
     if ( found == myMatrix.end() ) {
         if(DEBUG) printf("\ngetSetCost didn't find %" PRIu64 " %" PRIu64 ".\n", left->element[0], right->element[0]);
 
@@ -162,6 +162,9 @@ int CostMatrix::getSetCostMedian( dcElement_t* left
         if(DEBUG) printf("computed cost, median: %2i %" PRIu64 "\n", std::get<0>(*computedCostMed), std::get<1>(*computedCostMed)[0]);
 
         foundCost          = std::get<0>(*computedCostMed);
+
+    if(retMedian->element != NULL)
+        free(retMedian->element);
         retMedian->element = makePackedCharCopy( std::get<1>(*computedCostMed), alphabetSize, 1 );
 
         // Was using toLookup here, but the memory allocation was getting confusing.
@@ -180,7 +183,9 @@ int CostMatrix::getSetCostMedian( dcElement_t* left
     } else {
         // because in the next two lines, I get back a tuple<keys, costMedian_t>
         foundCost          = std::get<0>(std::get<1>(*found));
-        retMedian->element = makePackedCharCopy( std::get<1>(std::get<1>(*found)), alphabetSize, 1 );
+        if(retMedian->element != NULL)
+            free(retMedian->element);
+    retMedian->element = makePackedCharCopy( std::get<1>(std::get<1>(*found)), alphabetSize, 1 );
     }
 
     return foundCost;
@@ -229,7 +234,8 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys)
             minCost = curCost;
             ClearAll(curMedian, elemArrLen);
             SetBit(curMedian, curNucleotideIdx);
-        } else if (curCost == minCost) {
+        }
+    else if (curCost == minCost) {
       /*
             printf("\nSame cost, new median.\n");
             printf("current nucleotide: %" PRIu64 " \n", *std::get<1>(searchKey).element);
@@ -246,6 +252,7 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys)
     std::get<1>(*toReturn) = curMedian;
 
     freeKeys_t(searchKey);
+    delete searchKey;
 
     return toReturn;
 }
@@ -275,12 +282,14 @@ int CostMatrix::findDistance (keys_t* searchKey, dcElement_t* ambElem)
                     }
                     curCost = tcm[pos * alphabetSize + unambElemIdx];
                     // printf("\n--findDistance-- \n    ambElemIdx: %zu, nucleotide: %zu, cost: %d\n", unambElemIdx, pos, curCost);
-                } else {
+                }
+        else {
                     printf("Something went wrong in the memoized cost matrix.\n");
                     printf("missing key: %" PRIu64 " %" PRIu64 "\n", *std::get<0>(*searchKey).element, *std::get<1>(*searchKey).element);
                     exit(1);
                 }
-            } else {  // We found the memoized cost for the elements in the TCM.
+            }
+        else {  // We found the memoized cost for the elements in the TCM.
                 curCost = std::get<0>(std::get<1>(*found));
             }
             if (curCost < minCost) {
@@ -328,6 +337,14 @@ void CostMatrix::initializeMatrix()
 void CostMatrix::setValue(const keys_t* const key, const costMedian_t* const median)
 {
     // This has to be a pair. Clang is okay with make_tuple() or forward_as_tuple(), but gcc doesn't like it.
-    // TODO: We might want a deep copy of key & median here to help with memory management.
+    // TODO: We might want a deep copy of key & median here to help with mempory management.
+    //std::tuple<int,         packedChar*>  costMedian_t
+  /*
+    auto medianCopy = new costMedian_t;
+    auto packedCopy = malloc(elementSize * sizeof(packedChar));
+    memcpy(packedCopy, std::get<1>(median), elementSize);
+    std::get<0>(medianCopy) = std::get<0>(median);
+    std::get<1>(medianCopy) = packedCopy;
+  */
     myMatrix.insert(std::make_pair(*key, *median));
 }
