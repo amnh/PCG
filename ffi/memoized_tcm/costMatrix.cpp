@@ -164,23 +164,25 @@ int CostMatrix::getSetCostMedian( dcElement_t* left
         foundCost          = std::get<0>(*computedCostMed);
         retMedian->element = makePackedCharCopy( std::get<1>(*computedCostMed), alphabetSize, 1 );
 
+        // Was using toLookup here, but the memory allocation was getting confusing.
+        auto insertKey = new keys_t;
         // Can't use allocateDCElement here, because makePackedCharCopy() allocates.
-        std::get<0>(*toLookup)           = *(dcElement_t*) malloc( sizeof(dcElement_t) );
-        std::get<0>(*toLookup).alphSize  = left->alphSize;
-        std::get<0>(*toLookup).element   = makePackedCharCopy( left->element , alphabetSize, 1 );
+        std::get<0>(*insertKey)          = *(new dcElement_t);
+        std::get<0>(*insertKey).alphSize = left->alphSize;
+        std::get<0>(*insertKey).element  = makePackedCharCopy( left->element , alphabetSize, 1 );
 
-        std::get<1>(*toLookup)          = *(dcElement_t*) malloc( sizeof(dcElement_t) );
-        std::get<1>(*toLookup).alphSize = right->alphSize;
-        std::get<1>(*toLookup).element  = makePackedCharCopy( right->element, alphabetSize, 1 );
+        std::get<1>(*insertKey)          = *(new dcElement_t);
+        std::get<1>(*insertKey).alphSize = right->alphSize;
+        std::get<1>(*insertKey).element  = makePackedCharCopy( right->element, alphabetSize, 1 );
 
-        setValue (toLookup, computedCostMed);
+        setValue(insertKey, computedCostMed);
+        // freeKeys_t(insertKey); Don't want to free this because it gets copied by ref into the map.
     } else {
         // because in the next two lines, I get back a tuple<keys, costMedian_t>
         foundCost          = std::get<0>(std::get<1>(*found));
         retMedian->element = makePackedCharCopy( std::get<1>(std::get<1>(*found)), alphabetSize, 1 );
     }
 
-    freeKeys_t(toLookup);
     return foundCost;
 }
 
@@ -315,20 +317,17 @@ void CostMatrix::initializeMatrix()
         } // key2
         ClearBit(firstKey->element, key1);
     }
-    freeDCElem(firstKey);
-    freeDCElem(secondKey);
-    freeDCElem(retMedian);
-    // printf("finished initializing\n");
-    // printf("freed keys\n");
-    freeDCElem( firstKey  );
+    freeDCElem( firstKey );
     freeDCElem( secondKey );
     freeDCElem( retMedian );
+    // printf("finished initializing\n");
+    // printf("freed keys\n");
 }
 
 
 void CostMatrix::setValue(const keys_t* const key, const costMedian_t* const median)
 {
     // This has to be a pair. Clang is okay with make_tuple() or forward_as_tuple(), but gcc doesn't like it.
-    // TODO: We might want a deep copy of key & median here to help with mempory management.
+    // TODO: We might want a deep copy of key & median here to help with memory management.
     myMatrix.insert(std::make_pair(*key, *median));
 }

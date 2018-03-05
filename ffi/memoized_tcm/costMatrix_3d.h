@@ -203,7 +203,7 @@ class CostMatrix_3d
     private:
         std::unordered_map <keys_3d_t, costMedian_t, KeyHash_3d, KeyEqual_3d> myMatrix;
 
-        CostMatrix yourMatrix;
+        CostMatrix twoD_matrix;
 
         std::unordered_map <keys_3d_t, costMedian_t, KeyHash_3d, KeyEqual_3d> hasher;
 

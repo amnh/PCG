@@ -10,14 +10,27 @@
 // #include "seqAlignForHaskell.h"
 
 int main() {
-    const size_t tcmLen       = 25;
-    const size_t alphabetSize = 5;
+    const size_t alphabetSize = 25;
+    const size_t tcmLen       = alphabetSize * alphabetSize;
 
-    int tcm [tcmLen] = {0,1,2,3,4, 1,0,1,2,3, 2,1,0,1,2, 3,2,1,0,1, 4,3,2,1,0};
     if ( tcmLen != alphabetSize * alphabetSize ) {
         printf("tcm wrong size\n");
         exit(1);
     }
+
+    int tcm[tcmLen];  // gcc weirdly complains this isn't used. Don't know how to suppress this error.
+    for (size_t i{0}; i < alphabetSize; i++) {
+        for (size_t j{0}; j < alphabetSize; j++) {
+            if (i == j) {
+                tcm[i * alphabetSize + j] = 0;
+            }
+            else {
+                tcm[i * alphabetSize + j] = 1;
+            }
+        }
+    }
+
+
 
     /*
     const size_t SEQ_A_LEN = 15;
@@ -41,7 +54,7 @@ int main() {
     auto firstKey  = makeDCElement( alphabetSize, 1 );
     auto secondKey = makeDCElement( alphabetSize, 1 );
     auto retMedian = makeDCElement( alphabetSize, 1 );
-    auto cost{0},
+    auto cost{0},      // gcc will complain that this isn't used, but it clearly is in nested for loop below
          foundCost{0};
 
     // just a test: alphabet size == 4, so don't need packedChar*
@@ -93,8 +106,8 @@ int main() {
         foundCost = myMatrix.getSetCostMedian(firstKey, secondKey, retMedian);
         printf("***Final cost: %i median: %" PRIu64 "\n", foundCost, *retMedian->element);
         printPackedChar(retMedian->element, 1, alphabetSize);
-        ClearAll( firstKey->element, dynCharSize(alphabetSize, 1) );
-        ClearAll(secondKey->element, dynCharSize(alphabetSize, 1) );
+        // ClearAll( firstKey->element, dynCharSize(alphabetSize, 1) );
+        // ClearAll(secondKey->element, dynCharSize(alphabetSize, 1) );
     }
     auto first   = new packedChar{1},
          second  = new packedChar{4},
@@ -125,7 +138,7 @@ int main() {
     // free(seqA_main);
     // free(seqB_main);
 
-    //Free everything we have alocated as to not mess with valgrind's leak diognostics.
+    // Free everything we have allocated as to not mess with valgrind's leak diagnostics.
     freeDCElem(firstKey);
     freeDCElem(secondKey);
     freeDCElem(retMedian);

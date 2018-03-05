@@ -163,7 +163,7 @@ class CostMatrix
          *
          *  Nota bene: Requires symmetric, if not metric, matrix. TODO: Is this true? If so fix it?
          */
-        int findDistance (keys_t* searchKey, dcElement_t* ambElem);
+        int findDistance(keys_t* searchKey, dcElement_t* ambElem);
 
         /** Getter only for cost. Necessary for testing, to insure that particular
          *  key pair has, in fact, already been inserted into lookup table.
@@ -176,7 +176,7 @@ class CostMatrix
          *  the median for the two. Puts the median and alphabet size into retMedian,
          *  which must therefore by necessity be allocated elsewhere.
          *
-         *  This functin allocates _if necessary_. So freeing inputs after a call will not
+         *  This function allocates _if necessary_. So freeing inputs after a call isnecessary and will not
          *  cause invalid reads from the cost matrix.
          */
         int getSetCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
@@ -198,7 +198,7 @@ class CostMatrix
          */
 	//        void setValue(keys_t* key, costMedian_t* median);
 	void setValue(const keys_t* const key, const costMedian_t* const median);
-	  
+
         /** Takes in a pair of keys_t (each of which is a single `dcElement`) and computes their lowest-cost median.
          *  Uses a Sankoff-like algorithm, where all bases are considered, and the lowest cost bases are included in the
          *  cost and median calculations. That means a base might appear in the median that is not present in either of

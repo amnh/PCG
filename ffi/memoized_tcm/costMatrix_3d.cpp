@@ -65,7 +65,7 @@ CostMatrix_3d::CostMatrix_3d( size_t alphSize, int* inTcm )
     tcm = new int[alphabetSize * alphabetSize * alphabetSize];
     memcpy(tcm, inTcm, alphabetSize * alphabetSize * alphabetSize);
     initializeMatrix(); // should only have to do this for 3d, as 2d is initialized by its own constructor
-    yourMatrix = CostMatrix(alphSize, inTcm);
+    twoD_matrix = CostMatrix(alphSize, inTcm);
 }
 
 
@@ -202,9 +202,9 @@ costMedian_t* CostMatrix_3d::computeCostMedian(keys_3d_t keys)
     for (size_t curNucleotideIdx = 0; curNucleotideIdx < alphabetSize; ++curNucleotideIdx) {
         SetBit(singleNucleotide->element, curNucleotideIdx);
 
-        curCost = yourMatrix.findDistance(searchKey, firstKey)
-                + yourMatrix.findDistance(searchKey, secondKey)
-                + yourMatrix.findDistance(searchKey, thirdKey);
+        curCost = twoD_matrix.findDistance(searchKey, firstKey)
+                + twoD_matrix.findDistance(searchKey, secondKey)
+                + twoD_matrix.findDistance(searchKey, thirdKey);
 
         // now seemingly recreating logic in findDistance(). However, that was to get the cost for the
         // ambElem on each child; now we're combining those costs get overall cost and median

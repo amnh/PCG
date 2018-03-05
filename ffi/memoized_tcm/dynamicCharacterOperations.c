@@ -377,7 +377,7 @@ void freeDCElem( const dcElement_t *p )
     if(p == NULL)
         return;
     free( p->element );
-    free( p );
+    // free( p ); Can't free here. It was passed in as const.
     // No p = NULL; because we need a const pointer for some reason in C++ land.
 }
 
