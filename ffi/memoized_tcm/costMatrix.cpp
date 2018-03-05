@@ -326,6 +326,5 @@ void CostMatrix::setValue(const keys_t* const key, const costMedian_t* const med
 {
     // This has to be a pair. Clang is okay with make_tuple() or forward_as_tuple(), but gcc doesn't like it.
     // TODO: We might want a deep copy of key & median here to help with mempory management.
-    auto medianCopy = new costMedian_t
-    myMatrix.insert(std::make_pair(*key, medianCopy));
+    myMatrix.insert(std::make_pair(*key, *median));
 }
