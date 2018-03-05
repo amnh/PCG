@@ -99,6 +99,9 @@ typedef struct dynChar_t {
  *  character is packed.
  *  This may or may not have been a good judgement call, since both store some similar elements.
  *  The dynChar_t struct cannot just have an array of dcElement_ts, because of the packing.
+ *
+ *  IMPORTANT:
+ *  alphabetSize % sizeof ( packedChar ) determines how many packedChars values are in *element
  */
 typedef struct dcElement_t {
     size_t      alphSize;
