@@ -127,8 +127,7 @@ int CostMatrix::getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t
         return -1;
     } else {
         foundCost          = std::get<0>(std::get<1>(*found));
-    if(retMedian->element != NULL)
-       free(retMedian->element);
+        if(retMedian->element != NULL) free(retMedian->element);
         retMedian->element = std::get<1>(std::get<1>(*found));
     }
 
@@ -163,8 +162,7 @@ int CostMatrix::getSetCostMedian( dcElement_t* left
 
         foundCost          = std::get<0>(*computedCostMed);
 
-    if(retMedian->element != NULL)
-        free(retMedian->element);
+        if(retMedian->element != NULL) free(retMedian->element);
         retMedian->element = makePackedCharCopy( std::get<1>(*computedCostMed), alphabetSize, 1 );
 
         // Was using toLookup here, but the memory allocation was getting confusing.
@@ -182,10 +180,9 @@ int CostMatrix::getSetCostMedian( dcElement_t* left
         // freeKeys_t(insertKey); Don't want to free this because it gets copied by ref into the map.
     } else {
         // because in the next two lines, I get back a tuple<keys, costMedian_t>
-        foundCost          = std::get<0>(std::get<1>(*found));
-        if(retMedian->element != NULL)
-            free(retMedian->element);
-    retMedian->element = makePackedCharCopy( std::get<1>(std::get<1>(*found)), alphabetSize, 1 );
+        foundCost = std::get<0>(std::get<1>(*found));
+        if(retMedian->element != NULL) free(retMedian->element);
+        retMedian->element = makePackedCharCopy( std::get<1>(std::get<1>(*found)), alphabetSize, 1 );
     }
 
     return foundCost;
