@@ -364,7 +364,11 @@ int dcElementEq (dcElement_t *lhs, dcElement_t *rhs)
 
 void freeDynChar( dynChar_t *p )
 {
+    if(p == NULL)
+        return;
     free( p->dynChar );
+    free( p );
+    p = NULL;
 }
 
 
