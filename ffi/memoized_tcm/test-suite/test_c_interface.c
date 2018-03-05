@@ -100,6 +100,8 @@ int main() {
             SetBit(secondKey->element, key2);
             cost = tcm[(key1 - 1) * alphabetSize + (key2 - 1)];
             SetBit(&median, key2);
+            printf("key1: %zu\n", key1);
+            printf("key2: %zu\n", key2);
 
             foundCost = getCostAndMedian(firstKey, secondKey, retMedian, myMatrix);
 
@@ -144,4 +146,3 @@ int main() {
     // }
 
 }
-

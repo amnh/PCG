@@ -282,14 +282,12 @@ int CostMatrix::findDistance (keys_t* searchKey, dcElement_t* ambElem)
                     }
                     curCost = tcm[pos * alphabetSize + unambElemIdx];
                     // printf("\n--findDistance-- \n    ambElemIdx: %zu, nucleotide: %zu, cost: %d\n", unambElemIdx, pos, curCost);
-                }
-        else {
+                } else {
                     printf("Something went wrong in the memoized cost matrix.\n");
                     printf("missing key: %" PRIu64 " %" PRIu64 "\n", *std::get<0>(*searchKey).element, *std::get<1>(*searchKey).element);
                     exit(1);
                 }
-            }
-        else {  // We found the memoized cost for the elements in the TCM.
+            } else {  // We found the memoized cost for the elements in the TCM.
                 curCost = std::get<0>(std::get<1>(*found));
             }
             if (curCost < minCost) {
