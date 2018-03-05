@@ -187,7 +187,6 @@ int CostMatrix::getSetCostMedian( dcElement_t* left
 	retMedian->element = makePackedCharCopy( std::get<1>(std::get<1>(*found)), alphabetSize, 1 );
     }
 
-    freeKeys_t(toLookup);
     return foundCost;
 }
 
