@@ -122,7 +122,7 @@ int CostMatrix::getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t
     std::get<1>(toLookup) = *right;
     auto foundCost{0};
 
-    auto found = myMatrix.find(toLookup);
+    const auto found = myMatrix.find(toLookup);
 
     if ( found == myMatrix.end() ) {
         return -1;
@@ -142,10 +142,10 @@ int CostMatrix::getSetCostMedian( dcElement_t* left
                                 )
 {
     // not using allocKeys_t because we're making a copy of the packed characters _if we need to_
-    auto toLookup          = new keys_t;
+    const auto toLookup          = new keys_t;
     std::get<0>(*toLookup) = *left;
     std::get<1>(*toLookup) = *right;
-    auto found = myMatrix.find(*toLookup);
+    const auto found = myMatrix.find(*toLookup);
     auto foundCost{0};
 
     if(DEBUG) {
@@ -156,7 +156,7 @@ int CostMatrix::getSetCostMedian( dcElement_t* left
     if ( found == myMatrix.end() ) {
         if(DEBUG) printf("\ngetSetCost didn't find %" PRIu64 " %" PRIu64 ".\n", left->element[0], right->element[0]);
 
-        auto computedCostMed = computeCostMedian(*toLookup);
+        const auto computedCostMed = computeCostMedian(*toLookup);
         //costMedian_t* computedCostMed = computeCostMedianFitchy(*toLookup);
 
         if(DEBUG) printf("computed cost, median: %2i %" PRIu64 "\n", std::get<0>(*computedCostMed), std::get<1>(*computedCostMed)[0]);
@@ -192,9 +192,8 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys)
     auto firstKey  = &std::get<0>(keys);
     auto secondKey = &std::get<1>(keys);
     auto toReturn  = new costMedian_t;   // array is alloc'ed above
+    auto curMedian = (packedChar*) calloc(elemArrLen, INT_WIDTH);  // don't free, it's going into toReturn
 
-    // TODO: I need the alloc here, `new` won't work. Why?
-    packedChar* curMedian = (packedChar*) calloc(elemArrLen, INT_WIDTH);  // don't free, it's going into toReturn
     auto searchKey        = allocKeys_t(alphabetSize);
     auto singleNucleotide = &std::get<1>(*searchKey);
 
@@ -298,10 +297,10 @@ int CostMatrix::findDistance (keys_t* searchKey, dcElement_t* ambElem)
 
 void CostMatrix::initializeMatrix()
 {
-    auto key1 = allocateDCElement(alphabetSize);
-    auto key2 = allocateDCElement(alphabetSize);
+    const auto key1     = allocateDCElement(alphabetSize);
+    const auto key2     = allocateDCElement(alphabetSize);
+    const auto toInsert = new costMedian_t;
 
-    auto toInsert      = new costMedian_t;
     // Don't do this because dcElementOr() allocs. TODO: Is that allocation a good idea? No. Fix it.
     std::get<1>(*toInsert) = allocatePackedChar(alphabetSize, 1);
 
@@ -339,7 +338,7 @@ void CostMatrix::setValue(const dcElement_t* const lhs, const dcElement_t* const
     // Making a deep copy of key & median here to help with memory management in calling fns.
 
     // Precompute the buffer size for memory management.
-    const auto byteCount = elementSize * sizeof(packedChar);
+    // const auto byteCount = elementSize * sizeof(packedChar);
 
     // Create a new 2-tuple key to insert.
     const auto key = new keys_t;

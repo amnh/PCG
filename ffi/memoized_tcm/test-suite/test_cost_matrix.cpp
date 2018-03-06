@@ -49,8 +49,7 @@ int main() {
     auto firstKey  = makeDCElement( alphabetSize, 1 );
     auto secondKey = makeDCElement( alphabetSize, 1 );
     auto retMedian = makeDCElement( alphabetSize, 1 );
-    auto cost{0},      // gcc will complain that this isn't used, but it clearly is in nested for loop below
-         foundCost{0};
+    auto foundCost{0};
 
     // just a test: alphabet size == 4, so don't need packedChar*
     auto median = CANONICAL_ZERO;
@@ -64,7 +63,7 @@ int main() {
 
         for (size_t key2 = 0; key2 < alphabetSize; ++key2) { // no longer assumes 0 diagonal
             SetBit(secondKey->element, key2);
-            cost = tcm[key1 * alphabetSize + key2];
+            //auto cost = tcm[key1 * alphabetSize + key2];
             SetBit(&median, key2);
 
             foundCost = myMatrix.getCostMedian(firstKey, secondKey, retMedian);
