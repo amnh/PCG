@@ -53,11 +53,9 @@ void freeCostMedian_t (costMedian_t* toFree)
     packedChar* medianValue = std::get<1>(*toFree);
     if (medianValue == NULL)
       return;
-
+    
     free(medianValue);
     std::get<1>(*toFree) = NULL;
-    delete toFree;
-    toFree = NULL;
 }
 
 
@@ -105,16 +103,13 @@ CostMatrix::CostMatrix(size_t alphSize, int* inTcm)
 
 CostMatrix::~CostMatrix()
 {
-    // We occasionally invalid free pointers that were already freed with this loop. TODO: Occasionally?
-    /**/
     for ( auto& thing: myMatrix ) {
-    // for ( mapIterator thing = myMatrix.begin(); thing != myMatrix.end(); thing++ ) {
-      //freeCostMedian_t(&std::get<1>(thing));
-        // TODO: since keys_t is tuple<dcElement_t, dcElement_t>, there are no pointers, and nothing
-        // to free?? How is this right? Anyway, skipping next line.
+        // LEAK:
+        // Call to freeCostMedian_t causes a number of invalid reads equal to alphabetSize
+        // Omission of the call leaks O(alphabetSize) space 
+        // freeCostMedian_t(&std::get<1>(thing));
         freeKeys_t( &std::get<0>(thing) );
     }
-    /**/
     myMatrix.clear();
     hasher.clear();
 }
@@ -132,9 +127,9 @@ int CostMatrix::getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t
     if ( found == myMatrix.end() ) {
         return -1;
     } else {
-        foundCost          = std::get<0>(std::get<1>(*found));
         if(retMedian->element != NULL) free(retMedian->element);
         retMedian->element = std::get<1>(std::get<1>(*found));
+        foundCost          = std::get<0>(std::get<1>(*found));
     }
 
     return foundCost;
@@ -181,6 +176,8 @@ int CostMatrix::getSetCostMedian( dcElement_t* left
         retMedian->element = makePackedCharCopy( std::get<1>(std::get<1>(*found)), alphabetSize, 1 );
     }
 
+    if(DEBUG) printf("Matrix Value Count: %i\n", myMatrix.size());
+    
     return foundCost;
 }
 
@@ -313,7 +310,7 @@ void CostMatrix::initializeMatrix()
             SetBit(secondKey->element, key2);
             CostMatrix::getSetCostMedian(firstKey, secondKey, retMedian);
 
-             ClearBit(secondKey->element, key2);
+            ClearBit(secondKey->element, key2);
         } // key2
         ClearBit(firstKey->element, key1);
     }
@@ -327,25 +324,32 @@ void CostMatrix::initializeMatrix()
 
 void CostMatrix::setValue(const dcElement_t* const lhs, const dcElement_t* const rhs, const costMedian_t* const median)
 {
-    // This has to be a pair. Clang is okay with make_tuple() or forward_as_tuple(), but gcc doesn't like it.
-    //Create a new 2-tuple key to insert
-    auto key = new keys_t;
+    // Precompute the buffer size for memory management.
+    const auto byteCount = elementSize * sizeof(packedChar);
+
+    // Create a new 2-tuple key to insert.
+    const auto key = new keys_t;
+
+    // Copy the left-hand-side into key.
     std::get<0>(*key)          = *(new dcElement_t);
     std::get<0>(*key).alphSize = lhs->alphSize;
-    std::get<0>(*key).element  = (packedChar*) std::malloc(elementSize * sizeof(packedChar)); //makePackedCharCopy( lhs->element, alphabetSize, 1 );
-    std::memcpy(std::get<0>(*key).element, lhs->element, elementSize * sizeof(packedChar));
+    std::get<0>(*key).element  = (packedChar*) std::malloc(byteCount);
+    std::memcpy(std::get<0>(*key).element, lhs->element, byteCount);
 
+    // Copy the right-hand-side into key.
     std::get<1>(*key)          = *(new dcElement_t);
     std::get<1>(*key).alphSize = rhs->alphSize;
-    std::get<1>(*key).element  = (packedChar*) std::malloc(elementSize * sizeof(packedChar)); //makePackedCharCopy( rhs->element, alphabetSize, 1 );
-    std::memcpy(std::get<1>(*key).element, rhs->element, elementSize * sizeof(packedChar));
+    std::get<1>(*key).element  = (packedChar*) std::malloc(byteCount);
+    std::memcpy(std::get<1>(*key).element, rhs->element, byteCount);
 
-    //Create a deep copy of the median value to insert
-    /**/
-    auto value = new costMedian_t;
+    // Create a deep copy of the median value to insert.
+    const auto value = new costMedian_t;
     std::get<0>(*value) = std::get<0>(*median);
-    std::get<1>(*value) = (packedChar*) std::malloc(elementSize * sizeof(packedChar));
-    std::memcpy(std::get<1>(*value), std::get<1>(*median), elementSize * sizeof(packedChar));
-    /**/
+    std::get<1>(*value) = (packedChar*) std::malloc(byteCount);
+    std::memcpy(std::get<1>(*value), std::get<1>(*median), byteCount);
+
+    // Add the copied key-value pair to the matrix.
+    // This has to be a pair!
+    // Clang is okay with make_tuple() or forward_as_tuple(), but gcc doesn't like it.
     myMatrix.insert(std::make_pair(*key, *value));
 }
