@@ -10,7 +10,7 @@
 // #include "seqAlignForHaskell.h"
 
 int main() {
-    const size_t alphabetSize = 25;
+    const size_t alphabetSize = 5;
     const size_t tcmLen       = alphabetSize * alphabetSize;
 
     if ( tcmLen != alphabetSize * alphabetSize ) {
