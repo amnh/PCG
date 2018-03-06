@@ -52,6 +52,8 @@ void freeCostMedian_t (costMedian_t* toFree)
 
     free(medianValue);
     std::get<1>(*toFree) = NULL;
+    delete toFree;
+    toFree = NULL;
 }
 
 
@@ -80,6 +82,7 @@ void freeKeys_t ( const keys_t* toFree )
 CostMatrix::CostMatrix()
 {
     alphabetSize = 5;
+    elementSize  = 1;
     int inTcm[25] = {0, 1, 1, 1, 2,  1, 0, 1, 1, 2,  1, 1, 0, 1, 2,  1, 1, 1, 0, 2,  2, 2, 2, 2, 0};
     tcm = new int[25];
     memcpy(tcm, inTcm, alphabetSize * alphabetSize * sizeof(int));
@@ -90,7 +93,7 @@ CostMatrix::CostMatrix()
 CostMatrix::CostMatrix(size_t alphSize, int* inTcm)
 {
     alphabetSize = alphSize;
-    elementSize  = alphabetSize % sizeof(packedChar);
+    elementSize  = (alphabetSize / sizeof(packedChar)) + ((alphabetSize % sizeof(packedChar)) ? 1 : 0);
     tcm = new int[alphabetSize * alphabetSize];
     memcpy(tcm, inTcm, alphabetSize * alphabetSize * sizeof(int));
     initializeMatrix();
@@ -165,18 +168,8 @@ int CostMatrix::getSetCostMedian( dcElement_t* left
         if(retMedian->element != NULL) free(retMedian->element);
         retMedian->element = makePackedCharCopy( std::get<1>(*computedCostMed), alphabetSize, 1 );
 
-        // Was using toLookup here, but the memory allocation was getting confusing.
-        auto insertKey = new keys_t;
-        // Can't use allocateDCElement here, because makePackedCharCopy() allocates.
-        std::get<0>(*insertKey)          = *(new dcElement_t);
-        std::get<0>(*insertKey).alphSize = left->alphSize;
-        std::get<0>(*insertKey).element  = makePackedCharCopy( left->element , alphabetSize, 1 );
-
-        std::get<1>(*insertKey)          = *(new dcElement_t);
-        std::get<1>(*insertKey).alphSize = right->alphSize;
-        std::get<1>(*insertKey).element  = makePackedCharCopy( right->element, alphabetSize, 1 );
-
-        setValue(insertKey, computedCostMed);
+        setValue(left, right, computedCostMed);
+	freeCostMedian_t(computedCostMed);
         // freeKeys_t(insertKey); Don't want to free this because it gets copied by ref into the map.
     } else {
         // because in the next two lines, I get back a tuple<keys, costMedian_t>
@@ -329,17 +322,27 @@ void CostMatrix::initializeMatrix()
 }
 
 
-void CostMatrix::setValue(const keys_t* const key, const costMedian_t* const median)
+void CostMatrix::setValue(const dcElement_t* const lhs, const dcElement_t* const rhs, const costMedian_t* const median)
 {
     // This has to be a pair. Clang is okay with make_tuple() or forward_as_tuple(), but gcc doesn't like it.
-    // TODO: We might want a deep copy of key & median here to help with mempory management.
-    //std::tuple<int,         packedChar*>  costMedian_t
-  /*
-    auto medianCopy = new costMedian_t;
-    auto packedCopy = malloc(elementSize * sizeof(packedChar));
-    memcpy(packedCopy, std::get<1>(median), elementSize);
-    std::get<0>(medianCopy) = std::get<0>(median);
-    std::get<1>(medianCopy) = packedCopy;
-  */
-    myMatrix.insert(std::make_pair(*key, *median));
+    //Create a new 2-tuple key to insert
+    auto key = new keys_t;
+    std::get<0>(*key)          = *(new dcElement_t);
+    std::get<0>(*key).alphSize = lhs->alphSize;
+    std::get<0>(*key).element  = (packedChar*) std::malloc(elementSize * sizeof(packedChar)); //makePackedCharCopy( lhs->element, alphabetSize, 1 );
+    std::memcpy(std::get<0>(*key).element, lhs->element, elementSize * sizeof(packedChar));
+
+    std::get<1>(*key)          = *(new dcElement_t);
+    std::get<1>(*key).alphSize = rhs->alphSize;
+    std::get<1>(*key).element  = (packedChar*) std::malloc(elementSize * sizeof(packedChar)); //makePackedCharCopy( rhs->element, alphabetSize, 1 );
+    std::memcpy(std::get<1>(*key).element, rhs->element, elementSize * sizeof(packedChar));
+
+    //Create a deep copy of the median value to insert
+    /**/
+    auto value = new costMedian_t;
+    std::get<0>(*value) = std::get<0>(*median);
+    std::get<1>(*value) = (packedChar*) std::malloc(elementSize * sizeof(packedChar));
+    std::memcpy(std::get<1>(*value), std::get<1>(*median), elementSize * sizeof(packedChar));
+    /**/
+    myMatrix.insert(std::make_pair(*key, *value));
 }

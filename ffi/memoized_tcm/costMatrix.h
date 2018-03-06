@@ -188,7 +188,8 @@ class CostMatrix
 
         size_t alphabetSize;
 
-	/** Always equal to alphabetSize % sizeof ( packedChar )
+	/** Always equal to:
+         *    alphabetSize / sizeof ( packedChar ) + alphabetSize % sizeof(packedChar) ? 1 : 0
          *  Calculated once and stored for efficincy.
          */
         size_t elementSize; 
@@ -202,7 +203,7 @@ class CostMatrix
          *  with @key as a key, and @median as the value.
          */
 	//        void setValue(keys_t* key, costMedian_t* median);
-	void setValue(const keys_t* const key, const costMedian_t* const median);
+	void setValue(const dcElement_t* const lhs, const dcElement_t* const rhs, const costMedian_t* const median);
 
         /** Takes in a pair of keys_t (each of which is a single `dcElement`) and computes their lowest-cost median.
          *  Uses a Sankoff-like algorithm, where all bases are considered, and the lowest cost bases are included in the
