@@ -8,6 +8,10 @@
 
 // TODO: I'll need this for the Haskell side of things: https://hackage.haskell.org/package/base-4.9.0.0/docs/Foreign-StablePtr.html
 
+constexpr int CostMatrix::defaultExtraGapCostMetric[25];
+constexpr int CostMatrix::defaultDiscreteMetric[25];
+constexpr int CostMatrix::defaultL1NormMetric[25];
+
 costMatrix_p construct_CostMatrix_C(size_t alphSize, int* tcm)
 {
     return new CostMatrix(alphSize, tcm);
@@ -78,24 +82,19 @@ void freeKeys_t ( const keys_t* toFree )
 
 
 CostMatrix::CostMatrix()
+  : alphabetSize(5)
+  , elementSize(1)
 {
-    alphabetSize = 5;
-    int inTcm[25] = {0, 1, 1, 1, 2,
-                     1, 0, 1, 1, 2,
-                     1, 1, 0, 1, 2,
-                     1, 1, 1, 0, 2,
-                     2, 2, 2, 2, 0};
     tcm = new int[25];
-    memcpy(tcm, inTcm, alphabetSize * alphabetSize * sizeof(int));
+    memcpy(tcm, defaultExtraGapCostMetric, alphabetSize * alphabetSize * sizeof(int));
     initializeMatrix();
 }
 
 
 CostMatrix::CostMatrix(size_t alphSize, int* inTcm)
+  : alphabetSize(alphSize)
+  , elementSize(dcElemSize(alphSize))
 {
-    alphabetSize = alphSize;
-    // Shouldn't need this. Only used to make copy of medians, but all medians are a single element.
-    // elementSize  = dcElemSize(alphabetSize);
     tcm = new int[alphabetSize * alphabetSize];
     memcpy(tcm, inTcm, alphabetSize * alphabetSize * sizeof(int));
     initializeMatrix();
@@ -104,16 +103,13 @@ CostMatrix::CostMatrix(size_t alphSize, int* inTcm)
 
 CostMatrix::~CostMatrix()
 {
-    // We occasionally invalid free pointers that were already freed with this loop. TODO: Occasionally?
-    /*
     for ( auto& thing: myMatrix ) {
-    // for ( mapIterator thing = myMatrix.begin(); thing != myMatrix.end(); thing++ ) {
-        //freeCostMedian_t(&std::get<1>(thing));
-        // TODO: since keys_t is tuple<dcElement_t, dcElement_t>, there are no pointers, and nothing
-        // to free?? How is this right? Anyway, skipping next line.
-        // freeKeys_t( &std::get<0>(thing) );
+        // LEAK:
+        // Call to freeCostMedian_t causes a number of invalid reads equal to alphabetSize
+        // Omission of the call leaks O(alphabetSize) space
+        // freeCostMedian_t(&std::get<1>(thing));
+        freeKeys_t( &std::get<0>(thing) );
     }
-    */
     myMatrix.clear();
     hasher.clear();
 }
@@ -131,9 +127,9 @@ int CostMatrix::getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t
     if ( found == myMatrix.end() ) {
         return -1;
     } else {
-        foundCost          = std::get<0>(std::get<1>(*found));
         if(retMedian->element != NULL) free(retMedian->element);
         retMedian->element = std::get<1>(std::get<1>(*found));
+        foundCost          = std::get<0>(std::get<1>(*found));
     }
 
     return foundCost;
@@ -170,18 +166,8 @@ int CostMatrix::getSetCostMedian( dcElement_t* left
         if(retMedian->element != NULL) free(retMedian->element);
         retMedian->element = makePackedCharCopy( std::get<1>(*computedCostMed), alphabetSize, 1 );
 
-        // Was using toLookup here, but the memory allocation was getting confusing.
-        auto insertKey = new keys_t;
-        // Can't use allocateDCElement here, because makePackedCharCopy() allocates.
-        std::get<0>(*insertKey)          = *(new dcElement_t);
-        std::get<0>(*insertKey).alphSize = left->alphSize;
-        std::get<0>(*insertKey).element  = makePackedCharCopy( left->element , alphabetSize, 1 );
-
-        std::get<1>(*insertKey)          = *(new dcElement_t);
-        std::get<1>(*insertKey).alphSize = right->alphSize;
-        std::get<1>(*insertKey).element  = makePackedCharCopy( right->element, alphabetSize, 1 );
-
-        setValue(insertKey, computedCostMed);
+        setValue(left, right, computedCostMed);
+        freeCostMedian_t(computedCostMed);
         // freeKeys_t(insertKey); Don't want to free this because it gets copied by ref into the map.
     } else {
         // because in the next two lines, I get back a tuple<keys, costMedian_t>
@@ -189,6 +175,8 @@ int CostMatrix::getSetCostMedian( dcElement_t* left
         if(retMedian->element != NULL) free(retMedian->element);
         retMedian->element = makePackedCharCopy( std::get<1>(std::get<1>(*found)), alphabetSize, 1 );
     }
+
+    if(DEBUG) printf("Matrix Value Count: %lu\n", myMatrix.size());
 
     return foundCost;
 }
@@ -310,53 +298,73 @@ int CostMatrix::findDistance (keys_t* searchKey, dcElement_t* ambElem)
 
 void CostMatrix::initializeMatrix()
 {
-    auto keys = new keys_t;
-    std::get<0>(*keys) = *allocateDCElement(alphabetSize);
-    std::get<1>(*keys) = *allocateDCElement(alphabetSize);
+    auto key1 = allocateDCElement(alphabetSize);
+    auto key2 = allocateDCElement(alphabetSize);
+
     auto toInsert      = new costMedian_t;
-    // Don't do this because dcElementOr() allocs. TODO: Is that good idea?
+    // Don't do this because dcElementOr() allocs. TODO: Is that allocation a good idea? No. Fix it.
     std::get<1>(*toInsert) = allocatePackedChar(alphabetSize, 1);
 
-    for (size_t key1 = 0; key1 < alphabetSize; ++key1) { // for every possible value of key1, key2
-        SetBit(std::get<0>(*keys).element, key1);
+    for (size_t key1_bit = 0; key1_bit < alphabetSize; ++key1_bit) { // for every possible value of key1_bit, key2_bit
+        SetBit(key1->element, key1_bit);
 
-        // key2 starts from 0, so non-symmetric matrices should work
-        for (size_t key2 = 0; key2 < alphabetSize; ++key2) { // doesn't assumes 0 diagonal
-            printf("%zu %zu\n", key1, key2);
-            // I WAS HERE. Do I need to call getSetCostMedian? I'm initializing, shouldn't I just
-            // put in the cost straight out of the tcm?
-            // Also, halfway through changing setValue().
-            SetBit(std::get<1>(*keys).element, key2);
+        // key2_bit starts from 0, so non-symmetric matrices should work
+        for (size_t key2_bit = 0; key2_bit < alphabetSize; ++key2_bit) { // doesn't assumes 0 diagonal
+            if (DEBUG) printf("Insert key1_bit: %3zu, key2_bit: %3zu\n", key1_bit, key2_bit);
+            SetBit(key2->element, key2_bit);
+
             // Originally used `getSetCostMedian()` here, but it involves a lot of overhead and we know we're only
-            // using unambiguous elems here, so we can just insert.
-            std::get<0>(*toInsert) = tcm[key1 * alphabetSize + key2];
-            std::get<1>(*toInsert) = packedCharOr(std::get<0>(*keys).element, std::get<1>(*keys).element, alphabetSize, 1);
-            setValue(keys, toInsert);
-            ClearBit(std::get<1>(*toInsert), key2);
-            ClearBit(std::get<1>(*keys).element, key2);
-        } // key2
-        ClearBit(std::get<0>(*keys).element, key1);
-        ClearBit(std::get<1>(*toInsert), key1);
+            // using unambiguous elems, so we can just insert.
+            std::get<0>(*toInsert) = tcm[key1_bit * alphabetSize + key2_bit];
+            std::get<1>(*toInsert) = packedCharOr(key1->element, key2->element, alphabetSize, 1);
+
+            setValue(key1, key2, toInsert);
+            ClearBit(std::get<1>(*toInsert), key2_bit);
+            ClearBit(key2->element, key2_bit);
+        } // key2_bit
+        ClearBit(key1->element, key1_bit);
+        ClearBit(std::get<1>(*toInsert), key1_bit);
     }
     // Just to reiterate, getSetCostMedian() should allocate, so we should dealloc these.
-    freeKeys_t( keys );
+    freeDCElem(key1);
+    freeDCElem(key2);
     free( std::get<1>(*toInsert) );
     // printf("finished initializing\n");
     // printf("freed keys\n");
 }
 
 
-void CostMatrix::setValue(const keys_t* const key, const costMedian_t* const median)
+void CostMatrix::setValue(const dcElement_t* const lhs, const dcElement_t* const rhs, const costMedian_t* const toInsert)
 {
     // Making a deep copy of key & median here to help with memory management in calling fns.
 
-    auto medianCopy = new costMedian_t;
-    auto packedCopy = makePackedCharCopy( std::get<1>(*median), alphabetSize, 1 );
-    std::get<0>(*medianCopy) = std::get<0>(*median); // this is just an int
-    std::get<1>(*medianCopy) = packedCopy;
+    // Precompute the buffer size for memory management.
+    const auto byteCount = elementSize * sizeof(packedChar);
 
+    // Create a new 2-tuple key to insert.
+    const auto key = new keys_t;
 
-    // This has to be a pair. Clang is okay with make_tuple() or forward_as_tuple(),
-    // but gcc doesn't like it.
-    myMatrix.insert(std::make_pair(*key, *medianCopy));
+    // Copy the left-hand-side into key.
+    std::get<0>(*key)          = *(new dcElement_t);
+    std::get<0>(*key).alphSize = alphabetSize; // could use lhs->alphSize, but this should be more guaranteed correct... right?
+    std::get<0>(*key).element  = makePackedCharCopy( lhs->element, alphabetSize, 1 );
+    // std::memcpy(std::get<0>(*key).element, lhs->element, byteCount);
+
+    // Copy the right-hand-side into key.
+    std::get<1>(*key)          = *(new dcElement_t);
+    std::get<1>(*key).alphSize = alphabetSize;
+    std::get<1>(*key).element  = makePackedCharCopy( rhs->element, alphabetSize, 1 );
+    // std::memcpy(std::get<1>(*key).element, rhs->element, byteCount);
+
+    // Create a deep copy of the toInsert value to insert.
+    const auto value = new costMedian_t;
+    std::get<0>(*value) = std::get<0>(*toInsert);
+    std::get<1>(*value) = makePackedCharCopy( std::get<1>(*toInsert), alphabetSize, 1 );
+    // allocatePackedChar(alphabetSize, 1);
+    // std::memcpy(std::get<1>(*value), std::get<1>(*toInsert), byteCount);
+
+    // Add the copied key-value pair to the matrix.
+    // This has to be a pair!
+    // Clang is okay with make_tuple() or forward_as_tuple(), but gcc doesn't like it.
+    myMatrix.insert(std::make_pair(*key, *value));
 }

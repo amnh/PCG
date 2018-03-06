@@ -79,7 +79,7 @@ int main() {
         cost = tcm[(seqA_main[i]) * ALPH_SIZE + (seqB_main[i])];
         printf("computed cost: %d\n", cost);
         if(foundCost != cost) {
-            printf(" cost %2d, %2d\n", foundCost, cost);
+            printf("found cost %2d\n", foundCost);
         } else {
             printf("yep!\n");
         }
