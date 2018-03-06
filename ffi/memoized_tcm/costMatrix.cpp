@@ -8,6 +8,10 @@
 
 // TODO: I'll need this for the Haskell side of things: https://hackage.haskell.org/package/base-4.9.0.0/docs/Foreign-StablePtr.html
 
+constexpr int CostMatrix::defaultExtraGapCostMetric[25];
+constexpr int CostMatrix::defaultDiscreteMetric[25];
+constexpr int CostMatrix::defaultL1NormMetric[25]; 
+
 costMatrix_p construct_CostMatrix_C(size_t alphSize, int* tcm)
 {
     return new CostMatrix(alphSize, tcm);
@@ -102,15 +106,15 @@ CostMatrix::CostMatrix(size_t alphSize, int* inTcm)
 CostMatrix::~CostMatrix()
 {
     // We occasionally invalid free pointers that were already freed with this loop. TODO: Occasionally?
-    /*
+    /**/
     for ( auto& thing: myMatrix ) {
     // for ( mapIterator thing = myMatrix.begin(); thing != myMatrix.end(); thing++ ) {
-        //freeCostMedian_t(&std::get<1>(thing));
+      //freeCostMedian_t(&std::get<1>(thing));
         // TODO: since keys_t is tuple<dcElement_t, dcElement_t>, there are no pointers, and nothing
         // to free?? How is this right? Anyway, skipping next line.
-        // freeKeys_t( &std::get<0>(thing) );
+        freeKeys_t( &std::get<0>(thing) );
     }
-    */
+    /**/
     myMatrix.clear();
     hasher.clear();
 }

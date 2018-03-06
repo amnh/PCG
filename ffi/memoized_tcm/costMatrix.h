@@ -136,6 +136,7 @@ struct KeyEqual {
     }
 };
 
+
 typedef std::unordered_map<keys_t, costMedian_t, KeyHash, KeyEqual>::const_iterator mapIterator;
 
 
@@ -225,5 +226,8 @@ class CostMatrix
          */
         void initializeMatrix ();
 };
+
+
+
 
 #endif // COSTMATRIX_H
