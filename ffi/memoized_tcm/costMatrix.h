@@ -182,28 +182,33 @@ class CostMatrix
         int getSetCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
 
     private:
+	static constexpr int defaultExtraGapCostMetric[25] = {0, 1, 1, 1, 2,  1, 0, 1, 1, 2,  1, 1, 0, 1, 2,  1, 1, 1, 0, 2,  2, 2, 2, 2, 0};
+	static constexpr int defaultDiscreteMetric[25]     = {0, 1, 1, 1, 1,  1, 0, 1, 1, 1,  1, 1, 0, 1, 1,  1, 1, 1, 0, 1,  1, 1, 1, 1, 0};
+	static constexpr int defaultL1NormMetric[25]       = {0, 1, 2, 3, 4,  1, 0, 1, 2, 3,  2, 1, 0, 1, 2,  3, 2, 1, 0, 1,  4, 3, 2, 1, 0};
+	
         std::unordered_map <keys_t, costMedian_t, KeyHash, KeyEqual> myMatrix;
 
         std::unordered_map <keys_t, costMedian_t, KeyHash, KeyEqual> hasher;
 
-        size_t alphabetSize;
+        const size_t alphabetSize;
 
 	/** Always equal to:
          *    alphabetSize / sizeof ( packedChar ) + alphabetSize % sizeof(packedChar) ? 1 : 0
          *  Calculated once and stored for efficincy.
          */
-        size_t elementSize; 
+        const size_t elementSize; 
 
         /** Stored unambiguous tcm, necessary to do first calls to findDistance() without having to rewrite
          *  findDistance() and computeCostMedian()
          */
-        int *tcm;
+        int * tcm;
 
-        /** Takes in a `keys_t` and a `costMedian_t` and updates myMap to store the new values,
-         *  with @key as a key, and @median as the value.
+        /** Takes in two `dcElement_t` and a `costMedian_t` and updates myMap to store the new values,
+         *  with @{lhs, rhs} as a key, and @median as the value.
+         *
+         * Makes a deep copy of the arguments before inserting them into the map.
          */
-	//        void setValue(keys_t* key, costMedian_t* median);
-	void setValue(const dcElement_t* const lhs, const dcElement_t* const rhs, const costMedian_t* const median);
+         void setValue(const dcElement_t* const lhs, const dcElement_t* const rhs, const costMedian_t* const median);
 
         /** Takes in a pair of keys_t (each of which is a single `dcElement`) and computes their lowest-cost median.
          *  Uses a Sankoff-like algorithm, where all bases are considered, and the lowest cost bases are included in the

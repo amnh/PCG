@@ -80,20 +80,19 @@ void freeKeys_t ( const keys_t* toFree )
 
 
 CostMatrix::CostMatrix()
+  : alphabetSize(5)
+  , elementSize(1)
 {
-    alphabetSize = 5;
-    elementSize  = 1;
-    int inTcm[25] = {0, 1, 1, 1, 2,  1, 0, 1, 1, 2,  1, 1, 0, 1, 2,  1, 1, 1, 0, 2,  2, 2, 2, 2, 0};
     tcm = new int[25];
-    memcpy(tcm, inTcm, alphabetSize * alphabetSize * sizeof(int));
+    memcpy(tcm, defaultExtraGapCostMetric, alphabetSize * alphabetSize * sizeof(int));
     initializeMatrix();
 }
 
 
 CostMatrix::CostMatrix(size_t alphSize, int* inTcm)
+  : alphabetSize(alphSize)
+  , elementSize((alphabetSize / sizeof(packedChar)) + ((alphabetSize % sizeof(packedChar)) ? 1 : 0))
 {
-    alphabetSize = alphSize;
-    elementSize  = (alphabetSize / sizeof(packedChar)) + ((alphabetSize % sizeof(packedChar)) ? 1 : 0);
     tcm = new int[alphabetSize * alphabetSize];
     memcpy(tcm, inTcm, alphabetSize * alphabetSize * sizeof(int));
     initializeMatrix();
