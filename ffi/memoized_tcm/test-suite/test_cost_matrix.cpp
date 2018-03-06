@@ -13,11 +13,6 @@ int main() {
     const size_t alphabetSize = 25;
     const size_t tcmLen       = alphabetSize * alphabetSize;
 
-    if ( tcmLen != alphabetSize * alphabetSize ) {
-        printf("tcm wrong size\n");
-        exit(1);
-    }
-
     int tcm[tcmLen];  // gcc weirdly complains this isn't used. Don't know how to suppress this error.
     for (size_t i{0}; i < alphabetSize; i++) {
         for (size_t j{0}; j < alphabetSize; j++) {

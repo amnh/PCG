@@ -176,7 +176,7 @@ class CostMatrix
          *  the median for the two. Puts the median and alphabet size into retMedian,
          *  which must therefore by necessity be allocated elsewhere.
          *
-         *  This function allocates _if necessary_. So freeing inputs after a call isnecessary and will not
+         *  This function allocates _if necessary_. So freeing inputs after a call is necessary and will not
          *  cause invalid reads from the cost matrix.
          */
         int getSetCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
@@ -188,10 +188,11 @@ class CostMatrix
 
         size_t alphabetSize;
 
-	/** Always equal to alphabetSize % sizeof ( packedChar )
-         *  Calculated once and stored for efficincy.
+        // TODO: fix this. It's actually the width of a character given a specific alphabet size, I think.
+        /** Always equal to alphabetSize % sizeof ( packedChar )
+         *  Calculated once and stored for efficiency.
          */
-        size_t elementSize; 
+        size_t elementSize;
 
         /** Stored unambiguous tcm, necessary to do first calls to findDistance() without having to rewrite
          *  findDistance() and computeCostMedian()
@@ -200,9 +201,10 @@ class CostMatrix
 
         /** Takes in a `keys_t` and a `costMedian_t` and updates myMap to store the new values,
          *  with @key as a key, and @median as the value.
+         *  Makes a copy of median, so that input can me dealloc'ed in an external function, in order
+         *  to make memory management easier. Maps only store pointers to the input values.
          */
-	//        void setValue(keys_t* key, costMedian_t* median);
-	void setValue(const keys_t* const key, const costMedian_t* const median);
+        void setValue(const keys_t* const key, const costMedian_t* const median);
 
         /** Takes in a pair of keys_t (each of which is a single `dcElement`) and computes their lowest-cost median.
          *  Uses a Sankoff-like algorithm, where all bases are considered, and the lowest cost bases are included in the

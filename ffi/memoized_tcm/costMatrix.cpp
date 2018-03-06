@@ -62,7 +62,7 @@ keys_t* allocKeys_t (size_t alphabetSize)
     std::get<0>(*toReturn) = *allocateDCElement(alphabetSize);
     std::get<1>(*toReturn) = *allocateDCElement(alphabetSize);
 
-    std::get<0>(*toReturn).alphSize = std::get<1>(*toReturn).alphSize                            = alphabetSize;
+    std::get<0>(*toReturn).alphSize = std::get<1>(*toReturn).alphSize = alphabetSize;
 
     return toReturn;
 }
@@ -80,7 +80,11 @@ void freeKeys_t ( const keys_t* toFree )
 CostMatrix::CostMatrix()
 {
     alphabetSize = 5;
-    int inTcm[25] = {0, 1, 1, 1, 2,  1, 0, 1, 1, 2,  1, 1, 0, 1, 2,  1, 1, 1, 0, 2,  2, 2, 2, 2, 0};
+    int inTcm[25] = {0, 1, 1, 1, 2,
+                     1, 0, 1, 1, 2,
+                     1, 1, 0, 1, 2,
+                     1, 1, 1, 0, 2,
+                     2, 2, 2, 2, 0};
     tcm = new int[25];
     memcpy(tcm, inTcm, alphabetSize * alphabetSize * sizeof(int));
     initializeMatrix();
@@ -90,7 +94,8 @@ CostMatrix::CostMatrix()
 CostMatrix::CostMatrix(size_t alphSize, int* inTcm)
 {
     alphabetSize = alphSize;
-    elementSize  = alphabetSize % sizeof(packedChar);
+    // Shouldn't need this. Only used to make copy of medians, but all medians are a single element.
+    // elementSize  = dcElemSize(alphabetSize);
     tcm = new int[alphabetSize * alphabetSize];
     memcpy(tcm, inTcm, alphabetSize * alphabetSize * sizeof(int));
     initializeMatrix();
@@ -160,7 +165,7 @@ int CostMatrix::getSetCostMedian( dcElement_t* left
 
         if(DEBUG) printf("computed cost, median: %2i %" PRIu64 "\n", std::get<0>(*computedCostMed), std::get<1>(*computedCostMed)[0]);
 
-        foundCost          = std::get<0>(*computedCostMed);
+        foundCost = std::get<0>(*computedCostMed);
 
         if(retMedian->element != NULL) free(retMedian->element);
         retMedian->element = makePackedCharCopy( std::get<1>(*computedCostMed), alphabetSize, 1 );
@@ -265,7 +270,7 @@ int CostMatrix::findDistance (keys_t* searchKey, dcElement_t* ambElem)
          curCost{INT_MAX};
     size_t unambElemIdx;
 
-    for (size_t pos = 0; pos < alphabetSize; pos++) {
+    for (size_t pos = 0; pos < alphabetSize; ++pos) {
         if (TestBit(ambElem->element, pos)) {
 
             SetBit( std::get<0>(*searchKey).element, pos );
@@ -305,25 +310,37 @@ int CostMatrix::findDistance (keys_t* searchKey, dcElement_t* ambElem)
 
 void CostMatrix::initializeMatrix()
 {
-    auto firstKey  = allocateDCElement( alphabetSize );
-    auto secondKey = allocateDCElement( alphabetSize );
-    auto retMedian = allocateDCElement( alphabetSize );
+    auto keys = new keys_t;
+    std::get<0>(*keys) = *allocateDCElement(alphabetSize);
+    std::get<1>(*keys) = *allocateDCElement(alphabetSize);
+    auto toInsert      = new costMedian_t;
+    // Don't do this because dcElementOr() allocs. TODO: Is that good idea?
+    std::get<1>(*toInsert) = allocatePackedChar(alphabetSize, 1);
 
-    for (size_t key1 = 0; key1 < alphabetSize; key1++) { // for every possible value of key1, key2
-        SetBit(firstKey->element, key1);
+    for (size_t key1 = 0; key1 < alphabetSize; ++key1) { // for every possible value of key1, key2
+        SetBit(std::get<0>(*keys).element, key1);
 
         // key2 starts from 0, so non-symmetric matrices should work
-        for (size_t key2 = 0; key2 < alphabetSize; key2++) { // doesn't assumes 0 diagonal
-            SetBit(secondKey->element, key2);
-            CostMatrix::getSetCostMedian(firstKey, secondKey, retMedian);
-
-             ClearBit(secondKey->element, key2);
+        for (size_t key2 = 0; key2 < alphabetSize; ++key2) { // doesn't assumes 0 diagonal
+            printf("%zu %zu\n", key1, key2);
+            // I WAS HERE. Do I need to call getSetCostMedian? I'm initializing, shouldn't I just
+            // put in the cost straight out of the tcm?
+            // Also, halfway through changing setValue().
+            SetBit(std::get<1>(*keys).element, key2);
+            // Originally used `getSetCostMedian()` here, but it involves a lot of overhead and we know we're only
+            // using unambiguous elems here, so we can just insert.
+            std::get<0>(*toInsert) = tcm[key1 * alphabetSize + key2];
+            std::get<1>(*toInsert) = packedCharOr(std::get<0>(*keys).element, std::get<1>(*keys).element, alphabetSize, 1);
+            setValue(keys, toInsert);
+            ClearBit(std::get<1>(*toInsert), key2);
+            ClearBit(std::get<1>(*keys).element, key2);
         } // key2
-        ClearBit(firstKey->element, key1);
+        ClearBit(std::get<0>(*keys).element, key1);
+        ClearBit(std::get<1>(*toInsert), key1);
     }
-    freeDCElem( firstKey );
-    freeDCElem( secondKey );
-    freeDCElem( retMedian );
+    // Just to reiterate, getSetCostMedian() should allocate, so we should dealloc these.
+    freeKeys_t( keys );
+    free( std::get<1>(*toInsert) );
     // printf("finished initializing\n");
     // printf("freed keys\n");
 }
@@ -331,15 +348,15 @@ void CostMatrix::initializeMatrix()
 
 void CostMatrix::setValue(const keys_t* const key, const costMedian_t* const median)
 {
-    // This has to be a pair. Clang is okay with make_tuple() or forward_as_tuple(), but gcc doesn't like it.
-    // TODO: We might want a deep copy of key & median here to help with mempory management.
-    //std::tuple<int,         packedChar*>  costMedian_t
-  /*
+    // Making a deep copy of key & median here to help with memory management in calling fns.
+
     auto medianCopy = new costMedian_t;
-    auto packedCopy = malloc(elementSize * sizeof(packedChar));
-    memcpy(packedCopy, std::get<1>(median), elementSize);
-    std::get<0>(medianCopy) = std::get<0>(median);
-    std::get<1>(medianCopy) = packedCopy;
-  */
-    myMatrix.insert(std::make_pair(*key, *median));
+    auto packedCopy = makePackedCharCopy( std::get<1>(*median), alphabetSize, 1 );
+    std::get<0>(*medianCopy) = std::get<0>(*median); // this is just an int
+    std::get<1>(*medianCopy) = packedCopy;
+
+
+    // This has to be a pair. Clang is okay with make_tuple() or forward_as_tuple(),
+    // but gcc doesn't like it.
+    myMatrix.insert(std::make_pair(*key, *medianCopy));
 }

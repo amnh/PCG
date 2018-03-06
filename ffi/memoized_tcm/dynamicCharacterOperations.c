@@ -296,7 +296,7 @@ packedChar *allocatePackedChar( size_t alphSize, size_t numElems )
 }
 
 
-packedChar *makePackedCharCopy( packedChar *inChar, size_t alphSize, size_t numElems)
+packedChar *makePackedCharCopy( const packedChar *inChar, size_t alphSize, size_t numElems)
 {
     packedChar *outChar = allocatePackedChar(alphSize, numElems);
     size_t length = dynCharSize(alphSize, numElems);
@@ -340,7 +340,7 @@ packedChar *packedCharOr ( packedChar *lhs, packedChar *rhs, size_t alphSize, si
     size_t length = dcElemSize(alphSize);
     packedChar *toReturn = allocatePackedChar(alphSize, numElems);
     for (size_t i = 0; i < length; i++) {
-        printf("lhs: %" PRIu64 ", rhs: %" PRIu64 "\n", *lhs, *rhs);
+        // printf("lhs: %" PRIu64 ", rhs: %" PRIu64 "\n", *lhs, *rhs);
         toReturn[i] = lhs[i] | rhs[i];
     }
     return toReturn;

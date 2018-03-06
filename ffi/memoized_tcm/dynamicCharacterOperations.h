@@ -248,7 +248,7 @@ packedChar *allocatePackedChar( size_t alphSize, size_t numElems );
 /** Allocates new packedChar Copy input values to already alloced output and return a pointer
  *  to output
  */
-packedChar *makePackedCharCopy( packedChar *inChar, size_t alphSize, size_t numElems );
+packedChar *makePackedCharCopy( const packedChar *inChar, size_t alphSize, size_t numElems );
 
 /** As intArrToDynChar, but only allocates and fills the bit array, not whole dyn char */
 packedChar *intArrToBitArr( size_t alphSize, size_t arrayLen, uint64_t *input );
