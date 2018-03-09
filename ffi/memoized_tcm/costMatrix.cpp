@@ -146,22 +146,19 @@ int CostMatrix::getSetCostMedian( dcElement_t* left
                                 , dcElement_t* retMedian
                                 )
 {
-    // not using allocKeys_t because we're making a copy of the packed characters _if we need to_
-    const auto toLookup    = new keys_t;
-    std::get<0>(*toLookup) = *left;
-    std::get<1>(*toLookup) = *right;
-    const auto found = myMatrix.find(*toLookup);
+    const auto toLookup = std::make_tuple(*left, *right);
+    const auto found    = myMatrix.find(toLookup);
     auto foundCost{0};
 
     if(DEBUG) {
-        printf("1st: {%zu}: %" PRIu64 "\n", std::get<0>(*toLookup).alphSize, *std::get<0>(*toLookup).element ), fflush(stdout);
-        printf("2nd: {%zu}: %" PRIu64 "\n", std::get<1>(*toLookup).alphSize, *std::get<1>(*toLookup).element), fflush(stdout);
+        printf("1st: {%zu}: %" PRIu64 "\n", std::get<0>(toLookup).alphSize, *std::get<0>(toLookup).element ), fflush(stdout);
+        printf("2nd: {%zu}: %" PRIu64 "\n", std::get<1>(toLookup).alphSize, *std::get<1>(toLookup).element), fflush(stdout);
     }
 
     if ( found == myMatrix.end() ) {
         if(DEBUG) printf("\ngetSetCost didn't find %" PRIu64 " %" PRIu64 ".\n", left->element[0], right->element[0]);
 
-        const auto computedCostMed = computeCostMedian(*toLookup);
+        const auto computedCostMed = computeCostMedian(toLookup);
         //costMedian_t* computedCostMed = computeCostMedianFitchy(*toLookup);
 
         if(DEBUG) printf("computed cost, median: %2i %" PRIu64 "\n", std::get<0>(*computedCostMed), std::get<1>(*computedCostMed)[0]);
@@ -182,8 +179,6 @@ int CostMatrix::getSetCostMedian( dcElement_t* left
         retMedian->element = makePackedCharCopy( std::get<1>(std::get<1>(*found)), alphabetSize, 1 );
     }
     // freeCostMedian_t(std::get<0>(found));
-    // freeKeys_t(toLookup);
-    delete toLookup;
 
     if(DEBUG) printf("Matrix Value Count: %lu\n", myMatrix.size());
 
