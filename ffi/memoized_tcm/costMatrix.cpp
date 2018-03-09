@@ -136,9 +136,10 @@ int CostMatrix::getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t
     if ( found == myMatrix.end() ) {
         return -1;
     } else {
+        const auto foundValue = std::get<1>(*found);
         if (retMedian->element != NULL) free(retMedian->element);
-        retMedian->element = createCopyPackedChar( std::get<1>(std::get<1>(*found)) );
-        foundCost          = std::get<0>(std::get<1>(*found));
+        retMedian->element = createCopyPackedChar( std::get<1>(foundValue) );
+        foundCost          = std::get<0>(foundValue);
     }
 
     delete toLookup;
