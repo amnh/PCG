@@ -1,0 +1,63 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">------------------------------------------------------------------------------</span><span>
+</span><a name="line-2"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-3"></a><span class="hs-comment">-- Module      :  Bio.Graph.LeafSet</span><span>
+</span><a name="line-4"></a><span class="hs-comment">-- Copyright   :  (c) 2015-2015 Ward Wheeler</span><span>
+</span><a name="line-5"></a><span class="hs-comment">-- License     :  BSD-style</span><span>
+</span><a name="line-6"></a><span class="hs-comment">--</span><span>
+</span><a name="line-7"></a><span class="hs-comment">-- Maintainer  :  wheeler@amnh.org</span><span>
+</span><a name="line-8"></a><span class="hs-comment">-- Stability   :  provisional</span><span>
+</span><a name="line-9"></a><span class="hs-comment">-- Portability :  portable</span><span>
+</span><a name="line-10"></a><span class="hs-comment">--</span><span>
+</span><a name="line-11"></a><span class="hs-comment">-- Provides a class for HasLeafSet, as well as an instance of HasLeafSet</span><span>
+</span><a name="line-12"></a><span class="hs-comment">-- for NonEmptyList</span><span>
+</span><a name="line-13"></a><span class="hs-comment">--</span><span>
+</span><a name="line-14"></a><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-15"></a><span>
+</span><a name="line-16"></a><span class="hs-pragma">{-# LANGUAGE AllowAmbiguousTypes, DeriveFoldable, DeriveFunctor, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses #-}</span><span>
+</span><a name="line-17"></a><span>
+</span><a name="line-18"></a><span>
+</span><a name="line-19"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Bio</span><span class="hs-operator">.</span><span class="hs-identifier">Graph</span><span class="hs-operator">.</span><span class="hs-identifier">LeafSet</span><span>
+</span><a name="line-20"></a><span>  </span><span class="hs-special">(</span><span> </span><a href="Bio.Graph.LeafSet.html#LeafSet"><span class="hs-identifier hs-type">LeafSet</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-21"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.LeafSet.html#HasLeafSet"><span class="hs-identifier hs-type">HasLeafSet</span></a><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-22"></a><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-23"></a><span>
+</span><a name="line-24"></a><span>
+</span><a name="line-25"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Control</span><span class="hs-operator">.</span><span class="hs-identifier">Lens</span><span>
+</span><a name="line-26"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">List</span><span>         </span><span class="hs-special">(</span><span class="hs-identifier hs-var">union</span><span class="hs-special">)</span><span>
+</span><a name="line-27"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Semigroup</span><span>
+</span><a name="line-28"></a><span class="hs-keyword">import</span><span> </span><a href="Text.Newick.Class.html"><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">Newick</span><span class="hs-operator">.</span><span class="hs-identifier">Class</span></a><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-29"></a><span class="hs-keyword">import</span><span> </span><a href="Text.XML.Custom.html"><span class="hs-identifier">Text</span><span class="hs-operator">.</span><span class="hs-identifier">XML</span><span class="hs-operator">.</span><span class="hs-identifier">Custom</span></a><span>   </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-30"></a><span>
+</span><a name="line-31"></a><span>
+</span><a name="line-32"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-33"></a><span class="hs-comment">-- Set of unique leaf labels.</span><span>
+</span><a name="line-34"></a><span class="hs-keyword">newtype</span><span> </span><a name="LeafSet"><a href="Bio.Graph.LeafSet.html#LeafSet"><span class="hs-identifier">LeafSet</span></a></a><span> </span><a name="local-6989586621679255473"><a href="#local-6989586621679255473"><span class="hs-identifier">n</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><a name="LeafSet"><a href="Bio.Graph.LeafSet.html#LeafSet"><span class="hs-identifier">LeafSet</span></a></a><span> </span><span class="hs-special">[</span><a href="#local-6989586621679255473"><span class="hs-identifier hs-type">n</span></a><span class="hs-special">]</span><span>
+</span><a name="line-35"></a><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Foldable</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Functor</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Show</span><span class="hs-special">)</span><span>
+</span><a name="line-36"></a><span>
+</span><a name="line-37"></a><span>
+</span><a name="line-38"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-39"></a><span class="hs-comment">-- A 'Lens' for 'LeafSet'</span><span>
+</span><a name="line-40"></a><span class="hs-keyword">class</span><span> </span><a name="HasLeafSet"><a href="Bio.Graph.LeafSet.html#HasLeafSet"><span class="hs-identifier">HasLeafSet</span></a></a><span> </span><a name="local-6989586621679255471"><a href="#local-6989586621679255471"><span class="hs-identifier">s</span></a></a><span> </span><a name="local-6989586621679255472"><a href="#local-6989586621679255472"><span class="hs-identifier">a</span></a></a><span> </span><span class="hs-glyph">|</span><span> </span><span class="hs-identifier">s</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">a</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-41"></a><span>
+</span><a name="line-42"></a><span>    </span><span class="hs-pragma">{-# MINIMAL leafSet #-}</span><span>
+</span><a name="line-43"></a><span>    </span><span class="hs-identifier">leafSet</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Lens'</span><span> </span><a href="#local-6989586621679255471"><span class="hs-identifier hs-type">s</span></a><span> </span><a href="#local-6989586621679255472"><span class="hs-identifier hs-type">a</span></a><span>
+</span><a name="line-44"></a><span>
+</span><a name="line-45"></a><span>  </span><span>
+</span><a name="line-46"></a><span class="hs-comment">-- | (&#10004;)</span><span>
+</span><a name="line-47"></a><span class="hs-keyword">instance</span><span> </span><span class="hs-identifier hs-type">Eq</span><span> </span><a href="#local-6989586621679255474"><span class="hs-identifier hs-type">n</span></a><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-identifier hs-type">Semigroup</span><span> </span><span class="hs-special">(</span><a href="Bio.Graph.LeafSet.html#LeafSet"><span class="hs-identifier hs-type">LeafSet</span></a><span> </span><a href="#local-6989586621679255474"><span class="hs-identifier hs-type">n</span></a><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-48"></a><span>
+</span><a name="line-49"></a><span>    </span><span class="hs-special">(</span><a name="local-3458764513820541482"><span class="hs-operator">&lt;&gt;</span></a><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><a href="Bio.Graph.LeafSet.html#LeafSet"><span class="hs-identifier hs-var">LeafSet</span></a><span> </span><a name="local-6989586621679255475"><a href="#local-6989586621679255475"><span class="hs-identifier">lhs</span></a></a><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><a href="Bio.Graph.LeafSet.html#LeafSet"><span class="hs-identifier hs-var">LeafSet</span></a><span> </span><a name="local-6989586621679255476"><a href="#local-6989586621679255476"><span class="hs-identifier">rhs</span></a></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><a href="Bio.Graph.LeafSet.html#LeafSet"><span class="hs-identifier hs-var">LeafSet</span></a><span> </span><span class="hs-operator hs-var">$</span><span> </span><span class="hs-identifier hs-var">union</span><span> </span><a href="#local-6989586621679255475"><span class="hs-identifier hs-var">lhs</span></a><span> </span><a href="#local-6989586621679255476"><span class="hs-identifier hs-var">rhs</span></a><span>
+</span><a name="line-50"></a><span>
+</span><a name="line-51"></a><span>
+</span><a name="line-52"></a><span class="hs-comment">{--
+instance ToXML (LeafSet (Maybe String)) where
+
+    toXML (LeafSet lst) = xmlElement &quot;Leaf_set&quot; attrs contents
+        where
+            attrs    = []
+            contents = [Left (&quot;Leaves&quot;, foldr leafStr &quot;&quot; lst)]
+
+            leafStr input accum = case input of Just item -&gt; item &lt;&gt; &quot;, &quot; &lt;&gt; accum
+                                                Nothing   -&gt; accum
+--}</span><span>
+</span><a name="line-63"></a></pre></body></html>

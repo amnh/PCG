@@ -1,0 +1,130 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-2"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-3"></a><span class="hs-comment">-- Module      :  Bio.Graph.Component</span><span>
+</span><a name="line-4"></a><span class="hs-comment">-- Copyright   :  (c) 2015-2015 Ward Wheeler</span><span>
+</span><a name="line-5"></a><span class="hs-comment">-- License     :  BSD-style</span><span>
+</span><a name="line-6"></a><span class="hs-comment">--</span><span>
+</span><a name="line-7"></a><span class="hs-comment">-- Maintainer  :  wheeler@amnh.org</span><span>
+</span><a name="line-8"></a><span class="hs-comment">-- Stability   :  provisional</span><span>
+</span><a name="line-9"></a><span class="hs-comment">-- Portability :  portable</span><span>
+</span><a name="line-10"></a><span class="hs-comment">--</span><span>
+</span><a name="line-11"></a><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-12"></a><span>
+</span><a name="line-13"></a><span class="hs-pragma">{-# LANGUAGE FunctionalDependencies, MultiParamTypeClasses #-}</span><span>
+</span><a name="line-14"></a><span>
+</span><a name="line-15"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Bio</span><span class="hs-operator">.</span><span class="hs-identifier">Graph</span><span class="hs-operator">.</span><span class="hs-identifier">Component</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-16"></a><span>
+</span><a name="line-17"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">List</span><span class="hs-operator">.</span><span class="hs-identifier">NonEmpty</span><span>
+</span><a name="line-18"></a><span>
+</span><a name="line-19"></a><span class="hs-comment">-- newtype PhylogeneticComponent a = PhylogeneticComponent a</span><span>
+</span><a name="line-20"></a><span>
+</span><a name="line-21"></a><span class="hs-comment">{- Laws:
+
+ Node queries are mutually exclusive.
+ forall i, t . (==1) . length . filter id $
+               [ i `isComponentNode` t
+               , i `isNetworkNode` t
+               , i `isTreeNode` t
+               , i `isLeafNode` t
+               , i `isRootNode` t
+               ]
+-}</span><span>
+</span><a name="line-32"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-33"></a><span class="hs-comment">-- Represents the most relaxed phylogentic graph structure.</span><span>
+</span><a name="line-34"></a><span class="hs-comment">--</span><span>
+</span><a name="line-35"></a><span class="hs-comment">-- The graph must satisfy the following:</span><span>
+</span><a name="line-36"></a><span class="hs-comment">--  * The graph is directed</span><span>
+</span><a name="line-37"></a><span class="hs-comment">--  * The graph is acyclic</span><span>
+</span><a name="line-38"></a><span class="hs-comment">--  * the graph contains one or more root nodes</span><span>
+</span><a name="line-39"></a><span class="hs-comment">--  * All nodes have at most in-degree 2</span><span>
+</span><a name="line-40"></a><span class="hs-comment">--  * All nodes have out-degree 0 or out-degree 2</span><span>
+</span><a name="line-41"></a><span class="hs-keyword">class</span><span> </span><a name="PhylogeneticComponent"><a href="Bio.Graph.Component.html#PhylogeneticComponent"><span class="hs-identifier">PhylogeneticComponent</span></a></a><span> </span><a name="local-6989586621679130444"><a href="#local-6989586621679130444"><span class="hs-identifier">t</span></a></a><span> </span><a name="local-6989586621679130445"><a href="#local-6989586621679130445"><span class="hs-identifier">i</span></a></a><span> </span><a name="local-6989586621679130446"><a href="#local-6989586621679130446"><span class="hs-identifier">e</span></a></a><span> </span><a name="local-6989586621679130447"><a href="#local-6989586621679130447"><span class="hs-identifier">n</span></a></a><span> </span><span class="hs-glyph">|</span><span> </span><span class="hs-identifier">t</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">i</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">t</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">n</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">t</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">e</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-42"></a><span>
+</span><a name="line-43"></a><span>    </span><span class="hs-identifier">parents</span><span>   </span><span class="hs-glyph">::</span><span> </span><a href="#local-6989586621679130445"><span class="hs-identifier hs-type">i</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679130444"><span class="hs-identifier hs-type">t</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><a href="#local-6989586621679130445"><span class="hs-identifier hs-type">i</span></a><span class="hs-special">]</span><span>
+</span><a name="line-44"></a><span>
+</span><a name="line-45"></a><span>    </span><span class="hs-identifier">children</span><span>  </span><span class="hs-glyph">::</span><span> </span><a href="#local-6989586621679130445"><span class="hs-identifier hs-type">i</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679130444"><span class="hs-identifier hs-type">t</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><a href="#local-6989586621679130445"><span class="hs-identifier hs-type">i</span></a><span class="hs-special">]</span><span>
+</span><a name="line-46"></a><span>
+</span><a name="line-47"></a><span>    </span><span class="hs-identifier">roots</span><span>     </span><span class="hs-glyph">::</span><span> </span><a href="#local-6989586621679130444"><span class="hs-identifier hs-type">t</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">NonEmpty</span><span> </span><a href="#local-6989586621679130445"><span class="hs-identifier hs-type">i</span></a><span>
+</span><a name="line-48"></a><span>
+</span><a name="line-49"></a><span>    </span><span class="hs-identifier">leaves</span><span>    </span><span class="hs-glyph">::</span><span> </span><a href="#local-6989586621679130444"><span class="hs-identifier hs-type">t</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><a href="#local-6989586621679130445"><span class="hs-identifier hs-type">i</span></a><span class="hs-special">]</span><span>
+</span><a name="line-50"></a><span>
+</span><a name="line-51"></a><span>    </span><span class="hs-identifier">nodeCount</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="#local-6989586621679130444"><span class="hs-identifier hs-type">t</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Int</span><span>
+</span><a name="line-52"></a><span>
+</span><a name="line-53"></a><span>    </span><span class="hs-identifier">nodeDatum</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="#local-6989586621679130445"><span class="hs-identifier hs-type">i</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679130444"><span class="hs-identifier hs-type">t</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679130447"><span class="hs-identifier hs-type">n</span></a><span>
+</span><a name="line-54"></a><span>
+</span><a name="line-55"></a><span>    </span><span class="hs-identifier">edgeDatum</span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><a href="#local-6989586621679130445"><span class="hs-identifier hs-type">i</span></a><span class="hs-special">,</span><a href="#local-6989586621679130445"><span class="hs-identifier hs-type">i</span></a><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679130444"><span class="hs-identifier hs-type">t</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Maybe</span><span> </span><a href="#local-6989586621679130446"><span class="hs-identifier hs-type">e</span></a><span>
+</span><a name="line-56"></a><span>
+</span><a name="line-57"></a><span>    </span><span class="hs-comment">-- |</span><span>
+</span><a name="line-58"></a><span>    </span><span class="hs-comment">-- A node satisfying:</span><span>
+</span><a name="line-59"></a><span>    </span><span class="hs-comment">--  * In-degree  of 2 or more</span><span>
+</span><a name="line-60"></a><span>    </span><span class="hs-comment">--  * Out-degree of 2 or more</span><span>
+</span><a name="line-61"></a><span>    </span><span class="hs-comment">--  * A least 2 parent nodes have ancestoral paths to different root nodes</span><span>
+</span><a name="line-62"></a><span>    </span><span class="hs-identifier">isComponentNode</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="#local-6989586621679130445"><span class="hs-identifier hs-type">i</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679130444"><span class="hs-identifier hs-type">t</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Bool</span><span>
+</span><a name="line-63"></a><span>
+</span><a name="line-64"></a><span>    </span><span class="hs-comment">-- |</span><span>
+</span><a name="line-65"></a><span>    </span><span class="hs-comment">-- A node satisfying:</span><span>
+</span><a name="line-66"></a><span>    </span><span class="hs-comment">--  * In-degree  of 2 or more</span><span>
+</span><a name="line-67"></a><span>    </span><span class="hs-comment">--  * Out-degree of 2 or more</span><span>
+</span><a name="line-68"></a><span>    </span><span class="hs-comment">--  * All parent nodes have ancestoral paths to a single root node</span><span>
+</span><a name="line-69"></a><span>    </span><span class="hs-identifier">isNetworkNode</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="#local-6989586621679130445"><span class="hs-identifier hs-type">i</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679130444"><span class="hs-identifier hs-type">t</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Bool</span><span>
+</span><a name="line-70"></a><span>
+</span><a name="line-71"></a><span>    </span><span class="hs-comment">-- |</span><span>
+</span><a name="line-72"></a><span>    </span><span class="hs-comment">-- A node satisfying:</span><span>
+</span><a name="line-73"></a><span>    </span><span class="hs-comment">--  * In-degree  of 1</span><span>
+</span><a name="line-74"></a><span>    </span><span class="hs-comment">--  * Out-degree of 2</span><span>
+</span><a name="line-75"></a><span>    </span><span class="hs-identifier">isTreeNode</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="#local-6989586621679130445"><span class="hs-identifier hs-type">i</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679130444"><span class="hs-identifier hs-type">t</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Bool</span><span>
+</span><a name="line-76"></a><span>
+</span><a name="line-77"></a><span>    </span><span class="hs-comment">-- |</span><span>
+</span><a name="line-78"></a><span>    </span><span class="hs-comment">-- A node satisfying:</span><span>
+</span><a name="line-79"></a><span>    </span><span class="hs-comment">--  * Out-degree 0</span><span>
+</span><a name="line-80"></a><span>    </span><span class="hs-identifier">isLeafNode</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="#local-6989586621679130445"><span class="hs-identifier hs-type">i</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679130444"><span class="hs-identifier hs-type">t</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Bool</span><span>
+</span><a name="line-81"></a><span>
+</span><a name="line-82"></a><span>    </span><span class="hs-comment">-- |</span><span>
+</span><a name="line-83"></a><span>    </span><span class="hs-comment">-- A node satisfying:</span><span>
+</span><a name="line-84"></a><span>    </span><span class="hs-comment">--  * In-degree 0</span><span>
+</span><a name="line-85"></a><span>    </span><span class="hs-identifier">isRootNode</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="#local-6989586621679130445"><span class="hs-identifier hs-type">i</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679130444"><span class="hs-identifier hs-type">t</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Bool</span><span>
+</span><a name="line-86"></a><span>
+</span><a name="line-87"></a><span>    </span><span class="hs-comment">-- |</span><span>
+</span><a name="line-88"></a><span>    </span><span class="hs-comment">-- Performs a softwire resolution of all /component/ nodes into a collection</span><span>
+</span><a name="line-89"></a><span>    </span><span class="hs-comment">-- of all resulting networks. The resulting size of the collection is equal</span><span>
+</span><a name="line-90"></a><span>    </span><span class="hs-comment">-- to /2^n/ where /n/ is the number of component nodes in the</span><span>
+</span><a name="line-91"></a><span>    </span><span class="hs-comment">-- 'PhylogeneticComponent'.</span><span>
+</span><a name="line-92"></a><span>    </span><span class="hs-identifier">networkResolutions</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="#local-6989586621679130444"><span class="hs-identifier hs-type">t</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">NonEmpty</span><span> </span><a href="#local-6989586621679130444"><span class="hs-identifier hs-type">t</span></a><span>
+</span><a name="line-93"></a><span>
+</span><a name="line-94"></a><span>
+</span><a name="line-95"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-96"></a><span class="hs-comment">-- Represents a more constrained phylogentic graph structure.</span><span>
+</span><a name="line-97"></a><span class="hs-comment">--</span><span>
+</span><a name="line-98"></a><span class="hs-comment">-- The graph must satisfy the following:</span><span>
+</span><a name="line-99"></a><span class="hs-comment">--  * The graph is directed</span><span>
+</span><a name="line-100"></a><span class="hs-comment">--  * The graph is acyclic</span><span>
+</span><a name="line-101"></a><span class="hs-comment">--  * The graph contains /exactly one/ root nodes</span><span>
+</span><a name="line-102"></a><span class="hs-comment">--  * All nodes have at most in-degree 2</span><span>
+</span><a name="line-103"></a><span class="hs-comment">--  * All nodes have out-degree 0 or out-degree 2</span><span>
+</span><a name="line-104"></a><span class="hs-keyword">class</span><span> </span><a name="PhylogeneticNetwork"><a href="Bio.Graph.Component.html#PhylogeneticNetwork"><span class="hs-identifier">PhylogeneticNetwork</span></a></a><span> </span><a name="local-6989586621679130440"><a href="#local-6989586621679130440"><span class="hs-identifier">t</span></a></a><span> </span><a name="local-6989586621679130441"><a href="#local-6989586621679130441"><span class="hs-identifier">i</span></a></a><span> </span><a name="local-6989586621679130442"><a href="#local-6989586621679130442"><span class="hs-identifier">e</span></a></a><span> </span><a name="local-6989586621679130443"><a href="#local-6989586621679130443"><span class="hs-identifier">n</span></a></a><span> </span><span class="hs-glyph">|</span><span> </span><span class="hs-identifier">t</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">i</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">t</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">n</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">t</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">e</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-105"></a><span>
+</span><a name="line-106"></a><span>    </span><span class="hs-identifier">root</span><span>  </span><span class="hs-glyph">::</span><span> </span><a href="#local-6989586621679130440"><span class="hs-identifier hs-type">t</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679130441"><span class="hs-identifier hs-type">i</span></a><span>
+</span><a name="line-107"></a><span>
+</span><a name="line-108"></a><span>    </span><span class="hs-comment">-- |</span><span>
+</span><a name="line-109"></a><span>    </span><span class="hs-comment">-- Performs a softwire resolution of all /network/ nodes into a collection</span><span>
+</span><a name="line-110"></a><span>    </span><span class="hs-comment">-- of all resulting trees. The resulting size of the collection is equal</span><span>
+</span><a name="line-111"></a><span>    </span><span class="hs-comment">-- to /2^n/ where /n/ is the number of network nodes in the</span><span>
+</span><a name="line-112"></a><span>    </span><span class="hs-comment">-- 'PhylogenetiNetwork'.</span><span>
+</span><a name="line-113"></a><span>    </span><span class="hs-identifier">treeResolutions</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="#local-6989586621679130440"><span class="hs-identifier hs-type">t</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">NonEmpty</span><span> </span><a href="#local-6989586621679130440"><span class="hs-identifier hs-type">t</span></a><span>
+</span><a name="line-114"></a><span>
+</span><a name="line-115"></a><span>
+</span><a name="line-116"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-117"></a><span class="hs-comment">-- Represents the most constrained phylogentic graph structure.</span><span>
+</span><a name="line-118"></a><span class="hs-comment">-- The constraints correlate to a binary tree.</span><span>
+</span><a name="line-119"></a><span class="hs-comment">--</span><span>
+</span><a name="line-120"></a><span class="hs-comment">-- The graph must satisfy the following:</span><span>
+</span><a name="line-121"></a><span class="hs-comment">--  * The graph is directed</span><span>
+</span><a name="line-122"></a><span class="hs-comment">--  * The graph is acyclic</span><span>
+</span><a name="line-123"></a><span class="hs-comment">--  * The graph contains /exactly one/ root nodes</span><span>
+</span><a name="line-124"></a><span class="hs-comment">--  * All nodes have /exactly/ in-degree 1</span><span>
+</span><a name="line-125"></a><span class="hs-comment">--  * All nodes contain out-degree 0 or out-degree 2</span><span>
+</span><a name="line-126"></a><span class="hs-keyword">class</span><span> </span><a name="PhylogeneticTree"><a href="Bio.Graph.Component.html#PhylogeneticTree"><span class="hs-identifier">PhylogeneticTree</span></a></a><span> </span><a name="local-6989586621679130436"><a href="#local-6989586621679130436"><span class="hs-identifier">t</span></a></a><span> </span><a name="local-6989586621679130437"><a href="#local-6989586621679130437"><span class="hs-identifier">i</span></a></a><span> </span><a name="local-6989586621679130438"><a href="#local-6989586621679130438"><span class="hs-identifier">e</span></a></a><span> </span><a name="local-6989586621679130439"><a href="#local-6989586621679130439"><span class="hs-identifier">n</span></a></a><span> </span><span class="hs-glyph">|</span><span> </span><span class="hs-identifier">t</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">i</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">t</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">n</span><span class="hs-special">,</span><span> </span><span class="hs-identifier">t</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier">e</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-127"></a><span>
+</span><a name="line-128"></a><span>    </span><span class="hs-identifier">parent</span><span> </span><span class="hs-glyph">::</span><span> </span><a href="#local-6989586621679130437"><span class="hs-identifier hs-type">i</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><a href="#local-6989586621679130436"><span class="hs-identifier hs-type">t</span></a><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-identifier hs-type">Maybe</span><span> </span><a href="#local-6989586621679130437"><span class="hs-identifier hs-type">i</span></a><span>
+</span><a name="line-129"></a><span>
+</span><a name="line-130"></a></pre></body></html>

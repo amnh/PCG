@@ -20,6 +20,8 @@ costMatrix_p construct_CostMatrix_C(size_t alphSize, int* tcm)
 
 void destruct_CostMatrix_C(costMatrix_p untyped_self)
 {
+    // costMatrix_p thing = <CostMatrix*>(untyped_self);
+    // ((CostMatrix*) untyped_self)::~CostMatrix();
     delete static_cast<CostMatrix*> (untyped_self);
 }
 
@@ -50,12 +52,12 @@ costMedian_t* allocCostMedian_t (size_t alphabetSize)
 
 void freeCostMedian_t (costMedian_t* toFree)
 {
-    packedChar* medianValue = std::get<1>(*toFree);
-    if (medianValue == NULL)
+    // packedChar* medianValue = std::get<1>(*toFree);
+    if (std::get<1>(*toFree) == NULL)
       return;
 
-    free(medianValue);
-    std::get<1>(*toFree) = NULL;
+    free( std::get<1>(*toFree) );
+    // std::get<1>(*toFree) = NULL;
 }
 
 
@@ -63,8 +65,16 @@ keys_t* allocKeys_t (size_t alphabetSize)
 {
     auto toReturn = new keys_t;
 
-    std::get<0>(*toReturn) = *allocateDCElement(alphabetSize);
-    std::get<1>(*toReturn) = *allocateDCElement(alphabetSize);
+    // jump through these hoops because I'm dereferencing the two elements,
+    // and I couldn't free the pointers otherwise.
+    auto firstElement  = allocateDCElement(alphabetSize);
+    auto secondElement = allocateDCElement(alphabetSize);
+
+    std::get<0>(*toReturn) = *firstElement;
+    std::get<1>(*toReturn) = *secondElement;
+
+    free(firstElement);
+    free(secondElement);
 
     std::get<0>(*toReturn).alphSize = std::get<1>(*toReturn).alphSize = alphabetSize;
 
@@ -73,12 +83,20 @@ keys_t* allocKeys_t (size_t alphabetSize)
 
 // TODO: since keys_t is Pair<dcElement_t, dcElement_t>, there are no pointers, and nothing
 // to free?? How is this right?
-void freeKeys_t ( const keys_t* toFree )
+void freeKeys_t( const keys_t* toFree )
 {
-    freeDCElem(&std::get<0>(*toFree));
-    freeDCElem(&std::get<1>(*toFree));
-    // C++ memory Manager will free toFree
+    freeDCElem( &std::get<0>(*toFree) );
+    // delete &std::get<0>(*toFree);
+    freeDCElem( &std::get<1>(*toFree) );
+    // delete &std::get<1>(*toFree);
 }
+
+
+// void freeMapAccessTuple_t (const mapAccessTuple_t* toFree)
+// {
+//     freeKeys_t(std::get<0>(toFree));
+//     freeCostMedian_t(std::get<1>(toFree));
+// }
 
 
 CostMatrix::CostMatrix()
@@ -103,13 +121,21 @@ CostMatrix::CostMatrix(size_t alphSize, int* inTcm)
 
 CostMatrix::~CostMatrix()
 {
-    for ( auto& thing: myMatrix ) {
+    for ( auto iterator = myMatrix.begin(); iterator != myMatrix.end(); iterator++ ) {
         // LEAK:
         // Call to freeCostMedian_t causes a number of invalid reads equal to alphabetSize
         // Omission of the call leaks O(alphabetSize) space
-        // freeCostMedian_t(&std::get<1>(thing));
-        freeKeys_t( &std::get<0>(thing) );
+        freeCostMedian_t( &std::get<1>(*iterator) );
+        freeKeys_t( &std::get<0>(*iterator) );
     }
+    for ( auto iterator = hasher.begin(); iterator != hasher.end(); iterator++ ) {
+        // LEAK:
+        // Call to freeCostMedian_t causes a number of invalid reads equal to alphabetSize
+        // Omission of the call leaks O(alphabetSize) space
+        freeCostMedian_t( &std::get<1>(*iterator) );
+        freeKeys_t( &std::get<0>(*iterator) );
+    }
+    // free(tcm);
     myMatrix.clear();
     hasher.clear();
 }
@@ -117,12 +143,12 @@ CostMatrix::~CostMatrix()
 
 int CostMatrix::getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian)
 {
-    keys_t toLookup;
-    std::get<0>(toLookup) = *left;
-    std::get<1>(toLookup) = *right;
+    auto toLookup = new keys_t;
+    std::get<0>(*toLookup) = *left;
+    std::get<1>(*toLookup) = *right;
     auto foundCost{0};
 
-    const auto found = myMatrix.find(toLookup);
+    const auto found = myMatrix.find(*toLookup);
 
     if ( found == myMatrix.end() ) {
         return -1;
@@ -132,6 +158,8 @@ int CostMatrix::getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t
         foundCost          = std::get<0>(std::get<1>(*found));
     }
 
+    freeKeys_t(toLookup);
+    delete toLookup;
     return foundCost;
 }
 
@@ -142,7 +170,7 @@ int CostMatrix::getSetCostMedian( dcElement_t* left
                                 )
 {
     // not using allocKeys_t because we're making a copy of the packed characters _if we need to_
-    const auto toLookup          = new keys_t;
+    const auto toLookup    = new keys_t;
     std::get<0>(*toLookup) = *left;
     std::get<1>(*toLookup) = *right;
     const auto found = myMatrix.find(*toLookup);
@@ -168,13 +196,17 @@ int CostMatrix::getSetCostMedian( dcElement_t* left
 
         setValue(left, right, computedCostMed);
         freeCostMedian_t(computedCostMed);
-        // freeKeys_t(insertKey); Don't want to free this because it gets copied by ref into the map.
+        delete computedCostMed;
+        // freeMapAccessTuple_t(toLookup);
     } else {
         // because in the next two lines, I get back a tuple<keys, costMedian_t>
         foundCost = std::get<0>(std::get<1>(*found));
         if(retMedian->element != NULL) free(retMedian->element);
         retMedian->element = makePackedCharCopy( std::get<1>(std::get<1>(*found)), alphabetSize, 1 );
     }
+    // freeCostMedian_t(std::get<0>(found));
+    freeKeys_t(toLookup);
+    delete toLookup;
 
     if(DEBUG) printf("Matrix Value Count: %lu\n", myMatrix.size());
 
@@ -192,7 +224,7 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys)
     auto firstKey  = &std::get<0>(keys);
     auto secondKey = &std::get<1>(keys);
     auto toReturn  = new costMedian_t;   // array is alloc'ed above
-    auto curMedian = (packedChar*) calloc(elemArrLen, INT_WIDTH);  // don't free, it's going into toReturn
+    auto curMedian = allocatePackedChar(alphabetSize, 1); //(packedChar*) calloc(elemArrLen, INT_WIDTH);  // don't free, it's going into toReturn
 
     auto searchKey        = allocKeys_t(alphabetSize);
     auto singleNucleotide = &std::get<1>(*searchKey);
@@ -241,7 +273,10 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys)
     std::get<1>(*toReturn) = curMedian;
 
     freeKeys_t(searchKey);
-    delete searchKey;
+    // free( &std::get<0>(*toReturn) );
+    // free( &std::get<1>(*toReturn) );
+
+    // delete searchKey;
 
     return toReturn;
 }
@@ -302,7 +337,7 @@ void CostMatrix::initializeMatrix()
     const auto toInsert = new costMedian_t;
 
     // Don't do this because dcElementOr() allocs. TODO: Is that allocation a good idea? No. Fix it.
-    std::get<1>(*toInsert) = allocatePackedChar(alphabetSize, 1);
+    // std::get<1>(*toInsert) = allocatePackedChar(alphabetSize, 1);
 
     for (size_t key1_bit = 0; key1_bit < alphabetSize; ++key1_bit) { // for every possible value of key1_bit, key2_bit
         SetBit(key1->element, key1_bit);
@@ -315,6 +350,8 @@ void CostMatrix::initializeMatrix()
             // Originally used `getSetCostMedian()` here, but it involves a lot of overhead and we know we're only
             // using unambiguous elems, so we can just insert.
             std::get<0>(*toInsert) = tcm[key1_bit * alphabetSize + key2_bit];
+            // TODO: can I move the allocation out of `packedCharOr()`?
+            free( std::get<1>(*toInsert) );
             std::get<1>(*toInsert) = packedCharOr(key1->element, key2->element, alphabetSize, 1);
 
             setValue(key1, key2, toInsert);
@@ -325,9 +362,12 @@ void CostMatrix::initializeMatrix()
         ClearBit(std::get<1>(*toInsert), key1_bit);
     }
     // Just to reiterate, getSetCostMedian() should allocate, so we should dealloc these.
-    freeDCElem(key1);
+    freeDCElem(key1);        // deallocate array
+    free(key1);              // free pointer
     freeDCElem(key2);
-    free( std::get<1>(*toInsert) );
+    free(key2);
+    freeCostMedian_t(toInsert);
+    delete toInsert;         // because generated with `new`
     // printf("finished initializing\n");
     // printf("freed keys\n");
 }
@@ -344,19 +384,25 @@ void CostMatrix::setValue(const dcElement_t* const lhs, const dcElement_t* const
     const auto key = new keys_t;
 
     // Copy the left-hand-side into key.
-    std::get<0>(*key)          = *(new dcElement_t);
+    // TODO: I need to free the pointer inside the DCElement. That means I don't have a deep copy? Fix that.
+    auto subkey = allocateDCElement(alphabetSize);
+    std::get<0>(*key)          = *subkey;
     std::get<0>(*key).alphSize = alphabetSize; // could use lhs->alphSize, but this should be more guaranteed correct... right?
+    // TODO: Decide what to do with the copy pointer here:
     std::get<0>(*key).element  = makePackedCharCopy( lhs->element, alphabetSize, 1 );
     // std::memcpy(std::get<0>(*key).element, lhs->element, byteCount);
 
     // Copy the right-hand-side into key.
-    std::get<1>(*key)          = *(new dcElement_t);
+    free(subkey->element);
+    subkey = allocateDCElement(alphabetSize);
+    std::get<1>(*key) = *subkey;
+    free(subkey->element);
     std::get<1>(*key).alphSize = alphabetSize;
     std::get<1>(*key).element  = makePackedCharCopy( rhs->element, alphabetSize, 1 );
     // std::memcpy(std::get<1>(*key).element, rhs->element, byteCount);
 
     // Create a deep copy of the toInsert value to insert.
-    const auto value = new costMedian_t;
+    const auto value    = new costMedian_t;
     std::get<0>(*value) = std::get<0>(*toInsert);
     std::get<1>(*value) = makePackedCharCopy( std::get<1>(*toInsert), alphabetSize, 1 );
     // allocatePackedChar(alphabetSize, 1);

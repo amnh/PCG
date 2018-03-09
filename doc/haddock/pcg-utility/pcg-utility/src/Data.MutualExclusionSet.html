@@ -1,0 +1,66 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-2"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-3"></a><span class="hs-comment">-- Module      :  Data.MutualExclusionSet</span><span>
+</span><a name="line-4"></a><span class="hs-comment">-- Copyright   :  (c) 2015-2015 Ward Wheeler</span><span>
+</span><a name="line-5"></a><span class="hs-comment">-- License     :  BSD-style</span><span>
+</span><a name="line-6"></a><span class="hs-comment">--</span><span>
+</span><a name="line-7"></a><span class="hs-comment">-- Maintainer  :  wheeler@amnh.org</span><span>
+</span><a name="line-8"></a><span class="hs-comment">-- Stability   :  provisional</span><span>
+</span><a name="line-9"></a><span class="hs-comment">-- Portability :  portable</span><span>
+</span><a name="line-10"></a><span class="hs-comment">--</span><span>
+</span><a name="line-11"></a><span class="hs-comment">-- Set-like structure for a collection of elements where each included element</span><span>
+</span><a name="line-12"></a><span class="hs-comment">-- implies the exclusion of another element.</span><span>
+</span><a name="line-13"></a><span class="hs-comment">--</span><span>
+</span><a name="line-14"></a><span class="hs-comment">-- The 'MutualExclusionSet' holds a /bijective/ mapping between a set of included</span><span>
+</span><a name="line-15"></a><span class="hs-comment">-- elements and their corresponding mutually exclusive element. The construction</span><span>
+</span><a name="line-16"></a><span class="hs-comment">-- allows for efficient access to included and excluded elements.</span><span>
+</span><a name="line-17"></a><span class="hs-comment">--</span><span>
+</span><a name="line-18"></a><span class="hs-comment">-- The following properties will always hold:</span><span>
+</span><a name="line-19"></a><span class="hs-comment">--</span><span>
+</span><a name="line-20"></a><span class="hs-comment">--  * @ invert . invert === id @</span><span>
+</span><a name="line-21"></a><span class="hs-comment">--</span><span>
+</span><a name="line-22"></a><span class="hs-comment">--  * @ includedSet === excludedSet . invert @</span><span>
+</span><a name="line-23"></a><span class="hs-comment">--</span><span>
+</span><a name="line-24"></a><span class="hs-comment">--  * @ excludedSet === includedSet . invert @</span><span>
+</span><a name="line-25"></a><span class="hs-comment">--</span><span>
+</span><a name="line-26"></a><span class="hs-comment">--  * @ toList === toList . includedSet @</span><span>
+</span><a name="line-27"></a><span class="hs-comment">--</span><span>
+</span><a name="line-28"></a><span class="hs-comment">--  * @ toList . invert === toList . excludedSet  @</span><span>
+</span><a name="line-29"></a><span class="hs-comment">--</span><span>
+</span><a name="line-30"></a><span class="hs-comment">--  * @ &#8704; e, isIncluded e ==&gt; not . isExcluded e @</span><span>
+</span><a name="line-31"></a><span class="hs-comment">--</span><span>
+</span><a name="line-32"></a><span class="hs-comment">--  * @ &#8704; e, isExcluded e ==&gt; not . isIncluded e @</span><span>
+</span><a name="line-33"></a><span class="hs-comment">--</span><span>
+</span><a name="line-34"></a><span class="hs-comment">--  * @ &#8704; e, isIncluded e === isExcluded e . invert @</span><span>
+</span><a name="line-35"></a><span class="hs-comment">--</span><span>
+</span><a name="line-36"></a><span class="hs-comment">--  * @ &#8704; e, isExcluded e === isIncluded e . invert @</span><span>
+</span><a name="line-37"></a><span class="hs-comment">--</span><span>
+</span><a name="line-38"></a><span class="hs-comment">--  * @ &#8704; e, &#8707;! k, isIncluded e ==&gt; excludedLookup k == Just e @</span><span>
+</span><a name="line-39"></a><span class="hs-comment">--</span><span>
+</span><a name="line-40"></a><span class="hs-comment">--  * @ &#8704; e, &#8707;! k, isExcluded e ==&gt; includedLookup k == Just e @</span><span>
+</span><a name="line-41"></a><span class="hs-comment">--</span><span>
+</span><a name="line-42"></a><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-43"></a><span>
+</span><a name="line-44"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">MutualExclusionSet</span><span>
+</span><a name="line-45"></a><span>  </span><span class="hs-special">(</span><span> </span><a href="Data.MutualExclusionSet.Internal.html#MutualExclusionSet"><span class="hs-identifier hs-type">MutualExclusionSet</span></a><span>
+</span><a name="line-46"></a><span>  </span><span class="hs-comment">-- * Construction</span><span>
+</span><a name="line-47"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.MutualExclusionSet.Internal.html#singleton"><span class="hs-identifier hs-var">singleton</span></a><span>
+</span><a name="line-48"></a><span>  </span><span class="hs-comment">-- * Deconstruct</span><span>
+</span><a name="line-49"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.MutualExclusionSet.Internal.html#excludedSet"><span class="hs-identifier hs-var">excludedSet</span></a><span>
+</span><a name="line-50"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.MutualExclusionSet.Internal.html#includedSet"><span class="hs-identifier hs-var">includedSet</span></a><span>
+</span><a name="line-51"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.MutualExclusionSet.Internal.html#mutuallyExclusivePairs"><span class="hs-identifier hs-var">mutuallyExclusivePairs</span></a><span>
+</span><a name="line-52"></a><span>  </span><span class="hs-comment">-- * Manipulation</span><span>
+</span><a name="line-53"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.MutualExclusionSet.Internal.html#invert"><span class="hs-identifier hs-var">invert</span></a><span>
+</span><a name="line-54"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.MutualExclusionSet.Internal.html#merge"><span class="hs-identifier hs-var">merge</span></a><span>
+</span><a name="line-55"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.MutualExclusionSet.Internal.html#prettyPrintMutualExclusionSet"><span class="hs-identifier hs-var">prettyPrintMutualExclusionSet</span></a><span>
+</span><a name="line-56"></a><span>  </span><span class="hs-comment">-- * Comparison / Queries</span><span>
+</span><a name="line-57"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.MutualExclusionSet.Internal.html#excludedLookup"><span class="hs-identifier hs-var">excludedLookup</span></a><span>
+</span><a name="line-58"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.MutualExclusionSet.Internal.html#includedLookup"><span class="hs-identifier hs-var">includedLookup</span></a><span>
+</span><a name="line-59"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.MutualExclusionSet.Internal.html#isCoherent"><span class="hs-identifier hs-var">isCoherent</span></a><span>
+</span><a name="line-60"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.MutualExclusionSet.Internal.html#isExcluded"><span class="hs-identifier hs-var">isExcluded</span></a><span>
+</span><a name="line-61"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.MutualExclusionSet.Internal.html#isIncluded"><span class="hs-identifier hs-var">isIncluded</span></a><span>
+</span><a name="line-62"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.MutualExclusionSet.Internal.html#isPermissible"><span class="hs-identifier hs-var">isPermissible</span></a><span>
+</span><a name="line-63"></a><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-64"></a><span>
+</span><a name="line-65"></a><span class="hs-keyword">import</span><span> </span><a href="Data.MutualExclusionSet.Internal.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">MutualExclusionSet</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span></a><span>
+</span><a name="line-66"></a></pre></body></html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">------------------------------------------------------------------------------</span><span>
+</span><a name="line-2"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-3"></a><span class="hs-comment">-- Module      :  Bio.PhyloGraphPrime.PhylogeneticDAG</span><span>
+</span><a name="line-4"></a><span class="hs-comment">-- Copyright   :  (c) 2015-2015 Ward Wheeler</span><span>
+</span><a name="line-5"></a><span class="hs-comment">-- License     :  BSD-style</span><span>
+</span><a name="line-6"></a><span class="hs-comment">--</span><span>
+</span><a name="line-7"></a><span class="hs-comment">-- Maintainer  :  wheeler@amnh.org</span><span>
+</span><a name="line-8"></a><span class="hs-comment">-- Stability   :  provisional</span><span>
+</span><a name="line-9"></a><span class="hs-comment">-- Portability :  portable</span><span>
+</span><a name="line-10"></a><span class="hs-comment">--</span><span>
+</span><a name="line-11"></a><span class="hs-comment">-- Containing the master command for unifying all input types: tree, metadata, and sequence</span><span>
+</span><a name="line-12"></a><span class="hs-comment">--</span><span>
+</span><a name="line-13"></a><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-14"></a><span>
+</span><a name="line-15"></a><span class="hs-pragma">{-# LANGUAGE FlexibleContexts #-}</span><span>
+</span><a name="line-16"></a><span class="hs-comment">-- {-# LANGUAGE FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses, UndecidableInstances #-}</span><span>
+</span><a name="line-17"></a><span>
+</span><a name="line-18"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Bio</span><span class="hs-operator">.</span><span class="hs-identifier">Graph</span><span>
+</span><a name="line-19"></a><span>  </span><span class="hs-special">(</span><span> </span><a href="Bio.Graph.Constructions.html#CharacterResult"><span class="hs-identifier hs-type">CharacterResult</span></a><span>
+</span><a name="line-20"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.Constructions.html#CharacterDAG"><span class="hs-identifier hs-type">CharacterDAG</span></a><span>
+</span><a name="line-21"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.Constructions.html#DecoratedCharacterResult"><span class="hs-identifier hs-type">DecoratedCharacterResult</span></a><span>
+</span><a name="line-22"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.Constructions.html#FinalDecorationDAG"><span class="hs-identifier hs-type">FinalDecorationDAG</span></a><span>
+</span><a name="line-23"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.Constructions.html#GraphState"><span class="hs-identifier hs-type">GraphState</span></a><span>
+</span><a name="line-24"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.PhylogeneticDAG.Internal.html#PhylogeneticDAG"><span class="hs-identifier hs-type">PhylogeneticDAG</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-25"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.PhylogeneticDAG.Internal.html#PhylogeneticDAG2"><span class="hs-identifier hs-type">PhylogeneticDAG2</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-26"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.PhylogeneticDAG.Class.html#PhylogeneticDAGish"><span class="hs-identifier hs-type">PhylogeneticDAGish</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-27"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.Forest.html#PhylogeneticForest"><span class="hs-identifier hs-type">PhylogeneticForest</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-28"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.Solution.html#PhylogeneticSolution"><span class="hs-identifier hs-type">PhylogeneticSolution</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-29"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.Constructions.html#PostOrderDecorationDAG"><span class="hs-identifier hs-type">PostOrderDecorationDAG</span></a><span>
+</span><a name="line-30"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.Constructions.html#SearchState"><span class="hs-identifier hs-type">SearchState</span></a><span>
+</span><a name="line-31"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.Constructions.html#TopologicalResult"><span class="hs-identifier hs-type">TopologicalResult</span></a><span>
+</span><a name="line-32"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.Constructions.html#UnifiedCharacterSequence"><span class="hs-identifier hs-type">UnifiedCharacterSequence</span></a><span>
+</span><a name="line-33"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.Constructions.html#UnifiedCharacterBlock"><span class="hs-identifier hs-type">UnifiedCharacterBlock</span></a><span>
+</span><a name="line-34"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.Constructions.html#UnifiedContinuousCharacter"><span class="hs-identifier hs-type">UnifiedContinuousCharacter</span></a><span>
+</span><a name="line-35"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.Constructions.html#UnifiedDiscreteCharacter"><span class="hs-identifier hs-type">UnifiedDiscreteCharacter</span></a><span>
+</span><a name="line-36"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.Constructions.html#UnifiedDynamicCharacter"><span class="hs-identifier hs-type">UnifiedDynamicCharacter</span></a><span>
+</span><a name="line-37"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.Constructions.html#UnReifiedCharacterDAG"><span class="hs-identifier hs-type">UnReifiedCharacterDAG</span></a><span>
+</span><a name="line-38"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting.html#assignOptimalDynamicCharacterRootEdges"><span class="hs-identifier hs-var">assignOptimalDynamicCharacterRootEdges</span></a><span>
+</span><a name="line-39"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification.html#assignPunitiveNetworkEdgeCost"><span class="hs-identifier hs-var">assignPunitiveNetworkEdgeCost</span></a><span>
+</span><a name="line-40"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.PhylogeneticDAG.Internal.html#generateLocalResolutions"><span class="hs-identifier hs-var">generateLocalResolutions</span></a><span>
+</span><a name="line-41"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.PhylogeneticDAG.Postorder.html#postorderSequence%27"><span class="hs-identifier hs-var">postorderSequence'</span></a><span>
+</span><a name="line-42"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.PhylogeneticDAG.Preorder.html#preorderFromRooting"><span class="hs-identifier hs-var">preorderFromRooting</span></a><span>
+</span><a name="line-43"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.PhylogeneticDAG.Preorder.html#preorderFromRooting%27%27"><span class="hs-identifier hs-var">preorderFromRooting''</span></a><span>
+</span><a name="line-44"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.PhylogeneticDAG.Preorder.html#preorderSequence%27"><span class="hs-identifier hs-var">preorderSequence'</span></a><span>
+</span><a name="line-45"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.PhylogeneticDAG.Preorder.html#preorderSequence%27%27"><span class="hs-identifier hs-var">preorderSequence''</span></a><span>
+</span><a name="line-46"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.PhylogeneticDAG.Internal.html#renderSummary"><span class="hs-identifier hs-var">renderSummary</span></a><span>
+</span><a name="line-47"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.PhylogeneticDAG.Reification.html#reifiedSolution"><span class="hs-identifier hs-var">reifiedSolution</span></a><span>
+</span><a name="line-48"></a><span class="hs-comment">--  , reifiedToCharacterDAG</span><span>
+</span><a name="line-49"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.PhylogeneticDAG.html#rootCosts"><span class="hs-identifier hs-var">rootCosts</span></a><span>
+</span><a name="line-50"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.Solution.html#phylogeneticForests"><span class="hs-identifier hs-var">phylogeneticForests</span></a><span>
+</span><a name="line-51"></a><span>  </span><span class="hs-comment">-- * Mapping over networks</span><span>
+</span><a name="line-52"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.PhylogeneticDAG.html#edgePreorderMap"><span class="hs-identifier hs-var">edgePreorderMap</span></a><span>
+</span><a name="line-53"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.PhylogeneticDAG.html#edgePostorderMap"><span class="hs-identifier hs-var">edgePostorderMap</span></a><span>
+</span><a name="line-54"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.PhylogeneticDAG.html#edgePreorderFold"><span class="hs-identifier hs-var">edgePreorderFold</span></a><span>
+</span><a name="line-55"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.PhylogeneticDAG.html#edgePostorderFold"><span class="hs-identifier hs-var">edgePostorderFold</span></a><span>
+</span><a name="line-56"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.PhylogeneticDAG.html#nodePreorderMap"><span class="hs-identifier hs-var">nodePreorderMap</span></a><span>
+</span><a name="line-57"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.PhylogeneticDAG.html#nodePostorderMap"><span class="hs-identifier hs-var">nodePostorderMap</span></a><span>
+</span><a name="line-58"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.PhylogeneticDAG.html#nodePreorderFold"><span class="hs-identifier hs-var">nodePreorderFold</span></a><span>
+</span><a name="line-59"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.PhylogeneticDAG.html#nodePostorderFold"><span class="hs-identifier hs-var">nodePostorderFold</span></a><span>
+</span><a name="line-60"></a><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-61"></a><span>
+</span><a name="line-62"></a><span>
+</span><a name="line-63"></a><span class="hs-comment">-- import           Bio.Sequence</span><span>
+</span><a name="line-64"></a><span class="hs-keyword">import</span><span>           </span><a href="Bio.Graph.Constructions.html"><span class="hs-identifier">Bio</span><span class="hs-operator">.</span><span class="hs-identifier">Graph</span><span class="hs-operator">.</span><span class="hs-identifier">Constructions</span></a><span>
+</span><a name="line-65"></a><span class="hs-comment">-- import           Bio.Graph.Node</span><span>
+</span><a name="line-66"></a><span class="hs-keyword">import</span><span>           </span><a href="Bio.Graph.PhylogeneticDAG.html"><span class="hs-identifier">Bio</span><span class="hs-operator">.</span><span class="hs-identifier">Graph</span><span class="hs-operator">.</span><span class="hs-identifier">PhylogeneticDAG</span></a><span>
+</span><a name="line-67"></a><span class="hs-comment">-- import           Bio.Graph.PhylogeneticDAG.Class</span><span>
+</span><a name="line-68"></a><span class="hs-comment">-- import           Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting</span><span>
+</span><a name="line-69"></a><span class="hs-comment">-- import           Bio.Graph.PhylogeneticDAG.Internal</span><span>
+</span><a name="line-70"></a><span class="hs-comment">-- import           Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification</span><span>
+</span><a name="line-71"></a><span class="hs-comment">-- import           Bio.Graph.PhylogeneticDAG.Postorder</span><span>
+</span><a name="line-72"></a><span class="hs-comment">-- import           Bio.Graph.PhylogeneticDAG.Preorder</span><span>
+</span><a name="line-73"></a><span class="hs-keyword">import</span><span>           </span><a href="Bio.Graph.PhylogeneticDAG.Reification.html"><span class="hs-identifier">Bio</span><span class="hs-operator">.</span><span class="hs-identifier">Graph</span><span class="hs-operator">.</span><span class="hs-identifier">PhylogeneticDAG</span><span class="hs-operator">.</span><span class="hs-identifier">Reification</span></a><span>
+</span><a name="line-74"></a><span class="hs-comment">-- import           Bio.Graph.ReferenceDAG.Internal</span><span>
+</span><a name="line-75"></a><span class="hs-keyword">import</span><span>           </span><a href="Bio.Graph.Solution.html"><span class="hs-identifier">Bio</span><span class="hs-operator">.</span><span class="hs-identifier">Graph</span><span class="hs-operator">.</span><span class="hs-identifier">Solution</span></a><span>
+</span><a name="line-76"></a><span class="hs-comment">-- import           Data.Key</span><span>
+</span><a name="line-77"></a><span class="hs-comment">-- import           Data.List.NonEmpty        (NonEmpty)</span><span>
+</span><a name="line-78"></a><span class="hs-comment">-- import qualified Data.List.NonEmpty as NE</span><span>
+</span><a name="line-79"></a><span>
+</span><a name="line-80"></a><span>
+</span><a name="line-81"></a><span class="hs-comment">{-
+import           Bio.Graph.Forest
+import           Bio.Graph.LeafSet
+import           Bio.Graph.Node
+import           Control.Lens           hiding (Indexable)
+import           Data.Foldable
+import           Data.GraphViz.Printing hiding ((&lt;&gt;), indent) -- Seriously, why is this redefined?
+import           Data.Key
+import           Data.List
+import           Data.List.NonEmpty            (NonEmpty)
+import           Data.Semigroup
+import           Data.Semigroup.Foldable
+import           Prelude                hiding (lookup)
+import           Text.XML.Custom
+
+
+-- |
+-- A solution that contains one or more equally costly forests.
+newtype PhylogeneticSolution a
+      = PhylogeneticSolution (NonEmpty (PhylogeneticForest a))
+      deriving (Semigroup)
+
+
+-- |
+-- Retrieve the non-empty collection of phylogenetic forests from the solution.
+{-# INLINE phylogeneticForests #-}
+phylogeneticForests :: PhylogeneticSolution a -&gt; NonEmpty (PhylogeneticForest a)
+phylogeneticForests (PhylogeneticSolution x) = x
+
+
+instance PrintDot a =&gt; PrintDot (PhylogeneticSolution a) where
+
+    unqtDot       = unqtListToDot . toList . phylogeneticForests
+
+    toDot         = listToDot . toList . phylogeneticForests
+
+    unqtListToDot = fmap mconcat . sequenceA . fmap unqtDot
+
+    listToDot     = fmap mconcat . sequenceA . fmap toDot
+
+
+instance Show a =&gt; Show (PhylogeneticSolution a) where
+
+    show = (&quot;Solution:\n\n&quot; &lt;&gt;) . indent . renderForests . fmap renderForest . phylogeneticForests
+      where
+        indent = intercalate &quot;\n&quot; . fmap (&quot;  &quot;&lt;&gt;) . lines
+        renderForest = indent . foldMapWithKey f
+          where
+            f k e = mconcat
+                [ &quot;Component #&quot;
+                , show k
+                , &quot;:\n\n&quot;
+                , indent $ show e
+                , &quot;\n&quot;
+                ]
+        renderForests = indent . foldMapWithKey f
+          where
+            f k e = mconcat
+                [ &quot;Forest #&quot;
+                , show k
+                , &quot;:\n\n&quot;
+                , indent e
+                , &quot;\n&quot;
+                ]
+
+
+instance (ToXML s) =&gt; ToXML (PhylogeneticSolution s) where
+
+    toXML (PhylogeneticSolution soln) = xmlElement &quot;Solution&quot; attrs contents
+        where
+            attrs    = []
+            contents = [-- Right leafSetElement
+                       -- , Right graphRepresentation
+                        Right $ collapseElemList &quot;Final graph&quot; attrs soln
+                       ]
+            -- (PhylogeneticForest firstForest) = head $ toList soln
+            -- (PDAG2 refDag _e _n)    = head $ toList firstForest
+            -- (refDag )
+--            leafSetElement = collapseElemList &quot;Leaf Set&quot; attrs leaves
+
+--            leaves = fmap nodeDecorationDatum2 $ soln ^. leafSet
+
+
+instance (HasLeafSet s a, Semigroup a) =&gt; HasLeafSet (PhylogeneticSolution s) a where
+
+    leafSet = lens getter setter
+      where
+        setter e _ = id e
+        getter = foldMap1 (foldMap1 (^. leafSet)) . phylogeneticForests
+-}</span><span>
+</span><a name="line-171"></a></pre></body></html>

@@ -71,21 +71,21 @@ int main() {
 
     int count = 0;
     for(size_t i = 0; i < SEQ_A_LEN; i++) {
-        printf("%llu\n", bitRepresentation(seqA_main[i])), fflush(stdout);
+        // printf("%zu\n", bitRepresentation(seqA_main[i])), fflush(stdout);
 
         foundCost = getCost((seqA_main[i]), (seqB_main[i]), myMatrix, ALPH_SIZE);
         // foundCost = getCost(bitRepresentation(seqA_main[i]), bitRepresentation(seqB_main[i]), myMatrix, ALPH_SIZE);
         //printf("iteration %2zu a: %llu b: %llu\n", i, seqA_main[i], seqB_main[i]);
         cost = tcm[(seqA_main[i]) * ALPH_SIZE + (seqB_main[i])];
-        printf("computed cost: %d\n", cost);
-        if(foundCost != cost) {
-            printf("found cost %2d\n", foundCost);
-        } else {
-            printf("yep!\n");
-        }
+        // printf("computed cost: %d\n", cost);
+        // if(foundCost != cost) {
+        //     printf("found cost %2d\n", foundCost);
+        // } else {
+        //     printf("yep!\n");
+        // }
         // printf("\n");
     }
-    printf("total nonzero: %d\n", count);
+    // printf("total nonzero: %d\n", count);
 
 
 
@@ -137,14 +137,14 @@ int main() {
     }
 /**/
     matrixDestroy(myMatrix);
- /*
-    free(firstKey->element );
-    free(secondKey->element);
-    free(retMedian->element);
+
+    freeDCElem(firstKey );
+    freeDCElem(secondKey);
+    freeDCElem(retMedian);
     free(firstKey );
     free(secondKey);
     free(retMedian);
-*/
+
     // int success = aligner(seqA_main, seqALen, seqB_main, seqBLen, ALPH_SIZE, getCostMatrix(myMatrix), &retMedChar);
 
     // if (success == 0) {

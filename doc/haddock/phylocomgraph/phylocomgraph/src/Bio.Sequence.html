@@ -1,0 +1,43 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-2"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-3"></a><span class="hs-comment">-- Module      :  Bio.Sequence</span><span>
+</span><a name="line-4"></a><span class="hs-comment">-- Copyright   :  (c) 2015-2015 Ward Wheeler</span><span>
+</span><a name="line-5"></a><span class="hs-comment">-- License     :  BSD-style</span><span>
+</span><a name="line-6"></a><span class="hs-comment">--</span><span>
+</span><a name="line-7"></a><span class="hs-comment">-- Maintainer  :  wheeler@amnh.org</span><span>
+</span><a name="line-8"></a><span class="hs-comment">-- Stability   :  provisional</span><span>
+</span><a name="line-9"></a><span class="hs-comment">-- Portability :  portable</span><span>
+</span><a name="line-10"></a><span class="hs-comment">--</span><span>
+</span><a name="line-11"></a><span class="hs-comment">-- Data structures and instances for coded characters</span><span>
+</span><a name="line-12"></a><span class="hs-comment">-- Coded characters are dynamic characters recoded as </span><span>
+</span><a name="line-13"></a><span class="hs-comment">--</span><span>
+</span><a name="line-14"></a><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-15"></a><span>
+</span><a name="line-16"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Bio</span><span class="hs-operator">.</span><span class="hs-identifier">Sequence</span><span>
+</span><a name="line-17"></a><span>  </span><span class="hs-special">(</span><span> </span><a href="Bio.Sequence.Internal.html#CharacterSequence"><span class="hs-identifier hs-type">CharacterSequence</span></a><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-18"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Sequence.Block.Internal.html#CharacterBlock"><span class="hs-identifier hs-type">CharacterBlock</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-19"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Sequence.Block.html#HasBlockCost"><span class="hs-identifier hs-type">HasBlockCost</span></a><span>
+</span><a name="line-20"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Sequence.Block.html#HasRootCost"><span class="hs-identifier hs-type">HasRootCost</span></a><span>
+</span><a name="line-21"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Sequence.Block.Builder.html#PartialCharacterBlock"><span class="hs-identifier hs-type">PartialCharacterBlock</span></a><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-22"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Sequence.Block.Builder.html#continuousSingleton"><span class="hs-identifier hs-var">continuousSingleton</span></a><span>
+</span><a name="line-23"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Sequence.Block.Builder.html#discreteSingleton"><span class="hs-identifier hs-var">discreteSingleton</span></a><span>
+</span><a name="line-24"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Sequence.Block.Builder.html#dynamicSingleton"><span class="hs-identifier hs-var">dynamicSingleton</span></a><span> </span><span>
+</span><a name="line-25"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Sequence.Block.Builder.html#finalizeCharacterBlock"><span class="hs-identifier hs-var">finalizeCharacterBlock</span></a><span>
+</span><a name="line-26"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Sequence.Block.html#toMissingCharacters"><span class="hs-identifier hs-var">toMissingCharacters</span></a><span>
+</span><a name="line-27"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Sequence.Internal.html#toBlocks"><span class="hs-identifier hs-var">toBlocks</span></a><span>
+</span><a name="line-28"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Sequence.Internal.html#fromBlocks"><span class="hs-identifier hs-var">fromBlocks</span></a><span>
+</span><a name="line-29"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Sequence.Internal.html#toBlockVector"><span class="hs-identifier hs-var">toBlockVector</span></a><span>
+</span><a name="line-30"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Sequence.Internal.html#fromBlockVector"><span class="hs-identifier hs-var">fromBlockVector</span></a><span>
+</span><a name="line-31"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Sequence.Internal.html#hexmap"><span class="hs-identifier hs-var">hexmap</span></a><span>
+</span><a name="line-32"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Sequence.Internal.html#hexTranspose"><span class="hs-identifier hs-var">hexTranspose</span></a><span>
+</span><a name="line-33"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Sequence.Internal.html#hexZipWith"><span class="hs-identifier hs-var">hexZipWith</span></a><span>
+</span><a name="line-34"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Sequence.Internal.html#sequenceCost"><span class="hs-identifier hs-var">sequenceCost</span></a><span>
+</span><a name="line-35"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Sequence.Internal.html#sequenceRootCost"><span class="hs-identifier hs-var">sequenceRootCost</span></a><span>
+</span><a name="line-36"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Sequence.Block.html#blockCost"><span class="hs-identifier hs-var">blockCost</span></a><span>
+</span><a name="line-37"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Sequence.Block.html#staticCost"><span class="hs-identifier hs-var">staticCost</span></a><span>
+</span><a name="line-38"></a><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-39"></a><span>
+</span><a name="line-40"></a><span class="hs-keyword">import</span><span> </span><a href="Bio.Sequence.Internal.html"><span class="hs-identifier">Bio</span><span class="hs-operator">.</span><span class="hs-identifier">Sequence</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span></a><span>
+</span><a name="line-41"></a><span class="hs-keyword">import</span><span> </span><a href="Bio.Sequence.Block.html"><span class="hs-identifier">Bio</span><span class="hs-operator">.</span><span class="hs-identifier">Sequence</span><span class="hs-operator">.</span><span class="hs-identifier">Block</span></a><span> </span><span class="hs-keyword">hiding</span><span> </span><span class="hs-special">(</span><a href="Bio.Sequence.Block.html#hexmap"><span class="hs-identifier hs-var">hexmap</span></a><span class="hs-special">,</span><span> </span><a href="Bio.Sequence.Block.html#hexTranspose"><span class="hs-identifier hs-var">hexTranspose</span></a><span class="hs-special">,</span><span> </span><a href="Bio.Sequence.Block.html#hexZipWith"><span class="hs-identifier hs-var">hexZipWith</span></a><span class="hs-special">)</span><span>
+</span><a name="line-42"></a><span class="hs-keyword">import</span><span> </span><a href="Bio.Sequence.Block.Builder.html"><span class="hs-identifier">Bio</span><span class="hs-operator">.</span><span class="hs-identifier">Sequence</span><span class="hs-operator">.</span><span class="hs-identifier">Block</span><span class="hs-operator">.</span><span class="hs-identifier">Builder</span></a><span>
+</span><a name="line-43"></a></pre></body></html>

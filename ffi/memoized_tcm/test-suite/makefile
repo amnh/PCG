@@ -53,7 +53,7 @@ test_cost_matrix : test_cost_matrix.cpp ../costMatrix.cpp ../dynamicCharacterOpe
 test_c_interface : test_c_interface.c $(costMatrix) $(dynamicChar) $(wrapper)
 	gcc -std=c11   $(sanityWarnings) -g -c $(dynamicChar)
 	# g++ -std=c++14 -c costMatrix.h
-	g++ -std=c++14 $(sanityWarnings) -g -c $(costMatrix)
+	g++ -std=c++14 $(sanityWarnings) -g -c ../costMatrix.cpp
 	# gcc -std=c11 -c costMatrixWrapper.h
 	gcc -std=c11   $(sanityWarnings) -g -c $(wrapper)
 	# in next line, need -lc++ so that it calls correct linker: we need C compiler, but C++ libraries in scope.
@@ -72,7 +72,7 @@ test_cost_matrix_3d : test_cost_matrix_3d.cpp ../costMatrix.cpp ../costMatrix_3d
 test_c_interface_3d : test_c_interface_3d.c $(costMatrix_3d) $(dynamicChar) $(wrapper_3d)
 	gcc -std=c11   $(sanityWarnings) -g -c $(dynamicChar)
 	# g++ -std=c++14 -c costMatrix.h
-	g++ -std=c++14 $(sanityWarnings) -g -c $(costMatrix_3d)
+	g++ -std=c++14 $(sanityWarnings) -g -c ../costMatrix_3d.cpp
 	# gcc -std=c11 -c costMatrixWrapper.h
 	gcc -std=c11   $(sanityWarnings) -g -c $(wrapper_3d)
 	# in next line, need -lc++ so that it calls correct linker: we need C compiler, but C++ libraries in scope.

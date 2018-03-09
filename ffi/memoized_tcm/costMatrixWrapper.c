@@ -34,7 +34,7 @@ int getCost(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSiz
 
     int cost = getCostInternal(elem1, elem2, tcm, alphSize, retElem);
 
-    free(packedElemRet);
+    free(retElem->element);
 
     return cost;
 }
@@ -71,7 +71,7 @@ int getCostAndMedian(dcElement_t *elem1, dcElement_t *elem2, dcElement_t *retEle
     size_t alphSize = elem1->alphSize;
     //printf("alphSize %d\n",alphSize), fflush(stdout);
     //printf("[%d]\n",elem1->element[0]), fflush(stdout);
-    
+
     // dcElement_t *elem1copy = allocateDCElement( alphSize );
     // dcElement_t *elem2copy = allocateDCElement( alphSize );
     // Can't use allocateDCElement because makePackedCharCopy allocates
@@ -83,6 +83,10 @@ int getCostAndMedian(dcElement_t *elem1, dcElement_t *elem2, dcElement_t *retEle
 
     elem1copy->element = makePackedCharCopy( elem1->element, alphSize, 1 );
     elem2copy->element = makePackedCharCopy( elem2->element, alphSize, 1 );
+/*
+    copyPackedChar( elem1copy->element, elem1->element, alphSize, 1 );
+    copyPackedChar( elem2copy->element, elem2->element, alphSize, 1 );
+*/
     //printf("We copied!\n"), fflush(stdout);
 
     //// printf("Here we go:\n");
@@ -97,6 +101,12 @@ int getCostAndMedian(dcElement_t *elem1, dcElement_t *elem2, dcElement_t *retEle
     // printPackedChar(retElem->element, 1, alphSize);
 
     int cost = call_getSetCost_C(tcm, elem1copy, elem2copy, retElem);
+
+    // freeDCElem(elem1copy);
+    // free(elem1copy);
+    // freeDCElem(elem1copy);
+    // free(elem1copy);
+
 
     return cost;
 }

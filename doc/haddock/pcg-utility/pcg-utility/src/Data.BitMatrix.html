@@ -1,0 +1,35 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-2"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-3"></a><span class="hs-comment">-- Module      :  Data.BitMatrix</span><span>
+</span><a name="line-4"></a><span class="hs-comment">-- Copyright   :  (c) 2015-2015 Ward Wheeler</span><span>
+</span><a name="line-5"></a><span class="hs-comment">-- License     :  BSD-style</span><span>
+</span><a name="line-6"></a><span class="hs-comment">--</span><span>
+</span><a name="line-7"></a><span class="hs-comment">-- Maintainer  :  wheeler@amnh.org</span><span>
+</span><a name="line-8"></a><span class="hs-comment">-- Stability   :  provisional</span><span>
+</span><a name="line-9"></a><span class="hs-comment">-- Portability :  portable</span><span>
+</span><a name="line-10"></a><span class="hs-comment">--</span><span>
+</span><a name="line-11"></a><span class="hs-comment">-- A matrix of bits with some useful operations.</span><span>
+</span><a name="line-12"></a><span class="hs-comment">-- Exposes row-based monomorphic maps, folds, and traversals.</span><span>
+</span><a name="line-13"></a><span class="hs-comment">-- Intended to be used by multiple datatypes for space efficient character</span><span>
+</span><a name="line-14"></a><span class="hs-comment">-- state encoding and packing.</span><span>
+</span><a name="line-15"></a><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-16"></a><span>
+</span><a name="line-17"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">BitMatrix</span><span>
+</span><a name="line-18"></a><span>  </span><span class="hs-special">(</span><span> </span><a href="Data.BitMatrix.Internal.html#BitMatrix"><span class="hs-identifier hs-type">BitMatrix</span></a><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-19"></a><span>  </span><span class="hs-comment">-- * Construction</span><span>
+</span><a name="line-20"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.BitMatrix.Internal.html#bitMatrix"><span class="hs-identifier hs-var">bitMatrix</span></a><span>
+</span><a name="line-21"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.BitMatrix.Internal.html#fromRows"><span class="hs-identifier hs-var">fromRows</span></a><span>
+</span><a name="line-22"></a><span>  </span><span class="hs-comment">-- * Querries</span><span>
+</span><a name="line-23"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.BitMatrix.Internal.html#isSet"><span class="hs-identifier hs-var">isSet</span></a><span>
+</span><a name="line-24"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.BitMatrix.Internal.html#isZeroMatrix"><span class="hs-identifier hs-var">isZeroMatrix</span></a><span>
+</span><a name="line-25"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.BitMatrix.Internal.html#numCols"><span class="hs-identifier hs-var">numCols</span></a><span>
+</span><a name="line-26"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.BitMatrix.Internal.html#numRows"><span class="hs-identifier hs-var">numRows</span></a><span>
+</span><a name="line-27"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.BitMatrix.Internal.html#row"><span class="hs-identifier hs-var">row</span></a><span>
+</span><a name="line-28"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.BitMatrix.Internal.html#rows"><span class="hs-identifier hs-var">rows</span></a><span>
+</span><a name="line-29"></a><span>  </span><span class="hs-comment">-- * Specializations</span><span>
+</span><a name="line-30"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.BitMatrix.Internal.html#expandRows"><span class="hs-identifier hs-var">expandRows</span></a><span>
+</span><a name="line-31"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.BitMatrix.Internal.html#factorRows"><span class="hs-identifier hs-var">factorRows</span></a><span>
+</span><a name="line-32"></a><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-33"></a><span>
+</span><a name="line-34"></a><span class="hs-keyword">import</span><span> </span><a href="Data.BitMatrix.Internal.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">BitMatrix</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span></a><span>
+</span><a name="line-35"></a></pre></body></html>

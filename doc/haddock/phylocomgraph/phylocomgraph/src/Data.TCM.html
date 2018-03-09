@@ -1,0 +1,35 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-2"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-3"></a><span class="hs-comment">-- Module      :  Data.TCM</span><span>
+</span><a name="line-4"></a><span class="hs-comment">-- Copyright   :  (c) 2015-2015 Ward Wheeler</span><span>
+</span><a name="line-5"></a><span class="hs-comment">-- License     :  BSD-style</span><span>
+</span><a name="line-6"></a><span class="hs-comment">--</span><span>
+</span><a name="line-7"></a><span class="hs-comment">-- Maintainer  :  wheeler@amnh.org</span><span>
+</span><a name="line-8"></a><span class="hs-comment">-- Stability   :  provisional</span><span>
+</span><a name="line-9"></a><span class="hs-comment">-- Portability :  portable</span><span>
+</span><a name="line-10"></a><span class="hs-comment">--</span><span>
+</span><a name="line-11"></a><span class="hs-comment">-- A matrix of transition costs between alphabet symbols.</span><span>
+</span><a name="line-12"></a><span class="hs-comment">-- Exposes row-major monomorphic maps, folds, and traversals.</span><span>
+</span><a name="line-13"></a><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-14"></a><span>
+</span><a name="line-15"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">TCM</span><span>
+</span><a name="line-16"></a><span>  </span><span class="hs-special">(</span><span> </span><a href="Data.TCM.Internal.html#TCM"><span class="hs-identifier hs-type">TCM</span></a><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-17"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.TCM.Internal.html#TCMDiagnosis"><span class="hs-identifier hs-type">TCMDiagnosis</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-18"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.TCM.Internal.html#TCMStructure"><span class="hs-identifier hs-type">TCMStructure</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-19"></a><span>    </span><span class="hs-comment">-- * Construction</span><span>
+</span><a name="line-20"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.TCM.Internal.html#fromCols"><span class="hs-identifier hs-var">fromCols</span></a><span>
+</span><a name="line-21"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.TCM.Internal.html#fromList"><span class="hs-identifier hs-var">fromList</span></a><span>
+</span><a name="line-22"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.TCM.Internal.html#fromRows"><span class="hs-identifier hs-var">fromRows</span></a><span>
+</span><a name="line-23"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.TCM.Internal.html#generate"><span class="hs-identifier hs-var">generate</span></a><span>
+</span><a name="line-24"></a><span>    </span><span class="hs-comment">-- * Indexing</span><span>
+</span><a name="line-25"></a><span>  </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">!</span><span class="hs-special">)</span><span>
+</span><a name="line-26"></a><span>  </span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><a href="Data.TCM.Internal.html#%21%3F"><span class="hs-operator hs-var">!?</span></a><span class="hs-special">)</span><span>
+</span><a name="line-27"></a><span>    </span><span class="hs-comment">-- * Queries</span><span>
+</span><a name="line-28"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.TCM.Internal.html#size"><span class="hs-identifier hs-var">size</span></a><span>
+</span><a name="line-29"></a><span>    </span><span class="hs-comment">-- * Specialization Utility</span><span>
+</span><a name="line-30"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.TCM.Internal.html#diagnoseTcm"><span class="hs-identifier hs-var">diagnoseTcm</span></a><span>
+</span><a name="line-31"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Data.TCM.Internal.html#reduceTcm"><span class="hs-identifier hs-var">reduceTcm</span></a><span>
+</span><a name="line-32"></a><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-33"></a><span>
+</span><a name="line-34"></a><span class="hs-keyword">import</span><span> </span><a href="Data.TCM.Internal.html"><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">TCM</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span></a><span>
+</span><a name="line-35"></a></pre></body></html>

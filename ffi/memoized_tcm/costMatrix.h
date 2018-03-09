@@ -48,19 +48,23 @@ typedef void* costMatrix_p;
 
 
 /** Allocate room for a costMedian_t. Assumes alphabetSize is already initialized. */
-costMedian_t* allocCostMedian_t (size_t alphabetSize);
+costMedian_t* allocCostMedian_t( size_t alphabetSize );
 
 
 /** dealloc costMedian_t. */
-void freeCostMedian_t (costMedian_t* toFree);
+void freeCostMedian_t( costMedian_t* toFree );
 
 
 /** Allocate room for a keys_t. */
-keys_t* allocKeys_t (size_t alphSize);
+keys_t* allocKeys_t( size_t alphSize );
 
 
 /** dealloc keys_t. Calls various other free fns. */
-void freeKeys_t (const keys_t* toFree);
+void freeKeys_t( const keys_t* toFree );
+
+
+/** dealloc mapAccessTuple_t. Calls various other free fns. */
+void freeMapAccessTuple_t( const mapAccessTuple_t* toFree );
 
 
 /** Hashes two `dcElement`s, and returns an order-dependent hash value. In this case
@@ -217,7 +221,7 @@ class CostMatrix
         /** Stored unambiguous tcm, necessary to do first calls to findDistance() without having to rewrite
          *  findDistance() and computeCostMedian()
          */
-        int * tcm;
+        int* tcm;
 
         /** Takes in two `dcElement_t` and a `costMedian_t` and updates myMap to store the new values,
          *  with @{lhs, rhs} as a key, and @median as the value.

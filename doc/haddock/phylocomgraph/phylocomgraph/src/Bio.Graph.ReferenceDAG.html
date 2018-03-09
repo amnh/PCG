@@ -1,0 +1,43 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-2"></a><span class="hs-comment">-- |</span><span>
+</span><a name="line-3"></a><span class="hs-comment">-- Module      :  Bio.Graph.ReferenceDAG</span><span>
+</span><a name="line-4"></a><span class="hs-comment">-- Copyright   :  (c) 2015-2015 Ward Wheeler</span><span>
+</span><a name="line-5"></a><span class="hs-comment">-- License     :  BSD-style</span><span>
+</span><a name="line-6"></a><span class="hs-comment">--</span><span>
+</span><a name="line-7"></a><span class="hs-comment">-- Maintainer  :  wheeler@amnh.org</span><span>
+</span><a name="line-8"></a><span class="hs-comment">-- Stability   :  provisional</span><span>
+</span><a name="line-9"></a><span class="hs-comment">-- Portability :  portable</span><span>
+</span><a name="line-10"></a><span class="hs-comment">--</span><span>
+</span><a name="line-11"></a><span class="hs-comment">-----------------------------------------------------------------------------</span><span>
+</span><a name="line-12"></a><span>
+</span><a name="line-13"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Bio</span><span class="hs-operator">.</span><span class="hs-identifier">Graph</span><span class="hs-operator">.</span><span class="hs-identifier">ReferenceDAG</span><span>
+</span><a name="line-14"></a><span>  </span><span class="hs-special">(</span><span> </span><span class="hs-comment">-- * Efficient access</span><span>
+</span><a name="line-15"></a><span>    </span><a href="Bio.Graph.ReferenceDAG.Internal.html#ReferenceDAG"><span class="hs-identifier hs-type">ReferenceDAG</span></a><span class="hs-special">(</span><span class="hs-identifier">graphData</span><span class="hs-special">)</span><span>
+</span><a name="line-16"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.ReferenceDAG.Internal.html#GraphData"><span class="hs-identifier hs-type">GraphData</span></a><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><a name="line-17"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.ReferenceDAG.Internal.html#NodeRef"><span class="hs-identifier hs-type">NodeRef</span></a><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><a name="line-18"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.ReferenceDAG.Internal.html#nodeFoldMap"><span class="hs-identifier hs-var">nodeFoldMap</span></a><span>
+</span><a name="line-19"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.ReferenceDAG.Internal.html#nodePostOrder"><span class="hs-identifier hs-var">nodePostOrder</span></a><span>
+</span><a name="line-20"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.ReferenceDAG.Internal.html#nodePreOrder"><span class="hs-identifier hs-var">nodePreOrder</span></a><span>
+</span><a name="line-21"></a><span>  </span><span class="hs-comment">-- * Effciently construct a DAG</span><span>
+</span><a name="line-22"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.ReferenceDAG.Internal.html#fromList"><span class="hs-identifier hs-var">fromList</span></a><span>
+</span><a name="line-23"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.ReferenceDAG.Internal.html#unfoldDAG"><span class="hs-identifier hs-var">unfoldDAG</span></a><span>
+</span><a name="line-24"></a><span>  </span><span class="hs-comment">-- * Remove metadata information and replace with a default</span><span>
+</span><a name="line-25"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.ReferenceDAG.Internal.html#defaultGraphMetadata"><span class="hs-identifier hs-var">defaultGraphMetadata</span></a><span>
+</span><a name="line-26"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.ReferenceDAG.Internal.html#defaultMetadata"><span class="hs-identifier hs-var">defaultMetadata</span></a><span>
+</span><a name="line-27"></a><span>  </span><span class="hs-comment">-- * Edgeset query</span><span>
+</span><a name="line-28"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.ReferenceDAG.Internal.html#candidateNetworkEdges"><span class="hs-identifier hs-var">candidateNetworkEdges</span></a><span>
+</span><a name="line-29"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.ReferenceDAG.Internal.html#referenceEdgeSet"><span class="hs-identifier hs-var">referenceEdgeSet</span></a><span>
+</span><a name="line-30"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.ReferenceDAG.Internal.html#referenceTreeEdgeSet"><span class="hs-identifier hs-var">referenceTreeEdgeSet</span></a><span>
+</span><a name="line-31"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.ReferenceDAG.Internal.html#referenceNetworkEdgeSet"><span class="hs-identifier hs-var">referenceNetworkEdgeSet</span></a><span>
+</span><a name="line-32"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.ReferenceDAG.Internal.html#undirectedRootEdgeSet"><span class="hs-identifier hs-var">undirectedRootEdgeSet</span></a><span>
+</span><a name="line-33"></a><span>  </span><span class="hs-comment">-- * Edgeset manipulation</span><span>
+</span><a name="line-34"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.ReferenceDAG.Internal.html#connectEdge"><span class="hs-identifier hs-var">connectEdge</span></a><span>
+</span><a name="line-35"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.ReferenceDAG.Internal.html#invadeEdge"><span class="hs-identifier hs-var">invadeEdge</span></a><span>
+</span><a name="line-36"></a><span>  </span><span class="hs-comment">-- * Rendering</span><span>
+</span><a name="line-37"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.ReferenceDAG.Internal.html#referenceRendering"><span class="hs-identifier hs-var">referenceRendering</span></a><span>
+</span><a name="line-38"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.ReferenceDAG.Internal.html#topologyRendering"><span class="hs-identifier hs-var">topologyRendering</span></a><span>
+</span><a name="line-39"></a><span>  </span><span class="hs-special">,</span><span> </span><a href="Bio.Graph.ReferenceDAG.Internal.html#getDotContext"><span class="hs-identifier hs-var">getDotContext</span></a><span>
+</span><a name="line-40"></a><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-41"></a><span>
+</span><a name="line-42"></a><span class="hs-keyword">import</span><span> </span><a href="Bio.Graph.ReferenceDAG.Internal.html"><span class="hs-identifier">Bio</span><span class="hs-operator">.</span><span class="hs-identifier">Graph</span><span class="hs-operator">.</span><span class="hs-identifier">ReferenceDAG</span><span class="hs-operator">.</span><span class="hs-identifier">Internal</span></a><span>
+</span><a name="line-43"></a></pre></body></html>
