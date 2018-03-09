@@ -10,11 +10,7 @@
 // #include "seqAlignForHaskell.h"
 
 int main() {
-    for (size_t i{0}; i < 10; ++i) {
-        auto bits = i+60;
-        printf("Bit count: %d result returned: %d\n", bits, dynCharSize(bits, 1));
-    }
-    const size_t alphabetSize = 65;
+    const size_t alphabetSize = 80;
     const size_t tcmLen       = alphabetSize * alphabetSize;
 
     int tcm[tcmLen];  // gcc weirdly complains this isn't used. Don't know how to suppress this error.
@@ -107,9 +103,10 @@ int main() {
         // ClearAll( firstKey->element, dynCharSize(alphabetSize, 1) );
         // ClearAll(secondKey->element, dynCharSize(alphabetSize, 1) );
     }
-    auto first   = new packedChar{1},
-         second  = new packedChar{4},
-         third   = new packedChar{16},
+    /**
+    auto first   = new packedChar{1,0},
+         second  = new packedChar{4,0},
+	 third   = new packedChar{16,0},
          result  = packedCharOr( first, second, alphabetSize, 1 ),
          result2 = packedCharOr( result, third, alphabetSize, 1 );
 
@@ -117,7 +114,7 @@ int main() {
     printf("%" PRIu64 "\n", *result);
     //free(result);
     printf("%" PRIu64 "\n\nDone.", *result2);
-
+    **/
     /****** This next to test Yu Xiang's code, once you can. ******/
 
     // int success = aligner(seqA_main, SEQ_A_LEN, seqB_main, SEQ_B_LEN, alphabetSize, getCostMatrix(myMatrix), &retMedChar);
@@ -143,9 +140,11 @@ int main() {
     free(firstKey);
     free(secondKey);
     free(retMedian);
+    /**
     delete first;
     delete second;
     delete third;
     free(result);
     free(result2);
+    **/
 }

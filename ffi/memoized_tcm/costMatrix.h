@@ -245,17 +245,26 @@ class CostMatrix
          */
         void initializeMatrix ();
 
-	/** Given a srcBuffer of a dynamic character element, this function
-         *  creates a new buffer and coppies the value of the provided dynamic
-         *  character element buffer into the newly alocated buffer.
+        /** Takes an input buffer and assigns a malloc'ed copy to @tcm.
+         *  Uses the @alphabetSize of the matrix to determine the required space.
+         *  Because @alphabetSize is a const member, it will always be initialized
+         *  before this call, making the allocation and copy safe so long as the
+         *  input buffer is equal to or greater than @alphabetSize squared in
+         *  length.
+         */
+        void initializeTCM(const int* const inputBuffer);
+
+        /** Given a srcBuffer of a dynamic character element, this function
+         *  creates a new buffer and copies the value of the provided dynamic
+         *  character element buffer into the newly allocated buffer.
          *
-         *  Uses the TCM's elementSize vairable to avoid recomutation of buffer
+         *  Uses the TCM's elementSize vairable to avoid recomputation of buffer
          *  size and reduces the number of function call parameters compared to
          *  the function makePackedCharCopy. Less noisy, slightly more efficient.
          *
          *  Useful to deep copy a packedChar* to a new pointer location.
          */
-	packedChar* createCopyPackedChar(const packedChar* const srcBuffer);
+        packedChar* createCopyPackedChar(const packedChar* const srcBuffer);
 };
 
 

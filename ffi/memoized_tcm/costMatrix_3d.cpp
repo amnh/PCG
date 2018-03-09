@@ -71,10 +71,11 @@ CostMatrix_3d::CostMatrix_3d()
 
 
 CostMatrix_3d::CostMatrix_3d( size_t alphSize, int* inTcm )
+  : alphabetSize(alphSize)
+  , elementSize(dcElemSize(alphSize))
 {
-    alphabetSize = alphSize;
     tcm = new int[alphabetSize * alphabetSize * alphabetSize];
-    memcpy(tcm, inTcm, alphabetSize * alphabetSize * alphabetSize);
+    std::memcpy(tcm, inTcm, alphabetSize * alphabetSize * alphabetSize * sizeof(int));
     initializeMatrix(); // should only have to do this for 3d, as 2d is initialized by its own constructor
     twoD_matrix = new CostMatrix(alphSize, inTcm);
 }

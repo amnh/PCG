@@ -322,8 +322,8 @@ packedChar *packedCharAnd( const packedChar *lhs, const packedChar *rhs, size_t 
 
 dcElement_t *dcElementOr( const dcElement_t *lhs, const dcElement_t *rhs )
 {
-    dcElement_t *toReturn = malloc(sizeof(dcElement_t));        // not calling allocateDCElem
-                                                                // because packedCharOr allocates.
+    dcElement_t *toReturn = malloc(sizeof(dcElement_t)); // not calling allocateDCElem
+                                                         // because packedCharOr allocates.
     if (toReturn == NULL) {
         printf("Out of memory.\n");
         fflush(stdout);
@@ -337,9 +337,13 @@ dcElement_t *dcElementOr( const dcElement_t *lhs, const dcElement_t *rhs )
 
 packedChar *packedCharOr( const packedChar *lhs, const packedChar *rhs, size_t alphSize, size_t numElems )
 {
-    size_t length = dcElemSize(alphSize);
-    packedChar *toReturn = allocatePackedChar(alphSize, numElems);
-    for (size_t i = 0; i < length; i++) {
+    // This relies on the fact that the inputs lhs & rhs both have allocated
+    // buffers of *at least* "bufferLen" number of elements.
+    //
+    // There is no way to verify this internally.
+    size_t      bufferLen = dynCharSize(alphSize, numElems);
+    packedChar *toReturn  = malloc(bufferLen * sizeof(packedChar));
+    for (size_t i = 0; i < bufferLen; i++) {
         // printf("lhs: %" PRIu64 ", rhs: %" PRIu64 "\n", *lhs, *rhs);
         toReturn[i] = lhs[i] | rhs[i];
     }
