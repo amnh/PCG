@@ -92,8 +92,7 @@ CostMatrix::CostMatrix()
   : alphabetSize(5)
   , elementSize(1)
 {
-    tcm = (int*) std::malloc( alphabetSize * alphabetSize * sizeof(int) );
-    std::memcpy(tcm, defaultExtraGapCostMetric, alphabetSize * alphabetSize * sizeof(int));
+    initializeTCM(defaultExtraGapCostMetric);
     initializeMatrix();
 }
 
@@ -102,8 +101,7 @@ CostMatrix::CostMatrix(size_t alphSize, int* inTcm)
   : alphabetSize(alphSize)
   , elementSize(dcElemSize(alphSize))
 {
-    tcm = (int*) std::malloc( alphabetSize * alphabetSize * sizeof(int) );
-    std::memcpy(tcm, inTcm, alphabetSize * alphabetSize * sizeof(int));
+    initializeTCM(inTcm);
     initializeMatrix();
 }
 
@@ -351,6 +349,14 @@ void CostMatrix::initializeMatrix()
     delete toInsert;         // because generated with `new`
     // printf("finished initializing\n");
     // printf("freed keys\n");
+}
+
+
+void CostMatrix::initializeTCM(const int* const inputBuffer)
+{
+    const auto bufferSize = alphabetSize * alphabetSize * sizeof(*tcm);
+    tcm = (int*) std::malloc( bufferSize );
+    std::memcpy( tcm, inputBuffer, bufferSize );    
 }
 
 

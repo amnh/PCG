@@ -245,6 +245,15 @@ class CostMatrix
          */
         void initializeMatrix ();
 
+	/** Takes an input buffer and assigns a malloc'ed copy to @tcm.
+         *  Uses the @alphabetSize of the matrix to determine the required space.
+         *  Because @alphabetSize is a const member, it will always be initialized
+         *  before this call, making the allocation and copy safe so long as the
+         *  input buffer is equal to or greater than @alphabetSize squared in 
+         *  length.
+         */
+	void initializeTCM(const int* const inputBuffer);
+	
 	/** Given a srcBuffer of a dynamic character element, this function 
          *  creates a new buffer and coppies the value of the provided dynamic 
          *  character element buffer into the newly alocated buffer.
