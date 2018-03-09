@@ -124,12 +124,10 @@ CostMatrix::~CostMatrix()
 
 int CostMatrix::getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian)
 {
-    auto toLookup = new keys_t;
-    std::get<0>(*toLookup) = *left;
-    std::get<1>(*toLookup) = *right;
+    const auto toLookup = std::make_tuple(*left, *right);
     auto foundCost{0};
 
-    const auto found = myMatrix.find(*toLookup);
+    const auto found = myMatrix.find(toLookup);
 
     if ( found == myMatrix.end() ) {
         return -1;
@@ -140,7 +138,6 @@ int CostMatrix::getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t
         foundCost          = std::get<0>(foundValue);
     }
 
-    delete toLookup;
     return foundCost;
 }
 
@@ -395,6 +392,7 @@ void CostMatrix::setValue(const dcElement_t* const lhs, const dcElement_t* const
     delete rhsElem;
     delete value;
 }
+
 
 packedChar* CostMatrix::createCopyPackedChar(const packedChar* const srcBuffer)
 {
