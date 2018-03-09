@@ -84,7 +84,7 @@ int main() {
 
     printf("\n\n\n******* Testing ambiguous characters: get/set of ambiguous characters. ******\n");
     size_t numSetInKey;
-    for(size_t i = 0; i < 25; ++i) {
+    for(size_t i = 0; i < 250; ++i) {
         printf("\n\niteration %2zu\n", i + 1);
         numSetInKey = rand() % alphabetSize + 1;
 

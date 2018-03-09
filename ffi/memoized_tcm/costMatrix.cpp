@@ -40,7 +40,7 @@ int call_getSetCost_C( costMatrix_p untyped_self
 
 // costMatrix_p get_CostMatrixPtr_C(costMatrix_p untyped_self);
 
-
+/*
 costMedian_t* allocCostMedian_t (size_t alphabetSize)
 {
     auto toReturn = new costMedian_t;
@@ -48,7 +48,7 @@ costMedian_t* allocCostMedian_t (size_t alphabetSize)
     std::get<1>(*toReturn) = (uint64_t*) calloc(dcElemSize(alphabetSize), INT_WIDTH);
     return toReturn;
 }
-
+*/
 
 void freeCostMedian_t (costMedian_t* toFree)
 {
@@ -153,13 +153,13 @@ int CostMatrix::getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t
     if ( found == myMatrix.end() ) {
         return -1;
     } else {
-        if(retMedian->element != NULL) free(retMedian->element);
+        if (retMedian->element != NULL) free(retMedian->element);
         retMedian->element = std::get<1>(std::get<1>(*found));
         foundCost          = std::get<0>(std::get<1>(*found));
     }
 
-    freeKeys_t(toLookup);
-    delete toLookup;
+    // freeKeys_t(toLookup);
+    // delete toLookup;
     return foundCost;
 }
 
@@ -205,7 +205,7 @@ int CostMatrix::getSetCostMedian( dcElement_t* left
         retMedian->element = makePackedCharCopy( std::get<1>(std::get<1>(*found)), alphabetSize, 1 );
     }
     // freeCostMedian_t(std::get<0>(found));
-    freeKeys_t(toLookup);
+    // freeKeys_t(toLookup);
     delete toLookup;
 
     if(DEBUG) printf("Matrix Value Count: %lu\n", myMatrix.size());
@@ -272,11 +272,7 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys)
     std::get<0>(*toReturn) = minCost;
     std::get<1>(*toReturn) = curMedian;
 
-    freeKeys_t(searchKey);
-    // free( &std::get<0>(*toReturn) );
-    // free( &std::get<1>(*toReturn) );
-
-    // delete searchKey;
+    delete searchKey;
 
     return toReturn;
 }
@@ -287,7 +283,7 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys)
  */
 int CostMatrix::findDistance (keys_t* searchKey, dcElement_t* ambElem)
 {
-    mapIterator found;
+    // mapIterator found;
     auto minCost{INT_MAX},
          curCost{INT_MAX};
     size_t unambElemIdx;
@@ -296,7 +292,7 @@ int CostMatrix::findDistance (keys_t* searchKey, dcElement_t* ambElem)
         if (TestBit(ambElem->element, pos)) {
 
             SetBit( std::get<0>(*searchKey).element, pos );
-            found = myMatrix.find(*searchKey);
+            const auto found = myMatrix.find(*searchKey);
             if (found == myMatrix.end()) {
                 // do unambiguous calculation here
                 if( !isAmbiguous(ambElem->element, dcElemSize(alphabetSize)) ) {
@@ -325,7 +321,6 @@ int CostMatrix::findDistance (keys_t* searchKey, dcElement_t* ambElem)
         printf("distance ambElem: %" PRIu64 ", nucleotide: %" PRIu64 "\n", ambElem->element[0], *std::get<1>(*searchKey).element);
         printf("cost: %i\n", minCost);
     }
-
     return minCost;
 }
 
@@ -393,10 +388,10 @@ void CostMatrix::setValue(const dcElement_t* const lhs, const dcElement_t* const
     // std::memcpy(std::get<0>(*key).element, lhs->element, byteCount);
 
     // Copy the right-hand-side into key.
-    free(subkey->element);
-    subkey = allocateDCElement(alphabetSize);
-    std::get<1>(*key) = *subkey;
-    free(subkey->element);
+    // if (subkey->element != NULL) free(subkey->element);
+    auto subkey2 = allocateDCElement(alphabetSize);
+    std::get<1>(*key) = *subkey2;
+    // if (subkey2->element != NULL) free(subkey2->element);
     std::get<1>(*key).alphSize = alphabetSize;
     std::get<1>(*key).element  = makePackedCharCopy( rhs->element, alphabetSize, 1 );
     // std::memcpy(std::get<1>(*key).element, rhs->element, byteCount);
@@ -412,4 +407,6 @@ void CostMatrix::setValue(const dcElement_t* const lhs, const dcElement_t* const
     // This has to be a pair!
     // Clang is okay with make_tuple() or forward_as_tuple(), but gcc doesn't like it.
     myMatrix.insert(std::make_pair(*key, *value));
+    delete key;
+    delete value;
 }

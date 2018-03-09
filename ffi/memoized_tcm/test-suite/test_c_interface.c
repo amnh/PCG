@@ -69,7 +69,7 @@ int main() {
     printf("cost on 15, 12: %i\n", cost); */
 
 
-    int count = 0;
+    // int count = 0;
     for(size_t i = 0; i < SEQ_A_LEN; i++) {
         // printf("%zu\n", bitRepresentation(seqA_main[i])), fflush(stdout);
 
