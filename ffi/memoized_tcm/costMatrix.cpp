@@ -52,12 +52,11 @@ costMedian_t* allocCostMedian_t (size_t alphabetSize)
 
 void freeCostMedian_t (costMedian_t* toFree)
 {
-    // packedChar* medianValue = std::get<1>(*toFree);
     if (std::get<1>(*toFree) == NULL)
       return;
 
-    free( std::get<1>(*toFree) );
-    // std::get<1>(*toFree) = NULL;
+    std::free( std::get<1>(*toFree) );
+    std::get<1>(*toFree) = NULL;
 }
 
 
@@ -73,8 +72,8 @@ keys_t* allocKeys_t (size_t alphabetSize)
     std::get<0>(*toReturn) = *firstElement;
     std::get<1>(*toReturn) = *secondElement;
 
-    free(firstElement);
-    free(secondElement);
+    std::free( firstElement );
+    std::free( secondElement );
 
     std::get<0>(*toReturn).alphSize = std::get<1>(*toReturn).alphSize = alphabetSize;
 
@@ -116,7 +115,7 @@ CostMatrix::~CostMatrix()
         freeCostMedian_t( &std::get<1>(*iterator) );
         freeKeys_t( &std::get<0>(*iterator) );
     }
-    free(tcm);
+    std::free(tcm);
     myMatrix.clear();
     hasher.clear();
 }
@@ -133,7 +132,7 @@ int CostMatrix::getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t
         return -1;
     } else {
         const auto foundValue = std::get<1>(*found);
-        if (retMedian->element != NULL) free(retMedian->element);
+        if (retMedian->element != NULL) std::free(retMedian->element);
         retMedian->element = createCopyPackedChar( std::get<1>(foundValue) );
         foundCost          = std::get<0>(foundValue);
     }
@@ -169,7 +168,7 @@ int CostMatrix::getSetCostMedian( dcElement_t* left
 
         foundCost = std::get<0>(*computedCostMed);
 
-        if(retMedian->element != NULL) free(retMedian->element);
+        if(retMedian->element != NULL) std::free(retMedian->element);
         retMedian->element = makePackedCharCopy( std::get<1>(*computedCostMed), alphabetSize, 1 );
 
         setValue(left, right, computedCostMed);
@@ -179,7 +178,7 @@ int CostMatrix::getSetCostMedian( dcElement_t* left
     } else {
         // because in the next two lines, I get back a tuple<keys, costMedian_t>
         foundCost = std::get<0>(std::get<1>(*found));
-        if(retMedian->element != NULL) free(retMedian->element);
+        if(retMedian->element != NULL) std::free(retMedian->element);
         retMedian->element = makePackedCharCopy( std::get<1>(std::get<1>(*found)), alphabetSize, 1 );
     }
     // freeCostMedian_t(std::get<0>(found));
@@ -326,7 +325,7 @@ void CostMatrix::initializeMatrix()
             std::get<0>(*toInsert) = tcm[key1_bit * alphabetSize + key2_bit];
             // TODO: can I move the allocation out of `packedCharOr()`?
             if (std::get<1>(*toInsert) != NULL) {
-                free( std::get<1>(*toInsert) );
+               std::free( std::get<1>(*toInsert) );
             }
             std::get<1>(*toInsert) = packedCharOr(key1->element, key2->element, alphabetSize, 1);
 
@@ -339,9 +338,9 @@ void CostMatrix::initializeMatrix()
     }
     // Just to reiterate, getSetCostMedian() should allocate, so we should dealloc these.
     freeDCElem(key1);        // deallocate array
-    free(key1);              // free pointer
+    std::free(key1);         // free pointer
     freeDCElem(key2);
-    free(key2);
+    std::free(key2);
     freeCostMedian_t(toInsert);
     delete toInsert;         // because generated with `new`
     // printf("finished initializing\n");
