@@ -355,7 +355,8 @@ void CostMatrix::setValue(const dcElement_t* const lhs, const dcElement_t* const
 {
     // Making a deep copy of key & median here to help with memory management in calling fns.
 
-    // Precompute the buffer size for memory management.
+    // Create a deep copy of the toInsert value to insert.
+    const auto value = std::make_tuple( std::get<0>(*toInsert), createCopyPackedChar(std::get<1>(*toInsert)));
 
     // Create a new 2-tuple key to insert.
     const auto key = new keys_t;
@@ -372,19 +373,13 @@ void CostMatrix::setValue(const dcElement_t* const lhs, const dcElement_t* const
     std::get<1>(*key).alphSize = alphabetSize;
     std::get<1>(*key).element  = createCopyPackedChar(rhs->element);
 
-    // Create a deep copy of the toInsert value to insert.
-    const auto value    = new costMedian_t;
-    std::get<0>(*value) = std::get<0>(*toInsert);
-    std::get<1>(*value) = createCopyPackedChar(std::get<1>(*toInsert));
-
     // Add the copied key-value pair to the matrix.
     // This has to be a pair!
     // Clang is okay with make_tuple() or forward_as_tuple(), but gcc doesn't like it.
-    myMatrix.insert(std::make_pair(*key, *value));
+    myMatrix.insert(std::make_pair(*key, value));
     delete key;
     delete lhsElem;
     delete rhsElem;
-    delete value;
 }
 
 
