@@ -59,13 +59,24 @@ void freeKeys_3d_t( const keys_3d_t* toFree )
 }
 
 
+CostMatrix_3d::CostMatrix_3d()
+  : alphabetSize(5)
+  , elementSize(1)
+{
+    tcm = (int*) std::malloc( alphabetSize * alphabetSize * alphabetSize * sizeof(int) );
+    std::memcpy(tcm, inTcm, alphabetSize * alphabetSize * alphabetSize);
+    initializeMatrix(); // should only have to do this for 3d, as 2d is initialized by its own constructor
+    twoD_matrix = new CostMatrix(alphSize, inTcm);
+}
+
+
 CostMatrix_3d::CostMatrix_3d( size_t alphSize, int* inTcm )
 {
     alphabetSize = alphSize;
     tcm = new int[alphabetSize * alphabetSize * alphabetSize];
     memcpy(tcm, inTcm, alphabetSize * alphabetSize * alphabetSize);
     initializeMatrix(); // should only have to do this for 3d, as 2d is initialized by its own constructor
-    twoD_matrix = CostMatrix(alphSize, inTcm);
+    twoD_matrix = new CostMatrix(alphSize, inTcm);
 }
 
 

@@ -10,7 +10,11 @@
 // #include "seqAlignForHaskell.h"
 
 int main() {
-    const size_t alphabetSize = 5;
+    for (size_t i{0}; i < 10; ++i) {
+        auto bits = i+60;
+        printf("Bit count: %d result returned: %d\n", bits, dynCharSize(bits, 1));
+    }
+    const size_t alphabetSize = 65;
     const size_t tcmLen       = alphabetSize * alphabetSize;
 
     int tcm[tcmLen];  // gcc weirdly complains this isn't used. Don't know how to suppress this error.
@@ -84,7 +88,7 @@ int main() {
 
     printf("\n\n\n******* Testing ambiguous characters: get/set of ambiguous characters. ******\n");
     size_t numSetInKey;
-    for(size_t i = 0; i < 250; ++i) {
+    for(size_t i = 0; i < 25000; ++i) {
         printf("\n\niteration %2zu\n", i + 1);
         numSetInKey = rand() % alphabetSize + 1;
 

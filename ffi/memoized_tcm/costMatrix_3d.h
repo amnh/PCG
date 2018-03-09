@@ -207,7 +207,13 @@ class CostMatrix_3d
 
         std::unordered_map <keys_3d_t, costMedian_t, KeyHash_3d, KeyEqual_3d> hasher;
 
-        size_t alphabetSize;
+        const size_t alphabetSize;
+
+        /** Always equal to:
+         *    alphabetSize / sizeof ( packedChar ) + alphabetSize % sizeof(packedChar) ? 1 : 0
+         *  Calculated once and stored for efficeincy.
+         */
+        const size_t elementSize;
 
         /** Stored unambiguous tcm, necessary to do first calls to findDistance() without having
          *  to rewrite findDistance() and computeCostMedian_3d().

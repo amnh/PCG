@@ -307,18 +307,6 @@ packedChar *makePackedCharCopy( const packedChar *inChar, size_t alphSize, size_
 }
 
 
-/*
-void copyPackedChar( packedChar *outChar, const packedChar *inChar, size_t alphSize, size_t numElems)
-{
-    size_t length = dynCharSize(alphSize, numElems);
-    outChar = realloc( outChar, length * sizeof(packedChar) );
-    for (size_t i = 0; i < length; i++) {
-        outChar[i] = inChar[i];
-    }
-}
-*/
-
-
 // TODO: test the next four fns. And make sure docs in .h file are good.
 packedChar *packedCharAnd( const packedChar *lhs, const packedChar *rhs, size_t alphSize, size_t numElems )
 {

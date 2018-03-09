@@ -35,6 +35,7 @@ int getCost(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSiz
     int cost = getCostInternal(elem1, elem2, tcm, alphSize, retElem);
 
     free(retElem->element);
+    free(retElem);
 
     return cost;
 }
@@ -58,6 +59,12 @@ int getCostInternal(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t
     dcElem2->element = packedElem2;
 
     int cost = call_getSetCost_C(tcm, dcElem1, dcElem2, retElem);
+
+    freeDCElem(dcElem1);
+    freeDCElem(dcElem2);
+    free(dcElem1);
+    free(dcElem2);
+
 
     return cost;
 }
@@ -87,18 +94,6 @@ int getCostAndMedian(dcElement_t *elem1, dcElement_t *elem2, dcElement_t *retEle
     copyPackedChar( elem1copy->element, elem1->element, alphSize, 1 );
     copyPackedChar( elem2copy->element, elem2->element, alphSize, 1 );
 */
-    //printf("We copied!\n"), fflush(stdout);
-
-    //// printf("Here we go:\n");
-    // printPackedChar(elem1copy->element, 1, alphSize);
-    //printf("Go again:\n");
-    // printPackedChar(elem2copy->element, 1, alphSize);
-
-    // printf("Inputs:\n");
-    // printPackedChar(  elem1->element, 1, alphSize);
-    // printPackedChar(  elem2->element, 1, alphSize);
-    // printf("Output buffer:\n");
-    // printPackedChar(retElem->element, 1, alphSize);
 
     int cost = call_getSetCost_C(tcm, elem1copy, elem2copy, retElem);
 

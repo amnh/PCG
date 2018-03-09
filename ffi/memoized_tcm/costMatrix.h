@@ -212,7 +212,7 @@ class CostMatrix
 
         const size_t alphabetSize;
 
-    /** Always equal to:
+        /** Always equal to:
          *    alphabetSize / sizeof ( packedChar ) + alphabetSize % sizeof(packedChar) ? 1 : 0
          *  Calculated once and stored for efficeincy.
          */
@@ -245,8 +245,8 @@ class CostMatrix
          */
         void initializeMatrix ();
 
-	/** Given a srcBuffer of a dynamic character element, this function 
-         *  creates a new buffer and coppies the value of the provided dynamic 
+	/** Given a srcBuffer of a dynamic character element, this function
+         *  creates a new buffer and coppies the value of the provided dynamic
          *  character element buffer into the newly alocated buffer.
          *
          *  Uses the TCM's elementSize vairable to avoid recomutation of buffer
