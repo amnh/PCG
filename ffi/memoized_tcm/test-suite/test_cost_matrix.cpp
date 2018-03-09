@@ -13,7 +13,7 @@ int main() {
     const size_t alphabetSize = 80;
     const size_t tcmLen       = alphabetSize * alphabetSize;
 
-    int tcm[tcmLen];  // gcc weirdly complains this isn't used. Don't know how to suppress this error.
+    int tcm[tcmLen];
     for (size_t i{0}; i < alphabetSize; i++) {
         for (size_t j{0}; j < alphabetSize; j++) {
             if (i == j) {
@@ -103,6 +103,18 @@ int main() {
         // ClearAll( firstKey->element, dynCharSize(alphabetSize, 1) );
         // ClearAll(secondKey->element, dynCharSize(alphabetSize, 1) );
     }
+
+    // Free everything we have allocated as to not mess with valgrind's leak diagnostics.
+    freeDCElem(firstKey);
+    freeDCElem(secondKey);
+    freeDCElem(retMedian);
+    free(firstKey);
+    free(secondKey);
+    free(retMedian);
+
+    
+    /****** An abandoned packedCharOr test that doesn't scale with alphabetSize > 64 ******/
+
     /**
     auto first   = new packedChar{1,0},
          second  = new packedChar{4,0},
@@ -112,9 +124,16 @@ int main() {
 
 
     printf("%" PRIu64 "\n", *result);
-    //free(result);
     printf("%" PRIu64 "\n\nDone.", *result2);
+    
+    delete first;
+    delete second;
+    delete third;
+    free(result);
+    free(result2);
     **/
+
+    
     /****** This next to test Yu Xiang's code, once you can. ******/
 
     // int success = aligner(seqA_main, SEQ_A_LEN, seqB_main, SEQ_B_LEN, alphabetSize, getCostMatrix(myMatrix), &retMedChar);
@@ -133,18 +152,4 @@ int main() {
     // free(seqA_main);
     // free(seqB_main);
 
-    // Free everything we have allocated as to not mess with valgrind's leak diagnostics.
-    freeDCElem(firstKey);
-    freeDCElem(secondKey);
-    freeDCElem(retMedian);
-    free(firstKey);
-    free(secondKey);
-    free(retMedian);
-    /**
-    delete first;
-    delete second;
-    delete third;
-    free(result);
-    free(result2);
-    **/
 }
