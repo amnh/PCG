@@ -244,6 +244,18 @@ class CostMatrix
          *  Can only be called once this.alphabetSize has been set.
          */
         void initializeMatrix ();
+
+	/** Given a srcBuffer of a dynamic character element, this function 
+         *  creates a new buffer and coppies the value of the provided dynamic 
+         *  character element buffer into the newly alocated buffer.
+         *
+         *  Uses the TCM's elementSize vairable to avoid recomutation of buffer
+         *  size and reduces the number of function call parameters compared to
+         *  the function makePackedCharCopy. Less noisy, slightly more efficient.
+         *
+         *  Useful to deep copy a packedChar* to a new pointer location.
+         */
+	packedChar* createCopyPackedChar(const packedChar* const srcBuffer);
 };
 
 
