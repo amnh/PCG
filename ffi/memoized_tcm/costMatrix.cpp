@@ -81,30 +81,19 @@ keys_t* allocKeys_t (size_t alphabetSize)
     return toReturn;
 }
 
-// TODO: since keys_t is Pair<dcElement_t, dcElement_t>, there are no pointers, and nothing
-// to free?? How is this right?
 void freeKeys_t( const keys_t* toFree )
 {
     freeDCElem( &std::get<0>(*toFree) );
-    // delete &std::get<0>(*toFree);
     freeDCElem( &std::get<1>(*toFree) );
-    // delete &std::get<1>(*toFree);
 }
-
-
-// void freeMapAccessTuple_t (const mapAccessTuple_t* toFree)
-// {
-//     freeKeys_t(std::get<0>(toFree));
-//     freeCostMedian_t(std::get<1>(toFree));
-// }
 
 
 CostMatrix::CostMatrix()
   : alphabetSize(5)
   , elementSize(1)
 {
-    tcm = new int[25];
-    memcpy(tcm, defaultExtraGapCostMetric, alphabetSize * alphabetSize * sizeof(int));
+    tcm = (int*) std::malloc( alphabetSize * alphabetSize * sizeof(int) );
+    std::memcpy(tcm, defaultExtraGapCostMetric, alphabetSize * alphabetSize * sizeof(int));
     initializeMatrix();
 }
 
@@ -113,8 +102,8 @@ CostMatrix::CostMatrix(size_t alphSize, int* inTcm)
   : alphabetSize(alphSize)
   , elementSize(dcElemSize(alphSize))
 {
-    tcm = new int[alphabetSize * alphabetSize];
-    memcpy(tcm, inTcm, alphabetSize * alphabetSize * sizeof(int));
+    tcm = (int*) std::malloc( alphabetSize * alphabetSize * sizeof(int) );
+    std::memcpy(tcm, inTcm, alphabetSize * alphabetSize * sizeof(int));
     initializeMatrix();
 }
 
@@ -122,20 +111,14 @@ CostMatrix::CostMatrix(size_t alphSize, int* inTcm)
 CostMatrix::~CostMatrix()
 {
     for ( auto iterator = myMatrix.begin(); iterator != myMatrix.end(); iterator++ ) {
-        // LEAK:
-        // Call to freeCostMedian_t causes a number of invalid reads equal to alphabetSize
-        // Omission of the call leaks O(alphabetSize) space
         freeCostMedian_t( &std::get<1>(*iterator) );
         freeKeys_t( &std::get<0>(*iterator) );
     }
     for ( auto iterator = hasher.begin(); iterator != hasher.end(); iterator++ ) {
-        // LEAK:
-        // Call to freeCostMedian_t causes a number of invalid reads equal to alphabetSize
-        // Omission of the call leaks O(alphabetSize) space
         freeCostMedian_t( &std::get<1>(*iterator) );
         freeKeys_t( &std::get<0>(*iterator) );
     }
-    // free(tcm);
+    free(tcm);
     myMatrix.clear();
     hasher.clear();
 }
@@ -158,8 +141,7 @@ int CostMatrix::getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t
         foundCost          = std::get<0>(std::get<1>(*found));
     }
 
-    // freeKeys_t(toLookup);
-    // delete toLookup;
+    delete toLookup;
     return foundCost;
 }
 
@@ -272,6 +254,7 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys)
     std::get<0>(*toReturn) = minCost;
     std::get<1>(*toReturn) = curMedian;
 
+    freeKeys_t(searchKey);
     delete searchKey;
 
     return toReturn;
@@ -378,16 +361,15 @@ void CostMatrix::setValue(const dcElement_t* const lhs, const dcElement_t* const
 
     // Create a new 2-tuple key to insert.
     const auto key = new keys_t;
-    free(std::get<0>(key).element);
 
     // Copy the left-hand-side into key.
-    auto lhsElem = new dcElement_t;
+    const auto lhsElem = new dcElement_t;
     std::get<0>(*key)          = *lhsElem;
     std::get<0>(*key).alphSize = alphabetSize;
     std::get<0>(*key).element  = createCopyPackedChar(lhs->element);
 
     // Copy the right-hand-side into key.
-    auto rhsElem = new dcElement_t;
+    const auto rhsElem = new dcElement_t;
     std::get<1>(*key) = *rhsElem;
     std::get<1>(*key).alphSize = alphabetSize;
     std::get<1>(*key).element  = createCopyPackedChar(rhs->element);
@@ -402,6 +384,8 @@ void CostMatrix::setValue(const dcElement_t* const lhs, const dcElement_t* const
     // Clang is okay with make_tuple() or forward_as_tuple(), but gcc doesn't like it.
     myMatrix.insert(std::make_pair(*key, *value));
     delete key;
+    delete lhsElem;
+    delete rhsElem;
     delete value;
 }
 
