@@ -154,7 +154,7 @@ int CostMatrix::getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t
         return -1;
     } else {
         if (retMedian->element != NULL) free(retMedian->element);
-        retMedian->element = std::get<1>(std::get<1>(*found));
+        retMedian->element = createCopyPackedChar( std::get<1>(std::get<1>(*found)) );
         foundCost          = std::get<0>(std::get<1>(*found));
     }
 
@@ -346,7 +346,9 @@ void CostMatrix::initializeMatrix()
             // using unambiguous elems, so we can just insert.
             std::get<0>(*toInsert) = tcm[key1_bit * alphabetSize + key2_bit];
             // TODO: can I move the allocation out of `packedCharOr()`?
-            free( std::get<1>(*toInsert) );
+            if (std::get<1>(*toInsert) != NULL) {
+                free( std::get<1>(*toInsert) );
+            }
             std::get<1>(*toInsert) = packedCharOr(key1->element, key2->element, alphabetSize, 1);
 
             setValue(key1, key2, toInsert);
@@ -376,6 +378,7 @@ void CostMatrix::setValue(const dcElement_t* const lhs, const dcElement_t* const
 
     // Create a new 2-tuple key to insert.
     const auto key = new keys_t;
+    free(std::get<0>(key).element);
 
     // Copy the left-hand-side into key.
     auto lhsElem = new dcElement_t;

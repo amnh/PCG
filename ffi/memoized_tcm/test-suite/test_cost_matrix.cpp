@@ -136,4 +136,12 @@ int main() {
     freeDCElem(firstKey);
     freeDCElem(secondKey);
     freeDCElem(retMedian);
+    // delete firstKey;
+    // delete secondKey;
+    // delete retMedian;
+    delete first;
+    delete second;
+    delete third;
+    free(result);
+    free(result2);
 }

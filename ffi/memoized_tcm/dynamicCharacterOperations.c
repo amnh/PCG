@@ -378,15 +378,15 @@ void freeDynChar( const dynChar_t *p )
 {
     if(p == NULL)
         return;
-    free( p->dynChar );
+    if (p->dynChar != NULL) free( p->dynChar );
 }
 
 
 void freeDCElem( const dcElement_t *p )
 {
-    if(p == NULL)
+    if (p == NULL)
         return;
-    free( p->element );
+    if (p->element != NULL) free( p->element );
     // free( p ); Can't free here. It was passed in as const.
     // No p = NULL; because we need a const pointer for some reason in C++ land.
 }
