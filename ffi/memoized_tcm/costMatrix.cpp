@@ -373,35 +373,26 @@ void CostMatrix::setValue(const dcElement_t* const lhs, const dcElement_t* const
     // Making a deep copy of key & median here to help with memory management in calling fns.
 
     // Precompute the buffer size for memory management.
-    // const auto byteCount = elementSize * sizeof(packedChar);
 
     // Create a new 2-tuple key to insert.
     const auto key = new keys_t;
 
     // Copy the left-hand-side into key.
-    // TODO: I need to free the pointer inside the DCElement. That means I don't have a deep copy? Fix that.
-    auto subkey = allocateDCElement(alphabetSize);
-    std::get<0>(*key)          = *subkey;
-    std::get<0>(*key).alphSize = alphabetSize; // could use lhs->alphSize, but this should be more guaranteed correct... right?
-    // TODO: Decide what to do with the copy pointer here:
-    std::get<0>(*key).element  = makePackedCharCopy( lhs->element, alphabetSize, 1 );
-    // std::memcpy(std::get<0>(*key).element, lhs->element, byteCount);
+    auto lhsElem = new dcElement_t;
+    std::get<0>(*key)          = *lhsElem;
+    std::get<0>(*key).alphSize = alphabetSize;
+    std::get<0>(*key).element  = createCopyPackedChar(lhs->element);
 
     // Copy the right-hand-side into key.
-    // if (subkey->element != NULL) free(subkey->element);
-    auto subkey2 = allocateDCElement(alphabetSize);
-    std::get<1>(*key) = *subkey2;
-    // if (subkey2->element != NULL) free(subkey2->element);
+    auto rhsElem = new dcElement_t;
+    std::get<1>(*key) = *rhsElem;
     std::get<1>(*key).alphSize = alphabetSize;
-    std::get<1>(*key).element  = makePackedCharCopy( rhs->element, alphabetSize, 1 );
-    // std::memcpy(std::get<1>(*key).element, rhs->element, byteCount);
+    std::get<1>(*key).element  = createCopyPackedChar(rhs->element);
 
     // Create a deep copy of the toInsert value to insert.
     const auto value    = new costMedian_t;
     std::get<0>(*value) = std::get<0>(*toInsert);
-    std::get<1>(*value) = makePackedCharCopy( std::get<1>(*toInsert), alphabetSize, 1 );
-    // allocatePackedChar(alphabetSize, 1);
-    // std::memcpy(std::get<1>(*value), std::get<1>(*toInsert), byteCount);
+    std::get<1>(*value) = createCopyPackedChar(std::get<1>(*toInsert));
 
     // Add the copied key-value pair to the matrix.
     // This has to be a pair!
@@ -409,4 +400,12 @@ void CostMatrix::setValue(const dcElement_t* const lhs, const dcElement_t* const
     myMatrix.insert(std::make_pair(*key, *value));
     delete key;
     delete value;
+}
+
+packedChar* CostMatrix::createCopyPackedChar(const packedChar* const srcBuffer)
+{
+    auto byteCount = elementSize * sizeof(packedChar);
+    auto outBuffer = (packedChar*) std::malloc(byteCount);
+    std::memcpy(outBuffer, srcBuffer, byteCount);
+    return outBuffer;
 }
