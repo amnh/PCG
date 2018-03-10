@@ -208,7 +208,6 @@ class CostMatrix
 
         std::unordered_map <keys_t, costMedian_t, KeyHash, KeyEqual> myMatrix;
 
-        std::unordered_map <keys_t, costMedian_t, KeyHash, KeyEqual> hasher;
 
         const size_t alphabetSize;
 

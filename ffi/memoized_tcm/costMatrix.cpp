@@ -111,13 +111,8 @@ CostMatrix::~CostMatrix()
         freeCostMedian_t( &std::get<1>(*iterator) );
         freeKeys_t( &std::get<0>(*iterator) );
     }
-    for ( auto iterator = hasher.begin(); iterator != hasher.end(); iterator++ ) {
-        freeCostMedian_t( &std::get<1>(*iterator) );
-        freeKeys_t( &std::get<0>(*iterator) );
-    }
     std::free(tcm);
     myMatrix.clear();
-    hasher.clear();
 }
 
 
