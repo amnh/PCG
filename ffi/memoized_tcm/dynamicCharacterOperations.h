@@ -71,6 +71,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 /** Following constants must be static to prevent compilation issues. */
 static const size_t   BITS_IN_BYTE   = 8;                    // so bytes are set to 8, for all architectures
@@ -263,10 +264,23 @@ void intArrToDynChar( size_t alphSize, size_t arrayLen, uint64_t *input, dynChar
 packedChar *allocatePackedChar( size_t alphSize, size_t numElems );
 
 
-/** Allocates new packedChar Copy input values to already alloced output and return a pointer
+/** Allocates new packedCharCopy input values to already alloced output and return a pointer
  *  to output
  */
 packedChar *makePackedCharCopy( const packedChar *inChar, size_t alphSize, size_t numElems );
+
+
+/** Given a srcBuffer of a dynamic character element, this function
+ *  creates a new buffer and copies the value of the provided dynamic
+ *  character element buffer into the newly allocated buffer.
+ *
+ *  Uses the TCM's elementSize vairable to avoid recomputation of buffer
+ *  size and reduces the number of function call parameters compared to
+ *  the function makePackedCharCopy. Less noisy, slightly more efficient.
+ *
+ *  Useful to deep copy a packedChar* to a new pointer location.
+ */
+packedChar *createCopyPackedChar( const packedChar* const srcChar, size_t alphSize );
 
 
 /** Reallocs outChar to be correct length, then copies values from inChar to outChar.

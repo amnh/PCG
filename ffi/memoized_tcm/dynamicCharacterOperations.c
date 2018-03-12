@@ -296,6 +296,15 @@ packedChar *allocatePackedChar( size_t alphSize, size_t numElems )
 }
 
 
+packedChar *createCopyPackedChar( const packedChar* const srcChar, size_t alphSize )
+{
+    size_t byteCount    = dcElemSize(alphSize) * sizeof(packedChar);
+    packedChar *outChar = malloc(byteCount);
+    memcpy(outChar, srcChar, byteCount);
+    return outChar;
+}
+
+
 packedChar *makePackedCharCopy( const packedChar *inChar, size_t alphSize, size_t numElems)
 {
     packedChar *outChar = allocatePackedChar(alphSize, numElems);

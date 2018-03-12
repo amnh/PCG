@@ -22,7 +22,7 @@
 #include <cstdlib>
 #include <unordered_map>
 
-#include "costMatrix.h"        // This is for lookup in `computeCostMedian()`. TODO: Wrap this crap in. Tonight?
+#include "costMatrix2d.h"
 
 
 /********************* Next three fns defined here to use on C side. *********************/
@@ -50,6 +50,7 @@ int call_getSetCost_3d_C ( costMatrix_p untyped_self
 
 typedef std::tuple<dcElement_t, dcElement_t, dcElement_t> keys_3d_t;
 typedef std::tuple<keys_3d_t,   costMedian_t>             mapAccessTuple_3d_t;
+// The stored cost & median type is defined in 2d matrix.
 
 
 /** Allocate room for a keys_3d_t. */

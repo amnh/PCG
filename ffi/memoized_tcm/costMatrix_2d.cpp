@@ -118,7 +118,7 @@ int CostMatrix_2d::getCostMedian(dcElement_t* left, dcElement_t* right, dcElemen
     } else {
         const auto foundValue = std::get<1>(*found);
         if (retMedian->element != NULL) std::free(retMedian->element);
-        retMedian->element = createCopyPackedChar( std::get<1>(foundValue) );
+        retMedian->element = createCopyPackedChar( std::get<1>(foundValue), alphabetSize );
         foundCost          = std::get<0>(foundValue);
     }
 
@@ -340,7 +340,9 @@ void CostMatrix_2d::setValue(const dcElement_t* const lhs, const dcElement_t* co
     // Making a deep copy of key & median here to help with memory management in calling fns.
 
     // Create a deep copy of the toInsert value to insert.
-    const auto value = std::make_tuple( std::get<0>(*toInsert), createCopyPackedChar(std::get<1>(*toInsert)));
+    const auto value = std::make_tuple( std::get<0>(*toInsert)
+                                      , createCopyPackedChar( std::get<1>(*toInsert), alphabetSize )
+                                      );
 
     // Create a new 2-tuple key to insert.
     const auto key = new keys_2d_t;
@@ -349,13 +351,13 @@ void CostMatrix_2d::setValue(const dcElement_t* const lhs, const dcElement_t* co
     const auto lhsElem = new dcElement_t;
     std::get<0>(*key)          = *lhsElem;
     std::get<0>(*key).alphSize = alphabetSize;
-    std::get<0>(*key).element  = createCopyPackedChar(lhs->element);
+    std::get<0>(*key).element  = createCopyPackedChar(lhs->element, alphabetSize);
 
     // Copy the right-hand-side into key.
     const auto rhsElem = new dcElement_t;
     std::get<1>(*key) = *rhsElem;
     std::get<1>(*key).alphSize = alphabetSize;
-    std::get<1>(*key).element  = createCopyPackedChar(rhs->element);
+    std::get<1>(*key).element  = createCopyPackedChar(rhs->element, alphabetSize);
 
     // Add the copied key-value pair to the matrix.
     // This has to be a pair!
@@ -364,12 +366,4 @@ void CostMatrix_2d::setValue(const dcElement_t* const lhs, const dcElement_t* co
     delete key;
     delete lhsElem;
     delete rhsElem;
-}
-
-packedChar* CostMatrix_2d::createCopyPackedChar(const packedChar* const srcBuffer)
-{
-    auto byteCount = elementSize * sizeof(packedChar);
-    auto outBuffer = (packedChar*) std::malloc(byteCount);
-    std::memcpy(outBuffer, srcBuffer, byteCount);
-    return outBuffer;
 }

@@ -11,8 +11,8 @@
  *  Any such checks should be done exterior to this library.
  */
 
-#ifndef _CostMatrix_2d_H
-#define _CostMatrix_2d_H
+#ifndef _COSTMATRIX_2D_H
+#define _COSTMATRIX_2D_H
 
 #define DEBUG 0
 
@@ -38,12 +38,13 @@ int call_getSetCost_2d_C (costMatrix_p untyped_self, dcElement_t* left, dcElemen
 }
 #endif
 
-// #include "CostMedPair.h"
+/******************************** End of C interface fns ********************************/
+
 typedef std::tuple<dcElement_t, dcElement_t>  keys_2d_t;
 typedef std::tuple<int,         packedChar*>  costMedian_t;
 typedef std::tuple<keys_2d_t,   costMedian_t> mapAccessTuple_2d_t;
 
-/** Used to send 2d and 3d cost matrices through the C interface where they're tatically cast to the two matrix types. */
+/** Used to send 2d and 3d cost matrices through the C interface where they're statically cast to the two matrix types. */
 typedef void* costMatrix_p;
 
 
@@ -252,18 +253,7 @@ class CostMatrix_2d
          */
         void initializeTCM(const int* const inputBuffer);
 
-        /** Given a srcBuffer of a dynamic character element, this function
-         *  creates a new buffer and copies the value of the provided dynamic
-         *  character element buffer into the newly allocated buffer.
-         *
-         *  Uses the TCM's elementSize vairable to avoid recomputation of buffer
-         *  size and reduces the number of function call parameters compared to
-         *  the function makePackedCharCopy. Less noisy, slightly more efficient.
-         *
-         *  Useful to deep copy a packedChar* to a new pointer location.
-         */
-        packedChar* createCopyPackedChar(const packedChar* const srcBuffer);
 };
 
 
-#endif // CostMatrix_2d_H
+#endif // COSTMATRIX_2D_H
