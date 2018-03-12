@@ -41,12 +41,11 @@ int call_getSetCost_2d_C( costMatrix_p untyped_self
 
 void freeCostMedian_t (costMedian_t* toFree)
 {
-    // packedChar* medianValue = std::get<1>(*toFree);
     if (std::get<1>(*toFree) == NULL)
       return;
 
-    free( std::get<1>(*toFree) );
-    // std::get<1>(*toFree) = NULL;
+    std::free( std::get<1>(*toFree) );
+    std::get<1>(*toFree) = NULL;
 }
 
 
@@ -62,8 +61,8 @@ keys_2d_t* allockeys_2d_t (size_t alphabetSize)
     std::get<0>(*toReturn) = *firstElement;
     std::get<1>(*toReturn) = *secondElement;
 
-    free(firstElement);
-    free(secondElement);
+    std::free( firstElement );
+    std::free( secondElement );
 
     std::get<0>(*toReturn).alphSize = std::get<1>(*toReturn).alphSize
                                     = alphabetSize;
@@ -102,35 +101,27 @@ CostMatrix_2d::~CostMatrix_2d()
         freeCostMedian_t( &std::get<1>(*iterator) );
         freekeys_2d_t( &std::get<0>(*iterator) );
     }
-    for ( auto iterator = hasher.begin(); iterator != hasher.end(); iterator++ ) {
-        freeCostMedian_t( &std::get<1>(*iterator) );
-        freekeys_2d_t( &std::get<0>(*iterator) );
-    }
-    free(tcm);
+    std::free(tcm);
     myMatrix.clear();
-    hasher.clear();
 }
 
 
 int CostMatrix_2d::getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian)
 {
-    auto toLookup = new keys_2d_t;
-    std::get<0>(*toLookup) = *left;
-    std::get<1>(*toLookup) = *right;
+    const auto toLookup = std::make_tuple(*left, *right);
     auto foundCost{0};
 
-    const auto found = myMatrix.find(*toLookup);
+    const auto found = myMatrix.find(toLookup);
 
     if ( found == myMatrix.end() ) {
         return -1;
     } else {
         const auto foundValue = std::get<1>(*found);
-        if (retMedian->element != NULL) free(retMedian->element);
+        if (retMedian->element != NULL) std::free(retMedian->element);
         retMedian->element = createCopyPackedChar( std::get<1>(foundValue) );
         foundCost          = std::get<0>(foundValue);
     }
 
-    delete toLookup;
     return foundCost;
 }
 
@@ -140,29 +131,26 @@ int CostMatrix_2d::getSetCostMedian( dcElement_t* left
                                 , dcElement_t* retMedian
                                 )
 {
-    // not using allockeys_2d_t because we're making a copy of the packed characters _if we need to_
-    const auto toLookup    = new keys_2d_t;
-    std::get<0>(*toLookup) = *left;
-    std::get<1>(*toLookup) = *right;
-    const auto found = myMatrix.find(*toLookup);
+    const auto toLookup = std::make_tuple(*left, *right);
+    const auto found    = myMatrix.find(toLookup);
     auto foundCost{0};
 
     if(DEBUG) {
-        printf("1st: {%zu}: %" PRIu64 "\n", std::get<0>(*toLookup).alphSize, *std::get<0>(*toLookup).element ), fflush(stdout);
-        printf("2nd: {%zu}: %" PRIu64 "\n", std::get<1>(*toLookup).alphSize, *std::get<1>(*toLookup).element), fflush(stdout);
+        printf("1st: {%zu}: %" PRIu64 "\n", std::get<0>(toLookup).alphSize, *std::get<0>(toLookup).element ), fflush(stdout);
+        printf("2nd: {%zu}: %" PRIu64 "\n", std::get<1>(toLookup).alphSize, *std::get<1>(toLookup).element), fflush(stdout);
     }
 
     if ( found == myMatrix.end() ) {
         if(DEBUG) printf("\ngetSetCost didn't find %" PRIu64 " %" PRIu64 ".\n", left->element[0], right->element[0]);
 
-        const auto computedCostMed = computeCostMedian(*toLookup);
+        const auto computedCostMed = computeCostMedian(toLookup);
         //costMedian_t* computedCostMed = computeCostMedianFitchy(*toLookup);
 
         if(DEBUG) printf("computed cost, median: %2i %" PRIu64 "\n", std::get<0>(*computedCostMed), std::get<1>(*computedCostMed)[0]);
 
         foundCost = std::get<0>(*computedCostMed);
 
-        if(retMedian->element != NULL) free(retMedian->element);
+        if(retMedian->element != NULL) std::free(retMedian->element);
         retMedian->element = makePackedCharCopy( std::get<1>(*computedCostMed), alphabetSize, 1 );
 
         setValue(left, right, computedCostMed);
@@ -172,12 +160,10 @@ int CostMatrix_2d::getSetCostMedian( dcElement_t* left
     } else {
         // because in the next two lines, I get back a tuple<keys, costMedian_t>
         foundCost = std::get<0>(std::get<1>(*found));
-        if(retMedian->element != NULL) free(retMedian->element);
+        if(retMedian->element != NULL) std::free(retMedian->element);
         retMedian->element = makePackedCharCopy( std::get<1>(std::get<1>(*found)), alphabetSize, 1 );
     }
     // freeCostMedian_t(std::get<0>(found));
-    // freekeys_2d_t(toLookup);
-    delete toLookup;
 
     if(DEBUG) printf("Matrix Value Count: %lu\n", myMatrix.size());
 
@@ -318,7 +304,7 @@ void CostMatrix_2d::initializeMatrix()
             std::get<0>(*toInsert) = tcm[key1_bit * alphabetSize + key2_bit];
             // TODO: can I move the allocation out of `packedCharOr()`?
             if (std::get<1>(*toInsert) != NULL) {
-                free( std::get<1>(*toInsert) );
+               std::free( std::get<1>(*toInsert) );
             }
             std::get<1>(*toInsert) = packedCharOr(key1->element, key2->element, alphabetSize, 1);
 
@@ -331,9 +317,9 @@ void CostMatrix_2d::initializeMatrix()
     }
     // Just to reiterate, getSetCostMedian() should allocate, so we should dealloc these.
     freeDCElem(key1);        // deallocate array
-    free(key1);              // free pointer
+    std::free(key1);         // free pointer
     freeDCElem(key2);
-    free(key2);
+    std::free(key2);
     freeCostMedian_t(toInsert);
     delete toInsert;         // because generated with `new`
     // printf("finished initializing\n");
@@ -353,7 +339,8 @@ void CostMatrix_2d::setValue(const dcElement_t* const lhs, const dcElement_t* co
 {
     // Making a deep copy of key & median here to help with memory management in calling fns.
 
-    // Precompute the buffer size for memory management.
+    // Create a deep copy of the toInsert value to insert.
+    const auto value = std::make_tuple( std::get<0>(*toInsert), createCopyPackedChar(std::get<1>(*toInsert)));
 
     // Create a new 2-tuple key to insert.
     const auto key = new keys_2d_t;
@@ -370,19 +357,13 @@ void CostMatrix_2d::setValue(const dcElement_t* const lhs, const dcElement_t* co
     std::get<1>(*key).alphSize = alphabetSize;
     std::get<1>(*key).element  = createCopyPackedChar(rhs->element);
 
-    // Create a deep copy of the toInsert value to insert.
-    const auto value    = new costMedian_t;
-    std::get<0>(*value) = std::get<0>(*toInsert);
-    std::get<1>(*value) = createCopyPackedChar(std::get<1>(*toInsert));
-
     // Add the copied key-value pair to the matrix.
     // This has to be a pair!
     // Clang is okay with make_tuple() or forward_as_tuple(), but gcc doesn't like it.
-    myMatrix.insert(std::make_pair(*key, *value));
+    myMatrix.insert(std::make_pair(*key, value));
     delete key;
     delete lhsElem;
     delete rhsElem;
-    delete value;
 }
 
 packedChar* CostMatrix_2d::createCopyPackedChar(const packedChar* const srcBuffer)

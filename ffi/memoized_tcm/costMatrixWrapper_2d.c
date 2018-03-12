@@ -76,15 +76,15 @@ int getCostInternal_2d(packedChar elem1, packedChar elem2, costMatrix_p tcm, siz
 int getCostAndMedian_2d(dcElement_t *elem1, dcElement_t *elem2, dcElement_t *retElem, costMatrix_p tcm)
 {
     // Need to create new pointers, because of copying into cost matrix.
-    // TODO: valgrind this.
+    // UPDATE:
+    // We might *not* need to create copies, keys should be copied internally.
+  
     //printf("We made it to C LAND!!!!\n"), fflush(stdout);
     //printf("%p\n", elem1), fflush(stdout);
     size_t alphSize = elem1->alphSize;
     //printf("alphSize %d\n",alphSize), fflush(stdout);
     //printf("[%d]\n",elem1->element[0]), fflush(stdout);
 
-    // dcElement_t *elem1copy = allocateDCElement( alphSize );
-    // dcElement_t *elem2copy = allocateDCElement( alphSize );
     // Can't use allocateDCElement because makePackedCharCopy allocates
     dcElement_t *elem1copy = malloc(sizeof(dcElement_t));
     elem1copy->alphSize    = alphSize;
@@ -94,18 +94,13 @@ int getCostAndMedian_2d(dcElement_t *elem1, dcElement_t *elem2, dcElement_t *ret
 
     elem1copy->element = makePackedCharCopy( elem1->element, alphSize, 1 );
     elem2copy->element = makePackedCharCopy( elem2->element, alphSize, 1 );
-/*
-    copyPackedChar( elem1copy->element, elem1->element, alphSize, 1 );
-    copyPackedChar( elem2copy->element, elem2->element, alphSize, 1 );
-*/
 
     int cost = call_getSetCost_2d_C(tcm, elem1copy, elem2copy, retElem);
 
-    // freeDCElem(elem1copy);
-    // free(elem1copy);
-    // freeDCElem(elem1copy);
-    // free(elem1copy);
-
+    freeDCElem(elem1copy);
+    freeDCElem(elem2copy);
+    free(elem1copy);
+    free(elem2copy);
 
     return cost;
 }
