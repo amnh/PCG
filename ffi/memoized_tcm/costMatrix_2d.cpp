@@ -1,54 +1,43 @@
 #include <cstring> //for memcpy;
 #include <inttypes.h>
 
-#include "costMatrix.h"
+#include "costMatrix_2d.h"
 #include "dynamicCharacterOperations.h"
 
 #define __STDC_FORMAT_MACROS
 
 // TODO: I'll need this for the Haskell side of things: https://hackage.haskell.org/package/base-4.9.0.0/docs/Foreign-StablePtr.html
 
-constexpr int CostMatrix::defaultExtraGapCostMetric[25];
-constexpr int CostMatrix::defaultDiscreteMetric[25];
-constexpr int CostMatrix::defaultL1NormMetric[25];
+constexpr int CostMatrix_2d::defaultExtraGapCostMetric[25];
+constexpr int CostMatrix_2d::defaultDiscreteMetric[25];
+constexpr int CostMatrix_2d::defaultL1NormMetric[25];
 
-costMatrix_p construct_CostMatrix_C(size_t alphSize, int* tcm)
+
+costMatrix_p construct_CostMatrix_2d_C(size_t alphSize, int* tcm)
 {
-    return new CostMatrix(alphSize, tcm);
+    return new CostMatrix_2d(alphSize, tcm);
 }
 
 
-void destruct_CostMatrix_C(costMatrix_p untyped_self)
+void destruct_CostMatrix_2d_C(costMatrix_p untyped_self)
 {
-    // costMatrix_p thing = <CostMatrix*>(untyped_self);
-    // ((CostMatrix*) untyped_self)::~CostMatrix();
-    delete static_cast<CostMatrix*> (untyped_self);
+    // costMatrix_p thing = <CostMatrix_2d*>(untyped_self);
+    // ((CostMatrix_2d*) untyped_self)::~CostMatrix_2d();
+    delete static_cast<CostMatrix_2d*> (untyped_self);
 }
 
 
-int call_getSetCost_C( costMatrix_p untyped_self
-                     , dcElement_t* left
-                     , dcElement_t* right
-                     , dcElement_t* retMedian
-                     )
+int call_getSetCost_2d_C( costMatrix_p untyped_self
+                        , dcElement_t* left
+                        , dcElement_t* right
+                        , dcElement_t* retMedian
+                        )
 {
 
-    CostMatrix* thisMtx = static_cast<CostMatrix*> (untyped_self);
+    CostMatrix_2d* thisMtx = static_cast<CostMatrix_2d*> (untyped_self);
     return thisMtx->getSetCostMedian(left, right, retMedian);
 }
 
-
-// costMatrix_p get_CostMatrixPtr_C(costMatrix_p untyped_self);
-
-/*
-costMedian_t* allocCostMedian_t (size_t alphabetSize)
-{
-    auto toReturn = new costMedian_t;
-    std::get<0>(*toReturn) = 0;
-    std::get<1>(*toReturn) = (uint64_t*) calloc(dcElemSize(alphabetSize), INT_WIDTH);
-    return toReturn;
-}
-*/
 
 void freeCostMedian_t (costMedian_t* toFree)
 {
@@ -61,9 +50,9 @@ void freeCostMedian_t (costMedian_t* toFree)
 }
 
 
-keys_t* allocKeys_t (size_t alphabetSize)
+keys_2d_t* allockeys_2d_t (size_t alphabetSize)
 {
-    auto toReturn = new keys_t;
+    auto toReturn = new keys_2d_t;
 
     // jump through these hoops because I'm dereferencing the two elements,
     // and I couldn't free the pointers otherwise.
@@ -76,19 +65,20 @@ keys_t* allocKeys_t (size_t alphabetSize)
     free(firstElement);
     free(secondElement);
 
-    std::get<0>(*toReturn).alphSize = std::get<1>(*toReturn).alphSize = alphabetSize;
+    std::get<0>(*toReturn).alphSize = std::get<1>(*toReturn).alphSize
+                                    = alphabetSize;
 
     return toReturn;
 }
 
-void freeKeys_t( const keys_t* toFree )
+void freekeys_2d_t( const keys_2d_t* toFree )
 {
     freeDCElem( &std::get<0>(*toFree) );
     freeDCElem( &std::get<1>(*toFree) );
 }
 
 
-CostMatrix::CostMatrix()
+CostMatrix_2d::CostMatrix_2d()
   : alphabetSize(5)
   , elementSize(1)
 {
@@ -97,7 +87,7 @@ CostMatrix::CostMatrix()
 }
 
 
-CostMatrix::CostMatrix(size_t alphSize, int* inTcm)
+CostMatrix_2d::CostMatrix_2d(size_t alphSize, int* inTcm)
   : alphabetSize(alphSize)
   , elementSize(dcElemSize(alphSize))
 {
@@ -106,15 +96,15 @@ CostMatrix::CostMatrix(size_t alphSize, int* inTcm)
 }
 
 
-CostMatrix::~CostMatrix()
+CostMatrix_2d::~CostMatrix_2d()
 {
     for ( auto iterator = myMatrix.begin(); iterator != myMatrix.end(); iterator++ ) {
         freeCostMedian_t( &std::get<1>(*iterator) );
-        freeKeys_t( &std::get<0>(*iterator) );
+        freekeys_2d_t( &std::get<0>(*iterator) );
     }
     for ( auto iterator = hasher.begin(); iterator != hasher.end(); iterator++ ) {
         freeCostMedian_t( &std::get<1>(*iterator) );
-        freeKeys_t( &std::get<0>(*iterator) );
+        freekeys_2d_t( &std::get<0>(*iterator) );
     }
     free(tcm);
     myMatrix.clear();
@@ -122,9 +112,9 @@ CostMatrix::~CostMatrix()
 }
 
 
-int CostMatrix::getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian)
+int CostMatrix_2d::getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian)
 {
-    auto toLookup = new keys_t;
+    auto toLookup = new keys_2d_t;
     std::get<0>(*toLookup) = *left;
     std::get<1>(*toLookup) = *right;
     auto foundCost{0};
@@ -145,13 +135,13 @@ int CostMatrix::getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t
 }
 
 
-int CostMatrix::getSetCostMedian( dcElement_t* left
+int CostMatrix_2d::getSetCostMedian( dcElement_t* left
                                 , dcElement_t* right
                                 , dcElement_t* retMedian
                                 )
 {
-    // not using allocKeys_t because we're making a copy of the packed characters _if we need to_
-    const auto toLookup    = new keys_t;
+    // not using allockeys_2d_t because we're making a copy of the packed characters _if we need to_
+    const auto toLookup    = new keys_2d_t;
     std::get<0>(*toLookup) = *left;
     std::get<1>(*toLookup) = *right;
     const auto found = myMatrix.find(*toLookup);
@@ -186,7 +176,7 @@ int CostMatrix::getSetCostMedian( dcElement_t* left
         retMedian->element = makePackedCharCopy( std::get<1>(std::get<1>(*found)), alphabetSize, 1 );
     }
     // freeCostMedian_t(std::get<0>(found));
-    // freeKeys_t(toLookup);
+    // freekeys_2d_t(toLookup);
     delete toLookup;
 
     if(DEBUG) printf("Matrix Value Count: %lu\n", myMatrix.size());
@@ -195,7 +185,7 @@ int CostMatrix::getSetCostMedian( dcElement_t* left
 }
 
 
-costMedian_t* CostMatrix::computeCostMedian(keys_t keys)
+costMedian_t* CostMatrix_2d::computeCostMedian(keys_2d_t keys)
 {
     auto curCost{INT_MAX},
          minCost{INT_MAX};
@@ -207,7 +197,7 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys)
     auto toReturn  = new costMedian_t;   // array is alloc'ed above
     auto curMedian = allocatePackedChar(alphabetSize, 1); //(packedChar*) calloc(elemArrLen, INT_WIDTH);  // don't free, it's going into toReturn
 
-    auto searchKey        = allocKeys_t(alphabetSize);
+    auto searchKey        = allockeys_2d_t(alphabetSize);
     auto singleNucleotide = &std::get<1>(*searchKey);
 
     if(DEBUG) {
@@ -253,7 +243,7 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys)
     std::get<0>(*toReturn) = minCost;
     std::get<1>(*toReturn) = curMedian;
 
-    freeKeys_t(searchKey);
+    freekeys_2d_t(searchKey);
     delete searchKey;
 
     return toReturn;
@@ -263,9 +253,8 @@ costMedian_t* CostMatrix::computeCostMedian(keys_t keys)
 /** Find minimum substitution cost from one nucleotide (searchKey->second) to ambElem.
  *  Does so by setting a bit in searchKey->first, then doing a lookup in the cost matrix.
  */
-int CostMatrix::findDistance (keys_t* searchKey, dcElement_t* ambElem)
+int CostMatrix_2d::findDistance (keys_2d_t* searchKey, dcElement_t* ambElem)
 {
-    // mapIterator found;
     auto minCost{INT_MAX},
          curCost{INT_MAX};
     size_t unambElemIdx;
@@ -307,7 +296,7 @@ int CostMatrix::findDistance (keys_t* searchKey, dcElement_t* ambElem)
 }
 
 
-void CostMatrix::initializeMatrix()
+void CostMatrix_2d::initializeMatrix()
 {
     const auto key1     = allocateDCElement(alphabetSize);
     const auto key2     = allocateDCElement(alphabetSize);
@@ -352,22 +341,22 @@ void CostMatrix::initializeMatrix()
 }
 
 
-void CostMatrix::initializeTCM(const int* const inputBuffer)
+void CostMatrix_2d::initializeTCM(const int* const inputBuffer)
 {
     const auto bufferSize = alphabetSize * alphabetSize * sizeof(*tcm);
     tcm = (int*) std::malloc( bufferSize );
-    std::memcpy( tcm, inputBuffer, bufferSize );    
+    std::memcpy( tcm, inputBuffer, bufferSize );
 }
 
 
-void CostMatrix::setValue(const dcElement_t* const lhs, const dcElement_t* const rhs, const costMedian_t* const toInsert)
+void CostMatrix_2d::setValue(const dcElement_t* const lhs, const dcElement_t* const rhs, const costMedian_t* const toInsert)
 {
     // Making a deep copy of key & median here to help with memory management in calling fns.
 
     // Precompute the buffer size for memory management.
 
     // Create a new 2-tuple key to insert.
-    const auto key = new keys_t;
+    const auto key = new keys_2d_t;
 
     // Copy the left-hand-side into key.
     const auto lhsElem = new dcElement_t;
@@ -396,7 +385,7 @@ void CostMatrix::setValue(const dcElement_t* const lhs, const dcElement_t* const
     delete value;
 }
 
-packedChar* CostMatrix::createCopyPackedChar(const packedChar* const srcBuffer)
+packedChar* CostMatrix_2d::createCopyPackedChar(const packedChar* const srcBuffer)
 {
     auto byteCount = elementSize * sizeof(packedChar);
     auto outBuffer = (packedChar*) std::malloc(byteCount);

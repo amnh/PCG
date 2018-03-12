@@ -1,4 +1,4 @@
-/** costMatrix object to provide for a memoizable cost lookup table. Table is indexed by two
+/** CostMatrix_2d object to provide for a memoizable cost lookup table. Table is indexed by two
  *  dcElement values, and returns an int, for the cost. In addition, an additional dcElement
  *  is passed in by reference, and the median value of the two input elements is placed there.
  *  The getCost function is designed to interface directly with C.
@@ -11,8 +11,8 @@
  *  Any such checks should be done exterior to this library.
  */
 
-#ifndef _COSTMATRIX_H
-#define _COSTMATRIX_H
+#ifndef _CostMatrix_2d_H
+#define _CostMatrix_2d_H
 
 #define DEBUG 0
 
@@ -29,22 +29,22 @@ extern "C" {
 #include "dynamicCharacterOperations.h"
 
 /** Next three fns defined here to use on C side. */
-costMatrix_p construct_CostMatrix_C (size_t alphSize, int* tcm);
-void destruct_CostMatrix_C (costMatrix_p mytype);
-int call_getSetCost_C (costMatrix_p untyped_self, dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
-    // extern "C" costMatrix_p get_CostMatrixPtr_C(costMatrix_p untyped_self);
+costMatrix_p construct_CostMatrix_2d_C (size_t alphSize, int* tcm);
+void destruct_CostMatrix_2d_C (costMatrix_p mytype);
+int call_getSetCost_2d_C (costMatrix_p untyped_self, dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
+    // extern "C" costMatrix_p get_CostMatrix_Ptr_2d_C(costMatrix_p untyped_self);
 
 #ifdef __cplusplus
 }
 #endif
 
 // #include "CostMedPair.h"
-typedef std::tuple<dcElement_t, dcElement_t>  keys_t;
+typedef std::tuple<dcElement_t, dcElement_t>  keys_2d_t;
 typedef std::tuple<int,         packedChar*>  costMedian_t;
-typedef std::tuple<keys_t,      costMedian_t> mapAccessTuple_t;
+typedef std::tuple<keys_2d_t,   costMedian_t> mapAccessTuple_2d_t;
 
+/** Used to send 2d and 3d cost matrices through the C interface where they're tatically cast to the two matrix types. */
 typedef void* costMatrix_p;
-
 
 
 /** Allocate room for a costMedian_t. Assumes alphabetSize is already initialized. */
@@ -55,16 +55,16 @@ costMedian_t* allocCostMedian_t( size_t alphabetSize );
 void freeCostMedian_t( costMedian_t* toFree );
 
 
-/** Allocate room for a keys_t. */
-keys_t* allocKeys_t( size_t alphSize );
+/** Allocate room for a keys_2d_t. */
+keys_2d_t* allockeys_2d_t( size_t alphSize );
 
 
-/** dealloc keys_t. Calls various other free fns. */
-void freeKeys_t( const keys_t* toFree );
+/** dealloc keys_2d_t. Calls various other free fns. */
+void freekeys_2d_t( const keys_2d_t* toFree );
 
 
-/** dealloc mapAccessTuple_t. Calls various other free fns. */
-void freeMapAccessTuple_t( const mapAccessTuple_t* toFree );
+/** dealloc mapAccessTuple_2d_t. Calls various other free fns. */
+void freemapAccessTuple_2d_t( const mapAccessTuple_2d_t* toFree );
 
 
 /** Hashes two `dcElement`s, and returns an order-dependent hash value. In this case
@@ -76,7 +76,7 @@ void freeMapAccessTuple_t( const mapAccessTuple_t* toFree );
  *  `dcElement` has two fields, the second of which is the element, and is an array of `uint64_t`s)
  *  using two different seeds, then combines the two resulting values.
  */
-struct KeyHash {
+struct KeyHash_2d {
     /** Following hash_combine code modified from here (seems to be based on Boost):
      *  http://stackoverflow.com/questions/2590677/how-do-i-combine-hash-values-in-c0x
      */
@@ -97,7 +97,7 @@ struct KeyHash {
         return left_seed;
     }
 
-    std::size_t operator()(const keys_t& k) const
+    std::size_t operator()(const keys_2d_t& k) const
     {
         // printf("operator hash ()\n");
         // printPackedChar(k.first.element, 1, k.first.alphSize);
@@ -107,9 +107,9 @@ struct KeyHash {
 };
 
 
-struct KeyEqual {
+struct KeyEqual_2d {
     // Return true if every `uint64_t` in lhs->element and rhs->element is equal, else false.
-    bool operator()(const keys_t& lhs, const keys_t& rhs) const
+    bool operator()(const keys_2d_t& lhs, const keys_2d_t& rhs) const
     {
       // Assert that all key components share the same alphSize value
       if (   std::get<0>(lhs).alphSize  != std::get<0>(rhs).alphSize
@@ -141,19 +141,19 @@ struct KeyEqual {
 };
 
 
-typedef std::unordered_map<keys_t, costMedian_t, KeyHash, KeyEqual>::const_iterator mapIterator;
+// typedef std::unordered_map<keys_2d_t, costMedian_t, KeyHash_2, KeyEqual_2>::const_iterator mapIterator;
 
 
-class CostMatrix
+class CostMatrix_2d
 {
     public:
 
         /** Default constructor. Settings: alphabet size: 5, indel cost: 2, substitution cost: 1 */
-        CostMatrix();
+        CostMatrix_2d();
 
-        CostMatrix(size_t alphSize, int* tcm);
+        CostMatrix_2d(size_t alphSize, int* tcm);
 
-        ~CostMatrix();
+        ~CostMatrix_2d();
 
         /** Find distance between an ambiguous nucleotide and an unambiguous ambElem. Return that value and the median.
          *  @param ambElem is ambiguous input.
@@ -168,7 +168,7 @@ class CostMatrix
          *
          *  Nota bene: Requires symmetric, if not metric, matrix. TODO: Is this true? If so fix it?
          */
-        int findDistance(keys_t* searchKey, dcElement_t* ambElem);
+        int findDistance(keys_2d_t* searchKey, dcElement_t* ambElem);
 
         /** Getter only for cost. Necessary for testing, to insure that particular
          *  key pair has, in fact, already been inserted into lookup table.
@@ -206,9 +206,9 @@ class CostMatrix
                                                               4, 3, 2, 1, 0};
 
 
-        std::unordered_map <keys_t, costMedian_t, KeyHash, KeyEqual> myMatrix;
+        std::unordered_map <keys_2d_t, costMedian_t, KeyHash_2d, KeyEqual_2d> myMatrix;
 
-        std::unordered_map <keys_t, costMedian_t, KeyHash, KeyEqual> hasher;
+        std::unordered_map <keys_2d_t, costMedian_t, KeyHash_2d, KeyEqual_2d> hasher;
 
         const size_t alphabetSize;
 
@@ -230,12 +230,12 @@ class CostMatrix
          */
          void setValue(const dcElement_t* const lhs, const dcElement_t* const rhs, const costMedian_t* const median);
 
-        /** Takes in a pair of keys_t (each of which is a single `dcElement`) and computes their lowest-cost median.
+        /** Takes in a pair of keys_2d_t (each of which is a single `dcElement`) and computes their lowest-cost median.
          *  Uses a Sankoff-like algorithm, where all bases are considered, and the lowest cost bases are included in the
          *  cost and median calculations. That means a base might appear in the median that is not present in either of
          *  the two elements being compared.
          */
-        costMedian_t* computeCostMedian(keys_t key);
+        costMedian_t* computeCostMedian(keys_2d_t key);
 
         /** Takes in an initial TCM, which is actually just a row-major array, creates hash table of costs
          *  where cost is least cost between two elements, and medians, where median is union of characters.
@@ -268,6 +268,4 @@ class CostMatrix
 };
 
 
-
-
-#endif // COSTMATRIX_H
+#endif // CostMatrix_2d_H

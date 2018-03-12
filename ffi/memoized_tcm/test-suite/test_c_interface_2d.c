@@ -2,7 +2,7 @@
 
 //#include "costMatrix.h"
 #include "../dynamicCharacterOperations.h"
-#include "../costMatrixWrapper.h"
+#include "../costMatrixWrapper_2d.h"
 // #include "seqAlignForHaskell.h"
 
 #define ALPH_SIZE 64
@@ -43,7 +43,7 @@ int main() {
 
     // retType_t *retMedChar = malloc(sizeof(retType_t));
 
-    costMatrix_p myMatrix = matrixInit(ALPH_SIZE, tcm);
+    costMatrix_p myMatrix = matrixInit_2d(ALPH_SIZE, tcm);
 /*    cost = getCost(5, 5, myMatrix, 5);
 
     printf("cost on 5, 5: %i\n", cost);
@@ -73,7 +73,7 @@ int main() {
     for(size_t i = 0; i < SEQ_A_LEN; i++) {
         // printf("%zu\n", bitRepresentation(seqA_main[i])), fflush(stdout);
 
-        foundCost = getCost((seqA_main[i]), (seqB_main[i]), myMatrix, ALPH_SIZE);
+        foundCost = getCost_2d((seqA_main[i]), (seqB_main[i]), myMatrix, ALPH_SIZE);
         // foundCost = getCost(bitRepresentation(seqA_main[i]), bitRepresentation(seqB_main[i]), myMatrix, ALPH_SIZE);
         //printf("iteration %2zu a: %llu b: %llu\n", i, seqA_main[i], seqB_main[i]);
         cost = tcm[(seqA_main[i]) * ALPH_SIZE + (seqB_main[i])];
@@ -116,7 +116,7 @@ int main() {
             // printf("key1: %zu\n", key1);
             // printf("key2: %zu\n", key2);
 
-            foundCost = getCostAndMedian(firstKey, secondKey, retMedian, myMatrix);
+            foundCost = getCostAndMedian_2d(firstKey, secondKey, retMedian, myMatrix);
 
             if(median != *retMedian->element || cost != foundCost) {
                 printf("key 1 set: %zu\n", key1);
@@ -136,7 +136,7 @@ int main() {
         ClearBit(&median, key1);
     }
 /**/
-    matrixDestroy(myMatrix);
+    matrixDestroy_2d(myMatrix);
 
     freeDCElem(firstKey );
     freeDCElem(secondKey);

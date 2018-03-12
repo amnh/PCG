@@ -2,20 +2,23 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "costMatrixWrapper.h"
+#include "costMatrixWrapper_2d.h"
 #include "dynamicCharacterOperations.h"
 
-costMatrix_p matrixInit(size_t alphSize, int *tcm) {
-   return (costMatrix_p) construct_CostMatrix_C(alphSize, tcm);
-}
-
-void matrixDestroy(costMatrix_p untyped_ptr) {
-    destruct_CostMatrix_C(untyped_ptr);
+costMatrix_p matrixInit_2d(size_t alphSize, int *tcm)
+{
+   return (costMatrix_p) construct_CostMatrix_2d_C(alphSize, tcm);
 }
 
 
+void matrixDestroy_2d(costMatrix_p untyped_ptr)
+{
+    destruct_CostMatrix_2d_C(untyped_ptr);
+}
 
-int getCost(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSize) {
+
+int getCost_2d(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSize)
+{
     // Need to create new pointers, because of copying into cost matrix.
     if (elem1 == 0 || elem2 == 0) {
       // printf("Gave me a zero, kuddos to you brave soul!\n");
@@ -24,7 +27,6 @@ int getCost(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSiz
       return 1337;
     }
 
-
     packedChar *packedElemRet = malloc(sizeof(packedChar));
     dcElement_t *retElem      = malloc(sizeof(dcElement_t));
 
@@ -32,7 +34,7 @@ int getCost(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSiz
     retElem->alphSize = alphSize;
     retElem->element  = packedElemRet;
 
-    int cost = getCostInternal(elem1, elem2, tcm, alphSize, retElem);
+    int cost = getCostInternal_2d(elem1, elem2, tcm, alphSize, retElem);
 
     free(retElem->element);
     free(retElem);
@@ -40,7 +42,8 @@ int getCost(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSiz
     return cost;
 }
 
-int getCostInternal(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSize, dcElement_t *retElem) {
+int getCostInternal_2d(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSize, dcElement_t *retElem)
+{
     // Need to create new pointers, because of copying into cost matrix.
 
     packedChar *packedElem1 = malloc(sizeof(packedChar));
@@ -58,7 +61,7 @@ int getCostInternal(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t
     dcElem1->element = packedElem1;
     dcElem2->element = packedElem2;
 
-    int cost = call_getSetCost_C(tcm, dcElem1, dcElem2, retElem);
+    int cost = call_getSetCost_2d_C(tcm, dcElem1, dcElem2, retElem);
 
     freeDCElem(dcElem1);
     freeDCElem(dcElem2);
@@ -70,7 +73,8 @@ int getCostInternal(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t
 }
 
 
-int getCostAndMedian(dcElement_t *elem1, dcElement_t *elem2, dcElement_t *retElem, costMatrix_p tcm) {
+int getCostAndMedian_2d(dcElement_t *elem1, dcElement_t *elem2, dcElement_t *retElem, costMatrix_p tcm)
+{
     // Need to create new pointers, because of copying into cost matrix.
     // TODO: valgrind this.
     //printf("We made it to C LAND!!!!\n"), fflush(stdout);
@@ -95,7 +99,7 @@ int getCostAndMedian(dcElement_t *elem1, dcElement_t *elem2, dcElement_t *retEle
     copyPackedChar( elem2copy->element, elem2->element, alphSize, 1 );
 */
 
-    int cost = call_getSetCost_C(tcm, elem1copy, elem2copy, retElem);
+    int cost = call_getSetCost_2d_C(tcm, elem1copy, elem2copy, retElem);
 
     // freeDCElem(elem1copy);
     // free(elem1copy);

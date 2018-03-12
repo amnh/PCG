@@ -7,7 +7,9 @@
 
 #define __STDC_FORMAT_MACROS
 
-// TODO: I'll need this for the Haskell side of things: https://hackage.haskell.org/package/base-4.9.0.0/docs/Foreign-StablePtr.html
+constexpr int CostMatrix::defaultExtraGapCostMetric[25];
+constexpr int CostMatrix::defaultDiscreteMetric[25];
+constexpr int CostMatrix::defaultL1NormMetric[25];
 
 
 costMatrix_p construct_CostMatrix_3d_C( size_t alphSize, int* tcm )
@@ -37,11 +39,17 @@ int call_getSetCost_3d_C( costMatrix_p untyped_self
 
 keys_3d_t* allockeys_3d_t( size_t alphabetSize )
 {
+    // jump through these hoops because I'm dereferencing the two elements,
+    // and I couldn't free the pointers otherwise.
+    auto firstElement  = allocateDCElement(alphabetSize);
+    auto secondElement = allocateDCElement(alphabetSize);
+    auto thirdElement  = allocateDCElement(alphabetSize);
+
     auto toReturn = new keys_3d_t;
 
-    std::get<0>(*toReturn) = *allocateDCElement(alphabetSize);
-    std::get<1>(*toReturn) = *allocateDCElement(alphabetSize);
-    std::get<2>(*toReturn) = *allocateDCElement(alphabetSize);
+    std::get<0>(*toReturn) = *firstElement;
+    std::get<1>(*toReturn) = *secondElement;
+    std::get<2>(*toReturn) = *thirdElement;
 
     std::get<0>(*toReturn).alphSize = std::get<1>(*toReturn).alphSize
                                     = std::get<2>(*toReturn).alphSize
@@ -63,10 +71,10 @@ CostMatrix_3d::CostMatrix_3d()
   : alphabetSize(5)
   , elementSize(1)
 {
-    tcm = (int*) std::malloc( alphabetSize * alphabetSize * alphabetSize * sizeof(int) );
-    std::memcpy(tcm, inTcm, alphabetSize * alphabetSize * alphabetSize);
-    initializeMatrix(); // should only have to do this for 3d, as 2d is initialized by its own constructor
-    twoD_matrix = new CostMatrix(alphSize, inTcm);
+    // should only have to do this for 3d, as 2d is initialized by its own constructor
+    initializeTCM(defaultExtraGapCostMetric);
+    initializeMatrix();
+    twoD_matrix = CostMatrix(alphabetSize, inTcm);
 }
 
 
@@ -74,19 +82,24 @@ CostMatrix_3d::CostMatrix_3d( size_t alphSize, int* inTcm )
   : alphabetSize(alphSize)
   , elementSize(dcElemSize(alphSize))
 {
-    tcm = new int[alphabetSize * alphabetSize * alphabetSize];
-    std::memcpy(tcm, inTcm, alphabetSize * alphabetSize * alphabetSize * sizeof(int));
-    initializeMatrix(); // should only have to do this for 3d, as 2d is initialized by its own constructor
+    // should only have to do this for 3d, as 2d is initialized by its own constructor
+    initializeTCM(inTcm);
+    initializeMatrix();
     twoD_matrix = new CostMatrix(alphSize, inTcm);
 }
 
 
 CostMatrix_3d::~CostMatrix_3d()
 {
-    for ( auto& thing: myMatrix ) {
-        freeKeys_3d_t(&std::get<0>(thing));
-        // freeCostMedian_t(&std::get<1>(thing));
+    for ( auto iterator = myMatrix.begin(); iterator != myMatrix.end(); iterator++ ) {
+        freeCostMedian_t( &std::get<1>(*iterator) );
+        freeKeys_t( &std::get<0>(*iterator) );
     }
+    for ( auto iterator = hasher.begin(); iterator != hasher.end(); iterator++ ) {
+        freeCostMedian_t( &std::get<1>(*iterator) );
+        freeKeys_t( &std::get<0>(*iterator) );
+    }
+    free(tcm);
     myMatrix.clear();
     hasher.clear();
 
@@ -310,32 +323,54 @@ void CostMatrix_3d::initializeMatrix ()
     auto secondKey = allocateDCElement( alphabetSize );
     auto thirdKey  = allocateDCElement( alphabetSize );
     auto retMedian = allocateDCElement( alphabetSize );
+    const auto toInsert = new costMedian_t;
 
-    for (size_t key1 = 0; key1 < alphabetSize; key1++) { // for every possible value of key1, key2
-        SetBit(firstKey->element, key1);
+    for (size_t key1_bit = 0; key1_bit < alphabetSize; key1_bit++) { // for every possible value of key1_bit, key2_bit
+        SetBit(firstKey->element, key1_bit);
 
-        // key2 and key3 start from 0, so non-symmetric matrices should work
-        for (size_t key2 = 0; key2 < alphabetSize; key2++) { // doesn't assumes 0 diagonal
-            SetBit(secondKey->element, key2);
+        // key2_bit and key3_bit start from 0, so non-symmetric matrices should work
+        for (size_t key2_bit = 0; key2_bit < alphabetSize_bit; key2_bit++) { // doesn't assumes 0 diagonal
+            SetBit(secondKey->element, key2_bit);
 
-            for (size_t key3 = 0; key3 < alphabetSize; key3++) {
-                SetBit(thirdKey->element, key3);
+            for (size_t key3_bit = 0; key3_bit < alphabetSize; key3_bit++) {
+                if (DEBUG) printf("Insert key1_bit: %3zu, key2_bit: %3zu, key2_bit: %3zu\n"
+                                 , key1_bit, key2_bit, key3_bit);
+                SetBit(thirdKey->element, key3_bit);
+                std::get<0>(*toInsert) = tcm[  key1_bit * alphabetSize * alphabetSize
+                                             + key2_bit * alphabetSize
+                                             + key3_bit ];
+                if (std::get<1>(*toInsert) != NULL) {
+                    free( std::get<1>(*toInsert) );
+                }
+
                 CostMatrix_3d::getSetCostMedian(firstKey, secondKey, thirdKey, retMedian);
 
-                ClearBit(thirdKey->element, key3);
-            } // key3
-            ClearBit(secondKey->element, key2);
-        } // key2
+                ClearBit(thirdKey->element, key3_bit);
+            } // key3_bit
+            ClearBit(secondKey->element, key2_bit);
+        } // key2_bit
         ClearBit(firstKey->element, key1);
     }
-    // printf("finished initializing\n");
-    // TODO: do I need to free keys?
-    freeDCElem(firstKey);
+    // Just to reiterate, getSetCostMedian() should allocate, so we should dealloc these.
+    freeDCElem(firstKey);        // deallocate array
+    free(firstKey);              // free pointer
     freeDCElem(secondKey);
+    free(secondKey);
     freeDCElem(thirdKey);
-    freeDCElem(retMedian);
+    free(thirdKey);
+    freeCostMedian_t(toInsert);
+    delete toInsert;         // because generated with `new`
+    // printf("finished initializing\n");
     // printf("freed keys\n");
 
+}
+
+
+void CostMatrix_3d::initializeTCM(const int* const inputBuffer)
+{
+    const auto bufferSize = alphabetSize * alphabetSize * sizeof(*tcm);
+    tcm = (int*) std::malloc( bufferSize );
+    std::memcpy( tcm, inputBuffer, bufferSize );
 }
 
 
@@ -343,4 +378,40 @@ void CostMatrix_3d::setValue(keys_3d_t* key, costMedian_t* median)
 {
     // This has to be a pair. Clang is okay with make_tuple() or forward_as_tuple(), but gcc doesn't like it.
     myMatrix.insert(std::make_pair(*key, *median));
+}
+
+void CostMatrix::setValue(const dcElement_t* const lhs, const dcElement_t* const rhs, const costMedian_t* const toInsert)
+{
+    // Making a deep copy of key & median here to help with memory management in calling fns.
+
+    // Precompute the buffer size for memory management.
+
+    // Create a new 2-tuple key to insert.
+    const auto key = new keys_t;
+
+    // Copy the left-hand-side into key.
+    const auto lhsElem = new dcElement_t;
+    std::get<0>(*key)          = *lhsElem;
+    std::get<0>(*key).alphSize = alphabetSize;
+    std::get<0>(*key).element  = createCopyPackedChar(lhs->element);
+
+    // Copy the right-hand-side into key.
+    const auto rhsElem = new dcElement_t;
+    std::get<1>(*key) = *rhsElem;
+    std::get<1>(*key).alphSize = alphabetSize;
+    std::get<1>(*key).element  = createCopyPackedChar(rhs->element);
+
+    // Create a deep copy of the toInsert value to insert.
+    const auto value    = new costMedian_t;
+    std::get<0>(*value) = std::get<0>(*toInsert);
+    std::get<1>(*value) = createCopyPackedChar(std::get<1>(*toInsert));
+
+    // Add the copied key-value pair to the matrix.
+    // This has to be a pair!
+    // Clang is okay with make_tuple() or forward_as_tuple(), but gcc doesn't like it.
+    myMatrix.insert(std::make_pair(*key, *value));
+    delete key;
+    delete lhsElem;
+    delete rhsElem;
+    delete value;
 }

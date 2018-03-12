@@ -33,11 +33,7 @@ extern "C" {
 #include "dynamicCharacterOperations.h"
 
 costMatrix_p construct_CostMatrix_3d_C (size_t alphSize, int* tcm);
-
-
 void destruct_CostMatrix_3d_C (costMatrix_p mytype);
-
-
 int call_getSetCost_3d_C ( costMatrix_p untyped_self
                          , dcElement_t* first
                          , dcElement_t* second
@@ -54,8 +50,6 @@ int call_getSetCost_3d_C ( costMatrix_p untyped_self
 
 typedef std::tuple<dcElement_t, dcElement_t, dcElement_t> keys_3d_t;
 typedef std::tuple<keys_3d_t,   costMedian_t>             mapAccessTuple_3d_t;
-
-typedef void* costMatrix_p;
 
 
 /** Allocate room for a keys_3d_t. */
@@ -201,6 +195,25 @@ class CostMatrix_3d
                             );
 
     private:
+
+        static constexpr int defaultExtraGapCostMetric[25] = {0, 1, 1, 1, 2,
+                                                              1, 0, 1, 1, 2,
+                                                              1, 1, 0, 1, 2,
+                                                              1, 1, 1, 0, 2,
+                                                              2, 2, 2, 2, 0};
+
+        static constexpr int defaultDiscreteMetric[25]     = {0, 1, 1, 1, 1,
+                                                              1, 0, 1, 1, 1,
+                                                              1, 1, 0, 1, 1,
+                                                              1, 1, 1, 0, 1,
+                                                              1, 1, 1, 1, 0};
+
+        static constexpr int defaultL1NormMetric[25]       = {0, 1, 2, 3, 4,
+                                                              1, 0, 1, 2, 3,
+                                                              2, 1, 0, 1, 2,
+                                                              3, 2, 1, 0, 1,
+                                                              4, 3, 2, 1, 0};
+
         std::unordered_map <keys_3d_t, costMedian_t, KeyHash_3d, KeyEqual_3d> myMatrix;
 
         CostMatrix twoD_matrix;
@@ -219,6 +232,16 @@ class CostMatrix_3d
          *  to rewrite findDistance() and computeCostMedian_3d().
          */
         int *tcm;
+
+
+        /** Takes an input buffer and assigns a malloc'ed copy to @tcm.
+         *  Uses the @alphabetSize of the matrix to determine the required space.
+         *  Because @alphabetSize is a const member, it will always be initialized
+         *  before this call, making the allocation and copy safe so long as the
+         *  input buffer is equal to or greater than @alphabetSize squared in
+         *  length.
+         */
+        void initializeTCM(const int* const inputBuffer);
 
 
         /** Takes in a `keys_3d_t` and a `costMedian_t` and updates myMap to store the new values,
