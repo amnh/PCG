@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../costMatrix.h"
+#include "../costMatrix_2d.h"
 #include "../dynamicCharacterOperations.h"
 
 #define __STDC_FORMAT_MACROS
@@ -43,7 +43,7 @@ int main() {
     */
 
 
-    CostMatrix myMatrix = CostMatrix(alphabetSize, tcm);
+    CostMatrix_2d myMatrix = CostMatrix_2d(alphabetSize, tcm);
 
 
     auto firstKey  = makeDCElement( alphabetSize, 1 );
