@@ -11,7 +11,6 @@ extra-deps:
   - QuickCheck-2.11.3
   - bimap-0.3.3
   - blaze-html-0.9.0.1
-  - boxes-0.1.4
   - case-insensitive-1.2.0.10
   - colour-2.3.4
   - dlist-0.8.0.4
@@ -53,7 +52,6 @@ extra-deps:
   - base-compat-0.9.3
   - base-orphans-0.6
   - bifunctors-5.5.2
-  - blaze-builder-0.4.0.2
   - blaze-markup-0.8.2.0
   - cabal-doctest-1.0.6
   - call-stack-0.1.0
@@ -100,7 +98,10 @@ packages:
 # We use this upstream commit until it is uploaded to hackage and stackage respectively.
   - location:  https://github.com/ivan-m/graphviz/archive/a099a07.zip
     extra-dep: true
-
+  - location:  https://github.com/lpsmith/blaze-builder/archive/b1a62ee.zip
+    extra-dep: true
+  - location:  https://github.com/treeowl/boxes/archive/acbf4da.zip
+    extra-dep: true
 #  - location:  https://github.com/haskell/primitive/archive/53f72ce.zip
 #    extra-dep: true
 
