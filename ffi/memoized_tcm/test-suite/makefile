@@ -19,7 +19,7 @@ wrapper_2d     = ../costMatrixWrapper_2d.h \
                  ../costMatrixWrapper_2d.c
 
 wrapper_3d     = ../costMatrixWrapper_3d.h \
-                 ../costMatrixWrapper_2d.c
+                 ../costMatrixWrapper_3d.c
 
 exe_matrix_2d    = test_cost_matrix_2d
 exe_matrix_3d    = test_cost_matrix_3d
@@ -69,13 +69,14 @@ test_cost_matrix_3d : test_cost_matrix_3d.cpp ../costMatrix_2d.cpp ../costMatrix
 	g++ -std=c++14 $(sanityWarnings) -g -Wall -o $(exe_matrix_3d) test_cost_matrix_3d.cpp dynamicCharacterOperations.o costMatrix_2d.o costMatrix_3d.o
 
 
-test_c_interface_3d : test_c_interface_3d.c $(costMatrix_3d) $(dynamicChar) $(wrapper_3d)
+test_c_interface_3d : test_c_interface_3d.c $(costMatrix_3d) $(costMatrix_2d) $(dynamicChar) $(wrapper_3d)
 	gcc -std=c11   $(sanityWarnings) -g -c $(dynamicChar)
 	# g++ -std=c++14 -c costMatrix_2d.h
+	g++ -std=c++14 $(sanityWarnings) -g -c ../costMatrix_2d.cpp
 	g++ -std=c++14 $(sanityWarnings) -g -c ../costMatrix_3d.cpp
 	# gcc -std=c11 -c costMatrixWrapper.h
 	gcc -std=c11   $(sanityWarnings) -g -c $(wrapper_3d)
 	# in next line, need -lc++ so that it calls correct linker: we need C compiler, but C++ libraries in scope.
-	gcc -std=c11   $(sanityWarnings) -g -o $(exe_interface_3d) -Wall test_c_interface_3d.c dynamicCharacterOperations.o costMatrix_3d.o costMatrixWrapper_3d.o -lstdc++
+	gcc -std=c11   $(sanityWarnings) -g -o $(exe_interface_3d) -Wall test_c_interface_3d.c dynamicCharacterOperations.o costMatrix_2d.o costMatrix_3d.o costMatrixWrapper_3d.o -lstdc++
 	# gcc -std=c11 -c -v -Wall test_c_interface.c # dynamicCharacterOperations.o costMatrix_2d.o costMatrixWrapper.o
 	# ld -demangle -dynamic -arch x86_64 -o test_c_interface test_c_interface.o dynamicCharacterOperations.o costMatrix_2d.o costMatrixWrapper.o -lc++ -lSystem

@@ -78,7 +78,9 @@ CostMatrix_3d::CostMatrix_3d()
 {
     // should only have to do this for 3d, as 2d is initialized by its own constructor
     initializeTCM(defaultExtraGapCostMetric);
-    initializeMatrix();
+    // Don't need to initialize matrix because we're always going to look up in 2d matrix first
+    // initializeMatrix();inTcm
+    twoD_matrix = new CostMatrix_2d(alphabetSize, tcm);
 }
 
 
@@ -87,7 +89,8 @@ CostMatrix_3d::CostMatrix_3d( size_t alphSize, int* inTcm )
   , elementSize(dcElemSize(alphSize))
 {
     initializeTCM(inTcm);
-    initializeMatrix();
+    // Don't need to initialize matrix because we're always going to look up in 2d matrix first
+    // initializeMatrix();
     // should only have to do this for 3d, as 2d is initialized by its own constructor
     twoD_matrix = new CostMatrix_2d(alphSize, inTcm);
 }
@@ -99,6 +102,8 @@ CostMatrix_3d::~CostMatrix_3d()
         freeCostMedian_t( &std::get<1>(*iterator) );
         freeKeys_3d_t( &std::get<0>(*iterator) );
     }
+    // twoD_matrix->~CostMatrix_2d();
+    delete twoD_matrix;
     std::free(tcm);
     myMatrix.clear();
 }
@@ -209,9 +214,9 @@ costMedian_t* CostMatrix_3d::computeCostMedian(keys_3d_t keys)
     for (size_t curNucleotideIdx = 0; curNucleotideIdx < alphabetSize; ++curNucleotideIdx) {
         SetBit(singleNucleotide->element, curNucleotideIdx);
 
-        curCost = twoD_matrix.findDistance(searchKey, firstKey)
-                + twoD_matrix.findDistance(searchKey, secondKey)
-                + twoD_matrix.findDistance(searchKey, thirdKey);
+        curCost = twoD_matrix->findDistance(searchKey, firstKey)
+                + twoD_matrix->findDistance(searchKey, secondKey)
+                + twoD_matrix->findDistance(searchKey, thirdKey);
 
         // now seemingly recreating logic in findDistance(). However, that was to get the cost for the
         // ambElem on each child; now we're combining those costs get overall cost and median
@@ -250,7 +255,7 @@ costMedian_t* CostMatrix_3d::computeCostMedian(keys_3d_t keys)
 /** Find minimum substitution cost from one nucleotide (searchKey->second) to ambElem.
  *  Does so by setting a bit in searchKey->first, then doing a lookup in the cost matrix.
  */
-int CostMatrix_3d::findDistance (keys_3d_t* searchKey, dcElement_t* ambElem)
+int CostMatrix_3d::findDistance(keys_3d_t* searchKey, dcElement_t* ambElem)
 {
     auto minCost{INT_MAX},
          curCost{INT_MAX};
@@ -329,7 +334,7 @@ void CostMatrix_3d::initializeMatrix()
                 }
                 // TODO: Or'ing the median with third key should do the trick.
                 std::get<1>(*toInsert) = packedCharOr(firstKey->element, secondKey->element, alphabetSize, 1);
-                std::get<1>(*toInsert) = packedCharOr(std::get<1>(*toInsert), thirdKey->element, alphabetSize, 1);
+                std::get<1>(*toInsert) = packedCharOr(firstKey->element, thirdKey->element, alphabetSize, 1);
 
                 setValue(firstKey, secondKey, thirdKey, toInsert);
                 ClearBit(std::get<1>(*toInsert), thirdKey_bit);
@@ -353,8 +358,6 @@ void CostMatrix_3d::initializeMatrix()
     // printf("finished initializing\n");
     // printf("freed keys\n");
 }
-
-
 
 
 void CostMatrix_3d::initializeTCM(const int* const inputBuffer)

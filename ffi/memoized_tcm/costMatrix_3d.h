@@ -32,14 +32,14 @@ extern "C" {
 
 #include "dynamicCharacterOperations.h"
 
-costMatrix_p construct_CostMatrix_3d_C (size_t alphSize, int* tcm);
-void destruct_CostMatrix_3d_C (costMatrix_p mytype);
-int call_getSetCost_3d_C ( costMatrix_p untyped_self
-                         , dcElement_t* first
-                         , dcElement_t* second
-                         , dcElement_t* third
-                         , dcElement_t* retMedian
-                         );
+costMatrix_p construct_CostMatrix_3d_C(size_t alphSize, int* tcm);
+void destruct_CostMatrix_3d_C(costMatrix_p mytype);
+int call_getSetCost_3d_C( costMatrix_p untyped_self
+                        , dcElement_t* first
+                        , dcElement_t* second
+                        , dcElement_t* third
+                        , dcElement_t* retMedian
+                        );
     // extern "C" costMatrix_p get_CostMatrix_2dPtr_C(costMatrix_p untyped_self);
 
 #ifdef __cplusplus
@@ -219,9 +219,7 @@ class CostMatrix_3d
 
         std::unordered_map <keys_3d_t, costMedian_t, KeyHash_3d, KeyEqual_3d> myMatrix;
 
-        CostMatrix_2d twoD_matrix;
-
-        std::unordered_map <keys_3d_t, costMedian_t, KeyHash_3d, KeyEqual_3d> hasher;
+        CostMatrix_2d* twoD_matrix;
 
         const size_t alphabetSize;
 

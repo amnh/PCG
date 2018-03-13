@@ -78,7 +78,7 @@ int getCostAndMedian_2d(dcElement_t *elem1, dcElement_t *elem2, dcElement_t *ret
     // Need to create new pointers, because of copying into cost matrix.
     // UPDATE:
     // We might *not* need to create copies, keys should be copied internally.
-  
+
     //printf("We made it to C LAND!!!!\n"), fflush(stdout);
     //printf("%p\n", elem1), fflush(stdout);
     size_t alphSize = elem1->alphSize;

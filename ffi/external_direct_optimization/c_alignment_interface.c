@@ -481,6 +481,11 @@ int align3d( alignIO_t          *inputChar1_aio
     reverseCharacterElements(gappedOutput_aio);
     reverseCharacterElements(ungappedOutput_aio);
 
+    freeDynChar(powellInputs);
+    free(powellInputs);
+    freeDynChar(powellOutputs);
+    free(powellOutputs);
+
     return algnCost;
 }
 
@@ -630,7 +635,7 @@ void dynCharToAlignIO( alignIO_t *output, dyn_character_t *input, int delete_ini
 void freeAlignIO(alignIO_t *toFree )
 {
     free(toFree->character);
-    free(toFree);
+    // free(toFree);
 }
 
 

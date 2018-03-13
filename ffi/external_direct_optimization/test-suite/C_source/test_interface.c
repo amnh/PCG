@@ -392,6 +392,10 @@ void do2D_nonAffine( unsigned int * tcm, size_t alphSize )
         printf("\n  Ungapped character  ");
         alignIO_print(ungappedMedianChar);
     }
+    freeAlignIO(lesserInputChar);
+    freeAlignIO(longerInputChar);
+    freeAlignIO(gappedMedianChar);
+    freeAlignIO(ungappedMedianChar);
     freeCostMtx(costMtx2d, 1);  // 1 is 2d
 } // Do 2D
 
@@ -672,6 +676,13 @@ void do3D( unsigned int *tcm, size_t alphSize )
     alignIO_print( ungappedMedianChar );
 
     printf("\n\n\n");
+
+    freeAlignIO(*inputChar1);
+    freeAlignIO(*inputChar2);
+    freeAlignIO(*inputChar3);
+    freeAlignIO(*returnChar1);
+    freeAlignIO(*returnChar2);
+    freeAlignIO(*returnChar3);
 
     freeCostMtx( costMtx3d, 0 );  // 0 is !2d
 }

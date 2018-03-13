@@ -1,5 +1,5 @@
-#ifndef _COST_MATRIX_WRAPPER_H
-#define _COST_MATRIX_WRAPPER_H
+#ifndef _COST_MATRIX_WRAPPER_3D_H
+#define _COST_MATRIX_WRAPPER_3D_H
 
 #include <stdint.h>
 
@@ -9,15 +9,11 @@
 /** Initialize a matrix (fill in all values for non-ambiguous chracter
  *  transition costs) using a TCM sent in from an outside source.
  */
-costMatrix_p matrixInit(size_t alphSize, int *tcm);
+costMatrix_p matrixInit_3d(size_t alphSize, int *tcm);
 
 
 /** C wrapper for cpp destructor */
-void matrixDestroy(costMatrix_p untyped_ptr);
-
-
-/** No longer sure why this is here. */
-int lookUpCost(costMatrix_p untyped_self, dcElement_t *left, dcElement_t *right, dcElement_t *retMedian);
+void matrixDestroy_3d(costMatrix_p untyped_ptr);
 
 
 // TODO: figure out how to eliminate at least one of the next three.
@@ -26,25 +22,41 @@ int lookUpCost(costMatrix_p untyped_self, dcElement_t *left, dcElement_t *right,
  *  Contrast with getCostAndMedian, which also returns a pointer to a
  *  median value.
  */
-int getCost(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSize);
+int getCost_3d(packedChar elem1, packedChar elem2, packedChar elem3, costMatrix_p tcm, size_t alphSize);
 
 
 /** used by getCost. Allocates. */
-int getCostInternal(packedChar elem1, packedChar elem2, costMatrix_p tcm, size_t alphSize, dcElement_t *retElem);
+int getCostInternal_3d( packedChar elem1
+                      , packedChar elem2
+                      , packedChar elem3
+                      , costMatrix_p tcm
+                      , size_t alphSize
+                      , dcElement_t *retElem
+                      );
 
 
 /** Like getCost, but also returns a pointer to a median value. */
-int getCostAndMedian(dcElement_t *elem1, dcElement_t *elem2, dcElement_t *retElem, costMatrix_p tcm);
+int getCostAndMedian_3d( dcElement_t *elem1
+                       , dcElement_t *elem2
+                       , dcElement_t *elem3
+                       , dcElement_t *retElem
+                       , costMatrix_p tcm
+                       );
 
 
 /** Following three fns are C references to cpp functions found in costMatrix.cpp */
-costMatrix_p construct_CostMatrix_C(size_t alphSize, int *tcm);
+costMatrix_p construct_CostMatrix_3d_C(size_t alphSize, int *tcm);
 
 
-void destruct_CostMatrix_C(costMatrix_p mytype);
+void destruct_CostMatrix_3d_C(costMatrix_p mytype);
 
 
-int call_getSetCost_C(costMatrix_p untyped_self, dcElement_t *left, dcElement_t *right, dcElement_t *retMedian);
+int call_getSetCost_3d_C( costMatrix_p untyped_self
+                        , dcElement_t* first
+                        , dcElement_t* second
+                        , dcElement_t* third
+                        , dcElement_t* retMedian
+                        );
 
 
-#endif // _COST_MATRIX_WRAPPER_H
+#endif // _COST_MATRIX_WRAPPER_3D_H
