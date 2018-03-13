@@ -13,7 +13,7 @@ int main() {
     const size_t alphabetSize = 80;
     const size_t tcmLen       = alphabetSize * alphabetSize;
 
-    int tcm[tcmLen];
+    unsigned int tcm[tcmLen];
     for (size_t i{0}; i < alphabetSize; i++) {
         for (size_t j{0}; j < alphabetSize; j++) {
             if (i == j) {

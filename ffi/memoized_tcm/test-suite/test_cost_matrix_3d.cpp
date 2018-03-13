@@ -14,7 +14,7 @@ int main() {
     const size_t tcmLen       = 25;
     const size_t alphabetSize = 5;
 
-    int tcm [tcmLen] = {0,1,1,1,1, 1,0,1,1,1, 1,1,0,1,1, 1,1,1,0,1, 1,1,1,1,0};
+    unsigned int tcm [tcmLen] = {0,1,1,1,1, 1,0,1,1,1, 1,1,0,1,1, 1,1,1,0,1, 1,1,1,1,0};
     if ( tcmLen != alphabetSize * alphabetSize ) {
         printf("tcm wrong size\n");
         exit(1);
