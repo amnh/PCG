@@ -57,11 +57,11 @@ void freeCostMedian_t( costMedian_t* toFree );
 
 
 /** Allocate room for a keys_2d_t. */
-keys_2d_t* allockeys_2d_t( size_t alphSize );
+keys_2d_t* allocKeys_2d_t( size_t alphSize );
 
 
 /** dealloc keys_2d_t. Calls various other free fns. */
-void freekeys_2d_t( const keys_2d_t* toFree );
+void freeKeys_2d_t( const keys_2d_t* toFree );
 
 
 /** dealloc mapAccessTuple_2d_t. Calls various other free fns. */
@@ -227,7 +227,7 @@ class CostMatrix_2d
          *
          * Makes a deep copy of the arguments before inserting them into the map.
          */
-         void setValue(const dcElement_t* const lhs, const dcElement_t* const rhs, const costMedian_t* const median);
+         void setValue(const dcElement_t* const first, const dcElement_t* const second, const costMedian_t* const median);
 
         /** Takes in a pair of keys_2d_t (each of which is a single `dcElement`) and computes their lowest-cost median.
          *  Uses a Sankoff-like algorithm, where all bases are considered, and the lowest cost bases are included in the

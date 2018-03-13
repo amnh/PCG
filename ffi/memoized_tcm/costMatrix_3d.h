@@ -22,7 +22,7 @@
 #include <cstdlib>
 #include <unordered_map>
 
-#include "costMatrix2d.h"
+#include "costMatrix_2d.h"
 
 
 /********************* Next three fns defined here to use on C side. *********************/
@@ -40,7 +40,7 @@ int call_getSetCost_3d_C ( costMatrix_p untyped_self
                          , dcElement_t* third
                          , dcElement_t* retMedian
                          );
-    // extern "C" costMatrix_p get_CostMatrixPtr_C(costMatrix_p untyped_self);
+    // extern "C" costMatrix_p get_CostMatrix_2dPtr_C(costMatrix_p untyped_self);
 
 #ifdef __cplusplus
 }
@@ -54,7 +54,7 @@ typedef std::tuple<keys_3d_t,   costMedian_t>             mapAccessTuple_3d_t;
 
 
 /** Allocate room for a keys_3d_t. */
-keys_3d_t* allockeys_3d_t (size_t alphSize);
+keys_3d_t* allocKeys_3d_t (size_t alphSize);
 
 
 /** dealloc keys_3d_t. Calls various other free fns. */
@@ -167,6 +167,8 @@ typedef std::unordered_map<keys_3d_t, costMedian_t, KeyHash_3d, KeyEqual_3d>::co
 class CostMatrix_3d
 {
     public:
+        CostMatrix_3d();
+
         CostMatrix_3d( size_t alphSize, int* tcm );
 
         ~CostMatrix_3d();
@@ -217,7 +219,7 @@ class CostMatrix_3d
 
         std::unordered_map <keys_3d_t, costMedian_t, KeyHash_3d, KeyEqual_3d> myMatrix;
 
-        CostMatrix twoD_matrix;
+        CostMatrix_2d twoD_matrix;
 
         std::unordered_map <keys_3d_t, costMedian_t, KeyHash_3d, KeyEqual_3d> hasher;
 
@@ -248,7 +250,11 @@ class CostMatrix_3d
         /** Takes in a `keys_3d_t` and a `costMedian_t` and updates myMap to store the new values,
          *  with @key as a key, and @median as the value.
          */
-        void setValue(keys_3d_t* key, costMedian_t* median);
+        void setValue( const dcElement_t* const first
+                     , const dcElement_t* const second
+                     , const dcElement_t* const third
+                     , const costMedian_t* const median
+                     );
 
 
         /** Takes in a pair of keys_3d_t (each of which is a single `dcElement`) and computes their
