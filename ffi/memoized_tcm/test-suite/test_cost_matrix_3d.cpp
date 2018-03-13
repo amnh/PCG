@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../costMatrix.h"
+#include "../costMatrix_2d.h"
 #include "../costMatrix_3d.h"
 #include "../dynamicCharacterOperations.h"
 
@@ -119,8 +119,20 @@ int main() {
     //     ClearAll( thirdKey->element,  dynCharSize(alphabetSize, 1) );
     // }
 
+    //Free objects the test suite creates to help with Valgrin's memory leak diagnostics.
+    freeDCElem( firstKey  );
+    freeDCElem( secondKey );
+    freeDCElem( thirdKey  );
+    freeDCElem( retMedian );
+    free( firstKey  );
+    free( secondKey );
+    free( thirdKey  );
+    free( retMedian );
+
+
     // TODO: Right now this isn't doing anything. It only works for 2d.
     // For 3d something more fancier will need to be done.
+    /*
     auto first   = new packedChar{1},
          second  = new packedChar{4},
          third   = new packedChar{16},
@@ -131,7 +143,7 @@ int main() {
     printf("%" PRIu64 "\n", *result);
     //free(result);
     printf("%" PRIu64 "\n", *result2);
-
+    */
     /****** This next to test Yu Xiang's code, once you can. ******/
 
     // int success = aligner(seqA_main, SEQ_A_LEN, seqB_main, SEQ_B_LEN, alphabetSize, getCostMatrix(myMatrix), &retMedChar);
@@ -147,9 +159,4 @@ int main() {
     //     printf("Fail!\n");
     // }
 
-    //Free objects the test suite creates to help with Valgrin's memory leak diagnostics.
-    freeDCElem( firstKey  );
-    freeDCElem( secondKey );
-    freeDCElem( thirdKey  );
-    freeDCElem( retMedian );
 }
