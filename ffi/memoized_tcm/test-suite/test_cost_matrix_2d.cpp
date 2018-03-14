@@ -66,7 +66,7 @@ int main() {
             //auto cost = tcm[key1 * alphabetSize + key2];
             SetBit(&median, key2);
 
-            foundCost = myMatrix.getCostMedian(firstKey, secondKey, retMedian);
+            foundCost = myMatrix.getSetCostMedian(firstKey, secondKey, retMedian);
             fflush(stdout);
             printf("key 1 set: %zu\n", key1);
             printf("key 2 set: %zu\n", key2);

@@ -39,7 +39,7 @@ import Test.QuickCheck hiding ((.&.), output)
 
 -- import Debug.Trace
 
-#include "costMatrixWrapper.h"
+#include "costMatrixWrapper_2d.h"
 #include "dynamicCharacterOperations.h"
 
 
@@ -209,7 +209,7 @@ instance Storable MemoizedCostMatrix where
 -- indexed not by powers of two, but by cardinal integer.
 foreign import ccall unsafe "costMatrixWrapper matrixInit"
     initializeMemoizedCMfn_c :: CSize
-                             -> Ptr CInt
+                             -> Ptr CUInt
                              -> IO (StablePtr ForeignVoid)
 
 
@@ -219,7 +219,7 @@ foreign import ccall unsafe "costMatrix getCostAndMedian"
                          -> Ptr DCElement
 --                         -> CSize
                          -> StablePtr ForeignVoid
-                         -> IO CInt
+                         -> IO CUInt
 
 
 -- |

@@ -130,9 +130,9 @@ library
     -- ffi/memoized_tcm/dynamicCharacterOperations.h
     ffi/memoized_tcm/dynamicCharacterOperations.c
     -- ffi/memoized_tcm/costMatrix.h
-    ffi/memoized_tcm/costMatrix.cpp
+    ffi/memoized_tcm/costMatrix_2d.cpp
     -- ffi/memoized_tcm/costMatrixWrapper.h
-    ffi/memoized_tcm/costMatrixWrapper.c
+    ffi/memoized_tcm/costMatrixWrapper_2d.c
     -- ffi/sequential_align/sequentialAlignInterface.h
     ffi/sequential_align/sequentialAlignInterface.c
     -- ffi/sequential_align/sequentialAlign.h
@@ -812,9 +812,9 @@ Test-Suite testsuite
     -- ffi/memoized_tcm/dynamicCharacterOperations.h
     ffi/memoized_tcm/dynamicCharacterOperations.c
     -- ffi/memoized_tcm/costMatrix.h
-    ffi/memoized_tcm/costMatrix.cpp
+    ffi/memoized_tcm/costMatrix_2d.cpp
     -- ffi/memoized_tcm/costMatrixWrapper.h
-    ffi/memoized_tcm/costMatrixWrapper.c
+    ffi/memoized_tcm/costMatrixWrapper_2d.c
     -- ffi/sequential_align/sequentialAlignInterface.h
     ffi/sequential_align/sequentialAlignInterface.c
     -- ffi/sequential_align/sequentialAlign.h
