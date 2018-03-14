@@ -10,7 +10,7 @@
 // #include "seqAlignForHaskell.h"
 
 int main() {
-    const size_t alphabetSize = 80;
+    const size_t alphabetSize = 5;
     const size_t tcmLen       = alphabetSize * alphabetSize;
 
     unsigned int tcm[tcmLen];
@@ -84,7 +84,7 @@ int main() {
 
     printf("\n\n\n******* Testing ambiguous characters: get/set of ambiguous characters. ******\n");
     size_t numSetInKey;
-    for(size_t i = 0; i < 25000; ++i) {
+    for(size_t i = 0; i < 25; ++i) {
         printf("\n\niteration %2zu\n", i + 1);
         numSetInKey = rand() % alphabetSize + 1;
 
@@ -96,12 +96,17 @@ int main() {
         for(size_t setIdx = 0; setIdx < numSetInKey; ++setIdx) {
             SetBit(secondKey->element, rand() % alphabetSize);
         }
-        printf("key1: %2" PRIu64 ", key2: %2" PRIu64 "\n", *firstKey->element, *secondKey->element);
+        
+        printf("Input:\n");
+        printf("  Key #1: "); printPackedChar(firstKey->element,  1, alphabetSize); printf("\n");
+        printf("  Key #2: "); printPackedChar(secondKey->element, 1, alphabetSize); printf("\n");
         foundCost = myMatrix.getSetCostMedian(firstKey, secondKey, retMedian);
-        printf("***Final cost: %i median: %" PRIu64 "\n", foundCost, *retMedian->element);
-        printPackedChar(retMedian->element, 1, alphabetSize);
-        // ClearAll( firstKey->element, dynCharSize(alphabetSize, 1) );
-        // ClearAll(secondKey->element, dynCharSize(alphabetSize, 1) );
+        printf("Output:\n");
+        printf("  Median: "); printPackedChar(retMedian->element, 1, alphabetSize); printf("\n");
+        printf("  Cost: %i\n", foundCost);
+
+        ClearAll( firstKey->element, dynCharSize(alphabetSize, 1) );
+        ClearAll(secondKey->element, dynCharSize(alphabetSize, 1) );
     }
 
     // Free everything we have allocated as to not mess with valgrind's leak diagnostics.
