@@ -71,7 +71,7 @@ instance Arbitrary NucleotideBase where
 
 instance Monad m => Serial m NucleotideBase where
 
-    series = generate $ \d -> take (d+1) (NB . encodeElement alphabet <$> validSpace)
+    series = generate $ const (NB . encodeElement alphabet <$> validSpace)
       where
         validSpace = fmap NE.fromList $ [] `delete` powerSet (toList alphabet) 
         powerSet :: [a] -> [[a]]
