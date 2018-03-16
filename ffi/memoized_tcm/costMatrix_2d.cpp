@@ -175,8 +175,8 @@ unsigned int CostMatrix_2d::getSetCostMedian( dcElement_t* first
 
 costMedian_t* CostMatrix_2d::computeCostMedian(keys_2d_t keys)
 {
-    auto curCost{INT_MAX},
-         minCost{INT_MAX};
+    auto curCost{UINT_MAX},
+         minCost{UINT_MAX};
 
     auto toReturn  = new costMedian_t;   // array is alloc'ed above
     auto curMedian = allocatePackedChar(alphabetSize, 1);   // don't free, it's going into toReturn
@@ -252,8 +252,8 @@ costMedian_t* CostMatrix_2d::computeCostMedian(keys_2d_t keys)
  */
 unsigned int CostMatrix_2d::findDistance (size_t fixedSymbolIndex, dcElement_t* ambElem)
 {
-    auto minCost{INT_MAX},
-         curCost{INT_MAX};
+    auto minCost{UINT_MAX},
+         curCost{UINT_MAX};
 
     for (size_t ambiguitySymbolIndex = 0; ambiguitySymbolIndex < alphabetSize; ++ambiguitySymbolIndex) {
         if (TestBit( ambElem->element, ambiguitySymbolIndex )) {
