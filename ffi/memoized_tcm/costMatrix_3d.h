@@ -32,14 +32,14 @@ extern "C" {
 
 #include "dynamicCharacterOperations.h"
 
-costMatrix_p construct_CostMatrix_3d_C(size_t alphSize, int* tcm);
-void destruct_CostMatrix_3d_C(costMatrix_p mytype);
-int call_getSetCost_3d_C( costMatrix_p untyped_self
-                        , dcElement_t* first
-                        , dcElement_t* second
-                        , dcElement_t* third
-                        , dcElement_t* retMedian
-                        );
+costMatrix_p construct_CostMatrix_3d_C (size_t alphSize, unsigned int* tcm);
+void destruct_CostMatrix_3d_C (costMatrix_p mytype);
+unsigned int call_getSetCost_3d_C ( costMatrix_p untyped_self
+                                  , dcElement_t* first
+                                  , dcElement_t* second
+                                  , dcElement_t* third
+                                  , dcElement_t* retMedian
+                                  );
     // extern "C" costMatrix_p get_CostMatrix_2dPtr_C(costMatrix_p untyped_self);
 
 #ifdef __cplusplus
@@ -169,18 +169,18 @@ class CostMatrix_3d
     public:
         CostMatrix_3d();
 
-        CostMatrix_3d( size_t alphSize, int* tcm );
+        CostMatrix_3d( size_t alphSize, unsigned int* tcm );
 
         ~CostMatrix_3d();
 
         /** Getter only for cost. Necessary for testing, to ensure that particular
          *  key pair has, in fact, already been inserted into lookup table.
          */
-        int getCostMedian( dcElement_t* first
-                         , dcElement_t* second
-                         , dcElement_t* third
-                         , dcElement_t* retMedian
-                         );
+        unsigned int getCostMedian( dcElement_t* first
+                                  , dcElement_t* second
+                                  , dcElement_t* third
+                                  , dcElement_t* retMedian
+                                  );
 
         /** Acts as both a setter and getter, mutating myMap.
          *
@@ -191,31 +191,37 @@ class CostMatrix_3d
          *  This functin allocates _if necessary_. So freeing inputs after a call will not
          *  cause invalid reads from the cost matrix.
          */
-        int getSetCostMedian( dcElement_t* first
-                            , dcElement_t* second
-                            , dcElement_t* third
-                            , dcElement_t* retMedian
-                            );
+        unsigned int getSetCostMedian( dcElement_t* first
+                                     , dcElement_t* second
+                                     , dcElement_t* third
+                                     , dcElement_t* retMedian
+                                     );
 
     private:
 
-        static constexpr int defaultExtraGapCostMetric[25] = {0, 1, 1, 1, 2,
-                                                              1, 0, 1, 1, 2,
-                                                              1, 1, 0, 1, 2,
-                                                              1, 1, 1, 0, 2,
-                                                              2, 2, 2, 2, 0};
+        static constexpr unsigned int defaultExtraGapCostMetric[25] =
+            { 0, 1, 1, 1, 2
+            , 1, 0, 1, 1, 2
+            , 1, 1, 0, 1, 2
+            , 1, 1, 1, 0, 2
+            , 2, 2, 2, 2, 0
+            };
 
-        static constexpr int defaultDiscreteMetric[25]     = {0, 1, 1, 1, 1,
-                                                              1, 0, 1, 1, 1,
-                                                              1, 1, 0, 1, 1,
-                                                              1, 1, 1, 0, 1,
-                                                              1, 1, 1, 1, 0};
+        static constexpr unsigned int defaultDiscreteMetric[25] =
+            { 0, 1, 1, 1, 1
+            , 1, 0, 1, 1, 1
+            , 1, 1, 0, 1, 1
+            , 1, 1, 1, 0, 1
+            , 1, 1, 1, 1, 0
+            };
 
-        static constexpr int defaultL1NormMetric[25]       = {0, 1, 2, 3, 4,
-                                                              1, 0, 1, 2, 3,
-                                                              2, 1, 0, 1, 2,
-                                                              3, 2, 1, 0, 1,
-                                                              4, 3, 2, 1, 0};
+        static constexpr unsigned int defaultL1NormMetric[25] =
+            { 0, 1, 2, 3, 4
+            , 1, 0, 1, 2, 3
+            , 2, 1, 0, 1, 2
+            , 3, 2, 1, 0, 1
+            , 4, 3, 2, 1, 0
+            };
 
         std::unordered_map <keys_3d_t, costMedian_t, KeyHash_3d, KeyEqual_3d> myMatrix;
 
@@ -232,7 +238,7 @@ class CostMatrix_3d
         /** Stored unambiguous tcm, necessary to do first calls to findDistance() without having
          *  to rewrite findDistance() and computeCostMedian_3d().
          */
-        int *tcm;
+        unsigned int *tcm;
 
 
         /** Takes an input buffer and assigns a malloc'ed copy to @tcm.
@@ -242,7 +248,7 @@ class CostMatrix_3d
          *  input buffer is equal to or greater than @alphabetSize squared in
          *  length.
          */
-        void initializeTCM(const int* const inputBuffer);
+        void initializeTCM(const unsigned int* const inputBuffer);
 
 
         /** Takes in a `keys_3d_t` and a `costMedian_t` and updates myMap to store the new values,
@@ -276,7 +282,7 @@ class CostMatrix_3d
          *
          *  Nota bene: Requires symmetric, if not metric, matrix. TODO: Is this true? If so fix it?
          */
-        int findDistance (keys_3d_t* searchKey, dcElement_t* ambElem);
+        unsigned int findDistance (keys_3d_t* searchKey, dcElement_t* ambElem);
 
 
         /** Takes in an initial TCM, which is actually just a row-major array, creates hash

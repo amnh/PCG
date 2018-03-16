@@ -8,12 +8,12 @@
 
 // TODO: I'll need this for the Haskell side of things: https://hackage.haskell.org/package/base-4.9.0.0/docs/Foreign-StablePtr.html
 
-constexpr int CostMatrix_2d::defaultExtraGapCostMetric[25];
-constexpr int CostMatrix_2d::defaultDiscreteMetric[25];
-constexpr int CostMatrix_2d::defaultL1NormMetric[25];
+constexpr unsigned int CostMatrix_2d::defaultExtraGapCostMetric[25];
+constexpr unsigned int CostMatrix_2d::defaultDiscreteMetric[25];
+constexpr unsigned int CostMatrix_2d::defaultL1NormMetric[25];
 
 
-costMatrix_p construct_CostMatrix_2d_C( size_t alphSize, int* tcm )
+costMatrix_p construct_CostMatrix_2d_C( size_t alphSize, unsigned int* tcm )
 {
     return new CostMatrix_2d( alphSize, tcm );
 }
@@ -25,18 +25,18 @@ void destruct_CostMatrix_2d_C( costMatrix_p untyped_self )
 }
 
 
-int call_getSetCost_2d_C( costMatrix_p untyped_self
-                        , dcElement_t* first
-                        , dcElement_t* second
-                        , dcElement_t* retMedian
-                        )
+unsigned int call_getSetCost_2d_C( costMatrix_p untyped_self
+                                 , dcElement_t* first
+                                 , dcElement_t* second
+                                 , dcElement_t* retMedian
+                                 )
 {
     CostMatrix_2d* thisMtx = static_cast<CostMatrix_2d*> (untyped_self);
     return thisMtx->getSetCostMedian(first, second, retMedian);
 }
 
 
-void freeCostMedian_t (costMedian_t* toFree)
+void freeCostMedian_t ( costMedian_t* toFree )
 {
     if (std::get<1>(*toFree) == NULL)
       return;
@@ -84,7 +84,7 @@ CostMatrix_2d::CostMatrix_2d()
 }
 
 
-CostMatrix_2d::CostMatrix_2d( size_t alphSize, int* inTcm )
+CostMatrix_2d::CostMatrix_2d( size_t alphSize, unsigned int* inTcm )
   : alphabetSize(alphSize)
   , elementSize(dcElemSize(alphSize))
 {
@@ -104,10 +104,10 @@ CostMatrix_2d::~CostMatrix_2d()
 }
 
 
-int CostMatrix_2d::getCostMedian( dcElement_t* first
-                                , dcElement_t* second
-                                , dcElement_t* retMedian
-                                )
+unsigned int CostMatrix_2d::getCostMedian( dcElement_t* first
+                                         , dcElement_t* second
+                                         , dcElement_t* retMedian
+                                         )
 {
     const auto toLookup = std::make_tuple(*first, *second);
     auto foundCost{0};
@@ -129,10 +129,10 @@ int CostMatrix_2d::getCostMedian( dcElement_t* first
 }
 
 
-int CostMatrix_2d::getSetCostMedian( dcElement_t* first
-                                   , dcElement_t* second
-                                   , dcElement_t* retMedian
-                                   )
+unsigned int CostMatrix_2d::getSetCostMedian( dcElement_t* first
+                                            , dcElement_t* second
+                                            , dcElement_t* retMedian
+                                            )
 {
     const auto toLookup = std::make_tuple(*first, *second);
     const auto found    = myMatrix.find(toLookup);
@@ -243,7 +243,7 @@ costMedian_t* CostMatrix_2d::computeCostMedian(keys_2d_t keys)
 /** Find minimum substitution cost from one nucleotide (searchKey->second) to ambElem.
  *  Does so by setting a bit in searchKey->first, then doing a lookup in the cost matrix.
  */
-int CostMatrix_2d::findDistance (keys_2d_t* searchKey, dcElement_t* ambElem)
+unsigned int CostMatrix_2d::findDistance (keys_2d_t* searchKey, dcElement_t* ambElem)
 {
     auto minCost{INT_MAX},
          curCost{INT_MAX};
@@ -334,10 +334,10 @@ void CostMatrix_2d::initializeMatrix()
 }
 
 
-void CostMatrix_2d::initializeTCM(const int* const inputBuffer)
+void CostMatrix_2d::initializeTCM(const unsigned int* const inputBuffer)
 {
     const auto bufferSize = alphabetSize * alphabetSize * sizeof(*tcm);
-    tcm = (int*) std::malloc( bufferSize );
+    tcm = (unsigned int*) std::malloc( bufferSize );
     std::memcpy( tcm, inputBuffer, bufferSize );
 }
 

@@ -39,7 +39,7 @@ import Test.QuickCheck hiding ((.&.), output)
 
 -- import Debug.Trace
 
-#include "costMatrixWrapper.h"
+#include "costMatrixWrapper_2d.h"
 #include "dynamicCharacterOperations.h"
 
 
@@ -207,19 +207,19 @@ instance Storable MemoizedCostMatrix where
 -- generate the entire cost matrix, which includes ambiguous elements. TCM is
 -- row-major, with each row being the left character element. It is therefore
 -- indexed not by powers of two, but by cardinal integer.
-foreign import ccall unsafe "costMatrixWrapper matrixInit"
+foreign import ccall unsafe "costMatrixWrapper matrixInit_2d"
     initializeMemoizedCMfn_c :: CSize
-                             -> Ptr CInt
+                             -> Ptr CUInt
                              -> IO (StablePtr ForeignVoid)
 
 
-foreign import ccall unsafe "costMatrix getCostAndMedian"
+foreign import ccall unsafe "costMatrix getCostAndMedian_2d"
     getCostAndMedianFn_c :: Ptr DCElement
                          -> Ptr DCElement
                          -> Ptr DCElement
 --                         -> CSize
                          -> StablePtr ForeignVoid
-                         -> IO CInt
+                         -> IO CUInt
 
 
 -- |

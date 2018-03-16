@@ -29,9 +29,9 @@ extern "C" {
 #include "dynamicCharacterOperations.h"
 
 /** Next three fns defined here to use on C side. */
-costMatrix_p construct_CostMatrix_2d_C (size_t alphSize, int* tcm);
+costMatrix_p construct_CostMatrix_2d_C (size_t alphSize, unsigned int* tcm);
 void destruct_CostMatrix_2d_C (costMatrix_p mytype);
-int call_getSetCost_2d_C (costMatrix_p untyped_self, dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
+unsigned int call_getSetCost_2d_C (costMatrix_p untyped_self, dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
     // extern "C" costMatrix_p get_CostMatrix_Ptr_2d_C(costMatrix_p untyped_self);
 
 #ifdef __cplusplus
@@ -40,9 +40,9 @@ int call_getSetCost_2d_C (costMatrix_p untyped_self, dcElement_t* left, dcElemen
 
 /******************************** End of C interface fns ********************************/
 
-typedef std::tuple<dcElement_t, dcElement_t>  keys_2d_t;
-typedef std::tuple<int,         packedChar*>  costMedian_t;
-typedef std::tuple<keys_2d_t,   costMedian_t> mapAccessTuple_2d_t;
+typedef std::tuple< dcElement_t,  dcElement_t> keys_2d_t;
+typedef std::tuple<unsigned int,  packedChar*> costMedian_t;
+typedef std::tuple<   keys_2d_t, costMedian_t> mapAccessTuple_2d_t;
 
 /** Used to send 2d and 3d cost matrices through the C interface where they're statically cast to the two matrix types. */
 typedef void* costMatrix_p;
@@ -152,7 +152,7 @@ class CostMatrix_2d
         /** Default constructor. Settings: alphabet size: 5, indel cost: 2, substitution cost: 1 */
         CostMatrix_2d();
 
-        CostMatrix_2d(size_t alphSize, int* tcm);
+        CostMatrix_2d(size_t alphSize, unsigned int* tcm);
 
         ~CostMatrix_2d();
 
@@ -169,12 +169,12 @@ class CostMatrix_2d
          *
          *  Nota bene: Requires symmetric, if not metric, matrix. TODO: Is this true? If so fix it?
          */
-        int findDistance(keys_2d_t* searchKey, dcElement_t* ambElem);
+        unsigned int findDistance(keys_2d_t* searchKey, dcElement_t* ambElem);
 
         /** Getter only for cost. Necessary for testing, to insure that particular
          *  key pair has, in fact, already been inserted into lookup table.
          */
-        int getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
+        unsigned int getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
 
         /** Acts as both a setter and getter, mutating myMap.
          *
@@ -185,27 +185,33 @@ class CostMatrix_2d
          *  This function allocates _if necessary_. So freeing inputs after a call is necessary and will not
          *  cause invalid reads from the cost matrix.
          */
-        int getSetCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
+        unsigned int getSetCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
 
     private:
-        static constexpr int defaultExtraGapCostMetric[25] = {0, 1, 1, 1, 2,
-                                                              1, 0, 1, 1, 2,
-                                                              1, 1, 0, 1, 2,
-                                                              1, 1, 1, 0, 2,
-                                                              2, 2, 2, 2, 0};
 
-        static constexpr int defaultDiscreteMetric[25]     = {0, 1, 1, 1, 1,
-                                                              1, 0, 1, 1, 1,
-                                                              1, 1, 0, 1, 1,
-                                                              1, 1, 1, 0, 1,
-                                                              1, 1, 1, 1, 0};
+        static constexpr unsigned int defaultExtraGapCostMetric[25] =
+            { 0, 1, 1, 1, 2
+            , 1, 0, 1, 1, 2
+            , 1, 1, 0, 1, 2
+            , 1, 1, 1, 0, 2
+            , 2, 2, 2, 2, 0
+            };
 
-        static constexpr int defaultL1NormMetric[25]       = {0, 1, 2, 3, 4,
-                                                              1, 0, 1, 2, 3,
-                                                              2, 1, 0, 1, 2,
-                                                              3, 2, 1, 0, 1,
-                                                              4, 3, 2, 1, 0};
+        static constexpr unsigned int defaultDiscreteMetric[25] =
+            { 0, 1, 1, 1, 1
+            , 1, 0, 1, 1, 1
+            , 1, 1, 0, 1, 1
+            , 1, 1, 1, 0, 1
+            , 1, 1, 1, 1, 0
+            };
 
+        static constexpr unsigned int defaultL1NormMetric[25] =
+            { 0, 1, 2, 3, 4
+            , 1, 0, 1, 2, 3
+            , 2, 1, 0, 1, 2
+            , 3, 2, 1, 0, 1
+            , 4, 3, 2, 1, 0
+            };
 
         std::unordered_map <keys_2d_t, costMedian_t, KeyHash_2d, KeyEqual_2d> myMatrix;
 
@@ -220,7 +226,7 @@ class CostMatrix_2d
         /** Stored unambiguous tcm, necessary to do first calls to findDistance() without having to rewrite
          *  findDistance() and computeCostMedian()
          */
-        int* tcm;
+        unsigned int* tcm;
 
         /** Takes in two `dcElement_t` and a `costMedian_t` and updates myMap to store the new values,
          *  with @{lhs, rhs} as a key, and @median as the value.
@@ -251,7 +257,7 @@ class CostMatrix_2d
          *  input buffer is equal to or greater than @alphabetSize squared in
          *  length.
          */
-        void initializeTCM(const int* const inputBuffer);
+        void initializeTCM(const unsigned int* const inputBuffer);
 
 };
 

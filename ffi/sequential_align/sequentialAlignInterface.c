@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../memoized_tcm/costMatrixWrapper.h"
+#include "../memoized_tcm/costMatrixWrapper_2d.h"
 #include "../memoized_tcm/dynamicCharacterOperations.h"
 #include "sequentialAlign.h"
 #include "sequentialAlignInterface.h"
@@ -71,7 +71,7 @@ packedChar *getMedian(const packedChar *const lhs, const packedChar *const rhs, 
            && "Can't allocate state buffer in sequential alignment." );
 
     for( size_t i = 0; i < length; i++ ) {
-        getCostInternal(lhs[i], rhs[i], costMatrix, alphSize, median);
+        getCostInternal_2d(lhs[i], rhs[i], costMatrix, alphSize, median);
         uint64_t value = *median->element;
         printf("%zu: a: %" PRIu64 ", b: %" PRIu64 ", median: %" PRIu64 "\n", i, lhs[i], rhs[i], value);
         integralStateBuffer[i] = value;

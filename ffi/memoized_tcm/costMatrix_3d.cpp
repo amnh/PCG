@@ -9,12 +9,12 @@
 
 // TODO: I'll need this for the Haskell side of things: https://hackage.haskell.org/package/base-4.9.0.0/docs/Foreign-StablePtr.html
 
-constexpr int CostMatrix_3d::defaultExtraGapCostMetric[25];
-constexpr int CostMatrix_3d::defaultDiscreteMetric[25];
-constexpr int CostMatrix_3d::defaultL1NormMetric[25];
+constexpr unsigned int CostMatrix_3d::defaultExtraGapCostMetric[25];
+constexpr unsigned int CostMatrix_3d::defaultDiscreteMetric[25];
+constexpr unsigned int CostMatrix_3d::defaultL1NormMetric[25];
 
 
-costMatrix_p construct_CostMatrix_3d_C( size_t alphSize, int* tcm )
+costMatrix_p construct_CostMatrix_3d_C( size_t alphSize, unsigned int* tcm )
 {
     return new CostMatrix_3d( alphSize, tcm );
 }
@@ -26,12 +26,12 @@ void destruct_CostMatrix_3d_C( costMatrix_p untyped_self )
 }
 
 
-int call_getSetCost_3d_C( costMatrix_p untyped_self
-                        , dcElement_t* first
-                        , dcElement_t* second
-                        , dcElement_t* third
-                        , dcElement_t* retMedian
-                        )
+unsigned int call_getSetCost_3d_C( costMatrix_p untyped_self
+                                 , dcElement_t* first
+                                 , dcElement_t* second
+                                 , dcElement_t* third
+                                 , dcElement_t* retMedian
+                                 )
 {
     CostMatrix_3d* thisMtx = static_cast<CostMatrix_3d*> (untyped_self);
     return thisMtx->getSetCostMedian(first, second, third, retMedian);
@@ -84,7 +84,7 @@ CostMatrix_3d::CostMatrix_3d()
 }
 
 
-CostMatrix_3d::CostMatrix_3d( size_t alphSize, int* inTcm )
+CostMatrix_3d::CostMatrix_3d( size_t alphSize, unsigned int* inTcm )
   : alphabetSize(alphSize)
   , elementSize(dcElemSize(alphSize))
 {
@@ -109,11 +109,11 @@ CostMatrix_3d::~CostMatrix_3d()
 }
 
 
-int CostMatrix_3d::getCostMedian( dcElement_t* first
-                                , dcElement_t* second
-                                , dcElement_t* third
-                                , dcElement_t* retMedian
-                                )
+unsigned int CostMatrix_3d::getCostMedian( dcElement_t* first
+                                         , dcElement_t* second
+                                         , dcElement_t* third
+                                         , dcElement_t* retMedian
+                                         )
 {
     const auto toLookup = std::make_tuple(*first, *second, *third);
     auto foundCost{0};
@@ -135,11 +135,11 @@ int CostMatrix_3d::getCostMedian( dcElement_t* first
 }
 
 
-int CostMatrix_3d::getSetCostMedian( dcElement_t* first
-                                   , dcElement_t* second
-                                   , dcElement_t* third
-                                   , dcElement_t* retMedian
-                                   )
+unsigned int CostMatrix_3d::getSetCostMedian( dcElement_t* first
+                                            , dcElement_t* second
+                                            , dcElement_t* third
+                                            , dcElement_t* retMedian
+                                            )
 {
     const auto toLookup = std::make_tuple(*first, *second, *third);
     const auto found    = myMatrix.find(toLookup);
@@ -255,7 +255,7 @@ costMedian_t* CostMatrix_3d::computeCostMedian(keys_3d_t keys)
 /** Find minimum substitution cost from one nucleotide (searchKey->second) to ambElem.
  *  Does so by setting a bit in searchKey->first, then doing a lookup in the cost matrix.
  */
-int CostMatrix_3d::findDistance(keys_3d_t* searchKey, dcElement_t* ambElem)
+unsigned int CostMatrix_3d::findDistance (keys_3d_t* searchKey, dcElement_t* ambElem)
 {
     auto minCost{INT_MAX},
          curCost{INT_MAX};
@@ -360,10 +360,10 @@ void CostMatrix_3d::initializeMatrix()
 }
 
 
-void CostMatrix_3d::initializeTCM(const int* const inputBuffer)
+void CostMatrix_3d::initializeTCM(const unsigned int* const inputBuffer)
 {
     const auto bufferSize = alphabetSize * alphabetSize * sizeof(*tcm);
-    tcm = (int*) std::malloc( bufferSize );
+    tcm = (unsigned int*) std::malloc( bufferSize );
     std::memcpy( tcm, inputBuffer, bufferSize );
 }
 
