@@ -148,7 +148,6 @@ unsigned int CostMatrix_2d::getSetCostMedian( dcElement_t* first
                         , first->element[0], second->element[0] );
 
         const auto computedCostMed = computeCostMedian(toLookup);
-        //costMedian_t* computedCostMed = computeCostMedianFitchy(*toLookup);
 
         if(DEBUG) printf( "computed cost, median: %2i %" PRIu64 "\n"
                         , std::get<0>(*computedCostMed), std::get<1>(*computedCostMed)[0] );
@@ -161,7 +160,6 @@ unsigned int CostMatrix_2d::getSetCostMedian( dcElement_t* first
         setValue(first, second, computedCostMed);
         freeCostMedian_t(computedCostMed);
         delete computedCostMed;
-        // freeMapAccessTuple_t(toLookup);
     } else {
         // because in the next two lines, I get back a tuple<keys_2d_t, costMedian_t>
         foundCost = std::get<0>(std::get<1>(*found));
@@ -285,24 +283,13 @@ void CostMatrix_2d::initializeMatrix()
             SetBit(secondKey->element, secondKey_bit);
 
             auto toInsert = computeCostMedian(toLookup);
-            
-            // Originally used `getSetCostMedian()` here, but it involves a lot of overhead and we know we're only
-            // using unambiguous elems, so we can just insert.
-            //std::get<0>(*toInsert) = tcm[firstKey_bit * alphabetSize + secondKey_bit];
-            // TODO: can I move the allocation out of `packedCharOr()`?
-            //if (std::get<1>(*toInsert) != NULL) {
-            //    std::free( std::get<1>(*toInsert) );
-            //}
-            //std::get<1>(*toInsert) = packedCharOr(firstKey->element, secondKey->element, alphabetSize, 1);
-            
 
             setValue(firstKey, secondKey, toInsert);
             freeCostMedian_t(toInsert);
             delete toInsert;
             ClearBit(secondKey->element, secondKey_bit);
-        } // secondKey_bit
+        }
         ClearBit(firstKey->element, firstKey_bit);
-        // ClearBit(std::get<1>(*toInsert), firstKey_bit);
     }
     // Just to reiterate, getSetCostMedian() should allocate, so we should dealloc these.
     freeDCElem(firstKey);        // deallocate array
