@@ -169,7 +169,7 @@ class CostMatrix_2d
          *
          *  Nota bene: Requires symmetric, if not metric, matrix. TODO: Is this true? If so fix it?
          */
-        unsigned int findDistance(keys_2d_t* searchKey, dcElement_t* ambElem);
+        unsigned int findDistance(size_t fixedElemIndex, dcElement_t* ambElem);
 
         /** Getter only for cost. Necessary for testing, to insure that particular
          *  key pair has, in fact, already been inserted into lookup table.

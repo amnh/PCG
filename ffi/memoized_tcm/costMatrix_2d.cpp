@@ -180,15 +180,11 @@ costMedian_t* CostMatrix_2d::computeCostMedian(keys_2d_t keys)
     auto curCost{INT_MAX},
          minCost{INT_MAX};
 
-    auto elemArrLen = dcElemSize(alphabetSize);
-//    packedChar*   median     = (packedChar*) calloc( elemArrLen, sizeof(uint64_t) );
-    auto firstKey  = &std::get<0>(keys);
-    auto secondKey = &std::get<1>(keys);
     auto toReturn  = new costMedian_t;   // array is alloc'ed above
     auto curMedian = allocatePackedChar(alphabetSize, 1);   // don't free, it's going into toReturn
 
-    auto searchKey        = allocKeys_2d_t(alphabetSize);
-    auto singleNucleotide = &std::get<1>(*searchKey);
+    const auto firstKey  = &std::get<0>(keys);
+    const auto secondKey = &std::get<1>(keys);
 
     if(DEBUG) {
         for ( auto& thing: myMatrix ) {
@@ -201,11 +197,19 @@ costMedian_t* CostMatrix_2d::computeCostMedian(keys_2d_t keys)
         }
     }
 
-    for (size_t curNucleotideIdx = 0; curNucleotideIdx < alphabetSize; ++curNucleotideIdx) {
-        SetBit(singleNucleotide->element, curNucleotideIdx);
-        curCost = findDistance(searchKey, firstKey)
-                + findDistance(searchKey, secondKey);
+    for (size_t symbolIndex = 0; symbolIndex < alphabetSize; ++symbolIndex) {
+        curCost = findDistance(symbolIndex, firstKey)
+                + findDistance(symbolIndex, secondKey);
 
+        if (DEBUG) {
+            printf("Before Minimization Logic:\n");
+            printf("  Symbol Index: %" PRIu64 " \n", symbolIndex);
+            printf("  Current Cost: %d\n", curCost);
+            printf("  Minimal Cost: %d\n", minCost);
+            printPackedChar( curMedian, 1, alphabetSize);
+            printf("\n\n");
+        }
+        
         // now seemingly recreating logic in findDistance(). However, that was to get the cost for the
         // ambElem on each child; now we're combining those costs get overall cost and median
         if (curCost < minCost) {
@@ -215,8 +219,8 @@ costMedian_t* CostMatrix_2d::computeCostMedian(keys_2d_t keys)
             printf("    found cost:      %d\n", curCost);
           */
             minCost = curCost;
-            ClearAll(curMedian, elemArrLen);
-            SetBit(curMedian, curNucleotideIdx);
+            ClearAll(curMedian, elementSize);
+            SetBit(curMedian, symbolIndex);
         } else if (curCost == minCost) {
       /*
             printf("\nSame cost, new median.\n");
@@ -224,17 +228,22 @@ costMedian_t* CostMatrix_2d::computeCostMedian(keys_2d_t keys)
             printf("median: %" PRIu64 "\n", *curMedian);
             printf("found cost:      %d\n", curCost);
       */
-            SetBit(curMedian, curNucleotideIdx);
+            SetBit(curMedian, symbolIndex);
 
             // printf("new median: %" PRIu64 "\n", *curMedian);
         }
-        ClearBit(singleNucleotide->element, curNucleotideIdx);
-    } // curNucleotideIdx
+
+        if (DEBUG) {
+          printf("After Minimization Logic:\n");
+          printf("  Minimal Cost: %d\n", minCost);
+          printPackedChar( curMedian, 1, alphabetSize);
+          printf("\n\n");
+          fflush(stdout);
+        }
+        
+    }
     std::get<0>(*toReturn) = minCost;
     std::get<1>(*toReturn) = curMedian;
-
-    freeKeys_2d_t(searchKey);
-    delete searchKey;
 
     return toReturn;
 }
@@ -243,49 +252,18 @@ costMedian_t* CostMatrix_2d::computeCostMedian(keys_2d_t keys)
 /** Find minimum substitution cost from one nucleotide (searchKey->second) to ambElem.
  *  Does so by setting a bit in searchKey->first, then doing a lookup in the cost matrix.
  */
-unsigned int CostMatrix_2d::findDistance (keys_2d_t* searchKey, dcElement_t* ambElem)
+unsigned int CostMatrix_2d::findDistance (size_t fixedSymbolIndex, dcElement_t* ambElem)
 {
     auto minCost{INT_MAX},
          curCost{INT_MAX};
-    size_t unambElemIdx;
 
-    for (size_t pos = 0; pos < alphabetSize; ++pos) {
-        if (TestBit( ambElem->element, pos )) {
-
-            SetBit( std::get<0>(*searchKey).element, pos );
-            const auto found = myMatrix.find(*searchKey);
-
-            if (found == myMatrix.end()) {
-                // do unambiguous calculation here
-                if( !isAmbiguous(ambElem->element, dcElemSize(alphabetSize)) ) {
-                    unambElemIdx = 0;
-                    while( unambElemIdx < alphabetSize && !TestBit(std::get<1>(*searchKey).element, unambElemIdx) ) {
-                        unambElemIdx++;
-                    }
-                    curCost = tcm[pos * alphabetSize + unambElemIdx];
-                    // printf("\n--findDistance-- \n    ambElemIdx: %zu, nucleotide: %zu, cost: %d\n", unambElemIdx, pos, curCost);
-                } else {
-                    printf("Something went wrong in the memoized cost matrix.\n");
-                    printf("missing key: %" PRIu64 " %" PRIu64 "\n", *std::get<0>(*searchKey).element, *std::get<1>(*searchKey).element);
-                    exit(1);
-                }
-            } else {  // We found the memoized cost for the elements in the TCM.
-                curCost = std::get<0>(std::get<1>(*found));
-            }
-            if (curCost < minCost) {
+    for (size_t ambiguitySymbolIndex = 0; ambiguitySymbolIndex < alphabetSize; ++ambiguitySymbolIndex) {
+        if (TestBit( ambElem->element, ambiguitySymbolIndex )) {
+            curCost = tcm[fixedSymbolIndex * alphabetSize + ambiguitySymbolIndex];
+            if ( curCost < minCost ) {
                 minCost = curCost;
             }
-            ClearBit( std::get<0>(*searchKey).element, pos );
         }
-    }
-
-    if (DEBUG) {
-        printf( "distance ambElem: %" PRIu64 ", nucleotide: %" PRIu64 "\n"
-              , ambElem->element[0]
-              , *std::get<1>(*searchKey).element
-              );
-
-        printf( "cost: %i\n", minCost );
     }
 
     return minCost;
@@ -296,7 +274,7 @@ void CostMatrix_2d::initializeMatrix()
 {
     const auto firstKey  = allocateDCElement( alphabetSize );
     const auto secondKey = allocateDCElement( alphabetSize );
-    const auto toInsert  = new costMedian_t;
+    const auto toLookup  = std::make_tuple(*firstKey, *secondKey);
 
     for (size_t firstKey_bit = 0; firstKey_bit < alphabetSize; ++firstKey_bit) { // for every possible value of firstKey_bit, secondKey_bit
         SetBit(firstKey->element, firstKey_bit);
@@ -306,29 +284,31 @@ void CostMatrix_2d::initializeMatrix()
             if (DEBUG) printf("Insert key1_bit: %3zu, key2_bit: %3zu\n", firstKey_bit, secondKey_bit);
             SetBit(secondKey->element, secondKey_bit);
 
+            auto toInsert = computeCostMedian(toLookup);
+            
             // Originally used `getSetCostMedian()` here, but it involves a lot of overhead and we know we're only
             // using unambiguous elems, so we can just insert.
-            std::get<0>(*toInsert) = tcm[firstKey_bit * alphabetSize + secondKey_bit];
+            //std::get<0>(*toInsert) = tcm[firstKey_bit * alphabetSize + secondKey_bit];
             // TODO: can I move the allocation out of `packedCharOr()`?
-            if (std::get<1>(*toInsert) != NULL) {
-                std::free( std::get<1>(*toInsert) );
-            }
-            std::get<1>(*toInsert) = packedCharOr(firstKey->element, secondKey->element, alphabetSize, 1);
+            //if (std::get<1>(*toInsert) != NULL) {
+            //    std::free( std::get<1>(*toInsert) );
+            //}
+            //std::get<1>(*toInsert) = packedCharOr(firstKey->element, secondKey->element, alphabetSize, 1);
+            
 
             setValue(firstKey, secondKey, toInsert);
-            ClearBit(std::get<1>(*toInsert), secondKey_bit);
+            freeCostMedian_t(toInsert);
+            delete toInsert;
             ClearBit(secondKey->element, secondKey_bit);
         } // secondKey_bit
         ClearBit(firstKey->element, firstKey_bit);
-        ClearBit(std::get<1>(*toInsert), firstKey_bit);
+        // ClearBit(std::get<1>(*toInsert), firstKey_bit);
     }
     // Just to reiterate, getSetCostMedian() should allocate, so we should dealloc these.
     freeDCElem(firstKey);        // deallocate array
-    std::free(firstKey);         // free pointer
     freeDCElem(secondKey);
+    std::free(firstKey);         // free pointer
     std::free(secondKey);
-    freeCostMedian_t(toInsert);
-    delete toInsert;         // because generated with `new`
     // printf("finished initializing\n");
     // printf("freed keys\n");
 }
