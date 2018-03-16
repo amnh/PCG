@@ -167,7 +167,7 @@ class CostMatrix_2d
          *
          *  Public because gets called in CostMatrix_3d
          */
-        unsigned int findDistance(size_t fixedElemIndex, dcElement_t* ambElem);
+        unsigned int findDistance(const size_t fixedElemIndex, const dcElement_t* const ambElem);
 
         /** Getter only for cost. Necessary for testing, to insure that particular
          *  key pair has, in fact, already been inserted into lookup table.

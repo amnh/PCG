@@ -178,11 +178,9 @@ costMedian_t* CostMatrix_2d::computeCostMedian(keys_2d_t keys)
     auto curCost{UINT_MAX},
          minCost{UINT_MAX};
 
-    auto toReturn  = new costMedian_t;   // array is alloc'ed above
-    auto curMedian = allocatePackedChar(alphabetSize, 1);   // don't free, it's going into toReturn
-
     const auto firstKey  = &std::get<0>(keys);
     const auto secondKey = &std::get<1>(keys);
+    const auto curMedian = allocatePackedChar(alphabetSize, 1);   // don't free, it's going into toReturn
 
     if(DEBUG) {
         for ( auto& thing: myMatrix ) {
@@ -240,6 +238,8 @@ costMedian_t* CostMatrix_2d::computeCostMedian(keys_2d_t keys)
         }
         
     }
+    
+    const auto toReturn  = new costMedian_t;
     std::get<0>(*toReturn) = minCost;
     std::get<1>(*toReturn) = curMedian;
 
@@ -250,7 +250,7 @@ costMedian_t* CostMatrix_2d::computeCostMedian(keys_2d_t keys)
 /** Find minimum substitution cost from one nucleotide (searchKey->second) to ambElem.
  *  Does so by setting a bit in searchKey->first, then doing a lookup in the cost matrix.
  */
-unsigned int CostMatrix_2d::findDistance (size_t fixedSymbolIndex, dcElement_t* ambElem)
+unsigned int CostMatrix_2d::findDistance (const size_t fixedSymbolIndex, const dcElement_t* const ambElem)
 {
     auto minCost{UINT_MAX},
          curCost{UINT_MAX};
@@ -282,7 +282,7 @@ void CostMatrix_2d::initializeMatrix()
             if (DEBUG) printf("Insert key1_bit: %3zu, key2_bit: %3zu\n", firstKey_bit, secondKey_bit);
             SetBit(secondKey->element, secondKey_bit);
 
-            auto toInsert = computeCostMedian(toLookup);
+            const auto toInsert = computeCostMedian(toLookup);
 
             setValue(firstKey, secondKey, toInsert);
             freeCostMedian_t(toInsert);

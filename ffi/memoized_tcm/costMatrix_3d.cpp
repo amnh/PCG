@@ -173,10 +173,11 @@ costMedian_t* CostMatrix_3d::computeCostMedian(keys_3d_t keys)
     auto curCost{UINT_MAX},
          minCost{UINT_MAX};
 
-    auto firstKey  = &std::get<0>(keys);
-    auto secondKey = &std::get<1>(keys);
-    auto thirdKey  = &std::get<2>(keys);
-    auto curMedian = allocatePackedChar(twoD_matrix->alphabetSize, 1);   // don't free, it's going into toReturn
+    const auto symbolCount = twoD_matrix->alphabetSize; // For efficiency, dereference less.
+    const auto firstKey    = &std::get<0>(keys);
+    const auto secondKey   = &std::get<1>(keys);
+    const auto thirdKey    = &std::get<2>(keys);
+    const auto curMedian   = allocatePackedChar(symbolCount, 1);   // don't free, it's going into toReturn
 
     if(DEBUG) {
         for ( auto& thing: myMatrix ) {
@@ -189,7 +190,7 @@ costMedian_t* CostMatrix_3d::computeCostMedian(keys_3d_t keys)
         }
     }
 
-    for (size_t symbolIndex = 0; symbolIndex < twoD_matrix->alphabetSize; ++symbolIndex) {
+    for (size_t symbolIndex = 0; symbolIndex < symbolCount; ++symbolIndex) {
 
         curCost = twoD_matrix->findDistance(symbolIndex, firstKey)
                 + twoD_matrix->findDistance(symbolIndex, secondKey)
@@ -217,7 +218,7 @@ costMedian_t* CostMatrix_3d::computeCostMedian(keys_3d_t keys)
         }
     }
 
-    auto toReturn = new costMedian_t;
+    const auto toReturn = new costMedian_t;
     std::get<0>(*toReturn) = minCost;
     std::get<1>(*toReturn) = curMedian;
 
@@ -278,27 +279,28 @@ unsigned int CostMatrix_3d::findDistance (keys_3d_t* searchKey, dcElement_t* fix
 
 void CostMatrix_3d::initializeMatrix()
 {
-    const auto firstKey  = allocateDCElement( twoD_matrix->alphabetSize );
-    const auto secondKey = allocateDCElement( twoD_matrix->alphabetSize );
-    const auto thirdKey  = allocateDCElement( twoD_matrix->alphabetSize );
-    const auto toLookup  = std::make_tuple(*firstKey, *secondKey, *thirdKey);
+    const auto symbolCount = twoD_matrix->alphabetSize; // For efficiency, dereference less.
+    const auto firstKey    = allocateDCElement( symbolCount );
+    const auto secondKey   = allocateDCElement( symbolCount );
+    const auto thirdKey    = allocateDCElement( symbolCount );
+    const auto toLookup    = std::make_tuple(*firstKey, *secondKey, *thirdKey);
 
     // for every possible value of firstKey_bit, secondKey_bit, & third_bit
-    for (size_t firstKey_bit = 0; firstKey_bit < twoD_matrix->alphabetSize; ++firstKey_bit) {
+    for (size_t firstKey_bit = 0; firstKey_bit < symbolCount; ++firstKey_bit) {
         SetBit(firstKey->element, firstKey_bit);
 
         // secondKey_bit and thirdKey_bit start from 0, so non-symmetric input TCMs will work
         // Doesn't assumes 0 diagonal
-        for (size_t secondKey_bit = 0; secondKey_bit < twoD_matrix->alphabetSize; ++secondKey_bit) {
+        for (size_t secondKey_bit = 0; secondKey_bit < symbolCount; ++secondKey_bit) {
             SetBit(secondKey->element, secondKey_bit);
 
-            for (size_t thirdKey_bit = 0; thirdKey_bit < twoD_matrix->alphabetSize; ++thirdKey_bit) {
+            for (size_t thirdKey_bit = 0; thirdKey_bit < symbolCount; ++thirdKey_bit) {
                 if (DEBUG) printf("Insert firstKey_bit: %3zu, secondKey_bit: %3zu, thirdKey_bit: %3zu\n"
                                  , firstKey_bit, secondKey_bit, thirdKey_bit);
 
                 SetBit(thirdKey->element, thirdKey_bit);
 
-                auto toInsert = computeCostMedian(toLookup);
+                const auto toInsert = computeCostMedian(toLookup);
 
                 setValue(firstKey, secondKey, thirdKey, toInsert);
 
@@ -328,11 +330,14 @@ void CostMatrix_3d::setValue( const dcElement_t*  const first
                             , const costMedian_t* const toInsert
                             )
 {
+    // For efficiency, dereference less.
+    const auto symbolCount = twoD_matrix->alphabetSize;
+
     // Making a deep copy of key & median here to help with memory management in calling fns.
 
     // Create a deep copy of the toInsert value to insert.
     const auto value = std::make_tuple( std::get<0>(*toInsert)
-                                      , makePackedCharCopy( std::get<1>(*toInsert), twoD_matrix->alphabetSize, 1 )
+                                      , makePackedCharCopy( std::get<1>(*toInsert), symbolCount, 1 )
                                       );
 
     // Create a new 3-tuple key to insert.
@@ -342,19 +347,19 @@ void CostMatrix_3d::setValue( const dcElement_t*  const first
     const auto firstElem       = new dcElement_t;
     std::get<0>(*key)          = *firstElem;
     std::get<0>(*key).alphSize = twoD_matrix->alphabetSize;
-    std::get<0>(*key).element  = makePackedCharCopy(first->element, twoD_matrix->alphabetSize, 1);
+    std::get<0>(*key).element  = makePackedCharCopy(first->element, symbolCount, 1);
 
     // Copy the second element into key.
     const auto secondElem      = new dcElement_t;
     std::get<1>(*key)          = *secondElem;
     std::get<1>(*key).alphSize = twoD_matrix->alphabetSize;
-    std::get<1>(*key).element  = makePackedCharCopy(second->element, twoD_matrix->alphabetSize, 1);
+    std::get<1>(*key).element  = makePackedCharCopy(second->element, symbolCount, 1);
 
     // Copy the third element into key.
     const auto thirdElem       = new dcElement_t;
     std::get<2>(*key)          = *thirdElem;
     std::get<2>(*key).alphSize = twoD_matrix->alphabetSize;
-    std::get<2>(*key).element  = makePackedCharCopy(third->element, twoD_matrix->alphabetSize, 1);
+    std::get<2>(*key).element  = makePackedCharCopy(third->element, symbolCount, 1);
 
     // Add the copied key-value pair to the matrix.
     // This has to be a pair!
