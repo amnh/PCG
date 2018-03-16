@@ -60,25 +60,44 @@ dyn_char_compare (dyn_character_t *char1, dyn_character_t *char2) {
 }
 
 
-void dyn_char_initialize(dyn_character_t *retChar, size_t allocSize) {
-    retChar->cap        = allocSize;                              // capacity
-    retChar->array_head = calloc(allocSize, sizeof(elem_t));      // beginning of array that holds dynamic character
-    assert( retChar->array_head != NULL && "Couldn't initialize dynamic character." );
+dyn_character_t *dyn_char_alloc(size_t allocSize)
+{
+    dyn_character_t *toReturn = malloc(sizeof(dyn_character_t));
+    toReturn->cap        = allocSize;                              // capacity
+    toReturn->array_head = calloc(allocSize, sizeof(elem_t));      // beginning of array that holds dynamic character
+    assert( NULL != toReturn && NULL != toReturn->array_head && "Couldn't initialize dynamic character." );
+    // Doing this here because of null check above. Not super happy with this solution, but I can live with it.
+    if (allocSize == 0) {
+        free(toReturn->array_head);
+        toReturn->array_head = NULL;
+    }
 
-    retChar->end        = retChar->array_head + allocSize - 1;    // end of array
-    retChar->char_begin = 0;                                      /* position of first element in dynamic character, 0 so prepend works. */
-    retChar->len        = 0;                                      // number of elements in character
+    toReturn->end        = toReturn->array_head + allocSize - 1;   // end of array
+    toReturn->char_begin = 0;                                      /* position of first element in dynamic character, 0 so prepend works. */
+    toReturn->len        = 0;                                      // number of elements in character
+
+    return toReturn;
 }
 
 
-void dyn_char_resetValues(dyn_character_t *retChar) {
-    memset(retChar->array_head, 0, retChar->cap * sizeof(elem_t));
-    retChar->char_begin = 0;
-    retChar->len        = 0;
+void dyn_char_free(dyn_character_t *toFree)
+{
+    if (NULL != toFree->array_head) free(toFree->array_head); // Once this is free char_being and end don't have to be.
+
+    toFree->array_head = toFree->end = toFree->char_begin = NULL;
 }
 
 
-void dyn_char_prepend (dyn_character_t *a, elem_t v) {
+void dyn_char_resetValues(dyn_character_t *toReturn)
+{
+    memset(toReturn->array_head, 0, toReturn->cap * sizeof(elem_t));
+    toReturn->char_begin = 0;
+    toReturn->len        = 0;
+}
+
+
+void dyn_char_prepend (dyn_character_t *a, elem_t v)
+{
     assert( a->cap > a->len && "Failing values: capacity <= length when attempting to prepend to character." );
 
     if (a->char_begin == 0) {
@@ -92,7 +111,7 @@ void dyn_char_prepend (dyn_character_t *a, elem_t v) {
     if (DEBUG_3D) {
        printf("char_begin: %u, end: %u, length: %zu, capacity: %zu\n", *a->char_begin, *a->end, a->len, a->cap);
        printf("\n\nentire char: ");
-       dyn_char_print( a );
+       dyn_char_print(a);
        printf("\n\n");
     }
 }
@@ -112,7 +131,8 @@ void dyn_char_print( const dyn_character_t *inChar )
 */
 
 inline void
-dyn_char_reverse (dyn_character_t *target, dyn_character_t *source) {
+dyn_char_reverse (dyn_character_t *target, dyn_character_t *source)
+{
     if (source->len == 0 || source->char_begin == 0)    return;
     target->len = source->len;
     target->char_begin = target->array_head + (target->cap - target->len);
@@ -125,7 +145,8 @@ dyn_char_reverse (dyn_character_t *target, dyn_character_t *source) {
 
 /** reverse in place */
 inline void
-dyn_char_reverse_ip (dyn_character_t *inChar) {
+dyn_char_reverse_ip (dyn_character_t *inChar)
+{
     if (inChar->len == 0 || inChar->char_begin == 0)    return;
     elem_t *beginning, *end, tmp;
 

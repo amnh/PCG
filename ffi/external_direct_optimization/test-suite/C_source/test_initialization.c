@@ -251,7 +251,7 @@ int main() {
         printf("\n  Median with gaps\n  ");
         dyn_char_print(algnChar);
 
-        free (algnChar);
+        if (NULL != algnChar) free(algnChar);
     }
 
 
@@ -504,7 +504,7 @@ int main() {
     freeChar(retShortChar);
     freeChar(retMiddleChar);
 
-    free(tcm);
+    if (NULL != tcm) free(tcm);
 
     return 0;
 }

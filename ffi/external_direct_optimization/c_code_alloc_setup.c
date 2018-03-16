@@ -44,25 +44,25 @@ int distance( unsigned int const *tcm
 
 
 void freeChar(dyn_character_t *toFree) {
-    free(toFree->array_head);
-    free(toFree);
+    if (NULL != toFree->array_head) free(toFree->array_head);
+    if (NULL != toFree) free(toFree);
 }
 
 
 void freeCostMtx(void * input, int is_2d) {
 
     if (is_2d) {
-        free( ( (cost_matrices_2d_t *) input )->cost);
-        free( ( (cost_matrices_2d_t *) input )->median);
-        free( ( (cost_matrices_2d_t *) input )->worst);
-        free( ( (cost_matrices_2d_t *) input )->prepend_cost);
-        free( ( (cost_matrices_2d_t *) input )->tail_cost);
+        if (NULL != ((cost_matrices_2d_t *) input)->cost)         free( ((cost_matrices_2d_t *) input)->cost);
+        if (NULL != ((cost_matrices_2d_t *) input)->median)       free( ((cost_matrices_2d_t *) input)->median);
+        if (NULL != ((cost_matrices_2d_t *) input)->worst)        free( ((cost_matrices_2d_t *) input)->worst);
+        if (NULL != ((cost_matrices_2d_t *) input)->prepend_cost) free( ((cost_matrices_2d_t *) input)->prepend_cost);
+        if (NULL != ((cost_matrices_2d_t *) input)->tail_cost)    free( ((cost_matrices_2d_t *) input)->tail_cost);
     } else {
-        free( ( (cost_matrices_3d_t *) input )->cost);
-        free( ( (cost_matrices_3d_t *) input )->median);
+        if (NULL != ((cost_matrices_3d_t *) input)->cost)   free( ((cost_matrices_3d_t *) input)->cost);
+        if (NULL != ((cost_matrices_3d_t *) input)->median) free( ((cost_matrices_3d_t *) input)->median);
     }
 
-    free (input);
+    if (NULL != input) free (input);
 }
 
 
@@ -71,11 +71,11 @@ void freeCostMtx(void * input, int is_2d) {
  * TODO: make sure I'm actually deallocing right here.
  */
 void freeNWMtx(alignment_matrices_t *input) {
-    free (input->algn_costMtx);
-    free (input->algn_dirMtx);
-    free (input->algn_precalcMtx);
+    if (NULL != input->algn_costMtx)    free (input->algn_costMtx);
+    if (NULL != input->algn_dirMtx)     free (input->algn_dirMtx);
+    if (NULL != input->algn_precalcMtx) free (input->algn_precalcMtx);
 
-    free(input);
+    if (NULL != input) free(input);
 }
 
 
