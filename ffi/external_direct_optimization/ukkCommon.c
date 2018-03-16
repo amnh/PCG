@@ -366,6 +366,36 @@ void revElem_tArray( elem_t *arr, int start, int end )
 }
 
 
+void free_characters_t( characters_t *toFree )
+{
+    if (NULL != toFree->seq1) free(toFree->seq1);
+    if (NULL != toFree->seq2) free(toFree->seq2);
+    if (NULL != toFree->seq3) free(toFree->seq3);
+}
+
+
+characters_t *alloc_characters_t( size_t seq_1_number_elems, size_t seq_2_number_elems, size_t seq_3_number_elems )
+{
+    characters_t *toReturn = malloc( sizeof(characters_t) );
+    toReturn->seq1 = malloc( seq_1_number_elems * sizeof(elem_t) );
+    toReturn->seq2 = malloc( seq_2_number_elems * sizeof(elem_t) );
+    toReturn->seq3 = malloc( seq_3_number_elems * sizeof(elem_t) );
+    assert(   toReturn       != NULL
+           && toReturn->seq1 != NULL
+           && toReturn->seq2 != NULL
+           && toReturn->seq3 != NULL
+           && "Out of Memory error: Can't allocate." );
+    toReturn->lenSeq1 = seq_1_number_elems;
+    toReturn->lenSeq2 = seq_2_number_elems;
+    toReturn->lenSeq3 = seq_3_number_elems;
+
+    toReturn->idxSeq1 = toReturn->idxSeq2
+                      = toReturn->idxSeq3
+                      = 0;
+    return toReturn;
+}
+
+
 int alignmentCost(          int  states[]
                  , unsigned int *al1
                  , unsigned int *al2

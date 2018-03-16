@@ -115,7 +115,7 @@ void alignIOtoDynChar(       dyn_character_t *retChar
 
 
 /** Allocate the fields of an alignIO struct. Incoming pointer must already have space for the alignIO field pointers allocated. */
-void allocAlignIO( alignIO_t *toAlloc, size_t capacity );
+alignIO_t *allocAlignIO( size_t capacity );
 
 
 /** For use in 3DO and for testing.

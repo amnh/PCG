@@ -79,9 +79,9 @@ extern elem_t gap_char_g;
  *  Used for both input and output types for Ukkonnen alignment.
  */
 typedef struct characters_t {
-    elem_t *seq1;  // string representation inputs
-    elem_t *seq2;  // string representation inputs
-    elem_t *seq3;  // string representation inputs
+    elem_t *seq1;     // string representation inputs
+    elem_t *seq2;     // string representation inputs
+    elem_t *seq3;     // string representation inputs
     int     lenSeq1;  // lengths of A, B and Cstr. Have to be signed because compared to `furthestReached` in `ukkCheckPoint.c`
     int     lenSeq2;  // lengths of A, B and Cstr. Have to be signed because compared to `furthestReached` in `ukkCheckPoint.c`
     int     lenSeq3;  // lengths of A, B and Cstr. Have to be signed because compared to `furthestReached` in `ukkCheckPoint.c`
@@ -109,8 +109,10 @@ char *state2str( int s );
 int countTrans( Trans st[3], Trans t );
 void setup();
 
+
 // Alignment checking routines
 void checkAlign( elem_t *al, int alLen, elem_t *str, int strLen );
+
 
 /** As it says, reverses an array of `int`s */
 void revIntArray( int *arr, int start, int end );
@@ -118,6 +120,16 @@ void revIntArray( int *arr, int start, int end );
 
 /** As it says, reverses an array of `elem_t`s */
 void revElem_tArray( elem_t *arr, int start, int end );
+
+
+/** Frees all internal pointers to a characters_t struct. */
+void free_characters_t( characters_t *toFree );
+
+
+/** Allocates all internal arrays and initializes array lengths and pointer locations for a characters_t struct with
+ *  `number_elems` elements, where each element is of type `elem_t`, which is a synonym for `unsigned int`. */
+characters_t *alloc_characters_t( size_t seq_1_number_elems, size_t seq_2_number_elems, size_t seq_3_number_elems );
+
 
 
 /** As it says, reverses an array of `char`s */
