@@ -132,8 +132,9 @@ library
     ffi/memoized_tcm/dynamicCharacterOperations.c
     -- ffi/memoized_tcm/costMatrix.h
     ffi/memoized_tcm/costMatrix_2d.cpp
+    ffi/memoized_tcm/costMatrix_3d.cpp
     -- ffi/memoized_tcm/costMatrixWrapper.h
-    ffi/memoized_tcm/costMatrixWrapper_2d.c
+    ffi/memoized_tcm/costMatrixWrapper.c
     -- ffi/sequential_align/sequentialAlignInterface.h
     ffi/sequential_align/sequentialAlignInterface.c
     -- ffi/sequential_align/sequentialAlign.h

@@ -17,7 +17,8 @@ module Data.TCM.Memoized.FFI
   , ForeignVoid()
   , MemoizedCostMatrix(costMatrix)
   , getMemoizedCostMatrix
-  , getMedianAndCost
+  , getMedianAndCost2D
+  , getMedianAndCost3D
   -- * Utility functions
   , calculateBufferLength
   , coerceEnum
@@ -39,7 +40,7 @@ import Test.QuickCheck hiding ((.&.), output)
 
 -- import Debug.Trace
 
-#include "costMatrixWrapper_2d.h"
+#include "costMatrixWrapper.h"
 #include "dynamicCharacterOperations.h"
 
 
@@ -207,17 +208,25 @@ instance Storable MemoizedCostMatrix where
 -- generate the entire cost matrix, which includes ambiguous elements. TCM is
 -- row-major, with each row being the left character element. It is therefore
 -- indexed not by powers of two, but by cardinal integer.
-foreign import ccall unsafe "costMatrixWrapper matrixInit_2d"
+foreign import ccall unsafe "costMatrixWrapper matrixInit"
     initializeMemoizedCMfn_c :: CSize
                              -> Ptr CUInt
                              -> IO (StablePtr ForeignVoid)
 
 
-foreign import ccall unsafe "costMatrix getCostAndMedian_2d"
-    getCostAndMedianFn_c :: Ptr DCElement
+foreign import ccall unsafe "costMatrix getCostAndMedian2D"
+    getCostAndMedian2D_c :: Ptr DCElement
                          -> Ptr DCElement
                          -> Ptr DCElement
---                         -> CSize
+                         -> StablePtr ForeignVoid
+                         -> IO CUInt
+
+
+foreign import ccall unsafe "costMatrix getCostAndMedian3D"
+    getCostAndMedian3D_c :: Ptr DCElement
+                         -> Ptr DCElement
+                         -> Ptr DCElement
+                         -> Ptr DCElement
                          -> StablePtr ForeignVoid
                          -> IO CUInt
 
@@ -244,17 +253,40 @@ getMemoizedCostMatrix alphabetSize costFn = unsafePerformIO . withArray rowMajor
 -- symbol sets.
 --
 -- *Note:* This operation is lazily evaluated and memoized for future calls.
-getMedianAndCost :: Exportable s => MemoizedCostMatrix -> s -> s -> (s, Word)
-getMedianAndCost memo lhs rhs = unsafePerformIO $ do
+getMedianAndCost2D :: Exportable s => MemoizedCostMatrix -> s -> s -> (s, Word)
+getMedianAndCost2D memo e1 e2 = unsafePerformIO $ do
     medianPtr     <- constructEmptyElement alphabetSize
-    lhs'          <- constructElementFromExportable lhs
-    rhs'          <- constructElementFromExportable rhs
-    !cost         <- getCostAndMedianFn_c lhs' rhs' medianPtr (costMatrix memo)
+    e1'          <- constructElementFromExportable e1
+    e2'          <- constructElementFromExportable e2
+    !cost         <- getCostAndMedian2D_c e1' e2' medianPtr (costMatrix memo)
     medianElement <- peek medianPtr
     medianValue   <- fmap buildExportable . peekArray bufferLength $ characterElement medianElement
     pure (medianValue, coerceEnum cost)
   where
-    alphabetSize    = exportedElementWidthSequence $ toExportableBuffer lhs
+    alphabetSize    = exportedElementWidthSequence $ toExportableBuffer e1
+    buildExportable = fromExportableBuffer . ExportableCharacterSequence 1 alphabetSize
+    bufferLength    = calculateBufferLength alphabetSize 1
+
+
+-- |
+-- /O(1)/ amortized.
+--
+-- Calculate the median symbol set and transition cost between the two input
+-- symbol sets.
+--
+-- *Note:* This operation is lazily evaluated and memoized for future calls.
+getMedianAndCost3D :: Exportable s => MemoizedCostMatrix -> s -> s -> s -> (s, Word)
+getMedianAndCost3D memo e1 e2 e3 = unsafePerformIO $ do
+    medianPtr     <- constructEmptyElement alphabetSize
+    e1'           <- constructElementFromExportable e1
+    e2'           <- constructElementFromExportable e2
+    e3'           <- constructElementFromExportable e3
+    !cost         <- getCostAndMedian3D_c e1' e2' e3' medianPtr (costMatrix memo)
+    medianElement <- peek medianPtr
+    medianValue   <- fmap buildExportable . peekArray bufferLength $ characterElement medianElement
+    pure (medianValue, coerceEnum cost)
+  where
+    alphabetSize    = exportedElementWidthSequence $ toExportableBuffer e1
     buildExportable = fromExportableBuffer . ExportableCharacterSequence 1 alphabetSize
     bufferLength    = calculateBufferLength alphabetSize 1
 

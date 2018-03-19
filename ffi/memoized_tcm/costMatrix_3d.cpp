@@ -9,27 +9,38 @@
 
 // TODO: I'll need this for the Haskell side of things: https://hackage.haskell.org/package/base-4.9.0.0/docs/Foreign-StablePtr.html
 
-costMatrix_p construct_CostMatrix_3d_C( size_t alphSize, unsigned int* tcm )
+costMatrix_p construct_CostMatrix_C( size_t alphSize, unsigned int* tcm )
 {
     return new CostMatrix_3d( alphSize, tcm );
 }
 
 
-void destruct_CostMatrix_3d_C( costMatrix_p untyped_self )
+void destruct_CostMatrix_C( costMatrix_p untyped_self )
 {
     delete static_cast<CostMatrix_3d*> (untyped_self);
 }
 
 
-unsigned int call_getSetCost_3d_C( costMatrix_p untyped_self
-                                 , dcElement_t* first
-                                 , dcElement_t* second
-                                 , dcElement_t* third
-                                 , dcElement_t* retMedian
-                                 )
+unsigned int call_costAndMedian2D_C( costMatrix_p untyped_self
+                                   , dcElement_t* first
+                                   , dcElement_t* second
+                                   , dcElement_t* retMedian
+                                   )
 {
     CostMatrix_3d* thisMtx = static_cast<CostMatrix_3d*> (untyped_self);
-    return thisMtx->getSetCostMedian(first, second, third, retMedian);
+    return thisMtx->costAndMedian2D(first, second, retMedian);
+}
+
+
+unsigned int call_costAndMedian3D_C( costMatrix_p untyped_self
+                                   , dcElement_t* first
+                                   , dcElement_t* second
+                                   , dcElement_t* third
+                                   , dcElement_t* retMedian
+                                   )
+{
+    CostMatrix_3d* thisMtx = static_cast<CostMatrix_3d*> (untyped_self);
+    return thisMtx->costAndMedian3D(first, second, third, retMedian);
 }
 
 
@@ -116,6 +127,29 @@ unsigned int CostMatrix_3d::getCostMedian( dcElement_t* first
 }
 
 
+unsigned int CostMatrix_3d::costAndMedian2D( dcElement_t* first
+                                           , dcElement_t* second
+                                           , dcElement_t* retMedian
+                                           )
+{
+  fprintf(stderr, "Memoized 2D ping\n");
+  fflush(stderr);
+  return twoD_matrix->getSetCostMedian(first, second, retMedian);
+}
+
+
+unsigned int CostMatrix_3d::costAndMedian3D( dcElement_t* first
+                                           , dcElement_t* second
+                                           , dcElement_t* third
+                                           , dcElement_t* retMedian
+                                           )
+{
+  fprintf(stderr, "Memoized 3D ping\n");
+  fflush(stderr);
+  return getSetCostMedian(first, second, third, retMedian);
+}
+
+
 unsigned int CostMatrix_3d::getSetCostMedian( dcElement_t* first
                                             , dcElement_t* second
                                             , dcElement_t* third
@@ -137,12 +171,11 @@ unsigned int CostMatrix_3d::getSetCostMedian( dcElement_t* first
                          , first->element[0], second->element[0], third->element[0] );
 
         const auto computedCostMed = computeCostMedian(toLookup);
-        //costMedian_t* computedCostMed = computeCostMedianFitchy(*toLookup);
 
         if(DEBUG) printf( "computed cost, median: %2i %" PRIu64 "\n"
                         , std::get<0>(*computedCostMed), std::get<1>(*computedCostMed)[0] );
 
-        foundCost          = std::get<0>(*computedCostMed);
+        foundCost = std::get<0>(*computedCostMed);
 
         if(retMedian->element != NULL) std::free(retMedian->element);
         retMedian->element = makePackedCharCopy( std::get<1>(*computedCostMed), twoD_matrix->alphabetSize, 1 );
@@ -150,7 +183,6 @@ unsigned int CostMatrix_3d::getSetCostMedian( dcElement_t* first
         setValue(first, second, third, computedCostMed);
         freeCostMedian_t(computedCostMed);
         delete computedCostMed;
-        // freeMapAccessTuple_t(toLookup);
     } else {
         // because in the next two lines, I get back a tuple<keys_3d_t, costMedian_t>
         foundCost = std::get<0>(std::get<1>(*found));
@@ -158,7 +190,6 @@ unsigned int CostMatrix_3d::getSetCostMedian( dcElement_t* first
         retMedian->element = makePackedCharCopy( std::get<1>(std::get<1>(*found)), twoD_matrix->alphabetSize, 1 );
     }
 
-    // don't need to free toLookup because it only contains pointers to input dc_Elements which will be dealloc'ed elsewhere
     if(DEBUG) printf("Matrix Value Count: %lu\n", myMatrix.size());
 
     return foundCost;

@@ -13,7 +13,8 @@
 module Data.TCM.Memoized
   ( FFI.MemoizedCostMatrix
   , generateMemoizedTransitionCostMatrix
-  , FFI.getMedianAndCost
+  , FFI.getMedianAndCost2D
+  , FFI.getMedianAndCost3D
   ) where
 
 import qualified Data.TCM.Memoized.FFI as FFI

@@ -22,6 +22,7 @@
 module Analysis.Parsimony.Dynamic.DirectOptimization.Internal where
 
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (overlap)
 import           Analysis.Parsimony.Dynamic.SequentialAlign
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
@@ -85,7 +86,7 @@ selectDynamicMetric candidate
   | otherwise =
       case candidate ^. denseTransitionCostMatrix of
         Just dm -> \x y -> foreignPairwiseDO x y dm
-        Nothing -> let !sTCM' = getMedianAndCost sTCM
+        Nothing -> let !sTCM' = getMedianAndCost2D sTCM
                    in  \x y -> ukkonenDO x y sTCM'
   where
     !sTCM = candidate ^. sparseTransitionCostMatrix
@@ -283,10 +284,25 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter parentSingle 
     -- If we have a small alphabet, there will not have been a call to
     -- initialize a memoized TCM. We certainly don't want to force that here!
     costStructure =
-      case childDecoration ^. denseTransitionCostMatrix of
-        Nothing -> getMedianAndCost (childDecoration ^. sparseTransitionCostMatrix)
-        Just _  -> let !scm = childDecoration ^. symbolChangeMatrix
-                   in \x y -> getOverlap x y scm
+        case childDecoration ^. denseTransitionCostMatrix of
+          Nothing -> getMedianAndCost3D (childDecoration ^. sparseTransitionCostMatrix)
+          -- Compute things naively
+          Just _  -> naiveMedianAndCost3D
+      where
+        !scm = childDecoration ^. symbolChangeMatrix
+        gap = gapOfStream parentCharacter
+        zed = gap `xor` gap
+        singletonStates = (zed `setBit`) <$> [0 .. fromEnum (symbolCount zed) - 1]
+        naiveMedianAndCost3D a b c = fmap unsafeToFinite $ foldl' g (zed, infinity :: ExtendedNatural) singletonStates
+          where
+            g acc@(combinedState, curentMinCost) singleState =
+                case combinedCost `compare` curentMinCost of
+                  EQ -> (combinedState .|. singleState, curentMinCost)
+                  LT -> (                  singleState, combinedCost)
+                  GT -> acc
+              where
+                combinedCost = fromFinite . sum $ (snd . overlap scm singleState) <$> [a, b, c]
+
 
     single = lexicallyDisambiguate $ filterGaps almostSingle
     (_, ungapped, gapped)  = threeWayMean costStructure extendedParentFinal  extendedLeftCharacter1 extendedRightCharacter1
@@ -421,7 +437,7 @@ threeWayMean
   :: ( EncodableDynamicCharacter c
      , EncodedAmbiguityGroupContainer c
      )
-  => (Element c -> Element c -> (Element c, Word))
+  => (Element c -> Element c -> Element c -> (Element c, Word))
   -> c
   -> c
   -> c
@@ -435,7 +451,8 @@ threeWayMean sigma char1 char2 char3 =
     gap = gapOfStream char1
     zed = gap `xor` gap
     singletonStates = (zed `setBit`) <$> [0 .. fromEnum (symbolCount char1) - 1]
-    (meanStates, costValues) = unzip $ zipWith3 f (otoList char1) (otoList char2) (otoList char3)
+    (meanStates, costValues) = unzip $ zipWith3 sigma (otoList char1) (otoList char2) (otoList char3)
+    {-
     f a b c = foldl' g (zed, infinity :: ExtendedNatural) singletonStates
       where
         g acc@(combinedState, curentMinCost) singleState =
@@ -445,7 +462,7 @@ threeWayMean sigma char1 char2 char3 =
               GT -> acc
           where
             combinedCost = fromFinite . sum $ (snd . sigma singleState) <$> [a, b, c]
-      
+    -}
 {-
 f a b c = minimalChoice $
               sigma a b  :|

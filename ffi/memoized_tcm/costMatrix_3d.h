@@ -22,7 +22,7 @@
 #include <cstdlib>
 #include <unordered_map>
 
-#include "costMatrix_2d.h"
+//#include "costMatrixWrapper.h"
 
 
 /********************* Next three fns defined here to use on C side. *********************/
@@ -32,15 +32,24 @@ extern "C" {
 
 #include "dynamicCharacterOperations.h"
 
-costMatrix_p construct_CostMatrix_3d_C (size_t alphSize, unsigned int* tcm);
-void destruct_CostMatrix_3d_C (costMatrix_p mytype);
-unsigned int call_getSetCost_3d_C ( costMatrix_p untyped_self
-                                  , dcElement_t* first
-                                  , dcElement_t* second
-                                  , dcElement_t* third
-                                  , dcElement_t* retMedian
-                                  );
-    // extern "C" costMatrix_p get_CostMatrix_2dPtr_C(costMatrix_p untyped_self);
+costMatrix_p construct_CostMatrix_C (size_t alphSize, unsigned int* tcm);
+
+void destruct_CostMatrix_C (costMatrix_p mytype);
+
+unsigned int call_costAndMedian2D_C ( costMatrix_p untyped_self
+                                    , dcElement_t* first
+                                    , dcElement_t* second
+                                    , dcElement_t* retMedian
+                                    );
+
+unsigned int call_costAndMedian3D_C ( costMatrix_p untyped_self
+                                    , dcElement_t* first
+                                    , dcElement_t* second
+                                    , dcElement_t* third
+                                    , dcElement_t* retMedian
+                                    );
+
+// extern "C" costMatrix_p get_CostMatrix_2dPtr_C(costMatrix_p untyped_self);
 
 #ifdef __cplusplus
 }
@@ -175,6 +184,8 @@ class CostMatrix_3d
 
         /** Getter only for cost. Necessary for testing, to ensure that particular
          *  key pair has, in fact, already been inserted into lookup table.
+         *
+         *  TODO: Eventually remove
          */
         unsigned int getCostMedian( dcElement_t* first
                                   , dcElement_t* second
@@ -187,15 +198,58 @@ class CostMatrix_3d
          *  Receives two dcElements and computes the transformation cost as well as
          *  the median for the two. Puts the median and alphabet size into retMedian,
          *  which must therefore by necessity be allocated elsewhere.
-         *
+         * 
          *  This functin allocates _if necessary_. So freeing inputs after a call will not
          *  cause invalid reads from the cost matrix.
+         *
+         *  TODO: Replace withcostAndMedian3D
          */
         unsigned int getSetCostMedian( dcElement_t* first
                                      , dcElement_t* second
                                      , dcElement_t* third
                                      , dcElement_t* retMedian
                                      );
+
+        /** Returns the cost to transition between the *two* input elements and 
+         *  sets retMedian to be the median value between the *two* input 
+         *  elements.
+         *
+         *  If this is the first call to the function with the supplied inputs,
+         *  then the cost and median will be calculated and the result with be 
+         *  internally cached. 
+         *
+         *  If the pair of inputs have already been queried, the cached result 
+         *  is returned in constant time.
+         *
+         *  This function performs deep copies of the inputs _when necessary_. 
+         *  Freeing inputs after a call will _never_ cause invalid reads from 
+         *  the cost matrix.
+         */
+        unsigned int costAndMedian2D( dcElement_t* first
+                                    , dcElement_t* second
+                                    , dcElement_t* retMedian
+                                      );
+
+
+        /** Returns the cost to transition between the *three* input elements and 
+         *  sets retMedian to be the median value between the *two* input 
+         *  elements.
+         *
+         *  If this is the first call to the function with the supplied inputs,
+         *  then the cost and median will be calculated and the result with be 
+         *  internally cached. 
+         *
+         *  If the pair of inputs have already been queried, the cached result 
+         *  is returned in constant time.
+         *  This function performs deep copies of the inputs _when necessary_. 
+         *  Freeing inputs after a call will _never_ cause invalid reads from 
+         *  the cost matrix.
+         */
+        unsigned int costAndMedian3D( dcElement_t* first
+                                    , dcElement_t* second
+                                    , dcElement_t* third
+                                    , dcElement_t* retMedian
+                                    );
 
     private:
 
