@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveGeneric, FlexibleContexts #-}
+{-# LANGUAGE DeriveGeneric, FlexibleContexts, TemplateHaskell #-}
 
 module Main (main) where
 
@@ -9,6 +9,7 @@ import Control.Evaluation
 import Data.Semigroup ((<>))
 import Data.Version (showVersion)
 import Data.Void
+import Development.GitRev (gitCommitCount, gitHash)
 import GHC.Generics
 import Options.Applicative hiding (ParseError)
 import PCG.Computation.Internal
@@ -48,7 +49,7 @@ main = do
      opts <- parseCommandLineOptions
      let  verbosity = validateVerbosity $ verbosityNum opts
      if   printVersion opts
-     then putStrLn $ "Phylogenetic Component Graph alpha version " <> showVersion version
+     then putStrLn versionInformation
      else do
           inputStream  <- if   inputFile opts == "STDIN"
                           then getContents
@@ -63,6 +64,17 @@ main = do
      parse' :: Parsec Void s a -> String -> s -> Either (ParseError (Token s) Void) a
      parse' = parse
       
+
+versionInformation = mconcat
+    [ "(alpha) version "
+    , showVersion version
+    , "["
+    , $(gitHash)
+    , "] ("
+    , $(gitCommitCount)
+    , " commits)"
+    ]
+  
 
 parseCommandLineOptions :: IO CommandLineOptions
 parseCommandLineOptions = customExecParser preferences $ info (helper <*> commandLineOptions) description

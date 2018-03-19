@@ -299,6 +299,7 @@ executable pcg
                      , containers       >=0.5.8
                      , deepseq
                      , directory
+                     , gitrev
                      , Glob
                      , graphviz
                      , hashable
