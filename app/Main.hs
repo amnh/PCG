@@ -65,7 +65,7 @@ main = do
       
 
 parseCommandLineOptions :: IO CommandLineOptions
-parseCommandLineOptions = customExecParser preferences $ info commandLineOptions description
+parseCommandLineOptions = customExecParser preferences $ info (helper <*> commandLineOptions) description
   where
     commandLineOptions =
         CommandLineOptions
