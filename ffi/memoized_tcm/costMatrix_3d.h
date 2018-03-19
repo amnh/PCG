@@ -221,32 +221,6 @@ class CostMatrix_3d
          */
         costMedian_t* computeCostMedian(keys_3d_t keys);
 
-
-        /** Find distance between an ambiguous nucleotide and an unambiguous ambElem. Return
-         *  that value and the median.
-         *  @param ambElem is ambiguous input.
-         *  @param nucleotide is unambiguous.
-         *  @param median is used to return the calculated median value.
-         *
-         *  This fn is necessary because there isn't yet a cost matrix set up, so it's not
-         *  possible to look up ambElems, therefore we must loop over possible values of the
-         *  ambElem and find the lowest cost median.
-         *
-         *  Nota bene: Requires symmetric, if not metric, matrix. TODO: Is this true? If so fix it?
-         */
-        /* As far as I can tell, this does not have a meaningful 3D analog to the 2D definition.
-        unsigned int findDistance (keys_3d_t* searchKey, dcElement_t* ambElem);
-        */
-
-        /** Takes in an initial TCM, which is actually just a row-major array, creates hash
-         *  table of costs where cost is least cost between two elements, and medians,
-         *  where median is union of characters.
-         *
-         *  Nota bene:
-         *  Can only be called once this.alphabetSize has been set.
-         */
-        void initializeMatrix ();
-
 };
 
 #endif // COSTMATRIX_3D_H

@@ -80,7 +80,6 @@ CostMatrix_2d::CostMatrix_2d()
   , elementSize(1)
 {
     initializeTCM(defaultExtraGapCostMetric);
-    initializeMatrix();
 }
 
 
@@ -89,7 +88,6 @@ CostMatrix_2d::CostMatrix_2d( size_t alphSize, unsigned int* inTcm )
   , elementSize(dcElemSize(alphSize))
 {
     initializeTCM(inTcm);
-    initializeMatrix();
 }
 
 
@@ -265,39 +263,6 @@ unsigned int CostMatrix_2d::findDistance (const size_t fixedSymbolIndex, const d
     }
 
     return minCost;
-}
-
-
-void CostMatrix_2d::initializeMatrix()
-{
-    const auto firstKey  = allocateDCElement( alphabetSize );
-    const auto secondKey = allocateDCElement( alphabetSize );
-    const auto toLookup  = std::make_tuple(*firstKey, *secondKey);
-
-    for (size_t firstKey_bit = 0; firstKey_bit < alphabetSize; ++firstKey_bit) { // for every possible value of firstKey_bit, secondKey_bit
-        SetBit(firstKey->element, firstKey_bit);
-
-        // secondKey_bit starts from 0, so non-symmetric matrices should work
-        for (size_t secondKey_bit = 0; secondKey_bit < alphabetSize; ++secondKey_bit) { // doesn't assumes 0 diagonal
-            if (DEBUG) printf("Insert key1_bit: %3zu, key2_bit: %3zu\n", firstKey_bit, secondKey_bit);
-            SetBit(secondKey->element, secondKey_bit);
-
-            const auto toInsert = computeCostMedian(toLookup);
-
-            setValue(firstKey, secondKey, toInsert);
-            freeCostMedian_t(toInsert);
-            delete toInsert;
-            ClearBit(secondKey->element, secondKey_bit);
-        }
-        ClearBit(firstKey->element, firstKey_bit);
-    }
-    // Just to reiterate, getSetCostMedian() should allocate, so we should dealloc these.
-    freeDCElem(firstKey);        // deallocate array
-    freeDCElem(secondKey);
-    std::free(firstKey);         // free pointer
-    std::free(secondKey);
-    // printf("finished initializing\n");
-    // printf("freed keys\n");
 }
 
 

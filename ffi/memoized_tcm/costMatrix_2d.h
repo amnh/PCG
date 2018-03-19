@@ -245,14 +245,6 @@ class CostMatrix_2d
          */
         costMedian_t* computeCostMedian(keys_2d_t key);
 
-        /** Takes in an initial TCM, which is actually just a row-major array, creates hash table of costs
-         *  where cost is least cost between two elements, and medians, where median is union of characters.
-         *
-         *  Nota bene:
-         *  Can only be called once this.alphabetSize has been set.
-         */
-        void initializeMatrix ();
-
         /** Takes an input buffer and assigns a malloc'ed copy to @tcm.
          *  Uses the @alphabetSize of the matrix to determine the required space.
          *  Because @alphabetSize is a const member, it will always be initialized

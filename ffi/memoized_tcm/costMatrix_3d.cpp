@@ -70,14 +70,12 @@ void freeKeys_3d_t( const keys_3d_t* toFree )
 CostMatrix_3d::CostMatrix_3d()
 {
     twoD_matrix = new CostMatrix_2d();
-    initializeMatrix();
 }
 
 
 CostMatrix_3d::CostMatrix_3d( size_t alphSize, unsigned int* inTcm )
 {
     twoD_matrix = new CostMatrix_2d(alphSize, inTcm);
-    initializeMatrix();
 }
 
 
@@ -87,7 +85,6 @@ CostMatrix_3d::~CostMatrix_3d()
         freeCostMedian_t( &std::get<1>(*iterator) );
         freeKeys_3d_t( &std::get<0>(*iterator) );
     }
-    // twoD_matrix->~CostMatrix_2d();
     delete twoD_matrix;
     myMatrix.clear();
 }
@@ -223,104 +220,6 @@ costMedian_t* CostMatrix_3d::computeCostMedian(keys_3d_t keys)
     std::get<1>(*toReturn) = curMedian;
 
     return toReturn;
-}
-
-
-// As far as I can tell, this does not have a meaningful 3D analog to the 2D definition.
-/*
-unsigned int CostMatrix_3d::findDistance (keys_3d_t* searchKey, dcElement_t* fixedSymbolIndex)
-{
-    auto minCost{INT_MAX},
-         curCost{INT_MAX};
-    size_t unambElemIdx;
-
-    for (size_t pos = 0; pos < twoD_matrix->alphabetSize; ++pos) {
-        if (TestBit( ambElem->element, pos )) {
-
-            SetBit( std::get<0>(*searchKey).element, pos );
-            const auto found = myMatrix.find(*searchKey);
-
-            if (found == myMatrix.end()) {
-                // do unambiguous calculation here
-                if( !isAmbiguous(ambElem->element, dcElemSize(twoD_matrix->alphabetSize)) ) {
-                    unambElemIdx = 0;
-                    while( unambElemIdx < twoD_matrix->alphabetSize && !TestBit(std::get<1>(*searchKey).element, unambElemIdx) ) {
-                        unambElemIdx++;
-                    }
-                    curCost = tcm[pos * twoD_matrix->alphabetSize + unambElemIdx];
-                    // printf("\n--findDistance-- \n    ambElemIdx: %zu, nucleotide: %zu, cost: %d\n", unambElemIdx, pos, curCost);
-                } else {
-                    printf("Something went wrong in the memoized cost matrix.\n");
-                    printf("missing key: %" PRIu64 " %" PRIu64 "\n", *std::get<0>(*searchKey).element, *std::get<1>(*searchKey).element);
-                    exit(1);
-                }
-            } else {  // We found the memoized cost for the elements in the TCM.
-                curCost = std::get<0>(std::get<1>(*found));
-            }
-            if (curCost < minCost) {
-                minCost = curCost;
-            }
-            ClearBit( std::get<0>(*searchKey).element, pos );
-        }
-    }
-
-    if (DEBUG) {
-        printf( "distance ambElem: %" PRIu64 ", nucleotide: %" PRIu64 "\n"
-              , ambElem->element[0]
-              , *std::get<1>(*searchKey).element
-              );
-
-        printf( "cost: %i\n", minCost );
-    }
-
-    return minCost;
-}
-*/
-
-void CostMatrix_3d::initializeMatrix()
-{
-    const auto symbolCount = twoD_matrix->alphabetSize; // For efficiency, dereference less.
-    const auto firstKey    = allocateDCElement( symbolCount );
-    const auto secondKey   = allocateDCElement( symbolCount );
-    const auto thirdKey    = allocateDCElement( symbolCount );
-    const auto toLookup    = std::make_tuple(*firstKey, *secondKey, *thirdKey);
-
-    // for every possible value of firstKey_bit, secondKey_bit, & third_bit
-    for (size_t firstKey_bit = 0; firstKey_bit < symbolCount; ++firstKey_bit) {
-        SetBit(firstKey->element, firstKey_bit);
-
-        // secondKey_bit and thirdKey_bit start from 0, so non-symmetric input TCMs will work
-        // Doesn't assumes 0 diagonal
-        for (size_t secondKey_bit = 0; secondKey_bit < symbolCount; ++secondKey_bit) {
-            SetBit(secondKey->element, secondKey_bit);
-
-            for (size_t thirdKey_bit = 0; thirdKey_bit < symbolCount; ++thirdKey_bit) {
-                if (DEBUG) printf("Insert firstKey_bit: %3zu, secondKey_bit: %3zu, thirdKey_bit: %3zu\n"
-                                 , firstKey_bit, secondKey_bit, thirdKey_bit);
-
-                SetBit(thirdKey->element, thirdKey_bit);
-
-                const auto toInsert = computeCostMedian(toLookup);
-
-                setValue(firstKey, secondKey, thirdKey, toInsert);
-
-                freeCostMedian_t(toInsert);
-                delete toInsert;
-
-                ClearBit(thirdKey->element, thirdKey_bit);
-            }
-            ClearBit(secondKey->element, secondKey_bit);
-        }
-        ClearBit(firstKey->element, firstKey_bit);
-    }
-    freeDCElem(firstKey);
-    freeDCElem(secondKey);
-    freeDCElem(thirdKey);
-    std::free(firstKey); 
-    std::free(secondKey);
-    std::free(thirdKey);
-    // printf("finished initializing\n");
-    // printf("freed keys\n");
 }
 
 
