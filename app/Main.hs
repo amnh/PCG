@@ -48,7 +48,7 @@ main = do
      opts <- parseCommandLineOptions
      let  verbosity = validateVerbosity $ verbosityNum opts
      if   printVersion opts
-     then putStrLn $ "Phylogenetic Component Graph version" <> showVersion version
+     then putStrLn $ "Phylogenetic Component Graph version " <> showVersion version
      else do
           inputStream  <- if   inputFile opts == "STDIN"
                           then getContents
