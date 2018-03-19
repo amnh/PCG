@@ -292,6 +292,7 @@ executable pcg
   main-is:             Main.hs
 
   build-depends:       phylocomgraph
+                     , ansi-wl-pprint
                      , base             >=4.8
                      , blaze-html
                        -- Required for Data.Map.restrictKeys
@@ -305,6 +306,7 @@ executable pcg
                      , lens
                      , megaparsec       >=5.0
                      , mono-traversable >=1.0
+                     , optparse-applicative
                      , parallel
                      , pcg-file-parsers
                      , pcg-language
@@ -361,6 +363,7 @@ executable pcg
   hs-source-dirs:      app
 
   other-modules:
+                       Paths_phylocomgraph
                        PCG.Command.Build.Evaluate
                        PCG.Command.Read.DecorationInitialization
                        PCG.Command.Read.Evaluate

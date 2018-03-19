@@ -37,14 +37,11 @@ evaluate (Computation xs) = foldl' f mempty xs
 --    f _ = error "NOT YET IMPLEMENTED"
 
 
-renderSearchState :: Evaluation a -> IO ()
-renderSearchState e = do
-   _ <- case notifications e of
-          [] -> pure ()
-          xs -> putStrLn . unlines $ show <$> xs
+renderSearchState :: Evaluation a -> String
+renderSearchState e =
    case evaluationResult e of
-     NoOp         -> putStrLn   "[❓] No computation speciified...?"
-     Value _      -> putStrLn   "[✔] Computation complete!"
-     Error errMsg -> putStrLn $ "[✘] Error: "<> trimR errMsg
+     NoOp         -> "[❓] No computation speciified...?"
+     Value _      -> "[✔] Computation complete!"
+     Error errMsg -> "[✘] Error: "<> trimR errMsg
   where
     trimR = reverse . dropWhile isSpace . reverse
