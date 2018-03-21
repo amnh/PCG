@@ -59,17 +59,13 @@ int main() {
 
         for (size_t key2 = 0; key2 < alphabetSize; ++key2) { // no longer assumes 0 diagonal
             SetBit(secondKey->element, key2);
-            // TODO: How does this work in 3d?
-            cost = tcm[key1 * alphabetSize + key2];
             SetBit(&median, key2);
 
             for (size_t key3 = 0; key3 < alphabetSize; ++key3) { // no longer assumes 0 diagonal
                 SetBit(thirdKey->element, key3);
-                // TODO: How does this work in 3d?
-                cost = tcm[key1 * alphabetSize + key3];
                 SetBit(&median, key3);
 
-                foundCost = myMatrix.getCostMedian(firstKey, secondKey, thirdKey, retMedian);
+                foundCost = myMatrix.costAndMedian3D(firstKey, secondKey, thirdKey, retMedian);
                 fflush(stdout);
                 printf("key 1 set bit: %zu\n", key1);
                 printf("key 2 set bit: %zu\n", key2);

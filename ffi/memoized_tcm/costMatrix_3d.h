@@ -181,33 +181,6 @@ class CostMatrix_3d
 
         ~CostMatrix_3d();
 
-        /** Getter only for cost. Necessary for testing, to ensure that particular
-         *  key pair has, in fact, already been inserted into lookup table.
-         *
-         *  TODO: Eventually remove
-         */
-        unsigned int getCostMedian( dcElement_t* first
-                                  , dcElement_t* second
-                                  , dcElement_t* third
-                                  , dcElement_t* retMedian
-                                  );
-
-        /** Acts as both a setter and getter, mutating myMap.
-         *
-         *  Receives two dcElements and computes the transformation cost as well as
-         *  the median for the two. Puts the median and alphabet size into retMedian,
-         *  which must therefore by necessity be allocated elsewhere.
-         * 
-         *  This functin allocates _if necessary_. So freeing inputs after a call will not
-         *  cause invalid reads from the cost matrix.
-         *
-         *  TODO: Replace withcostAndMedian3D
-         */
-        unsigned int getSetCostMedian( dcElement_t* first
-                                     , dcElement_t* second
-                                     , dcElement_t* third
-                                     , dcElement_t* retMedian
-                                     );
 
         /** Returns the cost to transition between the *two* input elements and 
          *  sets retMedian to be the median value between the *two* input 

@@ -101,32 +101,6 @@ CostMatrix_3d::~CostMatrix_3d()
 }
 
 
-unsigned int CostMatrix_3d::getCostMedian( dcElement_t* first
-                                         , dcElement_t* second
-                                         , dcElement_t* third
-                                         , dcElement_t* retMedian
-                                         )
-{
-    const auto toLookup = std::make_tuple(*first, *second, *third);
-    auto foundCost{0};
-
-    const auto found = myMatrix.find(toLookup);
-
-    if ( found == myMatrix.end() ) {
-        return -1;
-    } else {
-        const auto foundValue = std::get<1>(*found);
-        if (retMedian->element != NULL) std::free(retMedian->element);
-        retMedian->element = makePackedCharCopy( std::get<1>(foundValue), twoD_matrix->alphabetSize, 1 );
-        foundCost          = std::get<0>(foundValue);
-     }
-
-    // don't need to free toLookup because it only contains pointers to incoming dc_Elements which
-    // will be dealloc'ed elsewhere
-    return foundCost;
-}
-
-
 unsigned int CostMatrix_3d::costAndMedian2D( dcElement_t* first
                                            , dcElement_t* second
                                            , dcElement_t* retMedian
@@ -142,16 +116,6 @@ unsigned int CostMatrix_3d::costAndMedian3D( dcElement_t* first
                                            , dcElement_t* retMedian
                                            )
 {
-  return getSetCostMedian(first, second, third, retMedian);
-}
-
-
-unsigned int CostMatrix_3d::getSetCostMedian( dcElement_t* first
-                                            , dcElement_t* second
-                                            , dcElement_t* third
-                                            , dcElement_t* retMedian
-                                            )
-{
     const auto toLookup = std::make_tuple(*first, *second, *third);
     const auto found    = myMatrix.find(toLookup);
     auto foundCost{0};
@@ -163,7 +127,7 @@ unsigned int CostMatrix_3d::getSetCostMedian( dcElement_t* first
     }
 
     if ( found == myMatrix.end() ) {
-        if(DEBUG) printf( "\ngetSetCost didn't find %" PRIu64 " %" PRIu64 " %" PRIu64 ".\n"
+        if(DEBUG) printf( "\nCostAndMedian didn't find %" PRIu64 " %" PRIu64 " %" PRIu64 ".\n"
                          , first->element[0], second->element[0], third->element[0] );
 
         const auto computedCostMed = computeCostMedian(toLookup);
@@ -173,17 +137,25 @@ unsigned int CostMatrix_3d::getSetCostMedian( dcElement_t* first
 
         foundCost = std::get<0>(*computedCostMed);
 
-        if(retMedian->element != NULL) std::free(retMedian->element);
-        retMedian->element = makePackedCharCopy( std::get<1>(*computedCostMed), twoD_matrix->alphabetSize, 1 );
-
+        // If retMedian is NULL, we do not return the median result.
+        if (retMedian != NULL) {
+            if (retMedian->element != NULL) std::free(retMedian->element);
+            retMedian->element = makePackedCharCopy( std::get<1>(*computedCostMed), twoD_matrix->alphabetSize, 1 );
+        }
+        
         setValue(first, second, third, computedCostMed);
         freeCostMedian_t(computedCostMed);
         delete computedCostMed;
-    } else {
-        // because in the next two lines, I get back a tuple<keys_3d_t, costMedian_t>
+    }
+    else {
+        // I get back a tuple<keys_3d_t, costMedian_t>
         foundCost = std::get<0>(std::get<1>(*found));
-        if(retMedian->element != NULL) std::free(retMedian->element);
-        retMedian->element = makePackedCharCopy( std::get<1>(std::get<1>(*found)), twoD_matrix->alphabetSize, 1 );
+
+        // If retMedian is NULL, we do not return the median result.
+        if (retMedian != NULL) {
+            if (retMedian->element != NULL) std::free(retMedian->element);
+            retMedian->element = makePackedCharCopy( std::get<1>(std::get<1>(*found)), twoD_matrix->alphabetSize, 1 );
+        }
     }
 
     if(DEBUG) printf("Matrix Value Count: %lu\n", myMatrix.size());
@@ -221,24 +193,12 @@ costMedian_t* CostMatrix_3d::computeCostMedian(keys_3d_t keys)
                 + twoD_matrix->findDistance(symbolIndex, thirdKey);
 
         if (curCost < minCost) {
-            /*
-            printf("\n--computeCostMedian: New low cost.\n");
-            printf("    current nucleotide: %" PRIu64 " \n", *std::get<1>(searchKey).element);
-            printf("    found cost:      %d\n", curCost);
-          */
             minCost = curCost;
             ClearAll(curMedian, twoD_matrix->elementSize);
             SetBit(curMedian, symbolIndex);
-        } else if (curCost == minCost) {
-      /*
-            printf("\nSame cost, new median.\n");
-            printf("current nucleotide: %" PRIu64 " \n", *std::get<1>(searchKey).element);
-            printf("median: %" PRIu64 "\n", *curMedian);
-            printf("found cost:      %d\n", curCost);
-      */
+        }
+        else if (curCost == minCost) {
             SetBit(curMedian, symbolIndex);
-
-            // printf("new median: %" PRIu64 "\n", *curMedian);
         }
     }
 
