@@ -21,8 +21,7 @@
 #include <climits>
 #include <cstdlib>
 #include <unordered_map>
-
-//#include "costMatrixWrapper.h"
+#include "costMatrix_2d.h"
 
 
 /********************* Next three fns defined here to use on C side. *********************/
