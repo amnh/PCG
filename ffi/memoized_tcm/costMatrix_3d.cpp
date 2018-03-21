@@ -132,8 +132,6 @@ unsigned int CostMatrix_3d::costAndMedian2D( dcElement_t* first
                                            , dcElement_t* retMedian
                                            )
 {
-  fprintf(stderr, "Memoized 2D ping\n");
-  fflush(stderr);
   return twoD_matrix->getSetCostMedian(first, second, retMedian);
 }
 
@@ -144,8 +142,6 @@ unsigned int CostMatrix_3d::costAndMedian3D( dcElement_t* first
                                            , dcElement_t* retMedian
                                            )
 {
-  fprintf(stderr, "Memoized 3D ping\n");
-  fflush(stderr);
   return getSetCostMedian(first, second, third, retMedian);
 }
 
