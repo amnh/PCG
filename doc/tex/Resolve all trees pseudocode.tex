@@ -1,0 +1,53 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+
+\begin{document}
+\renewcommand{\algorithmiccomment}[1]{// #1}
+\begin{algorithm}
+\caption{Enumerate all trees for given taxon set}\label{euclid}
+\begin{algorithmic}[1]
+
+\Procedure{enumerate}{$\textit{graph}(V,E)$}
+
+\For {$e \in graph$}
+	\If {$e$ is leaf}
+		\Return $e$	\quad \algorithmiccomment{$e$ is its own root}
+	\EndIf
+    \State \textit{resolutions} $\gets \emptyset$
+    
+	\State $t_l \gets$ first tree subtending $e$
+	\State $t_r \gets$ second tree subtending $e$
+
+	
+	\For {$subtree_l$ in \Call{enumerate}{$t_l$}}
+		\For {$subtree_r$ in \Call{enumerate}{$t_r$}}
+			
+			\State $trees_{final} \cup (subtree_l \oplus subtree_r)$ 
+			
+			\quad \quad \quad \quad \quad \algorithmiccomment {Function $\oplus$ joins the roots of } 
+																
+			\quad \quad \quad \quad \quad \algorithmiccomment {$subtree_l$ and $subtree_r$ with an edge}
+																	 
+			\quad \quad \quad \quad \quad \algorithmiccomment {and subtends a root to that edge,}
+
+			\quad \quad \quad \quad \quad \algorithmiccomment {so a rooted tree is always returned.}
+		\EndFor
+	\EndFor
+%    \If {$v_1 \in \textit{done}$ \textbf{or} $v_2 \in \textit{done}$}
+%       \State $resolutions \gets resolutions$
+%    \Else 
+%        \If {$prevValue = v.unambiguousFinal$}
+%            \State $v.updated \gets False$
+%        \Else 
+%            \State $v.updated \gets$ \; True
+%            \State $convergence \gets$ \; False
+%        \EndIf
+%    \EndIf
+\EndFor
+
+\Return $trees_{final}$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
