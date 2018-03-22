@@ -199,57 +199,9 @@ class CostMatrix_3d
 
     private:
 
-        static constexpr unsigned int defaultExtraGapCostMetric[25] =
-            { 0, 1, 1, 1, 2
-            , 1, 0, 1, 1, 2
-            , 1, 1, 0, 1, 2
-            , 1, 1, 1, 0, 2
-            , 2, 2, 2, 2, 0
-            };
-
-        static constexpr unsigned int defaultDiscreteMetric[25] =
-            { 0, 1, 1, 1, 1
-            , 1, 0, 1, 1, 1
-            , 1, 1, 0, 1, 1
-            , 1, 1, 1, 0, 1
-            , 1, 1, 1, 1, 0
-            };
-
-        static constexpr unsigned int defaultL1NormMetric[25] =
-            { 0, 1, 2, 3, 4
-            , 1, 0, 1, 2, 3
-            , 2, 1, 0, 1, 2
-            , 3, 2, 1, 0, 1
-            , 4, 3, 2, 1, 0
-            };
-
         std::unordered_map <keys_3d_t, costMedian_t, KeyHash_3d, KeyEqual_3d> myMatrix;
 
         CostMatrix_2d* twoD_matrix;
-
-        const size_t alphabetSize;
-
-        /** Always equal to:
-         *    alphabetSize / sizeof ( packedChar ) + alphabetSize % sizeof(packedChar) ? 1 : 0
-         *  Calculated once and stored for efficeincy.
-         */
-        const size_t elementSize;
-
-        /** Stored unambiguous tcm, necessary to do first calls to findDistance() without having
-         *  to rewrite findDistance() and computeCostMedian_3d().
-         */
-        unsigned int *tcm;
-
-
-        /** Takes an input buffer and assigns a malloc'ed copy to @tcm.
-         *  Uses the @alphabetSize of the matrix to determine the required space.
-         *  Because @alphabetSize is a const member, it will always be initialized
-         *  before this call, making the allocation and copy safe so long as the
-         *  input buffer is equal to or greater than @alphabetSize squared in
-         *  length.
-         */
-        void initializeTCM(const unsigned int* const inputBuffer);
-
 
         /** Takes in a `keys_3d_t` and a `costMedian_t` and updates myMap to store the new values,
          *  with @key as a key, and @median as the value.
@@ -282,8 +234,9 @@ class CostMatrix_3d
          *
          *  Nota bene: Requires symmetric, if not metric, matrix. TODO: Is this true? If so fix it?
          */
+        /* As far as I can tell, this does not have a meaningful 3D analog to the 2D definition.
         unsigned int findDistance (keys_3d_t* searchKey, dcElement_t* ambElem);
-
+        */
 
         /** Takes in an initial TCM, which is actually just a row-major array, creates hash
          *  table of costs where cost is least cost between two elements, and medians,

@@ -166,10 +166,8 @@ class CostMatrix_2d
          *  and find the lowest cost median.
          *
          *  Public because gets called in CostMatrix_3d
-         *
-         *  Nota bene: Requires symmetric, if not metric, matrix. TODO: Is this true? If so fix it?
          */
-        unsigned int findDistance(keys_2d_t* searchKey, dcElement_t* ambElem);
+        unsigned int findDistance(const size_t fixedElemIndex, const dcElement_t* const ambElem);
 
         /** Getter only for cost. Necessary for testing, to insure that particular
          *  key pair has, in fact, already been inserted into lookup table.
@@ -186,6 +184,19 @@ class CostMatrix_2d
          *  cause invalid reads from the cost matrix.
          */
         unsigned int getSetCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
+
+        // Required to be public as they are referenced from CostMatrix_3d.
+        // These can safely be public members because they are constant.
+
+        /** Number of symbol in the alphabet for the cost matrix.
+         */
+        const size_t alphabetSize;
+
+        /** Always equal to:
+         *    alphabetSize / sizeof ( packedChar ) + alphabetSize % sizeof(packedChar) ? 1 : 0
+         *  Calculated once and stored for efficeincy.
+         */
+        const size_t elementSize;
 
     private:
 
@@ -214,14 +225,6 @@ class CostMatrix_2d
             };
 
         std::unordered_map <keys_2d_t, costMedian_t, KeyHash_2d, KeyEqual_2d> myMatrix;
-
-        const size_t alphabetSize;
-
-        /** Always equal to:
-         *    alphabetSize / sizeof ( packedChar ) + alphabetSize % sizeof(packedChar) ? 1 : 0
-         *  Calculated once and stored for efficeincy.
-         */
-        const size_t elementSize;
 
         /** Stored unambiguous tcm, necessary to do first calls to findDistance() without having to rewrite
          *  findDistance() and computeCostMedian()

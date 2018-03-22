@@ -65,4 +65,5 @@ TAGS
 *.xml
 .*
 production/bin
+production/doc/haddock/*
 production/doc/haddock*
