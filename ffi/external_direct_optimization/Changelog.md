@@ -74,7 +74,10 @@
 
 ## 17/11/16–17
 * Issue with short gapped and ungapped chars was because of copying to/from align_io. 2D necessitates opening gap removal. 3D doesn't.
-*
+
+## 18/03/16
+* Completely valgrinded code to deal with memory leaks.
+* Almost all leaks were in `interface.c`.
 
 ## TODOs:
 - [x] What to do with gap character
