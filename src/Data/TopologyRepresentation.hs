@@ -45,7 +45,7 @@ isCompatableSubtopologyOf (TR x) (TR y) = isSubsetOf x y
 
 
 -- |
--- Represents a collection of network edges and their mutually exclusive edges.
+-- Represents a collection of network edges and their mutually-exclusive edges.
 --
 -- Often used to represent a unique spanning tree in a phylogenetic DAG.
 newtype TopologyRepresentation a = TR { unwrap :: MutualExclusionSet a }
@@ -55,23 +55,23 @@ newtype TopologyRepresentation a = TR { unwrap :: MutualExclusionSet a }
 instance Foldable TopologyRepresentation where
 
     fold = fold . toList
-  
+
     foldMap f = foldMap f . toList
 
     toList = BM.keysR . unwrap
-    
+
 
 instance Hashable a => Hashable (TopologyRepresentation a) where
 
     hashWithSalt salt = foldl' hashWithSalt salt . mutuallyExclusivePairs
-  
+
 
 instance Ord a => Monoid (TopologyRepresentation a) where
 
     mappend = (<>)
 
     mempty  = TR BM.empty
-    
+
 
 instance NFData a => NFData (TopologyRepresentation a) where
 
@@ -103,9 +103,9 @@ instance (Ord a, Show a) => Show (TopologyRepresentation a) where
 -- |
 -- \( \mathcal{O} \left( 1 \right) \)
 --
--- Construct a singleton 'TopologyRepresentation' value by supplying a network
--- edge identifier representing an edge contained in the topology and a
--- corresponding network edge identifier representing the mutually exclusive
+-- Construct a singleton 'TopologyRepresentation' value by supplying two network edge identifiers: one
+-- that represents an edge contained in the topology and a
+-- corresponding one that represents the mutually-exclusive
 -- incident edge.
 --
 -- Use the semigroup operator '(<>)' to merge isolated network edge contexts into
@@ -120,9 +120,9 @@ isolatedNetworkEdgeContext x y = TR $ MES.singleton x y
 
 
 -- |
--- \( \mathcal{O} \left( n \right) \) 
+-- \( \mathcal{O} \left( n \right) \)
 --
--- Retreive the list of network edge identifiers present in the topology.
+-- Retrieve the list of network edge identifiers present in the topology.
 {-# INLINE includedNetworkEdges #-}
 includedNetworkEdges :: TopologyRepresentation a -> Set a
 includedNetworkEdges = MES.includedSet . unwrap
@@ -131,7 +131,7 @@ includedNetworkEdges = MES.includedSet . unwrap
 -- |
 -- \( \mathcal{O} \left( n \right) \)
 --
--- Retreive the list of network edge identifiers excluded from the topology.
+-- Retrieve the list of network edge identifiers excluded from the topology.
 {-# INLINE excludedNetworkEdges #-}
 excludedNetworkEdges :: TopologyRepresentation a -> Set a
 excludedNetworkEdges = MES.excludedSet . unwrap
@@ -140,7 +140,7 @@ excludedNetworkEdges = MES.excludedSet . unwrap
 -- |
 -- \( \mathcal{O} \left( n \right) \)
 --
--- Retreive the list of network edge identifiers stored in the topology
+-- Retrieve the list of network edge identifiers stored in the topology
 -- representation.
 {-# INLINE mutuallyExclusivePairs #-}
 mutuallyExclusivePairs :: TopologyRepresentation a -> Set (a,a)
@@ -150,7 +150,7 @@ mutuallyExclusivePairs = MES.mutuallyExclusivePairs . unwrap
 -- |
 -- \( \mathcal{O} \left( m * \log_2 ( \frac {n}{m + 1} ) \right), m \leq n \)
 --
--- Perform a subsetting operation to determine is a sub-topology is compatable
+-- Perform a subsetting operation to determine is a sub-topology is compatible
 -- with another topology.
 {-# INLINE isCompatableWithTopology #-}
 isCompatableWithTopology :: Ord a => TopologyRepresentation a -> TopologyRepresentation a -> Bool
