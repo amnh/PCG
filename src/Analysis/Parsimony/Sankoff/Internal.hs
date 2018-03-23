@@ -13,13 +13,13 @@
 -- This only works on static characters, and due to the traversal only one
 -- character will be received at a time.
 --
--- Goloboff's algorithm relies on computing the "extra cost" for each non-
--- optimal state assignment for each node. There's a preliminary extra
+-- Goloboff’s algorithm relies on computing the “extra cost” for each non-
+-- optimal state assignment for each node. There’s a preliminary extra
 -- cost, which is the difference between the assignment cost for this state
 -- on this node, and a final extra cost, which is the total extra cost
 -- when recursing over the whole tree that this state assignment implies.
 -- This involves, then, computing extra costs even for states that are non-
--- optimal
+-- optimal.
 --
 -- Assumes binary trees.
 --
@@ -64,7 +64,7 @@ sankoffPostOrder charDecoration xs =
 -- Used on the pre-order (i.e. second) traversal.
 --
 -- Either calls `initializeDirVector` on root or `updateDirectionalMins`.
--- Needs to determine which child it's updating, then sends the appropriate
+-- Needs to determine which child it’s updating, then sends the appropriate
 -- minlist to `updateDirectionalMins`.
 sankoffPreOrder :: EncodableStaticCharacter c
                 => SankoffOptimizationDecoration c
@@ -238,7 +238,7 @@ updateDirectionalMins parentDecoration childDecoration childStateMinsFromParent 
 -- These mins will be saved for use at the next post-order call, to the current parent node’s parent.
 --
 -- Note: We can throw away the medians that come back from the tcm here because we’re building medians:
--- the possible character is looped over all available characters, and there's an outer loop which sends in each possible character.
+-- the possible character is looped over all available characters, and there’s an outer loop which sends in each possible character.
 calcCostPerState :: Word
                  -> SankoffOptimizationDecoration c
                  -> SankoffOptimizationDecoration c

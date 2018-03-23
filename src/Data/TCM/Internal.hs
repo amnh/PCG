@@ -33,8 +33,8 @@ import           Text.XML
 
 
 -- |
--- A data structure for storing a two dimensional, square array of dimensionality
--- greater that or equal to two with positive cost values at the array indices.
+-- A data structure for storing a square array of dimensionality
+-- greater than or equal to two, with positive cost values at the array indices.
 -- Values are stored in an unboxed structure for cache efficiency.
 --
 -- A 'TCM' can be constructed by calling one of the following functions:
@@ -55,7 +55,7 @@ data TCM
 
 
 -- |
--- The monomorphic element of a TCM representing the transition cost between to
+-- The monomorphic element of a TCM representing the transition cost between two
 -- state symbols.
 type instance Element TCM = Word32
 
@@ -87,7 +87,7 @@ type instance Element TCM = Word32
 -- Each TCM structure has certain properties that must hold and allows for space
 -- & time optimizations.
 --
---   * Non-Symmetric: No structure expoitable for optimizations.
+--   * Non-Symmetric: No structure exploitable for optimizations.
 --
 --   * Symmetric: Allows for half the space allocation.
 --
@@ -109,13 +109,13 @@ type instance Element TCM = Word32
 --
 --       * /σ(i,k) ≤ max { σ(i,j),  σ(j,k) }/
 --
---   * Non-Additive: Allows for /no/ space allocation & runtime optimizations
+--   * Non-Additive: Allows for /no/ space allocation or runtime optimizations
 --
 --       * /σ(i,j) = 0 iff i = j/
 --
 --       * /σ(i,j) = 1 iff i ≠ j/
 --
---   * Additive: Allows for /no/ space allocation & runtime optimizations
+--   * Additive: Allows for /no/ space allocation or runtime optimizations
 --
 --       * /σ(i,j) = max(i,j) - min(i,j)/
 --
@@ -135,7 +135,7 @@ data TCMDiagnosis
    = TCMDiagnosis
    { factoredWeight :: Int          -- ^ The multiplicative constant factor of a
                                     --   'TCM'. Minimum value of the
-                                    --   multiplicative identiy /one/.
+                                    --   multiplicative identity /one/.
    , factoredTcm    :: TCM          -- ^ The new 'TCM' with each value divided by
                                     --   the 'factoredWeight'.
    , tcmStructure   :: TCMStructure -- ^ The most restrictive present in the
@@ -144,7 +144,7 @@ data TCMDiagnosis
 
 
 -- |
--- Resulting TCMs will have at a dimension between 2 and 25.
+-- Resulting TCMs will have a dimension between 2 and 25.
 instance Arbitrary TCM where
 
     arbitrary = do
@@ -175,7 +175,7 @@ instance MonoFoldable TCM where
     -- |
     -- Right-associative fold of a monomorphic container with no base element.
     --
-    -- Note: this is a partial function. On an empty 'MonoFoldable', it will
+    -- Note: this is a partial function. On an empty 'MonoFoldable' it will
     -- throw an exception.
     --
     -- /See 'Data.MinLen.ofoldr1Ex' from "Data.MinLen" for a total version of
@@ -187,7 +187,7 @@ instance MonoFoldable TCM where
     -- Strict left-associative fold of a monomorphic container with no base
     -- element.
     --
-    -- Note: this is a partial function. On an empty 'MonoFoldable', it will
+    -- Note: this is a partial function. On an empty 'MonoFoldable' it will
     -- throw an exception.
     --
     -- /See 'Data.MinLen.ofoldl1Ex'' from "Data.MinLen" for a total version of

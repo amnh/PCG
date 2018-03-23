@@ -15,7 +15,7 @@
 module Control.Evaluation
   ( EvaluationT()
   , Evaluation()
-  , EvalUnit(..) -- TODO: Restructure so we don't export this internal structure!
+  , EvalUnit(..) -- TODO: Restructure so we don’t export this internal structure!
   , Notification()
   , evalEither
   , evalIO
