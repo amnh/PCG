@@ -41,20 +41,20 @@ import           Text.XML
 --import Debug.Trace
 
 
-evaluate :: Command -> SearchState -> SearchState
-evaluate (REPORT (ReportCommand format target)) old = do
-    stateValue <- force old
-    case generateOutput stateValue format of
-      ErrorCase    errMsg  -> fail errMsg
-      MultiStream  streams -> old <* sequenceA (liftIO . uncurry writeFile <$> streams)
-      SingleStream output  ->
-        let op = case target of
-                   OutputToStdout   -> putStr
-                   OutputToFile f w ->
-                     case w of
-                       Append    -> appendFile f
-                       Overwrite ->  writeFile f
-        in  liftIO (op output) *> old
+evaluate :: Command -> GraphState -> SearchState
+evaluate (REPORT (ReportCommand format target)) stateValue = do
+    _ <- case generateOutput stateValue format of
+           ErrorCase    errMsg  -> fail errMsg
+           MultiStream  streams -> sequence_ (liftIO . uncurry writeFile <$> streams)
+           SingleStream output  ->
+             let op = case target of
+                        OutputToStdout   -> putStr
+                        OutputToFile f w ->
+                          case w of
+                            Append    -> appendFile f
+                            Overwrite ->  writeFile f
+             in  liftIO (op output)
+    pure stateValue
 
 evaluate _ _ = fail "Invalid READ command binding"
 

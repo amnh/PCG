@@ -30,7 +30,7 @@ library
                      , either
                      , free
                      , keys
-                     , megaparsec         >=6.0.0
+                     , megaparsec         >=6.0.0 && <6.4.0
                      , mtl
                      , parser-combinators >=0.2.0
                      , safe
