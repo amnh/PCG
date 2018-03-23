@@ -47,9 +47,9 @@ main :: IO ()
 main = do
      hSetBuffering stdout NoBuffering
      opts <- parseCommandLineOptions
-     let  verbosity = validateVerbosity $ verbosityNum opts
+     let  _verbosity = validateVerbosity $ verbosityNum opts
      if   printVersion opts
-     then putStrLn versionInformation
+     then putStrLn fullVersionInformation
      else do
           inputStream  <- if   inputFile opts == "STDIN"
                           then getContents
@@ -65,9 +65,13 @@ main = do
      parse' = parse
       
 
-versionInformation = mconcat
-    [ "(alpha) version "
-    , showVersion version
+shortVersionInformation :: String
+shortVersionInformation = "(alpha) version " <> showVersion version
+
+
+fullVersionInformation :: String
+fullVersionInformation = mconcat
+    [ shortVersionInformation
     , "["
     , $(gitHash)
     , "] ("
@@ -90,8 +94,8 @@ parseCommandLineOptions = customExecParser preferences $ info (helper <*> comman
 
     description = mconcat
         [ fullDesc
-        , headerDoc (Just (string "\n  Phylogenetic Component Graph"))
-        , footerDoc (Just mempty)
+        , headerDoc . Just . string $ "\n  Phylogenetic Component Graph\n  " <> shortVersionInformation
+        , footerDoc $ Just mempty
         ]
 
     preferences = prefs $ mconcat [showHelpOnError, showHelpOnEmpty]
