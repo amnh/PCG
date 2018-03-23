@@ -10,7 +10,7 @@
 --
 -- The 'Evaluation' type's monad transformer definition and types.
 --
------------------------------------------------------------------------------ 
+-----------------------------------------------------------------------------
 
 {-# LANGUAGE BangPatterns, DeriveGeneric, FlexibleInstances, MultiParamTypeClasses #-}
 
@@ -20,7 +20,7 @@ import           Control.Applicative
 import           Control.DeepSeq
 import           Control.Evaluation.Internal
 import           Control.Evaluation.Unit
-import           Control.Monad           (MonadPlus(..), join, liftM2)
+import           Control.Monad           (MonadPlus(..), join)
 import           Control.Monad.Fail      (MonadFail)
 import qualified Control.Monad.Fail as F
 import           Control.Monad.IO.Class
@@ -54,7 +54,7 @@ instance Applicative m => Applicative (EvaluationT m) where
     pure = state . pure
 
     f <*> x = EvaluationT $ liftA2 (<*>) (runEvaluation f) (runEvaluation x)
-  
+
     x  *> y = EvaluationT $ liftA2  (*>) (runEvaluation x) (runEvaluation y)
 
 
@@ -143,7 +143,7 @@ impure = liftIO
 -- Takes an 'Evaluation' and lifts it into the transformer context.
 {-# INLINE state #-}
 state :: Applicative m => Evaluation a -> EvaluationT m a
-state = EvaluationT . pure 
+state = EvaluationT . pure
 
 
 -- |

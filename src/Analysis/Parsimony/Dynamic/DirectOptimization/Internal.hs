@@ -153,9 +153,8 @@ updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) = resultDecoration
 -- atomic alignments depending on the character's metadata.
 directOptimizationPreOrder
   :: ( DirectOptimizationPostOrderDecoration d c
-     , EncodedAmbiguityGroupContainer c
+     -- , EncodedAmbiguityGroupContainer c
      , Exportable (Element c)
-     , Show (Element c)
      )
   => PairwiseAlignment c
   -> d
@@ -224,8 +223,8 @@ disambiguateFromParent {- pGaps cGaps -} pSingle cFinal = result
 -- decoration. The recursive logic of the pre-order traversal.
 updateFromParent
   :: ( DirectOptimizationPostOrderDecoration d c
-     , EncodedAmbiguityGroupContainer c
      , Exportable (Element c)
+     -- , EncodedAmbiguityGroupContainer c
      )
   => PairwiseAlignment c
   -> d
@@ -260,8 +259,8 @@ updateFromParent pairwiseAlignment currentDecoration parentDecoration = resultDe
 -- A three way comparison of characters used in the DO preorder traversal.
 tripleComparison
   :: ( Exportable (Element c)
+     -- , EncodedAmbiguityGroupContainer c
      , DirectOptimizationPostOrderDecoration d c
-     , EncodedAmbiguityGroupContainer c
      )
   => PairwiseAlignment c
   -> d
@@ -435,7 +434,7 @@ insertNewGaps insertionIndicies character = constructDynamic . (<> trailingGaps)
 -- Calculates the mean character and cost between three supplied characters.
 threeWayMean
   :: ( EncodableDynamicCharacter c
-     , EncodedAmbiguityGroupContainer c
+     -- , EncodedAmbiguityGroupContainer c
      )
   => (Element c -> Element c -> Element c -> (Element c, Word))
   -> c
@@ -449,8 +448,8 @@ threeWayMean sigma char1 char2 char3 =
     Just _  -> (unsafeToFinite $ sum costValues, constructDynamic $ filter (/= gap) meanStates, constructDynamic meanStates)
   where
     gap = gapOfStream char1
-    zed = gap `xor` gap
-    singletonStates = (zed `setBit`) <$> [0 .. fromEnum (symbolCount char1) - 1]
+    -- zed = gap `xor` gap
+    -- singletonStates = (zed `setBit`) <$> [0 .. fromEnum (symbolCount char1) - 1]
     (meanStates, costValues) = unzip $ zipWith3 sigma (otoList char1) (otoList char2) (otoList char3)
     {-
     f a b c = foldl' g (zed, infinity :: ExtendedNatural) singletonStates
