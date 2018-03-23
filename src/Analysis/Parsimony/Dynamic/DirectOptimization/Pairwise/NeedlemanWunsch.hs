@@ -38,13 +38,13 @@ naiveDO :: DOCharConstraint s
         -> s                       -- ^ Second dynamic character
         -> (Word -> Word -> Word)  -- ^ Structure defining the transition costs between character states
         -> (Word, s, s, s, s)      -- ^ The cost of the alignment
-                                   -- 
+                                   --
                                    --   The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
-                                   -- 
+                                   --
                                    --   The /gapped/ character derived from the the input characters' N-W-esque matrix traceback
-                                   -- 
+                                   --
                                    --   The gapped alignment of the /first/ input character when aligned with the second character
-                                   -- 
+                                   --
                                    --   The gapped alignment of the /second/ input character when aligned with the first character
 
 naiveDO char1 char2 costStruct = directOptimization char1 char2 (overlap costStruct) createNeedlemanWunchMatrix
@@ -69,14 +69,14 @@ naiveDOMemo char1 char2 tcm = directOptimization char1 char2 tcm createNeedleman
 
 
 -- |
--- Main function to generate an 'NeedlemanWunchMatrix'. Works as in Needleman-Wunsch,
+-- Main function to generate a 'NeedlemanWunchMatrix'. Works as in Needleman-Wunsch,
 -- but allows for multiple indel/replacement costs, depending on the symbol change
 -- cost function. Also, returns the aligned parent characters, with appropriate
 -- ambiguities, as the third of each tuple in the matrix.
 --
 -- Takes in two 'EncodableDynamicCharacter's and a 'CostStructure'. The first
 -- character must be the longer of the two and is the top labeling of the matrix.
--- Returns an 'NeedlemanWunchMatrix'.
+-- Returns a 'NeedlemanWunchMatrix'.
 createNeedlemanWunchMatrix :: DOCharConstraint s => s -> s -> OverlapFunction (Element s) -> NeedlemanWunchMatrix (Element s)
 --createNeedlemanWunchMatrix topChar leftChar overlapFunction = trace renderedMatrix result
 createNeedlemanWunchMatrix topChar leftChar overlapFunction = result

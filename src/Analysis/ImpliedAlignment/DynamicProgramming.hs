@@ -47,7 +47,7 @@ import           Safe                            (tailMay)
 
 
 -- |
--- Memoized data points on the edges of the post order traversal.
+-- Memoized data points on the edges of the post-order traversal.
 data IndelEvents e
    = IndelEvents
    { edgeInsertionEvents :: InsertionEvents e
@@ -56,7 +56,7 @@ data IndelEvents e
 
 
 -- |
--- The referencial precomputation tree structure used for the tree traversals.
+-- The referential precomputation tree structure used for the tree traversals.
 data TreeReferences n
    = TreeRefs
    { rootRef    :: Int
@@ -68,36 +68,37 @@ data TreeReferences n
 
 -- |
 -- Top level wrapper to do an IA over an entire solution
--- takes a solution
--- returns an AlignmentSolution
+-- Takes a solution.
+-- Returns an 'AlignmentSolution'.
 iaSolution :: (SolutionConstraint r m f t n e s, IANode' n s) => r -> r
 iaSolution inSolution = inSolution `setForests` fmap (`iaForest` getMetadata inSolution) (getForests inSolution)
 
 
 -- |
 -- Simple wrapper to do an IA over a forest
--- takes in a forest and some metadata
--- returns an alignment forest
+-- Takes in a forest and some metadata.
+-- Returns an alignment forest.
 iaForest :: (FoldableWithKey k, ForestConstraint f t n e s, IANode' n s, Metadata m s, Key k ~ Int) => f -> k m -> f
 iaForest inForest inMeta = inForest `setTrees` fmap (deriveImpliedAlignments inMeta) (trees inForest)
 
 
--- TODO: make sure a sequence always ends up in FinalGapped to avoid this decision tree
+-- TODO: make sure a sequence always ends up in FinalGapped to avoid this decision tree.
 -- |
 -- Simple function to get a sequence for alignment purposes
 getForAlign :: NodeConstraint n s => n -> Vector s
-getForAlign n 
+getForAlign n
 --    | not . null $ getFinalGapped         n = getFinalGapped n
---    | not . null $ getPreliminaryUngapped n = getPreliminaryUngapped n 
-    | not . null $ getSingle              n = getSingle n 
-    | not . null $ getEncoded     n         = getEncoded n 
+--    | not . null $ getPreliminaryUngapped n = getPreliminaryUngapped n
+    | not . null $ getSingle              n = getSingle n
+    | not . null $ getEncoded     n         = getEncoded n
     | otherwise = mempty {-error "No sequence at node for IA to numerate"-}
 
+
 -- |
--- Decorates a tree with implied alignments of the leaf nodes given a tree
--- decorated with direct optimization annotations, along with suporting metadata.
+-- Given a tree decorated with direct optimization annotations, decorates that tree with implied alignments
+-- of the leaf nodes, along with suporting metadata.
 deriveImpliedAlignments :: (FoldableWithKey f, TreeConstraint t n e s, IANode' n s, Metadata m s, Key f ~ Int)
-                        => f m -> t -> t 
+                        => f m -> t -> t
 deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMetadatas
   where
     f t k m
@@ -115,8 +116,8 @@ deriveImpliedAlignments sequenceMetadatas tree = foldlWithKey' f tree sequenceMe
 --
 --   * The 'CostStructure' for that character
 --
---   * The tree on which implies the alignment
--- 
+--   * The tree which implies the alignment
+--
 numeration :: (TreeConstraint t n e s, IANode' n s) => Int -> CostStructure -> t -> t
 numeration sequenceIndex costStructure tree = tree `update` (snd <$> updatedLeafNodes)
   where
@@ -137,8 +138,8 @@ numeration sequenceIndex costStructure tree = tree `update` (snd <$> updatedLeaf
 
     -- |
     -- The root 'AlignmentContext'.
-    -- Defines how 'InserionEvents' are accumulated in a post-order traversal
-    -- to encapsulate the require global state information of the implied alignment.
+    -- Defines how 'InsertionEvents' are accumulated in a post-order traversal
+    -- in order to encapsulate the require global state information of the implied alignment.
     rootContext = deriveContextFromCharacter rootCharacter totalInsertionEvents
       where
         rootCharacter            = getForAlign rootNode V.! sequenceIndex
@@ -151,7 +152,7 @@ numeration sequenceIndex costStructure tree = tree `update` (snd <$> updatedLeaf
     -- The 'AlignmentContext' for each node in the tree.
     -- Constructed using a recursive, memoized generating function
     -- with the root node as the base case.
-    -- The generating function will implicitly perform a parralelizable pre-order traversal
+    -- The generating function will implicitly perform a parallelizable pre-order traversal.
     nodeContexts = V.generate (length enumeratedNodes) f
       where
         f nodeIndex
@@ -173,13 +174,13 @@ numeration sequenceIndex costStructure tree = tree `update` (snd <$> updatedLeaf
 
     -- |
     -- We filter the 'updatedNodes' to only include the leaf nodes.
-    -- We do this beacuse implied alignments on internal nodes doesn't make sense... or does it?
+    -- We do this because an implied alignment on internal nodes doesn't make sense... or does it?
     updatedLeafNodes = filter ((`nodeIsLeaf` tree) . snd) updatedNodes
 
 
 -- |
--- Performs a preorder traversal to generate referential indexing structures
--- for refrencing actions to perform a tree.
+-- Performs a pre-order traversal to generate referential indexing structures
+-- for referencing actions to perform a tree traversal.
 precomputeTreeReferences :: TreeConstraint t n e s  => t -> TreeReferences n
 precomputeTreeReferences tree =
      TreeRefs
@@ -190,12 +191,12 @@ precomputeTreeReferences tree =
      }
   where
     (a,b,c) = V.unzip3 . V.fromList $ rmRefVal <$> sortBy (comparing refVal) tokens
-    
+
     (_,tokens) = f (root tree) Nothing 0
 
     refVal   (i,_,_,_) = i
     rmRefVal (_,x,y,z) = (x,y,z)
-                 
+
     f node parentRef counter = (counter', nodeResult : mconcat kids)
       where
         nodeResult = (counter, node, fromMaybe (-1) parentRef, IS.fromList $ refVal . head <$> kids)
@@ -209,7 +210,7 @@ precomputeTreeReferences tree =
 -- |
 -- Calculates the 'IndelEvents' that occur given two sequences of an edge.
 --
--- Note that as a precondition to this linear time algorithim, it is assumed
+-- Note that as a precondition to this linear time algorithim it is assumed
 -- that both input sequences are ungapped. There can be no gaps in the input
 -- sequences. If gaps exist in the input sequences, even from user input, this
 -- function may return incorrect results!
@@ -245,10 +246,10 @@ comparativeIndelEvents edgeIdentifier ancestorCharacterUnaligned descendantChara
 --      containsGap char    = gap .&. char /= zeroBits
         insertionEventLogic =     ancestorElement == gap && descendantElement /= gap -- not (containsGap descendantElement)
         deletionEventLogic  =   descendantElement == gap && ancestorElement   /= gap --not (containsGap   ancestorElement)
-{-        
+{-
         nothingLogic        =  (  ancestorElement == gap && containsGap descendantElement)
                             || (descendantElement == gap && containsGap   ancestorElement)
--}                             
+-}
 
         incInsMap :: Int -> IntMap Int -> IntMap Int
         incInsMap key = IM.insertWith g key 1
@@ -256,7 +257,7 @@ comparativeIndelEvents edgeIdentifier ancestorCharacterUnaligned descendantChara
             g = const succ
 
 -- |
---Transforms a node's decorations to include the implied alignment given a 'PsuedoCharacter' and sequence index.
+--Transforms a node’s decorations to include the implied alignment given a 'PsuedoCharacter' and sequence index.
 deriveImpliedAlignment :: (EncodableDynamicCharacter s2, Foldable t, IANode' n s2, NodeConstraint n s1, Element s1 ~ Element s2)
                        => Int -> t PseudoIndex -> n -> n
 deriveImpliedAlignment sequenceIndex psuedoCharacterVal node = node `setHomologies'` leafHomologies
@@ -266,7 +267,7 @@ deriveImpliedAlignment sequenceIndex psuedoCharacterVal node = node `setHomologi
           | otherwise                             = oldHomologies V.// [(sequenceIndex, leafAlignedChar)]
           where
             oldHomologies = getHomologies' node
-            
+
         leafSequence    = getForAlign node
         leafCharacter   = leafSequence V.! sequenceIndex
         leafAlignedChar = constructDynamic $ reverse result
@@ -276,8 +277,7 @@ deriveImpliedAlignment sequenceIndex psuedoCharacterVal node = node `setHomologi
           where
             f (basesSeen, xs, ys) e
               | isPseudoGap e = (basesSeen    , xs , gap : ys )
-              | otherwise     = (basesSeen + 1, xs',       ys') 
+              | otherwise     = (basesSeen + 1, xs',       ys')
               where
-                xs' = fromMaybe []   $ tailMay xs 
+                xs' = fromMaybe []   $ tailMay xs
                 ys' = maybe ys (:ys) $ headMay xs
-

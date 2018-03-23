@@ -137,8 +137,9 @@ initializeCostVector inputDecoration = returnChar
 --
 -- This node is not a leaf node. Assumes binary tree.
 
--- TODO: Do I need this, or is it redundant: Likewise, for each state calculates its min: \(min_{left} + min_{right}\)
--- state from the characters on each of the left and right children. Stores those mins as a tuple of lists.
+-- TODO: Do I need this, or is it redundant?
+-- Likewise, for each state, calculates its min state \(min_{left} + min_{right}\)
+-- from the characters on each of the left and right children. Stores those mins as a tuple of lists.
 --
 --
 updateCostVector :: DiscreteCharacterDecoration d c
@@ -148,8 +149,8 @@ updateCostVector :: DiscreteCharacterDecoration d c
 updateCostVector _parentDecoration (x:|[])                         = x                    -- Shouldn't be possible, but here for completion.
 updateCostVector _parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDecoration -- May? be able to amend this to use non-binary children.
     where
-        (cs, ds, minTransCost) = foldr findMins initialAccumulator range   -- sorry abut these shitty variable names. It was to shorten
-                                                                           -- the extendDiscreteToSankoff call.
+        (cs, ds, minTransCost) = foldr findMins initialAccumulator range   -- Sorry abut these shitty variable names. It was to shorten
+                                                                           -- the 'extendDiscreteToSankoff' call.
                                                                            -- cs = min costs per state
                                                                            -- ds = (left child min states, right child min states)
         range                = [0..numAlphStates]
@@ -232,9 +233,10 @@ updateDirectionalMins parentDecoration childDecoration childStateMinsFromParent 
         setState newMedian charState = newMedian `setBit` (fromIntegral charState :: Int)
 
 
--- | Take in a single character state as a `Word`---which represents an unambiguous character state on the parent---
--- and two decorations: the decorations of the two child states.
--- Return the minimum costs of transitioning from the input character to each of those two child decorations.
+-- |
+-- Takes in a single character state as a `Word`---which represents an unambiguous character state on the parent---
+-- and two decorations, the decorations of the two child states.
+-- Returns the minimum costs of transitioning from the input character to each of those two child decorations.
 -- These mins will be saved for use at the next post-order call, to the current parent node’s parent.
 --
 -- Note: We can throw away the medians that come back from the tcm here because we’re building medians:

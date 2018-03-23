@@ -25,7 +25,7 @@ module Analysis.ImpliedAlignment.AlignmentContext
 
 import           Analysis.ImpliedAlignment.DeletionEvents
 import           Analysis.ImpliedAlignment.InsertionEvents
-import qualified Analysis.ImpliedAlignment.InsertionEvents as IE (unwrap,wrap) 
+import qualified Analysis.ImpliedAlignment.InsertionEvents as IE (unwrap,wrap)
 import           Data.Foldable
 import           Data.IntMap                    (IntMap)
 import qualified Data.IntMap             as IM
@@ -53,7 +53,7 @@ data PseudoIndex
    deriving (Eq)
 
 -- |
--- The contextual representation of a character based on ancestoral insertion
+-- The contextual representation of a character based on ancestral insertion
 -- and deletion events.
 type PseudoCharacter = [PseudoIndex]
 
@@ -85,12 +85,14 @@ instance Show e => Show (AlignmentContext e) where
           , ("  "<>) . concatMap show $ pseudoCharacter ac
           ]
 
+
 -- |
--- Query whetehr a given 'PseudoIndex' represents a gap in the aligned character.
+-- Query whether a given 'PseudoIndex' represents a gap in the aligned character.
 isPseudoGap :: PseudoIndex -> Bool
 isPseudoGap OriginalBase = False
 isPseudoGap InsertedBase = False
 isPseudoGap _            = True
+
 
 -- |
 -- Read a 'PseudoCharacter' from a 'String'. Stops reading input at the first
@@ -104,9 +106,10 @@ readPseudoCharacter ('-':xs) = HardGap      : readPseudoCharacter xs
 readPseudoCharacter ('~':xs) = SoftGap      : readPseudoCharacter xs
 readPseudoCharacter       _  = []
 
+
 -- |
 -- Augments an 'AlignmentContext' based on local 'DeletionEvents' and
--- 'InsertionEvents' Values on the given edge identifier.
+-- 'InsertionEvents' values on the given edge identifier.
 applyLocalEventsToAlignment :: (Eq e, Show e) => e -> DeletionEvents -> AlignmentContext e -> AlignmentContext e
 applyLocalEventsToAlignment edgeIdentifier (DE localDeletionEvents) alignmentContext = --  (\x -> trace ("\nOutput\n"<>show x) x)
     Context
@@ -135,7 +138,7 @@ applyLocalEventsToAlignment edgeIdentifier (DE localDeletionEvents) alignmentCon
         -- Same logic in nesxt two cases, essentially the identifunction of the accumulator.
         DeletedBase  -> (pBasesSeen    , cBasesSeen    , unappliedGlobalInsertions, is,        pc : cs)
         DelInsBase   -> (pBasesSeen    , cBasesSeen    , unappliedGlobalInsertions, is,        pc : cs)
-        
+
         HardGap      -> (pBasesSeen    , cBasesSeen    , imRemove pBasesSeen 0 unappliedGlobalInsertions, imAdd cBasesSeen (Seq.take 1 (unappliedGlobalInsertions ! pBasesSeen)) is,       pc : cs) -- maybe increment consecutive here too?
 
         -- The complicated case with indexing.
@@ -161,8 +164,9 @@ imRemove k i = IM.update f k
         v' = as <> Seq.drop 1 bs
         (as, bs) = Seq.splitAt i v
 
+
 -- | Derive an initial 'AlignmentContext' from a given character and
---   the 'InsertionEvents' contained in it's subtree.
+--   the 'InsertionEvents' contained in its subtree.
 deriveContextFromCharacter :: (Eq e, MonoFoldable t) => t -> InsertionEvents e -> AlignmentContext e
 deriveContextFromCharacter char totalInsertionEvents =
     Context
@@ -181,7 +185,7 @@ deriveContextFromCharacter char totalInsertionEvents =
           case k `lookup` insertionMapping of
             Nothing -> [OriginalBase]
             Just n  -> replicate (length n) SoftGap <> [OriginalBase]
-            
+
         trailingInsertions =
           case characterLength `lookup` insertionMapping of
             Nothing -> []
@@ -197,10 +201,10 @@ consistency :: Eq e => AlignmentContext e -> Bool
 consistency ac = truth
   where
     m = IE.unwrap $ insertionEvents ac
-    (_,_,truth) = foldl f (0,0,True) $ pseudoCharacter ac 
+    (_,_,truth) = foldl f (0,0,True) $ pseudoCharacter ac
 
     f a@(_,_,False) _ = a
-    f (basesSeen, consecutiveBases, result) e = 
+    f (basesSeen, consecutiveBases, result) e =
       case e of
         OriginalBase -> (basesSeen + 1, 0                   , result)
         InsertedBase -> (basesSeen + 1, 0                   , result)

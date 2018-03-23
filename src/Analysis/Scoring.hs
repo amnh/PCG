@@ -53,7 +53,7 @@ wipeScoring (PDAG2 dag) = PDAG2 wipedDAG
           <*> rootRefs
           <*> ((mempty, mempty, Nothing) <$) . graphData
           $ dag
-    
+
     wipeDecorations
       :: Monoid n
       => IndexData e (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
@@ -74,13 +74,13 @@ wipeNode
   :: Monoid n
   => Bool -- ^ Do I wipe?
   -> PhylogeneticNode2 (CharacterSequence        u         v         w         x         y         z ) n
-  -> PhylogeneticNode2 (CharacterSequence (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)) n 
+  -> PhylogeneticNode2 (CharacterSequence (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)) n
 wipeNode wipe = PNode2 <$> pure . g . NE.head . resolutions <*> f . nodeDecorationDatum2
       where
         f :: Monoid a => a -> a
         f | wipe      = const mempty
           | otherwise = id
-        
+
         g = ResInfo
               <$> totalSubtreeCost
               <*> localSequenceCost
@@ -92,19 +92,19 @@ wipeNode wipe = PNode2 <$> pure . g . NE.head . resolutions <*> f . nodeDecorati
         h :: a -> Maybe a
         h | wipe      = const Nothing
           | otherwise = Just
-        
+
 
 
 -- |
--- Take a solution of one or more undecorated trees and assign peliminary and
+-- Take a solution of one or more undecorated trees and assign preliminary and
 -- final states to all nodes.
 scoreSolution :: CharacterResult -> PhylogeneticSolution FinalDecorationDAG
 scoreSolution (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
 
 
 -- |
--- Take an undecorated tree and assign peliminary and final states to all nodes.
-performDecoration 
+-- Take an undecorated tree and assign preliminary and final states to all nodes.
+performDecoration
   :: ( DiscreteCharacterMetadata u
      , DiscreteCharacterMetadata w
      , DiscreteCharacterDecoration v StaticCharacter
@@ -131,7 +131,7 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
           edgeCostMapping
           contextualNodeDatum
           minBlockConext
-              
+
         . preorderSequence''
           additivePreOrder
           fitchPreOrder
@@ -143,7 +143,7 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
         adaptiveDirectOptimizationPreOrder dec kidDecs = directOptimizationPreOrder pairwiseAlignmentFunction dec kidDecs
           where
             pairwiseAlignmentFunction = chooseDirectOptimizationComparison2 dec kidDecs
-    
+
     performPostOrderDecoration :: PostOrderDecorationDAG
     performPostOrderDecoration = postOrderResult
 
@@ -356,5 +356,3 @@ initializeDecorations (PhylogeneticSolution forests) = PhylogeneticSolution $ fm
             pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec $ snd <$> kidDecs
 
 --}
-
-
