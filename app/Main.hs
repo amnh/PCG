@@ -68,6 +68,7 @@ main = do
 softwareName :: String
 softwareName = "Phylogenetic Component Graph"
 
+
 shortVersionInformation :: String
 shortVersionInformation = "(alpha) version " <> showVersion version
 
@@ -93,9 +94,23 @@ parseCommandLineOptions = customExecParser preferences $ info (helper <*> comman
           <$> switch  (mconcat [long "version", help "Display version number"])
           <*> fileSpec 'i' "input"  "STDIN"  "Input PCG script file, defaults to STDIN"
           <*> fileSpec 'o' "output" "STDOUT" "Output file, defaults to STDOUT"
-          <*> (toEnum <$> option auto (mconcat [short 'v', long "verbosity", value 3, helpDoc verbosityHelp]))
+          <*> (toEnum <$> option auto verbositySpec)
 
-    fileSpec c s d h = strOption $ mconcat [short c, long s, value d, help h, metavar "FILE"]
+    fileSpec c s d h = strOption $ mconcat
+        [ short c
+        , long s
+        , value d
+        , help h
+        , metavar "FILE"
+        ]
+
+    verbositySpec = mconcat
+        [ short 'v'
+        , long "verbosity"
+        , value 3
+        , helpDoc verbosityHelp
+        , metavar "LEVEL"
+        ]
 
     description = mconcat
         [ fullDesc
