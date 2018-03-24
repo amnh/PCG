@@ -65,15 +65,20 @@ main = do
      parse' = parse
       
 
+softwareName :: String
+softwareName = "Phylogenetic Component Graph"
+
 shortVersionInformation :: String
 shortVersionInformation = "(alpha) version " <> showVersion version
 
 
 fullVersionInformation :: String
 fullVersionInformation = mconcat
-    [ shortVersionInformation
-    , "["
-    , $(gitHash)
+    [ softwareName
+    , " "
+    , shortVersionInformation
+    , " ["
+    , take 7 $(gitHash)
     , "] ("
     , $(gitCommitCount)
     , " commits)"
@@ -94,7 +99,7 @@ parseCommandLineOptions = customExecParser preferences $ info (helper <*> comman
 
     description = mconcat
         [ fullDesc
-        , headerDoc . Just . string $ "\n  Phylogenetic Component Graph\n  " <> shortVersionInformation
+        , headerDoc . Just . string $ "\n  " <> softwareName <> "\n  " <> shortVersionInformation
         , footerDoc $ Just mempty
         ]
 
