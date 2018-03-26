@@ -5,7 +5,6 @@ compiler: ghc-8.2.2
 compiler-check: match-exact
 
 extra-deps:
-  - bv-little-0.1.0.0
   - pretty-tree-0.1.0.0
 
 flags: {}
@@ -25,7 +24,6 @@ packages:
   - location:  https://github.com/ivan-m/graphviz/archive/a099a07.zip
     extra-dep: true
 
-resolver: lts-10.0
-#resolver: nightly-2017-11-23
+resolver: lts-11.1
 
 system-ghc: false
