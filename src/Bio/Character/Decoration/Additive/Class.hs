@@ -26,7 +26,7 @@ import Numeric.Extended
 
 
 -- |
--- A partially complete character decoration that contains an interval character
+-- A partially-complete character decoration that contains an interval character
 -- after a post-order traversal.
 class ( RangedCharacterDecoration s c
       , HasCharacterCost s (Finite (Bound c))
@@ -52,7 +52,7 @@ class ( RangedCharacterDecoration s c
 
 
 -- |
--- A character decoration that can extended to a represent the results of a
+-- A character decoration that can extended to represent the results of a
 -- post-order traversal.
 class RangedPostorderDecoration s c => RangedExtensionPostorder s c | s -> c where
 
@@ -68,7 +68,7 @@ class RangedPostorderDecoration s c => RangedExtensionPostorder s c | s -> c whe
 
 
 -- |
--- A character decoration that can extended to a represent the results of a
+-- A character decoration that can extended to represent the results of a
 -- pre-order traversal.
 class ( RangedDecorationOptimization s c
       ) => RangedExtensionPreorder s c | s -> c where

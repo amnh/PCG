@@ -52,17 +52,17 @@ import           Prelude                           hiding (lookup)
 -- type ParserTree   = ZipperNode (Maybe Double) (Maybe String)
 
 -- |
--- The type of possibly present decorations on a tree from a parsed file.
+-- The type of possibly-present decorations on a tree from a parsed file.
 type ParserTree   = ReferenceDAG () EdgeLength (Maybe String)
 
 
 -- |
--- The parser coalesced type, representing a possibly present forest.
+-- The parser coalesced type representing a possibly present forest.
 type ParserForest = Maybe (PhylogeneticForest ParserTree)
 
 
 -- |
--- The parser coalesced type, representing a possibly present forest.
+-- The parser coalesced type representing a possibly present forest.
 type ParserForestSet = Maybe (NonEmpty (PhylogeneticForest ParserTree))
 
 
@@ -71,8 +71,9 @@ type ParserForestSet = Maybe (NonEmpty (PhylogeneticForest ParserTree))
 data NewickEnum   = NE !Int (Maybe String) (Maybe Double) [NewickEnum]
 
 
--- | Represents a parser result type which can have a possibly empty forest
---   extracted from it.
+-- |
+-- Represents a parser result type which can have a possibly empty forest
+-- extracted from it.
 class ParsedForest a where
 
     unifyGraph :: a -> ParserForestSet
@@ -138,10 +139,10 @@ instance ParsedForest (NonEmpty NewickForest) where
     unifyGraph = Just . fmap (PhylogeneticForest . fmap (coerceTree . relationMap . enumerate)) {- . (\x -> trace (unlines $ renderNewickForest <$> toList x) x) -}
       where
 
-        -- Apply generating function by indexing adjacentcy matrix.
+        -- Apply generating function by indexing adjacency matrix.
         coerceTree mapping = unfoldDAG (mapping !) 0
 
-        -- We assign a unique index to each node by converting the node to a NewickEnum type.
+        -- We assign a unique index to each node by converting the node to a 'NewickEnum' type.
         enumerate :: NewickNode -> NewickEnum
         enumerate = (\(_,_,x) -> x) . f mempty 0
           where
@@ -167,7 +168,7 @@ instance ParsedForest (NonEmpty NewickForest) where
                                     Just x  -> seen' <> Map.singleton x enumed
                             in  (seen'', n', enumed)
 
-        -- We use the unique indicies from the 'enumerate' step to build a local connectivity map.
+        -- We use the unique indices from the 'enumerate' step to build a local connectivity map.
         relationMap :: NewickEnum -> IntMap ([(EdgeLength, Int)], Maybe String, [(EdgeLength, Int)])
         relationMap root = subCall Nothing root mempty
           where
@@ -198,7 +199,7 @@ instance ParsedForest TntResult where
           Right (WithTaxa _ _ forest) -> toPhylogeneticForest fst        <$> nonEmpty forest
       where
 
-        -- | Propper fmapping over Maybes and NonEmptys
+        -- | Propper fmapping over 'Maybe's and 'NonEmpty's
         toPhylogeneticForest f = PhylogeneticForest . fmap (coerceTree . enumerate f)
 
         -- | Apply the generating function referencing the relational mapping.
@@ -209,7 +210,7 @@ instance ParsedForest TntResult where
                 (parentMay, datum, childRefs) = mapping ! i
                 g = fmap (\j -> (mempty, j))
 
-        -- | We assign a unique index to each node and creating an adjcentcy matrix.
+        -- | We assign a unique index to each node and create an adjcency matrix.
         enumerate :: (n -> String) -> LeafyTree n -> IntMap (Maybe Int, Maybe String, [Int])
         enumerate toLabel = (\(_,_,x) -> x) . f Nothing 0
           where
@@ -224,7 +225,7 @@ instance ParsedForest TntResult where
                         selfMapping     = IM.singleton n (parentRef, Nothing, childrenRefs)
                     in (n, counter, selfMapping <> subTreeMapping)
 
-        -- | Conversion function for NodeType to string
+        -- | Conversion function for 'NodeType' to string
         getTNTName :: NodeType -> String
         getTNTName node =
             case node of
@@ -310,5 +311,3 @@ getTNTName node = case node of
     (Name n) -> n
     (Prefix s) -> s
 -}
-
-

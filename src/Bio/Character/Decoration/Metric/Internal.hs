@@ -56,7 +56,7 @@ data SankoffOptimizationDecoration c
                                                                                  -- extra costs down through the tree when this assignment
                                                                                  -- is chosen
    , sankoffFinalExtraCosts       :: [ExtendedNatural]                           -- list of final extra costs for the node, so the sum of
-                                                                                 -- ALL of the extra costs, on the whole tree for this a
+                                                                                 -- ALL of the extra costs, on the whole tree, for this
                                                                                  -- assignment
    , sankoffBeta                  :: [ExtendedNatural]                           -- this is Goloboff's beta, where
                                                                                  -- beta_(s,n) = min[t_(s,x) + prelimExtraCost_(x,n)]

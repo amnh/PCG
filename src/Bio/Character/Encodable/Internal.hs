@@ -24,8 +24,8 @@ import Foreign.C.Types
 
 
 -- |
--- Represents a type which stores one or more abiuguity groups from an alphabet.
--- Allows /O(1)/ derivation of the number of possiblly prsent symbols in the
+-- Represents a type which stores one or more abiguity groups from an alphabet.
+-- Allows /O(1)/ derivation of the number of possibly-present symbols in the
 -- ambiguity group.
 class EncodedAmbiguityGroupContainer w where
 
@@ -34,7 +34,7 @@ class EncodedAmbiguityGroupContainer w where
 
 -- |
 -- Represents a type which may be a missing character.
--- Allows for /O(1)/ testing and construction of missing character.
+-- Allows for /O(1)/ testing and construction of missing characters.
 class PossiblyMissingCharacter c where
 
     toMissing :: c -> c
@@ -42,7 +42,7 @@ class PossiblyMissingCharacter c where
     isMissing :: c -> Bool
 
 
--- | (✔) 
+-- | (✔)
 instance PossiblyMissingCharacter c => PossiblyMissingCharacter (Maybe c) where
 
     toMissing = fmap toMissing
@@ -51,7 +51,7 @@ instance PossiblyMissingCharacter c => PossiblyMissingCharacter (Maybe c) where
 
 
 -- |
--- A local compile time constant defining the width of the 'CULong' type. Useful
+-- A local compile-time constant defining the width of the 'CULong' type. Useful
 -- for ensuring a safe exporting to C or C++ code over the FFI interface.
 longWidth :: Word
 longWidth = toEnum $ finiteBitSize (minBound :: CULong)
@@ -77,7 +77,7 @@ bitVectorToBufferChunks elemWidth elemCount bv = fmap toUnsignedNumber $ ((`subR
 -- |
 -- Converts a collection of 'CULong' values to a 'BitVector'.
 --
--- The inverse of 'bitvectortorToBufferChunks'.
+-- The inverse of 'bitVectorToBufferChunks'.
 --
 bufferChunksToBitVector :: Foldable t => Word -> Word -> t CULong -> BitVector
 bufferChunksToBitVector elemWidth elemCount chunks = fromNumber totalBits . fst $ foldl' f initialAccumulator chunks
@@ -92,12 +92,12 @@ bufferChunksToBitVector elemWidth elemCount chunks = fromNumber totalBits . fst 
     f (summation, shiftDistance) e = (summation + addend, shiftDistance + longWidth')
       where
         addend = fromIntegral e `shift` shiftDistance
-    
 
--- Use 'Data.BitMatrix.fromRows' which corrects the Semigroup operator for
+
+-- Use 'Data.BitMatrix.fromRows', which corrects the Semigroup operator for
 -- 'BitVector's to behave correctly.
 -- |
--- Converts a exportable character context to a 'BitMatrix'.
+-- Converts an exportable character context to a 'BitMatrix'.
 exportableCharacterElementsToBitMatrix :: ExportableCharacterElements -> BitMatrix
 exportableCharacterElementsToBitMatrix ece = fromRows $ fromNumber elementWidth <$> integralValues
   where
@@ -106,7 +106,7 @@ exportableCharacterElementsToBitMatrix ece = fromRows $ fromNumber elementWidth 
 
 
 -- |
--- Converts a exportable character context to a 'BitVector'.
+-- Converts an exportable character context to a 'BitVector'.
 exportableCharacterElementsHeadToBitVector :: ExportableCharacterElements -> BitVector
 exportableCharacterElementsHeadToBitVector ece = fromNumber elementWidth $ head integralValues
   where

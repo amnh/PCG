@@ -98,7 +98,8 @@ data  GraphData d
     } deriving (Functor, Generic)
 
 
--- | This will be used below to print the node type to XML and Newick.
+-- |
+-- This will be used below to print the node type to XML and Newick.
 data NodeClassification
     = NodeClassification
     | LeafNode
@@ -202,7 +203,7 @@ instance PhylogeneticComponent (ReferenceDAG d e n) NodeRef e n where
 
     edgeDatum (i,j) dag =  fromEnum j `lookup` childRefs (references dag ! fromEnum i)
 
-    isComponentNode = isNetworkNode 
+    isComponentNode = isNetworkNode
 
     isNetworkNode i dag = olength ps == 2 && length cs == 1
       where
@@ -381,7 +382,7 @@ referenceNetworkEdgeSet dag = foldMapWithKey f refs
 
 -- |
 -- Produces a set of undirected references representing all undirected edges that
--- have a root edges in the DAG, if the root(s) were removed an to create an
+-- have root edges in the DAG, if the root(s) were removed an to create an
 -- undirected network. Omits all edges in the undirected network representation
 -- of the DAG that are not specified as a root of the DAG. The resulting 'EdgeSet'
 -- (unless of trivial cardinality) *will not* be connected.
@@ -398,17 +399,16 @@ undirectedRootEdgeSet dag = foldMap f $ rootRefs dag
 
 
 -- |
---
--- Given two edges, and two functions describing the way to construct new node
+-- Given two edges and two functions describing the way to construct new node
 -- values, adds a new edge between the two supplied edges and constructs two
 -- intermediary nodes.
 connectEdge
   :: Monoid e
   => ReferenceDAG d e n
   -> (n -> n -> n -> n) -- ^ Function describing how to construct the new origin internal node: parent, existing child, new child
-  -> (n -> n -> n) -- ^ Function describing how to construct the new target internal node: exisiting parent, exisiting child
+  -> (n -> n -> n) -- ^ Function describing how to construct the new target internal node: existing parent, existing child
   -> (Int, Int) -- ^ Origin edge (coming from)
-  -> (Int, Int) -- ^ Target edge (going too)
+  -> (Int, Int) -- ^ Target edge (going to)
   -> ReferenceDAG d e n
 --connectEdge dag _ _ origin target | trace (unlines  ["Origin: " <> show origin, "Target: " <> show target, "Input:", show dag ]) False = undefined
 connectEdge dag originTransform targetTransform (ooRef, otRef) (toRef, ttRef) = {- (\x -> trace ("Output:\n"<>show x) x) -} newDag
@@ -463,7 +463,7 @@ connectEdge dag originTransform targetTransform (ooRef, otRef) (toRef, ttRef) = 
 invadeEdge
   :: Monoid e
   => ReferenceDAG d e n
-  -> (n -> n -> n -> n) -- ^ Function describing how to construct the new internal node, parent, old child, new child
+  -> (n -> n -> n -> n) -- ^ Function describing how to construct the new internal node, parent, old child, and new child
   -> n
   -> (Int, Int)
   -> ReferenceDAG d e n
@@ -508,7 +508,7 @@ invadeEdge dag transformation node (oRef, iRef) = newDag
 -- /O(n*i)/ where /i/ is the number of missing indicies.
 -- Assuming all indicies in the input /x/ are positive, /i/ = 'findMax x - length x'.
 --
--- Takes an IntMap that might not have a contiguous index range and makes the
+-- Takes an 'IntMap' that might not have a contiguous index range and makes the
 -- range contiguous [0, length n - 1].
 contractToContiguousVertexMapping :: IntMap (IntSet, t, IntMap a) -> IntMap (IntSet, t, IntMap a)
 contractToContiguousVertexMapping inputMap = foldMapWithKey contractIndices inputMap
@@ -743,7 +743,7 @@ expandVertexMapping unexpandedMap = snd . foldl' expandEdges (initialCounter+1, 
 
 
 -- |
--- 'generateNewick' recursively  retrieves the node name at a given index in a 'IndexData' vector.
+-- 'generateNewick' recursively retrieves the node name at a given index in an 'IndexData' vector.
 -- The set acts as an accumulator to remember which network nodes have been referenced thus far.
 -- Each network node has already been assigned an index. That index will be used as the node reference in the eNewick output.
 generateNewick :: Vector (IndexData e String) -> Int -> S.Set String -> (S.Set String, String)
@@ -811,7 +811,7 @@ getNodeType e =
 
 -- |
 -- Use the supplied transformation to fold the Node values of the DAG into a
--- 'Monoid' result. The fold is *loosely* ordered from *a* root node towards the
+-- 'Monoid' result. The fold is *loosely* ordered from *a* root node toward the
 -- leaves.
 nodeFoldMap :: Monoid m => (n -> m) -> ReferenceDAG d e n -> m
 nodeFoldMap f = foldMap f . fmap nodeDecoration . references
@@ -820,7 +820,7 @@ nodeFoldMap f = foldMap f . fmap nodeDecoration . references
 -- |
 -- Applies a traversal logic function over a 'ReferenceDAG' in a /post-order/ manner.
 --
--- The logic function takes a current node decoration,
+-- The logic function takes a current node decoration and
 -- a list of child node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
 nodePostOrder :: (n -> [n'] -> n') -> ReferenceDAG d e n -> ReferenceDAG d e n'
@@ -842,7 +842,7 @@ nodePostOrder f dag = RefDAG <$> const newReferences <*> rootRefs <*> graphData 
 -- |
 -- Applies a traversal logic function over a 'ReferenceDAG' in a /pre-order/ manner.
 --
--- The logic function takes a current node decoration,
+-- The logic function takes a current node decoration and
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
 nodePreOrder :: (n -> [(Word, n')] -> n') -> ReferenceDAG d e n -> ReferenceDAG d e n'
@@ -919,9 +919,9 @@ topologyRendering dag = drawVerticalTree . unfoldTree f . NE.head $ rootRefs dag
 --
 -- * Does not check for the lack of cycles.
 --
--- * Does not normalize nodes for propper in-degree values.
+-- * Does not normalize nodes for proper in-degree values.
 --
--- * Does not normalize nodes for propper out-degree values.
+-- * Does not normalize nodes for proper out-degree values.
 fromList :: Foldable f => f (IntSet, n, IntMap e) -> ReferenceDAG () e n
 fromList xs =
     RefDAG
@@ -986,8 +986,8 @@ unfoldDAG f origin =
     (_, _, _, _rootIndices, resultMap) = g initialAccumulator origin
     g (counter, _otherIndex, previousContext@(previousIndex, previousSeenSet), currentRoots, currentMap) currentValue =
         case currentValue `lookup` previousSeenSet of
-          -- If this value is in the previously seen set we don't recurse.
-          -- We just return the supplied accumulator with a mutated otherIndex value.
+          -- If this value is in the previously seen set we don't recurse,
+          -- we just return the supplied accumulator with a mutated otherIndex value.
           Just i  -> (counter, i, previousContext, currentRoots, currentMap)
           Nothing -> result
       where
@@ -1067,7 +1067,7 @@ gen1 x = (pops, show x, kids)
 
 
 -- |
--- Exctract a context from the 'ReferenceDAG' that can be used to create a dot
+-- Extract a context from the 'ReferenceDAG' that can be used to create a dot
 -- context for rendering.
 getDotContext
   :: Foldable f

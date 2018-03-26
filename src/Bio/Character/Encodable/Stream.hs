@@ -26,7 +26,7 @@ import           Data.Bits
 import           Data.Foldable
 import           Data.List.NonEmpty        (NonEmpty)
 import qualified Data.List.NonEmpty as NE
-import           Data.List.Utility 
+import           Data.List.Utility
 import           Data.Maybe                (fromMaybe)
 import           Data.Monoid
 import           Data.MonoTraversable
@@ -49,7 +49,7 @@ import           Foreign.C.Types
    * @encodeElement alphabet alphabet == complement (bit (length alphabet - 1) `clearBit` (bit (length alphabet - 1))@
 
    * @decodeElement alphabet (encodeElement alphabet xs .|. encodeElement alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.union` toList ys)@
- 
+
    * @decodeElement alphabet (encodeElement alphabet xs .&. encodeElement alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.intersect` toList ys)@
 
 -}
@@ -71,7 +71,7 @@ class ( FiniteBits b
 
 
 {- |
- Represents a non empty stream of 'EncodableStreamElement' of variable length.
+ Represents a non-empty stream of 'EncodableStreamElement's of variable lengths.
 
  Laws:
 
@@ -82,7 +82,7 @@ class ( EncodableStreamElement (Element s)
       , MonoFoldable s
       , MonoFunctor  s
       ) => EncodableStream s where
-  
+
     decodeStream :: (Ord a, IsString a) => Alphabet a -> s -> NonEmpty (AmbiguityGroup a)
     decodeStream alphabet = NE.fromList . ofoldMap (\e -> [decodeElement alphabet e])
 
@@ -92,7 +92,7 @@ class ( EncodableStreamElement (Element s)
     indexStream xs i = fromMaybe raiseError $ xs `lookupStream` i
       where
         raiseError = error
-                   $ mconcat ["Stream indexing at ", show i, " is out of range [0,", show $ olength xs - 1,"]."] 
+                   $ mconcat ["Stream indexing at ", show i, " is out of range [0,", show $ olength xs - 1,"]."]
 
     lookupStream :: s -> Int -> Maybe (Element s)
     lookupStream xs i = fst $ ofoldl' f (Nothing, 0) xs
@@ -106,7 +106,7 @@ class ( EncodableStreamElement (Element s)
 
 
 -- |
--- Show an 'EncodableStreamElement' by decoding it with it's corresponding alphabet.
+-- Show an 'EncodableStreamElement' by decoding it with its corresponding alphabet.
 showStreamElement :: EncodableStreamElement e => Alphabet String -> e -> String
 showStreamElement alphabet element
   | zeroBits == element = "<Empty Character>"
@@ -133,8 +133,8 @@ showStreamElement alphabet element
 
 -- |
 -- Serialize any instance of 'FiniteBits' as a stream of 1s and 0s with the
--- left hand side of the stream representing the least significant bit and the
--- right hand side of the stream representing the most significant bit.
+-- left-hand side of the stream representing the least significant bit and the
+-- right-hand side of the stream representing the most significant bit.
 showBits :: FiniteBits b => b -> String
 showBits b = foldMap f [0 .. finiteBitSize b - 1]
   where
@@ -144,7 +144,7 @@ showBits b = foldMap f [0 .. finiteBitSize b - 1]
 
 
 -- |
--- Show an 'EncodableStream' by decoding it with it's corresponding alphabet.
+-- Show an 'EncodableStream' by decoding it with its corresponding alphabet.
 showStream :: EncodableStream s => Alphabet String -> s -> String
 showStream alphabet = ofoldMap (showStreamElement alphabet)
 
@@ -165,4 +165,4 @@ encodableStreamToExportableCharacterElements dc
   where
     bitsInElement    = symbolCount dc
     numberOfElements = toEnum $ olength dc
-    integralElements = ofoldMap (pure . toEnum . fromEnum) dc 
+    integralElements = ofoldMap (pure . toEnum . fromEnum) dc
