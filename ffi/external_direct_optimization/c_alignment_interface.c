@@ -40,34 +40,22 @@ int align2d( alignIO_t          *inputChar1_aio
     alignIO_t *longIO,
               *shortIO;
 
-    dyn_character_t *longChar     = malloc(sizeof(dyn_character_t)); // input to algn_nw_2d
-    dyn_character_t *shortChar    = malloc(sizeof(dyn_character_t)); // input to algn_nw_2d
-    dyn_character_t *retShortChar = malloc(sizeof(dyn_character_t)); // aligned character outputs from backtrace (not medians)
-    dyn_character_t *retLongChar  = malloc(sizeof(dyn_character_t)); // aligned character outputs from backtrace (not medians)
-    assert(   longChar     != NULL
-           && shortChar    != NULL
-           && retShortChar != NULL
-           && retLongChar  != NULL
-           && "Can't allocate input or output characters in 2D affine." );
-
-    assert(   longChar     != NULL
-           && shortChar    != NULL
-           && retShortChar != NULL
-           && retLongChar  != NULL
-           && "OOM. Can't allocate space for characters in 2D alignment." );
-
     /*** Most character allocation is now done on Haskell side, but these two are local. ***/
     /*** longChar and shortChar will both have pointers into the input characters, so don't need to be initialized separately ***/
-    dyn_char_initialize(retLongChar,  CHAR_CAPACITY);
-    dyn_char_initialize(retShortChar, CHAR_CAPACITY);
-
+    dyn_character_t *retLongChar  = dyn_char_alloc(CHAR_CAPACITY);
+    dyn_character_t *retShortChar = dyn_char_alloc(CHAR_CAPACITY);
+    dyn_character_t *longChar     = dyn_char_alloc(0);
+    dyn_character_t *shortChar    = dyn_char_alloc(0);
     size_t alphabetSize = costMtx2d->alphSize;
 
     int firstCharIsLongerOrBothAreIdenticalInValue = 1;
-    if (inputChar1_aio->length < inputChar2_aio->length)
-	firstCharIsLongerOrBothAreIdenticalInValue = 0;
-    else if (inputChar1_aio->length > inputChar2_aio->length)
+
+    if (inputChar1_aio->length < inputChar2_aio->length) {
+        firstCharIsLongerOrBothAreIdenticalInValue = 0;
+    }
+    else if (inputChar1_aio->length > inputChar2_aio->length) {
         firstCharIsLongerOrBothAreIdenticalInValue = 1;
+    }
     else { // Length is equal!
         // Use lexical ordering to determine "length" in the case of equal length dynamic characters
         // Two dynamic chanracters will *only* be equal in length if they contain the same sequence of elements.
@@ -76,9 +64,9 @@ int align2d( alignIO_t          *inputChar1_aio
         elem_t *p2 = inputChar2_aio->character + (inputChar2_aio->capacity - inputChar2_aio->length);
         for (size_t i = 0; i < inputChar1_aio->length; ++i) {
             if (p1[i] != p2[i]) {
-	        firstCharIsLongerOrBothAreIdenticalInValue = p1[i] > p2[i];
-	        break;
-	    }
+                firstCharIsLongerOrBothAreIdenticalInValue = p1[i] > p2[i];
+                break;
+            }
         }
     }
 
@@ -128,9 +116,7 @@ int align2d( alignIO_t          *inputChar1_aio
         algn_backtrace_2d( shortChar, longChar, retShortChar, retLongChar, algnMtxs2d, costMtx2d, 0, 0 );
 
         if (getUngapped) {
-            dyn_character_t *ungappedMedianChar = malloc( sizeof(dyn_character_t) );
-            assert( ungappedMedianChar != NULL && "Can't allocate 2D ungapped median character." );
-            dyn_char_initialize( ungappedMedianChar, CHAR_CAPACITY );
+            dyn_character_t *ungappedMedianChar = dyn_char_alloc( CHAR_CAPACITY );
 
             algn_get_median_2d_no_gaps( retShortChar, retLongChar, costMtx2d, ungappedMedianChar );
 
@@ -138,12 +124,11 @@ int align2d( alignIO_t          *inputChar1_aio
             dynCharToAlignIO( longIO,  retLongChar, 1 );
             dynCharToAlignIO( shortIO, retShortChar, 1 );
 
-            freeChar( ungappedMedianChar );
+            dyn_char_free( ungappedMedianChar );
+            if (NULL != ungappedMedianChar) free(ungappedMedianChar);
         }
         if (getGapped && !getUnion) {
-            dyn_character_t *gappedMedianChar = malloc( sizeof(dyn_character_t) );
-            assert( gappedMedianChar != NULL && "Can't allocate gapped median character." );
-            dyn_char_initialize( gappedMedianChar, CHAR_CAPACITY );
+            dyn_character_t *gappedMedianChar = dyn_char_alloc( CHAR_CAPACITY );
 
             algn_get_median_2d_with_gaps( retShortChar, retLongChar, costMtx2d, gappedMedianChar );
 
@@ -151,27 +136,27 @@ int align2d( alignIO_t          *inputChar1_aio
             dynCharToAlignIO( longIO,  retLongChar, 1 );
             dynCharToAlignIO( shortIO, retShortChar, 1 );
 
-            freeChar( gappedMedianChar );
+            dyn_char_free( gappedMedianChar );
+            if (NULL != gappedMedianChar) free(gappedMedianChar);
         }
         if (getUnion) {
-            dyn_character_t *unionMedianChar = malloc( sizeof(dyn_character_t) );
-            assert( unionMedianChar != NULL && "Can't allocate union median character." );
-
-            dyn_char_initialize(unionMedianChar, CHAR_CAPACITY);
+            dyn_character_t *unionMedianChar = dyn_char_alloc(CHAR_CAPACITY);
 
             algn_union( retShortChar, retLongChar, unionMedianChar );
 
             dynCharToAlignIO( gappedOutput_aio, unionMedianChar, 1 );
 
-            freeChar( unionMedianChar );
+            dyn_char_free( unionMedianChar );
+            if (NULL != unionMedianChar) free(unionMedianChar);
 
             /*** following once union has its own output field again ***/
             // dyn_character_t *unionChar = malloc(sizeof(dyn_character_t));
-            // dyn_char_initialize(unionChar, CHAR_CAPACITY);
+            // dyn_char_alloc(unionChar, CHAR_CAPACITY);
             // algn_union(retShortChar, retLongChar, gappedMedianChar);
 
             // dynCharToAlignIO(unionChar, unionOutputChar);
-            // freeChar(unionChar);
+            // dyn_char_free(unionChar);
+            // if (NULL != retLongChar) free(unionChar);
 
             dynCharToAlignIO( longIO,  retLongChar,  1 );
             dynCharToAlignIO( shortIO, retShortChar, 1 );
@@ -179,8 +164,14 @@ int align2d( alignIO_t          *inputChar1_aio
     }
 
     freeNWMtx( algnMtxs2d );
-    freeChar( retLongChar );
-    freeChar( retShortChar );
+    dyn_char_free( retLongChar );
+    if (NULL != retLongChar) free(retLongChar);
+    dyn_char_free( retShortChar );
+    if (NULL != retShortChar) free(retShortChar);
+
+    // Shouldn't have to free the whole structs here because they just pointed into the retChars.
+    if (NULL != longChar) free(longChar);
+    if (NULL != shortChar) free(shortChar);
 
     return algnCost;
 
@@ -210,27 +201,12 @@ int align2dAffine( alignIO_t          *inputChar1_aio
     alignIO_t *longIO,
               *shortIO;
 
-
-    dyn_character_t *longChar     = malloc(sizeof(dyn_character_t)); // input to algn_nw_2d
-    dyn_character_t *shortChar    = malloc(sizeof(dyn_character_t)); // input to algn_nw_2d
-    dyn_character_t *retShortChar = malloc(sizeof(dyn_character_t)); // aligned character outputs from backtrace (not medians)
-    dyn_character_t *retLongChar  = malloc(sizeof(dyn_character_t)); // aligned character outputs from backtrace (not medians)
-    assert(   longChar     != NULL
-           && shortChar    != NULL
-           && retShortChar != NULL
-           && retLongChar  != NULL
-           && "Can't allocate input or output characters in 2D affine." );
-
-    assert(   longChar     != NULL
-           && shortChar    != NULL
-           && retShortChar != NULL
-           && retLongChar  != NULL
-           && "OOM. Can't allocate space for characters in 2D alignment." );
-
     /*** Most character allocation is now done on Haskell side, but these two are local. ***/
     /*** longChar and shortChar will both have pointers into the input characters, so don't need to be initialized separately ***/
-    dyn_char_initialize(retLongChar,  CHAR_CAPACITY);
-    dyn_char_initialize(retShortChar, CHAR_CAPACITY);
+    dyn_character_t *longChar     = dyn_char_alloc(0);
+    dyn_character_t *shortChar    = dyn_char_alloc(0);
+    dyn_character_t *retLongChar  = dyn_char_alloc(CHAR_CAPACITY);
+    dyn_character_t *retShortChar = dyn_char_alloc(CHAR_CAPACITY);
 
     size_t alphabetSize = costMtx2d_affine->alphSize;
 
@@ -333,14 +309,8 @@ int align2dAffine( alignIO_t          *inputChar1_aio
                                             );
 
     if(getMedians) {
-        dyn_character_t *ungappedMedianChar = malloc(sizeof(dyn_character_t));
-        dyn_character_t *gappedMedianChar   = malloc(sizeof(dyn_character_t));
-        assert(   gappedMedianChar   != NULL
-               && ungappedMedianChar != NULL
-               && "Can't allocate median characters." );
-
-        dyn_char_initialize(ungappedMedianChar, CHAR_CAPACITY);
-        dyn_char_initialize(gappedMedianChar,   CHAR_CAPACITY);
+        dyn_character_t *ungappedMedianChar = dyn_char_alloc(CHAR_CAPACITY);
+        dyn_character_t *gappedMedianChar   = dyn_char_alloc(CHAR_CAPACITY);
 
         algn_backtrace_affine( shortChar
                              , longChar
@@ -358,13 +328,22 @@ int align2dAffine( alignIO_t          *inputChar1_aio
         dynCharToAlignIO( longIO,  retLongChar, 1 );
         dynCharToAlignIO( shortIO, retShortChar, 1 );
 
-        freeChar(ungappedMedianChar);
-        freeChar(gappedMedianChar);
+        dyn_char_free(ungappedMedianChar);
+        if (NULL != ungappedMedianChar) free(ungappedMedianChar);
+        dyn_char_free(gappedMedianChar);
+        if (NULL != gappedMedianChar) free(gappedMedianChar);
     }
 
     freeNWMtx(algnMtxs2dAffine);
-    freeChar(retLongChar);
-    freeChar(retShortChar);
+    /**** Can't free these structs internals because they're pointing into inputChar1_aio and inputChar2_aio ****/
+    // dyn_char_free(longChar);
+    // dyn_char_free(shortChar);
+    if (NULL != longChar) free(longChar);
+    if (NULL != shortChar) free(shortChar);
+    dyn_char_free(retLongChar);
+    if (NULL != retLongChar) free(retLongChar);
+    dyn_char_free(retShortChar);
+    if (NULL != retShortChar) free(retShortChar);
 
     return algnCost;
 }
@@ -403,42 +382,11 @@ int align3d( alignIO_t          *inputChar1_aio
 
     const size_t CHAR_CAPACITY = inputChar1_aio->length + inputChar2_aio->length + inputChar3_aio->length;
 
-    int alignmentInChar1Len = inputChar1_aio->length,
-        alignmentInChar2Len = inputChar2_aio->length,
-        alignmentInChar3Len = inputChar3_aio->length;
-
     unsigned int algnCost;
 
     // powellInputs will be sent to Powell 3D alignment, powellOutputs will be returned.
-    characters_t *powellInputs = malloc( sizeof(characters_t) );
-    powellInputs->seq1         = malloc( alignmentInChar1Len * sizeof(elem_t) );
-    powellInputs->seq2         = malloc( alignmentInChar2Len * sizeof(elem_t) );
-    powellInputs->seq3         = malloc( alignmentInChar3Len * sizeof(elem_t) );
-    assert(   powellInputs       != NULL
-           && powellInputs->seq1 != NULL
-           && powellInputs->seq2 != NULL
-           && powellInputs->seq3 != NULL
-           && "Can't allocate inputs to Powell 3DO." );
-
-    characters_t *powellOutputs = malloc( sizeof(characters_t) );
-    powellOutputs->seq1         = malloc( CHAR_CAPACITY * sizeof(elem_t) );
-    powellOutputs->seq2         = malloc( CHAR_CAPACITY * sizeof(elem_t) );
-    powellOutputs->seq3         = malloc( CHAR_CAPACITY * sizeof(elem_t) );
-    assert(   powellOutputs       != NULL
-           && powellOutputs->seq1 != NULL
-           && powellOutputs->seq2 != NULL
-           && powellOutputs->seq3 != NULL
-           && "Can't allocate outputs from Powell 3DO." );
-
-    assert(   powellInputs        != NULL
-           && powellInputs->seq1  != NULL
-           && powellInputs->seq2  != NULL
-           && powellInputs->seq3  != NULL
-           && powellOutputs       != NULL
-           && powellOutputs->seq1 != NULL
-           && powellOutputs->seq2 != NULL
-           && powellOutputs->seq3 != NULL
-           && "OOM. Can't allocate space for characters in 3D alignment." );
+    characters_t *powellInputs  = alloc_characters_t(inputChar1_aio->length, inputChar2_aio->length, inputChar3_aio->length);
+    characters_t *powellOutputs = alloc_characters_t(CHAR_CAPACITY, CHAR_CAPACITY, CHAR_CAPACITY);
 
     alignIOtoCharacters_t( powellInputs, inputChar1_aio, inputChar2_aio, inputChar3_aio );
 
@@ -453,14 +401,8 @@ int align3d( alignIO_t          *inputChar1_aio
                                , gap_extension_cost  // gap extension cost: must be > 0
                                );
 
-    dyn_character_t *ungappedMedianChar = malloc( sizeof(dyn_character_t) );
-    dyn_character_t *gappedMedianChar   = malloc( sizeof(dyn_character_t) );
-    assert(   gappedMedianChar   != NULL
-           && ungappedMedianChar != NULL
-           && "Can't allocate 3D median characters." );
-
-    dyn_char_initialize( ungappedMedianChar, powellOutputs->idxSeq1 );
-    dyn_char_initialize( gappedMedianChar,   powellOutputs->idxSeq1 );
+    dyn_character_t *gappedMedianChar   = dyn_char_alloc( powellOutputs->idxSeq1 );
+    dyn_character_t *ungappedMedianChar = dyn_char_alloc( powellOutputs->idxSeq1 );
 
     algnCost = algn_get_cost_medians_3d( powellOutputs
                                        , costMtx3d
@@ -468,8 +410,8 @@ int align3d( alignIO_t          *inputChar1_aio
                                        , gappedMedianChar
                                        );
 
-    dynCharToAlignIO( ungappedOutput_aio, ungappedMedianChar, 0 );
     dynCharToAlignIO( gappedOutput_aio,   gappedMedianChar,   0 );
+    dynCharToAlignIO( ungappedOutput_aio, ungappedMedianChar, 0 );
 
     copyValsToAIO( outputChar1_aio, powellOutputs->seq1, powellOutputs->lenSeq1, powellOutputs->lenSeq1 );
     copyValsToAIO( outputChar2_aio, powellOutputs->seq2, powellOutputs->lenSeq1, powellOutputs->lenSeq1 );
@@ -480,6 +422,16 @@ int align3d( alignIO_t          *inputChar1_aio
     reverseCharacterElements(outputChar3_aio);
     reverseCharacterElements(gappedOutput_aio);
     reverseCharacterElements(ungappedOutput_aio);
+
+    dyn_char_free(gappedMedianChar);
+    if (gappedMedianChar != NULL) free(gappedMedianChar);
+    dyn_char_free(ungappedMedianChar);
+    if (ungappedMedianChar != NULL) free(ungappedMedianChar);
+
+    free_characters_t(powellInputs);
+    if (powellInputs != NULL) free(powellInputs);
+    free_characters_t(powellOutputs);
+    if (powellOutputs != NULL) free(powellOutputs);
 
     return algnCost;
 }
@@ -533,6 +485,10 @@ void alignIOtoCharacters_t( characters_t *output
                           , alignIO_t    *inputChar3
                           )
 {
+    output->seq1 = realloc( output->seq1, inputChar1->length * sizeof(elem_t) );
+    output->seq2 = realloc( output->seq2, inputChar2->length * sizeof(elem_t) );
+    output->seq3 = realloc( output->seq3, inputChar3->length * sizeof(elem_t) );
+
     memcpy( output->seq1, inputChar1->character + inputChar1->capacity - inputChar1->length, inputChar1->length * sizeof(elem_t) );
     memcpy( output->seq2, inputChar2->character + inputChar2->capacity - inputChar2->length, inputChar2->length * sizeof(elem_t) );
     memcpy( output->seq3, inputChar3->character + inputChar3->capacity - inputChar3->length, inputChar3->length * sizeof(elem_t) );
@@ -548,12 +504,15 @@ void alignIOtoCharacters_t( characters_t *output
 
 
 
-void allocAlignIO( alignIO_t *toAlloc, size_t capacity )
+alignIO_t *allocAlignIO( size_t capacity )
 {
-    toAlloc->length    = 0;
-    toAlloc->capacity  = capacity;
-    toAlloc->character = calloc(capacity, sizeof(elem_t));
-    assert( toAlloc->character != NULL && "Can't allocate alignIO character field." );
+    alignIO_t *toReturn = malloc( sizeof(alignIO_t) );
+    assert( NULL != toReturn && "Out of memory: Can't allocate alignIO." );
+    toReturn->length    = 0;
+    toReturn->capacity  = capacity;
+    toReturn->character = calloc(capacity, sizeof(elem_t));
+    assert( NULL != toReturn->character && "Out of memory: Can't allocate alignIO character field." );
+    return(toReturn);
 }
 
 
@@ -570,8 +529,8 @@ void copyValsToAIO( alignIO_t *outChar, elem_t *vals, size_t length, size_t capa
 {
     outChar->length   = length;
     outChar->capacity = capacity;
-    outChar->character = malloc( outChar->capacity * sizeof(elem_t) );
-    assert( outChar->character != NULL && "Can't allocate alignIO character field." );
+    outChar->character = realloc( outChar->character, outChar->capacity * sizeof(elem_t) );
+    assert( NULL != outChar->character && "Can't allocate alignIO character field." );
 
     size_t offset = capacity - length;
     memcpy(outChar->character + offset, vals, length * sizeof(elem_t));
@@ -618,8 +577,8 @@ void dynCharToAlignIO( alignIO_t *output, dyn_character_t *input, int delete_ini
     // output->capacity = input->cap;     // this shouldn't change
     size_t offset  = output->capacity - copy_length; // How far into output to start copying input character.
 
-    output->character = malloc( output->capacity * sizeof(elem_t) );
-    assert( output->character != NULL && "Can't allocate alignIO character field." );
+    output->character = realloc( output->character, output->capacity * sizeof(elem_t) );
+    assert( NULL != output->character && "Can't allocate alignIO character field." );
 
     // Start copy after unnecessary gap char in input, if it exists.
     memcpy( output->character + offset, input_begin, copy_length * sizeof(elem_t) );
@@ -629,8 +588,8 @@ void dynCharToAlignIO( alignIO_t *output, dyn_character_t *input, int delete_ini
 
 void freeAlignIO(alignIO_t *toFree )
 {
-    free(toFree->character);
-    free(toFree);
+    if (NULL != toFree->character) free(toFree->character);
+    // free(toFree);
 }
 
 
@@ -639,11 +598,11 @@ void reallocAlignIO(alignIO_t *toAlloc, size_t capacity )
     toAlloc->length    = 0;
     toAlloc->capacity  = capacity;
     toAlloc->character = realloc(toAlloc->character, capacity * sizeof(elem_t));
-    assert (toAlloc->character != NULL && "OOM: can't allocate aligntIO_t character.");
+    assert( NULL != toAlloc->character && "OOM: can't allocate aligntIO_t character." );
 }
 
 
-void resetAlignIO(alignIO_t *inChar )
+void resetAlignIO(alignIO_t *inChar)
 {
     memset(inChar->character, 0, inChar->capacity * sizeof(elem_t));
     inChar->length = 0;

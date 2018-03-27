@@ -68,10 +68,10 @@ parse' = parse
 
 --evaluate :: Command -> EvaluationT IO a -> EvaluationT IO (Either TopologicalResult DecoratedCharacterResult)
 --evaluate :: Command -> EvaluationT IO a -> EvaluationT IO (Either TopologicalResult CharacterResult)
-evaluate :: Command -> EvaluationT IO a -> SearchState -- EvaluationT IO (Either TopologicalResult CharacterResult)
+evaluate :: Command -> SearchState -- EvaluationT IO (Either TopologicalResult CharacterResult)
 -- evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
 -- evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
-evaluate (READ (ReadCommand fileSpecs)) _old = do
+evaluate (READ (ReadCommand fileSpecs)) = do
     when (null fileSpecs) $ fail "No files specified in 'read()' command"
     result <- liftIO . runExceptT . eitherTValidation $ parmap rpar parseSpecifiedFile fileSpecs
     case result of
@@ -89,7 +89,7 @@ evaluate (READ (ReadCommand fileSpecs)) _old = do
     transformation = id -- expandIUPAC
     decoration     = fmap (fmap initializeDecorations2)
 
-evaluate _ _ = fail "Invalid READ command binding"
+evaluate _ = fail "Invalid READ command binding"
 
 {-
 renderSequenceCosts :: Either t (PhylogeneticSolution (PhylogeneticDAG2 e n u v w x y z)) -> String

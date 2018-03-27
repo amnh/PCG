@@ -238,7 +238,7 @@ dynChar_t *makeDynamicChar( size_t alphSize, size_t numElems, packedChar *values
 }
 
 
-uint64_t *dynCharToIntArr(dynChar_t *input)
+uint64_t *dynCharToIntArr( const dynChar_t *input )
 {
     uint64_t *output = allocatePackedChar(input->alphSize, input->numElems);
 
@@ -296,7 +296,16 @@ packedChar *allocatePackedChar( size_t alphSize, size_t numElems )
 }
 
 
-packedChar *makePackedCharCopy( packedChar *inChar, size_t alphSize, size_t numElems)
+packedChar *createCopyPackedChar( const packedChar* const srcChar, size_t alphSize )
+{
+    size_t byteCount    = dcElemSize(alphSize) * sizeof(packedChar);
+    packedChar *outChar = malloc(byteCount);
+    memcpy(outChar, srcChar, byteCount);
+    return outChar;
+}
+
+
+packedChar *makePackedCharCopy( const packedChar *inChar, size_t alphSize, size_t numElems)
 {
     packedChar *outChar = allocatePackedChar(alphSize, numElems);
     size_t length = dynCharSize(alphSize, numElems);
@@ -308,7 +317,7 @@ packedChar *makePackedCharCopy( packedChar *inChar, size_t alphSize, size_t numE
 
 
 // TODO: test the next four fns. And make sure docs in .h file are good.
-packedChar *packedCharAnd( packedChar *lhs, packedChar *rhs, size_t alphSize, size_t numElems )
+packedChar *packedCharAnd( const packedChar *lhs, const packedChar *rhs, size_t alphSize, size_t numElems )
 {
     size_t length = dynCharSize(alphSize, numElems);
     // printf("length: %" PRIu64 "\n", length);
@@ -320,10 +329,10 @@ packedChar *packedCharAnd( packedChar *lhs, packedChar *rhs, size_t alphSize, si
 }
 
 
-dcElement_t *dcElementOr( dcElement_t *lhs, dcElement_t *rhs )
+dcElement_t *dcElementOr( const dcElement_t *lhs, const dcElement_t *rhs )
 {
-    dcElement_t *toReturn = malloc(sizeof(dcElement_t));        // not calling allocateDCElem
-                                                                // because packedCharOr allocates.
+    dcElement_t *toReturn = malloc(sizeof(dcElement_t)); // not calling allocateDCElem
+                                                         // because packedCharOr allocates.
     if (toReturn == NULL) {
         printf("Out of memory.\n");
         fflush(stdout);
@@ -335,19 +344,23 @@ dcElement_t *dcElementOr( dcElement_t *lhs, dcElement_t *rhs )
 }
 
 
-packedChar *packedCharOr ( packedChar *lhs, packedChar *rhs, size_t alphSize, size_t numElems )
+packedChar *packedCharOr( const packedChar *lhs, const packedChar *rhs, size_t alphSize, size_t numElems )
 {
-    size_t length = dcElemSize(alphSize);
-    packedChar *toReturn = allocatePackedChar(alphSize, numElems);
-    for (size_t i = 0; i < length; i++) {
-        printf("lhs: %" PRIu64 ", rhs: %" PRIu64 "\n", *lhs, *rhs);
+    // This relies on the fact that the inputs lhs & rhs both have allocated
+    // buffers of *at least* "bufferLen" number of elements.
+    //
+    // There is no way to verify this internally.
+    size_t      bufferLen = dynCharSize(alphSize, numElems);
+    packedChar *toReturn  = malloc(bufferLen * sizeof(packedChar));
+    for (size_t i = 0; i < bufferLen; i++) {
+        // printf("lhs: %" PRIu64 ", rhs: %" PRIu64 "\n", *lhs, *rhs);
         toReturn[i] = lhs[i] | rhs[i];
     }
     return toReturn;
 }
 
 
-int dcElementEq (dcElement_t *lhs, dcElement_t *rhs)
+int dcElementEq( const dcElement_t *lhs, const dcElement_t *rhs )
 {
     if (lhs->alphSize != rhs->alphSize) {
         return 0;
@@ -362,15 +375,21 @@ int dcElementEq (dcElement_t *lhs, dcElement_t *rhs)
 }
 
 
-void freeDynChar( dynChar_t *p )
+void freeDynChar( const dynChar_t *p )
 {
-    free( p->dynChar );
+    if(p == NULL)
+        return;
+    if (p->dynChar != NULL) free( p->dynChar );
 }
 
 
 void freeDCElem( const dcElement_t *p )
 {
-    free( p->element );
+    if (p == NULL)
+        return;
+    if (p->element != NULL) free( p->element );
+    // free( p ); Can't free here. It was passed in as const.
+    // No p = NULL; because we need a const pointer for some reason in C++ land.
 }
 
 
@@ -381,20 +400,16 @@ void printCharBits( const dynChar_t *const input )
 
 
 void printPackedChar( const packedChar *input, size_t numElems, size_t alphSize ) {
-    printf("[\n");
-
     for( size_t elemNum = 0; elemNum < numElems; elemNum++ ) {
         for( size_t bitIdx = 0; bitIdx < alphSize; bitIdx++ ) {
             if( TestBit(input, alphSize * elemNum + bitIdx) ) {
                 // printf("Bit index:        %" PRIu64 "\n", alphSize * elemNum + bitIdx );
-                printf("1,");
+                printf("1");
             } else {
-                printf("0,");
+                printf("0");
             }
         }
-        printf("\n");
     }
-    printf("]\n");
 }
 
 

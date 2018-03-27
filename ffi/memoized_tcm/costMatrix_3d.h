@@ -21,8 +21,7 @@
 #include <climits>
 #include <cstdlib>
 #include <unordered_map>
-
-#include "costMatrix.h"        // This is for lookup in `computeCostMedian()`. TODO: Wrap this crap in. Tonight?
+#include "costMatrix_2d.h"
 
 
 /********************* Next three fns defined here to use on C side. *********************/
@@ -32,19 +31,24 @@ extern "C" {
 
 #include "dynamicCharacterOperations.h"
 
-costMatrix_p construct_CostMatrix_3d_C (size_t alphSize, int* tcm);
+costMatrix_p construct_CostMatrix_C (size_t alphSize, unsigned int* tcm);
 
+void destruct_CostMatrix_C (costMatrix_p mytype);
 
-void destruct_CostMatrix_3d_C (costMatrix_p mytype);
+unsigned int call_costAndMedian2D_C ( costMatrix_p untyped_self
+                                    , dcElement_t* first
+                                    , dcElement_t* second
+                                    , dcElement_t* retMedian
+                                    );
 
+unsigned int call_costAndMedian3D_C ( costMatrix_p untyped_self
+                                    , dcElement_t* first
+                                    , dcElement_t* second
+                                    , dcElement_t* third
+                                    , dcElement_t* retMedian
+                                    );
 
-int call_getSetCost_3d_C ( costMatrix_p untyped_self
-                         , dcElement_t* first
-                         , dcElement_t* second
-                         , dcElement_t* third
-                         , dcElement_t* retMedian
-                         );
-    // extern "C" costMatrix_p get_CostMatrixPtr_C(costMatrix_p untyped_self);
+// extern "C" costMatrix_p get_CostMatrix_2dPtr_C(costMatrix_p untyped_self);
 
 #ifdef __cplusplus
 }
@@ -54,12 +58,11 @@ int call_getSetCost_3d_C ( costMatrix_p untyped_self
 
 typedef std::tuple<dcElement_t, dcElement_t, dcElement_t> keys_3d_t;
 typedef std::tuple<keys_3d_t,   costMedian_t>             mapAccessTuple_3d_t;
-
-typedef void* costMatrix_p;
+// The stored cost & median type is defined in 2d matrix.
 
 
 /** Allocate room for a keys_3d_t. */
-keys_3d_t* allockeys_3d_t (size_t alphSize);
+keys_3d_t* allocKeys_3d_t (size_t alphSize);
 
 
 /** dealloc keys_3d_t. Calls various other free fns. */
@@ -172,53 +175,68 @@ typedef std::unordered_map<keys_3d_t, costMedian_t, KeyHash_3d, KeyEqual_3d>::co
 class CostMatrix_3d
 {
     public:
-        CostMatrix_3d( size_t alphSize, int* tcm );
+        CostMatrix_3d();
+
+        CostMatrix_3d( size_t alphSize, unsigned int* tcm );
 
         ~CostMatrix_3d();
 
-        /** Getter only for cost. Necessary for testing, to ensure that particular
-         *  key pair has, in fact, already been inserted into lookup table.
-         */
-        int getCostMedian( dcElement_t* first
-                         , dcElement_t* second
-                         , dcElement_t* third
-                         , dcElement_t* retMedian
-                         );
 
-        /** Acts as both a setter and getter, mutating myMap.
+        /** Returns the cost to transition between the *two* input elements and 
+         *  sets retMedian to be the median value between the *two* input 
+         *  elements.
          *
-         *  Receives two dcElements and computes the transformation cost as well as
-         *  the median for the two. Puts the median and alphabet size into retMedian,
-         *  which must therefore by necessity be allocated elsewhere.
+         *  If this is the first call to the function with the supplied inputs,
+         *  then the cost and median will be calculated and the result with be 
+         *  internally cached. 
          *
-         *  This functin allocates _if necessary_. So freeing inputs after a call will not
-         *  cause invalid reads from the cost matrix.
+         *  If the pair of inputs have already been queried, the cached result 
+         *  is returned in constant time.
+         *
+         *  This function performs deep copies of the inputs _when necessary_. 
+         *  Freeing inputs after a call will _never_ cause invalid reads from 
+         *  the cost matrix.
          */
-        int getSetCostMedian( dcElement_t* first
-                            , dcElement_t* second
-                            , dcElement_t* third
-                            , dcElement_t* retMedian
-                            );
+        unsigned int costAndMedian2D( dcElement_t* first
+                                    , dcElement_t* second
+                                    , dcElement_t* retMedian
+                                      );
+
+
+        /** Returns the cost to transition between the *three* input elements and 
+         *  sets retMedian to be the median value between the *two* input 
+         *  elements.
+         *
+         *  If this is the first call to the function with the supplied inputs,
+         *  then the cost and median will be calculated and the result with be 
+         *  internally cached. 
+         *
+         *  If the pair of inputs have already been queried, the cached result 
+         *  is returned in constant time.
+         *  This function performs deep copies of the inputs _when necessary_. 
+         *  Freeing inputs after a call will _never_ cause invalid reads from 
+         *  the cost matrix.
+         */
+        unsigned int costAndMedian3D( dcElement_t* first
+                                    , dcElement_t* second
+                                    , dcElement_t* third
+                                    , dcElement_t* retMedian
+                                    );
 
     private:
+
         std::unordered_map <keys_3d_t, costMedian_t, KeyHash_3d, KeyEqual_3d> myMatrix;
 
-        CostMatrix yourMatrix;
-
-        std::unordered_map <keys_3d_t, costMedian_t, KeyHash_3d, KeyEqual_3d> hasher;
-
-        size_t alphabetSize;
-
-        /** Stored unambiguous tcm, necessary to do first calls to findDistance() without having
-         *  to rewrite findDistance() and computeCostMedian_3d().
-         */
-        int *tcm;
-
+        CostMatrix_2d* twoD_matrix;
 
         /** Takes in a `keys_3d_t` and a `costMedian_t` and updates myMap to store the new values,
          *  with @key as a key, and @median as the value.
          */
-        void setValue(keys_3d_t* key, costMedian_t* median);
+        void setValue( const dcElement_t* const first
+                     , const dcElement_t* const second
+                     , const dcElement_t* const third
+                     , const costMedian_t* const median
+                     );
 
 
         /** Takes in a pair of keys_3d_t (each of which is a single `dcElement`) and computes their
@@ -228,31 +246,6 @@ class CostMatrix_3d
          *  in the median that is not present in either of the two elements being compared.
          */
         costMedian_t* computeCostMedian(keys_3d_t keys);
-
-
-        /** Find distance between an ambiguous nucleotide and an unambiguous ambElem. Return
-         *  that value and the median.
-         *  @param ambElem is ambiguous input.
-         *  @param nucleotide is unambiguous.
-         *  @param median is used to return the calculated median value.
-         *
-         *  This fn is necessary because there isn't yet a cost matrix set up, so it's not
-         *  possible to look up ambElems, therefore we must loop over possible values of the
-         *  ambElem and find the lowest cost median.
-         *
-         *  Nota bene: Requires symmetric, if not metric, matrix. TODO: Is this true? If so fix it?
-         */
-        int findDistance (keys_3d_t* searchKey, dcElement_t* ambElem);
-
-
-        /** Takes in an initial TCM, which is actually just a row-major array, creates hash
-         *  table of costs where cost is least cost between two elements, and medians,
-         *  where median is union of characters.
-         *
-         *  Nota bene:
-         *  Can only be called once this.alphabetSize has been set.
-         */
-        void initializeMatrix ();
 
 };
 

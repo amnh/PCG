@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../costMatrix.h"
+#include "../costMatrix_2d.h"
 #include "../costMatrix_3d.h"
 #include "../dynamicCharacterOperations.h"
 
@@ -14,7 +14,7 @@ int main() {
     const size_t tcmLen       = 25;
     const size_t alphabetSize = 5;
 
-    int tcm [tcmLen] = {0,1,1,1,1, 1,0,1,1,1, 1,1,0,1,1, 1,1,1,0,1, 1,1,1,1,0};
+    unsigned int tcm [tcmLen] = {0,1,1,1,1, 1,0,1,1,1, 1,1,0,1,1, 1,1,1,0,1, 1,1,1,1,0};
     if ( tcmLen != alphabetSize * alphabetSize ) {
         printf("tcm wrong size\n");
         exit(1);
@@ -59,17 +59,13 @@ int main() {
 
         for (size_t key2 = 0; key2 < alphabetSize; ++key2) { // no longer assumes 0 diagonal
             SetBit(secondKey->element, key2);
-            // TODO: How does this work in 3d?
-            cost = tcm[key1 * alphabetSize + key2];
             SetBit(&median, key2);
 
             for (size_t key3 = 0; key3 < alphabetSize; ++key3) { // no longer assumes 0 diagonal
                 SetBit(thirdKey->element, key3);
-                // TODO: How does this work in 3d?
-                cost = tcm[key1 * alphabetSize + key3];
                 SetBit(&median, key3);
 
-                foundCost = myMatrix.getCostMedian(firstKey, secondKey, thirdKey, retMedian);
+                foundCost = myMatrix.costAndMedian3D(firstKey, secondKey, thirdKey, retMedian);
                 fflush(stdout);
                 printf("key 1 set bit: %zu\n", key1);
                 printf("key 2 set bit: %zu\n", key2);
@@ -119,8 +115,20 @@ int main() {
     //     ClearAll( thirdKey->element,  dynCharSize(alphabetSize, 1) );
     // }
 
+    //Free objects the test suite creates to help with Valgrin's memory leak diagnostics.
+    freeDCElem( firstKey  );
+    freeDCElem( secondKey );
+    freeDCElem( thirdKey  );
+    freeDCElem( retMedian );
+    free( firstKey  );
+    free( secondKey );
+    free( thirdKey  );
+    free( retMedian );
+
+
     // TODO: Right now this isn't doing anything. It only works for 2d.
     // For 3d something more fancier will need to be done.
+    /*
     auto first   = new packedChar{1},
          second  = new packedChar{4},
          third   = new packedChar{16},
@@ -131,7 +139,7 @@ int main() {
     printf("%" PRIu64 "\n", *result);
     //free(result);
     printf("%" PRIu64 "\n", *result2);
-
+    */
     /****** This next to test Yu Xiang's code, once you can. ******/
 
     // int success = aligner(seqA_main, SEQ_A_LEN, seqB_main, SEQ_B_LEN, alphabetSize, getCostMatrix(myMatrix), &retMedChar);
@@ -147,9 +155,4 @@ int main() {
     //     printf("Fail!\n");
     // }
 
-    //Free objects the test suite creates to help with Valgrin's memory leak diagnostics.
-    freeDCElem( firstKey  );
-    freeDCElem( secondKey );
-    freeDCElem( thirdKey  );
-    freeDCElem( retMedian );
 }

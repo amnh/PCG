@@ -72,7 +72,7 @@ newtype Vector a = NEV { unwrap :: V.Vector a }
 
 
 -- |
--- Generation biases towards medium length
+-- Generation biases towards medium length.
 instance Arbitrary a => Arbitrary (Vector a) where
 
     arbitrary = do
@@ -113,12 +113,12 @@ instance Traversable1 Vector where
 instance TraversableWithKey Vector where
 
     traverseWithKey f = fmap NEV . traverseWithKey f . unwrap
-  
+
 
 instance TraversableWithKey1 Vector where
 
     traverseWithKey1 f = fmap fromNonEmpty . traverseWithKey1 f . toNonEmpty
-  
+
 
 instance Show a => Show (Vector a) where
 
@@ -158,7 +158,7 @@ unfoldr f = NEV . V.unfoldr f
 
 -- | /O(n)/
 --
--- 'uncons' produces the first element of the 'Vector', and a 'Vector' of the remaining elements, if any.
+-- 'uncons' produces both the first element of the 'Vector' and a 'Vector' of the remaining elements, if any.
 uncons :: Vector a -> (a, Maybe (Vector a))
 uncons (NEV v) = (first, stream)
   where

@@ -90,13 +90,13 @@ testNumerate = testGroup "Numeration properties"
     checkID :: DynamicChar -> Bool
     checkID inChar                   = onull inChar || (traces == defaultH && counter <= olength inChar)
       where
-        defaultH = V.fromList [0..olength inChar - 1] 
+        defaultH = V.fromList [0..olength inChar - 1]
         (traces, (_, counter), _) =  numerateOne inChar inChar (0, 0)
 
     lengthHolds                      = testProperty "Numerate returns a sequence of the correct length" checkLen
     checkLen :: (GoodParsedChar, GoodParsedChar) -> Int -> Bool
     checkLen inParse count           = length traces >= maxLen
-      where 
+      where
          (seq1, seq2)        = encodeArbSameLen inParse
          (traces, (_, _), _) = numerateOne seq1 seq2 (olength seq1, count)
          maxLen              = maximum [olength seq1, olength seq2]
@@ -104,14 +104,14 @@ testNumerate = testGroup "Numeration properties"
     counterIncrease                   = testProperty "After numerate runs, counter is same or larger" checkCounter
     checkCounter :: (GoodParsedChar, GoodParsedChar) -> Int -> Bool
     checkCounter inParse count        = counter >= count
-      where 
+      where
         (seq1, seq2)              = encodeArbSameLen inParse
         (_, (_, counter), _) = numerateOne seq1 seq2 (olength seq1, count)
 
     monotonic = testProperty "Numerate produces a monotonically increasing homology" checkIncrease
     checkIncrease :: (GoodParsedChar, GoodParsedChar) -> Int -> Bool
     checkIncrease inParse count       = increases $ toList traces
-      where 
+      where
         (seq1, seq2)         = encodeArbSameLen inParse
         (traces, _, _) = numerateOne seq1 seq2 (olength seq1, count)
         increases :: Ord a => [a] -> Bool
@@ -133,7 +133,7 @@ encodeArbSameLen (parse1, parse2) =
     alph    = fromSymbols $ oneAlph p1 `S.union` oneAlph p2
 
 
--- | Newtyping ensures that the sequence and ambiguity groups are both non empty.
+-- | Newtyping ensures that the sequence and ambiguity groups are both non-empty.
 newtype GoodParsedChar
       = GoodParsedChar
       { getGoodness :: ParsedChar

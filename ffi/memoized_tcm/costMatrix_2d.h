@@ -1,4 +1,4 @@
-/** costMatrix object to provide for a memoizable cost lookup table. Table is indexed by two
+/** CostMatrix_2d object to provide for a memoizable cost lookup table. Table is indexed by two
  *  dcElement values, and returns an int, for the cost. In addition, an additional dcElement
  *  is passed in by reference, and the median value of the two input elements is placed there.
  *  The getCost function is designed to interface directly with C.
@@ -11,8 +11,8 @@
  *  Any such checks should be done exterior to this library.
  */
 
-#ifndef _COSTMATRIX_H
-#define _COSTMATRIX_H
+#ifndef _COSTMATRIX_2D_H
+#define _COSTMATRIX_2D_H
 
 #define DEBUG 0
 
@@ -29,38 +29,43 @@ extern "C" {
 #include "dynamicCharacterOperations.h"
 
 /** Next three fns defined here to use on C side. */
-costMatrix_p construct_CostMatrix_C (size_t alphSize, int* tcm);
-void destruct_CostMatrix_C (costMatrix_p mytype);
-int call_getSetCost_C (costMatrix_p untyped_self, dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
-    // extern "C" costMatrix_p get_CostMatrixPtr_C(costMatrix_p untyped_self);
+costMatrix_p construct_CostMatrix_2d_C (size_t alphSize, unsigned int* tcm);
+void destruct_CostMatrix_2d_C (costMatrix_p mytype);
+unsigned int call_getSetCost_2d_C (costMatrix_p untyped_self, dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
+    // extern "C" costMatrix_p get_CostMatrix_Ptr_2d_C(costMatrix_p untyped_self);
 
 #ifdef __cplusplus
 }
 #endif
 
-// #include "CostMedPair.h"
-typedef std::tuple<dcElement_t, dcElement_t>  keys_t;
-typedef std::tuple<int,         packedChar*>  costMedian_t;
-typedef std::tuple<keys_t,      costMedian_t> mapAccessTuple_t;
+/******************************** End of C interface fns ********************************/
 
+typedef std::tuple< dcElement_t,  dcElement_t> keys_2d_t;
+typedef std::tuple<unsigned int,  packedChar*> costMedian_t;
+typedef std::tuple<   keys_2d_t, costMedian_t> mapAccessTuple_2d_t;
+
+/** Used to send 2d and 3d cost matrices through the C interface where they're statically cast to the two matrix types. */
 typedef void* costMatrix_p;
 
 
-
 /** Allocate room for a costMedian_t. Assumes alphabetSize is already initialized. */
-costMedian_t* allocCostMedian_t (size_t alphabetSize);
+costMedian_t* allocCostMedian_t( size_t alphabetSize );
 
 
 /** dealloc costMedian_t. */
-void freeCostMedian_t (costMedian_t* toFree);
+void freeCostMedian_t( costMedian_t* toFree );
 
 
-/** Allocate room for a keys_t. */
-keys_t* allocKeys_t (size_t alphSize);
+/** Allocate room for a keys_2d_t. */
+keys_2d_t* allocKeys_2d_t( size_t alphSize );
 
 
-/** dealloc keys_t. Calls various other free fns. */
-void freeKeys_t (const keys_t* toFree);
+/** dealloc keys_2d_t. Calls various other free fns. */
+void freeKeys_2d_t( const keys_2d_t* toFree );
+
+
+/** dealloc mapAccessTuple_2d_t. Calls various other free fns. */
+void freemapAccessTuple_2d_t( const mapAccessTuple_2d_t* toFree );
 
 
 /** Hashes two `dcElement`s, and returns an order-dependent hash value. In this case
@@ -72,7 +77,7 @@ void freeKeys_t (const keys_t* toFree);
  *  `dcElement` has two fields, the second of which is the element, and is an array of `uint64_t`s)
  *  using two different seeds, then combines the two resulting values.
  */
-struct KeyHash {
+struct KeyHash_2d {
     /** Following hash_combine code modified from here (seems to be based on Boost):
      *  http://stackoverflow.com/questions/2590677/how-do-i-combine-hash-values-in-c0x
      */
@@ -93,7 +98,7 @@ struct KeyHash {
         return left_seed;
     }
 
-    std::size_t operator()(const keys_t& k) const
+    std::size_t operator()(const keys_2d_t& k) const
     {
         // printf("operator hash ()\n");
         // printPackedChar(k.first.element, 1, k.first.alphSize);
@@ -103,9 +108,9 @@ struct KeyHash {
 };
 
 
-struct KeyEqual {
+struct KeyEqual_2d {
     // Return true if every `uint64_t` in lhs->element and rhs->element is equal, else false.
-    bool operator()(const keys_t& lhs, const keys_t& rhs) const
+    bool operator()(const keys_2d_t& lhs, const keys_2d_t& rhs) const
     {
       // Assert that all key components share the same alphSize value
       if (   std::get<0>(lhs).alphSize  != std::get<0>(rhs).alphSize
@@ -136,19 +141,20 @@ struct KeyEqual {
     }
 };
 
-typedef std::unordered_map<keys_t, costMedian_t, KeyHash, KeyEqual>::const_iterator mapIterator;
+
+// typedef std::unordered_map<keys_2d_t, costMedian_t, KeyHash_2, KeyEqual_2>::const_iterator mapIterator;
 
 
-class CostMatrix
+class CostMatrix_2d
 {
     public:
 
         /** Default constructor. Settings: alphabet size: 5, indel cost: 2, substitution cost: 1 */
-        CostMatrix();
+        CostMatrix_2d();
 
-        CostMatrix(size_t alphSize, int* tcm);
+        CostMatrix_2d(size_t alphSize, unsigned int* tcm);
 
-        ~CostMatrix();
+        ~CostMatrix_2d();
 
         /** Find distance between an ambiguous nucleotide and an unambiguous ambElem. Return that value and the median.
          *  @param ambElem is ambiguous input.
@@ -160,15 +166,13 @@ class CostMatrix
          *  and find the lowest cost median.
          *
          *  Public because gets called in CostMatrix_3d
-         *
-         *  Nota bene: Requires symmetric, if not metric, matrix. TODO: Is this true? If so fix it?
          */
-        int findDistance (keys_t* searchKey, dcElement_t* ambElem);
+        unsigned int findDistance(const size_t fixedElemIndex, const dcElement_t* const ambElem);
 
         /** Getter only for cost. Necessary for testing, to insure that particular
          *  key pair has, in fact, already been inserted into lookup table.
          */
-        int getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
+        unsigned int getCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
 
         /** Acts as both a setter and getter, mutating myMap.
          *
@@ -176,42 +180,81 @@ class CostMatrix
          *  the median for the two. Puts the median and alphabet size into retMedian,
          *  which must therefore by necessity be allocated elsewhere.
          *
-         *  This functin allocates _if necessary_. So freeing inputs after a call will not
+         *  This function allocates _if necessary_. So freeing inputs after a call is necessary and will not
          *  cause invalid reads from the cost matrix.
          */
-        int getSetCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
+        unsigned int getSetCostMedian(dcElement_t* left, dcElement_t* right, dcElement_t* retMedian);
+
+        // Required to be public as they are referenced from CostMatrix_3d.
+        // These can safely be public members because they are constant.
+
+        /** Number of symbol in the alphabet for the cost matrix.
+         */
+        const size_t alphabetSize;
+
+        /** Always equal to:
+         *    alphabetSize / sizeof ( packedChar ) + alphabetSize % sizeof(packedChar) ? 1 : 0
+         *  Calculated once and stored for efficeincy.
+         */
+        const size_t elementSize;
 
     private:
-        std::unordered_map <keys_t, costMedian_t, KeyHash, KeyEqual> myMatrix;
 
-        std::unordered_map <keys_t, costMedian_t, KeyHash, KeyEqual> hasher;
+        static constexpr unsigned int defaultExtraGapCostMetric[25] =
+            { 0, 1, 1, 1, 2
+            , 1, 0, 1, 1, 2
+            , 1, 1, 0, 1, 2
+            , 1, 1, 1, 0, 2
+            , 2, 2, 2, 2, 0
+            };
 
-        size_t alphabetSize;
+        static constexpr unsigned int defaultDiscreteMetric[25] =
+            { 0, 1, 1, 1, 1
+            , 1, 0, 1, 1, 1
+            , 1, 1, 0, 1, 1
+            , 1, 1, 1, 0, 1
+            , 1, 1, 1, 1, 0
+            };
+
+        static constexpr unsigned int defaultL1NormMetric[25] =
+            { 0, 1, 2, 3, 4
+            , 1, 0, 1, 2, 3
+            , 2, 1, 0, 1, 2
+            , 3, 2, 1, 0, 1
+            , 4, 3, 2, 1, 0
+            };
+
+        std::unordered_map <keys_2d_t, costMedian_t, KeyHash_2d, KeyEqual_2d> myMatrix;
 
         /** Stored unambiguous tcm, necessary to do first calls to findDistance() without having to rewrite
          *  findDistance() and computeCostMedian()
          */
-        int *tcm;
+        unsigned int* tcm;
 
-        /** Takes in a `keys_t` and a `costMedian_t` and updates myMap to store the new values,
-         *  with @key as a key, and @median as the value.
+        /** Takes in two `dcElement_t` and a `costMedian_t` and updates myMap to store the new values,
+         *  with @{lhs, rhs} as a key, and @median as the value.
+         *
+         * Makes a deep copy of the arguments before inserting them into the map.
          */
-        void setValue(keys_t* key, costMedian_t* median);
+         void setValue(const dcElement_t* const first, const dcElement_t* const second, const costMedian_t* const median);
 
-        /** Takes in a pair of keys_t (each of which is a single `dcElement`) and computes their lowest-cost median.
+        /** Takes in a pair of keys_2d_t (each of which is a single `dcElement`) and computes their lowest-cost median.
          *  Uses a Sankoff-like algorithm, where all bases are considered, and the lowest cost bases are included in the
          *  cost and median calculations. That means a base might appear in the median that is not present in either of
          *  the two elements being compared.
          */
-        costMedian_t* computeCostMedian(keys_t key);
+        costMedian_t* computeCostMedian(keys_2d_t key);
 
-        /** Takes in an initial TCM, which is actually just a row-major array, creates hash table of costs
-         *  where cost is least cost between two elements, and medians, where median is union of characters.
-         *
-         *  Nota bene:
-         *  Can only be called once this.alphabetSize has been set.
+        /** Takes an input buffer and assigns a malloc'ed copy to @tcm.
+         *  Uses the @alphabetSize of the matrix to determine the required space.
+         *  Because @alphabetSize is a const member, it will always be initialized
+         *  before this call, making the allocation and copy safe so long as the
+         *  input buffer is equal to or greater than @alphabetSize squared in
+         *  length.
          */
-        void initializeMatrix ();
+        void initializeTCM(const unsigned int* const inputBuffer);
+
 };
 
-#endif // COSTMATRIX_H
+
+#endif // COSTMATRIX_2D_H

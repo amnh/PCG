@@ -275,9 +275,12 @@ int doUkkInLimits(int sab, int sac, int sCost, int sState, int sDist,
 
         int i;
         fprintf(stderr, "\n\nSequence to align at this step:\n");
-        for (i = sDist; i < fDist; i++)                fprintf(stderr, "%3d ", inputs->seq1[i]); fprintf(stderr, "\n");
-        for (i = sDist - sab; i < fDist - fab; i++)    fprintf(stderr, "%3d ", inputs->seq2[i]); fprintf(stderr, "\n");
-        for (i = sDist - sac; i < fDist - fac; i++)    fprintf(stderr, "%3d ", inputs->seq3[i]); fprintf(stderr, "\n");
+        for (i = sDist; i < fDist; i++)             fprintf(stderr, "%3d ", inputs->seq1[i]);
+            fprintf(stderr, "\n");
+        for (i = sDist - sab; i < fDist - fab; i++) fprintf(stderr, "%3d ", inputs->seq2[i]);
+            fprintf(stderr, "\n");
+        for (i = sDist - sac; i < fDist - fac; i++) fprintf(stderr, "%3d ", inputs->seq3[i]);
+            fprintf(stderr, "\n");
     }
 
     completeFromInfo = 0;

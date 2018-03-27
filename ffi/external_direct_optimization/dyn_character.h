@@ -50,8 +50,10 @@ typedef struct dyn_character_t {
  *
  *  Note that it allocates allocSize + 1, because prepending won't work if array end == character end.
  */
-void dyn_char_initialize( dyn_character_t *retChar
-                        , size_t           allocSize );
+dyn_character_t *dyn_char_alloc( size_t allocSize );
+
+
+void dyn_char_free(dyn_character_t *toFree);
 
 
 /** Adds v to the front of the character array inside a. Increments the length of a and decrements the pointer to the head of

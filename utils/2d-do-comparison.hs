@@ -66,8 +66,8 @@ counterExampleCheck (NS lhs) (NS rhs) = counterexample contextRendering $
   where
     contextRendering = niceContextRendering naiveDOResult memoizeDOResult ukkonenDOResult foreignDOResult
     naiveDOResult    = naiveDO           lhs rhs  costStructure
-    memoizeDOResult  = naiveDOMemo       lhs rhs (getMedianAndCost memoMatrixValue)
-    ukkonenDOResult  = ukkonenDO         lhs rhs (getMedianAndCost memoMatrixValue)
+    memoizeDOResult  = naiveDOMemo       lhs rhs (getMedianAndCost2D memoMatrixValue)
+    ukkonenDOResult  = ukkonenDO         lhs rhs (getMedianAndCost2D memoMatrixValue)
     foreignDOResult  = foreignPairwiseDO lhs rhs  denseMatrixValue
 --    shownInputs      = mconcat ["\n(",showStream alphabet lhs,",",showStream alphabet rhs,")"]
 
@@ -77,8 +77,8 @@ performImplementationComparison char1 char2 = putStrLn renderedComparison
   where
     renderedComparison = niceContextRendering naiveDOResult memoizeDOResult ukkonenDOResult foreignDOResult
     naiveDOResult      = naiveDO           char1 char2  costStructure
-    memoizeDOResult    = naiveDOMemo       char1 char2 (getMedianAndCost memoMatrixValue)
-    ukkonenDOResult    = ukkonenDO         char1 char2 (getMedianAndCost memoMatrixValue)
+    memoizeDOResult    = naiveDOMemo       char1 char2 (getMedianAndCost2D memoMatrixValue)
+    ukkonenDOResult    = ukkonenDO         char1 char2 (getMedianAndCost2D memoMatrixValue)
     foreignDOResult    = foreignPairwiseDO char1 char2  denseMatrixValue
 
 

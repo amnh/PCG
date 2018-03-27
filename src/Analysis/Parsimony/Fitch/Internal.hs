@@ -58,7 +58,7 @@ fitchPreOrder childDecoration [(_, parentDecoration)] =
 
 
 -- |
--- Used in first, postorder, pass. Take in parent and two child nodes. Using the child preliminary decorations,
+-- Used in first, post-order, pass. Take in parent and two child nodes. Using the child preliminary decorations,
 -- calculate the preliminary character state for the parent node. In addition, calculate the cost of assigning
 -- that character state to the parent.
 updatePostOrder :: DiscreteCharacterDecoration d c
@@ -103,12 +103,12 @@ determineFinalState :: EncodableStaticCharacter c
                     -> FitchOptimizationDecoration c
 determineFinalState parentDecoration childDecoration = finalDecoration
     where
-        -- following two should both short-circuit
+        -- Following two should both short-circuit.
         curIsSuperset = (ancestor `intersect` preliminary) == ancestor
 
         curIsUnion    = (left `union` right) == preliminary
 
-            -- using parentDecoration here because I need a DiscreteCharacterDecoration.
+            -- Using parentDecoration here because I need a DiscreteCharacterDecoration.
             -- Safe because new char is created.
         interimDecoration = extendDiscreteToFitch parentDecoration cost preliminary median (left, right) leafVal
         finalDecoration   = interimDecoration & discreteCharacter .~ median
@@ -123,4 +123,3 @@ determineFinalState parentDecoration childDecoration = finalDecoration
             | curIsSuperset = ancestor                                                                          -- Fitch rule 1
             | curIsUnion    = ancestor `union` preliminary                                                      -- Fitch rule 2
             | otherwise     = ancestor `union` (left `intersect` ancestor) `union` (right `intersect` ancestor) -- Fitch rule 3
-

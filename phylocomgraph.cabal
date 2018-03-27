@@ -1,6 +1,6 @@
 name:                phylocomgraph
 
-version:             0.0.1.0
+version:             0.1.0.1
 
 -- A short (one-line) description of the package.
 -- synopsis:
@@ -56,6 +56,7 @@ library
                      , scientific
                      , semigroupoids
                      , semigroups
+                     , smallcheck
                      , text
                      , transformers
                      , unordered-containers
@@ -130,7 +131,8 @@ library
     -- ffi/memoized_tcm/dynamicCharacterOperations.h
     ffi/memoized_tcm/dynamicCharacterOperations.c
     -- ffi/memoized_tcm/costMatrix.h
-    ffi/memoized_tcm/costMatrix.cpp
+    ffi/memoized_tcm/costMatrix_2d.cpp
+    ffi/memoized_tcm/costMatrix_3d.cpp
     -- ffi/memoized_tcm/costMatrixWrapper.h
     ffi/memoized_tcm/costMatrixWrapper.c
     -- ffi/sequential_align/sequentialAlignInterface.h
@@ -291,12 +293,14 @@ executable pcg
   main-is:             Main.hs
 
   build-depends:       phylocomgraph
+                     , ansi-wl-pprint
                      , base             >=4.8
                      , blaze-html
                        -- Required for Data.Map.restrictKeys
                      , containers       >=0.5.8
                      , deepseq
                      , directory
+                     , gitrev
                      , Glob
                      , graphviz
                      , hashable
@@ -304,6 +308,7 @@ executable pcg
                      , lens
                      , megaparsec       >=5.0
                      , mono-traversable >=1.0
+                     , optparse-applicative
                      , parallel
                      , pcg-file-parsers
                      , pcg-language
@@ -360,6 +365,7 @@ executable pcg
   hs-source-dirs:      app
 
   other-modules:
+                       Paths_phylocomgraph
                        PCG.Command.Build.Evaluate
                        PCG.Command.Read.DecorationInitialization
                        PCG.Command.Read.Evaluate
@@ -742,6 +748,7 @@ Test-Suite testsuite
                      , semigroupoids
                      -- required for Data.Semigroup.Foldable.toNonEmpty
                      , semigroups         >=5.2.1
+                     , smallcheck
                      , split
                      , tasty
                      , tasty-hunit
@@ -812,9 +819,9 @@ Test-Suite testsuite
     -- ffi/memoized_tcm/dynamicCharacterOperations.h
     ffi/memoized_tcm/dynamicCharacterOperations.c
     -- ffi/memoized_tcm/costMatrix.h
-    ffi/memoized_tcm/costMatrix.cpp
+    ffi/memoized_tcm/costMatrix_2d.cpp
     -- ffi/memoized_tcm/costMatrixWrapper.h
-    ffi/memoized_tcm/costMatrixWrapper.c
+    ffi/memoized_tcm/costMatrixWrapper_2d.c
     -- ffi/sequential_align/sequentialAlignInterface.h
     ffi/sequential_align/sequentialAlignInterface.c
     -- ffi/sequential_align/sequentialAlign.h

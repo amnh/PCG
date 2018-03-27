@@ -22,6 +22,7 @@
 module Analysis.Parsimony.Dynamic.DirectOptimization.Internal where
 
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (overlap)
 import           Analysis.Parsimony.Dynamic.SequentialAlign
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
@@ -47,15 +48,15 @@ import           Prelude     hiding (lookup, zipWith)
 -- |
 -- A function representing an alignment of two dynamic characters.
 --
--- The first  result in the tuple is the cost of the alignment.
+-- The first result in the tuple is the cost of the alignment.
 --
 -- The second result in the tuple is the /ungapped/ median alignment.
 --
--- The third  result in the tuple is the   /gapped/ median alignment.
+-- The third result in the tuple is the /gapped/ median alignment.
 --
--- The fourth result in the tuple is the first  input aligned with respect to the second.
+-- The fourth result in the tuple is the first input aligned with respect to the second.
 --
--- The fifth  result in the tuple is the second input aligned with respect to the first.
+-- The fifth result in the tuple is the second input aligned with respect to the first.
 type PairwiseAlignment s = s -> s -> (Word, s, s, s, s)
 
 
@@ -85,7 +86,7 @@ selectDynamicMetric candidate
   | otherwise =
       case candidate ^. denseTransitionCostMatrix of
         Just dm -> \x y -> foreignPairwiseDO x y dm
-        Nothing -> let !sTCM' = getMedianAndCost sTCM
+        Nothing -> let !sTCM' = getMedianAndCost2D sTCM
                    in  \x y -> ukkonenDO x y sTCM'
   where
     !sTCM = candidate ^. sparseTransitionCostMatrix
@@ -128,7 +129,7 @@ initializeLeaf =
 
 
 -- |
--- Use the decoration(s) of the descendant nodes to calculate the currect node
+-- Use the decoration(s) of the descendant nodes to calculate the current node
 -- decoration. The recursive logic of the post-order traversal.
 updateFromLeaves
   :: ( EncodableDynamicCharacter c
@@ -152,9 +153,8 @@ updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) = resultDecoration
 -- atomic alignments depending on the character's metadata.
 directOptimizationPreOrder
   :: ( DirectOptimizationPostOrderDecoration d c
-     , EncodedAmbiguityGroupContainer c
+     -- , EncodedAmbiguityGroupContainer c
      , Exportable (Element c)
-     , Show (Element c)
      )
   => PairwiseAlignment c
   -> d
@@ -196,11 +196,11 @@ disambiguateElement x = zed `setBit` idx
   where
     idx = countLeadingZeros x
     zed = x `xor` x
-    
+
 
 -- |
 -- Disambiguate the elements of a dynamic Character so that they are consistent
--- with the ancestoral disambiguation.
+-- with the ancestral disambiguation.
 disambiguateFromParent
   :: EncodableDynamicCharacter c
   => c -- ^ parent single disambiguation field
@@ -219,12 +219,12 @@ disambiguateFromParent {- pGaps cGaps -} pSingle cFinal = result
 
 
 -- |
--- Use the decoration(s) of the ancestoral nodes to calculate the currect node
+-- Use the decoration(s) of the ancestral nodes to calculate the corrent node
 -- decoration. The recursive logic of the pre-order traversal.
 updateFromParent
   :: ( DirectOptimizationPostOrderDecoration d c
-     , EncodedAmbiguityGroupContainer c
      , Exportable (Element c)
+     -- , EncodedAmbiguityGroupContainer c
      )
   => PairwiseAlignment c
   -> d
@@ -233,12 +233,12 @@ updateFromParent
 updateFromParent pairwiseAlignment currentDecoration parentDecoration = resultDecoration
   where
     -- If the current node has a missing character value representing its
-    -- preliminary median assignment, then we take the parent's final assignment
+    -- preliminary median assignment then we take the parent's final assignment
     -- values and assign them to the current node as its own final assignments.
     --
     -- Otherwise we perform a local alignment between the parent's *UNGAPPED*
     -- final assignment and the current node's *GAPPED* preliminary assignment.
-    -- Afterwards we calculate the indices of the new gaps in the alignment and
+    -- Afterward we calculate the indices of the new gaps in the alignment and
     -- insert these gaps into the current node's left and right child alignments.
     -- Lastly, a three-way mean between the locally-aligned parent assignment and
     -- the expanded left and right child alignments is used to calculate the
@@ -259,8 +259,8 @@ updateFromParent pairwiseAlignment currentDecoration parentDecoration = resultDe
 -- A three way comparison of characters used in the DO preorder traversal.
 tripleComparison
   :: ( Exportable (Element c)
+     -- , EncodedAmbiguityGroupContainer c
      , DirectOptimizationPostOrderDecoration d c
-     , EncodedAmbiguityGroupContainer c
      )
   => PairwiseAlignment c
   -> d
@@ -274,19 +274,34 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter parentSingle 
     childLeftAligned  = childDecoration ^. leftAlignment
     childRightAligned = childDecoration ^. rightAlignment
 
-    -- We conditionally decide how to get derive the metric
+    -- We conditionally decide how to derive the metric.
     -- If we are working with large alphabets we use the memoized TCM.
-    -- Otherwise with a small alphabet, we use the naive calcualtions.
+    -- Otherwise we use the naive calculations.
     --
     -- We do this so that we don't allocate and begin using a memoized TCM
     -- for all characters regardless of alphabet size on the pre-order.
     -- If we have a small alphabet, there will not have been a call to
     -- initialize a memoized TCM. We certainly don't want to force that here!
     costStructure =
-      case childDecoration ^. denseTransitionCostMatrix of
-        Nothing -> getMedianAndCost (childDecoration ^. sparseTransitionCostMatrix)
-        Just _  -> let !scm = childDecoration ^. symbolChangeMatrix
-                   in \x y -> getOverlap x y scm
+        case childDecoration ^. denseTransitionCostMatrix of
+          Nothing -> getMedianAndCost3D (childDecoration ^. sparseTransitionCostMatrix)
+          -- Compute things naively
+          Just _  -> naiveMedianAndCost3D
+      where
+        !scm = childDecoration ^. symbolChangeMatrix
+        gap = gapOfStream parentCharacter
+        zed = gap `xor` gap
+        singletonStates = (zed `setBit`) <$> [0 .. fromEnum (symbolCount zed) - 1]
+        naiveMedianAndCost3D a b c = fmap unsafeToFinite $ foldl' g (zed, infinity :: ExtendedNatural) singletonStates
+          where
+            g acc@(combinedState, curentMinCost) singleState =
+                case combinedCost `compare` curentMinCost of
+                  EQ -> (combinedState .|. singleState, curentMinCost)
+                  LT -> (                  singleState, combinedCost)
+                  GT -> acc
+              where
+                combinedCost = fromFinite . sum $ (snd . overlap scm singleState) <$> [a, b, c]
+
 
     single = lexicallyDisambiguate $ filterGaps almostSingle
     (_, ungapped, gapped)  = threeWayMean costStructure extendedParentFinal  extendedLeftCharacter1 extendedRightCharacter1
@@ -332,7 +347,7 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter parentSingle 
 
 
 -- |
--- Given a node, it's parent, and it's children; this function aligns the dynamic
+-- Given a node, its parent, and its children; this function aligns the dynamic
 -- characters around the current node.
 alignAroundCurrentNode
   :: EncodableDynamicCharacter c
@@ -384,10 +399,10 @@ newGapLocations unaligned aligned
 
           -- In the case that the unaligned character has one or more elements
           -- that have not been accounted for in the alignment, we use standard
-          -- logic for determining if a deletion event occured.
+          -- logic for determining if a deletion event occurred.
           --
           -- If a deletion event *DID* occur, we note the index in the unaligned
-          -- character where deletion event occurred and *DO NOT* advance the
+          -- character where deletion events occurred and *DO NOT* advance the
           -- "cursor" in our accumulator.
           --
           -- If a deletion event *DID NOT* occur, we just advance the "cursor"
@@ -401,8 +416,8 @@ newGapLocations unaligned aligned
 
 
 -- |
--- Given a list of gap location and a character returns a longer character with
--- the supplied gaps inserted at the corersponding locations.
+-- Given a list of gap locations and a character, returns a longer character with
+-- the supplied gaps inserted at the corresponding locations.
 insertNewGaps :: EncodableDynamicCharacter c => IntMap Int -> c -> c
 insertNewGaps insertionIndicies character = constructDynamic . (<> trailingGaps) . foldMapWithKey f $ otoList character
   where
@@ -419,9 +434,9 @@ insertNewGaps insertionIndicies character = constructDynamic . (<> trailingGaps)
 -- Calculates the mean character and cost between three supplied characters.
 threeWayMean
   :: ( EncodableDynamicCharacter c
-     , EncodedAmbiguityGroupContainer c
+     -- , EncodedAmbiguityGroupContainer c
      )
-  => (Element c -> Element c -> (Element c, Word))
+  => (Element c -> Element c -> Element c -> (Element c, Word))
   -> c
   -> c
   -> c
@@ -433,9 +448,10 @@ threeWayMean sigma char1 char2 char3 =
     Just _  -> (unsafeToFinite $ sum costValues, constructDynamic $ filter (/= gap) meanStates, constructDynamic meanStates)
   where
     gap = gapOfStream char1
-    zed = gap `xor` gap
-    singletonStates = (zed `setBit`) <$> [0 .. fromEnum (symbolCount char1) - 1]
-    (meanStates, costValues) = unzip $ zipWith3 f (otoList char1) (otoList char2) (otoList char3)
+    -- zed = gap `xor` gap
+    -- singletonStates = (zed `setBit`) <$> [0 .. fromEnum (symbolCount char1) - 1]
+    (meanStates, costValues) = unzip $ zipWith3 sigma (otoList char1) (otoList char2) (otoList char3)
+    {-
     f a b c = foldl' g (zed, infinity :: ExtendedNatural) singletonStates
       where
         g acc@(combinedState, curentMinCost) singleState =
@@ -445,7 +461,7 @@ threeWayMean sigma char1 char2 char3 =
               GT -> acc
           where
             combinedCost = fromFinite . sum $ (snd . sigma singleState) <$> [a, b, c]
-      
+    -}
 {-
 f a b c = minimalChoice $
               sigma a b  :|

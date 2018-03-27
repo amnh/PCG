@@ -93,15 +93,13 @@ evaluate
   => -}
   :: Command
 --  -> EvaluationT IO (Either TopologicalResult (PhylogeneticSolution (PhylogeneticDAG2 EdgeLength (Maybe String) u v w x y z)))
-  -> SearchState
+  -> GraphState
   -> SearchState
 -- EvaluationT IO (Either TopologicalResult CharacterResult)
 -- evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
 -- evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
-evaluate (BUILD (BuildCommand trajectoryCount buildType)) oldState = do
-    x <- oldState
-    
-    case x of
+evaluate (BUILD (BuildCommand trajectoryCount buildType)) inState = do
+    case inState of
       Left  e -> pure $ Left e
       Right v ->
         case toList $ v ^. leafSet of

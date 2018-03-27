@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../costMatrix.h"
+#include "../costMatrix_2d.h"
 #include "../dynamicCharacterOperations.h"
 
 #define __STDC_FORMAT_MACROS
@@ -10,14 +10,22 @@
 // #include "seqAlignForHaskell.h"
 
 int main() {
-    const size_t tcmLen       = 25;
     const size_t alphabetSize = 5;
+    const size_t tcmLen       = alphabetSize * alphabetSize;
 
-    int tcm [tcmLen] = {0,1,2,3,4, 1,0,1,2,3, 2,1,0,1,2, 3,2,1,0,1, 4,3,2,1,0};
-    if ( tcmLen != alphabetSize * alphabetSize ) {
-        printf("tcm wrong size\n");
-        exit(1);
+    unsigned int tcm[tcmLen];
+    for (size_t i{0}; i < alphabetSize; i++) {
+        for (size_t j{0}; j < alphabetSize; j++) {
+            if (i == j) {
+                tcm[i * alphabetSize + j] = 0;
+            }
+            else {
+                tcm[i * alphabetSize + j] = 1;
+            }
+        }
     }
+
+
 
     /*
     const size_t SEQ_A_LEN = 15;
@@ -35,14 +43,13 @@ int main() {
     */
 
 
-    CostMatrix myMatrix = CostMatrix(alphabetSize, tcm);
+    CostMatrix_2d myMatrix = CostMatrix_2d(alphabetSize, tcm);
 
 
     auto firstKey  = makeDCElement( alphabetSize, 1 );
     auto secondKey = makeDCElement( alphabetSize, 1 );
     auto retMedian = makeDCElement( alphabetSize, 1 );
-    auto cost{0},
-         foundCost{0};
+    auto foundCost{0};
 
     // just a test: alphabet size == 4, so don't need packedChar*
     auto median = CANONICAL_ZERO;
@@ -56,10 +63,10 @@ int main() {
 
         for (size_t key2 = 0; key2 < alphabetSize; ++key2) { // no longer assumes 0 diagonal
             SetBit(secondKey->element, key2);
-            cost = tcm[key1 * alphabetSize + key2];
+            //auto cost = tcm[key1 * alphabetSize + key2];
             SetBit(&median, key2);
 
-            foundCost = myMatrix.getCostMedian(firstKey, secondKey, retMedian);
+            foundCost = myMatrix.getSetCostMedian(firstKey, secondKey, retMedian);
             fflush(stdout);
             printf("key 1 set: %zu\n", key1);
             printf("key 2 set: %zu\n", key2);
@@ -89,24 +96,49 @@ int main() {
         for(size_t setIdx = 0; setIdx < numSetInKey; ++setIdx) {
             SetBit(secondKey->element, rand() % alphabetSize);
         }
-        printf("key1: %2" PRIu64 ", key2: %2" PRIu64 "\n", *firstKey->element, *secondKey->element);
+        
+        printf("Input:\n");
+        printf("  Key #1: "); printPackedChar(firstKey->element,  1, alphabetSize); printf("\n");
+        printf("  Key #2: "); printPackedChar(secondKey->element, 1, alphabetSize); printf("\n");
         foundCost = myMatrix.getSetCostMedian(firstKey, secondKey, retMedian);
-        printf("***Final cost: %i median: %" PRIu64 "\n", foundCost, *retMedian->element);
-        printPackedChar(retMedian->element, 1, alphabetSize);
+        printf("Output:\n");
+        printf("  Median: "); printPackedChar(retMedian->element, 1, alphabetSize); printf("\n");
+        printf("  Cost: %i\n", foundCost);
+
         ClearAll( firstKey->element, dynCharSize(alphabetSize, 1) );
         ClearAll(secondKey->element, dynCharSize(alphabetSize, 1) );
     }
-    auto first   = new packedChar{1},
-         second  = new packedChar{4},
-         third   = new packedChar{16},
+
+    // Free everything we have allocated as to not mess with valgrind's leak diagnostics.
+    freeDCElem(firstKey);
+    freeDCElem(secondKey);
+    freeDCElem(retMedian);
+    free(firstKey);
+    free(secondKey);
+    free(retMedian);
+
+    
+    /****** An abandoned packedCharOr test that doesn't scale with alphabetSize > 64 ******/
+
+    /**
+    auto first   = new packedChar{1,0},
+         second  = new packedChar{4,0},
+	 third   = new packedChar{16,0},
          result  = packedCharOr( first, second, alphabetSize, 1 ),
          result2 = packedCharOr( result, third, alphabetSize, 1 );
 
 
     printf("%" PRIu64 "\n", *result);
-    //free(result);
     printf("%" PRIu64 "\n\nDone.", *result2);
+    
+    delete first;
+    delete second;
+    delete third;
+    free(result);
+    free(result2);
+    **/
 
+    
     /****** This next to test Yu Xiang's code, once you can. ******/
 
     // int success = aligner(seqA_main, SEQ_A_LEN, seqB_main, SEQ_B_LEN, alphabetSize, getCostMatrix(myMatrix), &retMedChar);
@@ -125,8 +157,4 @@ int main() {
     // free(seqA_main);
     // free(seqB_main);
 
-    //Free everything we have alocated as to not mess with valgrind's leak diognostics.
-    freeDCElem(firstKey);
-    freeDCElem(secondKey);
-    freeDCElem(retMedian);
 }

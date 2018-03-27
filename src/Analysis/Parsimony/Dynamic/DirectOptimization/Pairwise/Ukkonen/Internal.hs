@@ -39,7 +39,7 @@ import           Prelude           hiding (lookup)
 
 -- |
 -- Time & space saving data structure for computing only a central "ribbon" of
--- a two dimensional matrix.
+-- a two-dimensional matrix.
 --
 -- Allocates a "ribbon" down the diagonal plus an offset of the matrix rather
 -- than the entire matrix. The computed ribbon of the matrix is expanded until
@@ -48,7 +48,7 @@ import           Prelude           hiding (lookup)
 --
 -- Use the 'createUkkonenMethodMatrix' function to create this effcient structure.
 newtype UkkonenMethodMatrix a = U (Ribbon a)
-  deriving (Eq, Foldable, Functor) 
+  deriving (Eq, Foldable, Functor)
 
 
 type instance Key UkkonenMethodMatrix = (Int, Int)
@@ -68,7 +68,7 @@ instance Lookup UkkonenMethodMatrix where
 -- /O( (n - m + 1 ) * log(n - m + 1) )/, /n/ >= /m/
 --
 -- Compute the alignment of two dynamic characters and the median states by
--- using Ukkone's string edit distance algorthim to improve space and time
+-- using Ukkonen's string edit distance algorthim to improve space and time
 -- complexity.
 ukkonenDO
   :: DOCharConstraint s
@@ -81,18 +81,18 @@ ukkonenDO char1 char2 overlapFunction
   | otherwise               = directOptimization char1 char2 overlapFunction $ createUkkonenMethodMatrix coefficient
   where
     (_, longer, lesser) = measureCharacters char1 char2
-    
-    -- If the longer character is 50% larger than the shorter character then
+
+    -- If the longer character is 50% larger than the shorter character, then
     -- there is no point in using the barriers. Rather, we fill the full matrix
     -- immediately.
     --
     -- Additionally, if the shorter sequence is of length 4 or less, then the
-    -- inital barrier will be set at a adjacent to or beyond the lower left and
+    -- initial barrier will be set adjacent to or beyond the lower left and
     -- upper right corners.
     --
     -- Lastly, a threshhold coeffcient is computed as the minimal indel cost from
     -- any symbol in the alphabet to gap. However, if the indel cost for any
-    -- symbol is zero, the algorithm will hang and a naive approach must be taken.
+    -- symbol is zero, the algorithm will hang, and a naive approach must be taken.
     --
     -- Do not perform Ukkonen's algorithm if and only if:
     --
@@ -110,12 +110,12 @@ ukkonenDO char1 char2 overlapFunction
 
     -- /O(2*(a - 1))/
     --
-    -- This was taken from Ukkonen's original 1985 paper where the coeffcient
+    -- This was taken from Ukkonen's original 1985 paper wherein the coeffcient
     -- delta @(Δ)@ was defined by the minimum transition cost from any symbol in
     -- the alphabet @(Σ)@ to the gap symbol @'-'@.
     --
-    -- If there is any transition to gap from a non-gap for which the cost is
-    -- zero, then this coeffcient will be zero. This leaves us with no way to
+    -- If there is any transition to a gap from a non-gap for which the cost is
+    -- zero, then this coefficient will be zero. This leaves us with no way to
     -- determine if optimality is preserved, and the Ukkonen algorithm will hang.
     -- Consequently, we do not perform Ukkonen's algorithm if the coefficient is
     -- zero.
@@ -131,7 +131,7 @@ ukkonenDO char1 char2 overlapFunction
 -- |
 -- /O( (n - m + 1 ) * log(n - m + 1) )/, /n/ >= /m/
 --
--- Generates an /optimal/, partially filled in matrix using Ukkonen's string
+-- Generates an /optimal/, partially-filled-in matrix using Ukkonen's string
 -- edit distance algorithm.
 --
 -- Note that the threshhold value is lowered more than described in Ukkonen's
@@ -140,10 +140,10 @@ ukkonenDO char1 char2 overlapFunction
 -- input did not contain any gap symbols.
 createUkkonenMethodMatrix
   :: DOCharConstraint s
-  => Word                        -- ^ Coeffcient value, representing the /minimum/ transition cost from a state to gap
+  => Word                        -- ^ Coefficient value, representing the /minimum/ transition cost from a state to gap
   -> s                           -- ^ Longer dynamic character
   -> s                           -- ^ Shorter dynamic character
-  -> OverlapFunction (Element s) -- ^ Function to determine the cost an median state between two other states.
+  -> OverlapFunction (Element s) -- ^ Function to determine the cost a median state between two other states.
   -> UkkonenMethodMatrix (Cost, Direction, Element s)
 createUkkonenMethodMatrix minimumIndelCost longerTop lesserLeft overlapFunction = U $ ukkonenUntilOptimal startOffset
   where
@@ -153,24 +153,24 @@ createUkkonenMethodMatrix minimumIndelCost longerTop lesserLeft overlapFunction 
     coefficient = fromEnum minimumIndelCost
     rows        = toEnum lesserLen + 1
     cols        = toEnum longerLen + 1
-    
+
     -- We start the offset at two rather than at one so that the first doubling
     -- isn't trivially small.
     startOffset = 2
 
     -- /O(1)/
     --
-    -- Necessary to compute the width of a row in the barrier constrained matrix.
+    -- Necessary to compute the width of a row in the barrier-constrained matrix.
     quasiDiagonalWidth = differenceInLength + 1
       where
         differenceInLength = longerLen - lesserLen
 
     -- /O(n + m)/
     --
-    -- This is important to decrement the threshhold value to account for
-    -- diagonal directions in the matrix having an "indel" cost because one or
-    -- more of the aligned character elements contained a gap. This was not
-    -- described in Ukkonen's original paper as the inputs were assumed to not
+    -- If one or more of the aligned character elements contained a gap, diagonal directions in the matrix
+    -- have an "indel" cost. 'gapsPresentInInputs' is necessary in order to decrement the threshhold value
+    -- to account for this. This was not
+    -- described in Ukkonen's original paper, as the inputs were assumed not to
     -- contain any gaps.
     gapsPresentInInputs = longerGaps + lesserGaps
       where
@@ -202,4 +202,3 @@ createUkkonenMethodMatrix minimumIndelCost longerTop lesserLeft overlapFunction 
             , "Total Cost : " <> show alignmentCost
             ]
 --}
-
