@@ -41,17 +41,17 @@
  *  (the alphabet).
  *
  *  To clarify the nomenclature used in this file,
- *  • A dynamic character element (DCElement) is a single, possibly ambiguous phylogenetic
+ *  * A dynamic character element (DCElement) is a single, possibly ambiguous phylogenetic
  *    character, e.g.,
  *    in the case of DNA, A or {A,G}.
- *  • A series of DCElements are "packed" if they are concatenated directly,
+ *  * A series of DCElements are "packed" if they are concatenated directly,
  *    and not stored one to each array position. Each array position might therefore hold
  *    many elements.
  *    For instance, one might store characters with alphabet size 4 in an array of int64s.
  *    In that case 16 elements would fit in each int in the array.
  *    Likewise, it's possible that only the first part of an element might fit into a single
  *    position in the array.
- *   A dynamic character is a packed series of elements. (This isn't the _actual_ definition
+ *  * A dynamic character is a packed series of elements. (This isn't the _actual_ definition
  *    of a dynamic character, but will do for our purposes.)
  */
 
@@ -68,15 +68,14 @@
  *  to compile even on architectures on which int != 32 bits (and, more to the point,
  *  unsigned long int != 64 bits).
  */
+#include <limits.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 
 /** Following constants must be static to prevent compilation issues. */
-static const size_t   BITS_IN_BYTE   = 8;                    // so bytes are set to 8, for all architectures
-static const size_t   INT_WIDTH      = sizeof(uint64_t);     // don't forget: in bytes
-static const size_t   WORD_WIDTH     = 8 * sizeof(uint64_t); // BITS_IN_BYTE * INT_WIDTH; <-- because HSC is dumb!
+static const size_t   WORD_WIDTH     = 8 * sizeof(uint64_t);
 static const uint64_t CANONICAL_ONE  = 1;
 static const uint64_t CANONICAL_ZERO = 0;
 
