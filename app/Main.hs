@@ -21,13 +21,13 @@ import Text.Megaparsec              (Parsec, ParseError, Token, parse, parseErro
 import Text.PrettyPrint.ANSI.Leijen ((<+>), (</>), align, indent, int, line, string, text)
 
 
-data CommandLineOptions
-   = CommandLineOptions
-   { printVersion :: Bool
-   , inputFile    :: FilePath
-   , outputFile   :: FilePath
-   , verbosity    :: Verbosity
-   } deriving (Generic)
+data  CommandLineOptions
+    = CommandLineOptions
+    { inputFile    :: FilePath
+    , outputFile   :: FilePath
+    , printVersion :: Bool
+    , verbosity    :: Verbosity
+    } deriving (Generic)
 
 
 data Verbosity
@@ -127,16 +127,16 @@ parserInformation = info (helper <*> commandLineOptions) description
   where
     commandLineOptions =
         CommandLineOptions
-          <$> switch  (mconcat [long "version", help "Display version number"])
-          <*> fileSpec 'i' "input"  "STDIN"  "Input PCG script file, defaults to STDIN"
-          <*> fileSpec 'o' "output" "STDOUT" "Output file, defaults to STDOUT"
+          <$> fileSpec 'i' "input"  "STDIN"  "Input PCG script file"
+          <*> fileSpec 'o' "output" "STDOUT" "Output file"
+          <*> switch  (mconcat [long "version", help "Display version number"])
           <*> (validateVerbosity <$> option auto verbositySpec)
 
     fileSpec c s d h = strOption $ mconcat
         [ short c
         , long  s
         , value d
-        , help  h
+        , help  $ mconcat [h, " (default ", d, ")"]
         , metavar "FILE"
         ]
 
@@ -150,8 +150,8 @@ parserInformation = info (helper <*> commandLineOptions) description
 
     description = mconcat
         [ fullDesc
-        , headerDoc . Just . string $ "\n  " <> softwareName <> "\n  " <> shortVersionInformation
-        , footerDoc $ Just mempty
+        , headerDoc . Just . string $ "  " <> softwareName <> "\n  " <> shortVersionInformation
+--        , footerDoc $ Just mempty
         ]
 
     verbosityHelp = Just . (text "Select the verbosity level (default 3):" `op`) . indent 2 . foldl1 op $ f <$>
