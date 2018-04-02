@@ -47,8 +47,7 @@ instance NFData Verbosity
 
 main :: IO ()
 main = do
-     hSetBuffering stdout NoBuffering
-     opts <- parseCommandLineOptions
+     opts <- force <$> parseCommandLineOptions
      let  _verbosity = verbosity opts
      if   printVersion opts
      then putStrLn fullVersionInformation
@@ -61,7 +60,7 @@ main = do
                                   Left  err -> pure $ parseErrorPretty' (inputFile opts) err
                                   Right val -> renderSearchState <$> runEvaluation (evaluate (optimizeComputation val))
                 if   outputFile opts == "STDOUT"
-                then putStrLn outputStream
+                then hSetBuffering stdout NoBuffering >> putStrLn outputStream
                 else writeFile (outputFile opts) outputStream
   where
      parse' :: Parsec Void s a -> String -> s -> Either (ParseError (Token s) Void) a
