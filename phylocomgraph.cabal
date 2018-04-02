@@ -23,7 +23,7 @@ cabal-version:       >= 1.22
 
 flag build-cpp-files
   description: Toggles the C++ files being successfully build.
-  default: False
+  default: True
 
 
 library
