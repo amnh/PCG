@@ -21,6 +21,8 @@ import Text.Megaparsec              (Parsec, ParseError, Token, parse, parseErro
 import Text.PrettyPrint.ANSI.Leijen ((<+>), (</>), align, indent, int, line, string, text)
 
 
+-- |
+-- Valid command line options
 data  CommandLineOptions
     = CommandLineOptions
     { inputFile    :: FilePath
@@ -30,6 +32,8 @@ data  CommandLineOptions
     } deriving (Generic)
 
 
+-- |
+-- Enumeration of verbosity levels.
 data Verbosity
    = None
    | Errors
@@ -45,6 +49,16 @@ instance NFData CommandLineOptions
 instance NFData Verbosity
 
 
+-- |
+-- Main evaluation call.
+--
+-- Parses command line options, handles parse errors gracefully.
+--
+-- Conditionally prints version or help information and exits when requested.
+--
+-- Gracefully handles empty STDIN stream.
+--
+-- Initiates phylogenetic search when valid commmand line options are supplied.
 main :: IO ()
 main = do
      opts <- force <$> parseCommandLineOptions
@@ -71,10 +85,16 @@ main = do
 -- |
 -- Attempts to read from the FilePath.
 --
--- If the FilePath is STDIN  and no arguments were supplied to the program,
--- then an IO failure is returned instead of a String value. The IO failure
--- prints the program's help menu. This creates the effect that when no arguments
--- are supplied to the program, i prints the help menu.
+-- If the 'FilePath' is *not* STDIN or the 'FilePath' is STDIN and the STIDN
+-- stream is non-empty, then a success value ('Right') is returned.
+--
+-- If the 'FilePath' is STDIN and the STDIN stream is empty, then an error value
+-- ('Left') is returned. In the error case where no arguments were supplied to
+-- the program, then the help menu is returned as the error message. In the error
+-- case where program arguments were supplied, it is assumed that the STDIN
+-- stream was intentionally choosen as the input stream and an error message
+-- noting that the stream is empty is returned along with the program's usage
+-- menu.
 retreiveInputStream :: FilePath -> IO (Either String String)
 retreiveInputStream path
   | (toUpper <$> path) /= "STDIN" = Right <$> readFile path
@@ -89,39 +109,25 @@ retreiveInputStream path
            else Left . ("Error: STDIN is empty\n\n" <>) <$> parserHelpMessage
 
 
-softwareName :: String
-softwareName = "Phylogenetic Component Graph"
-
-
-shortVersionInformation :: String
-shortVersionInformation = "(alpha) version " <> showVersion version
-
-
-fullVersionInformation :: String
-fullVersionInformation = mconcat
-    [ softwareName
-    , " "
-    , shortVersionInformation
-    , " ["
-    , take 7 $(gitHash)
-    , "] ("
-    , $(gitCommitCount)
-    , " commits)"
-    ]
-  
-
+-- |
+-- Generates the program's help menu based on the command line options parser.
 parserHelpMessage :: IO String
-parserHelpMessage = do
-    name <- getProgName
-    pure . fst . (`renderFailure` name) $ parserFailure (prefs showHelpOnEmpty) parserInformation ShowHelpText []
+parserHelpMessage = fst . renderFailure failValue <$> getProgName
+  where
+    failValue = parserFailure (prefs showHelpOnEmpty) parserInformation ShowHelpText []
 
 
+-- |
+-- Command to parse the command line options.
 parseCommandLineOptions :: IO CommandLineOptions
 parseCommandLineOptions = customExecParser preferences parserInformation
   where
     preferences = prefs $ mconcat [showHelpOnError, showHelpOnEmpty]
 
 
+-- |
+-- Information regarding which command line options are valid and how they are
+-- parsed and interpreted.
 parserInformation :: ParserInfo CommandLineOptions
 parserInformation = info (helper <*> commandLineOptions) description
   where
@@ -151,7 +157,6 @@ parserInformation = info (helper <*> commandLineOptions) description
     description = mconcat
         [ fullDesc
         , headerDoc . Just . string $ "  " <> softwareName <> "\n  " <> shortVersionInformation
---        , footerDoc $ Just mempty
         ]
 
     verbosityHelp = Just . (text "Select the verbosity level (default 3):" `op`) . indent 2 . foldl1 op $ f <$>
@@ -167,10 +172,44 @@ parserInformation = info (helper <*> commandLineOptions) description
         op x y = x <> line <> y
 
 
+-- |
+-- Name of the software package.
+softwareName :: String
+softwareName = "Phylogenetic Component Graph"
+
+
+-- |
+-- Brief description of the software version.
+shortVersionInformation :: String
+shortVersionInformation = "(alpha) version " <> showVersion version
+
+
+-- |
+-- Full escription of the software version.
+--
+-- Uses @TemplateHaskell@ to splice in git hash and commit count information
+-- from the compilation environment.
+fullVersionInformation :: String
+fullVersionInformation = mconcat
+    [ softwareName
+    , " "
+    , shortVersionInformation
+    , " ["
+    , take 7 $(gitHash)
+    , "] ("
+    , $(gitCommitCount)
+    , " commits)"
+    ]
+  
+
+-- |
+-- Interpret an 'Integer' as a 'Verbosity' value.
+--
+-- 'Integer' values in the range @[0 .. 4]@ are valid.
+-- Values oput side the range defualt to @3@.
 validateVerbosity :: Integer -> Verbosity
 validateVerbosity 0 = None
 validateVerbosity 1 = Errors
 validateVerbosity 2 = Warnings
 validateVerbosity 4 = Debugging
 validateVerbosity _ = Informational
-
