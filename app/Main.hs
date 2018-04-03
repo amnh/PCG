@@ -54,14 +54,15 @@ main = do
      else do
           inputStreamMaybe <- retreiveInputStream $ inputFile opts
           case inputStreamMaybe of
-            Nothing -> parserHelpMessage >>= putStrLn
-            Just inputStream -> do
-                outputStream <- case parse' computationalStreamParser (inputFile opts) inputStream of
-                                  Left  err -> pure $ parseErrorPretty' (inputFile opts) err
-                                  Right val -> renderSearchState <$> runEvaluation (evaluate (optimizeComputation val))
-                if   outputFile opts == "STDOUT"
-                then hSetBuffering stdout NoBuffering >> putStrLn outputStream
-                else writeFile (outputFile opts) outputStream
+            Left errorMessage -> putStrLn errorMessage
+            Right inputStream -> do
+                 outputStream <- case parse' computationalStreamParser (inputFile opts) inputStream of
+                                   Left  err -> pure $ parseErrorPretty' (inputFile opts) err
+                                   Right val -> renderSearchState <$> runEvaluation (evaluate (optimizeComputation val))
+                 let  outputPath = outputFile opts
+                 if   (toUpper <$> outputPath) == "STDOUT"
+                 then hSetBuffering stdout NoBuffering >> putStrLn outputStream
+                 else writeFile outputPath outputStream
   where
      parse' :: Parsec Void s a -> String -> s -> Either (ParseError (Token s) Void) a
      parse' = parse
@@ -74,18 +75,18 @@ main = do
 -- then an IO failure is returned instead of a String value. The IO failure
 -- prints the program's help menu. This creates the effect that when no arguments
 -- are supplied to the program, i prints the help menu.
-retreiveInputStream :: FilePath -> IO (Maybe String)
+retreiveInputStream :: FilePath -> IO (Either String String)
 retreiveInputStream path
-  | (toUpper <$> path) /= "STDIN" = Just <$> readFile path
+  | (toUpper <$> path) /= "STDIN" = Right <$> readFile path
   | otherwise = do
-      args <- getArgs
-      if   null args 
-      then do
-          emptySTDIN <- not <$> hReady stdin
-          if   emptySTDIN
-          then pure Nothing
-          else Just <$> getContents
-      else Just <$> getContents
+      nonEmptyStream <- hReady stdin
+      if   nonEmptyStream
+      then Right <$> getContents
+      else do
+           args <- getArgs
+           if   null args 
+           then Left <$> parserHelpMessage
+           else Left . ("Error: STDIN is empty\n\n" <>) <$> parserHelpMessage
 
 
 softwareName :: String
