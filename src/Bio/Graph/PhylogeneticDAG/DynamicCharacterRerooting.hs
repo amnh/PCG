@@ -71,8 +71,6 @@ import           Prelude            hiding (lookup, zipWith)
 assignOptimalDynamicCharacterRootEdges
   :: ( HasBlockCost u v w x y z Word Double
      , HasTraversalFoci z (Maybe TraversalFoci)
-{--
-     , Show e
      , Show n
      , Show u
      , Show v
@@ -80,6 +78,8 @@ assignOptimalDynamicCharacterRootEdges
      , Show x
      , Show y
      , Show z
+{--
+     , Show e
 --}
      ) --x, Ord x, Show x)
   => (z -> [z] -> z)  -- ^ Post-order traversal function for Dynamic Characters.

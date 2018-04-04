@@ -22,11 +22,12 @@ import           Control.DeepSeq
 import           Control.Lens                     (lens)
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
+import           Data.Char
 import           Data.EdgeSet
 import           Data.Foldable
 import           Data.Functor                     ((<$))
 import           Data.GraphViz.Attributes
-import           Data.GraphViz.Printing    hiding ((<>)) -- Seriously, why is this redefined?
+import           Data.GraphViz.Printing    hiding (Doc, (<>), (<$>), indent, int, line, text) -- Seriously, why is this redefined?
 import           Data.GraphViz.Types       hiding (attrs)
 import           Data.GraphViz.Types.Graph hiding (node)
 import           Data.Hashable                    (Hashable)
@@ -46,6 +47,7 @@ import           Data.Semigroup.Foldable
 import           Data.Set                         (Set)
 import qualified Data.Set                  as S
 import           Data.String
+import           Data.Traversable
 import           Data.Tree                        (unfoldTree)
 import           Data.Tree.Pretty                 (drawVerticalTree)
 import           Data.Vector                      (Vector)
@@ -56,7 +58,7 @@ import           Numeric.Extended.Real
 import           Prelude                   hiding (lookup, zipWith)
 import           Text.Newick.Class
 import           Text.XML.Custom
-
+import           Text.PrettyPrint.ANSI.Leijen hiding ((<>),(<$>))
 
 -- |
 -- A constant time access representation of a directed acyclic graph.
@@ -262,9 +264,9 @@ instance Show (GraphData m) where
 
 
 -- | (✔)
-instance {- (Show e, Show n) => -} Show (ReferenceDAG d e n) where
+instance Show n => Show (ReferenceDAG d e n) where
 
-    show dag = intercalate "\n" [topologyRendering dag, "", referenceRendering dag]
+    show dag = intercalate "\n" [topologyRendering dag, "", horizontalRenderTopology show dag, "", referenceRendering dag]
 
 
 -- | (✔)
@@ -1238,3 +1240,52 @@ tabulateDescendantEdgesets dag =
         point = memo ! j
         -- This is the step where new information is added to the accumulator
         other = foldMap (\x -> singletonEdgeSet (j,x)) . IM.keys $ childRefs point
+
+
+horizontalRenderTopology :: (n -> String) -> ReferenceDAG d e n -> String
+horizontalRenderTopology renderer dag = show . lineJoin . (`evalState` initialState) . mapM subTreeRendering . toList $ rootRefs dag
+  where
+    refVec = references dag
+
+    -- |
+    -- Holds a counter for the next symbolic reference in the first position of
+    -- the tuple.
+    --
+    -- Holds a map from indicies in the reference vector to symbolic references.
+    --
+    -- Symbolic references are used only on in-degree 2 edges.
+    initialState :: (Int, IntMap Int)
+    initialState = (0, mempty)
+
+    lineJoin = foldl' (\a b -> a <> line <> b) mempty
+
+    getLabel = renderer . nodeDecoration
+
+    subTreeRendering :: Int -> State (Int, IntMap Int) Doc
+    subTreeRendering i = 
+        if   olength parents < 2
+        then do
+             subDocs <- mapM subTreeRendering children
+             pure $ case subDocs of
+                      []    -> indent 1 . text $ getLabel context
+                      [x]   -> text "─" <> x
+                      x:y:_ -> lineJoin [text "┌─" <> x, text "┤ ", text "└─" <> y]
+        else do
+             (ctr, symRefs) <- get
+             case i `lookup` symRefs of
+               Just sym -> pure . indent 1 $ int sym
+               Nothing  -> do
+                 let newCtr = succ ctr
+                 put (newCtr, IM.insert i newCtr symRefs)
+                 subDocs <- mapM subTreeRendering children
+                 pure $ case subDocs of
+                          []    -> indent 1 . text $ getLabel context
+                          [x]   -> text "─" <> x
+                          x:y:_ -> lineJoin [text "┌─" <> x, text "┤ ", text "└─" <> y]
+
+      where
+        context  = refVec ! i
+        parents  = parentRefs context
+        children = IM.keys $ childRefs context
+      
+    

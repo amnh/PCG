@@ -29,7 +29,8 @@ flag build-cpp-files
 library
   other-extensions: MonadFailDesugaring
 
-  build-depends:       base               >=4.8
+  build-depends:       ansi-wl-pprint
+                     , base               >=4.8
                      , bimap
                      , blaze-html
                      , bv-little

@@ -359,6 +359,13 @@ pairs = f . toList
 -- Nicely show the DAG information.
 renderSummary
   :: ( Foldable f
+     , Show (f String)
+     , Show u
+     , Show v
+     , Show w
+     , Show x
+     , Show y
+     , Show z
      , HasBlockCost u v w x y z Word Double
      , HasCharacterName u CharacterName
      , HasCharacterName v CharacterName
