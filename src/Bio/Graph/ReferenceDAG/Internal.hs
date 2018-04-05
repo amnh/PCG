@@ -1242,6 +1242,11 @@ tabulateDescendantEdgesets dag =
         other = foldMap (\x -> singletonEdgeSet (j,x)) . IM.keys $ childRefs point
 
 
+data  BinaryRenderingTree
+    = Leaf Word String
+    | Node Word [RenderingTree]
+
+
 horizontalRenderTopology :: (n -> String) -> ReferenceDAG d e n -> String
 horizontalRenderTopology renderer dag = show . lineJoin . (`evalState` initialState) . mapM subTreeRendering . toList $ rootRefs dag
   where
