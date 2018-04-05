@@ -47,9 +47,9 @@ main :: IO ()
 main = do
      hSetBuffering stdout NoBuffering
      opts <- parseCommandLineOptions
-     let  verbosity = validateVerbosity $ verbosityNum opts
+     let  _verbosity = validateVerbosity $ verbosityNum opts
      if   printVersion opts
-     then putStrLn versionInformation
+     then putStrLn fullVersionInformation
      else do
           inputStream  <- if   inputFile opts == "STDIN"
                           then getContents
@@ -65,11 +65,21 @@ main = do
      parse' = parse
       
 
-versionInformation = mconcat
-    [ "(alpha) version "
-    , showVersion version
-    , "["
-    , $(gitHash)
+softwareName :: String
+softwareName = "Phylogenetic Component Graph"
+
+
+shortVersionInformation :: String
+shortVersionInformation = "(alpha) version " <> showVersion version
+
+
+fullVersionInformation :: String
+fullVersionInformation = mconcat
+    [ softwareName
+    , " "
+    , shortVersionInformation
+    , " ["
+    , take 7 $(gitHash)
     , "] ("
     , $(gitCommitCount)
     , " commits)"
@@ -84,14 +94,28 @@ parseCommandLineOptions = customExecParser preferences $ info (helper <*> comman
           <$> switch  (mconcat [long "version", help "Display version number"])
           <*> fileSpec 'i' "input"  "STDIN"  "Input PCG script file, defaults to STDIN"
           <*> fileSpec 'o' "output" "STDOUT" "Output file, defaults to STDOUT"
-          <*> (toEnum <$> option auto (mconcat [short 'v', long "verbosity", value 3, helpDoc verbosityHelp]))
+          <*> (toEnum <$> option auto verbositySpec)
 
-    fileSpec c s d h = strOption $ mconcat [short c, long s, value d, help h, metavar "FILE"]
+    fileSpec c s d h = strOption $ mconcat
+        [ short c
+        , long s
+        , value d
+        , help h
+        , metavar "FILE"
+        ]
+
+    verbositySpec = mconcat
+        [ short 'v'
+        , long "verbosity"
+        , value 3
+        , helpDoc verbosityHelp
+        , metavar "LEVEL"
+        ]
 
     description = mconcat
         [ fullDesc
-        , headerDoc (Just (string "\n  Phylogenetic Component Graph"))
-        , footerDoc (Just mempty)
+        , headerDoc . Just . string $ "\n  " <> softwareName <> "\n  " <> shortVersionInformation
+        , footerDoc $ Just mempty
         ]
 
     preferences = prefs $ mconcat [showHelpOnError, showHelpOnEmpty]

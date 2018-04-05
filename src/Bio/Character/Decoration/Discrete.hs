@@ -46,7 +46,7 @@ import Text.XML
 
 
 -- |
--- General, concrete type for Discrete characters.
+-- General, concrete type for 'Discrete' characters.
 data DiscreteDecoration c
    = DiscreteDec
    { discreteDecorationCharacter :: c
@@ -56,8 +56,8 @@ data DiscreteDecoration c
 
 -- |
 -- Show an appropriate instance of 'HasDiscreteCharacter' that is also
--- 'HasCharacterAlphabet' by decoding the 'EncodableStreamElement' over the 'Alphabet';
--- both of which contained in the lensed type.
+-- 'HasCharacterAlphabet' by decoding the 'EncodableStreamElement' over the 'Alphabet',
+-- where both 'HasDiscreteCharacter' and 'HasCharacterAlphabet' are contained in the lensed type.
 showDiscreteCharacterElement :: ( EncodableStreamElement a
                                 , HasCharacterAlphabet s (Alphabet String)
                                 , HasDiscreteCharacter s a
@@ -203,5 +203,3 @@ instance {-# OVERLAPPABLE #-} (HasDiscreteCharacter s c, PossiblyMissingCharacte
     isMissing = isMissing . (^. discreteCharacter)
 
     toMissing x = x & discreteCharacter %~ toMissing
-
-

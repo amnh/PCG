@@ -10,9 +10,9 @@
 --
 -- The 'Evaluation' type's monad transformer definition and types.
 --
------------------------------------------------------------------------------ 
+-----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE BangPatterns, DeriveGeneric, FlexibleInstances, MultiParamTypeClasses #-}
 
 module Control.Evaluation.Trans where
 
@@ -20,7 +20,7 @@ import           Control.Applicative
 import           Control.DeepSeq
 import           Control.Evaluation.Internal
 import           Control.Evaluation.Unit
-import           Control.Monad           (MonadPlus(..), join, liftM2)
+import           Control.Monad           (MonadPlus(..), join)
 import           Control.Monad.Fail      (MonadFail)
 import qualified Control.Monad.Fail as F
 import           Control.Monad.IO.Class
@@ -41,21 +41,21 @@ newtype EvaluationT m a
 
 
 -- | (✔)
-instance Monad m => Alternative (EvaluationT m) where
+instance Applicative m => Alternative (EvaluationT m) where
 
     empty = mempty
 
-    (<|>) x y = EvaluationT $ liftM2 (<|>) (runEvaluation x) (runEvaluation y)
+    (<|>) x y = EvaluationT $ liftA2 (<|>) (runEvaluation x) (runEvaluation y)
 
 
 -- | (✔)
 instance Applicative m => Applicative (EvaluationT m) where
 
-    pure = EvaluationT . pure . pure
+    pure = state . pure
 
     f <*> x = EvaluationT $ liftA2 (<*>) (runEvaluation f) (runEvaluation x)
-  
-    x  *> y = EvaluationT $ liftA2 (*>) (runEvaluation x) (runEvaluation y)
+
+    x  *> y = EvaluationT $ liftA2  (*>) (runEvaluation x) (runEvaluation y)
 
 
 -- | (✔)
@@ -86,17 +86,17 @@ instance Monad m => Monad (EvaluationT m) where
     return  = pure
 
     x >>= f = EvaluationT $ do
-                y <- runEvaluation x
+                !y <- runEvaluation x
                 case y of
-                  Evaluation ns  NoOp     -> pure . Evaluation ns $ NoOp
-                  Evaluation ns (Error e) -> pure . Evaluation ns $ Error e
-                  Evaluation ns (Value v) -> (`prependNotifications` ns) <$> runEvaluation (f v)
+                  Evaluation ns  NoOp      -> pure . Evaluation ns $ NoOp
+                  Evaluation ns (Error  e) -> pure . Evaluation ns $ Error e
+                  Evaluation ns (Value !v) -> (`prependNotifications` ns) <$> runEvaluation (f v)
 
 
 -- | (✔)
 instance Monad m => MonadFail (EvaluationT m) where
 
-    fail = EvaluationT . pure . fail
+    fail = state . fail
 
 
 -- | (✔)
@@ -120,17 +120,17 @@ instance MonadTrans EvaluationT where
 
 
 -- | (✔)
-instance Monad m => Monoid (EvaluationT m a) where
+instance Applicative m => Monoid (EvaluationT m a) where
 
-    mempty  = EvaluationT $ pure mempty
+    mempty  = state mempty
 
     mappend = (<>)
 
 
 -- | (✔)
-instance Monad m => Semigroup (EvaluationT m a) where
+instance Applicative m => Semigroup (EvaluationT m a) where
 
-    x <> y = EvaluationT $ liftM2 (<>) (runEvaluation x) (runEvaluation y)
+    x <> y = EvaluationT $ liftA2 (<>) (runEvaluation x) (runEvaluation y)
 
 
 -- |
@@ -141,8 +141,9 @@ impure = liftIO
 
 -- |
 -- Takes an 'Evaluation' and lifts it into the transformer context.
-state :: Monad m => Evaluation a -> EvaluationT m a
-state = EvaluationT . pure 
+{-# INLINE state #-}
+state :: Applicative m => Evaluation a -> EvaluationT m a
+state = EvaluationT . pure
 
 
 -- |

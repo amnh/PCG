@@ -30,7 +30,7 @@ import Data.IntMap
 import Data.MonoTraversable (Element)
 import Data.Vector
 
--- | (✔) 
+-- | (✔)
 type SolutionConstraint r m f t n e s = (GeneralSolution r f, MetadataSolution r m, Metadata m s, ForestConstraint f t n e s, Show r)
 
 -- | (✔)
@@ -46,13 +46,13 @@ type NodeConstraint             n   s = (FinalNode n s, IANode n, SeqConstraint 
 type SeqConstraint                  s = (EncodableDynamicCharacter s, Bits s, Show s, {- Memoizable s, -} Show (Element s))
 
 
--- | The counter tracks the max sequence length and the number of gaps added
+-- | The counter tracks the max sequence length and the number of gaps added.
 type Counter = (Int, Int)
--- | The counts are a vector of ints
+-- | The counts are a vector of Ints
 type Counts = Vector Counter
--- | An alignment object is an intmap from the node code to a vector of aligned coded sequences
+-- | An alignment object is an 'IntMap' from the node code to a vector of aligned coded sequences.
 type Alignment s = IntMap (Vector s)
--- | An alignment over a forest is then a list of alignments
+-- | An alignment over a forest is then a list of 'Alignment's.
 type AlignmentForest s = [Alignment s]
--- | And an alignment over a solution is a list of forest alignments
+-- | And an alignment over a solution is a list of 'AlignmentForest's.
 type AlignmentSolution s = [AlignmentForest s]

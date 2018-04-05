@@ -36,8 +36,7 @@ import Numeric.NonNegativeAverage
 -- |
 -- The average length of all the sequences in the subtree.
 --
--- Forms a 'Semigroup' for effcient, recursive post-order acumulation on the
--- tree.
+-- Forms a 'Semigroup' for efficient recursive post-order accumulation on the tree.
 newtype AverageLength = AL NonNegativeAverage
   deriving (Eq, Generic, Ord, Semigroup)
 
@@ -81,7 +80,7 @@ class ( HasCharacterCost        s Word
 -- |
 -- A decoration of a dynamic character with all direct optimization annotations.
 --
--- Is a sub-class of 'DirectOptimizationPreOrderDecoration'.
+-- Is a sub-class of 'DirectOptimizationPostOrderDecoration'.
 class ( HasFinalGapped          s a
       , HasFinalUngapped        s a
       , DirectOptimizationPostOrderDecoration s a
@@ -149,12 +148,12 @@ instance ( DynamicCharacterDecoration s a
 
     isMissing = isMissing . (^. encoded)
 
-    toMissing x = x & encoded %~ toMissing 
+    toMissing x = x & encoded %~ toMissing
 -}
 
 
 -- |
--- A 'Lens' for the 'encoded' field
+-- A 'Lens' for the 'characterLocalCost' field
 class HasCharacterLocalCost s a | s -> a where
 
     characterLocalCost :: Lens' s a
@@ -234,7 +233,7 @@ class HasImpliedAlignment s a | s -> a where
 
 
 -- |
--- A 'Lens' for the 'impliedAlignment' field
+-- A 'Lens' for the 'averageLength' field
 class HasAverageLength s a | s -> a where
 
     averageLength :: Lens' s a

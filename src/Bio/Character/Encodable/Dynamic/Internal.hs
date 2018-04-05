@@ -54,9 +54,9 @@ import           Text.XML
 
 -- |
 -- Represents an encoded dynamic character, consisting of one or more static
--- characters. Dynamic characters treat entire static characters as the
+-- characters. 'DynamicChar's treat entire static characters as the
 -- character states of the dynamic character. The dynamic character relies on
--- the encoding of the individual static characters to defined the encoding of
+-- the encoding of the individual static characters to define the encoding of
 -- the entire dynamic character.
 data  DynamicChar
     = Missing Word
@@ -77,7 +77,7 @@ type instance Element DynamicChar = DynamicCharacterElement
 type instance Element DynamicCharacterElement = Bool
 
 -- |
--- A sequence of many dynamic characters. Probably should be asserted as non-empty.
+-- A sequence of many 'DynamicChar's. Probably should be asserted as non-empty.
 type DynamicChars = Vector DynamicChar
 
 
@@ -87,7 +87,7 @@ type DynamicChars = Vector DynamicChar
 -- decodeMany seqs alph = fmap (Just . decodeOverAlphabet alph) seqs
 
 
--- We restrict the DynamicChar values generated to be non-empty.
+-- We restrict the 'DynamicChar' values generated to be non-empty.
 -- Most algorithms assume a nonempty dynamic character.
 instance Arbitrary DynamicChar where
 
