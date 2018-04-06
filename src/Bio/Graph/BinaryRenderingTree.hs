@@ -1,3 +1,17 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  Bio.Graph.BinaryRenderingTree
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- An intermediate tree representation of nice horizontal rendering.
+--
+-----------------------------------------------------------------------------
+
 module Bio.Graph.BinaryRenderingTree where
 
 
@@ -7,17 +21,26 @@ import Data.List.NonEmpty hiding (length)
 import Data.Semigroup
 import Prelude            hiding (head, splitAt)
 
+
+-- |
+-- An intermediate structure for rendering directed, acyclic graphs.
 data  BinaryRenderingTree
     = Leaf String
     | Node Word (Maybe String) (NonEmpty BinaryRenderingTree)
     deriving (Eq)
 
 
+-- |
+-- Get the number of leaves present in a subtree.
 subtreeSize :: BinaryRenderingTree -> Word
 subtreeSize (Leaf x)       = 1
 subtreeSize (Node x _ _) = x
 
 
+-- |
+-- Render a directed, acyclic graph in a horizontal fashion. Bias larger subtrees
+-- towards the bottom and smaller subtrees to the top. Apply symbolic references
+-- to network nodes.
 horizontalRendering :: BinaryRenderingTree -> String
 horizontalRendering = fold . intersperse "\n" . go
   where
