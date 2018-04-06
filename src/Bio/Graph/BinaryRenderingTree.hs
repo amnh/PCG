@@ -76,6 +76,6 @@ horizontalRendering = fold . intersperse "\n" . go
       where
         f :: String -> (Bool, [String]) -> (Bool, [String])
         f e@(h:_) (crossedMidPoint, acc)
-          | crossedMidPoint || h `notElem` "└┌│ " = ( True, (center<>e):acc)
+          | crossedMidPoint || h `notElem` "└┌│├ " = ( True, (center<>e):acc)
           | crossedMidPoint                      = ( True, ( upper<>e):acc)
           | otherwise                            = (False, ( lower<>e):acc)
