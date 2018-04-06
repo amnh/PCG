@@ -9,18 +9,13 @@ import Prelude            hiding (head, splitAt)
 
 data  BinaryRenderingTree
     = Leaf String
-    | Node Word Word (Maybe String) (NonEmpty BinaryRenderingTree)
+    | Node Word (Maybe String) (NonEmpty BinaryRenderingTree)
     deriving (Eq)
 
 
 subtreeSize :: BinaryRenderingTree -> Word
 subtreeSize (Leaf x)       = 1
-subtreeSize (Node _ x _ _) = x
-
-
-subtreeDepth :: BinaryRenderingTree -> Word
-subtreeDepth (Leaf x)     = 0
-subtreeDepth (Node x _ _ _) = x
+subtreeSize (Node x _ _) = x
 
 
 horizontalRendering :: BinaryRenderingTree -> String
@@ -28,7 +23,7 @@ horizontalRendering = fold . intersperse "\n" . go
   where
     go :: BinaryRenderingTree -> NonEmpty String
     go (Leaf label) = pure $ "─ " <> label
-    go (Node _ _ labelMay kids) = sconcat paddedSubtrees
+    go (Node _ labelMay kids) = sconcat paddedSubtrees
       where
         paddedSubtrees   = maybe prefixedSubtrees (`applyPadding` prefixedSubtrees) labelMay
         
