@@ -27,7 +27,7 @@ import Prelude            hiding (head, splitAt)
 data  BinaryRenderingTree
     = Leaf String
     | Node Word (Maybe String) (NonEmpty BinaryRenderingTree)
-    deriving (Eq)
+    deriving (Eq, Show)
 
 
 -- |
@@ -94,6 +94,6 @@ horizontalRendering = fold . intersperse "\n" . go
       where
         f :: String -> (Bool, [String]) -> (Bool, [String])
         f e@(h:_) (crossedMidPoint, acc)
-          | crossedMidPoint || h `notElem` "└┌│├ " = ( True, (center<>e):acc)
-          | crossedMidPoint                      = ( True, ( upper<>e):acc)
-          | otherwise                            = (False, ( lower<>e):acc)
+          | not crossedMidPoint && h `notElem` "└┌│├ " = ( True, (center<>e):acc)
+          | crossedMidPoint                            = ( True, ( upper<>e):acc)
+          | otherwise                                  = (False, ( lower<>e):acc)
