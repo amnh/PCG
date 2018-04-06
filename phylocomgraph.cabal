@@ -29,8 +29,7 @@ flag build-cpp-files
 library
   other-extensions: MonadFailDesugaring
 
-  build-depends:       ansi-wl-pprint
-                     , base               >=4.8
+  build-depends:       base               >=4.8
                      , bimap
                      , blaze-html
                      , bv-little
@@ -261,6 +260,7 @@ library
                        Bio.Metadata.DiscreteWithTCM.Internal
                        Bio.Metadata.Dynamic.Class
                        Bio.Metadata.Dynamic.Internal
+                       Bio.Graph.BinaryRenderingTree
                        Bio.Graph.Constructions
                        Bio.Graph.Forest
                        Bio.Graph.Node.Class

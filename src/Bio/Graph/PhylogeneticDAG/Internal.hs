@@ -20,6 +20,7 @@
 module Bio.Graph.PhylogeneticDAG.Internal where
 
 import           Bio.Character.Decoration.Shared
+import           Bio.Graph.BinaryRenderingTree
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG.Internal

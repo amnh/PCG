@@ -15,6 +15,7 @@
 
 module Bio.Graph.ReferenceDAG.Internal where
 
+import           Bio.Graph.BinaryRenderingTree
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Component
 import           Control.Arrow                    ((&&&),(***))
@@ -27,7 +28,7 @@ import           Data.EdgeSet
 import           Data.Foldable
 import           Data.Functor                     ((<$))
 import           Data.GraphViz.Attributes
-import           Data.GraphViz.Printing    hiding (Doc, (<>), (<$>), indent, int, line, text) -- Seriously, why is this redefined?
+import           Data.GraphViz.Printing    hiding ((<>)) -- Seriously, why is this redefined?
 import           Data.GraphViz.Types       hiding (attrs)
 import           Data.GraphViz.Types.Graph hiding (node)
 import           Data.Hashable                    (Hashable)
@@ -38,11 +39,12 @@ import           Data.IntSet                      (IntSet)
 import qualified Data.IntSet               as IS
 import           Data.Key
 import           Data.List                        (intercalate)
-import           Data.List.NonEmpty               (NonEmpty ((:|)))
+import           Data.List.NonEmpty               (NonEmpty(..), intersperse)
 import qualified Data.List.NonEmpty        as NE
 import           Data.List.Utility                (isSingleton)
-import           Data.Monoid                      ((<>))
+import           Data.Monoid               hiding ((<>))
 import           Data.MonoTraversable
+import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Data.Set                         (Set)
 import qualified Data.Set                  as S
@@ -58,7 +60,7 @@ import           Numeric.Extended.Real
 import           Prelude                   hiding (lookup, zipWith)
 import           Text.Newick.Class
 import           Text.XML.Custom
-import           Text.PrettyPrint.ANSI.Leijen hiding ((<>),(<$>))
+
 
 -- |
 -- A constant time access representation of a directed acyclic graph.
@@ -266,7 +268,13 @@ instance Show (GraphData m) where
 -- | (✔)
 instance Show n => Show (ReferenceDAG d e n) where
 
-    show dag = intercalate "\n" [topologyRendering dag, "", horizontalRenderTopology show dag, "", referenceRendering dag]
+    show dag = intercalate "\n"
+        [ topologyRendering dag
+        , ""
+        , sconcat . intersperse "\n" $ horizontalRendering <$> toBinaryRenderingTree show dag
+        , ""
+        , referenceRendering dag
+        ]
 
 
 -- | (✔)
@@ -1242,13 +1250,8 @@ tabulateDescendantEdgesets dag =
         other = foldMap (\x -> singletonEdgeSet (j,x)) . IM.keys $ childRefs point
 
 
-data  BinaryRenderingTree
-    = Leaf Word String
-    | Node Word [RenderingTree]
-
-
-horizontalRenderTopology :: (n -> String) -> ReferenceDAG d e n -> String
-horizontalRenderTopology renderer dag = show . lineJoin . (`evalState` initialState) . mapM subTreeRendering . toList $ rootRefs dag
+toBinaryRenderingTree :: (n -> String) -> ReferenceDAG d e n -> NonEmpty BinaryRenderingTree
+toBinaryRenderingTree nodeRenderer dag = (`evalState` initialState) . traverse subtreeToRendering $ rootRefs dag
   where
     refVec = references dag
 
@@ -1262,35 +1265,27 @@ horizontalRenderTopology renderer dag = show . lineJoin . (`evalState` initialSt
     initialState :: (Int, IntMap Int)
     initialState = (0, mempty)
 
-    lineJoin = foldl' (\a b -> a <> line <> b) mempty
-
-    getLabel = renderer . nodeDecoration
-
-    subTreeRendering :: Int -> State (Int, IntMap Int) Doc
-    subTreeRendering i = 
+    subtreeToRendering :: Int -> State (Int, IntMap Int) BinaryRenderingTree
+    subtreeToRendering i = 
         if   olength parents < 2
         then do
-             subDocs <- mapM subTreeRendering children
-             pure $ case subDocs of
-                      []    -> indent 1 . text $ getLabel context
-                      [x]   -> text "─" <> x
-                      x:y:_ -> lineJoin [text "┌─" <> x, text "┤ ", text "└─" <> y]
+             subtrees <- mapM subtreeToRendering children
+             pure $ case subtrees of
+                      []   -> Leaf shownNode
+                      x:xs -> Node (sum $ subtreeSize <$> x:xs) Nothing $ x:|xs
         else do
              (ctr, symRefs) <- get
              case i `lookup` symRefs of
-               Just sym -> pure . indent 1 $ int sym
+               Just sym -> pure . Leaf $ "@" <> show sym
                Nothing  -> do
-                 let newCtr = succ ctr
-                 put (newCtr, IM.insert i newCtr symRefs)
-                 subDocs <- mapM subTreeRendering children
-                 pure $ case subDocs of
-                          []    -> indent 1 . text $ getLabel context
-                          [x]   -> text "─" <> x
-                          x:y:_ -> lineJoin [text "┌─" <> x, text "┤ ", text "└─" <> y]
+                 put (succ ctr, IM.insert i ctr symRefs)
+                 subtrees <- mapM subtreeToRendering children
+                 pure $ case subtrees of
+                          []   -> Leaf shownNode
+                          x:xs -> Node (sum $ subtreeSize <$> x:xs) (Just (show ctr)) $ x:|xs
 
       where
-        context  = refVec ! i
-        parents  = parentRefs context
-        children = IM.keys $ childRefs context
-      
-    
+        context   = refVec ! i
+        parents   = parentRefs context
+        children  = IM.keys $ childRefs context
+        shownNode = takeWhile (/='\n') . nodeRenderer $ nodeDecoration context
