@@ -28,52 +28,54 @@ horizontalRendering = fold . intersperse "\n" . go
   where
     go :: BinaryRenderingTree -> NonEmpty String
     go (Leaf label) = pure $ "─ " <> label
-    go (Node _ _ labelMay kids) = sconcat prefixedSubtrees-- paddedSubtrees
+    go (Node _ _ labelMay kids) = sconcat paddedSubtrees
       where
---        paddedSubtrees   = applyPadding labelMay prefixedSubtrees
-
+        paddedSubtrees   = maybe prefixedSubtrees (`applyPadding` prefixedSubtrees) labelMay
+        
         prefixedSubtrees  :: NonEmpty (NonEmpty String)
-        prefixedSubtrees = applyPrefixes  alignedSubtrees
+        prefixedSubtrees = applyPrefixes alignedSubtrees
 
         alignedSubtrees  :: NonEmpty (NonEmpty String)
-        alignedSubtrees  = (\(i, xs) -> let branch = replicate (maxSubtreeDepth - i) '─' in (branch <>) <$>  xs) <$> renderedSubtrees
+        alignedSubtrees  = applySubtreeAlignment maxSubtreeDepth <$> renderedSubtrees
 
         renderedSubtrees :: NonEmpty (Int, NonEmpty String)
         renderedSubtrees = fmap (length . head &&& id) $ go <$> sortWith subtreeSize kids
 
         maxSubtreeDepth  = maximum $ fst <$> renderedSubtrees
 
-{-
-    applyPrefixes True  (x:|[]) = pure $ "─" <> x
-    applyPrefixes False (x:|[]) = pure $ "└" <> x
-    applyPrefixes True  (x:|(y:xs)) = pure ("┌" <> x) <> applyPrefixes False (y:|xs)
-    applyPrefixes False (x:|(y:xs)) = pure ("├" <> x) <> applyPrefixes False (y:|xs)
--}
+    applyPadding :: String -> NonEmpty (NonEmpty String) -> NonEmpty (NonEmpty String)
+    applyPadding e input =
+        case input of
+          v:|[]     -> applyAtCenter e pad pad v :| []
+          v:|(x:xs) -> fmap (pad<>) v :| (applyAtCenter e pad pad x : fmap (fmap (pad<>)) xs)
+      where
+        pad   = replicate (length e) ' '
 
     applyPrefixes :: NonEmpty (NonEmpty String) -> NonEmpty (NonEmpty String)
     applyPrefixes = go True
       where
         go :: Bool -> NonEmpty (NonEmpty String) -> NonEmpty (NonEmpty String) 
-        go True  (v:|[]) = pure $ applyAtCenter '─' ' ' ' ' v
-        go False (v:|[]) = pure $ applyAtCenter '└' '│' ' ' v
-        go True  (v:|(x:xs)) = pure (applyAtCenter '┌' ' ' '│' v) <> go False (x:|xs)
-        go False (v:|(x:xs)) = pure (applyAtCenter '├' '│' '│' v) <> go False (x:|xs)
+        go True  (v:|[])     = pure $ applyAtCenter "─" " " " " v
+        go False (v:|[])     = pure $ applyAtCenter "└" "│" " " v
+        go True  (v:|(x:xs)) = applyPrefixAndGlue  v "┤" "┌" " " "│" (x:|xs)
+        go False (v:|(x:xs)) = applyPrefixAndGlue  v "│" "├" "│" " " (x:|xs)
 
-    applyAtCenter :: Char -> Char -> Char -> NonEmpty String -> NonEmpty String
-    applyAtCenter center upper lower xs =
-        case xs of
-          x:|[] -> (center : x) :| []
-          _ -> fmap (upper:) pref <> pure (center:midPoint) <> fmap (lower:) (fromList suff)
+        applyPrefixAndGlue v glue center upper lower xs = pure (applyAtCenter center upper lower v)
+                                          <> pure (pure glue)
+                                          <> go False xs
+
+    applySubtreeAlignment :: Int -> (Int, NonEmpty String) -> NonEmpty String
+    applySubtreeAlignment maxLength (currLength, xs) = applyAtCenter branch pad pad xs
       where
-        mid = length xs `div` 2
-        (pref, midPoint:|suff) = (fromList *** fromList) $ splitAt mid xs
-{--}
-        
-    applyPadding labelMay stream =
-        case stream of
-          x:|[] -> stream
-          _ -> intersperse pad pref  <> pure (maybe "" show labelMay <> "┤") <> intersperse pad suff 
+        branch = replicate (maxLength - currLength) '─'
+        pad    = replicate (maxLength - currLength) ' '
+
+    applyAtCenter :: String -> String -> String -> NonEmpty String -> NonEmpty String
+    applyAtCenter center     _     _ (x:|[]) = (center<>x) :| []
+    applyAtCenter center upper lower (x:|xs) = ( upper<>x) :| snd (foldr f (False, []) xs)
       where
-        pad = maybe "│" (\x -> let i = length (show x) in replicate i ' ' <> "│") labelMay
-        mid = length stream `div` 2
-        (pref,suff) = (fromList *** fromList) $ splitAt mid stream
+        f :: String -> (Bool, [String]) -> (Bool, [String])
+        f e@(h:_) (crossedMidPoint, acc)
+          | crossedMidPoint || h `notElem` "└┌│ " = ( True, (center<>e):acc)
+          | crossedMidPoint                      = ( True, ( upper<>e):acc)
+          | otherwise                            = (False, ( lower<>e):acc)
