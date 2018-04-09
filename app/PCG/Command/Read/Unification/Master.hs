@@ -49,10 +49,12 @@ import           Data.List.Utility                 (duplicates)
 import           Data.Map                          (Map, intersectionWith, keys)
 import qualified Data.Map                   as Map
 import           Data.Maybe                        (catMaybes, fromMaybe, listToMaybe)
+import           Data.NodeLabel
 import           Data.Semigroup                    ((<>), sconcat)
 import           Data.Semigroup.Foldable
 import           Data.Set                          (Set, (\\))
 import qualified Data.Set                   as Set
+import           Data.String
 import           Data.TCM                          (TCM, TCMStructure(..))
 import qualified Data.TCM                   as TCM
 --import           Data.MonoTraversable
@@ -143,8 +145,8 @@ rectifyResults2 fprs =
             f = const Nothing
 
         singletonComponent (label, datum) = PhylogeneticForest . pure . PDAG $ DAG.fromList
-            [ (        mempty, PNode (Just "Trivial Root") defaultCharacterSequenceDatum, IM.singleton 1 mempty)
-            , (IS.singleton 0, PNode (Just label         )                         datum, mempty               )
+            [ (        mempty, PNode (fromString "Trivial Root") defaultCharacterSequenceDatum, IM.singleton 1 mempty)
+            , (IS.singleton 0, PNode (fromString label         )                         datum, mempty               )
             ]
 
         matchToChars :: Map String UnifiedCharacterSequence
@@ -152,9 +154,13 @@ rectifyResults2 fprs =
                      -> PhylogeneticForest UnReifiedCharacterDAG --CharacterDAG
         matchToChars charMapping = fmap (PDAG . fmap f)
           where
-            f label = PNode label $ fromMaybe defaultCharacterSequenceDatum charLabelMay
+            f label = PNode nodeLabel $ fromMaybe defaultCharacterSequenceDatum charLabelMay
               where
-                charLabelMay     = label >>= (`lookup` charMapping)
+                nodeLabel    =
+                    case label of
+                      Nothing -> unlabeled
+                      Just xs -> fromString xs
+                charLabelMay = label >>= (`lookup` charMapping)
 
     -- Error collection
     errors          = catMaybes [duplicateError, extraError, missingError]
@@ -223,10 +229,7 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
         charNames :: [CharacterName]
         charNames = makeCharacterNames . concatMap transform $ toList xs
           where
-            transform x = fmap (const (sourceFile x) &&& correctName . characterName) . toList $ parsedMetas x
-              where
-                correctName [] = Nothing
-                correctName ys = Just ys
+            transform x = fmap (const (sourceFile x) &&& fromString . characterName) . toList $ parsedMetas x
 
     deriveCorrectTCMs :: Functor f
                       => f (Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, Maybe (TCM, TCMStructure), CharacterName)))

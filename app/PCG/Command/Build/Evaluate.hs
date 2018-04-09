@@ -46,6 +46,7 @@ import qualified Data.List.NonEmpty     as NE
 --import           Data.Map                      (Map,assocs,insert,union)
 --import qualified Data.Map               as M
 --import           Data.Maybe                    (fromMaybe)
+import           Data.NodeLabel
 import           Data.Ord                      (comparing)
 import           Data.Semigroup.Foldable
 --import           Data.Vector                   (Vector)
@@ -65,7 +66,7 @@ type DatNode =
       (SankoffOptimizationDecoration StaticCharacter)
       (DynamicDecorationDirectOptimization DynamicChar)
     )
-    (Maybe String)
+    NodeLabel
 
 
 --evaluate :: Command -> EvaluationT IO a -> EvaluationT IO (Either TopologicalResult DecoratedCharacterResult)
