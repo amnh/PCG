@@ -36,7 +36,7 @@ import GHC.Generics
 -- Use 'Default' instance to construct the empty label.
 --
 -- The primary use of 'NodeLabel' is for well-typed rendering. Use the 'Show'
--- instance to nice render the 'NodeLabel'. If the user specified a label for
+-- instance to nicely render the 'NodeLabel'. If the user specified a label for
 -- the node, that string will be returned from the call to 'show'. If the user
 -- did not specify a label for the node, the Show insatnce will return
 -- @{Unlabeled Node}@.
