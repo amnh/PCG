@@ -1292,5 +1292,3 @@ horizontalRenderTopology renderer dag = show . lineJoin . (`evalState` initialSt
         context  = refVec ! i
         parents  = parentRefs context
         children = IM.keys $ childRefs context
-      
-    
