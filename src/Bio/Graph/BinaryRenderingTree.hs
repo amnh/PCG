@@ -1,3 +1,17 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  Bio.Graph.BinaryRenderingTree
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- An intermediate tree representation of nice horizontal rendering.
+--
+-----------------------------------------------------------------------------
+
 module Bio.Graph.BinaryRenderingTree where
 
 
@@ -7,61 +21,79 @@ import Data.List.NonEmpty hiding (length)
 import Data.Semigroup
 import Prelude            hiding (head, splitAt)
 
+
+-- |
+-- An intermediate structure for rendering directed, acyclic graphs.
 data  BinaryRenderingTree
     = Leaf String
-    | Node Word Word (Maybe String) (NonEmpty BinaryRenderingTree)
-    deriving (Eq)
+    | Node Word (Maybe String) (NonEmpty BinaryRenderingTree)
+    deriving (Eq, Show)
 
 
+-- |
+-- Get the number of leaves present in a subtree.
 subtreeSize :: BinaryRenderingTree -> Word
 subtreeSize (Leaf x)       = 1
-subtreeSize (Node _ x _ _) = x
+subtreeSize (Node x _ _) = x
 
 
-subtreeDepth :: BinaryRenderingTree -> Word
-subtreeDepth (Leaf x)     = 0
-subtreeDepth (Node x _ _ _) = x
-
-
+-- |
+-- Render a directed, acyclic graph in a horizontal fashion. Bias larger subtrees
+-- towards the bottom and smaller subtrees to the top. Apply symbolic references
+-- to network nodes.
 horizontalRendering :: BinaryRenderingTree -> String
 horizontalRendering = fold . intersperse "\n" . go
   where
     go :: BinaryRenderingTree -> NonEmpty String
     go (Leaf label) = pure $ "─ " <> label
-    go (Node _ _ labelMay kids) = sconcat paddedSubtrees
+    go (Node _ labelMay kids) = sconcat paddedSubtrees
       where
-        paddedSubtrees   = applyPadding labelMay prefixedSubtrees
-        prefixedSubtrees = applyPrefixes True alignedSubtrees
+        paddedSubtrees   = maybe prefixedSubtrees (`applyPadding` prefixedSubtrees) labelMay
+        
+        prefixedSubtrees  :: NonEmpty (NonEmpty String)
+        prefixedSubtrees = applyPrefixes alignedSubtrees
 
         alignedSubtrees  :: NonEmpty (NonEmpty String)
-        alignedSubtrees  = (\(i, xs) -> let branch = replicate (maxSubtreeDepth - i) '─' in (branch <>) <$>  xs) <$> renderedSubtrees
+        alignedSubtrees  = applySubtreeAlignment maxSubtreeDepth <$> renderedSubtrees
 
         renderedSubtrees :: NonEmpty (Int, NonEmpty String)
         renderedSubtrees = fmap (length . head &&& id) $ go <$> sortWith subtreeSize kids
 
         maxSubtreeDepth  = maximum $ fst <$> renderedSubtrees
 
-
-    applyPrefixes True  (x:|[]) = pure $ "─" <> x
-    applyPrefixes False (x:|[]) = pure $ "└" <> x
-    applyPrefixes True  (x:|(y:xs)) = pure ("┌" <> x) <> applyPrefixes False (y:|xs)
-    applyPrefixes False (x:|(y:xs)) = pure ("├" <> x) <> applyPrefixes False (y:|xs)
-
-    applyAtCenter e xs = 
-        case xs of
-          x:|[] -> xs
-          _ -> intersperse pad pref  <> pure (maybe "" show labelMay <> "┤") <> intersperse pad suff 
+    applyPadding :: String -> NonEmpty (NonEmpty String) -> NonEmpty (NonEmpty String)
+    applyPadding e input =
+        case input of
+          v:|[]     -> applyAtCenter e pad pad v :| []
+          v:|(x:xs) -> fmap (pad<>) v :| (applyAtCenter e pad pad x : fmap (fmap (pad<>)) xs)
       where
-        pad = let i = length (show x) in replicate i ' '
-        mid = length stream `div` 2
-        (pref, suff) = (fromList *** fromList) $ splitAt mid stream
+        pad   = replicate (length e) ' '
 
-        
-    applyPadding labelMay stream =
-        case stream of
-          x:|[] -> stream
-          _ -> intersperse pad pref  <> pure (maybe "" show labelMay <> "┤") <> intersperse pad suff 
+    applyPrefixes :: NonEmpty (NonEmpty String) -> NonEmpty (NonEmpty String)
+    applyPrefixes = go True
       where
-        pad = maybe "│" (\x -> let i = length (show x) in replicate i ' ' <> "│") labelMay
-        mid = length stream `div` 2
-        (pref,suff) = (fromList *** fromList) $ splitAt mid stream
+        go :: Bool -> NonEmpty (NonEmpty String) -> NonEmpty (NonEmpty String) 
+        go True  (v:|[])     = pure $ applyAtCenter "─" " " " " v
+        go False (v:|[])     = pure $ applyAtCenter "└" "│" " " v
+        go True  (v:|(x:xs)) = applyPrefixAndGlue  v "┤" "┌" " " "│" (x:|xs)
+        go False (v:|(x:xs)) = applyPrefixAndGlue  v "│" "├" "│" " " (x:|xs)
+
+        applyPrefixAndGlue v glue center upper lower xs = pure (applyAtCenter center upper lower v)
+                                          <> pure (pure glue)
+                                          <> go False xs
+
+    applySubtreeAlignment :: Int -> (Int, NonEmpty String) -> NonEmpty String
+    applySubtreeAlignment maxLength (currLength, xs) = applyAtCenter branch pad pad xs
+      where
+        branch = replicate (maxLength - currLength) '─'
+        pad    = replicate (maxLength - currLength) ' '
+
+    applyAtCenter :: String -> String -> String -> NonEmpty String -> NonEmpty String
+    applyAtCenter center     _     _ (x:|[]) = (center<>x) :| []
+    applyAtCenter center upper lower (x:|xs) = ( upper<>x) :| snd (foldr f (False, []) xs)
+      where
+        f :: String -> (Bool, [String]) -> (Bool, [String])
+        f e@(h:_) (crossedMidPoint, acc)
+          | not crossedMidPoint && h `notElem` "└┌│├ " = ( True, (center<>e):acc)
+          | crossedMidPoint                            = ( True, ( upper<>e):acc)
+          | otherwise                                  = (False, ( lower<>e):acc)
