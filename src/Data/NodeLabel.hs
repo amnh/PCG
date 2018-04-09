@@ -21,6 +21,7 @@ module Data.NodeLabel
 
 
 import Control.DeepSeq
+import Data.Default
 import Data.MonoTraversable
 import Data.String
 import GHC.Generics
@@ -32,7 +33,7 @@ import GHC.Generics
 --
 -- Use 'IsString' instance to construct a user supplied 'NodeLabel'.
 --
--- Use 'unlabeled' to create the empty label.
+-- Use 'Default' instance to construct the empty label.
 --
 -- The primary use of 'NodeLabel' is for well-typed rendering. Use the 'Show'
 -- instance to nice render the 'NodeLabel'. If the user specified a label for
@@ -40,7 +41,7 @@ import GHC.Generics
 -- did not specify a label for the node, the Show insatnce will return
 -- @{Unlabeled Node}@.
 newtype NodeLabel = NL String
-    deriving(Eq, Generic, MonoFoldable, NFData, Ord)
+    deriving(Eq, Default, Generic, MonoFoldable, NFData, Ord)
 
 
 type instance Element NodeLabel = Char
@@ -58,4 +59,4 @@ instance Show NodeLabel where
 
 
 unlabeled :: NodeLabel
-unlabeled = NL []
+unlabeled = def
