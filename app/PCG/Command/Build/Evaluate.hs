@@ -46,6 +46,7 @@ import qualified Data.List.NonEmpty     as NE
 --import           Data.Map                      (Map,assocs,insert,union)
 --import qualified Data.Map               as M
 --import           Data.Maybe                    (fromMaybe)
+import           Data.NodeLabel
 import           Data.Ord                      (comparing)
 import           Data.Semigroup.Foldable
 --import           Data.Vector                   (Vector)
@@ -65,7 +66,7 @@ type DatNode =
       (SankoffOptimizationDecoration StaticCharacter)
       (DynamicDecorationDirectOptimization DynamicChar)
     )
-    (Maybe String)
+    NodeLabel
 
 
 --evaluate :: Command -> EvaluationT IO a -> EvaluationT IO (Either TopologicalResult DecoratedCharacterResult)
@@ -98,7 +99,7 @@ evaluate
 -- EvaluationT IO (Either TopologicalResult CharacterResult)
 -- evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
 -- evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
-evaluate (BUILD (BuildCommand trajectoryCount buildType)) inState = do
+evaluate (BUILD (BuildCommand trajectoryCount buildType)) inState =
     case inState of
       Left  e -> pure $ Left e
       Right v ->

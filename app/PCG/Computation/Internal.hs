@@ -1,7 +1,6 @@
 module PCG.Computation.Internal where
 
 import           Bio.Graph
-import           Control.DeepSeq
 import           Control.Evaluation
 import           Data.Char          (isSpace)
 import           Data.Foldable

@@ -53,7 +53,7 @@ tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gathe
     colateResult (     _,     _,     _,      _,    [],     []) = fail "No XREAD command or TREAD command, expecting either a single XREAD command or one or more TRead commands."
     colateResult (     _,     _,    _,       _,treads,     []) = pure . Left $ NE.fromList treads
     colateResult (ccodes,cnames,costs,_nstates,treads,[xread])
-      | charCountx xread == 0 = (Left . fmap (fmap (Name . fst)) . NE.fromList) <$> matchTaxaInTree xread treads
+      | charCountx xread == 0 = Left . fmap (fmap (Name . fst)) . NE.fromList <$> matchTaxaInTree xread treads
       | otherwise             = Right <$> liftM3 WithTaxa
                                   (pure $ vectorizeTaxa xread)
                                   (pure . applyCosts costs . applyCNames cnames $ ccodeCoalesce (charCountx xread) ccodes)

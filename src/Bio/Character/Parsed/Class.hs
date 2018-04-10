@@ -160,7 +160,7 @@ instance ParsedCharacters TntResult where
 
     unifyCharacters (Right (WithTaxa seqs _ []    )) = M.fromList . toList $ second tntToTheSuperSequence   <$> seqs
     -- maybe just use the seq vaiable like above and remove this case?
-    unifyCharacters (Right (WithTaxa _    _ forest)) = mergeMaps $ (M.fromList . toList . fmap (second tntToTheSuperSequence)) <$> forest
+    unifyCharacters (Right (WithTaxa _    _ forest)) = mergeMaps $ M.fromList . toList . fmap (second tntToTheSuperSequence) <$> forest
 
 
 -- | (✔)
