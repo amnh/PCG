@@ -15,7 +15,7 @@
 module Bio.Graph.BinaryRenderingTree where
 
 
-import Control.Arrow             ((&&&), (***))
+import Control.Arrow             ((&&&))
 import Data.Foldable
 import Data.List.NonEmpty hiding (length)
 import Data.Semigroup
@@ -33,7 +33,7 @@ data  BinaryRenderingTree
 -- |
 -- Get the number of leaves present in a subtree.
 subtreeSize :: BinaryRenderingTree -> Word
-subtreeSize (Leaf x)       = 1
+subtreeSize (Leaf _)     = 1
 subtreeSize (Node x _ _) = x
 
 
@@ -70,17 +70,17 @@ horizontalRendering = fold . intersperse "\n" . go
         pad   = replicate (length e) ' '
 
     applyPrefixes :: NonEmpty (NonEmpty String) -> NonEmpty (NonEmpty String)
-    applyPrefixes = go True
+    applyPrefixes = run True
       where
-        go :: Bool -> NonEmpty (NonEmpty String) -> NonEmpty (NonEmpty String) 
-        go True  (v:|[])     = pure $ applyAtCenter "─" " " " " v
-        go False (v:|[])     = pure $ applyAtCenter "└" "│" " " v
-        go True  (v:|(x:xs)) = applyPrefixAndGlue  v "┤" "┌" " " "│" (x:|xs)
-        go False (v:|(x:xs)) = applyPrefixAndGlue  v "│" "├" "│" " " (x:|xs)
+        run :: Bool -> NonEmpty (NonEmpty String) -> NonEmpty (NonEmpty String) 
+        run True  (v:|[])     = pure $ applyAtCenter "─" " " " " v
+        run False (v:|[])     = pure $ applyAtCenter "└" "│" " " v
+        run True  (v:|(x:xs)) = applyPrefixAndGlue  v "┤" "┌" " " "│" (x:|xs)
+        run False (v:|(x:xs)) = applyPrefixAndGlue  v "│" "├" "│" " " (x:|xs)
 
         applyPrefixAndGlue v glue center upper lower xs = pure (applyAtCenter center upper lower v)
                                           <> pure (pure glue)
-                                          <> go False xs
+                                          <> run False xs
 
     applySubtreeAlignment :: Int -> (Int, NonEmpty String) -> NonEmpty String
     applySubtreeAlignment maxLength (currLength, xs) = applyAtCenter branch pad pad xs
@@ -93,7 +93,8 @@ horizontalRendering = fold . intersperse "\n" . go
     applyAtCenter center upper lower (x:|xs) = ( upper<>x) :| snd (foldr f (False, []) xs)
       where
         f :: String -> (Bool, [String]) -> (Bool, [String])
-        f e@(h:_) (crossedMidPoint, acc)
-          | not crossedMidPoint && h `notElem` "└┌│├ " = ( True, (center<>e):acc)
-          | crossedMidPoint                            = ( True, ( upper<>e):acc)
-          | otherwise                                  = (False, ( lower<>e):acc)
+        f str (crossedMidPoint, acc) =
+          case str of
+            h:_ | not crossedMidPoint && h `notElem` "└┌│├ " -> ( True, (center<>str):acc)
+            _   | crossedMidPoint                            -> ( True, ( upper<>str):acc)
+                | otherwise                                  -> (False, ( lower<>str):acc)
