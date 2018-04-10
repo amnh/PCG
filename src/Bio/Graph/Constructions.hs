@@ -49,6 +49,7 @@ import Bio.Graph.Solution
 import Bio.Sequence
 import Control.Evaluation
 import Data.EdgeLength
+import Data.NodeLabel
 
 
 -- |
@@ -56,7 +57,7 @@ import Data.EdgeLength
 type CharacterDAG =
        PhylogeneticDAG2
          EdgeLength
-         (Maybe String)
+         NodeLabel
          UnifiedContinuousCharacter
          UnifiedDiscreteCharacter
          UnifiedDiscreteCharacter
@@ -97,7 +98,7 @@ type DecoratedCharacterResult = PhylogeneticSolution FinalDecorationDAG
 type FinalDecorationDAG =
        PhylogeneticDAG2
          EdgeLength
-         (Maybe String)
+         NodeLabel
          (ContinuousOptimizationDecoration    ContinuousChar)
          (FitchOptimizationDecoration         StaticCharacter)
          (AdditiveOptimizationDecoration      StaticCharacter)
@@ -115,7 +116,7 @@ type FinalDecorationDAG =
 type PostOrderDecorationDAG =
        PhylogeneticDAG2
          EdgeLength
-         (Maybe String)
+         NodeLabel
          (ContinuousPostorderDecoration ContinuousChar )
          (FitchOptimizationDecoration   StaticCharacter)
          (AdditivePostorderDecoration   StaticCharacter)
@@ -185,7 +186,7 @@ type UnifiedDynamicCharacter    = Maybe (DynamicDecorationInitial DynamicChar)
 type UnReifiedCharacterDAG =
        PhylogeneticDAG
          EdgeLength
-         (Maybe String)
+         NodeLabel
          UnifiedContinuousCharacter
          UnifiedDiscreteCharacter
          UnifiedDiscreteCharacter

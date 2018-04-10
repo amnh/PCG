@@ -142,10 +142,8 @@ taxaBlockDefinition = do
 taxaSubBlock :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char {- , Show s -}) => m SeqSubBlock
 taxaSubBlock = {-do
     x <- getInput
-    trace ("many taxaSubBlock"  ++ show x) $ -}do
-        _      <- whitespace
-        block' <- symbol block
-        pure block'
+    trace ("many taxaSubBlock"  ++ show x) $ -}
+        whitespace *> symbol block
     where
         block =  (Dims   <$> try dimensionsDefinition)
              <|> (Taxa   <$> try (stringListDefinition "taxlabels"))
@@ -267,8 +265,7 @@ charFormatFieldDef :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char {-
 charFormatFieldDef = {-do
         x <- getInput
         trace ("many charFormatFieldDef"  ++ show x) $ -}do
-        block' <- many $ symbol block
-        pure block'
+        many $ symbol block
     where
         block = choice
             [ CharDT      <$> try (string'' "datatype" *> symbol (char '=') *> charDTDefinition)

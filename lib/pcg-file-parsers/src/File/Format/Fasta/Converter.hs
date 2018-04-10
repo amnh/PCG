@@ -84,8 +84,7 @@ seqCharMapping seqType = V.fromList . fmap (f seqType)
 -- |
 -- Substitutions for converting to a DNA sequence based on IUPAC codes.
 iupacNucleotideSubstitutions :: Map Char (NonEmpty String)
-iupacNucleotideSubstitutions = 
-    (fmap pure . NE.fromList) <$> M.fromList 
+iupacNucleotideSubstitutions = fmap pure . NE.fromList <$> M.fromList 
     [ ('A', "A")
     , ('C', "C")
     , ('G', "G")

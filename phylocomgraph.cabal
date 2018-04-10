@@ -37,6 +37,7 @@ library
                        -- >=0.5.8 Required for Data.Map.restrictKeys
                      , containers         >=0.5.8
                      , deepseq
+                     , data-default
                      , dlist
                      , graphviz
                      , hashable
@@ -203,6 +204,7 @@ library
                        Data.TCM
                        Data.TCM.Memoized
                        Data.TopologyRepresentation
+                       Data.NodeLabel
 --                       Text.HTML.Class
 --                       Text.HTML.Custom
                        Text.Newick.Class
@@ -260,6 +262,7 @@ library
                        Bio.Metadata.DiscreteWithTCM.Internal
                        Bio.Metadata.Dynamic.Class
                        Bio.Metadata.Dynamic.Internal
+                       Bio.Graph.BinaryRenderingTree
                        Bio.Graph.Constructions
                        Bio.Graph.Forest
                        Bio.Graph.Node.Class
@@ -298,6 +301,7 @@ executable pcg
                      , blaze-html
                        -- Required for Data.Map.restrictKeys
                      , containers       >=0.5.8
+                     , data-default
                      , deepseq
                      , directory
                      , gitrev
