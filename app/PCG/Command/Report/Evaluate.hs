@@ -16,7 +16,6 @@ import           Bio.Character.Exportable
 import           Bio.Metadata.CharacterName
 import           Bio.Graph
 import           Bio.Graph.PhylogeneticDAG
-import           Control.DeepSeq
 import           Control.Monad.IO.Class
 --import           Control.Monad.Logger
 --import           Data.Foldable

@@ -50,7 +50,6 @@ import           Data.List.Utility                 (duplicates)
 import           Data.Map                          (Map, intersectionWith, keys)
 import qualified Data.Map                   as Map
 import           Data.Maybe                        (catMaybes, fromMaybe, listToMaybe)
-import           Data.NodeLabel
 import           Data.Semigroup                    ((<>), sconcat)
 import           Data.Semigroup.Foldable
 import           Data.Set                          (Set, (\\))

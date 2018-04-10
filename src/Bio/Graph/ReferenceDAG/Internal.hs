@@ -23,7 +23,6 @@ import           Control.DeepSeq
 import           Control.Lens                     (lens)
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
-import           Data.Char
 import           Data.EdgeSet
 import           Data.Foldable
 import           Data.Functor                     ((<$))
@@ -1263,9 +1262,9 @@ toBinaryRenderingTree nodeRenderer dag = (`evalState` initialState) . traverse s
 
     subtreeToRendering :: Int -> State (Int, IntMap Int) BinaryRenderingTree
     subtreeToRendering i = 
-        if   olength parents < 2
+        if   parentCount < 2
         then do
-             subtrees <- mapM subtreeToRendering children
+             subtrees <- mapM subtreeToRendering kids
              pure $ case subtrees of
                       []   -> Leaf shownNode
                       x:xs -> Node (sum $ subtreeSize <$> x:xs) Nothing $ x:|xs
@@ -1275,13 +1274,13 @@ toBinaryRenderingTree nodeRenderer dag = (`evalState` initialState) . traverse s
                Just sym -> pure . Leaf $ "@" <> show sym
                Nothing  -> do
                  put (succ ctr, IM.insert i ctr symRefs)
-                 subtrees <- mapM subtreeToRendering children
+                 subtrees <- mapM subtreeToRendering kids
                  pure $ case subtrees of
                           []   -> Leaf shownNode
                           x:xs -> Node (sum $ subtreeSize <$> x:xs) (Just (show ctr)) $ x:|xs
 
       where
-        context   = refVec ! i
-        parents   = parentRefs context
-        children  = IM.keys $ childRefs context
-        shownNode = takeWhile (/='\n') . nodeRenderer $ nodeDecoration context
+        context     = refVec ! i
+        kids        = IM.keys $ childRefs context
+        parentCount = olength $ parentRefs context
+        shownNode   = takeWhile (/='\n') . nodeRenderer $ nodeDecoration context
