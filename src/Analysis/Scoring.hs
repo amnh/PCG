@@ -44,7 +44,7 @@ import           Data.NodeLabel
 -- |
 -- Remove all scoring data from nodes.
 wipeScoring
-  :: Monoid n
+  :: Default n
   => PhylogeneticDAG2 e n u v w x y z
   -> PhylogeneticDAG2 e n (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
 wipeScoring (PDAG2 dag) = PDAG2 wipedDAG
@@ -57,7 +57,7 @@ wipeScoring (PDAG2 dag) = PDAG2 wipedDAG
           $ dag
 
     wipeDecorations
-      :: Monoid n
+      :: Default n
       => IndexData e (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
       -> IndexData e (PhylogeneticNode2 (CharacterSequence (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)) n)
     wipeDecorations x =
@@ -79,7 +79,7 @@ wipeNode
   -> PhylogeneticNode2 (CharacterSequence (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)) n
 wipeNode wipe = PNode2 <$> pure . g . NE.head . resolutions <*> f . nodeDecorationDatum2
       where
-        f :: Monoid a => a -> a
+        f :: Default a => a -> a
         f | wipe      = const def
           | otherwise = id
 

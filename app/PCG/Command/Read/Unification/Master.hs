@@ -229,7 +229,9 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
         charNames :: [CharacterName]
         charNames = makeCharacterNames . concatMap transform $ toList xs
           where
-            transform x = fmap (const (sourceFile x) &&& fromString . characterName) . toList $ parsedMetas x
+            transform x = fmap (const (sourceFile x) &&& correctName . characterName) . toList $ parsedMetas x
+            correctName [] = Nothing
+            correctName ys = Just ys
 
     deriveCorrectTCMs :: Functor f
                       => f (Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, Maybe (TCM, TCMStructure), CharacterName)))

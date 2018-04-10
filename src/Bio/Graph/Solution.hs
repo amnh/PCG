@@ -84,7 +84,7 @@ instance {-# OVERLAPPABLE #-} PrintDot a => PrintDot (PhylogeneticSolution a) wh
     listToDot     = fmap mconcat . traverse   toDot
 
 
-instance Foldable f => PrintDot (PhylogeneticSolution (PhylogeneticDAG2 e (f String) u v w x y z)) where
+instance Show n => PrintDot (PhylogeneticSolution (PhylogeneticDAG2 e n u v w x y z)) where
 
     unqtDot       = unqtDot . uncurry mkGraph . foldMap1 getSolutionDotContext . phylogeneticForests
 
@@ -137,12 +137,19 @@ instance
   , DiscreteCharacterMetadata x
   , DiscreteCharacterMetadata y
   , DiscreteCharacterMetadata z
-  , Foldable f
+  , HasBlockCost u v w x y z Word Double
   , HasSymbolChangeMatrix x (Word -> Word -> Word)
   , HasSymbolChangeMatrix y (Word -> Word -> Word)
   , HasSymbolChangeMatrix z (Word -> Word -> Word)
 --  , PrintDot (PhylogeneticDAG2 e (f String) u v w x y z)
-  ) => ToXML (PhylogeneticSolution (PhylogeneticDAG2 e (f String) u v w x y z)) where
+  , Show n
+  , Show u
+  , Show v
+  , Show w
+  , Show x
+  , Show y
+  , Show z
+  ) => ToXML (PhylogeneticSolution (PhylogeneticDAG2 e n u v w x y z)) where
 
     toXML soln@(PhylogeneticSolution forests) = xmlElement "Solution" attrs forestContents
         where
@@ -194,12 +201,12 @@ instance
 
 
 getSolutionDotContext
-  :: ( Foldable f
-     , FoldableWithKey1 t
+  :: ( FoldableWithKey1 t
      , Functor t
      , Key t ~ Int
+     , Show n
      )
-  => t (PhylogeneticDAG2 e (f String) u v w x y z)
+  => t (PhylogeneticDAG2 e n u v w x y z)
   -> ([DotNode GraphID], [DotEdge GraphID])
 getSolutionDotContext xs = foldMapWithKey1 g xs
   where

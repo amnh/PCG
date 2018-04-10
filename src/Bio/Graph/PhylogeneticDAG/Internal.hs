@@ -20,7 +20,6 @@
 module Bio.Graph.PhylogeneticDAG.Internal where
 
 import           Bio.Character.Decoration.Shared
-import           Bio.Graph.BinaryRenderingTree
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG.Internal
@@ -100,13 +99,11 @@ newtype PhylogeneticDAG2 e n u v w x y z
 type EdgeReference = (Int, Int)
 
 
---instance HasLeafSet (PhylogeneticDAG2 e n u v w x y z) (LeafSet n) where
 -- | (✔)
 instance HasLeafSet (PhylogeneticDAG2 e n u v w x y z) (LeafSet (PhylogeneticNode2 (CharacterSequence u v w x y z) n)) where
 
     leafSet = lens getter undefined
         where
---            getter :: (PhylogeneticDAG2 e n u v w x y z) -> (LeafSet n)
             getter (PDAG2 e) =  e ^. leafSet
 
 
@@ -115,7 +112,7 @@ instance (NFData e, NFData n, NFData u, NFData v, NFData w, NFData x, NFData y, 
 
 
 -- | (✔)
-instance Foldable f => PrintDot (PhylogeneticDAG2 e (f String) u v w x y z) where
+instance Show n => PrintDot (PhylogeneticDAG2 e n u v w x y z) where
 
     unqtDot       = unqtDot . discardCharacters
 
@@ -144,8 +141,7 @@ instance ( Show e
 
 
 -- | (✔)
-instance ( Foldable f
-         , HasBlockCost u v w x y z Word Double
+instance ( HasBlockCost u v w x y z Word Double
          , HasCharacterName u CharacterName
          , HasCharacterName v CharacterName
          , HasCharacterName w CharacterName
@@ -154,14 +150,14 @@ instance ( Foldable f
          , HasCharacterName z CharacterName
          , HasTraversalFoci z (Maybe TraversalFoci)
          , Show e
-         , Show (f String)
+         , Show n
          , Show u
          , Show v
          , Show w
          , Show x
          , Show y
          , Show z
-         ) => Show (PhylogeneticDAG2 e (f String) u v w x y z) where
+         ) => Show (PhylogeneticDAG2 e n u v w x y z) where
 
     show p@(PDAG2 dag) = unlines
         [ renderSummary p
@@ -173,13 +169,21 @@ instance ( Foldable f
 
 
 -- | (✔)
-instance Foldable f => ToNewick (PhylogeneticDAG2 e (f String) u v w x y z) where
+instance Show n => ToNewick (PhylogeneticDAG2 e n u v w x y z) where
 
     toNewick = toNewick . discardCharacters
 
 
 -- | (✔)
-instance ( ToXML u
+instance ( HasBlockCost u v w x y z Word Double
+         , Show  n
+         , Show  u
+         , Show  v
+         , Show  w
+         , Show  y
+         , Show  x
+         , Show  z
+         , ToXML u
          , ToXML v
          , ToXML w
          , ToXML y
@@ -192,10 +196,10 @@ instance ( ToXML u
 -- |
 -- Get the dot context of a 'PhylogeneticDAG' with useful internal node decorations.
 getDotContextWithBaseAndIndex
-  :: Foldable f
+  :: Show n
   => Int -- ^ Base over which the Unique
   -> Int
-  -> PhylogeneticDAG2 e (f String) u v w x y z
+  -> PhylogeneticDAG2 e n u v w x y z
   -> ([DotNode GraphID], [DotEdge GraphID])
 getDotContextWithBaseAndIndex i j (PDAG2 dag) = getDotContext i j $ nodeDecorationDatum2 <$> dag
 
@@ -359,8 +363,7 @@ pairs = f . toList
 -- |
 -- Nicely show the DAG information.
 renderSummary
-  :: ( Foldable f
-     , Show (f String)
+  :: ( Show n
      , Show u
      , Show v
      , Show w
@@ -376,7 +379,7 @@ renderSummary
      , HasCharacterName z CharacterName
      , HasTraversalFoci z (Maybe TraversalFoci)
      )
-  => PhylogeneticDAG2 e (f String) u v w x y z
+  => PhylogeneticDAG2 e n u v w x y z
   -> String
 renderSummary pdag@(PDAG2 dag) = unlines
     [ show dag
@@ -388,7 +391,7 @@ renderSummary pdag@(PDAG2 dag) = unlines
 -- |
 -- Render a "summary" of a sequence consisting of a summary for each block
 renderSequenceSummary
-  :: ( Foldable f
+  :: ( Show n
      , HasBlockCost u v w x y z Word Double
      , HasCharacterName u CharacterName
      , HasCharacterName v CharacterName
@@ -398,7 +401,7 @@ renderSequenceSummary
      , HasCharacterName z CharacterName
      , HasTraversalFoci z (Maybe TraversalFoci)
      )
-  => PhylogeneticDAG2 e (f String) u v w x y z
+  => PhylogeneticDAG2 e n u v w x y z
   -> String
 renderSequenceSummary pdag@(PDAG2 dag) = ("Sequence Summary\n\n" <>) . unlines $ mapWithKey (renderBlockSummary pdag) sequenceContext
   where
@@ -433,8 +436,7 @@ renderSequenceSummary pdag@(PDAG2 dag) = ("Sequence Summary\n\n" <>) . unlines $
 --   * brief summary of each character in the block
 --
 renderBlockSummary
-  :: ( Foldable f
-     , HasBlockCost u v w x y z Word Double
+  :: ( HasBlockCost u v w x y z Word Double
      , HasCharacterName u CharacterName
      , HasCharacterName v CharacterName
      , HasCharacterName w CharacterName
@@ -442,8 +444,9 @@ renderBlockSummary
      , HasCharacterName y CharacterName
      , HasCharacterName z CharacterName
      , HasTraversalFoci z (Maybe TraversalFoci)
+     , Show n
      )
-  => PhylogeneticDAG2 e (f String) u v w x y z
+  => PhylogeneticDAG2 e n u v w x y z
   -> Int
   -> (Maybe Double, Maybe Double, Maybe TraversalTopology, CharacterBlock u v w x y z)
   -> String
@@ -497,7 +500,7 @@ renderBlockSummary (PDAG2 dag) key (costOfRooting, costOfNetworking, displayMay,
 
 -- |
 -- Render a display forest to a newick string.
-renderDisplayForestNewick :: Foldable f => ReferenceDAG d e (f String) -> TraversalTopology -> String
+renderDisplayForestNewick :: Show n => ReferenceDAG d e n -> TraversalTopology -> String
 renderDisplayForestNewick dag topo = unlines $ renderDisplayTree <$> toList (rootRefs dag)
   where
     refVec = references dag
@@ -519,10 +522,7 @@ renderDisplayForestNewick dag topo = unlines $ renderDisplayTree <$> toList (roo
 
         openParensIn = length . filter (== '(')
 
-    renderLeaf k v =
-        case toList v of
-          []  -> show k
-          x:_ -> x
+    renderLeaf _k v = show v
 
   
 -- |
