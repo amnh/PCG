@@ -17,7 +17,7 @@ module Bio.Graph.BinaryRenderingTree where
 
 import Control.Arrow             ((&&&))
 import Data.Foldable
-import Data.List.NonEmpty hiding (length)
+import Data.List.NonEmpty hiding (length, takeWhile)
 import Data.Semigroup
 import Prelude            hiding (head, splitAt)
 
@@ -50,16 +50,18 @@ horizontalRendering = fold . intersperse "\n" . go
       where
         paddedSubtrees   = maybe prefixedSubtrees (`applyPadding` prefixedSubtrees) labelMay
         
-        prefixedSubtrees  :: NonEmpty (NonEmpty String)
+        prefixedSubtrees :: NonEmpty (NonEmpty String)
         prefixedSubtrees = applyPrefixes alignedSubtrees
 
         alignedSubtrees  :: NonEmpty (NonEmpty String)
         alignedSubtrees  = applySubtreeAlignment maxSubtreeDepth <$> renderedSubtrees
 
         renderedSubtrees :: NonEmpty (Int, NonEmpty String)
-        renderedSubtrees = fmap (length . head &&& id) $ go <$> sortWith subtreeSize kids
+        renderedSubtrees = fmap (prefixLength &&& id) $ go <$> sortWith subtreeSize kids
 
         maxSubtreeDepth  = maximum $ fst <$> renderedSubtrees
+
+        prefixLength     = length . takeWhile (`elem` "└┌│├┤─ ") . head
 
     applyPadding :: String -> NonEmpty (NonEmpty String) -> NonEmpty (NonEmpty String)
     applyPadding e input =
