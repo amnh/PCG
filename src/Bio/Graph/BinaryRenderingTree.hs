@@ -19,7 +19,7 @@ import Control.Arrow             ((&&&))
 import Data.Foldable
 import Data.List.NonEmpty hiding (length, takeWhile)
 import Data.Semigroup
-import Prelude            hiding (head, splitAt)
+import Prelude            hiding (head)
 
 
 -- |

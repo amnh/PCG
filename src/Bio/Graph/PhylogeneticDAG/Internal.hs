@@ -522,7 +522,7 @@ renderDisplayForestNewick dag topo = unlines $ renderDisplayTree <$> toList (roo
 
         openParensIn = length . filter (== '(')
 
-    renderLeaf _k v = show v
+    renderLeaf _k = show
 
   
 -- |

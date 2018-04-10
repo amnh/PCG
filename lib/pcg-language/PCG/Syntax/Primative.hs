@@ -368,5 +368,5 @@ typeMismatchContext p targetType = do
         [ ResultBool <$> boolValue
         , ResultText <$> textValue
         , ResultTime <$> timeValue
-        , (either ResultReal ResultInt . floatingOrInteger) <$> numValue
+        , either ResultReal ResultInt . floatingOrInteger <$> numValue
         ]

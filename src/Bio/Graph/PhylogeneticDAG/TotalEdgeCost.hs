@@ -74,7 +74,7 @@ totalEdgeCosts (PDAG2 dag) = applyWeights $ foldlWithKey f initAcc refVec
 
 --    pariwiseFunction' lhs rhs tcm = (\(!x,_,_,_,_) -> {- trace ("Cost " <> show x) -} x) $ pariwiseFunction lhs rhs tcm
 
-    initAcc = ((0 <$) . toList . dynamicCharacters) <$> sequencesWLOG
+    initAcc = (0 <$) . toList . dynamicCharacters <$> sequencesWLOG
 
     sequencesWLOG = getSequence $ NE.head roots
 
@@ -82,12 +82,12 @@ totalEdgeCosts (PDAG2 dag) = applyWeights $ foldlWithKey f initAcc refVec
 
     getFields = fmap (fmap (^. singleDisambiguation) . toList . dynamicCharacters) . getSequence
 
-    weightSequence = (fmap (^. characterWeight) . toList . dynamicCharacters) <$> sequencesWLOG
+    weightSequence = fmap (^. characterWeight) . toList . dynamicCharacters <$> sequencesWLOG
 
 --    tcmSequence = (fmap (^. symbolChangeMatrix) . toList . dynamicCharacters) <$> sequencesWLOG
 --    functionSequence = fmap (\tcm x y -> pariwiseFunction' x y tcm) <$> tcmSequence 
 
-    functionSequence = (fmap getDynamicMetric . toList . dynamicCharacters) <$> sequencesWLOG
+    functionSequence = fmap getDynamicMetric . toList . dynamicCharacters <$> sequencesWLOG
       where
         getDynamicMetric dec x y = let (!c,_,_,_,_) = selectDynamicMetric dec x y in {- trace ("Cost " <> show c) -} c
 

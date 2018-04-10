@@ -692,7 +692,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                 h (costVal, foci) originalDec =
                     originalDec
                       & characterCost .~ costVal
-                      & traversalFoci .~ Just foci
+                      & traversalFoci ?~ foci
 
 
 -- |

@@ -99,7 +99,7 @@ evaluate
 -- EvaluationT IO (Either TopologicalResult CharacterResult)
 -- evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
 -- evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
-evaluate (BUILD (BuildCommand trajectoryCount buildType)) inState = do
+evaluate (BUILD (BuildCommand trajectoryCount buildType)) inState =
     case inState of
       Left  e -> pure $ Left e
       Right v ->
