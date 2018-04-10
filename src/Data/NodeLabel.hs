@@ -16,7 +16,6 @@
 
 module Data.NodeLabel
   ( NodeLabel()
-  , unlabeled
   ) where
 
 
@@ -56,7 +55,3 @@ instance Show NodeLabel where
 
     show (NL []) = "{Unlabeled Node}"
     show (NL xs) = xs
-
-
-unlabeled :: NodeLabel
-unlabeled = def

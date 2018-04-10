@@ -38,6 +38,7 @@ import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Alphabet
 import           Data.Bifunctor                    (first)
+import           Data.Default
 import           Data.Foldable
 import qualified Data.IntMap                as IM
 import qualified Data.IntSet                as IS
@@ -158,7 +159,7 @@ rectifyResults2 fprs =
               where
                 nodeLabel    =
                     case label of
-                      Nothing -> unlabeled
+                      Nothing -> def
                       Just xs -> fromString xs
                 charLabelMay = label >>= (`lookup` charMapping)
 

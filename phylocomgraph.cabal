@@ -301,6 +301,7 @@ executable pcg
                      , blaze-html
                        -- Required for Data.Map.restrictKeys
                      , containers       >=0.5.8
+                     , data-default
                      , deepseq
                      , directory
                      , gitrev
