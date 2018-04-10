@@ -1245,6 +1245,10 @@ tabulateDescendantEdgesets dag =
         other = foldMap (\x -> singletonEdgeSet (j,x)) . IM.keys $ childRefs point
 
 
+-- |
+-- Contruct the intermediate 'BinaryRenderingTree' data type for a given 'ReferenceDAG'.
+--
+-- The first parameter is a rendering function for the leaves.
 toBinaryRenderingTree :: (n -> String) -> ReferenceDAG d e n -> NonEmpty BinaryRenderingTree
 toBinaryRenderingTree nodeRenderer dag = (`evalState` initialState) . traverse subtreeToRendering $ rootRefs dag
   where
