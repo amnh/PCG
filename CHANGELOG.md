@@ -8,6 +8,7 @@ Releases are available [on GitHub][2].
 ## _v0.1.2.0_ - Unreleased Changes
 
 * Polished command line option parsing and error reporting
+* Improved phylogeny pretty-printing
 * Documentation improvements
 
 
