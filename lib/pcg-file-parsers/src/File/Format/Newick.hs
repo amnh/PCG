@@ -32,12 +32,19 @@
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 module File.Format.Newick
-  ( NewickForest
-  , NewickNode(branchLength, descendants, newickLabel)
-  , isLeaf
+  ( NewickForest 
+  , NewickNode()
+  -- * Smart Constructor
   , newickNode
-  , newickStreamParser
+  -- * Node Queries
+  , branchLength
+  , descendants
+  , newickLabel
+  , isLeaf
+  -- * Node Rendering
   , renderNewickForest
+  -- * Parser
+  , newickStreamParser
   ) where
 
 

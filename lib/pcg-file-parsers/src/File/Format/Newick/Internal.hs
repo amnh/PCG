@@ -60,9 +60,9 @@ type NewickForest = NonEmpty NewickNode
 -- A node in a "Phylogenetic Forest"
 data NewickNode
    = NewickNode
-   { descendants  :: [NewickNode] -- leaf nodes are empty lists
-   , newickLabel  :: Maybe String -- leaf nodes will always be Just
-   , branchLength :: Maybe Double
+   { descendants  :: [NewickNode] -- ^ List of node's children, leaf nodes are empty lists
+   , newickLabel  :: Maybe String -- ^ The node's possibly included label, leaf nodes will always be Just-valued
+   , branchLength :: Maybe Double -- ^ The node's possibly included branch length
    } deriving (Eq,Ord)
 
 
