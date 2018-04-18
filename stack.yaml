@@ -7,11 +7,11 @@ compiler-check: match-exact
 extra-deps:
   - pretty-tree-0.1.0.0
 
-  - hashtables-1.2.2.1
+  - hashtables-1.2.3.0
   - matrix-0.3.6.0
   - MonadRandom-0.5.1
   - random-shuffle-0.0.4
-  - wl-pprint-text-1.1.1.0
+  - wl-pprint-text-1.1.1.1
 
 #  - Glob-0.9.2
 #  - QuickCheck-2.11.3
@@ -104,7 +104,7 @@ packages:
   - lib/pcg-language
   - lib/pcg-utility
 # We use this upstream commit until it is uploaded to hackage and stackage respectively.
-  - location:  https://github.com/ivan-m/graphviz/archive/a099a07.zip
+  - location:  https://github.com/ivan-m/graphviz/archive/b7539aa.zip
     extra-dep: true
 #  - location:  https://github.com/haskell/primitive/archive/53f72ce.zip
 #    extra-dep: true
@@ -112,4 +112,4 @@ packages:
 #  - location:  https://github.com/ekmett/reflection/archive/eaa190c.zip
 #    extra-dep: true
 
-resolver: lts-11.1
+resolver: lts-11.5
