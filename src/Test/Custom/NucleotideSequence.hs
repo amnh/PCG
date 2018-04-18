@@ -14,15 +14,22 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
+
 module Test.Custom.NucleotideSequence
-  ( NucleotideSequence(..)
+  ( NucleotideBase(..)
+  , NucleotideSequence(..)
   ) where
 
 import           Bio.Character
+import           Bio.Character.Encodable.Dynamic
 import           Data.Alphabet.IUPAC
-import           Data.Bimap               (elems)
+import           Data.Bimap                (elems)
+import           Data.Foldable
+import           Data.List
 import qualified Data.List.NonEmpty as NE
-import           Test.QuickCheck
+import           Test.QuickCheck    hiding (generate)
+import           Test.SmallCheck.Series
 
 
 -- |
@@ -44,5 +51,32 @@ instance Arbitrary NucleotideSequence where
         elementGen = elements $ elems iupacToDna
 
 
+-- |
+-- Represents an arbitrary, non-empty ambiguity group which may include gaps.
+newtype NucleotideBase = NB DynamicCharacterElement
+
+
+instance Show NucleotideBase where
+
+    show (NB x) = showStreamElement alphabet x
+
+
+instance Arbitrary NucleotideBase where
+
+    arbitrary = NB . encodeElement alphabet <$> elementGen
+      where
+        elementGen = elements $ elems iupacToDna
+
+
+instance Monad m => Serial m NucleotideBase where
+
+    series = generate $ const (NB . encodeElement alphabet <$> validSpace)
+      where
+        validSpace = fmap NE.fromList $ [] `delete` powerSet (toList alphabet) 
+        powerSet :: [a] -> [[a]]
+        powerSet [] = [[]]
+        powerSet (x:xs) = [x:ps | ps <- powerSet xs] ++ powerSet xs
+
+      
 alphabet :: Alphabet String
 alphabet = fromSymbols ["A","C","G","T"] 

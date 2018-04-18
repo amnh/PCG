@@ -9,10 +9,9 @@ import           Bio.Metadata.Parsed
 import           Bio.Graph
 import           Bio.Graph.Forest.Parsed
 --import           Control.DeepSeq
-import           Control.Evaluation
 import           Control.Monad                (liftM2, when)
 import           Control.Monad.IO.Class
-import           Control.Monad.Trans.Either
+import           Control.Monad.Trans.Except
 import           Control.Parallel.Strategies
 import           Control.Parallel.Custom
 import           Data.Alphabet   --    hiding (AmbiguityGroup)
@@ -68,12 +67,12 @@ parse' = parse
 
 --evaluate :: Command -> EvaluationT IO a -> EvaluationT IO (Either TopologicalResult DecoratedCharacterResult)
 --evaluate :: Command -> EvaluationT IO a -> EvaluationT IO (Either TopologicalResult CharacterResult)
-evaluate :: Command -> EvaluationT IO a -> SearchState -- EvaluationT IO (Either TopologicalResult CharacterResult)
+evaluate :: Command -> SearchState -- EvaluationT IO (Either TopologicalResult CharacterResult)
 -- evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
 -- evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
-evaluate (READ (ReadCommand fileSpecs)) _old = do
+evaluate (READ (ReadCommand fileSpecs)) = do
     when (null fileSpecs) $ fail "No files specified in 'read()' command"
-    result <- liftIO . runEitherT . eitherTValidation $ parmap rpar parseSpecifiedFile fileSpecs
+    result <- liftIO . runExceptT . eitherTValidation $ parmap rpar parseSpecifiedFile fileSpecs
     case result of
       Left pErr -> fail $ show pErr   -- Report structural errors here.
       Right xs ->
@@ -89,11 +88,11 @@ evaluate (READ (ReadCommand fileSpecs)) _old = do
     transformation = id -- expandIUPAC
     decoration     = fmap (fmap initializeDecorations2)
 
-evaluate _ _ = fail "Invalid READ command binding"
+evaluate _ = fail "Invalid READ command binding"
 
 {-
 renderSequenceCosts :: Either t (PhylogeneticSolution (PhylogeneticDAG2 e n u v w x y z)) -> String
-renderSequenceCosts (Left    _) = "<Trees only>"
+renderSequenceCosts (ThrowE    _) = "<Trees only>"
 renderSequenceCosts (Right sol) = outputStream
   where
     outputStream = foldMapWithKey f $ phylogeneticForests sol
@@ -112,7 +111,7 @@ renderSequenceCosts (Right sol) = outputStream
 -}
 
 
-parseSpecifiedFile  :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
+parseSpecifiedFile  :: FileSpecification -> ExceptT ReadError IO [FracturedParseResult]
 parseSpecifiedFile      AnnotatedFile     {}     = fail "Annotated file specification is not implemented"
 parseSpecifiedFile      ChromosomeFile    {}     = fail "Chromosome file specification is not implemented"
 parseSpecifiedFile      GenomeFile        {}     = fail "Genome file specification is not implemented"
@@ -128,8 +127,8 @@ parseSpecifiedFile     (PrealignedFile x tcmRef) = do
       case tcmContent of
         Nothing              -> pure subContent
         Just (path, content) -> do
-          tcmMat <- hoistEither . first (unparsable content) $ parse' tcmStreamParser path content
-          traverse (hoistEither . setTcm tcmMat path) subContent
+          tcmMat <- ExceptT . pure . first (unparsable content) $ parse' tcmStreamParser path content
+          traverse (ExceptT . pure . setTcm tcmMat path) subContent
 
 
 setTcm :: TCM -> FilePath -> FracturedParseResult -> Either ReadError FracturedParseResult
@@ -150,9 +149,9 @@ setTcm t tcmPath fpr =
            }
 
 
-fastaDNA :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
+fastaDNA :: FileSpecification -> ExceptT ReadError IO [FracturedParseResult]
 --fastaDNA spec | trace ("fasta DNA parser with spec " ++ show spec) False = undefined
-fastaDNA spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent parse'')
+fastaDNA spec = getSpecifiedContent spec >>= (ExceptT . pure . parseSpecifiedContent parse'')
   where
     parse'' :: FileResult -> Either ReadError FracturedParseResult
     parse'' (path,content) = toFractured Nothing path <$> parseResult
@@ -162,8 +161,8 @@ fastaDNA spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedConten
 
 
 -- TODO: abstract these two (three) v^
-fastaAminoAcid :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
-fastaAminoAcid spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContent parse'')
+fastaAminoAcid :: FileSpecification -> ExceptT ReadError IO [FracturedParseResult]
+fastaAminoAcid spec = getSpecifiedContent spec >>= (ExceptT . pure . parseSpecifiedContent parse'')
   where
     parse'' :: FileResult -> Either ReadError FracturedParseResult
     parse'' (path,content) = toFractured Nothing path <$> parseResult
@@ -176,8 +175,8 @@ parseSpecifiedContent :: (FileResult -> Either ReadError FracturedParseResult) -
 parseSpecifiedContent parse'' = eitherValidation . fmap parse'' . dataFiles
 
 
-parseCustomAlphabet :: FileSpecification -> EitherT ReadError IO [FracturedParseResult]
-parseCustomAlphabet spec = getSpecifiedContent spec >>= (hoistEither . parseSpecifiedContentWithTcm)
+parseCustomAlphabet :: FileSpecification -> ExceptT ReadError IO [FracturedParseResult]
+parseCustomAlphabet spec = getSpecifiedContent spec >>= (ExceptT . pure . parseSpecifiedContentWithTcm)
   where
     parse'' m (path, content) =
         case m of
@@ -249,7 +248,7 @@ expandIUPAC fpr = fpr { parsedChars = newTreeChars }
 -}
 
 -- TODO: check file extension, to guess which parser to use first
-progressiveParse :: FilePath -> EitherT ReadError IO FracturedParseResult
+progressiveParse :: FilePath -> ExceptT ReadError IO FracturedParseResult
 --progressiveParse _ | trace "STARTING PROGRESSIVE PARSE" False = undefined
 progressiveParse inputPath = do
     (filePath, fileContent) <- head . dataFiles <$> getSpecifiedContent (UnspecifiedFile $ inputPath:|[])
@@ -276,7 +275,7 @@ progressiveParse inputPath = do
                               Left  err6 ->
                                 let previousErrors      = [(err1,"Fasta"),(err2,"Fasta"),(err3,"Newick tree"),(err4,"VER"),(err5,"Henning/TNT"),(err6,"Nexus")]
                                     (parseErr,_fileType) = maximumBy (comparing (farthestParseErr . fst)) previousErrors
-                                in  left $ unparsable fileContent parseErr
+                                in  throwE $ unparsable fileContent parseErr
 {-
                                 fail $ mconcat [ "Could not parse '"
                                                , filePath
@@ -360,7 +359,7 @@ casei x = foldl f x $ assocs x
 -}
 
 
-getSpecifiedContent :: FileSpecification -> EitherT ReadError IO FileSpecificationContent
+getSpecifiedContent :: FileSpecification -> ExceptT ReadError IO FileSpecificationContent
 getSpecifiedContent (UnspecifiedFile    xs      ) = getSpecifiedContentSimple xs
 getSpecifiedContent (AminoAcidFile      xs      ) = getSpecifiedContentSimple xs
 getSpecifiedContent (NucleotideFile     xs      ) = getSpecifiedContentSimple xs
@@ -375,7 +374,7 @@ getSpecifiedContent (PrealignedFile     fs tcm  ) = do
       Just _  -> pure specifiedContent
 
 
-getSpecifiedTcm :: Maybe FilePath -> EitherT ReadError IO (Maybe (FilePath, FileContent))
+getSpecifiedTcm :: Maybe FilePath -> ExceptT ReadError IO (Maybe (FilePath, FileContent))
 getSpecifiedTcm tcmPath =
     case tcmPath of
       Nothing       -> pure Nothing
@@ -383,20 +382,20 @@ getSpecifiedTcm tcmPath =
         tcmFiles <- getFileContents tcmPath'
         case tcmFiles of
           [x] -> pure $ Just x
-          []  -> left $ unfindable tcmPath'
-          _   -> left $ ambiguous tcmPath' (fst <$> tcmFiles)
+          []  -> throwE $ unfindable tcmPath'
+          _   -> throwE $ ambiguous tcmPath' (fst <$> tcmFiles)
 
 
-getSpecifiedFileContents :: Foldable f => f FilePath -> EitherT ReadError IO [FileResult]
+getSpecifiedFileContents :: Foldable f => f FilePath -> ExceptT ReadError IO [FileResult]
 getSpecifiedFileContents = fmap concat . eitherTValidation . fmap getFileContents . toList
 
 
-getSpecifiedContentSimple :: Foldable f => f FilePath -> EitherT ReadError IO FileSpecificationContent
+getSpecifiedContentSimple :: Foldable f => f FilePath -> ExceptT ReadError IO FileSpecificationContent
 getSpecifiedContentSimple = fmap (`SpecContent` Nothing) . getSpecifiedFileContents
 
 
 -- | Reads in the contents of the given FilePath, correctly interpolating glob paths
-getFileContents :: FilePath -> EitherT ReadError IO [(FilePath, FileContent)]
+getFileContents :: FilePath -> ExceptT ReadError IO [(FilePath, FileContent)]
 getFileContents path = do
     -- Check if the file exists exactly as specified
     exists <- liftIO $ doesFileExist path
@@ -409,15 +408,15 @@ getFileContents path = do
     -- by interpreting the path as a 'glob'
         matches <- liftIO $ glob path
         case matches of
-          []  -> left $ unfindable path
+          []  -> throwE $ unfindable path
           [x] -> pure <$> readFileContent x
           xs  -> eitherTValidation $ readFileContent <$> xs
   where
-    readFileContent :: FilePath -> EitherT ReadError IO (FilePath, FileContent)
+    readFileContent :: FilePath -> ExceptT ReadError IO (FilePath, FileContent)
     readFileContent foundPath = do
         canRead <- liftIO $ readable <$> getPermissions foundPath
         if   not canRead
-        then left $ unopenable foundPath
+        then throwE $ unopenable foundPath
         else do
             content <- liftIO $ readFile foundPath
             pure (foundPath, content)

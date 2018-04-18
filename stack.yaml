@@ -1,16 +1,20 @@
 allow-newer: true
 
-compiler: ghc-8.2.2
+compiler: ghc-8.4.1
 
 compiler-check: match-exact
 
 extra-deps:
+  - base-compat-0.10.1
   - pretty-tree-0.1.0.0
+  - matrix-0.3.6.0
+  - wl-pprint-text-1.1.1.1
 
 flags: {}
 
 ghc-options:
-  "*": -j -fdiagnostics-color=always
+  "$everything": -j -fdiagnostics-color=always
+  "$locals": -fhide-source-paths
 
 local-bin-path: bin
 
@@ -21,10 +25,8 @@ packages:
   - lib/pcg-utility
   - lib/tcm-memo
 # We use this upstream commit until it is uploaded to hackage and stackage respectively.
-  - location:  https://github.com/ivan-m/graphviz/archive/a099a07.zip
+  - location:  https://github.com/ivan-m/graphviz/archive/b7539aa.zip
     extra-dep: true
 
-resolver: lts-10.0
-#resolver: nightly-2017-11-23
-
-system-ghc: false
+#resolver: lts-11.5
+resolver: nightly-2018-04-18

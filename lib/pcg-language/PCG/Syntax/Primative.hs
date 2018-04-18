@@ -34,7 +34,7 @@ module PCG.Syntax.Primative
   , whitespace
   ) where
 
-import           Control.Applicative
+import           Control.Applicative        hiding (many)
 import           Control.Monad.Free
 import           Data.CaseInsensitive              (FoldCase)
 import           Data.Char                         (isControl)
@@ -368,5 +368,5 @@ typeMismatchContext p targetType = do
         [ ResultBool <$> boolValue
         , ResultText <$> textValue
         , ResultTime <$> timeValue
-        , (either ResultReal ResultInt . floatingOrInteger) <$> numValue
+        , either ResultReal ResultInt . floatingOrInteger <$> numValue
         ]

@@ -38,8 +38,8 @@ ceil_log_2 (int v)
 static inline int
 cm_combinations_of_alphabet (const int alphSize)
 {
-    assert (alphSize >= 0);
-    return ((1 << alphSize) - 1); // ignore empty set
+    assert (alphSize > 0);
+    return (1 << alphSize);
 }
 
 
@@ -50,8 +50,8 @@ cm_combinations_of_alphabet (const int alphSize)
 static inline size_t
 cm_calc_cost_position_2d (elem_t a, elem_t b, size_t alphSize)
 {
-    // assert(alphSize >= 0); // alphSize is size_t, always >= 0
-    return ( (((size_t) a) << alphSize) + (size_t) b );
+    assert (alphSize > 0);
+    return (size_t) (a << alphSize) + b;
 }
 
 
@@ -68,24 +68,24 @@ void cm_print_2d (cost_matrices_2d_t *costMatrix)
     printf("  num elements:         %zu\n", costMatrix->num_elements);
 
     printf("\n  Cost matrix:\n    ");
-    cm_print_matrix_2d(costMatrix->cost,         costMatrix->alphSize + 1, costMatrix->alphSize + 1);
+    cm_print_matrix_2d(costMatrix->cost,         costMatrix->costMatrixDimension, costMatrix->costMatrixDimension);
     printf("  Prepend cost\n    ");
-    cm_print_matrix_2d(costMatrix->prepend_cost, 1,                        costMatrix->alphSize + 1);
+    cm_print_matrix_2d(costMatrix->prepend_cost, 1,                        costMatrix->costMatrixDimension);
  //   printf("  Worst\n    ");
- //   cm_print_matrix(c->worst,        costMatrix->alphSize + 1, costMatrix->alphSize + 1);
+ //   cm_print_matrix(c->worst,        costMatrix->costMatrixDimension, costMatrix->costMatrixDimension);
     printf("  Tail cost:\n    ");
-    cm_print_matrix_2d(costMatrix->tail_cost,    1,                         costMatrix->alphSize);
+    cm_print_matrix_2d(costMatrix->tail_cost,    1,                         costMatrix->costMatrixDimension );
     printf("  Median costs:\n    ");
-    cm_print_matrix_2d(costMatrix->median,        costMatrix->alphSize + 1, costMatrix->alphSize + 1);
+    cm_print_matrix_2d(costMatrix->median,        costMatrix->costMatrixDimension, costMatrix->costMatrixDimension);
 }
 
 
 void
-cm_print_matrix_2d (unsigned int *costMatrix, size_t height, size_t alphSize) {
+cm_print_matrix_2d (unsigned int *costMatrix, size_t height, size_t dimension) {
     for (size_t i = 0; i < height; i++) {
         //fprintf(stdout,"%zu: ", i);
-        for (size_t j = 0; j < alphSize; j++)
-            printf ("%4d", *(costMatrix + (alphSize * i) + j));
+        for (size_t j = 0; j < dimension; j++)
+            printf ("%4d", *(costMatrix + (dimension * i) + j));
         printf ("\n    ");
     }
 }
@@ -94,20 +94,29 @@ cm_print_matrix_2d (unsigned int *costMatrix, size_t height, size_t alphSize) {
 void
 cm_free (cost_matrices_2d_t *costMatrix)
 {
-    free (costMatrix->cost);
-    free (costMatrix->median);
-    free (costMatrix->worst);
-    free (costMatrix->prepend_cost);
-    free (costMatrix->tail_cost);
-    free (costMatrix);
+    if (NULL != costMatrix->cost)         free(costMatrix->cost);
+    if (NULL != costMatrix->median)       free(costMatrix->median);
+    if (NULL != costMatrix->worst)        free(costMatrix->worst);
+    if (NULL != costMatrix->prepend_cost) free(costMatrix->prepend_cost);
+    if (NULL != costMatrix->tail_cost)    free(costMatrix->tail_cost);
+    if (NULL != costMatrix)               free(costMatrix);
+    costMatrix->cost = costMatrix->median
+                     = costMatrix->worst
+                     = costMatrix->prepend_cost
+                     = costMatrix->tail_cost
+                     = NULL;
+    free(costMatrix);
 }
 
 /** As with cm_calc_cost_position_2d, but with three elements, so first element gets shifted alphSize twice, etc. */
 static inline size_t
 cm_calc_cost_position_3d (elem_t a, elem_t b, elem_t c, size_t alphSize)
 {
-    // assert(alphSize >= 0); alphSize is size_t, always >= 0
-    return ((((a << alphSize) + b) << alphSize) + c);
+    assert(alphSize > 0);
+    assert(a > 0 && "Cannot have an empty element!");
+    assert(b > 0 && "Cannot have an empty element!");
+    assert(c > 0 && "Cannot have an empty element!");
+    return (((a << alphSize) + b) << alphSize) + c;
 }
 
 
@@ -142,8 +151,8 @@ cm_alloc_2d ( cost_matrices_2d_t *res
 
     if (combinations) {
         res->gap_char            = 1 << (alphSize - 1);
-        res->alphSize            = cm_combinations_of_alphabet (alphSize); // 2 ^ alphSize - 1 is |power set of alphSize|
-        res->costMatrixDimension = alphSize;
+        res->alphSize            = alphSize;
+        res->costMatrixDimension = cm_combinations_of_alphabet (alphSize); // 2 ^ alphSize - 1 is |power set of alphSize|
         res->include_ambiguities = 1;
     } else {
         res->gap_char            = alphSize;
@@ -158,8 +167,8 @@ cm_alloc_2d ( cost_matrices_2d_t *res
     cm_set_affine (res, do_aff, gap_open_cost);
 
     size_t size = 2
-                * (1 << (res->costMatrixDimension))
-                * (1 << (res->costMatrixDimension))
+                * (res->costMatrixDimension)
+                * (res->costMatrixDimension)
                 * sizeof(int); // size for cost matrices
 
     assert( size != 0 && "Your cost matrix is too large to fit in memory. I can't continue with your data loading." );
@@ -185,8 +194,8 @@ cm_alloc_2d ( cost_matrices_2d_t *res
            && "OOM: Couldn't alloc 2d cost matrix fields." );
 
     size = 2
-         * (1 << (res->costMatrixDimension))
-         * (1 << (res->costMatrixDimension))
+         * (res->costMatrixDimension)
+         * (res->costMatrixDimension)
          * sizeof(elem_t); // size for median matrix
 
     assert( 0 != size && "Your cost matrix is too large to fit in memory. I can't continue with your data loading." );
@@ -217,14 +226,14 @@ cm_calc_cost_2d ( unsigned int *tcm
                 , size_t        alphSize
                 )
 {
-    unsigned int *res;
     unsigned int one = 1;
     unsigned int upperBound = one << alphSize;
-    // assert(alphSize >= 0); alphSize is size_t, always >= 0
+    unsigned int boundBound = 8 * sizeof(unsigned int); // Otherwise we rotate the bits over
+    assert (alphSize   >  0);
+    assert (alphSize   < boundBound);
     assert (upperBound > a);
     assert (upperBound > b);
-    res = tcm + cm_calc_cost_position_2d(a, b, alphSize);
-    return (*res);
+    return tcm[ cm_calc_cost_position_2d(a, b, alphSize) ];
 }
 
 
@@ -233,10 +242,13 @@ cm_get_row (unsigned int *tcm, elem_t a, size_t alphSize) {
     unsigned int one = 1;
     unsigned int upperBound = one << alphSize;
 
-    assert( alphSize   > 0 && "Alphabet size = 3." );
-    assert( upperBound > a && "3a is bigger than alphabet size." );
-
-    return (tcm + (a << alphSize));
+    assert( alphSize   > 0 && "Alphabet size >= 3." );
+    if (upperBound <= a) {
+        printf("\nupperBound:(%d) <= a:(%d)\n", upperBound, a);
+        fflush(stdout);
+        assert( upperBound > a && "The value of element 'a' is larger than the maximum allowed value based on the alphabet size." );
+    }
+    return tcm + (a << alphSize);
 }
 
 
@@ -253,20 +265,13 @@ cm_get_value_2d (elem_t a, elem_t b, unsigned int *p, size_t alphSize) {
 
 void
 cm_set_cost_2d (cost_matrices_2d_t *costMtx, elem_t elem1, elem_t elem2, unsigned int val) {
-    cm_set_value_2d (elem1, elem2, val, costMtx->cost, costMtx->costMatrixDimension);
+    cm_set_value_2d (elem1, elem2, val, costMtx->cost, costMtx->alphSize);
 }
 
 unsigned int
 cm_get_cost_2d (cost_matrices_2d_t *costMtx, elem_t elem1, elem_t elem2) {
-    return cm_get_value_2d (elem1, elem2, costMtx->cost, costMtx->costMatrixDimension);
+    return cm_get_value_2d (elem1, elem2, costMtx->cost, costMtx->alphSize);
 }
-
-// TODO: This seems never to be used
-// void
-// cm_set_worst (cost_matrices_2d_t *costMtx, elem_t elem1, elem_t elem2, unsigned int val) {
-//     cm_set_value_2d (elem1, elem2, val, costMtx->worst, costMtx->costMatrixDimension);
-// }
-
 
 void
 cm_set_prepend_2d (cost_matrices_2d_t *c, int a, int b) {
@@ -280,29 +285,32 @@ cm_set_tail_2d (cost_matrices_2d_t *c, int a, int b) {
 
 void
 cm_set_median_2d (cost_matrices_2d_t *costMtx, elem_t elem1, elem_t elem2, unsigned int val) {
-    cm_set_value_2d (elem1, elem2, val, costMtx->median, costMtx->costMatrixDimension);
+    cm_set_value_2d (elem1, elem2, val, costMtx->median, costMtx->alphSize);
 }
 
 
 int
 cm_compare (cost_matrices_2d_t *a, cost_matrices_2d_t *b) {
-    int cmp, len_g;
-    size_t len, len1;
+    int cmp, mtxElementCount;
+    size_t lenCosts, lenElems;
     if      (a->alphSize != b->alphSize)                       return (a->alphSize            - b->alphSize);
+    else if (a->costMatrixDimension != b->costMatrixDimension) return (a->costMatrixDimension - b->costMatrixDimension);
     else if (a->include_ambiguities != b->include_ambiguities) return (a->include_ambiguities - b->include_ambiguities);
     else if (a->cost_model_type != b->cost_model_type)         return (a->cost_model_type     - b->cost_model_type);
     else if (a->gap_open_cost != b->gap_open_cost)             return (a->gap_open_cost       - b->gap_open_cost);
     else if (a->is_metric != b->is_metric)                     return (a->is_metric           - b->is_metric);
     else {
-        len_g = 2 * (1 << (a->costMatrixDimension)) * (1 << (a->costMatrixDimension));
-        len   = len_g * sizeof(int);
-        len1  = len_g * sizeof(elem_t);
-        cmp   = memcmp (a->cost, b->cost, len);
-        if (cmp != 0) return (cmp);
-        cmp   = memcmp (a->median, b->median, len1);
-        if (cmp != 0) return (cmp);
-        cmp   = memcmp (a->worst, b->worst, len);
-        return (cmp);
+        mtxElementCount = 2 * (a->costMatrixDimension) * (a->costMatrixDimension);
+        lenCosts = mtxElementCount * sizeof(int);
+        lenElems = mtxElementCount * sizeof(elem_t);
+        cmp = memcmp ( a->cost, b->cost, lenCosts );
+
+        if (cmp != 0)    return cmp;
+
+        cmp = memcmp ( a->median, b->median, lenElems );
+        //if (cmp != 0) return (cmp);
+        //cmp   = memcmp (a->worst, b->worst, len);
+        return cmp;
     }
 }
 
@@ -327,7 +335,7 @@ cm_get_median_2d ( const cost_matrices_2d_t *t
                  ,       elem_t             a
                  ,       elem_t             b
                  ) {
-    return (cm_calc_median_2d( (t->median), a, b, t->costMatrixDimension ));
+    return cm_calc_median_2d( t->median, a, b, t->alphSize );
 }
 
 
@@ -343,15 +351,18 @@ void cm_print_3d (cost_matrices_3d_t *costMatrix)
     printf("  num elements:         %zu\n", costMatrix->num_elements);
 
     printf("\n  Cost matrix:\n    ");
-    cm_print_matrix_3d(costMatrix->cost,   costMatrix->alphSize + 1);
+    cm_print_matrix_3d(costMatrix->cost,   costMatrix->costMatrixDimension + 1);
     printf("  Median costs:\n    ");
-    cm_print_matrix_3d(costMatrix->median, costMatrix->alphSize + 1);
+    cm_print_matrix_3d(costMatrix->median, costMatrix->costMatrixDimension + 1);
 }
 
 
+// don't take entire cost matrix because I want to print only
+// medians or costs
 void
-cm_print_matrix_3d (unsigned int *costMatrix, size_t costMatrixDimension) { // don't take entire cost matrix because I want to print only
-                                                                            // medians or costs
+cm_print_matrix_3d (unsigned int *costMatrix, size_t costMatrixDimension)
+{
+
     for (size_t i = 0; i < costMatrixDimension; i++) {
         //fprintf(stdout,"%zu: ", i);
         for (size_t j = 0; j < costMatrixDimension; j++) {
@@ -359,7 +370,7 @@ cm_print_matrix_3d (unsigned int *costMatrix, size_t costMatrixDimension) { // d
                 printf ("%4d", costMatrix[cm_calc_cost_position_3d(i, j, k, costMatrixDimension)]);
             }
             printf ("\n");
-            for (size_t num_tabs = 0; num_tabs < j; num_tabs++) {
+            for (size_t num_tabs = 1; num_tabs < j && j < costMatrixDimension - 1; num_tabs++) {
                 printf("    ");
             }
         }
@@ -371,9 +382,9 @@ cm_print_matrix_3d (unsigned int *costMatrix, size_t costMatrixDimension) { // d
 void
 cm_3d_free (cost_matrices_2d_t *costMatrix)
 {
-    free (costMatrix->cost);
-    free (costMatrix->median);
-    free (costMatrix);
+    if(NULL != costMatrix->cost)   free (costMatrix->cost);
+    if(NULL != costMatrix->median) free (costMatrix->median);
+    if(NULL != costMatrix)         free (costMatrix);
 }
 
 
@@ -414,8 +425,8 @@ cm_alloc_3d ( cost_matrices_3d_t *res
     // TODO: check the following code. Does combinations need to be reset? Are the dimensions set right?
     res->gap_char            = 1 << (alphSize - 1);
     if (combinations != 0) {
-        res->alphSize            = cm_combinations_of_alphabet (alphSize); // 2 ^ alphSize - 1 is |power set of alphSize|
-        res->costMatrixDimension = alphSize;
+        res->alphSize            = alphSize;
+        res->costMatrixDimension = cm_combinations_of_alphabet (alphSize); // 2 ^ alphSize - 1 is |power set of alphSize|
         res->include_ambiguities = 1;
     } else {
        // res->gap_char            = alphSize;
@@ -426,9 +437,9 @@ cm_alloc_3d ( cost_matrices_3d_t *res
 
     res->num_elements = num_elements;
     cm_set_affine_3d (res, do_aff, gap_open_cost);
-    size              = (1 << (res->costMatrixDimension + 1))
-                      * (1 << (res->costMatrixDimension + 1))
-                      * (1 << (res->costMatrixDimension + 1));
+    size              = (res->costMatrixDimension + 1)
+                      * (res->costMatrixDimension + 1)
+                      * (res->costMatrixDimension + 1);
 
     res->cost         = calloc (size * sizeof(int),  1);
     res->median       = calloc (size * sizeof(elem_t), 1);
@@ -471,22 +482,22 @@ cm_get_median_3d( const cost_matrices_3d_t *matrix
                 ,       elem_t              c
                 )
 {
-    unsigned int upperBound = ((elem_t) 1) << matrix->costMatrixDimension;
+    unsigned int upperBound = ((elem_t) 1) << matrix->alphSize;
     if (DEBUG_3D) printf( "alphSize: %zu, upperBound: %2u;  elements a: %2u, b: %2u, c: %2u;  median: %2u\n"
-                        , matrix->costMatrixDimension
+                        , matrix->alphSize
                         , upperBound
                         , a
                         , b
                         , c
-                        , matrix->median[cm_calc_cost_position_3d (a, b, c, matrix->costMatrixDimension)]
+                        , matrix->median[ cm_calc_cost_position_3d (a, b, c, matrix->alphSize) ]
                         );
 
-    assert( matrix->costMatrixDimension > 0 && "Alphabet size <= 0." );
-    assert( upperBound                  > a && "Element a has a larger than allowed value." );
-    assert( upperBound                  > b && "Element b has a larger than allowed value." );
-    assert( upperBound                  > c && "Element c has a larger than allowed value." );
+    assert( matrix->alphSize > 0 && "Alphabet size < 0." );
+    assert( upperBound       > a && "Element a has a larger than allowed value." );
+    assert( upperBound       > b && "Element b has a larger than allowed value." );
+    assert( upperBound       > c && "Element c has a larger than allowed value." );
 
-    return( cm_get_value_3d(matrix->median, a, b, c, matrix->costMatrixDimension) );
+    return cm_get_value_3d(matrix->median, a, b, c, matrix->alphSize);
 }
 
 
@@ -526,7 +537,7 @@ cm_set_cost_3d( cost_matrices_3d_t *costMtx
               , unsigned int        val
               )
 {
-    cm_set_value_3d (costMtx->cost, elem1, elem2, elem3, val, costMtx->costMatrixDimension);
+    cm_set_value_3d (costMtx->cost, elem1, elem2, elem3, val, costMtx->alphSize);
 }
 
 unsigned int
@@ -536,7 +547,7 @@ cm_get_cost_3d ( const cost_matrices_3d_t *costMtx
                ,       elem_t              elem3
                )
 {
-    return cm_get_value_3d (costMtx->cost, elem1, elem2, elem3, costMtx->costMatrixDimension);
+    return cm_get_value_3d (costMtx->cost, elem1, elem2, elem3, costMtx->alphSize);
 }
 
 
@@ -548,5 +559,43 @@ cm_set_median_3d( const cost_matrices_3d_t *costMtx
                 ,       elem_t              val
                 )
 {
-    cm_set_value_3d (costMtx->median, elem1, elem2, elem3, val, costMtx->costMatrixDimension);
+    cm_set_value_3d (costMtx->median, elem1, elem2, elem3, val, costMtx->alphSize);
+}
+
+
+void printVolumeOfMedianValues(const cost_matrices_3d_t *matrix, size_t dimension, elem_t i, elem_t j, elem_t k)
+{
+    int    left_offset  = dimension / 2;
+    elem_t right_offset = (elem_t) left_offset + (dimension % 2 == 1 ? 1 : 0);
+    elem_t bound = matrix->costMatrixDimension - 1;
+
+    // We set the lower bound here to 1 and not 0 because there cannot be empty elements!
+    elem_t aStart = max(1, (int) i - left_offset);
+    elem_t bStart = max(1, (int) j - left_offset);
+    elem_t cStart = max(1, (int) k - left_offset);
+
+    elem_t aBound = min (bound, i + right_offset);
+    elem_t bBound = min (bound, j + right_offset);
+    elem_t cBound = min (bound, k + right_offset);
+
+    assert(aBound < matrix->costMatrixDimension);
+    assert(bBound < matrix->costMatrixDimension);
+    assert(cBound < matrix->costMatrixDimension);
+
+    printf("Point: (%d, %d, %d)\n", i, j, k);
+    printf("Range: [%d, %d] X [%d, %d] X [%d, %d] \n\n", aStart, aBound - 1, bStart, bBound - 1, cStart, cBound - 1);
+
+    for (elem_t a = aStart; a < aBound; ++a) {
+        elem_t total_tabs = 1;
+        for (elem_t b = bStart; b < bBound; ++b, ++total_tabs) {
+            for (elem_t c = cStart; c < cBound; ++c) {
+                printf ("%4d", matrix->median[ cm_calc_cost_position_3d(a, b, c, matrix->alphSize)]);
+            }
+            printf ("\n");
+            for (size_t num_tabs = 0; num_tabs < total_tabs && b < bBound - 1; num_tabs++) {
+                printf("    ");
+            }
+        }
+    }
+    printf ("\n");
 }

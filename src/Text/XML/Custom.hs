@@ -9,13 +9,11 @@
 -- Portability :  portable
 --
 -- Output an XML.Element from various input types.
--- Includes helper fns, all of which are exported.
+-- Includes helper functions, all of which are exported.
 --
 -----------------------------------------------------------------------------
 
-
 {-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
-
 
 module Text.XML.Custom
   ( ToXML (..)
@@ -30,7 +28,6 @@ module Text.XML.Custom
 
 import Data.Foldable
 import Data.Key
--- import Data.Monoid         ((<>))
 import Text.XML.Class (ToXML(..))
 import Text.XML.Light.Types
 
@@ -47,12 +44,14 @@ collapseElemList name attrs lst = Element (xmlQName name) attrs contents Nothing
         f i e        = [numberElem i, toXML e]
 
 
--- | Create an XML Attr, which is a key value pair (xmlQName, String).
+-- |
+-- Create an XML Attr, which is a key value pair (xmlQName, String).
 xmlAttr :: (String, String) -> Attr
 xmlAttr (name, val) = Attr (xmlQName name) val
 
 
--- | Create XML Contents, which for our use is always an Element.
+-- |
+-- Create XML Contents, which for our use is always an Element.
 xmlContent :: (String, String) -> Content
 xmlContent (key, val) = Elem $ Element (xmlQName key) [] [CRef val] Nothing
 
@@ -71,6 +70,7 @@ xmlElement name attrs contLst = Element (xmlQName name) attributes contents Noth
             Right element -> Elem element
 
 
--- | Create a QName from a String.
+-- |
+-- Create a QName from a String.
 xmlQName :: String -> QName
 xmlQName str = QName str mempty mempty

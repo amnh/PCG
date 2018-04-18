@@ -15,12 +15,10 @@
 module Data.BitMatrix.Internal where
 
 import Control.DeepSeq
---import Data.Bifunctor
 import Data.Bits
 import Data.BitVector.LittleEndian
 import Data.List.Utility        (equalityOf, invariantTransformation)
 import Data.Foldable
-import Data.Maybe               (fromMaybe)
 import Data.Monoid
 import Data.MonoTraversable
 import Data.Ord
@@ -59,7 +57,7 @@ instance Arbitrary BitMatrix where
         rowCount <- (arbitrary :: Gen Int) `suchThat` (\x -> 0 < x && x <= 20)
         let rVal = choose (0, 2 ^ colCount -1) :: Gen Integer
         bitRows  <- vectorOf rowCount rVal
-        pure . fromRows $ bitvector (toEnum colCount) <$> bitRows
+        pure . fromRows $ fromNumber (toEnum colCount) <$> bitRows
 
 
 -- |
@@ -113,6 +111,7 @@ instance MonoFoldable BitMatrix where
     olength = fromEnum . numRows
 
 
+-- | (✔)
 instance MonoFunctor BitMatrix where
 
     omap f bm =
@@ -123,6 +122,7 @@ instance MonoFunctor BitMatrix where
         rows' = f <$> rows bm
 
 
+-- | (✔)
 instance MonoTraversable BitMatrix where
 
     otraverse f = fmap correction . traverse f . rows
@@ -137,6 +137,7 @@ instance MonoTraversable BitMatrix where
 instance NFData BitMatrix
 
 
+-- | (✔)
 instance Ord BitMatrix where
 
   compare lhs rhs =
@@ -146,6 +147,7 @@ instance Ord BitMatrix where
              EQ -> comparing expandRows lhs rhs
              v  -> v
        v  -> v
+
 
 -- | (✔)
 instance Show BitMatrix where
@@ -200,7 +202,7 @@ bitMatrix :: Word                   -- ^ Number of rows in the BitMatrix.
 bitMatrix m n f =
   case errorMsg of
     Just msg -> error msg
-    Nothing  -> BitMatrix (fromEnum n) . bitvector (m * n) . snd . foldl' g initialAccumulator $ [(i,j) | i <- [0..m-1], j <- [0..n-1]]
+    Nothing  -> BitMatrix (fromEnum n) . fromNumber (m * n) . snd . foldl' g initialAccumulator $ [(i,j) | i <- [0..m-1], j <- [0..n-1]]
   where
     initialAccumulator :: (Integer, Integer)
     initialAccumulator = (1,0)
@@ -335,17 +337,13 @@ rows :: BitMatrix -> [BitVector]
 rows bm@(BitMatrix nCols bv)
     | nRows == 0 || nCols == 0 = []
     | nRows == 1               = [bv]
-    | otherwise                = go nRows initAcc -- (`subRange` bv) <$> slices
+    | otherwise                = go nRows initAcc
     where
       nRows   = numRows bm
       dim     = toEnum nCols
-{-
-      slices  = take (fromEnum nRows) $ iterate ((dim +) `bimap` (dim +)) (0, dim - 1)
--}
-      
       mask    = (2^dim) - 1 :: Integer
 
       initAcc = (toUnsignedNumber bv, []) :: (Integer, [BitVector])
 
       go 0 (   _, xs) = reverse xs
-      go n (!val, xs) = go (n-1) (val `shiftR` nCols, bitvector dim (val .&. mask) : xs)
+      go n (!val, xs) = go (n-1) (val `shiftR` nCols, fromNumber dim (val .&. mask) : xs)

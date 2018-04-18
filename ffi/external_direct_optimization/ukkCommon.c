@@ -310,7 +310,7 @@ void setup()
             }
         }
         maxSingleStep_g = maxCost;
-        fprintf(stderr, "Maximum single step cost = %d\n", maxSingleStep_g);
+        if (DEBUG_3D)   fprintf(stderr, "Maximum single step cost = %d\n", maxSingleStep_g);
     } // End setup of transition costs
 }
 
@@ -322,15 +322,14 @@ void checkAlign( elem_t *al, int alLen, elem_t *str, int strLen )
     int i,
         j = 0;
     // char errorMsg[1024]; // for assertion outputs
-
     for (i = 0; i < alLen; i++) {
         if (al[i] == gap_char_g)    continue;
-        printf( "Element in output alignment equals element in input string. a[i]: %2u, str[j]: %2u\n", al[i], str[j] );
+        if (DEBUG_3D)    printf( "Element in output alignment equals element in input string. a[i]: %2u, str[j]: %2u\n", al[i], str[j] );
         // assert( al[i] == str[j] );
         j++;
     }
     // sprintf( errorMsg, "Output alignment not equal length to input string. Index: %d, character length: %d", j, strLen);
-    // assert( j == strLen );
+    assert( j == strLen );
 }
 
 
@@ -338,23 +337,62 @@ void revIntArray( int *arr, int start, int end )
 {
     if (end <= start)    return;
 
-    for (int i = start; i < (end + start) / 2; i++) {
-        int t  = arr[i];
-        arr[i] = arr[end - i + start - 1];
-        arr[end - i + start - 1] = t;
+    int bound = (end - start) / 2;
+
+    for (int i = 0; i <= bound; i++) {
+        int j  = start + i;
+        int k  = end   - i;
+        int t  = arr[j];
+        arr[j] = arr[k];
+        arr[k] = t;
     }
 }
 
 
 void revElem_tArray( elem_t *arr, int start, int end )
 {
+
     if (end <= start)    return;
 
-    for (int i = start; i < (end + start) / 2; i++) {
-        elem_t t                 = arr[i];
-        arr[i]                   = arr[end - i + start - 1];
-        arr[end - i + start - 1] = t;
+    int bound = (end - start) / 2;
+
+    for (int i = 0; i <= bound; i++) {
+        int j    = start + i;
+        int k    = end   - i;
+        elem_t t = arr[j];
+        arr[j]   = arr[k];
+        arr[k]   = t;
     }
+}
+
+
+void free_characters_t( characters_t *toFree )
+{
+    if (NULL != toFree->seq1) free(toFree->seq1);
+    if (NULL != toFree->seq2) free(toFree->seq2);
+    if (NULL != toFree->seq3) free(toFree->seq3);
+}
+
+
+characters_t *alloc_characters_t( size_t seq_1_number_elems, size_t seq_2_number_elems, size_t seq_3_number_elems )
+{
+    characters_t *toReturn = malloc( sizeof(characters_t) );
+    toReturn->seq1 = malloc( seq_1_number_elems * sizeof(elem_t) );
+    toReturn->seq2 = malloc( seq_2_number_elems * sizeof(elem_t) );
+    toReturn->seq3 = malloc( seq_3_number_elems * sizeof(elem_t) );
+    assert(   toReturn       != NULL
+           && toReturn->seq1 != NULL
+           && toReturn->seq2 != NULL
+           && toReturn->seq3 != NULL
+           && "Out of Memory error: Can't allocate." );
+    toReturn->lenSeq1 = seq_1_number_elems;
+    toReturn->lenSeq2 = seq_2_number_elems;
+    toReturn->lenSeq3 = seq_3_number_elems;
+
+    toReturn->idxSeq1 = toReturn->idxSeq2
+                      = toReturn->idxSeq3
+                      = 0;
+    return toReturn;
 }
 
 

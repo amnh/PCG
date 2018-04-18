@@ -4,12 +4,11 @@ Phylogenetic Component Graph
 [![BSD3 license](https://img.shields.io/badge/license-BSD3-blue.svg)](https://github.com/amnh/PCG/blob/master/LICENSE)
 
 
-Haskell code for general phylogenetic graph searching
+Haskell program and library for general phylogenetic graph search
 
-Not ready for prime-time.
+**Project status:** Alpha release
 
-Ward Wheeler
-wheeler@amnh.org
+**Project manager:** [Ward Wheeler](mailto:wheeler@amnh.org)
 
  | Directory   | Description of Contents
  |:----------- |:---------------------------------------- |
@@ -22,3 +21,11 @@ wheeler@amnh.org
  | `src`       | main code base                           |
  | `test`      | test suites and test data                |
  | `utils`     | diagnostic and testing binaries          |
+
+### Funding provided by:
+
+  * [American Museum of Natural History](https://www.amnh.org/our-research/computational-sciences)
+
+  * [DARPA SIMPLEX](https://www.darpa.mil/program/simplifying-complexity-in-scientific-discovery)
+
+  * [Kleberg Foundation](http://www.klebergfoundation.org/)

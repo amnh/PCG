@@ -1,7 +1,0 @@
-read("../data/sample_3_identical.fasta")
-read("../data/sample_3_taxa.tre")
-set(iterative: exact)
-report("identical_seqs_out.txt", diagnosis, trees)
-
-
-exit()

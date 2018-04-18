@@ -10,11 +10,12 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances #-}
+{-# LANGUAGE DeriveFunctor, DeriveGeneric, FlexibleContexts, FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies #-}
 
 module Bio.Graph.ReferenceDAG.Internal where
 
+import           Bio.Graph.BinaryRenderingTree
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Component
 import           Control.Arrow                    ((&&&),(***))
@@ -37,15 +38,17 @@ import           Data.IntSet                      (IntSet)
 import qualified Data.IntSet               as IS
 import           Data.Key
 import           Data.List                        (intercalate)
-import           Data.List.NonEmpty               (NonEmpty ((:|)))
+import           Data.List.NonEmpty               (NonEmpty(..), intersperse)
 import qualified Data.List.NonEmpty        as NE
 import           Data.List.Utility                (isSingleton)
-import           Data.Monoid                      ((<>))
+import           Data.Monoid               hiding ((<>))
 import           Data.MonoTraversable
+import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Data.Set                         (Set)
 import qualified Data.Set                  as S
 import           Data.String
+import           Data.Traversable
 import           Data.Tree                        (unfoldTree)
 import           Data.Tree.Pretty                 (drawVerticalTree)
 import           Data.Vector                      (Vector)
@@ -90,12 +93,12 @@ data  IndexData e n
 -- * d = graph metadata
 data  GraphData d
     = GraphData
-    { dagCost           :: ExtendedReal
-    , networkEdgeCost   :: ExtendedReal
-    , rootingCost       :: Double
-    , totalBlockCost    :: Double
+    { dagCost           :: {-# UNPACK #-} !ExtendedReal
+    , networkEdgeCost   :: {-# UNPACK #-} !ExtendedReal
+    , rootingCost       :: {-# UNPACK #-} !Double
+    , totalBlockCost    :: {-# UNPACK #-} !Double
     , graphMetadata     :: d
-    } deriving (Generic)
+    } deriving (Functor, Generic)
 
 
 -- | This will be used below to print the node type to XML and Newick.
@@ -202,15 +205,13 @@ instance PhylogeneticComponent (ReferenceDAG d e n) NodeRef e n where
 
     edgeDatum (i,j) dag =  fromEnum j `lookup` childRefs (references dag ! fromEnum i)
 
-    -- TODO: Broken
-    isComponentNode i dag = olength ps > 2
-      where
-        ps = parentRefs $ references dag ! fromEnum i
+    isComponentNode = isNetworkNode 
 
-    -- TODO: Broken
-    isNetworkNode i dag = olength ps > 2
+    isNetworkNode i dag = olength ps == 2 && length cs == 1
       where
-        ps = parentRefs $ references dag ! fromEnum i
+        iPoint = references dag ! fromEnum i
+        ps = parentRefs iPoint
+        cs = childRefs  iPoint
 
     isTreeNode i dag = olength ps == 1 && length cs == 2
       where
@@ -222,7 +223,6 @@ instance PhylogeneticComponent (ReferenceDAG d e n) NodeRef e n where
 
     isRootNode i dag = onull . parentRefs $ references dag ! fromEnum i
 
-    -- TODO: Broken
     networkResolutions = pure
 
 
@@ -242,7 +242,7 @@ instance PhylogeneticTree (ReferenceDAG d e n) NodeRef e n where
 
 
 -- | (✔)
-instance Foldable f => PrintDot (ReferenceDAG d e (f String)) where
+instance Show n => PrintDot (ReferenceDAG d e n) where
 
     unqtDot       = unqtDot . uncurry mkGraph . getDotContext 0 0
 
@@ -265,13 +265,19 @@ instance Show (GraphData m) where
 
 
 -- | (✔)
-instance {- (Show e, Show n) => -} Show (ReferenceDAG d e n) where
+instance Show n => Show (ReferenceDAG d e n) where
 
-    show dag = intercalate "\n" [topologyRendering dag, "", referenceRendering dag]
+    show dag = intercalate "\n"
+        [ topologyRendering dag
+        , ""
+        , sconcat . intersperse "\n" $ horizontalRendering <$> toBinaryRenderingTree show dag
+        , ""
+        , referenceRendering dag
+        ]
 
 
 -- | (✔)
-instance Foldable f => ToNewick (ReferenceDAG d e (f String)) where
+instance Show n => ToNewick (ReferenceDAG d e n) where
 
     toNewick refDag = mconcat [ newickString, "[", show cost, "]" ]
       where
@@ -279,25 +285,27 @@ instance Foldable f => ToNewick (ReferenceDAG d e (f String)) where
         cost     = dagCost $ graphData refDag
         rootRef  = NE.head $ rootRefs refDag
         vec      = references refDag
-            
+
         namedVec = zipWith (\x n -> n { nodeDecoration = x }) labelVec vec
         labelVec = (`evalState` (1,1,1)) $ mapM deriveLabel vec -- All network nodes have "htu\d" as nodeDecoration.
-        deriveLabel :: Foldable f => IndexData e (f String) -> State (Int,Int,Int) String
-        deriveLabel node =
-            case toList $ nodeDecoration node of
-              x:_ -> pure x
-              []  -> do
-                  (lC, nC, tC) <- get
-                  case getNodeType node of
-                    LeafNode    -> do
-                        put (lC+1, nC, tC)
-                        pure $ "Leaf_" <> show lC
-                    NetworkNode -> do
-                        put (lC, nC+1, tC)
-                        pure $ "HTU_"  <> show nC
-                    _           -> do
-                        put (lC, nC, tC+1)
-                        pure $ "Node_" <> show tC
+
+        deriveLabel :: Show n => IndexData e n -> State (Int, Int, Int) String
+        deriveLabel node
+          | shownLabel /= "{Unlabeled Node}" = pure shownLabel
+          | otherwise = do
+              (lC, nC, tC) <- get
+              case getNodeType node of
+                LeafNode    -> do
+                    put (lC+1, nC, tC)
+                    pure $ "Leaf_" <> show lC
+                NetworkNode -> do
+                    put (lC, nC+1, tC)
+                    pure $ "HTU_"  <> show nC
+                _           -> do
+                    put (lC, nC, tC+1)
+                    pure $ "Node_" <> show tC
+          where
+            shownLabel = show $ nodeDecoration node  
 
 
 -- | (✔)
@@ -314,15 +322,14 @@ instance ToXML (GraphData m) where
 
 
 -- | (✔)
-instance (ToXML n) => ToXML (IndexData e n) where
+instance Show n => ToXML (IndexData e n) where
 
-   toXML indexData = toXML $ nodeDecoration indexData
+   toXML indexData = toXML . show $ nodeDecoration indexData
    -- ("Node_type", show $ getNodeType indexData)
 
 
 -- | (✔)
-instance Foldable f => ToXML (ReferenceDAG d e (f String)) where
---instance (ToXML n) => ToXML (ReferenceDAG d e n) where
+instance (Show n, ToXML n) => ToXML (ReferenceDAG d e n) where
 
     toXML dag = xmlElement "Directed_acyclic_graph" [] [newick, meta, vect]
       where
@@ -330,7 +337,7 @@ instance Foldable f => ToXML (ReferenceDAG d e (f String)) where
           -- fmap id . (^. leafSet) <$> forests
           meta   = Right . toXML $ graphData dag
           newick = Left ("Newick_representation", toNewick dag)
-          vect   = Right $ collapseElemList "Nodes" [] dag  -- Because ReferenceDAG is Foldable over Vector(IndexData)
+          vect   = Right . collapseElemList "Nodes" [] $ dag
 
 
 -- |
@@ -400,7 +407,11 @@ undirectedRootEdgeSet dag = foldMap f $ rootRefs dag
           x:y:_ -> singletonEdgeSet (x,y)
 
 
-
+-- |
+--
+-- Given two edges, and two functions describing the way to construct new node
+-- values, adds a new edge between the two supplied edges and constructs two
+-- intermediary nodes.
 connectEdge
   :: Monoid e
   => ReferenceDAG d e n
@@ -408,7 +419,7 @@ connectEdge
   -> (n -> n -> n) -- ^ Function describing how to construct the new target internal node: exisiting parent, exisiting child
   -> (Int, Int) -- ^ Origin edge (coming from)
   -> (Int, Int) -- ^ Target edge (going too)
-  -> ReferenceDAG d e n 
+  -> ReferenceDAG d e n
 --connectEdge dag _ _ origin target | trace (unlines  ["Origin: " <> show origin, "Target: " <> show target, "Input:", show dag ]) False = undefined
 connectEdge dag originTransform targetTransform (ooRef, otRef) (toRef, ttRef) = {- (\x -> trace ("Output:\n"<>show x) x) -} newDag
   where
@@ -457,6 +468,8 @@ connectEdge dag originTransform targetTransform (ooRef, otRef) (toRef, ttRef) = 
                 Nothing -> cs
 
 
+-- |
+-- Add a node on the supplied edge, creating two new incident edges.
 invadeEdge
   :: Monoid e
   => ReferenceDAG d e n
@@ -527,9 +540,9 @@ contractToContiguousVertexMapping inputMap = foldMapWithKey contractIndices inpu
 
 
 -- |
--- Overwrite the current graph metadata with a default value.
+-- Set the metadata to a "default" value.
 --
--- Defualt in the function's name is used as a verb, not a noun.
+-- Default in the function's name is used as a verb, not a noun.
 defaultGraphMetadata :: Monoid m => GraphData d -> GraphData m
 defaultGraphMetadata =
     GraphData
@@ -540,6 +553,10 @@ defaultGraphMetadata =
       <*> const mempty
 
 
+-- |
+-- Overwrite the current graph metadata with a default value.
+--
+-- Default in the function's name is used as a verb, not a noun.
 defaultMetadata :: Monoid m => ReferenceDAG d e n -> ReferenceDAG m e n
 defaultMetadata =
     RefDAG
@@ -743,7 +760,7 @@ generateNewick :: Vector (IndexData e String) -> Int -> S.Set String -> (S.Set S
 generateNewick refs idx htuNumSet = (finalNumSet, finalStr)
   where
     node = refs ! idx
-    
+
     (finalNumSet, finalStr) =
         case getNodeType node of
           LeafNode    -> (htuNumSet, nodeDecoration node)
@@ -801,12 +818,14 @@ getNodeType e =
       (2,1) -> NetworkNode
       (p,c) -> error $ "Incoherently constructed graph when determining NodeClassification: parents " <> show p <> " children " <> show c
 
+
 -- |
 -- Use the supplied transformation to fold the Node values of the DAG into a
 -- 'Monoid' result. The fold is *loosely* ordered from *a* root node towards the
 -- leaves.
 nodeFoldMap :: Monoid m => (n -> m) -> ReferenceDAG d e n -> m
 nodeFoldMap f = foldMap f . fmap nodeDecoration . references
+
 
 -- |
 -- Applies a traversal logic function over a 'ReferenceDAG' in a /post-order/ manner.
@@ -942,8 +961,8 @@ fromList xs =
 --
 -- 3. A list of child edge decorations and corresponding descendent values
 unfoldDAG :: (Eq a, Hashable a, Monoid e, Monoid n)
-          => (a -> ([(e,a)], n, [(e,a)])) -- ^ Unfolding function
-          -> a                            -- ^ Seed value
+          => (a -> ([(e, a)], n, [(e, a)])) -- ^ Unfolding function
+          -> a                              -- ^ Seed value
           -> ReferenceDAG () e n
 unfoldDAG f origin =
     RefDAG
@@ -1057,31 +1076,29 @@ gen1 x = (pops, show x, kids)
 --}
 
 
+-- |
+-- Exctract a context from the 'ReferenceDAG' that can be used to create a dot
+-- context for rendering.
 getDotContext
-  :: Foldable f
+  :: Show n
   => Int -- ^ Base over which the Unique
   -> Int
-  -> ReferenceDAG d e (f String)
+  -> ReferenceDAG d e n
   -> ([DotNode GraphID], [DotEdge GraphID])
 --getDotContext dag | trace ("About to render this to DOT:\n\n" <> show dag) False = undefined
 getDotContext uniqueIdentifierBase mostSignificantDigit dag = second mconcat . unzip $ foldMapWithKey f vec
   where
     idOffest = uniqueIdentifierBase * mostSignificantDigit
-    
+
     vec = references dag
 
     toId :: Int -> GraphID
     toId = Num . Int . (+ idOffest)
 
-    toAttributes :: Foldable f => f String -> Attributes
-    toAttributes x =
-      case toList x of
-        []  -> []
-        s:_ -> [ toLabel s ]
+    toAttributes :: Show a => a -> Attributes
+    toAttributes x = [ toLabel (show x) ]
 
-    
-
-    f :: Foldable f => Int -> IndexData e (f String) -> [(DotNode GraphID, [DotEdge GraphID])]
+    f :: Show n => Int -> IndexData e n -> [(DotNode GraphID, [DotEdge GraphID])]
     f k v = [ (toDotNode, toDotEdge <$> kidRefs) ]
       where
         datum       = nodeDecoration v
@@ -1098,7 +1115,7 @@ candidateNetworkEdges :: ReferenceDAG d e n -> Set ( (Int, Int), (Int,Int) )
 candidateNetworkEdges dag = S.filter correctnessCriterion $ foldMapWithKey f mergedVector
   where
     mergedVector  = zipWith mergeThem ancestoralEdgeSets descendantEdgeSets
-    
+
     mergeThem a d =
         IndexData
         { nodeDecoration = nodeDecoration a
@@ -1123,8 +1140,8 @@ candidateNetworkEdges dag = S.filter correctnessCriterion $ foldMapWithKey f mer
     g j k   = foldMap (\x -> S.singleton ((j,k), x))
     h j k v = possibleEdgeSet j k `difference` v
     possibleEdgeSet i j = completeEdgeSet `difference` (singletonEdgeSet (i,j) <> singletonEdgeSet (j,i))
-{-    
-    renderVector  = unlines . mapWithKey (\k v -> show k <> " " <> show (childRefs v)) . toList 
+{-
+    renderVector  = unlines . mapWithKey (\k v -> show k <> " " <> show (childRefs v)) . toList
 
     renderContext = unlines [refsStr, anstSet, descSet, edgeset]
       where
@@ -1135,6 +1152,8 @@ candidateNetworkEdges dag = S.filter correctnessCriterion $ foldMapWithKey f mer
 -}
 
 
+-- |
+-- Find all edges adjacent to root nodes.
 tabulateRootIncidentEdgeset :: ReferenceDAG d e n -> EdgeSet (Int,Int)
 tabulateRootIncidentEdgeset dag = foldMap f $ rootRefs dag
   where
@@ -1142,7 +1161,9 @@ tabulateRootIncidentEdgeset dag = foldMap f $ rootRefs dag
       where
         kids = IM.keys . childRefs $ references dag ! i
 
-    
+
+-- |
+-- Gather all paths from a root node to each node in the graph.
 tabulateAncestoralEdgesets :: ReferenceDAG d e n -> ReferenceDAG () (EdgeSet (Int,Int)) ()
 tabulateAncestoralEdgesets dag =
     RefDAG
@@ -1168,7 +1189,7 @@ tabulateAncestoralEdgesets dag =
               []    -> mempty
               [x]   -> getPreviousDatums x i
               x:y:_ -> getPreviousDatums x i `union` getPreviousDatums y i
-    
+
     getPreviousDatums i j = childRefs point ! j <> other
       where
         point = memo ! i
@@ -1189,7 +1210,9 @@ tabulateAncestoralEdgesets dag =
                 x:_ -> singletonEdgeSet (x,k)
 --                x:_ -> foldMap (`getPreviousDatums` x) . otoList . parentRefs $ memo ! x
 
-        
+
+-- |
+-- Gather all paths from a leaf node to each node in the graph.
 tabulateDescendantEdgesets :: ReferenceDAG d e n -> ReferenceDAG () (EdgeSet (Int,Int)) ()
 tabulateDescendantEdgesets dag =
     RefDAG
@@ -1214,10 +1237,54 @@ tabulateDescendantEdgesets dag =
               []    -> mempty
               [x]   -> getPreviousDatums i x
               x:y:_ -> getPreviousDatums i x `union` getPreviousDatums i y
-    
+
     getPreviousDatums _ j = foldMap id (childRefs point) <> other
       where
         point = memo ! j
         -- This is the step where new information is added to the accumulator
         other = foldMap (\x -> singletonEdgeSet (j,x)) . IM.keys $ childRefs point
-        
+
+
+-- |
+-- Contruct the intermediate 'BinaryRenderingTree' data type for a given 'ReferenceDAG'.
+--
+-- The first parameter is a rendering function for the leaves.
+toBinaryRenderingTree :: (n -> String) -> ReferenceDAG d e n -> NonEmpty BinaryRenderingTree
+toBinaryRenderingTree nodeRenderer dag = (`evalState` initialState) . traverse subtreeToRendering $ rootRefs dag
+  where
+    refVec = references dag
+
+    -- |
+    -- Holds a counter for the next symbolic reference in the first position of
+    -- the tuple.
+    --
+    -- Holds a map from indicies in the reference vector to symbolic references.
+    --
+    -- Symbolic references are used only on in-degree 2 edges.
+    initialState :: (Int, IntMap Int)
+    initialState = (0, mempty)
+
+    subtreeToRendering :: Int -> State (Int, IntMap Int) BinaryRenderingTree
+    subtreeToRendering i = 
+        if   parentCount < 2
+        then do
+             subtrees <- mapM subtreeToRendering kids
+             pure $ case subtrees of
+                      []   -> Leaf shownNode
+                      x:xs -> Node (sum $ subtreeSize <$> x:xs) Nothing $ x:|xs
+        else do
+             (ctr, symRefs) <- get
+             case i `lookup` symRefs of
+               Just sym -> pure . Leaf $ "@" <> show sym
+               Nothing  -> do
+                 put (succ ctr, IM.insert i ctr symRefs)
+                 subtrees <- mapM subtreeToRendering kids
+                 pure $ case subtrees of
+                          []   -> Leaf shownNode
+                          x:xs -> Node (sum $ subtreeSize <$> x:xs) (Just (show ctr)) $ x:|xs
+
+      where
+        context     = refVec ! i
+        kids        = IM.keys $ childRefs context
+        parentCount = olength $ parentRefs context
+        shownNode   = takeWhile (/='\n') . nodeRenderer $ nodeDecoration context

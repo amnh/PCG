@@ -60,6 +60,8 @@ import qualified Data.List.NonEmpty as NE
 
 
 -- HasBlockCost u v w x y z i r
+-- |
+-- Calculate the root cost for each character block.
 {-
 rootCosts :: ( Integral e
              , HasCharacterWeight u Double
@@ -81,30 +83,53 @@ rootCosts :: HasBlockCost u v w x y z i r
 rootCosts (PDAG2 dag) = sequenceCost <$> rootDecs
   where
     roots     = rootRefs dag
-    rootDecs  = (characterSequence . NE.head . resolutions . nodeDecoration . (references dag !)) <$> roots
+    rootDecs  = characterSequence . NE.head . resolutions . nodeDecoration . (references dag !) <$> roots
 
 
+-- |
+-- Map over each node in a pre-order manner.
 nodePreorderMap :: (n -> [n'] -> n')
 nodePreorderMap = undefined
 
+
+-- |
+-- Map over each edge in a pre-order manner.
 edgePreorderMap :: (e -> [e'] -> e')
 edgePreorderMap = undefined
 
+
+-- |
+-- Map over each node in a post-order manner.
 nodePostorderMap :: (n -> [n'] -> n')
 nodePostorderMap = undefined
 
+
+-- |
+-- Map over each edge in a post-order manner.
 edgePostorderMap :: (e -> [e'] -> e')
 edgePostorderMap = undefined
 
+
+-- |
+-- Fold over each node in a pre-order manner.
 nodePreorderFold :: (n -> [a] -> a)
 nodePreorderFold = undefined
 
+
+-- |
+-- Fold over each edge in a pre-order manner.
 edgePreorderFold :: (e -> [a] -> a)
 edgePreorderFold = undefined
 
+
+-- |
+-- Fold over each node in a post-order manner.
 nodePostorderFold :: (n -> [a] -> a)
 nodePostorderFold = undefined
 
+
+-- |
+-- Fold over each edge in a pre-order manner.
 edgePostorderFold :: (e -> [a] -> a)
 edgePostorderFold = undefined
 

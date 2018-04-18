@@ -16,7 +16,8 @@ import           Bio.Graph
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
 --import           Bio.Graph.PhylogeneticDAG
-import           Bio.Graph.ReferenceDAG
+--import           Bio.Graph.ReferenceDAG
+import           Bio.Graph.ReferenceDAG.Internal
 import qualified Bio.Graph.ReferenceDAG as DAG
 import           Bio.Sequence
 import           Control.Arrow                 ((&&&))
@@ -45,6 +46,7 @@ import qualified Data.List.NonEmpty     as NE
 --import           Data.Map                      (Map,assocs,insert,union)
 --import qualified Data.Map               as M
 --import           Data.Maybe                    (fromMaybe)
+import           Data.NodeLabel
 import           Data.Ord                      (comparing)
 import           Data.Semigroup.Foldable
 --import           Data.Vector                   (Vector)
@@ -64,7 +66,7 @@ type DatNode =
       (SankoffOptimizationDecoration StaticCharacter)
       (DynamicDecorationDirectOptimization DynamicChar)
     )
-    (Maybe String)
+    NodeLabel
 
 
 --evaluate :: Command -> EvaluationT IO a -> EvaluationT IO (Either TopologicalResult DecoratedCharacterResult)
@@ -92,15 +94,13 @@ evaluate
   => -}
   :: Command
 --  -> EvaluationT IO (Either TopologicalResult (PhylogeneticSolution (PhylogeneticDAG2 EdgeLength (Maybe String) u v w x y z)))
-  -> SearchState
+  -> GraphState
   -> SearchState
 -- EvaluationT IO (Either TopologicalResult CharacterResult)
 -- evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
 -- evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
-evaluate (BUILD (BuildCommand trajectoryCount buildType)) oldState = do
-    x <- oldState
-    
-    case x of
+evaluate (BUILD (BuildCommand trajectoryCount buildType)) inState =
+    case inState of
       Left  e -> pure $ Left e
       Right v ->
         case toList $ v ^. leafSet of
@@ -182,7 +182,7 @@ naiveWagnerBuild ns =
           in  iterativeBuild initTree xs
 
   where
-    fromRefDAG = performDecoration . PDAG2 . defaultMetadata
+    fromRefDAG = performDecoration . PDAG2 . resetMetadata
  
 
 iterativeBuild
@@ -217,7 +217,7 @@ iterativeBuild currentTree (nextLeaf:remainingLeaves) = iterativeBuild nextTree 
     edgeSet     = NE.fromList . toList $ referenceEdgeSet dag
 
     tryEdge :: (Int, Int) -> FinalDecorationDAG
-    tryEdge     = performDecoration . PDAG2 . invadeEdge (defaultMetadata dag) deriveInternalNode (wipeNode False nextLeaf)
+    tryEdge     = performDecoration . PDAG2 . invadeEdge (resetMetadata dag) deriveInternalNode (wipeNode False nextLeaf)
     nextTree    = minimumBy (comparing getCost) $ parmap rpar tryEdge edgeSet
 
     getCost (PDAG2 v) = dagCost $ graphData v
@@ -268,7 +268,7 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag) =
 
     getCost (PDAG2 v) = dagCost $ graphData v
 
-    connectEdge' = uncurry (connectEdge (defaultMetadata dag) deriveOriginEdgeNode deriveTargetEdgeNode)
+    connectEdge' = uncurry (connectEdge (resetMetadata dag) deriveOriginEdgeNode deriveTargetEdgeNode)
 
     deriveOriginEdgeNode parentDatum oldChildDatum _newChildDatum =
         PNode2 (resolutions oldChildDatum) (nodeDecorationDatum2 parentDatum)
@@ -276,3 +276,10 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag) =
     deriveTargetEdgeNode parentDatum oldChildDatum =
         PNode2 (resolutions oldChildDatum) (nodeDecorationDatum2 parentDatum)
         
+
+resetMetadata :: (Monoid a, Monoid b) => ReferenceDAG d e n -> ReferenceDAG (a, b, Maybe c) e n
+resetMetadata = 
+    RefDAG
+      <$> references
+      <*> rootRefs
+      <*> ((mempty, mempty, Nothing) <$) . graphData 

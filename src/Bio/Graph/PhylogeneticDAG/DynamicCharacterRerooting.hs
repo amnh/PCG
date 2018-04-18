@@ -8,8 +8,6 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Containing the master command for unifying all input types: tree, metadata, and sequence
---
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE FlexibleContexts, MonoLocalBinds #-}
@@ -73,8 +71,6 @@ import           Prelude            hiding (lookup, zipWith)
 assignOptimalDynamicCharacterRootEdges
   :: ( HasBlockCost u v w x y z Word Double
      , HasTraversalFoci z (Maybe TraversalFoci)
-{--
-     , Show e
      , Show n
      , Show u
      , Show v
@@ -82,6 +78,8 @@ assignOptimalDynamicCharacterRootEdges
      , Show x
      , Show y
      , Show z
+{--
+     , Show e
 --}
      ) --x, Ord x, Show x)
   => (z -> [z] -> z)  -- ^ Post-order traversal function for Dynamic Characters.
@@ -121,7 +119,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
     -- Step 4: Update the dynamic character decoration's cost & add an edge reference.
     updatedDag = inputDag
         { references = refVec V.// toList modifiedRootRefs
-        , graphData  = (graphData inputDag) { graphMetadata = (edgeCostMapping, contextualNodeDatum) }
+        , graphData  = (graphData inputDag) { graphMetadata = (edgeCostMapping, contextualNodeDatum, Nothing) }
         }
 
 
@@ -409,13 +407,13 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                     key = topologyRepresentation resInfo
                     val = pure (rootingEdge, characterSequence resInfo)
 
-        -- Once we have invereted the Edge Cost Mapping to be keyed by the
+        -- Once we have inverted the Edge Cost Mapping to be keyed by the
         -- display trees, we can perform a minimization on each display tree
         -- to determine which the minimal rooting edge for each dynamic character
         -- in each block.
         --
         -- It is important to rememebr that since this minimization is performed
-        -- independantly on each display tree, the rooting edges on the display
+        -- independently on each display tree, the rooting edges on the display
         -- tree can all be choosen independantly also.
         deriveMinimalSequenceForDisplayTree
           :: HasBlockCost u v w x y z Word Double
@@ -694,7 +692,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                 h (costVal, foci) originalDec =
                     originalDec
                       & characterCost .~ costVal
-                      & traversalFoci .~ Just foci
+                      & traversalFoci ?~ foci
 
 
 -- |

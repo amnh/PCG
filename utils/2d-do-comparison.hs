@@ -8,6 +8,7 @@ import           Data.Alphabet
 import           Data.Alphabet.IUPAC
 import qualified Data.Bimap         as BM
 import qualified Data.List.NonEmpty as NE
+import           Data.Maybe
 import           Data.Semigroup
 import           Data.TCM.Memoized
 import           System.Environment        (getArgs)
@@ -59,49 +60,100 @@ performCounterExampleSearch valueMay = do
 --    stocasticSearchContext = quickCheckWith stdArgs { maxSuccess = 10000 }
 
 
-counterExampleCheck :: NucleotideSequence -> NucleotideSequence -> Bool
-counterExampleCheck (NS lhs) (NS rhs) = all (== naiveDOResult) [memoizeDOResult, ukkonenDOResult, foreignDOResult]
+counterExampleCheck :: NucleotideSequence -> NucleotideSequence -> Property
+counterExampleCheck (NS lhs) (NS rhs) = counterexample contextRendering $
+    all (== naiveDOResult) [memoizeDOResult, ukkonenDOResult, foreignDOResult]
   where
+    contextRendering = niceContextRendering naiveDOResult memoizeDOResult ukkonenDOResult foreignDOResult
     naiveDOResult    = naiveDO           lhs rhs  costStructure
-    memoizeDOResult  = naiveDOMemo       lhs rhs (getMedianAndCost memoMatrixValue)
-    ukkonenDOResult  = ukkonenDO         lhs rhs (getMedianAndCost memoMatrixValue)
+    memoizeDOResult  = naiveDOMemo       lhs rhs (getMedianAndCost2D memoMatrixValue)
+    ukkonenDOResult  = ukkonenDO         lhs rhs (getMedianAndCost2D memoMatrixValue)
     foreignDOResult  = foreignPairwiseDO lhs rhs  denseMatrixValue
 --    shownInputs      = mconcat ["\n(",showStream alphabet lhs,",",showStream alphabet rhs,")"]
 
 
 performImplementationComparison :: DynamicChar -> DynamicChar -> IO ()
-performImplementationComparison char1 char2 = do
-    putStrLn "Native Naive    DO Result:"
-    putStrLn   naiveMessage
-    putStrLn "Native Memoized DO Result:"
-    putStrLn memoizeMessage
-    putStrLn "Native Ukkonen  DO Result:"
-    putStrLn ukkonenMessage
-    putStrLn "Foreign C code  DO Result:"
-    putStrLn foreignMessage
-    if   all (== naiveMessage) [memoizeMessage, ukkonenMessage, foreignMessage]
-    then putStrLn "[!] Results MATCH"
-    else putStrLn "[X] Results DO NOT MATCH"
+performImplementationComparison char1 char2 = putStrLn renderedComparison
   where
-    naiveMessage     = renderResult   naiveDOResult
-    memoizeMessage   = renderResult memoizeDOResult
-    ukkonenMessage   = renderResult ukkonenDOResult
-    foreignMessage   = renderResult foreignDOResult
-    naiveDOResult    = naiveDO           char1 char2  costStructure
-    memoizeDOResult  = naiveDOMemo       char1 char2 (getMedianAndCost memoMatrixValue)
-    ukkonenDOResult  = ukkonenDO         char1 char2 (getMedianAndCost memoMatrixValue)
-    foreignDOResult  = foreignPairwiseDO char1 char2  denseMatrixValue
---    char1 = readSequence lhs
---    char2 = readSequence rhs
---    readSequence :: String -> DynamicChar
---    readSequence = encodeStream alphabet . fmap ((iupacToDna BM.!) . pure . pure) . NE.fromList
-    renderResult (c, w, x, y, z) = unlines
-        [ "  Cost           : " <> show c 
+    renderedComparison = niceContextRendering naiveDOResult memoizeDOResult ukkonenDOResult foreignDOResult
+    naiveDOResult      = naiveDO           char1 char2  costStructure
+    memoizeDOResult    = naiveDOMemo       char1 char2 (getMedianAndCost2D memoMatrixValue)
+    ukkonenDOResult    = ukkonenDO         char1 char2 (getMedianAndCost2D memoMatrixValue)
+    foreignDOResult    = foreignPairwiseDO char1 char2  denseMatrixValue
+
+
+niceContextRendering 
+  :: ( Show c1
+     , Show c2
+     , Show c3
+     , Show c4
+     , EncodableStream s1
+     , EncodableStream s2
+     , EncodableStream s3
+     , EncodableStream s4
+     , EncodableStream s5
+     , EncodableStream s6
+     , EncodableStream s7
+     , EncodableStream s8
+     , EncodableStream s9
+     , EncodableStream s10
+     , EncodableStream s11
+     , EncodableStream s12
+     , EncodableStream s13
+     , EncodableStream s14
+     , EncodableStream s15
+     , EncodableStream s16
+     )
+  => (c1, s1 , s2 , s3 , s4 )
+  -> (c2, s5 , s6 , s7 , s8 )
+  -> (c3, s9 , s10, s11, s12)
+  -> (c4, s13, s14, s15, s16)
+  -> String
+niceContextRendering a b c d = unlines
+    [ "Native Naive    DO Result:"
+    , naiveMessage
+    , "Native Memoized DO Result:"
+    , memoizeMessage
+    , "Native Ukkonen  DO Result:"
+    , ukkonenMessage
+    , "Foreign C code  DO Result:"
+    , foreignMessage
+    , whichDoNotMatch
+{-
+    , if   all (== naiveMessage) [memoizeMessage, ukkonenMessage, foreignMessage]
+      then "[!] Results MATCH"
+      else "[X] Results DO NOT MATCH"
+-}
+    ]
+  where
+    naiveMessage   = renderResult a
+    memoizeMessage = renderResult b
+    ukkonenMessage = renderResult c
+    foreignMessage = renderResult d
+    renderResult (v, w, x, y, z) = unlines
+        [ "  Cost           : " <> show v
         , "  Median ungapped: " <> showStream alphabet w
         , "  Median   gapped: " <> showStream alphabet x
         , "  LHS   alignment: " <> showStream alphabet y
         , "  RHS   alignment: " <> showStream alphabet z
         ]
+
+    whichDoNotMatch =
+        case messageDiffs of
+          [] -> "[!] Results MATCH"
+          xs -> "[X] Results DO NOT MATCH\n\n" <> foldMap renderDiff xs
+      where
+        messages     = [naiveMessage, memoizeMessage, ukkonenMessage, foreignMessage]
+        messageDiffs = catMaybes [ (\i -> (i, x, y)) <$> diffIndex x y | x <- messages, y <- messages, x > y ]
+        renderDiff (i, x, y) = unlines [ "At index " <> show i, x, y]
+
+
+diffIndex :: String -> String -> Maybe Int
+diffIndex x y
+  | null remaining = Nothing
+  | otherwise      = Just $ length matched
+  where
+    (matched, remaining) = span id $ zipWith (==) x y
 
 
 alphabet :: Alphabet String

@@ -194,11 +194,11 @@ algnMtx_precalc_4algn_2d(       alignment_matrices_t *alignmentMatrices
         printf("\n");
         fflush(stdout);
     }
-    for (j = 1; j <= costMatrix->alphSize; j++, tmpPrecMtx += charLen) {
+    for (j = 1; j < costMatrix->costMatrixDimension; j++, tmpPrecMtx += charLen) {
         // if (DEBUG_CM) {
         //     printf("%zu\t", j);
         // }
-        tmpCost = cm_get_row (charTcm, j, costMatrix->costMatrixDimension);
+        tmpCost = cm_get_row( charTcm, j, costMatrix->alphSize );
         /* We fill almost the complete row. Only the first (aligning with the
          * gap), is filled using the tail cost */
         tmpPrecMtx[0] = tailCosts[j];

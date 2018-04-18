@@ -142,10 +142,8 @@ taxaBlockDefinition = do
 taxaSubBlock :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char {- , Show s -}) => m SeqSubBlock
 taxaSubBlock = {-do
     x <- getInput
-    trace ("many taxaSubBlock"  ++ show x) $ -}do
-        _      <- whitespace
-        block' <- symbol block
-        pure block'
+    trace ("many taxaSubBlock"  ++ show x) $ -}
+        whitespace *> symbol block
     where
         block =  (Dims   <$> try dimensionsDefinition)
              <|> (Taxa   <$> try (stringListDefinition "taxlabels"))
@@ -194,6 +192,7 @@ tcmMatrixDefinition = {-do
         pure $ StepMatrix matrixName cardinality (TCM mtxAlphabet assumpMatrix)
 
 
+-- | treeBlockDefinition captures the contents of a tree block, which is defined as starting with "TREES;"
 treeBlockDefinition :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char {- , Show s -}) => m TreeBlock
 treeBlockDefinition = do
         _     <- symbol $ string'' "trees;"
@@ -266,8 +265,7 @@ charFormatFieldDef :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char {-
 charFormatFieldDef = {-do
         x <- getInput
         trace ("many charFormatFieldDef"  ++ show x) $ -}do
-        block' <- many $ symbol block
-        pure block'
+        many $ symbol block
     where
         block = choice
             [ CharDT      <$> try (string'' "datatype" *> symbol (char '=') *> charDTDefinition)
@@ -311,6 +309,7 @@ booleanDefinition blockTitle = {-do
         x <- getInput
         trace (("booleanDefinition " ++ blockTitle)  ++ show x) $-}
     symbol (string'' blockTitle) $> True
+
 
 -- | stringDefinition takes a string of format TITLE=value;
 -- and returns the value. The semicolon is not captured by this fn.
@@ -384,6 +383,8 @@ treeDefinition = do
     pure (label, newick)
 
 
+-- | seqMatrixDefinition takes a 'String' that starts with "MATRIX" and ends with ";" and parses it into a list of
+-- 'String's where each string in the list is a row in a cost matrix.
 seqMatrixDefinition :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char {- , Show s -}) => m [String]
 seqMatrixDefinition = {-do
     x <- getInput
@@ -551,4 +552,3 @@ nexusKeywords = S.fromList
     , "usertype"
     , "wtset"
     ]
-

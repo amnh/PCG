@@ -9,7 +9,7 @@
 -- Portability :  portable
 --
 -- A possible present, real-valued edge length with a 'Monoid' instance defined
--- in terms of addition. 
+-- in terms of addition.
 --
 -----------------------------------------------------------------------------
 
@@ -24,6 +24,7 @@ module Data.EdgeLength
 
 import Control.Applicative (liftA2)
 import Control.DeepSeq
+import Data.Default
 import Data.Monoid hiding ((<>))
 import Data.Semigroup
 import GHC.Generics
@@ -33,15 +34,15 @@ import GHC.Generics
 -- A monoidal edge annotation for representing an edge length.
 --
 -- The identity element represents an *unspecified* edge length, which is
--- distinct from a specified edge length of length zero.
+-- distinct from a specified edge length of zero.
 --
--- The assoiative semigroup opperation is isomorphic to addition over the real
--- numbers when both operands are specified edge length. When one or more of
+-- The associative semigroup operation is isomorphic to addition over the real
+-- numbers when both operands have specified edge lengths. When one or more of
 -- the edge lengths are unspecified (the identity element), the semigroup
 -- operation returns a specified edge length if possible, satifying the monoid
 -- laws regarding the identity element.
 newtype EdgeLength = C (Maybe (Sum Double))
-  deriving(Eq, Generic, NFData, Ord, Semigroup, Monoid)
+  deriving(Eq, Default, Generic, NFData, Ord, Semigroup, Monoid)
 
 
 instance Num EdgeLength where
@@ -66,7 +67,7 @@ instance Show EdgeLength where
 
     show (C  Nothing) = "{?}"
     show (C (Just x)) = "{" <> show (getSum x) <> "}"
-            
+
 
 -- |
 -- Construct an 'EdgeLength' from a 'Double' value.
@@ -77,7 +78,7 @@ fromDouble = C . Just . Sum
 
 -- |
 -- Construct an 'EdgeLength' from a 'Maybe Double' value.
--- A @Nothing@ value indicates aa missing edge length.
+-- A @Nothing@ value indicates a missing edge length.
 {-# INLINE fromDoubleMay #-}
 fromDoubleMay :: Maybe Double -> EdgeLength
 fromDoubleMay = C . fmap Sum

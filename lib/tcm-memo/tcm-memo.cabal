@@ -1,23 +1,22 @@
-name:               tcm-memo
-version:            1.0.0.0
-
-synopsis:           A binding to a C++ hashtable for thread-safe memoization.
-
--- A longer description of the package.
--- description:
-license:            BSD3
---license-file:       LICENSE
-author:             Ward Wheeler
-maintainer:         wheeler@amnh.org
-
--- A copyright notice.
--- copyright:
-
-category:           Biology
+cabal-version:      2.2
+category:           Example
 build-type:         Simple
 extra-source-files: README.md
 
-cabal-version:      >= 1.22
+name:               tcm-memo
+version:            1.0.0.0
+
+author:             Ward Wheeler 
+maintainer:         wheeler@amnh.org
+copyright:          2015 - 2018 Ward Wheeler
+license:            BSD-3-Clause
+license-file:       LICENSE
+                    
+synopsis:           A binding to a C++ hashtable for thread-safe memoization.
+
+description:        This package is designed to provide a thread safe binding 
+                    to a "pure" memoization of two-way and three-way Sankoff 
+                    character cost and median computations.
 
 library
 

@@ -40,40 +40,42 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
  ) where
 
 
-import Bio.Character.Encodable
-import Data.Bits
-import Data.DList            (snoc)
-import Data.Foldable
-import Data.Key
-import Data.List.NonEmpty    (NonEmpty(..), fromList)
-import Data.Matrix.NotStupid (Matrix)
-import Data.Maybe            (fromMaybe)
-import Data.MonoTraversable
-import Data.Ord
-import Data.Semigroup
-import Data.Semigroup.Foldable
-import Numeric.Extended.Natural
-import Prelude        hiding (lookup, zipWith)
+import           Bio.Character.Encodable
+import           Control.Arrow            ((&&&))
+import           Data.Bits
+import           Data.DList               (snoc)
+import           Data.Foldable
+import           Data.Key
+import           Data.List.NonEmpty       (NonEmpty(..))
+import qualified Data.List.NonEmpty as NE
+import           Data.Matrix.NotStupid    (Matrix)
+import           Data.Maybe               (fromMaybe)
+import           Data.MonoTraversable
+import           Data.Ord
+import           Data.Semigroup
+import           Data.Semigroup.Foldable
+import           Numeric.Extended.Natural
+import           Prelude            hiding (lookup, zipWith)
 
 
 -- |
--- The direction to align the character at a given matrix point.
+-- Which direction to align the character at a given matrix point.
 --
--- It should be noted that the ordering of the three arrow types are important
--- as it guarantees that the derived Ord instance will have the following
+-- It should be noted that the ordering of the three arrow types are important,
+-- as it guarantees that the derived 'Ord' instance will have the following
 -- property:
 --
 -- DiagArrow < LeftArrow < UpArrow
 --
 -- This means:
 --
---   - DiagArrow is biased towards with highest precedency when one or more costs are equal
+--   - DiagArrow has highest precedence when one or more costs are equal
 --
---   - LeftArrow is biased towards with second highest precedence when one or more costs are equal
+--   - LeftArrow has second highest precedence when one or more costs are equal
 --
---   -   UpArrow is biased towards with lowest precedency when one or more costs are equal
+--   -   UpArrow has lowest precedence when one or more costs are equal
 --
--- Using this Ord instance, we can resolve ambiguous transformations in a
+-- Using this 'Ord' instance, we can resolve ambiguous transformations in a
 -- deterministic way. Without loss of generality in determining the ordering,
 -- we choose the same biasing as the C code called from the FFI for consistency.
 data Direction = DiagArrow | LeftArrow | UpArrow
@@ -90,7 +92,7 @@ instance Show Direction where
 
 -- |
 -- This internal type used for computing the alignment cost. This type has an
--- "infinity" value that is conviently used for the barrier costs. The cost is
+-- "infinity" value that is conveniently used for the barrier costs. The cost is
 -- strictly non-negative, and possibly infinite.
 type Cost = ExtendedNatural
 
@@ -99,17 +101,17 @@ type Cost = ExtendedNatural
 -- A representation of an alignment matrix for DO.
 -- The matrix itself stores tuples of the cost and direction at that position.
 -- We also store a vector of characters that are generated.
-type NeedlemanWunchMatrix s = Matrix (Cost, Direction, s)
+type NeedlemanWunchMatrix e = Matrix (Cost, Direction, e)
 
 
 -- |
 -- Constraints on the input dynamic characters that direct optimization requires
 -- to operate.
-type DOCharConstraint c = (EncodableDynamicCharacter c, Ord (Element c) {- , Show c, Show (Element c), Integral (Element c) -})
+type DOCharConstraint s = (EncodableDynamicCharacter s, Ord (Element s) {- , Show s, Show (Element s), Integral (Element s) -})
 
 
 -- |
--- Constraints on the type of structure a "matrix" expose to be used in rendering
+-- Constraints on the type of structure a "matrix" exposes to be used in rendering
 -- and traceback functions.
 type MatrixConstraint m = (Indexable m, Key m ~ (Int, Int))
 
@@ -120,10 +122,10 @@ type MatrixFunction m s = s -> s -> OverlapFunction (Element s) -> m (Cost, Dire
 
 
 -- |
--- A generalized function represention the "overlap" between dynamic character
+-- A generalized function representation: the "overlap" between dynamic character
 -- elements, supplying the corresponding median and cost to align the two
 -- characters.
-type OverlapFunction c = c -> c -> (c, Word)
+type OverlapFunction e = e -> e -> (e, Word)
 
 
 -- |
@@ -157,7 +159,7 @@ directOptimization char1 char2 overlapFunction matrixFunction =
 -- Strips the gap elements from the supplied character.
 --
 -- If the character contains /only/ gaps, a missing character is returned.
-filterGaps :: EncodableDynamicCharacter c => c -> c
+filterGaps :: EncodableDynamicCharacter s => s -> s
 filterGaps char =
     case filter (/= gap) $ otoList char of
       [] -> toMissing char
@@ -214,7 +216,7 @@ handleMissingCharacterThreeway f a b c v =
 
 
 -- |
--- /O(1)/ for input characters of differing length
+-- /O(1)/ for input characters of differing lengths
 --
 -- /O(k)/ for input characters of equal length, where /k/ is the shared prefix of
 -- both characters.
@@ -241,7 +243,10 @@ measureCharacters lhs rhs
 -- Internal generator function for the matrices based on the Needleman-Wunsch
 -- definition described in their paper.
 needlemanWunschDefinition
-  :: (DOCharConstraint s, Indexable f, Key f ~ (Int,Int))
+  :: ( DOCharConstraint s
+     , Indexable f
+     , Key f ~ (Int, Int)
+     )
   => s
   -> s
   -> OverlapFunction (Element s)
@@ -285,7 +290,7 @@ renderCostMatrix
      , Foldable f
      , Functor f
      , Indexable f
-     , Key f ~ (Int,Int)
+     , Key f ~ (Int, Int)
      , Show a
      , Show b
      )
@@ -365,7 +370,7 @@ renderCostMatrix lhs rhs mtx = unlines
 -- dynamic characters.
 traceback :: ( DOCharConstraint s
              , Indexable f
-             , Key f ~ (Int,Int)
+             , Key f ~ (Int, Int)
              )
           => f (Cost, Direction, Element s)
           -> s
@@ -411,7 +416,7 @@ traceback alignMatrix longerChar lesserChar =
 
 -- |
 -- Memoized wrapper of the overlap function
-getOverlap :: EncodableStreamElement c => c -> c -> (Word -> Word -> Word) -> (c, Word)
+getOverlap :: EncodableStreamElement e => e -> e -> (Word -> Word -> Word) -> (e, Word)
 getOverlap inChar1 inChar2 costStruct = result
   where
     result = overlap costStruct inChar1 inChar2
@@ -428,60 +433,70 @@ getOverlap inChar1 inChar2 costStruct = result
 -- combinations, so for instance, if @ char1 == A,T @ and @ char2 == G,C @, and
 -- the two (non-overlapping) least cost pairs are A,C and T,G, then the return
 -- value is A,C,G,T.
-overlap :: (EncodableStreamElement c {- , Show c -}) => (Word -> Word -> Word) -> c -> c -> (c, Word)
+overlap :: (EncodableStreamElement e {- , Show e -}) => (Word -> Word -> Word) -> e -> e -> (e, Word)
 overlap costStruct char1 char2
-  | intersectionStates == zeroBits = minimalChoice $ allPossibleBaseCombosCosts costStruct char1 char2
-  | otherwise                      = (intersectionStates, 0)
+  | intersectionStates == zero = minimalChoice $ symbolDistances costStruct char1 char2
+  | otherwise                  = (intersectionStates, 0)
   where
     intersectionStates = char1 .&. char2
+    zero = char1 `xor` char1
 
 
 -- |
--- Given a structure of character elements and costs, calculates the least
--- costly intersection of character elements and the cost of that intersection
--- of character elements.
-minimalChoice :: (Bits c, Foldable1 t, Ord n) => t (c, n) -> (c, n)
+-- Given a structure of unambiguous character elements and costs, calculates the
+-- least costly intersection of unambiguous character elements and the cost of
+-- that intersection.
+minimalChoice :: (Bits b, Foldable1 t, Ord c) => t (b, c) -> (b, c)
 minimalChoice = foldl1 f
   where
-    f (!val1, !cost1) (!val2, !cost2)
-      | cost1 == cost2 = (val1 .|. val2, cost1)
-      | cost1 < cost2  = (val1         , cost1)
-      | otherwise      = (val2         , cost2)
+    f (!symbol1, !cost1) (!symbol2, !cost2) =
+        case cost1 `compare` cost2 of
+          EQ -> (symbol1 .|. symbol2, cost1)
+          LT -> (symbol1            , cost1)
+          GT -> (symbol2            , cost2)
 
 
 -- |
--- Finds the cost of a pairing of two static characters.
+-- Finds the cost between all single, unambiguous symbols and two dynamic
+-- character elements (ambiguity groups of symbols).
 --
 -- Takes in a symbol change cost function and two ambiguous elements of a dynamic
 -- character and returns a list of tuples of all possible unambiguous pairings,
 -- along with the cost of each pairing. The resulting elements each have exactly
 -- two bits set.
-allPossibleBaseCombosCosts :: EncodableStreamElement s => (Word -> Word -> Word) -> s -> s -> NonEmpty (s, Word)
-allPossibleBaseCombosCosts costStruct char1 char2 = do
-    (i, x) <- getSubChars char1
-    (j, y) <- getSubChars char2
-    pure (x .|. y, costStruct i j)
-
-
--- |
--- Takes in a 'EncodableStreamElement', possibly with more than one bit set, and
--- returns a list of tuples of 'Word's and 'EncodableStreamElement's, such that,
--- for each set bit in the input, there is one element in the output list, a
--- tuple with an 'Word', @ x @, giving the location of the set bit, as well as an
--- 'EncodableStreamElement' of the same length as the input, but with only the
--- bit at location @ x @ set.
-getSubChars :: EncodableStreamElement s => s -> NonEmpty (Word, s)
-getSubChars fullChar = fromList $ foldMap f [0 .. finiteBitSize fullChar - 1]
+symbolDistances
+  :: EncodableStreamElement e
+  => (Word -> Word -> Word)
+  -> e
+  -> e
+  -> NonEmpty (e, Word)
+symbolDistances costStruct char1 char2 = costAndSymbol <$> allSymbols
   where
-    f i
-      | fullChar `testBit` i = pure (toEnum i,  z `setBit` i)
-      | otherwise            = mempty
-    z = fullChar `xor` fullChar
+    costAndSymbol (i, x) = (x, cost1 + cost2)
+      where
+        cost1 = getDistance i char1
+        cost2 = getDistance i char2
+
+    symbolIndices = NE.fromList [0 .. finiteBitSize char1 - 1]
+    allSymbols    = (toEnum &&& setBit zero) <$> symbolIndices
+    zero          = char1 `xor` char1
+
+    getDistance :: FiniteBits b => Word -> b -> Word
+    getDistance i e = minimum $ costStruct i <$> getSetBits e
+
+    getSetBits :: FiniteBits b => b -> NonEmpty Word
+    getSetBits b =
+        case filter (b `testBit`) indices of
+          x:xs -> toEnum <$> x:|xs
+          []   -> error $ "There were no bits set in the character: " <>
+                    show (foldMap (\i -> if b `testBit` i then "1" else "0") indices)
+      where
+        indices = [0 .. finiteBitSize b - 1]
 
 
 -- |
 -- An overlap function that applies the discrete metric to aligning two elements.
-overlapConst :: (EncodableStreamElement c {- , Show c -}) => c -> c -> (c, Word)
+overlapConst :: (EncodableStreamElement e {- , Show e -}) => e -> e -> (e, Word)
 overlapConst lhs rhs
   | intersect == zeroBits = (lhs .|. rhs, 1)
   | otherwise             = (intersect  , 0)

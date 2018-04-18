@@ -1,29 +1,27 @@
-name:                phylocomgraph
-
-version:             0.0.1.0
-
--- A short (one-line) description of the package.
--- synopsis:
-
--- A longer description of the package.
--- description:
-license:             BSD3
-license-file:        LICENSE
-author:              Ward Wheeler
-maintainer:          wheeler@amnh.org
-
--- A copyright notice.
--- copyright:
-
+cabal-version:       2.2
 category:            Biology
 build-type:          Simple
 extra-source-files:  README.md
 
-cabal-version:       >= 1.22
+name:                phylocomgraph
+version:             0.1.0.1
+
+author:              Ward Wheeler
+maintainer:          wheeler@amnh.org
+license:             BSD-3-Clause
+license-file:        LICENSE
+
+synopsis:            Program and library for general phylogenetic graph search
+
+description:         Phylogenetic Componet Graph provides a library for
+                     interacting with phylogenetic graphs. It defines a
+                     decalartive scripting language for defining phylogenetic
+                     searches. Said scripts can be evaluated by the provided pcg
+                     program to perform a phylogenetic search on an input dataset.
 
 flag build-cpp-files
   description: Toggles the C++ files being successfully build.
-  default: True
+  default: False
 
 
 library
@@ -32,12 +30,13 @@ library
   build-depends:       base               >=4.8
                      , bimap
                      , blaze-html
+                     , bv-little
                      , case-insensitive
                        -- >=0.5.8 Required for Data.Map.restrictKeys
                      , containers         >=0.5.8
                      , deepseq
+                     , data-default
                      , dlist
-                     , either
                      , graphviz
                      , hashable
                      , hashtables
@@ -58,6 +57,7 @@ library
                      -- required for Data.Semigroup.Foldable.toNonEmpty
                      , semigroups         >=5.2.1
                      , tcm-memo
+                     , smallcheck
                      , text
                      , transformers
                      , unordered-containers
@@ -113,6 +113,9 @@ library
     cc-options: --std=c++11 -g
   else
     cc-options: --std=c11
+                -pedantic
+                -Wall -Wextra
+--                -fPIC
 
   -- We must provide the full relative path to every C file that the project depends on.
   c-sources:
@@ -126,12 +129,15 @@ library
     ffi/external_direct_optimization/alignCharacters.c
     ffi/external_direct_optimization/ukkCheckPoint.c
     ffi/external_direct_optimization/ukkCommon.c
-    -- ffi/sequential_align/sequentialAlignInterface.h
-    ffi/sequential_align/sequentialAlignInterface.c
-    -- ffi/sequential_align/sequentialAlign.h
-    ffi/sequential_align/sequentialAlign.c
-    -- ffi/sequential_align/sequentialAlignOutputTypes.h
 
+--    ffi/memoized_tcm/dynamicCharacterOperations.c
+--    ffi/memoized_tcm/costMatrix_2d.cpp
+--    ffi/memoized_tcm/costMatrix_3d.cpp
+--    ffi/memoized_tcm/costMatrixWrapper.c
+
+
+    ffi/sequential_align/sequentialAlignInterface.c
+    ffi/sequential_align/sequentialAlign.c
 
   -- Here we list all directories that contain C header files that the FFI tools will need
   -- to locate when preprocessing the C files. Without listing the directories containing
@@ -194,6 +200,7 @@ library
                        Data.TCM
                        Data.TCM.Memoized
                        Data.TopologyRepresentation
+                       Data.NodeLabel
 --                       Text.HTML.Class
 --                       Text.HTML.Custom
                        Text.Newick.Class
@@ -251,6 +258,7 @@ library
                        Bio.Metadata.DiscreteWithTCM.Internal
                        Bio.Metadata.Dynamic.Class
                        Bio.Metadata.Dynamic.Internal
+                       Bio.Graph.BinaryRenderingTree
                        Bio.Graph.Constructions
                        Bio.Graph.Forest
                        Bio.Graph.Node.Class
@@ -283,13 +291,15 @@ executable pcg
   main-is:             Main.hs
 
   build-depends:       phylocomgraph
+                     , ansi-wl-pprint
                      , base             >=4.8
                      , blaze-html
                        -- Required for Data.Map.restrictKeys
                      , containers       >=0.5.8
+                     , data-default
                      , deepseq
                      , directory
-                     , either
+                     , gitrev
                      , Glob
                      , graphviz
                      , hashable
@@ -297,6 +307,7 @@ executable pcg
                      , lens
                      , megaparsec       >=6.0
                      , mono-traversable >=1.0
+                     , optparse-applicative
                      , parallel
                      , pcg-file-parsers
                      , pcg-language
@@ -307,6 +318,7 @@ executable pcg
                      , semigroups
                      , text
                      , time
+                     , transformers
                      , vector
                      , vector-instances >=3.4
                      , xml
@@ -352,6 +364,7 @@ executable pcg
   hs-source-dirs:      app
 
   other-modules:
+                       Paths_phylocomgraph
                        PCG.Command.Build.Evaluate
                        PCG.Command.Read.DecorationInitialization
                        PCG.Command.Read.Evaluate
@@ -475,6 +488,7 @@ executable 3d-do-comparison
   build-depends:       base >=4.8
                      , bimap
                      , phylocomgraph
+                     , deepseq
                      , QuickCheck
                      , tcm-memo
 
@@ -709,6 +723,7 @@ Test-Suite testsuite
   build-depends:       base               >=4.8
                      , bimap
                      , blaze-html
+                     , bv-little
                      , case-insensitive
                        -- >=0.5.8 Required for Data.Map.restrictKeys
                      , containers         >=0.5.8
@@ -735,6 +750,7 @@ Test-Suite testsuite
                      , semigroupoids
                      -- required for Data.Semigroup.Foldable.toNonEmpty
                      , semigroups         >=5.2.1
+                     , smallcheck
                      , split
                      , tasty
                      , tasty-hunit
@@ -805,9 +821,9 @@ Test-Suite testsuite
     -- ffi/memoized_tcm/dynamicCharacterOperations.h
     ffi/memoized_tcm/dynamicCharacterOperations.c
     -- ffi/memoized_tcm/costMatrix.h
-    ffi/memoized_tcm/costMatrix.cpp
+    ffi/memoized_tcm/costMatrix_2d.cpp
     -- ffi/memoized_tcm/costMatrixWrapper.h
-    ffi/memoized_tcm/costMatrixWrapper.c
+    ffi/memoized_tcm/costMatrixWrapper_2d.c
     -- ffi/sequential_align/sequentialAlignInterface.h
     ffi/sequential_align/sequentialAlignInterface.c
     -- ffi/sequential_align/sequentialAlign.h
@@ -894,7 +910,7 @@ Test-Suite testsuite
                        Bio.Metadata.Parsed
                        Control.Evaluation.Internal
                        Control.Evaluation.Test
-                       Control.Evaluation.Unit 
+                       Control.Evaluation.Unit
                        Control.Monad.Logger
                        Data.Alphabet
                        Data.Alphabet.IUPAC

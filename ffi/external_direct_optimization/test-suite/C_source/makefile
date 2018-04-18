@@ -69,6 +69,7 @@ test_interface : test_interface.c $(necessary_c_files) $(necessary_h_files)
 
 
 ######### Create a .so file that can be called from a Python script, thereby allowing batch scripting
+######### This is used for testing
 test_interface_3D_for_python : test_interface_3d_for_python.c $(necessary_c_files) $(necessary_h_files)
 	gcc -std=c11 -fPIC -O3 -c $(sanity-warnings) $(necessary_c_files)
 	gcc -std=c11 -fPIC -O3 -c $(sanity-warnings) test_interface_3d_for_python.c -o intermediate_lib.o
@@ -77,11 +78,12 @@ test_interface_3D_for_python : test_interface_3d_for_python.c $(necessary_c_file
 
 
 ########################## The following are  for testing only the Powell 3D, and not the interface ################################
+################################# They may or may not work, because circular dependencies ##########################################
 
 ######### To compile to .so for Python ffi.
 test_powell_for_python : ../../ukkCheckPoint.c ../../ukkCommon_for_python.c ../../ukkCommon.h
-	gcc         -fPIC -std=c11 -g $(sanity-warnings) -c ../../ukkCheckPoint.c -o intermediatelib.o
-	gcc -shared -fPIC -std=c11 -g $(sanity-warnings) ../../ukkCommon_for_python.c intermediatelib.o -o test_powell_for_python.so
+	gcc         -fPIC -O3 -std=c11 -g $(sanity-warnings) -c ../../ukkCheckPoint.c -o intermediatelib.o
+	gcc -shared -fPIC -O3 -std=c11 -g $(sanity-warnings) ../../ukkCommon_for_python.c intermediatelib.o -o test_powell_for_python.so
 
 
 ######### To compile to exe for valgrinding on Ubuntu.

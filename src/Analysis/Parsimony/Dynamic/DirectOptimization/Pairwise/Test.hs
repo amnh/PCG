@@ -23,16 +23,15 @@ import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
 
 import Bio.Character.Encodable
-import Bio.Metadata          hiding (alphabet)
+import Bio.Metadata
 import Data.Alphabet
 import Data.MonoTraversable
 import Data.Semigroup
 import Data.TCM.Memoized
 import Test.Custom.NucleotideSequence
 import Test.Tasty
---import Test.Tasty.HUnit
-import Test.Tasty.QuickCheck hiding ((.&.))
-
+import Test.Tasty.QuickCheck
+import qualified Test.Tasty.SmallCheck as SC
 
 
 testSuite :: TestTree
@@ -41,7 +40,32 @@ testSuite = testGroup "Pariwise alignment tests"
     , testSuiteMemoizedDO
     , testSuiteUkkonnenDO
     , testSuiteForeignDO
+    , constistentImplementation
     ]
+
+
+constistentImplementation = testGroup "All implementations return same states"
+    [ consistentResults "Consistenty over discrete metric" discreteMetric
+    , consistentResults "Consistenty over L1 norm" l1Norm
+    , consistentResults "Consistenty over prefer substitution metric (1:2)" preferSubMetric
+    , consistentResults "Consistenty over prefer insertion/deletion metric (2:1)" preferGapMetric
+    ]
+
+
+consistentResults :: String -> (Word -> Word -> Word) -> TestTree
+consistentResults label metric = SC.testProperty label $ SC.forAll checkConsistency
+  where
+    dense = genDenseMatrix metric
+    memoed = getMedianAndCost (genMemoMatrix metric)
+    f :: DynamicCharacterElement -> DynamicChar
+    f = constructDynamic . (:[])
+
+    checkConsistency :: (NucleotideBase, NucleotideBase) -> Bool
+    checkConsistency (NB x, NB y) = naiveResult == memoedResult && naiveResult == foreignResult
+      where
+        naiveResult   = naiveDO           (f x) (f y) metric
+        memoedResult  = naiveDOMemo       (f x) (f y) memoed
+        foreignResult = foreignPairwiseDO (f x) (f y) dense
 
 
 testSuiteNaiveDO = testGroup "Naive DO"
@@ -192,14 +216,6 @@ l1Norm :: (Ord a, Num a) => a -> a -> a
 l1Norm i j = max i j - min i j
 
 
-preferSubMetric :: (Ord a, Num a) => a -> a -> a
-preferSubMetric i j
-  | i == j    = 0
-  | i == 4    = 2
-  | j == 4    = 2
-  | otherwise = 1
-
-
 preferGapMetric :: (Ord a, Num a) => a -> a -> a 
 preferGapMetric i j
   | i == j    = 0
@@ -207,6 +223,13 @@ preferGapMetric i j
   | j == 4    = 1
   | otherwise = 2
 
+
+preferSubMetric :: (Ord a, Num a) => a -> a -> a
+preferSubMetric i j
+  | i == j    = 0
+  | i == 4    = 2
+  | j == 4    = 2
+  | otherwise = 1
 
 
 {-

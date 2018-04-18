@@ -120,7 +120,7 @@ reifyDAGWithContext leafCount maskDAG (PDAG dag) = PDAG2 newDAG
     newDAG = RefDAG
         { references = newRefs
         , rootRefs   = rootRefs dag
-        , graphData  = defaultGraphMetadata $ graphData dag
+        , graphData  = ((mempty, mempty, Nothing) <$) $ graphData dag
         }
     
     buildLeafNodeAssignments = nodeDecoration <$> references maskDAG
