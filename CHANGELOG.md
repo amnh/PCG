@@ -5,9 +5,11 @@ PCG uses [PVP Versioning][1].
 Releases are available [on GitHub][2].
 
 
-## Unreleased Changes
+## _v0.1.2.0_ - Unreleased Changes
 
-* None
+* Polished command line option parsing and error reporting
+* Improved phylogeny pretty-printing
+* Documentation improvements
 
 
 ## [v0.1.0.1][4] - 2018-03-23
