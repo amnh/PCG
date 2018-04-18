@@ -1,24 +1,23 @@
 cabal-version:       2.2
-name:                phylocomgraph
-
-version:             0.1.0.1
-
--- A short (one-line) description of the package.
--- synopsis:
-
--- A longer description of the package.
--- description:
-license:             BSD3
-license-file:        LICENSE
-author:              Ward Wheeler
-maintainer:          wheeler@amnh.org
-
--- A copyright notice.
--- copyright:
-
 category:            Biology
 build-type:          Simple
 extra-source-files:  README.md
+
+name:                phylocomgraph
+version:             0.1.0.1
+
+author:              Ward Wheeler
+maintainer:          wheeler@amnh.org
+license:             BSD-3-Clause
+license-file:        LICENSE
+
+synopsis:            Program and library for general phylogenetic graph search
+
+description:         Phylogenetic Componet Graph provides a library for
+                     interacting with phylogenetic graphs. It defines a
+                     decalartive scripting language for defining phylogenetic
+                     searches. Said scripts can be evaluated by the provided pcg
+                     program to perform a phylogenetic search on an input dataset.
 
 flag build-cpp-files
   description: Toggles the C++ files being successfully build.
