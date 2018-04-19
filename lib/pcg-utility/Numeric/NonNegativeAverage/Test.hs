@@ -14,12 +14,12 @@ import Test.Tasty.QuickCheck
 
 testSuite :: TestTree
 testSuite = testGroup "NonNegativeAverage tests"
-    [ testProperties
+    [ testInvariantProperties
     ]
 
 
-testProperties :: TestTree
-testProperties = testGroup "Invariant properties"
+testInvariantProperties :: TestTree
+testInvariantProperties = testGroup "Invariant properties"
     [ orderingProperties
     , semigroupProperties
     ]

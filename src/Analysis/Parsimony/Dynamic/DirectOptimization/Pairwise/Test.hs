@@ -56,7 +56,7 @@ consistentResults :: String -> (Word -> Word -> Word) -> TestTree
 consistentResults label metric = SC.testProperty label $ SC.forAll checkConsistency
   where
     dense = genDenseMatrix metric
-    memoed = getMedianAndCost (genMemoMatrix metric)
+    memoed = getMedianAndCost2D (genMemoMatrix metric)
     f :: DynamicCharacterElement -> DynamicChar
     f = constructDynamic . (:[])
 
@@ -82,25 +82,25 @@ testSuiteNaiveDO = testGroup "Naive DO"
 
 testSuiteMemoizedDO = testGroup "Memoized DO"
     [ isValidPairwiseAlignment "Memoized DO over discrete metric"
-       $ \x y -> naiveDOMemo x y (getMedianAndCost (genMemoMatrix discreteMetric))
+       $ \x y -> naiveDOMemo x y (getMedianAndCost2D (genMemoMatrix discreteMetric))
     , isValidPairwiseAlignment "Memoized DO over L1 norm"
-       $ \x y -> naiveDOMemo x y (getMedianAndCost (genMemoMatrix l1Norm))
+       $ \x y -> naiveDOMemo x y (getMedianAndCost2D (genMemoMatrix l1Norm))
     , isValidPairwiseAlignment "Memoized DO over prefer substitution metric (1:2)"
-       $ \x y -> naiveDOMemo x y (getMedianAndCost (genMemoMatrix preferSubMetric))
+       $ \x y -> naiveDOMemo x y (getMedianAndCost2D (genMemoMatrix preferSubMetric))
     , isValidPairwiseAlignment "Memoized DO over prefer insertion/deletion metric (2:1)"
-       $ \x y -> naiveDOMemo x y (getMedianAndCost (genMemoMatrix preferGapMetric))
+       $ \x y -> naiveDOMemo x y (getMedianAndCost2D (genMemoMatrix preferGapMetric))
     ]
 
 
 testSuiteUkkonnenDO = testGroup "Ukkonnen DO"
     [ isValidPairwiseAlignment "Ukkonnen DO over discrete metric"
-       $ \x y -> ukkonenDO x y (getMedianAndCost (genMemoMatrix discreteMetric))
+       $ \x y -> ukkonenDO x y (getMedianAndCost2D (genMemoMatrix discreteMetric))
     , isValidPairwiseAlignment "Ukkonnen DO over L1 norm"
-       $ \x y -> ukkonenDO x y (getMedianAndCost (genMemoMatrix l1Norm))
+       $ \x y -> ukkonenDO x y (getMedianAndCost2D (genMemoMatrix l1Norm))
     , isValidPairwiseAlignment "Ukkonnen DO over prefer substitution metric (1:2)"
-       $ \x y -> ukkonenDO x y (getMedianAndCost (genMemoMatrix preferSubMetric))
+       $ \x y -> ukkonenDO x y (getMedianAndCost2D (genMemoMatrix preferSubMetric))
     , isValidPairwiseAlignment "Ukkonnen DO over prefer insertion/deletion metric (2:1)"
-       $ \x y -> ukkonenDO x y (getMedianAndCost (genMemoMatrix preferGapMetric))
+       $ \x y -> ukkonenDO x y (getMedianAndCost2D (genMemoMatrix preferGapMetric))
     ]
 
 

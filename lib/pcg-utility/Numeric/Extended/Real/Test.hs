@@ -12,19 +12,19 @@ import Test.Tasty.QuickCheck
 
 testSuite :: TestTree
 testSuite = testGroup "ExtendedReal tests"
-    [ testInvariants
-    , testProperties
+    [ testInvariantCases
+    , testInvariantProperties
     ]
 
 
-testInvariants :: TestTree
-testInvariants = testGroup "Invariant corner cases"
+testInvariantCases :: TestTree
+testInvariantCases = testGroup "Invariant corner cases"
     [ infinityCases
     ]
 
 
-testProperties :: TestTree
-testProperties = testGroup "Invariant properties"
+testInvariantProperties :: TestTree
+testInvariantProperties = testGroup "Invariant properties"
     [ orderingProperties
     , additionProperties
     , subtractionProperties
