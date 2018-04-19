@@ -15,16 +15,15 @@
 module Resolve where
 
 import Data.Foldable
-import Data.List.NonEmpty (NonEmpty(..), fromList, (!!))
+import Data.Key           ((!)) -- import the polymorphic indexing operator
+import Data.List.NonEmpty (NonEmpty(..), fromList)
 import Data.Maybe
 import Data.Semigroup
 import Data.Void
 import File.Format.Newick
-import Prelude             hiding ((!!))
+import Prelude
 import Text.Megaparsec
-
 import System.Environment  -- for command-line arguments.
-import System.Exit
 
 
 main :: IO ()
@@ -35,7 +34,7 @@ main = do
         inputfileName : _ -> do
             inputStream  <- readFile inputfileName
             case parse' newickStreamParser inputfileName inputStream of
-                Left  error  -> putStrLn $ parseErrorPretty' inputfileName error
+                Left  errMsg -> putStrLn $ parseErrorPretty' inputfileName errMsg
                 Right forest -> print $ fmap resolveAllTrees <$> forest
     where
        parse' :: Parsec Void s a -> String -> s -> Either (ParseError (Token s) Void) a
@@ -63,29 +62,31 @@ resolveAllTrees root =
 generateSubsets :: [NewickNode] -> Int -> [(NewickForest, NewickForest)]
 generateSubsets inNodes numTrees =
     case inNodes of
-        x:[]    -> error "Exactly one element found in a set. Need three."
-        x:[y]   -> error "Exactly two elements found in a set. Need three."
+        []      -> error "Exactly zero elements found in a set. Need three or more."
+        [_]     -> error "Exactly one element found in a set. Need three or more."
+        [_,_]   -> error "Exactly two elements found in a set. Need three or more."
         x:[y,z] -> [ (x :| [], y :| [z])
                    , (y :| [], x :| [z])
                    , (z :| [], x :| [y])
                    ]
-        xs      -> snd $ foldl getPieces (0, []) xs
+        xs      -> snd $ foldl getPieces (0, []) [xs] -- Now this is a list of lists, probably wrong though
 
     where
-        getPieces :: (Int, a) -> [NewickNode] -> (Int, [(NewickForest, NewickForest)])
-        getPieces (index, acc) inputList
+        getPieces :: (Int, [(NewickForest, NewickForest)]) -> [NewickNode] -> (Int, [(NewickForest, NewickForest)])
+        getPieces e@(index, acc) inputList -- create a binding for the accumulator so it can be resused
             -- Ignore any sets that have ordinality greater than half the size of the input set, as they'll already
             -- have been included during first half of fold.
             -- Likewise, stop folding when there are at most two elements in the last set, otherwise we end up
             -- skipping the base case, which requires |m| == 3.
-            | numTrees - index - 1 > 2 && index <= numTrees / 2 =
+            | numTrees - index - 1 > 2 && index <= numTrees `div` 2 = --div is for integral types, (\) is for floating types
                 case inputList of
-                    -- []    -> error "Something went wrong."
-                    x:[] -> (index, x)
-                    x:xs -> foldl f [] $ generateSubsets xs $ numTrees - index - 1 -- x has been taken care of above
+                    []   -> error "Something went wrong, pattern matched the empty list in call: 'getPieces (_, _) []' ."
+                    [_]  -> e -- reuse the input accumulator in this case
+                    _:xs -> let i = numTrees - index - 1 -- define the index here so it can easily be partially applied below
+                            in  (i, foldl (f i) [] $ generateSubsets xs i) -- partially apply f to the index i to create a new folding function
             | otherwise = (succ index, acc)
-        -- f :: [(NewickForest, NewickForest)] -> (NewickForest, NewickForest) -> Int -> [(NewickForest, NewickForest)]
-        f tupleList (lhs, rhs) idx = (idx, (inNodes !! idx <> lhs, rhs) : tupleList)
+        f :: Int -> [(NewickForest, NewickForest)] -> (NewickForest, NewickForest) -> [(NewickForest, NewickForest)] -- change the argument order so it can actually be a foldl function.
+        f idx tupleList (lhs, rhs) = (pure (inNodes ! idx) <> lhs, rhs) : tupleList -- just use the standard indexing operator
 
 
 

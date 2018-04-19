@@ -25,13 +25,14 @@ cabal-version:       >= 1.22
 
 
 executable resolveResolutions
-  main-is:             Resolve.hs
+  main-is:             Main.hs
 
   build-depends:       base               >=4.8
                      , bimap
                       -- >=0.5.8 Required for Data.Map.restrictKeys
                      , containers         >=0.5.8
                      , deepseq
+                     , keys
                      , megaparsec         >=6.0 && <6.4
                      , mono-traversable   >=1.0
                      , pcg-file-parsers
@@ -76,4 +77,6 @@ executable resolveResolutions
                        -Wunused-matches
                        -Wwrong-do-bind
 
-  hs-source-dirs:      src
+  hs-source-dirs:      app, src
+
+  other-modules:       Resolve
