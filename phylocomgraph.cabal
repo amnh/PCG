@@ -1,366 +1,368 @@
-cabal-version:       2.2
-category:            Biology
-build-type:          Simple
-extra-source-files:  README.md
+cabal-version:      2.2
+category:           Biology
+build-type:         Simple
+extra-source-files: README.md
 
-name:                phylocomgraph
-version:             0.1.0.1
+name:               phylocomgraph
+version:            0.1.0.1
 
-author:              Ward Wheeler
-maintainer:          wheeler@amnh.org
-license:             BSD-3-Clause
-license-file:        LICENSE
+author:             Ward Wheeler
+maintainer:         wheeler@amnh.org
+license:            BSD-3-Clause
+license-file:       LICENSE
 
-synopsis:            Program and library for general phylogenetic graph search
+synopsis:           Program and library for general phylogenetic graph search
 
-description:         Phylogenetic Componet Graph provides a library for
-                     interacting with phylogenetic graphs. It defines a
-                     decalartive scripting language for defining phylogenetic
-                     searches. Said scripts can be evaluated by the provided pcg
-                     program to perform a phylogenetic search on an input dataset.
+description:        Phylogenetic Componet Graph provides a library for
+                    interacting with phylogenetic graphs. It defines a
+                    decalartive scripting language for defining phylogenetic
+                    searches. Said scripts can be evaluated by the provided pcg
+                    program to perform a phylogenetic search on an input dataset.
 
 
 library
   other-extensions: MonadFailDesugaring
 
-  build-depends:       base               >=4.8
-                     , bimap
-                     , blaze-html
-                     , bv-little
-                     , case-insensitive
-                       -- >=0.5.8 Required for Data.Map.restrictKeys
-                     , containers         >=0.5.8
-                     , deepseq
-                     , data-default
-                     , dlist
-                     , graphviz
-                     , hashable
-                     , hashtables
-                     , integer-gmp
-                     , keys
-                     , lens
-                     , mono-traversable   >=1.0
-                     , mtl
-                     , parallel
-                     , pcg-file-parsers
-                     , pcg-utility
-                     , pointed
-                     , pretty-tree
-                     , primitive
-                     , QuickCheck
-                     , scientific
-                     , semigroupoids
-                     -- required for Data.Semigroup.Foldable.toNonEmpty
-                     , semigroups         >=5.2.1
-                     , tcm-memo
-                     , smallcheck
-                     , text
-                     , transformers
-                     , unordered-containers
-                     , vector
-                     -- >=3.4 required for corrected definition of (!) & index
-                     , vector-instances >=3.4
-                     , xml
+  build-depends:      base               >=4.8
+                    , bimap
+                    , blaze-html
+                    , bv-little
+                    , case-insensitive
+                    -- >=0.5.8 Required for Data.Map.restrictKeys
+                    , containers         >=0.5.8
+                    , deepseq
+                    , data-default
+                    , dlist
+                    , graphviz
+                    , hashable
+                    , hashtables
+                    , integer-gmp
+                    , keys
+                    , lens
+                    , mono-traversable   >=1.0
+                    , mtl
+                    , parallel
+                    , pcg-file-parsers
+                    , pcg-utility
+                    , pointed
+                    , pretty-tree
+                    , primitive
+                    , QuickCheck
+                    , scientific
+                    -- required for Data.Semigroup.Foldable.toNonEmpty
+                    , semigroupoids      >=5.2.1
+                    , semigroups
+                    , smallcheck
+                    , text
+                    , transformers
+                    , unordered-containers
+                    , vector
+                    -- >=3.4 required for corrected definition of (!) & index
+                    , vector-instances   >=3.4
+                    , xml
 
-  cc-options: --std=c11
+  cc-options:       --std=c11
 
+  c-sources:        ffi/external_direct_optimization/c_alignment_interface.c
+                    ffi/external_direct_optimization/c_code_alloc_setup.c
+                    ffi/external_direct_optimization/costMatrix.c
+                    ffi/external_direct_optimization/alignmentMatrices.c
+                    ffi/external_direct_optimization/dyn_character.c
+                    ffi/external_direct_optimization/alignCharacters.c
+                    ffi/external_direct_optimization/ukkCheckPoint.c
+                    ffi/external_direct_optimization/ukkCommon.c
+                    ffi/memoized-tcm/dynamicCharacterOperations.c
+                    ffi/memoized-tcm/costMatrixWrapper.c
+                    ffi/sequential_align/sequentialAlignInterface.c
+                    ffi/sequential_align/sequentialAlign.c
 
-  -- We must provide the full relative path to every C file that the project depends on.
-  c-sources:
-    ffi/external_direct_optimization/c_alignment_interface.c
-    ffi/external_direct_optimization/c_code_alloc_setup.c
-    ffi/external_direct_optimization/costMatrix.c
-    ffi/external_direct_optimization/alignmentMatrices.c
-    ffi/external_direct_optimization/dyn_character.c
-    ffi/external_direct_optimization/alignCharacters.c
-    ffi/external_direct_optimization/ukkCheckPoint.c
-    ffi/external_direct_optimization/ukkCommon.c
-    ffi/sequential_align/sequentialAlignInterface.c
-    ffi/sequential_align/sequentialAlign.c
+  cxx-options:      --std=c++11
 
-  default-language:    Haskell2010
+  cxx-sources:      ffi/memoized-tcm/costMatrix_2d.cpp
+                    ffi/memoized-tcm/costMatrix_3d.cpp
+    
+  default-language: Haskell2010
 
-  ghc-options:         -O2
-                       -g
---                       -debug -optl-static
+  -- This library is required for linking to the C++ standard template library.
+  extra-libraries:  stdc++
+  
+  ghc-options:      -O2
+                    -g
+--                    -debug -optl-static
                     -- Sanity check warnings
-                       -Wall
-                       -Wcompat
-                       -Wdodgy-foreign-imports
-                       -Wduplicate-exports
-                       -Wempty-enumerations
-                       -Widentities
-                       -Wincomplete-patterns
-                       -Wincomplete-record-updates
-                       -Wincomplete-uni-patterns
-                       -Wmissing-fields
-                       -Wmissing-home-modules
-                       -Wmissing-monadfail-instances
-                       -Wmissing-monadfail-instances
-                       -Wmissing-signatures
-                       -Wnoncanonical-monadfail-instances
-                       -Wnoncanonical-monad-instances
-                       -Wnoncanonical-monoid-instances
-                       -Woverflowed-literals
-                       -Woverlapping-patterns
-                       -Wredundant-constraints
-                       -Wsemigroup
-                       -Wtabs
-                       -Wunrecognised-warning-flags
-                       -Wunrecognised-warning-flags
-                       -Wunused-binds
-                       -Wunused-do-bind
-                       -Wunused-foralls
-                       -Wunused-imports
-                       -Wunused-matches
-                       -Wwrong-do-bind
+                    -Wall
+                    -Wcompat
+                    -Wdodgy-foreign-imports
+                    -Wduplicate-exports
+                    -Wempty-enumerations
+                    -Widentities
+                    -Wincomplete-patterns
+                    -Wincomplete-record-updates
+                    -Wincomplete-uni-patterns
+                    -Wmissing-fields
+                    -Wmissing-home-modules
+                    -Wmissing-monadfail-instances
+                    -Wmissing-monadfail-instances
+                    -Wmissing-signatures
+                    -Wnoncanonical-monadfail-instances
+                    -Wnoncanonical-monad-instances
+                    -Wnoncanonical-monoid-instances
+                    -Woverflowed-literals
+                    -Woverlapping-patterns
+                    -Wredundant-constraints
+                    -Wsemigroup
+                    -Wtabs
+                    -Wunrecognised-warning-flags
+                    -Wunrecognised-warning-flags
+                    -Wunused-binds
+                    -Wunused-do-bind
+                    -Wunused-foralls
+                    -Wunused-imports
+                    -Wunused-matches
+                    -Wwrong-do-bind
 
-  hs-source-dirs:      src, ffi
+  hs-source-dirs:   src, ffi
 
-  -- Here we list all directories that contain C header files that the FFI tools will need
-  -- to locate when preprocessing the C files. Without listing the directories containing
-  -- the C header files here, the FFI preprocession (hsc2hs, c2hs,etc.) will fail to locate
-  -- the requisite files.
-  -- Note also, that the parent directory of the nessicary C header files must be specified.
-  -- The preprocesser will not recursively look in subdirectories for C header files!
-  include-dirs:
-    ffi/external_direct_optimization
-    ffi/sequential_align
+  -- Here we list all directories that contain C & C++ header files that the FFI
+  -- tools will need to locate when preprocessing the C files. Without listing
+  -- the directories containing the C header files here, the FFI preprocessor
+  -- (hsc2hs, c2hs, etc.) will fail to locate the requisite files. Note also,
+  -- that the parent directory of the nessicary C & C++ header files must be
+  -- specified. The preprocessor will not recursively look in subdirectories for
+  -- header files!
+  include-dirs:     ffi/external_direct_optimization
+                    ffi/memoized-tcm
+                    ffi/sequential_align
 
-  -- Modules exported by the library.
-  exposed-modules:
---                       Analysis.ImpliedAlignment
-                       Analysis.Parsimony.Additive.Internal
-                       Analysis.Parsimony.Dynamic.DirectOptimization
-                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
-                       Analysis.Parsimony.Dynamic.SequentialAlign
-                       Analysis.Parsimony.Fitch.Internal
-                       Analysis.Parsimony.Sankoff.Internal
-                       Analysis.Scoring
-                       Bio.Character
-                       Bio.Character.Decoration.Additive
-                       Bio.Character.Decoration.Continuous
-                       Bio.Character.Decoration.Discrete
-                       Bio.Character.Decoration.Dynamic
-                       Bio.Character.Decoration.Fitch
-                       Bio.Character.Decoration.Metric
-                       Bio.Character.Decoration.NonMetric
-                       Bio.Character.Encodable
-                       Bio.Character.Encodable.Continuous
-                       Bio.Character.Exportable
-                       Bio.Character.Parsed
-                       Bio.Metadata
-                       Bio.Metadata.CharacterName
-                       Bio.Metadata.Continuous
-                       Bio.Metadata.Discrete
-                       Bio.Metadata.DiscreteWithTCM
-                       Bio.Metadata.Dynamic
-                       Bio.Metadata.Parsed
-                       Bio.Sequence
-                       Bio.Sequence.Block
-                       Bio.Graph
-                       Bio.Graph.Component
-                       Bio.Graph.Forest.Parsed
-                       Bio.Graph.LeafSet
-                       Bio.Graph.Node
-                       Bio.Graph.PhylogeneticDAG
-                       Bio.Graph.ReferenceDAG
-                       Bio.Graph.ReferenceDAG.Internal
-                       Bio.Graph.Solution
-                       Bio.Graph.ZipperDAG
-                       Control.Evaluation
-                       Control.Parallel.Custom
-                       Control.Monad.Logger
-                       Data.Alphabet
-                       Data.Alphabet.IUPAC
-                       Data.EdgeLength
-                       Data.TCM
-                       Data.TCM.Memoized
-                       Data.TopologyRepresentation
-                       Data.NodeLabel
---                       Text.HTML.Class
---                       Text.HTML.Custom
-                       Text.Newick.Class
-                       Text.XML
-                       Text.XML.Custom
+  exposed-modules:  Analysis.Parsimony.Additive.Internal
+                    Analysis.Parsimony.Dynamic.DirectOptimization
+                    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
+                    Analysis.Parsimony.Dynamic.SequentialAlign
+                    Analysis.Parsimony.Fitch.Internal
+                    Analysis.Parsimony.Sankoff.Internal
+                    Analysis.Scoring
+                    Bio.Character
+                    Bio.Character.Decoration.Additive
+                    Bio.Character.Decoration.Continuous
+                    Bio.Character.Decoration.Discrete
+                    Bio.Character.Decoration.Dynamic
+                    Bio.Character.Decoration.Fitch
+                    Bio.Character.Decoration.Metric
+                    Bio.Character.Decoration.NonMetric
+                    Bio.Character.Encodable
+                    Bio.Character.Encodable.Continuous
+                    Bio.Character.Exportable
+                    Bio.Character.Parsed
+                    Bio.Metadata
+                    Bio.Metadata.CharacterName
+                    Bio.Metadata.Continuous
+                    Bio.Metadata.Discrete
+                    Bio.Metadata.DiscreteWithTCM
+                    Bio.Metadata.Dynamic
+                    Bio.Metadata.Parsed
+                    Bio.Sequence
+                    Bio.Sequence.Block
+                    Bio.Graph
+                    Bio.Graph.Component
+                    Bio.Graph.Forest.Parsed
+                    Bio.Graph.LeafSet
+                    Bio.Graph.Node
+                    Bio.Graph.PhylogeneticDAG
+                    Bio.Graph.ReferenceDAG
+                    Bio.Graph.ReferenceDAG.Internal
+                    Bio.Graph.Solution
+                    Bio.Graph.ZipperDAG
+                    Control.Evaluation
+                    Control.Parallel.Custom
+                    Control.Monad.Logger
+                    Data.Alphabet
+                    Data.Alphabet.IUPAC
+                    Data.EdgeLength
+                    Data.TCM
+                    Data.TCM.Memoized
+                    Data.TCM.Memoized.FFI
+                    Data.TopologyRepresentation
+                    Data.NodeLabel
+--                    Text.HTML.Class
+--                    Text.HTML.Custom
+                    Text.Newick.Class
+                    Text.XML
+                    Text.XML.Custom
 
   -- probably can be moved to other-modules:
-                       Test.Custom.NucleotideSequence
-                       Test.Custom.DynamicCharacterNode
+                    Test.Custom.NucleotideSequence
+                    Test.Custom.DynamicCharacterNode
 
-  other-modules:
-                       Analysis.Parsimony.Dynamic.DirectOptimization.DeletionEvents
-                       Analysis.Parsimony.Dynamic.DirectOptimization.Internal
-                       Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents
-                       Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Internal
-                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
-                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
-                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
-                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
-                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Internal
-                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
-                       Analysis.Parsimony.Dynamic.SequentialAlign.FFI
-                       Bio.Character.Decoration.Additive.Class
-                       Bio.Character.Decoration.Additive.Internal
-                       Bio.Character.Decoration.Continuous.Class
-                       Bio.Character.Decoration.Continuous.Internal
-                       Bio.Character.Decoration.Dynamic.Class
-                       Bio.Character.Decoration.Dynamic.Internal
-                       Bio.Character.Decoration.Fitch.Class
-                       Bio.Character.Decoration.Fitch.Internal
-                       Bio.Character.Decoration.Metric.Class
-                       Bio.Character.Decoration.Metric.Internal
-                       Bio.Character.Decoration.NonMetric.Class
-                       Bio.Character.Decoration.NonMetric.Internal
-                       Bio.Character.Decoration.Shared
-                       Bio.Character.Encodable.Continuous.Class
-                       Bio.Character.Encodable.Continuous.Internal
-                       Bio.Character.Encodable.Dynamic
-                       Bio.Character.Encodable.Dynamic.Class
-                       Bio.Character.Encodable.Dynamic.Internal
-                       Bio.Character.Encodable.Internal
-                       Bio.Character.Encodable.Static
-                       Bio.Character.Encodable.Static.Class
-                       Bio.Character.Encodable.Static.Internal
-                       Bio.Character.Encodable.Stream
---                       Bio.Character.Exportable.Class
-                       Bio.Character.Parsed.Class
-                       Bio.Character.Parsed.Internal
-                       Bio.Metadata.General
-                       Bio.Metadata.General.Class
-                       Bio.Metadata.General.Internal
-                       Bio.Metadata.Discrete.Class
-                       Bio.Metadata.Discrete.Internal
-                       Bio.Metadata.DiscreteWithTCM.Class
-                       Bio.Metadata.DiscreteWithTCM.Internal
-                       Bio.Metadata.Dynamic.Class
-                       Bio.Metadata.Dynamic.Internal
-                       Bio.Graph.BinaryRenderingTree
-                       Bio.Graph.Constructions
-                       Bio.Graph.Forest
-                       Bio.Graph.Node.Class
-                       Bio.Graph.Node.Internal
-                       Bio.Graph.PhylogeneticDAG.Class
-                       Bio.Graph.PhylogeneticDAG.Internal
-                       Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
-                       Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
-                       Bio.Graph.PhylogeneticDAG.Postorder
-                       Bio.Graph.PhylogeneticDAG.Preorder
-                       Bio.Graph.PhylogeneticDAG.Reification
-                       Bio.Graph.PhylogeneticDAG.TotalEdgeCost
-                       Bio.Graph.ZipperDAG.Internal
-                       Bio.Sequence.Internal
-                       Bio.Sequence.Block.Builder
-                       Bio.Sequence.Block.Internal
-                       Control.Evaluation.Unit
-                       Control.Evaluation.Internal
-                       Control.Evaluation.Trans
-                       Data.Alphabet.Internal
-                       Data.EdgeSet
-                       Data.Range
-                       Data.TCM.Internal
-                       Data.Vector.NonEmpty
-                       Test.QuickCheck.Arbitrary.Instances
-                       Text.XML.Class
+  other-modules:    Analysis.Parsimony.Dynamic.DirectOptimization.DeletionEvents
+                    Analysis.Parsimony.Dynamic.DirectOptimization.Internal
+                    Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents
+                    Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Internal
+                    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
+                    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
+                    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
+                    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
+                    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Internal
+                    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
+                    Analysis.Parsimony.Dynamic.SequentialAlign.FFI
+                    Bio.Character.Decoration.Additive.Class
+                    Bio.Character.Decoration.Additive.Internal
+                    Bio.Character.Decoration.Continuous.Class
+                    Bio.Character.Decoration.Continuous.Internal
+                    Bio.Character.Decoration.Dynamic.Class
+                    Bio.Character.Decoration.Dynamic.Internal
+                    Bio.Character.Decoration.Fitch.Class
+                    Bio.Character.Decoration.Fitch.Internal
+                    Bio.Character.Decoration.Metric.Class
+                    Bio.Character.Decoration.Metric.Internal
+                    Bio.Character.Decoration.NonMetric.Class
+                    Bio.Character.Decoration.NonMetric.Internal
+                    Bio.Character.Decoration.Shared
+                    Bio.Character.Encodable.Continuous.Class
+                    Bio.Character.Encodable.Continuous.Internal
+                    Bio.Character.Encodable.Dynamic
+                    Bio.Character.Encodable.Dynamic.Class
+                    Bio.Character.Encodable.Dynamic.Internal
+                    Bio.Character.Encodable.Internal
+                    Bio.Character.Encodable.Static
+                    Bio.Character.Encodable.Static.Class
+                    Bio.Character.Encodable.Static.Internal
+                    Bio.Character.Encodable.Stream
+                    Bio.Character.Exportable.Class
+                    Bio.Character.Parsed.Class
+                    Bio.Character.Parsed.Internal
+                    Bio.Metadata.General
+                    Bio.Metadata.General.Class
+                    Bio.Metadata.General.Internal
+                    Bio.Metadata.Discrete.Class
+                    Bio.Metadata.Discrete.Internal
+                    Bio.Metadata.DiscreteWithTCM.Class
+                    Bio.Metadata.DiscreteWithTCM.Internal
+                    Bio.Metadata.Dynamic.Class
+                    Bio.Metadata.Dynamic.Internal
+                    Bio.Graph.BinaryRenderingTree
+                    Bio.Graph.Constructions
+                    Bio.Graph.Forest
+                    Bio.Graph.Node.Class
+                    Bio.Graph.Node.Internal
+                    Bio.Graph.PhylogeneticDAG.Class
+                    Bio.Graph.PhylogeneticDAG.Internal
+                    Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
+                    Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
+                    Bio.Graph.PhylogeneticDAG.Postorder
+                    Bio.Graph.PhylogeneticDAG.Preorder
+                    Bio.Graph.PhylogeneticDAG.Reification
+                    Bio.Graph.PhylogeneticDAG.TotalEdgeCost
+                    Bio.Graph.ZipperDAG.Internal
+                    Bio.Sequence.Internal
+                    Bio.Sequence.Block.Builder
+                    Bio.Sequence.Block.Internal
+                    Control.Evaluation.Unit
+                    Control.Evaluation.Internal
+                    Control.Evaluation.Trans
+                    Data.Alphabet.Internal
+                    Data.EdgeSet
+                    Data.Range
+                    Data.TCM.Internal
+                    Data.Vector.NonEmpty
+                    Test.QuickCheck.Arbitrary.Instances
+                    Text.XML.Class
 
 
 executable pcg
-  main-is:             Main.hs
 
-  build-depends:       phylocomgraph
-                     , ansi-wl-pprint
-                     , base             >=4.8
-                     , blaze-html
-                       -- Required for Data.Map.restrictKeys
-                     , containers       >=0.5.8
-                     , data-default
-                     , deepseq
-                     , directory
-                     , gitrev
-                     , Glob
-                     , graphviz
-                     , hashable
-                     , keys
-                     , lens
-                     , megaparsec       >=6.0
-                     , mono-traversable >=1.0
-                     , optparse-applicative
-                     , parallel
-                     , pcg-file-parsers
-                     , pcg-language
-                     , pcg-utility
-                     , primitive
-                     , random-shuffle
-                     , semigroupoids
-                     , semigroups
-                     , text
-                     , time
-                     , transformers
-                     , vector
-                     , vector-instances >=3.4
-                     , xml
+  main-is:          Main.hs
 
-  default-language:    Haskell2010
+  build-depends:      phylocomgraph
+                    , ansi-wl-pprint
+                    , base             >=4.8
+                    , blaze-html
+                    -- Required for Data.Map.restrictKeys
+                    , containers       >=0.5.8
+                    , data-default
+                    , deepseq
+                    , directory
+                    , gitrev
+                    , Glob
+                    , graphviz
+                    , hashable
+                    , keys
+                    , lens
+                    , megaparsec       >=6.0
+                    , mono-traversable >=1.0
+                    , optparse-applicative
+                    , parallel
+                    , pcg-file-parsers
+                    , pcg-language
+                    , pcg-utility
+                    , primitive
+                    , random-shuffle
+                    , semigroupoids
+                    , semigroups
+                    , text
+                    , time
+                    , transformers
+                    , vector
+                    , vector-instances >=3.4
+                    , xml
 
-  ghc-options:         -O2
-                       -g
-                     -- This is to enable thread parralellism at compile time
-                       -threaded
-                     -- -rtsopts -with-rtsopts=-N8
-                       -Wall
-                       -Wcompat
-                       -Wdodgy-foreign-imports
-                       -Wduplicate-exports
-                       -Wempty-enumerations
-                       -Widentities
-                       -Wincomplete-patterns
-                       -Wincomplete-record-updates
-                       -Wincomplete-uni-patterns
-                       -Wmissing-fields
-                       -Wmissing-home-modules
-                       -Wmissing-monadfail-instances
-                       -Wmissing-monadfail-instances
-                       -Wmissing-signatures
-                       -Wnoncanonical-monadfail-instances
-                       -Wnoncanonical-monad-instances
-                       -Wnoncanonical-monoid-instances
-                       -Woverflowed-literals
-                       -Woverlapping-patterns
-                       -Wredundant-constraints
-                       -Wsemigroup
-                       -Wtabs
-                       -Wunrecognised-warning-flags
-                       -Wunrecognised-warning-flags
-                       -Wunused-binds
-                       -Wunused-do-bind
-                       -Wunused-foralls
-                       -Wunused-imports
-                       -Wunused-matches
-                       -Wwrong-do-bind
+  default-language: Haskell2010
 
-  hs-source-dirs:      app
+  ghc-options:      -O2
+                    -g
+                    -- This is to enable thread parralellism at compile time
+                    -threaded
+                    -- -rtsopts -with-rtsopts=-N8
+                    -Wall
+                    -Wcompat
+                    -Wdodgy-foreign-imports
+                    -Wduplicate-exports
+                    -Wempty-enumerations
+                    -Widentities
+                    -Wincomplete-patterns
+                    -Wincomplete-record-updates
+                    -Wincomplete-uni-patterns
+                    -Wmissing-fields
+                    -Wmissing-home-modules
+                    -Wmissing-monadfail-instances
+                    -Wmissing-monadfail-instances
+                    -Wmissing-signatures
+                    -Wnoncanonical-monadfail-instances
+                    -Wnoncanonical-monad-instances
+                    -Wnoncanonical-monoid-instances
+                    -Woverflowed-literals
+                    -Woverlapping-patterns
+                    -Wredundant-constraints
+                    -Wsemigroup
+                    -Wtabs
+                    -Wunrecognised-warning-flags
+                    -Wunrecognised-warning-flags
+                    -Wunused-binds
+                    -Wunused-do-bind
+                    -Wunused-foralls
+                    -Wunused-imports
+                    -Wunused-matches
+                    -Wwrong-do-bind
 
-  other-modules:
-                       Paths_phylocomgraph
-                       PCG.Command.Build.Evaluate
-                       PCG.Command.Read.DecorationInitialization
-                       PCG.Command.Read.Evaluate
-                       PCG.Command.Read.ReadError
-                       PCG.Command.Read.Unification.Master
-                       PCG.Command.Read.Unification.UnificationError
+  hs-source-dirs:   app
 
---                       PCG.Command.Report.CharacterMatrix
-                       PCG.Command.Report.DynamicCharacterTable
-                       PCG.Command.Report.Evaluate
-                       PCG.Command.Report.GraphViz
---                       PCG.Command.Report.ImpliedAlignmentFasta
---                       PCG.Command.Report.Internal
---                       PCG.Command.Report.Metadata
---                       PCG.Command.Report.TaxonMatrix
---                       PCG.Command.Report.Newick
---                       PCG.Command.Report.Validate
-
-                       PCG.Computation.Internal
+  other-modules:    Paths_phylocomgraph
+                    PCG.Command.Build.Evaluate
+                    PCG.Command.Read.DecorationInitialization
+                    PCG.Command.Read.Evaluate
+                    PCG.Command.Read.ReadError
+                    PCG.Command.Read.Unification.Master
+                    PCG.Command.Read.Unification.UnificationError
+--                    PCG.Command.Report.CharacterMatrix
+                    PCG.Command.Report.DynamicCharacterTable
+                    PCG.Command.Report.Evaluate
+                    PCG.Command.Report.GraphViz
+--                    PCG.Command.Report.ImpliedAlignmentFasta
+--                    PCG.Command.Report.Internal
+--                    PCG.Command.Report.Metadata
+--                    PCG.Command.Report.TaxonMatrix
+--                    PCG.Command.Report.Newick
+--                    PCG.Command.Report.Validate
+                    PCG.Computation.Internal
 
 
 executable fasta-differ
@@ -419,7 +421,6 @@ executable 2d-do-comparison
                      , bimap
                      , phylocomgraph
                      , QuickCheck
-                     , tcm-memo
 
   default-language:    Haskell2010
 
@@ -467,7 +468,6 @@ executable 3d-do-comparison
                      , phylocomgraph
                      , deepseq
                      , QuickCheck
-                     , tcm-memo
 
   default-language:    Haskell2010
 
@@ -502,7 +502,6 @@ executable 3d-do-comparison
                        -Wunused-imports
                        -Wunused-matches
                        -Wwrong-do-bind
-                       -optl-ltcm-memo -optl-lstdc++
 
   hs-source-dirs:      utils
 
@@ -733,7 +732,6 @@ Test-Suite testsuite
                      , tasty-hunit
                      , tasty-quickcheck
                      , tasty-smallcheck
-                     , tcm-memo
                      , text
                      , time
                      , transformers

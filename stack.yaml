@@ -23,7 +23,6 @@ packages:
   - lib/pcg-file-parsers
   - lib/pcg-language
   - lib/pcg-utility
-  - lib/tcm-memo
 # We use this upstream commit until it is uploaded to hackage and stackage respectively.
   - location:  https://github.com/ivan-m/graphviz/archive/b7539aa.zip
     extra-dep: true
