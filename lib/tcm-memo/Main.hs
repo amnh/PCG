@@ -18,7 +18,7 @@ instance Exportable MyStruct where
     toExportableBuffer (T xs) =
         ExportableCharacterSequence
         { exportedElementCountSequence = 5
-        , exportedElementWidthSequence = length xs
+        , exportedElementWidthSequence = toEnum $ length xs
         , exportedBufferChunks         = xs
         }
       
@@ -33,7 +33,7 @@ main = do
    case parseArgs args of
      Left  argsError  -> print argsError
      Right (lhs, rhs) ->
-       let (result, cost) = getMedianAndCost linearNormTCM (T [lhs]) (T [rhs])
+       let (result, cost) = getMedianAndCost2D linearNormTCM (T [lhs]) (T [rhs])
        in  do
            putStrLn "Cost:"
            print cost
@@ -54,7 +54,7 @@ parseArgs args =
     [_] -> Left "Only one argument was supplied, expecting two arguments."
     x:y:_ ->
       case liftA2 (,) (readMay x) (readMay y) of
-        Nothing           -> Left "An invalid input was supplied. Expecting two positive integers."
+        Nothing       -> Left "An invalid input was supplied. Expecting two positive integers."
         Just r@(lhs, rhs)
           | lhs > 31  -> Left "First argument is above 31!"
           | rhs > 31  -> Left "Second argument is above 31!"

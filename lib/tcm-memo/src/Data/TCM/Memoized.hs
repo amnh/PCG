@@ -13,7 +13,8 @@
 module Data.TCM.Memoized
   ( FFI.MemoizedCostMatrix
   , generateMemoizedTransitionCostMatrix
-  , FFI.getMedianAndCost
+  , FFI.getMedianAndCost2D
+  , FFI.getMedianAndCost3D
   ) where
 
 import qualified Data.TCM.Memoized.FFI as FFI
@@ -37,9 +38,3 @@ generateMemoizedTransitionCostMatrix
   -> (Word -> Word -> Word) -- ^ Generating function
   -> FFI.MemoizedCostMatrix
 generateMemoizedTransitionCostMatrix = FFI.getMemoizedCostMatrix
-
-{-
--- Causes ambiguity with Data.TCM.(!)
-(!) :: Exportable s => FFI.MemoizedCostMatrix -> (s, s) -> (s, Word)
-(!) memo (x,y) = FFI.getMedianAndCost memo x y
--}
