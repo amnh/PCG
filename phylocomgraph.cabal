@@ -19,10 +19,6 @@ description:         Phylogenetic Componet Graph provides a library for
                      searches. Said scripts can be evaluated by the provided pcg
                      program to perform a phylogenetic search on an input dataset.
 
-flag build-cpp-files
-  description: Toggles the C++ files being successfully build.
-  default: False
-
 
 library
   other-extensions: MonadFailDesugaring
@@ -104,51 +100,6 @@ library
                        -Wwrong-do-bind
 
   hs-source-dirs:      src, ffi
-
---  ld-options: -lstdc++
-
-  extra-libraries: stdc++
-
-  if  flag(build-cpp-files)
-    cc-options: --std=c++11 -g
-  else
-    cc-options: --std=c11
-                -pedantic
-                -Wall -Wextra
---                -fPIC
-
-  -- We must provide the full relative path to every C file that the project depends on.
-  c-sources:
-    -- ffi/Analysis/Parsimony/Binary/SequentialAlign/sequentialAlign.c
-    -- ffi/Analysis/Parsimony/Binary/SequentialAlign/dynamicCharacterOperations.c
-    ffi/external_direct_optimization/c_alignment_interface.c
-    ffi/external_direct_optimization/c_code_alloc_setup.c
-    ffi/external_direct_optimization/costMatrix.c
-    ffi/external_direct_optimization/alignmentMatrices.c
-    ffi/external_direct_optimization/dyn_character.c
-    ffi/external_direct_optimization/alignCharacters.c
-    ffi/external_direct_optimization/ukkCheckPoint.c
-    ffi/external_direct_optimization/ukkCommon.c
-
---    ffi/memoized_tcm/dynamicCharacterOperations.c
---    ffi/memoized_tcm/costMatrix_2d.cpp
---    ffi/memoized_tcm/costMatrix_3d.cpp
---    ffi/memoized_tcm/costMatrixWrapper.c
-
-
-    ffi/sequential_align/sequentialAlignInterface.c
-    ffi/sequential_align/sequentialAlign.c
-
-  -- Here we list all directories that contain C header files that the FFI tools will need
-  -- to locate when preprocessing the C files. Without listing the directories containing
-  -- the C header files here, the FFI preprocession (hsc2hs, c2hs,etc.) will fail to locate
-  -- the requisite files.
-  -- Note also, that the parent directory of the nessicary C header files must be specified.
-  -- The preprocesser will not recursively look in subdirectories for C header files!
-  include-dirs:
-    ffi/external_direct_optimization
-    ffi/sequential_align
-    lib/tcm-memo/memoized-tcm
 
   -- Modules exported by the library.
   exposed-modules:

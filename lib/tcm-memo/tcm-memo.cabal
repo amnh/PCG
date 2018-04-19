@@ -33,7 +33,8 @@ library
 
   cc-options:       --std=c11
                      
-  cxx-sources:      memoized-tcm/costMatrix.cpp
+  cxx-sources:      memoized-tcm/costMatrix_2d.cpp
+                    memoized-tcm/costMatrix_3d.cpp
 
   cxx-options:      --std=c++11
 
