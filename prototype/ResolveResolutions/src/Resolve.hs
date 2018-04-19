@@ -24,7 +24,7 @@ import File.Format.Newick
 import Text.Megaparsec
 
 import System.Environment  -- for command-line arguments.
-import System.Exit
+-- import System.Exit
 
 
 -- |
@@ -56,10 +56,11 @@ resolveAllTrees :: NewickNode -> NewickForest
 resolveAllTrees root =
     case descendants root of
         []   -> root :| []
-        xs -> fromList . foldl makeNode [] . generateSubsets (toList xs) $ length xs
-    where
-        makeNode acc (lhs, rhs) =
-            fromJust (newickNode (foldMap toList $ toList ((resolveAllTrees <$> lhs) <> (resolveAllTrees <$> rhs))) Nothing Nothing) : acc
+        xs -> fromList . foldl makeNode [] $ generateSubsets [] (toList xs) inputLength inputLength
+            where
+                makeNode acc (lhs, rhs) =
+                    fromJust (newickNode (foldMap toList $ toList ((resolveAllTrees <$> lhs) <> (resolveAllTrees <$> rhs))) Nothing Nothing) : acc
+                inputLength = length xs
 
 
 -- |
@@ -68,30 +69,34 @@ resolveAllTrees root =
 -- subsets is the input forest, they do not intersect, and neither can be the empty set.
 -- numNodes is the number of nodes in inNodes.
 -- Throws an error if |input forest| < 3.
-generateSubsets :: [NewickNode] -> Int -> [(NewickForest, NewickForest)]
-generateSubsets inNodes numNodes =
+generateSubsets :: [NewickNode] -> [NewickNode] -> Int -> Int -> [(NewickForest, NewickForest)]
+generateSubsets previous inNodes originalLength curLength =
     case inNodes of
-        x:[]    -> error "Exactly one element found in a set. Need three."
-        x:[y]   -> error "Exactly two elements found in a set. Need three."
+        []      -> [] -- error "Empty list not allowed. Minimum length is three."
+        _:[]    -> [] -- error "Exactly one element found in a list. Need three."
+        _:[_]   -> [] -- error "Exactly two elements found in a list. Need three."
         x:[y,z] -> [ (x :| [], y :| [z])    -- This is recursion base case.
                    , (y :| [], x :| [z])
                    , (z :| [], x :| [y])
                    ]
-        xs      -> snd $ foldl getPieces (0, []) xs
+        x:xs      -> foldl getPieces ([], xs) $ x:xs -- Need to accumulate
+                                                          -- the list of tuples
+                                                          -- the current index
+                                                          -- the previous members
+                                                          -- the following members
     where
-
-        -- For each newick node in input produce a 2-tuple of an int and a tuple. The int is just the index of the current
-        -- member being examined. The second tuple item is a list of tuples, where each 2-tuple is a pair of 'NewickForest's
-        -- that are subsets of the input forest. The union of those subsets is the input forest, they do not intersect,
-        -- and neither can be the empty set.
-        getPieces :: (Int, [(NewickForest, NewickForest)]) -> [NewickNode] -> (Int, [(NewickForest, NewickForest)])
-        getPieces (curIndex, forestTupleAcc) (curMember:rest) = (succ curIndex, firstMember <> secondMember)
+        -- For each newick node in input produce a 2-tuple of an int and a tuple. The int is just the index of
+        --  the current member being examined. The second tuple item is a list of tuples, where each 2-tuple
+        -- is a pair of 'NewickForest's that are subsets of the input forest. The union of those subsets is
+        -- the input forest, they do not intersect, and neither can be the empty set.
+        getPieces :: ([a], [NewickNode]) -> NewickNode -> [a]
+        getPieces (forestTupleAcc, following) curMember = firstSet <> secondSet <> forestTupleAcc
             where
                 -- For each single member, curMember, create tuple (curMember, inNodeList - curMember)
                 -- where (inNodeList - curMember) is concatenation of members before curMember in list, i.e. forestTupleAcc
                 -- and members after curMember, i.e. rest.
                 -- curMember is head of inNodeList
-                firstMember = [(curMember:|[], curMember:|[])] --TODO: I'm not creating inNodeList - curMember here
+                firstSet = [(fromList [curMember], fromList $ previous <> following)]
 
                 -- Now append all remaining subsets recursively.
                 -- Ignore any sets that have ordinality greater than half the size of the input set, as they'll already
@@ -100,12 +105,13 @@ generateSubsets inNodes numNodes =
                 -- skipping the base case, which requires |m| == 3.
                 -- Using an index is not very functional, but does mean I don't have to keep doing O(n)
                 -- length calculations.
-                secondMember
-                    | numNodes - curIndex - 1 > 2 && curIndex <= numNodes / 2 =
-                        foldl f [] $ snd $ generateSubsets rest $ numNodes - curIndex - 1  -- x has been taken care of above
-                    | otherwise = (curIndex, forestTupleAcc) -- Base case.
-                f :: [(NewickForest, NewickForest)] -> (NewickForest, NewickForest) -> Int -> [(NewickForest, NewickForest)]
-                f tupleList (lhs, rhs) idx = ((inNodes !! idx :| []) <> lhs, rhs) : tupleList
+                secondSet =
+                    if curLength <= quot originalLength 2  -- && (curLength - curLength - 1 > 2)
+                    then
+                        foldl f [] $ generateSubsets (curMember:previous) following originalLength (curLength - 1) -- curMember has been taken care of above
+                    else forestTupleAcc -- Base case.
+                f :: [(NewickForest, NewickForest)] -> (NewickForest, NewickForest) -> [(NewickForest, NewickForest)]
+                f tupleList (lhs, rhs) = ((fromList [inNodes !! (originalLength - curLength)]) <> lhs, rhs) : tupleList
 
 
 
