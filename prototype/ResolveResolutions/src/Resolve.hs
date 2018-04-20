@@ -71,10 +71,10 @@ generateSubsets previous inNodes originalLength curLength =
     case inNodes of
         []      -> [] -- error "Empty list not allowed. Minimum length is three."
         [_]     -> [] -- error "Exactly one element found in a list. Need at least three."
-        [x,y]   -> [ (x:|[], y:|[]) ] -- error "Exactly two elements found in a list. Need at least three."
-        x:[y,z] -> [ (x :| [], y :| [z])    -- This is recursion base case.
-                   , (y :| [], x :| [z])
-                   , (z :| [], x :| [y])
+        [x,y]   -> [ (pure x, pure y) ] -- error "Exactly two elements found in a list. Need at least three."
+        x:[y,z] -> [ (pure x, y :| [z])    -- This is recursion base case.
+                   , (pure y, x :| [z])
+                   , (pure z, x :| [y])
                    ]
         x:xs      -> fst . foldl getPieces ([], xs) $ x:xs -- Need to accumulate
                                                            -- the list of tuples
@@ -94,7 +94,7 @@ generateSubsets previous inNodes originalLength curLength =
                 -- and members after curMember, i.e. rest.
                 -- curMember is head of inNodeList
                 firstSet :: [(NewickForest, NewickForest)]
-                firstSet = [(fromList [curMember], fromList $ previous <> following)]
+                firstSet = [(pure curMember, fromList $ previous <> following)]
 
                 -- Now append all remaining subsets recursively.
                 -- Ignore any sets that have ordinality greater than half the size of the input set, as they'll already
@@ -110,4 +110,4 @@ generateSubsets previous inNodes originalLength curLength =
                         foldl f [] $ generateSubsets (curMember:previous) following originalLength (curLength - 1) -- curMember has been taken care of above
                     else forestTupleAcc -- Base case.
                 f :: [(NewickForest, NewickForest)] -> (NewickForest, NewickForest) -> [(NewickForest, NewickForest)]
-                f tupleList (lhs, rhs) = ((fromList [inNodes !! (originalLength - curLength)]) <> lhs, rhs) : tupleList
+                f tupleList (lhs, rhs) = ((pure (inNodes !! (originalLength - curLength))) <> lhs, rhs) : tupleList
