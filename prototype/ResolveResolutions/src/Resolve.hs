@@ -40,7 +40,7 @@ main = do
             inputStream  <- readFile inputfileName
             case parse' newickStreamParser inputfileName inputStream of
                 Left  errMsg -> putStrLn $ parseErrorPretty' inputfileName errMsg
-                Right forest -> print $ fmap resolveAllTrees <$> forest
+                Right forest -> mapM_ putStrLn . sconcat $ fmap (renderNewickForest . resolveAllTrees) <$> forest
     where
        parse' :: Parsec Void s a -> String -> s -> Either (ParseError (Token s) Void) a
        parse' = parse
@@ -94,7 +94,7 @@ generateSubsets previous inNodes originalLength curLength =
                 -- and members after curMember, i.e. rest.
                 -- curMember is head of inNodeList
                 firstSet :: [(NewickForest, NewickForest)]
-                firstSet = [(fromList [curMember], fromList $ previous <> following)]
+                firstSet = [(pure curMember, fromList $ previous <> following)]
 
                 -- Now append all remaining subsets recursively.
                 -- Ignore any sets that have ordinality greater than half the size of the input set, as they'll already
@@ -110,7 +110,7 @@ generateSubsets previous inNodes originalLength curLength =
                         foldl f [] $ generateSubsets (curMember:previous) following originalLength (curLength - 1) -- curMember has been taken care of above
                     else forestTupleAcc -- Base case.
                 f :: [(NewickForest, NewickForest)] -> (NewickForest, NewickForest) -> [(NewickForest, NewickForest)]
-                f tupleList (lhs, rhs) = ((fromList [inNodes !! (originalLength - curLength)]) <> lhs, rhs) : tupleList
+                f tupleList (lhs, rhs) = ((pure (inNodes !! (originalLength - curLength))) <> lhs, rhs) : tupleList
 
 
 
