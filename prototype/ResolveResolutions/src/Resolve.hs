@@ -61,8 +61,8 @@ resolveAllTrees root =
 
 
 -- |
--- Takes in a 'NewickForest', i.e. a nonempty list of 'NewickNode's, and returns a list of 2-tuples of 'NewickForest's,
--- where each 2-tuple is a pair of 'NewickForest's that are subsets of the input forest. The union of those
+-- Takes in a list of 'NewickNode's, and returns a list of 2-tuples of 'NewickForest's,
+-- where each 2-tuple is a pair of 'NewickForest's that are subsets of the input list. The union of those
 -- subsets is the input forest, they do not intersect, and neither can be the empty set.
 -- numNodes is the number of nodes in inNodes.
 -- Throws an error if |input forest| < 3.
@@ -71,7 +71,7 @@ generateSubsets previous inNodes originalLength curLength =
     case inNodes of
         []      -> [] -- error "Empty list not allowed. Minimum length is three."
         [_]     -> [] -- error "Exactly one element found in a list. Need at least three."
-        [_,_]   -> [] -- error "Exactly two elements found in a list. Need at least three."
+        [x,y]   -> [ (x:|[], y:|[]) ] -- error "Exactly two elements found in a list. Need at least three."
         x:[y,z] -> [ (x :| [], y :| [z])    -- This is recursion base case.
                    , (y :| [], x :| [z])
                    , (z :| [], x :| [y])
