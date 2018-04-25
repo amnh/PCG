@@ -83,6 +83,41 @@ generateSubsets previous inNodes originalLength curLength =
                                                            -- the following members
     where
         -- For each newick node in input produce a 2-tuple of an int and a tuple. The int is just the index of
+        -- the current member being examined. The second tuple item is a list of tuples, where each 2-tuple
+        -- is a pair of 'NewickForest's that are subsets of the input forest. The union of those subsets is
+        -- the input forest, they do not intersect, and neither can be the empty set.
+        getPieces :: ([(NewickForest, NewickForest)], [NewickNode]) -> NewickNode -> ([(NewickForest, NewickForest)], [NewickNode])
+        getPieces (forestTupleAcc, following) curMember = (firstSet <> secondSet <> forestTupleAcc, following)
+            where
+                -- combinedSet = [i <> j | i <- resolveAllTrees firstSet,
+                --                         j <- secondSet ]
+                -- For each single member, curMember, create tuple (curMember, inNodeList - curMember)
+                -- where (inNodeList - curMember) is concatenation of members before curMember in list, i.e. forestTupleAcc
+                -- and members after curMember, i.e. following.
+                -- curMember is head of inNodeList
+                firstSet :: [(NewickForest, NewickForest)]
+                firstSet = [(pure curMember, fromList $ previous <> following)]
+
+                -- Now append all remaining subsets recursively.
+                -- Ignore any sets that have ordinality greater than half the size of the input set, as they'll already
+                -- have been included during first half of fold.
+                -- Likewise, stop folding when there are at most two elements in the last set, otherwise we end up
+                -- skipping the base case, which requires |m| == 3.
+                -- Using an index is not very functional, but does mean I don't have to keep doing O(n)
+                -- length calculations.
+                secondSet :: [(NewickForest, NewickForest)]
+                secondSet =
+                    if (originalLength - curLength - 1 > 2) -- && curLength <= quot originalLength 2
+                    then
+                        foldl f [] $ generateSubsets (curMember:previous) following originalLength (curLength - 1) -- curMember has been taken care of above
+                    else forestTupleAcc -- Base case.
+                f :: [(NewickForest, NewickForest)] -> (NewickForest, NewickForest) -> [(NewickForest, NewickForest)]
+                f tupleList (lhs, rhs) = ((pure (inNodes !! (originalLength - curLength))) <> lhs, rhs) : tupleList
+
+{-
+
+    where
+        -- For each newick node in input produce a 2-tuple of an int and a tuple. The int is just the index of
         --  the current member being examined. The second tuple item is a list of tuples, where each 2-tuple
         -- is a pair of 'NewickForest's that are subsets of the input forest. The union of those subsets is
         -- the input forest, they do not intersect, and neither can be the empty set.
@@ -111,3 +146,5 @@ generateSubsets previous inNodes originalLength curLength =
                     else forestTupleAcc -- Base case.
                 f :: [(NewickForest, NewickForest)] -> (NewickForest, NewickForest) -> [(NewickForest, NewickForest)]
                 f tupleList (lhs, rhs) = ((pure (inNodes !! (originalLength - curLength))) <> lhs, rhs) : tupleList
+
+-}
