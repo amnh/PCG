@@ -13,8 +13,8 @@
 {-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses #-}
 
 module Bio.Sequence.Block.Builder
-  ( PartialCharacterBlock()
-  , finalizeCharacterBlock
+  ( PartialCharacterBlock(..)
+--  , finalizeCharacterBlock
 --  , toMissingCharacters
   , continuousSingleton
   , discreteSingleton
@@ -22,6 +22,7 @@ module Bio.Sequence.Block.Builder
   ) where
 
 
+--import           Bio.Sequence.Block.Character
 import           Bio.Sequence.Block.Internal
 import           Data.DList     hiding (toList)
 import           Data.Foldable
@@ -61,6 +62,7 @@ instance Semigroup (PartialCharacterBlock u v w x y z) where
           }
           
 
+{-
 -- |
 -- Converts a 'PartialCharacterBlock' to a 'CharacterBlock', finalizing the
 -- efficient construction process.
@@ -75,6 +77,7 @@ finalizeCharacterBlock =
       <*> fromDList . partialDynamicCharacters
   where
     fromDList = V.fromList . toList 
+-}
 
 
 {-

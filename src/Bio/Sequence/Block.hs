@@ -30,6 +30,8 @@ import           Bio.Character.Encodable
 import           Bio.Character.Decoration.Continuous
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Sequence.Block.Internal
+import           Bio.Sequence.Block.Character
+import           Bio.Sequence.Block.Metadata
 import           Control.Lens
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
