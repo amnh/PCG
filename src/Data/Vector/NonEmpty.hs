@@ -135,7 +135,7 @@ singleton = NEV . V.singleton
 
 
 -- |
--- /On)/
+-- /O(n)/
 --
 -- Construct a 'Vector' from a non-empty structure.
 {-# INLINE fromNonEmpty #-}
@@ -143,17 +143,22 @@ fromNonEmpty :: Foldable1 f => f a -> Vector a
 fromNonEmpty = NEV . V.fromList . toList . toNonEmpty
 
 
--- | /O(n)/
+-- |
+-- /O(n)/
 --
--- Construct a vector by repeatedly applying the generator function
--- to a seed. The generator function yields 'Just' the next element and the
--- new seed or 'Nothing' if there are no more elements.
+-- Construct a vector by repeatedly applying the generator function to a seed.
+-- The generator function always yields the next element and either @ Just @ the
+-- new seed or 'Nothing' if there are no more elements to be generated.
 --
--- > unfoldr (\n -> if n == 0 then Nothing else Just (n,n-1)) 10
+-- > unfoldr (\n -> (n, if n == 0 then Nothing else Just (n-1))) 10
 -- >  = <10,9,8,7,6,5,4,3,2,1>
 {-# INLINE unfoldr #-}
 unfoldr :: (b -> (a, Maybe b)) -> b -> Vector a
-unfoldr f = NEV . V.unfoldr (sequenceA . f)
+unfoldr f = NEV . V.fromList . go
+  where
+    go b =
+        case f b of
+          (v, mb) -> v : maybe [] go mb
 
 
 -- | /O(n)/
