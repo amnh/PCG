@@ -152,8 +152,8 @@ fromNonEmpty = NEV . V.fromList . toList . toNonEmpty
 -- > unfoldr (\n -> if n == 0 then Nothing else Just (n,n-1)) 10
 -- >  = <10,9,8,7,6,5,4,3,2,1>
 {-# INLINE unfoldr #-}
-unfoldr :: (b -> Maybe (a, b)) -> b -> Vector a
-unfoldr f = NEV . V.unfoldr f
+unfoldr :: (b -> (a, Maybe b)) -> b -> Vector a
+unfoldr f = NEV . V.unfoldr (sequenceA . f)
 
 
 -- | /O(n)/
