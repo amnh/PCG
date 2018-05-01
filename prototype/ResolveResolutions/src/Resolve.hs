@@ -55,7 +55,7 @@ resolveTree :: NewickNode -> NewickForest
 resolveTree root = -- trace ("root " <> show root) $
     case descendants root of
         [] -> root :| []
-        [x] -> resolveTree x
+        [x] -> resolveTree x -- this was non-obvious. Subtrees are Nodes themselves, so must be unpacked.
         xs -> allSubtrees {- pure $ foldl makeNode [] subtrees -}
             where
                 -- childTuples is a list of partitions as tuples.
