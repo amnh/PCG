@@ -21,6 +21,7 @@ import Data.Semigroup
 import Data.Void
 import File.Format.Newick
 import Text.Megaparsec
+import Debug.Trace
 import System.Environment  -- for command-line arguments.
 
 
@@ -74,15 +75,24 @@ generate subtree
 -- Takes in a a 'NewickNode', the root of a tree which may or may not be completely resolved, and returns a
 -- 'NewickForest', the list of all possible resolutions of the tree rooted at the input 'NewickNode'.
 resolveTree :: NewickNode -> NewickForest
-resolveTree root =
+resolveTree root = -- trace ("root " <> show root) $
     case descendants root of
         [] -> root :| []
+        [x] -> resolveTree x
         xs -> allSubtrees {- pure $ foldl makeNode [] subtrees -}
             where
-                -- allSubtrees is a `NonEmpty` list of binary `NewickNode`s, where each node represents one possible
+                -- childTuples is a list of partitions as tuples.
+                -- Each partition is the nodes in one set of subtrees for the input node.
+                childTuples = generateSubsetPairs [] (toList xs) inputLength inputLength
+                inputLength = length xs
+
+                -- allSubtrees is a 'NonEmpty' list of binary 'NewickNode's, where each node represents one possible
                 -- resolution of the two subtrees, and the whole list represents all possible resolutions.
-                allSubtrees :: NewickForest
-                allSubtrees = fromList [ makeNode $ toList (i <> j) | i <- leftSubtrees, j <- rightSubtrees]
+                -- allSubtrees :: NewickForest
+                -- allSubtrees = trace ("leftSubtrees "    <> show leftSubtrees <>
+                --                      "\nrightSubtrees " <> show rightSubtrees) $
+                --     fromList [ makeNode $ toList (i <> j) | i <- leftSubtrees, j <- rightSubtrees]
+                allSubtrees = fromList $ foldMap f childTuples
 
                 -- combineSubtrees (leftChild, rightChild) = (resolveTree leftSubtree) <> (resolveTree rightSubtree)
                 --     where
@@ -90,66 +100,24 @@ resolveTree root =
                 --         rightSubtree = makeNode rightChildren
 
                 -- left & right subtrees are respectively all possible resolutions of the left & right leaf partitions
-                -- returned by generateSubsetPairs and held in childTuples. Each is therefore a list of `NewickForest`s
+                -- returned by generateSubsetPairs and held in childTuples. Each is therefore a list of 'NewickForest's
                 -- as each forest is a non-empty list of resolutions.
-                leftSubtrees :: [NewickForest]
-                leftSubtrees  = map (resolveTree . makeNode . toList . fst) childTuples
-                rightSubtrees = map (resolveTree . makeNode . toList . snd) childTuples
+                -- leftSubtrees :: [NewickForest]
+                -- (leftSubtrees, rightSubtrees) = trace ("childTuples " <> show childTuples) $
+                --                 map f childTuples
+                -- rightSubtrees = map (resolveTree . makeNode . toList . snd) childTuples
                 -- subtrees      = [(i.j) | i <- leftSubtrees, j <- rightSubtrees ]
-
-                -- childTuples is a list of partitions as tuples.
-                -- Each partition is the nodes in one set of subtrees for the input node.
-                childTuples = generateSubsetPairs [] (toList xs) inputLength inputLength
-                inputLength = length xs
-
+                f (left, right) =
+                    [ makeNode $ i : [j] | i <- toList leftSubtrees
+                                         , j <- toList rightSubtrees
+                    ]
+                    where
+                        (leftSubtrees, rightSubtrees) = (resolveTree . makeNode $ toList left, resolveTree . makeNode $ toList right)
                 -- newRoot is a forest of possible subtrees
                 -- newRoots       = makeNode $ (foldMap fst allSubtrees) <> (foldMap snd allSubtrees)
 
                 makeNode :: [NewickNode] -> NewickNode
                 makeNode children = fromJust $ newickNode children Nothing Nothing
-
-{-                makeNode acc (lhs, rhs) =
-                    -- Following notes are for Eric's educational purposes.
-                    fromJust (  -- Unsafely unwrap the Maybe type.
-                      newickNode  -- Apply the smart constructor
-                        ( -- First argument to the smart constructor between parens
-                        foldMap  -- Fold over the structure by applying the transformation (a -> m) to each element
-                                 -- then "Concatenate" all the transformed elements using (<>).
-                                 -- This will flatten a "list of lists" to a list.
-                          toList -- The function (a -> m) to be applied to each element of the structure.
-                            (
-                              (resolveTree <$> lhs) -- Apply the function recursively to the left hand side
-                              <>  -- "Concatenate" the recursive results (list concatenation).
-                              (resolveTree <$> rhs) -- Apply the function recursively to the right hand side
-                            )
-                        )
-                        Nothing -- Second argument to newickNode
-                        Nothing -- Third argument to newickNode
-                      ) : acc -- cons result of newickNode call to front of accumulator
--}
-{-
-        xs -> fromList . foldl makeNode [] $ generateSubsetPairs [] (toList xs) inputLength inputLength
-            where
-                makeNode acc (lhs, rhs) =
-                    -- Following notes are for Eric's educational purposes.
-                    fromJust (  -- Unsafely unwrap the Maybe type.
-                      newickNode  -- Apply the smart constructor
-                        ( -- First argument to the smart constructor between parens
-                        foldMap  -- Fold over the structure by applying the transformation (a -> m) to each element
-                                 -- then "Concatenate" all the transformed elements using (<>).
-                                 -- This will flatten a "list of lists" to a list.
-                          toList -- The function (a -> m) to be applied to each element of the structure.
-                            (
-                              (resolveTree <$> lhs) -- Apply the function recursively to the left hand side
-                              <>  -- "Concatenate" the recursive results (list concatenation).
-                              (resolveTree <$> rhs) -- Apply the function recursively to the right hand side
-                            )
-                        )
-                        Nothing -- Second argument to newickNode
-                        Nothing -- Third argument to newickNode
-                        ) : acc -- cons result of newickNode call to front of accumulator
-                inputLength = length xs
--}
 
 -- |
 -- Takes in a list of 'NewickNode's, and returns a list of 2-tuples of 'NewickForest's,
@@ -158,10 +126,10 @@ resolveTree root =
 -- numNodes is the number of nodes in inNodes.
 -- Throws an error if |input forest| < 3.
 generateSubsetPairs :: [NewickNode] -> [NewickNode] -> Int -> Int -> [(NewickForest, NewickForest)]
-generateSubsetPairs previous inNodes originalLength curLength =
+generateSubsetPairs previous inNodes originalLength curLength = -- trace ("inNodes " <> show inNodes) $
     case inNodes of
         []      -> [] -- error "Empty list not allowed. Minimum length is three."
-        [_]     -> [] -- error "Exactly one element found in a list. Need at least three."
+        [x]     -> [] -- error "Exactly one element found in a list. Need at least three."
         [x,y]   -> [ (pure x, pure y) ] -- error "Exactly two elements found in a list. Need at least three."
         x:[y,z] -> [ (pure x, y :| [z])    -- This is recursion base case.
                    , (pure y, x :| [z])
@@ -245,4 +213,47 @@ generateSubsetPairs previous inNodes originalLength curLength =
                 f :: [(NewickForest, NewickForest)] -> (NewickForest, NewickForest) -> [(NewickForest, NewickForest)]
                 f tupleList (lhs, rhs) = ((pure (inNodes !! (originalLength - curLength))) <> lhs, rhs) : tupleList
 
+-}
+
+{-                makeNode acc (lhs, rhs) =
+                    -- Following notes are for Eric's educational purposes.
+                    fromJust (  -- Unsafely unwrap the Maybe type.
+                      newickNode  -- Apply the smart constructor
+                        ( -- First argument to the smart constructor between parens
+                        foldMap  -- Fold over the structure by applying the transformation (a -> m) to each element
+                                 -- then "Concatenate" all the transformed elements using (<>).
+                                 -- This will flatten a "list of lists" to a list.
+                          toList -- The function (a -> m) to be applied to each element of the structure.
+                            (
+                              (resolveTree <$> lhs) -- Apply the function recursively to the left hand side
+                              <>  -- "Concatenate" the recursive results (list concatenation).
+                              (resolveTree <$> rhs) -- Apply the function recursively to the right hand side
+                            )
+                        )
+                        Nothing -- Second argument to newickNode
+                        Nothing -- Third argument to newickNode
+                      ) : acc -- cons result of newickNode call to front of accumulator
+-}
+{-
+        xs -> fromList . foldl makeNode [] $ generateSubsetPairs [] (toList xs) inputLength inputLength
+            where
+                makeNode acc (lhs, rhs) =
+                    -- Following notes are for Eric's educational purposes.
+                    fromJust (  -- Unsafely unwrap the Maybe type.
+                      newickNode  -- Apply the smart constructor
+                        ( -- First argument to the smart constructor between parens
+                        foldMap  -- Fold over the structure by applying the transformation (a -> m) to each element
+                                 -- then "Concatenate" all the transformed elements using (<>).
+                                 -- This will flatten a "list of lists" to a list.
+                          toList -- The function (a -> m) to be applied to each element of the structure.
+                            (
+                              (resolveTree <$> lhs) -- Apply the function recursively to the left hand side
+                              <>  -- "Concatenate" the recursive results (list concatenation).
+                              (resolveTree <$> rhs) -- Apply the function recursively to the right hand side
+                            )
+                        )
+                        Nothing -- Second argument to newickNode
+                        Nothing -- Third argument to newickNode
+                        ) : acc -- cons result of newickNode call to front of accumulator
+                inputLength = length xs
 -}
