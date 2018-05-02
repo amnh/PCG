@@ -42,10 +42,21 @@ main = do
             case parse' newickStreamParser inputfileName inputStream of
                 Left  errMsg -> putStrLn $ parseErrorPretty' inputfileName errMsg
                 -- Right forest -> print $ fmap resolveTree <$> forest
-                Right forest -> mapM_ putStrLn . sconcat $ fmap (renderNewickForest . resolveTree) <$> forest
+                -- Right forest -> mapM_ putStrLn . sconcat $ fmap (renderNewickForest . resolveTree) <$> forest
+                Right forest -> mapM_ putStrLn . sconcat $ fmap (unlines . toList . fmap renderNewickString . resolveTree) <$> forest
     where
        parse' :: Parsec Void s a -> String -> s -> Either (ParseError (Token s) Void) a
        parse' = parse
+
+
+-- |
+-- Take a 'NewickNode' and map over its descendents to render the entire string in Newick format.
+renderNewickString :: NewickNode -> String
+renderNewickString inNode =
+    case descendants inNode of
+        []    -> fromJust $ newickLabel inNode
+        [x]   -> mconcat [ "(", renderNewickString x, ")" ]
+        x:y:_ -> mconcat [ "(", renderNewickString x, ", ", renderNewickString y, ")" ]
 
 
 -- |
