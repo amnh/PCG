@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
 
 module Resolve where
 
@@ -19,10 +19,10 @@ import Data.List.NonEmpty (NonEmpty(..), fromList)
 import Data.Maybe
 import Data.Semigroup
 import Data.Void
-import File.Format.Newick
-import Text.Megaparsec
 import Debug.Trace
+import File.Format.Newick
 import System.Environment  -- for command-line arguments.
+import Text.Megaparsec
 
 
 -- |
@@ -43,11 +43,12 @@ main = do
                 Left  errMsg -> putStrLn $ parseErrorPretty' inputfileName errMsg
                 -- Right forest -> print $ fmap resolveTree <$> forest
                 -- Right forest -> mapM_ putStrLn . sconcat $ fmap (renderNewickForest . resolveTree) <$> forest
-                Right forest -> mapM_ putStrLn . sconcat $ fmap (unlines . toList . fmap renderNewickString . resolveTree) <$> forest
+                Right forest -> mapM_ putStrLn . sconcat $ fmap (unlines . toList . fmap (appendSemicolon . renderNewickString) . resolveTree) <$> forest
     where
-       parse' :: Parsec Void s a -> String -> s -> Either (ParseError (Token s) Void) a
-       parse' = parse
+        parse' :: Parsec Void s a -> String -> s -> Either (ParseError (Token s) Void) a
+        parse' = parse
 
+        appendSemicolon = (<> ";")
 
 -- |
 -- Take a 'NewickNode' and map over its descendents to render the entire string in Newick format.
@@ -139,9 +140,9 @@ generateSubsetPairs previous inNodes originalLength curLength = -- trace ("inNod
                 -- length calculations.
                 secondSet :: [(NewickForest, NewickForest)]
                 secondSet =
-                    if (originalLength - curLength - 1 > 2)
+                    if originalLength - curLength - 1 > 2
                     then
                         foldl f [] $ generateSubsetPairs (curMember:previous) following originalLength (curLength - 1) -- curMember has been taken care of above
                     else forestTupleAcc -- Base case.
                 f :: [(NewickForest, NewickForest)] -> (NewickForest, NewickForest) -> [(NewickForest, NewickForest)]
-                f tupleList (lhs, rhs) = ((pure (inNodes !! (originalLength - curLength))) <> lhs, rhs) : tupleList
+                f tupleList (lhs, rhs) = (pure (inNodes !! (originalLength - curLength)) <> lhs, rhs) : tupleList
