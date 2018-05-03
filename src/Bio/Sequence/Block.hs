@@ -13,12 +13,15 @@
 {-# LANGUAGE ConstraintKinds, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses #-}
 
 module Bio.Sequence.Block
-  ( CharacterBlock(..)
+  ( CharacterBlock()
+  , MetadataBlock()
   , HasBlockCost
   , HasRootCost
+  -- * Cost Queries
   , blockCost
   , rootCost
   , staticCost
+  -- * Transformations
   , toMissingCharacters
   , hexmap
   , hexTranspose
@@ -29,17 +32,17 @@ module Bio.Sequence.Block
 import           Bio.Character.Encodable
 import           Bio.Character.Decoration.Continuous
 import           Bio.Character.Decoration.Dynamic
-import           Bio.Sequence.Block.Internal
+--import           Bio.Sequence.Block.Internal
 import           Bio.Sequence.Block.Character
 import           Bio.Sequence.Block.Metadata
 import           Control.Lens
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Foldable
-import           Data.Key
-import           Data.Semigroup
+--import           Data.Key
+--import           Data.Semigroup
 import           Data.Vector.Instances                ()
-import qualified Data.Vector                   as V
+--import qualified Data.Vector                   as V
 import           Prelude                       hiding (zipWith)
 
 
@@ -82,99 +85,6 @@ type HasRootCost u v w x y z r =
     , Floating r
     , Real     r
     )
-
-
--- |
--- Perform a six way map over the polymorphic types.
-hexmap :: (u -> u')
-       -> (v -> v')
-       -> (w -> w')
-       -> (x -> x')
-       -> (y -> y')
-       -> (z -> z')
-       -> CharacterBlock u  v  w  x  y  z
-       -> CharacterBlock u' v' w' x' y' z'
-hexmap f1 f2 f3 f4 f5 f6 =
-    CharacterBlock
-      <$> (parmap rpar f1 . continuousCharacterBins )
-      <*> (parmap rpar f2 . nonAdditiveCharacterBins)
-      <*> (parmap rpar f3 . additiveCharacterBins   )
-      <*> (parmap rpar f4 . metricCharacterBins     )
-      <*> (parmap rpar f5 . nonMetricCharacterBins  )
-      <*> (parmap rpar f6 . dynamicCharacters       )
-
-
--- |
--- Performs a 2D transform on the 'Traversable' structure of 'CharacterBlock'
--- values.
--- 
--- Assumes that the 'CharacterBlock' values in the 'Traversable' structure are of
--- equal length. If this assumtion is violated, the result will be truncated.
-hexTranspose :: Traversable t => t (CharacterBlock u v w x y z) -> CharacterBlock (t u) (t v) (t w) (t x) (t y) (t z)
-hexTranspose = 
-    CharacterBlock
-      <$> transposition continuousCharacterBins
-      <*> transposition nonAdditiveCharacterBins
-      <*> transposition additiveCharacterBins
-      <*> transposition metricCharacterBins
-      <*> transposition nonMetricCharacterBins
-      <*> transposition dynamicCharacters
-  where
-    transposition f xs =
-        case toList listOfVectors of
-          [] -> mempty
-          ys -> V.generate (length ys) g
-      where
-        g i = (V.! i) <$> listOfVectors
-        listOfVectors = fmap f xs
-
-
--- |
--- Performs a zip over the two character blocks. Uses the input functions to zip
--- the different character types in the character block.
--- 
--- Assumes that the 'CharacterBlock' values have the same number of each character
--- type. If this assumtion is violated, the result will be truncated.
-hexZipWith :: (u -> u' -> u'')
-           -> (v -> v' -> v'') 
-           -> (w -> w' -> w'')
-           -> (x -> x' -> x'')
-           -> (y -> y' -> y'')
-           -> (z -> z' -> z'')
-           -> CharacterBlock u   v   w   x   y   z
-           -> CharacterBlock u'  v'  w'  x'  y'  z'
-           -> CharacterBlock u'' v'' w'' x'' y'' z''
-hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs =
-    CharacterBlock
-        { continuousCharacterBins  = parZipWith rpar f1 (continuousCharacterBins  lhs) (continuousCharacterBins  rhs)
-        , nonAdditiveCharacterBins = parZipWith rpar f2 (nonAdditiveCharacterBins lhs) (nonAdditiveCharacterBins rhs)
-        , additiveCharacterBins    = parZipWith rpar f3 (additiveCharacterBins    lhs) (additiveCharacterBins    rhs)
-        , metricCharacterBins      = parZipWith rpar f4 (metricCharacterBins      lhs) (metricCharacterBins      rhs)
-        , nonMetricCharacterBins   = parZipWith rpar f5 (nonMetricCharacterBins   lhs) (nonMetricCharacterBins   rhs)
-        , dynamicCharacters        =    zipWith      f6 (dynamicCharacters        lhs) (dynamicCharacters        rhs)
-        }
-
-
--- |
--- Convert all characters contained in the block to thier missing value.
-toMissingCharacters :: ( PossiblyMissingCharacter u
-                       , PossiblyMissingCharacter v
-                       , PossiblyMissingCharacter w
-                       , PossiblyMissingCharacter x
-                       , PossiblyMissingCharacter y 
-                       , PossiblyMissingCharacter z
-                       )
-                    => CharacterBlock u v w x y z
-                    -> CharacterBlock u v w x y z
-toMissingCharacters cb =
-    CharacterBlock
-    { continuousCharacterBins  = toMissing <$> continuousCharacterBins  cb
-    , nonAdditiveCharacterBins = toMissing <$> nonAdditiveCharacterBins cb
-    , additiveCharacterBins    = toMissing <$> additiveCharacterBins    cb
-    , metricCharacterBins      = toMissing <$> metricCharacterBins      cb
-    , nonMetricCharacterBins   = toMissing <$> nonMetricCharacterBins   cb
-    , dynamicCharacters        = toMissing <$> dynamicCharacters        cb
-    }
 
 
 -- |

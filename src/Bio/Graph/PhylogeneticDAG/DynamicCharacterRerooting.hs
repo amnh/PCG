@@ -687,7 +687,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                 vectorForZipping :: Vector (Word, NonEmpty (TraversalFocusEdge, TraversalTopology))
                 vectorForZipping = second (fmap (\e -> (e, resolutionTopology))) <$> minBlockContexts
                 
-                modifiedDynamicChars = zipWith h vectorForZipping $ dynamicCharacters charBlock
+                modifiedDynamicChars = zipWith h vectorForZipping $ dynamicCharacterBins charBlock
                 
                 h (costVal, foci) originalDec =
                     originalDec
