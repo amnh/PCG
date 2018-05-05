@@ -1,0 +1,74 @@
+# Choose a lightweight base image; we provide our own build tools.
+language: c
+
+os:
+  - linux
+  - osx
+
+# Required to install stack on Linux
+sudo: true
+
+#addons:
+#  apt:
+#    packages:
+#    - libgmp-dev # GHC depends on system GMP (maybe?).
+#    - build-essentials
+
+before_install:
+  # MacOS setups
+  # Install Cabal & GHC
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install ghc cabal-install && export PATH=/usr/local/opt/ghc/bin:$PATH; fi
+
+  # Linux initial setup
+  # Install required system packages, newer GCC than comes with Trusty image
+  # We do this because Travis-CI dropped the ball, and the 'addons' section 
+  # doesn't correctly parse. We have to explicitly use the Debian package 
+  # manager to install the system dependedncies for Linux builds.
+  - |
+    if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+      sudo apt-get update
+      sudo apt-get install libgmp-dev
+      sudo apt-get install build-essential software-properties-common -y
+      sudo apt-get install gcc-snapshot -y
+      sudo apt-get install gcc-7 g++-7 -y
+      sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 --slave /usr/bin/g++ g++ /usr/bin/g++-7
+    fi
+
+  # Download and unpack the stack executable
+  - mkdir -p ~/.local/bin
+  - export PATH=$HOME/.local/bin:$PATH
+  - travis_retry wget -qO- https://get.haskellstack.org/ | sh
+  # - travis_retry curl -L https://github.com/commercialhaskell/stack/releases/download/v1.7.0.3/stack-1.7.0.3-linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+  # - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+
+  # Install code linting tool
+  - stack install hlint
+
+script:
+  - stack update
+  - stack setup
+  - gcc --version
+  - stack --version
+  - stack ghc -- --version
+  - stack build --coverage --fast --haddock --no-terminal
+# removed because --test flag was removed
+#  - stack hpc report
+  - stack exec hlint app src lib
+
+# removed because --test flag was removed
+#after_script:
+#  - hpc-coveralls --coverage-mode=StrictlyFullLines
+#                  --exclude-dir=prototype
+#                  --exclude-dir=test
+#                  --exclude-dir=utils
+#                  testsuite
+
+# Caching so the next build will be fast too.
+cache:
+  directories:
+  - $HOME/.stack
+  - $HOME/build/amnh/PCG/.stack-work
+
+git:
+  submodules: false
