@@ -672,7 +672,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
             -- Also expects a "data-block" with the old block data to be updated
             -- with information from the "context-block."
 --            g :: (Double, Vector (Word, NonEmpty TraversalFocusEdge)) -> CharacterBlock u v w x y z -> CharacterBlock u v w x y z
-            g (_, minBlockContexts) charBlock = charBlock { dynamicCharacters = modifiedDynamicChars }
+            g (_, minBlockContexts) charBlock = setDynamicCharacters modifiedDynamicChars charBlock
               where
 
                 -- We take the first of the minimal contexts and distribute the
@@ -687,7 +687,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                 vectorForZipping :: Vector (Word, NonEmpty (TraversalFocusEdge, TraversalTopology))
                 vectorForZipping = second (fmap (\e -> (e, resolutionTopology))) <$> minBlockContexts
                 
-                modifiedDynamicChars = zipWith h vectorForZipping $ dynamicCharacterBins charBlock
+                modifiedDynamicChars = zipWith h vectorForZipping $ dynamicCharacters charBlock
                 
                 h (costVal, foci) originalDec =
                     originalDec

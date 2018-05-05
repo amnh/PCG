@@ -561,7 +561,7 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
             updateDynamicCharactersInSequence resInfo = resInfo { characterSequence = updatedCharacterSequence }
               where
                 updatedCharacterSequence = fromBlockVector . mapWithKey blockGen . toBlockVector $ characterSequence resInfo
-                blockGen j block = block { dynamicCharacterBins = updatedDynamicCharacters }
+                blockGen j block = setDynamicCharacters updatedDynamicCharacters block
                   where
                     (topology,_,_,_,minEdgesVector) = minTopologyContextPerBlock ! j
                     excludedEdges = excludedNetworkEdges topology
@@ -651,9 +651,8 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ 
       where
         oldResolution = NE.head $ resolutions oldNode
         oldSequence   = characterSequence oldResolution
-        newSequence   = fromBlocks . zipWith g dynCharSeq $ toBlocks oldSequence
+        newSequence   = fromBlocks . zipWith setDynamicCharacters dynCharSeq $ toBlocks oldSequence
         newResolution = oldResolution { characterSequence = newSequence }
-        g newDynChars oldBlock = oldBlock { dynamicCharacterBins = newDynChars }
 
 
     -- |

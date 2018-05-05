@@ -36,6 +36,7 @@ module Bio.Sequence
   , metricCharacterBins
   , nonMetricCharacterBins
   , dynamicCharacters
+  , setDynamicCharacters
   -- * CharacterBlock transformations
   , toMissingCharacters
   , hexmap
@@ -58,5 +59,6 @@ import Bio.Sequence.Block.Character ( finalizeCharacterBlock
                                     , metricCharacterBins
                                     , nonMetricCharacterBins
                                     , dynamicCharacters
+                                    , setDynamicCharacters
                                     )
 

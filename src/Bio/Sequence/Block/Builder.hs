@@ -22,13 +22,9 @@ module Bio.Sequence.Block.Builder
   ) where
 
 
---import           Bio.Sequence.Block.Character
-import           Bio.Sequence.Block.Internal
-import           Data.DList     hiding (toList)
-import           Data.Foldable
-import           Data.TCM
-import           Data.Vector.Instances ()
-import qualified Data.Vector    as V
+import Data.DList     hiding (toList)
+import Data.TCM
+import Data.Vector.Instances ()
 
 
 -- |
