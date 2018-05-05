@@ -262,10 +262,7 @@ formatDefinition = {-do
 -- A test exists in the test suite, although only false positives are tested for, not false negatives.
 -- I deemed this good enough, since each of the called fns is well-tested, and the calling fn is, as well.
 charFormatFieldDef :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char {- , Show s -}) => m [CharFormatField]
-charFormatFieldDef = {-do
-        x <- getInput
-        trace ("many charFormatFieldDef"  ++ show x) $ -}do
-        many $ symbol block
+charFormatFieldDef = many $ symbol block
     where
         block = choice
             [ CharDT      <$> try (string'' "datatype" *> symbol (char '=') *> charDTDefinition)

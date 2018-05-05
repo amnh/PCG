@@ -1,3 +1,4 @@
+{-# ANN module "HLint: ignore Evaluate" #-}
 {-# LANGUAGE FlexibleInstances #-}
 
 module Numeric.Extended.Real.Test
