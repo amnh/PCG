@@ -6,7 +6,6 @@ import Control.DeepSeq
 import Criterion.Main
 import Data.Bits
 import Data.MutualExclusionSet.Internal
-import Data.Semigroup
 
 
 benchmarks :: Benchmark

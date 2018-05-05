@@ -22,7 +22,6 @@ import           Data.List                     (transpose)
 import           Data.List.Utility             (equalityOf, occurances)
 import           Data.Map                      (delete, findMax, keys)
 import qualified Data.Map             as Map   (fromList)
-import           Data.Monoid
 import           Data.MonoTraversable
 import           Data.Ratio
 import           Data.Vector.Unboxed           (Vector)

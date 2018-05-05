@@ -31,7 +31,7 @@ import Data.Foldable
 import Data.Hashable
 import Data.List.NonEmpty (intersperse)
 import Data.MonoTraversable
-import Data.Semigroup
+import Data.Semigroup     (sconcat)
 import Data.TopologyRepresentation
 import GHC.Generics
 import Text.XML

@@ -35,7 +35,6 @@ import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Foldable
 import           Data.Key
-import           Data.Semigroup
 import           Data.Vector.Instances                ()
 import qualified Data.Vector                   as V
 import           Prelude                       hiding (zipWith)

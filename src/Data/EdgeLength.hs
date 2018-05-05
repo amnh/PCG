@@ -25,8 +25,7 @@ module Data.EdgeLength
 import Control.Applicative (liftA2)
 import Control.DeepSeq
 import Data.Default
-import Data.Monoid hiding ((<>))
-import Data.Semigroup
+import Data.Monoid         (Sum(..))
 import GHC.Generics
 
 
@@ -42,7 +41,7 @@ import GHC.Generics
 -- operation returns a specified edge length if possible, satifying the monoid
 -- laws regarding the identity element.
 newtype EdgeLength = C (Maybe (Sum Double))
-  deriving(Eq, Default, Generic, NFData, Ord, Semigroup, Monoid)
+    deriving(Eq, Default, Generic, NFData, Ord, Semigroup, Monoid)
 
 
 instance Num EdgeLength where

@@ -27,8 +27,6 @@ import qualified Data.List.NonEmpty  as NE  (head)
 --import           Data.List.Split           (splitOneOf)
 import           Data.Maybe                 (fromMaybe, isJust)
 import           Data.Proxy
--- import           Data.Monoid
-import           Data.Semigroup
 import qualified Data.Set            as S
 import           File.Format.Newick
 import           File.Format.Newick.Parser  (newickExtendedDefinition)

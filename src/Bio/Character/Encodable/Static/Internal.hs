@@ -39,7 +39,6 @@ import           Data.Maybe
 import           Data.Monoid                         ()
 import           Data.MonoTraversable
 import           Data.Range
-import           Data.Semigroup
 import           Data.String                         (fromString)
 import           Data.Tuple                          (swap)
 import           GHC.Generics

@@ -19,7 +19,6 @@ import Data.Key           (Zip(..))
 import Data.List          (sort, sortBy)
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Map           (assocs, empty, insertWith)
-import Data.Semigroup
 import Data.Ord           (comparing)
 import Data.Set           (insert, intersection)
 

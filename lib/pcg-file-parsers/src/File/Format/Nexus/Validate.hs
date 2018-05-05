@@ -28,7 +28,6 @@ import           Data.List.Split           (splitOn)
 import           Data.Map.Lazy             (Map)
 import qualified Data.Map.Lazy      as M
 import           Data.Maybe
-import           Data.Monoid
 import           Data.Ord                  (comparing)
 import           Data.Semigroup.Foldable
 import           Data.Set                  (Set)

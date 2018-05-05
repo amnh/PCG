@@ -23,10 +23,8 @@ import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
 
 import Bio.Character.Encodable
-import Bio.Metadata
 import Data.Alphabet
 import Data.MonoTraversable
-import Data.Semigroup
 import Data.TCM.Memoized
 import Test.Custom.NucleotideSequence
 import Test.Tasty
@@ -44,6 +42,7 @@ testSuite = testGroup "Pariwise alignment tests"
     ]
 
 
+constistentImplementation :: TestTree
 constistentImplementation = testGroup "All implementations return same states"
     [ consistentResults "Consistenty over discrete metric" discreteMetric
     , consistentResults "Consistenty over L1 norm" l1Norm
@@ -53,7 +52,7 @@ constistentImplementation = testGroup "All implementations return same states"
 
 
 consistentResults :: String -> (Word -> Word -> Word) -> TestTree
-consistentResults label metric = SC.testProperty label $ SC.forAll checkConsistency
+consistentResults testLabel metric = SC.testProperty testLabel $ SC.forAll checkConsistency
   where
     dense = genDenseMatrix metric
     memoed = getMedianAndCost2D (genMemoMatrix metric)
@@ -68,6 +67,7 @@ consistentResults label metric = SC.testProperty label $ SC.forAll checkConsiste
         foreignResult = foreignPairwiseDO (f x) (f y) dense
 
 
+testSuiteNaiveDO :: TestTree
 testSuiteNaiveDO = testGroup "Naive DO"
     [ isValidPairwiseAlignment "Naive DO over discrete metric"
        $ \x y -> naiveDO x y discreteMetric
@@ -80,6 +80,7 @@ testSuiteNaiveDO = testGroup "Naive DO"
     ]
 
 
+testSuiteMemoizedDO :: TestTree
 testSuiteMemoizedDO = testGroup "Memoized DO"
     [ isValidPairwiseAlignment "Memoized DO over discrete metric"
        $ \x y -> naiveDOMemo x y (getMedianAndCost2D (genMemoMatrix discreteMetric))
@@ -92,6 +93,7 @@ testSuiteMemoizedDO = testGroup "Memoized DO"
     ]
 
 
+testSuiteUkkonnenDO :: TestTree
 testSuiteUkkonnenDO = testGroup "Ukkonnen DO"
     [ isValidPairwiseAlignment "Ukkonnen DO over discrete metric"
        $ \x y -> ukkonenDO x y (getMedianAndCost2D (genMemoMatrix discreteMetric))
@@ -104,6 +106,7 @@ testSuiteUkkonnenDO = testGroup "Ukkonnen DO"
     ]
 
 
+testSuiteForeignDO :: TestTree
 testSuiteForeignDO = testGroup "Foreign C DO"
     [ isValidPairwiseAlignment "Foreign C DO over discrete metric"
        $ \x y -> foreignPairwiseDO x y (genDenseMatrix discreteMetric)
@@ -127,7 +130,7 @@ isValidPairwiseAlignment
   :: String
   -> (DynamicChar -> DynamicChar -> (Word, DynamicChar, DynamicChar, DynamicChar, DynamicChar))
   -> TestTree
-isValidPairwiseAlignment label alignmentFunction = testGroup label
+isValidPairwiseAlignment testLabel alignmentFunction = testGroup testLabel
     [ testProperty "alignment function is commutative"               commutivity
     , testProperty "aligned results are all equal length"            resultsAreEqualLength
     , testProperty "output length is >= input length"                greaterThanOrEqualToInputLength
@@ -157,6 +160,7 @@ isValidPairwiseAlignment label alignmentFunction = testGroup label
       where
         (_, _, _, lhs', rhs') = alignmentFunction lhs rhs
 
+{-
     totalAlignmentLengthLessThanOrEqualToSumOfLengths :: (NucleotideSequence, NucleotideSequence) -> Property
     totalAlignmentLengthLessThanOrEqualToSumOfLengths (NS lhs, NS rhs) =
         counterexample shownCounterexample $ medLen <= lhsLen + rhsLen
@@ -166,6 +170,7 @@ isValidPairwiseAlignment label alignmentFunction = testGroup label
         lhsLen = olength lhs
         rhsLen = olength rhs
         shownCounterexample = unwords [ show medLen, ">", show lhsLen, "+", show rhsLen ]
+-}
 
     outputsCorrespondToInputs :: (NucleotideSequence, NucleotideSequence) -> Property
     outputsCorrespondToInputs (NS lhs, NS rhs) =

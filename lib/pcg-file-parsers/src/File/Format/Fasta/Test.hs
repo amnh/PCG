@@ -8,7 +8,6 @@ module File.Format.Fasta.Test
 import Control.Arrow              (second)
 import Data.Char                  (isSpace)
 import Data.Maybe                 (fromMaybe)
-import Data.Semigroup
 import File.Format.Fasta.Internal
 import File.Format.Fasta.Parser
 import Safe                       (headMay)

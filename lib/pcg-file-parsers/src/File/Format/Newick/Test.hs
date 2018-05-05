@@ -6,7 +6,6 @@ module File.Format.Newick.Test
   ) where
 
 import Data.Either.Combinators    (rightToMaybe)
-import Data.Semigroup
 import Data.Void
 import File.Format.Newick.Internal
 import File.Format.Newick.Parser

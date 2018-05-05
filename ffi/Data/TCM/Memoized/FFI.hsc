@@ -31,7 +31,6 @@ import Bio.Character.Exportable.Class
 import Control.DeepSeq
 import Data.Bits
 import Data.Foldable
-import Data.Monoid
 import Foreign         hiding (alignPtr)
 import Foreign.C.Types
 import GHC.Generics           (Generic)

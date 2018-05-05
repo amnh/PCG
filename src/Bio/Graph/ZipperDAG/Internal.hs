@@ -19,7 +19,7 @@
 module Bio.Graph.ZipperDAG.Internal where
 
 import Data.Bifunctor
-import Data.Monoid 
+
 
 -- |
 -- A node in the zipper structure.

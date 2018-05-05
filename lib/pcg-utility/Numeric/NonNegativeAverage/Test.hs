@@ -6,7 +6,6 @@ module Numeric.NonNegativeAverage.Test
 
 
 import Data.Ratio
-import Data.Semigroup
 import Numeric.NonNegativeAverage
 import Test.Tasty
 import Test.Tasty.QuickCheck

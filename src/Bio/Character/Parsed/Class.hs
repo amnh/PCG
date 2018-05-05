@@ -28,8 +28,6 @@ import qualified Data.List.NonEmpty as NE
 import           Data.Map                  (Map, fromSet, insert, keysSet, mergeWithKey)
 import qualified Data.Map           as M
 import           Data.Maybe
-import           Data.Monoid        hiding ((<>))
-import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Data.Set                  (Set)
 import qualified Data.Set           as S

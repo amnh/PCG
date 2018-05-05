@@ -40,7 +40,6 @@ import           Data.Key
 import           Data.List
 import           Data.List.NonEmpty               (NonEmpty)
 import qualified Data.List.NonEmpty        as NE
-import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Data.TCM                         (generate)
 import qualified Data.Text.Lazy            as L

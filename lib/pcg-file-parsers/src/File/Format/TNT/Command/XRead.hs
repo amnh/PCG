@@ -38,7 +38,6 @@ import qualified Data.List.NonEmpty as NE (filter,fromList,length)
 import           Data.List.Utility
 import           Data.Map                 (assocs,insertWith,lookup)
 import           Data.Maybe               (catMaybes,fromJust,isJust)
-import           Data.Semigroup
 import           Data.Traversable
 import           File.Format.TNT.Internal
 import           Prelude           hiding (lookup)

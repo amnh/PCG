@@ -26,7 +26,6 @@ import qualified Data.Map           as M  (fromList,lookup)
 import qualified Data.List.NonEmpty as NE (fromList)
 import           Data.Matrix.NotStupid    (Matrix)
 import           Data.Maybe               (fromMaybe)
-import           Data.Semigroup
 import           Data.Vector              (Vector,(!),(//),generate)
 import qualified Data.Vector        as V  (fromList)
 import           File.Format.TNT.Command.CNames

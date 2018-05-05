@@ -33,7 +33,6 @@ import           Data.Hashable
 import           Data.Key
 import qualified Data.List.NonEmpty         as NE
 import           Data.Pointed
-import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Data.Semigroup.Traversable
 import qualified Data.Vector                as V

@@ -24,7 +24,6 @@ import Data.List.NonEmpty          (some1)
 import Data.Map             hiding (filter, foldl', null)
 import Data.Maybe                  (fromJust, fromMaybe, isJust)
 import Data.Proxy
-import Data.Semigroup
 import Data.String
 import File.Format.Newick.Internal
 import Prelude              hiding (lookup)

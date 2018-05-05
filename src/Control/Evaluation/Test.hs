@@ -9,10 +9,7 @@ module Control.Evaluation.Test
 
 import Control.Evaluation.Unit
 import Control.Evaluation.Internal
---import PCG.Evaluation.Trans
-import Data.Monoid
 import Test.Tasty                 (TestTree, testGroup)
---import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 import Test.QuickCheck.Function
 
