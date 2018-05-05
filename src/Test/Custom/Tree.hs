@@ -394,7 +394,7 @@ instance N.Network SimpleTree SimpleTree where
            f :: SimpleTree -> SimpleTree
            f node@(TT internal) = TT $ internal { rootLabel = decoration', subForest = children' }
              where
-               children'   = ((\(TT x) -> x) . f . TT) <$> subForest internal
+               children'   = (\(TT x) -> x) . f . TT <$> subForest internal
                decoration' =
                  case findNode (sameRef node) (TT root') of
                    Nothing     -> rootLabel internal 
