@@ -26,8 +26,6 @@ import qualified Control.Monad.Fail as F
 import           Control.Monad.IO.Class
 import           Control.Monad.Logger
 import           Control.Monad.Trans.Class
-import           Data.Monoid             ()
-import           Data.Semigroup
 import           GHC.Generics
 
 

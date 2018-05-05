@@ -209,15 +209,11 @@ instance PhylogeneticComponent (ReferenceDAG d e n) NodeRef e n where
 
     isNetworkNode i dag = olength ps == 2 && length cs == 1
       where
-        iPoint = references dag ! fromEnum i
-        ps = parentRefs iPoint
-        cs = childRefs  iPoint
+        (ps,cs) = parentsAndChildren i dag
 
     isTreeNode i dag = olength ps == 1 && length cs == 2
       where
-        iPoint = references dag ! fromEnum i
-        ps = parentRefs iPoint
-        cs = childRefs  iPoint
+        (ps,cs) = parentsAndChildren i dag
 
     isLeafNode i dag =  null . childRefs  $ references dag ! fromEnum i
 
@@ -1288,3 +1284,12 @@ toBinaryRenderingTree nodeRenderer dag = (`evalState` initialState) . traverse s
         kids        = IM.keys $ childRefs context
         parentCount = olength $ parentRefs context
         shownNode   = takeWhile (/='\n') . nodeRenderer $ nodeDecoration context
+
+
+parentsAndChildren :: Enum a => a -> ReferenceDAG d e n -> (IntSet, IntMap e)
+parentsAndChildren i dag = (ps, cs)
+  where
+    iPoint = references dag ! fromEnum i
+    ps = parentRefs iPoint
+    cs = childRefs  iPoint
+

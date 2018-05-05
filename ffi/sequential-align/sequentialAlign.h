@@ -11,8 +11,8 @@
 
 #include <stddef.h>
 
-#include "../memoized_tcm/costMatrixWrapper_2d.h"
-#include "../memoized_tcm/dynamicCharacterOperations.h"
+#include "../memoized-tcm/costMatrixWrapper.h"
+#include "../memoized-tcm/dynamicCharacterOperations.h"
 #include "sequentialAlignOutputTypes.h"
 
 typedef void* costMatrix_p;

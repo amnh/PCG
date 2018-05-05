@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../memoized_tcm/dynamicCharacterOperations.h"
+#include "dynamicCharacterOperations.h"
 #include "sequentialAlign.h"
 
 // this and <inttypes.h> so I can use PRIu64 instead of llu

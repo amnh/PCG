@@ -20,7 +20,6 @@ module Bio.Sequence.Block.Internal
 import Control.DeepSeq
 import Data.Bifunctor
 import Data.Foldable
-import Data.Semigroup
 import Data.Vector            (Vector)
 import Data.Vector.Instances  ()
 import GHC.Generics

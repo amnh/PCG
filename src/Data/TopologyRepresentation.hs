@@ -34,7 +34,6 @@ import           Data.Functor.Classes
 import           Data.Hashable
 import           Data.MutualExclusionSet        (MutualExclusionSet)
 import qualified Data.MutualExclusionSet as MES
-import           Data.Semigroup
 import           Data.Set                       (Set)
 import           GHC.Generics
 
@@ -49,7 +48,7 @@ isCompatableSubtopologyOf (TR x) (TR y) = isSubsetOf x y
 --
 -- Often used to represent a unique spanning tree in a phylogenetic DAG.
 newtype TopologyRepresentation a = TR { unwrap :: MutualExclusionSet a }
-  deriving (Eq, Eq1, Hashable, Generic, Monoid, NFData, Ord, Ord1, Semigroup)
+    deriving (Eq, Eq1, Hashable, Generic, Monoid, NFData, Ord, Ord1, Semigroup)
 
 {-
 instance Foldable TopologyRepresentation where

@@ -11,7 +11,6 @@ module PCG.Command.Read.ReadError
 
 import Data.List.NonEmpty
 import Data.Maybe            (catMaybes)
-import Data.Semigroup
 import Text.Megaparsec
 
 

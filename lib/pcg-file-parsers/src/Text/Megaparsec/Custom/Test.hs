@@ -10,7 +10,6 @@ module Text.Megaparsec.Custom.Test
 import Data.Either.Combinators
 import Data.List               (nub,sort)
 import Data.Proxy
-import Data.Semigroup
 import Data.Void
 import Safe                    (readMay)
 import Test.SmallCheck.Series  ()

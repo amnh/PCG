@@ -44,7 +44,6 @@ import qualified Data.List.NonEmpty        as NE
 import           Data.List.Utility
 import           Data.Maybe                       (fromMaybe)
 import           Data.MonoTraversable
-import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Data.TopologyRepresentation
 import           Data.Vector                      (Vector)

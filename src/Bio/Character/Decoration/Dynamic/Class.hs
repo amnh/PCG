@@ -28,7 +28,6 @@ import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
 import Data.MonoTraversable
-import Data.Semigroup
 import GHC.Generics
 import Numeric.NonNegativeAverage
 

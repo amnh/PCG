@@ -30,7 +30,6 @@ import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
 import Data.List (intercalate)
-import Data.Monoid
 import GHC.Generics
 import Text.XML
 

@@ -8,6 +8,7 @@ module Test.Custom.Parse
   , parserSatisfies
   ) where
 
+import Data.Either
 import Data.Void
 import Test.Tasty.HUnit
 import Text.Megaparsec       (Parsec, parse)
@@ -25,9 +26,7 @@ parseEquals parser input expected =
 
 parseFailure :: Parsec Void String a -> String -> Assertion
 parseFailure parser input =
-  case result of
-    Right _ -> assertFailure $ "Should have failed to parse input: " ++ show input
-    Left  _ -> assert True
+    assertBool ("Should have failed to parse input: " ++ show input) $ isLeft result
   where
     result = parse parser "" input
 
@@ -36,7 +35,7 @@ parseSuccess :: Parsec Void String a -> String -> Assertion
 parseSuccess parser input =
   case result of
     Left  x -> assertFailure $ parseErrorPretty x
-    Right _ -> assert True
+    Right _ -> () @=? ()
   where
     result = parse parser "" input
 
