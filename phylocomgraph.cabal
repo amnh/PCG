@@ -20,10 +20,102 @@ description:        Phylogenetic Componet Graph provides a library for
                     program to perform a phylogenetic search on an input dataset.
 
 
-library
+-- Group of buildinfo specifications to correctly build and link to the C & C++
+-- FFI code. 
+common ffi-buildinfo
+
+  cc-options:       --std=c11
+
+  c-sources:        ffi/external-direct-optimization/c_alignment_interface.c
+                    ffi/external-direct-optimization/c_code_alloc_setup.c
+                    ffi/external-direct-optimization/costMatrix.c
+                    ffi/external-direct-optimization/alignmentMatrices.c
+                    ffi/external-direct-optimization/dyn_character.c
+                    ffi/external-direct-optimization/alignCharacters.c
+                    ffi/external-direct-optimization/ukkCheckPoint.c
+                    ffi/external-direct-optimization/ukkCommon.c
+                    ffi/memoized-tcm/dynamicCharacterOperations.c
+                    ffi/memoized-tcm/costMatrixWrapper.c
+                    ffi/sequential-align/sequentialAlignInterface.c
+                    ffi/sequential-align/sequentialAlign.c
+
+  cxx-options:      --std=c++11
+
+  cxx-sources:      ffi/memoized-tcm/costMatrix_2d.cpp
+                    ffi/memoized-tcm/costMatrix_3d.cpp
+    
+  -- This library is required for linking to the C++ standard template library.
+  extra-libraries:  stdc++
+  
+  hs-source-dirs:   ffi
+
+  -- Here we list all directories that contain C & C++ header files that the FFI
+  -- tools will need to locate when preprocessing the C files. Without listing
+  -- the directories containing the C header files here, the FFI preprocessor
+  -- (hsc2hs, c2hs, etc.) will fail to locate the requisite files. Note also,
+  -- that the parent directory of the nessicary C & C++ header files must be
+  -- specified. The preprocessor will not recursively look in subdirectories for
+  -- header files!
+  include-dirs:     ffi/external-direct-optimization
+                    ffi/memoized-tcm
+                    ffi/sequential-align
+
+
+-- A litany of GHC warnings designed to alert us during the build of any common
+-- pitfalls, future compatibility issues, or coding conventions.
+common ghc-flags
+
+  ghc-options:      -O2
+                    -g
+                    -- Sanity check warnings
+                    -Wall
+                    -Wcompat
+                    -Wdodgy-foreign-imports
+                    -Wduplicate-exports
+                    -Wempty-enumerations
+                    -Widentities
+                    -Wincomplete-patterns
+                    -Wincomplete-record-updates
+                    -Wincomplete-uni-patterns
+                    -Wmissing-fields
+                    -Wmissing-home-modules
+                    -Wmissing-monadfail-instances
+                    -Wmissing-monadfail-instances
+                    -Wmissing-signatures
+                    -Wnoncanonical-monadfail-instances
+                    -Wnoncanonical-monad-instances
+                    -Wnoncanonical-monoid-instances
+                    -Woverflowed-literals
+                    -Woverlapping-patterns
+                    -Wredundant-constraints
+                    -Wsemigroup
+                    -Wtabs
+                    -Wunrecognised-warning-flags
+                    -Wunrecognised-warning-flags
+                    -Wunused-binds
+                    -Wunused-do-bind
+                    -Wunused-foralls
+                    -Wunused-imports
+                    -Wunused-matches
+                    -Wwrong-do-bind
+
+
+-- Global deviations from Haskell98
+common language-specs
+
+  default-language: Haskell2010
+
+  -- Use MonadFail(fail), not Monad(fail)
   other-extensions: MonadFailDesugaring
 
-  build-depends:      base               >=4.8
+
+library
+
+  import:             ffi-buildinfo
+                    , ghc-flags
+                    , language-specs
+
+  build-depends:      base               >=4.10
                     , bimap
                     , blaze-html
                     , bv-little
@@ -61,78 +153,7 @@ library
                     , vector-instances   >=3.4
                     , xml
 
-  cc-options:       --std=c11
-
-  c-sources:        ffi/external-direct-optimization/c_alignment_interface.c
-                    ffi/external-direct-optimization/c_code_alloc_setup.c
-                    ffi/external-direct-optimization/costMatrix.c
-                    ffi/external-direct-optimization/alignmentMatrices.c
-                    ffi/external-direct-optimization/dyn_character.c
-                    ffi/external-direct-optimization/alignCharacters.c
-                    ffi/external-direct-optimization/ukkCheckPoint.c
-                    ffi/external-direct-optimization/ukkCommon.c
-                    ffi/memoized-tcm/dynamicCharacterOperations.c
-                    ffi/memoized-tcm/costMatrixWrapper.c
-                    ffi/sequential-align/sequentialAlignInterface.c
-                    ffi/sequential-align/sequentialAlign.c
-
-  cxx-options:      --std=c++11
-
-  cxx-sources:      ffi/memoized-tcm/costMatrix_2d.cpp
-                    ffi/memoized-tcm/costMatrix_3d.cpp
-    
-  default-language: Haskell2010
-
-  -- This library is required for linking to the C++ standard template library.
-  extra-libraries:  stdc++
-  
-  ghc-options:      -O2
-                    -g
---                    -debug -optl-static
-                    -- Sanity check warnings
-                    -Wall
-                    -Wcompat
-                    -Wdodgy-foreign-imports
-                    -Wduplicate-exports
-                    -Wempty-enumerations
-                    -Widentities
-                    -Wincomplete-patterns
-                    -Wincomplete-record-updates
-                    -Wincomplete-uni-patterns
-                    -Wmissing-fields
-                    -Wmissing-home-modules
-                    -Wmissing-monadfail-instances
-                    -Wmissing-monadfail-instances
-                    -Wmissing-signatures
-                    -Wnoncanonical-monadfail-instances
-                    -Wnoncanonical-monad-instances
-                    -Wnoncanonical-monoid-instances
-                    -Woverflowed-literals
-                    -Woverlapping-patterns
-                    -Wredundant-constraints
-                    -Wsemigroup
-                    -Wtabs
-                    -Wunrecognised-warning-flags
-                    -Wunrecognised-warning-flags
-                    -Wunused-binds
-                    -Wunused-do-bind
-                    -Wunused-foralls
-                    -Wunused-imports
-                    -Wunused-matches
-                    -Wwrong-do-bind
-
-  hs-source-dirs:   src, ffi
-
-  -- Here we list all directories that contain C & C++ header files that the FFI
-  -- tools will need to locate when preprocessing the C files. Without listing
-  -- the directories containing the C header files here, the FFI preprocessor
-  -- (hsc2hs, c2hs, etc.) will fail to locate the requisite files. Note also,
-  -- that the parent directory of the nessicary C & C++ header files must be
-  -- specified. The preprocessor will not recursively look in subdirectories for
-  -- header files!
-  include-dirs:     ffi/external-direct-optimization
-                    ffi/memoized-tcm
-                    ffi/sequential-align
+  hs-source-dirs:   src
 
   exposed-modules:  Analysis.Parsimony.Additive.Internal
                     Analysis.Parsimony.Dynamic.DirectOptimization
@@ -270,11 +291,14 @@ library
 
 executable pcg
 
+  import:             ghc-flags
+                    , language-specs
+
   main-is:          Main.hs
 
   build-depends:      phylocomgraph
                     , ansi-wl-pprint
-                    , base             >=4.8
+                    , base             >=4.10
                     , blaze-html
                     -- Required for Data.Map.restrictKeys
                     , containers       >=0.5.8
@@ -305,43 +329,8 @@ executable pcg
                     , vector-instances >=3.4
                     , xml
 
-  default-language: Haskell2010
-
-  ghc-options:      -O2
-                    -g
-                    -- This is to enable thread parralellism at compile time
-                    -threaded
+  ghc-options:      -threaded
                     -- -rtsopts -with-rtsopts=-N8
-                    -Wall
-                    -Wcompat
-                    -Wdodgy-foreign-imports
-                    -Wduplicate-exports
-                    -Wempty-enumerations
-                    -Widentities
-                    -Wincomplete-patterns
-                    -Wincomplete-record-updates
-                    -Wincomplete-uni-patterns
-                    -Wmissing-fields
-                    -Wmissing-home-modules
-                    -Wmissing-monadfail-instances
-                    -Wmissing-monadfail-instances
-                    -Wmissing-signatures
-                    -Wnoncanonical-monadfail-instances
-                    -Wnoncanonical-monad-instances
-                    -Wnoncanonical-monoid-instances
-                    -Woverflowed-literals
-                    -Woverlapping-patterns
-                    -Wredundant-constraints
-                    -Wsemigroup
-                    -Wtabs
-                    -Wunrecognised-warning-flags
-                    -Wunrecognised-warning-flags
-                    -Wunused-binds
-                    -Wunused-do-bind
-                    -Wunused-foralls
-                    -Wunused-imports
-                    -Wunused-matches
-                    -Wwrong-do-bind
 
   hs-source-dirs:   app
 
@@ -367,10 +356,13 @@ executable pcg
 
 executable fasta-differ
 
+  import:             ghc-flags
+                    , language-specs
+
   main-is:          fasta-differ.hs
 
   build-depends:      phylocomgraph
-                    , base >=4.8
+                    , base >=4.10
                     , bimap
                     , containers
                     , keys
@@ -378,327 +370,113 @@ executable fasta-differ
                     , pcg-file-parsers
                     , QuickCheck
 
-  default-language: Haskell2010
-
-  ghc-options:      -O2
-                    -Wall
-                    -Wcompat
-                    -Wdodgy-foreign-imports
-                    -Wduplicate-exports
-                    -Wempty-enumerations
-                    -Widentities
-                    -Wincomplete-patterns
-                    -Wincomplete-record-updates
-                    -Wincomplete-uni-patterns
-                    -Wmissing-fields
-                    -Wmissing-home-modules
-                    -Wmissing-monadfail-instances
-                    -Wmissing-monadfail-instances
-                    -Wmissing-signatures
-                    -Wnoncanonical-monadfail-instances
-                    -Wnoncanonical-monad-instances
-                    -Wnoncanonical-monoid-instances
-                    -Woverflowed-literals
-                    -Woverlapping-patterns
-                    -Wredundant-constraints
-                    -Wsemigroup
-                    -Wtabs
-                    -Wunrecognised-warning-flags
-                    -Wunrecognised-warning-flags
-                    -Wunused-binds
-                    -Wunused-do-bind
-                    -Wunused-foralls
-                    -Wunused-imports
-                    -Wunused-matches
-                    -Wwrong-do-bind
-
   hs-source-dirs:   utils
 
 
 executable 2d-do-comparison
 
+  import:             ghc-flags
+                    , language-specs
+
   main-is:          2d-do-comparison.hs
 
   build-depends:      phylocomgraph
-                    , base >=4.8
+                    , base >=4.10
                     , bimap
                     , QuickCheck
-
-  default-language: Haskell2010
-
-  ghc-options:      -O2
-                    -Wall
-                    -Wcompat
-                    -Wdodgy-foreign-imports
-                    -Wduplicate-exports
-                    -Wempty-enumerations
-                    -Widentities
-                    -Wincomplete-patterns
-                    -Wincomplete-record-updates
-                    -Wincomplete-uni-patterns
-                    -Wmissing-fields
-                    -Wmissing-home-modules
-                    -Wmissing-monadfail-instances
-                    -Wmissing-monadfail-instances
-                    -Wmissing-signatures
-                    -Wnoncanonical-monadfail-instances
-                    -Wnoncanonical-monad-instances
-                    -Wnoncanonical-monoid-instances
-                    -Woverflowed-literals
-                    -Woverlapping-patterns
-                    -Wredundant-constraints
-                    -Wsemigroup
-                    -Wtabs
-                    -Wunrecognised-warning-flags
-                    -Wunrecognised-warning-flags
-                    -Wunused-binds
-                    -Wunused-do-bind
-                    -Wunused-foralls
-                    -Wunused-imports
-                    -Wunused-matches
-                    -Wwrong-do-bind
 
   hs-source-dirs:   utils
 
 
 executable 3d-do-comparison
 
+  import:             ghc-flags
+                    , language-specs
+
   main-is:          3d-do-comparison.hs
 
   build-depends:      phylocomgraph
-                    , base >=4.8
+                    , base >=4.10
                     , bimap
                     , deepseq
                     , QuickCheck
-
-  default-language: Haskell2010
-
-  ghc-options:      -O2
-                    -Wall
-                    -Wcompat
-                    -Wdodgy-foreign-imports
-                    -Wduplicate-exports
-                    -Wempty-enumerations
-                    -Widentities
-                    -Wincomplete-patterns
-                    -Wincomplete-record-updates
-                    -Wincomplete-uni-patterns
-                    -Wmissing-fields
-                    -Wmissing-home-modules
-                    -Wmissing-monadfail-instances
-                    -Wmissing-monadfail-instances
-                    -Wmissing-signatures
-                    -Wnoncanonical-monadfail-instances
-                    -Wnoncanonical-monad-instances
-                    -Wnoncanonical-monoid-instances
-                    -Woverflowed-literals
-                    -Woverlapping-patterns
-                    -Wredundant-constraints
-                    -Wsemigroup
-                    -Wtabs
-                    -Wunrecognised-warning-flags
-                    -Wunrecognised-warning-flags
-                    -Wunused-binds
-                    -Wunused-do-bind
-                    -Wunused-foralls
-                    -Wunused-imports
-                    -Wunused-matches
-                    -Wwrong-do-bind
 
   hs-source-dirs:   utils
 
 
 executable affine-safety
 
+  import:             ghc-flags
+                    , language-specs
+
   main-is:          affine-safety.hs
 
   build-depends:      phylocomgraph
-                    , base >=4.8
+                    , base >=4.10
                     , bimap
                     , QuickCheck
-
-  default-language: Haskell2010
-
-  ghc-options:      -O2
-                    -Wall
-                    -Wcompat
-                    -Wdodgy-foreign-imports
-                    -Wduplicate-exports
-                    -Wempty-enumerations
-                    -Widentities
-                    -Wincomplete-patterns
-                    -Wincomplete-record-updates
-                    -Wincomplete-uni-patterns
-                    -Wmissing-fields
-                    -Wmissing-home-modules
-                    -Wmissing-monadfail-instances
-                    -Wmissing-monadfail-instances
-                    -Wmissing-signatures
-                    -Wnoncanonical-monadfail-instances
-                    -Wnoncanonical-monad-instances
-                    -Wnoncanonical-monoid-instances
-                    -Woverflowed-literals
-                    -Woverlapping-patterns
-                    -Wredundant-constraints
-                    -Wsemigroup
-                    -Wtabs
-                    -Wunrecognised-warning-flags
-                    -Wunrecognised-warning-flags
-                    -Wunused-binds
-                    -Wunused-do-bind
-                    -Wunused-foralls
-                    -Wunused-imports
-                    -Wunused-matches
-                    -Wwrong-do-bind
 
   hs-source-dirs:   utils
 
 
 executable sequential-alignment-invariants
 
+  import:             ghc-flags
+                    , language-specs
+
   main-is:          sequential-alignment-invariants.hs
 
   build-depends:      phylocomgraph
-                    , base >=4.8
+                    , base >=4.10
                     , bimap
                     , QuickCheck
-
-  default-language: Haskell2010
-
-  ghc-options:      -O2
-                    -Wall
-                    -Wcompat
-                    -Wdodgy-foreign-imports
-                    -Wduplicate-exports
-                    -Wempty-enumerations
-                    -Widentities
-                    -Wincomplete-patterns
-                    -Wincomplete-record-updates
-                    -Wincomplete-uni-patterns
-                    -Wmissing-fields
-                    -Wmissing-home-modules
-                    -Wmissing-monadfail-instances
-                    -Wmissing-monadfail-instances
-                    -Wmissing-signatures
-                    -Wnoncanonical-monadfail-instances
-                    -Wnoncanonical-monad-instances
-                    -Wnoncanonical-monoid-instances
-                    -Woverflowed-literals
-                    -Woverlapping-patterns
-                    -Wredundant-constraints
-                    -Wsemigroup
-                    -Wtabs
-                    -Wunrecognised-warning-flags
-                    -Wunrecognised-warning-flags
-                    -Wunused-binds
-                    -Wunused-do-bind
-                    -Wunused-foralls
-                    -Wunused-imports
-                    -Wunused-matches
-                    -Wwrong-do-bind
 
   hs-source-dirs:   utils
 
 
 executable three-way-mean-check
 
+  import:             ghc-flags
+                    , language-specs
+
   main-is:          three-way-mean-check.hs
 
   build-depends:      phylocomgraph
-                    , base >=4.8
+                    , base >=4.10
                     , bimap
                     , lens
                     , QuickCheck
-
-  default-language: Haskell2010
-
-  ghc-options:      -O2
-                    -Wall
-                    -Wcompat
-                    -Wdodgy-foreign-imports
-                    -Wduplicate-exports
-                    -Wempty-enumerations
-                    -Widentities
-                    -Wincomplete-patterns
-                    -Wincomplete-record-updates
-                    -Wincomplete-uni-patterns
-                    -Wmissing-fields
-                    -Wmissing-home-modules
-                    -Wmissing-monadfail-instances
-                    -Wmissing-monadfail-instances
-                    -Wmissing-signatures
-                    -Wnoncanonical-monadfail-instances
-                    -Wnoncanonical-monad-instances
-                    -Wnoncanonical-monoid-instances
-                    -Woverflowed-literals
-                    -Woverlapping-patterns
-                    -Wredundant-constraints
-                    -Wsemigroup
-                    -Wtabs
-                    -Wunrecognised-warning-flags
-                    -Wunrecognised-warning-flags
-                    -Wunused-binds
-                    -Wunused-do-bind
-                    -Wunused-foralls
-                    -Wunused-imports
-                    -Wunused-matches
-                    -Wwrong-do-bind
 
   hs-source-dirs:   utils
 
 
 executable ukkonen-do-comparison
 
+  import:             ghc-flags
+                    , language-specs
+
   main-is:          ukkonen-do-comparison.hs
 
   build-depends:      phylocomgraph
-                    , base >=4.8
+                    , base >=4.10
                     , bimap
                     , QuickCheck
-
-  default-language: Haskell2010
- 
-  ghc-options:      -O2
-                    -Wall
-                    -Wcompat
-                    -Wdodgy-foreign-imports
-                    -Wduplicate-exports
-                    -Wempty-enumerations
-                    -Widentities
-                    -Wincomplete-patterns
-                    -Wincomplete-record-updates
-                    -Wincomplete-uni-patterns
-                    -Wmissing-fields
-                    -Wmissing-home-modules
-                    -Wmissing-monadfail-instances
-                    -Wmissing-monadfail-instances
-                    -Wmissing-signatures
-                    -Wnoncanonical-monadfail-instances
-                    -Wnoncanonical-monad-instances
-                    -Wnoncanonical-monoid-instances
-                    -Woverflowed-literals
-                    -Woverlapping-patterns
-                    -Wredundant-constraints
-                    -Wsemigroup
-                    -Wtabs
-                    -Wunrecognised-warning-flags
-                    -Wunrecognised-warning-flags
-                    -Wunused-binds
-                    -Wunused-do-bind
-                    -Wunused-foralls
-                    -Wunused-imports
-                    -Wunused-matches
-                    -Wwrong-do-bind
 
   hs-source-dirs:   utils
 
 
 Test-Suite testsuite
-  type:             exitcode-stdio-1.0
 
+  import:             ffi-buildinfo
+                    , ghc-flags
+                    , language-specs
+
+
+  type:             exitcode-stdio-1.0
+  
   main-is:          TestAll.hs
 
-  build-depends:      base               >=4.8
+  build-depends:      base               >=4.10
                     , bimap
                     , blaze-html
                     , bv-little
@@ -743,76 +521,9 @@ Test-Suite testsuite
                     , vector-instances >=3.4
                     , xml
 
-  cc-options:       --std=c11
+  ghc-options:      -threaded
 
-  c-sources:        ffi/external-direct-optimization/c_alignment_interface.c
-                    ffi/external-direct-optimization/c_code_alloc_setup.c
-                    ffi/external-direct-optimization/costMatrix.c
-                    ffi/external-direct-optimization/alignmentMatrices.c
-                    ffi/external-direct-optimization/dyn_character.c
-                    ffi/external-direct-optimization/alignCharacters.c
-                    ffi/external-direct-optimization/ukkCheckPoint.c
-                    ffi/external-direct-optimization/ukkCommon.c
-                    ffi/memoized-tcm/dynamicCharacterOperations.c
-                    ffi/memoized-tcm/costMatrixWrapper.c
-                    ffi/sequential-align/sequentialAlignInterface.c
-                    ffi/sequential-align/sequentialAlign.c
-
-  cxx-options:      --std=c++11
-
-  cxx-sources:      ffi/memoized-tcm/costMatrix_2d.cpp
-                    ffi/memoized-tcm/costMatrix_3d.cpp
-    
-  default-language: Haskell2010
-
-  -- This library is required for linking to the C++ standard template library.
-  extra-libraries:  stdc++
-  
-  ghc-options:      -O2
-                    -threaded
-                    -Wall
-                    -Wcompat
-                    -Wdodgy-foreign-imports
-                    -Wduplicate-exports
-                    -Wempty-enumerations
-                    -Widentities
-                    -Wincomplete-patterns
-                    -Wincomplete-record-updates
-                    -Wincomplete-uni-patterns
-                    -Wmissing-fields
-                    -Wmissing-home-modules
-                    -Wmissing-monadfail-instances
-                    -Wmissing-monadfail-instances
-                    -Wmissing-signatures
-                    -Wnoncanonical-monadfail-instances
-                    -Wnoncanonical-monad-instances
-                    -Wnoncanonical-monoid-instances
-                    -Woverflowed-literals
-                    -Woverlapping-patterns
-                    -Wredundant-constraints
-                    -Wsemigroup
-                    -Wtabs
-                    -Wunrecognised-warning-flags
-                    -Wunrecognised-warning-flags
-                    -Wunused-binds
-                    -Wunused-do-bind
-                    -Wunused-foralls
-                    -Wunused-imports
-                    -Wunused-matches
-                    -Wwrong-do-bind
-
-  hs-source-dirs:   test, src, app, ffi
-
-  -- Here we list all directories that contain C & C++ header files that the FFI
-  -- tools will need to locate when preprocessing the C files. Without listing
-  -- the directories containing the C header files here, the FFI preprocessor
-  -- (hsc2hs, c2hs, etc.) will fail to locate the requisite files. Note also,
-  -- that the parent directory of the nessicary C & C++ header files must be
-  -- specified. The preprocessor will not recursively look in subdirectories for
-  -- header files!
-  include-dirs:     ffi/external-direct-optimization
-                    ffi/memoized-tcm
-                    ffi/sequential-align
+  hs-source-dirs:   test, src, app
 
   other-modules:    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
                     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
