@@ -1,6 +1,5 @@
--- |
--- This is where some tests are
-
+{-# ANN module "HLint: ignore Functor law" #-}
+{-# ANN module "HLint: ignore Use >=>" #-}
 {-# LANGUAGE AllowAmbiguousTypes, ViewPatterns #-}
 
 module Control.Evaluation.Test
