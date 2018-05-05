@@ -205,8 +205,6 @@ library
                        Data.TCM.Memoized
                        Data.TopologyRepresentation
                        Data.NodeLabel
---                       Text.HTML.Class
---                       Text.HTML.Custom
                        Text.Newick.Class
                        Text.XML
                        Text.XML.Custom
