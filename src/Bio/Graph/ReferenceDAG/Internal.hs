@@ -1286,6 +1286,8 @@ toBinaryRenderingTree nodeRenderer dag = (`evalState` initialState) . traverse s
         shownNode   = takeWhile (/='\n') . nodeRenderer $ nodeDecoration context
 
 
+-- |
+-- get the parents and children references for a given node index.
 parentsAndChildren :: Enum a => a -> ReferenceDAG d e n -> (IntSet, IntMap e)
 parentsAndChildren i dag = (ps, cs)
   where
