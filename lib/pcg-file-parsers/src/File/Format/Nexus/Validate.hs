@@ -277,8 +277,8 @@ foldSeqs ((taxSeqMap,charMDataVec):xs)   = ((newSeqMap, newMetadata), totLength)
         ((curMap,curMetadata),curLength) = foldSeqs xs
         newSeqMap                        = M.unionWith (updateSeqInMap curLength) taxSeqMap curMap
                                            -- This condition shouldn't ever be True. Only seqs should have missing data.
-        newMetadata                      = charMDataVec V.<> if length curMetadata < curLength
-                                                                then V.fromList [] V.<> curMetadata -- TODO: Error out here?
+        newMetadata                      = charMDataVec <> if length curMetadata < curLength
+                                                                then V.fromList [] <> curMetadata -- TODO: Error out here?
                                                                 else curMetadata
         totLength                        = curLength +  V.length charMDataVec
 
@@ -409,10 +409,10 @@ translateTrees taxaList treeSet =
 updateSeqInMap :: Int -> Sequence -> Sequence -> Sequence
 updateSeqInMap curLength inputSeq curSeq = newSeq
     where
-        newSeq        = seqToAdd V.<> curSeq
+        newSeq        = seqToAdd <> curSeq
         missingLength = curLength - length curSeq
         emptySeq      = V.replicate missingLength Nothing
-        seqToAdd      = inputSeq V.<> emptySeq
+        seqToAdd      = inputSeq <> emptySeq
 
 -- | wrongDataType looks at a PhyloSequence block and determines if it has a valid data type. If the datatype is missing, it will return Nothing, as
 -- results in default behavior ("standard" is default).
