@@ -1,16 +1,54 @@
 # HLint configuration file
 # https://github.com/ndmitchell/hlint
 
-- group: {name: generalise, enabled: true}
 
-# Ignoring certain hints in test-suites
-# These hints are inapplicable since the test-suites are testing the properties
-# that the hint assumes to be true.
+# Custom warning hints
+- warn: { lhs: x *> pure y  , rhs: x $> y   }
+- warn: { lhs: pure y <* x  , rhs: y <$ x   }
+- warn: { lhs: return x     , rhs: pure x   }
+- warn: { lhs: liftM x      , rhs: fmap x   }
+- warn: { lhs: map x        , rhs: fmap x   }
+- warn: { lhs: maybeToList x, rhs: toList x }
+- warn: { lhs: (!!)         , rhs: (!)      }
+- warn: { lhs: parMap       , rhs: parmap   }
 
-- ignore: {name: "Functor law", within: ["Control.Evaluation.Test"] }
 
-- ignore: {name: Use >=>, within: [Control.Evaluation.Test] }
-
-
+# Replace a $ b $ c with a . b $ c
+- group: { name: dollar, enabled: true }
 
 
+# Generalise map to fmap, ++ to <>
+- group: { name: generalise, enabled: true }
+
+
+# Ignore some builtin hint in test modules where we need to test the hint.
+# These hints are inapplicable within test modules since the test-suites are
+# testing the properties that the hint assumes to be true.
+- ignore: { name: Evaluate
+          , within:
+            [ Data.BitMatrix.Test
+            , Numeric.Extended.Natural.Test
+            , Numeric.Extended.Real.Test
+            ]
+          }
+- ignore: { name: Use >=>
+          , within:
+            [ Control.Evaluation.Test
+            ]
+          }
+- ignore: { name: "Functor law"
+          , within:
+            [ Control.Evaluation.Test
+            ]
+          }
+
+
+# unsafePerformIO can only appear in FFI modules
+- functions:
+  - { name: unsafePerformIO
+    , within:
+      [ Data.TCM.Memoized.FFI
+      , Analysis.Parsimony.Dynamic.SequentialAlign.FFI
+      , Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
+      ]
+    }
