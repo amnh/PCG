@@ -49,7 +49,7 @@ import           Prelude            hiding (zipWith)
 
 -- |
 -- Reifies a solution, performing several initialization functions on each DAG
--- before it's cost can be calculated.
+-- before its cost can be calculated.
 
 --reifiedSolution :: PhylogeneticSolution UnReifiedCharacterDAG -> CharacterResult
 --reifiedSolution  = PhylogeneticSolution . fmap (fmap reifiedToCharacterDAG) . phylogeneticForests
@@ -68,7 +68,7 @@ reifiedSolution = PhylogeneticSolution . fmap reifyForest . phylogeneticForests
 
 -- |
 -- Reifies a Forest so it has the requisite context for a post-order traversal.
--- Specifically each leaf in the forest has a unique bitvector index and subtree
+-- Specifically, each leaf in the forest has a unique bitvector index and subtree
 -- representation symbol.
 reifyForest :: PhylogeneticForest UnReifiedCharacterDAG -> PhylogeneticForest CharacterDAG
 reifyForest forest = zipWith (reifyDAGWithContext leavesInForest) leafMaskForest forest
@@ -121,9 +121,9 @@ reifyDAGWithContext leafCount maskDAG (PDAG dag) = PDAG2 newDAG
         , rootRefs   = rootRefs dag
         , graphData  = ((mempty, mempty, Nothing) <$) $ graphData dag
         }
-    
+
     buildLeafNodeAssignments = nodeDecoration <$> references maskDAG
-    
+
     dagSize = length $ references dag
 
     newRefs = V.generate dagSize g

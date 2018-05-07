@@ -36,7 +36,7 @@ class ( DiscreteCharacterDecoration s c
       , HasCharacterCost s Word
       , HasPreliminaryMedian s c
       , HasFinalMedian s c
-      
+
       ) => FitchDecoration s c | s -> c where
 
 
@@ -83,7 +83,7 @@ class HasPreliminaryMedian s a | s -> a where
 
 
 -- |
--- A 'Lens' for the 'HasFinalMedian' field.
+-- A 'Lens' for the 'finalMedian' field.
 class HasFinalMedian s a | s -> a where
 
     {-# MINIMAL finalMedian #-}

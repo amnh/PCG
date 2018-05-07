@@ -30,13 +30,13 @@ import Data.List.NonEmpty
                ]
 -}
 -- |
--- Represents the most relaxed phylogentic graph structure.
+-- Represents the most relaxed phylogenetic graph structure.
 --
 -- The graph must satisfy the following:
 --  * The graph is directed
 --  * The graph is acyclic
 --  * the graph contains one or more root nodes
---  * All nodes have at most in-degree 2
+--  * All nodes have in-degree at most 2
 --  * All nodes have out-degree 0 or out-degree 2
 class PhylogeneticComponent t i e n | t -> i, t -> n, t -> e where
 
@@ -58,14 +58,14 @@ class PhylogeneticComponent t i e n | t -> i, t -> n, t -> e where
     -- A node satisfying:
     --  * In-degree  of 2 or more
     --  * Out-degree of 2 or more
-    --  * A least 2 parent nodes have ancestoral paths to different root nodes
+    --  * A least 2 parent nodes have ancestral paths to different root nodes
     isComponentNode :: i -> t -> Bool
 
     -- |
     -- A node satisfying:
     --  * In-degree  of 2 or more
     --  * Out-degree of 2 or more
-    --  * All parent nodes have ancestoral paths to a single root node
+    --  * All parent nodes have ancestral paths to a single root node
     isNetworkNode :: i -> t -> Bool
 
     -- |
@@ -85,7 +85,7 @@ class PhylogeneticComponent t i e n | t -> i, t -> n, t -> e where
     isRootNode :: i -> t -> Bool
 
     -- |
-    -- Performs a softwire resolution of all /component/ nodes into a collection
+    -- Performs a soft-wired resolution of all /component/ nodes into a collection
     -- of all resulting networks. The resulting size of the collection is equal
     -- to /2^n/ where /n/ is the number of component nodes in the
     -- 'PhylogeneticComponent'.
@@ -98,7 +98,7 @@ class PhylogeneticComponent t i e n | t -> i, t -> n, t -> e where
 -- The graph must satisfy the following:
 --  * The graph is directed
 --  * The graph is acyclic
---  * The graph contains /exactly one/ root nodes
+--  * The graph contains /exactly one/ root node
 --  * All nodes have at most in-degree 2
 --  * All nodes have out-degree 0 or out-degree 2
 class PhylogeneticNetwork t i e n | t -> i, t -> n, t -> e where
@@ -106,7 +106,7 @@ class PhylogeneticNetwork t i e n | t -> i, t -> n, t -> e where
     root  :: t -> i
 
     -- |
-    -- Performs a softwire resolution of all /network/ nodes into a collection
+    -- Performs a soft-wired resolution of all /network/ nodes into a collection
     -- of all resulting trees. The resulting size of the collection is equal
     -- to /2^n/ where /n/ is the number of network nodes in the
     -- 'PhylogenetiNetwork'.
@@ -120,10 +120,9 @@ class PhylogeneticNetwork t i e n | t -> i, t -> n, t -> e where
 -- The graph must satisfy the following:
 --  * The graph is directed
 --  * The graph is acyclic
---  * The graph contains /exactly one/ root nodes
+--  * The graph contains /exactly one/ root node
 --  * All nodes have /exactly/ in-degree 1
 --  * All nodes contain out-degree 0 or out-degree 2
 class PhylogeneticTree t i e n | t -> i, t -> n, t -> e where
 
     parent :: i -> t -> Maybe i
-
