@@ -67,6 +67,7 @@ script:
 # Caching so the next build will be fast too.
 cache:
   directories:
+  - $HOME/.local/bin
   - $HOME/.stack
   - $HOME/build/amnh/PCG/.stack-work
 
