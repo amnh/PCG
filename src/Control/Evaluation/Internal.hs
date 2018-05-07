@@ -23,8 +23,6 @@ import           Control.Monad.Fail      (MonadFail)
 import qualified Control.Monad.Fail as F
 import           Control.Monad.Logger
 import           Data.DList              (DList, toList)
-import           Data.Monoid             ()
-import           Data.Semigroup
 import           GHC.Generics
 import           Test.QuickCheck
 

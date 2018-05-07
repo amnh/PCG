@@ -19,7 +19,6 @@ import Data.BitMatrix          (BitMatrix, fromRows)
 import Data.Bits
 import Data.BitVector.LittleEndian
 import Data.Foldable
-import Data.Semigroup
 import Foreign.C.Types
 
 

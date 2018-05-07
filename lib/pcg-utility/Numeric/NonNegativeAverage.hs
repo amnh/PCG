@@ -21,7 +21,6 @@ module Numeric.NonNegativeAverage
 import Control.DeepSeq
 import Data.Data
 import Data.Hashable
-import Data.Semigroup
 import GHC.Generics
 import Test.QuickCheck
   

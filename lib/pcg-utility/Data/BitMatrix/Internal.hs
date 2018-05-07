@@ -19,7 +19,6 @@ import Data.Bits
 import Data.BitVector.LittleEndian
 import Data.List.Utility        (equalityOf, invariantTransformation)
 import Data.Foldable
-import Data.Monoid
 import Data.MonoTraversable
 import Data.Ord
 import GHC.Generics

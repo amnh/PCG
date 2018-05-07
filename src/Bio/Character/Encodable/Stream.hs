@@ -28,7 +28,6 @@ import           Data.List.NonEmpty        (NonEmpty)
 import qualified Data.List.NonEmpty as NE
 import           Data.List.Utility
 import           Data.Maybe                (fromMaybe)
-import           Data.Monoid
 import           Data.MonoTraversable
 import           Data.String               (IsString)
 import           Foreign.C.Types

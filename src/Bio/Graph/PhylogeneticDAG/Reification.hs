@@ -39,7 +39,6 @@ import           Data.Key
 import           Data.List.NonEmpty        (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty as NE
 import           Data.Maybe
-import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Data.Vector               (Vector)
 import qualified Data.Vector        as V

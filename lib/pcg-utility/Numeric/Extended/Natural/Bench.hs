@@ -4,7 +4,6 @@ module Numeric.Extended.Natural.Bench (benchmarks) where
 
 import Control.DeepSeq
 import Criterion.Main
-import Data.Semigroup
 import Numeric.Extended.Natural
 
 

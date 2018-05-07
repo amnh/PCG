@@ -13,7 +13,6 @@ import           Data.List                  (inits, nub)
 import           Data.List.NonEmpty         (NonEmpty)
 import qualified Data.List.NonEmpty   as NE (fromList)
 import           Data.Void
-import           Data.Semigroup
 import           File.Format.TNT.Command.CCode
 import           File.Format.TNT.Command.CNames
 import           File.Format.TNT.Command.Procedure

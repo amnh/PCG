@@ -23,7 +23,6 @@ import Data.Alphabet
 import Data.Bits
 import Data.List.NonEmpty hiding (xor) -- Why is this defined? Is foldl1' (/=) too verbose?
 import Data.MonoTraversable
-import Data.Semigroup
 import Data.String               (IsString)
 
 

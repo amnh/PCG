@@ -25,7 +25,6 @@ module Bio.Sequence.Block.Builder
 import           Bio.Sequence.Block.Internal
 import           Data.DList     hiding (toList)
 import           Data.Foldable
-import           Data.Semigroup
 import           Data.TCM
 import           Data.Vector.Instances ()
 import qualified Data.Vector    as V

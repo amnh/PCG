@@ -34,7 +34,6 @@ import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
 import Data.List (intercalate)
-import Data.Monoid
 import Data.TCM
 import Data.TCM.Memoized
 import GHC.Generics
