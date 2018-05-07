@@ -8,9 +8,9 @@
 - warn: { lhs: return x     , rhs: pure x   }
 - warn: { lhs: liftM x      , rhs: fmap x   }
 - warn: { lhs: map x        , rhs: fmap x   }
-- warn: { lhs: maybeToList x, rhs: toList x }
-- warn: { lhs: (!!)         , rhs: (!)      }
-- warn: { lhs: parMap       , rhs: parmap   }
+- warn: { lhs: maybeToList x, rhs: toList x, note: Use more general Foldable typeclass instance }
+- warn: { lhs: (!!)         , rhs: (!)     , note: Use more general Indexable typeclass instance }
+- warn: { lhs: parMap       , rhs: parmap  , note: Use more general custom parmap function }
 
 
 # Replace a $ b $ c with a . b $ c
