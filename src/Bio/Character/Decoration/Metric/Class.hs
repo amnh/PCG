@@ -22,7 +22,7 @@ import Numeric.Extended.Natural
 
 
 -- |
--- A character optimization class for TCM which satisfy the properties of metricity.
+-- A character optimization class for TCMs which satisfy the properties of metricity.
 class DiscreteCharacterDecoration s a => MetricCharacterDecoration s a | s -> a where
 
 
@@ -64,7 +64,7 @@ class HasBeta s a | s -> a where
 
 
 -- |
--- A 'Lens' for the 'minCostVector' field.
+-- A 'Lens' for the 'characterCostVector' field.
 class HasCharacterCostVector s a | s -> a where
 
     {-# MINIMAL characterCostVector #-}
@@ -93,6 +93,3 @@ class HasStateMinTuple s a | s -> a where
 
     {-# MINIMAL minStateTuple #-}
     minStateTuple :: Lens' s a
-
-
-

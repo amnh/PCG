@@ -22,7 +22,7 @@ module Bio.Graph.PhylogeneticDAG.Class
 
 
 -- |
--- A typeclass for abstracting opperations on a phylogenetic DAG.
+-- A type class for abstracting operations on a phylogenetic DAG.
 class PhylogeneticDAGish dag where
 
     postorderDAG         :: (e -> [e'] -> e')

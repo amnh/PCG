@@ -90,7 +90,7 @@ instance HasCharacterName (FitchOptimizationDecoration f) CharacterName where
 
 
 -- |
--- A 'Lens' for the 'symbolicTCMGenerator' field
+-- A 'Lens' for the 'symbolChangeMatrix' field
 instance HasSymbolChangeMatrix (FitchOptimizationDecoration f) (Word -> Word -> Word) where
 
     symbolChangeMatrix = lens getter setter

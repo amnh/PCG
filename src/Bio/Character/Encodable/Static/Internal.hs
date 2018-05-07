@@ -57,7 +57,7 @@ newtype StaticCharacter
 -- |
 -- Represents an encoded stream of static characters, consisting of one or more
 -- static characters. The static character stream relies on the encoding of the
--- individual static characters to defined the encoding of the entire static
+-- individual static characters to define the encoding of the entire static
 -- character stream.
 newtype StaticCharacterBlock
       = SCB BitMatrix

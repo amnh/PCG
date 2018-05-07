@@ -320,7 +320,7 @@ generateLocalResolutions f1 f2 f3 f4 f5 f6 parentalResolutionContext childResolu
 
 
 -- |
--- Given a transformation for the last type parameter, and two resolution caches,
+-- Given a transformation for the last type parameter and two resolution caches,
 -- apply the transformation to all possible resolution combinations.
 localResolutionApplication
   :: HasBlockCost u v w x y d' Word Double
@@ -388,7 +388,7 @@ renderSummary pdag@(PDAG2 dag) = unlines
 
 
 -- |
--- Render a "summary" of a sequence consisting of a summary for each block
+-- Render a "summary" of a sequence consisting of a summary for each block.
 renderSequenceSummary
   :: ( Show n
      , HasBlockCost u v w x y z Word Double
@@ -406,7 +406,7 @@ renderSequenceSummary pdag@(PDAG2 dag) = ("Sequence Summary\n\n" <>) . unlines $
   where
     refVec = references dag
     roots  = rootRefs dag
-    
+
     sequenceWLOG   = getSequence $ NE.head roots
     getSequence    = otoList . characterSequence . NE.head . resolutions . nodeDecoration . (refVec !)
     displayForests = (\(_,_,x) -> fmap (fmap (\(y,r,n,_,_) -> (r,n,y))) x) . graphMetadata $ graphData dag
@@ -416,8 +416,8 @@ renderSequenceSummary pdag@(PDAG2 dag) = ("Sequence Summary\n\n" <>) . unlines $
           Nothing  -> (\x -> (Nothing, Nothing, Nothing, x)) <$> sequenceWLOG
           Just ctx -> let (a,b,c) = unzip3 $ toList ctx
                       in  zip4 (Just <$> a) (Just <$> b) (Just <$> c) sequenceWLOG
-      
-    
+
+
 -- |
 -- Render a block's "summary" in a legible manner.
 -- Includes:
@@ -475,7 +475,7 @@ renderBlockSummary (PDAG2 dag) key (costOfRooting, costOfNetworking, displayMay,
           , fromMaybe 0 costOfNetworking
           , blockCost bValue
           ]
-        
+
     renderStaticCharacterSummary sc = unlines
         [ "    Name:   " <> show (sc ^. characterName)
         , "    Weight: " <> show (sc ^. characterWeight)
@@ -503,7 +503,7 @@ renderDisplayForestNewick :: Show n => ReferenceDAG d e n -> TraversalTopology -
 renderDisplayForestNewick dag topo = unlines $ renderDisplayTree <$> toList (rootRefs dag)
   where
     refVec = references dag
-    
+
     renderDisplayTree :: Int -> String
     renderDisplayTree nodeIdx =
       case kidRefs of
@@ -523,7 +523,7 @@ renderDisplayForestNewick dag topo = unlines $ renderDisplayTree <$> toList (roo
 
     renderLeaf _k = show
 
-  
+
 -- |
 -- Assert that two resolutions do not overlap.
 resolutionsDoNotOverlap :: ResolutionInformation a -> ResolutionInformation b -> Bool
@@ -534,5 +534,3 @@ resolutionsDoNotOverlap x y = popCount (leafSetRepresentation x .&. leafSetRepre
 -- Retrieve only 'ReferenceDAG' from 'PhylogeneticDAG2'.
 discardCharacters :: PhylogeneticDAG2 e n u v w x y z -> ReferenceDAG () e n
 discardCharacters (PDAG2 x) = defaultMetadata $ nodeDecorationDatum2 <$> x
-
-
