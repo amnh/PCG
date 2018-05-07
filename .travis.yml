@@ -54,7 +54,7 @@ script:
   - stack build --coverage --fast --haddock --no-terminal
 # removed because --test flag was removed
 #  - stack hpc report
-  - stack exec hlint app src lib
+  - stack exec hlint app ffi lib src test utils
 
 # removed because --test flag was removed
 #after_script:
