@@ -53,7 +53,7 @@ import Data.NodeLabel
 
 
 -- |
--- A /reififed/ DAG that contains characters but has no decorations.
+-- A /reified/ DAG that contains characters but has no decorations.
 type CharacterDAG =
        PhylogeneticDAG2
          EdgeLength
@@ -77,7 +77,7 @@ type SearchState = EvaluationT IO GraphState
 
 
 -- |
--- The state of the graph which partitions the evaluation model on one of two
+-- The state of the graph that partitions the evaluation model on one of two
 -- paths depending on the presence or absence of character states in the search.
 type GraphState = Either TopologicalResult DecoratedCharacterResult
 
@@ -89,7 +89,7 @@ type TopologicalResult = PhylogeneticSolution (ReferenceDAG () EdgeLength (Maybe
 
 
 -- |
--- Fully decorated solution after a post-order and pre-order pass.
+-- Fully-decorated solution after both a post-order and a pre-order traversal.
 type DecoratedCharacterResult = PhylogeneticSolution FinalDecorationDAG
 
 
@@ -159,25 +159,25 @@ type UnifiedCharacterSequence
 
 
 -- |
--- A continuous, static character after being read in from a READ command.
--- Contains no decorations, and has no been assigned a scoring class.
--- Expected to be @Nothing@ valued for internal nodes and @Just valued for leaf
+-- A continuous static character after being read in from a READ command.
+-- Contains no decorations, and has not been assigned a scoring class.
+-- Expected to be @Nothing@-valued for internal nodes and @Just@-valued for leaf
 -- nodes.
 type UnifiedContinuousCharacter = Maybe (ContinuousDecorationInitial ContinuousChar)
 
 
 -- |
--- A discrete, static character after being read in from a READ command.
--- Contains no decorations, and has no been assigned a scoring class.
--- Expected to be @Nothing@ valued for internal nodes and @Just valued for leaf
+-- A discrete static character after being read in from a READ command.
+-- Contains no decorations, and has not been assigned a scoring class.
+-- Expected to be @Nothing@-valued for internal nodes and @Just-valued for leaf
 -- nodes.
 type UnifiedDiscreteCharacter   = Maybe (DiscreteDecoration StaticCharacter)
 
 
 -- |
 -- A dynamic character after being read in from a READ command.
--- Contains no decorations. Expected to be @Nothing@ valued for internal nodes
--- and @Just valued for leaf nodes.
+-- Contains no decorations. Expected to be @Nothing@-valued for internal nodes
+-- and @Just@-valued for leaf nodes.
 type UnifiedDynamicCharacter    = Maybe (DynamicDecorationInitial DynamicChar)
 
 

@@ -26,8 +26,7 @@ import Data.Alphabet
 
 
 -- |
--- An abstract initial dynamic character decoration with a polymorphic character
--- type.
+-- An abstract initial dynamic character decoration with a polymorphic character type.
 data NonMetricDecorationInitial c
    = NonMetricDecorationInitial
    { nonMetricDecorationInitialCharacter :: c
@@ -60,7 +59,7 @@ instance HasCharacterName (NonMetricDecorationInitial c) CharacterName where
 
 
 -- |
--- A 'Lens' for the 'symbolicTCMGenerator' field
+-- A 'Lens' for the 'symbolChangeMatrix' field
 instance HasSymbolChangeMatrix (NonMetricDecorationInitial c) (Word -> Word -> Word) where
 
     symbolChangeMatrix = lens getter setter
@@ -92,13 +91,13 @@ instance HasCharacterWeight (NonMetricDecorationInitial c) Double where
 instance GeneralCharacterMetadata (NonMetricDecorationInitial c) where
 
     extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . metadata
-  
+
 
 -- | (✔)
 instance DiscreteCharacterMetadata (NonMetricDecorationInitial c) where
 
     extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . metadata
-  
+
 
 -- | (✔)
 instance EncodableStreamElement c => DiscreteWithTcmCharacterMetadata (NonMetricDecorationInitial c) c where
