@@ -128,17 +128,17 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
       -- Ordered by call, so first independentErrors, then dependentErrors, then outputSeqTups. Dependencies are subgrouped according to calling fn.
 
       -- Independent errors
-        independentErrors  = catMaybes $ noTaxaError : multipleTaxaBlocks : seqMatrixDimsErrors ++ {- wrongDataTypeErrors <> -} treeTranslateErrors -- sequenceBlockErrors
+        independentErrors  = catMaybes $ noTaxaError : multipleTaxaBlocks : seqMatrixDimsErrors <> {- wrongDataTypeErrors <> -} treeTranslateErrors -- sequenceBlockErrors
       -- types of independent errors
 --        DEFINED BUT NOT USED: (taxaDimsMissingError)
 --        taxaDimsMissingError = taxaDimsMissing taxas inputSeqBlocks
         noTaxaError        = if null taxas && not (foldr (\x acc -> acc || areNewTaxa x) False inputSeqBlocks) -- will register as False if inputSeqBlocks is empty
-                             then Just "Taxa are never specified. \n"  {-++ (show taxas) ++ " " ++ (show inputSeqBlocks) -} -- error 6
+                             then Just "Taxa are never specified. \n"  {-<> (show taxas) <> " " <> (show inputSeqBlocks) -} -- error 6
                              else Nothing
         multipleTaxaBlocks = case taxas of
                              (_:_:_) -> Just "Multiple taxa blocks supplied. This is unclear input, and not allowed.\n"  -- error 1
                              _       -> Nothing
-        seqMatrixDimsErrors = fmap seqMatrixMissing inputSeqBlocks ++  -- Note that seqMatrixDimsErrors will be [] if
+        seqMatrixDimsErrors = fmap seqMatrixMissing inputSeqBlocks <>  -- Note that seqMatrixDimsErrors will be [] if
                                                                                                -- there are no character, unaligned or data blocks.
                                                                                                -- This allows us to do tree manipulations in their absence.
 
@@ -146,13 +146,13 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
         -- wrongDataTypeErrors = foldr (\x acc -> wrongDataType x : acc) [] inputSeqBlocks
 
       -- Dependent errors
-        dependentErrors = catMaybes $ incorrectTaxaBlockCount : ({- seqDimsError ++ -} missingCloseQuotes ++ seqTaxaCountErrors {- ++ {- mtxTaxonCountErrors ++
+        dependentErrors = catMaybes $ incorrectTaxaBlockCount : ({- seqDimsError <> -} missingCloseQuotes <> seqTaxaCountErrors {- <> {- mtxTaxonCountErrors <>
                                                                  TODO: decide if I can really delete this and seqDimsError and incorrectCharCount. -} incorrectCharCount -} )
 
       -- types of dependent errors
         incorrectTaxaBlockCount = f taxas >>= \(TaxaSpecification num listedTaxa) ->
             if num /= length listedTaxa
-                then Just "Incorrect number of taxa in taxa block.\n" {- ++ (show num) ++ " " ++ (show taxons) -} -- error 16a
+                then Just "Incorrect number of taxa in taxa block.\n" {- <> (show num) <> " " <> (show taxons) -} -- error 16a
                 else Nothing
             where
                 f [x] = Just x
@@ -160,11 +160,11 @@ validateNexusParseResult (NexusParseResult inputSeqBlocks taxas treeSet assumpti
         --seqDimsError        = map mtxTax inputSeqBlocks
           --where
           --   f (PhyloSequence _ mat _ dim _ _ _) = mat
-        missingCloseQuotes  = fmap Just (lefts equates) ++ fmap Just (lefts symbols') -- error 19
+        missingCloseQuotes  = fmap Just (lefts equates) <> fmap Just (lefts symbols') -- error 19
         seqTaxaCountErrors  = fmap checkForNewTaxa inputSeqBlocks -- errors 7, 8, 16b
 
 --        DEFINED BUT NOT USED: (mtxTaxonCountErrors)
---        mtxTaxonCountErrors = foldr (\x acc -> getMatrixTaxonRecurrenceErrors x ++ acc) [] inputSeqBlocks -- errors 12, 22
+--        mtxTaxonCountErrors = foldr (\x acc -> getMatrixTaxonRecurrenceErrors x <> acc) [] inputSeqBlocks -- errors 12, 22
 
 --        incorrectCharCount  = checkSeqLength (filter (\x -> alignedSeq x) inputSeqBlocks) outputSeqTups
 --        TODO: This doesn't work, because it takes an entire list of PhyloSequence blocks and the complete, concatted sequences.
@@ -233,14 +233,14 @@ handleLabeledSeqs block taxaLst
 handleLabeledNotInterleavedSeqs :: PhyloSequence -> V.Vector String -> Either String TaxonSequenceMap
 handleLabeledNotInterleavedSeqs block taxaLst
     | alignedSeq block = Right $ getSeqFromMatrix block taxaLst
-    | otherwise = Left $ "The " ++ blockType block ++
-        " block is labeled, not aligned, and not interleaved. Since the Nexus spec dictates that whitespace " ++
+    | otherwise = Left $ "The " <> blockType block <>
+        " block is labeled, not aligned, and not interleaved. Since the Nexus spec dictates that whitespace " <>
         "(hence line returns) in non-interleaved sequence matrices is ignored, it is impossible to discriminate between sequences and taxon names."
 
 handleUnlabeledNotInterleavedSeqs :: PhyloSequence -> V.Vector String -> Either String TaxonSequenceMap
 handleUnlabeledNotInterleavedSeqs block taxaLst
     | null taxaLst && null taxlabels' =
-        Left $ "In a " ++ blockType block ++ " block there is an unlabeled matrix which seems not to have any corresponding taxa.\n"
+        Left $ "In a " <> blockType block <> " block there is an unlabeled matrix which seems not to have any corresponding taxa.\n"
     | otherwise = handleUnlabeledNotInterleavedSeqsWithSepTaxa block taxaLst taxlabels'
     where
         taxlabels'
@@ -250,8 +250,8 @@ handleUnlabeledNotInterleavedSeqs block taxaLst
 handleUnlabeledNotInterleavedSeqsWithSepTaxa :: PhyloSequence -> V.Vector String -> V.Vector String -> Either String TaxonSequenceMap
 handleUnlabeledNotInterleavedSeqsWithSepTaxa block taxaLst taxlabels'
     | not (null taxaLst) && not (null taxlabels') =
-        Left $ "In a " ++ blockType block ++
-            " block there is an unlabeled matrix, but there are both newtaxa defined in the block, and there is a separate taxa block. " ++
+        Left $ "In a " <> blockType block <>
+            " block there is an unlabeled matrix, but there are both newtaxa defined in the block, and there is a separate taxa block. " <>
             "Thus, the ordering of the sequences in this block is unclear.\n"
     | null taxaLst = handleUnlabeledCheckTaxaCardinality block taxaLst
     | otherwise    = handleUnlabeledCheckTaxaCardinality block taxlabels'
@@ -259,9 +259,9 @@ handleUnlabeledNotInterleavedSeqsWithSepTaxa block taxaLst taxlabels'
 handleUnlabeledCheckTaxaCardinality :: PhyloSequence -> V.Vector String -> Either String TaxonSequenceMap
 handleUnlabeledCheckTaxaCardinality block taxaLst
     | length taxaLst /= mtxLength =
-        Left $ "In a " ++ blockType block ++
-            " block, either the number of taxa or the number of sequences in incorrect. " ++
-            show (length taxaLst) ++ " are given, but there are " ++ show mtxLength ++ " sequences in the matrix.\n"
+        Left $ "In a " <> blockType block <>
+            " block, either the number of taxa or the number of sequences in incorrect. " <>
+            show (length taxaLst) <> " are given, but there are " <> show mtxLength <> " sequences in the matrix.\n"
     | otherwise = Right $ getSeqFromMatrix block taxaLst
     where mtxLength = length . head $ seqMatrix block -- this is safe, as we've already checked to make sure this block has a matrix.
 
@@ -277,8 +277,8 @@ foldSeqs ((taxSeqMap,charMDataVec):xs)   = ((newSeqMap, newMetadata), totLength)
         ((curMap,curMetadata),curLength) = foldSeqs xs
         newSeqMap                        = M.unionWith (updateSeqInMap curLength) taxSeqMap curMap
                                            -- This condition shouldn't ever be True. Only seqs should have missing data.
-        newMetadata                      = charMDataVec V.++ if length curMetadata < curLength
-                                                                then V.fromList [] V.++ curMetadata -- TODO: Error out here?
+        newMetadata                      = charMDataVec V.<> if length curMetadata < curLength
+                                                                then V.fromList [] V.<> curMetadata -- TODO: Error out here?
                                                                 else curMetadata
         totLength                        = curLength +  V.length charMDataVec
 
@@ -409,10 +409,10 @@ translateTrees taxaList treeSet =
 updateSeqInMap :: Int -> Sequence -> Sequence -> Sequence
 updateSeqInMap curLength inputSeq curSeq = newSeq
     where
-        newSeq        = seqToAdd V.++ curSeq
+        newSeq        = seqToAdd V.<> curSeq
         missingLength = curLength - length curSeq
         emptySeq      = V.replicate missingLength Nothing
-        seqToAdd      = inputSeq V.++ emptySeq
+        seqToAdd      = inputSeq V.<> emptySeq
 
 -- | wrongDataType looks at a PhyloSequence block and determines if it has a valid data type. If the datatype is missing, it will return Nothing, as
 -- results in default behavior ("standard" is default).
@@ -421,7 +421,7 @@ updateSeqInMap curLength inputSeq curSeq = newSeq
 wrongDataType :: PhyloSequence -> Maybe String
 wrongDataType inSeq
     | lowerCased `elem` acceptableTypeStrs = Nothing
-    | otherwise = Just $ dataType ++ " is not an accepted type of data.\n"
+    | otherwise = Just $ dataType <> " is not an accepted type of data.\n"
     where
         lowerCased = fmap toLower dataType
         acceptableTypeStrs = ["standard", "dna", "rna", "nucleotide", "protein", "continuous", ""]
@@ -435,8 +435,8 @@ checkSeqLength [] _            = [Nothing]
 checkSeqLength seqBlockLst (seqMap,_) =
     M.foldrWithKey (\key val acc -> (if length val == len
                                      then Nothing
-                                     else Just (key ++ "'s sequence is the wrong length in an aligned block. It should be " ++ show len ++ ", but is " ++
-                                                show (length val) {- ++ ":\n" ++ show val -} ++ "\n")) : acc) [] seqMap
+                                     else Just (key <> "'s sequence is the wrong length in an aligned block. It should be " <> show len <> ", but is " <>
+                                                show (length val) {- <> ":\n" <> show val -} <> "\n")) : acc) [] seqMap
     where
         len = numChars . head . charDims $ head seqBlockLst -- TODO: fix this line
 
@@ -445,14 +445,14 @@ checkSeqLength seqBlockLst (seqMap,_) =
 -- TODO: fix this tornado code.
 -- TODO: write down this decision tree.
 taxaDimsMissing :: [TaxaSpecification] -> [PhyloSequence] -> [Maybe String]
-taxaDimsMissing taxas inputSeqBlocks = taxaProblems ++ seqProblems
+taxaDimsMissing taxas inputSeqBlocks = taxaProblems <> seqProblems
     where
         taxaProblems = fmap f taxas
         seqProblems  = fmap g inputSeqBlocks
         f (TaxaSpecification len list) = let len' = length list
             in if len == len'
                 then Nothing
-                else Just $ "ntax incorrect in Taxa block. Found: " ++ show len' ++ ", but ntax is given as " ++ show len ++ ".\n"
+                else Just $ "ntax incorrect in Taxa block. Found: " <> show len' <> ", but ntax is given as " <> show len <> ".\n"
         g (PhyloSequence _ _ _ dimensions _ _ _ blockType' )
             | blockType' == "data"  = -- TODO: double-check for case-insensitivity problems
                 if not (null dimensions)
@@ -469,9 +469,9 @@ taxaDimsMissing taxas inputSeqBlocks = taxaProblems ++ seqProblems
                     let (DimensionsFormat newtaxa' ntax' _) = head dimensions
                     in
                         if newtaxa' && ntax' == 0 -- 0 is default value if ntax is missing
-                        then Just $ blockType' ++ " block is missing ntax directive.\n"
+                        then Just $ blockType' <> " block is missing ntax directive.\n"
                         else Nothing
-                else Just $ blockType' ++ "Data block is missing dimensions.\n"
+                else Just $ blockType' <> "Data block is missing dimensions.\n"
 
 
 
@@ -522,11 +522,11 @@ getCharMetadata mayMtx seqBlock =
 -- | getMatrixTaxonRecurrenceErrors takes a Phylosequence. It reads throught the PhyloSequence matrix to see if there are any taxa
 -- that appear the incorrect number of times (all should appear the same number of times)
 getMatrixTaxonRecurrenceErrors :: PhyloSequence -> [Maybe String]
-getMatrixTaxonRecurrenceErrors seq' = wrongCountErrors -- ++ extraTaxonErrors
+getMatrixTaxonRecurrenceErrors seq' = wrongCountErrors -- <> extraTaxonErrors
     where
         wrongCountErrors = M.foldrWithKey (\key val acc -> (if val /= median
-                                                               then Just ("\"" ++ key ++ "\" appears the wrong number of times in a sequence block matrix. " ++
-                                                                          "It should appear " ++ show median ++ " times, but it actually appears " ++ show val ++ " times.\n")
+                                                               then Just ("\"" <> key <> "\" appears the wrong number of times in a sequence block matrix. " <>
+                                                                          "It should appear " <> show median <> " times, but it actually appears " <> show val <> " times.\n")
                                                                else Nothing) : acc
                                           ) [] seqTaxaMap
         seqTaxaMap       = getTaxaFromMatrix seq'
@@ -591,7 +591,7 @@ findAmbiguousNoTokens (x:xs) acc isAmb =
                 '(' -> findAmbiguousNoTokens xs [] True
                 ')' -> acc : findAmbiguousNoTokens xs [] False
                 _   -> if isAmb
-                           then findAmbiguousNoTokens xs (acc ++ [[x]]) isAmb
+                           then findAmbiguousNoTokens xs (acc <> [[x]]) isAmb
                            else [[x]] : findAmbiguousNoTokens xs [] isAmb
 
 -- | seqMatrixMissing takes in a PhyloSequence and makes sure it has a sequence matrix.
@@ -603,8 +603,8 @@ seqMatrixMissing phyloSeq
   | otherwise       = Nothing
   where
     numMatrices = length $ seqMatrix phyloSeq
-    tooFew      = Just $ blockType phyloSeq ++ " block has no sequence matrix.\n"
-    tooMany     = Just $ blockType phyloSeq ++ " block has more than one sequence matrix.\n"
+    tooFew      = Just $ blockType phyloSeq <> " block has no sequence matrix.\n"
+    tooMany     = Just $ blockType phyloSeq <> " block has more than one sequence matrix.\n"
 
 -- | seqDimsMissing checks a PhyloSequence to make sure it has the requisite sequence dims.
 seqDimsMissing :: PhyloSequence -> Maybe String
@@ -614,8 +614,8 @@ seqDimsMissing phyloSeq
   | otherwise   = Nothing
   where
     numDims = length $ charDims phyloSeq
-    tooFew  = Just $ blockType phyloSeq ++ " block has no dimensions or dimensions are misformatted.\n"
-    tooMany = Just $ blockType phyloSeq ++ " block has more than one dimension directive.\n"
+    tooFew  = Just $ blockType phyloSeq <> " block has no dimensions or dimensions are misformatted.\n"
+    tooMany = Just $ blockType phyloSeq <> " block has more than one dimension directive.\n"
 
 -- | findAmbiguousTokens is similar to findAmbiguousNoTokens. It takes a sequence as a String.
 -- If it encounters a '{' or '(', it translates
@@ -625,8 +625,8 @@ findAmbiguousTokens :: [String] -> AmbiguityGroup -> Bool -> [AmbiguityGroup]
 findAmbiguousTokens [] _ _ = []
 findAmbiguousTokens (x:xs) acc amb
   | xHead == "{" || xHead == "(" = findAmbiguousTokens xs [xTail] True
-  | xLast == "}" || xLast == ")" = (acc ++ [takeWhile (\ y -> y /= '}' && y /= ')') x]) : findAmbiguousTokens xs [] False
-  | amb                          = findAmbiguousTokens xs (acc ++ [x]) amb
+  | xLast == "}" || xLast == ")" = (acc <> [takeWhile (\ y -> y /= '}' && y /= ')') x]) : findAmbiguousTokens xs [] False
+  | amb                          = findAmbiguousTokens xs (acc <> [x]) amb
   | otherwise                    = [x] : findAmbiguousTokens xs [] amb
   where
     xHead = safeHead x
@@ -653,7 +653,7 @@ findInterleaveError taxaLst seq'
     | otherwise          =
         -- Line returns are not ignored in interleaved blocks, so this is correct logic.
         if interleaved && noLabels && (lineCount `mod` taxaCount /= 0)
-            then Just $ which ++ " block is not interleaved correctly. \n" {- ++ (show numLines) ++ " " ++ (show numTaxa) -}
+            then Just $ which <> " block is not interleaved correctly. \n" {- <> (show numLines) <> " " <> (show numTaxa) -}
             else Nothing
         where
             formatted   = not . null $ format seq'
@@ -802,7 +802,7 @@ getTaxaAndSeqsFromEntireMatrixHelper tokenized seqLen curLen mtx acc
                      else concat line
             line = words $ head mtx -- Safe because of first pattern match.
             newTup = (fst $ head acc, headSeq)
-            headSeq = snd (head acc) ++ seq'
+            headSeq = snd (head acc) <> seq'
         in getTaxaAndSeqsFromEntireMatrixHelper tokenized seqLen newLen (tail mtx) newAcc
   --  | curLen > seqLen = Left $ "Length of sequence, " <> (show curLen) <> " does not match nchar, " <> (show seqLen) <> "."
     | otherwise =
@@ -823,7 +823,7 @@ getTaxaAndSeqsFromEntireMatrixHelper tokenized seqLen curLen mtx acc
 -- the map value. Otherwise, the original value remains.
 -- Abstracted Char to a as an exercise.
 replaceEquates :: (Ord a) => M.Map a [a] -> [a] -> [a]
-replaceEquates eqMap = foldr (\x acc -> M.findWithDefault [x] x eqMap ++ acc) []
+replaceEquates eqMap = foldr (\x acc -> M.findWithDefault [x] x eqMap <> acc) []
 
 -- | replaceMatches takes a match character and two Strings,
 -- a canonical String and a String that contains the match character.
@@ -832,7 +832,7 @@ replaceEquates eqMap = foldr (\x acc -> M.findWithDefault [x] x eqMap ++ acc) []
 -- O(n)
 -- A test exists in the test suite.
 replaceMatches :: Char -> String -> String -> String
-replaceMatches matchTarget = {- trace (canonical ++"\n" ++ toReplace ++ "\n") $ -}
+replaceMatches matchTarget = {- trace (canonical <>"\n" <> toReplace <> "\n") $ -}
     zipWith f
     where
         f x y = if y == matchTarget
@@ -875,9 +875,9 @@ checkForNewTaxa phyloSeq = case charDims phyloSeq of
                          xs -> if newTaxa $ head xs
                                then
                                  case seqTaxaLabels phyloSeq of
-                                  [] -> Just $ "In the " ++ which ++ " block the newtaxa keyword is specified, but no new taxa are given."
+                                  [] -> Just $ "In the " <> which <> " block the newtaxa keyword is specified, but no new taxa are given."
                                   ys -> if length (head ys) == numTaxa (head xs)
-                                        then Just $ "In the " ++ which ++ " block the number of new taxa does not match the number of taxa specified."
+                                        then Just $ "In the " <> which <> " block the number of new taxa does not match the number of taxa specified."
                                         else Nothing
                                else Nothing
   where
@@ -888,15 +888,15 @@ checkForNewTaxa phyloSeq = case charDims phyloSeq of
 -- the elim clause in a Nexus file is of the form x,y-z,a,... it's possible to be within a range. So if a single number is given
 -- The tuple will be (True,that number :: Int), otherwise, it will be (False, ending number of range :: Int)
 createElimTups :: [String] -> [(Bool,Int)]
-createElimTups = foldr (\x acc -> f x ++ acc) []
+createElimTups = foldr (\x acc -> f x <> acc) []
     where
         f inStr = if secondNumStr /= ""
                       then [(True,firstNum),(False,secondNum)]
                       else [(True,firstNum)]
             where
                 (firstNumStr,secondNumStr) = break (== '-') inStr
-                firstNum = {- trace ("first: " ++ firstNumStr) $ -}read firstNumStr :: Int
-                secondNum = {- trace ("second: " ++ secondNumStr) $ -}read (tail secondNumStr) :: Int
+                firstNum = {- trace ("first: " <> firstNumStr) $ -}read firstNumStr :: Int
+                secondNum = {- trace ("second: " <> secondNumStr) $ -}read (tail secondNumStr) :: Int
 
 -- | getNext takes as input an index of a character in an aligned sequence, as well as the current index in a list of tuples
 -- as described in the output of createElimTups. It then determines whether the input character index should be ignored or not

@@ -252,7 +252,7 @@ type TntContinuousCharacter = Maybe Double
 -- |
 -- A 'TntDiscreteCharacter' is an integral value in the range '[0..62]'. Discrete
 -- values are serialized textualy as one of the 64  values:
--- '[0..9] ++ [\'A\'..\'B\'] ++ [\'a\'..\'z\'] ++ "-?"'.
+-- '[0..9] <> [\'A\'..\'B\'] <> [\'a\'..\'z\'] <> "-?"'.
 -- Missing \'?\' represents the empty ambiguity group.
 -- Each value coresponds to it's respective bit in the 'Int64'. Ambiguity groups
 -- are represented by 'Int64' values with multiple set bits.
@@ -295,7 +295,7 @@ instance Show TntDiscreteCharacter where
   show x =
     case x `lookup` serializeStateDiscrete of
       Just c  -> [c]
-      Nothing -> "[" ++ str ++ "]"
+      Nothing -> "[" <> str <> "]"
     where
       str = (serializeStateDiscrete !) <$> bitsToFlags x
 
@@ -310,7 +310,7 @@ instance Show TntProteinCharacter where
   show x =
     case x `lookup` serializeStateProtein of
       Just c  -> [c]
-      Nothing -> "[" ++ str ++ "]"
+      Nothing -> "[" <> str <> "]"
     where
       str = (serializeStateProtein !) <$> bitsToFlags x
 
@@ -406,7 +406,7 @@ modifyMetaDataTCM mat old = old { costTCM = Just mat }
 -- if the value is non-negative and an integer.
 flexibleNonNegativeInt :: (MonadParsec e s m, Token s ~ Char) => String -> m Int
 flexibleNonNegativeInt labeling = either coerceFloating coerceIntegral . floatingOrInteger
-                              =<< signed whitespace scientific <?> ("positive integer for " ++ labeling)
+                              =<< signed whitespace scientific <?> ("positive integer for " <> labeling)
   where
     coerceIntegral :: (MonadParsec e s m {- , Token s ~ Char -}) => Integer -> m Int
     coerceIntegral x
@@ -451,7 +451,7 @@ flexibleNonNegativeInt labeling = either coerceFloating coerceIntegral . floatin
 -- The errorCount value (0.1337) is not a positive integer
 flexiblePositiveInt :: (MonadParsec e s m, Token s ~ Char) => String -> m Int
 flexiblePositiveInt labeling = either coerceFloating coerceIntegral . floatingOrInteger
-                             =<< signed whitespace scientific <?> ("positive integer for " ++ labeling)
+                             =<< signed whitespace scientific <?> ("positive integer for " <> labeling)
   where
     coerceIntegral :: (MonadParsec e s m {- , Token s ~ Char -}) => Integer -> m Int
     coerceIntegral x
@@ -493,9 +493,9 @@ keyword :: forall e s m. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char
 keyword x y = abreviatable x y $> ()
   where
     abreviatable fullName minimumChars
-      | minimumChars < 1             = fail $ "Nonpositive abreviation prefix (" ++ show minimumChars ++ ") supplied to abreviatable combinator"
-      | any (not . isAlpha) fullName = fail $ "A keywork containing a non alphabetic character: '" ++ show fullName ++ "' supplied to abreviateable combinator"
-      | otherwise                    = combinator <?> "keyword '" ++ fullName ++ "'"
+      | minimumChars < 1             = fail $ "Nonpositive abreviation prefix (" <> show minimumChars <> ") supplied to abreviatable combinator"
+      | any (not . isAlpha) fullName = fail $ "A keywork containing a non alphabetic character: '" <> show fullName <> "' supplied to abreviateable combinator"
+      | otherwise                    = combinator <?> "keyword '" <> fullName <> "'"
       where
         combinator     = choice partialOptions $> fullName
         partialOptions = makePartial <$> drop minimumChars (inits fullName)

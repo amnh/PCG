@@ -75,7 +75,7 @@ instance Monad m => Serial m NucleotideBase where
         validSpace = fmap NE.fromList $ [] `delete` powerSet (toList alphabet) 
         powerSet :: [a] -> [[a]]
         powerSet [] = [[]]
-        powerSet (x:xs) = [x:ps | ps <- powerSet xs] ++ powerSet xs
+        powerSet (x:xs) = [x:ps | ps <- powerSet xs] <> powerSet xs
 
       
 alphabet :: Alphabet String
