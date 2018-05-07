@@ -53,6 +53,8 @@ resolveNode node =
     case descendants node of
       []   -> pure node
       [x]  -> resolveNode x >>= (\y -> resolveNode $ makeNode [y])
+           -- This was non-obvious. Subtrees are Nodes themselves,
+           -- so must be unpacked.
       x:xs -> do
           (lhs, rhs)  <- splittings $ x:|xs
           lhsJoined   <- joinSubtrees lhs
@@ -77,7 +79,7 @@ splittings (x:|y:ys) = pure (pure x, y:|ys) <> do
 -- Given a non-empty set of subtrees, this function returns a list of
 -- all the ways to join the subtrees together into a single tree.
 --
--- Note, that the newly created internal verticies are decorated with
+-- Note that the newly created internal vertices are decorated with
 -- the 'mempty' value of the monoidal decoration type.
 joinSubtrees :: NewickForest -> NewickForest
 joinSubtrees e@(x:|[]) = e
@@ -89,6 +91,6 @@ joinSubtrees subtrees = do
 
 
 -- |
---
+-- Wrapper for a smart constructor, just to shorten the code.
 makeNode :: [NewickNode] -> NewickNode
 makeNode children = fromJust $ newickNode children Nothing Nothing
