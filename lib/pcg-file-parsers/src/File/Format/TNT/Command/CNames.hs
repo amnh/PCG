@@ -24,7 +24,6 @@ import           Data.List                (sort,sortBy)
 import qualified Data.List.NonEmpty as NE (fromList)
 import           Data.List.Utility
 import           Data.Ord                 (comparing)
-import           Data.Semigroup
 import           File.Format.TNT.Internal
 import           Text.Megaparsec
 import           Text.Megaparsec.Char

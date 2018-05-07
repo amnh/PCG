@@ -23,7 +23,6 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
 import           Data.Foldable
 import           Data.Key
 import           Data.Maybe               (fromMaybe)
-import           Data.Semigroup
 import           Data.Vector              (Vector)
 import qualified Data.Vector       as V
 import           Data.Vector.Instances    ()

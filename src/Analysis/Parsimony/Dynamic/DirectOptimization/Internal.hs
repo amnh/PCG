@@ -292,7 +292,7 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter parentSingle 
         gap = gapOfStream parentCharacter
         zed = gap `xor` gap
         singletonStates = (zed `setBit`) <$> [0 .. fromEnum (symbolCount zed) - 1]
-        naiveMedianAndCost3D a b c = fmap unsafeToFinite $ foldl' g (zed, infinity :: ExtendedNatural) singletonStates
+        naiveMedianAndCost3D a b c = unsafeToFinite <$> foldl' g (zed, infinity :: ExtendedNatural) singletonStates
           where
             g acc@(combinedState, curentMinCost) singleState =
                 case combinedCost `compare` curentMinCost of
@@ -300,7 +300,7 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter parentSingle 
                   LT -> (                  singleState, combinedCost)
                   GT -> acc
               where
-                combinedCost = fromFinite . sum $ (snd . overlap scm singleState) <$> [a, b, c]
+                combinedCost = fromFinite . sum $ snd . overlap scm singleState <$> [a, b, c]
 
 
     single = lexicallyDisambiguate $ filterGaps almostSingle

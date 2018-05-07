@@ -22,9 +22,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.DeletionEvents
 import           Data.IntSet       (IntSet)
 import qualified Data.IntSet as IS
 import           Data.List         (intercalate)
-import           Data.Monoid       ()
 import           Data.MonoTraversable
-import           Data.Semigroup
 
 
 -- |

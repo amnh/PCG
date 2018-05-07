@@ -38,7 +38,6 @@ import           Data.Functor                      (($>))
 import           Data.List.NonEmpty                (NonEmpty(..), nonEmpty)
 import           Data.Maybe                        (catMaybes)
 import           Data.Proxy
-import           Data.Semigroup
 import qualified Data.Set                   as S
 import           Data.Void
 import           Text.Megaparsec

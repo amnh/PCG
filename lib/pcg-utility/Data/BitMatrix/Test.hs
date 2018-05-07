@@ -1,3 +1,4 @@
+{-# ANN module "HLint: ignore Evaluate" #-}
 {-# LANGUAGE FlexibleInstances #-}
 
 module Data.BitMatrix.Test
@@ -8,11 +9,9 @@ import Control.DeepSeq
 import Control.Exception
 import Data.BitMatrix
 import Data.BitVector.LittleEndian
-import Data.Either
 import Data.Foldable
 import Data.Functor.Compose
 import Data.Functor.Identity
-import Data.Monoid ()
 import Data.MonoTraversable
 import Data.Semigroup
 import Test.QuickCheck.Monadic

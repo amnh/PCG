@@ -85,7 +85,7 @@ preorderSequence''
   -> PhylogeneticDAG2 e n u  v  w  x  y  z
   -> PhylogeneticDAG2 e n u' v' w' x' y' z'
 --preorderSequence'' _ _ _ _ _ _ (PDAG2 dag) | trace ("Before Pre-order: " <> referenceRendering dag) False = undefined
-preorderSequence'' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
+preorderSequence'' f1 f2 f3 f4 f5 f6 pdag@(PDAG2 dag) = PDAG2 $ newDAG dag
   where
     refs          = references dag
     dagSize       = length $ references dag
@@ -96,24 +96,7 @@ preorderSequence'' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
 
     -- A "sequence" of the minimum topologies that correspond to each block.
     sequenceOfBlockMinimumTopologies :: BlockTopologies
-    sequenceOfBlockMinimumTopologies = getTopologies blockMinimalResolutions
-      where
-        getTopologies = fmap topologyRepresentation
-
-        blockMinimalResolutions = mapWithKey f $ toBlocks sequenceWLOG
-
-        sequenceWLOG = characterSequence $ NE.head rootResolutions
-
-        f key _block = minimumBy (comparing extractedBlockCost)
---                     $ (\x -> trace (show $ extractedBlockCost <$> toList x) x)
-                       rootResolutions
-          where
-            extractedBlockCost = blockCost . (! key) . toBlocks . characterSequence
-
-        rootResolutions = -- (\x -> trace ("Root resolutions: " <> show (length x)) x) $
-                          resolutions . nodeDecoration $ refs ! rootWLOG
-
-        rootWLOG = NE.head $ rootRefs dag
+    sequenceOfBlockMinimumTopologies = getSequenceOfBlockMinimumTopologies pdag
 
 --    memo :: Vector (PhylogeneticNode2 (CharacterSequence u' v' w' x' y' z') n)
 
@@ -189,35 +172,13 @@ preorderSequence'' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
                 matchesTopology = (`notElem` excludedNetworkEdges topology) . (\j -> (j,i)) . fst
 
 
--- |
--- Applies a traversal logic function over a 'ReferenceDAG' in a /pre-order/ manner.
---
--- The logic function takes a current node decoration,
--- a list of parent node decorations with the logic function already applied,
--- and returns the new decoration for the current node.
-preorderSequence'
-  :: ( HasBlockCost u  v  w  x  y  z  Word Double
---     , HasBlockCost u' v' w' x' y' z' Word Double
-     )
-  => (u -> [(Word, u')] -> u')
-  -> (v -> [(Word, v')] -> v')
-  -> (w -> [(Word, w')] -> w')
-  -> (x -> [(Word, x')] -> x')
-  -> (y -> [(Word, y')] -> y')
-  -> (z -> [(Word, z')] -> z')
-  -> PhylogeneticDAG2 e n u  v  w  x  y  z
-  -> PhylogeneticDAG2 e n u' v' w' x' y' z'
-preorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
-  where
-    newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> constructDefaultMetadata
-    dagSize       = length $ references dag
-    newReferences = VE.generate dagSize g
-      where
-        g i = IndexData <$> const (snd $ memo ! i) <*> parentRefs <*> childRefs $ references dag ! i
 
     -- A "sequence" of the minimum topologies that correspond to each block.
-    sequenceOfBlockMinimumTopologies :: BlockTopologies
-    sequenceOfBlockMinimumTopologies = getTopologies blockMinimalResolutions
+getSequenceOfBlockMinimumTopologies
+  :: HasBlockCost u v w x y z Word Double
+  => PhylogeneticDAG2 e n u v w x y z
+  -> BlockTopologies
+getSequenceOfBlockMinimumTopologies (PDAG2 dag) = getTopologies blockMinimalResolutions
       where
         getTopologies = fmap topologyRepresentation
 
@@ -236,6 +197,36 @@ preorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag) = PDAG2 $ newDAG dag
 
         rootWLOG = NE.head $ rootRefs dag
 
+
+
+-- |
+-- Applies a traversal logic function over a 'ReferenceDAG' in a /pre-order/ manner.
+--
+-- The logic function takes a current node decoration,
+-- a list of parent node decorations with the logic function already applied,
+-- and returns the new decoration for the current node.
+preorderSequence'
+  :: ( HasBlockCost u  v  w  x  y  z  Word Double
+--     , HasBlockCost u' v' w' x' y' z' Word Double
+     )
+  => (u -> [(Word, u')] -> u')
+  -> (v -> [(Word, v')] -> v')
+  -> (w -> [(Word, w')] -> w')
+  -> (x -> [(Word, x')] -> x')
+  -> (y -> [(Word, y')] -> y')
+  -> (z -> [(Word, z')] -> z')
+  -> PhylogeneticDAG2 e n u  v  w  x  y  z
+  -> PhylogeneticDAG2 e n u' v' w' x' y' z'
+preorderSequence' f1 f2 f3 f4 f5 f6 pdag@(PDAG2 dag) = PDAG2 $ newDAG dag
+  where
+    newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> constructDefaultMetadata
+    dagSize       = length $ references dag
+    newReferences = VE.generate dagSize g
+      where
+        g i = IndexData <$> const (snd $ memo ! i) <*> parentRefs <*> childRefs $ references dag ! i
+
+    sequenceOfBlockMinimumTopologies :: BlockTopologies
+    sequenceOfBlockMinimumTopologies = getSequenceOfBlockMinimumTopologies pdag
 
 --    memo :: Vector (BlockTopologies, PhylogeneticNode2 n (CharacterSequence u' v' w' x' y' z'))
     memo = VE.generate dagSize g
@@ -739,10 +730,6 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ 
         g (topo, foci) = zipWith h foci
           where
             h focus dec = dec & traversalFoci .~ (Just $ (focus,topo):|[])
-
-
-
-
 --    memo :: Vector (NonEmpty (Vector z'))
     memo = VE.generate dagSize generateDatum
       where

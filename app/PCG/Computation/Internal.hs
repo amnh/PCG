@@ -1,12 +1,10 @@
 module PCG.Computation.Internal where
 
 import           Bio.Graph
-import           Control.DeepSeq
 import           Control.Evaluation
 import           Data.Char          (isSpace)
 import           Data.Foldable
 import           Data.List.NonEmpty (NonEmpty(..))
-import           Data.Semigroup
 import qualified PCG.Command.Build.Evaluate  as Build
 import qualified PCG.Command.Read.Evaluate   as Read
 import qualified PCG.Command.Report.Evaluate as Report

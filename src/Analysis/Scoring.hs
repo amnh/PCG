@@ -34,15 +34,17 @@ import           Bio.Graph
 import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
+import           Data.Default
 import           Data.EdgeLength
 import qualified Data.List.NonEmpty as NE
 import           Data.MonoTraversable      (Element)
+import           Data.NodeLabel
 
 
 -- |
 -- Remove all scoring data from nodes.
 wipeScoring
-  :: Monoid n
+  :: Default n
   => PhylogeneticDAG2 e n u v w x y z
   -> PhylogeneticDAG2 e n (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
 wipeScoring (PDAG2 dag) = PDAG2 wipedDAG
@@ -55,7 +57,7 @@ wipeScoring (PDAG2 dag) = PDAG2 wipedDAG
           $ dag
 
     wipeDecorations
-      :: Monoid n
+      :: Default n
       => IndexData e (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
       -> IndexData e (PhylogeneticNode2 (CharacterSequence (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)) n)
     wipeDecorations x =
@@ -71,14 +73,14 @@ wipeScoring (PDAG2 dag) = PDAG2 wipedDAG
 -- |
 -- Conditionally wipe the scoring of a single node.
 wipeNode
-  :: Monoid n
+  :: Default n
   => Bool -- ^ Do I wipe?
   -> PhylogeneticNode2 (CharacterSequence        u         v         w         x         y         z ) n
   -> PhylogeneticNode2 (CharacterSequence (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)) n
 wipeNode wipe = PNode2 <$> pure . g . NE.head . resolutions <*> f . nodeDecorationDatum2
       where
-        f :: Monoid a => a -> a
-        f | wipe      = const mempty
+        f :: Default a => a -> a
+        f | wipe      = const def
           | otherwise = id
 
         g = ResInfo
@@ -120,7 +122,7 @@ performDecoration
      , Show y
      , Show z
      )
-  => PhylogeneticDAG2 EdgeLength (Maybe String) (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
+  => PhylogeneticDAG2 EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
   -> FinalDecorationDAG
 performDecoration x = performPreOrderDecoration performPostOrderDecoration
   where

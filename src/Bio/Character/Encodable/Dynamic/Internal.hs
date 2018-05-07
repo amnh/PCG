@@ -40,7 +40,6 @@ import           Data.List.NonEmpty                  (NonEmpty(..))
 import qualified Data.List.NonEmpty           as NE
 import           Data.List.Utility                   (invariantTransformation)
 import qualified Data.Map                     as M
-import           Data.Monoid
 import           Data.MonoTraversable
 import           Data.String                         (fromString)
 import           Data.Tuple                          (swap)
@@ -317,7 +316,7 @@ instance ToXML DynamicChar where
     toXML dynamicChar = xmlElement "Dynamic_character" attributes contents
         where
             attributes            = []
-            contents              = (Left . contentTuple) <$> otoList dynamicChar -- toXML on all dynamic character elements
+            contents              = Left . contentTuple <$> otoList dynamicChar -- toXML on all dynamic character elements
             contentTuple (DCE bv) = ("Character_states", (\x -> if x then '1' else '0') <$> toBits bv) -- the value of this character
 
 {- Don't think I need this, since it's taken care of in ToXML DynamicChar

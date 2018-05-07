@@ -31,7 +31,6 @@ import Bio.Character.Exportable.Class
 import Control.DeepSeq
 import Data.Bits
 import Data.Foldable
-import Data.Monoid
 import Foreign         hiding (alignPtr)
 import Foreign.C.Types
 import GHC.Generics           (Generic)
@@ -256,8 +255,8 @@ getMemoizedCostMatrix alphabetSize costFn = unsafePerformIO . withArray rowMajor
 getMedianAndCost2D :: Exportable s => MemoizedCostMatrix -> s -> s -> (s, Word)
 getMedianAndCost2D memo e1 e2 = unsafePerformIO $ do
     medianPtr     <- constructEmptyElement alphabetSize
-    e1'          <- constructElementFromExportable e1
-    e2'          <- constructElementFromExportable e2
+    e1'           <- constructElementFromExportable e1
+    e2'           <- constructElementFromExportable e2
     !cost         <- getCostAndMedian2D_c e1' e2' medianPtr (costMatrix memo)
     medianElement <- peek medianPtr
     medianValue   <- fmap buildExportable . peekArray bufferLength $ characterElement medianElement

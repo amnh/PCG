@@ -46,7 +46,6 @@ import qualified Data.Map                   as M
 import           Data.Maybe                        (fromMaybe)
 import           Data.Proxy
 import           Data.Scientific            hiding (scientific)
-import           Data.Semigroup
 import           Data.Set                          (Set)
 import qualified Data.Set                   as S
 import           Data.Time.Clock                   (DiffTime, secondsToDiffTime)
@@ -368,5 +367,5 @@ typeMismatchContext p targetType = do
         [ ResultBool <$> boolValue
         , ResultText <$> textValue
         , ResultTime <$> timeValue
-        , (either ResultReal ResultInt . floatingOrInteger) <$> numValue
+        , either ResultReal ResultInt . floatingOrInteger <$> numValue
         ]

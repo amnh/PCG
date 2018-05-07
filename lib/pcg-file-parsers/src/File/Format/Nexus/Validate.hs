@@ -28,7 +28,6 @@ import           Data.List.Split           (splitOn)
 import           Data.Map.Lazy             (Map)
 import qualified Data.Map.Lazy      as M
 import           Data.Maybe
-import           Data.Monoid
 import           Data.Ord                  (comparing)
 import           Data.Semigroup.Foldable
 import           Data.Set                  (Set)
@@ -571,7 +570,7 @@ splitSequenceReplaceAmbiguities isTokens isContinuous isAlign seq' = finalList
     where
         finalList =
             if isAlign
-                then V.fromList $ (Just . V.singleton) <$> chars -- aligned, so each item in vector of ambiguity groups is single char
+                then V.fromList $  Just . V.singleton <$> chars -- aligned, so each item in vector of ambiguity groups is single char
                 else V.singleton . Just $ V.fromList chars -- not aligned, so whole vector of ambiguity groups is single char
         chars =
             if isTokens || isContinuous

@@ -39,7 +39,6 @@ import Data.BitVector.LittleEndian
 import Data.EdgeSet
 import Data.Foldable
 import Data.List.NonEmpty       (NonEmpty(..))
-import Data.Semigroup
 import Data.TopologyRepresentation
 import GHC.Generics
 import Text.Newick.Class

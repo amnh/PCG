@@ -83,7 +83,7 @@ rootCosts :: HasBlockCost u v w x y z i r
 rootCosts (PDAG2 dag) = sequenceCost <$> rootDecs
   where
     roots     = rootRefs dag
-    rootDecs  = (characterSequence . NE.head . resolutions . nodeDecoration . (references dag !)) <$> roots
+    rootDecs  = characterSequence . NE.head . resolutions . nodeDecoration . (references dag !) <$> roots
 
 
 -- |

@@ -25,7 +25,6 @@ import Bio.Metadata.DiscreteWithTCM
 import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
-import Data.Semigroup
 import GHC.Generics
 import Text.XML
 

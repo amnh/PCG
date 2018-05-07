@@ -20,14 +20,12 @@ import           Control.Applicative
 import           Control.DeepSeq
 import           Control.Evaluation.Internal
 import           Control.Evaluation.Unit
-import           Control.Monad           (MonadPlus(..), join)
+import           Control.Monad           (MonadPlus(..))
 import           Control.Monad.Fail      (MonadFail)
 import qualified Control.Monad.Fail as F
 import           Control.Monad.IO.Class
 import           Control.Monad.Logger
 import           Control.Monad.Trans.Class
-import           Data.Monoid             ()
-import           Data.Semigroup
 import           GHC.Generics
 
 
@@ -150,4 +148,4 @@ state = EvaluationT . pure
 -- Prints an 'IO' parameterized transformer of 'Evaluation' context to
 -- the STDOUT.
 showRun :: Show a => EvaluationT IO a -> IO ()
-showRun = join . fmap print . runEvaluation
+showRun = (print =<<) . runEvaluation
