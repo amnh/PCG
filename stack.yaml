@@ -28,4 +28,4 @@ packages:
     extra-dep: true
 
 #resolver: lts-11.5
-resolver: nightly-2018-04-18
+resolver: nightly-2018-05-04 # May the Force be with us
