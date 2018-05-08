@@ -43,8 +43,8 @@ before_install:
   # Download and unpack the hlint executable
   - which hlint || travis_retry curl --progress-bar --location -ohlint.tar.gz https://github.com/$(curl --silent https://github.com/ndmitchell/hlint/releases | grep -o '\"[^\"]*-x86_64-'$TRAVIS_OS_NAME'\.tar\.gz\"' | sed s/\"//g | head -n1)
   - tar -xzf hlint.tar.gz
-  - cp hlint-*/hlint ~/.local/bin/hlint
-  - cp hlint-*/data	 ~/.local/bin/data
+  - cp    hlint-*/hlint ~/.local/bin/hlint
+  - cp -r hlint-*/data	~/.local/bin/data
 
 script:
   - stack update
