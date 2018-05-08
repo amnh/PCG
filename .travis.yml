@@ -39,12 +39,6 @@ before_install:
   - mkdir -p ~/.local/bin
   - export PATH=$HOME/.local/bin:$PATH
   - travis_retry wget -qO- https://get.haskellstack.org/ | sh
-  # - travis_retry curl -L https://github.com/commercialhaskell/stack/releases/download/v1.7.0.3/stack-1.7.0.3-linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
-  # - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
-
-  # Install code linting tool if it is not present.
-  - curl -sL https://raw.github.com/ndmitchell/hlint/master/misc/travis.sh | sh -s .
-
 
 script:
   - stack update
@@ -56,7 +50,8 @@ script:
   - stack build --coverage --fast --haddock --no-terminal
 # removed because --test flag was removed
 #  - stack hpc report
-  - hlint app ffi lib src test utils
+  # Run HLint
+  - curl -sL https://raw.github.com/ndmitchell/neil/master/misc/travis.sh | sh -s -- hlint app ffi lib src test utils
 
 # removed because --test flag was removed
 #after_script:
