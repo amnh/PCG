@@ -355,4 +355,4 @@ applyMutations im xs = (<> trailing) . foldMapWithKey f $ toList xs
       case k `lookup` im of
         Nothing ->      Seq.singleton v
         Just x  -> x <> Seq.singleton v
-    trailing = fromMaybe mempty $ length xs `lookup` im
+    trailing = fold $ length xs `lookup` im

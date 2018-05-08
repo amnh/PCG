@@ -92,7 +92,7 @@ sharedWork logic dot = fromSet getAdjacency setOfNodes
     -- Get the map of directed edges.
     -- Missing nodes with out degree 0.
     edgeMap      = foldr logic mempty . dotEdgeSet
-    getAdjacency = fromMaybe mempty . (`lookup` setOfEdges)
+    getAdjacency = fold . (`lookup` setOfEdges)
     setOfEdges   = edgeMap    dot
     setOfNodes   = dotNodeSet dot 
 

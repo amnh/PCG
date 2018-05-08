@@ -367,7 +367,7 @@ validateForest ver@(VER vs es rs ) =
                 cycleDetected = not $ null base
                 cycle'        = [node] <> reverse inner <> [node]
                 childCycles   = findCycle' (node:stack) <$> toList children
-                children      = fromMaybe mempty $ node `lookup` connections
+                children      = fold $ node `lookup` connections
 
 {-
     -- Determine if multiple roots are connected by traversing the tree
