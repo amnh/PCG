@@ -41,7 +41,11 @@ before_install:
   - which stack || travis_retry wget -qO- https://get.haskellstack.org/ | sh
 
   - echo $TRAVIS_OS_NAME
-
+  - curl --silent https://github.com/ndmitchell/hlint/releases
+  - curl --silent https://github.com/ndmitchell/hlint/releases | grep -o '\"[^\"]*-x86_64-$(echo $TRAVIS_OS_NAME)\.tar\.gz\"'
+  - echo $(curl --silent https://github.com/ndmitchell/hlint/releases | grep -o '\"[^\"]*-x86_64-$(echo $TRAVIS_OS_NAME)\.tar\.gz\"' | sed s/\"//g | head -n1)
+  - curl --progress-bar --location -ohlint.tar.gz https://github.com/$(curl --silent https://github.com/ndmitchell/hlint/releases | grep -o '\"[^\"]*-x86_64-$(echo $TRAVIS_OS_NAME)\.tar\.gz\"' | sed s/\"//g | head -n1)
+  
   # Download and unpack the hlint executable
   - which hlint || travis_retry curl --progress-bar --location -ohlint.tar.gz https://github.com/$(curl --silent https://github.com/ndmitchell/hlint/releases | grep -o '\"[^\"]*-x86_64-$(echo $TRAVIS_OS_NAME)\.tar\.gz\"' | sed s/\"//g | head -n1)
   - tar -xzf hlint.tar.gz
