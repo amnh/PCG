@@ -23,7 +23,6 @@ import           Data.IntMap            (IntMap)
 import qualified Data.IntMap     as IM
 import           Data.Key
 import           Data.List              (intercalate)
-import           Data.Maybe             (fromMaybe)
 import           Data.Monoid     hiding ((<>))
 import           Data.MonoTraversable
 import           Data.Semigroup         (Semigroup(..))

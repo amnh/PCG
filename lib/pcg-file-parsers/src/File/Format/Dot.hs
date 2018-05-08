@@ -33,7 +33,6 @@ import           Data.GraphViz.Types
 import           Data.GraphViz.Types.Generalised
 import           Data.Key
 import           Data.Map                  (Map, fromSet, insertWith)
-import           Data.Maybe
 import           Data.Monoid
 import           Data.Set                  (Set)
 import qualified Data.Set           as S
