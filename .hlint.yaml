@@ -3,14 +3,22 @@
 
 
 # Custom warning hints
-- warn: { lhs: x *> pure y  , rhs: x $> y   }
-- warn: { lhs: pure y <* x  , rhs: y <$ x   }
-- warn: { lhs: return x     , rhs: pure x   }
-- warn: { lhs: liftM x      , rhs: fmap x   }
-- warn: { lhs: map x        , rhs: fmap x   }
-- warn: { lhs: maybeToList x, rhs: toList x, note: Use more general Foldable typeclass instance }
-- warn: { lhs: (!!)         , rhs: (!)     , note: Use more general Indexable typeclass instance }
-- warn: { lhs: parMap       , rhs: parmap  , note: Use more general custom parmap function }
+- warn: { note: Prefer pure to reduce Monad constraint
+        , lhs: return x
+        , rhs: pure x
+        }
+- warn: { note: Use more general Foldable typeclass instance
+        , lhs: maybeToList x
+        , rhs: toList x
+        }
+- warn: { note: Use more general Indexable typeclass instance
+        , lhs: (!!)
+        , rhs: (!)
+        }
+- warn: { note: Use more general custom parmap function
+        , lhs: parMap
+        , rhs: parmap
+        }
 
 
 # Replace a $ b $ c with a . b $ c
@@ -19,6 +27,10 @@
 
 # Generalise map to fmap, ++ to <>
 - group: { name: generalise, enabled: true }
+
+
+# Generalise Maybe, Either functions to fold, foldMap
+- group: { name: generalise-for-conciseness, enabled: true }
 
 
 # Ignore some builtin hint in test modules where we need to test the hint.
