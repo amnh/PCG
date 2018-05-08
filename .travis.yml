@@ -51,6 +51,7 @@ script:
   - gcc --version
   - stack --version
   - stack ghc -- --version
+  - stack exec hlint -- --version
   - stack build --coverage --fast --haddock --no-terminal
 # removed because --test flag was removed
 #  - stack hpc report
