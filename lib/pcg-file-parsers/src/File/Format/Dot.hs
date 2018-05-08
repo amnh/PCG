@@ -27,6 +27,7 @@ module File.Format.Dot
 
 
 import           Control.Arrow             ((&&&))
+import           Data.Foldable
 import           Data.GraphViz.Parsing
 import           Data.GraphViz.Types
 import           Data.GraphViz.Types.Generalised

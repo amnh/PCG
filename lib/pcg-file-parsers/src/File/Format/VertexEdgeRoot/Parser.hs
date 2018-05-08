@@ -29,7 +29,7 @@ import qualified Data.List.NonEmpty as NE
 import           Data.List.Utility         (duplicates)
 import           Data.Map                  (Map)
 import qualified Data.Map           as Map
-import           Data.Maybe                (catMaybes, fromMaybe)
+import           Data.Maybe                (catMaybes)
 import           Data.Monoid
 import           Data.Ord                  (comparing)
 import           Data.Set                  (Set)
