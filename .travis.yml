@@ -42,8 +42,9 @@ before_install:
   # - travis_retry curl -L https://github.com/commercialhaskell/stack/releases/download/v1.7.0.3/stack-1.7.0.3-linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
   # - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
 
-  # Install code linting tool
-  - stack install hlint
+  # Install code linting tool if it is not present.
+  - stack exec hlint -- --version &> /dev/null && echo "HLint present" || stack install hlint
+
 
 script:
   - stack update
