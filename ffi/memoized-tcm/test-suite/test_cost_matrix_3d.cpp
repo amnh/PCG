@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../costMatrix_2d.h"
-#include "../costMatrix_3d.h"
+#include "../costMatrix_2d.hpp"
+#include "../costMatrix_3d.hpp"
 #include "../dynamicCharacterOperations.h"
 
 #define __STDC_FORMAT_MACROS

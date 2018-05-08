@@ -48,13 +48,13 @@ instance Show ReadError where
         unfindableMessage =
           case unfindables of
             []  -> Nothing
-            [x] -> Just $ "The file "  ++ show x ++ " does not exist"
-            xs  -> Just $ "The following files do not exists: \n"        ++ unlines (show <$> xs)
+            [x] -> Just $ "The file "  <> show x <> " does not exist"
+            xs  -> Just $ "The following files do not exists: \n"        <> unlines (show <$> xs)
         unopenableMessage =
           case unopenables of
             []  -> Nothing
-            [x] -> Just $ "The file "  ++ show x ++ " can not be opened"
-            xs  -> Just $ "The following files could not be opened: \n" ++ unlines (show <$> xs)
+            [x] -> Just $ "The file "  <> show x <> " can not be opened"
+            xs  -> Just $ "The following files could not be opened: \n" <> unlines (show <$> xs)
         unparsableMessage =
           case unparsables of
             []  -> Nothing
@@ -68,7 +68,7 @@ instance Show ReadError where
           case doubleTCMs of
             []  -> Nothing
             [x] -> Just $ "The file had multiple TCM definitions " <> show x
-            xs  -> Just $ "The following files had multiple TCM definitions: \n"        ++ unlines (show <$> xs)
+            xs  -> Just $ "The following files had multiple TCM definitions: \n"        <> unlines (show <$> xs)
         partitionReadErrorMessages ::  [ReadErrorMessage]
                                    -> ([ReadErrorMessage], [ReadErrorMessage], [ReadErrorMessage], [ReadErrorMessage], [ReadErrorMessage])
         partitionReadErrorMessages = foldr f ([],[],[],[],[])
@@ -82,8 +82,8 @@ instance Show ReadError where
 
 instance Show ReadErrorMessage where
 
-    show (FileUnfindable path        ) = "'" ++ path ++ "'"
-    show (FileUnopenable path        ) = "'" ++ path ++ "'"
+    show (FileUnfindable path        ) = "'" <> path <> "'"
+    show (FileUnopenable path        ) = "'" <> path <> "'"
     show (FileUnparsable pErr        ) = pErr
     show (MultipleTCMs   dataPath tcmPath) = "'" <> show dataPath <> "' with the referenced TCM file '" <> show tcmPath <> "'"
     show (FileAmbiguous  path matches) = message
@@ -91,9 +91,9 @@ instance Show ReadErrorMessage where
         files   = toList matches
         message = unlines
           [ "The following file specification is ambiguous:"
-          , "\t'"++path++"'"
+          , "\t'"<>path<>"'"
           , "The file specification should match a single file, but multiple matches were found:"
-          , unlines $ (\x -> '\'' : x ++ "'") <$> files
+          , unlines $ (\x -> '\'' : x <> "'") <$> files
           ]
 
 

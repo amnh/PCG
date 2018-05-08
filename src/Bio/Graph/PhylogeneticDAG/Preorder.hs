@@ -729,7 +729,7 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ 
       where
         g (topo, foci) = zipWith h foci
           where
-            h focus dec = dec & traversalFoci .~ (Just $ (focus,topo):|[])
+            h focus dec = dec & traversalFoci ?~ pure (focus, topo)
 --    memo :: Vector (NonEmpty (Vector z'))
     memo = VE.generate dagSize generateDatum
       where

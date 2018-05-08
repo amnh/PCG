@@ -38,23 +38,25 @@ before_install:
   # Download and unpack the stack executable
   - mkdir -p ~/.local/bin
   - export PATH=$HOME/.local/bin:$PATH
-  - travis_retry wget -qO- https://get.haskellstack.org/ | sh
-  # - travis_retry curl -L https://github.com/commercialhaskell/stack/releases/download/v1.7.0.3/stack-1.7.0.3-linux-x86_64.tar.gz | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
-  # - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+  - which stack || travis_retry wget -qO- https://get.haskellstack.org/ | sh
 
-  # Install code linting tool
-  - stack install hlint
+  # Download and unpack the hlint executable
+  - which hlint || travis_retry curl --progress-bar --location -ohlint.tar.gz https://github.com/$(curl --silent https://github.com/ndmitchell/hlint/releases | grep -o '\"[^\"]*-x86_64-'$TRAVIS_OS_NAME'\.tar\.gz\"' | sed s/\"//g | head -n1)
+  - tar -xzf hlint.tar.gz
+  - cp    hlint-*/hlint ~/.local/bin/hlint
+  - cp -r hlint-*/data	~/.local/bin/data
 
 script:
   - stack update
   - stack setup
   - gcc --version
+  - hlint --version
   - stack --version
   - stack ghc -- --version
   - stack build --coverage --fast --haddock --no-terminal
 # removed because --test flag was removed
 #  - stack hpc report
-  - stack exec hlint app src lib
+  - hlint app ffi lib src test utils
 
 # removed because --test flag was removed
 #after_script:
@@ -67,6 +69,7 @@ script:
 # Caching so the next build will be fast too.
 cache:
   directories:
+  - $HOME/.local/bin
   - $HOME/.stack
   - $HOME/build/amnh/PCG/.stack-work
 

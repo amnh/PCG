@@ -58,8 +58,8 @@ identifierLine = do
     _ <- endOfLine <?> lineEndMessage x
     pure x
   where
-    commentMessage x = "Invalid comment for following label: '" ++ x ++ "'"
-    lineEndMessage x = "There is no end-of-line after label: '" ++ x ++ "'"
+    commentMessage x = "Invalid comment for following label: '" <> x <> "'"
+    lineEndMessage x = "There is no end-of-line after label: '" <> x <> "'"
 
 
 -- |

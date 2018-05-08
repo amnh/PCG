@@ -1,4 +1,3 @@
-{-# ANN module "HLint: ignore Evaluate" #-}
 {-# LANGUAGE FlexibleInstances #-}
 
 module Bio.Character.Encodable.Static.Test

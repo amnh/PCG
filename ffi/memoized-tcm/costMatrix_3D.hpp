@@ -21,7 +21,7 @@
 #include <climits>
 #include <cstdlib>
 #include <unordered_map>
-#include "costMatrix_2d.h"
+#include "costMatrix_2d.hpp"
 
 
 /********************* Next three fns defined here to use on C side. *********************/
@@ -182,19 +182,19 @@ class CostMatrix_3d
         ~CostMatrix_3d();
 
 
-        /** Returns the cost to transition between the *two* input elements and 
-         *  sets retMedian to be the median value between the *two* input 
+        /** Returns the cost to transition between the *two* input elements and
+         *  sets retMedian to be the median value between the *two* input
          *  elements.
          *
          *  If this is the first call to the function with the supplied inputs,
-         *  then the cost and median will be calculated and the result with be 
-         *  internally cached. 
+         *  then the cost and median will be calculated and the result with be
+         *  internally cached.
          *
-         *  If the pair of inputs have already been queried, the cached result 
+         *  If the pair of inputs have already been queried, the cached result
          *  is returned in constant time.
          *
-         *  This function performs deep copies of the inputs _when necessary_. 
-         *  Freeing inputs after a call will _never_ cause invalid reads from 
+         *  This function performs deep copies of the inputs _when necessary_.
+         *  Freeing inputs after a call will _never_ cause invalid reads from
          *  the cost matrix.
          */
         unsigned int costAndMedian2D( dcElement_t* first
@@ -203,18 +203,18 @@ class CostMatrix_3d
                                       );
 
 
-        /** Returns the cost to transition between the *three* input elements and 
-         *  sets retMedian to be the median value between the *two* input 
+        /** Returns the cost to transition between the *three* input elements and
+         *  sets retMedian to be the median value between the *two* input
          *  elements.
          *
          *  If this is the first call to the function with the supplied inputs,
-         *  then the cost and median will be calculated and the result with be 
-         *  internally cached. 
+         *  then the cost and median will be calculated and the result with be
+         *  internally cached.
          *
-         *  If the pair of inputs have already been queried, the cached result 
+         *  If the pair of inputs have already been queried, the cached result
          *  is returned in constant time.
-         *  This function performs deep copies of the inputs _when necessary_. 
-         *  Freeing inputs after a call will _never_ cause invalid reads from 
+         *  This function performs deep copies of the inputs _when necessary_.
+         *  Freeing inputs after a call will _never_ cause invalid reads from
          *  the cost matrix.
          */
         unsigned int costAndMedian3D( dcElement_t* first

@@ -1,10 +1,8 @@
-{-# ANN module "HLint: ignore Evaluate" #-}
 {-# LANGUAGE FlexibleInstances #-}
 
 module Numeric.Extended.Natural.Test
   ( testSuite
   ) where
-
 
 import Numeric.Extended.Natural
 import Test.Tasty

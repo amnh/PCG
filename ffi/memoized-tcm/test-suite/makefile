@@ -8,10 +8,10 @@ sanityWarnings = -Wall -Wextra -pedantic
 dynamicChar    = ../dynamicCharacterOperations.h \
                  ../dynamicCharacterOperations.c
 
-costMatrix_2d  = ../costMatrix_2d.h \
+costMatrix_2d  = ../costMatrix_2d.hpp \
                  ../costMatrix_2d.cpp
 
-costMatrix_3d  = ../costMatrix_3d.h \
+costMatrix_3d  = ../costMatrix_3d.hpp \
                  ../costMatrix_3d.cpp
 
 wrapper        = ../costMatrixWrapper.h \
@@ -45,15 +45,15 @@ $(test_matrix_2d) : test_cost_matrix_2d.cpp $(costMatrix_2d) $(dynamicChar)
 
 $(test_matrix_3d) : test_cost_matrix_3d.cpp $(costMatrix_2d) $(costMatrix_3d) $(dynamicChar)
 	gcc -std=c11   $(sanityWarnings) -c -g $(dynamicChar)
-	g++ -std=c++14 $(sanityWarnings) -c -g $(costMatrix_2d) 
-	g++ -std=c++14 $(sanityWarnings) -c -g $(costMatrix_3d) 
+	g++ -std=c++14 $(sanityWarnings) -c -g $(costMatrix_2d)
+	g++ -std=c++14 $(sanityWarnings) -c -g $(costMatrix_3d)
 	g++ -std=c++14 $(sanityWarnings) -g -Wall -o $(test_matrix_3d) test_cost_matrix_3d.cpp *.o
 
 
 $(test_interface) : test_c_interface.c $(costMatrix_3d) $(costMatrix_2d) $(dynamicChar) $(wrapper)
 	gcc -std=c11   $(sanityWarnings) -g -c $(dynamicChar)
-	g++ -std=c++14 $(sanityWarnings) -g -c $(costMatrix_2d) 
-	g++ -std=c++14 $(sanityWarnings) -g -c $(costMatrix_3d) 
+	g++ -std=c++14 $(sanityWarnings) -g -c $(costMatrix_2d)
+	g++ -std=c++14 $(sanityWarnings) -g -c $(costMatrix_3d)
 	gcc -std=c11   $(sanityWarnings) -g -c $(wrapper)
 	# in next line, need -lstdc++ so that it calls correct linker: we need C compiler, but C++ libraries in scope.
 	gcc -std=c11   $(sanityWarnings) -g -o $(test_interface) test_c_interface.c *.o -lstdc++

@@ -16,13 +16,13 @@ benchmarks = bgroup "ExtendedNatural" $
 
 extendedNaturalBench :: [Benchmark]
 extendedNaturalBench =
-    [ bgroup "addition" $ interlace
+    [ bgroup "addition" . interlace
         ( binaryOperationBenchmark      "+"    (+) "ExtendedNatural" extendedNaturalValues)
         $ binaryOperationBenchmark      "+"    (+) "Word"            wordValues
-    , bgroup "subtraction" $ interlace
+    , bgroup "subtraction" . interlace
         ( binaryOperationBenchmark      "-"    (-) "ExtendedNatural" extendedNaturalValues)
         $ binaryOperationBenchmark      "-"    (-) "Word"            wordValues
-    , bgroup "multiplication" $ interlace
+    , bgroup "multiplication" . interlace
         ( binaryOperationBenchmark      "*"    (*) "ExtendedNatural" extendedNaturalValues)
         $ binaryOperationBenchmark      "*"    (*) "Word"            wordValues
     , bgroup "division" . interlace

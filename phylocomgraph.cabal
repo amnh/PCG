@@ -26,16 +26,16 @@ common ffi-buildinfo
 
   cc-options:       --std=c11
 
-  c-sources:        ffi/external-direct-optimization/c_alignment_interface.c
+  c-sources:        ffi/external-direct-optimization/alignCharacters.c
+                    ffi/external-direct-optimization/alignmentMatrices.c
+                    ffi/external-direct-optimization/c_alignment_interface.c
                     ffi/external-direct-optimization/c_code_alloc_setup.c
                     ffi/external-direct-optimization/costMatrix.c
-                    ffi/external-direct-optimization/alignmentMatrices.c
                     ffi/external-direct-optimization/dyn_character.c
-                    ffi/external-direct-optimization/alignCharacters.c
                     ffi/external-direct-optimization/ukkCheckPoint.c
                     ffi/external-direct-optimization/ukkCommon.c
-                    ffi/memoized-tcm/dynamicCharacterOperations.c
                     ffi/memoized-tcm/costMatrixWrapper.c
+                    ffi/memoized-tcm/dynamicCharacterOperations.c
                     ffi/sequential-align/sequentialAlignInterface.c
                     ffi/sequential-align/sequentialAlign.c
 

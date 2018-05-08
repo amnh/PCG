@@ -1,7 +1,7 @@
 #include <cstring> //for memcpy;
 #include <inttypes.h>
 
-#include "costMatrix_2d.h"
+#include "costMatrix_2d.hpp"
 #include "dynamicCharacterOperations.h"
 
 #define __STDC_FORMAT_MACROS
@@ -203,7 +203,7 @@ costMedian_t* CostMatrix_2d::computeCostMedian(keys_2d_t keys)
             printPackedChar( curMedian, 1, alphabetSize);
             printf("\n\n");
         }
-        
+
         // now seemingly recreating logic in findDistance(). However, that was to get the cost for the
         // ambElem on each child; now we're combining those costs get overall cost and median
         if (curCost < minCost) {
@@ -234,9 +234,9 @@ costMedian_t* CostMatrix_2d::computeCostMedian(keys_2d_t keys)
           printf("\n\n");
           fflush(stdout);
         }
-        
+
     }
-    
+
     const auto toReturn  = new costMedian_t;
     std::get<0>(*toReturn) = minCost;
     std::get<1>(*toReturn) = curMedian;
