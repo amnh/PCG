@@ -523,6 +523,14 @@ Test-Suite testsuite
 
   ghc-options:      -threaded
 
+  if os(linux) && arch(x86_64)
+    ghc-options:    .stack-work/dist/x86_64-linux/Cabal-2.2.0.0/build/ffi/memoized-tcm/costMatrix_2d.dyn_o
+                    .stack-work/dist/x86_64-linux/Cabal-2.2.0.0/build/ffi/memoized-tcm/costMatrix_3d.dyn_o
+
+  if os(osx) && arch(x86_64)
+    ghc-options:    .stack-work/dist/x86_64-osx/Cabal-2.2.0.0/build/ffi/memoized-tcm/costMatrix_2d.dyn_o
+                    .stack-work/dist/x86_64-osx/Cabal-2.2.0.0/build/ffi/memoized-tcm/costMatrix_3d.dyn_o
+
   hs-source-dirs:   test, src, app
 
   other-modules:    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
