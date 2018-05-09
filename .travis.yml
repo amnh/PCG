@@ -53,7 +53,9 @@ script:
   - hlint --version
   - stack --version
   - stack ghc -- --version
-  - travis_wait 45 stack build --fast --haddock --no-terminal --test
+  - stack build   --coverage --fast --no-terminal
+  - stack test    --coverage --fast --no-terminal || :
+  - stack haddock --fast --no-terminal
 # removed because --test flag was removed
 #  - stack hpc report
   - hlint app ffi lib src test utils
