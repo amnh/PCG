@@ -53,9 +53,8 @@ script:
   - hlint --version
   - stack --version
   - stack ghc -- --version
-  - stack build   --coverage --fast --no-terminal
-  - stack test    --coverage --fast --no-terminal || :
-  - stack haddock --fast --no-terminal
+  - stack build   --coverage --fast --haddock --no-terminal
+  - stack test    --coverage --fast --no-terminal
 # removed because --test flag was removed
 #  - stack hpc report
   - hlint app ffi lib src test utils
