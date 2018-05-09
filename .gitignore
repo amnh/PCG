@@ -58,6 +58,7 @@ TAGS
 *.fasta
 *.gch
 *.log
+*.out
 *.poy
 *.ss
 *.tre

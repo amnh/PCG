@@ -27,7 +27,7 @@
 -- This parser correctly parses the Newick file format, and the super set
 -- Extended Newick filed format, and the new Forest Extended Newick format.
 --
------------------------------------------------------------------------------    
+-----------------------------------------------------------------------------
 
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
@@ -55,12 +55,12 @@ import Text.Megaparsec
 
 
 -- |
--- Parses an entire stream into a zero or more 'NewickForest's.
+-- Parses an entire stream into zero or more 'NewickForest's.
 newickStreamParser :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty NewickForest)
 newickStreamParser = some1 forestDefinitions <* eof
 
 
-forestDefinitions :: (MonadParsec e s m, Token s ~ Char) => m NewickForest 
+forestDefinitions :: (MonadParsec e s m, Token s ~ Char) => m NewickForest
 forestDefinitions = explicitForest <|> implicitForest
 
 
