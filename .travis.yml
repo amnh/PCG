@@ -71,7 +71,6 @@ cache:
   directories:
   - $HOME/.local/bin
   - $HOME/.stack
-  - $HOME/build/amnh/PCG/.stack-work
 
 git:
   submodules: false
