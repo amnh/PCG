@@ -64,7 +64,7 @@ install:
   - stack build --bench --fast --install-ghc --only-dependencies --no-terminal --test
 
   # Build project
-  - stack build --bench --coverage --fast --haddock --no-haddock-deps --no-run-benchmarks --no-run-tests --no-terminal
+  - stack build --bench --fast --haddock --no-haddock-deps --no-run-benchmarks --no-run-tests --no-terminal
 
   # Inspect generated .stack-work directories
   - ls .stack-work/dist/
@@ -75,18 +75,19 @@ script:
 
    - stack test --no-terminal
 
-# removed because --test flag was removed
+#  Not run because --coverage flag was removed
 #  - stack hpc report
 
    - hlint app ffi lib src test utils
 
-# removed because --test flag was removed
+# Not run because --coverage flag was removed
 #after_script:
 #  - hpc-coveralls --coverage-mode=StrictlyFullLines
 #                  --exclude-dir=prototype
 #                  --exclude-dir=test
 #                  --exclude-dir=utils
 #                  testsuite
+
 
 # Caching so the next build will be fast too.
 cache:
