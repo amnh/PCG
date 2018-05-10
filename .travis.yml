@@ -58,6 +58,9 @@ script:
   - stack test --bench --fast --install-ghc --only-dependencies --no-terminal
   # Build project
   - travis_wait 45 stack test --bench --coverage --fast --haddock --no-haddock-deps --no-run-benchmarks --no-terminal
+  - ls .stack-work/dist/
+  - ls .stack-work/dist/*/
+  - ls .stack-work/dist/*/*/
 # removed because --test flag was removed
 #  - stack hpc report
   - hlint app ffi lib src test utils
