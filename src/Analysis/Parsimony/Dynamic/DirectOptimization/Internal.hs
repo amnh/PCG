@@ -202,6 +202,7 @@ disambiguateElement x = zed `setBit` idx
     zed = x `xor` x
 
 
+{-
 -- |
 -- Disambiguate the elements of a dynamic Character so that they are consistent
 -- with the ancestral disambiguation.
@@ -220,6 +221,7 @@ disambiguateFromParent {- pGaps cGaps -} pSingle cFinal = result
         -- Since pS will have only one bit set,
         -- there can only ever be an symbol intersection of size 1
         val = pS .&. cF
+-}
 
 
 -- |

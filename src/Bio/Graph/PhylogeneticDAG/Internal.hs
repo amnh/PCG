@@ -358,6 +358,7 @@ localResolutionApplication f x y =
         }
 
 
+{-
 -- |
 -- Given a foldable structure, generate a list of all possible pairs in the
 -- structure. Does not check for uniqueness of elements.
@@ -367,6 +368,7 @@ pairs = f . toList
     f    []  = []
     f   [_]  = []
     f (x:xs) = ((\y -> (x, y)) <$> xs) <> f xs
+-}
 
 
 -- |
