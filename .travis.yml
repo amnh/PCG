@@ -51,9 +51,13 @@ script:
   - stack setup
   - gcc --version
   - hlint --version
+  - cabal --version
   - stack --version
   - stack ghc -- --version
-  - travis_wait 45 stack build   --coverage --fast --haddock --no-terminal --test
+  # Install dependencies
+  - stack test --bench --fast --install-ghc --only-dependencies --no-terminal
+  # Build project
+  - travis_wait 45 stack test --bench --coverage --fast --haddock --no-haddock-deps --no-run-benchmarks --no-terminal
 # removed because --test flag was removed
 #  - stack hpc report
   - hlint app ffi lib src test utils
