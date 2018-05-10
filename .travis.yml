@@ -35,9 +35,11 @@ before_install:
       sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 --slave /usr/bin/g++ g++ /usr/bin/g++-7
     fi
 
-  # Download and unpack the stack executable
+  # Create and export path to stack binaries
   - mkdir -p ~/.local/bin
   - export PATH=$HOME/.local/bin:$PATH
+
+  # Download and unpack the stack executable
   - which stack || travis_retry wget -qO- https://get.haskellstack.org/ | sh
 
   # Download and unpack the hlint executable
@@ -46,24 +48,37 @@ before_install:
   - cp    hlint-*/hlint ~/.local/bin/hlint
   - cp -r hlint-*/data	~/.local/bin/data
 
-script:
+install:
+  # Update stack
   - stack update
-  - stack setup
-  - gcc --version
+  - stack setup --no-terminal
+
+  # Output build tool version information
+  - gcc   --version
   - hlint --version
   - cabal --version
   - stack --version
   - stack ghc -- --version
+
   # Install dependencies
-  - stack test --bench --fast --install-ghc --only-dependencies --no-terminal
+  - stack build --bench --fast --install-ghc --only-dependencies --no-terminal --test
+
   # Build project
-  - travis_wait 45 stack test --bench --coverage --fast --haddock --no-haddock-deps --no-run-benchmarks --no-terminal
+  - stack build --bench --coverage --fast --haddock --no-haddock-deps --no-run-benchmarks --no-run-tests --no-terminal
+
+  # Inspect generated .stack-work directories
   - ls .stack-work/dist/
   - ls .stack-work/dist/*/
   - ls .stack-work/dist/*/*/
+
+script:
+
+   - stack test --no-terminal
+
 # removed because --test flag was removed
 #  - stack hpc report
-  - hlint app ffi lib src test utils
+
+   - hlint app ffi lib src test utils
 
 # removed because --test flag was removed
 #after_script:
@@ -78,6 +93,8 @@ cache:
   directories:
   - $HOME/.local/bin
   - $HOME/.stack
+  - $HOME/build/amnh/PCG/.stack-work
 
 git:
+  depth: 10
   submodules: false
