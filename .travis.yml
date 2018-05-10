@@ -56,7 +56,6 @@ install:
   # Output build tool version information
   - gcc   --version
   - hlint --version
-  - cabal --version
   - stack --version
   - stack ghc -- --version
 
