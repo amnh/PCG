@@ -17,7 +17,29 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.Character.Decoration.Dynamic.Class where
+module Bio.Character.Decoration.Dynamic.Class
+  ( AverageLength()
+  , DirectOptimizationDecoration
+  , DirectOptimizationPostOrderDecoration
+  , DynamicCharacterDecoration(..)
+  , ImpliedAlignmentDecoration
+  , PostOrderExtensionDirectOptimizationDecoration(..)
+  , SimpleDynamicDecoration
+  , SimpleDynamicExtensionPostOrderDecoration(..)
+  , HasAverageLength(..)
+  , HasCharacterLocalCost(..)
+  , HasEncoded(..)
+  , HasFinalGapped(..)
+  , HasFinalUngapped(..)
+  , HasImpliedAlignment(..)
+  , HasLeftAlignment(..)
+  , HasPreliminaryGapped(..)
+  , HasPreliminaryUngapped(..)
+  , HasRightAlignment(..)
+  , HasSingleDisambiguation(..)
+  , getAverageLength
+  , toAverageLength
+  ) where
 
 
 import Bio.Character.Decoration.Shared

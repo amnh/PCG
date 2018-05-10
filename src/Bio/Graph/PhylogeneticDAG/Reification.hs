@@ -17,8 +17,8 @@
 module Bio.Graph.PhylogeneticDAG.Reification
   ( reifiedSolution
 --  , reifiedToCharacterDAG
-  , reifyForest
 --  , reifiedToCharacterDAG
+--  , reifyForest
   ) where
 
 import           Bio.Graph.Constructions

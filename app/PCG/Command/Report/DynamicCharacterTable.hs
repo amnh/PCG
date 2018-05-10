@@ -12,7 +12,7 @@
 
 {-# LANGUAGE FlexibleContexts #-}
 
-module PCG.Command.Report.DynamicCharacterTable where
+module PCG.Command.Report.DynamicCharacterTable () where
 
 import Bio.Character.Encodable
 import Bio.Character.Decoration.Dynamic

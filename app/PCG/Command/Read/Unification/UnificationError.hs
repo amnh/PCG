@@ -1,4 +1,8 @@
-module PCG.Command.Read.Unification.UnificationError where
+module PCG.Command.Read.Unification.UnificationError
+  ( TaxaName
+  , UnificationError(..)
+  , UnificationErrorMessage(ForestDuplicateTaxa, ForestExtraTaxa, ForestMissingTaxa, VacuousInput)
+  ) where
 
 import Data.Foldable
 import Data.List          (intercalate)

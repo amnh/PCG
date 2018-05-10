@@ -19,7 +19,11 @@
 
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
-module Analysis.Parsimony.Dynamic.DirectOptimization.Internal where
+module Analysis.Parsimony.Dynamic.DirectOptimization.Internal
+  ( directOptimizationPostOrder
+  , directOptimizationPreOrder
+  , selectDynamicMetric
+  ) where
 
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (overlap)

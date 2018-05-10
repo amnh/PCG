@@ -8,7 +8,7 @@ module Data.MutualExclusionSet.Test
 import Control.Arrow
 import Data.Foldable
 import Data.Semigroup
-import Data.MutualExclusionSet.Internal
+import Data.MutualExclusionSet
 import Data.Word
 import Test.QuickCheck
 import Test.Tasty

@@ -12,7 +12,15 @@
 
 {-# LANGUAGE FlexibleContexts, FunctionalDependencies, MultiParamTypeClasses #-}
 
-module Bio.Character.Decoration.Continuous.Class where
+module Bio.Character.Decoration.Continuous.Class
+  ( ContinuousCharacter(..)
+  , ContinuousCharacterDecoration
+  , ContinuousDecoration
+  , DiscreteExtensionContinuousDecoration(..)
+  , HasChildPrelimIntervals(..)
+  , HasContinuousCharacter(..)
+  , HasPreliminaryInterval(..)
+  ) where
 
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Shared

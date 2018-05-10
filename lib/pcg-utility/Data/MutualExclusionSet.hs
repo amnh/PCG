@@ -45,7 +45,8 @@ module Data.MutualExclusionSet
   ( MutualExclusionSet
   -- * Construction
   , singleton
-  -- * Deconstruct
+  , unsafeFromList
+  -- * Deconstruction
   , excludedSet
   , includedSet
   , mutuallyExclusivePairs
@@ -53,13 +54,19 @@ module Data.MutualExclusionSet
   , invert
   , merge
   , prettyPrintMutualExclusionSet
-  -- * Comparison / Queries
+  -- * Lookup
   , excludedLookup
   , includedLookup
-  , isCoherent
+  -- * Relational query
   , isExcluded
   , isIncluded
+  -- * Set query
+  , excludedSet
+  , includedSet
+  , mutuallyExclusivePairs
+  -- * Contextual query
   , isPermissible
+  , isCoherent
   ) where
 
 import Data.MutualExclusionSet.Internal
