@@ -60,11 +60,7 @@ module Data.MutualExclusionSet
   -- * Relational query
   , isExcluded
   , isIncluded
-  -- * Set query
-  , excludedSet
-  , includedSet
-  , mutuallyExclusivePairs
-  -- * Contextual query
+  -- * Holistic query
   , isPermissible
   , isCoherent
   ) where
