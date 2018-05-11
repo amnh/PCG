@@ -72,7 +72,10 @@ install:
 
 script:
 
-   - stack test --no-terminal
+   # Run the test suite if we are building on MacOS
+   # Do not run the test suite on Linux!
+   # Setup + Build + Test on Linux exeeds 50 minutes and times out.
+   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then stack test --no-terminal fi
 
 #  Not run because --coverage flag was removed
 #  - stack hpc report
