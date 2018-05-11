@@ -16,9 +16,8 @@
 
 module Text.Megaparsec.Custom
   ( (<:>)
-  , (<++>)
   , anythingTill
-  , comment
+--  , comment
   , double
   , endOfLine
   , fails
@@ -26,20 +25,19 @@ module Text.Megaparsec.Custom
   , inlineSpace
   , somethingTill
   , string''
-  -- * Useful simplified stream parsers
-  , runParserOnFile
-  , parseWithDefaultErrorType
+--  , runParserOnFile
+--  , parseWithDefaultErrorType
   ) where
 
 import           Data.CaseInsensitive
 import           Data.Char                         (isSpace)
-import           Data.Either                       (either)
+--import           Data.Either                       (either)
 import           Data.Functor                      (($>))
 import           Data.List.NonEmpty                (NonEmpty(..), nonEmpty)
 import           Data.Maybe                        (catMaybes)
 import           Data.Proxy
 import qualified Data.Set                   as S
-import           Data.Void
+--import           Data.Void
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as LEX
@@ -52,10 +50,12 @@ import qualified Text.Megaparsec.Char.Lexer as LEX
 (<:>)  a b = (:)  <$> a <*> b
 
 
+{-
 -- |
 -- Concatenate the result of two list producing combinators.
 (<++>) :: (Applicative f, Semigroup a) => f a -> f a -> f a
 (<++>) a b = (<>) <$> a <*> b
+-}
 
 
 -- |
@@ -143,6 +143,7 @@ inlineSpace :: (Enum (Token s), MonadParsec e s m) => m ()
 inlineSpace = skipMany inlineSpaceChar
 
 
+{-
 -- |
 -- @comment start end@ will parse a /nested/ comment structure which begins with
 -- the delimiter @start@ and ends with the delimiter @end@.
@@ -193,6 +194,7 @@ runParserOnFile parser filePath = either (parseErrorPretty :: ParseError Char Vo
 -- Useful for quick tests in GHCi.
 parseWithDefaultErrorType :: Parsec Void s a -> s -> Either (ParseError (Token s) Void) a
 parseWithDefaultErrorType c = parse c "" 
+-}
 
 
 -- Takes a 'Stream' of 'Char's and returns a String

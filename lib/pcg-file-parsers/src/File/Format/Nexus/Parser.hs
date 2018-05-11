@@ -17,8 +17,9 @@
 -- TODOs:
 -- • Get char weights from assumptions block
 
-
-module File.Format.Nexus.Parser where
+module File.Format.Nexus.Parser
+  ( parseNexus
+  ) where
 
 import           Data.CaseInsensitive
 import           Data.Char                  (isSpace, toLower)
@@ -31,7 +32,7 @@ import           File.Format.Newick
 import           File.Format.Newick.Parser  (newickExtendedDefinition)
 import           File.Format.Nexus.Data
 import           File.Format.Nexus.Partition
-import           File.Format.TransitionCostMatrix.Parser hiding (symbol)
+import           File.Format.TransitionCostMatrix.Parser
 import           Text.Megaparsec     hiding (label)
 import           Text.Megaparsec.Char
 import           Text.Megaparsec.Char.Lexer (decimal, skipBlockCommentNested)
@@ -438,10 +439,12 @@ commentDefinition = do
     proxy = Proxy :: Proxy s
 
 
+{-
 -- |
 -- Consume one or more spaces.
 space1 :: (MonadParsec e s m , Token s ~ Char {- Show s -}) => m ()
 space1 = skipSome spaceChar
+-}
 
 
 -- |

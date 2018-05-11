@@ -14,7 +14,10 @@
 
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
-module File.Format.TNT.Partitioning where
+module File.Format.TNT.Partitioning
+  ( Commands
+  , gatherCommands
+  ) where
 
 
 import Data.CaseInsensitive

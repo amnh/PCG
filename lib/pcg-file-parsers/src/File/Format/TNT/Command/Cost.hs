@@ -14,7 +14,9 @@
 
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
-module File.Format.TNT.Command.Cost where
+module File.Format.TNT.Command.Cost
+  ( costCommand
+  ) where
 
 
 import Data.CaseInsensitive

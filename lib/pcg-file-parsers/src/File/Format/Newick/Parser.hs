@@ -14,7 +14,18 @@
 
 {-# LANGUAGE FlexibleContexts, ScopedTypeVariables, TypeFamilies #-}
 
-module File.Format.Newick.Parser where
+module File.Format.Newick.Parser
+  ( branchLengthDefinition
+  , descendantListDefinition
+  , quotedLabel
+  , newickExtendedDefinition
+  , newickForestDefinition
+  , newickLabelDefinition
+  , newickLeafDefinition
+  , newickStandardDefinition
+  , requiresQuotedLabelChars
+  , unquotedLabel
+  ) where
 
 import Data.Char                   (isSpace)
 import Data.Foldable
