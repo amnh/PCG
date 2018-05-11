@@ -12,7 +12,9 @@
 
 {-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
 
-module Bio.Character.Encodable.Continuous.Internal where
+module Bio.Character.Encodable.Continuous.Internal
+  ( ContinuousChar
+  ) where
 
 import Bio.Character.Encodable.Continuous.Class
 import Bio.Character.Encodable.Internal

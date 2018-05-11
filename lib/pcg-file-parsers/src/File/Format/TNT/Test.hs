@@ -20,11 +20,26 @@ import           File.Format.TNT.Command.TRead
 import           File.Format.TNT.Command.XRead
 import           File.Format.TNT.Internal
 import           Test.Custom.Parse
-import           Test.Custom.Types
 import           Test.Tasty                 (TestTree, testGroup)
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 import           Text.Megaparsec
+
+
+newtype WordToken = WordToken { getWordToken :: String }
+    deriving (Eq)
+
+
+instance Arbitrary WordToken where
+
+    arbitrary = fmap WordToken . listOf1 $ elements wordChar
+      where
+        wordChar = filter isAlpha $ chr <$> [0..128]
+
+
+instance Show WordToken where
+
+    show (WordToken s) = s
 
 
 testSuite :: TestTree

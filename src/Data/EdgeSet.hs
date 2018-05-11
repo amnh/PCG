@@ -15,11 +15,11 @@
 {-# LANGUAGE DeriveGeneric, GeneralizedNewtypeDeriving #-}
 
 module Data.EdgeSet
-  ( EdgeSet(..)
-  , NetworkDisplayEdgeSet(..)
-  , SetLike(..)
-  , collapseToEdgeSet
-  , fromEdgeSets
+  ( EdgeSet()
+--  , NetworkDisplayEdgeSet(..)
+  , SetLike(difference, union)
+--  , collapseToEdgeSet
+--  , fromEdgeSets
   , singletonEdgeSet
   ) where
 
@@ -29,7 +29,6 @@ import           Data.Foldable
 import           Data.Key
 import           Data.List.NonEmpty (NonEmpty(..))
 import           Data.Semigroup
-import           Data.Semigroup.Foldable
 import           Data.Set           (Set)
 import qualified Data.Set    as Set
 import           GHC.Generics       (Generic)
@@ -127,6 +126,7 @@ instance Show a => Show (EdgeSet a) where
   show (ES xs) = show (toList xs)
 
 
+{-
 -- |
 -- Coalesce the disconnected edge sets of the 'NetworkDisplayEdgeSet' to a
 -- single 'EdgeSet'.
@@ -138,6 +138,7 @@ collapseToEdgeSet (NDES x) = fold1 x
 -- Construct a 'NetworkDisplayEdgeSet' from a non-empty collection of edge sets.
 fromEdgeSets :: NonEmpty (EdgeSet e) -> NetworkDisplayEdgeSet e
 fromEdgeSets = NDES
+-}
 
 
 -- |

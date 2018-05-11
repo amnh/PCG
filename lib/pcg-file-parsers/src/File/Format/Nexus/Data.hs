@@ -12,7 +12,36 @@
 --
 -----------------------------------------------------------------------------
 
-module File.Format.Nexus.Data where
+module File.Format.Nexus.Data
+  ( Sequences
+  , AlphabetSymbol
+  , AmbiguityGroup
+  , TaxonIdentifier
+  , CharacterMetadata(..)
+  , Character
+  , Sequence
+  , TaxonSequenceMap
+  , AssumptionBlock(..)
+  , AssumptionField(..)
+  , CharFormatField(..)
+--  , CharStateFormat(..)
+  , CharacterFormat(..)
+  , CharDataType(..)
+  , DimensionsFormat(..)
+  , IgnBlock(..)
+  , Nexus(..)
+  , NexusBlock(..)
+  , NexusParseResult(..)
+  , PhyloSequence(..)
+  , SeqSubBlock(Matrix, Format, Dims, Eliminate, CharLabels, IgnSSB, Taxa)
+  , StepMatrix(..)
+  , TaxaSpecification(..)
+--  , TreeName
+--  , SerializedTree
+  , TreeBlock(..)
+  , TreeField(..)
+--  , SequenceBlock(..)
+  ) where
 
 import qualified Data.Map.Lazy as M
 import qualified Data.Vector   as V
@@ -274,8 +303,10 @@ data TaxaSpecification
 type TreeName       = String
 
 
+{-
 -- | (✓)
 type SerializedTree = String
+-}
 
 
 -- | (✓)
@@ -302,8 +333,11 @@ data SequenceBlock
    , seqs     :: [V.Vector (String, [String])]
    } deriving (Show)
 
+
+{-
 standardAlphabet :: [String]
 standardAlphabet = ["0","1"]
+
 
 dna :: M.Map String [String]
 dna = M.fromList [ ("A",["A"])
@@ -328,6 +362,7 @@ dna = M.fromList [ ("A",["A"])
 dnaAlphabet :: [String]
 dnaAlphabet = M.keys dna
 
+
 rna :: M.Map String [String]
 rna = M.fromList [ ("A",["A"])
                  , ("C",["C"])
@@ -350,11 +385,14 @@ rna = M.fromList [ ("A",["A"])
 rnaAlphabet :: [String]
 rnaAlphabet = M.keys rna
 
+
 nucleotide :: M.Map String [String]
 nucleotide = M.insert "U" ["T"] dna
 
+
 nucleotideAlphabet :: [String]
 nucleotideAlphabet = "U" : dnaAlphabet
+
 
 protein :: M.Map String [String]
 protein = M.fromList [ ("A",["A"])
@@ -384,3 +422,4 @@ protein = M.fromList [ ("A",["A"])
 
 proteinAlphabet :: [String]
 proteinAlphabet = M.keys protein
+-}

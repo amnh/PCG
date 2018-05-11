@@ -14,11 +14,14 @@
 
 {-# LANGUAGE BangPatterns, FlexibleContexts #-}
 
-module PCG.Command.Read.Unification.Master where
+module PCG.Command.Read.Unification.Master
+  ( FracturedParseResult(..)
+  , masterUnify
+  ) where
 
 import           Bio.Character
 import           Bio.Character.Encodable
-import           Bio.Character.Decoration.Continuous hiding (characterName)
+import           Bio.Character.Decoration.Continuous hiding (characterName, toContinuousCharacter)
 import           Bio.Character.Decoration.Discrete   hiding (characterName)
 import           Bio.Character.Decoration.Dynamic    hiding (characterName)
 import           Bio.Character.Parsed
@@ -516,7 +519,3 @@ nonAdditiveDistanceFunction :: Word -> Word -> Word
 nonAdditiveDistanceFunction i j
   | i == j    = 0
   | otherwise = 1
-
-
-
-

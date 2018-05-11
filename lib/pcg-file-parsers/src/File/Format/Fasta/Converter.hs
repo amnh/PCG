@@ -14,7 +14,10 @@
 
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
-module File.Format.Fasta.Converter where
+module File.Format.Fasta.Converter
+  ( FastaSequenceType(..)
+  , fastaStreamConverter
+  ) where
 
 import           Data.List                         (intercalate,partition)
 import           Data.List.NonEmpty                (NonEmpty) 
@@ -30,7 +33,11 @@ import           Text.Megaparsec.Custom            (fails)
 
 -- |
 -- Different forms a 'FastaSequence' can be interpreted as.
-data FastaSequenceType = DNA | RNA | AminoAcid deriving (Bounded,Eq,Enum,Read,Show)
+data  FastaSequenceType
+    = DNA
+    | RNA
+    | AminoAcid
+    deriving (Bounded, Eq, Enum, Read, Show)
 
 
 -- |

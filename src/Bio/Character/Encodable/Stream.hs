@@ -15,7 +15,14 @@
 
 {-# LANGUAGE FlexibleContexts, MultiParamTypeClasses #-}
 
-module Bio.Character.Encodable.Stream where
+module Bio.Character.Encodable.Stream
+  ( EncodableStreamElement(..)
+  , EncodableStream(..)
+  , showStreamElement
+  , showStream
+  , bitsInLocalWord
+  , encodableStreamToExportableCharacterElements
+  ) where
 
 import           Bio.Character.Encodable.Internal
 import           Bio.Character.Exportable
@@ -130,6 +137,7 @@ showStreamElement alphabet element
       | otherwise                    = x
 
 
+{-
 -- |
 -- Serialize any instance of 'FiniteBits' as a stream of 1s and 0s with the
 -- left-hand side of the stream representing the least significant bit and the
@@ -140,6 +148,7 @@ showBits b = foldMap f [0 .. finiteBitSize b - 1]
     f i
       | b `testBit`  i = "1"
       | otherwise      = "0"
+-}
 
 
 -- |

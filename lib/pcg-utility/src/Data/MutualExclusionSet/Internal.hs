@@ -15,7 +15,23 @@
 
 {-# LANGUAGE DeriveGeneric, FlexibleContexts #-}
 
-module Data.MutualExclusionSet.Internal where
+module Data.MutualExclusionSet.Internal
+  ( MutualExclusionSet (includedElemMap, excludedElemMap, includedFullMap, excludedFullMap)
+  , excludedLookup
+  , excludedSet
+  , includedSet
+  , includedLookup
+  , invert
+  , isCoherent
+  , isExcluded
+  , isIncluded
+  , isPermissible
+  , merge
+  , mutuallyExclusivePairs
+  , prettyPrintMutualExclusionSet
+  , singleton
+  , unsafeFromList
+  ) where
 
 
 import           Control.DeepSeq

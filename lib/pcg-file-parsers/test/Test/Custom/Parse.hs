@@ -4,7 +4,7 @@ module Test.Custom.Parse
   ( parseEquals
   , parseFailure
   , parseSuccess
-  , parserFalsifies
+--  , parserFalsifies
   , parserSatisfies
   ) where
 
@@ -47,8 +47,10 @@ parserSatisfies parser input property =
     Right x -> property x
 
 
+{-
 parserFalsifies :: Parsec Void String a -> String -> (a -> Bool) -> Bool
 parserFalsifies parser input property =
   case parse parser "" input of
     Left  _ -> True
     Right x -> property x
+-}

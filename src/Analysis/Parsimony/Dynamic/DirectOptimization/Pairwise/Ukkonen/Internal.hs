@@ -17,9 +17,7 @@
 {-# LANGUAGE ConstraintKinds, DeriveFoldable, DeriveFunctor, FlexibleContexts, TypeFamilies #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Internal
-  ( UkkonenMethodMatrix()
-  , createUkkonenMethodMatrix
-  , ukkonenDO
+  ( ukkonenDO
   ) where
 
 

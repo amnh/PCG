@@ -14,8 +14,14 @@
 
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
-module File.Format.TransitionCostMatrix.Parser where
-
+module File.Format.TransitionCostMatrix.Parser
+  ( TCM(..)
+  , alphabetLine
+  , tcmAlphabet
+  , tcmMatrix
+  , tcmStreamParser
+  , matrixBlock
+  ) where
 
 import           Data.Char                   (isSpace)
 import           Data.Foldable               (toList)

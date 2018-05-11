@@ -14,7 +14,16 @@
 
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
-module File.Format.Fasta.Parser where
+module File.Format.Fasta.Parser
+  ( FastaParseResult
+  , FastaSequence(..)
+  , fastaStreamParser
+  , fastaTaxonSequenceDefinition
+  , fastaSequence
+  , iupacAminoAcidChars
+  , iupacNucleotideChars
+  , iupacRNAChars
+  ) where
 
 import Control.Arrow              ((&&&))
 import Control.Monad              ((<=<))

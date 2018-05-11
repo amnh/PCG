@@ -14,9 +14,9 @@
 
 module Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
   ( assignPunitiveNetworkEdgeCost
-  , extractMostParsimoniusDisplayForest
-  , extractMinimalDisplayForestPerBlock
-  , gatherDisplayForests
+--  , extractMostParsimoniusDisplayForest
+--  , extractMinimalDisplayForestPerBlock
+--  , gatherDisplayForests
   ) where
 
 

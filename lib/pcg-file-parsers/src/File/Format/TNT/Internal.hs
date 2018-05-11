@@ -16,8 +16,57 @@
 {-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving, ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module File.Format.TNT.Internal where
-
+module File.Format.TNT.Internal
+  ( TntResult
+  , TreeOnly
+  , WithTaxa(..)
+  , CCode
+  , CCodeAugment(..)
+  , CharacterState(..)
+  , CharacterSet(..)
+  , CNames
+  , CharacterName(..)
+  , Cost(..)
+  , NStates(..)
+  , TRead
+  , TReadTree
+  , LeafyTree(..)
+  , NodeType(..)
+  , XRead(..)
+  , TaxonInfo
+  , TaxonName
+  , TaxonSequence
+  , TntCharacter(..)
+  , TntContinuousCharacter
+  , TntDiscreteCharacter
+  , TntDnaCharacter
+  , TntProteinCharacter
+  , CharacterMetaData(..)
+  , bitsToFlags
+  , characterIndicies
+  , characterStateChar
+  , deserializeStateDiscrete
+  , deserializeStateDna
+  , deserializeStateProtein
+  , discreteStateValues
+  , dnaStateValues
+  , findFirstSet
+  , flexibleNonNegativeInt
+  , flexiblePositiveInt
+  , initialMetaData
+  , keyword
+  , metaDataTemplate
+  , modifyMetaDataState
+  , modifyMetaDataNames
+  , modifyMetaDataTCM
+  , nonNegInt
+  , proteinStateValues
+  , serializeStateDiscrete
+  , symbol
+  , trim
+  , whitespace
+  , whitespaceInline
+  ) where
 
 import           Control.Monad              ((<=<))
 import           Data.Bits
@@ -178,9 +227,11 @@ type TRead     = NonEmpty  TReadTree
 type TReadTree = LeafyTree NodeType
 
 
+{-
 -- |
 -- A tree which has had each leaf node matched against the taxon from the taxa set.
 type TNTTree   = LeafyTree TaxonInfo
+-}
 
 
 -- |

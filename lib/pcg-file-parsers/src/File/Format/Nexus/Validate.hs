@@ -14,20 +14,22 @@
 
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
-module File.Format.Nexus.Validate where
+module File.Format.Nexus.Validate
+  ( validateNexusParseResult
+  ) where
 
 import           Data.Bifunctor            (second)
 import           Data.Char                 (isSpace)
 import           Data.Either
 import           Data.Foldable
-import           Data.List                 (sort, sortBy)
+--import           Data.List                 (sort, sortBy)
 import           Data.List.NonEmpty        (NonEmpty( (:|) ))
 --import qualified Data.List.NonEmpty as NE
-import           Data.List.Split           (splitOn)
+--import           Data.List.Split           (splitOn)
 import           Data.Map.Lazy             (Map)
 import qualified Data.Map.Lazy      as M
 import           Data.Maybe
-import           Data.Ord                  (comparing)
+--import           Data.Ord                  (comparing)
 import           Data.Semigroup.Foldable
 import           Data.Set                  (Set)
 import qualified Data.Set           as Set
@@ -425,7 +427,7 @@ wrongDataType inSeq
         lowerCased = fmap toLower dataType
         acceptableTypeStrs = ["standard", "dna", "rna", "nucleotide", "protein", "continuous", ""]
         (_, _noLabels, _interleaved, _tkns, dataType, _matchChar') = getFormatInfo inSeq
--}
+
 
 -- |
 -- Takes in the list of 'PhyloSequence's and the final map of sequences and checks each sequence to see whether it's
@@ -474,8 +476,7 @@ taxaDimsMissing taxas inputSeqBlocks = taxaProblems <> seqProblems
                         then Just $ blockType' <> " block is missing ntax directive.\n"
                         else Nothing
                 else Just $ blockType' <> "Data block is missing dimensions.\n"
-
-
+-}
 
 
 -- TODOs:
@@ -521,8 +522,7 @@ getCharMetadata mayMtx seqBlock =
         wt          = 1
 
 
-
-
+{-
 -- |
 -- Takes a 'Phylosequence'. It reads through the 'PhyloSequence' matrix to see if there are any taxa
 -- that appear an incorrect number of times (all should appear the same number of times).
@@ -545,6 +545,7 @@ getMatrixTaxonRecurrenceErrors seq' = wrongCountErrors -- <> extraTaxonErrors
 -- Sorts a list of orderables and returns the middle value. Assumes there is at least one element in the list.
 findMedian :: Ord a => [a] -> a
 findMedian xs = sort xs !! quot (length xs) 2
+-}
 
 
 -- |
@@ -554,6 +555,7 @@ getEquates :: PhyloSequence -> Either String [String]
 getEquates = maybe (Right [""]) equate . headMay . format
 
 
+{-
 -- |
 -- Takes a 'PhyloSequence' and returns a map from 'String' to 'Int', where the 'String' is a taxon name
 -- and the 'Int' is the number of times it appears in the sequence matrix.
@@ -566,6 +568,7 @@ getTaxaFromMatrix seq'
         mtx     = head $ seqMatrix seq' -- I've already checked to make sure there's a matrix
         taxaMap = foldr (\x acc -> M.insert x (succ (M.findWithDefault 0 x acc)) acc) M.empty taxa
         taxa    = takeWhile (`notElem` " \t") <$> mtx
+-}
 
 
 -- TODO: This is too similar to getEquates, above. Can they be combined?
@@ -653,17 +656,22 @@ findAmbiguousTokens (x:xs) acc amb
     xTail = safeTail x
     xLast = safeLast x
 
+
 safeLast :: [a] -> [a]
 safeLast inLst = [ last inLst | not (null inLst) ]
+
 
 safeHead :: [a] -> [a]
 safeHead []    = []
 safeHead (x:_) = [x]
 
+
 safeTail :: [a] -> [a]
 safeTail []     = []
 safeTail (_:xs) = xs
 
+
+{-
 -- |
 -- Takes a Vector of the taxon names and a 'Phylosequence' and attempts to determine
 -- whether the sequence matrix in the 'PhyloSequence', if interleaved, is interleaved correctly. I.e., no taxon
@@ -683,6 +691,7 @@ findInterleaveError taxaLst seq'
             taxaCount   = length taxaLst
             lineCount   = length . head $ seqMatrix seq'
             which       = blockType seq'
+-}
 
 
 -- |
@@ -919,6 +928,7 @@ checkForNewTaxa phyloSeq = case charDims phyloSeq of
     which = blockType phyloSeq
 
 
+{-
 -- |
 -- Takes the output of sortElimsStr (so a list of strings) and returns a list of tuples of form (Bool, Int)
 -- This will be used to determine whether a given character in an aligned sequence is to be ignored. However, because
@@ -976,6 +986,7 @@ setIgnores seqIdx curElimIdx toElim seqLength acc
     | otherwise           = setIgnores (succ seqIdx) next toElim seqLength (val : acc)
         where
             (val, next) = getNext seqIdx curElimIdx toElim
+-}
 
 
 ----------------------------------------------

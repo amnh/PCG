@@ -14,8 +14,12 @@
 
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
-module File.Format.TNT.Command.Procedure where
-
+module File.Format.TNT.Command.Procedure
+  ( procedureCommand
+  , procCommandFile
+  , procCloseFile
+  , procHeader
+  ) where
 
 import Data.CaseInsensitive
 import Data.Functor (($>))

@@ -14,7 +14,9 @@
 
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
-module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Test where
+module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Test
+  ( testSuite
+  ) where
 
 
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
@@ -23,7 +25,6 @@ import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
 
 import Bio.Character.Encodable
-import Data.Alphabet
 import Data.MonoTraversable
 import Data.TCM.Memoized
 import Test.Custom.NucleotideSequence
@@ -201,10 +202,6 @@ isValidPairwiseAlignment testLabel alignmentFunction = testGroup testLabel
         (_, unGap, _, _, _) = alignmentFunction lhs rhs
 
 
-alphabet :: Alphabet String
-alphabet = fromSymbols ["A","C","G","T"] 
-
-
 genDenseMatrix :: (Word -> Word -> Word) -> DenseTransitionCostMatrix
 genDenseMatrix = generateDenseTransitionCostMatrix 0  5
 
@@ -238,6 +235,10 @@ preferSubMetric i j
 
 
 {-
+alphabet :: Alphabet String
+alphabet = fromSymbols ["A","C","G","T"] 
+
+
 standardAlph :: Alphabet String
 standardAlph =  fromSymbols $ V.fromList ["A", "C", "G", "T", "-"]
 

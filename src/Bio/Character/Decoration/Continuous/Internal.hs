@@ -14,8 +14,8 @@
 
 module Bio.Character.Decoration.Continuous.Internal
   ( ContinuousDecorationInitial(..)
-  , ContinuousPostorderDecoration(..)
-  , ContinuousOptimizationDecoration(..)
+  , ContinuousPostorderDecoration()
+  , ContinuousOptimizationDecoration()
   , continuousDecorationInitial
   ) where
 

@@ -15,7 +15,21 @@
 
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
-module File.Format.VertexEdgeRoot.Parser where
+module File.Format.VertexEdgeRoot.Parser
+  ( VertexLabel
+  , EdgeLength
+  , VertexSetType(..)
+  , EdgeInfo(..)
+  , VertexEdgeRoot(..)
+  , connectedVertex
+  , verStreamParser
+  , labeledVertexSetDefinition
+  , vertexSetType
+  , unlabeledVertexSetDefinition
+  , vertexLabelDefinition
+  , edgeSetDefinition
+  , edgeDefinition
+  ) where
 
 import           Data.CaseInsensitive
 import           Data.Char                 (isSpace)

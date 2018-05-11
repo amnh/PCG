@@ -83,8 +83,8 @@ commentBody  = do
     _       <- inlineSpace
     content <- many (commentWord <* inlineSpace)
     pure $ unwords content
-
-
--- | Defines the words of a commenty
-commentWord :: (MonadParsec e s m, Token s ~ Char) => m String
-commentWord  = some (satisfy (not . isSpace)) <?> "Non-space characters"
+  where
+    -- |
+    -- Defines the words of a comment
+    commentWord :: (MonadParsec e s m, Token s ~ Char) => m String
+    commentWord  = some (satisfy (not . isSpace)) <?> "Non-space characters"

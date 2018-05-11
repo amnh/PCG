@@ -15,7 +15,13 @@
 
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
-module File.Format.TNT.Command.XRead where
+module File.Format.TNT.Command.XRead
+  ( xreadCommand
+  , discreteSequence
+  , dnaSequence
+  , proteinSequence
+  , xreadHeader
+  ) where
 
 {-- TODO:
   - Robust tests
@@ -37,7 +43,7 @@ import           Data.List.NonEmpty       (NonEmpty)
 import qualified Data.List.NonEmpty as NE (filter,fromList,length)
 import           Data.List.Utility
 import           Data.Map                 (assocs,insertWith,lookup)
-import           Data.Maybe               (catMaybes,fromJust,isJust)
+import           Data.Maybe               (catMaybes)
 import           Data.Traversable
 import           File.Format.TNT.Internal
 import           Prelude           hiding (lookup)
@@ -303,6 +309,7 @@ segmentTerminal :: (MonadParsec e s m, Token s ~ Char) => m Char
 segmentTerminal = whitespaceInline *> endOfLine <* whitespace
 
 
+{-
 -- |
 -- Takes a 'zeroBits' bit value, a 'Foldable' structure of 'Char's to represent
 -- the ordered alphabet and a 'Traversable' structure of 'Char's to be bit
@@ -334,6 +341,7 @@ toBits b xs = foldr (.|.) b . fmap setFlag
 -- parameter combinator.
 tagIdentifier :: (MonadParsec e s m, Token s ~ Char) => m a -> m ()
 tagIdentifier c = symbol (char '&') *> symbol (withinBraces c) $> ()
+-}
 
 
 -- |
@@ -344,10 +352,12 @@ withinBraces = between (f '[') (f ']')
     f c = char c <* whitespaceInline 
 
 
+{-
 -- |
 -- An append efficient datastructure containing 'TntCharacter's.
 -- Used to efficiently concatenat many interleaved taxon sequence segments.
 type TntCharacterSegment = DList TntCharacter
+-}
 
 
 -- |

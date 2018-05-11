@@ -19,7 +19,11 @@
 
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
-module Analysis.Parsimony.Dynamic.DirectOptimization.Internal where
+module Analysis.Parsimony.Dynamic.DirectOptimization.Internal
+  ( directOptimizationPostOrder
+  , directOptimizationPreOrder
+  , selectDynamicMetric
+  ) where
 
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (overlap)
@@ -40,7 +44,7 @@ import           Data.TCM.Memoized
 import           Data.MonoTraversable
 import           Data.Word
 import           Numeric.Extended.Natural
-import           Prelude     hiding (lookup, zipWith)
+import           Prelude     hiding (lookup)
 
 -- import Debug.Trace
 
@@ -198,6 +202,7 @@ disambiguateElement x = zed `setBit` idx
     zed = x `xor` x
 
 
+{-
 -- |
 -- Disambiguate the elements of a dynamic Character so that they are consistent
 -- with the ancestral disambiguation.
@@ -216,6 +221,7 @@ disambiguateFromParent {- pGaps cGaps -} pSingle cFinal = result
         -- Since pS will have only one bit set,
         -- there can only ever be an symbol intersection of size 1
         val = pS .&. cF
+-}
 
 
 -- |
