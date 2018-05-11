@@ -59,10 +59,11 @@ install:
   - stack setup --no-terminal
 
   # Output build tool version information
-  - gcc   --version
-  - hlint --version
-  - stack --version
   - stack ghc -- --version
+  - gcc    --version
+  - stack  --version
+  - hlint  --version
+  - weeder --version
 
   # Install dependencies
   - stack build --bench --fast --install-ghc --only-dependencies --no-terminal --test
