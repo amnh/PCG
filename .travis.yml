@@ -48,6 +48,11 @@ before_install:
   - cp    hlint-*/hlint ~/.local/bin/hlint
   - cp -r hlint-*/data	~/.local/bin/data
 
+  # Download and unpack the weeder executable
+  - which weeder || travis_retry curl --progress-bar --location -oweeder.tar.gz https://github.com/$(curl --silent https://github.com/ndmitchell/weeder/releases | grep -o '\"[^\"]*-x86_64-'$TRAVIS_OS_NAME'\.tar\.gz\"' | sed s/\"//g | head -n1)
+  - tar -xzf weeder.tar.gz
+  - cp    weeder-*/weeder ~/.local/bin/weeder
+
 install:
   # Update stack
   - stack update
@@ -72,15 +77,17 @@ install:
 
 script:
 
-   # Run the test suite if we are building on MacOS
-   # Do not run the test suite on Linux!
-   # Setup + Build + Test on Linux exeeds 50 minutes and times out.
-   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then stack test --no-terminal fi
+  # Run the test suite if we are building on MacOS
+  # Do not run the test suite on Linux!
+  # Setup + Build + Test on Linux exeeds 50 minutes and times out.
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then stack test --no-terminal fi
 
 #  Not run because --coverage flag was removed
 #  - stack hpc report
 
-   - hlint app ffi lib src test utils
+  - hlint app ffi lib src test utils
+
+  - weeder .
 
 # Not run because --coverage flag was removed
 #after_script:
