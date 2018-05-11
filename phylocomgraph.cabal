@@ -419,6 +419,20 @@ executable affine-safety
   hs-source-dirs:   utils
 
 
+executable newick-resolver
+
+  import:             ghc-flags
+                    , language-specs
+
+  main-is:          newick-resolver.hs
+
+  build-depends:      base               >=4.8
+                    , megaparsec         >=6.0 && <6.4
+                    , pcg-file-parsers
+
+  hs-source-dirs:   utils
+
+
 executable sequential-alignment-invariants
 
   import:             ghc-flags
