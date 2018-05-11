@@ -49,9 +49,9 @@ before_install:
   - cp -r hlint-*/data	~/.local/bin/data
 
   # Download and unpack the weeder executable
-  - which weeder || travis_retry curl --progress-bar --location -oweeder.tar.gz https://github.com/$(curl --silent https://github.com/ndmitchell/weeder/releases | grep -o '\"[^\"]*-x86_64-'$TRAVIS_OS_NAME'\.tar\.gz\"' | sed s/\"//g | head -n1)
-  - tar -xzf weeder.tar.gz
-  - cp    weeder-*/weeder ~/.local/bin/weeder
+#  - which weeder || travis_retry curl --progress-bar --location -oweeder.tar.gz https://github.com/$(curl --silent https://github.com/ndmitchell/weeder/releases | grep -o '\"[^\"]*-x86_64-'$TRAVIS_OS_NAME'\.tar\.gz\"' | sed s/\"//g | head -n1)
+#  - tar -xzf weeder.tar.gz
+#  - cp    weeder-*/weeder ~/.local/bin/weeder
 
 install:
   # Update stack
@@ -63,7 +63,7 @@ install:
   - gcc    --version
   - stack  --version
   - hlint  --version
-  - weeder --version
+#  - weeder --version
 
   # Install dependencies
   - stack build --bench --fast --install-ghc --only-dependencies --no-terminal --test
@@ -88,7 +88,7 @@ script:
 
   - hlint app ffi lib src test utils
 
-  - weeder . --build
+#  - weeder . --build
 
 # Not run because --coverage flag was removed
 #after_script:
