@@ -16,6 +16,7 @@ description:        Defines custom data structures for special use cases,
                     more abstract functions that base provides, and reexported
                     correcting to deficient libraries.
 
+
 common ghc-settings
 
   default-language: Haskell2010
@@ -51,6 +52,7 @@ common ghc-settings
                     -Wunused-imports
                     -Wunused-matches
                     -Wwrong-do-bind
+
 
 library
 

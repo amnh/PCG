@@ -1,227 +1,172 @@
-name:                pcg-file-parsers
+cabal-version:      2.2
+category:           Parser
+build-type:         Simple
 
-version:             0.0.1.1
---
--- A short (one-line) description of the package.
--- synopsis:
---
--- A longer description of the package.
--- description:
-license:             BSD3
---license-file:        LICENSE
-author:              Ward Wheeler
-maintainer:          wheeler@amnh.org
+name:               pcg-file-parsers
+version:            0.0.1.1
 
--- A copyright notice.
--- copyright:
+author:             Ward Wheeler
+maintainer:         wheeler@amnh.org
+license:            BSD-3-Clause
+license-file:       LICENSE
 
-category:            Biology
-build-type:          Simple
---extra-source-files:  README.md
+synopsis:           Parsers for the input file types accepted by PCG
 
-cabal-version:       >= 1.22
+description:        Defines file parsers for Fasta files with sequence spliting,
+                    Newick files with support for extended newick format, Nexus
+                    files (though many block types are skipped), DOT files as
+                    graph input, TNT files (though many commands are skipped),
+                    and custom file formats for parsing transition cost matrices
+                    with an alphabet, and the depricated vertex/edge/root set
+                    format.
+
+
+common ghc-settings
+
+  default-language: Haskell2010
+
+  ghc-options:      -O2
+                    -Wall
+                    -Wcompat
+                    -Wdodgy-foreign-imports
+                    -Wduplicate-exports
+                    -Wempty-enumerations
+                    -Widentities
+                    -Wincomplete-patterns
+                    -Wincomplete-record-updates
+                    -Wincomplete-uni-patterns
+                    -Wmissing-fields
+                    -Wmissing-home-modules
+                    -Wmissing-monadfail-instances
+                    -Wmissing-monadfail-instances
+                    -Wmissing-signatures
+                    -Wnoncanonical-monadfail-instances
+                    -Wnoncanonical-monad-instances
+                    -Wnoncanonical-monoid-instances
+                    -Woverflowed-literals
+                    -Woverlapping-patterns
+                    -Wredundant-constraints
+                    -Wsemigroup
+                    -Wtabs
+                    -Wunrecognised-warning-flags
+                    -Wunrecognised-warning-flags
+                    -Wunused-binds
+                    -Wunused-do-bind
+                    -Wunused-foralls
+                    -Wunused-imports
+                    -Wunused-matches
+                    -Wwrong-do-bind
+
+  other-extensions: MonadFailDesugaring
+
 
 library
 
-  build-depends:       base               >=4.10
-                     , case-insensitive
-                       -- >=0.5.8 Required for Data.Map.restrictKeys
-                     , containers         >=0.5.8
-                     , dlist
-                     , graphviz
-                     , keys
-                     , megaparsec         >=6.4.0
-                     , parser-combinators >=0.2.0
-                     , pcg-utility
-                     , safe
-                     , scientific
-                     , semigroupoids
---                     , split
-                     , text
-                     , vector
+  import:           ghc-settings
 
-  default-language:    Haskell2010
+  build-depends:    base               >=4.10
+                  , case-insensitive
+                  -- >=0.5.8 Required for Data.Map.restrictKeys
+                  , containers         >=0.5.8
+                  , dlist
+                  , graphviz
+                  , keys
+                  , megaparsec         >=6.4.0
+                  , parser-combinators >=0.2.0
+                  , pcg-utility
+                  , safe
+                  , scientific
+                  , semigroupoids
+                  , text
+                  , vector
 
-  hs-source-dirs:      src
+  hs-source-dirs:   src
 
-  ghc-options:         -O2
+  exposed-modules:  File.Format.Dot
+                    File.Format.Fasta
+                    File.Format.Fastc
+                    File.Format.Newick
+                    File.Format.Nexus
+                    File.Format.TNT
+                    File.Format.TransitionCostMatrix
+                    File.Format.VertexEdgeRoot
 
-                    -- Sanity check warnings
-                       -Wall
-                       -Wcompat
-                       -Wdodgy-foreign-imports
-                       -Wduplicate-exports
-                       -Wempty-enumerations
-                       -Widentities
-                       -Wincomplete-patterns
-                       -Wincomplete-record-updates
-                       -Wincomplete-uni-patterns
-                       -Wmissing-fields
-                       -Wmissing-home-modules
-                       -Wmissing-monadfail-instances
-                       -Wmissing-monadfail-instances
-                       -Wmissing-signatures
-                       -Wnoncanonical-monadfail-instances
-                       -Wnoncanonical-monad-instances
-                       -Wnoncanonical-monoid-instances
-                       -Woverflowed-literals
-                       -Woverlapping-patterns
-                       -Wredundant-constraints
-                       -Wsemigroup
-                       -Wtabs
-                       -Wunrecognised-warning-flags
-                       -Wunrecognised-warning-flags
-                       -Wunused-binds
-                       -Wunused-do-bind
-                       -Wunused-foralls
-                       -Wunused-imports
-                       -Wunused-matches
-                       -Wwrong-do-bind
-
-  -- Modules exported by the library.
-  exposed-modules:     File.Format.Dot
-                       File.Format.Fasta
-                       File.Format.Fastc
-                       File.Format.Newick
-                       File.Format.Nexus
-                       File.Format.TNT
-                       File.Format.TransitionCostMatrix
-                       File.Format.VertexEdgeRoot
-
-  -- Modules included in this library but not exported.
-  other-modules:       File.Format.TNT.Command.CCode
-                       File.Format.TNT.Command.CNames
-                       File.Format.TNT.Command.Cost
-                       File.Format.TNT.Command.NStates
-                       File.Format.TNT.Command.Procedure
-                       File.Format.TNT.Command.TRead
-                       File.Format.TNT.Command.XRead
-                       File.Format.TNT.Parser
-                       File.Format.TNT.Partitioning
-                       File.Format.TNT.Internal
-                       File.Format.Fasta.Converter
-                       File.Format.Fasta.Internal
-                       File.Format.Fasta.Parser
-                       File.Format.Fastc.Parser
-                       File.Format.Newick.Internal
-                       File.Format.Newick.Parser
-                       File.Format.Nexus.Data
-                       File.Format.Nexus.Parser
-                       File.Format.Nexus.Partition
-                       File.Format.Nexus.Validate
-                       File.Format.TransitionCostMatrix.Parser
-                       File.Format.VertexEdgeRoot.Parser
-                       Text.Megaparsec.Custom
-
-  other-extensions:    MonadFailDesugaring
+  other-modules:    File.Format.Fasta.Converter
+                    File.Format.Fasta.Internal
+                    File.Format.Fasta.Parser
+                    File.Format.Fastc.Parser
+                    File.Format.Newick.Internal
+                    File.Format.Newick.Parser
+                    File.Format.Nexus.Data
+                    File.Format.Nexus.Parser
+                    File.Format.Nexus.Partition
+                    File.Format.Nexus.Validate
+                    File.Format.TNT.Command.CCode
+                    File.Format.TNT.Command.CNames
+                    File.Format.TNT.Command.Cost
+                    File.Format.TNT.Command.NStates
+                    File.Format.TNT.Command.Procedure
+                    File.Format.TNT.Command.TRead
+                    File.Format.TNT.Command.XRead
+                    File.Format.TNT.Parser
+                    File.Format.TNT.Partitioning
+                    File.Format.TNT.Internal
+                    File.Format.TransitionCostMatrix.Parser
+                    File.Format.VertexEdgeRoot.Parser
+                    Text.Megaparsec.Custom
 
 
 Test-Suite unit-tests
 
-  type:                exitcode-stdio-1.0
+  import:           ghc-settings
 
-  main-is:             TestSuite.hs
+  type:             exitcode-stdio-1.0
 
-  build-depends:       base               >=4.8
-                     , case-insensitive
-                       -- >=0.5.8 Required for Data.Map.restrictKeys
-                     , containers         >=0.5.8
-                     , dlist
-                     , either
---                     , graphviz
-                     , keys
-                     , megaparsec         >=6.0.0
-                     , parser-combinators >=0.2.0
-                     , pcg-utility
-                     , safe
-                     , scientific
---                     , semigroupoids
-                     , smallcheck
---                     , split
-                     , tasty
-                     , tasty-hunit
-                     , tasty-quickcheck
---                     , tasty-smallcheck
---                     , text
-                     , vector
+  main-is:          TestSuite.hs
 
-  default-language:    Haskell2010
+  build-depends:    base               >=4.8
+                  , case-insensitive
+                  -- >=0.5.8 Required for Data.Map.restrictKeys
+                  , containers         >=0.5.8
+                  , dlist
+                  , either
+                  , keys
+                  , megaparsec         >=6.0.0
+                  , parser-combinators >=0.2.0
+                  , pcg-utility
+                  , safe
+                  , scientific
+                  , smallcheck
+                  , tasty
+                  , tasty-hunit
+                  , tasty-quickcheck
+                  , vector
 
-  hs-source-dirs:      src, test
+  hs-source-dirs:   src, test
 
-  ghc-options:         -O2
-                       -threaded
-
-                    -- Sanity check warnings
-                       -Wall
-                       -Wcompat
-                       -Wdodgy-foreign-imports
-                       -Wduplicate-exports
-                       -Wempty-enumerations
-                       -Widentities
-                       -Wincomplete-patterns
-                       -Wincomplete-record-updates
-                       -Wincomplete-uni-patterns
-                       -Wmissing-fields
-                       -Wmissing-home-modules
-                       -Wmissing-monadfail-instances
-                       -Wmissing-monadfail-instances
-                       -Wmissing-signatures
-                       -Wnoncanonical-monadfail-instances
-                       -Wnoncanonical-monad-instances
-                       -Wnoncanonical-monoid-instances
-                       -Woverflowed-literals
-                       -Woverlapping-patterns
-                       -Wredundant-constraints
-                       -Wsemigroup
-                       -Wtabs
-                       -Wunrecognised-warning-flags
-                       -Wunrecognised-warning-flags
-                       -Wunused-binds
-                       -Wunused-do-bind
-                       -Wunused-foralls
-                       -Wunused-imports
-                       -Wunused-matches
-                       -Wwrong-do-bind
+  ghc-options:      -threaded
 
   other-modules:
---                       File.Format.Fasta
---                       File.Format.Fasta.Converter
                        File.Format.Fasta.Internal
                        File.Format.Fasta.Parser
                        File.Format.Fasta.Test
---                       File.Format.Fastc
                        File.Format.Fastc.Parser
                        File.Format.Fastc.Test
---                       File.Format.Newick
                        File.Format.Newick.Internal
                        File.Format.Newick.Parser
                        File.Format.Newick.Test
---                       File.Format.Nexus
---                       File.Format.Nexus.Data
---                       File.Format.Nexus.Parser
---                       File.Format.Nexus.Partition
---                       File.Format.Nexus.Validate
---                       File.Format.TNT
                        File.Format.TNT.Command.CCode
                        File.Format.TNT.Command.CNames
---                       File.Format.TNT.Command.Cost
---                       File.Format.TNT.Command.NStates
                        File.Format.TNT.Command.Procedure
                        File.Format.TNT.Command.TRead
                        File.Format.TNT.Command.XRead
                        File.Format.TNT.Internal
---                       File.Format.TNT.Parser
---                       File.Format.TNT.Partitioning
                        File.Format.TNT.Test
---                       File.Format.TransitionCostMatrix
                        File.Format.TransitionCostMatrix.Parser
                        File.Format.TransitionCostMatrix.Test
---                       File.Format.VertexEdgeRoot
                        File.Format.VertexEdgeRoot.Parser
                        File.Format.VertexEdgeRoot.Test
                        Test.Custom.Parse
---                       Test.Custom.Types
                        Text.Megaparsec.Custom
                        Text.Megaparsec.Custom.Test
 
@@ -231,103 +176,23 @@ Executable file-tests
   main-is:             FileTests.hs
 
   build-depends:       base               >=4.8
---                     , case-insensitive
-                       -- >=0.5.8 Required for Data.Map.restrictKeys
+                     -- >=0.5.8 Required for Data.Map.restrictKeys
                      , containers         >=0.5.8
                      , directory
---                     , dlist
---                     , either
---                     , graphviz
---                     , keys
                      , megaparsec         >=6.0.0
---                     , parser-combinators >=0.2.0
                      , pcg-file-parsers
---                     , pcg-utility
---                     , safe
---                     , scientific
---                     , semigroupoids
---                     , smallcheck
---                     , split
                      , tasty
                      , tasty-hunit
---                     , tasty-quickcheck
---                     , tasty-smallcheck
---                     , text
---                     , vector
-
-  default-language:    Haskell2010
 
   hs-source-dirs:      test
 
-  ghc-options:         -O2
-                       -threaded
+  ghc-options:         -threaded
 
-                    -- Sanity check warnings
-                       -Wall
-                       -Wcompat
-                       -Wdodgy-foreign-imports
-                       -Wduplicate-exports
-                       -Wempty-enumerations
-                       -Widentities
-                       -Wincomplete-patterns
-                       -Wincomplete-record-updates
-                       -Wincomplete-uni-patterns
-                       -Wmissing-fields
-                       -Wmissing-home-modules
-                       -Wmissing-monadfail-instances
-                       -Wmissing-monadfail-instances
-                       -Wmissing-signatures
-                       -Wnoncanonical-monadfail-instances
-                       -Wnoncanonical-monad-instances
-                       -Wnoncanonical-monoid-instances
-                       -Woverflowed-literals
-                       -Woverlapping-patterns
-                       -Wredundant-constraints
-                       -Wsemigroup
-                       -Wtabs
-                       -Wunrecognised-warning-flags
-                       -Wunrecognised-warning-flags
-                       -Wunused-binds
-                       -Wunused-do-bind
-                       -Wunused-foralls
-                       -Wunused-imports
-                       -Wunused-matches
-                       -Wwrong-do-bind
-
-  other-modules:
---                       File.Format.Fasta
---                       File.Format.Fasta.Converter
---                       File.Format.Fasta.Internal
---                       File.Format.Fasta.Parser
---                       File.Format.Fastc
---                       File.Format.Fastc.Parser
---                       File.Format.Newick
---                       File.Format.Newick.Internal
---                       File.Format.Newick.Parser
---                       File.Format.Nexus
---                       File.Format.Nexus.Data
---                       File.Format.Nexus.Parser
---                       File.Format.Nexus.Partition
---                       File.Format.Nexus.Validate
---                       File.Format.TNT
---                       File.Format.TNT.Command.CCode
---                       File.Format.TNT.Command.CNames
---                       File.Format.TNT.Command.Cost
---                       File.Format.TNT.Command.NStates
---                       File.Format.TNT.Command.Procedure
---                       File.Format.TNT.Command.TRead
---                       File.Format.TNT.Command.XRead
---                       File.Format.TNT.Internal
---                       File.Format.TNT.Parser
---                       File.Format.TNT.Partitioning
---                       File.Format.TransitionCostMatrix
---                       File.Format.TransitionCostMatrix.Parser
-                       Test.Custom.Parse
---                       Test.Custom.Types
+  other-modules:       Test.Custom.Parse
                        TestSuite.GeneratedTests
                        TestSuite.GeneratedTests.Fasta
                        TestSuite.GeneratedTests.Fastc
                        TestSuite.GeneratedTests.Internal
                        TestSuite.GeneratedTests.Nexus
                        TestSuite.GeneratedTests.TNT
---                       Text.Megaparsec.Custom
+
