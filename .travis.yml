@@ -17,7 +17,7 @@ sudo: true
 before_install:
   # MacOS setups
   # Install Cabal & GHC
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install ghc cabal-install && export PATH=/usr/local/opt/ghc/bin:$PATH; fi
+  # - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install ghc cabal-install && export PATH=/usr/local/opt/ghc/bin:$PATH; fi
 
   # Linux initial setup
   # Install required system packages, newer GCC than comes with Trusty image
