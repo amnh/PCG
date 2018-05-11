@@ -15,7 +15,6 @@
 module Bio.Character.Decoration.Continuous.Class
   ( ContinuousCharacter(..)
   , ContinuousCharacterDecoration
-  , ContinuousDecoration
   , DiscreteExtensionContinuousDecoration(..)
   , HasChildPrelimIntervals(..)
   , HasContinuousCharacter(..)

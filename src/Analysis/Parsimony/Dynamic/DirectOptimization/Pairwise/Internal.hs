@@ -17,7 +17,7 @@
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
  ( Cost
- , Direction(..)
+ , Direction()
  , DOCharConstraint
  , MatrixConstraint
  , MatrixFunction
@@ -30,8 +30,8 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
  , handleMissingCharacterThreeway
  , measureCharacters
  , needlemanWunschDefinition
- , renderCostMatrix
- , traceback
+-- , renderCostMatrix
+-- , traceback
  -- * Probably removable
  , overlap
  , overlapConst
@@ -279,6 +279,7 @@ needlemanWunschDefinition topChar leftChar overlapFunction memo p@(row, col)
                                       ( downCost,  downChar)
 
 
+{-
 -- |
 -- Serializes an alignment matrix to a 'String'. Uses input characters for row
 -- and column labelings.
@@ -356,6 +357,7 @@ renderCostMatrix lhs rhs mtx = unlines
     pad n e = replicate (n - len) ' ' <> e <> " "
       where
         len = length e
+-}
 
 
 -- |

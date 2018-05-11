@@ -13,7 +13,13 @@
 
 {-# LANGUAGE DeriveGeneric, FlexibleInstances, MultiParamTypeClasses #-}
 
-module Control.Evaluation.Internal where
+module Control.Evaluation.Internal
+  ( Evaluation(..)
+  , Notification()
+  , evaluationResult
+  , notifications
+  , prependNotifications
+  ) where
 
 import           Control.Applicative
 import           Control.DeepSeq

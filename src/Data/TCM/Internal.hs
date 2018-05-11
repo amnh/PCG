@@ -13,7 +13,20 @@
 {-# LANGUAGE Strict       #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Data.TCM.Internal where
+module Data.TCM.Internal
+  ( TCM(..)
+  , TCMDiagnosis(..)
+  , TCMStructure(..)
+  , (!)
+  , (!?)
+  , diagnoseTcm
+  , generate
+  , size
+  , fromList
+  , fromCols
+  , fromRows
+  , reduceTcm
+  ) where
 
 import           Control.Arrow                 ((***))
 import           Data.Foldable

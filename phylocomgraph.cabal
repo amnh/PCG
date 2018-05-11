@@ -117,9 +117,9 @@ library
 
   build-depends:      base               >=4.10
                     , bimap
-                    , blaze-html
+--                    , blaze-html
                     , bv-little
-                    , case-insensitive
+--                    , case-insensitive
                     -- >=0.5.8 Required for Data.Map.restrictKeys
                     , containers         >=0.5.8
                     , deepseq
@@ -127,7 +127,7 @@ library
                     , dlist
                     , graphviz
                     , hashable
-                    , hashtables
+--                    , hashtables
                     , integer-gmp
                     , keys
                     , lens
@@ -138,9 +138,9 @@ library
                     , pcg-utility
                     , pointed
                     , pretty-tree
-                    , primitive
+--                    , primitive
                     , QuickCheck
-                    , scientific
+--                    , scientific
                     -- required for Data.Semigroup.Foldable.toNonEmpty
                     , semigroupoids      >=5.2.1
                     , semigroups
@@ -204,6 +204,7 @@ library
                     Data.TCM.Memoized.FFI
                     Data.TopologyRepresentation
                     Data.NodeLabel
+                    Data.Vector.NonEmpty
 --                    Text.HTML.Class
 --                    Text.HTML.Custom
                     Text.Newick.Class
@@ -284,7 +285,6 @@ library
                     Data.EdgeSet
                     Data.Range
                     Data.TCM.Internal
-                    Data.Vector.NonEmpty
                     Test.QuickCheck.Arbitrary.Instances
                     Text.XML.Class
 
@@ -486,7 +486,7 @@ Test-Suite testsuite
                     , deepseq
                     , dlist
 --                    , either
-                    , graphviz
+--                    , graphviz
                     , hashable
 --                    , hashtables
                     , integer-gmp
@@ -495,7 +495,7 @@ Test-Suite testsuite
                     , mono-traversable   >=1.0
                     , mtl
 --                    , parallel
-                    , pcg-file-parsers
+--                    , pcg-file-parsers
                     , pcg-utility
                     , pointed
 --                    , pretty-tree
