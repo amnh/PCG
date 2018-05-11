@@ -88,7 +88,7 @@ script:
 
   - hlint app ffi lib src test utils
 
-  - weeder .
+  - weeder . --build
 
 # Not run because --coverage flag was removed
 #after_script:
