@@ -1,0 +1,26 @@
+- package:
+  - name: pcg-file-parsers
+  - section:
+    - name: exe:file-tests test:unit-tests
+    - message:
+      - name: Module reused between components
+      - module: Test.Custom.Parse
+  - section:
+    - name: library test:unit-tests
+    - message:
+      - name: Module reused between components
+      - module:
+        - File.Format.Fasta.Internal
+        - File.Format.Fasta.Parser
+        - File.Format.Fastc.Parser
+        - File.Format.Newick.Internal
+        - File.Format.Newick.Parser
+        - File.Format.TNT.Command.CCode
+        - File.Format.TNT.Command.CNames
+        - File.Format.TNT.Command.Procedure
+        - File.Format.TNT.Command.TRead
+        - File.Format.TNT.Command.XRead
+        - File.Format.TNT.Internal
+        - File.Format.TransitionCostMatrix.Parser
+        - File.Format.VertexEdgeRoot.Parser
+        - Text.Megaparsec.Custom
