@@ -55,7 +55,7 @@ import           Data.Ord
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Numeric.Extended.Natural
-import           Prelude            hiding (lookup, zipWith)
+import           Prelude            hiding (lookup)
 
 
 -- |

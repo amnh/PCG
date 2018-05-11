@@ -44,7 +44,7 @@ import           Data.TCM.Memoized
 import           Data.MonoTraversable
 import           Data.Word
 import           Numeric.Extended.Natural
-import           Prelude     hiding (lookup, zipWith)
+import           Prelude     hiding (lookup)
 
 -- import Debug.Trace
 
