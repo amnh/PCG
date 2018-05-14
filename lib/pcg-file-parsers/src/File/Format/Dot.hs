@@ -27,12 +27,12 @@ module File.Format.Dot
 
 
 import           Control.Arrow             ((&&&))
+import           Data.Foldable
 import           Data.GraphViz.Parsing
 import           Data.GraphViz.Types
 import           Data.GraphViz.Types.Generalised
 import           Data.Key
 import           Data.Map                  (Map, fromSet, insertWith)
-import           Data.Maybe
 import           Data.Monoid
 import           Data.Set                  (Set)
 import qualified Data.Set           as S
@@ -92,7 +92,7 @@ sharedWork logic dot = fromSet getAdjacency setOfNodes
     -- Get the map of directed edges.
     -- Missing nodes with out degree 0.
     edgeMap      = foldr logic mempty . dotEdgeSet
-    getAdjacency = fromMaybe mempty . (`lookup` setOfEdges)
+    getAdjacency = fold . (`lookup` setOfEdges)
     setOfEdges   = edgeMap    dot
     setOfNodes   = dotNodeSet dot 
 

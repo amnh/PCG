@@ -13,7 +13,11 @@
 
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
-module File.Format.TNT.Command.CCode where
+module File.Format.TNT.Command.CCode
+  ( ccodeCommand
+  , ccodeHeader
+  , ccodeCharacterState
+  ) where
 
 import Data.CaseInsensitive
 import Data.List.NonEmpty       (some1)

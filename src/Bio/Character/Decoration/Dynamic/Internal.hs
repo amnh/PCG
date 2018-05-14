@@ -14,7 +14,12 @@
 
 {-# LANGUAGE UndecidableInstances #-}
 
-module Bio.Character.Decoration.Dynamic.Internal where
+module Bio.Character.Decoration.Dynamic.Internal
+  ( DynamicDecorationDirectOptimization(..)
+  , DynamicDecorationDirectOptimizationPostOrderResult(..)
+  , DynamicDecorationImpliedAlignment(..)
+  , DynamicDecorationInitial(..)
+  ) where
 
 import Bio.Character.Decoration.Dynamic.Class
 import Bio.Character.Decoration.Shared

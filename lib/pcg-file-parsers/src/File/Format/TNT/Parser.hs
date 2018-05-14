@@ -15,7 +15,9 @@
 
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
-module File.Format.TNT.Parser where
+module File.Format.TNT.Parser
+  ( tntStreamParser
+  ) where
 
 import           Control.Monad            ((<=<),liftM3)
 import           Data.CaseInsensitive

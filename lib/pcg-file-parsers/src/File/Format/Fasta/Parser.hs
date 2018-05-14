@@ -14,7 +14,16 @@
 
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
-module File.Format.Fasta.Parser where
+module File.Format.Fasta.Parser
+  ( FastaParseResult
+  , FastaSequence(..)
+  , fastaStreamParser
+  , fastaTaxonSequenceDefinition
+  , fastaSequence
+  , iupacAminoAcidChars
+  , iupacNucleotideChars
+  , iupacRNAChars
+  ) where
 
 import Control.Arrow              ((&&&))
 import Control.Monad              ((<=<))
@@ -54,7 +63,7 @@ fastaStreamParser = validate =<< seqTranslation <$> (some fastaTaxonSequenceDefi
 fastaTaxonSequenceDefinition :: (MonadParsec e s m, Token s ~ Char) => m FastaSequence
 fastaTaxonSequenceDefinition = do
     name <- fastaTaxonName
-    seq' <- try fastaSequence <?> ("Unable to read character sequence for taxon: '" ++ name ++ "'")
+    seq' <- try fastaSequence <?> ("Unable to read character sequence for taxon: '" <> name <> "'")
     _    <- space
     pure $ FastaSequence name seq'
 
@@ -88,8 +97,8 @@ symbolSequence sym = space *> fullSequence
 alphabet, otherValidChars, iupacAminoAcidChars, iupacNucleotideChars, iupacRNAChars :: String
 alphabet             = unionAll [iupacAminoAcidChars, iupacNucleotideChars, iupacRNAChars]
 otherValidChars      = ".-?#"
-iupacAminoAcidChars  = caseInsensitiveOptions $ "ACDEFGHIKLMNPQRSTVWY" ++ otherValidChars
-iupacNucleotideChars = caseInsensitiveOptions $ "ACGTRYSWKMBDHVN"      ++ otherValidChars
+iupacAminoAcidChars  = caseInsensitiveOptions $ "ACDEFGHIKLMNPQRSTVWY" <> otherValidChars
+iupacNucleotideChars = caseInsensitiveOptions $ "ACGTRYSWKMBDHVN"      <> otherValidChars
 iupacRNAChars        = f <$> iupacNucleotideChars
   where
     f x 
@@ -141,7 +150,7 @@ validateIdentifierConsistency xs =
   where
     dupes = duplicates $ taxonName <$> xs
     errors         = errorMessage <$> dupes
-    errorMessage x = "Multiple taxon labels found identified by: '"++x++"'" 
+    errorMessage x = "Multiple taxon labels found identified by: '"<>x<>"'" 
 
 
 -- |

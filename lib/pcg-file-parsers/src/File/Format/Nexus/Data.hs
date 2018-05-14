@@ -12,7 +12,36 @@
 --
 -----------------------------------------------------------------------------
 
-module File.Format.Nexus.Data where
+module File.Format.Nexus.Data
+  ( Sequences
+  , AlphabetSymbol
+  , AmbiguityGroup
+  , TaxonIdentifier
+  , CharacterMetadata(..)
+  , Character
+  , Sequence
+  , TaxonSequenceMap
+  , AssumptionBlock(..)
+  , AssumptionField(..)
+  , CharFormatField(..)
+--  , CharStateFormat(..)
+  , CharacterFormat(..)
+  , CharDataType(..)
+  , DimensionsFormat(..)
+  , IgnBlock(..)
+  , Nexus(..)
+  , NexusBlock(..)
+  , NexusParseResult(..)
+  , PhyloSequence(..)
+  , SeqSubBlock(Matrix, Format, Dims, Eliminate, CharLabels, IgnSSB, Taxa)
+  , StepMatrix(..)
+  , TaxaSpecification(..)
+--  , TreeName
+--  , SerializedTree
+  , TreeBlock(..)
+  , TreeField(..)
+--  , SequenceBlock(..)
+  ) where
 
 import qualified Data.Map.Lazy as M
 import qualified Data.Vector   as V
@@ -89,7 +118,8 @@ type TaxonSequenceMap = M.Map TaxonIdentifier Sequence
 -------------- Types for parsing and validation --------------
 --------------------------------------------------------------
 
--- | AssumptionBlock is a spec'd block in Nexus format. We're only interested in a single entity in this block
+-- |
+-- AssumptionBlock is a spec'd block in Nexus format. We're only interested in a single entity in this block
 -- for now, the step matrix, but this datatype is included for later extensibility
 data AssumptionBlock
    = AssumptionBlock
@@ -97,13 +127,16 @@ data AssumptionBlock
    , add :: [Bool]
    } deriving (Show)
 
+
 -- | AssumptionField is a list of fields in the Assumptions block.
 data AssumptionField
    = TCMMat StepMatrix
    | Add    Bool
    | IgnAF  String
 
--- | The different subfields of the Format field in the sequence blocks.
+
+-- |
+-- The different subfields of the Format field in the sequence blocks.
 -- As with SeqSubBlock, listed simply so that it can be "looped" over. Will eventually be
 -- coverted to CharacterFormat data type for export
 -- TODO: better documentation on the use of each field below
@@ -123,6 +156,7 @@ data CharFormatField
    | IgnFF       String -- for non-standard inputs, plus notokens, which is the default anyway
    deriving (Eq,Show)
 
+
 -- | CharStateFormat is currently unused, but may be in future. Included here for completeness.
 data CharStateFormat
    = CharStateFormat
@@ -131,8 +165,10 @@ data CharStateFormat
    , stateName :: [String]
    } deriving (Show)
 
--- | CharacterFormat
--- Note that symbols may or may not be space-delimited. I work under the assumption that it is iff
+
+-- |
+-- CharacterFormat
+-- Note that symbols may or may not be space-delimited. I work under the assumption that it is iff.
 -- Tokens is spec'd, as well.
 data CharacterFormat
    = CharacterFormat
@@ -150,7 +186,9 @@ data CharacterFormat
    , unlabeled    :: Bool
    } deriving (Eq,Show)
 
--- | The types of data which can be present in a Nexus file.
+
+-- |
+-- The types of data which can be present in a Nexus file.
 -- This type might get scrapped and another type imported from
 -- different module, or preserved but moved to another module.
 data CharDataType
@@ -162,7 +200,9 @@ data CharDataType
     | Continuous
     deriving (Eq, Read, Show)
 
--- | DimensionsFormat is format of dimensions field in characters and unaligned nexus blocks.
+
+-- |
+-- DimensionsFormat is format of dimensions field in characters, data and unaligned nexus blocks.
 -- It could also actually be used for the dimensions in the taxa block, with newTaxa = False
 -- and numChars = 0
 data DimensionsFormat
@@ -172,8 +212,10 @@ data DimensionsFormat
    , numChars :: Int
    } deriving (Show)
 
+
 -- | Where any information that should be ignored is stored.
 newtype IgnBlock = IgnBlock {ignoredName :: String} deriving (Show)
+
 
 -- | The collection of information extracted from blocks in the Nexus file.
 data Nexus
@@ -185,6 +227,7 @@ data Nexus
    , nexusForests :: [NewickForest]
    } deriving (Show)
 
+
 -- | Types blocks in the Nexus file and their accompanying data.
 data NexusBlock
    = TaxaBlock        TaxaSpecification
@@ -193,6 +236,7 @@ data NexusBlock
    | SkippedBlock     IgnBlock
    | AssumptionsBlock AssumptionBlock
    deriving (Show)
+
 
 -- | The output type of the Nexus parser, containing the results of each block in the file, sorted by type.
 data NexusParseResult
@@ -203,6 +247,7 @@ data NexusParseResult
    , assumpB :: [AssumptionBlock]
    , ign     :: [IgnBlock]
    } deriving (Show)
+
 
 -- | Phylosequence is general sequence type, to be used for both characters and data blocks (aligned) and unaligned blocks.
 data PhyloSequence
@@ -217,7 +262,9 @@ data PhyloSequence
    , blockType     :: String -- characters, taxa or data
    } deriving (Show)
 
--- | SeqSubBlock is list of fields available in sequence blocks. It's set up as an enumeration
+
+-- |
+-- SeqSubBlock is list of fields available in sequence blocks. It's set up as an enumeration
 -- so that it can be "looped" over when parsing the sequence blocks, as the order of the fields
 -- is not documented.
 data SeqSubBlock
@@ -232,6 +279,7 @@ data SeqSubBlock
    | Taxa            [String]
    deriving (Show)
 
+
 -- | StepMatrix is type to be pulled from Assumptions block.
 data StepMatrix
    = StepMatrix
@@ -240,7 +288,9 @@ data StepMatrix
    , matrixData :: TCM
    } deriving (Show)
 
--- | TaxaSpecification holds the number of taxa and the list of taxa names. It's collected from a taxa block, and appears as a subtype
+
+-- |
+-- TaxaSpecification holds the number of taxa and the list of taxa names. It's collected from a taxa block, and appears as a subtype
 -- of NexusBlock. Used for verification.
 data TaxaSpecification
    = TaxaSpecification
@@ -248,25 +298,34 @@ data TaxaSpecification
    , taxaLabels :: [String]
    } deriving (Show)
 
--- |
+
+-- | (✓)
 type TreeName       = String
 
--- |
-type SerializedTree = String
 
--- |
+{-
+-- | (✓)
+type SerializedTree = String
+-}
+
+
+-- | (✓)
 data TreeBlock
    = TreeBlock
    { translate :: [[String]]
    , trees     :: [(TreeName, NewickNode)]
    } deriving (Show)
 
+
+-- | (✓)
 data TreeField
    = Translation [String]
    | Tree        (TreeName, NewickNode)
    | IgnTF       String
    deriving (Show)
 
+
+-- | (✓)
 data SequenceBlock
    = SequenceBlock
    { meta     :: CharacterMetadata
@@ -274,8 +333,11 @@ data SequenceBlock
    , seqs     :: [V.Vector (String, [String])]
    } deriving (Show)
 
+
+{-
 standardAlphabet :: [String]
 standardAlphabet = ["0","1"]
+
 
 dna :: M.Map String [String]
 dna = M.fromList [ ("A",["A"])
@@ -300,6 +362,7 @@ dna = M.fromList [ ("A",["A"])
 dnaAlphabet :: [String]
 dnaAlphabet = M.keys dna
 
+
 rna :: M.Map String [String]
 rna = M.fromList [ ("A",["A"])
                  , ("C",["C"])
@@ -322,11 +385,14 @@ rna = M.fromList [ ("A",["A"])
 rnaAlphabet :: [String]
 rnaAlphabet = M.keys rna
 
+
 nucleotide :: M.Map String [String]
 nucleotide = M.insert "U" ["T"] dna
 
+
 nucleotideAlphabet :: [String]
 nucleotideAlphabet = "U" : dnaAlphabet
+
 
 protein :: M.Map String [String]
 protein = M.fromList [ ("A",["A"])
@@ -356,3 +422,4 @@ protein = M.fromList [ ("A",["A"])
 
 proteinAlphabet :: [String]
 proteinAlphabet = M.keys protein
+-}

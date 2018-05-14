@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../costMatrix_2d.h"
+#include "../costMatrix_2d.hpp"
 #include "../dynamicCharacterOperations.h"
 
 #define __STDC_FORMAT_MACROS
@@ -96,7 +96,7 @@ int main() {
         for(size_t setIdx = 0; setIdx < numSetInKey; ++setIdx) {
             SetBit(secondKey->element, rand() % alphabetSize);
         }
-        
+
         printf("Input:\n");
         printf("  Key #1: "); printPackedChar(firstKey->element,  1, alphabetSize); printf("\n");
         printf("  Key #2: "); printPackedChar(secondKey->element, 1, alphabetSize); printf("\n");
@@ -117,7 +117,7 @@ int main() {
     free(secondKey);
     free(retMedian);
 
-    
+
     /****** An abandoned packedCharOr test that doesn't scale with alphabetSize > 64 ******/
 
     /**
@@ -130,7 +130,7 @@ int main() {
 
     printf("%" PRIu64 "\n", *result);
     printf("%" PRIu64 "\n\nDone.", *result2);
-    
+
     delete first;
     delete second;
     delete third;
@@ -138,7 +138,7 @@ int main() {
     free(result2);
     **/
 
-    
+
     /****** This next to test Yu Xiang's code, once you can. ******/
 
     // int success = aligner(seqA_main, SEQ_A_LEN, seqB_main, SEQ_B_LEN, alphabetSize, getCostMatrix(myMatrix), &retMedChar);

@@ -1,4 +1,3 @@
-{-# ANN module "HLint: ignore Evaluate" #-}
 {-# LANGUAGE FlexibleInstances #-}
 
 module Data.BitMatrix.Test

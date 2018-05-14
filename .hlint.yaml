@@ -1,16 +1,68 @@
 # HLint configuration file
 # https://github.com/ndmitchell/hlint
 
-- group: {name: generalise, enabled: true}
 
-# Ignoring certain hints in test-suites
-# These hints are inapplicable since the test-suites are testing the properties
-# that the hint assumes to be true.
+# Custom warning hints
+- warn: { note: Prefer pure to reduce Monad constraint
+        , lhs: return x
+        , rhs: pure x
+        }
+- warn: { note: Use more general Foldable typeclass instance
+        , lhs: maybeToList x
+        , rhs: toList x
+        }
+- warn: { note: Use more general Indexable typeclass instance
+        , lhs: (!!)
+        , rhs: (!)
+        }
+- warn: { note: Use more general custom parmap function
+        , lhs: parMap
+        , rhs: parmap
+        }
 
-- ignore: {name: "Functor law", within: ["Control.Evaluation.Test"] }
 
-- ignore: {name: Use >=>, within: [Control.Evaluation.Test] }
-
-
+# Replace a $ b $ c with a . b $ c
+- group: { name: dollar, enabled: true }
 
 
+# Generalise map to fmap, ++ to <>
+- group: { name: generalise, enabled: true }
+
+
+# Generalise Maybe, Either functions to fold, foldMap
+- group: { name: generalise-for-conciseness, enabled: true }
+
+
+# Ignore some builtin hint in test modules where we need to test the hint.
+# These hints are inapplicable within test modules since the test-suites are
+# testing the properties that the hint assumes to be true.
+- ignore: { name: Evaluate
+          , within:
+            [ Bio.Character.Encodable.Dynamic.Test
+            , Bio.Character.Encodable.Static.Test
+            , Data.BitMatrix.Test
+            , Numeric.Extended.Natural.Test
+            , Numeric.Extended.Real.Test
+            ]
+          }
+- ignore: { name: Use >=>
+          , within:
+            [ Control.Evaluation.Test
+            ]
+          }
+- ignore: { name: "Functor law"
+          , within:
+            [ Control.Evaluation.Test
+            ]
+          }
+
+
+# unsafePerformIO can only appear in FFI modules
+- functions:
+  - { name: unsafePerformIO
+    , within:
+      [ Data.TCM.Memoized.FFI
+      , Analysis.Parsimony.Dynamic.SequentialAlign.FFI
+      , Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
+      ]
+    }

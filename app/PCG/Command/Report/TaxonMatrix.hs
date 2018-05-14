@@ -44,7 +44,7 @@ taxonReferenceOutput sol files = printIt $ makeRef sol files
             where
                 presenceMatrix = matrix (length allNodes) (length checkPos) gen
                 gen :: (Int,Int) -> Bool
-                --gen (i,j) | trace ("gen on row " ++ show i ++ " " ++ show (length (allSeqs ! (allNodes V.! i))) ++ " " ++ show (checkPos V.! j)) False = undefined
+                --gen (i,j) | trace ("gen on row " <> show i <> " " <> show (length (allSeqs ! (allNodes V.! i))) <> " " <> show (checkPos V.! j)) False = undefined
                 gen (i,j) = isJust $ (allSeqs ! (allNodes V.! i)) V.! (checkPos V.! j)
                   
                 filterNames taxonName = null inFilter || taxonName `elem` inFilter
@@ -60,8 +60,8 @@ taxonReferenceOutput sol files = printIt $ makeRef sol files
 
 
 printIt :: TaxaPresence -> String
-printIt (mat, taxa, files) = header ++ ifoldr (\i taxaName acc -> acc ++ "\n" ++ taxaName ++ printRow (getRow i mat)) mempty (V.fromList taxa)
+printIt (mat, taxa, files) = header <> ifoldr (\i taxaName acc -> acc <> "\n" <> taxaName <> printRow (getRow i mat)) mempty (V.fromList taxa)
     where
-        header = foldr (\fileName acc -> acc ++ ", " ++ fileName) "Taxa" files
-        printRow = V.foldr (\b acc -> if b then ", +" ++ acc else ", -" ++ acc) mempty
+        header = foldr (\fileName acc -> acc <> ", " <> fileName) "Taxa" files
+        printRow = V.foldr (\b acc -> if b then ", +" <> acc else ", -" <> acc) mempty
 

@@ -6,7 +6,9 @@ import Control.Arrow    ((&&&))
 import Data.Map         (Map,fromList)
 import System.Directory
 
--- | Gets all the given files and thier contents in the specified directory
+
+-- |
+-- Gets all the given files and thier contents in the specified directory
 getFileContentsInDirectory :: FilePath -> IO (Map FilePath String)
 getFileContentsInDirectory path = do
     exists <- doesDirectoryExist path
@@ -18,5 +20,5 @@ getFileContentsInDirectory path = do
   where
     isFile = not . all (=='.')
     withPath file = if last path /= '/'
-                    then path ++ "/" ++ file
-                    else path ++ file
+                    then path <> "/" <> file
+                    else path <> file

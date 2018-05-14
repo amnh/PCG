@@ -37,7 +37,7 @@ identifier' = testGroup "identifier" [invariant, valid, invalid]
     success str   = testCase (show str) $ parseEquals  (identifier <* eof) str str
     failure str   = testCase (show str) $ parseFailure (identifier <* eof) str
     invalidTaxonLabels =
-      [ x ++ [s] ++ y |  e    <- validTaxonLabels
+      [ x <> [s] <> y |  e    <- validTaxonLabels
                       ,  s    <- "$ \t\r\n"
                       ,  i    <- [length e `div` 2]
                       , (x,y) <- [i `splitAt` e] 
@@ -153,7 +153,7 @@ fastaTaxonSequenceDefinition' = testGroup "fastaTaxonSequenceDefinition" [valid]
 
 
 validTaxonLines     :: [(String,String)]
-validTaxonLines     = validTaxonCommentLines ++ validTaxonCommentlessLines
+validTaxonLines     = validTaxonCommentLines <> validTaxonCommentlessLines
 validTaxonSequences :: [(FastaSequence,String)]
 validTaxonSequences = zipWith f validTaxonLines validSequences
   where

@@ -22,8 +22,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
-  ( CostMatrix2d
-  , DenseTransitionCostMatrix
+  ( DenseTransitionCostMatrix
   , foreignPairwiseDO
   , foreignThreeWayDO
   , generateDenseTransitionCostMatrix

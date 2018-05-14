@@ -1,53 +1,82 @@
 \documentclass{article}
 \usepackage{amsmath}
 \usepackage{algorithm}
-\usepackage[noend]{algpseudocode}
+\usepackage{algpseudocode}
 
 \begin{document}
-\renewcommand{\algorithmiccomment}[1]{// #1}
+%%------------------------------------------------------------------------%%
+%%% See resolve_all_trees.py for legible, working subset generation code %%%
+%%------------------------------------------------------------------------%%
+\newcommand{\comment}[1]{\hskip1em// #1}
+\alglanguage{pseudocode}
+
 \begin{algorithm}
-\caption{Enumerate all trees for given taxon set}\label{euclid}
+\caption{Enumerate all trees for given taxon set}\label{create_trees}
 \begin{algorithmic}[1]
 
-\Procedure{enumerate}{$\textit{graph}(V,E)$}
+\Function{resolve}{${root}$}
+\Require phylogenetic node, ${root}$, the root of an unresolved phylogenetic tree
+\Ensure phylogenetic forest: all possible resolutions of tree rooted at ${root}$
+%\comment {Input: phylogenetic node; Output: phylogenetic forest. }
+    \State ${forest} \gets \emptyset$
+    \If {$root$ is leaf}
+        \State ${forest} \gets {list}(root)$
 
-\For {$e \in graph$}
-	\If {$e$ is leaf}
-		\Return $e$	\quad \algorithmiccomment{$e$ is its own root}
-	\EndIf
-    \State \textit{resolutions} $\gets \emptyset$
-    
-	\State $t_l \gets$ first tree subtending $e$
-	\State $t_r \gets$ second tree subtending $e$
-
-	
-	\For {$subtree_l$ in \Call{enumerate}{$t_l$}}
-		\For {$subtree_r$ in \Call{enumerate}{$t_r$}}
-			
-			\State $trees_{final} \cup (subtree_l \oplus subtree_r)$ 
-			
-			\quad \quad \quad \quad \quad \algorithmiccomment {Function $\oplus$ joins the roots of } 
-																
-			\quad \quad \quad \quad \quad \algorithmiccomment {$subtree_l$ and $subtree_r$ with an edge}
-																	 
-			\quad \quad \quad \quad \quad \algorithmiccomment {and subtends a root to that edge,}
-
-			\quad \quad \quad \quad \quad \algorithmiccomment {so a rooted tree is always returned.}
-		\EndFor
-	\EndFor
-%    \If {$v_1 \in \textit{done}$ \textbf{or} $v_2 \in \textit{done}$}
-%       \State $resolutions \gets resolutions$
-%    \Else 
-%        \If {$prevValue = v.unambiguousFinal$}
-%            \State $v.updated \gets False$
-%        \Else 
-%            \State $v.updated \gets$ \; True
-%            \State $convergence \gets$ \; False
-%        \EndIf
-%    \EndIf
-\EndFor
-
-\Return $trees_{final}$
-\EndProcedure
+        \comment{$root$ is already the root of all possible subtrees}
+    \Else % For each pair of subsets generate a pair of forests, return the new forest
+        \State \textit{subsetPairs} $\gets$ \Call{generate\_subsets}{$root_{descendents}$}
+        \ForAll{$(l, r) \in {subsetPairs}$}
+            \State ${subtree_l} \gets$ \Call{resolve}{l}
+            \State ${subtree_r} \gets$ \Call{resolve}{r}
+            \State ${forest} \gets$ \Call{create\_node}{$subtree_l$, $subtree_r$}
+        \EndFor
+    \EndIf
+    \State \Return ${forest}$
+\EndFunction
 \end{algorithmic}
 \end{algorithm}
+
+
+\begin{algorithm}
+\caption{Enumerate subset bifurcations of ordered input set}\label{generate_subsets}
+\begin{algorithmic}[1]
+\Function{generate\_subsets}{${forest, length}$}\label{subsets}
+    \Require Phylogenetic forest (essentially an \textit{ordered} set of nodes) of size $>$ 2, as well as size of said forest
+    \Ensure  List of tuple pairs of all bifurcations of forest set
+
+
+    \If {${length} < 3$}            \Comment{This is degenerate case. Returning this just to match types.}
+        \State \textit{subsetPairs} $\gets (\emptyset, n)$
+
+    \ElsIf {${length} == 3$}        \comment{This is the base case.}
+        \State \textit{subsetPairs} $\gets$
+
+               \quad \quad \quad \quad \quad  [ ([forest[0]], forest[1:]),
+
+               \quad \quad \quad \quad \quad    ([forest[1]], [forest[0], forest[2]]),
+
+               \quad \quad \quad \quad \quad    ([forest[2]], forest[:2])  ]
+               \comment{Split notation above follows Python.}
+    \Else                           \comment{Call recursively from here.}
+        \State ${subsetPairs} \gets \emptyset$
+        \For {$i \gets 0, n$}
+            \comment{For each single member, $m$, create tuple $(m, {forest} - m)$.}
+            \State ${subsetPairs} \gets {subsetPairs}$ \textbf{cons}
+            \If {${length} - i - 1 > 2$ and $i < {length} / 2$}
+                \For {$(lhs, rhs) \in$ \Call{generate\_subsets}{${forest_descendents[]}$last ${length - i}$ descendents of forest, length - i - 1}}
+
+
+                \EndFor
+            \EndIf
+        \EndFor
+    \EndIf
+
+    \Return \textit{subsetPairs}
+
+
+% \Return $trees_{final}$
+\EndFunction
+
+\end{algorithmic}
+\end{algorithm}
+\end{document}

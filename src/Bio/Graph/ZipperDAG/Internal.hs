@@ -8,18 +8,22 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- The Phylogentic Graph types.
---
---
---
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE TypeFamilies #-}
 
-module Bio.Graph.ZipperDAG.Internal where
+module Bio.Graph.ZipperDAG.Internal
+  ( Cursor
+  , ZipperNode()
+  , ZipperEdge()
+  , unfoldDAG
+  , zipperEdgeChild
+  , zipperEdgeParent
+  , zipperEdges
+  ) where
 
 import Data.Bifunctor
-import Data.Monoid
+
 
 -- |
 -- A node in the zipper structure.

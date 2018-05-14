@@ -186,7 +186,7 @@ instance Enum StaticCharacter where
 
 instance Exportable StaticCharacterBlock where
 
-    toExportableBuffer (SCB bm) = ExportableCharacterSequence x y $ bitVectorToBufferChunks x y $ expandRows bm
+    toExportableBuffer (SCB bm) = ExportableCharacterSequence x y . bitVectorToBufferChunks x y $ expandRows bm
       where
         x = numRows bm
         y = numCols bm

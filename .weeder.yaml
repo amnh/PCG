@@ -1,0 +1,71 @@
+- package:
+  - name: pcg-file-parsers
+  - section:
+    - name: exe:file-tests test:unit-tests
+    - message:
+      - name: Module reused between components
+      - module: Test.Custom.Parse
+  - section:
+    - name: library test:unit-tests
+    - message:
+      - name: Module reused between components
+      - module:
+        - File.Format.Fasta.Internal
+        - File.Format.Fasta.Parser
+        - File.Format.Fastc.Parser
+        - File.Format.Newick.Internal
+        - File.Format.Newick.Parser
+        - File.Format.TNT.Command.CCode
+        - File.Format.TNT.Command.CNames
+        - File.Format.TNT.Command.Procedure
+        - File.Format.TNT.Command.TRead
+        - File.Format.TNT.Command.XRead
+        - File.Format.TNT.Internal
+        - File.Format.TransitionCostMatrix.Parser
+        - File.Format.VertexEdgeRoot.Parser
+        - Text.Megaparsec.Custom
+
+
+- package:
+  - name: phylocomgraph
+  - section:
+    - name: library test:testsuite
+    - message:
+      - name: Module reused between components
+      - module:
+        - Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
+        - Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
+        - Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
+        - Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
+        - Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Internal
+        - Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
+        - Bio.Character
+        - Bio.Character.Encodable
+        - Bio.Character.Encodable.Continuous
+        - Bio.Character.Encodable.Continuous.Class
+        - Bio.Character.Encodable.Continuous.Internal
+        - Bio.Character.Encodable.Dynamic
+        - Bio.Character.Encodable.Dynamic.Class
+        - Bio.Character.Encodable.Dynamic.Internal
+        - Bio.Character.Encodable.Internal
+        - Bio.Character.Encodable.Static
+        - Bio.Character.Encodable.Static.Class
+        - Bio.Character.Encodable.Static.Internal
+        - Bio.Character.Encodable.Stream
+        - Bio.Character.Exportable
+        - Bio.Character.Exportable.Class
+        - Control.Evaluation.Internal
+        - Control.Evaluation.Unit
+        - Control.Monad.Logger
+        - Data.Alphabet
+        - Data.Alphabet.IUPAC
+        - Data.Alphabet.Internal
+        - Data.Range
+        - Data.TCM.Memoized
+        - Data.TCM.Memoized.FFI
+        - Data.Vector.NonEmpty
+        - Test.Custom.NucleotideSequence
+        - Test.QuickCheck.Arbitrary.Instances
+        - Text.XML
+        - Text.XML.Class
+

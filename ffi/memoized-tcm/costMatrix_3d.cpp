@@ -1,8 +1,8 @@
 #include <cstring> //for memcpy;
 #include <inttypes.h>
 
-#include "costMatrix_2d.h"
-#include "costMatrix_3d.h"
+#include "costMatrix_2d.hpp"
+#include "costMatrix_3d.hpp"
 #include "dynamicCharacterOperations.h"
 
 #define __STDC_FORMAT_MACROS
@@ -142,7 +142,7 @@ unsigned int CostMatrix_3d::costAndMedian3D( dcElement_t* first
             if (retMedian->element != NULL) std::free(retMedian->element);
             retMedian->element = makePackedCharCopy( std::get<1>(*computedCostMed), twoD_matrix->alphabetSize, 1 );
         }
-        
+
         setValue(first, second, third, computedCostMed);
         freeCostMedian_t(computedCostMed);
         delete computedCostMed;

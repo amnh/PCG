@@ -27,15 +27,11 @@ library
                      , case-insensitive
                        -- >=0.5.8 Required for Data.Map.restrictKeys
                      , containers         >=0.5.8
-                     , either
                      , free
                      , keys
                      , megaparsec         >=6.4.0
-                     , mtl
                      , parser-combinators >=0.2.0
-                     , safe
                      , scientific
-                     , semigroupoids
                      , text
                      , time
 

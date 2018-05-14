@@ -5,7 +5,7 @@ module Data.MutualExclusionSet.Bench (benchmarks) where
 import Control.DeepSeq
 import Criterion.Main
 import Data.Bits
-import Data.MutualExclusionSet.Internal
+import Data.MutualExclusionSet
 
 
 benchmarks :: Benchmark
@@ -30,11 +30,11 @@ singletonBench = bench "MutualExclusionSet singleton is constant-time constructi
 
 
 invertBench :: Benchmark
-invertBench = bench "MutualExclusionSet invert is constant-time" $ whnf invert $ force (ofSize 50)
+invertBench = bench "MutualExclusionSet invert is constant-time" . whnf invert $ force (ofSize 50)
 
 
 isCoherentBench :: Benchmark
-isCoherentBench = bench "MutualExclusionSet isCoherent is constant-time" $ whnf isCoherent $ force (ofSize 50)
+isCoherentBench = bench "MutualExclusionSet isCoherent is constant-time" . whnf isCoherent $ force (ofSize 50)
 
 
 isPermissibleBench :: Benchmark

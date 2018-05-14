@@ -10,7 +10,14 @@
 --
 -----------------------------------------------------------------------------
 
-module Bio.Character.Encodable.Internal where
+module Bio.Character.Encodable.Internal
+  ( EncodedAmbiguityGroupContainer(..)
+  , PossiblyMissingCharacter(..)
+  , bitVectorToBufferChunks
+  , bufferChunksToBitVector
+  , exportableCharacterElementsToBitMatrix
+  , exportableCharacterElementsHeadToBitVector
+  ) where
 
 import Bio.Character.Exportable
 import Control.Lens

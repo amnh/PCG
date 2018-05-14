@@ -13,8 +13,12 @@
 
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
-module File.Format.TNT.Command.CNames where
-
+module File.Format.TNT.Command.CNames
+  ( cnamesCommand
+  , duplicateIndexMessages
+  , cnamesHeader
+  , cnamesStateName
+  ) where
 
 import           Data.CaseInsensitive
 import           Data.Foldable            (toList)

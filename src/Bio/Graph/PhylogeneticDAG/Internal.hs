@@ -17,7 +17,17 @@
 -- Because I'm sick of dealing with the typechecker.
 {-# LANGUAGE UndecidableInstances #-}
 
-module Bio.Graph.PhylogeneticDAG.Internal where
+module Bio.Graph.PhylogeneticDAG.Internal
+  ( EdgeReference
+  , PhylogeneticDAG(..)
+  , PhylogeneticDAG2(..)
+  , applySoftwireResolutions
+  , generateLocalResolutions
+  , getDotContextWithBaseAndIndex
+  , localResolutionApplication
+  , renderSummary
+  , resolutionsDoNotOverlap
+  ) where
 
 import           Bio.Character.Decoration.Shared
 import           Bio.Graph.LeafSet
@@ -66,7 +76,7 @@ import           Text.XML
 -- * y = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * z = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Dynamic'    specified as 'DynamicChar'     or 'Bio.Metadata.DiscreteWithTCM'
 newtype PhylogeneticDAG e n u v w x y z
-     = PDAG (ReferenceDAG () e (PhylogeneticNode n (CharacterSequence u v w x y z)))
+    = PDAG (ReferenceDAG () e (PhylogeneticNode n (CharacterSequence u v w x y z)))
 
 
 -- |
@@ -82,7 +92,7 @@ newtype PhylogeneticDAG e n u v w x y z
 -- * y = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * z = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Dynamic'    specified as 'DynamicChar'     or 'Bio.Metadata.DiscreteWithTCM'
 newtype PhylogeneticDAG2 e n u v w x y z
-     = PDAG2 ( ReferenceDAG
+    = PDAG2 ( ReferenceDAG
                  (         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
                  , Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
                  , Maybe  (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge)))
@@ -348,6 +358,7 @@ localResolutionApplication f x y =
         }
 
 
+{-
 -- |
 -- Given a foldable structure, generate a list of all possible pairs in the
 -- structure. Does not check for uniqueness of elements.
@@ -357,6 +368,7 @@ pairs = f . toList
     f    []  = []
     f   [_]  = []
     f (x:xs) = ((\y -> (x, y)) <$> xs) <> f xs
+-}
 
 
 -- |

@@ -5,10 +5,11 @@ PCG uses [PVP Versioning][1].
 Releases are available [on GitHub][2].
 
 
-## _v0.1.2.0_ - Unreleased Changes
+## _v0.1.1.0_ - Unreleased Changes
 
 * Updated to GHC-8.4.2
 * Updated to Cabal-2.2
+* Added Travis CI build script
 * Streamlined build experiance on MacOS
 * Corrected defect in Data.Vector.NonEmpty.unfoldr
 * Polished command line option parsing and error reporting

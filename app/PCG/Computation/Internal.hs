@@ -1,4 +1,8 @@
-module PCG.Computation.Internal where
+module PCG.Computation.Internal
+  ( evaluate
+  , optimizeComputation
+  , renderSearchState
+  ) where
 
 import           Bio.Graph
 import           Control.Evaluation
