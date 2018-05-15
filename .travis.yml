@@ -66,10 +66,10 @@ install:
 #  - weeder --version
 
   # Install dependencies
-  - stack build --bench --fast --install-ghc --only-dependencies --no-terminal --test
+  - stack build --bench --install-ghc --only-dependencies --no-terminal --test
 
   # Build project
-  - stack build --bench --fast --haddock --no-haddock-deps --no-run-benchmarks --no-run-tests --no-terminal
+  - stack build --bench --haddock --no-haddock-deps --no-run-benchmarks --no-run-tests --no-terminal --ghc-options -j -rtsopts -with-rtsopts "-A128m" -with-rtsopts "-n2m"
 
   # Inspect generated .stack-work directories
   - ls .stack-work/dist/
