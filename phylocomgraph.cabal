@@ -216,7 +216,7 @@ library
                     Test.Custom.DynamicCharacterNode
 
   other-modules:    Analysis.Parsimony.Dynamic.DirectOptimization.Internal
---                    Analysis.Parsimony.Dynamic.DirectOptimization.DeletionEvents  
+--                    Analysis.Parsimony.Dynamic.DirectOptimization.DeletionEvents
 --                    Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents
 --                    Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Internal
                     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
