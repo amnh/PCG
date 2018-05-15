@@ -536,7 +536,7 @@ Test-Suite testsuite
                     , xml
 
   ghc-options:      -threaded
-                    -with-rtsopts=-N4
+--                    -with-rtsopts=-N4
 
   -- This is a hack beacuse the cxx-options & cxx-options feature in Cabal-2.2
   -- is not fully implmented and does not correctly link to the C++ sources.
