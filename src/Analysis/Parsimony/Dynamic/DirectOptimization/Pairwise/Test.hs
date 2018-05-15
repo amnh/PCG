@@ -27,6 +27,7 @@ import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
 import Bio.Character.Encodable
 import Data.MonoTraversable
 import Data.TCM.Memoized
+import Debug.Trace
 import Test.Custom.NucleotideSequence
 import Test.Tasty
 import Test.Tasty.QuickCheck
@@ -132,14 +133,14 @@ isValidPairwiseAlignment
   -> (DynamicChar -> DynamicChar -> (Word, DynamicChar, DynamicChar, DynamicChar, DynamicChar))
   -> TestTree
 isValidPairwiseAlignment testLabel alignmentFunction = testGroup testLabel
-    [ testProperty "alignment function is commutative"               commutivity
-    , testProperty "aligned results are all equal length"            resultsAreEqualLength
-    , testProperty "output length is >= input length"                greaterThanOrEqualToInputLength
-    , testProperty "alignment length is =< sum of input lengths"     greaterThanOrEqualToInputLength
-    , testProperty "output alignments were not erroneously swapped"  outputsCorrespondToInputs
-    , testProperty "output alignments were not erroneously reversed" outputsAreNotReversed
-    , testProperty "output alignments only contain new gaps"         filterGapsEqualsInput
-    , testProperty "ungapped output contains no gaps"                ungappedHasNogaps
+    [  testProperty "alignment function is commutative"               commutivity
+     , testProperty "aligned results are all equal length"            resultsAreEqualLength
+     , testProperty "output length is >= input length"                greaterThanOrEqualToInputLength
+     , testProperty "alignment length is =< sum of input lengths"     greaterThanOrEqualToInputLength
+     , testProperty "output alignments were not erroneously swapped"  outputsCorrespondToInputs
+     , testProperty "output alignments were not erroneously reversed" outputsAreNotReversed
+     , testProperty "output alignments only contain new gaps"         filterGapsEqualsInput
+     , testProperty "ungapped output contains no gaps"                ungappedHasNogaps
     ]
   where
     commutivity :: (NucleotideSequence, NucleotideSequence) -> Property
@@ -181,7 +182,11 @@ isValidPairwiseAlignment testLabel alignmentFunction = testGroup testLabel
         (_, _, _, lhs', rhs') = alignmentFunction lhs rhs
 
     outputsAreNotReversed :: (NucleotideSequence, NucleotideSequence) -> Property
-    outputsAreNotReversed (NS lhs, NS rhs) =
+    outputsAreNotReversed (NS lhs, NS rhs) = --trace ("lhs:  "   <> fmap (\x -> if x == '\n' then ' ' else x) (show $ filterGaps lhs)            <>
+                                                   --  "\nlhs': " <> fmap (\x -> if x == '\n' then ' ' else x) (show $  lhs') <>
+                                                   --  "\nrhs:  " <> fmap (\x -> if x == '\n' then ' ' else x) (show $  rhs)            <>
+                                                   --  "\nrhs': " <> fmap (\x -> if x == '\n' then ' ' else x) (show $  rhs') <> "\n"
+                                                   -- ) $
         counterexample (show lhs <> show lhs') (isNotPalindrome lhs ==> isNotReversed (filterGaps lhs') lhs) .&&.
         counterexample (show rhs <> show rhs') (isNotPalindrome rhs ==> isNotReversed (filterGaps rhs') rhs)
       where
@@ -218,7 +223,7 @@ l1Norm :: (Ord a, Num a) => a -> a -> a
 l1Norm i j = max i j - min i j
 
 
-preferGapMetric :: (Ord a, Num a) => a -> a -> a 
+preferGapMetric :: (Ord a, Num a) => a -> a -> a
 preferGapMetric i j
   | i == j    = 0
   | i == 4    = 1
@@ -236,14 +241,14 @@ preferSubMetric i j
 
 {-
 alphabet :: Alphabet String
-alphabet = fromSymbols ["A","C","G","T"] 
+alphabet = fromSymbols ["A","C","G","T"]
 
 
 standardAlph :: Alphabet String
 standardAlph =  fromSymbols $ V.fromList ["A", "C", "G", "T", "-"]
 
 
-sampleMeta :: CharacterMetadata DynamicChar             
+sampleMeta :: CharacterMetadata DynamicChar
 sampleMeta =  CharMeta DirectOptimization standardAlph "" False False 1 mempty (constructDynamic [], constructDynamic []) 0 uniformCostStructure
 
 
@@ -344,13 +349,13 @@ getSubCharsTest :: TestTree
 getSubCharsTest  = testGroup "getSubChars tests"
     [ orTest
     , lengthTest
-    , allReturnedCharsRightLength 
+    , allReturnedCharsRightLength
     , allReturnedCharsOnlyOneBitSet
     , posIsCorrect
     ]
   where
-    orTest = testProperty "Or-ing all returned static chars == input" f 
-      where 
+    orTest = testProperty "Or-ing all returned static chars == input" f
+      where
         f :: DynamicCharacterElement -> Bool
         f inChar = inChar == outChar
           where
@@ -381,7 +386,7 @@ getSubCharsTest  = testGroup "getSubChars tests"
 
 getCostTest :: TestTree
 getCostTest = testGroup "Properties of getCosts"
-    [ -- tcmTest 
+    [ -- tcmTest
       generalCostTest
     ]
   where
@@ -394,12 +399,12 @@ getCostTest = testGroup "Properties of getCosts"
         -}
     generalCostTest = testGroup "Works with a general cost structure"
         [ indelTest
-        , subsTest 
+        , subsTest
         ]
-      where 
+      where
         -- in both following tests, check both orders of characters
         indelTest = testCase "Indels work correctly"
-          . assertEqual "" expectedResult $ getCost defaultCostStructure char1 char2 
+          . assertEqual "" expectedResult $ getCost defaultCostStructure char1 char2
           where
             char1          = (4, makeElem ["-"]) -- has a gap
             char2          = (2, makeElem ["G"]) -- no gap
@@ -417,7 +422,7 @@ allPossibleCombosCostsTest :: TestTree
 allPossibleCombosCostsTest = testProperty "allPossibleCombosCosts returns correct costs (getSubChars tested separately)" f
     where
         f :: Bool
-        f = 
+        f =
 -}
 
 overlapTest :: TestTree
@@ -438,15 +443,15 @@ overlapTest = testGroup "Overlap test cases"
 
     multipleIntersectionTest = testCase "Given characters with single intersection, gives expected results"
         $ assertEqual "" expectedResult result
-      where 
+      where
         char1          =  makeElem ["A","G"]     -- This is two bits on
         char2          =  makeElem ["A","C","G"] -- This is two different, but overlapping, bits set
         expectedResult = (makeElem ["A","G"], 0)
         result         = getOverlap char1 char2 defaultCostStructure
-                
+
     unionTestWithGeneral = testGroup "Given characters with no intersection and general cost, gives expected results"
         [ withoutGap
-        , withGap 
+        , withGap
         ]
       where
         withoutGap = testCase "Without a gap"
@@ -456,7 +461,7 @@ overlapTest = testGroup "Overlap test cases"
             char2          =  makeElem ["G"] -- No gap.
             expectedResult = (makeElem ["C","G"], 1)
             result         = getOverlap char1 char2 defaultCostStructure
-            
+
         withGap    = testCase "With a gap"
             $ assertEqual "" expectedResult result
           where
@@ -464,7 +469,7 @@ overlapTest = testGroup "Overlap test cases"
             char2          =  makeElem ["C","-"] -- Has a gap.
             expectedResult = (makeElem ["C","G"], 1)
             result         = getOverlap char1 char2 defaultCostStructure
-{-                        
+{-
         unionTestWithTCM = testProperty "Given characters with no intersection and TCM, gives expected results" f
             where
                 f :: Bool
