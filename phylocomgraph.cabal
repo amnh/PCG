@@ -492,44 +492,29 @@ Test-Suite testsuite
 
   build-depends:      base               >=4.10
                     , bimap
---                    , blaze-html
                     , bv-little
---                    , case-insensitive
                     -- >=0.5.8 Required for Data.Map.restrictKeys
                     , containers         >=0.5.8
                     , deepseq
                     , dlist
---                    , either
---                    , graphviz
                     , hashable
---                    , hashtables
                     , integer-gmp
                     , keys
                     , lens
                     , mono-traversable   >=1.0
                     , mtl
---                    , parallel
---                    , pcg-file-parsers
                     , pcg-utility
                     , pointed
---                    , pretty-tree
---                    , primitive
                     , QuickCheck
---                    , quickcheck-properties
---                    , scientific
                     -- required for Data.Semigroup.Foldable.toNonEmpty
                     , semigroupoids      >=5.2.1
                     , semigroups
                     , smallcheck
---                    , split
                     , tasty
                     , tasty-hunit
                     , tasty-quickcheck
                     , tasty-smallcheck
---                    , text
---                    , time
                     , transformers
---                    , unordered-containers
                     , vector
                     -- >=3.4 required for corrected definition of (!) & index
                     , vector-instances >=3.4
