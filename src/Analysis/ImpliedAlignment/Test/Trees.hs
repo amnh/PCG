@@ -1324,57 +1324,57 @@ testTwoAdjacentInsertionsSeperateDeletions = testCase "Delete two     adjacent i
 
   0
   |
-  +-1: AATT
+  +-1: AAGTT
   |
   `-2
     |
-    +-3: AATT
+    +-3: AAGTT
     |
     `-4
       |
-      +-5: AATT
+      +-5: AAGTT
       |
       `-6
         |
-        +-7: AACTT
+        +-7: AACGTT
         |
         `-8
           |
-          +-9: AACTT
+          +-9: AACGTT
           |
           `-10
             |
-            +-11: AACTT
+            +-11: AACGTT
             |
             `-12
               |
-              +-13: AACCTT
+              +-13: AACGCTT
               |
               `-14
                  |
-                 +-15: AACCTT
+                 +-15: AACGCTT
                  |
                  `-16
                    |
-                   +-17: AACCTT
+                   +-17: AACGCTT
                    |
                    `-18
                      |
-                     +-19: AACTT
+                     +-19: AACGTT
                      |
                      `-20
                        |
-                       +-21: AACTT
+                       +-21: AACGTT
                        |
                        `-22
                           |
-                          +-23: AACTT
+                          +-23: AACGTT
                           |
                           `-24
                             |
-                            +-25: AATT
+                            +-25: AAGTT
                             |
-                            `-26: AATT
+                            `-26: AAGTT
 -}
 testTwoNonAdjacentSymetricInsertionsSeperateDeletions :: TestTree
 testTwoNonAdjacentSymetricInsertionsSeperateDeletions = testCase "Delete two non-adjacent insertion events on different edges (symetric)" $ decorationTest tree
@@ -1419,57 +1419,57 @@ testTwoNonAdjacentSymetricInsertionsSeperateDeletions = testCase "Delete two non
 
   0
   |
-  +-1: AATT
+  +-1: AAGTT
   |
   `-2
     |
-    +-3: AATT
+    +-3: AAGTT
     |
     `-4
       |
-      +-5: AATT
+      +-5: AAGTT
       |
       `-6
         |
-        +-7: AACTT
+        +-7: AACGTT
         |
         `-8
           |
-          +-9: AACTT
+          +-9: AACGTT
           |
           `-10
             |
-            +-11: AACTT
+            +-11: AACGTT
             |
             `-12
               |
-              +-13: AACCTT
+              +-13: AACGCTT
               |
               `-14
                  |
-                 +-15: AACCTT
+                 +-15: AACGCTT
                  |
                  `-16
                    |
-                   +-17: AACCTT
+                   +-17: AACGCTT
                    |
                    `-18
                      |
-                     +-19: AACTT
+                     +-19: AAGCTT
                      |
                      `-20
                        |
-                       +-21: AACTT
+                       +-21: AAGCTT
                        |
                        `-22
                           |
-                          +-23: AACTT
+                          +-23: AAGCTT
                           |
                           `-24
                             |
-                            +-25: AATT
+                            +-25: AAGTT
                             |
-                            `-26: AATT
+                            `-26: AAGTT
 -}
 testTwoNonAdjacentAntiSymetricInsertionsSeperateDeletions :: TestTree
 testTwoNonAdjacentAntiSymetricInsertionsSeperateDeletions = testCase "Delete two non-adjacent insertion events on different edges (antisymetric)" $ decorationTest tree
