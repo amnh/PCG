@@ -17,7 +17,7 @@
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
  ( Cost
- , Direction(..)
+ , Direction()
  , DOCharConstraint
  , MatrixConstraint
  , MatrixFunction
@@ -30,8 +30,8 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
  , handleMissingCharacterThreeway
  , measureCharacters
  , needlemanWunschDefinition
- , renderCostMatrix
- , traceback
+-- , renderCostMatrix
+-- , traceback
  -- * Probably removable
  , overlap
  , overlapConst
@@ -55,27 +55,27 @@ import           Data.Ord
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Numeric.Extended.Natural
-import           Prelude            hiding (lookup, zipWith)
+import           Prelude            hiding (lookup)
 
 
 -- |
--- The direction to align the character at a given matrix point.
+-- Which direction to align the character at a given matrix point.
 --
--- It should be noted that the ordering of the three arrow types are important
--- as it guarantees that the derived Ord instance will have the following
+-- It should be noted that the ordering of the three arrow types are important,
+-- as it guarantees that the derived 'Ord' instance will have the following
 -- property:
 --
 -- DiagArrow < LeftArrow < UpArrow
 --
 -- This means:
 --
---   - DiagArrow is biased towards with highest precedency when one or more costs are equal
+--   - DiagArrow has highest precedence when one or more costs are equal
 --
---   - LeftArrow is biased towards with second highest precedence when one or more costs are equal
+--   - LeftArrow has second highest precedence when one or more costs are equal
 --
---   -   UpArrow is biased towards with lowest precedency when one or more costs are equal
+--   -   UpArrow has lowest precedence when one or more costs are equal
 --
--- Using this Ord instance, we can resolve ambiguous transformations in a
+-- Using this 'Ord' instance, we can resolve ambiguous transformations in a
 -- deterministic way. Without loss of generality in determining the ordering,
 -- we choose the same biasing as the C code called from the FFI for consistency.
 data Direction = DiagArrow | LeftArrow | UpArrow
@@ -92,7 +92,7 @@ instance Show Direction where
 
 -- |
 -- This internal type used for computing the alignment cost. This type has an
--- "infinity" value that is conviently used for the barrier costs. The cost is
+-- "infinity" value that is conveniently used for the barrier costs. The cost is
 -- strictly non-negative, and possibly infinite.
 type Cost = ExtendedNatural
 
@@ -111,7 +111,7 @@ type DOCharConstraint s = (EncodableDynamicCharacter s, Ord (Element s) {- , Sho
 
 
 -- |
--- Constraints on the type of structure a "matrix" expose to be used in rendering
+-- Constraints on the type of structure a "matrix" exposes to be used in rendering
 -- and traceback functions.
 type MatrixConstraint m = (Indexable m, Key m ~ (Int, Int))
 
@@ -122,7 +122,7 @@ type MatrixFunction m s = s -> s -> OverlapFunction (Element s) -> m (Cost, Dire
 
 
 -- |
--- A generalized function represention the "overlap" between dynamic character
+-- A generalized function representation: the "overlap" between dynamic character
 -- elements, supplying the corresponding median and cost to align the two
 -- characters.
 type OverlapFunction e = e -> e -> (e, Word)
@@ -216,7 +216,7 @@ handleMissingCharacterThreeway f a b c v =
 
 
 -- |
--- /O(1)/ for input characters of differing length
+-- /O(1)/ for input characters of differing lengths
 --
 -- /O(k)/ for input characters of equal length, where /k/ is the shared prefix of
 -- both characters.
@@ -279,6 +279,7 @@ needlemanWunschDefinition topChar leftChar overlapFunction memo p@(row, col)
                                       ( downCost,  downChar)
 
 
+{-
 -- |
 -- Serializes an alignment matrix to a 'String'. Uses input characters for row
 -- and column labelings.
@@ -356,6 +357,7 @@ renderCostMatrix lhs rhs mtx = unlines
     pad n e = replicate (n - len) ' ' <> e <> " "
       where
         len = length e
+-}
 
 
 -- |
@@ -458,7 +460,7 @@ minimalChoice = foldl1 f
 
 -- |
 -- Finds the cost between all single, unambiguous symbols and two dynamic
--- character elements (ambiguity groups of symbols)xsy.
+-- character elements (ambiguity groups of symbols).
 --
 -- Takes in a symbol change cost function and two ambiguous elements of a dynamic
 -- character and returns a list of tuples of all possible unambiguous pairings,

@@ -113,9 +113,9 @@ alphabetPreprocessing = appendGapSymbol . sort . removeSpecialSymbolsAndDuplicat
 -- |
 -- \( \mathcal{O} \left( n \right) \)
 --
--- Retreives the state names for the symbols of the 'Alphabet'.
+-- Retrieves the state names for the symbols of the 'Alphabet'.
 --
--- If there the symbols of the 'Alphabet' were not given state names during
+-- If the symbols of the 'Alphabet' were not given state names during
 -- construction then an empty list is returned.
 alphabetStateNames :: Alphabet a -> [a]
 alphabetStateNames = stateNames
@@ -124,7 +124,7 @@ alphabetStateNames = stateNames
 -- |
 -- \( \mathcal{O} \left( n \right) \)
 --
--- Retreives the symbols of the 'Alphabet'. Synonym for 'toList'.
+-- Retrieves the symbols of the 'Alphabet'. Synonym for 'toList'.
 alphabetSymbols :: Alphabet a -> [a]
 alphabetSymbols = toList
 
@@ -148,7 +148,7 @@ fromSymbols inputSymbols = Alphabet symbols []
 -- \( \mathcal{O} \left( n * \log_2 n \right) \)
 --
 -- Constructs an 'Alphabet' from a 'Foldable' structure of symbols and
--- coresponding state names, both of which a are 'IsString' values.
+-- coresponding state names, both of which are 'IsString' values.
 --
 -- The input ordering is preserved.
 fromSymbolsWithStateNames :: (Ord a, IsString a, Foldable t) => t (a,a) -> Alphabet a
@@ -164,7 +164,7 @@ fromTuple  = ASNI
 -- |
 -- \( \mathcal{O} \left( 1 \right) \)
 --
--- Retreives the "gap character" from the alphabet.
+-- Retrieves the "gap character" from the alphabet.
 gapSymbol :: Alphabet a -> a
 gapSymbol alphabet = alphabet ! (length alphabet - 1)
 
@@ -172,10 +172,10 @@ gapSymbol alphabet = alphabet ! (length alphabet - 1)
 -- |
 -- \( \mathcal{O} \left( n * \log_2 n \right) \)
 --
--- Attempts to find the symbol in the Alphabet.
--- If the symbol exists, returns an alphabet with all the symbols occuring
--- before the supplied symbol included and all symbols occuring after the
--- supplied symbol excluded. The gap character is preserved in the alphabet
+-- Attempts to find the symbol in the 'Alphabet'.
+-- If the symbol exists, returns an alphabet that includes all symbols occurring
+-- before the supplied symbol and excludes all symbols occurring after the
+-- supplied symbol. The gap character is preserved in the alphabet
 -- regardless of the supplied symbol.
 truncateAtSymbol :: (Ord a, IsString a) => a -> Alphabet a -> Alphabet a
 truncateAtSymbol symbol alphabet =
@@ -192,8 +192,8 @@ truncateAtSymbol symbol alphabet =
 --
 -- Attempts to find the maximum provided symbol in the Alphabet.
 -- If the any of the provided symbols exists, returns an alphabet including all
--- the symbols occuring before the maximum provided symbol and all symbols
--- occuring after the maximum supplied symbol excluded. The gap character is
+-- the symbols occurring before the maximum provided symbol and excluding all symbols
+-- occurring after the maximum supplied symbol. The gap character is
 -- preserved in the alphabet regardless of the supplied symbol.
 truncateAtMaxSymbol :: (Foldable t, Ord a, IsString a) => t a -> Alphabet a -> Alphabet a
 truncateAtMaxSymbol symbols alphabet =

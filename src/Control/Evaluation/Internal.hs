@@ -13,7 +13,13 @@
 
 {-# LANGUAGE DeriveGeneric, FlexibleInstances, MultiParamTypeClasses #-}
 
-module Control.Evaluation.Internal where
+module Control.Evaluation.Internal
+  ( Evaluation(..)
+  , Notification()
+  , evaluationResult
+  , notifications
+  , prependNotifications
+  ) where
 
 import           Control.Applicative
 import           Control.DeepSeq
@@ -23,8 +29,6 @@ import           Control.Monad.Fail      (MonadFail)
 import qualified Control.Monad.Fail as F
 import           Control.Monad.Logger
 import           Data.DList              (DList, toList)
-import           Data.Monoid             ()
-import           Data.Semigroup
 import           GHC.Generics
 import           Test.QuickCheck
 
@@ -39,7 +43,7 @@ data Notification
 
 
 -- |
--- Reprsents a monoidal evaluations of a value 'a' with contextual notifications.
+-- Represents monoidal evaluations of a value 'a' with contextual notifications.
 -- Stores a list of ordered contextual notifications retrievable by
 -- 'notifications'. Holds the evaluation state 'a' retrievable 'evaluationResult'.
 data Evaluation a
@@ -59,9 +63,9 @@ evaluationResult :: Evaluation a -> EvalUnit a
 evaluationResult (Evaluation _ x) = x
 
 
--- Maybe add error strings Notifications list also?
+-- Maybe add error strings 'Notifications' list also?
 -- Currently we throw this information away,
--- perhaps it should be preserved in the Alternative context?
+-- perhaps it should be preserved in the 'Alternative' context?
 -- | (✔)
 instance Alternative Evaluation where
 
@@ -87,7 +91,7 @@ instance Arbitrary a => Arbitrary (Evaluation a) where
 
     arbitrary = oneof [pure mempty, pure $ fail "Error Description", pure <$> arbitrary]
 
-              
+
 -- | (✔)
 instance Functor Evaluation where
 
@@ -114,7 +118,7 @@ instance NFData Notification
 instance Monad Evaluation where
 
     fail   = F.fail
-  
+
     return = pure
 
     (>>)   = (*>)
@@ -137,7 +141,7 @@ instance MonadPlus Evaluation where
 
     mplus = (<>)
 
-    
+
 -- | (✔)
 instance Monoid (Evaluation a) where
 
@@ -163,7 +167,7 @@ instance Show a => Show (Evaluation a) where
 
 
 -- |
--- Prepends a 'DList' of Notifications to the evaluation. Should only be used
--- internally. 
+-- Prepends a 'DList' of 'Notification's to the evaluation. Should only be used
+-- internally.
 prependNotifications :: Evaluation a -> DList Notification -> Evaluation a
 prependNotifications (Evaluation ms x) ns = Evaluation (ns <> ms) x

@@ -5,41 +5,107 @@ os:
   - linux
   - osx
 
-sudo: false
+# Required to install stack on Linux
+sudo: true
 
-addons:
-  apt:
-    packages:
-    - libgmp-dev # GHC depends on system GMP (maybe?).
+#addons:
+#  apt:
+#    packages:
+#    - libgmp-dev # GHC depends on system GMP (maybe?).
+#    - build-essentials
 
 before_install:
-  # Download and unpack the stack executable
+  # MacOS setups
+  # Install Cabal & GHC
+  # - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install ghc cabal-install && export PATH=/usr/local/opt/ghc/bin:$PATH; fi
+
+  # Linux initial setup
+  # Install required system packages, newer GCC than comes with Trusty image
+  # We do this because Travis-CI dropped the ball, and the 'addons' section 
+  # doesn't correctly parse. We have to explicitly use the Debian package 
+  # manager to install the system dependedncies for Linux builds.
+  - |
+    if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+      sudo apt-get update
+      sudo apt-get install libgmp-dev
+      sudo apt-get install build-essential software-properties-common -y
+      sudo apt-get install gcc-snapshot -y
+      sudo apt-get install gcc-7 g++-7 -y
+      sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 --slave /usr/bin/g++ g++ /usr/bin/g++-7
+    fi
+
+  # Create and export path to stack binaries
   - mkdir -p ~/.local/bin
   - export PATH=$HOME/.local/bin:$PATH
-  - travis_retry wget -qO- https://get.haskellstack.org/ | sh
-  # - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
 
-  # Install code linting tool
-  - stack install hlint
+  # Download and unpack the stack executable
+  - which stack || travis_retry wget -qO- https://get.haskellstack.org/ | sh
+
+  # Download and unpack the hlint executable
+  - which hlint || travis_retry curl --progress-bar --location -ohlint.tar.gz https://github.com/$(curl --silent https://github.com/ndmitchell/hlint/releases | grep -o '\"[^\"]*-x86_64-'$TRAVIS_OS_NAME'\.tar\.gz\"' | sed s/\"//g | head -n1)
+  - tar -xzf hlint.tar.gz
+  - cp    hlint-*/hlint ~/.local/bin/hlint
+  - cp -r hlint-*/data	~/.local/bin/data
+
+  # Download and unpack the weeder executable
+#  - which weeder || travis_retry curl --progress-bar --location -oweeder.tar.gz https://github.com/$(curl --silent https://github.com/ndmitchell/weeder/releases | grep -o '\"[^\"]*-x86_64-'$TRAVIS_OS_NAME'\.tar\.gz\"' | sed s/\"//g | head -n1)
+#  - tar -xzf weeder.tar.gz
+#  - cp    weeder-*/weeder ~/.local/bin/weeder
+
+install:
+  # Update stack
+  - stack update
+  - stack setup --no-terminal
+
+  # Output build tool version information
+  - stack ghc -- --version
+  - gcc    --version
+  - stack  --version
+  - hlint  --version
+#  - weeder --version
+
+  # Install dependencies
+  - stack build --fast --no-terminal --ghc-options="-j -fasm -rtsopts -with-rtsopts \"-A128m\" -with-rtsopts \"-n2m\"" --bench --install-ghc --only-dependencies --test
+
+  # Build project
+  - stack build --fast --no-terminal --ghc-options="-j -fasm -rtsopts -with-rtsopts \"-A128m\" -with-rtsopts \"-n2m\"" --bench --haddock --no-haddock-deps --no-run-benchmarks --no-run-tests 
+
+  # Inspect generated .stack-work directories
+  - ls .stack-work/dist/
+  - ls .stack-work/dist/*/
+  - ls .stack-work/dist/*/*/
 
 script:
-  - stack update
-  - stack setup
-  - stack --version
-  - stack ghc -- --version
-  - stack build --coverage --fast --haddock --no-terminal --test
-  - stack hpc report
-  - stack exec hlint app src lib
 
-after_script:
-  - hpc-coveralls --coverage-mode=StrictlyFullLines
-                  --exclude-dir=prototype
-                  --exclude-dir=test
-                  --exclude-dir=utils
-                  testsuite
+  # Run the test suite if we are building on MacOS
+  # Do not run the test suite on Linux!
+  # Setup + Build + Test on Linux exeeds 50 minutes and times out.
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then travis_wait 30 stack test --no-terminal; fi
+
+#  Not run because --coverage flag was removed
+#  - stack hpc report
+
+  - hlint app ffi lib src test utils
+
+#  - weeder . --build
+
+# Not run because --coverage flag was removed
+#after_script:
+#  - hpc-coveralls --coverage-mode=StrictlyFullLines
+#                  --exclude-dir=prototype
+#                  --exclude-dir=test
+#                  --exclude-dir=utils
+#                  testsuite
+
 
 # Caching so the next build will be fast too.
 cache:
   directories:
+  - $HOME/.local/bin
   - $HOME/.stack
   - $HOME/build/amnh/PCG/.stack-work
+
+git:
+  depth: 10
+  submodules: false

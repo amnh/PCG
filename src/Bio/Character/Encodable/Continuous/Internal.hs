@@ -12,7 +12,9 @@
 
 {-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
 
-module Bio.Character.Encodable.Continuous.Internal where
+module Bio.Character.Encodable.Continuous.Internal
+  ( ContinuousChar
+  ) where
 
 import Bio.Character.Encodable.Continuous.Class
 import Bio.Character.Encodable.Internal
@@ -87,7 +89,6 @@ instance ToXML ContinuousChar where
 -- |
 -- The default range for "missing" continuous characters.
 --
--- This value ensures that the scoring on th character produces correct results.
+-- This value ensures that scoring on the character produces correct results.
 missingRange :: (ExtendedReal, ExtendedReal)
 missingRange = (minBound, maxBound)
-

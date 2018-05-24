@@ -58,6 +58,7 @@ TAGS
 *.fasta
 *.gch
 *.log
+*.out
 *.poy
 *.ss
 *.tre
@@ -65,4 +66,5 @@ TAGS
 *.xml
 .*
 production/bin
+production/doc/haddock/*
 production/doc/haddock*

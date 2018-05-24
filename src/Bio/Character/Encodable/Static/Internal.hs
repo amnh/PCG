@@ -39,7 +39,6 @@ import           Data.Maybe
 import           Data.Monoid                         ()
 import           Data.MonoTraversable
 import           Data.Range
-import           Data.Semigroup
 import           Data.String                         (fromString)
 import           Data.Tuple                          (swap)
 import           GHC.Generics
@@ -58,7 +57,7 @@ newtype StaticCharacter
 -- |
 -- Represents an encoded stream of static characters, consisting of one or more
 -- static characters. The static character stream relies on the encoding of the
--- individual static characters to defined the encoding of the entire static
+-- individual static characters to define the encoding of the entire static
 -- character stream.
 newtype StaticCharacterBlock
       = SCB BitMatrix
@@ -187,7 +186,7 @@ instance Enum StaticCharacter where
 
 instance Exportable StaticCharacterBlock where
 
-    toExportableBuffer (SCB bm) = ExportableCharacterSequence x y $ bitVectorToBufferChunks x y $ expandRows bm
+    toExportableBuffer (SCB bm) = ExportableCharacterSequence x y . bitVectorToBufferChunks x y $ expandRows bm
       where
         x = numRows bm
         y = numCols bm

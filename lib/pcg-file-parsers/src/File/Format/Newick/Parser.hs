@@ -14,7 +14,18 @@
 
 {-# LANGUAGE FlexibleContexts, ScopedTypeVariables, TypeFamilies #-}
 
-module File.Format.Newick.Parser where
+module File.Format.Newick.Parser
+  ( branchLengthDefinition
+  , descendantListDefinition
+  , quotedLabel
+  , newickExtendedDefinition
+  , newickForestDefinition
+  , newickLabelDefinition
+  , newickLeafDefinition
+  , newickStandardDefinition
+  , requiresQuotedLabelChars
+  , unquotedLabel
+  ) where
 
 import Data.Char                   (isSpace)
 import Data.Foldable
@@ -24,7 +35,6 @@ import Data.List.NonEmpty          (some1)
 import Data.Map             hiding (filter, foldl', null)
 import Data.Maybe                  (fromJust, fromMaybe, isJust)
 import Data.Proxy
-import Data.Semigroup
 import Data.String
 import File.Format.Newick.Internal
 import Prelude              hiding (lookup)

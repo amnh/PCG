@@ -17,7 +17,17 @@
 -- Because I'm sick of dealing with the typechecker.
 {-# LANGUAGE UndecidableInstances #-}
 
-module Bio.Graph.PhylogeneticDAG.Internal where
+module Bio.Graph.PhylogeneticDAG.Internal
+  ( EdgeReference
+  , PhylogeneticDAG(..)
+  , PhylogeneticDAG2(..)
+  , applySoftwireResolutions
+  , generateLocalResolutions
+  , getDotContextWithBaseAndIndex
+  , localResolutionApplication
+  , renderSummary
+  , resolutionsDoNotOverlap
+  ) where
 
 import           Bio.Character.Decoration.Shared
 import           Bio.Graph.LeafSet
@@ -44,7 +54,6 @@ import qualified Data.List.NonEmpty        as NE
 import           Data.List.Utility
 import           Data.Maybe                       (fromMaybe)
 import           Data.MonoTraversable
-import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Data.TopologyRepresentation
 import           Data.Vector                      (Vector)
@@ -67,7 +76,7 @@ import           Text.XML
 -- * y = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * z = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Dynamic'    specified as 'DynamicChar'     or 'Bio.Metadata.DiscreteWithTCM'
 newtype PhylogeneticDAG e n u v w x y z
-     = PDAG (ReferenceDAG () e (PhylogeneticNode n (CharacterSequence u v w x y z)))
+    = PDAG (ReferenceDAG () e (PhylogeneticNode n (CharacterSequence u v w x y z)))
 
 
 -- |
@@ -83,7 +92,7 @@ newtype PhylogeneticDAG e n u v w x y z
 -- * y = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * z = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Dynamic'    specified as 'DynamicChar'     or 'Bio.Metadata.DiscreteWithTCM'
 newtype PhylogeneticDAG2 e n u v w x y z
-     = PDAG2 ( ReferenceDAG
+    = PDAG2 ( ReferenceDAG
                  (         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
                  , Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
                  , Maybe  (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge)))
@@ -99,13 +108,11 @@ newtype PhylogeneticDAG2 e n u v w x y z
 type EdgeReference = (Int, Int)
 
 
---instance HasLeafSet (PhylogeneticDAG2 e n u v w x y z) (LeafSet n) where
 -- | (✔)
 instance HasLeafSet (PhylogeneticDAG2 e n u v w x y z) (LeafSet (PhylogeneticNode2 (CharacterSequence u v w x y z) n)) where
 
     leafSet = lens getter undefined
         where
---            getter :: (PhylogeneticDAG2 e n u v w x y z) -> (LeafSet n)
             getter (PDAG2 e) =  e ^. leafSet
 
 
@@ -114,7 +121,7 @@ instance (NFData e, NFData n, NFData u, NFData v, NFData w, NFData x, NFData y, 
 
 
 -- | (✔)
-instance Foldable f => PrintDot (PhylogeneticDAG2 e (f String) u v w x y z) where
+instance Show n => PrintDot (PhylogeneticDAG2 e n u v w x y z) where
 
     unqtDot       = unqtDot . discardCharacters
 
@@ -143,8 +150,7 @@ instance ( Show e
 
 
 -- | (✔)
-instance ( Foldable f
-         , HasBlockCost u v w x y z Word Double
+instance ( HasBlockCost u v w x y z Word Double
          , HasCharacterName u CharacterName
          , HasCharacterName v CharacterName
          , HasCharacterName w CharacterName
@@ -153,14 +159,14 @@ instance ( Foldable f
          , HasCharacterName z CharacterName
          , HasTraversalFoci z (Maybe TraversalFoci)
          , Show e
-         , Show (f String)
+         , Show n
          , Show u
          , Show v
          , Show w
          , Show x
          , Show y
          , Show z
-         ) => Show (PhylogeneticDAG2 e (f String) u v w x y z) where
+         ) => Show (PhylogeneticDAG2 e n u v w x y z) where
 
     show p@(PDAG2 dag) = unlines
         [ renderSummary p
@@ -172,13 +178,21 @@ instance ( Foldable f
 
 
 -- | (✔)
-instance Foldable f => ToNewick (PhylogeneticDAG2 e (f String) u v w x y z) where
+instance Show n => ToNewick (PhylogeneticDAG2 e n u v w x y z) where
 
     toNewick = toNewick . discardCharacters
 
 
 -- | (✔)
-instance ( ToXML u
+instance ( HasBlockCost u v w x y z Word Double
+         , Show  n
+         , Show  u
+         , Show  v
+         , Show  w
+         , Show  y
+         , Show  x
+         , Show  z
+         , ToXML u
          , ToXML v
          , ToXML w
          , ToXML y
@@ -191,10 +205,10 @@ instance ( ToXML u
 -- |
 -- Get the dot context of a 'PhylogeneticDAG' with useful internal node decorations.
 getDotContextWithBaseAndIndex
-  :: Foldable f
+  :: Show n
   => Int -- ^ Base over which the Unique
   -> Int
-  -> PhylogeneticDAG2 e (f String) u v w x y z
+  -> PhylogeneticDAG2 e n u v w x y z
   -> ([DotNode GraphID], [DotEdge GraphID])
 getDotContextWithBaseAndIndex i j (PDAG2 dag) = getDotContext i j $ nodeDecorationDatum2 <$> dag
 
@@ -316,7 +330,7 @@ generateLocalResolutions f1 f2 f3 f4 f5 f6 parentalResolutionContext childResolu
 
 
 -- |
--- Given a transformation for the last type parameter, and two resolution caches,
+-- Given a transformation for the last type parameter and two resolution caches,
 -- apply the transformation to all possible resolution combinations.
 localResolutionApplication
   :: HasBlockCost u v w x y d' Word Double
@@ -344,6 +358,7 @@ localResolutionApplication f x y =
         }
 
 
+{-
 -- |
 -- Given a foldable structure, generate a list of all possible pairs in the
 -- structure. Does not check for uniqueness of elements.
@@ -353,12 +368,19 @@ pairs = f . toList
     f    []  = []
     f   [_]  = []
     f (x:xs) = ((\y -> (x, y)) <$> xs) <> f xs
+-}
 
 
 -- |
 -- Nicely show the DAG information.
 renderSummary
-  :: ( Foldable f
+  :: ( Show n
+     , Show u
+     , Show v
+     , Show w
+     , Show x
+     , Show y
+     , Show z
      , HasBlockCost u v w x y z Word Double
      , HasCharacterName u CharacterName
      , HasCharacterName v CharacterName
@@ -368,7 +390,7 @@ renderSummary
      , HasCharacterName z CharacterName
      , HasTraversalFoci z (Maybe TraversalFoci)
      )
-  => PhylogeneticDAG2 e (f String) u v w x y z
+  => PhylogeneticDAG2 e n u v w x y z
   -> String
 renderSummary pdag@(PDAG2 dag) = unlines
     [ show dag
@@ -378,9 +400,9 @@ renderSummary pdag@(PDAG2 dag) = unlines
 
 
 -- |
--- Render a "summary" of a sequence consisting of a summary for each block
+-- Render a "summary" of a sequence consisting of a summary for each block.
 renderSequenceSummary
-  :: ( Foldable f
+  :: ( Show n
      , HasBlockCost u v w x y z Word Double
      , HasCharacterName u CharacterName
      , HasCharacterName v CharacterName
@@ -390,13 +412,13 @@ renderSequenceSummary
      , HasCharacterName z CharacterName
      , HasTraversalFoci z (Maybe TraversalFoci)
      )
-  => PhylogeneticDAG2 e (f String) u v w x y z
+  => PhylogeneticDAG2 e n u v w x y z
   -> String
 renderSequenceSummary pdag@(PDAG2 dag) = ("Sequence Summary\n\n" <>) . unlines $ mapWithKey (renderBlockSummary pdag) sequenceContext
   where
     refVec = references dag
     roots  = rootRefs dag
-    
+
     sequenceWLOG   = getSequence $ NE.head roots
     getSequence    = otoList . characterSequence . NE.head . resolutions . nodeDecoration . (refVec !)
     displayForests = (\(_,_,x) -> fmap (fmap (\(y,r,n,_,_) -> (r,n,y))) x) . graphMetadata $ graphData dag
@@ -406,8 +428,8 @@ renderSequenceSummary pdag@(PDAG2 dag) = ("Sequence Summary\n\n" <>) . unlines $
           Nothing  -> (\x -> (Nothing, Nothing, Nothing, x)) <$> sequenceWLOG
           Just ctx -> let (a,b,c) = unzip3 $ toList ctx
                       in  zip4 (Just <$> a) (Just <$> b) (Just <$> c) sequenceWLOG
-      
-    
+
+
 -- |
 -- Render a block's "summary" in a legible manner.
 -- Includes:
@@ -425,8 +447,7 @@ renderSequenceSummary pdag@(PDAG2 dag) = ("Sequence Summary\n\n" <>) . unlines $
 --   * brief summary of each character in the block
 --
 renderBlockSummary
-  :: ( Foldable f
-     , HasBlockCost u v w x y z Word Double
+  :: ( HasBlockCost u v w x y z Word Double
      , HasCharacterName u CharacterName
      , HasCharacterName v CharacterName
      , HasCharacterName w CharacterName
@@ -434,8 +455,9 @@ renderBlockSummary
      , HasCharacterName y CharacterName
      , HasCharacterName z CharacterName
      , HasTraversalFoci z (Maybe TraversalFoci)
+     , Show n
      )
-  => PhylogeneticDAG2 e (f String) u v w x y z
+  => PhylogeneticDAG2 e n u v w x y z
   -> Int
   -> (Maybe Double, Maybe Double, Maybe TraversalTopology, CharacterBlock u v w x y z)
   -> String
@@ -465,7 +487,7 @@ renderBlockSummary (PDAG2 dag) key (costOfRooting, costOfNetworking, displayMay,
           , fromMaybe 0 costOfNetworking
           , blockCost bValue
           ]
-        
+
     renderStaticCharacterSummary sc = unlines
         [ "    Name:   " <> show (sc ^. characterName)
         , "    Weight: " <> show (sc ^. characterWeight)
@@ -489,11 +511,11 @@ renderBlockSummary (PDAG2 dag) key (costOfRooting, costOfNetworking, displayMay,
 
 -- |
 -- Render a display forest to a newick string.
-renderDisplayForestNewick :: Foldable f => ReferenceDAG d e (f String) -> TraversalTopology -> String
+renderDisplayForestNewick :: Show n => ReferenceDAG d e n -> TraversalTopology -> String
 renderDisplayForestNewick dag topo = unlines $ renderDisplayTree <$> toList (rootRefs dag)
   where
     refVec = references dag
-    
+
     renderDisplayTree :: Int -> String
     renderDisplayTree nodeIdx =
       case kidRefs of
@@ -511,12 +533,9 @@ renderDisplayForestNewick dag topo = unlines $ renderDisplayTree <$> toList (roo
 
         openParensIn = length . filter (== '(')
 
-    renderLeaf k v =
-        case toList v of
-          []  -> show k
-          x:_ -> x
+    renderLeaf _k = show
 
-  
+
 -- |
 -- Assert that two resolutions do not overlap.
 resolutionsDoNotOverlap :: ResolutionInformation a -> ResolutionInformation b -> Bool
@@ -527,5 +546,3 @@ resolutionsDoNotOverlap x y = popCount (leafSetRepresentation x .&. leafSetRepre
 -- Retrieve only 'ReferenceDAG' from 'PhylogeneticDAG2'.
 discardCharacters :: PhylogeneticDAG2 e n u v w x y z -> ReferenceDAG () e n
 discardCharacters (PDAG2 x) = defaultMetadata $ nodeDecorationDatum2 <$> x
-
-

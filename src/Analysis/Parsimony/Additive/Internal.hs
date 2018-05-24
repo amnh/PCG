@@ -36,7 +36,7 @@ import Numeric.Extended
 -- import Debug.Trace
 
 {-
-  TODO: Add these trees to the new test-suite
+  TODO: Add these trees to the new test suite
 
   To test pre-order additive logic Case 1:
     ((A, B), C)
@@ -126,7 +126,7 @@ additivePostOrder parentDecoration xs =
 -- Initializes a leaf node by copying its current value into its preliminary
 -- state. Gives it a minimum cost of 0.
 --
--- Used on the postorder pass.
+-- Used on the post-order pass.
 initializeLeaf :: ( DiscreteCharacterMetadata d
                   , RangedCharacterDecoration d  c
 --                  , ToXML                     d'
@@ -145,7 +145,7 @@ initializeLeaf curDecoration = finalDecoration
 -- |
 -- Updates the character on the parent of two child nodes to become an
 -- 'AdditiveOptimizationDecoration'. Determines the cost by adding the cost of
--- the intersection of the two child nodes, then summing that value with the
+-- the intersection of the two child nodes then summing that value with the
 -- costs of the two children. The preliminary value of the character is the
 -- intersection of the two child intervals.
 --
@@ -221,7 +221,7 @@ finalizeLeaf decoration = finalDecoration
 -- 3. Otherwise, find the intersections of the parent and each of the children,
 -- union them, then union that with the parent.
 --
--- Used on the preorder pass.
+-- Used on the pre-order pass.
 determineFinalState :: (-- Ranged c
 --                       , Num (Bound c)
                          Ord (Bound c)

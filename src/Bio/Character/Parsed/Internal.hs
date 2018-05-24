@@ -25,12 +25,12 @@ import Data.Vector        (Vector)
 
 
 -- |
--- A mapping from taxon identifiers to thier corresponding sequences.
+-- A mapping from taxon identifiers to their corresponding sequences.
 type TaxonCharacters = Map Identifier ParsedChars
 
 
 -- |
--- Represents a character sequence containing possibly missing character data.
+-- Represents a character sequence containing possibly-missing character data.
 type ParsedChars = Vector ParsedCharacter
 
 -- |

@@ -14,7 +14,9 @@
 
 {-# LANGUAGE FlexibleContexts, ScopedTypeVariables, TypeFamilies #-}
 
-module File.Format.TNT.Command.NStates where
+module File.Format.TNT.Command.NStates
+  ( nstatesCommand
+  ) where
 
 
 import Data.CaseInsensitive

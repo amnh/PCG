@@ -14,8 +14,12 @@
 
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
-module File.Format.TNT.Command.TRead where
-
+module File.Format.TNT.Command.TRead
+  ( treadCommand
+  , treadHeader
+  , treadLeaf
+  , treadTree
+  ) where
 
 import           Data.CaseInsensitive
 import           Data.Char                (isSpace)

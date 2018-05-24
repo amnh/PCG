@@ -33,12 +33,12 @@ import           Test.Tasty.HUnit
 -}
 
 
--- | A meta data structure with the cheap indel cost (1) and large substituion cost (4).
+-- | A metadata structure with a cheap indel cost (1) and large substitution cost (4).
 sillyMeta :: Vector (CharacterMetadata s)
 sillyMeta =
   pure CharMeta
     { charType   = DirectOptimization
-    , alphabet   = undefined 
+    , alphabet   = undefined
     , name       = "DefaultCharacter"
     , isAligned  = False
     , isIgnored  = False
@@ -50,12 +50,12 @@ sillyMeta =
     }
 
 
--- | A meta data structure with the typical indel cost (2) and substituion cost (1).
+-- | A metadata structure with the typical indel cost (2) and substitution cost (1).
 defaultMeta :: Vector (CharacterMetadata s)
 defaultMeta =
   pure CharMeta
     { charType   = DirectOptimization
-    , alphabet   = undefined 
+    , alphabet   = undefined
     , name       = "DefaultCharacter"
     , isAligned  = False
     , isIgnored  = False
@@ -67,7 +67,7 @@ defaultMeta =
     }
 
 
--- | A meta data structure with the equal indel cost (1) and substituion cost (1).
+-- | A metadata structure with equal indel and substitution costs (1).
 equalMeta :: Vector (CharacterMetadata s)
 equalMeta =
   pure CharMeta
@@ -91,11 +91,11 @@ equalMeta =
 performImpliedAlignment :: SimpleTree -> SimpleTree
 performImpliedAlignment = deriveImpliedAlignments meta . allOptimization 1 meta
   where
-    meta = defaultMeta 
+    meta = defaultMeta
 
 
 {- |
-  Takes an adjacency list representation of a tree with annotations of inital
+  Takes an adjacency list representation of a tree with annotations of initial
   characters and the resulting valid implied alignment character decorations.
 -}
 decorationTest :: Foldable t => t (Int, String, [String], [Int]) -> Assertion
@@ -140,7 +140,7 @@ testSimpleInsertionDeletionBiasing = testGroup "Insertion & deletion event appen
 
 
 {- |
-  A set of test trees which insertion events are later deleted. These events
+  A set of test trees which will later have their insertion events deleted. These events
   should /not/ be non-homology events.
 -}
 testDeletedInsertions :: TestTree
@@ -158,7 +158,7 @@ testDeletedInsertions = testGroup "Deletion of insertion events (no non-homology
 
 
 {- |
-  A set of test trees which deletion events are later filled with an insertion
+  A set of test trees which will later have their deletion events filled with an insertion
   event. These events should /not/ be non-homology events.
 -}
 testInsertedDeletions :: TestTree
@@ -184,7 +184,7 @@ testNonHomology = testGroup "Non-homology events from insertion and/or deletion 
 
 {- |
   A set of test trees which tests the indexing between insertion and deletion
-  events occuring at various places in the tree and character.
+  events occurring at various places in the tree and character.
 -}
 testDeletionInsertionInterrelations :: TestTree
 testDeletionInsertionInterrelations = testGroup "Correct relative indexing between insertion and deletion events"
@@ -203,7 +203,7 @@ testDeletionInsertionInterrelations = testGroup "Correct relative indexing betwe
 
 
 {- |
-  This tree should contain 3 deletion events which are applied repeatedly to the
+  This tree should contain three deletion events that are applied repeatedly to the
   /end/ of the character as you traverse down the tree.
 
   0
@@ -234,7 +234,7 @@ testAppendedDeletions = testCase "Chain of deletions appended to sequence" $ dec
 
 
 {- |
-  This tree should contain 3 deletion events which are applied repeatedly to the
+  This tree should contain three deletion events that are applied repeatedly to the
   /beginning/ of the character as you traverse down the tree.
 
   0
@@ -264,7 +264,7 @@ testPrependedDeletions = testCase "Chain of deletions prepended to sequence" $ d
            ]
 
 {- |
-  This tree should contain 3 insertion events which are applied repeatedly to the
+  This tree should contain three insertion events that are applied repeatedly to the
   /end/ of the character as you traverse down the tree.
 
   0
@@ -295,7 +295,7 @@ testAppendedInsertions = testCase "Chain of insertions appended to sequence" $ d
 
 
 {- |
-  This tree should contain 3 insertion events which are applied repeatedly to the
+  This tree should contain three insertion events that are applied repeatedly to the
   /beginning/ of the character as you traverse down the tree.
 
   0
@@ -326,10 +326,10 @@ testPrependedInsertions = testCase "Chain of insertions prepended to sequence" $
 
 
 {- |
-  This tree should contain an insertion event and a deletion event which are
+  This tree should contain an insertion event and a deletion event that are
   adjacent. We need to make sure that these events are calculated correctly.
 
-  It should be noted that we use a unique cost structure to force the adjacentcy
+  It should be noted that we use a unique cost structure to force the adjacency
   on such a small tree.
 
   0
@@ -362,10 +362,10 @@ testAdjacentDeletionInsertionEvents = testCase "Pair of adjacent insertion & del
 
 
 {- |
-  This tree should contain an insertion event and a deletion event which are
+  This tree should contain an insertion event and a deletion event that are
   adjacent. We need to make sure that these events are calculated correctly.
 
-  It should be noted that we use a unique cost structure to force the adjacentcy
+  It should be noted that we use a unique cost structure to force the adjacency
   on such a small tree.
 
   The alignment of trailing AA is not the focus of this test case.
@@ -400,13 +400,13 @@ testAdjacentDeletionInsertionEvents2 = testCase "Pair of adjacent insertion & de
 
 
 {- |
-  This tree should contain an two insertion events on each branch between the
-  AAA and ACATA characters followed by a deletion event between the
+  This tree should contain two insertion events on each branch between the
+  AAA and ACATA characters, followed by a deletion event between the
   AAA and AATA/ACAA characters.
 
   We should note that both insertion events of C & T on each side of the root
   note between the AAA and ACATA characters are /non-homologous/ and should
-  result in anti-symetric gaps in the leaf node alignments.
+  result in anti-symmetric gaps in the leaf node alignments.
 
   0
   |
@@ -540,13 +540,13 @@ testAmbiguousNonHomologyInsertions = testCase "multiple ambigously placed non-ho
 
 
 {- |
-  This tree should contain one deletion event followwed by an insertion event.
+  This tree should contain one deletion event followed by an insertion event.
 
   We should note that the deletion event and subsequent insertion event of the
   T base are /non-homologous/!
 
-  The presense of an additional T base in all the leaf characters tests that
-  the implied alignment correctly handles the base ambiguity appropriately. 
+  The presence of an additional T base in all the leaf characters tests the
+  appropriate handling of the base ambiguity by the implied alignment.
 
   0
   |
@@ -600,8 +600,8 @@ testInsertedDeletion = testCase "Insertion event of an deletion event" $ decorat
   We should note that the insertion event is /non-homologous/ with the similar
   base earlier in the tree!
 
-  The presense of an additional T base in all the leaf characters tests that
-  the implied alignment correctly handles the base ambiguity appropriately.
+  The presence of an additional T base in all the leaf characters tests the
+  appropriate handling of the base ambiguity by the implied alignment.
 
   0
   |
@@ -627,7 +627,7 @@ testInsertedDeletion = testCase "Insertion event of an deletion event" $ decorat
           |
           +-11: ATA
           |
-          `-12: 
+          `-12:
             |
             +-13: ATTA
             |
@@ -656,11 +656,11 @@ testInsertedDeletion3 = testCase "Insertion event of an deletion event 3" $ deco
 
 {- |
   This tree should contain one insertion event on each branch between the
-  AA and ATA characters followed.
+  AA and ATA characters.
 
   We should note that these insertion events of the T base on each side of the
   root note between the AA and ATA characters are /non-homologous/ and should
-  result in anti-symetric gaps in the leaf node alignments.
+  result in anti-symmetric gaps in the leaf node alignments.
 
   0
   |
@@ -785,14 +785,14 @@ testNonHomologyDoubleDeletedInsertion = testCase "Double deletion event of an si
 
 {- |
   This tree should contain one insertion event on each branch between the
-  ATA and ATTA characters followed.
+  ATA and ATTA characters.
 
   We should note that these insertion events of the T base on each side of the
   root note between the ATA and ATTA characters are /non-homologous/ and should
-  result in anti-symetric gaps in the leaf node alignments.
+  result in anti-symmetric gaps in the leaf node alignments.
 
-  The presense of an additional T base in all the leaf characters tests that
-  the implied alignment correctly handles the base ambiguity appropriately.
+  The presence of an additional T base in all the leaf characters tests the
+  appropriate handling of the base ambiguity by the implied alignment.
 
   0
   |
@@ -1317,64 +1317,64 @@ testTwoAdjacentInsertionsSeperateDeletions = testCase "Delete two     adjacent i
 {- |
   This tree should contain two /non-adjacent/ insertion events on different edges
   and two deletion events on different edges. The insertion events follow a
-  symetric pattern.
+  symmetric pattern.
 
   The deletion events should be applied to the same indices as the inserted
   bases.
 
   0
   |
-  +-1: AATT
+  +-1: AAGTT
   |
   `-2
     |
-    +-3: AATT
+    +-3: AAGTT
     |
     `-4
       |
-      +-5: AATT
+      +-5: AAGTT
       |
       `-6
         |
-        +-7: AACTT
+        +-7: AACGTT
         |
         `-8
           |
-          +-9: AACTT
+          +-9: AACGTT
           |
           `-10
             |
-            +-11: AACTT
+            +-11: AACGTT
             |
             `-12
               |
-              +-13: AACCTT
+              +-13: AACGCTT
               |
               `-14
                  |
-                 +-15: AACCTT
+                 +-15: AACGCTT
                  |
                  `-16
                    |
-                   +-17: AACCTT
+                   +-17: AACGCTT
                    |
                    `-18
                      |
-                     +-19: AACTT
+                     +-19: AACGTT
                      |
                      `-20
                        |
-                       +-21: AACTT
+                       +-21: AACGTT
                        |
                        `-22
                           |
-                          +-23: AACTT
+                          +-23: AACGTT
                           |
                           `-24
                             |
-                            +-25: AATT
+                            +-25: AAGTT
                             |
-                            `-26: AATT
+                            `-26: AAGTT
 -}
 testTwoNonAdjacentSymetricInsertionsSeperateDeletions :: TestTree
 testTwoNonAdjacentSymetricInsertionsSeperateDeletions = testCase "Delete two non-adjacent insertion events on different edges (symetric)" $ decorationTest tree
@@ -1412,64 +1412,64 @@ testTwoNonAdjacentSymetricInsertionsSeperateDeletions = testCase "Delete two non
 {- |
   This tree should contain two /non-adjacent/ insertion events on different edges
   and two deletion events on different edges. The insertion events follow a
-  symetric pattern.
+  symmetric pattern.
 
   The deletion events should be applied to the same indices as the inserted
   bases.
 
   0
   |
-  +-1: AATT
+  +-1: AAGTT
   |
   `-2
     |
-    +-3: AATT
+    +-3: AAGTT
     |
     `-4
       |
-      +-5: AATT
+      +-5: AAGTT
       |
       `-6
         |
-        +-7: AACTT
+        +-7: AACGTT
         |
         `-8
           |
-          +-9: AACTT
+          +-9: AACGTT
           |
           `-10
             |
-            +-11: AACTT
+            +-11: AACGTT
             |
             `-12
               |
-              +-13: AACCTT
+              +-13: AACGCTT
               |
               `-14
                  |
-                 +-15: AACCTT
+                 +-15: AACGCTT
                  |
                  `-16
                    |
-                   +-17: AACCTT
+                   +-17: AACGCTT
                    |
                    `-18
                      |
-                     +-19: AACTT
+                     +-19: AAGCTT
                      |
                      `-20
                        |
-                       +-21: AACTT
+                       +-21: AAGCTT
                        |
                        `-22
                           |
-                          +-23: AACTT
+                          +-23: AAGCTT
                           |
                           `-24
                             |
-                            +-25: AATT
+                            +-25: AAGTT
                             |
-                            `-26: AATT
+                            `-26: AAGTT
 -}
 testTwoNonAdjacentAntiSymetricInsertionsSeperateDeletions :: TestTree
 testTwoNonAdjacentAntiSymetricInsertionsSeperateDeletions = testCase "Delete two non-adjacent insertion events on different edges (antisymetric)" $ decorationTest tree
@@ -1507,9 +1507,9 @@ testTwoNonAdjacentAntiSymetricInsertionsSeperateDeletions = testCase "Delete two
 {- |
   This tree should contain three insertion events.
 
-  We should notice that the two furthers leaf nodes contain a different number
-  of insertion events. This induced a truncation issue because the insertion
-  events were not being applied correctly. on the preorder pass.
+  We should note that the two furthest leaf nodes contain a different number
+  of insertion events. This induces a truncation issue, because the insertion
+  events would not be applied correctly on the pre-order pass.
 
   0
   |
@@ -1553,9 +1553,8 @@ testTheDamnTrucnation = testCase "That god damn truncation issue" $ decorationTe
 {- |
   This tree should contain one insertion event and one deletion event.
 
-  This tree tests to ensure that an insertion event with a deletion event
-  before in the character and above the insertion event in the tree is
-  handled correctly.
+  This tree tests the handling of an insertion event with a deletion event
+  before it in the character and above it in the tree.
 
   0
   |
@@ -1599,8 +1598,8 @@ testDeletionBeforeAboveInsertion = testCase "Insertion event with deletion event
 {- |
   This tree should contain one insertion event and one deletion event.
 
-  This tree tests to ensure that an insertion event with a deletion event
-  before in the character and below in the tree is handled correctly.
+  This tree tests the handling of an insertion event with a deletion event
+  before it in the character and below it in the tree.
 
   0
   |
@@ -1614,7 +1613,7 @@ testDeletionBeforeAboveInsertion = testCase "Insertion event with deletion event
       |
       +-5: GACA
       |
-      `-6 
+      `-6
         |
         +-7: GACA
         |
@@ -1644,8 +1643,8 @@ testDeletionBeforeBelowInsertion = testCase "Insertion event with deletion event
 {- |
   This tree should contain one insertion event and one deletion event.
 
-  This tree tests to ensure that an insertion event with a deletion event
-  after in the character and above in the tree is handled correctly.
+  This tree tests the handling of an insertion event with a deletion event
+  after it in the character and above it in the tree.
 
   0
   |
@@ -1687,10 +1686,8 @@ testDeletionAfterAboveInsertion = testCase "Insertion event with deletion event 
 
 
 {- |
-  This tree should contain one insertion event and one deletion event.
-
-  This tree tests to ensure that an insertion event with a deletion event
-  after in the character and below in the tree is handled correctly.
+  This tree tests the handling of an insertion event with a deletion event
+  after it in the character and below it in the tree.
 
   0
   |
@@ -1704,7 +1701,7 @@ testDeletionAfterAboveInsertion = testCase "Insertion event with deletion event 
       |
       +-5: ACAG
       |
-      `-6 
+      `-6
         |
         +-7: ACAG
         |
@@ -1732,10 +1729,10 @@ testDeletionAfterBelowInsertion = testCase "Insertion event with deletion event 
 
 
 {- |
-  This tree contains an insertion event embedded in an earlier ancertoral insertion sequence.
+  This tree contains an insertion event embedded in an earlier ancertral insertion sequence.
 
-  This won't be handled appropriately with greedy preorder traversal insertions, unless extra
-  information is stored in the insertion event structure, or pains are taken to perform linear
+  This won't be handled appropriately with greedy pre-order traversal insertions unless either extra
+  information is stored in the insertion event structure or pains are taken to perform linear
   probing during the folds.
 
   0
@@ -1750,7 +1747,7 @@ testDeletionAfterBelowInsertion = testCase "Insertion event with deletion event 
       |
       +-5: ACCA
       |
-      `-6 
+      `-6
         |
         +-7: ACCA
         |
@@ -1782,8 +1779,7 @@ testNestedInsertions = testCase "Insertion event nested inside a larger ancetora
   This tree contains disjoint ancestoral insertion events and branches with
   anti-symetric adjacent insertion events.
 
-  This tree tests that the ordering of insertion event biasing from root to leafs
-  is handled appropriately.
+  This tree tests appropriate handling of the ordering of insertion events biasing from root to leafs.
 
   This tree will fail for many naive attempts at greedy insertion event application.
 
@@ -1799,9 +1795,9 @@ testNestedInsertions = testCase "Insertion event nested inside a larger ancetora
       |
       +-5: ACACA
       |
-      `-6 
+      `-6
         |
-        +-7: 
+        +-7:
         | |
         | +-13: ACACA
         | |
@@ -1849,15 +1845,15 @@ testBranchesWithAdjacentInsertions = testCase "Insertion events adjacent to ance
 {- |
   This tree should *crush* your very soul.
 
-  This tree contains insertion events which are ambigous with respect to thier
-  resolution. On resolution is of a large insertion event prepended to a smaller
-  ancestoral insertion event. Another resolution is of two insertion events
-  prepending and appending another ancestoral insetrtion event.
+  This tree contains insertion events that are ambiguous with respect to their
+  resolution. Two possible resolutions are presented: a large insertion event
+  prepended to a smaller ancestral insertion event, and two insertion events that
+  prepend and append another ancestral insertion event.
 
-  This will break if the implied alignment postorder traversal accumulation of
-  insertion events is not perfectly reapplied during the preorder traversal. It is
-  possible that one of the ambiguous resolutions will be chosen on the postorder
-  traversal and that the other ambiguous resolution will be chosen on the preorder
+  This will break if the accumulation of insertion events during implied alignment
+  post-order traversal is not perfectly reapplied during the pre-order traversal. It is
+  possible that one of the ambiguous resolutions will be chosen on the post-order
+  traversal and that the other ambiguous resolution will be chosen on the pre-order
   traversal.
 
   0
@@ -1872,7 +1868,7 @@ testBranchesWithAdjacentInsertions = testCase "Insertion events adjacent to ance
       |
       +-5: ACA
       |
-      `-6 
+      `-6
         |
         +-7: ACA
         |
@@ -1897,5 +1893,3 @@ testAmbigousResolutionConsistency = testCase "Consistency of ambiguous insertion
            , ( 9, "ACA"    , ["A---CA"], []     )
            , (10, "AGCTCA" , ["AGCTCA"], []     )
            ]
-
-

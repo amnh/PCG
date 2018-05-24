@@ -14,8 +14,8 @@
 
 module Bio.Character.Decoration.Continuous.Internal
   ( ContinuousDecorationInitial(..)
-  , ContinuousPostorderDecoration(..)
-  , ContinuousOptimizationDecoration(..)
+  , ContinuousPostorderDecoration()
+  , ContinuousOptimizationDecoration()
   , continuousDecorationInitial
   ) where
 
@@ -30,7 +30,6 @@ import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
 import Data.Range
-import Data.Semigroup
 import GHC.Generics
 import Numeric.Extended
 import Text.XML
@@ -63,7 +62,7 @@ newtype ContinuousOptimizationDecoration  c = COptD (AdditiveOptimizationDecorat
 
 
 -- |
--- Represents the partially complete character decoration after a post-order
+-- Represents the partially-complete character decoration after a post-order
 -- traversal.
 newtype ContinuousPostorderDecoration c = CPostD (AdditivePostorderDecoration c)
     deriving (Generic)
@@ -323,7 +322,7 @@ instance NFData c => NFData (ContinuousDecorationInitial c)
 instance (NFData c, NFData (Finite (Bound c)), NFData (Range (Bound c))) => NFData (ContinuousOptimizationDecoration c)
 
 
-instance (NFData c, NFData (Finite (Bound c)), NFData (Range (Bound c))) => NFData (ContinuousPostorderDecoration c) 
+instance (NFData c, NFData (Finite (Bound c)), NFData (Range (Bound c))) => NFData (ContinuousPostorderDecoration c)
 
 
 -- | (✔)
@@ -511,4 +510,3 @@ instance
                          , Left ("Preliminary_interval", show $ postorderDecoration ^. preliminaryInterval )
                          , Left ("Child_intervals"     , show $ postorderDecoration ^. childPrelimIntervals)
                          ]
-

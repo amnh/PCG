@@ -15,7 +15,21 @@
 
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
-module File.Format.VertexEdgeRoot.Parser where
+module File.Format.VertexEdgeRoot.Parser
+  ( VertexLabel
+  , EdgeLength
+  , VertexSetType(..)
+  , EdgeInfo(..)
+  , VertexEdgeRoot(..)
+  , connectedVertex
+  , verStreamParser
+  , labeledVertexSetDefinition
+  , vertexSetType
+  , unlabeledVertexSetDefinition
+  , vertexLabelDefinition
+  , edgeSetDefinition
+  , edgeDefinition
+  ) where
 
 import           Data.CaseInsensitive
 import           Data.Char                 (isSpace)
@@ -29,7 +43,7 @@ import qualified Data.List.NonEmpty as NE
 import           Data.List.Utility         (duplicates)
 import           Data.Map                  (Map)
 import qualified Data.Map           as Map
-import           Data.Maybe                (catMaybes, fromMaybe)
+import           Data.Maybe                (catMaybes)
 import           Data.Monoid
 import           Data.Ord                  (comparing)
 import           Data.Set                  (Set)
@@ -126,7 +140,7 @@ verDefinition = do
     sets <- many setDefinition
     case partitionEithers sets of
       ([edges'], [x,y]) -> formVertexEdgeRoot x y edges'
-      (xs      , ys   ) -> runFail $ edgeSetMessages xs ++ vertexSetMessages ys
+      (xs      , ys   ) -> runFail $ edgeSetMessages xs <> vertexSetMessages ys
   where
     formVertexEdgeRoot x@(typeA, setA) y@(typeB, setB) edges' =
       case (typeA, typeB) of
@@ -143,7 +157,7 @@ verDefinition = do
         (_             , _            ) -> runFail $ vertexSetMessages [x,y]
     runFail [x] = fail x
     runFail xs  = fails xs
-    vertexSetMessages xs    = rootSetMessages roots' ++ vertSetMessages verticies'
+    vertexSetMessages xs    = rootSetMessages roots' <> vertSetMessages verticies'
       where
         (roots',verticies') = partition isRoot xs
         isRoot              = (Just Roots ==) . fst
@@ -152,7 +166,7 @@ verDefinition = do
     vertSetMessages         = messages "vertex set"
     messages name []        = [message "No" name]
     messages _    [_]       = []
-    messages name (_:_:_)   = [message "Multiple" (name++"s")]
+    messages name (_:_:_)   = [message "Multiple" (name<>"s")]
     message x y             = concat [x," ",y," defined in input"]
 
 
@@ -216,7 +230,7 @@ unlabeledVertexSetDefinition = validateVertexSet =<< unlabeledVertexSetDefinitio
       | otherwise  = fail errorMessage
       where
         dupes = duplicates vs
-        errorMessage = "The following verticies were defined multiple times: " ++ show dupes
+        errorMessage = "The following verticies were defined multiple times: " <> show dupes
 
 
 -- |
@@ -367,7 +381,7 @@ validateForest ver@(VER vs es rs ) =
                 cycleDetected = not $ null base
                 cycle'        = [node] <> reverse inner <> [node]
                 childCycles   = findCycle' (node:stack) <$> toList children
-                children      = fromMaybe mempty $ node `lookup` connections
+                children      = fold $ node `lookup` connections
 
 {-
     -- Determine if multiple roots are connected by traversing the tree

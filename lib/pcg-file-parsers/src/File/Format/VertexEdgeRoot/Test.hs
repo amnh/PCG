@@ -102,7 +102,7 @@ unlabeledVertexSetDefinition' = testGroup "unlabeledVertexSetDefinition" [validL
 
 
 validVertexSet :: String
-validVertexSet = (\x -> "{"++x++"}") $ intercalate "," validVertexLabels
+validVertexSet = (\x -> "{"<>x<>"}") $ intercalate "," validVertexLabels
 
 
 labeledVertexSetDefinition' :: TestTree
@@ -113,7 +113,7 @@ labeledVertexSetDefinition' = testGroup "labeledVertexSetDefinition" [validLines
     success str  = testCase (show str) $ parseSuccess (labeledVertexSetDefinition <* eof) str
     failure str  = testCase (show str) $ parseFailure (labeledVertexSetDefinition <* eof) str
     validLabeledVertexSets =
-        [ label++"="++set | (_,label) <-  validSetLabels 
+        [ label<>"="<>set | (_,label) <-  validSetLabels 
                           , set       <- [validVertexSet]
         ]
     invalidLabeledVertexSets = 

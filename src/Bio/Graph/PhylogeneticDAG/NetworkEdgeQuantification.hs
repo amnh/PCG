@@ -14,9 +14,9 @@
 
 module Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
   ( assignPunitiveNetworkEdgeCost
-  , extractMostParsimoniusDisplayForest
-  , extractMinimalDisplayForestPerBlock
-  , gatherDisplayForests
+--  , extractMostParsimoniusDisplayForest
+--  , extractMinimalDisplayForestPerBlock
+--  , gatherDisplayForests
   ) where
 
 
@@ -51,45 +51,45 @@ import           Prelude            hiding (zipWith)
 -- |
 -- Calculate and assign the punitive network edge cost for the DAG.
 --
--- Consider a network \(N = (V, E)\), as commonly defined with an edge set \(E\)
+-- Consider a network, \(N = (V, E)\), as commonly defined with an edge set \(E\)
 -- and vertex set \(V\). Let this network be a directed, acyclic graph (DAG) with
--- a single root. Furthermore, consider the set of display trees \(T\), with
+-- a single root. Furthermore, consider the set of display trees, \(T\), with
 -- individual display trees denoted as \(τ \in T\), derived from the resolutions
 -- of network edges in \(E\) with \(n\) leaf taxa. For a set of \(k\) character
--- blocks \(C = \(C_1, ... , C_k\)\), there is at least one most parsimonious
+-- blocks \(C = \(C_1, ... , C_k\)\), there is at least one most-parsimonious
 -- display tree \(τ_{min} \in T\) with a cost of \(cost \left(τ_{min} \right)\)
 -- and with edge set \(E_{min} \subseteq E\) and vertex set
 -- \(V_{min} \subseteq V\). We further denote the display tree with minimum cost
 -- \(c_i\) for the character block \(C_i \in C\) as \(τ_i \in T\) with the
 -- corresponding edge set \(E_i \subseteq E\) and vertex set \(V_i \subseteq V\).
 --
--- The network edge punative cost is \(\infty\) if there is an "unused" network
+-- The network edge punitive cost is \(\infty\) if there is an "unused" network
 -- edge in the DAG. There exists an "unused" edge in the DAG if and only if there
 -- exists a network edge \(e \in E\) such that:
 --
 -- \[ \forall C_i \in C \quad  τ_i \in T \; \text{is the minimal display tree for} \; C_i \text{and} \; e \not \in τ_i \]
 --
 -- If there does not exist such a network edge we consider all the network edges
--- in the DAG "used" and the punative network edge cost is defined as follows:
+-- in the DAG "used" and the punitive network edge cost is defined as follows:
 --
 -- \[ \frac {\Sigma_{1}^{k} \; c_i \times | E_i \setminus E_{min} |} {2 \times \left( 2n -2 \right)} \]
 --
--- For more detail on the quantification of a network with a single root, see:
+-- For more details on the quantification of a network with a single root, see:
 --
 -- /Phylogenetic network analysis as a parsimony optimization problem/, Wheeler 2015
 --
 -- We must also consider the cases of multi-rooted DAGs, extending the method
--- described above. Unlike in the single rooted DAG context where we find a
+-- described above. Unlike in the single-rooted DAG context where we find a
 -- minimum display tree over all character blocks, in a multi-rooted DAG we find
 -- the "minimal display forest" over all character blocks. In the multi-rooted
 -- DAG, let \( \left\{r_1, r_2, ... r_k \right\} = \mathcal{R}\) be the set of
 -- \(k\) set roots.
 --
--- The minimal display forest is the set
+-- The minimal display forest is the set ??
 --
--- 
 --
--- This function performs this punative network edge cost calculation and updates
+--
+-- This function performs this punitive network edge cost calculation and updates
 -- the DAG metadata to reflect the cost of the network context.
 assignPunitiveNetworkEdgeCost
   :: ( HasBlockCost u v w x y z i r
@@ -108,9 +108,9 @@ assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = (outputContext, PDAG2 $ dag { 
 
     -- Use the valid display forests to determine:
     --
-    --  * The most parsimonious display forest for /all/ characters.
+    --  * The most-parsimonious display forest for /all/ characters.
     --
-    --  * The most parsimonious display forest for /each/ characters.
+    --  * The most-parsimonious display forest for /each/ characters.
     --
     mostParsimoniousDisplayForest       = extractMostParsimoniusDisplayForest displayForests
     minimalDisplayForestPerBlockContext = extractMinimalDisplayForestPerBlock displayForests
@@ -125,8 +125,8 @@ assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = (outputContext, PDAG2 $ dag { 
     edgeSetSize = toEnum . length $ referenceEdgeSet dag
 
     -- With all the requisite information in scope we can now compute the
-    -- punative network edge cost for the DAG.
-    (punativeCost, splitPunativeCosts) =
+    -- punitive network edge cost for the DAG.
+    (punitiveCost, splitPunativeCosts) =
         calculatePunitiveNetworkEdgeCost
           edgeSetSize
           networkEdgeSet
@@ -140,7 +140,7 @@ assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = (outputContext, PDAG2 $ dag { 
     cumulativeRootCost      = sum $ (\(_,c,_) -> c) <$> minimalDisplayForestPerBlock
 
     -- And lastly the total DAG cost
-    totalCost = punativeCost + realToFrac cumulativeCharacterCost + realToFrac cumulativeRootCost
+    totalCost = punitiveCost + realToFrac cumulativeCharacterCost + realToFrac cumulativeRootCost
 
     -- And store all the minimization work in a context to be returned.
     outputContext = zipWith f splitPunativeCosts minimalDisplayForestPerBlockContext
@@ -148,56 +148,56 @@ assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = (outputContext, PDAG2 $ dag { 
         f x (a, b, c, d) = (a, b, x, c, d)
 
     newGraphData  =
-        GraphData        
+        GraphData
         { dagCost           = totalCost
-        , networkEdgeCost   = punativeCost
+        , networkEdgeCost   = punitiveCost
         , rootingCost       = realToFrac cumulativeRootCost
         , totalBlockCost    = realToFrac cumulativeCharacterCost
         , graphMetadata     = graphMetadata $ graphData dag
         }
 
-    
-    
+
+
 {-
 assignPunitiveNetworkEdgeCost :: HasBlockCost u v w x y z i r => PhylogeneticDAG2 e n u v w x y z -> PhylogeneticDAG2 e n u v w x y z
 assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = PDAG2 $ dag { graphData = newGraphData }
   where
-    punativeCost  = calculatePunitiveNetworkEdgeCost input
+    punitiveCost  = calculatePunitiveNetworkEdgeCost input
 --    sequenceCosts = minimum . fmap totalSubtreeCost . resolutions . nodeDecoration . (references dag !) <$> rootRefs dag
     sequenceCosts = sum . fmap minimum . NE.transpose . fmap (fmap blockCost . toBlocks . characterSequence)
                   . (\x -> trace (renderResolutionContexts x) x)
                   . resolutions . nodeDecoration . (references dag !) <$> rootRefs dag
     newGraphData  =
-        GraphData        
-        { dagCost           = punativeCost + realToFrac (sum sequenceCosts)
-        , networkEdgeCost   = punativeCost
+        GraphData
+        { dagCost           = punitiveCost + realToFrac (sum sequenceCosts)
+        , networkEdgeCost   = punitiveCost
         , rootSequenceCosts = realToFrac <$> sequenceCosts
         , graphMetadata     = graphMetadata $ graphData dag
         }
-    renderResolutionContexts = unlines . fmap renderContext . toList 
+    renderResolutionContexts = unlines . fmap renderContext . toList
       where
         renderContext x = unwords
             [ show $ totalSubtreeCost x
             , show $ subtreeEdgeSet x
             ]
--}      
+-}
 
 
 -- |
 -- /O(r * 2^d)/ where /r/ is the number of roots and /d/ is the number of network
 -- nodes in the DAG.
--- 
+--
 -- Gathers the valid display forests present in the input DAG.
 --
--- A valid display forest satifies the following constraints:
+-- A valid display forest satisfies the following constraints:
 --
 -- * For each root node in the input DAG, there is a corresponding display tree
 --   with that root.
 --
--- * Each display tree in the display forest is not connected to anothe display
+-- * No display tree in the display forest is connected to another display
 --   tree. Equivelently, no two roots on the input DAG are connected.
 --
--- * Each taxa in the input DAG is connected to exactly one root.
+-- * Each taxon in the input DAG is connected to exactly one root.
 --
 gatherDisplayForests :: PhylogeneticDAG2 e n u v w x y z -> [ResolutionCache (CharacterSequence u v w x y z)]
 gatherDisplayForests (PDAG2 dag) = result
@@ -211,13 +211,13 @@ gatherDisplayForests (PDAG2 dag) = result
 
 
 -- |
--- There is at least one most parsimonious (for all characters combined) display
--- forest. This display forest is analogous to the most parsimonious display tree
+-- There is at least one most-parsimonious (for all characters combined) display
+-- forest. This display forest is analogous to the most-parsimonious display tree
 -- \(τ_min\) described in /Wheeler 2015/, with additional constraints. See
--- 'gatherDisplayForests' for more information on the contraints of a valid
+-- 'gatherDisplayForests' for more information on the constraints of a valid
 -- display forest.
 --
--- The most parsimonious display forest is the set of display trees which has
+-- The most-parsimonious display forest is the set of display trees which has
 -- the minimal cost over all character blocks when adding together the cost of
 -- each display tree *and* adding the root cost for each character block.
 extractMostParsimoniusDisplayForest
@@ -230,9 +230,9 @@ extractMostParsimoniusDisplayForest
   -> (TraversalTopology, r, r)
 extractMostParsimoniusDisplayForest displayForests = (topo, rCost, bCost)
   where
-    -- We select the most parsimonious display forest.
+    -- We select the most-parsimonious display forest.
     --
-    -- If there are multiple-equally parsimonious display forests, then we
+    -- If there are multiple equally-parsimonious display forests, then we
     -- select the first one.
     minDisplayForestWLOG  = head $ minimaBy (comparing displayForestCost) displayForests
 
@@ -242,18 +242,18 @@ extractMostParsimoniusDisplayForest displayForests = (topo, rCost, bCost)
         displayTreeCost x = let charSeq = characterSequence x
                             in  sequenceCost charSeq + sequenceRootCost rootCount charSeq
 
-    -- Once we have our most parsimonious display forest we create the forest
+    -- Once we have our most-parsimonious display forest we create the forest
     -- context for it.
     (topo, costs)  = createForestContext minDisplayForestWLOG
 
-    -- Since we don't need the block-by-block contexts partitioned, we accumulate
+    -- Since we don't need the block-by-block contexts partitioned we accumulate
     -- the costs of the forest context.
     (rCost, bCost) = foldr1 (\(a,b) (c,d) -> (a+c, b+d)) $ (\(a,b,_) -> (a,b)) <$> costs
 
 
 -- |
 -- Takes the non-empty set of valid display forests and returns the display
--- forest that is minimal for each character block. 
+-- forest that is minimal for each character block.
 extractMinimalDisplayForestPerBlock
   :: ( Foldable1 f
      , Functor   f
@@ -274,12 +274,12 @@ extractMinimalDisplayForestPerBlock displayForests = minimalBlockContexts
           where
             cost1 = rCost1 + bCost1
             cost2 = rCost2 + bCost2
-    
+
     validBlockContexts = linearizeContext . createForestContext <$> displayForests
 
 
 -- |
--- Calculate the punitive networkedge cost for the DAG.
+-- Calculate the punitive network edge cost for the DAG.
 calculatePunitiveNetworkEdgeCost
   :: ( Foldable f
 --     , Num r
@@ -289,7 +289,7 @@ calculatePunitiveNetworkEdgeCost
      )
   => Word                                      -- ^ Entire DAG edge-set cardinality
   -> f e                                       -- ^ Complete collection of network edges in the DAG
-  -> (TopologyRepresentation e, r, r)          -- ^ Most parsimonious display forest context
+  -> (TopologyRepresentation e, r, r)          -- ^ Most-parsimonious display forest context
   -> NonEmpty (TopologyRepresentation e, r, r) -- ^ Minimal display forest context for each character block
   -> (ExtendedReal, NonEmpty r)
 calculatePunitiveNetworkEdgeCost edgeSetCardinality networkEdgeSet parsimoniousContext minimalContexts
@@ -297,43 +297,43 @@ calculatePunitiveNetworkEdgeCost edgeSetCardinality networkEdgeSet parsimoniousC
                                  -- . trace ("Entire     edges: " <> show entireNetworkEdgeSet)
                                  -- . trace ("Minimal Block edges: " <> show ((\(_,_,x) -> collapseToEdgeSet x) <$> minimalBlockNetworkDisplay)) $
                                  (infinity, 0 <$ minimalContexts)
-  | otherwise                  = (realToFrac $ sum punativeCostPerBlock, punativeCostPerBlock)
+  | otherwise                  = (realToFrac $ sum punitiveCostPerBlock, punitiveCostPerBlock)
   where
-    -- First we determine if there are extraneous network edges in the DAG
-    -- 
+    -- First we determine if there are extraneous network edges in the DAG.
+    --
     -- We calculate the extraneous network edges by taking the difference between
     -- the complete netowrk edge set and the "used" network edge set.
     extraneousEdges   = totalNetworkEdges `difference` usedNetworkEdges
     totalNetworkEdges = S.fromList $ toList networkEdgeSet
     usedNetworkEdges  = foldMap1 (\(x,_,_) -> includedNetworkEdges x) minimalContexts
 
-    -- Next we gather the set of network edges present in the most parsimonious
+    -- Next we gather the set of network edges present in the most-parsimonious
     -- display forest.
     (parimoniousTopology,_,_) = parsimoniousContext
     mostParsimoniousNetworkEdgeSet = includedNetworkEdges parimoniousTopology
 
-    -- We gather the punative network edge cost for a block.
-    punativeEdgeCost (topo, _, costOfBlock) = costOfBlock * fromIntegral differingNetworkEdgeCount
+    -- We gather the punitive network edge cost for a block.
+    punitiveEdgeCost (topo, _, costOfBlock) = costOfBlock * fromIntegral differingNetworkEdgeCount
       where
         differingNetworkEdgeCount = length differenceEdgeSet
         differenceEdgeSet         = minimalBlockEdgeSet `difference` mostParsimoniousNetworkEdgeSet
         minimalBlockEdgeSet       = includedNetworkEdges topo
 
-    -- Then we apply the punative edge cost to each character block
-    punativeCostPerBlock = (/ divisor) . punativeEdgeCost <$> minimalContexts
+    -- Then we apply the punitive edge cost to each character block.
+    punitiveCostPerBlock = (/ divisor) . punitiveEdgeCost <$> minimalContexts
       where
         divisor = realToFrac $ 2 * edgeSetCardinality
 
-    -- The numerator is the sum of the punative network edge cost for each block.
---    numerator   = sum $ punativeEdgeCost <$> minimalContexts
+    -- The numerator is the sum of the punitive network edge cost for each block.
+--    numerator   = sum $ punitiveEdgeCost <$> minimalContexts
 --    denominator = 2 * edgeSetCardinality
-    
+
 
 -- |
 -- We create a forest context by accumulating the display tree topologies
 -- and the cost for each block between roots.
 --
--- Useful for comparing contexts when quantifying the punative network edge cost.
+-- Useful for comparing contexts when quantifying the punitive network edge cost.
 createForestContext
   :: ( Foldable1 f
      , HasBlockCost u v w x y z i r
@@ -364,7 +364,7 @@ linearizeContext (topo, costs) = squashTopologyIntoContext <$> costs
 ignoreDynamicCharacterTraversalFoci :: Functor f => f (a,b,c,d) -> f (a,b,c)
 ignoreDynamicCharacterTraversalFoci = fmap (\(a,b,c,_) -> (a,b,c))
 
-  
+
 
 
 -- | Used for convient accumulation.
@@ -380,7 +380,7 @@ instance Num c => Semigroup (BlockMinimizationContext c) where
 toBlockMinimizationContext :: TraversalTopology -> NonEmpty (c, c, Vector TraversalFocusEdge) -> BlockMinimizationContext c
 toBlockMinimizationContext x = BMC x . fmap (\(a,b,c) -> (a,b, pure <$> c))
 
-  
+
 fromBlockMinimizationContext :: BlockMinimizationContext c -> (TraversalTopology, NonEmpty (c, c, Vector (NonEmpty TraversalFocusEdge)))
 fromBlockMinimizationContext (BMC topo costs) = (topo, costs)
 
@@ -399,22 +399,22 @@ calculatePunitiveNetworkEdgeCost inputDag
                                       infinity
   | otherwise                       = realToFrac numerator / realToFrac denominator
   where
-    extraneousEdges        = entireNetworkEdgeSet `difference` minimalRequiredEdgeSet 
+    extraneousEdges        = entireNetworkEdgeSet `difference` minimalRequiredEdgeSet
     minimalRequiredEdgeSet = foldMap (\(_,_,x) -> collapseToEdgeSet x) minimalBlockNetworkDisplay
     entireNetworkEdgeSet   = extractNetworkEdgeSet inputDag
 
-    numerator   = punativeEdgeCost minResult
+    numerator   = punitiveEdgeCost minResult
     denominator :: Word
     denominator = cardinality minimalTotalNetworkDisplay --WLOG, all should be the same number of edges
-    
-    minResult@(minimalTotalNetworkDisplay, minimalBlockNetworkDisplay) = minimumBy (comparing punativeEdgeCost) minimalNetworkDisplaysWithMinimalBlocks
+
+    minResult@(minimalTotalNetworkDisplay, minimalBlockNetworkDisplay) = minimumBy (comparing punitiveEdgeCost) minimalNetworkDisplaysWithMinimalBlocks
 
     minimalTotalNetworkDisplays = extractNetworkMinimalDisplayTrees inputDag
     minimalBlockNetworkDisplays = extractBlocksMinimalEdgeSets      inputDag
 
     minimalNetworkDisplaysWithMinimalBlocks = minimalBlocksForGivenNetworkEdgeDisplay <$> minimalTotalNetworkDisplays
 
-    punativeEdgeCost (_totalEdgeSet, blockEdgeSets) = sum $ fmap g blockEdgeSets 
+    punitiveEdgeCost (_totalEdgeSet, blockEdgeSets) = sum $ fmap g blockEdgeSets
       where
         g (x,y,_) = x * fromIntegral y
 
@@ -426,7 +426,7 @@ calculatePunitiveNetworkEdgeCost inputDag
 
 
 -- |
--- Construct each most parsimonious display forest resolution with respect to the
+-- Construct each most-parsimonious display forest resolution with respect to the
 -- DAG rootings.
 extractNetworkMinimalDisplayTrees :: PhylogeneticDAG2 e n u v w x y z -> NonEmpty (NetworkDisplayEdgeSet (Int, Int))
 extractNetworkMinimalDisplayTrees (PDAG2 dag) = rootTransformation rootResolutions
@@ -440,7 +440,7 @@ extractNetworkMinimalDisplayTrees (PDAG2 dag) = rootTransformation rootResolutio
     -- First we collect all resolutions for each root node
     rootResolutions = resolutions . nodeDecoration . (refs !) <$> rootRefs dag
     refs = references dag
-    
+
 
 -- |
 -- Derive the entire edgeset of the DAG.
@@ -451,7 +451,7 @@ extractNetworkEdgeSet (PDAG2 dag) = getEdges dag
 -- |
 -- Construct a "Sequence" of minimal cost minimal and display tree resolutions
 -- for each character block.
-extractBlocksMinimalEdgeSets :: HasBlockCost u v w x y z i r 
+extractBlocksMinimalEdgeSets :: HasBlockCost u v w x y z i r
                              => PhylogeneticDAG2 e n u v w x y z
                              -> NonEmpty (r, NonEmpty (NetworkDisplayEdgeSet (Int,Int)))
 extractBlocksMinimalEdgeSets (PDAG2 dag) = foldMapWithKey1 f sequenceBlocksWLOG
@@ -466,7 +466,7 @@ extractBlocksMinimalEdgeSets (PDAG2 dag) = foldMapWithKey1 f sequenceBlocksWLOG
 
     f k _v =
         case minimaValues of
-          x:xs -> pure (fst x, fmap snd $ x:|xs) 
+          x:xs -> pure (fst x, fmap snd $ x:|xs)
           []   -> error ""
       where
         minimaValues = minimaBy (comparing fst) $ focusOnBlockIndex k <$> rootingResolutions
@@ -491,13 +491,13 @@ filterResolutionCombinationsBy predicate = filter predicate . toList . sequenceA
 -- A collection of resolutions, one resolution for each root in the DAG, forms a
 -- valid display forest if the following constraints are satisfied:
 --
--- * For each root node in the input DAG, there is a corresponding display tree
+-- * For each root node in the input DAG there is a corresponding display tree
 --   with that root.
 --
--- * Each diplay tree in the display forest is not connected to anothe display
+-- * No diplay tree in the display forest is connected to another display
 --   tree. Equivelently, no two roots on the input DAG are connected.
 --
--- * Each taxa in the input DAG is connected to exactly one root.
+-- * Each taxon in the input DAG is connected to exactly one root.
 --
 -- This function asserts that the conditions are met indirectly by using
 -- invariants of the 'ResolutionInformation' construction in an earlier

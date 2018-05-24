@@ -9,7 +9,6 @@ import           Data.Alphabet
 import           Data.Alphabet.IUPAC
 import qualified Data.Bimap         as BM
 import qualified Data.List.NonEmpty as NE
-import           Data.Semigroup
 import           Data.TCM.Memoized
 import           System.Environment        (getArgs)
 import           Test.Custom.NucleotideSequence
@@ -43,7 +42,7 @@ counterExampleCheck (NS lhs, NS rhs) = counterexample renderedExample $
     nativeDOResult == foreignDOResult
   where
     renderedExample = niceContextRendering nativeDOResult foreignDOResult
-    nativeDOResult  =         naiveDOMemo       lhs rhs (getMedianAndCost memoMatrixValue)
+    nativeDOResult  =         naiveDOMemo       lhs rhs (getMedianAndCost2D memoMatrixValue)
     foreignDOResult = chomp $ foreignThreeWayDO lhs rhs rhs 1 1 1 denseMatrixValue
 
 
@@ -57,7 +56,7 @@ performImplementationComparison lhs rhs = putStrLn renderedComparison
     readSequence = encodeStream alphabet . fmap ((iupacToDna BM.!) . pure . pure) . NE.fromList
 
     renderedComparison = niceContextRendering nativeDOResult foreignDOResult
-    nativeDOResult     =         naiveDOMemo       char1 char2 (getMedianAndCost memoMatrixValue)
+    nativeDOResult     =         naiveDOMemo       char1 char2 (getMedianAndCost2D memoMatrixValue)
     foreignDOResult    = chomp $ foreignThreeWayDO char1 char2 char2 1 1 1 denseMatrixValue
 
 

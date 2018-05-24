@@ -16,42 +16,67 @@ import Text.Megaparsec.Custom
 import Text.Megaparsec.Perm
 import Text.Megaparsec.Prim   (MonadParsec)
 
+
+data  VertexSetType
+    = Verticies
+    | Edges
+    | Roots
+    deriving (Eq,Show)
+
+
+data  EdgeInfo
+    = EdgeInfo (VertexLabel,VertexLabel) EdgeLength
+    deriving (Show,Eq,Ord)
+
+
+data  VertexEdgeRoot
+    = VER
+    { verticies   :: Set VertexLabel
+    , edges       :: Set EdgeInfo
+    , roots       :: Set VertexLabel
+    } deriving (Show)
+
+
+data  NodeSet
+    = Labeled   (Set VertexLabel) String
+    | Unlabeled (Set VertexLabel)
+
+
 type VertexLabel   = String
+
+
 type EdgeLength    = Maybe Double
 
-data VertexSetType = Verticies | Edges | Roots deriving (Eq,Show)
-data EdgeInfo      = EdgeInfo (VertexLabel,VertexLabel) EdgeLength deriving (Show,Eq,Ord)
-data VertexEdgeRoot
-   = VER
-   { verticies   :: Set VertexLabel
-   , edges       :: Set EdgeInfo
-   , roots       :: Set VertexLabel
-   } deriving (Show)
 
-
-data NodeSet
-   = Labeled   (Set VertexLabel) String
-   | Unlabeled (Set VertexLabel)
 type VertexSet = NodeSet
+
+
 type EdgeSet   = Set EdgeInfo
+
+
 type RootSet   = NodeSet
+
 
 getNodes :: NodeSet -> Set VertexLabel
 getNodes (Labeled s _) = s
 getNodes (Unlabeled s) = s
+
 
 edgeConnection :: EdgeInfo -> (VertexLabel,VertexLabel)
 edgeConnection (EdgeInfo (a,b) _)
   | a <= b    = (a,b)
   | otherwise = (b,a)
 
--- | Reads two vertex sets and an edge set, conditionally infers the root set
+
+-- |
+-- Reads two vertex sets and an edge set, conditionally infers the root set
 -- when vertex sets are unlabeled. Ensures that the elements of the root set
 -- are not connected in the forest. Ensures that the rooted trees in the
 -- forest do not contain cycles.
 verStreamParser :: (MonadParsec e s m, Token s ~ Char) => m VertexEdgeRoot
 verStreamParser = validateForest =<< verDefinition
-    
+
+
 -- We have a complicated definition here because we do not want to restrict
 -- the order of the set definitions, and yet we must enforce that there is 
 -- only one edge set and two vertex sets. One vertex set is the set of all 
@@ -69,13 +94,14 @@ verStreamParser = validateForest =<< verDefinition
 verDefinition :: (MonadParsec e s m, Token s ~ Char) => m VertexEdgeRoot
 verDefinition = perm
 
+
 {-
 verDefinition :: (MonadParsec e s m, Token s ~ Char) => m VertexEdgeRoot
 verDefinition = do
     sets <- many setDefinition
     case partitionEithers sets of
       ([edges'], [x,y]) -> formVertexEdgeRoot x y edges'
-      (xs      , ys   ) -> runFail $ edgeSetMessages xs ++ vertexSetMessages ys
+      (xs      , ys   ) -> runFail $ edgeSetMessages xs <> vertexSetMessages ys
   where
     formVertexEdgeRoot x@(typeA, setA) y@(typeB, setB) edges' =
       case (typeA, typeB) of
@@ -90,7 +116,7 @@ verDefinition = do
         (_             , _             ) -> runFail $ vertexSetMessages [x,y]
     runFail [x] = fail x
     runFail xs  = fails xs
-    vertexSetMessages xs    = rootSetMessages roots' ++ vertSetMessages verticies'
+    vertexSetMessages xs    = rootSetMessages roots' <> vertSetMessages verticies'
       where
         (roots',verticies') = partition isRoot xs
         isRoot              = (Just Roots ==) . fst
@@ -99,9 +125,10 @@ verDefinition = do
     vertSetMessages         = messages "vertex set"
     messages name []        = [message "No" name]
     messages _    [_]       = []
-    messages name (_:_:_)   = [message "Multiple" (name++"s")]
+    messages name (_:_:_)   = [message "Multiple" (name<>"s")]
     message x y             = concat [x," ",y," defined in input"]
 -}
+
 
 perm :: (MonadParsec e s m, Token s ~ Char) => m VertexEdgeRoot
 perm = do
@@ -114,9 +141,10 @@ perm = do
                                            else VER r' e v'
            _                            -> VER v' e r'
 
+
 labeledNodeSet :: (MonadParsec e s m, Token s ~ Char) => String -> m NodeSet
 labeledNodeSet setLabel = do
-    l  <- vertexSetLabel <?> "set label '" ++ setLabel ++ "'"
+    l  <- vertexSetLabel <?> "set label '" <> setLabel <> "'"
     ns <- unlabeledNodeSet
     pure $ case ns of
              Unlabeled xs -> Labeled xs l
@@ -132,6 +160,7 @@ labeledNodeSet setLabel = do
 rootSet, vertexSet :: (MonadParsec e s m, Token s ~ Char) => m NodeSet
 rootSet   = (labeledNodeSet "RootSet"   <|> unlabeledNodeSet) <?> "root set definition"
 vertexSet = (labeledNodeSet "VertexSet" <|> unlabeledNodeSet) <?> "vertex set definition"
+
 
 -- A vertex set with an optional set label enclosed in braces.
 -- A vertex set cannot have duplicate verticies
@@ -150,7 +179,8 @@ unlabeledNodeSet = validateNodeSet =<< unlabeledNodeSet'
       | otherwise  = fail errorMessage
       where
         dupes = duplicates ns
-        errorMessage = "The following verticies were defined multiple times: " ++ show dupes
+        errorMessage = "The following verticies were defined multiple times: " <> show dupes
+
 
 -- A vertex label is any non-space character that is also not a brace, paren, or comma.
 vertexLabel :: (MonadParsec e s m, Token s ~ Char) => m String
@@ -158,6 +188,7 @@ vertexLabel = some validChar
   where
     validChar = satisfy $ \x -> x `notElem` "{}(),"
                              && (not . isSpace) x
+
 
 -- Parses an edge set with an optional edge set label.
 -- Edges cannot be from one node to the same node.
@@ -189,8 +220,9 @@ edgeSet = validateEdgeSet =<< (edgeSet' <?> "edge set definition")
                    (_:_,[] ) -> [dupesErrorMessage]
                    ([] ,_:_) -> [selfsErrorMessage] 
                    (_:_,_:_) -> [dupesErrorMessage,selfsErrorMessage]
-        dupesErrorMessage = "Duplicate edges detected. The following edges were defined multiple times: "    ++ show dupes
-        selfsErrorMessage = "Self-referencing edge(s) detected.The following edge(s) are self=referencing: " ++ show selfs
+        dupesErrorMessage = "Duplicate edges detected. The following edges were defined multiple times: "    <> show dupes
+        selfsErrorMessage = "Self-referencing edge(s) detected.The following edge(s) are self=referencing: " <> show selfs
+
 
 edgeDefinition :: (MonadParsec e s m, Token s ~ Char) => m EdgeInfo
 edgeDefinition = symbol $ do
@@ -205,8 +237,10 @@ edgeDefinition = symbol $ do
   where
     branchLengthDefinition = symbol (char ':') *> symbol double
 
+
 symbol :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
 symbol x = x <* space
+
 
 -- A VER forest is not valid if:
 --   * Any two root nodes are connected
@@ -239,7 +273,7 @@ validateForest ver@(VER vs es rs )
           where
             (inner,base)  = span (/=node) stack
             cycleDetected = not $ null base
-            cycle'        = [node] ++ inner ++ [node]
+            cycle'        = [node] <> inner <> [node]
             childCycles   = findCycle' (node:stack) (Just node) <$> children
             adjacentNodes = fromMaybe [] $ node `lookup` connections
             children      = case parent of
@@ -251,7 +285,7 @@ validateForest ver@(VER vs es rs )
     findRoots :: VertexLabel -> [VertexLabel]
     findRoots root = findRoots' root root
       where
-        findRoots' parent node = selfRoot ++ descendantRoots
+        findRoots' parent node = selfRoot <> descendantRoots
           where
             selfRoot        = filter (`elem` rs) [node]
             descendantRoots = concat $ findRoots' node <$> children
@@ -269,6 +303,7 @@ validateForest ver@(VER vs es rs )
       , "The following root nodes should form different trees, but thay are part of the same tree: "
       , show xs
       ]
+
 
 buildEdgeMap :: Set VertexLabel -> Set EdgeInfo -> Map VertexLabel [VertexLabel]
 buildEdgeMap vs es = foldr buildMap empty vs

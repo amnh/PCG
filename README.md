@@ -2,7 +2,7 @@ Phylogenetic Component Graph
 =============
 
 [![BSD3 license](https://img.shields.io/badge/license-BSD3-blue.svg)](https://github.com/amnh/PCG/blob/master/LICENSE)
-
+[![Build Status](https://travis-ci.org/amnh/PCG.svg?branch=master)](https://travis-ci.org/amnh/PCG)
 
 Haskell program and library for general phylogenetic graph search
 

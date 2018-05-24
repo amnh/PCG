@@ -23,7 +23,6 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
 import           Data.Foldable
 import           Data.Key
 import           Data.Maybe               (fromMaybe)
-import           Data.Semigroup
 import           Data.Vector              (Vector)
 import qualified Data.Vector       as V
 import           Data.Vector.Instances    ()
@@ -31,11 +30,11 @@ import           Prelude           hiding (lookup)
 
 
 -- |
--- Time & space saving data structure for computing only a central "ribbon " of
--- a two dimensional matrix.
+-- Time- & space-saving data structure for computing only a central "ribbon " of
+-- a two-dimensional matrix.
 data Ribbon a
    = Ribbon
-   { height   :: {-# UNPACK #-} !Int 
+   { height   :: {-# UNPACK #-} !Int
    , width    :: {-# UNPACK #-} !Int -- width >= height
    , diagonal :: {-# UNPACK #-} !Int
    , offset   :: {-# UNPACK #-} !Int
@@ -129,7 +128,7 @@ generate x y f alpha = result
 
 
 -- |
--- Attempts to index the 'Ribbon' at a point within it's defiend region.
+-- Attempts to index the 'Ribbon' at a point within its defined region.
 ribbonLookup :: (Int, Int) -> Ribbon a -> Maybe a
 ribbonLookup (i,j) r
   | outsideBounds = Nothing
@@ -151,7 +150,7 @@ ribbonLookup (i,j) r
         ]
 
 -- |
--- Convert a 2D point to it's linear position in the vector.
+-- Convert a 2D point to its linear position in the vector.
 --
 -- Will produce undefined behavior when transforming a point outside the 'Ribbon'.
 transformation :: Ribbon a -> (Int, Int) -> Int
@@ -160,7 +159,7 @@ transformation r (i,j) = indexValue
     a = offset r
     h = height r
 
-    -- We compute the index value by determining the 'rowPrefix' and the 'colIndex'
+    -- We compute the index value by determining the 'rowPrefix' and the 'colIndex'.
     --
     -- The 'rowPrefix' is the number of cells in the linear layout required to
     -- get to the correct row in the 2D space.
@@ -169,11 +168,10 @@ transformation r (i,j) = indexValue
     -- get to the correct column offset in the 2D space.
     indexValue = rowPrefix + colIndex
 
-    -- The number of cells to offset to get to the correct row in 2D space is
-    -- equal to the target row times the maximum number of cells in a paritally
-    -- filled in row minus the number of cells over-counted at the beginning of
-    -- the matrix and also minus the number of cells over-counted at the end of
-    -- the matrix.
+    -- The number of cells to offset in order to get the correct row in 2D space is
+    -- equal to the target row times the maximum number of cells in a partially-
+    -- filled-in row minus both the number of cells over-counted at the beginning of
+    -- the matrix and  the number of cells over-counted at the end of the matrix.
     rowPrefix = i * (d + 2*a) - beg - end
       where
         beg = t a - t b
@@ -192,4 +190,3 @@ transformation r (i,j) = indexValue
 {-# INLINE t #-}
 t :: Int -> Int
 t n = (n*(n+1)) `div` 2
-

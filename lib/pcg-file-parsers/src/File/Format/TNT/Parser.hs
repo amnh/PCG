@@ -15,7 +15,9 @@
 
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
-module File.Format.TNT.Parser where
+module File.Format.TNT.Parser
+  ( tntStreamParser
+  ) where
 
 import           Control.Monad            ((<=<),liftM3)
 import           Data.CaseInsensitive
@@ -26,7 +28,6 @@ import qualified Data.Map           as M  (fromList,lookup)
 import qualified Data.List.NonEmpty as NE (fromList)
 import           Data.Matrix.NotStupid    (Matrix)
 import           Data.Maybe               (fromMaybe)
-import           Data.Semigroup
 import           Data.Vector              (Vector,(!),(//),generate)
 import qualified Data.Vector        as V  (fromList)
 import           File.Format.TNT.Command.CNames
@@ -53,7 +54,7 @@ tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gathe
     colateResult (     _,     _,     _,      _,    [],     []) = fail "No XREAD command or TREAD command, expecting either a single XREAD command or one or more TRead commands."
     colateResult (     _,     _,    _,       _,treads,     []) = pure . Left $ NE.fromList treads
     colateResult (ccodes,cnames,costs,_nstates,treads,[xread])
-      | charCountx xread == 0 = (Left . fmap (fmap (Name . fst)) . NE.fromList) <$> matchTaxaInTree xread treads
+      | charCountx xread == 0 = Left . fmap (fmap (Name . fst)) . NE.fromList <$> matchTaxaInTree xread treads
       | otherwise             = Right <$> liftM3 WithTaxa
                                   (pure $ vectorizeTaxa xread)
                                   (pure . applyCosts costs . applyCNames cnames $ ccodeCoalesce (charCountx xread) ccodes)

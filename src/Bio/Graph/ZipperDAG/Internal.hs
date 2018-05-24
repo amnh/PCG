@@ -8,24 +8,28 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- The Phylogentic Graph types.
---
--- 
---
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE TypeFamilies #-}
 
-module Bio.Graph.ZipperDAG.Internal where
+module Bio.Graph.ZipperDAG.Internal
+  ( Cursor
+  , ZipperNode()
+  , ZipperEdge()
+  , unfoldDAG
+  , zipperEdgeChild
+  , zipperEdgeParent
+  , zipperEdges
+  ) where
 
 import Data.Bifunctor
-import Data.Monoid 
+
 
 -- |
 -- A node in the zipper structure.
 --
 -- * The node's decoration value can be accessed through the 'Cursor' instance functions.
--- * The node's edges can bew extracted with 'zipperEdges'.
+-- * The node's edges can be extracted with 'zipperEdges'.
 data ZipperNode e n = ZNode n [InternalEdge n e]
 
 
@@ -34,22 +38,22 @@ data ZipperNode e n = ZNode n [InternalEdge n e]
 --
 -- * The edge's decoration value can be accessed through the 'Cursor' instance functions.
 -- * The edge's parent node can be accessed with 'zipperEdgeParent'.
--- * The edge's child  node can be accessed with 'zipperEdgeChild'.
+-- * The edge's child node can be accessed with 'zipperEdgeChild'.
 data ZipperEdge n e = ZEdge EdgeDirection e (ZipperNode e n) (ZipperNode e n)
 
 
 -- WARN: Do not export
 -- |
 -- This edge does not have bidirectional pointers.
--- 
+--
 -- If bidirectional pointers to parent and child existed, then the entire graph
--- would be reconstructed on an modification of any node or edge data!
+-- would be reconstructed on modification of any node or edge data!
 --
 -- When 'zipperEdges' is called, 'ZipperEdge' values containing bidirectional
 -- references for the parent and child 'ZipperNode's of the edge are created.
--- By only creating bidirectional references on demand while zipping locally,
--- we circumvebnt the problem of reconstructing the entire graph upon local
--- cursor modification that is present with a more naive data definition.
+-- By only creating bidirectional references on demand while zipping locally
+-- we circumvent the problem of reconstructing the entire graph upon local
+-- cursor modification that would otherwise be present when using a more naive data definition.
 data InternalEdge n e = IEdge EdgeDirection e (ZipperNode e n)
 
 
@@ -109,7 +113,7 @@ instance Functor (ZipperEdge n) where
 
 -- |
 -- Zipper types with an accessible cursor. The instance methods should be
--- implemented in constant time for this type-class to be useful.
+-- implemented in constant time for this type class to be useful.
 class Cursor f where
 
     {-# MINIMAL getCursor, (setCursor | adjustCursor) #-}
@@ -139,13 +143,13 @@ class Cursor f where
 zipperEdges :: ZipperNode e n -> [ZipperEdge n e]
 zipperEdges origin@(ZNode _ internalEdges) = f <$> internalEdges
   where
-    f (IEdge dir datum node) = ZEdge dir datum origin node 
+    f (IEdge dir datum node) = ZEdge dir datum origin node
 
 
 -- |
 -- /O(1)/
 --
--- Retrieves the parent 'ZipperNode' of a 'ZipperEdge'
+-- Retrieves the parent 'ZipperNode' of a 'ZipperEdge'.
 zipperEdgeParent :: ZipperEdge n e -> ZipperNode e n
 zipperEdgeParent (ZEdge dir _ lhs rhs) =
     case dir of
@@ -156,7 +160,7 @@ zipperEdgeParent (ZEdge dir _ lhs rhs) =
 -- |
 --
 -- /O(1)/
--- Retrieves the /child/ 'ZipperNode' of a 'ZipperEdge'
+-- Retrieves the /child/ 'ZipperNode' of a 'ZipperEdge'.
 zipperEdgeChild :: ZipperEdge n e -> ZipperNode e n
 zipperEdgeChild (ZEdge dir _ lhs rhs) =
     case dir of

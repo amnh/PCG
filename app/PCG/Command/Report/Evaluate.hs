@@ -16,7 +16,6 @@ import           Bio.Character.Exportable
 import           Bio.Metadata.CharacterName
 import           Bio.Graph
 import           Bio.Graph.PhylogeneticDAG
-import           Control.DeepSeq
 import           Control.Monad.IO.Class
 --import           Control.Monad.Logger
 --import           Data.Foldable
@@ -41,20 +40,20 @@ import           Text.XML
 --import Debug.Trace
 
 
-evaluate :: Command -> SearchState -> SearchState
-evaluate (REPORT (ReportCommand format target)) old = do
-    stateValue <- force old
-    case generateOutput stateValue format of
-      ErrorCase    errMsg  -> fail errMsg
-      MultiStream  streams -> old <* sequenceA (liftIO . uncurry writeFile <$> streams)
-      SingleStream output  ->
-        let op = case target of
-                   OutputToStdout   -> putStr
-                   OutputToFile f w ->
-                     case w of
-                       Append    -> appendFile f
-                       Overwrite ->  writeFile f
-        in  liftIO (op output) *> old
+evaluate :: Command -> GraphState -> SearchState
+evaluate (REPORT (ReportCommand format target)) stateValue = do
+    _ <- case generateOutput stateValue format of
+           ErrorCase    errMsg  -> fail errMsg
+           MultiStream  streams -> sequence_ (liftIO . uncurry writeFile <$> streams)
+           SingleStream output  ->
+             let op = case target of
+                        OutputToStdout   -> putStr
+                        OutputToFile f w ->
+                          case w of
+                            Append    -> appendFile f
+                            Overwrite ->  writeFile f
+             in  liftIO (op output)
+    pure stateValue
 
 evaluate _ _ = fail "Invalid READ command binding"
 
@@ -122,10 +121,9 @@ showWithTotalEdgeCost
      , EncodableDynamicCharacter c
      , Exportable c
      , Exportable (Element c)
-     , Foldable f
      , Ord (Element c)
      , Show e
-     , Show (f String)
+     , Show n
      , Show u
      , Show v
      , Show w
@@ -152,7 +150,7 @@ showWithTotalEdgeCost
      , HasCharacterWeight z Double
      , HasTraversalFoci   z (Maybe TraversalFoci)
      ) 
-  => PhylogeneticSolution (PhylogeneticDAG2 e (f String) u v w x y z) 
+  => PhylogeneticSolution (PhylogeneticDAG2 e n u v w x y z) 
   -> String
 {-
 showWithTotalEdgeCost x | trace ("Before Report Rendering: " <>

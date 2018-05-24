@@ -22,9 +22,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.DeletionEvents
 import           Data.IntSet       (IntSet)
 import qualified Data.IntSet as IS
 import           Data.List         (intercalate)
-import           Data.Monoid       ()
 import           Data.MonoTraversable
-import           Data.Semigroup
 
 
 -- |
@@ -44,27 +42,27 @@ instance Semigroup DeletionEvents where
 
     {- | /O(m)/ where m is sequence length
 
-         When we have two Deletion Event collections and we want to merge them
-         into a new, larger deletion event collection, we must take into account
-         that one collection is of anscestoral events and the other of descendant
+         When we have two 'DeletionEvents' collections and we want to merge them
+         into a new, larger 'DeletionEvents' collection, we must take into account
+         that one collection is of anscestral events and the other of descendant
          events. There will likely be a shift in the indices' "frames of reference"
-         which will require incrementation of the descendant deletion event
+         which will require incrementing the descendant 'DeletionEvents'
          collection.
 
 
          |> CASE 1 (simple)
          -=-=-=-=-=-=-=-=-
 
-         Consider the comparison between the follwoing sequences:
+         Consider the comparison between the following sequences:
 
          Anscestor:  GATTACA
          Descendant: GAACA
          Alignment:  GA--ACA
          Deletion Events: [2,3]
 
-         Consider the comparison betwen the folowing sequences:
+         Consider the comparison between the following sequences:
 
-         Anscestor:  GAACA
+         Ancestor:   GAACA
          Descendant: GAAC
          Alignment:  GAAC-
          Deletion Events: [4]
@@ -85,31 +83,31 @@ instance Semigroup DeletionEvents where
          Child:        GA--AC-
 
          Note that the index of 4 on the righthand side is incremented by 2 to 6.
-         This is because there are 2 indicies in the ancestor deletion event
+         This is because there are 2 indices in the ancestor deletion event
          collection that are less than 4.
 
 
          |> CASE 2: (complex)
          -=-=-=-=-=-=-=-=-
 
-         Consider the comparison between the follwoing sequences:
+         Consider the comparison between the following sequences:
 
-         Anscestor:  GATTACATA
+         Ancestor:   GATTACATA
          Descendant: GACATA
          Alignment:  GA---CATA
          Deletion Events: [2,3,4]
 
-         Consider the comparison betwen the folowing sequences:
+         Consider the comparison between the following sequences:
 
-         Anscestor:  GACATA
+         Ancestor:   GACATA
          Descendant: GAAA
          Alignment:  GA-A-A
          Deletion Events: [2,4]
 
          When the descendant deletion event collection has a deletion event with
-         an index that is a member of the acestor deletion event collection, the
+         an index that is a member of the ancestor deletion event collection the
          descendant index must be updated by the number of sequential elements in
-         the ancestor deletion collection starting from the matching index.
+         the ancestor deletion event collection starting from the matching index.
 
          Alignment History:
            Grandparent:  GATTACATA
@@ -123,7 +121,7 @@ instance Semigroup DeletionEvents where
          Child:        GA--A-A
 
          Note that the index of 2 on the righthand side is incremented by 3 to 5.
-         This is because there are 3 *consecutive* indicies in the ancestor
+         This is because there are 3 *consecutive* indices in the ancestor
          deletion event collection starting at index 2.
 
          Note that the index of 4 on the righthand side is incremented by 3 to 7.
@@ -207,7 +205,7 @@ instance MonoFoldable DeletionEvents where
     -- Note: this is a partial function. On an empty 'MonoFoldable', it will
     -- throw an exception.
     --
-    -- /See 'Data.MinLen.ofoldl1Ex'' from "Data.MinLen" for a total version of this function./
+    -- /See 'Data.MinLen.ofoldl1Ex' from "Data.MinLen" for a total version of this function./
     {-# INLINE ofoldl1Ex' #-}
     ofoldl1Ex' f (DE de) = ofoldl1Ex' f de
 
@@ -219,6 +217,6 @@ instance MonoFoldable DeletionEvents where
 
 
 -- |
--- Construct a 'DeletionEvent' from a structure of values coercable to an 'Int'.
+-- Construct a 'DeletionEvent' from a structure of values coercible to an 'Int'.
 fromList :: (Enum (Element t), MonoFoldable t) => t -> DeletionEvents
 fromList = DE . ofoldMap (IS.singleton . fromEnum)

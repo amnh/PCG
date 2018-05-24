@@ -14,11 +14,12 @@
 
 {-# LANGUAGE FlexibleContexts #-}
 
-module PCG.Command.Report.GraphViz where
+module PCG.Command.Report.GraphViz
+  ( generateDotFile
+  ) where
 
 import           Bio.Graph
 import           Data.GraphViz.Printing hiding ((<>)) -- Seriously, why is this redefined?
-import           Data.Semigroup
 import qualified Data.Text.Lazy         as L
 
 

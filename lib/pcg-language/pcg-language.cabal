@@ -1,6 +1,6 @@
 name:                pcg-language
 
-version:             0.0.1.0
+version:             0.0.1.1
 
 -- A short (one-line) description of the package.
 -- synopsis:
@@ -27,15 +27,11 @@ library
                      , case-insensitive
                        -- >=0.5.8 Required for Data.Map.restrictKeys
                      , containers         >=0.5.8
-                     , either
                      , free
                      , keys
-                     , megaparsec         >=6.0.0
-                     , mtl
+                     , megaparsec         >=6.4.0
                      , parser-combinators >=0.2.0
-                     , safe
                      , scientific
-                     , semigroupoids
                      , text
                      , time
 

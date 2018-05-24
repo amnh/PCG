@@ -15,7 +15,7 @@ module Bio.Graph.ZipperDAG
     ZipperNode()
   , ZipperEdge()
     -- * Zipper cursor accessors
-  , Cursor(..)
+  , Cursor
     -- * Zipper neighbor accessors
   , zipperEdgeChild
   , zipperEdgeParent

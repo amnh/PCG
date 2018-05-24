@@ -1,56 +1,31 @@
-name:                pcg-utility
+cabal-version:      2.2
+category:           Data
+build-type:         Simple
 
-version:             0.0.1.0
+name:               pcg-utility
+version:            0.0.1.0
 
--- A short (one-line) description of the package.
--- synopsis:
+author:             Ward Wheeler
+maintainer:         wheeler@amnh.org
+license:            BSD-3-Clause
+license-file:       LICENSE
 
--- A longer description of the package.
--- description:
---license:             BSD3
---license-file:        LICENSE
-author:              Ward Wheeler
-maintainer:          wheeler@amnh.org
+synopsis:           Collection of utility functions and data structures
 
--- A copyright notice.
--- copyright:
+description:        Defines custom data structures for special use cases,
+                    more abstract functions that base provides, and reexported
+                    correcting to deficient libraries.
 
-category:            Biology
-build-type:          Simple
---extra-source-files:  README.md
 
-cabal-version:      >= 1.22
-
-library
-
-  build-depends:      base             >=4.8
-                    , bv-little
-                    , containers       >=0.5.8
-                    , deepseq
-                    , either
-                    , hashable
-                    , integer-gmp
-                    , keys
-                    , matrix
-                    , mono-traversable >=1.0
-                    , primitive
-                    , QuickCheck
-                    , tasty
-                    , tasty-hunit
-                    , tasty-quickcheck
-                    , transformers
-                    , vector
+common ghc-settings
 
   default-language: Haskell2010
   
   ghc-options:      -O2
-
-                    -- Sanity check warnings
                     -Wall
                     -Wcompat
                     -Wdodgy-foreign-imports
                     -Wduplicate-exports
-
                     -Wempty-enumerations
                     -Widentities
                     -Wincomplete-patterns
@@ -77,6 +52,26 @@ library
                     -Wunused-imports
                     -Wunused-matches
                     -Wwrong-do-bind
+
+
+library
+
+  import:           ghc-settings
+
+  build-depends:    base             >=4.8
+                  , bv-little
+                  , containers       >=0.5.8
+                  , deepseq
+                  , hashable
+                  , integer-gmp
+                  , keys
+                  , matrix
+                  , mono-traversable >=1.0
+                  , QuickCheck
+                  , transformers
+                  , vector
+
+  hs-source-dirs:   src
 
   exposed-modules:  Data.BitMatrix
                     Data.Either.Custom
@@ -93,157 +88,55 @@ library
                     Numeric.Extended.Internal
 
                        
-Test-Suite test-suite
-
-  type:             exitcode-stdio-1.0
-
-  main-is:          TestSuite.hs
-
-  build-depends:      base               >=4.8
-                    , bv-little
-                    , containers         >=0.5.8
-                    , deepseq
-                    , hashable
-                    , integer-gmp
-                    , keys
-                    , matrix
-                    , mono-traversable   >=1.0
-                    , primitive
-                    , QuickCheck
-                    , tasty
-                    , tasty-hunit
-                    , tasty-quickcheck
-                    , vector
-
-  default-language: Haskell2010
-
-  ghc-options:      -O2
-
-                    -- Sanity check warnings
-                    -Wall
-                    -Wcompat
-                    -Wdodgy-foreign-imports
-                    -Wduplicate-exports
-                    -Wempty-enumerations
-                    -Widentities
-                    -Wincomplete-patterns
-                    -Wincomplete-record-updates
-                    -Wincomplete-uni-patterns
-                    -Wmissing-fields
-                    -Wmissing-home-modules
-                    -Wmissing-monadfail-instances
-                    -Wmissing-monadfail-instances
-                    -Wmissing-signatures
-                    -Wnoncanonical-monadfail-instances
-                    -Wnoncanonical-monad-instances
-                    -Wnoncanonical-monoid-instances
-                    -Woverflowed-literals
-                    -Woverlapping-patterns
-                    -Wredundant-constraints
-                    -Wsemigroup
-                    -Wtabs
-                    -Wunrecognised-warning-flags
-                    -Wunrecognised-warning-flags
-                    -Wunused-binds
-                    -Wunused-do-bind
-                    -Wunused-foralls
-                    -Wunused-imports
-                    -Wunused-matches
-                    -Wwrong-do-bind
-
-  other-modules:    Data.BitMatrix
-                    Data.BitMatrix.Internal
-                    Data.BitMatrix.Test
-                    Data.List.Utility
-                    Data.Matrix.NotStupid
-                    Data.MutualExclusionSet.Internal
-                    Data.MutualExclusionSet.Test
-                    Numeric.Extended.Internal
-                    Numeric.Extended.Natural
-                    Numeric.Extended.Natural.Test
-                    Numeric.Extended.Real
-                    Numeric.Extended.Real.Test
-                    Numeric.NonNegativeAverage
-                    Numeric.NonNegativeAverage.Test
-
-
 benchmark benchmark-suite
+
+  import:           ghc-settings
 
   type:             exitcode-stdio-1.0
 
   main-is:          Benchmarks.hs
                       
-  build-depends:      base               >=4.8
-                    , bv-little
-                    , containers         >=0.5.8
-                    , criterion
-                    , deepseq
-                    , either
-                    , ghc-prim
-                    , hashable
-                    , integer-gmp
-                    , keys
-                    , matrix
-                    , mono-traversable   >=1.0
-                    , primitive
-                    , QuickCheck
-                    , transformers
-                    , vector
+  build-depends:    base               >=4.8
+                  , criterion
+                  , deepseq
+                  , ghc-prim
+                  , pcg-utility
 
-  default-language: Haskell2010
+  ghc-options:    -fdicts-cheap
+                  -fmax-simplifier-iterations=10
+                  -fspec-constr-count=6
+                  -threaded
 
-  ghc-options:      -O2
-                    -fmax-simplifier-iterations=10
-                    -fdicts-cheap
-                    -fspec-constr-count=6
-                    -threaded
-
-                    -- Sanity check warnings
-                    -Wall
-                    -Wcompat
-                    -Wdodgy-foreign-imports
-                    -Wduplicate-exports
-                    -Wempty-enumerations
-                    -Widentities
-                    -Wincomplete-patterns
-                    -Wincomplete-record-updates
-                    -Wincomplete-uni-patterns
-                    -Wmissing-fields
-                    -Wmissing-home-modules
-                    -Wmissing-monadfail-instances
-                    -Wmissing-monadfail-instances
-                    -Wmissing-signatures
-                    -Wnoncanonical-monadfail-instances
-                    -Wnoncanonical-monad-instances
-                    -Wnoncanonical-monoid-instances
-                    -Woverflowed-literals
-                    -Woverlapping-patterns
-                    -Wredundant-constraints
-                    -Wsemigroup
-                    -Wtabs
-                    -Wunrecognised-warning-flags
-                    -Wunrecognised-warning-flags
-                    -Wunused-binds
-                    -Wunused-do-bind
-                    -Wunused-foralls
-                    -Wunused-imports
-                    -Wunused-matches
-                    -Wwrong-do-bind
-
-  other-modules:    Data.BitMatrix
-                    Data.BitMatrix.Internal
-                    Data.Either.Custom
-                    Data.List.Utility
-                    Data.Matrix.NotStupid
-                    Data.MutualExclusionSet.Bench
-                    Data.MutualExclusionSet.Internal
-                    Numeric.Extended
-                    Numeric.Extended.Internal
-                    Numeric.Extended.Natural
-                    Numeric.Extended.Natural.Bench
-                    Numeric.Extended.Real
-                    Numeric.NonNegativeAverage
-
-
+  hs-source-dirs: bench
+                    
+  other-modules:  Data.MutualExclusionSet.Bench
+                  Numeric.Extended.Natural.Bench
 
                        
+test-suite test-suite
+
+  import:           ghc-settings
+
+  type:             exitcode-stdio-1.0
+
+  main-is:          TestSuite.hs
+
+  build-depends:    base               >=4.8
+                  , bv-little
+                  , deepseq
+                  , integer-gmp
+                  , mono-traversable   >=1.0
+                  , pcg-utility
+                  , QuickCheck
+                  , tasty
+                  , tasty-hunit
+                  , tasty-quickcheck
+
+  hs-source-dirs: test
+                    
+  other-modules:  Data.BitMatrix.Test
+                  Data.MutualExclusionSet.Test
+                  Numeric.Extended.Natural.Test
+                  Numeric.Extended.Real.Test
+                  Numeric.NonNegativeAverage.Test
+

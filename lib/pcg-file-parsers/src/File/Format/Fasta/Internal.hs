@@ -58,8 +58,8 @@ identifierLine = do
     _ <- endOfLine <?> lineEndMessage x
     pure x
   where
-    commentMessage x = "Invalid comment for following label: '" ++ x ++ "'"
-    lineEndMessage x = "There is no end-of-line after label: '" ++ x ++ "'"
+    commentMessage x = "Invalid comment for following label: '" <> x <> "'"
+    lineEndMessage x = "There is no end-of-line after label: '" <> x <> "'"
 
 
 -- |
@@ -83,8 +83,8 @@ commentBody  = do
     _       <- inlineSpace
     content <- many (commentWord <* inlineSpace)
     pure $ unwords content
-
-
--- | Defines the words of a commenty
-commentWord :: (MonadParsec e s m, Token s ~ Char) => m String
-commentWord  = some (satisfy (not . isSpace)) <?> "Non-space characters"
+  where
+    -- |
+    -- Defines the words of a comment
+    commentWord :: (MonadParsec e s m, Token s ~ Char) => m String
+    commentWord  = some (satisfy (not . isSpace)) <?> "Non-space characters"

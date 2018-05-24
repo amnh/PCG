@@ -23,13 +23,12 @@ import Data.Alphabet
 import Data.Bits
 import Data.List.NonEmpty hiding (xor) -- Why is this defined? Is foldl1' (/=) too verbose?
 import Data.MonoTraversable
-import Data.Semigroup
 import Data.String               (IsString)
 
 
 
 -- |
--- Represents a single static character encoded in a binary and coercable to
+-- Represents a single static character encoded in binary and coercable to
 -- `Int` values.
 --
 -- Binary encoding must allow for the nth symbol in the 'Alphabet' to be tested
@@ -58,5 +57,3 @@ class ( EncodableStaticCharacter (Element s)
     -- |
     -- Directly construct a static character stream from the encoded elements.
     constructStaticStream :: NonEmpty (Element s) -> s
-
-

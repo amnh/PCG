@@ -12,7 +12,14 @@
 
 {-# LANGUAGE FlexibleContexts, FunctionalDependencies, MultiParamTypeClasses #-}
 
-module Bio.Character.Decoration.Continuous.Class where
+module Bio.Character.Decoration.Continuous.Class
+  ( ContinuousCharacter(..)
+  , ContinuousCharacterDecoration
+  , DiscreteExtensionContinuousDecoration(..)
+  , HasChildPrelimIntervals(..)
+  , HasContinuousCharacter(..)
+  , HasPreliminaryInterval(..)
+  ) where
 
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Shared
@@ -27,12 +34,12 @@ class ( ContinuousCharacter c
       , HasContinuousCharacter s c
       ) => ContinuousDecoration s c | s -> c where
 
-  
+
 -- |
 -- A character class for continuous characters.
 class Ord c => ContinuousCharacter c where
 
-    toContinuousCharacter :: Real r => Maybe r -> c 
+    toContinuousCharacter :: Real r => Maybe r -> c
 
 
 -- |
@@ -40,7 +47,7 @@ class Ord c => ContinuousCharacter c where
 class HasContinuousCharacter s a | s -> a where
 
     continuousCharacter :: Lens' s a
-    {-# MINIMAL continuousCharacter #-} 
+    {-# MINIMAL continuousCharacter #-}
 
 
 -- |
@@ -50,7 +57,7 @@ class ContinuousDecoration s a => ContinuousCharacterDecoration s a | s -> a whe
 
 
 -- |
--- A decoration containing a character that has been scored using Continuous's algorithm.
+-- A decoration containing a character that has been scored using the algorithm for 'Continuous' characters.
 class ( HasChildPrelimIntervals s ((Double, Double), (Double, Double))
       , HasIsLeaf s Bool
       , HasCharacterCost s Double
@@ -61,7 +68,7 @@ class ( HasChildPrelimIntervals s ((Double, Double), (Double, Double))
 -- |
 -- A decoration that can be constructed from a 'DiscreteCharacterDecoration' by
 -- extending the decoration to contain the requisite fields for performing
--- Continuous's algorithm.
+-- the algorithm for 'Continuous' characters.
 class ( ContinuousAdditiveHybridDecoration s c
       ) => DiscreteExtensionContinuousDecoration s c | s -> c where
 

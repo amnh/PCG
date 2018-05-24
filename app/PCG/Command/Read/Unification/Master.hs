@@ -14,11 +14,14 @@
 
 {-# LANGUAGE BangPatterns, FlexibleContexts #-}
 
-module PCG.Command.Read.Unification.Master where
+module PCG.Command.Read.Unification.Master
+  ( FracturedParseResult(..)
+  , masterUnify
+  ) where
 
 import           Bio.Character
 import           Bio.Character.Encodable
-import           Bio.Character.Decoration.Continuous hiding (characterName)
+import           Bio.Character.Decoration.Continuous hiding (characterName, toContinuousCharacter)
 import           Bio.Character.Decoration.Discrete   hiding (characterName)
 import           Bio.Character.Decoration.Dynamic    hiding (characterName)
 import           Bio.Character.Parsed
@@ -38,6 +41,7 @@ import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Alphabet
 import           Data.Bifunctor                    (first)
+import           Data.Default
 import           Data.Foldable
 import qualified Data.IntMap                as IM
 import qualified Data.IntSet                as IS
@@ -53,6 +57,7 @@ import           Data.Semigroup                    ((<>), sconcat)
 import           Data.Semigroup.Foldable
 import           Data.Set                          (Set, (\\))
 import qualified Data.Set                   as Set
+import           Data.String
 import           Data.TCM                          (TCM, TCMStructure(..))
 import qualified Data.TCM                   as TCM
 --import           Data.MonoTraversable
@@ -143,8 +148,8 @@ rectifyResults2 fprs =
             f = const Nothing
 
         singletonComponent (label, datum) = PhylogeneticForest . pure . PDAG $ DAG.fromList
-            [ (        mempty, PNode (Just "Trivial Root") defaultCharacterSequenceDatum, IM.singleton 1 mempty)
-            , (IS.singleton 0, PNode (Just label         )                         datum, mempty               )
+            [ (        mempty, PNode (fromString "Trivial Root") defaultCharacterSequenceDatum, IM.singleton 1 mempty)
+            , (IS.singleton 0, PNode (fromString label         )                         datum, mempty               )
             ]
 
         matchToChars :: Map String UnifiedCharacterSequence
@@ -152,9 +157,13 @@ rectifyResults2 fprs =
                      -> PhylogeneticForest UnReifiedCharacterDAG --CharacterDAG
         matchToChars charMapping = fmap (PDAG . fmap f)
           where
-            f label = PNode label $ fromMaybe defaultCharacterSequenceDatum charLabelMay
+            f label = PNode nodeLabel $ fromMaybe defaultCharacterSequenceDatum charLabelMay
               where
-                charLabelMay     = label >>= (`lookup` charMapping)
+                nodeLabel    =
+                    case label of
+                      Nothing -> def
+                      Just xs -> fromString xs
+                charLabelMay = label >>= (`lookup` charMapping)
 
     -- Error collection
     errors          = catMaybes [duplicateError, extraError, missingError]
@@ -224,9 +233,8 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
         charNames = makeCharacterNames . concatMap transform $ toList xs
           where
             transform x = fmap (const (sourceFile x) &&& correctName . characterName) . toList $ parsedMetas x
-              where
-                correctName [] = Nothing
-                correctName ys = Just ys
+            correctName [] = Nothing
+            correctName ys = Just ys
 
     deriveCorrectTCMs :: Functor f
                       => f (Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, Maybe (TCM, TCMStructure), CharacterName)))
@@ -511,7 +519,3 @@ nonAdditiveDistanceFunction :: Word -> Word -> Word
 nonAdditiveDistanceFunction i j
   | i == j    = 0
   | otherwise = 1
-
-
-
-

@@ -1,12 +1,14 @@
-module PCG.Computation.Internal where
+module PCG.Computation.Internal
+  ( evaluate
+  , optimizeComputation
+  , renderSearchState
+  ) where
 
 import           Bio.Graph
-import           Control.DeepSeq
 import           Control.Evaluation
 import           Data.Char          (isSpace)
 import           Data.Foldable
 import           Data.List.NonEmpty (NonEmpty(..))
-import           Data.Semigroup
 import qualified PCG.Command.Build.Evaluate  as Build
 import qualified PCG.Command.Read.Evaluate   as Read
 import qualified PCG.Command.Report.Evaluate as Report
@@ -30,21 +32,18 @@ collapseReadCommands p@(x:|xs) =
 evaluate :: Computation -> SearchState
 evaluate (Computation xs) = foldl' f mempty xs
   where
-    f :: SearchState -> Command ->  SearchState
-    f v c@BUILD  {} = Build.evaluate  c $ force v
-    f v c@READ   {} = Read.evaluate   c $ force v
-    f v c@REPORT {} = Report.evaluate c $ force v
+    f :: SearchState -> Command -> SearchState
+    f v c@BUILD  {} = v >>= Build.evaluate  c
+    f v c@READ   {} = v *>  Read.evaluate   c
+    f v c@REPORT {} = v >>= Report.evaluate c
 --    f _ = error "NOT YET IMPLEMENTED"
 
 
-renderSearchState :: Evaluation a -> IO ()
-renderSearchState e = do
-   _ <- case notifications e of
-          [] -> pure ()
-          xs -> putStrLn . unlines $ show <$> xs
+renderSearchState :: Evaluation a -> String
+renderSearchState e =
    case evaluationResult e of
-     NoOp         -> putStrLn   "[❓] No computation speciified...?"
-     Value _      -> putStrLn   "[✔] Computation complete!"
-     Error errMsg -> putStrLn $ "[✘] Error: "<> trimR errMsg
+     NoOp         -> "[❓] No computation speciified...?"
+     Value _      -> "[✔] Computation complete!"
+     Error errMsg -> "[✘] Error: "<> trimR errMsg
   where
     trimR = reverse . dropWhile isSpace . reverse

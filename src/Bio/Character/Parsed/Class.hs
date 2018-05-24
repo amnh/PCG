@@ -28,8 +28,6 @@ import qualified Data.List.NonEmpty as NE
 import           Data.Map                  (Map, fromSet, insert, keysSet, mergeWithKey)
 import qualified Data.Map           as M
 import           Data.Maybe
-import           Data.Monoid        hiding ((<>))
-import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Data.Set                  (Set)
 import qualified Data.Set           as S
@@ -46,7 +44,7 @@ import qualified File.Format.TNT    as TNT
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
 import           Prelude            hiding (zipWith)
-  
+
 
 {-
 data ParsedCharacter
@@ -60,23 +58,23 @@ type TaxonCharacters = Map String ParsedChars
 -}
 
 
--- TODO: Make sure that pipelines don't undo and redo the conversion to treeSeqs
--- currently we pack and unpack codes, make parsers dumber in the future. Read below!
+-- TODO: Make sure that pipelines don't undo and redo the conversion to treeSeqs.
+-- Currently we pack and unpack codes, make parsers dumber in the future. Read below!
 
 -- |
--- Instances provide a method to extract Character sequences from raw parsed results.
+-- Instances provide a method to extract 'Character' sequences from raw parsed results.
 -- The 'TreeSeqs' are agnostic of character data types. "Tree-only" return values from
 -- files will extract the taxa labels from leaf nodes only with empty sequences.
 --
 -- Characters of types DNA, RNA, protein, and amino acid will *not* have thier IUPAC
 -- codes translated to the apropriate groups. This abiguity group translation will
--- occur later during the rectification process with the character metadata. Parsers
+-- occur later, during the rectification process with the character metadata. Parsers
 -- which produce expanded ambiguity groups for these character types will be collapsed
--- back to the IUPAC code for the ambiguity group during the type-class's extraction
+-- back to the IUPAC code for the ambiguity group during the type class's extraction
 -- process.
 --
--- It is expected that parsers will altered to return simpler character literals for
--- time efficientcy in the future.
+-- It is expected that parsers will be altered to return simpler character literals for
+-- time efficiency in the future.
 --
 -- I need to think about how this might interact with some things in Nexus, but it seems
 -- to make sense. It might make verification in the parsers more difficult... thinking...
@@ -92,7 +90,7 @@ instance ParsedCharacters (DotGraph GraphID) where
       where
         -- Get the set of all nodes with out degree 0.
         leafNodeSet :: Ord n => DotGraph n -> Set n
-        leafNodeSet = keysSet . M.filter null . dotChildMap 
+        leafNodeSet = keysSet . M.filter null . dotChildMap
 
 
 -- | (✔)
@@ -123,7 +121,7 @@ instance ParsedCharacters (NonEmpty NewickForest) where
 
     unifyCharacters = mergeMaps . foldMap1 (fmap f)
       where
-        f node 
+        f node
           | null (descendants node) = M.singleton nodeName mempty
           | otherwise = foldMap f $ descendants node -- foldl1 (<>) $ f <$> descendants node
           where
@@ -154,13 +152,13 @@ instance ParsedCharacters TntResult where
     unifyCharacters (Left forest) = mergeMaps $ foldl f mempty forest
       where
         f xs tree = foldMap g tree : xs
-        g (Index  i) = M.singleton (show i) mempty 
-        g (Name   n) = M.singleton n mempty 
-        g (Prefix p) = M.singleton p mempty 
+        g (Index  i) = M.singleton (show i) mempty
+        g (Name   n) = M.singleton n mempty
+        g (Prefix p) = M.singleton p mempty
 
     unifyCharacters (Right (WithTaxa seqs _ []    )) = M.fromList . toList $ second tntToTheSuperSequence   <$> seqs
     -- maybe just use the seq vaiable like above and remove this case?
-    unifyCharacters (Right (WithTaxa _    _ forest)) = mergeMaps $ (M.fromList . toList . fmap (second tntToTheSuperSequence)) <$> forest
+    unifyCharacters (Right (WithTaxa _    _ forest)) = mergeMaps $ M.fromList . toList . fmap (second tntToTheSuperSequence) <$> forest
 
 
 -- | (✔)
@@ -175,7 +173,7 @@ instance ParsedCharacters VertexEdgeRoot where
     unifyCharacters (VER _ e r) = mergeMaps $ f . buildTree <$> toList r
       where
         es = toList e
-        f node 
+        f node
           | null (subForest node) = insert (rootLabel node) mempty mempty
           | otherwise = foldl1 (<>) $ f <$> subForest node
         buildTree nodeName = Node nodeName kids
@@ -202,8 +200,8 @@ tntToTheSuperSequence = V.fromList . fmap f
 
 -- |
 -- Takes a 'Foldable' structure of 'Map's and returns the union 'Map'
--- containing all the key value pairs. This fold is right biased with respect
+-- containing all the key-value pairs. This fold is right biased with respect
 -- to duplicate keys. When identical keys occur in multiple 'Map's, the value
--- occuring last in the 'Foldable' structure is returned.
+-- occurring last in the 'Foldable' structure is returned.
 mergeMaps :: (Foldable t, Ord k) => t (Map k v) -> Map k v
 mergeMaps = foldl (mergeWithKey (\_ _ b -> Just b) id id) mempty

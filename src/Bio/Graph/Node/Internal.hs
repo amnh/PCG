@@ -39,7 +39,6 @@ import Data.BitVector.LittleEndian
 import Data.EdgeSet
 import Data.Foldable
 import Data.List.NonEmpty       (NonEmpty(..))
-import Data.Semigroup
 import Data.TopologyRepresentation
 import GHC.Generics
 import Text.Newick.Class
@@ -58,7 +57,7 @@ data  PhylogeneticNode n s
 
 -- |
 -- This serves as a computation /dependant/ node decoration designed to hold node
--- information for a a phylogenetic network (or tree).
+-- information for a phylogenetic network (or tree).
 data  PhylogeneticNode2 s n
     = PNode2
     { resolutions          :: ResolutionCache s
@@ -87,16 +86,16 @@ type ResolutionCache s = NonEmpty (ResolutionInformation s)
 
 
 -- |
--- A newick representation of a subtree. Semigroup instance used for subtree
+-- A newick representation of a subtree. 'Semigroup' instance used for subtree
 -- joining.
 newtype NewickSerialization = NS String
   deriving (Eq, Generic, Ord)
 
 
 -- |
--- An arbitrarily ordered collection of leaf nodes in a subtree. Leaves in the
+-- An arbitrarily-ordered collection of leaf nodes in a subtree. Leaves in the
 -- tree are uniquely identified by an index across the entire DAG. Set bits
--- represent a leaf uniquily identified by that index being present in the
+-- represent a leaf uniquely identified by that index being present in the
 -- subtree.
 --
 -- Use the 'Semigroup' operation '(<>)' to union the leaves included in a leaf
@@ -237,7 +236,7 @@ addEdgeToEdgeSet e r = r { subtreeEdgeSet = singletonEdgeSet e <> subtreeEdgeSet
 
 -- |
 -- Updates the 'TopologyRepresentation' to include a new network edge present in
--- to spanning tree the node is a subtree of.
+-- the spanning tree the node is a subtree of.
 addNetworkEdgeToTopology
   :: (Int, Int) -- ^ Applied network edge identifier
   -> (Int, Int) -- ^ Excluded network edge identifier
@@ -254,7 +253,7 @@ pNode2 = flip PNode2
 
 -- |
 -- Construct a singleton newick string with a unique identifier that can be
--- rendered to a string through it's 'Show' instance.
+-- rendered to a string through its 'Show' instance.
 singletonNewickSerialization :: Show i => i -> NewickSerialization
 singletonNewickSerialization i = NS $ show i
 

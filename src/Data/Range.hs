@@ -56,7 +56,7 @@ instance NFData r => NFData (Range r)
 
 -- |
 -- Represents a numeric range. Allows for conversion to and from 'Ranged' types.
--- There is also a constructor for the zero range which can be used to for an
+-- There is also a constructor for the zero range, which can be used for an
 -- identity element in some contexts.
 class Num (Bound a) => Ranged a where
 
@@ -70,7 +70,7 @@ class Num (Bound a) => Ranged a where
 instance Show r => Show (Range r) where
 
     show (Range (x,y,_)) = mconcat [ "[" , show x, ", ", show y, "]" ]
-    
+
 
 -- |
 -- /O(1)/
@@ -92,7 +92,7 @@ fromTupleWithPrecision (x,y) d = Range (max x y, min x y, Just d)
 -- |
 -- /O(1)/
 --
--- Represents the precision of the Range.
+-- Represents the precision of the 'Range'.
 -- A Nothing value represents infinite precision.
 -- A Just    value represents a finite precision.
 precision :: Range r -> Maybe Int
@@ -128,7 +128,7 @@ intersects lhs rhs = lowerBound rhs <= upperBound lhs
 -- /O(1)/
 --
 -- Finds the intersection of two intervals, the intersection being the smallest
--- interval possible. Does not assume there's an overlap.
+-- interval possible. Does not assume there is an overlap.
 intersection :: Ord r => Range r -> Range r -> Range r
 intersection lhs rhs = Range (newLowerBound, newUpperBound, precision lhs)
     where
@@ -143,7 +143,7 @@ intersection lhs rhs = Range (newLowerBound, newUpperBound, precision lhs)
 -- possible, i.e. from the smallest possible value to the largest possible,
 -- considering the values in both intervals.
 --
--- Works for overlapped or subsetted intervals, as well as non-overlapping
+-- Works for overlapped or subsetted intervals as well as non-overlapping
 -- intervals.
 union :: Ord r => Range r -> Range r -> Range r
 union lhs rhs = Range (newLowerBound, newUpperBound, precision lhs)
@@ -167,8 +167,8 @@ closestStateTo lhs rhs
 -- |
 -- /O(1)/
 --
--- The smallest closed interval is the smallext interval between two non-
--- overlapping intervals, so the largest value in the leftmost interval on the
+-- The smallest closed interval is the smallest interval between two non-
+-- overlapping intervals, i.e. the largest value in the leftmost interval on the
 -- number line to the smallest value of the rightmost.
 smallestClosed :: Ord r => Range r -> Range r -> Range r
 smallestClosed lhs rhs = Range (newLowerBound, newUpperBound, precision lhs)
@@ -196,9 +196,9 @@ largestClosed interval value = Range (newLowerBound, newUpperBound, precision in
 -- Perform a fancy three-way operation used in a special case of the additive
 -- character scoring logic.
 threeWayRange :: Ord r => Range r -> Range r -> Range r -> Range r
-threeWayRange ancestoralInterval selfInterval descendantInterval = Range (newLowerBound, newUpperBound, precision selfInterval) 
+threeWayRange ancestoralInterval selfInterval descendantInterval = Range (newLowerBound, newUpperBound, precision selfInterval)
     where
-        selfClosestBound  =       selfInterval `closestStateTo` ancestoralInterval 
-        heirClosestBound  = descendantInterval `closestStateTo` ancestoralInterval 
+        selfClosestBound  =       selfInterval `closestStateTo` ancestoralInterval
+        heirClosestBound  = descendantInterval `closestStateTo` ancestoralInterval
         newLowerBound     = min selfClosestBound heirClosestBound
         newUpperBound     = max selfClosestBound heirClosestBound

@@ -12,7 +12,8 @@ import Test.Tasty.HUnit
 import TestSuite.GeneratedTests.Internal
 
 testSuite :: IO TestTree
-testSuite = testGroup "fastcStreamParser" <$> sequence [validFastaFiles{-, invalidFastaFiles-}]
+--testSuite = testGroup "fastcStreamParser" <$> sequence [validFastaFiles, invalidFastaFiles]
+testSuite = testGroup "fastcStreamParser" . pure <$> validFastaFiles
 
 validFastaFiles :: IO TestTree
 validFastaFiles = validateFileContents <$> validContents

@@ -8,7 +8,6 @@ import           Data.Alphabet
 import           Data.Alphabet.IUPAC
 import qualified Data.Bimap         as BM
 import qualified Data.List.NonEmpty as NE
-import           Data.Semigroup
 import           Data.TCM.Memoized
 import           System.Environment        (getArgs)
 import           Test.Custom.NucleotideSequence
@@ -41,7 +40,7 @@ counterExampleCheck :: (NucleotideSequence, NucleotideSequence) -> Bool
 counterExampleCheck (NS lhs, NS rhs) =
     ukkonenDOResult == foreignDOResult
   where
-    ukkonenDOResult = ukkonenDO         lhs rhs  (getMedianAndCost memoMatrixValue)
+    ukkonenDOResult = ukkonenDO         lhs rhs  (getMedianAndCost2D memoMatrixValue)
     foreignDOResult = foreignPairwiseDO lhs rhs  denseMatrixValue
 
 
@@ -57,7 +56,7 @@ performImplementationComparison lhs rhs = do
   where
     ukkonenMessage   = renderResult ukkonenDOResult
     foreignMessage   = renderResult foreignDOResult
-    ukkonenDOResult  = ukkonenDO         char1 char2 (getMedianAndCost memoMatrixValue)
+    ukkonenDOResult  = ukkonenDO         char1 char2 (getMedianAndCost2D memoMatrixValue)
     foreignDOResult  = foreignPairwiseDO char1 char2  denseMatrixValue 
     char1 = readSequence lhs
     char2 = readSequence rhs

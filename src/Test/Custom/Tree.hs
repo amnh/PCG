@@ -41,11 +41,13 @@ import           Safe                                    (tailMay)
 import           Test.QuickCheck
 import           Test.Tasty.HUnit
 
-createSimpleTree :: Foldable t
-               => Int      -- ^ Root node reference
-               -> String   -- ^ Alphabet symbols
-               -> t (Int, String, [Int]) -- ^ (Node Reference, sequence of dynamic characters, child nodes)
-               -> SimpleTree
+
+createSimpleTree
+  :: Foldable t
+  => Int      -- ^ Root node reference
+  -> String   -- ^ Alphabet symbols
+  -> t (Int, String, [Int]) -- ^ (Node Reference, sequence of dynamic characters, child nodes)
+  -> SimpleTree
 createSimpleTree rootRef symbols xs = TT . setRefIds $ unfoldTree buildTree rootRef
   where
     alphabet = fromSymbols $ pure <$> symbols
@@ -82,6 +84,7 @@ createCherry rootCharacter leftCharacter rightCharacter = createSimpleTree 0 alp
   where
     alphabet = toList $ foldMap S.fromList [rootCharacter, leftCharacter, rightCharacter]
 
+
 createBinary :: Foldable t => t String -> SimpleTree
 createBinary leafCharacters = TT . setRefIds . createBinary' $ createCherry' <$> chunksOf 2 leafCharacters
   where
@@ -104,7 +107,8 @@ createBinary leafCharacters = TT . setRefIds . createBinary' $ createCherry' <$>
     
 
 newtype SimpleTree = TT (Tree TestingDecoration)
-  deriving (Eq)
+    deriving (Eq)
+
 
 data TestingDecoration
    = Decorations
@@ -125,6 +129,7 @@ data TestingDecoration
    , suppliedAlphabet  :: Maybe (Alphabet String)
    } deriving (Eq)
 
+
 def :: TestingDecoration
 def = Decorations
     { dEncoded          = mempty
@@ -144,52 +149,60 @@ def = Decorations
     , suppliedAlphabet  = Nothing
     }
 
+
 sameRef :: SimpleTree -> SimpleTree -> Bool
 sameRef x y = nodeRef x == nodeRef y
+
 
 nodeRef :: SimpleTree -> Int
 nodeRef (TT x) = refEquality $ rootLabel x
 
+
 instance Show SimpleTree where
-  show (TT x) = drawTreeMultiLine $ show <$> x
+
+    show (TT x) = drawTreeMultiLine $ show <$> x
+
 
 instance Show TestingDecoration where
-  show decoration = intercalate "\n" $ catMaybes renderings
-    where
-      renderings = mconcat [renderedId, renderedCosts, renderedDecorations]
-      
-      renderedId = pure . pure $ "Node ( " <> show (refEquality decoration) <> " )"
-      renderedCosts =
-        [  pure $ "LocalCost   " <> show (dLocalCost decoration)
-        ,  pure $ "TotalCost   " <> show (dTotalCost decoration)
---        [  ("LocalCost   " <>)  <$> h dLocalCost
---        ,  ("TotalCost   " <>)  <$> h dTotalCost
-        ]
-      renderedDecorations =
-        [ g "Encoded                   " <$> f dEncoded
-        , g "Single                    " <$> f dSingle
-        , g "Final Ungapped            " <$> f dFinal
-        , g "Final Gapped              " <$> f dGapped
-        , g "Preliminary Ungapped      " <$> f dPreliminary
-        , g "Preliminary Gapped        " <$> f dAligned
-        , g "Left  Child-wise Alignment" <$> f dLeftAlignment
-        , g "Right Child-wise Alignment" <$> f dRightAlignment
-        , g "Implied Alignment         " <$> f dImpliedAlignment
-        ]
-      alphabetToken = suppliedAlphabet decoration
-      f x = renderDynamicCharacter alphabetToken <$> headMay (x decoration)
-      g prefix shown = prefix <> ": " <> shown --intercalate "\n" $ (prefix <> ": " <> y) : (("  " <>) <$> zs)
---        where
---          (x:y:zs) = lines shown :: [String]
-{-
-      h x
-        | x decoration == 0.0 = Nothing
-        | otherwise           = Just . show $ x decoration
+
+    show decoration = intercalate "\n" $ catMaybes renderings
+      where
+        renderings = mconcat [renderedId, renderedCosts, renderedDecorations]
+        
+        renderedId = pure . pure $ "Node ( " <> show (refEquality decoration) <> " )"
+        renderedCosts =
+            [  pure $ "LocalCost   " <> show (dLocalCost decoration)
+            ,  pure $ "TotalCost   " <> show (dTotalCost decoration)
+--            [  ("LocalCost   " <>)  <$> h dLocalCost
+--            ,  ("TotalCost   " <>)  <$> h dTotalCost
+            ]
+        renderedDecorations =
+            [ g "Encoded                   " <$> f dEncoded
+            , g "Single                    " <$> f dSingle
+            , g "Final Ungapped            " <$> f dFinal
+            , g "Final Gapped              " <$> f dGapped
+            , g "Preliminary Ungapped      " <$> f dPreliminary
+            , g "Preliminary Gapped        " <$> f dAligned
+            , g "Left  Child-wise Alignment" <$> f dLeftAlignment
+            , g "Right Child-wise Alignment" <$> f dRightAlignment
+            , g "Implied Alignment         " <$> f dImpliedAlignment
+            ]
+        alphabetToken = suppliedAlphabet decoration
+        f x = renderDynamicCharacter alphabetToken <$> headMay (x decoration)
+        g prefix shown = prefix <> ": " <> shown --intercalate "\n" $ (prefix <> ": " <> y) : (("  " <>) <$> zs)
+--          where
+--            (x:y:zs) = lines shown :: [String]
+{-  
+        h x
+          | x decoration == 0.0 = Nothing
+          | otherwise           = Just . show $ x decoration
 -}
 
--- | Neat 2-dimensional drawing of a tree.
+-- |
+-- Neat 2-dimensional drawing of a tree.
 drawTreeMultiLine :: Tree String -> String
 drawTreeMultiLine = unlines . draw
+
 
 draw :: Tree String -> [String]
 draw (Node x xs) = lines x <> drawSubTrees xs
@@ -200,6 +213,7 @@ draw (Node x xs) = lines x <> drawSubTrees xs
     drawSubTrees (t:ts) =
       "|" : shift "+- " "|  " (draw t) <> drawSubTrees ts
     shift first other = Prelude.zipWith (<>) (first : repeat other)
+
 
 renderDynamicCharacter :: Maybe (Alphabet String) -> DynamicChar -> String
 renderDynamicCharacter alphabetMay char
@@ -216,16 +230,19 @@ renderDynamicCharacter alphabetMay char
 
 arbitrarySymbols :: [String]
 arbitrarySymbols = fmap pure . ('-' :) $ ['0'..'9'] <> ['A'..'Z'] <> ['a'..'z']
-    
+
+                   
 instance Arbitrary SimpleTree where
-  -- | Arbitrary Cherry
+
+    -- Arbitrary Cherry
     arbitrary = do
-      let defaultSymbols         = ['0'..'9'] <> ['A'..'Z'] <> ['a'..'z']
-      alphabetLength             <- choose (1, length defaultSymbols) -- Inclusive bounds
-      let defaultAlphabetSymbols = take alphabetLength defaultSymbols
-      leafNodeCount              <- choose (2, 16) -- Inclusive bounds
-      let leafNodeCharGen        = listOf1 (elements defaultAlphabetSymbols)
-      createBinary <$> vectorOf leafNodeCount leafNodeCharGen
+        let defaultSymbols         = ['0'..'9'] <> ['A'..'Z'] <> ['a'..'z']
+        alphabetLength             <- choose (1, length defaultSymbols) -- Inclusive bounds
+        let defaultAlphabetSymbols = take alphabetLength defaultSymbols
+        leafNodeCount              <- choose (2, 16) -- Inclusive bounds
+        let leafNodeCharGen        = listOf1 (elements defaultAlphabetSymbols)
+        createBinary <$> vectorOf leafNodeCount leafNodeCharGen
+
 
 type instance Element SimpleTree = SimpleTree
 
@@ -235,6 +252,7 @@ treeFold x@(TT root) = (x :) . concatMap (treeFold . TT) $ subForest root
 
 
 instance MonoFoldable SimpleTree where
+
     {-# INLINE ofoldMap #-}
     ofoldMap f = foldr (mappend . f) mempty . treeFold
 
@@ -250,74 +268,97 @@ instance MonoFoldable SimpleTree where
     {-# INLINE ofoldl1Ex' #-}
     ofoldl1Ex' f = foldl1 f . treeFold
 
+
 instance EN.EncodedNode SimpleTree DynamicChar where
+
     getEncoded     (TT n)   = dEncoded $ rootLabel n
+
     setEncoded     (TT n) x = TT $ n { rootLabel = decoration { dEncoded = x } }
       where
         decoration = rootLabel n
 
+
 instance FN.FinalNode SimpleTree DynamicChar where
+
     getFinal       (TT n) = dFinal   $ rootLabel n
+
     setFinal     x (TT n) = TT $ n { rootLabel = decoration { dFinal = x } }
       where
         decoration = rootLabel n
         
     getFinalGapped   (TT n) = dGapped  $ rootLabel n
+
     setFinalGapped x (TT n) = TT $ n { rootLabel = decoration { dGapped = x } }
       where
         decoration = rootLabel n
 
     getSingle       (TT n) = dSingle   $ rootLabel n
+
     setSingle     x (TT n) = TT $ n { rootLabel = decoration { dSingle = x } }
       where
         decoration = rootLabel n
 
+
 instance RN.PreliminaryNode SimpleTree DynamicChar where
+
     getPreliminaryUngapped   (TT n) = dPreliminary $ rootLabel n
+
     setPreliminaryUngapped x (TT n) = TT $ n { rootLabel = decoration { dPreliminary = x } }
       where
         decoration = rootLabel n
 
     getPreliminaryGapped   (TT n) = dAligned $ rootLabel n
+
     setPreliminaryGapped x (TT n) = TT $ n { rootLabel = decoration { dAligned = x } }
       where
         decoration = rootLabel n
 
     getLeftAlignment    (TT n) = dLeftAlignment $ rootLabel n
+
     setLeftAlignment  x (TT n) = TT $ n { rootLabel = decoration { dLeftAlignment = x } }
       where
         decoration = rootLabel n
 
     getRightAlignment   (TT n) = dRightAlignment $ rootLabel n
+
     setRightAlignment x (TT n) = TT $ n { rootLabel = decoration { dRightAlignment = x } }
       where
         decoration = rootLabel n
 
     getLocalCost        (TT n) = dLocalCost $ rootLabel n
+
     setLocalCost      x (TT n) = TT $ n { rootLabel = decoration { dLocalCost = x } }
       where
         decoration = rootLabel n
 
     getTotalCost        (TT n) = dTotalCost $ rootLabel n
+
     setTotalCost      x (TT n) = TT $ n { rootLabel = decoration { dTotalCost = x } }
       where
         decoration = rootLabel n
 
+
 instance IN.IANode SimpleTree where
+
     getHomologies     (TT n)   = dIaHomology $ rootLabel n
+
     setHomologies     (TT n) x = TT $ n { rootLabel = decoration { dIaHomology = x } }
       where
         decoration = rootLabel n
 
+
 instance IN.IANode' SimpleTree DynamicChar where
+
     getHomologies'    (TT n)   = dImpliedAlignment $ rootLabel n
+
     setHomologies'    (TT n) x = TT $ n { rootLabel = decoration { dImpliedAlignment = x } }
       where
         decoration = rootLabel n
 
 
 instance N.Network SimpleTree SimpleTree where
-   -- | Not efficient but correct.
+
+   -- Not efficient but correct.
    parents (TT node) (TT tree)
      | node == tree = []
      | otherwise    = foldMap (f tree) $ subForest tree
@@ -353,7 +394,7 @@ instance N.Network SimpleTree SimpleTree where
            f :: SimpleTree -> SimpleTree
            f node@(TT internal) = TT $ internal { rootLabel = decoration', subForest = children' }
              where
-               children'   = ((\(TT x) -> x) . f . TT) <$> subForest internal
+               children'   = (\(TT x) -> x) . f . TT <$> subForest internal
                decoration' =
                  case findNode (sameRef node) (TT root') of
                    Nothing     -> rootLabel internal 
@@ -366,8 +407,10 @@ instance N.Network SimpleTree SimpleTree where
            f node = (rootLabel node, children')
              where
                children' = subForest . maybe node (\(TT x) -> x) $ find (sameRef (TT node)) nodes'
+
          
 instance RT.ReferentialTree SimpleTree SimpleTree where
+
     getNodeIdx (TT node) (TT root) = snd $ foldl' f (0, Nothing) root
       where
         target = refEquality $ rootLabel node
@@ -387,14 +430,20 @@ instance RT.ReferentialTree SimpleTree SimpleTree where
           | counter == pos = (counter + 1, Just e  )
           | otherwise      = (counter + 1, Nothing )
 
+
 instance BinaryTree SimpleTree SimpleTree where
+
     leftChild    (TT internal) _ = fmap TT .  headMay $ subForest internal
+
     rightChild   (TT internal) _ = fmap TT . (headMay <=< tailMay) $ subForest internal
+
     verifyBinary = isNothing . findNode isNotBinaryNode
       where
         isNotBinaryNode (TT node) = (> 2) . length $ subForest node
 
+
 instance RoseTree SimpleTree SimpleTree where
+
     parent node = findNode isParent
       where
         isParent (TT internal) = any (sameRef node . TT) $ subForest internal
@@ -403,10 +452,11 @@ instance RoseTree SimpleTree SimpleTree where
 idMatches :: Int -> SimpleTree -> Bool
 idMatches target (TT internal) = refEquality (rootLabel internal) == target
 
+
 findNode :: (SimpleTree -> Bool) -> SimpleTree -> Maybe SimpleTree
 findNode f tree@(TT x)
   | f tree    = Just tree
-  | otherwise = foldl' (<|>) Nothing $ (findNode f. TT) <$> subForest x
+  | otherwise = foldl' (<|>) Nothing $ findNode f . TT <$> subForest x
 
 
 data CharacterValueComparison
@@ -414,9 +464,11 @@ data CharacterValueComparison
    | MismatchedCharacterValues [String]
    deriving (Eq, Show)
 
+
 mismatches :: CharacterValueComparison -> [String]
 mismatches AllCharactersMatched           = []
 mismatches (MismatchedCharacterValues xs) = xs
+
 
 simpleTreeCharacterDecorationEqualityAssertion :: Foldable t
                => Int                                -- ^ Root node reference
