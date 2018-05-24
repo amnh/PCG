@@ -10,17 +10,17 @@ Haskell program and library for general phylogenetic graph search
 
 **Project manager:** [Ward Wheeler](mailto:wheeler@amnh.org)
 
- | Directory   | Description of Contents
- |:----------- |:---------------------------------------- |
- | `app`       | binaries are defined here                |
- | `bin`       | binaries are placed here                 |
- | `doc`       | Haddock & PDF documentation              |
- | `ffi`       | supporting C & C++ code and FFI bindings |
- | `lib`       | sub-libraries                            |
- | `prototype` | experimental/legacy codebase             |
- | `src`       | main code base                           |
- | `test`      | test suites and test data                |
- | `utils`     | diagnostic and testing binaries          |
+| Directory   | Description of Contents
+|:----------- |:---------------------------------------- |
+| `app`       | binaries are defined here                |
+| `bin`       | binaries are placed here                 |
+| `doc`       | Haddock & PDF documentation              |
+| `ffi`       | supporting C & C++ code and FFI bindings |
+| `lib`       | sub-libraries                            |
+| `prototype` | experimental/legacy codebase             |
+| `src`       | main code base                           |
+| `test`      | test suites and test data                |
+| `utils`     | diagnostic and testing binaries          |
 
 ### Funding provided by:
 
