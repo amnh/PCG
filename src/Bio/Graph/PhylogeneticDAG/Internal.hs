@@ -36,6 +36,7 @@ import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Metadata.CharacterName
 import           Bio.Metadata.Dynamic
 import           Bio.Sequence
+import           Bio.Sequence.Metadata
 import           Control.Applicative              (liftA2)
 import           Control.DeepSeq
 import           Control.Lens
@@ -91,16 +92,20 @@ newtype PhylogeneticDAG e n u v w x y z
 -- * x = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * y = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * z = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Dynamic'    specified as 'DynamicChar'     or 'Bio.Metadata.DiscreteWithTCM'
-newtype PhylogeneticDAG2 e n u v w x y z
-    = PDAG2 ( ReferenceDAG
-                 (         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
-                 , Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
-                 , Maybe  (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge)))
-                 )
-                 e
-                 (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
-             )
-     deriving (Generic)
+
+-- TODO: RENAME THIS to PhylogeneticForest
+data  PhylogeneticDAG2 m a d e n u v w x y z
+    = PDAG2 
+    { phylogeneticForest :: ( ReferenceDAG
+                              (         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
+                              , Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
+                              , Maybe  (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge)))
+                              )
+                              e
+                              (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
+                            )
+    , columnMetadata     :: MetadataSequence m a d
+    } deriving (Generic)
 
 
 -- |
@@ -109,19 +114,30 @@ type EdgeReference = (Int, Int)
 
 
 -- | (✔)
-instance HasLeafSet (PhylogeneticDAG2 e n u v w x y z) (LeafSet (PhylogeneticNode2 (CharacterSequence u v w x y z) n)) where
+instance HasLeafSet (PhylogeneticDAG2 m a d e n u v w x y z) (LeafSet (PhylogeneticNode2 (CharacterSequence u v w x y z) n)) where
 
     leafSet = lens getter undefined
         where
-            getter (PDAG2 e) =  e ^. leafSet
+            getter (PDAG2 e _) =  e ^. leafSet
 
 
 -- | (✔)
-instance (NFData e, NFData n, NFData u, NFData v, NFData w, NFData x, NFData y, NFData z) => NFData (PhylogeneticDAG2 e n u v w x y z)
+instance ( NFData m
+         , NFData a
+         , NFData d
+         , NFData e
+         , NFData n
+         , NFData u
+         , NFData v
+         , NFData w
+         , NFData x
+         , NFData y
+         , NFData z
+         ) => NFData (PhylogeneticDAG2 m a d e n u v w x y z)
 
 
 -- | (✔)
-instance Show n => PrintDot (PhylogeneticDAG2 e n u v w x y z) where
+instance Show n => PrintDot (PhylogeneticDAG2 m a d e n u v w x y z) where
 
     unqtDot       = unqtDot . discardCharacters
 
@@ -166,9 +182,9 @@ instance ( HasBlockCost u v w x y z Word Double
          , Show x
          , Show y
          , Show z
-         ) => Show (PhylogeneticDAG2 e n u v w x y z) where
+         ) => Show (PhylogeneticDAG2 m a d e n u v w x y z) where
 
-    show p@(PDAG2 dag) = unlines
+    show p@(PDAG2 dag _) = unlines
         [ renderSummary p
         , foldMapWithKey f dag
         ]
@@ -178,7 +194,7 @@ instance ( HasBlockCost u v w x y z Word Double
 
 
 -- | (✔)
-instance Show n => ToNewick (PhylogeneticDAG2 e n u v w x y z) where
+instance Show n => ToNewick (PhylogeneticDAG2 m a d e n u v w x y z) where
 
     toNewick = toNewick . discardCharacters
 
@@ -197,9 +213,9 @@ instance ( HasBlockCost u v w x y z Word Double
          , ToXML w
          , ToXML y
          , ToXML z
-         ) => ToXML (PhylogeneticDAG2 e n u v w x y z)  where
+         ) => ToXML (PhylogeneticDAG2 m a d e n u v w x y z)  where
 
-    toXML (PDAG2 refDag) = toXML refDag
+    toXML (PDAG2 refDag _) = toXML refDag
 
 
 -- |
@@ -208,9 +224,9 @@ getDotContextWithBaseAndIndex
   :: Show n
   => Int -- ^ Base over which the Unique
   -> Int
-  -> PhylogeneticDAG2 e n u v w x y z
+  -> PhylogeneticDAG2 m a d e n u v w x y z
   -> ([DotNode GraphID], [DotEdge GraphID])
-getDotContextWithBaseAndIndex i j (PDAG2 dag) = getDotContext i j $ nodeDecorationDatum2 <$> dag
+getDotContextWithBaseAndIndex i j (PDAG2 dag _) = getDotContext i j $ nodeDecorationDatum2 <$> dag
 
 
 -- |
@@ -390,9 +406,9 @@ renderSummary
      , HasCharacterName z CharacterName
      , HasTraversalFoci z (Maybe TraversalFoci)
      )
-  => PhylogeneticDAG2 e n u v w x y z
+  => PhylogeneticDAG2 m a d e n u v w x y z
   -> String
-renderSummary pdag@(PDAG2 dag) = unlines
+renderSummary pdag@(PDAG2 dag _) = unlines
     [ show dag
     , show $ graphData dag
     , renderSequenceSummary pdag
@@ -412,9 +428,9 @@ renderSequenceSummary
      , HasCharacterName z CharacterName
      , HasTraversalFoci z (Maybe TraversalFoci)
      )
-  => PhylogeneticDAG2 e n u v w x y z
+  => PhylogeneticDAG2 m a d e n u v w x y z
   -> String
-renderSequenceSummary pdag@(PDAG2 dag) = ("Sequence Summary\n\n" <>) . unlines $ mapWithKey (renderBlockSummary pdag) sequenceContext
+renderSequenceSummary pdag@(PDAG2 dag _) = ("Sequence Summary\n\n" <>) . unlines $ mapWithKey (renderBlockSummary pdag) sequenceContext
   where
     refVec = references dag
     roots  = rootRefs dag
@@ -457,11 +473,11 @@ renderBlockSummary
      , HasTraversalFoci z (Maybe TraversalFoci)
      , Show n
      )
-  => PhylogeneticDAG2 e n u v w x y z
+  => PhylogeneticDAG2 m a d e n u v w x y z
   -> Int
   -> (Maybe Double, Maybe Double, Maybe TraversalTopology, CharacterBlock u v w x y z)
   -> String
-renderBlockSummary (PDAG2 dag) key (costOfRooting, costOfNetworking, displayMay, block) = mconcat . (renderedPrefix:) $
+renderBlockSummary (PDAG2 dag _) key (costOfRooting, costOfNetworking, displayMay, block) = mconcat . (renderedPrefix:) $
     [ renderBlockMeta
     , unlines . fmap renderStaticCharacterSummary  . toList . continuousCharacterBins
     , unlines . fmap renderStaticCharacterSummary  . toList . nonAdditiveCharacterBins
@@ -544,5 +560,5 @@ resolutionsDoNotOverlap x y = popCount (leafSetRepresentation x .&. leafSetRepre
 
 -- |
 -- Retrieve only 'ReferenceDAG' from 'PhylogeneticDAG2'.
-discardCharacters :: PhylogeneticDAG2 e n u v w x y z -> ReferenceDAG () e n
-discardCharacters (PDAG2 x) = defaultMetadata $ nodeDecorationDatum2 <$> x
+discardCharacters :: PhylogeneticDAG2 m a d e n u v w x y z -> ReferenceDAG () e n
+discardCharacters (PDAG2 x _) = defaultMetadata $ nodeDecorationDatum2 <$> x

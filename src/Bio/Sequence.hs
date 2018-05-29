@@ -49,7 +49,7 @@ module Bio.Sequence
   , staticCost
   ) where
 
-import Bio.Sequence.Internal
+import Bio.Sequence.Character
 import Bio.Sequence.Block hiding (hexmap, hexTranspose, hexZipWith)
 import Bio.Sequence.Block.Builder
 import Bio.Sequence.Block.Character ( finalizeCharacterBlock

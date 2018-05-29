@@ -96,9 +96,9 @@ assignPunitiveNetworkEdgeCost
      , HasRootCost  u v w x y z   r
      , HasTraversalFoci z (Maybe TraversalFoci)
      )
-  => PhylogeneticDAG2 e n u v w x y z
-  -> (NonEmpty (TraversalTopology, r, r, r, Vector (NonEmpty TraversalFocusEdge)), PhylogeneticDAG2 e n u v w x y z)
-assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = (outputContext, PDAG2 $ dag { graphData = newGraphData })
+  => PhylogeneticDAG2 m a d e n u v w x y z
+  -> (NonEmpty (TraversalTopology, r, r, r, Vector (NonEmpty TraversalFocusEdge)), PhylogeneticDAG2 m a d e n u v w x y z)
+assignPunitiveNetworkEdgeCost input@(PDAG2 dag _) = (outputContext, PDAG2 (dag { graphData = newGraphData }) undefined )
   where
     -- First grab all the valid display forests present in the DAG.
     displayForests =
@@ -159,7 +159,7 @@ assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = (outputContext, PDAG2 $ dag { 
 
 
 {-
-assignPunitiveNetworkEdgeCost :: HasBlockCost u v w x y z i r => PhylogeneticDAG2 e n u v w x y z -> PhylogeneticDAG2 e n u v w x y z
+assignPunitiveNetworkEdgeCost :: HasBlockCost u v w x y z i r => PhylogeneticDAG2 m a d e n u v w x y z -> PhylogeneticDAG2 m a d e n u v w x y z
 assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = PDAG2 $ dag { graphData = newGraphData }
   where
     punitiveCost  = calculatePunitiveNetworkEdgeCost input
@@ -199,8 +199,8 @@ assignPunitiveNetworkEdgeCost input@(PDAG2 dag) = PDAG2 $ dag { graphData = newG
 --
 -- * Each taxon in the input DAG is connected to exactly one root.
 --
-gatherDisplayForests :: PhylogeneticDAG2 e n u v w x y z -> [ResolutionCache (CharacterSequence u v w x y z)]
-gatherDisplayForests (PDAG2 dag) = result
+gatherDisplayForests :: PhylogeneticDAG2 m a d e n u v w x y z -> [ResolutionCache (CharacterSequence u v w x y z)]
+gatherDisplayForests (PDAG2 dag _) = result
   where
     -- First we collect all resolutions for each root node
     rootResolutions = resolutions . nodeDecoration . (refs !) <$> rootRefs dag
@@ -391,7 +391,7 @@ fromBlockMinimizationContext (BMC topo costs) = (topo, costs)
 {-
 -- |
 -- Calculate the punitive networkedge cost for the DAG.
-calculatePunitiveNetworkEdgeCost :: HasBlockCost u v w x y z i r => PhylogeneticDAG2 e n u v w x y z -> ExtendedReal
+calculatePunitiveNetworkEdgeCost :: HasBlockCost u v w x y z i r => PhylogeneticDAG2 m a d e n u v w x y z -> ExtendedReal
 calculatePunitiveNetworkEdgeCost inputDag
   | cardinality extraneousEdges > 0 = -- trace ("Extraneous edges: " <> show extraneousEdges)
                                     -- . trace ("Entire     edges: " <> show entireNetworkEdgeSet)
@@ -428,7 +428,7 @@ calculatePunitiveNetworkEdgeCost inputDag
 -- |
 -- Construct each most-parsimonious display forest resolution with respect to the
 -- DAG rootings.
-extractNetworkMinimalDisplayTrees :: PhylogeneticDAG2 e n u v w x y z -> NonEmpty (NetworkDisplayEdgeSet (Int, Int))
+extractNetworkMinimalDisplayTrees :: PhylogeneticDAG2 m a d e n u v w x y z -> NonEmpty (NetworkDisplayEdgeSet (Int, Int))
 extractNetworkMinimalDisplayTrees (PDAG2 dag) = rootTransformation rootResolutions
   where
     -- Since the number of roots in a DAG is fixed, each network display will
@@ -444,7 +444,7 @@ extractNetworkMinimalDisplayTrees (PDAG2 dag) = rootTransformation rootResolutio
 
 -- |
 -- Derive the entire edgeset of the DAG.
-extractNetworkEdgeSet :: PhylogeneticDAG2 e n u v w x y z -> EdgeSet (Int, Int)
+extractNetworkEdgeSet :: PhylogeneticDAG2 m a d e n u v w x y z -> EdgeSet (Int, Int)
 extractNetworkEdgeSet (PDAG2 dag) = getEdges dag
 
 
@@ -452,7 +452,7 @@ extractNetworkEdgeSet (PDAG2 dag) = getEdges dag
 -- Construct a "Sequence" of minimal cost minimal and display tree resolutions
 -- for each character block.
 extractBlocksMinimalEdgeSets :: HasBlockCost u v w x y z i r
-                             => PhylogeneticDAG2 e n u v w x y z
+                             => PhylogeneticDAG2 m a d e n u v w x y z
                              -> NonEmpty (r, NonEmpty (NetworkDisplayEdgeSet (Int,Int)))
 extractBlocksMinimalEdgeSets (PDAG2 dag) = foldMapWithKey1 f sequenceBlocksWLOG
   where

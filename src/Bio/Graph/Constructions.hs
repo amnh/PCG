@@ -50,12 +50,16 @@ import Bio.Sequence
 import Control.Evaluation
 import Data.EdgeLength
 import Data.NodeLabel
+import Data.Void
 
 
 -- |
 -- A /reified/ DAG that contains characters but has no decorations.
 type CharacterDAG =
        PhylogeneticDAG2
+         Void
+         Void
+         Void
          EdgeLength
          NodeLabel
          UnifiedContinuousCharacter
@@ -97,14 +101,17 @@ type DecoratedCharacterResult = PhylogeneticSolution FinalDecorationDAG
 -- Decoration of a phylogenetic DAG after a pre-order traversal.
 type FinalDecorationDAG =
        PhylogeneticDAG2
+         (Double, TraversalFoci)
+         Void
+         Void
          EdgeLength
          NodeLabel
-         (ContinuousOptimizationDecoration    ContinuousChar)
+         (ContinuousOptimizationDecoration    ContinuousChar )
          (FitchOptimizationDecoration         StaticCharacter)
          (AdditiveOptimizationDecoration      StaticCharacter)
          (SankoffOptimizationDecoration       StaticCharacter)
          (SankoffOptimizationDecoration       StaticCharacter)
-         (DynamicDecorationDirectOptimization DynamicChar)
+         (DynamicDecorationDirectOptimization DynamicChar    )
 --         (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
 
 
@@ -115,6 +122,9 @@ type FinalDecorationDAG =
 -- Decoration of a phylogenetic DAG after a post-order traversal.
 type PostOrderDecorationDAG =
        PhylogeneticDAG2
+         (Double, TraversalFoci)
+         Void
+         Void
          EdgeLength
          NodeLabel
          (ContinuousPostorderDecoration ContinuousChar )

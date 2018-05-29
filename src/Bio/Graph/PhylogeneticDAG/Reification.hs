@@ -114,7 +114,7 @@ tabulateLeaves = {- (\v@(x,_) -> trace ("Tab Vector:\n\n"  <> foldMap1 (\y -> sh
 
 
 reifyDAGWithContext :: Int -> ReferenceDAG () () (Maybe Int) -> UnReifiedCharacterDAG -> CharacterDAG
-reifyDAGWithContext leafCount maskDAG (PDAG dag) = PDAG2 newDAG
+reifyDAGWithContext leafCount maskDAG (PDAG dag) = PDAG2 newDAG undefined
   where
     newDAG = RefDAG
         { references = newRefs

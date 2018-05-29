@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Sequence.Internal
+-- Module      :  Bio.Sequence.Character
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -19,7 +19,7 @@
 -- cost variable 'r' doesn't appear on the right hand side of the double arrow.
 {-# LANGUAGE UndecidableInstances #-}
 
-module Bio.Sequence.Internal
+module Bio.Sequence.Character
   ( CharacterSequence()
   , HasBlockCost
   -- * Construction / Decomposition
@@ -125,7 +125,6 @@ instance MonoFunctor (CharacterSequence u v w x y z) where
     omap f = fromBlocks . fmap f . toBlocks
 
 
--- | Monomorphic containers that can be traversed from left to right.
 instance MonoTraversable (CharacterSequence u v w x y z) where
 
     {-# INLINE otraverse #-}

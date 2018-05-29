@@ -82,10 +82,10 @@ preorderSequence''
   -> (x -> [(Word, x')] -> x')
   -> (y -> [(Word, y')] -> y')
   -> (z -> [(Word, z')] -> z')
-  -> PhylogeneticDAG2 e n u  v  w  x  y  z
-  -> PhylogeneticDAG2 e n u' v' w' x' y' z'
+  -> PhylogeneticDAG2 m a d e n u  v  w  x  y  z
+  -> PhylogeneticDAG2 m a d e n u' v' w' x' y' z'
 --preorderSequence'' _ _ _ _ _ _ (PDAG2 dag) | trace ("Before Pre-order: " <> referenceRendering dag) False = undefined
-preorderSequence'' f1 f2 f3 f4 f5 f6 pdag@(PDAG2 dag) = PDAG2 $ newDAG dag
+preorderSequence'' f1 f2 f3 f4 f5 f6 pdag@(PDAG2 dag m) = PDAG2 (newDAG dag) m
   where
     refs          = references dag
     dagSize       = length $ references dag
@@ -176,9 +176,9 @@ preorderSequence'' f1 f2 f3 f4 f5 f6 pdag@(PDAG2 dag) = PDAG2 $ newDAG dag
     -- A "sequence" of the minimum topologies that correspond to each block.
 getSequenceOfBlockMinimumTopologies
   :: HasBlockCost u v w x y z Word Double
-  => PhylogeneticDAG2 e n u v w x y z
+  => PhylogeneticDAG2 m a d e n u v w x y z
   -> BlockTopologies
-getSequenceOfBlockMinimumTopologies (PDAG2 dag) = getTopologies blockMinimalResolutions
+getSequenceOfBlockMinimumTopologies (PDAG2 dag _) = getTopologies blockMinimalResolutions
       where
         getTopologies = fmap topologyRepresentation
 
@@ -215,9 +215,9 @@ preorderSequence'
   -> (x -> [(Word, x')] -> x')
   -> (y -> [(Word, y')] -> y')
   -> (z -> [(Word, z')] -> z')
-  -> PhylogeneticDAG2 e n u  v  w  x  y  z
-  -> PhylogeneticDAG2 e n u' v' w' x' y' z'
-preorderSequence' f1 f2 f3 f4 f5 f6 pdag@(PDAG2 dag) = PDAG2 $ newDAG dag
+  -> PhylogeneticDAG2 m a d e n u  v  w  x  y  z
+  -> PhylogeneticDAG2 m a d e n u' v' w' x' y' z'
+preorderSequence' f1 f2 f3 f4 f5 f6 pdag@(PDAG2 dag m) = PDAG2 (newDAG dag) m
   where
     newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> constructDefaultMetadata
     dagSize       = length $ references dag
@@ -429,10 +429,10 @@ preorderFromRooting''
   ->         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
   -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
   -> NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge))
-  -> PhylogeneticDAG2 e' n' u' v' w' x' y' z
-  -> PhylogeneticDAG2 e' n' u' v' w' x' y' z'
---preorderFromRooting'' _ _ _ _ (PDAG2 dag) | trace ("Before Pre-order From Rooting: " <> referenceRendering dag) False = undefined
-preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopologyContextPerBlock (PDAG2 dag) = PDAG2 $ newDAG dag
+  -> PhylogeneticDAG2 m a d e' n' u' v' w' x' y' z
+  -> PhylogeneticDAG2 m a d e' n' u' v' w' x' y' z'
+--preorderFromRooting'' _ _ _ _ (PDAG2 dag _) | trace ("Before Pre-order From Rooting: " <> referenceRendering dag) False = undefined
+preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopologyContextPerBlock (PDAG2 dag m) = PDAG2 (newDAG dag) m
   where
     newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> reconstructMetadata
     newReferences = VE.generate nodeCount g
@@ -629,9 +629,9 @@ preorderFromRooting
   => (z -> [(Word, z')] -> z')
   ->         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
   -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
-  -> PhylogeneticDAG2 e' n' u' v' w' x' y' z
-  -> PhylogeneticDAG2 e' n' u' v' w' x' y' z'
-preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag) = PDAG2 $ newDAG dag
+  -> PhylogeneticDAG2 m a d e' n' u' v' w' x' y' z
+  -> PhylogeneticDAG2 m a d e' n' u' v' w' x' y' z'
+preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag m) = PDAG2 (newDAG dag) m
   where
     newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> constructDefaultMetadata
     dagSize       = length $ references dag

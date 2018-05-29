@@ -45,9 +45,9 @@ import           Data.NodeLabel
 -- Remove all scoring data from nodes.
 wipeScoring
   :: Default n
-  => PhylogeneticDAG2 e n u v w x y z
-  -> PhylogeneticDAG2 e n (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
-wipeScoring (PDAG2 dag) = PDAG2 wipedDAG
+  => PhylogeneticDAG2 m a d e n u v w x y z
+  -> PhylogeneticDAG2 m a d e n (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
+wipeScoring (PDAG2 dag m) = PDAG2 wipedDAG m
   where
     wipedDAG =
         RefDAG
@@ -122,7 +122,7 @@ performDecoration
      , Show y
      , Show z
      )
-  => PhylogeneticDAG2 EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
+  => PhylogeneticDAG2 m a d EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
   -> FinalDecorationDAG
 performDecoration x = performPreOrderDecoration performPostOrderDecoration
   where

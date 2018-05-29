@@ -83,7 +83,7 @@ instance {-# OVERLAPPABLE #-} PrintDot a => PrintDot (PhylogeneticSolution a) wh
     listToDot     = fmap mconcat . traverse   toDot
 
 
-instance Show n => PrintDot (PhylogeneticSolution (PhylogeneticDAG2 e n u v w x y z)) where
+instance Show n => PrintDot (PhylogeneticSolution (PhylogeneticDAG2 m a d e n u v w x y z)) where
 
     unqtDot       = unqtDot . uncurry mkGraph . foldMap1 getSolutionDotContext . phylogeneticForests
 
@@ -148,7 +148,7 @@ instance
   , Show x
   , Show y
   , Show z
-  ) => ToXML (PhylogeneticSolution (PhylogeneticDAG2 e n u v w x y z)) where
+  ) => ToXML (PhylogeneticSolution (PhylogeneticDAG2 m a d e n u v w x y z)) where
 
     toXML soln@(PhylogeneticSolution forests) = xmlElement "Solution" attrs forestContents
         where
@@ -180,22 +180,22 @@ instance
                                 -- ]
 
             metadataSequence = hexmap f1 f2 f3 f4 f5 f6 arbitraryCharSeq
-                where
-                    arbitraryCharSeq = characterSequence . NE.head . resolutions . nodeDecoration $ arbitraryNode
-                    arbitraryNode    = references arbitraryRefDAG ! arbitraryRootRef
-                    arbitraryRootRef        = NE.head $ rootRefs arbitraryRefDAG
-                    (PDAG2 arbitraryRefDAG) = NE.head arbitraryPDAG
-                    arbitraryPDAG           = toNonEmpty $ NE.head forests
-                    f1  = extractGeneralCharacterMetadata
-                    f2  = extractDiscreteCharacterMetadata
-                    f3  = extractDiscreteCharacterMetadata
-                    f4  = g
-                    f5  = g
-                    f6  = g
-                    g x = (generate dim scm, extractDiscreteCharacterMetadata x)
-                        where
-                            scm = uncurry $ x ^. symbolChangeMatrix
-                            dim = length  $ x ^. characterAlphabet
+              where
+                arbitraryCharSeq = characterSequence . NE.head . resolutions . nodeDecoration $ arbitraryNode
+                arbitraryNode    = references arbitraryRefDAG ! arbitraryRootRef
+                arbitraryRootRef          = NE.head $ rootRefs arbitraryRefDAG
+                (PDAG2 arbitraryRefDAG _) = NE.head arbitraryPDAG
+                arbitraryPDAG             = toNonEmpty $ NE.head forests
+                f1  = extractGeneralCharacterMetadata
+                f2  = extractDiscreteCharacterMetadata
+                f3  = extractDiscreteCharacterMetadata
+                f4  = g
+                f5  = g
+                f6  = g
+                g x = (generate dim scm, extractDiscreteCharacterMetadata x)
+                  where
+                    scm = uncurry $ x ^. symbolChangeMatrix
+                    dim = length  $ x ^. characterAlphabet
 
 
 
@@ -205,10 +205,10 @@ getSolutionDotContext
      , Key t ~ Int
      , Show n
      )
-  => t (PhylogeneticDAG2 e n u v w x y z)
+  => t (PhylogeneticDAG2 m a d e n u v w x y z)
   -> ([DotNode GraphID], [DotEdge GraphID])
 getSolutionDotContext xs = foldMapWithKey1 g xs
   where
     g = getDotContextWithBaseAndIndex baseValue
     baseValue = maximum $ f <$> xs
-    f (PDAG2 dag) = length dag
+    f (PDAG2 dag _) = length dag

@@ -273,11 +273,12 @@ library
                     Bio.Graph.PhylogeneticDAG.Reification
                     Bio.Graph.PhylogeneticDAG.TotalEdgeCost
                     Bio.Graph.ZipperDAG.Internal
-                    Bio.Sequence.Internal
                     Bio.Sequence.Block.Builder
                     Bio.Sequence.Block.Character
                     Bio.Sequence.Block.Internal
                     Bio.Sequence.Block.Metadata
+                    Bio.Sequence.Character
+                    Bio.Sequence.Metadata
                     Control.Evaluation.Unit
                     Control.Evaluation.Internal
                     Control.Evaluation.Trans
