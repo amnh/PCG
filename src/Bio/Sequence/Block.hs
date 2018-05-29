@@ -41,7 +41,6 @@ import           Control.Parallel.Strategies
 import           Data.Foldable
 import           Data.Vector.Instances                ()
 --import qualified Data.Vector                   as V
-import           Prelude                       hiding (zipWith)
 
 
 -- |
