@@ -22,7 +22,7 @@ module Bio.Sequence.Block.Builder
   ) where
 
 
-import Data.DListu
+import Data.DList
 import Data.TCM
 import Data.Vector.Instances ()
 
