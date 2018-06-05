@@ -29,8 +29,8 @@ module Bio.Graph
   , PostOrderDecorationDAG
   , SearchState
   , TopologicalResult
-  , UnifiedCharacterSequence
-  , UnifiedCharacterBlock
+  , UnifiedBlock
+  , UnifiedSequence
   , UnifiedContinuousCharacter
   , UnifiedDiscreteCharacter
   , UnifiedDynamicCharacter

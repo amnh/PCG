@@ -16,17 +16,20 @@
 {-# LANGUAGE DeriveGeneric, FlexibleContexts, TypeFamilies #-}
 
 module Bio.Sequence.Metadata
-  ( MetadataSequence()
+  ( MetadataBlock()
+  , MetadataSequence()
   -- * Construction / Decomposition
   , toBlocks
   , fromBlocks
   , toBlockVector
   , fromBlockVector
+  , defaultUnaryMetadataSequence
   ) where
 
 
-import           Bio.Sequence.Block             (MetadataBlock)
 import qualified Bio.Sequence.Block      as Blk
+import           Bio.Sequence.Block.Internal    (Block(..))
+import           Bio.Sequence.Block.Metadata    (MetadataBlock(..))
 import           Control.DeepSeq
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
@@ -174,3 +177,15 @@ toBlockVector (MetaSeq x) =  x
 {-# INLINE fromBlockVector #-}
 fromBlockVector :: Vector (MetadataBlock m e d) -> MetadataSequence m e d
 fromBlockVector = MetaSeq
+
+
+defaultUnaryMetadataSequence :: MetadataSequence () e d
+defaultUnaryMetadataSequence = fromBlocks . pure . MB $ Block
+    { blockMetadata   = ()
+    , continuousBins  = mempty
+    , nonAdditiveBins = mempty
+    , additiveBins    = mempty
+    , metricBins      = mempty
+    , nonMetricBins   = mempty
+    , dynamicBins     = mempty
+    }

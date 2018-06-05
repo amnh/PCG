@@ -26,8 +26,10 @@ module Bio.Graph.Constructions
   , PostOrderDecorationDAG
   , SearchState
   , TopologicalResult
-  , UnifiedCharacterSequence
-  , UnifiedCharacterBlock
+  , UnifiedBlock
+  , UnifiedSequence
+--  , UnifiedCharacterSequence
+--  , UnifiedCharacterBlock
   , UnifiedContinuousCharacter
   , UnifiedDiscreteCharacter
   , UnifiedDynamicCharacter
@@ -47,8 +49,10 @@ import Bio.Graph.PhylogeneticDAG.Internal
 import Bio.Graph.ReferenceDAG.Internal
 import Bio.Graph.Solution
 import Bio.Sequence
+import Bio.Sequence.Metadata
 import Control.Evaluation
 import Data.EdgeLength
+import Data.MonoTraversable
 import Data.NodeLabel
 import Data.Void
 
@@ -146,6 +150,23 @@ type ReRootedEdgeContext u v w x y z =
 
 -- |
 -- A "heterogenous" character block after being read in from a READ command.
+type UnifiedBlock =
+    ( MetadataBlock
+        ()
+        StaticCharacter
+        (Element DynamicChar)
+    , CharacterBlock
+        UnifiedContinuousCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDynamicCharacter
+    )
+
+{-
+TODO: Make this a tuple
+
 type UnifiedCharacterBlock
      = CharacterBlock
          UnifiedContinuousCharacter
@@ -155,9 +176,12 @@ type UnifiedCharacterBlock
          UnifiedDiscreteCharacter
          UnifiedDynamicCharacter
 
+-}
 
--- |
--- A "heterogenous" character sequence after being read in from a READ command.
+
+{-
+TODO: Make this a tuple
+
 type UnifiedCharacterSequence
      = CharacterSequence
          UnifiedContinuousCharacter
@@ -166,6 +190,23 @@ type UnifiedCharacterSequence
          UnifiedDiscreteCharacter
          UnifiedDiscreteCharacter
          UnifiedDynamicCharacter
+
+-}
+-- |
+-- A "heterogenous" character sequence after being read in from a READ command.
+type UnifiedSequence =
+    ( MetadataSequence
+        ()
+        StaticCharacter
+        (Element DynamicChar)
+    , CharacterSequence
+        UnifiedContinuousCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDynamicCharacter
+    )
 
 
 -- |

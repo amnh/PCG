@@ -150,7 +150,7 @@ showWithTotalEdgeCost
      , HasCharacterWeight z Double
      , HasTraversalFoci   z (Maybe TraversalFoci)
      ) 
-  => PhylogeneticSolution (PhylogeneticDAG2 e n u v w x y z) 
+  => PhylogeneticSolution (PhylogeneticDAG2 m a d e n u v w x y z) 
   -> String
 {-
 showWithTotalEdgeCost x | trace ("Before Report Rendering: " <>

@@ -152,7 +152,7 @@ rectifyResults2 fprs =
             , (IS.singleton 0, PNode (fromString label         )                         datum, mempty               )
             ]
 
-        matchToChars :: Map String UnifiedCharacterSequence
+        matchToChars :: Map String UnifiedSequence
                      -> PhylogeneticForest ParserTree
                      -> PhylogeneticForest UnReifiedCharacterDAG --CharacterDAG
         matchToChars charMapping = fmap (PDAG . fmap f)
@@ -213,7 +213,7 @@ rectifyResults2 fprs =
 -- * Lastly we collapse the many parse results into a single map of charcter
 --   blocks wrapped together as a charcter sequence. This will properly add
 --   missing character values to taxa provided in other files.
-joinSequences2 :: Foldable t => t FracturedParseResult -> Map String UnifiedCharacterSequence
+joinSequences2 :: Foldable t => t FracturedParseResult -> Map String UnifiedSequence
 joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorrectTCMs . deriveCharacterNames
   where
 
@@ -427,21 +427,21 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
             )
 
 {-
-    collapseAndMerge2 :: Foldable f => f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName))) -> Map String UnifiedCharacterSequence
+    collapseAndMerge2 :: Foldable f => f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName))) -> Map String UnifiedSequence
     collapseAndMerge2 = h . g . f
       where
         f :: Foldable f => f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName))) -> f (Map String (Map OptToken [OptValueWrapper]))
         f = undefined
         g :: Foldable f => f (Map String (Map OptToken [OptValueWrapper])) -> Map String (f (Map OptToken [OptValueWrapper]))
         g = undefined
-        h :: Foldable f => Map String (f (Map OptToken [OptValueWrapper])) -> Map String UnifiedCharacterSequence
+        h :: Foldable f => Map String (f (Map OptToken [OptValueWrapper])) -> Map String UnifiedSequence
         h = undefined
 -}
     collapseAndMerge = fmap fromBlocks . fst . foldl' f (mempty, [])
       where
-        f :: (Map String (NonEmpty UnifiedCharacterBlock), [UnifiedCharacterBlock])
+        f :: (Map String (NonEmpty UnifiedBlock), [UnifiedBlock])
           ->  Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName))
-          -> (Map String (NonEmpty UnifiedCharacterBlock), [UnifiedCharacterBlock])
+          -> (Map String (NonEmpty UnifiedBlock), [UnifiedBlock])
         f (prevMapping, prevPad) currTreeChars = (nextMapping, nextPad)
           where
             nextMapping    = inOnlyPrev <> inBoth <> inOnlyCurr
@@ -461,11 +461,11 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
 
             encodeToBlock :: Foldable1 t
                           => t (ParsedCharacter, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName)
-                          -> UnifiedCharacterBlock
+                          -> UnifiedBlock
             encodeToBlock = finalizeCharacterBlock . foldMap1 encodeBinToSingletonBlock
               where
 --                encodeBinToSingletonBlock :: (Maybe ParsedChar, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName)
---                                          -> UnifiedCharacterBlock
+--                                          -> UnifiedBlock
                 encodeBinToSingletonBlock (charMay, charMeta, scm, structure, charName) =
                     case charMay of
                       ParsedContinuousCharacter continuousMay -> continuousSingleton           . Just .   continuousDecorationInitial charName charWeight $ toContinuousCharacter continuousMay

@@ -50,6 +50,7 @@ import           Data.Semigroup.Foldable
 import           Data.Tuple                (swap)
 import           Data.Vector               (Vector)
 import qualified Data.Vector        as V
+import           Data.Void
 import           Prelude            hiding (lookup, zipWith)
 
 
@@ -84,7 +85,7 @@ assignOptimalDynamicCharacterRootEdges
      ) --x, Ord x, Show x)
   => (z -> [z] -> z)  -- ^ Post-order traversal function for Dynamic Characters.
   -> PhylogeneticDAG2 m a d e n u v w x y z
-  -> ( PhylogeneticDAG2 m a d e n u v w x y z
+  -> ( PhylogeneticDAG2 (Double, TraversalFoci) Void Void e n u v w x y z
      ,         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
      , Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
 --     , NonEmpty (TraversalFoci)
@@ -94,8 +95,8 @@ assignOptimalDynamicCharacterRootEdges
 assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 inputDag _) =
     case toList inputDag of
       -- Degenarate cases
-      []      ->     (pdag, mempty, mempty)
-      [_]     ->     (pdag, mempty, mempty)
+      []      ->     (pdag { columnMetadata = undefined } , mempty, mempty)
+      [_]     ->     (pdag { columnMetadata = undefined } , mempty, mempty)
       -- Trivial case
       [_,_]   -> let r = ((0,1), getCache 1)
                      c = ((1,0), getCache 0)

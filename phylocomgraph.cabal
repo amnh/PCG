@@ -183,6 +183,7 @@ library
                     Bio.Metadata.Parsed
                     Bio.Sequence
                     Bio.Sequence.Block
+                    Bio.Sequence.Metadata
                     Bio.Graph
                     Bio.Graph.Component
                     Bio.Graph.Forest.Parsed
@@ -278,7 +279,6 @@ library
                     Bio.Sequence.Block.Internal
                     Bio.Sequence.Block.Metadata
                     Bio.Sequence.Character
-                    Bio.Sequence.Metadata
                     Control.Evaluation.Unit
                     Control.Evaluation.Internal
                     Control.Evaluation.Trans

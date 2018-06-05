@@ -20,6 +20,7 @@ import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG.Internal
 import qualified Bio.Graph.ReferenceDAG as DAG
 import           Bio.Sequence
+import           Bio.Sequence.Metadata
 import           Control.Arrow                 ((&&&))
 import           Control.DeepSeq
 --import           Control.Evaluation
@@ -182,7 +183,7 @@ naiveWagnerBuild ns =
           in  iterativeBuild initTree xs
 
   where
-    fromRefDAG = performDecoration . PDAG2 . resetMetadata
+    fromRefDAG = performDecoration . (`PDAG2` defaultUnaryMetadataSequence) . resetMetadata
  
 
 iterativeBuild
@@ -213,14 +214,14 @@ iterativeBuild currentTree [] = currentTree
 --iterativeBuild currentTree (nextLeaf:_) | trace (show $ nodeDecorationDatum2 nextLeaf) False = undefined
 iterativeBuild currentTree (nextLeaf:remainingLeaves) = iterativeBuild nextTree remainingLeaves
   where
-    (PDAG2 dag) = wipeScoring currentTree
+    (PDAG2 dag _) = wipeScoring currentTree
     edgeSet     = NE.fromList . toList $ referenceEdgeSet dag
 
     tryEdge :: (Int, Int) -> FinalDecorationDAG
-    tryEdge     = performDecoration . PDAG2 . invadeEdge (resetMetadata dag) deriveInternalNode (wipeNode False nextLeaf)
+    tryEdge     = performDecoration . (`PDAG2` defaultUnaryMetadataSequence) . invadeEdge (resetMetadata dag) deriveInternalNode (wipeNode False nextLeaf)
     nextTree    = minimumBy (comparing getCost) $ parmap rpar tryEdge edgeSet
 
-    getCost (PDAG2 v) = dagCost $ graphData v
+    getCost (PDAG2 v _) = dagCost $ graphData v
 
     deriveInternalNode parentDatum oldChildDatum _newChildDatum =
         PNode2 (resolutions oldChildDatum) (nodeDecorationDatum2 parentDatum)
@@ -249,7 +250,7 @@ iterativeNetworkBuild
 --  -> [PhylogeneticNode2 (CharacterSequence (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)) (Maybe String)]
 --  -> [PhylogeneticNode2 (CharacterSequence u v w x y z) (Maybe String)]
   -> FinalDecorationDAG
-iterativeNetworkBuild currentNetwork@(PDAG2 inputDag) = 
+iterativeNetworkBuild currentNetwork@(PDAG2 inputDag _) = 
     case toList $ candidateNetworkEdges inputDag of
       []   -> currentNetwork
       x:xs ->
@@ -261,12 +262,12 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag) =
             then currentNetwork
             else iterativeNetworkBuild bestNewNetwork
   where
-    (PDAG2 dag) = force $ wipeScoring currentNetwork
+    (PDAG2 dag _) = force $ wipeScoring currentNetwork
 
     tryNetworkEdge :: ((Int, Int), (Int, Int)) -> FinalDecorationDAG
-    tryNetworkEdge = performDecoration . PDAG2 . connectEdge'
+    tryNetworkEdge = performDecoration . (`PDAG2` defaultUnaryMetadataSequence) . connectEdge'
 
-    getCost (PDAG2 v) = dagCost $ graphData v
+    getCost (PDAG2 v _) = dagCost $ graphData v
 
     connectEdge' = uncurry (connectEdge (resetMetadata dag) deriveOriginEdgeNode deriveTargetEdgeNode)
 

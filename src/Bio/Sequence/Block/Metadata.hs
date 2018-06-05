@@ -13,7 +13,7 @@
 {-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses #-}
 
 module Bio.Sequence.Block.Metadata
-  ( MetadataBlock()
+  ( MetadataBlock(..)
   ) where
 
 import Bio.Metadata.Continuous
