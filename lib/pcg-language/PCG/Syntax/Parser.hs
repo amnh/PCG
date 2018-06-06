@@ -13,7 +13,7 @@
 --
 ----------------------------------------------------------------------------- 
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts, TypeFamilies, UnboxedSums #-}
 
 module PCG.Syntax.Parser where
 
@@ -29,9 +29,9 @@ import Text.Megaparsec
 -- |
 -- All the commands of the PCG scripting language.
 data  Command
-    = BUILD   BuildCommand
-    | READ     ReadCommand
-    | REPORT ReportCommand
+    = BUILD   {-# UNPACK #-} !BuildCommand
+    | READ    {-# UNPACK #-} !ReadCommand
+    | REPORT  {-# UNPACK #-} !ReportCommand
     deriving (Show)
 
 

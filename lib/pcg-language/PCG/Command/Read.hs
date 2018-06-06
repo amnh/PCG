@@ -13,7 +13,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, UnboxedSums #-}
 
 module PCG.Command.Read
   ( CustomAlphabetOptions(..)
@@ -46,31 +46,31 @@ newtype ReadCommand = ReadCommand (NonEmpty FileSpecification)
 -- The content of a file along with a possibly associated TCM file content.
 data  FileSpecificationContent
     = SpecContent
-    { dataFiles :: [FileResult]
-    , tcmFile   :: Maybe FileResult
+    { dataFiles :: ![FileResult]
+    , tcmFile   :: !(Maybe FileResult)
     } deriving (Eq)
 
 
 -- |
 -- The specification for a file to be read.
 data  FileSpecification
-    = UnspecifiedFile    (NonEmpty FilePath) --Try to parse them all?
-    | AminoAcidFile      (NonEmpty FilePath)
-    | NucleotideFile     (NonEmpty FilePath)
-    | AnnotatedFile      (NonEmpty FilePath)
-    | ChromosomeFile     (NonEmpty FilePath)
-    | GenomeFile         (NonEmpty FilePath)
-    | CustomAlphabetFile (NonEmpty FilePath) TcmReference [CustomAlphabetOptions]
-    | PrealignedFile     FileSpecification TcmReference
+    = UnspecifiedFile    !(NonEmpty FilePath) --Try to parse them all?
+    | AminoAcidFile      !(NonEmpty FilePath)
+    | NucleotideFile     !(NonEmpty FilePath)
+    | AnnotatedFile      !(NonEmpty FilePath)
+    | ChromosomeFile     !(NonEmpty FilePath)
+    | GenomeFile         !(NonEmpty FilePath)
+    | CustomAlphabetFile !(NonEmpty FilePath) !TcmReference ![CustomAlphabetOptions]
+    | PrealignedFile     !FileSpecification   !TcmReference
     deriving (Show)
 
 
 -- |
 -- Options for custom alphabets. Not sure how these will be evaluation.
 data  CustomAlphabetOptions
-    = Init3D Bool
-    | Level  Int  (Either CustomAlphabetStrategy Tiebreaker)
-    | Ties   Tiebreaker
+    = Init3D                !Bool
+    | Level  {-# UNPACK #-} !Int  !(Either CustomAlphabetStrategy Tiebreaker)
+    | Ties                  !Tiebreaker
     deriving (Show)
 
 

@@ -50,18 +50,18 @@ import Text.XML
 -- polymorphic character type.
 data DynamicDecorationDirectOptimization d
    = DynamicDecorationDirectOptimization
-   { dynamicDecorationDirectOptimizationCharacterCost            :: Word
-   , dynamicDecorationDirectOptimizationCharacterLocalCost       :: Word
-   , dynamicDecorationDirectOptimizationCharacterAverageLength   :: AverageLength
-   , dynamicDecorationDirectOptimizationSingleDisambiguation     :: d
-   , dynamicDecorationDirectOptimizationEncodedField             :: d
-   , dynamicDecorationDirectOptimizationFinalGappedField         :: d
-   , dynamicDecorationDirectOptimizationFinalUngappedField       :: d
-   , dynamicDecorationDirectOptimizationPreliminaryGappedField   :: d
-   , dynamicDecorationDirectOptimizationPreliminaryUngappedField :: d
-   , dynamicDecorationDirectOptimizationLeftAlignmentField       :: d
-   , dynamicDecorationDirectOptimizationRightAlignmentField      :: d
-   , dynamicDecorationDirectOptimizationMetadata                 :: DynamicCharacterMetadataDec (Element d)
+   { dynamicDecorationDirectOptimizationCharacterCost            :: {-# UNPACK #-} !Word
+   , dynamicDecorationDirectOptimizationCharacterLocalCost       :: {-# UNPACK #-} !Word
+   , dynamicDecorationDirectOptimizationCharacterAverageLength   :: {-# UNPACK #-} !AverageLength
+   , dynamicDecorationDirectOptimizationSingleDisambiguation     :: !d
+   , dynamicDecorationDirectOptimizationEncodedField             :: !d
+   , dynamicDecorationDirectOptimizationFinalGappedField         :: !d
+   , dynamicDecorationDirectOptimizationFinalUngappedField       :: !d
+   , dynamicDecorationDirectOptimizationPreliminaryGappedField   :: !d
+   , dynamicDecorationDirectOptimizationPreliminaryUngappedField :: !d
+   , dynamicDecorationDirectOptimizationLeftAlignmentField       :: !d
+   , dynamicDecorationDirectOptimizationRightAlignmentField      :: !d
+   , dynamicDecorationDirectOptimizationMetadata                 :: {-# UNPACK #-} !(DynamicCharacterMetadataDec (Element d))
    } deriving (Eq, Generic)
 
 
@@ -69,15 +69,15 @@ data DynamicDecorationDirectOptimization d
 -- Represents the partial character decoration result of a post-order traversal.
 data DynamicDecorationDirectOptimizationPostOrderResult d
    = DynamicDecorationDirectOptimizationPostOrderResult
-   { dynamicDecorationDirectOptimizationPostOrderCharacterCost            :: Word
-   , dynamicDecorationDirectOptimizationPostOrderCharacterLocalCost       :: Word
-   , dynamicDecorationDirectOptimizationPostOrderCharacterAverageLength   :: AverageLength
-   , dynamicDecorationDirectOptimizationPostOrderEncodedField             :: d
-   , dynamicDecorationDirectOptimizationPostOrderPreliminaryGappedField   :: d
-   , dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField :: d
-   , dynamicDecorationDirectOptimizationPostOrderLeftAlignmentField       :: d
-   , dynamicDecorationDirectOptimizationPostOrderRightAlignmentField      :: d
-   , dynamicDecorationDirectOptimizationPostOrderMetadata                 :: DynamicCharacterMetadataDec (Element d)
+   { dynamicDecorationDirectOptimizationPostOrderCharacterCost            :: {-# UNPACK #-} !Word
+   , dynamicDecorationDirectOptimizationPostOrderCharacterLocalCost       :: {-# UNPACK #-} !Word
+   , dynamicDecorationDirectOptimizationPostOrderCharacterAverageLength   :: {-# UNPACK #-} !AverageLength
+   , dynamicDecorationDirectOptimizationPostOrderEncodedField             :: !d
+   , dynamicDecorationDirectOptimizationPostOrderPreliminaryGappedField   :: !d
+   , dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField :: !d
+   , dynamicDecorationDirectOptimizationPostOrderLeftAlignmentField       :: !d
+   , dynamicDecorationDirectOptimizationPostOrderRightAlignmentField      :: !d
+   , dynamicDecorationDirectOptimizationPostOrderMetadata                 :: {-# UNPACK #-} !(DynamicCharacterMetadataDec (Element d))
    } deriving (Eq, Generic)
 
 
@@ -86,18 +86,18 @@ data DynamicDecorationDirectOptimizationPostOrderResult d
 -- character type.
 data DynamicDecorationImpliedAlignment d
    = DynamicDecorationImpliedAlignment
-   { dynamicDecorationImpliedAlignmentCharacterCost            :: Word
-   , dynamicDecorationImpliedAlignmentCharacterLocalCost       :: Word
-   , dynamicDecorationImpliedAlignmentCharacterAverageLength   :: AverageLength
-   , dynamicDecorationImpliedAlignmentEncodedField             :: d
-   , dynamicDecorationImpliedAlignmentFinalGappedField         :: d
-   , dynamicDecorationImpliedAlignmentFinalUngappedField       :: d
-   , dynamicDecorationImpliedAlignmentPreliminaryGappedField   :: d
-   , dynamicDecorationImpliedAlignmentPreliminaryUngappedField :: d
-   , dynamicDecorationImpliedAlignmentLeftAlignmentField       :: d
-   , dynamicDecorationImpliedAlignmentRightAlignmentField      :: d
-   , dynamicDecorationImpliedAlignmentImpliedAlignmentField    :: d
-   , dynamicDecorationImpliedAlignmentMetadata                 :: DynamicCharacterMetadataDec (Element d)
+   { dynamicDecorationImpliedAlignmentCharacterCost            :: {-# UNPACK #-} !Word
+   , dynamicDecorationImpliedAlignmentCharacterLocalCost       :: {-# UNPACK #-} !Word
+   , dynamicDecorationImpliedAlignmentCharacterAverageLength   :: {-# UNPACK #-} !AverageLength
+   , dynamicDecorationImpliedAlignmentEncodedField             :: !d
+   , dynamicDecorationImpliedAlignmentFinalGappedField         :: !d
+   , dynamicDecorationImpliedAlignmentFinalUngappedField       :: !d
+   , dynamicDecorationImpliedAlignmentPreliminaryGappedField   :: !d
+   , dynamicDecorationImpliedAlignmentPreliminaryUngappedField :: !d
+   , dynamicDecorationImpliedAlignmentLeftAlignmentField       :: !d
+   , dynamicDecorationImpliedAlignmentRightAlignmentField      :: !d
+   , dynamicDecorationImpliedAlignmentImpliedAlignmentField    :: !d
+   , dynamicDecorationImpliedAlignmentMetadata                 :: {-# UNPACK #-} !(DynamicCharacterMetadataDec (Element d))
    } deriving (Eq, Generic)
 
 
@@ -106,9 +106,9 @@ data DynamicDecorationImpliedAlignment d
 -- type.
 data DynamicDecorationInitial d
    = DynamicDecorationInitial
-   { dynamicDecorationInitialEncodedField           :: d
-   , dynamicDecorationInitialCharacterAverageLength :: AverageLength
-   , metadata                                       :: DynamicCharacterMetadataDec (Element d)
+   { dynamicDecorationInitialEncodedField           :: !d
+   , dynamicDecorationInitialCharacterAverageLength :: {-# UNPACK #-} !AverageLength
+   , metadata                                       :: {-# UNPACK #-} !(DynamicCharacterMetadataDec (Element d))
    } deriving (Eq, Generic)
 
 

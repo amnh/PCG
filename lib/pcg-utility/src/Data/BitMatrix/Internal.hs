@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns, DeriveGeneric, TypeFamilies #-}
+{-# LANGUAGE BangPatterns, DeriveGeneric, Strict, TypeFamilies #-}
 
 module Data.BitMatrix.Internal where
 
@@ -38,7 +38,7 @@ import Test.QuickCheck   hiding ((.&.))
 -- for the resulting xth 'BitVector' column when calling 'cols' on a 'BitMatrix'.
 --
 data BitMatrix
-   = BitMatrix !Int BitVector
+   = BitMatrix {-# UNPACK #-} !Int {-# UNPACK #-} !BitVector
    deriving (Eq, Generic)
 
 

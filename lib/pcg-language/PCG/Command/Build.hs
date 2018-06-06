@@ -13,6 +13,9 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE UnboxedSums #-}
+
+
 module PCG.Command.Build
   ( BuildCommand(..)
   , ConstructionType(..)
@@ -29,7 +32,7 @@ import PCG.Syntax.Combinators
 -- The BUILD command specifying how a component graph should be constructed.
 -- output should be directed.
 data  BuildCommand
-    = BuildCommand Int ConstructionType
+    = BuildCommand {-# UNPACK #-} !Int !ConstructionType
     deriving (Show)
 
 -- |

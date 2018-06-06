@@ -38,8 +38,8 @@ import Text.XML
 -- Represents the finalized character decoration after a pre-order traversal.
 data AdditiveOptimizationDecoration a
    = AdditiveOptimizationDecoration
-   { additiveFinalInterval :: Range (Bound a)
-   , postorderDecoration   :: AdditivePostorderDecoration a
+   { additiveFinalInterval :: {-# UNPACK #-} !(Range (Bound a))
+   , postorderDecoration   :: {-# UNPACK #-} !(AdditivePostorderDecoration a)
    } deriving (Generic)
 
 
@@ -48,12 +48,12 @@ data AdditiveOptimizationDecoration a
 -- type.
 data AdditivePostorderDecoration a
    = AdditivePostorderDecoration
-   { additiveCost                 :: Finite (Bound a)
-   , additivePreliminaryInterval  :: Range (Bound a)
-   , additiveChildPrelimIntervals :: (Range (Bound a), Range (Bound a))
-   , additiveIsLeaf               :: Bool
-   , additiveCharacterField       :: a
-   , additiveMetadataField        :: DiscreteCharacterMetadataDec
+   { additiveCost                 :: !(Finite (Bound a))
+   , additivePreliminaryInterval  :: {-# UNPACK #-} !(Range (Bound a))
+   , additiveChildPrelimIntervals :: {-# UNPACK #-} !(Range (Bound a), Range (Bound a))
+   , additiveIsLeaf               :: !Bool
+   , additiveCharacterField       :: !a
+   , additiveMetadataField        :: {-# UNPACK #-} !DiscreteCharacterMetadataDec
    } deriving (Generic)
 
 

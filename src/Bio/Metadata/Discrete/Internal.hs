@@ -39,8 +39,8 @@ import Text.XML
 -- discrete different bins. Continous bins do not have Alphabets.
 data DiscreteCharacterMetadataDec
    = DiscreteCharacterMetadataDec
-   { alphabet    :: Alphabet String
-   , generalData :: GeneralCharacterMetadataDec
+   { alphabet    :: {-# UNPACK #-} !(Alphabet String)
+   , generalData :: {-# UNPACK #-} !GeneralCharacterMetadataDec
    } deriving (Generic)
 
 

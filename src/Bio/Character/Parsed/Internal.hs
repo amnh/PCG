@@ -14,7 +14,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances, TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances, StrictData, TypeSynonymInstances #-}
 
 module Bio.Character.Parsed.Internal where
 
