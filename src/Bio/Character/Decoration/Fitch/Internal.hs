@@ -34,16 +34,16 @@ import Text.XML
 -- type.
 data FitchOptimizationDecoration f
    = FitchOptimizationDecoration
-   { fitchMinCost           :: Word                          -- Cost of the subtree
-   , fitchPreliminaryMedian :: f                             -- Held here until final state is
-                                                             --     determined and we can assign that
-                                                             --     into discreteCharacter
-   , fitchFinalMedian       :: f                             -- Eventually gets assigned to discreteCharacter
-   , fitchChildMedians      :: (f, f)                        -- (left, right) so that we can do post order
-                                                             --     pass with all of Fitch's rules
-   , fitchIsLeaf            :: Bool                          -- need this in preorder
-   , fitchCharacterField    :: f
-   , fitchMetadataField     :: DiscreteCharacterMetadataDec
+   { fitchMinCost           :: {-# UNPACK #-} !Word   -- Cost of the subtree
+   , fitchPreliminaryMedian :: !f                     -- Held here until final state is
+                                                      --     determined and we can assign that
+                                                      --     into discreteCharacter
+   , fitchFinalMedian       :: !f                     -- Eventually gets assigned to discreteCharacter
+   , fitchChildMedians      :: {-# UNPACK #-} !(f, f) -- (left, right) so that we can do post order
+                                                      --     pass with all of Fitch's rules
+   , fitchIsLeaf            :: !Bool                  -- need this in preorder
+   , fitchCharacterField    :: !f
+   , fitchMetadataField     :: {-# UNPACK #-} !DiscreteCharacterMetadataDec
    } deriving (Generic)
 
 

@@ -13,6 +13,8 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE UnboxedSums #-}
+
 module PCG.Command.Report
   ( ReportCommand(..)
   , OutputFormat(..)
@@ -30,7 +32,7 @@ import PCG.Syntax.Combinators
 -- |
 -- How the output should be formatted
 data  OutputFormat
-    = CrossReferences [FilePath]
+    = CrossReferences ![FilePath]
     | Data
     | DotFile
     | DynamicTable
@@ -50,7 +52,7 @@ data  OutputFormat
 -- Where the output stream should be directed.
 data  OutputTarget
     = OutputToStdout
-    | OutputToFile FilePath FileWriteMethod
+    | OutputToFile !FilePath !FileWriteMethod
     deriving (Show)
 
 
@@ -66,7 +68,7 @@ data  FileWriteMethod
 -- The REPORT command specifying what information should be output and where the
 -- output should be directed.
 data  ReportCommand
-    = ReportCommand OutputFormat OutputTarget
+    = ReportCommand !OutputFormat !OutputTarget
     deriving (Show)
 
 

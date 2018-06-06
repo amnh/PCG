@@ -13,7 +13,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies, TypeSynonymInstances, UndecidableInstances #-}
+{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies, TypeSynonymInstances, UnboxedSums, UndecidableInstances #-}
 
 module Bio.Character.Encodable.Dynamic.Internal
   ( DynamicChar (DC,Missing)
@@ -58,8 +58,8 @@ import           Text.XML
 -- the encoding of the individual static characters to define the encoding of
 -- the entire dynamic character.
 data  DynamicChar
-    = Missing Word
-    | DC BitMatrix
+    = Missing {-# UNPACK #-} !Word
+    | DC      {-# UNPACK #-} !BitMatrix
     deriving (Eq, Generic, Ord, Show)
 
 

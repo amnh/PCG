@@ -32,8 +32,8 @@ import Text.XML.Class
 -- bins.
 data GeneralCharacterMetadataDec
    = GeneralCharacterMetadataDec
-   { name     :: CharacterName
-   , weight   :: Double
+   { name     :: !CharacterName
+   , weight   :: {-# UNPACK #-} !Double
    } deriving (Eq, Generic, Show)
 
 

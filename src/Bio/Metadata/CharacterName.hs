@@ -36,6 +36,7 @@
 
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UnboxedSums #-}
 
 module Bio.Metadata.CharacterName
   ( CharacterName()
@@ -61,8 +62,8 @@ import Text.Show       (showListWith, showString)
 -- |
 -- Represents the name of a character in a type-safe manner which resolves namespace ambiguities.
 data CharacterName
-   = UserDefined FilePath String
-   | Default     FilePath Int
+   = UserDefined !FilePath !String
+   | Default     !FilePath {-# UNPACK #-} !Int
    deriving (Eq, Generic)
 
 

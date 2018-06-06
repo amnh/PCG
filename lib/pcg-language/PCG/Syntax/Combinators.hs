@@ -22,7 +22,7 @@
 
 
 {-# LANGUAGE DeriveFunctor, FlexibleContexts, RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables, TypeFamilies #-}
+{-# LANGUAGE ScopedTypeVariables, TypeFamilies, UnboxedSums #-}
 
 
 module PCG.Syntax.Combinators
@@ -83,7 +83,7 @@ data  ArgList z
 -- |
 -- Specifcation for a command in the PCG scripting language syntax.
 data  CommandSpecification z
-    = CommandSpec String (Ap SyntacticArgument z)
+    = CommandSpec !String (Ap SyntacticArgument z)
 
 
 -- |

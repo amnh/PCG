@@ -49,8 +49,8 @@ import Text.XML
 -- General, concrete type for 'Discrete' characters.
 data DiscreteDecoration c
    = DiscreteDec
-   { discreteDecorationCharacter :: c
-   , metadata                    :: DiscreteWithTCMCharacterMetadataDec c
+   { discreteDecorationCharacter :: !c
+   , metadata                    :: {-# UNPACK #-} !(DiscreteWithTCMCharacterMetadataDec c)
    }
 
 

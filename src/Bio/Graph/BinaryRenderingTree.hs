@@ -25,8 +25,8 @@ import Prelude            hiding (head)
 -- |
 -- An intermediate structure for rendering directed, acyclic graphs.
 data  BinaryRenderingTree
-    = Leaf String
-    | Node Word (Maybe String) (NonEmpty BinaryRenderingTree)
+    = Leaf !String
+    | Node {-# UNPACK #-} !Word !(Maybe String) !(NonEmpty BinaryRenderingTree)
     deriving (Eq, Show)
 
 
