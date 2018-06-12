@@ -11,7 +11,7 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveFunctor, DeriveGeneric, FlexibleContexts, FlexibleInstances #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies, UnboxedSums #-}
 
 module Bio.Graph.ReferenceDAG.Internal where
 
@@ -65,8 +65,8 @@ import           Text.XML.Custom
 -- A constant time access representation of a directed acyclic graph.
 data  ReferenceDAG d e n
     = RefDAG
-    { references :: Vector (IndexData e n)
-    , rootRefs   :: NonEmpty Int
+    { references :: {-# UNPACK #-} !(Vector (IndexData e n))
+    , rootRefs   :: !(NonEmpty Int)
     , graphData  :: GraphData d
     } deriving (Generic)
 
@@ -80,9 +80,9 @@ data  ReferenceDAG d e n
 -- * n = node label: 'Maybe'('String')
 data  IndexData e n
     = IndexData
-    { nodeDecoration :: n
-    , parentRefs     :: IntSet
-    , childRefs      :: IntMap e
+    { nodeDecoration :: !n
+    , parentRefs     :: !IntSet
+    , childRefs      :: !(IntMap e)
     } deriving (Generic, Show)
 
 

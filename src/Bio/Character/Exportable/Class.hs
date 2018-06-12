@@ -40,9 +40,9 @@ class Exportable c where
 -- 'bufferChunks' contains the bit-packed representation of the character sequence.
 data ExportableCharacterSequence
    = ExportableCharacterSequence
-   { exportedElementCountSequence :: Word
-   , exportedElementWidthSequence :: Word
-   , exportedBufferChunks :: [CULong]
+   { exportedElementCountSequence :: {-# UNPACK #-} !Word
+   , exportedElementWidthSequence :: {-# UNPACK #-} !Word
+   , exportedBufferChunks         :: ![CULong]
    } deriving (Eq, Show)   
 
 
@@ -51,9 +51,9 @@ data ExportableCharacterSequence
 -- 'characterElements' contains the integral value for each character element.
 data ExportableCharacterElements
    = ExportableCharacterElements
-   { exportedElementCountElements :: Word
-   , exportedElementWidthElements :: Word
-   , exportedCharacterElements :: [CUInt]
+   { exportedElementCountElements :: {-# UNPACK #-} !Word
+   , exportedElementWidthElements :: {-# UNPACK #-} !Word
+   , exportedCharacterElements    :: ![CUInt]
    } deriving (Eq, Show)   
 
 

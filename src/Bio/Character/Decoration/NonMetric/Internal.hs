@@ -30,7 +30,7 @@ import Data.Alphabet
 data NonMetricDecorationInitial c
    = NonMetricDecorationInitial
    { nonMetricDecorationInitialCharacter :: c
-   , metadata                        :: DiscreteWithTCMCharacterMetadataDec c
+   , metadata                            :: {-# UNPACK #-} !(DiscreteWithTCMCharacterMetadataDec c)
    }
 
 

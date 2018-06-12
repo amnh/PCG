@@ -18,7 +18,7 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveFunctor, FlexibleContexts, ScopedTypeVariables, TypeFamilies #-}
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, TypeSynonymInstances, UnboxedSums #-}
 
 module PCG.Syntax.Primative
   ( PrimativeValue()
@@ -56,12 +56,12 @@ import qualified Text.Megaparsec.Char.Lexer as Lex
 
 
 data  PrimativeParseResult
-    = ResultBool  Bool
-    | ResultInt   Int
-    | ResultReal  Double
-    | ResultText  String
-    | ResultTime  DiffTime
-    | ResultValue String
+    = ResultBool                 !Bool
+    | ResultInt   {-# UNPACK #-} !Int
+    | ResultReal  {-# UNPACK #-} !Double
+    | ResultText                 !String
+    | ResultTime                 !DiffTime
+    | ResultValue                !String
     deriving (Show)
 
 
@@ -78,12 +78,12 @@ data  PrimativeType
 -- |
 -- A primative value in the PCG scripting language.
 data PrimativeValue a
-   = PInt           (Int      -> a)
-   | PReal          (Double   -> a)
-   | PBool          (Bool     -> a)
-   | PText          (String   -> a)
-   | PTime          (DiffTime -> a)
-   | PValue String  (()       -> a)
+   = PInt            (Int      -> a)
+   | PReal           (Double   -> a)
+   | PBool           (Bool     -> a)
+   | PText           (String   -> a)
+   | PTime           (DiffTime -> a)
+   | PValue !String  (()       -> a)
    deriving (Functor)
 
 

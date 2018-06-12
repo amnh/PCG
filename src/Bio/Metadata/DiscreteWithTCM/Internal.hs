@@ -46,8 +46,8 @@ data DiscreteWithTCMCharacterMetadataDec c
    = DiscreteWithTCMCharacterMetadataDec
    { symbolChangeMatrixData   :: Word -> Word -> Word
    , transitionCostMatrixData :: c -> c -> (c, Word)
-   , foreignPointerData       :: MemoizedCostMatrix
-   , discreteData             :: DiscreteCharacterMetadataDec
+   , foreignPointerData       :: {-# UNPACK #-} !MemoizedCostMatrix
+   , discreteData             :: {-# UNPACK #-} !DiscreteCharacterMetadataDec
    } deriving (Generic)
 
 

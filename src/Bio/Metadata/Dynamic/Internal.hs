@@ -73,9 +73,9 @@ type TraversalFoci      = NonEmpty TraversalFocus
 -- discrete different bins. Continous bins do not have Alphabets.
 data DynamicCharacterMetadataDec c
    = DynamicCharacterMetadataDec
-   { dataDenseTransitionCostMatrix :: Maybe DenseTransitionCostMatrix
-   , optimalTraversalFoci          :: Maybe TraversalFoci
-   , metadata                      :: DiscreteWithTCMCharacterMetadataDec c
+   { dataDenseTransitionCostMatrix :: !(Maybe DenseTransitionCostMatrix)
+   , optimalTraversalFoci          :: !(Maybe TraversalFoci)
+   , metadata                      :: {-# UNPACK #-} !(DiscreteWithTCMCharacterMetadataDec c)
    } deriving (Generic)
 
 

@@ -141,11 +141,11 @@ rectifyResults2 fprs =
           (True , True ) -> Left . UnificationError . pure . VacuousInput $ sourceFile <$> NE.fromList fprs
           -- Build a default forest of singleton components
           (True , False) -> Right . Right . PhylogeneticSolution . pure
-                          . foldMap1 singletonComponent . NE.fromList $ toKeyedList charSeqs
+                          . foldMap1 singletonComponent . NE.fromList . toKeyedList $ snd <$> charSeqs
           -- Build a forest of with Units () as character type parameter
           (False, True ) -> Right . Left  . PhylogeneticSolution $ NE.fromList suppliedForests
           -- BUild a forest with the corresponding character data on the nodes
-          (False, False) -> Right . Right . PhylogeneticSolution $ matchToChars charSeqs <$> NE.fromList suppliedForests
+          (False, False) -> Right . Right . PhylogeneticSolution $ matchToChars (fmap snd charSeqs) <$> NE.fromList suppliedForests
       where
         defaultCharacterSequenceDatum = fromBlocks . fmap blockTransform . toBlocks . head $ toList charSeqs
           where

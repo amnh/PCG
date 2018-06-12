@@ -50,8 +50,8 @@ import Text.XML
 -- information such as name and later a subtree structure.
 data  PhylogeneticNode n s
     = PNode
-    { nodeDecorationDatum :: n
-    , sequenceDecoration  :: s
+    { nodeDecorationDatum :: !n
+    , sequenceDecoration  :: !s
     } deriving (Eq, Functor, Generic, Show)
 
 
@@ -60,8 +60,8 @@ data  PhylogeneticNode n s
 -- information for a phylogenetic network (or tree).
 data  PhylogeneticNode2 s n
     = PNode2
-    { resolutions          :: ResolutionCache s
-    , nodeDecorationDatum2 :: n
+    { resolutions          :: !(ResolutionCache s)
+    , nodeDecorationDatum2 :: !n
     } deriving (Eq, Functor, Generic)
 
 
@@ -69,13 +69,13 @@ data  PhylogeneticNode2 s n
 -- A collection of information used to memoize network optimizations.
 data  ResolutionInformation s
     = ResInfo
-    { totalSubtreeCost       :: Double
-    , localSequenceCost      :: Double
-    , leafSetRepresentation  :: SubtreeLeafSet
-    , subtreeRepresentation  :: NewickSerialization
-    , subtreeEdgeSet         :: EdgeSet (Int, Int)
-    , topologyRepresentation :: TopologyRepresentation (Int, Int)
-    , characterSequence      :: s
+    { totalSubtreeCost       :: {-# UNPACK #-} !Double
+    , localSequenceCost      :: {-# UNPACK #-} !Double
+    , leafSetRepresentation  :: {-# UNPACK #-} !SubtreeLeafSet
+    , subtreeRepresentation  ::                !NewickSerialization
+    , subtreeEdgeSet         ::                !(EdgeSet (Int, Int))
+    , topologyRepresentation :: {-# UNPACK #-} !(TopologyRepresentation (Int, Int))
+    , characterSequence      :: !s
     } deriving (Functor, Generic)
 
 
