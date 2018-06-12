@@ -44,14 +44,14 @@ before_install:
 
   # Download and unpack the hlint executable
   - which hlint || travis_retry curl --progress-bar --location -ohlint.tar.gz https://github.com/$(curl --silent https://github.com/ndmitchell/hlint/releases | grep -o '\"[^\"]*-x86_64-'$TRAVIS_OS_NAME'\.tar\.gz\"' | sed s/\"//g | head -n1)
-  - tar -xzf hlint.tar.gz
-  - cp    hlint-*/hlint ~/.local/bin/hlint
-  - cp -r hlint-*/data	~/.local/bin/data
+  - which hlint || tar -xzf hlint.tar.gz
+  - which hlint || cp    hlint-*/hlint ~/.local/bin/hlint
+  - which hlint || cp -r hlint-*/data  ~/.local/bin/data
 
   # Download and unpack the weeder executable
 #  - which weeder || travis_retry curl --progress-bar --location -oweeder.tar.gz https://github.com/$(curl --silent https://github.com/ndmitchell/weeder/releases | grep -o '\"[^\"]*-x86_64-'$TRAVIS_OS_NAME'\.tar\.gz\"' | sed s/\"//g | head -n1)
-#  - tar -xzf weeder.tar.gz
-#  - cp    weeder-*/weeder ~/.local/bin/weeder
+#  - which weeder || tar -xzf weeder.tar.gz
+#  - which weeder || cp weeder-*/weeder ~/.local/bin/weeder
 
 install:
   # Update stack
