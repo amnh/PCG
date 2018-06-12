@@ -219,9 +219,15 @@ applyReferencedTCM fpr =
 
 
 setCharactersToAligned :: FracturedParseResult -> FracturedParseResult
-setCharactersToAligned fpr = fpr { parsedMetas = setAligned <$> parsedMetas fpr }
+setCharactersToAligned fpr = fpr { parsedMetas = setAligned <$> parsedMetas fpr
+                                 , parsedChars = 
+                                 }
   where
     setAligned x = x { isDynamic = False }
+    expandDynamicCharacter :: ParsedCharacter -> [ParsedCharacter]
+    expandDynamicCharacter (ParsedDynamicCharacter x) = 
+    expandDynamicCharacter x                          = pure x
+    
 
 {- removed to eliminate compilation warning
 expandIUPAC :: FracturedParseResult -> FracturedParseResult

@@ -218,11 +218,13 @@ rectifyResults2 fprs =
 -- * Lastly we collapse the many parse results into a single map of charcter
 --   blocks wrapped together as a charcter sequence. This will properly add
 --   missing character values to taxa provided in other files.
-joinSequences2 :: Foldable t => t FracturedParseResult -> Map String UnifiedSequence
+joinSequences2 :: Foldable t => t FracturedParseResult -> (MetadataSequence, Map String UnifiedSequence)
 joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorrectTCMs . deriveCharacterNames
   where
 
     -- We do this to correctly construct the CharacterNames.
+    --
+    -- We must be careful here, prealigned data requires unique names for each character "column" in the sequence.
     deriveCharacterNames
       :: Foldable t
       => t FracturedParseResult
@@ -232,7 +234,7 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
         g (propperNames, ys) fpr = (drop (length localMetadata) propperNames, newMap:ys)
           where
             localMetadata = parsedMetas fpr
-            -- This call to Ne.fromList is safe, we checked that there were no empty characters in Step 1. (not realy though)
+            -- This call to NE.fromList is safe, we checked that there were no empty characters in Step 1. (not realy though)
             newMap = (\x -> NE.fromList $ zip4 (toList x) (toList localMetadata) (repeat (relatedTcm fpr)) propperNames) <$> parsedChars fpr
 
         charNames :: [CharacterName]
