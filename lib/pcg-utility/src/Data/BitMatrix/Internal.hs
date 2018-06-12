@@ -115,7 +115,7 @@ instance MonoFoldable BitMatrix where
       where
         n = toEnum c
 
-    tailEx bm@(BitMatrix c bv)
+    lastEx bm@(BitMatrix c bv)
       | d < n     = error $ "call to BitMatrix.otail with: " <> show bm
       | otherwise = (d - n, d - 1) `subRange` bv
       where
