@@ -18,6 +18,10 @@
 module Bio.Sequence.Metadata
   ( MetadataBlock()
   , MetadataSequence()
+  -- * Block Singletons
+  , continuousToMetadataBlock
+  , discreteToMetadataBlock
+  , dynamicToMetadataBlock
   -- * Construction / Decomposition
   , toBlocks
   , fromBlocks
@@ -29,7 +33,7 @@ module Bio.Sequence.Metadata
 
 import qualified Bio.Sequence.Block      as Blk
 import           Bio.Sequence.Block.Internal    (Block(..))
-import           Bio.Sequence.Block.Metadata    (MetadataBlock(..))
+import           Bio.Sequence.Block.Metadata
 import           Control.DeepSeq
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies

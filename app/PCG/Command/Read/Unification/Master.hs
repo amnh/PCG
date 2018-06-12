@@ -27,6 +27,11 @@ import           Bio.Character.Decoration.Dynamic    hiding (characterName)
 import           Bio.Character.Parsed
 import           Bio.Sequence                        hiding (hexmap)
 import           Bio.Sequence.Block
+import qualified Bio.Sequence.Metadata               as MD
+import           Bio.Metadata.Continuous                    (continuousMetadata)
+import           Bio.Metadata.Discrete                      (discreteMetadata)
+import           Bio.Metadata.DiscreteWithTCM               (discreteMetadataWithTCM)
+import           Bio.Metadata.Dynamic                       (dynamicMetadataWithTCM)
 import           Bio.Metadata.CharacterName          hiding (sourceFile)
 import           Bio.Metadata.Parsed
 import           Bio.Graph
@@ -35,7 +40,7 @@ import           Bio.Graph.Forest.Parsed
 import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG
 import qualified Bio.Graph.ReferenceDAG     as DAG
-import           Control.Arrow                     ((&&&))
+import           Control.Arrow                     ((***), (&&&))
 import           Control.Applicative               ((<|>))
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
@@ -47,7 +52,7 @@ import qualified Data.IntMap                as IM
 import qualified Data.IntSet                as IS
 import           Data.Key
 import           Data.List                         (transpose, zip4)
-import           Data.List.NonEmpty                (NonEmpty( (:|) ))
+import           Data.List.NonEmpty                (NonEmpty(..))
 import qualified Data.List.NonEmpty         as NE
 import           Data.List.Utility                 (duplicates)
 import           Data.Map                          (Map, intersectionWith, keys)
@@ -60,10 +65,10 @@ import qualified Data.Set                   as Set
 import           Data.String
 import           Data.TCM                          (TCM, TCMStructure(..))
 import qualified Data.TCM                   as TCM
---import           Data.MonoTraversable
+import           Data.MonoTraversable
 import           Data.Vector                       (Vector)
 import           PCG.Command.Read.Unification.UnificationError
-import           Prelude                    hiding (lookup, zipWith)
+import           Prelude                    hiding (lookup, unzip, zipWith)
 
 
 data FracturedParseResult
@@ -218,9 +223,10 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
   where
 
     -- We do this to correctly construct the CharacterNames.
-    deriveCharacterNames :: Foldable t
-                         => t FracturedParseResult
-                         -> [ Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, Maybe (TCM, TCMStructure), CharacterName)) ]
+    deriveCharacterNames
+      :: Foldable t
+      => t FracturedParseResult
+      -> [ Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, Maybe (TCM, TCMStructure), CharacterName)) ]
     deriveCharacterNames xs = reverse . snd $ foldl' g (charNames, []) xs
       where
         g (propperNames, ys) fpr = (drop (length localMetadata) propperNames, newMap:ys)
@@ -236,9 +242,10 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
             correctName [] = Nothing
             correctName ys = Just ys
 
-    deriveCorrectTCMs :: Functor f
-                      => f (Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, Maybe (TCM, TCMStructure), CharacterName)))
-                      -> f (Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata,        TCM, TCMStructure, CharacterName)))
+    deriveCorrectTCMs
+      :: Functor f
+      => f (Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, Maybe (TCM, TCMStructure), CharacterName)))
+      -> f (Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata,        TCM, TCMStructure, CharacterName)))
     deriveCorrectTCMs = fmap (fmap (fmap selectTCM))
       where
         selectTCM (charMay, charMetadata, tcmMay, charName) = (charMay, charMetadata, selectedTCM, selectedStructure, charName)
@@ -340,9 +347,10 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
 -}
 
 
-    performMetadataTransformations :: Functor f
-                    => f (Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, TCM, TCMStructure, CharacterName)))
-                    -> f (Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName)))
+    performMetadataTransformations
+      :: Functor f
+      => f (Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, TCM, TCMStructure, CharacterName)))
+      -> f (Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName)))
     performMetadataTransformations = fmap reduceFileBlock
       where
         reduceFileBlock mapping = fmap (zipWith updateMetadataInformation updatedMetadataTokens) mapping
@@ -415,9 +423,10 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
                          _           -> let !tcm' = tcm -- TCM.reduceTcm missingSymbolIndicies tcm
                                         in (\i j -> toEnum . fromEnum $ tcm' TCM.! (i,j))
 
-        updateMetadataInformation :: (Alphabet String, Word -> Word -> Word)
-                                 -> (ParsedCharacter, ParsedCharacterMetadata, TCM, TCMStructure, CharacterName)
-                                 -> (ParsedCharacter, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName)
+        updateMetadataInformation
+          :: (Alphabet String, Word -> Word -> Word)
+          -> (ParsedCharacter, ParsedCharacterMetadata, TCM, TCMStructure, CharacterName)
+          -> (ParsedCharacter, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName)
         updateMetadataInformation (reducedAlphabet, symbolDistance) (charMay, charMetadata, _, structure, charName) =
             ( charMay
             , charMetadata { alphabet = reducedAlphabet }
@@ -437,22 +446,26 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
         h :: Foldable f => Map String (f (Map OptToken [OptValueWrapper])) -> Map String UnifiedSequence
         h = undefined
 -}
-    collapseAndMerge = fmap fromBlocks . fst . foldl' f (mempty, [])
+    collapseAndMerge
+      :: Foldable f
+      => f (Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName)))
+      -> Map String UnifiedSequence
+    collapseAndMerge = fmap ((MD.fromBlocks *** fromBlocks) . NE.unzip) . fst . foldl' f (mempty, [])
       where
         f :: (Map String (NonEmpty UnifiedBlock), [UnifiedBlock])
           ->  Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName))
           -> (Map String (NonEmpty UnifiedBlock), [UnifiedBlock])
         f (prevMapping, prevPad) currTreeChars = (nextMapping, nextPad)
           where
-            nextMapping    = inOnlyPrev <> inBoth <> inOnlyCurr
-            nextPad        = prevPad <> toList currPad -- generate (length nextMetaData) (const Nothing)
+            nextMapping   = inOnlyPrev <> inBoth <> inOnlyCurr
+            nextPad       = prevPad <> toList currPad -- generate (length nextMetaData) (const Nothing)
 
-            currPad        = fmap toMissingCharacters . head $ toList currMapping
-            currMapping    = pure . encodeToBlock <$> currTreeChars
+            currPad       = fmap (id *** toMissingCharacters) . head $ toList currMapping
+            currMapping   = pure . encodeToBlock <$> currTreeChars
 
-            inBoth         = intersectionWith (<>) prevMapping currMapping-- oldTreeChars nextTreeChars
-            inOnlyCurr     =  prepend prevPad  <$> getUnique currMapping prevMapping
-            inOnlyPrev     = (<>      currPad) <$> getUnique prevMapping currMapping
+            inBoth        = intersectionWith (<>) prevMapping currMapping-- oldTreeChars nextTreeChars
+            inOnlyCurr    =  prepend prevPad  <$> getUnique currMapping prevMapping
+            inOnlyPrev    = (<>      currPad) <$> getUnique prevMapping currMapping
 
             getUnique x y = x `Map.restrictKeys` (lhs `Set.difference` rhs)
               where
@@ -462,15 +475,22 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
             encodeToBlock :: Foldable1 t
                           => t (ParsedCharacter, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName)
                           -> UnifiedBlock
-            encodeToBlock = finalizeCharacterBlock . foldMap1 encodeBinToSingletonBlock
+            encodeToBlock = (fold1 *** finalizeCharacterBlock) . NE.unzip . foldMap1 encodeBinToSingletonBlock
               where
---                encodeBinToSingletonBlock :: (Maybe ParsedChar, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName)
---                                          -> UnifiedBlock
+                encodeBinToSingletonBlock
+                  :: (ParsedCharacter, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName)
+                  -> (MetadataBlock () StaticCharacter (Element DynamicChar), PartialCharacterBlock UnifiedContinuousCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDynamicCharacter)
                 encodeBinToSingletonBlock (charMay, charMeta, scm, structure, charName) =
                     case charMay of
-                      ParsedContinuousCharacter continuousMay -> continuousSingleton           . Just .   continuousDecorationInitial charName charWeight $ toContinuousCharacter continuousMay
-                      ParsedDiscreteCharacter     discreteMay ->   discreteSingleton structure . Just $ toDiscreteCharacterDecoration charName charWeight specifiedAlphabet scm  staticTransform discreteMay
-                      ParsedDynamicCharacter       dynamicMay ->    dynamicSingleton           . Just $  toDynamicCharacterDecoration charName charWeight specifiedAlphabet scm dynamicTransform  dynamicMay
+                      ParsedContinuousCharacter continuousMay ->
+                        let mData = MD.continuousToMetadataBlock $ continuousMetadata charName charWeight
+                        in (mData, continuousSingleton           . Just .   continuousDecorationInitial charName charWeight $ toContinuousCharacter continuousMay)
+                      ParsedDiscreteCharacter     discreteMay ->
+                        let mData = MD.discreteToMetadataBlock structure $ discreteMetadataWithTCM charName charWeight specifiedAlphabet scm
+                        in (mData,   discreteSingleton structure . Just $ toDiscreteCharacterDecoration charName charWeight specifiedAlphabet scm  staticTransform discreteMay)
+                      ParsedDynamicCharacter       dynamicMay ->
+                        let mData = MD.dynamicToMetadataBlock $ dynamicMetadataWithTCM charName charWeight specifiedAlphabet scm
+                        in (mData,    dynamicSingleton           . Just $  toDynamicCharacterDecoration charName charWeight specifiedAlphabet scm dynamicTransform  dynamicMay)
                   where
                     alphabetLength    = toEnum $ length specifiedAlphabet
                     charWeight        = weight   charMeta

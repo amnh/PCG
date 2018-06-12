@@ -164,6 +164,7 @@ type UnifiedBlock =
         UnifiedDynamicCharacter
     )
 
+
 {-
 TODO: Make this a tuple
 
@@ -192,6 +193,8 @@ type UnifiedCharacterSequence
          UnifiedDynamicCharacter
 
 -}
+
+
 -- |
 -- A "heterogenous" character sequence after being read in from a READ command.
 type UnifiedSequence =

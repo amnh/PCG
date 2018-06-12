@@ -29,6 +29,7 @@ module Bio.Metadata.Dynamic.Internal
   , TraversalTopology
   , dynamicMetadata
   , dynamicMetadataFromTCM
+  , dynamicMetadataWithTCM
   , maybeConstructDenseTransitionCostMatrix
   ) where
 
@@ -232,6 +233,19 @@ dynamicMetadataFromTCM name weight alpha tcm =
     coefficient = fromIntegral $ factoredWeight diagnosis
     diagnosis   = diagnoseTcm tcm
     denseTCM = maybeConstructDenseTransitionCostMatrix alpha sigma
+
+
+-- |
+-- Construct a concrete typed 'DynamicCharacterMetadataDec' value from the supplied inputs.
+dynamicMetadataWithTCM :: CharacterName -> Double -> Alphabet String -> (Word -> Word -> Word) -> DynamicCharacterMetadataDec c
+dynamicMetadataWithTCM name weight alpha scm =
+    force DynamicCharacterMetadataDec
+    { dataDenseTransitionCostMatrix = denseTCM
+    , optimalTraversalFoci          = Nothing
+    , metadata                      = discreteMetadataWithTCM name weight alpha scm
+    }
+  where
+    denseTCM = maybeConstructDenseTransitionCostMatrix alpha scm
 
 
 -- |
