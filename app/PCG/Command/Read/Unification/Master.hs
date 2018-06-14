@@ -218,7 +218,7 @@ rectifyResults2 fprs =
 -- * Lastly we collapse the many parse results into a single map of charcter
 --   blocks wrapped together as a charcter sequence. This will properly add
 --   missing character values to taxa provided in other files.
-joinSequences2 :: Foldable t => t FracturedParseResult -> (MetadataSequence, Map String UnifiedSequence)
+joinSequences2 :: Foldable t => t FracturedParseResult -> (MD.MetadataSequence () StaticCharacter (Element DynamicChar), Map String UnifiedSequence)
 joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorrectTCMs . deriveCharacterNames
   where
 

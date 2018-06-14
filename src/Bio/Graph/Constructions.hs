@@ -212,6 +212,9 @@ type UnifiedSequence =
     )
 
 
+type UnifiedMetadataSequences = MetadataSequence () StaticCharacter (Element DynamicChar)
+
+
 -- |
 -- A continuous static character after being read in from a READ command.
 -- Contains no decorations, and has not been assigned a scoring class.
