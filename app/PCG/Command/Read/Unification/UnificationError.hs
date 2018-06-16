@@ -26,14 +26,17 @@ data UnificationErrorMessage
 
 
 instance Semigroup UnificationError where
+
     (UnificationError messages1) <> (UnificationError messages2) = UnificationError (messages1 <> messages2)
 
 
 instance Show UnificationError where
+
     show (UnificationError xs) = unlines $ show <$> toList xs
 
 
 instance Show UnificationErrorMessage where
+
     show (NonMatchingTaxa xs ys) = mconcat
         [ "LHS: "
         , show xs
@@ -68,6 +71,7 @@ instance Show UnificationErrorMessage where
        [ "There was niether any character sequences nor any trees found in any of the supplied files input files:\n"
        , (\x -> "  ["<>x<>"]") . intercalate ", " $ show <$> toList files 
        ]
+
 
 listShow :: (Foldable t, Show a) => t a -> String
 listShow = (\x -> "[ " <> x <> "]") . drop 2 . unlines . fmap ((", " <>) . show) . toList

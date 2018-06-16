@@ -449,7 +449,7 @@ interpretAsPrealigned fpr = updateFpr <$> result
       -> Validation ReadError ([ParsedCharacterMetadata], Map String [ParsedCharacter])
     expandDynamicChars k m acc = 
         case getRepresentativeChar ! k of
-          ParsedDynamicCharacter {} ->  -- | not (isDynamic m)
+          ParsedDynamicCharacter {} -> -- | not (isDynamic m) ->
             case fmap fst . sortBy (comparing snd) . occurances . catMaybes $ (dynCharLen . (!k)) <$> toList characterMap of
               []    -> acc
               [len] -> case acc of
