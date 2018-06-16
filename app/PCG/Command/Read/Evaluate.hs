@@ -447,23 +447,18 @@ interpretAsPrealigned fpr = updateFpr <$> result
       -> ParsedCharacterMetadata
       -> Validation ReadError ([ParsedCharacterMetadata], Map String [ParsedCharacter])
       -> Validation ReadError ([ParsedCharacterMetadata], Map String [ParsedCharacter])
-    expandDynamicChars k m acc@(Failure err) = 
-      case getRepresentativeChar ! k of
-        ParsedDynamicCharacter {} ->
-          case fmap fst . sortBy (comparing snd) . occurances . catMaybes $ (dynCharLen . (!k)) <$> toList characterMap of
-            []    -> acc
-            [len] -> acc
-            x:xs  -> Failure $ err <> invalidPrealigned (sourceFile fpr) (x:|xs)
-        _ -> acc
-        
-    expandDynamicChars k m acc@(Success (ms, cm)) = 
-      case getRepresentativeChar ! k of
-        ParsedDynamicCharacter {} ->
-          case fmap fst . sortBy (comparing snd) . occurances . catMaybes $ (dynCharLen . (!k)) <$> toList characterMap of
-            []    -> acc
-            [len] -> pure (expandMetadata len m <> ms, expandCharacter len k <#$> cm)
-            x:xs  -> Failure $ invalidPrealigned (sourceFile fpr) (x:|xs)
-        _ -> pure (m:ms, (\i -> (((characterMap!i)!k):)) <#$> cm)
+    expandDynamicChars k m acc = 
+        case getRepresentativeChar ! k of
+          ParsedDynamicCharacter {} ->  -- | not (isDynamic m)
+            case fmap fst . sortBy (comparing snd) . occurances . catMaybes $ (dynCharLen . (!k)) <$> toList characterMap of
+              []    -> acc
+              [len] -> case acc of
+                         Failure err -> acc
+                         Success (ms, cm) -> pure (expandMetadata len m <> ms, expandCharacter len k <#$> cm)
+              x:xs  -> const <$> acc <*> Failure (invalidPrealigned (sourceFile fpr) (x:|xs))
+          _ -> prependUnmodified <$> acc
+      where
+        prependUnmodified (ms, cm) = (m:ms, (\i -> (((characterMap!i)!k):)) <#$> cm)
 
     dynCharLen (ParsedDynamicCharacter x) = length <$> x
     dynCharLen _ = Nothing
