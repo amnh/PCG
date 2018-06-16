@@ -190,9 +190,9 @@ parseCustomAlphabet spec = getSpecifiedContent spec >>= (ExceptT . pure . parseS
         fastcCombinator = fmap (toFractured Nothing path) fastcStreamParser
         fastaCombinator = fmap (toFractured Nothing path) $
                           fastaStreamParser >>=
-                          (\x -> try (fastaStreamConverter Fasta.DNA  x)
-                             <|> try (fastaStreamConverter Fasta.RNA  x)
-                             <|> fastaStreamConverter Fasta.AminoAcid x)
+                          (\x -> try (fastaStreamConverter Fasta.DNA       x)
+                             <|> try (fastaStreamConverter Fasta.RNA       x)
+                             <|>      fastaStreamConverter Fasta.AminoAcid x)
 
     parseSpecifiedContentWithTcm :: FileSpecificationContent -> Either ReadError [FracturedParseResult]
     parseSpecifiedContentWithTcm specContent = do
