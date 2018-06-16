@@ -8,8 +8,9 @@ import           Bio.Character.Parsed
 import           Bio.Metadata.Parsed
 import           Bio.Graph
 import           Bio.Graph.Forest.Parsed
+import           Control.Arrow                ((***))
 --import           Control.DeepSeq
-import           Control.Monad                (liftM2, when)
+import           Control.Monad                ((<=<), liftM2, when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Except
 import           Control.Parallel.Strategies
@@ -21,21 +22,22 @@ import           Data.Bifunctor               (bimap,first)
 import           Data.Either.Custom
 import           Data.Foldable
 import           Data.Functor
---import           Data.Key
---import           Data.List                    (intercalate)
+import           Data.Key
+import           Data.List                    (sortBy)
 import           Data.List.NonEmpty           (NonEmpty(..))
--- import qualified Data.List.NonEmpty    as NE
--- import           Data.List.Utility            (subsetOf)
--- import           Data.Map                     (Map,assocs,insert,union)
+import qualified Data.List.NonEmpty    as NE
+import           Data.List.Utility            (occurances)
+import           Data.Map                     (Map) -- ,assocs,insert,union)
 -- import qualified Data.Map              as M
--- import           Data.Maybe                   (fromMaybe)
+import           Data.Maybe                   (catMaybes)
 import           Data.Ord                     (comparing)
 --import           Data.Semigroup
 import           Data.TCM                     (TCMDiagnosis(..), TCMStructure(..), diagnoseTcm)
 import qualified Data.TCM              as TCM
 import           Data.Text.IO                 (readFile)
+import           Data.Validation
 -- import           Data.Vector                  (Vector)
--- import qualified Data.Vector           as V   (zipWith)
+import qualified Data.Vector           as V
 import           Data.Void
 import           File.Format.Dot
 import           File.Format.Fasta   hiding   (FastaSequenceType(..))
@@ -72,7 +74,7 @@ evaluate :: Command -> SearchState -- EvaluationT IO (Either TopologicalResult C
 -- evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
 evaluate (READ (ReadCommand fileSpecs)) = do
     when (null fileSpecs) $ fail "No files specified in 'read()' command"
-    result <- liftIO . runExceptT . eitherTValidation $ parmap rpar parseSpecifiedFile fileSpecs
+    result <- liftIO . runExceptT . eitherTValidation $ parmap rpar (fmap removeGaps . parseSpecifiedFile) fileSpecs
     case result of
       Left pErr -> fail $ show pErr   -- Report structural errors here.
       Right xs ->
@@ -111,6 +113,10 @@ renderSequenceCosts (Right sol) = outputStream
 -}
 
 
+removeGaps :: Functor f => f FracturedParseResult -> f FracturedParseResult
+removeGaps = fmap removeGapsFromDynamicCharsNotMarkedAsAligned
+
+
 parseSpecifiedFile  :: FileSpecification -> ExceptT ReadError IO [FracturedParseResult]
 parseSpecifiedFile      AnnotatedFile     {}     = fail "Annotated file specification is not implemented"
 parseSpecifiedFile      ChromosomeFile    {}     = fail "Chromosome file specification is not implemented"
@@ -123,12 +129,13 @@ parseSpecifiedFile spec@(UnspecifiedFile      _) =
 parseSpecifiedFile     (PrealignedFile x tcmRef) = do
     tcmContent <- getSpecifiedTcm tcmRef
     subContent <- parseSpecifiedFile x
-    fmap (fmap setCharactersToAligned) $
-      case tcmContent of
-        Nothing              -> pure subContent
-        Just (path, content) -> do
-          tcmMat <- ExceptT . pure . first (unparsable content) $ parse' tcmStreamParser path content
-          traverse (ExceptT . pure . setTcm tcmMat path) subContent
+    combined   <- case tcmContent of
+                   Nothing              -> pure subContent
+                   Just (path, content) -> do
+                     tcmMat <- ExceptT . pure . first (unparsable content) $ parse' tcmStreamParser path content
+                     traverse (ExceptT . pure . setTcm tcmMat path) subContent
+    ExceptT . pure . toEither . sequenceA $ expandDynamicCharsMarkedAsAligned . setCharactersToAligned <$> combined
+
 
 
 setTcm :: TCM -> FilePath -> FracturedParseResult -> Either ReadError FracturedParseResult
@@ -187,9 +194,9 @@ parseCustomAlphabet spec = getSpecifiedContent spec >>= (ExceptT . pure . parseS
         fastcCombinator = fmap (toFractured Nothing path) fastcStreamParser
         fastaCombinator = fmap (toFractured Nothing path) $
                           fastaStreamParser >>=
-                          (\x -> try (fastaStreamConverter Fasta.DNA  x)
-                             <|> try (fastaStreamConverter Fasta.RNA  x)
-                             <|> fastaStreamConverter Fasta.AminoAcid x)
+                          (\x -> try (fastaStreamConverter Fasta.DNA       x)
+                             <|> try (fastaStreamConverter Fasta.RNA       x)
+                             <|>      fastaStreamConverter Fasta.AminoAcid x)
 
     parseSpecifiedContentWithTcm :: FileSpecificationContent -> Either ReadError [FracturedParseResult]
     parseSpecifiedContentWithTcm specContent = do
@@ -217,17 +224,6 @@ applyReferencedTCM fpr =
 --prependFilenamesToCharacterNames :: FracturedParseResult -> FracturedParseResult
 --prependFilenamesToCharacterNames fpr = fpr { parsedMetas = prependName (sourceFile fpr) <$> parsedMetas fpr }
 
-
-setCharactersToAligned :: FracturedParseResult -> FracturedParseResult
-setCharactersToAligned fpr = fpr { parsedMetas = setAligned <$> parsedMetas fpr
-                                 , parsedChars = 
-                                 }
-  where
-    setAligned x = x { isDynamic = False }
-    expandDynamicCharacter :: ParsedCharacter -> [ParsedCharacter]
-    expandDynamicCharacter (ParsedDynamicCharacter x) = 
-    expandDynamicCharacter x                          = pure x
-    
 
 {- removed to eliminate compilation warning
 expandIUPAC :: FracturedParseResult -> FracturedParseResult
@@ -277,7 +273,7 @@ progressiveParse inputPath = do
                           Right x    -> pure $ toFractured Nothing filePath x
                           Left  err5 ->
                             case parse' nexusStreamParser filePath fileContent of
-                              Right x    -> pure $ toFractured Nothing filePath x
+                              Right x    -> ExceptT . pure . toEither . expandDynamicCharsMarkedAsAligned $ toFractured Nothing filePath x
                               Left  err6 ->
                                 let previousErrors      = [(err1,"Fasta"),(err2,"Fasta"),(err3,"Newick tree"),(err4,"VER"),(err5,"Henning/TNT"),(err6,"Nexus")]
                                     (parseErr,_fileType) = maximumBy (comparing (farthestParseErr . fst)) previousErrors
@@ -426,3 +422,74 @@ getFileContents path = do
         else do
             content <- liftIO $ readFile foundPath
             pure (foundPath, content)
+
+
+setCharactersToAligned :: FracturedParseResult -> FracturedParseResult
+setCharactersToAligned fpr = fpr { parsedMetas = setAligned <$> parsedMetas fpr }
+  where
+    setAligned x = x { isDynamic = False }
+
+
+expandDynamicCharsMarkedAsAligned :: FracturedParseResult -> Validation ReadError FracturedParseResult
+expandDynamicCharsMarkedAsAligned fpr = updateFpr <$> result
+  where
+    setAligned x = x { isDynamic = False }
+
+    updateFpr (ms, cm) = fpr
+        { parsedChars = V.fromList <$> cm
+        , parsedMetas = V.fromList ms
+        } 
+
+    result = foldrWithKey expandDynamicChars (pure ([], [] <$ characterMap)) $ parsedMetas fpr
+
+    characterMap = parsedChars fpr
+
+    getRepresentativeChar = head $ toList characterMap
+
+    expandDynamicChars
+      :: Int
+      -> ParsedCharacterMetadata
+      -> Validation ReadError ([ParsedCharacterMetadata], Map String [ParsedCharacter])
+      -> Validation ReadError ([ParsedCharacterMetadata], Map String [ParsedCharacter])
+    expandDynamicChars k m acc = 
+        case getRepresentativeChar ! k of
+          ParsedDynamicCharacter {} | not (isDynamic m) ->
+            case fmap fst . sortBy (comparing snd) . occurances . catMaybes $ (dynCharLen . (!k)) <$> toList characterMap of
+              []    -> acc
+              [len] -> case acc of
+                         Failure err -> acc
+                         Success (ms, cm) -> pure (expandMetadata len m <> ms, expandCharacter len k <#$> cm)
+              x:xs  -> const <$> acc <*> Failure (invalidPrealigned (sourceFile fpr) (x:|xs))
+          _ -> prependUnmodified <$> acc
+      where
+        prependUnmodified (ms, cm) = (m:ms, (\i -> (((characterMap!i)!k):)) <#$> cm)
+
+    dynCharLen (ParsedDynamicCharacter x) = length <$> x
+    dynCharLen _ = Nothing
+
+    expandMetadata
+      :: Int -- ^ Length
+      -> ParsedCharacterMetadata
+      -> [ParsedCharacterMetadata]
+    expandMetadata len meta = replicate len $ setAligned meta
+
+    expandCharacter
+      :: Int    -- ^ Length
+      -> Int    -- ^ Index
+      -> String -- ^ Key
+      -> v
+      -> [ParsedCharacter]
+    expandCharacter len i k _ =
+        case (characterMap ! k) ! i of
+          ParsedDynamicCharacter  Nothing  -> replicate len $ ParsedDiscreteCharacter Nothing
+          ParsedDynamicCharacter (Just xs) -> toList $ ParsedDiscreteCharacter . Just <$> xs
+          _                                -> error "Bad character indexing in Read.Evaluate.expandCharacter"
+
+
+removeGapsFromDynamicCharsNotMarkedAsAligned :: FracturedParseResult -> FracturedParseResult
+removeGapsFromDynamicCharsNotMarkedAsAligned fpr =
+    fpr { parsedChars = fmap removeGapsFromUnalignedDynamicChars <$> parsedChars fpr } 
+  where
+    removeGapsFromUnalignedDynamicChars :: ParsedCharacter -> ParsedCharacter
+    removeGapsFromUnalignedDynamicChars (ParsedDynamicCharacter (Just xs)) = ParsedDynamicCharacter . NE.nonEmpty $ NE.filter (/= (pure "-")) xs
+    removeGapsFromUnalignedDynamicChars e = e

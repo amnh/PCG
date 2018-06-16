@@ -327,6 +327,7 @@ executable pcg
                     , text
 --                    , time
                     , transformers
+                    , validation
                     , vector
 --                    , vector-instances >=3.4
                     , xml

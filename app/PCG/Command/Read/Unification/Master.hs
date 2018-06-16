@@ -128,7 +128,7 @@ rectifyResults2 fprs =
     extraNames      = filter (not . all null . fst) $ first (fmap ((\\ taxaSet) . Set.fromList . toList)) `parmap'` forestTaxa
     missingNames :: [([Set Identifier], FracturedParseResult)]
     missingNames    = filter (not . all null . fst) $ first (fmap ((taxaSet \\) . Set.fromList . toList)) `parmap'` forestTaxa
-    -- Step 7: Combine disparte sequences from many sources  into single metadata & character sequence.
+    -- Step 7: Combine disparte sequences from many sources into single metadata & character sequence.
     charSeqs        = joinSequences2 dataSeqs
     -- Step 8: Collect the parsed forests to be merged
     suppliedForests :: [PhylogeneticForest ParserTree]

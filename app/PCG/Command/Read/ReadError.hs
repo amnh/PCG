@@ -3,6 +3,7 @@
 module PCG.Command.Read.ReadError
   ( ReadError
   , ambiguous
+  , invalidPrealigned
   , multipleTCMs
   , unfindable
   , unopenable
@@ -12,6 +13,8 @@ module PCG.Command.Read.ReadError
 import Data.List.NonEmpty
 import Data.Maybe            (catMaybes)
 import Text.Megaparsec
+import Data.Semigroup
+import Data.Semigroup.Foldable
 
 
 -- |
@@ -22,11 +25,12 @@ newtype ReadError = ReadError (NonEmpty ReadErrorMessage)
 
 
 data ReadErrorMessage
-   = FileUnfindable FilePath
-   | FileUnopenable FilePath
-   | FileUnparsable String
-   | FileAmbiguous  FilePath (NonEmpty FilePath)
-   | MultipleTCMs   FilePath FilePath
+   = FileUnfindable    FilePath
+   | FileUnopenable    FilePath
+   | FileUnparsable    String
+   | FileAmbiguous     FilePath (NonEmpty FilePath)
+   | InvalidPrealigned FilePath (NonEmpty Word)
+   | MultipleTCMs      FilePath FilePath
 
 
 instance Semigroup ReadError where
@@ -44,49 +48,64 @@ instance Show ReadError where
         , multipleTCMsMessage
         ]
       where
-        (unfindables,unopenables,unparsables,ambiguity,doubleTCMs) = partitionReadErrorMessages $ toList errors
+        (unfindables, unopenables, unparsables, ambiguity, doubleTCMs, invalidPrealigns) = partitionReadErrorMessages $ toList errors
+
         unfindableMessage =
           case unfindables of
             []  -> Nothing
             [x] -> Just $ "The file "  <> show x <> " does not exist"
             xs  -> Just $ "The following files do not exists: \n"        <> unlines (show <$> xs)
+
         unopenableMessage =
           case unopenables of
             []  -> Nothing
             [x] -> Just $ "The file "  <> show x <> " can not be opened"
             xs  -> Just $ "The following files could not be opened: \n" <> unlines (show <$> xs)
+
         unparsableMessage =
           case unparsables of
             []  -> Nothing
             [x] -> Just $  "Could not parse file " <> show x
             xs  -> Just . ("Could not parse the following files:\n" <>) . unlines $ show <$> xs
+
         ambiguousMessage  =
           case ambiguity of
             []  -> Nothing
             xs  -> Just . unlines $ show <$> xs
+
         multipleTCMsMessage =
           case doubleTCMs of
             []  -> Nothing
             [x] -> Just $ "The file had multiple TCM definitions " <> show x
-            xs  -> Just $ "The following files had multiple TCM definitions: \n"        <> unlines (show <$> xs)
-        partitionReadErrorMessages ::  [ReadErrorMessage]
-                                   -> ([ReadErrorMessage], [ReadErrorMessage], [ReadErrorMessage], [ReadErrorMessage], [ReadErrorMessage])
-        partitionReadErrorMessages = foldr f ([],[],[],[],[])
+            xs  -> Just $ "The following files had multiple TCM definitions: \n" <> unlines (show <$> xs)
+
+        invalidPrealignsMessage =
+          case invalidPrealigns of
+            []  -> Nothing
+            [x] -> Just $ "The file was specified as prealigned, but not all characters had the same length. " <> show x
+            xs  -> Just $ "The following files were specified as prealigned, but not all characters had the same length: \n" <> unlines (show <$> xs)
+            
+        partitionReadErrorMessages
+          ::  [ReadErrorMessage]
+          -> ([ReadErrorMessage],[ReadErrorMessage], [ReadErrorMessage], [ReadErrorMessage], [ReadErrorMessage], [ReadErrorMessage])
+        partitionReadErrorMessages = foldr f ([],[],[],[],[],[])
           where
-            f e@(FileUnfindable _  ) (v,w,x,y,z) = (e:v,  w,  x,  y,   z) 
-            f e@(FileUnopenable _  ) (v,w,x,y,z) = (  v,e:w,  x,  y,   z) 
-            f e@(FileUnparsable _  ) (v,w,x,y,z) = (  v,  w,e:x,  y,   z) 
-            f e@(FileAmbiguous  _ _) (v,w,x,y,z) = (  v,  w,  x,e:y,   z)
-            f e@(MultipleTCMs   _ _) (v,w,x,y,z) = (  v,  w,  x,  y, e:z)
+            f e@FileUnfindable    {} (u,v,w,x,y,z) = (e:u,  v,  w,  x,   y,  z) 
+            f e@FileUnopenable    {} (u,v,w,x,y,z) = (  u,e:v,  w,  x,   y,  z) 
+            f e@FileUnparsable    {} (u,v,w,x,y,z) = (  u,  v,e:w,  x,   y,  z) 
+            f e@FileAmbiguous     {} (u,v,w,x,y,z) = (  u,  v,  w,e:x,   y,  z)
+            f e@MultipleTCMs      {} (u,v,w,x,y,z) = (  u,  v,  w,  x, e:y,  z)
+            f e@InvalidPrealigned {} (u,v,w,x,y,z) = (  u,  v,  w,  x,   y,e:z)
 
 
 instance Show ReadErrorMessage where
 
-    show (FileUnfindable path        ) = "'" <> path <> "'"
-    show (FileUnopenable path        ) = "'" <> path <> "'"
-    show (FileUnparsable pErr        ) = pErr
-    show (MultipleTCMs   dataPath tcmPath) = "'" <> show dataPath <> "' with the referenced TCM file '" <> show tcmPath <> "'"
-    show (FileAmbiguous  path matches) = message
+    show (FileUnfindable    path) = "'" <> path <> "'"
+    show (FileUnopenable    path) = "'" <> path <> "'"
+    show (FileUnparsable    pErr) = pErr
+    show (InvalidPrealigned path cols) = mconcat ["'", path, "', has characters of lengths ", fold1 . intersperse ", " $ show <$> cols]
+    show (MultipleTCMs dataPath tcmPath) = "'" <> show dataPath <> "' with the referenced TCM file '" <> show tcmPath <> "'"
+    show (FileAmbiguous path matches) = message
       where
         files   = toList matches
         message = unlines
@@ -132,3 +151,5 @@ multipleTCMs :: FilePath -> FilePath -> ReadError
 multipleTCMs dataPath tcmPath = ReadError $ MultipleTCMs dataPath tcmPath :| []
 
 
+invalidPrealigned :: Integral i => FilePath -> NonEmpty i -> ReadError
+invalidPrealigned path = ReadError . pure . InvalidPrealigned path . fmap (fromIntegral . abs)
