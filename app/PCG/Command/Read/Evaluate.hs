@@ -10,7 +10,7 @@ import           Bio.Graph
 import           Bio.Graph.Forest.Parsed
 import           Control.Arrow                ((***))
 --import           Control.DeepSeq
-import           Control.Monad                (liftM2, when)
+import           Control.Monad                ((<=<), liftM2, when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Except
 import           Control.Parallel.Strategies
@@ -74,7 +74,7 @@ evaluate :: Command -> SearchState -- EvaluationT IO (Either TopologicalResult C
 -- evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
 evaluate (READ (ReadCommand fileSpecs)) = do
     when (null fileSpecs) $ fail "No files specified in 'read()' command"
-    result <- liftIO . runExceptT . eitherTValidation $ parmap rpar parseSpecifiedFile fileSpecs
+    result <- liftIO . runExceptT . eitherTValidation $ parmap rpar (fmap removeGaps . parseSpecifiedFile) fileSpecs
     case result of
       Left pErr -> fail $ show pErr   -- Report structural errors here.
       Right xs ->
@@ -111,6 +111,10 @@ renderSequenceCosts (Right sol) = outputStream
     indent = intercalate "\n" . fmap ("  "<>) . lines
 --    unlines . toList . fmap (unlines . toList . fmap (unlines . fmap show . toList . rootCosts)) . phylogeneticForests
 -}
+
+
+removeGaps :: Functor f => f FracturedParseResult -> f FracturedParseResult
+removeGaps = fmap removeGapsFromDynamicCharsNotMarkedAsAligned
 
 
 parseSpecifiedFile  :: FileSpecification -> ExceptT ReadError IO [FracturedParseResult]
@@ -480,3 +484,12 @@ expandDynamicCharsMarkedAsAligned fpr = updateFpr <$> result
           ParsedDynamicCharacter  Nothing  -> replicate len $ ParsedDiscreteCharacter Nothing
           ParsedDynamicCharacter (Just xs) -> toList $ ParsedDiscreteCharacter . Just <$> xs
           _                                -> error "Bad character indexing in Read.Evaluate.expandCharacter"
+
+
+removeGapsFromDynamicCharsNotMarkedAsAligned :: FracturedParseResult -> FracturedParseResult
+removeGapsFromDynamicCharsNotMarkedAsAligned fpr =
+    fpr { parsedChars = fmap removeGapsFromUnalignedDynamicChars <$> parsedChars fpr } 
+  where
+    removeGapsFromUnalignedDynamicChars :: ParsedCharacter -> ParsedCharacter
+    removeGapsFromUnalignedDynamicChars (ParsedDynamicCharacter (Just xs)) = ParsedDynamicCharacter . NE.nonEmpty $ NE.filter (/= (pure "-")) xs
+    removeGapsFromUnalignedDynamicChars e = e
