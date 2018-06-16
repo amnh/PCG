@@ -130,7 +130,7 @@ parseSpecifiedFile     (PrealignedFile x tcmRef) = do
                    Just (path, content) -> do
                      tcmMat <- ExceptT . pure . first (unparsable content) $ parse' tcmStreamParser path content
                      traverse (ExceptT . pure . setTcm tcmMat path) subContent
-    ExceptT . pure . toEither . sequenceA $ interpretAsPrealigned <$> combined
+    ExceptT . pure . toEither . sequenceA $ expandDynamicCharsMarkedAsAligned . setCharactersToAligned <$> combined
 
 
 
@@ -269,7 +269,7 @@ progressiveParse inputPath = do
                           Right x    -> pure $ toFractured Nothing filePath x
                           Left  err5 ->
                             case parse' nexusStreamParser filePath fileContent of
-                              Right x    -> pure $ toFractured Nothing filePath x
+                              Right x    -> ExceptT . pure . toEither . expandDynamicCharsMarkedAsAligned $ toFractured Nothing filePath x
                               Left  err6 ->
                                 let previousErrors      = [(err1,"Fasta"),(err2,"Fasta"),(err3,"Newick tree"),(err4,"VER"),(err5,"Henning/TNT"),(err6,"Nexus")]
                                     (parseErr,_fileType) = maximumBy (comparing (farthestParseErr . fst)) previousErrors
@@ -426,8 +426,8 @@ setCharactersToAligned fpr = fpr { parsedMetas = setAligned <$> parsedMetas fpr 
     setAligned x = x { isDynamic = False }
 
 
-interpretAsPrealigned :: FracturedParseResult -> Validation ReadError FracturedParseResult
-interpretAsPrealigned fpr = updateFpr <$> result
+expandDynamicCharsMarkedAsAligned :: FracturedParseResult -> Validation ReadError FracturedParseResult
+expandDynamicCharsMarkedAsAligned fpr = updateFpr <$> result
   where
     setAligned x = x { isDynamic = False }
 
@@ -449,7 +449,7 @@ interpretAsPrealigned fpr = updateFpr <$> result
       -> Validation ReadError ([ParsedCharacterMetadata], Map String [ParsedCharacter])
     expandDynamicChars k m acc = 
         case getRepresentativeChar ! k of
-          ParsedDynamicCharacter {} -> -- | not (isDynamic m) ->
+          ParsedDynamicCharacter {} | not (isDynamic m) ->
             case fmap fst . sortBy (comparing snd) . occurances . catMaybes $ (dynCharLen . (!k)) <$> toList characterMap of
               []    -> acc
               [len] -> case acc of
