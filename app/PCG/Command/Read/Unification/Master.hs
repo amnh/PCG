@@ -457,13 +457,18 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
         f :: ((Maybe (NonEmpty UnifiedMetadataBlock), Map String (NonEmpty UnifiedCharacterBlock)), [UnifiedCharacterBlock])
           -> Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName))
           -> ((Maybe (NonEmpty UnifiedMetadataBlock), Map String (NonEmpty UnifiedCharacterBlock)), [UnifiedCharacterBlock])
-        f ((prevMeta, prevMapping), prevPad) currTreeChars = ((prevMeta, nextMapping), nextPad)
+        f ((prevMeta, prevMapping), prevPad) currTreeChars = ((nextMeta, nextMapping), nextPad)
           where
             nextMapping   = inOnlyPrev <> inBoth <> inOnlyCurr
             nextPad       = prevPad <> toList currPad -- generate (length nextMetaData) (const Nothing)
 
             currPad       = fmap toMissingCharacters . head $ toList currMapping
-            currMapping   = pure . encodeToBlock <$> currTreeChars
+            currMapping   = pure . encodeToCharacterBlock <$> currTreeChars
+
+            nextMeta =
+                case toList currTreeChars of
+                  []  -> prevMeta
+                  x:_ -> prevMeta <> Just (pure (buildMetadataBlock x))
 
             inBoth        = intersectionWith (<>) prevMapping currMapping-- oldTreeChars nextTreeChars
             inOnlyCurr    =  prepend prevPad  <$> getUnique currMapping prevMapping
@@ -474,15 +479,30 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
                 lhs = Set.fromList $ keys x
                 rhs = Set.fromList $ keys y
 
-            encodeToBlock :: Foldable1 t
+            buildMetadataBlock
+              :: Foldable1 t
+              => t (ParsedCharacter, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName)
+              -> UnifiedMetadataBlock
+            buildMetadataBlock = foldMap1 encodeToSingletonMetadata
+              where
+                encodeToSingletonMetadata (charMay, charMeta, scm, structure, charName) =
+                    case charMay of
+                      ParsedContinuousCharacter continuousMay -> MD.continuousToMetadataBlock $ continuousMetadata charName charWeight
+                      ParsedDiscreteCharacter     discreteMay -> MD.discreteToMetadataBlock structure $ discreteMetadataWithTCM charName charWeight specifiedAlphabet scm
+                      ParsedDynamicCharacter       dynamicMay -> MD.dynamicToMetadataBlock $ dynamicMetadataWithTCM charName charWeight specifiedAlphabet scm
+                  where
+                    charWeight        = weight   charMeta
+                    specifiedAlphabet = alphabet charMeta
+
+            encodeToCharacterBlock :: Foldable1 t
                           => t (ParsedCharacter, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName)
                           -> UnifiedCharacterBlock
-            encodeToBlock = finalizeCharacterBlock . foldMap1 encodeBinToSingletonBlock
+            encodeToCharacterBlock = finalizeCharacterBlock . foldMap1 encodeBinToSingletonCharacterBlock
               where
-                encodeBinToSingletonBlock
+                encodeBinToSingletonCharacterBlock
                   :: (ParsedCharacter, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName)
                   -> (PartialCharacterBlock UnifiedContinuousCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDynamicCharacter)
-                encodeBinToSingletonBlock (charMay, charMeta, scm, structure, charName) =
+                encodeBinToSingletonCharacterBlock (charMay, charMeta, scm, structure, charName) =
                     case charMay of
                       ParsedContinuousCharacter continuousMay -> continuousSingleton           . Just .   continuousDecorationInitial charName charWeight $ toContinuousCharacter continuousMay
 --                        let mData = MD.continuousToMetadataBlock $ continuousMetadata charName charWeight
