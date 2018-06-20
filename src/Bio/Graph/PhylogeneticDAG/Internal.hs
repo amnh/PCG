@@ -76,8 +76,11 @@ import           Text.XML
 -- * x = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * y = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * z = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Dynamic'    specified as 'DynamicChar'     or 'Bio.Metadata.DiscreteWithTCM'
-newtype PhylogeneticDAG e n u v w x y z
-    = PDAG (ReferenceDAG () e (PhylogeneticNode n (CharacterSequence u v w x y z)))
+data  PhylogeneticDAG m a d e n u v w x y z
+    = PDAG
+    { simpleColumnMetadata     :: MetadataSequence m a d
+    , simplePhylogeneticForest :: (ReferenceDAG () e (PhylogeneticNode n (CharacterSequence u v w x y z)))
+    } deriving (Generic)
 
 
 -- |
@@ -158,9 +161,9 @@ instance ( Show e
          , Show y
          , Show z
          , HasBlockCost u v w x y z Word Double
-         ) => Show (PhylogeneticDAG e n u v w x y z) where
+         ) => Show (PhylogeneticDAG m a d e n u v w x y z) where
 
-    show (PDAG dag) = show dag <> "\n" <> foldMapWithKey f dag
+    show (PDAG _ dag) = show dag <> "\n" <> foldMapWithKey f dag
       where
         f i (PNode n sek) = mconcat [ "Node {", show i, "}:\n\n", unlines [show n, show sek] ]
 

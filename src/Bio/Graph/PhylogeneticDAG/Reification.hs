@@ -81,7 +81,7 @@ tabulateLeaves = {- (\v@(x,_) -> trace ("Tab Vector:\n\n"  <> foldMap1 (\y -> sh
                  (`runState` 0) . traverse1 tabulateDAG
   where
     tabulateDAG :: UnReifiedCharacterDAG -> State Int (ReferenceDAG () () (Maybe Int))
-    tabulateDAG (PDAG dag) = liftA3 RefDAG newRefs rootRefsContext graphDataContext
+    tabulateDAG (PDAG _ dag) = liftA3 RefDAG newRefs rootRefsContext graphDataContext
       where
         rootRefsContext  = pure $ rootRefs dag
         graphDataContext = pure . defaultGraphMetadata $ graphData dag
@@ -114,7 +114,7 @@ tabulateLeaves = {- (\v@(x,_) -> trace ("Tab Vector:\n\n"  <> foldMap1 (\y -> sh
 
 
 reifyDAGWithContext :: Int -> ReferenceDAG () () (Maybe Int) -> UnReifiedCharacterDAG -> CharacterDAG
-reifyDAGWithContext leafCount maskDAG (PDAG dag) = PDAG2 newDAG undefined
+reifyDAGWithContext leafCount maskDAG (PDAG _ dag) = PDAG2 newDAG undefined
   where
     newDAG = RefDAG
         { references = newRefs

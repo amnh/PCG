@@ -244,6 +244,9 @@ type UnifiedDynamicCharacter    = Maybe (DynamicDecorationInitial DynamicChar)
 -- A DAG as read in from a READ command before being reified.
 type UnReifiedCharacterDAG =
        PhylogeneticDAG
+         ()
+         StaticCharacter
+         (Element DynamicChar)
          EdgeLength
          NodeLabel
          UnifiedContinuousCharacter

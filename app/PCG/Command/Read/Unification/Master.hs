@@ -129,38 +129,44 @@ rectifyResults2 fprs =
     missingNames :: [([Set Identifier], FracturedParseResult)]
     missingNames    = filter (not . all null . fst) $ first (fmap ((taxaSet \\) . Set.fromList . toList)) `parmap'` forestTaxa
     -- Step 7: Combine disparte sequences from many sources into single metadata & character sequence.
-    (meta,charSeqs) = joinSequences2 dataSeqs
+    (metaSeq,charSeqs) = joinSequences2 dataSeqs
     -- Step 8: Collect the parsed forests to be merged
     suppliedForests :: [PhylogeneticForest ParserTree]
     suppliedForests = foldMap toList . catMaybes $ parsedForests `parmap'` allForests
 
     -- Step 9: Convert topological forests to DAGs (using reference indexing from #7 results)
     dagForest       =
-        case (null suppliedForests, null charSeqs) of
+        case (null suppliedForests, null charSeqs, metaSeq) of
           -- Throw a unification error here
-          (True , True ) -> Left . UnificationError . pure . VacuousInput $ sourceFile <$> NE.fromList fprs
+          (True , True , _        ) -> Left . UnificationError . pure . VacuousInput $ sourceFile <$> NE.fromList fprs
+          (_    , False, Nothing  ) -> Left . UnificationError . pure . VacuousInput $ sourceFile <$> NE.fromList fprs
+
           -- Build a default forest of singleton components
-          (True , False) -> Right . Right . PhylogeneticSolution . pure
-                          . foldMap1 singletonComponent . NE.fromList $ toKeyedList charSeqs
+          (True , False, Just meta) -> Right . Right . PhylogeneticSolution . pure
+                          . foldMap1 (singletonComponent meta) . NE.fromList $ toKeyedList charSeqs
+
           -- Build a forest of with Units () as character type parameter
-          (False, True ) -> Right . Left  . PhylogeneticSolution $ NE.fromList suppliedForests
-          -- BUild a forest with the corresponding character data on the nodes
-          (False, False) -> Right . Right . PhylogeneticSolution $ matchToChars charSeqs <$> NE.fromList suppliedForests
+          (False, True , _        ) -> Right . Left  . PhylogeneticSolution $ NE.fromList suppliedForests
+
+          -- Build a forest with the corresponding character data on the nodes
+          (False, False, Just meta) -> Right . Right . PhylogeneticSolution $ matchToChars meta charSeqs <$> NE.fromList suppliedForests
       where
         defaultCharacterSequenceDatum = fromBlocks . fmap blockTransform . toBlocks . head $ toList charSeqs
           where
             blockTransform = hexmap f f f f f f
             f = const Nothing
 
-        singletonComponent (label, datum) = PhylogeneticForest . pure . PDAG $ DAG.fromList
+        singletonComponent meta (label, datum) = PhylogeneticForest . pure . PDAG meta $ DAG.fromList
             [ (        mempty, PNode (fromString "Trivial Root") defaultCharacterSequenceDatum, IM.singleton 1 mempty)
             , (IS.singleton 0, PNode (fromString label         )                         datum, mempty               )
             ]
 
-        matchToChars :: Map String UnifiedCharacterSequence
-                     -> PhylogeneticForest ParserTree
-                     -> PhylogeneticForest UnReifiedCharacterDAG --CharacterDAG
-        matchToChars charMapping = fmap (PDAG . fmap f)
+        matchToChars
+          :: UnifiedMetadataSequence
+          -> Map String UnifiedCharacterSequence
+          -> PhylogeneticForest ParserTree
+          -> PhylogeneticForest UnReifiedCharacterDAG --CharacterDAG
+        matchToChars meta charMapping = fmap (PDAG meta . fmap f)
           where
             f label = PNode nodeLabel $ fromMaybe defaultCharacterSequenceDatum charLabelMay
               where
