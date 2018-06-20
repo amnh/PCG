@@ -30,10 +30,14 @@ module Bio.Graph
   , SearchState
   , TopologicalResult
   , UnifiedBlock
-  , UnifiedSequence
+  , UnifiedSequences
+  , UnifiedCharacterBlock
+  , UnifiedCharacterSequence
   , UnifiedContinuousCharacter
   , UnifiedDiscreteCharacter
   , UnifiedDynamicCharacter
+  , UnifiedMetadataBlock
+  , UnifiedMetadataSequence
   , UnReifiedCharacterDAG
   , assignOptimalDynamicCharacterRootEdges
   , assignPunitiveNetworkEdgeCost

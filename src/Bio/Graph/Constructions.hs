@@ -27,12 +27,14 @@ module Bio.Graph.Constructions
   , SearchState
   , TopologicalResult
   , UnifiedBlock
-  , UnifiedSequence
---  , UnifiedCharacterSequence
---  , UnifiedCharacterBlock
+  , UnifiedSequences
+  , UnifiedCharacterBlock
+  , UnifiedCharacterSequence
   , UnifiedContinuousCharacter
   , UnifiedDiscreteCharacter
   , UnifiedDynamicCharacter
+  , UnifiedMetadataBlock
+  , UnifiedMetadataSequence
   , UnReifiedCharacterDAG
   ) where
 
@@ -150,34 +152,27 @@ type ReRootedEdgeContext u v w x y z =
 
 -- |
 -- A "heterogenous" character block after being read in from a READ command.
-type UnifiedBlock =
-    ( MetadataBlock
-        ()
-        StaticCharacter
-        (Element DynamicChar)
-    , CharacterBlock
+type  UnifiedBlock =
+    ( UnifiedMetadataBlock
+    , UnifiedCharacterBlock
+    )
+
+
+type  UnifiedCharacterBlock
+    = CharacterBlock
         UnifiedContinuousCharacter
         UnifiedDiscreteCharacter
         UnifiedDiscreteCharacter
         UnifiedDiscreteCharacter
         UnifiedDiscreteCharacter
         UnifiedDynamicCharacter
-    )
 
 
-{-
-TODO: Make this a tuple
-
-type UnifiedCharacterBlock
-     = CharacterBlock
-         UnifiedContinuousCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDynamicCharacter
-
--}
+type  UnifiedMetadataBlock
+    = MetadataBlock
+        ()
+        StaticCharacter
+        (Element DynamicChar)
 
 
 {-
@@ -197,11 +192,8 @@ type UnifiedCharacterSequence
 
 -- |
 -- A "heterogenous" character sequence after being read in from a READ command.
-type UnifiedSequence =
-    ( MetadataSequence
-        ()
-        StaticCharacter
-        (Element DynamicChar)
+type  UnifiedSequences =
+    ( UnifiedMetadataSequence
     , CharacterSequence
         UnifiedContinuousCharacter
         UnifiedDiscreteCharacter
@@ -212,7 +204,17 @@ type UnifiedSequence =
     )
 
 
-type UnifiedMetadataSequences = MetadataSequence () StaticCharacter (Element DynamicChar)
+type UnifiedMetadataSequence = MetadataSequence () StaticCharacter (Element DynamicChar)
+
+
+type  UnifiedCharacterSequence
+    = CharacterSequence
+        UnifiedContinuousCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDynamicCharacter
 
 
 -- |
