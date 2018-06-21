@@ -454,7 +454,7 @@ expandDynamicCharsMarkedAsAligned fpr = updateFpr <$> result
     expandDynamicChars k m acc = 
         case getRepresentativeChar ! k of
           ParsedDynamicCharacter {} | not (isDynamic m) ->
-            case fmap fst . sortBy (comparing snd) . occurances . catMaybes $ (dynCharLen . (!k)) <$> toList characterMap of
+            case fmap fst . sortBy (comparing snd) . occurances . catMaybes $ dynCharLen . (!k) <$> toList characterMap of
               []    -> acc
               [len] -> case acc of
                          Failure err -> acc
@@ -491,5 +491,5 @@ removeGapsFromDynamicCharsNotMarkedAsAligned fpr =
     fpr { parsedChars = fmap removeGapsFromUnalignedDynamicChars <$> parsedChars fpr } 
   where
     removeGapsFromUnalignedDynamicChars :: ParsedCharacter -> ParsedCharacter
-    removeGapsFromUnalignedDynamicChars (ParsedDynamicCharacter (Just xs)) = ParsedDynamicCharacter . NE.nonEmpty $ NE.filter (/= (pure "-")) xs
+    removeGapsFromUnalignedDynamicChars (ParsedDynamicCharacter (Just xs)) = ParsedDynamicCharacter . NE.nonEmpty $ NE.filter (/= pure "-") xs
     removeGapsFromUnalignedDynamicChars e = e

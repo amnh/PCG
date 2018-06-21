@@ -277,6 +277,18 @@ instance MonoFoldable DynamicChar where
     olength Missing{} = 0
     olength (DC c)    = olength c
 
+    {-# INLINE headEx #-}
+    headEx dc =
+      case dc of
+        (DC c) | (not . onull) c -> DCE $ headEx c
+        _ -> error $ "call to DynamicChar.headEx with: " <> show dc
+
+    {-# INLINE lastEx #-}
+    lastEx dc = 
+      case dc of
+        (DC c) | (not . onull) c -> DCE $ lastEx c
+        _ -> error $ "call to DynamicChar.lastEx with: " <> show dc
+
 
 instance MonoFunctor DynamicChar where
 

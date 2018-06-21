@@ -110,13 +110,13 @@ instance MonoFoldable BitMatrix where
     olength = fromEnum . numRows
 
     headEx bm@(BitMatrix c bv)
-      | dimension bv < n = error $ "call to BitMatrix.ohead with: " <> show bm
+      | dimension bv < n = error $ "call to BitMatrix.headEx with: " <> show bm
       | otherwise        = (0, n - 1) `subRange` bv
       where
         n = toEnum c
 
     lastEx bm@(BitMatrix c bv)
-      | d < n     = error $ "call to BitMatrix.otail with: " <> show bm
+      | d < n     = error $ "call to BitMatrix.lastEx with: " <> show bm
       | otherwise = (d - n, d - 1) `subRange` bv
       where
         d = dimension bv
