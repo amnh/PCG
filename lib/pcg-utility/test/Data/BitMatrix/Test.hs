@@ -208,8 +208,11 @@ datastructureTests = testGroup "BitMatrix data structure tests"
 testRowsFromRows :: TestTree
 testRowsFromRows = testProperty "rows . fromRows === id" f
   where
+    -- Strangely this only works after showing the results,
+    -- but the Eq value of the lists are not equal.
+    -- This might be an ABI issue.
     f :: DependantFromRowsParameters -> Property
-    f params = rows (fromRows bvList) === bvList
+    f params = (show . rows . fromRows) bvList === show bvList
       where
         (_, _, bvList) = getParameters params
 
