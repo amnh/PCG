@@ -40,15 +40,16 @@ import qualified Data.Vector          as V
 -- The logic function takes a current node decoration,
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
-postorderSequence' :: HasBlockCost u' v' w' x' y' z' Word Double
-                   => (u -> [u'] -> u')
-                   -> (v -> [v'] -> v')
-                   -> (w -> [w'] -> w')
-                   -> (x -> [x'] -> x')
-                   -> (y -> [y'] -> y')
-                   -> (z -> [z'] -> z')
-                   -> PhylogeneticDAG2 m a d e n u  v  w  x  y  z
-                   -> PhylogeneticDAG2 m a d e n u' v' w' x' y' z'
+postorderSequence'
+  :: HasBlockCost u' v' w' x' y' z' Word Double
+  => (u -> [u'] -> u')
+  -> (v -> [v'] -> v')
+  -> (w -> [w'] -> w')
+  -> (x -> [x'] -> x')
+  -> (y -> [y'] -> y')
+  -> (z -> [z'] -> z')
+  -> PhylogeneticDAG2 m a d e n u  v  w  x  y  z
+  -> PhylogeneticDAG2 m a d e n u' v' w' x' y' z'
 postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag m) = PDAG2 (newDAG dag) m
   where
     completeLeafSetForDAG = foldl' f zeroBits dag

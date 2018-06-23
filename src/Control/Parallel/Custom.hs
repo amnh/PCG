@@ -15,6 +15,7 @@
 module Control.Parallel.Custom
   ( parmap
   , parZipWith
+  , parZipWith3
   ) where
 
 
@@ -34,3 +35,9 @@ parmap strat f = withStrategy (parTraversable strat) . fmap f
 -- Zip two traversable, zippable structures in parrallel with a function. 
 parZipWith :: (Traversable t, Zip t) => Strategy c -> (a -> b -> c) -> t a -> t b -> t c
 parZipWith strat f lhs rhs = withStrategy (parTraversable strat) $ zipWith f lhs rhs
+
+
+-- |
+-- Zip three traversable, zippable structures in parrallel with a function. 
+parZipWith3 :: (Traversable t, Zip t) => Strategy c -> (a -> b -> c -> d) -> t a -> t b -> t c -> t d
+parZipWith3 strat f x y z = withStrategy (parTraversable strat) $ zipWith3 f x y z

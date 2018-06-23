@@ -31,21 +31,28 @@ module Bio.Sequence.Block.Character
   , hexmap
   , hexTranspose
   , hexZipWith
+  , hexZipWithMeta
   , toMissingCharacters
   ) where
 
 
 import           Bio.Character.Encodable
+import           Bio.Metadata.Continuous
+import           Bio.Metadata.Discrete
+import           Bio.Metadata.DiscreteWithTCM
+import           Bio.Metadata.Dynamic
 import           Bio.Sequence.Block.Builder
 import           Bio.Sequence.Block.Internal
+import           Bio.Sequence.Block.Metadata         (MetadataBlock(..))
+import qualified Bio.Sequence.Block.Metadata as Meta
 import           Control.DeepSeq
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Bifunctor
 import           Data.Foldable
-import           Data.Vector           (Vector, fromList)
-import qualified Data.Vector      as V
-import           Data.Vector.Instances ()
+import           Data.Vector                         (Vector, fromList)
+import qualified Data.Vector                 as V
+import           Data.Vector.Instances               ()
 import           Data.Void
 import           GHC.Generics
 import           Text.XML
@@ -235,12 +242,41 @@ hexZipWith
 hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = CB $
     Block
       { blockMetadata   = undefined
-      , continuousBins  = parZipWith rpar f1 (continuousCharacterBins  lhs) (continuousCharacterBins  rhs)
-      , nonAdditiveBins = parZipWith rpar f2 (nonAdditiveCharacterBins lhs) (nonAdditiveCharacterBins rhs)
-      , additiveBins    = parZipWith rpar f3 (additiveCharacterBins    lhs) (additiveCharacterBins    rhs)
-      , metricBins      = parZipWith rpar f4 (metricCharacterBins      lhs) (metricCharacterBins      rhs)
-      , nonMetricBins   = parZipWith rpar f5 (nonMetricCharacterBins   lhs) (nonMetricCharacterBins   rhs)
-      , dynamicBins     = parZipWith rpar f6 (dynamicCharacters        lhs) (dynamicCharacters     rhs)
+      , continuousBins  = parZipWith3 rpar f1 (continuousCharacterBins  lhs) (continuousCharacterBins  rhs)
+      , nonAdditiveBins = parZipWith3 rpar f2 (nonAdditiveCharacterBins lhs) (nonAdditiveCharacterBins rhs)
+      , additiveBins    = parZipWith3 rpar f3 (additiveCharacterBins    lhs) (additiveCharacterBins    rhs)
+      , metricBins      = parZipWith3 rpar f4 (metricCharacterBins      lhs) (metricCharacterBins      rhs)
+      , nonMetricBins   = parZipWith3 rpar f5 (nonMetricCharacterBins   lhs) (nonMetricCharacterBins   rhs)
+      , dynamicBins     = parZipWith3 rpar f6 (dynamicCharacters        lhs) (dynamicCharacters     rhs)
+      }
+
+
+-- |
+-- Performs a zip over the two character blocks. Uses the input functions to zip
+-- the different character types in the character block.
+-- 
+-- Assumes that the 'CharacterBlock' values have the same number of each character
+-- type. If this assumtion is violated, the result will be truncated.
+hexZipWithMeta
+  :: (ContinuousCharacterMetadataDec        -> u -> u' -> u'')
+  -> (DiscreteCharacterMetadataDec          -> v -> v' -> v'') 
+  -> (DiscreteCharacterMetadataDec          -> w -> w' -> w'')
+  -> (DiscreteWithTCMCharacterMetadataDec e -> x -> x' -> x'')
+  -> (DiscreteWithTCMCharacterMetadataDec e -> y -> y' -> y'')
+  -> (DynamicCharacterMetadataDec d         -> z -> z' -> z'')
+  -> MetadataBlock  m e d
+  -> CharacterBlock u   v   w   x   y   z
+  -> CharacterBlock u'  v'  w'  x'  y'  z'
+  -> CharacterBlock u'' v'' w'' x'' y'' z''
+hexZipWithMeta f1 f2 f3 f4 f5 f6 (MB meta) lhs rhs = CB $
+    Block
+      { blockMetadata   = undefined
+      , continuousBins  = parZipWith rpar f1 (continuousBins           meta) (continuousCharacterBins  lhs) (continuousCharacterBins  rhs)
+      , nonAdditiveBins = parZipWith rpar f2 (nonAdditiveCharacterBins meta) (nonAdditiveCharacterBins lhs) (nonAdditiveCharacterBins rhs)
+      , additiveBins    = parZipWith rpar f3 (additiveCharacterBins    meta) (additiveCharacterBins    lhs) (additiveCharacterBins    rhs)
+      , metricBins      = parZipWith rpar f4 (metricCharacterBins      meta) (metricCharacterBins      lhs) (metricCharacterBins      rhs)
+      , nonMetricBins   = parZipWith rpar f5 (nonMetricCharacterBins   meta) (nonMetricCharacterBins   lhs) (nonMetricCharacterBins   rhs)
+      , dynamicBins     = parZipWith rpar f6 (dynamicBins              meta) (dynamicCharacters        lhs) (dynamicCharacters     rhs)
       }
 
 
