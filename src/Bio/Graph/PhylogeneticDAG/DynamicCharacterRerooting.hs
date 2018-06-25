@@ -103,7 +103,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                      c = ((1,0), getCache 0)
                      m = HM.fromList [r, c]
                      d = setDefaultFoci <$> inputDag
-                 in  (PDAG2 d undefined, m, V.generate 2 (const m))
+                 in  (PDAG2 d ((0,defaultFociValue) <$ meta), m, V.generate 2 (const m))
       -- Complex case, see four steps below.
       _:_:_:_ ->     (PDAG2 updatedDag undefined, edgeCostMapping, contextualNodeDatum)
   where
