@@ -257,7 +257,7 @@ hexZipWithMeta
   -> (DiscreteWithTCMCharacterMetadataDec e -> x -> x' -> x'')
   -> (DiscreteWithTCMCharacterMetadataDec e -> y -> y' -> y'')
   -> (DynamicCharacterMetadataDec d         -> z -> z' -> z'')
-  -> MetadataSequence m e d
+  -> MetadataSequence e d m
   -> CharacterSequence u   v   w   x   y   z
   -> CharacterSequence u'  v'  w'  x'  y'  z'
   -> CharacterSequence u'' v'' w'' x'' y'' z''

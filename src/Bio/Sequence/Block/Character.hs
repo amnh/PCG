@@ -44,7 +44,7 @@ import           Bio.Metadata.Dynamic
 import           Bio.Sequence.Block.Builder
 import           Bio.Sequence.Block.Internal
 import           Bio.Sequence.Block.Metadata         (MetadataBlock(..))
-import qualified Bio.Sequence.Block.Metadata as Meta
+--import qualified Bio.Sequence.Block.Metadata as Meta
 import           Control.DeepSeq
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
@@ -264,7 +264,7 @@ hexZipWithMeta
   -> (DiscreteWithTCMCharacterMetadataDec e -> x -> x' -> x'')
   -> (DiscreteWithTCMCharacterMetadataDec e -> y -> y' -> y'')
   -> (DynamicCharacterMetadataDec d         -> z -> z' -> z'')
-  -> MetadataBlock  m e d
+  -> MetadataBlock  e d m
   -> CharacterBlock u   v   w   x   y   z
   -> CharacterBlock u'  v'  w'  x'  y'  z'
   -> CharacterBlock u'' v'' w'' x'' y'' z''

@@ -35,7 +35,7 @@ import GHC.Generics
 -- networks.
 --
 -- Use '(<>)' to construct larger blocks.
-newtype MetadataBlock m e d = MB
+newtype MetadataBlock e d m = MB
     ( Block
          m
          ContinuousCharacterMetadataDec
@@ -48,9 +48,16 @@ newtype MetadataBlock m e d = MB
     deriving (NFData, Generic, Semigroup)
 
 
+instance Functor (MetadataBlock e d) where
+
+    fmap f (MB b) = MB $ b { blockMetadata = f $ blockMetadata b }
+    
+    (<$) v (MB b) = MB $ b { blockMetadata = v }
+
+
 continuousToMetadataBlock
   :: ContinuousCharacterMetadataDec
-  -> MetadataBlock () e d
+  -> MetadataBlock e d ()
 continuousToMetadataBlock v = MB $
     Block 
     { blockMetadata   = ()
@@ -66,7 +73,7 @@ continuousToMetadataBlock v = MB $
 discreteToMetadataBlock
   :: TCMStructure
   -> DiscreteWithTCMCharacterMetadataDec e
-  -> MetadataBlock () e d
+  -> MetadataBlock e d ()
 discreteToMetadataBlock struct v =
     case struct of
       NonAdditive  -> nonAdditive
@@ -125,7 +132,7 @@ discreteToMetadataBlock struct v =
 
 dynamicToMetadataBlock
   :: DynamicCharacterMetadataDec d
-  -> MetadataBlock () e d
+  -> MetadataBlock e d ()
 dynamicToMetadataBlock v = MB $
     Block 
     { blockMetadata   = ()

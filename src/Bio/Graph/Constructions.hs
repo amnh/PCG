@@ -170,9 +170,9 @@ type  UnifiedCharacterBlock
 
 type  UnifiedMetadataBlock
     = MetadataBlock
-        ()
         StaticCharacter
         (Element DynamicChar)
+        ()
 
 
 {-
@@ -204,7 +204,11 @@ type  UnifiedSequences =
     )
 
 
-type UnifiedMetadataSequence = MetadataSequence () StaticCharacter (Element DynamicChar)
+type  UnifiedMetadataSequence
+    = MetadataSequence
+        StaticCharacter
+        (Element DynamicChar)
+        ()
 
 
 type  UnifiedCharacterSequence

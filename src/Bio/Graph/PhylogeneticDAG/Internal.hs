@@ -81,7 +81,7 @@ import           Text.XML
 -- * z = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Dynamic'    specified as 'DynamicChar'     or 'Bio.Metadata.DiscreteWithTCM'
 data  PhylogeneticDAG m a d e n u v w x y z
     = PDAG
-    { simpleColumnMetadata     :: MetadataSequence m a d
+    { simpleColumnMetadata     :: MetadataSequence a d m
     , simplePhylogeneticForest :: (ReferenceDAG () e (PhylogeneticNode n (CharacterSequence u v w x y z)))
     } deriving (Generic)
 
@@ -110,7 +110,7 @@ data  PhylogeneticDAG2 m a d e n u v w x y z
                               e
                               (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
                             )
-    , columnMetadata     :: MetadataSequence m a d
+    , columnMetadata     :: MetadataSequence a d m
     } deriving (Generic)
 
 
@@ -311,7 +311,7 @@ generateLocalResolutions
   -> (DiscreteWithTCMCharacterMetadataDec e -> x -> [x'] -> x'')
   -> (DiscreteWithTCMCharacterMetadataDec e -> y -> [y'] -> y'')
   -> (DynamicCharacterMetadataDec d         -> z -> [z'] -> z'') 
-  ->  MetadataSequence  m e d
+  ->  MetadataSequence e d m
   ->  ResolutionInformation (CharacterSequence u   v   w   x   y   z  )
   -> [ResolutionInformation (CharacterSequence u'  v'  w'  x'  y'  z' )]
   ->  ResolutionInformation (CharacterSequence u'' v'' w'' x'' y'' z'')
@@ -359,7 +359,7 @@ generateLocalResolutions f1 f2 f3 f4 f5 f6 meta parentalResolutionContext childR
 localResolutionApplication
   :: HasBlockCost u v w x y d' Word Double
   => (DynamicCharacterMetadataDec a -> d -> [d] -> d')
-  -> MetadataSequence m e a
+  -> MetadataSequence e a m
   -> NonEmpty (ResolutionInformation (CharacterSequence u v w x y d))
   -> ResolutionCache (CharacterSequence u v w x y d)
   -> NonEmpty (ResolutionInformation (CharacterSequence u v w x y d'))

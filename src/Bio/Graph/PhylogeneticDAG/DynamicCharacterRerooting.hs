@@ -707,10 +707,14 @@ setDefaultFoci =
       <$> fmap (fmap (hexmap id id id id id f)) . resolutions
       <*> nodeDecorationDatum2
   where
-    f x = x & traversalFoci .~ (Just v :: Maybe TraversalFoci)
+    f x = x & traversalFoci .~ (Just defaultFociValue :: Maybe TraversalFoci)
+
+
+defaultFociValue :: TraversalFoci
+defaultFociValue = pure (e,t)
+  where
     e = (0,1)  -- The only edge in the DAG.
     t = mempty -- So there's no network edges in the DAG.
-    v = pure (e,t)
 
 
 (.!>.) :: (Lookup f, Show (Key f)) => f a -> Key f -> a
