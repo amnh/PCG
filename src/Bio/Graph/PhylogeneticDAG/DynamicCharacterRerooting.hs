@@ -18,6 +18,7 @@ module Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
 
 import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Dynamic
+import           Bio.Metadata.Dynamic
 import           Bio.Sequence
 import           Bio.Graph.Node
 --import           Bio.Graph.PhylogeneticDAG.Class
@@ -50,7 +51,7 @@ import           Data.Semigroup.Foldable
 import           Data.Tuple                (swap)
 import           Data.Vector               (Vector)
 import qualified Data.Vector        as V
-import           Data.Void
+--import           Data.Void
 import           Prelude            hiding (lookup, zipWith)
 
 
@@ -83,16 +84,16 @@ assignOptimalDynamicCharacterRootEdges
      , Show e
 --}
      ) --x, Ord x, Show x)
-  => (z -> [z] -> z)  -- ^ Post-order traversal function for Dynamic Characters.
+  => (DynamicCharacterMetadataDec d -> z -> [z] -> z)  -- ^ Post-order traversal function for Dynamic Characters.
   -> PhylogeneticDAG2 m a d e n u v w x y z
-  -> ( PhylogeneticDAG2 (Double, TraversalFoci) Void Void e n u v w x y z
+  -> ( PhylogeneticDAG2 (Double, TraversalFoci) a d e n u v w x y z
      ,         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
      , Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
 --     , NonEmpty (TraversalFoci)
      )
 --assignOptimalDynamicCharacterRootEdges extensionTransformation x | trace (L.unpack . renderDot $ toDot x) False = undefined
 --assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 x) | trace (referenceRendering x) False = undefined
-assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 inputDag _) =
+assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 inputDag meta) =
     case toList inputDag of
       -- Degenarate cases
       []      ->     (pdag { columnMetadata = undefined } , mempty, mempty)
@@ -182,7 +183,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
               Just r  -> (e, getCache r)
               Nothing ->
                   case liftA2 (,) lhsContext rhsContext of
-                    Just (lhs, rhs) -> (e, localResolutionApplication extensionTransformation lhs rhs)
+                    Just (lhs, rhs) -> (e, localResolutionApplication extensionTransformation meta lhs rhs)
                     Nothing         -> error errorContext
           where
             lhsContext = (i `lookup` contextualNodeDatum) >>= ((j,i) `lookup`)
@@ -338,25 +339,24 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                       -- Perform standard tree operation
                       (False, False) ->
                           if   not $ isNetworkEdge (i,n)
-                          then localResolutionApplication extensionTransformation lhsMemo rhsMemo
-                          else
-                            case (lhsContext, rhsContext) of
-                             (  [],   []) -> error "Well, that's ALSO embarassing..."
-                             (x:xs,   []) -> x:|xs
-                             (  [], y:ys) -> y:|ys
-                             (x:xs, y:ys) -> localResolutionApplication extensionTransformation (x:|xs) (y:|ys)
+                          then localResolutionApplication extensionTransformation meta lhsMemo rhsMemo
+                          else case (lhsContext, rhsContext) of
+                                 (  [],   []) -> error "Well, that's ALSO embarassing..."
+                                 (x:xs,   []) -> x:|xs
+                                 (  [], y:ys) -> y:|ys
+                                 (x:xs, y:ys) -> localResolutionApplication extensionTransformation meta (x:|xs) (y:|ys)
 
                       (False, True ) ->
                           case lhsContext of
                             []   -> rhsMemo
                             x:xs -> let lhsMemo' = x:|xs
-                                    in  sconcat  $ lhsMemo' :| [localResolutionApplication extensionTransformation lhsMemo' rhsMemo]
+                                    in  sconcat  $ lhsMemo' :| [localResolutionApplication extensionTransformation meta lhsMemo' rhsMemo]
 
                       (True , False) ->
                           case rhsContext of
                             []   -> rhsMemo
                             x:xs -> let rhsMemo' = x:|xs
-                                    in  sconcat  $ rhsMemo' :| [localResolutionApplication extensionTransformation lhsMemo  rhsMemo']
+                                    in  sconcat  $ rhsMemo' :| [localResolutionApplication extensionTransformation meta lhsMemo  rhsMemo']
 
                       (True , True ) ->
                           case (lhsContext, rhsContext) of

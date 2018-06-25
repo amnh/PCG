@@ -242,12 +242,12 @@ hexZipWith
 hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = CB $
     Block
       { blockMetadata   = undefined
-      , continuousBins  = parZipWith3 rpar f1 (continuousCharacterBins  lhs) (continuousCharacterBins  rhs)
-      , nonAdditiveBins = parZipWith3 rpar f2 (nonAdditiveCharacterBins lhs) (nonAdditiveCharacterBins rhs)
-      , additiveBins    = parZipWith3 rpar f3 (additiveCharacterBins    lhs) (additiveCharacterBins    rhs)
-      , metricBins      = parZipWith3 rpar f4 (metricCharacterBins      lhs) (metricCharacterBins      rhs)
-      , nonMetricBins   = parZipWith3 rpar f5 (nonMetricCharacterBins   lhs) (nonMetricCharacterBins   rhs)
-      , dynamicBins     = parZipWith3 rpar f6 (dynamicCharacters        lhs) (dynamicCharacters     rhs)
+      , continuousBins  = parZipWith rpar f1 (continuousCharacterBins  lhs) (continuousCharacterBins  rhs)
+      , nonAdditiveBins = parZipWith rpar f2 (nonAdditiveCharacterBins lhs) (nonAdditiveCharacterBins rhs)
+      , additiveBins    = parZipWith rpar f3 (additiveCharacterBins    lhs) (additiveCharacterBins    rhs)
+      , metricBins      = parZipWith rpar f4 (metricCharacterBins      lhs) (metricCharacterBins      rhs)
+      , nonMetricBins   = parZipWith rpar f5 (nonMetricCharacterBins   lhs) (nonMetricCharacterBins   rhs)
+      , dynamicBins     = parZipWith rpar f6 (dynamicCharacters        lhs) (dynamicCharacters        rhs)
       }
 
 
@@ -268,15 +268,15 @@ hexZipWithMeta
   -> CharacterBlock u   v   w   x   y   z
   -> CharacterBlock u'  v'  w'  x'  y'  z'
   -> CharacterBlock u'' v'' w'' x'' y'' z''
-hexZipWithMeta f1 f2 f3 f4 f5 f6 (MB meta) lhs rhs = CB $
+hexZipWithMeta f1 f2 f3 f4 f5 f6 (MB meta) (CB lhs) (CB rhs) = CB $
     Block
       { blockMetadata   = undefined
-      , continuousBins  = parZipWith rpar f1 (continuousBins           meta) (continuousCharacterBins  lhs) (continuousCharacterBins  rhs)
-      , nonAdditiveBins = parZipWith rpar f2 (nonAdditiveCharacterBins meta) (nonAdditiveCharacterBins lhs) (nonAdditiveCharacterBins rhs)
-      , additiveBins    = parZipWith rpar f3 (additiveCharacterBins    meta) (additiveCharacterBins    lhs) (additiveCharacterBins    rhs)
-      , metricBins      = parZipWith rpar f4 (metricCharacterBins      meta) (metricCharacterBins      lhs) (metricCharacterBins      rhs)
-      , nonMetricBins   = parZipWith rpar f5 (nonMetricCharacterBins   meta) (nonMetricCharacterBins   lhs) (nonMetricCharacterBins   rhs)
-      , dynamicBins     = parZipWith rpar f6 (dynamicBins              meta) (dynamicCharacters        lhs) (dynamicCharacters     rhs)
+      , continuousBins  = parZipWith3 rpar f1 (continuousBins  meta) (continuousBins  lhs) (continuousBins  rhs)
+      , nonAdditiveBins = parZipWith3 rpar f2 (nonAdditiveBins meta) (nonAdditiveBins lhs) (nonAdditiveBins rhs)
+      , additiveBins    = parZipWith3 rpar f3 (additiveBins    meta) (additiveBins    lhs) (additiveBins    rhs)
+      , metricBins      = parZipWith3 rpar f4 (metricBins      meta) (metricBins      lhs) (metricBins      rhs)
+      , nonMetricBins   = parZipWith3 rpar f5 (nonMetricBins   meta) (nonMetricBins   lhs) (nonMetricBins   rhs)
+      , dynamicBins     = parZipWith3 rpar f6 (dynamicBins     meta) (dynamicBins     lhs) (dynamicBins     rhs)
       }
 
 

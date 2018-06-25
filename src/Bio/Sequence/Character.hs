@@ -31,14 +31,21 @@ module Bio.Sequence.Character
   , hexmap
   , hexTranspose
   , hexZipWith
+  , hexZipWithMeta
   , sequenceCost
   , sequenceRootCost
   ) where
 
 
 --import           Bio.Character.Decoration.Continuous
+import           Bio.Metadata.Continuous
+import           Bio.Metadata.Discrete
+import           Bio.Metadata.DiscreteWithTCM
+import           Bio.Metadata.Dynamic 
 import           Bio.Sequence.Block             (CharacterBlock, HasBlockCost, HasRootCost)
 import qualified Bio.Sequence.Block      as Blk
+import           Bio.Sequence.Metadata          (MetadataSequence)
+import qualified Bio.Sequence.Metadata   as M
 import           Control.DeepSeq
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
@@ -223,16 +230,38 @@ hexTranspose = toNList . invert . fmap toDList . toNonEmpty
 -- Assumes that the 'CharacterSequence' values have the same number of character
 -- blocks and the same number of each character type in the corresponding block
 -- of each block. If this assumtion is violated, the result will be truncated.
-hexZipWith :: (u -> u' -> u'')
-           -> (v -> v' -> v'')
-           -> (w -> w' -> w'')
-           -> (x -> x' -> x'')
-           -> (y -> y' -> y'')
-           -> (z -> z' -> z'')
-           -> CharacterSequence u   v   w   x   y   z
-           -> CharacterSequence u'  v'  w'  x'  y'  z'
-           -> CharacterSequence u'' v'' w'' x'' y'' z''
+hexZipWith
+  :: (u -> u' -> u'')
+  -> (v -> v' -> v'')
+  -> (w -> w' -> w'')
+  -> (x -> x' -> x'')
+  -> (y -> y' -> y'')
+  -> (z -> z' -> z'')
+  -> CharacterSequence u   v   w   x   y   z
+  -> CharacterSequence u'  v'  w'  x'  y'  z'
+  -> CharacterSequence u'' v'' w'' x'' y'' z''
 hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = fromBlocks $ parZipWith rpar (Blk.hexZipWith f1 f2 f3 f4 f5 f6) (toBlocks lhs) (toBlocks rhs)
+
+
+-- |
+-- Performs a zip over the two character sequences. Uses the input functions to
+-- zip the different character types in the character block.
+--
+-- Assumes that the 'CharacterSequence' values have the same number of character
+-- blocks and the same number of each character type in the corresponding block
+-- of each block. If this assumtion is violated, the result will be truncated.
+hexZipWithMeta
+  :: (ContinuousCharacterMetadataDec        -> u -> u' -> u'')
+  -> (DiscreteCharacterMetadataDec          -> v -> v' -> v'')
+  -> (DiscreteCharacterMetadataDec          -> w -> w' -> w'')
+  -> (DiscreteWithTCMCharacterMetadataDec e -> x -> x' -> x'')
+  -> (DiscreteWithTCMCharacterMetadataDec e -> y -> y' -> y'')
+  -> (DynamicCharacterMetadataDec d         -> z -> z' -> z'')
+  -> MetadataSequence m e d
+  -> CharacterSequence u   v   w   x   y   z
+  -> CharacterSequence u'  v'  w'  x'  y'  z'
+  -> CharacterSequence u'' v'' w'' x'' y'' z''
+hexZipWithMeta f1 f2 f3 f4 f5 f6 meta lhs rhs = fromBlocks $ parZipWith3 rpar (Blk.hexZipWithMeta f1 f2 f3 f4 f5 f6) (M.toBlocks meta) (toBlocks lhs) (toBlocks rhs)
 
 
 -- |

@@ -21,6 +21,10 @@ module Bio.Graph.PhylogeneticDAG.Postorder
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
+import           Bio.Metadata.Continuous
+import           Bio.Metadata.Discrete
+import           Bio.Metadata.DiscreteWithTCM
+import           Bio.Metadata.Dynamic 
 import           Bio.Sequence
 import           Control.Arrow               ((&&&))
 import           Control.Applicative         (liftA2)
@@ -42,12 +46,12 @@ import qualified Data.Vector          as V
 -- and returns the new decoration for the current node.
 postorderSequence'
   :: HasBlockCost u' v' w' x' y' z' Word Double
-  => (u -> [u'] -> u')
-  -> (v -> [v'] -> v')
-  -> (w -> [w'] -> w')
-  -> (x -> [x'] -> x')
-  -> (y -> [y'] -> y')
-  -> (z -> [z'] -> z')
+  => (ContinuousCharacterMetadataDec        -> u -> [u'] -> u')
+  -> (DiscreteCharacterMetadataDec          -> v -> [v'] -> v')
+  -> (DiscreteCharacterMetadataDec          -> w -> [w'] -> w')
+  -> (DiscreteWithTCMCharacterMetadataDec a -> x -> [x'] -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec a -> y -> [y'] -> y')
+  -> (DynamicCharacterMetadataDec d         -> z -> [z'] -> z')
   -> PhylogeneticDAG2 m a d e n u  v  w  x  y  z
   -> PhylogeneticDAG2 m a d e n u' v' w' x' y' z'
 postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag m) = PDAG2 (newDAG dag) m
@@ -90,7 +94,7 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag m) = PDAG2 (newDAG dag) m
                         _    -> error "Root Node with no complete coverage resolutions!!! This should be logically impossible."
 
             completeCoverage = (completeLeafSetForDAG ==) . (completeLeafSetForDAG .&.) . leafSetRepresentation
-            localResolutions = liftA2 (generateLocalResolutions f1 f2 f3 f4 f5 f6) datumResolutions childResolutions
+            localResolutions = liftA2 (generateLocalResolutions f1 f2 f3 f4 f5 f6 m) datumResolutions childResolutions
                 
             node             = references dag ! i
             childIndices     = IM.keys $ childRefs node

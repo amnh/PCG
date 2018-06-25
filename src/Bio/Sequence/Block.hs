@@ -26,6 +26,7 @@ module Bio.Sequence.Block
   , hexmap
   , hexTranspose
   , hexZipWith
+  , hexZipWithMeta
   ) where
 
 
@@ -38,7 +39,7 @@ import           Bio.Sequence.Block.Metadata
 import           Control.Lens
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
-import           Data.Foldable
+--import           Data.Foldable
 import           Data.Vector.Instances                ()
 --import qualified Data.Vector                   as V
 

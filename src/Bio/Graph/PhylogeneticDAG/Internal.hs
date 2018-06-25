@@ -34,6 +34,9 @@ import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Metadata.CharacterName
+import           Bio.Metadata.Continuous
+import           Bio.Metadata.Discrete
+import           Bio.Metadata.DiscreteWithTCM                                                                                              
 import           Bio.Metadata.Dynamic
 import           Bio.Sequence
 import           Bio.Sequence.Metadata
@@ -300,17 +303,19 @@ applySoftwireResolutions inputContexts =
 -- |
 -- Given a pre-order transformation for each type parameter, apply the
 -- transformations to each possible resolution that is not inconsistent.
-generateLocalResolutions :: HasBlockCost u'' v'' w'' x'' y'' z'' Word Double
-                         => (u -> [u'] -> u'')
-                         -> (v -> [v'] -> v'')
-                         -> (w -> [w'] -> w'')
-                         -> (x -> [x'] -> x'')
-                         -> (y -> [y'] -> y'')
-                         -> (z -> [z'] -> z'')
-                         ->  ResolutionInformation (CharacterSequence u   v   w   x   y   z  )
-                         -> [ResolutionInformation (CharacterSequence u'  v'  w'  x'  y'  z' )]
-                         ->  ResolutionInformation (CharacterSequence u'' v'' w'' x'' y'' z'')
-generateLocalResolutions f1 f2 f3 f4 f5 f6 parentalResolutionContext childResolutionContext =
+generateLocalResolutions
+  :: HasBlockCost u'' v'' w'' x'' y'' z'' Word Double
+  => (ContinuousCharacterMetadataDec        -> u -> [u'] -> u'')
+  -> (DiscreteCharacterMetadataDec          -> v -> [v'] -> v'')
+  -> (DiscreteCharacterMetadataDec          -> w -> [w'] -> w'')
+  -> (DiscreteWithTCMCharacterMetadataDec e -> x -> [x'] -> x'')
+  -> (DiscreteWithTCMCharacterMetadataDec e -> y -> [y'] -> y'')
+  -> (DynamicCharacterMetadataDec d         -> z -> [z'] -> z'') 
+  ->  MetadataSequence  m e d
+  ->  ResolutionInformation (CharacterSequence u   v   w   x   y   z  )
+  -> [ResolutionInformation (CharacterSequence u'  v'  w'  x'  y'  z' )]
+  ->  ResolutionInformation (CharacterSequence u'' v'' w'' x'' y'' z'')
+generateLocalResolutions f1 f2 f3 f4 f5 f6 meta parentalResolutionContext childResolutionContext =
                 ResInfo
                 { totalSubtreeCost       = newTotalCost
                 , localSequenceCost      = newLocalCost
@@ -339,7 +344,7 @@ generateLocalResolutions f1 f2 f3 f4 f5 f6 parentalResolutionContext childResolu
                                    <*> foldMap1 topologyRepresentation
                                    $ x:|xs
 
-                transformation pSeq cSeqs = hexZipWith f1 f2 f3 f4 f5 f6 pSeq transposition
+                transformation pSeq cSeqs = hexZipWithMeta f1 f2 f3 f4 f5 f6 meta pSeq transposition
                   where
                     transposition =
                         case cSeqs of
@@ -353,18 +358,19 @@ generateLocalResolutions f1 f2 f3 f4 f5 f6 parentalResolutionContext childResolu
 -- apply the transformation to all possible resolution combinations.
 localResolutionApplication
   :: HasBlockCost u v w x y d' Word Double
-  => (d -> [d] -> d')
+  => (DynamicCharacterMetadataDec a -> d -> [d] -> d')
+  -> MetadataSequence m e a
   -> NonEmpty (ResolutionInformation (CharacterSequence u v w x y d))
   -> ResolutionCache (CharacterSequence u v w x y d)
   -> NonEmpty (ResolutionInformation (CharacterSequence u v w x y d'))
-localResolutionApplication f x y =
-    liftA2 (generateLocalResolutions id2 id2 id2 id2 id2 f) mutalatedChild relativeChildResolutions
+localResolutionApplication f m x y =
+    liftA2 (generateLocalResolutions id3 id3 id3 id3 id3 f m) mutalatedChild relativeChildResolutions
   where
     relativeChildResolutions = applySoftwireResolutions
         [ (x, IS.singleton 0)
         , (y, IS.singleton 0)
         ]
-    id2 z _ = z
+    id3 _ z _ = z
     mutalatedChild = pure
         ResInfo
         { totalSubtreeCost       = 0

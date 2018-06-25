@@ -42,6 +42,7 @@ module Bio.Sequence
   , hexmap
   , hexTranspose
   , hexZipWith
+  , hexZipWithMeta
   -- * Cost quantification
   , sequenceCost
   , sequenceRootCost
@@ -50,7 +51,7 @@ module Bio.Sequence
   ) where
 
 import Bio.Sequence.Character
-import Bio.Sequence.Block hiding (hexmap, hexTranspose, hexZipWith)
+import Bio.Sequence.Block hiding (hexmap, hexTranspose, hexZipWith, hexZipWithMeta)
 import Bio.Sequence.Block.Builder
 import Bio.Sequence.Block.Character ( finalizeCharacterBlock
                                     , continuousCharacterBins
