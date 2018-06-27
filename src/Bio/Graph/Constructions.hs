@@ -63,9 +63,9 @@ import Data.Void
 -- A /reified/ DAG that contains characters but has no decorations.
 type CharacterDAG =
        PhylogeneticDAG2
-         Void
-         Void
-         Void
+         ()
+         StaticCharacter
+         (Element DynamicChar)
          EdgeLength
          NodeLabel
          UnifiedContinuousCharacter
@@ -108,8 +108,8 @@ type DecoratedCharacterResult = PhylogeneticSolution FinalDecorationDAG
 type FinalDecorationDAG =
        PhylogeneticDAG2
          (Double, TraversalFoci)
-         Void
-         Void
+         StaticCharacter
+         (Element DynamicChar)
          EdgeLength
          NodeLabel
          (ContinuousOptimizationDecoration    ContinuousChar )
@@ -129,8 +129,8 @@ type FinalDecorationDAG =
 type PostOrderDecorationDAG =
        PhylogeneticDAG2
          (Double, TraversalFoci)
-         Void
-         Void
+         StaticCharacter
+         (Element DynamicChar)
          EdgeLength
          NodeLabel
          (ContinuousPostorderDecoration ContinuousChar )

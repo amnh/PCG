@@ -122,7 +122,7 @@ performDecoration
      , Show y
      , Show z
      )
-  => PhylogeneticDAG2 m a d EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
+  => PhylogeneticDAG2 m StaticCharacter (Element DynamicChar) EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
   -> FinalDecorationDAG
 performDecoration x = performPreOrderDecoration performPostOrderDecoration
   where
@@ -153,23 +153,24 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
     (post, edgeCostMapping, contextualNodeDatum) =
          assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostOrder
          . postorderSequence'
-             (g additivePostOrder)
-             (g    fitchPostOrder)
-             (g additivePostOrder)
-             (g  sankoffPostOrder)
-             (g  sankoffPostOrder)
-             (g adaptiveDirectOptimizationPostOrder)
+             (\_ -> g additivePostOrder)
+             (\_ -> g    fitchPostOrder)
+             (\_ -> g additivePostOrder)
+             (\_ -> g  sankoffPostOrder)
+             (\_ -> g  sankoffPostOrder)
+             (\meta -> g (adaptiveDirectOptimizationPostOrder meta))
          $ x
 
     g _  Nothing  [] = error "Uninitialized leaf node. This is bad!"
     g h (Just  v) [] = h v []
     g h        e  xs = h (error $ mconcat [ "We shouldn't be using this value.", show e, show $ length xs ]) xs
 
-    adaptiveDirectOptimizationPostOrder dec kidDecs = directOptimizationPostOrder pairwiseAlignmentFunction dec kidDecs
+    adaptiveDirectOptimizationPostOrder meta dec kidDecs = directOptimizationPostOrder pairwiseAlignmentFunction dec kidDecs
       where
-        pairwiseAlignmentFunction = chooseDirectOptimizationComparison dec kidDecs
+        pairwiseAlignmentFunction = selectDynamicMetric meta --chooseDirectOptimizationComparison meta dec kidDecs
 
 
+{-
 -- |
 -- Contextually select the direct optimization method to perform on dynamic
 -- characters.
@@ -181,16 +182,12 @@ chooseDirectOptimizationComparison
 --     , Show c
      , Ord (Element c)
      )
-  => d
-  -> [d']
+  => 
   -> c
   -> c
   -> (Word, c, c, c, c)
-chooseDirectOptimizationComparison dec decs =
-    case decs of
-      []  -> selectDynamicMetric dec
-      x:_ -> selectDynamicMetric x
-
+chooseDirectOptimizationComparison =  selectDynamicMetricmeta
+-}
 
 chooseDirectOptimizationComparison2
   :: ( SimpleDynamicDecoration d  c
