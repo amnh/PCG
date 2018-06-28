@@ -33,6 +33,7 @@ module Analysis.Parsimony.Sankoff.Internal where
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Metric
 import Bio.Character.Encodable
+import Bio.Metadata
 import Control.Lens
 import Data.Bits
 import Data.Key
@@ -52,13 +53,14 @@ import Prelude                   hiding (zip)
 -- Used on the post-order (i.e. first) traversal.
 sankoffPostOrder
   :: DiscreteCharacterDecoration d c
-  => d
+  => DiscreteWithTCMCharacterMetadataDec c
+  -> d
   -> [SankoffOptimizationDecoration c]
   ->  SankoffOptimizationDecoration c
-sankoffPostOrder charDecoration xs =
+sankoffPostOrder meta charDecoration xs =
   case xs of
     []   -> initializeCostVector charDecoration -- is a leaf
-    y:ys -> updateCostVector charDecoration (y:|ys)
+    y:ys -> updateCostVector meta charDecoration (y:|ys)
 
 
 -- |
@@ -153,11 +155,12 @@ initializeCostVector inputDecoration =
 --
 updateCostVector
   :: DiscreteCharacterDecoration d c
-  => d
+  => DiscreteWithTCMCharacterMetadataDec c
+  -> d
   -> NonEmpty (SankoffOptimizationDecoration c)
   -> SankoffOptimizationDecoration c
-updateCostVector _parentDecoration (x:|[])                         = x                    -- Shouldn't be possible, but here for completion.
-updateCostVector _parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDecoration -- May? be able to amend this to use non-binary children.
+updateCostVector meta _parentDecoration (x:|[])                         = x                    -- Shouldn't be possible, but here for completion.
+updateCostVector meta _parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDecoration -- May? be able to amend this to use non-binary children.
   where
     (cs, ds, minTransCost) = foldr findMins initialAccumulator range   -- Sorry abut these shitty variable names. It was to shorten
                                                                        -- the 'extendDiscreteToSankoff' call.
@@ -168,7 +171,7 @@ updateCostVector _parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeD
     preliminaryMins      = foldr         computeExtraMin [] cs
     bs                   = foldrWithKey' computeBetas    [] range      -- bs  = betas
     omc                  = unsafeToFinite minTransCost                 -- omc = overall min cost (min for all states)
-    scm                  = leftChildDec ^. symbolChangeMatrix
+    scm                  = meta ^. symbolChangeMatrix
 
     initialAccumulator   = ([], ([],[]), infinity)                   -- (min cost per state, (leftMin, rightMin), overall minimum)
     returnNodeDecoration = extendDiscreteToSankoff leftChildDec cs preliminaryMins [] bs ds omc emptyMedian False
@@ -199,7 +202,7 @@ updateCostVector _parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeD
           | stateMin < accMin = stateMin
           | otherwise         = accMin
         stateMin  = leftMin + rightMin
-        ((leftMin, leftChildRetStates), (rightMin, rightChildRetStates)) = calcCostPerState charState leftChildDec rightChildDec
+        ((leftMin, leftChildRetStates), (rightMin, rightChildRetStates)) = calcCostPerState scm charState leftChildDec rightChildDec
 
 
 -- |
@@ -251,11 +254,12 @@ updateDirectionalMins parentDecoration childDecoration childStateMinsFromParent 
 -- Note: We can throw away the medians that come back from the tcm here because we’re building medians:
 -- the possible character is looped over all available characters, and there’s an outer loop which sends in each possible character.
 calcCostPerState
-  :: Word
+  :: (Word -> Word -> Word)
+  -> Word
   -> SankoffOptimizationDecoration c
   -> SankoffOptimizationDecoration c
   -> ((ExtendedNatural, StateContributionList), (ExtendedNatural, StateContributionList))
-calcCostPerState parentCharState leftChildDec rightChildDec = retVal
+calcCostPerState scm parentCharState leftChildDec rightChildDec = retVal
   where
     -- Using keys, fold over child alphabet states as Ints. Look up the transition from parentCharState to that alphabet state.
     -- For each child alphabet state the zipped cost list has the minimum accumulated costs for that character state in each child.
@@ -263,7 +267,6 @@ calcCostPerState parentCharState leftChildDec rightChildDec = retVal
     retVal = foldlWithKey' findMins initialAccumulator zippedCostList
     initialAccumulator = ((infinity,[]), (infinity,[]))
     zippedCostList     = zip (leftChildDec ^. characterCostVector) (rightChildDec ^. characterCostVector)
-    scm                = leftChildDec ^. symbolChangeMatrix
 
     findMins
       :: ((ExtendedNatural, [Word]), (ExtendedNatural, [Word]))

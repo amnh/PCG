@@ -157,9 +157,9 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
              (\_ -> g additivePostOrder)
              (\_ -> g    fitchPostOrder)
              (\_ -> g additivePostOrder)
-             (\_ -> g  sankoffPostOrder)
-             (\_ -> g  sankoffPostOrder)
-             (\meta -> g (adaptiveDirectOptimizationPostOrder meta))
+             (\m -> g (sankoffPostOrder m))
+             (\m -> g (sankoffPostOrder m))
+             (\m -> g (adaptiveDirectOptimizationPostOrder m))
          $ x
 
     g _  Nothing  [] = error "Uninitialized leaf node. This is bad!"
