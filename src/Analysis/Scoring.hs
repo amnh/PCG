@@ -136,16 +136,16 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
           minBlockConext
 
         . preorderSequence''
-          additivePreOrder
-          fitchPreOrder
-          additivePreOrder
-          sankoffPreOrder
-          sankoffPreOrder
-          id2
+          (\_ -> additivePreOrder)
+          (\_ -> fitchPreOrder   )
+          (\_ -> additivePreOrder)
+          (\_ -> sankoffPreOrder )
+          (\_ -> sankoffPreOrder )
+          (\_ -> id2             )
       where
-        adaptiveDirectOptimizationPreOrder dec kidDecs = directOptimizationPreOrder pairwiseAlignmentFunction dec kidDecs
+        adaptiveDirectOptimizationPreOrder meta dec kidDecs = directOptimizationPreOrder pairwiseAlignmentFunction meta dec kidDecs
           where
-            pairwiseAlignmentFunction = chooseDirectOptimizationComparison2 dec kidDecs
+            pairwiseAlignmentFunction = selectDynamicMetric meta
 
     performPostOrderDecoration :: PostOrderDecorationDAG (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge))
     performPostOrderDecoration = postOrderResult

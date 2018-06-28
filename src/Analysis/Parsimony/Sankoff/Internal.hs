@@ -226,8 +226,8 @@ updateDirectionalMins
   -> SankoffOptimizationDecoration c
 updateDirectionalMins parentDecoration childDecoration childStateMinsFromParent = childDecoration & discreteCharacter .~ resultMedian
   where
-    parentFinalMedian   = parentDecoration ^. discreteCharacter
-    emptyMedian         = emptyStatic $ parentDecoration ^. discreteCharacter
+    parentFinalMedian = parentDecoration ^. discreteCharacter
+    emptyMedian       = emptyStatic $ parentDecoration ^. discreteCharacter
     resultMedian
       -- discreteChar doesn't change
       | childDecoration ^. isLeaf = childDecoration ^. discreteCharacter

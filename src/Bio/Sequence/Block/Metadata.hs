@@ -15,6 +15,7 @@
 module Bio.Sequence.Block.Metadata
   ( MetadataBlock(..)
   , getBlockMetadata
+  , getDynamicMetadata
   -- * Construction
   , continuousToMetadataBlock
   , discreteToMetadataBlock
@@ -29,6 +30,7 @@ import Bio.Sequence.Block.Internal
 import Control.DeepSeq
 import Control.Lens
 import Data.TCM
+import Data.Vector (Vector)
 import GHC.Generics
 
 
@@ -59,6 +61,10 @@ instance Functor (MetadataBlock e d) where
 
 getBlockMetadata :: MetadataBlock e d m -> m
 getBlockMetadata (MB x) = blockMetadata x
+
+
+getDynamicMetadata :: MetadataBlock e d m -> Vector (DynamicCharacterMetadataDec d)
+getDynamicMetadata (MB x) = dynamicBins x
 
 
 continuousToMetadataBlock

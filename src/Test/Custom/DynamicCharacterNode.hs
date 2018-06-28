@@ -28,6 +28,7 @@ import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (filterGaps)
 import           Bio.Character
 import           Bio.Character.Decoration.Dynamic
+import           Bio.Metadata
 import           Data.Alphabet.IUPAC
 import           Data.MonoTraversable
 import           Data.String
@@ -59,7 +60,7 @@ instance Arbitrary DynamicCharacterNode where
 -- Given two dynamic characters, constructs a cherry node with each character as
 -- a child.
 constructNode :: DynamicChar -> DynamicChar -> DynamicDecorationDirectOptimization DynamicChar
-constructNode lhs rhs = directOptimizationPreOrder pairwiseFunction lhsDec [(0,rootDec)]
+constructNode lhs rhs = directOptimizationPreOrder pairwiseFunction defMetadata lhsDec [(0,rootDec)]
   where
     lhsDec  = toLeafNode $ initDec lhs
     rhsDec  = toLeafNode $ initDec rhs
@@ -78,7 +79,7 @@ toLeafNode c = directOptimizationPostOrder pairwiseFunction c []
 toRootNode :: DynamicDecorationDirectOptimizationPostOrderResult DynamicChar
            -> DynamicDecorationDirectOptimizationPostOrderResult DynamicChar
            -> DynamicDecorationDirectOptimization DynamicChar
-toRootNode x y = directOptimizationPreOrder pairwiseFunction z []
+toRootNode x y = directOptimizationPreOrder pairwiseFunction defMetadata z []
   where
     z :: DynamicDecorationDirectOptimizationPostOrderResult DynamicChar
     z = directOptimizationPostOrder pairwiseFunction e [x,y]
@@ -94,6 +95,14 @@ pairwiseFunction x y = naiveDO x y scm
 
 scm :: Word -> Word -> Word
 scm i j = if i == j then 0 else 1
+
+
+defMetadata :: DynamicCharacterMetadataDec (Element DynamicChar)
+defMetadata = dynamicMetadata name weight alphabet scm Nothing
+  where
+    name   = fromString "Test Character"
+    weight = 1
+    alphabet = fromSymbols ["A","C","G","T"]
 
 
 initDec :: DynamicChar -> DynamicDecorationInitial DynamicChar
