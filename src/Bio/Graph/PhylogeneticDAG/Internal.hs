@@ -39,7 +39,8 @@ import           Bio.Metadata.Discrete
 import           Bio.Metadata.DiscreteWithTCM                                                                                              
 import           Bio.Metadata.Dynamic
 import           Bio.Sequence
-import           Bio.Sequence.Metadata
+import           Bio.Sequence.Metadata            (MetadataSequence, getBlockMetadata)
+import qualified Bio.Sequence.Metadata     as M
 import           Control.Applicative              (liftA2)
 import           Control.DeepSeq
 import           Control.Lens
@@ -53,7 +54,7 @@ import           Data.IntSet                      (IntSet)
 import qualified Data.IntSet               as IS
 import           Data.Key
 import           Data.List                        (zip4)
-import           Data.List.NonEmpty               (NonEmpty( (:|) ))
+import           Data.List.NonEmpty               (NonEmpty(..))
 import qualified Data.List.NonEmpty        as NE
 import           Data.List.Utility
 import           Data.Maybe                       (fromMaybe)
@@ -180,6 +181,7 @@ instance ( HasBlockCost u v w x y z Word Double
          , HasCharacterName y CharacterName
          , HasCharacterName z CharacterName
          , HasTraversalFoci z (Maybe TraversalFoci)
+         , Show m
          , Show e
          , Show n
          , Show u
@@ -190,8 +192,9 @@ instance ( HasBlockCost u v w x y z Word Double
          , Show z
          ) => Show (PhylogeneticDAG2 m a d e n u v w x y z) where
 
-    show p@(PDAG2 dag _) = unlines
-        [ renderSummary p
+    show p@(PDAG2 dag m) = unlines
+        [ renderSummary  p
+        , renderMetadata m
         , foldMapWithKey f dag
         ]
       where
@@ -422,6 +425,10 @@ renderSummary pdag@(PDAG2 dag _) = unlines
     , show $ graphData dag
     , renderSequenceSummary pdag
     ]
+
+
+renderMetadata :: Show m => MetadataSequence e d m -> String
+renderMetadata = unlines . fmap (show . getBlockMetadata) . toList . M.toBlocks
 
 
 -- |

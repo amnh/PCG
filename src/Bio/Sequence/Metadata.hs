@@ -18,6 +18,7 @@
 module Bio.Sequence.Metadata
   ( MetadataBlock()
   , MetadataSequence()
+  , getBlockMetadata
   -- * Block Singletons
   , continuousToMetadataBlock
   , discreteToMetadataBlock

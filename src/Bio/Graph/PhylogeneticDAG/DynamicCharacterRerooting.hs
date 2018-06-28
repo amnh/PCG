@@ -86,7 +86,7 @@ assignOptimalDynamicCharacterRootEdges
      ) --x, Ord x, Show x)
   => (DynamicCharacterMetadataDec d -> z -> [z] -> z)  -- ^ Post-order traversal function for Dynamic Characters.
   -> PhylogeneticDAG2 m a d e n u v w x y z
-  -> ( PhylogeneticDAG2 (Double, TraversalFoci) a d e n u v w x y z
+  -> ( PhylogeneticDAG2 m {-(Double, TraversalFoci)-} a d e n u v w x y z
      ,         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
      , Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
 --     , NonEmpty (TraversalFoci)
@@ -103,11 +103,11 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                      c = ((1,0), getCache 0)
                      m = HM.fromList [r, c]
                      d = setDefaultFoci <$> inputDag
-                 in  (PDAG2 d ((0,defaultFociValue) <$ meta), m, V.generate 2 (const m))
+                 in  (PDAG2 d meta {- ((0,defaultFociValue) <$ meta) -}, m, V.generate 2 (const m))
       -- Complex case, see four steps below.
-      _:_:_:_ ->     (PDAG2 updatedDag undefined, edgeCostMapping, contextualNodeDatum)
+      _:_:_:_ ->     (PDAG2 updatedDag meta, edgeCostMapping, contextualNodeDatum)
   where
-
+    
     -- Step 1: Construct a hashmap of all the *unrooted* edges.
     unrootedEdges = rootEdgeReferences <> otherUnrootedEdges
 

@@ -122,6 +122,7 @@ showWithTotalEdgeCost
      , Exportable c
      , Exportable (Element c)
      , Ord (Element c)
+     , Show m
      , Show e
      , Show n
      , Show u

@@ -39,6 +39,7 @@ import           Data.EdgeLength
 import qualified Data.List.NonEmpty as NE
 import           Data.MonoTraversable      (Element)
 import           Data.NodeLabel
+import           Data.Vector               (Vector)
 
 
 -- |
@@ -126,7 +127,7 @@ performDecoration
   -> FinalDecorationDAG
 performDecoration x = performPreOrderDecoration performPostOrderDecoration
   where
-    performPreOrderDecoration :: PostOrderDecorationDAG -> FinalDecorationDAG
+    performPreOrderDecoration :: PostOrderDecorationDAG (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge)) -> FinalDecorationDAG
     performPreOrderDecoration =
         preorderFromRooting''
           adaptiveDirectOptimizationPreOrder
@@ -146,7 +147,7 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
           where
             pairwiseAlignmentFunction = chooseDirectOptimizationComparison2 dec kidDecs
 
-    performPostOrderDecoration :: PostOrderDecorationDAG
+    performPostOrderDecoration :: PostOrderDecorationDAG (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge))
     performPostOrderDecoration = postOrderResult
 
     (minBlockConext, postOrderResult) = assignPunitiveNetworkEdgeCost post

@@ -54,9 +54,11 @@ import Bio.Sequence
 import Bio.Sequence.Metadata
 import Control.Evaluation
 import Data.EdgeLength
+import Data.List.NonEmpty
 import Data.MonoTraversable
 import Data.NodeLabel
-import Data.Void
+import Data.Vector (Vector)
+-- import Data.Void
 
 
 -- |
@@ -107,7 +109,7 @@ type DecoratedCharacterResult = PhylogeneticSolution FinalDecorationDAG
 -- Decoration of a phylogenetic DAG after a pre-order traversal.
 type FinalDecorationDAG =
        PhylogeneticDAG2
-         (Double, TraversalFoci)
+         (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
          StaticCharacter
          (Element DynamicChar)
          EdgeLength
@@ -126,9 +128,9 @@ type FinalDecorationDAG =
 
 -- |
 -- Decoration of a phylogenetic DAG after a post-order traversal.
-type PostOrderDecorationDAG =
+type PostOrderDecorationDAG m =
        PhylogeneticDAG2
-         (Double, TraversalFoci)
+         m -- (Double, TraversalFoci)
          StaticCharacter
          (Element DynamicChar)
          EdgeLength

@@ -14,6 +14,8 @@
 
 module Bio.Sequence.Block.Metadata
   ( MetadataBlock(..)
+  , getBlockMetadata
+  -- * Construction
   , continuousToMetadataBlock
   , discreteToMetadataBlock
   , dynamicToMetadataBlock
@@ -53,6 +55,10 @@ instance Functor (MetadataBlock e d) where
     fmap f (MB b) = MB $ b { blockMetadata = f $ blockMetadata b }
     
     (<$) v (MB b) = MB $ b { blockMetadata = v }
+
+
+getBlockMetadata :: MetadataBlock e d m -> m
+getBlockMetadata (MB x) = blockMetadata x
 
 
 continuousToMetadataBlock
