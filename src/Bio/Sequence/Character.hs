@@ -61,6 +61,7 @@ import           Data.Semigroup.Traversable
 import           Data.Vector.NonEmpty           (Vector)
 import qualified Data.Vector.NonEmpty    as V
 import           GHC.Generics
+import           Prelude                 hiding (zip)
 import           Text.XML
 
 
@@ -151,13 +152,11 @@ instance ( Show u
          , Show x
          , Show y
          , Show z
-         , Show r
-         , HasBlockCost u v w x y z i r
          ) => Show (CharacterSequence u v w x y z) where
 
-    show seek = prefix <> "\n" <> suffix
+    show seek = {- prefix <> "\n" <> -} suffix
       where
-        prefix = "Sequence Cost: " <> show (sequenceCost seek)
+--        prefix = "Sequence Cost: " <> show (sequenceCost seek)
         suffix = foldMapWithKey f $ toBlocks seek
         f blockNumber shownBlock = mconcat
             [ "Character Block #"
@@ -295,12 +294,12 @@ fromBlockVector = CharSeq
 -- |
 -- Calculates the cumulative cost of a 'CharacterSequence'. Performs some of the
 -- operation in parallel.
-sequenceCost :: HasBlockCost u v w x y z i r => CharacterSequence u v w x y z -> r
-sequenceCost = sum . parmap rpar Blk.blockCost . toBlocks
+sequenceCost :: HasBlockCost u v w x y z => MetadataSequence e d m -> CharacterSequence u v w x y z -> Double
+sequenceCost meta char = sum . parmap rpar (uncurry Blk.blockCost) $ zip (M.toBlocks meta) (toBlocks char)
 
 
 -- |
 -- Calculates the root cost of a 'CharacterSequence'. Performs some of the
 -- operation in parallel.
-sequenceRootCost :: (HasRootCost u v w x y z r, Integral i) => i -> CharacterSequence u v w x y z -> r
-sequenceRootCost rootCount = sum . parmap rpar (Blk.rootCost rootCount) . toBlocks
+sequenceRootCost :: (HasRootCost u v w x y z, Integral i) => i -> MetadataSequence e d m -> CharacterSequence u v w x y z -> Double
+sequenceRootCost rootCount meta char = sum . parmap rpar (uncurry (Blk.rootCost rootCount)) $ zip (M.toBlocks meta) (toBlocks char)

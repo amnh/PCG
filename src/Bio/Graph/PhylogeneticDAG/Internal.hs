@@ -41,7 +41,11 @@ import           Bio.Metadata.Dynamic
 import           Bio.Sequence
 import           Bio.Sequence.Metadata            (MetadataSequence, getBlockMetadata)
 import qualified Bio.Sequence.Metadata     as M
+import           Bio.Sequence.Block.Character     (CharacterBlock(..))
+import           Bio.Sequence.Block.Internal
+import           Bio.Sequence.Block.Metadata      (MetadataBlock(..))
 import           Control.Applicative              (liftA2)
+import           Control.Arrow                    ((***))
 import           Control.DeepSeq
 import           Control.Lens
 import           Data.Bits
@@ -63,6 +67,7 @@ import           Data.Semigroup.Foldable
 import           Data.TopologyRepresentation
 import           Data.Vector                      (Vector)
 import           GHC.Generics
+import           Prelude                   hiding (zip)
 import           Text.Newick.Class
 import           Text.XML
 
@@ -164,7 +169,7 @@ instance ( Show e
          , Show x
          , Show y
          , Show z
-         , HasBlockCost u v w x y z Word Double
+--         , HasBlockCost u v w x y z Word Double
          ) => Show (PhylogeneticDAG m a d e n u v w x y z) where
 
     show (PDAG _ dag) = show dag <> "\n" <> foldMapWithKey f dag
@@ -173,8 +178,8 @@ instance ( Show e
 
 
 -- | (✔)
-instance ( HasBlockCost u v w x y z Word Double
-         , HasCharacterName u CharacterName
+instance ( --HasBlockCost u v w x y z Word Double
+           HasCharacterName u CharacterName
          , HasCharacterName v CharacterName
          , HasCharacterName w CharacterName
          , HasCharacterName x CharacterName
@@ -209,8 +214,8 @@ instance Show n => ToNewick (PhylogeneticDAG2 m a d e n u v w x y z) where
 
 
 -- | (✔)
-instance ( HasBlockCost u v w x y z Word Double
-         , Show  n
+instance (-- HasBlockCost u v w x y z Word Double
+           Show  n
          , Show  u
          , Show  v
          , Show  w
@@ -307,7 +312,7 @@ applySoftwireResolutions inputContexts =
 -- Given a pre-order transformation for each type parameter, apply the
 -- transformations to each possible resolution that is not inconsistent.
 generateLocalResolutions
-  :: HasBlockCost u'' v'' w'' x'' y'' z'' Word Double
+  :: HasBlockCost u'' v'' w'' x'' y'' z''
   => (ContinuousCharacterMetadataDec        -> u -> [u'] -> u'')
   -> (DiscreteCharacterMetadataDec          -> v -> [v'] -> v'')
   -> (DiscreteCharacterMetadataDec          -> w -> [w'] -> w'')
@@ -360,7 +365,7 @@ generateLocalResolutions f1 f2 f3 f4 f5 f6 meta parentalResolutionContext childR
 -- Given a transformation for the last type parameter and two resolution caches,
 -- apply the transformation to all possible resolution combinations.
 localResolutionApplication
-  :: HasBlockCost u v w x y d' Word Double
+  :: HasBlockCost u v w x y d'
   => (DynamicCharacterMetadataDec a -> d -> [d] -> d')
   -> MetadataSequence e a m
   -> NonEmpty (ResolutionInformation (CharacterSequence u v w x y d))
@@ -409,7 +414,7 @@ renderSummary
      , Show x
      , Show y
      , Show z
-     , HasBlockCost u v w x y z Word Double
+--     , HasBlockCost u v w x y z Word Double
      , HasCharacterName u CharacterName
      , HasCharacterName v CharacterName
      , HasCharacterName w CharacterName
@@ -435,18 +440,18 @@ renderMetadata = unlines . fmap (show . getBlockMetadata) . toList . M.toBlocks
 -- Render a "summary" of a sequence consisting of a summary for each block.
 renderSequenceSummary
   :: ( Show n
-     , HasBlockCost u v w x y z Word Double
-     , HasCharacterName u CharacterName
-     , HasCharacterName v CharacterName
-     , HasCharacterName w CharacterName
-     , HasCharacterName x CharacterName
-     , HasCharacterName y CharacterName
-     , HasCharacterName z CharacterName
-     , HasTraversalFoci z (Maybe TraversalFoci)
+--     , HasBlockCost u v w x y z Word Double
+--     , HasCharacterName u CharacterName
+--     , HasCharacterName v CharacterName
+--     , HasCharacterName w CharacterName
+--     , HasCharacterName x CharacterName
+--     , HasCharacterName y CharacterName
+--     , HasCharacterName z CharacterName
+--     , HasTraversalFoci z (Maybe TraversalFoci)
      )
   => PhylogeneticDAG2 m a d e n u v w x y z
   -> String
-renderSequenceSummary pdag@(PDAG2 dag _) = ("Sequence Summary\n\n" <>) . unlines $ mapWithKey (renderBlockSummary pdag) sequenceContext
+renderSequenceSummary pdag@(PDAG2 dag meta) = ("Sequence Summary\n\n" <>) . unlines $ mapWithKey (renderBlockSummary pdag) sequenceContext
   where
     refVec = references dag
     roots  = rootRefs dag
@@ -479,13 +484,7 @@ renderSequenceSummary pdag@(PDAG2 dag _) = ("Sequence Summary\n\n" <>) . unlines
 --   * brief summary of each character in the block
 --
 renderBlockSummary
-  :: ( HasBlockCost u v w x y z Word Double
-     , HasCharacterName u CharacterName
-     , HasCharacterName v CharacterName
-     , HasCharacterName w CharacterName
-     , HasCharacterName x CharacterName
-     , HasCharacterName y CharacterName
-     , HasCharacterName z CharacterName
+  :: ( HasBlockCost u v w x y z
      , HasTraversalFoci z (Maybe TraversalFoci)
      , Show n
      )
@@ -493,44 +492,48 @@ renderBlockSummary
   -> Int
   -> (Maybe Double, Maybe Double, Maybe TraversalTopology, CharacterBlock u v w x y z)
   -> String
-renderBlockSummary (PDAG2 dag _) key (costOfRooting, costOfNetworking, displayMay, block) = mconcat . (renderedPrefix:) $
-    [ renderBlockMeta
-    , unlines . fmap renderStaticCharacterSummary  . toList . continuousCharacterBins
-    , unlines . fmap renderStaticCharacterSummary  . toList . nonAdditiveCharacterBins
-    , unlines . fmap renderStaticCharacterSummary  . toList . additiveCharacterBins
-    , unlines . fmap renderStaticCharacterSummary  . toList . metricCharacterBins
-    , unlines . fmap renderStaticCharacterSummary  . toList . nonMetricCharacterBins
-    , unlines . fmap renderDynamicCharacterSummary . toList . dynamicCharacters
-    ] <*> [block]
+renderBlockSummary (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displayMay, block) = mconcat . (renderedPrefix:) $
+    (renderBlockMeta pair :) $
+    [ unlines . fmap renderStaticCharacterSummary  . toList . uncurry zip . ( continuousBins ***  continuousBins)
+    , unlines . fmap renderStaticCharacterSummary  . toList . uncurry zip . (nonAdditiveBins *** nonAdditiveBins)
+    , unlines . fmap renderStaticCharacterSummary  . toList . uncurry zip . (   additiveBins ***    additiveBins)
+    , unlines . fmap renderStaticCharacterSummary  . toList . uncurry zip . (     metricBins ***      metricBins)
+    , unlines . fmap renderStaticCharacterSummary  . toList . uncurry zip . (  nonMetricBins ***   nonMetricBins)
+    , unlines . fmap renderDynamicCharacterSummary . toList . uncurry zip . (    dynamicBins ***     dynamicBins)
+    ] <*> [(mBlock, cBlock)]
   where
+    pair = (M.toBlocks meta ! key, block)
+    (MB mBlock, CB cBlock) = pair
+    
     renderedPrefix = "Block " <> show key <> "\n\n"
 
-    renderBlockMeta bValue = unlines
+    renderBlockMeta (mValue, bValue) = unlines
         [ "  Rooting Cost: " <> maybe "<Unavailible>" show costOfRooting
         , "  Network Cost: " <> maybe "<Unavailible>" show costOfNetworking
-        , "  Block   Cost: " <> show (blockCost bValue)
+        , "  Block   Cost: " <> show bCost
         , "  Total   Cost: " <> show totalCost
         , "  Display Tree: " <> inferDisplayForest
         , ""
         ]
       where
+        bCost     = blockCost mValue bValue
         totalCost = sum
-          [ fromMaybe 0 costOfRooting
-          , fromMaybe 0 costOfNetworking
-          , blockCost bValue
-          ]
+            [ fromMaybe 0 costOfRooting
+            , fromMaybe 0 costOfNetworking
+            , bCost
+            ]
 
-    renderStaticCharacterSummary sc = unlines
-        [ "    Name:   " <> show (sc ^. characterName)
-        , "    Weight: " <> show (sc ^. characterWeight)
-        , "    Cost:   " <> show (sc ^. characterCost)
+    renderStaticCharacterSummary (m, c) = unlines
+        [ "    Name:   " <> show (m ^. characterName)
+        , "    Weight: " <> show (m ^. characterWeight)
+        , "    Cost:   " <> show (c ^. characterCost)
         ]
 
-    renderDynamicCharacterSummary dc = unlines
-        [ "    Name:   " <> show (dc ^. characterName)
-        , "    Weight: " <> show (dc ^. characterWeight)
-        , "    Cost:   " <> show (dc ^. characterCost)
-        , "    Foci:   " <> maybe "<Unavailible>" renderFoci (dc ^. traversalFoci)
+    renderDynamicCharacterSummary (m, c) = unlines
+        [ "    Name:   " <> show (m ^. characterName)
+        , "    Weight: " <> show (m ^. characterWeight)
+        , "    Cost:   " <> show (c ^. characterCost)
+        , "    Foci:   " <> maybe "<Unavailible>" renderFoci (m ^. traversalFoci)
         ]
       where
         renderFoci (x:|[]) = show $ fst x

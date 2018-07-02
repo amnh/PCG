@@ -13,7 +13,7 @@
 {-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses #-}
 
 module Bio.Sequence.Block.Character
-  ( CharacterBlock()
+  ( CharacterBlock(..)
   -- * Block construction
   , finalizeCharacterBlock
   , continuousSingleton

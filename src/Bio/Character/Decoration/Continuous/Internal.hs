@@ -41,7 +41,7 @@ import Text.XML
 data ContinuousDecorationInitial c
    = ContinuousDecorationInitial
    { continuousDecorationInitialCharacter :: c
-   , continuousMetadataField              :: ContinuousCharacterMetadataDec
+--   , continuousMetadataField              :: ContinuousCharacterMetadataDec
    } deriving (Generic)
 
 
@@ -51,7 +51,7 @@ continuousDecorationInitial :: CharacterName -> Double -> c -> ContinuousDecorat
 continuousDecorationInitial name weight value =
     ContinuousDecorationInitial
     { continuousDecorationInitialCharacter = value
-    , continuousMetadataField              = continuousMetadata name weight
+--    , continuousMetadataField              = continuousMetadata name weight
     }
 
 
@@ -113,6 +113,7 @@ instance EncodableStaticCharacter a => DiscreteCharacterDecoration (ContinuousPo
 -}
 
 
+{-
 -- | (✔)
 instance DiscreteCharacterMetadata (ContinuousDecorationInitial d) where
 
@@ -132,6 +133,7 @@ instance DiscreteCharacterMetadata (ContinuousOptimizationDecoration a) where
 instance DiscreteCharacterMetadata (ContinuousPostorderDecoration a) where
 
     extractDiscreteCharacterMetadata (CPostD x) = extractDiscreteCharacterMetadata x
+-}
 
 
 {-
@@ -140,6 +142,7 @@ instance EncodableStaticCharacter a => DiscreteCharacterDecoration (ContinuousOp
 -}
 
 
+{-
 -- | (✔)
 instance GeneralCharacterMetadata (ContinuousDecorationInitial d) where
 
@@ -182,6 +185,7 @@ instance HasCharacterAlphabet (ContinuousDecorationInitial c) (Alphabet String) 
 instance HasCharacterAlphabet (ContinuousOptimizationDecoration a) (Alphabet String) where
 
     characterAlphabet = lensCOptD characterAlphabet characterAlphabet
+-}
 
 
 -- | (✔)
@@ -196,6 +200,7 @@ instance (Finite (Bound a) ~ c) => HasCharacterCost (ContinuousPostorderDecorati
     characterCost = lensCPostD characterCost characterCost
 
 
+{-
 -- | (✔)
 instance HasCharacterName (ContinuousDecorationInitial c) CharacterName where
 
@@ -236,6 +241,7 @@ instance HasCharacterWeight (ContinuousOptimizationDecoration a) Double where
 instance HasCharacterWeight (ContinuousPostorderDecoration a) Double where
 
     characterWeight = lensCPostD characterWeight characterWeight
+-}
 
 
 -- | (✔)
@@ -463,21 +469,15 @@ instance
 
 -- | Create xml instance for initial decoration, which is empty.
 instance (Show c) => ToXML (ContinuousDecorationInitial c) where
-    toXML (ContinuousDecorationInitial val metadata) = xmlElement "ContinuousDecorationInitial" attributes contents
+    toXML (ContinuousDecorationInitial val {-metadata-}) = xmlElement "ContinuousDecorationInitial" attributes contents
         where
             attributes = []
-            contents   = [ Left ("Name"                   , show $ metadata ^. characterName  )
-                         , Left ("Initial_character_state", show val                          )
-                         , Left ("Weight"                 , show $ metadata ^. characterWeight)
-                         ]
-            --TODO: use ToXML instance in Bio/Metadat/General/Internal
-            --meta = initialDecoration ^. continuousMetadataField
+            contents   = [ Left ("Initial_character_state", show val) ]
 
 
 -- | Create xml instance for preorder decoration, which has a finalized state interval.
 instance
     ( Show c
---    , Show (Bound c)        -- This is NOT redundant. Won't copile without it.
     , Show (Finite (Bound c))
     , Show (Range  (Bound c))
     ) => ToXML (ContinuousOptimizationDecoration c) where
@@ -486,7 +486,7 @@ instance
         where
             attributes = []
             contents   = [ Left ("Cost"                , show $ optimizationDecoration ^. characterCost       )
-                         , Left ("Is_leaf_node"       , show $ optimizationDecoration ^. isLeaf              )
+                         , Left ("Is_leaf_node"        , show $ optimizationDecoration ^. isLeaf              )
                          , Left ("Continuous_character", show $ optimizationDecoration ^. intervalCharacter   )
                          , Left ("Preliminary_interval", show $ optimizationDecoration ^. preliminaryInterval )
                          , Left ("Child_intervals"     , show $ optimizationDecoration ^. childPrelimIntervals)

@@ -33,138 +33,120 @@ module Bio.Sequence.Block
 import           Bio.Character.Encodable
 import           Bio.Character.Decoration.Continuous
 import           Bio.Character.Decoration.Dynamic
---import           Bio.Sequence.Block.Internal
 import           Bio.Sequence.Block.Character
+import           Bio.Sequence.Block.Internal
 import           Bio.Sequence.Block.Metadata
+import           Control.Arrow                        ((***))
 import           Control.Lens
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
---import           Data.Foldable
+import           Data.Key
 import           Data.Vector.Instances                ()
---import qualified Data.Vector                   as V
-
+import           Prelude                       hiding (zip, zipWith)
 
 -- |
 -- CharacterBlocks satisfying this constraint have a calculable cost.
-type HasBlockCost u v w x y z i r =
-    ( HasCharacterCost   u r
-    , HasCharacterCost   v i
-    , HasCharacterCost   w i
-    , HasCharacterCost   x i
-    , HasCharacterCost   y i
-    , HasCharacterCost   z i
-    , HasCharacterWeight u r
-    , HasCharacterWeight v r
-    , HasCharacterWeight w r
-    , HasCharacterWeight x r
-    , HasCharacterWeight y r
-    , HasCharacterWeight z r
-    , Integral i
-    , Real     r
+type HasBlockCost u v w x y z =
+    ( HasCharacterCost   u Double
+    , HasCharacterCost   v Word
+    , HasCharacterCost   w Word
+    , HasCharacterCost   x Word
+    , HasCharacterCost   y Word
+    , HasCharacterCost   z Word
     )
 
 
 -- |
 -- CharacterBlocks satisfying this constraint have a calculable cost.
-type HasRootCost u v w x y z r =
-    ( HasCharacterWeight   u r
-    , HasCharacterWeight   v r
-    , HasCharacterWeight   w r
-    , HasCharacterWeight   x r
-    , HasCharacterWeight   y r
-    , HasCharacterWeight   z r
-    , HasAverageLength     z AverageLength
+type HasRootCost u v w x y z =
+    ( HasAverageLength z AverageLength
     , PossiblyMissingCharacter u
     , PossiblyMissingCharacter v
     , PossiblyMissingCharacter w
     , PossiblyMissingCharacter x
     , PossiblyMissingCharacter y
     , PossiblyMissingCharacter z
-    , Floating r
-    , Real     r
     )
 
 
 -- |
 -- Calculates the cost of a 'CharacterBlock'. Performs some of the operation in
 -- parallel.
-blockCost :: HasBlockCost u v w x y z i r => CharacterBlock u v w x y z -> r
-blockCost block = sum . fmap sum $
-    [ parmap rpar floatingCost . continuousCharacterBins 
-    , parmap rpar integralCost . nonAdditiveCharacterBins
-    , parmap rpar integralCost . additiveCharacterBins   
-    , parmap rpar integralCost . metricCharacterBins     
-    , parmap rpar integralCost . nonMetricCharacterBins  
-    , parmap rpar integralCost . dynamicCharacters       
-    ] <*> [block]
+blockCost :: HasBlockCost u v w x y z => MetadataBlock e d m -> CharacterBlock u v w x y z -> Double
+blockCost (MB mBlock) (CB cBlock) = sum . fmap sum $
+    [ parmap rpar floatingCost . uncurry zip . ( continuousBins ***  continuousBins) 
+    , parmap rpar integralCost . uncurry zip . (nonAdditiveBins *** nonAdditiveBins)
+    , parmap rpar integralCost . uncurry zip . (   additiveBins ***    additiveBins)   
+    , parmap rpar integralCost . uncurry zip . (     metricBins ***      metricBins)
+    , parmap rpar integralCost . uncurry zip . (  nonMetricBins ***   nonMetricBins)  
+    , parmap rpar integralCost . uncurry zip . (    dynamicBins ***     dynamicBins)
+    ] <*> [(mBlock, cBlock)]
   where
-    integralCost dec = fromIntegral cost * weight
+    integralCost (m, c) = fromIntegral cost * weight
       where
-        cost   = dec ^. characterCost
-        weight = dec ^. characterWeight
+        cost   = c ^. characterCost
+        weight = m ^. characterWeight
 
-    floatingCost dec = cost * weight
+    floatingCost (m, c) = cost * weight
       where
-        cost   = dec ^. characterCost
-        weight = dec ^. characterWeight
+        cost   = c ^. characterCost
+        weight = m ^. characterWeight
 
 
 -- |
 -- Calculate the "rooting cost" of a 'CharacterBlock' by applying a "rooting-
 -- multiplier" based on the number of other roots in the DAG.
 rootCost
-  :: ( HasRootCost u v w x y z r
+  :: ( HasRootCost u v w x y z
      , Integral i
      )
   => i
+  -> MetadataBlock e d m
   -> CharacterBlock u v w x y z
-  -> r
-rootCost rootCount block = rootMultiplier . sum . fmap sum $
-    [ parmap rpar staticRootCost  . continuousCharacterBins 
-    , parmap rpar staticRootCost  . nonAdditiveCharacterBins
-    , parmap rpar staticRootCost  . additiveCharacterBins
-    , parmap rpar staticRootCost  . metricCharacterBins     
-    , parmap rpar staticRootCost  . nonMetricCharacterBins  
-    , parmap rpar dynamicRootCost . dynamicCharacters       
-    ] <*> [block]
+  -> Double
+rootCost rootCount (MB mBlock) (CB cBlock) = rootMultiplier . sum . fmap sum $
+    [ parmap rpar staticRootCost  . uncurry zip . ( continuousBins ***  continuousBins)
+    , parmap rpar staticRootCost  . uncurry zip . (nonAdditiveBins *** nonAdditiveBins)
+    , parmap rpar staticRootCost  . uncurry zip . (   additiveBins ***    additiveBins)
+    , parmap rpar staticRootCost  . uncurry zip . (     metricBins ***      metricBins)
+    , parmap rpar staticRootCost  . uncurry zip . (  nonMetricBins ***   nonMetricBins)
+    , parmap rpar dynamicRootCost . uncurry zip . (    dynamicBins ***     dynamicBins)
+    ] <*> [(mBlock, cBlock)]
   where
     rootMultiplier x = (otherRoots * x) / 2
       where
         otherRoots = max 0 (fromIntegral rootCount - 1)
     
-    staticRootCost dec
-      | isMissing dec = 0
-      | otherwise     = weight
-      where
-        weight = dec ^. characterWeight
+    staticRootCost (m, c)
+      | isMissing c = 0
+      | otherwise   = m ^. characterWeight
 
-    dynamicRootCost dec
-      | isMissing dec = 0
-      | otherwise     = weight * getAverageLength avgLen
+    dynamicRootCost (m, c)
+      | isMissing c = 0
+      | otherwise   = weight * getAverageLength avgLen
       where
-        avgLen = dec ^. averageLength
-        weight = dec ^. characterWeight
+        avgLen = c ^. averageLength
+        weight = m ^. characterWeight
 
 
 -- |
 -- Calculates the cost of a 'CharacterBlock'. Performs some of the operation in
 -- parallel.
-staticCost :: HasBlockCost u v w x y z i r => CharacterBlock u v w x y z -> r
-staticCost block = sum . fmap sum $
-    [ parmap rpar floatingCost . continuousCharacterBins 
-    , parmap rpar integralCost . nonAdditiveCharacterBins
-    , parmap rpar integralCost . additiveCharacterBins   
-    , parmap rpar integralCost . metricCharacterBins     
-    , parmap rpar integralCost . nonMetricCharacterBins  
-    ] <*> [block]
+staticCost :: HasBlockCost u v w x y z => MetadataBlock e d m -> CharacterBlock u v w x y z -> Double
+staticCost (MB mBlock) (CB cBlock) = sum . fmap sum $
+    [ parmap rpar floatingCost . uncurry zip . ( continuousBins ***  continuousBins) 
+    , parmap rpar integralCost . uncurry zip . (nonAdditiveBins *** nonAdditiveBins)
+    , parmap rpar integralCost . uncurry zip . (   additiveBins ***    additiveBins)   
+    , parmap rpar integralCost . uncurry zip . (     metricBins ***      metricBins)
+    , parmap rpar integralCost . uncurry zip . (  nonMetricBins ***   nonMetricBins)  
+    ] <*> [(mBlock, cBlock)]
   where
-    integralCost dec = fromIntegral cost * weight
+    integralCost (m, c) = fromIntegral cost * weight
       where
-        cost   = dec ^. characterCost
-        weight = dec ^. characterWeight
+        cost   = c ^. characterCost
+        weight = m ^. characterWeight
 
-    floatingCost dec = cost * weight
+    floatingCost (m, c) = cost * weight
       where
-        cost   = dec ^. characterCost
-        weight = dec ^. characterWeight
-
+        cost   = c ^. characterCost
+        weight = m ^. characterWeight
