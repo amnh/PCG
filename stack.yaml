@@ -27,6 +27,5 @@ packages:
   - location:  https://github.com/ivan-m/graphviz/archive/b7539aa.zip
     extra-dep: true
 
-#resolver: lts-11.12
-resolver: nightly-2018-06-05
+resolver: lts-12.0
 
