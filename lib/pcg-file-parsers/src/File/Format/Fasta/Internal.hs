@@ -71,7 +71,7 @@ identifier = some $ satisfy validIdentifierChar
 -- |
 -- Defines if a 'Char' is valid to be contained within a sequence 'Identifier'
 validIdentifierChar :: Char -> Bool
-validIdentifierChar c = (not . isSpace) c && c /= '$'
+validIdentifierChar c = (not . isSpace) c && c /= '$' && c /= ';'
 
 
 -- |
