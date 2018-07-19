@@ -139,4 +139,5 @@ test-suite test-suite
                   Numeric.Extended.Natural.Test
                   Numeric.Extended.Real.Test
                   Numeric.NonNegativeAverage.Test
+                  Data.List.Test
 
