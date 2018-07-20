@@ -10,7 +10,7 @@
 --
 -- Functions for finding occurances of elements in a list.
 --
------------------------------------------------------------------------------ 
+-----------------------------------------------------------------------------
 
 module Data.List.Utility where
 
@@ -104,11 +104,11 @@ isSingleton = f . toList
 -- []
 duplicates :: (Foldable t, Ord a) => t a -> [a]
 duplicates = duplicates' . sort . toList
-  where 
+  where
     duplicates' []       = []
     duplicates' [_]      = []
     duplicates' (x:y:ys) = if   x == y
-                           then (x:) . duplicates $ dropWhile (==y) ys 
+                           then (x:) . duplicates $ dropWhile (==y) ys
                            else duplicates (y:ys)
 
 
@@ -150,7 +150,7 @@ mostCommon xs
 occurances :: (Foldable t, Ord a) => t a -> [(a,Int)]
 occurances = collateOccuranceMap . buildOccuranceMap
   where
-    buildOccuranceMap = foldr occurance empty 
+    buildOccuranceMap = foldr occurance empty
       where
         occurance e = insertWith (const succ) e 1
     collateOccuranceMap = sortBy comparator . assocs
@@ -189,7 +189,7 @@ chunksOf n = chunksOf' . toList
 --
 -- ==_Example==
 --
--- >>> [  5 .. 10 ] `subsetOf` [ 1 .. 13 ] 
+-- >>> [  5 .. 10 ] `subsetOf` [ 1 .. 13 ]
 -- True
 --
 -- >>> [ 11 .. 15 ] `subsetOf` [ 1 .. 13 ]
@@ -197,8 +197,8 @@ chunksOf n = chunksOf' . toList
 subsetOf :: (Foldable t, Foldable c, Ord a) => t a -> c a -> Bool
 subsetOf xs ys = xs' `intersection` ys' == xs'
   where
-    xs' = foldr insert mempty xs 
-    ys' = foldr insert mempty ys 
+    xs' = foldr insert mempty xs
+    ys' = foldr insert mempty ys
 
 
 -- |
@@ -264,7 +264,7 @@ invariantTransformation f xs =
 -- ==_Example==
 --
 -- >>> transitivePropertyHolds (\x y -> snd x >= fst y) [ (9,9), (8,7), (6,6), (6,5), (3,4), (3,0) ]
--- True 
+-- True
 transitivePropertyHolds :: Foldable f => (a -> a -> Bool) -> f a -> Bool
 transitivePropertyHolds p es =
     case toList es of
