@@ -35,9 +35,9 @@ validSequences = first (fromList . fmap NE.fromList) <$>
     [ ([["wow"]]                                           , "wow\n"                         )
     , ([["wow"],["such"]]                                  , "wow such\n"                    )
     , ([["wow"],["such"],["very"]]                         , " wow such very \n"             )
-    , ([["wow"],["such","very","much"],["success"]]        , "wow such | very | much success\n")
+    , ([["wow"],["such","very","much"],["success"]]        , "wow [such very much] success\n")
     , ([["wow"],["such","very"],["success"],["many","much"]
-       ,["compile"],["so","amaze"],["parse"],["wow"]]      , "wow such|very success many|much compile so|amaze parse wow\n")
+       ,["compile"],["so","amaze"],["parse"],["wow"]]      , "wow [such very] success [many much] compile [so amaze] parse wow\n")
     ]
 
 
