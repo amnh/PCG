@@ -32,7 +32,7 @@ import Data.Set           (insert, intersection)
 -- ==_Example==
 --
 -- >>> transpose []
--- []
+-- [[]]
 --
 -- >>> transpose [[1]]
 -- [[1]]
