@@ -35,7 +35,7 @@ import qualified Data.Vector          as V
 
 
 -- |
--- Applies a traversal logic function over a 'ReferenceDAG' in a /pre-order/ manner.
+-- Applies a traversal logic function over a 'ReferenceDAG' in a /post-order/ manner.
 --
 -- The logic function takes a current node decoration,
 -- a list of parent node decorations with the logic function already applied,
