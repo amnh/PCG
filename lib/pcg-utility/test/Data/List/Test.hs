@@ -85,7 +85,7 @@ chunksOfProperties = testGroup "Properties of chunksOf"
   ]
 
 subsetOfProperties :: TestTree
-subsetOfProperties  = testGroup "Properties of chunksOf"
+subsetOfProperties  = testGroup "Properties of subsetOf"
   [
   ]
 
@@ -100,7 +100,7 @@ transitivePropertyHoldsProperties = testGroup "Properties of transitiveProperty"
   ]
 
 pairwiseSequenceProperties :: TestTree
-pairwiseSequenceProperties = testGroup "Properties of pairwiseSequnce"
+pairwiseSequenceProperties = testGroup "Properties of pairwiseSequence"
   [
   ]
 
@@ -119,7 +119,7 @@ minimaByProperties = testGroup "Properties of minimaBy"
 
 transposeCases :: TestTree
 transposeCases = testGroup "Cases of transpose"
-  [ testCase "transpose [] == []" ex1
+  [ testCase "transpose [] == [[]]" ex1
   , testCase "transpose [[1]] == [[1]]" ex2
   , testCase "transpose [[1,2], [3,4]] == [[1, 3], [2,4]]" ex3
   , testCase "transpose [[1,2,3],[4,5,6],[7,8,9]] == [[1,4,7],[2,5,8],[3,6,9]]" ex4
