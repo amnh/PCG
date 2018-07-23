@@ -121,6 +121,7 @@ library
                     , bv-little
 --                    , case-insensitive
                     -- >=0.5.8 Required for Data.Map.restrictKeys
+                    , compact
                     , containers         >=0.5.8
                     , deepseq
                     , data-default
@@ -301,6 +302,7 @@ executable pcg
                     , base             >=4.10
 --                    , blaze-html
                     -- Required for Data.Map.restrictKeys
+                    , compact
                     , containers       >=0.5.8
                     , data-default
                     , deepseq

@@ -9,6 +9,7 @@ extra-deps:
   - pretty-tree-0.1.0.0
   - matrix-0.3.6.0
   - wl-pprint-text-1.1.1.1
+  - compact-0.1.0.1
 
 flags: {}
 
