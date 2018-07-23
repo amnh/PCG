@@ -358,7 +358,7 @@ referenceEdgeSet = foldMapWithKey f . references
 --
 -- The following will always hold:
 --
--- > null (referenceTreeEdgeSet dag `intersecttion` referenceTreeEdgeSet dag)
+-- > null (referenceTreeEdgeSet dag `intersection` referenceTreeEdgeSet dag)
 referenceTreeEdgeSet :: ReferenceDAG d e n -> EdgeSet (Int, Int)
 referenceTreeEdgeSet dag = foldMapWithKey f refs
   where
@@ -368,7 +368,7 @@ referenceTreeEdgeSet dag = foldMapWithKey f refs
 
 
 -- |
--- Produces a set of directed references representing all /Netowrk/ edges in the DAG.
+-- Produces a set of directed references representing all /Network/ edges in the DAG.
 -- Omits /tree/ edges in the DAG. The resulting 'EdgeSet' *will not* be connected.
 --
 -- Equivelant to:
@@ -377,7 +377,7 @@ referenceTreeEdgeSet dag = foldMapWithKey f refs
 --
 -- The following will always hold:
 --
--- > null (referenceTreeEdgeSet dag `intersecttion` referenceTreeEdgeSet dag)
+-- > null (referenceTreeEdgeSet dag `intersection` referenceTreeEdgeSet dag)
 referenceNetworkEdgeSet :: ReferenceDAG d e n -> EdgeSet (Int, Int)
 referenceNetworkEdgeSet dag = foldMapWithKey f refs
   where
