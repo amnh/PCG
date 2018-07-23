@@ -20,6 +20,7 @@ module PCG.Command.Report.GraphViz
 
 import           Bio.Graph
 import           Data.GraphViz.Printing hiding ((<>)) -- Seriously, why is this redefined?
+import           Data.Compact (getCompact)
 import qualified Data.Text.Lazy         as L
 
 
@@ -28,5 +29,4 @@ generateDotFile = (<> "\n") . L.unpack . renderDot . getDotGraph
 
 
 getDotGraph :: GraphState -> DotCode
-getDotGraph = either toDot toDot
-
+getDotGraph = (either toDot toDot) . getCompact

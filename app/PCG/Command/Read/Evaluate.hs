@@ -19,6 +19,7 @@ import           Data.Alphabet   --    hiding (AmbiguityGroup)
 -- import           Data.Alphabet.IUPAC
 import           Data.Bifunctor               (bimap,first)
 -- import           Data.Char                    (isLower,toLower,isUpper,toUpper)
+import           Data.Compact (compact)
 import           Data.Either.Custom
 import           Data.Foldable
 import           Data.Functor
@@ -82,7 +83,7 @@ evaluate (READ (ReadCommand fileSpecs)) = do
 --        case masterUnify $ transformation <$> concat xs of
           Left uErr -> fail $ show uErr -- Report unification errors here.
            -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
-          Right g   -> pure g
+          Right g   -> liftIO (compact g)
                        -- (liftIO . putStrLn {- . take 500000 -} $ either show (ppTopElement . toXML) g)
                        -- (liftIO . putStrLn $ renderSequenceCosts g)
                        -- (liftIO . putStrLn $ show g) $> g

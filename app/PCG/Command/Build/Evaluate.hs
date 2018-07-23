@@ -11,7 +11,7 @@ import           Bio.Character.Decoration.Continuous
 --import           Bio.Character.Decoration.Discrete
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Decoration.Fitch
-import           Bio.Character.Decoration.Metric 
+import           Bio.Character.Decoration.Metric
 import           Bio.Graph
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
@@ -29,6 +29,7 @@ import           Control.Monad.IO.Class
 --import           Control.Monad.Trans.Either
 import           Control.Parallel.Strategies
 import           Control.Parallel.Custom
+import           Data.Compact (compact, getCompact)
 --import           Data.Bifunctor                (bimap,first)
 --import           Data.Char                     (isLower,toLower,isUpper,toUpper)
 --import           Data.EdgeLength
@@ -99,9 +100,10 @@ evaluate
 -- EvaluationT IO (Either TopologicalResult CharacterResult)
 -- evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
 -- evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
-evaluate (BUILD (BuildCommand trajectoryCount buildType)) inState =
+evaluate (BUILD (BuildCommand trajectoryCount buildType)) cpctInState = do
+    let inState = getCompact cpctInState
     case inState of
-      Left  e -> pure $ Left e
+      Left  _ -> pure $ cpctInState
       Right v ->
         case toList $ v ^. leafSet of
           []   -> fail "There are no nodes with which to build a tree."
@@ -119,9 +121,10 @@ evaluate (BUILD (BuildCommand trajectoryCount buildType)) inState =
 --                                                        pure $ parmap rpar iterativeNetworkBuild bestTrees
                                                         pure $ fmap iterativeNetworkBuild bestTrees
                                    WheelerForest  -> fail "The BUILD command type 'Forest' is not yet implemented!"
-                let bestSolution = Right $ toSolution bestNetwork
-                pure bestSolution
+                bestSolution <- liftIO $  compact . Right $ toSolution bestNetwork
+                pure $ bestSolution
   where
+    toSolution :: NonEmpty a -> PhylogeneticSolution a
     toSolution = PhylogeneticSolution . pure . PhylogeneticForest
 
 evaluate _ _ = fail "Invalid BUILD command binding"
@@ -183,7 +186,7 @@ naiveWagnerBuild ns =
 
   where
     fromRefDAG = performDecoration . PDAG2 . resetMetadata
- 
+
 
 iterativeBuild
   ::
@@ -249,7 +252,7 @@ iterativeNetworkBuild
 --  -> [PhylogeneticNode2 (CharacterSequence (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)) (Maybe String)]
 --  -> [PhylogeneticNode2 (CharacterSequence u v w x y z) (Maybe String)]
   -> FinalDecorationDAG
-iterativeNetworkBuild currentNetwork@(PDAG2 inputDag) = 
+iterativeNetworkBuild currentNetwork@(PDAG2 inputDag) =
     case toList $ candidateNetworkEdges inputDag of
       []   -> currentNetwork
       x:xs ->
