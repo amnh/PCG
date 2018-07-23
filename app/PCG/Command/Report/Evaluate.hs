@@ -1,4 +1,3 @@
-
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
 module PCG.Command.Report.Evaluate
@@ -19,6 +18,7 @@ import           Bio.Graph.PhylogeneticDAG
 import           Control.Monad.IO.Class
 --import           Control.Monad.Logger
 --import           Data.Foldable
+import           Data.Compact (getCompact)
 import           Data.List.NonEmpty
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
@@ -76,11 +76,17 @@ generateOutput
   :: GraphState
   -> OutputFormat
   -> FileStreamContext
+generateOutput g' format =
+  case format of
+    Data {}    -> SingleStream $ either show showWithTotalEdgeCost g
+    XML  {}    -> SingleStream $ either show (ppTopElement . toXML) g
+    DotFile {} -> SingleStream $ generateDotFile g'
+    _          -> ErrorCase "Unrecognized 'report' command"
+  where
+    g = getCompact g'
+
 --generateOutput :: StandardSolution -> OutputFormat -> FileStreamContext
 --generateOutput g (CrossReferences fileNames)   = SingleStream $ taxonReferenceOutput g fileNames
-generateOutput g Data                       {} = SingleStream $ either show showWithTotalEdgeCost g
-generateOutput g XML                        {} = SingleStream $ either show (ppTopElement . toXML) g
-generateOutput g DotFile                    {} = SingleStream $ generateDotFile g
 --generateOutput (Right g) DynamicTable               {} = SingleStream $ outputDynamicCharacterTablularData g
 --generateOutput g Metadata                   {} = SingleStream $ metadataCsvOutput g
 {-
@@ -111,10 +117,9 @@ generateOutput g ImpliedAlignmentCharacters {} =
                     zs -> MultiStream $ fromList zs
 -}
 
-generateOutput _ _ = ErrorCase "Unrecognized 'report' command"
 
 
-showWithTotalEdgeCost 
+showWithTotalEdgeCost
   :: ( HasSingleDisambiguation z c
      , HasDenseTransitionCostMatrix  z (Maybe DenseTransitionCostMatrix)
      , HasSparseTransitionCostMatrix z MemoizedCostMatrix
