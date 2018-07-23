@@ -1,14 +1,7 @@
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DeriveTraversable #-}
-{-# LANGUAGE TypeApplications #-}
-
 module Data.List.Test
   ( testSuite
   ) where
 
-import Data.Key (Zip(..))
 import Data.List.Utility
 import Data.List (sort, nub)
 import qualified  Data.List.NonEmpty as NE
