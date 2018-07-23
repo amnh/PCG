@@ -341,7 +341,7 @@ instance (Show n, ToXML n) => ToXML (ReferenceDAG d e n) where
 -- Produces a set of directed references representing all edges in the DAG.
 -- Equivelant to:
 --
--- > referenceTreeEdgeSet dag `union` referenceTreeEdgeSet dag
+-- > referenceTreeEdgeSet dag `union` referenceNetworkEdgeSet dag
 referenceEdgeSet :: ReferenceDAG d e n -> EdgeSet (Int, Int)
 referenceEdgeSet = foldMapWithKey f . references
   where
@@ -356,7 +356,7 @@ referenceEdgeSet = foldMapWithKey f . references
 --
 -- > referenceEdgeSet dag `difference` referenceNetworkEdgeSet dag
 --
--- The follwoing will always hold:
+-- The following will always hold:
 --
 -- > null (referenceTreeEdgeSet dag `intersecttion` referenceTreeEdgeSet dag)
 referenceTreeEdgeSet :: ReferenceDAG d e n -> EdgeSet (Int, Int)
@@ -375,7 +375,7 @@ referenceTreeEdgeSet dag = foldMapWithKey f refs
 --
 -- > referenceEdgeSet dag `difference` referenceTreeEdgeSet dag
 --
--- The follwoing will always hold:
+-- The following will always hold:
 --
 -- > null (referenceTreeEdgeSet dag `intersecttion` referenceTreeEdgeSet dag)
 referenceNetworkEdgeSet :: ReferenceDAG d e n -> EdgeSet (Int, Int)
