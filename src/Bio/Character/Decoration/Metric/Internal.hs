@@ -37,7 +37,7 @@ import Text.XML
 data MetricDecorationInitial c
    = MetricDecorationInitial
    { metricDecorationInitialCharacter :: c
-   , metadata                         :: {-# UNPACK #-} !(DiscreteWithTCMCharacterMetadataDec c)
+--   , metadata                         :: {-# UNPACK #-} !(DiscreteWithTCMCharacterMetadataDec c)
    } deriving (Generic)
 
 
@@ -62,7 +62,7 @@ data SankoffOptimizationDecoration c
    , sankoffBeta                  :: ![ExtendedNatural]   -- this is Goloboff's beta, where
                                                           -- beta_(s,n) = min[t_(s,x) + prelimExtraCost_(x,n)]
                                                           -- where t_(s,x) is the transition cost from state s to x
-   , sankoffMetadataField         :: {-# UNPACK #-} !(DiscreteWithTCMCharacterMetadataDec c)
+--   , sankoffMetadataField         :: {-# UNPACK #-} !(DiscreteWithTCMCharacterMetadataDec c)
    , sankoffCharacterField        :: c                    -- Bit Vector version of median character
    , sankoffIsLeaf                :: !Bool
    } deriving (Generic)
@@ -89,6 +89,7 @@ instance EncodableStaticCharacter c => DiscreteCharacterDecoration (MetricDecora
 instance EncodableStaticCharacter c => DiscreteCharacterDecoration (SankoffOptimizationDecoration c) c where
 
 
+{-
 -- | (✔)
 instance DiscreteCharacterMetadata (MetricDecorationInitial c) where
 
@@ -99,6 +100,7 @@ instance DiscreteCharacterMetadata (MetricDecorationInitial c) where
 instance DiscreteCharacterMetadata (SankoffOptimizationDecoration c) where
 
     extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . sankoffMetadataField
+-}
 
 
 -- | (✔)
@@ -113,11 +115,12 @@ instance EncodableStaticCharacter c => DiscreteExtensionSankoffDecoration (Sanko
         , sankoffPreliminaryExtraCosts = prelimExtras
         , sankoffFinalExtraCosts       = finalExtras
         , sankoffBeta                  = inputBeta
-        , sankoffMetadataField         = metadataValue
+--        , sankoffMetadataField         = metadataValue
         , sankoffMinCost               = cost
         , sankoffCharacterField        = newMedian
         , sankoffIsLeaf                = leaf
         }
+{-
       where
         alphabetValue   = subDecoration ^. characterAlphabet
         tcmValue        = generate (length alphabetValue) generator
@@ -129,8 +132,10 @@ instance EncodableStaticCharacter c => DiscreteExtensionSankoffDecoration (Sanko
                 <*> const alphabetValue
                 <*> const tcmValue
                  $  subDecoration
+-}
 
 
+{-
 -- | (✔)
 instance EncodableStreamElement c => DiscreteWithTcmCharacterMetadata (MetricDecorationInitial c) c where
 
@@ -149,6 +154,7 @@ instance GeneralCharacterMetadata (MetricDecorationInitial c) where
 instance GeneralCharacterMetadata (SankoffOptimizationDecoration c) where
 
     extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . sankoffMetadataField
+-}
 
 
 -- | (✔)
@@ -157,6 +163,7 @@ instance HasBeta (SankoffOptimizationDecoration c) [ExtendedNatural] where
     beta = lens sankoffBeta (\e x -> e { sankoffBeta = x })
 
 
+{-
 -- | (✔)
 instance HasCharacterAlphabet (MetricDecorationInitial c) (Alphabet String) where
 
@@ -173,6 +180,7 @@ instance HasCharacterAlphabet (SankoffOptimizationDecoration c) (Alphabet String
       where
          getter e   = sankoffMetadataField e ^. characterAlphabet
          setter e x = e { sankoffMetadataField = sankoffMetadataField e &  characterAlphabet .~ x }
+-}
 
 
 -- | (✔)
@@ -187,6 +195,7 @@ instance HasCharacterCostVector (SankoffOptimizationDecoration c) [ExtendedNatur
     characterCostVector = lens sankoffMinCostVector (\e x -> e { sankoffMinCostVector = x })
 
 
+{-
 -- | (✔)
 instance HasCharacterName (MetricDecorationInitial c) CharacterName where
 
@@ -221,6 +230,7 @@ instance HasCharacterWeight (SankoffOptimizationDecoration c) Double where
       where
          getter e   = sankoffMetadataField e ^. characterWeight
          setter e x = e { sankoffMetadataField = sankoffMetadataField e &  characterWeight .~ x }
+-}
 
 
 -- | (✔)
@@ -259,6 +269,7 @@ instance HasStateMinTuple (SankoffOptimizationDecoration c) ([StateContributionL
     minStateTuple = lens sankoffMinStateTuple (\e x -> e { sankoffMinStateTuple = x })
 
 
+{-
 -- | (✔)
 instance HasSymbolChangeMatrix (MetricDecorationInitial c) (Word -> Word -> Word) where
 
@@ -293,6 +304,7 @@ instance HasTransitionCostMatrix (SankoffOptimizationDecoration c) (c -> c -> (c
       where
          getter e   = sankoffMetadataField e ^. transitionCostMatrix
          setter e f = e { sankoffMetadataField = sankoffMetadataField e & transitionCostMatrix .~ f }
+-}
 
 
 -- | (✔)
@@ -308,9 +320,9 @@ instance EncodableStaticCharacter c => SankoffDecoration (SankoffOptimizationDec
 
 
 -- | (✔)
-instance EncodableStreamElement c => Show (SankoffOptimizationDecoration c) where
+instance Show c => Show (SankoffOptimizationDecoration c) where
 
-    show = showDiscreteCharacterElement
+    show x = show $ x ^. discreteCharacter
 
 
 -- | (✔)
@@ -319,7 +331,7 @@ instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (Metric
     toDiscreteCharacterDecoration name weight alphabet scm g symbolSet =
         MetricDecorationInitial
         { metricDecorationInitialCharacter = g symbolSet
-        , metadata                         = discreteMetadataWithTCM name weight alphabet scm
+--        , metadata                         = discreteMetadataWithTCM name weight alphabet scm
         }
 
 

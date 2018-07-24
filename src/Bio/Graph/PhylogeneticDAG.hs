@@ -78,9 +78,10 @@ rootCosts :: ( Integral e
              , HasCharacterCost z e
              )
 -}
-rootCosts :: HasBlockCost u v w x y z i r
-          => PhylogeneticDAG2 m a d s t u v w x y z -> NonEmpty r
-rootCosts (PDAG2 dag _) = sequenceCost <$> rootDecs
+rootCosts
+  :: HasBlockCost u v w x y z
+  => PhylogeneticDAG2 m a d s t u v w x y z -> NonEmpty Double
+rootCosts (PDAG2 dag meta) = sequenceCost meta <$> rootDecs
   where
     roots     = rootRefs dag
     rootDecs  = characterSequence . NE.head . resolutions . nodeDecoration . (references dag !) <$> roots

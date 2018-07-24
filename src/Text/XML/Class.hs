@@ -70,6 +70,15 @@ instance {-# OVERLAPPABLE #-} (Foldable f, ToXML a) => ToXML (f a) where
            attrs    = []
            contents = Elem . toXML <$> toList lst
 
+
+instance ToXML Int where
+
+    toXML i = Element name [] contents Nothing
+       where
+         name     = QName "Int" Nothing Nothing
+         attrs    = []
+         contents = [CRef $ show i]
+
 -- |
 -- Take in a list of ToXML items and return a single Element with XML'ed items as substructure.
 -- Used in ToXML instances when there are sequences of data.

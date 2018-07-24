@@ -76,7 +76,7 @@ class HasDiscreteCharacter s a | s -> a where
 -- | (✔)
 class ( HasDiscreteCharacter s a
       , EncodableStaticCharacter a
-      , DiscreteWithTcmCharacterMetadata s a
+--      , DiscreteWithTcmCharacterMetadata s a
       ) => DiscreteCharacterDecoration s a | s -> a where
 
 
@@ -88,9 +88,9 @@ class DiscreteCharacterDecoration s a => SimpleDiscreteCharacterDecoration s a |
 
 
 
-instance EncodableStreamElement c => Show (DiscreteDecoration c) where
+instance Show c => Show (DiscreteDecoration c) where
 
-    show = showDiscreteCharacterElement
+    show = show . (^. discreteCharacter)
 
 
 -- | (✔)
@@ -109,6 +109,7 @@ instance HasIntervalCharacter (DiscreteDecoration c) c where
 instance (Ranged c, ExtendedNumber (Bound c), Num (Finite (Bound c)), Num (Bound c), Ord (Bound c)) => RangedCharacterDecoration (DiscreteDecoration c) c where
 
 
+{-
 -- | (✔)
 instance HasCharacterAlphabet (DiscreteDecoration c) (Alphabet String) where
 
@@ -153,7 +154,6 @@ instance HasCharacterWeight (DiscreteDecoration c) Double where
          getter e   = metadata e ^. characterWeight
          setter e x = e { metadata = metadata e &  characterWeight .~ x }
 
-
 -- | (✔)
 instance GeneralCharacterMetadata (DiscreteDecoration c) where
 
@@ -170,6 +170,7 @@ instance DiscreteCharacterMetadata (DiscreteDecoration c) where
 
 -- | (✔)
 instance EncodableStreamElement c => DiscreteWithTcmCharacterMetadata (DiscreteDecoration c) c where
+-}
 
 
 -- | (✔)
@@ -187,13 +188,13 @@ instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (Discre
 
 
 -- | (✔)
-instance (EncodableStreamElement c) => ToXML (DiscreteDecoration c) where
+instance (Show c) => ToXML (DiscreteDecoration c) where
 
     toXML decoration = xmlElement "Discrete_character_decoration" attributes contents
         where
             attributes = []
-            contents   = [ Left ("Character", showDiscreteCharacterElement decoration)
-                         , Left ("Metadata" , "TCM not shown"                        )
+            contents   = [ Left ("Character", show $ decoration ^. discreteCharacter)
+                         , Left ("Metadata" , "TCM not shown"                       )
                          ]
 
 

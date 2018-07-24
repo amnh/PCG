@@ -50,7 +50,7 @@ import           Data.Semigroup.Foldable
 import           Data.Vector.NonEmpty           (Vector)
 import qualified Data.Vector.NonEmpty    as V
 import           GHC.Generics
---import           Text.XML
+import           Text.XML
 
 
 -- |
@@ -147,14 +147,11 @@ instance ( Show m
         indent = unlines . fmap ("  "<>) . lines
 
 
+-}
 -- | (✔)
-instance ( ToXML m
-         , ToXML e
-         , ToXML d
-         ) => ToXML (MetadataSequence m e d) where
+instance ToXML (MetadataSequence e d m) where
 
     toXML = collapseElemList "Metadata_sequence" [] . toBlocks
--}
 
 
 -- |

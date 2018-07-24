@@ -56,8 +56,7 @@ class ( RangedCharacterDecoration s c
 -- post-order traversal.
 class RangedPostorderDecoration s c => RangedExtensionPostorder s c | s -> c where
 
-    extendRangedToPostorder :: ( DiscreteCharacterMetadata x
-                               , RangedCharacterDecoration x c
+    extendRangedToPostorder :: ( RangedCharacterDecoration x c
                                )
                             => x                                  -- ^ Input decoration
                             -> Finite (Bound c)                   -- ^ Local cost
@@ -73,8 +72,8 @@ class RangedPostorderDecoration s c => RangedExtensionPostorder s c | s -> c whe
 class ( RangedDecorationOptimization s c
       ) => RangedExtensionPreorder s c | s -> c where
 
-    extendRangedToPreorder :: ( DiscreteCharacterMetadata x
-                              , RangedPostorderDecoration x c
+    extendRangedToPreorder :: ( --DiscreteCharacterMetadata x
+                                RangedPostorderDecoration x c
                               )
                            => x
                            -> Range (Bound c)

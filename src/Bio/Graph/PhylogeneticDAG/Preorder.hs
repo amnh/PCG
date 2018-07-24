@@ -76,7 +76,7 @@ type ParentalContext u v w x y z = NonEmpty (TraversalTopology, Word, Maybe (BLK
 --
 -- *The better version.*
 preorderSequence''
-  :: ( HasBlockCost u  v  w  x  y  z  Word Double
+  :: ( HasBlockCost u  v  w  x  y  z
 --     , HasBlockCost u' v' w' x' y' z' Word Double
      )
   => (ContinuousCharacterMetadataDec        -> u -> [(Word, u')] -> u')
@@ -178,22 +178,24 @@ preorderSequence'' f1 f2 f3 f4 f5 f6 pdag@(PDAG2 dag meta) = PDAG2 (newDAG dag) 
 
     -- A "sequence" of the minimum topologies that correspond to each block.
 getSequenceOfBlockMinimumTopologies
-  :: HasBlockCost u v w x y z Word Double
+  :: HasBlockCost u v w x y z
   => PhylogeneticDAG2 m a d e n u v w x y z
   -> BlockTopologies
-getSequenceOfBlockMinimumTopologies (PDAG2 dag _) = getTopologies blockMinimalResolutions
+getSequenceOfBlockMinimumTopologies (PDAG2 dag meta) = getTopologies blockMinimalResolutions
       where
-        getTopologies = fmap topologyRepresentation
+        getTopologies  = fmap topologyRepresentation
 
         blockMinimalResolutions = mapWithKey f $ toBlocks sequenceWLOG
 
-        sequenceWLOG = characterSequence $ NE.head rootResolutions
+        sequenceWLOG   = characterSequence $ NE.head rootResolutions
 
-        f key _block = minimumBy (comparing extractedBlockCost)
---                     $ (\x -> trace (show $ extractedBlockCost <$> toList x) x)
-                       rootResolutions
+        getMetaBlock i = M.toBlocks meta ! i
+
+        f key _block   = minimumBy (comparing extractedBlockCost)
+--                       $ (\x -> trace (show $ extractedBlockCost <$> toList x) x)
+                         rootResolutions
           where
-            extractedBlockCost = blockCost . (! key) . toBlocks . characterSequence
+            extractedBlockCost = blockCost (getMetaBlock key) . (! key) . toBlocks . characterSequence
 
         rootResolutions = -- (\x -> trace ("Root resolutions: " <> show (length x)) x) $
                           resolutions . nodeDecoration $ references dag ! rootWLOG
@@ -209,7 +211,7 @@ getSequenceOfBlockMinimumTopologies (PDAG2 dag _) = getTopologies blockMinimalRe
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
 preorderSequence'
-  :: ( HasBlockCost u  v  w  x  y  z  Word Double
+  :: ( HasBlockCost u  v  w  x  y  z
 --     , HasBlockCost u' v' w' x' y' z' Word Double
      )
   => (u -> [(Word, u')] -> u')
@@ -565,11 +567,11 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
             updateDynamicCharactersInSequence resInfo = resInfo { characterSequence = updatedCharacterSequence }
               where
                 updatedCharacterSequence = fromBlockVector . zipWithKey blockGen (M.toBlockVector meta) . toBlockVector $ characterSequence resInfo
-                blockGen j m block = setDynamicCharacters updatedDynamicCharacters block
+                blockGen j mBlock cBlock = setDynamicCharacters updatedDynamicCharacters cBlock
                   where
                     (topology,_,_,_,minEdgesVector) = minTopologyContextPerBlock ! j
                     excludedEdges = excludedNetworkEdges topology
-                    updatedDynamicCharacters = zipWithKey dynCharGen (getDynamicMetadata m) $ dynamicCharacters block
+                    updatedDynamicCharacters = zipWithKey dynCharGen (getDynamicMetadata mBlock) $ dynamicCharacters cBlock
 
 {-
                     dynCharGen k _ | trace renderedIndexingContext False = undefined
@@ -624,8 +626,8 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
 preorderFromRooting
-  :: ( HasBlockCost u  v  w  x  y  z  Word Double
-     , HasBlockCost u' v' w' x' y' z' Word Double
+  :: ( HasBlockCost u  v  w  x  y  z
+     , HasBlockCost u' v' w' x' y' z'
      , HasTraversalFoci z  (Maybe TraversalFoci)
      , HasTraversalFoci z' (Maybe TraversalFoci)
 --     , Show z
@@ -635,7 +637,7 @@ preorderFromRooting
   -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
   -> PhylogeneticDAG2 m a d e' n' u' v' w' x' y' z
   -> PhylogeneticDAG2 m a d e' n' u' v' w' x' y' z'
-preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag m) = PDAG2 (newDAG dag) m
+preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag meta) = PDAG2 (newDAG dag) meta
   where
     newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> constructDefaultMetadata
     dagSize       = length $ references dag
@@ -718,7 +720,7 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag m) = PDAG2 
                      $ minimumBy (comparing extractedBlockCost) datumResolutions
           where
             getBlock           = (! key) . toBlocks . characterSequence
-            extractedBlockCost = blockCost . getBlock
+            extractedBlockCost = blockCost (M.toBlocks meta ! key) . getBlock
 --            grabTraversalFoci :: HasTraversalFoci z TraversalFoci => ResolutionInformation (CharacterSequence u v w x y z) -> Vector (Int, Int)
             grabTraversalFoci  = fmap (fst . NE.head . fromJust . (^. traversalFoci)) . dynamicCharacters . getBlock
 

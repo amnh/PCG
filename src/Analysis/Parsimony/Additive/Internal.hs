@@ -109,11 +109,11 @@ import Numeric.Extended
 -- Used on the post-order (i.e. first) traversal.
 -- Applies appropriate logic to internal node and leaf node cases.
 additivePostOrder
-  :: ( DiscreteCharacterMetadata d
-     , RangedCharacterDecoration d  c
+  :: (-- DiscreteCharacterMetadata d
+       RangedCharacterDecoration d  c
 --     , ToXML                     d
 --     , ToXML                     d'
-     , DiscreteCharacterMetadata d'
+--     , DiscreteCharacterMetadata d'
      , RangedExtensionPostorder  d' c
      )
   => d
@@ -131,8 +131,8 @@ additivePostOrder parentDecoration xs =
 --
 -- Used on the post-order pass.
 initializeLeaf
-  :: ( DiscreteCharacterMetadata d
-     , RangedCharacterDecoration d  c
+  :: (-- DiscreteCharacterMetadata d
+       RangedCharacterDecoration d  c
 --     , ToXML                     d'
 --     , RangedCharacterDecoration d' c
      , RangedExtensionPostorder  d' c
@@ -158,7 +158,7 @@ updatePostOrder
   :: (-- DiscreteCharacterMetadata d
        RangedCharacterDecoration d c
 --     , ToXML                     d'
-     , DiscreteCharacterMetadata d'
+--     , DiscreteCharacterMetadata d'
      , RangedExtensionPostorder  d' c
      )
   => d
@@ -190,8 +190,8 @@ additivePreOrder
 --     , Eq (Range (Bound c))
 --     , Num (Bound c)
 --       Ord (Bound c)
-       DiscreteCharacterMetadata d
-     , RangedExtensionPostorder  d  c
+--       DiscreteCharacterMetadata d
+       RangedExtensionPostorder  d  c
 --     , ToXML                     d'
 --     , RangedExtensionPostorder  d' c
      , RangedExtensionPreorder   d' c
@@ -211,7 +211,7 @@ additivePreOrder childDecoration ((_, parentDecoration):_)
 -- Set the preliminary interval as the final interval of the leaf decoration.
 finalizeLeaf
   :: ( RangedExtensionPreorder   d' c
-     , DiscreteCharacterMetadata d
+--     , DiscreteCharacterMetadata d
      , RangedPostorderDecoration d  c
      )
   => d

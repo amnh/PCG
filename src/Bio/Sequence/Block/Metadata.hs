@@ -32,6 +32,8 @@ import Control.Lens
 import Data.TCM
 import Data.Vector (Vector)
 import GHC.Generics
+import Text.XML
+import Text.XML.Light.Types
 
 
 -- |
@@ -57,6 +59,23 @@ instance Functor (MetadataBlock e d) where
     fmap f (MB b) = MB $ b { blockMetadata = f $ blockMetadata b }
     
     (<$) v (MB b) = MB $ b { blockMetadata = v }
+
+
+instance ToXML (MetadataBlock e d m) where
+
+    toXML (MB block) = Element name attrs contents Nothing
+      where
+        name     = QName "Metadata_Block" Nothing Nothing
+        attrs    = []
+        contents = fmap Elem $
+            [ -- toXML . blockMetadata
+              collapseElemList "Continuous"  [] . continuousBins
+            , collapseElemList "NonAdditive" [] . nonAdditiveBins
+            , collapseElemList "Additive"    [] . additiveBins
+            , collapseElemList "Metric"      [] . metricBins
+            , collapseElemList "Non_Mertic"  [] . nonMetricBins
+            , collapseElemList "Dynamic"     [] . dynamicBins
+            ] <*> [block]
 
 
 getBlockMetadata :: MetadataBlock e d m -> m

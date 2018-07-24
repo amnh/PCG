@@ -48,6 +48,7 @@ import Data.List.NonEmpty (NonEmpty)
 import Data.TCM
 import Data.TopologyRepresentation
 import GHC.Generics       (Generic)
+import Text.XML
 
 
 -- |
@@ -206,6 +207,16 @@ instance HasTraversalFoci (DynamicCharacterMetadataDec c) (Maybe TraversalFoci) 
 
     traversalFoci = lens optimalTraversalFoci $ \e x -> e { optimalTraversalFoci = x }
 
+
+instance ToXML (DynamicCharacterMetadataDec c) where
+
+    toXML input = xmlElement "Dynamic_Metadata" attrs contents
+      where
+        attrs    = []
+        contents = [ Right . toXML $ metadata input
+                   , Right . toXML $ fmap (fmap mutuallyExclusivePairs) <$> optimalTraversalFoci input
+                   ]
+    
 
 -- |
 -- Construct a concrete typed 'DynamicCharacterMetadataDec' value from the supplied inputs.

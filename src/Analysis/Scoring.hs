@@ -109,8 +109,8 @@ scoreSolution (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap perfo
 -- Take an undecorated tree and assign preliminary and final states to all nodes.
 performDecoration
   :: ( --DiscreteCharacterMetadata u
-       DiscreteCharacterMetadata w
-     , DiscreteCharacterDecoration v StaticCharacter
+--       DiscreteCharacterMetadata w
+       DiscreteCharacterDecoration v StaticCharacter
      , DiscreteCharacterDecoration x StaticCharacter
      , DiscreteCharacterDecoration y StaticCharacter
      , RangedCharacterDecoration u ContinuousChar

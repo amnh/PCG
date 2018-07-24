@@ -20,6 +20,8 @@ import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Metadata.Dynamic
 import           Bio.Sequence
+import           Bio.Sequence.Metadata        (MetadataBlock, getDynamicMetadata)
+import qualified Bio.Sequence.Metadata as M 
 import           Bio.Graph.Node
 --import           Bio.Graph.PhylogeneticDAG.Class
 import           Bio.Graph.PhylogeneticDAG.Internal
@@ -71,7 +73,7 @@ import           Prelude            hiding (lookup, zipWith)
 -- network edge.
 
 assignOptimalDynamicCharacterRootEdges
-  :: ( HasBlockCost u v w x y z Word Double
+  :: ( HasBlockCost u v w x y z
      , HasTraversalFoci z (Maybe TraversalFoci)
      , Show n
      , Show u
@@ -416,7 +418,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
         -- independently on each display tree, the rooting edges on the display
         -- tree can all be chosen independantly also.
         deriveMinimalSequenceForDisplayTree
-          :: HasBlockCost u v w x y z Word Double
+          :: HasBlockCost u v w x y z
           => NonEmpty (TraversalFocusEdge, CharacterSequence u v w x y z)
           -> NonEmpty (Double, Vector (Word, NonEmpty TraversalFocusEdge))
         deriveMinimalSequenceForDisplayTree = fmap recomputeCost . foldr1 (zipWith minimizeBlock) . fmap createZippableContext
@@ -436,10 +438,10 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
         -- We unwrap the character sequence to a 'NonEmpty' list of blocks.
         -- Within each block we construct a minimization context.
         createZippableContext
-          :: HasBlockCost u v w x y z Word Double
+          :: HasBlockCost u v w x y z
           => (e, CharacterSequence u v w x y z)
           -> NonEmpty (Double, Vector (Word, Double, NonEmpty e))
-        createZippableContext (edge, charSeq) = toMinimalBlockContext edge <$> toBlocks charSeq
+        createZippableContext (edge, charSeq) = zipWith (toMinimalBlockContext edge) (M.toBlocks meta) (toBlocks charSeq)
 
         -- We create a minimization context for a given character block and a
         -- corresponding rooting edge (traversal focus) by extracting a vector
@@ -453,13 +455,14 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
         --
         -- We return the static cost and the vector to ??
         toMinimalBlockContext
-          :: HasBlockCost u v w x y z Word Double
+          :: HasBlockCost u v w x y z
           => e
+          -> MetadataBlock a d m
           -> CharacterBlock u v w x y z
           -> (Double, Vector (Word, Double, NonEmpty e))
-        toMinimalBlockContext edge block = (staticCost block, dynCharVect)
+        toMinimalBlockContext edge mBlock cBlock = (staticCost mBlock cBlock, dynCharVect)
           where
-            dynCharVect = (\dec -> (dec ^. characterCost, dec ^. characterWeight, pure edge)) <$> dynamicCharacters block
+            dynCharVect = zipWith (\mVal dec -> (dec ^. characterCost, mVal ^. characterWeight, pure edge)) (getDynamicMetadata mBlock) $ dynamicCharacters cBlock
 
         recomputeCost (staticCostVal, dynCharVect) = (staticCostVal + minDynCharCost, dynCharNoWeight)
           where
@@ -659,7 +662,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
             resolutionTopology = topologyRepresentation resInfo
             minimizedSequence  = minimalDisplayTreeRerootings ! resolutionTopology
 --            newLocalCost       = newTotalCost - sum (totalSubtreeCost <$> childResolutionContext)
-            newTotalCost       = sequenceCost modifiedSequence
+            newTotalCost       = sequenceCost meta modifiedSequence
             modifiedSequence   = fromBlocks . zipWith g minimizedSequence . toBlocks $ characterSequence resInfo
 
             -- The "block-wise" transformation.

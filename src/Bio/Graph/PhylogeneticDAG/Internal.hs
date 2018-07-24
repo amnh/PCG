@@ -178,14 +178,14 @@ instance ( Show e
 
 
 -- | (✔)
-instance ( --HasBlockCost u v w x y z Word Double
-           HasCharacterName u CharacterName
-         , HasCharacterName v CharacterName
-         , HasCharacterName w CharacterName
-         , HasCharacterName x CharacterName
-         , HasCharacterName y CharacterName
-         , HasCharacterName z CharacterName
-         , HasTraversalFoci z (Maybe TraversalFoci)
+instance ( HasBlockCost u v w x y z
+--         , HasCharacterName u CharacterName
+--         , HasCharacterName v CharacterName
+--         , HasCharacterName w CharacterName
+--         , HasCharacterName x CharacterName
+--         , HasCharacterName y CharacterName
+--         , HasCharacterName z CharacterName
+--         , HasTraversalFoci z (Maybe TraversalFoci)
          , Show m
          , Show e
          , Show n
@@ -334,7 +334,7 @@ generateLocalResolutions f1 f2 f3 f4 f5 f6 meta parentalResolutionContext childR
                 , characterSequence      = newCharacterSequence
                 }
               where
-                newTotalCost = sequenceCost newCharacterSequence
+                newTotalCost = sequenceCost meta newCharacterSequence
 
                 newLocalCost = newTotalCost - sum (totalSubtreeCost <$> childResolutionContext)
 
@@ -414,14 +414,14 @@ renderSummary
      , Show x
      , Show y
      , Show z
---     , HasBlockCost u v w x y z Word Double
-     , HasCharacterName u CharacterName
-     , HasCharacterName v CharacterName
-     , HasCharacterName w CharacterName
-     , HasCharacterName x CharacterName
-     , HasCharacterName y CharacterName
-     , HasCharacterName z CharacterName
-     , HasTraversalFoci z (Maybe TraversalFoci)
+     , HasBlockCost u v w x y z
+--     , HasCharacterName u CharacterName
+--     , HasCharacterName v CharacterName
+--     , HasCharacterName w CharacterName
+--     , HasCharacterName x CharacterName
+--     , HasCharacterName y CharacterName
+--     , HasCharacterName z CharacterName
+--     , HasTraversalFoci z (Maybe TraversalFoci)
      )
   => PhylogeneticDAG2 m a d e n u v w x y z
   -> String
@@ -440,7 +440,7 @@ renderMetadata = unlines . fmap (show . getBlockMetadata) . toList . M.toBlocks
 -- Render a "summary" of a sequence consisting of a summary for each block.
 renderSequenceSummary
   :: ( Show n
---     , HasBlockCost u v w x y z Word Double
+     , HasBlockCost u v w x y z
 --     , HasCharacterName u CharacterName
 --     , HasCharacterName v CharacterName
 --     , HasCharacterName w CharacterName
@@ -451,7 +451,7 @@ renderSequenceSummary
      )
   => PhylogeneticDAG2 m a d e n u v w x y z
   -> String
-renderSequenceSummary pdag@(PDAG2 dag meta) = ("Sequence Summary\n\n" <>) . unlines $ mapWithKey (renderBlockSummary pdag) sequenceContext
+renderSequenceSummary pdag@(PDAG2 dag _meta) = ("Sequence Summary\n\n" <>) . unlines $ mapWithKey (renderBlockSummary pdag) sequenceContext
   where
     refVec = references dag
     roots  = rootRefs dag
@@ -485,7 +485,7 @@ renderSequenceSummary pdag@(PDAG2 dag meta) = ("Sequence Summary\n\n" <>) . unli
 --
 renderBlockSummary
   :: ( HasBlockCost u v w x y z
-     , HasTraversalFoci z (Maybe TraversalFoci)
+--     , HasTraversalFoci z (Maybe TraversalFoci)
      , Show n
      )
   => PhylogeneticDAG2 m a d e n u v w x y z

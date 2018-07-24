@@ -137,6 +137,7 @@ showWithTotalEdgeCost
      , HasCharacterCost   x Word
      , HasCharacterCost   y Word
      , HasCharacterCost   z Word
+{-
      , HasCharacterName   u CharacterName
      , HasCharacterName   v CharacterName
      , HasCharacterName   w CharacterName
@@ -150,6 +151,7 @@ showWithTotalEdgeCost
      , HasCharacterWeight y Double
      , HasCharacterWeight z Double
      , HasTraversalFoci   z (Maybe TraversalFoci)
+-}
      ) 
   => PhylogeneticSolution (PhylogeneticDAG2 m a d e n u v w x y z) 
   -> String

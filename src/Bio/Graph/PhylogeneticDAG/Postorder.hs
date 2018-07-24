@@ -45,7 +45,7 @@ import qualified Data.Vector          as V
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
 postorderSequence'
-  :: HasBlockCost u' v' w' x' y' z' Word Double
+  :: HasBlockCost u' v' w' x' y' z'
   => (ContinuousCharacterMetadataDec        -> u -> [u'] -> u')
   -> (DiscreteCharacterMetadataDec          -> v -> [v'] -> v')
   -> (DiscreteCharacterMetadataDec          -> w -> [w'] -> w')

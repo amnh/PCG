@@ -53,7 +53,7 @@ data AdditivePostorderDecoration a
    , additiveChildPrelimIntervals :: {-# UNPACK #-} !(Range (Bound a), Range (Bound a))
    , additiveIsLeaf               :: !Bool
    , additiveCharacterField       :: !a
-   , additiveMetadataField        :: {-# UNPACK #-} !DiscreteCharacterMetadataDec
+--   , additiveMetadataField        :: {-# UNPACK #-} !DiscreteCharacterMetadataDec
    } deriving (Generic)
 
 
@@ -69,6 +69,7 @@ instance HasDiscreteCharacter (AdditivePostorderDecoration a) a where
     discreteCharacter = lens additiveCharacterField (\e x -> e { additiveCharacterField = x })
 
 
+{-
 -- | (✔)
 instance HasCharacterAlphabet (AdditivePostorderDecoration a) (Alphabet String) where
 
@@ -114,6 +115,7 @@ instance HasCharacterWeight (AdditivePostorderDecoration a) Double where
       where
          getter e   = additiveMetadataField e ^. characterWeight
          setter e x = e { additiveMetadataField = additiveMetadataField e &  characterWeight .~ x }
+-}
 
 
 -- | (✔)
@@ -140,6 +142,7 @@ instance (Bound a ~ c) => HasChildPrelimIntervals (AdditivePostorderDecoration a
     childPrelimIntervals = lens additiveChildPrelimIntervals (\e x -> e { additiveChildPrelimIntervals = x })
 
 
+{-
 -- | (✔)
 instance GeneralCharacterMetadata (AdditivePostorderDecoration a) where
 
@@ -154,6 +157,7 @@ instance DiscreteCharacterMetadata (AdditivePostorderDecoration a) where
 
 -- | (✔)
 instance EncodableStaticCharacter a => DiscreteWithTcmCharacterMetadata (AdditivePostorderDecoration a) a where
+-}
 
 
 -- | (✔)
@@ -175,7 +179,8 @@ instance (Ranged c, ExtendedNumber (Bound c), Num (Finite (Bound c)), Num (Bound
 -- | (✔)
 instance RangedCharacterDecoration (AdditivePostorderDecoration c) c => RangedPostorderDecoration (AdditivePostorderDecoration c) c where
 
-  {-
+
+{-
 -- | (✔)
 instance RangedCharacterDecoration s c
          , HasCharacterCost s (Bound c)
@@ -201,8 +206,8 @@ class ( RangedCharacterDecoration s c
 
 
 -- | (✔)
-instance ( DiscreteCharacterMetadata   (AdditivePostorderDecoration a)
-         , RangedPostorderDecoration   (AdditivePostorderDecoration a) a
+instance ( -- DiscreteCharacterMetadata   (AdditivePostorderDecoration a)
+           RangedPostorderDecoration   (AdditivePostorderDecoration a) a
          ) => RangedExtensionPostorder (AdditivePostorderDecoration a) a where
 
     extendRangedToPostorder subDecoration cost prelimInterval childMedianTup isLeafVal =
@@ -211,7 +216,7 @@ instance ( DiscreteCharacterMetadata   (AdditivePostorderDecoration a)
         { additiveChildPrelimIntervals = childMedianTup
         , additiveIsLeaf               = isLeafVal
         , additiveCost                 = cost
-        , additiveMetadataField        = extractDiscreteCharacterMetadata subDecoration
+--        , additiveMetadataField        = extractDiscreteCharacterMetadata subDecoration
         , additivePreliminaryInterval  = prelimInterval
         , additiveCharacterField       = subDecoration ^. intervalCharacter
         }
@@ -223,6 +228,7 @@ instance ( DiscreteCharacterMetadata   (AdditivePostorderDecoration a)
 -- | (✔)
 instance
   ( EncodableStreamElement c
+  , Show c
   , Show (Bound c)
   , Show (Finite (Bound c))
   , Show (Range  (Bound c))
@@ -231,7 +237,7 @@ instance
     show c = unlines
         [ "Cost = "                 <> show (c ^. characterCost       )
         , "Is Leaf Node?        : " <> show (c ^. isLeaf              )
-        , "Discrete Character   : " <> showDiscreteCharacterElement c
+        , "Discrete Character   : " <> show (c ^. discreteCharacter   )
         , "Preliminary Interval : " <> show (c ^. preliminaryInterval )
         , "Child       Intervals: " <> show (c ^. childPrelimIntervals)
         , "Final       Interval : " <> show (c ^. finalInterval       )
@@ -255,6 +261,7 @@ instance HasDiscreteCharacter (AdditiveOptimizationDecoration a) a where
         setter e x = e { postorderDecoration = postorderDecoration e & discreteCharacter .~ x }
 
 
+{-
 -- | (✔)
 instance HasCharacterAlphabet (AdditiveOptimizationDecoration a) (Alphabet String) where
 
@@ -301,6 +308,7 @@ instance HasCharacterWeight (AdditiveOptimizationDecoration a) Double where
       where
          getter e   =     postorderDecoration e ^. characterWeight
          setter e x = e { postorderDecoration = postorderDecoration e & characterWeight .~ x }
+-}
 
 
 -- | (✔)
@@ -345,6 +353,7 @@ instance (Bound a ~ c) => HasFinalInterval (AdditiveOptimizationDecoration a) (R
     finalInterval = lens additiveFinalInterval $ \e x -> e { additiveFinalInterval = x }
 
 
+{-
 -- | (✔)
 instance GeneralCharacterMetadata (AdditiveOptimizationDecoration a) where
 
@@ -359,7 +368,7 @@ instance DiscreteCharacterMetadata (AdditiveOptimizationDecoration a) where
 
 -- | (✔)
 instance EncodableStaticCharacter a => DiscreteWithTcmCharacterMetadata (AdditiveOptimizationDecoration a) a where
-
+-}
 
 -- | (✔)
 instance EncodableStaticCharacter a => DiscreteCharacterDecoration (AdditiveOptimizationDecoration a) a where
@@ -383,8 +392,8 @@ instance ( RangedCharacterDecoration (AdditiveOptimizationDecoration c) c
 
 
 -- | (✔)
-instance ( DiscreteCharacterMetadata    (AdditiveOptimizationDecoration a)
-         , RangedDecorationOptimization (AdditiveOptimizationDecoration a) a
+instance ( --DiscreteCharacterMetadata    (AdditiveOptimizationDecoration a)
+           RangedDecorationOptimization (AdditiveOptimizationDecoration a) a
          , RangedPostorderDecoration    (AdditiveOptimizationDecoration a) a
          ) => RangedExtensionPreorder   (AdditiveOptimizationDecoration a) a where
 
@@ -400,7 +409,7 @@ instance ( DiscreteCharacterMetadata    (AdditiveOptimizationDecoration a)
             { additiveChildPrelimIntervals = subDecoration ^. childPrelimIntervals
             , additiveIsLeaf               = subDecoration ^. isLeaf
             , additiveCost                 = subDecoration ^. characterCost
-            , additiveMetadataField        = extractDiscreteCharacterMetadata subDecoration
+--            , additiveMetadataField        = extractDiscreteCharacterMetadata subDecoration
             , additivePreliminaryInterval  = subDecoration ^. preliminaryInterval
             , additiveCharacterField       = fromRange interval
             }
@@ -419,6 +428,7 @@ instance ( RangedPostorderDecoration   (AdditiveOptimizationDecoration a) a
 -- | (✔)
 instance
   ( EncodableStreamElement c
+  , Show c
   , Show (Bound c)
   , Show (Finite (Bound c))
   , Show (Range  (Bound c))
@@ -427,7 +437,7 @@ instance
     show c = unlines
         [ "Cost = "                 <> show (c ^. characterCost)
         , "Is Leaf Node?        : " <> show (c ^. isLeaf)
-        , "Discrete Character   : " <> showDiscreteCharacterElement c
+        , "Discrete Character   : " <> show (c ^. discreteCharacter)
         , "Preliminary Interval : " <> show (additivePreliminaryInterval c)
         , "Child       Intervals: " <> show (additiveChildPrelimIntervals c)
         ]
@@ -436,6 +446,7 @@ instance
 -- | (✔)
 instance
     ( EncodableStreamElement c
+    , Show c
     -- , Show (Bound c)
     , Show (Finite (Bound c))
     , Show (Range  (Bound c))
@@ -446,7 +457,7 @@ instance
             attributes = []
             contents   = [ Left ("Cost"                 , show $ decoration ^. characterCost             )
                          , Left ("Is leaf"              , show $ decoration ^. isLeaf                    )
-                         , Left ("Discrete Character"   , showDiscreteCharacterElement        decoration )
+                         , Left ("Discrete Character"   , show $ decoration ^. discreteCharacter         )
                          , Left ("Preliminary Interval" , show $ additivePreliminaryInterval  decoration )
                          , Left ("Child Intervals:"     , show $ additiveChildPrelimIntervals decoration )
                          ]
@@ -455,6 +466,7 @@ instance
 -- | (✔)
 instance
     ( EncodableStreamElement c
+    , Show c
     -- , Show (Bound c)
     , Show (Finite (Bound c))
     , Show (Range  (Bound c))
@@ -466,7 +478,7 @@ instance
             contents   = [ Left ("Final interval"       , show $ decoration ^. finalInterval       )
                          , Left ("Cost"                 , show $ decoration ^. characterCost       )
                          , Left ("Is leaf"              , show $ decoration ^. isLeaf              )
-                         , Left ("Discrete Character"   , showDiscreteCharacterElement decoration  )
+                         , Left ("Discrete Character"   , show $ decoration ^. discreteCharacter   )
                          , Left ("Preliminary Interval" , show $ decoration ^. preliminaryInterval )
                          , Left ("Child Intervals:"     , show $ decoration ^. childPrelimIntervals)
                          ]

@@ -381,8 +381,8 @@ instance ( Ranged c
 
 
 -- | (✔)
-instance ( DiscreteCharacterMetadata   (ContinuousPostorderDecoration a)
-         , RangedPostorderDecoration   (ContinuousPostorderDecoration a) a
+instance ( -- DiscreteCharacterMetadata   (ContinuousPostorderDecoration a)
+           RangedPostorderDecoration   (ContinuousPostorderDecoration a) a
          , RangedCharacterDecoration   (AdditivePostorderDecoration a) a
          , RangedPostorderDecoration   (AdditivePostorderDecoration a) a
          ) => RangedExtensionPostorder (ContinuousPostorderDecoration a) a where
@@ -393,8 +393,8 @@ instance ( DiscreteCharacterMetadata   (ContinuousPostorderDecoration a)
 
 
 -- | (✔)
-instance ( DiscreteCharacterMetadata    (ContinuousOptimizationDecoration a)
-         , RangedDecorationOptimization (ContinuousOptimizationDecoration a) a
+instance ( -- DiscreteCharacterMetadata    (ContinuousOptimizationDecoration a)
+           RangedDecorationOptimization (ContinuousOptimizationDecoration a) a
          , RangedCharacterDecoration    (AdditiveOptimizationDecoration   a) a
          , RangedExtensionPreorder      (AdditiveOptimizationDecoration   a) a
          ) => RangedExtensionPreorder   (ContinuousOptimizationDecoration a) a where

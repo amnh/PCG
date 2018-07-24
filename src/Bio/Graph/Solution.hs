@@ -125,21 +125,22 @@ instance ToNewick a => ToNewick (PhylogeneticSolution a) where
 
 
 instance
-  ( ToXML u
+  (-- ToXML m
+    ToXML u
   , ToXML v
   , ToXML w
   , ToXML y
   , ToXML z
-  , GeneralCharacterMetadata  u
-  , DiscreteCharacterMetadata v
-  , DiscreteCharacterMetadata w
-  , DiscreteCharacterMetadata x
-  , DiscreteCharacterMetadata y
-  , DiscreteCharacterMetadata z
-  , HasBlockCost u v w x y z Word Double
-  , HasSymbolChangeMatrix x (Word -> Word -> Word)
-  , HasSymbolChangeMatrix y (Word -> Word -> Word)
-  , HasSymbolChangeMatrix z (Word -> Word -> Word)
+--  , GeneralCharacterMetadata  u
+--  , DiscreteCharacterMetadata v
+--  , DiscreteCharacterMetadata w
+--  , DiscreteCharacterMetadata x
+--  , DiscreteCharacterMetadata y
+--  , DiscreteCharacterMetadata z
+  , HasBlockCost u v w x y z
+--  , HasSymbolChangeMatrix x (Word -> Word -> Word)
+--  , HasSymbolChangeMatrix y (Word -> Word -> Word)
+--  , HasSymbolChangeMatrix z (Word -> Word -> Word)
 --  , PrintDot (PhylogeneticDAG2 e (f String) u v w x y z)
   , Show n
   , Show u
@@ -179,6 +180,8 @@ instance
                                 -- , Right . toXML $ snd metadataSequence
                                 -- ]
 
+            (PDAG2 _ metadataSequence) = NE.head . toNonEmpty $ NE.head forests
+            {-
             metadataSequence = hexmap f1 f2 f3 f4 f5 f6 arbitraryCharSeq
               where
                 arbitraryCharSeq = characterSequence . NE.head . resolutions . nodeDecoration $ arbitraryNode
@@ -196,7 +199,7 @@ instance
                   where
                     scm = uncurry $ x ^. symbolChangeMatrix
                     dim = length  $ x ^. characterAlphabet
-
+-}
 
 
 getSolutionDotContext
