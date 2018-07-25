@@ -72,8 +72,8 @@ truncateAtSymbolProperties = testGroup "Properties of truncateAtSymbol"
         False -> True
         True  ->
           let (xs, (y : ys)) = splitAt n strs in
-            ((truncateAtSymbol y) . fromSymbols $ strs)
-            == (fromSymbols (xs ++ [y]))
+              ((truncateAtSymbol y) . fromSymbols $ strs)
+              == (fromSymbols (xs ++ [y]))
 
 
 truncateAtMaxSymbolProperties :: TestTree
