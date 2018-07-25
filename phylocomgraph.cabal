@@ -515,6 +515,7 @@ Test-Suite testsuite
                     , tasty-hunit
                     , tasty-quickcheck
                     , tasty-smallcheck
+                    , text
                     , transformers
                     , vector
                     -- >=3.4 required for corrected definition of (!) & index
@@ -575,6 +576,7 @@ Test-Suite testsuite
                     Data.Alphabet
                     Data.Alphabet.IUPAC
                     Data.Alphabet.Internal
+                    Data.Alphabet.Test
                     Data.Range
 --                    Data.TCM
 --                    Data.TCM.Internal
