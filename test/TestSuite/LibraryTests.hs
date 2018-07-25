@@ -5,15 +5,16 @@ module TestSuite.LibraryTests
 import qualified Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Test as Pairwise
 import qualified Bio.Character.Encodable.Dynamic.Test                        as DynamicChar
 import qualified Bio.Character.Encodable.Static.Test                         as StaticChar
+import qualified Data.Alphabet.Test                                          as Alphabet
 import qualified Control.Evaluation.Test                                     as Evaluation
 import           Test.Tasty
 
 
 testSuite :: TestTree
-testSuite = testGroup "Library Test Suite" 
+testSuite = testGroup "Library Test Suite"
     [ Evaluation.testSuite
     , DynamicChar.testSuite
     , StaticChar.testSuite
     , Pairwise.testSuite
+    , Alphabet.testSuite
     ]
-
