@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 module Data.Alphabet.Test
   ( testSuite
   ) where
@@ -72,7 +70,7 @@ truncateAtSymbolProperties = testGroup "Properties of truncateAtSymbol"
     splitOrderedList (n, strs') = let strs = sort strs' in
       case (0 < n) && (n < length strs) of
         False -> True
-          True  ->
+        True  ->
           let (xs, (y : ys)) = splitAt n strs in
             ((truncateAtSymbol y) . fromSymbols $ strs)
             == (fromSymbols (xs ++ [y]))
