@@ -177,6 +177,8 @@ gapSymbol alphabet = alphabet ! (length alphabet - 1)
 -- before the supplied symbol and excludes all symbols occurring after the
 -- supplied symbol. The gap character is preserved in the alphabet
 -- regardless of the supplied symbol.
+--
+-- The resulting alphabet /includes/ the input symbol.
 truncateAtSymbol :: (Ord a, IsString a) => a -> Alphabet a -> Alphabet a
 truncateAtSymbol symbol alphabet =
     case elemIndex symbol $ toList alphabet of
@@ -195,6 +197,8 @@ truncateAtSymbol symbol alphabet =
 -- the symbols occurring before the maximum provided symbol and excluding all symbols
 -- occurring after the maximum supplied symbol. The gap character is
 -- preserved in the alphabet regardless of the supplied symbol.
+--
+-- The resulting alphabet /includes/ the input symbol.
 truncateAtMaxSymbol :: (Foldable t, Ord a, IsString a) => t a -> Alphabet a -> Alphabet a
 truncateAtMaxSymbol symbols alphabet =
     case maxIndex of
