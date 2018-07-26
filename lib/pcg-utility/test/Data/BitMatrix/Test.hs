@@ -15,6 +15,7 @@ import Data.MonoTraversable
 import Data.Semigroup
 import Test.QuickCheck.Monadic
 import Test.Tasty
+import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
 
@@ -56,6 +57,7 @@ testSuite = testGroup "BitMatrix tests"
     , monoTraversableProperties
     , orderingProperties
     , datastructureTests
+    , cornerCases
     ]
 
 
@@ -198,6 +200,7 @@ datastructureTests = testGroup "BitMatrix data structure tests"
     , testRowsToList
     , testRowCountConsistency
     , testRowIndexConsistency
+    , testConcatanationOfRows
     , testExpandRows
     , testFactorRows
     , testExpandFactorIdentity
@@ -231,7 +234,7 @@ testBitMatrix = testGroup "bitMatrix generating function"
         f :: Positive Int -> Positive Int -> Property
         f rowCt colCt = testBM === controlBM
           where
-            testBM    = mconcat $ rows (bitMatrix numChars alphLen $ const True)
+            testBM    = expandRows (bitMatrix numChars alphLen $ const True)
             controlBM = fromNumber (alphLen * numChars) (2 ^ (alphLen * numChars) - 1 :: Integer)
             numChars  = toEnum $ getPositive rowCt
             alphLen   = toEnum $ getPositive colCt
@@ -376,6 +379,13 @@ testFactorRows = testProperty "toBits === fmap (isSet bm) . factorRows n" f
         (_, colCount, bv) = getFactoredBitVector input
 
           
+testConcatanationOfRows :: TestTree
+testConcatanationOfRows = testProperty "expandRows === mconcat . rows" f
+  where
+    f :: BitMatrix -> Property
+    f bm = expandRows bm === (mconcat . rows) bm
+
+
 testExpandFactorIdentity :: TestTree
 testExpandFactorIdentity = testProperty "factorRows numCols . expandRows === id" f
   where
@@ -401,3 +411,9 @@ equalityWithExceptions x y = monadicIO $ do
 
     anyException :: Property
     anyException = True === True
+
+
+cornerCases :: TestTree
+cornerCases = testGroup "Corner case values of a BitMatrix"
+    [ testCase "maxBound :: Word is represented correctly" $ expandRows (bitMatrix 8 8 $ const True) @?= fromNumber 64 (2^64 - 1 :: Integer)
+    ]
