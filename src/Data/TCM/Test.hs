@@ -46,8 +46,21 @@ indexCases = testGroup "Example Cases for index function"
 
 -- Examples from documentation
 
+-- Helper function to extract list of elements and size of TCM
+elementsAndSize :: TCM -> ([Word32], Int)
+elementsAndSize = (bimap otoList size) . (\a -> (a,a))
+
 documentationCases :: TestTree
 documentationCases = testGroup "Example cases in documentation"
+    [ fromCases
+    , generateCases
+    ]
+
+
+
+
+fromCases :: TestTree
+fromCases = testGroup "Cases of from{List,Cols,Rows} function"
     [ HU.testCase
         (unlines
         ["fromList [1..9] ="
@@ -78,22 +91,8 @@ documentationCases = testGroup "Example cases in documentation"
         , "  7 8 9"
         ])
         fromRowsEx
-    , HU.testCase
-        (unlines
-        [ "generate 5 $ const 5"
-        , "TCM: 5 x 5"
-        , "  5 5 5 5 5"
-        , "  5 5 5 5 5"
-        , "  5 5 5 5 5"
-        , "  5 5 5 5 5"
-        , "  5 5 5 5 5"
-        ])
-        generateCase1
     ]
   where
-    elementsAndSize :: TCM -> ([Word32], Int)
-    elementsAndSize = (bimap otoList size) . (\a -> (a,a))
-
     fromListEx :: Assertion
     fromListEx =
       let tcm = snd . fromList $ [1..9] in
@@ -112,8 +111,36 @@ documentationCases = testGroup "Example cases in documentation"
         elementsAndSize tcm
         @?= ([1..9], 3)
 
+generateCases :: TestTree
+generateCases = testGroup "Cases of generate function"
+    [ HU.testCase
+        (unlines
+        [ "generate 5 $ const 5"
+        , "TCM: 5 x 5"
+        , "  5 5 5 5 5"
+        , "  5 5 5 5 5"
+        , "  5 5 5 5 5"
+        , "  5 5 5 5 5"
+        , "  5 5 5 5 5"
+        ])
+        generateCase1
+    ]
+  where
     generateCase1 :: Assertion
     generateCase1 =
       let tcm = generate 5 (const 5 :: (Int, Int) -> Int) in
         elementsAndSize tcm
         @?= (replicate 25 5, 5)
+
+    generateCase2 :: Assertion
+    generateCase2 =
+      let tcm = generate 4 $ \(i,j) -> abs (i - j) in
+        elementsAndSize tcm
+        @?= ([ 0, 1, 2, 3, 4
+             , 1, 0, 1, 2, 3
+             , 2, 1, 0, 1, 2
+             , 3, 2, 1, 0, 1
+             , 4, 3, 2, 1, 0] , 4)
+
+    generateCase3 :: Assertion
+    generateCase3 = undefined
