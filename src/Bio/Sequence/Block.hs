@@ -29,7 +29,6 @@ module Bio.Sequence.Block
   , hexZipWithMeta
   ) where
 
-
 import           Bio.Character.Encodable
 import           Bio.Character.Decoration.Continuous
 import           Bio.Character.Decoration.Dynamic
@@ -42,7 +41,8 @@ import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Key
 import           Data.Vector.Instances                ()
-import           Prelude                       hiding (zip, zipWith)
+import           Prelude                       hiding (zip)
+
 
 -- |
 -- CharacterBlocks satisfying this constraint have a calculable cost.

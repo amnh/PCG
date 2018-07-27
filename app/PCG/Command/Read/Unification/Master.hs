@@ -68,7 +68,7 @@ import qualified Data.TCM                   as TCM
 import           Data.MonoTraversable
 import           Data.Vector                       (Vector)
 import           PCG.Command.Read.Unification.UnificationError
-import           Prelude                    hiding (lookup, unzip, zipWith)
+import           Prelude                    hiding (lookup, zipWith)
 
 
 data FracturedParseResult
@@ -355,7 +355,7 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
               where
                 encodeBinToSingletonCharacterBlock
                   :: (ParsedCharacter, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName)
-                  -> (PartialCharacterBlock UnifiedContinuousCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDynamicCharacter)
+                  -> PartialCharacterBlock UnifiedContinuousCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDynamicCharacter
                 encodeBinToSingletonCharacterBlock (charMay, charMeta, scm, structure, charName) =
                     case charMay of
                       ParsedContinuousCharacter continuousMay -> continuousSingleton           . Just .   continuousDecorationInitial charName charWeight $ toContinuousCharacter continuousMay

@@ -46,10 +46,7 @@ import Text.XML
 
 -- |
 -- General, concrete type for 'Discrete' characters.
-data DiscreteDecoration c
-   = DiscreteDec
-   { discreteDecorationCharacter :: !c
-   }
+newtype DiscreteDecoration c = DiscreteDec { discreteDecorationCharacter :: c }
 
 
 -- |

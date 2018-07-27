@@ -33,10 +33,10 @@ import Text.XML
 -- |
 -- An abstract initial dynamic character decoration with a polymorphic character
 -- type.
-data MetricDecorationInitial c
-   = MetricDecorationInitial
-   { metricDecorationInitialCharacter :: c
-   } deriving (Generic)
+newtype MetricDecorationInitial c
+    = MetricDecorationInitial
+    { metricDecorationInitialCharacter :: c
+    } deriving (Generic)
 
 
 -- |
@@ -46,7 +46,7 @@ data SankoffOptimizationDecoration c
                                      -- tuple of (a,a) where a is a per-parent-state list of
                                      -- lists of child states that contributed to the minimum
                                      -- cost of that state
-   { sankoffMinStateTuple         :: {-# UNPACK #-} !([StateContributionList], [StateContributionList])                                                                                 
+   { sankoffMinStateTuple         :: {-# UNPACK #-} !([StateContributionList], [StateContributionList])
    , sankoffMinCostVector         :: ![ExtendedNatural]   -- minimum total cost per state (left + right)
    , sankoffMinCost               :: {-# UNPACK #-} !Word -- overall minimum cost for all states
    , sankoffPreliminaryExtraCosts :: ![ExtendedNatural]   -- list of preliminary per-character-state extra costs

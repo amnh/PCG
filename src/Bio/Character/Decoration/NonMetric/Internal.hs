@@ -26,10 +26,10 @@ import Data.Alphabet
 
 -- |
 -- An abstract initial dynamic character decoration with a polymorphic character type.
-data NonMetricDecorationInitial c
-   = NonMetricDecorationInitial
-   { nonMetricDecorationInitialCharacter :: c
-   }
+newtype NonMetricDecorationInitial c
+    = NonMetricDecorationInitial
+    { nonMetricDecorationInitialCharacter :: c
+    }
 
 
 -- | (✔)

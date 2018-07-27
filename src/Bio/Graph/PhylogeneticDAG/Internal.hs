@@ -88,7 +88,7 @@ import           Text.XML
 data  PhylogeneticDAG m a d e n u v w x y z
     = PDAG
     { simpleColumnMetadata     :: MetadataSequence a d m
-    , simplePhylogeneticForest :: (ReferenceDAG () e (PhylogeneticNode n (CharacterSequence u v w x y z)))
+    , simplePhylogeneticForest :: ReferenceDAG () e (PhylogeneticNode n (CharacterSequence u v w x y z))
     } deriving (Generic)
 
 
@@ -108,14 +108,13 @@ data  PhylogeneticDAG m a d e n u v w x y z
 -- TODO: RENAME THIS to PhylogeneticForest
 data  PhylogeneticDAG2 m a d e n u v w x y z
     = PDAG2 
-    { phylogeneticForest :: ( ReferenceDAG
+    { phylogeneticForest :: ReferenceDAG
                               (         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
                               , Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
                               , Maybe  (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge)))
                               )
                               e
                               (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
-                            )
     , columnMetadata     :: MetadataSequence a d m
     } deriving (Generic)
 
@@ -435,7 +434,7 @@ renderBlockSummary
   -> Int
   -> (Maybe Double, Maybe Double, Maybe TraversalTopology, CharacterBlock u v w x y z)
   -> String
-renderBlockSummary (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displayMay, block) = mconcat . (renderedPrefix:) $
+renderBlockSummary (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displayMay, block) = mconcat . (renderedPrefix:) .
     (renderBlockMeta pair :) $
     [ unlines . fmap renderStaticCharacterSummary  . toList . uncurry zip . ( continuousBins ***  continuousBins)
     , unlines . fmap renderStaticCharacterSummary  . toList . uncurry zip . (nonAdditiveBins *** nonAdditiveBins)

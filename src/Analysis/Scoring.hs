@@ -134,12 +134,12 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
           minBlockConext
 
         . preorderSequence''
-          (\_ -> additivePreOrder)
-          (\_ -> fitchPreOrder   )
-          (\_ -> additivePreOrder)
-          (\_ -> sankoffPreOrder )
-          (\_ -> sankoffPreOrder )
-          (\_ -> id2             )
+          (const additivePreOrder)
+          (const fitchPreOrder   )
+          (const additivePreOrder)
+          (const sankoffPreOrder )
+          (const sankoffPreOrder )
+          (const id2             )
       where
         adaptiveDirectOptimizationPreOrder meta dec kidDecs = directOptimizationPreOrder pairwiseAlignmentFunction meta dec kidDecs
           where
@@ -152,24 +152,24 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
     (post, edgeCostMapping, contextualNodeDatum) =
          assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostOrder
          . postorderSequence'
-             (\_ -> g additivePostOrder)
-             (\_ -> g    fitchPostOrder)
-             (\_ -> g additivePostOrder)
-             (\m -> g (sankoffPostOrder m))
-             (\m -> g (sankoffPostOrder m))
-             (\m -> g (adaptiveDirectOptimizationPostOrder m))
+             (const (g additivePostOrder))
+             (const (g    fitchPostOrder))
+             (const (g additivePostOrder))
+             (g . sankoffPostOrder)
+             (g . sankoffPostOrder)
+             (g . adaptiveDirectOptimizationPostOrder)
          $ x
 
     g _  Nothing  [] = error "Uninitialized leaf node. This is bad!"
     g h (Just  v) [] = h v []
     g h        e  xs = h (error $ mconcat [ "We shouldn't be using this value.", show e, show $ length xs ]) xs
 
-    adaptiveDirectOptimizationPostOrder meta dec kidDecs = directOptimizationPostOrder pairwiseAlignmentFunction dec kidDecs
+    adaptiveDirectOptimizationPostOrder meta = directOptimizationPostOrder pairwiseAlignmentFunction
       where
-        pairwiseAlignmentFunction = selectDynamicMetric meta --chooseDirectOptimizationComparison meta dec kidDecs
+        pairwiseAlignmentFunction = selectDynamicMetric meta
 
 
 -- |
--- An identety function which ignores the second parameter.
+-- An identity function which ignores the second parameter.
 id2 :: a -> b -> a
 id2 = const

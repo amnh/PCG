@@ -37,10 +37,10 @@ import Text.XML
 -- |
 -- An abstract initial continuous character decoration with a polymorphic character
 -- type.
-data ContinuousDecorationInitial c
-   = ContinuousDecorationInitial
-   { continuousDecorationInitialCharacter :: c
-   } deriving (Generic)
+newtype ContinuousDecorationInitial c
+    = ContinuousDecorationInitial
+    { continuousDecorationInitialCharacter :: c
+    } deriving (Generic)
 
 
 -- |

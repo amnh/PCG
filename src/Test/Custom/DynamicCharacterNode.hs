@@ -95,18 +95,13 @@ scm i j = if i == j then 0 else 1
 
 
 defMetadata :: DynamicCharacterMetadataDec (Element DynamicChar)
-defMetadata = dynamicMetadata name weight alphabet scm Nothing
-  where
-    name   = fromString "Test Character"
-    weight = 1
-    alphabet = fromSymbols ["A","C","G","T"]
-
+defMetadata = dynamicMetadata defName defWeight defAlphabet scm Nothing
 
 initDec :: DynamicChar -> DynamicDecorationInitial DynamicChar
-initDec = toDynamicCharacterDecoration name weight alphabet scm id
-  where
-    name   = fromString "Test Character"
-    weight = 1
-    alphabet = fromSymbols ["A","C","G","T"]
+initDec = toDynamicCharacterDecoration defName defWeight defAlphabet scm id
+
+defName   = fromString "Test Character"
+defWeight = 1
+defAlphabet = fromSymbols ["A","C","G","T"]
 
 
