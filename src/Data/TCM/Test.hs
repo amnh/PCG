@@ -63,6 +63,9 @@ diagnoseTcmCases = testGroup "Example cases for TCMDiagnosis"
     , QC.testProperty
         "generate k \\(i,j) -> (max i j) - (min i j) is Additive"
         additiveProp
+    , QC.testProperty
+        "generate k \\(i,j) -> if i == j then 0 else 1 is NonAdditive"
+        nonAdditiveProp
     ]
   where
     nonSymmetricProp :: (Positive Int, Positive  Int, Positive  Int) -> Bool
