@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 module Data.TCM.Test
   ( testSuite
   ) where
@@ -11,6 +12,7 @@ import           Test.HUnit.Custom (assertException)
 import           Data.MonoTraversable
 import           Data.Word
 import           Data.Bifunctor (bimap)
+import           Test.QuickCheck (Positive(getPositive))
 
 
 testSuite :: TestTree
@@ -27,12 +29,15 @@ testPropertyCases = testGroup "Invariant Properties"
 testExampleCases :: TestTree
 testExampleCases = testGroup "Example Cases for Data.TCM"
     [ documentationCases
+    , diagnoseTcmCases
     ]
 
 indexProperties :: TestTree
 indexProperties = testGroup "Properties of index function:"
     [
     ]
+
+
 
 
 indexCases :: TestTree
@@ -43,6 +48,61 @@ indexCases = testGroup "Example Cases for index function"
     ex1 :: Assertion
     ex1 = undefined
 
+
+-- generate cases for diagnosis
+structureType = tcmStructure . diagnoseTcm
+
+diagnoseTcmCases :: TestTree
+diagnoseTcmCases = testGroup "Example cases for TCMDiagnosis"
+    [ QC.testProperty
+        "generate k \\(i,j) -> n * i + m * j is non-symmetric for n \\= m"
+        nonSymmetricProp
+    , QC.testProperty
+        "generate k \\(i,j) -> a * (i * j) + b * (i + j) + c is at worst symmetric"
+        symmetricProp
+    , QC.testProperty
+        "generate k \\(i,j) -> (max i j) - (min i j) is Additive"
+        additiveProp
+    ]
+  where
+    nonSymmetricProp :: (Positive Int, Positive  Int, Positive  Int) -> Bool
+    nonSymmetricProp (k', n', m') =
+      let
+        k = getPositive k'
+        n = getPositive n'
+        m = getPositive m'
+      in
+        case (n == m) of
+          True -> True
+          False ->
+            structureType (generate (k + 1) $ \(i,j) -> n * i + m * j)
+            == NonSymmetric
+
+    symmetricProp :: (Positive Int, Positive  Int, Positive Int) -> Bool
+    symmetricProp (k', a', b') =
+      let
+        k = getPositive k'
+        a = getPositive a'
+        b = getPositive b'
+      in
+        structureType (generate (k + 1) $ \(i,j) -> a * (i * j) + b * (i + j))
+        /= NonSymmetric
+
+    additiveProp :: Positive Int -> Bool
+    additiveProp k' =
+      let
+        k = getPositive k'
+      in
+        structureType (generate (k + 1) $ \(i,j) -> (max i j) - (min i j))
+        == Additive
+
+    nonAdditiveProp :: Positive Int -> Bool
+    nonAdditiveProp k' =
+      let
+        k = getPositive k'
+      in
+        structureType (generate (k + 1) $ \ ((i,j) :: (Int, Int))-> if i == j then 0 else 1)
+        == NonAdditive
 
 -- Examples from documentation
 
@@ -70,8 +130,8 @@ fromCases = testGroup "Cases of from{List,Cols,Rows} function"
         , "            7 8 9"
         ])
         fromListEx
-    , HU.testCase "fromList [] raises exception" $ assertException fromList []
-    , HU.testCase "fromList [42] raises exception" $ assertException fromList [42]
+    , HU.testCase "fromList [] raises exception"      $ assertException fromList []
+    , HU.testCase "fromList [42] raises exception"    $ assertException fromList [42]
     , HU.testCase "fromList [1..12] raises exception" $ assertException fromList [1..12]
     , HU.testCase
         (unlines
