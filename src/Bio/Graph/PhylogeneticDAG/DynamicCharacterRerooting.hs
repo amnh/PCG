@@ -74,7 +74,7 @@ import           Prelude            hiding (lookup, zipWith)
 
 assignOptimalDynamicCharacterRootEdges
   :: ( HasBlockCost u v w x y z
-     , HasTraversalFoci z (Maybe TraversalFoci)
+--     , HasTraversalFoci z (Maybe TraversalFoci)
      , Show n
      , Show u
      , Show v
@@ -104,8 +104,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
       [_,_]   -> let r = ((0,1), getCache 1)
                      c = ((1,0), getCache 0)
                      m = HM.fromList [r, c]
-                     d = setDefaultFoci <$> inputDag
-                 in  (PDAG2 d meta {- ((0,defaultFociValue) <$ meta) -}, m, V.generate 2 (const m))
+                 in  (PDAG2 inputDag meta {- ((0,defaultFociValue) <$ meta) -}, m, V.generate 2 (const m))
       -- Complex case, see four steps below.
       _:_:_:_ ->     (PDAG2 updatedDag meta, edgeCostMapping, contextualNodeDatum)
   where
@@ -695,7 +694,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                 h (costVal, foci) originalDec =
                     originalDec
                       & characterCost .~ costVal
-                      & traversalFoci ?~ foci
+--                      & traversalFoci ?~ foci
 
 
 -- |

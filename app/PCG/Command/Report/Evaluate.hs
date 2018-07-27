@@ -116,8 +116,8 @@ generateOutput _ _ = ErrorCase "Unrecognized 'report' command"
 
 showWithTotalEdgeCost 
   :: ( HasSingleDisambiguation z c
-     , HasDenseTransitionCostMatrix  z (Maybe DenseTransitionCostMatrix)
-     , HasSparseTransitionCostMatrix z MemoizedCostMatrix
+--     , HasDenseTransitionCostMatrix  z (Maybe DenseTransitionCostMatrix)
+--     , HasSparseTransitionCostMatrix z MemoizedCostMatrix
      , EncodableDynamicCharacter c
      , Exportable c
      , Exportable (Element c)
