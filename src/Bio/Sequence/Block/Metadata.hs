@@ -68,8 +68,7 @@ instance ToXML (MetadataBlock e d m) where
         name     = QName "Metadata_Block" Nothing Nothing
         attrs    = []
         contents = fmap Elem $
-            [ -- toXML . blockMetadata
-              collapseElemList "Continuous"  [] . continuousBins
+            [ collapseElemList "Continuous"  [] . continuousBins
             , collapseElemList "NonAdditive" [] . nonAdditiveBins
             , collapseElemList "Additive"    [] . additiveBins
             , collapseElemList "Metric"      [] . metricBins

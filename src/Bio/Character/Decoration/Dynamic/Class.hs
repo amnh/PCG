@@ -78,7 +78,6 @@ instance Show AverageLength where
 class ( HasAverageLength           s AverageLength
       , HasEncoded                 s a
       , EncodableDynamicCharacter  a
---      , DynamicCharacterMetadata   s (Element a)
       ) => SimpleDynamicDecoration s a | s -> a where
 
 
@@ -161,16 +160,6 @@ class ( DirectOptimizationPostOrderDecoration s c
                                         -> c -- ^ Final   /gapped/ dynamic character
                                         -> c -- ^ Final   /single/ dynamic character
                                         -> s -- ^ Resulting decoration
-
-{-
-instance ( DynamicCharacterDecoration s a
-         , PossiblyMissingCharacter a
-         ) => PossiblyMissingCharacter s where
-
-    isMissing = isMissing . (^. encoded)
-
-    toMissing x = x & encoded %~ toMissing
--}
 
 
 -- |

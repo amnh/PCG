@@ -25,7 +25,6 @@ import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
 import           Bio.Metadata.Discrete
 import           Bio.Metadata.DiscreteWithTCM
--- import           Bio.Metadata.General
 import           Bio.Graph.PhylogeneticDAG
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
@@ -125,23 +124,12 @@ instance ToNewick a => ToNewick (PhylogeneticSolution a) where
 
 
 instance
-  (-- ToXML m
-    ToXML u
+  ( ToXML u
   , ToXML v
   , ToXML w
   , ToXML y
   , ToXML z
---  , GeneralCharacterMetadata  u
---  , DiscreteCharacterMetadata v
---  , DiscreteCharacterMetadata w
---  , DiscreteCharacterMetadata x
---  , DiscreteCharacterMetadata y
---  , DiscreteCharacterMetadata z
   , HasBlockCost u v w x y z
---  , HasSymbolChangeMatrix x (Word -> Word -> Word)
---  , HasSymbolChangeMatrix y (Word -> Word -> Word)
---  , HasSymbolChangeMatrix z (Word -> Word -> Word)
---  , PrintDot (PhylogeneticDAG2 e (f String) u v w x y z)
   , Show n
   , Show u
   , Show v
@@ -166,40 +154,14 @@ instance
             graphRepresentations = xmlElement "Graph_representations" attrs graphContents
             graphContents        = [ Left ("DOT"   , getDOT   soln)
                                    , Left ("Newick", toNewick soln)
-                                   --, Right graphASCII
                                    ]
-            -- TODO: This no longer works. Can't remember what I changed; pretty sure it's something simple.
-            -- graphASCII           = xmlElement "Graphical" attrs graphASCIIContents
-            -- graphASCIIContents   = (Right . toXML) <$> toList forests
 
             getDOT = L.unpack . renderDot . toDot
 
             characterMetadata = xmlElement "Character_metadata" attrs metadataContents
             metadataContents  = [Right $ toXML metadataSequence]
-                                -- [ Right . toXML $ fst metadataSequence
-                                -- , Right . toXML $ snd metadataSequence
-                                -- ]
 
             (PDAG2 _ metadataSequence) = NE.head . toNonEmpty $ NE.head forests
-            {-
-            metadataSequence = hexmap f1 f2 f3 f4 f5 f6 arbitraryCharSeq
-              where
-                arbitraryCharSeq = characterSequence . NE.head . resolutions . nodeDecoration $ arbitraryNode
-                arbitraryNode    = references arbitraryRefDAG ! arbitraryRootRef
-                arbitraryRootRef          = NE.head $ rootRefs arbitraryRefDAG
-                (PDAG2 arbitraryRefDAG _) = NE.head arbitraryPDAG
-                arbitraryPDAG             = toNonEmpty $ NE.head forests
-                f1  = extractGeneralCharacterMetadata
-                f2  = extractDiscreteCharacterMetadata
-                f3  = extractDiscreteCharacterMetadata
-                f4  = g
-                f5  = g
-                f6  = g
-                g x = (generate dim scm, extractDiscreteCharacterMetadata x)
-                  where
-                    scm = uncurry $ x ^. symbolChangeMatrix
-                    dim = length  $ x ^. characterAlphabet
--}
 
 
 getSolutionDotContext

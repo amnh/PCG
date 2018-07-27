@@ -21,8 +21,6 @@ import Bio.Character.Decoration.Shared
 import Control.Lens
 import Data.Range
 import Numeric.Extended
--- import Text.XML.Class
--- import Text.XML.Light.Types                (Content(..), Element(..), QName(..))
 
 
 -- |
@@ -42,13 +40,6 @@ class ( RangedCharacterDecoration s c
 class ( RangedCharacterDecoration s c
       , HasFinalInterval s (Range (Bound c))
       ) => RangedDecorationOptimization s c | s -> c where
-
-
--- |
--- An abstract initial additive character decoration with a polymorphic character
--- type.
-
--- class DiscreteCharacterDecoration s a => AdditiveCharacterDecoration s a | s -> a where
 
 
 -- |
@@ -72,9 +63,7 @@ class RangedPostorderDecoration s c => RangedExtensionPostorder s c | s -> c whe
 class ( RangedDecorationOptimization s c
       ) => RangedExtensionPreorder s c | s -> c where
 
-    extendRangedToPreorder :: ( --DiscreteCharacterMetadata x
-                                RangedPostorderDecoration x c
-                              )
+    extendRangedToPreorder :: RangedPostorderDecoration x c
                            => x
                            -> Range (Bound c)
                            -> s

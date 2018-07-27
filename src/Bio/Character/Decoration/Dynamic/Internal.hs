@@ -61,7 +61,6 @@ data DynamicDecorationDirectOptimization d
    , dynamicDecorationDirectOptimizationPreliminaryUngappedField :: !d
    , dynamicDecorationDirectOptimizationLeftAlignmentField       :: !d
    , dynamicDecorationDirectOptimizationRightAlignmentField      :: !d
---   , dynamicDecorationDirectOptimizationMetadata                 :: {-# UNPACK #-} !(DynamicCharacterMetadataDec (Element d))
    } deriving (Eq, Generic)
 
 
@@ -77,7 +76,6 @@ data DynamicDecorationDirectOptimizationPostOrderResult d
    , dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField :: !d
    , dynamicDecorationDirectOptimizationPostOrderLeftAlignmentField       :: !d
    , dynamicDecorationDirectOptimizationPostOrderRightAlignmentField      :: !d
---   , dynamicDecorationDirectOptimizationPostOrderMetadata                 :: {-# UNPACK #-} !(DynamicCharacterMetadataDec (Element d))
    } deriving (Eq, Generic)
 
 
@@ -97,7 +95,6 @@ data DynamicDecorationImpliedAlignment d
    , dynamicDecorationImpliedAlignmentLeftAlignmentField       :: !d
    , dynamicDecorationImpliedAlignmentRightAlignmentField      :: !d
    , dynamicDecorationImpliedAlignmentImpliedAlignmentField    :: !d
---   , dynamicDecorationImpliedAlignmentMetadata                 :: {-# UNPACK #-} !(DynamicCharacterMetadataDec (Element d))
    } deriving (Eq, Generic)
 
 
@@ -108,7 +105,6 @@ data DynamicDecorationInitial d
    = DynamicDecorationInitial
    { dynamicDecorationInitialEncodedField           :: !d
    , dynamicDecorationInitialCharacterAverageLength :: {-# UNPACK #-} !AverageLength
---   , metadata                                       :: {-# UNPACK #-} !(DynamicCharacterMetadataDec (Element d))
    } deriving (Eq, Generic)
 
 
@@ -148,107 +144,6 @@ instance EncodableDynamicCharacter d => DirectOptimizationPostOrderDecoration (D
 instance EncodableDynamicCharacter d => DirectOptimizationPostOrderDecoration (DynamicDecorationImpliedAlignment d) d where
 
 
-{-
--- | (✔)
-instance DiscreteCharacterMetadata (DynamicDecorationDirectOptimization d) where
-
-    {-# INLINE extractDiscreteCharacterMetadata #-}
-    extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . dynamicDecorationDirectOptimizationMetadata
-
-
--- | (✔)
-instance DiscreteCharacterMetadata (DynamicDecorationDirectOptimizationPostOrderResult d) where
-
-    {-# INLINE extractDiscreteCharacterMetadata #-}
-    extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . dynamicDecorationDirectOptimizationPostOrderMetadata
-
-
--- | (✔)
-instance DiscreteCharacterMetadata (DynamicDecorationImpliedAlignment d) where
-
-    {-# INLINE extractDiscreteCharacterMetadata #-}
-    extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . dynamicDecorationImpliedAlignmentMetadata
-
-
--- | (✔)
-instance DiscreteCharacterMetadata (DynamicDecorationInitial d) where
-
-    {-# INLINE extractDiscreteCharacterMetadata #-}
-    extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . metadata
-
-
--- | (✔)
-instance (EncodableStream d, Element d ~ c) => DiscreteWithTcmCharacterMetadata (DynamicDecorationDirectOptimization d) c where
-
-
--- | (✔)
-instance (EncodableStream d, Element d ~ c) => DiscreteWithTcmCharacterMetadata (DynamicDecorationDirectOptimizationPostOrderResult d) c where
-
-
--- | (✔)
-instance (EncodableStream d, Element d ~ c) => DiscreteWithTcmCharacterMetadata (DynamicDecorationImpliedAlignment d) c where
-
-
--- | (✔)
-instance (EncodableStream d, Element d ~ c) => DiscreteWithTcmCharacterMetadata (DynamicDecorationInitial d) c where
-
-
--- | (✔)
-instance (EncodableStream d, Element d ~ c) => DynamicCharacterMetadata (DynamicDecorationDirectOptimization d) c where
-
-    {-# INLINE extractDynamicCharacterMetadata #-}
-    extractDynamicCharacterMetadata = extractDynamicCharacterMetadata . dynamicDecorationDirectOptimizationMetadata
-
-
--- | (✔)
-instance (EncodableStream d, Element d ~ c) => DynamicCharacterMetadata (DynamicDecorationDirectOptimizationPostOrderResult d) c where
-
-    {-# INLINE extractDynamicCharacterMetadata #-}
-    extractDynamicCharacterMetadata = extractDynamicCharacterMetadata . dynamicDecorationDirectOptimizationPostOrderMetadata
-
-
--- | (✔)
-instance (EncodableStream d, Element d ~ c) => DynamicCharacterMetadata (DynamicDecorationImpliedAlignment d) c where
-
-    {-# INLINE extractDynamicCharacterMetadata #-}
-    extractDynamicCharacterMetadata = extractDynamicCharacterMetadata . dynamicDecorationImpliedAlignmentMetadata
-
-
--- | (✔)
-instance (EncodableStream d, Element d ~ c) => DynamicCharacterMetadata (DynamicDecorationInitial d) c where
-
-    {-# INLINE extractDynamicCharacterMetadata #-}
-    extractDynamicCharacterMetadata = extractDynamicCharacterMetadata . metadata
-
-
--- | (✔)
-instance GeneralCharacterMetadata (DynamicDecorationDirectOptimization d) where
-
-    {-# INLINE extractGeneralCharacterMetadata #-}
-    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . dynamicDecorationDirectOptimizationMetadata
-
-
--- | (✔)
-instance GeneralCharacterMetadata (DynamicDecorationDirectOptimizationPostOrderResult d) where
-
-    {-# INLINE extractGeneralCharacterMetadata #-}
-    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . dynamicDecorationDirectOptimizationPostOrderMetadata
-
-
--- | (✔)
-instance GeneralCharacterMetadata (DynamicDecorationImpliedAlignment d) where
-
-    {-# INLINE extractGeneralCharacterMetadata #-}
-    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . dynamicDecorationImpliedAlignmentMetadata
-
-
--- | (✔)
-instance GeneralCharacterMetadata (DynamicDecorationInitial d) where
-
-    {-# INLINE extractGeneralCharacterMetadata #-}
-    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . metadata
--}
-
 -- | (✔)
 instance (EncodableDynamicCharacter d) => DynamicCharacterDecoration (DynamicDecorationInitial d) d where
 
@@ -257,49 +152,9 @@ instance (EncodableDynamicCharacter d) => DynamicCharacterDecoration (DynamicDec
         DynamicDecorationInitial
         { dynamicDecorationInitialEncodedField           = charValue
         , dynamicDecorationInitialCharacterAverageLength = toAverageLength . toEnum $ olength charValue
---        , metadata                                       = dynamicMetadata name weight alphabet scm denseMay
         }
       where
         charValue = g symbolSet 
---        denseMay  = maybeConstructDenseTransitionCostMatrix alphabet scm
-
-
-{-
--- | (✔)
-instance HasCharacterAlphabet (DynamicDecorationDirectOptimization d) (Alphabet String) where
-
-    characterAlphabet = lens getter setter
-      where
-         getter e   = dynamicDecorationDirectOptimizationMetadata e ^. characterAlphabet
-         setter e x = e { dynamicDecorationDirectOptimizationMetadata = dynamicDecorationDirectOptimizationMetadata e &  characterAlphabet .~ x }
-
-
--- | (✔)
-instance HasCharacterAlphabet (DynamicDecorationDirectOptimizationPostOrderResult d) (Alphabet String) where
-
-    characterAlphabet = lens getter setter
-      where
-         getter e   = dynamicDecorationDirectOptimizationPostOrderMetadata e ^. characterAlphabet
-         setter e x = e { dynamicDecorationDirectOptimizationPostOrderMetadata = dynamicDecorationDirectOptimizationPostOrderMetadata e &  characterAlphabet .~ x }
-
-
--- | (✔)
-instance HasCharacterAlphabet (DynamicDecorationImpliedAlignment d) (Alphabet String) where
-
-    characterAlphabet = lens getter setter
-      where
-         getter e   = dynamicDecorationImpliedAlignmentMetadata e ^. characterAlphabet
-         setter e x = e { dynamicDecorationImpliedAlignmentMetadata = dynamicDecorationImpliedAlignmentMetadata e &  characterAlphabet .~ x }
-
-
--- | (✔)
-instance HasCharacterAlphabet (DynamicDecorationInitial d) (Alphabet String) where
-
-    characterAlphabet = lens getter setter
-      where
-         getter e   = metadata e ^. characterAlphabet
-         setter e x = e { metadata = metadata e &  characterAlphabet .~ x }
--}
 
 
 -- | (✔)
@@ -360,107 +215,6 @@ instance HasCharacterLocalCost (DynamicDecorationDirectOptimization d) Word wher
 instance HasCharacterLocalCost (DynamicDecorationDirectOptimizationPostOrderResult d) Word where
 
     characterLocalCost = lens dynamicDecorationDirectOptimizationPostOrderCharacterLocalCost (\e x -> e { dynamicDecorationDirectOptimizationPostOrderCharacterLocalCost = x })
-
-
-{-
--- | (✔)
-instance HasCharacterName (DynamicDecorationDirectOptimization d) CharacterName where
-
-    characterName = lens getter setter
-      where
-         getter e   = dynamicDecorationDirectOptimizationMetadata e ^. characterName
-         setter e x = e { dynamicDecorationDirectOptimizationMetadata = dynamicDecorationDirectOptimizationMetadata e &  characterName .~ x }
-
-
--- | (✔)
-instance HasCharacterName (DynamicDecorationDirectOptimizationPostOrderResult d) CharacterName where
-
-    characterName = lens getter setter
-      where
-         getter e   = dynamicDecorationDirectOptimizationPostOrderMetadata e ^. characterName
-         setter e x = e { dynamicDecorationDirectOptimizationPostOrderMetadata = dynamicDecorationDirectOptimizationPostOrderMetadata e &  characterName .~ x }
-
-
--- | (✔)
-instance HasCharacterName (DynamicDecorationImpliedAlignment d) CharacterName where
-
-    characterName = lens getter setter
-      where
-         getter e   = dynamicDecorationImpliedAlignmentMetadata e ^. characterName
-         setter e x = e { dynamicDecorationImpliedAlignmentMetadata = dynamicDecorationImpliedAlignmentMetadata e &  characterName .~ x }
-
-
--- | (✔)
-instance HasCharacterName (DynamicDecorationInitial d) CharacterName where
-
-    characterName = lens getter setter
-      where
-         getter e   = metadata e ^. characterName
-         setter e x = e { metadata = metadata e &  characterName .~ x }
-
-
--- | (✔)
-instance HasCharacterWeight (DynamicDecorationDirectOptimization d) Double where
-
-    characterWeight = lens getter setter
-      where
-         getter e   = dynamicDecorationDirectOptimizationMetadata e ^. characterWeight
-         setter e x = e { dynamicDecorationDirectOptimizationMetadata = dynamicDecorationDirectOptimizationMetadata e &  characterWeight .~ x }
-
-
--- | (✔)
-instance HasCharacterWeight (DynamicDecorationDirectOptimizationPostOrderResult d) Double where
-
-    characterWeight = lens getter setter
-      where
-         getter e   = dynamicDecorationDirectOptimizationPostOrderMetadata e ^. characterWeight
-         setter e x = e { dynamicDecorationDirectOptimizationPostOrderMetadata = dynamicDecorationDirectOptimizationPostOrderMetadata e &  characterWeight .~ x }
-
-
--- | (✔)
-instance HasCharacterWeight (DynamicDecorationImpliedAlignment d) Double where
-
-    characterWeight = lens getter setter
-      where
-         getter e   = dynamicDecorationImpliedAlignmentMetadata e ^. characterWeight
-         setter e x = e { dynamicDecorationImpliedAlignmentMetadata = dynamicDecorationImpliedAlignmentMetadata e &  characterWeight .~ x }
-
-
--- | (✔)
-instance HasCharacterWeight (DynamicDecorationInitial d) Double where
-
-    characterWeight = lens getter setter
-      where
-         getter e   = metadata e ^. characterWeight
-         setter e x = e { metadata = metadata e &  characterWeight .~ x }
-
-
--- | (✔)
-instance (Element d ~ c) => HasDenseTransitionCostMatrix (DynamicDecorationDirectOptimizationPostOrderResult d) (Maybe DenseTransitionCostMatrix) where
-
-    denseTransitionCostMatrix = lens getter setter
-      where
-         getter e   = dynamicDecorationDirectOptimizationPostOrderMetadata e ^. denseTransitionCostMatrix
-         setter e f = e { dynamicDecorationDirectOptimizationPostOrderMetadata = dynamicDecorationDirectOptimizationPostOrderMetadata e & denseTransitionCostMatrix .~ f }
-
-
--- | (✔)
-instance (Element d ~ c) => HasDenseTransitionCostMatrix (DynamicDecorationImpliedAlignment d) (Maybe DenseTransitionCostMatrix) where
-
-    denseTransitionCostMatrix = lens getter setter
-      where
-        getter e   = dynamicDecorationImpliedAlignmentMetadata e ^. denseTransitionCostMatrix
-        setter e f = e { dynamicDecorationImpliedAlignmentMetadata = dynamicDecorationImpliedAlignmentMetadata e & denseTransitionCostMatrix .~ f }
-
-
--- | (✔)
-instance (Element d ~ c) => HasDenseTransitionCostMatrix (DynamicDecorationInitial d) (Maybe DenseTransitionCostMatrix) where
-
-    denseTransitionCostMatrix = lens getter setter
-      where
-         getter e   = metadata e ^. denseTransitionCostMatrix
-         setter e f = e { metadata = metadata e & denseTransitionCostMatrix .~ f }
--}
 
 
 -- | (✔)
@@ -661,171 +415,6 @@ instance HasRightAlignment (DynamicDecorationDirectOptimizationPostOrderResult d
     rightAlignment = lens dynamicDecorationDirectOptimizationPostOrderRightAlignmentField (\e x -> e { dynamicDecorationDirectOptimizationPostOrderRightAlignmentField = x })
 
 
-{-
--- |
--- A 'Lens' for the 'transitionCostMatrix' field
-instance (Element d ~ c) => HasSparseTransitionCostMatrix (DynamicDecorationDirectOptimization d) MemoizedCostMatrix where
-
-    sparseTransitionCostMatrix = lens getter setter
-      where
-         getter e   = dynamicDecorationDirectOptimizationMetadata e ^. sparseTransitionCostMatrix
-         setter e f = e { dynamicDecorationDirectOptimizationMetadata = dynamicDecorationDirectOptimizationMetadata e & sparseTransitionCostMatrix .~ f }
-
-
--- |
--- A 'Lens' for the 'transitionCostMatrix' field
-instance (Element d ~ c) => HasSparseTransitionCostMatrix (DynamicDecorationDirectOptimizationPostOrderResult d) MemoizedCostMatrix where
-
-    sparseTransitionCostMatrix = lens getter setter
-      where
-         getter e   = dynamicDecorationDirectOptimizationPostOrderMetadata e ^. sparseTransitionCostMatrix
-         setter e f = e { dynamicDecorationDirectOptimizationPostOrderMetadata = dynamicDecorationDirectOptimizationPostOrderMetadata e & sparseTransitionCostMatrix .~ f }
-
-
--- | (✔)
-instance (Element d ~ c) => HasSparseTransitionCostMatrix (DynamicDecorationImpliedAlignment d) MemoizedCostMatrix where
-
-    sparseTransitionCostMatrix = lens getter setter
-      where
-         getter e   = dynamicDecorationImpliedAlignmentMetadata e ^. sparseTransitionCostMatrix
-         setter e f = e { dynamicDecorationImpliedAlignmentMetadata = dynamicDecorationImpliedAlignmentMetadata e & sparseTransitionCostMatrix .~ f }
-
-
--- |
--- A 'Lens' for the 'transitionCostMatrix' field
-instance (Element d ~ c) => HasSparseTransitionCostMatrix (DynamicDecorationInitial d) MemoizedCostMatrix where
-
-    sparseTransitionCostMatrix = lens getter setter
-      where
-         getter e   = metadata e ^. sparseTransitionCostMatrix
-         setter e f = e { metadata = metadata e & sparseTransitionCostMatrix .~ f }
-
-
--- |
--- A 'Lens' for the 'symbolicTCMGenerator' field
-instance HasSymbolChangeMatrix (DynamicDecorationDirectOptimization d) (Word -> Word -> Word) where
-
-    symbolChangeMatrix = lens getter setter
-      where
-         getter e   = dynamicDecorationDirectOptimizationMetadata e ^. symbolChangeMatrix
-         setter e f = e { dynamicDecorationDirectOptimizationMetadata = dynamicDecorationDirectOptimizationMetadata e & symbolChangeMatrix .~ f }
-
-
--- |
--- A 'Lens' for the 'symbolicTCMGenerator' field
-instance HasSymbolChangeMatrix (DynamicDecorationDirectOptimizationPostOrderResult d) (Word -> Word -> Word) where
-
-    symbolChangeMatrix = lens getter setter
-      where
-         getter e   = dynamicDecorationDirectOptimizationPostOrderMetadata e ^. symbolChangeMatrix
-         setter e f = e { dynamicDecorationDirectOptimizationPostOrderMetadata = dynamicDecorationDirectOptimizationPostOrderMetadata e & symbolChangeMatrix .~ f }
-
-
--- |
--- A 'Lens' for the 'symbolicTCMGenerator' field
-instance HasSymbolChangeMatrix (DynamicDecorationImpliedAlignment d) (Word -> Word -> Word) where
-
-    symbolChangeMatrix = lens getter setter
-      where
-         getter e   = dynamicDecorationImpliedAlignmentMetadata e ^. symbolChangeMatrix
-         setter e f = e { dynamicDecorationImpliedAlignmentMetadata = dynamicDecorationImpliedAlignmentMetadata e & symbolChangeMatrix .~ f }
-
-
--- |
--- A 'Lens' for the 'symbolicTCMGenerator' field
-instance HasSymbolChangeMatrix (DynamicDecorationInitial d) (Word -> Word -> Word) where
-
-    symbolChangeMatrix = lens getter setter
-      where
-         getter e   = metadata e ^. symbolChangeMatrix
-         setter e f = e { metadata = metadata e & symbolChangeMatrix .~ f }
-
-
--- |
--- A 'Lens' for the 'transitionCostMatrix' field
-instance (Element d ~ c) => HasTransitionCostMatrix (DynamicDecorationDirectOptimization d) (c -> c -> (c, Word)) where
-
-    transitionCostMatrix = lens getter setter
-      where
-         getter e   = dynamicDecorationDirectOptimizationMetadata e ^. transitionCostMatrix
-         setter e f = e { dynamicDecorationDirectOptimizationMetadata = dynamicDecorationDirectOptimizationMetadata e & transitionCostMatrix .~ f }
-
-
--- | (✔)
-instance (Element d ~ c) => HasDenseTransitionCostMatrix (DynamicDecorationDirectOptimization d) (Maybe DenseTransitionCostMatrix) where
-
-    denseTransitionCostMatrix = lens getter setter
-      where
-        getter e   = dynamicDecorationDirectOptimizationMetadata e ^. denseTransitionCostMatrix
-        setter e f = e { dynamicDecorationDirectOptimizationMetadata = dynamicDecorationDirectOptimizationMetadata e & denseTransitionCostMatrix .~ f }
-
-
--- |
--- A 'Lens' for the 'transitionCostMatrix' field
-instance (Element d ~ c) => HasTransitionCostMatrix (DynamicDecorationDirectOptimizationPostOrderResult d) (c -> c -> (c, Word)) where
-
-    transitionCostMatrix = lens getter setter
-      where
-         getter e   = dynamicDecorationDirectOptimizationPostOrderMetadata e ^. transitionCostMatrix
-         setter e f = e { dynamicDecorationDirectOptimizationPostOrderMetadata = dynamicDecorationDirectOptimizationPostOrderMetadata e & transitionCostMatrix .~ f }
-
-
--- |
--- A 'Lens' for the 'transitionCostMatrix' field
-instance (Element d ~ c) => HasTransitionCostMatrix (DynamicDecorationImpliedAlignment d) (c -> c -> (c, Word)) where
-
-    transitionCostMatrix = lens getter setter
-      where
-         getter e   = dynamicDecorationImpliedAlignmentMetadata e ^. transitionCostMatrix
-         setter e f = e { dynamicDecorationImpliedAlignmentMetadata = dynamicDecorationImpliedAlignmentMetadata e & transitionCostMatrix .~ f }
-
-
--- |
--- A 'Lens' for the 'transitionCostMatrix' field
-instance (Element d ~ c) => HasTransitionCostMatrix (DynamicDecorationInitial d) (c -> c -> (c, Word)) where
-
-    transitionCostMatrix = lens getter setter
-      where
-         getter e   = metadata e ^. transitionCostMatrix
-         setter e f = e { metadata = metadata e & transitionCostMatrix .~ f }
-
-
--- | (✔)
-instance HasTraversalFoci (DynamicDecorationDirectOptimization c) (Maybe TraversalFoci) where
-
-    traversalFoci = lens getter setter
-      where
-         getter e   = dynamicDecorationDirectOptimizationMetadata e ^. traversalFoci
-         setter e x = e { dynamicDecorationDirectOptimizationMetadata = dynamicDecorationDirectOptimizationMetadata e &  traversalFoci .~ x }
-
-
--- | (✔)
-instance HasTraversalFoci (DynamicDecorationDirectOptimizationPostOrderResult c) (Maybe TraversalFoci) where
-
-    traversalFoci = lens getter setter
-      where
-         getter e   = dynamicDecorationDirectOptimizationPostOrderMetadata e ^. traversalFoci
-         setter e x = e { dynamicDecorationDirectOptimizationPostOrderMetadata = dynamicDecorationDirectOptimizationPostOrderMetadata e &  traversalFoci .~ x }
-
-
--- | (✔)
-instance HasTraversalFoci (DynamicDecorationImpliedAlignment c) (Maybe TraversalFoci) where
-
-    traversalFoci = lens getter setter
-      where
-         getter e   = dynamicDecorationImpliedAlignmentMetadata e ^. traversalFoci
-         setter e x = e { dynamicDecorationImpliedAlignmentMetadata = dynamicDecorationImpliedAlignmentMetadata e &  traversalFoci .~ x }
-
-
--- | (✔)
-instance HasTraversalFoci (DynamicDecorationInitial c) (Maybe TraversalFoci) where
-
-    traversalFoci = lens getter setter
-      where
-         getter e   = metadata e ^. traversalFoci
-         setter e x = e { metadata = metadata e &  traversalFoci .~ x }
--}
-
 -- | (✔)
 instance EncodableDynamicCharacter d => ImpliedAlignmentDecoration   (DynamicDecorationImpliedAlignment d) d where
 
@@ -846,16 +435,14 @@ instance EncodableDynamicCharacter d => PostOrderExtensionDirectOptimizationDeco
         , dynamicDecorationDirectOptimizationPreliminaryUngappedField = subDecoration ^. preliminaryUngapped
         , dynamicDecorationDirectOptimizationLeftAlignmentField       = subDecoration ^. leftAlignment
         , dynamicDecorationDirectOptimizationRightAlignmentField      = subDecoration ^. rightAlignment
---        , dynamicDecorationDirectOptimizationMetadata                 = extractDynamicCharacterMetadata subDecoration
         }
 
 
 -- | (✔)
 instance (EncodableStream d, Show d) => Show (DynamicDecorationDirectOptimization d) where
 
-    show dec = {- (shownFoci <>) . unlines . (shownAlphabet:) . -} unlines . (shownCost:) $ f <$> pairs
+    show dec = unlines . (shownCost:) $ f <$> pairs
       where
---        (shownAlphabet, shownCost, shownFoci) = renderingDecorationContext dec
         shownCost = renderCost dec
 
         f (prefix, accessor) = prefix <> show (dec ^. accessor)
@@ -875,9 +462,8 @@ instance (EncodableStream d, Show d) => Show (DynamicDecorationDirectOptimizatio
 -- | (✔)
 instance (EncodableStream d, Show d) => Show (DynamicDecorationDirectOptimizationPostOrderResult d) where
 
-    show dec = {- (shownFoci <>) . unlines . (shownAlphabet:) . -} unlines . (shownCost:) $ f <$> pairs
+    show dec = unlines . (shownCost:) $ f <$> pairs
       where
---        (shownAlphabet, shownCost, shownFoci) = renderingDecorationContext dec
         shownCost = renderCost dec
 
         f (prefix, accessor) = prefix <> show (dec ^. accessor)
@@ -903,7 +489,6 @@ instance ( EncodableStreamElement (Element d)
       | otherwise           = ofoldMap show character
       where
         character = dec ^. encoded
---        alphabet  = dec ^. characterAlphabet
 
 
 -- | (✔)
@@ -935,7 +520,6 @@ instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostOrderDecoratio
         , dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField = ungapped
         , dynamicDecorationDirectOptimizationPostOrderLeftAlignmentField       = lhsAlignment
         , dynamicDecorationDirectOptimizationPostOrderRightAlignmentField      = rhsAlignment
---        , dynamicDecorationDirectOptimizationPostOrderMetadata                 = extractDynamicCharacterMetadata subDecoration
         }
 
 
@@ -945,7 +529,6 @@ instance (EncodableStream d, Show d) => ToXML (DynamicDecorationDirectOptimizati
     toXML decoration = xmlElement "Dynamic_DO_pre-order_decoration_result" attributes contents
         where
             attributes = []
-            -- f (prefix, accessor) = prefix <> showStream (dec ^. characterAlphabet) (dec ^. accessor)
             contents   = [ Left ("Local_cost"               , show (decoration ^. characterLocalCost) )
                          , Left ("Original_encoding"        , show (decoration ^. encoded)            )
                          , Left ("Preliminary_gapped_char"  , show (decoration ^. preliminaryGapped)  )
@@ -953,7 +536,6 @@ instance (EncodableStream d, Show d) => ToXML (DynamicDecorationDirectOptimizati
                          , Left ("Final_gapped_char"        , show (decoration ^. finalGapped)        )
                          , Left ("Final_ungapped_char"      , show (decoration ^. finalUngapped)      )
                          ]
---            alph = decoration ^. characterAlphabet
 
 
 -- | (✔)
@@ -967,7 +549,6 @@ instance (EncodableStream d, Show d) => ToXML (DynamicDecorationDirectOptimizati
                          , Left ("Preliminary_gapped_char"  , show (decoration ^. preliminaryGapped)  )
                          , Left ("Preliminary_ungapped_char", show (decoration ^. preliminaryUngapped))
                          ]
---            alph = decoration ^. characterAlphabet
 
 
 -- |
@@ -979,8 +560,6 @@ renderFoci foci = prefix <> body <> "\n"
     body     = sconcat . intersperse "\n" $ fmap g foci
     g (e,te) = "  Traversal Focus Edge: " <> show e <> " with network edges in topology: " <> show (toList $ includedNetworkEdges te)
 
-
--- renderingContext :: 
 
 -- |
 -- Generic rendering function for a dynamic character decoration with descriptive
@@ -999,8 +578,6 @@ renderingDecorationContext dec = (shownAlphabet, shownCost, shownFoci)
     shownAlphabet = show $ dec ^. characterAlphabet
 
     shownFoci = maybe "No Foci exist\n" renderFoci $ dec ^. traversalFoci
-
---    shownFoci = show . fmap renderFoci $ dec ^. traversalFoci
 
     shownCost = unwords
         [ "Cost                 :"

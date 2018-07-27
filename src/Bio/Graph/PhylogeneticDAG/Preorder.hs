@@ -36,25 +36,19 @@ import           Control.Monad.State.Lazy
 import           Data.Bifunctor
 import           Data.Foldable
 import           Data.HashMap.Lazy            (HashMap)
---import           Data.IntMap                  (IntMap)
 import qualified Data.IntMap           as IM
 import qualified Data.IntSet           as IS
 import           Data.Key
 import           Data.List.NonEmpty           (NonEmpty( (:|) ))
 import qualified Data.List.NonEmpty    as NE
---import           Data.Map                     (Map)
---import qualified Data.Map              as M
---import           Data.Matrix.NotStupid        (Matrix)
 import qualified Data.Matrix.NotStupid as MAT
 import           Data.Maybe
 import           Data.MonoTraversable
 import           Data.Ord                     (comparing)
 import           Data.Semigroup
---import           Data.Semigroup.Foldable
 import           Data.TopologyRepresentation
 import           Data.Vector                  (Vector)
 import qualified Data.Vector           as VE
---import qualified Data.Vector.NonEmpty  as VNE
 import           Data.Vector.Instances        ()
 import           Prelude               hiding (lookup, zip, zipWith)
 
@@ -76,9 +70,7 @@ type ParentalContext u v w x y z = NonEmpty (TraversalTopology, Word, Maybe (BLK
 --
 -- *The better version.*
 preorderSequence''
-  :: ( HasBlockCost u  v  w  x  y  z
---     , HasBlockCost u' v' w' x' y' z' Word Double
-     )
+  :: HasBlockCost u  v  w  x  y  z
   => (ContinuousCharacterMetadataDec        -> u -> [(Word, u')] -> u')
   -> (DiscreteCharacterMetadataDec          -> v -> [(Word, v')] -> v')
   -> (DiscreteCharacterMetadataDec          -> w -> [(Word, w')] -> w')
@@ -101,12 +93,11 @@ preorderSequence'' f1 f2 f3 f4 f5 f6 pdag@(PDAG2 dag meta) = PDAG2 (newDAG dag) 
     sequenceOfBlockMinimumTopologies :: BlockTopologies
     sequenceOfBlockMinimumTopologies = getSequenceOfBlockMinimumTopologies pdag
 
---    memo :: Vector (PhylogeneticNode2 (CharacterSequence u' v' w' x' y' z') n)
-
     -- Here we generate a memoized vector of the updated node decorations from
     -- the pre-order traversal. This memoization technique relies on lazy
     -- evaluation to compute the data for each vector index in the correct order
     -- of dependancy with the root node(s) as the base case(es).
+--  memo :: Vector (PhylogeneticNode2 (CharacterSequence u' v' w' x' y' z') n)
     memo = VE.generate dagSize g
       where
 
@@ -211,9 +202,7 @@ getSequenceOfBlockMinimumTopologies (PDAG2 dag meta) = getTopologies blockMinima
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
 preorderSequence'
-  :: ( HasBlockCost u  v  w  x  y  z
---     , HasBlockCost u' v' w' x' y' z' Word Double
-     )
+  :: HasBlockCost u  v  w  x  y  z
   => (u -> [(Word, u')] -> u')
   -> (v -> [(Word, v')] -> v')
   -> (w -> [(Word, w')] -> w')
@@ -233,7 +222,7 @@ preorderSequence' f1 f2 f3 f4 f5 f6 pdag@(PDAG2 dag m) = PDAG2 (newDAG dag) m
     sequenceOfBlockMinimumTopologies :: BlockTopologies
     sequenceOfBlockMinimumTopologies = getSequenceOfBlockMinimumTopologies pdag
 
---    memo :: Vector (BlockTopologies, PhylogeneticNode2 n (CharacterSequence u' v' w' x' y' z'))
+--  memo :: Vector (BlockTopologies, PhylogeneticNode2 n (CharacterSequence u' v' w' x' y' z'))
     memo = VE.generate dagSize g
       where
         g i = (inheritedToplogies,
@@ -251,22 +240,9 @@ preorderSequence' f1 f2 f3 f4 f5 f6 pdag@(PDAG2 dag m) = PDAG2 (newDAG dag) m
                 let newSequence = computeOnApplicableResolution f1 f2 f3 f4 f5 f6 parentalToplogies datumResolutions parentalResolutions
                 in  (parentalToplogies, mockResInfo datumResolutions newSequence)
 
---            completeCoverage = (completeLeafSet ==) . (completeLeafSet .&.) . leafSetRepresentation
---            localResolutions = liftA2 (generateLocalResolutions f1 f2 f3 f4 f5 f6') datumResolutions childResolutions
---            completeLeafSet  = complement $ wlog `xor`wlog
---              where
---                wlog = leafSetRepresentation $ NE.head localResolutions
-
             datumResolutions = resolutions $ nodeDecoration node
 
---            childResolutions :: NonEmpty [a]
---            childResolutions = applySoftwireResolutions $ extractResolutionContext <$> childIndices
---            extractResolutionContext = getResolutions &&& parentRefs . (references dag !)
---            getResolutions j = fmap (addEdgeToEdgeSet (i,j)) . resolutions $ memo ! j
-
-
             node            = references dag ! i
---            childIndices    = IM.keys $ childRefs node
             parentIndices   = otoList $ parentRefs node
             -- In sparsely connected graphs (like ours) this will be effectively constant.
             childPosition j = toEnum . length . takeWhile (/=i) . IM.keys . childRefs $ references dag ! j
@@ -317,51 +293,17 @@ computeOnApplicableResolution'' f1 f2 f3 f4 f5 f6 meta parentalContexts currentR
         h :: a -> [(Word, b)]
         h = const []
 
-
-{-
-     -- We can't use this below because the monomorphism restriction is quite dumb at deduction.
-     -- getBlock = (! key) . toBlocks . characterSequence
-        currentBlock = ((! key) . toBlocks . characterSequence) $ selectApplicableResolutions es currentResolutions
-        parentBlocks =
-            case second ((! key) . toBlocks . characterSequence) <$> parentalResolutions of
-              []   -> let c = const []
-                      in  BLK.hexmap c c c c c c currentBlock
-              x:xs -> let
-                  -- We can't use this below because the monomorphism restriction is quite dumb at deduction.
-                  --      f   = zip (fst <$> (x:xs))
-                          val = snd <$> x:xs
-                          trs = BLK.hexTranspose val
-                      in  BLK.hexmap
-                            (zip (fst <$> (x:xs)))
-                            (zip (fst <$> (x:xs)))
-                            (zip (fst <$> (x:xs)))
-                            (zip (fst <$> (x:xs)))
-                            (zip (fst <$> (x:xs)))
-                            (zip (fst <$> (x:xs)))
-                              trs
--}
-
-{--}
     selectChildBlockByTopology
-              :: ResolutionCache (CharacterSequence u v w x y z) -- NonEmpty (Int, PhylogeneticNode2 (CharacterSequence u v w x y z) n)
+              :: ResolutionCache (CharacterSequence u v w x y z)
               -> Int
               -> TraversalTopology
               -> BLK.CharacterBlock u v w x y z
     selectChildBlockByTopology childOptions key topology =
             case NE.filter matchesTopology childOptions of
               x:_ -> toBlocks (characterSequence x) ! key
---              []  -> error "No Matching topology in the child!!!!!"
               []  -> toBlocks (characterSequence $ NE.head childOptions) ! key
-{-
-                     error $ unlines
-                         [ unwords ["No matching CHILD topology for Block", show key, "on Node", show nodeRef]
-                         , "And this was the problem topology we were resolving: " <> show topology
-                         , "And these were our CHILD resolutions: " <> show (topologyRepresentation <$> childOptions)
-                         ]
--}
           where
             matchesTopology = (`isCompatableWithTopology` topology) . topologyRepresentation
-{--}
 
 
 computeOnApplicableResolution
@@ -380,8 +322,7 @@ computeOnApplicableResolution f1 f2 f3 f4 f5 f6 topologies currentResolutions pa
   where
     g key es = BLK.hexZipWith f1 f2 f3 f4 f5 f6 currentBlock parentBlocks
       where
-     -- We can't use this below because the monomorphism restriction is quite dumb at deduction.
-     -- getBlock = (! key) . toBlocks . characterSequence
+        -- We can't use this below because the monomorphism restriction is quite dumb at deduction.
         currentBlock = ((! key) . toBlocks . characterSequence) $ selectApplicableResolutions es currentResolutions
         parentBlocks =
             case second ((! key) . toBlocks . characterSequence) <$> parentalResolutions of
@@ -389,7 +330,6 @@ computeOnApplicableResolution f1 f2 f3 f4 f5 f6 topologies currentResolutions pa
                       in  BLK.hexmap c c c c c c currentBlock
               x:xs -> let
                   -- We can't use this below because the monomorphism restriction is quite dumb at deduction.
-                  --      f   = zip (fst <$> (x:xs))
                           val = snd <$> x:xs
                           trs = BLK.hexTranspose val
                       in  BLK.hexmap
@@ -430,8 +370,7 @@ data  PreorderContext c
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
 preorderFromRooting''
-  :: {- HasTraversalFoci z' (Maybe TraversalFoci)
-  => -} (DynamicCharacterMetadataDec d -> z -> [(Word, z')] -> z')
+  :: (DynamicCharacterMetadataDec d -> z -> [(Word, z')] -> z')
   ->         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
   -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
   -> NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge))
@@ -460,18 +399,12 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
     nodeCount  = length refs
     blockCount = length . toBlocks . characterSequence . NE.head . resolutions . nodeDecoration $ refs ! NE.head (rootRefs dag)
 
---    getCache = resolutions . nodeDecoration . (refs !)
-
     getDynCharSeq = fmap dynamicCharacters . toBlockVector . characterSequence
 
---    rootResolutions = getCache <$> rootRefs dag
-
---    getAdjacentNodes i | trace ("In getAdjacentNodes("<> show i <>")") False  = undefined
     getAdjacentNodes i = foldMap f $ otoList ns
       where
---        f j | trace ("In getAdjacentNodes.f ("<> show j <>")") False  = undefined
         f j
-          | j `oelem` rootSet = [j] -- toList . headMay . filter (/=i) . IM.keys . childRefs $ refs ! j
+          | j `oelem` rootSet = [j]
           | otherwise         = [j]
         v  = refs ! i
         ns = ps <> cs
@@ -573,32 +506,14 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
                     excludedEdges = excludedNetworkEdges topology
                     updatedDynamicCharacters = zipWithKey dynCharGen (getDynamicMetadata mBlock) $ dynamicCharacters cBlock
 
-{-
-                    dynCharGen k _ | trace renderedIndexingContext False = undefined
-                      where
-                        renderedIndexingContext = unlines [ unwords [ "Preorder - Node", show i, "Block", show j, "DynChar", show k]
-                                                          , renderedcontextualNodeDatum
-                                                          , renderedminTopologyContextPerBlock
-                                                          ]
-                        renderedcontextualNodeDatum = unlines $ foldMapWithKey zeta contextualNodeDatum
-                          where
-                            zeta k = pure . ((show k <> ": ") <>) . show . foldMapWithKey (\x v -> [unwords [show x, ":", show (length v)]])
-
-                        renderedminTopologyContextPerBlock = unlines $ foldMapWithKey zeta minTopologyContextPerBlock
-                          where
-                            zeta k = pure . ((show k <> ": ") <>) . show
--}
-
                     dynCharGen k m _ =
                         case parentRefContext of
---                          SetRootNode  p   -> updateDynCharWithFoci . getDynCharDecoration . NE.head . resolutions $ memo ! p
-                          SetRootNode  x -> {- updateDynCharWithFoci $ -} transformation m x []
+                          SetRootNode  x -> transformation m x []
                           FociEdgeNode p x ->
                             let currentContext     = selectApplicableResolutions topology $ (contextualNodeDatum .!>. i) .!>. (p,i)
                                 currentDecoration  = (!k) . dynamicCharacters . (!j) . toBlockVector . characterSequence $ currentContext
---                                currentDecoration  = getDynCharDecoration currentContext
                                 parentalDecoration = transformation m x []
-                            in  {- updateDynCharWithFoci $ -} transformation m currentDecoration [(0, parentalDecoration)]
+                            in  transformation m currentDecoration [(0, parentalDecoration)]
                           NormalNode   p   ->
                             let isDeadEndNode = -- This only checks one edge away, probably should be transitive.
                                   case kids of
@@ -609,12 +524,11 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
                                 parentalDecoration = getDynCharDecoration . NE.head . resolutions $ memo ! p
                             in  if   isDeadEndNode
                                 then parentalDecoration
-                                else {- updateDynCharWithFoci $ -} transformation m currentDecoration [(0, parentalDecoration)]
+                                else transformation m currentDecoration [(0, parentalDecoration)]
                       where
                         parentRefContext     = (parentVectors ! (i,j)) ! k
                         -- Stupid monomorphisms prevent elegant code reuse
                         getDynCharDecoration = (!k) . dynamicCharacters . (!j) . toBlockVector . characterSequence
---                        updateDynCharWithFoci dec = dec & traversalFoci .~ charFoci
                         charFoci = Just $ (\x -> (x, topology)) <$> rootingEdges
                         rootingEdges = minEdgesVector ! k
 
@@ -650,8 +564,6 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag meta) = PDA
               <*> parentRefs
               <*> childRefs
               $ references dag ! i
-
---    (edgeCostMapping, contextualNodeDatum) = graphMetadata $ graphData dag
 
     applyNewDynamicCharacters dynCharSeq oldNode = oldNode { resolutions = pure newResolution }
       where
@@ -721,21 +633,18 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag meta) = PDA
           where
             getBlock           = (! key) . toBlocks . characterSequence
             extractedBlockCost = blockCost (M.toBlocks meta ! key) . getBlock
---            grabTraversalFoci :: HasTraversalFoci z TraversalFoci => ResolutionInformation (CharacterSequence u v w x y z) -> Vector (Int, Int)
             grabTraversalFoci  = fmap (fst . NE.head . fromJust . (^. traversalFoci)) . dynamicCharacters . getBlock
 
 
     rootWLOG = NE.head $ rootRefs dag
 
---    fociWLOG = sequenceOfBlockMinimumTopologies
-
---    applyMetadata :: NonEmpty (Vector z') -> NonEmpty (Vector z')
+--  applyMetadata :: NonEmpty (Vector z') -> NonEmpty (Vector z')
     applyMetadata = zipWith g sequenceOfBlockMinimumTopologies
       where
         g (topo, foci) = zipWith h foci
           where
             h focus dec = dec & traversalFoci ?~ pure (focus, topo)
---    memo :: Vector (NonEmpty (Vector z'))
+--  memo :: Vector (NonEmpty (Vector z'))
     memo = VE.generate dagSize generateDatum
       where
         generateDatum i
@@ -743,23 +652,8 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag meta) = PDA
           | otherwise                = applyMetadata $ memo ! adjacentIndex
           where
             adjacentIndex = head . IM.keys . childRefs $ references dag ! i
-{-
-            (inheritedToplogies, newResolution)
-              | i `elem` rootRefs dag =
-                let newSequence = computeOnApplicableResolution id2 id2 id2 id2 id2 f sequenceOfBlockMinimumTopologies datumResolutions []
-                in (sequenceOfBlockMinimumTopologies, mockResInfo datumResolutions newSequence)
-              | otherwise             =
-                let newSequence = computeOnApplicableResolution id2 id2 id2 id2 id2 f parentalToplogies datumResolutions parentalResolutions
-                in  (parentalToplogies, mockResInfo datumResolutions newSequence)
 
---            completeCoverage = (completeLeafSet ==) . (completeLeafSet .&.) . leafSetRepresentation
---            localResolutions = liftA2 (generateLocalResolutions f1 f2 f3 f4 f5 f6') datumResolutions childResolutions
---            completeLeafSet  = complement $ wlog `xor` wlog
---              where
---                wlog = leafSetRepresentation $ NE.head localResolutions
--}
-
---            parentCharSeqOnlyDynChars :: NonEmpty (Vector [a])
+--          parentCharSeqOnlyDynChars :: NonEmpty (Vector [a])
             parentCharSeqOnlyDynChars = mapWithKey g parentVectors
               where
                 g k = mapWithKey h
@@ -789,34 +683,9 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag meta) = PDA
                       where
                         directedResolutions = --(contextualNodeDatum ! i) ! (trace (unwords ["\nkey:",show i,"sub-key:",show (p,i),"\nmapping sub-keys:",show (M.keys $ contextualNodeDatum ! i)])) (p,i)
                                                (contextualNodeDatum .!>. i) .!>. (p,i)
-{-
-                            case i `lookup` contextualNodeDatum of
-                              Nothing -> error $ "Couldn't find: " <> show i
-                              Just z  ->
-                                case (i, p) `lookup` z of
-                                  Nothing -> error $ "Couldn't find: " <> show (i, p) <> " in: " <> show (M.keys z)
-                                  Just a  -> a
--}
                         p = case x ! i of
                               Right (n,_) -> n
                               Left  n     -> n
-
-
---            childResolutions :: NonEmpty [a]
---            childResolutions = applySoftwireResolutions $ extractResolutionContext <$> childIndices
---            extractResolutionContext = getResolutions &&& parentRefs . (references dag !)
---            getResolutions j = fmap (addEdgeToEdgeSet (i,j)) . resolutions $ memo ! j
-
-{-
-            node            = references dag ! i
---            childIndices    = IM.keys $ childRefs node
-            parentIndices   = otoList $ parentRefs node
-            -- In sparsely connected graphs (like ours) this will be effectively constant.
-            childPosition j = toEnum . length . takeWhile (/=i) . IM.keys . childRefs $ references dag ! j
-            parentContexts  = (\x -> second (const (childPosition x) &&& NE.head . resolutions) $ memo ! x) <$> parentIndices
-            parentalResolutions = snd <$> parentContexts
-            parentalToplogies   = fst $ head parentContexts
--}
 
 
 (.!>.) :: (Lookup f, Show (Key f)) => f a -> Key f -> a

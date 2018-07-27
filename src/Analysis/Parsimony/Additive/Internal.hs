@@ -30,10 +30,6 @@ import Control.Lens
 import Data.List.NonEmpty (NonEmpty( (:|) ))
 import Data.Range
 import Numeric.Extended
--- import Text.XML.Custom
--- import Text.XML.Light
-
--- import Debug.Trace
 
 {-
   TODO: Add these trees to the new test suite
@@ -109,11 +105,7 @@ import Numeric.Extended
 -- Used on the post-order (i.e. first) traversal.
 -- Applies appropriate logic to internal node and leaf node cases.
 additivePostOrder
-  :: (-- DiscreteCharacterMetadata d
-       RangedCharacterDecoration d  c
---     , ToXML                     d
---     , ToXML                     d'
---     , DiscreteCharacterMetadata d'
+  :: ( RangedCharacterDecoration d  c
      , RangedExtensionPostorder  d' c
      )
   => d
@@ -131,10 +123,7 @@ additivePostOrder parentDecoration xs =
 --
 -- Used on the post-order pass.
 initializeLeaf
-  :: (-- DiscreteCharacterMetadata d
-       RangedCharacterDecoration d  c
---     , ToXML                     d'
---     , RangedCharacterDecoration d' c
+  :: ( RangedCharacterDecoration d  c
      , RangedExtensionPostorder  d' c
      )
   => d
@@ -155,10 +144,7 @@ initializeLeaf curDecoration = finalDecoration
 --
 -- Used on the postorder pass.
 updatePostOrder
-  :: (-- DiscreteCharacterMetadata d
-       RangedCharacterDecoration d c
---     , ToXML                     d'
---     , DiscreteCharacterMetadata d'
+  :: ( RangedCharacterDecoration d c
      , RangedExtensionPostorder  d' c
      )
   => d
@@ -186,16 +172,8 @@ updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) = finalDecoration
 -- Used on the pre-order (i.e. second) traversal.
 -- Applies appropriate logic to root node, internal node, and leaf node cases.
 additivePreOrder
-  :: (-- Ranged c
---     , Eq (Range (Bound c))
---     , Num (Bound c)
---       Ord (Bound c)
---       DiscreteCharacterMetadata d
-       RangedExtensionPostorder  d  c
---     , ToXML                     d'
---     , RangedExtensionPostorder  d' c
+  :: ( RangedExtensionPostorder  d  c
      , RangedExtensionPreorder   d' c
---     , RangedCharacterDecoration d' c
      )
   => d
   -> [(Word, d')]
@@ -211,7 +189,6 @@ additivePreOrder childDecoration ((_, parentDecoration):_)
 -- Set the preliminary interval as the final interval of the leaf decoration.
 finalizeLeaf
   :: ( RangedExtensionPreorder   d' c
---     , DiscreteCharacterMetadata d
      , RangedPostorderDecoration d  c
      )
   => d
@@ -236,10 +213,7 @@ finalizeLeaf decoration = finalDecoration
 --
 -- Used on the pre-order pass.
 determineFinalState
-  :: (-- Ranged c
---     , Num (Bound c)
-       Ord (Bound c)
---     , DiscreteCharacterMetadata    d
+  :: ( Ord (Bound c)
      , RangedExtensionPostorder     d  c
      , RangedDecorationOptimization d' c
      ) 

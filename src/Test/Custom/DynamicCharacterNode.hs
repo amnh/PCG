@@ -34,7 +34,6 @@ import           Data.MonoTraversable
 import           Data.String
 import           Test.Custom.NucleotideSequence
 import           Test.QuickCheck
---import           Text.XML.Custom
 
 
 -- |
@@ -69,8 +68,6 @@ constructNode lhs rhs = directOptimizationPreOrder pairwiseFunction defMetadata 
 
 toLeafNode :: ( Ord (Element c)
               , SimpleDynamicDecoration d c
---              , Show (Element c)
---              , Show c
               )
            => d -> DynamicDecorationDirectOptimizationPostOrderResult c
 toLeafNode c = directOptimizationPostOrder pairwiseFunction c []

@@ -24,7 +24,6 @@ import Data.Vector            (Vector)
 import Data.Vector.Instances  ()
 import GHC.Generics
 import Text.XML
--- import Text.XML.Light.Types
 
 
 -- |

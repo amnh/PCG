@@ -16,14 +16,10 @@
 
 module Bio.Graph.PhylogeneticDAG.Reification
   ( reifiedSolution
---  , reifiedToCharacterDAG
---  , reifiedToCharacterDAG
---  , reifyForest
   ) where
 
 import           Bio.Graph.Constructions
 import           Bio.Graph.Node
--- import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Graph.Solution
 import           Control.Applicative
@@ -45,14 +41,6 @@ import qualified Data.Vector        as V
 import           Prelude            hiding (zipWith)
 
 -- import Debug.Trace
-
-
--- |
--- Reifies a solution, performing several initialization functions on each DAG
--- before its cost can be calculated.
-
---reifiedSolution :: PhylogeneticSolution UnReifiedCharacterDAG -> CharacterResult
---reifiedSolution  = PhylogeneticSolution . fmap (fmap reifiedToCharacterDAG) . phylogeneticForests
 
 
 -- |
@@ -132,7 +120,7 @@ reifyDAGWithContext leafCount maskDAG (PDAG m dag) = PDAG2 newDAG m
 
     memo = V.generate dagSize g
       where
-        g i = newNode -- IndexData <$> const newNode <*> parentRefs <*> childRefs $ indexData
+        g i = newNode
           where
             indexData = references dag ! i
             newNode =

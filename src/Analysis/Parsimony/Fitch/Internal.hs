@@ -77,7 +77,6 @@ updatePostOrder _parentDecoration (leftChildDec:|rightChildDec:_) =
       False
   where
     -- fold over states of character. This is Fitch so final cost is either 0 or 1.
-    -- (median, parentCost) = foldlWithKey f initializedAcc [0..length (leftChildDec ^. characterAlphabet) - 1]
     (median, parentCost)
       | popCount union > 0 = (union, 0)
       | otherwise          = (intersection,  1)
@@ -95,7 +94,6 @@ initializeLeaf :: DiscreteCharacterDecoration d c => d -> FitchOptimizationDecor
 initializeLeaf leafDecoration =
     extendDiscreteToFitch leafDecoration 0 leafChar emptyChar (emptyChar, emptyChar) True
   where
-    --label     = leafDecoration ^. discreteCharacter -- can skip this now, because it's set in post order
     emptyChar = emptyStatic leafChar
     leafChar  = leafDecoration ^. discreteCharacter
 

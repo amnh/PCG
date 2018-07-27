@@ -43,7 +43,6 @@ data FitchOptimizationDecoration f
                                                       --     pass with all of Fitch's rules
    , fitchIsLeaf            :: !Bool                  -- need this in preorder
    , fitchCharacterField    :: !f
---   , fitchMetadataField     :: {-# UNPACK #-} !DiscreteCharacterMetadataDec
    } deriving (Generic)
 
 
@@ -51,12 +50,9 @@ data FitchOptimizationDecoration f
 instance (Bits c, Show c) => Show (FitchOptimizationDecoration c) where
 
     show c = unlines
-        [ {- "Cost = " <> show (fitchMinCost c)
-        , "Is Leaf Node?      : " <> show (fitchIsLeaf c)
-        , -} "Discrete Character : " <> showStatic (fitchCharacterField     c)
+        [ "Discrete Character : " <> showStatic (fitchCharacterField     c)
         , "Preliminary Median : "    <> showStatic (fitchPreliminaryMedian  c)
         , "Final       Median : "    <> showStatic (fitchFinalMedian        c)
-        -- , mconcat ["Child       Medians: ( ", (showStatic . fst . fitchChildMedians) c, " , ", (showStatic . snd . fitchChildMedians) c, " )"]
         ]
       where
         showStatic x
@@ -68,56 +64,6 @@ instance (Bits c, Show c) => Show (FitchOptimizationDecoration c) where
 instance HasDiscreteCharacter (FitchOptimizationDecoration f) f where
 
     discreteCharacter = lens fitchCharacterField (\e x -> e { fitchCharacterField = x })
-
-
-{-
--- | (✔)
-instance HasCharacterAlphabet (FitchOptimizationDecoration f) (Alphabet String) where
-
-    characterAlphabet = lens getter setter
-      where
-         getter e   = fitchMetadataField e ^. characterAlphabet
-         setter e x = e { fitchMetadataField = fitchMetadataField e &  characterAlphabet .~ x }
-
-
--- | (✔)
-instance HasCharacterName (FitchOptimizationDecoration f) CharacterName where
-
-    characterName = lens getter setter
-      where
-         getter e   = fitchMetadataField e ^. characterName
-         setter e x = e { fitchMetadataField = fitchMetadataField e &  characterName .~ x }
-
-
--- |
--- A 'Lens' for the 'symbolChangeMatrix' field
-instance HasSymbolChangeMatrix (FitchOptimizationDecoration f) (Word -> Word -> Word) where
-
-    symbolChangeMatrix = lens getter setter
-      where
-         getter = const $ \i j -> if i == j then 0 else 1
-         setter = const
-
-
--- |
--- A 'Lens' for the 'transitionCostMatrix' field
-instance HasTransitionCostMatrix (FitchOptimizationDecoration f) (f -> f -> (f, Word)) where
-
-    -- NOTE: This probably isn't sound
-    transitionCostMatrix = lens getter setter
-      where
-        getter = error "Please don't use lens accessor operations over 'transitionCostMatrix' on a FitchOptimizationDecoration."
-        setter = const
-
-
--- | (✔)
-instance HasCharacterWeight (FitchOptimizationDecoration f) Double where
-
-    characterWeight = lens getter setter
-      where
-         getter e   = fitchMetadataField e ^. characterWeight
-         setter e x = e { fitchMetadataField = fitchMetadataField e &  characterWeight .~ x }
--}
 
 
 -- | (✔)
@@ -150,24 +96,6 @@ instance HasFinalMedian (FitchOptimizationDecoration f) f where
     finalMedian = lens fitchFinalMedian (\e x -> e { fitchFinalMedian = x })
 
 
-{-
--- | (✔)
-instance GeneralCharacterMetadata (FitchOptimizationDecoration f) where
-
-    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . fitchMetadataField
-
-
--- | (✔)
-instance DiscreteCharacterMetadata (FitchOptimizationDecoration f) where
-
-    extractDiscreteCharacterMetadata = fitchMetadataField
-
-
--- | (✔)
-instance EncodableStaticCharacter f => DiscreteWithTcmCharacterMetadata (FitchOptimizationDecoration f) f
--}
-
-
 -- | (✔)
 instance EncodableStaticCharacter f => DiscreteCharacterDecoration (FitchOptimizationDecoration f) f where
 
@@ -189,23 +117,10 @@ instance EncodableStaticCharacter f => DiscreteExtensionFitchDecoration (FitchOp
         { fitchChildMedians      = childMedianTup
         , fitchIsLeaf            = isLeafVal
         , fitchMinCost           = cost
---        , fitchMetadataField     = metadataValue
         , fitchPreliminaryMedian = prelimMedian
         , fitchFinalMedian       = finMedian
         , fitchCharacterField    = subDecoration ^. discreteCharacter
         }
-{-        
-      where
-        alphabetValue = subDecoration ^. characterAlphabet
---        tcmValue      = generate (length alphabetValue) (uncurry $ subDecoration ^. characterSymbolTransitionCostMatrixGenerator)
-        metadataValue =
-          discreteMetadata
-            <$> (^. characterName)
-            <*> (^. characterWeight)
-            <*> const alphabetValue
---            <*> const tcmValue
-            $ subDecoration
--}
 
 
 -- | (✔)

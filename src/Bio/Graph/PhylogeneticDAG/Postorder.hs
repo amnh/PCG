@@ -60,14 +60,6 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag m) = PDAG2 (newDAG dag) m
       where
         f acc = (acc .|.) . leafSetRepresentation . NE.head . resolutions
     
-{-    
-    newDAG
-      :: ReferenceDAG d e x
-      -> ReferenceDAG
-           d
-           e
-           (PhylogeneticNode2 (CharacterSequence u' v' w' x' y' z') n)
--}
     newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> ((mempty, mempty, Nothing) <$) . graphData
     dagSize       = length $ references dag
     newReferences = V.generate dagSize h

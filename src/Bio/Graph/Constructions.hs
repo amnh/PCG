@@ -58,7 +58,6 @@ import Data.List.NonEmpty
 import Data.MonoTraversable
 import Data.NodeLabel
 import Data.Vector (Vector)
--- import Data.Void
 
 
 -- |
@@ -120,17 +119,13 @@ type FinalDecorationDAG =
          (SankoffOptimizationDecoration       StaticCharacter)
          (SankoffOptimizationDecoration       StaticCharacter)
          (DynamicDecorationDirectOptimization DynamicChar    )
---         (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
-
-
---type IncidentEdges = [EdgeReference]
 
 
 -- |
 -- Decoration of a phylogenetic DAG after a post-order traversal.
 type PostOrderDecorationDAG m =
        PhylogeneticDAG2
-         m -- (Double, TraversalFoci)
+         m
          StaticCharacter
          (Element DynamicChar)
          EdgeLength
@@ -141,15 +136,6 @@ type PostOrderDecorationDAG m =
          (SankoffOptimizationDecoration StaticCharacter)
          (SankoffOptimizationDecoration StaticCharacter)
          (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
-
-
-{-
-type ReRootedEdgeContext u v w x y z =
-   ( ResolutionCache (CharacterSequence u v w x y z)
-   , ResolutionCache (CharacterSequence u v w x y z)
-   , ResolutionCache (CharacterSequence u v w x y z)
-   )
--}
 
 
 -- |
@@ -175,21 +161,6 @@ type  UnifiedMetadataBlock
         StaticCharacter
         (Element DynamicChar)
         ()
-
-
-{-
-TODO: Make this a tuple
-
-type UnifiedCharacterSequence
-     = CharacterSequence
-         UnifiedContinuousCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDynamicCharacter
-
--}
 
 
 -- |

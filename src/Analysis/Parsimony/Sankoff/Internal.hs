@@ -38,15 +38,9 @@ import Control.Lens
 import Data.Bits
 import Data.Key
 import Data.List.NonEmpty (NonEmpty( (:|) ))
--- import Data.Monoid        ((<>))
--- import qualified Data.TCM as TCM
 import Data.Word
 import Numeric.Extended.Natural
 import Prelude                   hiding (zip)
--- import Text.XML.Custom
--- import Text.XML.Light
-
--- import Debug.Trace
 
 
 -- |
@@ -182,7 +176,6 @@ updateCostVector meta _parentDecoration (leftChildDec:|rightChildDec:_) = return
 
     computeBetas charState _childCharState acc = retVals
       where
-        -- transitionCost = fromFinite . scm charState childCharState
         retVal  = minimum [ prelimMin + fromFinite (scm (toEnum charState) otherState)
                           | (otherState, prelimMin) <- zip range preliminaryMins
                           ]
@@ -218,7 +211,7 @@ updateCostVector meta _parentDecoration (leftChildDec:|rightChildDec:_) = return
 --
 -- Used on second, pre-order, pass.
 updateDirectionalMins
-  :: EncodableStaticCharacter c -- ERIC: I made this more restrictive to resolve the 'Cannot deduce
+  :: EncodableStaticCharacter c -- TODO: I made this more restrictive to resolve the 'Cannot deduce
                                 -- EncodableStaticCharacter c from Bits c'
   => SankoffOptimizationDecoration c
   -> SankoffOptimizationDecoration c
@@ -289,11 +282,3 @@ calcCostPerState scm parentCharState leftChildDec rightChildDec = retVal
         curLeftMin      = transitionCost + leftMinFromVector
         curRightMin     = transitionCost + rightMinFromVector
         transitionCost  = fromFinite . scm parentCharState $ toEnum childCharState
-
-
-        -- Following needed for outputting TCM in trace statements
-{-
-        len         = symbolCount $ leftChildDec ^. discreteCharacter
-        showableTCM = TCM.generate len g
-        g (i,j)     = fromEnum $ scm i j
--}

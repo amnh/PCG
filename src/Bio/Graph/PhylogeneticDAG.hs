@@ -27,8 +27,6 @@ module Bio.Graph.PhylogeneticDAG
   , preorderSequence'
   , preorderSequence''
   , renderSummary
---  , riefiedSolution
---  , riefyForest
   , rootCosts
   , totalEdgeCosts
   , getDotContextWithBaseAndIndex
@@ -59,25 +57,8 @@ import           Data.List.NonEmpty        (NonEmpty)
 import qualified Data.List.NonEmpty as NE
 
 
--- HasBlockCost u v w x y z i r
 -- |
 -- Calculate the root cost for each character block.
-{-
-rootCosts :: ( Integral e
-             , HasCharacterWeight u Double
-             , HasCharacterWeight v Double
-             , HasCharacterWeight w Double
-             , HasCharacterWeight x Double
-             , HasCharacterWeight y Double
-             , HasCharacterWeight z Double
-             , HasCharacterCost u Double
-             , HasCharacterCost v e
-             , HasCharacterCost w e
-             , HasCharacterCost x e
-             , HasCharacterCost y e
-             , HasCharacterCost z e
-             )
--}
 rootCosts
   :: HasBlockCost u v w x y z
   => PhylogeneticDAG2 m a d s t u v w x y z -> NonEmpty Double

@@ -165,7 +165,7 @@ rectifyResults2 fprs =
           :: UnifiedMetadataSequence
           -> Map String UnifiedCharacterSequence
           -> PhylogeneticForest ParserTree
-          -> PhylogeneticForest UnReifiedCharacterDAG --CharacterDAG
+          -> PhylogeneticForest UnReifiedCharacterDAG
         matchToChars meta charMapping = fmap (PDAG meta . fmap f)
           where
             f label = PNode nodeLabel $ fromMaybe defaultCharacterSequenceDatum charLabelMay
@@ -266,94 +266,6 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
                 defaultCost (i,j)
                   | i == j    = 0
                   | otherwise = 1
-{-
-    reduceAlphabets :: Functor f
-                    => f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, TCMStructure, CharacterName)))
-                    -> f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, TCMStructure, CharacterName)))
-    reduceAlphabets = fmap reduceFileBlock
-      where
-        reduceFileBlock mapping = fmap (zipWith removeExtraneousSymbols observedSymbolSets) mapping
-          where
-            observedSymbolSets :: NonEmpty (Set String, Int, TCM, TCMStructure)
-            observedSymbolSets = fmap generateObservedSymbolSetForCharacter . NE.fromList . transpose . fmap toList $ toList mapping
-             where
-               generateObservedSymbolSetForCharacter input =
-                 case input of
-                   []             -> error "Should never happen in reduceAlphabets.reduceFileBlock.observedSymbolSets.generateObservedSymbolSetForCharacter" -- mempty
-                   x@(_,m,tcm,_):xs ->
-                     let diagnosis   = TCM.diagnoseTcm tcm
-                         weighting   = TCM.factoredWeight diagnosis
-                         tcm'        = TCM.factoredTcm    diagnosis
-                         structure   = TCM.tcmStructure   diagnosis
-                         seenSymbols =
-                             case structure of
-                               TCM.Additive -> Set.fromList . toList $ alphabet m
-                               _            -> foldMap f $ x:xs
-
-                     in (seenSymbols, weighting, tcm', structure)
-                     -- TCM structure won't change with columns removed!
-
-
-               f (x,_,_,_) = foldMap (foldMap (Set.fromList . toList)) x
-
-
-        removeExtraneousSymbols :: (Set String, Int, TCM, TCMStructure)
-                                -> (Maybe ParsedChar, ParsedCharacterMetadata, TCM, TCMStructure, CharacterName)
-                                -> (Maybe ParsedChar, ParsedCharacterMetadata, TCM, TCMStructure, CharacterName)
-        removeExtraneousSymbols (observedSymbols, coefficient, tcm, structure) (charMay, charMetadata, _, inputStruct, charName)
-          | isDynamic charMetadata      = (charMay, charMetadata' ,        tcm, charName, structure)
-          | onull missingSymbolIndicies = (charMay, charMetadata' ,        tcm, charName, structure)
-          | otherwise                   = (charMay, charMetadata'', reducedTCM, charName, structure)
-          where
-            charMetadata'  = charMetadata  { weight   = weight charMetadata * fromIntegral coefficient }
-            charMetadata'' = charMetadata' { alphabet = reducedAlphabet }
---            observedSymbols       = observedSymbols' `Set.remove` "?"
-            missingSymbolIndicies = foldMapWithKey f suppliedAlphabet
-              where
-                f k v
-                  |    v `notElem` observedSymbols
-                    && v /= gapSymbol suppliedAlphabet = IS.singleton k
-                  | otherwise = mempty
-
-            suppliedAlphabet      = alphabet charMetadata
-            reducedAlphabet       =
-                case alphabetStateNames suppliedAlphabet of
-                  [] -> fromSymbols               . reduceTokens $      alphabetSymbols suppliedAlphabet
-                  xs -> fromSymbolsWithStateNames . reduceTokens $ zip (alphabetSymbols suppliedAlphabet) xs
-              where
-                reduceTokens = foldMapWithKey (\k v -> if k `oelem` missingSymbolIndicies then [] else [v])
-            reducedTCM = TCM.generate reducedDimension genFunction
-              where
-                reducedDimension = TCM.size tcm - olength missingSymbolIndicies
-
-                genFunction =
-                    -- In the case of Additive characters,
-                    -- we don't want to preserve the transition cost to non-observed states.
-                    --
-                    -- In the matrix below, with '2' unobserved, would be naively transformed:
-                    --
-                    -- 0 1 2 3        0 1 3
-                    -- 1 0 1 2  ===>  1 0 2
-                    -- 2 1 0 1        3 2 0
-                    -- 3 2 1 0
-                    --
-                    -- We can see that is incorrect as the Additive structure is not preserved
-                    -- after the reduction. We handle this case specially.
-                    --
-                    -- We might need to do this for Ultra-metric also..?
-                    case TCM.tcmStructure $ TCM.diagnoseTcm tcm of
-                      TCM.Additive -> \(i,j) -> toEnum $ max i j - min i j
-                      _            -> f
-
-                f (i,j) = tcm TCM.! (i', j')
-                  where
-                    i' = i + iOffset
-                    j' = j + jOffset
-                    xs = otoList missingSymbolIndicies
-                    iOffset = length $ filter (<=i) xs
-                    jOffset = length $ filter (<=j) xs
--}
-
 
     performMetadataTransformations
       :: Functor f
@@ -366,64 +278,11 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
             updatedMetadataTokens :: NonEmpty (Alphabet String, Word -> Word -> Word)
             updatedMetadataTokens = fmap generateMetadataToken . NE.fromList . transpose . fmap toList $ toList mapping
              where
-{-
-               gatherSymbols (x,_,_,_,_) =
-                   case x of
-                     ParsedContinuousCharacter     _ -> mempty
-                     ParsedDiscreteCharacter  static -> foldMap (Set.fromList . toList) static
-                     ParsedDynamicCharacter  dynamic -> foldMap (foldMap (Set.fromList . toList)) dynamic
--}
-
                generateMetadataToken                []  = error "Should never happen in reduceAlphabets.reduceFileBlock.observedSymbolSets.generateObservedSymbolSetForCharacter" -- mempty
                generateMetadataToken (_x@(_,m,tcm,structure,_):_xs) = (reducedAlphabet, reducedTCM)
                  where
---                   diagnosis   = TCM.diagnoseTcm tcm
---                   weighting   = TCM.factoredWeight diagnosis
---                   tcm'        = TCM.factoredTcm    diagnosis
---                   structure   = TCM.tcmStructure   diagnosis
-                         -- In the case of Additive characters,
-                         -- we don't want to preserve the transition cost to non-observed states.
-                         --
-                         -- In the matrix below, with '2' unobserved, would be naively transformed:
-                         --
-                         -- 0 1 2 3        0 1 3
-                         -- 1 0 1 2  ===>  1 0 2
-                         -- 2 1 0 1        3 2 0
-                         -- 3 2 1 0
-                         --
-                         -- We can see that is incorrect as the Additive structure is not preserved
-                         -- after the reduction. We handle this case specially.
-                         --
-                         -- We might need to do this for Ultra-metric also..?
---                   seenSymbols = foldMap gatherSymbols $ x:xs
-{-
-                       case structure of
-                         Additive -> Set.fromList . toList $ alphabet m
-                         _        -> foldMap gatherSymbols $ x:xs
--}
-
---            observedSymbols       = observedSymbols' `Set.remove` "?"
-{-
-                   missingSymbolIndicies = foldMapWithKey f suppliedAlphabet
-                     where
-                       f k v
-                         |    v `notElem` seenSymbols
-                           && v /= gapSymbol suppliedAlphabet = IS.singleton k
-                         | otherwise = mempty
--}
-                   suppliedAlphabet      = alphabet m
-                   reducedAlphabet       = suppliedAlphabet
-{-
-                   reducedAlphabet       =
-                       case structure of
-                         Additive -> truncateAtMaxSymbol seenSymbols suppliedAlphabet
-                         _        ->
-                           case alphabetStateNames suppliedAlphabet of
-                             [] -> fromSymbols               . reduceTokens $      alphabetSymbols suppliedAlphabet
-                             ys -> fromSymbolsWithStateNames . reduceTokens $ zip (alphabetSymbols suppliedAlphabet) ys
-                     where
-                       reduceTokens = foldMapWithKey (\k v -> if k `oelem` missingSymbolIndicies then [] else [v])
--}
+                   suppliedAlphabet = alphabet m
+                   reducedAlphabet  = suppliedAlphabet
                    reducedTCM =
                        case structure of
                          NonAdditive -> nonAdditiveDistanceFunction
@@ -443,17 +302,6 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
             , charName
             )
 
-{-
-    collapseAndMerge2 :: Foldable f => f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName))) -> Map String UnifiedSequence
-    collapseAndMerge2 = h . g . f
-      where
-        f :: Foldable f => f (Map String (NonEmpty (Maybe ParsedChar, ParsedCharacterMetadata, TCM, CharacterName))) -> f (Map String (Map OptToken [OptValueWrapper]))
-        f = undefined
-        g :: Foldable f => f (Map String (Map OptToken [OptValueWrapper])) -> Map String (f (Map OptToken [OptValueWrapper]))
-        g = undefined
-        h :: Foldable f => Map String (f (Map OptToken [OptValueWrapper])) -> Map String UnifiedSequence
-        h = undefined
--}
     collapseAndMerge
       :: Foldable f
       => f (Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName)))
@@ -511,14 +359,8 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
                 encodeBinToSingletonCharacterBlock (charMay, charMeta, scm, structure, charName) =
                     case charMay of
                       ParsedContinuousCharacter continuousMay -> continuousSingleton           . Just .   continuousDecorationInitial charName charWeight $ toContinuousCharacter continuousMay
---                        let mData = MD.continuousToMetadataBlock $ continuousMetadata charName charWeight
---                        in (mData, continuousSingleton           . Just .   continuousDecorationInitial charName charWeight $ toContinuousCharacter continuousMay)
                       ParsedDiscreteCharacter     discreteMay ->   discreteSingleton structure . Just $ toDiscreteCharacterDecoration charName charWeight specifiedAlphabet scm  staticTransform discreteMay
---                        let mData = MD.discreteToMetadataBlock structure $ discreteMetadataWithTCM charName charWeight specifiedAlphabet scm
---                        in (mData,   discreteSingleton structure . Just $ toDiscreteCharacterDecoration charName charWeight specifiedAlphabet scm  staticTransform discreteMay)
                       ParsedDynamicCharacter       dynamicMay ->    dynamicSingleton           . Just $  toDynamicCharacterDecoration charName charWeight specifiedAlphabet scm dynamicTransform  dynamicMay
---                        let mData = MD.dynamicToMetadataBlock $ dynamicMetadataWithTCM charName charWeight specifiedAlphabet scm
---                        in (mData,    dynamicSingleton           . Just $  toDynamicCharacterDecoration charName charWeight specifiedAlphabet scm dynamicTransform  dynamicMay)
                   where
                     alphabetLength    = toEnum $ length specifiedAlphabet
                     charWeight        = weight   charMeta

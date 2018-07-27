@@ -33,20 +33,13 @@ module Bio.Sequence.Metadata
   ) where
 
 
---import qualified Bio.Sequence.Block      as Blk
 import           Bio.Sequence.Block.Internal    (Block(..))
 import           Bio.Sequence.Block.Metadata
 import           Control.DeepSeq
---import           Control.Parallel.Custom
---import           Control.Parallel.Strategies
---import           Data.Bifunctor
---import           Data.DList              hiding (foldr,toList)
 import           Data.Foldable
---import           Data.Key
 import           Data.List.NonEmpty             (NonEmpty)
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
---import           Data.Semigroup.Traversable
 import           Data.Vector.NonEmpty           (Vector)
 import qualified Data.Vector.NonEmpty    as V
 import           GHC.Generics
@@ -66,17 +59,6 @@ newtype MetadataSequence e d m
 
 
 type instance Element (MetadataSequence e d m) = MetadataBlock e d m
-
-
-{-
-instance Bifunctor (MetadataSequence m) where
-
-    bimap f g = fromBlocks . fmap (bimap f g) . toBlocks
-
-    first f   = fromBlocks . fmap (first f  ) . toBlocks
-
-    second = fmap
--}
 
 
 instance Functor (MetadataSequence e d) where
@@ -128,26 +110,6 @@ instance MonoTraversable (MetadataSequence e d m) where
 instance (NFData e, NFData d, NFData m) => NFData (MetadataSequence e d m)
 
 
-{-
--- | (✔)
-instance ( Show m
-         , Show e
-         , Show d
-         ) => Show (MetadataSequence m e d) where
-
-    show = foldMapWithKey f . toBlocks
-      where
-        f blockNumber shownBlock = mconcat
-            [ "Metadata Block #"
-            , show blockNumber
-            , "\n\n"
-            , indent (show shownBlock)
-            , "\n"
-            ]
-        indent = unlines . fmap ("  "<>) . lines
-
-
--}
 -- | (✔)
 instance ToXML (MetadataSequence e d m) where
 

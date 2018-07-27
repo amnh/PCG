@@ -44,7 +44,6 @@ import           Bio.Metadata.Dynamic
 import           Bio.Sequence.Block.Builder
 import           Bio.Sequence.Block.Internal
 import           Bio.Sequence.Block.Metadata         (MetadataBlock(..))
---import qualified Bio.Sequence.Block.Metadata as Meta
 import           Control.DeepSeq
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
@@ -56,7 +55,6 @@ import           Data.Vector.Instances               ()
 import           Data.Void
 import           GHC.Generics
 import           Text.XML
--- import Text.XML.Light.Types
 
 
 -- |

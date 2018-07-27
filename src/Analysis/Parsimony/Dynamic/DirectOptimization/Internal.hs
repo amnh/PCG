@@ -203,35 +203,12 @@ disambiguateElement x = zed `setBit` idx
     zed = x `xor` x
 
 
-{-
--- |
--- Disambiguate the elements of a dynamic Character so that they are consistent
--- with the ancestral disambiguation.
-disambiguateFromParent
-  :: EncodableDynamicCharacter c
-  => c -- ^ parent single disambiguation field
-  -> c -- ^ child  final gapped
-  -> c -- ^ child  single disambiguation field
-disambiguateFromParent {- pGaps cGaps -} pSingle cFinal = result
-  where
-    result = constructDynamic $ zipWith f (otoList pSingle) (otoList cFinal)
-    f pS cF
-      | popCount val /= 0 = val
-      | otherwise         = disambiguateElement cF
-      where
-        -- Since pS will have only one bit set,
-        -- there can only ever be an symbol intersection of size 1
-        val = pS .&. cF
--}
-
-
 -- |
 -- Use the decoration(s) of the ancestral nodes to calculate the corrent node
 -- decoration. The recursive logic of the pre-order traversal.
 updateFromParent
   :: ( DirectOptimizationPostOrderDecoration d c
      , Exportable (Element c)
-     -- , EncodedAmbiguityGroupContainer c
      )
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
@@ -267,7 +244,6 @@ updateFromParent pairwiseAlignment meta currentDecoration parentDecoration = res
 -- A three way comparison of characters used in the DO preorder traversal.
 tripleComparison
   :: ( Exportable (Element c)
-     -- , EncodedAmbiguityGroupContainer c
      , DirectOptimizationPostOrderDecoration d c
      )
   => PairwiseAlignment c
@@ -444,7 +420,6 @@ insertNewGaps insertionIndicies character = constructDynamic . (<> trailingGaps)
 -- Calculates the mean character and cost between three supplied characters.
 threeWayMean
   :: ( EncodableDynamicCharacter c
-     -- , EncodedAmbiguityGroupContainer c
      )
   => (Element c -> Element c -> Element c -> (Element c, Word))
   -> c
@@ -458,24 +433,4 @@ threeWayMean sigma char1 char2 char3 =
     Just _  -> (unsafeToFinite $ sum costValues, constructDynamic $ filter (/= gap) meanStates, constructDynamic meanStates)
   where
     gap = gapOfStream char1
-    -- zed = gap `xor` gap
-    -- singletonStates = (zed `setBit`) <$> [0 .. fromEnum (symbolCount char1) - 1]
     (meanStates, costValues) = unzip $ zipWith3 sigma (otoList char1) (otoList char2) (otoList char3)
-    {-
-    f a b c = foldl' g (zed, infinity :: ExtendedNatural) singletonStates
-      where
-        g acc@(combinedState, curentMinCost) singleState =
-            case combinedCost `compare` curentMinCost of
-              EQ -> (combinedState .|. singleState, curentMinCost)
-              LT -> (                  singleState, combinedCost)
-              GT -> acc
-          where
-            combinedCost = fromFinite . sum $ (snd . sigma singleState) <$> [a, b, c]
-    -}
-{-
-f a b c = minimalChoice $
-              sigma a b  :|
-            [ sigma a c
-            , sigma b c
-            ]
--}

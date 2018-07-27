@@ -169,7 +169,6 @@ instance ( Show e
          , Show x
          , Show y
          , Show z
---         , HasBlockCost u v w x y z Word Double
          ) => Show (PhylogeneticDAG m a d e n u v w x y z) where
 
     show (PDAG _ dag) = show dag <> "\n" <> foldMapWithKey f dag
@@ -179,13 +178,6 @@ instance ( Show e
 
 -- | (✔)
 instance ( HasBlockCost u v w x y z
---         , HasCharacterName u CharacterName
---         , HasCharacterName v CharacterName
---         , HasCharacterName w CharacterName
---         , HasCharacterName x CharacterName
---         , HasCharacterName y CharacterName
---         , HasCharacterName z CharacterName
---         , HasTraversalFoci z (Maybe TraversalFoci)
          , Show m
          , Show e
          , Show n
@@ -203,7 +195,6 @@ instance ( HasBlockCost u v w x y z
         , foldMapWithKey f dag
         ]
       where
---        f i (PNode2 n sek) = mconcat [ "Node {", show i, "}:\n\n", unlines [show n, show sek], "\n\n" ]
         f i n = mconcat [ "Node {", show i, "}:\n\n", show n ]
 
 
@@ -214,8 +205,7 @@ instance Show n => ToNewick (PhylogeneticDAG2 m a d e n u v w x y z) where
 
 
 -- | (✔)
-instance (-- HasBlockCost u v w x y z Word Double
-           Show  n
+instance ( Show  n
          , Show  u
          , Show  v
          , Show  w
@@ -250,21 +240,10 @@ applySoftwireResolutions inputContexts =
     case inputContexts of
       []   -> pure []
       [x]  -> pure <$> fst x
-{-
-          let y = pure <$> fst x
-          in  if   multipleParents x
-              then y <> pure []
-              else y
--}
       x:y:_ -> pairingLogic (x,y)
   where
     multipleParents = not . isSingleton . otoList . snd
-{-
-    pairingLogic :: ( (ResolutionCache s), IntSet)
-                    , (ResolutionCache s), IntSet)
-                    )
-                 -> NonEmpty [ResolutionInformation s]
--}
+
     pairingLogic (lhs, rhs) =
         case (multipleParents lhs, multipleParents rhs) of
           (False, False) -> pairedSet
@@ -278,7 +257,7 @@ applySoftwireResolutions inputContexts =
          rhs'   = fst rhs
          pairedSet =
              case cartesianProduct lhs' rhs' of
-               x:xs -> {- NE.fromList . ensureNoLeavesWereOmmitted $ -} x:|xs
+               x:xs -> x:|xs
                []   -> error errorContext -- pure [] -- This shouldn't ever happen
            where
              errorContext = unlines
@@ -298,14 +277,6 @@ applySoftwireResolutions inputContexts =
              , y <- toList ys
              , resolutionsDoNotOverlap x y
              ]
-{-
-           where
-             xMask = foldMap1 leafSetRepresentation xs
-             yMask = foldMap1 leafSetRepresentation ys
-             overlapMask = xMask .&. yMask
-             properOverlapInclusion x y =
-               (leafSetRepresentation x .&. overlapMask) `xor` (leafSetRepresentation y .&. overlapMask) == zeroBits
--}
 
 
 -- |
@@ -391,19 +362,6 @@ localResolutionApplication f m x y =
         }
 
 
-{-
--- |
--- Given a foldable structure, generate a list of all possible pairs in the
--- structure. Does not check for uniqueness of elements.
-pairs :: Foldable f => f a -> [(a, a)]
-pairs = f . toList
-  where
-    f    []  = []
-    f   [_]  = []
-    f (x:xs) = ((\y -> (x, y)) <$> xs) <> f xs
--}
-
-
 -- |
 -- Nicely show the DAG information.
 renderSummary
@@ -415,13 +373,6 @@ renderSummary
      , Show y
      , Show z
      , HasBlockCost u v w x y z
---     , HasCharacterName u CharacterName
---     , HasCharacterName v CharacterName
---     , HasCharacterName w CharacterName
---     , HasCharacterName x CharacterName
---     , HasCharacterName y CharacterName
---     , HasCharacterName z CharacterName
---     , HasTraversalFoci z (Maybe TraversalFoci)
      )
   => PhylogeneticDAG2 m a d e n u v w x y z
   -> String
@@ -441,13 +392,6 @@ renderMetadata = unlines . fmap (show . getBlockMetadata) . toList . M.toBlocks
 renderSequenceSummary
   :: ( Show n
      , HasBlockCost u v w x y z
---     , HasCharacterName u CharacterName
---     , HasCharacterName v CharacterName
---     , HasCharacterName w CharacterName
---     , HasCharacterName x CharacterName
---     , HasCharacterName y CharacterName
---     , HasCharacterName z CharacterName
---     , HasTraversalFoci z (Maybe TraversalFoci)
      )
   => PhylogeneticDAG2 m a d e n u v w x y z
   -> String
@@ -485,7 +429,6 @@ renderSequenceSummary pdag@(PDAG2 dag _meta) = ("Sequence Summary\n\n" <>) . unl
 --
 renderBlockSummary
   :: ( HasBlockCost u v w x y z
---     , HasTraversalFoci z (Maybe TraversalFoci)
      , Show n
      )
   => PhylogeneticDAG2 m a d e n u v w x y z
