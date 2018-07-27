@@ -63,11 +63,11 @@ fromCases :: TestTree
 fromCases = testGroup "Cases of from{List,Cols,Rows} function"
     [ HU.testCase
         (unlines
-        ["fromList [1..9] ="
-        ,"TCM: 3 x 3"
-        , "  1 2 3"
-        , "  4 5 6"
-        , "  7 8 9"
+        ["fromList [1..9] =="
+        ,"           TCM: 3 x 3"
+        , "            1 2 3"
+        , "            4 5 6"
+        , "            7 8 9"
         ])
         fromListEx
     , HU.testCase "fromList [] raises exception" $ assertException fromList []
@@ -75,20 +75,20 @@ fromCases = testGroup "Cases of from{List,Cols,Rows} function"
     , HU.testCase "fromList [1..12] raises exception" $ assertException fromList [1..12]
     , HU.testCase
         (unlines
-        [ "fromCols [[1,2,3],[4,5,6],[7,8,9]]"
-        , "TCM: 3 x 3"
-        , "  1 4 7"
-        , "  2 5 8"
-        , "  3 6 9"
+        [ "fromCols [[1,2,3],[4,5,6],[7,8,9]] =="
+        , "          TCM: 3 x 3"
+        , "            1 4 7"
+        , "            2 5 8"
+        , "            3 6 9"
         ])
         fromColsEx
     , HU.testCase
         (unlines
-        [ "fromRows [[1,2,3],[4,5,6],[7,8,9]]"
-        , "TCM: 3 x 3"
-        , "  1 2 3"
-        , "  4 5 6"
-        , "  7 8 9"
+        [ "fromRows [[1,2,3],[4,5,6],[7,8,9]] =="
+        , "          TCM: 3 x 3"
+        , "            1 2 3"
+        , "            4 5 6"
+        , "            7 8 9"
         ])
         fromRowsEx
     ]
@@ -115,15 +115,39 @@ generateCases :: TestTree
 generateCases = testGroup "Cases of generate function"
     [ HU.testCase
         (unlines
-        [ "generate 5 $ const 5"
-        , "TCM: 5 x 5"
-        , "  5 5 5 5 5"
-        , "  5 5 5 5 5"
-        , "  5 5 5 5 5"
-        , "  5 5 5 5 5"
-        , "  5 5 5 5 5"
+        [ "generate 5 $ const 5 =="
+        , "          TCM: 5 x 5"
+        , "            5 5 5 5 5"
+        , "            5 5 5 5 5"
+        , "            5 5 5 5 5"
+        , "            5 5 5 5 5"
+        , "            5 5 5 5 5"
         ])
         generateCase1
+    , HU.testCase
+        (unlines
+        [ "generate 4 $ \\(i,j) -> abs (i - j) =="
+        , "          TCM: 4 x 4"
+        , "            0 1 2 3"
+        , "            1 0 1 2"
+        , "            2 1 0 1"
+        , "            3 2 1 0"
+        ])
+        generateCase2
+    , HU.testCase
+        (unlines
+        [ "generate 8 $ \\(i,j) -> if i == j || i + j == 6 then 0 else 1 =="
+        , "          TCM: 8 x 8"
+        , "            0 1 1 1 1 1 0 1"
+        , "            1 0 1 1 1 0 1 1"
+        , "            1 1 1 1 0 1 1 1"
+        , "            1 1 1 0 1 1 1 1"
+        , "            1 1 0 1 0 1 1 1"
+        , "            1 0 1 1 1 0 1 1"
+        , "            0 1 1 1 1 1 0 1"
+        , "            1 1 1 1 1 1 1 0"
+        ])
+        generateCase3
     ]
   where
     generateCase1 :: Assertion
@@ -136,11 +160,20 @@ generateCases = testGroup "Cases of generate function"
     generateCase2 =
       let tcm = generate 4 $ \(i,j) -> abs (i - j) in
         elementsAndSize tcm
-        @?= ([ 0, 1, 2, 3, 4
-             , 1, 0, 1, 2, 3
-             , 2, 1, 0, 1, 2
-             , 3, 2, 1, 0, 1
-             , 4, 3, 2, 1, 0] , 4)
+        @?= ([ 0, 1, 2, 3
+             , 1, 0, 1, 2
+             , 2, 1, 0, 1
+             , 3, 2, 1, 0] , 4)
 
     generateCase3 :: Assertion
-    generateCase3 = undefined
+    generateCase3 =
+      let tcm = generate 8 $ \(i,j) -> if i == j || i + j == 6 then 0 else 1 in
+        elementsAndSize tcm
+        @?= ([ 0, 1, 1, 1, 1, 1, 0, 1
+             , 1, 0, 1, 1, 1, 0, 1, 1
+             , 1, 1, 0, 1, 0, 1, 1, 1
+             , 1, 1, 1, 0, 1, 1, 1, 1
+             , 1, 1, 0, 1, 0, 1, 1, 1
+             , 1, 0, 1, 1, 1, 0, 1, 1
+             , 0, 1, 1, 1, 1, 1, 0, 1
+             , 1, 1, 1, 1, 1, 1, 1, 0], 8)
