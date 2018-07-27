@@ -30,7 +30,7 @@ import Data.Alphabet
 data NonMetricDecorationInitial c
    = NonMetricDecorationInitial
    { nonMetricDecorationInitialCharacter :: c
-   , metadata                            :: {-# UNPACK #-} !(DiscreteWithTCMCharacterMetadataDec c)
+--   , metadata                            :: {-# UNPACK #-} !(DiscreteWithTCMCharacterMetadataDec c)
    }
 
 
@@ -40,6 +40,7 @@ instance HasDiscreteCharacter (NonMetricDecorationInitial c) c where
     discreteCharacter = lens nonMetricDecorationInitialCharacter (\e x -> e { nonMetricDecorationInitialCharacter = x })
 
 
+{-
 -- | (✔)
 instance HasCharacterAlphabet (NonMetricDecorationInitial c) (Alphabet String) where
 
@@ -101,6 +102,7 @@ instance DiscreteCharacterMetadata (NonMetricDecorationInitial c) where
 
 -- | (✔)
 instance EncodableStreamElement c => DiscreteWithTcmCharacterMetadata (NonMetricDecorationInitial c) c where
+-}
 
 
 -- | (✔)
@@ -112,7 +114,7 @@ instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (NonMet
     toDiscreteCharacterDecoration name weight alphabet scm g symbolSet =
         NonMetricDecorationInitial
         { nonMetricDecorationInitialCharacter = g symbolSet
-        , metadata                            = discreteMetadataWithTCM name weight alphabet scm
+--        , metadata                            = discreteMetadataWithTCM name weight alphabet scm
         }
 
 

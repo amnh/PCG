@@ -78,7 +78,7 @@ instance Show AverageLength where
 class ( HasAverageLength           s AverageLength
       , HasEncoded                 s a
       , EncodableDynamicCharacter  a
-      , DynamicCharacterMetadata   s (Element a)
+--      , DynamicCharacterMetadata   s (Element a)
       ) => SimpleDynamicDecoration s a | s -> a where
 
 

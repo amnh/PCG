@@ -29,7 +29,7 @@ module Bio.Character.Decoration.Discrete
   , HasTransitionCostMatrix(..)
   , PossiblyMissingCharacter(..)
   , SimpleDiscreteCharacterDecoration(..)
-  , showDiscreteCharacterElement
+--  , showDiscreteCharacterElement
   ) where
 
 
@@ -50,10 +50,11 @@ import Text.XML
 data DiscreteDecoration c
    = DiscreteDec
    { discreteDecorationCharacter :: !c
-   , metadata                    :: {-# UNPACK #-} !(DiscreteWithTCMCharacterMetadataDec c)
+--   , metadata                    :: {-# UNPACK #-} !(DiscreteWithTCMCharacterMetadataDec c)
    }
 
 
+{-
 -- |
 -- Show an appropriate instance of 'HasDiscreteCharacter' that is also
 -- 'HasCharacterAlphabet' by decoding the 'EncodableStreamElement' over the 'Alphabet',
@@ -63,6 +64,7 @@ showDiscreteCharacterElement :: ( EncodableStreamElement a
                                 , HasDiscreteCharacter s a
                                 ) => s -> String
 showDiscreteCharacterElement = showStreamElement <$> (^. characterAlphabet) <*> (^. discreteCharacter)
+-}
 
 
 -- |
@@ -183,7 +185,7 @@ instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (Discre
     toDiscreteCharacterDecoration name weight alphabet scm g symbolSet =
         DiscreteDec
         { discreteDecorationCharacter = g symbolSet
-        , metadata                    = discreteMetadataWithTCM name weight alphabet scm
+--        , metadata                    = discreteMetadataWithTCM name weight alphabet scm
         }
 
 

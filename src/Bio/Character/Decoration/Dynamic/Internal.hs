@@ -61,7 +61,7 @@ data DynamicDecorationDirectOptimization d
    , dynamicDecorationDirectOptimizationPreliminaryUngappedField :: !d
    , dynamicDecorationDirectOptimizationLeftAlignmentField       :: !d
    , dynamicDecorationDirectOptimizationRightAlignmentField      :: !d
-   , dynamicDecorationDirectOptimizationMetadata                 :: {-# UNPACK #-} !(DynamicCharacterMetadataDec (Element d))
+--   , dynamicDecorationDirectOptimizationMetadata                 :: {-# UNPACK #-} !(DynamicCharacterMetadataDec (Element d))
    } deriving (Eq, Generic)
 
 
@@ -77,7 +77,7 @@ data DynamicDecorationDirectOptimizationPostOrderResult d
    , dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField :: !d
    , dynamicDecorationDirectOptimizationPostOrderLeftAlignmentField       :: !d
    , dynamicDecorationDirectOptimizationPostOrderRightAlignmentField      :: !d
-   , dynamicDecorationDirectOptimizationPostOrderMetadata                 :: {-# UNPACK #-} !(DynamicCharacterMetadataDec (Element d))
+--   , dynamicDecorationDirectOptimizationPostOrderMetadata                 :: {-# UNPACK #-} !(DynamicCharacterMetadataDec (Element d))
    } deriving (Eq, Generic)
 
 
@@ -97,7 +97,7 @@ data DynamicDecorationImpliedAlignment d
    , dynamicDecorationImpliedAlignmentLeftAlignmentField       :: !d
    , dynamicDecorationImpliedAlignmentRightAlignmentField      :: !d
    , dynamicDecorationImpliedAlignmentImpliedAlignmentField    :: !d
-   , dynamicDecorationImpliedAlignmentMetadata                 :: {-# UNPACK #-} !(DynamicCharacterMetadataDec (Element d))
+--   , dynamicDecorationImpliedAlignmentMetadata                 :: {-# UNPACK #-} !(DynamicCharacterMetadataDec (Element d))
    } deriving (Eq, Generic)
 
 
@@ -108,7 +108,7 @@ data DynamicDecorationInitial d
    = DynamicDecorationInitial
    { dynamicDecorationInitialEncodedField           :: !d
    , dynamicDecorationInitialCharacterAverageLength :: {-# UNPACK #-} !AverageLength
-   , metadata                                       :: {-# UNPACK #-} !(DynamicCharacterMetadataDec (Element d))
+--   , metadata                                       :: {-# UNPACK #-} !(DynamicCharacterMetadataDec (Element d))
    } deriving (Eq, Generic)
 
 
@@ -148,6 +148,7 @@ instance EncodableDynamicCharacter d => DirectOptimizationPostOrderDecoration (D
 instance EncodableDynamicCharacter d => DirectOptimizationPostOrderDecoration (DynamicDecorationImpliedAlignment d) d where
 
 
+{-
 -- | (✔)
 instance DiscreteCharacterMetadata (DynamicDecorationDirectOptimization d) where
 
@@ -246,7 +247,7 @@ instance GeneralCharacterMetadata (DynamicDecorationInitial d) where
 
     {-# INLINE extractGeneralCharacterMetadata #-}
     extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . metadata
-
+-}
 
 -- | (✔)
 instance (EncodableDynamicCharacter d) => DynamicCharacterDecoration (DynamicDecorationInitial d) d where
@@ -256,13 +257,14 @@ instance (EncodableDynamicCharacter d) => DynamicCharacterDecoration (DynamicDec
         DynamicDecorationInitial
         { dynamicDecorationInitialEncodedField           = charValue
         , dynamicDecorationInitialCharacterAverageLength = toAverageLength . toEnum $ olength charValue
-        , metadata                                       = dynamicMetadata name weight alphabet scm denseMay
+--        , metadata                                       = dynamicMetadata name weight alphabet scm denseMay
         }
       where
         charValue = g symbolSet 
-        denseMay  = maybeConstructDenseTransitionCostMatrix alphabet scm
+--        denseMay  = maybeConstructDenseTransitionCostMatrix alphabet scm
 
 
+{-
 -- | (✔)
 instance HasCharacterAlphabet (DynamicDecorationDirectOptimization d) (Alphabet String) where
 
@@ -297,6 +299,7 @@ instance HasCharacterAlphabet (DynamicDecorationInitial d) (Alphabet String) whe
       where
          getter e   = metadata e ^. characterAlphabet
          setter e x = e { metadata = metadata e &  characterAlphabet .~ x }
+-}
 
 
 -- | (✔)
@@ -359,6 +362,7 @@ instance HasCharacterLocalCost (DynamicDecorationDirectOptimizationPostOrderResu
     characterLocalCost = lens dynamicDecorationDirectOptimizationPostOrderCharacterLocalCost (\e x -> e { dynamicDecorationDirectOptimizationPostOrderCharacterLocalCost = x })
 
 
+{-
 -- | (✔)
 instance HasCharacterName (DynamicDecorationDirectOptimization d) CharacterName where
 
@@ -456,6 +460,7 @@ instance (Element d ~ c) => HasDenseTransitionCostMatrix (DynamicDecorationIniti
       where
          getter e   = metadata e ^. denseTransitionCostMatrix
          setter e f = e { metadata = metadata e & denseTransitionCostMatrix .~ f }
+-}
 
 
 -- | (✔)
@@ -656,6 +661,7 @@ instance HasRightAlignment (DynamicDecorationDirectOptimizationPostOrderResult d
     rightAlignment = lens dynamicDecorationDirectOptimizationPostOrderRightAlignmentField (\e x -> e { dynamicDecorationDirectOptimizationPostOrderRightAlignmentField = x })
 
 
+{-
 -- |
 -- A 'Lens' for the 'transitionCostMatrix' field
 instance (Element d ~ c) => HasSparseTransitionCostMatrix (DynamicDecorationDirectOptimization d) MemoizedCostMatrix where
@@ -818,7 +824,7 @@ instance HasTraversalFoci (DynamicDecorationInitial c) (Maybe TraversalFoci) whe
       where
          getter e   = metadata e ^. traversalFoci
          setter e x = e { metadata = metadata e &  traversalFoci .~ x }
-
+-}
 
 -- | (✔)
 instance EncodableDynamicCharacter d => ImpliedAlignmentDecoration   (DynamicDecorationImpliedAlignment d) d where
@@ -840,18 +846,19 @@ instance EncodableDynamicCharacter d => PostOrderExtensionDirectOptimizationDeco
         , dynamicDecorationDirectOptimizationPreliminaryUngappedField = subDecoration ^. preliminaryUngapped
         , dynamicDecorationDirectOptimizationLeftAlignmentField       = subDecoration ^. leftAlignment
         , dynamicDecorationDirectOptimizationRightAlignmentField      = subDecoration ^. rightAlignment
-        , dynamicDecorationDirectOptimizationMetadata                 = extractDynamicCharacterMetadata subDecoration
+--        , dynamicDecorationDirectOptimizationMetadata                 = extractDynamicCharacterMetadata subDecoration
         }
 
 
 -- | (✔)
-instance EncodableStream d => Show (DynamicDecorationDirectOptimization d) where
+instance (EncodableStream d, Show d) => Show (DynamicDecorationDirectOptimization d) where
 
-    show dec = (shownFoci <>) . unlines . (shownAlphabet:) . (shownCost:) $ f <$> pairs
+    show dec = {- (shownFoci <>) . unlines . (shownAlphabet:) . -} unlines . (shownCost:) $ f <$> pairs
       where
-        (shownAlphabet, shownCost, shownFoci) = renderingDecorationContext dec
+--        (shownAlphabet, shownCost, shownFoci) = renderingDecorationContext dec
+        shownCost = renderCost dec
 
-        f (prefix, accessor) = prefix <> showStream (dec ^. characterAlphabet) (dec ^. accessor)
+        f (prefix, accessor) = prefix <> show (dec ^. accessor)
 
         pairs =
             [ ("Original Encoding    : ", encoded             )
@@ -866,13 +873,14 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimization d) where
 
 
 -- | (✔)
-instance EncodableStream d => Show (DynamicDecorationDirectOptimizationPostOrderResult d) where
+instance (EncodableStream d, Show d) => Show (DynamicDecorationDirectOptimizationPostOrderResult d) where
 
-    show dec = (shownFoci <>) . unlines . (shownAlphabet:) . (shownCost:) $ f <$> pairs
+    show dec = {- (shownFoci <>) . unlines . (shownAlphabet:) . -} unlines . (shownCost:) $ f <$> pairs
       where
-        (shownAlphabet, shownCost, shownFoci) = renderingDecorationContext dec
+--        (shownAlphabet, shownCost, shownFoci) = renderingDecorationContext dec
+        shownCost = renderCost dec
 
-        f (prefix, accessor) = prefix <> showStream (dec ^. characterAlphabet) (dec ^. accessor)
+        f (prefix, accessor) = prefix <> show (dec ^. accessor)
 
         pairs =
           [ ("Original Encoding   : ", encoded            )
@@ -887,14 +895,15 @@ instance EncodableStream d => Show (DynamicDecorationDirectOptimizationPostOrder
 instance ( EncodableStreamElement (Element d)
          , MonoFoldable d
          , PossiblyMissingCharacter d
+         , Show (Element d)
          ) => Show (DynamicDecorationInitial d) where
 
     show dec
       | isMissing character = "<Missing>"
-      | otherwise           = ofoldMap (showStreamElement alphabet) character
+      | otherwise           = ofoldMap show character
       where
         character = dec ^. encoded
-        alphabet  = dec ^. characterAlphabet
+--        alphabet  = dec ^. characterAlphabet
 
 
 -- | (✔)
@@ -926,39 +935,39 @@ instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostOrderDecoratio
         , dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField = ungapped
         , dynamicDecorationDirectOptimizationPostOrderLeftAlignmentField       = lhsAlignment
         , dynamicDecorationDirectOptimizationPostOrderRightAlignmentField      = rhsAlignment
-        , dynamicDecorationDirectOptimizationPostOrderMetadata                 = extractDynamicCharacterMetadata subDecoration
+--        , dynamicDecorationDirectOptimizationPostOrderMetadata                 = extractDynamicCharacterMetadata subDecoration
         }
 
 
 -- | (✔)
-instance EncodableStream d => ToXML (DynamicDecorationDirectOptimization d) where
+instance (EncodableStream d, Show d) => ToXML (DynamicDecorationDirectOptimization d) where
 
     toXML decoration = xmlElement "Dynamic_DO_pre-order_decoration_result" attributes contents
         where
             attributes = []
             -- f (prefix, accessor) = prefix <> showStream (dec ^. characterAlphabet) (dec ^. accessor)
             contents   = [ Left ("Local_cost"               , show (decoration ^. characterLocalCost) )
-                         , Left ("Original_encoding"        , showStream alph (decoration ^. encoded)            )
-                         , Left ("Preliminary_gapped_char"  , showStream alph (decoration ^. preliminaryGapped)  )
-                         , Left ("Preliminary_ungapped_char", showStream alph (decoration ^. preliminaryUngapped))
-                         , Left ("Final_gapped_char"        , showStream alph (decoration ^. finalGapped)        )
-                         , Left ("Final_ungapped_char"      , showStream alph (decoration ^. finalUngapped)      )
+                         , Left ("Original_encoding"        , show (decoration ^. encoded)            )
+                         , Left ("Preliminary_gapped_char"  , show (decoration ^. preliminaryGapped)  )
+                         , Left ("Preliminary_ungapped_char", show (decoration ^. preliminaryUngapped))
+                         , Left ("Final_gapped_char"        , show (decoration ^. finalGapped)        )
+                         , Left ("Final_ungapped_char"      , show (decoration ^. finalUngapped)      )
                          ]
-            alph = decoration ^. characterAlphabet
+--            alph = decoration ^. characterAlphabet
 
 
 -- | (✔)
-instance EncodableStream d => ToXML (DynamicDecorationDirectOptimizationPostOrderResult d) where
+instance (EncodableStream d, Show d) => ToXML (DynamicDecorationDirectOptimizationPostOrderResult d) where
 
     toXML decoration = xmlElement "Dynamic_DO_post-order_decoration_result" attributes contents
         where
             attributes = []
             contents   = [ Left ("Character_cost"           , show (decoration ^. characterCost)      )
                          , Left ("Local_cost"               , show (decoration ^. characterLocalCost) )
-                         , Left ("Preliminary_gapped_char"  , showStream alph (decoration ^. preliminaryGapped)  )
-                         , Left ("Preliminary_ungapped_char", showStream alph (decoration ^. preliminaryUngapped))
+                         , Left ("Preliminary_gapped_char"  , show (decoration ^. preliminaryGapped)  )
+                         , Left ("Preliminary_ungapped_char", show (decoration ^. preliminaryUngapped))
                          ]
-            alph = decoration ^. characterAlphabet
+--            alph = decoration ^. characterAlphabet
 
 
 -- |
@@ -1001,4 +1010,19 @@ renderingDecorationContext dec = (shownAlphabet, shownCost, shownFoci)
         , "}"
         ]
 
+renderCost
+  :: ( HasCharacterCost s a
+     , HasCharacterLocalCost s b
+     , Show a
+     , Show b
+     )
+  => s
+  -> String
+renderCost dec = unwords
+      [ "Cost                 :"
+      , show (dec ^. characterCost)
+      , "{"
+      , show (dec ^. characterLocalCost)
+      , "}"
+      ]
 

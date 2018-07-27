@@ -188,7 +188,7 @@ chooseDirectOptimizationComparison
   -> c
   -> (Word, c, c, c, c)
 chooseDirectOptimizationComparison =  selectDynamicMetricmeta
--}
+
 
 chooseDirectOptimizationComparison2
   :: ( SimpleDynamicDecoration d  c
@@ -207,6 +207,7 @@ chooseDirectOptimizationComparison2 dec decs =
     case decs of
       []      -> selectDynamicMetric dec
       (_,x):_ -> selectDynamicMetric x
+-}
 
 
 -- |

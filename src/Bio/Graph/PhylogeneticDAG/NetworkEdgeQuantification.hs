@@ -96,7 +96,7 @@ import           Prelude               hiding (zipWith)
 assignPunitiveNetworkEdgeCost
   :: ( HasBlockCost u v w x y z
      , HasRootCost  u v w x y z
-     , HasTraversalFoci z (Maybe TraversalFoci)
+--     , HasTraversalFoci z (Maybe TraversalFoci)
      )
   => PhylogeneticDAG2 m a d e n u v w x y z
   -> (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge)), PhylogeneticDAG2 (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge)) a d e n u v w x y z)
@@ -228,7 +228,7 @@ extractMostParsimoniusDisplayForest
   :: ( Foldable1 f
      , HasBlockCost u v w x y z
      , HasRootCost  u v w x y z
-     , HasTraversalFoci z (Maybe TraversalFoci)
+--     , HasTraversalFoci z (Maybe TraversalFoci)
      )
   => MetadataSequence e d m
   -> f (ResolutionCache (CharacterSequence u v w x y z))
@@ -264,7 +264,7 @@ extractMinimalDisplayForestPerBlock
      , Functor   f
      , HasBlockCost u v w x y z
      , HasRootCost  u v w x y z
-     , HasTraversalFoci z (Maybe TraversalFoci)
+--     , HasTraversalFoci z (Maybe TraversalFoci)
      )
   => MetadataSequence e d m
   -> f (ResolutionCache (CharacterSequence u v w x y z))                                -- ^ Set of valid display forests
@@ -344,7 +344,7 @@ createForestContext
   :: ( Foldable1 f
      , HasBlockCost u v w x y z
      , HasRootCost  u v w x y z
-     , HasTraversalFoci z (Maybe TraversalFoci)
+--     , HasTraversalFoci z (Maybe TraversalFoci)
      )
   => MetadataSequence e d m
   -> f (ResolutionInformation (CharacterSequence u v w x y z))
@@ -355,7 +355,7 @@ createForestContext metaSeq displayForest = fromBlockMinimizationContext $ foldM
     getRootingEdge = fst . NE.head . fromJust . (^. traversalFoci)
     blockContext   = toBlockMinimizationContext <$> topologyRepresentation <*> blockCosts
       where
-        blockCosts = zipWith (\m x -> (BLK.rootCost rootCount m x, BLK.blockCost m x, getRootingEdge <$> dynamicCharacters x)) (M.toBlocks metaSeq) . toBlocks . characterSequence
+        blockCosts = zipWith (\m x -> (BLK.rootCost rootCount m x, BLK.blockCost m x, getRootingEdge <$> M.getDynamicMetadata m)) (M.toBlocks metaSeq) . toBlocks . characterSequence
 
 
 -- |
