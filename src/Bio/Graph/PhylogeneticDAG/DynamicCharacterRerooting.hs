@@ -29,7 +29,6 @@ import           Control.Applicative
 import           Control.Arrow             ((&&&))
 import           Control.Lens
 import           Control.Monad.State.Lazy
-import           Data.Bifunctor            (second)
 import           Data.Foldable
 import           Data.HashMap.Lazy         (HashMap)
 import qualified Data.HashMap.Lazy  as HM
@@ -651,36 +650,14 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                 -- character vector from the "data-block," updating the dynamic
                 -- character decorations to contain the new minimal cost and
                 -- corresponding traversal foci.
-                vectorForZipping :: Vector (Word, NonEmpty (TraversalFocusEdge, TraversalTopology))
-                vectorForZipping = second (fmap (\e -> (e, resolutionTopology))) <$> minBlockContexts
+                vectorForZipping :: Vector Word
+                vectorForZipping = fst <$> minBlockContexts
 
                 modifiedDynamicChars = zipWith h vectorForZipping $ dynamicCharacters charBlock
 
-                h (costVal, foci) originalDec =
+                h costVal originalDec =
                     originalDec
                       & characterCost .~ costVal
-
-
--- |
--- Used in the trivial case of a single leaf component of a forest.
--- Updates the TraversalFoci to be the only edge in the DAG.
-setDefaultFoci
-  :: HasTraversalFoci z (Maybe TraversalFoci)
-  => PhylogeneticNode2 (CharacterSequence u v w x y z) a
-  -> PhylogeneticNode2 (CharacterSequence u v w x y z) a
-setDefaultFoci =
-    PNode2
-      <$> fmap (fmap (hexmap id id id id id f)) . resolutions
-      <*> nodeDecorationDatum2
-  where
-    f x = x & traversalFoci .~ (Just defaultFociValue :: Maybe TraversalFoci)
-
-
-defaultFociValue :: TraversalFoci
-defaultFociValue = pure (e,t)
-  where
-    e = (0,1)  -- The only edge in the DAG.
-    t = mempty -- So there's no network edges in the DAG.
 
 
 (.!>.) :: (Lookup f, Show (Key f)) => f a -> Key f -> a

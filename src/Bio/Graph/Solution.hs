@@ -22,11 +22,7 @@ module Bio.Graph.Solution
 
 import           Bio.Graph.Forest
 import           Bio.Graph.LeafSet
-import           Bio.Graph.Node
-import           Bio.Metadata.Discrete
-import           Bio.Metadata.DiscreteWithTCM
 import           Bio.Graph.PhylogeneticDAG
-import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
 import           Control.DeepSeq
 import           Control.Lens              hiding (Indexable)
@@ -40,7 +36,6 @@ import           Data.List
 import           Data.List.NonEmpty               (NonEmpty)
 import qualified Data.List.NonEmpty        as NE
 import           Data.Semigroup.Foldable
-import           Data.TCM                         (generate)
 import qualified Data.Text.Lazy            as L
 import           GHC.Generics
 import           Text.Newick.Class

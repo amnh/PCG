@@ -22,12 +22,8 @@ module Bio.Character.Decoration.Continuous.Internal
 
 import Bio.Character.Decoration.Additive
 import Bio.Character.Encodable
-import Bio.Metadata.CharacterName
-import Bio.Metadata.Continuous
-import Bio.Metadata.Discrete
 import Control.DeepSeq
 import Control.Lens
-import Data.Alphabet
 import Data.Range
 import GHC.Generics
 import Numeric.Extended
@@ -45,8 +41,8 @@ newtype ContinuousDecorationInitial c
 
 -- |
 -- A smart constructor for a continuous character.
-continuousDecorationInitial :: CharacterName -> Double -> c -> ContinuousDecorationInitial c
-continuousDecorationInitial name weight value =
+continuousDecorationInitial :: c -> ContinuousDecorationInitial c
+continuousDecorationInitial value =
     ContinuousDecorationInitial
     { continuousDecorationInitialCharacter = value
     }

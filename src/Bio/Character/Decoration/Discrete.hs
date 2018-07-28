@@ -36,9 +36,7 @@ import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
-import Bio.Metadata.CharacterName
 import Control.Lens
-import Data.Alphabet
 import Data.Range
 import Numeric.Extended
 import Text.XML
@@ -66,7 +64,7 @@ class ( HasDiscreteCharacter s a
 -- | (✔)
 class DiscreteCharacterDecoration s a => SimpleDiscreteCharacterDecoration s a | s -> a where
 
-    toDiscreteCharacterDecoration :: CharacterName -> Double -> Alphabet String -> (Word -> Word -> Word) -> (x -> a) -> x -> s
+    toDiscreteCharacterDecoration :: (x -> a) -> x -> s
     {-# MINIMAL toDiscreteCharacterDecoration #-}
 
 
@@ -99,7 +97,7 @@ instance EncodableStaticCharacter c => DiscreteCharacterDecoration (DiscreteDeco
 -- | (✔)
 instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (DiscreteDecoration c) c where
 
-    toDiscreteCharacterDecoration name weight alphabet scm g symbolSet =
+    toDiscreteCharacterDecoration g symbolSet =
         DiscreteDec
         { discreteDecorationCharacter = g symbolSet
         }

@@ -55,10 +55,9 @@ instance ToXML [Char] where
 -- | (✔)
 instance {-# OVERLAPPABLE #-} (Foldable f, ToXML a) => ToXML (f a) where
 
-    toXML lst = Element name attrs contents Nothing
+    toXML lst = Element name [] contents Nothing
        where
            name     = QName "List" Nothing Nothing
-           attrs    = []
            contents = Elem . toXML <$> toList lst
 
 
@@ -67,7 +66,6 @@ instance ToXML Int where
     toXML i = Element name [] contents Nothing
        where
          name     = QName "Int" Nothing Nothing
-         attrs    = []
          contents = [CRef $ show i]
 
 -- |

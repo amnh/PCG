@@ -18,10 +18,7 @@ module Bio.Character.Decoration.NonMetric.Internal where
 import Bio.Character.Decoration.NonMetric.Class
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Encodable
-import Bio.Metadata.CharacterName
-import Bio.Metadata.DiscreteWithTCM
 import Control.Lens
-import Data.Alphabet
 
 
 -- |
@@ -44,7 +41,8 @@ instance EncodableStaticCharacter c => DiscreteCharacterDecoration (NonMetricDec
 
 -- | (✔)
 instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (NonMetricDecorationInitial c) c where
-    toDiscreteCharacterDecoration name weight alphabet scm g symbolSet =
+
+    toDiscreteCharacterDecoration g symbolSet =
         NonMetricDecorationInitial
         { nonMetricDecorationInitialCharacter = g symbolSet
         }

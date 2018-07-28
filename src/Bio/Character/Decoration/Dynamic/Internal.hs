@@ -24,20 +24,11 @@ module Bio.Character.Decoration.Dynamic.Internal
 import Bio.Character.Decoration.Dynamic.Class
 import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
-import Bio.Metadata.CharacterName
-import Bio.Metadata.Discrete
-import Bio.Metadata.DiscreteWithTCM
-import Bio.Metadata.Dynamic
 import Control.DeepSeq
 import Control.Lens
-import Data.Alphabet
 import Data.Bits
-import Data.Foldable
 import Data.Hashable
-import Data.List.NonEmpty (intersperse)
 import Data.MonoTraversable
-import Data.Semigroup     (sconcat)
-import Data.TopologyRepresentation
 import GHC.Generics
 import Text.XML
 
@@ -148,7 +139,7 @@ instance EncodableDynamicCharacter d => DirectOptimizationPostOrderDecoration (D
 instance (EncodableDynamicCharacter d) => DynamicCharacterDecoration (DynamicDecorationInitial d) d where
 
 --    toDynamicCharacterDecoration :: CharacterName -> Double -> Alphabet String -> TCM -> (x -> a) -> x -> s
-    toDynamicCharacterDecoration name weight alphabet scm g symbolSet =
+    toDynamicCharacterDecoration g symbolSet =
         DynamicDecorationInitial
         { dynamicDecorationInitialEncodedField           = charValue
         , dynamicDecorationInitialCharacterAverageLength = toAverageLength . toEnum $ olength charValue
@@ -524,7 +515,7 @@ instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostOrderDecoratio
 
 
 -- | (✔)
-instance (EncodableStream d, Show d) => ToXML (DynamicDecorationDirectOptimization d) where
+instance Show d => ToXML (DynamicDecorationDirectOptimization d) where
 
     toXML decoration = xmlElement "Dynamic_DO_pre-order_decoration_result" attributes contents
         where
@@ -539,7 +530,7 @@ instance (EncodableStream d, Show d) => ToXML (DynamicDecorationDirectOptimizati
 
 
 -- | (✔)
-instance (EncodableStream d, Show d) => ToXML (DynamicDecorationDirectOptimizationPostOrderResult d) where
+instance Show d => ToXML (DynamicDecorationDirectOptimizationPostOrderResult d) where
 
     toXML decoration = xmlElement "Dynamic_DO_post-order_decoration_result" attributes contents
         where
@@ -550,42 +541,6 @@ instance (EncodableStream d, Show d) => ToXML (DynamicDecorationDirectOptimizati
                          , Left ("Preliminary_ungapped_char", show (decoration ^. preliminaryUngapped))
                          ]
 
-
--- |
--- Render a traversal foci to a String.
-renderFoci :: TraversalFoci -> String
-renderFoci foci = prefix <> body <> "\n"
-  where
-    prefix   = "Traversal Foci {" <> show (length foci) <> "}\n"
-    body     = sconcat . intersperse "\n" $ fmap g foci
-    g (e,te) = "  Traversal Focus Edge: " <> show e <> " with network edges in topology: " <> show (toList $ includedNetworkEdges te)
-
-
--- |
--- Generic rendering function for a dynamic character decoration with descriptive
--- fields for determining the result of a network traversal.
-renderingDecorationContext
-  :: ( HasCharacterAlphabet  s x
-     , HasCharacterCost      s y
-     , HasCharacterLocalCost s z
-     , HasTraversalFoci      s (Maybe TraversalFoci)
-     , Show x
-     , Show y
-     , Show z
-     ) => s -> (String, String, String)
-renderingDecorationContext dec = (shownAlphabet, shownCost, shownFoci)
-  where
-    shownAlphabet = show $ dec ^. characterAlphabet
-
-    shownFoci = maybe "No Foci exist\n" renderFoci $ dec ^. traversalFoci
-
-    shownCost = unwords
-        [ "Cost                 :"
-        , show (dec ^. characterCost)
-        , "{"
-        , show (dec ^. characterLocalCost)
-        , "}"
-        ]
 
 renderCost
   :: ( HasCharacterCost s a

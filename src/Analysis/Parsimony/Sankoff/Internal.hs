@@ -153,7 +153,7 @@ updateCostVector
   -> d
   -> NonEmpty (SankoffOptimizationDecoration c)
   -> SankoffOptimizationDecoration c
-updateCostVector meta _parentDecoration (x:|[])                         = x                    -- Shouldn't be possible, but here for completion.
+updateCostVector _meta _parentDecoration (x:|[])                        = x                    -- Shouldn't be possible, but here for completion.
 updateCostVector meta _parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDecoration -- May? be able to amend this to use non-binary children.
   where
     (cs, ds, minTransCost) = foldr findMins initialAccumulator range   -- Sorry abut these shitty variable names. It was to shorten

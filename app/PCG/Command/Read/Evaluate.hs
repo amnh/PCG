@@ -8,8 +8,7 @@ import           Bio.Character.Parsed
 import           Bio.Metadata.Parsed
 import           Bio.Graph
 import           Bio.Graph.Forest.Parsed
-import           Control.Arrow                ((***))
-import           Control.Monad                ((<=<), liftM2, when)
+import           Control.Monad                (liftM2, when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Except
 import           Control.Parallel.Strategies
@@ -324,7 +323,7 @@ expandDynamicCharsMarkedAsAligned fpr = updateFpr <$> result
             case fmap fst . sortBy (comparing snd) . occurances . catMaybes $ dynCharLen . (!k) <$> toList characterMap of
               []    -> acc
               [len] -> case acc of
-                         Failure err -> acc
+                         Failure _ -> acc
                          Success (ms, cm) -> pure (expandMetadata len m <> ms, expandCharacter len k <#$> cm)
               x:xs  -> const <$> acc <*> Failure (invalidPrealigned (sourceFile fpr) (x:|xs))
           _ -> prependUnmodified <$> acc

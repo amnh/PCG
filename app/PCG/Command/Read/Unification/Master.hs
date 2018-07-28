@@ -29,7 +29,7 @@ import           Bio.Sequence                        hiding (hexmap)
 import           Bio.Sequence.Block
 import qualified Bio.Sequence.Metadata               as MD
 import           Bio.Metadata.Continuous                    (continuousMetadata)
-import           Bio.Metadata.Discrete                      (discreteMetadata)
+--import           Bio.Metadata.Discrete                      (discreteMetadata)
 import           Bio.Metadata.DiscreteWithTCM               (discreteMetadataWithTCM)
 import           Bio.Metadata.Dynamic                       (dynamicMetadataWithTCM)
 import           Bio.Metadata.CharacterName          hiding (sourceFile)
@@ -65,7 +65,7 @@ import qualified Data.Set                   as Set
 import           Data.String
 import           Data.TCM                          (TCM, TCMStructure(..))
 import qualified Data.TCM                   as TCM
-import           Data.MonoTraversable
+--import           Data.MonoTraversable
 import           Data.Vector                       (Vector)
 import           PCG.Command.Read.Unification.UnificationError
 import           Prelude                    hiding (lookup, zipWith)
@@ -341,9 +341,9 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
               where
                 encodeToSingletonMetadata (charMay, charMeta, scm, structure, charName) =
                     case charMay of
-                      ParsedContinuousCharacter continuousMay -> MD.continuousToMetadataBlock $ continuousMetadata charName charWeight
-                      ParsedDiscreteCharacter     discreteMay -> MD.discreteToMetadataBlock structure $ discreteMetadataWithTCM charName charWeight specifiedAlphabet scm
-                      ParsedDynamicCharacter       dynamicMay -> MD.dynamicToMetadataBlock $ dynamicMetadataWithTCM charName charWeight specifiedAlphabet scm
+                      ParsedContinuousCharacter {} -> MD.continuousToMetadataBlock $ continuousMetadata charName charWeight
+                      ParsedDiscreteCharacter   {} -> MD.discreteToMetadataBlock structure $ discreteMetadataWithTCM charName charWeight specifiedAlphabet scm
+                      ParsedDynamicCharacter    {} -> MD.dynamicToMetadataBlock $ dynamicMetadataWithTCM charName charWeight specifiedAlphabet scm
                   where
                     charWeight        = weight   charMeta
                     specifiedAlphabet = alphabet charMeta
@@ -356,14 +356,13 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
                 encodeBinToSingletonCharacterBlock
                   :: (ParsedCharacter, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName)
                   -> PartialCharacterBlock UnifiedContinuousCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDynamicCharacter
-                encodeBinToSingletonCharacterBlock (charMay, charMeta, scm, structure, charName) =
+                encodeBinToSingletonCharacterBlock (charMay, charMeta, _scm, structure, _charName) =
                     case charMay of
-                      ParsedContinuousCharacter continuousMay -> continuousSingleton           . Just .   continuousDecorationInitial charName charWeight $ toContinuousCharacter continuousMay
-                      ParsedDiscreteCharacter     discreteMay ->   discreteSingleton structure . Just $ toDiscreteCharacterDecoration charName charWeight specifiedAlphabet scm  staticTransform discreteMay
-                      ParsedDynamicCharacter       dynamicMay ->    dynamicSingleton           . Just $  toDynamicCharacterDecoration charName charWeight specifiedAlphabet scm dynamicTransform  dynamicMay
+                      ParsedContinuousCharacter continuousMay -> continuousSingleton           . Just .   continuousDecorationInitial $ toContinuousCharacter continuousMay
+                      ParsedDiscreteCharacter     discreteMay ->   discreteSingleton structure . Just $ toDiscreteCharacterDecoration staticTransform discreteMay
+                      ParsedDynamicCharacter       dynamicMay ->    dynamicSingleton           . Just $  toDynamicCharacterDecoration dynamicTransform dynamicMay
                   where
                     alphabetLength    = toEnum $ length specifiedAlphabet
-                    charWeight        = weight   charMeta
                     specifiedAlphabet = alphabet charMeta
                     missingCharValue  = NE.fromList $ toList specifiedAlphabet
                     dynamicTransform  = maybe (Missing alphabetLength) (encodeStream specifiedAlphabet)

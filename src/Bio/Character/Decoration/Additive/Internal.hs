@@ -22,12 +22,12 @@ import Bio.Character.Decoration.Additive.Class
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
-import Bio.Metadata.CharacterName
-import Bio.Metadata.Discrete
-import Bio.Metadata.DiscreteWithTCM
+--import Bio.Metadata.CharacterName
+--import Bio.Metadata.Discrete
+--import Bio.Metadata.DiscreteWithTCM
 import Control.DeepSeq
 import Control.Lens
-import Data.Alphabet
+--import Data.Alphabet
 import Data.Range
 import GHC.Generics
 import Numeric.Extended
@@ -264,8 +264,7 @@ instance
 
 -- | (✔)
 instance
-    ( EncodableStreamElement c
-    , Show c
+    ( Show c
     , Show (Finite (Bound c))
     , Show (Range  (Bound c))
     ) => ToXML (AdditivePostorderDecoration c) where
@@ -283,8 +282,7 @@ instance
 
 -- | (✔)
 instance
-    ( EncodableStreamElement c
-    , Show c
+    ( Show c
     , Show (Finite (Bound c))
     , Show (Range  (Bound c))
     ) => ToXML (AdditiveOptimizationDecoration c) where

@@ -19,12 +19,8 @@ import Bio.Character.Decoration.Metric.Class
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
-import Bio.Metadata.CharacterName
-import Bio.Metadata.DiscreteWithTCM
 import Control.DeepSeq
 import Control.Lens
-import Data.Alphabet
-import Data.TCM
 import GHC.Generics
 import Numeric.Extended.Natural
 import Text.XML
@@ -89,7 +85,7 @@ instance EncodableStaticCharacter c => DiscreteCharacterDecoration (SankoffOptim
 -- | (✔)
 instance EncodableStaticCharacter c => DiscreteExtensionSankoffDecoration (SankoffOptimizationDecoration c) c where
 
-    extendDiscreteToSankoff subDecoration costVector prelimExtras finalExtras inputBeta childMinStates cost newMedian leaf =
+    extendDiscreteToSankoff _subDecoration costVector prelimExtras finalExtras inputBeta childMinStates cost newMedian leaf =
 
         SankoffOptimizationDecoration
         { sankoffMinStateTuple         = childMinStates
@@ -178,7 +174,7 @@ instance Show c => Show (SankoffOptimizationDecoration c) where
 -- | (✔)
 instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (MetricDecorationInitial c) c where
 
-    toDiscreteCharacterDecoration name weight alphabet scm g symbolSet =
+    toDiscreteCharacterDecoration g symbolSet =
         MetricDecorationInitial
         { metricDecorationInitialCharacter = g symbolSet
         }

@@ -502,7 +502,7 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
                 updatedCharacterSequence = fromBlockVector . zipWithKey blockGen (M.toBlockVector meta) . toBlockVector $ characterSequence resInfo
                 blockGen j mBlock cBlock = setDynamicCharacters updatedDynamicCharacters cBlock
                   where
-                    (topology,_,_,_,minEdgesVector) = minTopologyContextPerBlock ! j
+                    (topology,_,_,_,_) = minTopologyContextPerBlock ! j
                     excludedEdges = excludedNetworkEdges topology
                     updatedDynamicCharacters = zipWithKey dynCharGen (getDynamicMetadata mBlock) $ dynamicCharacters cBlock
 
@@ -529,8 +529,6 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
                         parentRefContext     = (parentVectors ! (i,j)) ! k
                         -- Stupid monomorphisms prevent elegant code reuse
                         getDynCharDecoration = (!k) . dynamicCharacters . (!j) . toBlockVector . characterSequence
-                        charFoci = Just $ (\x -> (x, topology)) <$> rootingEdges
-                        rootingEdges = minEdgesVector ! k
 
 
 -- |

@@ -80,7 +80,6 @@ common ghc-flags
                     -Wmissing-fields
                     -Wmissing-home-modules
                     -Wmissing-monadfail-instances
-                    -Wmissing-monadfail-instances
                     -Wmissing-signatures
                     -Wnoncanonical-monadfail-instances
                     -Wnoncanonical-monad-instances
@@ -90,7 +89,6 @@ common ghc-flags
                     -Wredundant-constraints
                     -Wsemigroup
                     -Wtabs
-                    -Wunrecognised-warning-flags
                     -Wunrecognised-warning-flags
                     -Wunused-binds
                     -Wunused-do-bind

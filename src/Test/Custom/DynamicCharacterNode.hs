@@ -29,6 +29,7 @@ import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (filterG
 import           Bio.Character
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Metadata
+import           Bio.Metadata.CharacterName
 import           Data.Alphabet.IUPAC
 import           Data.MonoTraversable
 import           Data.String
@@ -97,11 +98,20 @@ scm i j = if i == j then 0 else 1
 defMetadata :: DynamicCharacterMetadataDec (Element DynamicChar)
 defMetadata = dynamicMetadata defName defWeight defAlphabet scm Nothing
 
-initDec :: DynamicChar -> DynamicDecorationInitial DynamicChar
-initDec = toDynamicCharacterDecoration defName defWeight defAlphabet scm id
 
-defName   = fromString "Test Character"
+initDec :: DynamicChar -> DynamicDecorationInitial DynamicChar
+initDec = toDynamicCharacterDecoration id
+
+
+defName :: CharacterName
+defName = fromString "Test Character"
+
+
+defWeight :: Double
 defWeight = 1
+
+
+defAlphabet :: Alphabet String
 defAlphabet = fromSymbols ["A","C","G","T"]
 
 

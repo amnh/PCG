@@ -11,6 +11,9 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE FlexibleContexts #-}
+-- We add this because we have some 'realToFrac' calls which are necissary,
+-- but the -Widentities flag from the .cabal file erroneously warns to omit it.
+{-# OPTIONS_GHC -fno-warn-identities #-}
 
 module Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
   ( assignPunitiveNetworkEdgeCost

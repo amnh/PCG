@@ -33,10 +33,9 @@ import           Bio.Character.Decoration.Shared
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG.Internal
-import           Bio.Metadata.CharacterName
 import           Bio.Metadata.Continuous
 import           Bio.Metadata.Discrete
-import           Bio.Metadata.DiscreteWithTCM                                                                                              
+import           Bio.Metadata.DiscreteWithTCM
 import           Bio.Metadata.Dynamic
 import           Bio.Sequence
 import           Bio.Sequence.Metadata            (MetadataSequence, getBlockMetadata)
