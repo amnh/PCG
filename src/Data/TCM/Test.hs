@@ -1,4 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE RecordWildCards #-}
+
 module Data.TCM.Test
   ( testSuite
   ) where
@@ -32,7 +34,8 @@ testExampleCases = testGroup "Example Cases for Data.TCM"
     , diagnoseTcmCases
     ]
 
--- generate cases for diagnosis
+-- Generate cases for TcmStructure diagnosis
+
 structureType :: TCM -> TCMStructure
 structureType = tcmStructure . diagnoseTcm
 
@@ -94,9 +97,26 @@ diagnoseTcmCases = testGroup "Example cases for TCMDiagnosis"
                                 -- | -- Ensure matrix is at least 3 x 3 as k = 2 case is both
                                 -- | -- additive and nonadditive.
 
+-- Generate cases for TCMDiagnosis factoring
+
+factoringDiagnosisCases :: TestTree
+factoringDiagnosisCases = testGroup "Example cases for factoredTcm and factoredWeight"
+    [ QC.testProperty "(omap (* weight) factoredTcm) === tcm" factorProp
+    ]
+  where
+    factorProp :: TCM -> Property
+    factorProp tcm =
+      let
+        TCMDiagnosis{..} = diagnoseTcm tcm
+        weight = fromIntegral factoredWeight
+      in
+        (omap (* (weight :: Word32)) factoredTcm)
+        === tcm
+
 -- Examples from documentation
 
 -- Helper function to extract list of elements and size of TCM
+
 elementsAndSize :: TCM -> ([Word32], Int)
 elementsAndSize = (bimap otoList size) . (\a -> (a,a))
 
@@ -105,8 +125,6 @@ documentationCases = testGroup "Example cases in documentation"
     [ fromCases
     , generateCases
     ]
-
-
 
 
 fromCases :: TestTree
