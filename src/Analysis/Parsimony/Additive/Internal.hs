@@ -30,10 +30,6 @@ import Control.Lens
 import Data.List.NonEmpty (NonEmpty( (:|) ))
 import Data.Range
 import Numeric.Extended
--- import Text.XML.Custom
--- import Text.XML.Light
-
--- import Debug.Trace
 
 {-
   TODO: Add these trees to the new test suite
@@ -108,18 +104,17 @@ import Numeric.Extended
 -- |
 -- Used on the post-order (i.e. first) traversal.
 -- Applies appropriate logic to internal node and leaf node cases.
-additivePostOrder :: ( DiscreteCharacterMetadata d
-                     , RangedCharacterDecoration d  c
---                     , ToXML                     d
---                     , ToXML                     d'
-                     , DiscreteCharacterMetadata d'
-                     , RangedExtensionPostorder  d' c
-                     )
-                  => d -> [d'] -> d'
+additivePostOrder
+  :: ( RangedCharacterDecoration d  c
+     , RangedExtensionPostorder  d' c
+     )
+  => d
+  -> [d']
+  -> d'
 additivePostOrder parentDecoration xs =
     case xs of
-        []   -> initializeLeaf  parentDecoration -- a leaf
-        y:ys -> updatePostOrder parentDecoration $ y:|ys
+      []   -> initializeLeaf  parentDecoration -- a leaf
+      y:ys -> updatePostOrder parentDecoration $ y:|ys
 
 
 -- |
@@ -127,19 +122,17 @@ additivePostOrder parentDecoration xs =
 -- state. Gives it a minimum cost of 0.
 --
 -- Used on the post-order pass.
-initializeLeaf :: ( DiscreteCharacterMetadata d
-                  , RangedCharacterDecoration d  c
---                  , ToXML                     d'
---                  , RangedCharacterDecoration d' c
-                  , RangedExtensionPostorder  d' c
-                  )
-               => d
-               -> d'
+initializeLeaf
+  :: ( RangedCharacterDecoration d  c
+     , RangedExtensionPostorder  d' c
+     )
+  => d
+  -> d'
 initializeLeaf curDecoration = finalDecoration
-        where
-            finalDecoration = extendRangedToPostorder curDecoration 0 (toRange label) (unitRange, unitRange) True
-            label     = curDecoration ^. intervalCharacter
-            unitRange = zeroRange label
+  where
+    finalDecoration = extendRangedToPostorder curDecoration 0 (toRange label) (unitRange, unitRange) True
+    label     = curDecoration ^. intervalCharacter
+    unitRange = zeroRange label
 
 
 -- |
@@ -150,63 +143,60 @@ initializeLeaf curDecoration = finalDecoration
 -- intersection of the two child intervals.
 --
 -- Used on the postorder pass.
-updatePostOrder :: (-- DiscreteCharacterMetadata d
-                     RangedCharacterDecoration d c
---                   , ToXML                     d'
-                   , DiscreteCharacterMetadata d'
-                   , RangedExtensionPostorder  d' c
-                   )
-                => d -> NonEmpty d' -> d'
+updatePostOrder
+  :: ( RangedCharacterDecoration d c
+     , RangedExtensionPostorder  d' c
+     )
+  => d
+  -> NonEmpty d'
+  -> d'
 updatePostOrder _parentDecoration (x:|[])                     = x
 updatePostOrder _parentDecoration (leftChild:|(rightChild:_)) = finalDecoration
-        where
-            finalDecoration = extendRangedToPostorder leftChild totalCost newInterval childIntervals False
-            isOverlapping                = lhs `intersects` rhs
-            newInterval                  = if isOverlapping
-                                           then lhs `intersection`   rhs
-                                           else lhs `smallestClosed` rhs
-            childIntervals@(lhs, rhs)    = (leftChild ^. preliminaryInterval, rightChild ^. preliminaryInterval)
-            totalCost                    = thisNodeCost + (leftChild ^. characterCost) + (rightChild ^. characterCost)
-            thisNodeCost                 = if isOverlapping
-                                     then 0
-                                     else unsafeToFinite $ upperBound newInterval - lowerBound newInterval
+  where
+    finalDecoration = extendRangedToPostorder leftChild totalCost newInterval childIntervals False
+    totalCost       = thisNodeCost + (leftChild ^. characterCost) + (rightChild ^. characterCost)
+    isOverlapping   = lhs `intersects` rhs
+
+    newInterval
+      | isOverlapping = lhs `intersection`   rhs
+      | otherwise     = lhs `smallestClosed` rhs
+
+    thisNodeCost
+      | isOverlapping = 0
+      | otherwise     = unsafeToFinite $ upperBound newInterval - lowerBound newInterval
+
+    childIntervals@(lhs, rhs) = (leftChild ^. preliminaryInterval, rightChild ^. preliminaryInterval)
 
 
 -- |
 -- Used on the pre-order (i.e. second) traversal.
 -- Applies appropriate logic to root node, internal node, and leaf node cases.
-additivePreOrder  :: (-- Ranged c
---                     , Eq (Range (Bound c))
---                     , Num (Bound c)
---                       Ord (Bound c)
-                       DiscreteCharacterMetadata d
-                     , RangedExtensionPostorder  d  c
---                     , ToXML                     d'
---                     , RangedExtensionPostorder  d' c
-                     , RangedExtensionPreorder   d' c
---                     , RangedCharacterDecoration d' c
-                     )
-                  => d -> [(Word, d')] -> d'
-additivePreOrder childDecoration [] = finalDecoration
-    where
-    finalDecoration = extendRangedToPreorder childDecoration $ childDecoration ^. preliminaryInterval
+additivePreOrder
+  :: ( RangedExtensionPostorder  d  c
+     , RangedExtensionPreorder   d' c
+     )
+  => d
+  -> [(Word, d')]
+  -> d'
+additivePreOrder childDecoration [] = extendRangedToPreorder childDecoration $ childDecoration ^. preliminaryInterval
 additivePreOrder childDecoration ((_, parentDecoration):_)
-    | childDecoration ^. isLeaf = finalizeLeaf childDecoration
-    | otherwise                 = extendRangedToPreorder childDecoration $ determineFinalState childDecoration parentDecoration
+  | childDecoration ^. isLeaf = finalizeLeaf childDecoration
+  | otherwise                 = extendRangedToPreorder childDecoration $ determineFinalState childDecoration parentDecoration
 
 
 -- |
 -- Finalize a leaf node on a pre-order traversal.
 -- Set the preliminary interval as the final interval of the leaf decoration.
-finalizeLeaf :: ( RangedExtensionPreorder   d' c
-                , DiscreteCharacterMetadata d
-                , RangedPostorderDecoration d  c
-                )
-             => d -> d'
+finalizeLeaf
+  :: ( RangedExtensionPreorder   d' c
+     , RangedPostorderDecoration d  c
+     )
+  => d
+  -> d'
 finalizeLeaf decoration = finalDecoration
-    where
-        finalDecoration = extendRangedToPreorder decoration (decoration ^. preliminaryInterval)
-                                      & intervalCharacter .~ decoration ^. intervalCharacter -- Un-overwrite the character data
+  where
+    finalDecoration = extendRangedToPreorder decoration (decoration ^. preliminaryInterval)
+                        & intervalCharacter .~ decoration ^. intervalCharacter -- Un-overwrite the character data
 
 
 -- |
@@ -222,14 +212,14 @@ finalizeLeaf decoration = finalDecoration
 -- union them, then union that with the parent.
 --
 -- Used on the pre-order pass.
-determineFinalState :: (-- Ranged c
---                       , Num (Bound c)
-                         Ord (Bound c)
---                       , DiscreteCharacterMetadata    d
-                       , RangedExtensionPostorder     d  c
-                       , RangedDecorationOptimization d' c
-                       )
-                    => d -> d'-> Range (Bound c)
+determineFinalState
+  :: ( Ord (Bound c)
+     , RangedExtensionPostorder     d  c
+     , RangedDecorationOptimization d' c
+     ) 
+  => d
+  -> d'
+  -> Range (Bound c)
 determineFinalState childDecoration parentDecoration = resultRange
   where
     ancestor       = parentDecoration ^. finalInterval
@@ -238,14 +228,14 @@ determineFinalState childDecoration parentDecoration = resultRange
     chi            = (leftUnionRight `union` preliminary) `intersection` ancestor
     leftUnionRight = left `union` right
     resultRange
-        -- Additive rule 1
-        | (ancestor `intersection` preliminary) == ancestor = ancestor
+      -- Additive rule 1
+      | (ancestor `intersection` preliminary) == ancestor = ancestor
 
-        -- Additive rule 2
-        | leftUnionRight `intersects` ancestor =
-            if   chi `intersects` preliminary
-            then chi
-            else chi `largestClosed` (preliminary `closestStateTo` chi)
+      -- Additive rule 2
+      | leftUnionRight `intersects` ancestor =
+          if   chi `intersects` preliminary
+          then chi
+          else chi `largestClosed` (preliminary `closestStateTo` chi)
 
-        -- Additive rule 3
-        | otherwise = threeWayRange ancestor preliminary leftUnionRight
+      -- Additive rule 3
+      | otherwise = threeWayRange ancestor preliminary leftUnionRight

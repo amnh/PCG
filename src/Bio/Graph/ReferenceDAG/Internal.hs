@@ -322,7 +322,6 @@ instance ToXML (GraphData m) where
 instance Show n => ToXML (IndexData e n) where
 
    toXML indexData = toXML . show $ nodeDecoration indexData
-   -- ("Node_type", show $ getNodeType indexData)
 
 
 -- | (✔)
@@ -330,8 +329,6 @@ instance (Show n, ToXML n) => ToXML (ReferenceDAG d e n) where
 
     toXML dag = xmlElement "Directed_acyclic_graph" [] [newick, meta, vect]
       where
-          -- leafs    = Right $ collapseElemList "Leaf set" [] [(dag ^. leafSet)]
-          -- fmap id . (^. leafSet) <$> forests
           meta   = Right . toXML $ graphData dag
           newick = Left ("Newick_representation", toNewick dag)
           vect   = Right . collapseElemList "Nodes" [] $ dag
@@ -977,7 +974,6 @@ unfoldDAG f origin =
             }
 
     expandedMap = contractToContiguousVertexMapping $ expandVertexMapping resultMap
---    expandedMap = resultMap
 
     -- TODO:
     -- _rootIndices seems to be wrong so we do this.
@@ -1053,25 +1049,6 @@ unfoldDAG f origin =
           | otherwise            = mempty
 
 
-
-
--- A test for unfoldDAG containing all node types!
-{--
-
-dataDef1 :: [(Char,String)]
-dataDef1 = [('R',"AB"),('A',"CD"),('B',"CE"),('C',[]),('D',[]),('E',[]),('Z',"BF"),('F',"GH"),('G',[]),('H',[])]
-
-gen1 :: Char -> ([(Int,Char)], String, [(Int,Char)])
-gen1 x = (pops, show x, kids)
-  where
-    pops = foldMap (\(i,xs) -> if x `elem` xs then [(-1,i)] else []) dataDef1
-    kids =
-      case Pre.lookup x dataDef1 of
-        Nothing -> []
-        Just xs -> (\y -> (-1,y)) <$> xs
---}
-
-
 -- |
 -- Extract a context from the 'ReferenceDAG' that can be used to create a dot
 -- context for rendering.
@@ -1136,16 +1113,6 @@ candidateNetworkEdges dag = S.filter correctnessCriterion $ foldMapWithKey f mer
     g j k   = foldMap (\x -> S.singleton ((j,k), x))
     h j k v = possibleEdgeSet j k `difference` v
     possibleEdgeSet i j = completeEdgeSet `difference` (singletonEdgeSet (i,j) <> singletonEdgeSet (j,i))
-{-
-    renderVector  = unlines . mapWithKey (\k v -> show k <> " " <> show (childRefs v)) . toList
-
-    renderContext = unlines [refsStr, anstSet, descSet, edgeset]
-      where
-        refsStr = referenceRendering (dag { references = mergedVector })
-        edgeset = renderVector mergedVector
-        anstSet = renderVector ancestoralEdgeSets
-        descSet = renderVector descendantEdgeSets
--}
 
 
 -- |
@@ -1204,7 +1171,6 @@ tabulateAncestoralEdgesets dag =
               case filter (/=i) xs of
                 []  -> mempty
                 x:_ -> singletonEdgeSet (x,k)
---                x:_ -> foldMap (`getPreviousDatums` x) . otoList . parentRefs $ memo ! x
 
 
 -- |
@@ -1234,7 +1200,7 @@ tabulateDescendantEdgesets dag =
               [x]   -> getPreviousDatums i x
               x:y:_ -> getPreviousDatums i x `union` getPreviousDatums i y
 
-    getPreviousDatums _ j = foldMap id (childRefs point) <> other
+    getPreviousDatums _ j = fold (childRefs point) <> other
       where
         point = memo ! j
         -- This is the step where new information is added to the accumulator
@@ -1294,4 +1260,3 @@ parentsAndChildren i dag = (ps, cs)
     iPoint = references dag ! fromEnum i
     ps = parentRefs iPoint
     cs = childRefs  iPoint
-

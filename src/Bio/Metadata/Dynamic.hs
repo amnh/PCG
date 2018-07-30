@@ -27,6 +27,7 @@ module Bio.Metadata.Dynamic
     , TraversalTopology
     , dynamicMetadata
     , dynamicMetadataFromTCM
+    , dynamicMetadataWithTCM
     , maybeConstructDenseTransitionCostMatrix
     ) where
 

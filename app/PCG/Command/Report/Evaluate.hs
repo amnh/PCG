@@ -5,24 +5,15 @@ module PCG.Command.Report.Evaluate
   ( evaluate
   ) where
 
-
-import           Analysis.Parsimony.Dynamic.DirectOptimization
---import           Analysis.ImpliedAlignment.Standard
---import           Analysis.ImpliedAlignment
---import           Analysis.Parsimony.Binary.Optimization
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
 import           Bio.Character.Exportable
-import           Bio.Metadata.CharacterName
 import           Bio.Graph
 import           Bio.Graph.PhylogeneticDAG
 import           Control.Monad.IO.Class
---import           Control.Monad.Logger
---import           Data.Foldable
 import           Data.List.NonEmpty
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
-import           Data.TCM.Memoized
 import           PCG.Command.Report
 --import           PCG.Command.Report.DynamicCharacterTable
 import           PCG.Command.Report.GraphViz
@@ -33,11 +24,6 @@ import           PCG.Command.Report.GraphViz
 --import           PCG.Command.Report.TaxonMatrix
 import           PCG.Syntax (Command(..))
 import           Text.XML
--- import           Text.XML.Light
-
---import Bio.Graph.ReferenceDAG
---import Data.Semigroup
---import Debug.Trace
 
 
 evaluate :: Command -> GraphState -> SearchState
@@ -116,12 +102,11 @@ generateOutput _ _ = ErrorCase "Unrecognized 'report' command"
 
 showWithTotalEdgeCost 
   :: ( HasSingleDisambiguation z c
-     , HasDenseTransitionCostMatrix  z (Maybe DenseTransitionCostMatrix)
-     , HasSparseTransitionCostMatrix z MemoizedCostMatrix
      , EncodableDynamicCharacter c
      , Exportable c
      , Exportable (Element c)
      , Ord (Element c)
+     , Show m
      , Show e
      , Show n
      , Show u
@@ -136,30 +121,9 @@ showWithTotalEdgeCost
      , HasCharacterCost   x Word
      , HasCharacterCost   y Word
      , HasCharacterCost   z Word
-     , HasCharacterName   u CharacterName
-     , HasCharacterName   v CharacterName
-     , HasCharacterName   w CharacterName
-     , HasCharacterName   x CharacterName
-     , HasCharacterName   y CharacterName
-     , HasCharacterName   z CharacterName
-     , HasCharacterWeight u Double
-     , HasCharacterWeight v Double
-     , HasCharacterWeight w Double
-     , HasCharacterWeight x Double
-     , HasCharacterWeight y Double
-     , HasCharacterWeight z Double
-     , HasTraversalFoci   z (Maybe TraversalFoci)
      ) 
-  => PhylogeneticSolution (PhylogeneticDAG2 e n u v w x y z) 
+  => PhylogeneticSolution (PhylogeneticDAG2 m a d e n u v w x y z) 
   -> String
-{-
-showWithTotalEdgeCost x | trace ("Before Report Rendering: " <>
-                                   (unlines . fmap
-                                      (unlines . fmap (\(PDAG2 dag) -> referenceRendering dag) . toList
-                                      ) $ toList (toNonEmpty <$> phylogeneticForests x)
-                                   )
-                                ) False = undefined
--}
 showWithTotalEdgeCost x = unlines
     [ show $ fmap totalEdgeCosts . toNonEmpty <$> phylogeneticForests x
     , show x
@@ -173,12 +137,3 @@ data FileStreamContext
    = ErrorCase    String
    | SingleStream FileContent
    | MultiStream  (NonEmpty (FilePath,FileContent))
-
-{-
-dynamicCharacterCount :: MetadataSolution m StandardMetadata => m -> Int
-dynamicCharacterCount = foldl' f 0 . getMetadata
-  where
-    f n e = if   getType e == DirectOptimization
-            then n + 1
-            else n
--}

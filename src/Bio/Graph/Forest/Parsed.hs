@@ -20,7 +20,6 @@ module Bio.Graph.Forest.Parsed where
 
 import           Bio.Graph.Forest
 import           Bio.Graph.ReferenceDAG
--- import           Bio.Graph.ZipperDAG
 import           Control.Arrow                            ((&&&))
 import           Data.EdgeLength
 import           Data.Foldable
@@ -48,8 +47,6 @@ import           Prelude                           hiding (lookup)
 
 -- import Debug.Trace
 
-
--- type ParserTree   = ZipperNode (Maybe Double) (Maybe String)
 
 -- |
 -- The type of possibly-present decorations on a tree from a parsed file.
@@ -208,7 +205,7 @@ instance ParsedForest TntResult where
             f i = (g $ toList parentMay, datum, g childRefs)
               where
                 (parentMay, datum, childRefs) = mapping ! i
-                g = fmap (\j -> (mempty, j))
+                g = fmap (const mempty &&& id)
 
         -- | We assign a unique index to each node and create an adjcency matrix.
         enumerate :: (n -> String) -> LeafyTree n -> IntMap (Maybe Int, Maybe String, [Int])

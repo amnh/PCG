@@ -34,7 +34,7 @@ import           Data.Char                         (isSpace)
 --import           Data.Either                       (either)
 import           Data.Functor                      (($>))
 import           Data.List.NonEmpty                (NonEmpty(..), nonEmpty)
-import           Data.Maybe                        (catMaybes)
+import           Data.Maybe                        (mapMaybe)
 import           Data.Proxy
 import qualified Data.Set                   as S
 --import           Data.Void
@@ -115,7 +115,7 @@ endOfLine = choice (try <$> [ nl, cr *> nl, cr ]) $> newLineChar
 -- |
 -- Accepts zero or more Failure messages.
 fails :: MonadParsec e s m => [String] -> m a
-fails = failure Nothing . S.fromList . fmap Label . catMaybes . fmap nonEmpty
+fails = failure Nothing . S.fromList . fmap Label . mapMaybe nonEmpty
 
 
 -- |

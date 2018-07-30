@@ -15,28 +15,51 @@
 
 module Bio.Sequence
   ( CharacterSequence()
-  , CharacterBlock(..)
+  , CharacterBlock()
   , HasBlockCost
   , HasRootCost
   , PartialCharacterBlock()
+  -- * CharacterBlock construction
   , continuousSingleton
   , discreteSingleton
   , dynamicSingleton 
   , finalizeCharacterBlock
-  , toMissingCharacters
-  , toBlocks
   , fromBlocks
-  , toBlockVector
   , fromBlockVector
+  -- * CharacterBlock deconstruction
+  , toBlocks
+  , toBlockVector
+  -- * Block extraction
+  , continuousCharacterBins
+  , nonAdditiveCharacterBins
+  , additiveCharacterBins
+  , metricCharacterBins
+  , nonMetricCharacterBins
+  , dynamicCharacters
+  , setDynamicCharacters
+  -- * CharacterBlock transformations
+  , toMissingCharacters
   , hexmap
   , hexTranspose
   , hexZipWith
+  , hexZipWithMeta
+  -- * Cost quantification
   , sequenceCost
   , sequenceRootCost
   , blockCost
   , staticCost
   ) where
 
-import Bio.Sequence.Internal
-import Bio.Sequence.Block hiding (hexmap, hexTranspose, hexZipWith)
+import Bio.Sequence.Character
+import Bio.Sequence.Block hiding (hexmap, hexTranspose, hexZipWith, hexZipWithMeta)
 import Bio.Sequence.Block.Builder
+import Bio.Sequence.Block.Character ( finalizeCharacterBlock
+                                    , continuousCharacterBins
+                                    , nonAdditiveCharacterBins
+                                    , additiveCharacterBins
+                                    , metricCharacterBins
+                                    , nonMetricCharacterBins
+                                    , dynamicCharacters
+                                    , setDynamicCharacters
+                                    )
+

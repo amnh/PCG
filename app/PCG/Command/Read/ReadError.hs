@@ -13,7 +13,6 @@ module PCG.Command.Read.ReadError
 import Data.List.NonEmpty
 import Data.Maybe            (catMaybes)
 import Text.Megaparsec
-import Data.Semigroup
 import Data.Semigroup.Foldable
 
 
@@ -46,6 +45,7 @@ instance Show ReadError where
         , unparsableMessage
         , ambiguousMessage
         , multipleTCMsMessage
+        , invalidPrealignsMessage
         ]
       where
         (unfindables, unopenables, unparsables, ambiguity, doubleTCMs, invalidPrealigns) = partitionReadErrorMessages $ toList errors

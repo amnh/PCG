@@ -47,37 +47,3 @@ data ParsedCharacter
    | ParsedDiscreteCharacter   (Maybe (AmbiguityGroup String))
    | ParsedDynamicCharacter    (Maybe (NonEmpty (AmbiguityGroup String)))
    deriving (Eq, Show)
-
-
-{-
--- | Higher level arbitrary helper
-parsedCharsGivenAlph :: [Alphabet String] -> Gen ParsedChars
-parsedCharsGivenAlph inAlphs = V.fromList <$> mapM parsedMaybe inAlphs
--}
-
-
-{-
--- | Generates a maybe character
-parsedMaybe :: Alphabet String -> Gen (Maybe ParsedChar)
-parsedMaybe inAlph = do
-    c <- arbParsedGivenAlph inAlph
-    elements [Just c, Nothing]
--}
-
-
-{-
--- | Define an arbitrary helper function to create a parsed sequence over an Alphabet
-arbParsedGivenAlph :: Alphabet String -> Gen ParsedChar
-arbParsedGivenAlph inAlph = NE.fromList <$> listOf1 ( NE.fromList <$> sublistOf (toList inAlph))
--}
-
-
--- Shouldn't need this definition
-
-{-
--- | (✔)
-instance Arbitrary ParsedChar where
-   arbitrary = do
-       let amb = NE.fromList <$> listOf1 arbitrary
-       NE.fromList <$> listOf1 amb
- -}

@@ -8,35 +8,28 @@ import           Bio.Character.Parsed
 import           Bio.Metadata.Parsed
 import           Bio.Graph
 import           Bio.Graph.Forest.Parsed
-import           Control.Arrow                ((***))
---import           Control.DeepSeq
-import           Control.Monad                ((<=<), liftM2, when)
+import           Control.Monad                (liftM2, when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Except
 import           Control.Parallel.Strategies
 import           Control.Parallel.Custom
-import           Data.Alphabet   --    hiding (AmbiguityGroup)
--- import           Data.Alphabet.IUPAC
+import           Data.Alphabet
 import           Data.Bifunctor               (bimap,first)
--- import           Data.Char                    (isLower,toLower,isUpper,toUpper)
 import           Data.Either.Custom
 import           Data.Foldable
 import           Data.Functor
 import           Data.Key
-import           Data.List                    (sortBy)
+import           Data.List                    (sortOn)
 import           Data.List.NonEmpty           (NonEmpty(..))
 import qualified Data.List.NonEmpty    as NE
 import           Data.List.Utility            (occurances)
-import           Data.Map                     (Map) -- ,assocs,insert,union)
--- import qualified Data.Map              as M
+import           Data.Map                     (Map)
 import           Data.Maybe                   (catMaybes)
 import           Data.Ord                     (comparing)
---import           Data.Semigroup
 import           Data.TCM                     (TCMDiagnosis(..), TCMStructure(..), diagnoseTcm)
 import qualified Data.TCM              as TCM
 import           Data.Text.IO                 (readFile)
 import           Data.Validation
--- import           Data.Vector                  (Vector)
 import qualified Data.Vector           as V
 import           Data.Void
 import           File.Format.Dot
@@ -60,18 +53,12 @@ import           Text.Megaparsec
 
 --import Debug.Trace
 
--- type SearchState = EvaluationT IO (Either TopologicalResult CharacterResult)
-
 
 parse' :: Parsec Void s a -> String -> s -> Either (ParseError (Token s) Void) a
 parse' = parse
 
 
---evaluate :: Command -> EvaluationT IO a -> EvaluationT IO (Either TopologicalResult DecoratedCharacterResult)
---evaluate :: Command -> EvaluationT IO a -> EvaluationT IO (Either TopologicalResult CharacterResult)
-evaluate :: Command -> SearchState -- EvaluationT IO (Either TopologicalResult CharacterResult)
--- evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
--- evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
+evaluate :: Command -> SearchState
 evaluate (READ (ReadCommand fileSpecs)) = do
     when (null fileSpecs) $ fail "No files specified in 'read()' command"
     result <- liftIO . runExceptT . eitherTValidation $ parmap rpar (fmap removeGaps . parseSpecifiedFile) fileSpecs
@@ -79,38 +66,16 @@ evaluate (READ (ReadCommand fileSpecs)) = do
       Left pErr -> fail $ show pErr   -- Report structural errors here.
       Right xs ->
         case decoration . masterUnify $ transformation <$> concat xs of
---        case masterUnify $ transformation <$> concat xs of
           Left uErr -> fail $ show uErr -- Report unification errors here.
            -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
           Right g   -> pure g
                        -- (liftIO . putStrLn {- . take 500000 -} $ either show (ppTopElement . toXML) g)
-                       -- (liftIO . putStrLn $ renderSequenceCosts g)
                        -- (liftIO . putStrLn $ show g) $> g
   where
     transformation = id -- expandIUPAC
     decoration     = fmap (fmap initializeDecorations2)
 
 evaluate _ = fail "Invalid READ command binding"
-
-{-
-renderSequenceCosts :: Either t (PhylogeneticSolution (PhylogeneticDAG2 e n u v w x y z)) -> String
-renderSequenceCosts (ThrowE    _) = "<Trees only>"
-renderSequenceCosts (Right sol) = outputStream
-  where
-    outputStream = foldMapWithKey f $ phylogeneticForests sol
-    f key forest = unlines
-        [ "Solution #" <> show key
-        , ""
-        , indent $ foldMapWithKey g forest
-        ]
-    g key dags = unlines
-        [ "Forest #" <> show key
-        , ""
-        , indent $ renderSummary dags
-        ]
-    indent = intercalate "\n" . fmap ("  "<>) . lines
---    unlines . toList . fmap (unlines . toList . fmap (unlines . fmap show . toList . rootCosts)) . phylogeneticForests
--}
 
 
 removeGaps :: Functor f => f FracturedParseResult -> f FracturedParseResult
@@ -206,48 +171,6 @@ parseCustomAlphabet spec = getSpecifiedContent spec >>= (ExceptT . pure . parseS
             Just (path, content) -> bimap (unparsable content) Just $ parse' tcmStreamParser path content
         eitherValidation . fmap (parse'' tcmMay) $ dataFiles specContent
 
-{-
-applyReferencedTCM :: FracturedParseResult -> FracturedParseResult
-applyReferencedTCM fpr =
-    case relatedTcm fpr of
-       Nothing -> fpr
-       Just x  ->
-         let newAlphabet = fromSymbols $ customAlphabet x
-             newTcm      = transitionCosts x
-         in  fpr
-             { parsedMetas = updateAlphabet newAlphabet <$> parsedMetas fpr
-            }
-  where
-    updateAlphabet parsedMeta newValue = parsedMeta { alphabet = newValue }
--}
-
---prependFilenamesToCharacterNames :: FracturedParseResult -> FracturedParseResult
---prependFilenamesToCharacterNames fpr = fpr { parsedMetas = prependName (sourceFile fpr) <$> parsedMetas fpr }
-
-
-{- removed to eliminate compilation warning
-expandIUPAC :: FracturedParseResult -> FracturedParseResult
-expandIUPAC fpr = fpr { parsedChars = newTreeChars }
-  where
-    newTreeChars = f (parsedChars fpr) (parsedMetas fpr)
-    f :: TreeChars -> Vector ParsedCharacterMetadata -> TreeChars
-    f mapping meta = g <$> mapping
-      where
-        g :: ParsedChars -> ParsedChars
-        g = V.zipWith h meta
-          where
-            h :: ParsedCharacterMetadata -> Maybe ParsedChar -> Maybe ParsedChar
-            h cInfo seqMay = expandCodes <$> seqMay
-              where
-                cAlph = alphabet cInfo
-
-                expandCodes :: ParsedChar -> ParsedChar
-                expandCodes x
-                  | isAlphabetDna       cAlph = expandOrId nucleotideIUPAC <$> x
-                  | isAlphabetAminoAcid cAlph = expandOrId aminoAcidIUPAC  <$> x
-                  | otherwise = x
-    expandOrId m x = fromMaybe x $ x `lookup` m
--}
 
 -- TODO: check file extension, to guess which parser to use first
 progressiveParse :: FilePath -> ExceptT ReadError IO FracturedParseResult
@@ -302,63 +225,6 @@ toFractured tcmMat path =
         <*> unifyGraph
         <*> const tcmMat
         <*> const path
-{--}
-
-{- removed to eliminate compilation warning
-nucleotideIUPAC :: Map (AmbiguityGroup String) (AmbiguityGroup String)
-nucleotideIUPAC = casei $ nonEmptyMap core
-  where
-    ref  = (core !)
-    core = M.fromList
-         [ (["A"], ["A"]     )
-         , (["G"], ["G"]     )
-         , (["C"], ["C"]     )
-         , (["T"], ["T"]     )
-         , (["-"], ["-"]     ) -- assume 5th state (TODO: fix this)
-         , (["U"], ref ["T"] )
-         , (["R"], ref ["A"] <> ref ["G"])
-         , (["M"], ref ["A"] <> ref ["C"])
-         , (["W"], ref ["A"] <> ref ["T"])
-         , (["S"], ref ["G"] <> ref ["C"])
-         , (["K"], ref ["G"] <> ref ["T"])
-         , (["Y"], ref ["C"] <> ref ["T"])
-         , (["V"], ref ["A"] <> ref ["G"] <> ref ["C"])
-         , (["D"], ref ["A"] <> ref ["G"] <> ref ["T"])
-         , (["H"], ref ["A"] <> ref ["C"] <> ref ["T"])
-         , (["B"], ref ["G"] <> ref ["C"] <> ref ["T"])
-         , (["N"], ref ["A"] <> ref ["G"] <> ref ["C"] <> ref ["T"])
-         , (["X"], ref ["N"])
-         , (["?"], ref ["A"] <> ref ["G"] <> ref ["C"] <> ref ["T"] <> ref ["-"])
-         ]
-
-
-aminoAcidIUPAC :: Map (AmbiguityGroup String) (AmbiguityGroup String)
-aminoAcidIUPAC = casei . nonEmptyMap $ core `union` multi
-  where
-    core         = M.fromList $ zip symbolGroups symbolGroups
-    symbolGroups = pure . pure <$> "ACDEFGHIKLMNPQRSTVWY-"
-    ref          = (core !)
-    allSymbols   = foldl1 (<>) symbolGroups
-    allAcids     = foldl1 (<>) $ init symbolGroups
-    multi        = M.fromList
-                 [ (["B"], ref ["D"] <> ref ["N"])
-                 , (["Z"], ref ["E"] <> ref ["Q"])
-                 , (["X"], allAcids  )
-                 , (["?"], allSymbols)
-                 ]
-
-nonEmptyMap :: Map [a] [a] -> Map (NonEmpty a) (NonEmpty a)
-nonEmptyMap = fmap NE.fromList . M.mapKeysMonotonic NE.fromList
-
-casei :: Map (AmbiguityGroup String ) v -> Map (AmbiguityGroup String) v
-casei x = foldl f x $ assocs x
-  where
-    f m ([k]:|[], v)
-      | isLower k  = insert (pure . pure $ toUpper k) v m
-      | isUpper k  = insert (pure . pure $ toLower k) v m
-      | otherwise  = m
-    f m (_    , _) = m
--}
 
 
 getSpecifiedContent :: FileSpecification -> ExceptT ReadError IO FileSpecificationContent
@@ -454,10 +320,10 @@ expandDynamicCharsMarkedAsAligned fpr = updateFpr <$> result
     expandDynamicChars k m acc = 
         case getRepresentativeChar ! k of
           ParsedDynamicCharacter {} | not (isDynamic m) ->
-            case fmap fst . sortBy (comparing snd) . occurances . catMaybes $ dynCharLen . (!k) <$> toList characterMap of
+            case fmap fst . sortOn snd . occurances . catMaybes $ dynCharLen . (!k) <$> toList characterMap of
               []    -> acc
               [len] -> case acc of
-                         Failure err -> acc
+                         Failure _ -> acc
                          Success (ms, cm) -> pure (expandMetadata len m <> ms, expandCharacter len k <#$> cm)
               x:xs  -> const <$> acc <*> Failure (invalidPrealigned (sourceFile fpr) (x:|xs))
           _ -> prependUnmodified <$> acc

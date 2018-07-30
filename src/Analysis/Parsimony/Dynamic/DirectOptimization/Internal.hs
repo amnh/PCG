@@ -31,6 +31,7 @@ import           Analysis.Parsimony.Dynamic.SequentialAlign
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
 import           Bio.Character.Exportable
+import           Bio.Metadata
 import           Control.Lens
 import           Data.Bits
 import           Data.Foldable
@@ -62,7 +63,6 @@ import           Prelude     hiding (lookup)
 --
 -- The fifth result in the tuple is the second input aligned with respect to the first.
 type PairwiseAlignment s = s -> s -> (Word, s, s, s, s)
-
 
 
 -- |
@@ -146,7 +146,7 @@ updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) = resultDecoration
   where
     resultDecoration = extendDynamicToPostOrder leftChild localCost totalCost combinedAverageLength ungapped gapped lhsAlignment rhsAlignment
     (localCost, ungapped, gapped, lhsAlignment, rhsAlignment) = pairwiseAlignment (leftChild ^. preliminaryUngapped) (rightChild ^. preliminaryUngapped)
-    totalCost = localCost + leftChild ^. characterCost + rightChild ^. characterCost
+    totalCost = localCost + leftChild ^. characterCost +  rightChild ^. characterCost
     combinedAverageLength = leftChild ^. averageLength <> rightChild ^. averageLength
 
 
@@ -161,13 +161,14 @@ directOptimizationPreOrder
      , Exportable (Element c)
      )
   => PairwiseAlignment c
+  -> DynamicCharacterMetadataDec (Element c)
   -> d
   -> [(Word, DynamicDecorationDirectOptimization c)]
   ->  DynamicDecorationDirectOptimization c
-directOptimizationPreOrder pairwiseAlignment charDecoration parents =
+directOptimizationPreOrder pairwiseAlignment meta charDecoration parents =
     case parents of
         []            -> initializeRoot charDecoration
-        (_, parent):_ -> updateFromParent pairwiseAlignment charDecoration parent
+        (_, parent):_ -> updateFromParent pairwiseAlignment meta charDecoration parent
 
 
 -- |
@@ -202,41 +203,19 @@ disambiguateElement x = zed `setBit` idx
     zed = x `xor` x
 
 
-{-
--- |
--- Disambiguate the elements of a dynamic Character so that they are consistent
--- with the ancestral disambiguation.
-disambiguateFromParent
-  :: EncodableDynamicCharacter c
-  => c -- ^ parent single disambiguation field
-  -> c -- ^ child  final gapped
-  -> c -- ^ child  single disambiguation field
-disambiguateFromParent {- pGaps cGaps -} pSingle cFinal = result
-  where
-    result = constructDynamic $ zipWith f (otoList pSingle) (otoList cFinal)
-    f pS cF
-      | popCount val /= 0 = val
-      | otherwise         = disambiguateElement cF
-      where
-        -- Since pS will have only one bit set,
-        -- there can only ever be an symbol intersection of size 1
-        val = pS .&. cF
--}
-
-
 -- |
 -- Use the decoration(s) of the ancestral nodes to calculate the corrent node
 -- decoration. The recursive logic of the pre-order traversal.
 updateFromParent
   :: ( DirectOptimizationPostOrderDecoration d c
      , Exportable (Element c)
-     -- , EncodedAmbiguityGroupContainer c
      )
   => PairwiseAlignment c
+  -> DynamicCharacterMetadataDec (Element c)
   -> d
   -> DynamicDecorationDirectOptimization c
   -> DynamicDecorationDirectOptimization c
-updateFromParent pairwiseAlignment currentDecoration parentDecoration = resultDecoration
+updateFromParent pairwiseAlignment meta currentDecoration parentDecoration = resultDecoration
   where
     -- If the current node has a missing character value representing its
     -- preliminary median assignment then we take the parent's final assignment
@@ -255,7 +234,7 @@ updateFromParent pairwiseAlignment currentDecoration parentDecoration = resultDe
     resultDecoration = extendPostOrderToDirectOptimization currentDecoration ungapped gapped single
     (ungapped, gapped, single)
       | isMissing $ currentDecoration ^. preliminaryGapped = (pUngapped, pGapped, pSingle)
-      | otherwise = tripleComparison pairwiseAlignment currentDecoration pUngapped pSingle
+      | otherwise = tripleComparison pairwiseAlignment meta currentDecoration pUngapped pSingle
     pUngapped     = parentDecoration ^. finalUngapped
     pGapped       = parentDecoration ^. finalGapped
     pSingle       = parentDecoration ^. singleDisambiguation
@@ -265,15 +244,15 @@ updateFromParent pairwiseAlignment currentDecoration parentDecoration = resultDe
 -- A three way comparison of characters used in the DO preorder traversal.
 tripleComparison
   :: ( Exportable (Element c)
-     -- , EncodedAmbiguityGroupContainer c
      , DirectOptimizationPostOrderDecoration d c
      )
   => PairwiseAlignment c
+  -> DynamicCharacterMetadataDec (Element c)
   -> d
   -> c
   -> c
   -> (c, c, c)
-tripleComparison pairwiseAlignment childDecoration parentCharacter parentSingle =
+tripleComparison pairwiseAlignment meta childDecoration parentCharacter parentSingle =
    {-  trace context () `seq` -} (ungapped, gapped, single)
   where
     childCharacter    = childDecoration ^. preliminaryGapped
@@ -289,14 +268,15 @@ tripleComparison pairwiseAlignment childDecoration parentCharacter parentSingle 
     -- If we have a small alphabet, there will not have been a call to
     -- initialize a memoized TCM. We certainly don't want to force that here!
     costStructure =
-        case childDecoration ^. denseTransitionCostMatrix of
-          Nothing -> getMedianAndCost3D (childDecoration ^. sparseTransitionCostMatrix)
+        case meta ^. denseTransitionCostMatrix of
+          Nothing -> getMedianAndCost3D (meta ^. sparseTransitionCostMatrix)
           -- Compute things naively
           Just _  -> naiveMedianAndCost3D
       where
-        !scm = childDecoration ^. symbolChangeMatrix
-        gap = gapOfStream parentCharacter
-        zed = gap `xor` gap
+        !scm = meta ^. symbolChangeMatrix
+        !gap = gapOfStream parentCharacter
+        !zed = gap `xor` gap
+        
         singletonStates = (zed `setBit`) <$> [0 .. fromEnum (symbolCount zed) - 1]
         naiveMedianAndCost3D a b c = unsafeToFinite <$> foldl' g (zed, infinity :: ExtendedNatural) singletonStates
           where
@@ -440,7 +420,6 @@ insertNewGaps insertionIndicies character = constructDynamic . (<> trailingGaps)
 -- Calculates the mean character and cost between three supplied characters.
 threeWayMean
   :: ( EncodableDynamicCharacter c
-     -- , EncodedAmbiguityGroupContainer c
      )
   => (Element c -> Element c -> Element c -> (Element c, Word))
   -> c
@@ -454,24 +433,4 @@ threeWayMean sigma char1 char2 char3 =
     Just _  -> (unsafeToFinite $ sum costValues, constructDynamic $ filter (/= gap) meanStates, constructDynamic meanStates)
   where
     gap = gapOfStream char1
-    -- zed = gap `xor` gap
-    -- singletonStates = (zed `setBit`) <$> [0 .. fromEnum (symbolCount char1) - 1]
     (meanStates, costValues) = unzip $ zipWith3 sigma (otoList char1) (otoList char2) (otoList char3)
-    {-
-    f a b c = foldl' g (zed, infinity :: ExtendedNatural) singletonStates
-      where
-        g acc@(combinedState, curentMinCost) singleState =
-            case combinedCost `compare` curentMinCost of
-              EQ -> (combinedState .|. singleState, curentMinCost)
-              LT -> (                  singleState, combinedCost)
-              GT -> acc
-          where
-            combinedCost = fromFinite . sum $ (snd . sigma singleState) <$> [a, b, c]
-    -}
-{-
-f a b c = minimalChoice $
-              sigma a b  :|
-            [ sigma a c
-            , sigma b c
-            ]
--}
