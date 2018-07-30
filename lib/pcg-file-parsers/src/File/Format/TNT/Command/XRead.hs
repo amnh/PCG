@@ -43,7 +43,7 @@ import           Data.List.NonEmpty       (NonEmpty)
 import qualified Data.List.NonEmpty as NE (filter,fromList,length)
 import           Data.List.Utility
 import           Data.Map                 (assocs,insertWith,lookup)
-import           Data.Maybe               (catMaybes)
+import           Data.Maybe               (catMaybes,mapMaybe)
 import           Data.Traversable
 import           File.Format.TNT.Internal
 import           Prelude           hiding (lookup)
@@ -213,7 +213,7 @@ coreDiscreteSequenceThatGetsReused = many discreteCharacter
     singletonCharacter = bitPack . pure <$> stateToken
     ambiguityCharacter = bitPack <$> (validateAmbiguityGroup =<< withinBraces (many stateToken))
     stateToken         = characterStateChar <* whitespaceInline
-    bitPack            = foldr (.|.) zeroBits . catMaybes . fmap (`lookup` deserializeStateDiscrete)
+    bitPack            = foldr (.|.) zeroBits . mapMaybe (`lookup` deserializeStateDiscrete)
     validateAmbiguityGroup xs
       | null xs    = fail   "An ambiguity group containing no character states was found."
       | hasDupes   = fail $ "An ambiguity group contains duplicate character states: " <> show dupes <> "."

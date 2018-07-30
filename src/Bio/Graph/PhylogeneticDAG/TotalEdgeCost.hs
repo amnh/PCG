@@ -25,6 +25,8 @@ import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
 import           Bio.Character.Exportable
 import           Bio.Sequence
+import           Bio.Sequence.Metadata        (getDynamicMetadata)
+import qualified Bio.Sequence.Metadata as M
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
@@ -40,7 +42,6 @@ import           Data.List.NonEmpty        (NonEmpty(..))
 import qualified Data.List.NonEmpty as NE
 import           Data.MonoTraversable
 import           Data.Semigroup
-import           Data.TCM.Memoized
 import           Prelude            hiding (zipWith)
 
 --import Debug.Trace
@@ -52,48 +53,33 @@ totalEdgeCosts
   :: ( EncodableDynamicCharacter c
      , Exportable c
      , Exportable (Element c)
-     , HasCharacterWeight            z r
-     , HasDenseTransitionCostMatrix  z (Maybe DenseTransitionCostMatrix)
      , HasSingleDisambiguation       z c
-     , HasSparseTransitionCostMatrix z MemoizedCostMatrix
---     , Integral i
---     , Show i
---     , NFData i
-     , NFData r
-     , Num r
      , Ord (Element c)
      )
-  => PhylogeneticDAG2 e n u v w x y z
-  -> NonEmpty [r]
---totalEdgeCosts _ (PDAG2 dag) | trace ("Before Total Edge Cost: " <> referenceRendering dag) False = undefined
-totalEdgeCosts (PDAG2 dag) = applyWeights $ foldlWithKey f initAcc refVec
+  => PhylogeneticDAG2 m a d e n u v w x y z
+  -> NonEmpty [Double]
+--totalEdgeCosts _ (PDAG2 dag _) | trace ("Before Total Edge Cost: " <> referenceRendering dag) False = undefined
+totalEdgeCosts (PDAG2 dag meta) = applyWeights $ foldlWithKey f initAcc refVec
   where
     refVec = references dag
 
     roots  = rootRefs dag
 
---    pariwiseFunction' lhs rhs tcm = (\(!x,_,_,_,_) -> {- trace ("Cost " <> show x) -} x) $ pariwiseFunction lhs rhs tcm
-
     initAcc = (0 <$) . toList . dynamicCharacters <$> sequencesWLOG
 
     sequencesWLOG = getSequence $ NE.head roots
+
+    dynamicMetadataSeq = toList . getDynamicMetadata <$> M.toBlocks meta
 
     getSequence = NE.fromList . otoList . characterSequence . NE.head . resolutions . nodeDecoration . (refVec !)
 
     getFields = fmap (fmap (^. singleDisambiguation) . toList . dynamicCharacters) . getSequence
 
-    weightSequence = fmap (^. characterWeight) . toList . dynamicCharacters <$> sequencesWLOG
+    weightSequence = fmap (^. characterWeight) <$> dynamicMetadataSeq
 
---    tcmSequence = (fmap (^. symbolChangeMatrix) . toList . dynamicCharacters) <$> sequencesWLOG
---    functionSequence = fmap (\tcm x y -> pariwiseFunction' x y tcm) <$> tcmSequence 
-
-    functionSequence = fmap getDynamicMetric . toList . dynamicCharacters <$> sequencesWLOG
+    functionSequence = fmap getDynamicMetric <$> dynamicMetadataSeq
       where
         getDynamicMetric dec x y = let (!c,_,_,_,_) = selectDynamicMetric dec x y in {- trace ("Cost " <> show c) -} c
-
---    showChar = showStream alphabet
-
---    alphabet = A.fromSymbols ["A","C","G","T"]
 
     applyWeights = force . zipWith (zipWith (\d w -> d * fromIntegral w)) weightSequence
 
@@ -111,7 +97,6 @@ totalEdgeCosts (PDAG2 dag) = applyWeights $ foldlWithKey f initAcc refVec
         nodeSequence    = getFields key
 
         -- Folding function for adjacent nodes. Should apply the sum strictly.
---        g seqAcc = force . zipWith (zipWith (+)) seqAcc . zipWith (zipWith pariwiseFunction') . nodeSequence . getFields
         g seqAcc = force . zipWith (zipWith (+)) seqAcc .
                            zipWith (zipWith ($)) (zipWith (zipWith ($)) functionSequence nodeSequence) . getFields
         

@@ -8,49 +8,31 @@ import           Analysis.Scoring
 import           Bio.Character
 import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Continuous
---import           Bio.Character.Decoration.Discrete
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Decoration.Fitch
 import           Bio.Character.Decoration.Metric 
 import           Bio.Graph
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
---import           Bio.Graph.PhylogeneticDAG
---import           Bio.Graph.ReferenceDAG
 import           Bio.Graph.ReferenceDAG.Internal
 import qualified Bio.Graph.ReferenceDAG as DAG
 import           Bio.Sequence
+import           Bio.Sequence.Metadata
 import           Control.Arrow                 ((&&&))
 import           Control.DeepSeq
---import           Control.Evaluation
 import           Control.Lens
 import           Control.Monad                 (replicateM)
 import           Control.Monad.IO.Class
---import           Control.Monad.Trans.Either
 import           Control.Parallel.Strategies
 import           Control.Parallel.Custom
---import           Data.Bifunctor                (bimap,first)
---import           Data.Char                     (isLower,toLower,isUpper,toUpper)
---import           Data.EdgeLength
---import           Data.Either.Custom
 import           Data.Foldable
---import           Data.Functor
---import           Data.Hashable
 import qualified Data.IntMap            as IM
 import qualified Data.IntSet            as IS
---import           Data.Key
---import           Data.List                     (intercalate)
 import           Data.List.NonEmpty            (NonEmpty(..))
 import qualified Data.List.NonEmpty     as NE
---import           Data.List.Utility             (subsetOf)
---import           Data.Map                      (Map,assocs,insert,union)
---import qualified Data.Map               as M
---import           Data.Maybe                    (fromMaybe)
 import           Data.NodeLabel
 import           Data.Ord                      (comparing)
 import           Data.Semigroup.Foldable
---import           Data.Vector                   (Vector)
---import qualified Data.Vector            as V   (zipWith)
 import           PCG.Command.Build
 import           PCG.Syntax                    (Command(..))
 import           System.Random.Shuffle
@@ -69,34 +51,10 @@ type DatNode =
     NodeLabel
 
 
---evaluate :: Command -> EvaluationT IO a -> EvaluationT IO (Either TopologicalResult DecoratedCharacterResult)
---evaluate :: Command -> EvaluationT IO a -> EvaluationT IO (Either TopologicalResult CharacterResult)
 evaluate
-{-
-  :: ( DiscreteCharacterMetadata u
-     , DiscreteCharacterMetadata w
-     , DiscreteCharacterDecoration v StaticCharacter
-     , DiscreteCharacterDecoration x StaticCharacter
-     , DiscreteCharacterDecoration y StaticCharacter
-     , Eq z
-     , Hashable z
---     , HasLeafSet a (LeafSet (PhylogeneticNode2 (CharacterSequence u v w x y z) (Maybe String)))
-     , RangedCharacterDecoration u ContinuousChar
-     , RangedCharacterDecoration w StaticCharacter
-     , SimpleDynamicDecoration z DynamicChar
-     , Show u
-     , Show v
-     , Show w
-     , Show x
-     , Show y
-     , Show z
-     )
-  => -}
   :: Command
---  -> EvaluationT IO (Either TopologicalResult (PhylogeneticSolution (PhylogeneticDAG2 EdgeLength (Maybe String) u v w x y z)))
   -> GraphState
   -> SearchState
--- EvaluationT IO (Either TopologicalResult CharacterResult)
 -- evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
 -- evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
 evaluate (BUILD (BuildCommand trajectoryCount buildType)) inState =
@@ -129,37 +87,16 @@ evaluate _ _ = fail "Invalid BUILD command binding"
 
 naiveWagnerParallelBuild
   :: ( Foldable1 f
---     , Foldable1 t
      , Traversable t
      )
-  => t (f DatNode) -- (PhylogeneticNode2 (CharacterSequence u v w x y z) (Maybe String))
+  => t (f DatNode)
   -> t FinalDecorationDAG
 naiveWagnerParallelBuild = parmap rpar naiveWagnerBuild
---naiveWagnerParallelBuild = fmap naiveWagnerBuild
 
 
 naiveWagnerBuild
-{-  :: ( DiscreteCharacterMetadata u
-     , DiscreteCharacterMetadata w
-     , DiscreteCharacterDecoration v StaticCharacter
-     , DiscreteCharacterDecoration x StaticCharacter
-     , DiscreteCharacterDecoration y StaticCharacter
-     , Eq z
-     , Foldable f
-     , Hashable z
-     , RangedCharacterDecoration u ContinuousChar
-     , RangedCharacterDecoration w StaticCharacter
-     , SimpleDynamicDecoration z DynamicChar
-     , Show u
-     , Show v
-     , Show w
-     , Show x
-     , Show y
-     , Show z
-     )
-  => -}
   :: Foldable1 f
-  => f DatNode -- (PhylogeneticNode2 (CharacterSequence u v w x y z) (Maybe String))
+  => f DatNode
   -> FinalDecorationDAG
 naiveWagnerBuild ns =
    case toNonEmpty ns of
@@ -182,74 +119,34 @@ naiveWagnerBuild ns =
           in  iterativeBuild initTree xs
 
   where
-    fromRefDAG = performDecoration . PDAG2 . resetMetadata
+    fromRefDAG = performDecoration . (`PDAG2` defaultUnaryMetadataSequence) . resetMetadata
  
 
 iterativeBuild
-  ::
-{-    ( DiscreteCharacterMetadata u
-     , DiscreteCharacterMetadata w
-     , DiscreteCharacterDecoration v StaticCharacter
-     , DiscreteCharacterDecoration x StaticCharacter
-     , DiscreteCharacterDecoration y StaticCharacter
-     , Eq z
-     , Hashable z
-     , RangedCharacterDecoration u ContinuousChar
-     , RangedCharacterDecoration w StaticCharacter
-     , SimpleDynamicDecoration z DynamicChar
-     , Show u
-     , Show v
-     , Show w
-     , Show x
-     , Show y
-     , Show z
-     )
-  => -}FinalDecorationDAG
---  -> [PhylogeneticNode2 (CharacterSequence (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)) (Maybe String)]
---  -> [PhylogeneticNode2 (CharacterSequence u v w x y z) (Maybe String)]
+  :: FinalDecorationDAG
   -> [DatNode]
   -> FinalDecorationDAG
 iterativeBuild currentTree [] = currentTree
 --iterativeBuild currentTree (nextLeaf:_) | trace (show $ nodeDecorationDatum2 nextLeaf) False = undefined
 iterativeBuild currentTree (nextLeaf:remainingLeaves) = iterativeBuild nextTree remainingLeaves
   where
-    (PDAG2 dag) = wipeScoring currentTree
+    (PDAG2 dag _) = wipeScoring currentTree
     edgeSet     = NE.fromList . toList $ referenceEdgeSet dag
 
     tryEdge :: (Int, Int) -> FinalDecorationDAG
-    tryEdge     = performDecoration . PDAG2 . invadeEdge (resetMetadata dag) deriveInternalNode (wipeNode False nextLeaf)
+    tryEdge     = performDecoration . (`PDAG2` defaultUnaryMetadataSequence) . invadeEdge (resetMetadata dag) deriveInternalNode (wipeNode False nextLeaf)
     nextTree    = minimumBy (comparing getCost) $ parmap rpar tryEdge edgeSet
 
-    getCost (PDAG2 v) = dagCost $ graphData v
+    getCost (PDAG2 v _) = dagCost $ graphData v
 
     deriveInternalNode parentDatum oldChildDatum _newChildDatum =
         PNode2 (resolutions oldChildDatum) (nodeDecorationDatum2 parentDatum)
         
 
 iterativeNetworkBuild
-  ::
-{-    ( DiscreteCharacterMetadata u
-     , DiscreteCharacterMetadata w
-     , DiscreteCharacterDecoration v StaticCharacter
-     , DiscreteCharacterDecoration x StaticCharacter
-     , DiscreteCharacterDecoration y StaticCharacter
-     , Eq z
-     , Hashable z
-     , RangedCharacterDecoration u ContinuousChar
-     , RangedCharacterDecoration w StaticCharacter
-     , SimpleDynamicDecoration z DynamicChar
-     , Show u
-     , Show v
-     , Show w
-     , Show x
-     , Show y
-     , Show z
-     )
-  => -}FinalDecorationDAG
---  -> [PhylogeneticNode2 (CharacterSequence (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)) (Maybe String)]
---  -> [PhylogeneticNode2 (CharacterSequence u v w x y z) (Maybe String)]
+  :: FinalDecorationDAG
   -> FinalDecorationDAG
-iterativeNetworkBuild currentNetwork@(PDAG2 inputDag) = 
+iterativeNetworkBuild currentNetwork@(PDAG2 inputDag _) = 
     case toList $ candidateNetworkEdges inputDag of
       []   -> currentNetwork
       x:xs ->
@@ -261,12 +158,12 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag) =
             then currentNetwork
             else iterativeNetworkBuild bestNewNetwork
   where
-    (PDAG2 dag) = force $ wipeScoring currentNetwork
+    (PDAG2 dag _) = force $ wipeScoring currentNetwork
 
     tryNetworkEdge :: ((Int, Int), (Int, Int)) -> FinalDecorationDAG
-    tryNetworkEdge = performDecoration . PDAG2 . connectEdge'
+    tryNetworkEdge = performDecoration . (`PDAG2` defaultUnaryMetadataSequence) . connectEdge'
 
-    getCost (PDAG2 v) = dagCost $ graphData v
+    getCost (PDAG2 v _) = dagCost $ graphData v
 
     connectEdge' = uncurry (connectEdge (resetMetadata dag) deriveOriginEdgeNode deriveTargetEdgeNode)
 

@@ -2,7 +2,6 @@
 
 module Main (main) where
 
-import Data.Foldable
 import Data.List.NonEmpty hiding (unfoldr)
 import Data.Maybe
 import Data.Semigroup
@@ -112,8 +111,8 @@ joinSubtrees subtrees = do
 -- Given a non-empty set of elements, returns all the unique ways
 -- to split the input set into  two non-empty sets
 splittings :: NonEmpty a -> NonEmpty (NonEmpty a, NonEmpty a)
-splittings (x:|[])   = error "Singleton list of children supplied"
+splittings (_:|[])   = error "Singleton list of children supplied"
 splittings (x:|[y])  = pure (pure x, pure y)
 splittings (x:|y:ys) = pure (pure x, y:|ys) <> do
-    e@(lhs, rhs) <- splittings $ y:|ys
+    (lhs, rhs) <- splittings $ y:|ys
     (pure x <> lhs, rhs) :| [(lhs, pure x <> rhs)]
