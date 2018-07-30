@@ -115,7 +115,7 @@ endOfLine = choice (try <$> [ nl, cr *> nl, cr ]) $> newLineChar
 -- |
 -- Accepts zero or more Failure messages.
 fails :: MonadParsec e s m => [String] -> m a
-fails = failure Nothing . S.fromList . fmap Label . catMaybes . fmap nonEmpty
+fails = failure Nothing . S.fromList . fmap Label . mapMaybe nonEmpty
 
 
 -- |

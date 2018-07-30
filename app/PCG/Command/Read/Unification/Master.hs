@@ -197,7 +197,7 @@ rectifyResults2 fprs =
     expandForestErrors :: [([t TaxaName], FracturedParseResult)] -> [[(t TaxaName, FracturedParseResult)]]
     expandForestErrors = fmap f
       where
-        f (ys, fpr) = (\x -> (x, fpr)) <$> ys
+        f (ys, fpr) = (id &&& const fpr) <$> ys
 
 
 -- |

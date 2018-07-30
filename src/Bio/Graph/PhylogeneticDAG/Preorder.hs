@@ -163,7 +163,7 @@ preorderSequence'' f1 f2 f3 f4 f5 f6 pdag@(PDAG2 dag meta) = PDAG2 (newDAG dag) 
                                  ]
               where
 --                matchesTopology = (`isCompatableWithTopology` topology) . topologyRepresentation . snd
-                matchesTopology = (`notElem` excludedNetworkEdges topology) . (\j -> (j,i)) . fst
+                matchesTopology = (`notElem` excludedNetworkEdges topology) . (id &&& const i) . fst
 
 
 

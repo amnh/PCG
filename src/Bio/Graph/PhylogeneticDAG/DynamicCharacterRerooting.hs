@@ -118,7 +118,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
         f i n
           -- Don't consider edges from a root node, as the edges are "artificial" in an unrooted context.
           | i `elem` rootRefs inputDag = []
-          | otherwise                  = fmap (\e -> (i,e)) . IM.keys $ childRefs n
+          | otherwise                  = fmap (const i &&& id) . IM.keys $ childRefs n
 
     rootEdgeReferences = foldMap f $ rootRefs inputDag
       where

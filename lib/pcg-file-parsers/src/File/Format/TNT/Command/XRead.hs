@@ -213,7 +213,7 @@ coreDiscreteSequenceThatGetsReused = many discreteCharacter
     singletonCharacter = bitPack . pure <$> stateToken
     ambiguityCharacter = bitPack <$> (validateAmbiguityGroup =<< withinBraces (many stateToken))
     stateToken         = characterStateChar <* whitespaceInline
-    bitPack            = foldr (.|.) zeroBits . catMaybes . fmap (`lookup` deserializeStateDiscrete)
+    bitPack            = foldr (.|.) zeroBits . mapMaybe (`lookup` deserializeStateDiscrete)
     validateAmbiguityGroup xs
       | null xs    = fail   "An ambiguity group containing no character states was found."
       | hasDupes   = fail $ "An ambiguity group contains duplicate character states: " <> show dupes <> "."

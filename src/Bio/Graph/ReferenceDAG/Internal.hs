@@ -1200,7 +1200,7 @@ tabulateDescendantEdgesets dag =
               [x]   -> getPreviousDatums i x
               x:y:_ -> getPreviousDatums i x `union` getPreviousDatums i y
 
-    getPreviousDatums _ j = foldMap id (childRefs point) <> other
+    getPreviousDatums _ j = fold (childRefs point) <> other
       where
         point = memo ! j
         -- This is the step where new information is added to the accumulator

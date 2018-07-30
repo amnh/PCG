@@ -19,7 +19,7 @@ import           Data.Either.Custom
 import           Data.Foldable
 import           Data.Functor
 import           Data.Key
-import           Data.List                    (sortBy)
+import           Data.List                    (sortOn)
 import           Data.List.NonEmpty           (NonEmpty(..))
 import qualified Data.List.NonEmpty    as NE
 import           Data.List.Utility            (occurances)
@@ -320,7 +320,7 @@ expandDynamicCharsMarkedAsAligned fpr = updateFpr <$> result
     expandDynamicChars k m acc = 
         case getRepresentativeChar ! k of
           ParsedDynamicCharacter {} | not (isDynamic m) ->
-            case fmap fst . sortBy (comparing snd) . occurances . catMaybes $ dynCharLen . (!k) <$> toList characterMap of
+            case fmap fst . sortOn snd . occurances . catMaybes $ dynCharLen . (!k) <$> toList characterMap of
               []    -> acc
               [len] -> case acc of
                          Failure _ -> acc
