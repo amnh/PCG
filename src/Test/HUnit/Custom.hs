@@ -14,5 +14,5 @@ assertException :: forall a b.
 assertException fn a = do
     bErr <- (try $ evaluate (fn a)) :: (IO (Either ErrorCall b))
     case bErr of
-      Left  _ -> return ()
+      Left  _ -> pure ()
       Right _ -> HU.assertFailure "No exception thrown"

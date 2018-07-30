@@ -6,11 +6,10 @@ module Data.TCM.Test
   ) where
 
 import           Data.TCM
-import           Test.HUnit.Custom
+import           Test.HUnit.Custom (assertException)
 import           Test.Tasty
 import           Test.Tasty.HUnit as HU
 import           Test.Tasty.QuickCheck as QC hiding (generate)
-import           Test.HUnit.Custom (assertException)
 import           Data.MonoTraversable
 import           Data.Word
 import           Data.Bifunctor (bimap)
@@ -31,7 +30,6 @@ testPropertyCases = testGroup "Invariant Properties"
 testExampleCases :: TestTree
 testExampleCases = testGroup "Example Cases for Data.TCM"
     [ documentationCases
-    , diagnoseTcmCases
     ]
 
 -- Generate cases for TcmStructure diagnosis
@@ -62,11 +60,11 @@ diagnoseTcmCases = testGroup "Example cases for TCMDiagnosis"
         n = getPositive n'
         m = getPositive m'
       in
-        case (n == m) of
-          True -> property True
-          False ->
+        if n /= m then
             structureType (generate (k + 1) $ \(i,j) -> n * i + m * j)
             === NonSymmetric
+        else property True
+
 
     symmetricProp :: (Positive Int, Positive  Int, Positive Int) -> Bool
     symmetricProp (k', a', b') =
@@ -83,7 +81,7 @@ diagnoseTcmCases = testGroup "Example cases for TCMDiagnosis"
       let
         k = getPositive k'
       in
-        structureType (generate (k + 1) $ \(i,j) -> (max i j) - (min i j))
+        structureType (generate (k + 1) $ \(i,j) -> max i j - min i j)
         === Additive
 
     nonAdditiveProp :: Positive Int -> Property
@@ -110,7 +108,7 @@ factoringDiagnosisCases = testGroup "Example cases for factoredTcm and factoredW
         TCMDiagnosis{..} = diagnoseTcm tcm
         weight = fromIntegral factoredWeight
       in
-        (omap (* (weight :: Word32)) factoredTcm)
+        omap (* (weight :: Word32)) factoredTcm
         === tcm
 
 -- Examples from documentation
@@ -118,7 +116,7 @@ factoringDiagnosisCases = testGroup "Example cases for factoredTcm and factoredW
 -- Helper function to extract list of elements and size of TCM
 
 elementsAndSize :: TCM -> ([Word32], Int)
-elementsAndSize = (bimap otoList size) . (\a -> (a,a))
+elementsAndSize = bimap otoList size . \a -> (a,a)
 
 documentationCases :: TestTree
 documentationCases = testGroup "Example cases in documentation"
