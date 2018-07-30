@@ -12,18 +12,18 @@ import           Test.HUnit.Custom (assertException)
 import           Data.MonoTraversable
 import           Data.Word
 import           Data.Bifunctor (bimap)
-import           Test.QuickCheck (Positive(getPositive))
+import           Test.QuickCheck (Positive(getPositive), (===), Testable(property))
 
 
 testSuite :: TestTree
 testSuite = testGroup "TCM Tests"
-    [ testPropertyCases
-    , testExampleCases
+    [ testExampleCases
+    , testPropertyCases
     ]
 
 testPropertyCases :: TestTree
 testPropertyCases = testGroup "Invariant Properties"
-    [
+    [ diagnoseTcmCases
     ]
 
 testExampleCases :: TestTree
@@ -32,24 +32,8 @@ testExampleCases = testGroup "Example Cases for Data.TCM"
     , diagnoseTcmCases
     ]
 
-indexProperties :: TestTree
-indexProperties = testGroup "Properties of index function:"
-    [
-    ]
-
-
-
-
-indexCases :: TestTree
-indexCases = testGroup "Example Cases for index function"
-    [ HU.testCase "case" ex1
-    ]
-  where
-    ex1 :: Assertion
-    ex1 = undefined
-
-
 -- generate cases for diagnosis
+structureType :: TCM -> TCMStructure
 structureType = tcmStructure . diagnoseTcm
 
 diagnoseTcmCases :: TestTree
@@ -68,7 +52,7 @@ diagnoseTcmCases = testGroup "Example cases for TCMDiagnosis"
         nonAdditiveProp
     ]
   where
-    nonSymmetricProp :: (Positive Int, Positive  Int, Positive  Int) -> Bool
+    nonSymmetricProp :: (Positive Int, Positive  Int, Positive  Int) -> Property
     nonSymmetricProp (k', n', m') =
       let
         k = getPositive k'
@@ -76,10 +60,10 @@ diagnoseTcmCases = testGroup "Example cases for TCMDiagnosis"
         m = getPositive m'
       in
         case (n == m) of
-          True -> True
+          True -> property True
           False ->
             structureType (generate (k + 1) $ \(i,j) -> n * i + m * j)
-            == NonSymmetric
+            === NonSymmetric
 
     symmetricProp :: (Positive Int, Positive  Int, Positive Int) -> Bool
     symmetricProp (k', a', b') =
@@ -91,21 +75,24 @@ diagnoseTcmCases = testGroup "Example cases for TCMDiagnosis"
         structureType (generate (k + 1) $ \(i,j) -> a * (i * j) + b * (i + j))
         /= NonSymmetric
 
-    additiveProp :: Positive Int -> Bool
+    additiveProp :: Positive Int -> Property
     additiveProp k' =
       let
         k = getPositive k'
       in
         structureType (generate (k + 1) $ \(i,j) -> (max i j) - (min i j))
-        == Additive
+        === Additive
 
-    nonAdditiveProp :: Positive Int -> Bool
+    nonAdditiveProp :: Positive Int -> Property
     nonAdditiveProp k' =
       let
         k = getPositive k'
       in
-        structureType (generate (k + 1) $ \ ((i,j) :: (Int, Int))-> if i == j then 0 else 1)
-        == NonAdditive
+        structureType (generate (k + 2) $ \ ((i,j) :: (Int, Int))-> if i == j then 0 else 1)
+        === NonAdditive         -- |
+                                -- |
+                                -- | -- Ensure matrix is at least 3 x 3 as k = 2 case is both
+                                -- | -- additive and nonadditive.
 
 -- Examples from documentation
 
