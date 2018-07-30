@@ -43,10 +43,10 @@ before_install:
   - which stack || travis_retry wget -qO- https://get.haskellstack.org/ | sh
 
   # Download and unpack the hlint executable
-  - which hlint || travis_retry curl --progress-bar --location -ohlint.tar.gz https://github.com/$(curl --silent https://github.com/ndmitchell/hlint/releases | grep -o '\"[^\"]*-x86_64-'$TRAVIS_OS_NAME'\.tar\.gz\"' | sed s/\"//g | head -n1)
-  - which hlint || tar -xzf hlint.tar.gz
-  - which hlint || cp -r hlint-*/data  ~/.local/bin/data
-  - which hlint || cp    hlint-*/hlint ~/.local/bin/hlint
+  - travis_retry curl --progress-bar --location -ohlint.tar.gz https://github.com/$(curl --silent https://github.com/ndmitchell/hlint/releases | grep -o '\"[^\"]*-x86_64-'$TRAVIS_OS_NAME'\.tar\.gz\"' | sed s/\"//g | head -n1)
+  - tar -xzf hlint.tar.gz
+  - cp -r hlint-*/data  ~/.local/bin/data
+  - cp    hlint-*/hlint ~/.local/bin/hlint
 
   # Download and unpack the weeder executable
 #  - which weeder || travis_retry curl --progress-bar --location -oweeder.tar.gz https://github.com/$(curl --silent https://github.com/ndmitchell/weeder/releases | grep -o '\"[^\"]*-x86_64-'$TRAVIS_OS_NAME'\.tar\.gz\"' | sed s/\"//g | head -n1)
