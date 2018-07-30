@@ -44,12 +44,8 @@ module Bio.Character.Decoration.Dynamic.Class
 
 import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
-import Bio.Metadata.CharacterName
-import Bio.Metadata.Dynamic
 import Control.DeepSeq
 import Control.Lens
-import Data.Alphabet
-import Data.MonoTraversable
 import GHC.Generics
 import Numeric.NonNegativeAverage
 
@@ -78,7 +74,6 @@ instance Show AverageLength where
 class ( HasAverageLength           s AverageLength
       , HasEncoded                 s a
       , EncodableDynamicCharacter  a
-      , DynamicCharacterMetadata   s (Element a)
       ) => SimpleDynamicDecoration s a | s -> a where
 
 
@@ -123,7 +118,7 @@ class ( HasImpliedAlignment           s a
 class ( SimpleDynamicDecoration s a
       ) => DynamicCharacterDecoration s a | s -> a where
 
-    toDynamicCharacterDecoration :: CharacterName -> Double -> Alphabet String -> (Word -> Word -> Word) -> (x -> a) -> x -> s
+    toDynamicCharacterDecoration :: (x -> a) -> x -> s
     {-# MINIMAL toDynamicCharacterDecoration #-}
 
 
@@ -161,16 +156,6 @@ class ( DirectOptimizationPostOrderDecoration s c
                                         -> c -- ^ Final   /gapped/ dynamic character
                                         -> c -- ^ Final   /single/ dynamic character
                                         -> s -- ^ Resulting decoration
-
-{-
-instance ( DynamicCharacterDecoration s a
-         , PossiblyMissingCharacter a
-         ) => PossiblyMissingCharacter s where
-
-    isMissing = isMissing . (^. encoded)
-
-    toMissing x = x & encoded %~ toMissing
--}
 
 
 -- |

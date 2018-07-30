@@ -26,6 +26,7 @@ import Bio.Metadata.General
 import Control.DeepSeq
 import Control.Lens
 import GHC.Generics
+import Text.XML
 
 
 -- |
@@ -55,6 +56,10 @@ instance HasCharacterWeight ContinuousCharacterMetadataDec Double where
 
 instance NFData ContinuousCharacterMetadataDec
 
+
+instance ToXML ContinuousCharacterMetadataDec where
+
+    toXML (CCM gm) = toXML gm
 
 -- |
 -- A smart constructor for 'GeneralCharacterMetadata'.

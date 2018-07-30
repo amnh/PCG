@@ -80,7 +80,6 @@ common ghc-flags
                     -Wmissing-fields
                     -Wmissing-home-modules
                     -Wmissing-monadfail-instances
-                    -Wmissing-monadfail-instances
                     -Wmissing-signatures
                     -Wnoncanonical-monadfail-instances
                     -Wnoncanonical-monad-instances
@@ -90,7 +89,6 @@ common ghc-flags
                     -Wredundant-constraints
                     -Wsemigroup
                     -Wtabs
-                    -Wunrecognised-warning-flags
                     -Wunrecognised-warning-flags
                     -Wunused-binds
                     -Wunused-do-bind
@@ -105,7 +103,7 @@ common language-specs
 
   default-language: Haskell2010
 
-  -- Use MonadFail(fail), not Monad(fail)
+  -- Always use MonadFail(fail), not Monad(fail)
   other-extensions: MonadFailDesugaring
 
 
@@ -117,9 +115,7 @@ library
 
   build-depends:      base               >=4.10
                     , bimap
---                    , blaze-html
                     , bv-little
---                    , case-insensitive
                     -- >=0.5.8 Required for Data.Map.restrictKeys
                     , containers         >=0.5.8
                     , deepseq
@@ -127,7 +123,6 @@ library
                     , dlist
                     , graphviz
                     , hashable
---                    , hashtables
                     , integer-gmp
                     , keys
                     , lens
@@ -138,9 +133,7 @@ library
                     , pcg-utility
                     , pointed
                     , pretty-tree
---                    , primitive
                     , QuickCheck
---                    , scientific
                     -- required for Data.Semigroup.Foldable.toNonEmpty
                     , semigroupoids      >=5.2.1
                     , semigroups
@@ -183,6 +176,7 @@ library
                     Bio.Metadata.Parsed
                     Bio.Sequence
                     Bio.Sequence.Block
+                    Bio.Sequence.Metadata
                     Bio.Graph
                     Bio.Graph.Component
                     Bio.Graph.Forest.Parsed
@@ -205,8 +199,6 @@ library
                     Data.TopologyRepresentation
                     Data.NodeLabel
                     Data.Vector.NonEmpty
---                    Text.HTML.Class
---                    Text.HTML.Custom
                     Text.Newick.Class
                     Text.XML
                     Text.XML.Custom
@@ -216,9 +208,6 @@ library
                     Test.Custom.DynamicCharacterNode
 
   other-modules:    Analysis.Parsimony.Dynamic.DirectOptimization.Internal
---                    Analysis.Parsimony.Dynamic.DirectOptimization.DeletionEvents
---                    Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents
---                    Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Internal
                     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
                     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
                     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
@@ -264,7 +253,6 @@ library
                     Bio.Graph.BinaryRenderingTree
                     Bio.Graph.Constructions
                     Bio.Graph.Forest
---                    Bio.Graph.Node.Class
                     Bio.Graph.Node.Internal
                     Bio.Graph.PhylogeneticDAG.Class
                     Bio.Graph.PhylogeneticDAG.Internal
@@ -275,9 +263,11 @@ library
                     Bio.Graph.PhylogeneticDAG.Reification
                     Bio.Graph.PhylogeneticDAG.TotalEdgeCost
                     Bio.Graph.ZipperDAG.Internal
-                    Bio.Sequence.Internal
                     Bio.Sequence.Block.Builder
+                    Bio.Sequence.Block.Character
                     Bio.Sequence.Block.Internal
+                    Bio.Sequence.Block.Metadata
+                    Bio.Sequence.Character
                     Control.Evaluation.Unit
                     Control.Evaluation.Internal
                     Control.Evaluation.Trans
@@ -291,6 +281,7 @@ library
 
 executable pcg
 
+
   import:             ghc-flags
                     , language-specs
 
@@ -299,7 +290,6 @@ executable pcg
   build-depends:      phylocomgraph
                     , ansi-wl-pprint
                     , base             >=4.10
---                    , blaze-html
                     -- Required for Data.Map.restrictKeys
                     , containers       >=0.5.8
                     , data-default
@@ -308,7 +298,6 @@ executable pcg
                     , gitrev
                     , Glob
                     , graphviz
---                    , hashable
                     , keys
                     , lens
                     , megaparsec       >=6.0
@@ -318,16 +307,13 @@ executable pcg
                     , pcg-file-parsers
                     , pcg-language
                     , pcg-utility
---                    , primitive
                     , random-shuffle
                     , semigroupoids
                     , semigroups
                     , text
---                    , time
                     , transformers
                     , validation
                     , vector
---                    , vector-instances >=3.4
                     , xml
 
   ghc-options:      -threaded
@@ -342,16 +328,8 @@ executable pcg
                     PCG.Command.Read.ReadError
                     PCG.Command.Read.Unification.Master
                     PCG.Command.Read.Unification.UnificationError
---                    PCG.Command.Report.CharacterMatrix
---                    PCG.Command.Report.DynamicCharacterTable
                     PCG.Command.Report.Evaluate
                     PCG.Command.Report.GraphViz
---                    PCG.Command.Report.ImpliedAlignmentFasta
---                    PCG.Command.Report.Internal
---                    PCG.Command.Report.Metadata
---                    PCG.Command.Report.TaxonMatrix
---                    PCG.Command.Report.Newick
---                    PCG.Command.Report.Validate
                     PCG.Computation.Internal
 
 
@@ -363,13 +341,10 @@ executable fasta-differ
   main-is:          fasta-differ.hs
 
   build-depends:      base >=4.10
---                    , bimap
                     , containers
                     , keys
                     , megaparsec
                     , pcg-file-parsers
---                      phylocomgraph
---                    , QuickCheck
 
   hs-source-dirs:   utils
 
@@ -564,11 +539,6 @@ Test-Suite testsuite
                     Bio.Character.Encodable.Stream
                     Bio.Character.Exportable
                     Bio.Character.Exportable.Class
---                    Bio.Character.Parsed
---                    Bio.Character.Parsed.Class
---                    Bio.Character.Parsed.Internal
---                    Bio.Metadata
---                    Bio.Metadata.Parsed
                     Control.Evaluation.Internal
                     Control.Evaluation.Test
                     Control.Evaluation.Unit
@@ -578,8 +548,6 @@ Test-Suite testsuite
                     Data.Alphabet.Internal
                     Data.Alphabet.Test
                     Data.Range
---                    Data.TCM
---                    Data.TCM.Internal
                     Data.TCM.Memoized
                     Data.TCM.Memoized.FFI
                     Data.Vector.NonEmpty
@@ -589,107 +557,3 @@ Test-Suite testsuite
                     TestSuite.LibraryTests
                     Text.XML
                     Text.XML.Class
---                    Text.XML.Custom
-
---                       Analysis.ImpliedAlignment.AlignmentContext
---                       Analysis.ImpliedAlignment.DynamicProgramming
---                       Analysis.ImpliedAlignment.Internal
---                       Analysis.ImpliedAlignment.Standard
---                       Analysis.ImpliedAlignment.Test
---                       Analysis.ImpliedAlignment.Test.Trees
---                       Analysis.Parsimony.Binary.Internal
---                       Analysis.Parsimony.Binary.Test
---                       Analysis.Parsimony.Dynamic.DirectOptimization.DeletionEvents
---                       Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
---                       Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents
---                       Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Internal
---                       Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Test
---                       Bio.Character
---                       Bio.Character.Decoration.Additive
---                       --Bio.Character.Decoration.Continuous
---                       Bio.Character.Decoration.Discrete
---                       Bio.Character.Decoration.Dynamic
---                       Bio.Character.Decoration.Fitch
---                       Bio.Character.Decoration.Metric
---                       Bio.Character.Decoration.NonMetric
---                       Bio.Character.Encodable
---                       Bio.Character.Exportable.Class
---                       Bio.Character.Parsed
---                       Bio.Character.Decoration.Additive.Class
---                       Bio.Character.Decoration.Additive.Internal
---                       --Bio.Character.Decoration.Continuous.Class
---                       --Bio.Character.Decoration.Continuous.Internal
---                       Bio.Character.Decoration.Dynamic.Class
---                       Bio.Character.Decoration.Dynamic.Internal
---                       Bio.Character.Decoration.Fitch.Class
---                       Bio.Character.Decoration.Fitch.Internal
---                       Bio.Character.Decoration.Metric.Class
---                       Bio.Character.Decoration.Metric.Internal
---                       Bio.Character.Decoration.NonMetric.Class
---                       Bio.Character.Decoration.NonMetric.Internal
---                       Bio.Character.Encodable.Dynamic
---                       Bio.Character.Encodable.Dynamic.Class
---                       Bio.Character.Encodable.Dynamic.Internal
---                       Bio.Character.Encodable.Internal
---                       Bio.Character.Encodable.Static
---                       Bio.Character.Encodable.Static.Class
---                       Bio.Character.Encodable.Static.Internal
---                       Bio.Character.Encodable.Stream
---                       Bio.Character.Parsed.Class
---                       Bio.Character.Parsed.Internal
---                       Bio.Metadata
---                       Bio.Metadata.CharacterName
---                       --Bio.Metadata.Continuous
---                       Bio.Metadata.Discrete
---                       Bio.Metadata.Parsed
---                       Bio.Metadata.General
---                       Bio.Metadata.General.Class
---                       Bio.Metadata.General.Internal
---                       Bio.Metadata.Discrete.Class
---                       Bio.Metadata.Discrete.Internal
---                       Bio.Sequence
---                       Bio.Sequence.Block
---                       Bio.Graph
---                       Bio.Graph.Component
---                       Bio.Graph.LeafSet
---                       Bio.Graph.Node
---                       Bio.Graph.ReferenceDAG
---                       Bio.Graph.ZipperDAG
---                       Bio.Graph.Forest
---                       Bio.Graph.ReferenceDAG.Internal
---                       Bio.Graph.ZipperDAG.Internal
---                       Bio.Sequence.Internal
---
---
---
---                       Control.Evaluation.Internal
---                       Control.Evaluation.Test
---                       Control.Evaluation.Unit
---                       Data.Alphabet.IUPAC
---                       Data.BitMatrix.Internal
---                       Data.BitMatrix.Test
---                       Data.List.Utility
---                       Data.TCM
---                       Data.TCM.Internal
---                       Test.Custom
---                       Test.Custom.Constructions
---                       Test.Custom.Types
---                       Test.Custom.Tree
---                       Test.Custom.Tree.Test
---                       Test.QuickCheck.Arbitrary.Instances
---                       TestSuite.ExecutableTests
---                       Data.Matrix.NotStupid
---                       Data.Alphabet
---                       Data.BitMatrix
---                       Control.Evaluation
---                       Control.Evaluation.Trans
---                       Control.Monad.Logger
---                       Analysis.Parsimony.Binary.Optimization
---                       Bio.PhyloGraph.Forest.Parsed
---                       Bio.Metadata.MaskGenerator
---                       Bio.PhyloGraph.DAG.Test
---                       Analysis.Parsimony.Binary.Constraints
---                       -- Analysis.Parsimony.Binary.SequentialAlign
---                       Analysis.Parsimony.Dynamic.SequentialAlign
---                       Bio.Character.Encodable.Static.Test
---                       -- Analysis.Parsimony.Binary.SequentialAlign.SeqAlignFFI

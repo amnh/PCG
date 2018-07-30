@@ -17,19 +17,9 @@
 
 
 module Text.XML.Class where
-    -- ( ToXML (..)
-    -- , Content (CRef)
-    -- , collapseElemList
-    -- , xmlAttr
-    -- , xmlContent
-    -- , xmlElement
-    -- , xmlQName
-    -- ) where
-
 
 import Data.Foldable
 import Data.Key
--- import Text.XML.Custom
 import Text.XML.Light.Types
 
 
@@ -42,11 +32,12 @@ class ToXML a where
 -- | (✔)
 instance (ToXML a) => ToXML (Maybe a) where
 
-    toXML input = result -- Element (QName "Maybe_data" Nothing Nothing) [] [content] Nothing
-        where
-            result = case input of
-                          Nothing  -> Element (xmlQName "No_data") [] [] Nothing
-                          Just val -> toXML val
+    toXML input = result
+      where
+        result =
+            case input of
+              Nothing  -> Element (xmlQName "No_data") [] [] Nothing
+              Just val -> toXML val
 
 
 -- | (✔)
@@ -64,22 +55,28 @@ instance ToXML [Char] where
 -- | (✔)
 instance {-# OVERLAPPABLE #-} (Foldable f, ToXML a) => ToXML (f a) where
 
-    toXML lst = Element name attrs contents Nothing
+    toXML lst = Element name [] contents Nothing
        where
            name     = QName "List" Nothing Nothing
-           attrs    = []
            contents = Elem . toXML <$> toList lst
+
+
+instance ToXML Int where
+
+    toXML i = Element name [] contents Nothing
+       where
+         name     = QName "Int" Nothing Nothing
+         contents = [CRef $ show i]
 
 -- |
 -- Take in a list of ToXML items and return a single Element with XML'ed items as substructure.
 -- Used in ToXML instances when there are sequences of data.
 collapseElemList :: (FoldableWithKey f, Show (Key f), ToXML a) => String -> [Attr] -> f a -> Element
 collapseElemList name attrs lst = Element (xmlQName name) attrs contents Nothing
-    where
-        -- contents     = (Elem numberElem) : ((Elem . toXML) <$> toList lst)
-        numberElem i = Element (xmlQName "Number") [] [CRef $ show i] Nothing
-        contents     = Elem <$> toList (foldMapWithKey f lst)
-        f i e        = [numberElem i, toXML e]
+  where
+    numberElem i = Element (xmlQName "Number") [] [CRef $ show i] Nothing
+    contents     = Elem <$> toList (foldMapWithKey f lst)
+    f i e        = [numberElem i, toXML e]
 
 
 -- | Create an XML Attr, which is a key value pair (xmlQName, String).
@@ -98,12 +95,13 @@ xmlContent (key, val) = Elem $ Element (xmlQName key) [] [CRef val] Nothing
 -- Otherwise, return the Element val as Elem val (to create Content).
 xmlElement :: String -> [(String, String)] -> [Either (String, String) Element] -> Element
 xmlElement name attrs contLst = Element (xmlQName name) attributes contents Nothing
-    where
-        attributes      = xmlAttr   <$> attrs
-        contents        = parseList <$> contLst
-        parseList conts = case conts of
-            Left  tuple   -> xmlContent tuple
-            Right element -> Elem element
+  where
+    attributes      = xmlAttr   <$> attrs
+    contents        = parseList <$> contLst
+    parseList conts =
+        case conts of
+          Left  tuple   -> xmlContent tuple
+          Right element -> Elem element
 
 
 -- | Create a QName from a String.

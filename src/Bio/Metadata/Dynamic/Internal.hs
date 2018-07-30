@@ -29,6 +29,7 @@ module Bio.Metadata.Dynamic.Internal
   , TraversalTopology
   , dynamicMetadata
   , dynamicMetadataFromTCM
+  , dynamicMetadataWithTCM
   , maybeConstructDenseTransitionCostMatrix
   ) where
 
@@ -47,6 +48,7 @@ import Data.List.NonEmpty (NonEmpty)
 import Data.TCM
 import Data.TopologyRepresentation
 import GHC.Generics       (Generic)
+import Text.XML
 
 
 -- |
@@ -206,6 +208,16 @@ instance HasTraversalFoci (DynamicCharacterMetadataDec c) (Maybe TraversalFoci) 
     traversalFoci = lens optimalTraversalFoci $ \e x -> e { optimalTraversalFoci = x }
 
 
+instance ToXML (DynamicCharacterMetadataDec c) where
+
+    toXML input = xmlElement "Dynamic_Metadata" attrs contents
+      where
+        attrs    = []
+        contents = [ Right . toXML $ metadata input
+                   , Right . toXML $ fmap (fmap mutuallyExclusivePairs) <$> optimalTraversalFoci input
+                   ]
+    
+
 -- |
 -- Construct a concrete typed 'DynamicCharacterMetadataDec' value from the supplied inputs.
 dynamicMetadata :: CharacterName -> Double -> Alphabet String -> (Word -> Word -> Word) -> Maybe DenseTransitionCostMatrix -> DynamicCharacterMetadataDec c
@@ -232,6 +244,19 @@ dynamicMetadataFromTCM name weight alpha tcm =
     coefficient = fromIntegral $ factoredWeight diagnosis
     diagnosis   = diagnoseTcm tcm
     denseTCM = maybeConstructDenseTransitionCostMatrix alpha sigma
+
+
+-- |
+-- Construct a concrete typed 'DynamicCharacterMetadataDec' value from the supplied inputs.
+dynamicMetadataWithTCM :: CharacterName -> Double -> Alphabet String -> (Word -> Word -> Word) -> DynamicCharacterMetadataDec c
+dynamicMetadataWithTCM name weight alpha scm =
+    force DynamicCharacterMetadataDec
+    { dataDenseTransitionCostMatrix = denseTCM
+    , optimalTraversalFoci          = Nothing
+    , metadata                      = discreteMetadataWithTCM name weight alpha scm
+    }
+  where
+    denseTCM = maybeConstructDenseTransitionCostMatrix alpha scm
 
 
 -- |

@@ -78,8 +78,7 @@ ignoredBlockDefinition = do
 blockend :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char {- , Show s -}) => m (Tokens s)
 blockend = do
     v <- string'' "end"
-    _ <- optional . try $ string'' "block"
-    _ <- void $ char ';'
+    _ <- optional . try $ string'' "block" <* void (char ';')
     pure v
 
 

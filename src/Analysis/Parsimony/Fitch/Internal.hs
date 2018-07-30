@@ -17,7 +17,7 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE BangPatterns, FlexibleContexts #-}
 
 module Analysis.Parsimony.Fitch.Internal where
 
@@ -26,60 +26,65 @@ import Bio.Character.Decoration.Fitch
 import Bio.Character.Encodable
 import Control.Lens
 import Data.Bits
--- import Data.Key
-import Data.List.NonEmpty (NonEmpty( (:|) ))
--- import Debug.Trace
+import Data.List.NonEmpty (NonEmpty(..))
 
 
 -- | Used on the post-order (i.e. first) traversal.
-fitchPostOrder ::  DiscreteCharacterDecoration d c
-               => d
-               -> [FitchOptimizationDecoration c]
-               -> FitchOptimizationDecoration c
+fitchPostOrder
+  ::  DiscreteCharacterDecoration d c
+  => d
+  -> [FitchOptimizationDecoration c]
+  -> FitchOptimizationDecoration c
 fitchPostOrder parentDecoration xs =
     case xs of
-        []   -> initializeLeaf  parentDecoration         -- a leaf
+        []   -> initializeLeaf  parentDecoration -- a leaf
         y:ys -> updatePostOrder parentDecoration (y:|ys)
 
 
 -- | Used on the pre-order (i.e. second) traversal.
-fitchPreOrder :: EncodableStaticCharacter c
-              => FitchOptimizationDecoration c
-              -> [(Word, FitchOptimizationDecoration c)]
-              -> FitchOptimizationDecoration c
+fitchPreOrder
+  :: EncodableStaticCharacter c
+  => FitchOptimizationDecoration c
+  -> [(Word, FitchOptimizationDecoration c)]
+  -> FitchOptimizationDecoration c
 fitchPreOrder childDecoration (_:_:_) = childDecoration   -- two parents; shouldn't be possible, but here for completion
-fitchPreOrder childDecoration []      = childDecoration & finalMedian .~ prelim & discreteCharacter .~ prelim   -- root
-    where
-        prelim = childDecoration ^. preliminaryMedian
-fitchPreOrder childDecoration [(_, parentDecoration)] =
-    if childDecoration ^. isLeaf
-        then childDecoration & finalMedian .~ (childDecoration ^. preliminaryMedian)                            -- leaf
-        else determineFinalState parentDecoration childDecoration                                               -- internal node
+fitchPreOrder childDecoration []      = let !prelim = childDecoration ^. preliminaryMedian
+                                        in  childDecoration
+                                              & finalMedian       .~ prelim
+                                              & discreteCharacter .~ prelim
+fitchPreOrder childDecoration [(_, parentDecoration)]
+  | childDecoration ^. isLeaf = childDecoration & finalMedian .~ (childDecoration ^. preliminaryMedian) -- leaf
+  | otherwise                 = determineFinalState parentDecoration childDecoration                    -- internal node
 
 
 -- |
 -- Used in first, post-order, pass. Take in parent and two child nodes. Using the child preliminary decorations,
 -- calculate the preliminary character state for the parent node. In addition, calculate the cost of assigning
 -- that character state to the parent.
-updatePostOrder :: DiscreteCharacterDecoration d c
-                => d
-                -> NonEmpty (FitchOptimizationDecoration c)
-                -> FitchOptimizationDecoration c
-updatePostOrder _parentDecoration (x:|[])                         = x                    -- Shouldn't be possible, but here for completion.
-updatePostOrder _parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDecoration -- Not a leaf
-    where
-        returnNodeDecoration =
-            extendDiscreteToFitch leftChildDec totalCost median emptyChar (leftChildDec ^. preliminaryMedian,
-                                                                           rightChildDec ^. preliminaryMedian) False
-        -- fold over states of character. This is Fitch so final cost is either 0 or 1.
-        -- (median, parentCost) = foldlWithKey f initializedAcc [0..length (leftChildDec ^. characterAlphabet) - 1]
-        (median, parentCost)
-            | popCount union > 0 = (union, 0)
-            | otherwise          = (intersection,  1)
-        union        = (leftChildDec ^. preliminaryMedian) .&. (rightChildDec ^. preliminaryMedian)
-        intersection = (leftChildDec ^. preliminaryMedian) .|. (rightChildDec ^. preliminaryMedian)
-        totalCost    = parentCost + (leftChildDec ^. characterCost) + (rightChildDec ^. characterCost)
-        emptyChar    = emptyStatic $ leftChildDec ^. discreteCharacter
+updatePostOrder
+  :: DiscreteCharacterDecoration d c
+  => d
+  -> NonEmpty (FitchOptimizationDecoration c)
+  -> FitchOptimizationDecoration c
+updatePostOrder _parentDecoration (x:|[])                         = x -- Shouldn't be possible, but here for completion.
+updatePostOrder _parentDecoration (leftChildDec:|rightChildDec:_) =
+    extendDiscreteToFitch
+      leftChildDec
+      totalCost
+      median
+      emptyChar
+      (leftChildDec ^. preliminaryMedian, rightChildDec ^. preliminaryMedian)
+      False
+  where
+    -- fold over states of character. This is Fitch so final cost is either 0 or 1.
+    (median, parentCost)
+      | popCount union > 0 = (union, 0)
+      | otherwise          = (intersection,  1)
+
+    union        = (leftChildDec ^. preliminaryMedian) .&. (rightChildDec ^. preliminaryMedian)
+    intersection = (leftChildDec ^. preliminaryMedian) .|. (rightChildDec ^. preliminaryMedian)
+    totalCost    = parentCost + (leftChildDec ^. characterCost) + (rightChildDec ^. characterCost)
+    emptyChar    = emptyStatic $ leftChildDec ^. discreteCharacter
 
 
 -- |
@@ -88,38 +93,35 @@ updatePostOrder _parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDe
 initializeLeaf :: DiscreteCharacterDecoration d c => d -> FitchOptimizationDecoration c
 initializeLeaf leafDecoration =
     extendDiscreteToFitch leafDecoration 0 leafChar emptyChar (emptyChar, emptyChar) True
-    where
-        --label     = leafDecoration ^. discreteCharacter -- can skip this now, because it's set in post order
-        emptyChar = emptyStatic leafChar
-        leafChar  = leafDecoration ^. discreteCharacter
+  where
+    emptyChar = emptyStatic leafChar
+    leafChar  = leafDecoration ^. discreteCharacter
 
 
 -- |
 -- Using the preliminary state of the current node, as well as the preliminary states of its parent and sibling,
 -- compute the final state of the character using Fitch's ordered rules.
-determineFinalState :: EncodableStaticCharacter c
-                    => FitchOptimizationDecoration c
-                    -> FitchOptimizationDecoration c
-                    -> FitchOptimizationDecoration c
-determineFinalState parentDecoration childDecoration = finalDecoration
-    where
-        -- Following two should both short-circuit.
-        curIsSuperset = (ancestor `intersect` preliminary) == ancestor
+determineFinalState
+  :: EncodableStaticCharacter c
+  => FitchOptimizationDecoration c
+  -> FitchOptimizationDecoration c
+  -> FitchOptimizationDecoration c
+determineFinalState parentDecoration childDecoration = interimDecoration & discreteCharacter .~ median
+  where
+    -- Following two should both short-circuit.
+    curIsSuperset = (ancestor .&. preliminary) == ancestor
 
-        curIsUnion    = (left `union` right) == preliminary
+    curIsUnion    = (left .|. right) == preliminary
 
-            -- Using parentDecoration here because I need a DiscreteCharacterDecoration.
-            -- Safe because new char is created.
-        interimDecoration = extendDiscreteToFitch parentDecoration cost preliminary median (left, right) leafVal
-        finalDecoration   = interimDecoration & discreteCharacter .~ median
-        leafVal           = childDecoration  ^. isLeaf
-        cost              = childDecoration  ^. characterCost
-        preliminary       = childDecoration  ^. preliminaryMedian
-        ancestor          = parentDecoration ^. preliminaryMedian
-        (left, right)     = childDecoration  ^. childMedians
-        union     l r     = l .|. r
-        intersect l r     = l .&. r
-        median
-            | curIsSuperset = ancestor                                                                          -- Fitch rule 1
-            | curIsUnion    = ancestor `union` preliminary                                                      -- Fitch rule 2
-            | otherwise     = ancestor `union` (left `intersect` ancestor) `union` (right `intersect` ancestor) -- Fitch rule 3
+    -- Using parentDecoration here because I need a DiscreteCharacterDecoration.
+    -- Safe because new char is created.
+    interimDecoration = extendDiscreteToFitch parentDecoration cost preliminary median (left, right) leafVal
+    leafVal           = childDecoration  ^. isLeaf
+    cost              = childDecoration  ^. characterCost
+    preliminary       = childDecoration  ^. preliminaryMedian
+    ancestor          = parentDecoration ^. preliminaryMedian
+    (left, right)     = childDecoration  ^. childMedians
+    median
+      | curIsSuperset = ancestor                                                  -- Fitch rule 1
+      | curIsUnion    = ancestor .|. preliminary                                  -- Fitch rule 2
+      | otherwise     = ancestor .|. (left .&. ancestor) .|. (right .&. ancestor) -- Fitch rule 3

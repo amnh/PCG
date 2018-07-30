@@ -344,24 +344,7 @@ instance (Show a) => ToXML (Alphabet a) where
     toXML alphabet = xmlElement "Alphabet" [] [ Left ("Symbols", show alphabet)]
 
 
-
 {-
-
---fromUnnamed :: UnnamedSymbol t -> t
---fromUnnamed (Unnamed x) = x
-
-
---fromNamed   :: NamedSymbol t -> (t, t)
---fromNamed   (Named   x) = x
-
-{-
-symbolVector :: Alphabet b -> Vector b
-symbolVector (SimpleAlphabet     v) =       fromUnnamed <$> v
-symbolVector (StateNamedAlphabet v) = fst . fromNamed   <$> v
--}
-
-
-
 -- | Constructs an 'Alphabet' with a corresponding TCM. Permutes TCM rows and
 --   columns as the 'Alphabet' is reordered. Deletes TCM rows and columns where
 --   'Alphabet' symbols are eliminated.

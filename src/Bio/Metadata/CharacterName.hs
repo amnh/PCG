@@ -56,8 +56,6 @@ import GHC.Generics    (Generic)
 import Prelude  hiding (lookup)
 import Text.Show       (showListWith, showString)
 
--- import Debug.Trace
-
 
 -- |
 -- Represents the name of a character in a type-safe manner which resolves namespace ambiguities.
@@ -191,44 +189,3 @@ makeCharacterNames = (`evalState` mempty) . mapM f
       | null name        = False
       | head name == ':' = False
       | otherwise        = True
-      
-
-{-
--- | Constructor for a 'CharacterName' that has been specified explicitly by user input.
-makeUserDefinedCharacterName :: FilePath -> String -> CharacterName
-makeUserDefinedCharacterName path name
-  | null path = makeDefaultCharacterName path 
-  | null name = 
-  | = UserDefined
-
--- | Constructor for a 'CharacterName' that has needs to be defaulted.
--- Please don't pass in an 
-makeDefaultCharacterName :: FilePath -> Int -> CharacterName
-makeDefaultCharacterName = Default
-
--- | Construct many sequentially indexed default 'CharacterName's for the suppleid range and 'FilePath'.
---
--- ==== __Examples__
---
--- Basic usage:
---
--- >>> makeDefaultCharacterNameRange "path/to/file.dat" 3 5
--- ["file.dat:3","file.dat:4","file.dat:5"]
---
--- >>> makeDefaultCharacterNameRange "foo.bar" 1 1
--- ["foo.bar:1"]
---
--- >>> makeDefaultCharacterNameRange "virus.exe" (-6) 2
--- ["virus.exe:0","virus.exe:1",virus.exe:2"]
---
--- >>> makeDefaultCharacterNameRange "neg.val" (-3) (-1)
--- []
---
--- >>> makeDefaultCharacterNameRange "high.low" 8 6
--- []
--- 
-makeDefaultCharacterNameRange :: FilePath -> Int -> Int -> [CharacterName]
-makeDefaultCharacterNameRange path lower upper
-  | upper < 0 = []
-  | otherwise = Default path <$> [max lower 0 .. upper]
--}
