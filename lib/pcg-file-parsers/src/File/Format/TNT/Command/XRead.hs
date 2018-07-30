@@ -43,7 +43,7 @@ import           Data.List.NonEmpty       (NonEmpty)
 import qualified Data.List.NonEmpty as NE (filter,fromList,length)
 import           Data.List.Utility
 import           Data.Map                 (assocs,insertWith,lookup)
-import           Data.Maybe               (catMaybes)
+import           Data.Maybe               (catMaybes,mapMaybe)
 import           Data.Traversable
 import           File.Format.TNT.Internal
 import           Prelude           hiding (lookup)

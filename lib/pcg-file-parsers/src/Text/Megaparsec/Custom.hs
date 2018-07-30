@@ -34,7 +34,7 @@ import           Data.Char                         (isSpace)
 --import           Data.Either                       (either)
 import           Data.Functor                      (($>))
 import           Data.List.NonEmpty                (NonEmpty(..), nonEmpty)
-import           Data.Maybe                        (catMaybes)
+import           Data.Maybe                        (mapMaybe)
 import           Data.Proxy
 import qualified Data.Set                   as S
 --import           Data.Void
