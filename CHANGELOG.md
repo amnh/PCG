@@ -16,6 +16,7 @@ Releases are available [on GitHub][2].
 * Polished command line option parsing and error reporting
 * Improved phylogeny pretty-printing
 * Documentation improvements
+* Added test suites for Data.List, Data.Alphabet and Data.TCM
 
 
 ## [v0.1.0.1][4] - 2018-03-23
