@@ -63,7 +63,18 @@ import           Text.XML
 --
 -- Use '(<>)' to construct larger blocks.
 newtype CharacterBlock u v w x y z = CB (Block Void u v w x y z)
-    deriving (Bifunctor, Eq, Functor, NFData, Generic, Semigroup)
+    deriving (Bifunctor, Eq, Functor, Generic, Semigroup)
+
+
+instance ( NFData u
+         , NFData v
+         , NFData w
+         , NFData x
+         , NFData y
+         , NFData z
+         ) => NFData (CharacterBlock u v w x y z) where
+
+    rnf (CB (Block _ u v w x y z)) = foldr seq () [rnf u, rnf v, rnf w, rnf x, rnf y, rnf z]
 
 
 -- | (✔)
@@ -182,7 +193,7 @@ hexmap
  -> CharacterBlock u' v' w' x' y' z'
 hexmap f1 f2 f3 f4 f5 f6 = CB . (
     Block
-      <$> const undefined
+      <$> undefined
       <*> (parmap rpar f1 . continuousCharacterBins )
       <*> (parmap rpar f2 . nonAdditiveCharacterBins)
       <*> (parmap rpar f3 . additiveCharacterBins   )
