@@ -548,11 +548,15 @@ Test-Suite testsuite
                     Data.Alphabet.Internal
                     Data.Alphabet.Test
                     Data.Range
+                    Data.TCM
+                    Data.TCM.Internal
                     Data.TCM.Memoized
                     Data.TCM.Memoized.FFI
+                    Data.TCM.Test
                     Data.Vector.NonEmpty
                     Test.QuickCheck.Arbitrary.Instances
                     Test.Custom.NucleotideSequence
+                    Test.HUnit.Custom
                     TestSuite.ExecutableTests
                     TestSuite.LibraryTests
                     Text.XML

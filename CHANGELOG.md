@@ -7,8 +7,9 @@ Releases are available [on GitHub][2].
 
 ## _v0.1.1.0_ - Unreleased Changes
 
-* Updated to GHC-8.4.2
+* Updated to GHC-8.4.3
 * Updated to Cabal-2.2
+* Improved efficiency and consistency of character metadata representation
 * Added Travis CI build script
 * Streamlined build experiance on MacOS
 * Corrected defect in Data.Vector.NonEmpty.unfoldr

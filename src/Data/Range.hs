@@ -180,9 +180,9 @@ smallestClosed lhs rhs = Range (newLowerBound, newUpperBound, precision lhs)
 -- |
 -- /O(1)/
 --
--- The largest closed interval between the single value on the left and the
--- interval on the right. This is the equivalent of 'union', but works for a
--- single value on the left, rather than an interval.
+-- The largest closed interval between the single value on the right and the
+-- interval on the left. This is the equivalent of 'union', but works for a
+-- single value on the right, rather than an interval.
 largestClosed :: Ord r => Range r -> r -> Range r
 largestClosed interval value = Range (newLowerBound, newUpperBound, precision interval)
     where

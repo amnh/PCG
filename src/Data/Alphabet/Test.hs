@@ -49,7 +49,7 @@ alphabetSymbolsProperties = testGroup "Properties of alphabetSymbols"
       let strs =
             nubBy (\p q -> fst p == fst q) strs' in
               (alphabetSymbols . fromSymbolsWithStateNames $ strs) ==
-              (alphabetSymbols . fromSymbols . (fmap fst) $ strs)
+              (alphabetSymbols . fromSymbols . fmap fst $ strs)
 
 gapSymbolProperties :: TestTree
 gapSymbolProperties = testGroup "Properties of gapSymbol"
@@ -68,24 +68,22 @@ truncateAtSymbolProperties = testGroup "Properties of truncateAtSymbol"
   where
     splitOrderedList :: (Int, [String]) -> Bool
     splitOrderedList (n, strs') = let strs = sort strs' in
-      case (0 < n) && (n < length strs) of
-        False -> True
-        True  ->
-          let (xs, (y : ys)) = splitAt n strs in
-              ((truncateAtSymbol y) . fromSymbols $ strs)
-              == (fromSymbols (xs ++ [y]))
-
+      if (0 < n) && (n < length strs) then
+          let (xs, y : ys) = splitAt n strs in
+              (truncateAtSymbol y . fromSymbols $ strs)
+              == fromSymbols (xs <> [y])
+      else True
 
 truncateAtMaxSymbolProperties :: TestTree
 truncateAtMaxSymbolProperties = testGroup "Properties of truncateAtMaxSymbol"
     [ QC.testProperty
-        ("truncateAtMaxSymbol of the input returns the original alphabet"
-        ) truncatePreserve
+        "truncateAtMaxSymbol of the input returns the original alphabet"
+        truncatePreserve
     ]
   where
     truncatePreserve :: [String] -> Bool
     truncatePreserve strs = let alph = fromSymbols strs in
-        (truncateAtMaxSymbol strs alph) == alph
+        truncateAtMaxSymbol strs alph == alph
 
 -- Cases for unit tests
 
@@ -100,7 +98,7 @@ alphabetDNAString =
 
 alphabetDNAText :: [(T.Text, T.Text)]
 alphabetDNAText =
-  map (\(s1, s2) -> (T.pack s1, T.pack s2)) alphabetDNAString
+  fmap (\(s1, s2) -> (T.pack s1, T.pack s2)) alphabetDNAString
 
 alphabetDNA :: Alphabet String
 alphabetDNA = fromSymbolsWithStateNames alphabetDNAString
@@ -108,19 +106,21 @@ alphabetDNA = fromSymbolsWithStateNames alphabetDNAString
 alphabetDNACases :: TestTree
 alphabetDNACases =
   testGroup
-    (  "Cases for DNA alphabet given by:\n"
-    ++ "     A   adenine\n"
-    ++ "     C   cytosine\n"
-    ++ "     G   guanine\n"
-    ++ "     T   thymine\n"
+    (unlines
+     ["Cases for DNA alphabet given by:"
+     , "     A   adenine"
+     , "     C   cytosine"
+     , "     G   guanine"
+     , "     T   thymine"
+     ]
     )
       [ HU.testCase "The symbols are A, C, G, T and -" symbols1
       , HU.testCase "The state names are adenine, cytosine, guanine, thymine and -" states1
       ]
   where
     symbols1 :: Assertion
-    symbols1 = (alphabetSymbols alphabetDNA) @?= ["A", "C", "G", "T", "-"]
+    symbols1 = alphabetSymbols alphabetDNA @?= ["A", "C", "G", "T", "-"]
 
     states1 :: Assertion
-    states1 = (alphabetStateNames alphabetDNA)
+    states1 = alphabetStateNames alphabetDNA
              @?= ["adenine", "cytosine", "guanine", "thymine", "-"]

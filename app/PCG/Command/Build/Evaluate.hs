@@ -74,8 +74,8 @@ evaluate (BUILD (BuildCommand trajectoryCount buildType)) inState =
                 bestNetwork  <- case buildType of
                                    WagnerTree     -> pure bestTrees
                                    WheelerNetwork -> do liftIO $ putStrLn "Beginning network construction."
---                                                        pure $ parmap rpar iterativeNetworkBuild bestTrees
-                                                        pure $ fmap iterativeNetworkBuild bestTrees
+                                                        pure $ parmap rpar iterativeNetworkBuild bestTrees
+--                                                        pure $ fmap iterativeNetworkBuild bestTrees
                                    WheelerForest  -> fail "The BUILD command type 'Forest' is not yet implemented!"
                 let bestSolution = Right $ toSolution bestNetwork
                 pure bestSolution
