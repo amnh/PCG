@@ -54,6 +54,7 @@ postorderSequence'
   -> (DynamicCharacterMetadataDec d         -> z -> [z'] -> z')
   -> PhylogeneticDAG2 m a d e n u  v  w  x  y  z
   -> PhylogeneticDAG2 m a d e n u' v' w' x' y' z'
+--postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag m) | (trace (show fmap () $ M.toBlocks m) False) = undefined
 postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag m) = PDAG2 (newDAG dag) m
   where
     completeLeafSetForDAG = foldl' f zeroBits dag
@@ -65,6 +66,22 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag m) = PDAG2 (newDAG dag) m
     newReferences = V.generate dagSize h
       where
         h i = IndexData <$> const (memo ! i) <*> parentRefs <*> childRefs $ references dag ! i
+
+    updateGraphCosts g =
+        GraphData
+        { dagCost         = realToFrac . sum $ accessCost <$> rootRefs dag
+        , networkEdgeCost = 0
+        , rootingCost     = 0
+        , totalBlockCost  = 0
+        , graphMetadata   = graphMetadata g
+        }
+      where
+        accessCost :: Int -> Double
+        accessCost = minimum
+                   . fmap (sequenceCost m . characterSequence)
+                   . resolutions
+                   . nodeDecoration
+                   . (newReferences !)
 
 --    memo :: Vector (PhylogeneticNode2 n (CharacterSequence u' v' w' x' y' z'))
     memo = V.generate dagSize h

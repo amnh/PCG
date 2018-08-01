@@ -1,4 +1,4 @@
-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Metadata.Sequence.Block
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
@@ -43,6 +43,8 @@ import           Data.Key
 import           Data.Vector.Instances                ()
 import           Prelude                       hiding (zip)
 
+import           Debug.Trace
+
 
 -- |
 -- CharacterBlocks satisfying this constraint have a calculable cost.
@@ -79,9 +81,10 @@ blockCost (MB mBlock) (CB cBlock) = sum . fmap sum $
     , parmap rpar integralCost . uncurry zip . (   additiveBins ***    additiveBins)   
     , parmap rpar integralCost . uncurry zip . (     metricBins ***      metricBins)
     , parmap rpar integralCost . uncurry zip . (  nonMetricBins ***   nonMetricBins)  
-    , parmap rpar integralCost . uncurry zip . (    dynamicBins ***     dynamicBins)
+    , parmap rpar (uncurry (*)) {- . traceShowId -} . fmap ((^. characterWeight) *** fromIntegral . (^. characterCost)) . uncurry zip . (    dynamicBins ***     dynamicBins)
     ] <*> [(mBlock, cBlock)]
   where
+    integralCost (m, _) | (m ^. characterWeight :: Double) == 0 && trace (show "Weight of 0 found") False = undefined
     integralCost (m, c) = fromIntegral cost * weight
       where
         cost   = c ^. characterCost

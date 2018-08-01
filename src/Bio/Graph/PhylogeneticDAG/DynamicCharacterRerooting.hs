@@ -40,6 +40,7 @@ import           Data.Maybe
 import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
+import           Data.TopologyRepresentation
 import           Data.Tuple                (swap)
 import           Data.Vector               (Vector)
 import qualified Data.Vector        as V
@@ -88,7 +89,9 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
       [_,_]   -> let r = ((0,1), getCache 1)
                      c = ((1,0), getCache 0)
                      m = HM.fromList [r, c]
-                 in  (PDAG2 inputDag meta, m, V.generate 2 (const m))
+                     f = pure ((1,0), mempty) :: TraversalFoci
+                     meta' = omap (M.setAllFoci f) meta
+                 in  (PDAG2 inputDag meta', m, V.generate 2 (const m))
       -- Complex case, see four steps below.
       _:_:_:_ ->     (PDAG2 updatedDag meta, edgeCostMapping, contextualNodeDatum)
   where

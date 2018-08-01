@@ -47,8 +47,6 @@ import           Data.Word
 import           Numeric.Extended.Natural
 import           Prelude     hiding (lookup)
 
--- import Debug.Trace
-
 
 -- |
 -- A function representing an alignment of two dynamic characters.

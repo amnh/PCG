@@ -87,17 +87,17 @@ instance ( Show u
          ) => Show (CharacterBlock u v w x y z) where
 
     show (CB block) = unlines
-        [ "Non-additive s:"
-        , niceRendering $ nonAdditiveBins block
-        , "Additive s:"
-        , niceRendering $ additiveBins block
-        , "NonMetric s:"
-        , niceRendering $ nonMetricBins block
-        , "Continuous s: "
+        [ "Continuous s [" <> show (length (continuousBins block)) <> "]:"
         , niceRendering $ continuousBins block
-        , "Metric s:"
+        , "Non-additive s [" <> show (length (nonAdditiveBins block)) <> "]:"
+        , niceRendering $ nonAdditiveBins block
+        , "Additive s [" <> show (length (additiveBins block)) <> "]:"
+        , niceRendering $ additiveBins block
+        , "Metric s [" <> show (length (metricBins block)) <> "]:"
         , niceRendering $ metricBins block
-        , "Dynamic s:"
+        , "NonMetric s [" <> show (length (nonMetricBins block)) <> "]:"
+        , niceRendering $ nonMetricBins block
+        , "Dynamic s [" <> show (length (dynamicBins block)) <> "]:"
         , niceRendering $ dynamicBins block
         ]
       where

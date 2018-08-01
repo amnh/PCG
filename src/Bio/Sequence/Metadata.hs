@@ -30,6 +30,8 @@ module Bio.Sequence.Metadata
   , toBlockVector
   , fromBlockVector
   , defaultUnaryMetadataSequence
+  -- * Mutation
+  , setAllFoci
   ) where
 
 

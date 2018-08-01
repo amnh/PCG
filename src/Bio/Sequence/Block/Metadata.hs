@@ -20,6 +20,7 @@ module Bio.Sequence.Block.Metadata
   , continuousToMetadataBlock
   , discreteToMetadataBlock
   , dynamicToMetadataBlock
+  , setAllFoci
   ) where
 
 import Bio.Metadata.Continuous
@@ -75,6 +76,10 @@ instance ToXML (MetadataBlock e d m) where
             , collapseElemList "Non_Mertic"  [] . nonMetricBins
             , collapseElemList "Dynamic"     [] . dynamicBins
             ] <*> [block]
+
+
+setAllFoci :: TraversalFoci -> MetadataBlock e d m -> MetadataBlock e d m
+setAllFoci foci (MB x) = MB $ x { dynamicBins = (traversalFoci .~ Just foci) <$> dynamicBins x }
 
 
 getBlockMetadata :: MetadataBlock e d m -> m
