@@ -44,20 +44,20 @@ alphabetSymbolsProperties = testGroup "Properties of alphabetSymbols"
                       forgetStateNames
     ]
   where
-    forgetStateNames :: [(String, String)] -> Bool
+    forgetStateNames :: [(String, String)] -> Property
     forgetStateNames strs' =
       let strs =
             nubBy (\p q -> fst p == fst q) strs' in
-              (alphabetSymbols . fromSymbolsWithStateNames $ strs) ==
-              (alphabetSymbols . fromSymbols . fmap fst $ strs)
+              (alphabetSymbols . fromSymbolsWithStateNames $ strs)
+              === (alphabetSymbols . fromSymbols . fmap fst $ strs)
 
 gapSymbolProperties :: TestTree
 gapSymbolProperties = testGroup "Properties of gapSymbol"
     [ QC.testProperty "The gap symbol is always \"-\"" constGapSymbol
     ]
   where
-    constGapSymbol :: [(String, String)] -> Bool
-    constGapSymbol = (== "-") . gapSymbol . fromSymbolsWithStateNames
+    constGapSymbol :: [(String, String)] -> Property
+    constGapSymbol = (=== "-") . gapSymbol . fromSymbolsWithStateNames
 
 truncateAtSymbolProperties :: TestTree
 truncateAtSymbolProperties = testGroup "Properties of truncateAtSymbol"
@@ -66,13 +66,14 @@ truncateAtSymbolProperties = testGroup "Properties of truncateAtSymbol"
       splitOrderedList
     ]
   where
-    splitOrderedList :: (Int, [String]) -> Bool
-    splitOrderedList (n, strs') = let strs = sort strs' in
-      if (0 < n) && (n < length strs) then
+    splitOrderedList :: (Int, [String]) -> Property
+    splitOrderedList (n, strs') =
+      let strs = sort strs' in
+        if (0 < n) && (n < length strs) then
           let (xs, y : ys) = splitAt n strs in
               (truncateAtSymbol y . fromSymbols $ strs)
-              == fromSymbols (xs <> [y])
-      else True
+              === fromSymbols (xs <> [y])
+        else property True
 
 truncateAtMaxSymbolProperties :: TestTree
 truncateAtMaxSymbolProperties = testGroup "Properties of truncateAtMaxSymbol"
@@ -81,13 +82,12 @@ truncateAtMaxSymbolProperties = testGroup "Properties of truncateAtMaxSymbol"
         truncatePreserve
     ]
   where
-    truncatePreserve :: [String] -> Bool
+    truncatePreserve :: [String] -> Property
     truncatePreserve strs = let alph = fromSymbols strs in
-        truncateAtMaxSymbol strs alph == alph
+        truncateAtMaxSymbol strs alph === alph
 
 -- Cases for unit tests
 
--- Case 1
 alphabetDNAString :: [(String, String)]
 alphabetDNAString =
   [ ("A", "adenine")
