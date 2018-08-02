@@ -293,7 +293,7 @@ toBlockVector (CharSeq x) =  x
 
 
 -- |
--- Destructs a 'CharacterSequence' to it's composite blocks.
+-- Constructs a 'CharacterSequence' from a vector of blocks.
 {-# INLINE fromBlockVector #-}
 fromBlockVector :: Vector (CharacterBlock u v w x y z) -> CharacterSequence u v w x y z
 fromBlockVector = CharSeq
