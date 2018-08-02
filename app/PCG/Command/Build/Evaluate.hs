@@ -37,7 +37,7 @@ import           PCG.Command.Build
 import           PCG.Syntax                    (Command(..))
 import           System.Random.Shuffle
 
-import Debug.Trace
+--import Debug.Trace
 
 
 type DatNode =
@@ -118,7 +118,7 @@ naiveWagnerBuild ns =
                    , ( IS.singleton 1, wipeNode False y, mempty )
                    , ( IS.singleton 0, wipeNode False z, mempty )
                    ]
-          in  iterativeBuild (traceShowId initTree) xs
+          in  iterativeBuild initTree xs
 
   where
     fromRefDAG = performDecoration . (`PDAG2` defaultUnaryMetadataSequence) . resetMetadata
