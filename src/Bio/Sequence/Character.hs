@@ -15,10 +15,6 @@
 
 {-# LANGUAGE DeriveGeneric, FlexibleContexts, TypeFamilies #-}
 
--- This is so that the Show instance compiles, even though the "real valued"
--- cost variable 'r' doesn't appear on the right hand side of the double arrow.
-{-# LANGUAGE UndecidableInstances #-}
-
 module Bio.Sequence.Character
   ( CharacterSequence()
   , HasBlockCost
@@ -41,7 +37,7 @@ module Bio.Sequence.Character
 import           Bio.Metadata.Continuous
 import           Bio.Metadata.Discrete
 import           Bio.Metadata.DiscreteWithTCM
-import           Bio.Metadata.Dynamic 
+import           Bio.Metadata.Dynamic
 import           Bio.Sequence.Block             (CharacterBlock, HasBlockCost, HasRootCost)
 import qualified Bio.Sequence.Block      as Blk
 import           Bio.Sequence.Metadata          (MetadataSequence)
