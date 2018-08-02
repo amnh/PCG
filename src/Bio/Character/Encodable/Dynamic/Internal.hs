@@ -293,8 +293,9 @@ instance MonoFoldable DynamicChar where
 instance MonoFunctor DynamicChar where
 
     omap f bm =
-       let dces = f <$> otoList bm
-       in  case invariantTransformation finiteBitSize dces of
+        case f <$> otoList bm of
+          []   -> bm
+          dces -> case invariantTransformation finiteBitSize dces of
              Just i  -> DC . factorRows (toEnum i) $ foldMap unwrap dces
              Nothing -> error "The mapping function over the Dynamic Character did not return *all* all elements of equal length."
 
