@@ -23,7 +23,7 @@ module Bio.Sequence.Character
   , fromBlocks
   , toBlockVector
   , fromBlockVector
-  -- * Other
+  -- * Other-
   , hexmap
   , hexTranspose
   , hexZipWith
@@ -197,10 +197,15 @@ hexmap f1 f2 f3 f4 f5 f6 = fromBlocks . parmap rpar (Blk.hexmap f1 f2 f3 f4 f5 f
 --
 -- Assumes that the 'CharacterSequence' values in the 'Traversable' structure are
 -- of equal length. If this assumtion is violated, the result will be truncated.
-hexTranspose :: Traversable1 t => t (CharacterSequence u v w x y z) -> CharacterSequence [u] [v] [w] [x] [y] [z]
+hexTranspose
+  :: Traversable1 t
+  => t (CharacterSequence u v w x y z)
+  -> CharacterSequence [u] [v] [w] [x] [y] [z]
 hexTranspose = toNList . invert . fmap toDList . toNonEmpty
   where
-    toDList :: CharacterSequence u v w x y z -> CharacterSequence (DList u) (DList v) (DList w) (DList x) (DList y) (DList z)
+    toDList
+      :: CharacterSequence u v w x y z
+      -> CharacterSequence (DList u) (DList v) (DList w) (DList x) (DList y) (DList z)
     toDList = hexmap pure pure pure pure pure pure
 
     invert :: ( Foldable f
@@ -235,7 +240,8 @@ hexZipWith
   -> CharacterSequence u   v   w   x   y   z
   -> CharacterSequence u'  v'  w'  x'  y'  z'
   -> CharacterSequence u'' v'' w'' x'' y'' z''
-hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = fromBlocks $ parZipWith rpar (Blk.hexZipWith f1 f2 f3 f4 f5 f6) (toBlocks lhs) (toBlocks rhs)
+hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs
+  = fromBlocks $ parZipWith rpar (Blk.hexZipWith f1 f2 f3 f4 f5 f6) (toBlocks lhs) (toBlocks rhs)
 
 
 -- |
@@ -256,7 +262,13 @@ hexZipWithMeta
   -> CharacterSequence u   v   w   x   y   z
   -> CharacterSequence u'  v'  w'  x'  y'  z'
   -> CharacterSequence u'' v'' w'' x'' y'' z''
-hexZipWithMeta f1 f2 f3 f4 f5 f6 meta lhs rhs = fromBlocks $ parZipWith3 rpar (Blk.hexZipWithMeta f1 f2 f3 f4 f5 f6) (M.toBlocks meta) (toBlocks lhs) (toBlocks rhs)
+hexZipWithMeta f1 f2 f3 f4 f5 f6 meta lhs rhs
+  = fromBlocks
+  $ parZipWith3 rpar
+  (Blk.hexZipWithMeta f1 f2 f3 f4 f5 f6)
+  (M.toBlocks meta)
+  (toBlocks lhs)
+  (toBlocks rhs)
 
 
 -- |
@@ -290,12 +302,27 @@ fromBlockVector = CharSeq
 -- |
 -- Calculates the cumulative cost of a 'CharacterSequence'. Performs some of the
 -- operation in parallel.
-sequenceCost :: HasBlockCost u v w x y z => MetadataSequence e d m -> CharacterSequence u v w x y z -> Double
-sequenceCost meta char = sum . parmap rpar (uncurry Blk.blockCost) $ zip (M.toBlocks meta) (toBlocks char)
+sequenceCost
+  :: HasBlockCost u v w x y z
+  => MetadataSequence e d m
+  -> CharacterSequence u v w x y z
+  -> Double
+sequenceCost meta char
+  = sum
+  . parmap rpar (uncurry Blk.blockCost)
+  $ zip (M.toBlocks meta) (toBlocks char)
 
 
 -- |
 -- Calculates the root cost of a 'CharacterSequence'. Performs some of the
 -- operation in parallel.
-sequenceRootCost :: (HasRootCost u v w x y z, Integral i) => i -> MetadataSequence e d m -> CharacterSequence u v w x y z -> Double
-sequenceRootCost rootCount meta char = sum . parmap rpar (uncurry (Blk.rootCost rootCount)) $ zip (M.toBlocks meta) (toBlocks char)
+sequenceRootCost
+  :: (HasRootCost u v w x y z, Integral i)
+  => i
+  -> MetadataSequence e d m
+  -> CharacterSequence u v w x y z
+  -> Double
+sequenceRootCost rootCount meta char
+  = sum
+  . parmap rpar (uncurry (Blk.rootCost rootCount))
+  $ zip (M.toBlocks meta) (toBlocks char)
