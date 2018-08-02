@@ -83,8 +83,8 @@ assignOptimalDynamicCharacterRootEdges
 assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 inputDag meta) =
     case toList inputDag of
       -- Degenarate cases
-      []      ->     (pdag { columnMetadata = undefined } , mempty, mempty)
-      [_]     ->     (pdag { columnMetadata = undefined } , mempty, mempty)
+      []      ->     (pdag, mempty, mempty)
+      [_]     ->     (pdag, mempty, mempty)
       -- Trivial case
       [_,_]   -> let r = ((0,1), getCache 1)
                      c = ((1,0), getCache 0)
