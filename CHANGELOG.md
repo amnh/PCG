@@ -11,11 +11,16 @@ Releases are available [on GitHub][2].
 * Updated to Cabal-2.2
 * Improved efficiency and consistency of character metadata representation
 * Added Travis CI build script
+* Added test suites for Data.List.Utility, Data.Alphabet, and Data.TCM
 * Streamlined build experiance on MacOS
+* Corrected defect in handling of prealigned input data
 * Corrected defect in Data.Vector.NonEmpty.unfoldr
+* Corrected defect in headEx & lastEx of several MonoFoldable instances
+* Corrected defect in omap over missing dynamic characters
 * Polished command line option parsing and error reporting
 * Improved phylogeny pretty-printing
 * Documentation improvements
+
 
 
 ## [v0.1.0.1][4] - 2018-03-23
