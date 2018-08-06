@@ -21,6 +21,7 @@ module Bio.Sequence.Block.Metadata
   , discreteToMetadataBlock
   , dynamicToMetadataBlock
   , setAllFoci
+  , setFoci
   ) where
 
 import Bio.Metadata.Continuous
@@ -30,12 +31,13 @@ import Bio.Metadata.Dynamic
 import Bio.Sequence.Block.Internal
 import Control.DeepSeq
 import Control.Lens
+import Data.Key
 import Data.TCM
 import Data.Vector (Vector)
 import GHC.Generics
 import Text.XML
 import Text.XML.Light.Types
-
+import Prelude hiding (zipWith)
 
 -- |
 -- Represents a block of data which are optimized atomically together across
@@ -80,6 +82,10 @@ instance ToXML (MetadataBlock e d m) where
 
 setAllFoci :: TraversalFoci -> MetadataBlock e d m -> MetadataBlock e d m
 setAllFoci foci (MB x) = MB $ x { dynamicBins = (traversalFoci .~ Just foci) <$> dynamicBins x }
+
+
+setFoci :: Vector TraversalFoci -> MetadataBlock e d m -> MetadataBlock e d m
+setFoci fociVec (MB x) = MB $ x { dynamicBins = zipWith (\foci dec -> dec & traversalFoci .~ Just foci) fociVec $ dynamicBins x }
 
 
 getBlockMetadata :: MetadataBlock e d m -> m

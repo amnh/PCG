@@ -93,7 +93,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                      meta' = omap (M.setAllFoci f) meta
                  in  (PDAG2 inputDag meta', m, V.generate 2 (const m))
       -- Complex case, see four steps below.
-      _:_:_:_ ->     (PDAG2 updatedDag meta, edgeCostMapping, contextualNodeDatum)
+      _:_:_:_ ->     (PDAG2 updatedDag updatedMetadata, edgeCostMapping, contextualNodeDatum)
   where
     
     -- Step 1: Construct a hashmap of all the *unrooted* edges.
@@ -112,6 +112,8 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
         , graphData  = (graphData inputDag) { graphMetadata = (edgeCostMapping, contextualNodeDatum, Nothing) }
         }
 
+    --Step 5: Update the metadata sequence to contain all applicable TraversalFoci for each dynamic character.
+    updatedMetadata = modifiedMetadataSequence
 
     -- These are the edges of the DAG, not including the current root edge,
     -- which may be be the optimal root for a given dynamic character.
@@ -661,6 +663,25 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                 h costVal originalDec =
                     originalDec
                       & characterCost .~ costVal
+
+
+    -- Step 5: Update the metdata seuqnece with the TraversalFoci for each dynamic character
+    modifiedMetadataSequence = M.fromBlocks . zipWith M.setFoci fociSequence $ M.toBlocks meta
+      where
+        rootTopologies :: NonEmpty TraversalTopology
+        rootTopologies = do
+            rootRef <- rootRefs inputDag
+            resInfo <- resolutions . nodeDecoration $ refVec ! rootRef
+            pure $ topologyRepresentation resInfo
+
+        rootContextVectors :: NonEmpty (TraversalTopology, NonEmpty (Double, Vector (Word, NonEmpty TraversalFocusEdge)))
+        rootContextVectors = (id &&& (minimalDisplayTreeRerootings !)) <$> rootTopologies
+
+        topologySequences :: NonEmpty (NonEmpty (Vector (TraversalFoci)))
+        topologySequences = (\(topo, x) -> fmap ((fmap (fmap (id &&& const topo) . snd)) . snd) $ x) <$> rootContextVectors
+
+        fociSequence :: NonEmpty (Vector TraversalFoci)
+        fociSequence = foldr1 (zipWith (zipWith (<>))) topologySequences
 
 
 (.!>.) :: (Lookup f, Show (Key f)) => f a -> Key f -> a

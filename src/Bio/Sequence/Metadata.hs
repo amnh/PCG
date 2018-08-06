@@ -32,6 +32,7 @@ module Bio.Sequence.Metadata
   , defaultUnaryMetadataSequence
   -- * Mutation
   , setAllFoci
+  , setFoci
   ) where
 
 
