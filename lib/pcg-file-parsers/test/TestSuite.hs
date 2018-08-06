@@ -12,14 +12,18 @@ import qualified File.Format.TNT.Test                  as TNT
 import qualified File.Format.TransitionCostMatrix.Test as TCM
 import qualified File.Format.VertexEdgeRoot.Test       as VER
 import           Test.Tasty
+import           Test.Tasty.Ingredients.Rerun (rerunningTests)
 
 
 main :: IO ()
-main = defaultMain testSuite
+main =
+  defaultMainWithIngredients
+  [ rerunningTests defaulIngredients ]
+  testSuite
 
 
 testSuite :: TestTree
-testSuite = testGroup "Library Test Suite" 
+testSuite = testGroup "Library Test Suite"
     [ Megaparsec.testSuite
     , Fasta.testSuite
     , Fastc.testSuite
@@ -28,4 +32,3 @@ testSuite = testGroup "Library Test Suite"
     , TCM.testSuite
     , VER.testSuite
     ]
-

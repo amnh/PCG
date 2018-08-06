@@ -9,10 +9,14 @@ import qualified Numeric.NonNegativeAverage.Test as NonNegativeAverage
 import qualified Data.List.Test                  as DataList
 
 import           Test.Tasty
+import           Test.Tasty.Ingredients.Rerun (rerunningTests)
 
 
 main :: IO ()
-main = defaultMain testSuite
+main =
+  defaultMainWithIngredients
+  [ rerunningTests defaultIngredients ]
+  testSuite
 
 
 testSuite :: TestTree
