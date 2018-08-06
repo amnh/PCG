@@ -131,6 +131,7 @@ test-suite test-suite
                   , tasty
                   , tasty-hunit
                   , tasty-quickcheck
+                  , tasty-rerun
 
   hs-source-dirs: test
                     

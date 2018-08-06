@@ -490,6 +490,7 @@ Test-Suite testsuite
                     , tasty-hunit
                     , tasty-quickcheck
                     , tasty-smallcheck
+                    , tasty-rerun
                     , text
                     , transformers
                     , vector
