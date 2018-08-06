@@ -93,6 +93,17 @@ int aligner( uint64_t     *inChar1
     printBuffer(charA, lengthCharA, "CharA");
     printBuffer(charB, lengthCharB, "CharB");
 
+    // Here we allocate space for, and define a macro to convienently get the
+    // cost between two alphabet elements (less than 64 states).
+    dcElement_t* elemA = malloc( sizeof(dcElement_t) );
+    dcElement_t* elemB = malloc( sizeof(dcElement_t) );
+    elemA->element     = malloc( sizeof(packedChar) );
+    elemB->element     = malloc( sizeof(packedChar) );
+    elemA->alphSize    = alphSize;
+    elemB->alphSize    = alphSize;
+    #define GET_COST(x, y) (elemA->element[0] = x, elemA->element[0] = y, getCostAndMedian2D(elemA, elemB, NULL, tcm));
+    
+
     int flag         = 0;       // Has all of one of the input characters been consumed?
     int flagEmpty[2] = {1,1};   // indicator for the case when one tree becomes empty,
                                 // i.e., all the candidates nodes have converged to the other tree
@@ -114,21 +125,21 @@ int aligner( uint64_t     *inChar1
     //*******************************  Initialization first level generation for both trees ****************************//
     // under \sum z_i measure
 
-    int aToB0,    // Following will hold getCost values, so we don't have to call getCost() over and over.
-        aToGap0,  // 0 values get cost using character at 0 index in array of structs, etc.
-        gapToB0,
-        aToB1,
-        aToGap1,
-        gapToB1,
-        aToB2,
-        aToGap2,
-        gapToB2;
+    unsigned int aToB0,    // Following will hold getCost values, so we don't have to call getCost() over and over.
+                 aToGap0,  // 0 values get cost using character at 0 index in array of structs, etc.
+                 gapToB0,
+                 aToB1,
+                 aToGap1,
+                 gapToB1,
+                 aToB2,
+                 aToGap2,
+                 gapToB2;
 
     printf("1st   a: %2" PRIu64 " b: %2" PRIu64 "\n", charA[0], charB[0]);
 
-    aToB0   = getCostAndMedian2D(charA[0], charB[0], NULL, tcm);
-    aToGap0 = getCostAndMedian2D(charA[0],      GAP, NULL, tcm);
-    gapToB0 = getCostAndMedian2D(GAP,      charB[0], NULL, tcm);
+    aToB0   = GET_COST(charA[0], charB[0]);
+    aToGap0 = GET_COST(charA[0],      GAP);
+    gapToB0 = GET_COST(GAP,      charB[0]);
 
     alignment_t pathFirst[3];
     pathFirst[0] = *initAlignment(aToB0,   aToB0   + 2 * aToB0   * aToB0,   1, 1, 1, 1, 1, SEQ_MAX_LEN);
@@ -152,9 +163,9 @@ int aligner( uint64_t     *inChar1
     //  under \sum z_i^2 measure
 
     printf("2nd   a: %2" PRIu64 " b: %2" PRIu64 "\n", charA[0], charB[0]);
-    aToB0   = getCostAndMedian2D(charA[0], charB[0], NULL, tcm);
-    aToGap0 = getCostAndMedian2D(charA[0], GAP,     NULL, tcm);
-    gapToB0 = getCostAndMedian2D(GAP,     charB[0], NULL, tcm);
+    aToB0   = GET_COST(charA[0], charB[0]);
+    aToGap0 = GET_COST(charA[0],      GAP);
+    gapToB0 = GET_COST(     GAP, charB[0]);
     printf("costs: %d %d %d\n", aToB0, aToGap0, gapToB0);
 
     alignment_t pathSecond[3];
@@ -278,17 +289,17 @@ int aligner( uint64_t     *inChar1
         printf("5th   a[%zu]: %2" PRIu64 " b[%zu]: %2" PRIu64 "\n", pathFirst[1].input_character_A_ptr, charA[pathFirst[1].input_character_A_ptr], pathFirst[1].input_character_B_ptr, charB[pathFirst[1].input_character_B_ptr]);
         printf("6th   a[%zu]: %2" PRIu64 " b[%zu]: %2" PRIu64 "\n", pathFirst[1].input_character_A_ptr, charA[pathFirst[2].input_character_A_ptr], pathFirst[2].input_character_B_ptr, charB[pathFirst[2].input_character_B_ptr]);
 
-        aToB0   = getCostAndMedian2D( charA[pathFirst[0].input_character_A_ptr], charB[pathFirst[0].input_character_B_ptr], NULL, tcm );
-        aToGap0 = getCostAndMedian2D( charA[pathFirst[0].input_character_A_ptr], GAP,                                       NULL, tcm );
-        gapToB0 = getCostAndMedian2D( GAP,                                       charB[pathFirst[0].input_character_B_ptr], NULL, tcm );
+        aToB0   = GET_COST( charA[pathFirst[0].input_character_A_ptr], charB[pathFirst[0].input_character_B_ptr] );
+        aToGap0 = GET_COST( charA[pathFirst[0].input_character_A_ptr], GAP                                       );
+        gapToB0 = GET_COST( GAP,                                       charB[pathFirst[0].input_character_B_ptr] );
 
-        aToB1   = getCostAndMedian2D( charA[pathFirst[1].input_character_A_ptr], charB[pathFirst[1].input_character_B_ptr], NULL, tcm );
-        aToGap1 = getCostAndMedian2D( charA[pathFirst[1].input_character_A_ptr], GAP,                                       NULL, tcm );
-        gapToB1 = getCostAndMedian2D( GAP,                                       charB[pathFirst[1].input_character_B_ptr], NULL, tcm );
+        aToB1   = GET_COST( charA[pathFirst[1].input_character_A_ptr], charB[pathFirst[1].input_character_B_ptr] );
+        aToGap1 = GET_COST( charA[pathFirst[1].input_character_A_ptr], GAP                                       );
+        gapToB1 = GET_COST( GAP,                                       charB[pathFirst[1].input_character_B_ptr] );
 
-        aToB2   = getCostAndMedian2D( charA[pathFirst[2].input_character_A_ptr], charB[pathFirst[2].input_character_B_ptr], NULL, tcm );
-        aToGap2 = getCostAndMedian2D( charA[pathFirst[2].input_character_A_ptr], GAP,                                       NULL, tcm );
-        gapToB2 = getCostAndMedian2D( GAP,                                       charB[pathFirst[2].input_character_B_ptr], NULL, tcm );
+        aToB2   = GET_COST( charA[pathFirst[2].input_character_A_ptr], charB[pathFirst[2].input_character_B_ptr] );
+        aToGap2 = GET_COST( charA[pathFirst[2].input_character_A_ptr], GAP                                       );
+        gapToB2 = GET_COST( GAP,                                       charB[pathFirst[2].input_character_B_ptr] );
 
 
         int arrayFirst[2][9]= { { 10, 20, 30, 11, 21, 31, 12, 22, 32 }
@@ -325,17 +336,17 @@ int aligner( uint64_t     *inChar1
         printf("8th   a[%zu]: %2" PRIu64 " b[%zu]: %2" PRIu64 "\n", pathFirst[1].input_character_A_ptr, charA[pathFirst[1].input_character_A_ptr], pathFirst[1].input_character_B_ptr, charB[pathFirst[1].input_character_B_ptr]);
         printf("9th   a[%zu]: %2" PRIu64 " b[%zu]: %2" PRIu64 "\n", pathFirst[2].input_character_A_ptr, charA[pathFirst[2].input_character_A_ptr], pathFirst[2].input_character_B_ptr, charB[pathFirst[2].input_character_B_ptr]);
 
-        aToB0   = getCostAndMedian2D( charA[pathFirst[0].input_character_A_ptr], charB[pathFirst[0].input_character_B_ptr], NULL, tcm);
-        aToB1   = getCostAndMedian2D( charA[pathFirst[1].input_character_A_ptr], charB[pathFirst[1].input_character_B_ptr], NULL, tcm);
-        aToB2   = getCostAndMedian2D( charA[pathFirst[2].input_character_A_ptr], charB[pathFirst[2].input_character_B_ptr], NULL, tcm);
+        aToB0   = GET_COST( charA[pathFirst[0].input_character_A_ptr], charB[pathFirst[0].input_character_B_ptr] );
+        aToB1   = GET_COST( charA[pathFirst[1].input_character_A_ptr], charB[pathFirst[1].input_character_B_ptr] );
+        aToB2   = GET_COST( charA[pathFirst[2].input_character_A_ptr], charB[pathFirst[2].input_character_B_ptr] );
 
-        aToGap0 = getCostAndMedian2D( charA[pathFirst[0].input_character_A_ptr], GAP,                                       NULL, tcm);
-        aToGap1 = getCostAndMedian2D( charA[pathFirst[1].input_character_A_ptr], GAP,                                       NULL, tcm);
-        aToGap2 = getCostAndMedian2D( charA[pathFirst[2].input_character_A_ptr], GAP,                                       NULL, tcm);
+        aToGap0 = GET_COST( charA[pathFirst[0].input_character_A_ptr], GAP                                       );
+        aToGap1 = GET_COST( charA[pathFirst[1].input_character_A_ptr], GAP                                       );
+        aToGap2 = GET_COST( charA[pathFirst[2].input_character_A_ptr], GAP                                       );
 
-        gapToB0 = getCostAndMedian2D( GAP,                                       charB[pathFirst[0].input_character_B_ptr], NULL, tcm);
-        gapToB1 = getCostAndMedian2D( GAP,                                       charB[pathFirst[1].input_character_B_ptr], NULL, tcm);
-        gapToB2 = getCostAndMedian2D( GAP,                                       charB[pathFirst[2].input_character_B_ptr], NULL, tcm);
+        gapToB0 = GET_COST( GAP,                                       charB[pathFirst[0].input_character_B_ptr] );
+        gapToB1 = GET_COST( GAP,                                       charB[pathFirst[1].input_character_B_ptr] );
+        gapToB2 = GET_COST( GAP,                                       charB[pathFirst[2].input_character_B_ptr] );
 
         // TODO: Is there any way for this ordering to be different from that of arraySecond[1], which was sorted above?
         int arraySecond[2][9]= { { 10, 20, 30, 11, 21, 31, 12, 22, 32 }
@@ -387,10 +398,9 @@ int aligner( uint64_t     *inChar1
             copyAligmentStruct(pathFirst, i, pathTempFirst, kFirst, SEQ_MAX_LEN);
 
             if (indicatorFirst > 9 && indicatorFirst < 15) { // substitution
-                cost = getCostAndMedian2D( charA[pathFirst[kFirst].input_character_A_ptr]
-                              , charB[pathFirst[kFirst].input_character_B_ptr]
-                              , tcm
-                              , alphSize );
+                cost = GET_COST( charA[pathFirst[kFirst].input_character_A_ptr]
+                               , charB[pathFirst[kFirst].input_character_B_ptr]
+                               );
 
                 // TODO: make sure that this accumulator is being reset properly, as I don't believe it now is.
                 flag = updateCharacters( &pathFirst[i]
@@ -419,15 +429,9 @@ int aligner( uint64_t     *inChar1
             if ( indicatorFirst > 19 && indicatorFirst < 25) {   // gap in charB
                 printf("n+1th a: %2" PRIu64 " b: %2" PRIu64 " \n", charA[pathFirst[kFirst].input_character_A_ptr], charB[pathFirst[kFirst].input_character_B_ptr]);
                 printf("n+1th a[%zu]: %2" PRIu64 " b[X]: %2" PRIu64 ") \n", pathFirst[kFirst].input_character_A_ptr, charA[pathFirst[kFirst].input_character_A_ptr], GAP);
-                pathFirst[i].gapped_partialCost += getCostAndMedian2D(charA[pathFirst[kFirst].input_character_A_ptr]
-                                                        , GAP
-                                                        , tcm
-                                                        , alphSize);
+                pathFirst[i].gapped_partialCost += GET_COST(charA[pathFirst[kFirst].input_character_A_ptr], GAP);
 
-                int cost =   getCostAndMedian2D(charA[pathFirst[kFirst].input_character_A_ptr]
-                                    , GAP
-                                    , tcm
-                                    , alphSize );
+                int cost = GET_COST(charA[pathFirst[kFirst].input_character_A_ptr], GAP);
 
                 flag = updateCharacters( &pathFirst[i]
                                        ,  charA
@@ -455,11 +459,7 @@ int aligner( uint64_t     *inChar1
                             pathFirst[kFirst].input_character_B_ptr,
                        charB[pathFirst[kFirst].input_character_B_ptr]);
 
-                cost = getCostAndMedian2D( GAP
-                              , charB[pathFirst[kFirst].input_character_B_ptr]
-                              , tcm
-                              , alphSize
-                              );
+                cost = GET_COST( GAP, charB[pathFirst[kFirst].input_character_B_ptr] );
 
                 flag = updateCharacters( &pathFirst[i]
                                        ,  charA
@@ -502,11 +502,9 @@ int aligner( uint64_t     *inChar1
                 copyAligmentStruct(pathSecond, i, pathTempSecond, kSecond, SEQ_MAX_LEN);
 
                 if (indicatorSecond > 9 && indicatorSecond < 15) { // substitution
-                    cost = getCostAndMedian2D( charA[pathFirst[kSecond].input_character_A_ptr]
-                                  , charB[pathSecond[kSecond].input_character_B_ptr]
-                                  , tcm
-                                  , alphSize
-                                  );
+                    cost = GET_COST( charA[pathFirst[ kSecond].input_character_A_ptr]
+                                   , charB[pathSecond[kSecond].input_character_B_ptr]
+                                   );
 
                     flag = updateCharacters( &pathSecond[i]
                                            ,  charA
@@ -530,10 +528,7 @@ int aligner( uint64_t     *inChar1
                 }
 
                 if ( indicatorSecond > 19 && indicatorSecond < 25) {   // gap in charB
-                    cost = getCostAndMedian2D(charA[pathFirst[kSecond].input_character_A_ptr]
-                                  , GAP
-                                  , tcm
-                                  , alphSize );
+                    cost = GET_COST( charA[pathFirst[kSecond].input_character_A_ptr], GAP);
 
                     flag = updateCharacters( &pathSecond[i]
                                            ,  charA
@@ -555,10 +550,7 @@ int aligner( uint64_t     *inChar1
                 }
 
                 if ( indicatorSecond > 29 && indicatorSecond < 35) {   // gap in charA
-                    cost = getCostAndMedian2D( GAP
-                                  , charB[pathSecond[kSecond].input_character_B_ptr]
-                                  , tcm
-                                  , alphSize );
+                    cost = GET_COST( GAP, charB[pathSecond[kSecond].input_character_B_ptr] );
 
                     flag = updateCharacters( &pathFirst[i]
                                            ,  charA
@@ -675,13 +667,13 @@ int aligner( uint64_t     *inChar1
       //        printf("n+6th a: %2" PRIu64 " b: %2" PRIu64 " \n", finalAlign.partialAlign_A[i], finalAlign.partialAlign_B[i + LENGTH]);
 
         if (finalAlign.partialAlign_A[i] == GAP || finalAlign.partialAlign_B[i] == GAP) {
-            finalAlign.gapped_partialCost += getCostAndMedian2D(GAP, GAP, NULL, tcm);
+            finalAlign.gapped_partialCost += GET_COST(GAP, GAP);
 
         } else if (finalAlign.partialAlign_A[i] == finalAlign.partialAlign_B[i]) {
-            finalAlign.gapped_partialCost += getCostAndMedian2D(finalAlign.partialAlign_A[i], finalAlign.partialAlign_B[i], NULL, tcm);
+            finalAlign.gapped_partialCost += GET_COST(finalAlign.partialAlign_A[i], finalAlign.partialAlign_B[i]);
 
         } else {
-            finalAlign.gapped_partialCost += getCostAndMedian2D(finalAlign.partialAlign_A[i], finalAlign.partialAlign_B[i], NULL, tcm);
+            finalAlign.gapped_partialCost += GET_COST(finalAlign.partialAlign_A[i], finalAlign.partialAlign_B[i]);
         }
     }
 
@@ -767,10 +759,19 @@ int currentAlignmentCost(alignment_t *path, costMatrix_p tcm, size_t maxLen, siz
         costTempSecond = 0,
         cost;
 
+    dcElement_t* elemA = malloc( sizeof(dcElement_t) );
+    dcElement_t* elemB = malloc( sizeof(dcElement_t) );
+    elemA->element     = malloc( sizeof(packedChar) );
+    elemB->element     = malloc( sizeof(packedChar) );
+    elemA->alphSize    = alphSize;
+    elemB->alphSize    = alphSize;
+    
     // TODO: check that bounds checking is appropriate here
     for(i = 0; i < path->aligned_character_A_end_ptr && i < maxLen; i++) {
         // printf("n+7th a: %2" PRIu64 " b: %2" PRIu64 " (not indexing charA or charB)\n", path->partialAlign_A[i], path->partialAlign_B[i]);
-        cost = getCostAndMedian2D(path->partialAlign_A[i], path->partialAlign_B[i], NULL, tcm);
+        elemA->element[0] = path->partialAlign_A[i];
+        elemA->element[0] = path->partialAlign_B[i];
+        cost = getCostAndMedian2D(elemA, elemB, NULL, tcm);
         costTempFirst  += cost;
         costTempSecond += cost * cost;
     }
