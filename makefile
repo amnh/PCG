@@ -70,6 +70,13 @@ stack-build-profiling: phylocomgraph.cabal stack.yaml
 stack-build-test: phylocomgraph.cabal stack.yaml
 	stack build --test
 
+# Builds with profiling enabled
+stack-build-test-failures: phylocomgraph.cabal stack.yaml
+	stack build --test --ta "--rerun-filter=failures"
+
+stack-build-test-new: phylocomgraph.cabal stack.yaml
+	stack build --test --ta "--rerun-filter=new"
+
 # Copies documentation director to local scope
 copy-haddock: set-dir-variables
 	rm -rf doc/haddock/*
