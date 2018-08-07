@@ -18,7 +18,7 @@ import           Test.Tasty.Ingredients.Rerun (rerunningTests)
 main :: IO ()
 main =
   defaultMainWithIngredients
-  [ rerunningTests defaulIngredients ]
+  [ rerunningTests defaultIngredients ]
   testSuite
 
 
