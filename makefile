@@ -38,6 +38,10 @@ rebuild-full: clean rebuild
 # Rebuilds with optimizations and runs tests
 test: stack-build-test
 
+test-failures: stack-build-test-failures
+
+test-new: stack-build-test-new
+
 
 # Target Definitions
 ################################################################################
@@ -74,6 +78,7 @@ stack-build-test: phylocomgraph.cabal stack.yaml
 stack-build-test-failures: phylocomgraph.cabal stack.yaml
 	stack build --test --ta "--rerun-filter=failures"
 
+# Builds with profiling enabled
 stack-build-test-new: phylocomgraph.cabal stack.yaml
 	stack build --test --ta "--rerun-filter=new"
 
