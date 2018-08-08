@@ -11,14 +11,15 @@
 -- Unit tests for implied alignment
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances, TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 module Analysis.ImpliedAlignment.Test.Trees where
 
-import           Analysis.Parsimony.Binary.Internal
 import           Analysis.ImpliedAlignment.DynamicProgramming
+import           Analysis.Parsimony.Binary.Internal
 import           Bio.Metadata
-import           Data.Vector             (Vector)
+import           Data.Vector                                  (Vector)
 import           Test.Custom
 import           Test.Tasty
 import           Test.Tasty.HUnit

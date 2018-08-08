@@ -10,28 +10,32 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 -- We need this for the generalized type family derivation of Ranged instances.
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 module Bio.Character.Decoration.Additive.Internal where
 
 
-import Bio.Character.Decoration.Additive.Class
-import Bio.Character.Decoration.Discrete
-import Bio.Character.Decoration.Shared
-import Bio.Character.Encodable
+import           Bio.Character.Decoration.Additive.Class
+import           Bio.Character.Decoration.Discrete
+import           Bio.Character.Decoration.Shared
+import           Bio.Character.Encodable
 --import Bio.Metadata.CharacterName
 --import Bio.Metadata.Discrete
 --import Bio.Metadata.DiscreteWithTCM
-import Control.DeepSeq
-import Control.Lens
+import           Control.DeepSeq
+import           Control.Lens
 --import Data.Alphabet
-import Data.Range
-import GHC.Generics
-import Numeric.Extended
-import Text.XML
+import           Data.Range
+import           GHC.Generics
+import           Numeric.Extended
+import           Text.XML
 
 
 -- |
@@ -99,11 +103,11 @@ instance EncodableStaticCharacter a => DiscreteCharacterDecoration (AdditivePost
 -- | (✔)
 instance (NFData a, NFData (Finite (Bound a)), NFData (Range (Bound a))) => NFData (AdditiveOptimizationDecoration a)
 
-  
+
 -- | (✔)
 instance (NFData a, NFData (Finite (Bound a)), NFData (Range (Bound a))) => NFData (AdditivePostorderDecoration a)
 
-  
+
 -- | (✔)
 instance (Ranged c, ExtendedNumber (Bound c), Num (Finite (Bound c)), Num (Bound c), Ord (Bound c)) => RangedCharacterDecoration (AdditivePostorderDecoration c) c where
 

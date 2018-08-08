@@ -8,11 +8,11 @@ module Test.Custom.Parse
   , parserSatisfies
   ) where
 
-import Data.Either
-import Data.Void
-import Test.Tasty.HUnit
-import Text.Megaparsec       (Parsec, parse)
-import Text.Megaparsec.Error (parseErrorPretty)
+import           Data.Either
+import           Data.Void
+import           Test.Tasty.HUnit
+import           Text.Megaparsec       (Parsec, parse)
+import           Text.Megaparsec.Error (parseErrorPretty)
 
 
 parseEquals :: (Eq a, Show a) => Parsec Void String a -> String -> a -> Assertion

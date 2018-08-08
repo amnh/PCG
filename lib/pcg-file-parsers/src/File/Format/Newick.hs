@@ -29,10 +29,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.Newick
-  ( NewickForest 
+  ( NewickForest
   , NewickNode()
   -- * Smart Constructor
   , newickNode
@@ -48,10 +49,10 @@ module File.Format.Newick
   ) where
 
 
-import Data.List.NonEmpty          (NonEmpty, some1)
-import File.Format.Newick.Internal
-import File.Format.Newick.Parser
-import Text.Megaparsec
+import           Data.List.NonEmpty          (NonEmpty, some1)
+import           File.Format.Newick.Internal
+import           File.Format.Newick.Parser
+import           Text.Megaparsec
 
 
 -- |

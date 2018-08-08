@@ -31,7 +31,7 @@ module Bio.Character.Encodable
   , showStreamElement
   ) where
 
-import Bio.Character.Encodable.Continuous
-import Bio.Character.Encodable.Dynamic
-import Bio.Character.Encodable.Static
-import Bio.Character.Encodable.Stream
+import           Bio.Character.Encodable.Continuous
+import           Bio.Character.Encodable.Dynamic
+import           Bio.Character.Encodable.Static
+import           Bio.Character.Encodable.Stream

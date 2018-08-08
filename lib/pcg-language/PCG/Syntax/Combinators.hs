@@ -21,8 +21,12 @@
 -----------------------------------------------------------------------------
 
 
-{-# LANGUAGE DeriveFunctor, FlexibleContexts, RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables, TypeFamilies, UnboxedSums #-}
+{-# LANGUAGE DeriveFunctor       #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE UnboxedSums         #-}
 
 
 module PCG.Syntax.Combinators
@@ -48,28 +52,29 @@ module PCG.Syntax.Combinators
   -- ** MonadParsec based syntactic interpreter
   , parseCommand
   , runSyntax
-  -- ** Whitespace definition of the syntax 
+  -- ** Whitespace definition of the syntax
   , P.whitespace
   ) where
 
 
+import           Control.Alternative.Free         hiding (Ap, Pure)
+import qualified Control.Alternative.Free         as Alt
 import           Control.Applicative
 import           Control.Applicative.Free
 import           Control.Applicative.Permutations
-import           Control.Alternative.Free   hiding (Pure,Ap)
-import qualified Control.Alternative.Free   as Alt
-import qualified Control.Monad.Free         as F
-import           Data.CaseInsensitive              (FoldCase)
+import qualified Control.Monad.Free               as F
+import           Data.CaseInsensitive             (FoldCase)
 import           Data.Foldable
-import           Data.Functor                      (void)
-import           Data.List                         (intercalate)
-import           Data.List.NonEmpty                (NonEmpty(..), some1)
+import           Data.Functor                     (void)
+import           Data.List                        (intercalate)
+import           Data.List.NonEmpty               (NonEmpty (..), some1)
 import           Data.Proxy
-import           Data.String                       (IsString(..))
-import           Data.Time.Clock                   (DiffTime)
-import           PCG.Syntax.Primative              (PrimativeValue, parsePrimative, whitespace)
-import qualified PCG.Syntax.Primative       as P
-import           Text.Megaparsec            hiding (many)
+import           Data.String                      (IsString (..))
+import           Data.Time.Clock                  (DiffTime)
+import           PCG.Syntax.Primative             (PrimativeValue,
+                                                   parsePrimative, whitespace)
+import qualified PCG.Syntax.Primative             as P
+import           Text.Megaparsec                  hiding (many)
 import           Text.Megaparsec.Char
 
 
@@ -189,7 +194,7 @@ argId str x = liftAp $ ArgIdNamedArg x (ArgId str :|[])
 -- values. Accepts multiple aliases for the prefix used to disambiuate the
 -- argument.
 argIds :: Foldable f => f String -> Ap SyntacticArgument a -> Ap SyntacticArgument a
-argIds strs arg = 
+argIds strs arg =
     case toList strs of
       []   -> error "You cannot construct an empty set of identifiers!"
       x:xs -> liftAp . ArgIdNamedArg arg $ ArgId <$> (x:|xs)
@@ -250,7 +255,7 @@ apRunner effect (ArgIdNamedArg p ids) = toPermutation $ do
       => ArgumentIdentifier
       -> m' ()
     parseId  (ArgId x) = string'' x
-    
+
     parseHint =
         case ids of
           x:|[] -> "identifier " <> renderId x
@@ -272,10 +277,10 @@ parseArgumentList argListVal = toPermutation $ begin *> datum <* close
       => f a
       -> f ()
     bookend p = void $ whitespace *> p <* whitespace
-    
+
     begin = bookend . label "'(' starting a new argument list" $ char '('
     close = bookend . label "')' ending the argument list"     $ char ')'
-    datum = 
+    datum =
       case argListVal of
         Exact e -> runSyntax e
         SomeZ s -> runAlt' comma (runPermutation . runAp (apRunner voidEffect)) s

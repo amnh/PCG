@@ -31,4 +31,4 @@ module Data.TCM
   , reduceTcm
   ) where
 
-import Data.TCM.Internal
+import           Data.TCM.Internal

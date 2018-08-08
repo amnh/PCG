@@ -24,9 +24,9 @@ module PCG.Command.Report
   ) where
 
 
-import Control.Applicative.Free
-import Data.Functor (($>))
-import PCG.Syntax.Combinators
+import           Control.Applicative.Free
+import           Data.Functor             (($>))
+import           PCG.Syntax.Combinators
 
 
 -- |

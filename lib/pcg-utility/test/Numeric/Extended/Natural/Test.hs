@@ -4,10 +4,10 @@ module Numeric.Extended.Natural.Test
   ( testSuite
   ) where
 
-import Numeric.Extended.Natural
-import Test.Tasty
-import Test.Tasty.HUnit
-import Test.Tasty.QuickCheck
+import           Numeric.Extended.Natural
+import           Test.Tasty
+import           Test.Tasty.HUnit
+import           Test.Tasty.QuickCheck
 
 
 testSuite :: TestTree
@@ -168,7 +168,7 @@ subtractionProperties = testGroup "Properties of subtraction"
   where
     subtractionIsInverse :: ExtendedNatural -> Bool
     subtractionIsInverse val = val - val == 0 || val == infinity
-    
+
     subtractionIdentity :: ExtendedNatural -> Bool
     subtractionIdentity val = val - 0 == val
 
@@ -204,7 +204,7 @@ multiplicationCases = testGroup "specific multiplication cases"
         testCase (unwords [show a, "* (", show b, "+", show c, ")"])
           $ a * (b + c) @?= (a * b) + (a * c)
 
-    
+
 
 
 multiplicationProperties :: TestTree

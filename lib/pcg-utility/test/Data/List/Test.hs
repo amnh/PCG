@@ -2,13 +2,13 @@ module Data.List.Test
   ( testSuite
   ) where
 
-import Data.List.Utility
-import Data.List (sort, nub)
-import qualified  Data.List.NonEmpty as NE
-import Test.Tasty
-import Test.Tasty.HUnit
-import Test.Tasty.QuickCheck as QC
-import Control.Monad (join)
+import           Control.Monad         (join)
+import           Data.List             (nub, sort)
+import qualified Data.List.NonEmpty    as NE
+import           Data.List.Utility
+import           Test.Tasty
+import           Test.Tasty.HUnit
+import           Test.Tasty.QuickCheck as QC
 
 
 testSuite :: TestTree

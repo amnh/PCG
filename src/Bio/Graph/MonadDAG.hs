@@ -9,12 +9,11 @@
 -- Portability :  portable
 --
 -----------------------------------------------------------------------------
-
-{-# LANGUAGE MultiParameterTypeclasses #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Bio.Graph.MonadDAG where
 
-import Data.List.NonEmpty
+import           Data.List.NonEmpty
 
 
 newtype NodeRef = NR Int deriving (Eq)

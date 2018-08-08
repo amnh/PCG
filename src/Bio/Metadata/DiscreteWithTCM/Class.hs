@@ -10,7 +10,10 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
 
 module Bio.Metadata.DiscreteWithTCM.Class
   ( DiscreteWithTcmCharacterMetadata()
@@ -22,10 +25,10 @@ module Bio.Metadata.DiscreteWithTCM.Class
   , HasSparseTransitionCostMatrix(..)
   ) where
 
-import Bio.Character.Encodable
-import Bio.Metadata.General
-import Bio.Metadata.Discrete
-import Control.Lens
+import           Bio.Character.Encodable
+import           Bio.Metadata.Discrete
+import           Bio.Metadata.General
+import           Control.Lens
 
 
 -- |

@@ -12,7 +12,8 @@
 -- relevant to processing character data.
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.TNT.Partitioning
   ( Commands
@@ -20,19 +21,19 @@ module File.Format.TNT.Partitioning
   ) where
 
 
-import Data.CaseInsensitive
-import Data.Char (isAlpha)
-import File.Format.TNT.Command.CCode
-import File.Format.TNT.Command.CNames
-import File.Format.TNT.Command.Cost
-import File.Format.TNT.Command.NStates
-import File.Format.TNT.Command.Procedure
-import File.Format.TNT.Command.TRead
-import File.Format.TNT.Command.XRead
-import File.Format.TNT.Internal
-import Text.Megaparsec
-import Text.Megaparsec.Char
-import Text.Megaparsec.Custom
+import           Data.CaseInsensitive
+import           Data.Char                         (isAlpha)
+import           File.Format.TNT.Command.CCode
+import           File.Format.TNT.Command.CNames
+import           File.Format.TNT.Command.Cost
+import           File.Format.TNT.Command.NStates
+import           File.Format.TNT.Command.Procedure
+import           File.Format.TNT.Command.TRead
+import           File.Format.TNT.Command.XRead
+import           File.Format.TNT.Internal
+import           Text.Megaparsec
+import           Text.Megaparsec.Char
+import           Text.Megaparsec.Custom
 
 
 -- |
@@ -42,7 +43,7 @@ data Part
    | CN CNames
    | CO Cost
    | NS NStates
-   | TR TRead 
+   | TR TRead
    | XR XRead
    | Ignore
 

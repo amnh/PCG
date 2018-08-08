@@ -10,7 +10,12 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies, UndecidableInstances #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 module Bio.Character.Decoration.Continuous.Internal
   ( ContinuousDecorationInitial(..)
@@ -20,14 +25,14 @@ module Bio.Character.Decoration.Continuous.Internal
   ) where
 
 
-import Bio.Character.Decoration.Additive
-import Bio.Character.Encodable
-import Control.DeepSeq
-import Control.Lens
-import Data.Range
-import GHC.Generics
-import Numeric.Extended
-import Text.XML
+import           Bio.Character.Decoration.Additive
+import           Bio.Character.Encodable
+import           Control.DeepSeq
+import           Control.Lens
+import           Data.Range
+import           GHC.Generics
+import           Numeric.Extended
+import           Text.XML
 
 
 -- |

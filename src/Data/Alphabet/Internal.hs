@@ -14,8 +14,10 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeFamilies      #-}
 
 module Data.Alphabet.Internal
   ( Alphabet()
@@ -29,22 +31,23 @@ module Data.Alphabet.Internal
   , truncateAtMaxSymbol
   ) where
 
-import           Control.DeepSeq              (NFData)
+import           Control.DeepSeq                     (NFData)
 import           Control.Monad.State.Strict
-import           Data.Bifunctor               (bimap)
+import           Data.Bifunctor                      (bimap)
 import           Data.Foldable
 import           Data.Key
-import           Data.List                    (elemIndex, intercalate, sort)
-import           Data.List.NonEmpty           (NonEmpty(..), unzip)
+import           Data.List                           (elemIndex, intercalate,
+                                                      sort)
+import           Data.List.NonEmpty                  (NonEmpty (..), unzip)
 import           Data.Maybe
 import           Data.Monoid
 import           Data.Semigroup.Foldable
-import qualified Data.Set              as Set
+import qualified Data.Set                            as Set
 import           Data.String
-import           Data.Vector.NonEmpty         (Vector)
-import qualified Data.Vector.NonEmpty  as NEV
-import           GHC.Generics                 (Generic)
-import           Prelude               hiding (lookup, unzip, zip)
+import           Data.Vector.NonEmpty                (Vector)
+import qualified Data.Vector.NonEmpty                as NEV
+import           GHC.Generics                        (Generic)
+import           Prelude                             hiding (lookup, unzip, zip)
 import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances ()
 import           Text.XML
@@ -59,8 +62,8 @@ type AmbiguityGroup a = NonEmpty a
 -- A collection of symbols and optional corresponding state names.
 data Alphabet a =
      Alphabet
-     { symbolVector      :: {-# UNPACK #-} !(Vector a)
-     , stateNames        :: [a]
+     { symbolVector :: {-# UNPACK #-} !(Vector a)
+     , stateNames   :: [a]
      } deriving (Generic)
 
 

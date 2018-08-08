@@ -10,14 +10,15 @@
 --
 -- The Nexus file format was developed by an committee consisting of members
 -- who had no concept of language design. Consequently the Nexus file format
--- is needlessly complex. 
+-- is needlessly complex.
 --
 -- This parser works barely on a subset of the Nexus specification's ambiguously
--- defined features. 
+-- defined features.
 --
------------------------------------------------------------------------------ 
+-----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.Nexus
   ( AlphabetSymbol
@@ -34,11 +35,11 @@ module File.Format.Nexus
   ) where
 
 
-import Data.CaseInsensitive
-import File.Format.Nexus.Data
-import File.Format.Nexus.Parser
-import File.Format.Nexus.Validate
-import Text.Megaparsec
+import           Data.CaseInsensitive
+import           File.Format.Nexus.Data
+import           File.Format.Nexus.Parser
+import           File.Format.Nexus.Validate
+import           Text.Megaparsec
 
 
 -- |

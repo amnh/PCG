@@ -12,14 +12,15 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Control.Monad.Logger
   ( Logger(..)
   ) where
 
 
-import Control.Monad.Fail
+import           Control.Monad.Fail
 
 {- |
 
@@ -40,7 +41,7 @@ import Control.Monad.Fail
 
 -}
 class MonadFail m => Logger m a where
-  
+
     info, warn   :: String -> m a
 
     (<?>), (<!>) :: m a -> String -> m a

@@ -2,9 +2,9 @@
 
 module TestSuite.GeneratedTests.Internal where
 
-import Control.Arrow    ((&&&))
-import Data.Map         (Map,fromList)
-import System.Directory
+import           Control.Arrow    ((&&&))
+import           Data.Map         (Map, fromList)
+import           System.Directory
 
 
 -- |

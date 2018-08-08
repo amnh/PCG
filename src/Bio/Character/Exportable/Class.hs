@@ -13,13 +13,16 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
 
 module Bio.Character.Exportable.Class where
 
 
-import Control.Lens
-import Foreign.C.Types 
+import           Control.Lens
+import           Foreign.C.Types
 
 
 -- |
@@ -43,7 +46,7 @@ data ExportableCharacterSequence
    { exportedElementCountSequence :: {-# UNPACK #-} !Word
    , exportedElementWidthSequence :: {-# UNPACK #-} !Word
    , exportedBufferChunks         :: ![CULong]
-   } deriving (Eq, Show)   
+   } deriving (Eq, Show)
 
 
 -- |
@@ -54,7 +57,7 @@ data ExportableCharacterElements
    { exportedElementCountElements :: {-# UNPACK #-} !Word
    , exportedElementWidthElements :: {-# UNPACK #-} !Word
    , exportedCharacterElements    :: ![CUInt]
-   } deriving (Eq, Show)   
+   } deriving (Eq, Show)
 
 
 -- |

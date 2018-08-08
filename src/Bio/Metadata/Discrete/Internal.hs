@@ -10,7 +10,10 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Bio.Metadata.Discrete.Internal
   ( DiscreteCharacterMetadataDec()
@@ -23,15 +26,15 @@ module Bio.Metadata.Discrete.Internal
   ) where
 
 
-import Bio.Metadata.CharacterName
-import Bio.Metadata.Discrete.Class
-import Bio.Metadata.General
-import Control.DeepSeq
-import Control.Lens
-import Data.Alphabet
-import Data.List (intercalate)
-import GHC.Generics
-import Text.XML
+import           Bio.Metadata.CharacterName
+import           Bio.Metadata.Discrete.Class
+import           Bio.Metadata.General
+import           Control.DeepSeq
+import           Control.Lens
+import           Data.Alphabet
+import           Data.List                   (intercalate)
+import           GHC.Generics
+import           Text.XML
 
 
 -- |

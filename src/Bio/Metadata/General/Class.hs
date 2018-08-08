@@ -10,7 +10,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE TypeFamilies           #-}
 
 module Bio.Metadata.General.Class
   ( HasCharacterName(..)
@@ -18,7 +22,7 @@ module Bio.Metadata.General.Class
   ) where
 
 
-import Control.Lens
+import           Control.Lens
 
 
 -- |

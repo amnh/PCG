@@ -12,10 +12,15 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, MonoLocalBinds, MultiParamTypeClasses, ScopedTypeVariables #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MonoLocalBinds        #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 
 -- Because I'm sick of dealing with the typechecker.
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 module Bio.Graph.PhylogeneticDAG.Internal
   ( EdgeReference
@@ -38,35 +43,36 @@ import           Bio.Metadata.Discrete
 import           Bio.Metadata.DiscreteWithTCM
 import           Bio.Metadata.Dynamic
 import           Bio.Sequence
-import           Bio.Sequence.Metadata            (MetadataSequence, getBlockMetadata)
-import qualified Bio.Sequence.Metadata     as M
-import           Bio.Sequence.Block.Character     (CharacterBlock(..))
+import           Bio.Sequence.Block.Character    (CharacterBlock (..))
 import           Bio.Sequence.Block.Internal
-import           Bio.Sequence.Block.Metadata      (MetadataBlock(..))
-import           Control.Applicative              (liftA2)
-import           Control.Arrow                    ((***))
+import           Bio.Sequence.Block.Metadata     (MetadataBlock (..))
+import           Bio.Sequence.Metadata           (MetadataSequence,
+                                                  getBlockMetadata)
+import qualified Bio.Sequence.Metadata           as M
+import           Control.Applicative             (liftA2)
+import           Control.Arrow                   ((***))
 import           Control.DeepSeq
 import           Control.Lens
 import           Data.Bits
 import           Data.Foldable
-import           Data.GraphViz.Printing    hiding ((<>)) -- Seriously, why is this redefined?
+import           Data.GraphViz.Printing          hiding ((<>))
 import           Data.GraphViz.Types
-import           Data.HashMap.Lazy                (HashMap)
-import qualified Data.IntMap               as IM
-import           Data.IntSet                      (IntSet)
-import qualified Data.IntSet               as IS
+import           Data.HashMap.Lazy               (HashMap)
+import qualified Data.IntMap                     as IM
+import           Data.IntSet                     (IntSet)
+import qualified Data.IntSet                     as IS
 import           Data.Key
-import           Data.List                        (zip4)
-import           Data.List.NonEmpty               (NonEmpty(..))
-import qualified Data.List.NonEmpty        as NE
+import           Data.List                       (zip4)
+import           Data.List.NonEmpty              (NonEmpty (..))
+import qualified Data.List.NonEmpty              as NE
 import           Data.List.Utility
-import           Data.Maybe                       (fromMaybe)
+import           Data.Maybe                      (fromMaybe)
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
 import           Data.TopologyRepresentation
-import           Data.Vector                      (Vector)
+import           Data.Vector                     (Vector)
 import           GHC.Generics
-import           Prelude                   hiding (zip)
+import           Prelude                         hiding (zip)
 import           Text.Newick.Class
 import           Text.XML
 
@@ -106,7 +112,7 @@ data  PhylogeneticDAG m a d e n u v w x y z
 
 -- TODO: RENAME THIS to PhylogeneticForest
 data  PhylogeneticDAG2 m a d e n u v w x y z
-    = PDAG2 
+    = PDAG2
     { phylogeneticForest :: ReferenceDAG
                               (         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
                               , Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
@@ -236,8 +242,8 @@ getDotContextWithBaseAndIndex i j (PDAG2 dag _) = getDotContext i j $ nodeDecora
 applySoftwireResolutions :: [(ResolutionCache s, IntSet)] -> NonEmpty [ResolutionInformation s]
 applySoftwireResolutions inputContexts =
     case inputContexts of
-      []   -> pure []
-      [x]  -> pure <$> fst x
+      []    -> pure []
+      [x]   -> pure <$> fst x
       x:y:_ -> pairingLogic (x,y)
   where
     multipleParents = not . isSingleton . otoList . snd
@@ -287,7 +293,7 @@ generateLocalResolutions
   -> (DiscreteCharacterMetadataDec          -> w -> [w'] -> w'')
   -> (DiscreteWithTCMCharacterMetadataDec e -> x -> [x'] -> x'')
   -> (DiscreteWithTCMCharacterMetadataDec e -> y -> [y'] -> y'')
-  -> (DynamicCharacterMetadataDec d         -> z -> [z'] -> z'') 
+  -> (DynamicCharacterMetadataDec d         -> z -> [z'] -> z'')
   ->  MetadataSequence e d m
   ->  ResolutionInformation (CharacterSequence u   v   w   x   y   z  )
   -> [ResolutionInformation (CharacterSequence u'  v'  w'  x'  y'  z' )]
@@ -445,7 +451,7 @@ renderBlockSummary (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displa
   where
     pair = (M.toBlocks meta ! key, block)
     (MB mBlock, CB cBlock) = pair
-    
+
     renderedPrefix = "Block " <> show key <> "\n\n"
 
     renderBlockMeta (mValue, bValue) = unlines

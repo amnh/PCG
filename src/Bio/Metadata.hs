@@ -26,8 +26,8 @@ module Bio.Metadata
   , DiscreteCharacterMetadata(..)
   , discreteMetadata
   -- * Discrete Character with TCM Metadata
-  , DiscreteWithTcmCharacterMetadata()                                                                                                    
-  , DiscreteWithTCMCharacterMetadataDec()                                                                                                 
+  , DiscreteWithTcmCharacterMetadata()
+  , DiscreteWithTCMCharacterMetadataDec()
   , discreteMetadataFromTCM
   , discreteMetadataWithTCM
   -- * Dynamic Character Metadata
@@ -53,9 +53,9 @@ module Bio.Metadata
   , HasTraversalFoci(..)
   ) where
 
-import Bio.Metadata.Continuous
-import Bio.Metadata.Discrete
-import Bio.Metadata.DiscreteWithTCM
-import Bio.Metadata.Dynamic
-import Bio.Metadata.General
-import Bio.Metadata.Parsed
+import           Bio.Metadata.Continuous
+import           Bio.Metadata.Discrete
+import           Bio.Metadata.DiscreteWithTCM
+import           Bio.Metadata.Dynamic
+import           Bio.Metadata.General
+import           Bio.Metadata.Parsed

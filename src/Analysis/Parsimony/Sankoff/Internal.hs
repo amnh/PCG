@@ -25,22 +25,23 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module Analysis.Parsimony.Sankoff.Internal where
 
 
-import Bio.Character.Decoration.Discrete
-import Bio.Character.Decoration.Metric
-import Bio.Character.Encodable
-import Bio.Metadata
-import Control.Lens
-import Data.Bits
-import Data.Key
-import Data.List.NonEmpty (NonEmpty( (:|) ))
-import Data.Word
-import Numeric.Extended.Natural
-import Prelude                   hiding (zip)
+import           Bio.Character.Decoration.Discrete
+import           Bio.Character.Decoration.Metric
+import           Bio.Character.Encodable
+import           Bio.Metadata
+import           Control.Lens
+import           Data.Bits
+import           Data.Key
+import           Data.List.NonEmpty                (NonEmpty ((:|)))
+import           Data.Word
+import           Numeric.Extended.Natural
+import           Prelude                           hiding (zip)
 
 
 -- |

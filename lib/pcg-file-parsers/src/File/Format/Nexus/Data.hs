@@ -43,8 +43,8 @@ module File.Format.Nexus.Data
 --  , SequenceBlock(..)
   ) where
 
-import qualified Data.Map.Lazy as M
-import qualified Data.Vector   as V
+import qualified Data.Map.Lazy                    as M
+import qualified Data.Vector                      as V
 import           File.Format.Newick
 import           File.Format.TransitionCostMatrix
 
@@ -84,14 +84,14 @@ type TaxonIdentifier = String
 -- Metadata record type for a given character.
 data CharacterMetadata
    = CharacterMetadata
-   { name       :: String
-   , isAligned  :: Bool
-   , charType   :: CharDataType
-   , alphabet   :: AmbiguityGroup
-   , ignored    :: Bool
-   , costM      :: Maybe TCM
-   , additive   :: Bool
-   , weight     :: Int
+   { name      :: String
+   , isAligned :: Bool
+   , charType  :: CharDataType
+   , alphabet  :: AmbiguityGroup
+   , ignored   :: Bool
+   , costM     :: Maybe TCM
+   , additive  :: Bool
+   , weight    :: Int
    } deriving (Show)
 
 
@@ -222,7 +222,7 @@ data Nexus
    = Nexus
    -- TODO: taxa was commented out before first push to Grace
    { {- taxa :: [TaxonIdentifier]
-   ,-} sequences :: Sequences
+   ,-} sequences  :: Sequences
    {- , stepMatrices :: AssumptionBlock -}
    , nexusForests :: [NewickForest]
    } deriving (Show)

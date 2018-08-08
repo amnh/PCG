@@ -9,7 +9,7 @@
 -- Portability :  portable
 --
 -- Data structures and instances for coded characters
--- Coded characters are dynamic characters recoded as 
+-- Coded characters are dynamic characters recoded as
 --
 -----------------------------------------------------------------------------
 
@@ -22,7 +22,7 @@ module Bio.Sequence
   -- * CharacterBlock construction
   , continuousSingleton
   , discreteSingleton
-  , dynamicSingleton 
+  , dynamicSingleton
   , finalizeCharacterBlock
   , fromBlocks
   , fromBlockVector
@@ -50,16 +50,16 @@ module Bio.Sequence
   , staticCost
   ) where
 
-import Bio.Sequence.Character
-import Bio.Sequence.Block hiding (hexmap, hexTranspose, hexZipWith, hexZipWithMeta)
-import Bio.Sequence.Block.Builder
-import Bio.Sequence.Block.Character ( finalizeCharacterBlock
-                                    , continuousCharacterBins
-                                    , nonAdditiveCharacterBins
-                                    , additiveCharacterBins
-                                    , metricCharacterBins
-                                    , nonMetricCharacterBins
-                                    , dynamicCharacters
-                                    , setDynamicCharacters
-                                    )
+import           Bio.Sequence.Block           hiding (hexTranspose, hexZipWith,
+                                               hexZipWithMeta, hexmap)
+import           Bio.Sequence.Block.Builder
+import           Bio.Sequence.Block.Character (additiveCharacterBins,
+                                               continuousCharacterBins,
+                                               dynamicCharacters,
+                                               finalizeCharacterBlock,
+                                               metricCharacterBins,
+                                               nonAdditiveCharacterBins,
+                                               nonMetricCharacterBins,
+                                               setDynamicCharacters)
+import           Bio.Sequence.Character
 

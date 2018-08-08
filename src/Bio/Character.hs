@@ -28,8 +28,8 @@ module Bio.Character
   , Exportable(..)
   , PossiblyMissingCharacter(..)
   , showStream
-  , showStreamElement 
+  , showStreamElement
   ) where
 
-import Bio.Character.Encodable
-import Bio.Character.Exportable.Class
+import           Bio.Character.Encodable
+import           Bio.Character.Exportable.Class

@@ -12,26 +12,27 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Test
   ( testSuite
   ) where
 
 
-import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
-import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
-import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
-import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
 
-import Bio.Character.Encodable
-import Data.MonoTraversable
-import Data.TCM.Memoized
-import Debug.Trace
-import Test.Custom.NucleotideSequence
-import Test.Tasty
-import Test.Tasty.QuickCheck
-import qualified Test.Tasty.SmallCheck as SC
+import           Bio.Character.Encodable
+import           Data.MonoTraversable
+import           Data.TCM.Memoized
+import           Debug.Trace
+import           Test.Custom.NucleotideSequence
+import           Test.Tasty
+import           Test.Tasty.QuickCheck
+import qualified Test.Tasty.SmallCheck                                                  as SC
 
 
 testSuite :: TestTree

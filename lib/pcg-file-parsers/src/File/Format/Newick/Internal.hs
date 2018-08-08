@@ -23,18 +23,18 @@ module File.Format.Newick.Internal
   ) where
 
 
-import           Data.Tree
+import           Data.List.NonEmpty (NonEmpty, toList)
 import           Data.Maybe
-import           Data.List.NonEmpty  (NonEmpty, toList)
+import           Data.Tree
 
 
 {----
   - The Newick file format was developed by an informal committee meeting at
   - Newick's seafood restaurant. The grammar definition of the Newick format
-  - was never formally specified, but Gary Olsen's interpretation of the 
-  - original newick format has been documented here: 
+  - was never formally specified, but Gary Olsen's interpretation of the
+  - original newick format has been documented here:
   - http://evolution.genetics.washington.edu/phylip/newick_doc.html
-  - 
+  -
   - After over two decades of informal usage, the Extended Newick file format
   - was proposed in a BCM publication which allowed node labels to be non-
   - unique and merged to a single node with shared ancestors and descendants.
@@ -42,7 +42,7 @@ import           Data.List.NonEmpty  (NonEmpty, toList)
   -
   - Another half decade later, the Forest Extended Newick was proposed by
   - Professor Wheeler to model collections of disjoint phylogenetic trees.
-  - This new format allowed grouping many Extended Newick trees into a 
+  - This new format allowed grouping many Extended Newick trees into a
   - forest to be analyzed collectively.
   -
   - This parser correctly parses both Newick file formats, and the super set
@@ -67,7 +67,7 @@ data NewickNode
 
 instance Show NewickNode where
 
-    show (NewickNode d n b) = name <> len <> " " <> show d 
+    show (NewickNode d n b) = name <> len <> " " <> show d
       where
         name = maybe "Node" show n
         len  = maybe "" (\x -> ':' : show x) b
@@ -86,7 +86,7 @@ instance Semigroup NewickNode where
 -- |
 -- Renders the 'NewickForest' to a 'String'. If the forest contains a DAG with
 -- in-degree  greater than one, then the shared subtree in a DAG will be rendered
--- multiple times. 
+-- multiple times.
 renderNewickForest :: NewickForest -> String
 renderNewickForest = drawForest . unfoldForest f . toList
   where

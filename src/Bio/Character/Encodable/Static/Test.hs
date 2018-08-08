@@ -10,17 +10,18 @@ import           Data.Bits
 import           Data.Foldable
 import           Data.Functor.Compose
 import           Data.Functor.Identity
-import           Data.Key                  ((!))
-import           Data.List.NonEmpty        (NonEmpty((:|)))
-import qualified Data.List.NonEmpty as NE
+import           Data.Key                       ((!))
+import           Data.List.NonEmpty             (NonEmpty ((:|)))
+import qualified Data.List.NonEmpty             as NE
 import           Data.MonoTraversable
 import           Data.Semigroup
-import           Data.Set                  (Set)
-import qualified Data.Set           as Set (fromList,intersection,union)
-import           Data.Vector               (Vector, fromList)
+import           Data.Set                       (Set)
+import qualified Data.Set                       as Set (fromList, intersection,
+                                                        union)
+import           Data.Vector                    (Vector, fromList)
 import           Test.Tasty
 import           Test.Tasty.HUnit
-import           Test.Tasty.QuickCheck hiding ((.&.))
+import           Test.Tasty.QuickCheck          hiding ((.&.))
 
 
 testSuite :: TestTree
@@ -56,11 +57,11 @@ bitsTests = testGroup "Bits instance properties"
     zeroBitsAndSetBit :: NonNegative Int -> Property
     zeroBitsAndSetBit (NonNegative n) =
         setBit   (zeroBits :: StaticCharacter) n === bit n
-      
+
     zeroBitsAndTestBit :: NonNegative Int -> Property
     zeroBitsAndTestBit (NonNegative n) =
         testBit  (zeroBits :: StaticCharacter) n === False
-      
+
     zeroBitsAndPopCount :: Assertion
     zeroBitsAndPopCount =
         popCount (zeroBits :: StaticCharacter) @?= 0
@@ -96,8 +97,8 @@ bitsTests = testGroup "Bits instance properties"
 
 finiteBitsTests :: TestTree
 finiteBitsTests = testGroup "FiniteBits instance consistency"
-    [ testProperty "fromEnum . symbolCount === finiteBitSize" finiteBitSizeIsDimension 
-    , testProperty "length . otoList === finiteBitSize" finiteBitSizeIsBitLength 
+    [ testProperty "fromEnum . symbolCount === finiteBitSize" finiteBitSizeIsDimension
+    , testProperty "length . otoList === finiteBitSize" finiteBitSizeIsBitLength
     , testProperty "length . takeWhile not . otoList === countLeadingZeros" countLeadingZeroAndToBits
     , testProperty "length . takeWhile not . reverse . otoList === countTrailingZeros" countTrailingZeroAndToBits
     ]
@@ -105,15 +106,15 @@ finiteBitsTests = testGroup "FiniteBits instance consistency"
     finiteBitSizeIsDimension :: StaticCharacter -> Property
     finiteBitSizeIsDimension x =
       (fromEnum . symbolCount) x === finiteBitSize x
-      
+
     finiteBitSizeIsBitLength :: StaticCharacter -> Property
     finiteBitSizeIsBitLength x =
       (length . otoList) x === finiteBitSize x
-      
+
     countLeadingZeroAndToBits :: StaticCharacter -> Property
     countLeadingZeroAndToBits x =
       (length . takeWhile not . otoList) x === countLeadingZeros x
-      
+
     countTrailingZeroAndToBits :: StaticCharacter -> Property
     countTrailingZeroAndToBits x =
       (length . takeWhile not . reverse . otoList) x === countTrailingZeros x
@@ -147,15 +148,15 @@ monoFoldableProperties = testGroup "Properties of MonoFoldable"
     testFoldr :: (Blind (Bool -> Word -> Word), Word, StaticCharacter) -> Property
     testFoldr (Blind f, z, bv) =
         ofoldr f z bv === (ofoldr f z . otoList) bv
-    
+
     testFoldl :: (Blind (Word -> Bool -> Word), Word, StaticCharacter) -> Property
     testFoldl (Blind f, z, bv) =
         ofoldl' f z bv === (ofoldl' f z . otoList) bv
-    
+
     testFoldr1 :: (Blind (Bool -> Bool -> Bool), StaticCharacter) -> Property
     testFoldr1 (Blind f, bv) =
         (not . onull) bv  ==> ofoldr1Ex f bv === (ofoldr1Ex f . otoList) bv
-    
+
     testFoldl1 :: (Blind (Bool -> Bool -> Bool), StaticCharacter) -> Property
     testFoldl1 (Blind f, bv) =
         (not . onull) bv  ==> ofoldl1Ex' f bv === (ofoldl1Ex' f . otoList) bv
@@ -179,7 +180,7 @@ monoFoldableProperties = testGroup "Properties of MonoFoldable"
     testHead :: StaticCharacter -> Property
     testHead bv =
         (not . onull) bv ==> headEx bv === (getFirst . ofoldMap1Ex First) bv
-    
+
     testTail :: StaticCharacter -> Property
     testTail bv =
         (not . onull) bv ==> lastEx bv === (getLast . ofoldMap1Ex Last) bv
@@ -241,7 +242,7 @@ orderingProperties = testGroup "Properties of an Ordering"
           (LT, GT) -> True
           _        -> False
 
-    transitivity 
+    transitivity
       :: StaticCharacter
       -> StaticCharacter
       -> StaticCharacter

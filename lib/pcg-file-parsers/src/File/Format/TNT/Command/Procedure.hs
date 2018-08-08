@@ -12,7 +12,8 @@
 -- are usually ignored by the calling combinators.
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.TNT.Command.Procedure
   ( procedureCommand
@@ -21,12 +22,12 @@ module File.Format.TNT.Command.Procedure
   , procHeader
   ) where
 
-import Data.CaseInsensitive
-import Data.Functor (($>))
-import File.Format.TNT.Internal
-import Text.Megaparsec
-import Text.Megaparsec.Char
-import Text.Megaparsec.Custom
+import           Data.CaseInsensitive
+import           Data.Functor             (($>))
+import           File.Format.TNT.Internal
+import           Text.Megaparsec
+import           Text.Megaparsec.Char
+import           Text.Megaparsec.Custom
 
 
 -- |
@@ -64,7 +65,7 @@ procCommandFile = anythingTill (whitespace *> char ';') <* trim (char ';')
 -- |
 -- A directive to read in a FASTA file as aligned, non-addative data.
 -- This interpretation is beyond the scope of this software.
--- We ignore PROCEDURE commands of this form. 
+-- We ignore PROCEDURE commands of this form.
 procFastaFile :: (MonadParsec e s m, Token s ~ Char) => m FilePath
 procFastaFile = symbol (char '&') *> procCommandFile
 

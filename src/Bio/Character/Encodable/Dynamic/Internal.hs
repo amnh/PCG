@@ -13,7 +13,15 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies, TypeSynonymInstances, UnboxedSums, UndecidableInstances #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
+{-# LANGUAGE UnboxedSums                #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 module Bio.Character.Encodable.Dynamic.Internal
   ( DynamicChar (DC,Missing)
@@ -25,28 +33,28 @@ import           Bio.Character.Encodable.Dynamic.Class
 import           Bio.Character.Encodable.Internal
 import           Bio.Character.Encodable.Stream
 import           Bio.Character.Exportable.Class
-import           Control.Arrow                       ((***))
+import           Control.Arrow                         ((***))
 import           Control.DeepSeq
-import           Control.Lens                 hiding (mapping)
+import           Control.Lens                          hiding (mapping)
 import           Data.Alphabet
 import           Data.BitMatrix
-import           Data.Char                           (toLower)
-import           Data.Key
 import           Data.Bits
 import           Data.BitVector.LittleEndian
+import           Data.Char                             (toLower)
 import           Data.Foldable
 import           Data.Hashable
-import           Data.List.NonEmpty                  (NonEmpty(..))
-import qualified Data.List.NonEmpty           as NE
-import           Data.List.Utility                   (invariantTransformation)
-import qualified Data.Map                     as M
+import           Data.Key
+import           Data.List.NonEmpty                    (NonEmpty (..))
+import qualified Data.List.NonEmpty                    as NE
+import           Data.List.Utility                     (invariantTransformation)
+import qualified Data.Map                              as M
 import           Data.MonoTraversable
-import           Data.String                         (fromString)
-import           Data.Tuple                          (swap)
-import           Data.Vector                         (Vector)
+import           Data.String                           (fromString)
+import           Data.Tuple                            (swap)
+import           Data.Vector                           (Vector)
 import           GHC.Generics
 import           Test.QuickCheck
-import           Test.QuickCheck.Arbitrary.Instances ()
+import           Test.QuickCheck.Arbitrary.Instances   ()
 import           Text.XML
 
 -- TODO: Change DynamicChar/Sequences to DynamicCharacters
@@ -259,7 +267,7 @@ instance MonoFoldable DynamicChar where
 
     {-# INLINE ofoldl' #-}
     ofoldl' _ e Missing{} = e
-    ofoldl' f e (DC c)   = ofoldl' (\acc x -> f acc (DCE x)) e c
+    ofoldl' f e (DC c)    = ofoldl' (\acc x -> f acc (DCE x)) e c
 
     {-# INLINE ofoldr1Ex #-}
     ofoldr1Ex _ Missing{} = error "Trying to mono-morphically fold over an empty structure without supplying an inital accumulator!"
@@ -284,7 +292,7 @@ instance MonoFoldable DynamicChar where
         _ -> error $ "call to DynamicChar.headEx with: " <> show dc
 
     {-# INLINE lastEx #-}
-    lastEx dc = 
+    lastEx dc =
       case dc of
         (DC c) | (not . onull) c -> DCE $ lastEx c
         _ -> error $ "call to DynamicChar.lastEx with: " <> show dc

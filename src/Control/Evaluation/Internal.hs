@@ -11,7 +11,9 @@
 -- The 'Evaluation' monad definition.
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Control.Evaluation.Internal
   ( Evaluation(..)
@@ -24,9 +26,9 @@ module Control.Evaluation.Internal
 import           Control.Applicative
 import           Control.DeepSeq
 import           Control.Evaluation.Unit
-import           Control.Monad           (MonadPlus(..))
+import           Control.Monad           (MonadPlus (..))
 import           Control.Monad.Fail      (MonadFail)
-import qualified Control.Monad.Fail as F
+import qualified Control.Monad.Fail      as F
 import           Control.Monad.Logger
 import           Data.DList              (DList, toList)
 import           GHC.Generics

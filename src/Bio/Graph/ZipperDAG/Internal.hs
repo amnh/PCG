@@ -22,7 +22,7 @@ module Bio.Graph.ZipperDAG.Internal
   , zipperEdges
   ) where
 
-import Data.Bifunctor
+import           Data.Bifunctor
 
 
 -- |

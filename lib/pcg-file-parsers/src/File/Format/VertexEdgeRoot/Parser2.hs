@@ -1,20 +1,21 @@
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.VertexEdgeRoot.Parser2 where
 
-import Data.Char              (isSpace)
-import Data.Either            (partitionEithers)
-import Data.List              (delete,partition,maximumBy,sortBy)
-import Data.List.Utility      (duplicates)
-import Data.Map               (Map,empty,insert,lookup)
-import Data.Maybe             (catMaybes,fromMaybe)
-import Data.Ord               (comparing)
-import Data.Set               (Set,elems,fromList,size)
-import Prelude         hiding (lookup)
-import Text.Megaparsec
-import Text.Megaparsec.Custom
-import Text.Megaparsec.Perm
-import Text.Megaparsec.Prim   (MonadParsec)
+import           Data.Char              (isSpace)
+import           Data.Either            (partitionEithers)
+import           Data.List              (delete, maximumBy, partition, sortBy)
+import           Data.List.Utility      (duplicates)
+import           Data.Map               (Map, empty, insert, lookup)
+import           Data.Maybe             (catMaybes, fromMaybe)
+import           Data.Ord               (comparing)
+import           Data.Set               (Set, elems, fromList, size)
+import           Prelude                hiding (lookup)
+import           Text.Megaparsec
+import           Text.Megaparsec.Custom
+import           Text.Megaparsec.Perm
+import           Text.Megaparsec.Prim   (MonadParsec)
 
 
 data  VertexSetType
@@ -31,9 +32,9 @@ data  EdgeInfo
 
 data  VertexEdgeRoot
     = VER
-    { verticies   :: Set VertexLabel
-    , edges       :: Set EdgeInfo
-    , roots       :: Set VertexLabel
+    { verticies :: Set VertexLabel
+    , edges     :: Set EdgeInfo
+    , roots     :: Set VertexLabel
     } deriving (Show)
 
 
@@ -78,18 +79,18 @@ verStreamParser = validateForest =<< verDefinition
 
 
 -- We have a complicated definition here because we do not want to restrict
--- the order of the set definitions, and yet we must enforce that there is 
--- only one edge set and two vertex sets. One vertex set is the set of all 
--- verticies and the other is a subset consisting of the root nodes. To 
--- enforce this for propper parsing, and provide robust error messages we 
+-- the order of the set definitions, and yet we must enforce that there is
+-- only one edge set and two vertex sets. One vertex set is the set of all
+-- verticies and the other is a subset consisting of the root nodes. To
+-- enforce this for propper parsing, and provide robust error messages we
 -- read zero or more set definitions and seperate each set as either a vertex
--- set or an edge set by checking the type constructor for a Left or Right 
--- value. We then assert that we have received exactly one edge set and 
+-- set or an edge set by checking the type constructor for a Left or Right
+-- value. We then assert that we have received exactly one edge set and
 -- exactly two vertex sets. If not we generate meaningful error messages based
--- on the missing or multiple requisite sets. Once all sets have been parsed 
--- we disambiguate the vertex sets to the set of verticies and the set of root 
+-- on the missing or multiple requisite sets. Once all sets have been parsed
+-- we disambiguate the vertex sets to the set of verticies and the set of root
 -- nodes by inspecting the possibly provided set labels or in the absence of
--- labels by comparing the size of the sets; as the set of all verticies is 
+-- labels by comparing the size of the sets; as the set of all verticies is
 -- surely a superset of the set of root nodes.
 verDefinition :: (MonadParsec e s m, Token s ~ Char) => m VertexEdgeRoot
 verDefinition = perm
@@ -111,7 +112,7 @@ verDefinition = do
         (Nothing       , Just Roots    ) ->    pure $ VER setA edges' setB
         (Just Verticies, Nothing       ) ->    pure $ VER setA edges' setB
         (Just Roots    , Nothing       ) ->    pure $ VER setB edges' setA
-        (Just Verticies, Just Roots    ) ->    pure $ VER setA edges' setB 
+        (Just Verticies, Just Roots    ) ->    pure $ VER setA edges' setB
         (Just Roots    , Just Verticies) ->    pure $ VER setB edges' setA
         (_             , _             ) -> runFail $ vertexSetMessages [x,y]
     runFail [x] = fail x
@@ -153,9 +154,9 @@ labeledNodeSet setLabel = do
     vertexSetLabel = do
         l <- symbol $ string' setLabel
         _ <- symbol $ char '='
-        pure l 
-    
-                   
+        pure l
+
+
 -- A labeled vertex set contains a label followed by an unlabeled vertex set
 rootSet, vertexSet :: (MonadParsec e s m, Token s ~ Char) => m NodeSet
 rootSet   = (labeledNodeSet "RootSet"   <|> unlabeledNodeSet) <?> "root set definition"
@@ -218,7 +219,7 @@ edgeSet = validateEdgeSet =<< (edgeSet' <?> "edge set definition")
         errors = case (dupes,selfs) of
                    ([] ,[] ) -> []
                    (_:_,[] ) -> [dupesErrorMessage]
-                   ([] ,_:_) -> [selfsErrorMessage] 
+                   ([] ,_:_) -> [selfsErrorMessage]
                    (_:_,_:_) -> [dupesErrorMessage,selfsErrorMessage]
         dupesErrorMessage = "Duplicate edges detected. The following edges were defined multiple times: "    <> show dupes
         selfsErrorMessage = "Self-referencing edge(s) detected.The following edge(s) are self=referencing: " <> show selfs
@@ -227,9 +228,9 @@ edgeSet = validateEdgeSet =<< (edgeSet' <?> "edge set definition")
 edgeDefinition :: (MonadParsec e s m, Token s ~ Char) => m EdgeInfo
 edgeDefinition = symbol $ do
     _ <- space
-    _ <- symbol (char '(') 
+    _ <- symbol (char '(')
     x <- symbol vertexLabel
-    _ <- symbol (char ',') 
+    _ <- symbol (char ',')
     y <- symbol vertexLabel
     _ <- symbol (char ')')
     z <- optional $ try branchLengthDefinition
@@ -297,7 +298,7 @@ validateForest ver@(VER vs es rs )
       , show r
       , "', the following cycle was detected: "
       , show xs
-      ] 
+      ]
     manyRootsErrorMessage xs = concat
       [ "Multiple root nodes detected in a single tree. "
       , "The following root nodes should form different trees, but thay are part of the same tree: "

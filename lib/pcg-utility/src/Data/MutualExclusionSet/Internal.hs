@@ -13,7 +13,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts #-}
+{-# LANGUAGE DeriveGeneric    #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Data.MutualExclusionSet.Internal
   ( MutualExclusionSet (includedElemMap, excludedElemMap, includedFullMap, excludedFullMap)
@@ -39,18 +40,18 @@ import           Data.Foldable
 import           Data.Functor.Classes
 import           Data.Hashable
 import           Data.Key
-import           Data.List.NonEmpty       (NonEmpty(..))
+import           Data.List.NonEmpty   (NonEmpty (..))
+import           Data.Map             (Map)
+import qualified Data.Map             as M
+import qualified Data.Map.Internal    as M
+import           Data.Monoid          hiding ((<>))
 import           Data.Ord
-import           Data.Map                 (Map)
-import qualified Data.Map          as M
-import qualified Data.Map.Internal as M
-import           Data.Monoid       hiding ((<>))
 import           Data.Semigroup
-import           Data.Set                 (Set)
-import qualified Data.Set          as S
+import           Data.Set             (Set)
+import qualified Data.Set             as S
 import           Data.Tuple
-import           GHC.Generics             (Generic)
-import           Prelude           hiding (zip)
+import           GHC.Generics         (Generic)
+import           Prelude              hiding (zip)
 import           Test.QuickCheck
 
 
@@ -101,8 +102,8 @@ instance Eq1 MutualExclusionSet where
     liftEq eq (MES _ _ a b) (MES _ _ c d) = and
         [ length a == length c
         , length b == length d
-        , liftEq2 eq (liftEq eq) a c 
-        , liftEq2 eq (liftEq eq) b d 
+        , liftEq2 eq (liftEq eq) a c
+        , liftEq2 eq (liftEq eq) b d
         ]
 
 
@@ -115,7 +116,7 @@ instance Foldable MutualExclusionSet where
     -- We don't use isIncluded here because that would force an Ord constraint.
     {-# INLINE elem #-}
     elem x     = elem x . toList
-  
+
     {-# INLINABLE fold #-}
     fold       = fold . toList
 
@@ -168,7 +169,7 @@ instance Hashable a => Hashable (MutualExclusionSet a) where
     hashWithSalt salt (MES _ _ inc exc) = foldl' hashWithSalt (foldl' hashWithSalt salt (f inc)) $ f exc
       where
         f = toList . fmap toList
-  
+
 
 -- | (✔)
 instance Ord a => Monoid (MutualExclusionSet a) where
@@ -242,7 +243,7 @@ singleton x y =
     MES
     { includedElemMap = inc
     , excludedElemMap = exc
-    , includedFullMap = a 
+    , includedFullMap = a
     , excludedFullMap = b
     }
   where
@@ -264,7 +265,7 @@ singleton x y =
 -- within 'MutualExclusionSet' so that the following will always hold:
 --
 -- > invert . invert === id
-invert :: MutualExclusionSet a -> MutualExclusionSet a 
+invert :: MutualExclusionSet a -> MutualExclusionSet a
 invert (MES a b x y) = MES b a y x
 
 
@@ -296,7 +297,7 @@ excludedSet = M.keysSet . excludedElemMap
 includedLookup :: Ord a => a -> MutualExclusionSet a -> Maybe a
 includedLookup k = valueLookup k . includedElemMap
 
-  
+
 -- |
 -- \( \mathcal{O} \left( \log_2 n \right) \)
 --
@@ -317,7 +318,7 @@ excludedLookup k = valueLookup k . excludedElemMap
 isIncluded :: Ord a => a -> MutualExclusionSet a -> Bool
 isIncluded k = M.member k . includedElemMap
 
-  
+
 -- |
 -- \( \mathcal{O} \left( \log_2 n \right) \)
 --
@@ -461,8 +462,8 @@ mergeMany = mergePostProcess . foldr f mempty
       -> ( (Set a, Map a (Set a)), (Set a, Map a (Set a)) )
     f mes (lhs, rhs) = (lhs >>= mergeLogic inc, rhs >>= mergeLogic exc)
       where
-        inc = includedFullMap mes 
-        exc = excludedFullMap mes 
+        inc = includedFullMap mes
+        exc = excludedFullMap mes
 
 
 -- |
@@ -479,7 +480,7 @@ mergeLogic = M.mergeA preserveMissingValues preserveMissingValues accumulateDiff
       case (toList x, toList y) of
         ([a], [b]) -> a == b
         _          -> False
-        
+
     preserveMissingValues = M.traverseMaybeMissing conditionalPreservation
       where
         conditionalPreservation _ v =
@@ -504,7 +505,7 @@ mergePostProcess ((incNotBi, incFull), (excNotBi, excFull)) = MES incElem excEle
   where
     incElem = M.withoutKeys incFull notBijective
     excElem = M.withoutKeys excFull notBijective
-    
+
     includedAndExcluded = M.keysSet keyIntersection
     notBijective        = includedAndExcluded <> fold keyIntersection <> incNotBi <> excNotBi
     keyIntersection     = M.intersectionWith (<>) incFull excFull

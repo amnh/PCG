@@ -10,9 +10,10 @@
 --
 -- Functions for parsing FASTA files.
 --
------------------------------------------------------------------------------ 
+-----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.Fasta.Parser
   ( FastaParseResult
@@ -25,16 +26,16 @@ module File.Format.Fasta.Parser
   , iupacRNAChars
   ) where
 
-import Control.Arrow              ((&&&))
-import Control.Monad              ((<=<))
-import Data.Char                  (isLower,isUpper,toLower,toUpper)
-import Data.List                  (nub,partition)
-import Data.List.Utility
-import Data.Maybe                 (fromJust)
-import File.Format.Fasta.Internal
-import Text.Megaparsec
-import Text.Megaparsec.Char
-import Text.Megaparsec.Custom
+import           Control.Arrow              ((&&&))
+import           Control.Monad              ((<=<))
+import           Data.Char                  (isLower, isUpper, toLower, toUpper)
+import           Data.List                  (nub, partition)
+import           Data.List.Utility
+import           Data.Maybe                 (fromJust)
+import           File.Format.Fasta.Internal
+import           Text.Megaparsec
+import           Text.Megaparsec.Char
+import           Text.Megaparsec.Custom
 
 
 -- |
@@ -101,7 +102,7 @@ iupacAminoAcidChars  = caseInsensitiveOptions $ "ACDEFGHIKLMNPQRSTVWY" <> otherV
 iupacNucleotideChars = caseInsensitiveOptions $ "ACGTRYSWKMBDHVN"      <> otherValidChars
 iupacRNAChars        = f <$> iupacNucleotideChars
   where
-    f x 
+    f x
       | x == 'T'  = 'U'
       | x == 't'  = 'u'
       | otherwise = x
@@ -114,7 +115,7 @@ unionAll = nub . concat
 
 
 -- |
--- Adds the lowercase and uppercase Chars to string when only the upper or 
+-- Adds the lowercase and uppercase Chars to string when only the upper or
 -- lower is present in the String
 caseInsensitiveOptions :: String -> String
 caseInsensitiveOptions = nub . foldr f []
@@ -127,9 +128,9 @@ caseInsensitiveOptions = nub . foldr f []
 
 -- |
 -- Converts all Chars in the sequence to uppercase
--- This makes all subsequent processing easier 
+-- This makes all subsequent processing easier
 seqTranslation :: [FastaSequence] -> [FastaSequence]
-seqTranslation = foldr f [] 
+seqTranslation = foldr f []
   where
     f (FastaSequence name seq') a = FastaSequence name (toUpper <$> seq') : a
 
@@ -150,7 +151,7 @@ validateIdentifierConsistency xs =
   where
     dupes = duplicates $ taxonName <$> xs
     errors         = errorMessage <$> dupes
-    errorMessage x = "Multiple taxon labels found identified by: '"<>x<>"'" 
+    errorMessage x = "Multiple taxon labels found identified by: '"<>x<>"'"
 
 
 -- |
@@ -175,7 +176,7 @@ validateConsistentAlphabet xs =
                             || all (`elem` iupacNucleotideChars) seq'
                             || all (`elem` iupacRNAChars       ) seq'
 
-    errorMessage (n,_) = concat 
+    errorMessage (n,_) = concat
         [ "Error in sequence for taxon name: '"
         ,  n
         , "' the sequence data includes characters from multiple data formats. "

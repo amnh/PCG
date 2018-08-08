@@ -10,10 +10,13 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
 
 -- For derived instance of PossiblyMissingCharacter
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE UndecidableInstances   #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Bio.Character.Decoration.Discrete
@@ -32,14 +35,14 @@ module Bio.Character.Decoration.Discrete
   ) where
 
 
-import Bio.Character.Decoration.Shared
-import Bio.Character.Encodable
-import Bio.Metadata.Discrete
-import Bio.Metadata.DiscreteWithTCM
-import Control.Lens
-import Data.Range
-import Numeric.Extended
-import Text.XML
+import           Bio.Character.Decoration.Shared
+import           Bio.Character.Encodable
+import           Bio.Metadata.Discrete
+import           Bio.Metadata.DiscreteWithTCM
+import           Control.Lens
+import           Data.Range
+import           Numeric.Extended
+import           Text.XML
 
 
 -- |

@@ -21,4 +21,4 @@ module Bio.Character.Exportable
   , ExportableCharacterSequence(ExportableCharacterSequence, exportedBufferChunks)
   ) where
 
-import Bio.Character.Exportable.Class
+import           Bio.Character.Exportable.Class

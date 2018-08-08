@@ -13,16 +13,17 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Bio.Character.Encodable.Dynamic.Class where
 
-import Bio.Character.Encodable.Internal
-import Bio.Character.Encodable.Stream
-import Data.Alphabet
+import           Bio.Character.Encodable.Internal
+import           Bio.Character.Encodable.Stream
+import           Data.Alphabet
 --import Data.List.NonEmpty
-import Data.MonoTraversable
-import Data.String          (IsString)
+import           Data.MonoTraversable
+import           Data.String                      (IsString)
 
 -- {-# DEPRECATED decodeDynamic "Don't use decodeDynamic, use decodeStream instead!" #-}
 {-# DEPRECATED encodeDynamic "Don't use encodeDynamic, use encodeStream instead!" #-}
@@ -31,9 +32,9 @@ import Data.String          (IsString)
 
 -- TODO: Add more laws here
 {- | Represents a character of variable length representing multiple encoded static characters.
- 
+
  decodeMany alphabet . encodeMany alphabet == fmap toList . toList
-  
+
 -}
 class ( EncodableStream s
       , PossiblyMissingCharacter s
@@ -44,7 +45,7 @@ class ( EncodableStream s
     constructDynamic :: Foldable t => t (Element s) -> s
 -- TODO: Make sure it's non-empty
 --    constructDynamic :: NonEmpty (Element s) -> s
-  
+
 --    decodeDynamic :: (Ord a, IsString a) => Alphabet a -> s -> [[a]]
 --    decodeDynamic alphabet = toList . (fmap toList) . decodeStream alphabet
 

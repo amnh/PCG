@@ -16,6 +16,6 @@ module Bio.Character.Encodable.Continuous
   , PossiblyMissingCharacter(..)
   ) where
 
-import Bio.Character.Encodable.Continuous.Class
-import Bio.Character.Encodable.Continuous.Internal
-import Bio.Character.Encodable.Internal (PossiblyMissingCharacter(..))
+import           Bio.Character.Encodable.Continuous.Class
+import           Bio.Character.Encodable.Continuous.Internal
+import           Bio.Character.Encodable.Internal            (PossiblyMissingCharacter (..))

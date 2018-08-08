@@ -4,10 +4,10 @@ module Numeric.Extended.Real.Test
   ( testSuite
   ) where
 
-import Numeric.Extended.Real
-import Test.Tasty
-import Test.Tasty.HUnit
-import Test.Tasty.QuickCheck
+import           Numeric.Extended.Real
+import           Test.Tasty
+import           Test.Tasty.HUnit
+import           Test.Tasty.QuickCheck
 
 
 testSuite :: TestTree
@@ -116,7 +116,7 @@ subtractionProperties = testGroup "Properties of subtraction"
   where
     subtractionIsInverse :: ExtendedReal -> Bool
     subtractionIsInverse val = val - val == 0 || val == infinity
-                                       
+
     subtractionIdentity :: ExtendedReal -> Bool
     subtractionIdentity val = val - 0 == val
 

@@ -10,7 +10,9 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FunctionalDependencies, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
 
 module Bio.Character.Decoration.Continuous.Class
   ( ContinuousCharacter(..)
@@ -21,9 +23,9 @@ module Bio.Character.Decoration.Continuous.Class
   , HasPreliminaryInterval(..)
   ) where
 
-import Bio.Character.Decoration.Discrete
-import Bio.Character.Decoration.Shared
-import Control.Lens
+import           Bio.Character.Decoration.Discrete
+import           Bio.Character.Decoration.Shared
+import           Control.Lens
 
 
 -- |

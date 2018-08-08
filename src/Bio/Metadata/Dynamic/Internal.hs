@@ -10,9 +10,12 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses #-}
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE BangPatterns           #-}
+{-# LANGUAGE DeriveGeneric          #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
 
 module Bio.Metadata.Dynamic.Internal
   ( DenseTransitionCostMatrix
@@ -34,21 +37,21 @@ module Bio.Metadata.Dynamic.Internal
   ) where
 
 
-import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (generateDenseTransitionCostMatrix)
-import Bio.Character.Encodable
-import Bio.Metadata.CharacterName
-import Bio.Metadata.Discrete
-import Bio.Metadata.DiscreteWithTCM
-import Bio.Metadata.Dynamic.Class
-import Control.DeepSeq
-import Control.Lens
-import Data.Alphabet
-import Data.List          (intercalate)
-import Data.List.NonEmpty (NonEmpty)
-import Data.TCM
-import Data.TopologyRepresentation
-import GHC.Generics       (Generic)
-import Text.XML
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (generateDenseTransitionCostMatrix)
+import           Bio.Character.Encodable
+import           Bio.Metadata.CharacterName
+import           Bio.Metadata.Discrete
+import           Bio.Metadata.DiscreteWithTCM
+import           Bio.Metadata.Dynamic.Class
+import           Control.DeepSeq
+import           Control.Lens
+import           Data.Alphabet
+import           Data.List                                              (intercalate)
+import           Data.List.NonEmpty                                     (NonEmpty)
+import           Data.TCM
+import           Data.TopologyRepresentation
+import           GHC.Generics                                           (Generic)
+import           Text.XML
 
 
 -- |
@@ -216,7 +219,7 @@ instance ToXML (DynamicCharacterMetadataDec c) where
         contents = [ Right . toXML $ metadata input
                    , Right . toXML $ fmap (fmap mutuallyExclusivePairs) <$> optimalTraversalFoci input
                    ]
-    
+
 
 -- |
 -- Construct a concrete typed 'DynamicCharacterMetadataDec' value from the supplied inputs.

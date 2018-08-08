@@ -2,7 +2,7 @@ module TestSuite.ExecutableTests
   ( testSuite
   ) where
 
-import Test.Tasty
+import           Test.Tasty
 
 
 testSuite :: TestTree

@@ -12,7 +12,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.Fastc
   ( CharacterSequence
@@ -24,4 +25,4 @@ module File.Format.Fastc
   ) where
 
 
-import File.Format.Fastc.Parser
+import           File.Format.Fastc.Parser

@@ -11,7 +11,8 @@
 -- CCode command parser.
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.TNT.Command.CCode
   ( ccodeCommand
@@ -19,11 +20,11 @@ module File.Format.TNT.Command.CCode
   , ccodeCharacterState
   ) where
 
-import Data.CaseInsensitive
-import Data.List.NonEmpty       (some1)
-import File.Format.TNT.Internal
-import Text.Megaparsec
-import Text.Megaparsec.Char
+import           Data.CaseInsensitive
+import           Data.List.NonEmpty       (some1)
+import           File.Format.TNT.Internal
+import           Text.Megaparsec
+import           Text.Megaparsec.Char
 
 
 -- |

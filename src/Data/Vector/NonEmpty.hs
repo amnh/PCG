@@ -10,7 +10,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveDataTypeable, DeriveFunctor, DeriveTraversable, GeneralizedNewtypeDeriving, TypeFamilies #-}
+{-# LANGUAGE DeriveDataTypeable         #-}
+{-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE DeriveTraversable          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeFamilies               #-}
 
 module Data.Vector.NonEmpty
   ( Vector()
@@ -26,8 +30,8 @@ import           Control.DeepSeq
 import           Data.Data
 import           Data.Foldable
 import           Data.Functor.Alt
-import           Data.Functor.Classes
 import           Data.Functor.Bind
+import           Data.Functor.Classes
 import           Data.Functor.Extend
 import           Data.Hashable
 import           Data.Key
@@ -36,7 +40,7 @@ import           Data.Pointed
 import           Data.Semigroup.Foldable
 import           Data.Semigroup.Traversable
 import qualified Data.Vector                as V
-import           Data.Vector.Instances             ()
+import           Data.Vector.Instances      ()
 import           Test.QuickCheck
 
 

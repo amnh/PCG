@@ -5,15 +5,15 @@ module Data.MutualExclusionSet.Test
   ) where
 
 
-import Control.Arrow
-import Data.Foldable
-import Data.Semigroup
-import Data.MutualExclusionSet
-import Data.Word
-import Test.QuickCheck
-import Test.Tasty
-import Test.Tasty.HUnit
-import Test.Tasty.QuickCheck
+import           Control.Arrow
+import           Data.Foldable
+import           Data.MutualExclusionSet
+import           Data.Semigroup
+import           Data.Word
+import           Test.QuickCheck
+import           Test.Tasty
+import           Test.Tasty.HUnit
+import           Test.Tasty.QuickCheck
 
 
 -- |
@@ -68,10 +68,10 @@ constructionCases = testGroup "construction specific cases"
 
     paradoxSingleton =
       singleton 1 1 @?= unsafeFromList [ (1, 1 :: Word) ]
-    
-    paradoxConstruction = 
+
+    paradoxConstruction =
       singleton 1 2  <> singleton 2 1 @?= unsafeFromList [ (1, 2), (2, 1 :: Word8) ]
-    
+
     paradoxPermissible = lhs <> rhs @?= unsafeFromList [ (1, 2), (2, 1), (3, 4), (5, 6 :: Word8) ]
       where
         lhs = singleton 1 2 <> singleton 3 4 :: MutualExclusionSet Word8
@@ -203,7 +203,7 @@ structuralProperties = testGroup "data-structure invariants"
             case k `excludedLookup` mes of
               Nothing -> Any False
               Just v  -> Any $ v == e
-        
+
     excludedImpliesExistsIncludedValue :: ProbablyIncluded Word8 -> Property
     excludedImpliesExistsIncludedValue input =
          e `isExcluded` mes ==> getAny (foldMap f (includedSet mes))
@@ -212,5 +212,5 @@ structuralProperties = testGroup "data-structure invariants"
         f k =
             case k `includedLookup` mes of
               Nothing -> Any False
-              Just v -> Any $ v == e
-        
+              Just v  -> Any $ v == e
+

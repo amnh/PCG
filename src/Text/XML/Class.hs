@@ -13,14 +13,15 @@
 -----------------------------------------------------------------------------
 
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 
 module Text.XML.Class where
 
-import Data.Foldable
-import Data.Key
-import Text.XML.Light.Types
+import           Data.Foldable
+import           Data.Key
+import           Text.XML.Light.Types
 
 
 -- | (✔)

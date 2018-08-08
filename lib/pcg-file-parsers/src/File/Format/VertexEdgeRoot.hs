@@ -27,4 +27,4 @@ module File.Format.VertexEdgeRoot
   ) where
 
 
-import File.Format.VertexEdgeRoot.Parser
+import           File.Format.VertexEdgeRoot.Parser

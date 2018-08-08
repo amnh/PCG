@@ -31,4 +31,4 @@ module Data.BitMatrix
   , factorRows
   ) where
 
-import Data.BitMatrix.Internal
+import           Data.BitMatrix.Internal

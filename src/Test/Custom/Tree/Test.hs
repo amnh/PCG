@@ -11,7 +11,9 @@
 -- Test suite for TestTree to make sure they behave sanely.
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeSynonymInstances  #-}
 
 
 module Test.Custom.Tree.Test

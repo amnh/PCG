@@ -12,7 +12,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, MonoLocalBinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MonoLocalBinds   #-}
 
 module Bio.Graph.PhylogeneticDAG.Postorder
   ( postorderSequence'
@@ -24,18 +25,18 @@ import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Metadata.Continuous
 import           Bio.Metadata.Discrete
 import           Bio.Metadata.DiscreteWithTCM
-import           Bio.Metadata.Dynamic 
+import           Bio.Metadata.Dynamic
 import           Bio.Sequence
-import           Control.Arrow               ((&&&))
-import           Control.Applicative         (liftA2)
+import           Control.Applicative                (liftA2)
+import           Control.Arrow                      ((&&&))
 import           Data.Bits
 import           Data.Foldable
-import qualified Data.IntMap          as IM
+import qualified Data.IntMap                        as IM
 import           Data.Key
-import           Data.List.NonEmpty          (NonEmpty( (:|) ))
-import qualified Data.List.NonEmpty   as NE
+import           Data.List.NonEmpty                 (NonEmpty ((:|)))
+import qualified Data.List.NonEmpty                 as NE
 import           Data.MonoTraversable
-import qualified Data.Vector          as V
+import qualified Data.Vector                        as V
 
 
 -- |
@@ -59,7 +60,7 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag m) = PDAG2 (newDAG dag) m
     completeLeafSetForDAG = foldl' f zeroBits dag
       where
         f acc = (acc .|.) . leafSetRepresentation . NE.head . resolutions
-    
+
     newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> ((mempty, mempty, Nothing) <$) . graphData
     dagSize       = length $ references dag
     newReferences = V.generate dagSize h
@@ -87,11 +88,11 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag m) = PDAG2 (newDAG dag) m
 
             completeCoverage = (completeLeafSetForDAG ==) . (completeLeafSetForDAG .&.) . leafSetRepresentation
             localResolutions = liftA2 (generateLocalResolutions f1 f2 f3 f4 f5 f6 m) datumResolutions childResolutions
-                
+
             node             = references dag ! i
             childIndices     = IM.keys $ childRefs node
             datumResolutions = resolutions $ nodeDecoration node
-            
+
 --            childResolutions :: NonEmpty [a]
             childResolutions = applySoftwireResolutions $ extractResolutionContext <$> childIndices
             extractResolutionContext = getResolutions &&& parentRefs . (references dag !)

@@ -18,4 +18,4 @@ module File.Format.TransitionCostMatrix
   ) where
 
 
-import File.Format.TransitionCostMatrix.Parser
+import           File.Format.TransitionCostMatrix.Parser

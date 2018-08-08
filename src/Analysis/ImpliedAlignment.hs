@@ -11,10 +11,12 @@
 -- Standard algorithm for implied alignment
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeFamilies      #-}
 
 module Analysis.ImpliedAlignment
   ( iaSolution
   ) where
 
-import Analysis.ImpliedAlignment.DynamicProgramming
+import           Analysis.ImpliedAlignment.DynamicProgramming

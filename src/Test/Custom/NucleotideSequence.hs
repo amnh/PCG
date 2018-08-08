@@ -14,7 +14,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Test.Custom.NucleotideSequence
   ( NucleotideBase(..)
@@ -24,11 +25,11 @@ module Test.Custom.NucleotideSequence
 import           Bio.Character
 import           Bio.Character.Encodable.Dynamic
 import           Data.Alphabet.IUPAC
-import           Data.Bimap                (elems)
+import           Data.Bimap                      (elems)
 import           Data.Foldable
 import           Data.List
-import qualified Data.List.NonEmpty as NE
-import           Test.QuickCheck    hiding (generate)
+import qualified Data.List.NonEmpty              as NE
+import           Test.QuickCheck                 hiding (generate)
 import           Test.SmallCheck.Series
 
 
@@ -72,11 +73,11 @@ instance Monad m => Serial m NucleotideBase where
 
     series = generate $ const (NB . encodeElement alphabet <$> validSpace)
       where
-        validSpace = fmap NE.fromList $ [] `delete` powerSet (toList alphabet) 
+        validSpace = fmap NE.fromList $ [] `delete` powerSet (toList alphabet)
         powerSet :: [a] -> [[a]]
-        powerSet [] = [[]]
+        powerSet []     = [[]]
         powerSet (x:xs) = [x:ps | ps <- powerSet xs] <> powerSet xs
 
-      
+
 alphabet :: Alphabet String
-alphabet = fromSymbols ["A","C","G","T"] 
+alphabet = fromSymbols ["A","C","G","T"]

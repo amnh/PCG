@@ -24,9 +24,9 @@ module Analysis.Scoring
 
 
 import           Analysis.Parsimony.Additive.Internal
+import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Analysis.Parsimony.Fitch.Internal
 import           Analysis.Parsimony.Sankoff.Internal
-import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Bio.Character
 import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Dynamic
@@ -36,10 +36,10 @@ import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
 import           Data.Default
 import           Data.EdgeLength
-import qualified Data.List.NonEmpty as NE
-import           Data.MonoTraversable      (Element)
+import qualified Data.List.NonEmpty                            as NE
+import           Data.MonoTraversable                          (Element)
 import           Data.NodeLabel
-import           Data.Vector               (Vector)
+import           Data.Vector                                   (Vector)
 
 
 -- |

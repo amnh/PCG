@@ -1,14 +1,15 @@
-{-# LANGUAGE AllowAmbiguousTypes, ViewPatterns #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE ViewPatterns        #-}
 
 module Control.Evaluation.Test
   ( testSuite
   ) where
 
-import Control.Evaluation.Unit
-import Control.Evaluation.Internal
-import Test.Tasty                 (TestTree, testGroup)
-import Test.Tasty.QuickCheck
-import Test.QuickCheck.Function
+import           Control.Evaluation.Internal
+import           Control.Evaluation.Unit
+import           Test.QuickCheck.Function
+import           Test.Tasty                  (TestTree, testGroup)
+import           Test.Tasty.QuickCheck
 
 
 testSuite :: TestTree
@@ -98,7 +99,7 @@ applicativeComposition x' y' z = (pure (.) <*> x <*> y <*> z) == (x <*> (y <*> z
 
 
 {- | Cant figure the test out :(
-applicativeHomomorphism :: (Applicative f, Eq (f b)) => a -> Fun a b -> Bool  
+applicativeHomomorphism :: (Applicative f, Eq (f b)) => a -> Fun a b -> Bool
 applicativeHomomorphism x (apply -> f) = (pure f <*> pure x) == pure (f x)
 -}
 

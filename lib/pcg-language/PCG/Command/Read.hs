@@ -13,7 +13,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, UnboxedSums #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UnboxedSums      #-}
 
 module PCG.Command.Read
   ( CustomAlphabetOptions(..)
@@ -28,19 +29,19 @@ module PCG.Command.Read
   , readCommandSpecification
   ) where
 
-import Control.Applicative.Free (Ap)
-import Data.Foldable
-import Data.Functor             (($>))
-import Data.List.NonEmpty       (NonEmpty())
-import Data.Text                (Text)
-import PCG.Syntax.Combinators
+import           Control.Applicative.Free (Ap)
+import           Data.Foldable
+import           Data.Functor             (($>))
+import           Data.List.NonEmpty       (NonEmpty)
+import           Data.Text                (Text)
+import           PCG.Syntax.Combinators
 
 
 -- |
 -- The Read command containing the files paths to be read.
 newtype ReadCommand = ReadCommand (NonEmpty FileSpecification)
     deriving (Show)
-      
+
 
 -- |
 -- The content of a file along with a possibly associated TCM file content.
@@ -108,7 +109,7 @@ type  TcmReference = Maybe FilePath
 instance Semigroup ReadCommand where
 
     (ReadCommand lhs) <> (ReadCommand rhs) = ReadCommand $ lhs <> rhs
-  
+
 
 -- |
 -- Defines the semantics of interpreting a valid \"Read\" command from the PCG

@@ -10,7 +10,10 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, MagicHash, Strict, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE MagicHash     #-}
+{-# LANGUAGE Strict        #-}
+{-# LANGUAGE TypeFamilies  #-}
 
 module Numeric.Extended.Natural
   ( ExtendedNatural()
@@ -18,13 +21,13 @@ module Numeric.Extended.Natural
   , Finite
   ) where
 
-import Control.DeepSeq
-import Data.Bits
-import GHC.Exts
-import GHC.Integer.Logarithms
-import GHC.Generics
-import Numeric.Extended.Internal
-import Test.QuickCheck
+import           Control.DeepSeq
+import           Data.Bits
+import           GHC.Exts
+import           GHC.Generics
+import           GHC.Integer.Logarithms
+import           Numeric.Extended.Internal
+import           Test.QuickCheck
 
 
 -- |
@@ -55,7 +58,7 @@ import Test.QuickCheck
 --     with @infinity@ as an operand, multiplication with @infinity@ as an
 --     operand subtraction with @infinity@ as the minuend, or division with
 --     @infinity@ as the denominator.
--- 
+--
 newtype ExtendedNatural = Cost Word
   deriving (Eq, Generic, Ord)
 
@@ -120,12 +123,12 @@ instance Num ExtendedNatural where
       | result <  maxima    = maxBound
       | otherwise           = Cost result
       where
-        maxima = max x y 
+        maxima = max x y
         result = x + y
 
     lhs@(Cost x) - rhs@(Cost y)
       | lhs == infinity = infinity
-      | lhs <= rhs      = minBound 
+      | lhs <= rhs      = minBound
       | otherwise       = Cost $ x - y
 
     lhs@(Cost x) * rhs@ (Cost y)
@@ -151,9 +154,9 @@ instance Num ExtendedNatural where
                 -- If the minimum possible number of bits to
                 -- represent the product is exceeds the Word width,
                 -- then an overflow definately occured and
-                -- the product is the upper finite bound. 
+                -- the product is the upper finite bound.
                 GT -> maxBound
-               
+
                 -- If the minimum possible number of bits to
                 -- represent the product equals the Word width,
                 -- then great care must be taken!

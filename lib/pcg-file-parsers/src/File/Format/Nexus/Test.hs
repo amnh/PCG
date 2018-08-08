@@ -1,4 +1,5 @@
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.Nexus.Test
   ( testSuite
@@ -7,18 +8,18 @@ module File.Format.Nexus.Test
 import           Control.Monad              (join)
 import           Data.Char
 import           Data.DList                 (DList)
-import qualified Data.DList as DL           (empty,fromList)
-import           Data.Either.Combinators    (isLeft,isRight)
-import qualified Data.Map as M
+import qualified Data.DList                 as DL (empty, fromList)
+import           Data.Either.Combinators    (isLeft, isRight)
+import qualified Data.Map                   as M
 import           Data.Set                   (toList)
 import           File.Format.Nexus.Data
 import           File.Format.Nexus.Parser
 import           File.Format.Nexus.Validate
 import           Test.Custom.Parse
-import           Test.Tasty                 (TestTree,testGroup)
+import           Test.Tasty                 (TestTree, testGroup)
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
-import           Text.Megaparsec            (char,eof,parse,string)
+import           Text.Megaparsec            (char, eof, parse, string)
 
 
 testSuite :: TestTree
@@ -126,7 +127,7 @@ getTaxonAndSeqFromMatrixRow' = testGroup "getTaxonAndSeqFromMatrixRow" [space,sp
         f :: NonEmptyList AsciiAlphaNum -> AsciiAlphaNum -> NonEmptyList Char -> Bool
         f x prefix y = getTaxonAndSeqFromMatrixRow combo == (tax,seq)
           where
-            (tax, seq) = extractTaxonAndSeq x y prefix 
+            (tax, seq) = extractTaxonAndSeq x y prefix
             combo   = tax <> " " <> seq
 
     spaces = testProperty "Multiple spaces" f
@@ -134,7 +135,7 @@ getTaxonAndSeqFromMatrixRow' = testGroup "getTaxonAndSeqFromMatrixRow" [space,sp
         f :: NonEmptyList AsciiAlphaNum -> AsciiAlphaNum -> NonEmptyList Char -> Bool
         f x prefix y = getTaxonAndSeqFromMatrixRow combo == (tax,seq)
           where
-            (tax, seq) = extractTaxonAndSeq x y prefix 
+            (tax, seq) = extractTaxonAndSeq x y prefix
             combo   = tax <> "     " <> seq
 
     tab = testProperty "Single tab" f
@@ -142,7 +143,7 @@ getTaxonAndSeqFromMatrixRow' = testGroup "getTaxonAndSeqFromMatrixRow" [space,sp
         f :: NonEmptyList AsciiAlphaNum -> AsciiAlphaNum -> NonEmptyList Char -> Bool
         f x prefix y = getTaxonAndSeqFromMatrixRow combo == (tax,seq)
           where
-            (tax, seq) = extractTaxonAndSeq x y prefix 
+            (tax, seq) = extractTaxonAndSeq x y prefix
             combo   = tax <> "\t" <> seq
 
     tabs = testProperty "Multiple tabs" f
@@ -150,7 +151,7 @@ getTaxonAndSeqFromMatrixRow' = testGroup "getTaxonAndSeqFromMatrixRow" [space,sp
         f :: NonEmptyList AsciiAlphaNum -> AsciiAlphaNum -> NonEmptyList Char -> Bool
         f x prefix y = getTaxonAndSeqFromMatrixRow combo == (tax,seq)
           where
-            (tax, seq) = extractTaxonAndSeq x y prefix 
+            (tax, seq) = extractTaxonAndSeq x y prefix
             combo   = tax <> "\t\t\t\t" <> seq
 
     both = testProperty "Combination of tabs & spaces" f
@@ -158,7 +159,7 @@ getTaxonAndSeqFromMatrixRow' = testGroup "getTaxonAndSeqFromMatrixRow" [space,sp
         f :: NonEmptyList AsciiAlphaNum -> NonEmptyList InlineSpace -> AsciiAlphaNum -> NonEmptyList Char -> Bool
         f x y prefix z = getTaxonAndSeqFromMatrixRow combo == (tax,seq)
           where
-            (prefix', tax, seq) = extractTaxonAndSeq x y prefix 
+            (prefix', tax, seq) = extractTaxonAndSeq x y prefix
             sep     = getInlineSpaceChar <$> getNonEmpty y
             combo   = tax <> sep <> seq
 
@@ -167,7 +168,7 @@ extractTaxonAndSeq x y prefix = (tax, seq)
   where
     prefix' = getAsciiAlphaNum prefix
     tax     = getAsciiAlphaNum <$> getNonEmpty x
-    seq     = prefix' : getNonEmpty y  
+    seq     = prefix' : getNonEmpty y
 
 
 ignoredSubBlockDef' :: TestTree

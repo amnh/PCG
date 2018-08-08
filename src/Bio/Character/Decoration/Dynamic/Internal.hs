@@ -10,9 +10,13 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 module Bio.Character.Decoration.Dynamic.Internal
   ( DynamicDecorationDirectOptimization(..)
@@ -21,16 +25,16 @@ module Bio.Character.Decoration.Dynamic.Internal
   , DynamicDecorationInitial(..)
   ) where
 
-import Bio.Character.Decoration.Dynamic.Class
-import Bio.Character.Decoration.Shared
-import Bio.Character.Encodable
-import Control.DeepSeq
-import Control.Lens
-import Data.Bits
-import Data.Hashable
-import Data.MonoTraversable
-import GHC.Generics
-import Text.XML
+import           Bio.Character.Decoration.Dynamic.Class
+import           Bio.Character.Decoration.Shared
+import           Bio.Character.Encodable
+import           Control.DeepSeq
+import           Control.Lens
+import           Data.Bits
+import           Data.Hashable
+import           Data.MonoTraversable
+import           GHC.Generics
+import           Text.XML
 
 
 -- TODO: Make a polymorpic pre-order constructor.
@@ -145,7 +149,7 @@ instance (EncodableDynamicCharacter d) => DynamicCharacterDecoration (DynamicDec
         , dynamicDecorationInitialCharacterAverageLength = toAverageLength . toEnum $ olength charValue
         }
       where
-        charValue = g symbolSet 
+        charValue = g symbolSet
 
 
 -- | (✔)
@@ -299,7 +303,7 @@ instance Hashable d => Hashable (DynamicDecorationDirectOptimization d) where
 
       hashWithSalt salt dec = foldr1 xor $
           [ hashWithSalt salt . dynamicDecorationDirectOptimizationCharacterCost
-          , hashWithSalt salt . dynamicDecorationDirectOptimizationEncodedField 
+          , hashWithSalt salt . dynamicDecorationDirectOptimizationEncodedField
           , hashWithSalt salt . dynamicDecorationDirectOptimizationFinalGappedField
           , hashWithSalt salt . dynamicDecorationDirectOptimizationFinalUngappedField
           , hashWithSalt salt . dynamicDecorationDirectOptimizationPreliminaryGappedField

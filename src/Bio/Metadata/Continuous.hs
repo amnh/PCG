@@ -10,23 +10,26 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Bio.Metadata.Continuous
   ( ContinuousCharacterMetadataDec()
   , GeneralCharacterMetadata(..)
   , HasCharacterName(..)
-  , HasCharacterWeight(..) 
+  , HasCharacterWeight(..)
   , continuousMetadata
   ) where
 
 
-import Bio.Metadata.CharacterName
-import Bio.Metadata.General
-import Control.DeepSeq
-import Control.Lens
-import GHC.Generics
-import Text.XML
+import           Bio.Metadata.CharacterName
+import           Bio.Metadata.General
+import           Control.DeepSeq
+import           Control.Lens
+import           GHC.Generics
+import           Text.XML
 
 
 -- |

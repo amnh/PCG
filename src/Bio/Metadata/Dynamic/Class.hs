@@ -10,7 +10,10 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
 
 module Bio.Metadata.Dynamic.Class
   ( DenseTransitionCostMatrix
@@ -26,12 +29,12 @@ module Bio.Metadata.Dynamic.Class
 
 
 --import Bio.Character.Encodable
-import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (DenseTransitionCostMatrix)
-import Bio.Metadata.General
-import Bio.Metadata.Discrete
-import Bio.Metadata.DiscreteWithTCM
-import Control.Lens
-import Data.TCM.Memoized
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (DenseTransitionCostMatrix)
+import           Bio.Metadata.Discrete
+import           Bio.Metadata.DiscreteWithTCM
+import           Bio.Metadata.General
+import           Control.Lens
+import           Data.TCM.Memoized
 
 
 -- |

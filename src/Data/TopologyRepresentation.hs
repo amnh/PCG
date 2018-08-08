@@ -12,7 +12,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Data.TopologyRepresentation
   ( TopologyRepresentation
@@ -32,9 +33,9 @@ import           Control.DeepSeq
 import           Data.Foldable
 import           Data.Functor.Classes
 import           Data.Hashable
-import           Data.MutualExclusionSet        (MutualExclusionSet)
+import           Data.MutualExclusionSet (MutualExclusionSet)
 import qualified Data.MutualExclusionSet as MES
-import           Data.Set                       (Set)
+import           Data.Set                (Set)
 import           GHC.Generics
 
 {-

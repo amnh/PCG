@@ -1,12 +1,13 @@
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.Fasta.Translator where
 
+import           Data.Key                   (lookup, (!))
 import           Data.Map
-import           Data.Key                          ((!), lookup)
-import qualified Data.Map                   as M   (fromList)
-import qualified Data.Vector                as V   (fromList)
+import qualified Data.Map                   as M (fromList)
+import qualified Data.Vector                as V (fromList)
 import           File.Format.Fasta.Internal
 import           File.Format.Fasta.Parser
 --import           Text.Parsec
@@ -24,24 +25,24 @@ colate seqType = foldr f empty
 
 
 fastaStreamTranslator :: FastaSequenceType -> FastaParseResult -> ParsecT s u m TaxonSequenceMap
-fastaStreamTranslator seqType = fmap (colate seqType) . validateInterpretedStream seqType 
+fastaStreamTranslator seqType = fmap (colate seqType) . validateInterpretedStream seqType
 
 
 validateInterpretedStream :: FastaSequenceType -> FastaParseResult -> ParsecT s u m FastaParseResult
 validateInterpretedStream = undefined
 
 
-seqCharMapping :: FastaSequenceType -> String -> CharacterSequence 
+seqCharMapping :: FastaSequenceType -> String -> CharacterSequence
 seqCharMapping seqType = V.fromList . fmap (f seqType)
-  where 
+  where
     expandOrId x m = fromMaybe x $ x `lookup` m
     f AminoAcid = pure . pure
     f DNA       = expandOrId iupacNucleotideSubstitutions
-    f RNA       = expandOrId iupacRNASubstitutions 
+    f RNA       = expandOrId iupacRNASubstitutions
 
 
 iupacNucleotideSubstitutions :: Map Char [String]
-iupacNucleotideSubstitutions =  fmap pure <$> M.fromList 
+iupacNucleotideSubstitutions =  fmap pure <$> M.fromList
     [ ('A', "A")
     , ('C', "C")
     , ('G', "G")

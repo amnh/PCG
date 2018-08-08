@@ -12,7 +12,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module Bio.Graph.PhylogeneticDAG.Preorder
   ( preorderFromRooting
@@ -27,30 +28,32 @@ import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Metadata
 import           Bio.Sequence
-import           Bio.Sequence.Metadata        (MetadataSequence, getDynamicMetadata)
-import qualified Bio.Sequence.Metadata as M
-import qualified Bio.Sequence.Block    as BLK
-import           Control.Arrow                ((&&&))
+import qualified Bio.Sequence.Block                 as BLK
+import           Bio.Sequence.Metadata              (MetadataSequence,
+                                                     getDynamicMetadata)
+import qualified Bio.Sequence.Metadata              as M
+import           Control.Arrow                      ((&&&))
 import           Control.Lens
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
 import           Data.Foldable
-import           Data.HashMap.Lazy            (HashMap)
-import qualified Data.IntMap           as IM
-import qualified Data.IntSet           as IS
+import           Data.HashMap.Lazy                  (HashMap)
+import qualified Data.IntMap                        as IM
+import qualified Data.IntSet                        as IS
 import           Data.Key
-import           Data.List.NonEmpty           (NonEmpty( (:|) ))
-import qualified Data.List.NonEmpty    as NE
-import qualified Data.Matrix.NotStupid as MAT
+import           Data.List.NonEmpty                 (NonEmpty ((:|)))
+import qualified Data.List.NonEmpty                 as NE
+import qualified Data.Matrix.NotStupid              as MAT
 import           Data.Maybe
 import           Data.MonoTraversable
-import           Data.Ord                     (comparing)
+import           Data.Ord                           (comparing)
 import           Data.Semigroup
 import           Data.TopologyRepresentation
-import           Data.Vector                  (Vector)
-import qualified Data.Vector           as VE
-import           Data.Vector.Instances        ()
-import           Prelude               hiding (lookup, zip, zipWith)
+import           Data.Vector                        (Vector)
+import qualified Data.Vector                        as VE
+import           Data.Vector.Instances              ()
+import           Prelude                            hiding (lookup, zip,
+                                                     zipWith)
 
 --import Debug.Trace
 

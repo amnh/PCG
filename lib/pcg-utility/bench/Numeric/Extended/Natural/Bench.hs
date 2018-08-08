@@ -2,9 +2,9 @@
 
 module Numeric.Extended.Natural.Bench (benchmarks) where
 
-import Control.DeepSeq
-import Criterion.Main
-import Numeric.Extended.Natural
+import           Control.DeepSeq
+import           Criterion.Main
+import           Numeric.Extended.Natural
 
 
 benchmarks :: Benchmark
@@ -34,7 +34,7 @@ extendedNaturalBench =
     , bgroup "sign number" . interlace
         ( unaryOperationBenchmark "signum" signum "ExtendedNatural" extendedNaturalValues)
         $ unaryOperationBenchmark "signum" signum "Word"            wordValues
-    , bgroup "negation" . interlace 
+    , bgroup "negation" . interlace
         ( unaryOperationBenchmark "negate" negate "ExtendedNatural" extendedNaturalValues)
         $ unaryOperationBenchmark "negate" negate "WordValue"       wordValues
     ]

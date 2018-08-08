@@ -24,4 +24,4 @@ module Bio.Graph.ZipperDAG
   , unfoldDAG
   ) where
 
-import Bio.Graph.ZipperDAG.Internal
+import           Bio.Graph.ZipperDAG.Internal

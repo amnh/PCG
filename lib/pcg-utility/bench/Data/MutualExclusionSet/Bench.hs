@@ -2,10 +2,10 @@
 
 module Data.MutualExclusionSet.Bench (benchmarks) where
 
-import Control.DeepSeq
-import Criterion.Main
-import Data.Bits
-import Data.MutualExclusionSet
+import           Control.DeepSeq
+import           Criterion.Main
+import           Data.Bits
+import           Data.MutualExclusionSet
 
 
 benchmarks :: Benchmark
@@ -13,9 +13,9 @@ benchmarks = bgroup "MutualExclusionSet"
     [ singletonBench
     , invertBench
     , isCoherentBench
-    , isExcludedBench 
+    , isExcludedBench
     , isIncludedBench
-    , excludedLookupBench 
+    , excludedLookupBench
     , includedLookupBench
     , excludedSetBench
     , includedSetBench
@@ -93,7 +93,7 @@ linearBenchmark  label f g = bgroup label $ generateBenchmark <$> [0 .. 9]
         !target    = force $ f domainSize
         !app       = g expVal
         domainSize = 10 * (expVal + 1)
-    
+
 
 linearBenchmark2 :: (NFData a, NFData b, NFData c) => String -> (Int -> a) -> (Int -> b) -> (Int -> a -> b -> c) -> Benchmark
 linearBenchmark2  label f g h = bgroup label $ generateBenchmark <$> [0 .. 9]
@@ -104,7 +104,7 @@ linearBenchmark2  label f g h = bgroup label $ generateBenchmark <$> [0 .. 9]
         !rhs       = force $ g domainSize
         !app       = h expVal lhs
         domainSize = 10 * (expVal + 1)
-    
+
 
 logBenchmark :: String -> (Int -> a) -> (Int -> a -> b) -> Benchmark
 logBenchmark label f g = bgroup label $ generateBenchmark <$> [0 .. 9]

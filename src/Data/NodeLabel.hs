@@ -12,18 +12,21 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, GeneralizedNewtypeDeriving, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeFamilies               #-}
 
 module Data.NodeLabel
   ( NodeLabel()
   ) where
 
 
-import Control.DeepSeq
-import Data.Default
-import Data.MonoTraversable
-import Data.String
-import GHC.Generics
+import           Control.DeepSeq
+import           Data.Default
+import           Data.MonoTraversable
+import           Data.String
+import           GHC.Generics
 
 
 -- |

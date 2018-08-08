@@ -39,25 +39,25 @@ module Bio.Graph.Constructions
   ) where
 
 
-import Bio.Character
-import Bio.Character.Decoration.Additive
-import Bio.Character.Decoration.Continuous
-import Bio.Character.Decoration.Discrete
-import Bio.Character.Decoration.Dynamic
-import Bio.Character.Decoration.Fitch
-import Bio.Character.Decoration.Metric
-import Bio.Graph.PhylogeneticDAG.Class
-import Bio.Graph.PhylogeneticDAG.Internal
-import Bio.Graph.ReferenceDAG.Internal
-import Bio.Graph.Solution
-import Bio.Sequence
-import Bio.Sequence.Metadata
-import Control.Evaluation
-import Data.EdgeLength
-import Data.List.NonEmpty
-import Data.MonoTraversable
-import Data.NodeLabel
-import Data.Vector (Vector)
+import           Bio.Character
+import           Bio.Character.Decoration.Additive
+import           Bio.Character.Decoration.Continuous
+import           Bio.Character.Decoration.Discrete
+import           Bio.Character.Decoration.Dynamic
+import           Bio.Character.Decoration.Fitch
+import           Bio.Character.Decoration.Metric
+import           Bio.Graph.PhylogeneticDAG.Class
+import           Bio.Graph.PhylogeneticDAG.Internal
+import           Bio.Graph.ReferenceDAG.Internal
+import           Bio.Graph.Solution
+import           Bio.Sequence
+import           Bio.Sequence.Metadata
+import           Control.Evaluation
+import           Data.EdgeLength
+import           Data.List.NonEmpty
+import           Data.MonoTraversable
+import           Data.NodeLabel
+import           Data.Vector                         (Vector)
 
 
 -- |

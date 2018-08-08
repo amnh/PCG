@@ -18,8 +18,8 @@
 
 module File.Format.Nexus.Partition where
 
-import File.Format.Newick
-import File.Format.Nexus.Data
+import           File.Format.Newick
+import           File.Format.Nexus.Data
 
 -- |
 -- Takes an 'AssumptionField' list and returns a tuple of the step matrices

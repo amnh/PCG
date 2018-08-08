@@ -10,7 +10,9 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Bio.Sequence.Block.Builder
   ( PartialCharacterBlock(..)
@@ -20,9 +22,9 @@ module Bio.Sequence.Block.Builder
   ) where
 
 
-import Data.DList
-import Data.TCM
-import Data.Vector.Instances ()
+import           Data.DList
+import           Data.TCM
+import           Data.Vector.Instances ()
 
 
 -- |

@@ -21,5 +21,5 @@ module PCG.Syntax
 --  , syntacticStreamParser
   ) where
 
-import PCG.Syntax.Parser
-import PCG.Syntax.Combinators
+import           PCG.Syntax.Combinators
+import           PCG.Syntax.Parser

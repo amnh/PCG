@@ -23,9 +23,9 @@ module PCG.Command.Build
   ) where
 
 
-import Control.Applicative.Free (Ap)
-import Data.Functor             (($>))
-import PCG.Syntax.Combinators
+import           Control.Applicative.Free (Ap)
+import           Data.Functor             (($>))
+import           PCG.Syntax.Combinators
 
 
 -- |

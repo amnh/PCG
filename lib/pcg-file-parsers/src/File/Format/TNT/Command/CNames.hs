@@ -11,7 +11,8 @@
 -- Parser for the CNames command.
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.TNT.Command.CNames
   ( cnamesCommand
@@ -24,8 +25,8 @@ import           Data.CaseInsensitive
 import           Data.Foldable            (toList)
 import           Data.Functor             (($>))
 import           Data.IntMap              (insertWith)
-import           Data.List                (sort,sortOn)
-import qualified Data.List.NonEmpty as NE (fromList)
+import           Data.List                (sort, sortOn)
+import qualified Data.List.NonEmpty       as NE (fromList)
 import           Data.List.Utility
 import           File.Format.TNT.Internal
 import           Text.Megaparsec

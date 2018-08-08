@@ -10,7 +10,7 @@
 --
 -- Functions for for parsing FASTA files into a naive sequence form.
 --
------------------------------------------------------------------------------ 
+-----------------------------------------------------------------------------
 
 module File.Format.Fasta
   ( FastaParseResult
@@ -22,6 +22,9 @@ module File.Format.Fasta
   ) where
 
 
-import File.Format.Fasta.Parser    (FastaParseResult,FastaSequence(..),fastaStreamParser) 
-import File.Format.Fasta.Converter (FastaSequenceType(..),fastaStreamConverter)
-import File.Format.Fasta.Internal  (TaxonSequenceMap)
+import           File.Format.Fasta.Converter (FastaSequenceType (..),
+                                              fastaStreamConverter)
+import           File.Format.Fasta.Internal  (TaxonSequenceMap)
+import           File.Format.Fasta.Parser    (FastaParseResult,
+                                              FastaSequence (..),
+                                              fastaStreamParser)
