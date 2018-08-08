@@ -72,7 +72,7 @@ stack-build-profiling: phylocomgraph.cabal stack.yaml
 
 # Builds with profiling enabled
 stack-build-test: phylocomgraph.cabal stack.yaml
-	stack build --test
+	stack build --test --ta "--rerun-update"
 
 # Builds with profiling enabled
 stack-build-test-failures: phylocomgraph.cabal stack.yaml
