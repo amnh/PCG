@@ -52,7 +52,7 @@ lint: run-linter
 
 
 # Builds with useful features for a standard user of the package
-standard-build: install-stack format-code stack-setup
+standard-build: install-stack stack-setup
 	stack install $(haddock)
 
 # Builds with all useful options for package power users
@@ -97,7 +97,7 @@ format-code: install-stylish-haskell
 install-hlint:
 	which hlint || (stack install hlint)
 
-run-linter: install-hlint
+run-linter: install-hlint format-code
 	hlint lib src test
 
 # Copies documentation director to local scope
