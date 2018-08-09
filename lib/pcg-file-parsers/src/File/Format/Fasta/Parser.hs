@@ -26,16 +26,16 @@ module File.Format.Fasta.Parser
   , iupacRNAChars
   ) where
 
-import           Control.Arrow              ((&&&))
-import           Control.Monad              ((<=<))
-import           Data.Char                  (isLower, isUpper, toLower, toUpper)
-import           Data.List                  (nub, partition)
-import           Data.List.Utility
-import           Data.Maybe                 (fromJust)
-import           File.Format.Fasta.Internal
-import           Text.Megaparsec
-import           Text.Megaparsec.Char
-import           Text.Megaparsec.Custom
+import Control.Arrow              ((&&&))
+import Control.Monad              ((<=<))
+import Data.Char                  (isLower, isUpper, toLower, toUpper)
+import Data.List                  (nub, partition)
+import Data.List.Utility
+import Data.Maybe                 (fromJust)
+import File.Format.Fasta.Internal
+import Text.Megaparsec
+import Text.Megaparsec.Char
+import Text.Megaparsec.Custom
 
 
 -- |

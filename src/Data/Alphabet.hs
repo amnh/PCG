@@ -51,4 +51,4 @@ module Data.Alphabet
   , truncateAtMaxSymbol
   ) where
 
-import           Data.Alphabet.Internal
+import Data.Alphabet.Internal

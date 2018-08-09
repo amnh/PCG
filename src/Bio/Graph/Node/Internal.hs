@@ -33,17 +33,17 @@ module Bio.Graph.Node.Internal
   ) where
 
 
-import           Control.DeepSeq
-import           Control.Lens
-import           Data.Bits
-import           Data.BitVector.LittleEndian
-import           Data.EdgeSet
-import           Data.Foldable
-import           Data.List.NonEmpty          (NonEmpty (..))
-import           Data.TopologyRepresentation
-import           GHC.Generics
-import           Text.Newick.Class
-import           Text.XML
+import Control.DeepSeq
+import Control.Lens
+import Data.Bits
+import Data.BitVector.LittleEndian
+import Data.EdgeSet
+import Data.Foldable
+import Data.List.NonEmpty          (NonEmpty (..))
+import Data.TopologyRepresentation
+import GHC.Generics
+import Text.Newick.Class
+import Text.XML
 
 
 -- |

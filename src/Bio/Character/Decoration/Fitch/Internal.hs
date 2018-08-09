@@ -19,15 +19,15 @@
 module Bio.Character.Decoration.Fitch.Internal where
 
 
-import           Bio.Character.Decoration.Discrete
-import           Bio.Character.Decoration.Fitch.Class
-import           Bio.Character.Decoration.Shared
-import           Bio.Character.Encodable
-import           Control.DeepSeq
-import           Control.Lens
-import           Data.Bits
-import           GHC.Generics
-import           Text.XML
+import Bio.Character.Decoration.Discrete
+import Bio.Character.Decoration.Fitch.Class
+import Bio.Character.Decoration.Shared
+import Bio.Character.Encodable
+import Control.DeepSeq
+import Control.Lens
+import Data.Bits
+import GHC.Generics
+import Text.XML
 
 
 -- |

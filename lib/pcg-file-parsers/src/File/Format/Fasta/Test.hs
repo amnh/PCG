@@ -6,18 +6,17 @@ module File.Format.Fasta.Test
   , validTaxonLines
   ) where
 
-import           Control.Arrow              (second)
-import           Data.Char                  (isSpace)
-import           Data.Maybe                 (fromMaybe)
-import           File.Format.Fasta.Internal
-import           File.Format.Fasta.Parser
-import           Safe                       (headMay)
-import           Test.Custom.Parse          (parseEquals, parseFailure,
-                                             parserSatisfies)
-import           Test.Tasty                 (TestTree, testGroup)
-import           Test.Tasty.HUnit
-import           Test.Tasty.QuickCheck
-import           Text.Megaparsec            (eof)
+import Control.Arrow              (second)
+import Data.Char                  (isSpace)
+import Data.Maybe                 (fromMaybe)
+import File.Format.Fasta.Internal
+import File.Format.Fasta.Parser
+import Safe                       (headMay)
+import Test.Custom.Parse          (parseEquals, parseFailure, parserSatisfies)
+import Test.Tasty                 (TestTree, testGroup)
+import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck
+import Text.Megaparsec            (eof)
 
 
 testSuite :: TestTree

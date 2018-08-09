@@ -15,21 +15,21 @@
 
 module Analysis.ImpliedAlignment.Internal where
 
-import           Bio.Character.Encodable
-import           Bio.Metadata
+import Bio.Character.Encodable
+import Bio.Metadata
 --import Bio.PhyloGraph.DAG
-import           Bio.PhyloGraph.Forest
-import           Bio.PhyloGraph.Network
-import           Bio.PhyloGraph.Node
-import           Bio.PhyloGraph.Solution
+import Bio.PhyloGraph.Forest
+import Bio.PhyloGraph.Network
+import Bio.PhyloGraph.Node
+import Bio.PhyloGraph.Solution
 --import Bio.PhyloGraph.Tree
-import           Bio.PhyloGraph.Tree.Binary
-import           Bio.PhyloGraph.Tree.Referential
-import           Data.Bits
+import Bio.PhyloGraph.Tree.Binary
+import Bio.PhyloGraph.Tree.Referential
+import Data.Bits
 --import Data.Function.Memoize
-import           Data.IntMap
-import           Data.MonoTraversable            (Element)
-import           Data.Vector
+import Data.IntMap
+import Data.MonoTraversable            (Element)
+import Data.Vector
 
 -- | (✔)
 type SolutionConstraint r m f t n e s = (GeneralSolution r f, MetadataSolution r m, Metadata m s, ForestConstraint f t n e s, Show r)

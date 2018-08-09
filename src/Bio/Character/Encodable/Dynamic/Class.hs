@@ -18,12 +18,12 @@
 
 module Bio.Character.Encodable.Dynamic.Class where
 
-import           Bio.Character.Encodable.Internal
-import           Bio.Character.Encodable.Stream
-import           Data.Alphabet
+import Bio.Character.Encodable.Internal
+import Bio.Character.Encodable.Stream
+import Data.Alphabet
 --import Data.List.NonEmpty
-import           Data.MonoTraversable
-import           Data.String                      (IsString)
+import Data.MonoTraversable
+import Data.String                      (IsString)
 
 -- {-# DEPRECATED decodeDynamic "Don't use decodeDynamic, use decodeStream instead!" #-}
 {-# DEPRECATED encodeDynamic "Don't use encodeDynamic, use encodeStream instead!" #-}

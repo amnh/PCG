@@ -26,15 +26,15 @@ module Bio.Metadata.Discrete.Internal
   ) where
 
 
-import           Bio.Metadata.CharacterName
-import           Bio.Metadata.Discrete.Class
-import           Bio.Metadata.General
-import           Control.DeepSeq
-import           Control.Lens
-import           Data.Alphabet
-import           Data.List                   (intercalate)
-import           GHC.Generics
-import           Text.XML
+import Bio.Metadata.CharacterName
+import Bio.Metadata.Discrete.Class
+import Bio.Metadata.General
+import Control.DeepSeq
+import Control.Lens
+import Data.Alphabet
+import Data.List                   (intercalate)
+import GHC.Generics
+import Text.XML
 
 
 -- |

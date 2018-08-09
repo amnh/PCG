@@ -17,13 +17,13 @@
 
 module File.Format.Fasta.Internal where
 
-import           Data.Char              (isSpace)
-import           Data.List.NonEmpty
-import           Data.Map               (Map)
-import           Data.Vector            (Vector)
-import           Text.Megaparsec
-import           Text.Megaparsec.Char
-import           Text.Megaparsec.Custom
+import Data.Char              (isSpace)
+import Data.List.NonEmpty
+import Data.Map               (Map)
+import Data.Vector            (Vector)
+import Text.Megaparsec
+import Text.Megaparsec.Char
+import Text.Megaparsec.Custom
 
 
 -- |

@@ -2,9 +2,9 @@
 
 module Numeric.Extended.Natural.Bench (benchmarks) where
 
-import           Control.DeepSeq
-import           Criterion.Main
-import           Numeric.Extended.Natural
+import Control.DeepSeq
+import Criterion.Main
+import Numeric.Extended.Natural
 
 
 benchmarks :: Benchmark

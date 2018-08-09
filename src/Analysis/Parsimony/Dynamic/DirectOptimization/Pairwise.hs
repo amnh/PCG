@@ -28,7 +28,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
   ) where
 
 
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
+import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
+import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
+import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
+import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen

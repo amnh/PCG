@@ -32,19 +32,19 @@ module Bio.Sequence.Block
   , hexZipWithMeta
   ) where
 
-import           Bio.Character.Decoration.Continuous
-import           Bio.Character.Decoration.Dynamic
-import           Bio.Character.Encodable
-import           Bio.Sequence.Block.Character
-import           Bio.Sequence.Block.Internal
-import           Bio.Sequence.Block.Metadata
-import           Control.Arrow                       ((***))
-import           Control.Lens
-import           Control.Parallel.Custom
-import           Control.Parallel.Strategies
-import           Data.Key
-import           Data.Vector.Instances               ()
-import           Prelude                             hiding (zip)
+import Bio.Character.Decoration.Continuous
+import Bio.Character.Decoration.Dynamic
+import Bio.Character.Encodable
+import Bio.Sequence.Block.Character
+import Bio.Sequence.Block.Internal
+import Bio.Sequence.Block.Metadata
+import Control.Arrow                       ((***))
+import Control.Lens
+import Control.Parallel.Custom
+import Control.Parallel.Strategies
+import Data.Key
+import Data.Vector.Instances               ()
+import Prelude                             hiding (zip)
 
 
 -- |

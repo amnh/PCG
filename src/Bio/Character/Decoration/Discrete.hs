@@ -35,14 +35,14 @@ module Bio.Character.Decoration.Discrete
   ) where
 
 
-import           Bio.Character.Decoration.Shared
-import           Bio.Character.Encodable
-import           Bio.Metadata.Discrete
-import           Bio.Metadata.DiscreteWithTCM
-import           Control.Lens
-import           Data.Range
-import           Numeric.Extended
-import           Text.XML
+import Bio.Character.Decoration.Shared
+import Bio.Character.Encodable
+import Bio.Metadata.Discrete
+import Bio.Metadata.DiscreteWithTCM
+import Control.Lens
+import Data.Range
+import Numeric.Extended
+import Text.XML
 
 
 -- |

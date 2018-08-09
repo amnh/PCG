@@ -29,12 +29,12 @@ module Bio.Metadata.Dynamic.Class
 
 
 --import Bio.Character.Encodable
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (DenseTransitionCostMatrix)
-import           Bio.Metadata.Discrete
-import           Bio.Metadata.DiscreteWithTCM
-import           Bio.Metadata.General
-import           Control.Lens
-import           Data.TCM.Memoized
+import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (DenseTransitionCostMatrix)
+import Bio.Metadata.Discrete
+import Bio.Metadata.DiscreteWithTCM
+import Bio.Metadata.General
+import Control.Lens
+import Data.TCM.Memoized
 
 
 -- |

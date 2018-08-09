@@ -21,13 +21,13 @@ module Numeric.Extended.Natural
   , Finite
   ) where
 
-import           Control.DeepSeq
-import           Data.Bits
-import           GHC.Exts
-import           GHC.Generics
-import           GHC.Integer.Logarithms
-import           Numeric.Extended.Internal
-import           Test.QuickCheck
+import Control.DeepSeq
+import Data.Bits
+import GHC.Exts
+import GHC.Generics
+import GHC.Integer.Logarithms
+import Numeric.Extended.Internal
+import Test.QuickCheck
 
 
 -- |

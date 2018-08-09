@@ -65,4 +65,4 @@ module Data.MutualExclusionSet
   , isCoherent
   ) where
 
-import           Data.MutualExclusionSet.Internal
+import Data.MutualExclusionSet.Internal

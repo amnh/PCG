@@ -19,13 +19,13 @@
 
 module PCG.Syntax.Parser where
 
-import           Data.CaseInsensitive   (FoldCase)
-import           Data.List.NonEmpty     (NonEmpty, some1)
-import           PCG.Command.Build
-import           PCG.Command.Read
-import           PCG.Command.Report
-import           PCG.Syntax.Combinators
-import           Text.Megaparsec
+import Data.CaseInsensitive   (FoldCase)
+import Data.List.NonEmpty     (NonEmpty, some1)
+import PCG.Command.Build
+import PCG.Command.Read
+import PCG.Command.Report
+import PCG.Syntax.Combinators
+import Text.Megaparsec
 
 
 -- |

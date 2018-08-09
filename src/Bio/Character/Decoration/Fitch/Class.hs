@@ -17,11 +17,11 @@
 module Bio.Character.Decoration.Fitch.Class where
 
 
-import           Bio.Character.Decoration.Discrete
-import           Bio.Character.Decoration.Shared
+import Bio.Character.Decoration.Discrete
+import Bio.Character.Decoration.Shared
 --import Bio.Character.Encodable
 --import Bio.Metadata.Discrete
-import           Control.Lens
+import Control.Lens
 --import Data.Word
 
 

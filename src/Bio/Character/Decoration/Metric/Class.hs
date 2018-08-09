@@ -17,10 +17,10 @@
 module Bio.Character.Decoration.Metric.Class where
 
 
-import           Bio.Character.Decoration.Discrete
-import           Bio.Character.Decoration.Shared
-import           Control.Lens
-import           Numeric.Extended.Natural
+import Bio.Character.Decoration.Discrete
+import Bio.Character.Decoration.Shared
+import Control.Lens
+import Numeric.Extended.Natural
 
 
 -- |

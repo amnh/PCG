@@ -25,5 +25,5 @@ module Bio.Metadata.DiscreteWithTCM
     , discreteMetadataWithTCM
     ) where
 
-import           Bio.Metadata.DiscreteWithTCM.Class
-import           Bio.Metadata.DiscreteWithTCM.Internal
+import Bio.Metadata.DiscreteWithTCM.Class
+import Bio.Metadata.DiscreteWithTCM.Internal

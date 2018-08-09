@@ -27,10 +27,10 @@ module Text.XML.Custom
   ) where
 
 
-import           Data.Foldable
-import           Data.Key
-import           Text.XML.Class       (ToXML (..))
-import           Text.XML.Light.Types
+import Data.Foldable
+import Data.Key
+import Text.XML.Class       (ToXML (..))
+import Text.XML.Light.Types
 
 
 -- |

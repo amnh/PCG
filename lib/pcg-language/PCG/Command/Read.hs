@@ -29,12 +29,12 @@ module PCG.Command.Read
   , readCommandSpecification
   ) where
 
-import           Control.Applicative.Free (Ap)
-import           Data.Foldable
-import           Data.Functor             (($>))
-import           Data.List.NonEmpty       (NonEmpty)
-import           Data.Text                (Text)
-import           PCG.Syntax.Combinators
+import Control.Applicative.Free (Ap)
+import Data.Foldable
+import Data.Functor             (($>))
+import Data.List.NonEmpty       (NonEmpty)
+import Data.Text                (Text)
+import PCG.Syntax.Combinators
 
 
 -- |

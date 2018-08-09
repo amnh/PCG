@@ -26,18 +26,18 @@ module Bio.Sequence.Block.Metadata
   , dynamicToMetadataBlock
   ) where
 
-import           Bio.Metadata.Continuous
-import           Bio.Metadata.Discrete
-import           Bio.Metadata.DiscreteWithTCM
-import           Bio.Metadata.Dynamic
-import           Bio.Sequence.Block.Internal
-import           Control.DeepSeq
-import           Control.Lens
-import           Data.TCM
-import           Data.Vector                  (Vector)
-import           GHC.Generics
-import           Text.XML
-import           Text.XML.Light.Types
+import Bio.Metadata.Continuous
+import Bio.Metadata.Discrete
+import Bio.Metadata.DiscreteWithTCM
+import Bio.Metadata.Dynamic
+import Bio.Sequence.Block.Internal
+import Control.DeepSeq
+import Control.Lens
+import Data.TCM
+import Data.Vector                  (Vector)
+import GHC.Generics
+import Text.XML
+import Text.XML.Light.Types
 
 
 -- |

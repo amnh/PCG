@@ -19,4 +19,4 @@ module Analysis.ImpliedAlignment
   ( iaSolution
   ) where
 
-import           Analysis.ImpliedAlignment.DynamicProgramming
+import Analysis.ImpliedAlignment.DynamicProgramming

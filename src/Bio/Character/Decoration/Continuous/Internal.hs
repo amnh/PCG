@@ -25,14 +25,14 @@ module Bio.Character.Decoration.Continuous.Internal
   ) where
 
 
-import           Bio.Character.Decoration.Additive
-import           Bio.Character.Encodable
-import           Control.DeepSeq
-import           Control.Lens
-import           Data.Range
-import           GHC.Generics
-import           Numeric.Extended
-import           Text.XML
+import Bio.Character.Decoration.Additive
+import Bio.Character.Encodable
+import Control.DeepSeq
+import Control.Lens
+import Data.Range
+import GHC.Generics
+import Numeric.Extended
+import Text.XML
 
 
 -- |

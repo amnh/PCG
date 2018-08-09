@@ -4,12 +4,12 @@ module TestSuite.GeneratedTests.Nexus
   ( testSuite
   ) where
 
-import           Data.Map                          (toList)
-import           File.Format.Nexus
-import           Test.Custom.Parse
-import           Test.Tasty                        (TestTree, testGroup)
-import           Test.Tasty.HUnit
-import           TestSuite.GeneratedTests.Internal
+import Data.Map                          (toList)
+import File.Format.Nexus
+import Test.Custom.Parse
+import Test.Tasty                        (TestTree, testGroup)
+import Test.Tasty.HUnit
+import TestSuite.GeneratedTests.Internal
 
 testSuite :: IO TestTree
 testSuite = testGroup "nexusStreamParser" <$> sequence [validNexusFiles, invalidNexusFiles]

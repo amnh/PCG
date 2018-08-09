@@ -35,7 +35,7 @@ module Bio.Character.Decoration.Continuous
   , HasContinuousCharacter(..)
   ) where
 
-import           Bio.Character.Decoration.Continuous.Class
-import           Bio.Character.Decoration.Continuous.Internal
-import           Bio.Character.Decoration.Discrete
-import           Bio.Character.Decoration.Shared
+import Bio.Character.Decoration.Continuous.Class
+import Bio.Character.Decoration.Continuous.Internal
+import Bio.Character.Decoration.Discrete
+import Bio.Character.Decoration.Shared

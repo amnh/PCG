@@ -24,10 +24,10 @@ module Numeric.Extended.Real
   , (~==)
   ) where
 
-import           Control.DeepSeq
-import           GHC.Generics
-import           Numeric.Extended.Internal
-import           Test.QuickCheck
+import Control.DeepSeq
+import GHC.Generics
+import Numeric.Extended.Internal
+import Test.QuickCheck
 
 
 -- |

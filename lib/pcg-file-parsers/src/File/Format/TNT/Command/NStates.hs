@@ -21,12 +21,12 @@ module File.Format.TNT.Command.NStates
   ) where
 
 
-import           Data.CaseInsensitive
-import           Data.Functor             (($>))
-import           Data.Proxy
-import           File.Format.TNT.Internal
-import           Text.Megaparsec
-import           Text.Megaparsec.Char
+import Data.CaseInsensitive
+import Data.Functor             (($>))
+import Data.Proxy
+import File.Format.TNT.Internal
+import Text.Megaparsec
+import Text.Megaparsec.Char
 
 
 -- |

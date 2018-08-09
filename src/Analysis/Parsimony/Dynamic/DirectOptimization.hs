@@ -34,6 +34,6 @@ module Analysis.Parsimony.Dynamic.DirectOptimization
   ) where
 
 
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Internal
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
+import Analysis.Parsimony.Dynamic.DirectOptimization.Internal
+import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
 

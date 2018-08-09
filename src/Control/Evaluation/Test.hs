@@ -5,11 +5,11 @@ module Control.Evaluation.Test
   ( testSuite
   ) where
 
-import           Control.Evaluation.Internal
-import           Control.Evaluation.Unit
-import           Test.QuickCheck.Function
-import           Test.Tasty                  (TestTree, testGroup)
-import           Test.Tasty.QuickCheck
+import Control.Evaluation.Internal
+import Control.Evaluation.Unit
+import Test.QuickCheck.Function
+import Test.Tasty                  (TestTree, testGroup)
+import Test.Tasty.QuickCheck
 
 
 testSuite :: TestTree

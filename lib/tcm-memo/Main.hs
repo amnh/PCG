@@ -3,12 +3,12 @@
 
 module Main (main) where
 
-import           Bio.Character.Exportable.Class
-import           Control.Applicative            (liftA2)
-import           Data.TCM.Memoized.FFI
-import           Foreign.C.Types
-import           Safe                           (readMay)
-import           System.Environment             (getArgs)
+import Bio.Character.Exportable.Class
+import Control.Applicative            (liftA2)
+import Data.TCM.Memoized.FFI
+import Foreign.C.Types
+import Safe                           (readMay)
+import System.Environment             (getArgs)
 
 
 newtype MyStruct = T [CULong] deriving (Show)

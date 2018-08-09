@@ -22,7 +22,7 @@ module Bio.Metadata.General.Class
   ) where
 
 
-import           Control.Lens
+import Control.Lens
 
 
 -- |

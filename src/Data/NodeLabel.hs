@@ -22,11 +22,11 @@ module Data.NodeLabel
   ) where
 
 
-import           Control.DeepSeq
-import           Data.Default
-import           Data.MonoTraversable
-import           Data.String
-import           GHC.Generics
+import Control.DeepSeq
+import Data.Default
+import Data.MonoTraversable
+import Data.String
+import GHC.Generics
 
 
 -- |

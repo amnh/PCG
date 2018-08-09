@@ -2,10 +2,10 @@
 
 module Data.MutualExclusionSet.Bench (benchmarks) where
 
-import           Control.DeepSeq
-import           Criterion.Main
-import           Data.Bits
-import           Data.MutualExclusionSet
+import Control.DeepSeq
+import Criterion.Main
+import Data.Bits
+import Data.MutualExclusionSet
 
 
 benchmarks :: Benchmark

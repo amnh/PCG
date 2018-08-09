@@ -5,13 +5,13 @@ module File.Format.VertexEdgeRoot.Test2
   ( testSuite
   ) where
 
-import           Data.List                          (intercalate)
-import           File.Format.VertexEdgeRoot.Parser2
-import           Test.Custom                        (parseEquals, parseFailure,
-                                                     parseSuccess)
-import           Test.Tasty                         (TestTree, testGroup)
-import           Test.Tasty.HUnit
-import           Text.Megaparsec                    (eof)
+import Data.List                          (intercalate)
+import File.Format.VertexEdgeRoot.Parser2
+import Test.Custom                        (parseEquals, parseFailure,
+                                           parseSuccess)
+import Test.Tasty                         (TestTree, testGroup)
+import Test.Tasty.HUnit
+import Text.Megaparsec                    (eof)
 
 
 testSuite :: TestTree

@@ -20,7 +20,7 @@ module Control.Monad.Logger
   ) where
 
 
-import           Control.Monad.Fail
+import Control.Monad.Fail
 
 {- |
 

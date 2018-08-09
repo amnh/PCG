@@ -17,9 +17,9 @@
 module Bio.Character.Decoration.Shared where
 
 
-import           Control.Lens
-import           Data.Range
-import           Numeric.Extended
+import Control.Lens
+import Data.Range
+import Numeric.Extended
 
 
 -- |

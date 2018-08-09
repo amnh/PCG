@@ -39,4 +39,4 @@ module Bio.Graph.ReferenceDAG
   , getDotContext
   ) where
 
-import           Bio.Graph.ReferenceDAG.Internal
+import Bio.Graph.ReferenceDAG.Internal

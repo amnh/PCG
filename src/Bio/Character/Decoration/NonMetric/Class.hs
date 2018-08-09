@@ -16,7 +16,7 @@
 module Bio.Character.Decoration.NonMetric.Class where
 
 
-import           Bio.Character.Decoration.Discrete
+import Bio.Character.Decoration.Discrete
 
 
 -- |

@@ -23,9 +23,9 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
   , naiveDOMemo
   ) where
 
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
-import           Data.Matrix.NotStupid                                           (matrix)
-import           Data.MonoTraversable
+import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
+import Data.Matrix.NotStupid                                           (matrix)
+import Data.MonoTraversable
 
 
 -- |

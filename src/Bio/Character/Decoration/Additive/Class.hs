@@ -21,10 +21,10 @@
 module Bio.Character.Decoration.Additive.Class where
 
 
-import           Bio.Character.Decoration.Shared
-import           Control.Lens
-import           Data.Range
-import           Numeric.Extended
+import Bio.Character.Decoration.Shared
+import Control.Lens
+import Data.Range
+import Numeric.Extended
 
 
 -- |

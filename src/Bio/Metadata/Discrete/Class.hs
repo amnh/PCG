@@ -19,7 +19,7 @@ module Bio.Metadata.Discrete.Class
   ( HasCharacterAlphabet(..)
   ) where
 
-import           Control.Lens
+import Control.Lens
 
 
 -- |

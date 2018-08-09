@@ -25,4 +25,4 @@ module File.Format.Fastc
   ) where
 
 
-import           File.Format.Fastc.Parser
+import File.Format.Fastc.Parser

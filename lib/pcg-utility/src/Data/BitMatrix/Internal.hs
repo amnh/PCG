@@ -17,16 +17,15 @@
 
 module Data.BitMatrix.Internal where
 
-import           Control.DeepSeq
-import           Data.Bits
-import           Data.BitVector.LittleEndian
-import           Data.Foldable
-import           Data.List.Utility           (equalityOf,
-                                              invariantTransformation)
-import           Data.MonoTraversable
-import           Data.Ord
-import           GHC.Generics
-import           Test.QuickCheck             hiding ((.&.))
+import Control.DeepSeq
+import Data.Bits
+import Data.BitVector.LittleEndian
+import Data.Foldable
+import Data.List.Utility           (equalityOf, invariantTransformation)
+import Data.MonoTraversable
+import Data.Ord
+import GHC.Generics
+import Test.QuickCheck             hiding ((.&.))
 
 
 -- |

@@ -18,13 +18,13 @@
 
 module Bio.Character.Encodable.Static.Class where
 
-import           Bio.Character.Encodable.Internal
-import           Bio.Character.Encodable.Stream
-import           Data.Alphabet
-import           Data.Bits
-import           Data.List.NonEmpty               hiding (xor)
-import           Data.MonoTraversable
-import           Data.String                      (IsString)
+import Bio.Character.Encodable.Internal
+import Bio.Character.Encodable.Stream
+import Data.Alphabet
+import Data.Bits
+import Data.List.NonEmpty               hiding (xor)
+import Data.MonoTraversable
+import Data.String                      (IsString)
 
 
 

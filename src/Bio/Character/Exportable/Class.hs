@@ -21,8 +21,8 @@
 module Bio.Character.Exportable.Class where
 
 
-import           Control.Lens
-import           Foreign.C.Types
+import Control.Lens
+import Foreign.C.Types
 
 
 -- |

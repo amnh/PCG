@@ -20,11 +20,11 @@ module Numeric.NonNegativeAverage
   , fromNonNegativeValue
   ) where
 
-import           Control.DeepSeq
-import           Data.Data
-import           Data.Hashable
-import           GHC.Generics
-import           Test.QuickCheck
+import Control.DeepSeq
+import Data.Data
+import Data.Hashable
+import GHC.Generics
+import Test.QuickCheck
 
 
 -- |

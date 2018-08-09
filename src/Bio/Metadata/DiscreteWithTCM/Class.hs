@@ -25,10 +25,10 @@ module Bio.Metadata.DiscreteWithTCM.Class
   , HasSparseTransitionCostMatrix(..)
   ) where
 
-import           Bio.Character.Encodable
-import           Bio.Metadata.Discrete
-import           Bio.Metadata.General
-import           Control.Lens
+import Bio.Character.Encodable
+import Bio.Metadata.Discrete
+import Bio.Metadata.General
+import Control.Lens
 
 
 -- |

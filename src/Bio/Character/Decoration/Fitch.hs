@@ -30,7 +30,7 @@ module Bio.Character.Decoration.Fitch
   , HasChildMedians(..)
   ) where
 
-import           Bio.Character.Decoration.Discrete
-import           Bio.Character.Decoration.Fitch.Class
-import           Bio.Character.Decoration.Fitch.Internal
-import           Bio.Character.Decoration.Shared
+import Bio.Character.Decoration.Discrete
+import Bio.Character.Decoration.Fitch.Class
+import Bio.Character.Decoration.Fitch.Internal
+import Bio.Character.Decoration.Shared

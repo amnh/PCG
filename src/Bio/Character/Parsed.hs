@@ -22,5 +22,5 @@ module Bio.Character.Parsed
   , TaxonCharacters
   ) where
 
-import           Bio.Character.Parsed.Class
-import           Bio.Character.Parsed.Internal
+import Bio.Character.Parsed.Class
+import Bio.Character.Parsed.Internal

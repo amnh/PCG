@@ -23,9 +23,9 @@ module File.Format.Newick.Internal
   ) where
 
 
-import           Data.List.NonEmpty (NonEmpty, toList)
-import           Data.Maybe
-import           Data.Tree
+import Data.List.NonEmpty (NonEmpty, toList)
+import Data.Maybe
+import Data.Tree
 
 
 {----

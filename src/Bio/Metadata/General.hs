@@ -22,5 +22,5 @@ module Bio.Metadata.General
   , generalMetadata
   ) where
 
-import           Bio.Metadata.General.Class
-import           Bio.Metadata.General.Internal
+import Bio.Metadata.General.Class
+import Bio.Metadata.General.Internal

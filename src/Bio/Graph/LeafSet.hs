@@ -27,10 +27,10 @@ module Bio.Graph.LeafSet
   ) where
 
 
-import           Control.Lens
-import           Data.List       (union)
+import Control.Lens
+import Data.List       (union)
 --import Text.Newick.Class ()
-import           Text.XML.Custom ()
+import Text.XML.Custom ()
 
 
 -- |

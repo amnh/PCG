@@ -55,11 +55,11 @@ module Bio.Character.Decoration.Dynamic
   , TraversalTopology
   ) where
 
-import           Bio.Character.Decoration.Dynamic.Class
-import           Bio.Character.Decoration.Dynamic.Internal
-import           Bio.Character.Decoration.Shared
-import           Bio.Character.Encodable
-import           Bio.Metadata.Discrete
-import           Bio.Metadata.DiscreteWithTCM
-import           Bio.Metadata.Dynamic
+import Bio.Character.Decoration.Dynamic.Class
+import Bio.Character.Decoration.Dynamic.Internal
+import Bio.Character.Decoration.Shared
+import Bio.Character.Encodable
+import Bio.Metadata.Discrete
+import Bio.Metadata.DiscreteWithTCM
+import Bio.Metadata.Dynamic
 

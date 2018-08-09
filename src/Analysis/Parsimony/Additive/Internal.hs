@@ -25,11 +25,11 @@
 module Analysis.Parsimony.Additive.Internal where
 
 
-import           Bio.Character.Decoration.Additive
-import           Control.Lens
-import           Data.List.NonEmpty                (NonEmpty ((:|)))
-import           Data.Range
-import           Numeric.Extended
+import Bio.Character.Decoration.Additive
+import Control.Lens
+import Data.List.NonEmpty                (NonEmpty ((:|)))
+import Data.Range
+import Numeric.Extended
 
 {-
   TODO: Add these trees to the new test suite

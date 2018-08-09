@@ -28,4 +28,4 @@ module Bio.Graph.Node
 
 
 -- import Bio.Graph.Node.Class
-import           Bio.Graph.Node.Internal
+import Bio.Graph.Node.Internal

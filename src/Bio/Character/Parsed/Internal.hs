@@ -20,10 +20,10 @@
 
 module Bio.Character.Parsed.Internal where
 
-import           Data.Alphabet
-import           Data.List.NonEmpty (NonEmpty)
-import           Data.Map           (Map)
-import           Data.Vector        (Vector)
+import Data.Alphabet
+import Data.List.NonEmpty (NonEmpty)
+import Data.Map           (Map)
+import Data.Vector        (Vector)
 
 
 -- |

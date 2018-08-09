@@ -4,10 +4,10 @@ module Numeric.Extended.Natural.Test
   ( testSuite
   ) where
 
-import           Numeric.Extended.Natural
-import           Test.Tasty
-import           Test.Tasty.HUnit
-import           Test.Tasty.QuickCheck
+import Numeric.Extended.Natural
+import Test.Tasty
+import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck
 
 
 testSuite :: TestTree

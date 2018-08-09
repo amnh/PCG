@@ -21,9 +21,9 @@ module Control.Parallel.Custom
   ) where
 
 
-import           Control.Parallel.Strategies
-import           Data.Key
-import           Prelude                     hiding (zipWith)
+import Control.Parallel.Strategies
+import Data.Key
+import Prelude                     hiding (zipWith)
 
 
 -- |

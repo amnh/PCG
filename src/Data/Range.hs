@@ -38,8 +38,8 @@ module Data.Range
   ) where
 
 
-import           Control.DeepSeq
-import           GHC.Generics
+import Control.DeepSeq
+import GHC.Generics
 
 -- |
 -- A range between two bounds. The lower bound will always be less than or equal

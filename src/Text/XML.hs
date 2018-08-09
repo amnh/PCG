@@ -25,5 +25,5 @@ module Text.XML
     ) where
 
 
-import           Text.XML.Class
-import           Text.XML.Light
+import Text.XML.Class
+import Text.XML.Light

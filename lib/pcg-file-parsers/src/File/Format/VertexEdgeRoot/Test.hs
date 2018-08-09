@@ -6,13 +6,13 @@ module File.Format.VertexEdgeRoot.Test
   ) where
 
 --import           Bio.PhyloGraph.Node
-import           Data.List                         (intercalate)
-import           File.Format.VertexEdgeRoot.Parser
-import           Test.Custom.Parse                 (parseEquals, parseFailure,
-                                                    parseSuccess)
-import           Test.Tasty                        (TestTree, testGroup)
-import           Test.Tasty.HUnit
-import           Text.Megaparsec                   (eof)
+import Data.List                         (intercalate)
+import File.Format.VertexEdgeRoot.Parser
+import Test.Custom.Parse                 (parseEquals, parseFailure,
+                                          parseSuccess)
+import Test.Tasty                        (TestTree, testGroup)
+import Test.Tasty.HUnit
+import Text.Megaparsec                   (eof)
 
 
 testSuite :: TestTree

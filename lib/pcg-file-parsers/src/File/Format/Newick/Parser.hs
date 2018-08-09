@@ -29,21 +29,21 @@ module File.Format.Newick.Parser
   , unquotedLabel
   ) where
 
-import           Data.Char                   (isSpace)
-import           Data.Foldable
-import           Data.Functor                (void)
-import           Data.List                   (intercalate)
-import           Data.List.NonEmpty          (some1)
-import           Data.Map                    hiding (filter, foldl', null)
-import           Data.Maybe                  (fromJust, fromMaybe, isJust)
-import           Data.Proxy
-import           Data.String
-import           File.Format.Newick.Internal
-import           Prelude                     hiding (lookup)
-import           Text.Megaparsec             hiding (label)
-import           Text.Megaparsec.Char
-import           Text.Megaparsec.Char.Lexer  (skipBlockCommentNested)
-import           Text.Megaparsec.Custom
+import Data.Char                   (isSpace)
+import Data.Foldable
+import Data.Functor                (void)
+import Data.List                   (intercalate)
+import Data.List.NonEmpty          (some1)
+import Data.Map                    hiding (filter, foldl', null)
+import Data.Maybe                  (fromJust, fromMaybe, isJust)
+import Data.Proxy
+import Data.String
+import File.Format.Newick.Internal
+import Prelude                     hiding (lookup)
+import Text.Megaparsec             hiding (label)
+import Text.Megaparsec.Char
+import Text.Megaparsec.Char.Lexer  (skipBlockCommentNested)
+import Text.Megaparsec.Custom
 
 
 -- |

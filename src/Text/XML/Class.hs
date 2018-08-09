@@ -19,9 +19,9 @@
 
 module Text.XML.Class where
 
-import           Data.Foldable
-import           Data.Key
-import           Text.XML.Light.Types
+import Data.Foldable
+import Data.Key
+import Text.XML.Light.Types
 
 
 -- | (✔)

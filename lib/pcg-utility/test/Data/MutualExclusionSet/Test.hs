@@ -5,15 +5,15 @@ module Data.MutualExclusionSet.Test
   ) where
 
 
-import           Control.Arrow
-import           Data.Foldable
-import           Data.MutualExclusionSet
-import           Data.Semigroup
-import           Data.Word
-import           Test.QuickCheck
-import           Test.Tasty
-import           Test.Tasty.HUnit
-import           Test.Tasty.QuickCheck
+import Control.Arrow
+import Data.Foldable
+import Data.MutualExclusionSet
+import Data.Semigroup
+import Data.Word
+import Test.QuickCheck
+import Test.Tasty
+import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck
 
 
 -- |

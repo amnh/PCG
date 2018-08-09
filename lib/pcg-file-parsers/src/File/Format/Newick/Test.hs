@@ -6,15 +6,15 @@ module File.Format.Newick.Test
   ( testSuite
   ) where
 
-import           Data.Either.Combinators     (rightToMaybe)
-import           Data.Void
-import           File.Format.Newick.Internal
-import           File.Format.Newick.Parser
-import           Test.Custom.Parse
-import           Test.Tasty                  (TestTree, testGroup)
-import           Test.Tasty.HUnit
-import           Test.Tasty.QuickCheck
-import           Text.Megaparsec             hiding (failure)
+import Data.Either.Combinators     (rightToMaybe)
+import Data.Void
+import File.Format.Newick.Internal
+import File.Format.Newick.Parser
+import Test.Custom.Parse
+import Test.Tasty                  (TestTree, testGroup)
+import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck
+import Text.Megaparsec             hiding (failure)
 
 
 testSuite :: TestTree

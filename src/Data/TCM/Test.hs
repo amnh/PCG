@@ -5,16 +5,16 @@ module Data.TCM.Test
   ( testSuite
   ) where
 
-import           Data.Bifunctor        (bimap)
-import           Data.MonoTraversable
-import           Data.TCM
-import           Data.Word
-import           Test.HUnit.Custom     (assertException)
-import           Test.QuickCheck       (Positive (getPositive),
-                                        Testable (property), (===))
-import           Test.Tasty
-import           Test.Tasty.HUnit      as HU
-import           Test.Tasty.QuickCheck as QC hiding (generate)
+import Data.Bifunctor        (bimap)
+import Data.MonoTraversable
+import Data.TCM
+import Data.Word
+import Test.HUnit.Custom     (assertException)
+import Test.QuickCheck       (Positive (getPositive), Testable (property),
+                              (===))
+import Test.Tasty
+import Test.Tasty.HUnit      as HU
+import Test.Tasty.QuickCheck as QC hiding (generate)
 
 
 testSuite :: TestTree

@@ -16,13 +16,13 @@
 
 module Analysis.ImpliedAlignment.Test.Trees where
 
-import           Analysis.ImpliedAlignment.DynamicProgramming
-import           Analysis.Parsimony.Binary.Internal
-import           Bio.Metadata
-import           Data.Vector                                  (Vector)
-import           Test.Custom
-import           Test.Tasty
-import           Test.Tasty.HUnit
+import Analysis.ImpliedAlignment.DynamicProgramming
+import Analysis.Parsimony.Binary.Internal
+import Bio.Metadata
+import Data.Vector                                  (Vector)
+import Test.Custom
+import Test.Tasty
+import Test.Tasty.HUnit
 
 --import Debug.Trace
 

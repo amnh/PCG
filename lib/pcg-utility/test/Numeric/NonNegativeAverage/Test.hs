@@ -5,10 +5,10 @@ module Numeric.NonNegativeAverage.Test
   ) where
 
 
-import           Data.Ratio
-import           Numeric.NonNegativeAverage
-import           Test.Tasty
-import           Test.Tasty.QuickCheck
+import Data.Ratio
+import Numeric.NonNegativeAverage
+import Test.Tasty
+import Test.Tasty.QuickCheck
 
 
 testSuite :: TestTree

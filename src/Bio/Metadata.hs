@@ -53,9 +53,9 @@ module Bio.Metadata
   , HasTraversalFoci(..)
   ) where
 
-import           Bio.Metadata.Continuous
-import           Bio.Metadata.Discrete
-import           Bio.Metadata.DiscreteWithTCM
-import           Bio.Metadata.Dynamic
-import           Bio.Metadata.General
-import           Bio.Metadata.Parsed
+import Bio.Metadata.Continuous
+import Bio.Metadata.Discrete
+import Bio.Metadata.DiscreteWithTCM
+import Bio.Metadata.Dynamic
+import Bio.Metadata.General
+import Bio.Metadata.Parsed

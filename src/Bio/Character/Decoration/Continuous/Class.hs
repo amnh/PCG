@@ -23,9 +23,9 @@ module Bio.Character.Decoration.Continuous.Class
   , HasPreliminaryInterval(..)
   ) where
 
-import           Bio.Character.Decoration.Discrete
-import           Bio.Character.Decoration.Shared
-import           Control.Lens
+import Bio.Character.Decoration.Discrete
+import Bio.Character.Decoration.Shared
+import Control.Lens
 
 
 -- |

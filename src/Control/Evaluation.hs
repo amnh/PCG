@@ -27,9 +27,9 @@ module Control.Evaluation
   , showRun
   ) where
 
-import           Control.Evaluation.Internal
-import           Control.Evaluation.Trans
-import           Control.Evaluation.Unit
+import Control.Evaluation.Internal
+import Control.Evaluation.Trans
+import Control.Evaluation.Unit
 
 
 -- |

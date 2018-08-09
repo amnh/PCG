@@ -22,12 +22,12 @@ module File.Format.TNT.Command.Procedure
   , procHeader
   ) where
 
-import           Data.CaseInsensitive
-import           Data.Functor             (($>))
-import           File.Format.TNT.Internal
-import           Text.Megaparsec
-import           Text.Megaparsec.Char
-import           Text.Megaparsec.Custom
+import Data.CaseInsensitive
+import Data.Functor             (($>))
+import File.Format.TNT.Internal
+import Text.Megaparsec
+import Text.Megaparsec.Char
+import Text.Megaparsec.Custom
 
 
 -- |

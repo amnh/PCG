@@ -22,9 +22,8 @@ module File.Format.Fasta
   ) where
 
 
-import           File.Format.Fasta.Converter (FastaSequenceType (..),
-                                              fastaStreamConverter)
-import           File.Format.Fasta.Internal  (TaxonSequenceMap)
-import           File.Format.Fasta.Parser    (FastaParseResult,
-                                              FastaSequence (..),
-                                              fastaStreamParser)
+import File.Format.Fasta.Converter (FastaSequenceType (..),
+                                    fastaStreamConverter)
+import File.Format.Fasta.Internal  (TaxonSequenceMap)
+import File.Format.Fasta.Parser    (FastaParseResult, FastaSequence (..),
+                                    fastaStreamParser)

@@ -37,21 +37,21 @@ module Bio.Metadata.Dynamic.Internal
   ) where
 
 
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (generateDenseTransitionCostMatrix)
-import           Bio.Character.Encodable
-import           Bio.Metadata.CharacterName
-import           Bio.Metadata.Discrete
-import           Bio.Metadata.DiscreteWithTCM
-import           Bio.Metadata.Dynamic.Class
-import           Control.DeepSeq
-import           Control.Lens
-import           Data.Alphabet
-import           Data.List                                              (intercalate)
-import           Data.List.NonEmpty                                     (NonEmpty)
-import           Data.TCM
-import           Data.TopologyRepresentation
-import           GHC.Generics                                           (Generic)
-import           Text.XML
+import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (generateDenseTransitionCostMatrix)
+import Bio.Character.Encodable
+import Bio.Metadata.CharacterName
+import Bio.Metadata.Discrete
+import Bio.Metadata.DiscreteWithTCM
+import Bio.Metadata.Dynamic.Class
+import Control.DeepSeq
+import Control.Lens
+import Data.Alphabet
+import Data.List                                              (intercalate)
+import Data.List.NonEmpty                                     (NonEmpty)
+import Data.TCM
+import Data.TopologyRepresentation
+import GHC.Generics                                           (Generic)
+import Text.XML
 
 
 -- |

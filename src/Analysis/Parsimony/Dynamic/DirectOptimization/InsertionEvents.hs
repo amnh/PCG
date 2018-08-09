@@ -22,4 +22,4 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents
   )
   where
 
-import           Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Internal
+import Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Internal

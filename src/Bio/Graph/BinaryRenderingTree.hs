@@ -15,11 +15,11 @@
 module Bio.Graph.BinaryRenderingTree where
 
 
-import           Control.Arrow      ((&&&))
-import           Data.Foldable
-import           Data.List.NonEmpty hiding (length, takeWhile)
-import           Data.Semigroup
-import           Prelude            hiding (head)
+import Control.Arrow      ((&&&))
+import Data.Foldable
+import Data.List.NonEmpty hiding (length, takeWhile)
+import Data.Semigroup
+import Prelude            hiding (head)
 
 
 -- |

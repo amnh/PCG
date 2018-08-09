@@ -19,15 +19,15 @@
 module Bio.Character.Decoration.Metric.Internal where
 
 
-import           Bio.Character.Decoration.Discrete
-import           Bio.Character.Decoration.Metric.Class
-import           Bio.Character.Decoration.Shared
-import           Bio.Character.Encodable
-import           Control.DeepSeq
-import           Control.Lens
-import           GHC.Generics
-import           Numeric.Extended.Natural
-import           Text.XML
+import Bio.Character.Decoration.Discrete
+import Bio.Character.Decoration.Metric.Class
+import Bio.Character.Decoration.Shared
+import Bio.Character.Encodable
+import Control.DeepSeq
+import Control.Lens
+import GHC.Generics
+import Numeric.Extended.Natural
+import Text.XML
 
 
 -- |

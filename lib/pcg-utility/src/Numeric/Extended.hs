@@ -19,6 +19,6 @@ module Numeric.Extended
   , Finite
   ) where
 
-import           Numeric.Extended.Internal
-import           Numeric.Extended.Natural
-import           Numeric.Extended.Real
+import Numeric.Extended.Internal
+import Numeric.Extended.Natural
+import Numeric.Extended.Real

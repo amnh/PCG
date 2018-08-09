@@ -45,16 +45,16 @@ module Bio.Metadata.CharacterName
   , sourceFile
   ) where
 
-import           Control.DeepSeq
-import           Control.Monad.State.Lazy
-import           Data.List                (isPrefixOf)
-import           Data.Map                 hiding (null)
-import           Data.Monoid
-import           Data.String
-import           Data.Traversable
-import           GHC.Generics             (Generic)
-import           Prelude                  hiding (lookup)
-import           Text.Show                (showListWith, showString)
+import Control.DeepSeq
+import Control.Monad.State.Lazy
+import Data.List                (isPrefixOf)
+import Data.Map                 hiding (null)
+import Data.Monoid
+import Data.String
+import Data.Traversable
+import GHC.Generics             (Generic)
+import Prelude                  hiding (lookup)
+import Text.Show                (showListWith, showString)
 
 
 -- |

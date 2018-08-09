@@ -3,19 +3,19 @@
 
 module File.Format.VertexEdgeRoot.Parser2 where
 
-import           Data.Char              (isSpace)
-import           Data.Either            (partitionEithers)
-import           Data.List              (delete, maximumBy, partition, sortBy)
-import           Data.List.Utility      (duplicates)
-import           Data.Map               (Map, empty, insert, lookup)
-import           Data.Maybe             (catMaybes, fromMaybe)
-import           Data.Ord               (comparing)
-import           Data.Set               (Set, elems, fromList, size)
-import           Prelude                hiding (lookup)
-import           Text.Megaparsec
-import           Text.Megaparsec.Custom
-import           Text.Megaparsec.Perm
-import           Text.Megaparsec.Prim   (MonadParsec)
+import Data.Char              (isSpace)
+import Data.Either            (partitionEithers)
+import Data.List              (delete, maximumBy, partition, sortBy)
+import Data.List.Utility      (duplicates)
+import Data.Map               (Map, empty, insert, lookup)
+import Data.Maybe             (catMaybes, fromMaybe)
+import Data.Ord               (comparing)
+import Data.Set               (Set, elems, fromList, size)
+import Prelude                hiding (lookup)
+import Text.Megaparsec
+import Text.Megaparsec.Custom
+import Text.Megaparsec.Perm
+import Text.Megaparsec.Prim   (MonadParsec)
 
 
 data  VertexSetType

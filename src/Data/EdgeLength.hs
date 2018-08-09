@@ -23,11 +23,11 @@ module Data.EdgeLength
   ) where
 
 
-import           Control.Applicative (liftA2)
-import           Control.DeepSeq
-import           Data.Default
-import           Data.Monoid         (Sum (..))
-import           GHC.Generics
+import Control.Applicative (liftA2)
+import Control.DeepSeq
+import Data.Default
+import Data.Monoid         (Sum (..))
+import GHC.Generics
 
 
 -- |

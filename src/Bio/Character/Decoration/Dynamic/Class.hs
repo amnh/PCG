@@ -46,12 +46,12 @@ module Bio.Character.Decoration.Dynamic.Class
   ) where
 
 
-import           Bio.Character.Decoration.Shared
-import           Bio.Character.Encodable
-import           Control.DeepSeq
-import           Control.Lens
-import           GHC.Generics
-import           Numeric.NonNegativeAverage
+import Bio.Character.Decoration.Shared
+import Bio.Character.Encodable
+import Control.DeepSeq
+import Control.Lens
+import GHC.Generics
+import Numeric.NonNegativeAverage
 
 
 -- |

@@ -37,7 +37,7 @@ module Bio.Character.Decoration.Additive
   , RangedPostorderDecoration()
   ) where
 
-import           Bio.Character.Decoration.Additive.Class
-import           Bio.Character.Decoration.Additive.Internal
-import           Bio.Character.Decoration.Discrete
-import           Bio.Character.Decoration.Shared
+import Bio.Character.Decoration.Additive.Class
+import Bio.Character.Decoration.Additive.Internal
+import Bio.Character.Decoration.Discrete
+import Bio.Character.Decoration.Shared

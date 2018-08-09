@@ -20,13 +20,13 @@ module Test.Custom.Tree.Test
   ( testSuite
   ) where
 
-import           Bio.PhyloGraph.Network
-import           Bio.PhyloGraph.Node.Encoded
-import           Bio.PhyloGraph.Tree.Referential
-import           Data.MonoTraversable
-import           Test.Custom.Tree
-import           Test.Tasty
-import           Test.Tasty.QuickCheck
+import Bio.PhyloGraph.Network
+import Bio.PhyloGraph.Node.Encoded
+import Bio.PhyloGraph.Tree.Referential
+import Data.MonoTraversable
+import Test.Custom.Tree
+import Test.Tasty
+import Test.Tasty.QuickCheck
 
 --import Debug.Trace
 

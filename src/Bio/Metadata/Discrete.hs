@@ -21,5 +21,5 @@ module Bio.Metadata.Discrete
   ) where
 
 
-import           Bio.Metadata.Discrete.Class
-import           Bio.Metadata.Discrete.Internal
+import Bio.Metadata.Discrete.Class
+import Bio.Metadata.Discrete.Internal

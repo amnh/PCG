@@ -4,19 +4,19 @@ module Data.BitMatrix.Test
   ( testSuite
   ) where
 
-import           Control.DeepSeq
-import           Control.Exception
-import           Data.BitMatrix
-import           Data.BitVector.LittleEndian
-import           Data.Foldable
-import           Data.Functor.Compose
-import           Data.Functor.Identity
-import           Data.MonoTraversable
-import           Data.Semigroup
-import           Test.QuickCheck.Monadic
-import           Test.Tasty
-import           Test.Tasty.HUnit
-import           Test.Tasty.QuickCheck
+import Control.DeepSeq
+import Control.Exception
+import Data.BitMatrix
+import Data.BitVector.LittleEndian
+import Data.Foldable
+import Data.Functor.Compose
+import Data.Functor.Identity
+import Data.MonoTraversable
+import Data.Semigroup
+import Test.QuickCheck.Monadic
+import Test.Tasty
+import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck
 
 
 newtype DependantFromRowsParameters

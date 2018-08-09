@@ -16,4 +16,4 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
   ( ukkonenDO
   ) where
 
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Internal
+import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Internal

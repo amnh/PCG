@@ -20,13 +20,13 @@ module Bio.Sequence.Block.Internal
   ) where
 
 
-import           Control.DeepSeq
-import           Data.Bifunctor
-import           Data.Foldable
-import           Data.Vector           (Vector)
-import           Data.Vector.Instances ()
-import           GHC.Generics
-import           Text.XML
+import Control.DeepSeq
+import Data.Bifunctor
+import Data.Foldable
+import Data.Vector           (Vector)
+import Data.Vector.Instances ()
+import GHC.Generics
+import Text.XML
 
 
 -- |

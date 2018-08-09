@@ -25,16 +25,16 @@ module Bio.Character.Decoration.Dynamic.Internal
   , DynamicDecorationInitial(..)
   ) where
 
-import           Bio.Character.Decoration.Dynamic.Class
-import           Bio.Character.Decoration.Shared
-import           Bio.Character.Encodable
-import           Control.DeepSeq
-import           Control.Lens
-import           Data.Bits
-import           Data.Hashable
-import           Data.MonoTraversable
-import           GHC.Generics
-import           Text.XML
+import Bio.Character.Decoration.Dynamic.Class
+import Bio.Character.Decoration.Shared
+import Bio.Character.Encodable
+import Control.DeepSeq
+import Control.Lens
+import Data.Bits
+import Data.Hashable
+import Data.MonoTraversable
+import GHC.Generics
+import Text.XML
 
 
 -- TODO: Make a polymorpic pre-order constructor.

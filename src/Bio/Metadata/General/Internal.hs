@@ -23,12 +23,12 @@ module Bio.Metadata.General.Internal
   ) where
 
 
-import           Bio.Metadata.CharacterName
-import           Bio.Metadata.General.Class
-import           Control.DeepSeq
-import           Control.Lens
-import           GHC.Generics
-import           Text.XML.Class
+import Bio.Metadata.CharacterName
+import Bio.Metadata.General.Class
+import Control.DeepSeq
+import Control.Lens
+import GHC.Generics
+import Text.XML.Class
 
 
 -- |

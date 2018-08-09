@@ -15,7 +15,7 @@
 
 module Bio.Graph.Component where
 
-import           Data.List.NonEmpty
+import Data.List.NonEmpty
 
 -- newtype PhylogeneticComponent a = PhylogeneticComponent a
 
