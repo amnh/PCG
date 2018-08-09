@@ -9,10 +9,11 @@
 -- Portability :  portable
 --
 -- Parser for the COST command specifying custom TCM constructions for certain
--- chasracter indicies. 
------------------------------------------------------------------------------ 
+-- chasracter indicies.
+-----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.TNT.Command.Cost
   ( costCommand
@@ -23,8 +24,8 @@ import Data.CaseInsensitive
 import Data.Foldable
 import Data.Functor             (($>))
 import Data.List.NonEmpty       (NonEmpty, some1)
-import Data.Matrix.NotStupid    (Matrix,matrix)
-import Data.Maybe               (fromJust,fromMaybe)
+import Data.Matrix.NotStupid    (Matrix, matrix)
+import Data.Maybe               (fromJust, fromMaybe)
 import Data.Vector              ((!))
 import File.Format.TNT.Internal
 import Text.Megaparsec
@@ -125,4 +126,4 @@ costDefinition = TransitionCost
         open  = symbol $ char '['
         close = symbol $ char ']'
 
-    
+

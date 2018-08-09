@@ -26,8 +26,8 @@ module Bio.Metadata
   , DiscreteCharacterMetadata(..)
   , discreteMetadata
   -- * Discrete Character with TCM Metadata
-  , DiscreteWithTcmCharacterMetadata()                                                                                                    
-  , DiscreteWithTCMCharacterMetadataDec()                                                                                                 
+  , DiscreteWithTcmCharacterMetadata()
+  , DiscreteWithTCMCharacterMetadataDec()
   , discreteMetadataFromTCM
   , discreteMetadataWithTCM
   -- * Dynamic Character Metadata

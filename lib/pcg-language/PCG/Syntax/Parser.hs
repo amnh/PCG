@@ -11,9 +11,11 @@
 -- Provides the stream parser for interpreting a well-typed collection of
 -- commands to be evaluated from an input source.
 --
------------------------------------------------------------------------------ 
+-----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies, UnboxedSums #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE UnboxedSums      #-}
 
 module PCG.Syntax.Parser where
 
@@ -42,7 +44,7 @@ newtype Computation = Computation (NonEmpty Command)
 
 
 -- |
--- Parse a series of PCG commands. 
+-- Parse a series of PCG commands.
 computationalStreamParser :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m Computation
 computationalStreamParser = Computation <$> some1 commandStreamParser <* eof
 

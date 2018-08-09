@@ -13,7 +13,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.VertexEdgeRoot.Parser
   ( VertexLabel
@@ -32,23 +33,23 @@ module File.Format.VertexEdgeRoot.Parser
   ) where
 
 import           Data.CaseInsensitive
-import           Data.Char                 (isSpace)
-import           Data.Either               (partitionEithers)
+import           Data.Char              (isSpace)
+import           Data.Either            (partitionEithers)
 import           Data.Foldable
-import           Data.Functor              (($>))
+import           Data.Functor           (($>))
 import           Data.Key
-import           Data.List                 (intercalate, partition)
-import           Data.List.NonEmpty        (NonEmpty( (:|) ))
-import qualified Data.List.NonEmpty as NE
-import           Data.List.Utility         (duplicates)
-import           Data.Map                  (Map)
-import qualified Data.Map           as Map
-import           Data.Maybe                (catMaybes)
+import           Data.List              (intercalate, partition)
+import           Data.List.NonEmpty     (NonEmpty ((:|)))
+import qualified Data.List.NonEmpty     as NE
+import           Data.List.Utility      (duplicates)
+import           Data.Map               (Map)
+import qualified Data.Map               as Map
+import           Data.Maybe             (catMaybes)
 import           Data.Monoid
-import           Data.Ord                  (comparing)
-import           Data.Set                  (Set)
-import qualified Data.Set           as Set
-import           Prelude            hiding (lookup)
+import           Data.Ord               (comparing)
+import           Data.Set               (Set)
+import qualified Data.Set               as Set
+import           Prelude                hiding (lookup)
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 import           Text.Megaparsec.Custom
@@ -117,21 +118,21 @@ connectedVertex v (EdgeInfo a b _)
 -- forest do not contain cycles.
 verStreamParser :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m VertexEdgeRoot
 verStreamParser = validateForest =<< verDefinition
-    
+
 
 -- We have a complicated definition here because we do not want to restrict
--- the order of the set definitions, and yet we must enforce that there is 
--- only one edge set and two vertex sets. One vertex set is the set of all 
--- verticies and the other is a subset consisting of the root nodes. To 
--- enforce this for propper parsing, and provide robust error messages we 
+-- the order of the set definitions, and yet we must enforce that there is
+-- only one edge set and two vertex sets. One vertex set is the set of all
+-- verticies and the other is a subset consisting of the root nodes. To
+-- enforce this for propper parsing, and provide robust error messages we
 -- read zero or more set definitions and seperate each set as either a vertex
--- set or an edge set by checking the type constructor for a Left or Right 
--- value. We then assert that we have received exactly one edge set and 
+-- set or an edge set by checking the type constructor for a Left or Right
+-- value. We then assert that we have received exactly one edge set and
 -- exactly two vertex sets. If not we generate meaningful error messages based
--- on the missing or multiple requisite sets. Once all sets have been parsed 
--- we disambiguate the vertex sets to the set of verticies and the set of root 
+-- on the missing or multiple requisite sets. Once all sets have been parsed
+-- we disambiguate the vertex sets to the set of verticies and the set of root
 -- nodes by inspecting the possibly provided set labels or in the absence of
--- labels by comparing the size of the sets; as the set of all verticies is 
+-- labels by comparing the size of the sets; as the set of all verticies is
 -- surely a superset of the set of root nodes.
 -- |
 -- Parses exactly one vertex set, one edge set, and one root set.
@@ -152,7 +153,7 @@ verDefinition = do
         (Nothing       , Just Roots   ) ->    pure $ VER setA edges' setB
         (Just Vertices , Nothing      ) ->    pure $ VER setA edges' setB
         (Just Roots    , Nothing      ) ->    pure $ VER setB edges' setA
-        (Just Vertices , Just Roots   ) ->    pure $ VER setA edges' setB 
+        (Just Vertices , Just Roots   ) ->    pure $ VER setA edges' setB
         (Just Roots    , Just Vertices) ->    pure $ VER setB edges' setA
         (_             , _            ) -> runFail $ vertexSetMessages [x,y]
     runFail [x] = fail x
@@ -164,16 +165,16 @@ verDefinition = do
     edgeSetMessages         = messages "edge set"
     rootSetMessages         = messages "root set"
     vertSetMessages         = messages "vertex set"
-    messages name []        = [message "No" name]
-    messages _    [_]       = []
-    messages name (_:_:_)   = [message "Multiple" (name<>"s")]
+    messages name []      = [message "No" name]
+    messages _    [_]     = []
+    messages name (_:_:_) = [message "Multiple" (name<>"s")]
     message x y             = concat [x," ",y," defined in input"]
 
 
 -- |
 -- We read a set from the input. The set can be an edge set or a vertex set.
 -- If it is a vertex set, it may be labeled as a specific set of verticies or
--- a set of roots. We use the Either type as a return type to denote the 
+-- a set of roots. We use the Either type as a return type to denote the
 -- conditional type of the result.
 setDefinition :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m (Either (Set EdgeInfo) (Maybe VertexSetType, Set VertexLabel))
 setDefinition = do
@@ -184,7 +185,7 @@ setDefinition = do
 
 
 -- |
--- A vertex set can be labeled or unlabeled. We first attempt to read in a 
+-- A vertex set can be labeled or unlabeled. We first attempt to read in a
 -- labeled vertex set, and if that fails an unlabeled vertex set. The label
 -- is returned contidionally in a Maybe type.
 vertexSetDefinition :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m (Maybe VertexSetType, Set VertexLabel)
@@ -283,7 +284,7 @@ edgeSetDefinition = validateEdgeSet =<< edgeSetDefinition'
             biDirectionShow = (\x -> "[" <> x <> "]") . intercalate ", " . fmap g
               where
                 g (lhs, rhs) = show lhs <> " <--> " <> show rhs
-              
+
 
 -- |
 -- Converts EdgeInfo to an tuple of VertexLabels, representing edge direction.
@@ -304,9 +305,9 @@ isReflexive (EdgeInfo a b _) (EdgeInfo x y _) = a == y && b == x
 edgeDefinition :: (MonadParsec e s m, Token s ~ Char) => m EdgeInfo
 edgeDefinition = symbol $ do
     _ <- space
-    _ <- symbol (char '(') 
+    _ <- symbol (char '(')
     x <- symbol vertexLabelDefinition
-    _ <- symbol (char ',') 
+    _ <- symbol (char ',')
     y <- symbol vertexLabelDefinition
     _ <- symbol (char ')')
     z <- optional $ try branchLengthDefinition
@@ -324,7 +325,7 @@ symbol x = x <* space
 -- |
 -- Validates a parse result to ensure that the resulting forest is internally
 -- consistent.
--- 
+--
 -- A VER forest is not consistent if:
 --
 --   * Any spcified root node has in-degree greater than 0
@@ -355,7 +356,7 @@ validateForest ver@(VER vs es rs ) =
 
     -- |
     -- Detect if the tree contains a cycle by consulting a stack
-    -- while performing a depth-first-search 
+    -- while performing a depth-first-search
     treeEdgeCycles = foldMap mergeCycles [ (x,y) | x <- resultList, y <- resultList, x <= y ]
       where
         resultList = catMaybes $ findCycle <$> rootList
@@ -402,7 +403,7 @@ validateForest ver@(VER vs es rs ) =
       , show xs
       ]
 -}
-      
+
     badRootErrorMessages :: [String]
     badRootErrorMessages = foldMapWithKey f badRoots
       where
@@ -426,7 +427,7 @@ validateForest ver@(VER vs es rs ) =
             shownRoots
               | length r == 1 = "'" <> show r <> "'"
               | otherwise     = show $ toList r
-      
+
 
 
 -- |

@@ -10,7 +10,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Bio.Character.Encodable.Continuous.Class where
 

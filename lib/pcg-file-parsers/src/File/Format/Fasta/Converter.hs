@@ -10,25 +10,27 @@
 --
 -- Functions for interpreting and converting parsed abiguous FASTA sequences.
 --
------------------------------------------------------------------------------ 
+-----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.Fasta.Converter
   ( FastaSequenceType(..)
   , fastaStreamConverter
   ) where
 
-import           Data.List                         (intercalate,partition)
-import           Data.List.NonEmpty                (NonEmpty) 
-import qualified Data.List.NonEmpty         as NE 
-import           Data.Map                   hiding (filter,foldr,partition,null)
-import qualified Data.Map                   as M   (fromList)
-import qualified Data.Vector                as V   (fromList)
+import           Data.List                  (intercalate, partition)
+import           Data.List.NonEmpty         (NonEmpty)
+import qualified Data.List.NonEmpty         as NE
+import           Data.Map                   hiding (filter, foldr, null,
+                                             partition)
+import qualified Data.Map                   as M (fromList)
+import qualified Data.Vector                as V (fromList)
 import           File.Format.Fasta.Internal
 import           File.Format.Fasta.Parser
-import           Text.Megaparsec                   (MonadParsec)
-import           Text.Megaparsec.Custom            (fails)
+import           Text.Megaparsec            (MonadParsec)
+import           Text.Megaparsec.Custom     (fails)
 
 
 -- |
@@ -41,9 +43,9 @@ data  FastaSequenceType
 
 
 -- |
--- Define and convert a 'FastaParseResult' to the expected sequence type 
+-- Define and convert a 'FastaParseResult' to the expected sequence type
 fastaStreamConverter :: MonadParsec e s m => FastaSequenceType -> FastaParseResult -> m TaxonSequenceMap
-fastaStreamConverter seqType = fmap (colate seqType) . validateStreamConversion seqType 
+fastaStreamConverter seqType = fmap (colate seqType) . validateStreamConversion seqType
 
 
 -- |
@@ -54,7 +56,7 @@ validateStreamConversion seqType xs =
     ([] , _) -> pure xs
     (err, _) -> fails $ errorMessage <$> err
   where
-    result = containsIncorrectChars <$> xs  
+    result = containsIncorrectChars <$> xs
     hasErrors = not . null . snd
     containsIncorrectChars (FastaSequence name seq') = (name, f seq')
     f = g seqType
@@ -80,18 +82,18 @@ colate seqType = foldr f empty
 -- |
 -- Interprets and converts an ambiguous sequence according to the given 'FatsaSequenceType'
 -- from the ambiguous form to a 'CharacterSequence' based on IUPAC codes.
-seqCharMapping :: FastaSequenceType -> String -> CharacterSequence 
+seqCharMapping :: FastaSequenceType -> String -> CharacterSequence
 seqCharMapping seqType = V.fromList . fmap (f seqType)
-  where 
+  where
     f AminoAcid = pure . pure
     f DNA       = (!) iupacNucleotideSubstitutions
-    f RNA       = (!) iupacRNASubstitutions 
+    f RNA       = (!) iupacRNASubstitutions
 
 
 -- |
 -- Substitutions for converting to a DNA sequence based on IUPAC codes.
 iupacNucleotideSubstitutions :: Map Char (NonEmpty String)
-iupacNucleotideSubstitutions = fmap pure . NE.fromList <$> M.fromList 
+iupacNucleotideSubstitutions = fmap pure . NE.fromList <$> M.fromList
     [ ('A', "A")
     , ('C', "C")
     , ('G', "G")

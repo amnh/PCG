@@ -12,7 +12,10 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveFoldable, DeriveFunctor, FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE DeriveFoldable   #-}
+{-# LANGUAGE DeriveFunctor    #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
   ( Ribbon()
@@ -22,11 +25,11 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
 
 import           Data.Foldable
 import           Data.Key
-import           Data.Maybe               (fromMaybe)
-import           Data.Vector              (Vector)
-import qualified Data.Vector       as V
-import           Data.Vector.Instances    ()
-import           Prelude           hiding (lookup)
+import           Data.Maybe            (fromMaybe)
+import           Data.Vector           (Vector)
+import qualified Data.Vector           as V
+import           Data.Vector.Instances ()
+import           Prelude               hiding (lookup)
 
 
 -- |

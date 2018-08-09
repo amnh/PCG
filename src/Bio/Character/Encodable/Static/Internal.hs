@@ -13,7 +13,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TypeFamilies               #-}
 
 module Bio.Character.Encodable.Static.Internal
   ( StaticCharacter()
@@ -24,26 +28,26 @@ import           Bio.Character.Encodable.Internal
 import           Bio.Character.Encodable.Static.Class
 import           Bio.Character.Encodable.Stream
 import           Bio.Character.Exportable.Class
-import           Control.Arrow                       ((***))
+import           Control.Arrow                        ((***))
 import           Control.DeepSeq
 import           Data.Alphabet
-import           Data.Bits
 import           Data.BitMatrix
+import           Data.Bits
 import           Data.BitVector.LittleEndian
-import           Data.Char                           (toLower)
+import           Data.Char                            (toLower)
 import           Data.Foldable
 import           Data.Key
-import qualified Data.List.NonEmpty           as NE
-import qualified Data.Map                     as M
+import qualified Data.List.NonEmpty                   as NE
+import qualified Data.Map                             as M
 import           Data.Maybe
-import           Data.Monoid                         ()
+import           Data.Monoid                          ()
 import           Data.MonoTraversable
 import           Data.Range
-import           Data.String                         (fromString)
-import           Data.Tuple                          (swap)
+import           Data.String                          (fromString)
+import           Data.Tuple                           (swap)
 import           GHC.Generics
 import           Test.QuickCheck
-import           Test.QuickCheck.Arbitrary.Instances ()
+import           Test.QuickCheck.Arbitrary.Instances  ()
 import           Text.XML
 
 

@@ -10,7 +10,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveFunctor, DeriveGeneric, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 
 module Bio.Graph.Node.Internal
   ( EdgeSet
@@ -35,7 +39,7 @@ import Data.Bits
 import Data.BitVector.LittleEndian
 import Data.EdgeSet
 import Data.Foldable
-import Data.List.NonEmpty       (NonEmpty(..))
+import Data.List.NonEmpty          (NonEmpty (..))
 import Data.TopologyRepresentation
 import GHC.Generics
 import Text.Newick.Class

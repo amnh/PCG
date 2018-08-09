@@ -10,11 +10,15 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances #-}
-{-# LANGUAGE FunctionalDependencies, GeneralizedNewtypeDeriving, MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE FunctionalDependencies     #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 
 -- For derived instance of PossiblyMissingCharacter
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE UndecidableInstances       #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Bio.Character.Decoration.Dynamic.Class

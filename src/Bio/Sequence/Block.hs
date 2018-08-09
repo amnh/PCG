@@ -10,7 +10,10 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE ConstraintKinds, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Bio.Sequence.Block
   ( CharacterBlock()
@@ -29,19 +32,19 @@ module Bio.Sequence.Block
   , hexZipWithMeta
   ) where
 
-import           Bio.Character.Encodable
-import           Bio.Character.Decoration.Continuous
-import           Bio.Character.Decoration.Dynamic
-import           Bio.Sequence.Block.Character
-import           Bio.Sequence.Block.Internal
-import           Bio.Sequence.Block.Metadata
-import           Control.Arrow                        ((***))
-import           Control.Lens
-import           Control.Parallel.Custom
-import           Control.Parallel.Strategies
-import           Data.Key
-import           Data.Vector.Instances                ()
-import           Prelude                       hiding (zip)
+import Bio.Character.Decoration.Continuous
+import Bio.Character.Decoration.Dynamic
+import Bio.Character.Encodable
+import Bio.Sequence.Block.Character
+import Bio.Sequence.Block.Internal
+import Bio.Sequence.Block.Metadata
+import Control.Arrow                       ((***))
+import Control.Lens
+import Control.Parallel.Custom
+import Control.Parallel.Strategies
+import Data.Key
+import Data.Vector.Instances               ()
+import Prelude                             hiding (zip)
 
 
 -- |
@@ -74,11 +77,11 @@ type HasRootCost u v w x y z =
 -- parallel.
 blockCost :: HasBlockCost u v w x y z => MetadataBlock e d m -> CharacterBlock u v w x y z -> Double
 blockCost (MB mBlock) (CB cBlock) = sum . fmap sum $
-    [ parmap rpar floatingCost . uncurry zip . ( continuousBins ***  continuousBins) 
+    [ parmap rpar floatingCost . uncurry zip . ( continuousBins ***  continuousBins)
     , parmap rpar integralCost . uncurry zip . (nonAdditiveBins *** nonAdditiveBins)
-    , parmap rpar integralCost . uncurry zip . (   additiveBins ***    additiveBins)   
+    , parmap rpar integralCost . uncurry zip . (   additiveBins ***    additiveBins)
     , parmap rpar integralCost . uncurry zip . (     metricBins ***      metricBins)
-    , parmap rpar integralCost . uncurry zip . (  nonMetricBins ***   nonMetricBins)  
+    , parmap rpar integralCost . uncurry zip . (  nonMetricBins ***   nonMetricBins)
     , parmap rpar integralCost . uncurry zip . (    dynamicBins ***     dynamicBins)
     ] <*> [(mBlock, cBlock)]
   where
@@ -116,7 +119,7 @@ rootCost rootCount (MB mBlock) (CB cBlock) = rootMultiplier . sum . fmap sum $
     rootMultiplier x = (otherRoots * x) / 2
       where
         otherRoots = max 0 (fromIntegral rootCount - 1)
-    
+
     staticRootCost (m, c)
       | isMissing c = 0
       | otherwise   = m ^. characterWeight
@@ -134,11 +137,11 @@ rootCost rootCount (MB mBlock) (CB cBlock) = rootMultiplier . sum . fmap sum $
 -- parallel.
 staticCost :: HasBlockCost u v w x y z => MetadataBlock e d m -> CharacterBlock u v w x y z -> Double
 staticCost (MB mBlock) (CB cBlock) = sum . fmap sum $
-    [ parmap rpar floatingCost . uncurry zip . ( continuousBins ***  continuousBins) 
+    [ parmap rpar floatingCost . uncurry zip . ( continuousBins ***  continuousBins)
     , parmap rpar integralCost . uncurry zip . (nonAdditiveBins *** nonAdditiveBins)
-    , parmap rpar integralCost . uncurry zip . (   additiveBins ***    additiveBins)   
+    , parmap rpar integralCost . uncurry zip . (   additiveBins ***    additiveBins)
     , parmap rpar integralCost . uncurry zip . (     metricBins ***      metricBins)
-    , parmap rpar integralCost . uncurry zip . (  nonMetricBins ***   nonMetricBins)  
+    , parmap rpar integralCost . uncurry zip . (  nonMetricBins ***   nonMetricBins)
     ] <*> [(mBlock, cBlock)]
   where
     integralCost (m, c) = fromIntegral cost * weight

@@ -17,7 +17,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns, FlexibleContexts #-}
+{-# LANGUAGE BangPatterns     #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Analysis.Parsimony.Fitch.Internal where
 
@@ -26,7 +27,7 @@ import Bio.Character.Decoration.Fitch
 import Bio.Character.Encodable
 import Control.Lens
 import Data.Bits
-import Data.List.NonEmpty (NonEmpty(..))
+import Data.List.NonEmpty                (NonEmpty (..))
 
 
 -- | Used on the post-order (i.e. first) traversal.

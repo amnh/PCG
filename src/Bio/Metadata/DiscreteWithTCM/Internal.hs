@@ -11,7 +11,9 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Bio.Metadata.DiscreteWithTCM.Internal
   ( DiscreteCharacterMetadata(..)
@@ -33,7 +35,7 @@ import Bio.Metadata.DiscreteWithTCM.Class
 import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
-import Data.List (intercalate)
+import Data.List                          (intercalate)
 import Data.TCM
 import Data.TCM.Memoized
 import GHC.Generics
@@ -124,7 +126,7 @@ instance NFData (DiscreteWithTCMCharacterMetadataDec c) where
     rnf val = rnf (foreignPointerData val)
         `seq` rnf (discreteData val)
         `seq` ()
-  
+
 
 instance Show (DiscreteWithTCMCharacterMetadataDec c) where
 

@@ -8,9 +8,10 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
------------------------------------------------------------------------------    
+-----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.Dot
   ( DotGraph
@@ -26,26 +27,26 @@ module File.Format.Dot
   ) where
 
 
-import           Control.Arrow             ((&&&))
+import           Control.Arrow                   ((&&&))
 import           Data.Foldable
 import           Data.GraphViz.Parsing
 import           Data.GraphViz.Types
 import           Data.GraphViz.Types.Generalised
 import           Data.Key
-import           Data.Map                  (Map, fromSet, insertWith)
+import           Data.Map                        (Map, fromSet, insertWith)
 import           Data.Monoid
-import           Data.Set                  (Set)
-import qualified Data.Set           as S
-import           Data.Text                 (Text)
-import qualified Data.Text.Lazy     as L
-import           Prelude            hiding (lookup)
+import           Data.Set                        (Set)
+import qualified Data.Set                        as S
+import           Data.Text                       (Text)
+import qualified Data.Text.Lazy                  as L
+import           Prelude                         hiding (lookup)
 
 
 -- |
 -- Parses the 'Text' stream from a DOT file.
 dotParse :: Text -> Either String (DotGraph GraphID)
 dotParse = fst . runParser parse . L.fromStrict
-        
+
 
 -- |
 -- Takes a 'DotGraph' parse result and returns a set of unique node identifiers.
@@ -67,7 +68,7 @@ dotChildMap = sharedWork directionality
   where
     directionality (k,v) = insertWith (<>) k (S.singleton v)
 
-  
+
 -- |
 -- Takes a 'DotGraph' parse result and constructs a mapping from a node to it's
 -- parents.
@@ -75,7 +76,7 @@ dotParentMap :: Ord n => DotGraph n -> Map n (Set n)
 dotParentMap = sharedWork directionality
   where
     directionality (k,v) = insertWith (<>) v (S.singleton k)
-    
+
 -- |
 -- Intelligently render a 'GraphID' to a 'String' for output.
 toIdentifier :: GraphID -> String
@@ -94,6 +95,6 @@ sharedWork logic dot = fromSet getAdjacency setOfNodes
     edgeMap      = foldr logic mempty . dotEdgeSet
     getAdjacency = fold . (`lookup` setOfEdges)
     setOfEdges   = edgeMap    dot
-    setOfNodes   = dotNodeSet dot 
+    setOfNodes   = dotNodeSet dot
 
-  
+

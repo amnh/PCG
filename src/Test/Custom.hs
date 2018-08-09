@@ -3,10 +3,10 @@
 module Test.Custom (module X, nodeInvariantHolds) where
 
 import Bio.PhyloGraph.Network
-import Test.Custom.Constructions as X
-import Test.Custom.Parse         as X
-import Test.Custom.Tree          as X
-import Test.Custom.Types ()
+import Test.Custom.Constructions           as X
+import Test.Custom.Parse                   as X
+import Test.Custom.Tree                    as X
+import Test.Custom.Types                   ()
 import Test.QuickCheck.Arbitrary.Instances ()
 
 nodeInvariantHolds :: Network t n => (n -> Bool) -> t -> Bool

@@ -1,4 +1,8 @@
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies, TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeSynonymInstances  #-}
 
 module Test.Custom.Tree
   ( SimpleTree()
@@ -14,30 +18,30 @@ import qualified Bio.PhyloGraph.Node.Encoded      as EN
 import qualified Bio.PhyloGraph.Node.Final        as FN
 import qualified Bio.PhyloGraph.Node.ImpliedAlign as IN
 import qualified Bio.PhyloGraph.Node.Preliminary  as RN
-import           Bio.PhyloGraph.Node.Referential ()
+import           Bio.PhyloGraph.Node.Referential  ()
 import           Bio.PhyloGraph.Tree.Binary
 import qualified Bio.PhyloGraph.Tree.Referential  as RT
 import           Bio.PhyloGraph.Tree.Rose
-import           Control.Applicative                     ((<|>))
-import           Control.Monad                           ((<=<))
+import           Control.Applicative              ((<|>))
+import           Control.Monad                    ((<=<))
 import           Data.Alphabet
-import           Data.Bifunctor                          (second)
+import           Data.Bifunctor                   (second)
 import           Data.Foldable
-import           Data.IntMap                             (insertWith)
+import           Data.IntMap                      (insertWith)
 import qualified Data.IntSet                      as IS
 import           Data.Key                         hiding (zipWith)
-import           Data.List                               (intercalate)
-import           Data.List.NonEmpty                      (NonEmpty((:|)))
+import           Data.List                        (intercalate)
+import           Data.List.NonEmpty               (NonEmpty ((:|)))
 import qualified Data.List.NonEmpty               as NE
-import           Data.List.Utility                       (chunksOf)
+import           Data.List.Utility                (chunksOf)
 import           Data.Maybe
 import           Data.Monoid
 import           Data.MonoTraversable
-import           Data.Ord                                (comparing)
+import           Data.Ord                         (comparing)
 import qualified Data.Set                         as S
 import           Data.Tree
-import           Data.Vector                             (Vector)
-import           Safe                                    (tailMay)
+import           Data.Vector                      (Vector)
+import           Safe                             (tailMay)
 import           Test.QuickCheck
 import           Test.Tasty.HUnit
 
@@ -71,14 +75,14 @@ setRefIds :: Tree TestingDecoration -> Tree TestingDecoration
 setRefIds = snd . f 0
       where
         f :: Int -> Tree TestingDecoration -> (Int, Tree TestingDecoration)
-        f counter root = (counter', root') 
+        f counter root = (counter', root')
           where
             root' = Node decoration' children'
             decoration' = (rootLabel root) { refEquality = counter }
             (counter', children') = foldr g (counter + 1, []) $ subForest root
             g e (n, ys) = second (:ys) $ f n e
 
-        
+
 createCherry :: String -> String -> String -> SimpleTree
 createCherry rootCharacter leftCharacter rightCharacter = createSimpleTree 0 alphabet [(0,rootCharacter,[1,2]), (1,leftCharacter,[]), (2,rightCharacter,[])]
   where
@@ -104,7 +108,7 @@ createBinary leafCharacters = TT . setRefIds . createBinary' $ createCherry' <$>
       where
         f [y] = y
         f ys  = Node def ys
-    
+
 
 newtype SimpleTree = TT (Tree TestingDecoration)
     deriving (Eq)
@@ -168,7 +172,7 @@ instance Show TestingDecoration where
     show decoration = intercalate "\n" $ catMaybes renderings
       where
         renderings = mconcat [renderedId, renderedCosts, renderedDecorations]
-        
+
         renderedId = pure . pure $ "Node ( " <> show (refEquality decoration) <> " )"
         renderedCosts =
             [  pure $ "LocalCost   " <> show (dLocalCost decoration)
@@ -192,7 +196,7 @@ instance Show TestingDecoration where
         g prefix shown = prefix <> ": " <> shown --intercalate "\n" $ (prefix <> ": " <> y) : (("  " <>) <$> zs)
 --          where
 --            (x:y:zs) = lines shown :: [String]
-{-  
+{-
         h x
           | x decoration == 0.0 = Nothing
           | otherwise           = Just . show $ x decoration
@@ -225,13 +229,13 @@ renderDynamicCharacter alphabetMay char
     defaultAlphabet = fromSymbols symbols
     alphabet        = fromMaybe defaultAlphabet alphabetMay
     f :: [String] -> String
-    f [x] = x
+    f [x]            = x
     f ambiguityGroup = "[" <> concat ambiguityGroup <> "]"
 
 arbitrarySymbols :: [String]
 arbitrarySymbols = fmap pure . ('-' :) $ ['0'..'9'] <> ['A'..'Z'] <> ['a'..'z']
 
-                   
+
 instance Arbitrary SimpleTree where
 
     -- Arbitrary Cherry
@@ -285,7 +289,7 @@ instance FN.FinalNode SimpleTree DynamicChar where
     setFinal     x (TT n) = TT $ n { rootLabel = decoration { dFinal = x } }
       where
         decoration = rootLabel n
-        
+
     getFinalGapped   (TT n) = dGapped  $ rootLabel n
 
     setFinalGapped x (TT n) = TT $ n { rootLabel = decoration { dGapped = x } }
@@ -378,7 +382,7 @@ instance N.Network SimpleTree SimpleTree where
    update (TT root) nodes = TT $ modifyTopology root'
      where
        -- Step 1: We apply the new decorations to all the nodes in the original tree
-       root' :: Tree TestingDecoration 
+       root' :: Tree TestingDecoration
        root' = modifyDecoration <$> root
          where
             modifyDecoration :: TestingDecoration -> TestingDecoration
@@ -397,7 +401,7 @@ instance N.Network SimpleTree SimpleTree where
                children'   = (\(TT x) -> x) . f . TT <$> subForest internal
                decoration' =
                  case findNode (sameRef node) (TT root') of
-                   Nothing     -> rootLabel internal 
+                   Nothing     -> rootLabel internal
                    Just (TT x) -> rootLabel x
        -- Step 3: We rebuild the tree applying the updated subtrees to the existing topology
        modifyTopology :: Tree TestingDecoration -> Tree TestingDecoration
@@ -408,7 +412,7 @@ instance N.Network SimpleTree SimpleTree where
              where
                children' = subForest . maybe node (\(TT x) -> x) $ find (sameRef (TT node)) nodes'
 
-         
+
 instance RT.ReferentialTree SimpleTree SimpleTree where
 
     getNodeIdx (TT node) (TT root) = snd $ foldl' f (0, Nothing) root
@@ -419,7 +423,7 @@ instance RT.ReferentialTree SimpleTree SimpleTree where
           | isJust done             = (counter    , done        )
           | refEquality e == target = (counter    , Just counter)
           | otherwise               = (counter + 1, Nothing     )
-        
+
     getNthNode tree@(TT root) pos =
         case foldl' f (0, Nothing) root of
           (outerBound, Nothing         ) -> error    $ mconcat ["Could not get node at position ", show pos, "! Valid range is [0,", show $ outerBound - 1, "]."]
@@ -476,7 +480,7 @@ simpleTreeCharacterDecorationEqualityAssertion :: Foldable t
                -> (SimpleTree -> SimpleTree)         -- ^ Topology invariant tree transformation.
                -> (SimpleTree -> Vector DynamicChar) -- ^ Node accessing function
                -> t (Int, String, [String], [Int])   -- ^ (Node Reference, sequence of dynamic characters, expected values, child nodes)
-               -> Assertion                      
+               -> Assertion
 simpleTreeCharacterDecorationEqualityAssertion rootRef symbols transformation accessor spec =
     assertMinimalFailure $ compareTree outputTree <$> valueTrees
   where
@@ -497,7 +501,7 @@ simpleTreeCharacterDecorationEqualityAssertion rootRef symbols transformation ac
         checkTree' :: SimpleTree -> SimpleTree -> [Maybe String]
         checkTree' actualValueNode expectedValueNode
           | notEqualReference ||
-            length xs /= length ys = [Just "The tree topology changed!"] 
+            length xs /= length ys = [Just "The tree topology changed!"]
           | actual    /= expected  = Just failureMessage : recursiveFailures
           | otherwise              = Nothing : recursiveFailures
           where
@@ -514,7 +518,7 @@ simpleTreeCharacterDecorationEqualityAssertion rootRef symbols transformation ac
                               , "Actual value  : " <> seqShow actual
                               ]
               where
-                seqShow = indentLine . maybe "Empty sequence" (renderDynamicCharacter nodeAlphabet) . headMay 
+                seqShow = indentLine . maybe "Empty sequence" (renderDynamicCharacter nodeAlphabet) . headMay
 
     indentLine  = ("  " <>)
     indentBlock = unlines . fmap indentLine . lines
@@ -531,7 +535,7 @@ simpleTreeCharacterDecorationEqualityAssertion rootRef symbols transformation ac
     valueTreeCount = length . fst . head $ otoList mapping
 
     -- Takes an index from the list of possible tree decorations and constructs a "comparison" tree.
-    toValueTree j = TT . setRefIds $ unfoldTree buildExpectedTree rootRef 
+    toValueTree j = TT . setRefIds $ unfoldTree buildExpectedTree rootRef
       where
         buildExpectedTree :: Int -> (TestingDecoration, [Int])
         buildExpectedTree i = (def { dEncoded = encodedSequence }, otoList children)
@@ -541,7 +545,7 @@ simpleTreeCharacterDecorationEqualityAssertion rootRef symbols transformation ac
               | otherwise                =  pure . encodeStream alphabet . NE.fromList $ (\c -> [c]:|[]) <$> (expectedChar !! j)
             (expectedChar, children) = mapping ! i
 
-    -- 
+    --
     alphabet = fromSymbols $ pure <$> symbols
 --    mapping :: (Foldable a, Foldable c, Foldable v) => IntMap (v (c (a String)), IntSet)
     mapping = foldl' f mempty spec

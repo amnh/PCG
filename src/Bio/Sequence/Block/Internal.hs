@@ -10,7 +10,10 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Bio.Sequence.Block.Internal
   ( Block(..)
@@ -20,8 +23,8 @@ module Bio.Sequence.Block.Internal
 import Control.DeepSeq
 import Data.Bifunctor
 import Data.Foldable
-import Data.Vector            (Vector)
-import Data.Vector.Instances  ()
+import Data.Vector           (Vector)
+import Data.Vector.Instances ()
 import GHC.Generics
 import Text.XML
 

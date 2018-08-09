@@ -10,19 +10,22 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns, DeriveGeneric, Strict, TypeFamilies #-}
+{-# LANGUAGE BangPatterns  #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE Strict        #-}
+{-# LANGUAGE TypeFamilies  #-}
 
 module Data.BitMatrix.Internal where
 
 import Control.DeepSeq
 import Data.Bits
 import Data.BitVector.LittleEndian
-import Data.List.Utility        (equalityOf, invariantTransformation)
 import Data.Foldable
+import Data.List.Utility           (equalityOf, invariantTransformation)
 import Data.MonoTraversable
 import Data.Ord
 import GHC.Generics
-import Test.QuickCheck   hiding ((.&.))
+import Test.QuickCheck             hiding ((.&.))
 
 
 -- |
@@ -51,7 +54,7 @@ type instance Element BitMatrix = BitVector
 -- Resulting matricies will have at /least/ one row and one column.
 instance Arbitrary BitMatrix where
 
-    arbitrary = do 
+    arbitrary = do
         colCount <- choose (1, 20) :: Gen Int
         rowCount <- choose (1, 20) :: Gen Int
         let rVal =  choose (0, 2 ^ colCount - 1) :: Gen Integer
@@ -222,7 +225,7 @@ bitMatrix m n f =
     g (!shiftRegister, !summation) i
       | f i       = (shiftRegister `shiftL` 1, shiftRegister + summation)
       | otherwise = (shiftRegister `shiftL` 1,                 summation)
-      
+
     errorMsg
       | m <  0 && n <  0 = Just $ unwords [errorPrefix, errorRowCount, ". Also, ", errorColCount] <> "."
       | m <  0           = Just $ unwords [errorPrefix, errorRowCount] <> "."
@@ -290,7 +293,7 @@ fromRows xs
           y:_ -> BitMatrix (finiteBitSize y) $ fold xs
 
 
--- | 
+-- |
 -- \( \mathcal{O} \left( 1 \right) \)
 --
 -- Test if a bit is set at the given indices.
@@ -300,7 +303,7 @@ isSet (BitMatrix n bv) (i, j) = bv `testBit` (n * fromEnum i + fromEnum j)
 
 -- |
 -- \( \mathcal{O} \left( 1 \right) \)
--- 
+--
 -- Determines if there are no set bits in the 'BitMatrix'
 isZeroMatrix :: BitMatrix -> Bool
 isZeroMatrix (BitMatrix _ bv) = (toUnsignedNumber bv :: Integer) == 0

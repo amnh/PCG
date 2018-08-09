@@ -13,7 +13,9 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE ConstraintKinds, FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE ConstraintKinds  #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
   ( naiveDO
@@ -22,7 +24,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
   ) where
 
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
-import Data.Matrix.NotStupid (matrix)
+import Data.Matrix.NotStupid                                           (matrix)
 import Data.MonoTraversable
 
 

@@ -13,23 +13,25 @@
 -- possible forest of trees defined for the taxa set.
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.TNT.Parser
   ( tntStreamParser
   ) where
 
-import           Control.Monad            ((<=<),liftM3)
+import           Control.Monad                  (liftM3, (<=<))
 import           Data.CaseInsensitive
 import           Data.Foldable
-import           Data.IntMap              (IntMap,insertWith,mapWithKey,toAscList)
-import qualified Data.IntMap        as IM (lookup)
-import qualified Data.Map           as M  (fromList,lookup)
-import qualified Data.List.NonEmpty as NE (fromList)
-import           Data.Matrix.NotStupid    (Matrix)
-import           Data.Maybe               (fromMaybe)
-import           Data.Vector              (Vector,(!),(//),generate)
-import qualified Data.Vector        as V  (fromList)
+import           Data.IntMap                    (IntMap, insertWith, mapWithKey,
+                                                 toAscList)
+import qualified Data.IntMap                    as IM (lookup)
+import qualified Data.List.NonEmpty             as NE (fromList)
+import qualified Data.Map                       as M (fromList, lookup)
+import           Data.Matrix.NotStupid          (Matrix)
+import           Data.Maybe                     (fromMaybe)
+import           Data.Vector                    (Vector, generate, (!), (//))
+import qualified Data.Vector                    as V (fromList)
 import           File.Format.TNT.Command.CNames
 import           File.Format.TNT.Internal
 import           File.Format.TNT.Partitioning
@@ -88,9 +90,9 @@ collapseStructures (ccodes, cnames, costs, nstates, treads, xreads)
   | not (null errors) = fails errors
   | otherwise         = pure (ccodes, collapsedCNames, costs, nstates, collapsedTReads, xreads)
   where
-    errors          = cnamesErrors 
+    errors          = cnamesErrors
     collapsedCNames = concatMap toList cnames
-    collapsedTReads = concatMap toList treads 
+    collapsedTReads = concatMap toList treads
     cnamesErrors    = if null collapsedCNames
                       then []
                       else duplicateIndexMessages $ NE.fromList collapsedCNames
@@ -164,4 +166,4 @@ range _ (FromStart   j) = [0..j]
 range j (ToEnd     i  ) = [i..j]
 range j  Whole          = [0..j]
 
-    
+

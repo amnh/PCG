@@ -10,13 +10,16 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Bio.Character.Decoration.NonMetric.Internal where
 
 
-import Bio.Character.Decoration.NonMetric.Class
 import Bio.Character.Decoration.Discrete
+import Bio.Character.Decoration.NonMetric.Class
 import Bio.Character.Encodable
 import Control.Lens
 

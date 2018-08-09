@@ -3,11 +3,11 @@ module Data.Alphabet.Test
   ) where
 
 import           Data.Alphabet
-import           Data.List (sort, nub, nubBy, splitAt)
+import           Data.List             (nub, nubBy, sort, splitAt)
+import qualified Data.Text             as T
 import           Test.Tasty
-import           Test.Tasty.HUnit as HU
+import           Test.Tasty.HUnit      as HU
 import           Test.Tasty.QuickCheck as QC
-import qualified Data.Text as T
 
 testSuite :: TestTree
 testSuite = testGroup "Alphabet Tests"

@@ -11,7 +11,8 @@
 -- Parser for the Henning or TNT file format.
 -- Parses a useful subset of the file specification.
 -----------------------------------------------------------------------------
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 -- TODO: Document and restrict Internal exports!
 module File.Format.TNT
@@ -34,5 +35,5 @@ module File.Format.TNT
   , tntStreamParser
   ) where
 
-import File.Format.TNT.Parser (tntStreamParser)
 import File.Format.TNT.Internal
+import File.Format.TNT.Parser   (tntStreamParser)

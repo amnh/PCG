@@ -48,7 +48,7 @@ test-new: stack-build-test-new
 
 
 # Builds with useful features for a standard user of the package
-standard-build: install-stack stack-setup
+standard-build: install-stack format-code stack-setup
 	stack install $(haddock)
 
 # Builds with all useful options for package power users
@@ -57,6 +57,12 @@ full-build: install-stack clean stack-setup stack-build-prof
 # Upgrade stack if installed or install stack if not installed
 install-stack:
 	which stack || (cabal update && cabal install stack)
+
+install-stylish-haskell:
+	which stylish-haskell || (stack install stylish-haskell)
+
+format-code: install-stylish-haskell
+	(./stylish.sh)
 
 stack-setup: phylocomgraph.cabal stack.yaml
 	stack setup

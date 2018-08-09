@@ -15,12 +15,13 @@ module Analysis.ImpliedAlignment.InsertionEvents.Test
   ( testSuite
   ) where
 
+import qualified Analysis.ImpliedAlignment.DeletionEvents           as DE
 import           Analysis.ImpliedAlignment.InsertionEvents.Internal
-import qualified Analysis.ImpliedAlignment.DeletionEvents as DE
-import           Control.Arrow                                  (second)
-import qualified Data.IntMap                              as IM
+import           Control.Arrow                                      (second)
+import qualified Data.IntMap                                        as IM
 import           Data.Monoid
-import           Test.QuickCheck.Property.Common.Internal       (Equal, runEqual)
+import           Test.QuickCheck.Property.Common.Internal           (Equal,
+                                                                     runEqual)
 import           Test.QuickCheck.Property.Monoid
 import           Test.Tasty
 import           Test.Tasty.HUnit
@@ -67,7 +68,7 @@ testCoalesce = testGroup "The coalesce function behaves as expected"
 
 {-
 coalesceOperatorTestCases :: TestTree
-coalesceOperatorTestCases = testGroup "Coalesce operator test cases" 
+coalesceOperatorTestCases = testGroup "Coalesce operator test cases"
     [ testCase "Test decrementing  case"    $ fromList [(1,"A"),(2,"B")]       @=? fromList [(1,"A")]          <^> fromList [(3,"B")]
     , testCase "Test appending     case"    $ fromList [(1,"ABCD" )]           @=? fromList [(1,"A")]          <^> fromList [(2,"BCD")]
     , testCase "Test prepending    case"    $ fromList [(1,"ABCD" )]           @=? fromList [(1,"BCD")]        <^> fromList [(1,"A")]

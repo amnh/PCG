@@ -1,4 +1,5 @@
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.Fasta.Test
   ( testSuite
@@ -11,8 +12,8 @@ import Data.Maybe                 (fromMaybe)
 import File.Format.Fasta.Internal
 import File.Format.Fasta.Parser
 import Safe                       (headMay)
-import Test.Custom.Parse          (parseEquals,parseFailure,parserSatisfies)
-import Test.Tasty                 (TestTree,testGroup)
+import Test.Custom.Parse          (parseEquals, parseFailure, parserSatisfies)
+import Test.Tasty                 (TestTree, testGroup)
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 import Text.Megaparsec            (eof)
@@ -20,7 +21,7 @@ import Text.Megaparsec            (eof)
 
 testSuite :: TestTree
 testSuite = testGroup "Fasta Format"
-    [ testGroup "Fasta Generalized Combinators" 
+    [ testGroup "Fasta Generalized Combinators"
         [identifier',commentBody',identifierLine']
     , testGroup "Fasta Parser"
         [fastaSequence',fastaTaxonSequenceDefinition',fastaStreamParser']
@@ -40,10 +41,10 @@ identifier' = testGroup "identifier" [invariant, valid, invalid]
       [ x <> [s] <> y |  e    <- validTaxonLabels
                       ,  s    <- "$ \t\r\n"
                       ,  i    <- [length e `div` 2]
-                      , (x,y) <- [i `splitAt` e] 
+                      , (x,y) <- [i `splitAt` e]
       ]
     invariant = testProperty "fastaLabel invariant" f
-      where 
+      where
 --        f x = null str || parseEquals identifier str == res
         f x = null str || parserSatisfies identifier str (== res)
           where
@@ -52,7 +53,7 @@ identifier' = testGroup "identifier" [invariant, valid, invalid]
 
 
 validTaxonLabels :: [String]
-validTaxonLabels = 
+validTaxonLabels =
     [ "Peripatidae"
     , "Colossendeis"
     , "Ammotheidae"
@@ -67,7 +68,7 @@ commentBody' = testGroup "commentBody" [generalComment, prependedDollarSign, val
     generalComment :: TestTree
     generalComment = testProperty "General comment structure" f
       where
-        f x = hasLeadingDollarSign 
+        f x = hasLeadingDollarSign
            || null res
            || parserSatisfies commentBody x (== res)
           where
@@ -88,7 +89,7 @@ commentBody' = testGroup "commentBody" [generalComment, prependedDollarSign, val
             line  = takeWhile (not . (`elem`"\n\r")) x
             line' = unwords $ words line
     validComments = testGroup "Valid comments" $ success <$> validCommentBodies
-      where 
+      where
         success str = testCase (show str) $ parseEquals (commentBody <* eof) str "A species of animal"
 
 
@@ -111,7 +112,7 @@ identifierLine' = testGroup "fastaLabelLine" [validWithoutComments, validWithCom
 
 
 validTaxonCommentLines     :: [(String, String)]
-validTaxonCommentLines     = zip validTaxonLabels validTaxonCommentedLabels 
+validTaxonCommentLines     = zip validTaxonLabels validTaxonCommentedLabels
 validTaxonCommentlessLines :: [(String, String)]
 validTaxonCommentlessLines = zip  validTaxonLabels (inlineLabel <$> validTaxonLabels)
 validTaxonCommentedLabels  :: [String]
@@ -128,7 +129,7 @@ fastaSequence' = testGroup "fastaSequence" [valid,nonDNAValid]
     success (res,str) = testCase (show str) $ parseEquals fastaSequence str res
     nonDNASequences   =
         [ ("-.?"                 , "-.?\n"                 ) -- Gap / Missing
-        , ("#"                   , "#\n"                   ) -- Sequence Partition 
+        , ("#"                   , "#\n"                   ) -- Sequence Partition
         , ("RYSWKMBDHVN"         , "RYSWKMBDHVN\n"         ) -- IUPAC Ambiguity Codes
         , ("ACDEFGHIKLMNPQRSTVWY", "ACDEFGHIKLMNPQRSTVWY\n") -- AminoAcids
         ]

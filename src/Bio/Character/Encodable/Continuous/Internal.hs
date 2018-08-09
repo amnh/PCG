@@ -10,7 +10,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Bio.Character.Encodable.Continuous.Internal
   ( ContinuousChar
@@ -18,7 +22,7 @@ module Bio.Character.Encodable.Continuous.Internal
 
 import Bio.Character.Encodable.Continuous.Class
 import Bio.Character.Encodable.Internal
-import Control.Arrow ((&&&))
+import Control.Arrow                            ((&&&))
 import Control.DeepSeq
 import Data.Range
 import GHC.Generics

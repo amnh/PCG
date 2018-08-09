@@ -10,7 +10,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, MonoLocalBinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MonoLocalBinds   #-}
 
 module Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
   ( assignOptimalDynamicCharacterRootEdges
@@ -18,32 +19,33 @@ module Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
 
 import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Dynamic
-import           Bio.Metadata.Dynamic
-import           Bio.Sequence
-import           Bio.Sequence.Metadata        (MetadataBlock, getDynamicMetadata)
-import qualified Bio.Sequence.Metadata as M 
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
+import           Bio.Metadata.Dynamic
+import           Bio.Sequence
+import           Bio.Sequence.Metadata              (MetadataBlock,
+                                                     getDynamicMetadata)
+import qualified Bio.Sequence.Metadata              as M
 import           Control.Applicative
-import           Control.Arrow             ((&&&))
+import           Control.Arrow                      ((&&&))
 import           Control.Lens
 import           Control.Monad.State.Lazy
 import           Data.Foldable
-import           Data.HashMap.Lazy         (HashMap)
-import qualified Data.HashMap.Lazy  as HM
-import qualified Data.IntMap        as IM
-import qualified Data.IntSet        as IS
+import           Data.HashMap.Lazy                  (HashMap)
+import qualified Data.HashMap.Lazy                  as HM
+import qualified Data.IntMap                        as IM
+import qualified Data.IntSet                        as IS
 import           Data.Key
-import           Data.List.NonEmpty        (NonEmpty(..))
+import           Data.List.NonEmpty                 (NonEmpty (..))
 import           Data.Maybe
 import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
-import           Data.Tuple                (swap)
-import           Data.Vector               (Vector)
-import qualified Data.Vector        as V
-import           Prelude            hiding (lookup, zipWith)
+import           Data.Tuple                         (swap)
+import           Data.Vector                        (Vector)
+import qualified Data.Vector                        as V
+import           Prelude                            hiding (lookup, zipWith)
 
 
 -- |
@@ -92,7 +94,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
       -- Complex case, see four steps below.
       _:_:_:_ ->     (PDAG2 updatedDag meta, edgeCostMapping, contextualNodeDatum)
   where
-    
+
     -- Step 1: Construct a hashmap of all the *unrooted* edges.
     unrootedEdges = rootEdgeReferences <> otherUnrootedEdges
 

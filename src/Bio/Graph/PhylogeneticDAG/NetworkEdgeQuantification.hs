@@ -20,31 +20,31 @@ module Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
   ) where
 
 
-import           Bio.Metadata.Dynamic
-import           Bio.Sequence
-import           Bio.Sequence.Metadata        (MetadataSequence)
-import qualified Bio.Sequence.Metadata as M
-import qualified Bio.Sequence.Block    as BLK
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
+import           Bio.Metadata.Dynamic
+import           Bio.Sequence
+import qualified Bio.Sequence.Block                 as BLK
+import           Bio.Sequence.Metadata              (MetadataSequence)
+import qualified Bio.Sequence.Metadata              as M
 import           Control.Lens
 import           Data.Bits
 import           Data.Foldable
 import           Data.Key
-import           Data.List.NonEmpty           (NonEmpty((:|)))
-import qualified Data.List.NonEmpty    as NE
+import           Data.List.NonEmpty                 (NonEmpty ((:|)))
+import qualified Data.List.NonEmpty                 as NE
 import           Data.List.Utility
-import           Data.Maybe                   (fromJust)
+import           Data.Maybe                         (fromJust)
+import           Data.Ord
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
-import           Data.Set                     (difference)
-import qualified Data.Set              as S
+import           Data.Set                           (difference)
+import qualified Data.Set                           as S
 import           Data.TopologyRepresentation
-import           Data.Ord
-import           Data.Vector                  (Vector)
+import           Data.Vector                        (Vector)
 import           Numeric.Extended.Real
-import           Prelude               hiding (zipWith)
+import           Prelude                            hiding (zipWith)
 
 --import Debug.Trace
 

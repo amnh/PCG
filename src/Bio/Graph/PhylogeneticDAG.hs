@@ -42,7 +42,6 @@ module Bio.Graph.PhylogeneticDAG
   ) where
 
 
-import           Bio.Sequence
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Class
 import           Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
@@ -52,9 +51,10 @@ import           Bio.Graph.PhylogeneticDAG.Postorder
 import           Bio.Graph.PhylogeneticDAG.Preorder
 import           Bio.Graph.PhylogeneticDAG.TotalEdgeCost
 import           Bio.Graph.ReferenceDAG.Internal
+import           Bio.Sequence
 import           Data.Key
-import           Data.List.NonEmpty        (NonEmpty)
-import qualified Data.List.NonEmpty as NE
+import           Data.List.NonEmpty                                  (NonEmpty)
+import qualified Data.List.NonEmpty                                  as NE
 
 
 -- |

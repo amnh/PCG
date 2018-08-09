@@ -11,7 +11,8 @@
 -- CCode command parser.
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.TNT.Command.CCode
   ( ccodeCommand

@@ -4,8 +4,8 @@ module Test.HUnit.Custom
   (assertException
   ) where
 
-import Test.Tasty.HUnit as HU
-import Control.Exception (try, ErrorCall, evaluate)
+import Control.Exception (ErrorCall, evaluate, try)
+import Test.Tasty.HUnit  as HU
 
 assertException :: forall a b.
                    (a -> b) -> -- test function

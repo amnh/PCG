@@ -11,25 +11,26 @@
 -- Unit tests for implied alignment
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances, TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 module Analysis.ImpliedAlignment.Test where
 
-import           Analysis.Parsimony.Binary.Internal
+import qualified Analysis.ImpliedAlignment.InsertionEvents.Test as IE (testSuite)
 import           Analysis.ImpliedAlignment.Standard
 import           Analysis.ImpliedAlignment.Test.Trees
-import qualified Analysis.ImpliedAlignment.InsertionEvents.Test as IE (testSuite)
+import           Analysis.Parsimony.Binary.Internal
 import           Bio.Character.Encodable
 import           Bio.Character.Parsed
 import           Bio.Metadata
 import           Data.Alphabet
 import           Data.Foldable
-import           Data.Function             (on)
-import qualified Data.List.NonEmpty as NE
+import           Data.Function                                  (on)
+import qualified Data.List.NonEmpty                             as NE
 import           Data.MonoTraversable
-import qualified Data.Set           as S
-import           Data.Vector               (Vector)
-import qualified Data.Vector        as V
+import qualified Data.Set                                       as S
+import           Data.Vector                                    (Vector)
+import qualified Data.Vector                                    as V
 import           Test.Custom
 import           Test.Tasty
 import           Test.Tasty.HUnit
@@ -115,9 +116,9 @@ testNumerate = testGroup "Numeration properties"
         (seq1, seq2)         = encodeArbSameLen inParse
         (traces, _, _) = numerateOne seq1 seq2 (olength seq1, count)
         increases :: Ord a => [a] -> Bool
-        increases []         = True
-        increases [_]        = True
-        increases (x:y:xs)   = x < y && increases (y:xs)
+        increases []       = True
+        increases [_]      = True
+        increases (x:y:xs) = x < y && increases (y:xs)
 
 
 -- | Useful function to convert encoding information to two encoded seqs

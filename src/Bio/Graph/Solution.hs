@@ -11,8 +11,14 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MonoLocalBinds, MultiParamTypeClasses, TypeFamilies, UndecidableInstances #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MonoLocalBinds             #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 module Bio.Graph.Solution
   ( PhylogeneticSolution(..)
@@ -27,13 +33,13 @@ import           Bio.Sequence
 import           Control.DeepSeq
 import           Control.Lens              hiding (Indexable)
 import           Data.Foldable
-import           Data.GraphViz.Printing    hiding ((<>), indent) -- Seriously, why is this redefined?
-import           Data.GraphViz.Printing           (renderDot, toDot)
+import           Data.GraphViz.Printing    hiding (indent, (<>))
+import           Data.GraphViz.Printing    (renderDot, toDot)
 import           Data.GraphViz.Types       hiding (attrs)
 import           Data.GraphViz.Types.Graph
 import           Data.Key
 import           Data.List
-import           Data.List.NonEmpty               (NonEmpty)
+import           Data.List.NonEmpty        (NonEmpty)
 import qualified Data.List.NonEmpty        as NE
 import           Data.Semigroup.Foldable
 import qualified Data.Text.Lazy            as L

@@ -13,7 +13,9 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric    #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module Bio.Sequence.Character
   ( CharacterSequence()
@@ -38,26 +40,27 @@ import           Bio.Metadata.Continuous
 import           Bio.Metadata.Discrete
 import           Bio.Metadata.DiscreteWithTCM
 import           Bio.Metadata.Dynamic
-import           Bio.Sequence.Block             (CharacterBlock, HasBlockCost, HasRootCost)
-import qualified Bio.Sequence.Block      as Blk
-import           Bio.Sequence.Metadata          (MetadataSequence)
-import qualified Bio.Sequence.Metadata   as M
+import           Bio.Sequence.Block           (CharacterBlock, HasBlockCost,
+                                               HasRootCost)
+import qualified Bio.Sequence.Block           as Blk
+import           Bio.Sequence.Metadata        (MetadataSequence)
+import qualified Bio.Sequence.Metadata        as M
 import           Control.DeepSeq
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Bifunctor
-import           Data.DList              hiding (foldr,toList)
+import           Data.DList                   hiding (foldr, toList)
 import           Data.Foldable
 import           Data.Key
-import           Data.List.NonEmpty             (NonEmpty)
+import           Data.List.NonEmpty           (NonEmpty)
 --import qualified Data.List.NonEmpty      as NE
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
 import           Data.Semigroup.Traversable
-import           Data.Vector.NonEmpty           (Vector)
-import qualified Data.Vector.NonEmpty    as V
+import           Data.Vector.NonEmpty         (Vector)
+import qualified Data.Vector.NonEmpty         as V
 import           GHC.Generics
-import           Prelude                 hiding (zip)
+import           Prelude                      hiding (zip)
 import           Text.XML
 
 
