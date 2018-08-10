@@ -281,7 +281,14 @@ applySoftwireResolutions inputContexts =
 -- Given a pre-order transformation for each type parameter, apply the
 -- transformations to each possible resolution that is not inconsistent.
 generateLocalResolutions
-  :: HasBlockCost u'' v'' w'' x'' y'' z''
+  :: (HasBlockCost u'' v'' w'' x'' y'' z''
+     , Show u''
+  , Show v''
+  , Show w''
+  , Show x''
+  , Show y''
+  , Show z''
+  )
   => (ContinuousCharacterMetadataDec        -> u -> [u'] -> u'')
   -> (DiscreteCharacterMetadataDec          -> v -> [v'] -> v'')
   -> (DiscreteCharacterMetadataDec          -> w -> [w'] -> w'')
@@ -334,7 +341,14 @@ generateLocalResolutions f1 f2 f3 f4 f5 f6 meta parentalResolutionContext childR
 -- Given a transformation for the last type parameter and two resolution caches,
 -- apply the transformation to all possible resolution combinations.
 localResolutionApplication
-  :: HasBlockCost u v w x y d'
+  :: ( HasBlockCost u v w x y d'
+     , Show u
+     , Show v
+     , Show w
+     , Show x
+     , Show y
+     , Show d'
+     )
   => (DynamicCharacterMetadataDec a -> d -> [d] -> d')
   -> MetadataSequence e a m
   -> NonEmpty (ResolutionInformation (CharacterSequence u v w x y d))

@@ -56,6 +56,7 @@ import           Data.Void
 import           GHC.Generics
 import           Text.XML
 
+import Debug.Trace
 
 -- |
 -- Represents a block of data which are optimized atomically together across
@@ -267,7 +268,28 @@ hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = CB $
 -- Assumes that the 'CharacterBlock' values have the same number of each character
 -- type. If this assumtion is violated, the result will be truncated.
 hexZipWithMeta
-  :: (ContinuousCharacterMetadataDec        -> u -> u' -> u'')
+  :: ( Show u
+     , Show v
+     , Show w
+     , Show x
+     , Show y
+     , Show z
+     , Show u'
+     , Show v'
+     , Show w'
+     , Show x'
+     , Show y'
+     , Show z'
+     , Show u''
+     , Show v''
+     , Show w''
+     , Show x''
+     , Show y''
+     , Show z''
+     , Show m
+     )
+  =>
+     (ContinuousCharacterMetadataDec        -> u -> u' -> u'')
   -> (DiscreteCharacterMetadataDec          -> v -> v' -> v'') 
   -> (DiscreteCharacterMetadataDec          -> w -> w' -> w'')
   -> (DiscreteWithTCMCharacterMetadataDec e -> x -> x' -> x'')
@@ -277,7 +299,19 @@ hexZipWithMeta
   -> CharacterBlock u   v   w   x   y   z
   -> CharacterBlock u'  v'  w'  x'  y'  z'
   -> CharacterBlock u'' v'' w'' x'' y'' z''
-hexZipWithMeta f1 f2 f3 f4 f5 f6 (MB meta) (CB lhs) (CB rhs) = CB $
+hexZipWithMeta _ _ _ _ _ _ meta lhs rhs
+  | trace ( unlines
+              [ "\n()()() INPUTs to hexZipWithMeta:"
+              , "  Metadata Sequence:"
+              , "    " <> show meta
+              , "  Left-hand  side Character Sequence:"
+              , "    " <> show lhs
+              , "  Right-hand side Character Sequence:"
+              , "    " <> show rhs
+              ]
+          )
+    False = undefined
+hexZipWithMeta f1 f2 f3 f4 f5 f6 (MB meta) (CB lhs) (CB rhs) = traceShowId . trace "\n()()() OUTPUT hexZipWithMeta:\n" . CB $
     Block
       { blockMetadata   = undefined
       , continuousBins  = parZipWith3 rpar f1 (continuousBins  meta) (continuousBins  lhs) (continuousBins  rhs)

@@ -12,6 +12,8 @@
 
 {-# LANGUAGE FlexibleContexts #-}
 
+{-# LANGUAGE MultiParamTypeClasses #-}
+
 module Analysis.Scoring
   (
   -- * Decoration
@@ -34,6 +36,7 @@ import           Bio.Graph
 import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
+import Control.Lens
 import           Data.Default
 import           Data.EdgeLength
 import qualified Data.List.NonEmpty as NE
@@ -41,11 +44,21 @@ import           Data.MonoTraversable      (Element)
 import           Data.NodeLabel
 import           Data.Vector               (Vector)
 
+import Debug.Trace
 
 -- |
 -- Remove all scoring data from nodes.
 wipeScoring
-  :: Default n
+  :: ( Default n
+     , Show n
+     , Show u
+     , Show v
+     , Show w
+     , Show x
+     , Show y
+     , Show z
+     , Show e
+     )
   => PhylogeneticDAG2 m a d e n u v w x y z
   -> PhylogeneticDAG2 m a d e n (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
 wipeScoring (PDAG2 dag m) = PDAG2 wipedDAG m
@@ -58,10 +71,18 @@ wipeScoring (PDAG2 dag m) = PDAG2 wipedDAG m
           $ dag
 
     wipeDecorations
-      :: Default n
-      => IndexData e (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
+      :: (Default n
+     , Show n
+     , Show u
+     , Show v
+     , Show w
+     , Show x
+     , Show y
+     , Show z
+     , Show e
+     )      => IndexData e (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
       -> IndexData e (PhylogeneticNode2 (CharacterSequence (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)) n)
-    wipeDecorations x =
+    wipeDecorations x = {- (\y -> trace ("\n\nOutput from wipeDecorations:\n\n" <> show y) y) $ -}
           IndexData
             <$> wipeNode shouldWipe . nodeDecoration
             <*> parentRefs
@@ -74,11 +95,20 @@ wipeScoring (PDAG2 dag m) = PDAG2 wipedDAG m
 -- |
 -- Conditionally wipe the scoring of a single node.
 wipeNode
-  :: Default n
+  :: ( Default n
+     , Show n
+     , Show u
+     , Show v
+     , Show w
+     , Show x
+     , Show y
+     , Show z
+     )
   => Bool -- ^ Do I wipe?
   -> PhylogeneticNode2 (CharacterSequence        u         v         w         x         y         z ) n
   -> PhylogeneticNode2 (CharacterSequence (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)) n
-wipeNode wipe = PNode2 <$> pure . g . NE.head . resolutions <*> f . nodeDecorationDatum2
+--wipeNode _ node | trace ("!!! wipeNode InputNode:\n" <> show node) False = undefined
+wipeNode wipe = {-- (\x -> trace ("!!! wipeNode OutputNode:\n" <> show x) x) $ --} PNode2 <$> pure . g . NE.head . resolutions <*> f . nodeDecorationDatum2
       where
         f :: Default a => a -> a
         f | wipe      = const def
@@ -120,6 +150,7 @@ performDecoration
      , Show x
      , Show y
      , Show z
+     , Show m
      )
   => PhylogeneticDAG2 m StaticCharacter (Element DynamicChar) EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
   -> FinalDecorationDAG
@@ -151,6 +182,7 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
     (minBlockConext, postOrderResult) = assignPunitiveNetworkEdgeCost post
     (post, edgeCostMapping, contextualNodeDatum) =
          assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostOrder
+         . traceShowId
          . postorderSequence'
              (const (g additivePostOrder))
              (const (g    fitchPostOrder))
@@ -158,6 +190,8 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
              (g . sankoffPostOrder)
              (g . sankoffPostOrder)
              (g . adaptiveDirectOptimizationPostOrder)
+         . (\e@(PDAG2 x _) -> trace (show . references $ x) e)
+         . trace "\n\nSTART POST ORDER:\n\n"
          $ x
 
     g _  Nothing  [] = error "Uninitialized leaf node. This is bad!"
@@ -168,6 +202,16 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
       where
         pairwiseAlignmentFunction = selectDynamicMetric meta
 
+{-
+instance HasCharacterCost (Maybe u) Double where
+
+    characterCost = lens (const 0) undefined
+
+
+instance HasCharacterCost (Maybe u) Word where
+
+    characterCost = lens (const 0) undefined
+-}
 
 -- |
 -- An identity function which ignores the second parameter.

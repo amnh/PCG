@@ -252,7 +252,13 @@ hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs
 -- blocks and the same number of each character type in the corresponding block
 -- of each block. If this assumtion is violated, the result will be truncated.
 hexZipWithMeta
-  :: (ContinuousCharacterMetadataDec        -> u -> u' -> u'')
+  :: ( Show u''
+     , Show v''
+     , Show w''
+     , Show x''
+     , Show y''
+     , Show z''
+     ) => (ContinuousCharacterMetadataDec        -> u -> u' -> u'')
   -> (DiscreteCharacterMetadataDec          -> v -> v' -> v'')
   -> (DiscreteCharacterMetadataDec          -> w -> w' -> w'')
   -> (DiscreteWithTCMCharacterMetadataDec e -> x -> x' -> x'')

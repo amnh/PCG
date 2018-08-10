@@ -70,7 +70,14 @@ type ParentalContext u v w x y z = NonEmpty (TraversalTopology, Word, Maybe (BLK
 --
 -- *The better version.*
 preorderSequence''
-  :: HasBlockCost u  v  w  x  y  z
+  :: (HasBlockCost u  v  w  x  y  z
+     , Show u'
+     , Show v'
+     , Show w'
+     , Show x'
+     , Show y'
+     , Show z'
+     )
   => (ContinuousCharacterMetadataDec        -> u -> [(Word, u')] -> u')
   -> (DiscreteCharacterMetadataDec          -> v -> [(Word, v')] -> v')
   -> (DiscreteCharacterMetadataDec          -> w -> [(Word, w')] -> w')
@@ -267,7 +274,13 @@ mockResInfo currentResolutions newSequence =
 
 
 computeOnApplicableResolution''
-  :: (ContinuousCharacterMetadataDec        -> u -> [(Word, u')] -> u')
+  :: ( Show u'
+     , Show v'
+     , Show w'
+     , Show x'
+     , Show y'
+     , Show z'
+     ) => (ContinuousCharacterMetadataDec        -> u -> [(Word, u')] -> u')
   -> (DiscreteCharacterMetadataDec          -> v -> [(Word, v')] -> v')
   -> (DiscreteCharacterMetadataDec          -> w -> [(Word, w')] -> w')
   -> (DiscreteWithTCMCharacterMetadataDec e -> x -> [(Word, x')] -> x')

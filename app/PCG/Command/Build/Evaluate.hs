@@ -37,7 +37,7 @@ import           PCG.Command.Build
 import           PCG.Syntax                    (Command(..))
 import           System.Random.Shuffle
 
---import Debug.Trace
+import Debug.Trace
 
 
 type DatNode =
@@ -118,6 +118,7 @@ naiveWagnerBuild ns =
                    , ( IS.singleton 1, wipeNode False y, mempty )
                    , ( IS.singleton 0, wipeNode False z, mempty )
                    ]
+--          in  iterativeBuild (trace ("Leaves remaining: " <> show (length xs) <> "\n"<> show initTree) initTree) xs
           in  iterativeBuild initTree xs
 
   where
@@ -133,7 +134,7 @@ iterativeBuild currentTree [] = currentTree
 iterativeBuild currentTree (nextLeaf:remainingLeaves) = iterativeBuild nextTree remainingLeaves
   where
     (PDAG2 dag _) = wipeScoring currentTree
-    edgeSet     = NE.fromList . toList $ referenceEdgeSet dag
+    edgeSet     = NE.fromList . toList $ referenceEdgeSet $ traceShowId  dag
 
     tryEdge :: (Int, Int) -> FinalDecorationDAG
     tryEdge     = performDecoration . (`PDAG2` defaultUnaryMetadataSequence) . invadeEdge (resetMetadata dag) deriveInternalNode (wipeNode False nextLeaf)
