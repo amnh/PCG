@@ -40,4 +40,6 @@ parZipWith strat f lhs rhs = withStrategy (parTraversable strat) $ zipWith f lhs
 -- |
 -- Zip three traversable, zippable structures in parrallel with a function. 
 parZipWith3 :: (Traversable t, Zip t) => Strategy d -> (a -> b -> c -> d) -> t a -> t b -> t c -> t d
-parZipWith3 strat f x y z = withStrategy (parTraversable strat) $ zap (zipWith f x y) z
+parZipWith3 strat f x y z
+  | length x /= length y || length y /= length z = error "lengths did not match in parZipWith3"
+  | otherwise = withStrategy (parTraversable strat) $ zap (zipWith f x y) z

@@ -56,7 +56,6 @@ import           Data.Void
 import           GHC.Generics
 import           Text.XML
 
-import Debug.Trace
 
 -- |
 -- Represents a block of data which are optimized atomically together across
@@ -268,25 +267,12 @@ hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = CB $
 -- Assumes that the 'CharacterBlock' values have the same number of each character
 -- type. If this assumtion is violated, the result will be truncated.
 hexZipWithMeta
-  :: ( Show u
-     , Show v
-     , Show w
-     , Show x
-     , Show y
-     , Show z
-     , Show u'
-     , Show v'
-     , Show w'
-     , Show x'
-     , Show y'
-     , Show z'
-     , Show u''
+  :: ( Show u''
      , Show v''
      , Show w''
      , Show x''
      , Show y''
      , Show z''
-     , Show m
      )
   =>
      (ContinuousCharacterMetadataDec        -> u -> u' -> u'')
@@ -299,19 +285,21 @@ hexZipWithMeta
   -> CharacterBlock u   v   w   x   y   z
   -> CharacterBlock u'  v'  w'  x'  y'  z'
   -> CharacterBlock u'' v'' w'' x'' y'' z''
-hexZipWithMeta _ _ _ _ _ _ meta lhs rhs
+{-
+hexZipWithMeta _ _ _ _ _ _ (MB meta) (CB lhs) (CB rhs)
   | trace ( unlines
               [ "\n()()() INPUTs to hexZipWithMeta:"
               , "  Metadata Sequence:"
-              , "    " <> show meta
+              , "    " <> (show . length . dynamicBins) meta
               , "  Left-hand  side Character Sequence:"
-              , "    " <> show lhs
+              , "    " <> (show . length . dynamicBins) lhs
               , "  Right-hand side Character Sequence:"
-              , "    " <> show rhs
+              , "    " <> (show . length . dynamicBins) rhs
               ]
           )
     False = undefined
-hexZipWithMeta f1 f2 f3 f4 f5 f6 (MB meta) (CB lhs) (CB rhs) = traceShowId . trace "\n()()() OUTPUT hexZipWithMeta:\n" . CB $
+-}
+hexZipWithMeta f1 f2 f3 f4 f5 f6 (MB meta) (CB lhs) (CB rhs) = CB $
     Block
       { blockMetadata   = undefined
       , continuousBins  = parZipWith3 rpar f1 (continuousBins  meta) (continuousBins  lhs) (continuousBins  rhs)

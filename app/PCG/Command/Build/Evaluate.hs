@@ -30,14 +30,14 @@ import qualified Data.IntMap            as IM
 import qualified Data.IntSet            as IS
 import           Data.List.NonEmpty            (NonEmpty(..))
 import qualified Data.List.NonEmpty     as NE
+import           Data.MonoTraversable          (Element, omap)
 import           Data.NodeLabel
 import           Data.Ord                      (comparing)
 import           Data.Semigroup.Foldable
+import           Data.Vector                   (Vector)
 import           PCG.Command.Build
 import           PCG.Syntax                    (Command(..))
 import           System.Random.Shuffle
-
-import Debug.Trace
 
 
 type DatNode =
@@ -68,19 +68,20 @@ evaluate (BUILD (BuildCommand trajectoryCount buildType)) inState =
           y:ys ->
             if trajectoryCount < 1
             then fail "A non-positive number was supplied to the number of BUILD trajectories."
-            else do
-                trajectories <- case trajectoryCount of
-                                1 -> pure $ (y:|ys):|[]
-                                n -> liftIO . fmap (NE.fromList . fmap NE.fromList) $ replicateM n (shuffleM (y:ys))
-                let !bestTrees = naiveWagnerParallelBuild trajectories
-                bestNetwork  <- case buildType of
-                                   WagnerTree     -> pure bestTrees
-                                   WheelerNetwork -> do liftIO $ putStrLn "Beginning network construction."
-                                                        pure $ parmap rpar iterativeNetworkBuild bestTrees
---                                                        pure $ fmap iterativeNetworkBuild bestTrees
-                                   WheelerForest  -> fail "The BUILD command type 'Forest' is not yet implemented!"
-                let bestSolution = Right $ toSolution bestNetwork
-                pure bestSolution
+            else let (PDAG2 _ m) = NE.head . toNonEmpty . NE.head $ phylogeneticForests v
+                 in  do
+                     trajectories <- case trajectoryCount of
+                                       1 -> pure $ (y:|ys):|[]
+                                       n -> liftIO . fmap (NE.fromList . fmap NE.fromList) $ replicateM n (shuffleM (y:ys))
+                     let !bestTrees = naiveWagnerParallelBuild m trajectories
+                     bestNetwork  <- case buildType of
+                                       WagnerTree     -> pure bestTrees
+                                       WheelerNetwork -> do liftIO $ putStrLn "Beginning network construction."
+                                                            pure $ parmap rpar iterativeNetworkBuild bestTrees
+--                                                            pure $ fmap iterativeNetworkBuild bestTrees
+                                       WheelerForest  -> fail "The BUILD command type 'Forest' is not yet implemented!"
+                     let bestSolution = Right $ toSolution bestNetwork
+                     pure bestSolution
   where
     toSolution = PhylogeneticSolution . pure . PhylogeneticForest
 
@@ -90,17 +91,28 @@ evaluate _ _ = fail "Invalid BUILD command binding"
 naiveWagnerParallelBuild
   :: ( Foldable1 f
      , Traversable t
+     , Show m
      )
-  => t (f DatNode)
+  => MetadataSequence
+         StaticCharacter
+         (Element DynamicChar)
+         m --(TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
+  -> t (f DatNode)
   -> t FinalDecorationDAG
-naiveWagnerParallelBuild = parmap rpar naiveWagnerBuild
+naiveWagnerParallelBuild m = parmap rpar (naiveWagnerBuild m)
 
 
 naiveWagnerBuild
-  :: Foldable1 f
-  => f DatNode
+  :: ( Foldable1 f
+     , Show m
+     )
+  => MetadataSequence
+         StaticCharacter
+         (Element DynamicChar)
+         m
+  -> f DatNode
   -> FinalDecorationDAG
-naiveWagnerBuild ns =
+naiveWagnerBuild metaSeq ns =
    case toNonEmpty ns of
       x:|[]   -> fromRefDAG $ DAG.fromList
                    [ ( mempty        , wipeNode False x, mempty )
@@ -122,7 +134,7 @@ naiveWagnerBuild ns =
           in  iterativeBuild initTree xs
 
   where
-    fromRefDAG = performDecoration . (`PDAG2` defaultUnaryMetadataSequence) . resetMetadata
+    fromRefDAG = performDecoration . (`PDAG2`  metaSeq) . resetMetadata
  
 
 iterativeBuild
@@ -131,13 +143,13 @@ iterativeBuild
   -> FinalDecorationDAG
 iterativeBuild currentTree [] = currentTree
 --iterativeBuild currentTree (nextLeaf:_) | trace (show $ nodeDecorationDatum2 nextLeaf) False = undefined
-iterativeBuild currentTree (nextLeaf:remainingLeaves) = iterativeBuild nextTree remainingLeaves
+iterativeBuild currentTree@(PDAG2 _ metaSeq) (nextLeaf:remainingLeaves) = iterativeBuild nextTree remainingLeaves
   where
     (PDAG2 dag _) = wipeScoring currentTree
-    edgeSet     = NE.fromList . toList $ referenceEdgeSet $ traceShowId  dag
+    edgeSet     = NE.fromList . toList $ referenceEdgeSet dag
 
     tryEdge :: (Int, Int) -> FinalDecorationDAG
-    tryEdge     = performDecoration . (`PDAG2` defaultUnaryMetadataSequence) . invadeEdge (resetMetadata dag) deriveInternalNode (wipeNode False nextLeaf)
+    tryEdge     = performDecoration . (`PDAG2` metaSeq) . invadeEdge (resetMetadata dag) deriveInternalNode (wipeNode False nextLeaf)
     nextTree    = minimumBy (comparing getCost) $ parmap rpar tryEdge edgeSet
 
     getCost (PDAG2 v _) = dagCost $ graphData v

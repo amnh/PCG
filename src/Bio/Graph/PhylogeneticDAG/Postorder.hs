@@ -61,7 +61,7 @@ postorderSequence'
   -> (DynamicCharacterMetadataDec d         -> z -> [z'] -> z')
   -> PhylogeneticDAG2 m a d e n u  v  w  x  y  z
   -> PhylogeneticDAG2 m a d e n u' v' w' x' y' z'
---postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag m) | (trace (show fmap () $ M.toBlocks m) False) = undefined
+--postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag m) | (trace ((show . fmap length . otoList) m) False) = undefined
 postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag m) = PDAG2 (newDAG dag) m
   where
     completeLeafSetForDAG = foldl' f zeroBits dag

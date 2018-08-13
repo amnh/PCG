@@ -44,7 +44,6 @@ import           Data.MonoTraversable      (Element)
 import           Data.NodeLabel
 import           Data.Vector               (Vector)
 
-import Debug.Trace
 
 -- |
 -- Remove all scoring data from nodes.
@@ -182,7 +181,6 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
     (minBlockConext, postOrderResult) = assignPunitiveNetworkEdgeCost post
     (post, edgeCostMapping, contextualNodeDatum) =
          assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostOrder
-         . traceShowId
          . postorderSequence'
              (const (g additivePostOrder))
              (const (g    fitchPostOrder))
@@ -190,8 +188,6 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
              (g . sankoffPostOrder)
              (g . sankoffPostOrder)
              (g . adaptiveDirectOptimizationPostOrder)
-         . (\e@(PDAG2 x _) -> trace (show . references $ x) e)
-         . trace "\n\nSTART POST ORDER:\n\n"
          $ x
 
     g _  Nothing  [] = error "Uninitialized leaf node. This is bad!"
