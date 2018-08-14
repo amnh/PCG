@@ -10,7 +10,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 
 module Bio.Sequence.Block.Character
   ( CharacterBlock(..)
@@ -43,15 +47,15 @@ import           Bio.Metadata.DiscreteWithTCM
 import           Bio.Metadata.Dynamic
 import           Bio.Sequence.Block.Builder
 import           Bio.Sequence.Block.Internal
-import           Bio.Sequence.Block.Metadata         (MetadataBlock(..))
+import           Bio.Sequence.Block.Metadata  (MetadataBlock (..))
 import           Control.DeepSeq
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Bifunctor
 import           Data.Foldable
-import           Data.Vector                         (Vector, fromList)
-import qualified Data.Vector                 as V
-import           Data.Vector.Instances               ()
+import           Data.Vector                  (Vector, fromList)
+import qualified Data.Vector                  as V
+import           Data.Vector.Instances        ()
 import           Data.Void
 import           GHC.Generics
 import           Text.XML
@@ -205,12 +209,12 @@ hexmap f1 f2 f3 f4 f5 f6 = CB . (
 -- |
 -- Performs a 2D transform on the 'Traversable' structure of 'CharacterBlock'
 -- values.
--- 
+--
 -- Assumes that the 'CharacterBlock' values in the 'Traversable' structure are of
 -- equal length. If this assumtion is violated, the result will be truncated.
-hexTranspose 
-  :: Traversable t 
-  => t (CharacterBlock u v w x y z) 
+hexTranspose
+  :: Traversable t
+  => t (CharacterBlock u v w x y z)
   -> CharacterBlock (t u) (t v) (t w) (t x) (t y) (t z)
 hexTranspose = CB . (
     Block
@@ -235,12 +239,12 @@ hexTranspose = CB . (
 -- |
 -- Performs a zip over the two character blocks. Uses the input functions to zip
 -- the different character types in the character block.
--- 
+--
 -- Assumes that the 'CharacterBlock' values have the same number of each character
 -- type. If this assumtion is violated, the result will be truncated.
-hexZipWith 
+hexZipWith
   :: (u -> u' -> u'')
-  -> (v -> v' -> v'') 
+  -> (v -> v' -> v'')
   -> (w -> w' -> w'')
   -> (x -> x' -> x'')
   -> (y -> y' -> y'')
@@ -263,12 +267,12 @@ hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = CB
 -- |
 -- Performs a zip over the two character blocks. Uses the input functions to zip
 -- the different character types in the character block.
--- 
+--
 -- Assumes that the 'CharacterBlock' values have the same number of each character
 -- type. If this assumtion is violated, the result will be truncated.
 hexZipWithMeta
   :: (ContinuousCharacterMetadataDec        -> u -> u' -> u'')
-  -> (DiscreteCharacterMetadataDec          -> v -> v' -> v'') 
+  -> (DiscreteCharacterMetadataDec          -> v -> v' -> v'')
   -> (DiscreteCharacterMetadataDec          -> w -> w' -> w'')
   -> (DiscreteWithTCMCharacterMetadataDec e -> x -> x' -> x'')
   -> (DiscreteWithTCMCharacterMetadataDec e -> y -> y' -> y'')
@@ -305,12 +309,12 @@ hexZipWithMeta f1 f2 f3 f4 f5 f6 (MB meta) (CB lhs) (CB rhs) = CB
 
 -- |
 -- Convert all characters contained in the block to thier missing value.
-toMissingCharacters 
+toMissingCharacters
   :: ( PossiblyMissingCharacter u
      , PossiblyMissingCharacter v
      , PossiblyMissingCharacter w
      , PossiblyMissingCharacter x
-     , PossiblyMissingCharacter y 
+     , PossiblyMissingCharacter y
      , PossiblyMissingCharacter z
      )
   => CharacterBlock u v w x y z

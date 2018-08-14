@@ -10,18 +10,19 @@ import           Control.Exception
 import           Data.Alphabet
 import           Data.Bits
 import           Data.Foldable
-import           Data.Key                  ((!))
-import           Data.List.NonEmpty        (NonEmpty((:|)))
-import qualified Data.List.NonEmpty as NE
+import           Data.Key                        ((!))
+import           Data.List.NonEmpty              (NonEmpty ((:|)))
+import qualified Data.List.NonEmpty              as NE
 import           Data.MonoTraversable
 import           Data.Semigroup
-import           Data.Set                  (Set)
-import qualified Data.Set           as Set (fromList,intersection,union)
-import           Data.Vector               (Vector, fromList)
+import           Data.Set                        (Set)
+import qualified Data.Set                        as Set (fromList, intersection,
+                                                         union)
+import           Data.Vector                     (Vector, fromList)
 import           Test.QuickCheck.Monadic
 import           Test.Tasty
 import           Test.Tasty.HUnit
-import           Test.Tasty.QuickCheck hiding ((.&.))
+import           Test.Tasty.QuickCheck           hiding ((.&.))
 
 
 testSuite :: TestTree
@@ -77,15 +78,15 @@ monoFoldableProperties = testGroup "Properties of MonoFoldable"
     testFoldr :: (Blind (DynamicCharacterElement -> Word -> Word), Word, DynamicChar) -> Property
     testFoldr (Blind f, z, bv) =
         ofoldr f z bv === (ofoldr f z . otoList) bv
-    
+
     testFoldl :: (Blind (Word -> DynamicCharacterElement -> Word), Word, DynamicChar) -> Property
     testFoldl (Blind f, z, bv) =
         ofoldl' f z bv === (ofoldl' f z . otoList) bv
-    
+
     testFoldr1 :: (Blind (DynamicCharacterElement -> DynamicCharacterElement -> DynamicCharacterElement), DynamicChar) -> Property
     testFoldr1 (Blind f, bv) =
         (not . onull) bv  ==> ofoldr1Ex f bv === (ofoldr1Ex f . otoList) bv
-    
+
     testFoldl1 :: (Blind (DynamicCharacterElement -> DynamicCharacterElement -> DynamicCharacterElement), DynamicChar) -> Property
     testFoldl1 (Blind f, bv) =
         (not . onull) bv  ==> ofoldl1Ex' f bv === (ofoldl1Ex' f . otoList) bv
@@ -109,7 +110,7 @@ monoFoldableProperties = testGroup "Properties of MonoFoldable"
     testHead :: DynamicChar -> Property
     testHead bv =
         (not . onull) bv ==> headEx bv === (getFirst . ofoldMap1Ex First) bv
-    
+
     testTail :: DynamicChar -> Property
     testTail bv =
         (not . onull) bv ==> lastEx bv === (getLast . ofoldMap1Ex Last) bv
@@ -179,11 +180,11 @@ elementBitsTests = testGroup "Bits instance properties"
     zeroBitsAndSetBit :: NonNegative Int -> Property
     zeroBitsAndSetBit (NonNegative n) =
         setBit   (zeroBits :: DynamicCharacterElement) n === bit n
-      
+
     zeroBitsAndTestBit :: NonNegative Int -> Property
     zeroBitsAndTestBit (NonNegative n) =
         testBit  (zeroBits :: DynamicCharacterElement) n === False
-      
+
     zeroBitsAndPopCount :: Assertion
     zeroBitsAndPopCount =
         popCount (zeroBits :: DynamicCharacterElement) @?= 0
@@ -219,8 +220,8 @@ elementBitsTests = testGroup "Bits instance properties"
 
 elementFiniteBitsTests :: TestTree
 elementFiniteBitsTests = testGroup "FiniteBits instance consistency"
-    [ testProperty "fromEnum . symbolCount === finiteBitSize" finiteBitSizeIsDimension 
-    , testProperty "length . otoList === finiteBitSize" finiteBitSizeIsBitLength 
+    [ testProperty "fromEnum . symbolCount === finiteBitSize" finiteBitSizeIsDimension
+    , testProperty "length . otoList === finiteBitSize" finiteBitSizeIsBitLength
     , testProperty "length . takeWhile not . otoList === countLeadingZeros" countLeadingZeroAndToBits
     , testProperty "length . takeWhile not . reverse . otoList === countTrailingZeros" countTrailingZeroAndToBits
     ]
@@ -228,15 +229,15 @@ elementFiniteBitsTests = testGroup "FiniteBits instance consistency"
     finiteBitSizeIsDimension :: DynamicCharacterElement -> Property
     finiteBitSizeIsDimension x =
       (fromEnum . symbolCount) x === finiteBitSize x
-      
+
     finiteBitSizeIsBitLength :: DynamicCharacterElement -> Property
     finiteBitSizeIsBitLength x =
       (length . otoList) x === finiteBitSize x
-      
+
     countLeadingZeroAndToBits :: DynamicCharacterElement -> Property
     countLeadingZeroAndToBits x =
       (length . takeWhile not . otoList) x === countLeadingZeros x
-      
+
     countTrailingZeroAndToBits :: DynamicCharacterElement -> Property
     countTrailingZeroAndToBits x =
       (length . takeWhile not . reverse . otoList) x === countTrailingZeros x
@@ -270,15 +271,15 @@ elementMonoFoldableProperties = testGroup "Properties of MonoFoldable"
     testFoldr :: (Blind (Bool -> Word -> Word), Word, DynamicCharacterElement) -> Property
     testFoldr (Blind f, z, bv) =
         ofoldr f z bv === (ofoldr f z . otoList) bv
-    
+
     testFoldl :: (Blind (Word -> Bool -> Word), Word, DynamicCharacterElement) -> Property
     testFoldl (Blind f, z, bv) =
         ofoldl' f z bv === (ofoldl' f z . otoList) bv
-    
+
     testFoldr1 :: (Blind (Bool -> Bool -> Bool), DynamicCharacterElement) -> Property
     testFoldr1 (Blind f, bv) =
         (not . onull) bv  ==> ofoldr1Ex f bv === (ofoldr1Ex f . otoList) bv
-    
+
     testFoldl1 :: (Blind (Bool -> Bool -> Bool), DynamicCharacterElement) -> Property
     testFoldl1 (Blind f, bv) =
         (not . onull) bv  ==> ofoldl1Ex' f bv === (ofoldl1Ex' f . otoList) bv
@@ -302,7 +303,7 @@ elementMonoFoldableProperties = testGroup "Properties of MonoFoldable"
     testHead :: DynamicCharacterElement -> Property
     testHead bv =
         (not . onull) bv ==> headEx bv === (getFirst . ofoldMap1Ex First) bv
-    
+
     testTail :: DynamicCharacterElement -> Property
     testTail bv =
         (not . onull) bv ==> lastEx bv === (getLast . ofoldMap1Ex Last) bv
@@ -344,7 +345,7 @@ elementOrderingProperties = testGroup "Properties of an Ordering"
           (LT, GT) -> True
           _        -> False
 
-    transitivity 
+    transitivity
       :: DynamicCharacterElement
       -> DynamicCharacterElement
       -> DynamicCharacterElement

@@ -10,9 +10,13 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 module Bio.Character.Decoration.Dynamic.Internal
   ( DynamicDecorationDirectOptimization(..)
@@ -145,7 +149,7 @@ instance (EncodableDynamicCharacter d) => DynamicCharacterDecoration (DynamicDec
         , dynamicDecorationInitialCharacterAverageLength = toAverageLength . toEnum $ olength charValue
         }
       where
-        charValue = g symbolSet 
+        charValue = g symbolSet
 
 
 -- | (✔)
@@ -299,7 +303,7 @@ instance Hashable d => Hashable (DynamicDecorationDirectOptimization d) where
 
       hashWithSalt salt dec = foldr1 xor $
           [ hashWithSalt salt . dynamicDecorationDirectOptimizationCharacterCost
-          , hashWithSalt salt . dynamicDecorationDirectOptimizationEncodedField 
+          , hashWithSalt salt . dynamicDecorationDirectOptimizationEncodedField
           , hashWithSalt salt . dynamicDecorationDirectOptimizationFinalGappedField
           , hashWithSalt salt . dynamicDecorationDirectOptimizationFinalUngappedField
           , hashWithSalt salt . dynamicDecorationDirectOptimizationPreliminaryGappedField

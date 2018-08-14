@@ -91,8 +91,8 @@ module Data.Matrix.NotStupid
 
 import           Control.Arrow ((***))
 import           Data.Key
-import           Data.Matrix   (Matrix,(<->),(<|>))
-import qualified Data.Matrix as Stupid
+import           Data.Matrix   (Matrix, (<->), (<|>))
+import qualified Data.Matrix   as Stupid
 import           Data.Maybe    (catMaybes)
 import           Data.Vector   (Vector)
 
@@ -103,7 +103,7 @@ type instance Key Matrix = (Int, Int)
 instance Indexable Matrix where
     {-# INLINE index #-}
     index m (i,j) = getElem i j m
-      
+
 
 instance Lookup Matrix where
     {-# INLINE lookup #-}

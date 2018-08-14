@@ -57,7 +57,7 @@ import Data.EdgeLength
 import Data.List.NonEmpty
 import Data.MonoTraversable
 import Data.NodeLabel
-import Data.Vector (Vector)
+import Data.Vector                         (Vector)
 
 
 -- |

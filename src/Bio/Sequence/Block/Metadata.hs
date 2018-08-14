@@ -10,7 +10,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 
 module Bio.Sequence.Block.Metadata
   ( MetadataBlock(..)
@@ -33,7 +37,7 @@ import Control.DeepSeq
 import Control.Lens
 import Data.Key
 import Data.TCM
-import Data.Vector (Vector)
+import Data.Vector                  (Vector)
 import GHC.Generics
 import Text.XML
 import Text.XML.Light.Types
@@ -60,7 +64,7 @@ newtype MetadataBlock e d m = MB
 instance Functor (MetadataBlock e d) where
 
     fmap f (MB b) = MB $ b { blockMetadata = f $ blockMetadata b }
-    
+
     (<$) v (MB b) = MB $ b { blockMetadata = v }
 
 
@@ -100,9 +104,9 @@ continuousToMetadataBlock
   :: ContinuousCharacterMetadataDec
   -> MetadataBlock e d ()
 continuousToMetadataBlock v = MB
-    Block 
+    Block
     { blockMetadata   = ()
-    , continuousBins  = pure v 
+    , continuousBins  = pure v
     , nonAdditiveBins = mempty
     , additiveBins    = mempty
     , metricBins      = mempty
@@ -125,7 +129,6 @@ discreteToMetadataBlock struct v =
       Symmetric    -> nonMetric
   where
     stipDec = discreteMetadata <$> (^. characterName) <*> (^. characterWeight) <*> (^. characterAlphabet)
-    
     nonAdditive = MB
         Block 
         { blockMetadata   = ()
@@ -149,7 +152,7 @@ discreteToMetadataBlock struct v =
         }
 
     metric = MB
-        Block 
+        Block
         { blockMetadata   = ()
         , continuousBins  = mempty
         , nonAdditiveBins = mempty

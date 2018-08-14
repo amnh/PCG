@@ -13,7 +13,9 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric    #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module Bio.Sequence.Metadata
   ( MetadataBlock()
@@ -36,15 +38,15 @@ module Bio.Sequence.Metadata
   ) where
 
 
-import           Bio.Sequence.Block.Internal    (Block(..))
+import           Bio.Sequence.Block.Internal (Block (..))
 import           Bio.Sequence.Block.Metadata
 import           Control.DeepSeq
 import           Data.Foldable
-import           Data.List.NonEmpty             (NonEmpty)
+import           Data.List.NonEmpty          (NonEmpty)
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
-import           Data.Vector.NonEmpty           (Vector)
-import qualified Data.Vector.NonEmpty    as V
+import           Data.Vector.NonEmpty        (Vector)
+import qualified Data.Vector.NonEmpty        as V
 import           GHC.Generics
 import           Text.XML
 

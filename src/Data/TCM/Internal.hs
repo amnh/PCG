@@ -28,19 +28,19 @@ module Data.TCM.Internal
   , reduceTcm
   ) where
 
-import           Control.Arrow                 ((***))
+import           Control.Arrow        ((***))
 import           Data.Foldable
-import           Data.IntSet                   (IntSet)
-import           Data.List                     (transpose)
-import           Data.List.Utility             (equalityOf, occurances)
-import           Data.Map                      (delete, findMax, keys)
-import qualified Data.Map             as Map   (fromList)
+import           Data.IntSet          (IntSet)
+import           Data.List            (transpose)
+import           Data.List.Utility    (equalityOf, occurances)
+import           Data.Map             (delete, findMax, keys)
+import qualified Data.Map             as Map (fromList)
 import           Data.MonoTraversable
 import           Data.Ratio
-import           Data.Vector.Unboxed           (Vector)
+import           Data.Vector.Unboxed  (Vector)
 import qualified Data.Vector.Unboxed  as V
 import           Data.Word
-import           Test.QuickCheck      hiding   (generate)
+import           Test.QuickCheck      hiding (generate)
 import           Text.XML
 
 

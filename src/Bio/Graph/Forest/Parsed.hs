@@ -12,7 +12,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -20,30 +21,30 @@ module Bio.Graph.Forest.Parsed where
 
 import           Bio.Graph.Forest
 import           Bio.Graph.ReferenceDAG
-import           Control.Arrow                            ((&&&))
+import           Control.Arrow                    ((&&&))
 import           Data.EdgeLength
 import           Data.Foldable
 import           Data.Hashable
-import           Data.IntMap                              (IntMap)
-import qualified Data.IntMap                       as IM
+import           Data.IntMap                      (IntMap)
+import qualified Data.IntMap                      as IM
 import           Data.Key
-import           Data.List.NonEmpty                       (NonEmpty, nonEmpty)
-import qualified Data.List.NonEmpty                as NE
-import           Data.Map                                 (Map, findMin)
-import qualified Data.Map                          as Map
+import           Data.List.NonEmpty               (NonEmpty, nonEmpty)
+import qualified Data.List.NonEmpty               as NE
+import           Data.Map                         (Map, findMin)
+import qualified Data.Map                         as Map
 import           Data.Maybe
 import           Data.Monoid
-import qualified Data.Set                          as Set
+import qualified Data.Set                         as Set
 import           File.Format.Dot
 import           File.Format.Fasta
-import           File.Format.Fastc                 hiding (Identifier)
+import           File.Format.Fastc                hiding (Identifier)
 import           File.Format.Newick
-import           File.Format.Nexus                 hiding (TaxonSequenceMap)
+import           File.Format.Nexus                hiding (TaxonSequenceMap)
 import           File.Format.TNT
 import           File.Format.TransitionCostMatrix
-import           File.Format.VertexEdgeRoot        hiding (EdgeLength)
-import qualified File.Format.VertexEdgeRoot        as VER
-import           Prelude                           hiding (lookup)
+import           File.Format.VertexEdgeRoot       hiding (EdgeLength)
+import qualified File.Format.VertexEdgeRoot       as VER
+import           Prelude                          hiding (lookup)
 
 -- import Debug.Trace
 

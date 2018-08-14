@@ -31,12 +31,12 @@
 --  2. User defined values take precedence over a defaulted values within the same source file
 --  3. The lexical ordering of the user defined textual identifier within the same source file
 --  4. The numeric ordering of the defaulted values within the same source file.
--- 
+--
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric    #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE UnboxedSums #-}
+{-# LANGUAGE UnboxedSums      #-}
 
 module Bio.Metadata.CharacterName
   ( CharacterName()
@@ -47,14 +47,14 @@ module Bio.Metadata.CharacterName
 
 import Control.DeepSeq
 import Control.Monad.State.Lazy
-import Data.Traversable
-import Data.List       (isPrefixOf)
-import Data.Map hiding (null)
+import Data.List                (isPrefixOf)
+import Data.Map                 hiding (null)
 import Data.Monoid
 import Data.String
-import GHC.Generics    (Generic)
-import Prelude  hiding (lookup)
-import Text.Show       (showListWith, showString)
+import Data.Traversable
+import GHC.Generics             (Generic)
+import Prelude                  hiding (lookup)
+import Text.Show                (showListWith, showString)
 
 
 -- |
@@ -164,7 +164,7 @@ sourceFile (Default     x _) = x
 --
 -- >>> makeCharacterNames [("foo.txt", Nothing), ("foo.tx", Just ""), ("foo.tx", Nothing)]
 -- ["foo.txt:0","foo.txt:1","foo.txt:2"]
--- 
+--
 makeCharacterNames :: Traversable t => t (FilePath, Maybe String) -> t CharacterName
 makeCharacterNames = (`evalState` mempty) . mapM f
   where
@@ -183,7 +183,7 @@ makeCharacterNames = (`evalState` mempty) . mapM f
     incMap k = insertWith g k 1
       where
         g = const succ
-                     
+
     validName :: String -> Bool
     validName name
       | null name        = False

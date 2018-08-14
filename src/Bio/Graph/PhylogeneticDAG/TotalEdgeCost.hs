@@ -12,7 +12,9 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns, FlexibleContexts, MonoLocalBinds #-}
+{-# LANGUAGE BangPatterns     #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MonoLocalBinds   #-}
 
 module Bio.Graph.PhylogeneticDAG.TotalEdgeCost
   ( totalEdgeCosts
@@ -24,25 +26,25 @@ import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
 import           Bio.Character.Exportable
-import           Bio.Sequence
-import           Bio.Sequence.Metadata        (getDynamicMetadata)
-import qualified Bio.Sequence.Metadata as M
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
+import           Bio.Sequence
+import           Bio.Sequence.Metadata                         (getDynamicMetadata)
+import qualified Bio.Sequence.Metadata                         as M
 import           Control.Applicative
 import           Control.DeepSeq
 import           Control.Lens
 import           Control.Monad.State.Lazy
 import           Data.Foldable
-import qualified Data.IntMap        as IM
-import qualified Data.IntSet        as IS
+import qualified Data.IntMap                                   as IM
+import qualified Data.IntSet                                   as IS
 import           Data.Key
-import           Data.List.NonEmpty        (NonEmpty(..))
-import qualified Data.List.NonEmpty as NE
+import           Data.List.NonEmpty                            (NonEmpty (..))
+import qualified Data.List.NonEmpty                            as NE
 import           Data.MonoTraversable
 import           Data.Semigroup
-import           Prelude            hiding (zipWith)
+import           Prelude                                       hiding (zipWith)
 
 --import Debug.Trace
 
@@ -99,7 +101,7 @@ totalEdgeCosts (PDAG2 dag meta) = applyWeights $ foldlWithKey f initAcc refVec
         -- Folding function for adjacent nodes. Should apply the sum strictly.
         g seqAcc = force . zipWith (zipWith (+)) seqAcc .
                            zipWith (zipWith ($)) (zipWith (zipWith ($)) functionSequence nodeSequence) . getFields
-        
+
         collapseRootEdge i
           | i `notElem` roots = i
           | otherwise = {- (\x-> trace (unwords [ show i
@@ -112,4 +114,4 @@ totalEdgeCosts (PDAG2 dag meta) = applyWeights $ foldlWithKey f initAcc refVec
                                              ]) x) .
                         -}
                         head . filter (/= key) .  IM.keys . childRefs $ refVec ! i
-            
+

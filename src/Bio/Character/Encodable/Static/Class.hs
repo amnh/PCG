@@ -13,7 +13,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Bio.Character.Encodable.Static.Class where
 
@@ -21,9 +22,9 @@ import Bio.Character.Encodable.Internal
 import Bio.Character.Encodable.Stream
 import Data.Alphabet
 import Data.Bits
-import Data.List.NonEmpty hiding (xor) -- Why is this defined? Is foldl1' (/=) too verbose?
+import Data.List.NonEmpty               hiding (xor)
 import Data.MonoTraversable
-import Data.String               (IsString)
+import Data.String                      (IsString)
 
 
 

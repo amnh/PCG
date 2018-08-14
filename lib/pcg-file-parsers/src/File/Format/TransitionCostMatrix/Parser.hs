@@ -12,7 +12,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.TransitionCostMatrix.Parser
   ( TCM(..)
@@ -23,14 +24,14 @@ module File.Format.TransitionCostMatrix.Parser
   , matrixBlock
   ) where
 
-import           Data.Char                   (isSpace)
-import           Data.Foldable               (toList)
-import           Data.List.NonEmpty          (NonEmpty)
-import qualified Data.List.NonEmpty    as NE (fromList)
-import           Data.List.Utility           (duplicates, mostCommon)
-import           Data.Matrix.NotStupid       (Matrix, ncols, nrows)
-import qualified Data.Matrix.NotStupid as M  (fromList)
-import           Data.Maybe                  (catMaybes, fromJust)
+import           Data.Char              (isSpace)
+import           Data.Foldable          (toList)
+import           Data.List.NonEmpty     (NonEmpty)
+import qualified Data.List.NonEmpty     as NE (fromList)
+import           Data.List.Utility      (duplicates, mostCommon)
+import           Data.Matrix.NotStupid  (Matrix, ncols, nrows)
+import qualified Data.Matrix.NotStupid  as M (fromList)
+import           Data.Maybe             (catMaybes, fromJust)
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 import           Text.Megaparsec.Custom
@@ -38,7 +39,7 @@ import           Text.Megaparsec.Custom
 
 -- |
 --Intermediate parse result prior to consistancy validation
-data TCMParseResult 
+data TCMParseResult
    = TCMParseResult (NonEmpty String) (Matrix Double) deriving (Show)
 
 
@@ -54,7 +55,7 @@ data TCMParseResult
 -- > (length . customAlphabet) tcm == (nrows . transitionCosts) tcm && (length . customAlphabet) tcm == (ncols . transitionCosts) tcm
 --
 -- Note that the 'transitionCosts` does not need to be a symetic matrix nor have identity values on the matrix diagonal.
-data TCM 
+data TCM
    = TCM
    { -- | The custom alphabet of 'Symbols' for which the TCM matrix is defined
      customAlphabet  :: NonEmpty String
@@ -77,7 +78,7 @@ tcmStreamParser = validateTCMParseResult =<< tcmDefinition <* eof
 -- Both the Alphabet and Matrix have been validated independantly for
 -- consistencey, but no validation has been performed to ensure that the
 -- dimensions of the Matrix and the length of the Alphabet are consistant
--- with each other. 
+-- with each other.
 tcmDefinition :: (MonadParsec e s m, Token s ~ Char) => m TCMParseResult
 tcmDefinition = do
     _        <- space
@@ -154,7 +155,7 @@ validateTCMParseResult (TCMParseResult alphabet matrix)
     size         = length alphabet
     rows         = nrows matrix
     cols         = ncols matrix
-    dimMismatch  = size + 1 /= rows                   
+    dimMismatch  = size + 1 /= rows
                 || size + 1 /= cols
     errorMessage = concat
         [ "The alphabet length is "
@@ -183,7 +184,7 @@ validateTCMParseResult (TCMParseResult alphabet matrix)
 validateAlphabet :: (MonadParsec e s m, Token s ~ Char) => NonEmpty String -> m (NonEmpty String)
 validateAlphabet alphabet
   | duplicatesExist = fail $ "The following symbols were listed multiple times in the custom alphabet: " <> show dupes
-  | otherwise       = pure alphabet 
+  | otherwise       = pure alphabet
   where
     duplicatesExist = not $ null dupes
     dupes           = duplicates $ toList alphabet
@@ -209,7 +210,7 @@ validateMatrix matrix
     rows               = length matrix
     cols               = fromJust . mostCommon $ length <$> matrix
     badCols            = foldr getBadCols [] $ zip [(1::Int)..] matrix
-    getBadCols (n,e) a = let x = length e in if x /= cols then (n,x):a else a  
+    getBadCols (n,e) a = let x = length e in if x /= cols then (n,x):a else a
     colMsg (x,y)       = (:) (Just $ mconcat [ "Matrix row ", show x, " has ", show y, " columns but ", show cols, " columns were expected"])
     matrixErrors       = catMaybes $ badRowCount : badColCount
     badColCount        = foldr colMsg [] badCols

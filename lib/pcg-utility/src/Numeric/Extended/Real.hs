@@ -14,7 +14,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TypeFamilies  #-}
 
 module Numeric.Extended.Real
   ( ExtendedReal()
@@ -94,7 +95,7 @@ instance Fractional ExtendedReal where
           (False,False) -> Cost $ x / y
 
     recip (Cost x) = Cost $ recip x
-    
+
     fromRational = Cost . fromRational
 
 
@@ -188,4 +189,4 @@ infix 4 ~==
       EQ -> True
       LT -> lhs + epsilon >= rhs
       GT -> lhs - epsilon <= rhs
-    
+

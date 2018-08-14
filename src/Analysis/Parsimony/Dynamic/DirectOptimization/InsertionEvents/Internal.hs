@@ -17,19 +17,23 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Internal wh
 
 
 import           Analysis.Parsimony.Dynamic.DirectOptimization.DeletionEvents
-import           Data.Bifunctor         (bimap)
+import           Data.Bifunctor                                               (bimap)
 import           Data.Foldable
-import           Data.IntMap            (IntMap)
-import qualified Data.IntMap     as IM
+import           Data.IntMap                                                  (IntMap)
+import qualified Data.IntMap                                                  as IM
 import           Data.Key
-import           Data.List              (intercalate)
-import           Data.Monoid     hiding ((<>))
+import           Data.List                                                    (intercalate)
+import           Data.Monoid                                                  hiding
+                                                                               ((<>))
 import           Data.MonoTraversable
-import           Data.Semigroup         (Semigroup(..))
-import           Data.Sequence          (Seq)
-import qualified Data.Sequence   as Seq
-import           Prelude         hiding (lookup, zipWith)
-import           Test.QuickCheck hiding (output)
+import           Data.Semigroup                                               (Semigroup (..))
+import           Data.Sequence                                                (Seq)
+import qualified Data.Sequence                                                as Seq
+import           Prelude                                                      hiding
+                                                                               (lookup,
+                                                                               zipWith)
+import           Test.QuickCheck                                              hiding
+                                                                               (output)
 
 
 {-# DEPRECATED (<^>) "Don't use (<^>), it is an old and incorrect operator. Use coalesce instead!" #-}

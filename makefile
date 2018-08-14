@@ -38,6 +38,14 @@ rebuild-full: clean rebuild
 # Rebuilds with optimizations and runs tests
 test: stack-build-test
 
+test-failures: stack-build-test-failures
+
+test-new: stack-build-test-new
+
+# Runs linter
+
+lint: run-linter
+
 
 # Target Definitions
 ################################################################################
@@ -68,7 +76,29 @@ stack-build-profiling: phylocomgraph.cabal stack.yaml
 
 # Builds with profiling enabled
 stack-build-test: phylocomgraph.cabal stack.yaml
-	stack build --test
+	stack build --test --ta "--rerun-update"
+
+# Builds with profiling enabled
+stack-build-test-failures: phylocomgraph.cabal stack.yaml
+	stack build --test --ta "--rerun-filter=failures"
+
+# Builds with profiling enabled
+stack-build-test-new: phylocomgraph.cabal stack.yaml
+	stack build --test --ta "--rerun-filter=new"
+
+# install stylish haskell if not installed
+install-stylish-haskell:
+	which stylish-haskell || (stack install stylish-haskell)
+
+format-code: install-stylish-haskell
+	(./stylish.sh)
+
+# install hlint if not installed
+install-hlint:
+	which hlint || (stack install hlint)
+
+run-linter: install-hlint format-code
+	hlint lib src test
 
 # Copies documentation director to local scope
 copy-haddock: set-dir-variables

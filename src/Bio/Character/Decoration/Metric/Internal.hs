@@ -10,13 +10,17 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Bio.Character.Decoration.Metric.Internal where
 
 
-import Bio.Character.Decoration.Metric.Class
 import Bio.Character.Decoration.Discrete
+import Bio.Character.Decoration.Metric.Class
 import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Control.DeepSeq

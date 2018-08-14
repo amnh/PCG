@@ -4,11 +4,16 @@ module Main
   ) where
 
 import           Test.Tasty
-import qualified TestSuite.LibraryTests    as Library    (testSuite)
-import qualified TestSuite.ExecutableTests as Executable (testSuite)
+import           Test.Tasty.Ingredients.Rerun (rerunningTests)
+import qualified TestSuite.ExecutableTests    as Executable (testSuite)
+import qualified TestSuite.LibraryTests       as Library (testSuite)
+
 
 main :: IO ()
-main = defaultMain Library.testSuite
+main =
+  defaultMainWithIngredients
+  [ rerunningTests defaultIngredients ]
+  testSuite
 
 
 testSuite :: TestTree

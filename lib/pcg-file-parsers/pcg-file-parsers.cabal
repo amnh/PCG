@@ -140,6 +140,7 @@ Test-Suite unit-tests
                   , tasty
                   , tasty-hunit
                   , tasty-quickcheck
+                  , tasty-rerun
                   , vector
 
   hs-source-dirs:   src, test
@@ -183,6 +184,7 @@ Executable file-tests
                      , pcg-file-parsers
                      , tasty
                      , tasty-hunit
+                     , tasty-rerun
 
   hs-source-dirs:      test
 

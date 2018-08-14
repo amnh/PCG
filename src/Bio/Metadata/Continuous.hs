@@ -10,13 +10,16 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Bio.Metadata.Continuous
   ( ContinuousCharacterMetadataDec()
   , GeneralCharacterMetadata(..)
   , HasCharacterName(..)
-  , HasCharacterWeight(..) 
+  , HasCharacterWeight(..)
   , continuousMetadata
   ) where
 

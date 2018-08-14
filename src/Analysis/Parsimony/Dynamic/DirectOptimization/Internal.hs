@@ -17,7 +17,9 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE BangPatterns     #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Internal
   ( directOptimizationPostOrder
@@ -35,17 +37,18 @@ import           Bio.Metadata
 import           Control.Lens
 import           Data.Bits
 import           Data.Foldable
-import           Data.IntMap        (IntMap)
-import qualified Data.IntMap as IM
+import           Data.IntMap                                                     (IntMap)
+import qualified Data.IntMap                                                     as IM
 import           Data.Key
-import           Data.List.NonEmpty (NonEmpty( (:|) ))
-import           Data.List.Utility  (invariantTransformation)
+import           Data.List.NonEmpty                                              (NonEmpty ((:|)))
+import           Data.List.Utility                                               (invariantTransformation)
+import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.TCM.Memoized
-import           Data.MonoTraversable
 import           Data.Word
 import           Numeric.Extended.Natural
-import           Prelude     hiding (lookup)
+import           Prelude                                                         hiding
+                                                                                  (lookup)
 
 
 -- |
@@ -274,7 +277,7 @@ tripleComparison pairwiseAlignment meta childDecoration parentCharacter parentSi
         !scm = meta ^. symbolChangeMatrix
         !gap = gapOfStream parentCharacter
         !zed = gap `xor` gap
-        
+
         singletonStates = (zed `setBit`) <$> [0 .. fromEnum (symbolCount zed) - 1]
         naiveMedianAndCost3D a b c = unsafeToFinite <$> foldl' g (zed, infinity :: ExtendedNatural) singletonStates
           where

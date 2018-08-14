@@ -24,17 +24,17 @@ module Test.Custom.DynamicCharacterNode
   ) where
 
 
-import           Analysis.Parsimony.Dynamic.DirectOptimization
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (filterGaps)
-import           Bio.Character
-import           Bio.Character.Decoration.Dynamic
-import           Bio.Metadata
-import           Bio.Metadata.CharacterName
-import           Data.Alphabet.IUPAC
-import           Data.MonoTraversable
-import           Data.String
-import           Test.Custom.NucleotideSequence
-import           Test.QuickCheck
+import Analysis.Parsimony.Dynamic.DirectOptimization
+import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (filterGaps)
+import Bio.Character
+import Bio.Character.Decoration.Dynamic
+import Bio.Metadata
+import Bio.Metadata.CharacterName
+import Data.Alphabet.IUPAC
+import Data.MonoTraversable
+import Data.String
+import Test.Custom.NucleotideSequence
+import Test.QuickCheck
 
 
 -- |

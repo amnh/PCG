@@ -12,9 +12,14 @@
 -- should be exported from top level module.
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns, DeriveFoldable, DeriveFunctor, DeriveTraversable #-}
-{-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving, ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE BangPatterns               #-}
+{-# LANGUAGE DeriveFoldable             #-}
+{-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE DeriveTraversable          #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeFamilies               #-}
 
 module File.Format.TNT.Internal
   ( TntResult
@@ -71,22 +76,24 @@ module File.Format.TNT.Internal
 import           Control.Monad              ((<=<))
 import           Data.Bits
 import           Data.CaseInsensitive
-import           Data.Char                  (isAlpha, isLower, isUpper, toLower, toUpper)
-import           Data.Functor               (($>))
+import           Data.Char                  (isAlpha, isLower, isUpper, toLower,
+                                             toUpper)
 import           Data.Foldable              (toList)
-import           Data.Key                   ((!), lookup)
+import           Data.Functor               (($>))
+import           Data.Key                   (lookup, (!))
 import           Data.List                  (inits)
 import           Data.List.NonEmpty         (NonEmpty)
+import           Data.Map                   (Map, assocs, insert, insertWith,
+                                             keys, union)
+import qualified Data.Map                   as M (fromList)
 import           Data.Matrix.NotStupid      (Matrix)
-import           Data.Map                   (Map, assocs, insert, insertWith, keys, union)
-import qualified Data.Map              as M (fromList)
 import           Data.Proxy
 import           Data.Scientific            (floatingOrInteger)
 import           Data.Tuple                 (swap)
 import           Data.Vector                (Vector)
-import qualified Data.Vector           as V (fromList)
-import           Data.Word                  (Word8, Word32, Word64)
-import           Prelude             hiding (lookup)
+import qualified Data.Vector                as V (fromList)
+import           Data.Word                  (Word32, Word64, Word8)
+import           Prelude                    hiding (lookup)
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 import           Text.Megaparsec.Char.Lexer (decimal, scientific, signed)

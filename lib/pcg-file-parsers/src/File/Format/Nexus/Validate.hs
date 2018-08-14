@@ -12,29 +12,30 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.Nexus.Validate
   ( validateNexusParseResult
   ) where
 
-import           Data.Bifunctor            (second)
-import           Data.Char                 (isSpace)
+import           Data.Bifunctor          (second)
+import           Data.Char               (isSpace)
 import           Data.Either
 import           Data.Foldable
 --import           Data.List                 (sort, sortBy)
-import           Data.List.NonEmpty        (NonEmpty( (:|) ))
+import           Data.List.NonEmpty      (NonEmpty ((:|)))
 --import qualified Data.List.NonEmpty as NE
 --import           Data.List.Split           (splitOn)
-import           Data.Map.Lazy             (Map)
-import qualified Data.Map.Lazy      as M
+import           Data.Map.Lazy           (Map)
+import qualified Data.Map.Lazy           as M
 import           Data.Maybe
 --import           Data.Ord                  (comparing)
 import           Data.Semigroup.Foldable
-import           Data.Set                  (Set)
-import qualified Data.Set           as Set
-import           Data.Vector               (Vector)
-import qualified Data.Vector        as V
+import           Data.Set                (Set)
+import qualified Data.Set                as Set
+import           Data.Vector             (Vector)
+import qualified Data.Vector             as V
 import           File.Format.Newick
 import           File.Format.Nexus.Data
 import           Safe
@@ -513,8 +514,8 @@ getCharMetadata mayMtx seqBlock =
             Just fm -> f $ symbols fm
         f (Right x) = x
         f _         = [""] -- Shouldn't be possible, but leaving it in for completeness.
-        g (Just s)  = pure <$> s
-        g Nothing   = [""]
+        g (Just s) = pure <$> s
+        g Nothing  = [""]
         form        = headMay $ format seqBlock
         len         = numChars . head $ charDims seqBlock
         mayTCM      = matrixData <$> mayMtx
@@ -997,7 +998,7 @@ setIgnores seqIdx curElimIdx toElim seqLength acc
 -- Maybe use `Text`?
 
 lstrip :: String -> String
-lstrip "" = ""
+lstrip ""    = ""
 lstrip input = dropWhile (`elem` " \t\n\r") input
 
 rstrip :: String -> String

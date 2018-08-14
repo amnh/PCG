@@ -10,7 +10,9 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveDataTypeable, DeriveGeneric, Safe #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE Safe               #-}
 
 module Numeric.NonNegativeAverage
   ( NonNegativeAverage()
@@ -23,7 +25,7 @@ import Data.Data
 import Data.Hashable
 import GHC.Generics
 import Test.QuickCheck
-  
+
 
 -- |
 -- Defines an average of non-negative numbers.

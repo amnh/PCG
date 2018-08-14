@@ -10,53 +10,59 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveFunctor, DeriveGeneric, FlexibleContexts, FlexibleInstances #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies, UnboxedSums #-}
+{-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE UnboxedSums                #-}
 
 module Bio.Graph.ReferenceDAG.Internal where
 
 import           Bio.Graph.BinaryRenderingTree
-import           Bio.Graph.LeafSet
 import           Bio.Graph.Component
-import           Control.Arrow                    ((&&&),(***))
+import           Bio.Graph.LeafSet
+import           Control.Arrow                 ((&&&), (***))
 import           Control.DeepSeq
-import           Control.Lens                     (lens)
+import           Control.Lens                  (lens)
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
 import           Data.EdgeSet
 import           Data.Foldable
-import           Data.Functor                     ((<$))
+import           Data.Functor                  ((<$))
 import           Data.GraphViz.Attributes
-import           Data.GraphViz.Printing    hiding ((<>)) -- Seriously, why is this redefined?
-import           Data.GraphViz.Types       hiding (attrs)
-import           Data.GraphViz.Types.Graph hiding (node)
-import           Data.Hashable                    (Hashable)
-import qualified Data.HashMap.Strict       as HM
-import           Data.IntMap                      (IntMap)
-import qualified Data.IntMap               as IM
-import           Data.IntSet                      (IntSet)
-import qualified Data.IntSet               as IS
+import           Data.GraphViz.Printing        hiding ((<>))
+import           Data.GraphViz.Types           hiding (attrs)
+import           Data.GraphViz.Types.Graph     hiding (node)
+import           Data.Hashable                 (Hashable)
+import qualified Data.HashMap.Strict           as HM
+import           Data.IntMap                   (IntMap)
+import qualified Data.IntMap                   as IM
+import           Data.IntSet                   (IntSet)
+import qualified Data.IntSet                   as IS
 import           Data.Key
-import           Data.List                        (intercalate)
-import           Data.List.NonEmpty               (NonEmpty(..), intersperse)
-import qualified Data.List.NonEmpty        as NE
-import           Data.List.Utility                (isSingleton)
-import           Data.Monoid               hiding ((<>))
+import           Data.List                     (intercalate)
+import           Data.List.NonEmpty            (NonEmpty (..), intersperse)
+import qualified Data.List.NonEmpty            as NE
+import           Data.List.Utility             (isSingleton)
+import           Data.Monoid                   hiding ((<>))
 import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
-import           Data.Set                         (Set)
-import qualified Data.Set                  as S
+import           Data.Set                      (Set)
+import qualified Data.Set                      as S
 import           Data.String
 import           Data.Traversable
-import           Data.Tree                        (unfoldTree)
-import           Data.Tree.Pretty                 (drawVerticalTree)
-import           Data.Vector                      (Vector)
-import qualified Data.Vector               as V
-import           Data.Vector.Instances            ()
+import           Data.Tree                     (unfoldTree)
+import           Data.Tree.Pretty              (drawVerticalTree)
+import           Data.Vector                   (Vector)
+import qualified Data.Vector                   as V
+import           Data.Vector.Instances         ()
 import           GHC.Generics
 import           Numeric.Extended.Real
-import           Prelude                   hiding (lookup, zipWith)
+import           Prelude                       hiding (lookup, zipWith)
 import           Text.Newick.Class
 import           Text.XML.Custom
 
@@ -93,11 +99,11 @@ data  IndexData e n
 -- * d = graph metadata
 data  GraphData d
     = GraphData
-    { dagCost           :: {-# UNPACK #-} !ExtendedReal
-    , networkEdgeCost   :: {-# UNPACK #-} !ExtendedReal
-    , rootingCost       :: {-# UNPACK #-} !Double
-    , totalBlockCost    :: {-# UNPACK #-} !Double
-    , graphMetadata     :: d
+    { dagCost         :: {-# UNPACK #-} !ExtendedReal
+    , networkEdgeCost :: {-# UNPACK #-} !ExtendedReal
+    , rootingCost     :: {-# UNPACK #-} !Double
+    , totalBlockCost  :: {-# UNPACK #-} !Double
+    , graphMetadata   :: d
     } deriving (Functor, Generic)
 
 
@@ -302,7 +308,7 @@ instance Show n => ToNewick (ReferenceDAG d e n) where
                     put (lC, nC, tC+1)
                     pure $ "Node_" <> show tC
           where
-            shownLabel = show $ nodeDecoration node  
+            shownLabel = show $ nodeDecoration node
 
 
 -- | (✔)
@@ -1227,7 +1233,7 @@ toBinaryRenderingTree nodeRenderer dag = (`evalState` initialState) . traverse s
     initialState = (0, mempty)
 
     subtreeToRendering :: Int -> State (Int, IntMap Int) BinaryRenderingTree
-    subtreeToRendering i = 
+    subtreeToRendering i =
         if   parentCount < 2
         then do
              subtrees <- mapM subtreeToRendering kids

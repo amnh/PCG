@@ -9,8 +9,7 @@
 -- Portability :  portable
 --
 -----------------------------------------------------------------------------
-
-{-# LANGUAGE MultiParameterTypeclasses #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Bio.Graph.MonadDAG where
 

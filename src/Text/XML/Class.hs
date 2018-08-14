@@ -13,7 +13,8 @@
 -----------------------------------------------------------------------------
 
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 
 module Text.XML.Class where

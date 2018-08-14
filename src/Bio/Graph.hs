@@ -62,7 +62,7 @@ module Bio.Graph
   ) where
 
 
-import           Bio.Graph.Constructions
-import           Bio.Graph.PhylogeneticDAG
-import           Bio.Graph.PhylogeneticDAG.Reification
-import           Bio.Graph.Solution
+import Bio.Graph.Constructions
+import Bio.Graph.PhylogeneticDAG
+import Bio.Graph.PhylogeneticDAG.Reification
+import Bio.Graph.Solution

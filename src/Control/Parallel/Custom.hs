@@ -10,7 +10,9 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Control.Parallel.Custom
   ( parmap
@@ -21,7 +23,7 @@ module Control.Parallel.Custom
 
 import Control.Parallel.Strategies
 import Data.Key
-import Prelude hiding (zipWith)
+import Prelude                     hiding (zipWith)
 
 
 -- |
@@ -32,12 +34,12 @@ parmap strat f = withStrategy (parTraversable strat) . fmap f
 
 
 -- |
--- Zip two traversable, zippable structures in parrallel with a function. 
+-- Zip two traversable, zippable structures in parrallel with a function.
 parZipWith :: (Traversable t, Zip t) => Strategy c -> (a -> b -> c) -> t a -> t b -> t c
 parZipWith strat f lhs rhs = withStrategy (parTraversable strat) $ zipWith f lhs rhs
 
 
 -- |
--- Zip three traversable, zippable structures in parrallel with a function. 
+-- Zip three traversable, zippable structures in parrallel with a function.
 parZipWith3 :: (Traversable t, Zip t) => Strategy d -> (a -> b -> c -> d) -> t a -> t b -> t c -> t d
 parZipWith3 strat f x y z = withStrategy (parTraversable strat) $ zap (zipWith f x y) z

@@ -17,8 +17,14 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveFunctor, FlexibleContexts, ScopedTypeVariables, TypeFamilies #-}
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, TypeSynonymInstances, UnboxedSums #-}
+{-# LANGUAGE DeriveFunctor         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeSynonymInstances  #-}
+{-# LANGUAGE UnboxedSums           #-}
 
 module PCG.Syntax.Primative
   ( PrimativeValue()
@@ -36,22 +42,22 @@ module PCG.Syntax.Primative
 
 import           Control.Applicative        hiding (many)
 import           Control.Monad.Free
-import           Data.CaseInsensitive              (FoldCase)
-import           Data.Char                         (isControl)
-import           Data.Functor                      (($>), void)
+import           Data.CaseInsensitive       (FoldCase)
+import           Data.Char                  (isControl)
+import           Data.Functor               (void, ($>))
 import           Data.Key
-import           Data.List.NonEmpty                (NonEmpty(..))
+import           Data.List.NonEmpty         (NonEmpty (..))
 import qualified Data.List.NonEmpty         as NE
 import qualified Data.Map                   as M
-import           Data.Maybe                        (fromMaybe)
+import           Data.Maybe                 (fromMaybe)
 import           Data.Proxy
 import           Data.Scientific            hiding (scientific)
-import           Data.Set                          (Set)
+import           Data.Set                   (Set)
 import qualified Data.Set                   as S
-import           Data.Time.Clock                   (DiffTime, secondsToDiffTime)
+import           Data.Time.Clock            (DiffTime, secondsToDiffTime)
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
-import           Text.Megaparsec.Char.Lexer        (decimal, scientific, signed)
+import           Text.Megaparsec.Char.Lexer (decimal, scientific, signed)
 import qualified Text.Megaparsec.Char.Lexer as Lex
 
 
@@ -92,7 +98,7 @@ class HasPrimativeType a where
     getPrimativeType :: a -> PrimativeType
 
     getPrimativeName :: a -> String
-    getPrimativeName x = 
+    getPrimativeName x =
         case getPrimativeType x of
           TypeOfBool  {} -> "boolean value"
           TypeOfInt   {} -> "integer value"
@@ -101,14 +107,14 @@ class HasPrimativeType a where
           TypeOfTime  {} -> "time value"
           TypeOfValue v  -> "the literal '" <> v <> "'"
 
- 
+
 instance HasPrimativeType PrimativeType where
-  
+
     getPrimativeType = id
 
 
 instance HasPrimativeType (PrimativeValue a) where
-  
+
     getPrimativeType x =
        case x of
           PBool  {}  -> TypeOfBool
@@ -117,10 +123,10 @@ instance HasPrimativeType (PrimativeValue a) where
           PText  {}  -> TypeOfText
           PTime  {}  -> TypeOfTime
           PValue v _ -> TypeOfValue v
-  
+
 
 instance HasPrimativeType PrimativeParseResult where
-  
+
     getPrimativeType x =
         case x of
           ResultBool  {} -> TypeOfBool

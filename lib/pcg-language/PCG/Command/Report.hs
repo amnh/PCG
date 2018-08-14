@@ -25,7 +25,7 @@ module PCG.Command.Report
 
 
 import Control.Applicative.Free
-import Data.Functor (($>))
+import Data.Functor             (($>))
 import PCG.Syntax.Combinators
 
 

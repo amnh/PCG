@@ -11,7 +11,9 @@
 -- Standard algorithm for implied alignment
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeFamilies      #-}
 
 module Analysis.ImpliedAlignment.AlignmentContext
   ( AlignmentContext(..)
@@ -25,20 +27,20 @@ module Analysis.ImpliedAlignment.AlignmentContext
 
 import           Analysis.ImpliedAlignment.DeletionEvents
 import           Analysis.ImpliedAlignment.InsertionEvents
-import qualified Analysis.ImpliedAlignment.InsertionEvents as IE (unwrap,wrap)
+import qualified Analysis.ImpliedAlignment.InsertionEvents as IE (unwrap, wrap)
 import           Data.Foldable
-import           Data.IntMap                    (IntMap)
-import qualified Data.IntMap             as IM
-import qualified Data.IntSet             as IS
+import           Data.IntMap                               (IntMap)
+import qualified Data.IntMap                               as IM
+import qualified Data.IntSet                               as IS
 import           Data.Key
 import           Data.Maybe
 import           Data.Monoid
 import           Data.MonoTraversable
-import           Data.Sequence                  (Seq)
-import qualified Data.Sequence           as Seq
-import           Data.Vector.Instances          ()
-import           Prelude                 hiding (lookup)
-import           Text.Show                      (showListWith)
+import           Data.Sequence                             (Seq)
+import qualified Data.Sequence                             as Seq
+import           Data.Vector.Instances                     ()
+import           Prelude                                   hiding (lookup)
+import           Text.Show                                 (showListWith)
 
 
 -- |

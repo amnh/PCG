@@ -10,13 +10,15 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Bio.Metadata.General
   ( GeneralCharacterMetadataDec()
   , GeneralCharacterMetadata(..)
   , HasCharacterName(..)
-  , HasCharacterWeight(..) 
+  , HasCharacterWeight(..)
   , generalMetadata
   ) where
 

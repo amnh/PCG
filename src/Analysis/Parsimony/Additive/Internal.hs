@@ -27,7 +27,7 @@ module Analysis.Parsimony.Additive.Internal where
 
 import Bio.Character.Decoration.Additive
 import Control.Lens
-import Data.List.NonEmpty (NonEmpty( (:|) ))
+import Data.List.NonEmpty                (NonEmpty ((:|)))
 import Data.Range
 import Numeric.Extended
 
@@ -216,7 +216,7 @@ determineFinalState
   :: ( Ord (Bound c)
      , RangedExtensionPostorder     d  c
      , RangedDecorationOptimization d' c
-     ) 
+     )
   => d
   -> d'
   -> Range (Bound c)

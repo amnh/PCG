@@ -1,19 +1,22 @@
-{-# LANGUAGE FlexibleContexts, RankNTypes, ScopedTypeVariables, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 module Text.Megaparsec.Custom.Test
-  ( testSuite 
+  ( testSuite
   ) where
 -- We only export the testSuite
 -- This function can be combined with other testSuites definitions from other
 -- Test modules to form a giant test suite to run
 
 import Data.Either.Combinators
-import Data.List               (nub,sort)
+import Data.List               (nub, sort)
 import Data.Proxy
 import Data.Void
 import Safe                    (readMay)
-import Test.SmallCheck.Series  ()
 import Test.Custom.Parse
+import Test.SmallCheck.Series  ()
 import Test.Tasty              (TestTree, testGroup)
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
@@ -57,7 +60,7 @@ decimalProperties = testGroup "Arbitrary Double Tests"
 -- Ensure that all Doubles represented as Strings are correctly parsed as Doubles.
 -- The parser should never fail to testingParse a String representation of an Int.
 -- NOTE: This doesn't work due to the strangeness of decimal's precision
-decimalSurjection :: Double -> Bool 
+decimalSurjection :: Double -> Bool
 decimalSurjection x = Right x  == testingParse double "" (show x)
 
 
@@ -65,7 +68,7 @@ decimalSurjection x = Right x  == testingParse double "" (show x)
 -- Ensure that all Strings which can be `read` as a Double are parsed as Double.
 -- The parser should always fail to testingParse a String that cannot be read as
 -- an Double.
-decimalInjection :: String -> Bool 
+decimalInjection :: String -> Bool
 decimalInjection x =
     case readMay x :: Maybe Double of
       Nothing  -> True
@@ -189,7 +192,7 @@ endOfLineAssertions = testGroup "Assertions" [matchesUnix, matchesWindows, match
     matchesUnix    = testCase "Succeeds on Unix format '\\n'"         $ parseSuccess (endOfLine <* eof) "\n"
     matchesWindows = testCase "Succeeds on Windows format \"\\r\\n\"" $ parseSuccess (endOfLine <* eof) "\r\n"
     matchesOldMac  = testCase "Succeeds on Mac format '\\r'"          $ parseSuccess (endOfLine <* eof) "\r"
-    
+
 
 failsProperties :: TestTree
 failsProperties = testGroup "Property" [failsProperty]
@@ -209,6 +212,6 @@ failsProperties = testGroup "Property" [failsProperty]
 commentAssertions :: TestTree
 commentAssertions = testGroup "" []
   where
-    f :: (NonEmpty Char, NonEmpty Char, NonEmpty Char) -> 
+    f :: (NonEmpty Char, NonEmpty Char, NonEmpty Char) ->
 
 -}

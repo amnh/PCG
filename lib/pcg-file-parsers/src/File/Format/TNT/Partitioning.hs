@@ -12,7 +12,8 @@
 -- relevant to processing character data.
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.TNT.Partitioning
   ( Commands
@@ -21,7 +22,7 @@ module File.Format.TNT.Partitioning
 
 
 import Data.CaseInsensitive
-import Data.Char (isAlpha)
+import Data.Char                         (isAlpha)
 import File.Format.TNT.Command.CCode
 import File.Format.TNT.Command.CNames
 import File.Format.TNT.Command.Cost
@@ -42,7 +43,7 @@ data Part
    | CN CNames
    | CO Cost
    | NS NStates
-   | TR TRead 
+   | TR TRead
    | XR XRead
    | Ignore
 

@@ -12,7 +12,9 @@
 -- states for various character types.
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, ScopedTypeVariables, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 module File.Format.TNT.Command.NStates
   ( nstatesCommand
@@ -20,7 +22,7 @@ module File.Format.TNT.Command.NStates
 
 
 import Data.CaseInsensitive
-import Data.Functor (($>))
+import Data.Functor             (($>))
 import Data.Proxy
 import File.Format.TNT.Internal
 import Text.Megaparsec

@@ -3,15 +3,15 @@
 module Test.Custom.Constructions where
 
 
-import           Bio.Character.Parsed -- why?
 import           Bio.Character.Encodable
+import           Bio.Character.Parsed
 import           Data.Alphabet
 import           Data.BitMatrix
-import           Data.BitVector    (bitVec)
+import           Data.BitVector                      (bitVec)
 --import           Data.Foldable
 --import qualified Data.List.NonEmpty as NE
-import qualified Data.Vector        as V
-import           Test.Custom.Types        ()
+import qualified Data.Vector                         as V
+import           Test.Custom.Types                   ()
 import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances ()
 
@@ -25,7 +25,7 @@ arbitraryDynamicGivenAlph inAlph = do
 
 -- | Generate many dynamic characters using the above
 arbitraryDynamicsGA :: Alphabet String -> Gen DynamicChars
-arbitraryDynamicsGA inAlph = V.fromList <$> listOf (arbitraryDynamicGivenAlph inAlph) 
+arbitraryDynamicsGA inAlph = V.fromList <$> listOf (arbitraryDynamicGivenAlph inAlph)
 
 
 -- | An infinite list of (non-empty) 'DynamicChar's of fixed width and varying length.

@@ -16,9 +16,9 @@
 module Data.Either.Custom where
 
 import Control.Monad.Trans.Except
-import Data.Either        (partitionEithers)
+import Data.Either                (partitionEithers)
 import Data.Foldable
-import Data.List.NonEmpty (NonEmpty((:|)))
+import Data.List.NonEmpty         (NonEmpty ((:|)))
 import Data.Semigroup
 
 

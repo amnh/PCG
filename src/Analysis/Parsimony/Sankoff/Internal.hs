@@ -25,7 +25,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module Analysis.Parsimony.Sankoff.Internal where
 
@@ -37,10 +38,10 @@ import Bio.Metadata
 import Control.Lens
 import Data.Bits
 import Data.Key
-import Data.List.NonEmpty (NonEmpty( (:|) ))
+import Data.List.NonEmpty                (NonEmpty ((:|)))
 import Data.Word
 import Numeric.Extended.Natural
-import Prelude                   hiding (zip)
+import Prelude                           hiding (zip)
 
 
 -- |

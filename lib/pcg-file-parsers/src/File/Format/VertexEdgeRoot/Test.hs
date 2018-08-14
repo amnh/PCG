@@ -1,16 +1,18 @@
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.VertexEdgeRoot.Test
   ( testSuite
   ) where
 
 --import           Bio.PhyloGraph.Node
-import           Data.List                         (intercalate)
-import           File.Format.VertexEdgeRoot.Parser
-import           Test.Custom.Parse                 (parseEquals, parseFailure, parseSuccess)
-import           Test.Tasty                        (TestTree, testGroup)
-import           Test.Tasty.HUnit
-import           Text.Megaparsec                   (eof)
+import Data.List                         (intercalate)
+import File.Format.VertexEdgeRoot.Parser
+import Test.Custom.Parse                 (parseEquals, parseFailure,
+                                          parseSuccess)
+import Test.Tasty                        (TestTree, testGroup)
+import Test.Tasty.HUnit
+import Text.Megaparsec                   (eof)
 
 
 testSuite :: TestTree
@@ -23,7 +25,7 @@ testSuite = testGroup "VER Format"
         , edgeDefinition'
         , edgeSetDefinition'
         ]
-    , testGroup "VER Parser" 
+    , testGroup "VER Parser"
         [ verStreamParser' ]
     ]
 
@@ -113,10 +115,10 @@ labeledVertexSetDefinition' = testGroup "labeledVertexSetDefinition" [validLines
     success str  = testCase (show str) $ parseSuccess (labeledVertexSetDefinition <* eof) str
     failure str  = testCase (show str) $ parseFailure (labeledVertexSetDefinition <* eof) str
     validLabeledVertexSets =
-        [ label<>"="<>set | (_,label) <-  validSetLabels 
+        [ label<>"="<>set | (_,label) <-  validSetLabels
                           , set       <- [validVertexSet]
         ]
-    invalidLabeledVertexSets = 
+    invalidLabeledVertexSets =
         [ "={empty,label}"
         , "RootSet{no,equals,sign}"
         ]

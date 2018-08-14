@@ -11,7 +11,8 @@
 -- Standard algorithm for implied alignment
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.DeletionEvents
   ( DeletionEvents(..)
@@ -19,9 +20,9 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.DeletionEvents
   ) where
 
 
-import           Data.IntSet       (IntSet)
-import qualified Data.IntSet as IS
-import           Data.List         (intercalate)
+import           Data.IntSet          (IntSet)
+import qualified Data.IntSet          as IS
+import           Data.List            (intercalate)
 import           Data.MonoTraversable
 
 
