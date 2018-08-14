@@ -45,14 +45,7 @@ import qualified Data.Vector          as V
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
 postorderSequence'
-  :: ( HasBlockCost u' v' w' x' y' z'
-     , Show u'
-     , Show v'
-     , Show w'
-     , Show x'
-     , Show y'
-     , Show z'
-     )
+  :: HasBlockCost u' v' w' x' y' z'
   => (ContinuousCharacterMetadataDec        -> u -> [u'] -> u')
   -> (DiscreteCharacterMetadataDec          -> v -> [v'] -> v')
   -> (DiscreteCharacterMetadataDec          -> w -> [w'] -> w')
@@ -68,7 +61,7 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag m) = PDAG2 (newDAG dag) m
       where
         f acc = (acc .|.) . leafSetRepresentation . NE.head . resolutions
     
-    newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> ((mempty, mempty, Nothing) <$) . graphData
+    newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> ((mempty, mempty, Nothing) <$) . updateGraphCosts . graphData
     dagSize       = length $ references dag
     newReferences = V.generate dagSize h
       where

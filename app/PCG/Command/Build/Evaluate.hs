@@ -30,11 +30,10 @@ import qualified Data.IntMap            as IM
 import qualified Data.IntSet            as IS
 import           Data.List.NonEmpty            (NonEmpty(..))
 import qualified Data.List.NonEmpty     as NE
-import           Data.MonoTraversable          (Element, omap)
+import           Data.MonoTraversable          (Element)
 import           Data.NodeLabel
 import           Data.Ord                      (comparing)
 import           Data.Semigroup.Foldable
-import           Data.Vector                   (Vector)
 import           PCG.Command.Build
 import           PCG.Syntax                    (Command(..))
 import           System.Random.Shuffle
@@ -91,7 +90,6 @@ evaluate _ _ = fail "Invalid BUILD command binding"
 naiveWagnerParallelBuild
   :: ( Foldable1 f
      , Traversable t
-     , Show m
      )
   => MetadataSequence
          StaticCharacter
@@ -103,9 +101,7 @@ naiveWagnerParallelBuild m = parmap rpar (naiveWagnerBuild m)
 
 
 naiveWagnerBuild
-  :: ( Foldable1 f
-     , Show m
-     )
+  :: Foldable1 f
   => MetadataSequence
          StaticCharacter
          (Element DynamicChar)

@@ -36,7 +36,6 @@ import           Bio.Graph
 import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
-import Control.Lens
 import           Data.Default
 import           Data.EdgeLength
 import qualified Data.List.NonEmpty as NE
@@ -48,16 +47,7 @@ import           Data.Vector               (Vector)
 -- |
 -- Remove all scoring data from nodes.
 wipeScoring
-  :: ( Default n
-     , Show n
-     , Show u
-     , Show v
-     , Show w
-     , Show x
-     , Show y
-     , Show z
-     , Show e
-     )
+  :: Default n
   => PhylogeneticDAG2 m a d e n u v w x y z
   -> PhylogeneticDAG2 m a d e n (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
 wipeScoring (PDAG2 dag m) = PDAG2 wipedDAG m
@@ -70,16 +60,8 @@ wipeScoring (PDAG2 dag m) = PDAG2 wipedDAG m
           $ dag
 
     wipeDecorations
-      :: (Default n
-     , Show n
-     , Show u
-     , Show v
-     , Show w
-     , Show x
-     , Show y
-     , Show z
-     , Show e
-     )      => IndexData e (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
+      :: Default n
+      => IndexData e (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
       -> IndexData e (PhylogeneticNode2 (CharacterSequence (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)) n)
     wipeDecorations x = {- (\y -> trace ("\n\nOutput from wipeDecorations:\n\n" <> show y) y) $ -}
           IndexData
@@ -95,13 +77,6 @@ wipeScoring (PDAG2 dag m) = PDAG2 wipedDAG m
 -- Conditionally wipe the scoring of a single node.
 wipeNode
   :: ( Default n
-     , Show n
-     , Show u
-     , Show v
-     , Show w
-     , Show x
-     , Show y
-     , Show z
      )
   => Bool -- ^ Do I wipe?
   -> PhylogeneticNode2 (CharacterSequence        u         v         w         x         y         z ) n
@@ -143,13 +118,6 @@ performDecoration
      , RangedCharacterDecoration u ContinuousChar
      , RangedCharacterDecoration w StaticCharacter
      , SimpleDynamicDecoration z DynamicChar
-     , Show u
-     , Show v
-     , Show w
-     , Show x
-     , Show y
-     , Show z
-     , Show m
      )
   => PhylogeneticDAG2 m StaticCharacter (Element DynamicChar) EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
   -> FinalDecorationDAG
@@ -192,7 +160,7 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
 
     g _  Nothing  [] = error "Uninitialized leaf node. This is bad!"
     g h (Just  v) [] = h v []
-    g h        e  xs = h (error $ mconcat [ "We shouldn't be using this value.", show e, show $ length xs ]) xs
+    g h        _  xs = h (error "We shouldn't be using this value.") xs
 
     adaptiveDirectOptimizationPostOrder meta = directOptimizationPostOrder pairwiseAlignmentFunction
       where

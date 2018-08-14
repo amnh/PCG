@@ -59,7 +59,6 @@ import           Data.Map                          (Map, intersectionWith, keys)
 import qualified Data.Map                   as Map
 import           Data.Maybe                        (catMaybes, fromMaybe, listToMaybe)
 import           Data.Semigroup                    ((<>), sconcat)
-import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
 import           Data.Set                          (Set, (\\))
 import qualified Data.Set                   as Set
