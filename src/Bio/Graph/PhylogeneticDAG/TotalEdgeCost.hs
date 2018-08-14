@@ -58,7 +58,7 @@ totalEdgeCosts
      , HasSingleDisambiguation       z c
      , Ord (Element c)
      )
-  => PhylogeneticDAG2 m a d e n u v w x y z
+  => PhylogeneticDAG2 m e n u v w x y z
   -> NonEmpty [Double]
 --totalEdgeCosts _ (PDAG2 dag _) | trace ("Before Total Edge Cost: " <> referenceRendering dag) False = undefined
 totalEdgeCosts (PDAG2 dag meta) = applyWeights $ foldlWithKey f initAcc refVec
