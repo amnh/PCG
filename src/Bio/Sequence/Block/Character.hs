@@ -248,7 +248,7 @@ hexZipWith
   -> CharacterBlock u   v   w   x   y   z
   -> CharacterBlock u'  v'  w'  x'  y'  z'
   -> CharacterBlock u'' v'' w'' x'' y'' z''
-hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = CB $
+hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = CB
     Block
       { blockMetadata   = undefined
       , continuousBins  = parZipWith rpar f1 (continuousCharacterBins  lhs) (continuousCharacterBins  rhs)
@@ -299,7 +299,7 @@ hexZipWithMeta _ _ _ _ _ _ (MB meta) (CB lhs) (CB rhs)
           )
     False = undefined
 -}
-hexZipWithMeta f1 f2 f3 f4 f5 f6 (MB meta) (CB lhs) (CB rhs) = CB $
+hexZipWithMeta f1 f2 f3 f4 f5 f6 (MB meta) (CB lhs) (CB rhs) = CB
     Block
       { blockMetadata   = undefined
       , continuousBins  = parZipWith3 rpar f1 (continuousBins  meta) (continuousBins  lhs) (continuousBins  rhs)

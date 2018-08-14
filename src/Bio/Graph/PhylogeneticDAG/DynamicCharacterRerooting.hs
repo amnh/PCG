@@ -40,7 +40,6 @@ import           Data.Maybe
 import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
-import           Data.TopologyRepresentation
 import           Data.Tuple                (swap)
 import           Data.Vector               (Vector)
 import qualified Data.Vector        as V
@@ -677,8 +676,8 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
         rootContextVectors :: NonEmpty (TraversalTopology, NonEmpty (Double, Vector (Word, NonEmpty TraversalFocusEdge)))
         rootContextVectors = (id &&& (minimalDisplayTreeRerootings !)) <$> rootTopologies
 
-        topologySequences :: NonEmpty (NonEmpty (Vector (TraversalFoci)))
-        topologySequences = (\(topo, x) -> fmap ((fmap (fmap (id &&& const topo) . snd)) . snd) $ x) <$> rootContextVectors
+        topologySequences :: NonEmpty (NonEmpty (Vector TraversalFoci))
+        topologySequences = (\(topo, x) -> fmap (fmap (id &&& const topo) . snd) . snd <$> x) <$> rootContextVectors
 
         fociSequence :: NonEmpty (Vector TraversalFoci)
         fociSequence = foldr1 (zipWith (zipWith (<>))) topologySequences

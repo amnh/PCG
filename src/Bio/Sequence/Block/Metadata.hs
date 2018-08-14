@@ -81,11 +81,11 @@ instance ToXML (MetadataBlock e d m) where
 
 
 setAllFoci :: TraversalFoci -> MetadataBlock e d m -> MetadataBlock e d m
-setAllFoci foci (MB x) = MB $ x { dynamicBins = (traversalFoci .~ Just foci) <$> dynamicBins x }
+setAllFoci foci (MB x) = MB $ x { dynamicBins = (traversalFoci ?~ foci) <$> dynamicBins x }
 
 
 setFoci :: Vector TraversalFoci -> MetadataBlock e d m -> MetadataBlock e d m
-setFoci fociVec (MB x) = MB $ x { dynamicBins = zipWith (\foci dec -> dec & traversalFoci .~ Just foci) fociVec $ dynamicBins x }
+setFoci fociVec (MB x) = MB $ x { dynamicBins = zipWith (\foci dec -> dec & traversalFoci ?~ foci) fociVec $ dynamicBins x }
 
 
 getBlockMetadata :: MetadataBlock e d m -> m
@@ -99,7 +99,7 @@ getDynamicMetadata (MB x) = dynamicBins x
 continuousToMetadataBlock
   :: ContinuousCharacterMetadataDec
   -> MetadataBlock e d ()
-continuousToMetadataBlock v = MB $
+continuousToMetadataBlock v = MB
     Block 
     { blockMetadata   = ()
     , continuousBins  = pure v 
@@ -126,7 +126,7 @@ discreteToMetadataBlock struct v =
   where
     stipDec = discreteMetadata <$> (^. characterName) <*> (^. characterWeight) <*> (^. characterAlphabet)
     
-    nonAdditive = MB $
+    nonAdditive = MB
         Block 
         { blockMetadata   = ()
         , continuousBins  = mempty
@@ -137,7 +137,7 @@ discreteToMetadataBlock struct v =
         , dynamicBins     = mempty
         }
 
-    additive = MB $
+    additive = MB
         Block 
         { blockMetadata   = ()
         , continuousBins  = mempty
@@ -148,7 +148,7 @@ discreteToMetadataBlock struct v =
         , dynamicBins     = mempty
         }
 
-    metric = MB $
+    metric = MB
         Block 
         { blockMetadata   = ()
         , continuousBins  = mempty
@@ -159,7 +159,7 @@ discreteToMetadataBlock struct v =
         , dynamicBins     = mempty
         }
 
-    nonMetric = MB $
+    nonMetric = MB
         Block 
         { blockMetadata   = ()
         , continuousBins  = mempty
@@ -174,7 +174,7 @@ discreteToMetadataBlock struct v =
 dynamicToMetadataBlock
   :: DynamicCharacterMetadataDec d
   -> MetadataBlock e d ()
-dynamicToMetadataBlock v = MB $
+dynamicToMetadataBlock v = MB
     Block 
     { blockMetadata   = ()
     , continuousBins  = mempty
