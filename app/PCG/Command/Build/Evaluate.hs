@@ -91,10 +91,7 @@ naiveWagnerParallelBuild
   :: ( Foldable1 f
      , Traversable t
      )
-  => MetadataSequence
-         StaticCharacter
-         (Element DynamicChar)
-         m --(TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
+  => MetadataSequence m --(TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
   -> t (f DatNode)
   -> t FinalDecorationDAG
 naiveWagnerParallelBuild m = parmap rpar (naiveWagnerBuild m)
@@ -102,10 +99,7 @@ naiveWagnerParallelBuild m = parmap rpar (naiveWagnerBuild m)
 
 naiveWagnerBuild
   :: Foldable1 f
-  => MetadataSequence
-         StaticCharacter
-         (Element DynamicChar)
-         m
+  => MetadataSequence m
   -> f DatNode
   -> FinalDecorationDAG
 naiveWagnerBuild metaSeq ns =

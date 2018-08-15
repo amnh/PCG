@@ -100,7 +100,7 @@ generateOutput g ImpliedAlignmentCharacters {} =
 generateOutput _ _ = ErrorCase "Unrecognized 'report' command"
 
 
-showWithTotalEdgeCost 
+showWithTotalEdgeCost
   :: ( HasSingleDisambiguation z c
      , EncodableDynamicCharacter c
      , Exportable c
@@ -121,8 +121,8 @@ showWithTotalEdgeCost
      , HasCharacterCost   x Word
      , HasCharacterCost   y Word
      , HasCharacterCost   z Word
-     ) 
-  => PhylogeneticSolution (PhylogeneticDAG2 m a d e n u v w x y z) 
+     )
+  => PhylogeneticSolution (PhylogeneticDAG2 m e n u v w x y z)
   -> String
 showWithTotalEdgeCost x = unlines
     [ show $ fmap totalEdgeCosts . toNonEmpty <$> phylogeneticForests x

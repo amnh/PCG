@@ -65,8 +65,6 @@ import Data.Vector                         (Vector)
 type CharacterDAG =
        PhylogeneticDAG2
          ()
-         StaticCharacter
-         (Element DynamicChar)
          EdgeLength
          NodeLabel
          UnifiedContinuousCharacter
@@ -109,8 +107,6 @@ type DecoratedCharacterResult = PhylogeneticSolution FinalDecorationDAG
 type FinalDecorationDAG =
        PhylogeneticDAG2
          (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
-         StaticCharacter
-         (Element DynamicChar)
          EdgeLength
          NodeLabel
          (ContinuousOptimizationDecoration    ContinuousChar )
@@ -126,8 +122,6 @@ type FinalDecorationDAG =
 type PostOrderDecorationDAG m =
        PhylogeneticDAG2
          m
-         StaticCharacter
-         (Element DynamicChar)
          EdgeLength
          NodeLabel
          (ContinuousPostorderDecoration ContinuousChar )
@@ -158,8 +152,6 @@ type  UnifiedCharacterBlock
 
 type  UnifiedMetadataBlock
     = MetadataBlock
-        StaticCharacter
-        (Element DynamicChar)
         ()
 
 
@@ -179,8 +171,6 @@ type  UnifiedSequences =
 
 type  UnifiedMetadataSequence
     = MetadataSequence
-        StaticCharacter
-        (Element DynamicChar)
         ()
 
 
@@ -222,8 +212,6 @@ type UnifiedDynamicCharacter    = Maybe (DynamicDecorationInitial DynamicChar)
 type UnReifiedCharacterDAG =
        PhylogeneticDAG
          ()
-         StaticCharacter
-         (Element DynamicChar)
          EdgeLength
          NodeLabel
          UnifiedContinuousCharacter

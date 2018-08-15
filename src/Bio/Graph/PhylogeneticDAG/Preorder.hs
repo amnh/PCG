@@ -73,8 +73,7 @@ type ParentalContext u v w x y z = NonEmpty (TraversalTopology, Word, Maybe (BLK
 -- and returns the new decoration for the current node.
 --
 -- *The better version.*
-preorderSequence''
-  :: HasBlockCost u  v  w  x  y  z
+preorderSequence'' :: HasBlockCost u  v  w  x  y  z
   => (ContinuousCharacterMetadataDec        -> u -> [(Word, u')] -> u')
   -> (DiscreteCharacterMetadataDec          -> v -> [(Word, v')] -> v')
   -> (DiscreteCharacterMetadataDec          -> w -> [(Word, w')] -> w')
@@ -82,7 +81,7 @@ preorderSequence''
        -> x -> [(Word, x')] -> x')
   -> ((DiscreteWithTCMCharacterMetadataDec StaticCharacter)
        -> y -> [(Word, y')] -> y')
-  -> ((DynamicCharacterMetadataDec (Element DynamicChar)
+  -> ((DynamicCharacterMetadataDec (Element DynamicChar))
        -> z -> [(Word, z')] -> z')
   -> PhylogeneticDAG2 m e n u  v  w  x  y  z
   -> PhylogeneticDAG2 m e n u' v' w' x' y' z'

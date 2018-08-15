@@ -212,7 +212,7 @@ extractMostParsimoniusDisplayForest
      , HasBlockCost u v w x y z
      , HasRootCost  u v w x y z
      )
-  => MetadataSequence e d m
+  => MetadataSequence m
   -> f (ResolutionCache (CharacterSequence u v w x y z))
   -> (TraversalTopology, Double, Double)
 extractMostParsimoniusDisplayForest metaSeq displayForests = (topo, rCost, bCost)
@@ -325,7 +325,7 @@ createForestContext
      , HasBlockCost u v w x y z
      , HasRootCost  u v w x y z
      )
-  => MetadataSequence e d m
+  => MetadataSequence m
   -> f (ResolutionInformation (CharacterSequence u v w x y z))
   -> (TraversalTopology, NonEmpty (Double, Double, Vector (NonEmpty TraversalFocusEdge)))
 createForestContext metaSeq displayForest = fromBlockMinimizationContext $ foldMap1 blockContext displayForest

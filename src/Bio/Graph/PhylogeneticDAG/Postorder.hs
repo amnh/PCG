@@ -46,16 +46,15 @@ import qualified Data.Vector                        as V
 -- The logic function takes a current node decoration,
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
-postorderSequence'
-  :: HasBlockCost u' v' w' x' y' z'
+postorderSequence' :: HasBlockCost u' v' w' x' y' z'
   => (ContinuousCharacterMetadataDec        -> u -> [u'] -> u')
   -> (DiscreteCharacterMetadataDec          -> v -> [v'] -> v')
   -> (DiscreteCharacterMetadataDec          -> w -> [w'] -> w')
-  -> ((DiscreteWithTCMCharacterMetadataDec DiscreteCharacter)
+  -> ((DiscreteWithTCMCharacterMetadataDec StaticCharacter)
       -> x -> [x'] -> x')
-  -> ((DiscreteWithTCMCharacterMetadataDec DiscreteCharacter)
+  -> ((DiscreteWithTCMCharacterMetadataDec StaticCharacter)
       -> y -> [y'] -> y')
-  -> ((DynamicCharacterMetadataDec (Element DynamicChar)
+  -> ((DynamicCharacterMetadataDec (Element DynamicChar))
       -> z -> [z'] -> z')
   -> PhylogeneticDAG2 m e n u  v  w  x  y  z
   -> PhylogeneticDAG2 m e n u' v' w' x' y' z'
