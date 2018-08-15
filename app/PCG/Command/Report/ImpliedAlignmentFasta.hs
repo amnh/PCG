@@ -11,27 +11,28 @@
 -- Standard algorithm for implied alignment
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module PCG.Command.Types.Report.ImpliedAlignmentFasta where
 
 import Bio.Character.Encodable
-import Bio.Metadata    hiding (name)
+import Bio.Metadata            hiding (name)
 import Bio.PhyloGraph.DAG
 --import Bio.PhyloGraph.Network (nodeIsLeaf)
 import Bio.PhyloGraph.Node
 import Bio.PhyloGraph.Solution
 import Data.Alphabet
 import Data.Foldable
-import Data.IntMap            (IntMap,insert)
+import Data.IntMap             (IntMap, insert)
 import Data.Key
-import Data.List              (intercalate)
-import Data.List.Utility      (chunksOf)
-import Data.Map               (Map, singleton)
-import Data.Monoid            ((<>))
-import Data.Vector            (Vector)
-import Data.Vector.Instances  ()
-import Prelude         hiding (lookup)
+import Data.List               (intercalate)
+import Data.List.Utility       (chunksOf)
+import Data.Map                (Map, singleton)
+import Data.Monoid             ((<>))
+import Data.Vector             (Vector)
+import Data.Vector.Instances   ()
+import Prelude                 hiding (lookup)
 
 
 outputHUTs :: Bool
@@ -49,10 +50,10 @@ iaOutput solution = {- (\x -> trace (intercalate "\n\n"
                                          ]
                                        ) x) $
                       -}
-                         foldMapWithKey characterToFastaFile dynamicCharacterIndicesAndAlphabets 
+                         foldMapWithKey characterToFastaFile dynamicCharacterIndicesAndAlphabets
   where
     -- Here we use the metadata to filter for dynamic character indicies and
-    -- their corresponding alphabets. 
+    -- their corresponding alphabets.
     dynamicCharacterIndicesAndAlphabets :: IntMap (Alphabet String)
     dynamicCharacterIndicesAndAlphabets = foldlWithKey dynamicCharFilter mempty (getMetadata solution)
       where
@@ -69,7 +70,7 @@ iaOutput solution = {- (\x -> trace (intercalate "\n\n"
     nodeCharacterMapping :: Map String (Vector DynamicChar)
     nodeCharacterMapping = foldMap f $ getForests solution
       where
-        f = foldMap g 
+        f = foldMap g
         g dag            = foldMap h $ getNodes dag
           where
             h node       = if   node `nodeIsLeaf` dag || outputHUTs
@@ -89,7 +90,7 @@ iaOutput solution = {- (\x -> trace (intercalate "\n\n"
     -- Type checker doesn't like the Int in this explicit type signature.
     -- The type checker *can* infer the correct (complicated) type all by itself,
     -- so we will let it do that rather than listen to it complain.
-    
+
     -- characterToFastaFile :: Int -> Alphabet -> [(FilePath, String)]
     characterToFastaFile i alpha = [(characterFileName, foldMapWithKey f nodeCharacterMapping)]
       where
@@ -119,7 +120,7 @@ integrityCheckSolution sol = ("Solution:\n" <>) . unlines' $ f <#$> getForests s
                       else mconcat ["Failures ", show failures, " ", wrap $ intercalate ","  raw]
               where
                 prefix x = " * DAG " <> show j <> " integrity check: " <> x
-                (failures, raw) = foldrWithKey h accum $ nodes dag 
+                (failures, raw) = foldrWithKey h accum $ nodes dag
                 accum = (0, []) :: (Int, [String])
                 h k e (incorrect, xs) = ( if   k /= nodeIdx e
                                           then incorrect + 1

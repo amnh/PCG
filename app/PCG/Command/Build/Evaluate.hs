@@ -1,4 +1,6 @@
-{-# LANGUAGE BangPatterns, FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE BangPatterns     #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module PCG.Command.Build.Evaluate
   ( evaluate
@@ -10,32 +12,32 @@ import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Continuous
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Decoration.Fitch
-import           Bio.Character.Decoration.Metric 
+import           Bio.Character.Decoration.Metric
 import           Bio.Graph
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
+import qualified Bio.Graph.ReferenceDAG              as DAG
 import           Bio.Graph.ReferenceDAG.Internal
-import qualified Bio.Graph.ReferenceDAG as DAG
 import           Bio.Sequence
 import           Bio.Sequence.Metadata
-import           Control.Arrow                 ((&&&))
+import           Control.Arrow                       ((&&&))
 import           Control.DeepSeq
 import           Control.Lens
-import           Control.Monad                 (replicateM)
+import           Control.Monad                       (replicateM)
 import           Control.Monad.IO.Class
-import           Control.Parallel.Strategies
 import           Control.Parallel.Custom
+import           Control.Parallel.Strategies
 import           Data.Foldable
-import qualified Data.IntMap            as IM
-import qualified Data.IntSet            as IS
-import           Data.List.NonEmpty            (NonEmpty(..))
-import qualified Data.List.NonEmpty     as NE
-import           Data.MonoTraversable          (Element)
+import qualified Data.IntMap                         as IM
+import qualified Data.IntSet                         as IS
+import           Data.List.NonEmpty                  (NonEmpty (..))
+import qualified Data.List.NonEmpty                  as NE
+import           Data.MonoTraversable                (Element)
 import           Data.NodeLabel
-import           Data.Ord                      (comparing)
+import           Data.Ord                            (comparing)
 import           Data.Semigroup.Foldable
 import           PCG.Command.Build
-import           PCG.Syntax                    (Command(..))
+import           PCG.Syntax                          (Command (..))
 import           System.Random.Shuffle
 
 
@@ -125,7 +127,7 @@ naiveWagnerBuild metaSeq ns =
 
   where
     fromRefDAG = performDecoration . (`PDAG2`  metaSeq) . resetMetadata
- 
+
 
 iterativeBuild
   :: FinalDecorationDAG
@@ -146,12 +148,12 @@ iterativeBuild currentTree@(PDAG2 _ metaSeq) (nextLeaf:remainingLeaves) = iterat
 
     deriveInternalNode parentDatum oldChildDatum _newChildDatum =
         PNode2 (resolutions oldChildDatum) (nodeDecorationDatum2 parentDatum)
-        
+
 
 iterativeNetworkBuild
   :: FinalDecorationDAG
   -> FinalDecorationDAG
-iterativeNetworkBuild currentNetwork@(PDAG2 inputDag _) = 
+iterativeNetworkBuild currentNetwork@(PDAG2 inputDag _) =
     case toList $ candidateNetworkEdges inputDag of
       []   -> currentNetwork
       x:xs ->
@@ -177,11 +179,11 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag _) =
 
     deriveTargetEdgeNode parentDatum oldChildDatum =
         PNode2 (resolutions oldChildDatum) (nodeDecorationDatum2 parentDatum)
-        
+
 
 resetMetadata :: (Monoid a, Monoid b) => ReferenceDAG d e n -> ReferenceDAG (a, b, Maybe c) e n
-resetMetadata = 
+resetMetadata =
     RefDAG
       <$> references
       <*> rootRefs
-      <*> ((mempty, mempty, Nothing) <$) . graphData 
+      <*> ((mempty, mempty, Nothing) <$) . graphData

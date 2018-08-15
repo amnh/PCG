@@ -1,52 +1,55 @@
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module PCG.Command.Read.Evaluate
   ( evaluate
   ) where
 
 import           Bio.Character.Parsed
-import           Bio.Metadata.Parsed
 import           Bio.Graph
 import           Bio.Graph.Forest.Parsed
-import           Control.Monad                (liftM2, when)
+import           Bio.Metadata.Parsed
+import           Control.Monad                             (liftM2, when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Except
-import           Control.Parallel.Strategies
 import           Control.Parallel.Custom
+import           Control.Parallel.Strategies
 import           Data.Alphabet
-import           Data.Bifunctor               (bimap,first)
+import           Data.Bifunctor                            (bimap, first)
 import           Data.Either.Custom
 import           Data.Foldable
 import           Data.Functor
 import           Data.Key
-import           Data.List                    (sortOn)
-import           Data.List.NonEmpty           (NonEmpty(..))
-import qualified Data.List.NonEmpty    as NE
-import           Data.List.Utility            (occurances)
-import           Data.Map                     (Map)
-import           Data.Maybe                   (catMaybes)
-import           Data.Ord                     (comparing)
-import           Data.TCM                     (TCMDiagnosis(..), TCMStructure(..), diagnoseTcm)
-import qualified Data.TCM              as TCM
-import           Data.Text.IO                 (readFile)
+import           Data.List                                 (sortOn)
+import           Data.List.NonEmpty                        (NonEmpty (..))
+import qualified Data.List.NonEmpty                        as NE
+import           Data.List.Utility                         (occurances)
+import           Data.Map                                  (Map)
+import           Data.Maybe                                (catMaybes)
+import           Data.Ord                                  (comparing)
+import           Data.TCM                                  (TCMDiagnosis (..),
+                                                            TCMStructure (..),
+                                                            diagnoseTcm)
+import qualified Data.TCM                                  as TCM
+import           Data.Text.IO                              (readFile)
 import           Data.Validation
-import qualified Data.Vector           as V
+import qualified Data.Vector                               as V
 import           Data.Void
 import           File.Format.Dot
-import           File.Format.Fasta   hiding   (FastaSequenceType(..))
-import qualified File.Format.Fasta   as Fasta (FastaSequenceType(..))
-import           File.Format.Fastc   hiding   (Identifier)
+import           File.Format.Fasta                         hiding (FastaSequenceType (..))
+import qualified File.Format.Fasta                         as Fasta (FastaSequenceType (..))
+import           File.Format.Fastc                         hiding (Identifier)
 import           File.Format.Newick
-import           File.Format.Nexus            (nexusStreamParser)
-import           File.Format.TNT     hiding   (weight)
+import           File.Format.Nexus                         (nexusStreamParser)
+import           File.Format.TNT                           hiding (weight)
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
-import           PCG.Syntax                   (Command(..))
 import           PCG.Command.Read
 import           PCG.Command.Read.DecorationInitialization
 import           PCG.Command.Read.ReadError
 import           PCG.Command.Read.Unification.Master
-import           Prelude             hiding   (readFile)
+import           PCG.Syntax                                (Command (..))
+import           Prelude                                   hiding (readFile)
 import           System.Directory
 import           System.FilePath.Glob
 import           Text.Megaparsec
@@ -304,7 +307,7 @@ expandDynamicCharsMarkedAsAligned fpr = updateFpr <$> result
     updateFpr (ms, cm) = fpr
         { parsedChars = V.fromList <$> cm
         , parsedMetas = V.fromList ms
-        } 
+        }
 
     result = foldrWithKey expandDynamicChars (pure ([], [] <$ characterMap)) $ parsedMetas fpr
 
@@ -317,7 +320,7 @@ expandDynamicCharsMarkedAsAligned fpr = updateFpr <$> result
       -> ParsedCharacterMetadata
       -> Validation ReadError ([ParsedCharacterMetadata], Map String [ParsedCharacter])
       -> Validation ReadError ([ParsedCharacterMetadata], Map String [ParsedCharacter])
-    expandDynamicChars k m acc = 
+    expandDynamicChars k m acc =
         case getRepresentativeChar ! k of
           ParsedDynamicCharacter {} | not (isDynamic m) ->
             case fmap fst . sortOn snd . occurances . catMaybes $ dynCharLen . (!k) <$> toList characterMap of
@@ -331,7 +334,7 @@ expandDynamicCharsMarkedAsAligned fpr = updateFpr <$> result
         prependUnmodified (ms, cm) = (m:ms, (\i -> (((characterMap!i)!k):)) <#$> cm)
 
     dynCharLen (ParsedDynamicCharacter x) = length <$> x
-    dynCharLen _ = Nothing
+    dynCharLen _                          = Nothing
 
     expandMetadata
       :: Int -- ^ Length
@@ -354,7 +357,7 @@ expandDynamicCharsMarkedAsAligned fpr = updateFpr <$> result
 
 removeGapsFromDynamicCharsNotMarkedAsAligned :: FracturedParseResult -> FracturedParseResult
 removeGapsFromDynamicCharsNotMarkedAsAligned fpr =
-    fpr { parsedChars = fmap removeGapsFromUnalignedDynamicChars <$> parsedChars fpr } 
+    fpr { parsedChars = fmap removeGapsFromUnalignedDynamicChars <$> parsedChars fpr }
   where
     removeGapsFromUnalignedDynamicChars :: ParsedCharacter -> ParsedCharacter
     removeGapsFromUnalignedDynamicChars (ParsedDynamicCharacter (Just xs)) = ParsedDynamicCharacter . NE.nonEmpty $ NE.filter (/= pure "-") xs

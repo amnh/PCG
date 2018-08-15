@@ -18,11 +18,12 @@ module PCG.Command.Types.Report.CharacterMatrix where
 
 --import           Bio.Solution
 import           Bio.Metadata.Internal
-import           Data.Matrix.NotStupid        ((<->), (<|>), matrix, getElem, setElem, Matrix, getRow, nrows, ncols)
-import           Data.Maybe                   (fromMaybe)
+import           Data.Matrix.NotStupid (Matrix, getElem, getRow, matrix, ncols,
+                                        nrows, setElem, (<->), (<|>))
+import           Data.Maybe            (fromMaybe)
 import           Data.Monoid
-import           Data.Vector                  (Vector, (!), imap, cons)
-import qualified Data.Vector             as V (elemIndex)
+import           Data.Vector           (Vector, cons, imap, (!))
+import qualified Data.Vector           as V (elemIndex)
 
 data CharFileMatrix
    = CFMat
@@ -67,7 +68,7 @@ crossReferenceOutput (Graph dags) = printMat $ foldr (combineMats . makeMat) mem
         -- | In combining two CharFileMatrices, we assume that there are no common files between DAGS,
         -- but that there might be common characters.
         combineMats :: CharFileMatrix -> CharFileMatrix -> CharFileMatrix
-        combineMats (CFMat chars1 files1 presence1) (CFMat chars2 files2 presence2) = 
+        combineMats (CFMat chars1 files1 presence1) (CFMat chars2 files2 presence2) =
             let
                 commonChars = foldr (\e acc -> if e `elem` chars2 then e `cons` acc else acc) mempty chars2
                 complementVecs v1 v2 = foldr (\e acc -> if e `elem` v2 then acc else e `cons` acc) mempty v1
@@ -92,7 +93,7 @@ crossReferenceOutput (Graph dags) = printMat $ foldr (combineMats . makeMat) mem
 
         -- | Separates the file and character names, defaulting character name as needed
         separateNames :: Int -> String -> (String, FilePath)
-        separateNames curPos fullName = 
+        separateNames curPos fullName =
           case span (/=':') fullName of
             (             _,             []) -> (show curPos        , fullName)
             (fileNamePrefix, charNameSuffix) -> (tail charNameSuffix, fileNamePrefix) --tail to remove leading ':'

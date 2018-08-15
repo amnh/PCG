@@ -1,29 +1,30 @@
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module PCG.Command.Report.Evaluate
   ( evaluate
   ) where
 
-import           Bio.Character.Decoration.Dynamic
-import           Bio.Character.Encodable
-import           Bio.Character.Exportable
-import           Bio.Graph
-import           Bio.Graph.PhylogeneticDAG
-import           Control.Monad.IO.Class
-import           Data.List.NonEmpty
-import           Data.MonoTraversable
-import           Data.Semigroup.Foldable
-import           PCG.Command.Report
+import Bio.Character.Decoration.Dynamic
+import Bio.Character.Encodable
+import Bio.Character.Exportable
+import Bio.Graph
+import Bio.Graph.PhylogeneticDAG
+import Control.Monad.IO.Class
+import Data.List.NonEmpty
+import Data.MonoTraversable
+import Data.Semigroup.Foldable
+import PCG.Command.Report
 --import           PCG.Command.Report.DynamicCharacterTable
-import           PCG.Command.Report.GraphViz
+import PCG.Command.Report.GraphViz
 --import           PCG.Command.Report.ImpliedAlignmentFasta
 --import           PCG.Command.Report.Internal
 --import           PCG.Command.Report.Metadata
 --import           PCG.Command.Report.Newick
 --import           PCG.Command.Report.TaxonMatrix
-import           PCG.Syntax (Command(..))
-import           Text.XML
+import PCG.Syntax                       (Command (..))
+import Text.XML
 
 
 evaluate :: Command -> GraphState -> SearchState
