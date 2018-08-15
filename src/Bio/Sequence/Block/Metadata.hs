@@ -28,22 +28,22 @@ module Bio.Sequence.Block.Metadata
   , setFoci
   ) where
 
-import Bio.Character.Encodable
-import Bio.Metadata.Continuous
-import Bio.Metadata.Discrete
-import Bio.Metadata.DiscreteWithTCM
-import Bio.Metadata.Dynamic
-import Bio.Sequence.Block.Internal
-import Control.DeepSeq
-import Control.Lens
-import Data.Key
-import qualified Data.MonoTraversable as MT
-import Data.TCM
-import Data.Vector                  (Vector)
-import GHC.Generics
-import Text.XML
-import Text.XML.Light.Types
-import Prelude hiding (zipWith)
+import           Bio.Character.Encodable
+import           Bio.Metadata.Continuous
+import           Bio.Metadata.Discrete
+import           Bio.Metadata.DiscreteWithTCM
+import           Bio.Metadata.Dynamic
+import           Bio.Sequence.Block.Internal
+import           Control.DeepSeq
+import           Control.Lens
+import           Data.Key
+import qualified Data.MonoTraversable         as MT
+import           Data.TCM
+import           Data.Vector                  (Vector)
+import           GHC.Generics
+import           Prelude                      hiding (zipWith)
+import           Text.XML
+import           Text.XML.Light.Types
 
 -- |
 -- Represents a block of data which are optimized atomically together across

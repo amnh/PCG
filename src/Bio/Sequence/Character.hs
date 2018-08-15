@@ -34,7 +34,7 @@ module Bio.Sequence.Character
   , sequenceRootCost
   ) where
 
-import Bio.Character.Encodable
+import           Bio.Character.Encodable
 --import           Bio.Character.Decoration.Continuous
 import           Bio.Metadata.Continuous
 import           Bio.Metadata.Discrete
@@ -258,9 +258,9 @@ hexZipWithMeta
   :: (ContinuousCharacterMetadataDec        -> u -> u' -> u'')
   -> (DiscreteCharacterMetadataDec          -> v -> v' -> v'')
   -> (DiscreteCharacterMetadataDec          -> w -> w' -> w'')
-  -> ((DiscreteWithTCMCharacterMetadataDec StaticCharacter)
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
       -> x -> x' -> x'')
-  -> ((DiscreteWithTCMCharacterMetadataDec StaticCharacter)
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
       -> y -> y' -> y'')
   -> (DynamicCharacterMetadataDec (Element DynamicChar)
       -> z -> z' -> z'')

@@ -17,9 +17,9 @@ module Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
   ( assignOptimalDynamicCharacterRootEdges
   ) where
 
-import Bio.Character.Encodable
 import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Dynamic
+import           Bio.Character.Encodable
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
@@ -74,7 +74,7 @@ assignOptimalDynamicCharacterRootEdges
      , Show y
      , Show z
      )
-  => ((DynamicCharacterMetadataDec (Element DynamicChar)) -> z -> [z] -> z)  -- ^ Post-order traversal function for Dynamic Characters.
+  => (DynamicCharacterMetadataDec (Element DynamicChar) -> z -> [z] -> z)  -- ^ Post-order traversal function for Dynamic Characters.
   -> PhylogeneticDAG2 m e n u v w x y z
   -> ( PhylogeneticDAG2 m e n u v w x y z
      ,         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))

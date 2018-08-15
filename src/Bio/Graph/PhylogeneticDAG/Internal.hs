@@ -33,8 +33,8 @@ module Bio.Graph.PhylogeneticDAG.Internal
   , renderSummary
   , resolutionsDoNotOverlap
   ) where
-import Bio.Character.Encodable
 import           Bio.Character.Decoration.Shared
+import           Bio.Character.Encodable
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG.Internal
@@ -289,11 +289,11 @@ generateLocalResolutions
   => (ContinuousCharacterMetadataDec        -> u -> [u'] -> u'')
   -> (DiscreteCharacterMetadataDec          -> v -> [v'] -> v'')
   -> (DiscreteCharacterMetadataDec          -> w -> [w'] -> w'')
-  -> ((DiscreteWithTCMCharacterMetadataDec StaticCharacter)
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
       -> x -> [x'] -> x'')
-  -> ((DiscreteWithTCMCharacterMetadataDec StaticCharacter)
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
       -> y -> [y'] -> y'')
-  -> ((DynamicCharacterMetadataDec (Element DynamicChar))
+  -> (DynamicCharacterMetadataDec (Element DynamicChar)
       -> z -> [z'] -> z'')
   ->  MetadataSequence m
   ->  ResolutionInformation (CharacterSequence u   v   w   x   y   z  )

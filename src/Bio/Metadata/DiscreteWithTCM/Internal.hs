@@ -28,7 +28,7 @@ module Bio.Metadata.DiscreteWithTCM.Internal
   , discreteMetadataWithTCM
   ) where
 
-
+import Bio.Character.Encodable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM.Class
@@ -155,7 +155,7 @@ instance ToXML (DiscreteWithTCMCharacterMetadataDec c) where
 
 -- |
 -- Construct a concrete typed 'DiscreteWithTCMCharacterMetadataDec' value from the supplied inputs.
-discreteMetadataFromTCM :: CharacterName -> Double -> Alphabet String -> TCM -> DiscreteWithTCMCharacterMetadataDec c
+discreteMetadataFromTCM :: CharacterName -> Double -> Alphabet String -> TCM -> DiscreteWithTCMCharacterMetadataDec StaticCharacter
 discreteMetadataFromTCM name weight alpha tcm =
     DiscreteWithTCMCharacterMetadataDec
     { symbolChangeMatrixData   = sigma
@@ -173,7 +173,12 @@ discreteMetadataFromTCM name weight alpha tcm =
 
 -- |
 -- Construct a concrete typed 'DiscreteWithTCMCharacterMetadataDec' value from the supplied inputs.
-discreteMetadataWithTCM :: CharacterName -> Double -> Alphabet String -> (Word -> Word -> Word) -> DiscreteWithTCMCharacterMetadataDec c
+discreteMetadataWithTCM
+  :: CharacterName
+  -> Double
+  -> Alphabet String
+  -> (Word -> Word -> Word)
+  -> DiscreteWithTCMCharacterMetadataDec c
 discreteMetadataWithTCM name weight alpha scm =
     DiscreteWithTCMCharacterMetadataDec
     { symbolChangeMatrixData   = scm

@@ -53,7 +53,7 @@ import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Bifunctor
 import           Data.Foldable
-import Data.MonoTraversable (Element)
+import           Data.MonoTraversable         (Element)
 import           Data.Vector                  (Vector, fromList)
 import qualified Data.Vector                  as V
 import           Data.Vector.Instances        ()
@@ -275,12 +275,9 @@ hexZipWithMeta
   :: (ContinuousCharacterMetadataDec        -> u -> u' -> u'')
   -> (DiscreteCharacterMetadataDec          -> v -> v' -> v'')
   -> (DiscreteCharacterMetadataDec          -> w -> w' -> w'')
-  -> ((DiscreteWithTCMCharacterMetadataDec StaticCharacter)
-      -> x -> x' -> x'')
-  -> ((DiscreteWithTCMCharacterMetadataDec StaticCharacter)
-      -> y -> y' -> y'')
-  -> ((DynamicCharacterMetadataDec (Element DynamicChar))
-      -> z -> z' -> z'')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> x -> x' -> x'')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> y -> y' -> y'')
+  -> (DynamicCharacterMetadataDec (Element DynamicChar) -> z -> z' -> z'')
   -> MetadataBlock  m
   -> CharacterBlock u   v   w   x   y   z
   -> CharacterBlock u'  v'  w'  x'  y'  z'

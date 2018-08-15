@@ -19,7 +19,7 @@ module Bio.Graph.PhylogeneticDAG.Postorder
   ( postorderSequence'
   ) where
 
-import Bio.Character.Encodable
+import           Bio.Character.Encodable
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
@@ -50,12 +50,12 @@ postorderSequence' :: HasBlockCost u' v' w' x' y' z'
   => (ContinuousCharacterMetadataDec        -> u -> [u'] -> u')
   -> (DiscreteCharacterMetadataDec          -> v -> [v'] -> v')
   -> (DiscreteCharacterMetadataDec          -> w -> [w'] -> w')
-  -> ((DiscreteWithTCMCharacterMetadataDec StaticCharacter)
-      -> x -> [x'] -> x')
-  -> ((DiscreteWithTCMCharacterMetadataDec StaticCharacter)
-      -> y -> [y'] -> y')
-  -> ((DynamicCharacterMetadataDec (Element DynamicChar))
-      -> z -> [z'] -> z')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
+       -> x -> [x'] -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
+       -> y -> [y'] -> y')
+  -> (DynamicCharacterMetadataDec (Element DynamicChar)
+       -> z -> [z'] -> z')
   -> PhylogeneticDAG2 m e n u  v  w  x  y  z
   -> PhylogeneticDAG2 m e n u' v' w' x' y' z'
 --postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag m) | (trace ((show . fmap length . otoList) m) False) = undefined

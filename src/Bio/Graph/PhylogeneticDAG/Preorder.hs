@@ -22,8 +22,8 @@ module Bio.Graph.PhylogeneticDAG.Preorder
   , preorderSequence''
   ) where
 
-import Bio.Character.Encodable
 import           Bio.Character.Decoration.Dynamic
+import           Bio.Character.Encodable
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
@@ -77,11 +77,11 @@ preorderSequence'' :: HasBlockCost u  v  w  x  y  z
   => (ContinuousCharacterMetadataDec        -> u -> [(Word, u')] -> u')
   -> (DiscreteCharacterMetadataDec          -> v -> [(Word, v')] -> v')
   -> (DiscreteCharacterMetadataDec          -> w -> [(Word, w')] -> w')
-  -> ((DiscreteWithTCMCharacterMetadataDec StaticCharacter)
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
        -> x -> [(Word, x')] -> x')
-  -> ((DiscreteWithTCMCharacterMetadataDec StaticCharacter)
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
        -> y -> [(Word, y')] -> y')
-  -> ((DynamicCharacterMetadataDec (Element DynamicChar))
+  -> (DynamicCharacterMetadataDec (Element DynamicChar)
        -> z -> [(Word, z')] -> z')
   -> PhylogeneticDAG2 m e n u  v  w  x  y  z
   -> PhylogeneticDAG2 m e n u' v' w' x' y' z'
@@ -276,12 +276,12 @@ computeOnApplicableResolution''
   :: (ContinuousCharacterMetadataDec        -> u -> [(Word, u')] -> u')
   -> (DiscreteCharacterMetadataDec          -> v -> [(Word, v')] -> v')
   -> (DiscreteCharacterMetadataDec          -> w -> [(Word, w')] -> w')
-  -> ((DiscreteWithTCMCharacterMetadataDec StaticCharacter)
-      -> x -> [(Word, x')] -> x')
-  -> ((DiscreteWithTCMCharacterMetadataDec StaticCharacter)
-      -> y -> [(Word, y')] -> y')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
+       -> x -> [(Word, x')] -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
+       -> y -> [(Word, y')] -> y')
   -> (DynamicCharacterMetadataDec (Element DynamicChar)
-      -> z -> [(Word, z')] -> z')
+       -> z -> [(Word, z')] -> z')
   -> MetadataSequence m
   -> ParentalContext u' v' w' x' y' z'
   -> ResolutionCache (CharacterSequence u v w x y z)
@@ -379,7 +379,7 @@ data  PreorderContext c
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
 preorderFromRooting''
-  :: ((DynamicCharacterMetadataDec (Element DynamicChar))
+  :: (DynamicCharacterMetadataDec (Element DynamicChar)
       -> z -> [(Word, z')] -> z')
   ->         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
   -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
