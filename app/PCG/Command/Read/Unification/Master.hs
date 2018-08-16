@@ -12,7 +12,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns, FlexibleContexts #-}
+{-# LANGUAGE BangPatterns     #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module PCG.Command.Read.Unification.Master
   ( FracturedParseResult(..)
@@ -20,55 +21,55 @@ module PCG.Command.Read.Unification.Master
   ) where
 
 import           Bio.Character
+import           Bio.Character.Decoration.Continuous           hiding (characterName, toContinuousCharacter)
+import           Bio.Character.Decoration.Discrete             hiding (characterName)
+import           Bio.Character.Decoration.Dynamic              hiding (characterName)
 import           Bio.Character.Encodable
-import           Bio.Character.Decoration.Continuous hiding (characterName, toContinuousCharacter)
-import           Bio.Character.Decoration.Discrete   hiding (characterName)
-import           Bio.Character.Decoration.Dynamic    hiding (characterName)
 import           Bio.Character.Parsed
-import           Bio.Sequence                        hiding (hexmap)
+import           Bio.Metadata.Continuous                       (continuousMetadata)
+import           Bio.Sequence                                  hiding (hexmap)
 import           Bio.Sequence.Block
-import qualified Bio.Sequence.Metadata               as MD
-import           Bio.Metadata.Continuous                    (continuousMetadata)
+import qualified Bio.Sequence.Metadata                         as MD
 --import           Bio.Metadata.Discrete                      (discreteMetadata)
-import           Bio.Metadata.DiscreteWithTCM               (discreteMetadataWithTCM)
-import           Bio.Metadata.Dynamic                       (dynamicMetadataWithTCM)
-import           Bio.Metadata.CharacterName          hiding (sourceFile)
-import           Bio.Metadata.Parsed
 import           Bio.Graph
 import           Bio.Graph.Component
 import           Bio.Graph.Forest.Parsed
 import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG
-import qualified Bio.Graph.ReferenceDAG     as DAG
-import           Control.Arrow                     ((***), (&&&))
-import           Control.Applicative               ((<|>))
+import qualified Bio.Graph.ReferenceDAG                        as DAG
+import           Bio.Metadata.CharacterName                    hiding (sourceFile)
+import           Bio.Metadata.DiscreteWithTCM                  (discreteMetadataWithTCM)
+import           Bio.Metadata.Dynamic                          (dynamicMetadataWithTCM)
+import           Bio.Metadata.Parsed
+import           Control.Applicative                           ((<|>))
+import           Control.Arrow                                 ((&&&), (***))
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Alphabet
-import           Data.Bifunctor                    (first)
+import           Data.Bifunctor                                (first)
 import           Data.Default
 import           Data.Foldable
-import qualified Data.IntMap                as IM
-import qualified Data.IntSet                as IS
+import qualified Data.IntMap                                   as IM
+import qualified Data.IntSet                                   as IS
 import           Data.Key
-import           Data.List                         (transpose, zip4)
-import           Data.List.NonEmpty                (NonEmpty(..))
-import qualified Data.List.NonEmpty         as NE
-import           Data.List.Utility                 (duplicates)
-import           Data.Map                          (Map, intersectionWith, keys)
-import qualified Data.Map                   as Map
-import           Data.Maybe                        (catMaybes, fromMaybe, listToMaybe)
-import           Data.Semigroup                    ((<>), sconcat)
+import           Data.List                                     (transpose, zip4)
+import           Data.List.NonEmpty                            (NonEmpty (..))
+import qualified Data.List.NonEmpty                            as NE
+import           Data.List.Utility                             (duplicates)
+import           Data.Map                                      (Map, intersectionWith, keys)
+import qualified Data.Map                                      as Map
+import           Data.Maybe                                    (catMaybes, fromMaybe, listToMaybe)
+import           Data.Semigroup                                (sconcat, (<>))
 import           Data.Semigroup.Foldable
-import           Data.Set                          (Set, (\\))
-import qualified Data.Set                   as Set
+import           Data.Set                                      (Set, (\\))
+import qualified Data.Set                                      as Set
 import           Data.String
-import           Data.TCM                          (TCM, TCMStructure(..))
-import qualified Data.TCM                   as TCM
+import           Data.TCM                                      (TCM, TCMStructure (..))
+import qualified Data.TCM                                      as TCM
 --import           Data.MonoTraversable
-import           Data.Vector                       (Vector)
+import           Data.Vector                                   (Vector)
 import           PCG.Command.Read.Unification.UnificationError
-import           Prelude                    hiding (lookup, zipWith)
+import           Prelude                                       hiding (lookup, zipWith)
 
 
 data FracturedParseResult

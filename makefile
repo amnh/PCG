@@ -98,7 +98,7 @@ install-hlint:
 	which hlint || (stack install hlint)
 
 run-linter: install-hlint format-code
-	hlint lib src test
+	hlint lib src test app
 
 # Copies documentation director to local scope
 copy-haddock: set-dir-variables

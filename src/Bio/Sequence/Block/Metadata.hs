@@ -28,6 +28,7 @@ module Bio.Sequence.Block.Metadata
   , setFoci
   ) where
 
+import Bio.Character.Encodable
 import Bio.Metadata.Continuous
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
@@ -36,6 +37,7 @@ import Bio.Sequence.Block.Internal
 import Control.DeepSeq
 import Control.Lens
 import Data.Key
+import Data.MonoTraversable         as MT
 import Data.TCM
 import Data.Vector                  (Vector)
 import GHC.Generics
@@ -48,27 +50,27 @@ import Text.XML.Light.Types
 -- networks.
 --
 -- Use '(<>)' to construct larger blocks.
-newtype MetadataBlock e d m = MB
+newtype MetadataBlock m = MB
     ( Block
          m
          ContinuousCharacterMetadataDec
          DiscreteCharacterMetadataDec
          DiscreteCharacterMetadataDec
-        (DiscreteWithTCMCharacterMetadataDec e)
-        (DiscreteWithTCMCharacterMetadataDec e)
-        (DynamicCharacterMetadataDec d)
+        (DiscreteWithTCMCharacterMetadataDec StaticCharacter)
+        (DiscreteWithTCMCharacterMetadataDec StaticCharacter)
+        (DynamicCharacterMetadataDec (MT.Element DynamicChar))
     )
     deriving (NFData, Generic, Semigroup)
 
 
-instance Functor (MetadataBlock e d) where
+instance Functor MetadataBlock where
 
     fmap f (MB b) = MB $ b { blockMetadata = f $ blockMetadata b }
 
     (<$) v (MB b) = MB $ b { blockMetadata = v }
 
 
-instance ToXML (MetadataBlock e d m) where
+instance ToXML (MetadataBlock m) where
 
     toXML (MB block) = Element name attrs contents Nothing
       where
@@ -84,25 +86,25 @@ instance ToXML (MetadataBlock e d m) where
             ] <*> [block]
 
 
-setAllFoci :: TraversalFoci -> MetadataBlock e d m -> MetadataBlock e d m
+setAllFoci :: TraversalFoci -> MetadataBlock m -> MetadataBlock m
 setAllFoci foci (MB x) = MB $ x { dynamicBins = (traversalFoci ?~ foci) <$> dynamicBins x }
 
 
-setFoci :: Vector TraversalFoci -> MetadataBlock e d m -> MetadataBlock e d m
+setFoci :: Vector TraversalFoci -> MetadataBlock m -> MetadataBlock m
 setFoci fociVec (MB x) = MB $ x { dynamicBins = zipWith (\foci dec -> dec & traversalFoci ?~ foci) fociVec $ dynamicBins x }
 
 
-getBlockMetadata :: MetadataBlock e d m -> m
+getBlockMetadata :: MetadataBlock m -> m
 getBlockMetadata (MB x) = blockMetadata x
 
 
-getDynamicMetadata :: MetadataBlock e d m -> Vector (DynamicCharacterMetadataDec d)
+getDynamicMetadata :: MetadataBlock m -> Vector (DynamicCharacterMetadataDec (MT.Element DynamicChar))
 getDynamicMetadata (MB x) = dynamicBins x
 
 
 continuousToMetadataBlock
   :: ContinuousCharacterMetadataDec
-  -> MetadataBlock e d ()
+  -> MetadataBlock ()
 continuousToMetadataBlock v = MB
     Block
     { blockMetadata   = ()
@@ -117,8 +119,8 @@ continuousToMetadataBlock v = MB
 
 discreteToMetadataBlock
   :: TCMStructure
-  -> DiscreteWithTCMCharacterMetadataDec e
-  -> MetadataBlock e d ()
+  -> DiscreteWithTCMCharacterMetadataDec StaticCharacter
+  -> MetadataBlock ()
 discreteToMetadataBlock struct v =
     case struct of
       NonAdditive  -> nonAdditive
@@ -175,8 +177,8 @@ discreteToMetadataBlock struct v =
 
 
 dynamicToMetadataBlock
-  :: DynamicCharacterMetadataDec d
-  -> MetadataBlock e d ()
+  :: DynamicCharacterMetadataDec (MT.Element DynamicChar)
+  -> MetadataBlock ()
 dynamicToMetadataBlock v = MB
     Block
     { blockMetadata   = ()

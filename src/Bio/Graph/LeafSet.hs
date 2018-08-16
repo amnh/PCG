@@ -44,7 +44,7 @@ newtype LeafSet n = LeafSet [n]
 class HasLeafSet s a | s -> a where
 
     {-# MINIMAL leafSet #-}
-    leafSet :: Lens' s a
+    leafSet :: Getter s a
 
 
 -- | (✔)

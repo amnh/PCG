@@ -6,9 +6,9 @@ module PCG.Computation.Internal
 
 import           Bio.Graph
 import           Control.Evaluation
-import           Data.Char          (isSpace)
+import           Data.Char                   (isSpace)
 import           Data.Foldable
-import           Data.List.NonEmpty (NonEmpty(..))
+import           Data.List.NonEmpty          (NonEmpty (..))
 import qualified PCG.Command.Build.Evaluate  as Build
 import qualified PCG.Command.Read.Evaluate   as Read
 import qualified PCG.Command.Report.Evaluate as Report
@@ -26,7 +26,7 @@ collapseReadCommands p@(x:|xs) =
      y:ys ->
        case (x, y) of
          (READ lhs, READ rhs) -> collapseReadCommands (READ (lhs<>rhs) :| ys)
-         _ -> (x :|) . toList . collapseReadCommands $ y:|ys
+         _                    -> (x :|) . toList . collapseReadCommands $ y:|ys
 
 
 evaluate :: Computation -> SearchState

@@ -48,8 +48,8 @@ import           Data.Vector                                   (Vector)
 -- Remove all scoring data from nodes.
 wipeScoring
   :: Default n
-  => PhylogeneticDAG2 m a d e n u v w x y z
-  -> PhylogeneticDAG2 m a d e n (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
+  => PhylogeneticDAG2 m e n u v w x y z
+  -> PhylogeneticDAG2 m e n (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
 wipeScoring (PDAG2 dag m) = PDAG2 wipedDAG m
   where
     wipedDAG =
@@ -119,11 +119,19 @@ performDecoration
      , RangedCharacterDecoration w StaticCharacter
      , SimpleDynamicDecoration z DynamicChar
      )
-  => PhylogeneticDAG2 m StaticCharacter (Element DynamicChar) EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
+  => PhylogeneticDAG2 m EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
   -> FinalDecorationDAG
 performDecoration x = performPreOrderDecoration performPostOrderDecoration
   where
-    performPreOrderDecoration :: PostOrderDecorationDAG (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge)) -> FinalDecorationDAG
+    performPreOrderDecoration ::
+      PostOrderDecorationDAG
+      (TraversalTopology
+      , Double
+      , Double
+      , Double
+      , Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge)
+      )
+      -> FinalDecorationDAG
     performPreOrderDecoration =
         preorderFromRooting''
           adaptiveDirectOptimizationPreOrder
