@@ -174,7 +174,7 @@ instance HasLeafSet (ReferenceDAG d e n) (LeafSet n) where
 
     leafSet = Lens.to getter
         where
-            getter :: ReferencaeDAG d e n -> LeafSet n
+            getter :: ReferenceDAG d e n -> LeafSet n
             getter (RefDAG v _ _) = LeafSet $ foldMap f v
 
             f e | null (childRefs e) = [nodeDecoration e]
