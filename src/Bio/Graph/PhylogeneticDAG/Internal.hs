@@ -17,7 +17,6 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MonoLocalBinds        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
 
 -- Because I'm sick of dealing with the typechecker.
 {-# LANGUAGE UndecidableInstances  #-}
@@ -52,7 +51,7 @@ import qualified Bio.Sequence.Metadata           as M
 import           Control.Applicative             (liftA2)
 import           Control.Arrow                   ((***))
 import           Control.DeepSeq
-import           Control.Lens
+import           Control.Lens                    as Lens
 import           Data.Bits
 import           Data.Foldable
 import           Data.GraphViz.Printing          hiding ((<>))
@@ -130,10 +129,15 @@ type EdgeReference = (Int, Int)
 
 
 -- | (✔)
-instance HasLeafSet (PhylogeneticDAG2 m e n u v w x y z) (LeafSet (PhylogeneticNode2 (CharacterSequence u v w x y z) n)) where
+instance HasLeafSet
+  (PhylogeneticDAG2 m e n u v w x y z)
+  (LeafSet (PhylogeneticNode2 (CharacterSequence u v w x y z) n)) where
 
-    leafSet = lens getter undefined
+    leafSet = Lens.to getter
         where
+            getter ::
+              PhylogeneticDAG2 m e n u v w x y z
+              -> LeafSet (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
             getter (PDAG2 e _) =  e ^. leafSet
 
 

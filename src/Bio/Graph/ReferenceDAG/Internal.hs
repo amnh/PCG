@@ -16,6 +16,7 @@
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UnboxedSums                #-}
 
@@ -26,7 +27,7 @@ import           Bio.Graph.Component
 import           Bio.Graph.LeafSet
 import           Control.Arrow                 ((&&&), (***))
 import           Control.DeepSeq
-import           Control.Lens                  (lens)
+import           Control.Lens                  as Lens (lens, to)
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
 import           Data.EdgeSet
@@ -171,8 +172,9 @@ instance Functor (ReferenceDAG d e) where
 -- | (✔)
 instance HasLeafSet (ReferenceDAG d e n) (LeafSet n) where
 
-    leafSet = lens getter undefined
+    leafSet = Lens.to getter
         where
+            getter :: ReferencaeDAG d e n -> LeafSet n
             getter (RefDAG v _ _) = LeafSet $ foldMap f v
 
             f e | null (childRefs e) = [nodeDecoration e]
