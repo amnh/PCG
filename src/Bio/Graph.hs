@@ -26,6 +26,7 @@ module Bio.Graph
   , PhylogeneticForest(..)
   , PhylogeneticSolution(..)
   , PostOrderDecorationDAG
+  , PreOrderDecorationDAG
   , SearchState
   , TopologicalResult
   , UnifiedBlock
@@ -41,6 +42,7 @@ module Bio.Graph
   , assignOptimalDynamicCharacterRootEdges
   , assignPunitiveNetworkEdgeCost
   , generateLocalResolutions
+  , phylogeneticForests
   , postorderSequence'
   , preorderFromRooting
   , preorderFromRooting''
@@ -49,7 +51,7 @@ module Bio.Graph
   , renderSummary
   , reifiedSolution
   , rootCosts
-  , phylogeneticForests
+  , setEdgeSequences
   -- * Mapping over networks
   , edgePreorderMap
   , edgePostorderMap

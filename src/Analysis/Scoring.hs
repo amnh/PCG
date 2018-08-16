@@ -43,6 +43,9 @@ import           Data.MonoTraversable                          (Element)
 import           Data.NodeLabel
 import           Data.Vector                                   (Vector)
 
+import           Bio.Character.Decoration.Continuous
+import           Bio.Metadata
+
 
 -- |
 -- Remove all scoring data from nodes.
@@ -121,9 +124,19 @@ performDecoration
      )
   => PhylogeneticDAG2 m StaticCharacter (Element DynamicChar) EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
   -> FinalDecorationDAG
-performDecoration x = performPreOrderDecoration performPostOrderDecoration
+performDecoration x = finalizeEdgeData $ performPreOrderDecoration performPostOrderDecoration
   where
-    performPreOrderDecoration :: PostOrderDecorationDAG (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge)) -> FinalDecorationDAG
+
+    finalizeEdgeData :: PreOrderDecorationDAG -> FinalDecorationDAG
+    finalizeEdgeData = setEdgeSequences
+                         (const additivePostOrder :: ContinuousCharacterMetadataDec -> ContinuousOptimizationDecoration ContinuousChar -> [ContinuousOptimizationDecoration ContinuousChar] -> ContinuousOptimizationDecoration ContinuousChar)
+                         (const fitchPostOrder)
+                         (const additivePostOrder)
+                         sankoffPostOrder
+                         sankoffPostOrder
+                         (const id2)
+    
+    performPreOrderDecoration :: PostOrderDecorationDAG (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge)) -> PreOrderDecorationDAG
     performPreOrderDecoration =
         preorderFromRooting''
           adaptiveDirectOptimizationPreOrder
@@ -163,6 +176,10 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
     g h        _  xs = h (error "We shouldn't be using this value.") xs
 
     adaptiveDirectOptimizationPostOrder meta = directOptimizationPostOrder pairwiseAlignmentFunction
+      where
+        pairwiseAlignmentFunction = selectDynamicMetric meta
+
+    adaptiveDirectOptimizationPostOrder2 meta = directOptimizationPostOrder pairwiseAlignmentFunction
       where
         pairwiseAlignmentFunction = selectDynamicMetric meta
 

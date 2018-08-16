@@ -28,6 +28,7 @@ module Bio.Graph.PhylogeneticDAG
   , preorderSequence''
   , renderSummary
   , rootCosts
+  , setEdgeSequences
   , totalEdgeCosts
   , getDotContextWithBaseAndIndex
   -- * Mapping over networks

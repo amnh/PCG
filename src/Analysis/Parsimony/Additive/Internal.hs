@@ -101,6 +101,17 @@ import Numeric.Extended
  -}
 
 
+unionInterval
+  :: ( HasFinalInterval d (Range c)
+     , Ord c
+     )
+  => d -> d -> d
+unionInterval x y = x & finalInterval .~ union xInt yInt
+  where
+    xInt = x ^. finalInterval
+    yInt = y ^. finalInterval
+
+
 -- |
 -- Used on the post-order (i.e. first) traversal.
 -- Applies appropriate logic to internal node and leaf node cases.

@@ -24,6 +24,7 @@ module Bio.Graph.Constructions
   , PhylogeneticDAG2(..)
   , PhylogeneticDAGish(..)
   , PostOrderDecorationDAG
+  , PreOrderDecorationDAG
   , SearchState
   , TopologicalResult
   , UnifiedBlock
@@ -105,8 +106,25 @@ type DecoratedCharacterResult = PhylogeneticSolution FinalDecorationDAG
 
 
 -- |
--- Decoration of a phylogenetic DAG after a pre-order traversal.
+-- Decoration of a phylogenetic DAG after a pre-order traversal AND after the edge data has been finalized.
 type FinalDecorationDAG =
+       PhylogeneticDAG2
+         (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
+         StaticCharacter
+         (Element DynamicChar)
+         FinalEdgeDatum
+         NodeLabel
+         (ContinuousOptimizationDecoration    ContinuousChar )
+         (FitchOptimizationDecoration         StaticCharacter)
+         (AdditiveOptimizationDecoration      StaticCharacter)
+         (SankoffOptimizationDecoration       StaticCharacter)
+         (SankoffOptimizationDecoration       StaticCharacter)
+         (DynamicDecorationDirectOptimization DynamicChar    )
+
+
+-- |
+-- Decoration of a phylogenetic DAG after a pre-order traversal.
+type PreOrderDecorationDAG =
        PhylogeneticDAG2
          (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
          StaticCharacter
@@ -121,6 +139,18 @@ type FinalDecorationDAG =
          (DynamicDecorationDirectOptimization DynamicChar    )
 
 
+type FinalEdgeDatum =
+       ( EdgeLength
+       , CharacterSequence
+         (ContinuousOptimizationDecoration    ContinuousChar )
+         (FitchOptimizationDecoration         StaticCharacter)
+         (AdditiveOptimizationDecoration      StaticCharacter)
+         (SankoffOptimizationDecoration       StaticCharacter)
+         (SankoffOptimizationDecoration       StaticCharacter)
+         (DynamicDecorationDirectOptimization DynamicChar    )
+       )
+
+             
 -- |
 -- Decoration of a phylogenetic DAG after a post-order traversal.
 type PostOrderDecorationDAG m =
