@@ -123,7 +123,7 @@ naiveWagnerBuild metaSeq ns =
                    , ( IS.singleton 0, wipeNode False z, mempty )
                    ]
 --          in  iterativeBuild (trace ("Leaves remaining: " <> show (length xs) <> "\n"<> show initTree) initTree) xs
-          in  iterativeBuild initTree xs
+          in  foldl' iterativeBuild initTree xs
 
   where
     fromRefDAG = performDecoration . (`PDAG2`  metaSeq) . resetMetadata
@@ -131,11 +131,9 @@ naiveWagnerBuild metaSeq ns =
 
 iterativeBuild
   :: FinalDecorationDAG
-  -> [DatNode]
+  -> DatNode
   -> FinalDecorationDAG
-iterativeBuild currentTree [] = currentTree
---iterativeBuild currentTree (nextLeaf:_) | trace (show $ nodeDecorationDatum2 nextLeaf) False = undefined
-iterativeBuild currentTree@(PDAG2 _ metaSeq) (nextLeaf:remainingLeaves) = iterativeBuild nextTree remainingLeaves
+iterativeBuild currentTree@(PDAG2 _ metaSeq) nextLeaf = nextTree
   where
     (PDAG2 dag _) = wipeScoring currentTree
     edgeSet     = NE.fromList . toList $ referenceEdgeSet dag
