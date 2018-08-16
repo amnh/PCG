@@ -20,7 +20,9 @@ module Bio.Graph.PhylogeneticDAG.Preorder
   , preorderFromRooting''
   , preorderSequence'
   , preorderSequence''
+  , setEdgeSequences
   ) where
+
 
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Graph.Node
@@ -29,8 +31,7 @@ import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Metadata
 import           Bio.Sequence
 import qualified Bio.Sequence.Block                 as BLK
-import           Bio.Sequence.Metadata              (MetadataSequence,
-                                                     getDynamicMetadata)
+import           Bio.Sequence.Metadata              (MetadataSequence, getDynamicMetadata)
 import qualified Bio.Sequence.Metadata              as M
 import           Control.Arrow                      ((&&&))
 import           Control.Lens
@@ -52,10 +53,7 @@ import           Data.TopologyRepresentation
 import           Data.Vector                        (Vector)
 import qualified Data.Vector                        as VE
 import           Data.Vector.Instances              ()
-import           Prelude                            hiding (lookup, zip,
-                                                     zipWith)
-
---import Debug.Trace
+import           Prelude                            hiding (lookup, zip, zipWith)
 
 
 type BlockTopologies = NonEmpty TraversalTopology
@@ -695,3 +693,30 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag meta) = PDA
 
 constructDefaultMetadata :: (Monoid a, Monoid b) => ReferenceDAG d e n -> GraphData (a, b, Maybe c)
 constructDefaultMetadata = ((mempty, mempty, Nothing) <$) . graphData
+
+
+-- |
+-- Computes and sets the virtual node sequence on each edge.
+setEdgeSequences
+  :: (ContinuousCharacterMetadataDec        -> u -> [u] -> u)
+  -> (DiscreteCharacterMetadataDec          -> v -> [v] -> v)
+  -> (DiscreteCharacterMetadataDec          -> w -> [w] -> w)
+  -> (DiscreteWithTCMCharacterMetadataDec a -> x -> [x] -> x)
+  -> (DiscreteWithTCMCharacterMetadataDec a -> y -> [y] -> y)
+  -> (DynamicCharacterMetadataDec d         -> z -> [z] -> z)
+  -> PhylogeneticDAG2 m a d e n u v w x y z
+  -> PhylogeneticDAG2 m a d (e, CharacterSequence u v w x y z) n u v w x y z
+setEdgeSequences f1 f2 f3 f4 f5 f6 (PDAG2 dag meta) = PDAG2 updatedDAG meta
+  where
+    refVec       = references dag
+    updatedDAG   = dag { references = updatedEdges }
+    updatedEdges = updateEdgeData <$> refVec
+
+    updateEdgeData idx = idx { childRefs = addEdgeSeq <#$> childRefs idx }
+      where
+        thisSeq  = getDatum idx
+        getDatum = characterSequence . NE.head . resolutions . nodeDecoration
+        addEdgeSeq k v = (v, edgeSeq)
+          where
+            edgeSeq = hexZipWithMeta f1 f2 f3 f4 f5 f6 meta thisSeq . hexTranspose $ thisSeq :| [kidSeq]
+            kidSeq  = getDatum $ refVec ! k
