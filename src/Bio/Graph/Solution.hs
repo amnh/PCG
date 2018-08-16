@@ -31,7 +31,7 @@ import           Bio.Graph.LeafSet
 import           Bio.Graph.PhylogeneticDAG
 import           Bio.Sequence
 import           Control.DeepSeq
-import           Control.Lens              hiding (Indexable)
+import           Control.Lens              as Lens hiding (Indexable)
 import           Data.Foldable
 import           Data.GraphViz.Printing    hiding (indent, (<>))
 import           Data.GraphViz.Printing    (renderDot, toDot)
@@ -64,7 +64,7 @@ phylogeneticForests (PhylogeneticSolution x) = x
 
 instance (HasLeafSet a b, Semigroup b) => HasLeafSet (PhylogeneticSolution a) b where
 
-    leafSet = lens getter undefined
+    leafSet = Lens.to getter
       where
         getter = foldMap1 (^. leafSet) . phylogeneticForests
 
