@@ -46,8 +46,7 @@ import           Bio.Sequence
 import           Bio.Sequence.Block.Character    (CharacterBlock (..))
 import           Bio.Sequence.Block.Internal
 import           Bio.Sequence.Block.Metadata     (MetadataBlock (..))
-import           Bio.Sequence.Metadata           (MetadataSequence,
-                                                  getBlockMetadata)
+import           Bio.Sequence.Metadata           (MetadataSequence, getBlockMetadata)
 import qualified Bio.Sequence.Metadata           as M
 import           Control.Applicative             (liftA2)
 import           Control.Arrow                   ((***))

@@ -24,8 +24,7 @@ import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Metadata.Dynamic
 import           Bio.Sequence
-import           Bio.Sequence.Metadata              (MetadataBlock,
-                                                     getDynamicMetadata)
+import           Bio.Sequence.Metadata              (MetadataBlock, getDynamicMetadata)
 import qualified Bio.Sequence.Metadata              as M
 import           Control.Applicative
 import           Control.Arrow                      ((&&&))

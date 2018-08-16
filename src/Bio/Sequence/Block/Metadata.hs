@@ -39,9 +39,9 @@ import Data.Key
 import Data.TCM
 import Data.Vector                  (Vector)
 import GHC.Generics
+import Prelude                      hiding (zipWith)
 import Text.XML
 import Text.XML.Light.Types
-import Prelude hiding (zipWith)
 
 -- |
 -- Represents a block of data which are optimized atomically together across
@@ -130,7 +130,7 @@ discreteToMetadataBlock struct v =
   where
     stipDec = discreteMetadata <$> (^. characterName) <*> (^. characterWeight) <*> (^. characterAlphabet)
     nonAdditive = MB
-        Block 
+        Block
         { blockMetadata   = ()
         , continuousBins  = mempty
         , nonAdditiveBins = pure $ stipDec v
@@ -141,7 +141,7 @@ discreteToMetadataBlock struct v =
         }
 
     additive = MB
-        Block 
+        Block
         { blockMetadata   = ()
         , continuousBins  = mempty
         , nonAdditiveBins = mempty
@@ -163,7 +163,7 @@ discreteToMetadataBlock struct v =
         }
 
     nonMetric = MB
-        Block 
+        Block
         { blockMetadata   = ()
         , continuousBins  = mempty
         , nonAdditiveBins = mempty
@@ -178,7 +178,7 @@ dynamicToMetadataBlock
   :: DynamicCharacterMetadataDec d
   -> MetadataBlock e d ()
 dynamicToMetadataBlock v = MB
-    Block 
+    Block
     { blockMetadata   = ()
     , continuousBins  = mempty
     , nonAdditiveBins = mempty

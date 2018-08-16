@@ -36,8 +36,7 @@ import           Control.Monad.State.Strict
 import           Data.Bifunctor                      (bimap)
 import           Data.Foldable
 import           Data.Key
-import           Data.List                           (elemIndex, intercalate,
-                                                      sort)
+import           Data.List                           (elemIndex, intercalate, sort)
 import           Data.List.NonEmpty                  (NonEmpty (..), unzip)
 import           Data.Maybe
 import           Data.Monoid

@@ -16,8 +16,7 @@ import qualified Data.List.NonEmpty             as NE
 import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Set                       (Set)
-import qualified Data.Set                       as Set (fromList, intersection,
-                                                        union)
+import qualified Data.Set                       as Set (fromList, intersection, union)
 import           Data.Vector                    (Vector, fromList)
 import           Test.Tasty
 import           Test.Tasty.HUnit

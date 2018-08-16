@@ -71,8 +71,7 @@ import           Data.List.NonEmpty               (NonEmpty (..), some1)
 import           Data.Proxy
 import           Data.String                      (IsString (..))
 import           Data.Time.Clock                  (DiffTime)
-import           PCG.Syntax.Primative             (PrimativeValue,
-                                                   parsePrimative, whitespace)
+import           PCG.Syntax.Primative             (PrimativeValue, parsePrimative, whitespace)
 import qualified PCG.Syntax.Primative             as P
 import           Text.Megaparsec                  hiding (many)
 import           Text.Megaparsec.Char

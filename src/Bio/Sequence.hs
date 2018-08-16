@@ -50,15 +50,10 @@ module Bio.Sequence
   , staticCost
   ) where
 
-import Bio.Sequence.Block           hiding (hexTranspose, hexZipWith,
-                                     hexZipWithMeta, hexmap)
+import Bio.Sequence.Block           hiding (hexTranspose, hexZipWith, hexZipWithMeta, hexmap)
 import Bio.Sequence.Block.Builder
-import Bio.Sequence.Block.Character (additiveCharacterBins,
-                                     continuousCharacterBins, dynamicCharacters,
-                                     finalizeCharacterBlock,
-                                     metricCharacterBins,
-                                     nonAdditiveCharacterBins,
-                                     nonMetricCharacterBins,
-                                     setDynamicCharacters)
+import Bio.Sequence.Block.Character (additiveCharacterBins, continuousCharacterBins, dynamicCharacters,
+                                     finalizeCharacterBlock, metricCharacterBins, nonAdditiveCharacterBins,
+                                     nonMetricCharacterBins, setDynamicCharacters)
 import Bio.Sequence.Character
 

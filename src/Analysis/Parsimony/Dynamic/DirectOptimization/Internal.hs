@@ -47,8 +47,7 @@ import           Data.Semigroup
 import           Data.TCM.Memoized
 import           Data.Word
 import           Numeric.Extended.Natural
-import           Prelude                                                         hiding
-                                                                                  (lookup)
+import           Prelude                                                         hiding (lookup)
 
 
 -- |

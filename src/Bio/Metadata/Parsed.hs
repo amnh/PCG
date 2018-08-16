@@ -29,21 +29,16 @@ import           Data.Key
 import           Data.List                        (transpose)
 import           Data.List.NonEmpty               (NonEmpty)
 import           Data.Monoid
-import           Data.TCM                         (TCM, TCMDiagnosis (..),
-                                                   TCMStructure (..),
-                                                   diagnoseTcm)
+import           Data.TCM                         (TCM, TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
 import qualified Data.TCM                         as TCM
 import           Data.Vector                      (Vector)
 import qualified Data.Vector                      as V
 import           Data.Vector.Instances            ()
 import           File.Format.Dot
-import           File.Format.Fasta                (FastaParseResult,
-                                                   TaxonSequenceMap)
+import           File.Format.Fasta                (FastaParseResult, TaxonSequenceMap)
 import           File.Format.Fastc
 import           File.Format.Newick
-import           File.Format.Nexus                hiding
-                                                   (CharacterMetadata (..), DNA,
-                                                   Nucleotide, RNA,
+import           File.Format.Nexus                hiding (CharacterMetadata (..), DNA, Nucleotide, RNA,
                                                    TaxonSequenceMap)
 import qualified File.Format.Nexus                as Nex
 import qualified File.Format.TNT                  as TNT

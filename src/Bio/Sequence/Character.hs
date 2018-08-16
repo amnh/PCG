@@ -40,8 +40,7 @@ import           Bio.Metadata.Continuous
 import           Bio.Metadata.Discrete
 import           Bio.Metadata.DiscreteWithTCM
 import           Bio.Metadata.Dynamic
-import           Bio.Sequence.Block           (CharacterBlock, HasBlockCost,
-                                               HasRootCost)
+import           Bio.Sequence.Block           (CharacterBlock, HasBlockCost, HasRootCost)
 import qualified Bio.Sequence.Block           as Blk
 import           Bio.Sequence.Metadata        (MetadataSequence)
 import qualified Bio.Sequence.Metadata        as M

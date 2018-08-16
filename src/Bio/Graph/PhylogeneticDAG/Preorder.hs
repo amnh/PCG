@@ -29,8 +29,7 @@ import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Metadata
 import           Bio.Sequence
 import qualified Bio.Sequence.Block                 as BLK
-import           Bio.Sequence.Metadata              (MetadataSequence,
-                                                     getDynamicMetadata)
+import           Bio.Sequence.Metadata              (MetadataSequence, getDynamicMetadata)
 import qualified Bio.Sequence.Metadata              as M
 import           Control.Arrow                      ((&&&))
 import           Control.Lens
@@ -52,8 +51,7 @@ import           Data.TopologyRepresentation
 import           Data.Vector                        (Vector)
 import qualified Data.Vector                        as VE
 import           Data.Vector.Instances              ()
-import           Prelude                            hiding (lookup, zip,
-                                                     zipWith)
+import           Prelude                            hiding (lookup, zip, zipWith)
 
 --import Debug.Trace
 

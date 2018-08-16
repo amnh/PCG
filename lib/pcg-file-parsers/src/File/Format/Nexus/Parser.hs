@@ -38,8 +38,7 @@ import           File.Format.Nexus.Partition
 import           File.Format.TransitionCostMatrix.Parser
 import           Text.Megaparsec                         hiding (label)
 import           Text.Megaparsec.Char
-import           Text.Megaparsec.Char.Lexer              (decimal,
-                                                          skipBlockCommentNested)
+import           Text.Megaparsec.Char.Lexer              (decimal, skipBlockCommentNested)
 import           Text.Megaparsec.Custom
 
 

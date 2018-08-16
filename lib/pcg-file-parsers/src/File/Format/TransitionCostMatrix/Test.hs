@@ -11,8 +11,7 @@ module File.Format.TransitionCostMatrix.Test
 import Data.Foldable                           (toList)
 import Data.List.NonEmpty                      (fromList)
 import File.Format.TransitionCostMatrix.Parser
-import Test.Custom.Parse                       (parseEquals, parseFailure,
-                                                parseSuccess)
+import Test.Custom.Parse                       (parseEquals, parseFailure, parseSuccess)
 import Test.Tasty                              (TestTree, testGroup)
 import Test.Tasty.HUnit
 import Text.Megaparsec                         (eof)

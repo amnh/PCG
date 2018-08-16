@@ -289,13 +289,13 @@ instance MonoFoldable DynamicChar where
     headEx dc =
       case dc of
         (DC c) | (not . onull) c -> DCE $ headEx c
-        _ -> error $ "call to DynamicChar.headEx with: " <> show dc
+        _                        -> error $ "call to DynamicChar.headEx with: " <> show dc
 
     {-# INLINE lastEx #-}
     lastEx dc =
       case dc of
         (DC c) | (not . onull) c -> DCE $ lastEx c
-        _ -> error $ "call to DynamicChar.lastEx with: " <> show dc
+        _                        -> error $ "call to DynamicChar.lastEx with: " <> show dc
 
 
 instance MonoFunctor DynamicChar where
