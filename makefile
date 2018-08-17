@@ -86,19 +86,32 @@ stack-build-test-failures: phylocomgraph.cabal stack.yaml
 stack-build-test-new: phylocomgraph.cabal stack.yaml
 	stack build --test --ta "--rerun-filter=new"
 
+
+### The code cleanliness section
+### Installs hlint, stylish-haskell, and weeder
+### Formats code, then reports and cleanliness issues
+### NOTE: Should be run before merging into master!!!
+
+# install hlint if not installed
+install-hlint:
+	which hlint || (stack install hlint --resolver=lts)
+
 # install stylish haskell if not installed
 install-stylish-haskell:
-	which stylish-haskell || (stack install stylish-haskell)
+	which stylish-haskell || (stack install stylish-haskell --resolver=lts)
+
+# install weeder if not installed
+install-weeder:
+	which weeder || (stack install weeder --resolver=lts)
 
 format-code: install-stylish-haskell
 	(./stylish.sh)
 
-# install hlint if not installed
-install-hlint:
-	which hlint || (stack install hlint)
-
-run-linter: install-hlint format-code
+run-linter: install-hlint install-weeder format-code
 	hlint lib src test app
+	weeder . --build
+
+
 
 # Copies documentation director to local scope
 copy-haddock: set-dir-variables
