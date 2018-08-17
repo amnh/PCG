@@ -10,10 +10,10 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveAnyClass        #-}
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE Strict       #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric  #-}
+{-# LANGUAGE Strict         #-}
+{-# LANGUAGE TypeFamilies   #-}
 
 module Data.TCM.Internal
   ( TCM(..)

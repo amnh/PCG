@@ -42,7 +42,7 @@ import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
 import Data.Bits
-import Data.List                                 (intercalate)
+import Data.List                          (intercalate)
 import Data.Range
 import Data.TCM                           as TCM
 import Data.TCM.Memoized
@@ -108,14 +108,14 @@ linearNormLogic lhs rhs = (fromRange newInterval, cost)
   where
     lhs' = toRange lhs
     rhs' = toRange rhs
-    
+
     newInterval
       | isOverlapping = lhs' `intersection`   rhs'
       | otherwise     = lhs' `smallestClosed` rhs'
     isOverlapping     = lhs' `intersects`     rhs'
     cost
       | isOverlapping = 0
-      | otherwise     = upperBound newInterval - lowerBound newInterval 
+      | otherwise     = upperBound newInterval - lowerBound newInterval
 
 
 -- | (✔)
@@ -132,7 +132,7 @@ instance Eq RepresentedTCM where
   (ExplicitLayout x _) == (ExplicitLayout y _) = x == y
   _                    == _                    = False
 
- 
+
 -- | (✔)
 instance HasCharacterAlphabet (DiscreteWithTCMCharacterMetadataDec c) (Alphabet String) where
 
@@ -233,7 +233,7 @@ discreteMetadataFromTCM name weight alpha tcm =
           NonAdditive -> DiscreteMetric
           Additive    -> LinearNorm
           _           -> ExplicitLayout (factoredTcm diagnosis) memoMatrixValue
-    
+
     diagnosis       = diagnoseTcm tcm
     coefficient     = fromIntegral $ factoredWeight diagnosis
     sigma  i j      = toEnum . fromEnum $ factoredTcm diagnosis ! (fromEnum i, fromEnum j)

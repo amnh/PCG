@@ -25,7 +25,7 @@ import PCG.Command.Report.GraphViz
 --import           PCG.Command.Report.Metadata
 --import           PCG.Command.Report.Newick
 --import           PCG.Command.Report.TaxonMatrix
-import PCG.Syntax                       (Command (..))
+import PCG.Syntax                                    (Command (..))
 import Text.XML
 
 

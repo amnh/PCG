@@ -10,7 +10,6 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns           #-}
 {-# LANGUAGE DeriveAnyClass         #-}
 {-# LANGUAGE DeriveGeneric          #-}
 {-# LANGUAGE FlexibleContexts       #-}

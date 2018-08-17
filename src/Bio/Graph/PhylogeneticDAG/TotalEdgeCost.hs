@@ -12,10 +12,10 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns        #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE MonoLocalBinds      #-}
-{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE BangPatterns     #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MonoLocalBinds   #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module Bio.Graph.PhylogeneticDAG.TotalEdgeCost
   ( totalEdgeCosts
