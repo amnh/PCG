@@ -33,7 +33,6 @@ module Bio.Metadata.DiscreteWithTCM.Internal
   , discreteMetadataWithTCM
   ) where
 
-import Bio.Character.Encodable
 import Bio.Character.Exportable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete

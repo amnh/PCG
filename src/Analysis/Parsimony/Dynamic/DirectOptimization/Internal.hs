@@ -29,7 +29,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Internal
 
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (overlap)
-import           Analysis.Parsimony.Dynamic.SequentialAlign
+--import           Analysis.Parsimony.Dynamic.SequentialAlign
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
 import           Bio.Character.Exportable
@@ -44,7 +44,6 @@ import           Data.List.NonEmpty                                             
 import           Data.List.Utility                                               (invariantTransformation)
 import           Data.MonoTraversable
 import           Data.Semigroup
-import           Data.TCM.Memoized
 import           Data.Word
 import           Numeric.Extended.Natural
 import           Prelude                                                         hiding (lookup)
