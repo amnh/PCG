@@ -13,6 +13,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Analysis.Scoring
   (

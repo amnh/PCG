@@ -78,7 +78,7 @@ selectDynamicMetric
      , Exportable c
      , Exportable (Element c)
      , HasDenseTransitionCostMatrix  dec (Maybe DenseTransitionCostMatrix)
-     , HasSparseTransitionCostMatrix dec MemoizedCostMatrix
+     , HasTransitionCostMatrix       dec (OverlapFunction (Element c))
      , Ord (Element c)
      )
   => dec
@@ -86,14 +86,14 @@ selectDynamicMetric
   -> c
   -> (Word, c, c, c, c)
 selectDynamicMetric candidate
-  | sequentialAlignOverride = sequentialAlign sTCM
+  | sequentialAlignOverride = undefined -- sequentialAlign sTCM
   | otherwise =
       case candidate ^. denseTransitionCostMatrix of
         Just dm -> \x y -> foreignPairwiseDO x y dm
-        Nothing -> let !sTCM' = getMedianAndCost2D sTCM
+        Nothing -> let !sTCM' = sTCM
                    in  \x y -> ukkonenDO x y sTCM'
   where
-    !sTCM = candidate ^. sparseTransitionCostMatrix
+    !sTCM = candidate ^. transitionCostMatrix
 
 
 -- |
@@ -269,7 +269,8 @@ tripleComparison pairwiseAlignment meta childDecoration parentCharacter parentSi
     -- initialize a memoized TCM. We certainly don't want to force that here!
     costStructure =
         case meta ^. denseTransitionCostMatrix of
-          Nothing -> getMedianAndCost3D (meta ^. sparseTransitionCostMatrix)
+                     -- TODO: Encapsilate this in DiscreteMetadataWithTCM
+          Nothing -> naiveMedianAndCost3D -- getMedianAndCost3D (meta ^. sparseTransitionCostMatrix)
           -- Compute things naively
           Just _  -> naiveMedianAndCost3D
       where

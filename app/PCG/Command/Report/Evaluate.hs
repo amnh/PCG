@@ -6,11 +6,13 @@ module PCG.Command.Report.Evaluate
   ( evaluate
   ) where
 
+import Analysis.Parsimony.Dynamic.DirectOptimization (OverlapFunction)
 import Bio.Character.Decoration.Dynamic
 import Bio.Character.Encodable
 import Bio.Character.Exportable
 import Bio.Graph
 import Bio.Graph.PhylogeneticDAG
+import Bio.Metadata
 import Control.Monad.IO.Class
 import Data.List.NonEmpty
 import Data.MonoTraversable
@@ -102,7 +104,7 @@ generateOutput _ _                             = ErrorCase "Unrecognized 'report
 
 
 showWithTotalEdgeCost
-  :: ( HasSingleDisambiguation z c
+  :: ( HasSingleDisambiguation      z c
      , EncodableDynamicCharacter c
      , Exportable c
      , Exportable (Element c)
@@ -122,6 +124,7 @@ showWithTotalEdgeCost
      , HasCharacterCost   x Word
      , HasCharacterCost   y Word
      , HasCharacterCost   z Word
+     , Element c ~ DynamicCharacterElement
      )
   => PhylogeneticSolution (PhylogeneticDAG2 m e n u v w x y z)
   -> String

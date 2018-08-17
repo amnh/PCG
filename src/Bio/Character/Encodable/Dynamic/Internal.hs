@@ -48,7 +48,9 @@ import           Data.List.NonEmpty                    (NonEmpty (..))
 import qualified Data.List.NonEmpty                    as NE
 import           Data.List.Utility                     (invariantTransformation)
 import qualified Data.Map                              as M
+import           Data.Maybe                            (fromJust)
 import           Data.MonoTraversable
+import           Data.Range
 import           Data.String                           (fromString)
 import           Data.Tuple                            (swap)
 import           Data.Vector                           (Vector)
@@ -76,6 +78,9 @@ data  DynamicChar
 newtype DynamicCharacterElement
       = DCE BitVector
       deriving (Bits, Eq, FiniteBits, Generic, MonoFoldable, MonoFunctor, Ord, Show)
+
+
+type instance Bound DynamicCharacterElement = Word
 
 
 type instance Element DynamicChar = DynamicCharacterElement
@@ -330,6 +335,24 @@ instance PossiblyMissingCharacter DynamicChar where
     {-# INLINE isMissing  #-}
     isMissing Missing{} = True
     isMissing _         = False
+
+
+instance Ranged DynamicCharacterElement where
+
+    toRange sc = fromTupleWithPrecision (firstSetBit, lastSetBit) totalBits
+        where
+            firstSetBit = toEnum $ countLeadingZeros sc
+            lastSetBit  = toEnum $ totalBits - countTrailingZeros sc - 1
+            totalBits   = finiteBitSize sc
+
+    fromRange x = zeroVector .|. (allBitsUpperBound `xor` allBitsLowerBound)
+        where
+            allBitsUpperBound = DCE . fromNumber (toEnum boundaryBit) $ (2 ^ upperBound x - 1 :: Integer)
+            allBitsLowerBound = DCE . fromNumber (toEnum boundaryBit) $ (2 ^ lowerBound x - 1 :: Integer)
+            zeroVector  = (zeroBits `setBit` boundaryBit) `clearBit` boundaryBit
+            boundaryBit = fromJust (precision x) - 1
+
+    zeroRange sc = fromTupleWithPrecision (0,0) $ finiteBitSize sc
 
 
 instance ToXML DynamicChar where
