@@ -30,7 +30,6 @@ import           Bio.Character.Exportable
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
-import           Bio.Metadata
 import           Bio.Sequence
 import           Bio.Sequence.Metadata                         (getDynamicMetadata)
 import qualified Bio.Sequence.Metadata                         as M

@@ -127,12 +127,12 @@ instance DiscreteCharacterMetadata (DynamicCharacterMetadataDec c) where
 
 
 -- | (✔)
-instance (Bits c, Bound c ~ Word, EncodableStreamElement c, Exportable c, Ord (Bound c), Ranged c)
+instance (Bits c, Bound c ~ Word, EncodableStreamElement c, Exportable c, Ranged c)
     => DiscreteWithTcmCharacterMetadata (DynamicCharacterMetadataDec c) c where
 
 
 -- | (✔)
-instance (Bits c, Bound c ~ Word, EncodableStreamElement c, Exportable c, Ord (Bound c), Ranged c)
+instance (Bits c, Bound c ~ Word, EncodableStreamElement c, Exportable c, Ranged c)
     => DynamicCharacterMetadata (DynamicCharacterMetadataDec c) c where
 
     {-# INLINE extractDynamicCharacterMetadata #-}
@@ -190,7 +190,7 @@ instance HasSymbolChangeMatrix (DynamicCharacterMetadataDec c) (Word -> Word -> 
 
 
 -- | (✔)
-instance (Bits c, Bound c ~ Word, Exportable c, Ord (Bound c), Ranged c)
+instance (Bits c, Bound c ~ Word, Exportable c, Ranged c)
     => HasTransitionCostMatrix (DynamicCharacterMetadataDec c) (c -> c -> (c, Word)) where
 
     transitionCostMatrix = lens (\e -> metadata e ^. transitionCostMatrix)

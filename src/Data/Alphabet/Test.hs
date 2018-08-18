@@ -2,18 +2,20 @@ module Data.Alphabet.Test
   ( testSuite
   ) where
 
-import           Data.Alphabet
-import           Data.List             (nub, nubBy, sort, splitAt)
-import qualified Data.Text             as T
-import           Test.Tasty
-import           Test.Tasty.HUnit      as HU
-import           Test.Tasty.QuickCheck as QC
+import Data.Alphabet
+import Data.Foldable
+import Data.List             (nubBy, splitAt)
+import Test.Tasty
+import Test.Tasty.HUnit      as HU
+import Test.Tasty.QuickCheck as QC
+
 
 testSuite :: TestTree
 testSuite = testGroup "Alphabet Tests"
     [ testPropertyCases
     , testExampleCases
     ]
+
 
 testPropertyCases :: TestTree
 testPropertyCases = testGroup "Invariant properties"
@@ -24,10 +26,12 @@ testPropertyCases = testGroup "Invariant properties"
     , truncateAtMaxSymbolProperties
     ]
 
+
 testExampleCases :: TestTree
 testExampleCases = testGroup "Example cases for Data.Alphabet"
     [ alphabetDNACases
     ]
+
 
 alphabetStateNamesProperties :: TestTree
 alphabetStateNamesProperties = testGroup "Properties of alphabetStateNames"
@@ -37,6 +41,7 @@ alphabetStateNamesProperties = testGroup "Properties of alphabetStateNames"
   where
     noStateNames :: [String] -> Bool
     noStateNames = null . alphabetStateNames . fromSymbols
+
 
 alphabetSymbolsProperties :: TestTree
 alphabetSymbolsProperties = testGroup "Properties of alphabetSymbols"
@@ -51,6 +56,7 @@ alphabetSymbolsProperties = testGroup "Properties of alphabetSymbols"
               (alphabetSymbols . fromSymbolsWithStateNames $ strs)
               === (alphabetSymbols . fromSymbols . fmap fst $ strs)
 
+
 gapSymbolProperties :: TestTree
 gapSymbolProperties = testGroup "Properties of gapSymbol"
     [ QC.testProperty "The gap symbol is always \"-\"" constGapSymbol
@@ -59,6 +65,7 @@ gapSymbolProperties = testGroup "Properties of gapSymbol"
     constGapSymbol :: [(String, String)] -> Property
     constGapSymbol = (=== "-") . gapSymbol . fromSymbolsWithStateNames
 
+
 truncateAtSymbolProperties :: TestTree
 truncateAtSymbolProperties = testGroup "Properties of truncateAtSymbol"
     [ QC.testProperty
@@ -66,14 +73,13 @@ truncateAtSymbolProperties = testGroup "Properties of truncateAtSymbol"
       splitOrderedList
     ]
   where
-    splitOrderedList :: (Int, [String]) -> Property
-    splitOrderedList (n, strs') =
-      let strs = sort strs' in
-        if (0 < n) && (n < length strs) then
-          let (xs, y : ys) = splitAt n strs in
-              (truncateAtSymbol y . fromSymbols $ strs)
-              === fromSymbols (xs <> [y])
-        else property True
+    splitOrderedList :: (NonNegative Int, [String]) -> Property
+    splitOrderedList (NonNegative n, strs') =
+      let strs = toList $ fromSymbols strs'
+      in  case splitAt n strs of
+            (_,   []) -> property True
+            (xs, y:_) -> (truncateAtSymbol y . fromSymbols $ strs) === fromSymbols (xs <> [y])
+
 
 truncateAtMaxSymbolProperties :: TestTree
 truncateAtMaxSymbolProperties = testGroup "Properties of truncateAtMaxSymbol"
@@ -86,6 +92,7 @@ truncateAtMaxSymbolProperties = testGroup "Properties of truncateAtMaxSymbol"
     truncatePreserve strs = let alph = fromSymbols strs in
         truncateAtMaxSymbol strs alph === alph
 
+
 -- Cases for unit tests
 
 alphabetDNAString :: [(String, String)]
@@ -96,12 +103,17 @@ alphabetDNAString =
   , ("T", "thymine")
   ]
 
+
+{-
 alphabetDNAText :: [(T.Text, T.Text)]
 alphabetDNAText =
   fmap (\(s1, s2) -> (T.pack s1, T.pack s2)) alphabetDNAString
+-}
+
 
 alphabetDNA :: Alphabet String
 alphabetDNA = fromSymbolsWithStateNames alphabetDNAString
+
 
 alphabetDNACases :: TestTree
 alphabetDNACases =

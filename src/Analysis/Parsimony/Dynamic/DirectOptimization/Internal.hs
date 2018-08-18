@@ -75,7 +75,6 @@ sequentialAlignOverride = False
 selectDynamicMetric
   :: ( EncodableDynamicCharacter c
      , Exportable c
-     , Exportable (Element c)
      , HasDenseTransitionCostMatrix  dec (Maybe DenseTransitionCostMatrix)
      , HasTransitionCostMatrix       dec (OverlapFunction (Element c))
      , Ord (Element c)
@@ -155,10 +154,7 @@ updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) = resultDecoration
 -- Parameterized over a 'PairwiseAlignment' function to allow for different
 -- atomic alignments depending on the character's metadata.
 directOptimizationPreOrder
-  :: ( DirectOptimizationPostOrderDecoration d c
-     -- , EncodedAmbiguityGroupContainer c
-     , Exportable (Element c)
-     )
+  :: DirectOptimizationPostOrderDecoration d c
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
   -> d
@@ -206,9 +202,7 @@ disambiguateElement x = zed `setBit` idx
 -- Use the decoration(s) of the ancestral nodes to calculate the corrent node
 -- decoration. The recursive logic of the pre-order traversal.
 updateFromParent
-  :: ( DirectOptimizationPostOrderDecoration d c
-     , Exportable (Element c)
-     )
+  :: DirectOptimizationPostOrderDecoration d c
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
   -> d
@@ -242,9 +236,7 @@ updateFromParent pairwiseAlignment meta currentDecoration parentDecoration = res
 -- |
 -- A three way comparison of characters used in the DO preorder traversal.
 tripleComparison
-  :: ( Exportable (Element c)
-     , DirectOptimizationPostOrderDecoration d c
-     )
+  :: DirectOptimizationPostOrderDecoration d c
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
   -> d

@@ -32,7 +32,6 @@ import qualified Data.IntMap                         as IM
 import qualified Data.IntSet                         as IS
 import           Data.List.NonEmpty                  (NonEmpty (..))
 import qualified Data.List.NonEmpty                  as NE
-import           Data.MonoTraversable                (Element)
 import           Data.NodeLabel
 import           Data.Ord                            (comparing)
 import           Data.Semigroup.Foldable

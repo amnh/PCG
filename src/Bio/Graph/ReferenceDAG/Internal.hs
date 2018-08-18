@@ -27,7 +27,7 @@ import           Bio.Graph.Component
 import           Bio.Graph.LeafSet
 import           Control.Arrow                 ((&&&), (***))
 import           Control.DeepSeq
-import           Control.Lens                  as Lens (lens, to)
+import           Control.Lens                  as Lens (to)
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
 import           Data.EdgeSet
@@ -294,7 +294,7 @@ instance Show n => ToNewick (ReferenceDAG d e n) where
         namedVec = zipWith (\x n -> n { nodeDecoration = x }) labelVec vec
         labelVec = (`evalState` (1,1,1)) $ mapM deriveLabel vec -- All network nodes have "htu\d" as nodeDecoration.
 
-        deriveLabel :: Show n => IndexData e n -> State (Int, Int, Int) String
+        deriveLabel :: IndexData e n -> State (Int, Int, Int) String
         deriveLabel node
           | shownLabel /= "{Unlabeled Node}" = pure shownLabel
           | otherwise = do

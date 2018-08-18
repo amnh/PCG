@@ -40,7 +40,6 @@ import           Bio.Sequence
 import           Data.Default
 import           Data.EdgeLength
 import qualified Data.List.NonEmpty                            as NE
-import           Data.MonoTraversable                          (Element)
 import           Data.NodeLabel
 import           Data.Vector                                   (Vector)
 

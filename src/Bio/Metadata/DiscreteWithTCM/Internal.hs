@@ -46,7 +46,6 @@ import Data.Range
 import Data.TCM                           as TCM
 import Data.TCM.Memoized
 import GHC.Generics
-import Numeric.Extended
 import Text.XML
 
 
@@ -55,7 +54,7 @@ import Text.XML
 -- discrete different bins. Continous bins do not have Alphabets.
 data DiscreteWithTCMCharacterMetadataDec c
    = DiscreteWithTCMCharacterMetadataDec
-   { representedTCM :: {-# UNPACK #-} !RepresentedTCM
+   { representedTCM :: !RepresentedTCM
    , discreteData   :: {-# UNPACK #-} !DiscreteCharacterMetadataDec
    } deriving (Eq, Generic, NFData)
 
@@ -76,33 +75,42 @@ retreiveTCM
   :: ( Bits c
      , Bound c ~ Word
      , Exportable c
-     , Ord (Bound c)
      , Ranged c
      )
   => RepresentedTCM
   -> c
   -> c
   -> (c, Word)
-retreiveTCM (ExplicitLayout tcm memo) = getMedianAndCost2D memo
-retreiveTCM DiscreteMetric            = discreteMetricLogic
-retreiveTCM LinearNorm                = linearNormLogic
+retreiveTCM (ExplicitLayout _ memo) = getMedianAndCost2D memo
+retreiveTCM DiscreteMetric          = discreteMetricLogic
+retreiveTCM LinearNorm              = linearNormLogic
 
 
 
 retreiveSCM :: RepresentedTCM -> Word -> Word -> Word
-retreiveSCM (ExplicitLayout tcm memo) = \i j -> toEnum . fromEnum $ tcm TCM.! (i,j)
-retreiveSCM DiscreteMetric            = \i j -> if i == j then 0 else 1
-retreiveSCM LinearNorm                = \i j -> max i j - min i j
+retreiveSCM (ExplicitLayout tcm _) = \i j -> toEnum . fromEnum $ tcm TCM.! (i,j)
+retreiveSCM DiscreteMetric         = \i j -> if i == j then 0 else 1
+retreiveSCM LinearNorm             = \i j -> max i j - min i j
 
 
+discreteMetricLogic :: (Bits a, Num b) => a -> a -> (a, b)
 discreteMetricLogic lhs rhs
-  | popCount intersection > 0 = (intersection, 0)
-  | otherwise                 = (       union, 1)
+  | popCount intersect > 0 = (intersect, 0)
+  | otherwise              = (  unioned, 1)
   where
-    union        = lhs .|. rhs
-    intersection = lhs .&. rhs
+    unioned   = lhs .|. rhs
+    intersect = lhs .&. rhs
 
 
+linearNormLogic
+  :: ( Ord (Bound a)
+     , Ranged a
+     , Ranged b
+     , Ranged c
+     , Bound b ~ Bound a
+     , Bound c ~ Bound a
+     )
+  => a -> b -> (c, Bound a)
 linearNormLogic lhs rhs = (fromRange newInterval, cost)
   where
     lhs' = toRange lhs
@@ -178,7 +186,7 @@ instance HasSymbolChangeMatrix (DiscreteWithTCMCharacterMetadataDec c) (Word -> 
 
 -- |
 -- A 'Lens' for the 'transitionCostMatrix' field
-instance (Bits c, Bound c ~ Word, Exportable c, Ord (Bound c), Ranged c)
+instance (Bits c, Bound c ~ Word, Exportable c, Ranged c)
     => HasTransitionCostMatrix (DiscreteWithTCMCharacterMetadataDec c) (c -> c -> (c, Word)) where
 
     transitionCostMatrix = lens (retreiveTCM . representedTCM) undefined

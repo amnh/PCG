@@ -6,13 +6,11 @@ module PCG.Command.Report.Evaluate
   ( evaluate
   ) where
 
-import Analysis.Parsimony.Dynamic.DirectOptimization (OverlapFunction)
 import Bio.Character.Decoration.Dynamic
 import Bio.Character.Encodable
 import Bio.Character.Exportable
 import Bio.Graph
 import Bio.Graph.PhylogeneticDAG
-import Bio.Metadata
 import Control.Monad.IO.Class
 import Data.List.NonEmpty
 import Data.MonoTraversable
@@ -25,7 +23,7 @@ import PCG.Command.Report.GraphViz
 --import           PCG.Command.Report.Metadata
 --import           PCG.Command.Report.Newick
 --import           PCG.Command.Report.TaxonMatrix
-import PCG.Syntax                                    (Command (..))
+import PCG.Syntax                       (Command (..))
 import Text.XML
 
 
@@ -104,11 +102,9 @@ generateOutput _ _                             = ErrorCase "Unrecognized 'report
 
 
 showWithTotalEdgeCost
-  :: ( HasSingleDisambiguation      z c
+  :: ( HasSingleDisambiguation z c
      , EncodableDynamicCharacter c
      , Exportable c
-     , Exportable (Element c)
-     , Ord (Element c)
      , Show m
      , Show e
      , Show n

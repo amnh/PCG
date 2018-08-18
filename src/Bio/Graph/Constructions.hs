@@ -55,7 +55,6 @@ import Bio.Sequence.Metadata
 import Control.Evaluation
 import Data.EdgeLength
 import Data.List.NonEmpty
-import Data.MonoTraversable
 import Data.NodeLabel
 import Data.Vector                         (Vector)
 
