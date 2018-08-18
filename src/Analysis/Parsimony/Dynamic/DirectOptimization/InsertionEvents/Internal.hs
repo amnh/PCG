@@ -23,17 +23,13 @@ import           Data.IntMap                                                  (I
 import qualified Data.IntMap                                                  as IM
 import           Data.Key
 import           Data.List                                                    (intercalate)
-import           Data.Monoid                                                  hiding
-                                                                               ((<>))
+import           Data.Monoid                                                  hiding ((<>))
 import           Data.MonoTraversable
 import           Data.Semigroup                                               (Semigroup (..))
 import           Data.Sequence                                                (Seq)
 import qualified Data.Sequence                                                as Seq
-import           Prelude                                                      hiding
-                                                                               (lookup,
-                                                                               zipWith)
-import           Test.QuickCheck                                              hiding
-                                                                               (output)
+import           Prelude                                                      hiding (lookup, zipWith)
+import           Test.QuickCheck                                              hiding (output)
 
 
 {-# DEPRECATED (<^>) "Don't use (<^>), it is an old and incorrect operator. Use coalesce instead!" #-}

@@ -7,8 +7,7 @@ module File.Format.VertexEdgeRoot.Test2
 
 import Data.List                          (intercalate)
 import File.Format.VertexEdgeRoot.Parser2
-import Test.Custom                        (parseEquals, parseFailure,
-                                           parseSuccess)
+import Test.Custom                        (parseEquals, parseFailure, parseSuccess)
 import Test.Tasty                         (TestTree, testGroup)
 import Test.Tasty.HUnit
 import Text.Megaparsec                    (eof)

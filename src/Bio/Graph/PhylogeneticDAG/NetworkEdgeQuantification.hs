@@ -96,8 +96,19 @@ assignPunitiveNetworkEdgeCost
   :: ( HasBlockCost u v w x y z
      , HasRootCost  u v w x y z
      )
-  => PhylogeneticDAG2 m a d e n u v w x y z
-  -> (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge)), PhylogeneticDAG2 (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge)) a d e n u v w x y z)
+  => PhylogeneticDAG2 m e n u v w x y z
+  -> (NonEmpty
+      (TraversalTopology
+      , Double
+      , Double
+      , Double
+      , Vector (NonEmpty TraversalFocusEdge))
+     , PhylogeneticDAG2
+         (TraversalTopology
+         , Double
+         , Double
+         , Double
+         , Vector (NonEmpty TraversalFocusEdge)) e n u v w x y z)
 assignPunitiveNetworkEdgeCost input@(PDAG2 dag meta) = (outputContext, PDAG2 (dag { graphData = newGraphData }) newMetaSeq)
   where
     -- First grab all the valid display forests present in the DAG.
@@ -175,7 +186,7 @@ assignPunitiveNetworkEdgeCost input@(PDAG2 dag meta) = (outputContext, PDAG2 (da
 --
 -- * Each taxon in the input DAG is connected to exactly one root.
 --
-gatherDisplayForests :: PhylogeneticDAG2 m a d e n u v w x y z -> [ResolutionCache (CharacterSequence u v w x y z)]
+gatherDisplayForests :: PhylogeneticDAG2 m e n u v w x y z -> [ResolutionCache (CharacterSequence u v w x y z)]
 gatherDisplayForests (PDAG2 dag _) = result
   where
     -- First we collect all resolutions for each root node
@@ -201,7 +212,7 @@ extractMostParsimoniusDisplayForest
      , HasBlockCost u v w x y z
      , HasRootCost  u v w x y z
      )
-  => MetadataSequence e d m
+  => MetadataSequence m
   -> f (ResolutionCache (CharacterSequence u v w x y z))
   -> (TraversalTopology, Double, Double)
 extractMostParsimoniusDisplayForest metaSeq displayForests = (topo, rCost, bCost)
@@ -236,7 +247,7 @@ extractMinimalDisplayForestPerBlock
      , HasBlockCost u v w x y z
      , HasRootCost  u v w x y z
      )
-  => MetadataSequence e d m
+  => MetadataSequence m
   -> f (ResolutionCache (CharacterSequence u v w x y z))                                -- ^ Set of valid display forests
   -> NonEmpty (TraversalTopology, Double, Double, Vector (NonEmpty TraversalFocusEdge)) -- ^ Valid display forest for each character block
                                                                                         --   And the dynamic character rooting edges.
@@ -314,7 +325,7 @@ createForestContext
      , HasBlockCost u v w x y z
      , HasRootCost  u v w x y z
      )
-  => MetadataSequence e d m
+  => MetadataSequence m
   -> f (ResolutionInformation (CharacterSequence u v w x y z))
   -> (TraversalTopology, NonEmpty (Double, Double, Vector (NonEmpty TraversalFocusEdge)))
 createForestContext metaSeq displayForest = fromBlockMinimizationContext $ foldMap1 blockContext displayForest

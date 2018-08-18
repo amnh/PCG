@@ -20,8 +20,7 @@ import           Analysis.ImpliedAlignment.InsertionEvents.Internal
 import           Control.Arrow                                      (second)
 import qualified Data.IntMap                                        as IM
 import           Data.Monoid
-import           Test.QuickCheck.Property.Common.Internal           (Equal,
-                                                                     runEqual)
+import           Test.QuickCheck.Property.Common.Internal           (Equal, runEqual)
 import           Test.QuickCheck.Property.Monoid
 import           Test.Tasty
 import           Test.Tasty.HUnit

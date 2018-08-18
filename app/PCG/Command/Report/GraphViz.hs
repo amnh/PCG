@@ -19,7 +19,7 @@ module PCG.Command.Report.GraphViz
   ) where
 
 import           Bio.Graph
-import           Data.GraphViz.Printing hiding ((<>)) -- Seriously, why is this redefined?
+import           Data.GraphViz.Printing hiding ((<>))
 import qualified Data.Text.Lazy         as L
 
 

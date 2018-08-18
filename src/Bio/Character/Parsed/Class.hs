@@ -26,8 +26,7 @@ import           Data.Foldable
 import           Data.Key
 import           Data.List.NonEmpty               (NonEmpty (..))
 import qualified Data.List.NonEmpty               as NE
-import           Data.Map                         (Map, fromSet, insert,
-                                                   keysSet, mergeWithKey)
+import           Data.Map                         (Map, fromSet, insert, keysSet, mergeWithKey)
 import qualified Data.Map                         as M
 import           Data.Maybe
 import           Data.Semigroup.Foldable

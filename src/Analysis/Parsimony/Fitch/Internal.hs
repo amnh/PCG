@@ -79,11 +79,11 @@ updatePostOrder _parentDecoration (leftChildDec:|rightChildDec:_) =
   where
     -- fold over states of character. This is Fitch so final cost is either 0 or 1.
     (median, parentCost)
-      | popCount union > 0 = (union, 0)
-      | otherwise          = (intersection,  1)
+      | popCount intersection > 0 = (intersection, 0)
+      | otherwise                 = (       union, 1)
 
-    union        = (leftChildDec ^. preliminaryMedian) .&. (rightChildDec ^. preliminaryMedian)
-    intersection = (leftChildDec ^. preliminaryMedian) .|. (rightChildDec ^. preliminaryMedian)
+    union        = (leftChildDec ^. preliminaryMedian) .|. (rightChildDec ^. preliminaryMedian)
+    intersection = (leftChildDec ^. preliminaryMedian) .&. (rightChildDec ^. preliminaryMedian)
     totalCost    = parentCost + (leftChildDec ^. characterCost) + (rightChildDec ^. characterCost)
     emptyChar    = emptyStatic $ leftChildDec ^. discreteCharacter
 

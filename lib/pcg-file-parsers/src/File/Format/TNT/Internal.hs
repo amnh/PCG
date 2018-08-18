@@ -76,15 +76,13 @@ module File.Format.TNT.Internal
 import           Control.Monad              ((<=<))
 import           Data.Bits
 import           Data.CaseInsensitive
-import           Data.Char                  (isAlpha, isLower, isUpper, toLower,
-                                             toUpper)
+import           Data.Char                  (isAlpha, isLower, isUpper, toLower, toUpper)
 import           Data.Foldable              (toList)
 import           Data.Functor               (($>))
 import           Data.Key                   (lookup, (!))
 import           Data.List                  (inits)
 import           Data.List.NonEmpty         (NonEmpty)
-import           Data.Map                   (Map, assocs, insert, insertWith,
-                                             keys, union)
+import           Data.Map                   (Map, assocs, insert, insertWith, keys, union)
 import qualified Data.Map                   as M (fromList)
 import           Data.Matrix.NotStupid      (Matrix)
 import           Data.Proxy

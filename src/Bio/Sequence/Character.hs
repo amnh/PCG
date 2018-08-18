@@ -34,14 +34,13 @@ module Bio.Sequence.Character
   , sequenceRootCost
   ) where
 
-
+import           Bio.Character.Encodable
 --import           Bio.Character.Decoration.Continuous
 import           Bio.Metadata.Continuous
 import           Bio.Metadata.Discrete
 import           Bio.Metadata.DiscreteWithTCM
 import           Bio.Metadata.Dynamic
-import           Bio.Sequence.Block           (CharacterBlock, HasBlockCost,
-                                               HasRootCost)
+import           Bio.Sequence.Block           (CharacterBlock, HasBlockCost, HasRootCost)
 import qualified Bio.Sequence.Block           as Blk
 import           Bio.Sequence.Metadata        (MetadataSequence)
 import qualified Bio.Sequence.Metadata        as M
@@ -258,10 +257,13 @@ hexZipWithMeta
   :: (ContinuousCharacterMetadataDec        -> u -> u' -> u'')
   -> (DiscreteCharacterMetadataDec          -> v -> v' -> v'')
   -> (DiscreteCharacterMetadataDec          -> w -> w' -> w'')
-  -> (DiscreteWithTCMCharacterMetadataDec e -> x -> x' -> x'')
-  -> (DiscreteWithTCMCharacterMetadataDec e -> y -> y' -> y'')
-  -> (DynamicCharacterMetadataDec d         -> z -> z' -> z'')
-  -> MetadataSequence e d m
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
+      -> x -> x' -> x'')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
+      -> y -> y' -> y'')
+  -> (DynamicCharacterMetadataDec (Element DynamicChar)
+      -> z -> z' -> z'')
+  -> MetadataSequence m
   -> CharacterSequence u   v   w   x   y   z
   -> CharacterSequence u'  v'  w'  x'  y'  z'
   -> CharacterSequence u'' v'' w'' x'' y'' z''
@@ -307,7 +309,7 @@ fromBlockVector = CharSeq
 -- operation in parallel.
 sequenceCost
   :: HasBlockCost u v w x y z
-  => MetadataSequence e d m
+  => MetadataSequence m
   -> CharacterSequence u v w x y z
   -> Double
 sequenceCost meta char
@@ -322,7 +324,7 @@ sequenceCost meta char
 sequenceRootCost
   :: (HasRootCost u v w x y z, Integral i)
   => i
-  -> MetadataSequence e d m
+  -> MetadataSequence m
   -> CharacterSequence u v w x y z
   -> Double
 sequenceRootCost rootCount meta char

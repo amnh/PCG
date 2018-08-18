@@ -61,6 +61,8 @@
         - Data.Alphabet.IUPAC
         - Data.Alphabet.Internal
         - Data.Range
+        - Data.TCM
+        - Data.TCM.Internal
         - Data.TCM.Memoized
         - Data.TCM.Memoized.FFI
         - Data.Vector.NonEmpty

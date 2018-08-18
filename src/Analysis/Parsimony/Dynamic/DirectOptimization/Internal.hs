@@ -29,7 +29,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Internal
 
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (overlap)
-import           Analysis.Parsimony.Dynamic.SequentialAlign
+--import           Analysis.Parsimony.Dynamic.SequentialAlign
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
 import           Bio.Character.Exportable
@@ -44,11 +44,9 @@ import           Data.List.NonEmpty                                             
 import           Data.List.Utility                                               (invariantTransformation)
 import           Data.MonoTraversable
 import           Data.Semigroup
-import           Data.TCM.Memoized
 import           Data.Word
 import           Numeric.Extended.Natural
-import           Prelude                                                         hiding
-                                                                                  (lookup)
+import           Prelude                                                         hiding (lookup)
 
 
 -- |
@@ -77,9 +75,8 @@ sequentialAlignOverride = False
 selectDynamicMetric
   :: ( EncodableDynamicCharacter c
      , Exportable c
-     , Exportable (Element c)
      , HasDenseTransitionCostMatrix  dec (Maybe DenseTransitionCostMatrix)
-     , HasSparseTransitionCostMatrix dec MemoizedCostMatrix
+     , HasTransitionCostMatrix       dec (OverlapFunction (Element c))
      , Ord (Element c)
      )
   => dec
@@ -87,14 +84,14 @@ selectDynamicMetric
   -> c
   -> (Word, c, c, c, c)
 selectDynamicMetric candidate
-  | sequentialAlignOverride = sequentialAlign sTCM
+  | sequentialAlignOverride = undefined -- sequentialAlign sTCM
   | otherwise =
       case candidate ^. denseTransitionCostMatrix of
         Just dm -> \x y -> foreignPairwiseDO x y dm
-        Nothing -> let !sTCM' = getMedianAndCost2D sTCM
+        Nothing -> let !sTCM' = sTCM
                    in  \x y -> ukkonenDO x y sTCM'
   where
-    !sTCM = candidate ^. sparseTransitionCostMatrix
+    !sTCM = candidate ^. transitionCostMatrix
 
 
 -- |
@@ -157,10 +154,7 @@ updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) = resultDecoration
 -- Parameterized over a 'PairwiseAlignment' function to allow for different
 -- atomic alignments depending on the character's metadata.
 directOptimizationPreOrder
-  :: ( DirectOptimizationPostOrderDecoration d c
-     -- , EncodedAmbiguityGroupContainer c
-     , Exportable (Element c)
-     )
+  :: DirectOptimizationPostOrderDecoration d c
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
   -> d
@@ -208,9 +202,7 @@ disambiguateElement x = zed `setBit` idx
 -- Use the decoration(s) of the ancestral nodes to calculate the corrent node
 -- decoration. The recursive logic of the pre-order traversal.
 updateFromParent
-  :: ( DirectOptimizationPostOrderDecoration d c
-     , Exportable (Element c)
-     )
+  :: DirectOptimizationPostOrderDecoration d c
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
   -> d
@@ -244,9 +236,7 @@ updateFromParent pairwiseAlignment meta currentDecoration parentDecoration = res
 -- |
 -- A three way comparison of characters used in the DO preorder traversal.
 tripleComparison
-  :: ( Exportable (Element c)
-     , DirectOptimizationPostOrderDecoration d c
-     )
+  :: DirectOptimizationPostOrderDecoration d c
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
   -> d
@@ -270,7 +260,8 @@ tripleComparison pairwiseAlignment meta childDecoration parentCharacter parentSi
     -- initialize a memoized TCM. We certainly don't want to force that here!
     costStructure =
         case meta ^. denseTransitionCostMatrix of
-          Nothing -> getMedianAndCost3D (meta ^. sparseTransitionCostMatrix)
+                     -- TODO: Encapsilate this in DiscreteMetadataWithTCM
+          Nothing -> naiveMedianAndCost3D -- getMedianAndCost3D (meta ^. sparseTransitionCostMatrix)
           -- Compute things naively
           Just _  -> naiveMedianAndCost3D
       where

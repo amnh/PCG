@@ -29,7 +29,7 @@ module Bio.Graph.Forest
 
 import Bio.Graph.LeafSet
 import Control.DeepSeq
-import Control.Lens            hiding (Indexable)
+import Control.Lens            as Lens hiding (Indexable)
 import Data.Foldable
 import Data.GraphViz.Printing
 import Data.Key
@@ -88,7 +88,7 @@ instance FoldableWithKey1 PhylogeneticForest where
 
 instance (HasLeafSet a b, Semigroup b) => HasLeafSet (PhylogeneticForest a) b where
 
-    leafSet = lens getter undefined
+    leafSet = Lens.to getter
       where
         getter = foldMap1 (^. leafSet) . unwrap
 

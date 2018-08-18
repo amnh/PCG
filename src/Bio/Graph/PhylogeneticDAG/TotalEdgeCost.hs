@@ -15,6 +15,7 @@
 {-# LANGUAGE BangPatterns     #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MonoLocalBinds   #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module Bio.Graph.PhylogeneticDAG.TotalEdgeCost
   ( totalEdgeCosts
@@ -57,8 +58,9 @@ totalEdgeCosts
      , Exportable (Element c)
      , HasSingleDisambiguation       z c
      , Ord (Element c)
+     , Element c ~ DynamicCharacterElement
      )
-  => PhylogeneticDAG2 m a d e n u v w x y z
+  => PhylogeneticDAG2 m e n u v w x y z
   -> NonEmpty [Double]
 --totalEdgeCosts _ (PDAG2 dag _) | trace ("Before Total Edge Cost: " <> referenceRendering dag) False = undefined
 totalEdgeCosts (PDAG2 dag meta) = applyWeights $ foldlWithKey f initAcc refVec
@@ -81,7 +83,8 @@ totalEdgeCosts (PDAG2 dag meta) = applyWeights $ foldlWithKey f initAcc refVec
 
     functionSequence = fmap getDynamicMetric <$> dynamicMetadataSeq
       where
-        getDynamicMetric dec x y = let (!c,_,_,_,_) = selectDynamicMetric dec x y in {- trace ("Cost " <> show c) -} c
+        getDynamicMetric m x y = let (!c,_,_,_,_) = selectDynamicMetric m x y
+                                 in {- trace ("Cost " <> show c) -} c
 
     applyWeights = force . zipWith (zipWith (\d w -> d * fromIntegral w)) weightSequence
 

@@ -10,9 +10,10 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts      #-}
 
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Analysis.Scoring
   (
@@ -39,7 +40,6 @@ import           Bio.Sequence
 import           Data.Default
 import           Data.EdgeLength
 import qualified Data.List.NonEmpty                            as NE
-import           Data.MonoTraversable                          (Element)
 import           Data.NodeLabel
 import           Data.Vector                                   (Vector)
 
@@ -51,8 +51,8 @@ import           Bio.Metadata
 -- Remove all scoring data from nodes.
 wipeScoring
   :: Default n
-  => PhylogeneticDAG2 m a d e n u v w x y z
-  -> PhylogeneticDAG2 m a d e n (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
+  => PhylogeneticDAG2 m e n u v w x y z
+  -> PhylogeneticDAG2 m e n (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
 wipeScoring (PDAG2 dag m) = PDAG2 wipedDAG m
   where
     wipedDAG =
@@ -122,7 +122,7 @@ performDecoration
      , RangedCharacterDecoration w StaticCharacter
      , SimpleDynamicDecoration z DynamicChar
      )
-  => PhylogeneticDAG2 m StaticCharacter (Element DynamicChar) EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
+  => PhylogeneticDAG2 m EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
   -> FinalDecorationDAG
 performDecoration x = finalizeEdgeData $ performPreOrderDecoration performPostOrderDecoration
   where
@@ -136,7 +136,15 @@ performDecoration x = finalizeEdgeData $ performPreOrderDecoration performPostOr
                          sankoffPostOrder
                          (const id2)
     
-    performPreOrderDecoration :: PostOrderDecorationDAG (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge)) -> PreOrderDecorationDAG
+    performPreOrderDecoration ::
+      PostOrderDecorationDAG
+      (TraversalTopology
+      , Double
+      , Double
+      , Double
+      , Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge)
+      )
+      ->  PreOrderDecorationDAG
     performPreOrderDecoration =
         preorderFromRooting''
           adaptiveDirectOptimizationPreOrder

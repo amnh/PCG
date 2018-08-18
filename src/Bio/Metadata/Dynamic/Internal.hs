@@ -10,12 +10,13 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns           #-}
+{-# LANGUAGE DeriveAnyClass         #-}
 {-# LANGUAGE DeriveGeneric          #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE TypeFamilies           #-}
 
 module Bio.Metadata.Dynamic.Internal
   ( DenseTransitionCostMatrix
@@ -39,6 +40,7 @@ module Bio.Metadata.Dynamic.Internal
 
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (generateDenseTransitionCostMatrix)
 import Bio.Character.Encodable
+import Bio.Character.Exportable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
@@ -46,8 +48,10 @@ import Bio.Metadata.Dynamic.Class
 import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
+import Data.Bits
 import Data.List                                              (intercalate)
 import Data.List.NonEmpty                                     (NonEmpty)
+import Data.Range
 import Data.TCM
 import Data.TopologyRepresentation
 import GHC.Generics                                           (Generic)
@@ -80,7 +84,7 @@ data DynamicCharacterMetadataDec c
    { dataDenseTransitionCostMatrix :: !(Maybe DenseTransitionCostMatrix)
    , optimalTraversalFoci          :: !(Maybe TraversalFoci)
    , metadata                      :: {-# UNPACK #-} !(DiscreteWithTCMCharacterMetadataDec c)
-   } deriving (Generic)
+   } deriving (Generic, NFData)
 
 
 -- |
@@ -88,7 +92,7 @@ data DynamicCharacterMetadataDec c
 -- appropriate 'Lens' & character class constraints.
 class ( DiscreteWithTcmCharacterMetadata s c
       , HasDenseTransitionCostMatrix     s (Maybe DenseTransitionCostMatrix)
-      , HasSparseTransitionCostMatrix    s  MemoizedCostMatrix
+--      , HasSparseTransitionCostMatrix    s  MemoizedCostMatrix
       , HasTraversalFoci                 s (Maybe TraversalFoci)
       ) => DynamicCharacterMetadata s c | s -> c where
 
@@ -97,24 +101,7 @@ class ( DiscreteWithTcmCharacterMetadata s c
 
 instance Eq (DynamicCharacterMetadataDec c) where
 
-    lhs == rhs = lhs ^. characterAlphabet == rhs ^. characterAlphabet
-              && lhs ^. characterName     == rhs ^. characterName
-              && lhs ^. characterWeight   == rhs ^. characterWeight
-              && and [ (lhs ^. symbolChangeMatrix) i j == (rhs ^. symbolChangeMatrix) i j
-                     | i <- range
-                     , j <- range
-                     ]
-      where
-        dimension = length $ lhs ^. characterAlphabet
-        range     = toEnum <$> [0 .. dimension - 1 ]
-
-
-instance NFData (DynamicCharacterMetadataDec a) where
-
-    rnf (DynamicCharacterMetadataDec d e _) = ()
-      where
-        !_ = rnf d
-        !_ = rnf e
+    lhs == rhs = metadata lhs == metadata rhs && optimalTraversalFoci lhs == optimalTraversalFoci rhs
 
 
 instance Show (DynamicCharacterMetadataDec c) where
@@ -140,11 +127,13 @@ instance DiscreteCharacterMetadata (DynamicCharacterMetadataDec c) where
 
 
 -- | (✔)
-instance EncodableStreamElement c => DiscreteWithTcmCharacterMetadata (DynamicCharacterMetadataDec c) c where
+instance (Bits c, Bound c ~ Word, EncodableStreamElement c, Exportable c, Ranged c)
+    => DiscreteWithTcmCharacterMetadata (DynamicCharacterMetadataDec c) c where
 
 
 -- | (✔)
-instance EncodableStreamElement c => DynamicCharacterMetadata (DynamicCharacterMetadataDec c) c where
+instance (Bits c, Bound c ~ Word, EncodableStreamElement c, Exportable c, Ranged c)
+    => DynamicCharacterMetadata (DynamicCharacterMetadataDec c) c where
 
     {-# INLINE extractDynamicCharacterMetadata #-}
     extractDynamicCharacterMetadata = id
@@ -184,11 +173,13 @@ instance HasDenseTransitionCostMatrix (DynamicCharacterMetadataDec c) (Maybe Den
     denseTransitionCostMatrix = lens dataDenseTransitionCostMatrix $ \e x -> e { dataDenseTransitionCostMatrix = x }
 
 
+{-
 -- | (✔)
 instance HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec c) MemoizedCostMatrix where
 
     sparseTransitionCostMatrix = lens (\e -> metadata e ^. sparseTransitionCostMatrix)
                                $ \e x -> e { metadata = metadata e & sparseTransitionCostMatrix .~ x }
+-}
 
 
 -- | (✔)
@@ -199,7 +190,8 @@ instance HasSymbolChangeMatrix (DynamicCharacterMetadataDec c) (Word -> Word -> 
 
 
 -- | (✔)
-instance HasTransitionCostMatrix (DynamicCharacterMetadataDec c) (c -> c -> (c, Word)) where
+instance (Bits c, Bound c ~ Word, Exportable c, Ranged c)
+    => HasTransitionCostMatrix (DynamicCharacterMetadataDec c) (c -> c -> (c, Word)) where
 
     transitionCostMatrix = lens (\e -> metadata e ^. transitionCostMatrix)
                          $ \e x -> e { metadata = metadata e & transitionCostMatrix .~ x }

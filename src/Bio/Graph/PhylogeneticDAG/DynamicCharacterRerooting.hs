@@ -19,13 +19,13 @@ module Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
 
 import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Dynamic
+import           Bio.Character.Encodable
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Metadata.Dynamic
 import           Bio.Sequence
-import           Bio.Sequence.Metadata              (MetadataBlock,
-                                                     getDynamicMetadata)
+import           Bio.Sequence.Metadata              (MetadataBlock, getDynamicMetadata)
 import qualified Bio.Sequence.Metadata              as M
 import           Control.Applicative
 import           Control.Arrow                      ((&&&))
@@ -73,9 +73,9 @@ assignOptimalDynamicCharacterRootEdges
      , Show y
      , Show z
      )
-  => (DynamicCharacterMetadataDec d -> z -> [z] -> z)  -- ^ Post-order traversal function for Dynamic Characters.
-  -> PhylogeneticDAG2 m a d e n u v w x y z
-  -> ( PhylogeneticDAG2 m a d e n u v w x y z
+  => (DynamicCharacterMetadataDec (Element DynamicChar) -> z -> [z] -> z)  -- ^ Post-order traversal function for Dynamic Characters.
+  -> PhylogeneticDAG2 m e n u v w x y z
+  -> ( PhylogeneticDAG2 m e n u v w x y z
      ,         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
      , Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
      )
@@ -428,7 +428,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
         toMinimalBlockContext
           :: HasBlockCost u v w x y z
           => e
-          -> MetadataBlock a d m
+          -> MetadataBlock m
           -> CharacterBlock u v w x y z
           -> (Double, Vector (Word, Double, NonEmpty e))
         toMinimalBlockContext edge mBlock cBlock = (staticCost mBlock cBlock, dynCharVect)

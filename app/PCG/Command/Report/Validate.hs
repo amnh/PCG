@@ -4,12 +4,12 @@ module PCG.Command.Types.Report.Validate
   ( validate
   ) where
 
-import Data.Char                  (toLower)
-import Data.Either                (partitionEithers)
-import Data.Monoid                ((<>))
+import Data.Char                         (toLower)
+import Data.Either                       (partitionEithers)
+import Data.Monoid                       ((<>))
 import PCG.Command.Types
 import PCG.Command.Types.Report.Internal
-import PCG.Script.Types         --  (Argument(..),Lident(..),Primative(..))
+import PCG.Script.Types
 
 
 validate :: [Argument] -> Either String Command

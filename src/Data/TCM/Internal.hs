@@ -10,8 +10,10 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE Strict       #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric  #-}
+{-# LANGUAGE Strict         #-}
+{-# LANGUAGE TypeFamilies   #-}
 
 module Data.TCM.Internal
   ( TCM(..)
@@ -29,6 +31,7 @@ module Data.TCM.Internal
   ) where
 
 import           Control.Arrow        ((***))
+import           Control.DeepSeq
 import           Data.Foldable
 import           Data.IntSet          (IntSet)
 import           Data.List            (transpose)
@@ -40,6 +43,7 @@ import           Data.Ratio
 import           Data.Vector.Unboxed  (Vector)
 import qualified Data.Vector.Unboxed  as V
 import           Data.Word
+import           GHC.Generics
 import           Test.QuickCheck      hiding (generate)
 import           Text.XML
 
@@ -63,7 +67,7 @@ import           Text.XML
 -- constructors will result in a runtime exception.
 data TCM
    = TCM Int (Vector Word32)
-   deriving (Eq)
+   deriving (Eq, Generic, NFData)
 
 
 -- |

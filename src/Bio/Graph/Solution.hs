@@ -31,7 +31,7 @@ import           Bio.Graph.LeafSet
 import           Bio.Graph.PhylogeneticDAG
 import           Bio.Sequence
 import           Control.DeepSeq
-import           Control.Lens              hiding (Indexable)
+import           Control.Lens              as Lens hiding (Indexable)
 import           Data.Foldable
 import           Data.GraphViz.Printing    hiding (indent, (<>))
 import           Data.GraphViz.Printing    (renderDot, toDot)
@@ -64,7 +64,7 @@ phylogeneticForests (PhylogeneticSolution x) = x
 
 instance (HasLeafSet a b, Semigroup b) => HasLeafSet (PhylogeneticSolution a) b where
 
-    leafSet = lens getter undefined
+    leafSet = Lens.to getter
       where
         getter = foldMap1 (^. leafSet) . phylogeneticForests
 
@@ -83,7 +83,7 @@ instance {-# OVERLAPPABLE #-} PrintDot a => PrintDot (PhylogeneticSolution a) wh
     listToDot     = fmap mconcat . traverse   toDot
 
 
-instance Show n => PrintDot (PhylogeneticSolution (PhylogeneticDAG2 m a d e n u v w x y z)) where
+instance Show n => PrintDot (PhylogeneticSolution (PhylogeneticDAG2 m e n u v w x y z)) where
 
     unqtDot       = unqtDot . uncurry mkGraph . foldMap1 getSolutionDotContext . phylogeneticForests
 
@@ -138,7 +138,7 @@ instance
   , Show x
   , Show y
   , Show z
-  ) => ToXML (PhylogeneticSolution (PhylogeneticDAG2 m a d e n u v w x y z)) where
+  ) => ToXML (PhylogeneticSolution (PhylogeneticDAG2 m e n u v w x y z)) where
 
     toXML soln@(PhylogeneticSolution forests) = xmlElement "Solution" attrs forestContents
         where
@@ -171,7 +171,7 @@ getSolutionDotContext
      , Key t ~ Int
      , Show n
      )
-  => t (PhylogeneticDAG2 m a d e n u v w x y z)
+  => t (PhylogeneticDAG2 m e n u v w x y z)
   -> ([DotNode GraphID], [DotEdge GraphID])
 getSolutionDotContext xs = foldMapWithKey1 g xs
   where

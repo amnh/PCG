@@ -27,9 +27,7 @@ import           Bio.Character.Encodable
 import           Bio.Metadata
 import           Bio.PhyloGraph.Forest
 import           Bio.PhyloGraph.Network
-import           Bio.PhyloGraph.Node                                    hiding
-                                                                         (Node,
-                                                                         children)
+import           Bio.PhyloGraph.Node                                    hiding (Node, children)
 import           Bio.PhyloGraph.Solution
 import           Control.Arrow                                          ((&&&))
 import           Data.Foldable
@@ -46,8 +44,7 @@ import           Data.MonoTraversable
 import           Data.Vector                                            (Vector)
 import qualified Data.Vector                                            as V
 import           Data.Vector.Instances                                  ()
-import           Prelude                                                hiding
-                                                                         (zip)
+import           Prelude                                                hiding (zip)
 import           Safe                                                   (tailMay)
 
 

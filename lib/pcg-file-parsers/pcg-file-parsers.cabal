@@ -184,7 +184,7 @@ Executable file-tests
                      , pcg-file-parsers
                      , tasty
                      , tasty-hunit
-                     , tasty-rerun
+--                     , tasty-rerun
 
   hs-source-dirs:      test
 

@@ -17,7 +17,7 @@ newtype UnificationError
 
 
 data UnificationErrorMessage
-   = NonMatchingTaxa     [TaxaName] [TaxaName] 
+   = NonMatchingTaxa     [TaxaName] [TaxaName]
    | NonMatchingTaxaSeqs [TaxaName] [TaxaName]
    | ForestDuplicateTaxa (NonEmpty TaxaName) FilePath
    | ForestExtraTaxa     (NonEmpty TaxaName) FilePath
@@ -54,7 +54,7 @@ instance Show UnificationErrorMessage where
         , path
         , "' contain an multiple entries for the following taxa: \n"
         , listShow names
-        ]    
+        ]
     show (ForestExtraTaxa names path) = mconcat
         [ "A tree from file '"
         , path
@@ -69,7 +69,7 @@ instance Show UnificationErrorMessage where
         ]
     show (VacuousInput files) = mconcat
        [ "There was niether any character sequences nor any trees found in any of the supplied files input files:\n"
-       , (\x -> "  ["<>x<>"]") . intercalate ", " $ show <$> toList files 
+       , (\x -> "  ["<>x<>"]") . intercalate ", " $ show <$> toList files
        ]
 
 

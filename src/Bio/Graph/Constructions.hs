@@ -56,7 +56,6 @@ import Bio.Sequence.Metadata
 import Control.Evaluation
 import Data.EdgeLength
 import Data.List.NonEmpty
-import Data.MonoTraversable
 import Data.NodeLabel
 import Data.Vector                         (Vector)
 
@@ -66,8 +65,6 @@ import Data.Vector                         (Vector)
 type CharacterDAG =
        PhylogeneticDAG2
          ()
-         StaticCharacter
-         (Element DynamicChar)
          EdgeLength
          NodeLabel
          UnifiedContinuousCharacter
@@ -110,8 +107,6 @@ type DecoratedCharacterResult = PhylogeneticSolution FinalDecorationDAG
 type FinalDecorationDAG =
        PhylogeneticDAG2
          (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
-         StaticCharacter
-         (Element DynamicChar)
          FinalEdgeDatum
          NodeLabel
          (ContinuousOptimizationDecoration    ContinuousChar )
@@ -127,8 +122,6 @@ type FinalDecorationDAG =
 type PreOrderDecorationDAG =
        PhylogeneticDAG2
          (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
-         StaticCharacter
-         (Element DynamicChar)
          EdgeLength
          NodeLabel
          (ContinuousOptimizationDecoration    ContinuousChar )
@@ -156,8 +149,6 @@ type FinalEdgeDatum =
 type PostOrderDecorationDAG m =
        PhylogeneticDAG2
          m
-         StaticCharacter
-         (Element DynamicChar)
          EdgeLength
          NodeLabel
          (ContinuousPostorderDecoration ContinuousChar )
@@ -188,8 +179,6 @@ type  UnifiedCharacterBlock
 
 type  UnifiedMetadataBlock
     = MetadataBlock
-        StaticCharacter
-        (Element DynamicChar)
         ()
 
 
@@ -209,8 +198,6 @@ type  UnifiedSequences =
 
 type  UnifiedMetadataSequence
     = MetadataSequence
-        StaticCharacter
-        (Element DynamicChar)
         ()
 
 
@@ -252,8 +239,6 @@ type UnifiedDynamicCharacter    = Maybe (DynamicDecorationInitial DynamicChar)
 type UnReifiedCharacterDAG =
        PhylogeneticDAG
          ()
-         StaticCharacter
-         (Element DynamicChar)
          EdgeLength
          NodeLabel
          UnifiedContinuousCharacter

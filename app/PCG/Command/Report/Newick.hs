@@ -16,10 +16,10 @@ module PCG.Command.Types.Report.Newick where
 
 import Bio.PhyloGraph.DAG
 import Bio.PhyloGraph.Forest
+import Bio.PhyloGraph.Node.Topological (TopoNode (..))
 import Bio.PhyloGraph.Solution
-import Bio.PhyloGraph.Node.Topological (TopoNode(..))
-import Data.Monoid            ((<>))
-import Data.List              (intercalate)
+import Data.List                       (intercalate)
+import Data.Monoid                     ((<>))
 
 -- | Main fold over a graph
 newickReport :: StandardSolution -> String

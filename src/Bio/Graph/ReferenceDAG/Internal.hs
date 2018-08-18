@@ -16,6 +16,7 @@
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UnboxedSums                #-}
 
@@ -26,7 +27,7 @@ import           Bio.Graph.Component
 import           Bio.Graph.LeafSet
 import           Control.Arrow                 ((&&&), (***))
 import           Control.DeepSeq
-import           Control.Lens                  (lens)
+import           Control.Lens                  as Lens (to)
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
 import           Data.EdgeSet
@@ -171,8 +172,9 @@ instance Functor (ReferenceDAG d e) where
 -- | (✔)
 instance HasLeafSet (ReferenceDAG d e n) (LeafSet n) where
 
-    leafSet = lens getter undefined
+    leafSet = Lens.to getter
         where
+            getter :: ReferenceDAG d e n -> LeafSet n
             getter (RefDAG v _ _) = LeafSet $ foldMap f v
 
             f e | null (childRefs e) = [nodeDecoration e]
@@ -292,7 +294,7 @@ instance Show n => ToNewick (ReferenceDAG d e n) where
         namedVec = zipWith (\x n -> n { nodeDecoration = x }) labelVec vec
         labelVec = (`evalState` (1,1,1)) $ mapM deriveLabel vec -- All network nodes have "htu\d" as nodeDecoration.
 
-        deriveLabel :: Show n => IndexData e n -> State (Int, Int, Int) String
+        deriveLabel :: IndexData e n -> State (Int, Int, Int) String
         deriveLabel node
           | shownLabel /= "{Unlabeled Node}" = pure shownLabel
           | otherwise = do

@@ -25,6 +25,7 @@ module Bio.Graph.PhylogeneticDAG.Preorder
 
 
 import           Bio.Character.Decoration.Dynamic
+import           Bio.Character.Encodable
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
@@ -70,16 +71,18 @@ type ParentalContext u v w x y z = NonEmpty (TraversalTopology, Word, Maybe (BLK
 -- and returns the new decoration for the current node.
 --
 -- *The better version.*
-preorderSequence''
-  :: HasBlockCost u  v  w  x  y  z
+preorderSequence'' :: HasBlockCost u  v  w  x  y  z
   => (ContinuousCharacterMetadataDec        -> u -> [(Word, u')] -> u')
   -> (DiscreteCharacterMetadataDec          -> v -> [(Word, v')] -> v')
   -> (DiscreteCharacterMetadataDec          -> w -> [(Word, w')] -> w')
-  -> (DiscreteWithTCMCharacterMetadataDec a -> x -> [(Word, x')] -> x')
-  -> (DiscreteWithTCMCharacterMetadataDec a -> y -> [(Word, y')] -> y')
-  -> (DynamicCharacterMetadataDec d         -> z -> [(Word, z')] -> z')
-  -> PhylogeneticDAG2 m a d e n u  v  w  x  y  z
-  -> PhylogeneticDAG2 m a d e n u' v' w' x' y' z'
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
+       -> x -> [(Word, x')] -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
+       -> y -> [(Word, y')] -> y')
+  -> (DynamicCharacterMetadataDec (Element DynamicChar)
+       -> z -> [(Word, z')] -> z')
+  -> PhylogeneticDAG2 m e n u  v  w  x  y  z
+  -> PhylogeneticDAG2 m e n u' v' w' x' y' z'
 --preorderSequence'' _ _ _ _ _ _ (PDAG2 dag) | trace ("Before Pre-order: " <> referenceRendering dag) False = undefined
 preorderSequence'' f1 f2 f3 f4 f5 f6 pdag@(PDAG2 dag meta) = PDAG2 (newDAG dag) meta
   where
@@ -171,7 +174,7 @@ preorderSequence'' f1 f2 f3 f4 f5 f6 pdag@(PDAG2 dag meta) = PDAG2 (newDAG dag) 
     -- A "sequence" of the minimum topologies that correspond to each block.
 getSequenceOfBlockMinimumTopologies
   :: HasBlockCost u v w x y z
-  => PhylogeneticDAG2 m a d e n u v w x y z
+  => PhylogeneticDAG2 m e n u v w x y z
   -> BlockTopologies
 getSequenceOfBlockMinimumTopologies (PDAG2 dag meta) = getTopologies blockMinimalResolutions
       where
@@ -210,8 +213,8 @@ preorderSequence'
   -> (x -> [(Word, x')] -> x')
   -> (y -> [(Word, y')] -> y')
   -> (z -> [(Word, z')] -> z')
-  -> PhylogeneticDAG2 m a d e n u  v  w  x  y  z
-  -> PhylogeneticDAG2 m a d e n u' v' w' x' y' z'
+  -> PhylogeneticDAG2 m e n u  v  w  x  y  z
+  -> PhylogeneticDAG2 m e n u' v' w' x' y' z'
 preorderSequence' f1 f2 f3 f4 f5 f6 pdag@(PDAG2 dag m) = PDAG2 (newDAG dag) m
   where
     newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> constructDefaultMetadata
@@ -271,10 +274,13 @@ computeOnApplicableResolution''
   :: (ContinuousCharacterMetadataDec        -> u -> [(Word, u')] -> u')
   -> (DiscreteCharacterMetadataDec          -> v -> [(Word, v')] -> v')
   -> (DiscreteCharacterMetadataDec          -> w -> [(Word, w')] -> w')
-  -> (DiscreteWithTCMCharacterMetadataDec e -> x -> [(Word, x')] -> x')
-  -> (DiscreteWithTCMCharacterMetadataDec e -> y -> [(Word, y')] -> y')
-  -> (DynamicCharacterMetadataDec d         -> z -> [(Word, z')] -> z')
-  -> MetadataSequence e d m
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
+       -> x -> [(Word, x')] -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
+       -> y -> [(Word, y')] -> y')
+  -> (DynamicCharacterMetadataDec (Element DynamicChar)
+       -> z -> [(Word, z')] -> z')
+  -> MetadataSequence m
   -> ParentalContext u' v' w' x' y' z'
   -> ResolutionCache (CharacterSequence u v w x y z)
   -> CharacterSequence u' v' w' x' y' z'
@@ -371,12 +377,13 @@ data  PreorderContext c
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
 preorderFromRooting''
-  :: (DynamicCharacterMetadataDec d -> z -> [(Word, z')] -> z')
+  :: (DynamicCharacterMetadataDec (Element DynamicChar)
+      -> z -> [(Word, z')] -> z')
   ->         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
   -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
   -> NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge))
-  -> PhylogeneticDAG2 m a d e' n' u' v' w' x' y' z
-  -> PhylogeneticDAG2 m a d e' n' u' v' w' x' y' z'
+  -> PhylogeneticDAG2 m  e' n' u' v' w' x' y' z
+  -> PhylogeneticDAG2 m  e' n' u' v' w' x' y' z'
 --preorderFromRooting'' _ _ _ _ (PDAG2 dag _) | trace ("Before Pre-order From Rooting: " <> referenceRendering dag) False = undefined
 preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopologyContextPerBlock (PDAG2 dag meta) = PDAG2 (newDAG dag) meta
   where
@@ -548,8 +555,8 @@ preorderFromRooting
   => (z -> [(Word, z')] -> z')
   ->         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
   -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
-  -> PhylogeneticDAG2 m a d e' n' u' v' w' x' y' z
-  -> PhylogeneticDAG2 m a d e' n' u' v' w' x' y' z'
+  -> PhylogeneticDAG2 m e' n' u' v' w' x' y' z
+  -> PhylogeneticDAG2 m e' n' u' v' w' x' y' z'
 preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag meta) = PDAG2 (newDAG dag) meta
   where
     newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> constructDefaultMetadata
@@ -698,14 +705,14 @@ constructDefaultMetadata = ((mempty, mempty, Nothing) <$) . graphData
 -- |
 -- Computes and sets the virtual node sequence on each edge.
 setEdgeSequences
-  :: (ContinuousCharacterMetadataDec        -> u -> [u] -> u)
-  -> (DiscreteCharacterMetadataDec          -> v -> [v] -> v)
-  -> (DiscreteCharacterMetadataDec          -> w -> [w] -> w)
-  -> (DiscreteWithTCMCharacterMetadataDec a -> x -> [x] -> x)
-  -> (DiscreteWithTCMCharacterMetadataDec a -> y -> [y] -> y)
-  -> (DynamicCharacterMetadataDec d         -> z -> [z] -> z)
-  -> PhylogeneticDAG2 m a d e n u v w x y z
-  -> PhylogeneticDAG2 m a d (e, CharacterSequence u v w x y z) n u v w x y z
+  :: (ContinuousCharacterMetadataDec                      -> u -> [u] -> u)
+  -> (DiscreteCharacterMetadataDec                        -> v -> [v] -> v)
+  -> (DiscreteCharacterMetadataDec                        -> w -> [w] -> w)
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> x -> [x] -> x)
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> y -> [y] -> y)
+  -> (DynamicCharacterMetadataDec DynamicCharacterElement -> z -> [z] -> z)
+  -> PhylogeneticDAG2 m e n u v w x y z
+  -> PhylogeneticDAG2 m (e, CharacterSequence u v w x y z) n u v w x y z
 setEdgeSequences f1 f2 f3 f4 f5 f6 (PDAG2 dag meta) = PDAG2 updatedDAG meta
   where
     refVec       = references dag

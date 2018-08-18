@@ -74,7 +74,7 @@ type HasRootCost u v w x y z =
 -- |
 -- Calculates the cost of a 'CharacterBlock'. Performs some of the operation in
 -- parallel.
-blockCost :: HasBlockCost u v w x y z => MetadataBlock e d m -> CharacterBlock u v w x y z -> Double
+blockCost :: HasBlockCost u v w x y z => MetadataBlock m -> CharacterBlock u v w x y z -> Double
 blockCost (MB mBlock) (CB cBlock) = sum . fmap sum $
     [ parmap rpar floatingCost . uncurry zip . ( continuousBins ***  continuousBins)
     , parmap rpar integralCost . uncurry zip . (nonAdditiveBins *** nonAdditiveBins)
@@ -104,7 +104,7 @@ rootCost
      , Integral i
      )
   => i
-  -> MetadataBlock e d m
+  -> MetadataBlock m
   -> CharacterBlock u v w x y z
   -> Double
 rootCost rootCount (MB mBlock) (CB cBlock) = rootMultiplier . sum . fmap sum $
@@ -135,7 +135,7 @@ rootCost rootCount (MB mBlock) (CB cBlock) = rootMultiplier . sum . fmap sum $
 -- |
 -- Calculates the cost of a 'CharacterBlock'. Performs some of the operation in
 -- parallel.
-staticCost :: HasBlockCost u v w x y z => MetadataBlock e d m -> CharacterBlock u v w x y z -> Double
+staticCost :: HasBlockCost u v w x y z => MetadataBlock m -> CharacterBlock u v w x y z -> Double
 staticCost (MB mBlock) (CB cBlock) = sum . fmap sum $
     [ parmap rpar floatingCost . uncurry zip . ( continuousBins ***  continuousBins)
     , parmap rpar integralCost . uncurry zip . (nonAdditiveBins *** nonAdditiveBins)

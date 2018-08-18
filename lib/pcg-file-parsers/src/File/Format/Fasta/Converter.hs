@@ -23,8 +23,7 @@ module File.Format.Fasta.Converter
 import           Data.List                  (intercalate, partition)
 import           Data.List.NonEmpty         (NonEmpty)
 import qualified Data.List.NonEmpty         as NE
-import           Data.Map                   hiding (filter, foldr, null,
-                                             partition)
+import           Data.Map                   hiding (filter, foldr, null, partition)
 import qualified Data.Map                   as M (fromList)
 import qualified Data.Vector                as V (fromList)
 import           File.Format.Fasta.Internal

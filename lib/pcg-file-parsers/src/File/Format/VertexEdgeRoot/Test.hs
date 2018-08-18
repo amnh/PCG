@@ -8,8 +8,7 @@ module File.Format.VertexEdgeRoot.Test
 --import           Bio.PhyloGraph.Node
 import Data.List                         (intercalate)
 import File.Format.VertexEdgeRoot.Parser
-import Test.Custom.Parse                 (parseEquals, parseFailure,
-                                          parseSuccess)
+import Test.Custom.Parse                 (parseEquals, parseFailure, parseSuccess)
 import Test.Tasty                        (TestTree, testGroup)
 import Test.Tasty.HUnit
 import Text.Megaparsec                   (eof)

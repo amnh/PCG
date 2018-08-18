@@ -58,22 +58,22 @@ import           Text.XML
 -- and also seperate metadata for each column in the block.
 --
 -- Blocks are optimized atomically with resepect to network resolutions.
-newtype MetadataSequence e d m
-    = MetaSeq (Vector (MetadataBlock e d m))
+newtype MetadataSequence m
+    = MetaSeq (Vector (MetadataBlock m))
     deriving (Generic)
 
 
-type instance Element (MetadataSequence e d m) = MetadataBlock e d m
+type instance Element (MetadataSequence m) = MetadataBlock m
 
 
-instance Functor (MetadataSequence e d) where
+instance Functor MetadataSequence where
 
     fmap f = fromBlocks . fmap (fmap f) . toBlocks
 
     (<$) v = fromBlocks . fmap (v <$) . toBlocks
 
 
-instance MonoFoldable (MetadataSequence e d m) where
+instance MonoFoldable (MetadataSequence m) where
 
     {-# INLINE ofoldMap #-}
     ofoldMap f = foldMap f . toBlocks
@@ -97,13 +97,13 @@ instance MonoFoldable (MetadataSequence e d m) where
     olength = length . toBlocks
 
 
-instance MonoFunctor (MetadataSequence e d m) where
+instance MonoFunctor (MetadataSequence m) where
 
     {-# INLINE omap #-}
     omap f = fromBlocks . fmap f . toBlocks
 
 
-instance MonoTraversable (MetadataSequence e d m) where
+instance MonoTraversable (MetadataSequence m) where
 
     {-# INLINE otraverse #-}
     otraverse f = fmap fromBlocks . traverse f . toBlocks
@@ -112,11 +112,11 @@ instance MonoTraversable (MetadataSequence e d m) where
     omapM = otraverse
 
 
-instance (NFData e, NFData d, NFData m) => NFData (MetadataSequence e d m)
+instance (NFData m) => NFData (MetadataSequence m)
 
 
 -- | (✔)
-instance ToXML (MetadataSequence e d m) where
+instance ToXML (MetadataSequence m) where
 
     toXML = collapseElemList "Metadata_sequence" [] . toBlocks
 
@@ -124,32 +124,32 @@ instance ToXML (MetadataSequence e d m) where
 -- |
 -- Destructs a 'MetadataSequence' to it's composite blocks.
 {-# INLINE toBlocks #-}
-toBlocks :: MetadataSequence e d m -> NonEmpty (MetadataBlock e d m)
+toBlocks :: MetadataSequence m -> NonEmpty (MetadataBlock m)
 toBlocks (MetaSeq x) = toNonEmpty x
 
 
 -- |
 -- Constructs a 'MetadataSequence' from a non-empty colection of blocks.
 {-# INLINE fromBlocks #-}
-fromBlocks :: NonEmpty (MetadataBlock e d m) -> MetadataSequence e d m
+fromBlocks :: NonEmpty (MetadataBlock m) -> MetadataSequence m
 fromBlocks = MetaSeq . V.fromNonEmpty
 
 
 -- |
 -- Destructs a 'MetadataSequence' to it's composite blocks.
 {-# INLINE toBlockVector #-}
-toBlockVector :: MetadataSequence e d m -> Vector (MetadataBlock e d m)
+toBlockVector :: MetadataSequence m -> Vector (MetadataBlock m)
 toBlockVector (MetaSeq x) =  x
 
 
 -- |
 -- Destructs a 'MetadataSequence' to it's composite blocks.
 {-# INLINE fromBlockVector #-}
-fromBlockVector :: Vector (MetadataBlock e d m) -> MetadataSequence e d m
+fromBlockVector :: Vector (MetadataBlock m) -> MetadataSequence m
 fromBlockVector = MetaSeq
 
 
-defaultUnaryMetadataSequence :: MetadataSequence e d ()
+defaultUnaryMetadataSequence :: MetadataSequence ()
 defaultUnaryMetadataSequence = fromBlocks . pure . MB $ Block
     { blockMetadata   = ()
     , continuousBins  = mempty
