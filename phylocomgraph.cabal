@@ -491,7 +491,6 @@ Test-Suite testsuite
                     , tasty-quickcheck
                     , tasty-smallcheck
                     , tasty-rerun
-                    , text
                     , transformers
                     , vector
                     -- >=3.4 required for corrected definition of (!) & index
