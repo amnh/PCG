@@ -57,25 +57,25 @@ diagnoseTcmCases = testGroup "Example cases for TCMDiagnosis"
     nonSymmetricProp :: (Positive Int, Positive  Int, Positive  Int) -> Property
     nonSymmetricProp (Positive k, Positive n, Positive m) =
       let g :: (Int, Int) -> Int
-          g = \(i,j) -> n * i + m * j
+          g (i,j) = n * i + m * j
       in  n /= m ==> structureType (generate (k + 1) g) === NonSymmetric
 
     symmetricProp :: (Positive Int, Positive  Int, Positive Int) -> Bool
     symmetricProp (Positive k, Positive a, Positive b) =
       let g :: (Int, Int) -> Int
-          g = \(i,j) -> a * (i * j) + b * (i + j)
+          g (i,j) = a * (i * j) + b * (i + j)
       in  structureType (generate (k + 1) g) /= NonSymmetric
 
     additiveProp :: Positive Int -> Property
     additiveProp (Positive k) =
       let g :: (Int, Int) -> Int
-          g = \(i,j) -> max i j - min i j
+          g (i,j) = max i j - min i j
       in  structureType (generate (k + 1) g) === Additive
 
     nonAdditiveProp :: Positive Int -> Property
     nonAdditiveProp (Positive k) =
       let g :: (Int, Int) -> Int
-          g = \(i,j) -> if i == j then 0 else 1
+          g (i,j) = if i == j then 0 else 1
       in  structureType (generate (k + 2) g) === NonAdditive
                                   -- |
                                   -- |
@@ -220,8 +220,8 @@ generateCases = testGroup "Cases of generate function"
 
     generateCase2 :: Assertion
     generateCase2 =
-      let g   :: (Int, Int) -> Int
-          g   = \(i,j) -> abs (i - j)
+      let g :: (Int, Int) -> Int
+          g (i,j) = abs (i - j)
 
           tcm = generate 4 g
 
@@ -235,8 +235,8 @@ generateCases = testGroup "Cases of generate function"
 
     generateCase3 :: Assertion
     generateCase3 =
-      let g   :: (Int, Int) -> Int
-          g   = \(i,j) -> if i == j || i + j == 6 then 0 else 1
+      let g :: (Int, Int) -> Int
+          g (i,j) = if i == j || i + j == 6 then 0 else 1
 
           tcm = generate 8 g
 
