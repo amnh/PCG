@@ -45,6 +45,8 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
 
 import           Bio.Character.Encodable
 import           Control.Arrow            ((&&&))
+import           Control.Foldl            (Fold(..))
+import qualified Control.Foldl            as F
 import           Data.Bits
 import           Data.DList               (snoc)
 import           Data.Foldable
@@ -440,12 +442,47 @@ getOverlap inChar1 inChar2 costStruct = result
 -- value is A,C,G,T.
 overlap :: (EncodableStreamElement e {- , Show e -}) => (Word -> Word -> Word) -> e -> e -> (e, Word)
 overlap costStruct char1 char2
-  | intersectionStates == zero = minimalChoice $ symbolDistances costStruct char1 char2
+  | intersectionStates == zero = deriveOverlap costStruct char1 char2 -- minimalChoice $ symbolDistances costStruct char1 char2
   | otherwise                  = (intersectionStates, 0)
   where
     intersectionStates = char1 .&. char2
     zero = char1 `xor` char1
 
+
+deriveOverlap
+  :: FiniteBits e
+  => (Word -> Word -> Word)
+  -> e
+  -> e
+  -> (e, Word)
+deriveOverlap costStruct char1 char2 = F.fold 
+    (F.premap (costAndSymbol . (toEnum &&& setBit zero)) outerFold)
+    symbolIndices
+  where
+    outerFold = Fold f (char1 `xor` char1, maxBound) id
+
+    f (!symbol1, !cost1) (!symbol2, !cost2) =
+        case cost1 `compare` cost2 of
+          EQ -> (symbol1 .|. symbol2, cost1)
+          LT -> (symbol1            , cost1)
+          GT -> (symbol2            , cost2)
+
+    costAndSymbol (i, x) = (x, cost1 + cost2)
+      where
+        cost1 = getDistance2 i char1
+        cost2 = getDistance2 i char2
+
+    symbolIndices = NE.fromList [0 .. finiteBitSize char1 - 1]
+--    allSymbols    = (toEnum &&& setBit zero) symbolIndices
+    zero          = char1 `xor` char1
+
+    getDistance2 :: FiniteBits b => Word -> b -> Word
+    getDistance2 i b = 
+        case F.fold (F.prefilter (b `testBit`) (F.premap (costStruct i . toEnum) F.minimum)) indices of
+          Just x  -> x
+          Nothing -> error $ "There were no bits set in the character!"
+      where
+        indices = [0 .. finiteBitSize b - 1]
 
 -- |
 -- Given a structure of unambiguous character elements and costs, calculates the
@@ -479,24 +516,39 @@ symbolDistances costStruct char1 char2 = costAndSymbol <$> allSymbols
   where
     costAndSymbol (i, x) = (x, cost1 + cost2)
       where
-        cost1 = getDistance i char1
-        cost2 = getDistance i char2
+        cost1 = getDistance2 i char1
+        cost2 = getDistance2 i char2
 
     symbolIndices = NE.fromList [0 .. finiteBitSize char1 - 1]
     allSymbols    = (toEnum &&& setBit zero) <$> symbolIndices
     zero          = char1 `xor` char1
 
+    getDistance2 :: FiniteBits b => Word -> b -> Word
+    getDistance2 i b = 
+        case F.fold (F.prefilter (b `testBit`) (F.premap (costStruct i . toEnum) F.minimum)) indices of
+          Just x  -> x
+          Nothing -> error $ "There were no bits set in the character!"
+      where
+        indices = [0 .. finiteBitSize b - 1]
+{-
     getDistance :: FiniteBits b => Word -> b -> Word
-    getDistance i e = minimum $ costStruct i <$> getSetBits e
+    getDistance i e = F.minimum $ costStruct i <$> getSetBits e
 
     getSetBits :: FiniteBits b => b -> NonEmpty Word
-    getSetBits b =
-        case filter (b `testBit`) indices of
-          x:xs -> toEnum <$> x:|xs
+    getSetBits b = 
+        case fold (F.prefilter (b `testBit`) (costStruct i <$> F.minimum)) indices of
+          x:xs -> x:|xs
           []   -> error $ "There were no bits set in the character: " <>
                     show (foldMap (\i -> if b `testBit` i then "1" else "0") indices)
       where
         indices = [0 .. finiteBitSize b - 1]
+-}
+{-        
+        go  0 xs = if b `testBit` 0 then 0:xs else xs
+        go !n xs
+          | b `testBit` n = go (n-1) $ toEnum n:xs
+          | otherwise     = go (n-1) xs
+-}
 
 
 -- |

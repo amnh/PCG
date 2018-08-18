@@ -121,6 +121,7 @@ library
                     , deepseq
                     , data-default
                     , dlist
+                    , foldl
                     , graphviz
                     , hashable
                     , integer-gmp
