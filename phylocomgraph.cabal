@@ -66,6 +66,7 @@ common ffi-buildinfo
 common ghc-flags
 
   ghc-options:      -O2
+                    -foptimal-applicative-do
 --                    -g
                     -- Sanity check warnings
                     -Wall
