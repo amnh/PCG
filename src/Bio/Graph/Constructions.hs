@@ -38,7 +38,6 @@ module Bio.Graph.Constructions
   , UnReifiedCharacterDAG
   ) where
 
-import Data.Compact
 import Bio.Character
 import Bio.Character.Decoration.Additive
 import Bio.Character.Decoration.Continuous
@@ -53,6 +52,7 @@ import Bio.Graph.Solution
 import Bio.Sequence
 import Bio.Sequence.Metadata
 import Control.Evaluation
+import Data.Compact
 import Data.EdgeLength
 import Data.List.NonEmpty
 import Data.NodeLabel

@@ -19,7 +19,7 @@ module PCG.Command.Report.GraphViz
   ) where
 
 import           Bio.Graph
-import           Data.Compact (getCompact)
+import           Data.Compact           (getCompact)
 import           Data.GraphViz.Printing hiding ((<>))
 import qualified Data.Text.Lazy         as L
 
@@ -29,4 +29,4 @@ generateDotFile = (<> "\n") . L.unpack . renderDot . getDotGraph
 
 
 getDotGraph :: GraphState -> DotCode
-getDotGraph = (either toDot toDot) . getCompact
+getDotGraph = either toDot toDot . getCompact

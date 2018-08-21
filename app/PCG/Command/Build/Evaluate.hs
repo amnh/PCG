@@ -26,8 +26,8 @@ import           Control.Lens
 import           Control.Monad                       (replicateM)
 import           Control.Monad.IO.Class
 import           Control.Parallel.Custom
-import           Data.Compact (compact, getCompact)
 import           Control.Parallel.Strategies
+import           Data.Compact                        (compact, getCompact)
 import           Data.Foldable
 import qualified Data.IntMap                         as IM
 import qualified Data.IntSet                         as IS
@@ -63,7 +63,7 @@ evaluate
 evaluate (BUILD (BuildCommand trajectoryCount buildType)) cpctInState = do
     let inState = getCompact cpctInState
     case inState of
-      Left  _ -> pure $ cpctInState
+      Left  _ -> pure cpctInState
       Right v ->
         case toList $ v ^. leafSet of
           []   -> fail "There are no nodes with which to build a tree."
@@ -82,8 +82,7 @@ evaluate (BUILD (BuildCommand trajectoryCount buildType)) cpctInState = do
                                                             pure $ parmap rpar iterativeNetworkBuild bestTrees
 --                                                            pure $ fmap iterativeNetworkBuild bestTrees
                                        WheelerForest  -> fail "The BUILD command type 'Forest' is not yet implemented!"
-                     bestSolution <- liftIO $  compact . Right $ toSolution bestNetwork
-                     pure bestSolution
+                     liftIO . compact . Right $ toSolution bestNetwork
   where
     toSolution :: NonEmpty a -> PhylogeneticSolution a
     toSolution = PhylogeneticSolution . pure . PhylogeneticForest

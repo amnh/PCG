@@ -6,22 +6,22 @@ module PCG.Command.Report.Evaluate
   ) where
 
 
-import           Analysis.Parsimony.Dynamic.DirectOptimization
-import           Bio.Character.Decoration.Dynamic
-import           Bio.Character.Encodable
-import           Bio.Character.Exportable
-import           Bio.Metadata.CharacterName
-import           Bio.Graph
-import           Bio.Graph.PhylogeneticDAG
-import           Control.Monad.IO.Class
-import           Data.Compact (getCompact)
-import           Data.List.NonEmpty
-import           Data.MonoTraversable
-import           Data.Semigroup.Foldable
-import           Data.TCM.Memoized
-import           PCG.Command.Report
+import Analysis.Parsimony.Dynamic.DirectOptimization
+import Bio.Character.Decoration.Dynamic
+import Bio.Character.Encodable
+import Bio.Character.Exportable
+import Bio.Graph
+import Bio.Graph.PhylogeneticDAG
+import Bio.Metadata.CharacterName
+import Control.Monad.IO.Class
+import Data.Compact                                  (getCompact)
+import Data.List.NonEmpty
+import Data.MonoTraversable
+import Data.Semigroup.Foldable
+import Data.TCM.Memoized
+import PCG.Command.Report
 import PCG.Command.Report.GraphViz
-import PCG.Syntax                       (Command (..))
+import PCG.Syntax                                    (Command (..))
 import Text.XML
 
 

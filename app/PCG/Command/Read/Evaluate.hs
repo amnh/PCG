@@ -16,7 +16,7 @@ import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Alphabet
 import           Data.Bifunctor                            (bimap, first)
-import Data.Compact(getCompact)
+import           Data.Compact                              (compact)
 import           Data.Either.Custom
 import           Data.Foldable
 import           Data.Functor
