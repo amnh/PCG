@@ -7,6 +7,7 @@ import           Data.Foldable
 import           Test.Tasty
 import           Test.Tasty.Ingredients.Rerun (rerunningTests)
 import qualified TestSuite.ScriptTests as Script (testSuite)
+import qualified TestSuite.GoldenTests as Golden (testSuite)
 
 
 main :: IO ()
@@ -17,4 +18,6 @@ main
 
 
 testSuite :: IO TestTree
-testSuite = testGroup "Integration Test Suite" <$> sequenceA [ Script.testSuite ]
+testSuite
+  = testGroup "Integration Test Suite"
+  <$> sequenceA [ Script.testSuite, Golden.testSuite ]

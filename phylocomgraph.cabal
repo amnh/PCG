@@ -20,7 +20,7 @@ description:        Phylogenetic Componet Graph provides a library for
                     program to perform a phylogenetic search on an input dataset.
 
 
--- Group of buildinfo specifications to correctly build and link to the C & C++
+-- Group of buildinfo specifications to correctly build and link to the C & C++:
 -- FFI code.
 common ffi-buildinfo
 
@@ -470,6 +470,7 @@ Test-Suite integration-tests
   build-depends:      base               >=4.10
                     , semigroups
                     , tasty
+                    , tasty-golden
                     , tasty-hunit
                     , tasty-rerun
                     , text
@@ -481,6 +482,7 @@ Test-Suite integration-tests
   hs-source-dirs:   test
 
   other-modules:    TestSuite.ScriptTests
+                    TestSuite.GoldenTests
 
 
 Test-Suite unit-tests
