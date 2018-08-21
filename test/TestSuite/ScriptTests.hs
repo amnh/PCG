@@ -4,19 +4,34 @@ module TestSuite.ScriptTests
   ( testSuite
   ) where
 
-import Data.Functor   (($>))
-import Data.List.NonEmpty
-import Data.Text
+import Control.Arrow    ((&&&))
+import Data.Either
+import Data.Foldable
+import Data.Functor     (($>))
+import Data.Text        (Text)
 import Test.Tasty
+import Test.Tasty.HUnit
 import Turtle
 import Turtle.Prelude
 
+
 testSuite :: TestTree
-testSuite = testGroup "Integration Test Suite" []
+testSuite = testGroup "Integration Test Suite"
+  [ scriptFailure "test-data/pcg-test-missing-leaf/test.pcg"
+  ]
 
 
-exampleIntegrationTest = withResource (runExecutable "path/to/script/test.pcg" ["path/to/output.data"] (pure ()) $
-    \fileContests -> undefined
+scriptTest
+  :: String   -- ^ Script File
+  -> [String] -- ^ Expected Output Files
+  -> (Either Int [String] -> TestTree) -- ^ Build a TestTree from the resulting
+                                       -- output file contents or ExitStatus code
+  -> TestTree
+scriptTest scriptPath outputPaths testLogic = withResource (runExecutable scriptPath outputPaths) (const (pure ())) (testLogic . pure)
+
+
+scriptFailure :: String -> TestTree
+scriptFailure scriptPath = scriptTest scriptPath [] (testCase scriptPath . assertBool "Expected script failure" . isLeft)
 
 
 -- |
@@ -25,18 +40,21 @@ exampleIntegrationTest = withResource (runExecutable "path/to/script/test.pcg" [
 --
 -- Useful for integration tests specified with 'Test.Tasty.withResource'.
 runExecutable
-  :: String                         -- ^ Path to the script file to run
-  -> NonEmpty String                -- ^ Paths to the generated output files
-  -> IO (Either Int (NonEmpty Text) -- ^ Resulting file contents of the specified output files, or the exit code if the script failed
+  :: String                 -- ^ Path to the script file to run
+  -> [String]               -- ^ Paths to the generated output files
+  -> IO (Either Int [Text]) -- ^ Resulting file contents of the specified output
+                            --   files, or the exit code if the script failed
 runExecutable scriptStr outputPaths = do
     startingDirectory <- pwd 
     cd scriptDirectory
-    exitCode <- shell ("stack exec pcg < " <> toText scriptFile) []
+    exitCode <- shell ("stack exec pcg < " <> scriptText) mempty
     cd startingDirectory
     case exitCode of
-      ExitFailure v -> pure $ Left Int
-      _             -> Right <$> traverse readTextFile outputPaths
+      ExitFailure v -> pure $ Left v
+      _             -> Right <$> traverse (readTextFile . decodeString) outputPaths
   where
+    scriptText = either id id $ toText scriptFile
+    
     (scriptDirectory, scriptFile) = breakScriptPath $ decodeString scriptStr
 
     breakScriptPath = (collapse . foldl' (</>) defaultDirectory . init &&& last) . splitDirectories
