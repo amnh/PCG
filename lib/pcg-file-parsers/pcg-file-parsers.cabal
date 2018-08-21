@@ -71,7 +71,8 @@ library
                   -- >=0.5.8 Required for Data.Map.restrictKeys
                   , containers         >=0.5.8
                   , dlist
-                  , graphviz
+                    -- >=2999.20 Required for forgivig constructio of DOT object
+                  , graphviz           >=2999.20
                   , keys
                   , megaparsec         >=6.4.0
                   , parser-combinators >=0.2.0
