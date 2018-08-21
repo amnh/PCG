@@ -10,7 +10,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Bio.Metadata.General.Internal
   ( GeneralCharacterMetadataDec()
@@ -32,8 +36,8 @@ import Text.XML.Class
 -- bins.
 data GeneralCharacterMetadataDec
    = GeneralCharacterMetadataDec
-   { name     :: !CharacterName
-   , weight   :: {-# UNPACK #-} !Double
+   { name   :: !CharacterName
+   , weight :: {-# UNPACK #-} !Double
    } deriving (Eq, Generic, Show)
 
 

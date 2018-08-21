@@ -10,14 +10,15 @@
 --
 -- The Nexus file format was developed by an committee consisting of members
 -- who had no concept of language design. Consequently the Nexus file format
--- is needlessly complex. 
+-- is needlessly complex.
 --
 -- This parser works barely on a subset of the Nexus specification's ambiguously
--- defined features. 
+-- defined features.
 --
------------------------------------------------------------------------------ 
+-----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.Nexus
   ( AlphabetSymbol

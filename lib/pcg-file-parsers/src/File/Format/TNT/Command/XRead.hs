@@ -11,9 +11,10 @@
 -- Parser for the XREAD command sepecifying the collection of the taxa set
 -- and thier corresponding sequences. Sequences are well typed and may be
 -- specified as contiguous segments of character types.
------------------------------------------------------------------------------ 
+-----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.TNT.Command.XRead
   ( xreadCommand
@@ -34,19 +35,19 @@ import           Data.Bifunctor           (second)
 import           Data.Bits
 import           Data.CaseInsensitive
 import           Data.Char                (isSpace)
-import           Data.DList               (DList,append)
-import qualified Data.DList         as DL (concat,fromList)
+import           Data.DList               (DList, append)
+import qualified Data.DList               as DL (concat, fromList)
 import           Data.Foldable            (toList)
 import           Data.Functor             (($>))
 import           Data.Key                 ((!))
 import           Data.List.NonEmpty       (NonEmpty)
-import qualified Data.List.NonEmpty as NE (filter,fromList,length)
+import qualified Data.List.NonEmpty       as NE (filter, fromList, length)
 import           Data.List.Utility
-import           Data.Map                 (assocs,insertWith,lookup)
-import           Data.Maybe               (catMaybes)
+import           Data.Map                 (assocs, insertWith, lookup)
+import           Data.Maybe               (catMaybes, mapMaybe)
 import           Data.Traversable
 import           File.Format.TNT.Internal
-import           Prelude           hiding (lookup)
+import           Prelude                  hiding (lookup)
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 import           Text.Megaparsec.Custom
@@ -85,7 +86,7 @@ xreadCommand = xreadValidation =<< xreadDefinition
                               , show charCount
                               , ") does not match the number of chararacters found for the following taxa:\n"
                               , unlines $ prettyPrint <$> xs
-                              ]                            
+                              ]
 
         prettyPrint (name, num) = concat ["\t",show name," found (",show num,") characters"]
 
@@ -115,7 +116,7 @@ xreadHeader =  symbol (keyword "xread" 2)
 -- The number of taxa present in the XREAD command.
 -- __Naturally__ this number must be a positive integer.
 xreadTaxaCount :: (MonadParsec e s m, Token s ~ Char) => m Int
-xreadTaxaCount = symbol $ flexiblePositiveInt "taxa count" 
+xreadTaxaCount = symbol $ flexiblePositiveInt "taxa count"
 
 
 -- |
@@ -127,7 +128,7 @@ xreadCharCount = symbol $ flexibleNonNegativeInt "character count"
 
 -- |
 -- Reads one or more taxon sequences.
--- Performs deinterleaving of identically named taxon sequences. 
+-- Performs deinterleaving of identically named taxon sequences.
 -- ==== __Examples__
 --
 -- Basic usage:
@@ -213,7 +214,7 @@ coreDiscreteSequenceThatGetsReused = many discreteCharacter
     singletonCharacter = bitPack . pure <$> stateToken
     ambiguityCharacter = bitPack <$> (validateAmbiguityGroup =<< withinBraces (many stateToken))
     stateToken         = characterStateChar <* whitespaceInline
-    bitPack            = foldr (.|.) zeroBits . catMaybes . fmap (`lookup` deserializeStateDiscrete)
+    bitPack            = foldr (.|.) zeroBits . mapMaybe (`lookup` deserializeStateDiscrete)
     validateAmbiguityGroup xs
       | null xs    = fail   "An ambiguity group containing no character states was found."
       | hasDupes   = fail $ "An ambiguity group contains duplicate character states: " <> show dupes <> "."
@@ -282,7 +283,7 @@ discreteToDna character = foldl (.|.) zeroBits <$> mapM f flags
     flags = bitsToFlags character
     toDna = (`lookup` deserializeStateDna) . (serializeStateDiscrete !)
     f x   = case toDna x of
-              Nothing -> fail $ "The character state '" <> [serializeStateDiscrete ! x] <> "' is not a valid DNA character state." 
+              Nothing -> fail $ "The character state '" <> [serializeStateDiscrete ! x] <> "' is not a valid DNA character state."
               Just b  -> pure b
 
 
@@ -298,7 +299,7 @@ discreteToProtein character = foldl (.|.) zeroBits <$> mapM f flags
     toProtein = (`lookup` deserializeStateProtein) . (serializeStateDiscrete !)
     f x       =
         case toProtein x of
-          Nothing -> fail $ "The character state '" <> [serializeStateDiscrete ! x] <> "' is not a valid amino acid character state." 
+          Nothing -> fail $ "The character state '" <> [serializeStateDiscrete ! x] <> "' is not a valid amino acid character state."
           Just b  -> pure b
 
 
@@ -325,7 +326,7 @@ segmentTerminal = whitespaceInline *> endOfLine <* whitespace
 -- >>> toBits (zeroBits :: Word8) "Example" "alex"
 -- 102
 toBits :: (Bits b, Foldable f, Traversable t) => b -> f Char -> t Char -> b
-toBits b xs = foldr (.|.) b . fmap setFlag 
+toBits b xs = foldr (.|.) b . fmap setFlag
   where
     setFlag    = bit . (`getIndex` xs)
     getIndex e = fromJust . snd . foldl f (0,Nothing)
@@ -333,7 +334,7 @@ toBits b xs = foldr (.|.) b . fmap setFlag
         f a@(i,m) x
           | isJust m  = a
           | e == x    = (i  ,Just i )
-          | otherwise = (i+1,Nothing) 
+          | otherwise = (i+1,Nothing)
 
 
 -- |
@@ -349,7 +350,7 @@ tagIdentifier c = symbol (char '&') *> symbol (withinBraces c) $> ()
 withinBraces :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
 withinBraces = between (f '[') (f ']')
   where
-    f c = char c <* whitespaceInline 
+    f c = char c <* whitespaceInline
 
 
 {-
@@ -508,19 +509,19 @@ trimTail = fmap (second f)
 -- |
 -- Test if a given sequence character value is a gap value.
 isGap :: TntCharacter -> Bool
-isGap (Dna      x) | deserializeStateDna      ! '-' == x = True 
-isGap (Discrete x) | deserializeStateDiscrete ! '-' == x = True 
-isGap (Protein  x) | deserializeStateProtein  ! '-' == x = True 
-isGap _ = False
+isGap (Dna      x) | deserializeStateDna      ! '-' == x = True
+isGap (Discrete x) | deserializeStateDiscrete ! '-' == x = True
+isGap (Protein  x) | deserializeStateProtein  ! '-' == x = True
+isGap _            = False
 
 
 -- |
 -- Overwrite given seuqence character value with the missing character value.
-toMissing :: TntCharacter -> TntCharacter 
+toMissing :: TntCharacter -> TntCharacter
 toMissing Dna     {} = Dna      $ deserializeStateDna      ! '?'
 toMissing Discrete{} = Discrete $ deserializeStateDiscrete ! '?'
 toMissing Protein {} = Protein  $ deserializeStateProtein  ! '?'
-toMissing e = e
+toMissing e          = e
 
 
 -- |

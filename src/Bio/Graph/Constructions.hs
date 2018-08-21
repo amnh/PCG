@@ -26,11 +26,15 @@ module Bio.Graph.Constructions
   , PostOrderDecorationDAG
   , SearchState
   , TopologicalResult
-  , UnifiedCharacterSequence
+  , UnifiedBlock
+  , UnifiedSequences
   , UnifiedCharacterBlock
+  , UnifiedCharacterSequence
   , UnifiedContinuousCharacter
   , UnifiedDiscreteCharacter
   , UnifiedDynamicCharacter
+  , UnifiedMetadataBlock
+  , UnifiedMetadataSequence
   , UnReifiedCharacterDAG
   ) where
 
@@ -47,15 +51,19 @@ import Bio.Graph.PhylogeneticDAG.Internal
 import Bio.Graph.ReferenceDAG.Internal
 import Bio.Graph.Solution
 import Bio.Sequence
+import Bio.Sequence.Metadata
 import Control.Evaluation
 import Data.EdgeLength
+import Data.List.NonEmpty
 import Data.NodeLabel
+import Data.Vector                         (Vector)
 
 
 -- |
 -- A /reified/ DAG that contains characters but has no decorations.
 type CharacterDAG =
        PhylogeneticDAG2
+         ()
          EdgeLength
          NodeLabel
          UnifiedContinuousCharacter
@@ -97,24 +105,22 @@ type DecoratedCharacterResult = PhylogeneticSolution FinalDecorationDAG
 -- Decoration of a phylogenetic DAG after a pre-order traversal.
 type FinalDecorationDAG =
        PhylogeneticDAG2
+         (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
          EdgeLength
          NodeLabel
-         (ContinuousOptimizationDecoration    ContinuousChar)
+         (ContinuousOptimizationDecoration    ContinuousChar )
          (FitchOptimizationDecoration         StaticCharacter)
          (AdditiveOptimizationDecoration      StaticCharacter)
          (SankoffOptimizationDecoration       StaticCharacter)
          (SankoffOptimizationDecoration       StaticCharacter)
-         (DynamicDecorationDirectOptimization DynamicChar)
---         (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
-
-
---type IncidentEdges = [EdgeReference]
+         (DynamicDecorationDirectOptimization DynamicChar    )
 
 
 -- |
 -- Decoration of a phylogenetic DAG after a post-order traversal.
-type PostOrderDecorationDAG =
+type PostOrderDecorationDAG m =
        PhylogeneticDAG2
+         m
          EdgeLength
          NodeLabel
          (ContinuousPostorderDecoration ContinuousChar )
@@ -125,37 +131,56 @@ type PostOrderDecorationDAG =
          (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
 
 
-{-
-type ReRootedEdgeContext u v w x y z =
-   ( ResolutionCache (CharacterSequence u v w x y z)
-   , ResolutionCache (CharacterSequence u v w x y z)
-   , ResolutionCache (CharacterSequence u v w x y z)
-   )
--}
-
-
 -- |
 -- A "heterogenous" character block after being read in from a READ command.
-type UnifiedCharacterBlock
-     = CharacterBlock
-         UnifiedContinuousCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDynamicCharacter
+type  UnifiedBlock =
+    ( UnifiedMetadataBlock
+    , UnifiedCharacterBlock
+    )
+
+
+type  UnifiedCharacterBlock
+    = CharacterBlock
+        UnifiedContinuousCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDynamicCharacter
+
+
+type  UnifiedMetadataBlock
+    = MetadataBlock
+        ()
 
 
 -- |
 -- A "heterogenous" character sequence after being read in from a READ command.
-type UnifiedCharacterSequence
-     = CharacterSequence
-         UnifiedContinuousCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDiscreteCharacter
-         UnifiedDynamicCharacter
+type  UnifiedSequences =
+    ( UnifiedMetadataSequence
+    , CharacterSequence
+        UnifiedContinuousCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDynamicCharacter
+    )
+
+
+type  UnifiedMetadataSequence
+    = MetadataSequence
+        ()
+
+
+type  UnifiedCharacterSequence
+    = CharacterSequence
+        UnifiedContinuousCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDiscreteCharacter
+        UnifiedDynamicCharacter
 
 
 -- |
@@ -185,6 +210,7 @@ type UnifiedDynamicCharacter    = Maybe (DynamicDecorationInitial DynamicChar)
 -- A DAG as read in from a READ command before being reified.
 type UnReifiedCharacterDAG =
        PhylogeneticDAG
+         ()
          EdgeLength
          NodeLabel
          UnifiedContinuousCharacter

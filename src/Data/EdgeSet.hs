@@ -12,7 +12,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Data.EdgeSet
   ( EdgeSet()
@@ -27,12 +28,12 @@ module Data.EdgeSet
 import           Control.DeepSeq
 import           Data.Foldable
 import           Data.Key
-import           Data.List.NonEmpty (NonEmpty(..))
+import           Data.List.NonEmpty (NonEmpty (..))
 import           Data.Semigroup
 import           Data.Set           (Set)
-import qualified Data.Set    as Set
+import qualified Data.Set           as Set
 import           GHC.Generics       (Generic)
-import           Prelude     hiding (zipWith)
+import           Prelude            hiding (zipWith)
 
 
 -- |

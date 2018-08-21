@@ -12,7 +12,10 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns, DeriveGeneric, FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE BangPatterns          #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Control.Evaluation.Trans where
 
@@ -20,9 +23,9 @@ import           Control.Applicative
 import           Control.DeepSeq
 import           Control.Evaluation.Internal
 import           Control.Evaluation.Unit
-import           Control.Monad           (MonadPlus(..))
-import           Control.Monad.Fail      (MonadFail)
-import qualified Control.Monad.Fail as F
+import           Control.Monad               (MonadPlus (..))
+import           Control.Monad.Fail          (MonadFail)
+import qualified Control.Monad.Fail          as F
 import           Control.Monad.IO.Class
 import           Control.Monad.Logger
 import           Control.Monad.Trans.Class

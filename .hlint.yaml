@@ -32,11 +32,22 @@
 # Generalise Maybe, Either functions to fold, foldMap
 - group: { name: generalise-for-conciseness, enabled: true }
 
+# I don't like the TupleSections language extension, so we will ignore the hints
+- ignore: { name: Use tuple-section }
 
 # Ignore some builtin hint in test modules where we need to test the hint.
 # These hints are inapplicable within test modules since the test-suites are
 # testing the properties that the hint assumes to be true.
 - ignore: { name: Evaluate
+          , within:
+            [ Bio.Character.Encodable.Dynamic.Test
+            , Bio.Character.Encodable.Static.Test
+            , Data.BitMatrix.Test
+            , Numeric.Extended.Natural.Test
+            , Numeric.Extended.Real.Test
+            ]
+          }
+- ignore: { name: Redundant id
           , within:
             [ Bio.Character.Encodable.Dynamic.Test
             , Bio.Character.Encodable.Static.Test

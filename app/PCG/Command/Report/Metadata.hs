@@ -14,12 +14,12 @@
 
 module PCG.Command.Types.Report.Metadata where
 
-import Bio.PhyloGraph.Solution
 import Bio.Metadata
+import Bio.PhyloGraph.Solution
 import Data.Foldable
-import Data.List   (intercalate)
-import Data.Monoid ((<>))
-import Data.Vector (Vector)
+import Data.List               (intercalate)
+import Data.Monoid             ((<>))
+import Data.Vector             (Vector)
 
 --import Debug.Trace
 
@@ -33,11 +33,11 @@ metadataCsvOutput solution = header <> mainExport (metadata solution)
     where
         header = "Type, Name, Aligned, State Names, Alphabet, Ignored, Weight \n"
         mainExport :: Vector StandardMetadata -> String
-        mainExport = intercalate "\n" . fmap fetchInfo . toList 
+        mainExport = intercalate "\n" . fmap fetchInfo . toList
 
 fetchInfo :: CharacterMetadata s -> String
 fetchInfo c = intercalate ", " [show $ charType c, name c, show $ isAligned c, show $ stateNames c, show $ alphabet c, show $ isIgnored c, show $ weight c]
 
-foldInfo :: (Foldable t, Show a) => t a -> String  
+foldInfo :: (Foldable t, Show a) => t a -> String
 foldInfo = unwords . fmap show . toList
 

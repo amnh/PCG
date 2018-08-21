@@ -23,7 +23,7 @@ module Bio.Character.Encodable.Static
   ) where
 
 import Bio.Character.Encodable.Internal
-import Bio.Character.Encodable.Static.Internal
 import Bio.Character.Encodable.Static.Class
+import Bio.Character.Encodable.Static.Internal
 import Bio.Character.Encodable.Stream
 

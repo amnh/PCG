@@ -21,13 +21,13 @@ module Data.Alphabet.IUPAC
   ) where
 
 
-import           Control.Arrow            ((***))
+import           Control.Arrow      ((***))
 import           Data.Alphabet
-import           Data.Bimap               (Bimap)
+import           Data.Bimap         (Bimap)
 import qualified Data.Bimap         as BM
 import           Data.Foldable
 import qualified Data.List.NonEmpty as NE
-import qualified Data.Set              as Set 
+import qualified Data.Set           as Set
 import           Data.String
 
 
@@ -60,7 +60,7 @@ iupacToAminoAcid = toBimap
     , ('Z', "EQ")
     , ('-', "-")
     , ('?', "ACDEFGHIKLMNPQRSTVWY-")
-    ] 
+    ]
 
 
 -- |
@@ -84,7 +84,7 @@ iupacToDna = toBimap
     , ('N', "ACGT")
     , ('-', "-")
     , ('?', "ACGT-")
-    
+
     , ('a', "A-")
     , ('c', "C-")
     , ('g', "G-")
@@ -100,7 +100,7 @@ iupacToDna = toBimap
     , ('h', "ACT-")
     , ('v', "ACG-")
     , ('n', "ACGT-")
-    ] 
+    ]
 
 
 -- | Substitutions for converting to a RNA sequence based on IUPAC codes.
@@ -158,7 +158,7 @@ toBimap :: [(Char, String)] ->  Bimap (AmbiguityGroup String) (AmbiguityGroup St
 toBimap = BM.fromList . fmap transform
   where
     transform = pure . pure *** fmap pure . NE.fromList
-    
+
 
 
 

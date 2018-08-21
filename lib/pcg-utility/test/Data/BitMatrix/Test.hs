@@ -15,6 +15,7 @@ import Data.MonoTraversable
 import Data.Semigroup
 import Test.QuickCheck.Monadic
 import Test.Tasty
+import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
 
@@ -56,6 +57,7 @@ testSuite = testGroup "BitMatrix tests"
     , monoTraversableProperties
     , orderingProperties
     , datastructureTests
+    , cornerCases
     ]
 
 
@@ -87,15 +89,15 @@ monoFoldableProperties = testGroup "Properties of MonoFoldable"
     testFoldr :: (Blind (BitVector -> Word -> Word), Word, BitMatrix) -> Property
     testFoldr (Blind f, z, bm) =
         ofoldr f z bm === (ofoldr f z . otoList) bm
-    
+
     testFoldl :: (Blind (Word -> BitVector -> Word), Word, BitMatrix) -> Property
     testFoldl (Blind f, z, bm) =
         ofoldl' f z bm === (ofoldl' f z . otoList) bm
-    
+
     testFoldr1 :: (Blind (BitVector -> BitVector -> BitVector), BitMatrix) -> Property
     testFoldr1 (Blind f, bm) =
         (not . onull) bm  ==> ofoldr1Ex f bm === (ofoldr1Ex f . otoList) bm
-    
+
     testFoldl1 :: (Blind (BitVector -> BitVector -> BitVector), BitMatrix) -> Property
     testFoldl1 (Blind f, bm) =
         (not . onull) bm  ==> ofoldl1Ex' f bm === (ofoldl1Ex' f . otoList) bm
@@ -119,7 +121,7 @@ monoFoldableProperties = testGroup "Properties of MonoFoldable"
     testHead :: BitMatrix -> Property
     testHead bm =
         (not . onull) bm ==> headEx bm === (getFirst . ofoldMap1Ex First) bm
-    
+
     testTail :: BitMatrix -> Property
     testTail bm =
         (not . onull) bm ==> lastEx bm === (getLast . ofoldMap1Ex Last) bm
@@ -158,14 +160,14 @@ monoTraversableProperties = testGroup "Properties of MonoTraversable"
     testIdentity bm =
         otraverse Identity bm === Identity bm
 
-    testComposition 
+    testComposition
       :: Blind (BitVector -> Either Word BitVector)
       -> Blind (BitVector -> Maybe BitVector)
       -> BitMatrix
       -> Property
     testComposition (Blind f) (Blind g) bm =
         (Compose . fmap (otraverse g) . otraverse f) bm `equalityWithExceptions` otraverse (Compose . fmap g . f) bm
-        
+
 
 orderingProperties :: TestTree
 orderingProperties = testGroup "Properties of an Ordering"
@@ -198,6 +200,7 @@ datastructureTests = testGroup "BitMatrix data structure tests"
     , testRowsToList
     , testRowCountConsistency
     , testRowIndexConsistency
+    , testConcatanationOfRows
     , testExpandRows
     , testFactorRows
     , testExpandFactorIdentity
@@ -231,7 +234,7 @@ testBitMatrix = testGroup "bitMatrix generating function"
         f :: Positive Int -> Positive Int -> Property
         f rowCt colCt = testBM === controlBM
           where
-            testBM    = mconcat $ rows (bitMatrix numChars alphLen $ const True)
+            testBM    = expandRows (bitMatrix numChars alphLen $ const True)
             controlBM = fromNumber (alphLen * numChars) (2 ^ (alphLen * numChars) - 1 :: Integer)
             numChars  = toEnum $ getPositive rowCt
             alphLen   = toEnum $ getPositive colCt
@@ -277,7 +280,7 @@ testFromRows = testGroup "Construction using fromRows"
             (_, _, bvs) = getParameters params
             testBM      = mconcat . rows $ fromRows bvs
             controlBM   = mconcat bvs
-                        
+
     testWidth = testProperty "Number of columns is correct" f
       where
         f :: DependantFromRowsParameters -> Bool
@@ -285,7 +288,7 @@ testFromRows = testGroup "Construction using fromRows"
           where
             (_, colCt, bvs) = getParameters params
             testBM = fromRows bvs
-                        
+
     testHeight = testProperty "Number of rows is correct" f
       where
         f :: DependantFromRowsParameters -> Bool
@@ -299,8 +302,8 @@ testRow :: TestTree
 testRow = testProperty "row returns correct value" f
   where
     f :: DependantFromRowsParameters -> Bool
-    f params = retVal 
-      where 
+    f params = retVal
+      where
         -- at each item in the list of bvs, test it againts what ought to be at that index, and accumulate
         (retVal, _)    = foldl' (\(bool, i) bv -> ((bv == row testBM i) && bool, i + 1)) (True, 0) bvList
         (_, _, bvList) = getParameters params
@@ -375,7 +378,14 @@ testFactorRows = testProperty "toBits === fmap (isSet bm) . factorRows n" f
         indices = [ (i, j) | i <- [ 0 .. numRows bm - 1 ], j <- [ 0 .. numCols bm - 1 ] ]
         (_, colCount, bv) = getFactoredBitVector input
 
-          
+
+testConcatanationOfRows :: TestTree
+testConcatanationOfRows = testProperty "expandRows === mconcat . rows" f
+  where
+    f :: BitMatrix -> Property
+    f bm = expandRows bm === (mconcat . rows) bm
+
+
 testExpandFactorIdentity :: TestTree
 testExpandFactorIdentity = testProperty "factorRows numCols . expandRows === id" f
   where
@@ -401,3 +411,9 @@ equalityWithExceptions x y = monadicIO $ do
 
     anyException :: Property
     anyException = True === True
+
+
+cornerCases :: TestTree
+cornerCases = testGroup "Corner case values of a BitMatrix"
+    [ testCase "maxBound :: Word is represented correctly" $ expandRows (bitMatrix 8 8 $ const True) @?= fromNumber 64 (2^64 - 1 :: Integer)
+    ]

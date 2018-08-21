@@ -9,34 +9,51 @@
 -- Portability :  portable
 --
 -- Data structures and instances for coded characters
--- Coded characters are dynamic characters recoded as 
+-- Coded characters are dynamic characters recoded as
 --
 -----------------------------------------------------------------------------
 
 module Bio.Sequence
   ( CharacterSequence()
-  , CharacterBlock(..)
+  , CharacterBlock()
   , HasBlockCost
   , HasRootCost
   , PartialCharacterBlock()
+  -- * CharacterBlock construction
   , continuousSingleton
   , discreteSingleton
-  , dynamicSingleton 
+  , dynamicSingleton
   , finalizeCharacterBlock
-  , toMissingCharacters
-  , toBlocks
   , fromBlocks
-  , toBlockVector
   , fromBlockVector
+  -- * CharacterBlock deconstruction
+  , toBlocks
+  , toBlockVector
+  -- * Block extraction
+  , continuousCharacterBins
+  , nonAdditiveCharacterBins
+  , additiveCharacterBins
+  , metricCharacterBins
+  , nonMetricCharacterBins
+  , dynamicCharacters
+  , setDynamicCharacters
+  -- * CharacterBlock transformations
+  , toMissingCharacters
   , hexmap
   , hexTranspose
   , hexZipWith
+  , hexZipWithMeta
+  -- * Cost quantification
   , sequenceCost
   , sequenceRootCost
   , blockCost
   , staticCost
   ) where
 
-import Bio.Sequence.Internal
-import Bio.Sequence.Block hiding (hexmap, hexTranspose, hexZipWith)
+import Bio.Sequence.Block           hiding (hexTranspose, hexZipWith, hexZipWithMeta, hexmap)
 import Bio.Sequence.Block.Builder
+import Bio.Sequence.Block.Character (additiveCharacterBins, continuousCharacterBins, dynamicCharacters,
+                                     finalizeCharacterBlock, metricCharacterBins, nonAdditiveCharacterBins,
+                                     nonMetricCharacterBins, setDynamicCharacters)
+import Bio.Sequence.Character
+

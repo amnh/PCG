@@ -13,7 +13,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Text.XML.Custom
   ( ToXML (..)
@@ -28,7 +29,7 @@ module Text.XML.Custom
 
 import Data.Foldable
 import Data.Key
-import Text.XML.Class (ToXML(..))
+import Text.XML.Class       (ToXML (..))
 import Text.XML.Light.Types
 
 

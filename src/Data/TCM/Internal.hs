@@ -10,8 +10,10 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE Strict       #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric  #-}
+{-# LANGUAGE Strict         #-}
+{-# LANGUAGE TypeFamilies   #-}
 
 module Data.TCM.Internal
   ( TCM(..)
@@ -28,19 +30,21 @@ module Data.TCM.Internal
   , reduceTcm
   ) where
 
-import           Control.Arrow                 ((***))
+import           Control.Arrow        ((***))
+import           Control.DeepSeq
 import           Data.Foldable
-import           Data.IntSet                   (IntSet)
-import           Data.List                     (transpose)
-import           Data.List.Utility             (equalityOf, occurances)
-import           Data.Map                      (delete, findMax, keys)
-import qualified Data.Map             as Map   (fromList)
+import           Data.IntSet          (IntSet)
+import           Data.List            (transpose)
+import           Data.List.Utility    (equalityOf, occurances)
+import           Data.Map             (delete, findMax, keys)
+import qualified Data.Map             as Map (fromList)
 import           Data.MonoTraversable
 import           Data.Ratio
-import           Data.Vector.Unboxed           (Vector)
+import           Data.Vector.Unboxed  (Vector)
 import qualified Data.Vector.Unboxed  as V
 import           Data.Word
-import           Test.QuickCheck      hiding   (generate)
+import           GHC.Generics
+import           Test.QuickCheck      hiding (generate)
 import           Text.XML
 
 
@@ -63,7 +67,7 @@ import           Text.XML
 -- constructors will result in a runtime exception.
 data TCM
    = TCM Int (Vector Word32)
-   deriving (Eq)
+   deriving (Eq, Generic, NFData)
 
 
 -- |
@@ -477,21 +481,20 @@ modeAndOutlierLengths xs = (mode, otherLengths)
 --
 -- >>> generate 4 $ \(i,j) -> abs (i - j)
 -- TCM: 4 x 4
---   0 1 2 3 4
---   1 0 1 2 3
---   2 1 0 1 2
---   3 2 1 0 1
---   4 3 2 1 0
+--   0 1 2 3
+--   1 0 1 2
+--   2 1 0 1
+--   3 2 1 0
 --
 -- >>> generate 8 $ \(i,j) -> if i == j || i + j == 6 then 0 else 1
 -- TCM: 8 x 8
---   0 1 1 1 0 1 1 1
---   1 0 1 0 1 1 1 1
---   1 1 0 1 1 1 1 1
---   1 0 1 0 1 1 1 1
---   0 1 1 1 0 1 1 1
---   1 1 1 1 1 0 1 1
---   1 1 1 1 1 1 0 1
+--   0 1 1 1 1 1 0 1
+--   1 0 1 1 1 0 1 1
+--   1 1 1 1 0 1 1 1
+--   1 1 1 0 1 1 1 1
+--   1 1 0 1 0 1 1 1
+--   1 0 1 1 1 0 1 1
+--   0 1 1 1 1 1 0 1
 --   1 1 1 1 1 1 1 0
 --
 generate :: ( Enum i

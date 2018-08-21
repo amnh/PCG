@@ -11,22 +11,23 @@
 -- Functionality to output a matrix stating which taxa are present in which files.
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 module PCG.Command.Types.Report.TaxonMatrix where
 
-import           Bio.PhyloGraph.Solution
 import           Bio.Metadata
-import           Control.Arrow ((***))
-import           Data.Function (on)
+import           Bio.PhyloGraph.Solution
+import           Control.Arrow           ((***))
 import           Data.Foldable
-import qualified Data.HashMap.Strict as HM
+import           Data.Function           (on)
+import qualified Data.HashMap.Strict     as HM
 import           Data.Key
 import           Data.List
-import           Data.Matrix.NotStupid hiding (toList)
+import           Data.Matrix.NotStupid   hiding (toList)
 import           Data.Maybe
-import           Data.Vector (cons, ifoldr)
-import qualified Data.Vector as V
+import           Data.Vector             (cons, ifoldr)
+import qualified Data.Vector             as V
 
 
 type Presence = Matrix Bool
@@ -46,7 +47,7 @@ taxonReferenceOutput sol files = printIt $ makeRef sol files
                 gen :: (Int,Int) -> Bool
                 --gen (i,j) | trace ("gen on row " <> show i <> " " <> show (length (allSeqs ! (allNodes V.! i))) <> " " <> show (checkPos V.! j)) False = undefined
                 gen (i,j) = isJust $ (allSeqs ! (allNodes V.! i)) V.! (checkPos V.! j)
-                  
+
                 filterNames taxonName = null inFilter || taxonName `elem` inFilter
                 fileNames = takeWhile (/=':') . name <$> metadata inSolution
                 (checkPos, finalFiles) = (V.fromList *** V.fromList)

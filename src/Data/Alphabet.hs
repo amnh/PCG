@@ -34,7 +34,7 @@
 -- > fromString "?"
 -- This symbol will be removed from the 'Alphabet'
 -- if it is present in the construction structure.
------------------------------------------------------------------------------   
+-----------------------------------------------------------------------------
 
 module Data.Alphabet
   ( Alphabet()

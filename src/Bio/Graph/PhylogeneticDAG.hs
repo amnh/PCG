@@ -27,8 +27,6 @@ module Bio.Graph.PhylogeneticDAG
   , preorderSequence'
   , preorderSequence''
   , renderSummary
---  , riefiedSolution
---  , riefyForest
   , rootCosts
   , totalEdgeCosts
   , getDotContextWithBaseAndIndex
@@ -44,7 +42,6 @@ module Bio.Graph.PhylogeneticDAG
   ) where
 
 
-import           Bio.Sequence
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Class
 import           Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
@@ -54,33 +51,18 @@ import           Bio.Graph.PhylogeneticDAG.Postorder
 import           Bio.Graph.PhylogeneticDAG.Preorder
 import           Bio.Graph.PhylogeneticDAG.TotalEdgeCost
 import           Bio.Graph.ReferenceDAG.Internal
+import           Bio.Sequence
 import           Data.Key
-import           Data.List.NonEmpty        (NonEmpty)
-import qualified Data.List.NonEmpty as NE
+import           Data.List.NonEmpty                                  (NonEmpty)
+import qualified Data.List.NonEmpty                                  as NE
 
 
--- HasBlockCost u v w x y z i r
 -- |
 -- Calculate the root cost for each character block.
-{-
-rootCosts :: ( Integral e
-             , HasCharacterWeight u Double
-             , HasCharacterWeight v Double
-             , HasCharacterWeight w Double
-             , HasCharacterWeight x Double
-             , HasCharacterWeight y Double
-             , HasCharacterWeight z Double
-             , HasCharacterCost u Double
-             , HasCharacterCost v e
-             , HasCharacterCost w e
-             , HasCharacterCost x e
-             , HasCharacterCost y e
-             , HasCharacterCost z e
-             )
--}
-rootCosts :: HasBlockCost u v w x y z i r
-          => PhylogeneticDAG2 s t u v w x y z -> NonEmpty r
-rootCosts (PDAG2 dag) = sequenceCost <$> rootDecs
+rootCosts
+  :: HasBlockCost u v w x y z
+  => PhylogeneticDAG2 m s t u v w x y z -> NonEmpty Double
+rootCosts (PDAG2 dag meta) = sequenceCost meta <$> rootDecs
   where
     roots     = rootRefs dag
     rootDecs  = characterSequence . NE.head . resolutions . nodeDecoration . (references dag !) <$> roots

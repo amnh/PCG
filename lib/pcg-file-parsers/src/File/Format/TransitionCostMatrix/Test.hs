@@ -1,5 +1,6 @@
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.TransitionCostMatrix.Test
   ( testSuite
@@ -10,8 +11,8 @@ module File.Format.TransitionCostMatrix.Test
 import Data.Foldable                           (toList)
 import Data.List.NonEmpty                      (fromList)
 import File.Format.TransitionCostMatrix.Parser
-import Test.Custom.Parse                       (parseEquals,parseFailure,parseSuccess)
-import Test.Tasty                              (TestTree,testGroup)
+import Test.Custom.Parse                       (parseEquals, parseFailure, parseSuccess)
+import Test.Tasty                              (TestTree, testGroup)
 import Test.Tasty.HUnit
 import Text.Megaparsec                         (eof)
 
@@ -20,7 +21,7 @@ testSuite :: TestTree
 testSuite = testGroup "TCM Format"
     [ testGroup "TCM Combinators"
         [testTcmAlphabet, tcmMatrix']
-    , testGroup "TCM Parser" 
+    , testGroup "TCM Parser"
         [tcmStreamParser']
     , testGroup "TCM Converter"
         []

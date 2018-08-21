@@ -1,9 +1,10 @@
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, TemplateHaskell #-}
+{-# LANGUAGE DeriveGeneric    #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TemplateHaskell  #-}
 
 module Main (main) where
 
 
-import Paths_phylocomgraph          (version)
 import Control.DeepSeq
 import Control.Evaluation
 import Data.Char                    (toUpper)
@@ -12,13 +13,14 @@ import Data.Version                 (showVersion)
 import Data.Void
 import Development.GitRev           (gitCommitCount, gitHash)
 import GHC.Generics
-import Options.Applicative   hiding (ParseError)
+import Options.Applicative          hiding (ParseError)
+import Paths_phylocomgraph          (version)
 import PCG.Computation.Internal
 import PCG.Syntax                   (computationalStreamParser)
 import System.Environment
 import System.IO
-import Text.Megaparsec              (Parsec, ParseError, Token, parse, parseErrorPretty')
-import Text.PrettyPrint.ANSI.Leijen ((<+>), (</>), align, indent, int, line, string, text)
+import Text.Megaparsec              (ParseError, Parsec, Token, parse, parseErrorPretty')
+import Text.PrettyPrint.ANSI.Leijen (align, indent, int, line, string, text, (<+>), (</>))
 
 
 -- |
@@ -104,7 +106,7 @@ retreiveInputStream path
       then Right <$> getContents
       else do
            args <- getArgs
-           if   null args 
+           if   null args
            then Left <$> parserHelpMessage
            else Left . ("Error: STDIN is empty\n\n" <>) <$> parserHelpMessage
 
@@ -161,7 +163,7 @@ parserInformation = info (helper <*> commandLineOptions) description
 
     verbosityHelp = Just . (text "Select the verbosity level (default 3):" `op`) . indent 2 . foldl1 op $ f <$>
         [ (0, ["Suppress all output"])
-        , (1, ["Output only errors"]) 
+        , (1, ["Output only errors"])
         , (2, ["Output errors and", "warnings"])
         , (3, ["Output errors,", "warnings,", "and runtime information"])
         , (4, ["Output errors,", "warnings,", "runtime information,", "and debugging information"])
@@ -200,7 +202,7 @@ fullVersionInformation = mconcat
     , $(gitCommitCount)
     , " commits)"
     ]
-  
+
 
 -- |
 -- Interpret an 'Integer' as a 'Verbosity' value.

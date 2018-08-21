@@ -14,8 +14,8 @@
 
 module Test.QuickCheck.Arbitrary.Instances where
 
-import           Data.Vector      (Vector)
-import qualified Data.Vector as V (fromList)
+import           Data.Vector     (Vector)
+import qualified Data.Vector     as V (fromList)
 import           Test.QuickCheck
 
 

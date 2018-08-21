@@ -12,7 +12,10 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DoAndIfThenElse, FlexibleContexts, ScopedTypeVariables, TypeFamilies #-}
+{-# LANGUAGE DoAndIfThenElse     #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 -- TODOs:
 -- • Get char weights from assumptions block
@@ -22,20 +25,20 @@ module File.Format.Nexus.Parser
   ) where
 
 import           Data.CaseInsensitive
-import           Data.Char                  (isSpace, toLower)
+import           Data.Char                               (isSpace, toLower)
 import           Data.Functor
-import qualified Data.List.NonEmpty  as NE  (head)
-import           Data.Maybe                 (fromMaybe, isJust)
+import qualified Data.List.NonEmpty                      as NE (head)
+import           Data.Maybe                              (fromMaybe, isJust)
 import           Data.Proxy
-import qualified Data.Set            as S
+import qualified Data.Set                                as S
 import           File.Format.Newick
-import           File.Format.Newick.Parser  (newickExtendedDefinition)
+import           File.Format.Newick.Parser               (newickExtendedDefinition)
 import           File.Format.Nexus.Data
 import           File.Format.Nexus.Partition
 import           File.Format.TransitionCostMatrix.Parser
-import           Text.Megaparsec     hiding (label)
+import           Text.Megaparsec                         hiding (label)
 import           Text.Megaparsec.Char
-import           Text.Megaparsec.Char.Lexer (decimal, skipBlockCommentNested)
+import           Text.Megaparsec.Char.Lexer              (decimal, skipBlockCommentNested)
 import           Text.Megaparsec.Custom
 
 
@@ -78,8 +81,7 @@ ignoredBlockDefinition = do
 blockend :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char {- , Show s -}) => m (Tokens s)
 blockend = do
     v <- string'' "end"
-    _ <- optional . try $ string'' "block"
-    _ <- void $ char ';'
+    _ <- optional . try $ string'' "block" <* void (char ';')
     pure v
 
 

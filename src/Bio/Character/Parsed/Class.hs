@@ -11,7 +11,8 @@
 -- Typeclas for a parsed sequence
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 module Bio.Character.Parsed.Class
   ( ParsedCharacters(..)
@@ -19,31 +20,31 @@ module Bio.Character.Parsed.Class
   ) where
 
 import           Bio.Character.Parsed.Internal
-import           Control.Arrow             ((&&&))
-import           Data.Bifunctor            (second)
+import           Control.Arrow                    ((&&&))
+import           Data.Bifunctor                   (second)
 import           Data.Foldable
 import           Data.Key
-import           Data.List.NonEmpty        (NonEmpty(..))
-import qualified Data.List.NonEmpty as NE
-import           Data.Map                  (Map, fromSet, insert, keysSet, mergeWithKey)
-import qualified Data.Map           as M
+import           Data.List.NonEmpty               (NonEmpty (..))
+import qualified Data.List.NonEmpty               as NE
+import           Data.Map                         (Map, fromSet, insert, keysSet, mergeWithKey)
+import qualified Data.Map                         as M
 import           Data.Maybe
 import           Data.Semigroup.Foldable
-import           Data.Set                  (Set)
-import qualified Data.Set           as S
+import           Data.Set                         (Set)
+import qualified Data.Set                         as S
 import           Data.Tree
-import qualified Data.Vector        as V
-import           Data.Vector.Instances()
+import qualified Data.Vector                      as V
+import           Data.Vector.Instances            ()
 import           File.Format.Dot
 import           File.Format.Fasta
 import           File.Format.Fastc
 import           File.Format.Newick
-import           File.Format.Nexus  hiding (TaxonSequenceMap)
+import           File.Format.Nexus                hiding (TaxonSequenceMap)
 import           File.Format.TNT
-import qualified File.Format.TNT    as TNT
+import qualified File.Format.TNT                  as TNT
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
-import           Prelude            hiding (zipWith)
+import           Prelude                          hiding (zipWith)
 
 
 {-

@@ -10,9 +10,10 @@
 --
 -- Utility functions used for parsing both FASTA & FASTC file formats.
 --
------------------------------------------------------------------------------ 
+-----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.Fasta.Internal where
 
@@ -31,7 +32,7 @@ type TaxonSequenceMap  = Map Identifier CharacterSequence
 
 
 -- |
--- Unique identifier for a taxa 
+-- Unique identifier for a taxa
 type Identifier        = String
 
 
@@ -52,7 +53,7 @@ identifierLine :: (MonadParsec e s m, Token s ~ Char) => m Identifier
 identifierLine = do
     _ <- char '>'
     _ <- inlineSpace
-    x <- identifier 
+    x <- identifier
     _ <- inlineSpace
     _ <- optional (try commentBody <?> commentMessage x)
     _ <- endOfLine <?> lineEndMessage x

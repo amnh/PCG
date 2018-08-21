@@ -17,9 +17,9 @@ module Control.Evaluation.Unit where
 
 import           Control.Applicative
 import           Control.DeepSeq
-import           Control.Monad           (MonadPlus(..))
-import           Control.Monad.Fail      (MonadFail) 
-import qualified Control.Monad.Fail as F
+import           Control.Monad       (MonadPlus (..))
+import           Control.Monad.Fail  (MonadFail)
+import qualified Control.Monad.Fail  as F
 import           GHC.Generics
 import           Test.QuickCheck
 
@@ -29,7 +29,7 @@ import           Test.QuickCheck
 -- which returns a value, and error, or indicated that no work was done
 data EvalUnit a
    = NoOp
-   | Error String 
+   | Error String
    | Value a
    deriving (Eq, Generic, Show)
 
@@ -65,7 +65,7 @@ instance Applicative EvalUnit where
         Error e -> Error e
         Value x ->
             case rhs of
-              NoOp      -> NoOp
+              NoOp    -> NoOp
               Error e -> Error e
               Value y -> Value $ x `op` y
 

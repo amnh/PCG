@@ -15,7 +15,7 @@
 module Bio.Graph.BinaryRenderingTree where
 
 
-import Control.Arrow             ((&&&))
+import Control.Arrow      ((&&&))
 import Data.Foldable
 import Data.List.NonEmpty hiding (length, takeWhile)
 import Data.Semigroup
@@ -49,7 +49,7 @@ horizontalRendering = fold . intersperse "\n" . go
     go (Node _ labelMay kids) = sconcat paddedSubtrees
       where
         paddedSubtrees   = maybe prefixedSubtrees (`applyPadding` prefixedSubtrees) labelMay
-        
+
         prefixedSubtrees :: NonEmpty (NonEmpty String)
         prefixedSubtrees = applyPrefixes alignedSubtrees
 
@@ -74,7 +74,7 @@ horizontalRendering = fold . intersperse "\n" . go
     applyPrefixes :: NonEmpty (NonEmpty String) -> NonEmpty (NonEmpty String)
     applyPrefixes = run True
       where
-        run :: Bool -> NonEmpty (NonEmpty String) -> NonEmpty (NonEmpty String) 
+        run :: Bool -> NonEmpty (NonEmpty String) -> NonEmpty (NonEmpty String)
         run True  (v:|[])     = pure $ applyAtCenter "─" " " " " v
         run False (v:|[])     = pure $ applyAtCenter "└" "│" " " v
         run True  (v:|(x:xs)) = applyPrefixAndGlue  v "┤" "┌" " " "│" (x:|xs)

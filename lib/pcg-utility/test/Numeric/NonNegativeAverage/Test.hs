@@ -32,7 +32,7 @@ orderingProperties = testGroup "Properties of ordering"
   where
     orderPreserving :: (Word, Word) -> Bool
     orderPreserving (a, b) = a `compare` b == fromNonNegativeValue a `compare` fromNonNegativeValue b
-    
+
     symetry :: (NonNegativeAverage, NonNegativeAverage) -> Bool
     symetry (a, b) =
       case (a `compare` b, b `compare` a) of
@@ -56,7 +56,7 @@ semigroupProperties = testGroup "Properties of this semigroup operator"
       where
         f :: Word -> (Word, Word)
         f = ((,) <$> fromInteger . numerator <*> fromInteger . denominator) . g
-        
+
         g :: Word -> Rational
         g = fromNonNegativeAverage . fromNonNegativeValue
 

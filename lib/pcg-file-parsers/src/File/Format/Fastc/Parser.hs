@@ -12,9 +12,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE ApplicativeDo, FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE ApplicativeDo    #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
-module File.Format.Fastc.Parser 
+module File.Format.Fastc.Parser
   ( CharacterSequence
   , FastcParseResult
   , FastcSequence(..)
@@ -26,11 +28,11 @@ module File.Format.Fastc.Parser
   ) where
 
 
-import           Data.Char                 (isSpace)
-import           Data.List.NonEmpty        (NonEmpty)
-import qualified Data.List.NonEmpty as NE
+import           Data.Char                  (isSpace)
+import           Data.List.NonEmpty         (NonEmpty)
+import qualified Data.List.NonEmpty         as NE
 import           Data.Maybe
-import qualified Data.Vector        as V
+import qualified Data.Vector                as V
 import           File.Format.Fasta.Internal
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
@@ -107,7 +109,7 @@ validSymbol = do
   where
     syntenyDefinition = optional (char '~') <?> "synteny specification prefix: '~'"
 
-    handleSynteny x 
+    handleSynteny x
       | isJust x  = reverse
       | otherwise = id
 
@@ -132,7 +134,7 @@ validSymbol = do
     -- Consequently, I have opted to use the simpler definition.
     validSymbolChar = satisfy ( \x -> x /= '>' -- need to be able to match new taxa lines
                                    && x /= ';' -- need to be able to start comments
-                                   && x /= '[' -- need to be able to start an ambiguity list 
+                                   && x /= '[' -- need to be able to start an ambiguity list
                                    && x /= ']' -- need to be able to end   an ambiguity list
                                    && (not . isSpace) x
                               ) <?> "printable character that is not '>', ';', '[', or ']'"

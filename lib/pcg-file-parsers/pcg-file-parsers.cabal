@@ -26,6 +26,8 @@ common ghc-settings
   default-language: Haskell2010
 
   ghc-options:      -O2
+                    -- We turn this on to make the most of ApplicativeDo usage
+                    -foptimal-applicative-do
                     -Wall
                     -Wcompat
                     -Wdodgy-foreign-imports
@@ -69,7 +71,8 @@ library
                   -- >=0.5.8 Required for Data.Map.restrictKeys
                   , containers         >=0.5.8
                   , dlist
-                  , graphviz
+                    -- >=2999.20 Required for forgivig constructio of DOT object
+                  , graphviz           >=2999.20
                   , keys
                   , megaparsec         >=6.4.0
                   , parser-combinators >=0.2.0
@@ -140,6 +143,7 @@ Test-Suite unit-tests
                   , tasty
                   , tasty-hunit
                   , tasty-quickcheck
+                  , tasty-rerun
                   , vector
 
   hs-source-dirs:   src, test
@@ -183,6 +187,7 @@ Executable file-tests
                      , pcg-file-parsers
                      , tasty
                      , tasty-hunit
+--                     , tasty-rerun
 
   hs-source-dirs:      test
 

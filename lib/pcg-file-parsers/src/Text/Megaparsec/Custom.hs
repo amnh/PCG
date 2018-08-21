@@ -12,7 +12,9 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, ScopedTypeVariables, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 module Text.Megaparsec.Custom
   ( (<:>)
@@ -21,7 +23,7 @@ module Text.Megaparsec.Custom
   , double
   , endOfLine
   , fails
-  , inlineSpaceChar 
+  , inlineSpaceChar
   , inlineSpace
   , somethingTill
   , string''
@@ -30,11 +32,11 @@ module Text.Megaparsec.Custom
   ) where
 
 import           Data.CaseInsensitive
-import           Data.Char                         (isSpace)
+import           Data.Char                  (isSpace)
 --import           Data.Either                       (either)
-import           Data.Functor                      (($>))
-import           Data.List.NonEmpty                (NonEmpty(..), nonEmpty)
-import           Data.Maybe                        (catMaybes)
+import           Data.Functor               (($>))
+import           Data.List.NonEmpty         (NonEmpty (..), nonEmpty)
+import           Data.Maybe                 (mapMaybe)
 import           Data.Proxy
 import qualified Data.Set                   as S
 --import           Data.Void
@@ -68,7 +70,7 @@ string'' = string' . tokensToChunk (Proxy :: Proxy s)
 -- @anythingTill end@ consumes zero or more characters until @end@ is matched,
 -- leaving @end@ in the stream.
 anythingTill :: MonadParsec e s m => m a -> m [Token s]
-anythingTill c = do 
+anythingTill c = do
     ahead <- optional . try $ lookAhead c
     case ahead of
       Just _  -> pure []
@@ -115,7 +117,7 @@ endOfLine = choice (try <$> [ nl, cr *> nl, cr ]) $> newLineChar
 -- |
 -- Accepts zero or more Failure messages.
 fails :: MonadParsec e s m => [String] -> m a
-fails = failure Nothing . S.fromList . fmap Label . catMaybes . fmap nonEmpty
+fails = failure Nothing . S.fromList . fmap Label . mapMaybe nonEmpty
 
 
 -- |
@@ -126,13 +128,13 @@ inlineSpaceChar = token captureToken Nothing
     captureToken x
       | isInlineSpace x = Right x
       | otherwise       = Left (Just (Tokens (x:|[])), mempty)
-        
+
     isInlineSpace x = and $
         [ isSpace . enumCoerce
         , (newLineChar  /=)
         , (carriageChar /=)
         ] <*> [x]
-        
+
     newLineChar  = enumCoerce '\n'
     carriageChar = enumCoerce '\r'
 
@@ -170,7 +172,7 @@ comment start end = commentDefinition' False
         before   <- commentContent
         comments <- concat <$> many (commentDefinition' True <++> commentContent)
         suffix   <- end
-{-        
+{-
         after    <- if   enquote
                     then many spaceChar
                     else pure ""
@@ -193,7 +195,7 @@ runParserOnFile parser filePath = either (parseErrorPretty :: ParseError Char Vo
 -- Runs the supplied parser on the input stream with default error types.
 -- Useful for quick tests in GHCi.
 parseWithDefaultErrorType :: Parsec Void s a -> s -> Either (ParseError (Token s) Void) a
-parseWithDefaultErrorType c = parse c "" 
+parseWithDefaultErrorType c = parse c ""
 -}
 
 
@@ -219,7 +221,7 @@ parseWithDefaultErrorType c = parse c ""
 --    seqTuple may = case may of
 --                     Just (x,y) -> (Just x, Just y)
 --                     Nothing    -> (Nothing,Nothing)
-                     
+
 
 -- |
 -- Convert one Enum to another through the Int value.

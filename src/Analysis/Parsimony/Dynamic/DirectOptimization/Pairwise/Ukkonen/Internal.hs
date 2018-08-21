@@ -14,7 +14,11 @@
 -- Allocates a "ribbon" down the diagonal of the matrix rather than the entire matrix.
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE ConstraintKinds, DeriveFoldable, DeriveFunctor, FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE ConstraintKinds  #-}
+{-# LANGUAGE DeriveFoldable   #-}
+{-# LANGUAGE DeriveFunctor    #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Internal
   ( ukkonenDO
@@ -22,17 +26,17 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Internal
 
 
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch          (naiveDOMemo)
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon           (Ribbon)
-import qualified Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon as Ribbon
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch (naiveDOMemo)
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon  (Ribbon)
+import qualified Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon  as Ribbon
 import           Bio.Character.Encodable
 import           Data.Bits
 import           Data.Foldable
 import           Data.Key
 import           Data.MonoTraversable
-import           Data.Vector.Instances    ()
+import           Data.Vector.Instances                                                  ()
 import           Numeric.Extended.Natural
-import           Prelude           hiding (lookup)
+import           Prelude                                                                hiding (lookup)
 
 
 -- |

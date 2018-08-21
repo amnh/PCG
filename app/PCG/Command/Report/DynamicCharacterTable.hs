@@ -14,18 +14,18 @@
 
 module PCG.Command.Report.DynamicCharacterTable () where
 
-import Bio.Character.Encodable
-import Bio.Character.Decoration.Dynamic
-import Bio.Sequence
-import Bio.Graph
+import           Bio.Character.Decoration.Dynamic
+import           Bio.Character.Encodable
+import           Bio.Graph
+import           Bio.Sequence
 -- import Bio.Graph.PhylogeneticDAG
-import Bio.Graph.Node
-import Bio.Graph.ReferenceDAG
-import Control.Lens
-import Data.Foldable
-import Data.Monoid            ((<>))
-import Data.List              (intercalate)
-import qualified Data.List.NonEmpty as NE
+import           Bio.Graph.Node
+import           Bio.Graph.ReferenceDAG
+import           Control.Lens
+import           Data.Foldable
+import           Data.List                        (intercalate)
+import qualified Data.List.NonEmpty               as NE
+import           Data.Monoid                      ((<>))
 
 
 -- |

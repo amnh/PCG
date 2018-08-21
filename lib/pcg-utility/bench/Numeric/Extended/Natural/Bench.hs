@@ -34,7 +34,7 @@ extendedNaturalBench =
     , bgroup "sign number" . interlace
         ( unaryOperationBenchmark "signum" signum "ExtendedNatural" extendedNaturalValues)
         $ unaryOperationBenchmark "signum" signum "Word"            wordValues
-    , bgroup "negation" . interlace 
+    , bgroup "negation" . interlace
         ( unaryOperationBenchmark "negate" negate "ExtendedNatural" extendedNaturalValues)
         $ unaryOperationBenchmark "negate" negate "WordValue"       wordValues
     ]

@@ -1,17 +1,18 @@
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.TNT.Test
   ( testSuite
   ) where
 
-import           Control.Monad              (filterM)
+import           Control.Monad                     (filterM)
 import           Data.Bifunctor
 import           Data.Char
-import           Data.Either.Combinators    (isLeft, isRight)
+import           Data.Either.Combinators           (isLeft, isRight)
 import           Data.Foldable
-import           Data.List                  (inits, nub)
-import           Data.List.NonEmpty         (NonEmpty)
-import qualified Data.List.NonEmpty   as NE (fromList)
+import           Data.List                         (inits, nub)
+import           Data.List.NonEmpty                (NonEmpty)
+import qualified Data.List.NonEmpty                as NE (fromList)
 import           Data.Void
 import           File.Format.TNT.Command.CCode
 import           File.Format.TNT.Command.CNames
@@ -20,7 +21,7 @@ import           File.Format.TNT.Command.TRead
 import           File.Format.TNT.Command.XRead
 import           File.Format.TNT.Internal
 import           Test.Custom.Parse
-import           Test.Tasty                 (TestTree, testGroup)
+import           Test.Tasty                        (TestTree, testGroup)
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
 import           Text.Megaparsec
@@ -50,7 +51,7 @@ testSuite = testGroup "TNT Format"
                                 , testCommandProcedure
                                 , testCommandTRead
                                 , testCommandXRead
-                                ] 
+                                ]
   ]
 
 
@@ -79,7 +80,7 @@ internalCombinators = testGroup "General combinators used amongst TNT commands" 
             f :: Int -> Bool
             f x = (x > 0) == isRight (parseInternal (flexiblePositiveInt "") $ show (fromIntegral x :: Double))
 
-    keyword' = testGroup "Kewords parsed flexibly" [prefixesMatching] 
+    keyword' = testGroup "Kewords parsed flexibly" [prefixesMatching]
       where
         prefixesMatching = testProperty "Parses all prefixes after requisite characters" f
           where
@@ -285,13 +286,13 @@ testCommandProcedure = testGroup "PROCEDURE command tests" [shortProcedureHeader
     commandFile = testProperty "parses arbitrary command file reference" f
       where
          f :: NonEmptyList Char -> Bool
-         f x = isRight . parseInternal procCommandFile $ fileName <> ";" 
+         f x = isRight . parseInternal procCommandFile $ fileName <> ";"
            where fileName = takeWhile (not . isSpace) $ getNonEmpty x
 
     fastaFile = testProperty "parses arbitrary 'fasta' file reference" f
       where
          f :: NonEmptyList Char -> Bool
-         f x = isRight . parseInternal procCommandFile $ "&" <> fileName <> ";" 
+         f x = isRight . parseInternal procCommandFile $ "&" <> fileName <> ";"
            where fileName = takeWhile (not . isSpace) $ getNonEmpty x
 
 
@@ -369,10 +370,10 @@ testCommandXRead = testGroup "XREAD command test" [xreadHeader',xreadDiscreteSeq
                  .||. (not predicate ==> all isLeft  res)
               where
                 predicate = ambiguityGroupIsSingleton || ambiguityGroupContainsNoBadChars
-                
+
                 ambiguityGroupIsSingleton      = length toks == 1
                 ambiguityGroupContainsNoBadChars = all (`notElem` badChars) toks
-                
+
                 badChars = "-?"
                 res  = parseInternal discreteSequence <$> opts
                 toks = nub (getDiscreteCharacters amb)
@@ -411,8 +412,8 @@ testCommandXRead = testGroup "XREAD command test" [xreadHeader',xreadDiscreteSeq
               where
                 res  = parseInternal (proteinSequence <* eof) str
                 str  = getWordToken tok
-        
-        
+
+
 newtype DiscreteCharacters = DC (NonEmpty Char) deriving (Eq,Show)
 
 
@@ -437,4 +438,4 @@ parseInternal
   => Parsec Void s a
   -> s
   -> Either String a
-parseInternal p s = first (parseErrorPretty' s) $ parse p "test-stream" s 
+parseInternal p s = first (parseErrorPretty' s) $ parse p "test-stream" s

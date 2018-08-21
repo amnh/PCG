@@ -10,9 +10,10 @@
 --
 -- Parser for the TREAD command specifying how to read a forests of trees.
 -- No validation currently takes place.
------------------------------------------------------------------------------ 
+-----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.TNT.Command.TRead
   ( treadCommand
@@ -25,7 +26,7 @@ import           Data.CaseInsensitive
 import           Data.Char                (isSpace)
 import           Data.Functor             (($>))
 import           Data.List                (isSuffixOf)
-import qualified Data.List.NonEmpty as NE (fromList)
+import qualified Data.List.NonEmpty       as NE (fromList)
 import           File.Format.TNT.Internal
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
@@ -75,10 +76,10 @@ treadTree = treadSubtree <|> treadLeaf
 -- A leaf node of the TREAD tree, representing one of the three possible
 -- identifier types used for matching with a taxon from the taxa set.
 treadLeaf :: (MonadParsec e s m, Token s ~ Char) => m TReadTree
-treadLeaf = Leaf <$> choice [try index, try prefix, name] 
+treadLeaf = Leaf <$> choice [try index, try prefix, name]
  where
    index       = Index  <$>  flexibleNonNegativeInt "taxon reference index"
-   prefix      = Prefix <$> (taxaLabel >>= checkTail) 
+   prefix      = Prefix <$> (taxaLabel >>= checkTail)
    name        = Name   <$>  taxaLabel
    taxaLabel   = some labelChar
    labelChar   = satisfy (\x -> not (isSpace x) && x `notElem` "(),;")

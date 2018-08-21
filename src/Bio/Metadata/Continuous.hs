@@ -10,13 +10,16 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Bio.Metadata.Continuous
   ( ContinuousCharacterMetadataDec()
   , GeneralCharacterMetadata(..)
   , HasCharacterName(..)
-  , HasCharacterWeight(..) 
+  , HasCharacterWeight(..)
   , continuousMetadata
   ) where
 
@@ -26,6 +29,7 @@ import Bio.Metadata.General
 import Control.DeepSeq
 import Control.Lens
 import GHC.Generics
+import Text.XML
 
 
 -- |
@@ -55,6 +59,10 @@ instance HasCharacterWeight ContinuousCharacterMetadataDec Double where
 
 instance NFData ContinuousCharacterMetadataDec
 
+
+instance ToXML ContinuousCharacterMetadataDec where
+
+    toXML (CCM gm) = toXML gm
 
 -- |
 -- A smart constructor for 'GeneralCharacterMetadata'.

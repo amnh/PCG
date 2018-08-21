@@ -11,10 +11,9 @@ module PCG.Command.Read.ReadError
   ) where
 
 import Data.List.NonEmpty
-import Data.Maybe            (catMaybes)
-import Text.Megaparsec
-import Data.Semigroup
+import Data.Maybe              (catMaybes)
 import Data.Semigroup.Foldable
+import Text.Megaparsec
 
 
 -- |
@@ -46,6 +45,7 @@ instance Show ReadError where
         , unparsableMessage
         , ambiguousMessage
         , multipleTCMsMessage
+        , invalidPrealignsMessage
         ]
       where
         (unfindables, unopenables, unparsables, ambiguity, doubleTCMs, invalidPrealigns) = partitionReadErrorMessages $ toList errors
@@ -70,8 +70,8 @@ instance Show ReadError where
 
         ambiguousMessage  =
           case ambiguity of
-            []  -> Nothing
-            xs  -> Just . unlines $ show <$> xs
+            [] -> Nothing
+            xs -> Just . unlines $ show <$> xs
 
         multipleTCMsMessage =
           case doubleTCMs of
@@ -84,15 +84,15 @@ instance Show ReadError where
             []  -> Nothing
             [x] -> Just $ "The file was specified as prealigned, but not all characters had the same length. " <> show x
             xs  -> Just $ "The following files were specified as prealigned, but not all characters had the same length: \n" <> unlines (show <$> xs)
-            
+
         partitionReadErrorMessages
           ::  [ReadErrorMessage]
           -> ([ReadErrorMessage],[ReadErrorMessage], [ReadErrorMessage], [ReadErrorMessage], [ReadErrorMessage], [ReadErrorMessage])
         partitionReadErrorMessages = foldr f ([],[],[],[],[],[])
           where
-            f e@FileUnfindable    {} (u,v,w,x,y,z) = (e:u,  v,  w,  x,   y,  z) 
-            f e@FileUnopenable    {} (u,v,w,x,y,z) = (  u,e:v,  w,  x,   y,  z) 
-            f e@FileUnparsable    {} (u,v,w,x,y,z) = (  u,  v,e:w,  x,   y,  z) 
+            f e@FileUnfindable    {} (u,v,w,x,y,z) = (e:u,  v,  w,  x,   y,  z)
+            f e@FileUnopenable    {} (u,v,w,x,y,z) = (  u,e:v,  w,  x,   y,  z)
+            f e@FileUnparsable    {} (u,v,w,x,y,z) = (  u,  v,e:w,  x,   y,  z)
             f e@FileAmbiguous     {} (u,v,w,x,y,z) = (  u,  v,  w,e:x,   y,  z)
             f e@MultipleTCMs      {} (u,v,w,x,y,z) = (  u,  v,  w,  x, e:y,  z)
             f e@InvalidPrealigned {} (u,v,w,x,y,z) = (  u,  v,  w,  x,   y,e:z)
@@ -129,7 +129,7 @@ unopenable path = ReadError $ FileUnopenable path :| []
 
 
 -- |
--- Remark that a parsing error occured when reading the file. Note that the 'ParseError' should contain the 'FilePath' information. 
+-- Remark that a parsing error occured when reading the file. Note that the 'ParseError' should contain the 'FilePath' information.
 unparsable :: (ShowToken (Token s), LineToken (Token s), ShowErrorComponent e, Stream s) => s -> ParseError (Token s) e -> ReadError
 unparsable pStr pErr = ReadError $ FileUnparsable (parseErrorPretty' pStr pErr) :| []
 

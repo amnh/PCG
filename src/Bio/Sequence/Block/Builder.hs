@@ -10,24 +10,21 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Bio.Sequence.Block.Builder
-  ( PartialCharacterBlock()
-  , finalizeCharacterBlock
---  , toMissingCharacters
+  ( PartialCharacterBlock(..)
   , continuousSingleton
   , discreteSingleton
   , dynamicSingleton
   ) where
 
 
-import           Bio.Sequence.Block.Internal
-import           Data.DList     hiding (toList)
-import           Data.Foldable
-import           Data.TCM
-import           Data.Vector.Instances ()
-import qualified Data.Vector    as V
+import Data.DList
+import Data.TCM
+import Data.Vector.Instances ()
 
 
 -- |
@@ -58,46 +55,6 @@ instance Semigroup (PartialCharacterBlock u v w x y z) where
           , partialNonMetricCharacterBins   = partialNonMetricCharacterBins   lhs <> partialNonMetricCharacterBins   rhs
           , partialDynamicCharacters        = partialDynamicCharacters        lhs <> partialDynamicCharacters        rhs
           }
-          
-
--- |
--- Converts a 'PartialCharacterBlock' to a 'CharacterBlock', finalizing the
--- efficient construction process.
-finalizeCharacterBlock :: PartialCharacterBlock u v w x y z -> CharacterBlock u v w x y z
-finalizeCharacterBlock =
-    CharacterBlock
-      <$> fromDList . partialContinuousCharacterBins 
-      <*> fromDList . partialNonAdditiveCharacterBins
-      <*> fromDList . partialAdditiveCharacterBins
-      <*> fromDList . partialMetricCharacterBins
-      <*> fromDList . partialNonMetricCharacterBins
-      <*> fromDList . partialDynamicCharacters
-  where
-    fromDList = V.fromList . toList 
-
-
-{-
--- |
--- Convert all characters contained in the block to thier missing value.
-toMissingCharacters :: ( PossiblyMissingCharacter m
-                       , PossiblyMissingCharacter i
-                       , PossiblyMissingCharacter c
-                       , PossiblyMissingCharacter f
-                       , PossiblyMissingCharacter a
-                       , PossiblyMissingCharacter d
-                       )
-                    => CharacterBlock u v w x y z
-                    -> CharacterBlock u v w x y z
-toMissingCharacters cb =
-    CharacterBlock
-    { continuousCharacterBins  = toMissing <$> continuousCharacterBins  cb
-    , nonAdditiveCharacterBins = toMissing <$> nonAdditiveCharacterBins cb
-    , additiveCharacterBins    = toMissing <$> additiveCharacterBins    cb
-    , metricCharacterBins      = toMissing <$> metricCharacterBins      cb
-    , nonMetricCharacterBins   = toMissing <$> nonMetricCharacterBins   cb
-    , dynamicCharacters        = toMissing <$> dynamicCharacters        cb
-    }
--}
 
 
 -- TODO get rid of ContinuousDecorationInitial in signiture

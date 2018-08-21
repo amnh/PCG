@@ -10,53 +10,60 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveFunctor, DeriveGeneric, FlexibleContexts, FlexibleInstances #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies, UnboxedSums #-}
+{-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE UnboxedSums                #-}
 
 module Bio.Graph.ReferenceDAG.Internal where
 
 import           Bio.Graph.BinaryRenderingTree
-import           Bio.Graph.LeafSet
 import           Bio.Graph.Component
-import           Control.Arrow                    ((&&&),(***))
+import           Bio.Graph.LeafSet
+import           Control.Arrow                 ((&&&), (***))
 import           Control.DeepSeq
-import           Control.Lens                     (lens)
+import           Control.Lens                  as Lens (to)
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
 import           Data.EdgeSet
 import           Data.Foldable
-import           Data.Functor                     ((<$))
+import           Data.Functor                  ((<$))
 import           Data.GraphViz.Attributes
-import           Data.GraphViz.Printing    hiding ((<>)) -- Seriously, why is this redefined?
-import           Data.GraphViz.Types       hiding (attrs)
-import           Data.GraphViz.Types.Graph hiding (node)
-import           Data.Hashable                    (Hashable)
-import qualified Data.HashMap.Strict       as HM
-import           Data.IntMap                      (IntMap)
-import qualified Data.IntMap               as IM
-import           Data.IntSet                      (IntSet)
-import qualified Data.IntSet               as IS
+import           Data.GraphViz.Printing        hiding ((<>))
+import           Data.GraphViz.Types           hiding (attrs)
+import           Data.GraphViz.Types.Graph     hiding (node)
+import           Data.Hashable                 (Hashable)
+import qualified Data.HashMap.Strict           as HM
+import           Data.IntMap                   (IntMap)
+import qualified Data.IntMap                   as IM
+import           Data.IntSet                   (IntSet)
+import qualified Data.IntSet                   as IS
 import           Data.Key
-import           Data.List                        (intercalate)
-import           Data.List.NonEmpty               (NonEmpty(..), intersperse)
-import qualified Data.List.NonEmpty        as NE
-import           Data.List.Utility                (isSingleton)
-import           Data.Monoid               hiding ((<>))
+import           Data.List                     (intercalate)
+import           Data.List.NonEmpty            (NonEmpty (..), intersperse)
+import qualified Data.List.NonEmpty            as NE
+import           Data.List.Utility             (isSingleton)
+import           Data.Monoid                   hiding ((<>))
 import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
-import           Data.Set                         (Set)
-import qualified Data.Set                  as S
+import           Data.Set                      (Set)
+import qualified Data.Set                      as S
 import           Data.String
 import           Data.Traversable
-import           Data.Tree                        (unfoldTree)
-import           Data.Tree.Pretty                 (drawVerticalTree)
-import           Data.Vector                      (Vector)
-import qualified Data.Vector               as V
-import           Data.Vector.Instances            ()
+import           Data.Tree                     (unfoldTree)
+import           Data.Tree.Pretty              (drawVerticalTree)
+import           Data.Vector                   (Vector)
+import qualified Data.Vector                   as V
+import           Data.Vector.Instances         ()
 import           GHC.Generics
 import           Numeric.Extended.Real
-import           Prelude                   hiding (lookup, zipWith)
+import           Prelude                       hiding (lookup, zipWith)
 import           Text.Newick.Class
 import           Text.XML.Custom
 
@@ -93,11 +100,11 @@ data  IndexData e n
 -- * d = graph metadata
 data  GraphData d
     = GraphData
-    { dagCost           :: {-# UNPACK #-} !ExtendedReal
-    , networkEdgeCost   :: {-# UNPACK #-} !ExtendedReal
-    , rootingCost       :: {-# UNPACK #-} !Double
-    , totalBlockCost    :: {-# UNPACK #-} !Double
-    , graphMetadata     :: d
+    { dagCost         :: {-# UNPACK #-} !ExtendedReal
+    , networkEdgeCost :: {-# UNPACK #-} !ExtendedReal
+    , rootingCost     :: {-# UNPACK #-} !Double
+    , totalBlockCost  :: {-# UNPACK #-} !Double
+    , graphMetadata   :: d
     } deriving (Functor, Generic)
 
 
@@ -165,8 +172,9 @@ instance Functor (ReferenceDAG d e) where
 -- | (✔)
 instance HasLeafSet (ReferenceDAG d e n) (LeafSet n) where
 
-    leafSet = lens getter undefined
+    leafSet = Lens.to getter
         where
+            getter :: ReferenceDAG d e n -> LeafSet n
             getter (RefDAG v _ _) = LeafSet $ foldMap f v
 
             f e | null (childRefs e) = [nodeDecoration e]
@@ -286,7 +294,7 @@ instance Show n => ToNewick (ReferenceDAG d e n) where
         namedVec = zipWith (\x n -> n { nodeDecoration = x }) labelVec vec
         labelVec = (`evalState` (1,1,1)) $ mapM deriveLabel vec -- All network nodes have "htu\d" as nodeDecoration.
 
-        deriveLabel :: Show n => IndexData e n -> State (Int, Int, Int) String
+        deriveLabel :: IndexData e n -> State (Int, Int, Int) String
         deriveLabel node
           | shownLabel /= "{Unlabeled Node}" = pure shownLabel
           | otherwise = do
@@ -302,7 +310,7 @@ instance Show n => ToNewick (ReferenceDAG d e n) where
                     put (lC, nC, tC+1)
                     pure $ "Node_" <> show tC
           where
-            shownLabel = show $ nodeDecoration node  
+            shownLabel = show $ nodeDecoration node
 
 
 -- | (✔)
@@ -322,7 +330,6 @@ instance ToXML (GraphData m) where
 instance Show n => ToXML (IndexData e n) where
 
    toXML indexData = toXML . show $ nodeDecoration indexData
-   -- ("Node_type", show $ getNodeType indexData)
 
 
 -- | (✔)
@@ -330,8 +337,6 @@ instance (Show n, ToXML n) => ToXML (ReferenceDAG d e n) where
 
     toXML dag = xmlElement "Directed_acyclic_graph" [] [newick, meta, vect]
       where
-          -- leafs    = Right $ collapseElemList "Leaf set" [] [(dag ^. leafSet)]
-          -- fmap id . (^. leafSet) <$> forests
           meta   = Right . toXML $ graphData dag
           newick = Left ("Newick_representation", toNewick dag)
           vect   = Right . collapseElemList "Nodes" [] $ dag
@@ -977,7 +982,6 @@ unfoldDAG f origin =
             }
 
     expandedMap = contractToContiguousVertexMapping $ expandVertexMapping resultMap
---    expandedMap = resultMap
 
     -- TODO:
     -- _rootIndices seems to be wrong so we do this.
@@ -1053,25 +1057,6 @@ unfoldDAG f origin =
           | otherwise            = mempty
 
 
-
-
--- A test for unfoldDAG containing all node types!
-{--
-
-dataDef1 :: [(Char,String)]
-dataDef1 = [('R',"AB"),('A',"CD"),('B',"CE"),('C',[]),('D',[]),('E',[]),('Z',"BF"),('F',"GH"),('G',[]),('H',[])]
-
-gen1 :: Char -> ([(Int,Char)], String, [(Int,Char)])
-gen1 x = (pops, show x, kids)
-  where
-    pops = foldMap (\(i,xs) -> if x `elem` xs then [(-1,i)] else []) dataDef1
-    kids =
-      case Pre.lookup x dataDef1 of
-        Nothing -> []
-        Just xs -> (\y -> (-1,y)) <$> xs
---}
-
-
 -- |
 -- Extract a context from the 'ReferenceDAG' that can be used to create a dot
 -- context for rendering.
@@ -1136,16 +1121,6 @@ candidateNetworkEdges dag = S.filter correctnessCriterion $ foldMapWithKey f mer
     g j k   = foldMap (\x -> S.singleton ((j,k), x))
     h j k v = possibleEdgeSet j k `difference` v
     possibleEdgeSet i j = completeEdgeSet `difference` (singletonEdgeSet (i,j) <> singletonEdgeSet (j,i))
-{-
-    renderVector  = unlines . mapWithKey (\k v -> show k <> " " <> show (childRefs v)) . toList
-
-    renderContext = unlines [refsStr, anstSet, descSet, edgeset]
-      where
-        refsStr = referenceRendering (dag { references = mergedVector })
-        edgeset = renderVector mergedVector
-        anstSet = renderVector ancestoralEdgeSets
-        descSet = renderVector descendantEdgeSets
--}
 
 
 -- |
@@ -1204,7 +1179,6 @@ tabulateAncestoralEdgesets dag =
               case filter (/=i) xs of
                 []  -> mempty
                 x:_ -> singletonEdgeSet (x,k)
---                x:_ -> foldMap (`getPreviousDatums` x) . otoList . parentRefs $ memo ! x
 
 
 -- |
@@ -1234,7 +1208,7 @@ tabulateDescendantEdgesets dag =
               [x]   -> getPreviousDatums i x
               x:y:_ -> getPreviousDatums i x `union` getPreviousDatums i y
 
-    getPreviousDatums _ j = foldMap id (childRefs point) <> other
+    getPreviousDatums _ j = fold (childRefs point) <> other
       where
         point = memo ! j
         -- This is the step where new information is added to the accumulator
@@ -1261,7 +1235,7 @@ toBinaryRenderingTree nodeRenderer dag = (`evalState` initialState) . traverse s
     initialState = (0, mempty)
 
     subtreeToRendering :: Int -> State (Int, IntMap Int) BinaryRenderingTree
-    subtreeToRendering i = 
+    subtreeToRendering i =
         if   parentCount < 2
         then do
              subtrees <- mapM subtreeToRendering kids
@@ -1294,4 +1268,3 @@ parentsAndChildren i dag = (ps, cs)
     iPoint = references dag ! fromEnum i
     ps = parentRefs iPoint
     cs = childRefs  iPoint
-

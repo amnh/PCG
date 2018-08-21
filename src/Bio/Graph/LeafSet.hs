@@ -13,7 +13,12 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE AllowAmbiguousTypes, DeriveFoldable, DeriveFunctor, FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses #-}
+{-# LANGUAGE AllowAmbiguousTypes    #-}
+{-# LANGUAGE DeriveFoldable         #-}
+{-# LANGUAGE DeriveFunctor          #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
 
 
 module Bio.Graph.LeafSet
@@ -23,9 +28,9 @@ module Bio.Graph.LeafSet
 
 
 import Control.Lens
-import Data.List         (union)
+import Data.List       (union)
 --import Text.Newick.Class ()
-import Text.XML.Custom   ()
+import Text.XML.Custom ()
 
 
 -- |
@@ -39,9 +44,9 @@ newtype LeafSet n = LeafSet [n]
 class HasLeafSet s a | s -> a where
 
     {-# MINIMAL leafSet #-}
-    leafSet :: Lens' s a
+    leafSet :: Getter s a
 
-  
+
 -- | (✔)
 instance Eq n => Semigroup (LeafSet n) where
 

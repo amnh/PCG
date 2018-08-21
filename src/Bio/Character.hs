@@ -28,7 +28,7 @@ module Bio.Character
   , Exportable(..)
   , PossiblyMissingCharacter(..)
   , showStream
-  , showStreamElement 
+  , showStreamElement
   ) where
 
 import Bio.Character.Encodable

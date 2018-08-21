@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.List.Utility
@@ -15,9 +16,9 @@
 module Data.List.Utility where
 
 import Data.Foldable
-import Data.Key           (Zip(..))
+import Data.Key           (Zip (..))
 import Data.List          (sort, sortBy)
-import Data.List.NonEmpty (NonEmpty(..))
+import Data.List.NonEmpty (NonEmpty (..))
 import Data.Map           (assocs, empty, insertWith)
 import Data.Ord           (comparing)
 import Data.Set           (insert, intersection)
@@ -29,7 +30,7 @@ import Data.Set           (insert, intersection)
 -- Takes two nested, linear-dimentional structures and transposes thier dimensions.
 -- It's like performing a matrix transpose operation, but more general.
 --
--- ==_Example==
+-- ==Example==
 --
 -- >>> transpose []
 -- [[]]
@@ -156,9 +157,9 @@ occurances = collateOccuranceMap . buildOccuranceMap
     collateOccuranceMap = sortBy comparator . assocs
       where
         comparator x y = descending $ comparing snd x y
-        descending LT  = GT
-        descending GT  = LT
-        descending x   = x
+        descending LT = GT
+        descending GT = LT
+        descending x  = x
 
 
 -- |

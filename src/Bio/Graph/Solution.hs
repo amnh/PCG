@@ -11,8 +11,14 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MonoLocalBinds, MultiParamTypeClasses, TypeFamilies, UndecidableInstances #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MonoLocalBinds             #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 module Bio.Graph.Solution
   ( PhylogeneticSolution(..)
@@ -22,26 +28,20 @@ module Bio.Graph.Solution
 
 import           Bio.Graph.Forest
 import           Bio.Graph.LeafSet
-import           Bio.Graph.Node
-import           Bio.Metadata.Discrete
-import           Bio.Metadata.DiscreteWithTCM
--- import           Bio.Metadata.General
 import           Bio.Graph.PhylogeneticDAG
-import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
 import           Control.DeepSeq
-import           Control.Lens              hiding (Indexable)
+import           Control.Lens              as Lens hiding (Indexable)
 import           Data.Foldable
-import           Data.GraphViz.Printing    hiding ((<>), indent) -- Seriously, why is this redefined?
-import           Data.GraphViz.Printing           (renderDot, toDot)
+import           Data.GraphViz.Printing    hiding (indent, (<>))
+import           Data.GraphViz.Printing    (renderDot, toDot)
 import           Data.GraphViz.Types       hiding (attrs)
 import           Data.GraphViz.Types.Graph
 import           Data.Key
 import           Data.List
-import           Data.List.NonEmpty               (NonEmpty)
+import           Data.List.NonEmpty        (NonEmpty)
 import qualified Data.List.NonEmpty        as NE
 import           Data.Semigroup.Foldable
-import           Data.TCM                         (generate)
 import qualified Data.Text.Lazy            as L
 import           GHC.Generics
 import           Text.Newick.Class
@@ -64,7 +64,7 @@ phylogeneticForests (PhylogeneticSolution x) = x
 
 instance (HasLeafSet a b, Semigroup b) => HasLeafSet (PhylogeneticSolution a) b where
 
-    leafSet = lens getter undefined
+    leafSet = Lens.to getter
       where
         getter = foldMap1 (^. leafSet) . phylogeneticForests
 
@@ -83,7 +83,7 @@ instance {-# OVERLAPPABLE #-} PrintDot a => PrintDot (PhylogeneticSolution a) wh
     listToDot     = fmap mconcat . traverse   toDot
 
 
-instance Show n => PrintDot (PhylogeneticSolution (PhylogeneticDAG2 e n u v w x y z)) where
+instance Show n => PrintDot (PhylogeneticSolution (PhylogeneticDAG2 m e n u v w x y z)) where
 
     unqtDot       = unqtDot . uncurry mkGraph . foldMap1 getSolutionDotContext . phylogeneticForests
 
@@ -130,17 +130,7 @@ instance
   , ToXML w
   , ToXML y
   , ToXML z
-  , GeneralCharacterMetadata  u
-  , DiscreteCharacterMetadata v
-  , DiscreteCharacterMetadata w
-  , DiscreteCharacterMetadata x
-  , DiscreteCharacterMetadata y
-  , DiscreteCharacterMetadata z
-  , HasBlockCost u v w x y z Word Double
-  , HasSymbolChangeMatrix x (Word -> Word -> Word)
-  , HasSymbolChangeMatrix y (Word -> Word -> Word)
-  , HasSymbolChangeMatrix z (Word -> Word -> Word)
---  , PrintDot (PhylogeneticDAG2 e (f String) u v w x y z)
+  , HasBlockCost u v w x y z
   , Show n
   , Show u
   , Show v
@@ -148,7 +138,7 @@ instance
   , Show x
   , Show y
   , Show z
-  ) => ToXML (PhylogeneticSolution (PhylogeneticDAG2 e n u v w x y z)) where
+  ) => ToXML (PhylogeneticSolution (PhylogeneticDAG2 m e n u v w x y z)) where
 
     toXML soln@(PhylogeneticSolution forests) = xmlElement "Solution" attrs forestContents
         where
@@ -165,38 +155,14 @@ instance
             graphRepresentations = xmlElement "Graph_representations" attrs graphContents
             graphContents        = [ Left ("DOT"   , getDOT   soln)
                                    , Left ("Newick", toNewick soln)
-                                   --, Right graphASCII
                                    ]
-            -- TODO: This no longer works. Can't remember what I changed; pretty sure it's something simple.
-            -- graphASCII           = xmlElement "Graphical" attrs graphASCIIContents
-            -- graphASCIIContents   = (Right . toXML) <$> toList forests
 
             getDOT = L.unpack . renderDot . toDot
 
             characterMetadata = xmlElement "Character_metadata" attrs metadataContents
             metadataContents  = [Right $ toXML metadataSequence]
-                                -- [ Right . toXML $ fst metadataSequence
-                                -- , Right . toXML $ snd metadataSequence
-                                -- ]
 
-            metadataSequence = hexmap f1 f2 f3 f4 f5 f6 arbitraryCharSeq
-                where
-                    arbitraryCharSeq = characterSequence . NE.head . resolutions . nodeDecoration $ arbitraryNode
-                    arbitraryNode    = references arbitraryRefDAG ! arbitraryRootRef
-                    arbitraryRootRef        = NE.head $ rootRefs arbitraryRefDAG
-                    (PDAG2 arbitraryRefDAG) = NE.head arbitraryPDAG
-                    arbitraryPDAG           = toNonEmpty $ NE.head forests
-                    f1  = extractGeneralCharacterMetadata
-                    f2  = extractDiscreteCharacterMetadata
-                    f3  = extractDiscreteCharacterMetadata
-                    f4  = g
-                    f5  = g
-                    f6  = g
-                    g x = (generate dim scm, extractDiscreteCharacterMetadata x)
-                        where
-                            scm = uncurry $ x ^. symbolChangeMatrix
-                            dim = length  $ x ^. characterAlphabet
-
+            (PDAG2 _ metadataSequence) = NE.head . toNonEmpty $ NE.head forests
 
 
 getSolutionDotContext
@@ -205,10 +171,10 @@ getSolutionDotContext
      , Key t ~ Int
      , Show n
      )
-  => t (PhylogeneticDAG2 e n u v w x y z)
+  => t (PhylogeneticDAG2 m e n u v w x y z)
   -> ([DotNode GraphID], [DotEdge GraphID])
 getSolutionDotContext xs = foldMapWithKey1 g xs
   where
     g = getDotContextWithBaseAndIndex baseValue
     baseValue = maximum $ f <$> xs
-    f (PDAG2 dag) = length dag
+    f (PDAG2 dag _) = length dag

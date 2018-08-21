@@ -13,7 +13,10 @@
 -- two dynamic characters.
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE BangPatterns, ConstraintKinds, FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE BangPatterns     #-}
+{-# LANGUAGE ConstraintKinds  #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
  ( Cost
@@ -46,8 +49,8 @@ import           Data.Bits
 import           Data.DList               (snoc)
 import           Data.Foldable
 import           Data.Key
-import           Data.List.NonEmpty       (NonEmpty(..))
-import qualified Data.List.NonEmpty as NE
+import           Data.List.NonEmpty       (NonEmpty (..))
+import qualified Data.List.NonEmpty       as NE
 import           Data.Matrix.NotStupid    (Matrix)
 import           Data.Maybe               (fromMaybe)
 import           Data.MonoTraversable
@@ -55,7 +58,7 @@ import           Data.Ord
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Numeric.Extended.Natural
-import           Prelude            hiding (lookup)
+import           Prelude                  hiding (lookup)
 
 
 -- |

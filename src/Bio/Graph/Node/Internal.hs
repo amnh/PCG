@@ -10,7 +10,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveFunctor, DeriveGeneric, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 
 module Bio.Graph.Node.Internal
   ( EdgeSet
@@ -20,7 +24,6 @@ module Bio.Graph.Node.Internal
   , ResolutionCache
   , ResolutionInformation(..)
   , SubtreeLeafSet()
-  -- , hasLeafSet
   , addEdgeToEdgeSet
   , addNetworkEdgeToTopology
   , singletonEdgeSet
@@ -30,15 +33,13 @@ module Bio.Graph.Node.Internal
   ) where
 
 
--- import Bio.Graph.LeafSet
 import Control.DeepSeq
 import Control.Lens
--- import Data.Bifunctor
 import Data.Bits
 import Data.BitVector.LittleEndian
 import Data.EdgeSet
 import Data.Foldable
-import Data.List.NonEmpty       (NonEmpty(..))
+import Data.List.NonEmpty          (NonEmpty (..))
 import Data.TopologyRepresentation
 import GHC.Generics
 import Text.Newick.Class
@@ -139,15 +140,6 @@ instance Ord (ResolutionInformation s) where
           EQ -> subtreeRepresentation lhs `compare` subtreeRepresentation rhs
           c  -> c
 
--- -- |
--- -- A 'Lens' for the 'transitionCostMatrix' field
--- instance (Element d ~ c) => HasSparseTransitionCostMatrix (DynamicDecorationDirectOptimization d) MemoizedCostMatrix where
-
---     sparseTransitionCostMatrix = lens getter setter
---       where
---          getter e   = dynamicDecorationDirectOptimizationMetadata e ^. sparseTransitionCostMatrix
---          setter e f = e { dynamicDecorationDirectOptimizationMetadata = dynamicDecorationDirectOptimizationMetadata e & sparseTransitionCostMatrix .~ f }
-
 
 instance Semigroup NewickSerialization where
 
@@ -195,9 +187,8 @@ instance Show SubtreeLeafSet where
 
 
 instance Show s => ToNewick (PhylogeneticNode2 n s) where
-    toNewick node = show $ nodeDecorationDatum2 node {- case nodeDecorationDatum2 node of
-                        Just str -> show str
-                        _        -> "" -}
+
+    toNewick node = show $ nodeDecorationDatum2 node
 
 
 instance (ToXML n) => ToXML (PhylogeneticNode2 n s) where
@@ -213,19 +204,18 @@ instance (ToXML n) => ToXML (PhylogeneticNode2 n s) where
 instance (ToXML s) => ToXML (ResolutionInformation s) where
 
     toXML info = xmlElement "Resolution_info" attrs contents
-        where
-            -- (ES edgeSet)  = subtreeEdgeSet info
-            attrs         = []
-            contents      = [ Right . toXML $ characterSequence info
-                            , Left  ("Total_subtree_cost" , show $ totalSubtreeCost  info)
-                            , Left  ("Local_sequence_cost", show $ localSequenceCost info)
-                            , Right subtree
-                            ]
-            subtree       = xmlElement "Subtree_fields" [] subtreeFields
-            subtreeFields = [ Left ("Subtree_leaf_set"      , show $ leafSetRepresentation info)
-                            , Left ("Subtree_representation", show $ subtreeRepresentation info)
-                            , Left ("Subtree_edge_set"      , show $ subtreeEdgeSet        info)
-                            ]
+      where
+        attrs         = []
+        contents      = [ Right . toXML $ characterSequence info
+                        , Left  ("Total_subtree_cost" , show $ totalSubtreeCost  info)
+                        , Left  ("Local_sequence_cost", show $ localSequenceCost info)
+                        , Right subtree
+                        ]
+        subtree       = xmlElement "Subtree_fields" [] subtreeFields
+        subtreeFields = [ Left ("Subtree_leaf_set"      , show $ leafSetRepresentation info)
+                        , Left ("Subtree_representation", show $ subtreeRepresentation info)
+                        , Left ("Subtree_edge_set"      , show $ subtreeEdgeSet        info)
+                        ]
 
 
 -- |

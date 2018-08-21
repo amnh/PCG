@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Sequence.Internal
+-- Module      :  Bio.Sequence.Character
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -13,13 +13,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric    #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
--- This is so that the Show instance compiles, even though the "real valued"
--- cost variable 'r' doesn't appear on the right hand side of the double arrow.
-{-# LANGUAGE UndecidableInstances #-}
-
-module Bio.Sequence.Internal
+module Bio.Sequence.Character
   ( CharacterSequence()
   , HasBlockCost
   -- * Construction / Decomposition
@@ -27,33 +25,41 @@ module Bio.Sequence.Internal
   , fromBlocks
   , toBlockVector
   , fromBlockVector
-  -- * Other
+  -- * Other-
   , hexmap
   , hexTranspose
   , hexZipWith
+  , hexZipWithMeta
   , sequenceCost
   , sequenceRootCost
   ) where
 
-
+import           Bio.Character.Encodable
 --import           Bio.Character.Decoration.Continuous
-import           Bio.Sequence.Block             (CharacterBlock, HasBlockCost, HasRootCost)
-import qualified Bio.Sequence.Block      as Blk
+import           Bio.Metadata.Continuous
+import           Bio.Metadata.Discrete
+import           Bio.Metadata.DiscreteWithTCM
+import           Bio.Metadata.Dynamic
+import           Bio.Sequence.Block           (CharacterBlock, HasBlockCost, HasRootCost)
+import qualified Bio.Sequence.Block           as Blk
+import           Bio.Sequence.Metadata        (MetadataSequence)
+import qualified Bio.Sequence.Metadata        as M
 import           Control.DeepSeq
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Bifunctor
-import           Data.DList              hiding (foldr,toList)
+import           Data.DList                   hiding (foldr, toList)
 import           Data.Foldable
 import           Data.Key
-import           Data.List.NonEmpty             (NonEmpty)
+import           Data.List.NonEmpty           (NonEmpty)
 --import qualified Data.List.NonEmpty      as NE
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
 import           Data.Semigroup.Traversable
-import           Data.Vector.NonEmpty           (Vector)
-import qualified Data.Vector.NonEmpty    as V
+import           Data.Vector.NonEmpty         (Vector)
+import qualified Data.Vector.NonEmpty         as V
 import           GHC.Generics
+import           Prelude                      hiding (zip)
 import           Text.XML
 
 
@@ -125,7 +131,6 @@ instance MonoFunctor (CharacterSequence u v w x y z) where
     omap f = fromBlocks . fmap f . toBlocks
 
 
--- | Monomorphic containers that can be traversed from left to right.
 instance MonoTraversable (CharacterSequence u v w x y z) where
 
     {-# INLINE otraverse #-}
@@ -145,13 +150,11 @@ instance ( Show u
          , Show x
          , Show y
          , Show z
-         , Show r
-         , HasBlockCost u v w x y z i r
          ) => Show (CharacterSequence u v w x y z) where
 
-    show seek = prefix <> "\n" <> suffix
+    show seek = {- prefix <> "\n" <> -} suffix
       where
-        prefix = "Sequence Cost: " <> show (sequenceCost seek)
+--        prefix = "Sequence Cost: " <> show (sequenceCost seek)
         suffix = foldMapWithKey f $ toBlocks seek
         f blockNumber shownBlock = mconcat
             [ "Character Block #"
@@ -196,10 +199,15 @@ hexmap f1 f2 f3 f4 f5 f6 = fromBlocks . parmap rpar (Blk.hexmap f1 f2 f3 f4 f5 f
 --
 -- Assumes that the 'CharacterSequence' values in the 'Traversable' structure are
 -- of equal length. If this assumtion is violated, the result will be truncated.
-hexTranspose :: Traversable1 t => t (CharacterSequence u v w x y z) -> CharacterSequence [u] [v] [w] [x] [y] [z]
+hexTranspose
+  :: Traversable1 t
+  => t (CharacterSequence u v w x y z)
+  -> CharacterSequence [u] [v] [w] [x] [y] [z]
 hexTranspose = toNList . invert . fmap toDList . toNonEmpty
   where
-    toDList :: CharacterSequence u v w x y z -> CharacterSequence (DList u) (DList v) (DList w) (DList x) (DList y) (DList z)
+    toDList
+      :: CharacterSequence u v w x y z
+      -> CharacterSequence (DList u) (DList v) (DList w) (DList x) (DList y) (DList z)
     toDList = hexmap pure pure pure pure pure pure
 
     invert :: ( Foldable f
@@ -224,16 +232,48 @@ hexTranspose = toNList . invert . fmap toDList . toNonEmpty
 -- Assumes that the 'CharacterSequence' values have the same number of character
 -- blocks and the same number of each character type in the corresponding block
 -- of each block. If this assumtion is violated, the result will be truncated.
-hexZipWith :: (u -> u' -> u'')
-           -> (v -> v' -> v'')
-           -> (w -> w' -> w'')
-           -> (x -> x' -> x'')
-           -> (y -> y' -> y'')
-           -> (z -> z' -> z'')
-           -> CharacterSequence u   v   w   x   y   z
-           -> CharacterSequence u'  v'  w'  x'  y'  z'
-           -> CharacterSequence u'' v'' w'' x'' y'' z''
-hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = fromBlocks $ parZipWith rpar (Blk.hexZipWith f1 f2 f3 f4 f5 f6) (toBlocks lhs) (toBlocks rhs)
+hexZipWith
+  :: (u -> u' -> u'')
+  -> (v -> v' -> v'')
+  -> (w -> w' -> w'')
+  -> (x -> x' -> x'')
+  -> (y -> y' -> y'')
+  -> (z -> z' -> z'')
+  -> CharacterSequence u   v   w   x   y   z
+  -> CharacterSequence u'  v'  w'  x'  y'  z'
+  -> CharacterSequence u'' v'' w'' x'' y'' z''
+hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs
+  = fromBlocks $ parZipWith rpar (Blk.hexZipWith f1 f2 f3 f4 f5 f6) (toBlocks lhs) (toBlocks rhs)
+
+
+-- |
+-- Performs a zip over the two character sequences. Uses the input functions to
+-- zip the different character types in the character block.
+--
+-- Assumes that the 'CharacterSequence' values have the same number of character
+-- blocks and the same number of each character type in the corresponding block
+-- of each block. If this assumtion is violated, the result will be truncated.
+hexZipWithMeta
+  :: (ContinuousCharacterMetadataDec        -> u -> u' -> u'')
+  -> (DiscreteCharacterMetadataDec          -> v -> v' -> v'')
+  -> (DiscreteCharacterMetadataDec          -> w -> w' -> w'')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
+      -> x -> x' -> x'')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
+      -> y -> y' -> y'')
+  -> (DynamicCharacterMetadataDec (Element DynamicChar)
+      -> z -> z' -> z'')
+  -> MetadataSequence m
+  -> CharacterSequence u   v   w   x   y   z
+  -> CharacterSequence u'  v'  w'  x'  y'  z'
+  -> CharacterSequence u'' v'' w'' x'' y'' z''
+hexZipWithMeta f1 f2 f3 f4 f5 f6 meta lhs rhs
+  = fromBlocks
+  $ parZipWith3 rpar
+  (Blk.hexZipWithMeta f1 f2 f3 f4 f5 f6)
+  (M.toBlocks meta)
+  (toBlocks lhs)
+  (toBlocks rhs)
 
 
 -- |
@@ -258,7 +298,7 @@ toBlockVector (CharSeq x) =  x
 
 
 -- |
--- Destructs a 'CharacterSequence' to it's composite blocks.
+-- Constructs a 'CharacterSequence' from a vector of blocks.
 {-# INLINE fromBlockVector #-}
 fromBlockVector :: Vector (CharacterBlock u v w x y z) -> CharacterSequence u v w x y z
 fromBlockVector = CharSeq
@@ -267,12 +307,27 @@ fromBlockVector = CharSeq
 -- |
 -- Calculates the cumulative cost of a 'CharacterSequence'. Performs some of the
 -- operation in parallel.
-sequenceCost :: HasBlockCost u v w x y z i r => CharacterSequence u v w x y z -> r
-sequenceCost = sum . parmap rpar Blk.blockCost . toBlocks
+sequenceCost
+  :: HasBlockCost u v w x y z
+  => MetadataSequence m
+  -> CharacterSequence u v w x y z
+  -> Double
+sequenceCost meta char
+  = sum
+  . parmap rpar (uncurry Blk.blockCost)
+  $ zip (M.toBlocks meta) (toBlocks char)
 
 
 -- |
 -- Calculates the root cost of a 'CharacterSequence'. Performs some of the
 -- operation in parallel.
-sequenceRootCost :: (HasRootCost u v w x y z r, Integral i) => i -> CharacterSequence u v w x y z -> r
-sequenceRootCost rootCount = sum . parmap rpar (Blk.rootCost rootCount) . toBlocks
+sequenceRootCost
+  :: (HasRootCost u v w x y z, Integral i)
+  => i
+  -> MetadataSequence m
+  -> CharacterSequence u v w x y z
+  -> Double
+sequenceRootCost rootCount meta char
+  = sum
+  . parmap rpar (uncurry (Blk.rootCost rootCount))
+  $ zip (M.toBlocks meta) (toBlocks char)

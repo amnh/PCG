@@ -10,7 +10,12 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, TypeFamilies, UndecidableInstances #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 module Bio.Character.Decoration.Continuous.Internal
   ( ContinuousDecorationInitial(..)
@@ -21,14 +26,9 @@ module Bio.Character.Decoration.Continuous.Internal
 
 
 import Bio.Character.Decoration.Additive
---import Bio.Character.Decoration.Continuous.Class
 import Bio.Character.Encodable
-import Bio.Metadata.CharacterName
-import Bio.Metadata.Continuous
-import Bio.Metadata.Discrete
 import Control.DeepSeq
 import Control.Lens
-import Data.Alphabet
 import Data.Range
 import GHC.Generics
 import Numeric.Extended
@@ -38,20 +38,18 @@ import Text.XML
 -- |
 -- An abstract initial continuous character decoration with a polymorphic character
 -- type.
-data ContinuousDecorationInitial c
-   = ContinuousDecorationInitial
-   { continuousDecorationInitialCharacter :: c
-   , continuousMetadataField              :: ContinuousCharacterMetadataDec
-   } deriving (Generic)
+newtype ContinuousDecorationInitial c
+    = ContinuousDecorationInitial
+    { continuousDecorationInitialCharacter :: c
+    } deriving (Generic)
 
 
 -- |
 -- A smart constructor for a continuous character.
-continuousDecorationInitial :: CharacterName -> Double -> c -> ContinuousDecorationInitial c
-continuousDecorationInitial name weight value =
+continuousDecorationInitial :: c -> ContinuousDecorationInitial c
+continuousDecorationInitial value =
     ContinuousDecorationInitial
     { continuousDecorationInitialCharacter = value
-    , continuousMetadataField              = continuousMetadata name weight
     }
 
 
@@ -92,98 +90,6 @@ lensCPostD f g = lens (getterCPostD f) (setterCPostD g)
     setterCPostD h (CPostD e) x = CPostD $ e & h .~ x
 
 
-{-
--- | (✔)
-instance ContinuousCharacter ContinuousChar where
-
-    toContinuousCharacter = CC . fmap (fromRational . toRational)
-
--}
-
-
-{-
--- | (✔)
-instance ContinuousCharacter c => ContinuousDecoration (ContinuousDecorationInitial c) c where
--}
-
-
-{-
--- | (✔)
-instance EncodableStaticCharacter a => DiscreteCharacterDecoration (ContinuousPostorderDecoration a) a where
--}
-
-
--- | (✔)
-instance DiscreteCharacterMetadata (ContinuousDecorationInitial d) where
-
-    extractDiscreteCharacterMetadata x = discreteMetadata
-                                           (x ^. characterName    )
-                                           (x ^. characterWeight  )
-                                           (x ^. characterAlphabet)
-
-
--- | (✔)
-instance DiscreteCharacterMetadata (ContinuousOptimizationDecoration a) where
-
-    extractDiscreteCharacterMetadata (COptD x) = extractDiscreteCharacterMetadata x
-
-
--- | (✔)
-instance DiscreteCharacterMetadata (ContinuousPostorderDecoration a) where
-
-    extractDiscreteCharacterMetadata (CPostD x) = extractDiscreteCharacterMetadata x
-
-
-{-
--- | (✔)
-instance EncodableStaticCharacter a => DiscreteCharacterDecoration (ContinuousOptimizationDecoration a) a where
--}
-
-
--- | (✔)
-instance GeneralCharacterMetadata (ContinuousDecorationInitial d) where
-
-    extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . continuousMetadataField
-
-
--- | (✔)
-instance GeneralCharacterMetadata (ContinuousPostorderDecoration a) where
-
-    extractGeneralCharacterMetadata (CPostD x) = extractGeneralCharacterMetadata x
-
-
--- | (✔)
-instance GeneralCharacterMetadata (ContinuousOptimizationDecoration a) where
-
-    extractGeneralCharacterMetadata (COptD x) = extractGeneralCharacterMetadata x
-
-
--- | (✔)
-instance HasCharacterAlphabet (ContinuousPostorderDecoration a) (Alphabet String) where
-
-    characterAlphabet = lensCPostD characterAlphabet characterAlphabet
-
-
--- | This will throw errors, I advise against using this Lens.
-instance HasCharacterAlphabet (ContinuousDecorationInitial c) (Alphabet String) where
-
-    characterAlphabet = lens getter setter
-      where
-         setter e _ = e
-         getter _   = error $ unwords
-            [ "This is a kluge."
-            , "Please don't ask for the alphabet of a continuous character."
-            , "This exists solely to satisfy incoherent constraints due to bad design desicions."
-            , "My bad team :("
-            ]
-
-
--- | (✔)
-instance HasCharacterAlphabet (ContinuousOptimizationDecoration a) (Alphabet String) where
-
-    characterAlphabet = lensCOptD characterAlphabet characterAlphabet
-
-
 -- | (✔)
 instance (Finite (Bound a) ~ c) => HasCharacterCost (ContinuousOptimizationDecoration a) c where
 
@@ -197,48 +103,6 @@ instance (Finite (Bound a) ~ c) => HasCharacterCost (ContinuousPostorderDecorati
 
 
 -- | (✔)
-instance HasCharacterName (ContinuousDecorationInitial c) CharacterName where
-
-    characterName = lens getter setter
-      where
-         getter e   = continuousMetadataField e ^. characterName
-         setter e x = e { continuousMetadataField = continuousMetadataField e &  characterName .~ x }
-
-
--- | (✔)
-instance HasCharacterName (ContinuousOptimizationDecoration a) CharacterName where
-
-    characterName = lensCOptD characterName characterName
-
-
--- | (✔)
-instance HasCharacterName (ContinuousPostorderDecoration a) CharacterName where
-
-    characterName = lensCPostD characterName characterName
-
-
--- | (✔)
-instance HasCharacterWeight (ContinuousDecorationInitial c) Double where
-
-    characterWeight = lens getter setter
-      where
-         getter e   = continuousMetadataField e ^. characterWeight
-         setter e x = e { continuousMetadataField = continuousMetadataField e &  characterWeight .~ x }
-
-
--- | (✔)
-instance HasCharacterWeight (ContinuousOptimizationDecoration a) Double where
-
-    characterWeight = lensCOptD characterWeight characterWeight
-
-
--- | (✔)
-instance HasCharacterWeight (ContinuousPostorderDecoration a) Double where
-
-    characterWeight = lensCPostD characterWeight characterWeight
-
-
--- | (✔)
 instance (Bound a ~ c) => HasChildPrelimIntervals (ContinuousOptimizationDecoration a) (Range c, Range c) where
 
     childPrelimIntervals = lensCOptD childPrelimIntervals childPrelimIntervals
@@ -248,14 +112,6 @@ instance (Bound a ~ c) => HasChildPrelimIntervals (ContinuousOptimizationDecorat
 instance (Bound a ~ c) => HasChildPrelimIntervals (ContinuousPostorderDecoration a) (Range c, Range c) where
 
     childPrelimIntervals = lensCPostD childPrelimIntervals childPrelimIntervals
-
-
-{-
--- | (✔)
-instance HasContinuousCharacter (ContinuousDecorationInitial c) c where
-
-    continuousCharacter = lens continuousDecorationInitialCharacter $ \e x -> e { continuousDecorationInitialCharacter = x }
--}
 
 
 {--}
@@ -375,8 +231,8 @@ instance ( Ranged c
 
 
 -- | (✔)
-instance ( DiscreteCharacterMetadata   (ContinuousPostorderDecoration a)
-         , RangedPostorderDecoration   (ContinuousPostorderDecoration a) a
+instance ( -- DiscreteCharacterMetadata   (ContinuousPostorderDecoration a)
+           RangedPostorderDecoration   (ContinuousPostorderDecoration a) a
          , RangedCharacterDecoration   (AdditivePostorderDecoration a) a
          , RangedPostorderDecoration   (AdditivePostorderDecoration a) a
          ) => RangedExtensionPostorder (ContinuousPostorderDecoration a) a where
@@ -387,8 +243,8 @@ instance ( DiscreteCharacterMetadata   (ContinuousPostorderDecoration a)
 
 
 -- | (✔)
-instance ( DiscreteCharacterMetadata    (ContinuousOptimizationDecoration a)
-         , RangedDecorationOptimization (ContinuousOptimizationDecoration a) a
+instance ( -- DiscreteCharacterMetadata    (ContinuousOptimizationDecoration a)
+           RangedDecorationOptimization (ContinuousOptimizationDecoration a) a
          , RangedCharacterDecoration    (AdditiveOptimizationDecoration   a) a
          , RangedExtensionPreorder      (AdditiveOptimizationDecoration   a) a
          ) => RangedExtensionPreorder   (ContinuousOptimizationDecoration a) a where
@@ -404,21 +260,6 @@ instance RangedCharacterDecoration (ContinuousOptimizationDecoration c) c => Ran
 
 -- | (✔)
 instance RangedCharacterDecoration (ContinuousPostorderDecoration c) c => RangedPostorderDecoration (ContinuousPostorderDecoration c) c where
-
-
-{-
-class ( RangedCharacterDecoration s c
-      , HasCharacterCost s (Bound c)
-      , HasChildPrelimIntervals s (Range (Bound c), Range (Bound c))
-      , HasIsLeaf s Bool
-      , HasPreliminaryInterval s (Range (Bound c))
-      ) => RangedPostOrderDecoration s c | s -> c where
-
-
-class ( RangedCharacterDecoration s c
-      , HasFinalInterval s (Range (Bound c))
-      ) => RangedDecorationOptimization s c | s -> c where
--}
 
 
 -- | (✔)
@@ -463,21 +304,15 @@ instance
 
 -- | Create xml instance for initial decoration, which is empty.
 instance (Show c) => ToXML (ContinuousDecorationInitial c) where
-    toXML (ContinuousDecorationInitial val metadata) = xmlElement "ContinuousDecorationInitial" attributes contents
+    toXML (ContinuousDecorationInitial val {-metadata-}) = xmlElement "ContinuousDecorationInitial" attributes contents
         where
             attributes = []
-            contents   = [ Left ("Name"                   , show $ metadata ^. characterName  )
-                         , Left ("Initial_character_state", show val                          )
-                         , Left ("Weight"                 , show $ metadata ^. characterWeight)
-                         ]
-            --TODO: use ToXML instance in Bio/Metadat/General/Internal
-            --meta = initialDecoration ^. continuousMetadataField
+            contents   = [ Left ("Initial_character_state", show val) ]
 
 
 -- | Create xml instance for preorder decoration, which has a finalized state interval.
 instance
     ( Show c
---    , Show (Bound c)        -- This is NOT redundant. Won't copile without it.
     , Show (Finite (Bound c))
     , Show (Range  (Bound c))
     ) => ToXML (ContinuousOptimizationDecoration c) where
@@ -486,7 +321,7 @@ instance
         where
             attributes = []
             contents   = [ Left ("Cost"                , show $ optimizationDecoration ^. characterCost       )
-                         , Left ("Is_leaf_node"       , show $ optimizationDecoration ^. isLeaf              )
+                         , Left ("Is_leaf_node"        , show $ optimizationDecoration ^. isLeaf              )
                          , Left ("Continuous_character", show $ optimizationDecoration ^. intervalCharacter   )
                          , Left ("Preliminary_interval", show $ optimizationDecoration ^. preliminaryInterval )
                          , Left ("Child_intervals"     , show $ optimizationDecoration ^. childPrelimIntervals)

@@ -116,7 +116,7 @@ subtractionProperties = testGroup "Properties of subtraction"
   where
     subtractionIsInverse :: ExtendedReal -> Bool
     subtractionIsInverse val = val - val == 0 || val == infinity
-                                       
+
     subtractionIdentity :: ExtendedReal -> Bool
     subtractionIdentity val = val - 0 == val
 

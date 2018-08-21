@@ -11,7 +11,10 @@
 -- Standard algorithm for implied alignment
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns, FlexibleContexts, FlexibleInstances, TypeFamilies #-}
+{-# LANGUAGE BangPatterns      #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeFamilies      #-}
 
 module Analysis.ImpliedAlignment.DynamicProgramming where
 
@@ -24,26 +27,25 @@ import           Bio.Character.Encodable
 import           Bio.Metadata
 import           Bio.PhyloGraph.Forest
 import           Bio.PhyloGraph.Network
-import           Bio.PhyloGraph.Node     hiding  (Node, children)
+import           Bio.PhyloGraph.Node                                    hiding (Node, children)
 import           Bio.PhyloGraph.Solution
-import           Control.Arrow                   ((&&&))
+import           Control.Arrow                                          ((&&&))
 import           Data.Foldable
-import qualified Data.HashMap.Lazy       as HM
-import           Data.IntMap                     (IntMap)
-import qualified Data.IntMap             as IM
-import           Data.IntSet                     (IntSet)
-import qualified Data.IntSet             as IS
+import qualified Data.HashMap.Lazy                                      as HM
+import           Data.IntMap                                            (IntMap)
+import qualified Data.IntMap                                            as IM
+import           Data.IntSet                                            (IntSet)
+import qualified Data.IntSet                                            as IS
 import           Data.Key
-import           Data.List                       (sortBy)
+import           Data.List                                              (sortBy)
 import           Data.Maybe
 import           Data.Monoid
 import           Data.MonoTraversable
-import           Data.Ord                        (comparing)
-import           Data.Vector                     (Vector)
-import qualified Data.Vector             as V
-import           Data.Vector.Instances           ()
-import           Prelude                 hiding  (zip)
-import           Safe                            (tailMay)
+import           Data.Vector                                            (Vector)
+import qualified Data.Vector                                            as V
+import           Data.Vector.Instances                                  ()
+import           Prelude                                                hiding (zip)
+import           Safe                                                   (tailMay)
 
 
 -- |
@@ -190,7 +192,7 @@ precomputeTreeReferences tree =
      , childRefs  = c
      }
   where
-    (a,b,c) = V.unzip3 . V.fromList $ rmRefVal <$> sortBy (comparing refVal) tokens
+    (a,b,c) = V.unzip3 . V.fromList $ rmRefVal <$> sortOn refVal tokens
 
     (_,tokens) = f (root tree) Nothing 0
 

@@ -13,7 +13,15 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric, FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving, MultiParamTypeClasses, TypeFamilies, TypeSynonymInstances, UnboxedSums, UndecidableInstances #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
+{-# LANGUAGE UnboxedSums                #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 module Bio.Character.Encodable.Dynamic.Internal
   ( DynamicChar (DC,Missing)
@@ -25,28 +33,30 @@ import           Bio.Character.Encodable.Dynamic.Class
 import           Bio.Character.Encodable.Internal
 import           Bio.Character.Encodable.Stream
 import           Bio.Character.Exportable.Class
-import           Control.Arrow                       ((***))
+import           Control.Arrow                         ((***))
 import           Control.DeepSeq
-import           Control.Lens                 hiding (mapping)
+import           Control.Lens                          hiding (mapping)
 import           Data.Alphabet
 import           Data.BitMatrix
-import           Data.Char                           (toLower)
-import           Data.Key
 import           Data.Bits
 import           Data.BitVector.LittleEndian
+import           Data.Char                             (toLower)
 import           Data.Foldable
 import           Data.Hashable
-import           Data.List.NonEmpty                  (NonEmpty(..))
-import qualified Data.List.NonEmpty           as NE
-import           Data.List.Utility                   (invariantTransformation)
-import qualified Data.Map                     as M
+import           Data.Key
+import           Data.List.NonEmpty                    (NonEmpty (..))
+import qualified Data.List.NonEmpty                    as NE
+import           Data.List.Utility                     (invariantTransformation)
+import qualified Data.Map                              as M
+import           Data.Maybe                            (fromJust)
 import           Data.MonoTraversable
-import           Data.String                         (fromString)
-import           Data.Tuple                          (swap)
-import           Data.Vector                         (Vector)
+import           Data.Range
+import           Data.String                           (fromString)
+import           Data.Tuple                            (swap)
+import           Data.Vector                           (Vector)
 import           GHC.Generics
 import           Test.QuickCheck
-import           Test.QuickCheck.Arbitrary.Instances ()
+import           Test.QuickCheck.Arbitrary.Instances   ()
 import           Text.XML
 
 -- TODO: Change DynamicChar/Sequences to DynamicCharacters
@@ -68,6 +78,9 @@ data  DynamicChar
 newtype DynamicCharacterElement
       = DCE BitVector
       deriving (Bits, Eq, FiniteBits, Generic, MonoFoldable, MonoFunctor, Ord, Show)
+
+
+type instance Bound DynamicCharacterElement = Word
 
 
 type instance Element DynamicChar = DynamicCharacterElement
@@ -259,7 +272,7 @@ instance MonoFoldable DynamicChar where
 
     {-# INLINE ofoldl' #-}
     ofoldl' _ e Missing{} = e
-    ofoldl' f e (DC c)   = ofoldl' (\acc x -> f acc (DCE x)) e c
+    ofoldl' f e (DC c)    = ofoldl' (\acc x -> f acc (DCE x)) e c
 
     {-# INLINE ofoldr1Ex #-}
     ofoldr1Ex _ Missing{} = error "Trying to mono-morphically fold over an empty structure without supplying an inital accumulator!"
@@ -281,20 +294,21 @@ instance MonoFoldable DynamicChar where
     headEx dc =
       case dc of
         (DC c) | (not . onull) c -> DCE $ headEx c
-        _ -> error $ "call to DynamicChar.headEx with: " <> show dc
+        _                        -> error $ "call to DynamicChar.headEx with: " <> show dc
 
     {-# INLINE lastEx #-}
-    lastEx dc = 
+    lastEx dc =
       case dc of
         (DC c) | (not . onull) c -> DCE $ lastEx c
-        _ -> error $ "call to DynamicChar.lastEx with: " <> show dc
+        _                        -> error $ "call to DynamicChar.lastEx with: " <> show dc
 
 
 instance MonoFunctor DynamicChar where
 
     omap f bm =
-       let dces = f <$> otoList bm
-       in  case invariantTransformation finiteBitSize dces of
+        case f <$> otoList bm of
+          []   -> bm
+          dces -> case invariantTransformation finiteBitSize dces of
              Just i  -> DC . factorRows (toEnum i) $ foldMap unwrap dces
              Nothing -> error "The mapping function over the Dynamic Character did not return *all* all elements of equal length."
 
@@ -321,6 +335,24 @@ instance PossiblyMissingCharacter DynamicChar where
     {-# INLINE isMissing  #-}
     isMissing Missing{} = True
     isMissing _         = False
+
+
+instance Ranged DynamicCharacterElement where
+
+    toRange sc = fromTupleWithPrecision (firstSetBit, lastSetBit) totalBits
+        where
+            firstSetBit = toEnum $ countLeadingZeros sc
+            lastSetBit  = toEnum $ totalBits - countTrailingZeros sc - 1
+            totalBits   = finiteBitSize sc
+
+    fromRange x = zeroVector .|. (allBitsUpperBound `xor` allBitsLowerBound)
+        where
+            allBitsUpperBound = DCE . fromNumber (toEnum boundaryBit) $ (2 ^ upperBound x - 1 :: Integer)
+            allBitsLowerBound = DCE . fromNumber (toEnum boundaryBit) $ (2 ^ lowerBound x - 1 :: Integer)
+            zeroVector  = (zeroBits `setBit` boundaryBit) `clearBit` boundaryBit
+            boundaryBit = fromJust (precision x) - 1
+
+    zeroRange sc = fromTupleWithPrecision (0,0) $ finiteBitSize sc
 
 
 instance ToXML DynamicChar where

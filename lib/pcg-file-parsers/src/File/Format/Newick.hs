@@ -29,10 +29,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.Newick
-  ( NewickForest 
+  ( NewickForest
   , NewickNode()
   -- * Smart Constructor
   , newickNode

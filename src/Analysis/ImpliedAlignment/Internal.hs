@@ -10,7 +10,8 @@
 --
 -- Internal types for implied alignment
 -----------------------------------------------------------------------------
-{-# LANGUAGE ConstraintKinds, FlexibleContexts #-}
+{-# LANGUAGE ConstraintKinds  #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Analysis.ImpliedAlignment.Internal where
 
@@ -27,7 +28,7 @@ import Bio.PhyloGraph.Tree.Referential
 import Data.Bits
 --import Data.Function.Memoize
 import Data.IntMap
-import Data.MonoTraversable (Element)
+import Data.MonoTraversable            (Element)
 import Data.Vector
 
 -- | (✔)

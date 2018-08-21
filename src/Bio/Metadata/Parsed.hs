@@ -12,7 +12,9 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeSynonymInstances  #-}
 
 module Bio.Metadata.Parsed
   ( ParsedCharacterMetadata(..)
@@ -24,19 +26,20 @@ import           Data.Alphabet
 import           Data.Char
 import           Data.Foldable
 import           Data.Key
-import           Data.List                               (transpose)
-import           Data.List.NonEmpty                      (NonEmpty)
+import           Data.List                        (transpose)
+import           Data.List.NonEmpty               (NonEmpty)
 import           Data.Monoid
-import           Data.TCM                                (TCM, TCMDiagnosis(..), TCMStructure(..), diagnoseTcm)
+import           Data.TCM                         (TCM, TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
 import qualified Data.TCM                         as TCM
-import           Data.Vector                             (Vector)
+import           Data.Vector                      (Vector)
 import qualified Data.Vector                      as V
-import           Data.Vector.Instances                   ()
+import           Data.Vector.Instances            ()
 import           File.Format.Dot
-import           File.Format.Fasta                       (FastaParseResult,TaxonSequenceMap)
+import           File.Format.Fasta                (FastaParseResult, TaxonSequenceMap)
 import           File.Format.Fastc
 import           File.Format.Newick
-import           File.Format.Nexus                hiding (CharacterMetadata(..), DNA, RNA, Nucleotide, TaxonSequenceMap)
+import           File.Format.Nexus                hiding (CharacterMetadata (..), DNA, Nucleotide, RNA,
+                                                   TaxonSequenceMap)
 import qualified File.Format.Nexus                as Nex
 import qualified File.Format.TNT                  as TNT
 import qualified File.Format.TransitionCostMatrix as F
@@ -118,7 +121,7 @@ instance ParsedMetadata TNT.TntResult where
             (rationalWeight, characterAlphabet, unfactoredTcmMay) = chooseAppropriateMatrixAndAlphabet
 
             suppliedWeight = fromIntegral $ TNT.weight inMeta
-          
+
             chooseAppropriateMatrixAndAlphabet
               | TNT.sankoff  inMeta =
                 case TCM.fromList . toList <$> TNT.costTCM inMeta of
@@ -126,7 +129,7 @@ instance ParsedMetadata TNT.TntResult where
                   Just (v, tcm) ->
                     let truncatedSymbols = V.take (TCM.size tcm - 1) initialSymbolSet
                     in  (v, toAlphabet truncatedSymbols, Just (tcm, NonSymmetric)) -- TODO: Maybe we can do the diagnosis here
-                  
+
               | TNT.additive inMeta = (1, fullAlphabet, Just (TCM.generate matrixDimension genAdditive,    Additive))
               | otherwise           = (1, fullAlphabet, Just (TCM.generate matrixDimension genFitch   , NonAdditive))
               where
@@ -161,14 +164,14 @@ instance ParsedMetadata TNT.TntResult where
                       TNT.Dna        {} -> dnaAlph
                       TNT.Protein    {} -> aaAlph
                       TNT.Discrete   {} -> disAlph
-{-                        
+{-
                           let stateNameValues = TNT.characterStates inMeta
                           in
                               if   null stateNameValues
                               then fromSymbols disAlph
                               else fromSymbolsWithStateNames $ zip (toList disAlph) (toList stateNameValues)
 -}
-                          
+
 
 -- | (✔)
 instance ParsedMetadata F.TCM where
@@ -177,7 +180,7 @@ instance ParsedMetadata F.TCM where
         { alphabet      = fromSymbols alph
         , characterName = ""
         , weight        = fromRational rationalWeight * fromIntegral coefficient
-        , parsedTCM     = Just (resultTCM, structure) 
+        , parsedTCM     = Just (resultTCM, structure)
         , isDynamic     = False
         , isIgnored     = False -- Maybe this should be True?
         }
@@ -203,7 +206,7 @@ instance ParsedMetadata Nexus where
             , characterName = Nex.name inMeta
             , weight        = fromRational chosenWeight * suppliedWeight
             , parsedTCM     = chosenTCM
-            , isDynamic     = not $ Nex.isAligned inMeta 
+            , isDynamic     = not $ Nex.isAligned inMeta
             , isIgnored     = Nex.ignored inMeta
             }
           where
@@ -290,7 +293,7 @@ makeOneInfo alph =
     { alphabet      = alph
     , characterName = ""
     , weight        = 1
-    , parsedTCM     = Nothing 
+    , parsedTCM     = Nothing
     , isDynamic     = True
     , isIgnored     = False
     }
