@@ -122,7 +122,8 @@ library
                     , deepseq
                     , data-default
                     , dlist
-                    , graphviz
+                    -- >=2999.20 Required for forgivig constructio of DOT object
+                    , graphviz           >=2999.20
                     , hashable
                     , integer-gmp
                     , keys
@@ -298,7 +299,8 @@ executable pcg
                     , directory
                     , gitrev
                     , Glob
-                    , graphviz
+                    -- >=2999.20 Required for forgivig constructio of DOT object
+                    , graphviz           >=2999.20
                     , keys
                     , lens
                     , megaparsec       >=6.0
