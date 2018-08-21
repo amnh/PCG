@@ -458,16 +458,63 @@ executable ukkonen-do-comparison
   hs-source-dirs:   utils
 
 
-Test-Suite testsuite
+Test-Suite integration-tests
+
+  import:             ghc-flags
+                    , language-specs
+
+  type:             exitcode-stdio-1.0
+
+  main-is:          IntegrationTests.hs
+
+  build-depends:      base               >=4.10
+                    , bimap
+                    -- >=0.5.8 Required for Data.Map.restrictKeys
+                    , containers         >=0.5.8
+                    , deepseq
+                    , dlist
+                    , hashable
+                    , integer-gmp
+                    , keys
+                    , lens
+                    , mono-traversable   >=1.0
+                    , mtl
+                    , pointed
+                    , QuickCheck
+                    -- required for Data.Semigroup.Foldable.toNonEmpty
+                    , semigroupoids      >=5.2.1
+                    , semigroups
+                    , smallcheck
+                    , tasty
+                    , tasty-hunit
+                    , tasty-quickcheck
+                    , tasty-smallcheck
+                    , tasty-rerun
+                    , text
+                    , turtle
+                    , transformers
+                    , vector
+                    -- >=3.4 required for corrected definition of (!) & index
+                    , vector-instances >=3.4
+                    , xml
+
+  ghc-options:      -threaded
+--                    -with-rtsopts=-N4
+
+  hs-source-dirs:   test
+
+  other-modules:    TestSuite.ScriptTests
+
+
+Test-Suite unit-tests
 
   import:             ffi-buildinfo
                     , ghc-flags
                     , language-specs
 
-
   type:             exitcode-stdio-1.0
 
-  main-is:          TestAll.hs
+  main-is:          UnitTests.hs
 
   build-depends:      base               >=4.10
                     , bimap
