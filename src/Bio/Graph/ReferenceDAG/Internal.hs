@@ -34,7 +34,7 @@ import           Data.EdgeSet
 import           Data.Foldable
 import           Data.Functor                  ((<$))
 import           Data.GraphViz.Attributes
-import           Data.GraphViz.Printing        hiding ((<>))
+import           Data.GraphViz.Printing
 import           Data.GraphViz.Types           hiding (attrs)
 import           Data.GraphViz.Types.Graph     hiding (node)
 import           Data.Hashable                 (Hashable)

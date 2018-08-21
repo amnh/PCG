@@ -53,7 +53,7 @@ import           Control.DeepSeq
 import           Control.Lens                    as Lens
 import           Data.Bits
 import           Data.Foldable
-import           Data.GraphViz.Printing          hiding ((<>))
+import           Data.GraphViz.Printing
 import           Data.GraphViz.Types
 import           Data.HashMap.Lazy               (HashMap)
 import qualified Data.IntMap                     as IM
