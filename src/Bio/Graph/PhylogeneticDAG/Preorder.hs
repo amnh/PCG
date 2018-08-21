@@ -453,6 +453,7 @@ preorderFromRooting'' transformation edgeCostMapping contextualNodeDatum minTopo
                     lhs = IM.singleton r1 $ FociEdgeNode r2 virtualRootDatum
                     rhs = IM.singleton r2 $ FociEdgeNode r1 virtualRootDatum
                     virtualRootDatum = (! charIndex) . (! blockIndex) $ getDynCharSeq virtualRoot
+                    -- TODO: What if there are no applicable resolutions?
                     virtualRoot = head . NE.filter (\x -> topologyRepresentation x == topo) $ edgeCostMapping ! rootingEdge
                     excludedEdges = excludedNetworkEdges topo
                     gen seenSet (n1,n2)

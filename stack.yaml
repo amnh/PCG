@@ -5,10 +5,7 @@ compiler: ghc-8.6.0.20180627
 compiler-check: match-exact
 
 extra-deps:
-- base-compat-0.10.1
-- pretty-tree-0.1.0.0
-- matrix-0.3.6.0
-- wl-pprint-text-1.1.1.1
+  - pretty-tree-0.1.0.0
 
 flags: {}
 
@@ -23,14 +20,11 @@ packages:
   - lib/pcg-file-parsers
   - lib/pcg-language
   - lib/pcg-utility
-# We use this upstream commit until it is uploaded to hackage and stackage respectively.
-  - location:  https://github.com/ivan-m/graphviz/archive/b7539aa.zip
-    extra-dep: true
 
 #resolver: lts-12.6
 #resolver: lts-11.11
-resolver: nightly-2018-08-16
-#resolver: ghc-8.6.0.20180810
+#resolver: nightly-2018-08-16
+resolver: ghc-8.6.0.20180810
 
 setup-info:
   ghc:
@@ -66,5 +60,3 @@ setup-info:
       8.6.0.20180627:
         url: https://downloads.haskell.org/~ghc/8.6.1-alpha1/ghc-8.6.0.20180627-x86_64-unknown-mingw32.tar.xz
         sha256: ccff1f896425f932581c804e1fd6dd14dea7b7423f7f4970ff1d99ab03c97504
-
->>>>>>> Updating stack.yaml file for ghc-8.6.0 alpha.

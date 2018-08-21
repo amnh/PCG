@@ -150,7 +150,7 @@ iterativeBuild currentTree@(PDAG2 _ metaSeq) nextLeaf = nextTree
 iterativeNetworkBuild
   :: FinalDecorationDAG
   -> FinalDecorationDAG
-iterativeNetworkBuild currentNetwork@(PDAG2 inputDag _) =
+iterativeNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
     case toList $ candidateNetworkEdges inputDag of
       []   -> currentNetwork
       x:xs ->
@@ -165,7 +165,7 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag _) =
     (PDAG2 dag _) = force $ wipeScoring currentNetwork
 
     tryNetworkEdge :: ((Int, Int), (Int, Int)) -> FinalDecorationDAG
-    tryNetworkEdge = performDecoration . (`PDAG2` defaultUnaryMetadataSequence) . connectEdge'
+    tryNetworkEdge = performDecoration . (`PDAG2` metaSeq) . connectEdge'
 
     getCost (PDAG2 v _) = dagCost $ graphData v
 
