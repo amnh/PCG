@@ -13,7 +13,7 @@ import qualified PCG.Command.Build.Evaluate  as Build
 import qualified PCG.Command.Read.Evaluate   as Read
 import qualified PCG.Command.Report.Evaluate as Report
 import           PCG.Syntax
-
+import           System.Exit
 
 optimizeComputation :: Computation -> Computation
 optimizeComputation (Computation commands) = Computation $ collapseReadCommands commands
@@ -39,11 +39,11 @@ evaluate (Computation xs) = foldl' f mempty xs
 --    f _ = error "NOT YET IMPLEMENTED"
 
 
-renderSearchState :: Evaluation a -> String
+renderSearchState :: Evaluation a -> (ExitCode, String)
 renderSearchState e =
    case evaluationResult e of
-     NoOp         -> "[❓] No computation speciified...?"
-     Value _      -> "[✔] Computation complete!"
-     Error errMsg -> "[✘] Error: "<> trimR errMsg
+     NoOp         -> (ExitFailure 3, "[❓] No computation speciified...?")
+     Value _      -> (ExitSuccess  , "[✔] Computation complete!"        )
+     Error errMsg -> (ExitFailure 5, "[✘] Error: "<> trimR errMsg       )
   where
     trimR = reverse . dropWhile isSpace . reverse

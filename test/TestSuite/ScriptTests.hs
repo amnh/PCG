@@ -7,30 +7,28 @@ module TestSuite.ScriptTests
 import Control.Arrow    ((&&&))
 import Data.Either
 import Data.Foldable
-import Data.Functor     (($>))
 import Data.Text        (Text)
 import Test.Tasty
 import Test.Tasty.HUnit
 import Turtle
-import Turtle.Prelude
 
 
-testSuite :: TestTree
-testSuite = testGroup "Integration Test Suite"
-  [ scriptFailure "test-data/pcg-test-missing-leaf/test.pcg"
+testSuite :: IO TestTree
+testSuite = testGroup "Script Test Suite" <$> sequenceA
+  [ scriptFailure "datasets/unmatched-leaf-taxon/test.pcg"
   ]
 
 
 scriptTest
-  :: String   -- ^ Script File
-  -> [String] -- ^ Expected Output Files
-  -> (Either Int [String] -> TestTree) -- ^ Build a TestTree from the resulting
-                                       -- output file contents or ExitStatus code
-  -> TestTree
-scriptTest scriptPath outputPaths testLogic = withResource (runExecutable scriptPath outputPaths) (const (pure ())) (testLogic . pure)
+  :: String                          -- ^ Script File
+  -> [String]                        -- ^ Expected Output Files
+  -> (Either Int [Text] -> TestTree) -- ^ Build a TestTree from the resulting
+                                     -- output file contents or ExitStatus code
+  -> IO TestTree
+scriptTest scriptPath outputPaths testLogic = testLogic <$> runExecutable scriptPath outputPaths
 
 
-scriptFailure :: String -> TestTree
+scriptFailure :: String -> IO TestTree
 scriptFailure scriptPath = scriptTest scriptPath [] (testCase scriptPath . assertBool "Expected script failure" . isLeft)
 
 
@@ -45,7 +43,7 @@ runExecutable
   -> IO (Either Int [Text]) -- ^ Resulting file contents of the specified output
                             --   files, or the exit code if the script failed
 runExecutable scriptStr outputPaths = do
-    startingDirectory <- pwd 
+    startingDirectory <- pwd
     cd scriptDirectory
     exitCode <- shell ("stack exec pcg < " <> scriptText) mempty
     cd startingDirectory
@@ -54,7 +52,7 @@ runExecutable scriptStr outputPaths = do
       _             -> Right <$> traverse (readTextFile . decodeString) outputPaths
   where
     scriptText = either id id $ toText scriptFile
-    
+
     (scriptDirectory, scriptFile) = breakScriptPath $ decodeString scriptStr
 
     breakScriptPath = (collapse . foldl' (</>) defaultDirectory . init &&& last) . splitDirectories

@@ -3,17 +3,14 @@ module Main
   , testSuite
   ) where
 
+import           Data.Foldable
 import           Test.Tasty
-import           Test.Tasty.Ingredients.Rerun           (rerunningTests)
-import qualified TestSuite.ScriptTests        as Script (testSuite)
+import qualified TestSuite.ScriptTests as Script (testSuite)
 
 
 main :: IO ()
-main =
-  defaultMainWithIngredients
-  [ rerunningTests defaultIngredients ]
-  testSuite
+main = testSuite >>= defaultMain
 
 
-testSuite :: TestTree
-testSuite = testGroup "Integration Test Suite" [ Script.testSuite ]
+testSuite :: IO TestTree
+testSuite = testGroup "Integration Test Suite" <$> sequenceA [ Script.testSuite ]
