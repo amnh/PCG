@@ -5,11 +5,15 @@ module Main
 
 import           Data.Foldable
 import           Test.Tasty
+import           Test.Tasty.Ingredients.Rerun (rerunningTests)
 import qualified TestSuite.ScriptTests as Script (testSuite)
 
 
 main :: IO ()
-main = testSuite >>= defaultMain
+main
+  = testSuite >>=
+    defaultMainWithIngredients
+    [rerunningTests defaultIngredients]
 
 
 testSuite :: IO TestTree
