@@ -6,8 +6,8 @@ module Main
 import           Data.Foldable
 import           Test.Tasty
 import           Test.Tasty.Ingredients.Rerun (rerunningTests)
-import qualified TestSuite.ScriptTests as Script (testSuite)
-import qualified TestSuite.GoldenTests as Golden (testSuite)
+import qualified TestSuite.GoldenTests        as Golden (testSuite)
+import qualified TestSuite.ScriptTests        as Script (testSuite)
 
 
 main :: IO ()
