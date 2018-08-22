@@ -11,12 +11,15 @@ import Test.Tasty
 import Test.Tasty.Golden
 import Turtle                (shell)
 
+
 testSuite :: IO TestTree
 testSuite = do
   dir   <- goldenDir
   pcgFiles <- getPCGFiles dir
-  let extensions = [] -- TODO (CM): Add extensions for output to be tested.
+  let extensions = ["dot"] -- TODO (CM): Add extensions for output to be tested.
   let testInputs = [(pcg, ext) | pcg <- pcgFiles, ext <- extensions]
+  putStrLn "TESTINPUTS"
+  print testInputs
   tests <- mapM goldenTest testInputs
   pure $
     testGroup "Golden Test Suite:"
@@ -59,12 +62,22 @@ generateOutput
 getPCGFiles :: FilePath -> IO [FilePath]
 getPCGFiles fp = do
   subDirs <- getSubDirs fp
-  concat <$> mapM getPCGFiles subDirs
+  print fp
+  putStrLn "subDirs:"
+  print subDirs
+  pcg <- concat <$> mapM getPCGFiles subDirs
+  putStrLn "pcg:"
+  print pcg
+  pure pcg
     where
       getPCGFiles :: FilePath -> IO [FilePath]
-      getPCGFiles =
+      getPCGFiles fp =
         let filterPCG = filter $ (== ".pcg") . takeExtension
-          in (filterPCG <$>) . listDirectory
+          in (fmap (fp </>) <$>) . (filterPCG <$>) . listDirectory $ fp
 
       getSubDirs :: FilePath -> IO [FilePath]
-      getSubDirs = (filterM doesDirectoryExist =<<) . listDirectory
+      getSubDirs fp =
+          (filterM doesDirectoryExist =<<)
+        . fmap ((fp </>) <$>)
+        . listDirectory
+        $ fp
