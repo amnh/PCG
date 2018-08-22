@@ -468,6 +468,8 @@ Test-Suite integration-tests
   main-is:          IntegrationTests.hs
 
   build-depends:      base               >=4.10
+                    , directory
+                    , filepath
                     , semigroups
                     , tasty
                     , tasty-golden
