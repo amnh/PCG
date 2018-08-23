@@ -42,6 +42,8 @@ test-failures: stack-build-test-failures
 
 test-new: stack-build-test-new
 
+test-golden-new: stack-build-test-golden-new
+
 # Runs linter
 
 lint: run-linter
@@ -74,17 +76,21 @@ stack-build-profiling: phylocomgraph.cabal stack.yaml
 #	stack install $(profiling) --flag phylocomgraph:build-cpp-files
 	stack install $(profiling) --fast --ghc-options="-fprof-cafs -rtsopts=all -O0"
 
-# Builds with profiling enabled
+# Builds tests and updates log of tests that have been run
 stack-build-test: phylocomgraph.cabal stack.yaml
 	stack build --test --ta "--rerun-update"
 
-# Builds with profiling enabled
+# Builds tests and re-runs those that failed
 stack-build-test-failures: phylocomgraph.cabal stack.yaml
 	stack build --test --ta "--rerun-filter=failures"
 
-# Builds with profiling enabled
+# Builds tests and runs those that are not in the log
 stack-build-test-new: phylocomgraph.cabal stack.yaml
 	stack build --test --ta "--rerun-filter=new"
+
+# Builds only integration tests and generates new golden files
+stack-build-test-golden-new: phylocomgraph.cabal stack.yaml
+	stack build phylocomgraph:test:integration-tests --ta "--accept"
 
 
 ### The code cleanliness section
