@@ -14,12 +14,10 @@ import Turtle                (shell)
 
 testSuite :: IO TestTree
 testSuite = do
-  dir   <- goldenDir
+  dir      <- goldenDir
   pcgFiles <- getPCGFiles dir
   let extensions = ["dot"] -- TODO (CM): Add extensions for output to be tested.
   let testInputs = [(pcg, ext) | pcg <- pcgFiles, ext <- extensions]
-  putStrLn "TESTINPUTS"
-  print testInputs
   tests <- mapM goldenTest testInputs
   pure $
     testGroup "Golden Test Suite:"
@@ -62,12 +60,7 @@ generateOutput
 getPCGFiles :: FilePath -> IO [FilePath]
 getPCGFiles fp = do
   subDirs <- getSubDirs fp
-  print fp
-  putStrLn "subDirs:"
-  print subDirs
-  pcg <- concat <$> mapM getPCGFiles subDirs
-  putStrLn "pcg:"
-  print pcg
+  pcg     <- concat <$> mapM getPCGFiles subDirs
   pure pcg
     where
       getPCGFiles :: FilePath -> IO [FilePath]
