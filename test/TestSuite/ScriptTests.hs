@@ -45,7 +45,7 @@ runExecutable
 runExecutable scriptStr outputPaths = do
     startingDirectory <- pwd
     cd scriptDirectory
-    exitCode <- shell ("stack exec pcg < " <> scriptText) mempty
+    exitCode <- shell ("stack exec pcg -- --input " <> scriptText <> " --output test.log") mempty
     cd startingDirectory
     case exitCode of
       ExitFailure v -> pure $ Left v
