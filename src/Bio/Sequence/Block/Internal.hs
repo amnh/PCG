@@ -46,6 +46,36 @@ data  Block m u v w x y z
     } deriving (Eq, Generic)
 
 
+class SequenceBlock m u v w x y z where
+
+    continuousBins_  :: SequenceBlock m u v w x y z -> Vector u
+
+    nonAdditiveBins_ :: SequenceBlock m u v w x y z -> Vector v
+
+    additiveBins_    :: SequenceBlock m u v w x y z -> Vector w
+
+    metricBins_      :: SequenceBlock m u v w x y z -> Vector x
+
+    nonMetricBins_   :: SequenceBlock m u v w x y z -> Vector y
+
+    dynamicBins_     :: SequenceBlock m u v w x y z -> Vector z
+
+
+instance SequenceBlock (Block m) where
+
+    continuousBins_  = continuousBins
+
+    nonAdditiveBins_ = nonAdditiveBins
+
+    additiveBins_    = additiveBins
+
+    metricBins_      = metricBins
+
+    nonMetricBins_   = nonMetricBins_
+
+    dynamicBins_     = dynamicBins_
+
+
 instance Bifunctor (Block m u v w x) where
 
     bimap f g =
