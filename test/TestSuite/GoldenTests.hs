@@ -14,28 +14,27 @@ import Turtle                (shell)
 
 testSuite :: IO TestTree
 testSuite = do
-  dir      <- goldenDir
-  pcgFiles <- getPCGFiles dir
-  let extensions = ["dot"] -- TODO (CM): Add extensions for output to be tested.
+  pcgFiles <- getPCGFiles goldenDir
+  let extensions = ["data", "dot", "xml"]
   let testInputs = [(pcg, ext) | pcg <- pcgFiles, ext <- extensions]
-  tests <- mapM goldenTest testInputs
+  tests <- traverse goldenTest testInputs
   pure $
     testGroup "Golden Test Suite:"
     tests
   where
     --TODO (CM): put correct dir here"
-    goldenDir :: IO FilePath
-    goldenDir = makeAbsolute "./datasets/golden-tests"
+    goldenDir :: FilePath
+    goldenDir = "./datasets/golden-tests"
 
 -- |
 -- Runs a pcg file [file-name].pcg producing [file-name].extension for a
--- given extension which is then compared to [file-name].golden. If the
+-- given extension which is then compared to [file-name]_extension.golden. If the
 -- golden file does not exist the test will generate it.
 goldenTest :: (FilePath, String) -> IO TestTree
 goldenTest (filePath, extension) = do
   let testName = getFileName filePath
   let outputFilePath = filePath -<.> extension
-  let goldenFilePath = filePath -<.> "golden"
+  let goldenFilePath = makeGolden filePath
   pure $
     goldenVsFile
       testName
@@ -46,13 +45,16 @@ goldenTest (filePath, extension) = do
     getFileName :: FilePath -> FilePath
     getFileName =  dropExtension . takeFileName
 
+    makeGolden :: FilePath -> FilePath
+    makeGolden = (<.> "golden") . (<> "_" <> extension) . dropExtension
+
 -- |
 -- Runs pcg on the file passed in.
 generateOutput :: FilePath -> IO ()
 generateOutput
   = void
   . flip shell mempty
-  . ("stack exec pcg < " <>)
+  . ("stack exec pcg -- --output test.log < " <>)
   . pack
 
 -- |
@@ -60,17 +62,19 @@ generateOutput
 getPCGFiles :: FilePath -> IO [FilePath]
 getPCGFiles fp = do
   subDirs <- getSubDirs fp
-  pcg     <- concat <$> mapM getPCGFiles subDirs
+  pcg     <- concat <$> traverse getPCGFiles subDirs
   pure pcg
     where
       getPCGFiles :: FilePath -> IO [FilePath]
-      getPCGFiles fp =
+      getPCGFiles =
         let filterPCG = filter $ (== ".pcg") . takeExtension
-          in (fmap (fp </>) <$>) . (filterPCG <$>) . listDirectory $ fp
+          in  (filterPCG <$>) . listDirectoryWithFilePath
 
       getSubDirs :: FilePath -> IO [FilePath]
-      getSubDirs fp =
+      getSubDirs =
           (filterM doesDirectoryExist =<<)
-        . fmap ((fp </>) <$>)
-        . listDirectory
-        $ fp
+        . listDirectoryWithFilePath
+
+listDirectoryWithFilePath :: FilePath -> IO [FilePath]
+listDirectoryWithFilePath fp = do
+  (fmap (fp </>) <$>) . listDirectory $ fp
