@@ -62,8 +62,7 @@ generateOutput
 getPCGFiles :: FilePath -> IO [FilePath]
 getPCGFiles fp = do
   subDirs <- getSubDirs fp
-  pcg     <- concat <$> traverse getPCGFiles subDirs
-  pure pcg
+  concat <$> traverse getPCGFiles subDirs
     where
       getPCGFiles :: FilePath -> IO [FilePath]
       getPCGFiles =
@@ -76,5 +75,7 @@ getPCGFiles fp = do
         . listDirectoryWithFilePath
 
 listDirectoryWithFilePath :: FilePath -> IO [FilePath]
-listDirectoryWithFilePath fp = do
-  (fmap (fp </>) <$>) . listDirectory $ fp
+listDirectoryWithFilePath fp
+  = (fmap (fp </>) <$>)
+  . listDirectory
+  $ fp
