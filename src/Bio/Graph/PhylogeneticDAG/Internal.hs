@@ -44,7 +44,6 @@ import           Bio.Metadata.DiscreteWithTCM
 import           Bio.Metadata.Dynamic
 import           Bio.Sequence
 import           Bio.Sequence.Block.Character    (CharacterBlock (..))
-import           Bio.Sequence.Block.Internal
 import           Bio.Sequence.Block.Metadata     (MetadataBlock (..))
 import           Bio.Sequence.Metadata           (MetadataSequence, getBlockMetadata)
 import qualified Bio.Sequence.Metadata           as M
@@ -54,7 +53,7 @@ import           Control.DeepSeq
 import           Control.Lens                    as Lens
 import           Data.Bits
 import           Data.Foldable
-import           Data.GraphViz.Printing          hiding ((<>))
+import           Data.GraphViz.Printing
 import           Data.GraphViz.Types
 import           Data.HashMap.Lazy               (HashMap)
 import qualified Data.IntMap                     as IM

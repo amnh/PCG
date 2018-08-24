@@ -22,7 +22,6 @@ module Bio.Graph.Constructions
   , GraphState
   , PhylogeneticDAG(..)
   , PhylogeneticDAG2(..)
-  , PhylogeneticDAGish(..)
   , PostOrderDecorationDAG
   , SearchState
   , TopologicalResult
@@ -46,7 +45,6 @@ import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Dynamic
 import Bio.Character.Decoration.Fitch
 import Bio.Character.Decoration.Metric
-import Bio.Graph.PhylogeneticDAG.Class
 import Bio.Graph.PhylogeneticDAG.Internal
 import Bio.Graph.ReferenceDAG.Internal
 import Bio.Graph.Solution

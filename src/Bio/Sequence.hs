@@ -52,6 +52,6 @@ module Bio.Sequence
 
 import Bio.Sequence.Block           hiding (hexTranspose, hexZipWith, hexZipWithMeta, hexmap)
 import Bio.Sequence.Block.Builder
-import Bio.Sequence.Block.Character        (finalizeCharacterBlock)
+import Bio.Sequence.Block.Character (finalizeCharacterBlock)
 import Bio.Sequence.Character
 

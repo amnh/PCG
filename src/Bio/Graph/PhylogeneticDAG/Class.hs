@@ -133,6 +133,7 @@ class PhylogeneticDAGish dag where
         . preorderDynamic     f8
 
 
+{-
     preorderSequence    :: (u -> [(Word,u')] -> u')
                         -> (v -> [(Word,v')] -> v')
                         -> (w -> [(Word,w')] -> w')
@@ -142,6 +143,7 @@ class PhylogeneticDAGish dag where
                         -> dag e n u  v  w  x  y  z
                         -> dag e n u' v' w' x' y' z'
     preorderSequence     = preorderDAG id' id'
+-}
 
 
     preorderEdge        :: (e -> [(Word,e')] -> e')

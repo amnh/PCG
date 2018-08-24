@@ -13,7 +13,6 @@
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 
@@ -32,14 +31,6 @@ module Bio.Sequence.Block.Character
   , continuousSingleton
   , discreteSingleton
   , dynamicSingleton
-  -- * Block extraction
-  , continuousCharacterBins
-  , nonAdditiveCharacterBins
-  , additiveCharacterBins
-  , metricCharacterBins
-  , nonMetricCharacterBins
-  , dynamicCharacters
---  , setDynamicCharacters
   -- * Transformations
   , hexmap
   , hexTranspose
@@ -75,7 +66,7 @@ import           Text.XML
 -- networks.
 --
 -- Use '(<>)' to construct larger blocks.
-newtype CharacterBlock u v w x y z = CB { unwrap :: (Block u v w x y z) }
+newtype CharacterBlock u v w x y z = CB { unwrap :: Block u v w x y z }
     deriving (Bifunctor, Eq, Functor, Generic, NFData, Semigroup)
 
 

@@ -133,13 +133,13 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
       )
       -> FinalDecorationDAG
     performPreOrderDecoration =
-        preorderFromRooting''
+        preorderFromRooting
           adaptiveDirectOptimizationPreOrder
           edgeCostMapping
           contextualNodeDatum
           minBlockConext
 
-        . preorderSequence''
+        . preorderSequence
           (const additivePreOrder)
           (const fitchPreOrder   )
           (const additivePreOrder)

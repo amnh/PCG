@@ -29,8 +29,8 @@ module Bio.Sequence.Block.Internal
   ) where
 
 
-import Control.Lens
 import Control.DeepSeq
+import Control.Lens
 import Data.Bifunctor
 import Data.Foldable
 import Data.Vector           (Vector)
