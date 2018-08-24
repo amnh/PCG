@@ -42,9 +42,7 @@ module Bio.Graph
   , assignPunitiveNetworkEdgeCost
   , generateLocalResolutions
   , postorderSequence'
-  , preorderFromRooting
   , preorderFromRooting''
-  , preorderSequence'
   , preorderSequence''
   , renderSummary
   , reifiedSolution

@@ -433,7 +433,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
           -> (Double, Vector (Word, Double, NonEmpty e))
         toMinimalBlockContext edge mBlock cBlock = (staticCost mBlock cBlock, dynCharVect)
           where
-            dynCharVect = zipWith (\mVal dec -> (dec ^. characterCost, mVal ^. characterWeight, pure edge)) (getDynamicMetadata mBlock) $ dynamicCharacters cBlock
+            dynCharVect = zipWith (\mVal dec -> (dec ^. characterCost, mVal ^. characterWeight, pure edge)) (getDynamicMetadata mBlock) $ cBlock ^. dynamicBin
 
         recomputeCost (staticCostVal, dynCharVect) = (staticCostVal + minDynCharCost, dynCharNoWeight)
           where
@@ -644,7 +644,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
             -- Also expects a "data-block" with the old block data to be updated
             -- with information from the "context-block."
 --            g :: (Double, Vector (Word, NonEmpty TraversalFocusEdge)) -> CharacterBlock u v w x y z -> CharacterBlock u v w x y z
-            g (_, minBlockContexts) charBlock = setDynamicCharacters modifiedDynamicChars charBlock
+            g (_, minBlockContexts) charBlock = charBlock & dynamicBin .~ modifiedDynamicChars 
               where
 
                 -- We take the first of the minimal contexts and distribute the
@@ -659,7 +659,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                 vectorForZipping :: Vector Word
                 vectorForZipping = fst <$> minBlockContexts
 
-                modifiedDynamicChars = zipWith h vectorForZipping $ dynamicCharacters charBlock
+                modifiedDynamicChars = zipWith h vectorForZipping $ charBlock ^. dynamicBin
 
                 h costVal originalDec =
                     originalDec

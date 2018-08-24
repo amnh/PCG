@@ -39,7 +39,7 @@ module Bio.Sequence.Block.Character
   , metricCharacterBins
   , nonMetricCharacterBins
   , dynamicCharacters
-  , setDynamicCharacters
+--  , setDynamicCharacters
   -- * Transformations
   , hexmap
   , hexTranspose
@@ -114,7 +114,7 @@ instance HasNonMetricBin (CharacterBlock u v w x y z) (Vector y) where
                  $ \(CB b) x -> CB (b { _nonMetricBin = x })
 
 
-instance HasDynamicBin (CharacterBlock u v w x y z) (Vector z) where
+instance HasDynamicBin (CharacterBlock u v w x y z) (CharacterBlock u v w x y z') (Vector z) (Vector z') where
 
     {-# INLINE  dynamicBin #-}
     dynamicBin = lens (_dynamicBin . unwrap)
@@ -160,13 +160,13 @@ instance ( ToXML u -- This is NOT a redundant constraint.
     toXML (CB block) = xmlElement "_block" attributes contents
         where
             attributes = []
-            contents   = [ Right . collapseElemList "Non-additive_character_block" [] $ _nonAdditiveBin block
-                         , Right . collapseElemList "Additive_character_block"     [] $ _additiveBin    block
-                         , Right . collapseElemList "NonMetric_character_block"    [] $ _nonMetricBin   block
-                         , Right . collapseElemList "Continuous_character_block"   [] $ _continuousBin  block
-                         , Right . collapseElemList "Metric_character_block"       [] $ _nonMetricBin   block
-                         , Right . collapseElemList "Dynamic_character_block"      [] $ _dynamicBin     block
-                         ]
+            contents   = [ Right . collapseElemList "Continuous_character_block"   [] . (^.  continuousBin)
+                         , Right . collapseElemList "Non-additive_character_block" [] . (^. nonAdditiveBin)
+                         , Right . collapseElemList "Additive_character_block"     [] . (^.    additiveBin)
+                         , Right . collapseElemList "NonMetric_character_block"    [] . (^.   nonMetricBin)
+                         , Right . collapseElemList "Metric_character_block"       [] . (^.   nonMetricBin)
+                         , Right . collapseElemList "Dynamic_character_block"      [] . (^.     dynamicBin)
+                         ] <*> [block]
 
 
 -- |
@@ -210,6 +210,7 @@ dynamicCharacters :: CharacterBlock u v w x y z -> Vector z
 dynamicCharacters = (^. dynamicBin) . unwrap
 
 
+{-
 setDynamicCharacters :: Vector z -> CharacterBlock u v w x y a -> CharacterBlock u v w x y z
 setDynamicCharacters v = CB . (
     Block
@@ -220,6 +221,7 @@ setDynamicCharacters v = CB . (
       <*> nonMetricCharacterBins
       <*> const v
     )
+-}
 
 
 -- |

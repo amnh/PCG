@@ -105,9 +105,9 @@ class HasNonMetricBin s a | s -> a where
 
 -- |
 -- A 'Lens' for the 'dynamicBin' field
-class HasDynamicBin s a | s -> a where
+class HasDynamicBin s t a b | s -> a, t -> b where
 
-    dynamicBin :: Lens' s a
+    dynamicBin :: Lens s t a b
     {-# MINIMAL dynamicBin #-}
 
 
@@ -155,7 +155,7 @@ instance HasNonMetricBin (Block u v w x y z) (Vector y) where
                    \e x -> e { _nonMetricBin = x }
 
 
-instance HasDynamicBin (Block u v w x y z) (Vector z) where
+instance HasDynamicBin (Block u v w x y z) (Block u v w x y z') (Vector z) (Vector z') where
 
     {-# INLINE  dynamicBin #-}
     dynamicBin = lens _dynamicBin $

@@ -19,6 +19,14 @@ module Bio.Sequence
   , HasBlockCost
   , HasRootCost
   , PartialCharacterBlock()
+  -- * Lenses
+  , HasBlockMetadata(..)
+  , HasContinuousBin(..)
+  , HasNonAdditiveBin(..)
+  , HasAdditiveBin(..)
+  , HasMetricBin(..)
+  , HasNonMetricBin(..)
+  , HasDynamicBin(..)
   -- * CharacterBlock construction
   , continuousSingleton
   , discreteSingleton
@@ -29,14 +37,6 @@ module Bio.Sequence
   -- * CharacterBlock deconstruction
   , toBlocks
   , toBlockVector
-  -- * Block extraction
-  , continuousCharacterBins
-  , nonAdditiveCharacterBins
-  , additiveCharacterBins
-  , metricCharacterBins
-  , nonMetricCharacterBins
-  , dynamicCharacters
-  , setDynamicCharacters
   -- * CharacterBlock transformations
   , toMissingCharacters
   , hexmap
@@ -52,8 +52,6 @@ module Bio.Sequence
 
 import Bio.Sequence.Block           hiding (hexTranspose, hexZipWith, hexZipWithMeta, hexmap)
 import Bio.Sequence.Block.Builder
-import Bio.Sequence.Block.Character (additiveCharacterBins, continuousCharacterBins, dynamicCharacters,
-                                     finalizeCharacterBlock, metricCharacterBins, nonAdditiveCharacterBins,
-                                     nonMetricCharacterBins, setDynamicCharacters)
+import Bio.Sequence.Block.Character        (finalizeCharacterBlock)
 import Bio.Sequence.Character
 

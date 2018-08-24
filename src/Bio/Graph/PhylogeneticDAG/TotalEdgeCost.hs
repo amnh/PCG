@@ -21,7 +21,6 @@ module Bio.Graph.PhylogeneticDAG.TotalEdgeCost
   ( totalEdgeCosts
   ) where
 
-
 import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Dynamic
@@ -69,7 +68,7 @@ totalEdgeCosts (PDAG2 dag meta) = applyWeights $ foldlWithKey f initAcc refVec
 
     roots  = rootRefs dag
 
-    initAcc = (0 <$) . toList . dynamicCharacters <$> sequencesWLOG
+    initAcc = (0 <$) . toList . (^. dynamicBin) <$> sequencesWLOG
 
     sequencesWLOG = getSequence $ NE.head roots
 
@@ -77,7 +76,7 @@ totalEdgeCosts (PDAG2 dag meta) = applyWeights $ foldlWithKey f initAcc refVec
 
     getSequence = NE.fromList . otoList . characterSequence . NE.head . resolutions . nodeDecoration . (refVec !)
 
-    getFields = fmap (fmap (^. singleDisambiguation) . toList . dynamicCharacters) . getSequence
+    getFields = fmap (fmap (^. singleDisambiguation) . toList . (^. dynamicBin)) . getSequence
 
     weightSequence = fmap (^. characterWeight) <$> dynamicMetadataSeq
 
