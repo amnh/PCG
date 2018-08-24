@@ -31,14 +31,12 @@ module Bio.Sequence.Metadata
   , fromBlocks
   , toBlockVector
   , fromBlockVector
-  , defaultUnaryMetadataSequence
   -- * Mutation
   , setAllFoci
   , setFoci
   ) where
 
 
-import           Bio.Sequence.Block.Internal (Block (..))
 import           Bio.Sequence.Block.Metadata
 import           Control.DeepSeq
 import           Data.Foldable
@@ -147,15 +145,3 @@ toBlockVector (MetaSeq x) =  x
 {-# INLINE fromBlockVector #-}
 fromBlockVector :: Vector (MetadataBlock m) -> MetadataSequence m
 fromBlockVector = MetaSeq
-
-
-defaultUnaryMetadataSequence :: MetadataSequence ()
-defaultUnaryMetadataSequence = fromBlocks . pure . MB $ Block
-    { blockMetadata   = ()
-    , continuousBins  = mempty
-    , nonAdditiveBins = mempty
-    , additiveBins    = mempty
-    , metricBins      = mempty
-    , nonMetricBins   = mempty
-    , dynamicBins     = mempty
-    }

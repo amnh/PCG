@@ -18,7 +18,7 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
 
 module Bio.Sequence.Block.Metadata
-  ( MetadataBlock(..)
+  ( MetadataBlock(MB)
   -- * Lenses
   , HasBlockMetadata(..)
   , HasContinuousBin(..)
@@ -47,13 +47,12 @@ import Bio.Sequence.Block.Internal
 import Control.DeepSeq
 import Control.Lens
 import Data.Key
-import Data.MonoTraversable         (Element)
 import Data.TCM
 import Data.Vector                  (Vector)
 import GHC.Generics
 import Prelude                      hiding (zipWith)
 import Text.XML
-import Text.XML.Light.Types         hiding (Element)
+import Text.XML.Light.Types
 
 -- |
 -- Represents a block of data which are optimized atomically together across
@@ -69,7 +68,7 @@ newtype MetadataBlock m = MB
          DiscreteCharacterMetadataDec
         (DiscreteWithTCMCharacterMetadataDec StaticCharacter)
         (DiscreteWithTCMCharacterMetadataDec StaticCharacter)
-        (DynamicCharacterMetadataDec (Element DynamicChar))
+        (DynamicCharacterMetadataDec DynamicCharacterElement)
       )
     }
     deriving (NFData, Generic, Semigroup)
@@ -86,43 +85,50 @@ instance Functor MetadataBlock where
 instance HasBlockMetadata (MetadataBlock m) m where
 
     {-# INLINE blockMetadata #-}
-    blockMetadata = blockMetadata . unwrap
+    blockMetadata = lens (_blockMetadata . unwrap)
+                  $ \(MB b) x -> MB (b { _blockMetadata = x })
 
 
 instance HasContinuousBin (MetadataBlock m) (Vector ContinuousCharacterMetadataDec) where
 
     {-# INLINE continuousBin #-}
-    continuousBin = continuousBin . unwrap
+    continuousBin = lens (_continuousBin . unwrap)
+                  $ \(MB b) x -> MB (b { _continuousBin = x })
 
 
 instance HasNonAdditiveBin (MetadataBlock m) (Vector DiscreteCharacterMetadataDec) where
 
     {-# INLINE nonAdditiveBin #-}
-    nonAdditiveBin = nonAdditiveBin . unwrap
+    nonAdditiveBin = lens (_nonAdditiveBin . unwrap)
+                   $ \(MB b) x -> MB (b { _nonAdditiveBin = x })
 
 
 instance HasAdditiveBin (MetadataBlock m) (Vector DiscreteCharacterMetadataDec) where
 
     {-# INLINE additiveBin #-}
-    additiveBin = additiveBin . unwrap
+    additiveBin = lens (_additiveBin . unwrap)
+                $ \(MB b) x -> MB (b { _additiveBin = x })
 
 
 instance HasMetricBin (MetadataBlock m) (Vector (DiscreteWithTCMCharacterMetadataDec StaticCharacter)) where
 
     {-# INLINE metricBin #-}
-    metricBin = metricBin . unwrap
+    metricBin = lens (_metricBin . unwrap)
+              $ \(MB b) x -> MB (b { _metricBin = x })
 
 
 instance HasNonMetricBin (MetadataBlock m) (Vector (DiscreteWithTCMCharacterMetadataDec StaticCharacter)) where
 
     {-# INLINE nonMetricBin #-}
-    nonMetricBin = nonMetricBin . unwrap
+    nonMetricBin = lens (_nonMetricBin . unwrap)
+                 $ \(MB b) x -> MB (b { _nonMetricBin = x })
 
 
 instance HasDynamicBin (MetadataBlock m) (Vector (DynamicCharacterMetadataDec DynamicCharacterElement)) where
 
     {-# INLINE  dynamicBin #-}
-    dynamicBin = dynamicBin . unwrap
+    dynamicBin = lens (_dynamicBin . unwrap)
+               $ \(MB b) x -> MB (b { _dynamicBin = x })
 {--}
 
 
@@ -174,7 +180,7 @@ getNonMetricMetadata :: MetadataBlock m -> Vector DiscreteCharacterMetadataDec
 getNonMetricMetadata (MB x) = nonMetricBins x
 -}
 
-getDynamicMetadata :: MetadataBlock m -> Vector (DynamicCharacterMetadataDec (Element DynamicChar))
+getDynamicMetadata :: MetadataBlock m -> Vector (DynamicCharacterMetadataDec DynamicCharacterElement)
 getDynamicMetadata (MB x) = x ^. dynamicBin
 
 
@@ -253,7 +259,7 @@ discreteToMetadataBlock struct v =
 
 
 dynamicToMetadataBlock
-  :: DynamicCharacterMetadataDec (Element DynamicChar)
+  :: DynamicCharacterMetadataDec DynamicCharacterElement
   -> MetadataBlock ()
 dynamicToMetadataBlock v = MB
     Block

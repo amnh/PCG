@@ -13,11 +13,20 @@
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 
 module Bio.Sequence.Block.Character
   ( CharacterBlock(..)
+  -- * Lenses
+  , HasBlockMetadata(..)
+  , HasContinuousBin(..)
+  , HasNonAdditiveBin(..)
+  , HasAdditiveBin(..)
+  , HasMetricBin(..)
+  , HasNonMetricBin(..)
+  , HasDynamicBin(..)
   -- * Block construction
   , finalizeCharacterBlock
   , continuousSingleton
@@ -49,6 +58,7 @@ import           Bio.Sequence.Block.Builder
 import           Bio.Sequence.Block.Internal
 import           Bio.Sequence.Block.Metadata  (MetadataBlock (..))
 import           Control.DeepSeq
+import           Control.Lens
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Bifunctor
@@ -69,6 +79,48 @@ import           Text.XML
 -- Use '(<>)' to construct larger blocks.
 newtype CharacterBlock u v w x y z = CB (Block Void u v w x y z)
     deriving (Bifunctor, Eq, Functor, Generic, Semigroup)
+
+
+instance HasContinuousBin (CharacterBlock u v w x y z) (Vector u) where
+
+    {-# INLINE continuousBin #-}
+    continuousBin = lens (_continuousBin . unwrap)
+                  $ \(CB b) x -> CB (b { _continuousBin = x })
+
+
+instance HasNonAdditiveBin (CharacterBlock u v w x y z) (Vector v) where
+
+    {-# INLINE nonAdditiveBin #-}
+    nonAdditiveBin = lens (_nonAdditiveBin . unwrap)
+                   $ \(CB b) x -> CB (b { _nonAdditiveBin = x })
+
+
+instance HasAdditiveBin (CharacterBlock u v w x y z) (Vector w) where
+
+    {-# INLINE additiveBin #-}
+    additiveBin = lens (_additiveBin . unwrap)
+                $ \(CB b) x -> CB (b { _additiveBin = x })
+
+
+instance HasMetricBin (CharacterBlock u v w x y z) (Vector x) where
+
+    {-# INLINE metricBin #-}
+    metricBin = lens (_metricBin . unwrap)
+              $ \(CB b) x -> CB (b { _metricBin = x })
+
+
+instance HasNonMetricBin (CharacterBlock u v w x y z) (Vector y) where
+
+    {-# INLINE nonMetricBin #-}
+    nonMetricBin = lens (_nonMetricBin . unwrap)
+                 $ \(CB b) x -> CB (b { _nonMetricBin = x })
+
+
+instance HasDynamicBin (CharacterBlock u v w x y z) (Vector z) where
+
+    {-# INLINE  dynamicBin #-}
+    dynamicBin = lens (_dynamicBin . unwrap)
+               $ \(CB b) x -> CB (b { _dynamicBin = x })
 
 
 instance ( NFData u
@@ -92,18 +144,18 @@ instance ( Show u
          ) => Show (CharacterBlock u v w x y z) where
 
     show (CB block) = unlines
-        [ "Continuous s [" <> show (length (continuousBins block)) <> "]:"
-        , niceRendering $ continuousBins block
-        , "Non-additive s [" <> show (length (nonAdditiveBins block)) <> "]:"
-        , niceRendering $ nonAdditiveBins block
-        , "Additive s [" <> show (length (additiveBins block)) <> "]:"
-        , niceRendering $ additiveBins block
-        , "Metric s [" <> show (length (metricBins block)) <> "]:"
-        , niceRendering $ metricBins block
-        , "NonMetric s [" <> show (length (nonMetricBins block)) <> "]:"
-        , niceRendering $ nonMetricBins block
-        , "Dynamic s [" <> show (length (dynamicBins block)) <> "]:"
-        , niceRendering $ dynamicBins block
+        [ "Continuous s [" <> show (length (_continuousBin block)) <> "]:"
+        , niceRendering $ _continuousBin block
+        , "Non-additive s [" <> show (length (_nonAdditiveBin block)) <> "]:"
+        , niceRendering $ _nonAdditiveBin block
+        , "Additive s [" <> show (length (_additiveBin block)) <> "]:"
+        , niceRendering $ _additiveBin block
+        , "Metric s [" <> show (length (_metricBin block)) <> "]:"
+        , niceRendering $ _metricBin block
+        , "NonMetric s [" <> show (length (_nonMetricBin block)) <> "]:"
+        , niceRendering $ _nonMetricBin block
+        , "Dynamic s [" <> show (length (_dynamicBin block)) <> "]:"
+        , niceRendering $ _dynamicBin block
         ]
       where
         niceRendering :: (Foldable t, Show a) => t a -> String
@@ -121,12 +173,12 @@ instance ( ToXML u -- This is NOT a redundant constraint.
     toXML (CB block) = xmlElement "_block" attributes contents
         where
             attributes = []
-            contents   = [ Right . collapseElemList "Non-additive_character_block" [] $ nonAdditiveBins block
-                         , Right . collapseElemList "Additive_character_block"     [] $ additiveBins    block
-                         , Right . collapseElemList "NonMetric_character_block"    [] $ nonMetricBins   block
-                         , Right . collapseElemList "Continuous_character_block"   [] $ continuousBins  block
-                         , Right . collapseElemList "Metric_character_block"       [] $ nonMetricBins   block
-                         , Right . collapseElemList "Dynamic_character_block"      [] $ dynamicBins        block
+            contents   = [ Right . collapseElemList "Non-additive_character_block" [] $ _nonAdditiveBin block
+                         , Right . collapseElemList "Additive_character_block"     [] $ _additiveBin    block
+                         , Right . collapseElemList "NonMetric_character_block"    [] $ _nonMetricBin   block
+                         , Right . collapseElemList "Continuous_character_block"   [] $ _continuousBin  block
+                         , Right . collapseElemList "Metric_character_block"       [] $ _nonMetricBin   block
+                         , Right . collapseElemList "Dynamic_character_block"      [] $ _dynamicBin     block
                          ]
 
 
@@ -149,27 +201,27 @@ finalizeCharacterBlock = CB . (
 
 
 continuousCharacterBins :: CharacterBlock u v w x y z -> Vector u
-continuousCharacterBins = continuousBins . unwrap
+continuousCharacterBins = (^. continuousBin) . unwrap
 
 
 nonAdditiveCharacterBins :: CharacterBlock u v w x y z -> Vector v
-nonAdditiveCharacterBins = nonAdditiveBins . unwrap
+nonAdditiveCharacterBins = (^. nonAdditiveBin) . unwrap
 
 
 additiveCharacterBins :: CharacterBlock u v w x y z -> Vector w
-additiveCharacterBins = additiveBins . unwrap
+additiveCharacterBins = (^. additiveBin) . unwrap
 
 
 metricCharacterBins :: CharacterBlock u v w x y z -> Vector x
-metricCharacterBins = metricBins . unwrap
+metricCharacterBins = (^. metricBin) . unwrap
 
 
 nonMetricCharacterBins :: CharacterBlock u v w x y z -> Vector y
-nonMetricCharacterBins = nonMetricBins . unwrap
+nonMetricCharacterBins = (^. nonMetricBin) . unwrap
 
 
 dynamicCharacters :: CharacterBlock u v w x y z -> Vector z
-dynamicCharacters = dynamicBins . unwrap
+dynamicCharacters = (^. dynamicBin) . unwrap
 
 
 setDynamicCharacters :: Vector z -> CharacterBlock u v w x y a -> CharacterBlock u v w x y z
@@ -255,13 +307,13 @@ hexZipWith
   -> CharacterBlock u'' v'' w'' x'' y'' z''
 hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = CB
     Block
-      { blockMetadata   = undefined
-      , continuousBins  = parZipWith rpar f1 (continuousCharacterBins  lhs) (continuousCharacterBins  rhs)
-      , nonAdditiveBins = parZipWith rpar f2 (nonAdditiveCharacterBins lhs) (nonAdditiveCharacterBins rhs)
-      , additiveBins    = parZipWith rpar f3 (additiveCharacterBins    lhs) (additiveCharacterBins    rhs)
-      , metricBins      = parZipWith rpar f4 (metricCharacterBins      lhs) (metricCharacterBins      rhs)
-      , nonMetricBins   = parZipWith rpar f5 (nonMetricCharacterBins   lhs) (nonMetricCharacterBins   rhs)
-      , dynamicBins     = parZipWith rpar f6 (dynamicCharacters        lhs) (dynamicCharacters        rhs)
+      { _blockMetadata  = undefined
+      , _continuousBin  = parZipWith rpar f1 (continuousCharacterBins  lhs) (continuousCharacterBins  rhs)
+      , _nonAdditiveBin = parZipWith rpar f2 (nonAdditiveCharacterBins lhs) (nonAdditiveCharacterBins rhs)
+      , _additiveBin    = parZipWith rpar f3 (additiveCharacterBins    lhs) (additiveCharacterBins    rhs)
+      , _metricBin      = parZipWith rpar f4 (metricCharacterBins      lhs) (metricCharacterBins      rhs)
+      , _nonMetricBin   = parZipWith rpar f5 (nonMetricCharacterBins   lhs) (nonMetricCharacterBins   rhs)
+      , _dynamicBin     = parZipWith rpar f6 (dynamicCharacters        lhs) (dynamicCharacters        rhs)
       }
 
 
@@ -278,12 +330,12 @@ hexZipWithMeta
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> x -> x' -> x'')
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> y -> y' -> y'')
   -> (DynamicCharacterMetadataDec (Element DynamicChar) -> z -> z' -> z'')
-  -> MetadataBlock  m
+  -> MetadataBlock m
   -> CharacterBlock u   v   w   x   y   z
   -> CharacterBlock u'  v'  w'  x'  y'  z'
   -> CharacterBlock u'' v'' w'' x'' y'' z''
 {-
-hexZipWithMeta _ _ _ _ _ _ (MB meta) (CB lhs) (CB rhs)
+hexZipWithMeta _ _ _ _ _ _ (CB meta) (CB lhs) (CB rhs)
   | trace ( unlines
               [ "\n()()() INPUTs to hexZipWithMeta:"
               , "  Metadata Sequence:"
@@ -298,13 +350,13 @@ hexZipWithMeta _ _ _ _ _ _ (MB meta) (CB lhs) (CB rhs)
 -}
 hexZipWithMeta f1 f2 f3 f4 f5 f6 (MB meta) (CB lhs) (CB rhs) = CB
     Block
-      { blockMetadata   = undefined
-      , continuousBins  = parZipWith3 rpar f1 (continuousBins  meta) (continuousBins  lhs) (continuousBins  rhs)
-      , nonAdditiveBins = parZipWith3 rpar f2 (nonAdditiveBins meta) (nonAdditiveBins lhs) (nonAdditiveBins rhs)
-      , additiveBins    = parZipWith3 rpar f3 (additiveBins    meta) (additiveBins    lhs) (additiveBins    rhs)
-      , metricBins      = parZipWith3 rpar f4 (metricBins      meta) (metricBins      lhs) (metricBins      rhs)
-      , nonMetricBins   = parZipWith3 rpar f5 (nonMetricBins   meta) (nonMetricBins   lhs) (nonMetricBins   rhs)
-      , dynamicBins     = parZipWith3 rpar f6 (dynamicBins     meta) (dynamicBins     lhs) (dynamicBins     rhs)
+      { _blockMetadata  = undefined
+      , _continuousBin  = parZipWith3 rpar f1 (_continuousBin  meta) (_continuousBin  lhs) (_continuousBin  rhs)
+      , _nonAdditiveBin = parZipWith3 rpar f2 (_nonAdditiveBin meta) (_nonAdditiveBin lhs) (_nonAdditiveBin rhs)
+      , _additiveBin    = parZipWith3 rpar f3 (_additiveBin    meta) (_additiveBin    lhs) (_additiveBin    rhs)
+      , _metricBin      = parZipWith3 rpar f4 (_metricBin      meta) (_metricBin      lhs) (_metricBin      rhs)
+      , _nonMetricBin   = parZipWith3 rpar f5 (_nonMetricBin   meta) (_nonMetricBin   lhs) (_nonMetricBin   rhs)
+      , _dynamicBin     = parZipWith3 rpar f6 (_dynamicBin     meta) (_dynamicBin     lhs) (_dynamicBin     rhs)
       }
 
 
