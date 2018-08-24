@@ -32,6 +32,7 @@ module Bio.Graph.PhylogeneticDAG.Internal
   , renderSummary
   , resolutionsDoNotOverlap
   ) where
+
 import           Bio.Character.Decoration.Shared
 import           Bio.Character.Encodable
 import           Bio.Graph.LeafSet
@@ -446,16 +447,16 @@ renderBlockSummary
   -> String
 renderBlockSummary (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displayMay, block) = mconcat . (renderedPrefix:) .
     (renderBlockMeta pair :) $
-    [ unlines . fmap renderStaticCharacterSummary  . toList . uncurry zip . ( continuousBins ***  continuousBins)
-    , unlines . fmap renderStaticCharacterSummary  . toList . uncurry zip . (nonAdditiveBins *** nonAdditiveBins)
-    , unlines . fmap renderStaticCharacterSummary  . toList . uncurry zip . (   additiveBins ***    additiveBins)
-    , unlines . fmap renderStaticCharacterSummary  . toList . uncurry zip . (     metricBins ***      metricBins)
-    , unlines . fmap renderStaticCharacterSummary  . toList . uncurry zip . (  nonMetricBins ***   nonMetricBins)
-    , unlines . fmap renderDynamicCharacterSummary . toList . uncurry zip . (    dynamicBins ***     dynamicBins)
+    [ unlines . fmap renderStaticCharacterSummary  . toList . uncurry zip . ((^.  continuousBin) *** (^.  continuousBin))
+    , unlines . fmap renderStaticCharacterSummary  . toList . uncurry zip . ((^. nonAdditiveBin) *** (^. nonAdditiveBin))
+    , unlines . fmap renderStaticCharacterSummary  . toList . uncurry zip . ((^.    additiveBin) *** (^.    additiveBin))
+    , unlines . fmap renderStaticCharacterSummary  . toList . uncurry zip . ((^.      metricBin) *** (^.      metricBin))
+    , unlines . fmap renderStaticCharacterSummary  . toList . uncurry zip . ((^.   nonMetricBin) *** (^.   nonMetricBin))
+    , unlines . fmap renderDynamicCharacterSummary . toList . uncurry zip . ((^.     dynamicBin) *** (^.     dynamicBin))
     ] <*> [(mBlock, cBlock)]
   where
     pair = (M.toBlocks meta ! key, block)
-    (MB mBlock, CB cBlock) = pair
+    (MB _ mBlock, CB cBlock) = pair
 
     renderedPrefix = "Block " <> show key <> "\n\n"
 

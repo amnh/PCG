@@ -20,6 +20,14 @@ module Bio.Sequence.Block
   , MetadataBlock()
   , HasBlockCost
   , HasRootCost
+  -- * Lenses
+  , HasBlockMetadata(..)
+  , HasContinuousBin(..)
+  , HasNonAdditiveBin(..)
+  , HasAdditiveBin(..)
+  , HasMetricBin(..)
+  , HasNonMetricBin(..)
+  , HasDynamicBin(..)
   -- * Cost Queries
   , blockCost
   , rootCost
@@ -49,12 +57,12 @@ import Prelude                             hiding (zip)
 -- |
 -- CharacterBlocks satisfying this constraint have a calculable cost.
 type HasBlockCost u v w x y z =
-    ( HasCharacterCost   u Double
-    , HasCharacterCost   v Word
-    , HasCharacterCost   w Word
-    , HasCharacterCost   x Word
-    , HasCharacterCost   y Word
-    , HasCharacterCost   z Word
+    ( HasCharacterCost u Double
+    , HasCharacterCost v Word
+    , HasCharacterCost w Word
+    , HasCharacterCost x Word
+    , HasCharacterCost y Word
+    , HasCharacterCost z Word
     )
 
 
@@ -75,13 +83,13 @@ type HasRootCost u v w x y z =
 -- Calculates the cost of a 'CharacterBlock'. Performs some of the operation in
 -- parallel.
 blockCost :: HasBlockCost u v w x y z => MetadataBlock m -> CharacterBlock u v w x y z -> Double
-blockCost (MB mBlock) (CB cBlock) = sum . fmap sum $
-    [ parmap rpar floatingCost . uncurry zip . ( continuousBins ***  continuousBins)
-    , parmap rpar integralCost . uncurry zip . (nonAdditiveBins *** nonAdditiveBins)
-    , parmap rpar integralCost . uncurry zip . (   additiveBins ***    additiveBins)
-    , parmap rpar integralCost . uncurry zip . (     metricBins ***      metricBins)
-    , parmap rpar integralCost . uncurry zip . (  nonMetricBins ***   nonMetricBins)
-    , parmap rpar integralCost . uncurry zip . (    dynamicBins ***     dynamicBins)
+blockCost (MB _ mBlock) (CB cBlock) = sum . fmap sum $
+    [ parmap rpar floatingCost . uncurry zip . ( _continuousBin ***  _continuousBin)
+    , parmap rpar integralCost . uncurry zip . (_nonAdditiveBin *** _nonAdditiveBin)
+    , parmap rpar integralCost . uncurry zip . (   _additiveBin ***    _additiveBin)
+    , parmap rpar integralCost . uncurry zip . (     _metricBin ***      _metricBin)
+    , parmap rpar integralCost . uncurry zip . (  _nonMetricBin ***   _nonMetricBin)
+    , parmap rpar integralCost . uncurry zip . (    _dynamicBin ***     _dynamicBin)
 --    , parmap rpar (uncurry (*)) {- . traceShowId -} . fmap ((^. characterWeight) *** fromIntegral . (^. characterCost)) . uncurry zip . (    dynamicBins ***     dynamicBins)
     ] <*> [(mBlock, cBlock)]
   where
@@ -107,13 +115,13 @@ rootCost
   -> MetadataBlock m
   -> CharacterBlock u v w x y z
   -> Double
-rootCost rootCount (MB mBlock) (CB cBlock) = rootMultiplier . sum . fmap sum $
-    [ parmap rpar staticRootCost  . uncurry zip . ( continuousBins ***  continuousBins)
-    , parmap rpar staticRootCost  . uncurry zip . (nonAdditiveBins *** nonAdditiveBins)
-    , parmap rpar staticRootCost  . uncurry zip . (   additiveBins ***    additiveBins)
-    , parmap rpar staticRootCost  . uncurry zip . (     metricBins ***      metricBins)
-    , parmap rpar staticRootCost  . uncurry zip . (  nonMetricBins ***   nonMetricBins)
-    , parmap rpar dynamicRootCost . uncurry zip . (    dynamicBins ***     dynamicBins)
+rootCost rootCount (MB _ mBlock) (CB cBlock) = rootMultiplier . sum . fmap sum $
+    [ parmap rpar staticRootCost  . uncurry zip . ( _continuousBin ***  _continuousBin)
+    , parmap rpar staticRootCost  . uncurry zip . (_nonAdditiveBin *** _nonAdditiveBin)
+    , parmap rpar staticRootCost  . uncurry zip . (   _additiveBin ***    _additiveBin)
+    , parmap rpar staticRootCost  . uncurry zip . (     _metricBin ***      _metricBin)
+    , parmap rpar staticRootCost  . uncurry zip . (  _nonMetricBin ***   _nonMetricBin)
+    , parmap rpar dynamicRootCost . uncurry zip . (    _dynamicBin ***     _dynamicBin)
     ] <*> [(mBlock, cBlock)]
   where
     rootMultiplier x = (otherRoots * x) / 2
@@ -136,12 +144,12 @@ rootCost rootCount (MB mBlock) (CB cBlock) = rootMultiplier . sum . fmap sum $
 -- Calculates the cost of a 'CharacterBlock'. Performs some of the operation in
 -- parallel.
 staticCost :: HasBlockCost u v w x y z => MetadataBlock m -> CharacterBlock u v w x y z -> Double
-staticCost (MB mBlock) (CB cBlock) = sum . fmap sum $
-    [ parmap rpar floatingCost . uncurry zip . ( continuousBins ***  continuousBins)
-    , parmap rpar integralCost . uncurry zip . (nonAdditiveBins *** nonAdditiveBins)
-    , parmap rpar integralCost . uncurry zip . (   additiveBins ***    additiveBins)
-    , parmap rpar integralCost . uncurry zip . (     metricBins ***      metricBins)
-    , parmap rpar integralCost . uncurry zip . (  nonMetricBins ***   nonMetricBins)
+staticCost (MB _ mBlock) (CB cBlock) = sum . fmap sum $
+    [ parmap rpar floatingCost . uncurry zip . ( _continuousBin ***  _continuousBin)
+    , parmap rpar integralCost . uncurry zip . (_nonAdditiveBin *** _nonAdditiveBin)
+    , parmap rpar integralCost . uncurry zip . (   _additiveBin ***    _additiveBin)
+    , parmap rpar integralCost . uncurry zip . (     _metricBin ***      _metricBin)
+    , parmap rpar integralCost . uncurry zip . (  _nonMetricBin ***   _nonMetricBin)
     ] <*> [(mBlock, cBlock)]
   where
     integralCost (m, c) = fromIntegral cost * weight
