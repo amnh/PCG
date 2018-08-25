@@ -13,9 +13,12 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric    #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE DeriveGeneric          #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE TypeFamilies           #-}
 
 module Bio.Sequence.Metadata
   ( MetadataBlock()
@@ -29,8 +32,8 @@ module Bio.Sequence.Metadata
   -- * Construction / Decomposition
   , toBlocks
   , fromBlocks
-  , toBlockVector
-  , fromBlockVector
+--  , toBlockVector
+--  , fromBlockVector
   -- * Mutation
   , setAllFoci
   , setFoci
@@ -38,7 +41,9 @@ module Bio.Sequence.Metadata
 
 
 import           Bio.Sequence.Block.Metadata
+import           Bio.Sequence.Internal
 import           Control.DeepSeq
+import           Control.Lens
 import           Data.Foldable
 import           Data.List.NonEmpty          (NonEmpty)
 import           Data.MonoTraversable
@@ -69,6 +74,11 @@ instance Functor MetadataSequence where
     fmap f = fromBlocks . fmap (fmap f) . toBlocks
 
     (<$) v = fromBlocks . fmap (v <$) . toBlocks
+
+
+instance HasBlocks (MetadataSequence m) (MetadataSequence m) (Vector (MetadataBlock m)) (Vector (MetadataBlock m)) where
+
+    blockSequence = lens toBlocks $ const MetaSeq
 
 
 instance MonoFoldable (MetadataSequence m) where
@@ -122,26 +132,12 @@ instance ToXML (MetadataSequence m) where
 -- |
 -- Destructs a 'MetadataSequence' to it's composite blocks.
 {-# INLINE toBlocks #-}
-toBlocks :: MetadataSequence m -> NonEmpty (MetadataBlock m)
-toBlocks (MetaSeq x) = toNonEmpty x
+toBlocks :: MetadataSequence m -> Vector (MetadataBlock m)
+toBlocks (MetaSeq x) =  x
 
 
 -- |
--- Constructs a 'MetadataSequence' from a non-empty colection of blocks.
+-- Destructs a 'MetadataSequence' to it's composite blocks.
 {-# INLINE fromBlocks #-}
-fromBlocks :: NonEmpty (MetadataBlock m) -> MetadataSequence m
-fromBlocks = MetaSeq . V.fromNonEmpty
-
-
--- |
--- Destructs a 'MetadataSequence' to it's composite blocks.
-{-# INLINE toBlockVector #-}
-toBlockVector :: MetadataSequence m -> Vector (MetadataBlock m)
-toBlockVector (MetaSeq x) =  x
-
-
--- |
--- Destructs a 'MetadataSequence' to it's composite blocks.
-{-# INLINE fromBlockVector #-}
-fromBlockVector :: Vector (MetadataBlock m) -> MetadataSequence m
-fromBlockVector = MetaSeq
+fromBlocks :: Vector (MetadataBlock m) -> MetadataSequence m
+fromBlocks = MetaSeq

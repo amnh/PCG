@@ -270,6 +270,7 @@ library
                     Bio.Sequence.Block.Internal
                     Bio.Sequence.Block.Metadata
                     Bio.Sequence.Character
+                    Bio.Sequence.Internal
                     Control.Evaluation.Unit
                     Control.Evaluation.Internal
                     Control.Evaluation.Trans
