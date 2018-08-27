@@ -25,7 +25,6 @@ import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Metadata.Dynamic
 import           Bio.Sequence
-import           Bio.Sequence.Metadata              (MetadataBlock, getDynamicMetadata)
 import qualified Bio.Sequence.Metadata              as M
 import           Control.Applicative
 import           Control.Arrow                      ((&&&))
@@ -435,7 +434,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
           -> (Double, Vector (Word, Double, NonEmpty e))
         toMinimalBlockContext edge mBlock cBlock = (staticCost mBlock cBlock, dynCharVect)
           where
-            dynCharVect = zipWith (\mVal dec -> (dec ^. characterCost, mVal ^. characterWeight, pure edge)) (getDynamicMetadata mBlock) $ cBlock ^. dynamicBin
+            dynCharVect = zipWith (\mVal dec -> (dec ^. characterCost, mVal ^. characterWeight, pure edge)) (mBlock ^. dynamicBin) $ cBlock ^. dynamicBin
 
         recomputeCost (staticCostVal, dynCharVect) = (staticCostVal + minDynCharCost, dynCharNoWeight)
           where

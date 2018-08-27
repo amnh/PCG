@@ -19,15 +19,11 @@
 module Bio.Sequence.Metadata
   ( MetadataBlock()
   , MetadataSequence()
-  , getBlockMetadata
-  , getDynamicMetadata
   -- * Block Singletons
   , continuousToMetadataBlock
   , discreteToMetadataBlock
   , dynamicToMetadataBlock
   -- * Construction / Decomposition
-  , toBlocks
-  , fromBlocks
   , fromNonEmpty
   , unfoldr
   -- * Mutation

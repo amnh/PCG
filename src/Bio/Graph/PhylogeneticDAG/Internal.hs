@@ -45,8 +45,6 @@ import           Bio.Metadata.Dynamic
 import           Bio.Sequence
 import           Bio.Sequence.Block.Character    (CharacterBlock (..))
 import           Bio.Sequence.Block.Metadata     (MetadataBlock (..))
-import           Bio.Sequence.Metadata           (MetadataSequence, getBlockMetadata)
-import qualified Bio.Sequence.Metadata           as M
 import           Control.Applicative             (liftA2)
 import           Control.Arrow                   ((***))
 import           Control.DeepSeq
@@ -393,7 +391,7 @@ renderSummary pdag@(PDAG2 dag _) = unlines
 
 
 renderMetadata :: Show m => MetadataSequence m -> String
-renderMetadata = unlines . fmap (show . getBlockMetadata) . toList . M.toBlocks
+renderMetadata = unlines . fmap (show . (^. blockMetadata)) . toList . (^. blockSequence)
 
 
 -- |
@@ -454,7 +452,7 @@ renderBlockSummary (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displa
     , unlines . fmap renderDynamicCharacterSummary . toList . uncurry zip . ((^.     dynamicBin) *** (^.     dynamicBin))
     ] <*> [(mBlock, cBlock)]
   where
-    pair = (M.toBlocks meta ! key, block)
+    pair = ((meta ^. blockSequence) ! key, block)
     (MB _ mBlock, CB cBlock) = pair
 
     renderedPrefix = "Block " <> show key <> "\n\n"

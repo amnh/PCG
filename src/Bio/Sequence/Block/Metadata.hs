@@ -26,13 +26,11 @@ module Bio.Sequence.Block.Metadata
   , HasMetricBin(..)
   , HasNonMetricBin(..)
   , HasDynamicBin(..)
-  -- * Deprecated accessors
-  , getBlockMetadata
-  , getDynamicMetadata
   -- * Construction
   , continuousToMetadataBlock
   , discreteToMetadataBlock
   , dynamicToMetadataBlock
+  -- * Mutation
   , setAllFoci
   , setFoci
   ) where
@@ -151,22 +149,26 @@ instance ToXML (MetadataBlock m) where
             ] <*> [block]
 
 
+-- |
+-- Set all the 'TraversalFoci' of all dynamic characters in the block to the
+-- supplied value.
 setAllFoci :: TraversalFoci -> MetadataBlock m -> MetadataBlock m
 setAllFoci foci (MB m b) = MB m $ b { _dynamicBin = (traversalFoci ?~ foci) <$> _dynamicBin b }
 
 
+-- |
+-- Set the 'TraversalFoci' of each dynamic characters in the block to the
+-- corresponding value in the supplied vector.
+--
+-- If the supplied vector of 'TraversalFoci' has fewer values than there are
+-- dynamic characters in the 'MetadataBlock', then the dynamic characters will
+-- be truncated to the length of the supplied vector.
 setFoci :: Vector TraversalFoci -> MetadataBlock m -> MetadataBlock m
 setFoci fociVec (MB m b) = MB m $ b { _dynamicBin = zipWith (\foci dec -> dec & traversalFoci ?~ foci) fociVec $ _dynamicBin b }
 
 
-getBlockMetadata :: MetadataBlock m -> m
-getBlockMetadata = _blockMetadata
-
-
-getDynamicMetadata :: MetadataBlock m -> Vector (DynamicCharacterMetadataDec DynamicCharacterElement)
-getDynamicMetadata (MB _ x) = x ^. dynamicBin
-
-
+-- |
+-- Construct a singleton block containing a /continuous/ character's metadata.
 continuousToMetadataBlock
   :: ContinuousCharacterMetadataDec
   -> MetadataBlock ()
@@ -181,6 +183,8 @@ continuousToMetadataBlock v = MB ()
     }
 
 
+-- |
+-- Construct a singleton block containing a /discrete/ character's metadata.
 discreteToMetadataBlock
   :: TCMStructure
   -> DiscreteWithTCMCharacterMetadataDec StaticCharacter
@@ -236,6 +240,8 @@ discreteToMetadataBlock struct v =
         }
 
 
+-- |
+-- Construct a singleton block containing a /dynamic/ character's metadata.
 dynamicToMetadataBlock
   :: DynamicCharacterMetadataDec DynamicCharacterElement
   -> MetadataBlock ()

@@ -19,7 +19,6 @@ import           Bio.Graph.Node
 import qualified Bio.Graph.ReferenceDAG              as DAG
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
-import           Bio.Sequence.Metadata
 import           Control.Arrow                       ((&&&))
 import           Control.DeepSeq
 import           Control.Lens

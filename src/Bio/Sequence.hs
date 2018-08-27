@@ -17,11 +17,18 @@
 {-# LANGUAGE TypeFamilies     #-}
 
 module Bio.Sequence
-  ( CharacterSequence()
-  , CharacterBlock()
+  (
+  -- * CharacterSequence types
+    CharacterBlock()
+  , CharacterSequence()
+  -- * MetadataSequence types
+  , MetadataBlock()
+  , MetadataSequence()
+  -- * Construction types
+  , PartialCharacterBlock()
+  -- * Sequence constraints
   , HasBlockCost
   , HasRootCost
-  , PartialCharacterBlock()
   -- * Lenses
   , HasBlocks(..)
   , HasBlockMetadata(..)

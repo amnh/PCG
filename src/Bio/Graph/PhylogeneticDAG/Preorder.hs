@@ -30,8 +30,6 @@ import           Bio.Metadata
 import           Bio.Sequence
 import qualified Bio.Sequence.Block                 as BLK
 import qualified Bio.Sequence.Character             as CS
-import           Bio.Sequence.Metadata              (MetadataSequence)
-import qualified Bio.Sequence.Metadata              as M
 import           Control.Arrow                      ((&&&))
 import           Control.Lens
 import           Control.Monad.State.Lazy
@@ -179,7 +177,7 @@ getSequenceOfBlockMinimumTopologies (PDAG2 dag meta) = getTopologies blockMinima
 
         sequenceWLOG   = characterSequence $ NE.head rootResolutions
 
-        getMetaBlock i = M.toBlocks meta ! i
+        getMetaBlock i = (meta ^. blockSequence) ! i
 
         f key _block   = minimumBy (comparing extractedBlockCost)
                          rootResolutions
