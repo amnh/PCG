@@ -13,42 +13,31 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric          #-}
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Bio.Sequence.Character
   ( CharacterSequence()
   , HasBlockCost
+  , fromNonEmpty
+  , unfoldr
   ) where
 
-import           Bio.Character.Encodable
-import           Bio.Metadata.Continuous
-import           Bio.Metadata.Discrete
-import           Bio.Metadata.DiscreteWithTCM
-import           Bio.Metadata.Dynamic
-import           Bio.Sequence.Block           (CharacterBlock, HasBlockCost, HasRootCost)
-import qualified Bio.Sequence.Block           as Blk
+import           Bio.Sequence.Block      (CharacterBlock, HasBlockCost)
 import           Bio.Sequence.Internal
 import           Control.DeepSeq
 import           Control.Lens
-import           Control.Parallel.Custom
-import           Control.Parallel.Strategies
 import           Data.Bifunctor
-import           Data.DList                   hiding (foldr, toList)
 import           Data.Foldable
 import           Data.Key
-import           Data.List.NonEmpty           (NonEmpty)
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
-import           Data.Semigroup.Traversable
-import           Data.Vector.NonEmpty         (Vector)
-import qualified Data.Vector.NonEmpty         as V
+import           Data.Vector.NonEmpty    (Vector)
+import qualified Data.Vector.NonEmpty    as V
 import           GHC.Generics
-import           Prelude                      hiding (zip)
 import           Text.XML
 
 
@@ -171,6 +160,35 @@ instance ( ToXML u
 
     toXML = collapseElemList "Character_sequence" [] . toBlocks
 
+
+-- |
+-- /O(n)/
+--
+-- Construct a 'CharacterSequence' from a non-empty structure of character blocks.
+{-# INLINE fromNonEmpty #-}
+fromNonEmpty
+  :: Foldable1 f
+  => f (CharacterBlock u v w x y z)
+  -> CharacterSequence u v w x y z
+fromNonEmpty = CharSeq . V.fromNonEmpty
+
+
+-- |
+-- /O(n)/
+--
+-- Construct a 'CharacterSequence' by repeatedly applying the generator function
+-- to a seed. The generator function always yields the next element and either
+-- @ Just @ the new seed or 'Nothing' if there are no more elements to be
+-- generated.
+--
+-- > unfoldr (\n -> (n, if n == 0 then Nothing else Just (n-1))) 10
+-- >  = <10,9,8,7,6,5,4,3,2,1>
+{-# INLINE unfoldr #-}
+unfoldr
+  :: (b -> (CharacterBlock u v w x y z, Maybe b))
+  -> b
+  -> CharacterSequence u v w x y z
+unfoldr f = CharSeq . V.unfoldr f
 
 
 {-# INLINE fromBlocks #-}

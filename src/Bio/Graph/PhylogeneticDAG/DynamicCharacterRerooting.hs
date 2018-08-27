@@ -45,6 +45,7 @@ import           Data.Semigroup.Foldable
 import           Data.Tuple                         (swap)
 import           Data.Vector                        (Vector)
 import qualified Data.Vector                        as V
+import qualified Data.Vector.NonEmpty               as NEV
 import           Prelude                            hiding (lookup, zipWith)
 
 
@@ -105,6 +106,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
 
     -- Step 3: For each display tree, for each dynamic character, find the
     -- minimal cost edge(s).
+    minimalDisplayTreeRerootings :: HashMap TraversalTopology (NonEmpty (Double, Vector (Word, NonEmpty TraversalFocusEdge)))
     minimalDisplayTreeRerootings = displayTreeRerooting
 
     -- Step 4: Update the dynamic character decoration's cost & add an edge reference.
@@ -412,7 +414,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
           :: HasBlockCost u v w x y z
           => (e, CharacterSequence u v w x y z)
           -> NonEmpty (Double, Vector (Word, Double, NonEmpty e))
-        createZippableContext (edge, charSeq) = zipWith (toMinimalBlockContext edge) (M.toBlocks meta) (toBlocks charSeq)
+        createZippableContext (edge, charSeq) = toNonEmpty $ zipWith (toMinimalBlockContext edge) (meta ^. blockSequence) (charSeq ^. blockSequence)
 
         -- We create a minimization context for a given character block and a
         -- corresponding rooting edge (traversal focus) by extracting a vector
@@ -630,9 +632,9 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
             }
           where
             resolutionTopology = topologyRepresentation resInfo
-            minimizedSequence  = minimalDisplayTreeRerootings ! resolutionTopology
+            minimizedSequence  = NEV.fromNonEmpty $ minimalDisplayTreeRerootings ! resolutionTopology
             newTotalCost       = sequenceCost meta modifiedSequence
-            modifiedSequence   = fromBlocks . zipWith g minimizedSequence . toBlocks $ characterSequence resInfo
+            modifiedSequence   = over blockSequence (zipWith g minimizedSequence) $ characterSequence resInfo
 
             -- The "block-wise" transformation.
             --
@@ -666,8 +668,8 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                       & characterCost .~ costVal
 
 
-    -- Step 5: Update the metdata seuqnece with the TraversalFoci for each dynamic character
-    modifiedMetadataSequence = M.fromBlocks . zipWith M.setFoci fociSequence $ M.toBlocks meta
+    -- Step 5: Update the metdata sequence with the TraversalFoci for each dynamic character
+    modifiedMetadataSequence = over blockSequence (zipWith M.setFoci fociSequence) meta
       where
         rootTopologies :: NonEmpty TraversalTopology
         rootTopologies = do
@@ -681,8 +683,8 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
         topologySequences :: NonEmpty (NonEmpty (Vector TraversalFoci))
         topologySequences = (\(topo, x) -> fmap (fmap (id &&& const topo) . snd) . snd <$> x) <$> rootContextVectors
 
-        fociSequence :: NonEmpty (Vector TraversalFoci)
-        fociSequence = foldr1 (zipWith (zipWith (<>))) topologySequences
+        fociSequence :: NEV.Vector (Vector TraversalFoci)
+        fociSequence = NEV.fromNonEmpty $ foldr1 (zipWith (zipWith (<>))) topologySequences
 
 
 (.!>.) :: (Lookup f, Show (Key f)) => f a -> Key f -> a

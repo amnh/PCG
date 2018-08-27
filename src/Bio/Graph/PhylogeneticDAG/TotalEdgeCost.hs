@@ -30,8 +30,6 @@ import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
-import           Bio.Sequence.Metadata                         (getDynamicMetadata)
-import qualified Bio.Sequence.Metadata                         as M
 import           Control.Applicative
 import           Control.DeepSeq
 import           Control.Lens
@@ -44,6 +42,7 @@ import           Data.List.NonEmpty                            (NonEmpty (..))
 import qualified Data.List.NonEmpty                            as NE
 import           Data.MonoTraversable
 import           Data.Semigroup
+import           Data.Semigroup.Foldable
 import           Prelude                                       hiding (zipWith)
 
 --import Debug.Trace
@@ -62,23 +61,23 @@ totalEdgeCosts
   => PhylogeneticDAG2 m e n u v w x y z
   -> NonEmpty [Double]
 --totalEdgeCosts _ (PDAG2 dag _) | trace ("Before Total Edge Cost: " <> referenceRendering dag) False = undefined
-totalEdgeCosts (PDAG2 dag meta) = applyWeights $ foldlWithKey f initAcc refVec
+totalEdgeCosts (PDAG2 dag meta) = {-- toNonEmpty . --} applyWeights $ foldlWithKey f initAcc refVec
   where
-    refVec = references dag
+    refVec  = references dag
 
-    roots  = rootRefs dag
+    roots   = rootRefs dag
 
     initAcc = (0 <$) . toList . (^. dynamicBin) <$> sequencesWLOG
 
     sequencesWLOG = getSequence $ NE.head roots
 
-    dynamicMetadataSeq = toList . getDynamicMetadata <$> M.toBlocks meta
+    dynamicMetadataSeq = toList . (^. dynamicBin) <$> toNonEmpty (meta ^. blockSequence)
 
     getSequence = NE.fromList . otoList . characterSequence . NE.head . resolutions . nodeDecoration . (refVec !)
 
-    getFields = fmap (fmap (^. singleDisambiguation) . toList . (^. dynamicBin)) . getSequence
+    getFields        = fmap (fmap (^. singleDisambiguation) . toList . (^. dynamicBin)) . getSequence
 
-    weightSequence = fmap (^. characterWeight) <$> dynamicMetadataSeq
+    weightSequence   = fmap (^. characterWeight) <$> dynamicMetadataSeq
 
     functionSequence = fmap getDynamicMetric <$> dynamicMetadataSeq
       where

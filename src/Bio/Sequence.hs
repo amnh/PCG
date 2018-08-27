@@ -13,7 +13,6 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric    #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies     #-}
 
@@ -24,6 +23,7 @@ module Bio.Sequence
   , HasRootCost
   , PartialCharacterBlock()
   -- * Lenses
+  , HasBlocks(..)
   , HasBlockMetadata(..)
   , HasContinuousBin(..)
   , HasNonAdditiveBin(..)
@@ -64,7 +64,7 @@ import           Bio.Sequence.Metadata        (MetadataSequence)
 import           Control.Lens
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
-import           Data.DList                   hiding (foldr, toList)
+import           Data.DList                   hiding (toList)
 import           Data.Foldable
 import           Data.Key
 import           Data.MonoTraversable

@@ -8,17 +8,13 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Data structures and instances for coded characters
--- Coded characters are dynamic characters recoded as
---
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric          #-}
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Bio.Sequence.Metadata
   ( MetadataBlock()
@@ -32,8 +28,8 @@ module Bio.Sequence.Metadata
   -- * Construction / Decomposition
   , toBlocks
   , fromBlocks
---  , toBlockVector
---  , fromBlockVector
+  , fromNonEmpty
+  , unfoldr
   -- * Mutation
   , setAllFoci
   , setFoci
@@ -45,7 +41,6 @@ import           Bio.Sequence.Internal
 import           Control.DeepSeq
 import           Control.Lens
 import           Data.Foldable
-import           Data.List.NonEmpty          (NonEmpty)
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
 import           Data.Vector.NonEmpty        (Vector)
@@ -76,7 +71,7 @@ instance Functor MetadataSequence where
     (<$) v = fromBlocks . fmap (v <$) . toBlocks
 
 
-instance HasBlocks (MetadataSequence m) (MetadataSequence m) (Vector (MetadataBlock m)) (Vector (MetadataBlock m)) where
+instance HasBlocks (MetadataSequence m) (MetadataSequence m') (Vector (MetadataBlock m)) (Vector (MetadataBlock m')) where
 
     blockSequence = lens toBlocks $ const MetaSeq
 
@@ -127,6 +122,36 @@ instance (NFData m) => NFData (MetadataSequence m)
 instance ToXML (MetadataSequence m) where
 
     toXML = collapseElemList "Metadata_sequence" [] . toBlocks
+
+
+-- |
+-- /O(n)/
+--
+-- Construct a 'MetadataSequence' from a non-empty structure of character blocks.
+{-# INLINE fromNonEmpty #-}
+fromNonEmpty
+  :: Foldable1 f
+  => f (MetadataBlock m)
+  -> MetadataSequence m
+fromNonEmpty = MetaSeq . V.fromNonEmpty
+
+
+-- |
+-- /O(n)/
+--
+-- Construct a 'MetadataSequence' by repeatedly applying the generator function
+-- to a seed. The generator function always yields the next element and either
+-- @ Just @ the new seed or 'Nothing' if there are no more elements to be
+-- generated.
+--
+-- > unfoldr (\n -> (n, if n == 0 then Nothing else Just (n-1))) 10
+-- >  = <10,9,8,7,6,5,4,3,2,1>
+{-# INLINE unfoldr #-}
+unfoldr
+  :: (b -> (MetadataBlock m, Maybe b))
+  -> b
+  -> MetadataSequence m
+unfoldr f = MetaSeq . V.unfoldr f
 
 
 -- |
