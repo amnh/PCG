@@ -123,6 +123,7 @@ library
                     , deepseq
                     , data-default
                     , dlist
+                    , foldl
                     -- >=2999.20 Required for forgivig constructio of DOT object
                     , graphviz           >=2999.20
                     , hashable
@@ -478,6 +479,7 @@ Test-Suite testsuite
                     , containers         >=0.5.8
                     , deepseq
                     , dlist
+                    , foldl
                     , hashable
                     , integer-gmp
                     , keys

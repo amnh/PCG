@@ -69,7 +69,7 @@ evaluate (READ (ReadCommand fileSpecs)) = do
         case decoration . masterUnify $ transformation <$> concat xs of
           Left uErr -> fail $ show uErr -- Report unification errors here.
            -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
-          Right g   -> liftIO (compact g)
+          Right g   -> liftIO (compact  g)
                        -- liftIO (putStrLn "DECORATION CALL:" *> print g) *> pure g
                        -- (liftIO . putStrLn {- . take 500000 -} $ either show (ppTopElement . toXML) g)
                        -- (liftIO . putStrLn $ show g) $> g

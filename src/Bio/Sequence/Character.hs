@@ -62,7 +62,6 @@ import           GHC.Generics
 import           Prelude                      hiding (zip)
 import           Text.XML
 
-
 -- |
 -- A multi-level partitioned, non-empty sequence of characters.
 --

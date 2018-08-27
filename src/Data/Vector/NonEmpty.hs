@@ -27,6 +27,7 @@ module Data.Vector.NonEmpty
 
 
 import           Control.DeepSeq
+import qualified Control.Foldl              as L
 import           Data.Data
 import           Data.Foldable
 import           Data.Functor.Alt
@@ -143,7 +144,10 @@ singleton = NEV . V.singleton
 -- Construct a 'Vector' from a non-empty structure.
 {-# INLINE fromNonEmpty #-}
 fromNonEmpty :: Foldable1 f => f a -> Vector a
-fromNonEmpty = NEV . V.fromList . toList . toNonEmpty
+fromNonEmpty = NEV . uncurry V.fromListN . L.fold f
+  where
+    f :: L.Fold a (Int, [a])
+    f = (,) <$> L.length <*> L.list
 
 
 -- |
@@ -157,11 +161,12 @@ fromNonEmpty = NEV . V.fromList . toList . toNonEmpty
 -- >  = <10,9,8,7,6,5,4,3,2,1>
 {-# INLINE unfoldr #-}
 unfoldr :: (b -> (a, Maybe b)) -> b -> Vector a
-unfoldr f = NEV . V.fromList . go
+unfoldr f = NEV . uncurry V.fromListN . go 0
   where
-    go b =
-        case f b of
-          (v, mb) -> v : maybe [] go mb
+--  go :: Int -> b -> (Int, [a])
+    go n b =
+         let (v, mb) = f b
+         in  (v:) <$> maybe (n, []) (go (n+1)) mb
 
 
 -- | /O(n)/

@@ -49,15 +49,15 @@ import           Bio.Sequence.Block.Builder
 import           Bio.Sequence.Block.Internal
 import           Bio.Sequence.Block.Metadata  (MetadataBlock (..))
 import           Control.DeepSeq
+import qualified Control.Foldl                as L
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Bifunctor
 import           Data.Foldable
 import           Data.MonoTraversable         (Element)
-import           Data.Vector                  (Vector, fromList)
+import           Data.Vector                  (Vector, fromListN)
 import qualified Data.Vector                  as V
 import           Data.Vector.Instances        ()
-import           Data.Void
 import           GHC.Generics
 import           Text.XML
 
@@ -145,7 +145,10 @@ finalizeCharacterBlock = CB . (
       <*> fromDList . partialDynamicCharacters
     )
   where
-    fromDList = fromList . toList
+    fromDList = uncurry fromListN . L.fold f
+      where
+        f :: L.Fold a (Int, [a])
+        f = (,) <$> L.length <*> L.list
 
 
 continuousCharacterBins :: CharacterBlock u v w x y z -> Vector u

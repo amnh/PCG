@@ -20,7 +20,7 @@ module PCG.Command.Report.GraphViz
 
 import           Bio.Graph
 import           Data.Compact           (getCompact)
-import           Data.GraphViz.Printing hiding ((<>))
+import           Data.GraphViz.Printing
 import qualified Data.Text.Lazy         as L
 
 
