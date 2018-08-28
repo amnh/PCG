@@ -268,6 +268,7 @@ data  PreorderContext c
     = NormalNode   Int
     | SetRootNode  c
     | FociEdgeNode Int c
+    | NoBlockData
 
 
 -- |
@@ -319,8 +320,22 @@ preorderFromRooting transformation edgeCostMapping contextualNodeDatum minTopolo
 
 
     -- |
-    -- For each Node, for each block, for each dynamic character, parent ref index or root datum.
-    -- parentVectors :: Matrix (Vector (Either (c, Int) Int))
+    -- For each Node,
+    --   for each block,
+    --     for each dynamic character,
+    --        if   the block exists in the network context,
+    --        then either the parent ref index or the root datum.
+    --
+    -- matrix rows   index: node index
+    -- matrix column index: block index
+    -- nested vector index: dynamic character index of block
+    -- block context value: the parental context for the given block
+    --   NormalNode   -> parent  is another node in the graph
+    --   SetRootNode  -> parent is a root node of the graph structure
+    --   FociEdgeNode -> parent is a "virtual root node" from rerooting
+    --   NoBlockData  -> parent does not exist because for this block because
+    --                     no block data exists in the network context
+    -- parentVectors :: Matrix (Vector (PreorderContext c))
     parentVectors = MAT.matrix nodeCount blockCount g
       where
         g (nodeIndex, blockIndex) = (! nodeIndex) <$> dynCharVec
