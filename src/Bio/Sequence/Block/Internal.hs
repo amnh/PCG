@@ -33,7 +33,8 @@ import Control.DeepSeq
 import Control.Lens
 import Data.Bifunctor
 import Data.Foldable
-import Data.Vector           (Vector)
+import Data.Semigroup
+import Data.Vector           (Vector, fromListN)
 import Data.Vector.Instances ()
 import GHC.Generics
 import Text.XML
@@ -109,15 +110,6 @@ class HasDynamicBin s t a b | s -> a, t -> b where
 
     dynamicBin :: Lens s t a b
     {-# MINIMAL dynamicBin #-}
-
-
-{-
-instance HasBlockMetadata (Block u v w x y z) m where
-
-    {-# INLINE blockMetadata #-}
-    blockMetadata = lens _blockMetadata $
-                    \e x -> e { _blockMetadata = x }
--}
 
 
 instance HasContinuousBin (Block u v w x y z) (Vector u) where
@@ -206,18 +198,6 @@ instance Functor (Block u v w x y) where
           <*> (v <$) . _dynamicBin
 
 
-{-
-instance ( NFData u
-         , NFData v
-         , NFData w
-         , NFData x
-         , NFData y
-         , NFData z
-         ) => NFData (Block u v w x y z)
--}
-
-
--- | (✔)
 instance Semigroup (Block u v w x y z) where
 
     lhs <> rhs =
@@ -230,8 +210,33 @@ instance Semigroup (Block u v w x y z) where
           , _dynamicBin     = _dynamicBin     lhs <> _dynamicBin     rhs
           }
 
+    sconcat = 
+        Block
+          <$> sconcat . fmap  _continuousBin
+          <*> sconcat . fmap _nonAdditiveBin
+          <*> sconcat . fmap    _additiveBin
+          <*> sconcat . fmap      _metricBin
+          <*> sconcat . fmap   _nonMetricBin
+          <*> sconcat . fmap     _dynamicBin
 
--- | (✔)
+    stimes i _ | i < 1 = error $ mconcat
+        [ "Call to Bio.Sequence.Block.stimes with non-positive value: "
+        , show (fromIntegral i :: Integer)
+        , " <= 0"
+        ]
+    stimes i v = 
+        let !n = fromIntegral i
+            genVect x = fromListN (n * length x) . fold . replicate n $ toList x
+        in  Block
+              <$> genVect .  _continuousBin
+              <*> genVect . _nonAdditiveBin
+              <*> genVect .    _additiveBin
+              <*> genVect .      _metricBin
+              <*> genVect .   _nonMetricBin
+              <*> genVect .     _dynamicBin
+              $ v
+
+
 instance ( Show u
          , Show v
          , Show w
@@ -259,7 +264,6 @@ instance ( Show u
         niceRendering = unlines . fmap (unlines . fmap ("  " <>) . lines . show) . toList
 
 
--- | (✔)
 instance ( ToXML u -- This is NOT a redundant constraint.
          , ToXML v
          , ToXML w

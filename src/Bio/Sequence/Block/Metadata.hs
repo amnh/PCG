@@ -17,7 +17,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 module Bio.Sequence.Block.Metadata
-  ( MetadataBlock(MB)
+  ( MetadataBlock()
   -- * Lenses
   , HasBlockMetadata(..)
   , HasContinuousBin(..)

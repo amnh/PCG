@@ -43,7 +43,6 @@ import           Bio.Metadata.Discrete
 import           Bio.Metadata.DiscreteWithTCM
 import           Bio.Metadata.Dynamic
 import           Bio.Sequence
-import           Bio.Sequence.Block.Character    (CharacterBlock (..))
 import           Control.Applicative             (liftA2)
 import           Control.Arrow                   ((***))
 import           Control.DeepSeq

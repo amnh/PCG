@@ -43,6 +43,7 @@ module Bio.Sequence
   , discreteSingleton
   , dynamicSingleton
   , finalizeCharacterBlock
+  , nonExistantBlock
   -- * CharacterBlock transformations
   , toMissingCharacters
   , hexmap
@@ -64,7 +65,7 @@ import           Bio.Metadata.Dynamic
 import           Bio.Sequence.Block           hiding (hexTranspose, hexZipWith, hexZipWithMeta, hexmap)
 import qualified Bio.Sequence.Block           as Blk
 import           Bio.Sequence.Block.Builder
-import           Bio.Sequence.Block.Character (finalizeCharacterBlock)
+import           Bio.Sequence.Block.Character (finalizeCharacterBlock, nonExistantBlock)
 import           Bio.Sequence.Character       (CharacterSequence)
 import           Bio.Sequence.Internal
 import           Bio.Sequence.Metadata        (MetadataSequence)

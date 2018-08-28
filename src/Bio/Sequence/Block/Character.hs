@@ -10,16 +10,15 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveAnyClass             #-}
-{-# LANGUAGE DeriveGeneric              #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE UnboxedSums                #-}
+{-# LANGUAGE DeriveAnyClass        #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE UnboxedSums           #-}
 
 module Bio.Sequence.Block.Character
-  ( CharacterBlock(..)
+  ( CharacterBlock()
   -- * Lenses
   , HasBlockMetadata(..)
   , HasContinuousBin(..)
@@ -33,6 +32,7 @@ module Bio.Sequence.Block.Character
   , continuousSingleton
   , discreteSingleton
   , dynamicSingleton
+  , nonExistantBlock
   -- * Transformations
   , hexmap
   , hexTranspose
@@ -49,14 +49,16 @@ import           Bio.Metadata.DiscreteWithTCM
 import           Bio.Metadata.Dynamic
 import           Bio.Sequence.Block.Builder
 import           Bio.Sequence.Block.Internal
-import           Bio.Sequence.Block.Metadata  (MetadataBlock (..))
+import           Bio.Sequence.Block.Metadata  (MetadataBlock)
 import           Control.DeepSeq
 import           Control.Lens
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Bifunctor
 import           Data.Foldable
+import           Data.List.NonEmpty           (NonEmpty (..))
 import           Data.MonoTraversable         (Element)
+import           Data.Semigroup
 import           Data.Vector                  (Vector, fromList)
 import qualified Data.Vector                  as V
 import           Data.Vector.Instances        ()
@@ -75,11 +77,6 @@ data CharacterBlock u v w x y z
     deriving (Eq, Generic, NFData)
 
 
-unwrapWith :: Monoid a => (Block u v w x y z -> a) -> CharacterBlock u v w x y z -> a
-unwrapWith _ BlockDoesNotExist = mempty
-unwrapWith f (CB block)        = f block
-
-
 instance HasContinuousBin (CharacterBlock u v w x y z) (Vector u) where
 
     {-# INLINE continuousBin #-}
@@ -87,7 +84,7 @@ instance HasContinuousBin (CharacterBlock u v w x y z) (Vector u) where
         $ \cb v -> case cb of
                      (CB b)            -> CB (b { _continuousBin = v })
                      BlockDoesNotExist ->
-                         if length v == 0
+                         if null v
                          then cb
                          else CB Block
                                  { _continuousBin  = v
@@ -106,7 +103,7 @@ instance HasNonAdditiveBin (CharacterBlock u v w x y z) (Vector v) where
         $ \cb v -> case cb of
                      (CB b)            -> CB (b { _nonAdditiveBin = v })
                      BlockDoesNotExist ->
-                         if length v == 0
+                         if null v
                          then cb
                          else CB Block
                                  { _continuousBin  = mempty
@@ -125,7 +122,7 @@ instance HasAdditiveBin (CharacterBlock u v w x y z) (Vector w) where
         $ \cb v -> case cb of
                      (CB b)            -> CB (b { _additiveBin = v })
                      BlockDoesNotExist ->
-                         if length v == 0
+                         if null v
                          then cb
                          else CB Block
                                  { _continuousBin  = mempty
@@ -144,7 +141,7 @@ instance HasMetricBin (CharacterBlock u v w x y z) (Vector x) where
         $ \cb v -> case cb of
                      (CB b)            -> CB (b { _metricBin = v })
                      BlockDoesNotExist ->
-                         if length v == 0
+                         if null v
                          then cb
                          else CB Block
                                  { _continuousBin  = mempty
@@ -163,7 +160,7 @@ instance HasNonMetricBin (CharacterBlock u v w x y z) (Vector y) where
         $ \cb v -> case cb of
                      (CB b)            -> CB (b { _nonMetricBin = v })
                      BlockDoesNotExist ->
-                         if length v == 0
+                         if null v
                          then cb
                          else CB Block
                                  { _continuousBin  = mempty
@@ -182,7 +179,7 @@ instance HasDynamicBin (CharacterBlock u v w x y z) (CharacterBlock u v w x y z'
         $ \cb v -> case cb of
                      (CB b)            -> CB (b { _dynamicBin = v })
                      BlockDoesNotExist ->
-                         if length v == 0
+                         if null v
                          then BlockDoesNotExist
                          else CB Block
                                  { _continuousBin  = mempty
@@ -220,7 +217,7 @@ instance Bifunctor (CharacterBlock u v w x) where
 
     second = fmap
 
-  
+
 instance Functor (CharacterBlock u v w x y) where
 
     fmap f (CB b) = CB $ f <$> b
@@ -242,7 +239,23 @@ instance Semigroup (CharacterBlock u v w x y z) where
 
     (<>) BlockDoesNotExist rhs = rhs
     (<>) lhs BlockDoesNotExist = lhs
-    (<>) (CB lhs) (CB rhs) = CB $ lhs <> rhs
+    (<>) (CB lhs) (CB rhs)     = CB $ lhs <> rhs
+
+    sconcat cbs =
+        case foldMap unwrapCharacterBlock cbs of
+          []   -> BlockDoesNotExist
+          x:xs -> CB . sconcat $ x:|xs
+      where
+        unwrapCharacterBlock (CB b) = [b]
+        unwrapCharacterBlock  _     = []
+
+    stimes i _ | i < 1 = error $ mconcat
+        [ "Call to Bio.Sequence.CharacterBlock.stimes with non-positive value: "
+        , show (fromIntegral i :: Integer)
+        , " <= 0"
+        ]
+    stimes _ BlockDoesNotExist = BlockDoesNotExist
+    stimes i (CB b) = CB $ stimes i b
 
 
 instance ( Show u
@@ -311,42 +324,14 @@ finalizeCharacterBlock = CB . (
     fromDList = fromList . toList
 
 
-continuousCharacterBins :: CharacterBlock u v w x y z -> Vector u
-continuousCharacterBins = unwrapWith (^. continuousBin)
-
-
-nonAdditiveCharacterBins :: CharacterBlock u v w x y z -> Vector v
-nonAdditiveCharacterBins = unwrapWith (^. nonAdditiveBin)
-
-
-additiveCharacterBins :: CharacterBlock u v w x y z -> Vector w
-additiveCharacterBins = unwrapWith (^. additiveBin)
-
-
-metricCharacterBins :: CharacterBlock u v w x y z -> Vector x
-metricCharacterBins = unwrapWith (^. metricBin)
-
-
-nonMetricCharacterBins :: CharacterBlock u v w x y z -> Vector y
-nonMetricCharacterBins = unwrapWith (^. nonMetricBin)
-
-
-dynamicCharacters :: CharacterBlock u v w x y z -> Vector z
-dynamicCharacters = unwrapWith (^. dynamicBin)
-
-
-{-
-setDynamicCharacters :: Vector z -> CharacterBlock u v w x y a -> CharacterBlock u v w x y z
-setDynamicCharacters v = CB . (
-    Block
-      <$> continuousCharacterBins
-      <*> nonAdditiveCharacterBins
-      <*> additiveCharacterBins
-      <*> metricCharacterBins
-      <*> nonMetricCharacterBins
-      <*> const v
-    )
--}
+-- |
+-- Creates a representation for a non-existant character block.
+--
+-- This is used when a character block does not exist on a node for a given
+-- network content.
+{-# INLINE nonExistantBlock #-}
+nonExistantBlock :: CharacterBlock u v w x y z
+nonExistantBlock = BlockDoesNotExist
 
 
 -- |
@@ -362,12 +347,12 @@ hexmap
  -> CharacterBlock u' v' w' x' y' z'
 hexmap f1 f2 f3 f4 f5 f6 = CB . (
     Block
-      <$> (parmap rpar f1 . continuousCharacterBins )
-      <*> (parmap rpar f2 . nonAdditiveCharacterBins)
-      <*> (parmap rpar f3 . additiveCharacterBins   )
-      <*> (parmap rpar f4 . metricCharacterBins     )
-      <*> (parmap rpar f5 . nonMetricCharacterBins  )
-      <*> (parmap rpar f6 . dynamicCharacters       )
+      <$> (parmap rpar f1 . (^.  continuousBin))
+      <*> (parmap rpar f2 . (^. nonAdditiveBin))
+      <*> (parmap rpar f3 . (^.    additiveBin))
+      <*> (parmap rpar f4 . (^.      metricBin))
+      <*> (parmap rpar f5 . (^.   nonMetricBin))
+      <*> (parmap rpar f6 . (^.     dynamicBin))
     )
 
 -- |
@@ -382,12 +367,12 @@ hexTranspose
   -> CharacterBlock (t u) (t v) (t w) (t x) (t y) (t z)
 hexTranspose = CB . (
     Block
-      <$> transposition continuousCharacterBins
-      <*> transposition nonAdditiveCharacterBins
-      <*> transposition additiveCharacterBins
-      <*> transposition metricCharacterBins
-      <*> transposition nonMetricCharacterBins
-      <*> transposition dynamicCharacters
+      <$> transposition (^.  continuousBin)
+      <*> transposition (^. nonAdditiveBin)
+      <*> transposition (^.    additiveBin)
+      <*> transposition (^.      metricBin)
+      <*> transposition (^.   nonMetricBin)
+      <*> transposition (^.     dynamicBin)
     )
   where
     transposition f xs =
@@ -417,12 +402,12 @@ hexZipWith
   -> CharacterBlock u'' v'' w'' x'' y'' z''
 hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = CB
     Block
-      { _continuousBin  = parZipWith rpar f1 (continuousCharacterBins  lhs) (continuousCharacterBins  rhs)
-      , _nonAdditiveBin = parZipWith rpar f2 (nonAdditiveCharacterBins lhs) (nonAdditiveCharacterBins rhs)
-      , _additiveBin    = parZipWith rpar f3 (additiveCharacterBins    lhs) (additiveCharacterBins    rhs)
-      , _metricBin      = parZipWith rpar f4 (metricCharacterBins      lhs) (metricCharacterBins      rhs)
-      , _nonMetricBin   = parZipWith rpar f5 (nonMetricCharacterBins   lhs) (nonMetricCharacterBins   rhs)
-      , _dynamicBin     = parZipWith rpar f6 (dynamicCharacters        lhs) (dynamicCharacters        rhs)
+      { _continuousBin  = parZipWith rpar f1 (lhs ^.  continuousBin) (rhs ^.  continuousBin)
+      , _nonAdditiveBin = parZipWith rpar f2 (lhs ^. nonAdditiveBin) (rhs ^. nonAdditiveBin)
+      , _additiveBin    = parZipWith rpar f3 (lhs ^.    additiveBin) (rhs ^.    additiveBin)
+      , _metricBin      = parZipWith rpar f4 (lhs ^.      metricBin) (rhs ^.      metricBin)
+      , _nonMetricBin   = parZipWith rpar f5 (lhs ^.   nonMetricBin) (rhs ^.   nonMetricBin)
+      , _dynamicBin     = parZipWith rpar f6 (lhs ^.     dynamicBin) (rhs ^.     dynamicBin)
       }
 
 
@@ -468,10 +453,16 @@ toMissingCharacters
   -> CharacterBlock u v w x y z
 toMissingCharacters = CB . (
     Block
-      <$> (fmap toMissing . continuousCharacterBins)
-      <*> (fmap toMissing . nonAdditiveCharacterBins)
-      <*> (fmap toMissing . additiveCharacterBins)
-      <*> (fmap toMissing . metricCharacterBins)
-      <*> (fmap toMissing . nonMetricCharacterBins)
-      <*> (fmap toMissing . dynamicCharacters)
+      <$> (fmap toMissing . (^.  continuousBin))
+      <*> (fmap toMissing . (^. nonAdditiveBin))
+      <*> (fmap toMissing . (^.    additiveBin))
+      <*> (fmap toMissing . (^.      metricBin))
+      <*> (fmap toMissing . (^.   nonMetricBin))
+      <*> (fmap toMissing . (^.     dynamicBin))
     )
+
+
+{-# INLINE unwrapWith #-}
+unwrapWith :: Monoid a => (Block u v w x y z -> a) -> CharacterBlock u v w x y z -> a
+unwrapWith _ BlockDoesNotExist = mempty
+unwrapWith f (CB block)        = f block
