@@ -44,10 +44,12 @@ import Bio.Sequence.Block.Internal
 import Control.DeepSeq
 import Control.Lens
 import Data.Key
+import Data.List.NonEmpty           (last)
+import Data.Semigroup
 import Data.TCM
 import Data.Vector                  (Vector)
 import GHC.Generics
-import Prelude                      hiding (zipWith)
+import Prelude                      hiding (last, zipWith)
 import Text.XML
 import Text.XML.Light.Types
 
@@ -131,6 +133,17 @@ instance HasDynamicBin (MetadataBlock m) (MetadataBlock m) (Vector (DynamicChara
 instance Semigroup (MetadataBlock m) where
 
     (MB _ b1) <> (MB m2 b2) = MB m2 $ b1 <> b2
+
+    sconcat =
+        MB <$> (_blockMetadata . last)
+           <*> sconcat . fmap _blockDataSet
+
+    stimes i _ | i < 1 = error $ mconcat
+        [ "Call to Bio.Sequence.MetadataBlock.stimes with non-positive value: "
+        , show (fromIntegral i :: Integer)
+        , " <= 0"
+        ]
+    stimes i (MB m b) = MB m $ stimes i b
 
 
 instance ToXML (MetadataBlock m) where
