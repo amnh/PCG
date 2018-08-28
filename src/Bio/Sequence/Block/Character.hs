@@ -10,11 +10,13 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE UnboxedSums                #-}
 
 module Bio.Sequence.Block.Character
   ( CharacterBlock(..)
@@ -52,6 +54,7 @@ import           Control.DeepSeq
 import           Control.Lens
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
+import           Data.Bifunctor
 import           Data.Foldable
 import           Data.MonoTraversable         (Element)
 import           Data.Vector                  (Vector, fromList)
@@ -66,53 +69,182 @@ import           Text.XML
 -- networks.
 --
 -- Use '(<>)' to construct larger blocks.
-newtype CharacterBlock u v w x y z = CB { unwrap :: Block u v w x y z }
-    deriving (Bifunctor, Eq, Functor, Generic, NFData, Semigroup)
+data CharacterBlock u v w x y z
+    = BlockDoesNotExist
+    | CB {-# UNPACK #-} !(Block u v w x y z)
+    deriving (Eq, Generic, NFData)
+
+
+unwrapWith :: Monoid a => (Block u v w x y z -> a) -> CharacterBlock u v w x y z -> a
+unwrapWith _ BlockDoesNotExist = mempty
+unwrapWith f (CB block)        = f block
 
 
 instance HasContinuousBin (CharacterBlock u v w x y z) (Vector u) where
 
     {-# INLINE continuousBin #-}
-    continuousBin = lens (_continuousBin . unwrap)
-                  $ \(CB b) x -> CB (b { _continuousBin = x })
+    continuousBin = lens (unwrapWith _continuousBin)
+        $ \cb v -> case cb of
+                     (CB b)            -> CB (b { _continuousBin = v })
+                     BlockDoesNotExist ->
+                         if length v == 0
+                         then cb
+                         else CB Block
+                                 { _continuousBin  = v
+                                 , _nonAdditiveBin = mempty
+                                 , _additiveBin    = mempty
+                                 , _metricBin      = mempty
+                                 , _nonMetricBin   = mempty
+                                 , _dynamicBin     = mempty
+                                 }
 
 
 instance HasNonAdditiveBin (CharacterBlock u v w x y z) (Vector v) where
 
     {-# INLINE nonAdditiveBin #-}
-    nonAdditiveBin = lens (_nonAdditiveBin . unwrap)
-                   $ \(CB b) x -> CB (b { _nonAdditiveBin = x })
+    nonAdditiveBin = lens (unwrapWith _nonAdditiveBin)
+        $ \cb v -> case cb of
+                     (CB b)            -> CB (b { _nonAdditiveBin = v })
+                     BlockDoesNotExist ->
+                         if length v == 0
+                         then cb
+                         else CB Block
+                                 { _continuousBin  = mempty
+                                 , _nonAdditiveBin = v
+                                 , _additiveBin    = mempty
+                                 , _metricBin      = mempty
+                                 , _nonMetricBin   = mempty
+                                 , _dynamicBin     = mempty
+                                 }
 
 
 instance HasAdditiveBin (CharacterBlock u v w x y z) (Vector w) where
 
     {-# INLINE additiveBin #-}
-    additiveBin = lens (_additiveBin . unwrap)
-                $ \(CB b) x -> CB (b { _additiveBin = x })
+    additiveBin = lens (unwrapWith _additiveBin)
+        $ \cb v -> case cb of
+                     (CB b)            -> CB (b { _additiveBin = v })
+                     BlockDoesNotExist ->
+                         if length v == 0
+                         then cb
+                         else CB Block
+                                 { _continuousBin  = mempty
+                                 , _nonAdditiveBin = mempty
+                                 , _additiveBin    = v
+                                 , _metricBin      = mempty
+                                 , _nonMetricBin   = mempty
+                                 , _dynamicBin     = mempty
+                                 }
 
 
 instance HasMetricBin (CharacterBlock u v w x y z) (Vector x) where
 
     {-# INLINE metricBin #-}
-    metricBin = lens (_metricBin . unwrap)
-              $ \(CB b) x -> CB (b { _metricBin = x })
+    metricBin = lens (unwrapWith _metricBin)
+        $ \cb v -> case cb of
+                     (CB b)            -> CB (b { _metricBin = v })
+                     BlockDoesNotExist ->
+                         if length v == 0
+                         then cb
+                         else CB Block
+                                 { _continuousBin  = mempty
+                                 , _nonAdditiveBin = mempty
+                                 , _additiveBin    = mempty
+                                 , _metricBin      = v
+                                 , _nonMetricBin   = mempty
+                                 , _dynamicBin     = mempty
+                                 }
 
 
 instance HasNonMetricBin (CharacterBlock u v w x y z) (Vector y) where
 
     {-# INLINE nonMetricBin #-}
-    nonMetricBin = lens (_nonMetricBin . unwrap)
-                 $ \(CB b) x -> CB (b { _nonMetricBin = x })
+    nonMetricBin = lens (unwrapWith _nonMetricBin)
+        $ \cb v -> case cb of
+                     (CB b)            -> CB (b { _nonMetricBin = v })
+                     BlockDoesNotExist ->
+                         if length v == 0
+                         then cb
+                         else CB Block
+                                 { _continuousBin  = mempty
+                                 , _nonAdditiveBin = mempty
+                                 , _additiveBin    = mempty
+                                 , _metricBin      = mempty
+                                 , _nonMetricBin   = v
+                                 , _dynamicBin     = mempty
+                                 }
 
 
 instance HasDynamicBin (CharacterBlock u v w x y z) (CharacterBlock u v w x y z') (Vector z) (Vector z') where
 
     {-# INLINE  dynamicBin #-}
-    dynamicBin = lens (_dynamicBin . unwrap)
-               $ \(CB b) x -> CB (b { _dynamicBin = x })
+    dynamicBin = lens (unwrapWith _dynamicBin)
+        $ \cb v -> case cb of
+                     (CB b)            -> CB (b { _dynamicBin = v })
+                     BlockDoesNotExist ->
+                         if length v == 0
+                         then BlockDoesNotExist
+                         else CB Block
+                                 { _continuousBin  = mempty
+                                 , _nonAdditiveBin = mempty
+                                 , _additiveBin    = mempty
+                                 , _metricBin      = mempty
+                                 , _nonMetricBin   = mempty
+                                 , _dynamicBin     = v
+                                 }
 
 
--- | (✔)
+instance Bifunctor (CharacterBlock u v w x) where
+
+    bimap f g (CB b) = CB $
+        (Block
+          <$> _continuousBin
+          <*> _nonAdditiveBin
+          <*> _additiveBin
+          <*> _metricBin
+          <*> fmap f . _nonMetricBin
+          <*> fmap g . _dynamicBin
+        ) b
+    bimap _ _ _ = BlockDoesNotExist
+
+    first f (CB b) = CB $
+        (Block
+          <$> _continuousBin
+          <*> _nonAdditiveBin
+          <*> _additiveBin
+          <*> _metricBin
+          <*> fmap f . _nonMetricBin
+          <*> _dynamicBin
+        ) b
+    first _ _ = BlockDoesNotExist
+
+    second = fmap
+
+  
+instance Functor (CharacterBlock u v w x y) where
+
+    fmap f (CB b) = CB $ f <$> b
+    fmap _  _     = BlockDoesNotExist
+
+    (<$) v (CB b) = CB $
+        (Block
+          <$> _continuousBin
+          <*> _nonAdditiveBin
+          <*> _additiveBin
+          <*> _metricBin
+          <*> _nonMetricBin
+          <*> (v <$) . _dynamicBin
+        ) b
+    (<$) _ _ = BlockDoesNotExist
+
+
+instance Semigroup (CharacterBlock u v w x y z) where
+
+    (<>) BlockDoesNotExist rhs = rhs
+    (<>) lhs BlockDoesNotExist = lhs
+    (<>) (CB lhs) (CB rhs) = CB $ lhs <> rhs
+
+
 instance ( Show u
          , Show v
          , Show w
@@ -121,6 +253,7 @@ instance ( Show u
          , Show z
          ) => Show (CharacterBlock u v w x y z) where
 
+    show BlockDoesNotExist = "Block does not exists at this node"
     show (CB block) = unlines
         [ "Continuous s [" <> show (length (_continuousBin block)) <> "]:"
         , niceRendering $ _continuousBin block
@@ -148,6 +281,7 @@ instance ( ToXML u -- This is NOT a redundant constraint.
          , ToXML z
          ) => ToXML (CharacterBlock u v w x y z) where
 
+    toXML BlockDoesNotExist = xmlElement "_block does not exist" [] []
     toXML (CB block) = xmlElement "_block" attributes contents
         where
             attributes = []
@@ -178,27 +312,27 @@ finalizeCharacterBlock = CB . (
 
 
 continuousCharacterBins :: CharacterBlock u v w x y z -> Vector u
-continuousCharacterBins = (^. continuousBin) . unwrap
+continuousCharacterBins = unwrapWith (^. continuousBin)
 
 
 nonAdditiveCharacterBins :: CharacterBlock u v w x y z -> Vector v
-nonAdditiveCharacterBins = (^. nonAdditiveBin) . unwrap
+nonAdditiveCharacterBins = unwrapWith (^. nonAdditiveBin)
 
 
 additiveCharacterBins :: CharacterBlock u v w x y z -> Vector w
-additiveCharacterBins = (^. additiveBin) . unwrap
+additiveCharacterBins = unwrapWith (^. additiveBin)
 
 
 metricCharacterBins :: CharacterBlock u v w x y z -> Vector x
-metricCharacterBins = (^. metricBin) . unwrap
+metricCharacterBins = unwrapWith (^. metricBin)
 
 
 nonMetricCharacterBins :: CharacterBlock u v w x y z -> Vector y
-nonMetricCharacterBins = (^. nonMetricBin) . unwrap
+nonMetricCharacterBins = unwrapWith (^. nonMetricBin)
 
 
 dynamicCharacters :: CharacterBlock u v w x y z -> Vector z
-dynamicCharacters = (^. dynamicBin) . unwrap
+dynamicCharacters = unwrapWith (^. dynamicBin)
 
 
 {-
@@ -309,28 +443,14 @@ hexZipWithMeta
   -> CharacterBlock u   v   w   x   y   z
   -> CharacterBlock u'  v'  w'  x'  y'  z'
   -> CharacterBlock u'' v'' w'' x'' y'' z''
-{-
-hexZipWithMeta _ _ _ _ _ _ (CB meta) (CB lhs) (CB rhs)
-  | trace ( unlines
-              [ "\n()()() INPUTs to hexZipWithMeta:"
-              , "  Metadata Sequence:"
-              , "    " <> (show . length . dynamicBins) meta
-              , "  Left-hand  side Character Sequence:"
-              , "    " <> (show . length . dynamicBins) lhs
-              , "  Right-hand side Character Sequence:"
-              , "    " <> (show . length . dynamicBins) rhs
-              ]
-          )
-    False = undefined
--}
-hexZipWithMeta f1 f2 f3 f4 f5 f6 (MB _ meta) (CB lhs) (CB rhs) = CB
+hexZipWithMeta f1 f2 f3 f4 f5 f6 meta lhs rhs = CB
     Block
-      { _continuousBin  = parZipWith3 rpar f1 (_continuousBin  meta) (_continuousBin  lhs) (_continuousBin  rhs)
-      , _nonAdditiveBin = parZipWith3 rpar f2 (_nonAdditiveBin meta) (_nonAdditiveBin lhs) (_nonAdditiveBin rhs)
-      , _additiveBin    = parZipWith3 rpar f3 (_additiveBin    meta) (_additiveBin    lhs) (_additiveBin    rhs)
-      , _metricBin      = parZipWith3 rpar f4 (_metricBin      meta) (_metricBin      lhs) (_metricBin      rhs)
-      , _nonMetricBin   = parZipWith3 rpar f5 (_nonMetricBin   meta) (_nonMetricBin   lhs) (_nonMetricBin   rhs)
-      , _dynamicBin     = parZipWith3 rpar f6 (_dynamicBin     meta) (_dynamicBin     lhs) (_dynamicBin     rhs)
+      { _continuousBin  = parZipWith3 rpar f1 (meta ^.  continuousBin) (lhs ^.  continuousBin) (rhs ^.  continuousBin)
+      , _nonAdditiveBin = parZipWith3 rpar f2 (meta ^. nonAdditiveBin) (lhs ^. nonAdditiveBin) (rhs ^. nonAdditiveBin)
+      , _additiveBin    = parZipWith3 rpar f3 (meta ^.    additiveBin) (lhs ^.    additiveBin) (rhs ^.    additiveBin)
+      , _metricBin      = parZipWith3 rpar f4 (meta ^.      metricBin) (lhs ^.      metricBin) (rhs ^.      metricBin)
+      , _nonMetricBin   = parZipWith3 rpar f5 (meta ^.   nonMetricBin) (lhs ^.   nonMetricBin) (rhs ^.   nonMetricBin)
+      , _dynamicBin     = parZipWith3 rpar f6 (meta ^.     dynamicBin) (lhs ^.     dynamicBin) (rhs ^.     dynamicBin)
       }
 
 

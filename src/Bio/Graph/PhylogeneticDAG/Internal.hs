@@ -44,7 +44,6 @@ import           Bio.Metadata.DiscreteWithTCM
 import           Bio.Metadata.Dynamic
 import           Bio.Sequence
 import           Bio.Sequence.Block.Character    (CharacterBlock (..))
-import           Bio.Sequence.Block.Metadata     (MetadataBlock (..))
 import           Control.Applicative             (liftA2)
 import           Control.Arrow                   ((***))
 import           Control.DeepSeq
@@ -450,10 +449,9 @@ renderBlockSummary (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displa
     , unlines . fmap renderStaticCharacterSummary  . toList . uncurry zip . ((^.      metricBin) *** (^.      metricBin))
     , unlines . fmap renderStaticCharacterSummary  . toList . uncurry zip . ((^.   nonMetricBin) *** (^.   nonMetricBin))
     , unlines . fmap renderDynamicCharacterSummary . toList . uncurry zip . ((^.     dynamicBin) *** (^.     dynamicBin))
-    ] <*> [(mBlock, cBlock)]
+    ] <*> [(mBlock, block)]
   where
-    pair = ((meta ^. blockSequence) ! key, block)
-    (MB _ mBlock, CB cBlock) = pair
+    pair@(mBlock, _) = ((meta ^. blockSequence) ! key, block)
 
     renderedPrefix = "Block " <> show key <> "\n\n"
 
