@@ -225,7 +225,7 @@ instance Semigroup (Block u v w x y z) where
         , " <= 0"
         ]
     stimes i v = 
-        let !n = fromIntegral i
+        let n = force $ fromIntegral i
             genVect x = fromListN (n * length x) . fold . replicate n $ toList x
         in  Block
               <$> genVect .  _continuousBin
