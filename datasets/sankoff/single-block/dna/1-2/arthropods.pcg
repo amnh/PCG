@@ -1,0 +1,3 @@
+read(prealigned:(custom_alphabet:("../../../../shared-data/arthropods/arthSank.fasta", tcm:("../../../../shared-data/tcms/dna-1-2.tcm"))))
+read("../../../../shared-data/arthropods/arth.newick")
+report(data, (overwrite, "cost.data"))

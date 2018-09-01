@@ -17,14 +17,29 @@ import Turtle
 testSuite :: IO TestTree
 testSuite = testGroup "Script Test Suite" <$> sequenceA
   [ scriptCheckCost 0
-        "datasets/continuous/single-block/arthContin.pcg"
-        "datasets/continuous/single-block/arthContin.data"
+        "datasets/continuous/single-block/arthropods.pcg"
+        "datasets/continuous/single-block/cost.data"
   , scriptCheckCost 0
-        "datasets/non-additive/single-block/arthNonAdd.pcg"
-        "datasets/non-additive/single-block/arthNonAdd.data"
+        "datasets/non-additive/single-block/arthropods.pcg"
+        "datasets/non-additive/single-block/cost.data"
   , scriptCheckCost 0
-        "datasets/additive/single-block/arthAdd.pcg"
-        "datasets/additive/single-block/arthAdd.data"
+        "datasets/additive/single-block/arthropods.pcg"
+        "datasets/additive/single-block/cost.data"
+  , scriptCheckCost 0
+        "datasets/sankoff/single-block/dna/discrete/arthropods.pcg"
+        "datasets/sankoff/single-block/dna/discrete/cost.data"
+  , scriptCheckCost 0
+        "datasets/sankoff/single-block/dna/L1-norm/arthropods.pcg"
+        "datasets/sankoff/single-block/dna/L1-norm/cost.data"
+  , scriptCheckCost 0
+        "datasets/sankoff/single-block/dna/1-2/arthropods.pcg"
+        "datasets/sankoff/single-block/dna/1-2/cost.data"
+  , scriptCheckCost 0
+        "datasets/sankoff/single-block/dna/2-1/arthropods.pcg"
+        "datasets/sankoff/single-block/dna/2-1/cost.data"
+  , scriptCheckCost 0
+        "datasets/dynamic/multi-block/arthropods.pcg"
+        "datasets/dynamic/multi-block/cost.data"
   , scriptFailure "datasets/unmatched-leaf-taxon/test.pcg"
   ]
 
