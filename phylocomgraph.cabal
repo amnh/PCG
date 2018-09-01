@@ -470,6 +470,7 @@ Test-Suite integration-tests
   build-depends:      base               >=4.10
                     , directory
                     , filepath
+                    , pcg-utility
                     , semigroups
                     , tasty
                     , tasty-golden

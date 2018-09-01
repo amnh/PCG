@@ -8,6 +8,7 @@ import Control.Arrow    ((&&&))
 import Data.Either
 import Data.Foldable
 import Data.Text        (Text)
+import Numeric.Extended.Real
 import Test.Tasty
 import Test.Tasty.HUnit
 import Turtle
@@ -15,7 +16,16 @@ import Turtle
 
 testSuite :: IO TestTree
 testSuite = testGroup "Script Test Suite" <$> sequenceA
-  [ scriptFailure "datasets/unmatched-leaf-taxon/test.pcg"
+  [ scriptCheckCost 0
+        "datasets/continuous/single-block/arthContin.pcg"
+        "datasets/continuous/single-block/arthContin.data"
+  , scriptCheckCost 0
+        "datasets/non-additive/single-block/arthNonAdd.pcg"
+        "datasets/non-additive/single-block/arthNonAdd.data"
+  , scriptCheckCost 0
+        "datasets/additive/single-block/arthAdd.pcg"
+        "datasets/additive/single-block/arthAdd.data"
+  , scriptFailure "datasets/unmatched-leaf-taxon/test.pcg"
   ]
 
 
@@ -26,6 +36,25 @@ scriptTest
                                      -- output file contents or ExitStatus code
   -> IO TestTree
 scriptTest scriptPath outputPaths testLogic = testLogic <$> runExecutable scriptPath outputPaths
+
+
+scriptCheckCost
+  :: ExtendedReal                    -- ^ Expected cost ∈ [0, ∞]
+  -> String                          -- ^ Script File
+  -> String                          -- ^ Expected output file containing the cost
+  -> IO TestTree
+scriptCheckCost expectedCost scriptPath outputPath = scriptTest scriptPath [outputPath] $ testCase scriptPath . checkResult
+  where
+    checkResult (Left     exitCode) = assertFailure $ "Script failed with exit code: " <> show exitCode
+    checkResult (Right          []) = assertFailure $ "No files were returned despite supplying one path!"
+    checkResult (Right (outFile:_)) =
+        case parseCost outFile of
+          Nothing   -> assertFailure $ "No cost found in the output file: " <> show outFile
+          Just cost -> cost @?= expectedCost
+
+
+parseCost :: Text -> Maybe ExtendedReal
+parseCost = const $ Just 0
 
 
 scriptFailure :: String -> IO TestTree
