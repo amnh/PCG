@@ -54,6 +54,10 @@ import           Data.Vector.Instances              ()
 import qualified Data.Vector.NonEmpty               as NEV
 import           Prelude                            hiding (lookup)
 
+import           Control.DeepSeq
+import           Data.GraphViz.Printing
+import qualified Data.Text.Lazy                     as L
+import           System.IO.Unsafe
 
 type BlockTopologies = NEV.Vector TraversalTopology
 
@@ -271,6 +275,10 @@ data  PreorderContext c
     | NoBlockData
 
 
+generateDotFile :: Show n => ReferenceDAG d e n -> String
+generateDotFile = (<> "\n") . L.unpack . renderDot . toDot
+
+
 -- |
 -- Applies a traversal logic function over a 'ReferenceDAG' in a /pre-order/ manner.
 --
@@ -278,12 +286,21 @@ data  PreorderContext c
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
 preorderFromRooting
-  :: (DynamicCharacterMetadataDec (Element DynamicChar) -> z -> [(Word, z')] -> z')
+  :: ( Show n
+     , Show u'
+     , Show v'
+     , Show w'
+     , Show x'
+     , Show y'
+     , Show z
+     )
+  => (DynamicCharacterMetadataDec (Element DynamicChar) -> z -> [(Word, z')] -> z')
   ->         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
   -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
   -> NEV.Vector (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge))
   -> PhylogeneticDAG2 m e n u' v' w' x' y' z
   -> PhylogeneticDAG2 m e n u' v' w' x' y' z'
+--preorderFromRooting _ _ _ _ (PDAG2 dag _) | force . unsafePerformIO $ (writeFile "sad.dot" (generateDotFile dag) *> pure False) = undefined
 preorderFromRooting transformation edgeCostMapping contextualNodeDatum minTopologyContextPerBlock (PDAG2 dag meta) = PDAG2 (newDAG dag) meta
   where
     newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> reconstructMetadata
@@ -361,19 +378,22 @@ preorderFromRooting transformation edgeCostMapping contextualNodeDatum minTopolo
           where
             f topo blockIndex charIndex = foldMap epsilon
               where
-                epsilon rootingEdge@(r1,r2) = lhs <> rhs <> gen mempty (r1,r2) <> gen mempty (r2,r1)
+                epsilon rootingEdge@(r1,r2) =
+                    case virtualRoot of
+                      Nothing    -> IM.singleton r1 NoBlockData <> IM.singleton r2 NoBlockData
+                      Just vRoot ->
+                          let lhs = IM.singleton r1 $ FociEdgeNode r2 virtualRootDatum
+                              rhs = IM.singleton r2 $ FociEdgeNode r1 virtualRootDatum
+                              virtualRootDatum = (! charIndex) . (! blockIndex) $ getDynCharSeq vRoot
+                          in  lhs <> rhs <> gen virtualRootDatum mempty (r1,r2) <> gen virtualRootDatum mempty (r2,r1)
                   where
-                    lhs = IM.singleton r1 $ FociEdgeNode r2 virtualRootDatum
-                    rhs = IM.singleton r2 $ FociEdgeNode r1 virtualRootDatum
-                    virtualRootDatum = (! charIndex) . (! blockIndex) $ getDynCharSeq virtualRoot
-                    -- TODO: What if there are no applicable resolutions?
                     virtualRoot =
                         case NE.filter (\x -> topologyRepresentation x == topo) $ edgeCostMapping ! rootingEdge of
-                          []  -> error "No data at internal node."
-                          x:_ -> x
+                          []  -> Nothing
+                          x:_ -> Just x
 
                     excludedEdges = excludedNetworkEdges topo
-                    gen seenSet (n1,n2)
+                    gen virtualRootDatum seenSet (n1,n2)
                       | isExcludedEdge = mempty
                       | otherwise      = (currentVal <>) . foldMap toMap . filter (`onotElem` seenSet') $ getAdjacentNodes n2
                       where
@@ -385,7 +405,7 @@ preorderFromRooting transformation edgeCostMapping contextualNodeDatum minTopolo
                                            x:_ -> IM.singleton n2 $ NormalNode x
                                            []  -> IM.singleton n2 $ NormalNode n1 -- I guess it's just the root and a single leaf...?
                           | otherwise          =  IM.singleton n2 $ NormalNode n1
-                        toMap v     = gen seenSet' (n2, v)
+                        toMap v     = gen virtualRootDatum seenSet' (n2, v)
                         seenSet'    = IS.insert n1 seenSet
 
 
@@ -432,7 +452,8 @@ preorderFromRooting transformation edgeCostMapping contextualNodeDatum minTopolo
 
                     dynCharGen k m =
                         case parentRefContext of
-                          SetRootNode  x -> transformation m x []
+                          NoBlockData      -> error "This is bad and sad plus I'm mad. Wrote out DOT file to 'sad.dot'"
+                          SetRootNode  x   -> transformation m x []
                           FociEdgeNode p x ->
                             let currentContext     = selectApplicableResolutions topology $ (contextualNodeDatum .!>. i) .!>. (p,i)
                                 currentDecoration  = (!k) . (^. dynamicBin) . (!j) . (^. blockSequence) . characterSequence $ currentContext

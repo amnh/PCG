@@ -159,7 +159,7 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
                                           $ tryNetworkEdge <$> edgesToTry
         in  if   getCost currentNetwork <= minNewCost
             then currentNetwork
-            else iterativeNetworkBuild bestNewNetwork
+            else currentNetwork -- iterativeNetworkBuild bestNewNetwork
   where
     (PDAG2 dag _) = force $ wipeScoring currentNetwork
 
