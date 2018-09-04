@@ -1,43 +1,49 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts, OverloadedStrings, TypeFamilies #-}
 
 module TestSuite.ScriptTests
   ( testSuite
   ) where
 
-import Control.Arrow    ((&&&))
+import Control.Arrow              ((&&&))
+import Data.Char                  (isSpace)
 import Data.Either
 import Data.Foldable
-import Data.Text        (Text)
+import Data.Scientific     hiding (scientific)
+import Data.Text                  (Text)
+import Data.Void                  (Void)
 import Numeric.Extended.Real
 import Test.Tasty
 import Test.Tasty.HUnit
-import Turtle
+import Text.Megaparsec
+import Text.Megaparsec.Char
+import Text.Megaparsec.Char.Lexer (scientific)
+import Turtle              hiding (char,many,satisfy)
 
 
 testSuite :: IO TestTree
 testSuite = testGroup "Script Test Suite" <$> sequenceA
-  [ scriptCheckCost 0
+  [ scriptCheckCost 50.46
         "datasets/continuous/single-block/arthropods.pcg"
         "datasets/continuous/single-block/cost.data"
-  , scriptCheckCost 0
+  , scriptCheckCost 1665.0
         "datasets/non-additive/single-block/arthropods.pcg"
         "datasets/non-additive/single-block/cost.data"
-  , scriptCheckCost 0
+  , scriptCheckCost 77252.0
         "datasets/additive/single-block/arthropods.pcg"
         "datasets/additive/single-block/cost.data"
-  , scriptCheckCost 0
+  , scriptCheckCost 914.0
         "datasets/sankoff/single-block/dna/discrete/arthropods.pcg"
         "datasets/sankoff/single-block/dna/discrete/cost.data"
-  , scriptCheckCost 0
+  , scriptCheckCost 1618.0
         "datasets/sankoff/single-block/dna/L1-norm/arthropods.pcg"
         "datasets/sankoff/single-block/dna/L1-norm/cost.data"
-  , scriptCheckCost 0
+  , scriptCheckCost 908.0
         "datasets/sankoff/single-block/dna/1-2/arthropods.pcg"
         "datasets/sankoff/single-block/dna/1-2/cost.data"
-  , scriptCheckCost 0
+  , scriptCheckCost 1565.0
         "datasets/sankoff/single-block/dna/2-1/arthropods.pcg"
         "datasets/sankoff/single-block/dna/2-1/cost.data"
-  , scriptCheckCost 0
+  , scriptCheckCost 2042.0
         "datasets/dynamic/multi-block/arthropods.pcg"
         "datasets/dynamic/multi-block/cost.data"
   , scriptFailure "datasets/unmatched-leaf-taxon/test.pcg"
@@ -64,12 +70,41 @@ scriptCheckCost expectedCost scriptPath outputPath = scriptTest scriptPath [outp
     checkResult (Right          []) = assertFailure $ "No files were returned despite supplying one path!"
     checkResult (Right (outFile:_)) =
         case parseCost outFile of
-          Nothing   -> assertFailure $ "No cost found in the output file: " <> show outFile
+          Nothing   -> assertFailure $ "No cost found in the output file!"
           Just cost -> cost @?= expectedCost
 
 
 parseCost :: Text -> Maybe ExtendedReal
-parseCost = const $ Just 0
+parseCost = parseMaybe fileSpec
+  where
+    fileSpec =  many (try (ignoredLine <* notFollowedBy costLine))
+             *> ignoredLine
+             *> costLine
+             <* many ignoredLine
+    
+    costLine :: MonadParsec Void Text m => m ExtendedReal
+    costLine =  many inlineSpace
+             *> string' "DAG total cost:"
+             *> many inlineSpace
+             *> extendedReal
+             <* ignoredLine
+
+    
+    extendedReal :: MonadParsec Void Text m => m ExtendedReal
+    extendedReal = (fromFinite . toRealFloat <$> scientific) <|> (char '∞' *> pure infinity)
+
+    ignoredLine  :: MonadParsec Void Text m => m ()
+    ignoredLine  = many inlineChar *> newline
+
+    inlineSpace  :: MonadParsec Void Text m => m ()
+    inlineSpace  = void $ satisfy (\x -> isSpace x && x /= '\n')
+
+    inlineChar   :: MonadParsec Void Text m => m ()
+    inlineChar   = void $ satisfy (/= '\n')
+    
+    newline      :: (MonadParsec Void s m, Token s ~ Char) => m ()
+    newline      = void $ char '\n'
+
 
 
 scriptFailure :: String -> IO TestTree

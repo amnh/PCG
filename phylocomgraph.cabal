@@ -470,7 +470,10 @@ Test-Suite integration-tests
   build-depends:      base               >=4.10
                     , directory
                     , filepath
+                    , megaparsec         >=6.4.0
+                    , parser-combinators >=0.2.0
                     , pcg-utility
+                    , scientific
                     , semigroups
                     , tasty
                     , tasty-golden
