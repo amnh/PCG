@@ -79,6 +79,6 @@ library
                        PCG.Syntax.Combinators
 
   other-modules:       PCG.Syntax.Parser
-                       PCG.Syntax.Primative
+                       PCG.Syntax.Primitive
 
   other-extensions:    MonadFailDesugaring
