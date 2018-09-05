@@ -27,6 +27,7 @@ module PCG.Command.Read
   , TcmReference
   , Tiebreaker(..)
   , readCommandSpecification
+  , isSavedState
   ) where
 
 import Control.Applicative.Free (Ap)
@@ -63,6 +64,7 @@ data  FileSpecification
     | GenomeFile         !(NonEmpty FilePath)
     | CustomAlphabetFile !(NonEmpty FilePath) !TcmReference ![CustomAlphabetOptions]
     | PrealignedFile     !FileSpecification   !TcmReference
+    | SavedState
     deriving (Show)
 
 
@@ -119,7 +121,7 @@ readCommandSpecification = command "read" $ ReadCommand <$> someOf fileSpec
 
 
 fileSpec :: Ap SyntacticArgument FileSpecification
-fileSpec = choiceFrom [ unspecified, customAlphabet, aminoAcids, nucleotides, annotated, chromosome, genome, prealigned  ]
+fileSpec = choiceFrom [ unspecified, customAlphabet, aminoAcids, nucleotides, annotated, chromosome, genome, prealigned, savedState ]
   where
     unspecified    = UnspecifiedFile . pure <$> text
     aminoAcids     = AminoAcidFile  <$> oneOrSomeWithIds text [ "amino_acid", "amino_acids", "aminoacid", "aminoacids" ]
@@ -128,6 +130,7 @@ fileSpec = choiceFrom [ unspecified, customAlphabet, aminoAcids, nucleotides, an
     chromosome     = ChromosomeFile <$> oneOrSomeWithIds text [ "chromosome", "chromosomes", "chromosomal" ]
     genome         = GenomeFile     <$> oneOrSomeWithIds text [ "genome", "genomes", "genomic", "genomics" ]
     prealigned     = argId "prealigned"      . argList $ PrealignedFile <$> fileSpec <*> tcmReference
+    savedState     = argId "saved_state" $ value "save" $> SavedState
     customAlphabet = argId "custom_alphabet" . argList $ CustomAlphabetFile <$> fileRefs <*> tcmReference <*> alphabetOpts
       where
         fileRefs     = oneOrSome text
@@ -161,3 +164,8 @@ oneOrSome v = choiceFrom [ pure <$> v, someOf v ]
 -- without parens or many files may be specified with parens.
 oneOrSomeWithIds :: Foldable f => Ap SyntacticArgument a -> f String -> Ap SyntacticArgument (NonEmpty a)
 oneOrSomeWithIds v strs = choiceFrom [pure <$> argIds strs v, argIds strs (someOf v)]
+
+
+isSavedState :: FileSpecification -> Bool
+isSavedState SavedState = True
+isSavedState _          = False

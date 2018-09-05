@@ -1,5 +1,6 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module PCG.Command.Report.Evaluate
   ( evaluate
@@ -12,7 +13,8 @@ import Bio.Character.Exportable
 import Bio.Graph
 import Bio.Graph.PhylogeneticDAG
 import Control.Monad.IO.Class
-import Data.Compact                     (getCompact)
+import Data.Compact                     (getCompact, Compact())
+import Data.Compact.Serialize (unsafeReadCompact)
 import Data.List.NonEmpty
 import Data.MonoTraversable
 import Data.Semigroup.Foldable
@@ -60,7 +62,7 @@ generateOutput
   -> FileStreamContext
 generateOutput g' format =
   case format of
-    Data {}    -> SingleStream $ either show showWithTotalEdgeCost g
+    Data {}    -> SingleStream $ either show showWithTotalEdgeCost  g
     XML  {}    -> SingleStream $ either show (ppTopElement . toXML) g
     DotFile {} -> SingleStream $ generateDotFile g'
     _          -> ErrorCase "Unrecognized 'report' command"

@@ -1,5 +1,6 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module PCG.Command.Read.Evaluate
   ( evaluate
@@ -17,6 +18,7 @@ import           Control.Parallel.Strategies
 import           Data.Alphabet
 import           Data.Bifunctor                            (bimap, first)
 import           Data.Compact                              (compact)
+import           Data.Compact.Serialize                    (unsafeReadCompact)
 import           Data.Either.Custom
 import           Data.Foldable
 import           Data.Functor
@@ -61,21 +63,26 @@ parse' = parse
 evaluate :: Command -> SearchState
 evaluate (READ (ReadCommand fileSpecs)) = do
     when (null fileSpecs) $ fail "No files specified in 'read()' command"
-    result <- liftIO . runExceptT . eitherTValidation $ parmap rpar (fmap removeGaps . parseSpecifiedFile) fileSpecs
---    liftIO $ print result
-    case result of
-      Left pErr -> fail $ show pErr   -- Report structural errors here.
-      Right xs ->
-        case decoration . masterUnify $ transformation <$> concat xs of
-          Left uErr -> fail $ show uErr -- Report unification errors here.
-           -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
-          Right g   -> liftIO (compact  g)
-                       -- liftIO (putStrLn "DECORATION CALL:" *> print g) *> pure g
-                       -- (liftIO . putStrLn {- . take 500000 -} $ either show (ppTopElement . toXML) g)
-                       -- (liftIO . putStrLn $ show g) $> g
+    if (hasSavedState fileSpecs)  then readSavedState
+    else do
+      result <- liftIO . runExceptT . eitherTValidation $ parmap rpar (fmap removeGaps . parseSpecifiedFile) fileSpecs
+  --    liftIO $ print result
+      case result of
+        Left pErr -> fail $ show pErr   -- Report structural errors here.
+        Right xs ->
+          case decoration . masterUnify $ transformation <$> concat xs of
+            Left uErr -> fail $ show uErr -- Report unification errors here.
+             -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
+            Right g   -> liftIO (compact  g)
+                         -- liftIO (putStrLn "DECORATION CALL:" *> print g) *> pure g
+                         -- (liftIO . putStrLn {- . take 500000 -} $ either show (ppTopElement . toXML) g)
+                         -- (liftIO . putStrLn $ show g) $> g
   where
     transformation = id -- expandIUPAC
     decoration     = fmap (fmap initializeDecorations2)
+
+    hasSavedState :: NonEmpty FileSpecification -> Bool
+    hasSavedState = any (isSavedState)
 
 evaluate _ = fail "Invalid READ command binding"
 
@@ -93,6 +100,7 @@ parseSpecifiedFile spec@NucleotideFile    {}     = fastaDNA       spec
 parseSpecifiedFile spec@CustomAlphabetFile{}     = parseCustomAlphabet spec
 parseSpecifiedFile spec@(UnspecifiedFile      _) =
   getSpecifiedContent spec >>= eitherTValidation . fmap (progressiveParse . fst) . dataFiles
+parseSpecifiedFile     SavedState                = fail "Tried to unify from saved state"
 parseSpecifiedFile     (PrealignedFile x tcmRef) = do
     tcmContent <- getSpecifiedTcm tcmRef
     subContent <- parseSpecifiedFile x
@@ -237,6 +245,7 @@ getSpecifiedContent (AnnotatedFile      xs      ) = getSpecifiedContentSimple xs
 getSpecifiedContent (ChromosomeFile     xs      ) = getSpecifiedContentSimple xs
 getSpecifiedContent (GenomeFile         xs      ) = getSpecifiedContentSimple xs
 getSpecifiedContent (CustomAlphabetFile xs tcm _) = liftM2 SpecContent (getSpecifiedFileContents xs) (getSpecifiedTcm tcm)
+getSpecifiedContent (SavedState                 ) = fail "Tried to directly read saved state"
 getSpecifiedContent (PrealignedFile     fs tcm  ) = do
     specifiedContent <- getSpecifiedContent fs
     case tcmFile specifiedContent of
@@ -361,3 +370,11 @@ removeGapsFromDynamicCharsNotMarkedAsAligned fpr =
     removeGapsFromUnalignedDynamicChars :: ParsedCharacter -> ParsedCharacter
     removeGapsFromUnalignedDynamicChars (ParsedDynamicCharacter (Just xs)) = ParsedDynamicCharacter . NE.nonEmpty $ NE.filter (/= pure "-") xs
     removeGapsFromUnalignedDynamicChars e = e
+
+
+readSavedState :: SearchState
+readSavedState = do
+    (savedState :: Either String GraphState) <- liftIO $ unsafeReadCompact ".pcg.save"
+    case savedState of
+      Left err          -> fail err
+      Right graphState  -> pure graphState
