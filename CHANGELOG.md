@@ -11,9 +11,11 @@ Releases are available [on GitHub][2].
 * Updated to Cabal-2.2
 * Improved efficiency and consistency of character metadata representation
 * Improved efficiency of Wagner build
+* Improved effciencty of Data.Vector.NonEmpty.fromNonEmpty & unfoldr
 * Improved representation of Symbol Change Matrix (SCM) and Transition Cost Matrix (TCM)
 * Added Travis CI build script
 * Added test suites for Data.List.Utility, Data.Alphabet, and Data.TCM
+* Added support for compact regions of phylogenetic solutions
 * Streamlined build experiance on MacOS
 * Corrected defect in handling of prealigned input data
 * Corrected defect in Data.Vector.NonEmpty.unfoldr
@@ -22,7 +24,6 @@ Releases are available [on GitHub][2].
 * Polished command line option parsing and error reporting
 * Improved phylogeny pretty-printing
 * Documentation improvements
-
 
 
 ## [v0.1.0.1][4] - 2018-03-23
