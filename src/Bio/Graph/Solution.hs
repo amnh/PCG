@@ -46,13 +46,14 @@ import qualified Data.Text.Lazy            as L
 import           GHC.Generics
 import           Text.Newick.Class
 import           Text.XML
+import Type.Reflection(Typeable())
 
 
 -- |
 -- A solution that contains one or more equally costly forests.
 newtype PhylogeneticSolution a
       = PhylogeneticSolution (NonEmpty (PhylogeneticForest a))
-      deriving (Generic, Semigroup)
+      deriving (Generic, Semigroup, Typeable)
 
 
 -- |

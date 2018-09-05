@@ -73,6 +73,7 @@ import           GHC.Generics
 import           Prelude                         hiding (zip)
 import           Text.Newick.Class
 import           Text.XML
+import Type.Reflection (Typeable())
 
 
 -- |
@@ -119,7 +120,7 @@ data  PhylogeneticDAG2 m e n u v w x y z
                               e
                               (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
     , columnMetadata     :: MetadataSequence m
-    } deriving (Generic)
+    } deriving (Generic, Typeable)
 
 
 -- |
