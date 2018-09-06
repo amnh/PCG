@@ -28,6 +28,7 @@ import           Bio.Graph.LeafSet
 import           Control.Arrow                 ((&&&), (***))
 import           Control.DeepSeq
 import           Control.Lens                  as Lens (to)
+import           Control.Lens.Fold             (Fold, folding)
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
 import           Data.EdgeSet
@@ -139,11 +140,30 @@ instance Bifunctor (ReferenceDAG d) where
       where
         h (IndexData node parentRefs' childRefs') = IndexData (g node) parentRefs' $ f <$> childRefs'
 
-
+{--
 -- | (✔)
 instance Foldable (ReferenceDAG d e) where
 
     foldMap f = foldMap (f . nodeDecoration) . references
+--}
+
+class HasNodeDecoration s a | s -> a where
+  _nodeDecoration :: Lens' s a
+
+instance HasNodeDecoration (IndexData e n) n where
+  _nodeDecoration = lens (nodeDecoration) (\i n -> i {nodeDecoration = n})
+
+class HasReferenceVector s a | s -> a where
+  _references :: Lens' s a
+
+instance HasReferenceVector (ReferenceDAG d e n) (Vector (IndexData e n)) where
+  _references = lens (references) (\r v -> r {references = v}
+
+class FoldNodeDecoration s a | s -> a where
+  FoldNodeDecoration :: Fold s a
+
+instance HasNodeDecorationFold (ReferenceDAG d e n) n where
+  FoldNodeDecoration = _references . (folding id) . _nodeDecoration
 
 
 -- | (✔)
