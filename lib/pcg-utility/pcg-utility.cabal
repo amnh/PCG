@@ -78,6 +78,7 @@ library
                     Data.List.Utility
                     Data.Matrix.NotStupid
                     Data.MutualExclusionSet
+                    Data.UnionSet
                     Numeric.Extended
                     Numeric.Extended.Natural
                     Numeric.Extended.Real
