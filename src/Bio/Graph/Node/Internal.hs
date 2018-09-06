@@ -23,7 +23,6 @@ module Bio.Graph.Node.Internal
   , PhylogeneticNode2(..)
   , ResolutionCache
   , ResolutionInformation(..)
-  , SubtreeLeafSet()
   , addEdgeToEdgeSet
   , addNetworkEdgeToTopology
   , singletonEdgeSet
@@ -37,6 +36,7 @@ import Control.DeepSeq
 import Control.Lens
 import Data.Bits
 import Data.BitVector.LittleEndian
+import Data.UnionSet
 import Data.EdgeSet
 import Data.Foldable
 import Data.List.NonEmpty          (NonEmpty (..))
@@ -72,7 +72,7 @@ data  ResolutionInformation s
     = ResInfo
     { totalSubtreeCost       :: {-# UNPACK #-} !Double
     , localSequenceCost      :: {-# UNPACK #-} !Double
-    , leafSetRepresentation  :: {-# UNPACK #-} !SubtreeLeafSet
+    , leafSetRepresentation  :: {-# UNPACK #-} !UnionSet
     , subtreeRepresentation  ::                !NewickSerialization
     , subtreeEdgeSet         ::                !(EdgeSet (Int, Int))
     , topologyRepresentation :: {-# UNPACK #-} !(TopologyRepresentation (Int, Int))
@@ -92,17 +92,6 @@ type ResolutionCache s = NonEmpty (ResolutionInformation s)
 newtype NewickSerialization = NS String
   deriving (Eq, Generic, Ord)
 
-
--- |
--- An arbitrarily-ordered collection of leaf nodes in a subtree. Leaves in the
--- tree are uniquely identified by an index across the entire DAG. Set bits
--- represent a leaf uniquely identified by that index being present in the
--- subtree.
---
--- Use the 'Semigroup' operation '(<>)' to union the leaves included in a leaf
--- set.
-newtype SubtreeLeafSet = LS BitVector
-  deriving (Bits, Eq, Generic, Ord)
 
 
 instance Bifunctor PhylogeneticNode where
@@ -130,8 +119,6 @@ instance NFData NewickSerialization
 instance NFData s => NFData (ResolutionInformation s)
 
 
-instance NFData SubtreeLeafSet
-
 
 instance Ord (ResolutionInformation s) where
 
@@ -144,11 +131,6 @@ instance Ord (ResolutionInformation s) where
 instance Semigroup NewickSerialization where
 
     (NS lhs) <> (NS rhs) = NS $ "(" <> lhs <> "," <> rhs <> ")"
-
-
-instance Semigroup SubtreeLeafSet where
-
-    (<>) = (.|.)
 
 
 instance Show NewickSerialization where
@@ -177,13 +159,6 @@ instance Show s => Show (ResolutionInformation s) where
            , "Subtree   : "    <> show (subtreeRepresentation resInfo)
            , "Decoration:\n\n" <> show (characterSequence     resInfo)
            ]
-
-
-instance Show SubtreeLeafSet where
-
-    show (LS bv) = foldMap f $ toBits bv
-      where
-        f x = if x then "1" else "0"
 
 
 instance Show s => ToNewick (PhylogeneticNode2 n s) where
@@ -254,5 +229,5 @@ singletonNewickSerialization i = NS $ show i
 singletonSubtreeLeafSet
   :: Int -- ^ Leaf count
   -> Int -- ^ Leaf index
-  -> SubtreeLeafSet
-singletonSubtreeLeafSet n i = LS . (`setBit` i) $ toEnum n `fromNumber` (0 :: Integer)
+  -> UnionSet
+singletonSubtreeLeafSet n i = singletonSet n i
