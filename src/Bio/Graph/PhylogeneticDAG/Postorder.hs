@@ -61,9 +61,9 @@ postorderSequence' :: HasBlockCost u' v' w' x' y' z'
 --postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag m) | (trace ((show . fmap length . otoList) m) False) = undefined
 postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag m) = PDAG2 (newDAG dag) m
   where
-    completeLeafSetForDAG = foldl' f zeroBits dag
+    completeLeafSetForDAG = foldl' f mempty dag
       where
-        f acc = (acc .|.) . leafSetRepresentation . NE.head . resolutions
+        f acc = (acc <>) . leafSetRepresentation . NE.head . resolutions
 
     newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> ((mempty, mempty, Nothing) <$) . updateGraphCosts . graphData
     dagSize       = length $ references dag
