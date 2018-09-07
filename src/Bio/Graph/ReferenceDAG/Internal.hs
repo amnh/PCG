@@ -19,6 +19,7 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UnboxedSums                #-}
+{-# LANGUAGE FunctionalDependencies     #-}
 
 module Bio.Graph.ReferenceDAG.Internal where
 
@@ -27,7 +28,7 @@ import           Bio.Graph.Component
 import           Bio.Graph.LeafSet
 import           Control.Arrow                 ((&&&), (***))
 import           Control.DeepSeq
-import           Control.Lens                  as Lens (to)
+import           Control.Lens                  as Lens (to, Lens', lens)
 import           Control.Lens.Fold             (Fold, folding)
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
@@ -140,12 +141,12 @@ instance Bifunctor (ReferenceDAG d) where
       where
         h (IndexData node parentRefs' childRefs') = IndexData (g node) parentRefs' $ f <$> childRefs'
 
-{--
+
 -- | (✔)
 instance Foldable (ReferenceDAG d e) where
 
     foldMap f = foldMap (f . nodeDecoration) . references
---}
+
 
 class HasNodeDecoration s a | s -> a where
   _nodeDecoration :: Lens' s a
@@ -157,13 +158,13 @@ class HasReferenceVector s a | s -> a where
   _references :: Lens' s a
 
 instance HasReferenceVector (ReferenceDAG d e n) (Vector (IndexData e n)) where
-  _references = lens (references) (\r v -> r {references = v}
+  _references = lens (references) (\r v -> r {references = v})
 
 class FoldNodeDecoration s a | s -> a where
-  FoldNodeDecoration :: Fold s a
+  foldNodeDecoration :: Fold s a
 
-instance HasNodeDecorationFold (ReferenceDAG d e n) n where
-  FoldNodeDecoration = _references . (folding id) . _nodeDecoration
+instance FoldNodeDecoration (ReferenceDAG d e n) n where
+  foldNodeDecoration = _references . (folding id) . _nodeDecoration
 
 
 -- | (✔)
