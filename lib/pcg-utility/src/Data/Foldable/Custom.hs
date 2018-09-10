@@ -15,7 +15,7 @@
 
 module Data.Foldable.Custom where
 
-import Data.Foldable (Foldable(foldl'))
+import Data.Foldable (Foldable (foldl'))
 
 -- | Peforms a foldMap that is strict in the accumulator.
 --

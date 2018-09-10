@@ -10,11 +10,10 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveFunctor              #-}
-{-# LANGUAGE DeriveGeneric              #-}
-{-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE DeriveFunctor         #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Bio.Graph.Node.Internal
   ( EdgeSet
@@ -36,11 +35,11 @@ import Control.DeepSeq
 import Control.Lens
 import Data.Bits
 import Data.BitVector.LittleEndian
-import Data.UnionSet
 import Data.EdgeSet
 import Data.Foldable
 import Data.List.NonEmpty          (NonEmpty (..))
 import Data.TopologyRepresentation
+import Data.UnionSet
 import GHC.Generics
 import Text.Newick.Class
 import Text.XML
@@ -230,4 +229,4 @@ singletonSubtreeLeafSet
   :: Int -- ^ Leaf count
   -> Int -- ^ Leaf index
   -> UnionSet
-singletonSubtreeLeafSet n i = singletonSet n i
+singletonSubtreeLeafSet = singletonSet

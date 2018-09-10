@@ -14,12 +14,12 @@
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UnboxedSums                #-}
-{-# LANGUAGE FunctionalDependencies     #-}
 
 module Bio.Graph.ReferenceDAG.Internal where
 
@@ -28,7 +28,7 @@ import           Bio.Graph.Component
 import           Bio.Graph.LeafSet
 import           Control.Arrow                 ((&&&), (***))
 import           Control.DeepSeq
-import           Control.Lens                  as Lens (to, Lens', Lens, lens)
+import           Control.Lens                  as Lens (Lens, Lens', lens, to)
 import           Control.Lens.Fold             (Fold, folding)
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
@@ -351,7 +351,7 @@ class HasNodeDecoration s t a b | s -> a, t -> b where
 {-# SPECIALISE _nodeDecoration :: Lens (IndexData e n) (IndexData e n') n n' #-}
 
 instance HasNodeDecoration (IndexData e n) (IndexData e n') n n' where
-  _nodeDecoration = lens (nodeDecoration) (\i n' -> i {nodeDecoration = n'})
+  _nodeDecoration = lens nodeDecoration (\i n' -> i {nodeDecoration = n'})
 
 -- |
 -- A 'Lens' for the 'references' field
@@ -360,7 +360,7 @@ class HasReferenceVector s a | s -> a where
 {-# SPECIALISE _references :: Lens' (ReferenceDAG d e n) (Vector (IndexData e n)) #-}
 
 instance HasReferenceVector (ReferenceDAG d e n) (Vector (IndexData e n)) where
-  _references = lens (references) (\r v -> r {references = v})
+  _references = lens references (\r v -> r {references = v})
 
 -- |
 -- A 'Fold' for folding over a structure containing node decorations.
@@ -369,7 +369,7 @@ class FoldNodeDecoration s a | s -> a where
 {-# SPECIALISE foldNodeDecoration :: Fold (ReferenceDAG d e n) n #-}
 
 instance FoldNodeDecoration (ReferenceDAG d e n) n where
-  foldNodeDecoration = _references . (folding id) . _nodeDecoration
+  foldNodeDecoration = _references . folding id . _nodeDecoration
 
 -- |
 -- A 'Lens' for the 'dagCost' field
