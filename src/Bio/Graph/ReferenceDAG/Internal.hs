@@ -347,6 +347,8 @@ instance (Show n, ToXML n) => ToXML (ReferenceDAG d e n) where
 -- A 'Lens' for the 'nodeDecoration' field.
 class HasNodeDecoration s t a b | s -> a, t -> b where
   _nodeDecoration :: Lens s t a b
+  -- TODO (CM): Make these speicalise pragmas more monomorphic in the types being used?
+{-# SPECIALISE _nodeDecoration :: Lens (IndexData e n) (IndexData e n') n n' #-}
 
 instance HasNodeDecoration (IndexData e n) (IndexData e n') n n' where
   _nodeDecoration = lens (nodeDecoration) (\i n' -> i {nodeDecoration = n'})
@@ -355,6 +357,7 @@ instance HasNodeDecoration (IndexData e n) (IndexData e n') n n' where
 -- A 'Lens' for the 'references' field
 class HasReferenceVector s a | s -> a where
   _references :: Lens' s a
+{-# SPECIALISE _references :: Lens' (ReferenceDAG d e n) (Vector (IndexData e n)) #-}
 
 instance HasReferenceVector (ReferenceDAG d e n) (Vector (IndexData e n)) where
   _references = lens (references) (\r v -> r {references = v})
@@ -363,6 +366,7 @@ instance HasReferenceVector (ReferenceDAG d e n) (Vector (IndexData e n)) where
 -- A 'Fold' for folding over a structure containing node decorations.
 class FoldNodeDecoration s a | s -> a where
   foldNodeDecoration :: Fold s a
+{-# SPECIALISE foldNodeDecoration :: Fold (ReferenceDAG d e n) n #-}
 
 instance FoldNodeDecoration (ReferenceDAG d e n) n where
   foldNodeDecoration = _references . (folding id) . _nodeDecoration
@@ -371,6 +375,7 @@ instance FoldNodeDecoration (ReferenceDAG d e n) n where
 -- A 'Lens' for the 'dagCost' field
 class HasDagCost s a | s -> a where
   _dagCost :: Lens' s a
+{-# SPECIALISE _dagCost :: (GraphData d) ExtendedReal #-}
 
 instance HasDagCost (GraphData d) ExtendedReal where
   _dagCost = lens dagCost (\g d -> g {dagCost = d})
@@ -379,6 +384,8 @@ instance HasDagCost (GraphData d) ExtendedReal where
 -- A 'Lens' for the 'networkEdgeCost' field.
 class HasNetworkEdgeCost s a | s -> a where
   _networkEdgeCost :: Lens' s a
+{-# SPECIALISE _networkEdgeCost :: Lens' (GraphData d) ExtendedReal #-}
+
 
 instance HasNetworkEdgeCost (GraphData d) ExtendedReal where
   _networkEdgeCost = lens networkEdgeCost (\g n -> g {networkEdgeCost = n})
@@ -387,14 +394,25 @@ instance HasNetworkEdgeCost (GraphData d) ExtendedReal where
 -- a 'Lens' for the 'rootingCost' field.
 class HasRootingCost s a | s -> a where
   _rootingCost :: Lens' s a
+{-# SPECIALISE _rootingCost :: Lens' (GraphData d) Double #-}
 
 instance HasRootingCost (GraphData d) Double where
   _rootingCost = lens rootingCost (\g r -> g {rootingCost = r})
 
 -- |
+-- A 'Lens' for 'totalBlockClost' field.
+class HasTotalBlockCost s a | s -> a where
+  _totalBlockCost :: Lens' s a
+{-# SPECIALISE _totalBlockCost :: Lens' (GraphData d) Double #-}
+
+instance HasTotalBlockCost (GraphData d) Double where
+  _totalBlockCost = lens totalBlockCost (\g t -> g {totalBlockCost = t})
+
+-- |
 -- a 'Lens' for the 'graphMetadata' field.
 class HasGraphMetadata s a | s -> a where
   _graphMetadata :: Lens' s a
+{-# SPECIALISE _graphMetadata :: Lens' (GraphData d) d #-}
 
 instance HasGraphMetadata (GraphData d) d where
   _graphMetadata = lens graphMetadata (\g m -> g {graphMetadata = m})
