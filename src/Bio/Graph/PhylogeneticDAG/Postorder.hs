@@ -12,8 +12,10 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE MonoLocalBinds   #-}
+{-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE MonoLocalBinds      #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Bio.Graph.PhylogeneticDAG.Postorder
   ( postorderSequence'
@@ -30,13 +32,20 @@ import           Bio.Metadata.Dynamic
 import           Bio.Sequence
 import           Control.Applicative                (liftA2)
 import           Control.Arrow                      ((&&&))
+import           Control.Lens.At                    (ix)
+import           Control.Lens.Combinators           (singular)
+import           Control.Lens.Fold                  (foldMapOf)
+import           Control.Lens.Operators             ((.~), (^.))
 import           Data.Bits
 import           Data.Foldable
+import           Data.Foldable.Custom               (foldMap')
+import           Data.Function                      ((&))
 import qualified Data.IntMap                        as IM
 import           Data.Key
 import           Data.List.NonEmpty                 (NonEmpty ((:|)))
 import qualified Data.List.NonEmpty                 as NE
 import           Data.MonoTraversable
+import           Data.UnionSet                      (UnionSet)
 import qualified Data.Vector                        as V
 
 
@@ -46,7 +55,8 @@ import qualified Data.Vector                        as V
 -- The logic function takes a current node decoration,
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
-postorderSequence' :: HasBlockCost u' v' w' x' y' z'
+postorderSequence'
+  :: forall m e n u v w x y z u' v' w' x' y' z' . HasBlockCost u' v' w' x' y' z'
   => (ContinuousCharacterMetadataDec        -> u -> [u'] -> u')
   -> (DiscreteCharacterMetadataDec          -> v -> [v'] -> v')
   -> (DiscreteCharacterMetadataDec          -> w -> [w'] -> w')
@@ -61,24 +71,34 @@ postorderSequence' :: HasBlockCost u' v' w' x' y' z'
 --postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag m) | (trace ((show . fmap length . otoList) m) False) = undefined
 postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag m) = PDAG2 (newDAG dag) m
   where
-    completeLeafSetForDAG = foldl' f mempty dag
+    completeLeafSetForDAG = foldMap' f dag
       where
-        f acc = (acc <>) . leafSetRepresentation . NE.head . resolutions
+        f :: PhylogeneticNode2 charSeq decData -> UnionSet
+        f = leafSetRepresentation . NE.head . resolutions
 
     newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> ((mempty, mempty, Nothing) <$) . updateGraphCosts . graphData
-    dagSize       = length $ references dag
+    !dagSize      = length $ references dag
     newReferences = V.generate dagSize h
       where
-        h i = IndexData <$> const (memo ! i) <*> parentRefs <*> childRefs $ references dag ! i
+        h :: Int
+          -> IndexData e (PhylogeneticNode2 (CharacterSequence u' v' w' x' y' z') n)
+        h i = (dag ^. _references . singular (ix i))
+            & _nodeDecoration .~ (memo ^. singular (ix i))
+          --(IndexData <$> const (memo ! i)) <*> parentRefs <*> childRefs $ references dag ! i
 
+    updateGraphCosts :: GraphData d -> GraphData d
     updateGraphCosts g =
-        GraphData
+      g & _dagCost .~ (realToFrac . sum $ accessCost <$> rootRefs dag)
+        & _networkEdgeCost .~ 0
+        & _rootingCost     .~ 0
+        & _totalBlockCost  .~ 0
+{--        GraphData
         { dagCost         = realToFrac . sum $ accessCost <$> rootRefs dag
         , networkEdgeCost = 0
         , rootingCost     = 0
         , totalBlockCost  = 0
         , graphMetadata   = graphMetadata g
-        }
+        } --}
       where
         accessCost :: Int -> Double
         accessCost = minimum
@@ -87,7 +107,7 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag m) = PDAG2 (newDAG dag) m
                    . nodeDecoration
                    . (newReferences !)
 
---    memo :: Vector (PhylogeneticNode2 n (CharacterSequence u' v' w' x' y' z'))
+    memo :: V.Vector (PhylogeneticNode2 (CharacterSequence u' v' w' x' y' z') n)
     memo = V.generate dagSize h
       where
         h i =
@@ -125,3 +145,5 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag m) = PDAG2 (newDAG dag) m
                           let  mutuallyExclusiveIncidentEdge = if x == i then (y,j) else (x,j)
                           in   addEdgeToEdgeSet (i,j) . addNetworkEdgeToTopology (i,j) mutuallyExclusiveIncidentEdge
                       _     -> addEdgeToEdgeSet (i,j)
+
+--memoise ::
