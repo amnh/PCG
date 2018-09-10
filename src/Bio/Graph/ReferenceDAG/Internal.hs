@@ -28,7 +28,7 @@ import           Bio.Graph.Component
 import           Bio.Graph.LeafSet
 import           Control.Arrow                 ((&&&), (***))
 import           Control.DeepSeq
-import           Control.Lens                  as Lens (to, Lens', lens)
+import           Control.Lens                  as Lens (to, Lens', Lens, lens)
 import           Control.Lens.Fold             (Fold, folding)
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
@@ -146,25 +146,6 @@ instance Bifunctor (ReferenceDAG d) where
 instance Foldable (ReferenceDAG d e) where
 
     foldMap f = foldMap (f . nodeDecoration) . references
-
-
-class HasNodeDecoration s a | s -> a where
-  _nodeDecoration :: Lens' s a
-
-instance HasNodeDecoration (IndexData e n) n where
-  _nodeDecoration = lens (nodeDecoration) (\i n -> i {nodeDecoration = n})
-
-class HasReferenceVector s a | s -> a where
-  _references :: Lens' s a
-
-instance HasReferenceVector (ReferenceDAG d e n) (Vector (IndexData e n)) where
-  _references = lens (references) (\r v -> r {references = v})
-
-class FoldNodeDecoration s a | s -> a where
-  foldNodeDecoration :: Fold s a
-
-instance FoldNodeDecoration (ReferenceDAG d e n) n where
-  foldNodeDecoration = _references . (folding id) . _nodeDecoration
 
 
 -- | (✔)
@@ -362,6 +343,61 @@ instance (Show n, ToXML n) => ToXML (ReferenceDAG d e n) where
           newick = Left ("Newick_representation", toNewick dag)
           vect   = Right . collapseElemList "Nodes" [] $ dag
 
+-- |
+-- A 'Lens' for the 'nodeDecoration' field.
+class HasNodeDecoration s t a b | s -> a, t -> b where
+  _nodeDecoration :: Lens s t a b
+
+instance HasNodeDecoration (IndexData e n) (IndexData e n') n n' where
+  _nodeDecoration = lens (nodeDecoration) (\i n' -> i {nodeDecoration = n'})
+
+-- |
+-- A 'Lens' for the 'references' field
+class HasReferenceVector s a | s -> a where
+  _references :: Lens' s a
+
+instance HasReferenceVector (ReferenceDAG d e n) (Vector (IndexData e n)) where
+  _references = lens (references) (\r v -> r {references = v})
+
+-- |
+-- A 'Fold' for folding over a structure containing node decorations.
+class FoldNodeDecoration s a | s -> a where
+  foldNodeDecoration :: Fold s a
+
+instance FoldNodeDecoration (ReferenceDAG d e n) n where
+  foldNodeDecoration = _references . (folding id) . _nodeDecoration
+
+-- |
+-- A 'Lens' for the 'dagCost' field
+class HasDagCost s a | s -> a where
+  _dagCost :: Lens' s a
+
+instance HasDagCost (GraphData d) ExtendedReal where
+  _dagCost = lens dagCost (\g d -> g {dagCost = d})
+
+-- |
+-- A 'Lens' for the 'networkEdgeCost' field.
+class HasNetworkEdgeCost s a | s -> a where
+  _networkEdgeCost :: Lens' s a
+
+instance HasNetworkEdgeCost (GraphData d) ExtendedReal where
+  _networkEdgeCost = lens networkEdgeCost (\g n -> g {networkEdgeCost = n})
+
+-- |
+-- a 'Lens' for the 'rootingCost' field.
+class HasRootingCost s a | s -> a where
+  _rootingCost :: Lens' s a
+
+instance HasRootingCost (GraphData d) Double where
+  _rootingCost = lens rootingCost (\g r -> g {rootingCost = r})
+
+-- |
+-- a 'Lens' for the 'graphMetadata' field.
+class HasGraphMetadata s a | s -> a where
+  _graphMetadata :: Lens' s a
+
+instance HasGraphMetadata (GraphData d) d where
+  _graphMetadata = lens graphMetadata (\g m -> g {graphMetadata = m})
 
 -- |
 -- Produces a set of directed references representing all edges in the DAG.
