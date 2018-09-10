@@ -1,15 +1,15 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Foldable.Custom
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2018 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Functions for collecting 'Left' values of 'Either' forming a 'Validation'
--- similar context.
+-- This adds strict version of foldMap.
+-- Note: This is due to be added to Foldable in base 4.13.
 --
 -----------------------------------------------------------------------------
 
