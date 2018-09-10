@@ -1,4 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Foldable.Custom
@@ -21,4 +20,4 @@ import Data.Foldable (Foldable(foldl'))
 -- | Peforms a foldMap that is strict in the accumulator.
 --
 foldMap' :: (Monoid m, Foldable f) => (a -> m) -> f a -> m
-foldMap' f = foldl' (\ !acc a -> acc <> f a) mempty
+foldMap' f = foldl' (\ acc a -> acc <> f a) mempty
