@@ -75,6 +75,7 @@ library
 
   exposed-modules:  Data.BitMatrix
                     Data.Either.Custom
+                    Data.Foldable.Custom
                     Data.List.Utility
                     Data.Matrix.NotStupid
                     Data.MutualExclusionSet
