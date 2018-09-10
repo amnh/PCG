@@ -20,6 +20,14 @@
         , rhs: parmap
         }
 
+# Custom suggestion hints
+# TODO (CM): Add custom rule when I figure out how to ignore class instances.
+- suggestion: { name: Strict sum
+              , note: Prefer custom strict sum to lazy sum. Decreases laziness.
+              , lhs: sum
+              , rhs: sum'
+              }
+
 
 # Replace a $ b $ c with a . b $ c
 - group: { name: dollar, enabled: true }
@@ -77,3 +85,6 @@
       , Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
       ]
     }
+
+# Ignore strict sum in modules defining Foldable instance
+- ignore: {name: Strict sum, within: Data.MutualExclusionSet.Internal}
