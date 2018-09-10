@@ -32,6 +32,7 @@ import           Control.Arrow                      ((&&&))
 import           Control.Lens
 import           Control.Monad.State.Lazy
 import           Data.Foldable
+import           Data.Foldable.Custom               (sum')
 import           Data.HashMap.Lazy                  (HashMap)
 import qualified Data.HashMap.Lazy                  as HM
 import qualified Data.IntMap                        as IM
@@ -437,7 +438,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
 
         recomputeCost (staticCostVal, dynCharVect) = (staticCostVal + minDynCharCost, dynCharNoWeight)
           where
-            minDynCharCost  = sum $ (\(c, w,  _) -> fromIntegral c * w) <$> dynCharVect
+            minDynCharCost  = sum' $ (\(c, w,  _) -> fromIntegral c * w) <$> dynCharVect
             dynCharNoWeight =       (\(c, _, es) -> (c, es)           ) <$> dynCharVect
 
 {-

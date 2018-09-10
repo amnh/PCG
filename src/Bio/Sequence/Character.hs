@@ -53,6 +53,7 @@ import           Data.Foldable
 import           Data.Key
 import           Data.List.NonEmpty           (NonEmpty)
 --import qualified Data.List.NonEmpty      as NE
+import           Data.Foldable.Custom         (sum')
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
 import           Data.Semigroup.Traversable
@@ -313,7 +314,7 @@ sequenceCost
   -> CharacterSequence u v w x y z
   -> Double
 sequenceCost meta char
-  = sum
+  = sum'
   . parmap rpar (uncurry Blk.blockCost)
   $ zip (M.toBlocks meta) (toBlocks char)
 
@@ -328,6 +329,6 @@ sequenceRootCost
   -> CharacterSequence u v w x y z
   -> Double
 sequenceRootCost rootCount meta char
-  = sum
+  = sum'
   . parmap rpar (uncurry (Blk.rootCost rootCount))
   $ zip (M.toBlocks meta) (toBlocks char)

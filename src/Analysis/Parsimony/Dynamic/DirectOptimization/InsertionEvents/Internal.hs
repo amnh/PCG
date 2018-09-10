@@ -19,6 +19,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.InsertionEvents.Internal wh
 import           Analysis.Parsimony.Dynamic.DirectOptimization.DeletionEvents
 import           Data.Bifunctor                                               (bimap)
 import           Data.Foldable
+import           Data.Foldable.Custom                                         (sum')
 import           Data.IntMap                                                  (IntMap)
 import qualified Data.IntMap                                                  as IM
 import           Data.Key
@@ -174,7 +175,7 @@ instance (Show e) => Show (InsertionEvents a e) where
 coalesce :: Foldable t => DeletionEvents -> InsertionEvents e -> t (InsertionEvents e) -> InsertionEvents e
 coalesce ancestorDeletions (IE ancestorMap) descendantEvents
   | any (< 0) $ IM.keys descendantMap = error "A negative key value was created"
-  | size output /= sum (size <$> toList descendantEvents) + size (IE ancestorMap) = error "Serious problem, size is not additive"
+  | size output /= sum' (size <$> toList descendantEvents) + size (IE ancestorMap) = error "Serious problem, size is not additive"
   | otherwise                        = output
   where
     output = IE . IM.fromList $ result <> remaining acc
@@ -263,7 +264,7 @@ unwrap (IE x) = x
 
 -- | The number of distinct insertion events stored in the 'InsertionEvents'
 size :: InsertionEvents e -> Int
-size (IE im) = sum $ length <$> im
+size (IE im) = sum' $ length <$> im
 
 
 -- |

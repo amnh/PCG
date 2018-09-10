@@ -38,7 +38,7 @@ import           Control.Lens.Fold                  (foldMapOf)
 import           Control.Lens.Operators             ((.~), (^.))
 import           Data.Bits
 import           Data.Foldable
-import           Data.Foldable.Custom               (foldMap')
+import           Data.Foldable.Custom               (foldMap', sum')
 import           Data.Function                      ((&))
 import qualified Data.IntMap                        as IM
 import           Data.Key
@@ -88,7 +88,7 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag m) = PDAG2 (newDAG dag) m
 
     updateGraphCosts :: GraphData d -> GraphData d
     updateGraphCosts g =
-      g & _dagCost .~ (realToFrac . sum $ accessCost <$> rootRefs dag)
+      g & _dagCost .~ (realToFrac . sum' $ accessCost <$> rootRefs dag)
         & _networkEdgeCost .~ 0
         & _rootingCost     .~ 0
         & _totalBlockCost  .~ 0

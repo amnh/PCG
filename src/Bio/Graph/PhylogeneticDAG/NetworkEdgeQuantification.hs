@@ -31,6 +31,7 @@ import qualified Bio.Sequence.Metadata              as M
 import           Control.Lens
 import           Data.Bits
 import           Data.Foldable
+import           Data.Foldable.Custom               (sum')
 import           Data.Key
 import           Data.List.NonEmpty                 (NonEmpty ((:|)))
 import qualified Data.List.NonEmpty                 as NE
@@ -145,10 +146,10 @@ assignPunitiveNetworkEdgeCost input@(PDAG2 dag meta) = (outputContext, PDAG2 (da
           minimalDisplayForestPerBlock
 
     -- We also accumulate the cost of all the character blocks accros the display forests.
-    cumulativeCharacterCost = sum $ (\(_,_,c) -> c) <$> minimalDisplayForestPerBlock
+    cumulativeCharacterCost = sum' $ (\(_,_,c) -> c) <$> minimalDisplayForestPerBlock
 
     -- And accumulate the root cost of all the blocks accross the display forests.
-    cumulativeRootCost      = sum $ (\(_,c,_) -> c) <$> minimalDisplayForestPerBlock
+    cumulativeRootCost      = sum' $ (\(_,c,_) -> c) <$> minimalDisplayForestPerBlock
 
     -- And lastly the total DAG cost
     totalCost = punitiveCost + realToFrac cumulativeCharacterCost + realToFrac cumulativeRootCost
@@ -223,7 +224,7 @@ extractMostParsimoniusDisplayForest metaSeq displayForests = (topo, rCost, bCost
     -- select the first one.
     minDisplayForestWLOG  = head $ minimaBy (comparing displayForestCost) displayForests
 
-    displayForestCost dis = sum $ displayTreeCost <$> dis
+    displayForestCost dis = sum' $ displayTreeCost <$> dis
       where
         rootCount         = length dis
         displayTreeCost x = let charSeq = characterSequence x
@@ -283,7 +284,7 @@ calculatePunitiveNetworkEdgeCost edgeSetCardinality networkEdgeSet parsimoniousC
                                  -- . trace ("Entire     edges: " <> show entireNetworkEdgeSet)
                                  -- . trace ("Minimal Block edges: " <> show ((\(_,_,x) -> collapseToEdgeSet x) <$> minimalBlockNetworkDisplay)) $
                                  (infinity, 0 <$ minimalContexts)
-  | otherwise                  = (realToFrac $ sum punitiveCostPerBlock, punitiveCostPerBlock)
+  | otherwise                  = (realToFrac $ sum' punitiveCostPerBlock, punitiveCostPerBlock)
   where
     -- First we determine if there are extraneous network edges in the DAG.
     --

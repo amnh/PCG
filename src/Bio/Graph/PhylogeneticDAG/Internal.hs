@@ -53,6 +53,7 @@ import           Control.DeepSeq
 import           Control.Lens                    as Lens
 import           Data.Bits
 import           Data.Foldable
+import           Data.Foldable.Custom            (sum')
 import           Data.GraphViz.Printing          hiding ((<>))
 import           Data.GraphViz.Types
 import           Data.HashMap.Lazy               (HashMap)
@@ -315,7 +316,7 @@ generateLocalResolutions f1 f2 f3 f4 f5 f6 meta parentalResolutionContext childR
               where
                 newTotalCost = sequenceCost meta newCharacterSequence
 
-                newLocalCost = newTotalCost - sum (totalSubtreeCost <$> childResolutionContext)
+                newLocalCost = newTotalCost - sum' (totalSubtreeCost <$> childResolutionContext)
 
                 newCharacterSequence = transformation (characterSequence parentalResolutionContext) (characterSequence <$> childResolutionContext)
                 newSubtreeEdgeSet    = foldMap subtreeEdgeSet childResolutionContext
@@ -469,7 +470,7 @@ renderBlockSummary (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displa
         ]
       where
         bCost     = blockCost mValue bValue
-        totalCost = sum
+        totalCost = sum'
             [ fromMaybe 0 costOfRooting
             , fromMaybe 0 costOfNetworking
             , bCost

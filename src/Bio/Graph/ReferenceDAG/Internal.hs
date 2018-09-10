@@ -34,6 +34,7 @@ import           Control.Monad.State.Lazy
 import           Data.Bifunctor
 import           Data.EdgeSet
 import           Data.Foldable
+import           Data.Foldable.Custom
 import           Data.Functor                  ((<$))
 import           Data.GraphViz.Attributes
 import           Data.GraphViz.Printing        hiding ((<>))
@@ -1316,7 +1317,7 @@ toBinaryRenderingTree nodeRenderer dag = (`evalState` initialState) . traverse s
              subtrees <- mapM subtreeToRendering kids
              pure $ case subtrees of
                       []   -> Leaf shownNode
-                      x:xs -> Node (sum $ subtreeSize <$> x:xs) Nothing $ x:|xs
+                      x:xs -> Node (sum' $ subtreeSize <$> x:xs) Nothing $ x:|xs
         else do
              (ctr, symRefs) <- get
              case i `lookup` symRefs of
@@ -1326,7 +1327,7 @@ toBinaryRenderingTree nodeRenderer dag = (`evalState` initialState) . traverse s
                  subtrees <- mapM subtreeToRendering kids
                  pure $ case subtrees of
                           []   -> Leaf shownNode
-                          x:xs -> Node (sum $ subtreeSize <$> x:xs) (Just (show ctr)) $ x:|xs
+                          x:xs -> Node (sum' $ subtreeSize <$> x:xs) (Just (show ctr)) $ x:|xs
 
       where
         context     = refVec ! i

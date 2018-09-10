@@ -37,6 +37,7 @@ import           Bio.Metadata
 import           Control.Lens
 import           Data.Bits
 import           Data.Foldable
+import           Data.Foldable.Custom                                            (sum')
 import           Data.IntMap                                                     (IntMap)
 import qualified Data.IntMap                                                     as IM
 import           Data.Key
@@ -278,7 +279,7 @@ tripleComparison pairwiseAlignment meta childDecoration parentCharacter parentSi
                   LT -> (                  singleState, combinedCost)
                   GT -> acc
               where
-                combinedCost = fromFinite . sum $ snd . overlap scm singleState <$> [a, b, c]
+                combinedCost = fromFinite . sum' $ snd . overlap scm singleState <$> [a, b, c]
 
 
     single = lexicallyDisambiguate $ filterGaps almostSingle
@@ -422,7 +423,7 @@ threeWayMean sigma char1 char2 char3 =
   case invariantTransformation olength [char1, char2, char3] of
     Nothing -> error $ unwords [ "Three sequences supplied to 'threeWayMean' function did not have uniform length.", show (olength char1), show (olength char2), show (olength char3) ]
     Just 0  -> (0, char1, char1)
-    Just _  -> (unsafeToFinite $ sum costValues, constructDynamic $ filter (/= gap) meanStates, constructDynamic meanStates)
+    Just _  -> (unsafeToFinite $ sum' costValues, constructDynamic $ filter (/= gap) meanStates, constructDynamic meanStates)
   where
     gap = gapOfStream char1
     (meanStates, costValues) = unzip $ zipWith3 sigma (otoList char1) (otoList char2) (otoList char3)
