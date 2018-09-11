@@ -348,19 +348,23 @@ instance (Show n, ToXML n) => ToXML (ReferenceDAG d e n) where
 -- A 'Lens' for the 'nodeDecoration' field.
 class HasNodeDecoration s t a b | s -> a, t -> b where
   _nodeDecoration :: Lens s t a b
+
   -- TODO (CM): Make these speicalise pragmas more monomorphic in the types being used?
 {-# SPECIALISE _nodeDecoration :: Lens (IndexData e n) (IndexData e n') n n' #-}
 
 instance HasNodeDecoration (IndexData e n) (IndexData e n') n n' where
+  {-# INLINE _nodeDecoration #-}
   _nodeDecoration = lens nodeDecoration (\i n' -> i {nodeDecoration = n'})
 
 -- |
 -- A 'Lens' for the 'references' field
 class HasReferenceVector s a | s -> a where
   _references :: Lens' s a
+
 {-# SPECIALISE _references :: Lens' (ReferenceDAG d e n) (Vector (IndexData e n)) #-}
 
 instance HasReferenceVector (ReferenceDAG d e n) (Vector (IndexData e n)) where
+  {-# INLINE _references #-}
   _references = lens references (\r v -> r {references = v})
 
 -- |
@@ -370,6 +374,7 @@ class FoldNodeDecoration s a | s -> a where
 {-# SPECIALISE foldNodeDecoration :: Fold (ReferenceDAG d e n) n #-}
 
 instance FoldNodeDecoration (ReferenceDAG d e n) n where
+  {-# INLINE foldNodeDecoration #-}
   foldNodeDecoration = _references . folding id . _nodeDecoration
 
 -- |
@@ -379,6 +384,7 @@ class HasDagCost s a | s -> a where
 {-# SPECIALISE _dagCost :: (GraphData d) ExtendedReal #-}
 
 instance HasDagCost (GraphData d) ExtendedReal where
+  {-# INLINE _dagCost #-}
   _dagCost = lens dagCost (\g d -> g {dagCost = d})
 
 -- |
@@ -389,6 +395,7 @@ class HasNetworkEdgeCost s a | s -> a where
 
 
 instance HasNetworkEdgeCost (GraphData d) ExtendedReal where
+  {-# INLINE _networkEdgeCost #-}
   _networkEdgeCost = lens networkEdgeCost (\g n -> g {networkEdgeCost = n})
 
 -- |
@@ -398,6 +405,7 @@ class HasRootingCost s a | s -> a where
 {-# SPECIALISE _rootingCost :: Lens' (GraphData d) Double #-}
 
 instance HasRootingCost (GraphData d) Double where
+  {-# INLINE _rootingCost #-}
   _rootingCost = lens rootingCost (\g r -> g {rootingCost = r})
 
 -- |
@@ -407,6 +415,7 @@ class HasTotalBlockCost s a | s -> a where
 {-# SPECIALISE _totalBlockCost :: Lens' (GraphData d) Double #-}
 
 instance HasTotalBlockCost (GraphData d) Double where
+  {-# INLINE _totalBlockCost #-}
   _totalBlockCost = lens totalBlockCost (\g t -> g {totalBlockCost = t})
 
 -- |
@@ -416,6 +425,7 @@ class HasGraphMetadata s a | s -> a where
 {-# SPECIALISE _graphMetadata :: Lens' (GraphData d) d #-}
 
 instance HasGraphMetadata (GraphData d) d where
+  {-# INLINE _graphMetadata #-}
   _graphMetadata = lens graphMetadata (\g m -> g {graphMetadata = m})
 
 -- |
