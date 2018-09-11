@@ -46,6 +46,10 @@ test-new: stack-build-test-new
 
 lint: run-linter
 
+# Makes hoogle server
+
+hoogle: stack-hoogle-server
+
 
 # Target Definitions
 ################################################################################
@@ -85,6 +89,10 @@ stack-build-test-failures: phylocomgraph.cabal stack.yaml
 # Builds with profiling enabled
 stack-build-test-new: phylocomgraph.cabal stack.yaml
 	stack build --test --ta "--rerun-filter=new"
+
+# Builds haddock documentation searchable by locally hosted hoogle
+stack-hoogle-server:  phylocomgraph.cabal stack.yaml
+	stack hoogle --server
 
 
 ### The code cleanliness section
