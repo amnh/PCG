@@ -255,6 +255,7 @@ library
                     Bio.Graph.BinaryRenderingTree
                     Bio.Graph.Constructions
                     Bio.Graph.Forest
+                    Bio.Graph.Node.Class
                     Bio.Graph.Node.Internal
                     Bio.Graph.PhylogeneticDAG.Class
                     Bio.Graph.PhylogeneticDAG.Internal
