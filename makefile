@@ -35,6 +35,9 @@ rebuild: quick
 # Clean then rebuild
 rebuild-full: clean rebuild
 
+# Clean then rebuild outputting core
+core: clean stack-build-core
+
 # Rebuilds with optimizations and runs tests
 test: stack-build-test
 
@@ -77,6 +80,10 @@ stack-build-quick: phylocomgraph.cabal stack.yaml
 stack-build-profiling: phylocomgraph.cabal stack.yaml
 #	stack install $(profiling) --flag phylocomgraph:build-cpp-files
 	stack install $(profiling) --fast --ghc-options="-fprof-cafs -rtsopts=all -O0"
+
+# Builds outputting core files
+stack-build-core: phylocomgraph.cabal stack.yaml
+	stack build --ghc-options="-ddump-simpl"
 
 # Builds with profiling enabled
 stack-build-test: phylocomgraph.cabal stack.yaml
@@ -146,6 +153,8 @@ clean: phylocomgraph.cabal stack.yaml
 	  find $$dir -type f -name '*.hi' -delete; \
 	  find $$dir -type f -name '*.*~' -delete; \
 	  find $$dir -type f -name '#*.*' -delete; \
+	  find $$dir -type f -name '*dump\-hi*' -delete; \
+	  find $$dir -type f -name '*dump\-simpl*' -delete; \
 	done
 
 # Calls other make files to pre-process FFI files
