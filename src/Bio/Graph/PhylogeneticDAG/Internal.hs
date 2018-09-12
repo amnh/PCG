@@ -12,14 +12,13 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MonoLocalBinds        #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveGeneric          #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE MonoLocalBinds         #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE FunctionalDependencies #-}
 
--- Because I'm sick of dealing with the typechecker.
-{-# LANGUAGE UndecidableInstances  #-}
 
 module Bio.Graph.PhylogeneticDAG.Internal
   ( EdgeReference
@@ -31,6 +30,7 @@ module Bio.Graph.PhylogeneticDAG.Internal
   , localResolutionApplication
   , renderSummary
   , resolutionsDoNotOverlap
+  , HasPhylogeneticForest(..)
   ) where
 import           Bio.Character.Decoration.Shared
 import           Bio.Character.Encodable
@@ -127,6 +127,36 @@ data  PhylogeneticDAG2 m e n u v w x y z
 -- Reference to a edge in the DAG
 type EdgeReference = (Int, Int)
 
+-- |
+-- A 'Lens' for the 'phyogeneticForest' field
+class HasPhylogeneticForest s t a b | s -> a, s b -> t where
+  _phylogeneticForest :: Lens s t a b
+
+-- TODO (CM) : add specialise for the type
+
+-- These types are cursed:
+instance HasPhylogeneticForest
+  (PhylogeneticDAG2 m e n u v w x y z)
+  (PhylogeneticDAG2 m e n u' v' w' x' y' z')
+  ( ReferenceDAG
+                              (         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
+                              , Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
+                              , Maybe  (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge)))
+                              )
+                              e
+                              (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
+  )
+ ( ReferenceDAG
+                              (         HashMap EdgeReference (ResolutionCache (CharacterSequence u' v' w' x' y' z'))
+                              , Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u' v' w' x' y' z')))
+                              , Maybe  (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge)))
+                              )
+                              e
+                              (PhylogeneticNode2 (CharacterSequence u' v' w' x' y' z') n)
+ )
+  where
+  {-# INLINE _phylogeneticForest #-}
+  _phylogeneticForest = lens phylogeneticForest (\p pf -> p {phylogeneticForest = pf})
 
 -- | (✔)
 instance HasLeafSet
