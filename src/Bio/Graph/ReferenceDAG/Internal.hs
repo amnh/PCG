@@ -345,8 +345,27 @@ instance (Show n, ToXML n) => ToXML (ReferenceDAG d e n) where
           vect   = Right . collapseElemList "Nodes" [] $ dag
 
 -- |
+-- A 'Lens' for the 'graphData' field.
+class HasGraphData s t a b | s -> a, s b -> t where
+  _graphData :: Lens s t a b
+
+{-# SPECIALISE _graphData
+                 :: Lens
+                      (ReferenceDAG d e n)
+                      (ReferenceDAG d' e n)
+                      (GraphData d)
+                      (GraphData d')
+  #-}
+
+instance HasGraphData
+  (ReferenceDAG d e n) (ReferenceDAG d' e n) (GraphData d) (GraphData d')
+  where
+  {-# INLINE _graphData #-}
+  _graphData = lens graphData (\r g -> r {graphData = g})
+
+-- |
 -- A 'Lens' for the 'nodeDecoration' field.
-class HasNodeDecoration s t a b | s -> a, t -> b where
+class HasNodeDecoration s t a b | s -> a, b s -> t where
   _nodeDecoration :: Lens s t a b
 
   -- TODO (CM): Make these speicalise pragmas more monomorphic in the types being used?
@@ -358,12 +377,23 @@ instance HasNodeDecoration (IndexData e n) (IndexData e n') n n' where
 
 -- |
 -- A 'Lens' for the 'references' field
-class HasReferenceVector s a | s -> a where
-  _references :: Lens' s a
+class HasReferenceVector s t a b | s -> a, b s -> t where
+  _references :: Lens s t a b
 
-{-# SPECIALISE _references :: Lens' (ReferenceDAG d e n) (Vector (IndexData e n)) #-}
+{-# SPECIALISE
+  _references :: Lens
+                   (ReferenceDAG d e n)
+                   (ReferenceDAG d e' n')
+                   (Vector (IndexData e n))
+                   (Vector (IndexData e' n'))
+  #-}
 
-instance HasReferenceVector (ReferenceDAG d e n) (Vector (IndexData e n)) where
+instance HasReferenceVector
+  (ReferenceDAG d e n)
+  (ReferenceDAG d e' n')
+  (Vector (IndexData e n))
+  (Vector (IndexData e' n'))
+    where
   {-# INLINE _references #-}
   _references = lens references (\r v -> r {references = v})
 
@@ -420,11 +450,11 @@ instance HasTotalBlockCost (GraphData d) Double where
 
 -- |
 -- a 'Lens' for the 'graphMetadata' field.
-class HasGraphMetadata s a | s -> a where
-  _graphMetadata :: Lens' s a
+class HasGraphMetadata s t a b | s -> a, s b -> t where
+  _graphMetadata :: Lens s t a b
 {-# SPECIALISE _graphMetadata :: Lens' (GraphData d) d #-}
 
-instance HasGraphMetadata (GraphData d) d where
+instance HasGraphMetadata (GraphData d) (GraphData d') d d' where
   {-# INLINE _graphMetadata #-}
   _graphMetadata = lens graphMetadata (\g m -> g {graphMetadata = m})
 
