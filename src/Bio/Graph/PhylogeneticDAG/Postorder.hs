@@ -12,7 +12,6 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE MonoLocalBinds      #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -35,10 +34,10 @@ import           Control.Arrow                      ((&&&))
 import           Control.Lens.At                    (ix)
 import           Control.Lens.Combinators           (singular)
 import           Control.Lens.Fold                  (foldMapOf)
-import           Control.Lens.Operators             ((.~), (^.))
+import           Control.Lens.Operators             ((.~), (^.), (%~))
 import           Data.Bits
 import           Data.Foldable
-import           Data.Foldable.Custom               (foldMap', sum')
+import           Data.Foldable.Custom               (foldMap', sum', minimum')
 import           Data.Function                      ((&))
 import qualified Data.IntMap                        as IM
 import           Data.Key
@@ -47,7 +46,25 @@ import qualified Data.List.NonEmpty                 as NE
 import           Data.MonoTraversable
 import           Data.UnionSet                      (UnionSet)
 import qualified Data.Vector                        as V
+import Data.HashMap.Lazy (HashMap)
+import Data.IntSet (IntSet)
 
+
+type GraphMetadata u v w x y z
+  = (HashMap
+       EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
+    ,  V.Vector
+        (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
+    , Maybe
+        (NonEmpty
+           (TraversalTopology
+           , Double
+           , Double
+           , Double
+           , V.Vector (NonEmpty TraversalFocusEdge)
+           )
+        )
+    )
 
 -- |
 -- Applies a traversal logic function over a 'ReferenceDAG' in a /post-order/ manner.
@@ -55,6 +72,8 @@ import qualified Data.Vector                        as V
 -- The logic function takes a current node decoration,
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
+
+
 postorderSequence'
   :: forall m e n u v w x y z u' v' w' x' y' z' . HasBlockCost u' v' w' x' y' z'
   => (ContinuousCharacterMetadataDec        -> u -> [u'] -> u')
@@ -68,53 +87,44 @@ postorderSequence'
        -> z -> [z'] -> z')
   -> PhylogeneticDAG2 m e n u  v  w  x  y  z
   -> PhylogeneticDAG2 m e n u' v' w' x' y' z'
---postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag m) | (trace ((show . fmap length . otoList) m) False) = undefined
-postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag m) = PDAG2 (newDAG dag) m
+
+postorderSequence' f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag m) = pdag2 & _phylogeneticForest .~ newRDAG
   where
+    completeLeafSetForDAG :: UnionSet
     completeLeafSetForDAG = foldMap' f dag
       where
         f :: PhylogeneticNode2 charSeq decData -> UnionSet
         f = leafSetRepresentation . NE.head . resolutions
 
-    newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> ((mempty, mempty, Nothing) <$) . updateGraphCosts . graphData
-    !dagSize      = length $ references dag
-    newReferences = V.generate dagSize h
-      where
-        h :: Int
-          -> IndexData e (PhylogeneticNode2 (CharacterSequence u' v' w' x' y' z') n)
-        h i = (dag ^. _references . singular (ix i))
-            & _nodeDecoration .~ (memo ^. singular (ix i))
-          --(IndexData <$> const (memo ! i)) <*> parentRefs <*> childRefs $ references dag ! i
+    newRDAG =
+      dag  & _graphData %~ updateGraphCosts
+           & _graphData . _graphMetadata
+               .~ ((mempty, mempty, Nothing) :: GraphMetadata u' v' w' x' y' z')
+           & _references .~ newReferences
 
+    dagSize       = length $ references dag
+    newReferences = memo
+      where
     updateGraphCosts :: GraphData d -> GraphData d
     updateGraphCosts g =
       g & _dagCost .~ (realToFrac . sum' $ accessCost <$> rootRefs dag)
         & _networkEdgeCost .~ 0
         & _rootingCost     .~ 0
         & _totalBlockCost  .~ 0
-{--        GraphData
-        { dagCost         = realToFrac . sum $ accessCost <$> rootRefs dag
-        , networkEdgeCost = 0
-        , rootingCost     = 0
-        , totalBlockCost  = 0
-        , graphMetadata   = graphMetadata g
-        } --}
+
       where
         accessCost :: Int -> Double
-        accessCost = minimum
+        accessCost = minimum'
                    . fmap (sequenceCost m . characterSequence)
                    . resolutions
                    . nodeDecoration
                    . (newReferences !)
 
-    memo :: V.Vector (PhylogeneticNode2 (CharacterSequence u' v' w' x' y' z') n)
+    memo :: V.Vector (IndexData e (PhylogeneticNode2 (CharacterSequence u' v' w' x' y' z') n))
     memo = V.generate dagSize h
       where
-        h i =
-          PNode2
-              { resolutions          = newResolutions
-              , nodeDecorationDatum2 = nodeDecorationDatum2 $ nodeDecoration node
-              }
+        h i = (dag ^. _references . singular (ix i))
+              & _nodeDecoration . _resolutions .~ newResolutions
           where
             newResolutions
               | i `notElem` rootRefs dag = localResolutions
@@ -126,17 +136,27 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag m) = PDAG2 (newDAG dag) m
                         x:xs -> x:|xs
                         _    -> error "Root Node with no complete coverage resolutions!!! This should be logically impossible."
 
-            completeCoverage = (completeLeafSetForDAG ==) . (completeLeafSetForDAG .&.) . leafSetRepresentation
+            completeCoverage = (completeLeafSetForDAG ==) . leafSetRepresentation
+
             localResolutions = liftA2 (generateLocalResolutions f1 f2 f3 f4 f5 f6 m) datumResolutions childResolutions
 
+            node :: IndexData e (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
             node             = references dag ! i
+
+            childIndices :: [Int]
             childIndices     = IM.keys $ childRefs node
+
+            datumResolutions :: NonEmpty (ResolutionInformation (CharacterSequence u v w x y z))
             datumResolutions = resolutions $ nodeDecoration node
 
---            childResolutions :: NonEmpty [a]
+            childResolutions :: NonEmpty [ResolutionInformation (CharacterSequence u' v' w' x' y' z')]
             childResolutions = applySoftwireResolutions $ extractResolutionContext <$> childIndices
+
+            extractResolutionContext :: Int -> (NonEmpty (ResolutionInformation (CharacterSequence u' v' w' x' y' z')), IntSet)
             extractResolutionContext = getResolutions &&& parentRefs . (references dag !)
-            getResolutions j = fmap updateFunction . resolutions $ memo ! j
+
+            getResolutions :: Int -> NonEmpty (ResolutionInformation (CharacterSequence u' v' w' x' y' z'))
+            getResolutions j = fmap updateFunction . resolutions $ (memo ! j) ^. _nodeDecoration
               where
                 updateFunction =
                     case otoList . parentRefs $ references dag ! j of
@@ -145,5 +165,3 @@ postorderSequence' f1 f2 f3 f4 f5 f6 (PDAG2 dag m) = PDAG2 (newDAG dag) m
                           let  mutuallyExclusiveIncidentEdge = if x == i then (y,j) else (x,j)
                           in   addEdgeToEdgeSet (i,j) . addNetworkEdgeToTopology (i,j) mutuallyExclusiveIncidentEdge
                       _     -> addEdgeToEdgeSet (i,j)
-
---memoise ::
