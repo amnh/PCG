@@ -9,7 +9,8 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- This adds strict versions of some functions from Foldable.
+-- This adds strict versions of some functions from Foldable and some
+-- strict helper functions.
 -- Note: FoldMap' is due to be added to Foldable in base 4.13.
 --
 -----------------------------------------------------------------------------
@@ -25,9 +26,17 @@ module Data.Foldable.Custom
   where
 
 import Data.Coerce   (Coercible, coerce)
-import Data.Foldable (Foldable (foldl'))
+import Data.Foldable (Foldable (foldl', foldr))
 import Data.Monoid   (Sum (..))
 import Data.Maybe    (fromMaybe)
+import Control.DeepSeq (NFData (rnf), ($!!))
+
+-- | Performs an even stricter foldl reducing the accumulator
+-- to normal form as opposed to weak using NFData.
+--
+foldl'' :: (Foldable t, NFData b) => (b -> a -> b) -> b -> t a -> b
+foldl'' f z0 xs = foldr f' id xs z0
+  where f' x k z = k $!! f z x
 
 -- | Peforms a foldMap that is strict in the accumulator.
 --
@@ -35,7 +44,7 @@ foldMap' :: (Monoid m, Foldable f) => (a -> m) -> f a -> m
 {-# INLINE foldMap' #-}
 foldMap' f = foldl' (\ acc a -> acc <> f a) mempty
 
--- TODO (CM): fix this.
+
 foldl1' :: (Foldable t) => (a -> a -> a) -> t a -> a
 foldl1' f xs = fromMaybe (errorWithoutStackTrace "foldl1: empty structure")
                 (foldl' mf Nothing xs)
@@ -66,19 +75,22 @@ maximum' = fromMaybe (errorWithoutStackTrace "maximum: empty structure") .
   getMax . foldMap' (Max #. (Just :: a -> Maybe a))
 
 minimumBy' :: Foldable t => (a -> a -> Ordering) -> t a -> a
+{-# INLINE minimumBy' #-}
 minimumBy' cmp = foldl1' min'
   where min' x y = case cmp x y of
                         GT -> y
                         _  -> x
 
 maximumBy' :: Foldable t => (a -> a -> Ordering) -> t a -> a
+{-# INLINE maximumBy' #-}
 maximumBy' cmp = foldl1' max'
   where max' x y = case cmp x y of
                         GT -> x
                         _  -> y
 
 
--- This is from Data.Functor.Utils but is internal to base (as explained there).
+-- This is from Data.Functor.Utils but is internal to base (as explained there),
+-- so we reproduce it here.
 newtype Max a = Max {getMax :: Maybe a}
 newtype Min a = Min {getMin :: Maybe a}
 
