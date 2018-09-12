@@ -14,6 +14,7 @@
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FunctionalDependencies #-}
 
 module Bio.Graph.Node.Internal
   ( EdgeSet
@@ -22,6 +23,8 @@ module Bio.Graph.Node.Internal
   , PhylogeneticNode2(..)
   , ResolutionCache
   , ResolutionInformation(..)
+  , HasNodeDecorationDatum(..)
+  , HasResolutions(..)
   , addEdgeToEdgeSet
   , addNetworkEdgeToTopology
   , singletonEdgeSet
@@ -43,6 +46,7 @@ import Data.UnionSet
 import GHC.Generics
 import Text.Newick.Class
 import Text.XML
+import Control.Lens.Lens (Lens)
 
 
 -- |
@@ -64,6 +68,31 @@ data  PhylogeneticNode2 s n
     , nodeDecorationDatum2 :: !n
     } deriving (Eq, Functor, Generic)
 
+-- |
+-- A 'Lens' for the 'resoluions' field.
+class HasResolutions s t a b | s -> a, b s -> t where
+  _resolutions :: Lens s t a b
+
+{-# SPECIALISE _resolutions
+                 :: Lens (PhylogeneticNode2 s n) (PhylogeneticNode2 s' n) (ResolutionCache s) (ResolutionCache s')
+  #-}
+
+instance HasResolutions
+  (PhylogeneticNode2 s n) (PhylogeneticNode2 s' n) (ResolutionCache s) (ResolutionCache s')
+  where
+  {-# INLINE _resolutions #-}
+  _resolutions = lens resolutions (\p s -> p {resolutions = s})
+
+-- |
+-- A 'Lens' for the 'nodeDecorationDatum' field.
+class HasNodeDecorationDatum s t a b | s -> a, b s -> t where
+  _nodeDecorationDatum :: Lens s t a b
+
+{-# SPECIALISE _nodeDecorationDatum :: Lens (PhylogeneticNode2 s n) (PhylogeneticNode2 s n') n n' #-}
+
+instance HasNodeDecorationDatum (PhylogeneticNode2 s n) (PhylogeneticNode2 s n') n n' where
+  {-# INLINE _nodeDecorationDatum #-}
+  _nodeDecorationDatum = lens nodeDecorationDatum2 (\p n -> p {nodeDecorationDatum2 = n})
 
 -- |
 -- A collection of information used to memoize network optimizations.

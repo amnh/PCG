@@ -17,6 +17,8 @@ module Bio.Graph.Node
   , PhylogeneticNode2(..)
   , ResolutionCache
   , ResolutionInformation(..)
+  , HasNodeDecorationDatum(..)
+  , HasResolutions(..)
   , addEdgeToEdgeSet
   , addNetworkEdgeToTopology
   , singletonEdgeSet
