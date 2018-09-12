@@ -22,7 +22,10 @@ import GHC.Generics
 
 
 newtype UnionSet = Union BitVector
-  deriving (Bits, Eq, Generic, Ord)
+  deriving (Bits, Generic, Ord)
+
+instance Eq UnionSet where
+  (==) (Union bv1) (Union bv2) = (== bv2) $ (bv1 .&. bv2)
 
 instance Show UnionSet where
 
