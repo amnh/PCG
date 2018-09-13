@@ -9,7 +9,7 @@ import System.Directory
 import System.FilePath.Posix
 import Test.Tasty
 import Test.Tasty.Golden
-import Turtle                (shell, cd, pwd, rm, decodeString, encodeString)
+import Turtle                (cd, decodeString, encodeString, pwd, rm, shell)
 
 
 testSuite :: IO TestTree
@@ -18,7 +18,7 @@ testSuite = do
   let extensions = ["data", "dot", "xml"]
   let testInputs = [(pcg, ext) | pcg <- pcgFiles, ext <- extensions]
   flip shell mempty
-    $ pack
+    . pack
       $ mconcat
         ["[ -e ", testLog, " ]", " && ", "rm ", testLog] -- deletes the previous test.log
   tests <- traverse goldenTest testInputs
@@ -57,7 +57,7 @@ generateOutput :: FilePath -> IO ()
 generateOutput fp
   = do
   baseDir <- pwd
-  let testFP = pack $ (encodeString baseDir) </> testLog
+  let testFP = pack $ encodeString baseDir </> testLog
   cd $ decodeString fileDir
   flip shell mempty $
     mconcat
