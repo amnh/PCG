@@ -15,6 +15,7 @@
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
 
 module Bio.Graph.Node.Internal
   ( EdgeSet
@@ -40,6 +41,7 @@ import Data.BitVector.LittleEndian
 import Data.EdgeSet
 import Data.Foldable
 import Data.List.NonEmpty          (NonEmpty (..))
+import Data.Text.Lazy              (Text, pack)
 import Data.TopologyRepresentation
 import GHC.Generics
 import Text.Newick.Class
@@ -89,8 +91,8 @@ type ResolutionCache s = NonEmpty (ResolutionInformation s)
 -- |
 -- A newick representation of a subtree. 'Semigroup' instance used for subtree
 -- joining.
-newtype NewickSerialization = NS String
-  deriving (Eq, Generic, Ord)
+newtype NewickSerialization = NS Text
+  deriving (Eq, Generic, Ord, Show)
 
 
 -- |
@@ -149,11 +151,6 @@ instance Semigroup NewickSerialization where
 instance Semigroup SubtreeLeafSet where
 
     (<>) = (.|.)
-
-
-instance Show NewickSerialization where
-
-    show (NS s) = s
 
 
 instance (Show n, Show s) => Show (PhylogeneticNode2 s n) where
@@ -245,7 +242,7 @@ pNode2 = flip PNode2
 -- Construct a singleton newick string with a unique identifier that can be
 -- rendered to a string through its 'Show' instance.
 singletonNewickSerialization :: Show i => i -> NewickSerialization
-singletonNewickSerialization i = NS $ show i
+singletonNewickSerialization = NS . pack . show
 
 
 -- |
