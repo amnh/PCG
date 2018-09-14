@@ -30,7 +30,11 @@ newtype UnionSet = Union BitVector
 {-# SPECIALISE (==) :: UnionSet -> UnionSet -> Bool #-}
 instance Eq UnionSet where
   {-# INLINE (==)  #-}
-  (==) (Union bv1) (Union bv2) = (== bv2) $ (bv1 .&. bv2)
+  (==) (Union bv1) (Union bv2) =
+    case compare bv1 bv2 of
+      EQ -> True
+      LT -> (== bv2) $ bv1 .&. bv2
+      GT -> (== bv1) $ bv1 .&. bv2
 
 
 instance Show UnionSet where
