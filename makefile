@@ -38,6 +38,9 @@ rebuild-full: clean rebuild
 # Clean then rebuild outputting core
 core: clean stack-build-core
 
+# Clean then build with the llvm backend
+llvm: clean stack-build-llvm
+
 # Rebuilds with optimizations and runs tests
 test: stack-build-test
 
@@ -85,9 +88,14 @@ stack-build-profiling: phylocomgraph.cabal stack.yaml
 stack-build-core: phylocomgraph.cabal stack.yaml
 	stack build --ghc-options="-ddump-simpl -dsupress-coercions"
 
+# Builds with the llvm backend
+stack-build-llvm: phylocomgraph.cabal stack.yaml
+	stack build --ghc-options="-fllvm"
+
 # Builds with profiling enabled
 stack-build-test: phylocomgraph.cabal stack.yaml
 	stack build --test --ta "--rerun-update"
+
 
 # Builds with profiling enabled
 stack-build-test-failures: phylocomgraph.cabal stack.yaml
