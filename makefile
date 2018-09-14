@@ -81,9 +81,9 @@ stack-build-profiling: phylocomgraph.cabal stack.yaml
 #	stack install $(profiling) --flag phylocomgraph:build-cpp-files
 	stack install $(profiling) --fast --ghc-options="-fprof-cafs -rtsopts=all -O0"
 
-# Builds outputting core files
+# Builds outputting simplified core files (without newtype coercions)
 stack-build-core: phylocomgraph.cabal stack.yaml
-	stack build --ghc-options="-ddump-simpl"
+	stack build --ghc-options="-ddump-simpl -dsupress-coercions"
 
 # Builds with profiling enabled
 stack-build-test: phylocomgraph.cabal stack.yaml
@@ -168,4 +168,3 @@ cabal-build: phylocomgraph.cabal
 # Legacy cabal build option
 cabal-sandbox: phylocomgraph.cabal
 	cabal update && cabal sandbox delete && cabal sandbox init && cabal install --dependencies-only
-
