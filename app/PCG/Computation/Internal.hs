@@ -12,6 +12,8 @@ import           Data.List.NonEmpty          (NonEmpty (..))
 import qualified PCG.Command.Build.Evaluate  as Build
 import qualified PCG.Command.Read.Evaluate   as Read
 import qualified PCG.Command.Report.Evaluate as Report
+import qualified PCG.Command.Save.Evaluate as Save
+import qualified PCG.Command.Load.Evaluate as Load
 import           PCG.Syntax
 
 
@@ -33,10 +35,12 @@ evaluate :: Computation -> SearchState
 evaluate (Computation xs) = foldl' f mempty xs
   where
     f :: SearchState -> Command -> SearchState
-    f v c@BUILD  {} = v >>= Build.evaluate  c
-    f v c@READ   {} = v *>  Read.evaluate   c
-    f v c@REPORT {} = v >>= Report.evaluate c
---    f _ = error "NOT YET IMPLEMENTED"
+    f v c = case c of
+              BUILD  _ -> v >>= Build.evaluate  c
+              READ   _ -> v *>  Read.evaluate   c
+              REPORT _ -> v >>= Report.evaluate c
+              SAVE   _ -> v >>= Save.evaluate
+              LOAD   _ -> v >>= Load.evaluate
 
 
 renderSearchState :: Evaluation a -> String
