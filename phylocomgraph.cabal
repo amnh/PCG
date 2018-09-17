@@ -329,6 +329,7 @@ executable pcg
 
   other-modules:    Paths_phylocomgraph
                     PCG.Command.Build.Evaluate
+                    PCG.Command.Load.Evaluate
                     PCG.Command.Read.DecorationInitialization
                     PCG.Command.Read.Evaluate
                     PCG.Command.Read.ReadError
@@ -336,6 +337,7 @@ executable pcg
                     PCG.Command.Read.Unification.UnificationError
                     PCG.Command.Report.Evaluate
                     PCG.Command.Report.GraphViz
+                    PCG.Command.Save.Evaluate
                     PCG.Computation.Internal
 
 
