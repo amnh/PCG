@@ -76,6 +76,8 @@ library
                        PCG.Command.Build
                        PCG.Command.Read
                        PCG.Command.Report
+                       PCG.Command.Save
+                       PCG.Command.Load
                        PCG.Syntax.Combinators
 
   other-modules:       PCG.Syntax.Parser
