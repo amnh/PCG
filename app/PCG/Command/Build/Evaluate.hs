@@ -28,7 +28,7 @@ import           Control.Monad.IO.Class
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Compact                        (compact, getCompact)
-import Data.Compact.Serialize(writeCompact)
+import           Data.Compact.Serialize              (writeCompact)
 import           Data.Foldable
 import qualified Data.IntMap                         as IM
 import qualified Data.IntSet                         as IS
@@ -83,9 +83,7 @@ evaluate (BUILD (BuildCommand trajectoryCount buildType)) cpctInState = do
                                                             pure $ parmap rpar iterativeNetworkBuild bestTrees
 --                                                            pure $ fmap iterativeNetworkBuild bestTrees
                                        WheelerForest  -> fail "The BUILD command type 'Forest' is not yet implemented!"
-                     g <- liftIO . compact . Right $ toSolution bestNetwork
-                     liftIO $ writeCompact ".pcg.save" g
-                     pure g
+                     liftIO . compact . Right $ toSolution bestNetwork
   where
     toSolution :: NonEmpty a -> PhylogeneticSolution a
     toSolution = PhylogeneticSolution . pure . PhylogeneticForest

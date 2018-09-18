@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 module PCG.Command.Read.Evaluate
   ( evaluate

@@ -4,10 +4,10 @@ module PCG.Command.Load.Evaluate
   )
   where
 
-import           Data.Compact.Serialize                    (unsafeReadCompact)
-import           Bio.Graph
+import Bio.Graph
+import Control.Monad.IO.Class    (liftIO)
+import Data.Compact.Serialize    (unsafeReadCompact)
 import PCG.Command.Save.Evaluate (saveFile)
-import Control.Monad.IO.Class (liftIO)
 
 
 evaluate :: GraphState -> SearchState

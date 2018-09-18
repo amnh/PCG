@@ -13,8 +13,9 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE UnboxedSums      #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE UnboxedSums        #-}
 
 module PCG.Command.Save
   ( SaveCommand (..)
@@ -23,8 +24,8 @@ module PCG.Command.Save
 
 import PCG.Syntax.Combinators
 
-data SaveCommand = SaveCommand !FilePath
-  deriving Show
+newtype SaveCommand = SaveCommand FilePath
+  deriving stock Show
 
 saveCommandSpecification :: CommandSpecification SaveCommand
 saveCommandSpecification = command "save" . argList $ SaveCommand <$> text

@@ -5,9 +5,9 @@ module PCG.Command.Save.Evaluate
   )
   where
 
-import           Data.Compact.Serialize                    (writeCompact)
-import           Bio.Graph
-import           Control.Monad.IO.Class (liftIO)
+import Bio.Graph
+import Control.Monad.IO.Class (liftIO)
+import Data.Compact.Serialize (writeCompact)
 
 evaluate :: GraphState -> SearchState
 evaluate g = do

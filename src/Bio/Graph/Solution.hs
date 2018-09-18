@@ -46,7 +46,7 @@ import qualified Data.Text.Lazy            as L
 import           GHC.Generics
 import           Text.Newick.Class
 import           Text.XML
-import Type.Reflection(Typeable())
+import           Type.Reflection           (Typeable)
 
 
 -- |

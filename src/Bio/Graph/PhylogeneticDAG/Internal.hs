@@ -73,7 +73,7 @@ import           GHC.Generics
 import           Prelude                         hiding (zip)
 import           Text.Newick.Class
 import           Text.XML
-import Type.Reflection (Typeable())
+import           Type.Reflection                 (Typeable)
 
 
 -- |

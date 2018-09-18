@@ -13,8 +13,9 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE UnboxedSums      #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE UnboxedSums        #-}
 
 module PCG.Command.Load
   ( LoadCommand (..)
@@ -23,8 +24,8 @@ module PCG.Command.Load
 
 import PCG.Syntax.Combinators
 
-data LoadCommand = LoadCommand !FilePath
-  deriving Show
+newtype LoadCommand = LoadCommand FilePath
+  deriving stock Show
 
 loadCommandSpecification :: CommandSpecification LoadCommand
 loadCommandSpecification = command "Load" . argList $  LoadCommand <$> text

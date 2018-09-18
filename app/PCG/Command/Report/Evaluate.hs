@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 module PCG.Command.Report.Evaluate
   ( evaluate
@@ -13,8 +13,8 @@ import Bio.Character.Exportable
 import Bio.Graph
 import Bio.Graph.PhylogeneticDAG
 import Control.Monad.IO.Class
-import Data.Compact                     (getCompact, Compact())
-import Data.Compact.Serialize (unsafeReadCompact)
+import Data.Compact                     (Compact, getCompact)
+import Data.Compact.Serialize           (unsafeReadCompact)
 import Data.List.NonEmpty
 import Data.MonoTraversable
 import Data.Semigroup.Foldable

@@ -10,10 +10,10 @@ import           Data.Char                   (isSpace)
 import           Data.Foldable
 import           Data.List.NonEmpty          (NonEmpty (..))
 import qualified PCG.Command.Build.Evaluate  as Build
+import qualified PCG.Command.Load.Evaluate   as Load
 import qualified PCG.Command.Read.Evaluate   as Read
 import qualified PCG.Command.Report.Evaluate as Report
-import qualified PCG.Command.Save.Evaluate as Save
-import qualified PCG.Command.Load.Evaluate as Load
+import qualified PCG.Command.Save.Evaluate   as Save
 import           PCG.Syntax
 
 
