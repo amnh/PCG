@@ -17,17 +17,11 @@ testSuite = do
   pcgFiles <- getPCGFiles goldenDir
   let extensions = ["data", "dot", "xml"]
   let testInputs = [(pcg, ext) | pcg <- pcgFiles, ext <- extensions]
-  flip shell mempty
-    . pack
-      $ mconcat
-        ["[ -e ", testLog, " ]", " && ", "rm ", testLog] -- deletes the previous test.log
   tests <- traverse goldenTest testInputs
   pure $
     testGroup "Golden Test Suite:"
     tests
-  where
-    goldenDir :: FilePath
-    goldenDir = "./datasets/golden-tests"
+    
 
 -- |
 -- Runs a pcg file [file-name].pcg producing [file-name].extension for a
@@ -45,9 +39,6 @@ goldenTest (filePath, extension) = do
       outputFilePath
       (generateOutput filePath)
   where
-    getFileName :: FilePath -> FilePath
-    getFileName =  dropExtension . takeFileName
-
     makeGolden :: FilePath -> FilePath
     makeGolden = (<.> "golden") . (<> "_" <> extension) . dropExtension
 
@@ -57,15 +48,20 @@ generateOutput :: FilePath -> IO ()
 generateOutput fp
   = do
   baseDir <- pwd
-  let testFP = pack $ encodeString baseDir </> testLog
   cd $ decodeString fileDir
-  flip shell mempty $
-    mconcat
+  currDir <- pwd
+  flip shell mempty
+    . pack
+      $ mconcat
+        ["[ -e ", testLog, " ]", " && ", "rm ", testLog] -- deletes the previous test log.
+  flip shell mempty
+    . pack
+    $ mconcat
       ["stack exec pcg"
       , "< "
-      , pack fileName
+      , fileName
       , " >>"
-      , testFP
+      , testLog
       ]
   cd baseDir
   where
@@ -103,3 +99,8 @@ listDirectoryWithFilePath fp
 -- Name of test log file.
 testLog :: FilePath
 testLog = "test" <.> "log"
+
+-- |
+-- Name of golden tests directory.
+goldenDir :: FilePath
+goldenDir = "." </> "datasets" </> "golden-tests"
