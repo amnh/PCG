@@ -1,4 +1,4 @@
-Changelog
+﻿Changelog
 ==========
 
 PCG uses [PVP Versioning][1].
@@ -14,7 +14,7 @@ Releases are available [on GitHub][2].
 * Improved representation of Symbol Change Matrix (SCM) and Transition Cost Matrix (TCM)
 * Added Travis CI build script
 * Added test suites for Data.List.Utility, Data.Alphabet, and Data.TCM
-* Streamlined build experiance on MacOS
+* Streamlined build experience on MacOS
 * Corrected defect in handling of prealigned input data
 * Corrected defect in Data.Vector.NonEmpty.unfoldr
 * Corrected defect in headEx & lastEx of several MonoFoldable instances
@@ -24,12 +24,11 @@ Releases are available [on GitHub][2].
 * Documentation improvements
 
 
-
 ## [v0.1.0.1][4] - 2018-03-23
 
 * Removed space leaks in the C & C++ FFI bindings
 * Expanded memoized TCM to accept both pairs and triples of elements
-* Corrected defect in return results of the memoized TCM regarding unambiguous elments
+* Corrected defect in return results of the memoized TCM regarding unambiguous elements
 * Improved efficiency of memoized TCM implementation
 * Improved efficiency file parsers
 * Corrected binding issue which caused work to be repeated rather than shared

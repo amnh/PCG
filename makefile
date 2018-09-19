@@ -94,7 +94,7 @@ stack-build-test-new: phylocomgraph.cabal stack.yaml
 
 # install hlint if not installed
 install-hlint:
-	which hlint || (stack install hlint --resolver=lts)
+	which hlint           || (stack install hlint           --resolver=lts)
 
 # install stylish haskell if not installed
 install-stylish-haskell:
@@ -102,13 +102,13 @@ install-stylish-haskell:
 
 # install weeder if not installed
 install-weeder:
-	which weeder || (stack install weeder --resolver=lts)
+	which weeder          || (stack install weeder          --resolver=lts)
 
 format-code: install-stylish-haskell
 	(./stylish.sh)
 
 run-linter: install-hlint install-weeder format-code
-	hlint lib src test app
+	hlint app ffi lib src test utils
 	weeder . --build
 
 
