@@ -16,6 +16,7 @@ Releases are available [on GitHub][2].
 * Added Travis CI build script
 * Added test suites for Data.List.Utility, Data.Alphabet, and Data.TCM
 * Added support for compact regions of phylogenetic solutions
+* Added save and load commands by serialising compact regions
 * Streamlined build experiance on MacOS
 * Corrected defect in handling of prealigned input data
 * Corrected defect in Data.Vector.NonEmpty.unfoldr
