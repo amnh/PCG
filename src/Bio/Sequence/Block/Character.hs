@@ -49,15 +49,15 @@ import           Bio.Sequence.Block.Builder
 import           Bio.Sequence.Block.Internal
 import           Bio.Sequence.Block.Metadata  (MetadataBlock (..))
 import           Control.DeepSeq
+import qualified Control.Foldl                as L
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Bifunctor
 import           Data.Foldable
 import           Data.MonoTraversable         (Element)
-import           Data.Vector                  (Vector, fromList)
+import           Data.Vector                  (Vector, fromListN)
 import qualified Data.Vector                  as V
 import           Data.Vector.Instances        ()
-import           Data.Void
 import           GHC.Generics
 import           Text.XML
 
@@ -67,7 +67,7 @@ import           Text.XML
 -- networks.
 --
 -- Use '(<>)' to construct larger blocks.
-newtype CharacterBlock u v w x y z = CB (Block Void u v w x y z)
+newtype CharacterBlock u v w x y z = CB (Block () u v w x y z)
     deriving (Bifunctor, Eq, Functor, Generic, Semigroup)
 
 
@@ -136,7 +136,7 @@ instance ( ToXML u -- This is NOT a redundant constraint.
 finalizeCharacterBlock :: PartialCharacterBlock u v w x y z -> CharacterBlock u v w x y z
 finalizeCharacterBlock = CB . (
     Block
-      <$> const undefined
+      <$> const ()
       <*> fromDList . partialContinuousCharacterBins
       <*> fromDList . partialNonAdditiveCharacterBins
       <*> fromDList . partialAdditiveCharacterBins
@@ -145,7 +145,10 @@ finalizeCharacterBlock = CB . (
       <*> fromDList . partialDynamicCharacters
     )
   where
-    fromDList = fromList . toList
+    fromDList = uncurry fromListN . L.fold f
+      where
+        f :: L.Fold a (Int, [a])
+        f = (,) <$> L.length <*> L.list
 
 
 continuousCharacterBins :: CharacterBlock u v w x y z -> Vector u
@@ -175,7 +178,7 @@ dynamicCharacters = dynamicBins . unwrap
 setDynamicCharacters :: Vector z -> CharacterBlock u v w x y a -> CharacterBlock u v w x y z
 setDynamicCharacters v = CB . (
     Block
-      <$> const undefined
+      <$> const ()
       <*> continuousCharacterBins
       <*> nonAdditiveCharacterBins
       <*> additiveCharacterBins
@@ -198,7 +201,7 @@ hexmap
  -> CharacterBlock u' v' w' x' y' z'
 hexmap f1 f2 f3 f4 f5 f6 = CB . (
     Block
-      <$> undefined
+      <$> const ()
       <*> (parmap rpar f1 . continuousCharacterBins )
       <*> (parmap rpar f2 . nonAdditiveCharacterBins)
       <*> (parmap rpar f3 . additiveCharacterBins   )
@@ -219,7 +222,7 @@ hexTranspose
   -> CharacterBlock (t u) (t v) (t w) (t x) (t y) (t z)
 hexTranspose = CB . (
     Block
-      <$> const undefined
+      <$> const ()
       <*> transposition continuousCharacterBins
       <*> transposition nonAdditiveCharacterBins
       <*> transposition additiveCharacterBins
@@ -255,7 +258,7 @@ hexZipWith
   -> CharacterBlock u'' v'' w'' x'' y'' z''
 hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = CB
     Block
-      { blockMetadata   = undefined
+      { blockMetadata   = ()
       , continuousBins  = parZipWith rpar f1 (continuousCharacterBins  lhs) (continuousCharacterBins  rhs)
       , nonAdditiveBins = parZipWith rpar f2 (nonAdditiveCharacterBins lhs) (nonAdditiveCharacterBins rhs)
       , additiveBins    = parZipWith rpar f3 (additiveCharacterBins    lhs) (additiveCharacterBins    rhs)
@@ -298,7 +301,7 @@ hexZipWithMeta _ _ _ _ _ _ (MB meta) (CB lhs) (CB rhs)
 -}
 hexZipWithMeta f1 f2 f3 f4 f5 f6 (MB meta) (CB lhs) (CB rhs) = CB
     Block
-      { blockMetadata   = undefined
+      { blockMetadata   = ()
       , continuousBins  = parZipWith3 rpar f1 (continuousBins  meta) (continuousBins  lhs) (continuousBins  rhs)
       , nonAdditiveBins = parZipWith3 rpar f2 (nonAdditiveBins meta) (nonAdditiveBins lhs) (nonAdditiveBins rhs)
       , additiveBins    = parZipWith3 rpar f3 (additiveBins    meta) (additiveBins    lhs) (additiveBins    rhs)
@@ -322,7 +325,7 @@ toMissingCharacters
   -> CharacterBlock u v w x y z
 toMissingCharacters = CB . (
     Block
-      <$> const undefined
+      <$> const ()
       <*> (fmap toMissing . continuousCharacterBins)
       <*> (fmap toMissing . nonAdditiveCharacterBins)
       <*> (fmap toMissing . additiveCharacterBins)
@@ -333,5 +336,5 @@ toMissingCharacters = CB . (
 
 
 {-# INLINE unwrap #-}
-unwrap :: CharacterBlock u v w x y z -> Block Void u v w x y z
+unwrap :: CharacterBlock u v w x y z -> Block () u v w x y z
 unwrap (CB x) = x

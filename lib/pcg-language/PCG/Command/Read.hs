@@ -8,7 +8,7 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Provides the types fot the Read command allong with a semantic definition
+-- Provides the types for the Read command along with a semantic definition
 -- to be consumed by the stream parser.
 --
 -----------------------------------------------------------------------------
@@ -119,7 +119,7 @@ readCommandSpecification = command "read" $ ReadCommand <$> someOf fileSpec
 
 
 fileSpec :: Ap SyntacticArgument FileSpecification
-fileSpec = choiceFrom [ unspecified, customAlphabet, aminoAcids, nucleotides, annotated, chromosome, genome, prealigned  ]
+fileSpec = choiceFrom [ unspecified, customAlphabet, aminoAcids, nucleotides, annotated, chromosome, genome, prealigned ]
   where
     unspecified    = UnspecifiedFile . pure <$> text
     aminoAcids     = AminoAcidFile  <$> oneOrSomeWithIds text [ "amino_acid", "amino_acids", "aminoacid", "aminoacids" ]

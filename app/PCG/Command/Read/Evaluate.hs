@@ -1,5 +1,6 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 module PCG.Command.Read.Evaluate
   ( evaluate
@@ -16,6 +17,8 @@ import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Alphabet
 import           Data.Bifunctor                            (bimap, first)
+import           Data.Compact                              (compact)
+import           Data.Compact.Serialize                    (unsafeReadCompact)
 import           Data.Either.Custom
 import           Data.Foldable
 import           Data.Functor
@@ -68,10 +71,10 @@ evaluate (READ (ReadCommand fileSpecs)) = do
         case decoration . masterUnify $ transformation <$> concat xs of
           Left uErr -> fail $ show uErr -- Report unification errors here.
            -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
-          Right g   -> pure g
+          Right g   -> liftIO (compact  g)
                        -- liftIO (putStrLn "DECORATION CALL:" *> print g) *> pure g
                        -- (liftIO . putStrLn {- . take 500000 -} $ either show (ppTopElement . toXML) g)
-                       -- (liftIO . putStrLn $ show g) $> g
+                         -- (liftIO . putStrLn $ show g) $> g
   where
     transformation = id -- expandIUPAC
     decoration     = fmap (fmap initializeDecorations2)

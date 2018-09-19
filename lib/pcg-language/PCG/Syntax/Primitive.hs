@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  PCG.Syntax.Primative
+-- Module      :  PCG.Syntax.Primitive
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -8,7 +8,7 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Provides the Primative values of the PCG scripting language that are
+-- Provides the Primitive values of the PCG scripting language that are
 -- embedded in the PCG scripting language syntax. Provides a contextual parser
 -- that reports type errors.
 --
@@ -26,9 +26,9 @@
 {-# LANGUAGE TypeSynonymInstances  #-}
 {-# LANGUAGE UnboxedSums           #-}
 
-module PCG.Syntax.Primative
-  ( PrimativeValue()
-  -- ** Primative Free Monad constructors
+module PCG.Syntax.Primitive
+  ( PrimitiveValue()
+  -- ** Primitive Free Monad constructors
   , bool
   , int
   , real
@@ -36,7 +36,7 @@ module PCG.Syntax.Primative
   , time
   , value
   -- ** MonadParsec based Free Monad interpreter
-  , parsePrimative
+  , parsePrimitive
   , whitespace
   ) where
 
@@ -61,7 +61,7 @@ import           Text.Megaparsec.Char.Lexer (decimal, scientific, signed)
 import qualified Text.Megaparsec.Char.Lexer as Lex
 
 
-data  PrimativeParseResult
+data  PrimitiveParseResult
     = ResultBool                 !Bool
     | ResultInt   {-# UNPACK #-} !Int
     | ResultReal  {-# UNPACK #-} !Double
@@ -71,7 +71,7 @@ data  PrimativeParseResult
     deriving (Show)
 
 
-data  PrimativeType
+data  PrimitiveType
     = TypeOfBool
     | TypeOfInt
     | TypeOfReal
@@ -82,8 +82,8 @@ data  PrimativeType
 
 
 -- |
--- A primative value in the PCG scripting language.
-data PrimativeValue a
+-- A primitive value in the PCG scripting language.
+data PrimitiveValue a
    = PInt            (Int      -> a)
    | PReal           (Double   -> a)
    | PBool           (Bool     -> a)
@@ -93,13 +93,13 @@ data PrimativeValue a
    deriving (Functor)
 
 
-class HasPrimativeType a where
+class HasPrimitiveType a where
 
-    getPrimativeType :: a -> PrimativeType
+    getPrimitiveType :: a -> PrimitiveType
 
-    getPrimativeName :: a -> String
-    getPrimativeName x =
-        case getPrimativeType x of
+    getPrimitiveName :: a -> String
+    getPrimitiveName x =
+        case getPrimitiveType x of
           TypeOfBool  {} -> "boolean value"
           TypeOfInt   {} -> "integer value"
           TypeOfReal  {} -> "real value"
@@ -108,14 +108,14 @@ class HasPrimativeType a where
           TypeOfValue v  -> "the literal '" <> v <> "'"
 
 
-instance HasPrimativeType PrimativeType where
+instance HasPrimitiveType PrimitiveType where
 
-    getPrimativeType = id
+    getPrimitiveType = id
 
 
-instance HasPrimativeType (PrimativeValue a) where
+instance HasPrimitiveType (PrimitiveValue a) where
 
-    getPrimativeType x =
+    getPrimitiveType x =
        case x of
           PBool  {}  -> TypeOfBool
           PInt   {}  -> TypeOfInt
@@ -125,9 +125,9 @@ instance HasPrimativeType (PrimativeValue a) where
           PValue v _ -> TypeOfValue v
 
 
-instance HasPrimativeType PrimativeParseResult where
+instance HasPrimitiveType PrimitiveParseResult where
 
-    getPrimativeType x =
+    getPrimitiveType x =
         case x of
           ResultBool  {} -> TypeOfBool
           ResultInt   {} -> TypeOfInt
@@ -140,7 +140,7 @@ instance HasPrimativeType PrimativeParseResult where
 -- |
 -- A boolean value embedded in a Free computational context
 bool
-  :: MonadFree PrimativeValue m
+  :: MonadFree PrimitiveValue m
   => m Bool
 bool = liftF $ PBool id
 
@@ -148,7 +148,7 @@ bool = liftF $ PBool id
 -- |
 -- A integral value embedded in a Free computational context
 int
-  :: MonadFree PrimativeValue m
+  :: MonadFree PrimitiveValue m
   => m Int
 int = liftF $ PInt id
 
@@ -156,21 +156,21 @@ int = liftF $ PInt id
 -- |
 -- A real value embedded in a Free computational context
 real
-  :: MonadFree PrimativeValue m
+  :: MonadFree PrimitiveValue m
   => m Double
 real = liftF $ PReal id
 
 
 -- |
 -- A text value embedded in a Free computational context
-text :: MonadFree PrimativeValue m => m String
+text :: MonadFree PrimitiveValue m => m String
 text = liftF $ PText id
 
 
 -- |
 -- A temporal value embedded in a Free computational context
 time
-  :: MonadFree PrimativeValue m
+  :: MonadFree PrimitiveValue m
   => m DiffTime
 time = liftF $ PTime id
 
@@ -178,7 +178,7 @@ time = liftF $ PTime id
 -- |
 -- A literal value embedded in a Free computational context
 value
-  :: MonadFree PrimativeValue m
+  :: MonadFree PrimitiveValue m
   => String
   -> m ()
 value str = liftF $ PValue str id
@@ -203,17 +203,17 @@ whitespace = Lex.space single line block
 
 
 -- |
--- A contextual primative value parser that will return type errors.
-parsePrimative
+-- A contextual primitive value parser that will return type errors.
+parsePrimitive
   :: (FoldCase (Tokens s), MonadParsec e s m,  Token s ~ Char)
-  => PrimativeValue (m a)
+  => PrimitiveValue (m a)
   -> m a
-parsePrimative (PBool      x) = typeMismatchContext boolValue TypeOfBool >>= x
-parsePrimative (PInt       x) = typeMismatchContext  intValue TypeOfInt  >>= x
-parsePrimative (PReal      x) = typeMismatchContext realValue TypeOfReal >>= x
-parsePrimative (PText      x) = typeMismatchContext textValue TypeOfText >>= x
-parsePrimative (PTime      x) = typeMismatchContext timeValue TypeOfTime >>= x
-parsePrimative (PValue str x) = valueParser >>= x
+parsePrimitive (PBool      x) = typeMismatchContext boolValue TypeOfBool >>= x
+parsePrimitive (PInt       x) = typeMismatchContext  intValue TypeOfInt  >>= x
+parsePrimitive (PReal      x) = typeMismatchContext realValue TypeOfReal >>= x
+parsePrimitive (PText      x) = typeMismatchContext textValue TypeOfText >>= x
+parsePrimitive (PTime      x) = typeMismatchContext timeValue TypeOfTime >>= x
+parsePrimitive (PValue str x) = valueParser >>= x
   where
     valueParser = typeMismatchContext (valueValue str) (TypeOfValue str)
 
@@ -251,8 +251,8 @@ intValue  = label intLabel $ numValue >>= convertToInt
 
     expctMsg :: forall t. Set (ErrorItem t)
     expctMsg  = S.singleton . Label $ NE.fromList  intLabel
-    intLabel  = getPrimativeName TypeOfInt
-    realLabel = getPrimativeName TypeOfReal
+    intLabel  = getPrimitiveName TypeOfInt
+    realLabel = getPrimitiveName TypeOfReal
 
 
 numValue
@@ -266,7 +266,7 @@ numValue = hidden signedNum <?> "number"
 realValue
   :: (MonadParsec e s m, Token s ~ Char)
   => m Double
-realValue = label (getPrimativeName TypeOfReal)
+realValue = label (getPrimitiveName TypeOfReal)
           $ either id id . toBoundedRealFloat <$> numValue
 
 
@@ -281,8 +281,8 @@ textValue = openQuote *> many (escaped <|> nonEscaped) <* closeQuote
     lexicalChars :: Set Char
     lexicalChars = S.fromList ['\\', '"', '(', ')']
 
-    openQuote  = char '"' <?> ("'\"' opening quote for " <> getPrimativeName TypeOfText)
-    closeQuote = char '"' <?> ("'\"' closing quote for " <> getPrimativeName TypeOfText)
+    openQuote  = char '"' <?> ("'\"' opening quote for " <> getPrimitiveName TypeOfText)
+    closeQuote = char '"' <?> ("'\"' closing quote for " <> getPrimitiveName TypeOfText)
     nonEscaped = satisfy $ \x -> x `notElem` lexicalChars && not (isControl x)
     escaped    = do
         _ <- char '\\' <?> "'\\' beginning of character escape sequence"
@@ -354,22 +354,22 @@ typeMismatchContext
   :: forall e s m a
   .  (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char)
   => m a
-  -> PrimativeType
+  -> PrimitiveType
   -> m a
 typeMismatchContext p targetType = do
-    parsedPrimative <- primatives
-    case parsedPrimative of
+    parsedPrimitive <- primitives
+    case parsedPrimitive of
       Nothing -> p
       Just (str, parseResult) ->
-        let resultType = getPrimativeType parseResult
+        let resultType = getPrimitiveType parseResult
         in
           if   targetType == resultType || targetType == TypeOfReal && resultType == TypeOfInt
           then p
-          else let uxpMsg = Just . Label . NE.fromList $ mconcat [ getPrimativeName parseResult, " '", chunkToTokens (Proxy :: Proxy s) str, "'" ]
-                   expMsg = S.singleton . Label . NE.fromList $ getPrimativeName targetType
+          else let uxpMsg = Just . Label . NE.fromList $ mconcat [ getPrimitiveName parseResult, " '", chunkToTokens (Proxy :: Proxy s) str, "'" ]
+                   expMsg = S.singleton . Label . NE.fromList $ getPrimitiveName targetType
                in  failure uxpMsg expMsg
   where
-    primatives = optional . choice $ hidden . try . lookAhead . match <$>
+    primitives = optional . choice $ hidden . try . lookAhead . match <$>
         [ ResultBool <$> boolValue
         , ResultText <$> textValue
         , ResultTime <$> timeValue

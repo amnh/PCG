@@ -53,7 +53,7 @@ import           Control.DeepSeq
 import           Control.Lens                    as Lens
 import           Data.Bits
 import           Data.Foldable
-import           Data.GraphViz.Printing          hiding ((<>))
+import           Data.GraphViz.Printing
 import           Data.GraphViz.Types
 import           Data.HashMap.Lazy               (HashMap)
 import qualified Data.IntMap                     as IM
@@ -73,6 +73,7 @@ import           GHC.Generics
 import           Prelude                         hiding (zip)
 import           Text.Newick.Class
 import           Text.XML
+import           Type.Reflection                 (Typeable)
 
 
 -- |
@@ -119,7 +120,7 @@ data  PhylogeneticDAG2 m e n u v w x y z
                               e
                               (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
     , columnMetadata     :: MetadataSequence m
-    } deriving (Generic)
+    } deriving (Generic, Typeable)
 
 
 -- |

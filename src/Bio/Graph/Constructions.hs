@@ -38,7 +38,6 @@ module Bio.Graph.Constructions
   , UnReifiedCharacterDAG
   ) where
 
-
 import Bio.Character
 import Bio.Character.Decoration.Additive
 import Bio.Character.Decoration.Continuous
@@ -53,6 +52,7 @@ import Bio.Graph.Solution
 import Bio.Sequence
 import Bio.Sequence.Metadata
 import Control.Evaluation
+import Data.Compact
 import Data.EdgeLength
 import Data.List.NonEmpty
 import Data.NodeLabel
@@ -87,7 +87,7 @@ type SearchState = EvaluationT IO GraphState
 -- |
 -- The state of the graph that partitions the evaluation model on one of two
 -- paths depending on the presence or absence of character states in the search.
-type GraphState = Either TopologicalResult DecoratedCharacterResult
+type GraphState = Compact (Either TopologicalResult DecoratedCharacterResult)
 
 
 -- |

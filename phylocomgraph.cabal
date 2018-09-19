@@ -118,10 +118,12 @@ library
                     , bimap
                     , bv-little
                     -- >=0.5.8 Required for Data.Map.restrictKeys
+                    , compact
                     , containers         >=0.5.8
                     , deepseq
                     , data-default
                     , dlist
+                    , foldl
                     -- >=2999.20 Required for forgivig constructio of DOT object
                     , graphviz           >=2999.20
                     , hashable
@@ -293,6 +295,7 @@ executable pcg
                     , ansi-wl-pprint
                     , base             >=4.10
                     -- Required for Data.Map.restrictKeys
+                    , compact
                     , containers       >=0.5.8
                     , data-default
                     , deepseq
@@ -326,6 +329,7 @@ executable pcg
 
   other-modules:    Paths_phylocomgraph
                     PCG.Command.Build.Evaluate
+                    PCG.Command.Load.Evaluate
                     PCG.Command.Read.DecorationInitialization
                     PCG.Command.Read.Evaluate
                     PCG.Command.Read.ReadError
@@ -333,6 +337,7 @@ executable pcg
                     PCG.Command.Read.Unification.UnificationError
                     PCG.Command.Report.Evaluate
                     PCG.Command.Report.GraphViz
+                    PCG.Command.Save.Evaluate
                     PCG.Computation.Internal
 
 
@@ -476,6 +481,7 @@ Test-Suite testsuite
                     , containers         >=0.5.8
                     , deepseq
                     , dlist
+                    , foldl
                     , hashable
                     , integer-gmp
                     , keys

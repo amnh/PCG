@@ -1,10 +1,11 @@
-
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 module PCG.Command.Report.Evaluate
   ( evaluate
   ) where
+
 
 import Bio.Character.Decoration.Dynamic
 import Bio.Character.Encodable
@@ -12,17 +13,13 @@ import Bio.Character.Exportable
 import Bio.Graph
 import Bio.Graph.PhylogeneticDAG
 import Control.Monad.IO.Class
+import Data.Compact                     (Compact, getCompact)
+import Data.Compact.Serialize           (unsafeReadCompact)
 import Data.List.NonEmpty
 import Data.MonoTraversable
 import Data.Semigroup.Foldable
 import PCG.Command.Report
---import           PCG.Command.Report.DynamicCharacterTable
 import PCG.Command.Report.GraphViz
---import           PCG.Command.Report.ImpliedAlignmentFasta
---import           PCG.Command.Report.Internal
---import           PCG.Command.Report.Metadata
---import           PCG.Command.Report.Newick
---import           PCG.Command.Report.TaxonMatrix
 import PCG.Syntax                       (Command (..))
 import Text.XML
 
@@ -63,11 +60,17 @@ generateOutput
   :: GraphState
   -> OutputFormat
   -> FileStreamContext
+generateOutput g' format =
+  case format of
+    Data {}    -> SingleStream $ either show showWithTotalEdgeCost  g
+    XML  {}    -> SingleStream $ either show (ppTopElement . toXML) g
+    DotFile {} -> SingleStream $ generateDotFile g'
+    _          -> ErrorCase "Unrecognized 'report' command"
+  where
+    g = getCompact g'
+
 --generateOutput :: StandardSolution -> OutputFormat -> FileStreamContext
 --generateOutput g (CrossReferences fileNames)   = SingleStream $ taxonReferenceOutput g fileNames
-generateOutput g Data                       {} = SingleStream $ either show showWithTotalEdgeCost g
-generateOutput g XML                        {} = SingleStream $ either show (ppTopElement . toXML) g
-generateOutput g DotFile                    {} = SingleStream $ generateDotFile g
 --generateOutput (Right g) DynamicTable               {} = SingleStream $ outputDynamicCharacterTablularData g
 --generateOutput g Metadata                   {} = SingleStream $ metadataCsvOutput g
 {-
