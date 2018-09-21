@@ -1,0 +1,6 @@
+read("../../shared-data/arthropods/arth18a.fas")
+read(custom_alphabet:("../../shared-data/arthropods/arth18b.fas", tcm:("../../shared-data/tcms/sg1t1.mat")))
+read(custom_alphabet:("../../shared-data/arthropods/arth18c.fas", tcm:("../../shared-data/tcms/sg2t2.mat")))
+read(custom_alphabet:("../../shared-data/arthropods/arthubi.fas", tcm:("../../shared-data/tcms/sg4t4.mat")))
+read("../../shared-data/arthropods/arth.newick")
+report(data, (overwrite, "cost.data"))

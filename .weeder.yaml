@@ -29,7 +29,7 @@
 - package:
   - name: phylocomgraph
   - section:
-    - name: library test:testsuite
+    - name: library test:unit-tests
     - message:
       - name: Module reused between components
       - module:

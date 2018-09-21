@@ -20,7 +20,7 @@ description:        Phylogenetic Componet Graph provides a library for
                     program to perform a phylogenetic search on an input dataset.
 
 
--- Group of buildinfo specifications to correctly build and link to the C & C++
+-- Group of buildinfo specifications to correctly build and link to the C & C++:
 -- FFI code.
 common ffi-buildinfo
 
@@ -463,16 +463,48 @@ executable ukkonen-do-comparison
   hs-source-dirs:   utils
 
 
-Test-Suite testsuite
+Test-Suite integration-tests
+
+  import:             ghc-flags
+                    , language-specs
+
+  type:             exitcode-stdio-1.0
+
+  main-is:          IntegrationTests.hs
+
+  build-depends:      base               >=4.10
+                    , directory
+                    , filepath
+                    , megaparsec         >=6.4.0
+                    , parser-combinators >=0.2.0
+                    , pcg-utility
+                    , scientific
+                    , semigroups
+                    , tasty
+                    , tasty-golden
+                    , tasty-hunit
+                    , tasty-rerun
+                    , text
+                    , turtle
+
+  ghc-options:      -threaded
+--                    -with-rtsopts=-N4
+
+  hs-source-dirs:   test
+
+  other-modules:    TestSuite.ScriptTests
+                    TestSuite.GoldenTests
+
+
+Test-Suite unit-tests
 
   import:             ffi-buildinfo
                     , ghc-flags
                     , language-specs
 
-
   type:             exitcode-stdio-1.0
 
-  main-is:          TestAll.hs
+  main-is:          UnitTests.hs
 
   build-depends:      base               >=4.10
                     , bimap

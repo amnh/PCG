@@ -56,12 +56,15 @@ TAGS
 *.fa
 *.fas
 *.fasta
+*.fastc
 *.gch
 *.log
 *.out
+*.pcg
 *.poy
 *.ss
 *.tre
+*.tree
 *.txt
 *.xml
 .*
