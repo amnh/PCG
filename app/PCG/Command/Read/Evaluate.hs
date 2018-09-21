@@ -18,7 +18,6 @@ import           Control.Parallel.Strategies
 import           Data.Alphabet
 import           Data.Bifunctor                            (bimap, first)
 import           Data.Compact                              (compact)
-import           Data.Compact.Serialize                    (unsafeReadCompact)
 import           Data.Either.Custom
 import           Data.Foldable
 import           Data.Functor
@@ -60,8 +59,8 @@ parse' :: Parsec Void s a -> String -> s -> Either (ParseError (Token s) Void) a
 parse' = parse
 
 
-evaluate :: Command -> SearchState
-evaluate (READ (ReadCommand fileSpecs)) = do
+evaluate :: ReadCommand -> SearchState
+evaluate (ReadCommand fileSpecs) = do
     when (null fileSpecs) $ fail "No files specified in 'read()' command"
     result <- liftIO . runExceptT . eitherTValidation $ parmap rpar (fmap removeGaps . parseSpecifiedFile) fileSpecs
 --    liftIO $ print result
@@ -79,14 +78,12 @@ evaluate (READ (ReadCommand fileSpecs)) = do
     transformation = id -- expandIUPAC
     decoration     = fmap (fmap initializeDecorations2)
 
-evaluate _ = fail "Invalid READ command binding"
-
 
 removeGaps :: Functor f => f FracturedParseResult -> f FracturedParseResult
 removeGaps = fmap removeGapsFromDynamicCharsNotMarkedAsAligned
 
 
-parseSpecifiedFile  :: FileSpecification -> ExceptT ReadError IO [FracturedParseResult]
+parseSpecifiedFile :: FileSpecification -> ExceptT ReadError IO [FracturedParseResult]
 parseSpecifiedFile      AnnotatedFile     {}     = fail "Annotated file specification is not implemented"
 parseSpecifiedFile      ChromosomeFile    {}     = fail "Chromosome file specification is not implemented"
 parseSpecifiedFile      GenomeFile        {}     = fail "Genome file specification is not implemented"

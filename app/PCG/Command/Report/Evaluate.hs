@@ -13,8 +13,7 @@ import Bio.Character.Exportable
 import Bio.Graph
 import Bio.Graph.PhylogeneticDAG
 import Control.Monad.IO.Class
-import Data.Compact                     (Compact, getCompact)
-import Data.Compact.Serialize           (unsafeReadCompact)
+import Data.Compact                     (getCompact)
 import Data.List.NonEmpty
 import Data.MonoTraversable
 import Data.Semigroup.Foldable
@@ -24,8 +23,8 @@ import PCG.Syntax                       (Command (..))
 import Text.XML
 
 
-evaluate :: Command -> GraphState -> SearchState
-evaluate (REPORT (ReportCommand format target)) stateValue = do
+evaluate :: ReportCommand -> GraphState -> SearchState
+evaluate (ReportCommand format target) stateValue = do
     _ <- case generateOutput stateValue format of
            ErrorCase    errMsg  -> fail errMsg
            MultiStream  streams -> sequence_ (liftIO . uncurry writeFile <$> streams)
@@ -38,8 +37,6 @@ evaluate (REPORT (ReportCommand format target)) stateValue = do
                             Overwrite ->  writeFile f
              in  liftIO (op output)
     pure stateValue
-
-evaluate _ _ = fail "Invalid READ command binding"
 
 
 -- TODO: Redo reporting
@@ -100,8 +97,6 @@ generateOutput g ImpliedAlignmentCharacters {} =
                     [] -> ErrorCase "There were no Dynamic homology characters on which to perform an implied alignment."
                     zs -> MultiStream $ fromList zs
 -}
-
-generateOutput _ _                             = ErrorCase "Unrecognized 'report' command"
 
 
 showWithTotalEdgeCost

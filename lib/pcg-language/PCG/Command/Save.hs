@@ -20,6 +20,7 @@
 module PCG.Command.Save
   ( SaveCommand (..)
   , saveCommandSpecification
+  , defaultSaveFilePath
   ) where
 
 import PCG.Syntax.Combinators
@@ -28,4 +29,8 @@ newtype SaveCommand = SaveCommand FilePath
   deriving stock Show
 
 saveCommandSpecification :: CommandSpecification SaveCommand
-saveCommandSpecification = command "save" . argList $ SaveCommand <$> text
+saveCommandSpecification = command "save" . argList $ SaveCommand <$> (text `withDefault` defaultSaveFilePath)
+
+
+defaultSaveFilePath :: FilePath
+defaultSaveFilePath = ".pcg.save"

@@ -3,7 +3,6 @@ module Main
   , testSuite
   ) where
 
-import           Data.Foldable
 import           Test.Tasty
 import           Test.Tasty.Ingredients.Rerun (rerunningTests)
 import qualified TestSuite.GoldenTests        as Golden (testSuite)

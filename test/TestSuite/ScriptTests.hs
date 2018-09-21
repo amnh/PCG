@@ -20,7 +20,7 @@ import Test.Tasty.HUnit
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer (scientific)
-import Turtle                     hiding (char, many, satisfy)
+import Turtle                     hiding (char, many, satisfy, x)
 
 
 testSuite :: IO TestTree
@@ -97,7 +97,7 @@ parseCost = parseMaybe fileSpec
     extendedReal = (fromFinite . toRealFloat <$> scientific) <|> (char '∞' $> infinity)
 
     ignoredLine  :: MonadParsec Void Text m => m ()
-    ignoredLine  = many inlineChar *> newline
+    ignoredLine  = many inlineChar *> newlineChar
 
     inlineSpace  :: MonadParsec Void Text m => m ()
     inlineSpace  = void $ satisfy (\x -> isSpace x && x /= '\n')
@@ -105,8 +105,8 @@ parseCost = parseMaybe fileSpec
     inlineChar   :: MonadParsec Void Text m => m ()
     inlineChar   = void $ satisfy (/= '\n')
 
-    newline      :: (MonadParsec Void s m, Token s ~ Char) => m ()
-    newline      = void $ char '\n'
+    newlineChar  :: (MonadParsec Void s m, Token s ~ Char) => m ()
+    newlineChar  = void $ char '\n'
 
 
 

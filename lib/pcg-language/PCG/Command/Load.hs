@@ -22,10 +22,11 @@ module PCG.Command.Load
   , loadCommandSpecification
   ) where
 
+import PCG.Command.Save
 import PCG.Syntax.Combinators
 
 newtype LoadCommand = LoadCommand FilePath
   deriving stock Show
 
 loadCommandSpecification :: CommandSpecification LoadCommand
-loadCommandSpecification = command "Load" . argList $  LoadCommand <$> text
+loadCommandSpecification = command "Load" . argList $  LoadCommand <$> (text `withDefault` defaultSaveFilePath)
