@@ -59,6 +59,10 @@ import           Data.GraphViz.Printing
 import qualified Data.Text.Lazy                     as L
 import           System.IO.Unsafe
 
+
+import Debug.Trace
+
+
 type BlockTopologies = NEV.Vector TraversalTopology
 
 
@@ -355,8 +359,13 @@ preorderFromRooting transformation edgeCostMapping contextualNodeDatum minTopolo
     -- parentVectors :: Matrix (Vector (PreorderContext c))
     parentVectors = MAT.matrix nodeCount blockCount g
       where
-        g (nodeIndex, blockIndex) = (! nodeIndex) <$> dynCharVec
+        g t | trace ("g input: " <> show t) False = undefined
+        g e@(nodeIndex, blockIndex) = (!!! nodeIndex) <$> dynCharVec
           where
+            (!!!) v i =
+                case i `lookup` v of
+                  Nothing -> error $ "Can't index at " <> show i <> " when given " <> show e
+                  Just  v -> v
             dynCharVec = parentMapping ! blockIndex
 
         parentMapping = delta minTopologyContextPerBlock
