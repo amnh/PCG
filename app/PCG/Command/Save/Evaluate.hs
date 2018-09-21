@@ -9,7 +9,5 @@ import Data.Functor           (($>))
 import PCG.Command.Save
 import PCG.Syntax
 
-evaluate :: Command -> GraphState -> SearchState
-evaluate (SAVE (SaveCommand filePath)) g = liftIO (writeCompact filePath g) $> g
-
-evaluate _ _                             = error "Invalid SAVE command."
+evaluate :: SaveCommand -> GraphState -> SearchState
+evaluate (SaveCommand filePath) g = liftIO (writeCompact filePath g) $> g

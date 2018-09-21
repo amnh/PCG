@@ -55,12 +55,12 @@ type DatNode =
 
 
 evaluate
-  :: Command
+  :: BuildCommand
   -> GraphState
   -> SearchState
 -- evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
 -- evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
-evaluate (BUILD (BuildCommand trajectoryCount buildType)) cpctInState = do
+evaluate (BuildCommand trajectoryCount buildType) cpctInState = do
     let inState = getCompact cpctInState
     case inState of
       Left  _ -> pure cpctInState
@@ -86,8 +86,6 @@ evaluate (BUILD (BuildCommand trajectoryCount buildType)) cpctInState = do
   where
     toSolution :: NonEmpty a -> PhylogeneticSolution a
     toSolution = PhylogeneticSolution . pure . PhylogeneticForest
-
-evaluate _ _ = fail "Invalid BUILD command binding"
 
 
 naiveWagnerParallelBuild

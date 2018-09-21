@@ -23,8 +23,8 @@ import PCG.Syntax                       (Command (..))
 import Text.XML
 
 
-evaluate :: Command -> GraphState -> SearchState
-evaluate (REPORT (ReportCommand format target)) stateValue = do
+evaluate :: ReportCommand -> GraphState -> SearchState
+evaluate (ReportCommand format target) stateValue = do
     _ <- case generateOutput stateValue format of
            ErrorCase    errMsg  -> fail errMsg
            MultiStream  streams -> sequence_ (liftIO . uncurry writeFile <$> streams)
@@ -37,8 +37,6 @@ evaluate (REPORT (ReportCommand format target)) stateValue = do
                             Overwrite ->  writeFile f
              in  liftIO (op output)
     pure stateValue
-
-evaluate _ _ = fail "Invalid READ command binding"
 
 
 -- TODO: Redo reporting

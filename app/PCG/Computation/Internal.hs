@@ -36,11 +36,11 @@ evaluate (Computation xs) = foldl' f mempty xs
   where
     f :: SearchState -> Command -> SearchState
     f v c = case c of
-              BUILD  _ -> v >>= Build.evaluate  c
-              READ   _ -> v *>  Read.evaluate   c
-              REPORT _ -> v >>= Report.evaluate c
-              SAVE   _ -> v >>= Save.evaluate   c
-              LOAD   _ -> v >>= Load.evaluate   c
+              BUILD  x -> v >>= Build.evaluate  x
+              READ   x -> v *>  Read.evaluate   x
+              REPORT x -> v >>= Report.evaluate x
+              SAVE   x -> v >>= Save.evaluate   x
+              LOAD   x -> v >>= Load.evaluate   x
 
 
 renderSearchState :: Evaluation a -> (ExitCode, String)
