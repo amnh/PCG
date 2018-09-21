@@ -37,6 +37,7 @@ import Bio.Character.Encodable
 import Bio.Metadata
 import Control.Lens
 import Data.Bits
+import Data.Foldable
 import Data.Key
 import Data.List.NonEmpty                (NonEmpty ((:|)))
 import Data.Word
@@ -161,8 +162,7 @@ updateCostVector meta _parentDecoration (leftChildDec:|rightChildDec:_) = return
                                                                        -- the 'extendDiscreteToSankoff' call.
                                                                        -- cs = min costs per state
                                                                        -- ds = (left child min states, right child min states)
-    range                = [0 .. numAlphStates]
-    numAlphStates        = symbolCount charWLOG
+    range                = fmap (toEnum . fst) . keyed . toList $ meta ^. characterAlphabet
     preliminaryMins      = foldr         computeExtraMin [] cs
     bs                   = foldrWithKey' computeBetas    [] range      -- bs  = betas
     omc                  = unsafeToFinite minTransCost                 -- omc = overall min cost (min for all states)
