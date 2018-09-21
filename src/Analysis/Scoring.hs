@@ -166,6 +166,7 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
              (g . adaptiveDirectOptimizationPostOrder)
          $ x
 
+    g :: (t -> [a] -> p) -> Maybe t -> [a] -> p
     g _  Nothing  [] = error "Uninitialized leaf node. This is bad!"
     g h (Just  v) [] = h v []
     g h        _  xs = h (error "We shouldn't be using this value.") xs
