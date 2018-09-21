@@ -20,7 +20,7 @@ import           Data.Vector   as V
 -- |
 -- /O(n)/
 --
--- Construct a 'Vector' from a
+-- Construct a 'Vector' from a list.
 {-# INLINE fromList' #-}
 fromList' :: [a] -> Vector a
 fromList' = uncurry V.fromListN . L.fold f
