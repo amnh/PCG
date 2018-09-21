@@ -13,8 +13,7 @@ import Bio.Character.Exportable
 import Bio.Graph
 import Bio.Graph.PhylogeneticDAG
 import Control.Monad.IO.Class
-import Data.Compact                     (Compact, getCompact)
-import Data.Compact.Serialize           (unsafeReadCompact)
+import Data.Compact                     (getCompact)
 import Data.List.NonEmpty
 import Data.MonoTraversable
 import Data.Semigroup.Foldable
@@ -100,8 +99,6 @@ generateOutput g ImpliedAlignmentCharacters {} =
                     [] -> ErrorCase "There were no Dynamic homology characters on which to perform an implied alignment."
                     zs -> MultiStream $ fromList zs
 -}
-
-generateOutput _ _                             = ErrorCase "Unrecognized 'report' command"
 
 
 showWithTotalEdgeCost

@@ -1,19 +1,15 @@
-{-# LANGUAGE ApplicativeDo #-}
 module PCG.Command.Save.Evaluate
   ( evaluate
-  , saveFile
-  )
-  where
+  ) where
 
 import Bio.Graph
 import Control.Monad.IO.Class (liftIO)
 import Data.Compact.Serialize (writeCompact)
+import Data.Functor           (($>))
+import PCG.Command.Save
+import PCG.Syntax
 
-evaluate :: GraphState -> SearchState
-evaluate g = do
-  liftIO $ writeCompact saveFile g
-  pure g
+evaluate :: Command -> GraphState -> SearchState
+evaluate (SAVE (SaveCommand filePath)) g = liftIO (writeCompact filePath g) $> g
 
-
-saveFile :: FilePath
-saveFile = ".pcg.save"
+evaluate _ _                             = error "Invalid SAVE command."

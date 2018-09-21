@@ -28,4 +28,4 @@ newtype LoadCommand = LoadCommand FilePath
   deriving stock Show
 
 loadCommandSpecification :: CommandSpecification LoadCommand
-loadCommandSpecification = command "Load" . argList $  LoadCommand <$> text
+loadCommandSpecification = command "Load" . argList $  LoadCommand <$> (text `withDefault` ".pcg.save")

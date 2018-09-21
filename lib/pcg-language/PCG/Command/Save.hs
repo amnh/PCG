@@ -28,4 +28,4 @@ newtype SaveCommand = SaveCommand FilePath
   deriving stock Show
 
 saveCommandSpecification :: CommandSpecification SaveCommand
-saveCommandSpecification = command "save" . argList $ SaveCommand <$> text
+saveCommandSpecification = command "save" . argList $ SaveCommand <$> (text `withDefault` ".pcg.save")

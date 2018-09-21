@@ -18,7 +18,6 @@ import           Control.Parallel.Strategies
 import           Data.Alphabet
 import           Data.Bifunctor                            (bimap, first)
 import           Data.Compact                              (compact)
-import           Data.Compact.Serialize                    (unsafeReadCompact)
 import           Data.Either.Custom
 import           Data.Foldable
 import           Data.Functor

@@ -39,8 +39,8 @@ evaluate (Computation xs) = foldl' f mempty xs
               BUILD  _ -> v >>= Build.evaluate  c
               READ   _ -> v *>  Read.evaluate   c
               REPORT _ -> v >>= Report.evaluate c
-              SAVE   _ -> v >>= Save.evaluate
-              LOAD   _ -> v >>= Load.evaluate
+              SAVE   _ -> v >>= Save.evaluate   c
+              LOAD   _ -> v >>= Load.evaluate   c
 
 
 renderSearchState :: Evaluation a -> String

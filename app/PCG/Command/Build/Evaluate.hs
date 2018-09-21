@@ -28,7 +28,6 @@ import           Control.Monad.IO.Class
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Compact                        (compact, getCompact)
-import           Data.Compact.Serialize              (writeCompact)
 import           Data.Foldable
 import qualified Data.IntMap                         as IM
 import qualified Data.IntSet                         as IS
