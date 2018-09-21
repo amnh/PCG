@@ -33,6 +33,7 @@ import           Data.TCM                         (TCM, TCMDiagnosis (..), TCMSt
 import qualified Data.TCM                         as TCM
 import           Data.Vector                      (Vector)
 import qualified Data.Vector                      as V
+import qualified Data.Vector.Custom               as V (fromList')
 import           Data.Vector.Instances            ()
 import           File.Format.Dot
 import           File.Format.Fasta                (FastaParseResult, TaxonSequenceMap)
@@ -102,7 +103,7 @@ instance ParsedMetadata (NonEmpty NewickForest) where
 instance ParsedMetadata TNT.TntResult where
 
     unifyMetadata (Left        _) = mempty
-    unifyMetadata (Right withSeq) = V.fromList $ zipWith f parsedMetadatas parsedCharacters
+    unifyMetadata (Right withSeq) = V.fromList' $ zipWith f parsedMetadatas parsedCharacters
       where
         parsedMetadatas  = toList $ TNT.charMetaData withSeq
         parsedCharacters = snd . head . toList $ TNT.sequences withSeq
@@ -244,7 +245,7 @@ addOtherCases (x:xs)
 -- each taxon may have a sequence (multiple characters), hence Vector Maybe Vector [String]
 -- sequences are values mapped to using taxon names as keys, hence Map String Vector Maybe Vector [String]
 developAlphabets :: TaxonCharacters -> Vector (Alphabet String)
-developAlphabets = V.fromList . fmap (fromSymbols . foldMap f) . transpose . fmap toList . toList
+developAlphabets = V.fromList' . fmap (fromSymbols . foldMap f) . transpose . fmap toList . toList
   where
     f (ParsedContinuousCharacter     _) = mempty
     f (ParsedDiscreteCharacter  static) = foldMap toList static
@@ -257,18 +258,18 @@ developAlphabets = V.fromList . fmap (fromSymbols . foldMap f) . transpose . fma
 -- |
 -- The acceptable amino acid/protein character values (with IUPAC codes).
 aaAlph :: Vector String
-aaAlph  = V.fromList $ pure <$> addOtherCases "ABCDEFGHIKLMNPQRSTVWXYZ-"
+aaAlph  = V.fromList' $ pure <$> addOtherCases "ABCDEFGHIKLMNPQRSTVWXYZ-"
 
 -- |
 -- The acceptable discrete character values.
 disAlph :: Vector String
-disAlph = V.fromList $ pure <$> (['0'..'9'] <> ['A'..'Z'] <> ['a'..'z'] <> "-" <> "?")
+disAlph = V.fromList' $ pure <$> (['0'..'9'] <> ['A'..'Z'] <> ['a'..'z'] <> "-" <> "?")
 
 
 -- |
 -- The acceptable DNA character values (with IUPAC codes).
 dnaAlph :: Vector String
-dnaAlph = V.fromList $ pure <$> addOtherCases "AGCTRMWSKTVDHBNX?-"
+dnaAlph = V.fromList' $ pure <$> addOtherCases "AGCTRMWSKTVDHBNX?-"
 
 
 {-

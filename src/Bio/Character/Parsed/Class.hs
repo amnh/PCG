@@ -34,6 +34,7 @@ import           Data.Set                         (Set)
 import qualified Data.Set                         as S
 import           Data.Tree
 import qualified Data.Vector                      as V
+import           Data.Vector.Custom               as V (fromList')
 import           Data.Vector.Instances            ()
 import           File.Format.Dot
 import           File.Format.Fasta
@@ -190,7 +191,7 @@ convertCharacterSequenceLikeFASTA = pure . ParsedDynamicCharacter . Just . NE.fr
 -- |
 -- Coalesce the 'TaxonSequence' to the larger type 'ParsedSequences'
 tntToTheSuperSequence :: TaxonSequence -> ParsedChars
-tntToTheSuperSequence = V.fromList . fmap f
+tntToTheSuperSequence = V.fromList' . fmap f
   where
     f (TNT.Continuous c) = ParsedContinuousCharacter c
     f discreteCharacter  = ParsedDiscreteCharacter . Just . coerceDiscreteRendering $ show discreteCharacter
