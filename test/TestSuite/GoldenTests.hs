@@ -3,13 +3,13 @@ module TestSuite.GoldenTests
   ( testSuite
   ) where
 
-import Control.Monad         (filterM, mapM, void)
+import Control.Monad         (filterM)
 import Data.Text             (pack)
 import System.Directory
 import System.FilePath.Posix
 import Test.Tasty
 import Test.Tasty.Golden
-import Turtle                (cd, decodeString, encodeString, pwd, rm, shell)
+import Turtle                (cd, decodeString, pwd, shell)
 
 
 testSuite :: IO TestTree
@@ -21,7 +21,7 @@ testSuite = do
   pure $
     testGroup "Golden Test Suite:"
     tests
-    
+
 
 -- |
 -- Runs a pcg file [file-name].pcg producing [file-name].extension for a
@@ -49,20 +49,19 @@ generateOutput fp
   = do
   baseDir <- pwd
   cd $ decodeString fileDir
-  currDir <- pwd
-  flip shell mempty
-    . pack
-      $ mconcat
-        ["[ -e ", testLog, " ]", " && ", "rm ", testLog] -- deletes the previous test log.
-  flip shell mempty
-    . pack
-    $ mconcat
-      ["stack exec pcg"
-      , "< "
-      , fileName
-      , " >>"
-      , testLog
-      ]
+  _ <- flip shell mempty
+        . pack
+          $ mconcat
+            ["[ -e ", testLog, " ]", " && ", "rm ", testLog] -- deletes the previous test log.
+  _ <- flip shell mempty
+        . pack
+        $ mconcat
+          ["stack exec pcg"
+          , "< "
+          , fileName
+          , " >>"
+          , testLog
+          ]
   cd baseDir
   where
     (fileDir, fileName) = splitFileName fp

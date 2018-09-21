@@ -1,4 +1,6 @@
-{-# LANGUAGE FlexibleContexts, OverloadedStrings, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies      #-}
 
 module TestSuite.ScriptTests
   ( testSuite
@@ -8,7 +10,8 @@ import Control.Arrow              ((&&&))
 import Data.Char                  (isSpace)
 import Data.Either
 import Data.Foldable
-import Data.Scientific     hiding (scientific)
+import Data.Functor               (($>))
+import Data.Scientific            hiding (scientific)
 import Data.Text                  (Text)
 import Data.Void                  (Void)
 import Numeric.Extended.Real
@@ -17,7 +20,7 @@ import Test.Tasty.HUnit
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer (scientific)
-import Turtle              hiding (char,many,satisfy)
+import Turtle                     hiding (char, many, satisfy)
 
 
 testSuite :: IO TestTree
@@ -67,10 +70,10 @@ scriptCheckCost
 scriptCheckCost expectedCost scriptPath outputPath = scriptTest scriptPath [outputPath] $ testCase scriptPath . checkResult
   where
     checkResult (Left     exitCode) = assertFailure $ "Script failed with exit code: " <> show exitCode
-    checkResult (Right          []) = assertFailure $ "No files were returned despite supplying one path!"
+    checkResult (Right          []) = assertFailure "No files were returned despite supplying one path!"
     checkResult (Right (outFile:_)) =
         case parseCost outFile of
-          Nothing   -> assertFailure $ "No cost found in the output file!"
+          Nothing   -> assertFailure "No cost found in the output file!"
           Just cost -> cost @?= expectedCost
 
 
@@ -81,7 +84,7 @@ parseCost = parseMaybe fileSpec
              *> ignoredLine
              *> costLine
              <* many ignoredLine
-    
+
     costLine :: MonadParsec Void Text m => m ExtendedReal
     costLine =  many inlineSpace
              *> string' "DAG total cost:"
@@ -89,9 +92,9 @@ parseCost = parseMaybe fileSpec
              *> extendedReal
              <* ignoredLine
 
-    
+
     extendedReal :: MonadParsec Void Text m => m ExtendedReal
-    extendedReal = (fromFinite . toRealFloat <$> scientific) <|> (char '∞' *> pure infinity)
+    extendedReal = (fromFinite . toRealFloat <$> scientific) <|> (char '∞' $> infinity)
 
     ignoredLine  :: MonadParsec Void Text m => m ()
     ignoredLine  = many inlineChar *> newline
@@ -101,7 +104,7 @@ parseCost = parseMaybe fileSpec
 
     inlineChar   :: MonadParsec Void Text m => m ()
     inlineChar   = void $ satisfy (/= '\n')
-    
+
     newline      :: (MonadParsec Void s m, Token s ~ Char) => m ()
     newline      = void $ char '\n'
 
