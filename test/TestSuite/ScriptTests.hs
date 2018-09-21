@@ -34,13 +34,13 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
   , scriptCheckCost 914.0
         "datasets/sankoff/single-block/dna/discrete/arthropods.pcg"
         "datasets/sankoff/single-block/dna/discrete/cost.data"
-  , scriptCheckCost 1618.0
+  , scriptCheckCost 1713.0
         "datasets/sankoff/single-block/dna/L1-norm/arthropods.pcg"
         "datasets/sankoff/single-block/dna/L1-norm/cost.data"
-  , scriptCheckCost 908.0
+  , scriptCheckCost 914.0
         "datasets/sankoff/single-block/dna/1-2/arthropods.pcg"
         "datasets/sankoff/single-block/dna/1-2/cost.data"
-  , scriptCheckCost 1565.0
+  , scriptCheckCost 1789.0
         "datasets/sankoff/single-block/dna/2-1/arthropods.pcg"
         "datasets/sankoff/single-block/dna/2-1/cost.data"
   , scriptCheckCost 2042.0
