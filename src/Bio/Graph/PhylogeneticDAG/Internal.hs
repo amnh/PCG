@@ -446,12 +446,12 @@ renderBlockSummary
   -> String
 renderBlockSummary (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displayMay, block) = mconcat . (renderedPrefix:) .
     (renderBlockMeta pair :) $
-    [ unlines . fmap renderStaticCharacterSummary  . toList . uncurry zip . ( continuousBins ***  continuousBins)
-    , unlines . fmap renderStaticCharacterSummary  . toList . uncurry zip . (nonAdditiveBins *** nonAdditiveBins)
-    , unlines . fmap renderStaticCharacterSummary  . toList . uncurry zip . (   additiveBins ***    additiveBins)
-    , unlines . fmap renderStaticCharacterSummary  . toList . uncurry zip . (     metricBins ***      metricBins)
-    , unlines . fmap renderStaticCharacterSummary  . toList . uncurry zip . (  nonMetricBins ***   nonMetricBins)
-    , unlines . fmap renderDynamicCharacterSummary . toList . uncurry zip . (    dynamicBins ***     dynamicBins)
+    [ unlines . fmap renderStaticCharacterSummary              . toList . uncurry zip . ( continuousBins ***  continuousBins)
+    , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . (nonAdditiveBins *** nonAdditiveBins)
+    , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . (   additiveBins ***    additiveBins)
+    , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . (     metricBins ***      metricBins)
+    , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . (  nonMetricBins ***   nonMetricBins)
+    , unlines . fmap renderDynamicCharacterSummary             . toList . uncurry zip . (    dynamicBins ***     dynamicBins)
     ] <*> [(mBlock, cBlock)]
   where
     pair = (M.toBlocks meta ! key, block)
@@ -476,9 +476,16 @@ renderBlockSummary (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displa
             ]
 
     renderStaticCharacterSummary (m, c) = unlines
-        [ "    Name:   " <> show (m ^. characterName)
-        , "    Weight: " <> show (m ^. characterWeight)
-        , "    Cost:   " <> show (c ^. characterCost)
+        [ "    Name:     " <> show (m ^. characterName)
+        , "    Weight:   " <> show (m ^. characterWeight)
+        , "    Cost:     " <> show (c ^. characterCost)
+        ]
+
+    renderStaticCharacterWithAlphabetSummary (m, c) = unlines
+        [ "    Name:     " <> show (m ^. characterName)
+        , "    Weight:   " <> show (m ^. characterWeight)
+        , "    Cost:     " <> show (c ^. characterCost)
+        , "    "           <> show (m ^. characterAlphabet)
         ]
 
     renderDynamicCharacterSummary (m, c) = unlines
