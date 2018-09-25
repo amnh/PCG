@@ -45,7 +45,6 @@ import           Data.Semigroup.Foldable
 import           Data.Tuple                         (swap)
 import           Data.Vector                        (Vector)
 import qualified Data.Vector                        as V
-import qualified Data.Vector.Custom                 as V (fromList')
 import           Prelude                            hiding (lookup, zipWith)
 
 
@@ -494,7 +493,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
 
             getUnrootedEdgeReference i = fromMaybe (i,i) $ rootIndexToUnrootedIndex i
             getRootResolutionContext   = fmap (topologyRepresentation &&& getCostofEachBlock) . resolutions . nodeDecoration . (references inputDag !)
-            getCostofEachBlock         = V.fromList . fmap blockCost . toList . toBlocks . characterSequence
+            getCostofEachBlock         = V.fromList' . fmap blockCost . toList . toBlocks . characterSequence
 
         -- For each block in the sequence of character we perform a
         -- multi-dimensional minimization. We must determine the minimal spanning
@@ -564,7 +563,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
             deriveMinimalSpanningTreeContext blockDynamicCharacters spanningTree = toMinimalTopologyContext minimalBlockCost spanningTree minimalRootsPerCharacter
               where
                 minimalBlockCost               = sum $ fst <$> minimalCostAndRootPerCharacter
-                minimalRootsPerCharacter       = V.fromList . toList $ snd <$> minimalCostAndRootPerCharacter
+                minimalRootsPerCharacter       = V.fromList' . toList $ snd <$> minimalCostAndRootPerCharacter
                 minimalCostAndRootPerCharacter = mapWithKey getMinimalCharacterRootInSpanningTree blockDynamicCharacters
 
 
