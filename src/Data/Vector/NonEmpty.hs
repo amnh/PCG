@@ -21,6 +21,7 @@ module Data.Vector.NonEmpty
   , fromNonEmpty
   , singleton
   -- * Useful stuff
+  , generate
   , uncons
   , unfoldr
   ) where
@@ -42,7 +43,7 @@ import           Data.Semigroup.Foldable
 import           Data.Semigroup.Traversable
 import qualified Data.Vector                as V
 import           Data.Vector.Instances      ()
-import           Test.QuickCheck
+import           Test.QuickCheck hiding (generate)
 
 
 -- |
@@ -180,3 +181,9 @@ uncons (NEV v) = (first, stream)
       | otherwise = Just . NEV $ V.slice 1 (len-1) v
     first = v ! 0
     len   = length v
+
+
+generate :: Int -> (Int -> a) -> Vector a
+generate n f
+  | n < 1     = error $ "Called Vector.Nonempty.generate on a non-positive dimension " <> show n
+  | otherwise = NEV $ V.generate n f
