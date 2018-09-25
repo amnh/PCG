@@ -10,11 +10,11 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE BangPatterns               #-}
 
 module Data.Vector.NonEmpty
   ( Vector()
@@ -43,7 +43,7 @@ import           Data.Semigroup.Foldable
 import           Data.Semigroup.Traversable
 import qualified Data.Vector                as V
 import           Data.Vector.Instances      ()
-import           Test.QuickCheck hiding (generate)
+import           Test.QuickCheck            hiding (generate)
 
 
 -- |
