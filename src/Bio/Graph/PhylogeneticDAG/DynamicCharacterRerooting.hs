@@ -45,7 +45,6 @@ import           Data.Semigroup.Foldable
 import           Data.Tuple                         (swap)
 import           Data.Vector                        (Vector)
 import qualified Data.Vector                        as V
-import qualified Data.Vector.Custom                 as V (fromList')
 import           Prelude                            hiding (lookup, zipWith)
 
 
