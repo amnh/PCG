@@ -165,7 +165,8 @@ instance Arbitrary TCM where
 
     arbitrary = do
         dimension  <- (arbitrary :: Gen Int) `suchThat` (\x -> 2 <= x && x <= 25)
-        dataVector <- V.fromList <$> vectorOf (dimension * dimension) arbitrary
+        let vLen = dimension * dimension
+        dataVector <- V.fromListN vLen <$> vectorOf vLen arbitrary
         pure $ TCM dimension dataVector
 
 
