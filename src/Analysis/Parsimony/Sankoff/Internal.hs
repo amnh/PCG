@@ -55,7 +55,7 @@ sankoffPostOrder
   ->  SankoffOptimizationDecoration c
 sankoffPostOrder meta charDecoration xs =
   case xs of
-    []   -> initializeCostVector charDecoration -- is a leaf
+    []   -> initializeCostVector meta charDecoration -- is a leaf
     y:ys -> updateCostVector meta charDecoration (y:|ys)
 
 
@@ -70,13 +70,12 @@ sankoffPreOrder
   => SankoffOptimizationDecoration c
   -> [(Word, SankoffOptimizationDecoration c)]
   -> SankoffOptimizationDecoration c
-sankoffPreOrder childDecoration [] = newDecoration       -- is a root
+sankoffPreOrder childDecoration [] = childDecoration & discreteCharacter .~ newChar    -- is a root
   where
     childMins     = childDecoration ^. characterCostVector
     overallMin    = childDecoration ^. characterCost
     emptyMedian   = emptyStatic $ childDecoration ^. discreteCharacter
     newChar       = foldlWithKey' setState emptyMedian childMins
-    newDecoration = childDecoration & discreteCharacter .~ newChar
 
     setState acc pos childMin
       | unsafeToFinite childMin == overallMin = acc `setBit` pos
@@ -103,8 +102,12 @@ sankoffPreOrder childDecoration ((whichChild, parentDecoration):_) = resultDecor
 -- TODO: What’s this? \(i\)
 -- \[ cost(i_c) =
 --       \] \(i \exists s_x\), etc...
-initializeCostVector :: DiscreteCharacterDecoration d c => d -> SankoffOptimizationDecoration c
-initializeCostVector inputDecoration =
+initializeCostVector
+  :: DiscreteCharacterDecoration d c
+  => DiscreteWithTCMCharacterMetadataDec c
+  -> d
+  -> SankoffOptimizationDecoration c
+initializeCostVector meta inputDecoration =
     extendDiscreteToSankoff
       inputDecoration
       costList
@@ -118,7 +121,7 @@ initializeCostVector inputDecoration =
   where
     -- assuming metricity
     inputChar = inputDecoration ^. discreteCharacter
-    range     = [0..5]
+    range     = fmap (toEnum . fst) . keyed . toList $ meta ^. characterAlphabet
     costList  = fmap f range
       where
         f i
@@ -232,11 +235,11 @@ updateDirectionalMins parentDecoration childDecoration childStateMinsFromParent 
     -- to this parent state.
     determineWhetherToIncludeState :: EncodableStaticCharacter c => c -> Int-> StateContributionList -> c
     determineWhetherToIncludeState acc parentCharState childStateMinList
-      | parentFinalMedian `testBit` parentCharState = foldl setState acc childStateMinList
+      | parentFinalMedian `testBit` parentCharState = foldl' setState acc childStateMinList
       | otherwise                                   = acc
 
     setState :: EncodableStaticCharacter c => c -> Word -> c
-    setState newMedian charState = newMedian `setBit` (fromIntegral charState :: Int)
+    setState newMedian charState = newMedian `setBit` fromEnum charState
 
 
 -- |
