@@ -12,7 +12,6 @@
 
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveFunctor              #-}
-{-# LANGUAGE DeriveTraversable          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeFamilies               #-}
 
@@ -70,7 +69,7 @@ newtype Vector a = NEV { unwrap :: V.Vector a }
             , Ord1
             , Pointed
             , Semigroup
-            , Traversable
+--            , Traversable
             , Zip
             , ZipWithKey
             )
@@ -95,10 +94,13 @@ instance Alt Vector where
 
 instance Foldable1 Vector where
 
+    {-# INLINE fold1 #-}
     fold1 = fold1 . toNonEmpty
 
+    {-# INLINE foldMap1 #-}
     foldMap1 f = foldMap1 f . toNonEmpty
 
+    {-# INLINE toNonEmpty #-}
     toNonEmpty = NE.fromList . toList . unwrap
 
 
@@ -110,18 +112,35 @@ instance FoldableWithKey1 Vector where
 type instance Key Vector = Int
 
 
+instance Traversable Vector where
+
+    {-# INLINE traverse #-}
+    traverse f xs =
+        let !len = length xs
+        in  fmap (NEV . V.fromListN len) . traverse f $ toList xs
+
+    {-# INLINE mapM #-}
+    mapM f = fmap NEV . V.mapM f . unwrap
+
+    {-# INLINE sequence #-}
+    sequence = fmap NEV . V.sequence . unwrap
+
+
 instance Traversable1 Vector where
 
+    {-# INLINE traverse1 #-}
     traverse1 f = fmap fromNonEmpty . traverse1 f . toNonEmpty
 
 
 instance TraversableWithKey Vector where
 
+    {-# INLINE traverseWithKey #-}
     traverseWithKey f = fmap NEV . traverseWithKey f . unwrap
 
 
 instance TraversableWithKey1 Vector where
 
+    {-# INLINE traverseWithKey1 #-}
     traverseWithKey1 f = fmap fromNonEmpty . traverseWithKey1 f . toNonEmpty
 
 
