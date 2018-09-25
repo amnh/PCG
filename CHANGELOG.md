@@ -11,7 +11,7 @@ Releases are available [on GitHub][2].
 * Updated to Cabal-2.2
 * Improved efficiency and consistency of character metadata representation
 * Improved efficiency of Wagner build
-* Improved effciencty of Data.Vector.NonEmpty.fromNonEmpty & unfoldr
+* Improved efficiency of Data.Vector.NonEmpty.fromNonEmpty, unfoldr, and traverse
 * Improved representation of Symbol Change Matrix (SCM) and Transition Cost Matrix (TCM)
 * Added Travis CI build script
 * Added test suites for Data.List.Utility, Data.Alphabet, and Data.TCM
