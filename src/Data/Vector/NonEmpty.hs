@@ -14,6 +14,7 @@
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE BangPatterns               #-}
 
 module Data.Vector.NonEmpty
   ( Vector()
