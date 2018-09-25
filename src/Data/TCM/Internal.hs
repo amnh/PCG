@@ -236,8 +236,10 @@ instance MonoTraversable TCM where
     -- Map each element of a monomorphic container to an action, evaluate these
     -- actions in row-major order and collect the results.
     {-# INLINE otraverse #-}
-    otraverse f (TCM n v) = fmap (TCM n . V.fromList) . traverse f $ V.toList v
-
+    otraverse f (TCM n v) = fmap (TCM n . fromList') . traverse f $ V.toList v
+      where
+        fromList' :: [Word32] -> V.Vector Word32
+        fromList' xs = V.fromListN (length xs) xs
     -- |
     -- Map each element of a monomorphic container to a monadic action, evaluate
     -- these actions from left to right, and collect the results.
