@@ -19,6 +19,12 @@ module Bio.Graph.Node
   , ResolutionInformation(..)
   , HasNodeDecorationDatum(..)
   , HasResolutions(..)
+  , HasTotalSubtreeCost(..)
+  , HasLocalSequenceCost(..)
+  , HasLeafSetRepresentation(..)
+  , HasSubtreeRepresentation(..)
+  , HasTopologyRepresentation(..)
+  , HasCharacterSequence(..)
   , addEdgeToEdgeSet
   , addNetworkEdgeToTopology
   , singletonEdgeSet
