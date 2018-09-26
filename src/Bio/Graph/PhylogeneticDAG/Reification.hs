@@ -20,6 +20,7 @@ module Bio.Graph.PhylogeneticDAG.Reification
 
 import           Bio.Graph.Constructions
 import           Bio.Graph.Node
+import           Bio.Graph.PhylogeneticDAG.Internal (setDefaultMetadata)
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Graph.Solution
 import           Control.Applicative
@@ -27,18 +28,18 @@ import           Control.Lens
 import           Control.Monad.State.Lazy
 import           Data.Bits
 import           Data.Foldable
-import           Data.Functor                    (($>))
-import           Data.IntMap                     (IntMap)
-import qualified Data.IntMap                     as IM
-import           Data.IntSet                     (IntSet)
+import           Data.Functor                       (($>))
+import           Data.IntMap                        (IntMap)
+import qualified Data.IntMap                        as IM
+import           Data.IntSet                        (IntSet)
 import           Data.Key
-import           Data.List.NonEmpty              (NonEmpty ((:|)))
-import qualified Data.List.NonEmpty              as NE
+import           Data.List.NonEmpty                 (NonEmpty ((:|)))
+import qualified Data.List.NonEmpty                 as NE
 import           Data.Maybe
 import           Data.Semigroup.Foldable
-import           Data.Vector                     (Vector)
-import qualified Data.Vector                     as V
-import           Prelude                         hiding (zipWith)
+import           Data.Vector                        (Vector)
+import qualified Data.Vector                        as V
+import           Prelude                            hiding (zipWith)
 
 -- import Debug.Trace
 
@@ -102,13 +103,11 @@ tabulateLeaves = {- (\v@(x,_) -> trace ("Tab Vector:\n\n"  <> foldMap1 (\y -> sh
 
 
 reifyDAGWithContext :: Int -> ReferenceDAG () () (Maybe Int) -> UnReifiedCharacterDAG -> CharacterDAG
-reifyDAGWithContext leafCount maskDAG (PDAG m dag) = PDAG2 newDAG m
+reifyDAGWithContext leafCount maskDAG (PDAG m dag) = PDAG2 newRDAG m
   where
-    newDAG = RefDAG
-        { references = newRefs
-        , rootRefs   = rootRefs dag
-        , graphData  = ((mempty, mempty, Nothing) <$) $ graphData dag
-        }
+    newRDAG =
+      dag & _references .~ newRefs
+          & _graphData  %~ setDefaultMetadata
 
     buildLeafNodeAssignments = nodeDecoration <$> references maskDAG
 
