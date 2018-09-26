@@ -25,11 +25,11 @@ module Data.Foldable.Custom
   )
   where
 
-import Data.Coerce   (Coercible, coerce)
-import Data.Foldable (Foldable (foldl', foldr))
-import Data.Monoid   (Sum (..))
-import Data.Maybe    (fromMaybe)
 import Control.DeepSeq (NFData (rnf), ($!!))
+import Data.Coerce     (Coercible, coerce)
+import Data.Foldable   (Foldable (foldl', foldr))
+import Data.Maybe      (fromMaybe)
+import Data.Monoid     (Sum (..))
 
 -- | Performs an even stricter foldl reducing the accumulator
 -- to normal form as opposed to weak using NFData.
