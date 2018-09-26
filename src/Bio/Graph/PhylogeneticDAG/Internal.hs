@@ -12,17 +12,21 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveFoldable         #-}
+{-# LANGUAGE DeriveFunctor          #-}
 {-# LANGUAGE DeriveGeneric          #-}
+{-# LANGUAGE DeriveTraversable      #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MonoLocalBinds         #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE FunctionalDependencies #-}
 
 
 module Bio.Graph.PhylogeneticDAG.Internal
   ( EdgeReference
   , PhylogeneticDAG(..)
+  , PostorderContextualData(..)
   , PhylogeneticDAG2(..)
   , applySoftwireResolutions
   , generateLocalResolutions
@@ -31,6 +35,8 @@ module Bio.Graph.PhylogeneticDAG.Internal
   , renderSummary
   , resolutionsDoNotOverlap
   , HasPhylogeneticForest(..)
+  , HasMinimalNetworkContext(..)
+  , setDefaultMetadata
   ) where
 import           Bio.Character.Decoration.Shared
 import           Bio.Character.Encodable
@@ -109,14 +115,31 @@ data  PhylogeneticDAG m e n u v w x y z
 -- * y = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * z = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Dynamic'    specified as 'DynamicChar'     or 'Bio.Metadata.DiscreteWithTCM'
 
+
+data PostorderContextualData t = PostorderContextualData
+  { virtualNodeMapping    :: HashMap EdgeReference (ResolutionCache t)
+  , contextualNodeDatum   :: Vector (HashMap EdgeReference (ResolutionCache t))
+  , minimalNetworkContext :: Maybe (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge)))
+  }
+  deriving
+    ( Eq
+    , Show
+    , Generic
+    , Functor
+    , Foldable
+    , Traversable
+    )
+
+
+-- | (✔)
+instance ( NFData t
+         ) => NFData (PostorderContextualData t)
+
 -- TODO: RENAME THIS to PhylogeneticForest
 data  PhylogeneticDAG2 m e n u v w x y z
     = PDAG2
     { phylogeneticForest :: ReferenceDAG
-                              (         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
-                              , Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
-                              , Maybe  (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge)))
-                              )
+                              (PostorderContextualData (CharacterSequence u v w x y z))
                               e
                               (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
     , columnMetadata     :: MetadataSequence m
@@ -128,35 +151,42 @@ data  PhylogeneticDAG2 m e n u v w x y z
 type EdgeReference = (Int, Int)
 
 -- |
--- A 'Lens' for the 'phyogeneticForest' field
-class HasPhylogeneticForest s t a b | s -> a, s b -> t where
+-- A 'Lens' for the 'minimalNetworkContext' field in 'PostorderContextualData'
+class HasMinimalNetworkContext s a | s -> a where
+  _minimalNetworkContext :: Lens' s a
+
+{-# SPECIALISE
+      _minimalNetworkContext ::
+        Lens'
+          (PostorderContextualData t)
+          (Maybe (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge))))
+ #-}
+
+
+instance HasMinimalNetworkContext
+  (PostorderContextualData t)
+  (Maybe (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge))))
+    where
+  {-# INLINE _minimalNetworkContext #-}
+  _minimalNetworkContext = lens minimalNetworkContext (\p m -> p {minimalNetworkContext = m})
+
+-- |
+-- A 'Lens' for the 'phyogeneticForest' field in 'PhylogeneticDAG2'
+class HasPhylogeneticForest s t a b | s -> a, t -> b, s b -> t, t a -> s where
   _phylogeneticForest :: Lens s t a b
 
 -- TODO (CM) : add specialise for the type
 
--- These types are cursed:
 instance HasPhylogeneticForest
   (PhylogeneticDAG2 m e n u v w x y z)
   (PhylogeneticDAG2 m e n u' v' w' x' y' z')
-  ( ReferenceDAG
-                              (         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
-                              , Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
-                              , Maybe  (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge)))
-                              )
-                              e
-                              (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
-  )
- ( ReferenceDAG
-                              (         HashMap EdgeReference (ResolutionCache (CharacterSequence u' v' w' x' y' z'))
-                              , Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u' v' w' x' y' z')))
-                              , Maybe  (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge)))
-                              )
-                              e
-                              (PhylogeneticNode2 (CharacterSequence u' v' w' x' y' z') n)
- )
-  where
+  (ReferenceDAG
+    (PostorderContextualData (CharacterSequence u v w x y z)) e (PhylogeneticNode2 (CharacterSequence u v w x y z) n))
+  (ReferenceDAG
+    (PostorderContextualData (CharacterSequence u' v' w' x' y' z')) e (PhylogeneticNode2 (CharacterSequence u' v' w' x' y' z') n)) where
   {-# INLINE _phylogeneticForest #-}
   _phylogeneticForest = lens phylogeneticForest (\p pf -> p {phylogeneticForest = pf})
+
 
 -- | (✔)
 instance HasLeafSet
@@ -182,6 +212,7 @@ instance ( NFData m
          , NFData y
          , NFData z
          ) => NFData (PhylogeneticDAG2 m e n u v w x y z)
+
 
 
 -- | (✔)
@@ -442,7 +473,10 @@ renderSequenceSummary pdag@(PDAG2 dag _meta) = ("Sequence Summary\n\n" <>) . unl
 
     sequenceWLOG   = getSequence $ NE.head roots
     getSequence    = otoList . characterSequence . NE.head . resolutions . nodeDecoration . (refVec !)
-    displayForests = (\(_,_,x) -> fmap (fmap (\(y,r,n,_,_) -> (r,n,y))) x) . graphMetadata $ graphData dag
+    displayForests =
+      f . minimalNetworkContext . graphMetadata . graphData $ dag
+        where
+          f = (fmap (\(y,r,n,_,_) -> (r,n,y)) <$>)
 
     sequenceContext =
         case displayForests of
@@ -564,3 +598,20 @@ resolutionsDoNotOverlap x y = popCount (leafSetRepresentation x .&. leafSetRepre
 -- Retrieve only 'ReferenceDAG' from 'PhylogeneticDAG2'.
 discardCharacters :: PhylogeneticDAG2 m e n u v w x y z -> ReferenceDAG () e n
 discardCharacters (PDAG2 x _) = defaultMetadata $ nodeDecorationDatum2 <$> x
+
+
+setDefaultMetadata
+  :: GraphData m
+  -> GraphData (PostorderContextualData t')
+{-# INLINE setDefaultMetadata #-}
+setDefaultMetadata gd = gd & _graphMetadata .~ defaultMetadataValue
+
+
+defaultMetadataValue :: PostorderContextualData t
+{-# INLINE defaultMetadataValue #-}
+defaultMetadataValue =
+  PostorderContextualData
+  { virtualNodeMapping    = mempty
+  , contextualNodeDatum   = mempty
+  , minimalNetworkContext = Nothing
+  }
