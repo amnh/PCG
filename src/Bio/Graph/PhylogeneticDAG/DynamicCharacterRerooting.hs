@@ -95,7 +95,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                      meta' = omap (M.setAllFoci f) meta
                  in  (PDAG2 inputDag meta', m, V.generate 2 (const m))
       -- Complex case, see four steps below.
-      _:_:_:_ ->     (PDAG2 updatedDag updatedMetadata, edgeCostMapping, contextualNodeDatum)
+      _:_:_:_ ->     (PDAG2 updatedDag updatedMetadata, edgeCostMapping, contextNodeDatum)
   where
 
     -- Step 1: Construct a hashmap of all the *unrooted* edges.
@@ -111,7 +111,13 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
     -- Step 4: Update the dynamic character decoration's cost & add an edge reference.
     updatedDag = inputDag
         { references = refVec V.// toList modifiedRootRefs
-        , graphData  = (graphData inputDag) { graphMetadata = (edgeCostMapping, contextualNodeDatum, Nothing) }
+        , graphData  =
+          graphData inputDag & _graphMetadata .~
+                                 PostorderContextualData
+                                 { virtualNodeMapping    = edgeCostMapping
+                                 , contextualNodeDatum   = contextNodeDatum
+                                 , minimalNetworkContext = Nothing
+                                 }
         }
 
     --Step 5: Update the metadata sequence to contain all applicable TraversalFoci for each dynamic character.
@@ -178,13 +184,13 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                     Just (lhs, rhs) -> (e, localResolutionApplication extensionTransformation meta lhs rhs)
                     Nothing         -> error errorContext
           where
-            lhsContext = (i `lookup` contextualNodeDatum) >>= ((j,i) `lookup`)
-            rhsContext = (j `lookup` contextualNodeDatum) >>= ((i,j) `lookup`)
+            lhsContext = (i `lookup` contextNodeDatum) >>= ((j,i) `lookup`)
+            rhsContext = (j `lookup` contextNodeDatum) >>= ((i,j) `lookup`)
             errorContext = unlines
                 [ "Could not find one or more of the contexts:"
                 , show inputDag
                 , "Rooting Edge " <> show e
-                , show $ HM.keys <$> contextualNodeDatum
+                , show $ HM.keys <$> contextNodeDatum
                 ]
 
     getCache i = resolutions . nodeDecoration $ refVec ! i
@@ -212,7 +218,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
     --
 
 --    contextualNodeDatum :: Vector (Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
-    contextualNodeDatum = V.generate (length refVec) generateMemoizedDatum
+    contextNodeDatum = V.generate (length refVec) generateMemoizedDatum
       where
 
         -- Determine if the memoized point is a root node of the phylogenetic DAG
@@ -297,8 +303,8 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
 --            deriveDirectedEdgeDatum (i,j,k) | trace ("derive directional: " <> show (i,j,k)) False = undefined
             deriveDirectedEdgeDatum (i,j,k) = [((i, n), subtreeResolutions)]
               where
-                lhsMemo       = (contextualNodeDatum ! j) .!>. (n, j)
-                rhsMemo       = (contextualNodeDatum ! k) .!>. (n, k)
+                lhsMemo       = (contextNodeDatum ! j) .!>. (n, j)
+                rhsMemo       = (contextNodeDatum ! k) .!>. (n, k)
                 lhsContext    = edgeReferenceFilter [(k,n)] lhsMemo
                 rhsContext    = edgeReferenceFilter [(j,n)] rhsMemo
 
