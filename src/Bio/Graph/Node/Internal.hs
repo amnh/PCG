@@ -10,11 +10,13 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveFunctor         #-}
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveFoldable         #-}
+{-# LANGUAGE DeriveFunctor          #-}
+{-# LANGUAGE DeriveGeneric          #-}
+{-# LANGUAGE DeriveTraversable      #-}
+{-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
 
 module Bio.Graph.Node.Internal
   ( EdgeSet
@@ -25,6 +27,12 @@ module Bio.Graph.Node.Internal
   , ResolutionInformation(..)
   , HasNodeDecorationDatum(..)
   , HasResolutions(..)
+  , HasTotalSubtreeCost(..)
+  , HasLocalSequenceCost(..)
+  , HasLeafSetRepresentation(..)
+  , HasSubtreeRepresentation(..)
+  , HasTopologyRepresentation(..)
+  , HasCharacterSequence(..)
   , addEdgeToEdgeSet
   , addNetworkEdgeToTopology
   , singletonEdgeSet
@@ -36,6 +44,7 @@ module Bio.Graph.Node.Internal
 
 import Control.DeepSeq
 import Control.Lens
+import Control.Lens.Lens           (Lens)
 import Data.Bits
 import Data.BitVector.LittleEndian
 import Data.EdgeSet
@@ -46,7 +55,6 @@ import Data.UnionSet
 import GHC.Generics
 import Text.Newick.Class
 import Text.XML
-import Control.Lens.Lens (Lens)
 
 
 -- |
@@ -105,7 +113,7 @@ data  ResolutionInformation s
     , subtreeEdgeSet         ::                !(EdgeSet (Int, Int))
     , topologyRepresentation :: {-# UNPACK #-} !(TopologyRepresentation (Int, Int))
     , characterSequence      :: !s
-    } deriving (Functor, Generic)
+    } deriving (Functor, Foldable, Traversable, Generic)
 
 
 -- |
@@ -120,6 +128,101 @@ type ResolutionCache s = NonEmpty (ResolutionInformation s)
 newtype NewickSerialization = NS String
   deriving (Eq, Generic, Ord)
 
+-- |
+-- A 'Lens' for the 'totalSubtreeCost' field in 'ResolutionInformation'
+class HasTotalSubtreeCost s a | s -> a where
+  _totalSubtreeCost :: Lens' s a
+
+{-# SPECIALISE _totalSubtreeCost :: Lens' (ResolutionInformation s) Double #-}
+
+
+instance HasTotalSubtreeCost (ResolutionInformation s) Double where
+  {-# INLINE _totalSubtreeCost #-}
+  _totalSubtreeCost = lens totalSubtreeCost (\r t -> r {totalSubtreeCost = t})
+
+-- |
+-- A 'Lens' for the 'localSequencecost' field in 'ResolutionInformation'
+class HasLocalSequenceCost s a | s -> a where
+  _localSequenceCost :: Lens' s a
+
+{-# SPECIALISE _localSequenceCost :: Lens' (ResolutionInformation s) Double #-}
+
+
+instance HasLocalSequenceCost (ResolutionInformation s) Double where
+  {-# INLINE _localSequenceCost #-}
+  _localSequenceCost = lens localSequenceCost (\r t -> r {localSequenceCost = t})
+
+-- |
+-- A 'Lens' for the 'LeafSetRepresentation' field in 'ResolutionInformation'
+class HasLeafSetRepresentation s a | s -> a where
+  _leafSetRepresentation :: Lens' s a
+
+{-# SPECIALISE _leafSetRepresentation :: Lens' (ResolutionInformation s) UnionSet #-}
+
+
+instance HasLeafSetRepresentation (ResolutionInformation s) UnionSet where
+  {-# INLINE _leafSetRepresentation #-}
+  _leafSetRepresentation = lens leafSetRepresentation (\r l -> r {leafSetRepresentation = l})
+
+-- |
+-- A 'Lens' for the 'subtreeRepresentation' field in 'ResolutionInformation'
+class HasSubtreeRepresentation s a | s -> a where
+  _subtreeRepresentation :: Lens' s a
+
+{-# SPECIALISE _subtreeRepresentation :: Lens' (ResolutionInformation s) NewickSerialization #-}
+
+
+instance HasSubtreeRepresentation (ResolutionInformation s) NewickSerialization where
+  {-# INLINE _subtreeRepresentation #-}
+  _subtreeRepresentation = lens subtreeRepresentation (\r s -> r {subtreeRepresentation = s})
+
+-- |
+-- A 'Lens' for the 'subtreeEdgeSet' field in 'ResolutionInformation'
+class HasSubtreeEdgeSet s a | s -> a where
+  _subtreeEdgeSet :: Lens' s a
+
+{-# SPECIALISE _subtreeEdgeSet :: Lens' (ResolutionInformation s) (EdgeSet (Int, Int)) #-}
+
+
+instance HasSubtreeEdgeSet (ResolutionInformation s) (EdgeSet (Int, Int)) where
+  {-# INLINE _subtreeEdgeSet #-}
+  _subtreeEdgeSet = lens subtreeEdgeSet (\r s -> r {subtreeEdgeSet = s})
+
+-- |
+-- A 'Lens' for the 'topologyRepresentation' field in 'ResolutionInformation'
+class HasTopologyRepresentation s a | s -> a where
+  _topologyRepresentation :: Lens' s a
+
+{-# SPECIALISE
+      _topologyRepresentation :: Lens' (ResolutionInformation s) (TopologyRepresentation (Int, Int))  #-}
+
+instance HasTopologyRepresentation (ResolutionInformation s) (TopologyRepresentation (Int, Int))
+  where
+  {-# INLINE _topologyRepresentation #-}
+  _topologyRepresentation = lens topologyRepresentation (\r t -> r {topologyRepresentation = t})
+
+-- |
+-- A 'Lens' for the 'characterSequence' field in 'ResolutionInformation'
+class HasCharacterSequence s t a b | s -> a, t -> b, s b -> t, t a -> s where
+  _characterSequence :: Lens s t a b
+
+{-# SPECIALISE
+      _characterSequence
+        :: Lens'
+             (ResolutionInformation s)
+             (ResolutionInformation s')
+             s
+             s'
+  #-}
+
+instance HasCharacterSequence
+           (ResolutionInformation s)
+           (ResolutionInformation s')
+           s
+           s'
+  where
+  {-# INLINE _characterSequence #-}
+  _characterSequence = lens characterSequence (\r c -> r {characterSequence = c})
 
 
 instance Bifunctor PhylogeneticNode where
