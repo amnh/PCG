@@ -34,37 +34,21 @@ import           Control.Arrow                      ((&&&))
 import           Control.Lens.At                    (ix)
 import           Control.Lens.Combinators           (singular)
 import           Control.Lens.Fold                  (foldMapOf)
-import           Control.Lens.Operators             ((.~), (^.), (%~))
+import           Control.Lens.Operators             ((%~), (.~), (^.))
 import           Data.Bits
 import           Data.Foldable
-import           Data.Foldable.Custom               (foldMap', sum', minimum')
+import           Data.Foldable.Custom               (foldMap', minimum', sum')
 import           Data.Function                      ((&))
+import           Data.HashMap.Lazy                  (HashMap)
 import qualified Data.IntMap                        as IM
+import           Data.IntSet                        (IntSet)
 import           Data.Key
 import           Data.List.NonEmpty                 (NonEmpty ((:|)))
 import qualified Data.List.NonEmpty                 as NE
 import           Data.MonoTraversable
 import           Data.UnionSet                      (UnionSet)
 import qualified Data.Vector                        as V
-import Data.HashMap.Lazy (HashMap)
-import Data.IntSet (IntSet)
 
-
-type GraphMetadata u v w x y z
-  = (HashMap
-       EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
-    ,  V.Vector
-        (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
-    , Maybe
-        (NonEmpty
-           (TraversalTopology
-           , Double
-           , Double
-           , Double
-           , V.Vector (NonEmpty TraversalFocusEdge)
-           )
-        )
-    )
 
 -- |
 -- Applies a traversal logic function over a 'ReferenceDAG' in a /post-order/ manner.
@@ -97,17 +81,16 @@ postorderSequence' f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag m) = pdag2 & _phylogenetic
         f = leafSetRepresentation . NE.head . resolutions
 
     newRDAG =
-      dag  & _graphData %~ updateGraphCosts
-           & _graphData . _graphMetadata
-               .~ ((mempty, mempty, Nothing) :: GraphMetadata u' v' w' x' y' z')
+      dag  & _graphData  %~ updateGraphCosts
+           & _graphData  %~ setDefaultMetadata
            & _references .~ newReferences
 
     dagSize       = length $ references dag
     newReferences = memo
-      where
+
     updateGraphCosts :: GraphData d -> GraphData d
     updateGraphCosts g =
-      g & _dagCost .~ (realToFrac . sum' $ accessCost <$> rootRefs dag)
+      g & _dagCost         .~ (realToFrac . sum' $ accessCost <$> rootRefs dag)
         & _networkEdgeCost .~ 0
         & _rootingCost     .~ 0
         & _totalBlockCost  .~ 0
