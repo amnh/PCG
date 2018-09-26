@@ -35,13 +35,17 @@ import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Graph
 import           Bio.Graph.Node
+import           Bio.Graph.PhylogeneticDAG.Internal            (setDefaultMetadata)
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
+import           Control.Lens.Operators                        ((%~), (^.))
 import           Data.Default
 import           Data.EdgeLength
+import           Data.Function                                 ((&))
 import qualified Data.List.NonEmpty                            as NE
 import           Data.NodeLabel
 import           Data.Vector                                   (Vector)
+
 
 
 -- |
@@ -53,24 +57,18 @@ wipeScoring
 wipeScoring (PDAG2 dag m) = PDAG2 wipedDAG m
   where
     wipedDAG =
-        RefDAG
-          <$> fmap wipeDecorations . references
-          <*> rootRefs
-          <*> ((mempty, mempty, Nothing) <$) . graphData
-          $ dag
+      dag & _references %~ fmap wipeDecorations
+          & _graphData  %~ setDefaultMetadata
 
     wipeDecorations
       :: Default n
       => IndexData e (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
       -> IndexData e (PhylogeneticNode2 (CharacterSequence (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)) n)
-    wipeDecorations x = {- (\y -> trace ("\n\nOutput from wipeDecorations:\n\n" <> show y) y) $ -}
-          IndexData
-            <$> wipeNode shouldWipe . nodeDecoration
-            <*> parentRefs
-            <*> childRefs
-            $ x
+    wipeDecorations ind =
+      ind & _nodeDecoration %~ wipeNode shouldWipe
+
       where
-        shouldWipe = not . null $ childRefs x
+        shouldWipe = (not . null) . childRefs $ ind
 
 
 -- |
@@ -81,21 +79,15 @@ wipeNode
   => Bool -- ^ Do I wipe?
   -> PhylogeneticNode2 (CharacterSequence        u         v         w         x         y         z ) n
   -> PhylogeneticNode2 (CharacterSequence (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)) n
---wipeNode _ node | trace ("!!! wipeNode InputNode:\n" <> show node) False = undefined
-wipeNode wipe = {-- (\x -> trace ("!!! wipeNode OutputNode:\n" <> show x) x) $ --} PNode2 <$> pure . g . NE.head . resolutions <*> f . nodeDecorationDatum2
+wipeNode wipe =
+  PNode2 <$> pure . g . NE.head . resolutions <*> f . nodeDecorationDatum2
       where
         f :: Default a => a -> a
         f | wipe      = const def
           | otherwise = id
 
-        g = ResInfo
-              <$> totalSubtreeCost
-              <*> localSequenceCost
-              <*> leafSetRepresentation
-              <*> subtreeRepresentation
-              <*> subtreeEdgeSet
-              <*> topologyRepresentation
-              <*> hexmap h h h h h h . characterSequence
+        g res = res & _characterSequence %~ hexmap h h h h h h
+
         h :: a -> Maybe a
         h | wipe      = const Nothing
           | otherwise = Just
