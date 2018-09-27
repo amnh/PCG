@@ -110,11 +110,11 @@ preorderSequence'' f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag meta) = pdag2 & _phylogene
 
         -- This is the generating function.
         -- It computes the updated node decoration for a given index of the vector.
-        g i =
+        g currInd =
           (node ^. _nodeDecoration) & _resolutions .~ newResolution
           where
 
-            node            = refs ! i
+            node            = refs ! currInd
 
             -- This is a singleton resolution cache to conform the the
             -- PhylogeneticNode2 type requirements. It is the part of that gets
@@ -151,7 +151,7 @@ preorderSequence'' f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag meta) = pdag2 & _phylogene
 
             parentIndices   = otoList $ parentRefs node
             -- In sparsely connected graphs (like ours) this will be effectively constant.
-            childPosition j = toEnum . length . takeWhile (/=i) . IM.keys . childRefs $ refs ! j
+            childPosition j = toEnum . length . takeWhile (/=currInd) . IM.keys . childRefs $ refs ! j
 
             selectTopologyFromParentOptions
               :: NonEmpty (Int, PhylogeneticNode2 (CharacterSequence u1 v1 w1 x1 y1 z1) n)
@@ -162,14 +162,14 @@ preorderSequence'' f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag meta) = pdag2 & _phylogene
                 case NE.filter matchesTopology $ second (NE.head . resolutions) <$> nodeOptions of
                   (x,y):_ -> (topology, childPosition x, Just $ toBlocks (characterSequence y) ! key)
                   []      -> error $ unlines
-                                 [ unwords ["No Matching topology for Block", show key, "on Node", show i]
+                                 [ unwords ["No Matching topology for Block", show key, "on Node", show currInd]
                                  , "The minimal topologies for each block: " <> show sequenceOfBlockMinimumTopologies
                                  , "And this was the problem topology: " <> show topology
                                  , "And these were our options: " <> show (topologyRepresentation . NE.head . resolutions . snd <$> nodeOptions)
                                  ]
               where
---                matchesTopology = (`isCompatableWithTopology` topology) . topologyRepresentation . snd
-                matchesTopology = (`notElem` excludedNetworkEdges topology) . (id &&& const i) . fst
+                matchesTopology :: (Int, b) -> Bool
+                matchesTopology (parInd, _) = (parInd, currInd) `notElem` excludedNetworkEdges topology
 
 
 
@@ -695,7 +695,41 @@ preorderFromRooting f edgeCostMapping contextualNodeDatum (PDAG2 dag meta) = PDA
                 g k v topology = mapWithKey h v
                   where
                           -- Get this character from the block
-                    h j x = (! j) . dynamicCharacters
+                    h j x = (ere there are two parents, we grab both
+            -- of the parent contexts via memoization and then select the block
+            -- from the parent that was connected to the current node on the
+            -- minimal display tree for that block.
+            parentalContext  = mapWithKey parentalAccessor sequenceOfBlockMinimumTopologies
+
+            parentalAccessor =
+                case parentIndices of
+                  []    -> \_ x -> (x, 0, Nothing)
+                  [p]   -> selectTopologyFromParentOptions $ (p, memo ! p):|[]
+                  x:y:_ -> selectTopologyFromParentOptions $ (x, memo ! x):|[(y, memo ! y)]
+
+            datumResolutions = node ^. _nodeDecoration . _resolutions
+
+            parentIndices   = otoList $ parentRefs node
+            -- In sparsely connected graphs (like ours) this will be effectively constant.
+            childPosition j = toEnum . length . takeWhile (/=i) . IM.keys . childRefs $ refs ! j
+
+            selectTopologyFromParentOptions
+              :: NonEmpty (Int, PhylogeneticNode2 (CharacterSequence u1 v1 w1 x1 y1 z1) n)
+              -> Int
+              -> TraversalTopology
+              -> (TraversalTopology, Word, Maybe (BLK.CharacterBlock u1 v1 w1 x1 y1 z1))
+            selectTopologyFromParentOptions nodeOptions key topology =
+                case NE.filter matchesTopology $ second (NE.head . resolutions) <$> nodeOptions of
+                  (x,y):_ -> (topology, childPosition x, Just $ toBlocks (characterSequence y) ! key)
+                  []      -> error $ unlines
+                                 [ unwords ["No Matching topology for Block", show key, "on Node", show i]
+                                 , "The minimal topologies for each block: " <> show sequenceOfBlockMinimumTopologies
+                                 , "And this was the problem topology: " <> show topology
+                                 , "And these were our options: " <> show (topologyRepresentation . NE.head . resolutions . snd <$> nodeOptions)
+                                 ]
+              where
+                matchesTopology :: (Int, b) -> Bool
+                matchesTopology = (`notElem` exclu! j) . dynamicCharacters
                           -- Get the appropriate block from the resolution that contains this character
                           . (! k) . toBlocks . characterSequence
                           -- Get the appropriate resolution based on this character's display tree toplogy
