@@ -35,6 +35,7 @@ import           Control.Lens
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
 import           Data.Foldable
+import           Data.GraphViz.Printing
 import           Data.HashMap.Lazy                  (HashMap)
 import qualified Data.IntMap                        as IM
 import qualified Data.IntSet                        as IS
@@ -47,6 +48,7 @@ import           Data.MonoTraversable
 import           Data.Ord                           (comparing)
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
+import qualified Data.Text.Lazy                     as L
 import           Data.TopologyRepresentation
 import           Data.Vector                        (Vector)
 import qualified Data.Vector                        as V
@@ -54,13 +56,8 @@ import           Data.Vector.Instances              ()
 import qualified Data.Vector.NonEmpty               as NEV
 import           Prelude                            hiding (lookup)
 
-import           Control.DeepSeq
-import           Data.GraphViz.Printing
-import qualified Data.Text.Lazy                     as L
-import           System.IO.Unsafe
 
-
-import Debug.Trace
+import           Debug.Trace
 
 
 type BlockTopologies = NEV.Vector TraversalTopology
@@ -279,7 +276,7 @@ data  PreorderContext c
     | NoBlockData
 
 
-generateDotFile :: Show n => ReferenceDAG d e n -> String
+generateDotFile :: Show n => PhylogeneticDAG2 m e n u v w x y z -> String
 generateDotFile = (<> "\n") . L.unpack . renderDot . toDot
 
 
@@ -304,8 +301,7 @@ preorderFromRooting
   -> NEV.Vector (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge))
   -> PhylogeneticDAG2 m e n u' v' w' x' y' z
   -> PhylogeneticDAG2 m e n u' v' w' x' y' z'
---preorderFromRooting _ _ _ _ (PDAG2 dag _) | force . unsafePerformIO $ (writeFile "sad.dot" (generateDotFile dag) *> pure False) = undefined
-preorderFromRooting transformation edgeCostMapping contextualNodeDatum minTopologyContextPerBlock (PDAG2 dag meta) = PDAG2 (newDAG dag) meta
+preorderFromRooting transformation edgeCostMapping contextualNodeDatum minTopologyContextPerBlock pdag@(PDAG2 dag meta) = PDAG2 (newDAG dag) meta
   where
     newDAG        = RefDAG <$> const newReferences <*> rootRefs <*> reconstructMetadata
     newReferences = V.generate nodeCount g
@@ -359,14 +355,25 @@ preorderFromRooting transformation edgeCostMapping contextualNodeDatum minTopolo
     -- parentVectors :: Matrix (Vector (PreorderContext c))
     parentVectors = MAT.matrix nodeCount blockCount g
       where
-        g t | trace ("g input: " <> show t) False = undefined
-        g e@(nodeIndex, blockIndex) = (!!! nodeIndex) <$> dynCharVec
+        g e@(nodeIndex, blockIndex)
+          | nodeIndex == 0 = head . toList   <$> dynCharVec
+          | otherwise      = (!!! nodeIndex) <$> dynCharVec
           where
-            (!!!) v i =
-                case i `lookup` v of
-                  Nothing -> error $ "Can't index at " <> show i <> " when given " <> show e
-                  Just  v -> v
+             -- :: Vector (IM.IntMap (PreorderContext z))
             dynCharVec = parentMapping ! blockIndex
+
+            (!!!) v i = fromMaybe
+                (error $ mconcat
+                    [ "Can't index at "
+                    , show i
+                    , " when given "
+                    , show e
+                    , "\nIn the IntMap: "
+                    , show $ IM.keysSet <$> dynCharVec
+                    , "\n\n"
+                    , generateDotFile pdag
+                    ]
+                ) $ i `lookup` v
 
         parentMapping = delta minTopologyContextPerBlock
 
@@ -382,7 +389,9 @@ preorderFromRooting transformation edgeCostMapping contextualNodeDatum minTopolo
         -- edge.
         --
         -- Right is a reference to the parent index in the DAG.
---        delta :: (Keyed f, Keyed v, Foldable r) => f (TraversalTopology, v (r TraversalFocusEdge)) -> f (v (IntMap (Either (c, Int) Int)))
+
+--      delta :: NEV.Vector (TopologyRepresentation (IS.Key, Int), b, c, d, Vector (NonEmpty (IS.Key, IS.Key)))
+--            -> NEV.Vector (Vector (IM.IntMap (PreorderContext z)))
         delta = mapWithKey (\k (topo, _, _, _, v) -> mapWithKey (f topo k) v)
           where
             f topo blockIndex charIndex = foldMap epsilon
@@ -461,7 +470,7 @@ preorderFromRooting transformation edgeCostMapping contextualNodeDatum minTopolo
 
                     dynCharGen k m =
                         case parentRefContext of
-                          NoBlockData      -> error "This is bad and sad plus I'm mad. Wrote out DOT file to 'sad.dot'"
+                          NoBlockData      -> error "This is bad and sad plus I'm mad."
                           SetRootNode  x   -> transformation m x []
                           FociEdgeNode p x ->
                             let currentContext     = selectApplicableResolutions topology $ (contextualNodeDatum .!>. i) .!>. (p,i)

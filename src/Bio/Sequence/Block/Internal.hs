@@ -210,7 +210,7 @@ instance Semigroup (Block u v w x y z) where
           , _dynamicBin     = _dynamicBin     lhs <> _dynamicBin     rhs
           }
 
-    sconcat = 
+    sconcat =
         Block
           <$> sconcat . fmap  _continuousBin
           <*> sconcat . fmap _nonAdditiveBin
@@ -224,7 +224,7 @@ instance Semigroup (Block u v w x y z) where
         , show (fromIntegral i :: Integer)
         , " <= 0"
         ]
-    stimes i v = 
+    stimes i v =
         let n = force $ fromIntegral i
             genVect x = fromListN (n * length x) . fold . replicate n $ toList x
         in  Block

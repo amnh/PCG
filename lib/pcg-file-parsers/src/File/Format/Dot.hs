@@ -63,7 +63,7 @@ dotNodeSet = foldMap (S.singleton . nodeID) . graphNodes
                     Just label -> case label of
                                     StrLabel v -> v
                                     _ -> nodeID n
-      
+
     getLabel (Label x) = Just x
     getLabel _ = Nothing
 -}
