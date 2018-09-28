@@ -11,6 +11,7 @@ import Test.Tasty
 import Test.Tasty.Golden
 import Turtle                (cd, decodeString, pwd, shell)
 
+type Extension = String
 
 testSuite :: IO TestTree
 testSuite = do
@@ -27,7 +28,7 @@ testSuite = do
 -- Runs a pcg file [file-name].pcg producing [file-name].extension for a
 -- given extension which is then compared to [file-name]_extension.golden. If the
 -- golden file does not exist the test will generate it.
-goldenTest :: (FilePath, String) -> IO TestTree
+goldenTest :: (FilePath, Extension) -> IO TestTree
 goldenTest (filePath, extension) = do
   let testName = filePath
   let outputFilePath = filePath -<.> extension
@@ -39,7 +40,7 @@ goldenTest (filePath, extension) = do
       outputFilePath
       (generateOutput filePath)
   where
-    makeGolden :: FilePath -> FilePath
+    makeGolden :: FilePath -> FilePath -- Generates a name for the golden file
     makeGolden = (<.> "golden") . (<> "_" <> extension) . dropExtension
 
 -- |
@@ -48,11 +49,16 @@ generateOutput :: FilePath -> IO ()
 generateOutput fp
   = do
   baseDir <- pwd
-  cd $ decodeString fileDir
+  cd $ decodeString fileDir -- Change to filepath directory.
   _ <- flip shell mempty
         . pack
           $ mconcat
-            ["[ -e ", testLog, " ]", " && ", "rm ", testLog] -- deletes the previous test log.
+            ["[ -e "
+            , testLog
+            , " ]"
+            , " && "
+            , "rm "
+            , testLog]      -- Delete the previous test log.
   _ <- flip shell mempty
         . pack
         $ mconcat
@@ -60,9 +66,8 @@ generateOutput fp
           , "< "
           , fileName
           , " >>"
-          , testLog
-          ]
-  cd baseDir
+          , testLog]        -- Run pcg on file passing StdOut to log file.
+  cd baseDir                -- Return to base directory
   where
     (fileDir, fileName) = splitFileName fp
 
