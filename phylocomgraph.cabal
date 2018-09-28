@@ -474,6 +474,7 @@ Test-Suite integration-tests
   main-is:          IntegrationTests.hs
 
   build-depends:      base               >=4.10
+                    , containers
                     , directory
                     , filepath
                     , megaparsec         >=6.4.0
