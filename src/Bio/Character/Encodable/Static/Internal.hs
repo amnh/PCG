@@ -195,7 +195,7 @@ instance Exportable StaticCharacterBlock where
         x = numRows bm
         y = numCols bm
 
-    fromExportableBuffer = undefined
+    fromExportableBuffer = error "When did we start using static character block?! Please implement Exportable.fromExportableBuffer"
 
     toExportableElements = encodableStreamToExportableCharacterElements
 

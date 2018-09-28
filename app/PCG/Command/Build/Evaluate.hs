@@ -19,7 +19,6 @@ import           Bio.Graph.Node
 import qualified Bio.Graph.ReferenceDAG              as DAG
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
-import           Bio.Sequence.Metadata
 import           Control.Arrow                       ((&&&))
 import           Control.DeepSeq
 import           Control.Lens
@@ -27,6 +26,7 @@ import           Control.Monad                       (replicateM)
 import           Control.Monad.IO.Class
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
+import           Data.Compact                        (compact, getCompact)
 import           Data.Foldable
 import qualified Data.IntMap                         as IM
 import qualified Data.IntSet                         as IS
@@ -54,14 +54,15 @@ type DatNode =
 
 
 evaluate
-  :: Command
+  :: BuildCommand
   -> GraphState
   -> SearchState
 -- evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
 -- evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
-evaluate (BUILD (BuildCommand trajectoryCount buildType)) inState =
+evaluate (BuildCommand trajectoryCount buildType) cpctInState = do
+    let inState = getCompact cpctInState
     case inState of
-      Left  e -> pure $ Left e
+      Left  _ -> pure cpctInState
       Right v ->
         case toList $ v ^. leafSet of
           []   -> fail "There are no nodes with which to build a tree."
@@ -80,12 +81,10 @@ evaluate (BUILD (BuildCommand trajectoryCount buildType)) inState =
                                                             pure $ parmap rpar iterativeNetworkBuild bestTrees
 --                                                            pure $ fmap iterativeNetworkBuild bestTrees
                                        WheelerForest  -> fail "The BUILD command type 'Forest' is not yet implemented!"
-                     let bestSolution = Right $ toSolution bestNetwork
-                     pure bestSolution
+                     liftIO . compact . Right $ toSolution bestNetwork
   where
+    toSolution :: NonEmpty a -> PhylogeneticSolution a
     toSolution = PhylogeneticSolution . pure . PhylogeneticForest
-
-evaluate _ _ = fail "Invalid BUILD command binding"
 
 
 naiveWagnerParallelBuild
@@ -127,7 +126,6 @@ naiveWagnerBuild metaSeq ns =
   where
     fromRefDAG = performDecoration . (`PDAG2`  metaSeq) . resetMetadata
 
-
 iterativeBuild
   :: FinalDecorationDAG
   -> DatNode
@@ -150,13 +148,20 @@ iterativeBuild currentTree@(PDAG2 _ metaSeq) nextLeaf = nextTree
 iterativeNetworkBuild
   :: FinalDecorationDAG
   -> FinalDecorationDAG
+
 iterativeNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
     case toList $ candidateNetworkEdges inputDag of
       []   -> currentNetwork
       x:xs ->
+        -- DO NOT use rdeepseq! Prefer rseq!
+        -- When trying candidate edges, we can construct graphs for which a
+        -- pre-order traversal is not logically possible. These graphs will
+        -- necissarily result in an infinite cost. So long as we lazily compute
+        -- the cost, the minimization routine will discard the incoherent,
+        -- infinite-cost candidates and we won't run into interesting runtime problems.
         let !edgesToTry = x:|xs
             (minNewCost, !bestNewNetwork) = minimumBy (comparing fst)
-                                          . parmap (rparWith rdeepseq) (getCost &&& id)
+                                          . parmap (rparWith rseq) (getCost &&& id)
                                           $ tryNetworkEdge <$> edgesToTry
         in  if   getCost currentNetwork <= minNewCost
             then currentNetwork

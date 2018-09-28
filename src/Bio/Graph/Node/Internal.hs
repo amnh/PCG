@@ -12,6 +12,7 @@
 
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
@@ -92,7 +93,10 @@ type ResolutionCache s = NonEmpty (ResolutionInformation s)
 -- A newick representation of a subtree. 'Semigroup' instance used for subtree
 -- joining.
 newtype NewickSerialization = NS Text
-  deriving (Eq, Generic, Ord, Show)
+  deriving newtype Eq
+  deriving         Generic
+  deriving newtype Ord
+  deriving newtype Show
 
 
 -- |

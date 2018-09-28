@@ -43,9 +43,7 @@ module Bio.Graph
   , generateLocalResolutions
   , postorderSequence'
   , preorderFromRooting
-  , preorderFromRooting''
-  , preorderSequence'
-  , preorderSequence''
+  , preorderSequence
   , renderSummary
   , reifiedSolution
   , rootCosts
