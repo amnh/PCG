@@ -10,20 +10,27 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric              #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE DeriveAnyClass        #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Bio.Sequence.Block.Metadata
-  ( MetadataBlock(..)
-  , getBlockMetadata
-  , getDynamicMetadata
+  ( MetadataBlock()
+  -- * Lenses
+  , HasBlockMetadata(..)
+  , HasContinuousBin(..)
+  , HasNonAdditiveBin(..)
+  , HasAdditiveBin(..)
+  , HasMetricBin(..)
+  , HasNonMetricBin(..)
+  , HasDynamicBin(..)
   -- * Construction
   , continuousToMetadataBlock
   , discreteToMetadataBlock
   , dynamicToMetadataBlock
+  -- * Mutation
   , setAllFoci
   , setFoci
   ) where
@@ -37,11 +44,12 @@ import Bio.Sequence.Block.Internal
 import Control.DeepSeq
 import Control.Lens
 import Data.Key
-import Data.MonoTraversable         as MT
+import Data.List.NonEmpty           (last)
+import Data.Semigroup
 import Data.TCM
 import Data.Vector                  (Vector)
 import GHC.Generics
-import Prelude                      hiding (zipWith)
+import Prelude                      hiding (last, zipWith)
 import Text.XML
 import Text.XML.Light.Types
 
@@ -50,73 +58,146 @@ import Text.XML.Light.Types
 -- networks.
 --
 -- Use '(<>)' to construct larger blocks.
-newtype MetadataBlock m = MB
-    ( Block
-         m
-         ContinuousCharacterMetadataDec
-         DiscreteCharacterMetadataDec
-         DiscreteCharacterMetadataDec
-        (DiscreteWithTCMCharacterMetadataDec StaticCharacter)
-        (DiscreteWithTCMCharacterMetadataDec StaticCharacter)
-        (DynamicCharacterMetadataDec (MT.Element DynamicChar))
-    )
-    deriving (NFData, Generic, Semigroup)
+data MetadataBlock m = MB
+    { _blockMetadata :: m
+    , _blockDataSet  :: {-# UNPACK #-}
+      !(Block
+           ContinuousCharacterMetadataDec
+           DiscreteCharacterMetadataDec
+           DiscreteCharacterMetadataDec
+          (DiscreteWithTCMCharacterMetadataDec StaticCharacter)
+          (DiscreteWithTCMCharacterMetadataDec StaticCharacter)
+          (DynamicCharacterMetadataDec DynamicCharacterElement)
+      )
+    }
+    deriving (NFData, Generic)
 
 
 instance Functor MetadataBlock where
 
-    fmap f (MB b) = MB $ b { blockMetadata = f $ blockMetadata b }
+    fmap f (MB m b) = MB (f m) b
 
-    (<$) v (MB b) = MB $ b { blockMetadata = v }
+    (<$) v (MB _ b) = MB    v  b
+
+
+
+instance HasBlockMetadata (MetadataBlock m) m where
+
+    {-# INLINE blockMetadata #-}
+    blockMetadata = lens _blockMetadata
+                  $ \e x -> e { _blockMetadata = x }
+
+
+instance HasContinuousBin (MetadataBlock m) (Vector ContinuousCharacterMetadataDec) where
+
+    {-# INLINE continuousBin #-}
+    continuousBin = lens (_continuousBin . _blockDataSet)
+                  $ \(MB m b) x -> MB m (b { _continuousBin = x })
+
+
+instance HasNonAdditiveBin (MetadataBlock m) (Vector DiscreteCharacterMetadataDec) where
+
+    {-# INLINE nonAdditiveBin #-}
+    nonAdditiveBin = lens (_nonAdditiveBin . _blockDataSet)
+                   $ \(MB m b) x -> MB m (b { _nonAdditiveBin = x })
+
+
+instance HasAdditiveBin (MetadataBlock m) (Vector DiscreteCharacterMetadataDec) where
+
+    {-# INLINE additiveBin #-}
+    additiveBin = lens (_additiveBin . _blockDataSet)
+                $ \(MB m b) x -> MB m (b { _additiveBin = x })
+
+
+instance HasMetricBin (MetadataBlock m) (Vector (DiscreteWithTCMCharacterMetadataDec StaticCharacter)) where
+
+    {-# INLINE metricBin #-}
+    metricBin = lens (_metricBin . _blockDataSet)
+              $ \(MB m b) x -> MB m (b { _metricBin = x })
+
+
+instance HasNonMetricBin (MetadataBlock m) (Vector (DiscreteWithTCMCharacterMetadataDec StaticCharacter)) where
+
+    {-# INLINE nonMetricBin #-}
+    nonMetricBin = lens (_nonMetricBin . _blockDataSet)
+                 $ \(MB m b) x -> MB m (b { _nonMetricBin = x })
+
+
+instance HasDynamicBin (MetadataBlock m) (MetadataBlock m) (Vector (DynamicCharacterMetadataDec DynamicCharacterElement)) (Vector (DynamicCharacterMetadataDec DynamicCharacterElement)) where
+
+    {-# INLINE  dynamicBin #-}
+    dynamicBin = lens (_dynamicBin . _blockDataSet)
+               $ \(MB m b) x -> MB m (b { _dynamicBin = x })
+
+
+instance Semigroup (MetadataBlock m) where
+
+    (MB _ b1) <> (MB m2 b2) = MB m2 $ b1 <> b2
+
+    sconcat =
+        MB <$> (_blockMetadata . last)
+           <*> sconcat . fmap _blockDataSet
+
+    stimes i _ | i < 1 = error $ mconcat
+        [ "Call to Bio.Sequence.MetadataBlock.stimes with non-positive value: "
+        , show (fromIntegral i :: Integer)
+        , " <= 0"
+        ]
+    stimes i (MB m b) = MB m $ stimes i b
 
 
 instance ToXML (MetadataBlock m) where
 
-    toXML (MB block) = Element name attrs contents Nothing
+    toXML (MB _ block) = Element name attrs contents Nothing
       where
         name     = QName "Metadata_Block" Nothing Nothing
         attrs    = []
         contents = fmap Elem $
-            [ collapseElemList "Continuous"  [] . continuousBins
-            , collapseElemList "NonAdditive" [] . nonAdditiveBins
-            , collapseElemList "Additive"    [] . additiveBins
-            , collapseElemList "Metric"      [] . metricBins
-            , collapseElemList "Non_Mertic"  [] . nonMetricBins
-            , collapseElemList "Dynamic"     [] . dynamicBins
+            [ collapseElemList "Continuous"  [] . (^. continuousBin)
+            , collapseElemList "NonAdditive" [] . (^. nonAdditiveBin)
+            , collapseElemList "Additive"    [] . (^. additiveBin)
+            , collapseElemList "Metric"      [] . (^. metricBin)
+            , collapseElemList "Non_Mertic"  [] . (^. nonMetricBin)
+            , collapseElemList "Dynamic"     [] . (^. dynamicBin)
             ] <*> [block]
 
 
+-- |
+-- Set all the 'TraversalFoci' of all dynamic characters in the block to the
+-- supplied value.
 setAllFoci :: TraversalFoci -> MetadataBlock m -> MetadataBlock m
-setAllFoci foci (MB x) = MB $ x { dynamicBins = (traversalFoci ?~ foci) <$> dynamicBins x }
+setAllFoci foci (MB m b) = MB m $ b { _dynamicBin = (traversalFoci ?~ foci) <$> _dynamicBin b }
 
 
+-- |
+-- Set the 'TraversalFoci' of each dynamic characters in the block to the
+-- corresponding value in the supplied vector.
+--
+-- If the supplied vector of 'TraversalFoci' has fewer values than there are
+-- dynamic characters in the 'MetadataBlock', then the dynamic characters will
+-- be truncated to the length of the supplied vector.
 setFoci :: Vector TraversalFoci -> MetadataBlock m -> MetadataBlock m
-setFoci fociVec (MB x) = MB $ x { dynamicBins = zipWith (\foci dec -> dec & traversalFoci ?~ foci) fociVec $ dynamicBins x }
+setFoci fociVec (MB m b) = MB m $ b { _dynamicBin = zipWith (\foci dec -> dec & traversalFoci ?~ foci) fociVec $ _dynamicBin b }
 
 
-getBlockMetadata :: MetadataBlock m -> m
-getBlockMetadata (MB x) = blockMetadata x
-
-
-getDynamicMetadata :: MetadataBlock m -> Vector (DynamicCharacterMetadataDec (MT.Element DynamicChar))
-getDynamicMetadata (MB x) = dynamicBins x
-
-
+-- |
+-- Construct a singleton block containing a /continuous/ character's metadata.
 continuousToMetadataBlock
   :: ContinuousCharacterMetadataDec
   -> MetadataBlock ()
-continuousToMetadataBlock v = MB
+continuousToMetadataBlock v = MB ()
     Block
-    { blockMetadata   = ()
-    , continuousBins  = pure v
-    , nonAdditiveBins = mempty
-    , additiveBins    = mempty
-    , metricBins      = mempty
-    , nonMetricBins   = mempty
-    , dynamicBins     = mempty
+    { _continuousBin  = pure v
+    , _nonAdditiveBin = mempty
+    , _additiveBin    = mempty
+    , _metricBin      = mempty
+    , _nonMetricBin   = mempty
+    , _dynamicBin     = mempty
     }
 
 
+-- |
+-- Construct a singleton block containing a /discrete/ character's metadata.
 discreteToMetadataBlock
   :: TCMStructure
   -> DiscreteWithTCMCharacterMetadataDec StaticCharacter
@@ -131,61 +212,58 @@ discreteToMetadataBlock struct v =
       Symmetric    -> nonMetric
   where
     stipDec = discreteMetadata <$> (^. characterName) <*> (^. characterWeight) <*> (^. characterAlphabet)
-    nonAdditive = MB
+    nonAdditive = MB ()
         Block
-        { blockMetadata   = ()
-        , continuousBins  = mempty
-        , nonAdditiveBins = pure $ stipDec v
-        , additiveBins    = mempty
-        , metricBins      = mempty
-        , nonMetricBins   = mempty
-        , dynamicBins     = mempty
+        { _continuousBin  = mempty
+        , _nonAdditiveBin = pure $ stipDec v
+        , _additiveBin    = mempty
+        , _metricBin      = mempty
+        , _nonMetricBin   = mempty
+        , _dynamicBin     = mempty
         }
 
-    additive = MB
+    additive = MB ()
         Block
-        { blockMetadata   = ()
-        , continuousBins  = mempty
-        , nonAdditiveBins = mempty
-        , additiveBins    = pure $ stipDec v
-        , metricBins      = mempty
-        , nonMetricBins   = mempty
-        , dynamicBins     = mempty
+        { _continuousBin  = mempty
+        , _nonAdditiveBin = mempty
+        , _additiveBin    = pure $ stipDec v
+        , _metricBin      = mempty
+        , _nonMetricBin   = mempty
+        , _dynamicBin     = mempty
         }
 
-    metric = MB
+    metric = MB ()
         Block
-        { blockMetadata   = ()
-        , continuousBins  = mempty
-        , nonAdditiveBins = mempty
-        , additiveBins    = mempty
-        , metricBins      = pure v
-        , nonMetricBins   = mempty
-        , dynamicBins     = mempty
+        { _continuousBin  = mempty
+        , _nonAdditiveBin = mempty
+        , _additiveBin    = mempty
+        , _metricBin      = pure v
+        , _nonMetricBin   = mempty
+        , _dynamicBin     = mempty
         }
 
-    nonMetric = MB
+    nonMetric = MB ()
         Block
-        { blockMetadata   = ()
-        , continuousBins  = mempty
-        , nonAdditiveBins = mempty
-        , additiveBins    = mempty
-        , metricBins      = mempty
-        , nonMetricBins   = pure v
-        , dynamicBins     = mempty
+        { _continuousBin  = mempty
+        , _nonAdditiveBin = mempty
+        , _additiveBin    = mempty
+        , _metricBin      = mempty
+        , _nonMetricBin   = pure v
+        , _dynamicBin     = mempty
         }
 
 
+-- |
+-- Construct a singleton block containing a /dynamic/ character's metadata.
 dynamicToMetadataBlock
-  :: DynamicCharacterMetadataDec (MT.Element DynamicChar)
+  :: DynamicCharacterMetadataDec DynamicCharacterElement
   -> MetadataBlock ()
-dynamicToMetadataBlock v = MB
+dynamicToMetadataBlock v = MB ()
     Block
-    { blockMetadata   = ()
-    , continuousBins  = mempty
-    , nonAdditiveBins = mempty
-    , additiveBins    = mempty
-    , metricBins      = mempty
-    , nonMetricBins   = mempty
-    , dynamicBins     = pure v
+    { _continuousBin  = mempty
+    , _nonAdditiveBin = mempty
+    , _additiveBin    = mempty
+    , _metricBin      = mempty
+    , _nonMetricBin   = mempty
+    , _dynamicBin     = pure v
     }

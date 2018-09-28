@@ -32,6 +32,7 @@ module Bio.Graph.PhylogeneticDAG.Internal
   , renderSummary
   , resolutionsDoNotOverlap
   ) where
+
 import           Bio.Character.Decoration.Shared
 import           Bio.Character.Encodable
 import           Bio.Graph.LeafSet
@@ -42,11 +43,6 @@ import           Bio.Metadata.Discrete
 import           Bio.Metadata.DiscreteWithTCM
 import           Bio.Metadata.Dynamic
 import           Bio.Sequence
-import           Bio.Sequence.Block.Character    (CharacterBlock (..))
-import           Bio.Sequence.Block.Internal
-import           Bio.Sequence.Block.Metadata     (MetadataBlock (..))
-import           Bio.Sequence.Metadata           (MetadataSequence, getBlockMetadata)
-import qualified Bio.Sequence.Metadata           as M
 import           Control.Applicative             (liftA2)
 import           Control.Arrow                   ((***))
 import           Control.DeepSeq
@@ -394,7 +390,7 @@ renderSummary pdag@(PDAG2 dag _) = unlines
 
 
 renderMetadata :: Show m => MetadataSequence m -> String
-renderMetadata = unlines . fmap (show . getBlockMetadata) . toList . M.toBlocks
+renderMetadata = unlines . fmap (show . (^. blockMetadata)) . toList . (^. blockSequence)
 
 
 -- |
@@ -447,16 +443,15 @@ renderBlockSummary
   -> String
 renderBlockSummary (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displayMay, block) = mconcat . (renderedPrefix:) .
     (renderBlockMeta pair :) $
-    [ unlines . fmap renderStaticCharacterSummary              . toList . uncurry zip . ( continuousBins ***  continuousBins)
-    , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . (nonAdditiveBins *** nonAdditiveBins)
-    , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . (   additiveBins ***    additiveBins)
-    , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . (     metricBins ***      metricBins)
-    , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . (  nonMetricBins ***   nonMetricBins)
-    , unlines . fmap renderDynamicCharacterSummary             . toList . uncurry zip . (    dynamicBins ***     dynamicBins)
-    ] <*> [(mBlock, cBlock)]
+    [ unlines . fmap renderStaticCharacterSummary              . toList . uncurry zip . ((^.  continuousBin) *** (^.  continuousBin))
+    , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^. nonAdditiveBin) *** (^. nonAdditiveBin))
+    , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^.    additiveBin) *** (^.    additiveBin))
+    , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^.      metricBin) *** (^.      metricBin))
+    , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^.   nonMetricBin) *** (^.   nonMetricBin))
+    , unlines . fmap renderDynamicCharacterSummary             . toList . uncurry zip . ((^.     dynamicBin) *** (^.     dynamicBin))
+    ] <*> [(mBlock, block)]
   where
-    pair = (M.toBlocks meta ! key, block)
-    (MB mBlock, CB cBlock) = pair
+    pair@(mBlock, _) = ((meta ^. blockSequence) ! key, block)
 
     renderedPrefix = "Block " <> show key <> "\n\n"
 

@@ -13,53 +13,31 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric    #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Bio.Sequence.Character
   ( CharacterSequence()
   , HasBlockCost
-  -- * Construction / Decomposition
-  , toBlocks
-  , fromBlocks
-  , toBlockVector
-  , fromBlockVector
-  -- * Other-
-  , hexmap
-  , hexTranspose
-  , hexZipWith
-  , hexZipWithMeta
-  , sequenceCost
-  , sequenceRootCost
+  , fromNonEmpty
+  , unfoldr
   ) where
 
-import           Bio.Character.Encodable
---import           Bio.Character.Decoration.Continuous
-import           Bio.Metadata.Continuous
-import           Bio.Metadata.Discrete
-import           Bio.Metadata.DiscreteWithTCM
-import           Bio.Metadata.Dynamic
-import           Bio.Sequence.Block           (CharacterBlock, HasBlockCost, HasRootCost)
-import qualified Bio.Sequence.Block           as Blk
-import           Bio.Sequence.Metadata        (MetadataSequence)
-import qualified Bio.Sequence.Metadata        as M
+import           Bio.Sequence.Block      (CharacterBlock, HasBlockCost)
+import           Bio.Sequence.Internal
 import           Control.DeepSeq
-import           Control.Parallel.Custom
-import           Control.Parallel.Strategies
+import           Control.Lens
 import           Data.Bifunctor
-import           Data.DList                   hiding (foldr, toList)
 import           Data.Foldable
 import           Data.Key
-import           Data.List.NonEmpty           (NonEmpty)
---import qualified Data.List.NonEmpty      as NE
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
-import           Data.Semigroup.Traversable
-import           Data.Vector.NonEmpty         (Vector)
-import qualified Data.Vector.NonEmpty         as V
+import           Data.Vector.NonEmpty    (Vector)
+import qualified Data.Vector.NonEmpty    as V
 import           GHC.Generics
-import           Prelude                      hiding (zip)
 import           Text.XML
 
 -- |
@@ -98,6 +76,11 @@ instance Functor (CharacterSequence u v w x y) where
     fmap f = fromBlocks . fmap (fmap f) . toBlocks
 
     (<$) v = fromBlocks . fmap (v <$) . toBlocks
+
+
+instance HasBlocks (CharacterSequence u v w x y z) (CharacterSequence u' v' w' x' y' z') (Vector (CharacterBlock u v w x y z)) (Vector (CharacterBlock u' v' w' x' y' z')) where
+
+      blockSequence = lens toBlocks $ const CharSeq
 
 
 instance MonoFoldable (CharacterSequence u v w x y z) where
@@ -178,155 +161,40 @@ instance ( ToXML u
 
 
 -- |
--- Perform a six way map over the polymorphic types.
-hexmap :: (u -> u')
-       -> (v -> v')
-       -> (w -> w')
-       -> (x -> x')
-       -> (y -> y')
-       -> (z -> z')
-       -> CharacterSequence u  v  w  x  y  z
-       -> CharacterSequence u' v' w' x' y' z'
-hexmap f1 f2 f3 f4 f5 f6 = fromBlocks . parmap rpar (Blk.hexmap f1 f2 f3 f4 f5 f6) . toBlocks
-
-
--- TODO: Make sure the inner dimension's ordering is not reversed during the transpose.
+-- /O(n)/
 --
+-- Construct a 'CharacterSequence' from a non-empty structure of character blocks.
+{-# INLINE fromNonEmpty #-}
+fromNonEmpty
+  :: Foldable1 f
+  => f (CharacterBlock u v w x y z)
+  -> CharacterSequence u v w x y z
+fromNonEmpty = CharSeq . V.fromNonEmpty
+
+
 -- |
--- Performs a 2D transform on the 'Traversable' structure of 'CharacterSequence'
--- values.
+-- /O(n)/
 --
--- Assumes that the 'CharacterSequence' values in the 'Traversable' structure are
--- of equal length. If this assumtion is violated, the result will be truncated.
-hexTranspose
-  :: Traversable1 t
-  => t (CharacterSequence u v w x y z)
-  -> CharacterSequence [u] [v] [w] [x] [y] [z]
-hexTranspose = toNList . invert . fmap toDList . toNonEmpty
-  where
-    toDList
-      :: CharacterSequence u v w x y z
-      -> CharacterSequence (DList u) (DList v) (DList w) (DList x) (DList y) (DList z)
-    toDList = hexmap pure pure pure pure pure pure
-
-    invert :: ( Foldable f
-              , Semigroup u
-              , Semigroup v
-              , Semigroup w
-              , Semigroup x
-              , Semigroup y
-              , Semigroup z
-              )
-           => f (CharacterSequence u v w x y z)
-           -> CharacterSequence u v w x y z
-    invert = foldr1 (hexZipWith (<>) (<>) (<>) (<>) (<>) (<>))
-
-    toNList = hexmap toList toList toList toList toList toList
-
-
--- |
--- Performs a zip over the two character sequences. Uses the input functions to
--- zip the different character types in the character block.
+-- Construct a 'CharacterSequence' by repeatedly applying the generator function
+-- to a seed. The generator function always yields the next element and either
+-- @ Just @ the new seed or 'Nothing' if there are no more elements to be
+-- generated.
 --
--- Assumes that the 'CharacterSequence' values have the same number of character
--- blocks and the same number of each character type in the corresponding block
--- of each block. If this assumtion is violated, the result will be truncated.
-hexZipWith
-  :: (u -> u' -> u'')
-  -> (v -> v' -> v'')
-  -> (w -> w' -> w'')
-  -> (x -> x' -> x'')
-  -> (y -> y' -> y'')
-  -> (z -> z' -> z'')
-  -> CharacterSequence u   v   w   x   y   z
-  -> CharacterSequence u'  v'  w'  x'  y'  z'
-  -> CharacterSequence u'' v'' w'' x'' y'' z''
-hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs
-  = fromBlocks $ parZipWith rpar (Blk.hexZipWith f1 f2 f3 f4 f5 f6) (toBlocks lhs) (toBlocks rhs)
+-- > unfoldr (\n -> (n, if n == 0 then Nothing else Just (n-1))) 10
+-- >  = <10,9,8,7,6,5,4,3,2,1>
+{-# INLINE unfoldr #-}
+unfoldr
+  :: (b -> (CharacterBlock u v w x y z, Maybe b))
+  -> b
+  -> CharacterSequence u v w x y z
+unfoldr f = CharSeq . V.unfoldr f
 
 
--- |
--- Performs a zip over the two character sequences. Uses the input functions to
--- zip the different character types in the character block.
---
--- Assumes that the 'CharacterSequence' values have the same number of character
--- blocks and the same number of each character type in the corresponding block
--- of each block. If this assumtion is violated, the result will be truncated.
-hexZipWithMeta
-  :: (ContinuousCharacterMetadataDec        -> u -> u' -> u'')
-  -> (DiscreteCharacterMetadataDec          -> v -> v' -> v'')
-  -> (DiscreteCharacterMetadataDec          -> w -> w' -> w'')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
-      -> x -> x' -> x'')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
-      -> y -> y' -> y'')
-  -> (DynamicCharacterMetadataDec (Element DynamicChar)
-      -> z -> z' -> z'')
-  -> MetadataSequence m
-  -> CharacterSequence u   v   w   x   y   z
-  -> CharacterSequence u'  v'  w'  x'  y'  z'
-  -> CharacterSequence u'' v'' w'' x'' y'' z''
-hexZipWithMeta f1 f2 f3 f4 f5 f6 meta lhs rhs
-  = fromBlocks
-  $ parZipWith3 rpar
-  (Blk.hexZipWithMeta f1 f2 f3 f4 f5 f6)
-  (M.toBlocks meta)
-  (toBlocks lhs)
-  (toBlocks rhs)
-
-
--- |
--- Destructs a 'CharacterSequence' to it's composite blocks.
-{-# INLINE toBlocks #-}
-toBlocks :: CharacterSequence u v w x y z -> NonEmpty (CharacterBlock u v w x y z)
-toBlocks (CharSeq x) = toNonEmpty x
-
-
--- |
--- Constructs a 'CharacterSequence' from a non-empty colection of blocks.
 {-# INLINE fromBlocks #-}
-fromBlocks :: NonEmpty (CharacterBlock u v w x y z) -> CharacterSequence u v w x y z
-fromBlocks = CharSeq . V.fromNonEmpty
+fromBlocks :: Vector (CharacterBlock u v w x y z) -> CharacterSequence u v w x y z
+fromBlocks = CharSeq
 
 
--- |
--- Destructs a 'CharacterSequence' to it's composite blocks.
-{-# INLINE toBlockVector #-}
-toBlockVector :: CharacterSequence u v w x y z -> Vector (CharacterBlock u v w x y z)
-toBlockVector (CharSeq x) =  x
-
-
--- |
--- Constructs a 'CharacterSequence' from a vector of blocks.
-{-# INLINE fromBlockVector #-}
-fromBlockVector :: Vector (CharacterBlock u v w x y z) -> CharacterSequence u v w x y z
-fromBlockVector = CharSeq
-
-
--- |
--- Calculates the cumulative cost of a 'CharacterSequence'. Performs some of the
--- operation in parallel.
-sequenceCost
-  :: HasBlockCost u v w x y z
-  => MetadataSequence m
-  -> CharacterSequence u v w x y z
-  -> Double
-sequenceCost meta char
-  = sum
-  . parmap rpar (uncurry Blk.blockCost)
-  $ zip (M.toBlocks meta) (toBlocks char)
-
-
--- |
--- Calculates the root cost of a 'CharacterSequence'. Performs some of the
--- operation in parallel.
-sequenceRootCost
-  :: (HasRootCost u v w x y z, Integral i)
-  => i
-  -> MetadataSequence m
-  -> CharacterSequence u v w x y z
-  -> Double
-sequenceRootCost rootCount meta char
-  = sum
-  . parmap rpar (uncurry (Blk.rootCost rootCount))
-  $ zip (M.toBlocks meta) (toBlocks char)
+{-# INLINE toBlocks #-}
+toBlocks :: CharacterSequence u v w x y z ->  Vector (CharacterBlock u v w x y z)
+toBlocks (CharSeq x) = x

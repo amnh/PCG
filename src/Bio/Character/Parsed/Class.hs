@@ -33,7 +33,6 @@ import           Data.Semigroup.Foldable
 import           Data.Set                         (Set)
 import qualified Data.Set                         as S
 import           Data.Tree
-import qualified Data.Vector                      as V
 import           Data.Vector.Custom               as V (fromList')
 import           Data.Vector.Instances            ()
 import           File.Format.Dot

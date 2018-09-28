@@ -5,13 +5,15 @@ PCG uses [PVP Versioning][1].
 Releases are available [on GitHub][2].
 
 
-## _v0.1.1.0_ - Unreleased Changes
+## _v0.1.1_ - Unreleased Changes
 
+* Using semantic versioning
 * Updated to GHC-8.4.3
 * Updated to Cabal-2.2
 * Improved efficiency and consistency of character metadata representation
 * Improved efficiency of Wagner build
 * Improved efficiency of Data.Vector.NonEmpty.fromNonEmpty, unfoldr, and traverse
+* Improved representation of character & metadata sequences
 * Improved representation of Symbol Change Matrix (SCM) and Transition Cost Matrix (TCM)
 * Added Travis CI build script
 * Added test suites for Data.List.Utility, Data.Alphabet, and Data.TCM

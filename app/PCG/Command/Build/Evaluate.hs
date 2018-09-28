@@ -19,7 +19,6 @@ import           Bio.Graph.Node
 import qualified Bio.Graph.ReferenceDAG              as DAG
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
-import           Bio.Sequence.Metadata
 import           Control.Arrow                       ((&&&))
 import           Control.DeepSeq
 import           Control.Lens
@@ -154,9 +153,15 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
     case toList $ candidateNetworkEdges inputDag of
       []   -> currentNetwork
       x:xs ->
+        -- DO NOT use rdeepseq! Prefer rseq!
+        -- When trying candidate edges, we can construct graphs for which a
+        -- pre-order traversal is not logically possible. These graphs will
+        -- necissarily result in an infinite cost. So long as we lazily compute
+        -- the cost, the minimization routine will discard the incoherent,
+        -- infinite-cost candidates and we won't run into interesting runtime problems.
         let !edgesToTry = x:|xs
             (minNewCost, !bestNewNetwork) = minimumBy (comparing fst)
-                                          . parmap (rparWith rdeepseq) (getCost &&& id)
+                                          . parmap (rparWith rseq) (getCost &&& id)
                                           $ tryNetworkEdge <$> edgesToTry
         in  if   getCost currentNetwork <= minNewCost
             then currentNetwork

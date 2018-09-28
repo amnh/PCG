@@ -22,7 +22,6 @@ module Bio.Graph.Constructions
   , GraphState
   , PhylogeneticDAG(..)
   , PhylogeneticDAG2(..)
-  , PhylogeneticDAGish(..)
   , PostOrderDecorationDAG
   , SearchState
   , TopologicalResult
@@ -45,12 +44,10 @@ import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Dynamic
 import Bio.Character.Decoration.Fitch
 import Bio.Character.Decoration.Metric
-import Bio.Graph.PhylogeneticDAG.Class
 import Bio.Graph.PhylogeneticDAG.Internal
 import Bio.Graph.ReferenceDAG.Internal
 import Bio.Graph.Solution
 import Bio.Sequence
-import Bio.Sequence.Metadata
 import Control.Evaluation
 import Data.Compact
 import Data.EdgeLength
@@ -139,6 +136,8 @@ type  UnifiedBlock =
     )
 
 
+-- |
+-- A character block resulting fro the READ command.
 type  UnifiedCharacterBlock
     = CharacterBlock
         UnifiedContinuousCharacter
@@ -149,9 +148,9 @@ type  UnifiedCharacterBlock
         UnifiedDynamicCharacter
 
 
-type  UnifiedMetadataBlock
-    = MetadataBlock
-        ()
+-- |
+-- A metadata block resulting fro the READ command.
+type  UnifiedMetadataBlock = MetadataBlock ()
 
 
 -- |
@@ -168,11 +167,8 @@ type  UnifiedSequences =
     )
 
 
-type  UnifiedMetadataSequence
-    = MetadataSequence
-        ()
-
-
+-- |
+-- A character sequence resulting fro the READ command.
 type  UnifiedCharacterSequence
     = CharacterSequence
         UnifiedContinuousCharacter
@@ -181,6 +177,11 @@ type  UnifiedCharacterSequence
         UnifiedDiscreteCharacter
         UnifiedDiscreteCharacter
         UnifiedDynamicCharacter
+
+
+-- |
+-- A metadata sequence resulting fro the READ command.
+type  UnifiedMetadataSequence = MetadataSequence ()
 
 
 -- |
