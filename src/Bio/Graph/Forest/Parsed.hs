@@ -82,6 +82,8 @@ instance Hashable GraphID where
 
     hashWithSalt salt = hashWithSalt salt . show -- Lazy hash, should be fine
 
+instance Hashable (NodeLabel GraphID) where
+    hashWithSalt salt = hashWithSalt salt . show -- Copied from the above
 
 -- | (✔)
 instance ParsedForest (DotGraph GraphID) where
@@ -92,10 +94,13 @@ instance ParsedForest (DotGraph GraphID) where
         cMapping = dotChildMap  dot
         pMapping = dotParentMap dot
 
+        f :: NodeLabel GraphID
+          -> ([(EdgeLength, NodeLabel GraphID)], Maybe String, [(EdgeLength, NodeLabel GraphID)])
         f x = (parents, marker, kids)
            where
-            kids    = fmap (mempty &&& id) . toList $ cMapping ! x
-            parents = fmap (mempty &&& id) . toList $ pMapping ! x
+            kids :: [(EdgeLength, NodeLabel GraphID)]
+            kids    = fmap (const mempty &&& nodeLabel) . toList $ cMapping ! x
+            parents = fmap (const mempty &&& nodeLabel) . toList $ pMapping ! x
             marker
               | null kids = Just $ toIdentifier x
               | otherwise = Nothing
