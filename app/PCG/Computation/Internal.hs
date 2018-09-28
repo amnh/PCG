@@ -10,10 +10,12 @@ import           Data.Char                   (isSpace)
 import           Data.Foldable
 import           Data.List.NonEmpty          (NonEmpty (..))
 import qualified PCG.Command.Build.Evaluate  as Build
+import qualified PCG.Command.Load.Evaluate   as Load
 import qualified PCG.Command.Read.Evaluate   as Read
 import qualified PCG.Command.Report.Evaluate as Report
+import qualified PCG.Command.Save.Evaluate   as Save
 import           PCG.Syntax
-
+import           System.Exit
 
 optimizeComputation :: Computation -> Computation
 optimizeComputation (Computation commands) = Computation $ collapseReadCommands commands
@@ -33,17 +35,19 @@ evaluate :: Computation -> SearchState
 evaluate (Computation xs) = foldl' f mempty xs
   where
     f :: SearchState -> Command -> SearchState
-    f v c@BUILD  {} = v >>= Build.evaluate  c
-    f v c@READ   {} = v *>  Read.evaluate   c
-    f v c@REPORT {} = v >>= Report.evaluate c
---    f _ = error "NOT YET IMPLEMENTED"
+    f v c = case c of
+              BUILD  x -> v >>= Build.evaluate  x
+              READ   x -> v *>  Read.evaluate   x
+              REPORT x -> v >>= Report.evaluate x
+              SAVE   x -> v >>= Save.evaluate   x
+              LOAD   x -> v >>= Load.evaluate   x
 
 
-renderSearchState :: Evaluation a -> String
+renderSearchState :: Evaluation a -> (ExitCode, String)
 renderSearchState e =
    case evaluationResult e of
-     NoOp         -> "[❓] No computation speciified...?"
-     Value _      -> "[✔] Computation complete!"
-     Error errMsg -> "[✘] Error: "<> trimR errMsg
+     NoOp         -> (ExitFailure 3, "[❓] No computation speciified...?")
+     Value _      -> (ExitSuccess  , "[✔] Computation complete!"        )
+     Error errMsg -> (ExitFailure 5, "[✘] Error: "<> trimR errMsg       )
   where
     trimR = reverse . dropWhile isSpace . reverse

@@ -29,6 +29,7 @@ import           Bio.Character.Parsed
 import           Bio.Metadata.Continuous                       (continuousMetadata)
 import           Bio.Sequence                                  hiding (hexmap)
 import           Bio.Sequence.Block
+import qualified Bio.Sequence.Character                        as CS
 import qualified Bio.Sequence.Metadata                         as MD
 --import           Bio.Metadata.Discrete                      (discreteMetadata)
 import           Bio.Graph
@@ -43,6 +44,7 @@ import           Bio.Metadata.Dynamic                          (dynamicMetadataW
 import           Bio.Metadata.Parsed
 import           Control.Applicative                           ((<|>))
 import           Control.Arrow                                 ((&&&), (***))
+import           Control.Lens                                  (over)
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Alphabet
@@ -152,7 +154,7 @@ rectifyResults2 fprs =
           -- Build a forest with the corresponding character data on the nodes
           (False, False, Just meta) -> Right . Right . PhylogeneticSolution $ matchToChars meta charSeqs <$> NE.fromList suppliedForests
       where
-        defaultCharacterSequenceDatum = fromBlocks . fmap blockTransform . toBlocks . head $ toList charSeqs
+        defaultCharacterSequenceDatum = over blockSequence (fmap blockTransform) . head $ toList charSeqs
           where
             blockTransform = hexmap f f f f f f
             f = const Nothing
@@ -245,9 +247,9 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
             newMap = (\x -> NE.fromList $ zip4 (toList x) (toList localMetadata) (repeat (relatedTcm fpr)) propperNames) <$> parsedChars fpr
 
         charNames :: [CharacterName]
-        charNames = makeCharacterNames . concatMap transform $ toList xs
+        charNames = makeCharacterNames . concatMap nameTransform $ toList xs
           where
-            transform x = fmap (const (sourceFile x) &&& correctName . characterName) . toList $ parsedMetas x
+            nameTransform x = fmap (const (sourceFile x) &&& correctName . characterName) . toList $ parsedMetas x
             correctName [] = Nothing
             correctName ys = Just ys
 
@@ -307,7 +309,7 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
       :: Foldable f
       => f (Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName)))
       -> (Maybe UnifiedMetadataSequence, Map String UnifiedCharacterSequence)
-    collapseAndMerge = (fmap MD.fromBlocks *** fmap fromBlocks) . fst . foldl' f ((mempty, mempty), [])
+    collapseAndMerge = (fmap MD.fromNonEmpty *** fmap CS.fromNonEmpty) . fst . foldl' f ((mempty, mempty), [])
       where
         f :: ((Maybe (NonEmpty UnifiedMetadataBlock), Map String (NonEmpty UnifiedCharacterBlock)), [UnifiedCharacterBlock])
           -> Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName))

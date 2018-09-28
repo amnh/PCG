@@ -6,6 +6,8 @@ compiler-check: match-exact
 
 extra-deps:
   - pretty-tree-0.1.0.0
+  - compact-0.1.0.1
+  - tasty-rerun-1.1.12
 
 flags: {}
 

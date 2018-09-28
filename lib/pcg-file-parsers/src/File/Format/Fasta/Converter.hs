@@ -110,7 +110,7 @@ iupacNucleotideSubstitutions = fmap pure . NE.fromList <$> M.fromList
     , ('N', "ACGT")
     , ('-', "-")
     , ('.', "-")
-    , ('?', "?")
+    , ('?', "ACGT-")
     , ('#', "#")
     ]
 

@@ -22,7 +22,6 @@ module Bio.Graph.Constructions
   , GraphState
   , PhylogeneticDAG(..)
   , PhylogeneticDAG2(..)
-  , PhylogeneticDAGish(..)
   , PostOrderDecorationDAG
   , PreOrderDecorationDAG
   , SearchState
@@ -39,7 +38,6 @@ module Bio.Graph.Constructions
   , UnReifiedCharacterDAG
   ) where
 
-
 import Bio.Character
 import Bio.Character.Decoration.Additive
 import Bio.Character.Decoration.Continuous
@@ -47,13 +45,12 @@ import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Dynamic
 import Bio.Character.Decoration.Fitch
 import Bio.Character.Decoration.Metric
-import Bio.Graph.PhylogeneticDAG.Class
 import Bio.Graph.PhylogeneticDAG.Internal
 import Bio.Graph.ReferenceDAG.Internal
 import Bio.Graph.Solution
 import Bio.Sequence
-import Bio.Sequence.Metadata
 import Control.Evaluation
+import Data.Compact
 import Data.EdgeLength
 import Data.List.NonEmpty
 import Data.NodeLabel
@@ -88,7 +85,7 @@ type SearchState = EvaluationT IO GraphState
 -- |
 -- The state of the graph that partitions the evaluation model on one of two
 -- paths depending on the presence or absence of character states in the search.
-type GraphState = Either TopologicalResult DecoratedCharacterResult
+type GraphState = Compact (Either TopologicalResult DecoratedCharacterResult)
 
 
 -- |
@@ -167,6 +164,8 @@ type  UnifiedBlock =
     )
 
 
+-- |
+-- A character block resulting fro the READ command.
 type  UnifiedCharacterBlock
     = CharacterBlock
         UnifiedContinuousCharacter
@@ -177,9 +176,9 @@ type  UnifiedCharacterBlock
         UnifiedDynamicCharacter
 
 
-type  UnifiedMetadataBlock
-    = MetadataBlock
-        ()
+-- |
+-- A metadata block resulting fro the READ command.
+type  UnifiedMetadataBlock = MetadataBlock ()
 
 
 -- |
@@ -196,11 +195,8 @@ type  UnifiedSequences =
     )
 
 
-type  UnifiedMetadataSequence
-    = MetadataSequence
-        ()
-
-
+-- |
+-- A character sequence resulting fro the READ command.
 type  UnifiedCharacterSequence
     = CharacterSequence
         UnifiedContinuousCharacter
@@ -209,6 +205,11 @@ type  UnifiedCharacterSequence
         UnifiedDiscreteCharacter
         UnifiedDiscreteCharacter
         UnifiedDynamicCharacter
+
+
+-- |
+-- A metadata sequence resulting fro the READ command.
+type  UnifiedMetadataSequence = MetadataSequence ()
 
 
 -- |

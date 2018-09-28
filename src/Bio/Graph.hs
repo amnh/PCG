@@ -45,9 +45,7 @@ module Bio.Graph
   , phylogeneticForests
   , postorderSequence'
   , preorderFromRooting
-  , preorderFromRooting''
-  , preorderSequence'
-  , preorderSequence''
+  , preorderSequence
   , renderSummary
   , reifiedSolution
   , rootCosts

@@ -34,7 +34,7 @@ import           Data.EdgeSet
 import           Data.Foldable
 import           Data.Functor                  ((<$))
 import           Data.GraphViz.Attributes
-import           Data.GraphViz.Printing        hiding ((<>))
+import           Data.GraphViz.Printing
 import           Data.GraphViz.Types           hiding (attrs)
 import           Data.GraphViz.Types.Graph     hiding (node)
 import           Data.Hashable                 (Hashable)
@@ -60,6 +60,7 @@ import           Data.Tree                     (unfoldTree)
 import           Data.Tree.Pretty              (drawVerticalTree)
 import           Data.Vector                   (Vector)
 import qualified Data.Vector                   as V
+import qualified Data.Vector.Custom            as V (fromList')
 import           Data.Vector.Instances         ()
 import           GHC.Generics
 import           Numeric.Extended.Real
@@ -942,7 +943,7 @@ fromList xs =
     }
   where
     listValue = toList xs
-    referenceVector = V.fromList $ (\(pSet, datum, cMap) -> IndexData datum pSet cMap) <$> listValue
+    referenceVector = V.fromList' $ (\(pSet, datum, cMap) -> IndexData datum pSet cMap) <$> listValue
     rootSet =
       case foldMapWithKey (\k (pSet,_,_) -> [ k | onull pSet ]) listValue of
         []   -> error "No root nodes supplied in call to ReferenceDAG.fromList"
@@ -972,7 +973,7 @@ unfoldDAG f origin =
     , graphData  = GraphData 0 0 0 0 ()
     }
   where
-    referenceVector = V.fromList . fmap h $ toList expandedMap
+    referenceVector = V.fromList' . fmap h $ toList expandedMap
       where
         h (iSet, nDatum, iMap) =
             IndexData

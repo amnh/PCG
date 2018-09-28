@@ -1,4 +1,4 @@
-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
@@ -27,7 +27,6 @@ import           Bio.Metadata.Dynamic
 import           Bio.Sequence
 import qualified Bio.Sequence.Block                 as BLK
 import           Bio.Sequence.Metadata              (MetadataSequence)
-import qualified Bio.Sequence.Metadata              as M
 import           Control.Lens
 import           Data.Bits
 import           Data.Foldable
@@ -43,6 +42,7 @@ import           Data.Set                           (difference)
 import qualified Data.Set                           as S
 import           Data.TopologyRepresentation
 import           Data.Vector                        (Vector)
+import qualified Data.Vector.NonEmpty               as NEV
 import           Numeric.Extended.Real
 import           Prelude                            hiding (zipWith)
 
@@ -97,18 +97,21 @@ assignPunitiveNetworkEdgeCost
      , HasRootCost  u v w x y z
      )
   => PhylogeneticDAG2 m e n u v w x y z
-  -> (NonEmpty
-      (TraversalTopology
-      , Double
-      , Double
-      , Double
-      , Vector (NonEmpty TraversalFocusEdge))
+  -> ( NEV.Vector
+       ( TraversalTopology
+       , Double
+       , Double
+       , Double
+       , Vector (NonEmpty TraversalFocusEdge)
+       )
      , PhylogeneticDAG2
-         (TraversalTopology
+         ( TraversalTopology
          , Double
          , Double
          , Double
-         , Vector (NonEmpty TraversalFocusEdge)) e n u v w x y z)
+         , Vector (NonEmpty TraversalFocusEdge)
+         ) e n u v w x y z
+     )
 assignPunitiveNetworkEdgeCost input@(PDAG2 dag meta) = (outputContext, PDAG2 (dag { graphData = newGraphData }) newMetaSeq)
   where
     -- First grab all the valid display forests present in the DAG.
@@ -154,6 +157,8 @@ assignPunitiveNetworkEdgeCost input@(PDAG2 dag meta) = (outputContext, PDAG2 (da
     totalCost = punitiveCost + realToFrac cumulativeCharacterCost + realToFrac cumulativeRootCost
 
     -- And store all the minimization work in a context to be returned.
+    outputContext
+      :: NEV.Vector (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge))
     outputContext = zipWith f splitPunativeCosts minimalDisplayForestPerBlockContext
       where
         f x (a, b, c, d) = (a, b, x, c, d)
@@ -167,7 +172,7 @@ assignPunitiveNetworkEdgeCost input@(PDAG2 dag meta) = (outputContext, PDAG2 (da
         , graphMetadata     = graphMetadata $ graphData dag
         }
 
-    newMetaSeq = M.fromBlocks . zipWith (<$) outputContext $ M.toBlocks meta
+    newMetaSeq = over blockSequence (zipWith (<$) outputContext) meta
 
 
 -- |
@@ -249,7 +254,7 @@ extractMinimalDisplayForestPerBlock
      )
   => MetadataSequence m
   -> f (ResolutionCache (CharacterSequence u v w x y z))                                -- ^ Set of valid display forests
-  -> NonEmpty (TraversalTopology, Double, Double, Vector (NonEmpty TraversalFocusEdge)) -- ^ Valid display forest for each character block
+  -> NEV.Vector (TraversalTopology, Double, Double, Vector (NonEmpty TraversalFocusEdge)) -- ^ Valid display forest for each character block
                                                                                         --   And the dynamic character rooting edges.
 extractMinimalDisplayForestPerBlock metaSeq displayForests = minimalBlockContexts
   where
@@ -276,8 +281,8 @@ calculatePunitiveNetworkEdgeCost
   => Word                                      -- ^ Entire DAG edge-set cardinality
   -> f e                                       -- ^ Complete collection of network edges in the DAG
   -> (TopologyRepresentation e, Double, r)          -- ^ Most-parsimonious display forest context
-  -> NonEmpty (TopologyRepresentation e, Double, r) -- ^ Minimal display forest context for each character block
-  -> (ExtendedReal, NonEmpty r)
+  -> NEV.Vector (TopologyRepresentation e, Double, r) -- ^ Minimal display forest context for each character block
+  -> (ExtendedReal, NEV.Vector r)
 calculatePunitiveNetworkEdgeCost edgeSetCardinality networkEdgeSet parsimoniousContext minimalContexts
   | not (null extraneousEdges) = -- trace ("Extraneous edges: " <> show extraneousEdges)
                                  -- . trace ("Entire     edges: " <> show entireNetworkEdgeSet)
@@ -327,21 +332,21 @@ createForestContext
      )
   => MetadataSequence m
   -> f (ResolutionInformation (CharacterSequence u v w x y z))
-  -> (TraversalTopology, NonEmpty (Double, Double, Vector (NonEmpty TraversalFocusEdge)))
+  -> (TraversalTopology, NEV.Vector (Double, Double, Vector (NonEmpty TraversalFocusEdge)))
 createForestContext metaSeq displayForest = fromBlockMinimizationContext $ foldMap1 blockContext displayForest
   where
     rootCount      = length displayForest
     getRootingEdge = fst . NE.head . fromJust . (^. traversalFoci)
     blockContext   = toBlockMinimizationContext <$> topologyRepresentation <*> blockCosts
       where
-        blockCosts = zipWith (\m x -> (BLK.rootCost rootCount m x, BLK.blockCost m x, getRootingEdge <$> M.getDynamicMetadata m)) (M.toBlocks metaSeq) . toBlocks . characterSequence
+        blockCosts = zipWith (\m x -> (BLK.rootCost rootCount m x, BLK.blockCost m x, getRootingEdge <$> (m ^. dynamicBin))) (metaSeq ^. blockSequence) . (^. blockSequence) . characterSequence
 
 
 -- |
 -- Take a display forest context and push the topology information through to
 -- every block in the associated sequence. This creates a "linear" context
 -- suitable for zipping.
-linearizeContext :: (TraversalTopology, NonEmpty (a, b, c)) -> NonEmpty (TraversalTopology, a, b, c)
+linearizeContext :: (TraversalTopology, NEV.Vector (a, b, c)) -> NEV.Vector (TraversalTopology, a, b, c)
 linearizeContext (topo, costs) = squashTopologyIntoContext <$> costs
   where
     squashTopologyIntoContext (x,y,z) = (topo, x, y, z)
@@ -354,20 +359,20 @@ ignoreDynamicCharacterTraversalFoci = fmap (\(a,b,c,_) -> (a,b,c))
 
 
 -- | Used for convient accumulation.
-data BlockMinimizationContext c = BMC TraversalTopology (NonEmpty (c, c, Vector (NonEmpty TraversalFocusEdge)))
-  deriving (Eq)
+data BlockMinimizationContext c = BMC TraversalTopology (NEV.Vector (c, c, Vector (NonEmpty TraversalFocusEdge)))
+    deriving (Eq)
 
 
 instance Num c => Semigroup (BlockMinimizationContext c) where
 
-  (<>) (BMC topo1 costs1) (BMC topo2 costs2) = BMC (topo1 <> topo2) $ zipWith (\(a,b,c) (d,e,f) -> (a+d, b+e, zipWith (<>) c f)) costs1 costs2
+    (<>) (BMC topo1 costs1) (BMC topo2 costs2) = BMC (topo1 <> topo2) $ zipWith (\(a,b,c) (d,e,f) -> (a+d, b+e, zipWith (<>) c f)) costs1 costs2
 
 
-toBlockMinimizationContext :: TraversalTopology -> NonEmpty (c, c, Vector TraversalFocusEdge) -> BlockMinimizationContext c
+toBlockMinimizationContext :: TraversalTopology -> NEV.Vector (c, c, Vector TraversalFocusEdge) -> BlockMinimizationContext c
 toBlockMinimizationContext x = BMC x . fmap (\(a,b,c) -> (a,b, pure <$> c))
 
 
-fromBlockMinimizationContext :: BlockMinimizationContext c -> (TraversalTopology, NonEmpty (c, c, Vector (NonEmpty TraversalFocusEdge)))
+fromBlockMinimizationContext :: BlockMinimizationContext c -> (TraversalTopology, NEV.Vector (c, c, Vector (NonEmpty TraversalFocusEdge)))
 fromBlockMinimizationContext (BMC topo costs) = (topo, costs)
 
 

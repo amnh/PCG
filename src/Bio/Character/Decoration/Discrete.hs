@@ -44,11 +44,9 @@ import Data.Range
 import Numeric.Extended
 import Text.XML
 
-
 -- |
 -- General, concrete type for 'Discrete' characters.
 newtype DiscreteDecoration c = DiscreteDec { discreteDecorationCharacter :: c }
-
 
 -- |
 -- A 'Lens' for the 'discreteCharacter' field

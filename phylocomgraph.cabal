@@ -20,7 +20,7 @@ description:        Phylogenetic Componet Graph provides a library for
                     program to perform a phylogenetic search on an input dataset.
 
 
--- Group of buildinfo specifications to correctly build and link to the C & C++
+-- Group of buildinfo specifications to correctly build and link to the C & C++:
 -- FFI code.
 common ffi-buildinfo
 
@@ -118,10 +118,12 @@ library
                     , bimap
                     , bv-little
                     -- >=0.5.8 Required for Data.Map.restrictKeys
+                    , compact
                     , containers         >=0.5.8
                     , deepseq
                     , data-default
                     , dlist
+                    , foldl
                     -- >=2999.20 Required for forgivig constructio of DOT object
                     , graphviz           >=2999.20
                     , hashable
@@ -178,6 +180,7 @@ library
                     Bio.Metadata.Parsed
                     Bio.Sequence
                     Bio.Sequence.Block
+                    Bio.Sequence.Character
                     Bio.Sequence.Metadata
                     Bio.Graph
                     Bio.Graph.Component
@@ -200,6 +203,7 @@ library
                     Data.TCM.Memoized.FFI
                     Data.TopologyRepresentation
                     Data.NodeLabel
+                    Data.Vector.Custom
                     Data.Vector.NonEmpty
                     Text.Newick.Class
                     Text.XML
@@ -269,7 +273,7 @@ library
                     Bio.Sequence.Block.Character
                     Bio.Sequence.Block.Internal
                     Bio.Sequence.Block.Metadata
-                    Bio.Sequence.Character
+                    Bio.Sequence.Internal
                     Control.Evaluation.Unit
                     Control.Evaluation.Internal
                     Control.Evaluation.Trans
@@ -293,6 +297,7 @@ executable pcg
                     , ansi-wl-pprint
                     , base             >=4.10
                     -- Required for Data.Map.restrictKeys
+                    , compact
                     , containers       >=0.5.8
                     , data-default
                     , deepseq
@@ -326,6 +331,7 @@ executable pcg
 
   other-modules:    Paths_phylocomgraph
                     PCG.Command.Build.Evaluate
+                    PCG.Command.Load.Evaluate
                     PCG.Command.Read.DecorationInitialization
                     PCG.Command.Read.Evaluate
                     PCG.Command.Read.ReadError
@@ -333,6 +339,7 @@ executable pcg
                     PCG.Command.Read.Unification.UnificationError
                     PCG.Command.Report.Evaluate
                     PCG.Command.Report.GraphViz
+                    PCG.Command.Save.Evaluate
                     PCG.Computation.Internal
 
 
@@ -458,16 +465,48 @@ executable ukkonen-do-comparison
   hs-source-dirs:   utils
 
 
-Test-Suite testsuite
+Test-Suite integration-tests
+
+  import:             ghc-flags
+                    , language-specs
+
+  type:             exitcode-stdio-1.0
+
+  main-is:          IntegrationTests.hs
+
+  build-depends:      base               >=4.10
+                    , directory
+                    , filepath
+                    , megaparsec         >=6.4.0
+                    , parser-combinators >=0.2.0
+                    , pcg-utility
+                    , scientific
+                    , semigroups
+                    , tasty
+                    , tasty-golden
+                    , tasty-hunit
+                    , tasty-rerun
+                    , text
+                    , turtle
+
+  ghc-options:      -threaded
+--                    -with-rtsopts=-N4
+
+  hs-source-dirs:   test
+
+  other-modules:    TestSuite.ScriptTests
+                    TestSuite.GoldenTests
+
+
+Test-Suite unit-tests
 
   import:             ffi-buildinfo
                     , ghc-flags
                     , language-specs
 
-
   type:             exitcode-stdio-1.0
 
-  main-is:          TestAll.hs
+  main-is:          UnitTests.hs
 
   build-depends:      base               >=4.10
                     , bimap
@@ -476,6 +515,7 @@ Test-Suite testsuite
                     , containers         >=0.5.8
                     , deepseq
                     , dlist
+                    , foldl
                     , hashable
                     , integer-gmp
                     , keys

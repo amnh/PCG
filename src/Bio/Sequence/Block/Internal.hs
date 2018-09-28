@@ -10,20 +10,31 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveAnyClass         #-}
+{-# LANGUAGE DeriveGeneric          #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
 
 module Bio.Sequence.Block.Internal
   ( Block(..)
+  , HasBlockMetadata(..)
+  , HasContinuousBin(..)
+  , HasNonAdditiveBin(..)
+  , HasAdditiveBin(..)
+  , HasMetricBin(..)
+  , HasNonMetricBin(..)
+  , HasDynamicBin(..)
   ) where
 
 
 import Control.DeepSeq
+import Control.Lens
 import Data.Bifunctor
 import Data.Foldable
-import Data.Vector           (Vector)
+import Data.Semigroup
+import Data.Vector           (Vector, fromListN)
 import Data.Vector.Instances ()
 import GHC.Generics
 import Text.XML
@@ -34,127 +45,239 @@ import Text.XML
 -- networks.
 --
 -- Use '(<>)' to construct larger blocks.
-data  Block m u v w x y z
+data  Block u v w x y z
     = Block
-    { blockMetadata   :: m
-    , continuousBins  :: Vector u
-    , nonAdditiveBins :: Vector v
-    , additiveBins    :: Vector w
-    , metricBins      :: Vector x
-    , nonMetricBins   :: Vector y
-    , dynamicBins     :: Vector z
-    } deriving (Eq, Generic)
+    { _continuousBin  :: Vector u
+    , _nonAdditiveBin :: Vector v
+    , _additiveBin    :: Vector w
+    , _metricBin      :: Vector x
+    , _nonMetricBin   :: Vector y
+    , _dynamicBin     :: Vector z
+    } deriving (Eq, Generic, NFData)
 
 
-instance Bifunctor (Block m u v w x) where
+-- |
+-- A 'Lens' for the 'blockMetadata' field
+class HasBlockMetadata s a | s -> a where
+
+    blockMetadata :: Lens' s a
+    {-# MINIMAL blockMetadata #-}
+
+
+-- |
+-- A 'Lens' for the 'continuousBin' field
+class HasContinuousBin s a | s -> a where
+
+    continuousBin :: Lens' s a
+    {-# MINIMAL continuousBin #-}
+
+
+-- |
+-- A 'Lens' for the 'nonAdditiveBin' field
+class HasNonAdditiveBin s a | s -> a where
+
+    nonAdditiveBin :: Lens' s a
+    {-# MINIMAL nonAdditiveBin #-}
+
+
+-- |
+-- A 'Lens' for the 'additiveBin' field
+class HasAdditiveBin s a | s -> a where
+
+    additiveBin :: Lens' s a
+    {-# MINIMAL additiveBin #-}
+
+
+-- |
+-- A 'Lens' for the 'metricBin' field
+class HasMetricBin s a | s -> a where
+
+    metricBin :: Lens' s a
+    {-# MINIMAL metricBin #-}
+
+
+-- |
+-- A 'Lens' for the 'nonMetricBin' field
+class HasNonMetricBin s a | s -> a where
+
+    nonMetricBin :: Lens' s a
+    {-# MINIMAL nonMetricBin #-}
+
+
+-- |
+-- A 'Lens' for the 'dynamicBin' field
+class HasDynamicBin s t a b | s -> a, t -> b where
+
+    dynamicBin :: Lens s t a b
+    {-# MINIMAL dynamicBin #-}
+
+
+instance HasContinuousBin (Block u v w x y z) (Vector u) where
+
+    {-# INLINE continuousBin #-}
+    continuousBin = lens _continuousBin $
+                    \e x -> e { _continuousBin = x }
+
+
+instance HasNonAdditiveBin (Block u v w x y z) (Vector v) where
+
+    {-# INLINE nonAdditiveBin #-}
+    nonAdditiveBin = lens _nonAdditiveBin $
+                     \e x -> e { _nonAdditiveBin = x }
+
+
+instance HasAdditiveBin (Block u v w x y z) (Vector w) where
+
+    {-# INLINE additiveBin #-}
+    additiveBin = lens _additiveBin $
+                  \e x -> e { _additiveBin = x }
+
+
+instance HasMetricBin (Block u v w x y z) (Vector x) where
+
+    {-# INLINE metricBin #-}
+    metricBin = lens _metricBin $
+                \e x -> e { _metricBin = x }
+
+
+instance HasNonMetricBin (Block u v w x y z) (Vector y) where
+
+    {-# INLINE nonMetricBin #-}
+    nonMetricBin = lens _nonMetricBin $
+                   \e x -> e { _nonMetricBin = x }
+
+
+instance HasDynamicBin (Block u v w x y z) (Block u v w x y z') (Vector z) (Vector z') where
+
+    {-# INLINE  dynamicBin #-}
+    dynamicBin = lens _dynamicBin $
+                 \e x -> e { _dynamicBin = x }
+
+
+instance Bifunctor (Block u v w x) where
 
     bimap f g =
         Block
-          <$> blockMetadata
-          <*> continuousBins
-          <*> nonAdditiveBins
-          <*> additiveBins
-          <*> metricBins
-          <*> fmap f . nonMetricBins
-          <*> fmap g . dynamicBins
+          <$> _continuousBin
+          <*> _nonAdditiveBin
+          <*> _additiveBin
+          <*> _metricBin
+          <*> fmap f . _nonMetricBin
+          <*> fmap g . _dynamicBin
 
     first f =
         Block
-          <$> blockMetadata
-          <*> continuousBins
-          <*> nonAdditiveBins
-          <*> additiveBins
-          <*> metricBins
-          <*> fmap f . nonMetricBins
-          <*> dynamicBins
+          <$> _continuousBin
+          <*> _nonAdditiveBin
+          <*> _additiveBin
+          <*> _metricBin
+          <*> fmap f . _nonMetricBin
+          <*> _dynamicBin
 
     second = fmap
 
 
-instance Functor (Block m u v w x y) where
+instance Functor (Block u v w x y) where
 
     fmap f =
         Block
-          <$> blockMetadata
-          <*> continuousBins
-          <*> nonAdditiveBins
-          <*> additiveBins
-          <*> metricBins
-          <*> nonMetricBins
-          <*> fmap f . dynamicBins
+          <$> _continuousBin
+          <*> _nonAdditiveBin
+          <*> _additiveBin
+          <*> _metricBin
+          <*> _nonMetricBin
+          <*> fmap f . _dynamicBin
 
     (<$) v =
         Block
-          <$> blockMetadata
-          <*> continuousBins
-          <*> nonAdditiveBins
-          <*> additiveBins
-          <*> metricBins
-          <*> nonMetricBins
-          <*> (v <$) . dynamicBins
+          <$> _continuousBin
+          <*> _nonAdditiveBin
+          <*> _additiveBin
+          <*> _metricBin
+          <*> _nonMetricBin
+          <*> (v <$) . _dynamicBin
 
 
-instance (NFData m, NFData u, NFData v, NFData w, NFData x, NFData y, NFData z) => NFData (Block m u v w x y z)
-
-
--- | (✔)
-instance Semigroup (Block m u v w x y z) where
+instance Semigroup (Block u v w x y z) where
 
     lhs <> rhs =
         Block
-          { blockMetadata   = blockMetadata rhs
-          , continuousBins  = continuousBins  lhs <> continuousBins  rhs
-          , nonAdditiveBins = nonAdditiveBins lhs <> nonAdditiveBins rhs
-          , additiveBins    = additiveBins    lhs <> additiveBins    rhs
-          , metricBins      = metricBins      lhs <> metricBins      rhs
-          , nonMetricBins   = nonMetricBins   lhs <> nonMetricBins   rhs
-          , dynamicBins     = dynamicBins     lhs <> dynamicBins     rhs
+          { _continuousBin  = _continuousBin  lhs <> _continuousBin  rhs
+          , _nonAdditiveBin = _nonAdditiveBin lhs <> _nonAdditiveBin rhs
+          , _additiveBin    = _additiveBin    lhs <> _additiveBin    rhs
+          , _metricBin      = _metricBin      lhs <> _metricBin      rhs
+          , _nonMetricBin   = _nonMetricBin   lhs <> _nonMetricBin   rhs
+          , _dynamicBin     = _dynamicBin     lhs <> _dynamicBin     rhs
           }
 
+    sconcat =
+        Block
+          <$> sconcat . fmap  _continuousBin
+          <*> sconcat . fmap _nonAdditiveBin
+          <*> sconcat . fmap    _additiveBin
+          <*> sconcat . fmap      _metricBin
+          <*> sconcat . fmap   _nonMetricBin
+          <*> sconcat . fmap     _dynamicBin
 
--- | (✔)
+    stimes i _ | i < 1 = error $ mconcat
+        [ "Call to Bio.Sequence.Block.stimes with non-positive value: "
+        , show (fromIntegral i :: Integer)
+        , " <= 0"
+        ]
+    stimes i v =
+        let n = force $ fromIntegral i
+            genVect x = fromListN (n * length x) . fold . replicate n $ toList x
+        in  Block
+              <$> genVect .  _continuousBin
+              <*> genVect . _nonAdditiveBin
+              <*> genVect .    _additiveBin
+              <*> genVect .      _metricBin
+              <*> genVect .   _nonMetricBin
+              <*> genVect .     _dynamicBin
+              $ v
+
+
 instance ( Show u
          , Show v
          , Show w
          , Show x
          , Show y
          , Show z
-         ) => Show (Block m u v w x y z) where
+         ) => Show (Block u v w x y z) where
 
     show block = unlines
         [ "Non-additive s:"
-        , niceRendering $ nonAdditiveBins block
+        , niceRendering $ _nonAdditiveBin block
         , "Additive s:"
-        , niceRendering $ additiveBins block
+        , niceRendering $ _additiveBin block
         , "NonMetric s:"
-        , niceRendering $ nonMetricBins block
+        , niceRendering $ _nonMetricBin block
         , "Continuous s: "
-        , niceRendering $ continuousBins block
+        , niceRendering $ _continuousBin block
         , "Metric s:"
-        , niceRendering $ metricBins block
+        , niceRendering $ _metricBin block
         , "Dynamic s:"
-        , niceRendering $ dynamicBins block
+        , niceRendering $ _dynamicBin block
         ]
       where
         niceRendering :: (Foldable t, Show a) => t a -> String
         niceRendering = unlines . fmap (unlines . fmap ("  " <>) . lines . show) . toList
 
 
--- | (✔)
 instance ( ToXML u -- This is NOT a redundant constraint.
          , ToXML v
          , ToXML w
          , ToXML y
          , ToXML z
-         ) => ToXML (Block m u v w x y z) where
+         ) => ToXML (Block u v w x y z) where
 
     toXML block = xmlElement "_block" attributes contents
         where
             attributes = []
-            contents   = [ Right . collapseElemList "Non-additive_character_block" [] $ nonAdditiveBins block
-                         , Right . collapseElemList "Additive_character_block"     [] $ additiveBins    block
-                         , Right . collapseElemList "NonMetric_character_block"    [] $ nonMetricBins   block
-                         , Right . collapseElemList "Continuous_character_block"   [] $ continuousBins  block
-                         , Right . collapseElemList "Metric_character_block"       [] $ nonMetricBins   block
-                         , Right . collapseElemList "Dynamic_character_block"      [] $ dynamicBins        block
+            contents   = [ Right . collapseElemList "Non-additive_character_block" [] $ _nonAdditiveBin block
+                         , Right . collapseElemList "Additive_character_block"     [] $ _additiveBin    block
+                         , Right . collapseElemList "NonMetric_character_block"    [] $ _nonMetricBin   block
+                         , Right . collapseElemList "Continuous_character_block"   [] $ _continuousBin  block
+                         , Right . collapseElemList "Metric_character_block"       [] $ _nonMetricBin   block
+                         , Right . collapseElemList "Dynamic_character_block"      [] $ _dynamicBin        block
                          ]
