@@ -156,7 +156,7 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
       x:xs ->
         let !edgesToTry = x:|xs
             (minNewCost, !bestNewNetwork) = minimumBy (comparing fst)
-                                          . parmap (rparWith rdeepseq) (getCost &&& id)
+                                          . parmap (rparWith rseq) (getCost &&& id)
                                           $ tryNetworkEdge <$> edgesToTry
         in  if   getCost currentNetwork <= minNewCost
             then currentNetwork
