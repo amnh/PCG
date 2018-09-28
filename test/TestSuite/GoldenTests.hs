@@ -5,6 +5,7 @@ module TestSuite.GoldenTests
 
 import Control.Monad         (filterM)
 import Data.Text             (pack)
+import Data.Tree             (flatten, unfoldTreeM)
 import System.Directory
 import System.FilePath.Posix
 import Test.Tasty
@@ -84,10 +85,20 @@ getPCGFiles fp = do
         let filterPCG = filter $ (== ".pcg") . takeExtension
           in  (filterPCG <$>) . listDirectoryWithFilePath
 
-      getSubDirs :: FilePath -> IO [FilePath]
-      getSubDirs =
-          (filterM doesDirectoryExist =<<)
-        . listDirectoryWithFilePath
+      getSubDirs :: FilePath -> IO [FilePath] -- Get all subdirectories recursively
+      getSubDirs fp = do
+        dirTree <- unfoldTreeM listTopDirs fp
+        let dirList = flatten dirTree
+        pure dirList
+
+        where
+          listTopDirs :: FilePath -> IO (FilePath, [FilePath])
+          listTopDirs fp = do
+            topDirs <- (filterM doesDirectoryExist =<<)
+                       . listDirectoryWithFilePath $ fp
+            pure (fp, topDirs)
+
+
 
 -- |
 -- Takes a directory filepath and returns a list of all files within
