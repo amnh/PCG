@@ -23,4 +23,6 @@ packages:
   - lib/pcg-language
   - lib/pcg-utility
 
+require-stack-version: ">=1.7.1"
+
 resolver: lts-12.7
