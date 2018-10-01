@@ -10,10 +10,10 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE TypeFamilies        #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE DerivingStrategies  #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 module File.Format.Dot
   ( DotGraph
@@ -32,21 +32,20 @@ module File.Format.Dot
   ) where
 
 
-import           Control.Arrow                   ((&&&))
+import           Control.Arrow                     ((&&&))
 import           Data.Foldable
+import           Data.GraphViz.Attributes.Complete (Attribute (Label), Label (..))
 import           Data.GraphViz.Parsing
 import           Data.GraphViz.Types
 import           Data.GraphViz.Types.Generalised
 import           Data.Key
-import           Data.Map                        (Map, fromSet, insertWith)
+import           Data.Map                          (Map, fromSet, insertWith)
 import           Data.Monoid
-import           Data.Set                        (Set)
-import qualified Data.Set                        as S
-import           Data.Text                       (Text)
-import qualified Data.Text.Lazy                  as L
-import           Prelude                         hiding (lookup)
-import Data.Monoid (First(getFirst))
-import Data.GraphViz.Attributes.Complete (Attribute(Label), Label(..))
+import           Data.Set                          (Set)
+import qualified Data.Set                          as S
+import           Data.Text                         (Text)
+import qualified Data.Text.Lazy                    as L
+import           Prelude                           hiding (lookup)
 
 
 -- |
@@ -54,7 +53,7 @@ import Data.GraphViz.Attributes.Complete (Attribute(Label), Label(..))
 dotParse :: Text -> Either String (DotGraph GraphID)
 dotParse = fst . runParser parse . L.fromStrict
 
-newtype NodeLabel n = NodeLabel {getLabel :: (Either L.Text n)}
+newtype NodeLabel n = NodeLabel {getLabel :: Either L.Text n}
   deriving stock (Eq, Show, Ord)
 
 nodeLabel :: Ord n => n -> NodeLabel n
@@ -74,7 +73,7 @@ dotNodeSet = foldMap (S.singleton . nodeName) . graphNodes
     nodeName n =
           case getFirst (foldMap getStrLabel (nodeAttributes n)) of
             Nothing  -> nodeLabel . nodeID $ n
-            Just str -> strLabel $ str
+            Just str -> strLabel str
 
     getStrLabel :: Attribute -> First L.Text
     getStrLabel (Label (StrLabel txt)) = First . Just $ txt
@@ -131,11 +130,12 @@ sharedWork logic dot = fromSet getAdjacency setOfNodes
   where
     -- Get the map of directed edges.
     -- Missing nodes with out degree 0.
---    edgeMap :: DotGraph n -> Map (Node (Set n)
+    edgeMap :: DotGraph n -> Map (NodeLabel n) (Set n)
     edgeMap      = foldr logic mempty . dotEdgeSet
---    getAdjacency :: n -> Set n
+
+    getAdjacency :: NodeLabel n -> Set n
     getAdjacency = fold . (`lookup` setOfEdges)
---    setOfEdges :: Map n (Set n)
+
     setOfEdges   = edgeMap    dot
---     setOfNodes = Set (NodeIdentiifer n)
+
     setOfNodes   = dotNodeSet dot

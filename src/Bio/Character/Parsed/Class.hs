@@ -87,7 +87,7 @@ class ParsedCharacters a where
 -- | (✔)
 instance ParsedCharacters (DotGraph GraphID) where
 
-    unifyCharacters = (fromSet (const mempty)) . S.map toIdentifier . leafNodeSet
+    unifyCharacters = fromSet (const mempty) . S.map toIdentifier . leafNodeSet
       where
         -- Get the set of all nodes with out degree 0.
         leafNodeSet :: Ord n => DotGraph n -> Set (NodeLabel n)

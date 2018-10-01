@@ -78,18 +78,17 @@ class ParsedForest a where
 
 
 -- | (✔)
-instance Hashable GraphID where
-
-    hashWithSalt salt = hashWithSalt salt . show -- Lazy hash, should be fine
-
 instance Hashable (NodeLabel GraphID) where
-    hashWithSalt salt = hashWithSalt salt . show -- Copied from the above
+
+   hashWithSalt salt = hashWithSalt salt . show -- Lazy hash, should be fine
+
 
 -- | (✔)
 instance ParsedForest (DotGraph GraphID) where
 
     unifyGraph dot = Just . pure . PhylogeneticForest . pure $ unfoldDAG f seed
       where
+        seed :: NodeLabel GraphID
         (seed,_) = findMin cMapping
         cMapping = dotChildMap  dot
         pMapping = dotParentMap dot
@@ -98,9 +97,10 @@ instance ParsedForest (DotGraph GraphID) where
           -> ([(EdgeLength, NodeLabel GraphID)], Maybe String, [(EdgeLength, NodeLabel GraphID)])
         f x = (parents, marker, kids)
            where
-            kids :: [(EdgeLength, NodeLabel GraphID)]
+            kids, parents :: [(EdgeLength, NodeLabel GraphID)]
             kids    = fmap (const mempty &&& nodeLabel) . toList $ cMapping ! x
             parents = fmap (const mempty &&& nodeLabel) . toList $ pMapping ! x
+
             marker
               | null kids = Just $ toIdentifier x
               | otherwise = Nothing
