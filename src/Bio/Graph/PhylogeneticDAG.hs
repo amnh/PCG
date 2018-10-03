@@ -23,10 +23,8 @@ module Bio.Graph.PhylogeneticDAG
   , assignPunitiveNetworkEdgeCost
   , generateLocalResolutions
   , postorderSequence'
- -- , preorderFromRooting
-  , preorderFromRooting''
---  , preorderSequence'
-  , preorderSequence''
+  , preorderFromRooting
+  , preorderSequence
   , preorderFromRooting
   , preorderSequence
   , renderSummary

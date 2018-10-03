@@ -74,6 +74,7 @@ import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.DList                   hiding (toList)
 import           Data.Foldable
+import           Data.Foldable.Custom
 import           Data.Key
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
@@ -214,7 +215,7 @@ sequenceCost
   => MetadataSequence m
   -> CharacterSequence u v w x y z
   -> Double
-sequenceCost meta char = sum
+sequenceCost meta char = sum'
     . parmap rpar (uncurry Blk.blockCost)
     . zip (meta ^. blockSequence) $ char ^. blockSequence
 
@@ -228,6 +229,6 @@ sequenceRootCost
   -> MetadataSequence m
   -> CharacterSequence u v w x y z
   -> Double
-sequenceRootCost rootCount meta char = sum
+sequenceRootCost rootCount meta char = sum'
     . parmap rpar (uncurry (Blk.rootCost rootCount))
     . zip (meta ^. blockSequence) $ char ^. blockSequence

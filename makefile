@@ -94,19 +94,11 @@ stack-build-core: phylocomgraph.cabal stack.yaml
 stack-build-llvm: phylocomgraph.cabal stack.yaml
 	stack build --ghc-options="-fllvm"
 
-# Builds with profiling enabled
-stack-build-test: phylocomgraph.cabal stack.yaml
-	stack build --test --ta "--rerun-update"
-
-
-# Builds with profiling enabled
-=======
 # Builds tests and updates log of tests that have been run
 stack-build-test: phylocomgraph.cabal stack.yaml
 	stack build --test --ta "--rerun-update"
 
 # Builds tests and re-runs those that failed
->>>>>>> master
 stack-build-test-failures: phylocomgraph.cabal stack.yaml
 	stack build --test --ta "--rerun-filter=failures"
 

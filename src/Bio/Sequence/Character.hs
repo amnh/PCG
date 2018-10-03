@@ -32,9 +32,9 @@ import           Control.DeepSeq
 import           Control.Lens
 import           Data.Bifunctor
 import           Data.Foldable
+import           Data.Foldable.Custom    (sum')
 import           Data.Key
-import           Data.List.NonEmpty           (NonEmpty)
-import           Data.Foldable.Custom         (sum')
+import           Data.List.NonEmpty      (NonEmpty)
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
 import           Data.Vector.NonEmpty    (Vector)
@@ -199,37 +199,3 @@ fromBlocks = CharSeq
 {-# INLINE toBlocks #-}
 toBlocks :: CharacterSequence u v w x y z ->  Vector (CharacterBlock u v w x y z)
 toBlocks (CharSeq x) = x
-
--- |
--- Calculates the cumulative cost of a 'CharacterSequence'. Performs some of the
--- operation in parallel.
-sequenceCost
-  :: HasBlockCost u v w x y z
-  => MetadataSequence m
-  -> CharacterSequence u v w x y z
-  -> Double
-sequenceCost meta char
-  = sum'
-  . parmap rpar (uncurry Blk.blockCost)
-  $ zip (M.toBlocks meta) (toBlocks char)
-
-
--- |
--- Calculates the root cost of a 'CharacterSequence'. Performs some of the
--- operation in parallel.
-sequenceRootCost
-  :: (HasRootCost u v w x y z, Integral i)
-  => i
-  -> MetadataSequence m
-  -> CharacterSequence u v w x y z
-  -> Double
-sequenceRootCost rootCount meta char
-  = sum'
-  . parmap rpar (uncurry (Blk.rootCost rootCount))
-  $ zip (M.toBlocks meta) (toBlocks char)
-
-
-{-# INLINE toBlocks #-}
-toBlocks :: CharacterSequence u v w x y z ->  Vector (CharacterBlock u v w x y z)
-toBlocks (CharSeq x) = x
-

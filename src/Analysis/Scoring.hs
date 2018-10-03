@@ -129,7 +129,7 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
           adaptiveDirectOptimizationPreOrder
           edgeCostMapping
           contextualNodeDatum
-          minBlockConext
+          minBlockContext
 
         . preorderSequence
           (const additivePreOrder)
@@ -146,7 +146,7 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
     performPostOrderDecoration :: PostOrderDecorationDAG (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge))
     performPostOrderDecoration = postOrderResult
 
-    (minBlockConext, postOrderResult) = assignPunitiveNetworkEdgeCost post
+    (minBlockContext, postOrderResult) = assignPunitiveNetworkEdgeCost post
     (post, edgeCostMapping, contextualNodeDatum) =
          assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostOrder
          . postorderSequence'
