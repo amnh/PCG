@@ -404,6 +404,28 @@ executable affine-safety
   hs-source-dirs:   utils
 
 
+executable generate-data-set
+
+  import:             ghc-flags
+                    , language-specs
+
+  main-is:          generate-data-set.hs
+
+  build-depends:      ansi-wl-pprint
+                    , base               >=4.8
+                    , containers
+                    , keys
+                    , MemoTrie
+                    , mtl
+                    , optparse-applicative
+                    , random
+                    , random-shuffle
+                    , validation
+                    , vector
+
+  hs-source-dirs:   utils
+
+
 executable newick-resolver
 
   import:             ghc-flags
