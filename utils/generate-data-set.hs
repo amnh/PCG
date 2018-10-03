@@ -137,8 +137,8 @@ parseUserInput = customExecParser preferences $ info (helper <*> userInput) desc
       UserInput
         <$> argSpec 'a' "alphabet"    "List of symbols in the alphabet"
         <*> argSpec 'l' "leaves"      "List of leave node identifiers"
-        <*> argSpec 'f' "fasta"       "FASTA  data output file"
-        <*> argSpec 'n' "newick"      "Newick tree output file"
+        <*> argStr  'f' "fasta"       "FASTA  data output file"
+        <*> argStr  'n' "newick"      "Newick tree output file"
         <*> argSpec 'i' "insert"      "Probability of an insertion    event (0, 1)"
         <*> argSpec 'd' "delete"      "Probability of an deletion     event (0, 1)"
         <*> argSpec 's' "subsitution" "Probability of an substitution event (0, 1)"
@@ -146,6 +146,9 @@ parseUserInput = customExecParser preferences $ info (helper <*> userInput) desc
 
     argSpec :: Read a => Char -> String -> String -> Parser a
     argSpec c s h = option auto $ mconcat [short c, long s, help h]
+
+    argStr :: Char -> String -> String -> Parser String
+    argStr c s h = strOption $ mconcat [short c, long s, help h]
 
     description = mconcat
         [ fullDesc
@@ -289,7 +292,7 @@ toNewick :: BinaryTree a String -> String
 toNewick = (<>";\n") . go
   where
     go (Terminal _ x) = x
-    go (Branch _ l r) = mconcat ["(", toNewick l, ",", toNewick r, ")"]
+    go (Branch _ l r) = mconcat ["(", go l, ",", go r, ")"]
 
 
 toFASTA :: BinaryTree [String] String -> String
