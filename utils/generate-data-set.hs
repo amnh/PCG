@@ -37,6 +37,7 @@ data  Specification
     , specifiedDeletion     :: Double
     , specifiedSubstitution :: Double
     , specifiedRootLength   :: Word
+    , specifiedAlignedData  :: Bool
     } deriving (Eq, Show)
 
 
@@ -50,6 +51,7 @@ data  UserInput
     , inputDeletion     :: Double
     , inputSubstitution :: Double
     , inputRootLength   :: Word
+    , inputAlignedData  :: Bool
     } deriving (Eq, Show)
 
 
@@ -120,9 +122,8 @@ main = do
         labledTree    <- generateRandomTree $ specifiedLeaves spec
         decoratedTree <- generateRandomSequence
                            <$> specifiedAlphabet
-                           <*> specifiedInsertion
-                           <*> specifiedDeletion
                            <*> specifiedSubstitution
+                           <*> getInDelContext
                            <*> specifiedRootLength
                            <*> const labledTree
                            $ spec
@@ -130,19 +131,26 @@ main = do
         writeFile (specifiedFASTA  spec) $ toFASTA  decoratedTree
 
 
+getInDelContext :: Specification -> Maybe (Double, Double)
+getInDelContext userInput
+  | specifiedAlignedData userInput = Nothing
+  | otherwise = Just $ (,) <$> specifiedInsertion <*> specifiedDeletion $ userInput
+
+
 parseUserInput :: IO UserInput
 parseUserInput = customExecParser preferences $ info (helper <*> userInput) description
   where
     userInput =
       UserInput
-        <$> argSpec 'a' "alphabet"     "List of symbols in the alphabet"
-        <*> argSpec 'l' "leaves"       "List of leave node identifiers"
-        <*> argStr  'f' "fasta"        "FASTA  data output file"
-        <*> argStr  'n' "newick"       "Newick tree output file"
-        <*> argSpec 'i' "insert"       "Probability of an insertion    event (0, 1)"
-        <*> argSpec 'd' "delete"       "Probability of an deletion     event (0, 1)"
-        <*> argSpec 's' "substitution" "Probability of an substitution event (0, 1)"
-        <*> argSpec 'r' "root-length"  "Length of the sequence at the root node"
+        <$> argSpec 'a' "alphabet"     "List of symbols in the alphabet  :: [String]"
+        <*> argSpec 'l' "leaves"       "List of leave node identifiers   :: [String]"
+        <*> argStr  'f' "fasta"        "FASTA  data output file          :: FilePath"
+        <*> argStr  'n' "newick"       "Newick tree output file          :: FilePath"
+        <*> argSpec 'i' "insert"       "Insertion    event probability   :: Double (0, 1)"
+        <*> argSpec 'd' "delete"       "Deletion     event probability   :: Double (0, 1)"
+        <*> argSpec 's' "substitution" "Substitution event probability   :: Double (0, 1)"
+        <*> argSpec 'r' "root-length"  "Sequence length at the root node :: Word"
+        <*> switch  (mconcat [long "aligned", help "Generate aligned output data"])
 
     argSpec :: Read a => Char -> String -> String -> Parser a
     argSpec c s h = option auto $ mconcat [short c, long s, help h]
@@ -166,23 +174,23 @@ validateUserInput userInput =
       <*> (pure . S.fromList . inputLeaves)   userInput
       <*> (pure . inputFASTA ) userInput
       <*> (pure . inputNewick) userInput
-      <*> validate (pure "insertion probability outside range (0, 1)")    validProbability (inputInsertion userInput)
-      <*> validate (pure "deletion probability outside range (0, 1)")     validProbability (inputDeletion  userInput)
+      <*> validate (pure "insertion probability outside range (0, 1)")    validProbability (inputInsertion    userInput)
+      <*> validate (pure "deletion probability outside range (0, 1)")     validProbability (inputDeletion     userInput)
       <*> validate (pure "substitution probability outside range (0, 1)") validProbability (inputSubstitution userInput)
-      <*> (pure . inputRootLength) userInput
+      <*> (pure . inputRootLength ) userInput
+      <*> (pure . inputAlignedData) userInput
   where
     validProbability x = 0 < x && x < 1
 
 
 generateRandomSequence
-  :: Set String -- ^ Alphabet
-  -> Double     -- ^ Insertion    probablity (0,1)
-  -> Double     -- ^ Deletion     probablity (0,1)
-  -> Double     -- ^ Substitution probablity (0,1)
-  -> Word       -- ^ Root sequence length
+  :: Set String             -- ^ Alphabet
+  -> Double                 -- ^ Substitution probablity (0,1)
+  -> Maybe (Double, Double) -- ^ (Insertion, Deletion)    probablity (0,1)
+  -> Word                   -- ^ Root sequence length
   -> BinaryTree a b
   -> IO (BinaryTree [String] b)
-generateRandomSequence alphabet ins del sub rootLen tree = do
+generateRandomSequence alphabet sub indelMay rootLen tree = do
   rootSequence <- replicateM (fromEnum rootLen) randomSymbol
   case tree of
     Terminal _ x -> pure $ Terminal rootSequence x
@@ -204,26 +212,35 @@ generateRandomSequence alphabet ins del sub rootLen tree = do
     mutateString :: [String] -> IO [String]
     mutateString xs = do
         mStr <- mapM mutateSymbol xs
-        insV <- randomRIO (0,1) :: IO Double
-        suff <- if   insV <= ins
-                then pure <$> randomSymbol
-                else pure []
+        suff <- case indelMay of
+                  Nothing      -> pure []
+                  Just (ins,_) -> insertStr ins
         pure  $ mconcat mStr <> suff
       where
         mutateSymbol :: String -> IO [String]
         mutateSymbol x = do
-          insV <- randomRIO (0,1) :: IO Double
-          delV <- randomRIO (0,1) :: IO Double
+          -- Do we substitute the symbol
           subV <- randomRIO (0,1) :: IO Double
-          x'   <- if   insV <= ins
-                  then (:[x]) <$> randomSymbol
-                  else pure [x]
-          x''  <- if   subV <= sub
-                  then (init x' <>) . pure <$> randomSymbol
-                  else pure x'
-          pure  $ if   delV <= del
-                  then init x''
-                  else x''
+          x'   <- if   subV <= sub
+                  then randomSymbol
+                  else pure x
+          case indelMay of
+            Nothing        -> pure [x']
+            Just (ins,del) -> do
+              -- Do we delete the symbol
+              delV <- randomRIO (0,1) :: IO Double
+              let delStr = if   delV <= del
+                           then [x']
+                           else []
+              -- Do we add an inserted prefix string
+              (<> delStr) <$> insertStr ins
+
+        insertStr :: Double -> IO [String]
+        insertStr ins = do
+            insV <- randomRIO (0,1) :: IO Double
+            if insV <= ins
+            then (:) <$> randomSymbol <*> insertStr ins
+            else pure []
 
 
 generateRandomTree :: Set String -> IO (BinaryTree () String)
