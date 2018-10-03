@@ -286,8 +286,10 @@ toBinaryTree (Node l r) = Branch () (toBinaryTree l) (toBinaryTree r)
 
 
 toNewick :: BinaryTree a String -> String
-toNewick (Terminal _ x) = x
-toNewick (Branch _ l r) = mconcat ["(", toNewick l, ",", toNewick r, ")"]
+toNewick = (<>";\n") . go
+  where
+    go (Terminal _ x) = x
+    go (Branch _ l r) = mconcat ["(", toNewick l, ",", toNewick r, ")"]
 
 
 toFASTA :: BinaryTree [String] String -> String
