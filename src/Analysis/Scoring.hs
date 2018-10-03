@@ -125,13 +125,13 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
       )
       -> FinalDecorationDAG
     performPreOrderDecoration =
-        preorderFromRooting''
+        preorderFromRooting
           adaptiveDirectOptimizationPreOrder
           edgeCostMapping
           contextualNodeDatum
           minBlockConext
 
-        . preorderSequence''
+        . preorderSequence
           (const additivePreOrder)
           (const fitchPreOrder   )
           (const additivePreOrder)
@@ -158,6 +158,7 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
              (g . adaptiveDirectOptimizationPostOrder)
          $ x
 
+    g :: (t -> [a] -> p) -> Maybe t -> [a] -> p
     g _  Nothing  [] = error "Uninitialized leaf node. This is bad!"
     g h (Just  v) [] = h v []
     g h        _  xs = h (error "We shouldn't be using this value.") xs

@@ -1,5 +1,6 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 module PCG.Command.Read.Evaluate
   ( evaluate
@@ -16,6 +17,7 @@ import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Alphabet
 import           Data.Bifunctor                            (bimap, first)
+import           Data.Compact                              (compact)
 import           Data.Either.Custom
 import           Data.Foldable
 import           Data.Functor
@@ -57,8 +59,8 @@ parse' :: Parsec Void s a -> String -> s -> Either (ParseError (Token s) Void) a
 parse' = parse
 
 
-evaluate :: Command -> SearchState
-evaluate (READ (ReadCommand fileSpecs)) = do
+evaluate :: ReadCommand -> SearchState
+evaluate (ReadCommand fileSpecs) = do
     when (null fileSpecs) $ fail "No files specified in 'read()' command"
     result <- liftIO . runExceptT . eitherTValidation $ parmap rpar (fmap removeGaps . parseSpecifiedFile) fileSpecs
 --    liftIO $ print result
@@ -68,22 +70,20 @@ evaluate (READ (ReadCommand fileSpecs)) = do
         case decoration . masterUnify $ transformation <$> concat xs of
           Left uErr -> fail $ show uErr -- Report unification errors here.
            -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
-          Right g   -> pure g
+          Right g   -> liftIO (compact g)
                        -- liftIO (putStrLn "DECORATION CALL:" *> print g) *> pure g
                        -- (liftIO . putStrLn {- . take 500000 -} $ either show (ppTopElement . toXML) g)
-                       -- (liftIO . putStrLn $ show g) $> g
+                         -- (liftIO . putStrLn $ show g) $> g
   where
     transformation = id -- expandIUPAC
     decoration     = fmap (fmap initializeDecorations2)
-
-evaluate _ = fail "Invalid READ command binding"
 
 
 removeGaps :: Functor f => f FracturedParseResult -> f FracturedParseResult
 removeGaps = fmap removeGapsFromDynamicCharsNotMarkedAsAligned
 
 
-parseSpecifiedFile  :: FileSpecification -> ExceptT ReadError IO [FracturedParseResult]
+parseSpecifiedFile :: FileSpecification -> ExceptT ReadError IO [FracturedParseResult]
 parseSpecifiedFile      AnnotatedFile     {}     = fail "Annotated file specification is not implemented"
 parseSpecifiedFile      ChromosomeFile    {}     = fail "Chromosome file specification is not implemented"
 parseSpecifiedFile      GenomeFile        {}     = fail "Genome file specification is not implemented"

@@ -25,7 +25,6 @@ import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Metadata.Dynamic
 import           Bio.Sequence
-import           Bio.Sequence.Metadata              (MetadataBlock, getDynamicMetadata)
 import qualified Bio.Sequence.Metadata              as M
 import           Control.Applicative
 import           Control.Arrow                      ((&&&))
@@ -46,6 +45,7 @@ import           Data.Semigroup.Foldable
 import           Data.Tuple                         (swap)
 import           Data.Vector                        (Vector)
 import qualified Data.Vector                        as V
+import qualified Data.Vector.NonEmpty               as NEV
 import           Prelude                            hiding (lookup, zipWith)
 
 
@@ -106,6 +106,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
 
     -- Step 3: For each display tree, for each dynamic character, find the
     -- minimal cost edge(s).
+    minimalDisplayTreeRerootings :: HashMap TraversalTopology (NonEmpty (Double, Vector (Word, NonEmpty TraversalFocusEdge)))
     minimalDisplayTreeRerootings = displayTreeRerooting
 
     -- Step 4: Update the dynamic character decoration's cost & add an edge reference.
@@ -419,7 +420,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
           :: HasBlockCost u v w x y z
           => (e, CharacterSequence u v w x y z)
           -> NonEmpty (Double, Vector (Word, Double, NonEmpty e))
-        createZippableContext (edge, charSeq) = zipWith (toMinimalBlockContext edge) (M.toBlocks meta) (toBlocks charSeq)
+        createZippableContext (edge, charSeq) = toNonEmpty $ zipWith (toMinimalBlockContext edge) (meta ^. blockSequence) (charSeq ^. blockSequence)
 
         -- We create a minimization context for a given character block and a
         -- corresponding rooting edge (traversal focus) by extracting a vector
@@ -440,7 +441,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
           -> (Double, Vector (Word, Double, NonEmpty e))
         toMinimalBlockContext edge mBlock cBlock = (staticCost mBlock cBlock, dynCharVect)
           where
-            dynCharVect = zipWith (\mVal dec -> (dec ^. characterCost, mVal ^. characterWeight, pure edge)) (getDynamicMetadata mBlock) $ dynamicCharacters cBlock
+            dynCharVect = zipWith (\mVal dec -> (dec ^. characterCost, mVal ^. characterWeight, pure edge)) (mBlock ^. dynamicBin) $ cBlock ^. dynamicBin
 
         recomputeCost (staticCostVal, dynCharVect) = (staticCostVal + minDynCharCost, dynCharNoWeight)
           where
@@ -500,7 +501,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
 
             getUnrootedEdgeReference i = fromMaybe (i,i) $ rootIndexToUnrootedIndex i
             getRootResolutionContext   = fmap (topologyRepresentation &&& getCostofEachBlock) . resolutions . nodeDecoration . (references inputDag !)
-            getCostofEachBlock         = V.fromList . fmap blockCost . toList . toBlocks . characterSequence
+            getCostofEachBlock         = V.fromList' . fmap blockCost . toList . toBlocks . characterSequence
 
         -- For each block in the sequence of character we perform a
         -- multi-dimensional minimization. We must determine the minimal spanning
@@ -570,7 +571,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
             deriveMinimalSpanningTreeContext blockDynamicCharacters spanningTree = toMinimalTopologyContext minimalBlockCost spanningTree minimalRootsPerCharacter
               where
                 minimalBlockCost               = sum $ fst <$> minimalCostAndRootPerCharacter
-                minimalRootsPerCharacter       = V.fromList . toList $ snd <$> minimalCostAndRootPerCharacter
+                minimalRootsPerCharacter       = V.fromList' . toList $ snd <$> minimalCostAndRootPerCharacter
                 minimalCostAndRootPerCharacter = mapWithKey getMinimalCharacterRootInSpanningTree blockDynamicCharacters
 
 
@@ -637,9 +638,9 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
             }
           where
             resolutionTopology = topologyRepresentation resInfo
-            minimizedSequence  = minimalDisplayTreeRerootings ! resolutionTopology
+            minimizedSequence  = NEV.fromNonEmpty $ minimalDisplayTreeRerootings ! resolutionTopology
             newTotalCost       = sequenceCost meta modifiedSequence
-            modifiedSequence   = fromBlocks . zipWith g minimizedSequence . toBlocks $ characterSequence resInfo
+            modifiedSequence   = over blockSequence (zipWith g minimizedSequence) $ characterSequence resInfo
 
             -- The "block-wise" transformation.
             --
@@ -651,7 +652,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
             -- Also expects a "data-block" with the old block data to be updated
             -- with information from the "context-block."
 --            g :: (Double, Vector (Word, NonEmpty TraversalFocusEdge)) -> CharacterBlock u v w x y z -> CharacterBlock u v w x y z
-            g (_, minBlockContexts) charBlock = setDynamicCharacters modifiedDynamicChars charBlock
+            g (_, minBlockContexts) charBlock = charBlock & dynamicBin .~ modifiedDynamicChars
               where
 
                 -- We take the first of the minimal contexts and distribute the
@@ -666,15 +667,15 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                 vectorForZipping :: Vector Word
                 vectorForZipping = fst <$> minBlockContexts
 
-                modifiedDynamicChars = zipWith h vectorForZipping $ dynamicCharacters charBlock
+                modifiedDynamicChars = zipWith h vectorForZipping $ charBlock ^. dynamicBin
 
                 h costVal originalDec =
                     originalDec
                       & characterCost .~ costVal
 
 
-    -- Step 5: Update the metdata seuqnece with the TraversalFoci for each dynamic character
-    modifiedMetadataSequence = M.fromBlocks . zipWith M.setFoci fociSequence $ M.toBlocks meta
+    -- Step 5: Update the metdata sequence with the TraversalFoci for each dynamic character
+    modifiedMetadataSequence = over blockSequence (zipWith M.setFoci fociSequence) meta
       where
         rootTopologies :: NonEmpty TraversalTopology
         rootTopologies = do
@@ -688,8 +689,8 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
         topologySequences :: NonEmpty (NonEmpty (Vector TraversalFoci))
         topologySequences = (\(topo, x) -> fmap (fmap (id &&& const topo) . snd) . snd <$> x) <$> rootContextVectors
 
-        fociSequence :: NonEmpty (Vector TraversalFoci)
-        fociSequence = foldr1 (zipWith (zipWith (<>))) topologySequences
+        fociSequence :: NEV.Vector (Vector TraversalFoci)
+        fociSequence = NEV.fromNonEmpty $ foldr1 (zipWith (zipWith (<>))) topologySequences
 
 
 (.!>.) :: (Lookup f, Show (Key f)) => f a -> Key f -> a

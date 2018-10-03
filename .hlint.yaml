@@ -19,6 +19,11 @@
         , lhs: parMap
         , rhs: parmap
         }
+- warn: { name: fromList
+        , note: Use fromList' over fromList for correct vector allocation
+        , lhs: V.fromList
+        , rhs: V.fromList'
+        }
 
 # Custom suggestion hints
 # TODO (CM): Add custom rule when I figure out how to ignore class instances.
