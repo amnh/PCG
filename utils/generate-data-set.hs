@@ -135,14 +135,14 @@ parseUserInput = customExecParser preferences $ info (helper <*> userInput) desc
   where
     userInput =
       UserInput
-        <$> argSpec 'a' "alphabet"    "List of symbols in the alphabet"
-        <*> argSpec 'l' "leaves"      "List of leave node identifiers"
-        <*> argStr  'f' "fasta"       "FASTA  data output file"
-        <*> argStr  'n' "newick"      "Newick tree output file"
-        <*> argSpec 'i' "insert"      "Probability of an insertion    event (0, 1)"
-        <*> argSpec 'd' "delete"      "Probability of an deletion     event (0, 1)"
-        <*> argSpec 's' "subsitution" "Probability of an substitution event (0, 1)"
-        <*> argSpec 'r' "root-length" "Length of the sequence at the root node"
+        <$> argSpec 'a' "alphabet"     "List of symbols in the alphabet"
+        <*> argSpec 'l' "leaves"       "List of leave node identifiers"
+        <*> argStr  'f' "fasta"        "FASTA  data output file"
+        <*> argStr  'n' "newick"       "Newick tree output file"
+        <*> argSpec 'i' "insert"       "Probability of an insertion    event (0, 1)"
+        <*> argSpec 'd' "delete"       "Probability of an deletion     event (0, 1)"
+        <*> argSpec 's' "substitution" "Probability of an substitution event (0, 1)"
+        <*> argSpec 'r' "root-length"  "Length of the sequence at the root node"
 
     argSpec :: Read a => Char -> String -> String -> Parser a
     argSpec c s h = option auto $ mconcat [short c, long s, help h]
