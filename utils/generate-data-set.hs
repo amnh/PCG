@@ -180,7 +180,7 @@ validateUserInput userInput =
       <*> (pure . inputRootLength ) userInput
       <*> (pure . inputAlignedData) userInput
   where
-    validProbability x = 0 < x && x < 1
+    validProbability x = 0 <= x && x < 1
 
 
 generateRandomSequence
@@ -224,14 +224,15 @@ generateRandomSequence alphabet sub indelMay rootLen tree = do
           x'   <- if   subV <= sub
                   then randomSymbol
                   else pure x
+          -- Check if we are insert/deleting
           case indelMay of
             Nothing        -> pure [x']
             Just (ins,del) -> do
               -- Do we delete the symbol
               delV <- randomRIO (0,1) :: IO Double
               let delStr = if   delV <= del
-                           then [x']
-                           else []
+                           then []
+                           else [x']
               -- Do we add an inserted prefix string
               (<> delStr) <$> insertStr ins
 
