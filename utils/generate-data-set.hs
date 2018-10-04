@@ -134,7 +134,7 @@ main = do
 getInDelContext :: Specification -> Maybe (Double, Double)
 getInDelContext userInput
   | specifiedAlignedData userInput = Nothing
-  | otherwise = Just $ (,) <$> specifiedInsertion <*> specifiedDeletion $ userInput
+  | otherwise = Just $ ((,) <$> specifiedInsertion <*> specifiedDeletion) userInput
 
 
 parseUserInput :: IO UserInput

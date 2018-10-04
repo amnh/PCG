@@ -437,13 +437,8 @@ executable generate-tcm
                     , base               >=4.8
                     , containers
                     , keys
-                    , MemoTrie
-                    , mtl
                     , optparse-applicative
                     , pcg-utility
-                    , random
-                    , random-shuffle
-                    , validation
                     , vector
 
   hs-source-dirs:   utils

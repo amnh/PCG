@@ -1,7 +1,4 @@
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DeriveFoldable #-}
-{-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE FlexibleContexts #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -10,30 +7,22 @@ module Main where
 
 import Control.Arrow             ((***))
 import Control.Monad
-import Control.Monad.State.Strict
 import Data.Foldable
 import Data.Key
-import Data.List.NonEmpty        (NonEmpty(..))
-import qualified Data.Map    as M
 import Data.Matrix.NotStupid hiding (toList)
-import Data.MemoTrie             (memo)
 import Data.Semigroup        hiding (option)
-import Data.Set                  (Set)
+import Data.Set                   (Set)
 import qualified Data.Set    as S
-import Data.Tuple                (swap)
-import Data.Validation
+import Data.Tuple                 (swap)
+import           Data.Vector      (Vector)
 import qualified Data.Vector as V
 import Options.Applicative
-import Numeric.Natural
 import Prelude hiding (zipWith)
 import Text.PrettyPrint.ANSI.Leijen (string)
-import System.Random
-import System.Random.Shuffle
 
 
 data  MetricSpecification
-    = MetricSpecification
-    | AllMetrics
+    = AllMetrics
     | Spec Metric
 
 
@@ -97,7 +86,7 @@ parseUserInput = customExecParser preferences $ info (helper <*> userInput) desc
       UserInput
         <$> argSpec 'a' "alphabet"  "List of symbols in the alphabet :: [String]"
         <*> argStr  'o' "output"    "Output file path for TCM        :: FilePath"
-        <*> asum [ metricFlag (AllMetrics          ) "all"        "All metrics listed below"
+        <*> asum [ metricFlag  AllMetrics            "all"        "All metrics listed below"
                  , metricFlag (Spec Discrete       ) "discrete"   "Discrete metric"
                  , metricFlag (Spec LinearNorm1    ) "L1-norm"    "1st linear norm"
                  , metricFlag (Spec Sub1Gap2       ) "1-2"        "1 substitution, 2 gap"
@@ -112,7 +101,7 @@ parseUserInput = customExecParser preferences $ info (helper <*> userInput) desc
     argStr :: Char -> String -> String -> Parser String
     argStr c s h = strOption $ mconcat [short c, long s, help h]
 
-    metricFlag val str desc = flag' val $ mconcat [long str, help desc]
+    metricFlag v s desc = flag' v $ mconcat [long s, help desc]
 
     description = mconcat
         [ fullDesc
@@ -155,7 +144,7 @@ renderTCM alphabet tcmVals = unlines . fmap unwords $ shownAlphabet : shownMatri
     maxWidth      = max (getMaxLen symbolVals) (getMaxLen valueVals)
     getMaxLen :: (Foldable f, Foldable t, Functor f) => f (t a) -> Int
     getMaxLen     = maximum . fmap length 
-    pad str       = replicate (maxWidth - length str) ' ' <> str
+    pad xs        = replicate (maxWidth - length xs) ' ' <> xs
     toRows m      = toList . (`getRow` m) <$> [0 .. nrows m - 1]
 
 
@@ -198,9 +187,7 @@ defineTwoOne alphabet =
 defineHammingDistance :: Set String -> Matrix Word
 defineHammingDistance alphabet = mat
   where
-    len = length alphabet
-    vec = V.fromListN len $ toList alphabet
-    gap = (2*) . maximum $ (mat !) <$> [(i,j) | i <- [0 .. len - 1], j <- [0 .. len - 1]]
+    (len,vec,gap) = getSymbolContext alphabet mat
     mat = matrix (len + 1) (len + 1)
         $ \(i,j) -> if   i == len || j == len
                     then if i == j
@@ -213,13 +200,27 @@ defineHammingDistance alphabet = mat
                              s = sum $ zipWith (\a b -> if a == b then 0 else 1) x y
                          in  toEnum $ d + s
 
-      
-defineLeveshtein :: Set String -> Matrix Word
-defineLeveshtein alphabet = mat
+
+getSymbolContext :: Set String -> Matrix Word -> (Int, Vector String, Word)
+getSymbolContext alphabet mat = (len, vec, gap)
   where
     len = length alphabet
     vec = V.fromListN len $ toList alphabet
-    gap = (2*) . maximum $ (mat !) <$> [(i,j) | i <- [0 .. len - 1], j <- [0 .. len - 1]]
+    gap = getGapCost mat
+
+
+getGapCost :: Matrix Word -> Word
+getGapCost mat = (2*) . maximum $ (mat !) <$>
+    [ (i,j)
+    | i <- [0 .. nrows mat - 2]
+    , j <- [0 .. ncols mat - 2]
+    ]
+
+
+defineLeveshtein :: Set String -> Matrix Word
+defineLeveshtein alphabet = mat
+  where
+    (len,vec,gap) = getSymbolContext alphabet mat
     mat = matrix (len + 1) (len + 1)
         $ \(i,j) -> if   i == len || j == len
                     then if i == j
@@ -229,12 +230,12 @@ defineLeveshtein alphabet = mat
                              y = vec V.! j
                              m = length x
                              n = length y
-                             z = matrix (m) (n)
-                               $ \(i,j) -> if   min i j == 0
-                                           then max i j
+                             z = matrix m n
+                               $ \(a,b) -> if   min a b == 0
+                                           then max a b
                                            else minimum
-                                                  [ z ! (i-1, j  ) + 1
-                                                  , z ! (i  , j-1) + 1
-                                                  , z ! (i-1, j-1) + if x !! i /= y !! j then 1 else 0
+                                                  [ z ! (a-1, b  ) + 1
+                                                  , z ! (a  , b-1) + 1
+                                                  , z ! (a-1, b-1) + if x !! a /= y !! b then 1 else 0
                                                   ]
                          in  toEnum $ z ! (m-1, n-1)
