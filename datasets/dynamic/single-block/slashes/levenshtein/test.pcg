@@ -1,0 +1,3 @@
+read(custom_alphabet:( tcm:("../../../../shared-data/tcms/slashes-leveshtein.tcm"), "../../../../shared-data/slashes/slashes.fasta"))
+read("../../../../shared-data/slashes/slashes.tree")
+report(data, (overwrite, "cost.data"))

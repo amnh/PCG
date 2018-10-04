@@ -342,7 +342,7 @@ instance Ranged DynamicCharacterElement where
     toRange sc = fromTupleWithPrecision (firstSetBit, lastSetBit) totalBits
         where
             firstSetBit = toEnum $ countLeadingZeros sc
-            lastSetBit  = toEnum $ totalBits - countTrailingZeros sc - 1
+            lastSetBit  = toEnum . max 0 $ totalBits - countTrailingZeros sc - 1
             totalBits   = finiteBitSize sc
 
     fromRange x = zeroVector .|. (allBitsUpperBound `xor` allBitsLowerBound)

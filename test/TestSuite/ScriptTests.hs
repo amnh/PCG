@@ -49,6 +49,24 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
   , scriptCheckCost 2042.0
         "datasets/dynamic/multi-block/arthropods.pcg"
         "datasets/dynamic/multi-block/cost.data"
+  , scriptCheckCost 197.0
+        "datasets/dynamic/single-block/slashes/discrete/test.pcg"
+        "datasets/dynamic/single-block/slashes/discrete/cost.data"
+  , scriptCheckCost 2042.0
+        "datasets/dynamic/single-block/slashes/L1-norm/test.pcg"
+        "datasets/dynamic/single-block/slashes/L1-norm/cost.data"
+  , scriptCheckCost 254.0
+        "datasets/dynamic/single-block/slashes/1-2/test.pcg"
+        "datasets/dynamic/single-block/slashes/1-2/cost.data"
+  , scriptCheckCost 228.0
+        "datasets/dynamic/single-block/slashes/2-1/test.pcg"
+        "datasets/dynamic/single-block/slashes/2-1/cost.data"
+  , scriptCheckCost 671.0
+        "datasets/dynamic/single-block/slashes/hamming/test.pcg"
+        "datasets/dynamic/single-block/slashes/hamming/cost.data"
+  , scriptCheckCost 488.0
+        "datasets/dynamic/single-block/slashes/levenshtein/test.pcg"
+        "datasets/dynamic/single-block/slashes/levenshtein/cost.data"
   , scriptFailure "datasets/unmatched-leaf-taxon/test.pcg"
   ]
 
