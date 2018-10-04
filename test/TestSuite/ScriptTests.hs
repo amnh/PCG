@@ -65,9 +65,46 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
   , scriptCheckCost 176
         "datasets/sankoff/single-block/slashes/levenshtein/test.pcg"
         "datasets/sankoff/single-block/slashes/levenshtein/cost.data"
+  , scriptCheckCost 158
+        "datasets/sankoff/single-block/large-mix/discrete/test.pcg"
+        "datasets/sankoff/single-block/large-mix/discrete/cost.data"
+  , scriptCheckCost 11004
+        "datasets/sankoff/single-block/large-mix/L1-norm/test.pcg"
+        "datasets/sankoff/single-block/large-mix/L1-norm/cost.data"
+  , scriptCheckCost 158
+        "datasets/sankoff/single-block/large-mix/1-2/test.pcg"
+        "datasets/sankoff/single-block/large-mix/1-2/cost.data"
+  , scriptCheckCost 251
+        "datasets/sankoff/single-block/large-mix/2-1/test.pcg"
+        "datasets/sankoff/single-block/large-mix/2-1/cost.data"
+  , scriptCheckCost 348
+        "datasets/sankoff/single-block/large-mix/hamming/test.pcg"
+        "datasets/sankoff/single-block/large-mix/hamming/cost.data"
+  , scriptCheckCost 200
+        "datasets/sankoff/single-block/large-mix/levenshtein/test.pcg"
+        "datasets/sankoff/single-block/large-mix/levenshtein/cost.data"
+  , scriptCheckCost 117
+        "datasets/sankoff/single-block/huge-mix/discrete/test.pcg"
+        "datasets/sankoff/single-block/huge-mix/discrete/cost.data"
+  , scriptCheckCost 12681
+        "datasets/sankoff/single-block/huge-mix/L1-norm/test.pcg"
+        "datasets/sankoff/single-block/huge-mix/L1-norm/cost.data"
+  , scriptCheckCost 117
+        "datasets/sankoff/single-block/huge-mix/1-2/test.pcg"
+        "datasets/sankoff/single-block/huge-mix/1-2/cost.data"
+  , scriptCheckCost 181
+        "datasets/sankoff/single-block/huge-mix/2-1/test.pcg"
+        "datasets/sankoff/single-block/huge-mix/2-1/cost.data"
+  , scriptCheckCost 275
+        "datasets/sankoff/single-block/huge-mix/hamming/test.pcg"
+        "datasets/sankoff/single-block/huge-mix/hamming/cost.data"
+  , scriptCheckCost 230
+        "datasets/sankoff/single-block/huge-mix/levenshtein/test.pcg"
+        "datasets/sankoff/single-block/huge-mix/levenshtein/cost.data"
   , scriptCheckCost 2042.0
         "datasets/dynamic/multi-block/arthropods.pcg"
         "datasets/dynamic/multi-block/cost.data"
+{--
   , scriptCheckCost 197.0
         "datasets/dynamic/single-block/slashes/discrete/test.pcg"
         "datasets/dynamic/single-block/slashes/discrete/cost.data"
@@ -86,6 +123,7 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
   , scriptCheckCost 488.0
         "datasets/dynamic/single-block/slashes/levenshtein/test.pcg"
         "datasets/dynamic/single-block/slashes/levenshtein/cost.data"
+-}
   , scriptFailure "datasets/unmatched-leaf-taxon/test.pcg"
   ]
 
