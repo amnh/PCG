@@ -1,3 +1,4 @@
+
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies      #-}
@@ -46,6 +47,24 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
   , scriptCheckCost 1789.0
         "datasets/sankoff/single-block/dna/2-1/arthropods.pcg"
         "datasets/sankoff/single-block/dna/2-1/cost.data"
+  , scriptCheckCost 89
+        "datasets/sankoff/single-block/slashes/discrete/test.pcg"
+        "datasets/sankoff/single-block/slashes/discrete/cost.data"
+  , scriptCheckCost 2089
+        "datasets/sankoff/single-block/slashes/L1-norm/test.pcg"
+        "datasets/sankoff/single-block/slashes/L1-norm/cost.data"
+  , scriptCheckCost 89
+        "datasets/sankoff/single-block/slashes/1-2/test.pcg"
+        "datasets/sankoff/single-block/slashes/1-2/cost.data"
+  , scriptCheckCost 154
+        "datasets/sankoff/single-block/slashes/2-1/test.pcg"
+        "datasets/sankoff/single-block/slashes/2-1/cost.data"
+  , scriptCheckCost 240
+        "datasets/sankoff/single-block/slashes/hamming/test.pcg"
+        "datasets/sankoff/single-block/slashes/hamming/cost.data"
+  , scriptCheckCost 176
+        "datasets/sankoff/single-block/slashes/levenshtein/test.pcg"
+        "datasets/sankoff/single-block/slashes/levenshtein/cost.data"
   , scriptCheckCost 2042.0
         "datasets/dynamic/multi-block/arthropods.pcg"
         "datasets/dynamic/multi-block/cost.data"
