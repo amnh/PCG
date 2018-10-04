@@ -426,6 +426,29 @@ executable generate-data-set
   hs-source-dirs:   utils
 
 
+executable generate-tcm
+
+  import:             ghc-flags
+                    , language-specs
+
+  main-is:          generate-tcm.hs
+
+  build-depends:      ansi-wl-pprint
+                    , base               >=4.8
+                    , containers
+                    , keys
+                    , MemoTrie
+                    , mtl
+                    , optparse-applicative
+                    , pcg-utility
+                    , random
+                    , random-shuffle
+                    , validation
+                    , vector
+
+  hs-source-dirs:   utils
+
+
 executable newick-resolver
 
   import:             ghc-flags
