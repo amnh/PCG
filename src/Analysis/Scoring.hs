@@ -14,6 +14,8 @@
 
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE LambdaCase            #-}
 
 module Analysis.Scoring
   (
@@ -27,6 +29,7 @@ module Analysis.Scoring
 
 
 import           Analysis.Parsimony.Additive.Internal
+import           Analysis.Parsimony.Internal
 import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Analysis.Parsimony.Fitch.Internal
 import           Analysis.Parsimony.Sankoff.Internal
@@ -108,6 +111,7 @@ performDecoration
      , DiscreteCharacterDecoration x StaticCharacter
      , DiscreteCharacterDecoration y StaticCharacter
      , RangedCharacterDecoration u ContinuousChar
+     , RangedCharacterDecoration u ContinuousChar
      , RangedCharacterDecoration w StaticCharacter
      , SimpleDynamicDecoration z DynamicChar
      )
@@ -132,9 +136,9 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
           minBlockContext
 
         . preorderSequence
-          (const additivePreOrder)
+          (const additivePreorder)
           (const fitchPreOrder   )
-          (const additivePreOrder)
+          (const additivePreorder)
           (const sankoffPreOrder )
           (const sankoffPreOrder )
           (const id2             )
@@ -144,24 +148,35 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
             pairwiseAlignmentFunction = selectDynamicMetric meta
 
     performPostOrderDecoration :: PostOrderDecorationDAG (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge))
-    performPostOrderDecoration = postOrderResult
+    performPostOrderDecoration = postorderResult
 
-    (minBlockContext, postOrderResult) = assignPunitiveNetworkEdgeCost post
+    (minBlockContext, postorderResult) = assignPunitiveNetworkEdgeCost post
     (post, edgeCostMapping, contextualNodeDatum) =
          assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostOrder
          . postorderSequence'
-             (const (g additivePostOrder))
-             (const (g    fitchPostOrder))
-             (const (g additivePostOrder))
-             (g . sankoffPostOrder)
-             (g . sankoffPostOrder)
-             (g . adaptiveDirectOptimizationPostOrder)
+             (const (g' additivePostorder))
+             (const (g' fitchPostorder))
+             (const (g' additivePostorder))
+             (g' . sankoffPostorder)
+             (g' . sankoffPostorder)
+             (g' . adaptiveDirectOptimizationPostOrder)
          $ x
 
     g :: (t -> [a] -> p) -> Maybe t -> [a] -> p
     g _  Nothing  [] = error "Uninitialized leaf node. This is bad!"
     g h (Just  v) [] = h v []
     g h        _  xs = h (error "We shouldn't be using this value.") xs
+
+    g' :: (PostorderBinaryContext n c -> e) -> (PostorderBinaryContext (Maybe n) c -> e)
+    g' postFn = \case
+      LeafContext optD ->
+        case optD of
+          Nothing -> error "unitialized leaf node in PostorderBinaryContext!"
+          Just d  -> postFn $ LeafContext d
+
+      postInt@(PostInternalContext _ _ _) -> postFn $ postInt {node = error "The node data is used in the postorder!"}
+
+
 
     adaptiveDirectOptimizationPostOrder meta = directOptimizationPostOrder pairwiseAlignmentFunction
       where
