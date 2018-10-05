@@ -24,7 +24,7 @@ import Control.Lens
 
 
 -- |
--- A 'Lens' for 'blockSequence'.
-class HasBlocks s t a b | s -> a, t -> b where
+-- A 'Iso' for 'blockSequence'.
+class HasBlocks s t a b | s -> a, t -> b, a -> s, b -> t where
 
-    blockSequence :: Lens s t a b
+    blockSequence :: Iso s t a b

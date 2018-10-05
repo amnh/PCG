@@ -80,9 +80,13 @@ instance Functor (CharacterSequence u v w x y) where
     (<$) v = fromBlocks . fmap (v <$) . toBlocks
 
 
-instance HasBlocks (CharacterSequence u v w x y z) (CharacterSequence u' v' w' x' y' z') (Vector (CharacterBlock u v w x y z)) (Vector (CharacterBlock u' v' w' x' y' z')) where
+instance HasBlocks
+  (CharacterSequence u v w x y z)
+  (CharacterSequence u' v' w' x' y' z')
+  (Vector (CharacterBlock u v w x y z))
+  (Vector (CharacterBlock u' v' w' x' y' z')) where
 
-      blockSequence = lens toBlocks $ const CharSeq
+      blockSequence = iso toBlocks fromBlocks
 
 
 instance MonoFoldable (CharacterSequence u v w x y z) where
