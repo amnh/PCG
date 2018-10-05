@@ -116,13 +116,13 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
   , scriptCheckCost 2042.0
         "datasets/dynamic/multi-block/arthropods.pcg"
         "datasets/dynamic/multi-block/cost.data"
-{--  
   , scriptCheckCost 197.0
         "datasets/dynamic/single-block/protein/discrete/invertebrates.pcg"
         "datasets/dynamic/single-block/protein/discrete/cost.data"
   , scriptCheckCost 2042.0
         "datasets/dynamic/single-block/protein/L1-norm/invertebrates.pcg"
         "datasets/dynamic/single-block/protein/L1-norm/cost.data"
+{--
   , scriptCheckCost 254.0
         "datasets/dynamic/single-block/protein/1-2/invertebrates.pcg"
         "datasets/dynamic/single-block/protein/1-2/cost.data"
@@ -132,9 +132,11 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
   , scriptCheckCost 197.0
         "datasets/dynamic/single-block/slashes/discrete/test.pcg"
         "datasets/dynamic/single-block/slashes/discrete/cost.data"
+--}
   , scriptCheckCost 2042.0
         "datasets/dynamic/single-block/slashes/L1-norm/test.pcg"
         "datasets/dynamic/single-block/slashes/L1-norm/cost.data"
+{--
   , scriptCheckCost 254.0
         "datasets/dynamic/single-block/slashes/1-2/test.pcg"
         "datasets/dynamic/single-block/slashes/1-2/cost.data"
@@ -185,6 +187,13 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
         "datasets/dynamic/single-block/huge-mix/levenshtein/cost.data"
 -}
   , scriptFailure "datasets/unmatched-leaf-taxon/test.pcg"
+  , scriptFailure "datasets/unmatched-tree-taxon/test.pcg"
+  , scriptFailure "datasets/duplicate-leaf-taxon/test.pcg"
+-- We omit this test because the DAG.unfoldr function in the ParsedForest call
+-- will ensure that there is only one leaf in the graph. It may have multiple
+-- parents however.
+--  , scriptFailure "datasets/duplicate-tree-taxon/test.pcg"
+  , scriptFailure "datasets/no-data-in-graph/test.pcg"
   ]
 
 
