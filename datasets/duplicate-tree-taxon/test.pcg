@@ -1,0 +1,2 @@
+read ("newick.tree")
+read ("data.fasta")
