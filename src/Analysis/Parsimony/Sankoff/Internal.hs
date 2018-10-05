@@ -30,7 +30,7 @@
 
 module Analysis.Parsimony.Sankoff.Internal where
 
-
+import Analysis.Parsimony.Internal
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Metric
 import Bio.Character.Encodable
@@ -47,17 +47,12 @@ import Prelude                           hiding (zip)
 
 -- |
 -- Used on the post-order (i.e. first) traversal.
-sankoffPostOrder
+sankoffPostorder
   :: DiscreteCharacterDecoration d c
   => DiscreteWithTCMCharacterMetadataDec c
-  -> d
-  -> [SankoffOptimizationDecoration c]
+  -> (PostorderBinaryContext d (SankoffOptimizationDecoration c))
   ->  SankoffOptimizationDecoration c
-sankoffPostOrder meta charDecoration xs =
-  case xs of
-    []   -> initializeCostVector meta charDecoration -- is a leaf
-    y:ys -> updateCostVector meta charDecoration (y:|ys)
-
+sankoffPostorder meta = postorderBinaryContext (initializeCostVector meta) (updateCostVector meta)
 
 -- |
 -- Used on the pre-order (i.e. second) traversal.
@@ -156,10 +151,9 @@ updateCostVector
   :: DiscreteCharacterDecoration d c
   => DiscreteWithTCMCharacterMetadataDec c
   -> d
-  -> NonEmpty (SankoffOptimizationDecoration c)
+  -> (SankoffOptimizationDecoration c , SankoffOptimizationDecoration c)
   -> SankoffOptimizationDecoration c
-updateCostVector _meta _parentDecoration (x:|[])                        = x                    -- Shouldn't be possible, but here for completion.
-updateCostVector meta _parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDecoration -- May? be able to amend this to use non-binary children.
+updateCostVector meta _parentDecoration (leftChildDec, rightChildDec) = returnNodeDecoration -- May? be able to amend this to use non-binary children.
   where
     (cs, ds, minTransCost) = foldr findMins initialAccumulator range   -- Sorry abut these shitty variable names. It was to shorten
                                                                        -- the 'extendDiscreteToSankoff' call.

@@ -19,6 +19,7 @@
 
 {-# LANGUAGE BangPatterns     #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RecordWildCards  #-}
 
 module Analysis.Parsimony.Fitch.Internal where
 
@@ -28,18 +29,16 @@ import Bio.Character.Encodable
 import Control.Lens
 import Data.Bits
 import Data.List.NonEmpty                (NonEmpty (..))
+import Analysis.Parsimony.Internal
 
 
 -- | Used on the post-order (i.e. first) traversal.
-fitchPostOrder
-  ::  DiscreteCharacterDecoration d c
-  => d
-  -> [FitchOptimizationDecoration c]
-  -> FitchOptimizationDecoration c
-fitchPostOrder parentDecoration xs =
-    case xs of
-        []   -> initializeLeaf  parentDecoration -- a leaf
-        y:ys -> updatePostOrder parentDecoration (y:|ys)
+fitchPostorder
+  :: DiscreteCharacterDecoration d c
+  => (PostorderBinaryContext d (FitchOptimizationDecoration c))
+  -> (FitchOptimizationDecoration c)
+fitchPostorder = postorderBinaryContext initializeLeaf updatePostorder
+
 
 
 -- | Used on the pre-order (i.e. second) traversal.
@@ -62,13 +61,12 @@ fitchPreOrder childDecoration [(_, parentDecoration)]
 -- Used in first, post-order, pass. Take in parent and two child nodes. Using the child preliminary decorations,
 -- calculate the preliminary character state for the parent node. In addition, calculate the cost of assigning
 -- that character state to the parent.
-updatePostOrder
+updatePostorder
   :: DiscreteCharacterDecoration d c
   => d
-  -> NonEmpty (FitchOptimizationDecoration c)
+  -> (FitchOptimizationDecoration c , FitchOptimizationDecoration c)
   -> FitchOptimizationDecoration c
-updatePostOrder _parentDecoration (x:|[])                         = x -- Shouldn't be possible, but here for completion.
-updatePostOrder _parentDecoration (leftChildDec:|rightChildDec:_) =
+updatePostorder _parentDecoration (leftChildDec , rightChildDec) =
     extendDiscreteToFitch
       leftChildDec
       totalCost

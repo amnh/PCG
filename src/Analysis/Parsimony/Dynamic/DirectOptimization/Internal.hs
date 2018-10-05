@@ -27,6 +27,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Internal
   , selectDynamicMetric
   ) where
 
+import Analysis.Parsimony.Internal
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (overlap)
 --import           Analysis.Parsimony.Dynamic.SequentialAlign
@@ -103,13 +104,13 @@ selectDynamicMetric candidate
 directOptimizationPostOrder
   :: SimpleDynamicDecoration d c
   => PairwiseAlignment c
-  -> d
-  -> [DynamicDecorationDirectOptimizationPostOrderResult c]
+  -> (PostorderBinaryContext d (DynamicDecorationDirectOptimizationPostOrderResult c))
   ->  DynamicDecorationDirectOptimizationPostOrderResult c
-directOptimizationPostOrder pairwiseAlignment charDecoration xs =
-    case xs of
-        []   -> initializeLeaf charDecoration
-        y:ys -> updateFromLeaves pairwiseAlignment $ y:|ys
+directOptimizationPostOrder pairwiseAlignment
+  = postorderBinaryContext
+      initializeLeaf
+      (\n (leftChild, rightChild) -> updateFromLeaves pairwiseAlignment (leftChild, rightChild))
+
 
 
 -- |
@@ -138,10 +139,9 @@ updateFromLeaves
   :: ( EncodableDynamicCharacter c
      )
   => PairwiseAlignment c
-  -> NonEmpty (DynamicDecorationDirectOptimizationPostOrderResult c)
+  -> (DynamicDecorationDirectOptimizationPostOrderResult c, DynamicDecorationDirectOptimizationPostOrderResult c)
   -> DynamicDecorationDirectOptimizationPostOrderResult c
-updateFromLeaves _ (x:|[]) = x -- This shouldn't happen
-updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) = resultDecoration
+updateFromLeaves pairwiseAlignment (leftChild , rightChild) = resultDecoration
   where
     resultDecoration = extendDynamicToPostOrder leftChild localCost totalCost combinedAverageLength ungapped gapped lhsAlignment rhsAlignment
     (localCost, ungapped, gapped, lhsAlignment, rhsAlignment) = pairwiseAlignment (leftChild ^. preliminaryUngapped) (rightChild ^. preliminaryUngapped)
