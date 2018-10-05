@@ -46,7 +46,6 @@ import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
 import           Prelude                          hiding (zipWith)
 
-
 {-
 data ParsedCharacter
    = ParsedContinuousCharacter  Double
@@ -90,7 +89,7 @@ instance ParsedCharacters (DotGraph GraphID) where
     unifyCharacters = fromSet (const mempty) . S.map toIdentifier . leafNodeSet
       where
         -- Get the set of all nodes with out degree 0.
-        leafNodeSet :: Ord n => DotGraph n -> Set (NodeLabel n)
+        leafNodeSet :: Ord n => DotGraph n -> Set n
         leafNodeSet = keysSet . M.filter null . dotChildMap
 
 

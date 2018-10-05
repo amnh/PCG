@@ -46,9 +46,6 @@ import           File.Format.VertexEdgeRoot       hiding (EdgeLength)
 import qualified File.Format.VertexEdgeRoot       as VER
 import           Prelude                          hiding (lookup)
 
--- import Debug.Trace
-
-
 -- |
 -- The type of possibly-present decorations on a tree from a parsed file.
 type ParserTree   = ReferenceDAG () EdgeLength (Maybe String)
@@ -78,7 +75,7 @@ class ParsedForest a where
 
 
 -- | (✔)
-instance Hashable (NodeLabel GraphID) where
+instance Hashable GraphID where
 
    hashWithSalt salt = hashWithSalt salt . show -- Lazy hash, should be fine
 
@@ -88,18 +85,17 @@ instance ParsedForest (DotGraph GraphID) where
 
     unifyGraph dot = Just . pure . PhylogeneticForest . pure $ unfoldDAG f seed
       where
-        seed :: NodeLabel GraphID
-        (seed,_) = findMin cMapping
-        cMapping = dotChildMap  dot
-        pMapping = dotParentMap dot
+        seed :: GraphID
+        (seed,_) =  findMin cMapping
+        cMapping =  dotChildMap  dot
+        pMapping =  dotParentMap dot
 
-        f :: NodeLabel GraphID
-          -> ([(EdgeLength, NodeLabel GraphID)], Maybe String, [(EdgeLength, NodeLabel GraphID)])
+        f :: GraphID -> ([(EdgeLength, GraphID)], Maybe String, [(EdgeLength, GraphID)])
         f x = (parents, marker, kids)
            where
-            kids, parents :: [(EdgeLength, NodeLabel GraphID)]
-            kids    = fmap (const mempty &&& nodeLabel) . toList $ cMapping ! x
-            parents = fmap (const mempty &&& nodeLabel) . toList $ pMapping ! x
+            kids, parents :: [(EdgeLength, GraphID)]
+            kids    = fmap (const mempty &&& id) . toList $ cMapping ! x
+            parents = fmap (const mempty &&& id) . toList $ pMapping ! x
 
             marker
               | null kids = Just $ toIdentifier x

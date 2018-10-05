@@ -1078,7 +1078,10 @@ getDotContext uniqueIdentifierBase mostSignificantDigit dag = second mconcat . u
     toId = Num . Int . (+ idOffest)
 
     toAttributes :: Show a => a -> Attributes
-    toAttributes x = [ toLabel (show x) ]
+    toAttributes x =
+      case show x of
+        ""  -> []
+        str -> [ toLabel str ]
 
     f :: Show n => Int -> IndexData e n -> [(DotNode GraphID, [DotEdge GraphID])]
     f k v = [ (toDotNode, toDotEdge <$> kidRefs) ]
@@ -1088,7 +1091,7 @@ getDotContext uniqueIdentifierBase mostSignificantDigit dag = second mconcat . u
         nodeAttrs   = toAttributes datum
         kidRefs     = IM.keys $ childRefs v
         toDotNode   = DotNode nodeId nodeAttrs
-        toDotEdge x = DotEdge (toId x) nodeId nodeAttrs
+        toDotEdge x = DotEdge nodeId (toId x) nodeAttrs
 
 
 -- |
