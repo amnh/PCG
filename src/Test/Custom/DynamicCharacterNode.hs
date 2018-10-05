@@ -35,6 +35,7 @@ import Data.MonoTraversable
 import Data.String
 import Test.Custom.NucleotideSequence
 import Test.QuickCheck
+import Analysis.Parsimony.Internal
 
 
 -- |
@@ -71,7 +72,7 @@ toLeafNode :: ( Ord (Element c)
               , SimpleDynamicDecoration d c
               )
            => d -> DynamicDecorationDirectOptimizationPostOrderResult c
-toLeafNode c = directOptimizationPostOrder pairwiseFunction c []
+toLeafNode c = directOptimizationPostOrder pairwiseFunction (LeafContext c)
 
 
 toRootNode :: DynamicDecorationDirectOptimizationPostOrderResult DynamicChar
@@ -80,7 +81,7 @@ toRootNode :: DynamicDecorationDirectOptimizationPostOrderResult DynamicChar
 toRootNode x y = directOptimizationPreOrder pairwiseFunction defMetadata z []
   where
     z :: DynamicDecorationDirectOptimizationPostOrderResult DynamicChar
-    z = directOptimizationPostOrder pairwiseFunction e [x,y]
+    z = directOptimizationPostOrder pairwiseFunction (PostInternalContext {node = e, leftChild = x , rightChild = y})
     e :: DynamicDecorationDirectOptimizationPostOrderResult DynamicChar
     e = undefined
 
