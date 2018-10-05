@@ -23,6 +23,7 @@ module Bio.Graph.Node
   , HasLocalSequenceCost(..)
   , HasLeafSetRepresentation(..)
   , HasSubtreeRepresentation(..)
+  , HasSubtreeEdgeSet(..)
   , HasTopologyRepresentation(..)
   , HasCharacterSequence(..)
   , addEdgeToEdgeSet

@@ -34,6 +34,7 @@ module Bio.Graph.Node.Internal
   , HasLocalSequenceCost(..)
   , HasLeafSetRepresentation(..)
   , HasSubtreeRepresentation(..)
+  , HasSubtreeEdgeSet(..)
   , HasTopologyRepresentation(..)
   , HasCharacterSequence(..)
   , addEdgeToEdgeSet
