@@ -124,6 +124,8 @@ postorderSequence' f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag m) = pdag2 & _phylogenetic
             node :: IndexData e (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
             node             = references dag ! i
 
+            -- Do a case of pattern match her to consider the [], [x], and x:y:_ cases of
+            -- a leaf node, network node, and internal "tree" node respectively
             childIndices :: [Int]
             childIndices     = IM.keys $ childRefs node
 

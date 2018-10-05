@@ -302,12 +302,12 @@ getDotContextWithBaseAndIndex i j (PDAG2 dag _) = getDotContext i j $ nodeDecora
 -- Generate all the possible, consistent combinatorial patterns of the subtree.
 applySoftwireResolutions
   :: [(ResolutionCache s, IntSet)]
-  -> NonEmpty [ResolutionInformation s]
+  -> NonEmpty [ResolutionInformation s] -- The [] should be PostorderBinayContext
 applySoftwireResolutions inputContexts =
     case inputContexts of
-      []    -> pure []
-      [x]   -> pure <$> fst x
-      x:y:_ -> pairingLogic (x,y)
+      []    -> pure [] -- Make this a leaf context )I think)
+      [x]   -> pure <$> fst x -- This context shouldn't really exist... oops.
+      x:y:_ -> pairingLogic (x,y) -- All the Internal node contexts
   where
     multipleParents = not . isSingleton . otoList . snd
 
