@@ -27,8 +27,9 @@ import GHC.Generics
 newtype UnionSet = Union BitVector
   deriving (Bits, Generic, Ord)
 
-{-# SPECIALISE (==) :: UnionSet -> UnionSet -> Bool #-}
+
 instance Eq UnionSet where
+  {-# SPECIALISE instance Eq UnionSet #-}
   {-# INLINE (==)  #-}
   (==) (Union bv1) (Union bv2) =
     case compare bv1 bv2 of
@@ -45,13 +46,14 @@ instance Show UnionSet where
 
 instance NFData UnionSet
 
-{-# SPECIALISE (<>) :: UnionSet -> UnionSet -> UnionSet #-}
+
 instance Semigroup UnionSet where
+  {-# SPECIALISE instance Semigroup UnionSet #-}
   {-# INLINE (<>) #-}
   (<>) = (.|.)
 
-{-# SPECIALISE mempty :: UnionSet #-}
 instance Monoid UnionSet where
+  {-# SPECIALISE instance Monoid UnionSet #-}
   {-# INLINE mempty  #-}
   mempty = zeroBits
 
