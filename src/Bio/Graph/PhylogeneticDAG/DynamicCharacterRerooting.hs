@@ -10,8 +10,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE MonoLocalBinds   #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE MonoLocalBinds      #-}
 
 module Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
   ( assignOptimalDynamicCharacterRootEdges
@@ -47,6 +47,7 @@ import           Data.Vector                        (Vector)
 import qualified Data.Vector                        as V
 import qualified Data.Vector.NonEmpty               as NEV
 import           Prelude                            hiding (lookup, zipWith)
+import Analysis.Parsimony.Internal
 
 
 -- |
@@ -74,7 +75,8 @@ assignOptimalDynamicCharacterRootEdges
      , Show y
      , Show z
      )
-  => (DynamicCharacterMetadataDec (Element DynamicChar) -> z -> [z] -> z)  -- ^ Post-order traversal function for Dynamic Characters.
+  => (DynamicCharacterMetadataDec (Element DynamicChar)
+  -> (PostorderBinaryContext z z) -> z)  -- ^ Post-order traversal function for Dynamic Characters.
   -> PhylogeneticDAG2 m e n u v w x y z
   -> ( PhylogeneticDAG2 m e n u v w x y z
      ,         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))

@@ -48,6 +48,7 @@ import qualified Data.List.NonEmpty                 as NE
 import           Data.MonoTraversable
 import           Data.UnionSet                      (UnionSet)
 import qualified Data.Vector                        as V
+import Analysis.Parsimony.Internal
 
 
 -- |
@@ -60,15 +61,12 @@ import qualified Data.Vector                        as V
 
 postorderSequence'
   :: forall m e n u v w x y z u' v' w' x' y' z' . HasBlockCost u' v' w' x' y' z'
-  => (ContinuousCharacterMetadataDec        -> u -> [u'] -> u')
-  -> (DiscreteCharacterMetadataDec          -> v -> [v'] -> v')
-  -> (DiscreteCharacterMetadataDec          -> w -> [w'] -> w')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
-       -> x -> [x'] -> x')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
-       -> y -> [y'] -> y')
-  -> (DynamicCharacterMetadataDec (Element DynamicChar)
-       -> z -> [z'] -> z')
+  => (ContinuousCharacterMetadataDec                      -> (PostorderBinaryContext u u') -> u')
+  -> (DiscreteCharacterMetadataDec                        -> (PostorderBinaryContext v v') -> v')
+  -> (DiscreteCharacterMetadataDec                        -> (PostorderBinaryContext w w') -> w')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> (PostorderBinaryContext x x') -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> (PostorderBinaryContext y y') -> y')
+  -> (DynamicCharacterMetadataDec (Element DynamicChar)   -> (PostorderBinaryContext z z') -> z')
   -> PhylogeneticDAG2 m e n u  v  w  x  y  z
   -> PhylogeneticDAG2 m e n u' v' w' x' y' z'
 
