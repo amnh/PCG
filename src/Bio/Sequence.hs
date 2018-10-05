@@ -47,7 +47,9 @@ module Bio.Sequence
   -- * CharacterBlock transformations
   , toMissingCharacters
   , hexmap
+  , hexmapWithMeta
   , hexTranspose
+  , hexZip
   , hexZipWith
   , hexZipWithMeta
   -- * Cost quantification
@@ -96,6 +98,22 @@ hexmap
 hexmap f1 f2 f3 f4 f5 f6 = over blockSequence (parmap rpar (Blk.hexmap f1 f2 f3 f4 f5 f6))
 
 
+-- |
+-- Perform a six way map with metadata over the polymorphic types.
+hexmapWithMeta
+  :: (ContinuousCharacterMetadataDec                      -> u -> u')
+  -> (DiscreteCharacterMetadataDec                        -> v -> v')
+  -> (DiscreteCharacterMetadataDec                        -> w -> w')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> x -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> y -> y')
+  -> (DynamicCharacterMetadataDec (Element DynamicChar)   -> z -> z')
+  -> MetadataSequence m
+  -> CharacterSequence u  v  w  x  y  z
+  -> CharacterSequence u' v' w' x' y' z'
+hexmapWithMeta f1 f2 f3 f4 f5 f6 = undefined
+--  over blockSequence (parmap rpar (Blk.hexmap f1 f2 f3 f4 f5 f6))
+
+
 -- TODO: Make sure the inner dimension's ordering is not reversed during the transpose.
 --
 -- |
@@ -129,6 +147,15 @@ hexTranspose = toNList . invert . fmap toDList . toNonEmpty
     invert = foldr1 (hexZipWith (<>) (<>) (<>) (<>) (<>) (<>))
 
     toNList = hexmap toList toList toList toList toList toList
+
+-- |
+-- Zips together two 'CharacterSequence' values to get pairs of values.
+hexZip
+  :: CharacterSequence u v w x y z
+  -> CharacterSequence u' v' w' x' y' z'
+  -> CharacterSequence (u,u') (v,v') (w,w') (x,x') (y,y') (z,z')
+hexZip = hexZipWith (,) (,) (,) (,) (,) (,)
+
 
 
 -- |
