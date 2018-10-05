@@ -104,10 +104,10 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
   , scriptCheckCost 2042.0
         "datasets/dynamic/multi-block/arthropods.pcg"
         "datasets/dynamic/multi-block/cost.data"
-{--
   , scriptCheckCost 197.0
         "datasets/dynamic/single-block/slashes/discrete/test.pcg"
         "datasets/dynamic/single-block/slashes/discrete/cost.data"
+{--
   , scriptCheckCost 2042.0
         "datasets/dynamic/single-block/slashes/L1-norm/test.pcg"
         "datasets/dynamic/single-block/slashes/L1-norm/cost.data"
