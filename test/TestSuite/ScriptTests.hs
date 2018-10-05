@@ -47,6 +47,18 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
   , scriptCheckCost 1789.0
         "datasets/sankoff/single-block/dna/2-1/arthropods.pcg"
         "datasets/sankoff/single-block/dna/2-1/cost.data"
+  , scriptCheckCost 84
+        "datasets/sankoff/single-block/protein/discrete/invertebrates.pcg"
+        "datasets/sankoff/single-block/protein/discrete/cost.data"
+  , scriptCheckCost 0
+        "datasets/sankoff/single-block/protein/L1-norm/invertebrates.pcg"
+        "datasets/sankoff/single-block/protein/L1-norm/cost.data"
+  , scriptCheckCost 7.378697629483821e19
+        "datasets/sankoff/single-block/protein/1-2/invertebrates.pcg"
+        "datasets/sankoff/single-block/protein/1-2/cost.data"
+  , scriptCheckCost 7.378697629483821e19
+        "datasets/sankoff/single-block/protein/2-1/invertebrates.pcg"
+        "datasets/sankoff/single-block/protein/2-1/cost.data"
   , scriptCheckCost 89
         "datasets/sankoff/single-block/slashes/discrete/test.pcg"
         "datasets/sankoff/single-block/slashes/discrete/cost.data"
@@ -104,10 +116,22 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
   , scriptCheckCost 2042.0
         "datasets/dynamic/multi-block/arthropods.pcg"
         "datasets/dynamic/multi-block/cost.data"
+{--  
+  , scriptCheckCost 197.0
+        "datasets/dynamic/single-block/protein/discrete/invertebrates.pcg"
+        "datasets/dynamic/single-block/protein/discrete/cost.data"
+  , scriptCheckCost 2042.0
+        "datasets/dynamic/single-block/protein/L1-norm/invertebrates.pcg"
+        "datasets/dynamic/single-block/protein/L1-norm/cost.data"
+  , scriptCheckCost 254.0
+        "datasets/dynamic/single-block/protein/1-2/invertebrates.pcg"
+        "datasets/dynamic/single-block/protein/1-2/cost.data"
+  , scriptCheckCost 228.0
+        "datasets/dynamic/single-block/protein/2-1/invertebrates.pcg"
+        "datasets/dynamic/single-block/protein/2-1/cost.data"
   , scriptCheckCost 197.0
         "datasets/dynamic/single-block/slashes/discrete/test.pcg"
         "datasets/dynamic/single-block/slashes/discrete/cost.data"
-{--
   , scriptCheckCost 2042.0
         "datasets/dynamic/single-block/slashes/L1-norm/test.pcg"
         "datasets/dynamic/single-block/slashes/L1-norm/cost.data"
