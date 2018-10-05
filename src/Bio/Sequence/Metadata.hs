@@ -69,7 +69,7 @@ instance Functor MetadataSequence where
 
 instance HasBlocks (MetadataSequence m) (MetadataSequence m') (Vector (MetadataBlock m)) (Vector (MetadataBlock m')) where
 
-    blockSequence = lens toBlocks $ const MetaSeq
+    blockSequence = iso toBlocks fromBlocks
 
 
 instance MonoFoldable (MetadataSequence m) where
