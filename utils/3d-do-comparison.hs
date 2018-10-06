@@ -52,7 +52,7 @@ performImplementationComparison lhs rhs = putStrLn renderedComparison
     char1    = readSequence lhs
     char2    = readSequence rhs
 
-    readSequence :: String -> DynamicChar
+    readSequence :: String -> DynamicCharacter
     readSequence = encodeStream alphabet . fmap ((iupacToDna BM.!) . pure . pure) . NE.fromList
 
     renderedComparison = niceContextRendering nativeDOResult foreignDOResult

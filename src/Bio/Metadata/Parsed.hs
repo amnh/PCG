@@ -249,7 +249,7 @@ developAlphabets = V.fromList' . fmap (fromSymbols . foldMap f) . transpose . fm
   where
     f (ParsedContinuousCharacter     _) = mempty
     f (ParsedDiscreteCharacter  static) = foldMap toList static
-    f (ParsedDynamicCharacter  dynamic) = foldMap (foldMap toList) dynamic
+    f (ParsedDynamicCharacteracter  dynamic) = foldMap (foldMap toList) dynamic
 
 
 -- Alphabet values.

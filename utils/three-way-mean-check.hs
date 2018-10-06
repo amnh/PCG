@@ -42,7 +42,7 @@ performCounterExampleSearch = do
 counterExampleCheck :: DynamicCharacterNode -> Bool
 counterExampleCheck node = value == value
   where
-    value = getDynamicCharacterDecoration node ^. finalUngapped
+    value = getDynamicCharacteracterDecoration node ^. finalUngapped
 
 
 performImplementationComparison :: String -> String -> IO ()
@@ -53,5 +53,5 @@ performImplementationComparison lhs rhs = do
     pure ()
   where
     alphabet = fromSymbols ["A","C","G","T"]
---    readSequence :: String -> DynamicChar
+--    readSequence :: String -> DynamicCharacter
     readSequence = encodeStream alphabet . fmap ((iupacToDna BM.!) . pure . pure) . NE.fromList

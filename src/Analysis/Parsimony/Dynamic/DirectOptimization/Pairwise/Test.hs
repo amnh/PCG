@@ -25,6 +25,7 @@ import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
 import           Bio.Character.Encodable
+import           Data.List.NonEmpty (NonEmpty(..))
 import           Data.MonoTraversable
 import           Data.TCM.Memoized
 import           Test.Custom.NucleotideSequence
@@ -57,8 +58,8 @@ consistentResults testLabel metric = SC.testProperty testLabel $ SC.forAll check
   where
     dense = genDenseMatrix metric
     memoed = getMedianAndCost2D (genMemoMatrix metric)
-    f :: DynamicCharacterElement -> DynamicChar
-    f = constructDynamic . (:[])
+    f :: DynamicCharacterElement -> DynamicCharacter
+    f = constructDynamic . (:|[])
 
     checkConsistency :: (NucleotideBase, NucleotideBase) -> Bool
     checkConsistency (NB x, NB y) = naiveResult == memoedResult && naiveResult == foreignResult
@@ -129,7 +130,7 @@ isValidPairwiseAlignment
 -}
 isValidPairwiseAlignment
   :: String
-  -> (DynamicChar -> DynamicChar -> (Word, DynamicChar, DynamicChar, DynamicChar, DynamicChar))
+  -> (DynamicCharacter -> DynamicCharacter -> (Word, DynamicCharacter, DynamicCharacter, DynamicCharacter, DynamicCharacter))
   -> TestTree
 isValidPairwiseAlignment testLabel alignmentFunction = testGroup testLabel
     [  testProperty "alignment function is commutative"               commutivity
@@ -247,7 +248,7 @@ standardAlph :: Alphabet String
 standardAlph =  fromSymbols $ V.fromList ["A", "C", "G", "T", "-"]
 
 
-sampleMeta :: CharacterMetadata DynamicChar
+sampleMeta :: CharacterMetadata DynamicCharacter
 sampleMeta =  CharMeta DirectOptimization standardAlph "" False False 1 mempty (constructDynamic [], constructDynamic []) 0 uniformCostStructure
 
 
@@ -297,7 +298,7 @@ directOptimizationProperties = testGroup "General properties of direct optimizat
   where
     identicalInputAndOutput = testProperty "Identical input characters and uniform transition costs result in identity alignments" f
       where
-        f :: DynamicChar -> Bool
+        f :: DynamicCharacter -> Bool
         f char = and [ cost == 0
                      , derivedUngapped == filterGaps char
                      , derivedGapped   == char
@@ -311,7 +312,7 @@ directOptimizationProperties = testGroup "General properties of direct optimizat
       where
         f :: Gen Bool
         f = do
-            [char1,char2] <- take 2 <$> arbitraryDynamicCharStream
+            [char1,char2] <- take 2 <$> arbitraryDynamicCharacterStream
             let (_, _, derivedAlignment, leftAlignment, rightAlignment) = naiveDO char1 char2 defaultCostStructure
             pure $ olength leftAlignment == olength rightAlignment && olength rightAlignment == olength derivedAlignment
 
@@ -319,7 +320,7 @@ directOptimizationProperties = testGroup "General properties of direct optimizat
       where
         f :: Gen Bool
         f = do
-            [char1,char2] <- take 2 <$> arbitraryDynamicCharStream
+            [char1,char2] <- take 2 <$> arbitraryDynamicCharacterStream
             let (_, _, derivedAlignment, leftAlignment, rightAlignment) = naiveDO char1 char2 defaultCostStructure
             pure $ all (uncurry (>=))
                  [ (outputLength, inputLength)
@@ -334,7 +335,7 @@ alignDOProperties = testGroup "Properties of DO alignment algorithm" [ firstRow
     where
         firstRow = testProperty "First row of DO alignment matrix has expected directions" checkRow
             where
-                checkRow :: DynamicChar -> Bool
+                checkRow :: DynamicCharacter -> Bool
                 checkRow inSeq = fDir == DiagArrow && allLeft (V.tail result) && V.length result == (rowLen + 1)
                     where
                         rowLen  = olength inSeq

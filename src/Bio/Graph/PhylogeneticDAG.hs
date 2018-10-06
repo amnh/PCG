@@ -18,7 +18,7 @@ module Bio.Graph.PhylogeneticDAG
   ( PhylogeneticDAG(..)
   , PhylogeneticDAG2(..)
   , PhylogeneticDAGish(..)
-  , assignOptimalDynamicCharacterRootEdges
+  , assignOptimalDynamicCharacteracterRootEdges
   , assignPunitiveNetworkEdgeCost
   , generateLocalResolutions
   , postorderSequence'

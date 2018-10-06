@@ -164,7 +164,7 @@ hexZipWithMeta
   -> (DiscreteCharacterMetadataDec                        -> w -> w' -> w'')
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> x -> x' -> x'')
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> y -> y' -> y'')
-  -> (DynamicCharacterMetadataDec (Element DynamicChar)   -> z -> z' -> z'')
+  -> (DynamicCharacteracterMetadataDec (Element DynamicCharacter)   -> z -> z' -> z'')
   -> MetadataSequence m
   -> CharacterSequence u   v   w   x   y   z
   -> CharacterSequence u'  v'  w'  x'  y'  z'

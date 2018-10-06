@@ -19,7 +19,7 @@
 
 module Test.Custom.DynamicCharacterNode
   ( DynamicCharacterNode()
-  , getDynamicCharacterDecoration
+  , getDynamicCharacteracterDecoration
   , constructNode
   ) where
 
@@ -40,7 +40,7 @@ import Test.QuickCheck
 -- |
 -- Represents a cherry node of dynamic character decorations.
 newtype DynamicCharacterNode = DCN
-    { getDynamicCharacterDecoration :: DynamicDecorationDirectOptimization DynamicChar -- ^ Extract the character decoration.
+    { getDynamicCharacteracterDecoration :: DynamicDecorationDirectOptimization DynamicCharacter -- ^ Extract the character decoration.
     }
     deriving (Show)
 
@@ -59,7 +59,7 @@ instance Arbitrary DynamicCharacterNode where
 -- |
 -- Given two dynamic characters, constructs a cherry node with each character as
 -- a child.
-constructNode :: DynamicChar -> DynamicChar -> DynamicDecorationDirectOptimization DynamicChar
+constructNode :: DynamicCharacter -> DynamicCharacter -> DynamicDecorationDirectOptimization DynamicCharacter
 constructNode lhs rhs = directOptimizationPreOrder pairwiseFunction defMetadata lhsDec [(0,rootDec)]
   where
     lhsDec  = toLeafNode $ initDec lhs
@@ -74,14 +74,14 @@ toLeafNode :: ( Ord (Element c)
 toLeafNode c = directOptimizationPostOrder pairwiseFunction c []
 
 
-toRootNode :: DynamicDecorationDirectOptimizationPostOrderResult DynamicChar
-           -> DynamicDecorationDirectOptimizationPostOrderResult DynamicChar
-           -> DynamicDecorationDirectOptimization DynamicChar
+toRootNode :: DynamicDecorationDirectOptimizationPostOrderResult DynamicCharacter
+           -> DynamicDecorationDirectOptimizationPostOrderResult DynamicCharacter
+           -> DynamicDecorationDirectOptimization DynamicCharacter
 toRootNode x y = directOptimizationPreOrder pairwiseFunction defMetadata z []
   where
-    z :: DynamicDecorationDirectOptimizationPostOrderResult DynamicChar
+    z :: DynamicDecorationDirectOptimizationPostOrderResult DynamicCharacter
     z = directOptimizationPostOrder pairwiseFunction e [x,y]
-    e :: DynamicDecorationDirectOptimizationPostOrderResult DynamicChar
+    e :: DynamicDecorationDirectOptimizationPostOrderResult DynamicCharacter
     e = undefined
 
 
@@ -95,12 +95,12 @@ scm :: Word -> Word -> Word
 scm i j = if i == j then 0 else 1
 
 
-defMetadata :: DynamicCharacterMetadataDec (Element DynamicChar)
+defMetadata :: DynamicCharacteracterMetadataDec (Element DynamicCharacter)
 defMetadata = dynamicMetadata defName defWeight defAlphabet scm Nothing
 
 
-initDec :: DynamicChar -> DynamicDecorationInitial DynamicChar
-initDec = toDynamicCharacterDecoration id
+initDec :: DynamicCharacter -> DynamicDecorationInitial DynamicCharacter
+initDec = toDynamicCharacteracterDecoration id
 
 
 defName :: CharacterName

@@ -24,8 +24,8 @@
 {-# LANGUAGE UndecidableInstances       #-}
 
 module Bio.Character.Encodable.Dynamic.Internal
-  ( DynamicChar (DC,Missing)
-  , DynamicChars
+  ( DynamicCharacter (DC,Missing)
+  , DynamicCharacters
   , DynamicCharacterElement()
   ) where
 
@@ -33,41 +33,37 @@ import           Bio.Character.Encodable.Dynamic.Class
 import           Bio.Character.Encodable.Internal
 import           Bio.Character.Encodable.Stream
 import           Bio.Character.Exportable.Class
-import           Control.Arrow                         ((***))
 import           Control.DeepSeq
 import           Control.Lens                          hiding (mapping)
-import           Data.Alphabet
+import           Data.Alphabet.IUPAC
+import qualified Data.Bimap                            as B
 import           Data.BitMatrix
 import           Data.Bits
 import           Data.BitVector.LittleEndian
-import           Data.Char                             (toLower)
 import           Data.Foldable
 import           Data.Hashable
 import           Data.Key
 import           Data.List.NonEmpty                    (NonEmpty (..))
 import qualified Data.List.NonEmpty                    as NE
 import           Data.List.Utility                     (invariantTransformation)
-import qualified Data.Map                              as M
 import           Data.Maybe                            (fromJust)
 import           Data.MonoTraversable
 import           Data.Range
 import           Data.String                           (fromString)
-import           Data.Tuple                            (swap)
 import           Data.Vector                           (Vector)
 import           GHC.Generics
 import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances   ()
 import           Text.XML
 
--- TODO: Change DynamicChar/Sequences to DynamicCharacters
 
 -- |
 -- Represents an encoded dynamic character, consisting of one or more static
--- characters. 'DynamicChar's treat entire static characters as the
+-- characters. 'DynamicCharacter's treat entire static characters as the
 -- character states of the dynamic character. The dynamic character relies on
 -- the encoding of the individual static characters to define the encoding of
 -- the entire dynamic character.
-data  DynamicChar
+data  DynamicCharacter
     = Missing {-# UNPACK #-} !Word
     | DC      {-# UNPACK #-} !BitMatrix
     deriving (Eq, Generic, Ord, Show)
@@ -83,25 +79,25 @@ newtype DynamicCharacterElement
 type instance Bound DynamicCharacterElement = Word
 
 
-type instance Element DynamicChar = DynamicCharacterElement
+type instance Element DynamicCharacter = DynamicCharacterElement
 
 
 type instance Element DynamicCharacterElement = Bool
 
 -- |
--- A sequence of many 'DynamicChar's. Probably should be asserted as non-empty.
-type DynamicChars = Vector DynamicChar
+-- A sequence of many 'DynamicCharacter's. Probably should be asserted as non-empty.
+type DynamicCharacters = Vector DynamicCharacter
 
 
 -- |
 -- Functionality to unencode many encoded sequences
--- decodeMany :: DynamicChars -> Alphabet -> ParsedChars
+-- decodeMany :: DynamicCharacters -> Alphabet -> ParsedChars
 -- decodeMany seqs alph = fmap (Just . decodeOverAlphabet alph) seqs
 
 
--- We restrict the 'DynamicChar' values generated to be non-empty.
+-- We restrict the 'DynamicCharacter' values generated to be non-empty.
 -- Most algorithms assume a nonempty dynamic character.
-instance Arbitrary DynamicChar where
+instance Arbitrary DynamicCharacter where
 
     arbitrary = do
         alphabetLen  <- arbitrary `suchThat` (\x -> 2 <= x && x <= 62) :: Gen Int
@@ -121,7 +117,7 @@ instance Arbitrary DynamicCharacterElement where
 instance CoArbitrary DynamicCharacterElement
 
 
-instance EncodedAmbiguityGroupContainer DynamicChar where
+instance EncodedAmbiguityGroupContainer DynamicCharacter where
 
     {-# INLINE symbolCount #-}
     symbolCount (Missing n) = n
@@ -134,50 +130,29 @@ instance EncodedAmbiguityGroupContainer DynamicCharacterElement where
     symbolCount = dimension . unwrap
 
 
-instance EncodableDynamicCharacter DynamicChar where
+instance EncodableDynamicCharacter DynamicCharacter where
 
     constructDynamic = DC . fromRows . fmap unwrap . toList
 
     encodeDynamic alphabet = encodeStream alphabet . NE.fromList . fmap (NE.fromList . toList) . toList
 
 
-instance EncodableStream DynamicChar where
+instance EncodableStream DynamicCharacter where
 
     decodeStream alphabet char
-      | alphabet /= dnaAlphabet = rawResult
-      | otherwise               = (dnaIUPAC !) <$> rawResult
+      | isAlphabetDna alphabet  = (dnaIUPAC B.!) <$> rawResult
+      | isAlphabetRna alphabet  = (rnaIUPAC B.!) <$> rawResult
+      | otherwise               = rawResult
       where
-        rawResult   = NE.fromList . ofoldMap (pure . decodeElement alphabet) . otoList $ char
-        dnaAlphabet = fromSymbols $ fromString <$> ["A","C","G","T"]
---        dnaIUPAC :: (IsString a, Ord a) => Map [a] [a]
-        -- TODO: Maybe use Data.Alphabet.IUPAC Bimap definition
-        dnaIUPAC    = M.fromList . fmap (swap . (NE.fromList . pure . fromChar *** NE.fromList . fmap fromChar)) $ mapping
-          where
-            fromChar = fromString . pure
-            mapping  = gapMap <> noGapMap <> [('-', "-")]
-            gapMap   = (toLower *** (<> "-")) <$> noGapMap
-            noGapMap =
-              [ ('A', "A"   )
-              , ('C', "C"   )
-              , ('G', "G"   )
-              , ('T', "T"   )
-              , ('M', "AC"  )
-              , ('R', "AG"  )
-              , ('W', "AT"  )
-              , ('S', "CG"  )
-              , ('Y', "CT"  )
-              , ('K', "GT"  )
-              , ('V', "ACG" )
-              , ('H', "ACT" )
-              , ('D', "AGT" )
-              , ('B', "CGT" )
-              , ('N', "ACGT")
-              ]
+        rawResult    = NE.fromList . ofoldMap (pure . decodeElement alphabet) . otoList $ char
+        dnaIUPAC     = convertBimap iupacToDna
+        rnaIUPAC     = convertBimap iupacToRna
+        convertBimap = B.mapR (fmap fromString) . B.map (fmap fromString)
 
     encodeStream alphabet = DC . fromRows . fmap (unwrap . encodeElement alphabet) . toList
 
     lookupStream (DC bm) i
-      | 0 <= i    = let j = toEnum i
+      | 0 <= i    = let !j = toEnum i
                     in  if j < numRows bm
                         then Just . DCE $ bm `row` j
                         else Nothing
@@ -215,7 +190,7 @@ instance Enum DynamicCharacterElement where
         dim = toEnum $ finiteBitSize i - countLeadingZeros i
 
 
-instance Exportable DynamicChar where
+instance Exportable DynamicCharacter where
 
     toExportableBuffer Missing {} = error "Attempted to 'Export' a missing dynamic character to foreign functions."
     toExportableBuffer (DC bm) = ExportableCharacterSequence x y . bitVectorToBufferChunks x y $ expandRows bm
@@ -254,13 +229,13 @@ instance Exportable DynamicCharacterElement where
     fromExportableElements = DCE . exportableCharacterElementsHeadToBitVector
 
 
-instance Hashable DynamicChar where
+instance Hashable DynamicCharacter where
 
     hashWithSalt salt (Missing n) = salt `xor` fromEnum n
     hashWithSalt salt (DC bm) = salt `xor` fromEnum (numRows bm) `xor` hashWithSalt salt (toUnsignedNumber (expandRows bm) :: Integer)
 
 
-instance MonoFoldable DynamicChar where
+instance MonoFoldable DynamicCharacter where
 
     {-# INLINE ofoldMap #-}
     ofoldMap _ Missing{} = mempty
@@ -294,16 +269,16 @@ instance MonoFoldable DynamicChar where
     headEx dc =
       case dc of
         (DC c) | (not . onull) c -> DCE $ headEx c
-        _                        -> error $ "call to DynamicChar.headEx with: " <> show dc
+        _                        -> error $ "call to DynamicCharacter.headEx with: " <> show dc
 
     {-# INLINE lastEx #-}
     lastEx dc =
       case dc of
         (DC c) | (not . onull) c -> DCE $ lastEx c
-        _                        -> error $ "call to DynamicChar.lastEx with: " <> show dc
+        _                        -> error $ "call to DynamicCharacter.lastEx with: " <> show dc
 
 
-instance MonoFunctor DynamicChar where
+instance MonoFunctor DynamicCharacter where
 
     omap f bm =
         case f <$> otoList bm of
@@ -322,12 +297,12 @@ instance MonoTraversable DynamicCharacterElement where
     omapM = otraverse
 
 
-instance NFData DynamicChar
+instance NFData DynamicCharacter
 
 instance NFData DynamicCharacterElement
 
 
-instance PossiblyMissingCharacter DynamicChar where
+instance PossiblyMissingCharacter DynamicCharacter where
 
     {-# INLINE toMissing  #-}
     toMissing c = Missing $ symbolCount c
@@ -355,7 +330,7 @@ instance Ranged DynamicCharacterElement where
     zeroRange sc = fromTupleWithPrecision (0,0) $ finiteBitSize sc
 
 
-instance ToXML DynamicChar where
+instance ToXML DynamicCharacter where
 
     toXML dynamicChar = xmlElement "Dynamic_character" attributes contents
         where
@@ -363,7 +338,7 @@ instance ToXML DynamicChar where
             contents              = Left . contentTuple <$> otoList dynamicChar -- toXML on all dynamic character elements
             contentTuple (DCE bv) = ("Character_states", (\x -> if x then '1' else '0') <$> toBits bv) -- the value of this character
 
-{- Don't think I need this, since it's taken care of in ToXML DynamicChar
+{- Don't think I need this, since it's taken care of in ToXML DynamicCharacter
 instance ToXML DynamicCharacterElement where
 
     toXML (DCE bv) = xmlElement "Dynamic_character_element" attributes content
@@ -374,7 +349,7 @@ instance ToXML DynamicCharacterElement where
 
 {-
 {-# INLINE unstream #-}
-unstream :: DynamicChar -> BitMatrix
+unstream :: DynamicCharacter -> BitMatrix
 unstream (DC x) = x
 -}
 

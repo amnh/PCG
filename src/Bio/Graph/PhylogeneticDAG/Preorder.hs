@@ -76,7 +76,7 @@ preorderSequence
   -> (DiscreteCharacterMetadataDec                        -> w -> [(Word, w')] -> w')
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> x -> [(Word, x')] -> x')
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> y -> [(Word, y')] -> y')
-  -> (DynamicCharacterMetadataDec (Element DynamicChar)   -> z -> [(Word, z')] -> z')
+  -> (DynamicCharacteracterMetadataDec (Element DynamicCharacter)   -> z -> [(Word, z')] -> z')
   -> PhylogeneticDAG2 m e n u  v  w  x  y  z
   -> PhylogeneticDAG2 m e n u' v' w' x' y' z'
 preorderSequence f1 f2 f3 f4 f5 f6 pdag@(PDAG2 dag meta) = PDAG2 (newDAG dag) meta
@@ -214,7 +214,7 @@ computeOnApplicableResolution
        -> x -> [(Word, x')] -> x')
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
        -> y -> [(Word, y')] -> y')
-  -> (DynamicCharacterMetadataDec (Element DynamicChar)
+  -> (DynamicCharacteracterMetadataDec (Element DynamicCharacter)
        -> z -> [(Word, z')] -> z')
   -> MetadataSequence m
   -> ParentalContext u' v' w' x' y' z'
@@ -285,7 +285,7 @@ generateDotFile = (<> "\n") . L.unpack . renderDot . toDot
 -- and returns the new decoration for the current node.
 preorderFromRooting
   :: Show n
-  => (DynamicCharacterMetadataDec (Element DynamicChar) -> z -> [(Word, z')] -> z')
+  => (DynamicCharacteracterMetadataDec (Element DynamicCharacter) -> z -> [(Word, z')] -> z')
   ->         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
   -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
   -> NEV.Vector (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge))
@@ -440,7 +440,7 @@ preorderFromRooting transformation edgeCostMapping contextualNodeDatum minTopolo
             -- PhylogeneticNode2 type requirements. It is the part that gets
             -- updated, and requires a bunch of work to be performed.
             -- Remember, this only updates the dynamic characters.
-            newResolution    = pure . updateDynamicCharactersInSequence $ NE.head datumResolutions
+            newResolution    = pure . updateDynamicCharacteractersInSequence $ NE.head datumResolutions
 
             datumResolutions = resolutions $ nodeDecoration node
 
@@ -448,15 +448,15 @@ preorderFromRooting transformation edgeCostMapping contextualNodeDatum minTopolo
 
             kids             = IM.keys $ childRefs node
 
-            updateDynamicCharactersInSequence resInfo = resInfo { characterSequence = updatedCharacterSequence }
+            updateDynamicCharacteractersInSequence resInfo = resInfo { characterSequence = updatedCharacterSequence }
               where
                 updatedCharacterSequence = over blockSequence (zipWithKey blockGen (meta ^. blockSequence)) $ characterSequence resInfo
 
-                blockGen j mBlock cBlock = cBlock & dynamicBin .~ updatedDynamicCharacters
+                blockGen j mBlock cBlock = cBlock & dynamicBin .~ updatedDynamicCharacteracters
                   where
                     (topology,_,_,_,_) = minTopologyContextPerBlock ! j
                     excludedEdges = excludedNetworkEdges topology
-                    updatedDynamicCharacters = mapWithKey dynCharGen $ mBlock ^. dynamicBin
+                    updatedDynamicCharacteracters = mapWithKey dynCharGen $ mBlock ^. dynamicBin
 
                     dynCharGen k m =
                         case parentRefContext of

@@ -47,7 +47,7 @@ type DatNode =
       (AdditiveOptimizationDecoration StaticCharacter)
       (SankoffOptimizationDecoration StaticCharacter)
       (SankoffOptimizationDecoration StaticCharacter)
-      (DynamicDecorationDirectOptimization DynamicChar)
+      (DynamicDecorationDirectOptimization DynamicCharacter)
     )
     NodeLabel
 

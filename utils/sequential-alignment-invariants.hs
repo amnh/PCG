@@ -71,5 +71,5 @@ performImplementationComparison str1 str2 = do
     lhs = readSequence str1
     rhs = readSequence str2
     showCharacter = showStream alphabet
-    readSequence :: String -> DynamicChar
+    readSequence :: String -> DynamicCharacter
     readSequence = encodeStream alphabet . fmap ((iupacToDna BM.!) . pure . pure) . NE.fromList

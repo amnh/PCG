@@ -34,11 +34,11 @@ module Bio.Graph
   , UnifiedCharacterSequence
   , UnifiedContinuousCharacter
   , UnifiedDiscreteCharacter
-  , UnifiedDynamicCharacter
+  , UnifiedDynamicCharacteracter
   , UnifiedMetadataBlock
   , UnifiedMetadataSequence
   , UnReifiedCharacterDAG
-  , assignOptimalDynamicCharacterRootEdges
+  , assignOptimalDynamicCharacteracterRootEdges
   , assignPunitiveNetworkEdgeCost
   , generateLocalResolutions
   , postorderSequence'

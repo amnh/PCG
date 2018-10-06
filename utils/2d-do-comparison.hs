@@ -32,7 +32,7 @@ main = do
       TooManyParameters            -> putStrLn "Expecting only two parameters!"
 
 
-parseArgs :: [String] -> OperationalMode DynamicChar -- Either String (String, String)
+parseArgs :: [String] -> OperationalMode DynamicCharacter -- Either String (String, String)
 parseArgs args =
     case args of
       []          -> Search
@@ -46,7 +46,7 @@ parseArgs args =
     readSequence = encodeStream alphabet . fmap ((iupacToDna BM.!) . pure . pure) . NE.fromList
 
 
-performCounterExampleSearch :: Maybe DynamicChar -> IO ()
+performCounterExampleSearch :: Maybe DynamicCharacter -> IO ()
 performCounterExampleSearch valueMay = do 
     putStrLn "Performing stocastic counter-example search:"
     case valueMay of
@@ -71,7 +71,7 @@ counterExampleCheck (NS lhs) (NS rhs) = counterexample contextRendering $
 --    shownInputs      = mconcat ["\n(",showStream alphabet lhs,",",showStream alphabet rhs,")"]
 
 
-performImplementationComparison :: DynamicChar -> DynamicChar -> IO ()
+performImplementationComparison :: DynamicCharacter -> DynamicCharacter -> IO ()
 performImplementationComparison char1 char2 = putStrLn renderedComparison
   where
     renderedComparison = niceContextRendering naiveDOResult memoizeDOResult ukkonenDOResult foreignDOResult

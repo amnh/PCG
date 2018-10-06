@@ -84,7 +84,7 @@ import           Type.Reflection                 (Typeable)
 -- * w = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Additive'   specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * x = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * y = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
--- * z = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Dynamic'    specified as 'DynamicChar'     or 'Bio.Metadata.DiscreteWithTCM'
+-- * z = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Dynamic'    specified as 'DynamicCharacter'     or 'Bio.Metadata.DiscreteWithTCM'
 data  PhylogeneticDAG m e n u v w x y z
     = PDAG
     { simpleColumnMetadata     :: MetadataSequence m
@@ -103,7 +103,7 @@ data  PhylogeneticDAG m e n u v w x y z
 -- * w = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Additive'   specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * x = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * y = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
--- * z = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Dynamic'    specified as 'DynamicChar'     or 'Bio.Metadata.DiscreteWithTCM'
+-- * z = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Dynamic'    specified as 'DynamicCharacter'     or 'Bio.Metadata.DiscreteWithTCM'
 
 -- TODO: RENAME THIS to PhylogeneticForest
 data  PhylogeneticDAG2 m e n u v w x y z
@@ -293,7 +293,7 @@ generateLocalResolutions
       -> x -> [x'] -> x'')
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
       -> y -> [y'] -> y'')
-  -> (DynamicCharacterMetadataDec (Element DynamicChar)
+  -> (DynamicCharacteracterMetadataDec (Element DynamicCharacter)
       -> z -> [z'] -> z'')
   ->  MetadataSequence m
   ->  ResolutionInformation (CharacterSequence u   v   w   x   y   z  )
@@ -342,7 +342,7 @@ generateLocalResolutions f1 f2 f3 f4 f5 f6 meta parentalResolutionContext childR
 -- apply the transformation to all possible resolution combinations.
 localResolutionApplication
   :: HasBlockCost u v w x y d'
-  => (DynamicCharacterMetadataDec (Element DynamicChar)
+  => (DynamicCharacteracterMetadataDec (Element DynamicCharacter)
       -> d -> [d] -> d')
   -> MetadataSequence m
   -> NonEmpty (ResolutionInformation (CharacterSequence u v w x y d))
@@ -448,7 +448,7 @@ renderBlockSummary (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displa
     , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^.    additiveBin) *** (^.    additiveBin))
     , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^.      metricBin) *** (^.      metricBin))
     , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^.   nonMetricBin) *** (^.   nonMetricBin))
-    , unlines . fmap renderDynamicCharacterSummary             . toList . uncurry zip . ((^.     dynamicBin) *** (^.     dynamicBin))
+    , unlines . fmap renderDynamicCharacteracterSummary             . toList . uncurry zip . ((^.     dynamicBin) *** (^.     dynamicBin))
     ] <*> [(mBlock, block)]
   where
     pair@(mBlock, _) = ((meta ^. blockSequence) ! key, block)
@@ -484,7 +484,7 @@ renderBlockSummary (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displa
         , "    "           <> show (m ^. characterAlphabet)
         ]
 
-    renderDynamicCharacterSummary (m, c) = unlines
+    renderDynamicCharacteracterSummary (m, c) = unlines
         [ "    Name:   " <> show (m ^. characterName)
         , "    Weight: " <> show (m ^. characterWeight)
         , "    Cost:   " <> show (c ^. characterCost)

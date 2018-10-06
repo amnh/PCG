@@ -15,8 +15,8 @@
 module Bio.Character.Encodable
   ( ContinuousChar()
   , ContinuousCharacter(..)
-  , DynamicChar(DC,Missing)
-  , DynamicChars
+  , DynamicCharacter(DC,Missing)
+  , DynamicCharacters
   , DynamicCharacterElement()
   , StaticCharacter()
   , StaticCharacterBlock()

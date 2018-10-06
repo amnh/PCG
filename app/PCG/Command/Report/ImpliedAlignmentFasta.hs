@@ -39,13 +39,13 @@ outputHUTs :: Bool
 outputHUTs = False
 
 
---iaOutput :: (MetadataSolution s m, GeneralSolution s f) => AlignmentSolution DynamicChar -> s -> [(FilePath, String)]
+--iaOutput :: (MetadataSolution s m, GeneralSolution s f) => AlignmentSolution DynamicCharacter -> s -> [(FilePath, String)]
 iaOutput :: StandardSolution -> [(FilePath, String)]
 --iaOutput align solution | trace (mconcat [show align, show solution]) False = undefined
 iaOutput solution = {- (\x -> trace (intercalate "\n\n"
                                          [ integrityCheckSolution solution
                                          , renderAlignments align
-                                         , "DynamicChar indicies: "     <> show (keys dynamicCharacterIndicesAndAlphabets)
+                                         , "DynamicCharacter indicies: "     <> show (keys dynamicCharacterIndicesAndAlphabets)
                                          , "Metadata character types: " <> show (getType <$> getMetadata solution)
                                          ]
                                        ) x) $
@@ -67,7 +67,7 @@ iaOutput solution = {- (\x -> trace (intercalate "\n\n"
     -- The result of the structure zip is a Map from the taxon name within the
     -- original (right-hand) structure to the implied alignment sequences within
     -- the new (left-hand) structure.
-    nodeCharacterMapping :: Map String (Vector DynamicChar)
+    nodeCharacterMapping :: Map String (Vector DynamicCharacter)
     nodeCharacterMapping = foldMap f $ getForests solution
       where
         f = foldMap g

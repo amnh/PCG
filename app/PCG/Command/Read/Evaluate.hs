@@ -79,7 +79,7 @@ evaluate (ReadCommand fileSpecs) = do
 
 
 removeGaps :: Functor f => f FracturedParseResult -> f FracturedParseResult
-removeGaps = fmap removeGapsFromDynamicCharsNotMarkedAsAligned
+removeGaps = fmap removeGapsFromDynamicCharactersNotMarkedAsAligned
 
 
 parseSpecifiedFile :: FileSpecification -> ExceptT ReadError IO [FracturedParseResult]
@@ -99,7 +99,7 @@ parseSpecifiedFile     (PrealignedFile x tcmRef) = do
                    Just (path, content) -> do
                      tcmMat <- ExceptT . pure . first (unparsable content) $ parse' tcmStreamParser path content
                      traverse (ExceptT . pure . setTcm tcmMat path) subContent
-    ExceptT . pure . toEither . sequenceA $ expandDynamicCharsMarkedAsAligned . setCharactersToAligned <$> combined
+    ExceptT . pure . toEither . sequenceA $ expandDynamicCharactersMarkedAsAligned . setCharactersToAligned <$> combined
 
 
 
@@ -197,7 +197,7 @@ progressiveParse inputPath = do
                           Right x    -> pure $ toFractured Nothing filePath x
                           Left  err5 ->
                             case parse' nexusStreamParser filePath fileContent of
-                              Right x    -> ExceptT . pure . toEither . expandDynamicCharsMarkedAsAligned $ toFractured Nothing filePath x
+                              Right x    -> ExceptT . pure . toEither . expandDynamicCharactersMarkedAsAligned $ toFractured Nothing filePath x
                               Left  err6 ->
                                 let previousErrors      = [(err1,"Fasta"),(err2,"Fasta"),(err3,"Newick tree"),(err4,"VER"),(err5,"Henning/TNT"),(err6,"Nexus")]
                                     (parseErr,_fileType) = maximumBy (comparing (farthestParseErr . fst)) previousErrors
@@ -297,8 +297,8 @@ setCharactersToAligned fpr = fpr { parsedMetas = setAligned <$> parsedMetas fpr 
     setAligned x = x { isDynamic = False }
 
 
-expandDynamicCharsMarkedAsAligned :: FracturedParseResult -> Validation ReadError FracturedParseResult
-expandDynamicCharsMarkedAsAligned fpr = updateFpr <$> result
+expandDynamicCharactersMarkedAsAligned :: FracturedParseResult -> Validation ReadError FracturedParseResult
+expandDynamicCharactersMarkedAsAligned fpr = updateFpr <$> result
   where
     setAligned x = x { isDynamic = False }
 
@@ -307,20 +307,20 @@ expandDynamicCharsMarkedAsAligned fpr = updateFpr <$> result
         , parsedMetas = V.fromList ms
         }
 
-    result = foldrWithKey expandDynamicChars (pure ([], [] <$ characterMap)) $ parsedMetas fpr
+    result = foldrWithKey expandDynamicCharacters (pure ([], [] <$ characterMap)) $ parsedMetas fpr
 
     characterMap = parsedChars fpr
 
     getRepresentativeChar = head $ toList characterMap
 
-    expandDynamicChars
+    expandDynamicCharacters
       :: Int
       -> ParsedCharacterMetadata
       -> Validation ReadError ([ParsedCharacterMetadata], Map String [ParsedCharacter])
       -> Validation ReadError ([ParsedCharacterMetadata], Map String [ParsedCharacter])
-    expandDynamicChars k m acc =
+    expandDynamicCharacters k m acc =
         case getRepresentativeChar ! k of
-          ParsedDynamicCharacter {} | not (isDynamic m) ->
+          ParsedDynamicCharacteracter {} | not (isDynamic m) ->
             case fmap fst . sortOn snd . occurances . catMaybes $ dynCharLen . (!k) <$> toList characterMap of
               []    -> acc
               [len] -> case acc of
@@ -331,7 +331,7 @@ expandDynamicCharsMarkedAsAligned fpr = updateFpr <$> result
       where
         prependUnmodified (ms, cm) = (m:ms, (\i -> (((characterMap!i)!k):)) <#$> cm)
 
-    dynCharLen (ParsedDynamicCharacter x) = length <$> x
+    dynCharLen (ParsedDynamicCharacteracter x) = length <$> x
     dynCharLen _                          = Nothing
 
     expandMetadata
@@ -348,15 +348,15 @@ expandDynamicCharsMarkedAsAligned fpr = updateFpr <$> result
       -> [ParsedCharacter]
     expandCharacter len i k _ =
         case (characterMap ! k) ! i of
-          ParsedDynamicCharacter  Nothing  -> replicate len $ ParsedDiscreteCharacter Nothing
-          ParsedDynamicCharacter (Just xs) -> toList $ ParsedDiscreteCharacter . Just <$> xs
+          ParsedDynamicCharacteracter  Nothing  -> replicate len $ ParsedDiscreteCharacter Nothing
+          ParsedDynamicCharacteracter (Just xs) -> toList $ ParsedDiscreteCharacter . Just <$> xs
           _                                -> error "Bad character indexing in Read.Evaluate.expandCharacter"
 
 
-removeGapsFromDynamicCharsNotMarkedAsAligned :: FracturedParseResult -> FracturedParseResult
-removeGapsFromDynamicCharsNotMarkedAsAligned fpr =
-    fpr { parsedChars = fmap removeGapsFromUnalignedDynamicChars <$> parsedChars fpr }
+removeGapsFromDynamicCharactersNotMarkedAsAligned :: FracturedParseResult -> FracturedParseResult
+removeGapsFromDynamicCharactersNotMarkedAsAligned fpr =
+    fpr { parsedChars = fmap removeGapsFromUnalignedDynamicCharacters <$> parsedChars fpr }
   where
-    removeGapsFromUnalignedDynamicChars :: ParsedCharacter -> ParsedCharacter
-    removeGapsFromUnalignedDynamicChars (ParsedDynamicCharacter (Just xs)) = ParsedDynamicCharacter . NE.nonEmpty $ NE.filter (/= pure "-") xs
-    removeGapsFromUnalignedDynamicChars e = e
+    removeGapsFromUnalignedDynamicCharacters :: ParsedCharacter -> ParsedCharacter
+    removeGapsFromUnalignedDynamicCharacters (ParsedDynamicCharacteracter (Just xs)) = ParsedDynamicCharacteracter . NE.nonEmpty $ NE.filter (/= pure "-") xs
+    removeGapsFromUnalignedDynamicCharacters e = e

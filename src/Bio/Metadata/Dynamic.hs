@@ -12,8 +12,8 @@
 
 module Bio.Metadata.Dynamic
     ( DenseTransitionCostMatrix
-    , DynamicCharacterMetadata(..)
-    , DynamicCharacterMetadataDec()
+    , DynamicCharacteracterMetadata(..)
+    , DynamicCharacteracterMetadataDec()
     , HasCharacterAlphabet(..)
     , HasCharacterName(..)
     , HasCharacterWeight(..)

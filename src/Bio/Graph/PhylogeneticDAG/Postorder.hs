@@ -54,7 +54,7 @@ postorderSequence' :: HasBlockCost u' v' w' x' y' z'
        -> x -> [x'] -> x')
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
        -> y -> [y'] -> y')
-  -> (DynamicCharacterMetadataDec (Element DynamicChar)
+  -> (DynamicCharacteracterMetadataDec (Element DynamicCharacter)
        -> z -> [z'] -> z')
   -> PhylogeneticDAG2 m e n u  v  w  x  y  z
   -> PhylogeneticDAG2 m e n u' v' w' x' y' z'
