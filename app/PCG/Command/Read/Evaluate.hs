@@ -122,25 +122,26 @@ setTcm t tcmPath fpr =
 
 
 fastaDNA :: FileSpecification -> ExceptT ReadError IO [FracturedParseResult]
---fastaDNA spec | trace ("fasta DNA parser with spec " ++ show spec) False = undefined
-fastaDNA spec = getSpecifiedContent spec >>= (ExceptT . pure . parseSpecifiedContent parse'')
-  where
-    parse'' :: FileResult -> Either ReadError FracturedParseResult
-    parse'' (path,content) = toFractured Nothing path <$> parseResult
-      where
-        parseResult = {- (\x -> trace (show x) x) . -} first (unparsable content) $ parse' combinator path content
-        combinator  = (\x -> try (fastaStreamConverter Fasta.DNA x) <|> fastaStreamConverter Fasta.RNA x) =<< fastaStreamParser
+fastaDNA = fastaWithValidator $
+    \x -> try (fastaStreamConverter Fasta.DNA x) <|> fastaStreamConverter Fasta.RNA x
 
 
--- TODO: abstract these two (three) v^
 fastaAminoAcid :: FileSpecification -> ExceptT ReadError IO [FracturedParseResult]
-fastaAminoAcid spec = getSpecifiedContent spec >>= (ExceptT . pure . parseSpecifiedContent parse'')
+fastaAminoAcid = fastaWithValidator $ fastaStreamConverter Fasta.AminoAcid
+
+
+fastaWithValidator
+  :: (FastaParseResult -> Parsec Void FileContent TaxonSequenceMap)
+  -> FileSpecification
+  -> ExceptT ReadError IO [FracturedParseResult]
+fastaWithValidator validator spec = getSpecifiedContent spec >>= (ExceptT . pure . parseSpecifiedContent parse'')
   where
     parse'' :: FileResult -> Either ReadError FracturedParseResult
     parse'' (path,content) = toFractured Nothing path <$> parseResult
       where
         parseResult = first (unparsable content) $ parse' combinator path content
-        combinator  = fastaStreamConverter Fasta.AminoAcid =<< fastaStreamParser
+        combinator  = validator =<< fastaStreamParser
+
 
 
 parseSpecifiedContent :: (FileResult -> Either ReadError FracturedParseResult) -> FileSpecificationContent -> Either ReadError [FracturedParseResult]
