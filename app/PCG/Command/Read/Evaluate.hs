@@ -48,7 +48,6 @@ import           PCG.Command.Read
 import           PCG.Command.Read.DecorationInitialization
 import           PCG.Command.Read.ReadError
 import           PCG.Command.Read.Unification.Master
-import           PCG.Syntax                                (Command (..))
 import           Prelude                                   hiding (readFile)
 import           System.Directory
 import           System.FilePath.Glob

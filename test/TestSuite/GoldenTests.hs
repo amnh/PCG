@@ -16,13 +16,11 @@ type Extension = String
 
 testSuite :: IO TestTree
 testSuite = do
-  pcgFiles <- getPCGFiles goldenDir
-  let extensions = ["data", "dot", "xml"]
-  let testInputs = [(pcg, ext) | pcg <- pcgFiles, ext <- extensions]
-  tests <- traverse goldenTest testInputs
-  pure $
-    testGroup "Golden Test Suite:"
-    tests
+    pcgFiles <- getPCGFiles goldenDir
+    let extensions = ["data", "dot", "xml"]
+    let testInputs = [(pcg, ext) | pcg <- pcgFiles, ext <- extensions]
+    tests <- traverse goldenTest testInputs
+    pure $ testGroup "Golden Test Suite:" tests
 
 
 -- |
@@ -83,21 +81,20 @@ getPCGFiles fp = do
       getPCGFilesInDir :: FilePath -> IO [FilePath]
       getPCGFilesInDir =
         let filterPCG = filter $ (== ".pcg") . takeExtension
-          in  (filterPCG <$>) . listDirectoryWithFilePath
+        in  (filterPCG <$>) . listDirectoryWithFilePath
 
       getSubDirs :: FilePath -> IO [FilePath] -- Get all subdirectories recursively
-      getSubDirs fp = do
-        dirTree <- unfoldTreeM listTopDirs fp
+      getSubDirs path = do
+        dirTree <- unfoldTreeM listTopDirs path
         let dirList = flatten dirTree
         pure dirList
 
         where
           listTopDirs :: FilePath -> IO (FilePath, [FilePath])
-          listTopDirs fp = do
+          listTopDirs x = do
             topDirs <- (filterM doesDirectoryExist =<<)
-                       . listDirectoryWithFilePath $ fp
-            pure (fp, topDirs)
-
+                     . listDirectoryWithFilePath $ x
+            pure (x, topDirs)
 
 
 -- |

@@ -57,9 +57,6 @@ import qualified Data.Vector.NonEmpty               as NEV
 import           Prelude                            hiding (lookup)
 
 
-import           Debug.Trace
-
-
 type BlockTopologies = NEV.Vector TraversalTopology
 
 
@@ -287,14 +284,7 @@ generateDotFile = (<> "\n") . L.unpack . renderDot . toDot
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
 preorderFromRooting
-  :: ( Show n
-     , Show u'
-     , Show v'
-     , Show w'
-     , Show x'
-     , Show y'
-     , Show z
-     )
+  :: Show n
   => (DynamicCharacterMetadataDec (Element DynamicChar) -> z -> [(Word, z')] -> z')
   ->         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
   -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))

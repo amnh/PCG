@@ -328,18 +328,6 @@ finalizeCharacterBlock = CB . (
         f = (,) <$> L.length <*> L.list
 
 
-setDynamicCharacters :: Vector z -> CharacterBlock u v w x y a -> CharacterBlock u v w x y z
-setDynamicCharacters v = CB . (
-    Block
-      <$> (^.  continuousBin)
-      <*> (^. nonAdditiveBin)
-      <*> (^.    additiveBin)
-      <*> (^.      metricBin)
-      <*> (^.   nonMetricBin)
-      <*> const v
-    )
-
-
 -- |
 -- Creates a representation for a non-existant character block.
 --
