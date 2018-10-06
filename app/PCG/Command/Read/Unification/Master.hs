@@ -73,6 +73,8 @@ import           Data.Vector                                   (Vector)
 import           PCG.Command.Read.Unification.UnificationError
 import           Prelude                                       hiding (lookup, zipWith)
 
+--import Debug.Trace
+
 
 data FracturedParseResult
    = FPR
@@ -117,12 +119,12 @@ rectifyResults2 fprs =
     -- Step 1: Gather data file contents
     dataSeqs        = filter (not . fromTreeOnlyFile) fprs
     -- Step 2: Union the taxa names together into total terminal set
-    taxaSet         = {- (\x ->  trace ("Taxa Set: " <> show x) x) . -} mconcat $ (Set.fromList . keys . parsedChars) `parmap'` dataSeqs
+    taxaSet         = mconcat $ (Set.fromList . keys . parsedChars) `parmap'` dataSeqs
     -- Step 3: Gather forest file data
-    allForests      = {- (\x ->  trace ("Forest Lengths: " <> show (length . parsedTrees <$> x)) x) $ -} filter (not . null . parsedForests) fprs
+    allForests      = filter (not . null . parsedForests) fprs
     -- Step 4: Gather the taxa names for each forest from terminal nodes
     forestTaxa :: [([NonEmpty Identifier], FracturedParseResult)]
-    forestTaxa      = {- (\x ->  trace ("Forest Set: " <> show x) x) . -} gatherForestsTerminalNames `parmap'` allForests
+    forestTaxa      =  gatherForestsTerminalNames `parmap'` allForests
     -- Step 5: Assert that each terminal node name is unique in each forest
     duplicateNames :: [([[Identifier]], FracturedParseResult)]
     duplicateNames  = filter (not . all null . fst) $ first (fmap duplicates) `parmap'` forestTaxa
@@ -402,6 +404,7 @@ gatherForestsTerminalNames fpr = (identifiers, fpr)
           case foldMap terminalNames2 forest of
              []   -> Nothing
              x:xs -> Just $ x :| xs
+
 
 
 additiveDistanceFunction :: Word -> Word -> Word
