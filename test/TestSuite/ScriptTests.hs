@@ -1,3 +1,4 @@
+
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies      #-}
@@ -46,10 +47,153 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
   , scriptCheckCost 1789.0
         "datasets/sankoff/single-block/dna/2-1/arthropods.pcg"
         "datasets/sankoff/single-block/dna/2-1/cost.data"
+  , scriptCheckCost 84
+        "datasets/sankoff/single-block/protein/discrete/invertebrates.pcg"
+        "datasets/sankoff/single-block/protein/discrete/cost.data"
+  , scriptCheckCost 0
+        "datasets/sankoff/single-block/protein/L1-norm/invertebrates.pcg"
+        "datasets/sankoff/single-block/protein/L1-norm/cost.data"
+  , scriptCheckCost 7.378697629483821e19
+        "datasets/sankoff/single-block/protein/1-2/invertebrates.pcg"
+        "datasets/sankoff/single-block/protein/1-2/cost.data"
+  , scriptCheckCost 7.378697629483821e19
+        "datasets/sankoff/single-block/protein/2-1/invertebrates.pcg"
+        "datasets/sankoff/single-block/protein/2-1/cost.data"
+  , scriptCheckCost 89
+        "datasets/sankoff/single-block/slashes/discrete/test.pcg"
+        "datasets/sankoff/single-block/slashes/discrete/cost.data"
+  , scriptCheckCost 2089
+        "datasets/sankoff/single-block/slashes/L1-norm/test.pcg"
+        "datasets/sankoff/single-block/slashes/L1-norm/cost.data"
+  , scriptCheckCost 89
+        "datasets/sankoff/single-block/slashes/1-2/test.pcg"
+        "datasets/sankoff/single-block/slashes/1-2/cost.data"
+  , scriptCheckCost 154
+        "datasets/sankoff/single-block/slashes/2-1/test.pcg"
+        "datasets/sankoff/single-block/slashes/2-1/cost.data"
+  , scriptCheckCost 240
+        "datasets/sankoff/single-block/slashes/hamming/test.pcg"
+        "datasets/sankoff/single-block/slashes/hamming/cost.data"
+  , scriptCheckCost 176
+        "datasets/sankoff/single-block/slashes/levenshtein/test.pcg"
+        "datasets/sankoff/single-block/slashes/levenshtein/cost.data"
+  , scriptCheckCost 158
+        "datasets/sankoff/single-block/large-mix/discrete/test.pcg"
+        "datasets/sankoff/single-block/large-mix/discrete/cost.data"
+  , scriptCheckCost 11004
+        "datasets/sankoff/single-block/large-mix/L1-norm/test.pcg"
+        "datasets/sankoff/single-block/large-mix/L1-norm/cost.data"
+  , scriptCheckCost 158
+        "datasets/sankoff/single-block/large-mix/1-2/test.pcg"
+        "datasets/sankoff/single-block/large-mix/1-2/cost.data"
+  , scriptCheckCost 251
+        "datasets/sankoff/single-block/large-mix/2-1/test.pcg"
+        "datasets/sankoff/single-block/large-mix/2-1/cost.data"
+  , scriptCheckCost 348
+        "datasets/sankoff/single-block/large-mix/hamming/test.pcg"
+        "datasets/sankoff/single-block/large-mix/hamming/cost.data"
+  , scriptCheckCost 200
+        "datasets/sankoff/single-block/large-mix/levenshtein/test.pcg"
+        "datasets/sankoff/single-block/large-mix/levenshtein/cost.data"
+  , scriptCheckCost 117
+        "datasets/sankoff/single-block/huge-mix/discrete/test.pcg"
+        "datasets/sankoff/single-block/huge-mix/discrete/cost.data"
+  , scriptCheckCost 12681
+        "datasets/sankoff/single-block/huge-mix/L1-norm/test.pcg"
+        "datasets/sankoff/single-block/huge-mix/L1-norm/cost.data"
+  , scriptCheckCost 117
+        "datasets/sankoff/single-block/huge-mix/1-2/test.pcg"
+        "datasets/sankoff/single-block/huge-mix/1-2/cost.data"
+  , scriptCheckCost 181
+        "datasets/sankoff/single-block/huge-mix/2-1/test.pcg"
+        "datasets/sankoff/single-block/huge-mix/2-1/cost.data"
+  , scriptCheckCost 275
+        "datasets/sankoff/single-block/huge-mix/hamming/test.pcg"
+        "datasets/sankoff/single-block/huge-mix/hamming/cost.data"
+  , scriptCheckCost 230
+        "datasets/sankoff/single-block/huge-mix/levenshtein/test.pcg"
+        "datasets/sankoff/single-block/huge-mix/levenshtein/cost.data"
   , scriptCheckCost 2042.0
         "datasets/dynamic/multi-block/arthropods.pcg"
         "datasets/dynamic/multi-block/cost.data"
+  , scriptCheckCost 197.0
+        "datasets/dynamic/single-block/protein/discrete/invertebrates.pcg"
+        "datasets/dynamic/single-block/protein/discrete/cost.data"
+  , scriptCheckCost 2042.0
+        "datasets/dynamic/single-block/protein/L1-norm/invertebrates.pcg"
+        "datasets/dynamic/single-block/protein/L1-norm/cost.data"
+{--
+  , scriptCheckCost 254.0
+        "datasets/dynamic/single-block/protein/1-2/invertebrates.pcg"
+        "datasets/dynamic/single-block/protein/1-2/cost.data"
+  , scriptCheckCost 228.0
+        "datasets/dynamic/single-block/protein/2-1/invertebrates.pcg"
+        "datasets/dynamic/single-block/protein/2-1/cost.data"
+  , scriptCheckCost 197.0
+        "datasets/dynamic/single-block/slashes/discrete/test.pcg"
+        "datasets/dynamic/single-block/slashes/discrete/cost.data"
+--}
+  , scriptCheckCost 2042.0
+        "datasets/dynamic/single-block/slashes/L1-norm/test.pcg"
+        "datasets/dynamic/single-block/slashes/L1-norm/cost.data"
+{--
+  , scriptCheckCost 254.0
+        "datasets/dynamic/single-block/slashes/1-2/test.pcg"
+        "datasets/dynamic/single-block/slashes/1-2/cost.data"
+  , scriptCheckCost 228.0
+        "datasets/dynamic/single-block/slashes/2-1/test.pcg"
+        "datasets/dynamic/single-block/slashes/2-1/cost.data"
+  , scriptCheckCost 671.0
+        "datasets/dynamic/single-block/slashes/hamming/test.pcg"
+        "datasets/dynamic/single-block/slashes/hamming/cost.data"
+  , scriptCheckCost 488.0
+        "datasets/dynamic/single-block/slashes/levenshtein/test.pcg"
+        "datasets/dynamic/single-block/slashes/levenshtein/cost.data"
+  , scriptCheckCost 197.0
+        "datasets/dynamic/single-block/large-mix/discrete/test.pcg"
+        "datasets/dynamic/single-block/large-mix/discrete/cost.data"
+  , scriptCheckCost 2042.0
+        "datasets/dynamic/single-block/large-mix/L1-norm/test.pcg"
+        "datasets/dynamic/single-block/large-mix/L1-norm/cost.data"
+  , scriptCheckCost 254.0
+        "datasets/dynamic/single-block/large-mix/1-2/test.pcg"
+        "datasets/dynamic/single-block/large-mix/1-2/cost.data"
+  , scriptCheckCost 228.0
+        "datasets/dynamic/single-block/large-mix/2-1/test.pcg"
+        "datasets/dynamic/single-block/large-mix/2-1/cost.data"
+  , scriptCheckCost 671.0
+        "datasets/dynamic/single-block/large-mix/hamming/test.pcg"
+        "datasets/dynamic/single-block/large-mix/hamming/cost.data"
+  , scriptCheckCost 488.0
+        "datasets/dynamic/single-block/large-mix/levenshtein/test.pcg"
+        "datasets/dynamic/single-block/large-mix/levenshtein/cost.data"
+  , scriptCheckCost 197.0
+        "datasets/dynamic/single-block/huge-mix/discrete/test.pcg"
+        "datasets/dynamic/single-block/huge-mix/discrete/cost.data"
+  , scriptCheckCost 2042.0
+        "datasets/dynamic/single-block/huge-mix/L1-norm/test.pcg"
+        "datasets/dynamic/single-block/huge-mix/L1-norm/cost.data"
+  , scriptCheckCost 254.0
+        "datasets/dynamic/single-block/huge-mix/1-2/test.pcg"
+        "datasets/dynamic/single-block/huge-mix/1-2/cost.data"
+  , scriptCheckCost 228.0
+        "datasets/dynamic/single-block/huge-mix/2-1/test.pcg"
+        "datasets/dynamic/single-block/huge-mix/2-1/cost.data"
+  , scriptCheckCost 671.0
+        "datasets/dynamic/single-block/huge-mix/hamming/test.pcg"
+        "datasets/dynamic/single-block/huge-mix/hamming/cost.data"
+  , scriptCheckCost 488.0
+        "datasets/dynamic/single-block/huge-mix/levenshtein/test.pcg"
+        "datasets/dynamic/single-block/huge-mix/levenshtein/cost.data"
+-}
   , scriptFailure "datasets/unmatched-leaf-taxon/test.pcg"
+  , scriptFailure "datasets/unmatched-tree-taxon/test.pcg"
+  , scriptFailure "datasets/duplicate-leaf-taxon/test.pcg"
+-- We omit this test because the DAG.unfoldr function in the ParsedForest call
+-- will ensure that there is only one leaf in the graph. It may have multiple
+-- parents however.
+--  , scriptFailure "datasets/duplicate-tree-taxon/test.pcg"
+  , scriptFailure "datasets/no-data-in-graph/test.pcg"
   ]
 
 

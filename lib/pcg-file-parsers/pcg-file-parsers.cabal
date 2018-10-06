@@ -75,6 +75,7 @@ library
                   , graphviz           >=2999.20
                   , keys
                   , megaparsec         >=6.4.0
+                  , mtl
                   , parser-combinators >=0.2.0
                   , pcg-utility
                   , safe

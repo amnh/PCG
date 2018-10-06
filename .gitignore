@@ -52,6 +52,8 @@ TAGS
 
 # other
 .DS_Store
+*.data
+*.dot
 *.dSYM
 *.fa
 *.fas
@@ -63,6 +65,7 @@ TAGS
 *.pcg
 *.poy
 *.ss
+*.tcm
 *.tre
 *.tree
 *.txt

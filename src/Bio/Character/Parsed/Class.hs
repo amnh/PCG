@@ -46,7 +46,6 @@ import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
 import           Prelude                          hiding (zipWith)
 
-
 {-
 data ParsedCharacter
    = ParsedContinuousCharacter  Double

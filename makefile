@@ -38,6 +38,9 @@ rebuild-full: clean rebuild
 # Rebuilds with optimizations and runs tests
 test: stack-build-test
 
+# Re-builds project then runs only integration tests
+test-integration: stack-build-test-integration
+
 test-failures: stack-build-test-failures
 
 test-new: stack-build-test-new
@@ -79,6 +82,10 @@ stack-build-profiling: phylocomgraph.cabal stack.yaml
 # Builds tests and updates log of tests that have been run
 stack-build-test: phylocomgraph.cabal stack.yaml
 	stack build --test --ta "--rerun-update"
+
+# Builds and runs integration tests after a standard build.
+stack-build-test-integration: phylocomgraph.cabal stack.yaml standard-build
+	stack build phylocomgraph:test:integration-tests
 
 # Builds tests and re-runs those that failed
 stack-build-test-failures: phylocomgraph.cabal stack.yaml

@@ -36,7 +36,6 @@ import           Data.NodeLabel
 import           Data.Ord                            (comparing)
 import           Data.Semigroup.Foldable
 import           PCG.Command.Build
-import           PCG.Syntax                          (Command (..))
 import           System.Random.Shuffle
 
 
