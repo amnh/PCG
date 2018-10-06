@@ -8,7 +8,7 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Provides the types for the Read command along with a semantic definition
+-- Provides the types for the \"READ\" command along with a semantic definition
 -- to be consumed by the stream parser.
 --
 -----------------------------------------------------------------------------
@@ -38,7 +38,7 @@ import PCG.Syntax.Combinators
 
 
 -- |
--- The Read command containing the files paths to be read.
+-- The \"READ\" command containing the files paths to be read.
 newtype ReadCommand = ReadCommand (NonEmpty FileSpecification)
     deriving (Show)
 
@@ -112,7 +112,7 @@ instance Semigroup ReadCommand where
 
 
 -- |
--- Defines the semantics of interpreting a valid \"Read\" command from the PCG
+-- Defines the semantics of interpreting a valid \"READ\" command from the PCG
 -- scripting language syntax.
 readCommandSpecification :: CommandSpecification ReadCommand
 readCommandSpecification = command "read" $ ReadCommand <$> someOf fileSpec
