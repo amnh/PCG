@@ -15,7 +15,9 @@ Releases are available [on GitHub][2].
 * Improved efficiency of Data.Vector.NonEmpty.fromNonEmpty, unfoldr, and traverse
 * Improved representation of character & metadata sequences
 * Improved representation of Symbol Change Matrix (SCM) and Transition Cost Matrix (TCM)
+* Enhanced DOT file parser to accept DOT labels on leaf nodes as identifiers
 * Added Travis CI build script
+* Added integration test suite
 * Added test suites for Data.List.Utility, Data.Alphabet, and Data.TCM
 * Added support for compact regions of phylogenetic solutions
 * Added save and load commands by serialising compact regions
