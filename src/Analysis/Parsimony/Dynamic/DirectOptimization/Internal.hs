@@ -28,7 +28,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Internal
   ) where
 
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal        (overlap)
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (overlap)
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
 import           Bio.Character.Exportable
@@ -36,12 +36,12 @@ import           Bio.Metadata
 import           Control.Lens
 import           Data.Bits
 import           Data.Foldable
-import           Data.IntMap                                                            (IntMap)
+import           Data.IntMap                                                     (IntMap)
 import qualified Data.IntMap                                                     as IM
 import           Data.Key
-import           Data.List.NonEmpty                                                     (NonEmpty ((:|)))
+import           Data.List.NonEmpty                                              (NonEmpty ((:|)))
 import qualified Data.List.NonEmpty                                              as NE
-import           Data.List.Utility                                                      (invariantTransformation)
+import           Data.List.Utility                                               (invariantTransformation)
 import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Word

@@ -25,7 +25,7 @@ import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
 import           Bio.Character.Encodable
-import           Data.List.NonEmpty (NonEmpty(..))
+import           Data.List.NonEmpty                                                     (NonEmpty (..))
 import           Data.MonoTraversable
 import           Data.TCM.Memoized
 import           Test.Custom.NucleotideSequence

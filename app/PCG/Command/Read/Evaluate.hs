@@ -26,7 +26,8 @@ import           Data.List                                 (sortOn)
 import           Data.List.NonEmpty                        (NonEmpty (..))
 import qualified Data.List.NonEmpty                        as NE
 import           Data.List.Utility                         (occurances)
-import           Data.Map                                  (Map)
+import           Data.Map                                  (Map, updateLookupWithKey)
+import qualified Data.Map                                  as M
 import           Data.Maybe                                (catMaybes)
 import           Data.Ord                                  (comparing)
 import           Data.TCM                                  (TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
@@ -50,6 +51,7 @@ import           PCG.Command.Read.ReadError
 import           PCG.Command.Read.Unification.Master
 import           Prelude                                   hiding (readFile)
 import           System.Directory
+import           System.FilePath                                  (takeExtension)
 import           System.FilePath.Glob
 import           Text.Megaparsec
 
@@ -173,53 +175,88 @@ parseCustomAlphabet spec = getSpecifiedContent spec >>= (ExceptT . pure . parseS
         eitherValidation . fmap (parse'' tcmMay) $ dataFiles specContent
 
 
--- TODO: check file extension, to guess which parser to use first
 progressiveParse :: FilePath -> ExceptT ReadError IO FracturedParseResult
---progressiveParse _ | trace "STARTING PROGRESSIVE PARSE" False = undefined
 progressiveParse inputPath = do
     (filePath, fileContent) <- head . dataFiles <$> getSpecifiedContent (UnspecifiedFile $ inputPath:|[])
-    case parse' nukeParser filePath fileContent of
-      Right x    -> pure $ toFractured Nothing filePath x
-      Left  err1 ->
-        case parse' acidParser filePath fileContent of
-          Right x    -> pure $ toFractured Nothing filePath x
-          Left  err2 ->
-            case parse' newickStreamParser filePath fileContent of
-              Right x    -> pure $ toFractured Nothing filePath x
-              Left  err3 ->
-                case parse' verStreamParser filePath fileContent of
-                  Right x    -> pure $ toFractured Nothing filePath x
-                  Left  err4 ->
-                    case dotParse fileContent of
-                      Right x    -> pure $ toFractured Nothing filePath x
-                      Left  _ ->
-                        case parse' tntStreamParser filePath fileContent of
-                          Right x    -> pure $ toFractured Nothing filePath x
-                          Left  err5 ->
-                            case parse' nexusStreamParser filePath fileContent of
-                              Right x    -> ExceptT . pure . toEither . expandDynamicCharactersMarkedAsAligned $ toFractured Nothing filePath x
-                              Left  err6 ->
-                                let previousErrors      = [(err1,"Fasta"),(err2,"Fasta"),(err3,"Newick tree"),(err4,"VER"),(err5,"Henning/TNT"),(err6,"Nexus")]
-                                    (parseErr,_fileType) = maximumBy (comparing (farthestParseErr . fst)) previousErrors
-                                in  throwE $ unparsable fileContent parseErr
-{-
-                                fail $ mconcat [ "Could not parse '"
-                                               , filePath
-                                               , "', appears to be a "
-                                               , fileType
-                                               , " file.\n"
-                                               , parseErrorPretty parseErr
-                                               ]
--}
+    let parsers = getParsersToTry $ takeExtension filePath
+    -- Use the Either Left value to short circuit on a succussful parse
+    -- Otherwise collect all parse errors in the Right value
+    case traverse (\f -> f filePath fileContent) parsers of
+      Left  fpr    -> pure fpr
+      Right errors -> let parseErr = maximumBy (comparing farthestParseErr) errors
+                      in  throwE $ unparsable fileContent parseErr
   where
+    -- |
+    -- Takes a file extension and returns the /ordered/ list of parsers to try.
+    -- Attempts to place the parser that is associated with the given file
+    -- extension as the first parser to try.
+    --
+    -- Makes our parsing phase marginally more efficient.
+--    getParsersToTry :: String -> [FilePath -> s -> Either FracturedParseResult (ParseError Char Void)]
+    getParsersToTry ext = 
+        -- We do this by first looking up the file extension in a list of non-empty
+        -- lists of aliases for the same type of file.
+        case filter (elem ext) fileExtensions of
+          []       -> toList parserMap
+        -- If we find a non-empty list of file extensions that contains the given
+        -- file extension, then we take the head of the non-empty list and use this
+        -- as our representative file extension key.
+          (k:|_):_ ->
+        -- Lastly we lookup and remove the representative file extension key from a
+        -- map of file parsers.
+            case updateLookupWithKey (const (const Nothing)) k parserMap of
+              (Nothing, m) ->     toList m
+        -- This returns the parser associated with the representative file extension
+        -- key and the map of file parsers with the queried parser removed. With
+        -- these elements in scope, we simply place the desired parser at the head of
+        -- the list of all the parsers.
+              (Just  p, m) -> p : toList m
+    
+    fileExtensions :: [NonEmpty String]
+    fileExtensions = fmap ('.':) <$> foldMapWithKey (\k v -> [k :| snd v]) associationMap
+
+--  parserMap :: Map String (FilePath -> s -> Either FracturedParseResult (ParseError Char Void))
+    parserMap = fst <$> associationMap
+
+    associationMap = M.fromList
+        [ ("fas", (makeParser         nukeParser, ["fast","fasta"]))
+        , ("tre", (makeParser newickStreamParser, ["tree","new","newick"]))
+        , ("ver", (makeParser    verStreamParser, []))
+        , ("tnt", (makeParser    tntStreamParser, ["hen","hennig"]))
+        , ("nex", (makeParser  nexusStreamParser, ["nexus"]))
+        ]
+        
+    makeParser
+      :: ( ParsedMetadata a
+         , ParsedCharacters a
+         , ParsedForest a
+         , Token s ~ Char
+         )
+      => Parsec Void s a
+      -> FilePath
+      -> s
+      -> Either FracturedParseResult (ParseError (Token s) Void)
+    makeParser parser path = eSwap . fmap (toFractured Nothing path) . parse' parser path
+      where
+        eSwap (Left  x) = Right x
+        eSwap (Right x) = Left  x
+
     -- | We use this to find the parser which got farthest through the stream before failing.
     farthestParseErr :: ParseError t e -> SourcePos
     farthestParseErr err = maximum $ errorPos err
+
     nukeParser = (\x -> try (fastaStreamConverter Fasta.DNA x) <|> fastaStreamConverter Fasta.RNA x) =<< fastaStreamParser
-    acidParser = fastaStreamConverter Fasta.DNA =<< fastaStreamParser
 
 
-toFractured :: (ParsedMetadata a, ParsedCharacters a, ParsedForest a) => Maybe (TCM.TCM, TCMStructure) -> FilePath -> a -> FracturedParseResult
+toFractured
+  :: ( ParsedMetadata a
+     , ParsedCharacters a
+     , ParsedForest a
+     )
+  => Maybe (TCM.TCM, TCMStructure)
+  -> FilePath
+  -> a
+  -> FracturedParseResult
 toFractured tcmMat path =
     FPR <$> unifyCharacters
         <*> unifyMetadata
@@ -332,7 +369,7 @@ expandDynamicCharactersMarkedAsAligned fpr = updateFpr <$> result
         prependUnmodified (ms, cm) = (m:ms, (\i -> (((characterMap!i)!k):)) <#$> cm)
 
     dynCharLen (ParsedDynamicCharacteracter x) = length <$> x
-    dynCharLen _                          = Nothing
+    dynCharLen _                               = Nothing
 
     expandMetadata
       :: Int -- ^ Length
@@ -350,7 +387,7 @@ expandDynamicCharactersMarkedAsAligned fpr = updateFpr <$> result
         case (characterMap ! k) ! i of
           ParsedDynamicCharacteracter  Nothing  -> replicate len $ ParsedDiscreteCharacter Nothing
           ParsedDynamicCharacteracter (Just xs) -> toList $ ParsedDiscreteCharacter . Just <$> xs
-          _                                -> error "Bad character indexing in Read.Evaluate.expandCharacter"
+          _                                     -> error "Bad character indexing in Read.Evaluate.expandCharacter"
 
 
 removeGapsFromDynamicCharactersNotMarkedAsAligned :: FracturedParseResult -> FracturedParseResult

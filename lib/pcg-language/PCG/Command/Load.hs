@@ -30,7 +30,7 @@ import PCG.Syntax.Combinators
 -- The \"LOAD\" command specifies PCG to deserialize a save state from disk and
 -- use that state as the new current state of the computation. The file path from
 -- which to which the save state may be user specified. A default, hidden file
--- path will be used if no file path is specified by the user. 
+-- path will be used if no file path is specified by the user.
 newtype LoadCommand = LoadCommand FilePath
   deriving stock Show
 

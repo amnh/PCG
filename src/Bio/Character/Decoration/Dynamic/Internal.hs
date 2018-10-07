@@ -37,9 +37,6 @@ import GHC.Generics
 import Text.XML
 
 
--- TODO: Make a polymorpic pre-order constructor.
-
-
 -- |
 -- An abstract direct optimization dynamic character decoration with a
 -- polymorphic character type.
