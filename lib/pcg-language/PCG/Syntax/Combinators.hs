@@ -98,7 +98,8 @@ data  SyntacticArgument z
     | DefaultValue   (Ap SyntacticArgument z) z
     | ExactlyOneOf   (NonEmpty (Ap SyntacticArgument z))
     | ArgumentList   (ArgList z)
--- TODO: add this
+-- TODO: Add this "Such That" constructor
+--       might require Monad constraint and be impossible...
 --    | SuchThat       (Ap SyntacticArgument z) (z -> Bool) String
     deriving (Functor)
 
