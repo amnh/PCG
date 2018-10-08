@@ -17,6 +17,7 @@ import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Alphabet
 import           Data.Bifunctor                            (bimap, first)
+import           Data.Char                                 (toLower)
 import           Data.Compact                              (compact)
 import           Data.Either.Custom
 import           Data.Foldable
@@ -51,7 +52,7 @@ import           PCG.Command.Read.ReadError
 import           PCG.Command.Read.Unification.Master
 import           Prelude                                   hiding (readFile)
 import           System.Directory
-import           System.FilePath                                  (takeExtension)
+import           System.FilePath                           (takeExtension)
 import           System.FilePath.Glob
 import           Text.Megaparsec
 
@@ -187,16 +188,21 @@ progressiveParse inputPath = do
                       in  throwE $ unparsable fileContent parseErr
   where
     -- |
+    -- We use this to find the parser which got farthest through the stream before failing.
+    farthestParseErr :: ParseError t e -> SourcePos
+    farthestParseErr err = maximum $ errorPos err
+
+    -- |
     -- Takes a file extension and returns the /ordered/ list of parsers to try.
     -- Attempts to place the parser that is associated with the given file
     -- extension as the first parser to try.
     --
     -- Makes our parsing phase marginally more efficient.
---    getParsersToTry :: String -> [FilePath -> s -> Either FracturedParseResult (ParseError Char Void)]
-    getParsersToTry ext = 
+--  getParsersToTry :: String -> [FilePath -> s -> Either FracturedParseResult (ParseError Char Void)]
+    getParsersToTry ext =
         -- We do this by first looking up the file extension in a list of non-empty
         -- lists of aliases for the same type of file.
-        case filter (elem ext) fileExtensions of
+        case filter (elem extension) fileExtensions of
           []       -> toList parserMap
         -- If we find a non-empty list of file extensions that contains the given
         -- file extension, then we take the head of the non-empty list and use this
@@ -205,47 +211,47 @@ progressiveParse inputPath = do
         -- Lastly we lookup and remove the representative file extension key from a
         -- map of file parsers.
             case updateLookupWithKey (const (const Nothing)) k parserMap of
+        -- This case should never be entered, but it is sensibly covered.
               (Nothing, m) ->     toList m
         -- This returns the parser associated with the representative file extension
         -- key and the map of file parsers with the queried parser removed. With
         -- these elements in scope, we simply place the desired parser at the head of
         -- the list of all the parsers.
               (Just  p, m) -> p : toList m
-    
-    fileExtensions :: [NonEmpty String]
-    fileExtensions = fmap ('.':) <$> foldMapWithKey (\k v -> [k :| snd v]) associationMap
-
---  parserMap :: Map String (FilePath -> s -> Either FracturedParseResult (ParseError Char Void))
-    parserMap = fst <$> associationMap
-
-    associationMap = M.fromList
-        [ ("fas", (makeParser         nukeParser, ["fast","fasta"]))
-        , ("tre", (makeParser newickStreamParser, ["tree","new","newick"]))
-        , ("ver", (makeParser    verStreamParser, []))
-        , ("tnt", (makeParser    tntStreamParser, ["hen","hennig"]))
-        , ("nex", (makeParser  nexusStreamParser, ["nexus"]))
-        ]
-        
-    makeParser
-      :: ( ParsedMetadata a
-         , ParsedCharacters a
-         , ParsedForest a
-         , Token s ~ Char
-         )
-      => Parsec Void s a
-      -> FilePath
-      -> s
-      -> Either FracturedParseResult (ParseError (Token s) Void)
-    makeParser parser path = eSwap . fmap (toFractured Nothing path) . parse' parser path
       where
-        eSwap (Left  x) = Right x
-        eSwap (Right x) = Left  x
+        -- Convert the extension to lower case for simpler string comparisons
+        extension = toLower <$> ext
 
-    -- | We use this to find the parser which got farthest through the stream before failing.
-    farthestParseErr :: ParseError t e -> SourcePos
-    farthestParseErr err = maximum $ errorPos err
+        fileExtensions :: [NonEmpty String]
+        fileExtensions = fmap ('.':) <$> foldMapWithKey (\k v -> [k :| snd v]) associationMap
 
-    nukeParser = (\x -> try (fastaStreamConverter Fasta.DNA x) <|> fastaStreamConverter Fasta.RNA x) =<< fastaStreamParser
+--      parserMap :: Map String (FilePath -> s -> Either FracturedParseResult (ParseError Char Void))
+        parserMap = fst <$> associationMap
+
+        associationMap = M.fromList
+            [ ("fas", (makeParser         nukeParser, ["fast","fasta"]))
+            , ("tre", (makeParser newickStreamParser, ["tree","new","newick"]))
+            , ("ver", (makeParser    verStreamParser, []))
+            , ("tnt", (makeParser    tntStreamParser, ["hen","hennig"]))
+            , ("nex", (makeParser  nexusStreamParser, ["nexus"]))
+            ]
+
+        makeParser
+          :: ( ParsedMetadata a
+             , ParsedCharacters a
+             , ParsedForest a
+             , Token s ~ Char
+             )
+          => Parsec Void s a
+          -> FilePath
+          -> s
+          -> Either FracturedParseResult (ParseError (Token s) Void)
+        makeParser parser path = eSwap . fmap (toFractured Nothing path) . parse' parser path
+          where
+            eSwap (Left  x) = Right x
+            eSwap (Right x) = Left  x
+
+        nukeParser = (\x -> try (fastaStreamConverter Fasta.DNA x) <|> fastaStreamConverter Fasta.RNA x) =<< fastaStreamParser
 
 
 toFractured
