@@ -10,6 +10,7 @@ import           Data.Char                   (isSpace)
 import           Data.Foldable
 import           Data.List.NonEmpty          (NonEmpty (..))
 import qualified PCG.Command.Build.Evaluate  as Build
+import qualified PCG.Command.Echo.Evaluate   as Echo
 import qualified PCG.Command.Load.Evaluate   as Load
 import qualified PCG.Command.Read.Evaluate   as Read
 import qualified PCG.Command.Report.Evaluate as Report
@@ -37,10 +38,11 @@ evaluate (Computation xs) = foldl' f mempty xs
     f :: SearchState -> Command -> SearchState
     f v c = case c of
               BUILD  x -> v >>= Build.evaluate  x
+              ECHO   x -> v >>= Echo.evaluate   x
+              LOAD   x -> v >>= Load.evaluate   x
               READ   x -> v *>  Read.evaluate   x
               REPORT x -> v >>= Report.evaluate x
               SAVE   x -> v >>= Save.evaluate   x
-              LOAD   x -> v >>= Load.evaluate   x
 
 
 renderSearchState :: Evaluation a -> (ExitCode, String)

@@ -332,6 +332,7 @@ executable pcg
 
   other-modules:    Paths_phylocomgraph
                     PCG.Command.Build.Evaluate
+                    PCG.Command.Echo.Evaluate
                     PCG.Command.Load.Evaluate
                     PCG.Command.Read.DecorationInitialization
                     PCG.Command.Read.Evaluate
