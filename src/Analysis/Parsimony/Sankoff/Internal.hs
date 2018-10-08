@@ -215,8 +215,7 @@ updateCostVector meta _parentDecoration (leftChildDec:|rightChildDec:_) = return
 --
 -- Used on second, pre-order, pass.
 updateDirectionalMins
-  :: EncodableStaticCharacter c -- TODO: I made this more restrictive to resolve the 'Cannot deduce
-                                -- EncodableStaticCharacter c from Bits c'
+  :: EncodableStaticCharacter c
   => SankoffOptimizationDecoration c
   -> SankoffOptimizationDecoration c
   -> [StateContributionList]

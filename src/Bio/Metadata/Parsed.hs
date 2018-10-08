@@ -247,9 +247,9 @@ addOtherCases (x:xs)
 developAlphabets :: TaxonCharacters -> Vector (Alphabet String)
 developAlphabets = V.fromList' . fmap (fromSymbols . foldMap f) . transpose . fmap toList . toList
   where
-    f (ParsedContinuousCharacter     _) = mempty
-    f (ParsedDiscreteCharacter  static) = foldMap toList static
-    f (ParsedDynamicCharacter  dynamic) = foldMap (foldMap toList) dynamic
+    f (ParsedContinuousCharacter     _)      = mempty
+    f (ParsedDiscreteCharacter  static)      = foldMap toList static
+    f (ParsedDynamicCharacteracter  dynamic) = foldMap (foldMap toList) dynamic
 
 
 -- Alphabet values.

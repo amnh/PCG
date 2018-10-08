@@ -131,9 +131,6 @@ matrix m n f = Stupid.matrix m n (f . (pred *** pred))
 -------------------------------------------------------
 ---- ACCESSING
 
--- TODO: Think removing the nice error handling to improve efficiency.
---       Added for better debugging purposes.
-
 
 -- |
 -- /O(1)/.

@@ -302,6 +302,7 @@ executable pcg
                     , data-default
                     , deepseq
                     , directory
+                    , filepath
                     , gitrev
                     , Glob
                     -- >=2999.20 Required for forgivig constructio of DOT object

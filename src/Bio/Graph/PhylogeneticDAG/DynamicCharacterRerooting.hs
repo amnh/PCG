@@ -14,7 +14,7 @@
 {-# LANGUAGE MonoLocalBinds   #-}
 
 module Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
-  ( assignOptimalDynamicCharacterRootEdges
+  ( assignOptimalDynamicCharacteracterRootEdges
   ) where
 
 import           Bio.Character.Decoration.Additive
@@ -63,7 +63,7 @@ import           Prelude                            hiding (lookup, zipWith)
 -- resolutions that contain the incident network edge contained on the current
 -- network edge.
 
-assignOptimalDynamicCharacterRootEdges
+assignOptimalDynamicCharacteracterRootEdges
   :: ( HasBlockCost u v w x y z
      , Show n
      , Show u
@@ -73,15 +73,15 @@ assignOptimalDynamicCharacterRootEdges
      , Show y
      , Show z
      )
-  => (DynamicCharacterMetadataDec (Element DynamicChar) -> z -> [z] -> z)  -- ^ Post-order traversal function for Dynamic Characters.
+  => (DynamicCharacteracterMetadataDec (Element DynamicCharacter) -> z -> [z] -> z)  -- ^ Post-order traversal function for Dynamic Characters.
   -> PhylogeneticDAG2 m e n u v w x y z
   -> ( PhylogeneticDAG2 m e n u v w x y z
      ,         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
      , Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
      )
---assignOptimalDynamicCharacterRootEdges extensionTransformation x | trace (L.unpack . renderDot $ toDot x) False = undefined
---assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 x) | trace (referenceRendering x) False = undefined
-assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 inputDag meta) =
+--assignOptimalDynamicCharacteracterRootEdges extensionTransformation x | trace (L.unpack . renderDot $ toDot x) False = undefined
+--assignOptimalDynamicCharacteracterRootEdges extensionTransformation (PDAG2 x) | trace (referenceRendering x) False = undefined
+assignOptimalDynamicCharacteracterRootEdges extensionTransformation pdag@(PDAG2 inputDag meta) =
     case toList inputDag of
       -- Degenarate cases
       []      ->     (pdag, mempty, mempty)
@@ -395,10 +395,10 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
           -> NonEmpty (Double, Vector (Word, NonEmpty TraversalFocusEdge))
         deriveMinimalSequenceForDisplayTree = fmap recomputeCost . foldr1 (zipWith minimizeBlock) . fmap createZippableContext
           where
-            minimizeBlock (static, dynCharVect1) (_, dynCharVect2) = (static, minimizedDynamicCharVector)
+            minimizeBlock (static, dynCharVect1) (_, dynCharVect2) = (static, minimizedDynamicCharacterVector)
               where
-                minimizedDynamicCharVector = zipWith minimizeDynamicCharRooting dynCharVect1 dynCharVect2
-                minimizeDynamicCharRooting lhs@(c1, w, es1) rhs@(c2, _, es2) =
+                minimizedDynamicCharacterVector = zipWith minimizeDynamicCharacterRooting dynCharVect1 dynCharVect2
+                minimizeDynamicCharacterRooting lhs@(c1, w, es1) rhs@(c2, _, es2) =
                     case c1 `compare` c2 of
                       LT -> lhs
                       GT -> rhs
@@ -561,19 +561,19 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
             -- block, we construct a 'MinimalTopologyContext' value and *will*
             -- use the 'Semigroup' operator '(<>)' to accumulate the minimal
             -- context for all the spanning trees in the 'foldMap1' call above.
-            deriveMinimalSpanningTreeContext blockDynamicCharacters spanningTree = toMinimalTopologyContext minimalBlockCost spanningTree minimalRootsPerCharacter
+            deriveMinimalSpanningTreeContext blockDynamicCharacteracters spanningTree = toMinimalTopologyContext minimalBlockCost spanningTree minimalRootsPerCharacter
               where
                 minimalBlockCost               = sum $ fst <$> minimalCostAndRootPerCharacter
                 minimalRootsPerCharacter       = V.fromList' . toList $ snd <$> minimalCostAndRootPerCharacter
-                minimalCostAndRootPerCharacter = mapWithKey getMinimalCharacterRootInSpanningTree blockDynamicCharacters
+                minimalCostAndRootPerCharacter = mapWithKey getMinimalCharacterRootInSpanningTree blockDynamicCharacteracters
 
 
                 -- Determine the minimal rooting edge for the given dynamic
                 -- character in the spanning tree by first constructing a
-                -- 'MinimalDynamicCharacterRootContext' for each applicable edge
+                -- 'MinimalDynamicCharacteracterRootContext' for each applicable edge
                 -- in the spanning tree and then minimizing the root edge
                 -- contexts using the 'Semigroup' instance of the
-                -- 'MinimalDynamicCharacterRootContext' values in the 'fold1'
+                -- 'MinimalDynamicCharacteracterRootContext' values in the 'fold1'
                 -- call below.
                 --
                 -- We explicitly hande the "impossible" case that there was no
@@ -582,7 +582,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                 -- good to give an explict error message just in case.
                 getMinimalCharacterRootInSpanningTree characterIndex characterDecoration =
                     case foldMapWithKey getEdgeCostInSpanningTree edgeCostMapping of
-                      x:xs -> let r@(charCost, _) = fromMinimalDynamicCharacterRootContext . fold1 $ x:|xs
+                      x:xs -> let r@(charCost, _) = fromMinimalDynamicCharacteracterRootContext . fold1 $ x:|xs
                               in  (charWeight * fromIntegral charCost, r)
                       []   -> error $ unwords
                                   [ "A very peculiar impossiblity occurred!"
@@ -594,16 +594,16 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
 
                   where
                     charWeight = characterDecoration ^. characterWeight
-                    getDynamicCharaterDecoration = (! characterIndex) . dynamicCharacters . (! blockIndex) . toBlocks . characterSequence
+                    getDynamicCharacteraterDecoration = (! characterIndex) . dynamicCharacters . (! blockIndex) . toBlocks . characterSequence
 
-                    -- Possible construct a 'MinimalDynamicCharacterRootContext'
+                    -- Possible construct a 'MinimalDynamicCharacteracterRootContext'
                     -- value for a given edge.
                     getEdgeCostInSpanningTree rootingEdge cache =
                       case NE.filter (\x -> spanningTree == topologyRepresentation x) cache of
                         []  -> []
-                        x:_ -> [ toMinimalDynamicCharacterRootContext (getDynamicCharacterCost x) rootingEdge ]
+                        x:_ -> [ toMinimalDynamicCharacteracterRootContext (getDynamicCharacteracterCost x) rootingEdge ]
                       where
-                        getDynamicCharacterCost = (^. characterCost) . getDynamicCharaterDecoration
+                        getDynamicCharacteracterCost = (^. characterCost) . getDynamicCharacteraterDecoration
 -}
 
 
@@ -645,7 +645,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
             -- Also expects a "data-block" with the old block data to be updated
             -- with information from the "context-block."
 --            g :: (Double, Vector (Word, NonEmpty TraversalFocusEdge)) -> CharacterBlock u v w x y z -> CharacterBlock u v w x y z
-            g (_, minBlockContexts) charBlock = charBlock & dynamicBin .~ modifiedDynamicChars
+            g (_, minBlockContexts) charBlock = charBlock & dynamicBin .~ modifiedDynamicCharacters
               where
 
                 -- We take the first of the minimal contexts and distribute the
@@ -660,7 +660,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                 vectorForZipping :: Vector Word
                 vectorForZipping = fst <$> minBlockContexts
 
-                modifiedDynamicChars = zipWith h vectorForZipping $ charBlock ^. dynamicBin
+                modifiedDynamicCharacters = zipWith h vectorForZipping $ charBlock ^. dynamicBin
 
                 h costVal originalDec =
                     originalDec

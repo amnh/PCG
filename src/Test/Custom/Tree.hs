@@ -116,19 +116,19 @@ newtype SimpleTree = TT (Tree TestingDecoration)
 
 data TestingDecoration
    = Decorations
-   { dEncoded          :: Vector DynamicChar
-   , dSingle           :: Vector DynamicChar
-   , dFinal            :: Vector DynamicChar
-   , dGapped           :: Vector DynamicChar
-   , dPreliminary      :: Vector DynamicChar
-   , dLeftAlignment    :: Vector DynamicChar
-   , dRightAlignment   :: Vector DynamicChar
-   , dAligned          :: Vector DynamicChar
-   , dTemporary        :: Vector DynamicChar
+   { dEncoded          :: Vector DynamicCharacter
+   , dSingle           :: Vector DynamicCharacter
+   , dFinal            :: Vector DynamicCharacter
+   , dGapped           :: Vector DynamicCharacter
+   , dPreliminary      :: Vector DynamicCharacter
+   , dLeftAlignment    :: Vector DynamicCharacter
+   , dRightAlignment   :: Vector DynamicCharacter
+   , dAligned          :: Vector DynamicCharacter
+   , dTemporary        :: Vector DynamicCharacter
    , dLocalCost        :: Double
    , dTotalCost        :: Double
    , dIaHomology       :: IN.HomologyTrace
-   , dImpliedAlignment :: Vector DynamicChar
+   , dImpliedAlignment :: Vector DynamicCharacter
    , refEquality       :: Int
    , suppliedAlphabet  :: Maybe (Alphabet String)
    } deriving (Eq)
@@ -192,7 +192,7 @@ instance Show TestingDecoration where
             , g "Implied Alignment         " <$> f dImpliedAlignment
             ]
         alphabetToken = suppliedAlphabet decoration
-        f x = renderDynamicCharacter alphabetToken <$> headMay (x decoration)
+        f x = renderDynamicCharacteracter alphabetToken <$> headMay (x decoration)
         g prefix shown = prefix <> ": " <> shown --intercalate "\n" $ (prefix <> ": " <> y) : (("  " <>) <$> zs)
 --          where
 --            (x:y:zs) = lines shown :: [String]
@@ -219,8 +219,8 @@ draw (Node x xs) = lines x <> drawSubTrees xs
     shift first other = Prelude.zipWith (<>) (first : repeat other)
 
 
-renderDynamicCharacter :: Maybe (Alphabet String) -> DynamicChar -> String
-renderDynamicCharacter alphabetMay char
+renderDynamicCharacteracter :: Maybe (Alphabet String) -> DynamicCharacter -> String
+renderDynamicCharacteracter alphabetMay char
   | onull char = ""
   | otherwise  = concatMap (f . toList) $ decodeStream alphabet char
   where
@@ -273,7 +273,7 @@ instance MonoFoldable SimpleTree where
     ofoldl1Ex' f = foldl1 f . treeFold
 
 
-instance EN.EncodedNode SimpleTree DynamicChar where
+instance EN.EncodedNode SimpleTree DynamicCharacter where
 
     getEncoded     (TT n)   = dEncoded $ rootLabel n
 
@@ -282,7 +282,7 @@ instance EN.EncodedNode SimpleTree DynamicChar where
         decoration = rootLabel n
 
 
-instance FN.FinalNode SimpleTree DynamicChar where
+instance FN.FinalNode SimpleTree DynamicCharacter where
 
     getFinal       (TT n) = dFinal   $ rootLabel n
 
@@ -303,7 +303,7 @@ instance FN.FinalNode SimpleTree DynamicChar where
         decoration = rootLabel n
 
 
-instance RN.PreliminaryNode SimpleTree DynamicChar where
+instance RN.PreliminaryNode SimpleTree DynamicCharacter where
 
     getPreliminaryUngapped   (TT n) = dPreliminary $ rootLabel n
 
@@ -351,7 +351,7 @@ instance IN.IANode SimpleTree where
         decoration = rootLabel n
 
 
-instance IN.IANode' SimpleTree DynamicChar where
+instance IN.IANode' SimpleTree DynamicCharacter where
 
     getHomologies'    (TT n)   = dImpliedAlignment $ rootLabel n
 
@@ -478,7 +478,7 @@ simpleTreeCharacterDecorationEqualityAssertion :: Foldable t
                => Int                                -- ^ Root node reference
                -> String                             -- ^ Alphabet symbols
                -> (SimpleTree -> SimpleTree)         -- ^ Topology invariant tree transformation.
-               -> (SimpleTree -> Vector DynamicChar) -- ^ Node accessing function
+               -> (SimpleTree -> Vector DynamicCharacter) -- ^ Node accessing function
                -> t (Int, String, [String], [Int])   -- ^ (Node Reference, sequence of dynamic characters, expected values, child nodes)
                -> Assertion
 simpleTreeCharacterDecorationEqualityAssertion rootRef symbols transformation accessor spec =
@@ -518,7 +518,7 @@ simpleTreeCharacterDecorationEqualityAssertion rootRef symbols transformation ac
                               , "Actual value  : " <> seqShow actual
                               ]
               where
-                seqShow = indentLine . maybe "Empty sequence" (renderDynamicCharacter nodeAlphabet) . headMay
+                seqShow = indentLine . maybe "Empty sequence" (renderDynamicCharacteracter nodeAlphabet) . headMay
 
     indentLine  = ("  " <>)
     indentBlock = unlines . fmap indentLine . lines

@@ -67,7 +67,7 @@ generateOutput g' format =
 
 --generateOutput :: StandardSolution -> OutputFormat -> FileStreamContext
 --generateOutput g (CrossReferences fileNames)   = SingleStream $ taxonReferenceOutput g fileNames
---generateOutput (Right g) DynamicTable               {} = SingleStream $ outputDynamicCharacterTablularData g
+--generateOutput (Right g) DynamicTable               {} = SingleStream $ outputDynamicCharacteracterTablularData g
 --generateOutput g Metadata                   {} = SingleStream $ metadataCsvOutput g
 {-
 generateOutput g ImpliedAlignmentCharacters {} =

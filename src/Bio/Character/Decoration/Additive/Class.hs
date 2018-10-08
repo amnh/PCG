@@ -10,13 +10,11 @@
 --
 -----------------------------------------------------------------------------
 
--- TODO: remove UndecidableInstances
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE TypeFamilies           #-}
-{-# LANGUAGE UndecidableInstances   #-}
 
 module Bio.Character.Decoration.Additive.Class where
 

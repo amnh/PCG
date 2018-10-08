@@ -20,8 +20,8 @@
 
 module Bio.Metadata.Dynamic.Internal
   ( DenseTransitionCostMatrix
-  , DynamicCharacterMetadataDec()
-  , DynamicCharacterMetadata(..)
+  , DynamicCharacteracterMetadataDec()
+  , DynamicCharacteracterMetadata(..)
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)
@@ -79,8 +79,8 @@ type TraversalFoci      = NonEmpty TraversalFocus
 -- |
 -- Represents a concrete type containing metadata fields shared across all
 -- discrete different bins. Continous bins do not have Alphabets.
-data DynamicCharacterMetadataDec c
-   = DynamicCharacterMetadataDec
+data DynamicCharacteracterMetadataDec c
+   = DynamicCharacteracterMetadataDec
    { dataDenseTransitionCostMatrix :: !(Maybe DenseTransitionCostMatrix)
    , optimalTraversalFoci          :: !(Maybe TraversalFoci)
    , metadata                      :: {-# UNPACK #-} !(DiscreteWithTCMCharacterMetadataDec c)
@@ -94,17 +94,17 @@ class ( DiscreteWithTcmCharacterMetadata s c
       , HasDenseTransitionCostMatrix     s (Maybe DenseTransitionCostMatrix)
 --      , HasSparseTransitionCostMatrix    s  MemoizedCostMatrix
       , HasTraversalFoci                 s (Maybe TraversalFoci)
-      ) => DynamicCharacterMetadata s c | s -> c where
+      ) => DynamicCharacteracterMetadata s c | s -> c where
 
-    extractDynamicCharacterMetadata :: s -> DynamicCharacterMetadataDec c
+    extractDynamicCharacteracterMetadata :: s -> DynamicCharacteracterMetadataDec c
 
 
-instance Eq (DynamicCharacterMetadataDec c) where
+instance Eq (DynamicCharacteracterMetadataDec c) where
 
     lhs == rhs = metadata lhs == metadata rhs && optimalTraversalFoci lhs == optimalTraversalFoci rhs
 
 
-instance Show (DynamicCharacterMetadataDec c) where
+instance Show (DynamicCharacteracterMetadataDec c) where
 
     show e = intercalate "\n"
         [ "DiscreteCharacterMetadata"
@@ -120,7 +120,7 @@ instance Show (DynamicCharacterMetadataDec c) where
 
 
 -- | (✔)
-instance DiscreteCharacterMetadata (DynamicCharacterMetadataDec c) where
+instance DiscreteCharacterMetadata (DynamicCharacteracterMetadataDec c) where
 
     {-# INLINE extractDiscreteCharacterMetadata #-}
     extractDiscreteCharacterMetadata = extractDiscreteCharacterMetadata . metadata
@@ -128,54 +128,54 @@ instance DiscreteCharacterMetadata (DynamicCharacterMetadataDec c) where
 
 -- | (✔)
 instance (Bits c, Bound c ~ Word, EncodableStreamElement c, Exportable c, Ranged c)
-    => DiscreteWithTcmCharacterMetadata (DynamicCharacterMetadataDec c) c where
+    => DiscreteWithTcmCharacterMetadata (DynamicCharacteracterMetadataDec c) c where
 
 
 -- | (✔)
 instance (Bits c, Bound c ~ Word, EncodableStreamElement c, Exportable c, Ranged c)
-    => DynamicCharacterMetadata (DynamicCharacterMetadataDec c) c where
+    => DynamicCharacteracterMetadata (DynamicCharacteracterMetadataDec c) c where
 
-    {-# INLINE extractDynamicCharacterMetadata #-}
-    extractDynamicCharacterMetadata = id
+    {-# INLINE extractDynamicCharacteracterMetadata #-}
+    extractDynamicCharacteracterMetadata = id
 
 
 -- | (✔)
-instance GeneralCharacterMetadata (DynamicCharacterMetadataDec c) where
+instance GeneralCharacterMetadata (DynamicCharacteracterMetadataDec c) where
 
     {-# INLINE extractGeneralCharacterMetadata #-}
     extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . metadata
 
 
 -- | (✔)
-instance HasCharacterAlphabet (DynamicCharacterMetadataDec c) (Alphabet String) where
+instance HasCharacterAlphabet (DynamicCharacteracterMetadataDec c) (Alphabet String) where
 
     characterAlphabet = lens (\e -> metadata e ^. characterAlphabet)
                       $ \e x -> e { metadata = metadata e & characterAlphabet .~ x }
 
 
 -- | (✔)
-instance HasCharacterName (DynamicCharacterMetadataDec c) CharacterName where
+instance HasCharacterName (DynamicCharacteracterMetadataDec c) CharacterName where
 
     characterName = lens (\e -> metadata e ^. characterName)
                   $ \e x -> e { metadata = metadata e & characterName .~ x }
 
 
 -- | (✔)
-instance HasCharacterWeight (DynamicCharacterMetadataDec c) Double where
+instance HasCharacterWeight (DynamicCharacteracterMetadataDec c) Double where
 
     characterWeight = lens (\e -> metadata e ^. characterWeight)
                     $ \e x -> e { metadata = metadata e & characterWeight .~ x }
 
 
 -- | (✔)
-instance HasDenseTransitionCostMatrix (DynamicCharacterMetadataDec c) (Maybe DenseTransitionCostMatrix) where
+instance HasDenseTransitionCostMatrix (DynamicCharacteracterMetadataDec c) (Maybe DenseTransitionCostMatrix) where
 
     denseTransitionCostMatrix = lens dataDenseTransitionCostMatrix $ \e x -> e { dataDenseTransitionCostMatrix = x }
 
 
 {-
 -- | (✔)
-instance HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec c) MemoizedCostMatrix where
+instance HasSparseTransitionCostMatrix (DynamicCharacteracterMetadataDec c) MemoizedCostMatrix where
 
     sparseTransitionCostMatrix = lens (\e -> metadata e ^. sparseTransitionCostMatrix)
                                $ \e x -> e { metadata = metadata e & sparseTransitionCostMatrix .~ x }
@@ -183,7 +183,7 @@ instance HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec c) MemoizedC
 
 
 -- | (✔)
-instance HasSymbolChangeMatrix (DynamicCharacterMetadataDec c) (Word -> Word -> Word) where
+instance HasSymbolChangeMatrix (DynamicCharacteracterMetadataDec c) (Word -> Word -> Word) where
 
     symbolChangeMatrix = lens (\e -> metadata e ^. symbolChangeMatrix)
                        $ \e x -> e { metadata = metadata e & symbolChangeMatrix .~ x }
@@ -191,19 +191,19 @@ instance HasSymbolChangeMatrix (DynamicCharacterMetadataDec c) (Word -> Word -> 
 
 -- | (✔)
 instance (Bits c, Bound c ~ Word, Exportable c, Ranged c)
-    => HasTransitionCostMatrix (DynamicCharacterMetadataDec c) (c -> c -> (c, Word)) where
+    => HasTransitionCostMatrix (DynamicCharacteracterMetadataDec c) (c -> c -> (c, Word)) where
 
     transitionCostMatrix = lens (\e -> metadata e ^. transitionCostMatrix)
                          $ \e x -> e { metadata = metadata e & transitionCostMatrix .~ x }
 
 
 -- | (✔)
-instance HasTraversalFoci (DynamicCharacterMetadataDec c) (Maybe TraversalFoci) where
+instance HasTraversalFoci (DynamicCharacteracterMetadataDec c) (Maybe TraversalFoci) where
 
     traversalFoci = lens optimalTraversalFoci $ \e x -> e { optimalTraversalFoci = x }
 
 
-instance ToXML (DynamicCharacterMetadataDec c) where
+instance ToXML (DynamicCharacteracterMetadataDec c) where
 
     toXML input = xmlElement "Dynamic_Metadata" attrs contents
       where
@@ -214,10 +214,10 @@ instance ToXML (DynamicCharacterMetadataDec c) where
 
 
 -- |
--- Construct a concrete typed 'DynamicCharacterMetadataDec' value from the supplied inputs.
-dynamicMetadata :: CharacterName -> Double -> Alphabet String -> (Word -> Word -> Word) -> Maybe DenseTransitionCostMatrix -> DynamicCharacterMetadataDec c
+-- Construct a concrete typed 'DynamicCharacteracterMetadataDec' value from the supplied inputs.
+dynamicMetadata :: CharacterName -> Double -> Alphabet String -> (Word -> Word -> Word) -> Maybe DenseTransitionCostMatrix -> DynamicCharacteracterMetadataDec c
 dynamicMetadata name weight alpha scm denseMay =
-    force DynamicCharacterMetadataDec
+    force DynamicCharacteracterMetadataDec
     { dataDenseTransitionCostMatrix = denseMay
     , optimalTraversalFoci          = Nothing
     , metadata                      = discreteMetadataWithTCM name weight alpha scm
@@ -225,10 +225,10 @@ dynamicMetadata name weight alpha scm denseMay =
 
 
 -- |
--- Construct a concrete typed 'DynamicCharacterMetadataDec' value from the supplied inputs.
-dynamicMetadataFromTCM :: CharacterName -> Double -> Alphabet String -> TCM -> DynamicCharacterMetadataDec c
+-- Construct a concrete typed 'DynamicCharacteracterMetadataDec' value from the supplied inputs.
+dynamicMetadataFromTCM :: CharacterName -> Double -> Alphabet String -> TCM -> DynamicCharacteracterMetadataDec c
 dynamicMetadataFromTCM name weight alpha tcm =
-    force DynamicCharacterMetadataDec
+    force DynamicCharacteracterMetadataDec
     { dataDenseTransitionCostMatrix = denseTCM
     , optimalTraversalFoci          = Nothing
     , metadata                      = discreteMetadataWithTCM name (coefficient * weight) alpha sigma
@@ -242,10 +242,10 @@ dynamicMetadataFromTCM name weight alpha tcm =
 
 
 -- |
--- Construct a concrete typed 'DynamicCharacterMetadataDec' value from the supplied inputs.
-dynamicMetadataWithTCM :: CharacterName -> Double -> Alphabet String -> (Word -> Word -> Word) -> DynamicCharacterMetadataDec c
+-- Construct a concrete typed 'DynamicCharacteracterMetadataDec' value from the supplied inputs.
+dynamicMetadataWithTCM :: CharacterName -> Double -> Alphabet String -> (Word -> Word -> Word) -> DynamicCharacteracterMetadataDec c
 dynamicMetadataWithTCM name weight alpha scm =
-    force DynamicCharacterMetadataDec
+    force DynamicCharacteracterMetadataDec
     { dataDenseTransitionCostMatrix = denseTCM
     , optimalTraversalFoci          = Nothing
     , metadata                      = discreteMetadataWithTCM name weight alpha scm

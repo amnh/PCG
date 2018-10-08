@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  PCG.Command.Report.DynamicCharacterTable
+-- Module      :  PCG.Command.Report.DynamicCharacteracterTable
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -12,7 +12,7 @@
 
 {-# LANGUAGE FlexibleContexts #-}
 
-module PCG.Command.Report.DynamicCharacterTable () where
+module PCG.Command.Report.DynamicCharacteracterTable () where
 
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
@@ -31,12 +31,12 @@ import           Data.Monoid                      ((<>))
 -- |
 -- Outputs tabluar data of the first dynamic character of the first network in
 -- the first forest of the solution.
-outputDynamicCharacterTablularData
+outputDynamicCharacteracterTablularData
 --  :: DirectOptimizationDecoration z a
   :: DirectOptimizationPostOrderDecoration z a
   => PhylogeneticSolution (PhylogeneticDAG e n u v w x y z)
   -> String
-outputDynamicCharacterTablularData = generateTabularData . head . toList . NE.head . phylogeneticForests
+outputDynamicCharacteracterTablularData = generateTabularData . head . toList . NE.head . phylogeneticForests
 
 
 generateTabularData

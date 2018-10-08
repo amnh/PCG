@@ -14,7 +14,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies     #-}
 
--- TODO: Document and restrict Internal exports!
 module File.Format.TNT
   ( CharacterMetaData(..)
   , LeafyTree(..)

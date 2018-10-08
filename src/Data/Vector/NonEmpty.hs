@@ -203,6 +203,10 @@ uncons (NEV v) = (first, stream)
     len   = length v
 
 
+-- |
+-- /O(n)/
+--
+-- Construct a vector of the given length by applying the function to each index
 generate :: Int -> (Int -> a) -> Vector a
 generate n f
   | n < 1     = error $ "Called Vector.Nonempty.generate on a non-positive dimension " <> show n

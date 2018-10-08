@@ -120,7 +120,7 @@ performDecoration
      , DiscreteCharacterDecoration y StaticCharacter
      , RangedCharacterDecoration u ContinuousChar
      , RangedCharacterDecoration w StaticCharacter
-     , SimpleDynamicDecoration z DynamicChar
+     , SimpleDynamicDecoration z DynamicCharacter
      )
   => PhylogeneticDAG2 m EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
   -> FinalDecorationDAG
@@ -169,7 +169,7 @@ performDecoration x = finalizeEdgeData $ performPreOrderDecoration performPostOr
 
     (minBlockConext, postOrderResult) = assignPunitiveNetworkEdgeCost post
     (post, edgeCostMapping, contextualNodeDatum) =
-         assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostOrder
+         assignOptimalDynamicCharacteracterRootEdges adaptiveDirectOptimizationPostOrder
          . postorderSequence'
              (const (g additivePostOrder))
              (const (g    fitchPostOrder))

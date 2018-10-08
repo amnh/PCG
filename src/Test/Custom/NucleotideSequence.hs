@@ -36,7 +36,7 @@ import           Test.SmallCheck.Series
 -- |
 -- Represents an arbitrary, non-empty sequence of nucleotide bases that may be
 -- ambiguous and/or include gaps.
-newtype NucleotideSequence = NS DynamicChar
+newtype NucleotideSequence = NS DynamicCharacter
 
 
 instance Show NucleotideSequence where

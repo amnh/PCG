@@ -24,12 +24,6 @@ module File.Format.TNT.Command.XRead
   , xreadHeader
   ) where
 
-{-- TODO:
-  - Robust tests
-  - Good documentation
-  - Organize this jumbled monolith
-  -}
-
 
 import           Data.Bifunctor           (second)
 import           Data.Bits

@@ -37,9 +37,6 @@ import GHC.Generics
 import Text.XML
 
 
--- TODO: Make a polymorpic pre-order constructor.
-
-
 -- |
 -- An abstract direct optimization dynamic character decoration with a
 -- polymorphic character type.
@@ -140,10 +137,10 @@ instance EncodableDynamicCharacter d => DirectOptimizationPostOrderDecoration (D
 
 
 -- | (✔)
-instance (EncodableDynamicCharacter d) => DynamicCharacterDecoration (DynamicDecorationInitial d) d where
+instance (EncodableDynamicCharacter d) => DynamicCharacteracterDecoration (DynamicDecorationInitial d) d where
 
---    toDynamicCharacterDecoration :: CharacterName -> Double -> Alphabet String -> TCM -> (x -> a) -> x -> s
-    toDynamicCharacterDecoration g symbolSet =
+--    toDynamicCharacteracterDecoration :: CharacterName -> Double -> Alphabet String -> TCM -> (x -> a) -> x -> s
+    toDynamicCharacteracterDecoration g symbolSet =
         DynamicDecorationInitial
         { dynamicDecorationInitialEncodedField           = charValue
         , dynamicDecorationInitialCharacterAverageLength = toAverageLength . toEnum $ olength charValue

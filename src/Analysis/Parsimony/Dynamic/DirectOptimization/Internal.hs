@@ -29,7 +29,6 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Internal
 
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (overlap)
---import           Analysis.Parsimony.Dynamic.SequentialAlign
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
 import           Bio.Character.Exportable
@@ -41,6 +40,7 @@ import           Data.IntMap                                                    
 import qualified Data.IntMap                                                     as IM
 import           Data.Key
 import           Data.List.NonEmpty                                              (NonEmpty ((:|)))
+import qualified Data.List.NonEmpty                                              as NE
 import           Data.List.Utility                                               (invariantTransformation)
 import           Data.MonoTraversable
 import           Data.Semigroup
@@ -156,7 +156,7 @@ updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) = resultDecoration
 directOptimizationPreOrder
   :: DirectOptimizationPostOrderDecoration d c
   => PairwiseAlignment c
-  -> DynamicCharacterMetadataDec (Element c)
+  -> DynamicCharacteracterMetadataDec (Element c)
   -> d
   -> [(Word, DynamicDecorationDirectOptimization c)]
   ->  DynamicDecorationDirectOptimization c
@@ -204,7 +204,7 @@ disambiguateElement x = zed `setBit` idx
 updateFromParent
   :: DirectOptimizationPostOrderDecoration d c
   => PairwiseAlignment c
-  -> DynamicCharacterMetadataDec (Element c)
+  -> DynamicCharacteracterMetadataDec (Element c)
   -> d
   -> DynamicDecorationDirectOptimization c
   -> DynamicDecorationDirectOptimization c
@@ -238,7 +238,7 @@ updateFromParent pairwiseAlignment meta currentDecoration parentDecoration = res
 tripleComparison
   :: DirectOptimizationPostOrderDecoration d c
   => PairwiseAlignment c
-  -> DynamicCharacterMetadataDec (Element c)
+  -> DynamicCharacteracterMetadataDec (Element c)
   -> d
   -> c
   -> c
@@ -397,15 +397,17 @@ newGapLocations unaligned aligned
 -- Given a list of gap locations and a character, returns a longer character with
 -- the supplied gaps inserted at the corresponding locations.
 insertNewGaps :: EncodableDynamicCharacter c => IntMap Int -> c -> c
-insertNewGaps insertionIndicies character = constructDynamic . (<> trailingGaps) . foldMapWithKey f $ otoList character
+insertNewGaps insertionIndicies character = constructDynamic . appendGaps . foldMapWithKey1 f . NE.fromList $ otoList character
   where
     len = olength character
     gap = getGapElement $ character `indexStream` 0
+    appendGaps (x:|xs) = x:|(xs<>trailingGaps)
     trailingGaps = maybe [] (`replicate` gap) $ len `lookup` insertionIndicies
+--    f :: Int -> a -> NonEmpty a
     f i e =
       case i `lookup` insertionIndicies of
-        Nothing -> [e]
-        Just n  -> replicate n gap <> [e]
+        Nothing -> pure e
+        Just n  -> NE.fromList (replicate n gap) <> pure e
 
 
 -- |
@@ -422,7 +424,9 @@ threeWayMean sigma char1 char2 char3 =
   case invariantTransformation olength [char1, char2, char3] of
     Nothing -> error $ unwords [ "Three sequences supplied to 'threeWayMean' function did not have uniform length.", show (olength char1), show (olength char2), show (olength char3) ]
     Just 0  -> (0, char1, char1)
-    Just _  -> (unsafeToFinite $ sum costValues, constructDynamic $ filter (/= gap) meanStates, constructDynamic meanStates)
+    Just _  -> ( unsafeToFinite   $ sum costValues
+               , constructDynamic . NE.fromList $ filter (/= gap) meanStates
+               , constructDynamic $ NE.fromList meanStates)
   where
     gap = gapOfStream char1
     (meanStates, costValues) = unzip $ zipWith3 sigma (otoList char1) (otoList char2) (otoList char3)

@@ -25,7 +25,7 @@ module Bio.Character.Decoration.Dynamic.Class
   ( AverageLength()
   , DirectOptimizationDecoration
   , DirectOptimizationPostOrderDecoration
-  , DynamicCharacterDecoration(..)
+  , DynamicCharacteracterDecoration(..)
   , ImpliedAlignmentDecoration
   , PostOrderExtensionDirectOptimizationDecoration(..)
   , SimpleDynamicDecoration
@@ -86,7 +86,7 @@ class ( HasAverageLength           s AverageLength
 --
 -- Represents the result of just the post-order traversal.
 --
--- Is a sub-class of 'DynamicCharacterDecoration'.
+-- Is a sub-class of 'DynamicCharacteracterDecoration'.
 class ( HasCharacterCost        s Word
       , HasCharacterLocalCost   s Word
       , HasPreliminaryGapped    s a
@@ -120,10 +120,10 @@ class ( HasImpliedAlignment           s a
 -- A decoration of an initial encoding of a dynamic character which has the
 -- appropriate 'Lens' & character class constraints.
 class ( SimpleDynamicDecoration s a
-      ) => DynamicCharacterDecoration s a | s -> a where
+      ) => DynamicCharacteracterDecoration s a | s -> a where
 
-    toDynamicCharacterDecoration :: (x -> a) -> x -> s
-    {-# MINIMAL toDynamicCharacterDecoration #-}
+    toDynamicCharacteracterDecoration :: (x -> a) -> x -> s
+    {-# MINIMAL toDynamicCharacteracterDecoration #-}
 
 
 -- |

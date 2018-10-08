@@ -32,7 +32,7 @@ module Bio.Graph.Constructions
   , UnifiedCharacterSequence
   , UnifiedContinuousCharacter
   , UnifiedDiscreteCharacter
-  , UnifiedDynamicCharacter
+  , UnifiedDynamicCharacteracter
   , UnifiedMetadataBlock
   , UnifiedMetadataSequence
   , UnReifiedCharacterDAG
@@ -69,7 +69,7 @@ type CharacterDAG =
          UnifiedDiscreteCharacter
          UnifiedDiscreteCharacter
          UnifiedDiscreteCharacter
-         UnifiedDynamicCharacter
+         UnifiedDynamicCharacteracter
 
 
 -- |
@@ -126,7 +126,7 @@ type PreOrderDecorationDAG =
          (AdditiveOptimizationDecoration      StaticCharacter)
          (SankoffOptimizationDecoration       StaticCharacter)
          (SankoffOptimizationDecoration       StaticCharacter)
-         (DynamicDecorationDirectOptimization DynamicChar    )
+         (DynamicDecorationDirectOptimization DynamicCharacter    )
 
 
 type FinalEdgeDatum =
@@ -153,7 +153,7 @@ type PostOrderDecorationDAG m =
          (AdditivePostorderDecoration   StaticCharacter)
          (SankoffOptimizationDecoration StaticCharacter)
          (SankoffOptimizationDecoration StaticCharacter)
-         (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
+         (DynamicDecorationDirectOptimizationPostOrderResult DynamicCharacter)
 
 
 -- |
@@ -173,7 +173,7 @@ type  UnifiedCharacterBlock
         UnifiedDiscreteCharacter
         UnifiedDiscreteCharacter
         UnifiedDiscreteCharacter
-        UnifiedDynamicCharacter
+        UnifiedDynamicCharacteracter
 
 
 -- |
@@ -191,7 +191,7 @@ type  UnifiedSequences =
         UnifiedDiscreteCharacter
         UnifiedDiscreteCharacter
         UnifiedDiscreteCharacter
-        UnifiedDynamicCharacter
+        UnifiedDynamicCharacteracter
     )
 
 
@@ -204,7 +204,7 @@ type  UnifiedCharacterSequence
         UnifiedDiscreteCharacter
         UnifiedDiscreteCharacter
         UnifiedDiscreteCharacter
-        UnifiedDynamicCharacter
+        UnifiedDynamicCharacteracter
 
 
 -- |
@@ -232,7 +232,7 @@ type UnifiedDiscreteCharacter   = Maybe (DiscreteDecoration StaticCharacter)
 -- A dynamic character after being read in from a READ command.
 -- Contains no decorations. Expected to be @Nothing@-valued for internal nodes
 -- and @Just@-valued for leaf nodes.
-type UnifiedDynamicCharacter    = Maybe (DynamicDecorationInitial DynamicChar)
+type UnifiedDynamicCharacteracter    = Maybe (DynamicDecorationInitial DynamicCharacter)
 
 
 -- |
@@ -247,4 +247,4 @@ type UnReifiedCharacterDAG =
          UnifiedDiscreteCharacter
          UnifiedDiscreteCharacter
          UnifiedDiscreteCharacter
-         UnifiedDynamicCharacter
+         UnifiedDynamicCharacteracter
