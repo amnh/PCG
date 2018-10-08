@@ -140,7 +140,7 @@ type FinalEdgeDatum =
          (DynamicDecorationDirectOptimization DynamicChar    )
        )
 
-             
+
 -- |
 -- Decoration of a phylogenetic DAG after a post-order traversal.
 type PostOrderDecorationDAG m =

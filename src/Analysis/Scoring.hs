@@ -135,7 +135,7 @@ performDecoration x = finalizeEdgeData $ performPreOrderDecoration performPostOr
                          sankoffPostOrder
                          sankoffPostOrder
                          (const id2)
-    
+
     performPreOrderDecoration ::
       PostOrderDecorationDAG
       (TraversalTopology
