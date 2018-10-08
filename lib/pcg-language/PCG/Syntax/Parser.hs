@@ -35,11 +35,11 @@ import Text.Megaparsec
 -- All the commands of the PCG scripting language.
 data  Command
     = BUILD   {-# UNPACK #-} !BuildCommand
-    | ECHO    {-# UNPACK #-} !EchoCommand
-    | LOAD    {-# UNPACK #-} !LoadCommand
+    | ECHO                   !EchoCommand
+    | LOAD                   !LoadCommand
     | READ    {-# UNPACK #-} !ReadCommand
     | REPORT  {-# UNPACK #-} !ReportCommand
-    | SAVE    {-# UNPACK #-} !SaveCommand
+    | SAVE                   !SaveCommand
     deriving (Show)
 
 

@@ -17,11 +17,11 @@ module Data.Alphabet.IUPAC
   ) where
 
 
-import           Control.Arrow            ((***))
-import           Data.Alphabet.Internal   (AmbiguityGroup)
-import           Data.Bimap               (Bimap)
-import qualified Data.Bimap         as BM
-import qualified Data.List.NonEmpty as NE
+import           Control.Arrow          ((***))
+import           Data.Alphabet.Internal (AmbiguityGroup)
+import           Data.Bimap             (Bimap)
+import qualified Data.Bimap             as BM
+import qualified Data.List.NonEmpty     as NE
 
 
 -- |

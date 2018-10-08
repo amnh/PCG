@@ -31,7 +31,6 @@ import Bio.Character.Decoration.Dynamic
 import Bio.Metadata
 import Bio.Metadata.CharacterName
 import Data.Alphabet
-import Data.Alphabet.IUPAC
 import Data.MonoTraversable
 import Data.String
 import Test.Custom.NucleotideSequence

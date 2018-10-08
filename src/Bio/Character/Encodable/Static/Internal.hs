@@ -109,7 +109,7 @@ instance EncodableStream StaticCharacterBlock where
         rawResult    = NE.fromList . ofoldMap (pure . decodeElement alphabet) . otoList $ char
         dnaIUPAC     = convertBimap iupacToDna
         rnaIUPAC     = convertBimap iupacToRna
-        convertBimap = B.mapR (fmap fromString) . B.map (fmap fromString) 
+        convertBimap = B.mapR (fmap fromString) . B.map (fmap fromString)
 
     encodeStream alphabet = SCB . fromRows . fmap (unwrap . encodeElement alphabet) . toList
 

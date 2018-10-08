@@ -25,12 +25,12 @@ module Data.Alphabet.Special
 
 import           Data.Alphabet.Internal
 import           Data.Alphabet.IUPAC
-import           Data.Bimap                  (Bimap)
-import qualified Data.Bimap          as BM
-import           Data.Char                   (isUpper)
+import           Data.Bimap             (Bimap)
+import qualified Data.Bimap             as BM
+import           Data.Char              (isUpper)
 import           Data.Foldable
-import qualified Data.List.NonEmpty  as NE
-import qualified Data.Set            as Set
+import qualified Data.List.NonEmpty     as NE
+import qualified Data.Set               as Set
 import           Data.String
 
 

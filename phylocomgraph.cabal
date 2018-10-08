@@ -633,6 +633,7 @@ Test-Suite unit-tests
                     Data.Alphabet
                     Data.Alphabet.IUPAC
                     Data.Alphabet.Internal
+                    Data.Alphabet.Special
                     Data.Alphabet.Test
                     Data.Range
                     Data.TCM

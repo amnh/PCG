@@ -23,7 +23,6 @@ module Bio.Metadata.Parsed
 
 import           Bio.Character.Parsed
 import           Data.Alphabet
-import           Data.Char
 import           Data.Foldable
 import           Data.Key
 import           Data.List                        (transpose)

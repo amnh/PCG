@@ -43,7 +43,6 @@ import           Data.Proxy
 import           Data.Set                          (Set)
 import qualified Data.Set                          as S
 import           Data.String
-import           Data.Text                         (Text)
 import qualified Data.Text.Lazy                    as L
 import           Prelude                           hiding (lookup)
 import           Text.Megaparsec                   (MonadParsec, Token, chunkToTokens, takeWhileP)
@@ -68,7 +67,7 @@ dotStreamParser = relabelDotGraph <$> embededParser
     -- polymorphic MonadParsec type from Text.Megaparsec.
     --
     -- This is done so that *all* parsers share a parsing context.
-    embededParser :: (MonadParsec e s m, Token s ~ Char) => m (DotGraph GraphID)
+    embededParser :: m (DotGraph GraphID)
     embededParser = do
         toks <- chunkToTokens pxy <$> takeWhileP Nothing (const True) :: m String
         case fst . runParser parse $ fromString toks of
