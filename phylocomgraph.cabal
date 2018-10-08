@@ -278,6 +278,7 @@ library
                     Control.Evaluation.Internal
                     Control.Evaluation.Trans
                     Data.Alphabet.Internal
+                    Data.Alphabet.Special
                     Data.EdgeSet
                     Data.Range
                     Data.TCM.Internal

@@ -46,20 +46,20 @@ import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
 import           Prelude                          hiding (zipWith)
 
+
 {-
 data ParsedCharacter
    = ParsedContinuousCharacter  Double
    | ParsedDiscreteCharacter   (AmbiguityGroup String)
    | ParsedDynamicCharacteracter    (NonEmpty (AmbiguityGroup String))
 
+
 type ParsedChars = Vector (Maybe ParsedCharacter)
+
 
 type TaxonCharacters = Map String ParsedChars
 -}
 
-
--- TODO: Make sure that pipelines don't undo and redo the conversion to treeSeqs.
--- Currently we pack and unpack codes, make parsers dumber in the future. Read below!
 
 -- |
 -- Instances provide a method to extract 'Character' sequences from raw parsed results.
@@ -77,7 +77,7 @@ type TaxonCharacters = Map String ParsedChars
 -- time efficiency in the future.
 --
 -- I need to think about how this might interact with some things in Nexus, but it seems
--- to make sense. It might make verification in the parsers more difficult... thinking...
+-- to make sense. It might make verification in the parsers more difficult.
 class ParsedCharacters a where
 
     unifyCharacters :: a -> TaxonCharacters

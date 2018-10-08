@@ -11,24 +11,17 @@
 -----------------------------------------------------------------------------
 
 module Data.Alphabet.IUPAC
-  ( isAlphabetAminoAcid
-  , isAlphabetDna
-  , isAlphabetRna
-  , iupacToAminoAcid
+  ( iupacToAminoAcid
   , iupacToDna
   , iupacToRna
-  , module Data.Alphabet
   ) where
 
 
-import           Control.Arrow      ((***))
-import           Data.Alphabet
-import           Data.Bimap         (Bimap)
+import           Control.Arrow            ((***))
+import           Data.Alphabet.Internal   (AmbiguityGroup)
+import           Data.Bimap               (Bimap)
 import qualified Data.Bimap         as BM
-import           Data.Foldable
 import qualified Data.List.NonEmpty as NE
-import qualified Data.Set           as Set
-import           Data.String
 
 
 -- |
@@ -112,46 +105,6 @@ iupacToRna = BM.mapMonotonic setUpdate $ BM.mapMonotonicR setUpdate iupacToDna
         f x
           | x == "T"  = "U"
           | otherwise =  x
-
-
--- |
--- /O(n)/
---
--- Determines if the supplied alphabet represents amino acid symbols.
---
--- Useful for determining if an 'AmbiguityGroup' should be rendered as an IUPAC
--- code.
-isAlphabetAminoAcid :: (IsString s, Ord s) => Alphabet s -> Bool
-isAlphabetAminoAcid = (`isAlphabetSubsetOf` "ACDEFGHIKLMNPQRSTVWY-")
-
-
--- |
--- /O(n)/
---
--- Determines if the supplied alphabet represents DNA symbols.
---
--- Useful for determining if an 'AmbiguityGroup' should be rendered as an IUPAC
--- code.
-isAlphabetDna :: (IsString s, Ord s) => Alphabet s -> Bool
-isAlphabetDna = (`isAlphabetSubsetOf` "ACGT-")
-
-
--- |
--- /O(n)/
---
--- Determines if the supplied alphabet represents DNA symbols.
---
--- Useful for determining if an 'AmbiguityGroup' should be rendered as an IUPAC
--- code.
-isAlphabetRna :: (IsString s, Ord s) => Alphabet s -> Bool
-isAlphabetRna = (`isAlphabetSubsetOf` "ACGU-")
-
-
-isAlphabetSubsetOf :: (IsString s, Ord s) => Alphabet s -> String -> Bool
-isAlphabetSubsetOf alpha str = alphaSet `Set.isSubsetOf` strSet
-  where
-    alphaSet = Set.fromList $ toList alpha
-    strSet   = Set.fromList $ fromString . pure <$> str
 
 
 toBimap :: [(Char, String)] ->  Bimap (AmbiguityGroup String) (AmbiguityGroup String)

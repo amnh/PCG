@@ -57,8 +57,6 @@ import           System.FilePath.Glob
 import           Text.Megaparsec
 
 
-import Debug.Trace
-
 parse' :: Parsec Void s a -> String -> s -> Either (ParseError (Token s) Void) a
 parse' = parse
 
