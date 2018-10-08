@@ -237,7 +237,6 @@ instance PhylogeneticNetwork (ReferenceDAG d e n) NodeRef e n where
 
     root = toEnum . NE.head . rootRefs
 
-    -- TODO: Broken
     treeResolutions = pure
 
 
