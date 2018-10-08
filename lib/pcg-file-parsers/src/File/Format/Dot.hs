@@ -19,7 +19,7 @@ module File.Format.Dot
   ( DotGraph
   , GraphID(..)
   -- ** Parse a DOT file
-  , dotParse
+  , dotStreamParser
   -- ** Get useful representations from the DOT file
   , dotChildMap
   , dotParentMap
@@ -39,16 +39,42 @@ import           Data.GraphViz.Types.Canonical
 import           Data.Key
 import           Data.Map                          (Map, fromSet, insertWith)
 import           Data.Monoid
+import           Data.Proxy
 import           Data.Set                          (Set)
 import qualified Data.Set                          as S
+import           Data.String
 import           Data.Text                         (Text)
 import qualified Data.Text.Lazy                    as L
 import           Prelude                           hiding (lookup)
+import           Text.Megaparsec                   (MonadParsec, Token, chunkToTokens, takeWhileP)
+
 
 -- |
 -- Parses the 'Text' stream from a DOT file.
-dotParse :: Text -> Either String (DotGraph GraphID)
-dotParse = (relabelDotGraph <$>) . fst . runParser parse . L.fromStrict
+
+-- (MonadParsec e s m, Token s ~ Char) => m
+--dotParse :: Text -> Either String (DotGraph GraphID)
+dotStreamParser
+  :: forall e s (m :: * -> *).
+     ( MonadParsec e s m
+     , Token s ~ Char
+     )
+  => m (DotGraph GraphID)
+dotStreamParser = relabelDotGraph <$> embededParser
+  where
+    pxy = Proxy :: Proxy s
+
+    -- We embed the Text based parser from Data.GraphViz.Parsing inside a
+    -- polymorphic MonadParsec type from Text.Megaparsec.
+    --
+    -- This is done so that *all* parsers share a parsing context.
+    embededParser :: (MonadParsec e s m, Token s ~ Char) => m (DotGraph GraphID)
+    embededParser = do
+        toks <- chunkToTokens pxy <$> takeWhileP Nothing (const True) :: m String
+        case fst . runParser parse $ fromString toks of
+          Left  err -> fail err
+          Right val -> pure val
+
 
 -- |
 -- Takes a DotGraph and relabels the NodeID if the node has a label
@@ -143,6 +169,7 @@ dotParentMap :: Ord n => DotGraph n -> Map n (Set n)
 dotParentMap = sharedWork directionality
   where
     directionality (k,v) = insertWith (<>) v (S.singleton k)
+
 
 -- |
 -- Intelligently render a 'NodeLabel' of a 'GraphID' to a 'String' for output.

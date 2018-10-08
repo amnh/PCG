@@ -57,6 +57,8 @@ import           System.FilePath.Glob
 import           Text.Megaparsec
 
 
+import Debug.Trace
+
 parse' :: Parsec Void s a -> String -> s -> Either (ParseError (Token s) Void) a
 parse' = parse
 
@@ -179,18 +181,24 @@ parseCustomAlphabet spec = getSpecifiedContent spec >>= (ExceptT . pure . parseS
 progressiveParse :: FilePath -> ExceptT ReadError IO FracturedParseResult
 progressiveParse inputPath = do
     (filePath, fileContent) <- head . dataFiles <$> getSpecifiedContent (UnspecifiedFile $ inputPath:|[])
-    let parsers = getParsersToTry $ takeExtension filePath
+
+    let (preferredFound, parsers) = getParsersToTry $ takeExtension filePath
+
     -- Use the Either Left value to short circuit on a succussful parse
     -- Otherwise collect all parse errors in the Right value
     case traverse (\f -> f filePath fileContent) parsers of
       Left  fpr    -> pure fpr
-      Right errors -> let parseErr = maximumBy (comparing farthestParseErr) errors
-                      in  throwE $ unparsable fileContent parseErr
+      Right errors -> throwE . unparsable fileContent $
+                        if   preferredFound
+                        then NE.head errors
+                        else maximumBy (comparing farthestParseErr) errors
   where
     -- |
-    -- We use this to find the parser which got farthest through the stream before failing.
+    -- We use this to find the parser which got farthest through the stream
+    -- before failing, but only when we didn't find a preferred parser to try
+    -- first.
     farthestParseErr :: ParseError t e -> SourcePos
-    farthestParseErr err = maximum $ errorPos err
+    farthestParseErr = maximum . errorPos
 
     -- |
     -- Takes a file extension and returns the /ordered/ list of parsers to try.
@@ -198,32 +206,40 @@ progressiveParse inputPath = do
     -- extension as the first parser to try.
     --
     -- Makes our parsing phase marginally more efficient.
---  getParsersToTry :: String -> [FilePath -> s -> Either FracturedParseResult (ParseError Char Void)]
+--  getParsersToTry
+--    :: String
+--    -> ( Bool
+--       , NonEmpty (FilePath -> s -> Either FracturedParseResult (ParseError Char Void))
+--       )
     getParsersToTry ext =
         -- We do this by first looking up the file extension in a list of non-empty
         -- lists of aliases for the same type of file.
         case filter (elem extension) fileExtensions of
-          []       -> toList parserMap
+          []       -> (False, NE.fromList $ toList parserMap)
         -- If we find a non-empty list of file extensions that contains the given
         -- file extension, then we take the head of the non-empty list and use this
         -- as our representative file extension key.
           (k:|_):_ ->
         -- Lastly we lookup and remove the representative file extension key from a
         -- map of file parsers.
-            case updateLookupWithKey (const (const Nothing)) k parserMap of
+            case  updateLookupWithKey (const (const Nothing)) k parserMap of
         -- This case should never be entered, but it is sensibly covered.
-              (Nothing, m) ->     toList m
+              (Nothing, m) -> (False, NE.fromList $ toList m)
         -- This returns the parser associated with the representative file extension
         -- key and the map of file parsers with the queried parser removed. With
         -- these elements in scope, we simply place the desired parser at the head of
         -- the list of all the parsers.
-              (Just  p, m) -> p : toList m
+              (Just  p, m) -> ( True, p :| toList m)
       where
         -- Convert the extension to lower case for simpler string comparisons
-        extension = toLower <$> ext
+        -- Also romove the leading '.' if it exists
+        extension = dropDot $ toLower <$> ext
+          where
+            dropDot ('.':xs) = xs
+            dropDot      xs  = xs
 
         fileExtensions :: [NonEmpty String]
-        fileExtensions = fmap ('.':) <$> foldMapWithKey (\k v -> [k :| snd v]) associationMap
+        fileExtensions = foldMapWithKey (\k v -> [k :| snd v]) associationMap
 
 --      parserMap :: Map String (FilePath -> s -> Either FracturedParseResult (ParseError Char Void))
         parserMap = fst <$> associationMap
@@ -231,6 +247,7 @@ progressiveParse inputPath = do
         associationMap = M.fromList
             [ ("fas", (makeParser         nukeParser, ["fast","fasta"]))
             , ("tre", (makeParser newickStreamParser, ["tree","new","newick"]))
+            , ("dot", (makeParser    dotStreamParser, []))
             , ("ver", (makeParser    verStreamParser, []))
             , ("tnt", (makeParser    tntStreamParser, ["hen","hennig"]))
             , ("nex", (makeParser  nexusStreamParser, ["nexus"]))
