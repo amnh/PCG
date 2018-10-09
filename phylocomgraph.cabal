@@ -1,7 +1,10 @@
 cabal-version:      2.2
 category:           Biology
 build-type:         Simple
-extra-source-files: README.md
+extra-source-files: AUTHORS.md
+                    CHANGELOG.md
+                    README.md
+                    
 
 name:               phylocomgraph
 version:            0.1.0.1
