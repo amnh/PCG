@@ -15,17 +15,19 @@ Releases are available [on GitHub][2].
 * Improved efficiency of Data.Vector.NonEmpty.fromNonEmpty, unfoldr, and traverse
 * Improved representation of character & metadata sequences
 * Improved representation of Symbol Change Matrix (SCM) and Transition Cost Matrix (TCM)
+* Enhanced file parser selection to intelligently look at the file extension
 * Enhanced DOT file parser to accept DOT labels on leaf nodes as identifiers
 * Added Travis CI build script
 * Added integration test suite
 * Added test suites for Data.List.Utility, Data.Alphabet, and Data.TCM
 * Added support for compact regions of phylogenetic solutions
 * Added save and load commands by serialising compact regions
-* Streamlined build experience on MacOS
+* Added echo command for printing progress information
 * Corrected defect in handling of prealigned input data
 * Corrected defect in Data.Vector.NonEmpty.unfoldr
 * Corrected defect in headEx & lastEx of several MonoFoldable instances
 * Corrected defect in omap over missing dynamic characters
+* Streamlined build experience on MacOS
 * Polished command line option parsing and error reporting
 * Improved phylogeny pretty-printing
 * Documentation improvements
