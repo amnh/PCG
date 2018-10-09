@@ -1,7 +1,6 @@
 # Authors
 
-The following people have contributed to the Phylogenetic Component Graph (PCG)
-program, either with code cortibutions or related research collaboration.
+The following people have made code contributions to the Phylogenetic Component Graph (PCG) project.
 
 Names below are sorted alphabetically.
 
