@@ -313,7 +313,7 @@ executable pcg
                     , graphviz           >=2999.20
                     , keys
                     , lens
-                    , megaparsec       >=6.0
+                    , megaparsec       >=6.4.0
                     , mono-traversable >=1.0
                     , optparse-applicative
                     , parallel
@@ -459,7 +459,7 @@ executable newick-resolver
   main-is:          newick-resolver.hs
 
   build-depends:      base               >=4.8
-                    , megaparsec         >=6.0 && <6.4
+                    , megaparsec         >=6.4.0
                     , pcg-file-parsers
 
   hs-source-dirs:   utils
