@@ -91,12 +91,10 @@ hexmap
   -> (z -> z')
   -> CharacterSequence u  v  w  x  y  z
   -> CharacterSequence u' v' w' x' y' z'
---hexmap f1 f2 f3 f4 f5 f6 = fromBlocks . parmap rpar (Blk.hexmap f1 f2 f3 f4 f5 f6) . toBlocks
-hexmap f1 f2 f3 f4 f5 f6 = over blockSequence (parmap rpar (Blk.hexmap f1 f2 f3 f4 f5 f6))
+hexmap f1 f2 f3 f4 f5 f6 =
+    over blockSequence (parmap rpar (Blk.hexmap f1 f2 f3 f4 f5 f6))
 
 
--- TODO: Make sure the inner dimension's ordering is not reversed during the transpose.
---
 -- |
 -- Performs a 2D transform on the 'Traversable' structure of 'CharacterSequence'
 -- values.
@@ -216,7 +214,8 @@ sequenceCost
   -> Double
 sequenceCost meta char = sum
     . parmap rpar (uncurry Blk.blockCost)
-    . zip (meta ^. blockSequence) $ char ^. blockSequence
+    . zip (meta ^. blockSequence)
+        $  char ^. blockSequence
 
 
 -- |
