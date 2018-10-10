@@ -2,11 +2,11 @@ module Data.List.Test
   ( testSuite
   ) where
 
-import           Data.List             (nub, sort)
-import           Data.List.Utility
-import           Test.Tasty
-import           Test.Tasty.HUnit
-import           Test.Tasty.QuickCheck as QC
+import Data.List             (nub, sort)
+import Data.List.Utility
+import Test.Tasty
+import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck as QC
 
 
 testSuite :: TestTree
