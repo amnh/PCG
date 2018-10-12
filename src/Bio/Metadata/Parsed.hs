@@ -111,14 +111,14 @@ instance ParsedMetadata TNT.TntResult where
         f inMeta inChar =
             ParsedCharacterMetadata
             { alphabet      = characterAlphabet
-            , characterName = TNT.characterName         inMeta
+            , characterName = TNT.characterName inMeta
             , weight        = fromRational rationalWeight * suppliedWeight
-            , parsedTCM     = unfactoredTcmMay
+            , parsedTCM     = factoredTcmMay
             , isDynamic     = False
-            , isIgnored     = not $ TNT.active          inMeta
+            , isIgnored     = not $ TNT.active  inMeta
             }
           where
-            (rationalWeight, characterAlphabet, unfactoredTcmMay) = chooseAppropriateMatrixAndAlphabet
+            (rationalWeight, characterAlphabet, factoredTcmMay) = chooseAppropriateMatrixAndAlphabet
 
             suppliedWeight = fromIntegral $ TNT.weight inMeta
 
@@ -128,9 +128,11 @@ instance ParsedMetadata TNT.TntResult where
                   Nothing       -> (1, fullAlphabet, Nothing)
                   Just (v, tcm) ->
                     let truncatedSymbols = V.take (TCM.size tcm - 1) initialSymbolSet
-                    -- TODO: Maybe we can do the TCM diagnosis here and use the
-                    -- diagnosis later in the unification phase
-                    in  (v, toAlphabet truncatedSymbols, Just (tcm, NonSymmetric))
+                        diagnosis        = diagnoseTcm tcm
+                    in  ( v * toRational (factoredWeight diagnosis)
+                        , toAlphabet truncatedSymbols
+                        , Just (factoredTcm diagnosis, tcmStructure diagnosis)
+                        )
 
               | TNT.additive inMeta = (1, fullAlphabet, Just (TCM.generate matrixDimension genAdditive,    Additive))
               | otherwise           = (1, fullAlphabet, Just (TCM.generate matrixDimension genFitch   , NonAdditive))
