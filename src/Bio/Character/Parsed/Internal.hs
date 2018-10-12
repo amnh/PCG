@@ -45,7 +45,7 @@ type Identifier = String
 -- A character can be real-valued, discrete and singular,
 -- or discrete with variable length.
 data ParsedCharacter
-   = ParsedContinuousCharacter (Maybe Double)
-   | ParsedDiscreteCharacter   (Maybe (AmbiguityGroup String))
-   | ParsedDynamicCharacteracter    (Maybe (NonEmpty (AmbiguityGroup String)))
+   = ParsedContinuousCharacter   (Maybe Double)
+   | ParsedDiscreteCharacter     (Maybe (AmbiguityGroup String))
+   | ParsedDynamicCharacteracter (Maybe (NonEmpty (AmbiguityGroup String)))
    deriving (Eq, Show)
