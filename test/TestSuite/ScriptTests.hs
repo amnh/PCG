@@ -26,9 +26,21 @@ import Turtle                     hiding (char, many, satisfy, x)
 
 testSuite :: IO TestTree
 testSuite = testGroup "Script Test Suite" <$> sequenceA
-  [ scriptCheckCost 50.46
+  [ scriptCheckCost 2.625
+        "datasets/continuous/missing/test.pcg"
+        "datasets/continuous/missing/cost.data"
+  , scriptCheckCost 50.46
         "datasets/continuous/single-block/arthropods.pcg"
         "datasets/continuous/single-block/cost.data"
+  , scriptCheckCost 8
+        "datasets/non-additive/missing/test.pcg"
+        "datasets/non-additive/missing/cost.data"
+  , scriptCheckCost 1665
+        "datasets/non-additive/single-block/arthropods.pcg"
+        "datasets/non-additive/single-block/cost.data"
+  , scriptCheckCost 1051.0
+        "datasets/additive/missing/test.pcg"
+        "datasets/additive/missing/cost.data"
   , scriptCheckCost 77252
         "datasets/additive/single-block/arthropods.pcg"
         "datasets/additive/single-block/cost.data"
@@ -44,9 +56,6 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
   , scriptCheckCost 4
         "datasets/additive/case-3/case-3.pcg"
         "datasets/additive/case-3/cost.data"
-  , scriptCheckCost 1665
-        "datasets/non-additive/single-block/arthropods.pcg"
-        "datasets/non-additive/single-block/cost.data"
   , scriptCheckCost 914
         "datasets/sankoff/single-block/dna/discrete/arthropods.pcg"
         "datasets/sankoff/single-block/dna/discrete/cost.data"
