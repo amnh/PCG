@@ -7,21 +7,39 @@ module TestSuite.ScriptTests
   ( testSuite
   ) where
 
-import Control.Arrow              ((&&&))
-import Data.Char                  (isSpace)
-import Data.Either
-import Data.Foldable
-import Data.Functor               (($>))
-import Data.Scientific            hiding (scientific)
-import Data.Text                  (Text)
-import Data.Void                  (Void)
-import Numeric.Extended.Real
-import Test.Tasty
-import Test.Tasty.HUnit
-import Text.Megaparsec
-import Text.Megaparsec.Char
-import Text.Megaparsec.Char.Lexer (scientific)
-import Turtle                     hiding (char, many, satisfy, x)
+import           Bio.Graph                         (GraphState)
+import           Bio.Graph.PhylogeneticDAG         (phylogeneticForest)
+import           Bio.Graph.ReferenceDAG            (dagCost, graphData)
+import           Bio.Graph.Solution                (phylogeneticForests)
+import           Control.Arrow                     ((&&&))
+import           Data.Char                         (isSpace)
+import           Data.Compact                      (getCompact)
+import           Data.Compact.Serialize            (unsafeReadCompact)
+import           Data.Either
+import           Data.Foldable
+import           Data.Functor                      (($>))
+import qualified Data.List.NonEmpty         as NE
+import           Data.Scientific            hiding (scientific)
+import           Data.Semigroup.Foldable
+import           Data.Text                         (Text)
+import           Data.Void                         (Void)
+import           Numeric.Extended.Real
+import           PCG.Command.Save                  (defaultSaveFilePath)
+import           System.Directory                  (doesFileExist)
+import           Test.Tasty
+import           Test.Tasty.HUnit
+import           Text.Megaparsec
+import           Text.Megaparsec.Char
+import           Text.Megaparsec.Char.Lexer        (scientific)
+import           Turtle                     hiding (char, many, satisfy, x)
+import qualified Turtle                     as T
+
+
+data  ExecutionResults
+    = ExeRes
+    { finalState   :: Either String GraphState
+    , fileContents :: [Text]
+    }
 
 
 testSuite :: IO TestTree
@@ -29,6 +47,8 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
   [ scriptCheckCost 50.46
         "datasets/continuous/single-block/arthropods.pcg"
         "datasets/continuous/single-block/cost.data"
+  , scriptCheckValue getCost 50.46
+        "datasets/continuous/single-block/arthropods.pcg"
   , scriptCheckCost 77252
         "datasets/additive/single-block/arthropods.pcg"
         "datasets/additive/single-block/cost.data"
@@ -210,10 +230,10 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
 
 
 scriptTest
-  :: String                          -- ^ Script File
-  -> [String]                        -- ^ Expected Output Files
-  -> (Either Int [Text] -> TestTree) -- ^ Build a TestTree from the resulting
-                                     -- output file contents or ExitStatus code
+  :: String                                    -- ^ Script File
+  -> [String]                                  -- ^ Expected Output Files
+  -> (Either Int ExecutionResults -> TestTree) -- ^ Build a TestTree from the resulting
+                                               --   output file contents or ExitStatus code
   -> IO TestTree
 scriptTest scriptPath outputPaths testLogic = testLogic <$> runExecutable scriptPath outputPaths
 
@@ -225,14 +245,38 @@ scriptCheckCost
   -> IO TestTree
 scriptCheckCost expectedCost scriptPath outputPath = scriptTest scriptPath [outputPath] $ testCase scriptPath . checkResult
   where
-    checkResult (Left     exitCode) = assertFailure $ "Script failed with exit code: " <> show exitCode
-    checkResult (Right          []) = assertFailure "No files were returned despite supplying one path!"
-    checkResult (Right (outFile:_)) =
-        case parseCost outFile of
-          Nothing   -> assertFailure "No cost found in the output file!"
-          Just cost -> cost @?= expectedCost
+    checkResult (Left  exitCode) = assertFailure $ "Script failed with exit code: " <> show exitCode
+    checkResult (Right   exeRes) =
+      case fileContents exeRes of
+        []        -> assertFailure "No files were returned despite supplying one path!"
+        outFile:_ -> case parseCost outFile of
+                       Nothing   -> assertFailure "No cost found in the output file!"
+                       Just cost -> cost @?= expectedCost
 
 
+scriptCheckValue
+  :: ( Eq v
+     , Show v
+     )
+  => (GraphState -> v) -- ^ accessor function to retrieve value
+  -> v                 -- ^ expected value
+  -> String            -- ^ script file
+  -> IO TestTree
+scriptCheckValue accessor expectedValue scriptPath = scriptTest scriptPath [] $ testCase scriptPath . checkResult
+  where
+    checkResult (Left  exitCode) = assertFailure $ "Script failed with exit code: " <> show exitCode
+    checkResult (Right   exeRes) =
+      case finalState exeRes of
+        Left  errorMsg  -> assertFailure $ "No save state could be retreived for comparison:\n" <> errorMsg
+        Right saveState -> accessor saveState @?= expectedValue
+
+
+getCost :: GraphState -> ExtendedReal
+getCost = either
+            (const 0)
+            (dagCost . graphData . phylogeneticForest . NE.head . toNonEmpty . NE.head . phylogeneticForests)
+
+  
 parseCost :: Text -> Maybe ExtendedReal
 parseCost = parseMaybe fileSpec
   where
@@ -276,18 +320,26 @@ scriptFailure scriptPath = scriptTest scriptPath [] (testCase scriptPath . asser
 --
 -- Useful for integration tests specified with 'Test.Tasty.withResource'.
 runExecutable
-  :: String                 -- ^ Path to the script file to run
-  -> [String]               -- ^ Paths to the generated output files
-  -> IO (Either Int [Text]) -- ^ Resulting file contents of the specified output
-                            --   files, or the exit code if the script failed
+  :: String                           -- ^ Path to the script file to run
+  -> [String]                         -- ^ Paths to the generated output files
+  -> IO (Either Int ExecutionResults) -- ^ Resulting file contents of the specified output
+                                      --   graph state at the end of the script (if applicable) and files,
+                                      --   or the exit code if the script failed
 runExecutable scriptStr outputPaths = do
     startingDirectory <- pwd
     cd scriptDirectory
-    exitCode <- shell ("stack exec pcg -- --input " <> scriptText <> " --output test.log") mempty
-    cd startingDirectory
+    exitCode  <- shell ("stack exec pcg -- --input " <> scriptText <> " --output test.log") mempty
     case exitCode of
-      ExitFailure v -> pure $ Left v
-      _             -> Right <$> traverse (readTextFile . decodeString) outputPaths
+      ExitFailure v -> cd startingDirectory $> Left v
+      _             -> do
+          foundFile <- doesFileExist defaultSaveFilePath
+          saveState <- if   not foundFile
+                       then pure $ Left "File not found :("
+                       else fmap getCompact
+                         <$> unsafeReadCompact defaultSaveFilePath :: IO (Either String GraphState)
+          cd startingDirectory
+          Right . ExeRes saveState <$> traverse (readTextFile . decodeString) outputPaths
+
   where
     scriptText = either id id $ toText scriptFile
 

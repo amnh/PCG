@@ -300,8 +300,8 @@ executable pcg
   build-depends:      phylocomgraph
                     , ansi-wl-pprint
                     , base             >=4.10
-                    -- Required for Data.Map.restrictKeys
                     , compact
+                    -- Required for Data.Map.restrictKeys
                     , containers       >=0.5.8
                     , data-default
                     , deepseq
@@ -521,13 +521,17 @@ Test-Suite integration-tests
   main-is:          IntegrationTests.hs
 
   build-depends:      base               >=4.10
+                    , compact
                     , containers
                     , directory
                     , filepath
                     , megaparsec         >=6.4.0
                     , parser-combinators >=0.2.0
+                    , pcg-language
                     , pcg-utility
+                    , phylocomgraph
                     , scientific
+                    , semigroupoids      >=5.2.1
                     , semigroups
                     , tasty
                     , tasty-golden

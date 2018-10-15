@@ -75,7 +75,7 @@ data  ReferenceDAG d e n
     = RefDAG
     { references :: {-# UNPACK #-} !(Vector (IndexData e n))
     , rootRefs   :: !(NonEmpty Int)
-    , graphData  :: GraphData d
+    , graphData  :: !(GraphData d)
     } deriving (Generic)
 
 

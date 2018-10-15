@@ -1,2 +1,3 @@
 read("../../shared-data/arthropods/arthContin.tnt")
 report(data, (overwrite, "cost.data"))
+save()

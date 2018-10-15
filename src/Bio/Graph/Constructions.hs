@@ -78,13 +78,13 @@ type CharacterResult = PhylogeneticSolution CharacterDAG
 
 -- |
 -- Simple monad transformer stack for evaluating a phylogenetic search.
-type SearchState = EvaluationT IO GraphState
+type SearchState = EvaluationT IO (Compact GraphState)
 
 
 -- |
 -- The state of the graph that partitions the evaluation model on one of two
 -- paths depending on the presence or absence of character states in the search.
-type GraphState = Compact (Either TopologicalResult DecoratedCharacterResult)
+type GraphState = Either TopologicalResult DecoratedCharacterResult
 
 
 -- |

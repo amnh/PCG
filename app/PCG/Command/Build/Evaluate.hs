@@ -26,7 +26,7 @@ import           Control.Monad                       (replicateM)
 import           Control.Monad.IO.Class
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
-import           Data.Compact                        (compact, getCompact)
+import           Data.Compact                        (Compact, compact, getCompact)
 import           Data.Foldable
 import qualified Data.IntMap                         as IM
 import qualified Data.IntSet                         as IS
@@ -54,7 +54,7 @@ type DatNode =
 
 evaluate
   :: BuildCommand
-  -> GraphState
+  -> Compact GraphState
   -> SearchState
 -- evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
 -- evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined

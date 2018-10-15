@@ -19,14 +19,14 @@ module PCG.Command.Report.GraphViz
   ) where
 
 import           Bio.Graph
-import           Data.Compact           (getCompact)
+import           Data.Compact           (Compact, getCompact)
 import           Data.GraphViz.Printing
 import qualified Data.Text.Lazy         as L
 
 
-generateDotFile :: GraphState -> String
+generateDotFile :: Compact GraphState -> String
 generateDotFile = (<> "\n") . L.unpack . renderDot . getDotGraph
 
 
-getDotGraph :: GraphState -> DotCode
+getDotGraph :: Compact GraphState -> DotCode
 getDotGraph = either toDot toDot . getCompact
