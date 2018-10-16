@@ -10,13 +10,14 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE MonoLocalBinds      #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MonoLocalBinds   #-}
 
 module Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
   ( assignOptimalDynamicCharacterRootEdges
   ) where
 
+import           Analysis.Parsimony.Internal
 import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
@@ -47,7 +48,6 @@ import           Data.Vector                        (Vector)
 import qualified Data.Vector                        as V
 import qualified Data.Vector.NonEmpty               as NEV
 import           Prelude                            hiding (lookup, zipWith)
-import Analysis.Parsimony.Internal
 
 
 -- |
@@ -76,17 +76,15 @@ assignOptimalDynamicCharacterRootEdges
      , Show z
      )
   => (DynamicCharacterMetadataDec (Element DynamicChar)
-  -> (PostorderBinaryContext z z) -> z)  -- ^ Post-order traversal function for Dynamic Characters.
+  -> PostorderContext z z -> z)  -- ^ Post-order traversal function for Dynamic Characters.
   -> PhylogeneticDAG2 m e n u v w x y z
   -> ( PhylogeneticDAG2 m e n u v w x y z
      ,         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
      , Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
      )
---assignOptimalDynamicCharacterRootEdges extensionTransformation x | trace (L.unpack . renderDot $ toDot x) False = undefined
---assignOptimalDynamicCharacterRootEdges extensionTransformation (PDAG2 x) | trace (referenceRendering x) False = undefined
 assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 inputDag meta) =
+      -- degenerate cases
     case toList inputDag of
-      -- Degenarate cases
       []      ->     (pdag, mempty, mempty)
       [_]     ->     (pdag, mempty, mempty)
       -- Trivial case
@@ -353,7 +351,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
             -- the supplied edges in the subtree.
 --          edgeReferenceFilter :: [(Int,Int)] -> ResolutionCache (CharacterSequence u v w x y z) -> ResolutionCache (CharacterSequence u v w x y z)
 --            edgeReferenceFilter es xs | trace (show es <> "  " <> show (fmap subtreeEdgeSet xs)) False = undefined
-            edgeReferenceFilter es xs = filter (not . any (`elem` invalidEdges) . subtreeEdgeSet) $ toList xs
+            edgeReferenceFilter es xs = filter (not . any (`elem` invalidEdges) . (^. _subtreeEdgeSet)) $ toList xs
               where
                 invalidEdges       = toList es >>= getDirectedEdges
                 getDirectedEdges e = [e, swap e]
@@ -387,8 +385,8 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
               where
                 g innerMapRef resInfo = HM.insertWith (<>) key val innerMapRef
                   where
-                    key = topologyRepresentation resInfo
-                    val = pure (rootingEdge, characterSequence resInfo)
+                    key = (^. _topologyRepresentation) resInfo
+                    val = pure (rootingEdge, (^. _characterSequence) resInfo)
 
         -- Once we have inverted the Edge Cost Mapping to be keyed by the
         -- display trees, we can perform a minimization on each display tree
@@ -634,15 +632,14 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
         -- and also update the total cost of the resolution to reflect the lower
         -- dynamic character cost.
         f resInfo =
-            resInfo
-            { totalSubtreeCost  = newTotalCost
-            , characterSequence = modifiedSequence
-            }
+            resInfo & _totalSubtreeCost  .~ newTotalCost
+                    & _characterSequence .~ modifiedSequence
+
           where
-            resolutionTopology = topologyRepresentation resInfo
+            resolutionTopology = (^. _topologyRepresentation) resInfo
             minimizedSequence  = NEV.fromNonEmpty $ minimalDisplayTreeRerootings ! resolutionTopology
             newTotalCost       = sequenceCost meta modifiedSequence
-            modifiedSequence   = over blockSequence (zipWith g minimizedSequence) $ characterSequence resInfo
+            modifiedSequence   = over blockSequence (zipWith g minimizedSequence) $ (^. _characterSequence) resInfo
 
             -- The "block-wise" transformation.
             --
@@ -683,7 +680,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
         rootTopologies = do
             rootRef <- rootRefs inputDag
             resInfo <- resolutions . nodeDecoration $ refVec ! rootRef
-            pure $ topologyRepresentation resInfo
+            pure $ (^. _topologyRepresentation) resInfo
 
         rootContextVectors :: NonEmpty (TraversalTopology, NonEmpty (Double, Vector (Word, NonEmpty TraversalFocusEdge)))
         rootContextVectors = (id &&& (minimalDisplayTreeRerootings !)) <$> rootTopologies
