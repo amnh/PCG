@@ -50,9 +50,12 @@ import Prelude                           hiding (zip)
 sankoffPostorder
   :: DiscreteCharacterDecoration d c
   => DiscreteWithTCMCharacterMetadataDec c
-  -> (PostorderBinaryContext d (SankoffOptimizationDecoration c))
+  -> PostorderContext d (SankoffOptimizationDecoration c)
   ->  SankoffOptimizationDecoration c
-sankoffPostorder meta = postorderBinaryContext (initializeCostVector meta) (updateCostVector meta)
+sankoffPostorder meta
+  = postorderContext
+      (initializeCostVector meta)
+      (updateCostVector meta)
 
 -- |
 -- Used on the pre-order (i.e. second) traversal.
@@ -60,28 +63,31 @@ sankoffPostorder meta = postorderBinaryContext (initializeCostVector meta) (upda
 -- Either calls `initializeDirVector` on root or `updateDirectionalMins`.
 -- Needs to determine which child it’s updating, then sends the appropriate
 -- minlist to `updateDirectionalMins`.
-sankoffPreOrder
+sankoffPreorder
   :: EncodableStaticCharacter c
-  => SankoffOptimizationDecoration c
-  -> [(Word, SankoffOptimizationDecoration c)]
+  => PreorderContext (SankoffOptimizationDecoration c) (SankoffOptimizationDecoration c)
   -> SankoffOptimizationDecoration c
-sankoffPreOrder childDecoration [] = childDecoration & discreteCharacter .~ newChar    -- is a root
+sankoffPreorder = preorderContext rootFn internalFn
   where
-    childMins     = childDecoration ^. characterCostVector
-    overallMin    = childDecoration ^. characterCost
-    emptyMedian   = emptyStatic $ childDecoration ^. discreteCharacter
-    newChar       = foldlWithKey' setState emptyMedian childMins
+    rootFn childDecoration = childDecoration & discreteCharacter .~ newChar
+       where
+         childMins     = childDecoration ^. characterCostVector
+         overallMin    = childDecoration ^. characterCost
+         emptyMedian   = emptyStatic $ childDecoration ^. discreteCharacter
+         newChar       = foldlWithKey' setState emptyMedian childMins
 
-    setState acc pos childMin
-      | unsafeToFinite childMin == overallMin = acc `setBit` pos
-      | otherwise                             = acc
+         setState acc pos childMin
+           | unsafeToFinite childMin == overallMin = acc `setBit` pos
+           | otherwise                             = acc
 
-sankoffPreOrder childDecoration ((whichChild, parentDecoration):_) = resultDecoration $   -- is either internal node or leaf
-    case whichChild of
-      0 -> fst
-      _ -> snd
-  where
-    resultDecoration f = updateDirectionalMins parentDecoration childDecoration $ f (parentDecoration ^. minStateTuple)
+    internalFn childDecorationOpt parentDecoration
+      = case childDecorationOpt of
+          Left  childDecL -> resultDecoration fst childDecL
+          Right childDecR -> resultDecoration snd childDecR
+      where
+        resultDecoration proj childDec
+          = updateDirectionalMins parentDecoration childDec
+              $ proj (parentDecoration ^. minStateTuple)
 
 
 -- |

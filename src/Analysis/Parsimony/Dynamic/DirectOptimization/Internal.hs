@@ -22,14 +22,14 @@
 {-# LANGUAGE TypeFamilies     #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Internal
-  ( directOptimizationPostOrder
-  , directOptimizationPreOrder
+  ( directOptimizationPostorder
+  , directOptimizationPreorder
   , selectDynamicMetric
   ) where
 
-import Analysis.Parsimony.Internal
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (overlap)
+import           Analysis.Parsimony.Internal
 --import           Analysis.Parsimony.Dynamic.SequentialAlign
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
@@ -101,15 +101,15 @@ selectDynamicMetric candidate
 --
 -- Parameterized over a 'PairwiseAlignment' function to allow for different
 -- atomic alignments depending on the character's metadata.
-directOptimizationPostOrder
+directOptimizationPostorder
   :: SimpleDynamicDecoration d c
   => PairwiseAlignment c
-  -> (PostorderBinaryContext d (DynamicDecorationDirectOptimizationPostOrderResult c))
+  -> PostorderContext d (DynamicDecorationDirectOptimizationPostOrderResult c)
   ->  DynamicDecorationDirectOptimizationPostOrderResult c
-directOptimizationPostOrder pairwiseAlignment
-  = postorderBinaryContext
+directOptimizationPostorder pairwiseAlignment
+  = postorderContext
       initializeLeaf
-      (\n (leftChild, rightChild) -> updateFromLeaves pairwiseAlignment (leftChild, rightChild))
+      (\_ (lChild, rChild) -> updateFromLeaves pairwiseAlignment (lChild, rChild))
 
 
 
@@ -121,7 +121,7 @@ initializeLeaf
   => d
   -> DynamicDecorationDirectOptimizationPostOrderResult c
 initializeLeaf =
-    extendDynamicToPostOrder
+    extendDynamicToPostorder
       <$> id
       <*> const 0
       <*> const 0
@@ -141,12 +141,12 @@ updateFromLeaves
   => PairwiseAlignment c
   -> (DynamicDecorationDirectOptimizationPostOrderResult c, DynamicDecorationDirectOptimizationPostOrderResult c)
   -> DynamicDecorationDirectOptimizationPostOrderResult c
-updateFromLeaves pairwiseAlignment (leftChild , rightChild) = resultDecoration
+updateFromLeaves pairwiseAlignment (lChild , rChild) = resultDecoration
   where
-    resultDecoration = extendDynamicToPostOrder leftChild localCost totalCost combinedAverageLength ungapped gapped lhsAlignment rhsAlignment
-    (localCost, ungapped, gapped, lhsAlignment, rhsAlignment) = pairwiseAlignment (leftChild ^. preliminaryUngapped) (rightChild ^. preliminaryUngapped)
-    totalCost = localCost + leftChild ^. characterCost +  rightChild ^. characterCost
-    combinedAverageLength = leftChild ^. averageLength <> rightChild ^. averageLength
+    resultDecoration = extendDynamicToPostorder lChild localCost totalCost combinedAverageLength ungapped gapped lhsAlignment rhsAlignment
+    (localCost, ungapped, gapped, lhsAlignment, rhsAlignment) = pairwiseAlignment (lChild ^. preliminaryUngapped) (rChild ^. preliminaryUngapped)
+    totalCost = localCost + lChild ^. characterCost +  rChild ^. characterCost
+    combinedAverageLength = lChild ^. averageLength <> rChild ^. averageLength
 
 
 -- |
@@ -154,17 +154,17 @@ updateFromLeaves pairwiseAlignment (leftChild , rightChild) = resultDecoration
 --
 -- Parameterized over a 'PairwiseAlignment' function to allow for different
 -- atomic alignments depending on the character's metadata.
-directOptimizationPreOrder
+directOptimizationPreorder
   :: DirectOptimizationPostOrderDecoration d c
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
-  -> d
-  -> [(Word, DynamicDecorationDirectOptimization c)]
-  ->  DynamicDecorationDirectOptimization c
-directOptimizationPreOrder pairwiseAlignment meta charDecoration parents =
-    case parents of
-        []            -> initializeRoot charDecoration
-        (_, parent):_ -> updateFromParent pairwiseAlignment meta charDecoration parent
+  -> PreorderContext d (DynamicDecorationDirectOptimization c)
+  -> DynamicDecorationDirectOptimization c
+directOptimizationPreorder pairwiseAlignment meta =
+    preorderContextSym rootFn internalFn
+  where
+    rootFn     = initializeRoot
+    internalFn = updateFromParent pairwiseAlignment meta
 
 
 -- |
@@ -176,7 +176,7 @@ initializeRoot
   => d
   -> DynamicDecorationDirectOptimization c
 initializeRoot =
-    extendPostOrderToDirectOptimization
+    extendPostorderToDirectOptimization
       <$> id
       <*> (^. preliminaryUngapped)
       <*> (^. preliminaryGapped)
@@ -225,7 +225,7 @@ updateFromParent pairwiseAlignment meta currentDecoration parentDecoration = res
     --
     -- We do these convoluted operations to account for deletion events in the
     -- parent assignment when comparing to child assignments.
-    resultDecoration = extendPostOrderToDirectOptimization currentDecoration ungapped gapped single
+    resultDecoration = extendPostorderToDirectOptimization currentDecoration ungapped gapped single
     (ungapped, gapped, single)
       | isMissing $ currentDecoration ^. preliminaryGapped = (pUngapped, pGapped, pSingle)
       | otherwise = tripleComparison pairwiseAlignment meta currentDecoration pUngapped pSingle

@@ -21,15 +21,12 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE LambdaCase       #-}
-{-# LANGUAGE RecordWildCards  #-}
-{-# LANGUAGE ViewPatterns     #-}
 
 module Analysis.Parsimony.Additive.Internal where
 
 
-import Bio.Character.Decoration.Additive
 import Analysis.Parsimony.Internal
+import Bio.Character.Decoration.Additive
 import Control.Lens
 import Data.List.NonEmpty                (NonEmpty ((:|)))
 import Data.Range
@@ -112,17 +109,12 @@ additivePostorder
   :: ( RangedCharacterDecoration n c'
      , RangedExtensionPostorder  c c'
      )
-  => PostorderBinaryContext n c
+  => PostorderContext n c
   -> c
-additivePostorder = postorderBinaryContext initializeLeaf updatePostorder
-
-additivePostOrder'
-  :: ( RangedCharacterDecoration d  c
-     , RangedExtensionPostorder  d' c
-     )
-  => d -> [d']
-  -> d'
-additivePostOrder' = undefined
+additivePostorder
+  = postorderContext
+      initializeLeaf
+      updatePostorder
 
 -- |
 -- Initializes a leaf node by copying its current value into its preliminary
@@ -173,7 +165,7 @@ updatePostorder _parentDecoration (leftChild, rightChild) = finalDecoration
       | otherwise     = unsafeToFinite $ upperBound newInterval - lowerBound newInterval
 
     childIntervals@(lhs, rhs) = (leftChild ^. preliminaryInterval, rightChild ^. preliminaryInterval)
--- CM : FOR NOW JUST DO POSTORDER TO GET IT TO COMPILE!
+
 -- |
 -- Used on the pre-order (i.e. second) traversal.
 -- Applies appropriate logic to root node, internal node, and leaf node cases.
@@ -181,13 +173,20 @@ additivePreorder
   :: ( RangedExtensionPostorder  d  c
      , RangedExtensionPreorder   d' c
      )
-  => d
-  -> [(Word, d')]
+  => PreorderContext d d'
   -> d'
-additivePreorder childDecoration [] = extendRangedToPreorder childDecoration $ childDecoration ^. preliminaryInterval
-additivePreorder childDecoration ((_, parentDecoration):_)
-  | childDecoration ^. isLeaf = finalizeLeaf childDecoration
-  | otherwise                 = extendRangedToPreorder childDecoration $ determineFinalState childDecoration parentDecoration
+additivePreorder = preorderContextSym rootFn internalFn
+  where
+    rootFn rootDecoration
+      = extendRangedToPreorder rootDecoration $ rootDecoration ^. preliminaryInterval
+
+    internalFn childDecoration parentDecoration
+      | childDecoration ^. isLeaf
+          = finalizeLeaf childDecoration
+      | otherwise
+          = extendRangedToPreorder childDecoration
+              $ determineFinalState childDecoration parentDecoration
+
 {--
 -- |
 -- Used on the pre-order (i.e. second) traversal.
