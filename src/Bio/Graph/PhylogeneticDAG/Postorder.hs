@@ -20,6 +20,7 @@ module Bio.Graph.PhylogeneticDAG.Postorder
   ( postorderSequence'
   ) where
 
+import           Analysis.Parsimony.Internal
 import           Bio.Character.Encodable
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
@@ -29,17 +30,14 @@ import           Bio.Metadata.Discrete
 import           Bio.Metadata.DiscreteWithTCM
 import           Bio.Metadata.Dynamic
 import           Bio.Sequence
-import           Control.Applicative                (liftA2)
 import           Control.Arrow                      ((&&&))
 import           Control.Lens.At                    (ix)
 import           Control.Lens.Combinators           (singular)
 import           Control.Lens.Fold                  (foldMapOf)
 import           Control.Lens.Operators             ((%~), (.~), (^.))
 import           Data.Bits
-import           Data.Foldable
 import           Data.Foldable.Custom               (foldMap', minimum', sum')
 import           Data.Function                      ((&))
-import           Data.HashMap.Lazy                  (HashMap)
 import qualified Data.IntMap                        as IM
 import           Data.IntSet                        (IntSet)
 import           Data.Key
@@ -48,7 +46,6 @@ import qualified Data.List.NonEmpty                 as NE
 import           Data.MonoTraversable
 import           Data.UnionSet                      (UnionSet)
 import qualified Data.Vector                        as V
-import Analysis.Parsimony.Internal
 
 
 -- |
@@ -61,12 +58,12 @@ import Analysis.Parsimony.Internal
 
 postorderSequence'
   :: forall m e n u v w x y z u' v' w' x' y' z' . HasBlockCost u' v' w' x' y' z'
-  => (ContinuousCharacterMetadataDec                      -> (PostorderBinaryContext u u') -> u')
-  -> (DiscreteCharacterMetadataDec                        -> (PostorderBinaryContext v v') -> v')
-  -> (DiscreteCharacterMetadataDec                        -> (PostorderBinaryContext w w') -> w')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> (PostorderBinaryContext x x') -> x')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> (PostorderBinaryContext y y') -> y')
-  -> (DynamicCharacterMetadataDec (Element DynamicChar)   -> (PostorderBinaryContext z z') -> z')
+  => (ContinuousCharacterMetadataDec                      -> PostorderContext u u' -> u')
+  -> (DiscreteCharacterMetadataDec                        -> PostorderContext v v' -> v')
+  -> (DiscreteCharacterMetadataDec                        -> PostorderContext w w' -> w')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> PostorderContext x x' -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> PostorderContext y y' -> y')
+  -> (DynamicCharacterMetadataDec (Element DynamicChar)   -> PostorderContext z z' -> z')
   -> PhylogeneticDAG2 m e n u  v  w  x  y  z
   -> PhylogeneticDAG2 m e n u' v' w' x' y' z'
 
@@ -76,7 +73,7 @@ postorderSequence' f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag m) = pdag2 & _phylogenetic
     completeLeafSetForDAG = foldMap' f dag
       where
         f :: PhylogeneticNode2 charSeq decData -> UnionSet
-        f = leafSetRepresentation . NE.head . resolutions
+        f = (^. _leafSetRepresentation) . NE.head . resolutions
 
     newRDAG =
       dag  & _graphData  %~ updateGraphCosts
@@ -116,27 +113,43 @@ postorderSequence' f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag m) = pdag2 & _phylogenetic
                       case NE.filter completeCoverage localResolutions of
                         x:xs -> x:|xs
                         _    -> error "Root Node with no complete coverage resolutions!!! This should be logically impossible."
+            completeCoverage :: ResolutionInformation s -> Bool
+            completeCoverage = (completeLeafSetForDAG ==) . (^. _leafSetRepresentation)
 
-            completeCoverage = (completeLeafSetForDAG ==) . leafSetRepresentation
-
-            localResolutions = liftA2 (generateLocalResolutions f1 f2 f3 f4 f5 f6 m) datumResolutions childResolutions
+            localResolutions
+              = fmap (generateLocalResolutions f1 f2 f3 f4 f5 f6 m) childContextResolutions
 
             node :: IndexData e (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
             node             = references dag ! i
 
-            childIndices :: [Int]
-            childIndices     = IM.keys $ childRefs node
+            childIndices :: ChildContext Int
+            childIndices     = toChildContext . IM.keys . childRefs $ node
 
             datumResolutions :: NonEmpty (ResolutionInformation (CharacterSequence u v w x y z))
             datumResolutions = resolutions $ nodeDecoration node
+            nodeResolution   = NE.head datumResolutions
 
-            childResolutions :: NonEmpty [ResolutionInformation (CharacterSequence u' v' w' x' y' z')]
-            childResolutions = applySoftwireResolutions $ extractResolutionContext <$> childIndices
+            childContextResolutions
+              :: NonEmpty
+                   (ResolutionInformation
+                     (PostorderContext
+                       (CharacterSequence u  v  w  x  y  z )
+                       (CharacterSequence u' v' w' x' y' z')
+                     )
+                   )
+            childContextResolutions
+              = applySoftwireResolutions nodeResolution
+                  $ extractResolutionContext <$> childIndices
 
-            extractResolutionContext :: Int -> (NonEmpty (ResolutionInformation (CharacterSequence u' v' w' x' y' z')), IntSet)
+            extractResolutionContext
+              :: Int
+              -> (ResolutionCache (CharacterSequence u' v' w' x' y' z') , IntSet)
             extractResolutionContext = getResolutions &&& parentRefs . (references dag !)
 
-            getResolutions :: Int -> NonEmpty (ResolutionInformation (CharacterSequence u' v' w' x' y' z'))
+            getResolutions
+              :: Int
+              -> NonEmpty
+                   (ResolutionInformation (CharacterSequence u' v' w' x' y' z'))
             getResolutions j = fmap updateFunction . resolutions $ (memo ! j) ^. _nodeDecoration
               where
                 updateFunction =

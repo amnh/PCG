@@ -13,15 +13,21 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
+-- This gap is necessary for stylish Haskell not to re-arrange
+-- NoMonoLocalBinds before TypeFamilies
+{-# LANGUAGE NoMonoLocalBinds    #-}
+
 
 module Bio.Graph.PhylogeneticDAG.Preorder
   ( preorderSequence
   , preorderFromRooting
-  , preorderSequence
   ) where
 
+import           Analysis.Parsimony.Internal        as AP
+import           Analysis.Parsimony.Internal        hiding (PreorderContext)
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
 import           Bio.Graph.Node
@@ -37,6 +43,7 @@ import           Control.Lens.At                    (ix)
 import           Control.Lens.Combinators           (singular)
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
+import           Data.Either.Custom                 (fromTaggedRep, toTaggedRep)
 import           Data.Foldable
 import           Data.GraphViz.Printing
 import           Data.HashMap.Lazy                  (HashMap)
@@ -63,9 +70,6 @@ import           Prelude                            hiding (lookup)
 type BlockTopologies = NEV.Vector TraversalTopology
 
 
-type ParentalContext u v w x y z = NEV.Vector (TraversalTopology, Word, Maybe (BLK.CharacterBlock u v w x y z))
-
-
 -- |
 -- Applies a traversal logic function over a 'ReferenceDAG' in a /pre-order/ manner.
 --
@@ -76,15 +80,12 @@ type ParentalContext u v w x y z = NEV.Vector (TraversalTopology, Word, Maybe (B
 -- *The better version.*
 preorderSequence ::
   forall m e n u v w x y z u' v' w' x' y' z' . HasBlockCost u  v  w  x  y  z
-  => (ContinuousCharacterMetadataDec        -> u -> [(Word, u')] -> u')
-  -> (DiscreteCharacterMetadataDec          -> v -> [(Word, v')] -> v')
-  -> (DiscreteCharacterMetadataDec          -> w -> [(Word, w')] -> w')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
-       -> x -> [(Word, x')] -> x')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
-       -> y -> [(Word, y')] -> y')
-  -> (DynamicCharacterMetadataDec (Element DynamicChar)
-       -> z -> [(Word, z')] -> z')
+  => (ContinuousCharacterMetadataDec                      -> AP.PreorderContext u u' -> u')
+  -> (DiscreteCharacterMetadataDec                        -> AP.PreorderContext v v' -> v')
+  -> (DiscreteCharacterMetadataDec                        -> AP.PreorderContext w w' -> w')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> AP.PreorderContext x x' -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> AP.PreorderContext y y' -> y')
+  -> (DynamicCharacterMetadataDec (Element DynamicChar)   -> AP.PreorderContext z z' -> z')
   -> PhylogeneticDAG2 m e n u  v  w  x  y  z
   -> PhylogeneticDAG2 m e n u' v' w' x' y' z'
 preorderSequence f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag meta) = pdag2 & _phylogeneticForest .~ newRDAG
@@ -125,7 +126,8 @@ preorderSequence f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag meta) = pdag2 & _phylogeneti
 
             -- The character sequence for the current index with the node decorations
             -- updated to thier pre-order values with their final states assigned.
-            newSequence      = computeOnApplicableResolution f1 f2 f3 f4 f5 f6 meta parentalContext datumResolutions
+            newSequence      =
+              computeOnApplicableResolution f1 f2 f3 f4 f5 f6 meta parentalContext
 
             -- This is *really* important.
             -- Here is where we collect the parental context for the current node.
@@ -145,33 +147,70 @@ preorderSequence f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag meta) = pdag2 & _phylogeneti
 
             parentalAccessor =
                 case parentIndices of
-                  []    -> \_ x -> (x, 0, Nothing)
-                  [p]   -> selectTopologyFromParentOptions $ (p, memo ! p):|[]
-                  x:y:_ -> selectTopologyFromParentOptions $ (x, memo ! x):|[(y, memo ! y)]
+                  NoParent
+                    -> \_ x -> (x, RootContext datumResolutions)
+                  OneParent parInd
+                    -> selectTopologyFromParentOptions $ (parInd, memo ! parInd):|[]
+                  TwoParents parInd1 parInd2
+                    -> selectTopologyFromParentOptions
+                         $ (parInd1, memo ! parInd1):|[(parInd2, memo ! parInd2)]
 
+            datumResolutions :: ResolutionCache (CharacterSequence u v w x y z)
             datumResolutions = node ^. _nodeDecoration . _resolutions
 
-            parentIndices   = otoList $ parentRefs node
+            parentIndices = toParentContext $ parentRefs node
             -- In sparsely connected graphs (like ours) this will be effectively constant.
-            childPosition j = toEnum . length . takeWhile (/=currInd) . IM.keys . childRefs $ refs ! j
+            childPosition j
+              = toEnum . length . takeWhile (/= currInd) . IM.keys . childRefs $ refs ! j
 
             selectTopologyFromParentOptions
               :: NonEmpty (Int, PhylogeneticNode2 (CharacterSequence u1 v1 w1 x1 y1 z1) n)
               -> Int
               -> TraversalTopology
-              -> (TraversalTopology, Word, Maybe (BLK.CharacterBlock u1 v1 w1 x1 y1 z1))
+              -> ( TraversalTopology
+                 , AP.PreorderContext
+                     (ResolutionCache (CharacterSequence u v w x y z))
+                     (BLK.CharacterBlock u1 v1 w1 x1 y1 z1)
+                 )
             selectTopologyFromParentOptions nodeOptions key topology =
-                case NE.filter matchesTopology $ second (NE.head . resolutions) <$> nodeOptions of
-                  (x,y):_ -> (topology, childPosition x, Just $ toNonEmpty (characterSequence y ^. blockSequence) ! key)
+                case NE.filter matchesTopology
+                       $ second (NE.head . resolutions) <$> nodeOptions of
+                  (x,y):_ ->
+                    let
+                      parBlock        = (characterSequence y ^. blockSequence) ! key
+                      childCacheContext = leftRightChild (childPosition x) datumResolutions
+                    in
+                      ( topology
+                      , PreInternalContext parBlock childCacheContext
+                      )
                   []      -> error $ unlines
-                                 [ unwords ["No Matching topology for Block", show key, "on Node", show currInd]
-                                 , "The minimal topologies for each block: " <> show sequenceOfBlockMinimumTopologies
+                                 [ unwords
+                                   ["No Matching topology for Block"
+                                   , show key
+                                   , "on Node"
+                                   , show currInd
+                                   ]
+                                 , "The minimal topologies for each block: "
+                                   <> show sequenceOfBlockMinimumTopologies
                                  , "And this was the problem topology: " <> show topology
-                                 , "And these were our options: " <> show (topologyRepresentation . NE.head . resolutions . snd <$> nodeOptions)
+                                 , "And these were our options: "
+                                   <> show
+                                       ((^. _topologyRepresentation)
+                                        . NE.head
+                                        . resolutions
+                                        . snd
+                                        <$> nodeOptions
+                                       )
                                  ]
               where
+                leftRightChild :: Int -> (a -> Either a a)
+                leftRightChild = \case
+                  0 -> Left
+                  _ -> Right
+
                 matchesTopology :: (Int, b) -> Bool
-                matchesTopology (parInd, _) = (parInd, currInd) `notElem` excludedNetworkEdges topology
+                matchesTopology (pInd, _)
+                    = (pInd, currInd) `notElem` excludedNetworkEdges topology
 
 
 
@@ -182,7 +221,7 @@ getSequenceOfBlockMinimumTopologies
   -> BlockTopologies
 getSequenceOfBlockMinimumTopologies (PDAG2 dag meta) = getTopologies blockMinimalResolutions
       where
-        getTopologies  = fmap topologyRepresentation
+        getTopologies  = fmap (^. _topologyRepresentation)
 
         blockMinimalResolutions = mapWithKey f $ sequenceWLOG ^. blockSequence
 
@@ -193,7 +232,8 @@ getSequenceOfBlockMinimumTopologies (PDAG2 dag meta) = getTopologies blockMinima
         f key _block   = minimumBy (comparing extractedBlockCost)
                          rootResolutions
           where
-            extractedBlockCost = blockCost (getMetaBlock key) . (! key) . (^. blockSequence) . characterSequence
+            extractedBlockCost
+              = blockCost (getMetaBlock key) . (! key) . (^. blockSequence) . characterSequence
 
         rootResolutions = resolutions . nodeDecoration $ references dag ! rootWLOG
 
@@ -210,61 +250,86 @@ mockResInfo currentResolutions newSequence =
 
 
 computeOnApplicableResolution
-  :: (ContinuousCharacterMetadataDec        -> u -> [(Word, u')] -> u')
-  -> (DiscreteCharacterMetadataDec          -> v -> [(Word, v')] -> v')
-  -> (DiscreteCharacterMetadataDec          -> w -> [(Word, w')] -> w')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
-       -> x -> [(Word, x')] -> x')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
-       -> y -> [(Word, y')] -> y')
-  -> (DynamicCharacterMetadataDec (Element DynamicChar)
-       -> z -> [(Word, z')] -> z')
+  :: forall m u v w x y z u' v' w' x' y' z'
+   . (ContinuousCharacterMetadataDec                      -> AP.PreorderContext u u' -> u')
+  -> (DiscreteCharacterMetadataDec                        -> AP.PreorderContext v v' -> v')
+  -> (DiscreteCharacterMetadataDec                        -> AP.PreorderContext w w' -> w')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> AP.PreorderContext x x' -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> AP.PreorderContext y y' -> y')
+  -> (DynamicCharacterMetadataDec (Element DynamicChar)   -> AP.PreorderContext z z' -> z')
   -> MetadataSequence m
-  -> ParentalContext u' v' w' x' y' z'
-  -> ResolutionCache (CharacterSequence u v w x y z)
+  -> NEV.Vector
+       ( TraversalTopology
+       , AP.PreorderContext
+           (ResolutionCache (CharacterSequence u v w x y z))
+           (BLK.CharacterBlock u' v' w' x' y' z')
+       )
   -> CharacterSequence u' v' w' x' y' z'
-computeOnApplicableResolution f1 f2 f3 f4 f5 f6 meta parentalContexts currentResolutions =
-    CS.fromNonEmpty $ zipWithKey f (meta ^. blockSequence) parentalContexts
---    over blockSequence (zipWithKey f parentalContexts) meta
+computeOnApplicableResolution f1 f2 f3 f4 f5 f6 meta preContextOptions =
+
+    (^. from blockSequence) $ zipWithKey f (meta ^. blockSequence) preContextOptions
+
   where
-    f key metaBlock (topology, childRef, maybeParentBlock) = BLK.hexZipWithMeta f1 f2 f3 f4 f5 f6 metaBlock childBlock parentBlock
+    g = undefined
+    (f1Root, f1Bin) = (rootFunction <$> f1 , preBinaryFunction <$> f1)
+    (f2Root, f2Bin) = (rootFunction <$> f2 , preBinaryFunction <$> f2)
+    (f3Root, f3Bin) = (rootFunction <$> f3 , preBinaryFunction <$> f3)
+    (f4Root, f4Bin) = (rootFunction <$> f4 , preBinaryFunction <$> f4)
+    (f5Root, f5Bin) = (rootFunction <$> f5 , preBinaryFunction <$> f5)
+    (f6Root, f6Bin) = (rootFunction <$> f6 , preBinaryFunction <$> f6)
+
+
+    f key metaBlock (topology, preorderOpt) =
+      preorderContext rootFn internalFn preorderOpt
       where
-        childBlock  = selectChildBlockByTopology currentResolutions key topology
-        parentBlock =
-            case maybeParentBlock of
-              Just v  -> BLK.hexmap g g g g g g v
-              Nothing -> BLK.hexmap h h h h h h childBlock
+        rootFn rootResCache =
+          let
+            rootCharBlock = selectChildBlockByTopology key topology rootResCache
+          in
+            BLK.hexZipMeta f1Root f2Root f3Root f4Root f5Root f6Root metaBlock rootCharBlock
 
-        g :: a -> [(Word, a)]
-        g x = [(childRef, x)]
 
-        h :: a -> [(Word, b)]
-        h = const []
+        internalFn childResCacheContext parentBlock =
+          let
+{-             ┌───┤ Left/Right direction
+               │
+               │       ┌───┤ Value
+               │       │  -}
+             (tag, childRes) = toTaggedRep childResCacheContext
+             childBlock      = selectChildBlockByTopology key topology childRes
+           -- re-tagging function
+             dir = fromTaggedRep tag
+           -- Tag each character block with the correct context
+             childBlockContext =
+               BLK.hexmap dir dir dir dir dir dir childBlock
+          in
+            BLK.hexZipWithMeta
+              f1Bin f2Bin f3Bin f4Bin f5Bin f6Bin metaBlock childBlockContext parentBlock
 
     selectChildBlockByTopology
-      :: ResolutionCache (CharacterSequence u v w x y z)
-      -> Int
+      :: Int
       -> TraversalTopology
+      -> ResolutionCache (CharacterSequence u v w x y z)
       -> BLK.CharacterBlock u v w x y z
-    selectChildBlockByTopology childOptions key topology =
-        case NE.filter matchesTopology childOptions of
+    selectChildBlockByTopology key topology childCache =
+        case NE.filter matchesTopology childCache of
           x:_ -> (characterSequence x ^. blockSequence) ! key
-          []  -> (characterSequence (NE.head childOptions) ^. blockSequence) ! key
+          []  -> (characterSequence (NE.head childCache) ^. blockSequence) ! key
       where
-        matchesTopology = (`isCompatableWithTopology` topology) . topologyRepresentation
+        matchesTopology = (`isCompatableWithTopology` topology) . (^. _topologyRepresentation)
 
 
 selectApplicableResolutions :: TraversalTopology -> ResolutionCache s -> ResolutionInformation s
 selectApplicableResolutions topology cache =
-    case filter (\x -> topologyRepresentation x `isCompatableWithTopology` topology) $ toList cache of
+    case filter (\x -> (^. _topologyRepresentation) x `isCompatableWithTopology` topology) $ toList cache of
       []  -> error $ unlines
                  [ "No applicable resolution found on pre-order traversal"
                  , "Input set:   " <> show topology
-                 , "Local sets:  " <> show (subtreeEdgeSet <$> cache)
-                 , "Local Topos: " <> show (topologyRepresentation <$> cache)
+                 , "Local sets:  " <> show ((^. _subtreeEdgeSet) <$> cache)
+                 , "Local Topos: " <> show ((^. _topologyRepresentation) <$> cache)
                  ]
       [x] -> x
-      xs  -> maximumBy (comparing (length . subtreeEdgeSet)) xs
+      xs  -> maximumBy (comparing (length . (^. _subtreeEdgeSet))) xs
 
 
 -- |
@@ -296,7 +361,7 @@ preorderFromRooting
    , Show y'
    , Show z
    )
-  => (DynamicCharacterMetadataDec (Element DynamicChar) -> z -> [(Word, z')] -> z')
+  => (DynamicCharacterMetadataDec (Element DynamicChar) ->  AP.PreorderContext z z' -> z')
   ->         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
   -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
   -> NEV.Vector (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge))
@@ -413,7 +478,7 @@ preorderFromRooting transformation edgeCostMapping contextualNodeDatum minTopolo
                           in  lhs <> rhs <> gen virtualRootDatum mempty (r1,r2) <> gen virtualRootDatum mempty (r2,r1)
                   where
                     virtualRoot =
-                        case NE.filter (\x -> topologyRepresentation x == topo) $ edgeCostMapping ! rootingEdge of
+                        case NE.filter (\x -> (^. _topologyRepresentation) x == topo) $ edgeCostMapping ! rootingEdge of
                           []  -> Nothing
                           x:_ -> Just x
 
@@ -469,7 +534,8 @@ preorderFromRooting transformation edgeCostMapping contextualNodeDatum minTopolo
             updateDynamicCharactersInSequence
               :: ResolutionInformation (CharacterSequence u1 v1 w1 x1 y1 z)
               -> ResolutionInformation (CharacterSequence u1 v1 w1 x1 y1 z')
-            updateDynamicCharactersInSequence resInfo = resInfo { characterSequence = updatedCharacterSequence }
+            updateDynamicCharactersInSequence resInfo
+              = resInfo { characterSequence = updatedCharacterSequence }
               where
                 updatedCharacterSequence =
                   over blockSequence
@@ -486,7 +552,7 @@ preorderFromRooting transformation edgeCostMapping contextualNodeDatum minTopolo
                     dynCharGen k m =
                         case parentRefContext of
                           NoBlockData      -> error "This is bad and sad plus I'm mad."
-                          SetRootNode  x   -> transformation m x []
+                          SetRootNode  x   -> transformation m (RootContext x)
                           FociEdgeNode p x ->
                             let currentContext
                                   = selectApplicableResolutions topology
@@ -500,8 +566,13 @@ preorderFromRooting transformation edgeCostMapping contextualNodeDatum minTopolo
                                   . characterSequence
                                   $ currentContext
 
-                                parentalDecoration = transformation m x []
-                            in  transformation m currentDecoration [(0, parentalDecoration)]
+                                parentalDecoration = transformation m (RootContext x)
+                            in  transformation m
+                                  (PreInternalContext
+                                     { preParent       = parentalDecoration
+                                     , preChildContext = Left currentDecoration
+                                     }
+                                  )
 
                           NormalNode   p   ->
                             let isDeadEndNode = -- This only checks one edge away, probably should be transitive.
@@ -513,7 +584,12 @@ preorderFromRooting transformation edgeCostMapping contextualNodeDatum minTopolo
                                 parentalDecoration = getDynCharDecoration . NE.head . resolutions $ memo ! p
                             in  if   isDeadEndNode
                                 then parentalDecoration
-                                else transformation m currentDecoration [(0, parentalDecoration)]
+                                else transformation m
+                                       (PreInternalContext
+                                          { preParent       = parentalDecoration
+                                          , preChildContext = Left currentDecoration
+                                          }
+                                       )
                       where
                         parentRefContext     = (parentVectors ! (i,j)) ! k
                         -- Stupid monomorphisms prevent elegant code reuse
