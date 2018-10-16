@@ -12,10 +12,9 @@
 
 {-# LANGUAGE FlexibleContexts      #-}
 
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE RecordWildCards       #-}
-{-# LANGUAGE LambdaCase            #-}
 
 module Analysis.Scoring
   (
@@ -29,9 +28,9 @@ module Analysis.Scoring
 
 
 import           Analysis.Parsimony.Additive.Internal
-import           Analysis.Parsimony.Internal
 import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Analysis.Parsimony.Fitch.Internal
+import           Analysis.Parsimony.Internal
 import           Analysis.Parsimony.Sankoff.Internal
 import           Bio.Character
 import           Bio.Character.Decoration.Additive
@@ -41,7 +40,7 @@ import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal            (setDefaultMetadata)
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
-import           Control.Lens.Operators                        ((%~), (^.))
+import           Control.Lens.Operators                        ((%~))
 import           Data.Default
 import           Data.EdgeLength
 import           Data.Function                                 ((&))
@@ -130,22 +129,23 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
       -> FinalDecorationDAG
     performPreOrderDecoration =
         preorderFromRooting
-          adaptiveDirectOptimizationPreOrder
+          adaptiveDirectOptimizationPreorder
           edgeCostMapping
           contextualNodeDatum
           minBlockContext
 
         . preorderSequence
           (const additivePreorder)
-          (const fitchPreOrder   )
+          (const fitchPreorder   )
           (const additivePreorder)
-          (const sankoffPreOrder )
-          (const sankoffPreOrder )
-          (const id2             )
+          (const sankoffPreorder )
+          (const sankoffPreorder )
+          (const extractPreNode  )
       where
-        adaptiveDirectOptimizationPreOrder meta dec kidDecs = directOptimizationPreOrder pairwiseAlignmentFunction meta dec kidDecs
-          where
-            pairwiseAlignmentFunction = selectDynamicMetric meta
+        adaptiveDirectOptimizationPreorder meta decorationPreContext
+          = directOptimizationPreorder pairwiseAlignmentFunction meta decorationPreContext
+            where
+              pairwiseAlignmentFunction = selectDynamicMetric meta
 
     performPostOrderDecoration :: PostOrderDecorationDAG (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge))
     performPostOrderDecoration = postorderResult
@@ -162,23 +162,25 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
              (g' . adaptiveDirectOptimizationPostOrder)
          $ x
 
-    g :: (t -> [a] -> p) -> Maybe t -> [a] -> p
-    g _  Nothing  [] = error "Uninitialized leaf node. This is bad!"
-    g h (Just  v) [] = h v []
-    g h        _  xs = h (error "We shouldn't be using this value.") xs
-
-    g' :: (PostorderBinaryContext n c -> e) -> (PostorderBinaryContext (Maybe n) c -> e)
+    g' :: (PostorderContext n c -> e) -> (PostorderContext (Maybe n) c -> e)
     g' postFn = \case
       LeafContext optD ->
         case optD of
           Nothing -> error "unitialized leaf node in PostorderBinaryContext!"
           Just d  -> postFn $ LeafContext d
 
-      postInt@(PostInternalContext _ _ _) -> postFn $ postInt {node = error "The node data is used in the postorder!"}
+      PostNetworkContext _ ->
+        postFn $
+          PostNetworkContext
+            (error "The network internal node's data is used in the postorder!")
+      postBin@PostBinaryContext {} ->
+        postFn $
+          postBin
+          { binNode = error "A binary internal node's data is used in the postorder!"}
 
 
 
-    adaptiveDirectOptimizationPostOrder meta = directOptimizationPostOrder pairwiseAlignmentFunction
+    adaptiveDirectOptimizationPostOrder meta = directOptimizationPostorder pairwiseAlignmentFunction
       where
         pairwiseAlignmentFunction = selectDynamicMetric meta
 
