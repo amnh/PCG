@@ -36,6 +36,7 @@ module Bio.Sequence.Block
   , toMissingCharacters
   , hexmap
   , hexTranspose
+  , hexZipMeta
   , hexZipWith
   , hexZipWithMeta
   ) where

@@ -47,11 +47,11 @@ module Bio.Sequence
   -- * CharacterBlock transformations
   , toMissingCharacters
   , hexmap
-  , hexmapWithMeta
   , hexTranspose
   , hexZip
   , hexZipWith
   , hexZipWithMeta
+  , hexZipMeta
   -- * Cost quantification
   , sequenceCost
   , sequenceRootCost
@@ -64,7 +64,7 @@ import           Bio.Metadata.Continuous
 import           Bio.Metadata.Discrete
 import           Bio.Metadata.DiscreteWithTCM
 import           Bio.Metadata.Dynamic
-import           Bio.Sequence.Block           hiding (hexTranspose, hexZipWith, hexZipWithMeta, hexmap)
+import           Bio.Sequence.Block           hiding (hexTranspose, hexZipMeta, hexZipWith, hexZipWithMeta, hexmap)
 import qualified Bio.Sequence.Block           as Blk
 import           Bio.Sequence.Block.Builder
 import           Bio.Sequence.Block.Character (finalizeCharacterBlock, nonExistantBlock)
@@ -94,24 +94,9 @@ hexmap
   -> (z -> z')
   -> CharacterSequence u  v  w  x  y  z
   -> CharacterSequence u' v' w' x' y' z'
---hexmap f1 f2 f3 f4 f5 f6 = fromBlocks . parmap rpar (Blk.hexmap f1 f2 f3 f4 f5 f6) . toBlocks
+--hexmap f1 f2 f3 f4 f5 f6 = fromBlocks . parmap rpar (Blk.hexmap f1 f2 f3 f4 f5 f6) . toBlock
 hexmap f1 f2 f3 f4 f5 f6 = over blockSequence (parmap rpar (Blk.hexmap f1 f2 f3 f4 f5 f6))
 
-
--- |
--- Perform a six way map with metadata over the polymorphic types.
-hexmapWithMeta
-  :: (ContinuousCharacterMetadataDec                      -> u -> u')
-  -> (DiscreteCharacterMetadataDec                        -> v -> v')
-  -> (DiscreteCharacterMetadataDec                        -> w -> w')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> x -> x')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> y -> y')
-  -> (DynamicCharacterMetadataDec (Element DynamicChar)   -> z -> z')
-  -> MetadataSequence m
-  -> CharacterSequence u  v  w  x  y  z
-  -> CharacterSequence u' v' w' x' y' z'
-hexmapWithMeta f1 f2 f3 f4 f5 f6 = undefined
---  over blockSequence (parmap rpar (Blk.hexmap f1 f2 f3 f4 f5 f6))
 
 
 -- TODO: Make sure the inner dimension's ordering is not reversed during the transpose.
@@ -202,6 +187,28 @@ hexZipWithMeta f1 f2 f3 f4 f5 f6 meta lhs =
   where
     mSeq = meta ^. blockSequence
     cSeq = lhs  ^. blockSequence
+
+-- |
+-- Performs a zip over a character sequence and a metadata sequence.
+--
+-- Assumes that the 'CharacterSequence' and 'MetadataSequence' have the same
+-- number of character blocks and the same number of each character type in
+-- the corresponding block of each block. If this assumtion is violated, the
+-- result will be truncated.
+hexZipMeta
+  :: (ContinuousCharacterMetadataDec                      -> u -> u')
+  -> (DiscreteCharacterMetadataDec                        -> v -> v')
+  -> (DiscreteCharacterMetadataDec                        -> w -> w')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> x -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> y -> y')
+  -> (DynamicCharacterMetadataDec (Element DynamicChar)   -> z -> z')
+  -> MetadataSequence m
+  -> CharacterSequence u   v   w   x   y   z
+  -> CharacterSequence u'  v'  w'  x'  y'  z'
+hexZipMeta f1 f2 f3 f4 f5 f6 meta =
+    over blockSequence (parZipWith rpar (Blk.hexZipMeta f1 f2 f3 f4 f5 f6) mSeq)
+  where
+    mSeq = meta ^. blockSequence
 
 
 {-
