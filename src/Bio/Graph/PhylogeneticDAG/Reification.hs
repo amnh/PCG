@@ -124,19 +124,23 @@ reifyDAGWithContext leafCount maskDAG (PDAG m dag) = PDAG2 newRDAG m
             indexData = references dag ! i
             newNode =
                 PNode2
-                { resolutions          = res
+                { resolutions          = resInfo
                 , nodeDecorationDatum2 = nodeDecorationDatum $ nodeDecoration indexData
                 }
-            res = pure
-                ResInfo
-                { totalSubtreeCost       = 0
-                , localSequenceCost      = 0
-                , subtreeEdgeSet         = mempty
-                , leafSetRepresentation  = bv
-                , subtreeRepresentation  = ns
-                , topologyRepresentation = mempty
-                , characterSequence      = sequenceDecoration $ nodeDecoration indexData
-                }
+            resMeta =
+                    ResolutionMetadata
+                    { totalSubtreeCost       = 0
+                    , localSequenceCost      = 0
+                    , subtreeEdgeSet         = mempty
+                    , leafSetRepresentation  = bv
+                    , subtreeRepresentation  = ns
+                    , topologyRepresentation = mempty
+                    }
+            resInfo = pure
+                    ResInfo
+                    { resolutionMetadata = resMeta
+                    , characterSequence  = sequenceDecoration $ nodeDecoration indexData
+                    }
 
             (bv, ns) =
               case buildLeafNodeAssignments ! i of
@@ -145,7 +149,7 @@ reifyDAGWithContext leafCount maskDAG (PDAG m dag) = PDAG2 newRDAG m
                            )
                 Nothing ->
                   case IM.keys $ childRefs indexData of
-                    x:xs -> ( foldr1 (.|.) $ leafSetRepresentation . NE.head . resolutions . (memo !) <$> (x:|xs)
-                            , foldMap1      (subtreeRepresentation . NE.head . resolutions . (memo !)) (x:|xs)
+                    x:xs -> ( foldr1 (.|.) $ (^. _leafSetRepresentation) . NE.head . resolutions . (memo !) <$> (x:|xs)
+                            , foldMap1      ((^. _subtreeRepresentation) . NE.head . resolutions . (memo !)) (x:|xs)
                             )
                     []   -> error "Never occurs."

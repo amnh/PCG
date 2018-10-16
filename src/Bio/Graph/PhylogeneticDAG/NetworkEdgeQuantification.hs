@@ -338,7 +338,7 @@ createForestContext metaSeq displayForest = fromBlockMinimizationContext $ foldM
   where
     rootCount      = length displayForest
     getRootingEdge = fst . NE.head . fromJust . (^. traversalFoci)
-    blockContext   = toBlockMinimizationContext <$> topologyRepresentation <*> blockCosts
+    blockContext   = toBlockMinimizationContext <$> (^. _topologyRepresentation) <*> blockCosts
       where
         blockCosts = zipWith (\m x -> (BLK.rootCost rootCount m x, BLK.blockCost m x, getRootingEdge <$> (m ^. dynamicBin))) (metaSeq ^. blockSequence) . (^. blockSequence) . characterSequence
 
@@ -413,5 +413,5 @@ formsValidDisplayForest resSet =
       _     -> notContradictory && completeLeafCoverage
   where
     notContradictory     = transitivePropertyHolds resolutionsDoNotOverlap resSet
-    completeLeafCoverage = let bitVal = foldMap1 leafSetRepresentation resSet
+    completeLeafCoverage = let bitVal = foldMap1 (^. _leafSetRepresentation) resSet
                            in  complement (bitVal `xor` bitVal) == bitVal
