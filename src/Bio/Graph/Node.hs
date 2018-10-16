@@ -17,6 +17,7 @@ module Bio.Graph.Node
   , PhylogeneticNode2(..)
   , ResolutionCache
   , ResolutionInformation(..)
+  , ResolutionMetadata(..)
   , HasNodeDecorationDatum(..)
   , HasResolutions(..)
   , HasTotalSubtreeCost(..)
