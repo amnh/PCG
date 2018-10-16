@@ -26,5 +26,4 @@ import Control.Lens
 -- |
 -- A 'Iso' for 'blockSequence'.
 class HasBlocks s t a b | s -> a, t -> b, a -> s, b -> t where
-
     blockSequence :: Iso s t a b
