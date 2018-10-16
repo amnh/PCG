@@ -104,8 +104,8 @@ selectDynamicMetric candidate
 directOptimizationPostorder
   :: SimpleDynamicDecoration d c
   => PairwiseAlignment c
-  -> PostorderContext d (DynamicDecorationDirectOptimizationPostOrderResult c)
-  ->  DynamicDecorationDirectOptimizationPostOrderResult c
+  -> PostorderContext d (DynamicDecorationDirectOptimizationPostorderResult c)
+  ->  DynamicDecorationDirectOptimizationPostorderResult c
 directOptimizationPostorder pairwiseAlignment
   = postorderContext
       initializeLeaf
@@ -119,7 +119,7 @@ directOptimizationPostorder pairwiseAlignment
 initializeLeaf
   :: SimpleDynamicDecoration d c
   => d
-  -> DynamicDecorationDirectOptimizationPostOrderResult c
+  -> DynamicDecorationDirectOptimizationPostorderResult c
 initializeLeaf =
     extendDynamicToPostorder
       <$> id
@@ -139,8 +139,8 @@ updateFromLeaves
   :: ( EncodableDynamicCharacter c
      )
   => PairwiseAlignment c
-  -> (DynamicDecorationDirectOptimizationPostOrderResult c, DynamicDecorationDirectOptimizationPostOrderResult c)
-  -> DynamicDecorationDirectOptimizationPostOrderResult c
+  -> (DynamicDecorationDirectOptimizationPostorderResult c, DynamicDecorationDirectOptimizationPostorderResult c)
+  -> DynamicDecorationDirectOptimizationPostorderResult c
 updateFromLeaves pairwiseAlignment (lChild , rChild) = resultDecoration
   where
     resultDecoration = extendDynamicToPostorder lChild localCost totalCost combinedAverageLength ungapped gapped lhsAlignment rhsAlignment
@@ -155,7 +155,7 @@ updateFromLeaves pairwiseAlignment (lChild , rChild) = resultDecoration
 -- Parameterized over a 'PairwiseAlignment' function to allow for different
 -- atomic alignments depending on the character's metadata.
 directOptimizationPreorder
-  :: DirectOptimizationPostOrderDecoration d c
+  :: DirectOptimizationPostorderDecoration d c
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
   -> PreorderContext d (DynamicDecorationDirectOptimization c)
@@ -172,7 +172,7 @@ directOptimizationPreorder pairwiseAlignment meta =
 -- initializes the root node decoration as the base case of the pre-order
 -- traversal.
 initializeRoot
-  :: DirectOptimizationPostOrderDecoration d c
+  :: DirectOptimizationPostorderDecoration d c
   => d
   -> DynamicDecorationDirectOptimization c
 initializeRoot =
@@ -203,7 +203,7 @@ disambiguateElement x = zed `setBit` idx
 -- Use the decoration(s) of the ancestral nodes to calculate the corrent node
 -- decoration. The recursive logic of the pre-order traversal.
 updateFromParent
-  :: DirectOptimizationPostOrderDecoration d c
+  :: DirectOptimizationPostorderDecoration d c
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
   -> d
@@ -237,7 +237,7 @@ updateFromParent pairwiseAlignment meta currentDecoration parentDecoration = res
 -- |
 -- A three way comparison of characters used in the DO preorder traversal.
 tripleComparison
-  :: DirectOptimizationPostOrderDecoration d c
+  :: DirectOptimizationPostorderDecoration d c
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
   -> d

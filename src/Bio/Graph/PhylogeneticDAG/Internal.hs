@@ -319,7 +319,6 @@ applySoftwireResolutions nodeInfo =
       OneChild (resCache, _)         -> fmap PostNetworkContext <$> resCache
 
       TwoChildren leftCtxt rightCtxt -> pairingLogic (leftCtxt, rightCtxt)
-
   where
     multipleParents :: IntSet -> Bool
     multipleParents = (/= 1) . olength

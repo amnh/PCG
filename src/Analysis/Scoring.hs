@@ -116,10 +116,10 @@ performDecoration
      )
   => PhylogeneticDAG2 m EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
   -> FinalDecorationDAG
-performDecoration x = performPreOrderDecoration performPostOrderDecoration
+performDecoration x = performPreorderDecoration performPostorderDecoration
   where
-    performPreOrderDecoration ::
-      PostOrderDecorationDAG
+    performPreorderDecoration ::
+      PostorderDecorationDAG
       (TraversalTopology
       , Double
       , Double
@@ -127,7 +127,7 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
       , Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge)
       )
       -> FinalDecorationDAG
-    performPreOrderDecoration =
+    performPreorderDecoration =
         preorderFromRooting
           adaptiveDirectOptimizationPreorder
           edgeCostMapping
@@ -147,19 +147,19 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
             where
               pairwiseAlignmentFunction = selectDynamicMetric meta
 
-    performPostOrderDecoration :: PostOrderDecorationDAG (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge))
-    performPostOrderDecoration = postorderResult
+    performPostorderDecoration :: PostorderDecorationDAG (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge))
+    performPostorderDecoration = postorderResult
 
     (minBlockContext, postorderResult) = assignPunitiveNetworkEdgeCost post
     (post, edgeCostMapping, contextualNodeDatum) =
-         assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostOrder
+         assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostorder
          . postorderSequence'
              (const (g' additivePostorder))
              (const (g' fitchPostorder))
              (const (g' additivePostorder))
              (g' . sankoffPostorder)
              (g' . sankoffPostorder)
-             (g' . adaptiveDirectOptimizationPostOrder)
+             (g' . adaptiveDirectOptimizationPostorder)
          $ x
 
     g' :: (PostorderContext n c -> e) -> (PostorderContext (Maybe n) c -> e)
@@ -180,7 +180,7 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
 
 
 
-    adaptiveDirectOptimizationPostOrder meta = directOptimizationPostorder pairwiseAlignmentFunction
+    adaptiveDirectOptimizationPostorder meta = directOptimizationPostorder pairwiseAlignmentFunction
       where
         pairwiseAlignmentFunction = selectDynamicMetric meta
 

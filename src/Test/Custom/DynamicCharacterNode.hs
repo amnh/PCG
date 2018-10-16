@@ -77,20 +77,20 @@ constructNode lhs rhs
 toLeafNode :: ( Ord (Element c)
               , SimpleDynamicDecoration d c
               )
-           => d -> DynamicDecorationDirectOptimizationPostOrderResult c
+           => d -> DynamicDecorationDirectOptimizationPostorderResult c
 toLeafNode c = directOptimizationPostorder pairwiseFunction (LeafContext c)
 
 
-toRootNode :: DynamicDecorationDirectOptimizationPostOrderResult DynamicChar
-           -> DynamicDecorationDirectOptimizationPostOrderResult DynamicChar
+toRootNode :: DynamicDecorationDirectOptimizationPostorderResult DynamicChar
+           -> DynamicDecorationDirectOptimizationPostorderResult DynamicChar
            -> DynamicDecorationDirectOptimization DynamicChar
 toRootNode x y = directOptimizationPreorder pairwiseFunction defMetadata (RootContext z)
   where
-    z :: DynamicDecorationDirectOptimizationPostOrderResult DynamicChar
+    z :: DynamicDecorationDirectOptimizationPostorderResult DynamicChar
     z = directOptimizationPostorder
           pairwiseFunction
           (PostBinaryContext {binNode = e, leftChild = x , rightChild = y})
-    e :: DynamicDecorationDirectOptimizationPostOrderResult DynamicChar
+    e :: DynamicDecorationDirectOptimizationPostorderResult DynamicChar
     e = undefined
 
 
