@@ -570,6 +570,7 @@ Test-Suite unit-tests
                     , mono-traversable   >=1.0
                     , mtl
                     , pcg-utility
+                    , phylocomgraph
                     , pointed
                     , QuickCheck
                     -- required for Data.Semigroup.Foldable.toNonEmpty
@@ -592,13 +593,13 @@ Test-Suite unit-tests
 
   -- This is a hack beacuse the cxx-options & cxx-options feature in Cabal-2.2
   -- is not fully implmented and does not correctly link to the C++ sources.
-  if os(linux) && arch(x86_64)
-    ghc-options:    .stack-work/dist/x86_64-linux/Cabal-2.2.0.1/build/ffi/memoized-tcm/costMatrix_2d.dyn_o
-                    .stack-work/dist/x86_64-linux/Cabal-2.2.0.1/build/ffi/memoized-tcm/costMatrix_3d.dyn_o
+--  if os(linux) && arch(x86_64)
+--    ghc-options:    .stack-work/dist/x86_64-linux/Cabal-2.2.0.1/build/ffi/memoized-tcm/costMatrix_2d.dyn_o
+--                    .stack-work/dist/x86_64-linux/Cabal-2.2.0.1/build/ffi/memoized-tcm/costMatrix_3d.dyn_o
 
-  if os(osx) && arch(x86_64)
-    ghc-options:    .stack-work/dist/x86_64-osx/Cabal-2.2.0.1/build/ffi/memoized-tcm/costMatrix_2d.dyn_o
-                    .stack-work/dist/x86_64-osx/Cabal-2.2.0.1/build/ffi/memoized-tcm/costMatrix_3d.dyn_o
+--  if os(osx) && arch(x86_64)
+--    ghc-options:    .stack-work/dist/x86_64-osx/Cabal-2.2.0.1/build/ffi/memoized-tcm/costMatrix_2d.dyn_o
+--                    .stack-work/dist/x86_64-osx/Cabal-2.2.0.1/build/ffi/memoized-tcm/costMatrix_3d.dyn_o
 
   hs-source-dirs:   test, src, app
 

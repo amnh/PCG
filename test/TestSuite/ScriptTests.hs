@@ -26,7 +26,7 @@ import Turtle                     hiding (char, many, satisfy, x)
 
 testSuite :: IO TestTree
 testSuite = testGroup "Script Test Suite" <$> sequenceA
-  [ scriptCheckCost 2.625
+  [ scriptCheckCost 7
         "datasets/continuous/missing/test.pcg"
         "datasets/continuous/missing/cost.data"
   , scriptCheckCost 50.46
@@ -38,7 +38,7 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
   , scriptCheckCost 1665
         "datasets/non-additive/single-block/arthropods.pcg"
         "datasets/non-additive/single-block/cost.data"
-  , scriptCheckCost 1051.0
+  , scriptCheckCost 1206.0
         "datasets/additive/missing/test.pcg"
         "datasets/additive/missing/cost.data"
   , scriptCheckCost 77252
