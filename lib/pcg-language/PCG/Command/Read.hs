@@ -62,8 +62,9 @@ data  FileSpecification
     | AnnotatedFile      !(NonEmpty FilePath)
     | ChromosomeFile     !(NonEmpty FilePath)
     | GenomeFile         !(NonEmpty FilePath)
-    | CustomAlphabetFile !(NonEmpty FileSpecification) !TcmReference
-    | PrealignedFile     !(NonEmpty FileSpecification) !TcmReference
+    | CustomAlphabetFile !(NonEmpty FilePath) !TcmReference
+    | WithSpecifiedTCM   !FileSpecification   !TcmReference
+    | PrealignedFile     !FileSpecification
     deriving (Show)
 
 
