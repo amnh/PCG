@@ -46,6 +46,7 @@ iupacToAminoAcid = toBimap
     , ('R', "R")
     , ('S', "S")
     , ('T', "T")
+    , ('U', "C")
     , ('V', "V")
     , ('W', "W")
     , ('X', "ACDEFGHIKLMNPQRSTVWY")
