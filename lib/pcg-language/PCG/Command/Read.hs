@@ -17,9 +17,7 @@
 {-# LANGUAGE UnboxedSums      #-}
 
 module PCG.Command.Read
-  ( CustomAlphabetOptions(..)
-  , CustomAlphabetStrategy(..)
-  , FileSpecification(..)
+  ( FileSpecification(..)
   , FileSpecificationContent(..)
   , ReadCommand(..)
   , FileContent
@@ -45,10 +43,13 @@ newtype ReadCommand = ReadCommand (NonEmpty FileSpecification)
 
 -- |
 -- The content of a file along with a possibly associated TCM file content.
-data  FileSpecificationContent
-    = SpecContent
-    { dataFiles :: ![FileResult]
-    , tcmFile   :: !(Maybe FileResult)
+newtype FileSpecificationContent = SpecContent !(NonEmpty DataContent)
+
+
+data  DataContent
+    = DataContent
+    { dataFile :: !FileResult
+    , tcmFile  :: !(Maybe FileResult)
     } deriving (Eq)
 
 
@@ -61,17 +62,8 @@ data  FileSpecification
     | AnnotatedFile      !(NonEmpty FilePath)
     | ChromosomeFile     !(NonEmpty FilePath)
     | GenomeFile         !(NonEmpty FilePath)
-    | CustomAlphabetFile !(NonEmpty FilePath) !TcmReference ![CustomAlphabetOptions]
-    | PrealignedFile     !FileSpecification   !TcmReference
-    deriving (Show)
-
-
--- |
--- Options for custom alphabets. Not sure how these will be evaluation.
-data  CustomAlphabetOptions
-    = Init3D                !Bool
-    | Level  {-# UNPACK #-} !Int  !(Either CustomAlphabetStrategy Tiebreaker)
-    | Ties                  !Tiebreaker
+    | CustomAlphabetFile !(NonEmpty FileSpecification) !TcmReference
+    | PrealignedFile     !(NonEmpty FileSpecification) !TcmReference
     deriving (Show)
 
 
@@ -122,30 +114,13 @@ fileSpec :: Ap SyntacticArgument FileSpecification
 fileSpec = choiceFrom [ unspecified, customAlphabet, aminoAcids, nucleotides, annotated, chromosome, genome, prealigned ]
   where
     unspecified    = UnspecifiedFile . pure <$> text
-    aminoAcids     = AminoAcidFile  <$> oneOrSomeWithIds text [ "amino_acid", "amino_acids", "aminoacid", "aminoacids" ]
+    aminoAcids     = AminoAcidFile  <$> oneOrSomeWithIds text [ "amino_acid", "amino_acids", "aminoacid", "aminoacids", "protein", "proteins" ]
     nucleotides    = NucleotideFile <$> oneOrSomeWithIds text [ "nucleotide", "nucleotides" ]
     annotated      = AnnotatedFile  <$> oneOrSomeWithIds text [ "annotated" ]
     chromosome     = ChromosomeFile <$> oneOrSomeWithIds text [ "chromosome", "chromosomes", "chromosomal" ]
     genome         = GenomeFile     <$> oneOrSomeWithIds text [ "genome", "genomes", "genomic", "genomics" ]
-    prealigned     = argId "prealigned"      . argList $ PrealignedFile <$> fileSpec <*> tcmReference
-    customAlphabet = argId "custom_alphabet" . argList $ CustomAlphabetFile <$> fileRefs <*> tcmReference <*> alphabetOpts
-      where
-        fileRefs     = oneOrSome text
-        alphabetOpts = (toList <$> oneOrSome alphabetOpt) `withDefault` []
-        alphabetOpt  = choiceFrom [ initSpec, levelSpec, Ties <$> tiebreaker ]
-          where
-            initSpec   = Init3D     <$> argId "init3d" bool
-            tiebreaker = Tiebreaker <$> argIds [ "tie_breaker", "tiebreaker" ] strategy
-            levelSpec  = argId "level" . argList $ Level <$> int <*> choiceFrom [ Left <$> strategy, Right <$> tiebreaker]
-
-            strategy  = choiceFrom
-                [ value "first"     $> First
-                , value "last"      $> Last
-                , value "at_random" $> AtRandom
-                , value "randomly"  $> AtRandom
-                , value "random"    $> AtRandom
-                ]
-
+    prealigned     = argId "prealigned"      . argList $ PrealignedFile     <$> oneOrSome fileSpec <*> tcmReference
+    customAlphabet = argId "custom_alphabet" . argList $ CustomAlphabetFile <$> oneOrSome fileSpec <*> tcmReference
     tcmReference   = (Just <$> argId "tcm" (argList text)) `withDefault` Nothing
 
 

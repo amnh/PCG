@@ -10,7 +10,7 @@ import           Bio.Character.Parsed
 import           Bio.Graph
 import           Bio.Graph.Forest.Parsed
 import           Bio.Metadata.Parsed
-import           Control.Monad                             (liftM2, when)
+import           Control.Monad                             ((<=<), liftM2, when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Except
 import           Control.Parallel.Custom
@@ -287,18 +287,19 @@ toFractured tcmMat path =
 
 
 getSpecifiedContent :: FileSpecification -> ExceptT ReadError IO FileSpecificationContent
-getSpecifiedContent (UnspecifiedFile    xs      ) = getSpecifiedContentSimple xs
-getSpecifiedContent (AminoAcidFile      xs      ) = getSpecifiedContentSimple xs
-getSpecifiedContent (NucleotideFile     xs      ) = getSpecifiedContentSimple xs
-getSpecifiedContent (AnnotatedFile      xs      ) = getSpecifiedContentSimple xs
-getSpecifiedContent (ChromosomeFile     xs      ) = getSpecifiedContentSimple xs
-getSpecifiedContent (GenomeFile         xs      ) = getSpecifiedContentSimple xs
-getSpecifiedContent (CustomAlphabetFile xs tcm _) = liftM2 SpecContent (getSpecifiedFileContents xs) (getSpecifiedTcm tcm)
-getSpecifiedContent (PrealignedFile     fs tcm  ) = do
-    specifiedContent <- getSpecifiedContent fs
-    case tcmFile specifiedContent of
-      Nothing -> SpecContent (dataFiles specifiedContent) <$> getSpecifiedTcm tcm
-      Just _  -> pure specifiedContent
+getSpecifiedContent (UnspecifiedFile    xs    ) = getSpecifiedContentSimple xs
+getSpecifiedContent (AminoAcidFile      xs    ) = getSpecifiedContentSimple xs
+getSpecifiedContent (NucleotideFile     xs    ) = getSpecifiedContentSimple xs
+getSpecifiedContent (AnnotatedFile      xs    ) = getSpecifiedContentSimple xs
+getSpecifiedContent (ChromosomeFile     xs    ) = getSpecifiedContentSimple xs
+getSpecifiedContent (GenomeFile         xs    ) = getSpecifiedContentSimple xs
+getSpecifiedContent (CustomAlphabetFile xs tcm) = liftM2 SpecContent (getSpecifiedFileContents xs) (getSpecifiedTcm tcm)
+getSpecifiedContent (PrealignedFile     fs tcm) = traverse (conditionallyAddTCM <=< getSpecifiedContent) fs
+  where
+    conditionallyAddTCM x =
+        case tcmFile x of
+          Nothing -> SpecContent (dataFiles x) <$> getSpecifiedTcm tcm
+          Just _  -> pure x
 
 
 getSpecifiedTcm :: Maybe FilePath -> ExceptT ReadError IO (Maybe (FilePath, FileContent))
