@@ -30,7 +30,7 @@
 
 module Analysis.Parsimony.Sankoff.Internal where
 
-
+import Analysis.Parsimony.Internal
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Metric
 import Bio.Character.Encodable
@@ -47,17 +47,15 @@ import Prelude                           hiding (zip)
 
 -- |
 -- Used on the post-order (i.e. first) traversal.
-sankoffPostOrder
+sankoffPostorder
   :: DiscreteCharacterDecoration d c
   => DiscreteWithTCMCharacterMetadataDec c
-  -> d
-  -> [SankoffOptimizationDecoration c]
+  -> PostorderContext d (SankoffOptimizationDecoration c)
   ->  SankoffOptimizationDecoration c
-sankoffPostOrder meta charDecoration xs =
-  case xs of
-    []   -> initializeCostVector meta charDecoration -- is a leaf
-    y:ys -> updateCostVector meta charDecoration (y:|ys)
-
+sankoffPostorder meta
+  = postorderContext
+      (initializeCostVector meta)
+      (updateCostVector meta)
 
 -- |
 -- Used on the pre-order (i.e. second) traversal.
@@ -65,28 +63,31 @@ sankoffPostOrder meta charDecoration xs =
 -- Either calls `initializeDirVector` on root or `updateDirectionalMins`.
 -- Needs to determine which child it’s updating, then sends the appropriate
 -- minlist to `updateDirectionalMins`.
-sankoffPreOrder
+sankoffPreorder
   :: EncodableStaticCharacter c
-  => SankoffOptimizationDecoration c
-  -> [(Word, SankoffOptimizationDecoration c)]
+  => PreorderContext (SankoffOptimizationDecoration c) (SankoffOptimizationDecoration c)
   -> SankoffOptimizationDecoration c
-sankoffPreOrder childDecoration [] = childDecoration & discreteCharacter .~ newChar    -- is a root
+sankoffPreorder = preorderContext rootFn internalFn
   where
-    childMins     = childDecoration ^. characterCostVector
-    overallMin    = childDecoration ^. characterCost
-    emptyMedian   = emptyStatic $ childDecoration ^. discreteCharacter
-    newChar       = foldlWithKey' setState emptyMedian childMins
+    rootFn childDecoration = childDecoration & discreteCharacter .~ newChar
+       where
+         childMins     = childDecoration ^. characterCostVector
+         overallMin    = childDecoration ^. characterCost
+         emptyMedian   = emptyStatic $ childDecoration ^. discreteCharacter
+         newChar       = foldlWithKey' setState emptyMedian childMins
 
-    setState acc pos childMin
-      | unsafeToFinite childMin == overallMin = acc `setBit` pos
-      | otherwise                             = acc
+         setState acc pos childMin
+           | unsafeToFinite childMin == overallMin = acc `setBit` pos
+           | otherwise                             = acc
 
-sankoffPreOrder childDecoration ((whichChild, parentDecoration):_) = resultDecoration $   -- is either internal node or leaf
-    case whichChild of
-      0 -> fst
-      _ -> snd
-  where
-    resultDecoration f = updateDirectionalMins parentDecoration childDecoration $ f (parentDecoration ^. minStateTuple)
+    internalFn childDecorationOpt parentDecoration
+      = case childDecorationOpt of
+          Left  childDecL -> resultDecoration fst childDecL
+          Right childDecR -> resultDecoration snd childDecR
+      where
+        resultDecoration proj childDec
+          = updateDirectionalMins parentDecoration childDec
+              $ proj (parentDecoration ^. minStateTuple)
 
 
 -- |
@@ -156,10 +157,9 @@ updateCostVector
   :: DiscreteCharacterDecoration d c
   => DiscreteWithTCMCharacterMetadataDec c
   -> d
-  -> NonEmpty (SankoffOptimizationDecoration c)
+  -> (SankoffOptimizationDecoration c , SankoffOptimizationDecoration c)
   -> SankoffOptimizationDecoration c
-updateCostVector _meta _parentDecoration (x:|[])                        = x                    -- Shouldn't be possible, but here for completion.
-updateCostVector meta _parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDecoration -- May? be able to amend this to use non-binary children.
+updateCostVector meta _parentDecoration (leftChildDec, rightChildDec) = returnNodeDecoration -- May? be able to amend this to use non-binary children.
   where
     (cs, ds, minTransCost) = foldr findMins initialAccumulator range   -- Sorry abut these shitty variable names. It was to shorten
                                                                        -- the 'extendDiscreteToSankoff' call.

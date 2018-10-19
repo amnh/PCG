@@ -12,6 +12,7 @@
 
 {-# LANGUAGE FlexibleContexts      #-}
 
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies          #-}
 
@@ -29,19 +30,24 @@ module Analysis.Scoring
 import           Analysis.Parsimony.Additive.Internal
 import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Analysis.Parsimony.Fitch.Internal
+import           Analysis.Parsimony.Internal
 import           Analysis.Parsimony.Sankoff.Internal
 import           Bio.Character
 import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Graph
 import           Bio.Graph.Node
+import           Bio.Graph.PhylogeneticDAG.Internal            (setDefaultMetadata)
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
+import           Control.Lens.Operators                        ((%~))
 import           Data.Default
 import           Data.EdgeLength
+import           Data.Function                                 ((&))
 import qualified Data.List.NonEmpty                            as NE
 import           Data.NodeLabel
 import           Data.Vector                                   (Vector)
+
 
 
 -- |
@@ -53,24 +59,18 @@ wipeScoring
 wipeScoring (PDAG2 dag m) = PDAG2 wipedDAG m
   where
     wipedDAG =
-        RefDAG
-          <$> fmap wipeDecorations . references
-          <*> rootRefs
-          <*> ((mempty, mempty, Nothing) <$) . graphData
-          $ dag
+      dag & _references %~ fmap wipeDecorations
+          & _graphData  %~ setDefaultMetadata
 
     wipeDecorations
       :: Default n
       => IndexData e (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
       -> IndexData e (PhylogeneticNode2 (CharacterSequence (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)) n)
-    wipeDecorations x = {- (\y -> trace ("\n\nOutput from wipeDecorations:\n\n" <> show y) y) $ -}
-          IndexData
-            <$> wipeNode shouldWipe . nodeDecoration
-            <*> parentRefs
-            <*> childRefs
-            $ x
+    wipeDecorations ind =
+      ind & _nodeDecoration %~ wipeNode shouldWipe
+
       where
-        shouldWipe = not . null $ childRefs x
+        shouldWipe = (not . null) . childRefs $ ind
 
 
 -- |
@@ -81,21 +81,15 @@ wipeNode
   => Bool -- ^ Do I wipe?
   -> PhylogeneticNode2 (CharacterSequence        u         v         w         x         y         z ) n
   -> PhylogeneticNode2 (CharacterSequence (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)) n
---wipeNode _ node | trace ("!!! wipeNode InputNode:\n" <> show node) False = undefined
-wipeNode wipe = {-- (\x -> trace ("!!! wipeNode OutputNode:\n" <> show x) x) $ --} PNode2 <$> pure . g . NE.head . resolutions <*> f . nodeDecorationDatum2
+wipeNode wipe =
+  PNode2 <$> pure . g . NE.head . resolutions <*> f . nodeDecorationDatum2
       where
         f :: Default a => a -> a
         f | wipe      = const def
           | otherwise = id
 
-        g = ResInfo
-              <$> totalSubtreeCost
-              <*> localSequenceCost
-              <*> leafSetRepresentation
-              <*> subtreeRepresentation
-              <*> subtreeEdgeSet
-              <*> topologyRepresentation
-              <*> hexmap h h h h h h . characterSequence
+        g res = res & _characterSequence %~ hexmap h h h h h h
+
         h :: a -> Maybe a
         h | wipe      = const Nothing
           | otherwise = Just
@@ -116,15 +110,16 @@ performDecoration
      , DiscreteCharacterDecoration x StaticCharacter
      , DiscreteCharacterDecoration y StaticCharacter
      , RangedCharacterDecoration u ContinuousChar
+     , RangedCharacterDecoration u ContinuousChar
      , RangedCharacterDecoration w StaticCharacter
      , SimpleDynamicDecoration z DynamicCharacter
      )
   => PhylogeneticDAG2 m EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
   -> FinalDecorationDAG
-performDecoration x = performPreOrderDecoration performPostOrderDecoration
+performDecoration x = performPreorderDecoration performPostorderDecoration
   where
-    performPreOrderDecoration ::
-      PostOrderDecorationDAG
+    performPreorderDecoration ::
+      PostorderDecorationDAG
       (TraversalTopology
       , Double
       , Double
@@ -132,46 +127,61 @@ performDecoration x = performPreOrderDecoration performPostOrderDecoration
       , Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge)
       )
       -> FinalDecorationDAG
-    performPreOrderDecoration =
+    performPreorderDecoration =
         preorderFromRooting
-          adaptiveDirectOptimizationPreOrder
+          adaptiveDirectOptimizationPreorder
           edgeCostMapping
           contextualNodeDatum
-          minBlockConext
+          minBlockContext
 
         . preorderSequence
-          (const additivePreOrder)
-          (const fitchPreOrder   )
-          (const additivePreOrder)
-          (const sankoffPreOrder )
-          (const sankoffPreOrder )
-          (const id2             )
+          (const additivePreorder)
+          (const fitchPreorder   )
+          (const additivePreorder)
+          (const sankoffPreorder )
+          (const sankoffPreorder )
+          (const extractPreNode  )
       where
-        adaptiveDirectOptimizationPreOrder meta dec kidDecs = directOptimizationPreOrder pairwiseAlignmentFunction meta dec kidDecs
-          where
-            pairwiseAlignmentFunction = selectDynamicMetric meta
+        adaptiveDirectOptimizationPreorder meta decorationPreContext
+          = directOptimizationPreorder pairwiseAlignmentFunction meta decorationPreContext
+            where
+              pairwiseAlignmentFunction = selectDynamicMetric meta
 
-    performPostOrderDecoration :: PostOrderDecorationDAG (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge))
-    performPostOrderDecoration = postOrderResult
+    performPostorderDecoration :: PostorderDecorationDAG (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge))
+    performPostorderDecoration = postorderResult
 
-    (minBlockConext, postOrderResult) = assignPunitiveNetworkEdgeCost post
+    (minBlockContext, postorderResult) = assignPunitiveNetworkEdgeCost post
     (post, edgeCostMapping, contextualNodeDatum) =
-         assignOptimalDynamicCharacteracterRootEdges adaptiveDirectOptimizationPostOrder
+         assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostorder
          . postorderSequence'
-             (const (g additivePostOrder))
-             (const (g    fitchPostOrder))
-             (const (g additivePostOrder))
-             (g . sankoffPostOrder)
-             (g . sankoffPostOrder)
-             (g . adaptiveDirectOptimizationPostOrder)
+             (const (g' additivePostorder))
+             (const (g' fitchPostorder))
+             (const (g' additivePostorder))
+             (g' . sankoffPostorder)
+             (g' . sankoffPostorder)
+             (g' . adaptiveDirectOptimizationPostorder)
          $ x
 
-    g :: (t -> [a] -> p) -> Maybe t -> [a] -> p
-    g _  Nothing  [] = error "Uninitialized leaf node. This is bad!"
-    g h (Just  v) [] = h v []
-    g h        _  xs = h (error "We shouldn't be using this value.") xs
+    g' :: (PostorderContext n c -> e) -> (PostorderContext (Maybe n) c -> e)
+    g' postFn = \case
+      LeafContext optD ->
+        case optD of
+          Nothing -> error "unitialized leaf node in PostorderBinaryContext!"
+          Just d  -> postFn $ LeafContext d
 
-    adaptiveDirectOptimizationPostOrder meta = directOptimizationPostOrder pairwiseAlignmentFunction
+      PostNetworkContext _ ->
+        postFn $
+          PostNetworkContext
+            (error "The network internal node's data is used in the postorder!")
+      postBin@PostBinaryContext {} ->
+        postFn $
+          postBin
+          { binNode = error "A binary internal node's data is used in the postorder!"}
+
+
+>>>>>>> postorder-types
+
+    adaptiveDirectOptimizationPostorder meta = directOptimizationPostorder pairwiseAlignmentFunction
       where
         pairwiseAlignmentFunction = selectDynamicMetric meta
 

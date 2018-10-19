@@ -22,7 +22,7 @@ module Bio.Graph.Constructions
   , GraphState
   , PhylogeneticDAG(..)
   , PhylogeneticDAG2(..)
-  , PostOrderDecorationDAG
+  , PostorderDecorationDAG
   , SearchState
   , TopologicalResult
   , UnifiedBlock
@@ -115,7 +115,7 @@ type FinalDecorationDAG =
 
 -- |
 -- Decoration of a phylogenetic DAG after a post-order traversal.
-type PostOrderDecorationDAG m =
+type PostorderDecorationDAG m =
        PhylogeneticDAG2
          m
          EdgeLength
@@ -125,7 +125,8 @@ type PostOrderDecorationDAG m =
          (AdditivePostorderDecoration   StaticCharacter)
          (SankoffOptimizationDecoration StaticCharacter)
          (SankoffOptimizationDecoration StaticCharacter)
-         (DynamicDecorationDirectOptimizationPostOrderResult DynamicCharacter)
+         (DynamicDecorationDirectOptimizationPostorderResult DynamicCharacater)
+>>>>>>> postorder-types
 
 
 -- |
@@ -177,6 +178,11 @@ type  UnifiedCharacterSequence
         UnifiedDiscreteCharacter
         UnifiedDiscreteCharacter
         UnifiedDynamicCharacteracter
+
+
+-- |
+-- A metadata sequence resulting fro the READ command.
+type  UnifiedMetadataSequence = MetadataSequence ()
 
 
 -- |

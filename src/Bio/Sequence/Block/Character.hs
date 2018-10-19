@@ -36,6 +36,7 @@ module Bio.Sequence.Block.Character
   -- * Transformations
   , hexmap
   , hexTranspose
+  , hexZipMeta
   , hexZipWith
   , hexZipWithMeta
   , toMissingCharacters
@@ -423,12 +424,13 @@ hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = CB
 -- Assumes that the 'CharacterBlock' values have the same number of each character
 -- type. If this assumtion is violated, the result will be truncated.
 hexZipWithMeta
-  :: (ContinuousCharacterMetadataDec        -> u -> u' -> u'')
-  -> (DiscreteCharacterMetadataDec          -> v -> v' -> v'')
-  -> (DiscreteCharacterMetadataDec          -> w -> w' -> w'')
+  :: (ContinuousCharacterMetadataDec                      -> u -> u' -> u'')
+  -> (DiscreteCharacterMetadataDec                        -> v -> v' -> v'')
+  -> (DiscreteCharacterMetadataDec                        -> w -> w' -> w'')
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> x -> x' -> x'')
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> y -> y' -> y'')
-  -> (DynamicCharacteracterMetadataDec (Element DynamicCharacter) -> z -> z' -> z'')
+  -> (DynamicCharacterMetadataDec (Element DynamicChar)   -> z -> z' -> z'')
+>>>>>>> postorder-types
   -> MetadataBlock m
   -> CharacterBlock u   v   w   x   y   z
   -> CharacterBlock u'  v'  w'  x'  y'  z'
@@ -443,6 +445,37 @@ hexZipWithMeta f1 f2 f3 f4 f5 f6 meta lhs rhs = CB
       , _dynamicBin     = parZipWith3 rpar f6 (meta ^.     dynamicBin) (lhs ^.     dynamicBin) (rhs ^.     dynamicBin)
       }
 
+-- |
+-- Performs a zip over the two character blocks. Uses the input functions to zip
+-- the different character types in the character block.
+--
+-- Assumes that the 'CharacterBlock' values have the same number of each character
+-- type. If this assumtion is violated, the result will be truncated.
+hexZipMeta
+  :: (ContinuousCharacterMetadataDec                      -> u -> u')
+  -> (DiscreteCharacterMetadataDec                        -> v -> v')
+  -> (DiscreteCharacterMetadataDec                        -> w -> w')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> x -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> y -> y')
+  -> (DynamicCharacterMetadataDec (Element DynamicChar)   -> z -> z')
+  -> MetadataBlock m
+  -> CharacterBlock u  v  w  x  y  z
+  -> CharacterBlock u' v' w' x' y' z'
+hexZipMeta f1 f2 f3 f4 f5 f6 meta charBlock = CB
+    Block
+      { _continuousBin
+          = parZipWith rpar f1 (meta ^.  continuousBin) (charBlock ^.  continuousBin)
+      , _nonAdditiveBin
+          = parZipWith rpar f2 (meta ^. nonAdditiveBin) (charBlock ^. nonAdditiveBin)
+      , _additiveBin
+          = parZipWith rpar f3 (meta ^.    additiveBin) (charBlock ^.    additiveBin)
+      , _metricBin
+          = parZipWith rpar f4 (meta ^.      metricBin) (charBlock ^.      metricBin)
+      , _nonMetricBin
+          = parZipWith rpar f5 (meta ^.   nonMetricBin) (charBlock ^.   nonMetricBin)
+      , _dynamicBin
+          = parZipWith rpar f6 (meta ^.     dynamicBin) (charBlock ^.     dynamicBin)
+      }
 
 -- |
 -- Convert all characters contained in the block to thier missing value.

@@ -19,6 +19,7 @@ import Data.MonoTraversable
 import Data.Semigroup.Foldable
 import PCG.Command.Report
 import PCG.Command.Report.GraphViz
+import PCG.Syntax                       (Command (..))
 import Text.XML
 
 
@@ -67,7 +68,9 @@ generateOutput g' format =
 
 --generateOutput :: StandardSolution -> OutputFormat -> FileStreamContext
 --generateOutput g (CrossReferences fileNames)   = SingleStream $ taxonReferenceOutput g fileNames
---generateOutput (Right g) DynamicTable               {} = SingleStream $ outputDynamicCharacteracterTablularData g
+
+--generateOutput (Right g) DynamicTable               {} = SingleStream $ outputDynamicCharacterTablularData g
+
 --generateOutput g Metadata                   {} = SingleStream $ metadataCsvOutput g
 {-
 generateOutput g ImpliedAlignmentCharacters {} =

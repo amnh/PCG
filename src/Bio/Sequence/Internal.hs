@@ -24,7 +24,7 @@ import Control.Lens
 
 
 -- |
--- A 'Lens' for 'blockSequence'.
-class HasBlocks s t a b | s -> a, t -> b where
-
-    blockSequence :: Lens s t a b
+-- A 'Iso' for 'blockSequence'.
+class HasBlocks s t a b | s -> a, t -> b, a -> s, b -> t where
+    blockSequence :: Iso s t a b
+>>>>>>> postorder-types

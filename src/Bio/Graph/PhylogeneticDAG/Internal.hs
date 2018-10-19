@@ -12,18 +12,24 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MonoLocalBinds        #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveFoldable         #-}
+{-# LANGUAGE DeriveFunctor          #-}
+{-# LANGUAGE DeriveGeneric          #-}
+{-# LANGUAGE DeriveTraversable      #-}
+{-# LANGUAGE DuplicateRecordFields  #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE LambdaCase             #-}
+{-# LANGUAGE MonoLocalBinds         #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
 
--- Because I'm sick of dealing with the typechecker.
-{-# LANGUAGE UndecidableInstances  #-}
 
 module Bio.Graph.PhylogeneticDAG.Internal
   ( EdgeReference
   , PhylogeneticDAG(..)
+  , PostorderContextualData(..)
   , PhylogeneticDAG2(..)
   , applySoftwireResolutions
   , generateLocalResolutions
@@ -31,8 +37,13 @@ module Bio.Graph.PhylogeneticDAG.Internal
   , localResolutionApplication
   , renderSummary
   , resolutionsDoNotOverlap
+  , HasPhylogeneticForest(..)
+  , HasMinimalNetworkContext(..)
+  , setDefaultMetadata
   ) where
 
+
+import           Analysis.Parsimony.Internal
 import           Bio.Character.Decoration.Shared
 import           Bio.Character.Encodable
 import           Bio.Graph.LeafSet
@@ -46,9 +57,11 @@ import           Bio.Sequence
 import           Control.Applicative             (liftA2)
 import           Control.Arrow                   ((***))
 import           Control.DeepSeq
-import           Control.Lens                    as Lens
+import           Control.Lens                    as Lens hiding ((<.>))
 import           Data.Bits
 import           Data.Foldable
+import           Data.Foldable.Custom            (sum')
+import           Data.Functor.Apply              (Apply ((<.>)))
 import           Data.GraphViz.Printing
 import           Data.GraphViz.Types
 import           Data.HashMap.Lazy               (HashMap)
@@ -105,14 +118,31 @@ data  PhylogeneticDAG m e n u v w x y z
 -- * y = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * z = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Dynamic'    specified as 'DynamicCharacter'     or 'Bio.Metadata.DiscreteWithTCM'
 
+
+data PostorderContextualData t = PostorderContextualData
+  { virtualNodeMapping    :: HashMap EdgeReference (ResolutionCache t)
+  , contextualNodeDatum   :: Vector (HashMap EdgeReference (ResolutionCache t))
+  , minimalNetworkContext :: Maybe (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge)))
+  }
+  deriving
+    ( Eq
+    , Show
+    , Generic
+    , Functor
+    , Foldable
+    , Traversable
+    )
+
+
+-- | (✔)
+instance ( NFData t
+         ) => NFData (PostorderContextualData t)
+
 -- TODO: RENAME THIS to PhylogeneticForest
 data  PhylogeneticDAG2 m e n u v w x y z
     = PDAG2
     { phylogeneticForest :: ReferenceDAG
-                              (         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
-                              , Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
-                              , Maybe  (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge)))
-                              )
+                              (PostorderContextualData (CharacterSequence u v w x y z))
                               e
                               (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
     , columnMetadata     :: MetadataSequence m
@@ -122,6 +152,42 @@ data  PhylogeneticDAG2 m e n u v w x y z
 -- |
 -- Reference to a edge in the DAG
 type EdgeReference = (Int, Int)
+
+-- |
+-- A 'Lens' for the 'minimalNetworkContext' field in 'PostorderContextualData'
+class HasMinimalNetworkContext s a | s -> a where
+  _minimalNetworkContext :: Lens' s a
+
+{-# SPECIALISE
+      _minimalNetworkContext ::
+        Lens'
+          (PostorderContextualData t)
+          (Maybe (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge))))
+ #-}
+
+
+instance HasMinimalNetworkContext
+  (PostorderContextualData t)
+  (Maybe (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge))))
+    where
+  {-# INLINE _minimalNetworkContext #-}
+  _minimalNetworkContext = lens minimalNetworkContext (\p m -> p {minimalNetworkContext = m})
+
+-- |
+-- A 'Lens' for the 'phyogeneticForest' field in 'PhylogeneticDAG2'
+class HasPhylogeneticForest s t a b | s -> a, t -> b, s b -> t, t a -> s where
+  _phylogeneticForest :: Lens s t a b
+
+
+instance HasPhylogeneticForest
+  (PhylogeneticDAG2 m e n u v w x y z)
+  (PhylogeneticDAG2 m e n u' v' w' x' y' z')
+  (ReferenceDAG
+    (PostorderContextualData (CharacterSequence u v w x y z)) e (PhylogeneticNode2 (CharacterSequence u v w x y z) n))
+  (ReferenceDAG
+    (PostorderContextualData (CharacterSequence u' v' w' x' y' z')) e (PhylogeneticNode2 (CharacterSequence u' v' w' x' y' z') n)) where
+  {-# INLINE _phylogeneticForest #-}
+  _phylogeneticForest = lens phylogeneticForest (\p pf -> p {phylogeneticForest = pf})
 
 
 -- | (✔)
@@ -148,6 +214,7 @@ instance ( NFData m
          , NFData y
          , NFData z
          ) => NFData (PhylogeneticDAG2 m e n u v w x y z)
+
 
 
 -- | (✔)
@@ -237,30 +304,48 @@ getDotContextWithBaseAndIndex i j (PDAG2 dag _) = getDotContext i j $ nodeDecora
 
 -- |
 -- Generate all the possible, consistent combinatorial patterns of the subtree.
-applySoftwireResolutions :: [(ResolutionCache s, IntSet)] -> NonEmpty [ResolutionInformation s]
-applySoftwireResolutions inputContexts =
-    case inputContexts of
-      []    -> pure []
-      [x]   -> pure <$> fst x
-      x:y:_ -> pairingLogic (x,y)
-  where
-    multipleParents = not . isSingleton . otoList . snd
+applySoftwireResolutions
+  :: forall s t
+  .  ResolutionInformation t                    -- ^ Parent node information
+  -> ChildContext (ResolutionCache s, IntSet)   -- ^ Possible subtree resolution information
+  -> NonEmpty
+       (ResolutionInformation
+         (PostorderContext t s)
+       )                                        -- ^ Potential subtree contexts
+applySoftwireResolutions nodeInfo =
+    \case
+      NoChildren                     -> pure $ LeafContext <$> nodeInfo
 
-    pairingLogic (lhs, rhs) =
-        case (multipleParents lhs, multipleParents rhs) of
-          (False, False) -> pairedSet
-          (False, True ) -> pairedSet <> lhsSet
-          (True , False) -> pairedSet <> rhsSet
-          (True , True ) -> pairedSet <> lhsSet <> rhsSet
+      OneChild (resCache, _)         -> fmap PostNetworkContext <$> resCache
+
+      TwoChildren leftCtxt rightCtxt -> pairingLogic (leftCtxt, rightCtxt)
+  where
+    multipleParents :: IntSet -> Bool
+    multipleParents = (/= 1) . olength
+
+    pairingLogic
+      :: ((ResolutionCache s, IntSet) , (ResolutionCache s, IntSet))
+      -> NonEmpty
+           (ResolutionInformation
+             (PostorderContext t s)
+           )
+    pairingLogic
+      ((leftResolutionCache , lPars), (rightResolutionCache , rPars)) =
+        case (multipleParents lPars, multipleParents rPars) of
+          (False, False) -> pairedResolutions
+          (False, True ) -> pairedResolutions <> lhsNetResolutions
+          (True , False) -> pairedResolutions <> rhsNetResolutions
+          (True , True ) -> pairedResolutions <> lhsNetResolutions <> rhsNetResolutions
        where
-         lhsSet = pure <$> lhs'
-         rhsSet = pure <$> rhs'
-         lhs'   = fst lhs
-         rhs'   = fst rhs
-         pairedSet =
-             case cartesianProduct lhs' rhs' of
+         lhsNetResolutions
+           = fmap PostNetworkContext <$> leftResolutionCache
+         rhsNetResolutions
+           = fmap PostNetworkContext <$> rightResolutionCache
+
+         pairedResolutions =
+             case makeProductBinaryContexts leftResolutionCache rightResolutionCache of
                x:xs -> x:|xs
-               []   -> error errorContext -- pure [] -- This shouldn't ever happen
+               []   -> error errorContext  -- this shouldn't ever happen
            where
              errorContext = unlines
                  [ "The impossible happened!"
@@ -270,103 +355,149 @@ applySoftwireResolutions inputContexts =
                  , shownRHS
                  ]
                where
-                 shownLHS = unlines . toList $ show . leafSetRepresentation <$> fst lhs
-                 shownRHS = unlines . toList $ show . leafSetRepresentation <$> fst rhs
+                 shownLHS = unlines . toList
+                              $ show . (^. _leafSetRepresentation) <$> leftResolutionCache
+                 shownRHS = unlines . toList
+                              $ show . (^. _leafSetRepresentation) <$> rightResolutionCache
 
-         cartesianProduct xs ys =
-             [ [x,y]
-             | x <- toList xs
-             , y <- toList ys
-             , resolutionsDoNotOverlap x y
+      -- The apply operator here correctly updates the 'ResolutionMetadata' with a
+      -- pointwise semigroup operator in the relevant fields.
+         makeProductBinaryContexts ls rs =
+           [ PostBinaryContext (nodeInfo ^. _characterSequence) <$> l <.> r
+             | l <- toList ls
+             , r <- toList rs
+             , resolutionsDoNotOverlap l r
              ]
-
 
 -- |
 -- Given a pre-order transformation for each type parameter, apply the
 -- transformations to each possible resolution that is not inconsistent.
 generateLocalResolutions
-  :: HasBlockCost u'' v'' w'' x'' y'' z''
-  => (ContinuousCharacterMetadataDec        -> u -> [u'] -> u'')
-  -> (DiscreteCharacterMetadataDec          -> v -> [v'] -> v'')
-  -> (DiscreteCharacterMetadataDec          -> w -> [w'] -> w'')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
-      -> x -> [x'] -> x'')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
-      -> y -> [y'] -> y'')
-  -> (DynamicCharacteracterMetadataDec (Element DynamicCharacter)
-      -> z -> [z'] -> z'')
+  :: HasBlockCost u' v' w' x' y' z'
+  => (ContinuousCharacterMetadataDec                      -> PostorderContext u u' -> u')
+  -> (DiscreteCharacterMetadataDec                        -> PostorderContext v v' -> v')
+  -> (DiscreteCharacterMetadataDec                        -> PostorderContext w w' -> w')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> PostorderContext x x' -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> PostorderContext y y' -> y')
+  -> (DynamicCharacterMetadataDec (Element DynamicChar)   -> PostorderContext z z' -> z')
   ->  MetadataSequence m
-  ->  ResolutionInformation (CharacterSequence u   v   w   x   y   z  )
-  -> [ResolutionInformation (CharacterSequence u'  v'  w'  x'  y'  z' )]
-  ->  ResolutionInformation (CharacterSequence u'' v'' w'' x'' y'' z'')
-generateLocalResolutions f1 f2 f3 f4 f5 f6 meta parentalResolutionContext childResolutionContext =
-                ResInfo
-                { totalSubtreeCost       = newTotalCost
-                , localSequenceCost      = newLocalCost
-                , subtreeEdgeSet         = newSubtreeEdgeSet
-                , leafSetRepresentation  = newLeafSetRep
-                , subtreeRepresentation  = newSubtreeRep
-                , topologyRepresentation = newTopologyRep
-                , characterSequence      = newCharacterSequence
-                }
-              where
-                newTotalCost = sequenceCost meta newCharacterSequence
+  ->  ResolutionInformation
+        (PostorderContext
+          (CharacterSequence u  v  w  x  y  z)
+          (CharacterSequence u' v' w' x' y' z')
+        )
+  ->  ResolutionInformation (CharacterSequence u' v' w' x' y' z')
+generateLocalResolutions f1 f2 f3 f4 f5 f6 meta resolutionContext =
+  let
+    (f1Leaf, f1Bin) = (leafFunction <$> f1 , postBinaryFunction <$> f1)
+    (f2Leaf, f2Bin) = (leafFunction <$> f2 , postBinaryFunction <$> f2)
+    (f3Leaf, f3Bin) = (leafFunction <$> f3 , postBinaryFunction <$> f3)
+    (f4Leaf, f4Bin) = (leafFunction <$> f4 , postBinaryFunction <$> f4)
+    (f5Leaf, f5Bin) = (leafFunction <$> f5 , postBinaryFunction <$> f5)
+    (f6Leaf, f6Bin) = (leafFunction <$> f6 , postBinaryFunction <$> f6)
+  in
+    case resolutionContext ^. _characterSequence of
+      LeafContext leafCharSequence ->
+        let newCharacterSequence
+              = hexZipMeta
+                  f1Leaf
+                  f2Leaf
+                  f3Leaf
+                  f4Leaf
+                  f5Leaf
+                  f6Leaf
+                  meta
+                  leafCharSequence
+            newTotalCost = sequenceCost meta newCharacterSequence
+        in
+          resolutionContext & _characterSequence .~ newCharacterSequence
+                            & _totalSubtreeCost  .~ newTotalCost
+                            & _localSequenceCost .~ newTotalCost
 
-                newLocalCost = newTotalCost - sum (totalSubtreeCost <$> childResolutionContext)
+      PostNetworkContext netChildCharSequence ->
+          resolutionContext & _characterSequence .~ netChildCharSequence
+       -- Want to propogate what is stored in the network child resolution
+       -- to the parent.
 
-                newCharacterSequence = transformation (characterSequence parentalResolutionContext) (characterSequence <$> childResolutionContext)
-                newSubtreeEdgeSet    = foldMap subtreeEdgeSet childResolutionContext
+      PostBinaryContext
+        { binNode    = parentalCharSequence
+        , leftChild  = leftCharSequence
+        , rightChild = rightCharSequence
+        } ->
+        let
+          totalChildCost = resolutionContext ^. _totalSubtreeCost
+          newCharacterSequence
+              = hexZipWithMeta
+                  f1Bin
+                  f2Bin
+                  f3Bin
+                  f4Bin
+                  f5Bin
+                  f6Bin
+                  meta
+                  parentalCharSequence
+                  (hexZip
+                    leftCharSequence
+                    rightCharSequence
+                  )
+          newTotalCost      = sequenceCost meta newCharacterSequence
+          newLocalCost      = newTotalCost - totalChildCost
+            in
+          resolutionContext
+            & _characterSequence .~ newCharacterSequence
+            & _totalSubtreeCost  .~ newTotalCost
+            & _localSequenceCost .~ newLocalCost
 
-                (newLeafSetRep, newSubtreeRep, newTopologyRep) =
-                    case childResolutionContext of
-                      []   -> (,,) <$>          leafSetRepresentation
-                                   <*>          subtreeRepresentation
-                                   <*>          topologyRepresentation
-                                   $ parentalResolutionContext
-                      x:xs -> (,,) <$> foldMap1 leafSetRepresentation
-                                   <*> foldMap1 subtreeRepresentation
-                                   <*> foldMap1 topologyRepresentation
-                                   $ x:|xs
 
-                transformation pSeq cSeqs = hexZipWithMeta f1 f2 f3 f4 f5 f6 meta pSeq transposition
-                  where
-                    transposition =
-                        case cSeqs of
-                          x:xs -> hexTranspose $ x:|xs
-                          []   -> let c = const []
-                                  in hexmap c c c c c c pSeq
+
 
 
 -- |
 -- Given a transformation for the last type parameter and two resolution caches,
 -- apply the transformation to all possible resolution combinations.
 localResolutionApplication
-  :: HasBlockCost u v w x y d'
-  => (DynamicCharacteracterMetadataDec (Element DynamicCharacter)
-      -> d -> [d] -> d')
+  :: HasBlockCost u v w x y d
+  => (DynamicCharacterMetadataDec (Element DynamicChar) -> PostorderContext d d -> d)
   -> MetadataSequence m
   -> NonEmpty (ResolutionInformation (CharacterSequence u v w x y d))
-  -> ResolutionCache (CharacterSequence u v w x y d)
-  -> NonEmpty (ResolutionInformation (CharacterSequence u v w x y d'))
-localResolutionApplication f m x y =
-    liftA2 (generateLocalResolutions id3 id3 id3 id3 id3 f m) mutalatedChild relativeChildResolutions
+  -> NonEmpty (ResolutionInformation (CharacterSequence u v w x y d))
+  -> NonEmpty (ResolutionInformation (CharacterSequence u v w x y d))
+localResolutionApplication dynFunction meta leftResolutions rightResolutions =
+    fmap
+      ( generateLocalResolutions
+          (const extractNode)
+          (const extractNode)
+          (const extractNode)
+          (const extractNode)
+          (const extractNode)
+          dynFunction
+          meta
+      ) resolutionContext
   where
-    relativeChildResolutions = applySoftwireResolutions
-        [ (x, IS.singleton 0)
-        , (y, IS.singleton 0)
-        ]
-    id3 _ z _ = z
-    mutalatedChild = pure
-        ResInfo
+
+    resolutionContext
+      = applySoftwireResolutions
+          cleanLeftRes
+          (TwoChildren
+            (leftResolutions , IS.singleton 0)
+            (rightResolutions, IS.singleton 0)
+          )
+
+    cleanLeftResMeta =
+        ResolutionMetadata
         { totalSubtreeCost       = 0
         , localSequenceCost      = 0
         , subtreeEdgeSet         = mempty
         , leafSetRepresentation  = zeroBits
         , subtreeRepresentation  = singletonNewickSerialization (0 :: Word)
         , topologyRepresentation = mempty
-        , characterSequence      = characterSequence $ NE.head x
         }
 
+    cleanLeftRes =
+        ResInfo
+        { resolutionMetadata = cleanLeftResMeta
+        , characterSequence  = characterSequence $ NE.head leftResolutions
+        }
 
 -- |
 -- Nicely show the DAG information.
@@ -408,7 +539,10 @@ renderSequenceSummary pdag@(PDAG2 dag _meta) = ("Sequence Summary\n\n" <>) . unl
 
     sequenceWLOG   = getSequence $ NE.head roots
     getSequence    = otoList . characterSequence . NE.head . resolutions . nodeDecoration . (refVec !)
-    displayForests = (\(_,_,x) -> fmap (fmap (\(y,r,n,_,_) -> (r,n,y))) x) . graphMetadata $ graphData dag
+    displayForests =
+      f . minimalNetworkContext . graphMetadata . graphData $ dag
+        where
+          f = (fmap (\(y,r,n,_,_) -> (r,n,y)) <$>)
 
     sequenceContext =
         case displayForests of
@@ -448,7 +582,8 @@ renderBlockSummary (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displa
     , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^.    additiveBin) *** (^.    additiveBin))
     , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^.      metricBin) *** (^.      metricBin))
     , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^.   nonMetricBin) *** (^.   nonMetricBin))
-    , unlines . fmap renderDynamicCharacteracterSummary             . toList . uncurry zip . ((^.     dynamicBin) *** (^.     dynamicBin))
+    , unlines . fmap renderDynamicCharacterSummary             . toList . uncurry zip . ((^.     dynamicBin) *** (^.     dynamicBin))
+>>>>>>> postorder-types
     ] <*> [(mBlock, block)]
   where
     pair@(mBlock, _) = ((meta ^. blockSequence) ! key, block)
@@ -465,7 +600,7 @@ renderBlockSummary (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displa
         ]
       where
         bCost     = blockCost mValue bValue
-        totalCost = sum
+        totalCost = sum'
             [ fromMaybe 0 costOfRooting
             , fromMaybe 0 costOfNetworking
             , bCost
@@ -529,10 +664,32 @@ renderDisplayForestNewick dag topo = unlines $ renderDisplayTree <$> toList (roo
 -- |
 -- Assert that two resolutions do not overlap.
 resolutionsDoNotOverlap :: ResolutionInformation a -> ResolutionInformation b -> Bool
-resolutionsDoNotOverlap x y = popCount (leafSetRepresentation x .&. leafSetRepresentation y) == 0
+resolutionsDoNotOverlap x y
+  = popCount ((x ^. _leafSetRepresentation) .&. (y ^. _leafSetRepresentation)) == 0
 
 
 -- |
 -- Retrieve only 'ReferenceDAG' from 'PhylogeneticDAG2'.
 discardCharacters :: PhylogeneticDAG2 m e n u v w x y z -> ReferenceDAG () e n
 discardCharacters (PDAG2 x _) = defaultMetadata $ nodeDecorationDatum2 <$> x
+
+
+-- |
+-- Set 'GraphData' to a default value.
+setDefaultMetadata
+  :: GraphData m
+  -> GraphData (PostorderContextualData t')
+{-# INLINE setDefaultMetadata #-}
+setDefaultMetadata gd = gd & _graphMetadata .~ defaultMetadataValue
+
+
+-- |
+-- A polymorphic default value for 'PostorderContextualData'.
+defaultMetadataValue :: PostorderContextualData t
+{-# INLINE defaultMetadataValue #-}
+defaultMetadataValue =
+  PostorderContextualData
+  { virtualNodeMapping    = mempty
+  , contextualNodeDatum   = mempty
+  , minimalNetworkContext = Nothing
+  }

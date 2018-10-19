@@ -36,6 +36,7 @@ module Bio.Sequence.Block
   , toMissingCharacters
   , hexmap
   , hexTranspose
+  , hexZipMeta
   , hexZipWith
   , hexZipWithMeta
   ) where
@@ -48,6 +49,7 @@ import Control.Arrow                       ((***))
 import Control.Lens
 import Control.Parallel.Custom
 import Control.Parallel.Strategies
+import Data.Foldable.Custom                (sum')
 import Data.Key
 import Data.Vector.Instances               ()
 import Prelude                             hiding (zip)
@@ -82,7 +84,7 @@ type HasRootCost u v w x y z =
 -- Calculates the cost of a 'CharacterBlock'. Performs some of the operation in
 -- parallel.
 blockCost :: HasBlockCost u v w x y z => MetadataBlock m -> CharacterBlock u v w x y z -> Double
-blockCost mBlock cBlock = sum . fmap sum $
+blockCost mBlock cBlock = sum' . fmap sum' $
     [ parmap rpar floatingCost . uncurry zip . ((^.  continuousBin) *** (^.  continuousBin))
     , parmap rpar integralCost . uncurry zip . ((^. nonAdditiveBin) *** (^. nonAdditiveBin))
     , parmap rpar integralCost . uncurry zip . ((^.    additiveBin) *** (^.    additiveBin))
@@ -114,7 +116,7 @@ rootCost
   -> MetadataBlock m
   -> CharacterBlock u v w x y z
   -> Double
-rootCost rootCount mBlock cBlock = rootMultiplier . sum . fmap sum $
+rootCost rootCount mBlock cBlock = rootMultiplier . sum' . fmap sum' $
     [ parmap rpar staticRootCost  . uncurry zip . ((^.  continuousBin) *** (^.  continuousBin))
     , parmap rpar staticRootCost  . uncurry zip . ((^. nonAdditiveBin) *** (^. nonAdditiveBin))
     , parmap rpar staticRootCost  . uncurry zip . ((^.    additiveBin) *** (^.    additiveBin))
@@ -143,7 +145,7 @@ rootCost rootCount mBlock cBlock = rootMultiplier . sum . fmap sum $
 -- Calculates the cost of a 'CharacterBlock'. Performs some of the operation in
 -- parallel.
 staticCost :: HasBlockCost u v w x y z => MetadataBlock m -> CharacterBlock u v w x y z -> Double
-staticCost mBlock cBlock = sum . fmap sum $
+staticCost mBlock cBlock = sum' . fmap sum' $
     [ parmap rpar floatingCost . uncurry zip . ((^.  continuousBin) *** (^.  continuousBin))
     , parmap rpar integralCost . uncurry zip . ((^. nonAdditiveBin) *** (^. nonAdditiveBin))
     , parmap rpar integralCost . uncurry zip . ((^.    additiveBin) *** (^.    additiveBin))

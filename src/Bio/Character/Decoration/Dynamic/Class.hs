@@ -24,12 +24,12 @@
 module Bio.Character.Decoration.Dynamic.Class
   ( AverageLength()
   , DirectOptimizationDecoration
-  , DirectOptimizationPostOrderDecoration
-  , DynamicCharacteracterDecoration(..)
+  , DirectOptimizationPostorderDecoration
+  , DynamicCharacterDecoration(..)
   , ImpliedAlignmentDecoration
-  , PostOrderExtensionDirectOptimizationDecoration(..)
+  , PostorderExtensionDirectOptimizationDecoration(..)
   , SimpleDynamicDecoration
-  , SimpleDynamicExtensionPostOrderDecoration(..)
+  , SimpleDynamicExtensionPostorderDecoration(..)
   , HasAverageLength(..)
   , HasCharacterLocalCost(..)
   , HasEncoded(..)
@@ -94,16 +94,16 @@ class ( HasCharacterCost        s Word
       , HasLeftAlignment        s a
       , HasRightAlignment       s a
       , SimpleDynamicDecoration s a
-      ) => DirectOptimizationPostOrderDecoration s a | s -> a where
+      ) => DirectOptimizationPostorderDecoration s a | s -> a where
 
 
 -- |
 -- A decoration of a dynamic character with all direct optimization annotations.
 --
--- Is a sub-class of 'DirectOptimizationPostOrderDecoration'.
+-- Is a sub-class of 'DirectOptimizationPostorderDecoration'.
 class ( HasFinalGapped          s a
       , HasFinalUngapped        s a
-      , DirectOptimizationPostOrderDecoration s a
+      , DirectOptimizationPostorderDecoration s a
       ) => DirectOptimizationDecoration s a | s -> a where
 
 
@@ -131,10 +131,10 @@ class ( SimpleDynamicDecoration s a
 -- extending the decoration to contain the requisite fields for performing
 -- Sankoff's algorithm.
 class ( SimpleDynamicDecoration s c
-      , DirectOptimizationPostOrderDecoration s c
-      ) => SimpleDynamicExtensionPostOrderDecoration s c | s -> c where
+      , DirectOptimizationPostorderDecoration s c
+      ) => SimpleDynamicExtensionPostorderDecoration s c | s -> c where
 
-    extendDynamicToPostOrder :: SimpleDynamicDecoration x c
+    extendDynamicToPostorder :: SimpleDynamicDecoration x c
                              => x             -- ^ Original decoration
                              -> Word          -- ^ The cost of the alignment
                              -> Word          -- ^ The cost of the alignment and the child subtrees
@@ -150,11 +150,11 @@ class ( SimpleDynamicDecoration s c
 -- A decoration that can be constructed from a 'DiscreteCharacterDecoration' by
 -- extending the decoration to contain the requisite fields for performing
 -- Sankoff's algorithm.
-class ( DirectOptimizationPostOrderDecoration s c
+class ( DirectOptimizationPostorderDecoration s c
       , DirectOptimizationDecoration s c
-      ) => PostOrderExtensionDirectOptimizationDecoration s c | s -> c where
+      ) => PostorderExtensionDirectOptimizationDecoration s c | s -> c where
 
-    extendPostOrderToDirectOptimization :: DirectOptimizationPostOrderDecoration x c
+    extendPostorderToDirectOptimization :: DirectOptimizationPostorderDecoration x c
                                         => x -- ^ Original decoration
                                         -> c -- ^ Final /ungapped/ dynamic character
                                         -> c -- ^ Final   /gapped/ dynamic character

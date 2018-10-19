@@ -25,7 +25,7 @@ module Bio.Graph
   , PhylogeneticDAGish(..)
   , PhylogeneticForest(..)
   , PhylogeneticSolution(..)
-  , PostOrderDecorationDAG
+  , PostorderDecorationDAG
   , SearchState
   , TopologicalResult
   , UnifiedBlock

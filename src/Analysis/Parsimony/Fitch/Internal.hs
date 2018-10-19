@@ -22,6 +22,7 @@
 
 module Analysis.Parsimony.Fitch.Internal where
 
+import Analysis.Parsimony.Internal
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Fitch
 import Bio.Character.Encodable
@@ -31,44 +32,46 @@ import Data.List.NonEmpty                (NonEmpty (..))
 
 
 -- | Used on the post-order (i.e. first) traversal.
-fitchPostOrder
-  ::  DiscreteCharacterDecoration d c
-  => d
-  -> [FitchOptimizationDecoration c]
+fitchPostorder
+  :: DiscreteCharacterDecoration d c
+  => PostorderContext d (FitchOptimizationDecoration c)
   -> FitchOptimizationDecoration c
-fitchPostOrder parentDecoration xs =
-    case xs of
-        []   -> initializeLeaf  parentDecoration -- a leaf
-        y:ys -> updatePostOrder parentDecoration (y:|ys)
+fitchPostorder
+  = postorderContext
+      initializeLeaf
+      updatePostorder
+
 
 
 -- | Used on the pre-order (i.e. second) traversal.
-fitchPreOrder
+fitchPreorder
   :: EncodableStaticCharacter c
-  => FitchOptimizationDecoration c
-  -> [(Word, FitchOptimizationDecoration c)]
+  => PreorderContext (FitchOptimizationDecoration c) (FitchOptimizationDecoration c)
   -> FitchOptimizationDecoration c
-fitchPreOrder childDecoration (_:_:_) = childDecoration   -- two parents; shouldn't be possible, but here for completion
-fitchPreOrder childDecoration []      = let !prelim = childDecoration ^. preliminaryMedian
-                                        in  childDecoration
+fitchPreorder = preorderContextSym rootFn internalFn
+  where
+    rootFn rootDecoration = let !prelim = rootDecoration ^. preliminaryMedian
+                                        in  rootDecoration
                                               & finalMedian       .~ prelim
                                               & discreteCharacter .~ prelim
-fitchPreOrder childDecoration [(_, parentDecoration)]
-  | childDecoration ^. isLeaf = childDecoration & finalMedian .~ (childDecoration ^. preliminaryMedian) -- leaf
-  | otherwise                 = determineFinalState parentDecoration childDecoration                    -- internal node
+
+    internalFn childDecoration parentDecoration
+      | childDecoration ^. isLeaf
+          = childDecoration & finalMedian .~ (childDecoration ^. preliminaryMedian)
+      | otherwise
+          = determineFinalState parentDecoration childDecoration
 
 
 -- |
 -- Used in first, post-order, pass. Take in parent and two child nodes. Using the child preliminary decorations,
 -- calculate the preliminary character state for the parent node. In addition, calculate the cost of assigning
 -- that character state to the parent.
-updatePostOrder
+updatePostorder
   :: DiscreteCharacterDecoration d c
   => d
-  -> NonEmpty (FitchOptimizationDecoration c)
+  -> (FitchOptimizationDecoration c , FitchOptimizationDecoration c)
   -> FitchOptimizationDecoration c
-updatePostOrder _parentDecoration (x:|[])                         = x -- Shouldn't be possible, but here for completion.
-updatePostOrder _parentDecoration (leftChildDec:|rightChildDec:_) =
+updatePostorder _parentDecoration (leftChildDec , rightChildDec) =
     extendDiscreteToFitch
       leftChildDec
       totalCost

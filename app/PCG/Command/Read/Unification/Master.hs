@@ -363,7 +363,7 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
                   -> PartialCharacterBlock UnifiedContinuousCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDynamicCharacteracter
                 encodeBinToSingletonCharacterBlock (charMay, charMeta, _scm, structure, _charName) =
                     case charMay of
-                      ParsedContinuousCharacter continuousMay -> continuousSingleton           . Just .   continuousDecorationInitial $ toContinuousCharacter continuousMay
+                      ParsedContinuousCharacter continuousMay -> continuousSingleton           . Just $  continuousDecorationInitial $ toContinuousCharacter continuousMay
                       ParsedDiscreteCharacter     discreteMay ->   discreteSingleton structure . Just $ toDiscreteCharacterDecoration staticTransform discreteMay
                       ParsedDynamicCharacteracter       dynamicMay ->    dynamicSingleton           . Just $  toDynamicCharacteracterDecoration dynamicTransform dynamicMay
                   where

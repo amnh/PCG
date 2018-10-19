@@ -141,7 +141,21 @@ type EdgeIdentifier n = (n , n)
 -- Takes a 'DotGraph' parse result and returns a set of unique node identifiers.
 dotNodeSet :: Ord n => DotGraph n -> Set n
 dotNodeSet = foldMap (S.singleton . nodeID) . graphNodes
+-- Probably want to do something convoluted like this
+{-
+  where
+    beSmart n =
+        case attributes n of
+          [] -> nodeID n
+          x:xs -> case fmap NE.head . sequenceA $ getLabel <$> x:|xs of
+                    Nothing -> nodeID n
+                    Just label -> case label of
+                                    StrLabel v -> v
+                                    _ -> nodeID n
 
+    getLabel (Label x) = Just x
+    getLabel _ = Nothing
+-}
 
 -- |
 -- Takes a 'DotGraph' parse result and returns a set of unique edge identifiers.

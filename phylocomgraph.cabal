@@ -161,6 +161,7 @@ library
                     Analysis.Parsimony.Dynamic.SequentialAlign
                     Analysis.Parsimony.Fitch.Internal
                     Analysis.Parsimony.Sankoff.Internal
+                    Analysis.Parsimony.Internal
                     Analysis.Scoring
                     Bio.Character
                     Bio.Character.Decoration.Additive
