@@ -120,7 +120,7 @@ class ( HasImpliedAlignment           s a
 -- A decoration of an initial encoding of a dynamic character which has the
 -- appropriate 'Lens' & character class constraints.
 class ( SimpleDynamicDecoration s a
-      ) => DynamicCharacteracterDecoration s a | s -> a where
+      ) => DynamicCharacterDecoration s a | s -> a where
 
     toDynamicCharacteracterDecoration :: (x -> a) -> x -> s
     {-# MINIMAL toDynamicCharacteracterDecoration #-}

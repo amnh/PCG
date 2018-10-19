@@ -28,7 +28,6 @@ module Analysis.Parsimony.Additive.Internal where
 import Analysis.Parsimony.Internal
 import Bio.Character.Decoration.Additive
 import Control.Lens
-import Data.List.NonEmpty                (NonEmpty ((:|)))
 import Data.Range
 import Numeric.Extended
 
@@ -150,10 +149,10 @@ updatePostorder
   => n
   -> (c, c)
   -> c
-updatePostorder _parentDecoration (leftChild, rightChild) = finalDecoration
+updatePostorder _parentDecoration (lChild, rChild) = finalDecoration
   where
-    finalDecoration = extendRangedToPostorder leftChild totalCost newInterval childIntervals False
-    totalCost       = thisNodeCost + (leftChild ^. characterCost) + (rightChild ^. characterCost)
+    finalDecoration = extendRangedToPostorder lChild totalCost newInterval childIntervals False
+    totalCost       = thisNodeCost + (lChild ^. characterCost) + (rChild ^. characterCost)
     isOverlapping   = lhs `intersects` rhs
 
     newInterval
@@ -164,7 +163,7 @@ updatePostorder _parentDecoration (leftChild, rightChild) = finalDecoration
       | isOverlapping = 0
       | otherwise     = unsafeToFinite $ upperBound newInterval - lowerBound newInterval
 
-    childIntervals@(lhs, rhs) = (leftChild ^. preliminaryInterval, rightChild ^. preliminaryInterval)
+    childIntervals@(lhs, rhs) = (lChild ^. preliminaryInterval, rChild ^. preliminaryInterval)
 
 -- |
 -- Used on the pre-order (i.e. second) traversal.

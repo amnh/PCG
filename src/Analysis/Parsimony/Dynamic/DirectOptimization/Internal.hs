@@ -205,7 +205,7 @@ disambiguateElement x = zed `setBit` idx
 updateFromParent
   :: DirectOptimizationPostorderDecoration d c
   => PairwiseAlignment c
-  -> DynamicCharacteracterMetadataDec (Element c)
+  -> DynamicCharacterMetadataDec (Element c)
   -> d
   -> DynamicDecorationDirectOptimization c
   -> DynamicDecorationDirectOptimization c
@@ -239,7 +239,7 @@ updateFromParent pairwiseAlignment meta currentDecoration parentDecoration = res
 tripleComparison
   :: DirectOptimizationPostorderDecoration d c
   => PairwiseAlignment c
-  -> DynamicCharacteracterMetadataDec (Element c)
+  -> DynamicCharacterMetadataDec (Element c)
   -> d
   -> c
   -> c
@@ -425,9 +425,10 @@ threeWayMean sigma char1 char2 char3 =
   case invariantTransformation olength [char1, char2, char3] of
     Nothing -> error $ unwords [ "Three sequences supplied to 'threeWayMean' function did not have uniform length.", show (olength char1), show (olength char2), show (olength char3) ]
     Just 0  -> (0, char1, char1)
-    Just _  -> ( unsafeToFinite   $ sum costValues
+    Just _  -> ( unsafeToFinite   $ sum' costValues
                , constructDynamic . NE.fromList $ filter (/= gap) meanStates
-               , constructDynamic $ NE.fromList meanStates)
+               , constructDynamic $ NE.fromList meanStates
+               )
   where
     gap = gapOfStream char1
     (meanStates, costValues) = unzip $ zipWith3 sigma (otoList char1) (otoList char2) (otoList char3)

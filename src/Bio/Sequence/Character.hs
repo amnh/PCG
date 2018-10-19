@@ -32,9 +32,7 @@ import           Control.DeepSeq
 import           Control.Lens
 import           Data.Bifunctor
 import           Data.Foldable
-import           Data.Foldable.Custom    (sum')
 import           Data.Key
-import           Data.List.NonEmpty      (NonEmpty)
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
 import           Data.Vector.NonEmpty    (Vector)
@@ -198,6 +196,7 @@ unfoldr f = CharSeq . V.unfoldr f
 {-# INLINE fromBlocks #-}
 fromBlocks :: Vector (CharacterBlock u v w x y z) -> CharacterSequence u v w x y z
 fromBlocks = CharSeq
+
 
 {-# INLINE toBlocks #-}
 toBlocks :: CharacterSequence u v w x y z ->  Vector (CharacterBlock u v w x y z)

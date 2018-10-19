@@ -38,7 +38,7 @@ module Bio.Graph
   , UnifiedMetadataBlock
   , UnifiedMetadataSequence
   , UnReifiedCharacterDAG
-  , assignOptimalDynamicCharacteracterRootEdges
+  , assignOptimalDynamicCharacterRootEdges
   , assignPunitiveNetworkEdgeCost
   , generateLocalResolutions
   , postorderSequence'

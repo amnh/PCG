@@ -54,7 +54,6 @@ import           Bio.Metadata.Discrete
 import           Bio.Metadata.DiscreteWithTCM
 import           Bio.Metadata.Dynamic
 import           Bio.Sequence
-import           Control.Applicative             (liftA2)
 import           Control.Arrow                   ((***))
 import           Control.DeepSeq
 import           Control.Lens                    as Lens hiding ((<.>))
@@ -72,10 +71,8 @@ import           Data.Key
 import           Data.List                       (zip4)
 import           Data.List.NonEmpty              (NonEmpty (..))
 import qualified Data.List.NonEmpty              as NE
-import           Data.List.Utility
 import           Data.Maybe                      (fromMaybe)
 import           Data.MonoTraversable
-import           Data.Semigroup.Foldable
 import           Data.TopologyRepresentation
 import           Data.Vector                     (Vector)
 import           GHC.Generics
@@ -379,7 +376,7 @@ generateLocalResolutions
   -> (DiscreteCharacterMetadataDec                        -> PostorderContext w w' -> w')
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> PostorderContext x x' -> x')
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> PostorderContext y y' -> y')
-  -> (DynamicCharacterMetadataDec (Element DynamicChar)   -> PostorderContext z z' -> z')
+  -> (DynamicCharacterMetadataDec (Element DynamicCharacter)   -> PostorderContext z z' -> z')
   ->  MetadataSequence m
   ->  ResolutionInformation
         (PostorderContext
@@ -457,7 +454,7 @@ generateLocalResolutions f1 f2 f3 f4 f5 f6 meta resolutionContext =
 -- apply the transformation to all possible resolution combinations.
 localResolutionApplication
   :: HasBlockCost u v w x y d
-  => (DynamicCharacterMetadataDec (Element DynamicChar) -> PostorderContext d d -> d)
+  => (DynamicCharacterMetadataDec (Element DynamicCharacter) -> PostorderContext d d -> d)
   -> MetadataSequence m
   -> NonEmpty (ResolutionInformation (CharacterSequence u v w x y d))
   -> NonEmpty (ResolutionInformation (CharacterSequence u v w x y d))
@@ -583,7 +580,6 @@ renderBlockSummary (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displa
     , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^.      metricBin) *** (^.      metricBin))
     , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^.   nonMetricBin) *** (^.   nonMetricBin))
     , unlines . fmap renderDynamicCharacterSummary             . toList . uncurry zip . ((^.     dynamicBin) *** (^.     dynamicBin))
->>>>>>> postorder-types
     ] <*> [(mBlock, block)]
   where
     pair@(mBlock, _) = ((meta ^. blockSequence) ! key, block)
@@ -619,7 +615,7 @@ renderBlockSummary (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displa
         , "    "           <> show (m ^. characterAlphabet)
         ]
 
-    renderDynamicCharacteracterSummary (m, c) = unlines
+    renderDynamicCharacterSummary (m, c) = unlines
         [ "    Name:   " <> show (m ^. characterName)
         , "    Weight: " <> show (m ^. characterWeight)
         , "    Cost:   " <> show (c ^. characterCost)

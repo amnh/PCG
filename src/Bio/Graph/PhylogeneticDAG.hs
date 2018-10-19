@@ -25,8 +25,6 @@ module Bio.Graph.PhylogeneticDAG
   , postorderSequence'
   , preorderFromRooting
   , preorderSequence
-  , preorderFromRooting
-  , preorderSequence
   , renderSummary
   , rootCosts
   , totalEdgeCosts

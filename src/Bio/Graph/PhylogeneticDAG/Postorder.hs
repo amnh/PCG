@@ -33,9 +33,7 @@ import           Bio.Sequence
 import           Control.Arrow                      ((&&&))
 import           Control.Lens.At                    (ix)
 import           Control.Lens.Combinators           (singular)
-import           Control.Lens.Fold                  (foldMapOf)
 import           Control.Lens.Operators             ((%~), (.~), (^.))
-import           Data.Bits
 import           Data.Foldable.Custom               (foldMap', minimum', sum')
 import           Data.Function                      ((&))
 import qualified Data.IntMap                        as IM
@@ -61,8 +59,7 @@ postorderSequence'
   -> (DiscreteCharacterMetadataDec                        -> PostorderContext w w' -> w')
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> PostorderContext x x' -> x')
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> PostorderContext y y' -> y')
-  -> (DynamicCharacterMetadataDec (Element DynamicChar)   -> PostorderContext z z' -> z')
->>>>>>> postorder-types
+  -> (DynamicCharacterMetadataDec (Element DynamicCharacter)   -> PostorderContext z z' -> z')
   -> PhylogeneticDAG2 m e n u  v  w  x  y  z
   -> PhylogeneticDAG2 m e n u' v' w' x' y' z'
 

@@ -32,8 +32,8 @@ module Bio.Metadata
   , discreteMetadataWithTCM
   -- * Dynamic Character Metadata
   , DenseTransitionCostMatrix
-  , DynamicCharacteracterMetadata(..)
-  , DynamicCharacteracterMetadataDec()
+  , DynamicCharacterMetadata(..)
+  , DynamicCharacterMetadataDec()
   , MemoizedCostMatrix()
   , TraversalFoci
   , TraversalFocusEdge

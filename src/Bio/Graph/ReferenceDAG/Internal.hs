@@ -36,7 +36,6 @@ import           Data.Bifunctor
 import           Data.EdgeSet
 import           Data.Foldable
 import           Data.Foldable.Custom
-import           Data.Function                 ((&))
 import           Data.Functor                  ((<$))
 import           Data.GraphViz.Attributes
 import           Data.GraphViz.Printing

@@ -1,16 +1,17 @@
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module Main (main) where
 
-import           Analysis.Parsimony.Dynamic.SequentialAlign
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
+import           Analysis.Parsimony.Dynamic.SequentialAlign
 import           Bio.Character.Encodable
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
-import qualified Data.Bimap         as BM
-import qualified Data.List.NonEmpty as NE
+import qualified Data.Bimap                                             as BM
+import qualified Data.List.NonEmpty                                     as NE
 import           Data.TCM.Memoized
-import           System.Environment       (getArgs)
+import           System.Environment                                     (getArgs)
 import           Test.Custom.NucleotideSequence
 import           Test.QuickCheck
 

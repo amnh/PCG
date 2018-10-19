@@ -25,21 +25,22 @@ import Turtle                     hiding (char, many, satisfy, x)
 
 testSuite :: IO TestTree
 testSuite = testGroup "Script Test Suite" <$> sequenceA
-  [ scriptCheckCost 7
-        "datasets/continuous/missing/test.pcg"
-        "datasets/continuous/missing/cost.data"
-  , scriptCheckCost 50.46
+  [ scriptCheckCost 50.46
         "datasets/continuous/single-block/arthropods.pcg"
         "datasets/continuous/single-block/cost.data"
-  , scriptCheckCost 8
-        "datasets/non-additive/missing/test.pcg"
-        "datasets/non-additive/missing/cost.data"
   , scriptCheckCost 1665
         "datasets/non-additive/single-block/arthropods.pcg"
         "datasets/non-additive/single-block/cost.data"
-  , scriptCheckCost 1206.0
-        "datasets/additive/missing/test.pcg"
-        "datasets/additive/missing/cost.data"
+    -- The missing tests are commented out as they are not curretnly on master
+--  ,  scriptCheckCost 7
+--        "datasets/continuous/missing/test.pcg"
+--        "datasets/continuous/missing/cost.data"
+--  , scriptCheckCost 8
+--        "datasets/non-additive/missing/test.pcg"
+--        "datasets/non-additive/missing/cost.data"
+--  , scriptCheckCost 1206.0
+--        "datasets/additive/missing/test.pcg"
+--        "datasets/additive/missing/cost.data"
   , scriptCheckCost 77252
         "datasets/additive/single-block/arthropods.pcg"
         "datasets/additive/single-block/cost.data"

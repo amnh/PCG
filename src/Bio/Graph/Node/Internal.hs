@@ -50,7 +50,6 @@ module Bio.Graph.Node.Internal
 import Control.DeepSeq
 import Control.Lens
 import Control.Lens.Lens           (Lens)
-import Data.BitVector.LittleEndian
 import Data.EdgeSet
 import Data.Foldable
 import Data.Functor.Apply
@@ -371,7 +370,6 @@ instance Show s => Show (ResolutionInformation s) where
 
     show resInfo = unlines tokens
       where
-        resMetadata = resolutionMetadata resInfo
         tokens =
            [ "Total Cost: "    <> show (resInfo ^. _totalSubtreeCost     )
            , "Local Cost: "    <> show (resInfo ^. _localSequenceCost    )

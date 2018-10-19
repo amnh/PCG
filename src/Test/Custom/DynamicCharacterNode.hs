@@ -104,7 +104,7 @@ scm :: Word -> Word -> Word
 scm i j = if i == j then 0 else 1
 
 
-defMetadata :: DynamicCharacteracterMetadataDec (Element DynamicCharacter)
+defMetadata :: DynamicCharacterMetadataDec (Element DynamicCharacter)
 defMetadata = dynamicMetadata defName defWeight defAlphabet scm Nothing
 
 

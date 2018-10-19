@@ -9,7 +9,7 @@ import           Data.Alphabet
 import           Data.BitMatrix
 import           Data.BitVector                      (bitVec)
 import           Data.Foldable
-import qualified Data.List.NonEmpty as NE
+import qualified Data.List.NonEmpty                  as NE
 import qualified Data.Vector                         as V
 import           Test.Custom.Types                   ()
 import           Test.QuickCheck

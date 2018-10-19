@@ -429,8 +429,7 @@ hexZipWithMeta
   -> (DiscreteCharacterMetadataDec                        -> w -> w' -> w'')
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> x -> x' -> x'')
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> y -> y' -> y'')
-  -> (DynamicCharacterMetadataDec (Element DynamicChar)   -> z -> z' -> z'')
->>>>>>> postorder-types
+  -> (DynamicCharacterMetadataDec (Element DynamicCharacter)   -> z -> z' -> z'')
   -> MetadataBlock m
   -> CharacterBlock u   v   w   x   y   z
   -> CharacterBlock u'  v'  w'  x'  y'  z'
@@ -452,12 +451,12 @@ hexZipWithMeta f1 f2 f3 f4 f5 f6 meta lhs rhs = CB
 -- Assumes that the 'CharacterBlock' values have the same number of each character
 -- type. If this assumtion is violated, the result will be truncated.
 hexZipMeta
-  :: (ContinuousCharacterMetadataDec                      -> u -> u')
-  -> (DiscreteCharacterMetadataDec                        -> v -> v')
-  -> (DiscreteCharacterMetadataDec                        -> w -> w')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> x -> x')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> y -> y')
-  -> (DynamicCharacterMetadataDec (Element DynamicChar)   -> z -> z')
+  :: (ContinuousCharacterMetadataDec                         -> u -> u')
+  -> (DiscreteCharacterMetadataDec                           -> v -> v')
+  -> (DiscreteCharacterMetadataDec                           -> w -> w')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> x -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> y -> y')
+  -> (DynamicCharacterMetadataDec (Element DynamicCharacter) -> z -> z')
   -> MetadataBlock m
   -> CharacterBlock u  v  w  x  y  z
   -> CharacterBlock u' v' w' x' y' z'

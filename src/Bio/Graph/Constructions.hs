@@ -125,8 +125,7 @@ type PostorderDecorationDAG m =
          (AdditivePostorderDecoration   StaticCharacter)
          (SankoffOptimizationDecoration StaticCharacter)
          (SankoffOptimizationDecoration StaticCharacter)
-         (DynamicDecorationDirectOptimizationPostorderResult DynamicCharacater)
->>>>>>> postorder-types
+         (DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter)
 
 
 -- |
@@ -178,11 +177,6 @@ type  UnifiedCharacterSequence
         UnifiedDiscreteCharacter
         UnifiedDiscreteCharacter
         UnifiedDynamicCharacteracter
-
-
--- |
--- A metadata sequence resulting fro the READ command.
-type  UnifiedMetadataSequence = MetadataSequence ()
 
 
 -- |

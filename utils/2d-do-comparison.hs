@@ -1,4 +1,5 @@
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module Main (main) where
 
@@ -6,11 +7,11 @@ import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Bio.Character.Encodable
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
-import qualified Data.Bimap         as BM
-import qualified Data.List.NonEmpty as NE
+import qualified Data.Bimap                                    as BM
+import qualified Data.List.NonEmpty                            as NE
 import           Data.Maybe
 import           Data.TCM.Memoized
-import           System.Environment        (getArgs)
+import           System.Environment                            (getArgs)
 import           Test.Custom.NucleotideSequence
 import           Test.QuickCheck
 
@@ -20,7 +21,7 @@ data OperationalMode a
    | SearchAgainst    a
    | RenderComparison a a
    | TooManyParameters
-   
+
 
 main :: IO ()
 main = do
@@ -41,13 +42,13 @@ parseArgs args =
         in  case xs of
                []     -> SearchAgainst    char1
                [arg2] -> RenderComparison char1 (readSequence arg2)
-               _      -> TooManyParameters 
+               _      -> TooManyParameters
   where
     readSequence = encodeStream alphabet . fmap ((iupacToDna BM.!) . pure . pure) . NE.fromList
 
 
 performCounterExampleSearch :: Maybe DynamicCharacter -> IO ()
-performCounterExampleSearch valueMay = do 
+performCounterExampleSearch valueMay = do
     putStrLn "Performing stocastic counter-example search:"
     case valueMay of
       Nothing   -> quickCheckWith extraItertations $ uncurry counterExampleCheck
@@ -81,7 +82,7 @@ performImplementationComparison char1 char2 = putStrLn renderedComparison
     foreignDOResult    = foreignPairwiseDO char1 char2  denseMatrixValue
 
 
-niceContextRendering 
+niceContextRendering
   :: ( Show c1
      , Show c2
      , Show c3

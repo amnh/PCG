@@ -378,7 +378,7 @@ expandDynamicCharactersMarkedAsAligned fpr = updateFpr <$> result
       -> Validation ReadError ([ParsedCharacterMetadata], Map String [ParsedCharacter])
     expandDynamicCharacters k m acc =
         case getRepresentativeChar ! k of
-          ParsedDynamicCharacteracter {} | not (isDynamic m) ->
+          ParsedDynamicCharacter {} | not (isDynamic m) ->
             case fmap fst . sortOn snd . occurances . catMaybes $ dynCharLen . (!k) <$> toList characterMap of
               []    -> acc
               [len] -> case acc of
@@ -389,8 +389,8 @@ expandDynamicCharactersMarkedAsAligned fpr = updateFpr <$> result
       where
         prependUnmodified (ms, cm) = (m:ms, (\i -> (((characterMap!i)!k):)) <#$> cm)
 
-    dynCharLen (ParsedDynamicCharacteracter x) = length <$> x
-    dynCharLen _                               = Nothing
+    dynCharLen (ParsedDynamicCharacter x) = length <$> x
+    dynCharLen _                          = Nothing
 
     expandMetadata
       :: Int -- ^ Length
@@ -406,9 +406,9 @@ expandDynamicCharactersMarkedAsAligned fpr = updateFpr <$> result
       -> [ParsedCharacter]
     expandCharacter len i k _ =
         case (characterMap ! k) ! i of
-          ParsedDynamicCharacteracter  Nothing  -> replicate len $ ParsedDiscreteCharacter Nothing
-          ParsedDynamicCharacteracter (Just xs) -> toList $ ParsedDiscreteCharacter . Just <$> xs
-          _                                     -> error "Bad character indexing in Read.Evaluate.expandCharacter"
+          ParsedDynamicCharacter  Nothing  -> replicate len $ ParsedDiscreteCharacter Nothing
+          ParsedDynamicCharacter (Just xs) -> toList $ ParsedDiscreteCharacter . Just <$> xs
+          _                                -> error "Bad character indexing in Read.Evaluate.expandCharacter"
 
 
 removeGapsFromDynamicCharactersNotMarkedAsAligned :: FracturedParseResult -> FracturedParseResult
@@ -416,5 +416,5 @@ removeGapsFromDynamicCharactersNotMarkedAsAligned fpr =
     fpr { parsedChars = fmap removeGapsFromUnalignedDynamicCharacters <$> parsedChars fpr }
   where
     removeGapsFromUnalignedDynamicCharacters :: ParsedCharacter -> ParsedCharacter
-    removeGapsFromUnalignedDynamicCharacters (ParsedDynamicCharacteracter (Just xs)) = ParsedDynamicCharacteracter . NE.nonEmpty $ NE.filter (/= pure "-") xs
+    removeGapsFromUnalignedDynamicCharacters (ParsedDynamicCharacter (Just xs)) = ParsedDynamicCharacter . NE.nonEmpty $ NE.filter (/= pure "-") xs
     removeGapsFromUnalignedDynamicCharacters e = e

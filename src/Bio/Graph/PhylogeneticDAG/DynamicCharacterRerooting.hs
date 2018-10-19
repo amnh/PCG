@@ -14,7 +14,7 @@
 {-# LANGUAGE MonoLocalBinds   #-}
 
 module Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
-  ( assignOptimalDynamicCharacteracterRootEdges
+  ( assignOptimalDynamicCharacterRootEdges
   ) where
 
 import           Analysis.Parsimony.Internal
@@ -65,7 +65,7 @@ import           Prelude                            hiding (lookup, zipWith)
 -- resolutions that contain the incident network edge contained on the current
 -- network edge.
 
-assignOptimalDynamicCharacteracterRootEdges
+assignOptimalDynamicCharacterRootEdges
   :: ( HasBlockCost u v w x y z
      , Show n
      , Show u
@@ -82,9 +82,6 @@ assignOptimalDynamicCharacteracterRootEdges
      ,         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
      , Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
      )
---assignOptimalDynamicCharacteracterRootEdges extensionTransformation x | trace (L.unpack . renderDot $ toDot x) False = undefined
---assignOptimalDynamicCharacteracterRootEdges extensionTransformation (PDAG2 x) | trace (referenceRendering x) False = undefined
-assignOptimalDynamicCharacteracterRootEdges extensionTransformation pdag@(PDAG2 inputDag meta) =
 assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 inputDag meta) =
       -- degenerate cases
     case toList inputDag of

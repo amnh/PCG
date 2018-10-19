@@ -137,7 +137,7 @@ instance EncodableDynamicCharacter d => DirectOptimizationPostorderDecoration (D
 
 
 -- | (✔)
-instance (EncodableDynamicCharacter d) => DynamicCharacteracterDecoration (DynamicDecorationInitial d) d where
+instance (EncodableDynamicCharacter d) => DynamicCharacterDecoration (DynamicDecorationInitial d) d where
 
 --    toDynamicCharacteracterDecoration :: CharacterName -> Double -> Alphabet String -> TCM -> (x -> a) -> x -> s
     toDynamicCharacteracterDecoration g symbolSet =

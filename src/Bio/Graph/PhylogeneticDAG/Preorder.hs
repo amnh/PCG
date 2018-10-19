@@ -13,6 +13,7 @@
 -----------------------------------------------------------------------------
 
 
+{-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
@@ -21,13 +22,13 @@
 {-# LANGUAGE NoMonoLocalBinds    #-}
 
 
+
 module Bio.Graph.PhylogeneticDAG.Preorder
   ( preorderSequence
   , preorderFromRooting
   ) where
 
 import           Analysis.Parsimony.Internal        as AP
-import           Analysis.Parsimony.Internal        hiding (PreorderContext)
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
 import           Bio.Graph.Node
@@ -36,11 +37,7 @@ import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Metadata
 import           Bio.Sequence
 import qualified Bio.Sequence.Block                 as BLK
-import qualified Bio.Sequence.Character             as CS
-import           Control.Arrow                      ((&&&))
 import           Control.Lens
-import           Control.Lens.At                    (ix)
-import           Control.Lens.Combinators           (singular)
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
 import           Data.Either.Custom                 (fromTaggedRep, toTaggedRep)
@@ -78,12 +75,12 @@ type BlockTopologies = NEV.Vector TraversalTopology
 -- and returns the new decoration for the current node.
 preorderSequence ::
   forall m e n u v w x y z u' v' w' x' y' z' . HasBlockCost u  v  w  x  y  z
-  => (ContinuousCharacterMetadataDec                      -> AP.PreorderContext u u' -> u')
-  -> (DiscreteCharacterMetadataDec                        -> AP.PreorderContext v v' -> v')
-  -> (DiscreteCharacterMetadataDec                        -> AP.PreorderContext w w' -> w')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> AP.PreorderContext x x' -> x')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> AP.PreorderContext y y' -> y')
-  -> (DynamicCharacterMetadataDec (Element DynamicChar)   -> AP.PreorderContext z z' -> z')
+  => (ContinuousCharacterMetadataDec                         -> AP.PreorderContext u u' -> u')
+  -> (DiscreteCharacterMetadataDec                           -> AP.PreorderContext v v' -> v')
+  -> (DiscreteCharacterMetadataDec                           -> AP.PreorderContext w w' -> w')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> AP.PreorderContext x x' -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> AP.PreorderContext y y' -> y')
+  -> (DynamicCharacterMetadataDec (Element DynamicCharacter) -> AP.PreorderContext z z' -> z')
   -> PhylogeneticDAG2 m e n u  v  w  x  y  z
   -> PhylogeneticDAG2 m e n u' v' w' x' y' z'
 preorderSequence f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag meta) = pdag2 & _phylogeneticForest .~ newRDAG
@@ -239,24 +236,6 @@ getSequenceOfBlockMinimumTopologies (PDAG2 dag meta) = getTopologies blockMinima
 
         rootWLOG = NE.head $ rootRefs dag
 
-
-        <*> topologyRepresentation
-        <*> const newSequence
-      ) $ NE.head currentResolutions
-
-
-computeOnApplicableResolution
-  :: (ContinuousCharacterMetadataDec        -> u -> [(Word, u')] -> u')
-  -> (DiscreteCharacterMetadataDec          -> v -> [(Word, v')] -> v')
-  -> (DiscreteCharacterMetadataDec          -> w -> [(Word, w')] -> w')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
-       -> x -> [(Word, x')] -> x')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter
-       -> y -> [(Word, y')] -> y')
-  -> (DynamicCharacteracterMetadataDec (Element DynamicCharacter)
-       -> z -> [(Word, z')] -> z')
-
-
 mockResInfo :: ResolutionCache s -> s' -> ResolutionCache s'
 mockResInfo currentResolutions newSequence =
     -- Default the ResolutionInformation valus, insert the preorder sequence result
@@ -267,12 +246,12 @@ mockResInfo currentResolutions newSequence =
 
 computeOnApplicableResolution
   :: forall m u v w x y z u' v' w' x' y' z'
-   . (ContinuousCharacterMetadataDec                      -> AP.PreorderContext u u' -> u')
-  -> (DiscreteCharacterMetadataDec                        -> AP.PreorderContext v v' -> v')
-  -> (DiscreteCharacterMetadataDec                        -> AP.PreorderContext w w' -> w')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> AP.PreorderContext x x' -> x')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> AP.PreorderContext y y' -> y')
-  -> (DynamicCharacterMetadataDec (Element DynamicChar)   -> AP.PreorderContext z z' -> z')
+   . (ContinuousCharacterMetadataDec                         -> AP.PreorderContext u u' -> u')
+  -> (DiscreteCharacterMetadataDec                           -> AP.PreorderContext v v' -> v')
+  -> (DiscreteCharacterMetadataDec                           -> AP.PreorderContext w w' -> w')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> AP.PreorderContext x x' -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> AP.PreorderContext y y' -> y')
+  -> (DynamicCharacterMetadataDec (Element DynamicCharacter) -> AP.PreorderContext z z' -> z')
   -> MetadataSequence m
   -> NEV.Vector
        ( TraversalTopology
@@ -285,7 +264,6 @@ computeOnApplicableResolution f1 f2 f3 f4 f5 f6 meta preContextOptions =
     (^. from blockSequence) $ zipWithKey f (meta ^. blockSequence) preContextOptions
 
   where
-    g = undefined
     (f1Root, f1Bin) = (rootFunction <$> f1 , preBinaryFunction <$> f1)
     (f2Root, f2Bin) = (rootFunction <$> f2 , preBinaryFunction <$> f2)
     (f3Root, f3Bin) = (rootFunction <$> f3 , preBinaryFunction <$> f3)
@@ -366,22 +344,15 @@ generateDotFile = (<> "\n") . L.unpack . renderDot . toDot
 -- a list of parent node decorations with the logic function already applied,
 -- and returns the new decoration for the current node.
 preorderFromRooting
-  :: forall m u v w x y z e' n' u' v' w' x' y' z'.
-   ( Show n'
-   , Show u'
-   , Show v'
-   , Show w'
-   , Show x'
-   , Show y'
-   , Show z
-   )
-  => (DynamicCharacterMetadataDec (Element DynamicChar) ->  AP.PreorderContext z z' -> z')
+  :: forall m u v w x y z e' n' u' v' w' x' y' z'
+  .  (Show n')
+  => (DynamicCharacterMetadataDec (Element DynamicCharacter) ->  AP.PreorderContext z z' -> z')
   ->         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
   -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
   -> NEV.Vector (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge))
   -> PhylogeneticDAG2 m e' n' u' v' w' x' y' z
   -> PhylogeneticDAG2 m e' n' u' v' w' x' y' z'
-preorderFromRooting transformation edgeCostMapping contextualNodeDatum minTopologyContextPerBlock pdag2@(PDAG2 dag meta)
+preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyContextPerBlock pdag2@(PDAG2 dag meta)
   =  pdag2 & _phylogeneticForest .~ newRDAG
   where
     newRDAG
@@ -568,7 +539,7 @@ preorderFromRooting transformation edgeCostMapping contextualNodeDatum minTopolo
                           FociEdgeNode p x ->
                             let currentContext
                                   = selectApplicableResolutions topology
-                                  $ (contextualNodeDatum .!>. i) .!>. (p,i)
+                                  $ (nodeDatumContext .!>. i) .!>. (p,i)
 
                                 currentDecoration =
                                     (!k)
@@ -591,7 +562,7 @@ preorderFromRooting transformation edgeCostMapping contextualNodeDatum minTopolo
                                   case kids of
                                     [c] -> (c,i) `elem` excludedEdges || (i,c) `elem` excludedEdges
                                     _   -> False
-                                currentContext     = selectApplicableResolutions topology $ (contextualNodeDatum .!>. i) .!>. (p,i)
+                                currentContext     = selectApplicableResolutions topology $ (nodeDatumContext .!>. i) .!>. (p,i)
                                 currentDecoration  = (!k) . (^. dynamicBin) . (!j) . (^. blockSequence) . characterSequence $ currentContext
                                 parentalDecoration = getDynCharDecoration . NE.head . resolutions $ memo ! p
                             in  if   isDeadEndNode

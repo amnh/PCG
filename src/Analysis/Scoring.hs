@@ -10,8 +10,9 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts      #-}
+{-# OPTIONS -fno-warn-incomplete-record-updates #-}
 
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies          #-}
@@ -178,9 +179,6 @@ performDecoration x = performPreorderDecoration performPostorderDecoration
           postBin
           { binNode = error "A binary internal node's data is used in the postorder!"}
 
-
->>>>>>> postorder-types
-
     adaptiveDirectOptimizationPostorder meta = directOptimizationPostorder pairwiseAlignmentFunction
       where
         pairwiseAlignmentFunction = selectDynamicMetric meta
@@ -195,8 +193,3 @@ instance HasCharacterCost (Maybe u) Word where
 
     characterCost = lens (const 0) undefined
 -}
-
--- |
--- An identity function which ignores the second parameter.
-id2 :: a -> b -> a
-id2 = const

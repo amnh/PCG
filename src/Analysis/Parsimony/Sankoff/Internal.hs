@@ -39,7 +39,6 @@ import Control.Lens
 import Data.Bits
 import Data.Foldable
 import Data.Key
-import Data.List.NonEmpty                (NonEmpty ((:|)))
 import Data.Word
 import Numeric.Extended.Natural
 import Prelude                           hiding (zip)
