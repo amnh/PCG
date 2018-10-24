@@ -16,11 +16,7 @@
 module Data.Either.Custom where
 
 import Control.Monad.Trans.Except
-import Data.Either                (partitionEithers)
-import Data.Foldable
-import Data.List.NonEmpty         (NonEmpty ((:|)))
-import Data.Semigroup
-
+import Data.Validation
 
 -- |
 -- \( \mathcal{O} \left( n \right) \)
@@ -48,16 +44,13 @@ import Data.Semigroup
 --
 -- >>> eitherValidation [Left ("Love", "Hate"), Left (" you", " me")]
 -- Left ("Love you", "Hate me")
-eitherValidation :: (Foldable t, Semigroup e) => t (Either e a) -> Either e [a]
-eitherValidation xs =
-  case partitionEithers $ toList xs of
-    ([]  , r) -> Right r
-    (e:es, _) -> Left . sconcat $ e:|es
+eitherValidation :: (Traversable t, Semigroup e) => t (Either e a) -> Either e (t a)
+eitherValidation = toEither . traverse fromEither
 
 
 -- |
 -- \( \mathcal{O} \left( n \right) \)
 --
--- Works similarly to 'eitherValidation' but within the 'MonadTrans' context.
-eitherTValidation :: (Foldable t, Monad m, Semigroup e) => t (ExceptT e m a) -> ExceptT e m [a]
-eitherTValidation = ExceptT . fmap eitherValidation . traverse runExceptT . toList
+-- Works similarly to 'eitherValidation' but within the 'ExceptT' context.
+eitherTValidation :: (Traversable t, Monad m, Semigroup e) => t (ExceptT e m a) -> ExceptT e m (t a)
+eitherTValidation = ExceptT . fmap eitherValidation . traverse runExceptT
