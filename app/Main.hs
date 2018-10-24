@@ -74,7 +74,7 @@ main = do
             Left errorMessage -> putStrLn errorMessage
             Right inputStream -> do
                 (code, outputStream) <- case parse' computationalStreamParser (inputFile opts) inputStream of
-                                          Left  err -> pure (ExitFailure 4, parseErrorPretty' (inputFile opts) err)
+                                          Left  err -> pure (ExitFailure 4, parseErrorPretty' inputStream err)
                                           Right val -> fmap renderSearchState . runEvaluation . evaluate $ optimizeComputation val
                 let  outputPath = outputFile opts
                 if   (toUpper <$> outputPath) == "STDOUT"
