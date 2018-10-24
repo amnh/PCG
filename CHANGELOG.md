@@ -10,6 +10,7 @@ Releases are available [on GitHub][2].
 * Using semantic versioning
 * Updated to GHC-8.4.3
 * Updated to Cabal-2.2
+* Updated read command grammar to allow for more specific TCM specification
 * Improved efficiency and consistency of character metadata representation
 * Improved efficiency of Wagner build
 * Improved efficiency of Data.Vector.NonEmpty.fromNonEmpty, unfoldr, and traverse
@@ -17,6 +18,7 @@ Releases are available [on GitHub][2].
 * Improved representation of Symbol Change Matrix (SCM) and Transition Cost Matrix (TCM)
 * Enhanced file parser selection to intelligently look at the file extension
 * Enhanced DOT file parser to accept DOT labels on leaf nodes as identifiers
+* Enhanced FASTA file parser to better interpret accept amino input files
 * Added Travis CI build script
 * Added integration test suite
 * Added test suites for Data.List.Utility, Data.Alphabet, and Data.TCM
