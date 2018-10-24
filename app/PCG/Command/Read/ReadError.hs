@@ -143,8 +143,8 @@ unparsable pStr pErr = ReadError $ FileUnparsable (parseErrorPretty' pStr pErr) 
 -- Don't let @matches@ equal @[]@.
 -- That would be nonsensical and seriously not cool.
 -- Don't make me change the type of @matches@ for @['FilePath']@ to 'NonEmpty'.
-ambiguous  :: FilePath -> [FilePath] -> ReadError
-ambiguous path matches = ReadError $ FileAmbiguous path (fromList matches) :| []
+ambiguous :: Foldable1 f => FilePath -> f FilePath -> ReadError
+ambiguous path matches = ReadError $ FileAmbiguous path (toNonEmpty matches) :| []
 
 
 multipleTCMs :: FilePath -> FilePath -> ReadError

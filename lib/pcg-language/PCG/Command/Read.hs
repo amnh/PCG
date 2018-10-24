@@ -22,14 +22,12 @@ module PCG.Command.Read
   , ReadCommand(..)
   , FileContent
   , FileResult
+  , DataContent(..)
   , TcmReference
-  , Tiebreaker(..)
   , readCommandSpecification
   ) where
 
 import Control.Applicative.Free (Ap)
-import Data.Foldable
-import Data.Functor             (($>))
 import Data.List.NonEmpty       (NonEmpty)
 import Data.Text                (Text)
 import PCG.Syntax.Combinators
@@ -42,10 +40,12 @@ newtype ReadCommand = ReadCommand (NonEmpty FileSpecification)
 
 
 -- |
--- The content of a file along with a possibly associated TCM file content.
-newtype FileSpecificationContent = SpecContent !(NonEmpty DataContent)
+-- The collection of file content collected from a 'FileSpecification'.
+newtype FileSpecificationContent = SpecContent (NonEmpty DataContent)
 
 
+-- |
+-- Content of a single data file along with a possibly associated TCM file content.
 data  DataContent
     = DataContent
     { dataFile :: !FileResult
@@ -69,22 +69,6 @@ data  FileSpecification
 
 
 -- |
--- Describes how ties are to be broken. In what context ties are occuring, I'm
--- not sure.
-newtype Tiebreaker = Tiebreaker CustomAlphabetStrategy
-    deriving (Show)
-
-
--- |
--- Strategy for alphabet symbols.
-data  CustomAlphabetStrategy
-    = First
-    | Last
-    | AtRandom
-    deriving (Show)
-
-
--- |
 -- The content of a file.
 type  FileContent  = Text
 
@@ -96,7 +80,7 @@ type  FileResult   = (FilePath, FileContent)
 
 -- |
 -- An optional reference to a TCM file.
-type  TcmReference = Maybe FilePath
+type  TcmReference = FilePath
 
 
 instance Semigroup ReadCommand where
@@ -112,7 +96,17 @@ readCommandSpecification = command "read" $ ReadCommand <$> someOf fileSpec
 
 
 fileSpec :: Ap SyntacticArgument FileSpecification
-fileSpec = choiceFrom [ unspecified, customAlphabet, aminoAcids, nucleotides, annotated, chromosome, genome, prealigned ]
+fileSpec = choiceFrom
+    [ unspecified
+    , withSpecTCM
+    , prealigned
+    , customAlphabet
+    , aminoAcids
+    , nucleotides
+    , annotated
+    , chromosome
+    , genome
+    ]
   where
     unspecified    = UnspecifiedFile . pure <$> text
     aminoAcids     = AminoAcidFile  <$> oneOrSomeWithIds text [ "amino_acid", "amino_acids", "aminoacid", "aminoacids", "protein", "proteins" ]
@@ -120,9 +114,19 @@ fileSpec = choiceFrom [ unspecified, customAlphabet, aminoAcids, nucleotides, an
     annotated      = AnnotatedFile  <$> oneOrSomeWithIds text [ "annotated" ]
     chromosome     = ChromosomeFile <$> oneOrSomeWithIds text [ "chromosome", "chromosomes", "chromosomal" ]
     genome         = GenomeFile     <$> oneOrSomeWithIds text [ "genome", "genomes", "genomic", "genomics" ]
-    prealigned     = argId "prealigned"      . argList $ PrealignedFile     <$> oneOrSome fileSpec <*> tcmReference
-    customAlphabet = argId "custom_alphabet" . argList $ CustomAlphabetFile <$> oneOrSome fileSpec <*> tcmReference
-    tcmReference   = (Just <$> argId "tcm" (argList text)) `withDefault` Nothing
+    prealigned     = argId "prealigned"      . singleArgList $ PrealignedFile <$> fileSpec
+    customAlphabet = argId "custom_alphabet" . argList $ CustomAlphabetFile <$> oneOrSome text <*> tcmReference
+    withSpecTCM    = argId "set_tcm" . argList $ WithSpecifiedTCM <$> fileSpec <*> tcmReference
+
+
+    tcmReference :: Ap SyntacticArgument String
+    tcmReference   = argId "tcm" text
+
+
+-- |
+-- Can either place parens around the argument or not.
+singleArgList :: Ap SyntacticArgument a -> Ap SyntacticArgument a
+singleArgList v = choiceFrom [ v, argList v ]
 
 
 -- |

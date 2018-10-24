@@ -68,16 +68,16 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
   , scriptCheckCost 1789
         "datasets/sankoff/single-block/dna/2-1/arthropods.pcg"
         "datasets/sankoff/single-block/dna/2-1/cost.data"
-  , scriptCheckCost 84
+  , scriptCheckCost 1143
         "datasets/sankoff/single-block/protein/discrete/invertebrates.pcg"
         "datasets/sankoff/single-block/protein/discrete/cost.data"
-  , scriptCheckCost 0
+  , scriptCheckCost 11851
         "datasets/sankoff/single-block/protein/L1-norm/invertebrates.pcg"
         "datasets/sankoff/single-block/protein/L1-norm/cost.data"
-  , scriptCheckCost 7.378697629483821e19
+  , scriptCheckCost 2012
         "datasets/sankoff/single-block/protein/1-2/invertebrates.pcg"
         "datasets/sankoff/single-block/protein/1-2/cost.data"
-  , scriptCheckCost 7.378697629483821e19
+  , scriptCheckCost 1304
         "datasets/sankoff/single-block/protein/2-1/invertebrates.pcg"
         "datasets/sankoff/single-block/protein/2-1/cost.data"
   , scriptCheckCost 89
@@ -137,7 +137,7 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
   , scriptCheckCost 2042
         "datasets/dynamic/multi-block/arthropods.pcg"
         "datasets/dynamic/multi-block/cost.data"
-  , scriptCheckCost 197
+  , scriptCheckCost 1132
         "datasets/dynamic/single-block/protein/discrete/invertebrates.pcg"
         "datasets/dynamic/single-block/protein/discrete/cost.data"
   , scriptCheckCost 2042
