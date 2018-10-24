@@ -98,15 +98,14 @@ symbolSequence sym = space *> fullSequence
 alphabet, otherValidChars, iupacAminoAcidChars, iupacNucleotideChars, iupacRNAChars :: String
 alphabet             = unionAll [iupacAminoAcidChars, iupacNucleotideChars, iupacRNAChars]
 otherValidChars      = ".-?#"
-iupacAminoAcidChars  = caseInsensitiveOptions $ "ACDEFGHIKLMNPQRSTVWY" <> otherValidChars
-iupacNucleotideChars = caseInsensitiveOptions $ "ACGTRYSWKMBDHVN"      <> otherValidChars
+iupacAminoAcidChars  = caseInsensitiveOptions $ "ABCDEFGHIKLMNPQRSTUVWXYZ" <> otherValidChars
+iupacNucleotideChars = caseInsensitiveOptions $ "ACGTRYSWKMBDHVN"          <> otherValidChars
 iupacRNAChars        = f <$> iupacNucleotideChars
   where
     f x
       | x == 'T'  = 'U'
       | x == 't'  = 'u'
       | otherwise = x
-
 
 -- |
 -- Naively takes the union of many lists to a single list
