@@ -108,7 +108,7 @@ transformToAligned
   :: NonEmpty FracturedParseResult
   -> ExceptT ReadError IO (NonEmpty FracturedParseResult)
 transformToAligned =
-  ExceptT . pure . toEither . sequenceA . fmap (expandDynamicCharactersMarkedAsAligned . setCharactersToAligned)
+  ExceptT . pure . toEither . traverse (expandDynamicCharactersMarkedAsAligned . setCharactersToAligned)
 
 
 setTcm :: TCM -> FracturedParseResult -> FracturedParseResult
@@ -173,7 +173,7 @@ parseAndSetTCM tcmPath fprs = do
 
 parseCustomAlphabet
   :: NonEmpty FilePath
-  -> FilePath 
+  -> FilePath
   -> ExceptT ReadError IO (NonEmpty FracturedParseResult)
 parseCustomAlphabet dataFilePaths tcmPath = getSpecifiedContent spec
                                         >>= parseFiles
@@ -198,7 +198,7 @@ parseCustomAlphabet dataFilePaths tcmPath = getSpecifiedContent spec
 progressiveParse :: FilePath -> ExceptT ReadError IO FracturedParseResult
 progressiveParse inputPath = do
     SpecContent (fc:|_) <- getSpecifiedContent (UnspecifiedFile $ inputPath:|[])
-    
+
     let (filePath, fileContent)   = dataFile fc
         (preferredFound, parsers) = getParsersToTry $ takeExtension filePath
 
@@ -320,7 +320,7 @@ getSpecifiedContent (WithSpecifiedTCM   fs tcm) = do
     SpecContent fs' <- getSpecifiedContent fs
     tcm' <- getSpecifiedTcm tcm
     pure . SpecContent $ (DataContent <$> dataFile <*> const (Just tcm')) <$> fs'
-    
+
 getSpecifiedContent (CustomAlphabetFile xs tcm) = do
     xs'  <- getSpecifiedFileContents xs
     tcm' <- getSpecifiedTcm tcm

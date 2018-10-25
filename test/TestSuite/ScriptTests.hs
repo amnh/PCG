@@ -8,6 +8,7 @@ module TestSuite.ScriptTests
   ) where
 
 import Control.Arrow              ((&&&))
+import Control.DeepSeq
 import Data.Char                  (isSpace)
 import Data.Either
 import Data.Foldable
@@ -21,7 +22,7 @@ import Test.Tasty.HUnit
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer (scientific)
-import Turtle                     hiding (char, many, satisfy, x)
+import Turtle                     hiding (char, many, parallel, satisfy, wait, x)
 
 
 testSuite :: IO TestTree
@@ -140,23 +141,27 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
   , scriptCheckCost 1132
         "datasets/dynamic/single-block/protein/discrete/invertebrates.pcg"
         "datasets/dynamic/single-block/protein/discrete/cost.data"
+
   , scriptCheckCost 2042
         "datasets/dynamic/single-block/protein/L1-norm/invertebrates.pcg"
         "datasets/dynamic/single-block/protein/L1-norm/cost.data"
+
 {--
-  , scriptCheckCost 254
+  , scriptCheckCost 1948
         "datasets/dynamic/single-block/protein/1-2/invertebrates.pcg"
         "datasets/dynamic/single-block/protein/1-2/cost.data"
-  , scriptCheckCost 228
+  , scriptCheckCost 1241
         "datasets/dynamic/single-block/protein/2-1/invertebrates.pcg"
         "datasets/dynamic/single-block/protein/2-1/cost.data"
   , scriptCheckCost 197
         "datasets/dynamic/single-block/slashes/discrete/test.pcg"
         "datasets/dynamic/single-block/slashes/discrete/cost.data"
 --}
+
   , scriptCheckCost 2042
         "datasets/dynamic/single-block/slashes/L1-norm/test.pcg"
         "datasets/dynamic/single-block/slashes/L1-norm/cost.data"
+
 {--
   , scriptCheckCost 254
         "datasets/dynamic/single-block/slashes/1-2/test.pcg"
@@ -206,7 +211,7 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
   , scriptCheckCost 488
         "datasets/dynamic/single-block/huge-mix/levenshtein/test.pcg"
         "datasets/dynamic/single-block/huge-mix/levenshtein/cost.data"
--}
+--}
   , scriptFailure "datasets/unmatched-leaf-taxon/test.pcg"
   , scriptFailure "datasets/unmatched-tree-taxon/test.pcg"
   , scriptFailure "datasets/duplicate-leaf-taxon/test.pcg"
@@ -237,7 +242,7 @@ scriptCheckCost expectedCost scriptPath outputPath = scriptTest scriptPath [outp
     checkResult (Left     exitCode) = assertFailure $ "Script failed with exit code: " <> show exitCode
     checkResult (Right          []) = assertFailure "No files were returned despite supplying one path!"
     checkResult (Right (outFile:_)) =
-        case parseCost outFile of
+        case force $ parseCost outFile of
           Nothing   -> assertFailure "No cost found in the output file!"
           Just cost -> cost @?= expectedCost
 
@@ -292,7 +297,7 @@ runExecutable
 runExecutable scriptStr outputPaths = do
     startingDirectory <- pwd
     cd scriptDirectory
-    exitCode <- shell ("stack exec pcg -- --input " <> scriptText <> " --output test.log") mempty
+    (exitCode, _) <- shellStrict ("stack exec pcg -- --input " <> scriptText <> " --output test.log") mempty
     cd startingDirectory
     case exitCode of
       ExitFailure v -> pure $ Left v

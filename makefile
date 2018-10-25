@@ -151,6 +151,7 @@ clean: phylocomgraph.cabal stack.yaml
 	  find $$dir -type f -name '*.hi' -delete; \
 	  find $$dir -type f -name '*.*~' -delete; \
 	  find $$dir -type f -name '#*.*' -delete; \
+	  find $$dir -type f -name 'test.log' -delete; \
 	done
 
 # Calls other make files to pre-process FFI files
