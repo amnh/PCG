@@ -111,7 +111,6 @@ performDecoration
      , DiscreteCharacterDecoration x StaticCharacter
      , DiscreteCharacterDecoration y StaticCharacter
      , RangedCharacterDecoration u ContinuousChar
-     , RangedCharacterDecoration u ContinuousChar
      , RangedCharacterDecoration w StaticCharacter
      , SimpleDynamicDecoration z DynamicCharacter
      )

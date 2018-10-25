@@ -7,7 +7,6 @@ import Bio.Graph
 import Control.Monad.IO.Class (liftIO)
 import Data.Compact.Serialize (unsafeReadCompact)
 import PCG.Command.Load
-import PCG.Syntax
 
 
 evaluate :: LoadCommand -> GraphState -> SearchState
