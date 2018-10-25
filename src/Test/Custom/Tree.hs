@@ -192,7 +192,7 @@ instance Show TestingDecoration where
             , g "Implied Alignment         " <$> f dImpliedAlignment
             ]
         alphabetToken = suppliedAlphabet decoration
-        f x = renderDynamicCharacteracter alphabetToken <$> headMay (x decoration)
+        f x = renderDynamicCharacter alphabetToken <$> headMay (x decoration)
         g prefix shown = prefix <> ": " <> shown --intercalate "\n" $ (prefix <> ": " <> y) : (("  " <>) <$> zs)
 --          where
 --            (x:y:zs) = lines shown :: [String]
@@ -219,8 +219,8 @@ draw (Node x xs) = lines x <> drawSubTrees xs
     shift first other = Prelude.zipWith (<>) (first : repeat other)
 
 
-renderDynamicCharacteracter :: Maybe (Alphabet String) -> DynamicCharacter -> String
-renderDynamicCharacteracter alphabetMay char
+renderDynamicCharacter :: Maybe (Alphabet String) -> DynamicCharacter -> String
+renderDynamicCharacter alphabetMay char
   | onull char = ""
   | otherwise  = concatMap (f . toList) $ decodeStream alphabet char
   where
@@ -518,7 +518,7 @@ simpleTreeCharacterDecorationEqualityAssertion rootRef symbols transformation ac
                               , "Actual value  : " <> seqShow actual
                               ]
               where
-                seqShow = indentLine . maybe "Empty sequence" (renderDynamicCharacteracter nodeAlphabet) . headMay
+                seqShow = indentLine . maybe "Empty sequence" (renderDynamicCharacter nodeAlphabet) . headMay
 
     indentLine  = ("  " <>)
     indentBlock = unlines . fmap indentLine . lines

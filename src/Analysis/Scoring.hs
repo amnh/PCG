@@ -113,7 +113,7 @@ performDecoration
   :: ( DiscreteCharacterDecoration v StaticCharacter
      , DiscreteCharacterDecoration x StaticCharacter
      , DiscreteCharacterDecoration y StaticCharacter
-     , RangedCharacterDecoration u ContinuousChar
+     , RangedCharacterDecoration u ContinuousCharacter
      , RangedCharacterDecoration w StaticCharacter
      , SimpleDynamicDecoration z DynamicCharacter
      )
@@ -124,7 +124,7 @@ performDecoration x = finalizeEdgeData $ performPreorderDecoration performPostor
 
     finalizeEdgeData :: PreOrderDecorationDAG -> FinalDecorationDAG
     finalizeEdgeData = setEdgeSequences
-                         (const additivePostorder :: ContinuousCharacterMetadataDec -> ContinuousOptimizationDecoration ContinuousChar -> [ContinuousOptimizationDecoration ContinuousChar] -> ContinuousOptimizationDecoration ContinuousChar)
+                         (const additivePostorder :: ContinuousCharacterMetadataDec -> ContinuousOptimizationDecoration ContinuousCharacter -> [ContinuousOptimizationDecoration ContinuousCharacter] -> ContinuousOptimizationDecoration ContinuousCharacter)
                          (const fitchPostorder)
                          (const additivePostorder)
                          sankoffPostorder

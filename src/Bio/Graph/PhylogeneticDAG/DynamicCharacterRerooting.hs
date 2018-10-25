@@ -568,7 +568,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
             -- block, we construct a 'MinimalTopologyContext' value and *will*
             -- use the 'Semigroup' operator '(<>)' to accumulate the minimal
             -- context for all the spanning trees in the 'foldMap1' call above.
-            deriveMinimalSpanningTreeContext blockDynamicCharacteracters spanningTree = toMinimalTopologyContext minimalBlockCost spanningTree minimalRootsPerCharacter
+            deriveMinimalSpanningTreeContext blockDynamicCharacters spanningTree = toMinimalTopologyContext minimalBlockCost spanningTree minimalRootsPerCharacter
               where
                 minimalBlockCost               = sum $ fst <$> minimalCostAndRootPerCharacter
                 minimalRootsPerCharacter       = V.fromList' . toList $ snd <$> minimalCostAndRootPerCharacter
@@ -577,10 +577,10 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
 
                 -- Determine the minimal rooting edge for the given dynamic
                 -- character in the spanning tree by first constructing a
-                -- 'MinimalDynamicCharacteracterRootContext' for each applicable edge
+                -- 'MinimalDynamicCharacterRootContext' for each applicable edge
                 -- in the spanning tree and then minimizing the root edge
                 -- contexts using the 'Semigroup' instance of the
-                -- 'MinimalDynamicCharacteracterRootContext' values in the 'fold1'
+                -- 'MinimalDynamicCharacterRootContext' values in the 'fold1'
                 -- call below.
                 --
                 -- We explicitly hande the "impossible" case that there was no
@@ -589,7 +589,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                 -- good to give an explict error message just in case.
                 getMinimalCharacterRootInSpanningTree characterIndex characterDecoration =
                     case foldMapWithKey getEdgeCostInSpanningTree edgeCostMapping of
-                      x:xs -> let r@(charCost, _) = fromMinimalDynamicCharacteracterRootContext . fold1 $ x:|xs
+                      x:xs -> let r@(charCost, _) = fromMinimalDynamicCharacterRootContext . fold1 $ x:|xs
                               in  (charWeight * fromIntegral charCost, r)
                       []   -> error $ unwords
                                   [ "A very peculiar impossiblity occurred!"
@@ -603,14 +603,14 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                     charWeight = characterDecoration ^. characterWeight
                     getDynamicCharacteraterDecoration = (! characterIndex) . dynamicCharacters . (! blockIndex) . toBlocks . characterSequence
 
-                    -- Possible construct a 'MinimalDynamicCharacteracterRootContext'
+                    -- Possible construct a 'MinimalDynamicCharacterRootContext'
                     -- value for a given edge.
                     getEdgeCostInSpanningTree rootingEdge cache =
                       case NE.filter (\x -> spanningTree == topologyRepresentation x) cache of
                         []  -> []
-                        x:_ -> [ toMinimalDynamicCharacteracterRootContext (getDynamicCharacteracterCost x) rootingEdge ]
+                        x:_ -> [ toMinimalDynamicCharacterRootContext (getDynamicCharacterCost x) rootingEdge ]
                       where
-                        getDynamicCharacteracterCost = (^. characterCost) . getDynamicCharacteraterDecoration
+                        getDynamicCharacterCost = (^. characterCost) . getDynamicCharacteraterDecoration
 -}
 
 

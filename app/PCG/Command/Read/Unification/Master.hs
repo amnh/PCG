@@ -21,7 +21,7 @@ module PCG.Command.Read.Unification.Master
   ) where
 
 import           Bio.Character
-import           Bio.Character.Decoration.Continuous           hiding (characterName, toContinuousCharacter)
+import           Bio.Character.Decoration.Continuous           hiding (characterName)
 import           Bio.Character.Decoration.Discrete             hiding (characterName)
 import           Bio.Character.Decoration.Dynamic              hiding (characterName)
 import           Bio.Character.Encodable
@@ -362,12 +362,12 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
               where
                 encodeBinToSingletonCharacterBlock
                   :: (ParsedCharacter, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName)
-                  -> PartialCharacterBlock UnifiedContinuousCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDynamicCharacteracter
+                  -> PartialCharacterBlock UnifiedContinuousCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDynamicCharacter
                 encodeBinToSingletonCharacterBlock (charMay, charMeta, _scm, structure, _charName) =
                     case charMay of
                       ParsedContinuousCharacter continuousMay -> continuousSingleton           . Just $  continuousDecorationInitial $ toContinuousCharacter continuousMay
                       ParsedDiscreteCharacter     discreteMay ->   discreteSingleton structure . Just $ toDiscreteCharacterDecoration staticTransform discreteMay
-                      ParsedDynamicCharacter      dynamicMay ->    dynamicSingleton           . Just $  toDynamicCharacteracterDecoration dynamicTransform dynamicMay
+                      ParsedDynamicCharacter      dynamicMay ->    dynamicSingleton           . Just $  toDynamicCharacterDecoration dynamicTransform dynamicMay
                   where
                     alphabetLength    = toEnum $ length specifiedAlphabet
                     specifiedAlphabet = alphabet charMeta

@@ -18,6 +18,6 @@ module Bio.Character.Encodable.Continuous.Class where
 
 -- |
 -- A character class for continuous characters.
-class ContinuousCharacter c where
+class EncodableContinuousCharacter c where
 
     toContinuousCharacter :: Real r => Maybe r -> c

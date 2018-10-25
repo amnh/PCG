@@ -106,7 +106,7 @@ type FinalDecorationDAG =
          (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
          FinalEdgeDatum
          NodeLabel
-         (ContinuousOptimizationDecoration     ContinuousChar )
+         (ContinuousOptimizationDecoration ContinuousCharacter)
          (FitchOptimizationDecoration          StaticCharacter)
          (AdditiveOptimizationDecoration       StaticCharacter)
          (SankoffOptimizationDecoration        StaticCharacter)
@@ -121,7 +121,7 @@ type PreOrderDecorationDAG =
          (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
          EdgeLength
          NodeLabel
-         (ContinuousOptimizationDecoration     ContinuousChar )
+         (ContinuousOptimizationDecoration ContinuousCharacter)
          (FitchOptimizationDecoration          StaticCharacter)
          (AdditiveOptimizationDecoration       StaticCharacter)
          (SankoffOptimizationDecoration        StaticCharacter)
@@ -132,7 +132,7 @@ type PreOrderDecorationDAG =
 type FinalEdgeDatum =
        ( EdgeLength
        , CharacterSequence
-         (ContinuousOptimizationDecoration     ContinuousChar )
+         (ContinuousOptimizationDecoration ContinuousCharacter)
          (FitchOptimizationDecoration          StaticCharacter)
          (AdditiveOptimizationDecoration       StaticCharacter)
          (SankoffOptimizationDecoration        StaticCharacter)
@@ -148,11 +148,11 @@ type PostorderDecorationDAG m =
          m
          EdgeLength
          NodeLabel
-         (ContinuousPostorderDecoration ContinuousChar )
-         (FitchOptimizationDecoration   StaticCharacter)
-         (AdditivePostorderDecoration   StaticCharacter)
-         (SankoffOptimizationDecoration StaticCharacter)
-         (SankoffOptimizationDecoration StaticCharacter)
+         (ContinuousPostorderDecoration ContinuousCharacter)
+         (FitchOptimizationDecoration       StaticCharacter)
+         (AdditivePostorderDecoration       StaticCharacter)
+         (SankoffOptimizationDecoration     StaticCharacter)
+         (SankoffOptimizationDecoration     StaticCharacter)
          (DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter)
 
 
@@ -217,7 +217,7 @@ type  UnifiedMetadataSequence = MetadataSequence ()
 -- Contains no decorations, and has not been assigned a scoring class.
 -- Expected to be @Nothing@-valued for internal nodes and @Just@-valued for leaf
 -- nodes.
-type UnifiedContinuousCharacter = Maybe (ContinuousDecorationInitial ContinuousChar)
+type UnifiedContinuousCharacter = Maybe (ContinuousDecorationInitial ContinuousCharacter)
 
 
 -- |
