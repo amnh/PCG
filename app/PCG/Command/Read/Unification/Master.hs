@@ -98,7 +98,7 @@ instance Show FracturedParseResult where
         ]
 
 
-masterUnify :: [FracturedParseResult] -> Either UnificationError (Either TopologicalResult CharacterResult)
+masterUnify :: Foldable1 f => f FracturedParseResult -> Either UnificationError (Either TopologicalResult CharacterResult)
 masterUnify = rectifyResults2
 
 
@@ -108,8 +108,10 @@ parmap' = parmap rpar
 
 -- |
 -- Unify disparate parsed results into a single phylogenetic solution.
-rectifyResults2 :: [FracturedParseResult]
-                -> Either UnificationError (Either TopologicalResult CharacterResult)
+rectifyResults2
+  :: Foldable1 f
+  => f FracturedParseResult
+  -> Either UnificationError (Either TopologicalResult CharacterResult)
 --rectifyResults2 fprs | trace (show fprs) False = undefined
 rectifyResults2 fprs =
     case errors of
@@ -117,11 +119,11 @@ rectifyResults2 fprs =
       x:xs -> Left . sconcat $ x:|xs
   where
     -- Step 1: Gather data file contents
-    dataSeqs        = filter (not . fromTreeOnlyFile) fprs
+    dataSeqs        = filter (not . fromTreeOnlyFile) $ toList fprs
     -- Step 2: Union the taxa names together into total terminal set
     taxaSet         = mconcat $ (Set.fromList . keys . parsedChars) `parmap'` dataSeqs
     -- Step 3: Gather forest file data
-    allForests      = filter (not . null . parsedForests) fprs
+    allForests      = filter (not . null . parsedForests) $ toList fprs
     -- Step 4: Gather the taxa names for each forest from terminal nodes
     forestTaxa :: [([NonEmpty Identifier], FracturedParseResult)]
     forestTaxa      =  gatherForestsTerminalNames `parmap'` allForests
@@ -143,8 +145,8 @@ rectifyResults2 fprs =
     dagForest       =
         case (null suppliedForests, null charSeqs, metaSeq) of
           -- Throw a unification error here
-          (True , True , _        ) -> Left . UnificationError . pure . VacuousInput $ sourceFile <$> NE.fromList fprs
-          (_    , False, Nothing  ) -> Left . UnificationError . pure . VacuousInput $ sourceFile <$> NE.fromList fprs
+          (True , True , _        ) -> Left . UnificationError . pure . VacuousInput $ sourceFile <$> toNonEmpty fprs
+          (_    , False, Nothing  ) -> Left . UnificationError . pure . VacuousInput $ sourceFile <$> toNonEmpty fprs
 
           -- Build a default forest of singleton components
           (True , False, Just meta) -> Right . Right . PhylogeneticSolution . pure
