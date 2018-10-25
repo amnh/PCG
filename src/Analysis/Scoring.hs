@@ -110,7 +110,7 @@ performDecoration
   :: ( DiscreteCharacterDecoration v StaticCharacter
      , DiscreteCharacterDecoration x StaticCharacter
      , DiscreteCharacterDecoration y StaticCharacter
-     , RangedCharacterDecoration u ContinuousChar
+     , RangedCharacterDecoration u ContinuousCharacter
      , RangedCharacterDecoration w StaticCharacter
      , SimpleDynamicDecoration z DynamicCharacter
      )

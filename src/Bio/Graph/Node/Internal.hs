@@ -82,31 +82,34 @@ data  PhylogeneticNode2 s n
     , nodeDecorationDatum2 :: !n
     } deriving (Eq, Functor, Generic)
 
+
 -- |
 -- A 'Lens' for the 'resoluions' field.
+{-# SPECIALISE _resolutions :: Lens (PhylogeneticNode2 s n) (PhylogeneticNode2 s' n) (ResolutionCache s) (ResolutionCache s') #-}
 class HasResolutions s t a b | s -> a, b s -> t where
-  _resolutions :: Lens s t a b
 
-{-# SPECIALISE _resolutions
-                 :: Lens (PhylogeneticNode2 s n) (PhylogeneticNode2 s' n) (ResolutionCache s) (ResolutionCache s')
-  #-}
+    _resolutions :: Lens s t a b
 
-instance HasResolutions
-  (PhylogeneticNode2 s n) (PhylogeneticNode2 s' n) (ResolutionCache s) (ResolutionCache s')
-  where
-  {-# INLINE _resolutions #-}
-  _resolutions = lens resolutions (\p s -> p {resolutions = s})
+
+instance HasResolutions (PhylogeneticNode2 s n) (PhylogeneticNode2 s' n) (ResolutionCache s) (ResolutionCache s') where
+
+    {-# INLINE _resolutions #-}
+    _resolutions = lens resolutions (\p s -> p {resolutions = s})
+    
 
 -- |
 -- A 'Lens' for the 'nodeDecorationDatum' field.
-class HasNodeDecorationDatum s t a b | s -> a, b s -> t where
-  _nodeDecorationDatum :: Lens s t a b
-
 {-# SPECIALISE _nodeDecorationDatum :: Lens (PhylogeneticNode2 s n) (PhylogeneticNode2 s n') n n' #-}
+class HasNodeDecorationDatum s t a b | s -> a, b s -> t where
+
+    _nodeDecorationDatum :: Lens s t a b
+    
 
 instance HasNodeDecorationDatum (PhylogeneticNode2 s n) (PhylogeneticNode2 s n') n n' where
-  {-# INLINE _nodeDecorationDatum #-}
-  _nodeDecorationDatum = lens nodeDecorationDatum2 (\p n -> p {nodeDecorationDatum2 = n})
+
+    {-# INLINE _nodeDecorationDatum #-}
+    _nodeDecorationDatum = lens nodeDecorationDatum2 (\p n -> p {nodeDecorationDatum2 = n})
+
 
 -- |
 -- A collection of information used to memoize network optimizations.
@@ -116,6 +119,9 @@ data  ResolutionInformation s
     , characterSequence  :: !s
     } deriving (Functor, Foldable, Traversable, Generic)
 
+
+-- |
+-- The metadata of a subtree resolution.
 data ResolutionMetadata
     = ResolutionMetadata
     { totalSubtreeCost       :: {-# UNPACK #-} !Double
@@ -142,147 +148,159 @@ newtype NewickSerialization = NS Text
   deriving newtype Ord
   deriving newtype Show
 
+
 -- |
 -- A 'Lens' for the 'totalSubtreeCost' field in 'ResolutionMetadata'
-class HasTotalSubtreeCost s a | s -> a where
-  _totalSubtreeCost :: Lens' s a
-
 {-# SPECIALISE _totalSubtreeCost :: Lens' ResolutionMetadata Double #-}
 {-# SPECIALISE _totalSubtreeCost :: Lens' (ResolutionInformation s) Double #-}
+class HasTotalSubtreeCost s a | s -> a where
+
+    _totalSubtreeCost :: Lens' s a
 
 
 instance HasTotalSubtreeCost ResolutionMetadata Double where
-  {-# INLINE _totalSubtreeCost #-}
-  _totalSubtreeCost = lens totalSubtreeCost (\r t -> r {totalSubtreeCost = t})
+
+    {-# INLINE _totalSubtreeCost #-}
+    _totalSubtreeCost = lens totalSubtreeCost (\r t -> r {totalSubtreeCost = t})
+
 
 instance HasTotalSubtreeCost (ResolutionInformation s) Double where
-  {-# INLINE _totalSubtreeCost #-}
-  _totalSubtreeCost = _resolutionMetadata . _totalSubtreeCost
+
+    {-# INLINE _totalSubtreeCost #-}
+    _totalSubtreeCost = _resolutionMetadata . _totalSubtreeCost
+
 
 -- |
 -- A 'Lens' for the 'localSequencecost' field in 'ResolutionMetadata'
-class HasLocalSequenceCost s a | s -> a where
-  _localSequenceCost :: Lens' s a
-
 {-# SPECIALISE _localSequenceCost :: Lens' ResolutionMetadata Double #-}
 {-# SPECIALISE _localSequenceCost :: Lens' (ResolutionInformation s) Double #-}
+class HasLocalSequenceCost s a | s -> a where
+
+    _localSequenceCost :: Lens' s a
 
 
 instance HasLocalSequenceCost ResolutionMetadata Double where
-  {-# INLINE _localSequenceCost #-}
-  _localSequenceCost = lens localSequenceCost (\r t -> r {localSequenceCost = t})
+
+    {-# INLINE _localSequenceCost #-}
+    _localSequenceCost = lens localSequenceCost (\r t -> r {localSequenceCost = t})
+
 
 instance HasLocalSequenceCost (ResolutionInformation s) Double where
-  {-# INLINE _localSequenceCost #-}
-  _localSequenceCost = _resolutionMetadata . _localSequenceCost
+
+    {-# INLINE _localSequenceCost #-}
+    _localSequenceCost = _resolutionMetadata . _localSequenceCost
 
 -- |
 -- A 'Lens' for the 'LeafSetRepresentation' field in 'ResolutionMetadata'
-class HasLeafSetRepresentation s a | s -> a where
-  _leafSetRepresentation :: Lens' s a
-
 {-# SPECIALISE _leafSetRepresentation :: Lens' ResolutionMetadata UnionSet #-}
 {-# SPECIALISE _leafSetRepresentation :: Lens' (ResolutionInformation s) UnionSet #-}
+class HasLeafSetRepresentation s a | s -> a where
+
+    _leafSetRepresentation :: Lens' s a
 
 
 instance HasLeafSetRepresentation ResolutionMetadata UnionSet where
-  {-# INLINE _leafSetRepresentation #-}
-  _leafSetRepresentation = lens leafSetRepresentation (\r l -> r {leafSetRepresentation = l})
+
+    {-# INLINE _leafSetRepresentation #-}
+    _leafSetRepresentation = lens leafSetRepresentation (\r l -> r {leafSetRepresentation = l})
+
 
 instance HasLeafSetRepresentation (ResolutionInformation s) UnionSet where
-  {-# INLINE _leafSetRepresentation #-}
-  _leafSetRepresentation = _resolutionMetadata . _leafSetRepresentation
+
+    {-# INLINE _leafSetRepresentation #-}
+    _leafSetRepresentation = _resolutionMetadata . _leafSetRepresentation
+
 
 -- |
 -- A 'Lens' for the 'subtreeRepresentation' field in 'ResolutionMetadata'
-class HasSubtreeRepresentation s a | s -> a where
-  _subtreeRepresentation :: Lens' s a
-
 {-# SPECIALISE _subtreeRepresentation :: Lens' ResolutionMetadata NewickSerialization #-}
 {-# SPECIALISE _subtreeRepresentation :: Lens' (ResolutionInformation s) NewickSerialization #-}
+class HasSubtreeRepresentation s a | s -> a where
+
+    _subtreeRepresentation :: Lens' s a
 
 
 instance HasSubtreeRepresentation ResolutionMetadata NewickSerialization where
-  {-# INLINE _subtreeRepresentation #-}
-  _subtreeRepresentation = lens subtreeRepresentation (\r s -> r {subtreeRepresentation = s})
+
+    {-# INLINE _subtreeRepresentation #-}
+    _subtreeRepresentation = lens subtreeRepresentation (\r s -> r {subtreeRepresentation = s})
+
 
 instance HasSubtreeRepresentation (ResolutionInformation s) NewickSerialization where
-  {-# INLINE _subtreeRepresentation #-}
-  _subtreeRepresentation = _resolutionMetadata . _subtreeRepresentation
+
+    {-# INLINE _subtreeRepresentation #-}
+    _subtreeRepresentation = _resolutionMetadata . _subtreeRepresentation
+
 
 -- |
 -- A 'Lens' for the 'subtreeEdgeSet' field in 'ResolutionMetadata'
-class HasSubtreeEdgeSet s a | s -> a where
-  _subtreeEdgeSet :: Lens' s a
-
 {-# SPECIALISE _subtreeEdgeSet :: Lens' ResolutionMetadata (EdgeSet (Int, Int)) #-}
 {-# SPECIALISE _subtreeEdgeSet :: Lens' (ResolutionInformation s) (EdgeSet (Int, Int)) #-}
+class HasSubtreeEdgeSet s a | s -> a where
+
+    _subtreeEdgeSet :: Lens' s a
 
 
 instance HasSubtreeEdgeSet ResolutionMetadata (EdgeSet (Int, Int)) where
-  {-# INLINE _subtreeEdgeSet #-}
-  _subtreeEdgeSet = lens subtreeEdgeSet (\r s -> r {subtreeEdgeSet = s})
+
+    {-# INLINE _subtreeEdgeSet #-}
+    _subtreeEdgeSet = lens subtreeEdgeSet (\r s -> r {subtreeEdgeSet = s})
+
 
 instance HasSubtreeEdgeSet (ResolutionInformation s) (EdgeSet (Int, Int)) where
-  {-# INLINE _subtreeEdgeSet #-}
-  _subtreeEdgeSet = _resolutionMetadata . _subtreeEdgeSet
+
+    {-# INLINE _subtreeEdgeSet #-}
+    _subtreeEdgeSet = _resolutionMetadata . _subtreeEdgeSet
+
 
 -- |
 -- A 'Lens' for the 'topologyRepresentation' field in 'ResolutionMetadata'
+{-# SPECIALISE _topologyRepresentation :: Lens' ResolutionMetadata (TopologyRepresentation (Int, Int))  #-}
+{-# SPECIALISE _topologyRepresentation :: Lens' (ResolutionInformation s) (TopologyRepresentation (Int, Int))  #-}
 class HasTopologyRepresentation s a | s -> a where
-  _topologyRepresentation :: Lens' s a
 
-{-# SPECIALISE
-  _topologyRepresentation :: Lens' ResolutionMetadata (TopologyRepresentation (Int, Int))  #-}
-{-# SPECIALISE
-  _topologyRepresentation
-    :: Lens' (ResolutionInformation s) (TopologyRepresentation (Int, Int))  #-}
+    _topologyRepresentation :: Lens' s a
 
-instance HasTopologyRepresentation ResolutionMetadata (TopologyRepresentation (Int, Int))
-  where
-  {-# INLINE _topologyRepresentation #-}
-  _topologyRepresentation = lens topologyRepresentation (\r t -> r {topologyRepresentation = t})
-instance HasTopologyRepresentation
-           (ResolutionInformation s)
-           (TopologyRepresentation (Int, Int))
-  where
-  {-# INLINE _topologyRepresentation #-}
-  _topologyRepresentation = _resolutionMetadata . _topologyRepresentation
+
+instance HasTopologyRepresentation ResolutionMetadata (TopologyRepresentation (Int, Int)) where
+
+    {-# INLINE _topologyRepresentation #-}
+    _topologyRepresentation = lens topologyRepresentation (\r t -> r {topologyRepresentation = t})
+
+
+instance HasTopologyRepresentation (ResolutionInformation s) (TopologyRepresentation (Int, Int)) where
+
+    {-# INLINE _topologyRepresentation #-}
+    _topologyRepresentation = _resolutionMetadata . _topologyRepresentation
+
 
 -- |
 -- A 'Lens' for the 'characterSequence' field in 'ResolutionInformation'
+{-# SPECIALISE _characterSequence :: Lens (ResolutionInformation s) (ResolutionInformation s') s s' #-}
 class HasCharacterSequence s t a b | s -> a, t -> b, s b -> t, t a -> s where
-  _characterSequence :: Lens s t a b
 
-{-# SPECIALISE
-      _characterSequence
-        :: Lens
-             (ResolutionInformation s)
-             (ResolutionInformation s')
-             s
-             s'
-  #-}
+    _characterSequence :: Lens s t a b
 
-instance HasCharacterSequence
-           (ResolutionInformation s)
-           (ResolutionInformation s')
-           s
-           s'
-  where
-  {-# INLINE _characterSequence #-}
-  _characterSequence = lens characterSequence (\r c -> r {characterSequence = c})
+
+instance HasCharacterSequence (ResolutionInformation s) (ResolutionInformation s') s s' where
+
+    {-# INLINE _characterSequence #-}
+    _characterSequence = lens characterSequence (\r c -> r {characterSequence = c})
+
 
 -- |
 -- A 'Lens' for the 'resolutionMetadata' field in 'ResolutionInformation'
-class HasResolutionMetadata s a| s -> a where
-  _resolutionMetadata :: Lens' s a
-
 {-# SPECIALISE  _resolutionMetadata :: Lens' (ResolutionInformation s) ResolutionMetadata  #-}
+class HasResolutionMetadata s a| s -> a where
 
-instance HasResolutionMetadata (ResolutionInformation s) ResolutionMetadata
-  where
-  {-# INLINE _resolutionMetadata #-}
-  _resolutionMetadata = lens resolutionMetadata (\r m -> r {resolutionMetadata = m})
+    _resolutionMetadata :: Lens' s a
+
+
+instance HasResolutionMetadata (ResolutionInformation s) ResolutionMetadata where
+
+    {-# INLINE _resolutionMetadata #-}
+    _resolutionMetadata = lens resolutionMetadata (\r m -> r {resolutionMetadata = m})
+
 
 instance Apply ResolutionInformation where
 

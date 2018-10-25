@@ -96,7 +96,7 @@ class ( DiscreteWithTcmCharacterMetadata s c
       , HasTraversalFoci                 s (Maybe TraversalFoci)
       ) => DynamicCharacterMetadata s c | s -> c where
 
-    extractDynamicCharacteracterMetadata :: s -> DynamicCharacterMetadataDec c
+    extractDynamicCharacterMetadata :: s -> DynamicCharacterMetadataDec c
 
 
 instance Eq (DynamicCharacterMetadataDec c) where
@@ -135,8 +135,8 @@ instance (Bits c, Bound c ~ Word, EncodableStreamElement c, Exportable c, Ranged
 instance (Bits c, Bound c ~ Word, EncodableStreamElement c, Exportable c, Ranged c)
     => DynamicCharacterMetadata (DynamicCharacterMetadataDec c) c where
 
-    {-# INLINE extractDynamicCharacteracterMetadata #-}
-    extractDynamicCharacteracterMetadata = id
+    {-# INLINE extractDynamicCharacterMetadata #-}
+    extractDynamicCharacterMetadata = id
 
 
 -- | (✔)
@@ -175,7 +175,7 @@ instance HasDenseTransitionCostMatrix (DynamicCharacterMetadataDec c) (Maybe Den
 
 {-
 -- | (✔)
-instance HasSparseTransitionCostMatrix (DynamicCharacteracterMetadataDec c) MemoizedCostMatrix where
+instance HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec c) MemoizedCostMatrix where
 
     sparseTransitionCostMatrix = lens (\e -> metadata e ^. sparseTransitionCostMatrix)
                                $ \e x -> e { metadata = metadata e & sparseTransitionCostMatrix .~ x }
@@ -214,7 +214,7 @@ instance ToXML (DynamicCharacterMetadataDec c) where
 
 
 -- |
--- Construct a concrete typed 'DynamicCharacteracterMetadataDec' value from the supplied inputs.
+-- Construct a concrete typed 'DynamicCharacterMetadataDec' value from the supplied inputs.
 dynamicMetadata :: CharacterName -> Double -> Alphabet String -> (Word -> Word -> Word) -> Maybe DenseTransitionCostMatrix -> DynamicCharacterMetadataDec c
 dynamicMetadata name weight alpha scm denseMay =
     force DynamicCharacterMetadataDec
@@ -225,7 +225,7 @@ dynamicMetadata name weight alpha scm denseMay =
 
 
 -- |
--- Construct a concrete typed 'DynamicCharacteracterMetadataDec' value from the supplied inputs.
+-- Construct a concrete typed 'DynamicCharacterMetadataDec' value from the supplied inputs.
 dynamicMetadataFromTCM :: CharacterName -> Double -> Alphabet String -> TCM -> DynamicCharacterMetadataDec c
 dynamicMetadataFromTCM name weight alpha tcm =
     force DynamicCharacterMetadataDec
@@ -242,7 +242,7 @@ dynamicMetadataFromTCM name weight alpha tcm =
 
 
 -- |
--- Construct a concrete typed 'DynamicCharacteracterMetadataDec' value from the supplied inputs.
+-- Construct a concrete typed 'DynamicCharacterMetadataDec' value from the supplied inputs.
 dynamicMetadataWithTCM :: CharacterName -> Double -> Alphabet String -> (Word -> Word -> Word) -> DynamicCharacterMetadataDec c
 dynamicMetadataWithTCM name weight alpha scm =
     force DynamicCharacterMetadataDec

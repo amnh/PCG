@@ -129,7 +129,7 @@ assignPunitiveNetworkEdgeCost input@(PDAG2 dag meta) = (outputContext, PDAG2 (da
     --
     mostParsimoniousDisplayForest       = extractMostParsimoniusDisplayForest meta displayForests
     minimalDisplayForestPerBlockContext = extractMinimalDisplayForestPerBlock meta displayForests
-    minimalDisplayForestPerBlock        = ignoreDynamicCharacteracterTraversalFoci minimalDisplayForestPerBlockContext
+    minimalDisplayForestPerBlock        = ignoreDynamicCharacterTraversalFoci minimalDisplayForestPerBlockContext
 
     -- We need the collection of network edges in the DAG to calculate the
     -- numerator of the network edge cost.
@@ -353,8 +353,8 @@ linearizeContext (topo, costs) = squashTopologyIntoContext <$> costs
     squashTopologyIntoContext (x,y,z) = (topo, x, y, z)
 
 
-ignoreDynamicCharacteracterTraversalFoci :: Functor f => f (a,b,c,d) -> f (a,b,c)
-ignoreDynamicCharacteracterTraversalFoci = fmap (\(a,b,c,_) -> (a,b,c))
+ignoreDynamicCharacterTraversalFoci :: Functor f => f (a,b,c,d) -> f (a,b,c)
+ignoreDynamicCharacterTraversalFoci = fmap (\(a,b,c,_) -> (a,b,c))
 
 
 
