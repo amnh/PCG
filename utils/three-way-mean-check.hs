@@ -44,7 +44,7 @@ performCounterExampleSearch = do
 counterExampleCheck :: DynamicCharacterNode -> Bool
 counterExampleCheck node = value == value
   where
-    value = getDynamicCharacteracterDecoration node ^. finalUngapped
+    value = getDynamicCharacterDecoration node ^. finalUngapped
 
 
 performImplementationComparison :: String -> String -> IO ()

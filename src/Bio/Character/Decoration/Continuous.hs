@@ -11,8 +11,7 @@
 -----------------------------------------------------------------------------
 
 module Bio.Character.Decoration.Continuous
-  ( ContinuousCharacter(..)
-  , ContinuousCharacterDecoration()
+  ( ContinuousCharacterDecoration()
   , ContinuousOptimizationDecoration()
   , ContinuousPostorderDecoration()
   , DiscreteExtensionContinuousDecoration(..)
@@ -28,10 +27,6 @@ module Bio.Character.Decoration.Continuous
   , HasIntervalCharacter(..)
   , continuousDecorationInitial
   , ContinuousDecorationInitial()
---  , ContinuousCharacter()
---  , GeneralCharacterMetadata()
---  , HasCharacterName(..)
---  , HasCharacterWeight(..)
   , HasContinuousCharacter(..)
   ) where
 

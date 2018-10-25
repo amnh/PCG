@@ -43,7 +43,7 @@ import           System.Random.Shuffle
 type DatNode =
   PhylogeneticNode2
     (CharacterSequence
-      (ContinuousOptimizationDecoration ContinuousChar)
+      (ContinuousOptimizationDecoration ContinuousCharacter)
       (FitchOptimizationDecoration   StaticCharacter)
       (AdditiveOptimizationDecoration StaticCharacter)
       (SankoffOptimizationDecoration StaticCharacter)

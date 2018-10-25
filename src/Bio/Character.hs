@@ -12,14 +12,14 @@
 
 module Bio.Character
   (  -- * Character Types
-    ContinuousChar()
+    ContinuousCharacter()
   , DynamicCharacter()
   , DynamicCharacters
   , ExportableCharacterSequence(..)
   , StaticCharacter()
   , StaticCharacterBlock()
     -- * Character Classes
-  , ContinuousCharacter(..)
+  , EncodableContinuousCharacter(..)
   , EncodableDynamicCharacter(..)
   , EncodableStaticCharacter(..)
   , EncodableStaticCharacterStream(..)

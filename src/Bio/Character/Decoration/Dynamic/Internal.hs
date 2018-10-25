@@ -139,8 +139,8 @@ instance EncodableDynamicCharacter d => DirectOptimizationPostorderDecoration (D
 -- | (✔)
 instance (EncodableDynamicCharacter d) => DynamicCharacterDecoration (DynamicDecorationInitial d) d where
 
---    toDynamicCharacteracterDecoration :: CharacterName -> Double -> Alphabet String -> TCM -> (x -> a) -> x -> s
-    toDynamicCharacteracterDecoration g symbolSet =
+--    toDynamicCharacterDecoration :: CharacterName -> Double -> Alphabet String -> TCM -> (x -> a) -> x -> s
+    toDynamicCharacterDecoration g symbolSet =
         DynamicDecorationInitial
         { dynamicDecorationInitialEncodedField           = charValue
         , dynamicDecorationInitialCharacterAverageLength = toAverageLength . toEnum $ olength charValue

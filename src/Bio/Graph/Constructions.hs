@@ -31,7 +31,7 @@ module Bio.Graph.Constructions
   , UnifiedCharacterSequence
   , UnifiedContinuousCharacter
   , UnifiedDiscreteCharacter
-  , UnifiedDynamicCharacteracter
+  , UnifiedDynamicCharacter
   , UnifiedMetadataBlock
   , UnifiedMetadataSequence
   , UnReifiedCharacterDAG
@@ -68,7 +68,7 @@ type CharacterDAG =
          UnifiedDiscreteCharacter
          UnifiedDiscreteCharacter
          UnifiedDiscreteCharacter
-         UnifiedDynamicCharacteracter
+         UnifiedDynamicCharacter
 
 
 -- |
@@ -105,7 +105,7 @@ type FinalDecorationDAG =
          (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
          EdgeLength
          NodeLabel
-         (ContinuousOptimizationDecoration    ContinuousChar )
+         (ContinuousOptimizationDecoration    ContinuousCharacter )
          (FitchOptimizationDecoration         StaticCharacter)
          (AdditiveOptimizationDecoration      StaticCharacter)
          (SankoffOptimizationDecoration       StaticCharacter)
@@ -120,7 +120,7 @@ type PostorderDecorationDAG m =
          m
          EdgeLength
          NodeLabel
-         (ContinuousPostorderDecoration ContinuousChar )
+         (ContinuousPostorderDecoration ContinuousCharacter )
          (FitchOptimizationDecoration   StaticCharacter)
          (AdditivePostorderDecoration   StaticCharacter)
          (SankoffOptimizationDecoration StaticCharacter)
@@ -145,7 +145,7 @@ type  UnifiedCharacterBlock
         UnifiedDiscreteCharacter
         UnifiedDiscreteCharacter
         UnifiedDiscreteCharacter
-        UnifiedDynamicCharacteracter
+        UnifiedDynamicCharacter
 
 
 -- |
@@ -163,7 +163,7 @@ type  UnifiedSequences =
         UnifiedDiscreteCharacter
         UnifiedDiscreteCharacter
         UnifiedDiscreteCharacter
-        UnifiedDynamicCharacteracter
+        UnifiedDynamicCharacter
     )
 
 
@@ -176,7 +176,7 @@ type  UnifiedCharacterSequence
         UnifiedDiscreteCharacter
         UnifiedDiscreteCharacter
         UnifiedDiscreteCharacter
-        UnifiedDynamicCharacteracter
+        UnifiedDynamicCharacter
 
 
 -- |
@@ -189,7 +189,7 @@ type  UnifiedMetadataSequence = MetadataSequence ()
 -- Contains no decorations, and has not been assigned a scoring class.
 -- Expected to be @Nothing@-valued for internal nodes and @Just@-valued for leaf
 -- nodes.
-type UnifiedContinuousCharacter = Maybe (ContinuousDecorationInitial ContinuousChar)
+type UnifiedContinuousCharacter = Maybe (ContinuousDecorationInitial ContinuousCharacter)
 
 
 -- |
@@ -204,7 +204,7 @@ type UnifiedDiscreteCharacter   = Maybe (DiscreteDecoration StaticCharacter)
 -- A dynamic character after being read in from a READ command.
 -- Contains no decorations. Expected to be @Nothing@-valued for internal nodes
 -- and @Just@-valued for leaf nodes.
-type UnifiedDynamicCharacteracter    = Maybe (DynamicDecorationInitial DynamicCharacter)
+type UnifiedDynamicCharacter    = Maybe (DynamicDecorationInitial DynamicCharacter)
 
 
 -- |
@@ -219,4 +219,4 @@ type UnReifiedCharacterDAG =
          UnifiedDiscreteCharacter
          UnifiedDiscreteCharacter
          UnifiedDiscreteCharacter
-         UnifiedDynamicCharacteracter
+         UnifiedDynamicCharacter

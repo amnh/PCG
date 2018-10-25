@@ -13,8 +13,8 @@
 -----------------------------------------------------------------------------
 
 module Bio.Character.Encodable
-  ( ContinuousChar()
-  , ContinuousCharacter(..)
+  ( ContinuousCharacter()
+  , EncodableContinuousCharacter(..)
   , DynamicCharacter(DC,Missing)
   , DynamicCharacters
   , DynamicCharacterElement()

@@ -320,7 +320,7 @@ finalizeCharacterBlock = CB . (
       <*> fromDList . partialAdditiveCharacterBins
       <*> fromDList . partialMetricCharacterBins
       <*> fromDList . partialNonMetricCharacterBins
-      <*> fromDList . partialDynamicCharacteracters
+      <*> fromDList . partialDynamicCharacters
     )
   where
     fromDList = uncurry fromListN . L.fold f

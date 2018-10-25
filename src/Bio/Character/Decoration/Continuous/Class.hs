@@ -32,7 +32,7 @@ import Control.Lens
 -- A decoration of an initial encoding of a dynamic character which has the
 -- appropriate 'Lens' & character class constraints.
 class ( ContinuousCharacter c
-      , GeneralCharacterMetadata s
+--      , GeneralCharacterMetadata s
       , HasContinuousCharacter s c
       ) => ContinuousDecoration s c | s -> c where
 
