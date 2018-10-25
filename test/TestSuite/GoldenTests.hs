@@ -22,11 +22,11 @@ testSuite = do
     tests <- traverse goldenTest testInputs
     pure $ testGroup "Golden Test Suite:" tests
 
-
 -- |
 -- Runs a pcg file [file-name].pcg producing [file-name].extension for a
 -- given extension which is then compared to [file-name]_extension.golden. If the
 -- golden file does not exist the test will generate it.
+
 goldenTest :: (FilePath, Extension) -> IO TestTree
 goldenTest (filePath, extension) = do
   let testName = filePath

@@ -192,7 +192,8 @@ unfoldr f = NEV . uncurry V.fromListN . go 0
 
 -- | /O(n)/
 --
--- 'uncons' produces both the first element of the 'Vector' and a 'Vector' of the remaining elements, if any.
+-- 'uncons' produces both the first element of the 'Vector' and a
+-- 'Vector' of the remaining elements, if any.
 uncons :: Vector a -> (a, Maybe (Vector a))
 uncons (NEV v) = (first, stream)
   where

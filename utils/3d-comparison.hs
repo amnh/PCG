@@ -1,4 +1,5 @@
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module Main (main) where
 
@@ -6,11 +7,11 @@ import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Bio.Character.Encodable
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
-import qualified Data.Bimap         as BM
-import qualified Data.List.NonEmpty as NE
+import qualified Data.Bimap                                    as BM
+import qualified Data.List.NonEmpty                            as NE
 import           Data.Semigroup
 import           Data.TCM.Memoized
-import           System.Environment        (getArgs)
+import           System.Environment                            (getArgs)
 import           Test.Custom.NucleotideSequence
 import           Test.QuickCheck
 
@@ -31,7 +32,7 @@ parseArgs args =
 
 
 performCounterExampleSearch :: IO ()
-performCounterExampleSearch = do 
+performCounterExampleSearch = do
     putStrLn "Performing stocastic counter-example search:"
     quickCheckWith stdArgs { maxSuccess = 10000 } counterExampleCheck
 
@@ -63,7 +64,7 @@ performImplementationComparison lhs rhs = do
     readSequence :: String -> DynamicCharacter
     readSequence = encodeStream alphabet . fmap ((iupacToDna BM.!) . pure . pure) . NE.fromList
     renderResult (w, c, x, y, z) = unlines
-        [ "Cost           : " <> show c 
+        [ "Cost           : " <> show c
         , "Median ungapped: " <> showStream alphabet w
         , "Median   gapped: " <> showStream alphabet x
         , "LHS   alignment: " <> showStream alphabet y

@@ -51,7 +51,7 @@ import           Prelude                          hiding (zipWith)
 data ParsedCharacter
    = ParsedContinuousCharacter  Double
    | ParsedDiscreteCharacter   (AmbiguityGroup String)
-   | ParsedDynamicCharacteracter    (NonEmpty (AmbiguityGroup String))
+   | ParsedDynamicCharacter    (NonEmpty (AmbiguityGroup String))
 
 
 type ParsedChars = Vector (Maybe ParsedCharacter)
@@ -99,7 +99,7 @@ instance ParsedCharacters FastaParseResult where
     unifyCharacters = foldMap f
       where
         f (FastaSequence n s) = M.singleton n $ convertSeq s
-        convertSeq = pure . ParsedDynamicCharacteracter . Just . NE.fromList . fmap (pure . pure)
+        convertSeq = pure . ParsedDynamicCharacter . Just . NE.fromList . fmap (pure . pure)
 
 
 -- | (✔)
@@ -138,7 +138,7 @@ instance ParsedCharacters Nexus where
 
         g :: CharacterMetadata -> Character -> ParsedCharacter
         g m e
-          | not $ isAligned m = ParsedDynamicCharacteracter  $ fmap NE.fromList . NE.fromList . toList <$> e
+          | not $ isAligned m = ParsedDynamicCharacter  $ fmap NE.fromList . NE.fromList . toList <$> e
           | otherwise         = ParsedDiscreteCharacter $ do
               v <- e                      -- Check if the element is empty
               w <- NE.nonEmpty $ toList v -- If not, coerce the Vector to a NonEmpty list
@@ -183,7 +183,7 @@ instance ParsedCharacters VertexEdgeRoot where
 
 
 convertCharacterSequenceLikeFASTA :: CharacterSequence -> ParsedChars
-convertCharacterSequenceLikeFASTA = pure . ParsedDynamicCharacteracter . Just . NE.fromList . toList
+convertCharacterSequenceLikeFASTA = pure . ParsedDynamicCharacter . Just . NE.fromList . toList
 
 
 -- |

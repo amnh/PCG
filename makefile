@@ -35,6 +35,12 @@ rebuild: quick
 # Clean then rebuild
 rebuild-full: clean rebuild
 
+# Clean then rebuild outputting core
+core: clean stack-build-core
+
+# Clean then build with the llvm backend
+llvm: clean stack-build-llvm
+
 # Rebuilds with optimizations and runs tests
 test: stack-build-test
 
@@ -50,6 +56,10 @@ test-golden-new: stack-build-test-golden-new
 # Runs linter
 
 lint: run-linter
+
+# Makes hoogle server
+
+hoogle: stack-hoogle-server
 
 
 # Target Definitions
@@ -79,6 +89,14 @@ stack-build-profiling: phylocomgraph.cabal stack.yaml
 #	stack install $(profiling) --flag phylocomgraph:build-cpp-files
 	stack install $(profiling) --fast --ghc-options="-fprof-cafs -rtsopts=all -O0"
 
+# Builds outputting simplified core files (without newtype coercions)
+stack-build-core: phylocomgraph.cabal stack.yaml
+	stack build --ghc-options="-ddump-simpl -dsupress-coercions"
+
+# Builds with the llvm backend
+stack-build-llvm: phylocomgraph.cabal stack.yaml
+	stack build --ghc-options="-fllvm"
+
 # Builds tests and updates log of tests that have been run
 stack-build-test: phylocomgraph.cabal stack.yaml
 	stack build --test --ta "--rerun-update"
@@ -98,6 +116,16 @@ stack-build-test-new: phylocomgraph.cabal stack.yaml
 # Builds only integration tests and generates new golden files
 stack-build-test-golden-new: phylocomgraph.cabal stack.yaml
 	stack build phylocomgraph:test:integration-tests --ta "--accept"
+
+
+# Builds haddock documentation searchable by locally hosted hoogle
+stack-hoogle-server:  phylocomgraph.cabal stack.yaml
+	stack hoogle --server
+
+# Builds only integration tests and generates new golden files
+stack-build-test-golden-new: phylocomgraph.cabal stack.yaml
+	stack build phylocomgraph:test:integration-tests --ta "--accept"
+
 
 
 ### The code cleanliness section
@@ -147,10 +175,13 @@ set-dir-variables:
 clean: phylocomgraph.cabal stack.yaml
 	stack clean
 	for dir in $(code-dirs); do \
-	  find $$dir -type f -name '*.o'  -delete; \
-	  find $$dir -type f -name '*.hi' -delete; \
-	  find $$dir -type f -name '*.*~' -delete; \
-	  find $$dir -type f -name '#*.*' -delete; \
+	  find $$dir -type f -name '*.o'           -delete; \
+	  find $$dir -type f -name '*.hi'          -delete; \
+	  find $$dir -type f -name '*.*~'          -delete; \
+	  find $$dir -type f -name '#*.*'          -delete; \
+	  find $$dir -type f -name 'test.log'      -delete; \
+	  find $$dir -type f -name '*dump\-hi*'    -delete; \
+	  find $$dir -type f -name '*dump\-simpl*' -delete; \
 	done
 
 # Calls other make files to pre-process FFI files
@@ -164,4 +195,3 @@ cabal-build: phylocomgraph.cabal
 # Legacy cabal build option
 cabal-sandbox: phylocomgraph.cabal
 	cabal update && cabal sandbox delete && cabal sandbox init && cabal install --dependencies-only
-

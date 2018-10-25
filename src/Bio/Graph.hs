@@ -25,7 +25,7 @@ module Bio.Graph
   , PhylogeneticDAGish(..)
   , PhylogeneticForest(..)
   , PhylogeneticSolution(..)
-  , PostOrderDecorationDAG
+  , PostorderDecorationDAG
   , SearchState
   , TopologicalResult
   , UnifiedBlock
@@ -38,7 +38,7 @@ module Bio.Graph
   , UnifiedMetadataBlock
   , UnifiedMetadataSequence
   , UnReifiedCharacterDAG
-  , assignOptimalDynamicCharacteracterRootEdges
+  , assignOptimalDynamicCharacterRootEdges
   , assignPunitiveNetworkEdgeCost
   , generateLocalResolutions
   , postorderSequence'

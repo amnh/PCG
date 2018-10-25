@@ -1,4 +1,3 @@
-
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies      #-}
@@ -35,6 +34,24 @@ import           Turtle                     hiding (char, many, satisfy, x)
 import qualified Turtle                     as T
 
 
+import Control.Arrow              ((&&&))
+import Control.DeepSeq
+import Data.Char                  (isSpace)
+import Data.Either
+import Data.Foldable
+import Data.Functor               (($>))
+import Data.Scientific            hiding (scientific)
+import Data.Text                  (Text)
+import Data.Void                  (Void)
+import Numeric.Extended.Real
+import Test.Tasty
+import Test.Tasty.HUnit
+import Text.Megaparsec
+import Text.Megaparsec.Char
+import Text.Megaparsec.Char.Lexer (scientific)
+import Turtle                     hiding (char, many, parallel, satisfy, wait, x)
+
+
 data  ExecutionResults
     = ExeRes
     { finalState   :: Either String GraphState
@@ -49,6 +66,19 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
         "datasets/continuous/single-block/cost.data"
   , scriptCheckValue getCost 50.46
         "datasets/continuous/single-block/arthropods.pcg"
+  , scriptCheckCost 1665
+        "datasets/non-additive/single-block/arthropods.pcg"
+        "datasets/non-additive/single-block/cost.data"
+    -- The missing tests are commented out as they are not curretnly on master
+--  ,  scriptCheckCost 7
+--        "datasets/continuous/missing/test.pcg"
+--        "datasets/continuous/missing/cost.data"
+--  , scriptCheckCost 8
+--        "datasets/non-additive/missing/test.pcg"
+--        "datasets/non-additive/missing/cost.data"
+--  , scriptCheckCost 1206.0
+--        "datasets/additive/missing/test.pcg"
+--        "datasets/additive/missing/cost.data"
   , scriptCheckCost 77252
         "datasets/additive/single-block/arthropods.pcg"
         "datasets/additive/single-block/cost.data"
@@ -64,9 +94,6 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
   , scriptCheckCost 4
         "datasets/additive/case-3/case-3.pcg"
         "datasets/additive/case-3/cost.data"
-  , scriptCheckCost 1665
-        "datasets/non-additive/single-block/arthropods.pcg"
-        "datasets/non-additive/single-block/cost.data"
   , scriptCheckCost 914
         "datasets/sankoff/single-block/dna/discrete/arthropods.pcg"
         "datasets/sankoff/single-block/dna/discrete/cost.data"
@@ -79,16 +106,16 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
   , scriptCheckCost 1789
         "datasets/sankoff/single-block/dna/2-1/arthropods.pcg"
         "datasets/sankoff/single-block/dna/2-1/cost.data"
-  , scriptCheckCost 84
+  , scriptCheckCost 1143
         "datasets/sankoff/single-block/protein/discrete/invertebrates.pcg"
         "datasets/sankoff/single-block/protein/discrete/cost.data"
-  , scriptCheckCost 0
+  , scriptCheckCost 11851
         "datasets/sankoff/single-block/protein/L1-norm/invertebrates.pcg"
         "datasets/sankoff/single-block/protein/L1-norm/cost.data"
-  , scriptCheckCost 7.378697629483821e19
+  , scriptCheckCost 2012
         "datasets/sankoff/single-block/protein/1-2/invertebrates.pcg"
         "datasets/sankoff/single-block/protein/1-2/cost.data"
-  , scriptCheckCost 7.378697629483821e19
+  , scriptCheckCost 1304
         "datasets/sankoff/single-block/protein/2-1/invertebrates.pcg"
         "datasets/sankoff/single-block/protein/2-1/cost.data"
   , scriptCheckCost 89
@@ -148,26 +175,30 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
   , scriptCheckCost 2042
         "datasets/dynamic/multi-block/arthropods.pcg"
         "datasets/dynamic/multi-block/cost.data"
-  , scriptCheckCost 197
+  , scriptCheckCost 1132
         "datasets/dynamic/single-block/protein/discrete/invertebrates.pcg"
         "datasets/dynamic/single-block/protein/discrete/cost.data"
+
   , scriptCheckCost 2042
         "datasets/dynamic/single-block/protein/L1-norm/invertebrates.pcg"
         "datasets/dynamic/single-block/protein/L1-norm/cost.data"
+
 {--
-  , scriptCheckCost 254
+  , scriptCheckCost 1948
         "datasets/dynamic/single-block/protein/1-2/invertebrates.pcg"
         "datasets/dynamic/single-block/protein/1-2/cost.data"
-  , scriptCheckCost 228
+  , scriptCheckCost 1241
         "datasets/dynamic/single-block/protein/2-1/invertebrates.pcg"
         "datasets/dynamic/single-block/protein/2-1/cost.data"
   , scriptCheckCost 197
         "datasets/dynamic/single-block/slashes/discrete/test.pcg"
         "datasets/dynamic/single-block/slashes/discrete/cost.data"
 --}
+
   , scriptCheckCost 2042
         "datasets/dynamic/single-block/slashes/L1-norm/test.pcg"
         "datasets/dynamic/single-block/slashes/L1-norm/cost.data"
+
 {--
   , scriptCheckCost 254
         "datasets/dynamic/single-block/slashes/1-2/test.pcg"
@@ -217,7 +248,7 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
   , scriptCheckCost 488
         "datasets/dynamic/single-block/huge-mix/levenshtein/test.pcg"
         "datasets/dynamic/single-block/huge-mix/levenshtein/cost.data"
--}
+--}
   , scriptFailure "datasets/unmatched-leaf-taxon/test.pcg"
   , scriptFailure "datasets/unmatched-tree-taxon/test.pcg"
   , scriptFailure "datasets/duplicate-leaf-taxon/test.pcg"
@@ -249,7 +280,7 @@ scriptCheckCost expectedCost scriptPath outputPath = scriptTest scriptPath [outp
     checkResult (Right   exeRes) =
       case fileContents exeRes of
         []        -> assertFailure "No files were returned despite supplying one path!"
-        outFile:_ -> case parseCost outFile of
+        outFile:_ -> case force $ parseCost outFile of
                        Nothing   -> assertFailure "No cost found in the output file!"
                        Just cost -> cost @?= expectedCost
 
@@ -328,7 +359,8 @@ runExecutable
 runExecutable scriptStr outputPaths = do
     startingDirectory <- pwd
     cd scriptDirectory
-    exitCode  <- shell ("stack exec pcg -- --input " <> scriptText <> " --output test.log") mempty
+    (exitCode, _) <- shellStrict ("stack exec pcg -- --input " <> scriptText <> " --output test.log") mempty
+    cd startingDirectory
     case exitCode of
       ExitFailure v -> cd startingDirectory $> Left v
       _             -> do

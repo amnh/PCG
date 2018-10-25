@@ -24,6 +24,9 @@ import           Data.Monoid
 import           Data.Vector           (Vector, cons, imap, (!))
 import qualified Data.Vector           as V (elemIndex)
 
+--import           Codec.Xlsx.Types
+--import           Codec.Xlsx.Writer
+
 data CharFileMatrix
    = CFMat
    { charNames :: Vector String
