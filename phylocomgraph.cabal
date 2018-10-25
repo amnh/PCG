@@ -1,7 +1,10 @@
 cabal-version:      2.2
 category:           Biology
 build-type:         Simple
-extra-source-files: README.md
+extra-source-files: AUTHORS.md
+                    CHANGELOG.md
+                    README.md
+                    
 
 name:               phylocomgraph
 version:            0.1.0.1
@@ -158,6 +161,7 @@ library
                     Analysis.Parsimony.Dynamic.SequentialAlign
                     Analysis.Parsimony.Fitch.Internal
                     Analysis.Parsimony.Sankoff.Internal
+                    Analysis.Parsimony.Internal
                     Analysis.Scoring
                     Bio.Character
                     Bio.Character.Decoration.Additive
@@ -278,6 +282,7 @@ library
                     Control.Evaluation.Internal
                     Control.Evaluation.Trans
                     Data.Alphabet.Internal
+                    Data.Alphabet.Special
                     Data.EdgeSet
                     Data.Range
                     Data.TCM.Internal
@@ -309,7 +314,7 @@ executable pcg
                     , graphviz           >=2999.20
                     , keys
                     , lens
-                    , megaparsec       >=6.0
+                    , megaparsec       >=6.4.0
                     , mono-traversable >=1.0
                     , optparse-applicative
                     , parallel
@@ -332,6 +337,7 @@ executable pcg
 
   other-modules:    Paths_phylocomgraph
                     PCG.Command.Build.Evaluate
+                    PCG.Command.Echo.Evaluate
                     PCG.Command.Load.Evaluate
                     PCG.Command.Read.DecorationInitialization
                     PCG.Command.Read.Evaluate
@@ -454,7 +460,7 @@ executable newick-resolver
   main-is:          newick-resolver.hs
 
   build-depends:      base               >=4.8
-                    , megaparsec         >=6.0 && <6.4
+                    , megaparsec         >=6.4.0
                     , pcg-file-parsers
 
   hs-source-dirs:   utils
@@ -515,8 +521,9 @@ Test-Suite integration-tests
 
   main-is:          IntegrationTests.hs
 
-  build-depends:      base               >=4.10
+  build-depends:       base               >=4.10
                     , containers
+                    , deepseq
                     , directory
                     , filepath
                     , megaparsec         >=6.4.0
@@ -532,7 +539,7 @@ Test-Suite integration-tests
                     , turtle
 
   ghc-options:      -threaded
---                    -with-rtsopts=-N4
+                    -with-rtsopts=-N7
 
   hs-source-dirs:   test
 
@@ -565,6 +572,7 @@ Test-Suite unit-tests
                     , mono-traversable   >=1.0
                     , mtl
                     , pcg-utility
+                    , phylocomgraph
                     , pointed
                     , QuickCheck
                     -- required for Data.Semigroup.Foldable.toNonEmpty
@@ -587,13 +595,13 @@ Test-Suite unit-tests
 
   -- This is a hack beacuse the cxx-options & cxx-options feature in Cabal-2.2
   -- is not fully implmented and does not correctly link to the C++ sources.
-  if os(linux) && arch(x86_64)
-    ghc-options:    .stack-work/dist/x86_64-linux/Cabal-2.2.0.1/build/ffi/memoized-tcm/costMatrix_2d.dyn_o
-                    .stack-work/dist/x86_64-linux/Cabal-2.2.0.1/build/ffi/memoized-tcm/costMatrix_3d.dyn_o
+--  if os(linux) && arch(x86_64)
+--    ghc-options:    .stack-work/dist/x86_64-linux/Cabal-2.2.0.1/build/ffi/memoized-tcm/costMatrix_2d.dyn_o
+--                    .stack-work/dist/x86_64-linux/Cabal-2.2.0.1/build/ffi/memoized-tcm/costMatrix_3d.dyn_o
 
-  if os(osx) && arch(x86_64)
-    ghc-options:    .stack-work/dist/x86_64-osx/Cabal-2.2.0.1/build/ffi/memoized-tcm/costMatrix_2d.dyn_o
-                    .stack-work/dist/x86_64-osx/Cabal-2.2.0.1/build/ffi/memoized-tcm/costMatrix_3d.dyn_o
+--  if os(osx) && arch(x86_64)
+--    ghc-options:    .stack-work/dist/x86_64-osx/Cabal-2.2.0.1/build/ffi/memoized-tcm/costMatrix_2d.dyn_o
+--                    .stack-work/dist/x86_64-osx/Cabal-2.2.0.1/build/ffi/memoized-tcm/costMatrix_3d.dyn_o
 
   hs-source-dirs:   test, src, app
 
@@ -631,6 +639,7 @@ Test-Suite unit-tests
                     Data.Alphabet
                     Data.Alphabet.IUPAC
                     Data.Alphabet.Internal
+                    Data.Alphabet.Special
                     Data.Alphabet.Test
                     Data.Range
                     Data.TCM

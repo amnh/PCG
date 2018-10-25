@@ -13,6 +13,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -35,6 +36,7 @@ import           Bio.Character.Encodable.Stream
 import           Bio.Character.Exportable.Class
 import           Control.DeepSeq
 import           Control.Lens                          hiding (mapping)
+import           Data.Alphabet
 import           Data.Alphabet.IUPAC
 import qualified Data.Bimap                            as B
 import           Data.BitMatrix

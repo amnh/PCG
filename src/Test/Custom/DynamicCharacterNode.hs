@@ -26,11 +26,12 @@ module Test.Custom.DynamicCharacterNode
 
 import Analysis.Parsimony.Dynamic.DirectOptimization
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (filterGaps)
+import Analysis.Parsimony.Internal
 import Bio.Character
 import Bio.Character.Decoration.Dynamic
 import Bio.Metadata
 import Bio.Metadata.CharacterName
-import Data.Alphabet.IUPAC
+import Data.Alphabet
 import Data.MonoTraversable
 import Data.String
 import Test.Custom.NucleotideSequence
@@ -60,7 +61,13 @@ instance Arbitrary DynamicCharacterNode where
 -- Given two dynamic characters, constructs a cherry node with each character as
 -- a child.
 constructNode :: DynamicCharacter -> DynamicCharacter -> DynamicDecorationDirectOptimization DynamicCharacter
-constructNode lhs rhs = directOptimizationPreOrder pairwiseFunction defMetadata lhsDec [(0,rootDec)]
+constructNode lhs rhs
+    = directOptimizationPreorder pairwiseFunction defMetadata
+        (PreInternalContext
+           { preParent       = rootDec
+           , preChildContext = Left lhsDec
+           }
+        )
   where
     lhsDec  = toLeafNode $ initDec lhs
     rhsDec  = toLeafNode $ initDec rhs
@@ -70,18 +77,20 @@ constructNode lhs rhs = directOptimizationPreOrder pairwiseFunction defMetadata 
 toLeafNode :: ( Ord (Element c)
               , SimpleDynamicDecoration d c
               )
-           => d -> DynamicDecorationDirectOptimizationPostOrderResult c
-toLeafNode c = directOptimizationPostOrder pairwiseFunction c []
+           => d -> DynamicDecorationDirectOptimizationPostorderResult c
+toLeafNode c = directOptimizationPostorder pairwiseFunction (LeafContext c)
 
 
-toRootNode :: DynamicDecorationDirectOptimizationPostOrderResult DynamicCharacter
-           -> DynamicDecorationDirectOptimizationPostOrderResult DynamicCharacter
+toRootNode :: DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter
+           -> DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter
            -> DynamicDecorationDirectOptimization DynamicCharacter
-toRootNode x y = directOptimizationPreOrder pairwiseFunction defMetadata z []
+toRootNode x y = directOptimizationPreorder pairwiseFunction defMetadata (RootContext z)
   where
-    z :: DynamicDecorationDirectOptimizationPostOrderResult DynamicCharacter
-    z = directOptimizationPostOrder pairwiseFunction e [x,y]
-    e :: DynamicDecorationDirectOptimizationPostOrderResult DynamicCharacter
+    z :: DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter
+    z = directOptimizationPostorder
+          pairwiseFunction
+          (PostBinaryContext {binNode = e, leftChild = x , rightChild = y})
+    e :: DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter
     e = undefined
 
 
@@ -95,7 +104,7 @@ scm :: Word -> Word -> Word
 scm i j = if i == j then 0 else 1
 
 
-defMetadata :: DynamicCharacteracterMetadataDec (Element DynamicCharacter)
+defMetadata :: DynamicCharacterMetadataDec (Element DynamicCharacter)
 defMetadata = dynamicMetadata defName defWeight defAlphabet scm Nothing
 
 
@@ -113,5 +122,3 @@ defWeight = 1
 
 defAlphabet :: Alphabet String
 defAlphabet = fromSymbols ["A","C","G","T"]
-
-

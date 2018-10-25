@@ -47,5 +47,5 @@ type Identifier = String
 data ParsedCharacter
    = ParsedContinuousCharacter (Maybe Double)
    | ParsedDiscreteCharacter   (Maybe (AmbiguityGroup String))
-   | ParsedDynamicCharacteracter    (Maybe (NonEmpty (AmbiguityGroup String)))
+   | ParsedDynamicCharacter    (Maybe (NonEmpty (AmbiguityGroup String)))
    deriving (Eq, Show)

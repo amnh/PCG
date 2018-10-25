@@ -1,4 +1,6 @@
-{-# LANGUAGE DeriveFoldable, DeriveFunctor, DeriveTraversable #-}
+{-# LANGUAGE DeriveFoldable    #-}
+{-# LANGUAGE DeriveFunctor     #-}
+{-# LANGUAGE DeriveTraversable #-}
 
 module Main (main) where
 
@@ -7,7 +9,7 @@ import Data.Maybe
 import Data.Semigroup
 import Data.Void
 import File.Format.Newick
-import System.Environment  -- for command-line arguments.
+import System.Environment
 import Text.Megaparsec
 
 
@@ -48,12 +50,12 @@ main = do
 -- Take a 'NewickNode' and map over its descendents to render the entire string in Newick format.
 renderNewickString :: BinaryTree String -> String
 renderNewickString (Leaf x) = x
-renderNewickString (Branch lhs rhs) = mconcat 
+renderNewickString (Branch lhs rhs) = mconcat
     [ "("
     , renderNewickString lhs
     , ", "
     , renderNewickString rhs
-    , ")" 
+    , ")"
     ]
 
 
@@ -88,7 +90,7 @@ unfoldr kids = resolveNode
 -- |
 -- Given a binary tree with leaves of binary trees, construct binary tree.
 collapse :: BinaryTree (BinaryTree a) -> BinaryTree a
-collapse (Leaf x) = x
+collapse (Leaf x)         = x
 collapse (Branch lhs rhs) = Branch (collapse lhs) $ collapse rhs
 
 

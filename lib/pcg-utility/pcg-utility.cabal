@@ -69,15 +69,18 @@ library
                   , mono-traversable >=1.0
                   , QuickCheck
                   , transformers
+                  , validation
                   , vector
 
   hs-source-dirs:   src
 
   exposed-modules:  Data.BitMatrix
                     Data.Either.Custom
+                    Data.Foldable.Custom
                     Data.List.Utility
                     Data.Matrix.NotStupid
                     Data.MutualExclusionSet
+                    Data.UnionSet
                     Numeric.Extended
                     Numeric.Extended.Natural
                     Numeric.Extended.Real

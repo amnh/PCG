@@ -1,4 +1,5 @@
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module Main (main) where
 
@@ -7,11 +8,11 @@ import           Data.Bifunctor      (first)
 import           Data.Key
 import           Data.Map            (Map, keys, singleton, unionWith)
 import           Data.Set            (difference, intersection)
-import qualified Data.Set     as Set (fromList)
+import qualified Data.Set            as Set (fromList)
 import           Data.Void
 import           File.Format.Fasta
 import           System.Environment  (getArgs)
-import           Text.Megaparsec    -- (parse, parseErrorPretty)
+import           Text.Megaparsec
 
 main :: IO ()
 main = do
@@ -47,7 +48,7 @@ parseFiles (path1, file1, path2, file2) = liftA2 (,) (parse' path1 file1) (parse
 
 
 performFileDiff :: (FastaParseResult, FastaParseResult) -> Either String String
-performFileDiff (lhs, rhs) = maybe (Right fileDiffResult) Left errorMessage 
+performFileDiff (lhs, rhs) = maybe (Right fileDiffResult) Left errorMessage
   where
     fileDiffResult = foldMapWithKey renderTaxa sequenceUnion
     sequenceUnion  = unionWith (\x y -> unlines [x,y]) lhsMap rhsMap
@@ -60,8 +61,8 @@ performFileDiff (lhs, rhs) = maybe (Right fileDiffResult) Left errorMessage
     toMap = foldMap (singleton <$> taxonName <*> taxonSequence)
 
     renderTaxa :: String -> String -> String
-    renderTaxa taxaName taxaSequences = mconcat [ "> ", taxaName, "\n", taxaSequences, "\n"] 
-    
+    renderTaxa taxaName taxaSequences = mconcat [ "> ", taxaName, "\n", taxaSequences, "\n"]
+
     errorMessage
       | null lhsUnique &&
         null rhsUnique = Nothing
@@ -77,4 +78,4 @@ performFileDiff (lhs, rhs) = maybe (Right fileDiffResult) Left errorMessage
         lhsUnique   = lhsKeys `difference` intersected
         rhsUnique   = rhsKeys `difference` intersected
 
-                 
+

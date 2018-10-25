@@ -74,6 +74,7 @@ library
 
   exposed-modules:     PCG.Syntax
                        PCG.Command.Build
+                       PCG.Command.Echo
                        PCG.Command.Read
                        PCG.Command.Report
                        PCG.Command.Save

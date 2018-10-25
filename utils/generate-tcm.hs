@@ -1,24 +1,25 @@
-{-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs            #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Main where
 
-import Control.Arrow             ((***))
-import Control.Monad
-import Data.Foldable
-import Data.Key
-import Data.Matrix.NotStupid hiding (toList)
-import Data.Semigroup        hiding (option)
-import Data.Set                   (Set)
-import qualified Data.Set    as S
-import Data.Tuple                 (swap)
-import           Data.Vector      (Vector)
-import qualified Data.Vector as V
-import Options.Applicative
-import Prelude hiding (zipWith)
-import Text.PrettyPrint.ANSI.Leijen (string)
+import           Control.Arrow                ((***))
+import           Control.Monad
+import           Data.Foldable
+import           Data.Foldable.Custom         (sum')
+import           Data.Key
+import           Data.Matrix.NotStupid        hiding (toList)
+import           Data.Semigroup               hiding (option)
+import           Data.Set                     (Set)
+import qualified Data.Set                     as S
+import           Data.Tuple                   (swap)
+import           Data.Vector                  (Vector)
+import qualified Data.Vector                  as V
+import           Options.Applicative
+import           Prelude                      hiding (zipWith)
+import           Text.PrettyPrint.ANSI.Leijen (string)
 
 
 data  MetricSpecification
@@ -45,9 +46,9 @@ data  Specification
 
 data  UserInput
     = UserInput
-    { inputAlphabet      :: [String]
-    , inputOutputFile    :: FilePath
-    , inputMetric        :: MetricSpecification
+    { inputAlphabet   :: [String]
+    , inputOutputFile :: FilePath
+    , inputMetric     :: MetricSpecification
     }
 
 
@@ -143,7 +144,7 @@ renderTCM alphabet tcmVals = unlines . fmap unwords $ shownAlphabet : shownMatri
     valueVals     = show <$> tcmVals
     maxWidth      = max (getMaxLen symbolVals) (getMaxLen valueVals)
     getMaxLen :: (Foldable f, Foldable t, Functor f) => f (t a) -> Int
-    getMaxLen     = maximum . fmap length 
+    getMaxLen     = maximum . fmap length
     pad xs        = replicate (maxWidth - length xs) ' ' <> xs
     toRows m      = toList . (`getRow` m) <$> [0 .. nrows m - 1]
 
@@ -197,7 +198,7 @@ defineHammingDistance alphabet = mat
                              y = vec V.! j
                              d = max (length x) (length y) -
                                  min (length x) (length y)
-                             s = sum $ zipWith (\a b -> if a == b then 0 else 1) x y
+                             s = sum' $ zipWith (\a b -> if a == b then 0 else 1) x y
                          in  toEnum $ d + s
 
 

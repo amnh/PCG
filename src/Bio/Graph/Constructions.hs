@@ -22,8 +22,8 @@ module Bio.Graph.Constructions
   , GraphState
   , PhylogeneticDAG(..)
   , PhylogeneticDAG2(..)
-  , PostOrderDecorationDAG
   , PreOrderDecorationDAG
+  , PostorderDecorationDAG
   , SearchState
   , TopologicalResult
   , UnifiedBlock
@@ -32,7 +32,7 @@ module Bio.Graph.Constructions
   , UnifiedCharacterSequence
   , UnifiedContinuousCharacter
   , UnifiedDiscreteCharacter
-  , UnifiedDynamicCharacteracter
+  , UnifiedDynamicCharacter
   , UnifiedMetadataBlock
   , UnifiedMetadataSequence
   , UnReifiedCharacterDAG
@@ -69,7 +69,7 @@ type CharacterDAG =
          UnifiedDiscreteCharacter
          UnifiedDiscreteCharacter
          UnifiedDiscreteCharacter
-         UnifiedDynamicCharacteracter
+         UnifiedDynamicCharacter
 
 
 -- |
@@ -106,12 +106,12 @@ type FinalDecorationDAG =
          (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
          FinalEdgeDatum
          NodeLabel
-         (ContinuousOptimizationDecoration    ContinuousChar )
-         (FitchOptimizationDecoration         StaticCharacter)
-         (AdditiveOptimizationDecoration      StaticCharacter)
-         (SankoffOptimizationDecoration       StaticCharacter)
-         (SankoffOptimizationDecoration       StaticCharacter)
-         (DynamicDecorationDirectOptimization DynamicChar    )
+         (ContinuousOptimizationDecoration     ContinuousChar )
+         (FitchOptimizationDecoration          StaticCharacter)
+         (AdditiveOptimizationDecoration       StaticCharacter)
+         (SankoffOptimizationDecoration        StaticCharacter)
+         (SankoffOptimizationDecoration        StaticCharacter)
+         (DynamicDecorationDirectOptimization DynamicCharacter)
 
 
 -- |
@@ -121,29 +121,29 @@ type PreOrderDecorationDAG =
          (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
          EdgeLength
          NodeLabel
-         (ContinuousOptimizationDecoration    ContinuousChar )
-         (FitchOptimizationDecoration         StaticCharacter)
-         (AdditiveOptimizationDecoration      StaticCharacter)
-         (SankoffOptimizationDecoration       StaticCharacter)
-         (SankoffOptimizationDecoration       StaticCharacter)
-         (DynamicDecorationDirectOptimization DynamicCharacter    )
+         (ContinuousOptimizationDecoration     ContinuousChar )
+         (FitchOptimizationDecoration          StaticCharacter)
+         (AdditiveOptimizationDecoration       StaticCharacter)
+         (SankoffOptimizationDecoration        StaticCharacter)
+         (SankoffOptimizationDecoration        StaticCharacter)
+         (DynamicDecorationDirectOptimization DynamicCharacter)
 
 
 type FinalEdgeDatum =
        ( EdgeLength
        , CharacterSequence
-         (ContinuousOptimizationDecoration    ContinuousChar )
-         (FitchOptimizationDecoration         StaticCharacter)
-         (AdditiveOptimizationDecoration      StaticCharacter)
-         (SankoffOptimizationDecoration       StaticCharacter)
-         (SankoffOptimizationDecoration       StaticCharacter)
-         (DynamicDecorationDirectOptimization DynamicChar    )
+         (ContinuousOptimizationDecoration     ContinuousChar )
+         (FitchOptimizationDecoration          StaticCharacter)
+         (AdditiveOptimizationDecoration       StaticCharacter)
+         (SankoffOptimizationDecoration        StaticCharacter)
+         (SankoffOptimizationDecoration        StaticCharacter)
+         (DynamicDecorationDirectOptimization DynamicCharacter)
        )
 
 
 -- |
 -- Decoration of a phylogenetic DAG after a post-order traversal.
-type PostOrderDecorationDAG m =
+type PostorderDecorationDAG m =
        PhylogeneticDAG2
          m
          EdgeLength
@@ -153,7 +153,7 @@ type PostOrderDecorationDAG m =
          (AdditivePostorderDecoration   StaticCharacter)
          (SankoffOptimizationDecoration StaticCharacter)
          (SankoffOptimizationDecoration StaticCharacter)
-         (DynamicDecorationDirectOptimizationPostOrderResult DynamicCharacter)
+         (DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter)
 
 
 -- |
@@ -173,7 +173,7 @@ type  UnifiedCharacterBlock
         UnifiedDiscreteCharacter
         UnifiedDiscreteCharacter
         UnifiedDiscreteCharacter
-        UnifiedDynamicCharacteracter
+        UnifiedDynamicCharacter
 
 
 -- |
@@ -191,7 +191,7 @@ type  UnifiedSequences =
         UnifiedDiscreteCharacter
         UnifiedDiscreteCharacter
         UnifiedDiscreteCharacter
-        UnifiedDynamicCharacteracter
+        UnifiedDynamicCharacter
     )
 
 
@@ -204,7 +204,7 @@ type  UnifiedCharacterSequence
         UnifiedDiscreteCharacter
         UnifiedDiscreteCharacter
         UnifiedDiscreteCharacter
-        UnifiedDynamicCharacteracter
+        UnifiedDynamicCharacter
 
 
 -- |
@@ -232,7 +232,7 @@ type UnifiedDiscreteCharacter   = Maybe (DiscreteDecoration StaticCharacter)
 -- A dynamic character after being read in from a READ command.
 -- Contains no decorations. Expected to be @Nothing@-valued for internal nodes
 -- and @Just@-valued for leaf nodes.
-type UnifiedDynamicCharacteracter    = Maybe (DynamicDecorationInitial DynamicCharacter)
+type UnifiedDynamicCharacter    = Maybe (DynamicDecorationInitial DynamicCharacter)
 
 
 -- |
@@ -247,4 +247,4 @@ type UnReifiedCharacterDAG =
          UnifiedDiscreteCharacter
          UnifiedDiscreteCharacter
          UnifiedDiscreteCharacter
-         UnifiedDynamicCharacteracter
+         UnifiedDynamicCharacter

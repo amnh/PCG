@@ -415,5 +415,6 @@ equalityWithExceptions x y = monadicIO $ do
 
 cornerCases :: TestTree
 cornerCases = testGroup "Corner case values of a BitMatrix"
-    [ testCase "maxBound :: Word is represented correctly" $ expandRows (bitMatrix 8 8 $ const True) @?= fromNumber 64 (2^64 - 1 :: Integer)
+    [ testCase "maxBound :: Word is represented correctly"
+      $ expandRows (bitMatrix 8 8 $ const True) @?= fromNumber (64 :: Word) (2^(64 :: Int) - 1 :: Integer)
     ]

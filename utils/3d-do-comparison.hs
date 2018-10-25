@@ -1,4 +1,5 @@
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module Main (main) where
 
@@ -7,10 +8,10 @@ import           Bio.Character.Encodable
 import           Control.DeepSeq
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
-import qualified Data.Bimap         as BM
-import qualified Data.List.NonEmpty as NE
+import qualified Data.Bimap                                    as BM
+import qualified Data.List.NonEmpty                            as NE
 import           Data.TCM.Memoized
-import           System.Environment        (getArgs)
+import           System.Environment                            (getArgs)
 import           Test.Custom.NucleotideSequence
 import           Test.QuickCheck
 
@@ -38,7 +39,7 @@ performCounterExampleSearch = do
 
 
 counterExampleCheck :: (NucleotideSequence, NucleotideSequence) -> Property
-counterExampleCheck (NS lhs, NS rhs) = counterexample renderedExample $ 
+counterExampleCheck (NS lhs, NS rhs) = counterexample renderedExample $
     nativeDOResult == foreignDOResult
   where
     renderedExample = niceContextRendering nativeDOResult foreignDOResult
@@ -60,7 +61,7 @@ performImplementationComparison lhs rhs = putStrLn renderedComparison
     foreignDOResult    = chomp $ foreignThreeWayDO char1 char2 char2 1 1 1 denseMatrixValue
 
 
-niceContextRendering 
+niceContextRendering
   :: ( EncodableStream s1
      , EncodableStream s2
      , EncodableStream s3

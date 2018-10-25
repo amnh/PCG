@@ -20,7 +20,7 @@
 
 module Bio.Character.Decoration.Dynamic.Internal
   ( DynamicDecorationDirectOptimization(..)
-  , DynamicDecorationDirectOptimizationPostOrderResult(..)
+  , DynamicDecorationDirectOptimizationPostorderResult(..)
   , DynamicDecorationImpliedAlignment(..)
   , DynamicDecorationInitial(..)
   ) where
@@ -58,16 +58,16 @@ data DynamicDecorationDirectOptimization d
 
 -- |
 -- Represents the partial character decoration result of a post-order traversal.
-data DynamicDecorationDirectOptimizationPostOrderResult d
-   = DynamicDecorationDirectOptimizationPostOrderResult
-   { dynamicDecorationDirectOptimizationPostOrderCharacterCost            :: {-# UNPACK #-} !Word
-   , dynamicDecorationDirectOptimizationPostOrderCharacterLocalCost       :: {-# UNPACK #-} !Word
-   , dynamicDecorationDirectOptimizationPostOrderCharacterAverageLength   :: {-# UNPACK #-} !AverageLength
-   , dynamicDecorationDirectOptimizationPostOrderEncodedField             :: !d
-   , dynamicDecorationDirectOptimizationPostOrderPreliminaryGappedField   :: !d
-   , dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField :: !d
-   , dynamicDecorationDirectOptimizationPostOrderLeftAlignmentField       :: !d
-   , dynamicDecorationDirectOptimizationPostOrderRightAlignmentField      :: !d
+data DynamicDecorationDirectOptimizationPostorderResult d
+   = DynamicDecorationDirectOptimizationPostorderResult
+   { dynamicDecorationDirectOptimizationPostorderCharacterCost            :: {-# UNPACK #-} !Word
+   , dynamicDecorationDirectOptimizationPostorderCharacterLocalCost       :: {-# UNPACK #-} !Word
+   , dynamicDecorationDirectOptimizationPostorderCharacterAverageLength   :: {-# UNPACK #-} !AverageLength
+   , dynamicDecorationDirectOptimizationPostorderEncodedField             :: !d
+   , dynamicDecorationDirectOptimizationPostorderPreliminaryGappedField   :: !d
+   , dynamicDecorationDirectOptimizationPostorderPreliminaryUngappedField :: !d
+   , dynamicDecorationDirectOptimizationPostorderLeftAlignmentField       :: !d
+   , dynamicDecorationDirectOptimizationPostorderRightAlignmentField      :: !d
    } deriving (Eq, Generic)
 
 
@@ -109,7 +109,7 @@ instance NFData d => NFData (DynamicDecorationDirectOptimization d)
 
 
 -- | (✔)
-instance NFData d => NFData (DynamicDecorationDirectOptimizationPostOrderResult d)
+instance NFData d => NFData (DynamicDecorationDirectOptimizationPostorderResult d)
 
 
 -- | (✔)
@@ -125,19 +125,19 @@ instance EncodableDynamicCharacter d => DirectOptimizationDecoration (DynamicDec
 
 
 -- | (✔)
-instance EncodableDynamicCharacter d => DirectOptimizationPostOrderDecoration (DynamicDecorationDirectOptimization d) d where
+instance EncodableDynamicCharacter d => DirectOptimizationPostorderDecoration (DynamicDecorationDirectOptimization d) d where
 
 
 -- | (✔)
-instance EncodableDynamicCharacter d => DirectOptimizationPostOrderDecoration (DynamicDecorationDirectOptimizationPostOrderResult d) d where
+instance EncodableDynamicCharacter d => DirectOptimizationPostorderDecoration (DynamicDecorationDirectOptimizationPostorderResult d) d where
 
 
 -- | (✔)
-instance EncodableDynamicCharacter d => DirectOptimizationPostOrderDecoration (DynamicDecorationImpliedAlignment d) d where
+instance EncodableDynamicCharacter d => DirectOptimizationPostorderDecoration (DynamicDecorationImpliedAlignment d) d where
 
 
 -- | (✔)
-instance (EncodableDynamicCharacter d) => DynamicCharacteracterDecoration (DynamicDecorationInitial d) d where
+instance (EncodableDynamicCharacter d) => DynamicCharacterDecoration (DynamicDecorationInitial d) d where
 
 --    toDynamicCharacteracterDecoration :: CharacterName -> Double -> Alphabet String -> TCM -> (x -> a) -> x -> s
     toDynamicCharacteracterDecoration g symbolSet =
@@ -168,9 +168,9 @@ instance HasAverageLength (DynamicDecorationImpliedAlignment d) AverageLength wh
 
 
 -- | (✔)
-instance HasAverageLength (DynamicDecorationDirectOptimizationPostOrderResult d) AverageLength where
+instance HasAverageLength (DynamicDecorationDirectOptimizationPostorderResult d) AverageLength where
 
-    averageLength = lens dynamicDecorationDirectOptimizationPostOrderCharacterAverageLength (\e x -> e { dynamicDecorationDirectOptimizationPostOrderCharacterAverageLength = x })
+    averageLength = lens dynamicDecorationDirectOptimizationPostorderCharacterAverageLength (\e x -> e { dynamicDecorationDirectOptimizationPostorderCharacterAverageLength = x })
 
 
 -- | (✔)
@@ -186,9 +186,9 @@ instance HasCharacterCost (DynamicDecorationDirectOptimization d) Word where
 
 
 -- | (✔)
-instance HasCharacterCost (DynamicDecorationDirectOptimizationPostOrderResult d) Word where
+instance HasCharacterCost (DynamicDecorationDirectOptimizationPostorderResult d) Word where
 
-    characterCost = lens dynamicDecorationDirectOptimizationPostOrderCharacterCost (\e x -> e { dynamicDecorationDirectOptimizationPostOrderCharacterCost = x })
+    characterCost = lens dynamicDecorationDirectOptimizationPostorderCharacterCost (\e x -> e { dynamicDecorationDirectOptimizationPostorderCharacterCost = x })
 
 
 -- | (✔)
@@ -204,9 +204,9 @@ instance HasCharacterLocalCost (DynamicDecorationDirectOptimization d) Word wher
 
 
 -- | (✔)
-instance HasCharacterLocalCost (DynamicDecorationDirectOptimizationPostOrderResult d) Word where
+instance HasCharacterLocalCost (DynamicDecorationDirectOptimizationPostorderResult d) Word where
 
-    characterLocalCost = lens dynamicDecorationDirectOptimizationPostOrderCharacterLocalCost (\e x -> e { dynamicDecorationDirectOptimizationPostOrderCharacterLocalCost = x })
+    characterLocalCost = lens dynamicDecorationDirectOptimizationPostorderCharacterLocalCost (\e x -> e { dynamicDecorationDirectOptimizationPostorderCharacterLocalCost = x })
 
 
 -- | (✔)
@@ -222,9 +222,9 @@ instance HasEncoded (DynamicDecorationDirectOptimization d) d where
 
 
 -- | (✔)
-instance HasEncoded (DynamicDecorationDirectOptimizationPostOrderResult d) d where
+instance HasEncoded (DynamicDecorationDirectOptimizationPostorderResult d) d where
 
-    encoded = lens dynamicDecorationDirectOptimizationPostOrderEncodedField (\e x -> e { dynamicDecorationDirectOptimizationPostOrderEncodedField = x })
+    encoded = lens dynamicDecorationDirectOptimizationPostorderEncodedField (\e x -> e { dynamicDecorationDirectOptimizationPostorderEncodedField = x })
 
 
 -- | (✔)
@@ -256,7 +256,7 @@ instance PossiblyMissingCharacter c => PossiblyMissingCharacter (DynamicDecorati
 
 
 -- | (✔)
-instance PossiblyMissingCharacter c => PossiblyMissingCharacter (DynamicDecorationDirectOptimizationPostOrderResult c) where
+instance PossiblyMissingCharacter c => PossiblyMissingCharacter (DynamicDecorationDirectOptimizationPostorderResult c) where
 
     isMissing = isMissing . (^. encoded)
 
@@ -311,15 +311,15 @@ instance Hashable d => Hashable (DynamicDecorationDirectOptimization d) where
 
 
 -- | (✔)
-instance Hashable d => Hashable (DynamicDecorationDirectOptimizationPostOrderResult d) where
+instance Hashable d => Hashable (DynamicDecorationDirectOptimizationPostorderResult d) where
 
       hashWithSalt salt dec = foldr1 xor $
-                              [ hashWithSalt salt . dynamicDecorationDirectOptimizationPostOrderCharacterCost
-                              , hashWithSalt salt . dynamicDecorationDirectOptimizationPostOrderEncodedField
-                              , hashWithSalt salt . dynamicDecorationDirectOptimizationPostOrderPreliminaryGappedField
-                              , hashWithSalt salt . dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField
-                              , hashWithSalt salt . dynamicDecorationDirectOptimizationPostOrderLeftAlignmentField
-                              , hashWithSalt salt . dynamicDecorationDirectOptimizationPostOrderRightAlignmentField
+                              [ hashWithSalt salt . dynamicDecorationDirectOptimizationPostorderCharacterCost
+                              , hashWithSalt salt . dynamicDecorationDirectOptimizationPostorderEncodedField
+                              , hashWithSalt salt . dynamicDecorationDirectOptimizationPostorderPreliminaryGappedField
+                              , hashWithSalt salt . dynamicDecorationDirectOptimizationPostorderPreliminaryUngappedField
+                              , hashWithSalt salt . dynamicDecorationDirectOptimizationPostorderLeftAlignmentField
+                              , hashWithSalt salt . dynamicDecorationDirectOptimizationPostorderRightAlignmentField
                               ] <*> [dec]
 
 
@@ -348,9 +348,9 @@ instance HasLeftAlignment (DynamicDecorationDirectOptimization d) d where
 
 
 -- | (✔)
-instance HasLeftAlignment (DynamicDecorationDirectOptimizationPostOrderResult d) d where
+instance HasLeftAlignment (DynamicDecorationDirectOptimizationPostorderResult d) d where
 
-    leftAlignment = lens dynamicDecorationDirectOptimizationPostOrderLeftAlignmentField (\e x -> e { dynamicDecorationDirectOptimizationPostOrderLeftAlignmentField = x })
+    leftAlignment = lens dynamicDecorationDirectOptimizationPostorderLeftAlignmentField (\e x -> e { dynamicDecorationDirectOptimizationPostorderLeftAlignmentField = x })
 
 
 -- | (✔)
@@ -366,9 +366,9 @@ instance HasPreliminaryGapped (DynamicDecorationDirectOptimization d) d where
 
 
 -- | (✔)
-instance HasPreliminaryGapped (DynamicDecorationDirectOptimizationPostOrderResult d) d where
+instance HasPreliminaryGapped (DynamicDecorationDirectOptimizationPostorderResult d) d where
 
-    preliminaryGapped = lens dynamicDecorationDirectOptimizationPostOrderPreliminaryGappedField (\e x -> e { dynamicDecorationDirectOptimizationPostOrderPreliminaryGappedField = x })
+    preliminaryGapped = lens dynamicDecorationDirectOptimizationPostorderPreliminaryGappedField (\e x -> e { dynamicDecorationDirectOptimizationPostorderPreliminaryGappedField = x })
 
 
 -- | (✔)
@@ -384,9 +384,9 @@ instance HasPreliminaryUngapped (DynamicDecorationDirectOptimization d) d where
 
 
 -- | (✔)
-instance HasPreliminaryUngapped (DynamicDecorationDirectOptimizationPostOrderResult d) d where
+instance HasPreliminaryUngapped (DynamicDecorationDirectOptimizationPostorderResult d) d where
 
-    preliminaryUngapped = lens dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField (\e x -> e { dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField = x })
+    preliminaryUngapped = lens dynamicDecorationDirectOptimizationPostorderPreliminaryUngappedField (\e x -> e { dynamicDecorationDirectOptimizationPostorderPreliminaryUngappedField = x })
 
 
 -- | (✔)
@@ -402,9 +402,9 @@ instance HasRightAlignment (DynamicDecorationDirectOptimization d) d where
 
 
 -- | (✔)
-instance HasRightAlignment (DynamicDecorationDirectOptimizationPostOrderResult d) d where
+instance HasRightAlignment (DynamicDecorationDirectOptimizationPostorderResult d) d where
 
-    rightAlignment = lens dynamicDecorationDirectOptimizationPostOrderRightAlignmentField (\e x -> e { dynamicDecorationDirectOptimizationPostOrderRightAlignmentField = x })
+    rightAlignment = lens dynamicDecorationDirectOptimizationPostorderRightAlignmentField (\e x -> e { dynamicDecorationDirectOptimizationPostorderRightAlignmentField = x })
 
 
 -- | (✔)
@@ -412,9 +412,9 @@ instance EncodableDynamicCharacter d => ImpliedAlignmentDecoration   (DynamicDec
 
 
 -- | (✔)
-instance EncodableDynamicCharacter d => PostOrderExtensionDirectOptimizationDecoration (DynamicDecorationDirectOptimization d) d where
+instance EncodableDynamicCharacter d => PostorderExtensionDirectOptimizationDecoration (DynamicDecorationDirectOptimization d) d where
 
-    extendPostOrderToDirectOptimization subDecoration ungapped gapped single =
+    extendPostorderToDirectOptimization subDecoration ungapped gapped single =
         DynamicDecorationDirectOptimization
         { dynamicDecorationDirectOptimizationCharacterCost            = subDecoration ^. characterCost
         , dynamicDecorationDirectOptimizationCharacterLocalCost       = subDecoration ^. characterLocalCost
@@ -452,7 +452,7 @@ instance (EncodableStream d, Show d) => Show (DynamicDecorationDirectOptimizatio
 
 
 -- | (✔)
-instance (EncodableStream d, Show d) => Show (DynamicDecorationDirectOptimizationPostOrderResult d) where
+instance (EncodableStream d, Show d) => Show (DynamicDecorationDirectOptimizationPostorderResult d) where
 
     show dec = unlines . (shownCost:) $ f <$> pairs
       where
@@ -488,7 +488,7 @@ instance EncodableDynamicCharacter d => SimpleDynamicDecoration (DynamicDecorati
 
 
 -- | (✔)
-instance EncodableDynamicCharacter d => SimpleDynamicDecoration (DynamicDecorationDirectOptimizationPostOrderResult d) d where
+instance EncodableDynamicCharacter d => SimpleDynamicDecoration (DynamicDecorationDirectOptimizationPostorderResult d) d where
 
 
 -- | (✔)
@@ -500,18 +500,18 @@ instance EncodableDynamicCharacter d => SimpleDynamicDecoration (DynamicDecorati
 
 
 -- | (✔)
-instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostOrderDecoration (DynamicDecorationDirectOptimizationPostOrderResult d) d where
+instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostorderDecoration (DynamicDecorationDirectOptimizationPostorderResult d) d where
 
-    extendDynamicToPostOrder subDecoration localCost totalCost subTreeAvgLength ungapped gapped lhsAlignment rhsAlignment =
-        DynamicDecorationDirectOptimizationPostOrderResult
-        { dynamicDecorationDirectOptimizationPostOrderCharacterCost            = totalCost
-        , dynamicDecorationDirectOptimizationPostOrderCharacterLocalCost       = localCost
-        , dynamicDecorationDirectOptimizationPostOrderCharacterAverageLength   = subTreeAvgLength
-        , dynamicDecorationDirectOptimizationPostOrderEncodedField             = subDecoration ^. encoded
-        , dynamicDecorationDirectOptimizationPostOrderPreliminaryGappedField   = gapped
-        , dynamicDecorationDirectOptimizationPostOrderPreliminaryUngappedField = ungapped
-        , dynamicDecorationDirectOptimizationPostOrderLeftAlignmentField       = lhsAlignment
-        , dynamicDecorationDirectOptimizationPostOrderRightAlignmentField      = rhsAlignment
+    extendDynamicToPostorder subDecoration localCost totalCost subTreeAvgLength ungapped gapped lhsAlignment rhsAlignment =
+        DynamicDecorationDirectOptimizationPostorderResult
+        { dynamicDecorationDirectOptimizationPostorderCharacterCost            = totalCost
+        , dynamicDecorationDirectOptimizationPostorderCharacterLocalCost       = localCost
+        , dynamicDecorationDirectOptimizationPostorderCharacterAverageLength   = subTreeAvgLength
+        , dynamicDecorationDirectOptimizationPostorderEncodedField             = subDecoration ^. encoded
+        , dynamicDecorationDirectOptimizationPostorderPreliminaryGappedField   = gapped
+        , dynamicDecorationDirectOptimizationPostorderPreliminaryUngappedField = ungapped
+        , dynamicDecorationDirectOptimizationPostorderLeftAlignmentField       = lhsAlignment
+        , dynamicDecorationDirectOptimizationPostorderRightAlignmentField      = rhsAlignment
         }
 
 
@@ -531,7 +531,7 @@ instance Show d => ToXML (DynamicDecorationDirectOptimization d) where
 
 
 -- | (✔)
-instance Show d => ToXML (DynamicDecorationDirectOptimizationPostOrderResult d) where
+instance Show d => ToXML (DynamicDecorationDirectOptimizationPostorderResult d) where
 
     toXML decoration = xmlElement "Dynamic_DO_post-order_decoration_result" attributes contents
         where

@@ -1,0 +1,28 @@
+xread
+'
+To test pre-order additive logic Case 3:                                                               
+  (A, ((B, C), (D, E)))                                                                                
+  A: 4                                                                                                 
+  B: 1                                                                                                 
+  C: 2                                                                                                 
+  D: 3                                                                                                 
+  E: 4                                                                                                 
+                                                                                                         
+      R                                                                                                  
+     / \                                                                                                 
+    A   *                                                                                                
+       / \                                                                                               
+      *   *                                                                                              
+     / \ / \                                                                                             
+     B C D E 
+'
+1 5
+A 3
+B 0
+C 1
+D 2
+E 3
+;
+cc + .;
+tread (0 ((1 2) (3 4)));
+proc /;

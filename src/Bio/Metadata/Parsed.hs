@@ -23,7 +23,6 @@ module Bio.Metadata.Parsed
 
 import           Bio.Character.Parsed
 import           Data.Alphabet
-import           Data.Char
 import           Data.Foldable
 import           Data.Key
 import           Data.List                        (transpose)
@@ -112,14 +111,14 @@ instance ParsedMetadata TNT.TntResult where
         f inMeta inChar =
             ParsedCharacterMetadata
             { alphabet      = characterAlphabet
-            , characterName = TNT.characterName         inMeta
+            , characterName = TNT.characterName inMeta
             , weight        = fromRational rationalWeight * suppliedWeight
-            , parsedTCM     = unfactoredTcmMay
+            , parsedTCM     = factoredTcmMay
             , isDynamic     = False
-            , isIgnored     = not $ TNT.active          inMeta
+            , isIgnored     = not $ TNT.active  inMeta
             }
           where
-            (rationalWeight, characterAlphabet, unfactoredTcmMay) = chooseAppropriateMatrixAndAlphabet
+            (rationalWeight, characterAlphabet, factoredTcmMay) = chooseAppropriateMatrixAndAlphabet
 
             suppliedWeight = fromIntegral $ TNT.weight inMeta
 
@@ -129,7 +128,11 @@ instance ParsedMetadata TNT.TntResult where
                   Nothing       -> (1, fullAlphabet, Nothing)
                   Just (v, tcm) ->
                     let truncatedSymbols = V.take (TCM.size tcm - 1) initialSymbolSet
-                    in  (v, toAlphabet truncatedSymbols, Just (tcm, NonSymmetric)) -- TODO: Maybe we can do the diagnosis here
+                        diagnosis        = diagnoseTcm tcm
+                    in  ( v * toRational (factoredWeight diagnosis)
+                        , toAlphabet truncatedSymbols
+                        , Just (factoredTcm diagnosis, tcmStructure diagnosis)
+                        )
 
               | TNT.additive inMeta = (1, fullAlphabet, Just (TCM.generate matrixDimension genAdditive,    Additive))
               | otherwise           = (1, fullAlphabet, Just (TCM.generate matrixDimension genFitch   , NonAdditive))
@@ -155,16 +158,16 @@ instance ParsedMetadata TNT.TntResult where
                 --   to reference the undefined value.
                 --
                 -- * If the charcter type is Discrete (not DNA or Amino Acid), then
-                --   we must check for supplied state names
+                --   we must check for supplied state names.
                 --
                 -- * If the charcter has a Sankoff TCM defined, we truncate the
-                -- character alphabet
+                --   character alphabet.
                 initialSymbolSet =
                     case inChar of
                       TNT.Continuous {} -> undefined -- I'm sure this will never blow up in our face /s
-                      TNT.Dna        {} -> dnaAlph
-                      TNT.Protein    {} -> aaAlph
-                      TNT.Discrete   {} -> disAlph
+                      TNT.Dna        {} -> V.fromListN <$> length <*> alphabetSymbols $       dnaAlphabet
+                      TNT.Protein    {} -> V.fromListN <$> length <*> alphabetSymbols $ aminoAcidAlphabet
+                      TNT.Discrete   {} -> V.fromListN <$> length <*> alphabetSymbols $  discreteAlphabet
 {-
                           let stateNameValues = TNT.characterStates inMeta
                           in
@@ -225,16 +228,6 @@ instance ParsedMetadata Nexus where
 
 
 -- |
--- Adds case insensitive values to a 'String'.
-addOtherCases :: String -> String
-addOtherCases [] = []
-addOtherCases (x:xs)
-  | isLower x && toUpper x `notElem` xs = toUpper x : x : addOtherCases xs
-  | isUpper x && toLower x `notElem` xs = x : toLower x : addOtherCases xs
-  | otherwise = x : addOtherCases xs
-
-
--- |
 -- Internal function to create alphabets
 -- First is the new version. Following is the old version, which looks like it tosses the accumulator every once in a while.
 -- Notes on data types follow
@@ -247,37 +240,9 @@ addOtherCases (x:xs)
 developAlphabets :: TaxonCharacters -> Vector (Alphabet String)
 developAlphabets = V.fromList' . fmap (fromSymbols . foldMap f) . transpose . fmap toList . toList
   where
-    f (ParsedContinuousCharacter     _)      = mempty
-    f (ParsedDiscreteCharacter  static)      = foldMap toList static
-    f (ParsedDynamicCharacteracter  dynamic) = foldMap (foldMap toList) dynamic
-
-
--- Alphabet values.
--- TODO: Probably move to Data.Alphabet.Default at some point
-
--- |
--- The acceptable amino acid/protein character values (with IUPAC codes).
-aaAlph :: Vector String
-aaAlph  = V.fromList' $ pure <$> addOtherCases "ABCDEFGHIKLMNPQRSTVWXYZ-"
-
--- |
--- The acceptable discrete character values.
-disAlph :: Vector String
-disAlph = V.fromList' $ pure <$> (['0'..'9'] <> ['A'..'Z'] <> ['a'..'z'] <> "-" <> "?")
-
-
--- |
--- The acceptable DNA character values (with IUPAC codes).
-dnaAlph :: Vector String
-dnaAlph = V.fromList' $ pure <$> addOtherCases "AGCTRMWSKTVDHBNX?-"
-
-
-{-
--- |
--- The acceptable RNA character values (with IUPAC codes).
--- rnaAlph :: Vector String
--- rnaAlph = V.fromList $ pure <$> addOtherCases "AGCURMWSKTVDHBNX?-"
--}
+    f (ParsedContinuousCharacter _      ) = mempty
+    f (ParsedDiscreteCharacter   static ) = foldMap toList static
+    f (ParsedDynamicCharacter    dynamic) = foldMap (foldMap toList) dynamic
 
 
 -- |

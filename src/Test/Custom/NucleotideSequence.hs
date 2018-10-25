@@ -24,6 +24,7 @@ module Test.Custom.NucleotideSequence
 
 import           Bio.Character
 import           Bio.Character.Encodable.Dynamic
+import           Data.Alphabet
 import           Data.Alphabet.IUPAC
 import           Data.Bimap                      (elems)
 import           Data.Foldable
