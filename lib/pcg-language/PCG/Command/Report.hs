@@ -8,7 +8,7 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Provides the types fot the Report command allong with a semantic definition
+-- Provides the types fot the \"REPORT\" command allong with a semantic definition
 -- to be consumed by the stream parser.
 --
 -----------------------------------------------------------------------------
@@ -27,6 +27,14 @@ module PCG.Command.Report
 import Control.Applicative.Free
 import Data.Functor             (($>))
 import PCG.Syntax.Combinators
+
+
+-- |
+-- The \"REPORT\" command specifying what information should be output and where the
+-- output should be directed.
+data  ReportCommand
+    = ReportCommand !OutputFormat !OutputTarget
+    deriving (Show)
 
 
 -- |
@@ -65,15 +73,7 @@ data  FileWriteMethod
 
 
 -- |
--- The REPORT command specifying what information should be output and where the
--- output should be directed.
-data  ReportCommand
-    = ReportCommand !OutputFormat !OutputTarget
-    deriving (Show)
-
-
--- |
--- Defines the semantics of interpreting a valid \"Report\" command from the PCG
+-- Defines the semantics of interpreting a valid \"REPORT\" command from the PCG
 -- scripting language syntax.
 reportCommandSpecification :: CommandSpecification ReportCommand
 reportCommandSpecification = command "report" . argList $ ReportCommand <$> outputFormat <*> outputTarget

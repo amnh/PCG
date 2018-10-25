@@ -19,7 +19,7 @@ module File.Format.Dot
   ( DotGraph
   , GraphID(..)
   -- ** Parse a DOT file
-  , dotParse
+  , dotStreamParser
   -- ** Get useful representations from the DOT file
   , dotChildMap
   , dotParentMap
@@ -39,16 +39,41 @@ import           Data.GraphViz.Types.Canonical
 import           Data.Key
 import           Data.Map                          (Map, fromSet, insertWith)
 import           Data.Monoid
+import           Data.Proxy
 import           Data.Set                          (Set)
 import qualified Data.Set                          as S
-import           Data.Text                         (Text)
+import           Data.String
 import qualified Data.Text.Lazy                    as L
 import           Prelude                           hiding (lookup)
+import           Text.Megaparsec                   (MonadParsec, Token, chunkToTokens, takeWhileP)
+
 
 -- |
 -- Parses the 'Text' stream from a DOT file.
-dotParse :: Text -> Either String (DotGraph GraphID)
-dotParse = (relabelDotGraph <$>) . fst . runParser parse . L.fromStrict
+
+-- (MonadParsec e s m, Token s ~ Char) => m
+--dotParse :: Text -> Either String (DotGraph GraphID)
+dotStreamParser
+  :: forall e s (m :: * -> *).
+     ( MonadParsec e s m
+     , Token s ~ Char
+     )
+  => m (DotGraph GraphID)
+dotStreamParser = relabelDotGraph <$> embededParser
+  where
+    pxy = Proxy :: Proxy s
+
+    -- We embed the Text based parser from Data.GraphViz.Parsing inside a
+    -- polymorphic MonadParsec type from Text.Megaparsec.
+    --
+    -- This is done so that *all* parsers share a parsing context.
+    embededParser :: m (DotGraph GraphID)
+    embededParser = do
+        toks <- chunkToTokens pxy <$> takeWhileP Nothing (const True) :: m String
+        case fst . runParser parse $ fromString toks of
+          Left  err -> fail err
+          Right val -> pure val
+
 
 -- |
 -- Takes a DotGraph and relabels the NodeID if the node has a label
@@ -116,7 +141,21 @@ type EdgeIdentifier n = (n , n)
 -- Takes a 'DotGraph' parse result and returns a set of unique node identifiers.
 dotNodeSet :: Ord n => DotGraph n -> Set n
 dotNodeSet = foldMap (S.singleton . nodeID) . graphNodes
+-- Probably want to do something convoluted like this
+{-
+  where
+    beSmart n =
+        case attributes n of
+          [] -> nodeID n
+          x:xs -> case fmap NE.head . sequenceA $ getLabel <$> x:|xs of
+                    Nothing -> nodeID n
+                    Just label -> case label of
+                                    StrLabel v -> v
+                                    _ -> nodeID n
 
+    getLabel (Label x) = Just x
+    getLabel _ = Nothing
+-}
 
 -- |
 -- Takes a 'DotGraph' parse result and returns a set of unique edge identifiers.
@@ -143,6 +182,7 @@ dotParentMap :: Ord n => DotGraph n -> Map n (Set n)
 dotParentMap = sharedWork directionality
   where
     directionality (k,v) = insertWith (<>) v (S.singleton k)
+
 
 -- |
 -- Intelligently render a 'NodeLabel' of a 'GraphID' to a 'String' for output.

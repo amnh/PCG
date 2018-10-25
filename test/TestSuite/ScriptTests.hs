@@ -1,4 +1,3 @@
-
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies      #-}
@@ -8,6 +7,7 @@ module TestSuite.ScriptTests
   ) where
 
 import Control.Arrow              ((&&&))
+import Control.DeepSeq
 import Data.Char                  (isSpace)
 import Data.Either
 import Data.Foldable
@@ -21,7 +21,7 @@ import Test.Tasty.HUnit
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer (scientific)
-import Turtle                     hiding (char, many, satisfy, x)
+import Turtle                     hiding (char, many, parallel, satisfy, wait, x)
 
 
 testSuite :: IO TestTree
@@ -29,34 +29,56 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
   [ scriptCheckCost 50.46
         "datasets/continuous/single-block/arthropods.pcg"
         "datasets/continuous/single-block/cost.data"
-  , scriptCheckCost 1665.0
+  , scriptCheckCost 1665
         "datasets/non-additive/single-block/arthropods.pcg"
         "datasets/non-additive/single-block/cost.data"
-  , scriptCheckCost 77252.0
+    -- The missing tests are commented out as they are not curretnly on master
+--  ,  scriptCheckCost 7
+--        "datasets/continuous/missing/test.pcg"
+--        "datasets/continuous/missing/cost.data"
+--  , scriptCheckCost 8
+--        "datasets/non-additive/missing/test.pcg"
+--        "datasets/non-additive/missing/cost.data"
+--  , scriptCheckCost 1206.0
+--        "datasets/additive/missing/test.pcg"
+--        "datasets/additive/missing/cost.data"
+  , scriptCheckCost 77252
         "datasets/additive/single-block/arthropods.pcg"
         "datasets/additive/single-block/cost.data"
-  , scriptCheckCost 914.0
+  , scriptCheckCost 1
+        "datasets/additive/case-1/case-1.pcg"
+        "datasets/additive/case-1/cost.data"
+  , scriptCheckCost 3
+        "datasets/additive/case-2a/case-2a.pcg"
+        "datasets/additive/case-2a/cost.data"
+  , scriptCheckCost 5
+        "datasets/additive/case-2b/case-2b.pcg"
+        "datasets/additive/case-2b/cost.data"
+  , scriptCheckCost 4
+        "datasets/additive/case-3/case-3.pcg"
+        "datasets/additive/case-3/cost.data"
+  , scriptCheckCost 914
         "datasets/sankoff/single-block/dna/discrete/arthropods.pcg"
         "datasets/sankoff/single-block/dna/discrete/cost.data"
-  , scriptCheckCost 1713.0
+  , scriptCheckCost 1713
         "datasets/sankoff/single-block/dna/L1-norm/arthropods.pcg"
         "datasets/sankoff/single-block/dna/L1-norm/cost.data"
-  , scriptCheckCost 914.0
+  , scriptCheckCost 914
         "datasets/sankoff/single-block/dna/1-2/arthropods.pcg"
         "datasets/sankoff/single-block/dna/1-2/cost.data"
-  , scriptCheckCost 1789.0
+  , scriptCheckCost 1789
         "datasets/sankoff/single-block/dna/2-1/arthropods.pcg"
         "datasets/sankoff/single-block/dna/2-1/cost.data"
-  , scriptCheckCost 84
+  , scriptCheckCost 1143
         "datasets/sankoff/single-block/protein/discrete/invertebrates.pcg"
         "datasets/sankoff/single-block/protein/discrete/cost.data"
-  , scriptCheckCost 0
+  , scriptCheckCost 11851
         "datasets/sankoff/single-block/protein/L1-norm/invertebrates.pcg"
         "datasets/sankoff/single-block/protein/L1-norm/cost.data"
-  , scriptCheckCost 7.378697629483821e19
+  , scriptCheckCost 2012
         "datasets/sankoff/single-block/protein/1-2/invertebrates.pcg"
         "datasets/sankoff/single-block/protein/1-2/cost.data"
-  , scriptCheckCost 7.378697629483821e19
+  , scriptCheckCost 1304
         "datasets/sankoff/single-block/protein/2-1/invertebrates.pcg"
         "datasets/sankoff/single-block/protein/2-1/cost.data"
   , scriptCheckCost 89
@@ -113,79 +135,83 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
   , scriptCheckCost 230
         "datasets/sankoff/single-block/huge-mix/levenshtein/test.pcg"
         "datasets/sankoff/single-block/huge-mix/levenshtein/cost.data"
-  , scriptCheckCost 2042.0
+  , scriptCheckCost 2042
         "datasets/dynamic/multi-block/arthropods.pcg"
         "datasets/dynamic/multi-block/cost.data"
-  , scriptCheckCost 197.0
+  , scriptCheckCost 1132
         "datasets/dynamic/single-block/protein/discrete/invertebrates.pcg"
         "datasets/dynamic/single-block/protein/discrete/cost.data"
-  , scriptCheckCost 2042.0
+
+  , scriptCheckCost 2042
         "datasets/dynamic/single-block/protein/L1-norm/invertebrates.pcg"
         "datasets/dynamic/single-block/protein/L1-norm/cost.data"
+
 {--
-  , scriptCheckCost 254.0
+  , scriptCheckCost 1948
         "datasets/dynamic/single-block/protein/1-2/invertebrates.pcg"
         "datasets/dynamic/single-block/protein/1-2/cost.data"
-  , scriptCheckCost 228.0
+  , scriptCheckCost 1241
         "datasets/dynamic/single-block/protein/2-1/invertebrates.pcg"
         "datasets/dynamic/single-block/protein/2-1/cost.data"
-  , scriptCheckCost 197.0
+  , scriptCheckCost 197
         "datasets/dynamic/single-block/slashes/discrete/test.pcg"
         "datasets/dynamic/single-block/slashes/discrete/cost.data"
 --}
-  , scriptCheckCost 2042.0
+
+  , scriptCheckCost 2042
         "datasets/dynamic/single-block/slashes/L1-norm/test.pcg"
         "datasets/dynamic/single-block/slashes/L1-norm/cost.data"
+
 {--
-  , scriptCheckCost 254.0
+  , scriptCheckCost 254
         "datasets/dynamic/single-block/slashes/1-2/test.pcg"
         "datasets/dynamic/single-block/slashes/1-2/cost.data"
-  , scriptCheckCost 228.0
+  , scriptCheckCost 228
         "datasets/dynamic/single-block/slashes/2-1/test.pcg"
         "datasets/dynamic/single-block/slashes/2-1/cost.data"
-  , scriptCheckCost 671.0
+  , scriptCheckCost 671
         "datasets/dynamic/single-block/slashes/hamming/test.pcg"
         "datasets/dynamic/single-block/slashes/hamming/cost.data"
-  , scriptCheckCost 488.0
+  , scriptCheckCost 488
         "datasets/dynamic/single-block/slashes/levenshtein/test.pcg"
         "datasets/dynamic/single-block/slashes/levenshtein/cost.data"
-  , scriptCheckCost 197.0
+  , scriptCheckCost 197
         "datasets/dynamic/single-block/large-mix/discrete/test.pcg"
         "datasets/dynamic/single-block/large-mix/discrete/cost.data"
-  , scriptCheckCost 2042.0
+  , scriptCheckCost 2042
         "datasets/dynamic/single-block/large-mix/L1-norm/test.pcg"
         "datasets/dynamic/single-block/large-mix/L1-norm/cost.data"
-  , scriptCheckCost 254.0
+  , scriptCheckCost 254
         "datasets/dynamic/single-block/large-mix/1-2/test.pcg"
         "datasets/dynamic/single-block/large-mix/1-2/cost.data"
-  , scriptCheckCost 228.0
+  , scriptCheckCost 228
         "datasets/dynamic/single-block/large-mix/2-1/test.pcg"
         "datasets/dynamic/single-block/large-mix/2-1/cost.data"
-  , scriptCheckCost 671.0
+  , scriptCheckCost 671
         "datasets/dynamic/single-block/large-mix/hamming/test.pcg"
         "datasets/dynamic/single-block/large-mix/hamming/cost.data"
-  , scriptCheckCost 488.0
+  , scriptCheckCost 488
         "datasets/dynamic/single-block/large-mix/levenshtein/test.pcg"
         "datasets/dynamic/single-block/large-mix/levenshtein/cost.data"
-  , scriptCheckCost 197.0
+  , scriptCheckCost 197
         "datasets/dynamic/single-block/huge-mix/discrete/test.pcg"
         "datasets/dynamic/single-block/huge-mix/discrete/cost.data"
-  , scriptCheckCost 2042.0
+  , scriptCheckCost 2042
         "datasets/dynamic/single-block/huge-mix/L1-norm/test.pcg"
         "datasets/dynamic/single-block/huge-mix/L1-norm/cost.data"
-  , scriptCheckCost 254.0
+  , scriptCheckCost 254
         "datasets/dynamic/single-block/huge-mix/1-2/test.pcg"
         "datasets/dynamic/single-block/huge-mix/1-2/cost.data"
-  , scriptCheckCost 228.0
+  , scriptCheckCost 228
         "datasets/dynamic/single-block/huge-mix/2-1/test.pcg"
         "datasets/dynamic/single-block/huge-mix/2-1/cost.data"
-  , scriptCheckCost 671.0
+  , scriptCheckCost 671
         "datasets/dynamic/single-block/huge-mix/hamming/test.pcg"
         "datasets/dynamic/single-block/huge-mix/hamming/cost.data"
-  , scriptCheckCost 488.0
+  , scriptCheckCost 488
         "datasets/dynamic/single-block/huge-mix/levenshtein/test.pcg"
         "datasets/dynamic/single-block/huge-mix/levenshtein/cost.data"
--}
+--}
   , scriptFailure "datasets/unmatched-leaf-taxon/test.pcg"
   , scriptFailure "datasets/unmatched-tree-taxon/test.pcg"
   , scriptFailure "datasets/duplicate-leaf-taxon/test.pcg"
@@ -216,7 +242,7 @@ scriptCheckCost expectedCost scriptPath outputPath = scriptTest scriptPath [outp
     checkResult (Left     exitCode) = assertFailure $ "Script failed with exit code: " <> show exitCode
     checkResult (Right          []) = assertFailure "No files were returned despite supplying one path!"
     checkResult (Right (outFile:_)) =
-        case parseCost outFile of
+        case force $ parseCost outFile of
           Nothing   -> assertFailure "No cost found in the output file!"
           Just cost -> cost @?= expectedCost
 
@@ -271,7 +297,7 @@ runExecutable
 runExecutable scriptStr outputPaths = do
     startingDirectory <- pwd
     cd scriptDirectory
-    exitCode <- shell ("stack exec pcg -- --input " <> scriptText <> " --output test.log") mempty
+    (exitCode, _) <- shellStrict ("stack exec pcg -- --input " <> scriptText <> " --output test.log") mempty
     cd startingDirectory
     case exitCode of
       ExitFailure v -> pure $ Left v

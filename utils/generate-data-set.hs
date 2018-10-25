@@ -1,30 +1,30 @@
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE DeriveFoldable    #-}
+{-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE DeriveTraversable #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE GADTs             #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Main where
 
-import Control.Monad
-import Control.Monad.State.Strict
-import Data.Foldable
-import Data.Key
-import Data.List.NonEmpty        (NonEmpty(..))
-import qualified Data.Map    as M
-import Data.MemoTrie             (memo)
-import Data.Semigroup        hiding (option)
-import Data.Set                  (Set)
-import qualified Data.Set    as S
-import Data.Validation
-import qualified Data.Vector as V
-import Options.Applicative
-import Numeric.Natural
-import Text.PrettyPrint.ANSI.Leijen (string)
-import System.Random
-import System.Random.Shuffle
+import           Control.Monad
+import           Control.Monad.State.Strict
+import           Data.Foldable
+import           Data.Key
+import           Data.List.NonEmpty           (NonEmpty (..))
+import qualified Data.Map                     as M
+import           Data.MemoTrie                (memo)
+import           Data.Semigroup               hiding (option)
+import           Data.Set                     (Set)
+import qualified Data.Set                     as S
+import           Data.Validation
+import qualified Data.Vector                  as V
+import           Numeric.Natural
+import           Options.Applicative
+import           System.Random
+import           System.Random.Shuffle
+import           Text.PrettyPrint.ANSI.Leijen (string)
 
 
 data  Specification
@@ -251,14 +251,14 @@ generateRandomTree leafLabels = do
     pure $ getLabledTreeFromIndex xs treeIndex
   where
     leafCount    = length leafLabels
-    
+
     catalanNum n = head . drop (n-1) $ scanl (\c x -> c*2*(2*x-1) `div` (x+1)) 1 [1..]
 
     addLabels :: (Monoid m) => a -> State [m] m
     addLabels = const $ do
       x <- get
       case x of
-        []   -> pure mempty 
+        []   -> pure mempty
         e:es -> do
           put  es
           pure e
@@ -274,7 +274,7 @@ generateRandomTree leafLabels = do
 
 enumerate :: Enumeration a -> NonEmpty a
 enumerate (Enumeration f n) = fmap f $ 0 :| [1 .. n-1]
-  
+
 
 enumTreesMemo :: Int -> Enumeration Tree
 enumTreesMemo = memo enumTreesMemo'
@@ -282,7 +282,7 @@ enumTreesMemo = memo enumTreesMemo'
     enumTreesMemo' 0 = singleEnum Leaf
     enumTreesMemo' n = sconcat $
         ( Node <$> enumTreesMemo (n-1) <*> enumTreesMemo 0
-        ) :| 
+        ) :|
         [ Node <$> enumTreesMemo (n-k-1) <*> enumTreesMemo k
         | k <- [1 .. n-1]
         ]

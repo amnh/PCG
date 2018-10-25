@@ -31,4 +31,8 @@ packages:
 resolver: nightly-2018-09-28
 #resolver: ghc-8.6.0.20180810
 
+
 require-stack-version: ">=1.7.1"
+
+resolver: lts-12.13
+

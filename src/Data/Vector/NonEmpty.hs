@@ -192,7 +192,8 @@ unfoldr f = NEV . uncurry V.fromListN . go 0
 
 -- | /O(n)/
 --
--- 'uncons' produces both the first element of the 'Vector' and a 'Vector' of the remaining elements, if any.
+-- 'uncons' produces both the first element of the 'Vector' and a
+-- 'Vector' of the remaining elements, if any.
 uncons :: Vector a -> (a, Maybe (Vector a))
 uncons (NEV v) = (first, stream)
   where
@@ -203,6 +204,10 @@ uncons (NEV v) = (first, stream)
     len   = length v
 
 
+-- |
+-- /O(n)/
+--
+-- Construct a vector of the given length by applying the function to each index
 generate :: Int -> (Int -> a) -> Vector a
 generate n f
   | n < 1     = error $ "Called Vector.Nonempty.generate on a non-positive dimension " <> show n

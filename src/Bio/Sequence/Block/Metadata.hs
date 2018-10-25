@@ -123,8 +123,8 @@ instance HasNonMetricBin (MetadataBlock m) (Vector (DiscreteWithTCMCharacterMeta
                  $ \(MB m b) x -> MB m (b { _nonMetricBin = x })
 
 
-instance HasDynamicBin (MetadataBlock m) (MetadataBlock m) (Vector (DynamicCharacterMetadataDec DynamicCharacterElement)) (Vector (DynamicCharacterMetadataDec DynamicCharacterElement)) where
 
+instance HasDynamicBin (MetadataBlock m) (MetadataBlock m) (Vector (DynamicCharacterMetadataDec DynamicCharacterElement)) (Vector (DynamicCharacterMetadataDec DynamicCharacterElement)) where
     {-# INLINE  dynamicBin #-}
     dynamicBin = lens (_dynamicBin . _blockDataSet)
                $ \(MB m b) x -> MB m (b { _dynamicBin = x })

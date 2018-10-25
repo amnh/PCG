@@ -40,7 +40,7 @@ data PartialCharacterBlock u v w x y z
    , partialAdditiveCharacterBins    :: DList w
    , partialMetricCharacterBins      :: DList x
    , partialNonMetricCharacterBins   :: DList y
-   , partialDynamicCharacters        :: DList z
+   , partialDynamicCharacters   :: DList z
    } deriving (Eq)
 
 
@@ -56,8 +56,6 @@ instance Semigroup (PartialCharacterBlock u v w x y z) where
           , partialDynamicCharacters        = partialDynamicCharacters        lhs <> partialDynamicCharacters        rhs
           }
 
-
--- TODO get rid of ContinuousDecorationInitial in signiture
 
 -- |
 -- Construct a singleton block containing a /continuous/ character.

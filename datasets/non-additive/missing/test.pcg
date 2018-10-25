@@ -1,0 +1,2 @@
+read("../../shared-data/missing/non-additive.tnt")
+report(data, (overwrite, "cost.data"))

@@ -66,55 +66,55 @@ monoFoldableProperties = testGroup "Properties of MonoFoldable"
     , testProperty "oelem e /== onotElem e" testInclusionConsistency
     ]
   where
-    testFoldrFoldMap :: (Blind (DynamicCharacterElement -> Word -> Word), Word, DynamicChar) -> Property
+    testFoldrFoldMap :: (Blind (DynamicCharacterElement -> Word -> Word), Word, DynamicCharacter) -> Property
     testFoldrFoldMap (Blind f, z, bv) =
         ofoldr f z bv === appEndo (ofoldMap (Endo . f) bv) z
 
-    testFoldlFoldMap :: (Blind (Word -> DynamicCharacterElement -> Word), Word, DynamicChar) -> Property
+    testFoldlFoldMap :: (Blind (Word -> DynamicCharacterElement -> Word), Word, DynamicCharacter) -> Property
     testFoldlFoldMap (Blind f, z, bv) =
         ofoldl' f z bv === appEndo (getDual (ofoldMap (Dual . Endo . flip f) bv)) z
 
-    testFoldr :: (Blind (DynamicCharacterElement -> Word -> Word), Word, DynamicChar) -> Property
+    testFoldr :: (Blind (DynamicCharacterElement -> Word -> Word), Word, DynamicCharacter) -> Property
     testFoldr (Blind f, z, bv) =
         ofoldr f z bv === (ofoldr f z . otoList) bv
 
-    testFoldl :: (Blind (Word -> DynamicCharacterElement -> Word), Word, DynamicChar) -> Property
+    testFoldl :: (Blind (Word -> DynamicCharacterElement -> Word), Word, DynamicCharacter) -> Property
     testFoldl (Blind f, z, bv) =
         ofoldl' f z bv === (ofoldl' f z . otoList) bv
 
-    testFoldr1 :: (Blind (DynamicCharacterElement -> DynamicCharacterElement -> DynamicCharacterElement), DynamicChar) -> Property
+    testFoldr1 :: (Blind (DynamicCharacterElement -> DynamicCharacterElement -> DynamicCharacterElement), DynamicCharacter) -> Property
     testFoldr1 (Blind f, bv) =
         (not . onull) bv  ==> ofoldr1Ex f bv === (ofoldr1Ex f . otoList) bv
 
-    testFoldl1 :: (Blind (DynamicCharacterElement -> DynamicCharacterElement -> DynamicCharacterElement), DynamicChar) -> Property
+    testFoldl1 :: (Blind (DynamicCharacterElement -> DynamicCharacterElement -> DynamicCharacterElement), DynamicCharacter) -> Property
     testFoldl1 (Blind f, bv) =
         (not . onull) bv  ==> ofoldl1Ex' f bv === (ofoldl1Ex' f . otoList) bv
 
-    testAll :: (Blind (DynamicCharacterElement -> Bool), DynamicChar) -> Property
+    testAll :: (Blind (DynamicCharacterElement -> Bool), DynamicCharacter) -> Property
     testAll (Blind f, bv) =
         oall f bv === (getAll . ofoldMap (All . f)) bv
 
-    testAny :: (Blind (DynamicCharacterElement -> Bool), DynamicChar) -> Property
+    testAny :: (Blind (DynamicCharacterElement -> Bool), DynamicCharacter) -> Property
     testAny (Blind f, bv) =
         oany f bv === (getAny . ofoldMap (Any . f)) bv
 
-    testLength :: DynamicChar -> Property
+    testLength :: DynamicCharacter -> Property
     testLength bv =
         olength bv === (length . otoList) bv
 
-    testNull :: DynamicChar -> Property
+    testNull :: DynamicCharacter -> Property
     testNull bv =
         onull bv === ((0 ==) . olength) bv
 
-    testHead :: DynamicChar -> Property
+    testHead :: DynamicCharacter -> Property
     testHead bv =
         (not . onull) bv ==> headEx bv === (getFirst . ofoldMap1Ex First) bv
 
-    testTail :: DynamicChar -> Property
+    testTail :: DynamicCharacter -> Property
     testTail bv =
         (not . onull) bv ==> lastEx bv === (getLast . ofoldMap1Ex Last) bv
 
-    testInclusionConsistency :: (DynamicCharacterElement, DynamicChar) -> Property
+    testInclusionConsistency :: (DynamicCharacterElement, DynamicCharacter) -> Property
     testInclusionConsistency (e, bv) =
         oelem e bv === (not . onotElem e) bv
 
@@ -125,13 +125,13 @@ monoFunctorProperties = testGroup "Properites of a MonoFunctor"
     , testProperty "omap (f . g)  === omap f . omap g" omapComposition
     ]
   where
-    omapId :: DynamicChar -> Property
+    omapId :: DynamicCharacter -> Property
     omapId bm = omap id bm === id bm
 
     omapComposition
       :: Blind (DynamicCharacterElement -> DynamicCharacterElement)
       -> Blind (DynamicCharacterElement -> DynamicCharacterElement)
-      -> DynamicChar
+      -> DynamicCharacter
       -> Property
     omapComposition (Blind f) (Blind g) bm =
         (omap f . omap g) bm `equalityWithExceptions` omap (f . g) bm
@@ -143,7 +143,7 @@ orderingProperties = testGroup "Properties of an Ordering"
     , testProperty "ordering is transitive (total)" transitivity
     ]
   where
-    symetry :: (DynamicChar, DynamicChar) -> Bool
+    symetry :: (DynamicCharacter, DynamicCharacter) -> Bool
     symetry (lhs, rhs) =
         case (lhs `compare` rhs, rhs `compare` lhs) of
           (EQ, EQ) -> True
@@ -151,7 +151,7 @@ orderingProperties = testGroup "Properties of an Ordering"
           (LT, GT) -> True
           _        -> False
 
-    transitivity :: (DynamicChar, DynamicChar, DynamicChar) -> Property
+    transitivity :: (DynamicCharacter, DynamicCharacter, DynamicCharacter) -> Property
     transitivity (a, b, c) = caseOne .||. caseTwo
       where
         caseOne = (a <= b && b <= c) ==> a <= c
@@ -357,8 +357,8 @@ elementOrderingProperties = testGroup "Properties of an Ordering"
 
 datastructureTests :: TestTree
 datastructureTests = testGroup "Dynamic Character data structure tests"
-    [ testEncodableStaticCharacterInstanceDynamicChar
-    , testEncodableDynamicCharacterInstanceDynamicChar
+    [ testEncodableStaticCharacterInstanceDynamicCharacter
+    , testEncodableDynamicCharacterInstanceDynamicCharacter
 --    , testVectorBits
     ]
 
@@ -370,12 +370,12 @@ datastructureTests = testGroup "Dynamic Character data structure tests"
  - decodeElement alphabet (encodeChar alphabet xs .|. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.union` toList ys)
  - decodeElement alphabet (encodeChar alphabet xs .&. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.intersect` toList ys)
  -}
-testEncodableStaticCharacterInstanceDynamicChar :: TestTree
-testEncodableStaticCharacterInstanceDynamicChar = testGroup "DynamicChar instance of EncodableDynamicCharacter" [testLaws]
+testEncodableStaticCharacterInstanceDynamicCharacter :: TestTree
+testEncodableStaticCharacterInstanceDynamicCharacter = testGroup "DynamicCharacter instance of EncodableDynamicCharacter" [testLaws]
   where
     encodeChar' :: Alphabet String -> NonEmpty String -> DynamicCharacterElement
     encodeChar' = encodeElement
-    testLaws = testGroup "EncodableDynamicChar Laws"
+    testLaws = testGroup "EncodableDynamicCharacter Laws"
              [ encodeDecodeIdentity
              , singleBitConstruction
              , totalBitConstruction
@@ -440,23 +440,23 @@ gatherAlphabetAndAmbiguitySets input = (alphabet, Set.fromList $ toList xs, Set.
 {- LAWS:
  - decodeMany alphabet . encodeMany alphabet == fmap toList . toList
  -}
-testEncodableDynamicCharacterInstanceDynamicChar :: TestTree
-testEncodableDynamicCharacterInstanceDynamicChar = testGroup "DynamicChar instance of EncodableDynamicCharacter" [testLaws]
+testEncodableDynamicCharacterInstanceDynamicCharacter :: TestTree
+testEncodableDynamicCharacterInstanceDynamicCharacter = testGroup "DynamicCharacter instance of EncodableDynamicCharacter" [testLaws]
   where
-    testLaws = testGroup "EncodableDynamicChar Laws"
+    testLaws = testGroup "EncodableDynamicCharacter Laws"
              [ encodeDecodeIdentity
              ]
       where
         encodeDecodeIdentity = testProperty "decodeDynamic alphabet . encodeDynamic alphabet === fmap toList . toList" f
           where
             f :: AlphabetAndCharacter -> Bool
-            f alphabetAndDynamicChar = lhs dynamicChar == rhs dynamicChar
+            f alphabetAndDynamicCharacter = lhs dynamicChar == rhs dynamicChar
               where
-                enc :: NonEmpty (AmbiguityGroup String) -> DynamicChar
+                enc :: NonEmpty (AmbiguityGroup String) -> DynamicCharacter
                 enc = encodeStream alphabet
                 lhs = fmap (Set.fromList . toList) . toList . decodeStream alphabet . enc
                 rhs = fmap (Set.fromList . toList) . toList
-                (alphabet, dynamicChar) = getAlphabetAndCharacter alphabetAndDynamicChar
+                (alphabet, dynamicChar) = getAlphabetAndCharacter alphabetAndDynamicCharacter
 
 
 -- Types for supporting 'Arbitrary' construction

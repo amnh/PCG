@@ -18,6 +18,7 @@ module Bio.Graph.PhylogeneticDAG
   ( PhylogeneticDAG(..)
   , PhylogeneticDAG2(..)
   , PhylogeneticDAGish(..)
+  , PostorderContextualData(..)
   , assignOptimalDynamicCharacterRootEdges
   , assignPunitiveNetworkEdgeCost
   , generateLocalResolutions
@@ -37,6 +38,7 @@ module Bio.Graph.PhylogeneticDAG
   , nodePostorderMap
   , nodePreorderFold
   , nodePostorderFold
+  , setDefaultMetadata
   ) where
 
 
@@ -112,4 +114,3 @@ nodePostorderFold = undefined
 -- Fold over each edge in a pre-order manner.
 edgePostorderFold :: (e -> [a] -> a)
 edgePostorderFold = undefined
-

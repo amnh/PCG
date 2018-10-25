@@ -16,6 +16,7 @@ import           Bio.Character.Decoration.Metric
 import           Bio.Graph
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
+import           Bio.Graph.PhylogeneticDAG           (PostorderContextualData, setDefaultMetadata)
 import qualified Bio.Graph.ReferenceDAG              as DAG
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
@@ -42,12 +43,12 @@ import           System.Random.Shuffle
 type DatNode =
   PhylogeneticNode2
     (CharacterSequence
-      (ContinuousOptimizationDecoration ContinuousChar)
+      (ContinuousOptimizationDecoration ContinuousCharacter)
       (FitchOptimizationDecoration   StaticCharacter)
       (AdditiveOptimizationDecoration StaticCharacter)
       (SankoffOptimizationDecoration StaticCharacter)
       (SankoffOptimizationDecoration StaticCharacter)
-      (DynamicDecorationDirectOptimization DynamicChar)
+      (DynamicDecorationDirectOptimization DynamicCharacter)
     )
     NodeLabel
 
@@ -56,8 +57,6 @@ evaluate
   :: BuildCommand
   -> GraphState
   -> SearchState
--- evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
--- evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
 evaluate (BuildCommand trajectoryCount buildType) cpctInState = do
     let inState = getCompact cpctInState
     case inState of
@@ -173,7 +172,8 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
 
     getCost (PDAG2 v _) = dagCost $ graphData v
 
-    connectEdge' = uncurry (connectEdge (resetMetadata dag) deriveOriginEdgeNode deriveTargetEdgeNode)
+    connectEdge'
+      = uncurry (connectEdge (resetMetadata dag) deriveOriginEdgeNode deriveTargetEdgeNode)
 
     deriveOriginEdgeNode parentDatum oldChildDatum _newChildDatum =
         PNode2 (resolutions oldChildDatum) (nodeDecorationDatum2 parentDatum)
@@ -182,9 +182,5 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
         PNode2 (resolutions oldChildDatum) (nodeDecorationDatum2 parentDatum)
 
 
-resetMetadata :: (Monoid a, Monoid b) => ReferenceDAG d e n -> ReferenceDAG (a, b, Maybe c) e n
-resetMetadata =
-    RefDAG
-      <$> references
-      <*> rootRefs
-      <*> ((mempty, mempty, Nothing) <$) . graphData
+resetMetadata ::  ReferenceDAG d e n -> ReferenceDAG (PostorderContextualData t) e n
+resetMetadata ref = ref & _graphData %~ setDefaultMetadata

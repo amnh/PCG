@@ -17,7 +17,16 @@ module Bio.Graph.Node
   , PhylogeneticNode2(..)
   , ResolutionCache
   , ResolutionInformation(..)
-  , SubtreeLeafSet()
+  , ResolutionMetadata(..)
+  , HasNodeDecorationDatum(..)
+  , HasResolutions(..)
+  , HasTotalSubtreeCost(..)
+  , HasLocalSequenceCost(..)
+  , HasLeafSetRepresentation(..)
+  , HasSubtreeRepresentation(..)
+  , HasSubtreeEdgeSet(..)
+  , HasTopologyRepresentation(..)
+  , HasCharacterSequence(..)
   , addEdgeToEdgeSet
   , addNetworkEdgeToTopology
   , singletonEdgeSet

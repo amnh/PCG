@@ -21,7 +21,7 @@ module PCG.Command.Read.Unification.Master
   ) where
 
 import           Bio.Character
-import           Bio.Character.Decoration.Continuous           hiding (characterName, toContinuousCharacter)
+import           Bio.Character.Decoration.Continuous           hiding (characterName)
 import           Bio.Character.Decoration.Discrete             hiding (characterName)
 import           Bio.Character.Decoration.Dynamic              hiding (characterName)
 import           Bio.Character.Encodable
@@ -98,7 +98,7 @@ instance Show FracturedParseResult where
         ]
 
 
-masterUnify :: [FracturedParseResult] -> Either UnificationError (Either TopologicalResult CharacterResult)
+masterUnify :: Foldable1 f => f FracturedParseResult -> Either UnificationError (Either TopologicalResult CharacterResult)
 masterUnify = rectifyResults2
 
 
@@ -108,8 +108,10 @@ parmap' = parmap rpar
 
 -- |
 -- Unify disparate parsed results into a single phylogenetic solution.
-rectifyResults2 :: [FracturedParseResult]
-                -> Either UnificationError (Either TopologicalResult CharacterResult)
+rectifyResults2
+  :: Foldable1 f
+  => f FracturedParseResult
+  -> Either UnificationError (Either TopologicalResult CharacterResult)
 --rectifyResults2 fprs | trace (show fprs) False = undefined
 rectifyResults2 fprs =
     case errors of
@@ -117,11 +119,11 @@ rectifyResults2 fprs =
       x:xs -> Left . sconcat $ x:|xs
   where
     -- Step 1: Gather data file contents
-    dataSeqs        = filter (not . fromTreeOnlyFile) fprs
+    dataSeqs        = filter (not . fromTreeOnlyFile) $ toList fprs
     -- Step 2: Union the taxa names together into total terminal set
     taxaSet         = mconcat $ (Set.fromList . keys . parsedChars) `parmap'` dataSeqs
     -- Step 3: Gather forest file data
-    allForests      = filter (not . null . parsedForests) fprs
+    allForests      = filter (not . null . parsedForests) $ toList fprs
     -- Step 4: Gather the taxa names for each forest from terminal nodes
     forestTaxa :: [([NonEmpty Identifier], FracturedParseResult)]
     forestTaxa      =  gatherForestsTerminalNames `parmap'` allForests
@@ -143,8 +145,8 @@ rectifyResults2 fprs =
     dagForest       =
         case (null suppliedForests, null charSeqs, metaSeq) of
           -- Throw a unification error here
-          (True , True , _        ) -> Left . UnificationError . pure . VacuousInput $ sourceFile <$> NE.fromList fprs
-          (_    , False, Nothing  ) -> Left . UnificationError . pure . VacuousInput $ sourceFile <$> NE.fromList fprs
+          (True , True , _        ) -> Left . UnificationError . pure . VacuousInput $ sourceFile <$> toNonEmpty fprs
+          (_    , False, Nothing  ) -> Left . UnificationError . pure . VacuousInput $ sourceFile <$> toNonEmpty fprs
 
           -- Build a default forest of singleton components
           (True , False, Just meta) -> Right . Right . PhylogeneticSolution . pure
@@ -363,9 +365,9 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
                   -> PartialCharacterBlock UnifiedContinuousCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDynamicCharacter
                 encodeBinToSingletonCharacterBlock (charMay, charMeta, _scm, structure, _charName) =
                     case charMay of
-                      ParsedContinuousCharacter continuousMay -> continuousSingleton           . Just .   continuousDecorationInitial $ toContinuousCharacter continuousMay
+                      ParsedContinuousCharacter continuousMay -> continuousSingleton           . Just $  continuousDecorationInitial $ toContinuousCharacter continuousMay
                       ParsedDiscreteCharacter     discreteMay ->   discreteSingleton structure . Just $ toDiscreteCharacterDecoration staticTransform discreteMay
-                      ParsedDynamicCharacter       dynamicMay ->    dynamicSingleton           . Just $  toDynamicCharacterDecoration dynamicTransform dynamicMay
+                      ParsedDynamicCharacter      dynamicMay ->    dynamicSingleton           . Just $  toDynamicCharacterDecoration dynamicTransform dynamicMay
                   where
                     alphabetLength    = toEnum $ length specifiedAlphabet
                     specifiedAlphabet = alphabet charMeta

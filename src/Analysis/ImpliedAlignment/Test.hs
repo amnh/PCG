@@ -88,7 +88,7 @@ testNumerate = testGroup "Numeration properties"
     ]
   where
     idHolds                          = testProperty "When a sequence is numerated with itself, get indices and the same counter" checkID
-    checkID :: DynamicChar -> Bool
+    checkID :: DynamicCharacter -> Bool
     checkID inChar                   = onull inChar || (traces == defaultH && counter <= olength inChar)
       where
         defaultH = V.fromList [0..olength inChar - 1]
@@ -122,7 +122,7 @@ testNumerate = testGroup "Numeration properties"
 
 
 -- | Useful function to convert encoding information to two encoded seqs
-encodeArbSameLen :: (GoodParsedChar, GoodParsedChar) -> (DynamicChar, DynamicChar)
+encodeArbSameLen :: (GoodParsedChar, GoodParsedChar) -> (DynamicCharacter, DynamicCharacter)
 encodeArbSameLen (parse1, parse2) =
     ( encodeStream alph . NE.fromList $ NE.take minLen p1
     , encodeStream alph . NE.fromList $ NE.take minLen p2

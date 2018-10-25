@@ -135,7 +135,7 @@ Test-Suite unit-tests
                   , dlist
                   , either
                   , keys
-                  , megaparsec         >=6.0.0
+                  , megaparsec         >=6.4.0
                   , parser-combinators >=0.2.0
                   , pcg-utility
                   , safe
@@ -184,7 +184,7 @@ Executable file-tests
                      -- >=0.5.8 Required for Data.Map.restrictKeys
                      , containers         >=0.5.8
                      , directory
-                     , megaparsec         >=6.0.0
+                     , megaparsec         >=6.4.0
                      , pcg-file-parsers
                      , tasty
                      , tasty-hunit

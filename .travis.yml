@@ -81,7 +81,7 @@ script:
   # Run the test suite if we are building on MacOS
   # Do not run the test suite on Linux!
   # Setup + Build + Test on Linux exeeds 50 minutes and times out.
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then travis_wait 30 stack test --no-terminal; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then travis_wait 30 stack test phylocomgraph:unit-tests pcg-file-parsers:unit-tests pcg-utility:test-suite --no-terminal; fi
 
 #  Not run because --coverage flag was removed
 #  - stack hpc report

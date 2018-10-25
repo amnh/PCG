@@ -1,4 +1,5 @@
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module Main (main) where
 
@@ -6,9 +7,9 @@ import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Bio.Character.Encodable
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
-import qualified Data.Bimap         as BM
-import qualified Data.List.NonEmpty as NE
-import           System.Environment        (getArgs)
+import qualified Data.Bimap                                    as BM
+import qualified Data.List.NonEmpty                            as NE
+import           System.Environment                            (getArgs)
 import           Test.Custom.NucleotideSequence
 import           Test.QuickCheck
 
@@ -51,7 +52,7 @@ performImplementationComparison lhs rhs = do
     char1 = readSequence lhs
     char2 = readSequence rhs
     alphabet = fromSymbols ["A","C","G","T"]
-    readSequence :: String -> DynamicChar
+    readSequence :: String -> DynamicCharacter
     readSequence = encodeStream alphabet . fmap ((iupacToDna BM.!) . pure . pure) . NE.fromList
     renderResult (c, w, x, y, z) = unlines
         [ "Cost           : " <> show c

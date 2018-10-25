@@ -48,8 +48,10 @@ module Bio.Sequence
   , toMissingCharacters
   , hexmap
   , hexTranspose
+  , hexZip
   , hexZipWith
   , hexZipWithMeta
+  , hexZipMeta
   -- * Cost quantification
   , sequenceCost
   , sequenceRootCost
@@ -62,7 +64,7 @@ import           Bio.Metadata.Continuous
 import           Bio.Metadata.Discrete
 import           Bio.Metadata.DiscreteWithTCM
 import           Bio.Metadata.Dynamic
-import           Bio.Sequence.Block           hiding (hexTranspose, hexZipWith, hexZipWithMeta, hexmap)
+import           Bio.Sequence.Block           hiding (hexTranspose, hexZipMeta, hexZipWith, hexZipWithMeta, hexmap)
 import qualified Bio.Sequence.Block           as Blk
 import           Bio.Sequence.Block.Builder
 import           Bio.Sequence.Block.Character (finalizeCharacterBlock, nonExistantBlock)
@@ -74,6 +76,7 @@ import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.DList                   hiding (toList)
 import           Data.Foldable
+import           Data.Foldable.Custom
 import           Data.Key
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
@@ -91,12 +94,10 @@ hexmap
   -> (z -> z')
   -> CharacterSequence u  v  w  x  y  z
   -> CharacterSequence u' v' w' x' y' z'
---hexmap f1 f2 f3 f4 f5 f6 = fromBlocks . parmap rpar (Blk.hexmap f1 f2 f3 f4 f5 f6) . toBlocks
-hexmap f1 f2 f3 f4 f5 f6 = over blockSequence (parmap rpar (Blk.hexmap f1 f2 f3 f4 f5 f6))
+hexmap f1 f2 f3 f4 f5 f6 =
+    over blockSequence (parmap rpar (Blk.hexmap f1 f2 f3 f4 f5 f6))
 
 
--- TODO: Make sure the inner dimension's ordering is not reversed during the transpose.
---
 -- |
 -- Performs a 2D transform on the 'Traversable' structure of 'CharacterSequence'
 -- values.
@@ -129,6 +130,14 @@ hexTranspose = toNList . invert . fmap toDList . toNonEmpty
 
     toNList = hexmap toList toList toList toList toList toList
 
+-- |
+-- Zips together two 'CharacterSequence' values to get pairs of values.
+hexZip
+  :: CharacterSequence u v w x y z
+  -> CharacterSequence u' v' w' x' y' z'
+  -> CharacterSequence (u,u') (v,v') (w,w') (x,x') (y,y') (z,z')
+hexZip = hexZipWith (,) (,) (,) (,) (,) (,)
+
 
 -- |
 -- Performs a zip over the two character sequences. Uses the input functions to
@@ -159,12 +168,12 @@ hexZipWith f1 f2 f3 f4 f5 f6 lhs =
 -- blocks and the same number of each character type in the corresponding block
 -- of each block. If this assumtion is violated, the result will be truncated.
 hexZipWithMeta
-  :: (ContinuousCharacterMetadataDec                      -> u -> u' -> u'')
-  -> (DiscreteCharacterMetadataDec                        -> v -> v' -> v'')
-  -> (DiscreteCharacterMetadataDec                        -> w -> w' -> w'')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> x -> x' -> x'')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> y -> y' -> y'')
-  -> (DynamicCharacterMetadataDec (Element DynamicChar)   -> z -> z' -> z'')
+  :: (ContinuousCharacterMetadataDec                          -> u -> u' -> u'')
+  -> (DiscreteCharacterMetadataDec                            -> v -> v' -> v'')
+  -> (DiscreteCharacterMetadataDec                            -> w -> w' -> w'')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter     -> x -> x' -> x'')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter     -> y -> y' -> y'')
+  -> (DynamicCharacterMetadataDec (Element DynamicCharacter)  -> z -> z' -> z'')
   -> MetadataSequence m
   -> CharacterSequence u   v   w   x   y   z
   -> CharacterSequence u'  v'  w'  x'  y'  z'
@@ -174,6 +183,28 @@ hexZipWithMeta f1 f2 f3 f4 f5 f6 meta lhs =
   where
     mSeq = meta ^. blockSequence
     cSeq = lhs  ^. blockSequence
+
+-- |
+-- Performs a zip over a character sequence and a metadata sequence.
+--
+-- Assumes that the 'CharacterSequence' and 'MetadataSequence' have the same
+-- number of character blocks and the same number of each character type in
+-- the corresponding block of each block. If this assumtion is violated, the
+-- result will be truncated.
+hexZipMeta
+  :: (ContinuousCharacterMetadataDec                         -> u -> u')
+  -> (DiscreteCharacterMetadataDec                           -> v -> v')
+  -> (DiscreteCharacterMetadataDec                           -> w -> w')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> x -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> y -> y')
+  -> (DynamicCharacterMetadataDec (Element DynamicCharacter) -> z -> z')
+  -> MetadataSequence m
+  -> CharacterSequence u   v   w   x   y   z
+  -> CharacterSequence u'  v'  w'  x'  y'  z'
+hexZipMeta f1 f2 f3 f4 f5 f6 meta =
+    over blockSequence (parZipWith rpar (Blk.hexZipMeta f1 f2 f3 f4 f5 f6) mSeq)
+  where
+    mSeq = meta ^. blockSequence
 
 
 {-
@@ -214,7 +245,7 @@ sequenceCost
   => MetadataSequence m
   -> CharacterSequence u v w x y z
   -> Double
-sequenceCost meta char = sum
+sequenceCost meta char = sum'
     . parmap rpar (uncurry Blk.blockCost)
     . zip (meta ^. blockSequence) $ char ^. blockSequence
 
@@ -228,6 +259,6 @@ sequenceRootCost
   -> MetadataSequence m
   -> CharacterSequence u v w x y z
   -> Double
-sequenceRootCost rootCount meta char = sum
+sequenceRootCost rootCount meta char = sum'
     . parmap rpar (uncurry (Blk.rootCost rootCount))
     . zip (meta ^. blockSequence) $ char ^. blockSequence

@@ -2,13 +2,11 @@ module Data.List.Test
   ( testSuite
   ) where
 
-import           Control.Monad         (join)
-import           Data.List             (nub, sort)
-import qualified Data.List.NonEmpty    as NE
-import           Data.List.Utility
-import           Test.Tasty
-import           Test.Tasty.HUnit
-import           Test.Tasty.QuickCheck as QC
+import Data.List             (nub, sort)
+import Data.List.Utility
+import Test.Tasty
+import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck as QC
 
 
 testSuite :: TestTree
@@ -25,10 +23,13 @@ testExampleCases = testGroup "Example cases from documenation"
     , mostCommonCases
     , occurancesCases
     , chunksOfCases
+    , subsetOfCases
     , equalityOfCases
     , invariantTransformationCases
     , transitivePropertyHoldsCases
     , pairwiseSequenceCases
+    , maximaByCases
+    , minimaByCases
     ]
 
 
@@ -37,6 +38,15 @@ testInvariantProperties = testGroup "Invariant properties"
     [ transposeProperties
     , isSingletonProperties
     , duplicatesProperties
+    , mostCommonProperties
+    , occurancesProperties
+    , chunksOfProperties
+    , subsetOfProperties
+    , equalityOfProperties
+    , transitivePropertyHoldsProperties
+    , pairwiseSequenceProperties
+    , maximaByProperties
+    , minimaByProperties
     ]
 
 
@@ -132,12 +142,11 @@ transposeCases = testGroup "Cases of transpose"
   ]
   where
     ex1, ex2, ex3, ex4, ex5 :: Assertion
-    ex1 = transpose ([] :: [[Int]])                 @?= [[]]
-    ex2 = transpose [[1]]                           @?= [[1]]
-    ex3 = transpose [[1,2], [3,4]]                  @?= [[1,3], [2,4]]
-    ex4 = transpose [[1,2,3],[4,5,6],[7,8,9]]       @?= [[1,4,7],[2,5,8],[3,6,9]]
-    ex5 = transpose [[1,2,3,0,0],[4,5,6,0],[7,8,9]] @?= [[1,4,7],[2,5,8],[3,6,9]]
-
+    ex1 = transpose []                              @?= ([[]]                      :: [[Int]])
+    ex2 = transpose [[1]]                           @?= ([[1]]                     :: [[Int]])
+    ex3 = transpose [[1,2], [3,4]]                  @?= ([[1,3], [2,4]]            :: [[Int]])
+    ex4 = transpose [[1,2,3],[4,5,6],[7,8,9]]       @?= ([[1,4,7],[2,5,8],[3,6,9]] :: [[Int]])
+    ex5 = transpose [[1,2,3,0,0],[4,5,6,0],[7,8,9]] @?= ([[1,4,7],[2,5,8],[3,6,9]] :: [[Int]])
 
 
 isSingletonCases :: TestTree
@@ -191,9 +200,9 @@ occurancesCases = testGroup "Cases of occurances"
 
   where
     ex1, ex2 :: Assertion
-    ex1 = occurances "GATACACATCAGATT" @?= [('A',6),('T',4),('C',3),('G',2)]
-    ex2
-      = occurances "AABCDDDEFGGT"
+    ex1 = occurances "GATACACATCAGATT"
+      @?= [('A',6),('T',4),('C',3),('G',2)]
+    ex2 = occurances "AABCDDDEFGGT"
       @?= [('D',3),('A',2),('G',2),('B',1),('C',1),('E',1),('F',1),('T',1)]
 
 chunksOfCases :: TestTree
@@ -204,8 +213,8 @@ chunksOfCases = testGroup "Cases of chunksOf"
 
   where
     ex1, ex2 :: Assertion
-    ex1 = chunksOf 3 [1..13] @?= [[1,2,3],[4,5,6],[7,8,9],[10,11,12],[13]]
-    ex2 = chunksOf 5 [1..13] @?= [[1,2,3,4,5],[6,7,8,9,10],[11,12,13]]
+    ex1 = chunksOf 3 [1..13 :: Int] @?= [[1,2,3],[4,5,6],[7,8,9],[10,11,12],[13]]
+    ex2 = chunksOf 5 [1..13 :: Int] @?= [[1,2,3,4,5],[6,7,8,9,10],[11,12,13]]
 
 subsetOfCases :: TestTree
 subsetOfCases  = testGroup "Cases of subsetsOf"
@@ -215,8 +224,8 @@ subsetOfCases  = testGroup "Cases of subsetsOf"
 
   where
     ex1, ex2 :: Assertion
-    ex1 = [5..10]  `subsetOf` [1..13] @?= True
-    ex2 = [11..15] `subsetOf` [1..13] @?= False
+    ex1 = [5..10]  `subsetOf` [1..13 :: Int] @?= True
+    ex2 = [11..15] `subsetOf` [1..13 :: Int] @?= False
 
 equalityOfCases :: TestTree
 equalityOfCases = testGroup "Cases of equalityOf"
@@ -226,19 +235,19 @@ equalityOfCases = testGroup "Cases of equalityOf"
 
   where
     ex1, ex2 :: Assertion
-    ex1 = equalityOf (`mod` 10) [9,19..49] @?= True
-    ex2 = equalityOf (`mod` 7)  [9,19..49] @?= False
+    ex1 = equalityOf (`mod` 10) [9,19..49 :: Int] @?= True
+    ex2 = equalityOf (`mod` 7)  [9,19..49 :: Int] @?= False
 
 invariantTransformationCases :: TestTree
 invariantTransformationCases = testGroup "Cases of invariantTransformation"
   [ testCase "invariantTransformation (`mod` 10) [9,19,29,39,49] == Just 9" ex1
-  , testCase "invariantTransformation (`mod` 7) [9,19,29,39,49] == Nothing" ex2
+  , testCase "invariantTransformation (`mod`  7) [9,19,29,39,49] == Nothing" ex2
   ]
 
   where
     ex1, ex2 :: Assertion
-    ex1 = invariantTransformation (`mod` 10) [9,19..49]  @?= Just 9
-    ex2 = invariantTransformation (`mod` 7 ) [9,19..49]  @?= Nothing
+    ex1 = invariantTransformation (`mod` 10) [9,19..49 :: Int]  @?= Just 9
+    ex2 = invariantTransformation (`mod` 7 ) [9,19..49 :: Int]  @?= Nothing
 
 transitivePropertyHoldsCases :: TestTree
 transitivePropertyHoldsCases = testGroup "cases of transitivePropertyHolds"
@@ -253,7 +262,7 @@ transitivePropertyHoldsCases = testGroup "cases of transitivePropertyHolds"
     ex1 :: Assertion
     ex1 =
        transitivePropertyHolds (\x y -> snd x >= fst y)
-         [(9,9), (8,7), (6,6), (6,5), (3,4), (3,0)]
+         [(9,9), (8,7), (6,6), (6,5), (3,4), (3,0) :: (Int,Int)]
        @?= True
 
 pairwiseSequenceCases :: TestTree
@@ -282,7 +291,10 @@ pairwiseSequenceCases = testGroup "Cases of pairwiseSequence"
     ex1 =
       pairwiseSequence
       (\x y -> snd x /= snd y)
-      [[('A',1),('B',2)],[('X',1),('Y',2),('Z',3)],[('I',1),('J',2),('K',3),('L',4)]]
+      [ [('A',1),('B',2)]
+      , [('X',1),('Y',2),('Z',3)]
+      , [('I',1),('J',2),('K',3),('L',4) :: (Char,Int)]
+      ]
       @?=
       [ [('A',1),('Y',2),('K',3)]
       , [('A',1),('Y',2),('L',4)]

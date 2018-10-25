@@ -27,13 +27,14 @@ module Data.EdgeSet
 
 import           Control.DeepSeq
 import           Data.Foldable
+import           Data.Foldable.Custom (sum')
 import           Data.Key
-import           Data.List.NonEmpty (NonEmpty (..))
+import           Data.List.NonEmpty   (NonEmpty (..))
 import           Data.Semigroup
-import           Data.Set           (Set)
-import qualified Data.Set           as Set
-import           GHC.Generics       (Generic)
-import           Prelude            hiding (zipWith)
+import           Data.Set             (Set)
+import qualified Data.Set             as Set
+import           GHC.Generics         (Generic)
+import           Prelude              hiding (zipWith)
 
 
 -- |
@@ -98,7 +99,7 @@ instance Ord a => SetLike (EdgeSet a) where
 
 instance Ord a => SetLike (NetworkDisplayEdgeSet a) where
 
-    cardinality  (NDES x) = sum $ cardinality <$> x
+    cardinality  (NDES x) = sum' $ cardinality <$> x
 
     difference   (NDES x) (NDES y) = NDES $ zipWith difference x y
 

@@ -1,4 +1,5 @@
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module Main (main) where
 
@@ -6,10 +7,10 @@ import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Bio.Character.Encodable
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
-import qualified Data.Bimap         as BM
-import qualified Data.List.NonEmpty as NE
+import qualified Data.Bimap                                    as BM
+import qualified Data.List.NonEmpty                            as NE
 import           Data.TCM.Memoized
-import           System.Environment        (getArgs)
+import           System.Environment                            (getArgs)
 import           Test.Custom.NucleotideSequence
 import           Test.QuickCheck
 
@@ -31,7 +32,7 @@ parseArgs args =
 
 
 performCounterExampleSearch :: IO ()
-performCounterExampleSearch = do 
+performCounterExampleSearch = do
     putStrLn "Performing stocastic counter-example search:"
     quickCheckWith stdArgs { maxSuccess = 10000000 } counterExampleCheck
 
@@ -57,14 +58,14 @@ performImplementationComparison lhs rhs = do
     ukkonenMessage   = renderResult ukkonenDOResult
     foreignMessage   = renderResult foreignDOResult
     ukkonenDOResult  = ukkonenDO         char1 char2 (getMedianAndCost2D memoMatrixValue)
-    foreignDOResult  = foreignPairwiseDO char1 char2  denseMatrixValue 
+    foreignDOResult  = foreignPairwiseDO char1 char2  denseMatrixValue
     char1 = readSequence lhs
     char2 = readSequence rhs
     alphabet = fromSymbols ["A","C","G","T"]
-    readSequence :: String -> DynamicChar
+    readSequence :: String -> DynamicCharacter
     readSequence = encodeStream alphabet . fmap ((iupacToDna BM.!) . pure . pure) . NE.fromList
     renderResult (c, w, x, y, z) = unlines
-        [ "Cost           : " <> show c 
+        [ "Cost           : " <> show c
         , "Median ungapped: " <> showStream alphabet w
         , "Median   gapped: " <> showStream alphabet x
         , "LHS   alignment: " <> showStream alphabet y
