@@ -56,7 +56,7 @@ data DiscreteWithTCMCharacterMetadataDec c
    = DiscreteWithTCMCharacterMetadataDec
    { representedTCM :: !RepresentedTCM
    , discreteData   :: {-# UNPACK #-} !DiscreteCharacterMetadataDec
-   } deriving (Eq, Generic, NFData)
+   } deriving (Eq, Generic)
 
 
 data  RepresentedTCM
@@ -65,11 +65,18 @@ data  RepresentedTCM
     | LinearNorm
     deriving (Generic, NFData)
 
+foreignPointerData :: DiscreteWithTCMCharacterMetadataDec c -> MemoizedCostMatrix
+foreignPointerData x =
+  case representedTCM x of
+    ExplicitLayout _ v -> v
+    _ -> error "Man you really suck at everything, don't you? Why on earth would you allow a tragedy like this to occur?"
+
 {-
 data RepresentedTCM a where
   Disc :: Discrete -> RepresentedTCM Discrete
   Explicit :: TCM -> MemoizedCostMatrix -> RepresentedTCM Explicit
 -}
+
 
 retreiveTCM
   :: ( Bits c
@@ -168,13 +175,11 @@ instance HasCharacterWeight (DiscreteWithTCMCharacterMetadataDec c) Double where
                     $ \e x -> e { discreteData = discreteData e & characterWeight .~ x }
 
 
-{-
 -- |
 -- A 'Lens' for the 'symbolicTCMGenerator' field
 instance HasSparseTransitionCostMatrix (DiscreteWithTCMCharacterMetadataDec c) MemoizedCostMatrix where
 
-    sparseTransitionCostMatrix = lens foreignPointerData $ \e x -> e { foreignPointerData = x }
--}
+    sparseTransitionCostMatrix = lens foreignPointerData undefined
 
 
 -- |
@@ -192,13 +197,11 @@ instance (Bits c, Bound c ~ Word, Exportable c, Ranged c)
     transitionCostMatrix = lens (retreiveTCM . representedTCM) undefined
 
 
-{-
 instance NFData (DiscreteWithTCMCharacterMetadataDec c) where
 
     rnf val = rnf (representedTCM val)
         `seq` rnf (discreteData   val)
         `seq` ()
--}
 
 
 instance Show (DiscreteWithTCMCharacterMetadataDec c) where
