@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Graph.EdgeSet
+-- Module      :  Data.EdgeSet
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -21,7 +21,10 @@ module Data.EdgeSet
   , SetLike(difference, union)
 --  , collapseToEdgeSet
 --  , fromEdgeSets
+  , makeParentEdgeSet
+  , member
   , singletonEdgeSet
+  , toIntSet
   ) where
 
 
@@ -35,6 +38,8 @@ import           Data.Set             (Set)
 import qualified Data.Set             as Set
 import           GHC.Generics         (Generic)
 import           Prelude              hiding (zipWith)
+import Data.IntSet (IntSet, singleton)
+import Data.MonoTraversable (MonoFoldable (..))
 
 
 -- |
@@ -142,6 +147,19 @@ fromEdgeSets :: NonEmpty (EdgeSet e) -> NetworkDisplayEdgeSet e
 fromEdgeSets = NDES
 -}
 
+-- |
+-- Get 'IntSet' from all nodes in an 'EdgeSet'
+toIntSet :: EdgeSet (Int, Int) -> IntSet
+toIntSet = foldMap edgeIntSet
+  where
+    edgeIntSet :: (Int, Int) -> IntSet
+    edgeIntSet (ind1, ind2) = (singleton ind1) <> (singleton ind2)
+
+-- |
+-- Determine if a term is a member of an 'EdgeSet'
+member :: Ord e => e -> EdgeSet e -> Bool
+member e (ES edgeSet) = e `Set.member` edgeSet
+
 
 -- |
 -- Construct a singleton 'EdgeSet' value. Use the semigroup operator '(<>)' to
@@ -149,3 +167,14 @@ fromEdgeSets = NDES
 -- 'EdgeSet' data structure.
 singletonEdgeSet :: e -> EdgeSet e
 singletonEdgeSet = ES . Set.singleton
+
+
+-- |
+-- Take node index and the parent indices and add the edge from parent to node.
+-- This is only intended to be used on non-root nodes.
+makeParentEdgeSet
+  :: Int                -- ^ Current node index
+  -> IntSet             -- ^ Parent indices
+  -> EdgeSet (Int, Int)
+makeParentEdgeSet currInd parIndices
+  = ofoldMap (\parInd -> singletonEdgeSet (parInd, currInd)) parIndices
