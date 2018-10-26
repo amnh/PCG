@@ -47,6 +47,9 @@ test: stack-build-test
 # Re-builds project then runs only integration tests
 test-integration: stack-build-test-integration
 
+# Re-builds project then runs only unit tests
+test-unit: stack-build-test-unit
+
 test-failures: stack-build-test-failures
 
 test-new: stack-build-test-new
@@ -104,6 +107,10 @@ stack-build-test: phylocomgraph.cabal stack.yaml
 # Builds and runs integration tests after a standard build.
 stack-build-test-integration: phylocomgraph.cabal stack.yaml standard-build
 	stack build phylocomgraph:test:integration-tests
+
+# Builds and runs unit tests after a standard build.
+stack-build-test-unit: phylocomgraph.cabal stack.yaml standard-build
+	stack build phylocomgraph:test:unit-tests
 
 # Builds tests and re-runs those that failed
 stack-build-test-failures: phylocomgraph.cabal stack.yaml
