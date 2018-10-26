@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module PCG.Computation.Internal
   ( evaluate
   , optimizeComputation
@@ -18,11 +20,25 @@ import qualified PCG.Command.Save.Evaluate   as Save
 import           PCG.Syntax
 import           System.Exit
 
-optimizeComputation :: Computation -> Computation
+
+import Analysis.Scoring
+import Bio.Character
+import Bio.Graph
+import           Bio.Metadata
+import           Data.TCM.Memoized    
+
+
+optimizeComputation
+  :: HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec DynamicCharacterElement) MemoizedCostMatrix
+  => Computation
+  -> Computation
 optimizeComputation (Computation commands) = Computation $ collapseReadCommands commands
 
 
-collapseReadCommands :: NonEmpty Command -> NonEmpty Command
+collapseReadCommands
+    :: HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec DynamicCharacterElement) MemoizedCostMatrix
+    => NonEmpty Command
+    -> NonEmpty Command
 collapseReadCommands p@(x:|xs) =
     case xs of
      []   -> p
@@ -32,7 +48,10 @@ collapseReadCommands p@(x:|xs) =
          _                    -> (x :|) . toList . collapseReadCommands $ y:|ys
 
 
-evaluate :: Computation -> SearchState
+evaluate
+  :: HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec DynamicCharacterElement) MemoizedCostMatrix
+  => Computation
+  -> SearchState
 evaluate (Computation xs) = foldl' f mempty xs
   where
     f :: SearchState -> Command -> SearchState

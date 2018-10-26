@@ -57,13 +57,20 @@ import           System.Directory
 import           System.FilePath                           (takeExtension)
 import           System.FilePath.Glob
 import           Text.Megaparsec
+import Analysis.Scoring
+import Bio.Character
+import Bio.Graph
+import           Bio.Metadata
+import           Data.TCM.Memoized    
 
 
 parse' :: Parsec Void s a -> String -> s -> Either (ParseError (Token s) Void) a
 parse' = parse
 
 
-evaluate :: ReadCommand -> SearchState
+evaluate
+  :: HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec DynamicCharacterElement) MemoizedCostMatrix
+  => ReadCommand -> SearchState
 evaluate (ReadCommand fileSpecs) = do
     when (null fileSpecs) $ fail "No files specified in 'read()' command"
     result <- liftIO . runExceptT . eitherTValidation $ parmap rpar (fmap removeGaps . parseSpecifiedFile) fileSpecs

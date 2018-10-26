@@ -18,9 +18,10 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module Test.Custom.DynamicCharacterNode
-  ( DynamicCharacterNode()
+  ({- DynamicCharacterNode()
   , getDynamicCharacterDecoration
   , constructNode
+-}
   ) where
 
 
@@ -29,6 +30,7 @@ import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (filterGaps)
 import Analysis.Parsimony.Internal
 import Bio.Character
 import Bio.Character.Decoration.Dynamic
+import Bio.Character.Encodable.Dynamic
 import Bio.Metadata
 import Bio.Metadata.CharacterName
 import Data.Alphabet
@@ -37,7 +39,7 @@ import Data.String
 import Test.Custom.NucleotideSequence
 import Test.QuickCheck
 
-
+{-
 -- |
 -- Represents a cherry node of dynamic character decorations.
 newtype DynamicCharacterNode = DCN
@@ -76,8 +78,10 @@ constructNode lhs rhs
 
 toLeafNode :: ( Ord (Element c)
               , SimpleDynamicDecoration d c
+              , HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
               )
-           => d -> DynamicDecorationDirectOptimizationPostorderResult c
+           => d
+           -> DynamicDecorationDirectOptimizationPostorderResult c
 toLeafNode c = directOptimizationPostorder pairwiseFunction (LeafContext c)
 
 
@@ -122,3 +126,4 @@ defWeight = 1
 
 defAlphabet :: Alphabet String
 defAlphabet = fromSymbols ["A","C","G","T"]
+-}

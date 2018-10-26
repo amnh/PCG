@@ -46,6 +46,7 @@ import qualified Data.List.NonEmpty                                             
 import           Data.List.Utility                                               (invariantTransformation)
 import           Data.MonoTraversable
 import           Data.Semigroup
+import           Data.TCM.Memoized
 import           Data.Word
 import           Numeric.Extended.Natural
 import           Prelude                                                         hiding (lookup)
@@ -137,6 +138,7 @@ initializeLeaf =
 -- decoration. The recursive logic of the post-order traversal.
 updateFromLeaves
   :: ( EncodableDynamicCharacter c
+     , Exportable (Element c)
      )
   => PairwiseAlignment c
   -> (DynamicDecorationDirectOptimizationPostorderResult c, DynamicDecorationDirectOptimizationPostorderResult c)
@@ -155,7 +157,10 @@ updateFromLeaves pairwiseAlignment (lChild , rChild) = resultDecoration
 -- Parameterized over a 'PairwiseAlignment' function to allow for different
 -- atomic alignments depending on the character's metadata.
 directOptimizationPreorder
-  :: DirectOptimizationPostorderDecoration d c
+  :: ( DirectOptimizationPostorderDecoration d c
+     , Exportable (Element c)
+     , HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
+     )
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
   -> PreorderContext d (DynamicDecorationDirectOptimization c)
@@ -203,7 +208,10 @@ disambiguateElement x = zed `setBit` idx
 -- Use the decoration(s) of the ancestral nodes to calculate the corrent node
 -- decoration. The recursive logic of the pre-order traversal.
 updateFromParent
-  :: DirectOptimizationPostorderDecoration d c
+  :: ( DirectOptimizationPostorderDecoration d c
+     , Exportable (Element c)
+     , HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
+     )
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
   -> d
@@ -237,7 +245,10 @@ updateFromParent pairwiseAlignment meta currentDecoration parentDecoration = res
 -- |
 -- A three way comparison of characters used in the DO preorder traversal.
 tripleComparison
-  :: DirectOptimizationPostorderDecoration d c
+  :: ( DirectOptimizationPostorderDecoration d c
+     , Exportable (Element c)
+     , HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
+     )
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
   -> d
@@ -262,7 +273,7 @@ tripleComparison pairwiseAlignment meta childDecoration parentCharacter parentSi
     costStructure =
         case meta ^. denseTransitionCostMatrix of
                      -- TODO: Encapsilate this in DiscreteMetadataWithTCM
-          Nothing -> naiveMedianAndCost3D -- getMedianAndCost3D (meta ^. sparseTransitionCostMatrix)
+          Nothing -> getMedianAndCost3D (meta ^. sparseTransitionCostMatrix)
           -- Compute things naively
           Just _  -> naiveMedianAndCost3D
       where

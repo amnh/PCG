@@ -17,8 +17,13 @@
 module PCG.Command.Read.DecorationInitialization where
 
 import Analysis.Scoring
+import Bio.Character
 import Bio.Graph
+import           Bio.Metadata
+import           Data.TCM.Memoized
 
 
-initializeDecorations2 :: CharacterResult -> PhylogeneticSolution FinalDecorationDAG
+initializeDecorations2
+  :: HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec DynamicCharacterElement) MemoizedCostMatrix
+  => CharacterResult -> PhylogeneticSolution FinalDecorationDAG
 initializeDecorations2 = scoreSolution

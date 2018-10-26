@@ -36,10 +36,12 @@ import           Analysis.Parsimony.Sankoff.Internal
 import           Bio.Character
 import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Dynamic
+import           Bio.Character.Encodable.Dynamic
 import           Bio.Graph
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal            (setDefaultMetadata)
 import           Bio.Graph.ReferenceDAG.Internal
+import           Bio.Metadata
 import           Bio.Sequence
 import           Control.Lens.Operators                        ((%~))
 import           Data.Default
@@ -47,6 +49,7 @@ import           Data.EdgeLength
 import           Data.Function                                 ((&))
 import qualified Data.List.NonEmpty                            as NE
 import           Data.NodeLabel
+import           Data.TCM.Memoized
 import           Data.Vector                                   (Vector)
 
 
@@ -100,7 +103,8 @@ wipeNode wipe =
 -- |
 -- Take a solution of one or more undecorated trees and assign preliminary and
 -- final states to all nodes.
-scoreSolution :: CharacterResult -> PhylogeneticSolution FinalDecorationDAG
+scoreSolution :: HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec DynamicCharacterElement) MemoizedCostMatrix
+              => CharacterResult -> PhylogeneticSolution FinalDecorationDAG
 scoreSolution (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
 
 
@@ -113,19 +117,23 @@ performDecoration
      , RangedCharacterDecoration u ContinuousCharacter
      , RangedCharacterDecoration w StaticCharacter
      , SimpleDynamicDecoration z DynamicCharacter
+     -- Looks like GHC has serious problems with type inference.
+     -- The following constraint isn't a constraint, but GHC won't compile without
+     -- being reminded of the obvious fact that this universally holds. 
+     , HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec DynamicCharacterElement) MemoizedCostMatrix
      )
   => PhylogeneticDAG2 m EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
   -> FinalDecorationDAG
 performDecoration x = performPreorderDecoration performPostorderDecoration
   where
-    performPreorderDecoration ::
-      PostorderDecorationDAG
-      (TraversalTopology
-      , Double
-      , Double
-      , Double
-      , Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge)
-      )
+    performPreorderDecoration
+      :: PostorderDecorationDAG
+          ( TraversalTopology
+          , Double
+          , Double
+          , Double
+          , Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge)
+          )
       -> FinalDecorationDAG
     performPreorderDecoration =
         preorderFromRooting

@@ -19,6 +19,7 @@ import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG           (PostorderContextualData, setDefaultMetadata)
 import qualified Bio.Graph.ReferenceDAG              as DAG
 import           Bio.Graph.ReferenceDAG.Internal
+import           Bio.Metadata
 import           Bio.Sequence
 import           Control.Arrow                       ((&&&))
 import           Control.DeepSeq
@@ -36,6 +37,7 @@ import qualified Data.List.NonEmpty                  as NE
 import           Data.NodeLabel
 import           Data.Ord                            (comparing)
 import           Data.Semigroup.Foldable
+import           Data.TCM.Memoized
 import           PCG.Command.Build
 import           System.Random.Shuffle
 
@@ -54,7 +56,8 @@ type DatNode =
 
 
 evaluate
-  :: BuildCommand
+  :: HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec DynamicCharacterElement) MemoizedCostMatrix
+  => BuildCommand
   -> GraphState
   -> SearchState
 evaluate (BuildCommand trajectoryCount buildType) cpctInState = do
@@ -88,6 +91,9 @@ evaluate (BuildCommand trajectoryCount buildType) cpctInState = do
 naiveWagnerParallelBuild
   :: ( Foldable1 f
      , Traversable t
+     , HasSparseTransitionCostMatrix
+                                   (DynamicCharacterMetadataDec DynamicCharacterElement)
+                                                                 MemoizedCostMatrix
      )
   => MetadataSequence m --(TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
   -> t (f DatNode)
@@ -96,7 +102,9 @@ naiveWagnerParallelBuild m = parmap rpar (naiveWagnerBuild m)
 
 
 naiveWagnerBuild
-  :: Foldable1 f
+  :: ( Foldable1 f
+     , HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec DynamicCharacterElement) MemoizedCostMatrix
+     )
   => MetadataSequence m
   -> f DatNode
   -> FinalDecorationDAG
@@ -125,7 +133,8 @@ naiveWagnerBuild metaSeq ns =
     fromRefDAG = performDecoration . (`PDAG2`  metaSeq) . resetMetadata
 
 iterativeBuild
-  :: FinalDecorationDAG
+  ::  HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec DynamicCharacterElement) MemoizedCostMatrix
+  => FinalDecorationDAG
   -> DatNode
   -> FinalDecorationDAG
 iterativeBuild currentTree@(PDAG2 _ metaSeq) nextLeaf = nextTree
@@ -144,7 +153,8 @@ iterativeBuild currentTree@(PDAG2 _ metaSeq) nextLeaf = nextTree
 
 
 iterativeNetworkBuild
-  :: FinalDecorationDAG
+  :: HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec DynamicCharacterElement) MemoizedCostMatrix
+  => FinalDecorationDAG
   -> FinalDecorationDAG
 
 iterativeNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
@@ -182,5 +192,5 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
         PNode2 (resolutions oldChildDatum) (nodeDecorationDatum2 parentDatum)
 
 
-resetMetadata ::  ReferenceDAG d e n -> ReferenceDAG (PostorderContextualData t) e n
+resetMetadata ::  HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec DynamicCharacterElement) MemoizedCostMatrix =>  ReferenceDAG d e n -> ReferenceDAG (PostorderContextualData t) e n
 resetMetadata ref = ref & _graphData %~ setDefaultMetadata

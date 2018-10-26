@@ -24,6 +24,14 @@ import Text.Megaparsec              (ParseError, Parsec, Token, parse, parseErro
 import Text.PrettyPrint.ANSI.Leijen (align, indent, int, line, string, text, (<+>), (</>))
 
 
+
+import Analysis.Scoring
+import Bio.Character
+import Bio.Graph
+import           Bio.Metadata
+import           Data.TCM.Memoized 
+
+
 -- |
 -- Valid command line options
 data  CommandLineOptions
@@ -62,7 +70,8 @@ instance NFData Verbosity
 -- Gracefully handles empty STDIN stream.
 --
 -- Initiates phylogenetic search when valid commmand line options are supplied.
-main :: IO ()
+main :: HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec DynamicCharacterElement) MemoizedCostMatrix
+     => IO ()
 main = do
      opts <- force <$> parseCommandLineOptions
      let  _verbosity = verbosity opts
