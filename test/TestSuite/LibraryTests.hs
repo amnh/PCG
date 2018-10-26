@@ -8,6 +8,7 @@ import qualified Bio.Character.Encodable.Static.Test                         as 
 import qualified Control.Evaluation.Test                                     as Evaluation
 import qualified Data.Alphabet.Test                                          as Alphabet
 import qualified Data.TCM.Test                                               as TCM
+import qualified Bio.Graph.ReferenceDAG.Test as ReferenceDAG
 import           Test.Tasty
 
 
@@ -19,4 +20,5 @@ testSuite = testGroup "Library Test Suite"
     , DynamicChar.testSuite
     , StaticChar.testSuite
     , Pairwise.testSuite
+    , ReferenceDAG.testSuite
     ]
