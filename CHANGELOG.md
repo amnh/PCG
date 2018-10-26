@@ -32,6 +32,7 @@ Releases are available [on GitHub][2].
 * Added makefile commands for outputting core, building with llvm backend, various test options and building a local hoogle database
 * Streamlined build experience on MacOS
 * Corrected defect in handling of prealigned input data
+* Corrected defect in Data.Range value construction
 * Corrected defect in Data.Vector.NonEmpty.unfoldr
 * Corrected defect in headEx & lastEx of several MonoFoldable instances
 * Corrected defect in omap over missing dynamic characters
