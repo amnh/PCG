@@ -94,18 +94,14 @@ renderExampleNetwork = unlines
                          ]
 
 exampleNetworkCandidateNetworkEdges :: Set ((Int, Int), (Int, Int))
-exampleNetworkCandidateNetworkEdges
-    = orderedPairsFromUnorderedList unorderedEdges
-  where
-    unorderedEdges :: [((Int, Int), (Int, Int))]
-    unorderedEdges =
-      [ ((3,0), (5,1)), ((3,0), (5,2)), ((3,0), (6,4)), ((3,0) ,(7,5))
-      , ((5,1), (7,3)), ((5,1), (6,3)), ((5,1), (6,4))
-      , ((5,2), (7,3)), ((5,2), (6,3)), ((5,2), (6,4))
-      , ((6,4), (7,3)), ((6,4), (7,5))
-      , ((6,3), (8,7))
-      , ((7,3), (8,6))
-      ]
+exampleNetworkCandidateNetworkEdges =
+    [ ((6, 4), (5, 1)), ((6, 4), (5, 2)), ((6, 4), (7, 5))
+    , ((6, 3), (5, 1)), ((6, 3), (5, 2))
+    , ((7, 5), (4, 6))
+    , ((5, 1), (6, 4))
+    , ((5, 2), (6, 4))
+    ]
+
 
 renderExampleNetworkCandidateNetworkEdges :: String
 renderExampleNetworkCandidateNetworkEdges
