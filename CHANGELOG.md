@@ -10,6 +10,7 @@ Releases are available [on GitHub][2].
 * Using semantic versioning
 * Updated to GHC-8.4.4
 * Updated to Cabal-2.2
+* Updated build command to add network edges to input graphs rather than wagner build a new tree first.
 * Updated read command grammar to allow for more specific TCM specification
 * Improved efficiency and consistency of character metadata representation
 * Improved efficiency of Wagner build
