@@ -113,7 +113,6 @@ directOptimizationPostorder pairwiseAlignment
       (\_ (lChild, rChild) -> updateFromLeaves pairwiseAlignment (lChild, rChild))
 
 
-
 -- |
 -- Given a simple dynamic character as input, initializes the leaf node
 -- decoration as the base case of the post-order traversal.
@@ -200,7 +199,7 @@ lexicallyDisambiguate = omap disambiguateElement
 disambiguateElement :: FiniteBits b => b -> b
 disambiguateElement x = zed `setBit` idx
   where
-    idx = countLeadingZeros x
+    idx = min (finiteBitSize x - 1) $ countLeadingZeros x
     zed = x `xor` x
 
 

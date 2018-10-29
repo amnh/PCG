@@ -70,8 +70,7 @@ instance NFData Verbosity
 -- Gracefully handles empty STDIN stream.
 --
 -- Initiates phylogenetic search when valid commmand line options are supplied.
-main :: HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec DynamicCharacterElement) MemoizedCostMatrix
-     => IO ()
+main :: IO ()
 main = do
      opts <- force <$> parseCommandLineOptions
      let  _verbosity = verbosity opts

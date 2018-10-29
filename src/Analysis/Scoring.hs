@@ -103,8 +103,7 @@ wipeNode wipe =
 -- |
 -- Take a solution of one or more undecorated trees and assign preliminary and
 -- final states to all nodes.
-scoreSolution :: HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec DynamicCharacterElement) MemoizedCostMatrix
-              => CharacterResult -> PhylogeneticSolution FinalDecorationDAG
+scoreSolution :: CharacterResult -> PhylogeneticSolution FinalDecorationDAG
 scoreSolution (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap performDecoration <$> forests
 
 
@@ -117,10 +116,6 @@ performDecoration
      , RangedCharacterDecoration u ContinuousCharacter
      , RangedCharacterDecoration w StaticCharacter
      , SimpleDynamicDecoration z DynamicCharacter
-     -- Looks like GHC has serious problems with type inference.
-     -- The following constraint isn't a constraint, but GHC won't compile without
-     -- being reminded of the obvious fact that this universally holds. 
-     , HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec DynamicCharacterElement) MemoizedCostMatrix
      )
   => PhylogeneticDAG2 m EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
   -> FinalDecorationDAG

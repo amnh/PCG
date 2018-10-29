@@ -18,10 +18,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module Test.Custom.DynamicCharacterNode
-  ({- DynamicCharacterNode()
+  ( DynamicCharacterNode()
   , getDynamicCharacterDecoration
   , constructNode
--}
   ) where
 
 
@@ -39,7 +38,7 @@ import Data.String
 import Test.Custom.NucleotideSequence
 import Test.QuickCheck
 
-{-
+
 -- |
 -- Represents a cherry node of dynamic character decorations.
 newtype DynamicCharacterNode = DCN
@@ -126,4 +125,4 @@ defWeight = 1
 
 defAlphabet :: Alphabet String
 defAlphabet = fromSymbols ["A","C","G","T"]
--}
+

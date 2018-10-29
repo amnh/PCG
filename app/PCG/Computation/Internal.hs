@@ -28,17 +28,11 @@ import           Bio.Metadata
 import           Data.TCM.Memoized    
 
 
-optimizeComputation
-  :: HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec DynamicCharacterElement) MemoizedCostMatrix
-  => Computation
-  -> Computation
+optimizeComputation :: Computation -> Computation
 optimizeComputation (Computation commands) = Computation $ collapseReadCommands commands
 
 
-collapseReadCommands
-    :: HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec DynamicCharacterElement) MemoizedCostMatrix
-    => NonEmpty Command
-    -> NonEmpty Command
+collapseReadCommands :: NonEmpty Command -> NonEmpty Command
 collapseReadCommands p@(x:|xs) =
     case xs of
      []   -> p
@@ -48,10 +42,7 @@ collapseReadCommands p@(x:|xs) =
          _                    -> (x :|) . toList . collapseReadCommands $ y:|ys
 
 
-evaluate
-  :: HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec DynamicCharacterElement) MemoizedCostMatrix
-  => Computation
-  -> SearchState
+evaluate :: Computation -> SearchState
 evaluate (Computation xs) = foldl' f mempty xs
   where
     f :: SearchState -> Command -> SearchState
