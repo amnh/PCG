@@ -77,7 +77,7 @@ wagnerBuildLogic
   :: PhylogeneticSolution FinalDecorationDAG
   -> Int
   -> EvaluationT IO (NonEmpty FinalDecorationDAG)
-wagnerBuildLogic v count = 
+wagnerBuildLogic v count =
     case toList $ v ^. leafSet of
       []   -> fail "There are no nodes with which to build a tree."
       y:ys ->
@@ -102,7 +102,7 @@ networkBuildLogic v _ = do
 --  pure $ fmap iterativeNetworkBuild bestTrees
 
 
-forestBuildLogic 
+forestBuildLogic
   :: PhylogeneticSolution FinalDecorationDAG
   -> Int
   -> EvaluationT IO (NonEmpty FinalDecorationDAG)

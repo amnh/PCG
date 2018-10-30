@@ -262,7 +262,7 @@ instance Ranged StaticCharacter where
         ub   = upperBound x
         lb   = lowerBound x
         allBitsUpperBound = toSC $ (2 :: Integer) ^ upperBound x - 1
-        allBitsLowerBound = toSC $ (2 :: Integer) ^ lowerBound x - 1 
+        allBitsLowerBound = toSC $ (2 :: Integer) ^ lowerBound x - 1
 {-
       where
             allBitsUpperBound = SC . fromNumber (toEnum boundaryBit) $ (2 ^ upperBound x - 1 :: Integer)
