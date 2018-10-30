@@ -316,18 +316,22 @@ instance PossiblyMissingCharacter DynamicCharacter where
 
 instance Ranged DynamicCharacterElement where
 
-    toRange sc = fromTupleWithPrecision (firstSetBit, lastSetBit) totalBits
-        where
-            firstSetBit = toEnum $ countLeadingZeros sc
-            lastSetBit  = toEnum . max 0 $ totalBits - countTrailingZeros sc - 1
-            totalBits   = finiteBitSize sc
+    toRange dce = fromTupleWithPrecision (firstSetBit, lastSetBit) totalBits
+      where
+        firstSetBit = toEnum $ countLeadingZeros dce
+        lastSetBit  = toEnum . max 0 $ totalBits - countTrailingZeros dce - 1
+        totalBits   = finiteBitSize dce
 
-    fromRange x = zeroVector .|. (allBitsUpperBound `xor` allBitsLowerBound)
-        where
-            allBitsUpperBound = DCE . fromNumber (toEnum boundaryBit) $ (2 ^ upperBound x - 1 :: Integer)
-            allBitsLowerBound = DCE . fromNumber (toEnum boundaryBit) $ (2 ^ lowerBound x - 1 :: Integer)
-            zeroVector  = (zeroBits `setBit` boundaryBit) `clearBit` boundaryBit
-            boundaryBit = fromJust (precision x) - 1
+    fromRange x
+      | ub == lb  = toDCE $ 2 ^ ub
+      | otherwise = allBitsUpperBound `xor` allBitsLowerBound
+      where
+        toDCE = DCE . fromNumber dim
+        dim   = toEnum . fromJust $ precision x
+        ub    = upperBound x
+        lb    = lowerBound x
+        allBitsUpperBound = toDCE $ (2 :: Integer) ^ upperBound x - 1
+        allBitsLowerBound = toDCE $ (2 :: Integer) ^ lowerBound x - 1
 
     zeroRange sc = fromTupleWithPrecision (0,0) $ finiteBitSize sc
 

@@ -71,6 +71,7 @@ data RepresentedTCM a where
   Explicit :: TCM -> MemoizedCostMatrix -> RepresentedTCM Explicit
 -}
 
+
 retreiveTCM
   :: ( Bits c
      , Bound c ~ Word
@@ -120,6 +121,7 @@ linearNormLogic lhs rhs = (fromRange newInterval, cost)
       | isOverlapping = lhs' `intersection`   rhs'
       | otherwise     = lhs' `smallestClosed` rhs'
     isOverlapping     = lhs' `intersects`     rhs'
+
     cost
       | isOverlapping = 0
       | otherwise     = upperBound newInterval - lowerBound newInterval
