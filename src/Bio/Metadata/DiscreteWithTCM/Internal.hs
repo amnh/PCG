@@ -127,6 +127,7 @@ linearNormLogic lhs rhs = (fromRange newInterval, cost)
       | isOverlapping = lhs' `intersection`   rhs'
       | otherwise     = lhs' `smallestClosed` rhs'
     isOverlapping     = lhs' `intersects`     rhs'
+
     cost
       | isOverlapping = 0
       | otherwise     = upperBound newInterval - lowerBound newInterval

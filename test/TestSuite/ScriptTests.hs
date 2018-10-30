@@ -41,7 +41,7 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
   , scriptCheckCost 56
         "datasets/additive/missing/test.pcg"
         "datasets/additive/missing/cost.data"
-  , scriptCheckCost 72642
+  , scriptCheckCost 2642
         "datasets/additive/single-block/arthropods.pcg"
         "datasets/additive/single-block/cost.data"
   , scriptCheckCost 1
@@ -149,7 +149,7 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
   , scriptCheckCost 28
       "datasets/dynamic/single-block/missing/missing-values.pcg"
       "datasets/dynamic/single-block/missing/cost.data"
-  , scriptCheckCost 2042
+  , scriptCheckCost 11036
       "datasets/dynamic/single-block/protein/L1-norm/invertebrates.pcg"
       "datasets/dynamic/single-block/protein/L1-norm/cost.data"
 {--
@@ -163,7 +163,7 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
         "datasets/dynamic/single-block/protein/2-1/invertebrates.pcg"
         "datasets/dynamic/single-block/protein/2-1/cost.data"
 --}
-  , scriptCheckCost 2042
+  , scriptCheckCost 3413
       "datasets/dynamic/single-block/slashes/L1-norm/test.pcg"
       "datasets/dynamic/single-block/slashes/L1-norm/cost.data"
 {--
