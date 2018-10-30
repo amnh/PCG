@@ -58,7 +58,7 @@ evaluate
   :: BuildCommand
   -> GraphState
   -> SearchState
-evaluate (BuildCommand trajectoryCount buildType) cpctInState = do
+evaluate (BuildCommand trajectoryCount buildType) cpctInState =
     case getCompact cpctInState of
       Left  _ -> pure cpctInState
       Right v -> do
