@@ -26,7 +26,7 @@ module Data.Foldable.Custom
   )
   where
 
-import Control.DeepSeq (NFData(), ($!!))
+import Control.DeepSeq (NFData, ($!!))
 import Data.Coerce     (Coercible, coerce)
 import Data.Foldable   (Foldable (foldl', foldr))
 import Data.Maybe      (fromMaybe)
