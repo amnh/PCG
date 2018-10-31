@@ -13,35 +13,35 @@
 -- two dynamic characters.
 --
 -----------------------------------------------------------------------------
+
 {-# LANGUAGE BangPatterns     #-}
 {-# LANGUAGE ConstraintKinds  #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies     #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
- ( Cost
- , Direction()
- , DOCharConstraint
- , MatrixConstraint
- , MatrixFunction
- , NeedlemanWunchMatrix
- , OverlapFunction
- -- * Direct Optimization primative construction functions
- , directOptimization
- , filterGaps
- , handleMissingCharacter
- , handleMissingCharacterThreeway
- , measureCharacters
- , needlemanWunschDefinition
--- , renderCostMatrix
--- , traceback
- -- * Probably removable
- , overlap
- , overlapConst
- , getOverlap
- , minimalChoice
- ) where
-
+  ( Cost
+  , Direction()
+  , DOCharConstraint
+  , MatrixConstraint
+  , MatrixFunction
+  , NeedlemanWunchMatrix
+  , OverlapFunction
+  -- * Direct Optimization primative construction functions
+  , directOptimization
+  , filterGaps
+  , handleMissingCharacter
+  , handleMissingCharacterThreeway
+  , measureCharacters
+  , needlemanWunschDefinition
+--  , renderCostMatrix
+--  , traceback
+  -- * Probably removable
+  , overlap
+  , overlapConst
+  , getOverlap
+  , minimalChoice
+  ) where
 
 import           Bio.Character.Encodable
 import           Control.Arrow            ((&&&))
@@ -167,8 +167,8 @@ directOptimization char1 char2 overlapFunction matrixFunction =
 filterGaps :: EncodableDynamicCharacter s => s -> s
 filterGaps char =
     case filter (/= gap) $ otoList char of
-      [] -> toMissing char
-      xs -> constructDynamic xs
+      []   -> toMissing char
+      x:xs -> constructDynamic $ x:|xs
   where
     gap = gapOfStream char
 
@@ -385,9 +385,9 @@ traceback :: ( DOCharConstraint s
           -> (Word, s, s, s)
 traceback alignMatrix longerChar lesserChar =
     ( unsafeToFinite cost
-    , constructDynamic medianStates
-    , constructDynamic alignedLongerChar
-    , constructDynamic alignedLesserChar
+    , constructDynamic . NE.fromList $ toList medianStates
+    , constructDynamic . NE.fromList $ toList alignedLongerChar
+    , constructDynamic . NE.fromList $ toList alignedLesserChar
     )
   where
       (medianStates, alignedLongerChar, alignedLesserChar) = go lastCell

@@ -30,15 +30,15 @@
 
 module Analysis.Parsimony.Sankoff.Internal where
 
-
+import Analysis.Parsimony.Internal
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Metric
 import Bio.Character.Encodable
 import Bio.Metadata
 import Control.Lens
 import Data.Bits
+import Data.Foldable
 import Data.Key
-import Data.List.NonEmpty                (NonEmpty ((:|)))
 import Data.Word
 import Numeric.Extended.Natural
 import Prelude                           hiding (zip)
@@ -46,17 +46,15 @@ import Prelude                           hiding (zip)
 
 -- |
 -- Used on the post-order (i.e. first) traversal.
-sankoffPostOrder
+sankoffPostorder
   :: DiscreteCharacterDecoration d c
   => DiscreteWithTCMCharacterMetadataDec c
-  -> d
-  -> [SankoffOptimizationDecoration c]
+  -> PostorderContext d (SankoffOptimizationDecoration c)
   ->  SankoffOptimizationDecoration c
-sankoffPostOrder meta charDecoration xs =
-  case xs of
-    []   -> initializeCostVector charDecoration -- is a leaf
-    y:ys -> updateCostVector meta charDecoration (y:|ys)
-
+sankoffPostorder meta
+  = postorderContext
+      (initializeCostVector meta)
+      (updateCostVector meta)
 
 -- |
 -- Used on the pre-order (i.e. second) traversal.
@@ -64,29 +62,31 @@ sankoffPostOrder meta charDecoration xs =
 -- Either calls `initializeDirVector` on root or `updateDirectionalMins`.
 -- Needs to determine which child it’s updating, then sends the appropriate
 -- minlist to `updateDirectionalMins`.
-sankoffPreOrder
+sankoffPreorder
   :: EncodableStaticCharacter c
-  => SankoffOptimizationDecoration c
-  -> [(Word, SankoffOptimizationDecoration c)]
+  => PreorderContext (SankoffOptimizationDecoration c) (SankoffOptimizationDecoration c)
   -> SankoffOptimizationDecoration c
-sankoffPreOrder childDecoration [] = newDecoration       -- is a root
+sankoffPreorder = preorderContext rootFn internalFn
   where
-    childMins     = childDecoration ^. characterCostVector
-    overallMin    = childDecoration ^. characterCost
-    emptyMedian   = emptyStatic $ childDecoration ^. discreteCharacter
-    newChar       = foldlWithKey' setState emptyMedian childMins
-    newDecoration = childDecoration & discreteCharacter .~ newChar
+    rootFn childDecoration = childDecoration & discreteCharacter .~ newChar
+       where
+         childMins     = childDecoration ^. characterCostVector
+         overallMin    = childDecoration ^. characterCost
+         emptyMedian   = emptyStatic $ childDecoration ^. discreteCharacter
+         newChar       = foldlWithKey' setState emptyMedian childMins
 
-    setState acc pos childMin
-      | unsafeToFinite childMin == overallMin = acc `setBit` pos
-      | otherwise                             = acc
+         setState acc pos childMin
+           | unsafeToFinite childMin == overallMin = acc `setBit` pos
+           | otherwise                             = acc
 
-sankoffPreOrder childDecoration ((whichChild, parentDecoration):_) = resultDecoration $   -- is either internal node or leaf
-    case whichChild of
-      0 -> fst
-      _ -> snd
-  where
-    resultDecoration f = updateDirectionalMins parentDecoration childDecoration $ f (parentDecoration ^. minStateTuple)
+    internalFn childDecorationOpt parentDecoration
+      = case childDecorationOpt of
+          Left  childDecL -> resultDecoration fst childDecL
+          Right childDecR -> resultDecoration snd childDecR
+      where
+        resultDecoration proj childDec
+          = updateDirectionalMins parentDecoration childDec
+              $ proj (parentDecoration ^. minStateTuple)
 
 
 -- |
@@ -102,8 +102,12 @@ sankoffPreOrder childDecoration ((whichChild, parentDecoration):_) = resultDecor
 -- TODO: What’s this? \(i\)
 -- \[ cost(i_c) =
 --       \] \(i \exists s_x\), etc...
-initializeCostVector :: DiscreteCharacterDecoration d c => d -> SankoffOptimizationDecoration c
-initializeCostVector inputDecoration =
+initializeCostVector
+  :: DiscreteCharacterDecoration d c
+  => DiscreteWithTCMCharacterMetadataDec c
+  -> d
+  -> SankoffOptimizationDecoration c
+initializeCostVector meta inputDecoration =
     extendDiscreteToSankoff
       inputDecoration
       costList
@@ -117,7 +121,7 @@ initializeCostVector inputDecoration =
   where
     -- assuming metricity
     inputChar = inputDecoration ^. discreteCharacter
-    range     = [0..5]
+    range     = fmap (toEnum . fst) . keyed . toList $ meta ^. characterAlphabet
     costList  = fmap f range
       where
         f i
@@ -152,17 +156,15 @@ updateCostVector
   :: DiscreteCharacterDecoration d c
   => DiscreteWithTCMCharacterMetadataDec c
   -> d
-  -> NonEmpty (SankoffOptimizationDecoration c)
+  -> (SankoffOptimizationDecoration c , SankoffOptimizationDecoration c)
   -> SankoffOptimizationDecoration c
-updateCostVector _meta _parentDecoration (x:|[])                        = x                    -- Shouldn't be possible, but here for completion.
-updateCostVector meta _parentDecoration (leftChildDec:|rightChildDec:_) = returnNodeDecoration -- May? be able to amend this to use non-binary children.
+updateCostVector meta _parentDecoration (leftChildDec, rightChildDec) = returnNodeDecoration -- May? be able to amend this to use non-binary children.
   where
     (cs, ds, minTransCost) = foldr findMins initialAccumulator range   -- Sorry abut these shitty variable names. It was to shorten
                                                                        -- the 'extendDiscreteToSankoff' call.
                                                                        -- cs = min costs per state
                                                                        -- ds = (left child min states, right child min states)
-    range                = [0 .. numAlphStates]
-    numAlphStates        = symbolCount charWLOG
+    range                = fmap (toEnum . fst) . keyed . toList $ meta ^. characterAlphabet
     preliminaryMins      = foldr         computeExtraMin [] cs
     bs                   = foldrWithKey' computeBetas    [] range      -- bs  = betas
     omc                  = unsafeToFinite minTransCost                 -- omc = overall min cost (min for all states)
@@ -212,8 +214,7 @@ updateCostVector meta _parentDecoration (leftChildDec:|rightChildDec:_) = return
 --
 -- Used on second, pre-order, pass.
 updateDirectionalMins
-  :: EncodableStaticCharacter c -- TODO: I made this more restrictive to resolve the 'Cannot deduce
-                                -- EncodableStaticCharacter c from Bits c'
+  :: EncodableStaticCharacter c
   => SankoffOptimizationDecoration c
   -> SankoffOptimizationDecoration c
   -> [StateContributionList]
@@ -232,11 +233,11 @@ updateDirectionalMins parentDecoration childDecoration childStateMinsFromParent 
     -- to this parent state.
     determineWhetherToIncludeState :: EncodableStaticCharacter c => c -> Int-> StateContributionList -> c
     determineWhetherToIncludeState acc parentCharState childStateMinList
-      | parentFinalMedian `testBit` parentCharState = foldl setState acc childStateMinList
+      | parentFinalMedian `testBit` parentCharState = foldl' setState acc childStateMinList
       | otherwise                                   = acc
 
     setState :: EncodableStaticCharacter c => c -> Word -> c
-    setState newMedian charState = newMedian `setBit` (fromIntegral charState :: Int)
+    setState newMedian charState = newMedian `setBit` fromEnum charState
 
 
 -- |

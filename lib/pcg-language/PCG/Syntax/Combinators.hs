@@ -33,7 +33,7 @@ module PCG.Syntax.Combinators
   ( CommandSpecification()
   , SyntacticArgument()
   , ArgumentIdentifier(..)
-  -- ** Primative Free Applicaitve constructors
+  -- ** Primitive Free Applicaitve constructors
   , bool
   , int
   , real
@@ -71,8 +71,8 @@ import           Data.List.NonEmpty               (NonEmpty (..), some1)
 import           Data.Proxy
 import           Data.String                      (IsString (..))
 import           Data.Time.Clock                  (DiffTime)
-import           PCG.Syntax.Primative             (PrimativeValue, parsePrimative, whitespace)
-import qualified PCG.Syntax.Primative             as P
+import           PCG.Syntax.Primitive             (PrimitiveValue, parsePrimitive, whitespace)
+import qualified PCG.Syntax.Primitive             as P
 import           Text.Megaparsec                  hiding (many)
 import           Text.Megaparsec.Char
 
@@ -93,12 +93,13 @@ data  CommandSpecification z
 -- |
 -- Component of a semantic command embedded in the PCG scripting language syntax.
 data  SyntacticArgument z
-    = PrimativeArg   (F.Free PrimativeValue z)
+    = PrimitiveArg   (F.Free PrimitiveValue z)
     | ArgIdNamedArg  (Ap SyntacticArgument z) (NonEmpty ArgumentIdentifier)
     | DefaultValue   (Ap SyntacticArgument z) z
     | ExactlyOneOf   (NonEmpty (Ap SyntacticArgument z))
     | ArgumentList   (ArgList z)
--- TODO: add this
+-- TODO: Add this "Such That" constructor
+--       might require Monad constraint and be impossible...
 --    | SuchThat       (Ap SyntacticArgument z) (z -> Bool) String
     deriving (Functor)
 
@@ -121,13 +122,13 @@ instance Show ArgumentIdentifier where
 -- |
 -- Define a boolean value as part of a command specification.
 bool :: Ap SyntacticArgument Bool
-bool = primative P.bool
+bool = primitive P.bool
 
 
 -- |
 -- Define a integer value as part of a command specification.
 int :: Ap SyntacticArgument Int
-int = primative P.int
+int = primitive P.int
 
 
 -- |
@@ -138,25 +139,25 @@ int = primative P.int
 -- ambiguity, use 'argId' to require a disambiguating prefix on one or more of
 -- the command components.
 real :: Ap SyntacticArgument Double
-real = primative P.real
+real = primitive P.real
 
 
 -- |
 -- Define a textual value as part of a command specification.
 text :: Ap SyntacticArgument String
-text = primative P.text
+text = primitive P.text
 
 
 -- |
 -- Define a temporal value in minutes as part of a command specification.
 time :: Ap SyntacticArgument DiffTime
-time = primative P.time
+time = primitive P.time
 
 
 -- |
 -- Define a unique literal value as part of a command specification.
 value :: String -> Ap SyntacticArgument ()
-value str = primative $ P.value str
+value str = primitive $ P.value str
 
 
 -- |
@@ -238,7 +239,7 @@ runSyntax = intercalateEffect comma . runAp' noEffect apRunner
 -- The \"natural transformation\" used to convert the Free Alternative to the
 -- 'MonadParsec' parser result.
 apRunner :: forall a e m s. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => Permutation m () -> SyntacticArgument a -> Permutation m a
-apRunner effect (PrimativeArg p  ) = toPermutation $ runPermutation effect *> F.iterM parsePrimative p
+apRunner effect (PrimitiveArg p  ) = toPermutation $ runPermutation effect *> F.iterM parsePrimitive p
 apRunner effect (ExactlyOneOf ps ) = toPermutation $ runPermutation effect *> choice (runPermutation . runAp (apRunner voidEffect) <$> ps)
 apRunner effect (ArgumentList p  ) = toPermutation $ runPermutation effect *> runPermutation (parseArgumentList p)
 apRunner effect (DefaultValue p v) = toPermutationWithDefault v
@@ -297,9 +298,9 @@ comma = try (whitespace *> seperator *> whitespace)
 
 
 -- |
--- Lifts a primative value Free Monad into a 'SyntacticArgument' context.
-primative :: F.Free PrimativeValue a -> Ap SyntacticArgument a
-primative = liftAp . PrimativeArg
+-- Lifts a primitive value Free Monad into a 'SyntacticArgument' context.
+primitive :: F.Free PrimitiveValue a -> Ap SyntacticArgument a
+primitive = liftAp . PrimitiveArg
 
 
 -- |

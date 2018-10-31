@@ -84,9 +84,44 @@ colate seqType = foldr f empty
 seqCharMapping :: FastaSequenceType -> String -> CharacterSequence
 seqCharMapping seqType = V.fromList . fmap (f seqType)
   where
-    f AminoAcid = pure . pure
+    f AminoAcid = (!) iupacAminoAcidSubstitutions
     f DNA       = (!) iupacNucleotideSubstitutions
     f RNA       = (!) iupacRNASubstitutions
+
+
+-- |
+-- Substitutions for converting to a DNA sequence based on IUPAC codes.
+iupacAminoAcidSubstitutions :: Map Char (NonEmpty String)
+iupacAminoAcidSubstitutions = fmap pure . NE.fromList <$> M.fromList
+    [ ('A', "A")
+    , ('B', "DN")
+    , ('C', "C")
+    , ('D', "D")
+    , ('E', "E")
+    , ('F', "F")
+    , ('G', "G")
+    , ('H', "H")
+    , ('I', "I")
+    , ('K', "K")
+    , ('L', "L")
+    , ('M', "M")
+    , ('N', "N")
+    , ('P', "P")
+    , ('Q', "Q")
+    , ('R', "R")
+    , ('S', "S")
+    , ('T', "T")
+    , ('U', "C")
+    , ('V', "V")
+    , ('W', "W")
+    , ('X', "ACDEFGHIKLMNPQRSTVWY")
+    , ('Y', "Y")
+    , ('Z', "EQ")
+    , ('-', "-")
+    , ('.', "-")
+    , ('#', "#")
+    , ('?', "ACDEFGHIKLMNPQRSTVWY-")
+    ]
 
 
 -- |
@@ -110,7 +145,7 @@ iupacNucleotideSubstitutions = fmap pure . NE.fromList <$> M.fromList
     , ('N', "ACGT")
     , ('-', "-")
     , ('.', "-")
-    , ('?', "?")
+    , ('?', "ACGT-")
     , ('#', "#")
     ]
 

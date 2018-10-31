@@ -45,7 +45,7 @@ cnamesCommand = cnamesValidation =<< cnamesDefinition
                     <* symbol (char ';')
 
     -- Make sure indicies are unique
-    cnamesValidation :: (MonadParsec e s m {- , Token s ~ Char -}) => CNames -> m CNames
+    cnamesValidation :: MonadParsec e s m => CNames -> m CNames
     cnamesValidation cnames
       | not (null duplicateIndexErrors) = fails duplicateIndexErrors
       | otherwise                       = pure cnames
@@ -59,12 +59,9 @@ cnamesCommand = cnamesValidation =<< cnamesDefinition
 duplicateIndexMessages :: CNames -> [String]
 duplicateIndexMessages cnames = duplicateIndexErrors
   where
-    duplicateIndicies   = filter (not.isSingleton) . toList $ foldr mapBuild mempty cnames
+    duplicateIndicies   = filter (not . isSingleton) . toList $ foldr mapBuild mempty cnames
       where
-        mapBuild x = insertWith f (sequenceIndex x) [x]
-          where
-            f [new] old = new:old
-            f _     old = old -- TODO: Check this reasoning in "catch-all" case
+        mapBuild x = insertWith (<>) (sequenceIndex x) [x]
 
     duplicateIndexErrors = toList $ fmap getErrorMessage duplicateIndicies
       where

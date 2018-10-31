@@ -56,5 +56,5 @@ instance IsString NodeLabel where
 
 instance Show NodeLabel where
 
-    show (NL []) = "{Unlabeled Node}"
+    show (NL []) = ""
     show (NL xs) = xs

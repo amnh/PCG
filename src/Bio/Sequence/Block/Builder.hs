@@ -57,8 +57,6 @@ instance Semigroup (PartialCharacterBlock u v w x y z) where
           }
 
 
--- TODO get rid of ContinuousDecorationInitial in signiture
-
 -- |
 -- Construct a singleton block containing a /continuous/ character.
 continuousSingleton :: c -> PartialCharacterBlock c v w x y z

@@ -49,6 +49,17 @@ module Data.Alphabet
   -- * Truncation
   , truncateAtSymbol
   , truncateAtMaxSymbol
-  ) where
+  -- * Special Alphabet Constructions
+  , aminoAcidAlphabet
+  , dnaAlphabet
+  , rnaAlphabet
+  , discreteAlphabet
+  -- * Special Alphabet Querries
+  , isAlphabetAminoAcid
+  , isAlphabetDna
+  , isAlphabetRna
+  , isAlphabetDiscrete
+   ) where
 
 import Data.Alphabet.Internal
+import Data.Alphabet.Special

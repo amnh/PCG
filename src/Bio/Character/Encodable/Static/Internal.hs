@@ -28,23 +28,21 @@ import           Bio.Character.Encodable.Internal
 import           Bio.Character.Encodable.Static.Class
 import           Bio.Character.Encodable.Stream
 import           Bio.Character.Exportable.Class
-import           Control.Arrow                        ((***))
 import           Control.DeepSeq
 import           Data.Alphabet
+import           Data.Alphabet.IUPAC
+import qualified Data.Bimap                           as B
 import           Data.BitMatrix
 import           Data.Bits
 import           Data.BitVector.LittleEndian
-import           Data.Char                            (toLower)
 import           Data.Foldable
 import           Data.Key
 import qualified Data.List.NonEmpty                   as NE
-import qualified Data.Map                             as M
 import           Data.Maybe
 import           Data.Monoid                          ()
 import           Data.MonoTraversable
 import           Data.Range
 import           Data.String                          (fromString)
-import           Data.Tuple                           (swap)
 import           GHC.Generics
 import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances  ()
@@ -104,34 +102,14 @@ instance EncodableStaticCharacterStream StaticCharacterBlock where
 instance EncodableStream StaticCharacterBlock where
 
     decodeStream alphabet char
-      | alphabet /= dnaAlphabet = rawResult
-      | otherwise               = (dnaIUPAC !) <$> rawResult
+      | isAlphabetDna alphabet  = (dnaIUPAC B.!) <$> rawResult
+      | isAlphabetRna alphabet  = (rnaIUPAC B.!) <$> rawResult
+      | otherwise               = rawResult
       where
-        rawResult   = NE.fromList . ofoldMap (pure . decodeElement alphabet) . otoList $ char
-        dnaAlphabet = fromSymbols $ fromString <$> ["A","C","G","T"]
---        dnaIUPAC :: (IsString a, Ord a) => Map [a] [a]
-        dnaIUPAC    = M.fromList . fmap (swap . (NE.fromList . pure . fromChar *** NE.fromList . fmap fromChar)) $ mapping
-          where
-            fromChar = fromString . pure
-            mapping  = gapMap <> noGapMap <> [('-', "-")]
-            gapMap   = (toLower *** (<> "-")) <$> noGapMap
-            noGapMap =
-              [ ('A', "A"   )
-              , ('C', "C"   )
-              , ('G', "G"   )
-              , ('T', "T"   )
-              , ('M', "AC"  )
-              , ('R', "AG"  )
-              , ('W', "AT"  )
-              , ('S', "CG"  )
-              , ('Y', "CT"  )
-              , ('K', "GT"  )
-              , ('V', "ACG" )
-              , ('H', "ACT" )
-              , ('D', "AGT" )
-              , ('B', "CGT" )
-              , ('N', "ACGT")
-              ]
+        rawResult    = NE.fromList . ofoldMap (pure . decodeElement alphabet) . otoList $ char
+        dnaIUPAC     = convertBimap iupacToDna
+        rnaIUPAC     = convertBimap iupacToRna
+        convertBimap = B.mapR (fmap fromString) . B.map (fmap fromString)
 
     encodeStream alphabet = SCB . fromRows . fmap (unwrap . encodeElement alphabet) . toList
 
@@ -195,7 +173,7 @@ instance Exportable StaticCharacterBlock where
         x = numRows bm
         y = numCols bm
 
-    fromExportableBuffer = undefined
+    fromExportableBuffer = error "When did we start using static character block?! Please implement Exportable.fromExportableBuffer"
 
     toExportableElements = encodableStreamToExportableCharacterElements
 
@@ -272,15 +250,26 @@ instance Ranged StaticCharacter where
     toRange sc = fromTupleWithPrecision (firstSetBit, lastSetBit) totalBits
         where
             firstSetBit = toEnum $ countLeadingZeros sc
-            lastSetBit  = toEnum $ totalBits - countTrailingZeros sc - 1
+            lastSetBit  = toEnum . max 0 $ totalBits - countTrailingZeros sc - 1
             totalBits   = finiteBitSize sc
 
-    fromRange x = zeroVector .|. (allBitsUpperBound `xor` allBitsLowerBound)
-        where
+    fromRange x
+      | ub == lb  = toSC $ 2 ^ ub
+      | otherwise = allBitsUpperBound `xor` allBitsLowerBound
+      where
+        toSC = SC . fromNumber dim
+        dim  = toEnum . fromJust $ precision x
+        ub   = upperBound x
+        lb   = lowerBound x
+        allBitsUpperBound = toSC $ (2 :: Integer) ^ upperBound x - 1
+        allBitsLowerBound = toSC $ (2 :: Integer) ^ lowerBound x - 1
+{-
+      where
             allBitsUpperBound = SC . fromNumber (toEnum boundaryBit) $ (2 ^ upperBound x - 1 :: Integer)
             allBitsLowerBound = SC . fromNumber (toEnum boundaryBit) $ (2 ^ lowerBound x - 1 :: Integer)
             zeroVector  = (zeroBits `setBit` boundaryBit) `clearBit` boundaryBit
             boundaryBit = fromJust (precision x) - 1
+-}
 
     zeroRange sc = fromTupleWithPrecision (0,0) $ finiteBitSize sc
 

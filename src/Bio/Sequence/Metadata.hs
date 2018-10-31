@@ -8,41 +8,35 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Data structures and instances for coded characters
--- Coded characters are dynamic characters recoded as
---
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric    #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Bio.Sequence.Metadata
   ( MetadataBlock()
   , MetadataSequence()
-  , getBlockMetadata
-  , getDynamicMetadata
   -- * Block Singletons
   , continuousToMetadataBlock
   , discreteToMetadataBlock
   , dynamicToMetadataBlock
   -- * Construction / Decomposition
-  , toBlocks
-  , fromBlocks
-  , toBlockVector
-  , fromBlockVector
-  , defaultUnaryMetadataSequence
+  , fromNonEmpty
+  , unfoldr
   -- * Mutation
   , setAllFoci
   , setFoci
   ) where
 
 
-import           Bio.Sequence.Block.Internal (Block (..))
 import           Bio.Sequence.Block.Metadata
+import           Bio.Sequence.Internal
 import           Control.DeepSeq
+import           Control.Lens
 import           Data.Foldable
-import           Data.List.NonEmpty          (NonEmpty)
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
 import           Data.Vector.NonEmpty        (Vector)
@@ -71,6 +65,11 @@ instance Functor MetadataSequence where
     fmap f = fromBlocks . fmap (fmap f) . toBlocks
 
     (<$) v = fromBlocks . fmap (v <$) . toBlocks
+
+
+instance HasBlocks (MetadataSequence m) (MetadataSequence m') (Vector (MetadataBlock m)) (Vector (MetadataBlock m')) where
+
+    blockSequence = iso toBlocks fromBlocks
 
 
 instance MonoFoldable (MetadataSequence m) where
@@ -122,40 +121,44 @@ instance ToXML (MetadataSequence m) where
 
 
 -- |
+-- /O(n)/
+--
+-- Construct a 'MetadataSequence' from a non-empty structure of character blocks.
+{-# INLINE fromNonEmpty #-}
+fromNonEmpty
+  :: Foldable1 f
+  => f (MetadataBlock m)
+  -> MetadataSequence m
+fromNonEmpty = MetaSeq . V.fromNonEmpty
+
+
+-- |
+-- /O(n)/
+--
+-- Construct a 'MetadataSequence' by repeatedly applying the generator function
+-- to a seed. The generator function always yields the next element and either
+-- @ Just @ the new seed or 'Nothing' if there are no more elements to be
+-- generated.
+--
+-- > unfoldr (\n -> (n, if n == 0 then Nothing else Just (n-1))) 10
+-- >  = <10,9,8,7,6,5,4,3,2,1>
+{-# INLINE unfoldr #-}
+unfoldr
+  :: (b -> (MetadataBlock m, Maybe b))
+  -> b
+  -> MetadataSequence m
+unfoldr f = MetaSeq . V.unfoldr f
+
+
+-- |
 -- Destructs a 'MetadataSequence' to it's composite blocks.
 {-# INLINE toBlocks #-}
-toBlocks :: MetadataSequence m -> NonEmpty (MetadataBlock m)
-toBlocks (MetaSeq x) = toNonEmpty x
+toBlocks :: MetadataSequence m -> Vector (MetadataBlock m)
+toBlocks (MetaSeq x) =  x
 
 
 -- |
--- Constructs a 'MetadataSequence' from a non-empty colection of blocks.
+-- Destructs a 'MetadataSequence' to it's composite blocks.
 {-# INLINE fromBlocks #-}
-fromBlocks :: NonEmpty (MetadataBlock m) -> MetadataSequence m
-fromBlocks = MetaSeq . V.fromNonEmpty
-
-
--- |
--- Destructs a 'MetadataSequence' to it's composite blocks.
-{-# INLINE toBlockVector #-}
-toBlockVector :: MetadataSequence m -> Vector (MetadataBlock m)
-toBlockVector (MetaSeq x) =  x
-
-
--- |
--- Destructs a 'MetadataSequence' to it's composite blocks.
-{-# INLINE fromBlockVector #-}
-fromBlockVector :: Vector (MetadataBlock m) -> MetadataSequence m
-fromBlockVector = MetaSeq
-
-
-defaultUnaryMetadataSequence :: MetadataSequence ()
-defaultUnaryMetadataSequence = fromBlocks . pure . MB $ Block
-    { blockMetadata   = ()
-    , continuousBins  = mempty
-    , nonAdditiveBins = mempty
-    , additiveBins    = mempty
-    , metricBins      = mempty
-    , nonMetricBins   = mempty
-    , dynamicBins     = mempty
-    }
+fromBlocks :: Vector (MetadataBlock m) -> MetadataSequence m
+fromBlocks = MetaSeq

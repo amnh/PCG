@@ -254,7 +254,7 @@ orderingProperties = testGroup "Properties of an Ordering"
 
 datastructureTests :: TestTree
 datastructureTests = testGroup "Static Character data structure tests"
-    [ testEncodableStaticCharacterInstanceDynamicChar
+    [ testEncodableStaticCharacterInstanceDynamicCharacter
     ]
 
 
@@ -265,12 +265,12 @@ datastructureTests = testGroup "Static Character data structure tests"
  - decodeElement alphabet (encodeChar alphabet xs .|. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.union` toList ys)
  - decodeElement alphabet (encodeChar alphabet xs .&. encodeChar alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.intersect` toList ys)
  -}
-testEncodableStaticCharacterInstanceDynamicChar :: TestTree
-testEncodableStaticCharacterInstanceDynamicChar = testGroup "DynamicChar instance of EncodableDynamicCharacter" [testLaws]
+testEncodableStaticCharacterInstanceDynamicCharacter :: TestTree
+testEncodableStaticCharacterInstanceDynamicCharacter = testGroup "DynamicCharacter instance of EncodableDynamicCharacter" [testLaws]
   where
     encodeChar' :: Alphabet String -> NonEmpty String -> StaticCharacter
     encodeChar' = encodeElement
-    testLaws = testGroup "EncodableDynamicChar Laws"
+    testLaws = testGroup "EncodableDynamicCharacter Laws"
         [ encodeDecodeIdentity
         , singleBitConstruction
         , totalBitConstruction

@@ -14,6 +14,7 @@
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
@@ -27,14 +28,17 @@ import           Bio.Graph.Component
 import           Bio.Graph.LeafSet
 import           Control.Arrow                 ((&&&), (***))
 import           Control.DeepSeq
-import           Control.Lens                  as Lens (to)
+import           Control.Lens                  as Lens (Lens, Lens', lens, to)
+import           Control.Lens.Fold             (Fold, folding)
+import           Control.Lens.Operators        ((%~), (.~))
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
 import           Data.EdgeSet
 import           Data.Foldable
+import           Data.Foldable.Custom
 import           Data.Functor                  ((<$))
 import           Data.GraphViz.Attributes
-import           Data.GraphViz.Printing        hiding ((<>))
+import           Data.GraphViz.Printing
 import           Data.GraphViz.Types           hiding (attrs)
 import           Data.GraphViz.Types.Graph     hiding (node)
 import           Data.Hashable                 (Hashable)
@@ -60,6 +64,7 @@ import           Data.Tree                     (unfoldTree)
 import           Data.Tree.Pretty              (drawVerticalTree)
 import           Data.Vector                   (Vector)
 import qualified Data.Vector                   as V
+import qualified Data.Vector.Custom            as V (fromList')
 import           Data.Vector.Instances         ()
 import           GHC.Generics
 import           Numeric.Extended.Real
@@ -122,6 +127,147 @@ data NodeClassification
 -- |
 -- A reference to a node within the 'ReferenceDAG'.
 newtype NodeRef = NR Int deriving (Eq, Enum)
+
+
+-- |
+-- A 'Lens' for the 'nodeDecoration' field in 'IndexData'
+class HasNodeDecoration s t a b | s -> a, t -> b, s b -> t, t a -> s where
+  _nodeDecoration :: Lens s t a b
+
+  -- TODO (CM): Make these speicalise pragmas more monomorphic in the types being used?
+{-# SPECIALISE _nodeDecoration :: Lens (IndexData e n) (IndexData e n') n n' #-}
+
+instance HasNodeDecoration (IndexData e n) (IndexData e n') n n' where
+  {-# INLINE _nodeDecoration #-}
+  _nodeDecoration = lens nodeDecoration (\i n' -> i {nodeDecoration = n'})
+
+-- |
+-- A 'Lens' for the 'parentRefs' field in 'IndexData'
+class HasParentRefs s a | s -> a where
+  _parentRefs :: Lens' s a
+
+{-# SPECIALISE _parentRefs :: Lens' (IndexData e n) IntSet #-}
+
+instance HasParentRefs (IndexData e n) IntSet where
+  {-# INLINE _parentRefs #-}
+  _parentRefs = lens parentRefs (\i p -> i {parentRefs = p})
+
+-- |
+-- A 'Lens' for the 'childRefs' field in 'IndexData'
+class HasChildRefs s t a b | s -> a, t -> b, s b -> t, t a -> s where
+  _childRefs :: Lens s t a b
+
+{-# SPECIALISE _childRefs :: Lens' (IndexData e n) IntSet #-}
+
+instance HasChildRefs (IndexData e n) (IndexData e' n) (IntMap e) (IntMap e') where
+  {-# INLINE _childRefs #-}
+  _childRefs = lens childRefs (\i c -> i {childRefs = c})
+
+
+-- |
+-- A 'Lens' for the 'graphData' field.
+class HasGraphData s t a b | s -> a, t -> b,  s b -> t, t a -> s where
+  _graphData :: Lens s t a b
+
+{-# SPECIALISE _graphData
+                 :: Lens
+                      (ReferenceDAG d e n)
+                      (ReferenceDAG d' e n)
+                      (GraphData d)
+                      (GraphData d')
+  #-}
+
+instance HasGraphData
+  (ReferenceDAG d e n) (ReferenceDAG d' e n) (GraphData d) (GraphData d')
+  where
+  {-# INLINE _graphData #-}
+  _graphData = lens graphData (\r g -> r {graphData = g})
+
+
+
+-- |
+-- A 'Lens' for the 'references' field
+class HasReferenceVector s t a b | s -> a, b s -> t where
+  _references :: Lens s t a b
+
+{-# SPECIALISE
+  _references :: Lens
+                   (ReferenceDAG d e n)
+                   (ReferenceDAG d e' n')
+                   (Vector (IndexData e n))
+                   (Vector (IndexData e' n'))
+  #-}
+
+instance HasReferenceVector
+  (ReferenceDAG d e n)
+  (ReferenceDAG d e' n')
+  (Vector (IndexData e n))
+  (Vector (IndexData e' n'))
+    where
+  {-# INLINE _references #-}
+  _references = lens references (\r v -> r {references = v})
+
+-- |
+-- A 'Fold' for folding over a structure containing node decorations.
+class FoldNodeDecoration s a | s -> a where
+  foldNodeDecoration :: Fold s a
+{-# SPECIALISE foldNodeDecoration :: Fold (ReferenceDAG d e n) n #-}
+
+instance FoldNodeDecoration (ReferenceDAG d e n) n where
+  {-# INLINE foldNodeDecoration #-}
+  foldNodeDecoration = _references . folding id . _nodeDecoration
+
+-- |
+-- A 'Lens' for the 'dagCost' field
+class HasDagCost s a | s -> a where
+  _dagCost :: Lens' s a
+{-# SPECIALISE _dagCost :: (GraphData d) ExtendedReal #-}
+
+instance HasDagCost (GraphData d) ExtendedReal where
+  {-# INLINE _dagCost #-}
+  _dagCost = lens dagCost (\g d -> g {dagCost = d})
+
+-- |
+-- A 'Lens' for the 'networkEdgeCost' field.
+class HasNetworkEdgeCost s a | s -> a where
+  _networkEdgeCost :: Lens' s a
+{-# SPECIALISE _networkEdgeCost :: Lens' (GraphData d) ExtendedReal #-}
+
+
+instance HasNetworkEdgeCost (GraphData d) ExtendedReal where
+  {-# INLINE _networkEdgeCost #-}
+  _networkEdgeCost = lens networkEdgeCost (\g n -> g {networkEdgeCost = n})
+
+-- |
+-- a 'Lens' for the 'rootingCost' field.
+class HasRootingCost s a | s -> a where
+  _rootingCost :: Lens' s a
+{-# SPECIALISE _rootingCost :: Lens' (GraphData d) Double #-}
+
+instance HasRootingCost (GraphData d) Double where
+  {-# INLINE _rootingCost #-}
+  _rootingCost = lens rootingCost (\g r -> g {rootingCost = r})
+
+-- |
+-- A 'Lens' for 'totalBlockClost' field.
+class HasTotalBlockCost s a | s -> a where
+  _totalBlockCost :: Lens' s a
+{-# SPECIALISE _totalBlockCost :: Lens' (GraphData d) Double #-}
+
+instance HasTotalBlockCost (GraphData d) Double where
+  {-# INLINE _totalBlockCost #-}
+  _totalBlockCost = lens totalBlockCost (\g t -> g {totalBlockCost = t})
+
+-- |
+-- a 'Lens' for the 'graphMetadata' field.
+class HasGraphMetadata s t a b | s -> a, t -> b, s b -> t, t a -> s where
+  _graphMetadata :: Lens s t a b
+{-# SPECIALISE _graphMetadata :: Lens' (GraphData d) d #-}
+
+instance HasGraphMetadata (GraphData d) (GraphData d') d d' where
+  {-# INLINE _graphMetadata #-}
+  _graphMetadata = lens graphMetadata (\g m -> g {graphMetadata = m})
+
 
 
 type instance Key (ReferenceDAG d e) = Int
@@ -236,7 +382,6 @@ instance PhylogeneticNetwork (ReferenceDAG d e n) NodeRef e n where
 
     root = toEnum . NE.head . rootRefs
 
-    -- TODO: Broken
     treeResolutions = pure
 
 
@@ -545,26 +690,28 @@ contractToContiguousVertexMapping inputMap = foldMapWithKey contractIndices inpu
 --
 -- Default in the function's name is used as a verb, not a noun.
 defaultGraphMetadata :: Monoid m => GraphData d -> GraphData m
-defaultGraphMetadata =
-    GraphData
+{-# INLINE defaultGraphMetadata #-}
+defaultGraphMetadata = _graphMetadata .~ mempty
+{--    GraphData
       <$> dagCost
       <*> networkEdgeCost
       <*> rootingCost
       <*> totalBlockCost
       <*> const mempty
-
+--}
 
 -- |
 -- Overwrite the current graph metadata with a default value.
 --
 -- Default in the function's name is used as a verb, not a noun.
 defaultMetadata :: Monoid m => ReferenceDAG d e n -> ReferenceDAG m e n
-defaultMetadata =
-    RefDAG
+{-# INLINE defaultMetadata #-}
+defaultMetadata = _graphData %~ defaultGraphMetadata
+{--    RefDAG
       <$> references
       <*> rootRefs
       <*> defaultGraphMetadata . graphData
-
+--}
 
 -- |
 -- Ensure that each vertex has either:
@@ -942,7 +1089,7 @@ fromList xs =
     }
   where
     listValue = toList xs
-    referenceVector = V.fromList $ (\(pSet, datum, cMap) -> IndexData datum pSet cMap) <$> listValue
+    referenceVector = V.fromList' $ (\(pSet, datum, cMap) -> IndexData datum pSet cMap) <$> listValue
     rootSet =
       case foldMapWithKey (\k (pSet,_,_) -> [ k | onull pSet ]) listValue of
         []   -> error "No root nodes supplied in call to ReferenceDAG.fromList"
@@ -972,7 +1119,7 @@ unfoldDAG f origin =
     , graphData  = GraphData 0 0 0 0 ()
     }
   where
-    referenceVector = V.fromList . fmap h $ toList expandedMap
+    referenceVector = V.fromList' . fmap h $ toList expandedMap
       where
         h (iSet, nDatum, iMap) =
             IndexData
@@ -1077,7 +1224,10 @@ getDotContext uniqueIdentifierBase mostSignificantDigit dag = second mconcat . u
     toId = Num . Int . (+ idOffest)
 
     toAttributes :: Show a => a -> Attributes
-    toAttributes x = [ toLabel (show x) ]
+    toAttributes x =
+      case show x of
+        ""  -> []
+        str -> [ toLabel str ]
 
     f :: Show n => Int -> IndexData e n -> [(DotNode GraphID, [DotEdge GraphID])]
     f k v = [ (toDotNode, toDotEdge <$> kidRefs) ]
@@ -1087,7 +1237,7 @@ getDotContext uniqueIdentifierBase mostSignificantDigit dag = second mconcat . u
         nodeAttrs   = toAttributes datum
         kidRefs     = IM.keys $ childRefs v
         toDotNode   = DotNode nodeId nodeAttrs
-        toDotEdge x = DotEdge (toId x) nodeId nodeAttrs
+        toDotEdge x = DotEdge nodeId (toId x) nodeAttrs
 
 
 -- |
@@ -1241,7 +1391,7 @@ toBinaryRenderingTree nodeRenderer dag = (`evalState` initialState) . traverse s
              subtrees <- mapM subtreeToRendering kids
              pure $ case subtrees of
                       []   -> Leaf shownNode
-                      x:xs -> Node (sum $ subtreeSize <$> x:xs) Nothing $ x:|xs
+                      x:xs -> Node (sum' $ subtreeSize <$> x:xs) Nothing $ x:|xs
         else do
              (ctr, symRefs) <- get
              case i `lookup` symRefs of
@@ -1251,7 +1401,7 @@ toBinaryRenderingTree nodeRenderer dag = (`evalState` initialState) . traverse s
                  subtrees <- mapM subtreeToRendering kids
                  pure $ case subtrees of
                           []   -> Leaf shownNode
-                          x:xs -> Node (sum $ subtreeSize <$> x:xs) (Just (show ctr)) $ x:|xs
+                          x:xs -> Node (sum' $ subtreeSize <$> x:xs) (Just (show ctr)) $ x:|xs
 
       where
         context     = refVec ! i

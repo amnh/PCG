@@ -35,16 +35,31 @@ rebuild: quick
 # Clean then rebuild
 rebuild-full: clean rebuild
 
+# Clean then rebuild outputting core
+core: clean stack-build-core
+
+# Clean then build with the llvm backend
+llvm: clean stack-build-llvm
+
 # Rebuilds with optimizations and runs tests
 test: stack-build-test
+
+# Re-builds project then runs only integration tests
+test-integration: stack-build-test-integration
 
 test-failures: stack-build-test-failures
 
 test-new: stack-build-test-new
 
+test-golden-new: stack-build-test-golden-new
+
 # Runs linter
 
 lint: run-linter
+
+# Makes hoogle server
+
+hoogle: stack-hoogle-server
 
 
 # Target Definitions
@@ -74,17 +89,43 @@ stack-build-profiling: phylocomgraph.cabal stack.yaml
 #	stack install $(profiling) --flag phylocomgraph:build-cpp-files
 	stack install $(profiling) --fast --ghc-options="-fprof-cafs -rtsopts=all -O0"
 
-# Builds with profiling enabled
+# Builds outputting simplified core files (without newtype coercions)
+stack-build-core: phylocomgraph.cabal stack.yaml
+	stack build --ghc-options="-ddump-simpl -dsupress-coercions"
+
+# Builds with the llvm backend
+stack-build-llvm: phylocomgraph.cabal stack.yaml
+	stack build --ghc-options="-fllvm"
+
+# Builds tests and updates log of tests that have been run
 stack-build-test: phylocomgraph.cabal stack.yaml
 	stack build --test --ta "--rerun-update"
 
-# Builds with profiling enabled
+# Builds and runs integration tests after a standard build.
+stack-build-test-integration: phylocomgraph.cabal stack.yaml standard-build
+	stack build phylocomgraph:test:integration-tests
+
+# Builds tests and re-runs those that failed
 stack-build-test-failures: phylocomgraph.cabal stack.yaml
 	stack build --test --ta "--rerun-filter=failures"
 
-# Builds with profiling enabled
+# Builds tests and runs those that are not in the log
 stack-build-test-new: phylocomgraph.cabal stack.yaml
 	stack build --test --ta "--rerun-filter=new"
+
+# Builds only integration tests and generates new golden files
+stack-build-test-golden-new: phylocomgraph.cabal stack.yaml
+	stack build phylocomgraph:test:integration-tests --ta "--accept"
+
+
+# Builds haddock documentation searchable by locally hosted hoogle
+stack-hoogle-server:  phylocomgraph.cabal stack.yaml
+	stack hoogle --server
+
+# Builds only integration tests and generates new golden files
+stack-build-test-golden-new: phylocomgraph.cabal stack.yaml
+	stack build phylocomgraph:test:integration-tests --ta "--accept"
+
 
 
 ### The code cleanliness section
@@ -94,7 +135,7 @@ stack-build-test-new: phylocomgraph.cabal stack.yaml
 
 # install hlint if not installed
 install-hlint:
-	which hlint || (stack install hlint --resolver=lts)
+	which hlint           || (stack install hlint           --resolver=lts)
 
 # install stylish haskell if not installed
 install-stylish-haskell:
@@ -102,13 +143,13 @@ install-stylish-haskell:
 
 # install weeder if not installed
 install-weeder:
-	which weeder || (stack install weeder --resolver=lts)
+	which weeder          || (stack install weeder          --resolver=lts)
 
 format-code: install-stylish-haskell
 	(./stylish.sh)
 
 run-linter: install-hlint install-weeder format-code
-	hlint lib src test app
+	hlint app ffi lib src test utils
 	weeder . --build
 
 
@@ -134,10 +175,13 @@ set-dir-variables:
 clean: phylocomgraph.cabal stack.yaml
 	stack clean
 	for dir in $(code-dirs); do \
-	  find $$dir -type f -name '*.o'  -delete; \
-	  find $$dir -type f -name '*.hi' -delete; \
-	  find $$dir -type f -name '*.*~' -delete; \
-	  find $$dir -type f -name '#*.*' -delete; \
+	  find $$dir -type f -name '*.o'           -delete; \
+	  find $$dir -type f -name '*.hi'          -delete; \
+	  find $$dir -type f -name '*.*~'          -delete; \
+	  find $$dir -type f -name '#*.*'          -delete; \
+	  find $$dir -type f -name 'test.log'      -delete; \
+	  find $$dir -type f -name '*dump\-hi*'    -delete; \
+	  find $$dir -type f -name '*dump\-simpl*' -delete; \
 	done
 
 # Calls other make files to pre-process FFI files
@@ -151,4 +195,3 @@ cabal-build: phylocomgraph.cabal
 # Legacy cabal build option
 cabal-sandbox: phylocomgraph.cabal
 	cabal update && cabal sandbox delete && cabal sandbox init && cabal install --dependencies-only
-

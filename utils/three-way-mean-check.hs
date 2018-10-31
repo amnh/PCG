@@ -1,5 +1,7 @@
 
-{-# LANGUAGE BangPatterns, FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE BangPatterns     #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 
 module Main (main) where
@@ -10,9 +12,9 @@ import           Bio.Character.Encodable
 import           Control.Lens
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
-import qualified Data.Bimap         as BM
-import qualified Data.List.NonEmpty as NE
-import           System.Environment        (getArgs) 
+import qualified Data.Bimap                       as BM
+import qualified Data.List.NonEmpty               as NE
+import           System.Environment               (getArgs)
 import           Test.Custom.DynamicCharacterNode
 import           Test.QuickCheck
 
@@ -34,7 +36,7 @@ parseArgs args =
 
 
 performCounterExampleSearch :: IO ()
-performCounterExampleSearch = do 
+performCounterExampleSearch = do
     putStrLn "Performing stocastic counter-example search:"
     quickCheckWith stdArgs { maxSuccess = 10000 } counterExampleCheck
 
@@ -53,5 +55,5 @@ performImplementationComparison lhs rhs = do
     pure ()
   where
     alphabet = fromSymbols ["A","C","G","T"]
---    readSequence :: String -> DynamicChar
+--    readSequence :: String -> DynamicCharacter
     readSequence = encodeStream alphabet . fmap ((iupacToDna BM.!) . pure . pure) . NE.fromList

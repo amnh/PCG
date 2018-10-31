@@ -1,0 +1,2 @@
+read("case-2b.tnt")
+report(data, (overwrite, "cost.data"))

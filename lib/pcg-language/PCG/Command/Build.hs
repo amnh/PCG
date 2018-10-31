@@ -8,7 +8,7 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Provides the types for the Build command along with a semantic definition
+-- Provides the types for the \"BUILD\" command along with a semantic definition
 -- to be consumed by the stream parser.
 --
 -----------------------------------------------------------------------------
@@ -29,7 +29,7 @@ import PCG.Syntax.Combinators
 
 
 -- |
--- The BUILD command specifying how a component graph should be constructed.
+-- The \"BUILD\" command specifying how a component graph should be constructed.
 -- output should be directed.
 data  BuildCommand
     = BuildCommand {-# UNPACK #-} !Int !ConstructionType
@@ -45,7 +45,7 @@ data  ConstructionType
 
 
 -- |
--- Defines the semantics of interpreting a valid \"Report\" command from the PCG
+-- Defines the semantics of interpreting a valid \"BUILD\" command from the PCG
 -- scripting language syntax.
 buildCommandSpecification :: CommandSpecification BuildCommand
 buildCommandSpecification = command "build" . argList $ BuildCommand <$> trajectoryCount <*> constructionType

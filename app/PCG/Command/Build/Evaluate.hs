@@ -16,17 +16,19 @@ import           Bio.Character.Decoration.Metric
 import           Bio.Graph
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
+import           Bio.Graph.PhylogeneticDAG           (PostorderContextualData, setDefaultMetadata)
 import qualified Bio.Graph.ReferenceDAG              as DAG
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
-import           Bio.Sequence.Metadata
 import           Control.Arrow                       ((&&&))
 import           Control.DeepSeq
+import           Control.Evaluation
 import           Control.Lens
 import           Control.Monad                       (replicateM)
 import           Control.Monad.IO.Class
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
+import           Data.Compact                        (compact, getCompact)
 import           Data.Foldable
 import qualified Data.IntMap                         as IM
 import qualified Data.IntSet                         as IS
@@ -36,56 +38,75 @@ import           Data.NodeLabel
 import           Data.Ord                            (comparing)
 import           Data.Semigroup.Foldable
 import           PCG.Command.Build
-import           PCG.Syntax                          (Command (..))
 import           System.Random.Shuffle
 
 
 type DatNode =
   PhylogeneticNode2
     (CharacterSequence
-      (ContinuousOptimizationDecoration ContinuousChar)
+      (ContinuousOptimizationDecoration ContinuousCharacter)
       (FitchOptimizationDecoration   StaticCharacter)
       (AdditiveOptimizationDecoration StaticCharacter)
       (SankoffOptimizationDecoration StaticCharacter)
       (SankoffOptimizationDecoration StaticCharacter)
-      (DynamicDecorationDirectOptimization DynamicChar)
+      (DynamicDecorationDirectOptimization DynamicCharacter)
     )
     NodeLabel
 
 
 evaluate
-  :: Command
+  :: BuildCommand
   -> GraphState
   -> SearchState
--- evaluate (READ fileSpecs) _old | trace ("Evaluated called: " <> show fileSpecs) False = undefined
--- evaluate (READ fileSpecs) _old | trace "STARTING READ COMMAND" False = undefined
-evaluate (BUILD (BuildCommand trajectoryCount buildType)) inState =
-    case inState of
-      Left  e -> pure $ Left e
-      Right v ->
-        case toList $ v ^. leafSet of
-          []   -> fail "There are no nodes with which to build a tree."
-          y:ys ->
-            if trajectoryCount < 1
-            then fail "A non-positive number was supplied to the number of BUILD trajectories."
-            else let (PDAG2 _ m) = NE.head . toNonEmpty . NE.head $ phylogeneticForests v
-                 in  do
-                     trajectories <- case trajectoryCount of
-                                       1 -> pure $ (y:|ys):|[]
-                                       n -> liftIO . fmap (NE.fromList . fmap NE.fromList) $ replicateM n (shuffleM (y:ys))
-                     let !bestTrees = naiveWagnerParallelBuild m trajectories
-                     bestNetwork  <- case buildType of
-                                       WagnerTree     -> pure bestTrees
-                                       WheelerNetwork -> do liftIO $ putStrLn "Beginning network construction."
-                                                            pure $ parmap rpar iterativeNetworkBuild bestTrees
---                                                            pure $ fmap iterativeNetworkBuild bestTrees
-                                       WheelerForest  -> fail "The BUILD command type 'Forest' is not yet implemented!"
-                     let bestSolution = Right $ toSolution bestNetwork
-                     pure bestSolution
+evaluate (BuildCommand trajectoryCount buildType) cpctInState =
+    case getCompact cpctInState of
+      Left  _ -> pure cpctInState
+      Right v -> do
+        let buildLogic = case buildType of
+                           WagnerTree     -> wagnerBuildLogic
+                           WheelerNetwork -> networkBuildLogic
+                           WheelerForest  -> forestBuildLogic
+        bestNetwork <- buildLogic v trajectoryCount
+        liftIO . compact . Right $ toSolution bestNetwork
   where
+    toSolution :: NonEmpty a -> PhylogeneticSolution a
     toSolution = PhylogeneticSolution . pure . PhylogeneticForest
 
-evaluate _ _ = fail "Invalid BUILD command binding"
+
+wagnerBuildLogic
+  :: PhylogeneticSolution FinalDecorationDAG
+  -> Int
+  -> EvaluationT IO (NonEmpty FinalDecorationDAG)
+wagnerBuildLogic v count =
+    case toList $ v ^. leafSet of
+      []   -> fail "There are no nodes with which to build a tree."
+      y:ys ->
+        if count < 1
+        then fail "A non-positive number was supplied to the number of BUILD trajectories."
+        else let (PDAG2 _ m) = NE.head . toNonEmpty . NE.head $ phylogeneticForests v
+             in  do trajectories <- case count of
+                                      1 -> pure $ (y:|ys):|[]
+                                      n -> liftIO . fmap (NE.fromList . fmap NE.fromList)
+                                             $ replicateM n (shuffleM (y:ys))
+                    pure $ naiveWagnerParallelBuild m trajectories
+
+
+networkBuildLogic
+  :: PhylogeneticSolution FinalDecorationDAG
+  -> a
+  -> EvaluationT IO (NonEmpty FinalDecorationDAG)
+networkBuildLogic v _ = do
+    let bestTrees = toNonEmpty . NE.head $ phylogeneticForests v
+    liftIO $ putStrLn "Beginning network construction."
+    pure $ parmap rpar iterativeNetworkBuild bestTrees
+--  pure $ fmap iterativeNetworkBuild bestTrees
+
+
+forestBuildLogic
+  :: PhylogeneticSolution FinalDecorationDAG
+  -> Int
+  -> EvaluationT IO (NonEmpty FinalDecorationDAG)
+forestBuildLogic _ _ = fail "The BUILD command type 'Forest' is not yet implemented!"
 
 
 naiveWagnerParallelBuild
@@ -127,7 +148,6 @@ naiveWagnerBuild metaSeq ns =
   where
     fromRefDAG = performDecoration . (`PDAG2`  metaSeq) . resetMetadata
 
-
 iterativeBuild
   :: FinalDecorationDAG
   -> DatNode
@@ -150,13 +170,20 @@ iterativeBuild currentTree@(PDAG2 _ metaSeq) nextLeaf = nextTree
 iterativeNetworkBuild
   :: FinalDecorationDAG
   -> FinalDecorationDAG
-iterativeNetworkBuild currentNetwork@(PDAG2 inputDag _) =
+
+iterativeNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
     case toList $ candidateNetworkEdges inputDag of
       []   -> currentNetwork
       x:xs ->
+        -- DO NOT use rdeepseq! Prefer rseq!
+        -- When trying candidate edges, we can construct graphs for which a
+        -- pre-order traversal is not logically possible. These graphs will
+        -- necissarily result in an infinite cost. So long as we lazily compute
+        -- the cost, the minimization routine will discard the incoherent,
+        -- infinite-cost candidates and we won't run into interesting runtime problems.
         let !edgesToTry = x:|xs
             (minNewCost, !bestNewNetwork) = minimumBy (comparing fst)
-                                          . parmap (rparWith rdeepseq) (getCost &&& id)
+                                          . parmap (rparWith rseq) (getCost &&& id)
                                           $ tryNetworkEdge <$> edgesToTry
         in  if   getCost currentNetwork <= minNewCost
             then currentNetwork
@@ -165,11 +192,12 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag _) =
     (PDAG2 dag _) = force $ wipeScoring currentNetwork
 
     tryNetworkEdge :: ((Int, Int), (Int, Int)) -> FinalDecorationDAG
-    tryNetworkEdge = performDecoration . (`PDAG2` defaultUnaryMetadataSequence) . connectEdge'
+    tryNetworkEdge = performDecoration . (`PDAG2` metaSeq) . connectEdge'
 
     getCost (PDAG2 v _) = dagCost $ graphData v
 
-    connectEdge' = uncurry (connectEdge (resetMetadata dag) deriveOriginEdgeNode deriveTargetEdgeNode)
+    connectEdge'
+      = uncurry (connectEdge (resetMetadata dag) deriveOriginEdgeNode deriveTargetEdgeNode)
 
     deriveOriginEdgeNode parentDatum oldChildDatum _newChildDatum =
         PNode2 (resolutions oldChildDatum) (nodeDecorationDatum2 parentDatum)
@@ -178,9 +206,5 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag _) =
         PNode2 (resolutions oldChildDatum) (nodeDecorationDatum2 parentDatum)
 
 
-resetMetadata :: (Monoid a, Monoid b) => ReferenceDAG d e n -> ReferenceDAG (a, b, Maybe c) e n
-resetMetadata =
-    RefDAG
-      <$> references
-      <*> rootRefs
-      <*> ((mempty, mempty, Nothing) <$) . graphData
+resetMetadata ::  ReferenceDAG d e n -> ReferenceDAG (PostorderContextualData t) e n
+resetMetadata ref = ref & _graphData %~ setDefaultMetadata

@@ -1,0 +1,2 @@
+read("../../shared-data/arthropods/arthNonAdd.hen")
+report(data, (overwrite, "cost.data"))

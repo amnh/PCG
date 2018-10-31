@@ -22,14 +22,14 @@
 {-# LANGUAGE TypeFamilies     #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Internal
-  ( directOptimizationPostOrder
-  , directOptimizationPreOrder
+  ( directOptimizationPostorder
+  , directOptimizationPreorder
   , selectDynamicMetric
   ) where
 
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (overlap)
---import           Analysis.Parsimony.Dynamic.SequentialAlign
+import           Analysis.Parsimony.Internal
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
 import           Bio.Character.Exportable
@@ -37,10 +37,12 @@ import           Bio.Metadata
 import           Control.Lens
 import           Data.Bits
 import           Data.Foldable
+import           Data.Foldable.Custom                                            (sum')
 import           Data.IntMap                                                     (IntMap)
 import qualified Data.IntMap                                                     as IM
 import           Data.Key
 import           Data.List.NonEmpty                                              (NonEmpty ((:|)))
+import qualified Data.List.NonEmpty                                              as NE
 import           Data.List.Utility                                               (invariantTransformation)
 import           Data.MonoTraversable
 import           Data.Semigroup
@@ -99,16 +101,16 @@ selectDynamicMetric candidate
 --
 -- Parameterized over a 'PairwiseAlignment' function to allow for different
 -- atomic alignments depending on the character's metadata.
-directOptimizationPostOrder
+directOptimizationPostorder
   :: SimpleDynamicDecoration d c
   => PairwiseAlignment c
-  -> d
-  -> [DynamicDecorationDirectOptimizationPostOrderResult c]
-  ->  DynamicDecorationDirectOptimizationPostOrderResult c
-directOptimizationPostOrder pairwiseAlignment charDecoration xs =
-    case xs of
-        []   -> initializeLeaf charDecoration
-        y:ys -> updateFromLeaves pairwiseAlignment $ y:|ys
+  -> PostorderContext d (DynamicDecorationDirectOptimizationPostorderResult c)
+  ->  DynamicDecorationDirectOptimizationPostorderResult c
+directOptimizationPostorder pairwiseAlignment
+  = postorderContext
+      initializeLeaf
+      (\_ (lChild, rChild) -> updateFromLeaves pairwiseAlignment (lChild, rChild))
+
 
 
 -- |
@@ -117,9 +119,9 @@ directOptimizationPostOrder pairwiseAlignment charDecoration xs =
 initializeLeaf
   :: SimpleDynamicDecoration d c
   => d
-  -> DynamicDecorationDirectOptimizationPostOrderResult c
+  -> DynamicDecorationDirectOptimizationPostorderResult c
 initializeLeaf =
-    extendDynamicToPostOrder
+    extendDynamicToPostorder
       <$> id
       <*> const 0
       <*> const 0
@@ -137,15 +139,14 @@ updateFromLeaves
   :: ( EncodableDynamicCharacter c
      )
   => PairwiseAlignment c
-  -> NonEmpty (DynamicDecorationDirectOptimizationPostOrderResult c)
-  -> DynamicDecorationDirectOptimizationPostOrderResult c
-updateFromLeaves _ (x:|[]) = x -- This shouldn't happen
-updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) = resultDecoration
+  -> (DynamicDecorationDirectOptimizationPostorderResult c, DynamicDecorationDirectOptimizationPostorderResult c)
+  -> DynamicDecorationDirectOptimizationPostorderResult c
+updateFromLeaves pairwiseAlignment (lChild , rChild) = resultDecoration
   where
-    resultDecoration = extendDynamicToPostOrder leftChild localCost totalCost combinedAverageLength ungapped gapped lhsAlignment rhsAlignment
-    (localCost, ungapped, gapped, lhsAlignment, rhsAlignment) = pairwiseAlignment (leftChild ^. preliminaryUngapped) (rightChild ^. preliminaryUngapped)
-    totalCost = localCost + leftChild ^. characterCost +  rightChild ^. characterCost
-    combinedAverageLength = leftChild ^. averageLength <> rightChild ^. averageLength
+    resultDecoration = extendDynamicToPostorder lChild localCost totalCost combinedAverageLength ungapped gapped lhsAlignment rhsAlignment
+    (localCost, ungapped, gapped, lhsAlignment, rhsAlignment) = pairwiseAlignment (lChild ^. preliminaryUngapped) (rChild ^. preliminaryUngapped)
+    totalCost = localCost + lChild ^. characterCost +  rChild ^. characterCost
+    combinedAverageLength = lChild ^. averageLength <> rChild ^. averageLength
 
 
 -- |
@@ -153,17 +154,17 @@ updateFromLeaves pairwiseAlignment (leftChild:|rightChild:_) = resultDecoration
 --
 -- Parameterized over a 'PairwiseAlignment' function to allow for different
 -- atomic alignments depending on the character's metadata.
-directOptimizationPreOrder
-  :: DirectOptimizationPostOrderDecoration d c
+directOptimizationPreorder
+  :: DirectOptimizationPostorderDecoration d c
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
-  -> d
-  -> [(Word, DynamicDecorationDirectOptimization c)]
-  ->  DynamicDecorationDirectOptimization c
-directOptimizationPreOrder pairwiseAlignment meta charDecoration parents =
-    case parents of
-        []            -> initializeRoot charDecoration
-        (_, parent):_ -> updateFromParent pairwiseAlignment meta charDecoration parent
+  -> PreorderContext d (DynamicDecorationDirectOptimization c)
+  -> DynamicDecorationDirectOptimization c
+directOptimizationPreorder pairwiseAlignment meta =
+    preorderContextSym rootFn internalFn
+  where
+    rootFn     = initializeRoot
+    internalFn = updateFromParent pairwiseAlignment meta
 
 
 -- |
@@ -171,11 +172,11 @@ directOptimizationPreOrder pairwiseAlignment meta charDecoration parents =
 -- initializes the root node decoration as the base case of the pre-order
 -- traversal.
 initializeRoot
-  :: DirectOptimizationPostOrderDecoration d c
+  :: DirectOptimizationPostorderDecoration d c
   => d
   -> DynamicDecorationDirectOptimization c
 initializeRoot =
-    extendPostOrderToDirectOptimization
+    extendPostorderToDirectOptimization
       <$> id
       <*> (^. preliminaryUngapped)
       <*> (^. preliminaryGapped)
@@ -194,7 +195,7 @@ lexicallyDisambiguate = omap disambiguateElement
 disambiguateElement :: FiniteBits b => b -> b
 disambiguateElement x = zed `setBit` idx
   where
-    idx = countLeadingZeros x
+    idx = min (finiteBitSize x - 1) $ countLeadingZeros x
     zed = x `xor` x
 
 
@@ -202,7 +203,7 @@ disambiguateElement x = zed `setBit` idx
 -- Use the decoration(s) of the ancestral nodes to calculate the corrent node
 -- decoration. The recursive logic of the pre-order traversal.
 updateFromParent
-  :: DirectOptimizationPostOrderDecoration d c
+  :: DirectOptimizationPostorderDecoration d c
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
   -> d
@@ -224,7 +225,7 @@ updateFromParent pairwiseAlignment meta currentDecoration parentDecoration = res
     --
     -- We do these convoluted operations to account for deletion events in the
     -- parent assignment when comparing to child assignments.
-    resultDecoration = extendPostOrderToDirectOptimization currentDecoration ungapped gapped single
+    resultDecoration = extendPostorderToDirectOptimization currentDecoration ungapped gapped single
     (ungapped, gapped, single)
       | isMissing $ currentDecoration ^. preliminaryGapped = (pUngapped, pGapped, pSingle)
       | otherwise = tripleComparison pairwiseAlignment meta currentDecoration pUngapped pSingle
@@ -236,7 +237,7 @@ updateFromParent pairwiseAlignment meta currentDecoration parentDecoration = res
 -- |
 -- A three way comparison of characters used in the DO preorder traversal.
 tripleComparison
-  :: DirectOptimizationPostOrderDecoration d c
+  :: DirectOptimizationPostorderDecoration d c
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
   -> d
@@ -278,7 +279,7 @@ tripleComparison pairwiseAlignment meta childDecoration parentCharacter parentSi
                   LT -> (                  singleState, combinedCost)
                   GT -> acc
               where
-                combinedCost = fromFinite . sum $ snd . overlap scm singleState <$> [a, b, c]
+                combinedCost = fromFinite . sum' $ snd . overlap scm singleState <$> [a, b, c]
 
 
     single = lexicallyDisambiguate $ filterGaps almostSingle
@@ -397,15 +398,17 @@ newGapLocations unaligned aligned
 -- Given a list of gap locations and a character, returns a longer character with
 -- the supplied gaps inserted at the corresponding locations.
 insertNewGaps :: EncodableDynamicCharacter c => IntMap Int -> c -> c
-insertNewGaps insertionIndicies character = constructDynamic . (<> trailingGaps) . foldMapWithKey f $ otoList character
+insertNewGaps insertionIndicies character = constructDynamic . appendGaps . foldMapWithKey1 f . NE.fromList $ otoList character
   where
     len = olength character
     gap = getGapElement $ character `indexStream` 0
+    appendGaps (x:|xs) = x:|(xs<>trailingGaps)
     trailingGaps = maybe [] (`replicate` gap) $ len `lookup` insertionIndicies
+--    f :: Int -> a -> NonEmpty a
     f i e =
       case i `lookup` insertionIndicies of
-        Nothing -> [e]
-        Just n  -> replicate n gap <> [e]
+        Nothing -> pure e
+        Just n  -> NE.fromList (replicate n gap) <> pure e
 
 
 -- |
@@ -422,7 +425,10 @@ threeWayMean sigma char1 char2 char3 =
   case invariantTransformation olength [char1, char2, char3] of
     Nothing -> error $ unwords [ "Three sequences supplied to 'threeWayMean' function did not have uniform length.", show (olength char1), show (olength char2), show (olength char3) ]
     Just 0  -> (0, char1, char1)
-    Just _  -> (unsafeToFinite $ sum costValues, constructDynamic $ filter (/= gap) meanStates, constructDynamic meanStates)
+    Just _  -> ( unsafeToFinite   $ sum' costValues
+               , constructDynamic . NE.fromList $ filter (/= gap) meanStates
+               , constructDynamic $ NE.fromList meanStates
+               )
   where
     gap = gapOfStream char1
     (meanStates, costValues) = unzip $ zipWith3 sigma (otoList char1) (otoList char2) (otoList char3)

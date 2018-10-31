@@ -13,10 +13,10 @@
 -----------------------------------------------------------------------------
 
 module Bio.Character.Encodable
-  ( ContinuousChar()
-  , ContinuousCharacter(..)
-  , DynamicChar(DC,Missing)
-  , DynamicChars
+  ( ContinuousCharacter()
+  , EncodableContinuousCharacter(..)
+  , DynamicCharacter(DC,Missing)
+  , DynamicCharacters
   , DynamicCharacterElement()
   , StaticCharacter()
   , StaticCharacterBlock()

@@ -1,0 +1,3 @@
+read(custom_alphabet:(tcm:"../../../../shared-data/tcms/huge-mix-discrete.tcm", "../../../../shared-data/huge-mix/huge-mix.fasta"))
+read("../../../../shared-data/huge-mix/huge-mix.tree")
+report(data, (overwrite, "cost.data"))

@@ -22,8 +22,7 @@ module Bio.Graph.Constructions
   , GraphState
   , PhylogeneticDAG(..)
   , PhylogeneticDAG2(..)
-  , PhylogeneticDAGish(..)
-  , PostOrderDecorationDAG
+  , PostorderDecorationDAG
   , SearchState
   , TopologicalResult
   , UnifiedBlock
@@ -38,7 +37,6 @@ module Bio.Graph.Constructions
   , UnReifiedCharacterDAG
   ) where
 
-
 import Bio.Character
 import Bio.Character.Decoration.Additive
 import Bio.Character.Decoration.Continuous
@@ -46,13 +44,12 @@ import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Dynamic
 import Bio.Character.Decoration.Fitch
 import Bio.Character.Decoration.Metric
-import Bio.Graph.PhylogeneticDAG.Class
 import Bio.Graph.PhylogeneticDAG.Internal
 import Bio.Graph.ReferenceDAG.Internal
 import Bio.Graph.Solution
 import Bio.Sequence
-import Bio.Sequence.Metadata
 import Control.Evaluation
+import Data.Compact
 import Data.EdgeLength
 import Data.List.NonEmpty
 import Data.NodeLabel
@@ -87,7 +84,7 @@ type SearchState = EvaluationT IO GraphState
 -- |
 -- The state of the graph that partitions the evaluation model on one of two
 -- paths depending on the presence or absence of character states in the search.
-type GraphState = Either TopologicalResult DecoratedCharacterResult
+type GraphState = Compact (Either TopologicalResult DecoratedCharacterResult)
 
 
 -- |
@@ -108,27 +105,27 @@ type FinalDecorationDAG =
          (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
          EdgeLength
          NodeLabel
-         (ContinuousOptimizationDecoration    ContinuousChar )
+         (ContinuousOptimizationDecoration    ContinuousCharacter )
          (FitchOptimizationDecoration         StaticCharacter)
          (AdditiveOptimizationDecoration      StaticCharacter)
          (SankoffOptimizationDecoration       StaticCharacter)
          (SankoffOptimizationDecoration       StaticCharacter)
-         (DynamicDecorationDirectOptimization DynamicChar    )
+         (DynamicDecorationDirectOptimization DynamicCharacter    )
 
 
 -- |
 -- Decoration of a phylogenetic DAG after a post-order traversal.
-type PostOrderDecorationDAG m =
+type PostorderDecorationDAG m =
        PhylogeneticDAG2
          m
          EdgeLength
          NodeLabel
-         (ContinuousPostorderDecoration ContinuousChar )
+         (ContinuousPostorderDecoration ContinuousCharacter )
          (FitchOptimizationDecoration   StaticCharacter)
          (AdditivePostorderDecoration   StaticCharacter)
          (SankoffOptimizationDecoration StaticCharacter)
          (SankoffOptimizationDecoration StaticCharacter)
-         (DynamicDecorationDirectOptimizationPostOrderResult DynamicChar)
+         (DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter)
 
 
 -- |
@@ -139,6 +136,8 @@ type  UnifiedBlock =
     )
 
 
+-- |
+-- A character block resulting fro the READ command.
 type  UnifiedCharacterBlock
     = CharacterBlock
         UnifiedContinuousCharacter
@@ -149,9 +148,9 @@ type  UnifiedCharacterBlock
         UnifiedDynamicCharacter
 
 
-type  UnifiedMetadataBlock
-    = MetadataBlock
-        ()
+-- |
+-- A metadata block resulting fro the READ command.
+type  UnifiedMetadataBlock = MetadataBlock ()
 
 
 -- |
@@ -168,11 +167,8 @@ type  UnifiedSequences =
     )
 
 
-type  UnifiedMetadataSequence
-    = MetadataSequence
-        ()
-
-
+-- |
+-- A character sequence resulting fro the READ command.
 type  UnifiedCharacterSequence
     = CharacterSequence
         UnifiedContinuousCharacter
@@ -184,11 +180,16 @@ type  UnifiedCharacterSequence
 
 
 -- |
+-- A metadata sequence resulting fro the READ command.
+type  UnifiedMetadataSequence = MetadataSequence ()
+
+
+-- |
 -- A continuous static character after being read in from a READ command.
 -- Contains no decorations, and has not been assigned a scoring class.
 -- Expected to be @Nothing@-valued for internal nodes and @Just@-valued for leaf
 -- nodes.
-type UnifiedContinuousCharacter = Maybe (ContinuousDecorationInitial ContinuousChar)
+type UnifiedContinuousCharacter = Maybe (ContinuousDecorationInitial ContinuousCharacter)
 
 
 -- |
@@ -203,7 +204,7 @@ type UnifiedDiscreteCharacter   = Maybe (DiscreteDecoration StaticCharacter)
 -- A dynamic character after being read in from a READ command.
 -- Contains no decorations. Expected to be @Nothing@-valued for internal nodes
 -- and @Just@-valued for leaf nodes.
-type UnifiedDynamicCharacter    = Maybe (DynamicDecorationInitial DynamicChar)
+type UnifiedDynamicCharacter    = Maybe (DynamicDecorationInitial DynamicCharacter)
 
 
 -- |

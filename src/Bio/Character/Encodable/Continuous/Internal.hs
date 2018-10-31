@@ -17,7 +17,7 @@
 {-# LANGUAGE TypeFamilies          #-}
 
 module Bio.Character.Encodable.Continuous.Internal
-  ( ContinuousChar
+  ( ContinuousCharacter
   ) where
 
 import Bio.Character.Encodable.Continuous.Class
@@ -33,15 +33,15 @@ import Text.XML.Class
 -- |
 -- Represents a real-valued range with a minimum lower bound of zero and a
 -- maximum upper bound of infinity.
-newtype ContinuousChar = CC (ExtendedReal, ExtendedReal)
+newtype ContinuousCharacter = CC (ExtendedReal, ExtendedReal)
   deriving (Eq, Generic)
 
 
-type instance Bound ContinuousChar = ExtendedReal
+type instance Bound ContinuousCharacter = ExtendedReal
 
 
 -- | (✔)
-instance ContinuousCharacter ContinuousChar where
+instance EncodableContinuousCharacter ContinuousCharacter where
 
     toContinuousCharacter = CC . maybe missingRange (f &&& f)
       where
@@ -49,11 +49,11 @@ instance ContinuousCharacter ContinuousChar where
 
 
 -- | (✔)
-instance NFData ContinuousChar
+instance NFData ContinuousCharacter
 
 
 -- | (✔)
-instance PossiblyMissingCharacter ContinuousChar where
+instance PossiblyMissingCharacter ContinuousCharacter where
 
     {-# INLINE toMissing #-}
     toMissing = const $ CC missingRange
@@ -63,7 +63,7 @@ instance PossiblyMissingCharacter ContinuousChar where
 
 
 -- | (✔)
-instance Ranged ContinuousChar where
+instance Ranged ContinuousCharacter where
 
     toRange (CC interval) = fromTuple interval
 
@@ -73,7 +73,7 @@ instance Ranged ContinuousChar where
 
 
 -- | (✔)
-instance Show ContinuousChar where
+instance Show ContinuousCharacter where
 
     show (CC (lower, upper))
       | lower == upper = show lower
@@ -82,7 +82,7 @@ instance Show ContinuousChar where
             renderRange x y = mconcat [ "[", show x, ", ", show y, "]" ]
 
 -- | (✔)
-instance ToXML ContinuousChar where
+instance ToXML ContinuousCharacter where
 
     toXML continuousChar = xmlElement "Continuous_character" attributes content
         where

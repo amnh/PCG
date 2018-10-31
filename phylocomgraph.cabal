@@ -1,7 +1,10 @@
 cabal-version:      2.2
 category:           Biology
 build-type:         Simple
-extra-source-files: README.md
+extra-source-files: AUTHORS.md
+                    CHANGELOG.md
+                    README.md
+                    
 
 name:               phylocomgraph
 version:            0.1.0.1
@@ -20,7 +23,7 @@ description:        Phylogenetic Componet Graph provides a library for
                     program to perform a phylogenetic search on an input dataset.
 
 
--- Group of buildinfo specifications to correctly build and link to the C & C++
+-- Group of buildinfo specifications to correctly build and link to the C & C++:
 -- FFI code.
 common ffi-buildinfo
 
@@ -66,6 +69,7 @@ common ffi-buildinfo
 common ghc-flags
 
   ghc-options:      -O2
+                    -foptimal-applicative-do
 --                    -g
                     -- Sanity check warnings
                     -Wall
@@ -117,12 +121,14 @@ library
                     , bimap
                     , bv-little
                     -- >=0.5.8 Required for Data.Map.restrictKeys
+                    , compact
                     , containers         >=0.5.8
                     , deepseq
                     , data-default
                     , dlist
                     , foldl
-                    , graphviz
+                    -- >=2999.20 Required for forgivig constructio of DOT object
+                    , graphviz           >=2999.20
                     , hashable
                     , integer-gmp
                     , keys
@@ -155,6 +161,7 @@ library
                     Analysis.Parsimony.Dynamic.SequentialAlign
                     Analysis.Parsimony.Fitch.Internal
                     Analysis.Parsimony.Sankoff.Internal
+                    Analysis.Parsimony.Internal
                     Analysis.Scoring
                     Bio.Character
                     Bio.Character.Decoration.Additive
@@ -177,6 +184,7 @@ library
                     Bio.Metadata.Parsed
                     Bio.Sequence
                     Bio.Sequence.Block
+                    Bio.Sequence.Character
                     Bio.Sequence.Metadata
                     Bio.Graph
                     Bio.Graph.Component
@@ -199,6 +207,7 @@ library
                     Data.TCM.Memoized.FFI
                     Data.TopologyRepresentation
                     Data.NodeLabel
+                    Data.Vector.Custom
                     Data.Vector.NonEmpty
                     Text.Newick.Class
                     Text.XML
@@ -268,11 +277,12 @@ library
                     Bio.Sequence.Block.Character
                     Bio.Sequence.Block.Internal
                     Bio.Sequence.Block.Metadata
-                    Bio.Sequence.Character
+                    Bio.Sequence.Internal
                     Control.Evaluation.Unit
                     Control.Evaluation.Internal
                     Control.Evaluation.Trans
                     Data.Alphabet.Internal
+                    Data.Alphabet.Special
                     Data.EdgeSet
                     Data.Range
                     Data.TCM.Internal
@@ -292,16 +302,19 @@ executable pcg
                     , ansi-wl-pprint
                     , base             >=4.10
                     -- Required for Data.Map.restrictKeys
+                    , compact
                     , containers       >=0.5.8
                     , data-default
                     , deepseq
                     , directory
+                    , filepath
                     , gitrev
                     , Glob
-                    , graphviz
+                    -- >=2999.20 Required for forgivig constructio of DOT object
+                    , graphviz           >=2999.20
                     , keys
                     , lens
-                    , megaparsec       >=6.0
+                    , megaparsec       >=6.4.0
                     , mono-traversable >=1.0
                     , optparse-applicative
                     , parallel
@@ -324,6 +337,8 @@ executable pcg
 
   other-modules:    Paths_phylocomgraph
                     PCG.Command.Build.Evaluate
+                    PCG.Command.Echo.Evaluate
+                    PCG.Command.Load.Evaluate
                     PCG.Command.Read.DecorationInitialization
                     PCG.Command.Read.Evaluate
                     PCG.Command.Read.ReadError
@@ -331,6 +346,7 @@ executable pcg
                     PCG.Command.Read.Unification.UnificationError
                     PCG.Command.Report.Evaluate
                     PCG.Command.Report.GraphViz
+                    PCG.Command.Save.Evaluate
                     PCG.Computation.Internal
 
 
@@ -396,6 +412,46 @@ executable affine-safety
   hs-source-dirs:   utils
 
 
+executable generate-data-set
+
+  import:             ghc-flags
+                    , language-specs
+
+  main-is:          generate-data-set.hs
+
+  build-depends:      ansi-wl-pprint
+                    , base               >=4.8
+                    , containers
+                    , keys
+                    , MemoTrie
+                    , mtl
+                    , optparse-applicative
+                    , random
+                    , random-shuffle
+                    , validation
+                    , vector
+
+  hs-source-dirs:   utils
+
+
+executable generate-tcm
+
+  import:             ghc-flags
+                    , language-specs
+
+  main-is:          generate-tcm.hs
+
+  build-depends:      ansi-wl-pprint
+                    , base               >=4.8
+                    , containers
+                    , keys
+                    , optparse-applicative
+                    , pcg-utility
+                    , vector
+
+  hs-source-dirs:   utils
+
+
 executable newick-resolver
 
   import:             ghc-flags
@@ -404,7 +460,7 @@ executable newick-resolver
   main-is:          newick-resolver.hs
 
   build-depends:      base               >=4.8
-                    , megaparsec         >=6.0 && <6.4
+                    , megaparsec         >=6.4.0
                     , pcg-file-parsers
 
   hs-source-dirs:   utils
@@ -456,16 +512,50 @@ executable ukkonen-do-comparison
   hs-source-dirs:   utils
 
 
-Test-Suite testsuite
+Test-Suite integration-tests
+
+  import:             ghc-flags
+                    , language-specs
+
+  type:             exitcode-stdio-1.0
+
+  main-is:          IntegrationTests.hs
+
+  build-depends:       base               >=4.10
+                    , containers
+                    , deepseq
+                    , directory
+                    , filepath
+                    , megaparsec         >=6.4.0
+                    , parser-combinators >=0.2.0
+                    , pcg-utility
+                    , scientific
+                    , semigroups
+                    , tasty
+                    , tasty-golden
+                    , tasty-hunit
+                    , tasty-rerun
+                    , text
+                    , turtle
+
+  ghc-options:      -threaded
+                    -with-rtsopts=-N7
+
+  hs-source-dirs:   test
+
+  other-modules:    TestSuite.ScriptTests
+                    TestSuite.GoldenTests
+
+
+Test-Suite unit-tests
 
   import:             ffi-buildinfo
                     , ghc-flags
                     , language-specs
 
-
   type:             exitcode-stdio-1.0
 
-  main-is:          TestAll.hs
+  main-is:          UnitTests.hs
 
   build-depends:      base               >=4.10
                     , bimap
@@ -474,6 +564,7 @@ Test-Suite testsuite
                     , containers         >=0.5.8
                     , deepseq
                     , dlist
+                    , foldl
                     , hashable
                     , integer-gmp
                     , keys
@@ -481,6 +572,7 @@ Test-Suite testsuite
                     , mono-traversable   >=1.0
                     , mtl
                     , pcg-utility
+                    , phylocomgraph
                     , pointed
                     , QuickCheck
                     -- required for Data.Semigroup.Foldable.toNonEmpty
@@ -503,13 +595,13 @@ Test-Suite testsuite
 
   -- This is a hack beacuse the cxx-options & cxx-options feature in Cabal-2.2
   -- is not fully implmented and does not correctly link to the C++ sources.
-  if os(linux) && arch(x86_64)
-    ghc-options:    .stack-work/dist/x86_64-linux/Cabal-2.2.0.1/build/ffi/memoized-tcm/costMatrix_2d.dyn_o
-                    .stack-work/dist/x86_64-linux/Cabal-2.2.0.1/build/ffi/memoized-tcm/costMatrix_3d.dyn_o
+--  if os(linux) && arch(x86_64)
+--    ghc-options:    .stack-work/dist/x86_64-linux/Cabal-2.2.0.1/build/ffi/memoized-tcm/costMatrix_2d.dyn_o
+--                    .stack-work/dist/x86_64-linux/Cabal-2.2.0.1/build/ffi/memoized-tcm/costMatrix_3d.dyn_o
 
-  if os(osx) && arch(x86_64)
-    ghc-options:    .stack-work/dist/x86_64-osx/Cabal-2.2.0.1/build/ffi/memoized-tcm/costMatrix_2d.dyn_o
-                    .stack-work/dist/x86_64-osx/Cabal-2.2.0.1/build/ffi/memoized-tcm/costMatrix_3d.dyn_o
+--  if os(osx) && arch(x86_64)
+--    ghc-options:    .stack-work/dist/x86_64-osx/Cabal-2.2.0.1/build/ffi/memoized-tcm/costMatrix_2d.dyn_o
+--                    .stack-work/dist/x86_64-osx/Cabal-2.2.0.1/build/ffi/memoized-tcm/costMatrix_3d.dyn_o
 
   hs-source-dirs:   test, src, app
 
@@ -547,6 +639,7 @@ Test-Suite testsuite
                     Data.Alphabet
                     Data.Alphabet.IUPAC
                     Data.Alphabet.Internal
+                    Data.Alphabet.Special
                     Data.Alphabet.Test
                     Data.Range
                     Data.TCM

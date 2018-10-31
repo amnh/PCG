@@ -18,6 +18,7 @@ import Paths_phylocomgraph          (version)
 import PCG.Computation.Internal
 import PCG.Syntax                   (computationalStreamParser)
 import System.Environment
+import System.Exit
 import System.IO
 import Text.Megaparsec              (ParseError, Parsec, Token, parse, parseErrorPretty')
 import Text.PrettyPrint.ANSI.Leijen (align, indent, int, line, string, text, (<+>), (</>))
@@ -72,13 +73,14 @@ main = do
           case inputStreamMaybe of
             Left errorMessage -> putStrLn errorMessage
             Right inputStream -> do
-                 outputStream <- case parse' computationalStreamParser (inputFile opts) inputStream of
-                                   Left  err -> pure $ parseErrorPretty' (inputFile opts) err
-                                   Right val -> renderSearchState <$> runEvaluation (evaluate (optimizeComputation val))
-                 let  outputPath = outputFile opts
-                 if   (toUpper <$> outputPath) == "STDOUT"
-                 then hSetBuffering stdout NoBuffering >> putStrLn outputStream
-                 else writeFile outputPath outputStream
+                (code, outputStream) <- case parse' computationalStreamParser (inputFile opts) inputStream of
+                                          Left  err -> pure (ExitFailure 4, parseErrorPretty' inputStream err)
+                                          Right val -> fmap renderSearchState . runEvaluation . evaluate $ optimizeComputation val
+                let  outputPath = outputFile opts
+                if   (toUpper <$> outputPath) == "STDOUT"
+                then hSetBuffering stdout NoBuffering >> putStrLn outputStream
+                else writeFile outputPath outputStream
+                exitWith code
   where
      parse' :: Parsec Void s a -> String -> s -> Either (ParseError (Token s) Void) a
      parse' = parse

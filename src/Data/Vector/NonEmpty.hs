@@ -10,9 +10,9 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveFunctor              #-}
-{-# LANGUAGE DeriveTraversable          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeFamilies               #-}
 
@@ -21,12 +21,14 @@ module Data.Vector.NonEmpty
   , fromNonEmpty
   , singleton
   -- * Useful stuff
+  , generate
   , uncons
   , unfoldr
   ) where
 
 
 import           Control.DeepSeq
+import qualified Control.Foldl              as L
 import           Data.Data
 import           Data.Foldable
 import           Data.Functor.Alt
@@ -41,7 +43,7 @@ import           Data.Semigroup.Foldable
 import           Data.Semigroup.Traversable
 import qualified Data.Vector                as V
 import           Data.Vector.Instances      ()
-import           Test.QuickCheck
+import           Test.QuickCheck            hiding (generate)
 
 
 -- |
@@ -68,7 +70,7 @@ newtype Vector a = NEV { unwrap :: V.Vector a }
             , Ord1
             , Pointed
             , Semigroup
-            , Traversable
+--            , Traversable
             , Zip
             , ZipWithKey
             )
@@ -93,10 +95,13 @@ instance Alt Vector where
 
 instance Foldable1 Vector where
 
+    {-# INLINE fold1 #-}
     fold1 = fold1 . toNonEmpty
 
+    {-# INLINE foldMap1 #-}
     foldMap1 f = foldMap1 f . toNonEmpty
 
+    {-# INLINE toNonEmpty #-}
     toNonEmpty = NE.fromList . toList . unwrap
 
 
@@ -108,18 +113,35 @@ instance FoldableWithKey1 Vector where
 type instance Key Vector = Int
 
 
+instance Traversable Vector where
+
+    {-# INLINE traverse #-}
+    traverse f xs =
+        let !len = length xs
+        in  fmap (NEV . V.fromListN len) . traverse f $ toList xs
+
+    {-# INLINE mapM #-}
+    mapM f = fmap NEV . V.mapM f . unwrap
+
+    {-# INLINE sequence #-}
+    sequence = fmap NEV . V.sequence . unwrap
+
+
 instance Traversable1 Vector where
 
+    {-# INLINE traverse1 #-}
     traverse1 f = fmap fromNonEmpty . traverse1 f . toNonEmpty
 
 
 instance TraversableWithKey Vector where
 
+    {-# INLINE traverseWithKey #-}
     traverseWithKey f = fmap NEV . traverseWithKey f . unwrap
 
 
 instance TraversableWithKey1 Vector where
 
+    {-# INLINE traverseWithKey1 #-}
     traverseWithKey1 f = fmap fromNonEmpty . traverseWithKey1 f . toNonEmpty
 
 
@@ -143,7 +165,10 @@ singleton = NEV . V.singleton
 -- Construct a 'Vector' from a non-empty structure.
 {-# INLINE fromNonEmpty #-}
 fromNonEmpty :: Foldable1 f => f a -> Vector a
-fromNonEmpty = NEV . V.fromList . toList . toNonEmpty
+fromNonEmpty = NEV . uncurry V.fromListN . L.fold f
+  where
+    f :: L.Fold a (Int, [a])
+    f = (,) <$> L.length <*> L.list
 
 
 -- |
@@ -157,16 +182,18 @@ fromNonEmpty = NEV . V.fromList . toList . toNonEmpty
 -- >  = <10,9,8,7,6,5,4,3,2,1>
 {-# INLINE unfoldr #-}
 unfoldr :: (b -> (a, Maybe b)) -> b -> Vector a
-unfoldr f = NEV . V.fromList . go
+unfoldr f = NEV . uncurry V.fromListN . go 0
   where
-    go b =
-        case f b of
-          (v, mb) -> v : maybe [] go mb
+--  go :: Int -> b -> (Int, [a])
+    go n b =
+         let (v, mb) = f b
+         in  (v:) <$> maybe (n, []) (go (n+1)) mb
 
 
 -- | /O(n)/
 --
--- 'uncons' produces both the first element of the 'Vector' and a 'Vector' of the remaining elements, if any.
+-- 'uncons' produces both the first element of the 'Vector' and a
+-- 'Vector' of the remaining elements, if any.
 uncons :: Vector a -> (a, Maybe (Vector a))
 uncons (NEV v) = (first, stream)
   where
@@ -175,3 +202,13 @@ uncons (NEV v) = (first, stream)
       | otherwise = Just . NEV $ V.slice 1 (len-1) v
     first = v ! 0
     len   = length v
+
+
+-- |
+-- /O(n)/
+--
+-- Construct a vector of the given length by applying the function to each index
+generate :: Int -> (Int -> a) -> Vector a
+generate n f
+  | n < 1     = error $ "Called Vector.Nonempty.generate on a non-positive dimension " <> show n
+  | otherwise = NEV $ V.generate n f

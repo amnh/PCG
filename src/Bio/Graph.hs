@@ -25,7 +25,7 @@ module Bio.Graph
   , PhylogeneticDAGish(..)
   , PhylogeneticForest(..)
   , PhylogeneticSolution(..)
-  , PostOrderDecorationDAG
+  , PostorderDecorationDAG
   , SearchState
   , TopologicalResult
   , UnifiedBlock
@@ -43,9 +43,7 @@ module Bio.Graph
   , generateLocalResolutions
   , postorderSequence'
   , preorderFromRooting
-  , preorderFromRooting''
-  , preorderSequence'
-  , preorderSequence''
+  , preorderSequence
   , renderSummary
   , reifiedSolution
   , rootCosts

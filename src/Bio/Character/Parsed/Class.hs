@@ -33,7 +33,7 @@ import           Data.Semigroup.Foldable
 import           Data.Set                         (Set)
 import qualified Data.Set                         as S
 import           Data.Tree
-import qualified Data.Vector                      as V
+import           Data.Vector.Custom               as V (fromList')
 import           Data.Vector.Instances            ()
 import           File.Format.Dot
 import           File.Format.Fasta
@@ -53,14 +53,13 @@ data ParsedCharacter
    | ParsedDiscreteCharacter   (AmbiguityGroup String)
    | ParsedDynamicCharacter    (NonEmpty (AmbiguityGroup String))
 
+
 type ParsedChars = Vector (Maybe ParsedCharacter)
+
 
 type TaxonCharacters = Map String ParsedChars
 -}
 
-
--- TODO: Make sure that pipelines don't undo and redo the conversion to treeSeqs.
--- Currently we pack and unpack codes, make parsers dumber in the future. Read below!
 
 -- |
 -- Instances provide a method to extract 'Character' sequences from raw parsed results.
@@ -78,7 +77,7 @@ type TaxonCharacters = Map String ParsedChars
 -- time efficiency in the future.
 --
 -- I need to think about how this might interact with some things in Nexus, but it seems
--- to make sense. It might make verification in the parsers more difficult... thinking...
+-- to make sense. It might make verification in the parsers more difficult.
 class ParsedCharacters a where
 
     unifyCharacters :: a -> TaxonCharacters
@@ -190,7 +189,7 @@ convertCharacterSequenceLikeFASTA = pure . ParsedDynamicCharacter . Just . NE.fr
 -- |
 -- Coalesce the 'TaxonSequence' to the larger type 'ParsedSequences'
 tntToTheSuperSequence :: TaxonSequence -> ParsedChars
-tntToTheSuperSequence = V.fromList . fmap f
+tntToTheSuperSequence = V.fromList' . fmap f
   where
     f (TNT.Continuous c) = ParsedContinuousCharacter c
     f discreteCharacter  = ParsedDiscreteCharacter . Just . coerceDiscreteRendering $ show discreteCharacter

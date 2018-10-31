@@ -52,16 +52,22 @@ TAGS
 
 # other
 .DS_Store
+*.data
+*.dot
 *.dSYM
 *.fa
 *.fas
 *.fasta
+*.fastc
 *.gch
 *.log
 *.out
+*.pcg
 *.poy
 *.ss
+*.tcm
 *.tre
+*.tree
 *.txt
 *.xml
 .*
