@@ -18,9 +18,10 @@
 module Data.EdgeSet
   ( EdgeSet()
 --  , NetworkDisplayEdgeSet(..)
-  , SetLike(difference, union)
+  , SetLike(difference, union, intersection)
 --  , collapseToEdgeSet
 --  , fromEdgeSets
+  , disjoint
   , makeParentEdgeSet
   , member
   , singletonEdgeSet
@@ -31,15 +32,15 @@ module Data.EdgeSet
 import           Control.DeepSeq
 import           Data.Foldable
 import           Data.Foldable.Custom (sum')
+import           Data.IntSet          (IntSet, singleton)
 import           Data.Key
 import           Data.List.NonEmpty   (NonEmpty (..))
+import           Data.MonoTraversable (MonoFoldable (..))
 import           Data.Semigroup
 import           Data.Set             (Set)
 import qualified Data.Set             as Set
 import           GHC.Generics         (Generic)
 import           Prelude              hiding (zipWith)
-import Data.IntSet (IntSet, singleton)
-import Data.MonoTraversable (MonoFoldable (..))
 
 
 -- |
@@ -150,15 +151,21 @@ fromEdgeSets = NDES
 -- |
 -- Get 'IntSet' from all nodes in an 'EdgeSet'
 toIntSet :: EdgeSet (Int, Int) -> IntSet
-toIntSet = foldMap edgeIntSet
+toIntSet = foldMap edgeToIntSet
   where
-    edgeIntSet :: (Int, Int) -> IntSet
-    edgeIntSet (ind1, ind2) = (singleton ind1) <> (singleton ind2)
+    edgeToIntSet :: (Int, Int) -> IntSet
+    edgeToIntSet (ind1, ind2) = singleton ind1 <> singleton ind2
 
 -- |
 -- Determine if a term is a member of an 'EdgeSet'
 member :: Ord e => e -> EdgeSet e -> Bool
 member e (ES edgeSet) = e `Set.member` edgeSet
+
+
+-- |
+-- Check if two edge sets have any intersection.
+disjoint :: Ord e => EdgeSet e -> EdgeSet e -> Bool
+disjoint (ES edgeSet1) (ES edgeSet2) = edgeSet1 `Set.disjoint` edgeSet2
 
 
 -- |
@@ -176,5 +183,4 @@ makeParentEdgeSet
   :: Int                -- ^ Current node index
   -> IntSet             -- ^ Parent indices
   -> EdgeSet (Int, Int)
-makeParentEdgeSet currInd parIndices
-  = ofoldMap (\parInd -> singletonEdgeSet (parInd, currInd)) parIndices
+makeParentEdgeSet currInd = ofoldMap (\parInd -> singletonEdgeSet (parInd, currInd))
