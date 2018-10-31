@@ -79,7 +79,6 @@ library
                     Data.List.Utility
                     Data.Matrix.NotStupid
                     Data.MutualExclusionSet
-                    Data.SymmetricPair
                     Data.Tuple.Utility
                     Data.UnionSet
                     Data.Vector.Utility
@@ -90,7 +89,6 @@ library
 
   other-modules:    Data.BitMatrix.Internal
                     Data.MutualExclusionSet.Internal
-                    Data.SymmetricPair.Internal
                     Numeric.Extended.Internal
 
 benchmark benchmark-suite
