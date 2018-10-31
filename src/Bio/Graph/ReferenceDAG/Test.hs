@@ -1,20 +1,19 @@
-{-# LANGUAGE RecordWildCards     #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE OverloadedLists     #-}
+{-# LANGUAGE RecordWildCards     #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Bio.Graph.ReferenceDAG.Test
   ( testSuite
   ) where
 
-import Test.Tasty
-import Test.Tasty.HUnit      as HU
-import Test.Tasty.QuickCheck as QC hiding (generate)
-import Bio.Graph.ReferenceDAG.Internal
-import Data.Set as Set
-import Data.List.NonEmpty
-import qualified Data.Vector as V
-import Data.SymmetricPair
+import           Bio.Graph.ReferenceDAG.Internal
+import           Data.List.NonEmpty
+import           Data.Set                        as Set
+import qualified Data.Vector                     as V
+import           Test.Tasty
+import           Test.Tasty.HUnit                as HU
+import           Test.Tasty.QuickCheck           as QC hiding (generate)
 
 testSuite :: TestTree
 testSuite = testGroup "ReferenceDAG Tests"
@@ -38,25 +37,26 @@ renderExampleTree = unlines
 
 exampleTreeCandidateNetworkEdges :: Set ((Int, Int), (Int, Int))
 exampleTreeCandidateNetworkEdges
-    = orderedPairsFromUnorderedList $ unorderedEdges
-  where
-    unorderedEdges :: [((Int, Int), (Int, Int))]
-    unorderedEdges =
-      [ ((4,0), (5,2)), ((4,0), (5,3)), ((4,0), (6,5))
-      , ((4,1), (5,2)), ((4,1), (5,3)), ((4,1), (6,5))
-      , ((5,2), (6,4))
-      , ((5,3), (6,4))
-      ]
+  = [
+      ((4,0), (5,2)), ((4,0), (5,3)), ((4,0), (6,5))
+    , ((4,1), (5,2)), ((4,1), (5,3)), ((4,1), (6,5))
+    , ((5,2), (4,0)), ((5,2), (4,1)), ((5,2), (6,4))
+    , ((5,3), (4,0)), ((5,3), (4,1)), ((5,3), (6,4))
+    , ((6,4), (5,2)), ((6,4), (5,3))
+    , ((6,5), (4,0)), ((6,5), (4,1))
+    ]
 
 renderExampleTreeCandidateNetworkEdges :: String
 renderExampleTreeCandidateNetworkEdges
     = unlines
-    [ "              Undirected Edge Pairs: "
+    [ "              Candidate Edge Pairs: "
     , "              {"
-    , "                   {(4,0), (5,2)}, {(4,0), (5,3)}, {(4,0), (6,5)}"
-    , "                   {(4,1), (5,2)}, {(4,1), (5,3)}, {(4,1), (6,5)}"
-    , "                   {(5,2), (6,4)}"
-    , "                   {(5,3), (6,4)}"
+    , "                     ((4,0), (5,2)), ((4,0), (5,3)), ((4,0), (6,5))"
+    , "                     ((4,1), (5,2)), ((4,1), (5,3)), ((4,1), (6,5))"
+    , "                     ((5,2), (4,0)), ((5,2), (4,1)), ((5,2), (6,4))"
+    , "                     ((5,3), (4,0)), ((5,3), (4,1)), ((5,3), (6,4))"
+    , "                     ((6,4), (5,2)), ((6,4), (5,3))"
+    , "                     ((6,5), (4,0)), ((6,5), (4,1))"
     , "              }"
     ]
 
@@ -95,25 +95,16 @@ renderExampleNetwork = unlines
 
 exampleNetworkCandidateNetworkEdges :: Set ((Int, Int), (Int, Int))
 exampleNetworkCandidateNetworkEdges =
-    [ ((6, 4), (5, 1)), ((6, 4), (5, 2)), ((6, 4), (7, 5))
-    , ((6, 3), (5, 1)), ((6, 3), (5, 2))
-    , ((7, 5), (4, 6))
-    , ((5, 1), (6, 4))
-    , ((5, 2), (6, 4))
+    [ ((6, 4), (5, 1)), ((6, 4), (5, 2))
     ]
 
 
 renderExampleNetworkCandidateNetworkEdges :: String
 renderExampleNetworkCandidateNetworkEdges
     = unlines
-    [ "             Undirected Edge Pairs: "
+    [ "             Candidate Edge Pairs: "
     , "             {"
-    , "                 {(3,0), (5,1)}, {(3,0), (5,2)}, {(3,0), (6,4)}, {(3,0) ,(7,5)}"
-    , "                 {(5,1), (7,3)}, {(5,1), (6,3)}, {(5,1), (6,4)}"
-    , "                 {(5,2), (7,3)}, {(5,2), (6,3)}, {(5,2), (6,4)}"
-    , "                 {(6,4), (7,3)}, {(6,4), (7,5)}"
-    , "                 {(6,3), (8,7)}"
-    , "                 {(7,3), (8,6)}"
+    , "                  ((6, 4), (5, 1)), ((6, 4), (5, 2))"
     , "             }"
     ]
 
@@ -161,10 +152,10 @@ candidateNetworkEdgesCases = testGroup "Cases of candidateNetworkEdges function"
   where
     candidateNetworkEdgesTreeCase :: Assertion
     candidateNetworkEdgesTreeCase =
-            candidateNetworkEdges' exampleTree
+            candidateNetworkEdges exampleTree
         @?= exampleTreeCandidateNetworkEdges
 
     candidateNetworkEdgesNetworkCase :: Assertion
     candidateNetworkEdgesNetworkCase =
-            candidateNetworkEdges' exampleNetwork
+            candidateNetworkEdges exampleNetwork
         @?= exampleNetworkCandidateNetworkEdges
