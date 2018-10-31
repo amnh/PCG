@@ -69,6 +69,7 @@ library
                   , mono-traversable >=1.0
                   , QuickCheck
                   , transformers
+                  , validation
                   , vector
 
   hs-source-dirs:   src

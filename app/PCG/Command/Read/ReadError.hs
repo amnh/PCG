@@ -4,7 +4,6 @@ module PCG.Command.Read.ReadError
   ( ReadError
   , ambiguous
   , invalidPrealigned
-  , multipleTCMs
   , unfindable
   , unopenable
   , unparsable
@@ -29,7 +28,6 @@ data ReadErrorMessage
    | FileUnparsable    String
    | FileAmbiguous     FilePath (NonEmpty FilePath)
    | InvalidPrealigned FilePath (NonEmpty Word)
-   | MultipleTCMs      FilePath FilePath
 
 
 instance Semigroup ReadError where
@@ -44,11 +42,10 @@ instance Show ReadError where
         , unopenableMessage
         , unparsableMessage
         , ambiguousMessage
-        , multipleTCMsMessage
         , invalidPrealignsMessage
         ]
       where
-        (unfindables, unopenables, unparsables, ambiguity, doubleTCMs, invalidPrealigns) = partitionReadErrorMessages $ toList errors
+        (unfindables, unopenables, unparsables, ambiguity, invalidPrealigns) = partitionReadErrorMessages $ toList errors
 
         unfindableMessage =
           case unfindables of
@@ -73,12 +70,6 @@ instance Show ReadError where
             [] -> Nothing
             xs -> Just . unlines $ show <$> xs
 
-        multipleTCMsMessage =
-          case doubleTCMs of
-            []  -> Nothing
-            [x] -> Just $ "The file had multiple TCM definitions " <> show x
-            xs  -> Just $ "The following files had multiple TCM definitions: \n" <> unlines (show <$> xs)
-
         invalidPrealignsMessage =
           case invalidPrealigns of
             []  -> Nothing
@@ -87,15 +78,14 @@ instance Show ReadError where
 
         partitionReadErrorMessages
           ::  [ReadErrorMessage]
-          -> ([ReadErrorMessage],[ReadErrorMessage], [ReadErrorMessage], [ReadErrorMessage], [ReadErrorMessage], [ReadErrorMessage])
-        partitionReadErrorMessages = foldr f ([],[],[],[],[],[])
+          -> ([ReadErrorMessage],[ReadErrorMessage], [ReadErrorMessage], [ReadErrorMessage], [ReadErrorMessage])
+        partitionReadErrorMessages = foldr f ([],[],[],[],[])
           where
-            f e@FileUnfindable    {} (u,v,w,x,y,z) = (e:u,  v,  w,  x,   y,  z)
-            f e@FileUnopenable    {} (u,v,w,x,y,z) = (  u,e:v,  w,  x,   y,  z)
-            f e@FileUnparsable    {} (u,v,w,x,y,z) = (  u,  v,e:w,  x,   y,  z)
-            f e@FileAmbiguous     {} (u,v,w,x,y,z) = (  u,  v,  w,e:x,   y,  z)
-            f e@MultipleTCMs      {} (u,v,w,x,y,z) = (  u,  v,  w,  x, e:y,  z)
-            f e@InvalidPrealigned {} (u,v,w,x,y,z) = (  u,  v,  w,  x,   y,e:z)
+            f e@FileUnfindable    {} (u,v,w,x,z) = (e:u,  v,  w,  x,  z)
+            f e@FileUnopenable    {} (u,v,w,x,z) = (  u,e:v,  w,  x,  z)
+            f e@FileUnparsable    {} (u,v,w,x,z) = (  u,  v,e:w,  x,  z)
+            f e@FileAmbiguous     {} (u,v,w,x,z) = (  u,  v,  w,e:x,  z)
+            f e@InvalidPrealigned {} (u,v,w,x,z) = (  u,  v,  w,  x,e:z)
 
 
 instance Show ReadErrorMessage where
@@ -104,7 +94,6 @@ instance Show ReadErrorMessage where
     show (FileUnopenable    path) = "'" <> path <> "'"
     show (FileUnparsable    pErr) = pErr
     show (InvalidPrealigned path cols) = mconcat ["'", path, "', has characters of lengths ", fold1 . intersperse ", " $ show <$> cols]
-    show (MultipleTCMs dataPath tcmPath) = "'" <> show dataPath <> "' with the referenced TCM file '" <> show tcmPath <> "'"
     show (FileAmbiguous path matches) = message
       where
         files   = toList matches
@@ -143,12 +132,8 @@ unparsable pStr pErr = ReadError $ FileUnparsable (parseErrorPretty' pStr pErr) 
 -- Don't let @matches@ equal @[]@.
 -- That would be nonsensical and seriously not cool.
 -- Don't make me change the type of @matches@ for @['FilePath']@ to 'NonEmpty'.
-ambiguous  :: FilePath -> [FilePath] -> ReadError
-ambiguous path matches = ReadError $ FileAmbiguous path (fromList matches) :| []
-
-
-multipleTCMs :: FilePath -> FilePath -> ReadError
-multipleTCMs dataPath tcmPath = ReadError $ MultipleTCMs dataPath tcmPath :| []
+ambiguous :: Foldable1 f => FilePath -> f FilePath -> ReadError
+ambiguous path matches = ReadError $ FileAmbiguous path (toNonEmpty matches) :| []
 
 
 invalidPrealigned :: Integral i => FilePath -> NonEmpty i -> ReadError

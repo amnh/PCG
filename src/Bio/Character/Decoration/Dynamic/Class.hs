@@ -86,7 +86,7 @@ class ( HasAverageLength           s AverageLength
 --
 -- Represents the result of just the post-order traversal.
 --
--- Is a sub-class of 'DynamicCharacteracterDecoration'.
+-- Is a sub-class of 'DynamicCharacterDecoration'.
 class ( HasCharacterCost        s Word
       , HasCharacterLocalCost   s Word
       , HasPreliminaryGapped    s a
@@ -122,8 +122,8 @@ class ( HasImpliedAlignment           s a
 class ( SimpleDynamicDecoration s a
       ) => DynamicCharacterDecoration s a | s -> a where
 
-    toDynamicCharacteracterDecoration :: (x -> a) -> x -> s
-    {-# MINIMAL toDynamicCharacteracterDecoration #-}
+    toDynamicCharacterDecoration :: (x -> a) -> x -> s
+    {-# MINIMAL toDynamicCharacterDecoration #-}
 
 
 -- |

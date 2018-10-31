@@ -22,6 +22,7 @@ import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
 import           Control.Arrow                       ((&&&))
 import           Control.DeepSeq
+import           Control.Evaluation
 import           Control.Lens
 import           Control.Monad                       (replicateM)
 import           Control.Monad.IO.Class
@@ -43,7 +44,7 @@ import           System.Random.Shuffle
 type DatNode =
   PhylogeneticNode2
     (CharacterSequence
-      (ContinuousOptimizationDecoration ContinuousChar)
+      (ContinuousOptimizationDecoration ContinuousCharacter)
       (FitchOptimizationDecoration   StaticCharacter)
       (AdditiveOptimizationDecoration StaticCharacter)
       (SankoffOptimizationDecoration StaticCharacter)
@@ -57,32 +58,55 @@ evaluate
   :: BuildCommand
   -> GraphState
   -> SearchState
-evaluate (BuildCommand trajectoryCount buildType) cpctInState = do
-    let inState = getCompact cpctInState
-    case inState of
+evaluate (BuildCommand trajectoryCount buildType) cpctInState =
+    case getCompact cpctInState of
       Left  _ -> pure cpctInState
-      Right v ->
-        case toList $ v ^. leafSet of
-          []   -> fail "There are no nodes with which to build a tree."
-          y:ys ->
-            if trajectoryCount < 1
-            then fail "A non-positive number was supplied to the number of BUILD trajectories."
-            else let (PDAG2 _ m) = NE.head . toNonEmpty . NE.head $ phylogeneticForests v
-                 in  do
-                     trajectories <- case trajectoryCount of
-                                       1 -> pure $ (y:|ys):|[]
-                                       n -> liftIO . fmap (NE.fromList . fmap NE.fromList) $ replicateM n (shuffleM (y:ys))
-                     let !bestTrees = naiveWagnerParallelBuild m trajectories
-                     bestNetwork  <- case buildType of
-                                       WagnerTree     -> pure bestTrees
-                                       WheelerNetwork -> do liftIO $ putStrLn "Beginning network construction."
-                                                            pure $ parmap rpar iterativeNetworkBuild bestTrees
---                                                            pure $ fmap iterativeNetworkBuild bestTrees
-                                       WheelerForest  -> fail "The BUILD command type 'Forest' is not yet implemented!"
-                     liftIO . compact . Right $ toSolution bestNetwork
+      Right v -> do
+        let buildLogic = case buildType of
+                           WagnerTree     -> wagnerBuildLogic
+                           WheelerNetwork -> networkBuildLogic
+                           WheelerForest  -> forestBuildLogic
+        bestNetwork <- buildLogic v trajectoryCount
+        liftIO . compact . Right $ toSolution bestNetwork
   where
     toSolution :: NonEmpty a -> PhylogeneticSolution a
     toSolution = PhylogeneticSolution . pure . PhylogeneticForest
+
+
+wagnerBuildLogic
+  :: PhylogeneticSolution FinalDecorationDAG
+  -> Int
+  -> EvaluationT IO (NonEmpty FinalDecorationDAG)
+wagnerBuildLogic v count =
+    case toList $ v ^. leafSet of
+      []   -> fail "There are no nodes with which to build a tree."
+      y:ys ->
+        if count < 1
+        then fail "A non-positive number was supplied to the number of BUILD trajectories."
+        else let (PDAG2 _ m) = NE.head . toNonEmpty . NE.head $ phylogeneticForests v
+             in  do trajectories <- case count of
+                                      1 -> pure $ (y:|ys):|[]
+                                      n -> liftIO . fmap (NE.fromList . fmap NE.fromList)
+                                             $ replicateM n (shuffleM (y:ys))
+                    pure $ naiveWagnerParallelBuild m trajectories
+
+
+networkBuildLogic
+  :: PhylogeneticSolution FinalDecorationDAG
+  -> a
+  -> EvaluationT IO (NonEmpty FinalDecorationDAG)
+networkBuildLogic v _ = do
+    let bestTrees = toNonEmpty . NE.head $ phylogeneticForests v
+    liftIO $ putStrLn "Beginning network construction."
+    pure $ parmap rpar iterativeNetworkBuild bestTrees
+--  pure $ fmap iterativeNetworkBuild bestTrees
+
+
+forestBuildLogic
+  :: PhylogeneticSolution FinalDecorationDAG
+  -> Int
+  -> EvaluationT IO (NonEmpty FinalDecorationDAG)
+forestBuildLogic _ _ = fail "The BUILD command type 'Forest' is not yet implemented!"
 
 
 naiveWagnerParallelBuild

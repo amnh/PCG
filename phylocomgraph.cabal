@@ -521,8 +521,9 @@ Test-Suite integration-tests
 
   main-is:          IntegrationTests.hs
 
-  build-depends:      base               >=4.10
+  build-depends:       base               >=4.10
                     , containers
+                    , deepseq
                     , directory
                     , filepath
                     , megaparsec         >=6.4.0
@@ -538,7 +539,7 @@ Test-Suite integration-tests
                     , turtle
 
   ghc-options:      -threaded
---                    -with-rtsopts=-N4
+                    -with-rtsopts=-N7
 
   hs-source-dirs:   test
 

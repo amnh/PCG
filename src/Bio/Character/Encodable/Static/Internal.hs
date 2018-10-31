@@ -250,15 +250,26 @@ instance Ranged StaticCharacter where
     toRange sc = fromTupleWithPrecision (firstSetBit, lastSetBit) totalBits
         where
             firstSetBit = toEnum $ countLeadingZeros sc
-            lastSetBit  = toEnum $ totalBits - countTrailingZeros sc - 1
+            lastSetBit  = toEnum . max 0 $ totalBits - countTrailingZeros sc - 1
             totalBits   = finiteBitSize sc
 
-    fromRange x = zeroVector .|. (allBitsUpperBound `xor` allBitsLowerBound)
-        where
+    fromRange x
+      | ub == lb  = toSC $ 2 ^ ub
+      | otherwise = allBitsUpperBound `xor` allBitsLowerBound
+      where
+        toSC = SC . fromNumber dim
+        dim  = toEnum . fromJust $ precision x
+        ub   = upperBound x
+        lb   = lowerBound x
+        allBitsUpperBound = toSC $ (2 :: Integer) ^ upperBound x - 1
+        allBitsLowerBound = toSC $ (2 :: Integer) ^ lowerBound x - 1
+{-
+      where
             allBitsUpperBound = SC . fromNumber (toEnum boundaryBit) $ (2 ^ upperBound x - 1 :: Integer)
             allBitsLowerBound = SC . fromNumber (toEnum boundaryBit) $ (2 ^ lowerBound x - 1 :: Integer)
             zeroVector  = (zeroBits `setBit` boundaryBit) `clearBit` boundaryBit
             boundaryBit = fromJust (precision x) - 1
+-}
 
     zeroRange sc = fromTupleWithPrecision (0,0) $ finiteBitSize sc
 

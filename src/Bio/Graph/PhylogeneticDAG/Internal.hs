@@ -132,10 +132,15 @@ data PostorderContextualData t = PostorderContextualData
 
 
 -- | (✔)
-instance ( NFData t
-         ) => NFData (PostorderContextualData t)
+instance NFData t => NFData (PostorderContextualData t)
+
 
 -- TODO: RENAME THIS to PhylogeneticForest
+-- |
+-- The primitive phylogenetic object.
+--
+-- Contains each taxon exactly once, though the leaves do not need to be connected.
+-- The graph object allows for multiple roots and recticulation events.
 data  PhylogeneticDAG2 m e n u v w x y z
     = PDAG2
     { phylogeneticForest :: ReferenceDAG
@@ -150,47 +155,40 @@ data  PhylogeneticDAG2 m e n u v w x y z
 -- Reference to a edge in the DAG
 type EdgeReference = (Int, Int)
 
+
 -- |
 -- A 'Lens' for the 'minimalNetworkContext' field in 'PostorderContextualData'
+{-# SPECIALISE  _minimalNetworkContext :: Lens' (PostorderContextualData t) (Maybe (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge)))) #-}
 class HasMinimalNetworkContext s a | s -> a where
-  _minimalNetworkContext :: Lens' s a
 
-{-# SPECIALISE
-      _minimalNetworkContext ::
-        Lens'
-          (PostorderContextualData t)
-          (Maybe (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge))))
- #-}
+    _minimalNetworkContext :: Lens' s a
 
 
-instance HasMinimalNetworkContext
-  (PostorderContextualData t)
-  (Maybe (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge))))
-    where
-  {-# INLINE _minimalNetworkContext #-}
-  _minimalNetworkContext = lens minimalNetworkContext (\p m -> p {minimalNetworkContext = m})
+instance HasMinimalNetworkContext (PostorderContextualData t) (Maybe (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge)))) where
+
+    {-# INLINE _minimalNetworkContext #-}
+    _minimalNetworkContext = lens minimalNetworkContext (\p m -> p {minimalNetworkContext = m})
+
 
 -- |
 -- A 'Lens' for the 'phyogeneticForest' field in 'PhylogeneticDAG2'
 class HasPhylogeneticForest s t a b | s -> a, t -> b, s b -> t, t a -> s where
-  _phylogeneticForest :: Lens s t a b
+
+    _phylogeneticForest :: Lens s t a b
 
 
 instance HasPhylogeneticForest
-  (PhylogeneticDAG2 m e n u v w x y z)
-  (PhylogeneticDAG2 m e n u' v' w' x' y' z')
-  (ReferenceDAG
-    (PostorderContextualData (CharacterSequence u v w x y z)) e (PhylogeneticNode2 (CharacterSequence u v w x y z) n))
-  (ReferenceDAG
-    (PostorderContextualData (CharacterSequence u' v' w' x' y' z')) e (PhylogeneticNode2 (CharacterSequence u' v' w' x' y' z') n)) where
-  {-# INLINE _phylogeneticForest #-}
-  _phylogeneticForest = lens phylogeneticForest (\p pf -> p {phylogeneticForest = pf})
+           (PhylogeneticDAG2 m e n u v w x y z)
+           (PhylogeneticDAG2 m e n u' v' w' x' y' z')
+           (ReferenceDAG (PostorderContextualData (CharacterSequence u v w x y z)) e (PhylogeneticNode2 (CharacterSequence u v w x y z) n))
+           (ReferenceDAG (PostorderContextualData (CharacterSequence u' v' w' x' y' z')) e (PhylogeneticNode2 (CharacterSequence u' v' w' x' y' z') n)) where
+
+    {-# INLINE _phylogeneticForest #-}
+    _phylogeneticForest = lens phylogeneticForest (\p pf -> p {phylogeneticForest = pf})
 
 
 -- | (✔)
-instance HasLeafSet
-  (PhylogeneticDAG2 m e n u v w x y z)
-  (LeafSet (PhylogeneticNode2 (CharacterSequence u v w x y z) n)) where
+instance HasLeafSet (PhylogeneticDAG2 m e n u v w x y z) (LeafSet (PhylogeneticNode2 (CharacterSequence u v w x y z) n)) where
 
     leafSet = Lens.to getter
         where
@@ -211,7 +209,6 @@ instance ( NFData m
          , NFData y
          , NFData z
          ) => NFData (PhylogeneticDAG2 m e n u v w x y z)
-
 
 
 -- | (✔)

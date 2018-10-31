@@ -1,3 +1,3 @@
-read(prealigned:(nucleotide:"../../../../shared-data/arthropods/arthSank.fasta", tcm:("../../../../shared-data/tcms/dna-L1-norm.tcm")))
+read(set_tcm:(tcm:"../../../../shared-data/tcms/dna-L1-norm.tcm", prealigned:nucleotide:"../../../../shared-data/arthropods/arthSank.fasta"))
 read("../../../../shared-data/arthropods/arth.newick")
 report(data, (overwrite, "cost.data"))

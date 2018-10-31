@@ -19,7 +19,6 @@ import Data.MonoTraversable
 import Data.Semigroup.Foldable
 import PCG.Command.Report
 import PCG.Command.Report.GraphViz
-import PCG.Syntax                       (Command (..))
 import Text.XML
 
 

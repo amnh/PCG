@@ -19,7 +19,7 @@
 
 module Test.Custom.DynamicCharacterNode
   ( DynamicCharacterNode()
-  , getDynamicCharacteracterDecoration
+  , getDynamicCharacterDecoration
   , constructNode
   ) where
 
@@ -41,7 +41,7 @@ import Test.QuickCheck
 -- |
 -- Represents a cherry node of dynamic character decorations.
 newtype DynamicCharacterNode = DCN
-    { getDynamicCharacteracterDecoration :: DynamicDecorationDirectOptimization DynamicCharacter -- ^ Extract the character decoration.
+    { getDynamicCharacterDecoration :: DynamicDecorationDirectOptimization DynamicCharacter -- ^ Extract the character decoration.
     }
     deriving (Show)
 
@@ -109,7 +109,7 @@ defMetadata = dynamicMetadata defName defWeight defAlphabet scm Nothing
 
 
 initDec :: DynamicCharacter -> DynamicDecorationInitial DynamicCharacter
-initDec = toDynamicCharacteracterDecoration id
+initDec = toDynamicCharacterDecoration id
 
 
 defName :: CharacterName

@@ -34,7 +34,7 @@ module Bio.Graph
   , UnifiedCharacterSequence
   , UnifiedContinuousCharacter
   , UnifiedDiscreteCharacter
-  , UnifiedDynamicCharacteracter
+  , UnifiedDynamicCharacter
   , UnifiedMetadataBlock
   , UnifiedMetadataSequence
   , UnReifiedCharacterDAG
