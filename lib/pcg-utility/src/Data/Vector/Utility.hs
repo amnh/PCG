@@ -19,9 +19,9 @@ module Data.Vector.Utility
   , zip3
   ) where
 
-import Data.Vector as V hiding (zip3)
-import Prelude hiding (zip3)
 import Data.Tuple.Utility
+import Data.Vector        as V hiding (zip3)
+import Prelude            hiding (zip3)
 
 -- |
 -- This will generate a function in a memoized fashion across the range of the vector.
