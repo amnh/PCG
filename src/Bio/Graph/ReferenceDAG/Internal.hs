@@ -77,7 +77,7 @@ import           Prelude                       hiding (lookup, zipWith)
 import           Text.Newick.Class
 import           Text.XML.Custom
 
-import Debug.Trace
+import           Debug.Trace
 
 -- |
 -- A constant time access representation of a directed acyclic graph.
@@ -1515,8 +1515,8 @@ candidateNetworkEdges dag = S.fromList candidateEdgesList
           e2@(src2, tgt2) <- es
           guard (symmetricCompatibility e1 e2)
 
-          let  e1e2Bool = (not $ hasIncidentNetworkNode e2) && posetalCompatibility e1 e2
-          let  e2e1Bool = (not $ hasIncidentNetworkNode e1) && posetalCompatibility e2 e1
+          let  e1e2Bool = not (hasIncidentNetworkNode e2) && posetalCompatibility e1 e2
+          let  e2e1Bool = not (hasIncidentNetworkNode e1) && posetalCompatibility e2 e1
           case (e1e2Bool, e2e1Bool) of
             (True, True)   -> pure (e1,e2) <|> pure (e2,e1)
             (True, False)  -> pure (e1, e2)
