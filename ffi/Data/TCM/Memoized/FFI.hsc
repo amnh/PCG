@@ -237,9 +237,11 @@ foreign import ccall unsafe "costMatrix getCostAndMedian3D"
 getMemoizedCostMatrix :: Word
                       -> (Word -> Word -> Word)
                       -> MemoizedCostMatrix
-getMemoizedCostMatrix alphabetSize costFn = unsafePerformIO . withArray rowMajorList $ \allocedTCM -> do
-    !resultPtr <- initializeMemoizedCMfn_c (coerceEnum alphabetSize) allocedTCM
-    pure $ MemoizedCostMatrix resultPtr
+getMemoizedCostMatrix alphabetSize costFn = unsafePerformIO . withArray rowMajorList $
+    -- The array 'allocedTCM' is free'd at the end of the IO code in the do block's scope.
+    \allocedTCM -> do
+        !resultPtr <- initializeMemoizedCMfn_c (coerceEnum alphabetSize) allocedTCM
+        pure $ MemoizedCostMatrix resultPtr
   where
     rowMajorList = [ coerceEnum $ costFn i j | i <- range,  j <- range ]
     range = [0 .. alphabetSize - 1]
