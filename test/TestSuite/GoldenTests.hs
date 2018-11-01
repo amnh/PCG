@@ -1,16 +1,21 @@
+{-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE Strict            #-}
 module TestSuite.GoldenTests
   ( testSuite
   ) where
 
-import Control.Monad         (filterM)
+import Control.DeepSeq
+import Control.Monad         (filterM, void)
 import Data.Text             (pack)
 import Data.Tree             (flatten, unfoldTreeM)
 import System.Directory
 import System.FilePath.Posix
 import Test.Tasty
 import Test.Tasty.Golden
-import Turtle                (cd, decodeString, pwd, shell)
+import Turtle                (cd, decodeString, pwd, shellStrict, encodeString)
+
+import Debug.Trace
 
 type Extension = String
 
@@ -32,7 +37,7 @@ goldenTest (filePath, extension) = do
   let testName = filePath
   let outputFilePath = filePath -<.> extension
   let goldenFilePath = makeGolden filePath
-  pure $
+  pure  $
     goldenVsFile
       testName
       goldenFilePath
@@ -47,36 +52,37 @@ goldenTest (filePath, extension) = do
 generateOutput :: FilePath -> IO ()
 generateOutput fp
   = do
-  baseDir <- pwd
-  cd $ decodeString fileDir -- Change to filepath directory.
-  _ <- flip shell mempty
-        . pack
-          $ mconcat
-            ["[ -e "
-            , testLog
-            , " ]"
-            , " && "
-            , "rm "
-            , testLog]      -- Delete the previous test log.
-  _ <- flip shell mempty
-        . pack
-        $ mconcat
-          ["stack exec pcg"
-          , "< "
+  baseDir <- getCurrentDirectory
+  let !b = traceShowId baseDir
+  setCurrentDirectory fileDir -- Change to filepath directory.
+  {--_ <- shellRunner $ mconcat
+            [ "rm -f"
+            , testLog -- Delete the previous test log.
+            ]--}
+  _ <- shellRunner $ mconcat
+          [ "stack exec pcg -- --input "
           , fileName
-          , " >>"
-          , testLog]        -- Run pcg on file passing StdOut to log file.
-  cd baseDir                -- Return to base directory
+          , " --output "
+          , testLog
+          ]        -- Run pcg on file passing StdOut to log file.
+  setCurrentDirectory baseDir                -- Return to base directory
+--  _ <- shellRunner $ "cd " <> (encodeString baseDir)
+--  pure ()
   where
-    (fileDir, fileName) = splitFileName fp
+    (!fileDir, fileName) = traceShowId $ splitFileName fp
+    shellRunner = void . (flip shellStrict mempty) . pack
+
 
 
 -- |
 -- Recursively gets all .pcg files in a directory.
 getPCGFiles :: FilePath -> IO [FilePath]
 getPCGFiles fp = do
-  subDirs <- getSubDirs fp
-  concat <$> traverse getPCGFilesInDir subDirs
+  baseDir  <- getCurrentDirectory
+  subDirs  <- getSubDirs fp
+  relPaths <- concat <$> traverse getPCGFilesInDir subDirs
+  pure $ (baseDir </>) <$> relPaths
+  
     where
       getPCGFilesInDir :: FilePath -> IO [FilePath]
       getPCGFilesInDir =
@@ -115,4 +121,4 @@ testLog = "test" <.> "log"
 -- |
 -- Name of golden tests directory.
 goldenDir :: FilePath
-goldenDir = "." </> "datasets" </> "golden-tests"
+goldenDir = "datasets" </> "golden-tests"
