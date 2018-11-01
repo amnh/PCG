@@ -18,7 +18,7 @@
 module Data.EdgeSet
   ( EdgeSet()
 --  , NetworkDisplayEdgeSet(..)
-  , SetLike(difference, union, intersection)
+--  , SetLike(difference, union, intersection)
 --  , collapseToEdgeSet
 --  , fromEdgeSets
   , disjoint
@@ -50,7 +50,7 @@ import           Prelude              hiding (zipWith)
 newtype EdgeSet e = ES (Set e)
   deriving (Eq, Foldable, Generic, Monoid, Ord, Semigroup)
 
-
+{--
 -- |
 -- Represents multiple disconnected collections of edges.
 --
@@ -128,11 +128,16 @@ instance Ord a => SetLike (Set a) where
 
     union        = Set.union
 
+--}
+
+instance NFData e => NFData (EdgeSet e) where
+
+    rnf (ES set) = rnf set
+
 
 instance Show a => Show (EdgeSet a) where
 
   show (ES xs) = show (toList xs)
-
 
 {-
 -- |
