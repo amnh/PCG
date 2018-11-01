@@ -258,8 +258,11 @@ getMedianAndCost2D memo e1 e2 = unsafePerformIO $ do
     e1'           <- constructElementFromExportable e1
     e2'           <- constructElementFromExportable e2
     !cost         <- getCostAndMedian2D_c e1' e2' medianPtr (costMatrix memo)
+    _             <- free e1'
+    _             <- free e2'
     medianElement <- peek medianPtr
     medianValue   <- fmap buildExportable . peekArray bufferLength $ characterElement medianElement
+    _             <- free medianPtr
     pure (medianValue, coerceEnum cost)
   where
     alphabetSize    = exportedElementWidthSequence $ toExportableBuffer e1
@@ -281,8 +284,12 @@ getMedianAndCost3D memo e1 e2 e3 = unsafePerformIO $ do
     e2'           <- constructElementFromExportable e2
     e3'           <- constructElementFromExportable e3
     !cost         <- getCostAndMedian3D_c e1' e2' e3' medianPtr (costMatrix memo)
+    _             <- free e1'
+    _             <- free e2'
+    _             <- free e3'
     medianElement <- peek medianPtr
     medianValue   <- fmap buildExportable . peekArray bufferLength $ characterElement medianElement
+    _             <- free medianPtr
     pure (medianValue, coerceEnum cost)
   where
     alphabetSize    = exportedElementWidthSequence $ toExportableBuffer e1
