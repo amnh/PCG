@@ -13,7 +13,7 @@ import System.Directory
 import System.FilePath.Posix
 import Test.Tasty
 import Test.Tasty.Golden
-import Turtle                (cd, decodeString, pwd, shellStrict, encodeString)
+import Turtle                (cd, decodeString, encodeString, pwd, shellStrict)
 
 import Debug.Trace
 
@@ -55,22 +55,17 @@ generateOutput fp
   baseDir <- getCurrentDirectory
   let !b = traceShowId baseDir
   setCurrentDirectory fileDir -- Change to filepath directory.
-  {--_ <- shellRunner $ mconcat
-            [ "rm -f"
-            , testLog -- Delete the previous test log.
-            ]--}
   _ <- shellRunner $ mconcat
           [ "stack exec pcg -- --input "
           , fileName
           , " --output "
           , testLog
-          ]        -- Run pcg on file passing StdOut to log file.
-  setCurrentDirectory baseDir                -- Return to base directory
---  _ <- shellRunner $ "cd " <> (encodeString baseDir)
---  pure ()
+          ]                    -- Run pcg on file passing StdOut to log file.
+  setCurrentDirectory baseDir  -- Return to base directory
+
   where
     (!fileDir, fileName) = traceShowId $ splitFileName fp
-    shellRunner = void . (flip shellStrict mempty) . pack
+    shellRunner = void . (`shellStrict` mempty) . pack
 
 
 
@@ -82,7 +77,7 @@ getPCGFiles fp = do
   subDirs  <- getSubDirs fp
   relPaths <- concat <$> traverse getPCGFilesInDir subDirs
   pure $ (baseDir </>) <$> relPaths
-  
+
     where
       getPCGFilesInDir :: FilePath -> IO [FilePath]
       getPCGFilesInDir =
