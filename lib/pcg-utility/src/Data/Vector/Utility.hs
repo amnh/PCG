@@ -1,4 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Vector.Utility
@@ -13,15 +12,28 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Data.Vector.Utility
-  ( generateMemo
-  , DVector(..)
+  ( DVector(..)
+  , generateMemo
   , zip3
   ) where
 
 import Data.Tuple.Utility
 import Data.Vector        as V hiding (zip3)
 import Prelude            hiding (zip3)
+
+
+-- |
+-- A "difference" vector which describe how to perform a memoize, full
+-- transformation over a vector. Useful when you want to compose multiple
+-- open-recursion memoizations for a vector.
+--
+-- Use 'generateMemo' to produce the concrete vector from the "difference"
+-- vector specification.
+newtype DVector a = DVector {getDVector :: (Int -> a) -> Int -> a}
+
 
 -- |
 -- This will generate a function in a memoized fashion across the range of the vector.
@@ -40,8 +52,6 @@ generateMemo range dVector = memoizedVect
     memoizedVect :: V.Vector a
     memoizedVect = generate range (openRecurseFn memoizedFunction)
 
-
-newtype DVector a = DVector {getDVector :: (Int -> a) -> Int -> a}
 
 -- |
 -- Helper function to zip together three openly recursive vectors.

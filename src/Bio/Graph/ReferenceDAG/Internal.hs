@@ -1603,12 +1603,19 @@ candidateNetworkEdges dag = S.fromList candidateEdgesList
         e2AncestralTest
           = e1TgtDescendantNetworkNodes `IS.disjoint` e2SrcAncestralNetworkNodes
       in
-      {- This is the correct version if we allow root node as edge source
+      -- This is the correct version if we allow root node as edge source
+      --
+      -- TODO: Revisit this network edge constraint.
+      -- We will re-evaluate how to add network edges incident to the root after
+      -- some of the core data structures related to the topology and character
+      -- matrix
+      {-
         case (e1HasRootSource, e2HasRootSource) of
           (True , True ) -> False
           (True , False) -> e2AncestralTest
           (False, True ) -> e1AncestralTest
-          (False, False) -> e1AncestralTest && e2AncestralTest -}
+          (False, False) -> e1AncestralTest && e2AncestralTest
+      -}
         e1AncestralTest && e2AncestralTest
 
 
