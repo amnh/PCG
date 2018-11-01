@@ -10,6 +10,8 @@
 --
 -----------------------------------------------------------------------------
 
+{-# OPTIONS_GHC -Wno-unused-matches #-}
+
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleContexts           #-}
@@ -707,6 +709,8 @@ defaultMetadata :: Monoid m => ReferenceDAG d e n -> ReferenceDAG m e n
 {-# INLINE defaultMetadata #-}
 defaultMetadata = _graphData %~ defaultGraphMetadata
 
+-- |
+-- Zero cost graph data with 'graphMetadata' set to 'mempty'.
 zeroCostGraphData :: Monoid m => GraphData m
 {-# INLINE zeroCostGraphData #-}
 zeroCostGraphData
@@ -1467,7 +1471,9 @@ ancestralRootIncidentNodesContextFn ancestralRootNodes (currInd, nodeDatum) =
              then (IS.singleton currInd <> parAncestralSet1 <> parAncestralSet2, False)
              else (parAncestralSet1 <> parAncestralSet2, False)
 
-
+-- |
+-- Generate a vector of graph data for finding the candidate network edges in a memoized
+-- fashion.
 tabulateNetworkInformation
   :: ReferenceDAG d e n
   -> Vector
@@ -1493,6 +1499,9 @@ tabulateNetworkInformation dag =
     lengthRefs = length $ dag ^. _references
 
 
+
+-- |
+-- Find all candidate network edges in a DAG.
 candidateNetworkEdges :: ReferenceDAG d e n -> Set ((Int, Int), (Int,Int))
 candidateNetworkEdges dag = S.fromList candidateEdgesList
   where
@@ -1594,10 +1603,11 @@ candidateNetworkEdges dag = S.fromList candidateEdgesList
           = fst . proj3_2 $ networkInformation ! src2
 
      -- Boolean tests:
+      {-- See TODO below
         e1HasRootSource
           = src1 `IS.member` rootIndices
         e2HasRootSource
-          = src2 `IS.member` rootIndices
+          = src2 `IS.member` rootIndices --}
         e1AncestralTest
           = e2SrcDescendantNetworkNodes `IS.disjoint` e1SrcAncestralNetworkNodes
         e2AncestralTest
