@@ -58,7 +58,7 @@ generateOutput
   -> FileStreamContext
 generateOutput g' format =
   case format of
-    Data {}    -> SingleStream $ either show showWithTotalEdgeCost  g
+    Data {}    -> SingleStream $ either show show g
     XML  {}    -> SingleStream $ either show (ppTopElement . toXML) g
     DotFile {} -> SingleStream $ generateDotFile g'
     _          -> ErrorCase "Unrecognized 'report' command"
@@ -97,7 +97,7 @@ generateOutput g ImpliedAlignmentCharacters {} =
                     zs -> MultiStream $ fromList zs
 -}
 
-
+{--
 showWithTotalEdgeCost
   :: ( HasSingleDisambiguation z c
      , EncodableDynamicCharacter c
@@ -125,7 +125,7 @@ showWithTotalEdgeCost x = unlines
     [ show $ fmap totalEdgeCosts . toNonEmpty <$> phylogeneticForests x
     , show x
     ]
-
+--}
 
 type FileContent = String
 
