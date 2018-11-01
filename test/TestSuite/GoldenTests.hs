@@ -1,6 +1,6 @@
-{-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Strict            #-}
+
 module TestSuite.GoldenTests
   ( testSuite
   ) where
@@ -53,8 +53,7 @@ generateOutput :: FilePath -> IO ()
 generateOutput fp
   = do
   baseDir <- getCurrentDirectory
-  let !b = traceShowId baseDir
-  setCurrentDirectory fileDir -- Change to filepath directory.
+  setCurrentDirectory fileDir   -- Change to filepath directory.
   _ <- shellRunner $ mconcat
           [ "stack exec pcg -- --input "
           , fileName
@@ -64,7 +63,7 @@ generateOutput fp
   setCurrentDirectory baseDir  -- Return to base directory
 
   where
-    (!fileDir, fileName) = traceShowId $ splitFileName fp
+    (fileDir, fileName) = splitFileName fp
     shellRunner = void . (`shellStrict` mempty) . pack
 
 
