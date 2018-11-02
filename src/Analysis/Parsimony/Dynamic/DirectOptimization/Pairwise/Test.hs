@@ -176,8 +176,9 @@ isValidPairwiseAlignment testLabel alignmentFunction = testGroup testLabel
 
     outputsCorrespondToInputs :: (NucleotideSequence, NucleotideSequence) -> Property
     outputsCorrespondToInputs (NS lhs, NS rhs) =
-        lhs /= rhs ==> counterexample "lhs' === rhs" (filterGaps lhs' /= filterGaps rhs) .&&.
-                       counterexample "rhs' === lhs" (filterGaps rhs' /= filterGaps lhs)
+        lhs /= rhs && filterGaps lhs' /= filterGaps rhs' ==>
+            counterexample "lhs' === rhs" (filterGaps lhs' /= filterGaps rhs) .&&.
+            counterexample "rhs' === lhs" (filterGaps rhs' /= filterGaps lhs)
       where
         (_, _, _, lhs', rhs') = alignmentFunction lhs rhs
 

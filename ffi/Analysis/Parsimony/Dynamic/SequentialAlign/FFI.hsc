@@ -84,11 +84,11 @@ foreign import ccall unsafe "sequentialAlignInterface performSequentialAlignment
 pairwiseSequentialAlignment :: (EncodableDynamicCharacter s, Exportable s {- , Show s -}) => MemoizedCostMatrix -> s -> s -> (Word, s, s, s, s)
 pairwiseSequentialAlignment memo char1 char2 = unsafePerformIO $ do
 --        !_ <- trace "Before constructing char1" $ pure ()
-        char1'        <- constructCharacterFromExportable char1
+        char1'        <- constructCharacter char1
 --        !_ <- trace "After  constructing char1" $ pure ()
 
 --        !_ <- trace "Before constructing char2" $ pure ()
-        char2'        <- constructCharacterFromExportable char2
+        char2'        <- constructCharacter char2
 --        !_ <- trace "After  constructing char1" $ pure ()
 
 --        !_ <- trace "Before mallocing result " $ pure ()
