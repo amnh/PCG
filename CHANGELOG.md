@@ -31,8 +31,7 @@ Releases are available [on GitHub][2].
 * Added module for stricter fold functions
 * Added lenses for many graph and node accessors
 * Added makefile commands for outputting core, building with llvm backend, various test options and building a local hoogle database
-* Added new version of candidate network edges that rules out previously allowed examples.
-* Added vector memoisation module for writing single-pass memoization vector functions.
+* Added module for memoized vector computation abstracting the method used in pre/postorder
 * Streamlined build experience on MacOS
 * Corrected defect in handling of prealigned input data
 * Corrected defect in Data.Range value construction
@@ -40,6 +39,7 @@ Releases are available [on GitHub][2].
 * Corrected defect in Data.Vector.NonEmpty.unfoldr
 * Corrected defect in headEx & lastEx of several MonoFoldable instances
 * Corrected defect in omap over missing dynamic characters
+* Corrected defect in candidateNetworkEdges to not return inconsistent edges
 * Streamlined build experience on MacOS
 * Polished command line option parsing and error reporting
 * Improved phylogeny pretty-printing
