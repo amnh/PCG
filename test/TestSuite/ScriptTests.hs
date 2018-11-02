@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE Strict            #-}
 {-# LANGUAGE TypeFamilies      #-}
 
 module TestSuite.ScriptTests
@@ -11,17 +12,19 @@ import Control.DeepSeq
 import Data.Char                  (isSpace)
 import Data.Either
 import Data.Foldable
-import Data.Functor               (($>))
+import Data.Functor               (void, ($>))
 import Data.Scientific            hiding (scientific)
-import Data.Text                  (Text)
+import Data.Text                  (Text, pack)
 import Data.Void                  (Void)
 import Numeric.Extended.Real
+import System.Directory
+import System.FilePath.Posix
 import Test.Tasty
 import Test.Tasty.HUnit
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer (scientific)
-import Turtle                     hiding (char, many, parallel, satisfy, wait, x)
+import Turtle                     (ExitCode (..), decodeString, readTextFile, shellStrict)
 
 
 testSuite :: IO TestTree
@@ -302,18 +305,20 @@ runExecutable
   -> IO (Either Int [Text]) -- ^ Resulting file contents of the specified output
                             --   files, or the exit code if the script failed
 runExecutable scriptStr outputPaths = do
-    startingDirectory <- pwd
-    cd scriptDirectory
+    startingDirectory  <- getCurrentDirectory
+    absScriptDirectory <- makeAbsolute scriptDirectory
+    setCurrentDirectory absScriptDirectory
+
     (exitCode, _) <- shellStrict ("stack exec pcg -- --input " <> scriptText <> " --output test.log") mempty
-    cd startingDirectory
+    setCurrentDirectory startingDirectory
     case exitCode of
       ExitFailure v -> pure $ Left v
       _             -> Right <$> traverse (readTextFile . decodeString) outputPaths
   where
-    scriptText = either id id $ toText scriptFile
+    scriptText = pack scriptFile
 
-    (scriptDirectory, scriptFile) = breakScriptPath $ decodeString scriptStr
+    (scriptDirectory, scriptFile) = breakScriptPath scriptStr
 
-    breakScriptPath = (collapse . foldl' (</>) defaultDirectory . init &&& last) . splitDirectories
+    breakScriptPath = (normalise . foldl' (</>) defaultDirectory . init &&& last) . splitDirectories
       where
-        defaultDirectory = decodeString "."
+        defaultDirectory = "."
