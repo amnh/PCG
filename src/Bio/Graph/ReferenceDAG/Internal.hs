@@ -11,6 +11,7 @@
 -----------------------------------------------------------------------------
 
 {-# OPTIONS_GHC -Wno-unused-matches #-}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
@@ -38,10 +39,8 @@ import           Control.Lens.Operators        ((%~), (.~), (^.))
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
 import           Data.EdgeSet
-import           Data.Either                   (partitionEithers)
 import           Data.Foldable
 import           Data.Foldable.Custom
-import           Data.Functor                  ((<$))
 import           Data.GraphViz.Attributes
 import           Data.GraphViz.Printing
 import           Data.GraphViz.Types           hiding (attrs)
@@ -79,7 +78,6 @@ import           Prelude                       hiding (lookup, zipWith)
 import           Text.Newick.Class
 import           Text.XML.Custom
 
-import           Debug.Trace
 
 -- |
 -- A constant time access representation of a directed acyclic graph.
@@ -1331,7 +1329,6 @@ dVectorPostorder indexFn dag = DVector f
   where
     refs        = dag ^. _references
     leafInds    = leafIndices dag
-    numberNodes = length refs
 
  -- A generate function with open recursion
     f :: (Int -> a) -> Int -> a
@@ -1367,7 +1364,6 @@ dVectorPreorder indexFn dag = DVector f
   where
     refs        = dag ^. _references
     rootInds    = rootRefs dag
-    numberNodes = length refs
 
  -- A generate function with open recursion
     f :: (Int -> a) -> Int -> a
