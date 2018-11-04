@@ -33,6 +33,7 @@ Releases are available [on GitHub][2].
 * Added makefile commands for outputting core, building with llvm backend, various test options and building a local hoogle database
 * Streamlined build experience on MacOS
 * Corrected defect in handling of prealigned input data
+* Corrected defect in FFI resulting in a spae leak
 * Corrected defect in Data.Range value construction
 * Corrected defect in Data.Range.Ranged type-class definitions
 * Corrected defect in Data.Vector.NonEmpty.unfoldr
