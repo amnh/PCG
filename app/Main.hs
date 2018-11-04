@@ -24,6 +24,14 @@ import Text.Megaparsec              (ParseError, Parsec, Token, parse, parseErro
 import Text.PrettyPrint.ANSI.Leijen (align, indent, int, line, string, text, (<+>), (</>))
 
 
+
+import Analysis.Scoring
+import Bio.Character
+import Bio.Graph
+import           Bio.Metadata
+import           Data.TCM.Memoized 
+
+
 -- |
 -- Valid command line options
 data  CommandLineOptions

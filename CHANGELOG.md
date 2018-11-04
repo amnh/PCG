@@ -34,6 +34,7 @@ Releases are available [on GitHub][2].
 * Added module for memoized vector computation abstracting the method used in pre/postorder
 * Streamlined build experience on MacOS
 * Corrected defect in handling of prealigned input data
+* Corrected defect in FFI resulting in a spae leak
 * Corrected defect in Data.Range value construction
 * Corrected defect in Data.Range.Ranged type-class definitions
 * Corrected defect in Data.Vector.NonEmpty.unfoldr

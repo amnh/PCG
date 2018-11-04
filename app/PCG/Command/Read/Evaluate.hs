@@ -57,6 +57,11 @@ import           System.Directory
 import           System.FilePath                           (takeExtension)
 import           System.FilePath.Glob
 import           Text.Megaparsec
+import Analysis.Scoring
+import Bio.Character
+import Bio.Graph
+import           Bio.Metadata
+import           Data.TCM.Memoized    
 
 
 parse' :: Parsec Void s a -> String -> s -> Either (ParseError (Token s) Void) a

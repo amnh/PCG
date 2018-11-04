@@ -19,6 +19,7 @@ import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG           (PostorderContextualData, setDefaultMetadata)
 import qualified Bio.Graph.ReferenceDAG              as DAG
 import           Bio.Graph.ReferenceDAG.Internal
+import           Bio.Metadata
 import           Bio.Sequence
 import           Control.Arrow                       ((&&&))
 import           Control.DeepSeq
@@ -37,6 +38,7 @@ import qualified Data.List.NonEmpty                  as NE
 import           Data.NodeLabel
 import           Data.Ord                            (comparing)
 import           Data.Semigroup.Foldable
+import           Data.TCM.Memoized
 import           PCG.Command.Build
 import           System.Random.Shuffle
 
@@ -148,10 +150,8 @@ naiveWagnerBuild metaSeq ns =
   where
     fromRefDAG = performDecoration . (`PDAG2`  metaSeq) . resetMetadata
 
-iterativeBuild
-  :: FinalDecorationDAG
-  -> DatNode
-  -> FinalDecorationDAG
+
+iterativeBuild :: FinalDecorationDAG -> DatNode -> FinalDecorationDAG
 iterativeBuild currentTree@(PDAG2 _ metaSeq) nextLeaf = nextTree
   where
     (PDAG2 dag _) = wipeScoring currentTree
@@ -167,10 +167,7 @@ iterativeBuild currentTree@(PDAG2 _ metaSeq) nextLeaf = nextTree
         PNode2 (resolutions oldChildDatum) (nodeDecorationDatum2 parentDatum)
 
 
-iterativeNetworkBuild
-  :: FinalDecorationDAG
-  -> FinalDecorationDAG
-
+iterativeNetworkBuild :: FinalDecorationDAG -> FinalDecorationDAG
 iterativeNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
     case toList $ candidateNetworkEdges inputDag of
       []   -> currentNetwork
@@ -206,5 +203,5 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
         PNode2 (resolutions oldChildDatum) (nodeDecorationDatum2 parentDatum)
 
 
-resetMetadata ::  ReferenceDAG d e n -> ReferenceDAG (PostorderContextualData t) e n
+resetMetadata :: ReferenceDAG d e n -> ReferenceDAG (PostorderContextualData t) e n
 resetMetadata ref = ref & _graphData %~ setDefaultMetadata
