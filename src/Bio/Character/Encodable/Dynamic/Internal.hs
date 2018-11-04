@@ -47,7 +47,7 @@ import           Data.Hashable
 import           Data.Key
 import           Data.List.NonEmpty                    (NonEmpty (..))
 import qualified Data.List.NonEmpty                    as NE
-import           Data.List.Utility                     (invariantTransformation)
+import           Data.List.Utility                     (invariantTransformation, occurances)
 import           Data.Maybe                            (fromJust)
 import           Data.MonoTraversable
 import           Data.Range
@@ -287,7 +287,13 @@ instance MonoFunctor DynamicCharacter where
           []   -> bm
           dces -> case invariantTransformation finiteBitSize dces of
              Just i  -> DC . factorRows (toEnum i) $ foldMap unwrap dces
-             Nothing -> error "The mapping function over the Dynamic Character did not return *all* all elements of equal length."
+             Nothing -> error $ unlines
+                 [ "The mapping function over the Dynamic Character did not return *all* all elements of equal length."
+                 , show . occurances $ finiteBitSize <$> dces
+                 , show $ finiteBitSize <$> dces
+                 , unlines $ foldMap (\x -> if x then "1" else "0") . toBits . unwrap <$> dces
+                 , show bm
+                 ]
 
 
 instance MonoTraversable DynamicCharacterElement where

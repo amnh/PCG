@@ -36,10 +36,12 @@ import           Analysis.Parsimony.Sankoff.Internal
 import           Bio.Character
 import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Dynamic
+import           Bio.Character.Encodable.Dynamic
 import           Bio.Graph
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal            (setDefaultMetadata)
 import           Bio.Graph.ReferenceDAG.Internal
+import           Bio.Metadata
 import           Bio.Sequence
 import           Control.Lens.Operators                        ((%~))
 import           Data.Default
@@ -47,6 +49,7 @@ import           Data.EdgeLength
 import           Data.Function                                 ((&))
 import qualified Data.List.NonEmpty                            as NE
 import           Data.NodeLabel
+import           Data.TCM.Memoized
 import           Data.Vector                                   (Vector)
 
 
@@ -118,14 +121,14 @@ performDecoration
   -> FinalDecorationDAG
 performDecoration x = performPreorderDecoration performPostorderDecoration
   where
-    performPreorderDecoration ::
-      PostorderDecorationDAG
-      (TraversalTopology
-      , Double
-      , Double
-      , Double
-      , Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge)
-      )
+    performPreorderDecoration
+      :: PostorderDecorationDAG
+          ( TraversalTopology
+          , Double
+          , Double
+          , Double
+          , Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge)
+          )
       -> FinalDecorationDAG
     performPreorderDecoration =
         preorderFromRooting
