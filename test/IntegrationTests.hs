@@ -18,5 +18,5 @@ main
 
 testSuite :: IO TestTree
 testSuite
-  = testGroup "Integration Test Suite"
-  <$> sequenceA [ Script.testSuite, Golden.testSuite ]
+  = testGroup "Integration Test Suite" .
+      (\x -> [Script.testSuite, x]) <$> Golden.testSuite

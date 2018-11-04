@@ -1,6 +1,6 @@
 allow-newer: true
 
-compiler: ghc-8.4.4
+compiler: ghc-8.4.3
 
 compiler-check: match-exact
 
@@ -25,4 +25,4 @@ packages:
 
 require-stack-version: ">=1.7.1"
 
-resolver: lts-12.13
+resolver: lts-12.10

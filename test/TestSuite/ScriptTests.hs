@@ -7,28 +7,32 @@ module TestSuite.ScriptTests
   ( testSuite
   ) where
 
-import Control.Arrow              ((&&&))
+import Control.Arrow                     ((&&&))
 import Control.DeepSeq
-import Data.Char                  (isSpace)
+import Data.Bifunctor                    (first)
+import Data.Char                         (isSpace)
 import Data.Either
 import Data.Foldable
-import Data.Functor               (void, ($>))
+import Data.Functor                      (void, ($>))
 import Data.Scientific            hiding (scientific)
-import Data.Text                  (Text, pack)
-import Data.Void                  (Void)
+import Data.Text                         (Text, pack)
+import Data.Text.IO                      (readFile)
+import Data.Void                         (Void)
 import Numeric.Extended.Real
+import Prelude                    hiding (readFile)
+import System.Exit
 import System.Directory
 import System.FilePath.Posix
+import System.Process
 import Test.Tasty
 import Test.Tasty.HUnit
 import Text.Megaparsec
 import Text.Megaparsec.Char
-import Text.Megaparsec.Char.Lexer (scientific)
-import Turtle                     (ExitCode (..), decodeString, readTextFile, shellStrict)
+import Text.Megaparsec.Char.Lexer        (scientific)
 
 
-testSuite :: IO TestTree
-testSuite = testGroup "Script Test Suite" <$> sequenceA
+testSuite :: TestTree
+testSuite = testGroup "Script Test Suite"
   [ scriptCheckCost 50.46
         "datasets/continuous/single-block/arthropods.pcg"
         "datasets/continuous/single-block/cost.data"
@@ -233,6 +237,7 @@ testSuite = testGroup "Script Test Suite" <$> sequenceA
   ]
 
 
+{-
 scriptTest
   :: String                          -- ^ Script File
   -> [String]                        -- ^ Expected Output Files
@@ -240,26 +245,32 @@ scriptTest
                                      -- output file contents or ExitStatus code
   -> IO TestTree
 scriptTest scriptPath outputPaths testLogic = testLogic <$> runExecutable scriptPath outputPaths
-
+-}
 
 scriptCheckCost
-  :: ExtendedReal                    -- ^ Expected cost ∈ [0, ∞]
-  -> String                          -- ^ Script File
-  -> String                          -- ^ Expected output file containing the cost
-  -> IO TestTree
-scriptCheckCost expectedCost scriptPath outputPath = scriptTest scriptPath [outputPath] $ testCase scriptPath . checkResult
-  where
-    checkResult (Left     exitCode) = assertFailure $ "Script failed with exit code: " <> show exitCode
-    checkResult (Right          []) = assertFailure "No files were returned despite supplying one path!"
-    checkResult (Right (outFile:_)) =
-        case force $ parseCost outFile of
-          Nothing   -> assertFailure "No cost found in the output file!"
-          Just cost -> cost @?= expectedCost
+  :: ExtendedReal -- ^ Expected cost ∈ [0, ∞]
+  -> String       -- ^ Script File
+  -> String       -- ^ Expected output file containing the cost
+  -> TestTree
+scriptCheckCost expectedCost scriptPath outputPath = testCase scriptPath $ do
+    v <- runExecutable scriptPath [outputPath]
+    case v of
+      Left     exitCode -> assertFailure $ "Script failed with exit code: " <> show exitCode
+      Right          [] -> assertFailure "No files were returned despite supplying one path!"
+      Right (outData:_) -> case force $ parseCost outputPath outData of
+                             Left  pErr -> assertFailure $ "No cost found in the output file!\n" <> pErr
+                             Right cost -> cost @?= expectedCost      
 
 
-parseCost :: Text -> Maybe ExtendedReal
-parseCost = parseMaybe fileSpec
+parseCost
+  :: FilePath -- ^ The path of the input file
+  -> Text     -- ^ The text stream to parse
+  -> Either String ExtendedReal
+parseCost path str = first (parseErrorPretty' str) parseResult
   where
+    parseResult :: Either (ParseError Char Void) ExtendedReal
+    parseResult = parse fileSpec path str
+
     fileSpec =  many (try (ignoredLine <* notFollowedBy costLine))
              *> ignoredLine
              *> costLine
@@ -272,12 +283,11 @@ parseCost = parseMaybe fileSpec
              *> extendedReal
              <* ignoredLine
 
-
     extendedReal :: MonadParsec Void Text m => m ExtendedReal
     extendedReal = (fromFinite . toRealFloat <$> scientific) <|> (char '∞' $> infinity)
 
     ignoredLine  :: MonadParsec Void Text m => m ()
-    ignoredLine  = many inlineChar *> newlineChar
+    ignoredLine  = many inlineChar *> (newlineChar <|> eof)
 
     inlineSpace  :: MonadParsec Void Text m => m ()
     inlineSpace  = void $ satisfy (\x -> isSpace x && x /= '\n')
@@ -289,9 +299,10 @@ parseCost = parseMaybe fileSpec
     newlineChar  = void $ char '\n'
 
 
-
-scriptFailure :: String -> IO TestTree
-scriptFailure scriptPath = scriptTest scriptPath [] (testCase scriptPath . assertBool "Expected script failure" . isLeft)
+scriptFailure :: String -> TestTree
+scriptFailure scriptPath = testCase scriptPath $ do
+    v <- runExecutable scriptPath []
+    assertBool "Expected script failure" $ isLeft v
 
 
 -- |
@@ -307,18 +318,38 @@ runExecutable
 runExecutable scriptStr outputPaths = do
     startingDirectory  <- getCurrentDirectory
     absScriptDirectory <- makeAbsolute scriptDirectory
-    setCurrentDirectory absScriptDirectory
-
-    (exitCode, _) <- shellStrict ("stack exec pcg -- --input " <> scriptText <> " --output test.log") mempty
-    setCurrentDirectory startingDirectory
+    (exitCode, _, _)   <- readCreateProcessWithExitCode
+                            (defineProcess absScriptDirectory command) mempty
     case exitCode of
       ExitFailure v -> pure $ Left v
-      _             -> Right <$> traverse (readTextFile . decodeString) outputPaths
+      _             -> Right <$> traverse readFile outputPaths
   where
-    scriptText = pack scriptFile
+    command :: String
+    command = "stack exec pcg -- --input " <> scriptFile <> " --output test.log"
 
     (scriptDirectory, scriptFile) = breakScriptPath scriptStr
 
     breakScriptPath = (normalise . foldl' (</>) defaultDirectory . init &&& last) . splitDirectories
       where
         defaultDirectory = "."
+
+
+defineProcess :: String -> String -> CreateProcess
+defineProcess path command =
+    CreateProcess
+    { cmdspec            = ShellCommand command
+    , cwd                = Just path
+    , env                = Nothing
+    , std_in             = NoStream
+    , std_out            = NoStream
+    , std_err            = NoStream
+    , close_fds          = True
+    , create_group       = False
+    , delegate_ctlc      = False
+    , detach_console     = False
+    , create_new_console = False
+    , new_session        = False
+    , child_group        = Nothing
+    , child_user         = Nothing
+    , use_process_jobs   = False
+    }
