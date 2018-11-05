@@ -6,17 +6,10 @@ module PCG.Command.Report.Evaluate
   ( evaluate
   ) where
 
-
-import Bio.Character.Decoration.Dynamic
-import Bio.Character.Encodable
-import Bio.Character.Exportable
 import Bio.Graph
-import Bio.Graph.PhylogeneticDAG
 import Control.Monad.IO.Class
-import Data.Compact                     (getCompact)
+import Data.Compact                (getCompact)
 import Data.List.NonEmpty
-import Data.MonoTraversable
-import Data.Semigroup.Foldable
 import PCG.Command.Report
 import PCG.Command.Report.GraphViz
 import Text.XML

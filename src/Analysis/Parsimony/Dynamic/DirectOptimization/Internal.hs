@@ -157,8 +157,7 @@ updateFromLeaves pairwiseAlignment (lChild , rChild) = resultDecoration
 -- atomic alignments depending on the character's metadata.
 directOptimizationPreorder
   :: ( DirectOptimizationPostorderDecoration d c
-     , Exportable (Element c)
-     , HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
+--     , HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
      )
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
@@ -208,8 +207,7 @@ disambiguateElement x = zed `setBit` idx
 -- decoration. The recursive logic of the pre-order traversal.
 updateFromParent
   :: ( DirectOptimizationPostorderDecoration d c
-     , Exportable (Element c)
-     , HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
+--     , HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
      )
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
@@ -245,8 +243,7 @@ updateFromParent pairwiseAlignment meta currentDecoration parentDecoration = res
 -- A three way comparison of characters used in the DO preorder traversal.
 tripleComparison
   :: ( DirectOptimizationPostorderDecoration d c
-     , Exportable (Element c)
-     , HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
+--     , HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
      )
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
@@ -412,7 +409,7 @@ insertNewGaps insertionIndicies character = constructDynamic . appendGaps . fold
   where
     len = olength character
     gap = getGapElement $ character `indexStream` 0
-    appendGaps (x:|xs) = x:|(xs<>trailingGaps)
+    appendGaps (x:|xs) = x :| (xs <> trailingGaps)
     trailingGaps = maybe [] (`replicate` gap) $ len `lookup` insertionIndicies
 --    f :: Int -> a -> NonEmpty a
     f i e =

@@ -8,12 +8,11 @@ module Bio.Graph.ReferenceDAG.Test
   ) where
 
 import           Bio.Graph.ReferenceDAG.Internal
-import           Data.List.NonEmpty
 import           Data.Set                        as Set
 import qualified Data.Vector                     as V
 import           Test.Tasty
 import           Test.Tasty.HUnit                as HU
-import           Test.Tasty.QuickCheck           as QC hiding (generate)
+
 
 testSuite :: TestTree
 testSuite = testGroup "ReferenceDAG Tests"

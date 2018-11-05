@@ -51,8 +51,8 @@ import Bio.Character.Encodable
 import Bio.Character.Exportable
 import Control.DeepSeq
 import Control.Lens
+import Data.MonoTraversable            (Element)
 import GHC.Generics
-import Data.MonoTraversable (Element)
 import Numeric.NonNegativeAverage
 
 

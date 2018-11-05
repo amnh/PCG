@@ -648,28 +648,27 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
         -- because the C code returns the values in the wrong order!
         pure (fromIntegral cost, resultingUngapped, resultingGapped, resultingAlignedChar2, resultingAlignedChar1)
 
-    where
-      costStruct = costMatrix2D denseTCMs
-      neverComputeOnlyGapped = 0
+      where
+        costStruct = costMatrix2D denseTCMs
+        neverComputeOnlyGapped = 0
 
-      elemWidth        = exportedChar1 ^. exportedElementWidth
-      exportedChar1Len = coerceEnum $ exportedChar1 ^. exportedElementCount
-      exportedChar2Len = coerceEnum $ exportedChar2 ^. exportedElementCount
-      -- Add two because the C code needs stupid gap prepended to each character.
-      -- Forgetting to do this will eventually corrupt the heap memory
-      maxAllocLen      = exportedChar1Len + exportedChar2Len + 2
+        elemWidth        = exportedChar1 ^. exportedElementWidth
+        exportedChar1Len = coerceEnum $ exportedChar1 ^. exportedElementCount
+        exportedChar2Len = coerceEnum $ exportedChar2 ^. exportedElementCount
+        -- Add two because the C code needs stupid gap prepended to each character.
+        -- Forgetting to do this will eventually corrupt the heap memory
+        maxAllocLen      = exportedChar1Len + exportedChar2Len + 2
 
-      -- allocInitAlign_io :: CSize -> [CUInt] -> IO (Ptr Align_io)
-      -- allocInitAlign_io elemCount elemArr  =
-      --     do
-      --         output   <- malloc :: IO (Ptr Align_io)
-      --         outArray <- newArray paddedArr
-      --         poke output $ Align_io outArray elemCount maxAllocLen
-      --         pure output
-      --     where
-      --         paddedArr = replicate (max 0 (fromEnum (maxAllocLen - elemCount))) 0 <> elemArr
-
-      -- Used for debugging
+        -- allocInitAlign_io :: CSize -> [CUInt] -> IO (Ptr Align_io)
+        -- allocInitAlign_io elemCount elemArr = do
+        --       output   <- malloc :: IO (Ptr Align_io)
+        --       outArray <- newArray paddedArr
+        --       poke output $ Align_io outArray elemCount maxAllocLen
+        --       pure output
+        --     where
+        --       paddedArr = replicate (max 0 (fromEnum (maxAllocLen - elemCount))) 0 <> elemArr
+        
+        -- Used for debugging
 {-
       renderBuffer buf = "[" <> intercalate "," (fmap pad shownElems) <> "]"
         where

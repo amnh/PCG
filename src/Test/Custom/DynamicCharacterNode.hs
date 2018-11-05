@@ -29,7 +29,6 @@ import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (filterGaps)
 import Analysis.Parsimony.Internal
 import Bio.Character
 import Bio.Character.Decoration.Dynamic
-import Bio.Character.Encodable.Dynamic
 import Bio.Metadata
 import Bio.Metadata.CharacterName
 import Data.Alphabet
@@ -75,12 +74,13 @@ constructNode lhs rhs
     rootDec = toRootNode lhsDec rhsDec
 
 
-toLeafNode :: ( Ord (Element c)
-              , SimpleDynamicDecoration d c
-              , HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
-              )
-           => d
-           -> DynamicDecorationDirectOptimizationPostorderResult c
+toLeafNode
+  :: ( Ord (Element c)
+     , SimpleDynamicDecoration d c
+--     , HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
+     )
+  => d
+  -> DynamicDecorationDirectOptimizationPostorderResult c
 toLeafNode c = directOptimizationPostorder pairwiseFunction (LeafContext c)
 
 

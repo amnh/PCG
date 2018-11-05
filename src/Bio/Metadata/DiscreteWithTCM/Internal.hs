@@ -65,11 +65,13 @@ data  RepresentedTCM
     | LinearNorm
     deriving (Generic, NFData)
 
+
 foreignPointerData :: DiscreteWithTCMCharacterMetadataDec c -> MemoizedCostMatrix
 foreignPointerData x =
   case representedTCM x of
     ExplicitLayout _ v -> v
     _ -> error "Man you really suck at everything, don't you? Why on earth would you allow a tragedy like this to occur?"
+
 
 {-
 data RepresentedTCM a where
@@ -91,7 +93,6 @@ retreiveTCM
 retreiveTCM (ExplicitLayout _ memo) = getMedianAndCost2D memo
 retreiveTCM DiscreteMetric          = discreteMetricLogic
 retreiveTCM LinearNorm              = linearNormLogic
-
 
 
 retreiveSCM :: RepresentedTCM -> Word -> Word -> Word

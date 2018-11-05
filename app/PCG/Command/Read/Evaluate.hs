@@ -9,6 +9,7 @@ module PCG.Command.Read.Evaluate
 import           Bio.Character.Parsed
 import           Bio.Graph
 import           Bio.Graph.Forest.Parsed
+import           Bio.Metadata
 import           Bio.Metadata.Parsed
 import           Control.Monad                             (when)
 import           Control.Monad.IO.Class
@@ -57,11 +58,6 @@ import           System.Directory
 import           System.FilePath                           (takeExtension)
 import           System.FilePath.Glob
 import           Text.Megaparsec
-import Analysis.Scoring
-import Bio.Character
-import Bio.Graph
-import           Bio.Metadata
-import           Data.TCM.Memoized    
 
 
 parse' :: Parsec Void s a -> String -> s -> Either (ParseError (Token s) Void) a

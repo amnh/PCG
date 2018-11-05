@@ -4,7 +4,6 @@
 
 module Main (main) where
 
-
 import Control.DeepSeq
 import Control.Evaluation
 import Data.Char                    (toUpper)
@@ -22,14 +21,6 @@ import System.Exit
 import System.IO
 import Text.Megaparsec              (ParseError, Parsec, Token, parse, parseErrorPretty')
 import Text.PrettyPrint.ANSI.Leijen (align, indent, int, line, string, text, (<+>), (</>))
-
-
-
-import Analysis.Scoring
-import Bio.Character
-import Bio.Graph
-import           Bio.Metadata
-import           Data.TCM.Memoized 
 
 
 -- |

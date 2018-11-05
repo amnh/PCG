@@ -19,7 +19,6 @@ import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG           (PostorderContextualData, setDefaultMetadata)
 import qualified Bio.Graph.ReferenceDAG              as DAG
 import           Bio.Graph.ReferenceDAG.Internal
-import           Bio.Metadata
 import           Bio.Sequence
 import           Control.Arrow                       ((&&&))
 import           Control.DeepSeq
@@ -38,7 +37,6 @@ import qualified Data.List.NonEmpty                  as NE
 import           Data.NodeLabel
 import           Data.Ord                            (comparing)
 import           Data.Semigroup.Foldable
-import           Data.TCM.Memoized
 import           PCG.Command.Build
 import           System.Random.Shuffle
 

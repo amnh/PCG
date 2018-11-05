@@ -23,14 +23,13 @@ module Test.Custom.NucleotideSequence
   ) where
 
 import           Bio.Character
-import           Bio.Character.Encodable.Dynamic
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
-import           Data.Bimap                      (elems)
+import           Data.Bimap             (elems)
 import           Data.Foldable
 import           Data.List
-import qualified Data.List.NonEmpty              as NE
-import           Test.QuickCheck                 hiding (generate)
+import qualified Data.List.NonEmpty     as NE
+import           Test.QuickCheck        hiding (generate)
 import           Test.SmallCheck.Series
 
 

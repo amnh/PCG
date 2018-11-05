@@ -1,4 +1,4 @@
-cabal-version:      2.2
+'1;4205;0ccabal-version:      2.2
 category:           Biology
 build-type:         Simple
 extra-source-files: AUTHORS.md
@@ -315,7 +315,6 @@ executable pcg
                     , keys
                     , lens
                     , megaparsec       >=6.4.0
-                    , mono-traversable >=1.0
                     , optparse-applicative
                     , parallel
                     , pcg-file-parsers
@@ -526,7 +525,7 @@ Test-Suite integration-tests
                     , deepseq
                     , directory
                     , filepath
-                    , megaparsec         >=6.4.0
+                    , megaparsec         ==6.5.0
                     , parser-combinators >=0.2.0
                     , pcg-utility
                     , process 
@@ -537,15 +536,15 @@ Test-Suite integration-tests
                     , tasty-hunit
                     , tasty-rerun
                     , text
-                    , turtle
 
   ghc-options:      -threaded
                     -with-rtsopts=-N7
 
   hs-source-dirs:   test
 
-  other-modules:    TestSuite.ScriptTests
-                    TestSuite.GoldenTests
+  other-modules:    TestSuite.GoldenTests
+                    TestSuite.ScriptTests
+                    TestSuite.SubProcess
 
 
 Test-Suite unit-tests
