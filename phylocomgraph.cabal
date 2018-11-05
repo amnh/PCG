@@ -1,4 +1,4 @@
-'1;4205;0ccabal-version:      2.2
+cabal-version:      2.2
 category:           Biology
 build-type:         Simple
 extra-source-files: AUTHORS.md
