@@ -151,6 +151,7 @@ fromEdgeSets = NDES
 -}
 
 
+{-
 -- |
 -- Get 'IntSet' from all nodes in an 'EdgeSet'
 toIntSet :: EdgeSet (Int, Int) -> IntSet
@@ -163,6 +164,7 @@ toIntSet = foldMap edgeToIntSet
 -- Determine if a term is a member of an 'EdgeSet'
 member :: Ord e => e -> EdgeSet e -> Bool
 member e (ES edgeSet) = e `Set.member` edgeSet
+-}
 
 
 -- |
