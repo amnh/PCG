@@ -329,6 +329,8 @@ coerceEnum = toEnum . fromEnum
 -- Malloc and populate a pointer to an exportable representation of the
 -- 'Exportable' value. The supplied value is assumed to be a dynamic character
 -- and the result is a pointer to a C representation of a dynamic character.
+--
+-- Call 'destructCharacter' to free the resulting pointer.
 constructCharacter :: Exportable s => s -> IO (Ptr CDynamicChar)
 constructCharacter exChar = do
     valueBuffer <- newArray $ exportedBufferChunks exportableBuffer
@@ -350,6 +352,8 @@ constructCharacter exChar = do
 -- 'Exportable' value. The supplied value is assumed to be a dynamic character
 -- element and the result is a pointer to a C representation of a dynamic
 -- character element.
+--
+-- Call 'destructElement' to free the resulting pointer.
 constructElement :: Exportable s => s -> IO (Ptr DCElement)
 constructElement exChar = do
     valueBuffer    <- newArray $ exportedBufferChunks exportableBuffer
@@ -362,25 +366,13 @@ constructElement exChar = do
     exportableBuffer = toExportableBuffer exChar
 
 
-destructCharacter :: Ptr CDynamicChar -> IO ()
-destructCharacter p = do
-    !e <- peek p
-    !_ <- free (dynChar e)
-    free p
-
-
-destructElement :: Ptr DCElement -> IO ()
-destructElement p = do
-    !e <- peek p
-    !_ <- free (characterElement e)
-    free p
-
-
 -- |
 -- /O(1)/
 --
 -- Malloc and populate a pointer to a C representation of a dynamic character.
 -- The buffer of the resulting value is intentially zeroed out.
+--
+-- Call 'destructElement' to free the resulting pointer.
 constructEmptyElement :: Word -- ^ Bit width of a dynamic character element.
                       -> IO (Ptr DCElement)
 constructEmptyElement alphabetSize = do
@@ -391,3 +383,25 @@ constructEmptyElement alphabetSize = do
     pure elementPointer
   where
     bufferLength = calculateBufferLength alphabetSize 1
+
+
+-- |
+-- /O(1)/
+--
+-- Free's a character allocated by a call to 'constructCharacter'.
+destructCharacter :: Ptr CDynamicChar -> IO ()
+destructCharacter p = do
+    !e <- peek p
+    !_ <- free (dynChar e)
+    free p
+
+
+-- |
+-- /O(1)/
+--
+-- Free's a character allocated by a call to 'constructElement' or 'constructEmptyElement'.
+destructElement :: Ptr DCElement -> IO ()
+destructElement p = do
+    !e <- peek p
+    !_ <- free (characterElement e)
+    free p
