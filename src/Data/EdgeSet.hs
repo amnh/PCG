@@ -23,9 +23,9 @@ module Data.EdgeSet
 --  , fromEdgeSets
   , disjoint
   , makeParentEdgeSet
-  , member
+--  , member
   , singletonEdgeSet
-  , toIntSet
+--  , toIntSet
   ) where
 
 
@@ -149,6 +149,7 @@ collapseToEdgeSet (NDES x) = fold1 x
 fromEdgeSets :: NonEmpty (EdgeSet e) -> NetworkDisplayEdgeSet e
 fromEdgeSets = NDES
 -}
+
 
 -- |
 -- Get 'IntSet' from all nodes in an 'EdgeSet'
