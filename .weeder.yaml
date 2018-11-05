@@ -70,4 +70,3 @@
         - Test.QuickCheck.Arbitrary.Instances
         - Text.XML
         - Text.XML.Class
-
