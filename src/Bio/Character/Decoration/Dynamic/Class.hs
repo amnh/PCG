@@ -98,7 +98,7 @@ class ( HasCharacterCost        s Word
       , HasRightAlignment       s a
       , SimpleDynamicDecoration s a
       , Exportable (Element a)
---      , HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element a)) MemoizedCostMatrix
+--      , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element a)) MemoizedCostMatrix
       ) => DirectOptimizationPostorderDecoration s a | s -> a where
 
 

@@ -11,19 +11,20 @@
 -----------------------------------------------------------------------------
 
 module Bio.Character.Decoration.Fitch
-  ( FitchCharacterDecoration()
-  , FitchOptimizationDecoration(FitchOptimizationDecoration)
-  , DiscreteExtensionFitchDecoration(..)
-  , GeneralCharacterMetadata()
+  ( DiscreteCharacterDecoration()
   , DiscreteCharacterMetadata()
-  , DiscreteCharacterDecoration()
+  , DiscreteExtensionFitchDecoration(..)
+  , FitchCharacterDecoration()
+  , FitchOptimizationDecoration(FitchOptimizationDecoration)
+  , GeneralCharacterMetadata()
+  -- * Lenses
+  , GetSymbolChangeMatrix(..)
+  , GetTransitionCostMatrix(..)
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)
   , HasDiscreteCharacter(..)
   , HasFinalMedian(..)
-  , HasSymbolChangeMatrix(..)
-  , HasTransitionCostMatrix(..)
   , HasIsLeaf(..)
   , HasCharacterCost(..)
   , HasPreliminaryMedian(..)

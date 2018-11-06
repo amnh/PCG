@@ -78,8 +78,8 @@ sequentialAlignOverride = False
 selectDynamicMetric
   :: ( EncodableDynamicCharacter c
      , Exportable c
-     , HasDenseTransitionCostMatrix  dec (Maybe DenseTransitionCostMatrix)
-     , HasTransitionCostMatrix       dec (OverlapFunction (Element c))
+     , GetDenseTransitionCostMatrix  dec (Maybe DenseTransitionCostMatrix)
+     , GetTransitionCostMatrix       dec (OverlapFunction (Element c))
      , Ord (Element c)
      )
   => dec
@@ -157,7 +157,7 @@ updateFromLeaves pairwiseAlignment (lChild , rChild) = resultDecoration
 -- atomic alignments depending on the character's metadata.
 directOptimizationPreorder
   :: ( DirectOptimizationPostorderDecoration d c
---     , HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
+--     , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
      )
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
@@ -207,7 +207,7 @@ disambiguateElement x = zed `setBit` idx
 -- decoration. The recursive logic of the pre-order traversal.
 updateFromParent
   :: ( DirectOptimizationPostorderDecoration d c
---     , HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
+--     , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
      )
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
@@ -243,7 +243,7 @@ updateFromParent pairwiseAlignment meta currentDecoration parentDecoration = res
 -- A three way comparison of characters used in the DO preorder traversal.
 tripleComparison
   :: ( DirectOptimizationPostorderDecoration d c
---     , HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
+--     , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
      )
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
@@ -267,11 +267,9 @@ tripleComparison pairwiseAlignment meta childDecoration parentCharacter parentSi
     -- If we have a small alphabet, there will not have been a call to
     -- initialize a memoized TCM. We certainly don't want to force that here!
     costStructure =
-        case meta ^. denseTransitionCostMatrix of
-                     -- TODO: Encapsilate this in DiscreteMetadataWithTCM
-          Nothing -> getMedianAndCost3D (meta ^. sparseTransitionCostMatrix)
-          -- Compute things naively
-          Just _  -> naiveMedianAndCost3D
+        case (meta ^. sparseTransitionCostMatrix) of
+          Nothing  -> naiveMedianAndCost3D
+          Just tcm -> getMedianAndCost3D tcm
       where
         !scm = meta ^. symbolChangeMatrix
         !gap = gapOfStream parentCharacter

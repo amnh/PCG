@@ -11,12 +11,18 @@
 -----------------------------------------------------------------------------
 
 module Bio.Character.Decoration.Metric
-  ( MetricDecorationInitial()
-  , MetricCharacterDecoration()
-  , DiscreteExtensionSankoffDecoration(..)
+  ( DiscreteExtensionSankoffDecoration(..)
   , DiscreteCharacterMetadata()
   , DiscreteCharacterDecoration()
   , GeneralCharacterMetadata()
+  , MetricDecorationInitial()
+  , MetricCharacterDecoration()
+  , SankoffDecoration()
+  , SankoffOptimizationDecoration()
+  , StateContributionList
+  -- * Lenses
+  , GetSymbolChangeMatrix(..)
+  , GetTransitionCostMatrix(..)
   , HasBeta(..)
   , HasCharacterAlphabet(..)
   , HasCharacterCost(..)
@@ -28,11 +34,6 @@ module Bio.Character.Decoration.Metric
   , HasIsLeaf(..)
   , HasPreliminaryExtraCost(..)
   , HasStateMinTuple(..)
-  , HasSymbolChangeMatrix(..)
-  , HasTransitionCostMatrix(..)
-  , SankoffDecoration()
-  , SankoffOptimizationDecoration()
-  , StateContributionList
   ) where
 
 import Bio.Character.Decoration.Discrete

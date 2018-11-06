@@ -77,7 +77,7 @@ constructNode lhs rhs
 toLeafNode
   :: ( Ord (Element c)
      , SimpleDynamicDecoration d c
---     , HasSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
+--     , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
      )
   => d
   -> DynamicDecorationDirectOptimizationPostorderResult c

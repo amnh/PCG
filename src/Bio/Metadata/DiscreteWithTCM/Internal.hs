@@ -24,11 +24,11 @@ module Bio.Metadata.DiscreteWithTCM.Internal
   ( DiscreteCharacterMetadata(..)
   , DiscreteWithTCMCharacterMetadataDec()
   , GeneralCharacterMetadata(..)
+  , GetSymbolChangeMatrix(..)
+  , GetTransitionCostMatrix(..)
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)
-  , HasSymbolChangeMatrix(..)
-  , HasTransitionCostMatrix(..)
   , discreteMetadataFromTCM
   , discreteMetadataWithTCM
   ) where
@@ -41,11 +41,11 @@ import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
 import Data.Bits
-import Data.List                          (intercalate)
+import Data.List                                 (intercalate)
 import Data.Range
 import Data.TCM                           as TCM
 import Data.TCM.Memoized
-import GHC.Generics
+import GHC.Generics                       hiding (to)
 import Text.XML
 
 
@@ -66,11 +66,11 @@ data  RepresentedTCM
     deriving (Generic, NFData)
 
 
-foreignPointerData :: DiscreteWithTCMCharacterMetadataDec c -> MemoizedCostMatrix
+foreignPointerData :: DiscreteWithTCMCharacterMetadataDec c -> Maybe MemoizedCostMatrix
 foreignPointerData x =
   case representedTCM x of
-    ExplicitLayout _ v -> v
-    _ -> error "Man you really suck at everything, don't you? Why on earth would you allow a tragedy like this to occur?"
+    ExplicitLayout _ v -> Just v
+    _ -> Nothing
 
 
 {-
@@ -179,24 +179,24 @@ instance HasCharacterWeight (DiscreteWithTCMCharacterMetadataDec c) Double where
 
 -- |
 -- A 'Lens' for the 'symbolicTCMGenerator' field
-instance HasSparseTransitionCostMatrix (DiscreteWithTCMCharacterMetadataDec c) MemoizedCostMatrix where
+instance GetSparseTransitionCostMatrix (DiscreteWithTCMCharacterMetadataDec c) (Maybe MemoizedCostMatrix) where
 
-    sparseTransitionCostMatrix = lens foreignPointerData undefined
+    sparseTransitionCostMatrix = to foreignPointerData
 
 
 -- |
 -- A 'Lens' for the 'symbolicTCMGenerator' field
-instance HasSymbolChangeMatrix (DiscreteWithTCMCharacterMetadataDec c) (Word -> Word -> Word) where
+instance GetSymbolChangeMatrix (DiscreteWithTCMCharacterMetadataDec c) (Word -> Word -> Word) where
 
-    symbolChangeMatrix = lens (retreiveSCM . representedTCM) undefined
+    symbolChangeMatrix = to (retreiveSCM . representedTCM)
 
 
 -- |
 -- A 'Lens' for the 'transitionCostMatrix' field
 instance (Bits c, Bound c ~ Word, Exportable c, Ranged c)
-    => HasTransitionCostMatrix (DiscreteWithTCMCharacterMetadataDec c) (c -> c -> (c, Word)) where
+    => GetTransitionCostMatrix (DiscreteWithTCMCharacterMetadataDec c) (c -> c -> (c, Word)) where
 
-    transitionCostMatrix = lens (retreiveTCM . representedTCM) undefined
+    transitionCostMatrix = to (retreiveTCM . representedTCM)
 
 
 instance NFData (DiscreteWithTCMCharacterMetadataDec c) where
