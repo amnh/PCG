@@ -12,8 +12,6 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
-
 module PCG.Command.Read.DecorationInitialization where
 
 import Analysis.Scoring

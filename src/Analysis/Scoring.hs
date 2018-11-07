@@ -27,7 +27,6 @@ module Analysis.Scoring
   , wipeScoring
   ) where
 
-
 import           Analysis.Parsimony.Additive.Internal
 import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Analysis.Parsimony.Fitch.Internal
@@ -48,7 +47,6 @@ import           Data.Function                                 ((&))
 import qualified Data.List.NonEmpty                            as NE
 import           Data.NodeLabel
 import           Data.Vector                                   (Vector)
-
 
 
 -- |
@@ -118,14 +116,14 @@ performDecoration
   -> FinalDecorationDAG
 performDecoration x = performPreorderDecoration performPostorderDecoration
   where
-    performPreorderDecoration ::
-      PostorderDecorationDAG
-      (TraversalTopology
-      , Double
-      , Double
-      , Double
-      , Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge)
-      )
+    performPreorderDecoration
+      :: PostorderDecorationDAG
+          ( TraversalTopology
+          , Double
+          , Double
+          , Double
+          , Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge)
+          )
       -> FinalDecorationDAG
     performPreorderDecoration =
         preorderFromRooting

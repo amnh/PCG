@@ -43,13 +43,13 @@ module Bio.Metadata
   , dynamicMetadataWithTCM
   , maybeConstructDenseTransitionCostMatrix
   -- * Lens fields
+  , GetDenseTransitionCostMatrix(..)
+  , GetSparseTransitionCostMatrix(..)
+  , GetSymbolChangeMatrix(..)
+  , GetTransitionCostMatrix(..)
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)
-  , HasDenseTransitionCostMatrix(..)
-  , HasSparseTransitionCostMatrix(..)
-  , HasSymbolChangeMatrix(..)
-  , HasTransitionCostMatrix(..)
   , HasTraversalFoci(..)
   ) where
 

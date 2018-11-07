@@ -74,10 +74,13 @@ constructNode lhs rhs
     rootDec = toRootNode lhsDec rhsDec
 
 
-toLeafNode :: ( Ord (Element c)
-              , SimpleDynamicDecoration d c
-              )
-           => d -> DynamicDecorationDirectOptimizationPostorderResult c
+toLeafNode
+  :: ( Ord (Element c)
+     , SimpleDynamicDecoration d c
+--     , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
+     )
+  => d
+  -> DynamicDecorationDirectOptimizationPostorderResult c
 toLeafNode c = directOptimizationPostorder pairwiseFunction (LeafContext c)
 
 
@@ -122,3 +125,4 @@ defWeight = 1
 
 defAlphabet :: Alphabet String
 defAlphabet = fromSymbols ["A","C","G","T"]
+

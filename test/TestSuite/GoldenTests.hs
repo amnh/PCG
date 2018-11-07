@@ -5,19 +5,18 @@ module TestSuite.GoldenTests
   ( testSuite
   ) where
 
-import Control.DeepSeq
-import Control.Monad         (filterM, void)
-import Data.Text             (pack)
+import Control.Monad         (filterM)
 import Data.Tree             (flatten, unfoldTreeM)
 import System.Directory
 import System.FilePath.Posix
+import System.Process
 import Test.Tasty
 import Test.Tasty.Golden
-import Turtle                (cd, decodeString, encodeString, pwd, shellStrict)
+import TestSuite.SubProcess
 
-import Debug.Trace
 
 type Extension = String
+
 
 testSuite :: IO TestTree
 testSuite = do
@@ -27,11 +26,11 @@ testSuite = do
     tests <- traverse goldenTest testInputs
     pure $ testGroup "Golden Test Suite:" tests
 
+
 -- |
 -- Runs a pcg file [file-name].pcg producing [file-name].extension for a
 -- given extension which is then compared to [file-name]_extension.golden. If the
 -- golden file does not exist the test will generate it.
-
 goldenTest :: (FilePath, Extension) -> IO TestTree
 goldenTest (filePath, extension) = do
   let testName = filePath
@@ -47,25 +46,14 @@ goldenTest (filePath, extension) = do
     makeGolden :: FilePath -> FilePath -- Generates a name for the golden file
     makeGolden = (<.> "golden") . (<> "_" <> extension) . dropExtension
 
+
 -- |
 -- Runs pcg on the file passed in.
 generateOutput :: FilePath -> IO ()
-generateOutput fp
-  = do
-  baseDir <- getCurrentDirectory
-  setCurrentDirectory fileDir   -- Change to filepath directory.
-  _ <- shellRunner $ mconcat
-          [ "stack exec pcg -- --input "
-          , fileName
-          , " --output "
-          , testLog
-          ]                    -- Run pcg on file passing StdOut to log file.
-  setCurrentDirectory baseDir  -- Return to base directory
-
-  where
-    (fileDir, fileName) = splitFileName fp
-    shellRunner = void . (`shellStrict` mempty) . pack
-
+generateOutput fp = do
+    ctx <- constructProcess fp
+    _   <- readCreateProcessWithExitCode (process ctx) mempty
+    destructProcess ctx
 
 
 -- |
@@ -106,11 +94,6 @@ listDirectoryWithFilePath fp
   . listDirectory
   $ fp
 
-
--- |
--- Name of test log file.
-testLog :: FilePath
-testLog = "test" <.> "log"
 
 -- |
 -- Name of golden tests directory.

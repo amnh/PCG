@@ -17,12 +17,12 @@
 
 module Bio.Metadata.Dynamic.Class
   ( DenseTransitionCostMatrix
+  , GetDenseTransitionCostMatrix(..)
+  , GetSymbolChangeMatrix(..)
+  , GetTransitionCostMatrix(..)
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)
-  , HasDenseTransitionCostMatrix(..)
-  , HasSymbolChangeMatrix(..)
-  , HasTransitionCostMatrix(..)
   , HasTraversalFoci(..)
   , MemoizedCostMatrix()
   ) where
@@ -37,11 +37,11 @@ import Data.TCM.Memoized
 
 
 -- |
--- A 'Lens' for the 'denseTransitionCostMatrix' field
-class HasDenseTransitionCostMatrix s a | s -> a where
+-- A 'Getter' for the 'denseTransitionCostMatrix' field
+class GetDenseTransitionCostMatrix s a | s -> a where
 
     {-# MINIMAL denseTransitionCostMatrix #-}
-    denseTransitionCostMatrix  :: Lens' s a
+    denseTransitionCostMatrix  :: Getter s a
 
 
 -- |

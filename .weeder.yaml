@@ -24,8 +24,6 @@
         - File.Format.TransitionCostMatrix.Parser
         - File.Format.VertexEdgeRoot.Parser
         - Text.Megaparsec.Custom
-
-
 - package:
   - name: phylocomgraph
   - section:
@@ -39,6 +37,7 @@
         - Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
         - Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Internal
         - Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
+        - Analysis.Parsimony.Internal
         - Bio.Character
         - Bio.Character.Encodable
         - Bio.Character.Encodable.Continuous
@@ -54,20 +53,34 @@
         - Bio.Character.Encodable.Stream
         - Bio.Character.Exportable
         - Bio.Character.Exportable.Class
+        - Bio.Graph.BinaryRenderingTree
+        - Bio.Graph.Component
+        - Bio.Graph.LeafSet
+        - Bio.Graph.ReferenceDAG.Internal
         - Control.Evaluation.Internal
         - Control.Evaluation.Unit
         - Control.Monad.Logger
         - Data.Alphabet
         - Data.Alphabet.IUPAC
         - Data.Alphabet.Internal
+        - Data.Alphabet.Special
+        - Data.EdgeSet
         - Data.Range
         - Data.TCM
         - Data.TCM.Internal
         - Data.TCM.Memoized
         - Data.TCM.Memoized.FFI
+        - Data.Vector.Custom
         - Data.Vector.NonEmpty
         - Test.Custom.NucleotideSequence
         - Test.QuickCheck.Arbitrary.Instances
+        - Text.Newick.Class
         - Text.XML
         - Text.XML.Class
+        - Text.XML.Custom
+  - section:
+    - name: test:unit-tests
+    - message:
+      - name: Redundant build-depends entry
+      - depends: phylocomgraph
 

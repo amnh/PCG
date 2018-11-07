@@ -4,7 +4,6 @@
 
 module Main (main) where
 
-
 import Control.DeepSeq
 import Control.Evaluation
 import Data.Char                    (toUpper)

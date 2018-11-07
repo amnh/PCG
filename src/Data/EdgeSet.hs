@@ -23,15 +23,15 @@ module Data.EdgeSet
 --  , fromEdgeSets
   , disjoint
   , makeParentEdgeSet
-  , member
+--  , member
   , singletonEdgeSet
-  , toIntSet
+--  , toIntSet
   ) where
 
 
 import           Control.DeepSeq
 import           Data.Foldable
-import           Data.IntSet          (IntSet, singleton)
+import           Data.IntSet          (IntSet) -- , singleton)
 import           Data.MonoTraversable (MonoFoldable (..))
 import           Data.Semigroup
 import           Data.Set             (Set)
@@ -150,6 +150,8 @@ fromEdgeSets :: NonEmpty (EdgeSet e) -> NetworkDisplayEdgeSet e
 fromEdgeSets = NDES
 -}
 
+
+{-
 -- |
 -- Get 'IntSet' from all nodes in an 'EdgeSet'
 toIntSet :: EdgeSet (Int, Int) -> IntSet
@@ -162,6 +164,7 @@ toIntSet = foldMap edgeToIntSet
 -- Determine if a term is a member of an 'EdgeSet'
 member :: Ord e => e -> EdgeSet e -> Bool
 member e (ES edgeSet) = e `Set.member` edgeSet
+-}
 
 
 -- |

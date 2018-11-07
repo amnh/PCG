@@ -31,16 +31,18 @@ import Control.Lens
 -- |
 -- A decoration of an initial encoding of a dynamic character which has the
 -- appropriate 'Lens' & character class constraints.
-class ( ContinuousCharacter c
-      , HasContinuousCharacter s c
+class ( -- ContinuousCharacter c
+        HasContinuousCharacter s c
       ) => ContinuousDecoration s c | s -> c where
 
 
+{-
 -- |
 -- A character class for continuous characters.
 class Ord c => ContinuousCharacter c where
 
     toContinuousCharacter :: Real r => Maybe r -> c
+-}
 
 
 -- |
