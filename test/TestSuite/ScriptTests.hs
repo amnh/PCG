@@ -156,7 +156,6 @@ testSuite = testGroup "Script Test Suite"
   , scriptCheckCost 11036
       "datasets/dynamic/single-block/protein/L1-norm/invertebrates.pcg"
       "datasets/dynamic/single-block/protein/L1-norm/cost.data"
-{--
   , scriptCheckCost 1132
       "datasets/dynamic/single-block/protein/discrete/invertebrates.pcg"
       "datasets/dynamic/single-block/protein/discrete/cost.data"
@@ -166,11 +165,9 @@ testSuite = testGroup "Script Test Suite"
   , scriptCheckCost 1241
         "datasets/dynamic/single-block/protein/2-1/invertebrates.pcg"
         "datasets/dynamic/single-block/protein/2-1/cost.data"
---}
   , scriptCheckCost 3413
       "datasets/dynamic/single-block/slashes/L1-norm/test.pcg"
       "datasets/dynamic/single-block/slashes/L1-norm/cost.data"
-{--
   , scriptCheckCost 197
         "datasets/dynamic/single-block/slashes/discrete/test.pcg"
         "datasets/dynamic/single-block/slashes/discrete/cost.data"
@@ -186,22 +183,22 @@ testSuite = testGroup "Script Test Suite"
   , scriptCheckCost 488
         "datasets/dynamic/single-block/slashes/levenshtein/test.pcg"
         "datasets/dynamic/single-block/slashes/levenshtein/cost.data"
-  , scriptCheckCost 197
+  , scriptCheckCost 133
         "datasets/dynamic/single-block/large-mix/discrete/test.pcg"
         "datasets/dynamic/single-block/large-mix/discrete/cost.data"
-  , scriptCheckCost 2042
+  , scriptCheckCost 7185
         "datasets/dynamic/single-block/large-mix/L1-norm/test.pcg"
         "datasets/dynamic/single-block/large-mix/L1-norm/cost.data"
-  , scriptCheckCost 254
+  , scriptCheckCost 164
         "datasets/dynamic/single-block/large-mix/1-2/test.pcg"
         "datasets/dynamic/single-block/large-mix/1-2/cost.data"
-  , scriptCheckCost 228
+  , scriptCheckCost 172
         "datasets/dynamic/single-block/large-mix/2-1/test.pcg"
         "datasets/dynamic/single-block/large-mix/2-1/cost.data"
-  , scriptCheckCost 671
+  , scriptCheckCost 367
         "datasets/dynamic/single-block/large-mix/hamming/test.pcg"
         "datasets/dynamic/single-block/large-mix/hamming/cost.data"
-  , scriptCheckCost 488
+  , scriptCheckCost 213
         "datasets/dynamic/single-block/large-mix/levenshtein/test.pcg"
         "datasets/dynamic/single-block/large-mix/levenshtein/cost.data"
   , scriptCheckCost 197
@@ -222,7 +219,6 @@ testSuite = testGroup "Script Test Suite"
   , scriptCheckCost 488
         "datasets/dynamic/single-block/huge-mix/levenshtein/test.pcg"
         "datasets/dynamic/single-block/huge-mix/levenshtein/cost.data"
---}
   , scriptFailure "datasets/unmatched-leaf-taxon/test.pcg"
   , scriptFailure "datasets/unmatched-tree-taxon/test.pcg"
   , scriptFailure "datasets/duplicate-leaf-taxon/test.pcg"
