@@ -69,6 +69,8 @@ data Align_io
    }
 
 
+-- |
+-- Specify which alignment to perform
 data AlignmentStrategy = Linear | Affine | Other deriving (Eq, Show)
 
 
@@ -121,6 +123,8 @@ data CostMatrix2d
    } deriving (Eq, Generic)
 
 
+-- |
+-- A representation of the 3D cost matrix structure used on the C side.
 data CostMatrix3d
    = CostMatrix3d          -- See CostMatrix2d datatype for field description
    { alphSize3D            :: CInt
@@ -145,13 +149,18 @@ data DenseTransitionCostMatrix
    } deriving (Generic)
 
 
+-- |
+-- Specify whether or not to compute median state values
 data MedianContext = ComputeMedians | DoNotComputeMedians
 
 
+-- |
+-- Specify whether or not to compute union state values
 data UnionContext  = ComputeUnions  | DoNotComputeUnions
 
 
--- | Because we're using a struct we need to make a Storable instance
+-- |
+-- Because we're using a struct we need to make a Storable instance
 instance Storable Align_io where
 
     sizeOf    _  = (#size struct alignIO_t)
@@ -562,114 +571,112 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
     case (toExportableElements char1, toExportableElements char2) of
       (Just x, Just y) -> f x y
       (     _,      _) -> error "2DO: There's a dynamic character missing!"
-    where
-        f exportedChar1 exportedChar2 = unsafePerformIO $
-            do
---                !_ <- trace ("char 1: " <> show char1) $ pure ()
---                !_ <- trace ("char 2: " <> show char2) $ pure ()
-                char1ToSend <- allocInitAlign_io maxAllocLen exportedChar1Len . fmap coerceEnum $ exportedCharacterElements exportedChar1
-                char2ToSend <- allocInitAlign_io maxAllocLen exportedChar2Len . fmap coerceEnum $ exportedCharacterElements exportedChar2
-                retGapped   <- allocInitAlign_io maxAllocLen 0 []
-                retUngapped <- allocInitAlign_io maxAllocLen 0 []
-                -- retUnion    <- allocInitALignIO 0 []
+  where
+    f exportedChar1 exportedChar2 = unsafePerformIO $ do
+--        !_ <- trace ("char 1: " <> show char1) $ pure ()
+--        !_ <- trace ("char 2: " <> show char2) $ pure ()
+        char1ToSend <- allocInitAlign_io maxAllocLen exportedChar1Len . fmap coerceEnum $ exportedCharacterElements exportedChar1
+        char2ToSend <- allocInitAlign_io maxAllocLen exportedChar2Len . fmap coerceEnum $ exportedCharacterElements exportedChar2
+        retGapped   <- allocInitAlign_io maxAllocLen 0 []
+        retUngapped <- allocInitAlign_io maxAllocLen 0 []
+        -- retUnion    <- allocInitALignIO 0 []
 
 {--
-                Align_io char1Ptr char1Len buffer1Len <- peek char1ToSend
-                Align_io char2Ptr char2Len buffer2Len <- peek char2ToSend
-                input1CharArr <- peekArray (fromEnum buffer1Len) char1Ptr
-                input2CharArr <- peekArray (fromEnum buffer2Len) char2Ptr
-                !_ <- trace (mconcat [" Input LHS : { ", show char1Len, " / ", show buffer1Len, " } ", renderBuffer input1CharArr]) $ pure ()
-                !_ <- trace (mconcat [" Input RHS : { ", show char2Len, " / ", show buffer2Len, " } ", renderBuffer input2CharArr]) $ pure ()
+        Align_io char1Ptr char1Len buffer1Len <- peek char1ToSend
+        Align_io char2Ptr char2Len buffer2Len <- peek char2ToSend
+        input1CharArr <- peekArray (fromEnum buffer1Len) char1Ptr
+        input2CharArr <- peekArray (fromEnum buffer2Len) char2Ptr
+        !_ <- trace (mconcat [" Input LHS : { ", show char1Len, " / ", show buffer1Len, " } ", renderBuffer input1CharArr]) $ pure ()
+        !_ <- trace (mconcat [" Input RHS : { ", show char2Len, " / ", show buffer2Len, " } ", renderBuffer input2CharArr]) $ pure ()
 --}
 
-                strategy <- getAlignmentStrategy <$> peek costStruct
-                let !cost = case strategy of
-                              Affine -> align2dAffineFn_c char1ToSend char2ToSend retGapped retUngapped costStruct                        (coerceEnum computeMedians)
-                              _      -> align2dFn_c       char1ToSend char2ToSend retGapped retUngapped costStruct neverComputeOnlyGapped (coerceEnum computeMedians) (coerceEnum computeUnion)
+        strategy <- getAlignmentStrategy <$> peek costStruct
+        let !cost = case strategy of
+                      Affine -> align2dAffineFn_c char1ToSend char2ToSend retGapped retUngapped costStruct                        (coerceEnum computeMedians)
+                      _      -> align2dFn_c       char1ToSend char2ToSend retGapped retUngapped costStruct neverComputeOnlyGapped (coerceEnum computeMedians) (coerceEnum computeUnion)
 
 {-
-                Align_io ungappedCharArr ungappedLen _ <- peek retUngapped
-                Align_io gappedCharArr   gappedLen   _ <- peek retGapped
-                Align_io retChar1CharArr char1Len    _ <- peek char1ToSend
-                Align_io retChar2CharArr char2Len    _ <- peek char2ToSend
-                -- Align_io unionCharArr    unionLen    _ <- peek retUnion
+        Align_io ungappedCharArr ungappedLen _ <- peek retUngapped
+        Align_io gappedCharArr   gappedLen   _ <- peek retGapped
+        Align_io retChar1CharArr char1Len    _ <- peek char1ToSend
+        Align_io retChar2CharArr char2Len    _ <- peek char2ToSend
+        -- Align_io unionCharArr    unionLen    _ <- peek retUnion
 
-                -- A sanity check to ensure that the sequences were aligned
-                _ <- if gappedLen == char1Len && gappedLen == char2Len
-                     then pure ()
-                     else error $ unlines
-                         [ "Sequences returned from POY C code were not actually \"aligned.\""
-                         , "gappedLen = " <> show gappedLen
-                         , " char1Len = " <> show char1Len
-                         , " char2Len = " <> show char2Len
-                         ]
---                ungappedChar <- peekArray (fromEnum ungappedLen) ungappedCharArr
-                gappedChar   <- reverse <$> peekArray (fromEnum gappedArrLen)   gappedCharArr
-                char1Aligned <- reverse <$> peekArray (fromEnum  char1ArrLen) retChar1CharArr
-                char2Aligned <- reverse <$> peekArray (fromEnum  char2ArrLen) retChar2CharArr
-                -- unionChar    <- peekArray (fromEnum unionLen)    unionCharArr
+        -- A sanity check to ensure that the sequences were aligned
+        _ <- if gappedLen == char1Len && gappedLen == char2Len
+             then pure ()
+             else error $ unlines
+                  [ "Sequences returned from POY C code were not actually \"aligned.\""
+                  , "gappedLen = " <> show gappedLen
+                  , " char1Len = " <> show char1Len
+                  , " char2Len = " <> show char2Len
+                  ]
+--        ungappedChar <- peekArray (fromEnum ungappedLen) ungappedCharArr
+        gappedChar   <- reverse <$> peekArray (fromEnum gappedArrLen)   gappedCharArr
+        char1Aligned <- reverse <$> peekArray (fromEnum  char1ArrLen) retChar1CharArr
+        char2Aligned <- reverse <$> peekArray (fromEnum  char2ArrLen) retChar2CharArr
+        -- unionChar    <- peekArray (fromEnum unionLen)    unionCharArr
 
---                !_ <- trace (" Gapped Char : " <> renderBuffer   gappedChar) $ pure ()
---                !_ <- trace (" Aligned LHS : " <> renderBuffer char1Aligned) $ pure ()
---                !_ <- trace (" Aligned RHS : " <> renderBuffer char2Aligned) $ pure ()
+--        !_ <- trace (" Gapped Char : " <> renderBuffer   gappedChar) $ pure ()
+--        !_ <- trace (" Aligned LHS : " <> renderBuffer char1Aligned) $ pure ()
+--        !_ <- trace (" Aligned RHS : " <> renderBuffer char2Aligned) $ pure ()
 -}
 
 {-
-                Align_io char1Ptr' char1Len' buffer1Len' <- peek char1ToSend
-                Align_io char2Ptr' char2Len' buffer2Len' <- peek char2ToSend
-                output1Buffer <- peekArray (fromEnum buffer1Len') char1Ptr'
-                output2Buffer <- peekArray (fromEnum buffer2Len') char2Ptr'
-                !_ <- trace (mconcat [" Output LHS : { ", show char1Len', " / ", show buffer1Len', " } ", renderBuffer output1Buffer]) $ pure ()
-                !_ <- trace (mconcat [" Output RHS : { ", show char2Len', " / ", show buffer2Len', " } ", renderBuffer output2Buffer]) $ pure ()
+        Align_io char1Ptr' char1Len' buffer1Len' <- peek char1ToSend
+        Align_io char2Ptr' char2Len' buffer2Len' <- peek char2ToSend
+        output1Buffer <- peekArray (fromEnum buffer1Len') char1Ptr'
+        output2Buffer <- peekArray (fromEnum buffer2Len') char2Ptr'
+        !_ <- trace (mconcat [" Output LHS : { ", show char1Len', " / ", show buffer1Len', " } ", renderBuffer output1Buffer]) $ pure ()
+        !_ <- trace (mconcat [" Output RHS : { ", show char2Len', " / ", show buffer2Len', " } ", renderBuffer output2Buffer]) $ pure ()
 -}
 
-                resultingAlignedChar1 <- extractFromAlign_io elemWidth char1ToSend
-                resultingAlignedChar2 <- extractFromAlign_io elemWidth char2ToSend
-                resultingGapped       <- extractFromAlign_io elemWidth retGapped
-                let resultingUngapped = filterGaps resultingGapped
+        resultingAlignedChar1 <- extractFromAlign_io elemWidth char1ToSend
+        resultingAlignedChar2 <- extractFromAlign_io elemWidth char2ToSend
+        resultingGapped       <- extractFromAlign_io elemWidth retGapped
+        let resultingUngapped = filterGaps resultingGapped
 
 {--
-                !_ <- trace ("Ungapped Char: " <> show     resultingUngapped) $ pure ()
-                !_ <- trace ("  Gapped Char: " <> show       resultingGapped) $ pure ()
-                !_ <- trace (" Aligned LHS : " <> show resultingAlignedChar1) $ pure ()
-                !_ <- trace (" Aligned RHS : " <> show resultingAlignedChar2) $ pure ()
+        !_ <- trace ("Ungapped Char: " <> show     resultingUngapped) $ pure ()
+        !_ <- trace ("  Gapped Char: " <> show       resultingGapped) $ pure ()
+        !_ <- trace (" Aligned LHS : " <> show resultingAlignedChar1) $ pure ()
+        !_ <- trace (" Aligned RHS : " <> show resultingAlignedChar2) $ pure ()
 --}
---                !_ <- trace  " > Done with FFI Alignment\n" $ pure ()
+--        !_ <- trace  " > Done with FFI Alignment\n" $ pure ()
 
-                -- NOTE: We swapped resultingAlignedChar1 & resultingAlignedChar2
-                -- because the C code returns the values in the wrong order!
-                pure (fromIntegral cost, resultingUngapped, resultingGapped, resultingAlignedChar2, resultingAlignedChar1)
+        -- NOTE: We swapped resultingAlignedChar1 & resultingAlignedChar2
+        -- because the C code returns the values in the wrong order!
+        pure (fromIntegral cost, resultingUngapped, resultingGapped, resultingAlignedChar2, resultingAlignedChar1)
 
-            where
-                costStruct = costMatrix2D denseTCMs
-                neverComputeOnlyGapped = 0
+      where
+        costStruct = costMatrix2D denseTCMs
+        neverComputeOnlyGapped = 0
 
-                elemWidth        = exportedChar1 ^. exportedElementWidth
+        elemWidth        = exportedChar1 ^. exportedElementWidth
+        exportedChar1Len = coerceEnum $ exportedChar1 ^. exportedElementCount
+        exportedChar2Len = coerceEnum $ exportedChar2 ^. exportedElementCount
+        -- Add two because the C code needs stupid gap prepended to each character.
+        -- Forgetting to do this will eventually corrupt the heap memory
+        maxAllocLen      = exportedChar1Len + exportedChar2Len + 2
 
-                exportedChar1Len = coerceEnum $ exportedChar1 ^. exportedElementCount
-                exportedChar2Len = coerceEnum $ exportedChar2 ^. exportedElementCount
-                -- Add two because the C code needs stupid gap prepended to each character.
-                -- Forgetting to do this will eventually corrupt the heap memory
-                maxAllocLen      = exportedChar1Len + exportedChar2Len + 2
-
-                -- allocInitAlign_io :: CSize -> [CUInt] -> IO (Ptr Align_io)
-                -- allocInitAlign_io elemCount elemArr  =
-                --     do
-                --         output   <- malloc :: IO (Ptr Align_io)
-                --         outArray <- newArray paddedArr
-                --         poke output $ Align_io outArray elemCount maxAllocLen
-                --         pure output
-                --     where
-                --         paddedArr = replicate (max 0 (fromEnum (maxAllocLen - elemCount))) 0 <> elemArr
-
-                -- Used for debugging
+        -- allocInitAlign_io :: CSize -> [CUInt] -> IO (Ptr Align_io)
+        -- allocInitAlign_io elemCount elemArr = do
+        --       output   <- malloc :: IO (Ptr Align_io)
+        --       outArray <- newArray paddedArr
+        --       poke output $ Align_io outArray elemCount maxAllocLen
+        --       pure output
+        --     where
+        --       paddedArr = replicate (max 0 (fromEnum (maxAllocLen - elemCount))) 0 <> elemArr
+        
+        -- Used for debugging
 {-
-                renderBuffer buf = "[" <> intercalate "," (fmap pad shownElems) <> "]"
-                  where
-                    maxElemChars = maximum $ fmap length shownElems
-                    shownElems   = fmap show buf
-                    pad e        = replicate (maxElemChars - length e) ' ' <> e
+      renderBuffer buf = "[" <> intercalate "," (fmap pad shownElems) <> "]"
+        where
+          maxElemChars = maximum $ fmap length shownElems
+          shownElems   = fmap show buf
+          pad e        = replicate (maxElemChars - length e) ' ' <> e
 -}
+
 
 -- |
 -- Performs a naive direct optimization
@@ -677,155 +684,95 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
 -- Returns an assignment character, the cost of that assignment, the assignment character with gaps included,
 -- the aligned versions of the three input characters.
 -- The process for this algorithm is to generate a traversal matrix, then perform a traceback.
-algn3d :: ( EncodableDynamicCharacter s
-          , Exportable s
-          )
-       => s                         -- ^ First  dynamic character
-       -> s                         -- ^ Second dynamic character
-       -> s                         -- ^ Third  dynamic character
-       -> Int                       -- ^ Mismatch cost
-       -> Int                       -- ^ Gap open cost
-       -> Int                       -- ^ Indel cost
-       -> DenseTransitionCostMatrix -- ^ Structure defining the transition costs between character states
-       -> (Word, s, s, s, s, s)     -- ^ The cost of the alignment
-                                    --
-                                    --   The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
-                                    --
-                                    --   The /gapped/ character derived from the the input characters' N-W-esque matrix traceback
-                                    --
-                                    --   The gapped alignment of the /first/ input character when aligned with the second & third character
-                                    --
-                                    --   The gapped alignment of the /second/ input character when aligned with the first & third character
-                                    --
-                                    --   The gapped alignment of the /third/ input character when aligned with the first & second character
-                                    --
+algn3d
+  :: ( EncodableDynamicCharacter s
+     , Exportable s
+     )
+  => s                         -- ^ First  dynamic character
+  -> s                         -- ^ Second dynamic character
+  -> s                         -- ^ Third  dynamic character
+  -> Int                       -- ^ Mismatch cost
+  -> Int                       -- ^ Gap open cost
+  -> Int                       -- ^ Indel cost
+  -> DenseTransitionCostMatrix -- ^ Structure defining the transition costs between character states
+  -> (Word, s, s, s, s, s)     -- ^ The cost of the alignment
+                               --
+                               --   The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
+                               --
+                               --   The /gapped/ character derived from the the input characters' N-W-esque matrix traceback
+                               --
+                               --   The gapped alignment of the /first/ input character when aligned with the second & third character
+                               --
+                               --   The gapped alignment of the /second/ input character when aligned with the first & third character
+                               --
+                               --   The gapped alignment of the /third/ input character when aligned with the first & second character
+                               --
 algn3d char1 char2 char3 mismatchCost openningGapCost indelCost denseTCMs = handleMissingCharacterThreeway someFun char1 char2 char3 $
     case (toExportableElements char1, toExportableElements char2, toExportableElements char3) of
       (Just x, Just y, Just z) -> f x y z
       (     _,      _,      _) -> error "3DO: There's a dynamic character missing!"
-    where
-        someFun = undefined
-        f exportedChar1 exportedChar2 exportedChar3 = unsafePerformIO $
-            do
---                !_ <- trace ("char 1: " <> show char1) $ pure ()
---                !_ <- trace ("char 2: " <> show char2) $ pure ()
-                char1ToSend <- allocInitAlign_io maxAllocLen exportedChar1Len . fmap coerceEnum $ exportedCharacterElements exportedChar1
-                char2ToSend <- allocInitAlign_io maxAllocLen exportedChar2Len . fmap coerceEnum $ exportedCharacterElements exportedChar2
-                char3ToSend <- allocInitAlign_io maxAllocLen exportedChar3Len . fmap coerceEnum $ exportedCharacterElements exportedChar3
-                char1Return <- allocInitAlign_io maxAllocLen 0 []    -- Note that the next six can be empty as their C-side
-                char2Return <- allocInitAlign_io maxAllocLen 0 []    -- internal arrays are alloc'ed
-                char3Return <- allocInitAlign_io maxAllocLen 0 []
-                retGapped   <- allocInitAlign_io maxAllocLen 0 []
-                retUngapped <- allocInitAlign_io maxAllocLen 0 []
-                -- retUnion    <- allocInitALignIO 0 []
+  where
+    someFun = undefined
+    f exportedChar1 exportedChar2 exportedChar3 = unsafePerformIO $ do
+--        !_ <- trace ("char 1: " <> show char1) $ pure ()
+--        !_ <- trace ("char 2: " <> show char2) $ pure ()
+        char1ToSend <- allocInitAlign_io maxAllocLen exportedChar1Len . fmap coerceEnum $ exportedCharacterElements exportedChar1
+        char2ToSend <- allocInitAlign_io maxAllocLen exportedChar2Len . fmap coerceEnum $ exportedCharacterElements exportedChar2
+        char3ToSend <- allocInitAlign_io maxAllocLen exportedChar3Len . fmap coerceEnum $ exportedCharacterElements exportedChar3
+        char1Return <- allocInitAlign_io maxAllocLen 0 []    -- Note that the next six can be empty as their C-side
+        char2Return <- allocInitAlign_io maxAllocLen 0 []    -- internal arrays are alloc'ed
+        char3Return <- allocInitAlign_io maxAllocLen 0 []
+        retGapped   <- allocInitAlign_io maxAllocLen 0 []
+        retUngapped <- allocInitAlign_io maxAllocLen 0 []
+        -- retUnion    <- allocInitALignIO 0 []
 
-                let !cost = align3dFn_c char1ToSend char2ToSend char3ToSend
-                                        char1Return char2Return char3Return
-                                        retGapped   retUngapped
-                                        costStruct
-                                        (coerceEnum mismatchCost)
-                                        (coerceEnum openningGapCost)
-                                        (coerceEnum indelCost)
+        let !cost = align3dFn_c char1ToSend char2ToSend char3ToSend
+                                char1Return char2Return char3Return
+                                retGapped   retUngapped
+                                costStruct
+                                (coerceEnum mismatchCost)
+                                (coerceEnum openningGapCost)
+                                (coerceEnum indelCost)
 
-                resultingAlignedChar1 <- extractFromAlign_io elemWidth char1Return
-                resultingAlignedChar2 <- extractFromAlign_io elemWidth char2Return
-                resultingAlignedChar3 <- extractFromAlign_io elemWidth char3Return
-                resultingGapped       <- extractFromAlign_io elemWidth retGapped
-                resultingUngapped     <- extractFromAlign_io elemWidth retUngapped
+        resultingAlignedChar1 <- extractFromAlign_io elemWidth char1Return
+        resultingAlignedChar2 <- extractFromAlign_io elemWidth char2Return
+        resultingAlignedChar3 <- extractFromAlign_io elemWidth char3Return
+        resultingGapped       <- extractFromAlign_io elemWidth retGapped
+        resultingUngapped     <- extractFromAlign_io elemWidth retUngapped
 
-                pure ( fromIntegral cost
-                     , resultingUngapped
-                     , resultingGapped
-                     , resultingAlignedChar1
-                     , resultingAlignedChar2
-                     , resultingAlignedChar3
-                     )
+        pure ( fromIntegral cost
+             , resultingUngapped
+             , resultingGapped
+             , resultingAlignedChar1
+             , resultingAlignedChar2
+             , resultingAlignedChar3
+             )
 
-            where
-                costStruct       = costMatrix3D denseTCMs -- TODO: get memoized matrix wedged in here
+      where
+        costStruct       = costMatrix3D denseTCMs -- TODO: get memoized matrix wedged in here
 
-                elemWidth        = exportedChar1 ^. exportedElementWidth
+        elemWidth        = exportedChar1 ^. exportedElementWidth
 
-                exportedChar1Len = coerceEnum $ exportedChar1 ^. exportedElementCount
-                exportedChar2Len = coerceEnum $ exportedChar2 ^. exportedElementCount
-                exportedChar3Len = coerceEnum $ exportedChar3 ^. exportedElementCount
+        exportedChar1Len = coerceEnum $ exportedChar1 ^. exportedElementCount
+        exportedChar2Len = coerceEnum $ exportedChar2 ^. exportedElementCount
+        exportedChar3Len = coerceEnum $ exportedChar3 ^. exportedElementCount
 
-                maxAllocLen      = exportedChar1Len + exportedChar2Len + exportedChar3Len
-
-
--- |
--- Allocates space for an align_io struct to be sent to C.
-allocInitAlign_io :: CSize -> CSize -> [CUInt] -> IO (Ptr Align_io)
-allocInitAlign_io maxAllocLen elemCount elemArr  =
-    do
-        output   <- malloc :: IO (Ptr Align_io)
-        outArray <- newArray paddedArr
-        poke output $ Align_io outArray elemCount maxAllocLen
-        pure output
-    where
-        paddedArr = replicate (max 0 (fromEnum (maxAllocLen - elemCount))) 0 <> elemArr
-
-{-
--- | A C binding that computes only the cost of a 2d alignment
-align2dCostOnly
-  :: ( EncodableDynamicCharacter s
-     , Exportable s
-     , Show s
-     )
-  => s
-  -> s
-  -> DenseTransitionCostMatrix
-  -> (Word, s, s, s, s)
-align2dCostOnly c1 c2 cm = algn2d c1 c2 cm DoNotComputeUnions DoNotComputeMedians
-
-
--- | A C binding that aligns two DO characters and returns the cost and the ungapped median sequence
-align2dGetUngapped
-  :: ( EncodableDynamicCharacter s
-     , Exportable s
-     , Show s
-     )
-  => s
-  -> s
-  -> DenseTransitionCostMatrix
-  -> (Word, s, s, s, s)
-align2dGetUngapped c1 c2 cm = algn2d c1 c2 cm DoNotComputeUnions ComputeMedians
-
-
--- | A C binding that aligns two DO characters and returns the cost and the union median
-align2dGetUnion
-  :: ( EncodableDynamicCharacter s
-     , Exportable s
-     , Show s
-     )
-  => s
-  -> s
-  -> DenseTransitionCostMatrix
-  -> (Word, s, s, s, s)
-align2dGetUnion c1 c2 cm = algn2d c1 c2 cm ComputeUnions DoNotComputeMedians
-
-
--- | A C binding that aligns two DO characters and returns the cost and the gapped and ungapped median sequences
-align2dGappedUngapped
-  :: ( EncodableDynamicCharacter s
-     , Exportable s
-     , Show s
-     )
-  => s
-  -> s
-  -> DenseTransitionCostMatrix
-  -> (Word, s, s, s, s)
-align2dGappedUngapped c1 c2 cm = algn2d c1 c2 cm ComputeUnions ComputeMedians
--}
+        maxAllocLen      = exportedChar1Len + exportedChar2Len + exportedChar3Len
 
 
 {- Generic helper functions -}
 
 
 -- |
--- Coercing one 'Enum' to another through their corresponding 'Int' values.
-coerceEnum :: (Enum a, Enum b) => a -> b
-coerceEnum = toEnum . fromEnum
+-- Allocates space for an align_io struct to be sent to C.
+allocInitAlign_io :: CSize -> CSize -> [CUInt] -> IO (Ptr Align_io)
+allocInitAlign_io maxAllocLen elemCount elemArr  = do
+    output   <- malloc :: IO (Ptr Align_io)
+    outArray <- newArray paddedArr
+    poke output $ Align_io outArray elemCount maxAllocLen
+    pure output
+  where
+    paddedArr = replicate (max 0 (fromEnum (maxAllocLen - elemCount))) 0 <> elemArr
 
 
 -- |
@@ -841,6 +788,12 @@ extractFromAlign_io elemWidth ptr = do
     _ <- free bufferPtr
     _ <- free ptr
     pure $ fromExportableElements exportVal
+
+
+-- |
+-- Coercing one 'Enum' to another through their corresponding 'Int' values.
+coerceEnum :: (Enum a, Enum b) => a -> b
+coerceEnum = toEnum . fromEnum
 
 
 -- |

@@ -14,6 +14,7 @@ module Bio.Character
   (  -- * Character Types
     ContinuousCharacter()
   , DynamicCharacter()
+  , DynamicCharacterElement()
   , DynamicCharacters
   , ExportableCharacterSequence(..)
   , StaticCharacter()

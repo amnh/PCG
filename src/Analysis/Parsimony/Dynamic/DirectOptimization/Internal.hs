@@ -46,6 +46,7 @@ import qualified Data.List.NonEmpty                                             
 import           Data.List.Utility                                               (invariantTransformation)
 import           Data.MonoTraversable
 import           Data.Semigroup
+import           Data.TCM.Memoized
 import           Data.Word
 import           Numeric.Extended.Natural
 import           Prelude                                                         hiding (lookup)
@@ -77,8 +78,8 @@ sequentialAlignOverride = False
 selectDynamicMetric
   :: ( EncodableDynamicCharacter c
      , Exportable c
-     , HasDenseTransitionCostMatrix  dec (Maybe DenseTransitionCostMatrix)
-     , HasTransitionCostMatrix       dec (OverlapFunction (Element c))
+     , GetDenseTransitionCostMatrix  dec (Maybe DenseTransitionCostMatrix)
+     , GetTransitionCostMatrix       dec (OverlapFunction (Element c))
      , Ord (Element c)
      )
   => dec
@@ -112,7 +113,6 @@ directOptimizationPostorder pairwiseAlignment
       (\_ (lChild, rChild) -> updateFromLeaves pairwiseAlignment (lChild, rChild))
 
 
-
 -- |
 -- Given a simple dynamic character as input, initializes the leaf node
 -- decoration as the base case of the post-order traversal.
@@ -137,6 +137,7 @@ initializeLeaf =
 -- decoration. The recursive logic of the post-order traversal.
 updateFromLeaves
   :: ( EncodableDynamicCharacter c
+     , Exportable (Element c)
      )
   => PairwiseAlignment c
   -> (DynamicDecorationDirectOptimizationPostorderResult c, DynamicDecorationDirectOptimizationPostorderResult c)
@@ -155,7 +156,9 @@ updateFromLeaves pairwiseAlignment (lChild , rChild) = resultDecoration
 -- Parameterized over a 'PairwiseAlignment' function to allow for different
 -- atomic alignments depending on the character's metadata.
 directOptimizationPreorder
-  :: DirectOptimizationPostorderDecoration d c
+  :: ( DirectOptimizationPostorderDecoration d c
+--     , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
+     )
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
   -> PreorderContext d (DynamicDecorationDirectOptimization c)
@@ -203,7 +206,9 @@ disambiguateElement x = zed `setBit` idx
 -- Use the decoration(s) of the ancestral nodes to calculate the corrent node
 -- decoration. The recursive logic of the pre-order traversal.
 updateFromParent
-  :: DirectOptimizationPostorderDecoration d c
+  :: ( DirectOptimizationPostorderDecoration d c
+--     , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
+     )
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
   -> d
@@ -237,7 +242,9 @@ updateFromParent pairwiseAlignment meta currentDecoration parentDecoration = res
 -- |
 -- A three way comparison of characters used in the DO preorder traversal.
 tripleComparison
-  :: DirectOptimizationPostorderDecoration d c
+  :: ( DirectOptimizationPostorderDecoration d c
+--     , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
+     )
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
   -> d
@@ -260,11 +267,9 @@ tripleComparison pairwiseAlignment meta childDecoration parentCharacter parentSi
     -- If we have a small alphabet, there will not have been a call to
     -- initialize a memoized TCM. We certainly don't want to force that here!
     costStructure =
-        case meta ^. denseTransitionCostMatrix of
-                     -- TODO: Encapsilate this in DiscreteMetadataWithTCM
-          Nothing -> naiveMedianAndCost3D -- getMedianAndCost3D (meta ^. sparseTransitionCostMatrix)
-          -- Compute things naively
-          Just _  -> naiveMedianAndCost3D
+        case (meta ^. sparseTransitionCostMatrix) of
+          Nothing  -> naiveMedianAndCost3D
+          Just tcm -> getMedianAndCost3D tcm
       where
         !scm = meta ^. symbolChangeMatrix
         !gap = gapOfStream parentCharacter
@@ -402,7 +407,7 @@ insertNewGaps insertionIndicies character = constructDynamic . appendGaps . fold
   where
     len = olength character
     gap = getGapElement $ character `indexStream` 0
-    appendGaps (x:|xs) = x:|(xs<>trailingGaps)
+    appendGaps (x:|xs) = x :| (xs <> trailingGaps)
     trailingGaps = maybe [] (`replicate` gap) $ len `lookup` insertionIndicies
 --    f :: Int -> a -> NonEmpty a
     f i e =

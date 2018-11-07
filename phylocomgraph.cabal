@@ -4,7 +4,7 @@ build-type:         Simple
 extra-source-files: AUTHORS.md
                     CHANGELOG.md
                     README.md
-                    
+
 
 name:               phylocomgraph
 version:            0.1.0.1
@@ -127,7 +127,7 @@ library
                     , data-default
                     , dlist
                     , foldl
-                    -- >=2999.20 Required for forgivig constructio of DOT object
+                    -- >=2999.20 Required for forgiving construction of DOT object
                     , graphviz           >=2999.20
                     , hashable
                     , integer-gmp
@@ -315,7 +315,6 @@ executable pcg
                     , keys
                     , lens
                     , megaparsec       >=6.4.0
-                    , mono-traversable >=1.0
                     , optparse-applicative
                     , parallel
                     , pcg-file-parsers
@@ -526,9 +525,10 @@ Test-Suite integration-tests
                     , deepseq
                     , directory
                     , filepath
-                    , megaparsec         >=6.4.0
+                    , megaparsec         ==6.5.0
                     , parser-combinators >=0.2.0
                     , pcg-utility
+                    , process 
                     , scientific
                     , semigroups
                     , tasty
@@ -536,15 +536,15 @@ Test-Suite integration-tests
                     , tasty-hunit
                     , tasty-rerun
                     , text
-                    , turtle
 
   ghc-options:      -threaded
                     -with-rtsopts=-N7
 
   hs-source-dirs:   test
 
-  other-modules:    TestSuite.ScriptTests
-                    TestSuite.GoldenTests
+  other-modules:    TestSuite.GoldenTests
+                    TestSuite.ScriptTests
+                    TestSuite.SubProcess
 
 
 Test-Suite unit-tests
@@ -565,6 +565,7 @@ Test-Suite unit-tests
                     , deepseq
                     , dlist
                     , foldl
+                    , graphviz           >=2999.20
                     , hashable
                     , integer-gmp
                     , keys
@@ -572,6 +573,7 @@ Test-Suite unit-tests
                     , mono-traversable   >=1.0
                     , mtl
                     , pcg-utility
+                    , pretty-tree
                     , phylocomgraph
                     , pointed
                     , QuickCheck
@@ -585,6 +587,7 @@ Test-Suite unit-tests
                     , tasty-smallcheck
                     , tasty-rerun
                     , transformers
+                    , unordered-containers
                     , vector
                     -- >=3.4 required for corrected definition of (!) & index
                     , vector-instances >=3.4
@@ -612,6 +615,7 @@ Test-Suite unit-tests
                     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
                     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Internal
                     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
+                    Analysis.Parsimony.Internal
                     Bio.Character
                     Bio.Character.Encodable
                     Bio.Character.Encodable.Continuous
@@ -632,6 +636,11 @@ Test-Suite unit-tests
                     Bio.Character.Encodable.Stream
                     Bio.Character.Exportable
                     Bio.Character.Exportable.Class
+                    Bio.Graph.BinaryRenderingTree
+                    Bio.Graph.Component
+                    Bio.Graph.LeafSet
+                    Bio.Graph.ReferenceDAG.Internal
+                    Bio.Graph.ReferenceDAG.Test
                     Control.Evaluation.Internal
                     Control.Evaluation.Test
                     Control.Evaluation.Unit
@@ -641,17 +650,21 @@ Test-Suite unit-tests
                     Data.Alphabet.Internal
                     Data.Alphabet.Special
                     Data.Alphabet.Test
+                    Data.EdgeSet
                     Data.Range
                     Data.TCM
                     Data.TCM.Internal
                     Data.TCM.Memoized
                     Data.TCM.Memoized.FFI
                     Data.TCM.Test
+                    Data.Vector.Custom
                     Data.Vector.NonEmpty
                     Test.QuickCheck.Arbitrary.Instances
                     Test.Custom.NucleotideSequence
                     Test.HUnit.Custom
                     TestSuite.ExecutableTests
                     TestSuite.LibraryTests
+                    Text.Newick.Class
                     Text.XML
                     Text.XML.Class
+                    Text.XML.Custom

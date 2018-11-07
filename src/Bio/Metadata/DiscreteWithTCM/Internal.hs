@@ -24,11 +24,11 @@ module Bio.Metadata.DiscreteWithTCM.Internal
   ( DiscreteCharacterMetadata(..)
   , DiscreteWithTCMCharacterMetadataDec()
   , GeneralCharacterMetadata(..)
+  , GetSymbolChangeMatrix(..)
+  , GetTransitionCostMatrix(..)
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)
-  , HasSymbolChangeMatrix(..)
-  , HasTransitionCostMatrix(..)
   , discreteMetadataFromTCM
   , discreteMetadataWithTCM
   ) where
@@ -41,11 +41,11 @@ import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
 import Data.Bits
-import Data.List                          (intercalate)
+import Data.List                                 (intercalate)
 import Data.Range
 import Data.TCM                           as TCM
 import Data.TCM.Memoized
-import GHC.Generics
+import GHC.Generics                       hiding (to)
 import Text.XML
 
 
@@ -56,7 +56,7 @@ data DiscreteWithTCMCharacterMetadataDec c
    = DiscreteWithTCMCharacterMetadataDec
    { representedTCM :: !RepresentedTCM
    , discreteData   :: {-# UNPACK #-} !DiscreteCharacterMetadataDec
-   } deriving (Eq, Generic, NFData)
+   } deriving (Eq, Generic)
 
 
 data  RepresentedTCM
@@ -64,6 +64,14 @@ data  RepresentedTCM
     | DiscreteMetric
     | LinearNorm
     deriving (Generic, NFData)
+
+
+foreignPointerData :: DiscreteWithTCMCharacterMetadataDec c -> Maybe MemoizedCostMatrix
+foreignPointerData x =
+  case representedTCM x of
+    ExplicitLayout _ v -> Just v
+    _ -> Nothing
+
 
 {-
 data RepresentedTCM a where
@@ -85,7 +93,6 @@ retreiveTCM
 retreiveTCM (ExplicitLayout _ memo) = getMedianAndCost2D memo
 retreiveTCM DiscreteMetric          = discreteMetricLogic
 retreiveTCM LinearNorm              = linearNormLogic
-
 
 
 retreiveSCM :: RepresentedTCM -> Word -> Word -> Word
@@ -170,37 +177,33 @@ instance HasCharacterWeight (DiscreteWithTCMCharacterMetadataDec c) Double where
                     $ \e x -> e { discreteData = discreteData e & characterWeight .~ x }
 
 
-{-
 -- |
 -- A 'Lens' for the 'symbolicTCMGenerator' field
-instance HasSparseTransitionCostMatrix (DiscreteWithTCMCharacterMetadataDec c) MemoizedCostMatrix where
+instance GetSparseTransitionCostMatrix (DiscreteWithTCMCharacterMetadataDec c) (Maybe MemoizedCostMatrix) where
 
-    sparseTransitionCostMatrix = lens foreignPointerData $ \e x -> e { foreignPointerData = x }
--}
+    sparseTransitionCostMatrix = to foreignPointerData
 
 
 -- |
 -- A 'Lens' for the 'symbolicTCMGenerator' field
-instance HasSymbolChangeMatrix (DiscreteWithTCMCharacterMetadataDec c) (Word -> Word -> Word) where
+instance GetSymbolChangeMatrix (DiscreteWithTCMCharacterMetadataDec c) (Word -> Word -> Word) where
 
-    symbolChangeMatrix = lens (retreiveSCM . representedTCM) undefined
+    symbolChangeMatrix = to (retreiveSCM . representedTCM)
 
 
 -- |
 -- A 'Lens' for the 'transitionCostMatrix' field
 instance (Bits c, Bound c ~ Word, Exportable c, Ranged c)
-    => HasTransitionCostMatrix (DiscreteWithTCMCharacterMetadataDec c) (c -> c -> (c, Word)) where
+    => GetTransitionCostMatrix (DiscreteWithTCMCharacterMetadataDec c) (c -> c -> (c, Word)) where
 
-    transitionCostMatrix = lens (retreiveTCM . representedTCM) undefined
+    transitionCostMatrix = to (retreiveTCM . representedTCM)
 
 
-{-
 instance NFData (DiscreteWithTCMCharacterMetadataDec c) where
 
     rnf val = rnf (representedTCM val)
         `seq` rnf (discreteData   val)
         `seq` ()
--}
 
 
 instance Show (DiscreteWithTCMCharacterMetadataDec c) where

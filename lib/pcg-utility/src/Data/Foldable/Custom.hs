@@ -33,10 +33,9 @@ import Data.Foldable   (Foldable (foldl', foldr))
 import Data.Maybe      (fromMaybe)
 import Data.Monoid     (Sum (..))
 
-
--- |
--- Performs an even stricter foldl reducing the accumulator
--- to normal form as opposed to weak using NFData.
+-- | Performs an even stricter foldl reducing the accumulator
+-- to normal form as opposed to weak normal form using NFData.
+--
 foldl'' :: (Foldable t, NFData b) => (b -> a -> b) -> b -> t a -> b
 foldl'' f z0 xs = foldr f' id xs z0
   where
@@ -143,4 +142,3 @@ instance Ord a => Monoid (Min a) where
 {-# INLINE (#.) #-}
 (#.) :: Coercible b c => (b -> c) -> (a -> b) -> (a -> c)
 (#.) _f = coerce
-
