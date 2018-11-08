@@ -11,12 +11,21 @@
 \usepackage{MnSymbol}
 \usepackage{url}
 \usepackage{natbib}
+\usepackage{pmboxdraw}
+\usepackage{float}
+\usepackage{fancyvrb}
+\usepackage{bera}
 %\usepackage{fullpage}
 \bibliographystyle{cbe}
 \citestyle{aa}
 %\usepackage{algorithmic}
 %\usepackage[vlined,algochapter,ruled]{algorithm2e}
 \usepackage[vlined,ruled]{algorithm2e}
+\usepackage{listings}% http://ctan.org/pkg/listings
+\lstset{
+  basicstyle=\ttfamily,
+  mathescape
+}
 \SetKwComment{Comment}{$\triangleright\ $}{}
 
 %ROOT PRIORS?
@@ -43,13 +52,13 @@
 %\newpage
 
 %\doublespacing
-\section{Introduction}
+\section{Introduction} \label{Introduction}
 This document contains the descriptions and pseudo-code for core  Phylogenetic Component Graphs (PCG)
 algorithms.  This is designed to serve both as documentation for the code and a development tool.  We have tried to keep
 the style as consistent as possible,  Functional-type statements (\textit{e.g.} map and fold) and structures (\textit{e.g.} lists, tuples)
 are employed.
 
-\section{Labelling of a single graph}
+\section{Labelling of a single graph} \label{Labelling of a single graph}
 One of the fundamental procedures is in the labelling of individual graphs,  This is the determination of various 
 aspects (including preliminary, final, and single assignments) of vertices and edges.   
 
@@ -72,7 +81,7 @@ The basic PCG graph is a forest of directed acyclic graphs (DAG).  These DAGs ma
  outdegree of internal nodes is restricted to at most 2. Since edges may have zero length, networks may be output 
  with vertices of outdegree $> 2$.
  
- \section{Optimization of a single graph}
+ \section{Optimization of a single graph}\label{Optimization of a single graph}
  Optimization is a function that takes a graph ($G$), here a forest $F$, and data ($D$) as inputs and returns a numerical value.  
  This value can be referred to as its score ($S$)
  	\begin{eqnarray*}
@@ -80,7 +89,7 @@ The basic PCG graph is a forest of directed acyclic graphs (DAG).  These DAGs ma
 		g & : & \{  \mathbb{R},  \mathbb{R} \} \rightarrow \mathbb{R}
 	 \end{eqnarray*}
  
- \section{Forest Optimization/Labelling}
+ \section{Forest Optimization/Labelling}\label{Forest Optimization/Labelling}
  The optimization is simply the optimization of each constituent component and their optimization values 
  combined through $f$ (summed for parisomy, if likelihood or such then add logs).  Both local (vertex  specific) and subtree costs (local cost of a vertex plus
  the subtree costs of its descendants) are stored.  The overall component cost is stored at the traversal root.
@@ -197,11 +206,11 @@ joining representations $A$ and $B$ into $\left( A, B \right)$.
  %resolve soft-wired forest into simple forests.
  %keep track of simple and reticulate forests for optimization purposes.
  
- \section{Forest Rearrangement}
+ \section{Forest Rearrangement} \label{Forest Rearrangement}
  There are two operations in forest rearrangements.  The first is the operation which splits network components into
  multiple components and the second joins separate components into network components.
  
- \subsection{Break}
+ \subsection{Break} \label{Break}
  Each tree edge is deleted in turn.  There are two possible outcomes.  The resulting two components
  may or may not be connected (have vertices in common).  The neighborhood can be generated and evaluated
  for overall minimum or breaks evaluated seriatim.   In either case, the new forest elements 
@@ -219,7 +228,7 @@ joining representations $A$ and $B$ into $\left( A, B \right)$.
 		\Return {$\lbrack F' \rbrack$}
 	\end{algorithm}
 
- \subsection{Join}
+ \subsection{Join} \label{Join}
  Pairs of components are joined by creating a new edge between each pair of edges in the input networks,
  subject to the time consistency constraint of network edges.  This basically proceeds as SPR/TBR joins
  with added complexity of network edge issues (ie. time consistency. 
@@ -235,17 +244,17 @@ joining representations $A$ and $B$ into $\left( A, B \right)$.
 		\Return {$\lbrack F' \rbrack$}
 	\end{algorithm}
 
- \section{Network Rearrangement}
+ \section{Network Rearrangement}\label{Network Rearrangement}
  As with forest rearrangement, network edges can be added or subtracted, and underlying (displayed) trees 
  rearranged vis NNI, SPR, TBR etc.
  
- \subsection{Network edge removal}
+ \subsection{Network edge removal} \label{Network edge removal}
  The optimization of networks identifies 
  unused edges, so these can be removed during optimization.  Standardly, networks with unused edges are attached an
  infinite cost.  Another option would be to output a new network with the offending edge deleted.  Remaining 
  network edges can be removed in turn.
  
- \subsection{Network edge addition}
+ \subsection{Network edge addition} \label{Network edge addition}
  Subject to edge time constraints and that each edge must have at least one tree vertex, new edges are added
  between each pair of edges (except for those where both are network edges).
  
@@ -261,7 +270,7 @@ joining representations $A$ and $B$ into $\left( A, B \right)$.
 		\Return {$\lbrack N' \rbrack$}
 	\end{algorithm}
 	
-\subsection{Display tree rearangement}
+\subsection{Display tree rearangement}\label{Display tree rearangement}
 NNI, SPR, TBR etc.
  
  \section{\textit{Ab initio} build}
@@ -271,16 +280,16 @@ NNI, SPR, TBR etc.
 		\item{Build with forest and network rearrangements based on sequential addition of leaves}
 	\end{enumerate}
 	
-\section{Forest Refinement}
+\section{Forest Refinement}\label{Forest Refinement}
 Various combinations of forest, network, tree rearrangements.
 
- \section{Naive Tree Optimization}
+ \section{Naive Tree Optimization}\label{Naive Tree Optimization}
  
- \section{Tree ReRoot Optimization}
+ \section{Tree ReRoot Optimization}\label{Tree ReRoot Optimization}
  
- \section{Naive Soft-Wired Network Optimization}
+ \section{Naive Soft-Wired Network Optimization}\label{Naive Soft-Wired Network Optimization}
  
- \section{Less-Naive Network Optimization}
+ \section{Less-Naive Network Optimization} \label{Less-Naive Network Optimization}
  
 
 	\begin{algorithm}
@@ -341,6 +350,132 @@ Various combinations of forest, network, tree rearrangements.
 		\Return{labelled component} 					
 	\end{algorithm}
 
+\newpage 
+
+\section{Candidate Network Edges}\label{Candidate Network Edges}
+ As mentioned in \ref{Labelling of a single graph}, a PCG Network is a ``model'' phylogenetic network. This places incident degree constraints on the edges as well as ordering constraints on network edges. In order to formalise this we can think of a PCG network as having an implicit preordering  on the vertices $(N, \leq )$. 
+
+
+\vspace{2mm}
+\begin{center}
+\noindent\framebox{
+    \parbox{0.6\textwidth}{
+    \textbf{Notation:}
+    \begin{itemize}
+    \item We shall write $a \sim b$ if $a \leq b$ and $ b \leq a$.
+    \item We shall write $a < b$ if $a \leq b$ but $b \nleq a$
+    \end{itemize}
+    }%
+}
+\end{center}
+
+\noindent The vertex ordering is defined to be the smallest preorder such that:
+\begin{itemize}
+\item If $w$ is a descendent node from $v$ (which we define formally via induction) then $v < w$.
+\item If $v_1$ and $v_2$ share a descendent network node then $v \sim w$.
+\end{itemize}
+
+\vspace{2mm}
+
+
+\fbox{
+    \parbox{0.9\textwidth}{
+    \textbf{Network Ordering constraint:} If we have that $v < w$ then we cannot have a network node between $v$ and $w$.
+    }%
+}
+
+\vspace{4mm}
+
+Given a PCG network we would like to find all the edges $e_1= (\mathrm{src}_1, \mathrm{tgt}_1)$, $e_2 = (\mathrm{src}_2, \mathrm{tgt}_2)$ between which we could insert a new network node so that we still have a PCG network (as shown in figure 1).
+
+We say that any new network node added is compatible with the existing ordering if the new implied ordering satisfies the \textbf{Network Ordering Constraint}. In order for this to be the case we require the following conditions to be satisfied (using the notation from figure 1):
+
+\begin{itemize}
+
+\item \textbf{Ancestral Edge Condition: }We cannot add  a descendent network node along edges which are ancestral to one another i.e. if it is the case that:
+  \[ (\mathrm{tgt1} < \mathrm{src2})\; \bigvee \; (\mathrm{tgt2} < \mathrm{src1}) \]
+
+\item \textbf{Descendent Network Condition: }Denote by $\mathrm{DescNetNodes}(v)$ the collection of all network nodes that descend from $v$ and $\mathrm{RIA}(v)$ those nodes which are ancestral to $v$ and incident to a root node. We then write:
+\[ \mathrm{AncDescNetNodes}(v) = \bigcup_{a_{i}\in \mathrm{RIA}(v)} \mathrm{DescNetNodes} (a_i) \]
+We ask that the following two conditions are satisfied:
+\[ \mathrm{DescNetNodes}(\mathrm{src2})\; \bigcap \;\mathrm{AncDescNetNodes}(\mathrm{tgt1}) = \emptyset \]
+\[ \mathrm{DescNetNodes}(\mathrm{tgt1})\; \bigcap \;\mathrm{AncDescNetNodes}(\mathrm{tgt2}) = \emptyset  \]
+
+\end{itemize}
+
+\begin{figure}[H]
+  \begin{verbatim}
+                              ┌──────────────────────┐
+              o  ── src1    ┌─│ DescNetNodes(NewSrc):│
+             /              │ │ DescNetNodes(tgt1)   │
+  ┌─────┐   /               │ │   <> {netTgt}        │
+  │edge1│  o  ── newSrc ────┘ └──────────────────────┘
+  └─────┘ / \____________    
+         /               \
+        o ── tgt1         \
+                          [...] new edge
+                             \       ┌────────── o ── src2
+                              \______│_____     /
+                                     │     \   /
+                                     │      \ /           ┌─────┐
+       ┌──────────────────────┐      │       o  ── newTgt │edge2│
+       │ DescNetNodes(src2):  │──────┘      /             └─────┘
+       │ OldDescNetNodes(src2)│            /
+       │   <> {newTgt}        │           o  ── tgt2
+       └──────────────────────┘ 
+  \end{verbatim}
+\caption{Descendent network condition}
+\end{figure}
+
+\newpage
+
+
+\begin{algorithm}
+		\caption{CandidateNetworkEdges}
+		\label{alg:CandidateNetworkEdges}
+		\SetAlgoLined
+		\KwData{Input Network $N$}
+		\KwResult{Collection of network compatible edges}
+		\Comment{Get non-repeated collection of pairs.}
+        \begin{align*}
+        \begin{split}
+         orderedEdgePairs =\; & [\; (e1, e2)\\
+                               & |\; (e1 : es) \leftarrow \mathrm{tails}\; (\mathrm{edges}\; N)\\
+                               & ,\; e2 \leftarrow es\\
+                               & ]
+        \end{split}
+        \end{align*}
+        \begin{align*}
+        \begin{split}
+        swappedEdgePairs = \mathrm{map\;\;swap\;\;orderedEdgePairs}
+        \end{split}
+        \end{align*}
+        \Comment{Filter ancestral edge pairs}
+
+        \begin{align*}
+        \begin{split}
+        nonAncEdgePairs =\;& \mathrm{filter\;\;isAncestralEdge\;\;}orderedEdgePairs\\
+                         <>\;\; & \mathrm{filter\;\;isAncestralEdge\;\;}swappedEdgePairs
+        \end{split}
+        \end{align*}
+        \Comment{Filter for descendant network condition}
+        \begin{align*}
+        \begin{split}
+        compatibleEdgePairs =\;& \mathrm{filter\;\;hasCompDescNetNodes\;\;}nonAncEdgePairs
+        \end{split}
+        \end{align*}
+
+
+		\Return{$CompatibleEdgePairs$} 					
+	\end{algorithm}
+\newpage
+\singlespacing
+\bibliography{/users/ward/home/biblio/ward_new}
+%\bibliography{ward_new}
+
+%cost of root for pars = insert all characters, good first aapprox
+
+%
 %Algorithm basic template
 %	\begin{algorithm}
 %		\caption{Blah}
@@ -351,12 +486,5 @@ Various combinations of forest, network, tree rearrangements.
 %		\Comment{Blah Comment}
 %		\Return{Bleh} 					
 %	\end{algorithm}
-
-\newpage
-\singlespacing
-\bibliography{/users/ward/home/biblio/ward_new}
-%\bibliography{ward_new}
-
-%cost of root for pars = insert all characters, good first aapprox
 
 \end{document}
