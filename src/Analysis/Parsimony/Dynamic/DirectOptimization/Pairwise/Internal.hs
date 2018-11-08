@@ -47,6 +47,7 @@ import           Bio.Character.Encodable
 import           Control.Arrow            ((&&&))
 import           Control.Foldl            (Fold(..))
 import qualified Control.Foldl            as F
+import           Control.Monad.State.Strict
 import           Data.Bits
 import           Data.DList               (snoc)
 import           Data.Foldable
@@ -450,7 +451,7 @@ overlap costStruct char1 char2
 
 
 deriveOverlap
-  :: FiniteBits e
+  :: EncodableStreamElement e
   => (Word -> Word -> Word)
   -> e
   -> e
@@ -469,13 +470,23 @@ deriveOverlap costStruct char1 char2 = F.fold
 
     costAndSymbol (i, x) = (x, cost1 + cost2)
       where
-        cost1 = getDistance2 i char1
-        cost2 = getDistance2 i char2
+        !cost1 = getDistance3 i char1
+        !cost2 = getDistance3 i char2
 
     symbolIndices = NE.fromList [0 .. finiteBitSize char1 - 1]
---    allSymbols    = (toEnum &&& setBit zero) symbolIndices
     zero          = char1 `xor` char1
 
+    getDistance3 :: (MonoFoldable b, Element b ~ Bool) => Word -> b -> Word
+    getDistance3 i b = 
+        case F.impurely ofoldMUnwrap (F.prefilterM pure (F.premapM f (F.generalize F.minimum))) b `evalState` 0 of
+          Just x  -> x
+          Nothing -> error $ "There were no bits set in the character!"
+      where
+        f _ = do
+            j <- get
+            modify' (+1)
+            pure $ costStruct i j
+{-
     getDistance2 :: FiniteBits b => Word -> b -> Word
     getDistance2 i b = 
         case F.fold (F.prefilter (b `testBit`) (F.premap (costStruct i . toEnum) F.minimum)) indices of
@@ -483,6 +494,7 @@ deriveOverlap costStruct char1 char2 = F.fold
           Nothing -> error $ "There were no bits set in the character!"
       where
         indices = [0 .. finiteBitSize b - 1]
+-}
 
 -- |
 -- Given a structure of unambiguous character elements and costs, calculates the
@@ -491,7 +503,7 @@ deriveOverlap costStruct char1 char2 = F.fold
 minimalChoice :: (Bits b, Foldable1 t, Ord c) => t (b, c) -> (b, c)
 minimalChoice = foldl1 f
   where
-    f (!symbol1, !cost1) (!symbol2, !cost2) =
+    f !(!symbol1, !cost1) !(!symbol2, !cost2) =
         case cost1 `compare` cost2 of
           EQ -> (symbol1 .|. symbol2, cost1)
           LT -> (symbol1            , cost1)
@@ -516,13 +528,25 @@ symbolDistances costStruct char1 char2 = costAndSymbol <$> allSymbols
   where
     costAndSymbol (i, x) = (x, cost1 + cost2)
       where
-        cost1 = getDistance2 i char1
-        cost2 = getDistance2 i char2
+        !cost1 = getDistance3 i char1
+        !cost2 = getDistance3 i char2
 
     symbolIndices = NE.fromList [0 .. finiteBitSize char1 - 1]
     allSymbols    = (toEnum &&& setBit zero) <$> symbolIndices
     zero          = char1 `xor` char1
 
+    getDistance3 :: (MonoFoldable b, Element b ~ Bool) => Word -> b -> Word
+    getDistance3 i b = 
+        case F.impurely ofoldMUnwrap (F.prefilterM pure (F.premapM f (F.generalize F.minimum))) b `evalState` 0 of
+          Just x  -> x
+          Nothing -> error $ "There were no bits set in the character!"
+      where
+        f _ = do
+            j <- get
+            modify' (+1)
+            pure $ costStruct i j
+
+{-
     getDistance2 :: FiniteBits b => Word -> b -> Word
     getDistance2 i b = 
         case F.fold (F.prefilter (b `testBit`) (F.premap (costStruct i . toEnum) F.minimum)) indices of
@@ -530,6 +554,7 @@ symbolDistances costStruct char1 char2 = costAndSymbol <$> allSymbols
           Nothing -> error $ "There were no bits set in the character!"
       where
         indices = [0 .. finiteBitSize b - 1]
+-}
 {-
     getDistance :: FiniteBits b => Word -> b -> Word
     getDistance i e = F.minimum $ costStruct i <$> getSetBits e

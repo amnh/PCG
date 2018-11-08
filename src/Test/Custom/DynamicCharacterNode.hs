@@ -108,7 +108,7 @@ scm i j = if i == j then 0 else 1
 
 
 defMetadata :: DynamicCharacterMetadataDec (Element DynamicCharacter)
-defMetadata = dynamicMetadata defName defWeight defAlphabet scm Nothing
+defMetadata = dynamicMetadataWithTCM defName defWeight defAlphabet scm
 
 
 initDec :: DynamicCharacter -> DynamicDecorationInitial DynamicCharacter

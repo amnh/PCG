@@ -34,6 +34,7 @@ import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
 import           Bio.Character.Exportable
 import           Bio.Metadata
+import           Control.DeepSeq
 import           Control.Lens
 import           Data.Bits
 import           Data.Foldable
@@ -45,6 +46,7 @@ import           Data.List.NonEmpty                                             
 import qualified Data.List.NonEmpty                                              as NE
 import           Data.List.Utility                                               (invariantTransformation)
 import           Data.MonoTraversable
+import           Data.Range
 import           Data.Semigroup
 import           Data.TCM.Memoized
 import           Data.Word
@@ -157,6 +159,8 @@ updateFromLeaves pairwiseAlignment (lChild , rChild) = resultDecoration
 -- atomic alignments depending on the character's metadata.
 directOptimizationPreorder
   :: ( DirectOptimizationPostorderDecoration d c
+     , Bound (Element c) ~ Word
+     , Ranged (Element c)
 --     , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
      )
   => PairwiseAlignment c
@@ -207,6 +211,8 @@ disambiguateElement x = zed `setBit` idx
 -- decoration. The recursive logic of the pre-order traversal.
 updateFromParent
   :: ( DirectOptimizationPostorderDecoration d c
+     , Bound (Element c) ~ Word
+     , Ranged (Element c)
 --     , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
      )
   => PairwiseAlignment c
@@ -243,6 +249,8 @@ updateFromParent pairwiseAlignment meta currentDecoration parentDecoration = res
 -- A three way comparison of characters used in the DO preorder traversal.
 tripleComparison
   :: ( DirectOptimizationPostorderDecoration d c
+     , Ranged (Element c)
+     , Bound (Element c) ~ Word
 --     , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
      )
   => PairwiseAlignment c
@@ -267,16 +275,17 @@ tripleComparison pairwiseAlignment meta childDecoration parentCharacter parentSi
     -- If we have a small alphabet, there will not have been a call to
     -- initialize a memoized TCM. We certainly don't want to force that here!
     costStructure =
-        case (meta ^. sparseTransitionCostMatrix) of
-          Nothing  -> naiveMedianAndCost3D
-          Just tcm -> getMedianAndCost3D tcm
+        case meta ^. sparseTransitionCostMatrix of
+          Just memo -> getMedianAndCost3D memo
+          Nothing   -> naiveMedianAndCost3D
       where
-        !scm = meta ^. symbolChangeMatrix
+        !tcm = meta ^. transitionCostMatrix
         !gap = gapOfStream parentCharacter
         !zed = gap `xor` gap
 
         singletonStates = (zed `setBit`) <$> [0 .. fromEnum (symbolCount zed) - 1]
-        naiveMedianAndCost3D a b c = unsafeToFinite <$> foldl' g (zed, infinity :: ExtendedNatural) singletonStates
+
+        naiveMedianAndCost3D a b c = foldl' g (zed, maxBound :: Word) singletonStates
           where
             g acc@(combinedState, curentMinCost) singleState =
                 case combinedCost `compare` curentMinCost of
@@ -284,7 +293,7 @@ tripleComparison pairwiseAlignment meta childDecoration parentCharacter parentSi
                   LT -> (                  singleState, combinedCost)
                   GT -> acc
               where
-                combinedCost = fromFinite . sum' $ snd . overlap scm singleState <$> [a, b, c]
+                combinedCost = sum' $ snd . tcm singleState <$> [a, b, c] 
 
 
     single = lexicallyDisambiguate $ filterGaps almostSingle

@@ -23,12 +23,15 @@
 module Bio.Metadata.DiscreteWithTCM.Internal
   ( DiscreteCharacterMetadata(..)
   , DiscreteWithTCMCharacterMetadataDec()
+  , RepresentedTCM(..)
   , GeneralCharacterMetadata(..)
   , GetSymbolChangeMatrix(..)
   , GetTransitionCostMatrix(..)
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)
+  , retreiveSCM
+  , retreiveTCM
   , discreteMetadataFromTCM
   , discreteMetadataWithTCM
   ) where
@@ -54,16 +57,16 @@ import Text.XML
 -- discrete different bins. Continous bins do not have Alphabets.
 data DiscreteWithTCMCharacterMetadataDec c
    = DiscreteWithTCMCharacterMetadataDec
-   { representedTCM :: !RepresentedTCM
+   { representedTCM :: !(RepresentedTCM MemoizedCostMatrix)
    , discreteData   :: {-# UNPACK #-} !DiscreteCharacterMetadataDec
    } deriving (Eq, Generic)
 
 
-data  RepresentedTCM
-    = ExplicitLayout {-# UNPACK #-} !TCM {-# UNPACK #-} !MemoizedCostMatrix
+data  RepresentedTCM a
+    = ExplicitLayout {-# UNPACK #-} !TCM !a
     | DiscreteMetric
     | LinearNorm
-    deriving (Generic, NFData)
+    deriving (Eq, Generic, NFData)
 
 
 foreignPointerData :: DiscreteWithTCMCharacterMetadataDec c -> Maybe MemoizedCostMatrix
@@ -83,19 +86,19 @@ data RepresentedTCM a where
 retreiveTCM
   :: ( Bits c
      , Bound c ~ Word
-     , Exportable c
      , Ranged c
      )
-  => RepresentedTCM
+  => (TCM -> a -> c -> c -> (c, Word))
+  -> RepresentedTCM a
   -> c
   -> c
   -> (c, Word)
-retreiveTCM (ExplicitLayout _ memo) = getMedianAndCost2D memo
-retreiveTCM DiscreteMetric          = discreteMetricLogic
-retreiveTCM LinearNorm              = linearNormLogic
+retreiveTCM f (ExplicitLayout a b) = f a b
+retreiveTCM _ DiscreteMetric       = discreteMetricLogic
+retreiveTCM _ LinearNorm           = linearNormLogic
 
 
-retreiveSCM :: RepresentedTCM -> Word -> Word -> Word
+retreiveSCM :: RepresentedTCM a -> Word -> Word -> Word
 retreiveSCM (ExplicitLayout tcm _) = \i j -> toEnum . fromEnum $ tcm TCM.! (i,j)
 retreiveSCM DiscreteMetric         = \i j -> if i == j then 0 else 1
 retreiveSCM LinearNorm             = \i j -> max i j - min i j
@@ -139,14 +142,6 @@ instance DiscreteCharacterMetadata (DiscreteWithTCMCharacterMetadataDec c) where
 
     {-# INLINE extractDiscreteCharacterMetadata #-}
     extractDiscreteCharacterMetadata = discreteData
-
-
-instance Eq RepresentedTCM where
-
-  DiscreteMetric       == DiscreteMetric       = True
-  LinearNorm           == LinearNorm           = True
-  (ExplicitLayout x _) == (ExplicitLayout y _) = x == y
-  _                    == _                    = False
 
 
 -- | (✔)
@@ -196,7 +191,7 @@ instance GetSymbolChangeMatrix (DiscreteWithTCMCharacterMetadataDec c) (Word -> 
 instance (Bits c, Bound c ~ Word, Exportable c, Ranged c)
     => GetTransitionCostMatrix (DiscreteWithTCMCharacterMetadataDec c) (c -> c -> (c, Word)) where
 
-    transitionCostMatrix = to (retreiveTCM . representedTCM)
+    transitionCostMatrix = to (retreiveTCM (const getMedianAndCost2D) . representedTCM)
 
 
 instance NFData (DiscreteWithTCMCharacterMetadataDec c) where
