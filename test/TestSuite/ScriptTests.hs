@@ -201,22 +201,22 @@ testSuite = testGroup "Script Test Suite"
   , scriptCheckCost 213
         "datasets/dynamic/single-block/large-mix/levenshtein/test.pcg"
         "datasets/dynamic/single-block/large-mix/levenshtein/cost.data"
-  , scriptCheckCost 197
+  , scriptCheckCost 246
         "datasets/dynamic/single-block/huge-mix/discrete/test.pcg"
         "datasets/dynamic/single-block/huge-mix/discrete/cost.data"
-  , scriptCheckCost 2042
+  , scriptCheckCost 21753
         "datasets/dynamic/single-block/huge-mix/L1-norm/test.pcg"
         "datasets/dynamic/single-block/huge-mix/L1-norm/cost.data"
-  , scriptCheckCost 254
+  , scriptCheckCost 325
         "datasets/dynamic/single-block/huge-mix/1-2/test.pcg"
         "datasets/dynamic/single-block/huge-mix/1-2/cost.data"
-  , scriptCheckCost 228
+  , scriptCheckCost 284
         "datasets/dynamic/single-block/huge-mix/2-1/test.pcg"
         "datasets/dynamic/single-block/huge-mix/2-1/cost.data"
-  , scriptCheckCost 671
+  , scriptCheckCost 872
         "datasets/dynamic/single-block/huge-mix/hamming/test.pcg"
         "datasets/dynamic/single-block/huge-mix/hamming/cost.data"
-  , scriptCheckCost 488
+  , scriptCheckCost 698
         "datasets/dynamic/single-block/huge-mix/levenshtein/test.pcg"
         "datasets/dynamic/single-block/huge-mix/levenshtein/cost.data"
   , scriptFailure "datasets/unmatched-leaf-taxon/test.pcg"
