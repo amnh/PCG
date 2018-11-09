@@ -27,7 +27,7 @@
 module Bio.Character.Encodable.Dynamic.Internal
   ( DynamicCharacter (DC,Missing)
   , DynamicCharacters
-  , DynamicCharacterElement()
+  , DynamicCharacterElement(DCE)
   ) where
 
 import           Bio.Character.Encodable.Dynamic.Class

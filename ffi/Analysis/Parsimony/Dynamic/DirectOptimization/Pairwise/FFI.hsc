@@ -25,14 +25,18 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
   ( DenseTransitionCostMatrix
   , foreignPairwiseDO
   , foreignThreeWayDO
+  , lookupPairwise
+  , lookupThreeWay
   , generateDenseTransitionCostMatrix
   ) where
 
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (filterGaps, handleMissingCharacter, handleMissingCharacterThreeway)
 import Bio.Character.Encodable
+import Bio.Character.Encodable.Dynamic.Internal (DynamicCharacterElement(..))
 import Bio.Character.Exportable.Class
 import Control.DeepSeq
 import Control.Lens
+import Data.BitVector.LittleEndian
 --import Data.Foldable
 --import Data.List        (intercalate)
 --import Data.MonoTraversable
@@ -147,6 +151,49 @@ data DenseTransitionCostMatrix
    { costMatrix2D :: Ptr CostMatrix2d
    , costMatrix3D :: Ptr CostMatrix3d
    } deriving (Generic)
+
+
+lookupPairwise
+  :: DenseTransitionCostMatrix
+  -> DynamicCharacterElement
+  -> DynamicCharacterElement
+  -> (DynamicCharacterElement, Word)
+lookupPairwise m e1 e2 = unsafePerformIO $ do
+    cm2d <- peek $ costMatrix2D m
+    let dim = fromEnum $ alphSize cm2d
+    let off = toByteValue e1 * dim + toByteValue e2
+    cost <- peek $ advancePtr (bestCost cm2d) off
+    med  <- peek $ advancePtr (medians  cm2d) off
+    let val = DCE $ fromNumber (symbolCount e1) med
+    pure (val, toEnum $ fromEnum cost)
+
+
+lookupThreeWay
+  :: DenseTransitionCostMatrix
+  -> DynamicCharacterElement
+  -> DynamicCharacterElement
+  -> DynamicCharacterElement
+  -> (DynamicCharacterElement, Word)
+lookupThreeWay dtcm e1 e2 e3 = unsafePerformIO $ do
+    cm3d <- peek $ costMatrix3D dtcm
+    let dim = fromEnum $ alphSize3D cm3d
+    let off = toByteValue e1 * dim * dim + toByteValue e2 * dim + toByteValue e3
+    cost <- peek $ advancePtr (bestCost3D cm3d) off
+    med  <- peek $ advancePtr ( medians3D cm3d) off
+    let val = DCE $ fromNumber (symbolCount e1) med
+    pure (val, toEnum $ fromEnum cost)
+
+
+-- Retreive the first 8 bits of the value
+toByteValue :: DynamicCharacterElement -> Int
+toByteValue e = f 7
+  where
+    f !i
+      | i >= 0    = v + f (i-1)
+      | otherwise = 0
+      where
+        !v | e `testBit` i = 1 `shiftL` i
+           | otherwise     = 0
 
 
 -- |
