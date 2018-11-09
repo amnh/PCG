@@ -154,46 +154,64 @@ data DenseTransitionCostMatrix
 
 
 lookupPairwise
-  :: DenseTransitionCostMatrix
-  -> DynamicCharacterElement
-  -> DynamicCharacterElement
-  -> (DynamicCharacterElement, Word)
+  :: Bits b
+  => DenseTransitionCostMatrix
+  -> b
+  -> b
+  -> (b, Word)
 lookupPairwise m e1 e2 = unsafePerformIO $ do
     cm2d <- peek $ costMatrix2D m
-    let dim = fromEnum $ alphSize cm2d
+    let dim = 1 `shiftL` (fromEnum (alphSize cm2d))
     let off = toByteValue e1 * dim + toByteValue e2
     cost <- peek $ advancePtr (bestCost cm2d) off
     med  <- peek $ advancePtr (medians  cm2d) off
-    let val = DCE $ fromNumber (symbolCount e1) med
+    let val = fromByteValue e1 $ fromEnum med
     pure (val, toEnum $ fromEnum cost)
 
 
 lookupThreeWay
-  :: DenseTransitionCostMatrix
-  -> DynamicCharacterElement
-  -> DynamicCharacterElement
-  -> DynamicCharacterElement
-  -> (DynamicCharacterElement, Word)
+  :: Bits b
+  => DenseTransitionCostMatrix
+  -> b
+  -> b
+  -> b
+  -> (b, Word)
 lookupThreeWay dtcm e1 e2 e3 = unsafePerformIO $ do
     cm3d <- peek $ costMatrix3D dtcm
-    let dim = fromEnum $ alphSize3D cm3d
+    let dim = 1 `shiftL` (fromEnum (alphSize3D cm3d))
     let off = toByteValue e1 * dim * dim + toByteValue e2 * dim + toByteValue e3
     cost <- peek $ advancePtr (bestCost3D cm3d) off
     med  <- peek $ advancePtr ( medians3D cm3d) off
-    let val = DCE $ fromNumber (symbolCount e1) med
+    let val = fromByteValue e1 $ fromEnum med
     pure (val, toEnum $ fromEnum cost)
 
 
+-- |
+-- /O(1)/
+--
 -- Retreive the first 8 bits of the value
-toByteValue :: DynamicCharacterElement -> Int
+toByteValue :: Bits b => b -> Int
 toByteValue e = f 7
   where
-    f !i
-      | i >= 0    = v + f (i-1)
+    f !n
+      | n >= 0    = v + f (n-1)
       | otherwise = 0
       where
-        !v | e `testBit` i = 1 `shiftL` i
+        !v | e `testBit` n = 1 `shiftL` n
            | otherwise     = 0
+
+
+-- |
+-- /O(1)/
+--
+-- Set the first 8 bits of the value
+fromByteValue :: Bits b => b -> Int -> b
+fromByteValue x i = f 7 x
+  where
+    f !n b
+      | n < 0         = b
+      | i `testBit` n = f (n-1) $ b   `setBit` n 
+      | otherwise     = f (n-1) $ b `clearBit` n
 
 
 -- |
