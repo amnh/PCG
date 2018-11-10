@@ -22,7 +22,7 @@ module Bio.Character.Decoration.Additive
   , RangedPostorderDecoration()
   -- * Lenses
   , GetSymbolChangeMatrix(..)
-  , GetTransitionCostMatrix(..)
+  , GetPairwiseTransitionCostMatrix(..)
   , HasCharacterAlphabet(..)
   , HasCharacterCost(..)
   , HasCharacterName(..)

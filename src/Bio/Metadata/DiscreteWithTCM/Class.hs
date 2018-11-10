@@ -18,7 +18,7 @@
 module Bio.Metadata.DiscreteWithTCM.Class
   ( DiscreteWithTcmCharacterMetadata()
   , GetSymbolChangeMatrix(..)
-  , GetTransitionCostMatrix(..)
+  , GetPairwiseTransitionCostMatrix(..)
   , GetSparseTransitionCostMatrix(..)
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
@@ -36,7 +36,7 @@ import Control.Lens
 class ( DiscreteCharacterMetadata     s
       , EncodableStreamElement        c
       , GetSymbolChangeMatrix         s (Word -> Word -> Word)
-      , GetTransitionCostMatrix       s (c -> c -> (c, Word))
+      , GetPairwiseTransitionCostMatrix       s (c -> c -> (c, Word))
       ) => DiscreteWithTcmCharacterMetadata s c | s -> c where
 
 
@@ -49,11 +49,11 @@ class GetSymbolChangeMatrix s a | s -> a where
 
 
 -- |
--- A 'Getter' for the 'transitionCostMatrix' field
-class GetTransitionCostMatrix s a | s -> a where
+-- A 'Getter' for the 'pairwiseTransitionCostMatrix' field
+class GetPairwiseTransitionCostMatrix s a | s -> a where
 
-    {-# MINIMAL transitionCostMatrix #-}
-    transitionCostMatrix  :: Getter s a
+    {-# MINIMAL pairwiseTransitionCostMatrix #-}
+    pairwiseTransitionCostMatrix  :: Getter s a
 
 
 -- |

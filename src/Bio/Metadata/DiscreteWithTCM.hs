@@ -19,7 +19,7 @@ module Bio.Metadata.DiscreteWithTCM
     , HasCharacterName(..)
     , HasCharacterWeight(..)
     , GetSymbolChangeMatrix(..)
-    , GetTransitionCostMatrix(..)
+    , GetPairwiseTransitionCostMatrix(..)
     , GetSparseTransitionCostMatrix(..)
     , discreteMetadataFromTCM
     , discreteMetadataWithTCM

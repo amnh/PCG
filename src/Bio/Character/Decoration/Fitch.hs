@@ -19,7 +19,7 @@ module Bio.Character.Decoration.Fitch
   , GeneralCharacterMetadata()
   -- * Lenses
   , GetSymbolChangeMatrix(..)
-  , GetTransitionCostMatrix(..)
+  , GetPairwiseTransitionCostMatrix(..)
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)

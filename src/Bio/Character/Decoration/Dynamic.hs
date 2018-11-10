@@ -42,7 +42,7 @@ module Bio.Character.Decoration.Dynamic
   , HasImpliedAlignment(..)
   , HasSingleDisambiguation(..)
   , GetSymbolChangeMatrix(..)
-  , GetTransitionCostMatrix(..)
+  , GetPairwiseTransitionCostMatrix(..)
   , HasTraversalFoci(..)
   , GetSparseTransitionCostMatrix(..)
   , GetDenseTransitionCostMatrix(..)

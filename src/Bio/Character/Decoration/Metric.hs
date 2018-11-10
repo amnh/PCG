@@ -22,7 +22,7 @@ module Bio.Character.Decoration.Metric
   , StateContributionList
   -- * Lenses
   , GetSymbolChangeMatrix(..)
-  , GetTransitionCostMatrix(..)
+  , GetPairwiseTransitionCostMatrix(..)
   , HasBeta(..)
   , HasCharacterAlphabet(..)
   , HasCharacterCost(..)

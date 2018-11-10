@@ -16,7 +16,7 @@ module Bio.Metadata.Dynamic
     , DynamicCharacterMetadataDec()
     , GetDenseTransitionCostMatrix(..)
     , GetSymbolChangeMatrix(..)
-    , GetTransitionCostMatrix(..)
+    , GetPairwiseTransitionCostMatrix(..)
     , HasCharacterAlphabet(..)
     , HasCharacterName(..)
     , HasCharacterWeight(..)

@@ -157,6 +157,7 @@ library
 
   exposed-modules:  Analysis.Parsimony.Additive.Internal
                     Analysis.Parsimony.Dynamic.DirectOptimization
+                    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
                     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
                     Analysis.Parsimony.Dynamic.SequentialAlign
                     Analysis.Parsimony.Fitch.Internal
@@ -218,7 +219,7 @@ library
                     Test.Custom.DynamicCharacterNode
 
   other-modules:    Analysis.Parsimony.Dynamic.DirectOptimization.Internal
-                    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
+--                    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
                     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
                     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
                     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
@@ -260,6 +261,7 @@ library
                     Bio.Metadata.DiscreteWithTCM.Internal
                     Bio.Metadata.Dynamic.Class
                     Bio.Metadata.Dynamic.Internal
+                    Bio.Metadata.MetricRepresentation
                     Bio.Graph.BinaryRenderingTree
                     Bio.Graph.Constructions
                     Bio.Graph.Forest
@@ -378,6 +380,21 @@ executable 2d-do-comparison
                     , QuickCheck
 
   hs-source-dirs:   utils
+
+
+executable acessor
+
+  import:             ghc-flags
+                    , language-specs
+
+  main-is:          accessors.hs
+
+  build-depends:      phylocomgraph
+                    , base >=4.10
+                    , bimap
+                    , QuickCheck
+
+  hs-source-dirs:   utils, ffi
 
 
 executable 3d-do-comparison

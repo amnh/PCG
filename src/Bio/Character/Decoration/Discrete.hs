@@ -25,7 +25,7 @@ module Bio.Character.Decoration.Discrete
   , DiscreteCharacterMetadata()
   , GeneralCharacterMetadata()
   , GetSymbolChangeMatrix(..)
-  , GetTransitionCostMatrix(..)
+  , GetPairwiseTransitionCostMatrix(..)
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)

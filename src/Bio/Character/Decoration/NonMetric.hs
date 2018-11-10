@@ -18,7 +18,7 @@ module Bio.Character.Decoration.NonMetric
   , NonMetricCharacterDecoration()
   -- * Lenses
   , GetSymbolChangeMatrix(..)
-  , GetTransitionCostMatrix(..)
+  , GetPairwiseTransitionCostMatrix(..)
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)

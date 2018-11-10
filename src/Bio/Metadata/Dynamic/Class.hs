@@ -19,7 +19,8 @@ module Bio.Metadata.Dynamic.Class
   ( DenseTransitionCostMatrix
   , GetDenseTransitionCostMatrix(..)
   , GetSymbolChangeMatrix(..)
-  , GetTransitionCostMatrix(..)
+  , GetPairwiseTransitionCostMatrix(..)
+  , GetThreewayTransitionCostMatrix(..)
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)
@@ -42,6 +43,14 @@ class GetDenseTransitionCostMatrix s a | s -> a where
 
     {-# MINIMAL denseTransitionCostMatrix #-}
     denseTransitionCostMatrix  :: Getter s a
+
+
+-- |
+-- A 'Getter' for the 'threewayTransitionCostMatrix' field
+class GetThreewayTransitionCostMatrix s a | s -> a where
+
+    {-# MINIMAL threewayTransitionCostMatrix #-}
+    threewayTransitionCostMatrix  :: Getter s a
 
 
 -- |

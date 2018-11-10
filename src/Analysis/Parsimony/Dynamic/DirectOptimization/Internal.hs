@@ -81,7 +81,7 @@ selectDynamicMetric
   :: ( EncodableDynamicCharacter c
      , Exportable c
      , GetDenseTransitionCostMatrix  dec (Maybe DenseTransitionCostMatrix)
-     , GetTransitionCostMatrix       dec (OverlapFunction (Element c))
+     , GetPairwiseTransitionCostMatrix       dec (OverlapFunction (Element c))
      , Ord (Element c)
      )
   => dec
@@ -96,7 +96,7 @@ selectDynamicMetric candidate
         Nothing -> let !sTCM' = sTCM
                    in  \x y -> ukkonenDO x y sTCM'
   where
-    !sTCM = candidate ^. transitionCostMatrix
+    !sTCM = candidate ^. pairwiseTransitionCostMatrix
 
 
 -- |
@@ -279,7 +279,7 @@ tripleComparison pairwiseAlignment meta childDecoration parentCharacter parentSi
           Just memo -> getMedianAndCost3D memo
           Nothing   -> naiveMedianAndCost3D
       where
-        !tcm = meta ^. transitionCostMatrix
+        !tcm = meta ^. pairwiseTransitionCostMatrix
         !gap = gapOfStream parentCharacter
         !zed = gap `xor` gap
 

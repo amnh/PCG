@@ -25,7 +25,7 @@ module Bio.Metadata.Dynamic.Internal
   , DynamicCharacterMetadataDec()
   , DynamicCharacterMetadata(..)
   , GetSymbolChangeMatrix(..)
-  , GetTransitionCostMatrix(..)
+  , GetPairwiseTransitionCostMatrix(..)
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)
@@ -64,6 +64,7 @@ import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
 import Bio.Metadata.DiscreteWithTCM.Internal
 import Bio.Metadata.Dynamic.Class
+import Bio.Metadata.MetricRepresentation
 import Control.DeepSeq
 import Control.Lens                                     hiding (Fold)
 import Data.Alphabet
@@ -100,7 +101,7 @@ data DynamicCharacterMetadataDec c
    = DynamicCharacterMetadataDec
    { foreignTransitionCostMatrix :: !(Either DenseTransitionCostMatrix MemoizedCostMatrix)
    , optimalTraversalFoci        :: !(Maybe TraversalFoci)
-   , structuralRepresentationTCM :: !(RepresentedTCM ())
+   , structuralRepresentationTCM :: !(MetricRepresentation ())
    , metadata                    :: {-# UNPACK #-} !DiscreteCharacterMetadataDec
    } deriving (Generic, NFData)
 
@@ -111,6 +112,8 @@ data DynamicCharacterMetadataDec c
 class ( DiscreteWithTcmCharacterMetadata s c
       , GetDenseTransitionCostMatrix     s (Maybe DenseTransitionCostMatrix)
       , GetSparseTransitionCostMatrix    s (Maybe MemoizedCostMatrix)
+      , GetPairwiseTransitionCostMatrix  s (     c -> c -> (c, Word))
+      , GetThreewayTransitionCostMatrix  s (c -> c -> c -> (c, Word))
       , HasTraversalFoci                 s (Maybe TraversalFoci)
       ) => DynamicCharacterMetadata s c | s -> c where
 
@@ -205,9 +208,16 @@ instance GetSymbolChangeMatrix (DynamicCharacterMetadataDec c) (Word -> Word -> 
 
 -- | (✔)
 instance (Bound c ~ Word, EncodableStreamElement c, Exportable c, Ranged c)
-    => GetTransitionCostMatrix (DynamicCharacterMetadataDec c) (c -> c -> (c, Word)) where
+    => GetPairwiseTransitionCostMatrix (DynamicCharacterMetadataDec c) (c -> c -> (c, Word)) where
 
-    transitionCostMatrix = to extractTransitionCostMatrix
+    pairwiseTransitionCostMatrix = to extractPairwiseTransitionCostMatrix
+
+
+-- | (✔)
+instance (Bound c ~ Word, EncodableStreamElement c, Exportable c, Ranged c)
+    => GetThreewayTransitionCostMatrix (DynamicCharacterMetadataDec c) (c -> c -> c -> (c, Word)) where
+
+    threewayTransitionCostMatrix = to extractThreewayTransitionCostMatrix
 
 
 -- | (✔)
@@ -287,8 +297,7 @@ maybeConstructDenseTransitionCostMatrix alpha sigma = force f
 --
 -- Correctly select the most efficient TCM function based on the alphabet size
 -- and metric specification.
---extractTransitionCostMatrix :: DynamicCharacterMetadataDec c -> c -> c -> (c, Word)
-extractTransitionCostMatrix
+extractPairwiseTransitionCostMatrix
   :: ( Exportable c
      , EncodableStreamElement c
      , Ranged c
@@ -298,12 +307,36 @@ extractTransitionCostMatrix
   -> c
   -> c
   -> (c, Word)                                                                      
-extractTransitionCostMatrix m = retreiveTCM (handleGeneralCases) $ structuralRepresentationTCM m
+extractPairwiseTransitionCostMatrix m = retreivePairwiseTCM (handleGeneralCases) $ structuralRepresentationTCM m
   where
     handleGeneralCases tcm _ =
         case foreignTransitionCostMatrix m of
           Right memo -> getMedianAndCost2D memo
           Left _     -> overlap (\i j -> toEnum . fromEnum $ tcm TCM.! (i,j))
+
+
+-- |
+-- /O(n^2)/
+--
+-- Correctly select the most efficient TCM function based on the alphabet size
+-- and metric specification.
+extractThreewayTransitionCostMatrix
+  :: ( Exportable c
+     , EncodableStreamElement c
+     , Ranged c
+     , Bound c ~ Word
+     )
+  => DynamicCharacterMetadataDec c2
+  -> c
+  -> c
+  -> c
+  -> (c, Word)                                                                      
+extractThreewayTransitionCostMatrix m = retreiveThreewayTCM (handleGeneralCases) $ structuralRepresentationTCM m
+  where
+    handleGeneralCases tcm _ =
+        case foreignTransitionCostMatrix m of
+          Right memo -> getMedianAndCost3D memo
+          Left _     -> const $ overlap (\i j -> toEnum . fromEnum $ tcm TCM.! (i,j))
 
 
 -- |
