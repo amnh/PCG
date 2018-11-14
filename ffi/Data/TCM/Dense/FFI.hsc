@@ -31,7 +31,7 @@ module Data.TCM.Dense.FFI
   , generateDenseTransitionCostMatrix
   -- * Accessor functions
   , lookupPairwise
-  , lookupThreeWay
+  , lookupThreeway
   -- * Querries
   , getAlignmentStrategy
   ) where
@@ -374,14 +374,14 @@ lookupPairwise m e1 e2 = unsafePerformIO $ do
 -- Lookup the cost and median of /three/ elements.
 --
 -- _NOTE: /Only considers the first 8 bits of the elements!/_
-lookupThreeWay
+lookupThreeway
   :: Bits b
   => DenseTransitionCostMatrix
   -> b
   -> b
   -> b
   -> (b, Word)
-lookupThreeWay dtcm e1 e2 e3 = unsafePerformIO $ do
+lookupThreeway dtcm e1 e2 e3 = unsafePerformIO $ do
     cm3d <- peek $ costMatrix3D dtcm
     let dim = 1 `shiftL` (fromEnum (alphSize3D cm3d))
     let off = toByteValue e1 * dim * dim + toByteValue e2 * dim + toByteValue e3

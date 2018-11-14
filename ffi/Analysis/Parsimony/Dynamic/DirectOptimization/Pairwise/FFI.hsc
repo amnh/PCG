@@ -25,9 +25,6 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
   ( DenseTransitionCostMatrix
   , foreignPairwiseDO
   , foreignThreeWayDO
-  , lookupPairwise
-  , lookupThreeWay
-  , generateDenseTransitionCostMatrix
   ) where
 
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (filterGaps, handleMissingCharacter, handleMissingCharacterThreeway)

@@ -16,7 +16,7 @@ module Data.TCM.Dense
   , generateDenseTransitionCostMatrix
     -- * Accessor functions
   , lookupPairwise
-  , lookupThreeWay
+  , lookupThreeway
   ) where
 
 import Data.TCM.Dense.FFI

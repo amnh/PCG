@@ -55,10 +55,9 @@ import           Data.MonoTraversable
 import           Data.Ord
 import           Data.Semigroup
 import qualified Data.TCM                                               as TCM
+import           Data.TCM.Dense
 import           Data.TCM.Memoized
 import           Prelude                                                hiding (lookup)
-
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (generateDenseTransitionCostMatrix)
 import           Bio.Character.Exportable
 import           Bio.Metadata.CharacterName
 import           Bio.Metadata.Discrete
@@ -312,8 +311,8 @@ extractPairwiseTransitionCostMatrix = retreivePairwiseTCM handleGeneralCases . s
   where
     handleGeneralCases tcm v =
         case v of
+          Left dense -> lookupPairwise dense
           Right memo -> getMedianAndCost2D memo
-          Left _     -> overlap (\i j -> toEnum . fromEnum $ tcm TCM.! (i,j))
 
 
 -- |
@@ -336,8 +335,8 @@ extractThreewayTransitionCostMatrix = retreiveThreewayTCM handleGeneralCases . s
   where
     handleGeneralCases tcm v =
         case v of
+          Left dense -> lookupThreeway dense
           Right memo -> getMedianAndCost3D memo
-          Left _     -> const $ overlap (\i j -> toEnum . fromEnum $ tcm TCM.! (i,j))
 
 
 -- |
