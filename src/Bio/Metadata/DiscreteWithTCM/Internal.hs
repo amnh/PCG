@@ -41,7 +41,7 @@ import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
 import Data.Bits
-import Data.List                                 (intercalate)
+import Data.List                          (intercalate)
 import Data.Range
 import Data.TCM                           as TCM
 import Data.TCM.Memoized
@@ -70,7 +70,7 @@ foreignPointerData :: DiscreteWithTCMCharacterMetadataDec c -> Maybe MemoizedCos
 foreignPointerData x =
   case representedTCM x of
     ExplicitLayout _ v -> Just v
-    _ -> Nothing
+    _                  -> Nothing
 
 
 {-
