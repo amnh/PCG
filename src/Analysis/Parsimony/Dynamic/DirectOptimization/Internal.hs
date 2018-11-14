@@ -267,7 +267,7 @@ tripleComparison pairwiseAlignment meta childDecoration parentCharacter parentSi
     -- If we have a small alphabet, there will not have been a call to
     -- initialize a memoized TCM. We certainly don't want to force that here!
     costStructure =
-        case (meta ^. sparseTransitionCostMatrix) of
+        case meta ^. sparseTransitionCostMatrix of
           Nothing  -> naiveMedianAndCost3D
           Just tcm -> getMedianAndCost3D tcm
       where
