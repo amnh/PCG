@@ -27,6 +27,13 @@
 - package:
   - name: phylocomgraph
   - section:
+    - name: library
+    - message:
+      - name: Weeds exported
+      - module:
+        - name: Bio.Metadata.Dynamic.Class
+        - identifier: threewayTransitionCostMatrix
+  - section:
     - name: library test:unit-tests
     - message:
       - name: Module reused between components
@@ -67,6 +74,8 @@
         - Data.EdgeSet
         - Data.Range
         - Data.TCM
+        - Data.TCM.Dense
+        - Data.TCM.Dense.FFI
         - Data.TCM.Internal
         - Data.TCM.Memoized
         - Data.TCM.Memoized.FFI

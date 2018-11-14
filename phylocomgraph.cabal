@@ -393,8 +393,6 @@ executable acessor
 
   build-depends:      phylocomgraph
                     , base >=4.10
-                    , bimap
-                    , QuickCheck
 
   hs-source-dirs:   utils, ffi
 
@@ -673,6 +671,8 @@ Test-Suite unit-tests
                     Data.Range
                     Data.TCM
                     Data.TCM.Internal
+                    Data.TCM.Dense
+                    Data.TCM.Dense.FFI
                     Data.TCM.Memoized
                     Data.TCM.Memoized.FFI
                     Data.TCM.Test

@@ -26,20 +26,11 @@ module Bio.Metadata.MetricRepresentation
   , retreiveThreewayTCM
   ) where
 
---import Bio.Character.Exportable
---import Bio.Metadata.CharacterName
---import Bio.Metadata.Discrete
---import Bio.Metadata.DiscreteWithTCM.Class
 import Control.DeepSeq
---import Control.Lens
---import Data.Alphabet
 import Data.Bits
---import Data.List                          (intercalate)
 import Data.Range
 import Data.TCM        as TCM
---import Data.TCM.Memoized
 import GHC.Generics    hiding (to)
---import Text.XML
 
 
 -- |
@@ -190,6 +181,7 @@ firstLinearNormThreewayLogic x y z = (fromRange newInterval, cost)
   where
     x' = toRange x
     y' = toRange y
+    z' = toRange y
 
     newInterval
       | isOverlapping = x' `intersection`   y'

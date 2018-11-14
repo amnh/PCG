@@ -25,9 +25,9 @@
 {-# LANGUAGE UndecidableInstances       #-}
 
 module Bio.Character.Encodable.Dynamic.Internal
-  ( DynamicCharacter (DC,Missing)
+  ( DynamicCharacter (DC, Missing)
   , DynamicCharacters
-  , DynamicCharacterElement(DCE)
+  , DynamicCharacterElement()
   ) where
 
 import           Bio.Character.Encodable.Dynamic.Class

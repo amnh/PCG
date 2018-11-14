@@ -10,7 +10,6 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns           #-}
 {-# LANGUAGE ConstraintKinds        #-}
 {-# LANGUAGE DeriveAnyClass         #-}
 {-# LANGUAGE DeriveGeneric          #-}
@@ -33,7 +32,7 @@ module Bio.Metadata.Dynamic.Internal
   , TraversalFoci
   , TraversalFocusEdge
   , TraversalTopology
-  , TransitionCostMatrix
+--  , TransitionCostMatrix
   , dynamicMetadata
   , dynamicMetadataFromTCM
   , dynamicMetadataWithTCM
@@ -42,22 +41,6 @@ module Bio.Metadata.Dynamic.Internal
 
 
 import           Bio.Character.Encodable
-import           Control.Arrow                                          ((&&&))
-import           Control.Foldl                                          (Fold (..))
-import qualified Control.Foldl                                          as F
-import           Control.Monad.State.Strict
-import           Data.Bits
-import           Data.Foldable
-import           Data.List.NonEmpty                                     (NonEmpty (..))
-import qualified Data.List.NonEmpty                                     as NE
-import           Data.Maybe
-import           Data.MonoTraversable
-import           Data.Ord
-import           Data.Semigroup
-import qualified Data.TCM                                               as TCM
-import           Data.TCM.Dense
-import           Data.TCM.Memoized
-import           Prelude                                                hiding (lookup)
 import           Bio.Character.Exportable
 import           Bio.Metadata.CharacterName
 import           Bio.Metadata.Discrete
@@ -65,13 +48,23 @@ import           Bio.Metadata.DiscreteWithTCM
 import           Bio.Metadata.Dynamic.Class
 import           Bio.Metadata.MetricRepresentation
 import           Control.DeepSeq
-import           Control.Lens                                           hiding (Fold)
+import           Control.Lens                      hiding (Fold)
+import           Control.Monad.State.Strict
 import           Data.Alphabet
-import           Data.List                                              (intercalate)
+import           Data.Foldable
+import           Data.List                         (intercalate)
+import           Data.List.NonEmpty                (NonEmpty (..))
+import           Data.Maybe
+import           Data.Ord
 import           Data.Range
+import           Data.Semigroup
 import           Data.TCM
+import qualified Data.TCM                          as TCM
+import           Data.TCM.Dense
+import           Data.TCM.Memoized
 import           Data.TopologyRepresentation
-import           GHC.Generics                                           (Generic)
+import           GHC.Generics                      (Generic)
+import           Prelude                           hiding (lookup)
 import           Text.XML
 
 
@@ -91,6 +84,15 @@ type TraversalFocus     = (TraversalFocusEdge, TraversalTopology)
 -- |
 -- Represents a collection of paired rooting edges and unrooted topologies.
 type TraversalFoci      = NonEmpty TraversalFocus
+
+
+{-
+-- |
+-- A generalized function representation: the "overlap" between dynamic character
+-- elements, supplying the corresponding median and cost to align the two
+-- characters.
+type TransitionCostMatrix e = e -> e -> (e, Word)
+-}
 
 
 -- |
@@ -309,7 +311,7 @@ extractPairwiseTransitionCostMatrix
   -> (c, Word)
 extractPairwiseTransitionCostMatrix = retreivePairwiseTCM handleGeneralCases . structuralRepresentationTCM
   where
-    handleGeneralCases tcm v =
+    handleGeneralCases _ v =
         case v of
           Left dense -> lookupPairwise dense
           Right memo -> getMedianAndCost2D memo
@@ -333,17 +335,10 @@ extractThreewayTransitionCostMatrix
   -> (c, Word)
 extractThreewayTransitionCostMatrix = retreiveThreewayTCM handleGeneralCases . structuralRepresentationTCM
   where
-    handleGeneralCases tcm v =
+    handleGeneralCases _ v =
         case v of
           Left dense -> lookupThreeway dense
           Right memo -> getMedianAndCost3D memo
-
-
--- |
--- A generalized function representation: the "overlap" between dynamic character
--- elements, supplying the corresponding median and cost to align the two
--- characters.
-type TransitionCostMatrix e = e -> e -> (e, Word)
 
 
 {-
@@ -355,7 +350,6 @@ discreteOverlap lhs rhs
   | otherwise             = (intersect  , 0)
   where
     intersect = lhs .&. rhs
--}
 
 
 -- |
@@ -422,4 +416,5 @@ deriveOverlap costStruct char1 char2 = F.fold
           Nothing -> error $ "There were no bits set in the character!"
       where
         indices = [0 .. finiteBitSize b - 1]
+-}
 -}
