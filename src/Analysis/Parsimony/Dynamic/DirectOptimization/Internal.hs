@@ -272,7 +272,8 @@ tripleComparison pairwiseAlignment meta childDecoration parentCharacter parentSi
     -- for all characters regardless of alphabet size on the pre-order.
     -- If we have a small alphabet, there will not have been a call to
     -- initialize a memoized TCM. We certainly don't want to force that here!
-    costStructure =
+    costStructure = meta ^. threewayTransitionCostMatrix
+{-    
         case meta ^. sparseTransitionCostMatrix of
           Just memo -> getMedianAndCost3D memo
           Nothing   -> naiveMedianAndCost3D
@@ -292,7 +293,7 @@ tripleComparison pairwiseAlignment meta childDecoration parentCharacter parentSi
                   GT -> acc
               where
                 combinedCost = sum' $ snd . tcm singleState <$> [a, b, c]
-
+-}
 
     single = lexicallyDisambiguate $ filterGaps almostSingle
     (_, ungapped, gapped)  = threeWayMean costStructure extendedParentFinal  extendedLeftCharacter1 extendedRightCharacter1

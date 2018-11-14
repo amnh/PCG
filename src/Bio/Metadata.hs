@@ -47,6 +47,7 @@ module Bio.Metadata
   , GetSparseTransitionCostMatrix(..)
   , GetSymbolChangeMatrix(..)
   , GetPairwiseTransitionCostMatrix(..)
+  , GetThreewayTransitionCostMatrix(..)
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)
