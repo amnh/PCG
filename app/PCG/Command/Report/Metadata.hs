@@ -13,7 +13,10 @@
 --
 -----------------------------------------------------------------------------
 
-module PCG.Command.Report.Metadata where
+module PCG.Command.Report.Metadata
+  ( outputMetadata
+  )
+  where
 
 import           Bio.Graph
 import           Bio.Graph.PhylogeneticDAG
@@ -47,6 +50,7 @@ outputMetadata fileName compactGraph = do
     Right decGraph ->
       do
         let xlsxWorkSheet = characterSourcefileOutput decGraph
+        let xlsxOutput    = def & atSheet "CharacterSourceFiles" ?~ xlsxWorkSheet
         BS.writeFile fileName $ fromXlsx currTime xlsxOutput
 
 
