@@ -38,6 +38,7 @@ module Bio.Graph.PhylogeneticDAG.Internal
   , renderSummary
   , resolutionsDoNotOverlap
   , HasPhylogeneticForest(..)
+  , HasColumnMetadata(..)
   , HasMinimalNetworkContext(..)
   , setDefaultMetadata
   ) where
@@ -185,6 +186,20 @@ instance HasPhylogeneticForest
 
     {-# INLINE _phylogeneticForest #-}
     _phylogeneticForest = lens phylogeneticForest (\p pf -> p {phylogeneticForest = pf})
+
+-- |
+-- A 'Lens' for the 'columnMetadata' field in 'PhylogeneticDAG2'
+class HasColumnMetadata s t a b | s -> a, t -> b, s b -> t, t a -> s where
+    _columnMetadata :: Lens s t a b
+
+
+instance HasColumnMetadata
+           (PhylogeneticDAG2 m  e n u v w x y z)
+           (PhylogeneticDAG2 m' e n u v w x y z)
+           (MetadataSequence m                 )
+           (MetadataSequence m'                ) where
+    {-# INLINE _columnMetadata #-}
+    _columnMetadata = lens columnMetadata (\p c -> p {columnMetadata = c})
 
 
 -- | (✔)

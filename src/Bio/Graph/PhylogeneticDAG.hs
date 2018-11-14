@@ -19,6 +19,8 @@ module Bio.Graph.PhylogeneticDAG
   , PhylogeneticDAG2(..)
   , PhylogeneticDAGish(..)
   , PostorderContextualData(..)
+  , HasPhylogeneticForest(..)
+  , HasColumnMetadata(..)
   , assignOptimalDynamicCharacterRootEdges
   , assignPunitiveNetworkEdgeCost
   , generateLocalResolutions
