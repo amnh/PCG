@@ -302,6 +302,7 @@ executable pcg
                     , ansi-wl-pprint
                     , base             >=4.10
                     -- Required for Data.Map.restrictKeys
+                    , bytestring
                     , compact
                     , containers       >=0.5.8
                     , data-default
@@ -324,10 +325,12 @@ executable pcg
                     , semigroupoids
                     , semigroups
                     , text
+                    , time
                     , transformers
                     , validation
                     , vector
                     , xml
+                    , xlsx
 
   ghc-options:      -threaded
                     -- -rtsopts -with-rtsopts=-N8
@@ -345,6 +348,7 @@ executable pcg
                     PCG.Command.Read.Unification.UnificationError
                     PCG.Command.Report.Evaluate
                     PCG.Command.Report.GraphViz
+                    PCG.Command.Report.Metadata
                     PCG.Command.Save.Evaluate
                     PCG.Computation.Internal
 
