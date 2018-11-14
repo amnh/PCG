@@ -11,7 +11,6 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -42,7 +41,7 @@ import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
 import Data.Bits
-import Data.List                                 (intercalate)
+import Data.List                          (intercalate)
 import Data.Range
 import Data.TCM                           as TCM
 import Data.TCM.Memoized
@@ -56,7 +55,7 @@ import Text.XML
 data DiscreteWithTCMCharacterMetadataDec c
    = DiscreteWithTCMCharacterMetadataDec
    { metricRepresentation :: !(MetricRepresentation MemoizedCostMatrix)
-   , discreteData   :: {-# UNPACK #-} !DiscreteCharacterMetadataDec
+   , discreteData         :: {-# UNPACK #-} !DiscreteCharacterMetadataDec
    } deriving (Eq, Generic)
 
 
@@ -64,7 +63,7 @@ foreignPointerData :: DiscreteWithTCMCharacterMetadataDec c -> Maybe MemoizedCos
 foreignPointerData x =
   case metricRepresentation x of
     ExplicitLayout _ v -> Just v
-    _ -> Nothing
+    _                  -> Nothing
 
 
 -- | (✔)

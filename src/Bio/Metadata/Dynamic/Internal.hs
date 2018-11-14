@@ -42,38 +42,38 @@ module Bio.Metadata.Dynamic.Internal
 
 
 import           Bio.Character.Encodable
-import           Control.Arrow            ((&&&))
-import           Control.Foldl            (Fold(..))
-import qualified Control.Foldl            as F
+import           Control.Arrow                                          ((&&&))
+import           Control.Foldl                                          (Fold (..))
+import qualified Control.Foldl                                          as F
 import           Control.Monad.State.Strict
 import           Data.Bits
 import           Data.Foldable
-import           Data.List.NonEmpty       (NonEmpty (..))
-import qualified Data.List.NonEmpty       as NE
+import           Data.List.NonEmpty                                     (NonEmpty (..))
+import qualified Data.List.NonEmpty                                     as NE
+import           Data.Maybe
 import           Data.MonoTraversable
 import           Data.Ord
 import           Data.Semigroup
-import qualified Data.TCM                 as TCM
+import qualified Data.TCM                                               as TCM
 import           Data.TCM.Memoized
-import           Prelude                  hiding (lookup)
+import           Prelude                                                hiding (lookup)
 
-import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (generateDenseTransitionCostMatrix)
-import Bio.Character.Exportable
-import Bio.Metadata.CharacterName
-import Bio.Metadata.Discrete
-import Bio.Metadata.DiscreteWithTCM
-import Bio.Metadata.DiscreteWithTCM.Internal
-import Bio.Metadata.Dynamic.Class
-import Bio.Metadata.MetricRepresentation
-import Control.DeepSeq
-import Control.Lens                                     hiding (Fold)
-import Data.Alphabet
-import Data.List                                              (intercalate)
-import Data.Range
-import Data.TCM
-import Data.TopologyRepresentation
-import GHC.Generics                                           (Generic)
-import Text.XML
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (generateDenseTransitionCostMatrix)
+import           Bio.Character.Exportable
+import           Bio.Metadata.CharacterName
+import           Bio.Metadata.Discrete
+import           Bio.Metadata.DiscreteWithTCM
+import           Bio.Metadata.Dynamic.Class
+import           Bio.Metadata.MetricRepresentation
+import           Control.DeepSeq
+import           Control.Lens                                           hiding (Fold)
+import           Data.Alphabet
+import           Data.List                                              (intercalate)
+import           Data.Range
+import           Data.TCM
+import           Data.TopologyRepresentation
+import           GHC.Generics                                           (Generic)
+import           Text.XML
 
 
 -- |
@@ -99,9 +99,8 @@ type TraversalFoci      = NonEmpty TraversalFocus
 -- discrete different bins. Continous bins do not have Alphabets.
 data DynamicCharacterMetadataDec c
    = DynamicCharacterMetadataDec
-   { foreignTransitionCostMatrix :: !(Either DenseTransitionCostMatrix MemoizedCostMatrix)
-   , optimalTraversalFoci        :: !(Maybe TraversalFoci)
-   , structuralRepresentationTCM :: !(MetricRepresentation ())
+   { optimalTraversalFoci        :: !(Maybe TraversalFoci)
+   , structuralRepresentationTCM :: !(MetricRepresentation (Either DenseTransitionCostMatrix MemoizedCostMatrix))
    , metadata                    :: {-# UNPACK #-} !DiscreteCharacterMetadataDec
    } deriving (Generic, NFData)
 
@@ -191,13 +190,15 @@ instance HasCharacterWeight (DynamicCharacterMetadataDec c) Double where
 -- | (✔)
 instance GetDenseTransitionCostMatrix (DynamicCharacterMetadataDec c) (Maybe DenseTransitionCostMatrix) where
 
-    denseTransitionCostMatrix = to (either Just (const Nothing) . foreignTransitionCostMatrix)
+    denseTransitionCostMatrix = to $
+      foldl' (either Just . const) Nothing . structuralRepresentationTCM
 
 
 -- | (✔)
 instance GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec c) (Maybe MemoizedCostMatrix) where
 
-    sparseTransitionCostMatrix = to (either (const Nothing) Just . foreignTransitionCostMatrix)
+    sparseTransitionCostMatrix = to (
+      foldl' (\x -> either (const x) Just) Nothing . structuralRepresentationTCM)
 
 
 -- | (✔)
@@ -241,8 +242,7 @@ instance ToXML (DynamicCharacterMetadataDec c) where
 dynamicMetadata :: CharacterName -> Double -> Alphabet String -> TCM -> Maybe DenseTransitionCostMatrix -> DynamicCharacterMetadataDec c
 dynamicMetadata name weight alpha tcm denseMay =
     force DynamicCharacterMetadataDec
-    { foreignTransitionCostMatrix = maybe (Right memoMatrixValue) Left denseMay
-    , optimalTraversalFoci        = Nothing
+    { optimalTraversalFoci        = Nothing
     , structuralRepresentationTCM = representaionOfTCM
     , metadata                    = discreteMetadata name (weight * coefficient) alpha
     }
@@ -251,7 +251,8 @@ dynamicMetadata name weight alpha tcm denseMay =
         case tcmStructure diagnosis of
           NonAdditive -> DiscreteMetric
           Additive    -> LinearNorm
-          _           -> ExplicitLayout (factoredTcm diagnosis) ()
+          _           -> ExplicitLayout (factoredTcm diagnosis)
+                       $ maybe (Right memoMatrixValue) Left denseMay
 
     diagnosis       = diagnoseTcm tcm
     coefficient     = fromIntegral $ factoredWeight diagnosis
@@ -306,11 +307,11 @@ extractPairwiseTransitionCostMatrix
   => DynamicCharacterMetadataDec c2
   -> c
   -> c
-  -> (c, Word)                                                                      
-extractPairwiseTransitionCostMatrix m = retreivePairwiseTCM (handleGeneralCases) $ structuralRepresentationTCM m
+  -> (c, Word)
+extractPairwiseTransitionCostMatrix = retreivePairwiseTCM handleGeneralCases . structuralRepresentationTCM
   where
-    handleGeneralCases tcm _ =
-        case foreignTransitionCostMatrix m of
+    handleGeneralCases tcm v =
+        case v of
           Right memo -> getMedianAndCost2D memo
           Left _     -> overlap (\i j -> toEnum . fromEnum $ tcm TCM.! (i,j))
 
@@ -330,11 +331,11 @@ extractThreewayTransitionCostMatrix
   -> c
   -> c
   -> c
-  -> (c, Word)                                                                      
-extractThreewayTransitionCostMatrix m = retreiveThreewayTCM (handleGeneralCases) $ structuralRepresentationTCM m
+  -> (c, Word)
+extractThreewayTransitionCostMatrix = retreiveThreewayTCM handleGeneralCases . structuralRepresentationTCM
   where
-    handleGeneralCases tcm _ =
-        case foreignTransitionCostMatrix m of
+    handleGeneralCases tcm v =
+        case v of
           Right memo -> getMedianAndCost3D memo
           Left _     -> const $ overlap (\i j -> toEnum . fromEnum $ tcm TCM.! (i,j))
 
@@ -384,7 +385,7 @@ deriveOverlap
   -> e
   -> e
   -> (e, Word)
-deriveOverlap costStruct char1 char2 = F.fold 
+deriveOverlap costStruct char1 char2 = F.fold
     (F.premap (costAndSymbol . (toEnum &&& setBit zero)) outerFold)
     symbolIndices
   where
@@ -405,18 +406,18 @@ deriveOverlap costStruct char1 char2 = F.fold
     zero          = char1 `xor` char1
 
     getDistance3 :: (MonoFoldable b, Element b ~ Bool) => Word -> b -> Word
-    getDistance3 i b = 
-        case F.impurely ofoldMUnwrap (F.prefilterM pure (F.premapM g (F.generalize F.minimum))) b `evalState` 0 of
-          Just x  -> x
-          Nothing -> error $ "There were no bits set in the character!"
+    getDistance3 i b = fromMaybe errMsg $
+        F.impurely ofoldMUnwrap (F.prefilterM pure (F.premapM g (F.generalize F.minimum))) b `evalState` 0
       where
+        errMsg = error "There were no bits set in the character!"
+
         g _ = do
             j <- get
             modify' (+1)
             pure $ costStruct i j
 {-
     getDistance2 :: FiniteBits b => Word -> b -> Word
-    getDistance2 i b = 
+    getDistance2 i b =
         case F.fold (F.prefilter (b `testBit`) (F.premap (costStruct i . toEnum) F.minimum)) indices of
           Just x  -> x
           Nothing -> error $ "There were no bits set in the character!"

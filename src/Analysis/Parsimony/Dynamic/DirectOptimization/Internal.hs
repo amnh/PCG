@@ -28,30 +28,28 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Internal
   ) where
 
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (overlap)
 import           Analysis.Parsimony.Internal
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
 import           Bio.Character.Exportable
 import           Bio.Metadata
-import           Control.DeepSeq
 import           Control.Lens
 import           Data.Bits
 import           Data.Foldable
-import           Data.Foldable.Custom                                            (sum')
-import           Data.IntMap                                                     (IntMap)
-import qualified Data.IntMap                                                     as IM
+import           Data.Foldable.Custom                                   (sum')
+import           Data.IntMap                                            (IntMap)
+import qualified Data.IntMap                                            as IM
 import           Data.Key
-import           Data.List.NonEmpty                                              (NonEmpty ((:|)))
-import qualified Data.List.NonEmpty                                              as NE
-import           Data.List.Utility                                               (invariantTransformation)
+import           Data.List.NonEmpty                                     (NonEmpty ((:|)))
+import qualified Data.List.NonEmpty                                     as NE
+import           Data.List.Utility                                      (invariantTransformation)
 import           Data.MonoTraversable
 import           Data.Range
 import           Data.Semigroup
 import           Data.TCM.Memoized
 import           Data.Word
 import           Numeric.Extended.Natural
-import           Prelude                                                         hiding (lookup)
+import           Prelude                                                hiding (lookup)
 
 
 -- |
@@ -293,7 +291,7 @@ tripleComparison pairwiseAlignment meta childDecoration parentCharacter parentSi
                   LT -> (                  singleState, combinedCost)
                   GT -> acc
               where
-                combinedCost = sum' $ snd . tcm singleState <$> [a, b, c] 
+                combinedCost = sum' $ snd . tcm singleState <$> [a, b, c]
 
 
     single = lexicallyDisambiguate $ filterGaps almostSingle

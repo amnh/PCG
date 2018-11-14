@@ -204,7 +204,9 @@ library
                     Data.Alphabet.IUPAC
                     Data.EdgeLength
                     Data.TCM
+                    Data.TCM.Dense
                     Data.TCM.Memoized
+                    Data.TCM.Dense.FFI
                     Data.TCM.Memoized.FFI
                     Data.TopologyRepresentation
                     Data.NodeLabel

@@ -10,13 +10,14 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveAnyClass        #-}
-{-# LANGUAGE DeriveFunctor         #-}
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE StrictData            #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE UnboxedSums           #-}
+{-# LANGUAGE DeriveAnyClass   #-}
+{-# LANGUAGE DeriveFoldable   #-}
+{-# LANGUAGE DeriveFunctor    #-}
+{-# LANGUAGE DeriveGeneric    #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE StrictData       #-}
+{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE UnboxedSums      #-}
 
 module Bio.Metadata.MetricRepresentation
   ( MetricRepresentation(..)
@@ -25,20 +26,20 @@ module Bio.Metadata.MetricRepresentation
   , retreiveThreewayTCM
   ) where
 
-import Bio.Character.Exportable
-import Bio.Metadata.CharacterName
-import Bio.Metadata.Discrete
-import Bio.Metadata.DiscreteWithTCM.Class
+--import Bio.Character.Exportable
+--import Bio.Metadata.CharacterName
+--import Bio.Metadata.Discrete
+--import Bio.Metadata.DiscreteWithTCM.Class
 import Control.DeepSeq
-import Control.Lens
-import Data.Alphabet
+--import Control.Lens
+--import Data.Alphabet
 import Data.Bits
-import Data.List                                 (intercalate)
+--import Data.List                          (intercalate)
 import Data.Range
-import Data.TCM                           as TCM
-import Data.TCM.Memoized
-import GHC.Generics                       hiding (to)
-import Text.XML
+import Data.TCM        as TCM
+--import Data.TCM.Memoized
+import GHC.Generics    hiding (to)
+--import Text.XML
 
 
 -- |
@@ -57,7 +58,7 @@ data  MetricRepresentation a
     = ExplicitLayout {-# UNPACK #-} !TCM !a
     | DiscreteMetric
     | LinearNorm
-    deriving (Eq, Functor, Generic, NFData)
+    deriving (Eq, Foldable, Functor, Generic, NFData)
 
 
 retreiveSCM :: MetricRepresentation a -> Word -> Word -> Word
@@ -112,9 +113,13 @@ discreteMetricPairwiseLogic lhs rhs
 
 
 -- |
--- if           x    ⋂    y    ⋂    z    ≠ Ø ⮕  (   x    ⋂    y    ⋂    z   , 0)
--- else if   (x ⋂ y) ⋃ (x ⋂ z) ⋃ (y ⋂ z) ≠ Ø ⮕  ((x ⋂ y) ⋃ (x ⋂ z) ⋃ (y ⋂ z), 1)
--- otherwise                                 ⮕  (   x    ⋃    y    ⋃    z   , 2)
+-- if           x    ⋂    y    ⋂    z    ≠ Ø ⮕  (    x    ⋂    y    ⋂    z    , 0)
+--
+-- else if   (x ⋂ y) ⋃ (x ⋂ z) ⋃ (y ⋂ z) ≠ Ø ⮕  ( (x ⋂ y) ⋃ (x ⋂ z) ⋃ (y ⋂ z) , 1)
+--
+-- otherwise                                 ⮕  (    x    ⋃    y    ⋃    z    , 2)
+--
+--
 discreteMetricThreewayLogic
   :: ( Bits a
      , Num b
@@ -128,7 +133,7 @@ discreteMetricThreewayLogic x y z
   | popCount joinIntersection > 0 = (joinIntersection, 1)
   | otherwise                     = (fullUnion,        2)
   where
-    fullUnion        = x .|. y .|. z 
+    fullUnion        = x .|. y .|. z
     fullIntersection = x .&. y .&. z
     joinIntersection = (x .&. y) .|. (x .&. z) .|. (y .&. z)
 
@@ -159,6 +164,14 @@ firstLinearNormPairwiseLogic lhs rhs = (fromRange newInterval, cost)
       | otherwise     = upperBound newInterval - lowerBound newInterval
 
 
+-- |
+-- if           x    ⋂    y    ⋂    z    ≠ Ø ⮕  (    x    ⋂    y    ⋂    z    , 0)
+--
+-- else if   (x ⋂ y) ⋃ (x ⋂ z) ⋃ (y ⋂ z) ≠ Ø ⮕  ( (x ⋂ y) ⋃ (x ⋂ z) ⋃ (y ⋂ z) , 1)
+--
+-- otherwise                                 ⮕  (    x    ⋃    y    ⋃    z    , 2)
+--
+--
 firstLinearNormThreewayLogic
   :: ( Ord (Bound a)
      , Ranged a
