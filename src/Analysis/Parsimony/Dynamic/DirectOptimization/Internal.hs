@@ -407,6 +407,7 @@ newGapLocations unaligned aligned
 -- Given a list of gap locations and a character, returns a longer character with
 -- the supplied gaps inserted at the corresponding locations.
 insertNewGaps :: EncodableDynamicCharacter c => IntMap Int -> c -> c
+-- TODO: The foldMapWithKey1 call takes up a lot of memory. Consider how to make this new dynamic character construction more efficient. Maybe use Control.Foldl?
 insertNewGaps insertionIndicies character = constructDynamic . appendGaps . foldMapWithKey1 f . NE.fromList $ otoList character
   where
     len = olength character
