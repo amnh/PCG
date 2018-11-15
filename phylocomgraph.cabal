@@ -384,19 +384,6 @@ executable 2d-do-comparison
   hs-source-dirs:   utils
 
 
-executable acessor
-
-  import:             ghc-flags
-                    , language-specs
-
-  main-is:          accessors.hs
-
-  build-depends:      phylocomgraph
-                    , base >=4.10
-
-  hs-source-dirs:   utils, ffi
-
-
 executable 3d-do-comparison
 
   import:             ghc-flags
