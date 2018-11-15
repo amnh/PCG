@@ -38,20 +38,17 @@ import           Data.Monoid                ((<>))
 import           Data.Text                  (Text, pack)
 import           Data.Time.Clock.POSIX
 import           Data.Vector                (Vector)
+import Data.ByteString.Lazy.Char8 (unpack)
 
 
 -- | Wrapper function to output a metadata csv
-outputMetadata :: FilePath -> GraphState -> IO ()
-outputMetadata fileName compactGraph = do
-  currTime <- getPOSIXTime
-  let graphOpt = getCompact compactGraph
-  case graphOpt of
-    Left  topGraph -> pure ()
-    Right decGraph ->
-      do
-        let xlsxWorkSheet = characterSourcefileOutput decGraph
-        let xlsxOutput    = def & atSheet "CharacterSourceFiles" ?~ xlsxWorkSheet
-        BS.writeFile fileName $ fromXlsx currTime xlsxOutput
+outputMetadata :: DecoratedCharacterResult -> String
+outputMetadata decGraph =
+  let
+    xlsxWorkSheet = characterSourcefileOutput decGraph
+    xlsxOutput    = def & atSheet "CharacterSourceFiles" ?~ xlsxWorkSheet
+  in
+    unpack $ fromXlsx startOfTime xlsxOutput
 
 
 
@@ -70,8 +67,8 @@ characterSourcefileOutput decCharRes =
 
  -- Character name information
     charNameInfo = getCharacterNames metaSeq
-    srcFileNames = nub . fmap fst $ charNameInfo
-    charNames    = fmap snd charNameInfo
+    srcFileNames = nub . fmap snd $ charNameInfo
+    charNames    = fmap fst charNameInfo
 
  -- indexed rows and columns respectively
     indSrcFiles  = zip srcFileNames [2..]
@@ -81,12 +78,17 @@ characterSourcefileOutput decCharRes =
     srcFileFn  (name, rowInd) acc = acc & cellValueAt (rowInd, 1) ?~ CellText name
     charNameFn (name, colInd) acc = acc & cellValueAt (1, colInd) ?~ CellText name
     charSrcFileFn (name, colInd) acc =
-      let rowInd = fromJust $ lookup name indSrcFiles in
-        acc & cellValueAt (rowInd, colInd) ?~ CellText cellMarker
+      let
+        assocSrcFile = fromJust $ lookup name charNameInfo
+      in
+        case lookup assocSrcFile indSrcFiles of
+          Nothing     -> error $ "Src file of character " <> (show name) <> " not found in " <> (show indSrcFiles) 
+          Just rowInd -> acc & cellValueAt (rowInd, colInd) ?~ CellText cellMarker
 
---                                             ┌ Filepath
+
+--                                             ┌ Character Name
 --                                             │
---                                             │     ┌ Character Name
+--                                             │     ┌ Filepath
 --                                             │     │
 getCharacterNames :: MetadataSequence m -> [(Text, Text)]
 getCharacterNames =
@@ -99,7 +101,11 @@ getCharacterNames =
       (filePathAndName . (^. characterName))
   where
     filePathAndName :: CharacterName -> [(Text, Text)]
-    filePathAndName = pure . ((pack . sourceFile) &&& (pack . show))
+    filePathAndName = pure . ((pack . show) &&& (pack . sourceFile))
 
 cellMarker :: Text
-cellMarker = "✓"
+cellMarker = "x" --"✓"
+
+-- This should give 1970-01-01 00:00 UTC
+startOfTime :: POSIXTime
+startOfTime = 0
