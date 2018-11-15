@@ -15,6 +15,7 @@ Releases are available [on GitHub][2].
 * Improved efficiency and consistency of character metadata representation
 * Improved efficiency of Wagner build
 * Improved efficiency of Data.Vector.NonEmpty.fromNonEmpty, unfoldr, and traverse
+* Improved efficiency of three-way median and cost calculation (discrete metric, L1 norm, and small alphabet specialization)
 * Improved representation of character & metadata sequences
 * Improved representation of Symbol Change Matrix (SCM) and Transition Cost Matrix (TCM)
 * Improved representation of the types of postorder and preorder functions
