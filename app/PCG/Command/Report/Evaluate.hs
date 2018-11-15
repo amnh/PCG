@@ -11,6 +11,7 @@ import Control.Monad.IO.Class
 import Data.Compact                (getCompact)
 import Data.List.NonEmpty
 import PCG.Command.Report
+import PCG.Command.Report.Metadata
 import PCG.Command.Report.GraphViz
 import Text.XML
 
@@ -51,10 +52,14 @@ generateOutput
   -> FileStreamContext
 generateOutput g' format =
   case format of
-    Data {}    -> SingleStream $ either show show g
-    XML  {}    -> SingleStream $ either show (ppTopElement . toXML) g
-    DotFile {} -> SingleStream $ generateDotFile g'
-    _          -> ErrorCase "Unrecognized 'report' command"
+    Data     {} -> SingleStream $ either show show g
+    XML      {} -> SingleStream $ either show (ppTopElement . toXML) g
+    DotFile  {} -> SingleStream $ generateDotFile g'
+    Metadata {} -> either
+                     (const $ ErrorCase "No metadata in topological solution")
+                     (SingleStream . outputMetadata)
+                     $ g
+    _           -> ErrorCase "Unrecognized 'report' command"
   where
     g = getCompact g'
 
