@@ -441,11 +441,16 @@ getOverlap inChar1 inChar2 costStruct = result
 -- the two (non-overlapping) least cost pairs are A,C and T,G, then the return
 -- value is A,C,G,T.
 overlap :: (EncodableStreamElement e {- , Show e -}) => (Word -> Word -> Word) -> e -> e -> (e, Word)
-overlap costStruct char1 char2 = F.fold
-    (F.premap (costAndSymbol . (toEnum &&& setBit zero)) outerFold)
-    symbolIndices
+overlap costStruct char1 char2 = F.impurely ofoldMUnwrap (F.premapM g outerFold) char1 `evalState` 0
   where
-    outerFold = Fold f (char1 `xor` char1, maxBound) id
+    !zero     = char1 `xor` char1
+
+    outerFold = F.generalize $ Fold f (char1 `xor` char1, maxBound) id
+
+    costAndSymbol (i, x) = (x, cost1 + cost2)
+      where
+        !cost1 = getDistance3 costStruct i char1
+        !cost2 = getDistance3 costStruct i char2
 
     f (!symbol1, !cost1) (!symbol2, !cost2) =
         case cost1 `compare` cost2 of
@@ -453,13 +458,12 @@ overlap costStruct char1 char2 = F.fold
           LT -> (symbol1            , cost1)
           GT -> (symbol2            , cost2)
 
-    costAndSymbol (i, x) = (x, cost1 + cost2)
-      where
-        !cost1 = getDistance3 costStruct i char1
-        !cost2 = getDistance3 costStruct i char2
-
-    symbolIndices = NE.fromList [0 .. finiteBitSize char1 - 1]
-    zero          = char1 `xor` char1
+    g = const $ do
+        j <- get
+        modify' (+1)
+        let !v = toEnum j
+        let !b = zero `setBit` j
+        pure $ costAndSymbol (v, b)
 
 
 getDistance3 :: (MonoFoldable b, Element b ~ Bool) => (Word -> Word -> Word) -> Word -> b -> Word
