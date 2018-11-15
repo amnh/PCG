@@ -86,15 +86,13 @@ selectDynamicMetric
   -> c
   -> c
   -> (Word, c, c, c, c)
-selectDynamicMetric candidate
+selectDynamicMetric meta
   | sequentialAlignOverride = undefined -- sequentialAlign sTCM
   | otherwise =
-      case candidate ^. denseTransitionCostMatrix of
+      case meta ^. denseTransitionCostMatrix of
         Just dm -> \x y -> foreignPairwiseDO x y dm
-        Nothing -> let !sTCM' = sTCM
-                   in  \x y -> ukkonenDO x y sTCM'
-  where
-    !sTCM = candidate ^. pairwiseTransitionCostMatrix
+        Nothing -> let !pTCM = meta ^. pairwiseTransitionCostMatrix
+                   in  \x y -> ukkonenDO x y pTCM
 
 
 -- |
