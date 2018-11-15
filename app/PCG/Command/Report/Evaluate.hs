@@ -11,8 +11,8 @@ import Control.Monad.IO.Class
 import Data.Compact                (getCompact)
 import Data.List.NonEmpty
 import PCG.Command.Report
-import PCG.Command.Report.Metadata
 import PCG.Command.Report.GraphViz
+import PCG.Command.Report.Metadata
 import Text.XML
 
 
@@ -58,7 +58,7 @@ generateOutput g' format =
     Metadata {} -> either
                      (const $ ErrorCase "No metadata in topological solution")
                      (SingleStream . outputMetadata)
-                     $ g
+                     g
     _           -> ErrorCase "Unrecognized 'report' command"
   where
     g = getCompact g'

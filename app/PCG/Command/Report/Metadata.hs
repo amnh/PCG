@@ -28,6 +28,7 @@ import           Codec.Xlsx
 import           Control.Arrow              ((&&&))
 import           Control.Lens.Operators     ((?~), (^.))
 import qualified Data.ByteString.Lazy       as BS
+import           Data.ByteString.Lazy.Char8 (unpack)
 import           Data.Compact
 import           Data.Foldable
 import           Data.Function              ((&))
@@ -38,7 +39,6 @@ import           Data.Monoid                ((<>))
 import           Data.Text                  (Text, pack)
 import           Data.Time.Clock.POSIX
 import           Data.Vector                (Vector)
-import Data.ByteString.Lazy.Char8 (unpack)
 
 
 -- | Wrapper function to output a metadata csv
@@ -82,7 +82,12 @@ characterSourcefileOutput decCharRes =
         assocSrcFile = fromJust $ lookup name charNameInfo
       in
         case lookup assocSrcFile indSrcFiles of
-          Nothing     -> error $ "Src file of character " <> (show name) <> " not found in " <> (show indSrcFiles) 
+          Nothing     -> error . fold $
+                           ["Src file of character "
+                           ,  show name
+                           , " not found in "
+                           , show indSrcFiles
+                           ]
           Just rowInd -> acc & cellValueAt (rowInd, colInd) ?~ CellText cellMarker
 
 
