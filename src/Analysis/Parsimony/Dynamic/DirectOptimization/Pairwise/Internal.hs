@@ -441,13 +441,14 @@ getOverlap inChar1 inChar2 costStruct = result
 -- the two (non-overlapping) least cost pairs are A,C and T,G, then the return
 -- value is A,C,G,T.
 overlap :: (EncodableStreamElement e {- , Show e -}) => (Word -> Word -> Word) -> e -> e -> (e, Word)
-overlap costStruct char1 char2
+overlap {- costStruct char1 char2 -} = deriveOverlap
+{-
   | intersectionStates == zero = deriveOverlap costStruct char1 char2 -- minimalChoice $ symbolDistances costStruct char1 char2
   | otherwise                  = (intersectionStates, 0)
   where
     intersectionStates = char1 .&. char2
     zero = char1 `xor` char1
-
+-}
 
 deriveOverlap
   :: EncodableStreamElement e
@@ -475,16 +476,19 @@ deriveOverlap costStruct char1 char2 = F.fold
     symbolIndices = NE.fromList [0 .. finiteBitSize char1 - 1]
     zero          = char1 `xor` char1
 
+
 getDistance3 :: (MonoFoldable b, Element b ~ Bool) => (Word -> Word -> Word) -> Word -> b -> Word
 getDistance3 costStruct i b = fromMaybe errMsg $
-    F.impurely ofoldMUnwrap (F.prefilterM pure (F.premapM f (F.generalize F.minimum))) b `evalState` 0
+    F.impurely ofoldMUnwrap (F.premapM f (F.generalize F.minimum)) b `evalState` 0
   where
     errMsg = error "There were no bits set in the character!"
 
-    f _ = do
+    f b = do
         j <- get
         modify' (+1)
-        pure $ costStruct i j
+        pure $ if b
+               then costStruct i j
+               else maxBound
 {-
     getDistance2 :: FiniteBits b => Word -> b -> Word
     getDistance2 i b =
