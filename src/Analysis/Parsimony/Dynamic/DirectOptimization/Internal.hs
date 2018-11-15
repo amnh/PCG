@@ -35,7 +35,6 @@ import           Bio.Character.Exportable
 import           Bio.Metadata
 import           Control.Lens
 import           Data.Bits
-import           Data.Foldable
 import           Data.Foldable.Custom                                   (sum')
 import           Data.IntMap                                            (IntMap)
 import qualified Data.IntMap                                            as IM
@@ -46,7 +45,6 @@ import           Data.List.Utility                                      (invaria
 import           Data.MonoTraversable
 import           Data.Range
 import           Data.Semigroup
-import           Data.TCM.Memoized
 import           Data.Word
 import           Numeric.Extended.Natural
 import           Prelude                                                hiding (lookup)
@@ -271,7 +269,7 @@ tripleComparison pairwiseAlignment meta childDecoration parentCharacter parentSi
     -- If we have a small alphabet, there will not have been a call to
     -- initialize a memoized TCM. We certainly don't want to force that here!
     costStructure = meta ^. threewayTransitionCostMatrix
-{-    
+{-
         case meta ^. sparseTransitionCostMatrix of
           Just memo -> getMedianAndCost3D memo
           Nothing   -> naiveMedianAndCost3D

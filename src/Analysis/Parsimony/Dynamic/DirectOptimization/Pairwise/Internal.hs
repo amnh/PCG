@@ -441,14 +441,8 @@ getOverlap inChar1 inChar2 costStruct = result
 -- the two (non-overlapping) least cost pairs are A,C and T,G, then the return
 -- value is A,C,G,T.
 overlap :: (EncodableStreamElement e {- , Show e -}) => (Word -> Word -> Word) -> e -> e -> (e, Word)
-overlap {- costStruct char1 char2 -} = deriveOverlap
-{-
-  | intersectionStates == zero = deriveOverlap costStruct char1 char2 -- minimalChoice $ symbolDistances costStruct char1 char2
-  | otherwise                  = (intersectionStates, 0)
-  where
-    intersectionStates = char1 .&. char2
-    zero = char1 `xor` char1
--}
+overlap = deriveOverlap
+
 
 deriveOverlap
   :: EncodableStreamElement e
@@ -483,10 +477,10 @@ getDistance3 costStruct i b = fromMaybe errMsg $
   where
     errMsg = error "There were no bits set in the character!"
 
-    f b = do
+    f e = do
         j <- get
         modify' (+1)
-        pure $ if b
+        pure $ if e
                then costStruct i j
                else maxBound
 {-
