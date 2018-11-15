@@ -441,16 +441,7 @@ getOverlap inChar1 inChar2 costStruct = result
 -- the two (non-overlapping) least cost pairs are A,C and T,G, then the return
 -- value is A,C,G,T.
 overlap :: (EncodableStreamElement e {- , Show e -}) => (Word -> Word -> Word) -> e -> e -> (e, Word)
-overlap = deriveOverlap
-
-
-deriveOverlap
-  :: EncodableStreamElement e
-  => (Word -> Word -> Word)
-  -> e
-  -> e
-  -> (e, Word)
-deriveOverlap costStruct char1 char2 = F.fold
+overlap costStruct char1 char2 = F.fold
     (F.premap (costAndSymbol . (toEnum &&& setBit zero)) outerFold)
     symbolIndices
   where
