@@ -77,6 +77,8 @@ import           Numeric.Extended.Real
 import           Prelude                       hiding (lookup, zipWith)
 import           Text.Newick.Class
 import           Text.XML.Custom
+import Data.Binary (Binary())
+import Data.Vector.Binary ()
 
 
 -- |
@@ -140,7 +142,6 @@ newtype NodeRef = NR Int deriving (Eq, Enum)
 class HasNodeDecoration s t a b | s -> a, t -> b, s b -> t, t a -> s where
   _nodeDecoration :: Lens s t a b
 
-  -- TODO (CM): Make these speicalise pragmas more monomorphic in the types being used?
 {-# SPECIALISE _nodeDecoration :: Lens (IndexData e n) (IndexData e n') n n' #-}
 
 instance HasNodeDecoration (IndexData e n) (IndexData e n') n n' where
@@ -290,6 +291,18 @@ instance Bifunctor (ReferenceDAG d) where
         }
       where
         h (IndexData node parentRefs' childRefs') = IndexData (g node) parentRefs' $ f <$> childRefs'
+
+
+-- | (✔)
+instance Binary d => Binary (GraphData d)
+
+
+-- | (✔)
+instance (Binary e, Binary n) => Binary (IndexData e n)
+
+
+-- | (✔)
+instance (Binary d, Binary e, Binary n) => Binary (ReferenceDAG d e n)
 
 
 -- | (✔)
