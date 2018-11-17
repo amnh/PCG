@@ -59,6 +59,7 @@ library
   import:           ghc-settings
 
   build-depends:    base             >=4.8
+                  , binary
                   , bv-little
                   , containers       >=0.5.8
                   , deepseq
