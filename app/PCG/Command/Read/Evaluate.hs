@@ -9,6 +9,7 @@ module PCG.Command.Read.Evaluate
 import           Bio.Character.Parsed
 import           Bio.Graph
 import           Bio.Graph.Forest.Parsed
+import           Bio.Metadata
 import           Bio.Metadata.Parsed
 import           Control.Monad                             (when)
 import           Control.Monad.IO.Class

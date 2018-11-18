@@ -88,7 +88,7 @@ fromTuple (x,y) = Range (min x y, max x y, Nothing)
 -- Construct a 'Range' from a tuple of upper and lower bounds along with a
 -- precision value used for conversion back to the non-ranged type.
 fromTupleWithPrecision :: Ord r => (r, r) -> Int -> Range r
-fromTupleWithPrecision (x,y) d = Range (max x y, min x y, Just d)
+fromTupleWithPrecision (x,y) d = Range (min x y, max x y, Just d)
 
 
 -- |

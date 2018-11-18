@@ -22,17 +22,17 @@ module Analysis.Parsimony.Internal
   , PreorderContext (..)
   , ChildContext(..)
   , ParentContext(..)
-  , postorderContext
-  , leafFunction
-  , postBinaryFunction
-  , toChildContext
   , extractNode
   , extractPreNode
+  , leafFunction
+  , otoChildContext
+  , otoParentContext
+  , postBinaryFunction
+  , postorderContext
+  , preBinaryFunction
   , preorderContext
   , preorderContextSym
-  , toParentContext
   , rootFunction
-  , preBinaryFunction
   )
   where
 
@@ -95,8 +95,8 @@ data ChildContext c
 -- |
 -- Construct a 'ChildContext' from a monoTraversable structure ignoring
 -- any elements beyond the first two.
-toChildContext :: MonoTraversable t =>  t -> ChildContext (Element t)
-toChildContext xs =
+otoChildContext :: MonoFoldable t =>  t -> ChildContext (Element t)
+otoChildContext xs =
   case otoList xs of
     []        -> NoChildren
     [c]       -> OneChild c
@@ -169,8 +169,8 @@ data ParentContext p
 -- |
 -- Construct a 'ParentContext' from a monoTraversable structure ignoring
 -- any elements beyond the first two.
-toParentContext :: MonoFoldable t =>  t -> ParentContext (Element t)
-toParentContext xs =
+otoParentContext :: MonoFoldable t =>  t -> ParentContext (Element t)
+otoParentContext xs =
   case otoList xs of
     []        -> NoParent
     [p]       -> OneParent p

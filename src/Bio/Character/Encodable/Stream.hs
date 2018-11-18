@@ -15,6 +15,7 @@
 
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Bio.Character.Encodable.Stream
   ( EncodableStreamElement(..)
@@ -60,8 +61,10 @@ import           Foreign.C.Types
    * @decodeElement alphabet (encodeElement alphabet xs .&. encodeElement alphabet ys) == toList alphabet `Data.List.intersect` (toList xs `Data.List.intersect` toList ys)@
 
 -}
-class ( FiniteBits b
+class ( Element b ~ Bool
       , EncodedAmbiguityGroupContainer b
+      , FiniteBits b
+      , MonoFoldable b
 --      , Num b -- Required for bit twiddling hacks
       ) => EncodableStreamElement b where
 

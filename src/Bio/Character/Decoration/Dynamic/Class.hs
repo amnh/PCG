@@ -48,8 +48,10 @@ module Bio.Character.Decoration.Dynamic.Class
 
 import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
+import Bio.Character.Exportable
 import Control.DeepSeq
 import Control.Lens
+import Data.MonoTraversable            (Element)
 import GHC.Generics
 import Numeric.NonNegativeAverage
 
@@ -78,6 +80,7 @@ instance Show AverageLength where
 class ( HasAverageLength           s AverageLength
       , HasEncoded                 s a
       , EncodableDynamicCharacter  a
+      , Exportable                 (Element a)
       ) => SimpleDynamicDecoration s a | s -> a where
 
 
@@ -94,6 +97,8 @@ class ( HasCharacterCost        s Word
       , HasLeftAlignment        s a
       , HasRightAlignment       s a
       , SimpleDynamicDecoration s a
+      , Exportable (Element a)
+--      , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element a)) MemoizedCostMatrix
       ) => DirectOptimizationPostorderDecoration s a | s -> a where
 
 

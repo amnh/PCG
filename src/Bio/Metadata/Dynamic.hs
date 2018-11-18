@@ -14,12 +14,13 @@ module Bio.Metadata.Dynamic
     ( DenseTransitionCostMatrix
     , DynamicCharacterMetadata(..)
     , DynamicCharacterMetadataDec()
+    , GetDenseTransitionCostMatrix(..)
+    , GetSymbolChangeMatrix(..)
+    , GetPairwiseTransitionCostMatrix(..)
+    , GetThreewayTransitionCostMatrix(..)
     , HasCharacterAlphabet(..)
     , HasCharacterName(..)
     , HasCharacterWeight(..)
-    , HasDenseTransitionCostMatrix(..)
-    , HasSymbolChangeMatrix(..)
-    , HasTransitionCostMatrix(..)
     , HasTraversalFoci(..)
     , MemoizedCostMatrix()
     , TraversalFoci

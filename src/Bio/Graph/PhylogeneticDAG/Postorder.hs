@@ -119,7 +119,7 @@ postorderSequence' f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag m) = pdag2 & _phylogenetic
             node             = references dag ! i
 
             childIndices :: ChildContext Int
-            childIndices     = toChildContext . IM.keys . childRefs $ node
+            childIndices     = otoChildContext . IM.keysSet . childRefs $ node
 
             datumResolutions :: NonEmpty (ResolutionInformation (CharacterSequence u v w x y z))
             datumResolutions = resolutions $ nodeDecoration node

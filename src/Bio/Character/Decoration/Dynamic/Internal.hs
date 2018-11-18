@@ -28,6 +28,7 @@ module Bio.Character.Decoration.Dynamic.Internal
 import Bio.Character.Decoration.Dynamic.Class
 import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
+import Bio.Character.Exportable
 import Control.DeepSeq
 import Control.Lens
 import Data.Bits
@@ -117,27 +118,27 @@ instance NFData d => NFData (DynamicDecorationImpliedAlignment d)
 
 
 -- | (✔)
-instance EncodableDynamicCharacter d => DirectOptimizationDecoration (DynamicDecorationDirectOptimization d) d where
+instance (EncodableDynamicCharacter d, Exportable (Element d)) => DirectOptimizationDecoration (DynamicDecorationDirectOptimization d) d where
 
 
 -- | (✔)
-instance EncodableDynamicCharacter d => DirectOptimizationDecoration (DynamicDecorationImpliedAlignment d) d where
+instance (EncodableDynamicCharacter d, Exportable (Element d)) => DirectOptimizationDecoration (DynamicDecorationImpliedAlignment d) d where
 
 
 -- | (✔)
-instance EncodableDynamicCharacter d => DirectOptimizationPostorderDecoration (DynamicDecorationDirectOptimization d) d where
+instance (EncodableDynamicCharacter d, Exportable (Element d)) => DirectOptimizationPostorderDecoration (DynamicDecorationDirectOptimization d) d where
 
 
 -- | (✔)
-instance EncodableDynamicCharacter d => DirectOptimizationPostorderDecoration (DynamicDecorationDirectOptimizationPostorderResult d) d where
+instance (EncodableDynamicCharacter d, Exportable (Element d)) => DirectOptimizationPostorderDecoration (DynamicDecorationDirectOptimizationPostorderResult d) d where
 
 
 -- | (✔)
-instance EncodableDynamicCharacter d => DirectOptimizationPostorderDecoration (DynamicDecorationImpliedAlignment d) d where
+instance (EncodableDynamicCharacter d, Exportable (Element d)) => DirectOptimizationPostorderDecoration (DynamicDecorationImpliedAlignment d) d where
 
 
 -- | (✔)
-instance (EncodableDynamicCharacter d) => DynamicCharacterDecoration (DynamicDecorationInitial d) d where
+instance (EncodableDynamicCharacter d, Exportable (Element d)) => DynamicCharacterDecoration (DynamicDecorationInitial d) d where
 
 --    toDynamicCharacterDecoration :: CharacterName -> Double -> Alphabet String -> TCM -> (x -> a) -> x -> s
     toDynamicCharacterDecoration g symbolSet =
@@ -408,11 +409,11 @@ instance HasRightAlignment (DynamicDecorationDirectOptimizationPostorderResult d
 
 
 -- | (✔)
-instance EncodableDynamicCharacter d => ImpliedAlignmentDecoration   (DynamicDecorationImpliedAlignment d) d where
+instance (EncodableDynamicCharacter d, Exportable (Element d)) => ImpliedAlignmentDecoration   (DynamicDecorationImpliedAlignment d) d where
 
 
 -- | (✔)
-instance EncodableDynamicCharacter d => PostorderExtensionDirectOptimizationDecoration (DynamicDecorationDirectOptimization d) d where
+instance (EncodableDynamicCharacter d, Exportable (Element d)) => PostorderExtensionDirectOptimizationDecoration (DynamicDecorationDirectOptimization d) d where
 
     extendPostorderToDirectOptimization subDecoration ungapped gapped single =
         DynamicDecorationDirectOptimization
@@ -484,23 +485,23 @@ instance ( EncodableStreamElement (Element d)
 
 
 -- | (✔)
-instance EncodableDynamicCharacter d => SimpleDynamicDecoration (DynamicDecorationDirectOptimization d) d where
+instance (EncodableDynamicCharacter d, Exportable (Element d)) => SimpleDynamicDecoration (DynamicDecorationDirectOptimization d) d where
 
 
 -- | (✔)
-instance EncodableDynamicCharacter d => SimpleDynamicDecoration (DynamicDecorationDirectOptimizationPostorderResult d) d where
+instance (EncodableDynamicCharacter d, Exportable (Element d)) => SimpleDynamicDecoration (DynamicDecorationDirectOptimizationPostorderResult d) d where
 
 
 -- | (✔)
-instance EncodableDynamicCharacter d => SimpleDynamicDecoration (DynamicDecorationImpliedAlignment d) d where
+instance (EncodableDynamicCharacter d, Exportable (Element d)) => SimpleDynamicDecoration (DynamicDecorationImpliedAlignment d) d where
 
 
 -- | (✔)
-instance EncodableDynamicCharacter d => SimpleDynamicDecoration (DynamicDecorationInitial d) d where
+instance (EncodableDynamicCharacter d, Exportable (Element d)) => SimpleDynamicDecoration (DynamicDecorationInitial d) d where
 
 
 -- | (✔)
-instance EncodableDynamicCharacter d => SimpleDynamicExtensionPostorderDecoration (DynamicDecorationDirectOptimizationPostorderResult d) d where
+instance (EncodableDynamicCharacter d, Exportable (Element d)) => SimpleDynamicExtensionPostorderDecoration (DynamicDecorationDirectOptimizationPostorderResult d) d where
 
     extendDynamicToPostorder subDecoration localCost totalCost subTreeAvgLength ungapped gapped lhsAlignment rhsAlignment =
         DynamicDecorationDirectOptimizationPostorderResult

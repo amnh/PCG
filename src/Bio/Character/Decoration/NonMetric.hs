@@ -11,17 +11,18 @@
 -----------------------------------------------------------------------------
 
 module Bio.Character.Decoration.NonMetric
-  ( NonMetricDecorationInitial()
-  , NonMetricCharacterDecoration()
-  , GeneralCharacterMetadata()
-  , DiscreteCharacterMetadata()
+  ( DiscreteCharacterMetadata()
   , DiscreteCharacterDecoration()
+  , GeneralCharacterMetadata()
+  , NonMetricDecorationInitial()
+  , NonMetricCharacterDecoration()
+  -- * Lenses
+  , GetSymbolChangeMatrix(..)
+  , GetPairwiseTransitionCostMatrix(..)
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)
   , HasDiscreteCharacter(..)
-  , HasSymbolChangeMatrix(..)
-  , HasTransitionCostMatrix(..)
   ) where
 
 import Bio.Character.Decoration.Discrete

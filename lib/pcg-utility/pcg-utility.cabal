@@ -20,7 +20,7 @@ description:        Defines custom data structures for special use cases,
 common ghc-settings
 
   default-language: Haskell2010
-  
+
   ghc-options:      -O2
                     -Wall
                     -Wcompat
@@ -80,7 +80,9 @@ library
                     Data.List.Utility
                     Data.Matrix.NotStupid
                     Data.MutualExclusionSet
+                    Data.Tuple.Utility
                     Data.UnionSet
+                    Data.Vector.Utility
                     Numeric.Extended
                     Numeric.Extended.Natural
                     Numeric.Extended.Real
@@ -90,7 +92,6 @@ library
                     Data.MutualExclusionSet.Internal
                     Numeric.Extended.Internal
 
-                       
 benchmark benchmark-suite
 
   import:           ghc-settings
@@ -144,4 +145,3 @@ test-suite test-suite
                   Numeric.Extended.Real.Test
                   Numeric.NonNegativeAverage.Test
                   Data.List.Test
-
