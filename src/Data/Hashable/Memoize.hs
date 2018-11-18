@@ -13,7 +13,8 @@
 -- behavior may result.
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Data.Hashable.Memoize
   ( memoize
@@ -21,9 +22,13 @@ module Data.Hashable.Memoize
   ) where
 
 
+import Control.Concurrent.STM
+import Control.Concurrent.STM.TVar
+import Control.DeepSeq
+import Control.Monad.ST
 import Data.Functor
 import Data.Hashable
-import Data.HashTable.IO
+import Data.HashTable.ST.Basic
 import Prelude hiding (lookup)
 import System.IO.Unsafe
 
@@ -61,27 +66,59 @@ import System.IO.Unsafe
 -- >>> fibM 10000
 --
 {-# NOINLINE memoize #-}
-memoize :: (Eq a, Hashable a) => (a -> b) -> a -> b
+memoize :: forall a b. (Eq a, Hashable a, NFData b) => (a -> b) -> a -> b
 memoize f = unsafePerformIO $ do
-    ht <- new :: IO (BasicHashTable a b)
+    -- Initialize a new HashTable 
+    let !ht0 = new -- :: ST s (HashTable s a b)
+    -- Create a TVar which holds the ST state and the HashTable
+    !htRef <- newTVarIO ht0
     -- This is the returned closure of a memozized f
-    -- The closure captures the mutable reference to the hashtable above
+    -- The closure captures the "mutable" reference to the hashtable above
+    -- through the TVar.
+    --
     -- Once the mutable hashtable reference is escaped from the IO monad,
     -- this creates a new memoized reference to f.
     -- The technique should be safe for all pure functions, probably, I think.
     pure $ \k -> unsafePerformIO $ do
-        result <- ht `lookup` k
+        -- Read the TVar, we use IO since it is the outer monad
+        -- and the documentation says that this doesn't perform a complete transaction,
+        -- it just reads the current value from the TVar
+        st <- readTVarIO htRef
+        -- We use the HashTable to try and lookup the memoized value
+--        let result = runST $ (ht `lookup` k :: forall s. ST s (Maybe b))
+        let result = runST $ (st >>= (\ht -> ht `lookup` k))
+        -- Here we check if the memoized value exists
         case result of
+          -- If the value exists return it
           Just v  -> pure v
+          -- If the value doesn't exist:
           Nothing ->
-            let !v = f k
-            in insert ht k v $> v
+            -- Perform the expensive calculation to determine the value
+            -- associated with the key, fully evaluated.
+            let v = force $ f k
+            -- we want to perform the following modification atomically.
+            in  atomically $
+                  -- Don't use writeTVar or use a reference to the HashTable from above.
+                  -- It may have been concurrently modified before reaching this point!
+                  -- We *atomically* insert the new key-value pair into the exisiting
+                  -- HashTable behind the TVar, modifying the results of the TVar.
+                  modifyTVar' htRef
+                    (\s -> s                 -- Get the ST state from the TVar
+                        >>= (\x ->           -- Bind the hashtable in the state to x
+                                insert x k v -- Insert the key-value pair into the HashTable
+                                $> x         -- Return the HashTable as the value in ST state
+                            )
+                    )
+                  -- After performing the update side effects,
+                  -- we return the value associated with the key
+                  $> v
+
 
 -- |
 -- A memoizing combinator similar to 'memoize' except that it that acts on a
 -- function of two inputs rather than one.
 {-# NOINLINE memoize2 #-}
-memoize2 :: (Eq a, Eq b, Hashable a, Hashable b) => (a -> b -> c) -> a -> b -> c
+memoize2 :: (Eq a, Eq b, Hashable a, Hashable b, NFData c) => (a -> b -> c) -> a -> b -> c
 memoize2 f = let f' = memoize (uncurry f)
              in curry f'
 

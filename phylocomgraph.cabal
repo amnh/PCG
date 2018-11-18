@@ -130,6 +130,7 @@ library
                     -- >=2999.20 Required for forgiving construction of DOT object
                     , graphviz           >=2999.20
                     , hashable
+                    , hashtables
                     , integer-gmp
                     , keys
                     , lens
@@ -145,6 +146,7 @@ library
                     , semigroupoids      >=5.2.1
                     , semigroups
                     , smallcheck
+                    , stm
                     , text
                     , transformers
                     , unordered-containers
@@ -203,6 +205,7 @@ library
                     Data.Alphabet
                     Data.Alphabet.IUPAC
                     Data.EdgeLength
+                    Data.Hashable.Memoize
                     Data.TCM
                     Data.TCM.Dense
                     Data.TCM.Memoized
