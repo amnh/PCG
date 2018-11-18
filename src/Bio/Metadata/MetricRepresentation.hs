@@ -160,7 +160,7 @@ firstLinearNormPairwiseLogic lhs rhs = (fromRange newInterval, cost)
 --
 -- else if   (x ⋂ y) ⋃ (x ⋂ z) ⋃ (y ⋂ z) ≠ Ø ⮕  ( (x ⋂ y) ⋃ (x ⋂ z) ⋃ (y ⋂ z) , 1)
 --
--- otherwise                                 ⮕  (    x    ⋃    y    ⋃    z    , 2)
+-- otherwise (no intersections)              ⮕  (   y    , lowerBound y - upperBound x + lowerBound z - upperBound y)
 --
 --
 firstLinearNormThreewayLogic
