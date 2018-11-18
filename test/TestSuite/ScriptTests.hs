@@ -249,9 +249,9 @@ parseCost
   :: FilePath -- ^ The path of the input file
   -> Text     -- ^ The text stream to parse
   -> Either String ExtendedReal
-parseCost path str = first (parseErrorPretty' str) parseResult
+parseCost path str = first errorBundlePretty parseResult
   where
-    parseResult :: Either (ParseError Char Void) ExtendedReal
+    parseResult :: Either (ParseErrorBundle Text Void) ExtendedReal
     parseResult = parse fileSpec path $ force str
 
     fileSpec =  many (try (ignoredLine <* notFollowedBy costLine))

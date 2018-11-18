@@ -88,8 +88,9 @@ somethingTill c = do
 
 -- |
 -- Match any token. Fails only when the stream is empty.
+{-# DEPRECATED anyToken "Don't use anyToken, use anySingle instead" #-}
 anyToken :: MonadParsec e s m => m (Token s)
-anyToken = token Right Nothing
+anyToken = anySingle
 
 
 -- |
@@ -123,20 +124,20 @@ fails = failure Nothing . S.fromList . fmap Label . mapMaybe nonEmpty
 -- |
 -- Consumes a whitespace character that is not a newline character.
 inlineSpaceChar :: (Enum (Token s), MonadParsec e s m) => m (Token s)
-inlineSpaceChar = token captureToken Nothing
+inlineSpaceChar = token captureToken expItem
   where
     captureToken x
-      | isInlineSpace x = Right x
-      | otherwise       = Left (Just (Tokens (x:|[])), mempty)
+      | isInlineSpace x = Just x
+      | otherwise       = Nothing
+
+    expItem = S.singleton . Label $ 'i':|"nline space"
 
     isInlineSpace x = and $
-        [ isSpace . enumCoerce
-        , (newLineChar  /=)
-        , (carriageChar /=)
-        ] <*> [x]
-
-    newLineChar  = enumCoerce '\n'
-    carriageChar = enumCoerce '\r'
+        [ isSpace
+        , (/= '\n')
+        , (/= '\r')
+--        , (/= '\v')
+        ] <*> [enumCoerce x]
 
 
 -- |
@@ -231,9 +232,6 @@ enumCoerce = toEnum . fromEnum
 
 -- |
 -- Matches a single token.
+{-# DEPRECATED tokenMatch "Don't use tokenMatch, use single instead" #-}
 tokenMatch :: (MonadParsec e s m) => Token s -> m (Token s)
-tokenMatch tok = token testToken Nothing
-  where
-    testToken x
-      | tok == x  = Right x
-      | otherwise = Left (Just (Tokens (x:|[])), mempty)
+tokenMatch = single 

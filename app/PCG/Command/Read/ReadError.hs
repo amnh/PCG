@@ -119,8 +119,8 @@ unopenable path = ReadError $ FileUnopenable path :| []
 
 -- |
 -- Remark that a parsing error occured when reading the file. Note that the 'ParseError' should contain the 'FilePath' information.
-unparsable :: (ShowToken (Token s), LineToken (Token s), ShowErrorComponent e, Stream s) => s -> ParseError (Token s) e -> ReadError
-unparsable pStr pErr = ReadError $ FileUnparsable (parseErrorPretty' pStr pErr) :| []
+unparsable :: (ShowErrorComponent e, Stream s) => ParseErrorBundle s e -> ReadError
+unparsable pErr = ReadError $ FileUnparsable (errorBundlePretty pErr) :| []
 
 
 -- |

@@ -271,7 +271,7 @@ realValue = label (getPrimitiveName TypeOfReal)
 
 
 textValue
-  :: (MonadParsec e s m, Token s ~ Char)
+  :: forall e s m. (MonadParsec e s m, Token s ~ Char)
   => m String -- (Tokens s)
 textValue = openQuote *> many (escaped <|> nonEscaped) <* closeQuote
   where
@@ -284,6 +284,10 @@ textValue = openQuote *> many (escaped <|> nonEscaped) <* closeQuote
     openQuote  = char '"' <?> ("'\"' opening quote for " <> getPrimitiveName TypeOfText)
     closeQuote = char '"' <?> ("'\"' closing quote for " <> getPrimitiveName TypeOfText)
     nonEscaped = satisfy $ \x -> x `notElem` lexicalChars && not (isControl x)
+
+    escaped
+      :: (MonadParsec e s m, Token s ~ Char)
+      => m Char
     escaped    = do
         _ <- char '\\' <?> "'\\' beginning of character escape sequence"
         c <- region characterEscaping $ oneOf escapeChars
@@ -309,8 +313,9 @@ textValue = openQuote *> many (escaped <|> nonEscaped) <* closeQuote
 
         characterEscaping
           :: forall e
-          .  ParseError Char e
-          -> ParseError Char e
+          .  (Token s ~ Char)
+          => ParseError s e
+          -> ParseError s e
         characterEscaping e@FancyError {} = e
         characterEscaping   (TrivialError pos uxpItems expItems) = TrivialError pos uxpItems' expItems'
           where
@@ -319,11 +324,10 @@ textValue = openQuote *> many (escaped <|> nonEscaped) <* closeQuote
 
             f
               :: forall a t
-              .  ShowToken a
-              => ErrorItem a
+              .  ErrorItem Char
               -> ErrorItem t
             f  EndOfInput     = EndOfInput
-            f (Tokens    ts ) = Label . NE.fromList $ "invalid escape sequence character: " <> showTokens ts
+            f (Tokens    ts ) = Label . NE.fromList $ "invalid escape sequence character: " <> showTokens (Proxy :: Proxy s) ts
             f (Label (x:|xs)) = Label $ x :| xs <> " (not a valid escape sequence character)"
 
 
