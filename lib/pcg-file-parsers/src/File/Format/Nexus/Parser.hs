@@ -27,7 +27,6 @@ module File.Format.Nexus.Parser
 import           Data.CaseInsensitive
 import           Data.Char                               (isSpace, toLower)
 import           Data.Functor
-import qualified Data.List.NonEmpty                      as NE (head)
 import           Data.Maybe                              (fromMaybe, isJust)
 import           Data.Proxy
 import qualified Data.Set                                as S
@@ -67,7 +66,7 @@ nexusFileDefinition = do
 -- should be captured.
 ignoredBlockDefinition :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char {- , Show s -}) => m IgnBlock
 ignoredBlockDefinition = do
-    line  <- sourceLine . NE.head . statePos <$> getParserState
+    line  <- sourceLine . pstateSourcePos . statePosState <$> getParserState
     title <- many letterChar
     _     <- symbol $ char ';'
     _     <- somethingTill . lookAhead $ symbol blockend

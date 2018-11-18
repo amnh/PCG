@@ -19,7 +19,7 @@ import PCG.Syntax                   (computationalStreamParser)
 import System.Environment
 import System.Exit
 import System.IO
-import Text.Megaparsec              (ParseError, Parsec, Token, parse, parseErrorPretty')
+import Text.Megaparsec              (ParseErrorBundle, Parsec, errorBundlePretty, parse)
 import Text.PrettyPrint.ANSI.Leijen (align, indent, int, line, string, text, (<+>), (</>))
 
 
@@ -73,7 +73,7 @@ main = do
             Left errorMessage -> putStrLn errorMessage
             Right inputStream -> do
                 (code, outputStream) <- case parse' computationalStreamParser (inputFile opts) inputStream of
-                                          Left  err -> pure (ExitFailure 4, parseErrorPretty' inputStream err)
+                                          Left  err -> pure (ExitFailure 4, errorBundlePretty err)
                                           Right val -> fmap renderSearchState . runEvaluation . evaluate $ optimizeComputation val
                 let  outputPath = outputFile opts
                 if   (toUpper <$> outputPath) == "STDOUT"
@@ -81,7 +81,7 @@ main = do
                 else writeFile outputPath outputStream
                 exitWith code
   where
-     parse' :: Parsec Void s a -> String -> s -> Either (ParseError (Token s) Void) a
+     parse' :: Parsec Void s a -> String -> s -> Either (ParseErrorBundle s Void) a
      parse' = parse
 
 
