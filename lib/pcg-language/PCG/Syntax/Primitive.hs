@@ -192,10 +192,10 @@ whitespace
   :: forall e s m
   .  (MonadParsec e s m, Token s ~ Char)
   => m ()
-whitespace = Lex.space single line block
+whitespace = Lex.space spChar line block
   where
     pxy    = Proxy :: Proxy s
-    single = void spaceChar
+    spChar = void spaceChar
     line   = Lex.skipLineComment $ tokensToChunk pxy "**"
     block  = Lex.skipBlockCommentNested open close
     open   = tokensToChunk pxy "(*"
@@ -285,9 +285,7 @@ textValue = openQuote *> many (escaped <|> nonEscaped) <* closeQuote
     closeQuote = char '"' <?> ("'\"' closing quote for " <> getPrimitiveName TypeOfText)
     nonEscaped = satisfy $ \x -> x `notElem` lexicalChars && not (isControl x)
 
-    escaped
-      :: (MonadParsec e s m, Token s ~ Char)
-      => m Char
+    escaped :: m Char
     escaped    = do
         _ <- char '\\' <?> "'\\' beginning of character escape sequence"
         c <- region characterEscaping $ oneOf escapeChars
@@ -311,11 +309,7 @@ textValue = openQuote *> many (escaped <|> nonEscaped) <* closeQuote
                 , ( 'f', '\f')
                 ]
 
-        characterEscaping
-          :: forall e
-          .  (Token s ~ Char)
-          => ParseError s e
-          -> ParseError s e
+        characterEscaping :: ParseError s e -> ParseError s e
         characterEscaping e@FancyError {} = e
         characterEscaping   (TrivialError pos uxpItems expItems) = TrivialError pos uxpItems' expItems'
           where
@@ -323,7 +317,7 @@ textValue = openQuote *> many (escaped <|> nonEscaped) <* closeQuote
             expItems' = S.map (Tokens . pure) escapeChars <> expItems
 
             f
-              :: forall a t
+              :: forall t
               .  ErrorItem Char
               -> ErrorItem t
             f  EndOfInput     = EndOfInput

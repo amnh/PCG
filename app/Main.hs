@@ -19,7 +19,7 @@ import PCG.Syntax                   (computationalStreamParser)
 import System.Environment
 import System.Exit
 import System.IO
-import Text.Megaparsec              (ParseErrorBundle, Parsec, Token, parse, errorBundlePretty)
+import Text.Megaparsec              (ParseErrorBundle, Parsec, parse, errorBundlePretty)
 import Text.PrettyPrint.ANSI.Leijen (align, indent, int, line, string, text, (<+>), (</>))
 
 

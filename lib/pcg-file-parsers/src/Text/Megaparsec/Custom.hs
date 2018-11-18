@@ -83,14 +83,7 @@ anythingTill c = do
 somethingTill :: MonadParsec e s m => m a -> m [Token s]
 somethingTill c = do
     _ <- notFollowedBy c
-    anyToken <:> anythingTill c
-
-
--- |
--- Match any token. Fails only when the stream is empty.
-{-# DEPRECATED anyToken "Don't use anyToken, use anySingle instead" #-}
-anyToken :: MonadParsec e s m => m (Token s)
-anyToken = anySingle
+    anySingle <:> anythingTill c
 
 
 -- |
@@ -111,8 +104,8 @@ endOfLine = choice (try <$> [ nl, cr *> nl, cr ]) $> newLineChar
   where
     newLineChar  = enumCoerce '\n'
     carriageChar = enumCoerce '\r'
-    nl = tokenMatch newLineChar  $> ()
-    cr = tokenMatch carriageChar $> ()
+    nl = single newLineChar  $> ()
+    cr = single carriageChar $> ()
 
 
 -- |
@@ -166,7 +159,7 @@ inlineSpace = skipMany inlineSpaceChar
 comment :: MonadParsec e s m => m [Token s] -> m [Token s] -> m [Token s]
 comment start end = commentDefinition' False
   where
-    commentChar    = notFollowedBy (start <|> end) *> anyToken
+    commentChar    = notFollowedBy (start <|> end) *> anySingle
     commentContent = many commentChar
     commentDefinition' enquote = do
         prefix   <- start
@@ -228,10 +221,3 @@ parseWithDefaultErrorType c = parse c ""
 -- Convert one Enum to another through the Int value.
 enumCoerce :: (Enum a, Enum b) => a -> b
 enumCoerce = toEnum . fromEnum
-
-
--- |
--- Matches a single token.
-{-# DEPRECATED tokenMatch "Don't use tokenMatch, use single instead" #-}
-tokenMatch :: (MonadParsec e s m) => Token s -> m (Token s)
-tokenMatch = single 
