@@ -25,6 +25,7 @@ module Data.EdgeLength
 
 import Control.Applicative (liftA2)
 import Control.DeepSeq
+import Data.Binary         (Binary)
 import Data.Default
 import Data.Monoid         (Sum (..))
 import GHC.Generics
@@ -43,6 +44,9 @@ import GHC.Generics
 -- laws regarding the identity element.
 newtype EdgeLength = C (Maybe (Sum Double))
     deriving(Eq, Default, Generic, NFData, Ord, Semigroup, Monoid)
+
+
+instance Binary EdgeLength
 
 
 instance Num EdgeLength where
