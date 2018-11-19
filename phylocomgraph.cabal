@@ -372,6 +372,26 @@ executable fasta-differ
   hs-source-dirs:   utils
 
 
+executable memoizer-fuzzer
+
+  import:             ghc-flags
+                    , language-specs
+
+  main-is:          memoizer-fuzzer.hs
+
+  build-depends:      base >=4.10
+                    , deepseq
+                    , parallel
+                    , phylocomgraph
+                    , random
+                    , random-shuffle
+                    , time
+
+  ghc-options:      -threaded
+
+  hs-source-dirs:   utils
+
+
 executable 2d-do-comparison
 
   import:             ghc-flags
