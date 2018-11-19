@@ -13,17 +13,21 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE FlexibleContexts   #-}
-{-# LANGUAGE UnboxedSums        #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UnboxedSums      #-}
 
 module PCG.Command.Save
   ( SaveCommand (..)
+  , SerialType(..)
+  , serialType
   , saveCommandSpecification
   , defaultSaveFilePath
   ) where
 
+import Control.Applicative.Free (Ap)
+import Data.Functor             (($>))
 import PCG.Syntax.Combinators
+
 
 
 -- |
@@ -31,15 +35,27 @@ import PCG.Syntax.Combinators
 -- computation to disk. The file path to which the save state is serialized
 -- may be user specified. A default, hidden file path exists if no file path is
 -- specified by the user.
-newtype SaveCommand = SaveCommand FilePath
-  deriving stock Show
+data SaveCommand = SaveCommand !FilePath !SerialType
+  deriving Show
 
+-- |
+-- Type of serialisation formats
+data SerialType
+  = Compact
+  | Binary
+  deriving Show
 
 -- |
 -- Defines the semantics of interpreting a valid \"SAVE\" command from the PCG
 -- scripting language syntax.
 saveCommandSpecification :: CommandSpecification SaveCommand
-saveCommandSpecification = command "save" . argList $ SaveCommand <$> (text `withDefault` defaultSaveFilePath)
+saveCommandSpecification = command "save" . argList $ SaveCommand <$> (text `withDefault` defaultSaveFilePath) <*> serialType
+
+serialType :: Ap SyntacticArgument SerialType
+serialType = choiceFrom [saveCompact , saveBinary] `withDefault` defaultFormat
+  where
+    saveCompact  = value "compact" $> Compact
+    saveBinary   = value "binary"  $> Binary
 
 
 -- |
@@ -47,3 +63,8 @@ saveCommandSpecification = command "save" . argList $ SaveCommand <$> (text `wit
 -- by the user.
 defaultSaveFilePath :: FilePath
 defaultSaveFilePath = ".pcg.save"
+
+-- |
+-- The default format to serialise to disk.
+defaultFormat :: SerialType
+defaultFormat = Compact
