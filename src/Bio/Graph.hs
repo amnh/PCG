@@ -40,6 +40,8 @@ module Bio.Graph
   , UnReifiedCharacterDAG
   , assignOptimalDynamicCharacterRootEdges
   , assignPunitiveNetworkEdgeCost
+  , extractSolution
+  , extractReferenceDAG
   , generateLocalResolutions
   , postorderSequence'
   , preorderFromRooting
