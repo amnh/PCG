@@ -28,7 +28,8 @@ import Control.DeepSeq
 import Control.Monad.ST
 import Data.Functor
 import Data.Hashable
-import Data.HashTable.ST.Basic
+import Data.HashTable.IO
+--import Data.HashTable.ST.Basic
 import Prelude hiding (lookup)
 import System.IO.Unsafe
 
@@ -68,10 +69,8 @@ import System.IO.Unsafe
 {-# NOINLINE memoize #-}
 memoize :: forall a b. (Eq a, Hashable a, NFData b) => (a -> b) -> a -> b
 memoize f = unsafePerformIO $ do
-    -- Initialize a new HashTable 
-    let !ht0 = new -- :: ST s (HashTable s a b)
     -- Create a TVar which holds the ST state and the HashTable
-    !htRef <- newTVarIO ht0
+    !htRef <- newTVarIO (new :: IO (BasicHashTable a b))
     -- This is the returned closure of a memozized f
     -- The closure captures the "mutable" reference to the hashtable above
     -- through the TVar.
@@ -86,7 +85,7 @@ memoize f = unsafePerformIO $ do
         st <- readTVarIO htRef
         -- We use the HashTable to try and lookup the memoized value
 --        let result = runST $ (ht `lookup` k :: forall s. ST s (Maybe b))
-        let result = runST $ (st >>= (\ht -> ht `lookup` k))
+        result <- (st >>= (\ht -> ht `lookup` k))
         -- Here we check if the memoized value exists
         case result of
           -- If the value exists return it
@@ -103,10 +102,10 @@ memoize f = unsafePerformIO $ do
                   -- We *atomically* insert the new key-value pair into the exisiting
                   -- HashTable behind the TVar, modifying the results of the TVar.
                   modifyTVar' htRef
-                    (\s -> s                 -- Get the ST state from the TVar
-                        >>= (\x ->           -- Bind the hashtable in the state to x
-                                insert x k v -- Insert the key-value pair into the HashTable
-                                $> x         -- Return the HashTable as the value in ST state
+                    (\st -> st                -- Get the ST state from the TVar
+                        >>= (\ht ->           -- Bind the hashtable in the state to x
+                                insert ht k v -- Insert the key-value pair into the HashTable
+                                $> ht         -- Return the HashTable as the value in ST state
                             )
                     )
                   -- After performing the update side effects,
