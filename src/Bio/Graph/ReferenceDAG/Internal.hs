@@ -38,6 +38,7 @@ import           Control.Lens.Fold             (Fold, folding)
 import           Control.Lens.Operators        ((%~), (.~), (^.))
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
+import           Data.Binary                   (Binary)
 import           Data.EdgeSet
 import           Data.Foldable
 import           Data.Foldable.Custom
@@ -69,6 +70,7 @@ import           Data.Tree.Pretty              (drawVerticalTree)
 import           Data.Tuple.Utility
 import           Data.Vector                   (Vector)
 import qualified Data.Vector                   as V
+import           Data.Vector.Binary            ()
 import qualified Data.Vector.Custom            as V (fromList')
 import           Data.Vector.Instances         ()
 import           Data.Vector.Utility           as DV
@@ -77,8 +79,6 @@ import           Numeric.Extended.Real
 import           Prelude                       hiding (lookup, zipWith)
 import           Text.Newick.Class
 import           Text.XML.Custom
-import Data.Binary (Binary())
-import Data.Vector.Binary ()
 
 
 -- |
