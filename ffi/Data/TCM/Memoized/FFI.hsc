@@ -84,6 +84,11 @@ data MemoizedCostMatrix
    } deriving (Eq, Generic)
 
 
+instance Show MemoizedCostMatrix where
+
+    show = const "(MemoizedCostMatrix ?)"
+
+
 {--
 -- | (✔)
 instance Arbitrary CULong where
