@@ -121,8 +121,9 @@ library
                     , binary
                     , bimap
                     , bv-little
-                    -- >=0.5.8 Required for Data.Map.restrictKeys
+                    , bytestring
                     , compact
+                    -- >=0.5.8 Required for Data.Map.restrictKeys
                     , containers         >=0.5.8
                     , deepseq
                     , data-default
@@ -307,8 +308,10 @@ executable pcg
   build-depends:      phylocomgraph
                     , ansi-wl-pprint
                     , base             >=4.10
-                    -- Required for Data.Map.restrictKeys
+                    , binary
+                    , bytestring
                     , compact
+                    -- Required for Data.Map.restrictKeys
                     , containers       >=0.5.8
                     , data-default
                     , deepseq
