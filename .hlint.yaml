@@ -99,3 +99,8 @@
 - ignore: { name: Use .
           , within: PCG.Command.Read.Unification.Master
           }
+
+# Ignore if instead of case statement
+- ignore: { name: Use if
+          , within: Data.Binary.Utility
+          }
