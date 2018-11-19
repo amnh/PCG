@@ -35,6 +35,7 @@ module Bio.Graph.Constructions
   , UnifiedMetadataBlock
   , UnifiedMetadataSequence
   , UnReifiedCharacterDAG
+  , extractReferenceDAG
   ) where
 
 import Bio.Character
@@ -44,13 +45,17 @@ import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Dynamic
 import Bio.Character.Decoration.Fitch
 import Bio.Character.Decoration.Metric
+import Bio.Graph.Node
 import Bio.Graph.PhylogeneticDAG.Internal
 import Bio.Graph.ReferenceDAG.Internal
 import Bio.Graph.Solution
 import Bio.Sequence
 import Control.Evaluation
+import Control.Lens.Combinators            (mapped)
+import Control.Lens.Operators              ((%~), (.~), (^.))
 import Data.Compact
 import Data.EdgeLength
+import Data.Function                       ((&))
 import Data.List.NonEmpty
 import Data.NodeLabel
 import Data.Vector                         (Vector)
@@ -220,3 +225,25 @@ type UnReifiedCharacterDAG =
          UnifiedDiscreteCharacter
          UnifiedDiscreteCharacter
          UnifiedDynamicCharacter
+
+
+extractReferenceDAG
+  :: Either TopologicalResult DecoratedCharacterResult
+  -> ReferenceDAG () EdgeLength (Maybe String)
+extractReferenceDAG = either extractTopResult extractRefDAGfromDec
+  where
+    extractTopResult = extractSolution
+
+
+
+extractRefDAGfromDec
+  :: DecoratedCharacterResult -> ReferenceDAG () EdgeLength (Maybe String)
+extractRefDAGfromDec finalDecDAG =
+  let
+    decRefDAG = finalDecDAG & (^. _phylogeneticForest) . extractSolution
+    refDAGNoGraphMetadata = decRefDAG & (_graphData . _graphMetadata) .~ ()
+    refDAG =
+      refDAGNoGraphMetadata
+        & (_references . mapped . _nodeDecoration) %~ Just . show . nodeDecorationDatum2
+  in
+    refDAG
