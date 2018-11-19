@@ -25,10 +25,10 @@ module Numeric.Extended.Real
   ) where
 
 import Control.DeepSeq
+import Data.Binary
 import GHC.Generics
 import Numeric.Extended.Internal
 import Test.QuickCheck
-import Data.Binary
 
 
 -- |
