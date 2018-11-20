@@ -11,6 +11,7 @@ import Data.Compact.Serialize (writeCompact)
 import Data.Functor           (($>))
 import PCG.Command.Save
 
+
 evaluate :: SaveCommand -> GraphState -> SearchState
 evaluate (SaveCommand filePath serial) g =
   case serial of
@@ -21,3 +22,4 @@ evaluate (SaveCommand filePath serial) g =
         let refDAG = extractReferenceDAG graph
         liftIO $ BS.writeFile filePath (encode refDAG)
         pure g
+

@@ -44,7 +44,6 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
   ) where
 
 import           Bio.Character.Encodable
-import           Control.Arrow              ((&&&))
 import           Control.Foldl              (Fold (..))
 import qualified Control.Foldl              as F
 import           Control.Monad.State.Strict

@@ -44,7 +44,7 @@ readFiles (path1, path2) = do
 parseFiles :: (FilePath, String, FilePath, String) -> Either String ([FastaSequence], [FastaSequence])
 parseFiles (path1, file1, path2, file2) = liftA2 (,) (parse' path1 file1) (parse' path2 file2)
   where
-    parse' path stream = first parseErrorPretty (parse fastaStreamParser path stream :: Either (ParseError Char Void) [FastaSequence])
+    parse' path stream = first errorBundlePretty (parse fastaStreamParser path stream :: Either (ParseErrorBundle String Void) [FastaSequence])
 
 
 performFileDiff :: (FastaParseResult, FastaParseResult) -> Either String String

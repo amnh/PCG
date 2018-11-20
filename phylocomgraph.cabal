@@ -320,10 +320,10 @@ executable pcg
                     , gitrev
                     , Glob
                     -- >=2999.20 Required for forgivig constructio of DOT object
-                    , graphviz           >=2999.20
+                    , graphviz         >=2999.20
                     , keys
                     , lens
-                    , megaparsec       >=6.4.0
+                    , megaparsec       >=7.0.0
                     , optparse-applicative
                     , parallel
                     , pcg-file-parsers
@@ -368,7 +368,7 @@ executable fasta-differ
   build-depends:      base >=4.10
                     , containers
                     , keys
-                    , megaparsec
+                    , megaparsec  >=7.0.0
                     , pcg-file-parsers
 
   hs-source-dirs:   utils
@@ -468,7 +468,7 @@ executable newick-resolver
   main-is:          newick-resolver.hs
 
   build-depends:      base               >=4.8
-                    , megaparsec         >=6.4.0
+                    , megaparsec         >=7.0.0
                     , pcg-file-parsers
 
   hs-source-dirs:   utils
@@ -529,16 +529,21 @@ Test-Suite integration-tests
 
   main-is:          IntegrationTests.hs
 
-  build-depends:       base               >=4.10
+
+  build-depends:      base               >=4.10
+                    , compact
                     , containers
                     , deepseq
                     , directory
                     , filepath
-                    , megaparsec         ==6.5.0
+                    , megaparsec         >=7.0.0
                     , parser-combinators >=0.2.0
+                    , pcg-language
                     , pcg-utility
+                    , phylocomgraph
                     , process 
                     , scientific
+                    , semigroupoids      >=5.2.1
                     , semigroups
                     , tasty
                     , tasty-golden

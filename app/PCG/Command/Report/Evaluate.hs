@@ -8,14 +8,14 @@ module PCG.Command.Report.Evaluate
 
 import Bio.Graph
 import Control.Monad.IO.Class
-import Data.Compact                (getCompact)
+import Data.Compact                     (Compact, getCompact)
 import Data.List.NonEmpty
 import PCG.Command.Report
 import PCG.Command.Report.GraphViz
 import Text.XML
 
 
-evaluate :: ReportCommand -> GraphState -> SearchState
+evaluate :: ReportCommand -> Compact GraphState -> SearchState
 evaluate (ReportCommand format target) stateValue = do
     _ <- case generateOutput stateValue format of
            ErrorCase    errMsg  -> fail errMsg
@@ -46,7 +46,7 @@ generateOutput :: (Show c, Show t, ToXML c)
                -> FileStreamContext
 -}
 generateOutput
-  :: GraphState
+  :: Compact GraphState
   -> OutputFormat
   -> FileStreamContext
 generateOutput g' format =

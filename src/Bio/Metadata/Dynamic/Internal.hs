@@ -17,6 +17,7 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE StrictData             #-}
 {-# LANGUAGE TypeFamilies           #-}
 
 module Bio.Metadata.Dynamic.Internal
@@ -52,6 +53,7 @@ import           Control.Lens                      hiding (Fold)
 import           Control.Monad.State.Strict
 import           Data.Alphabet
 import           Data.Foldable
+import           Data.Functor                      (($>))
 import           Data.List                         (intercalate)
 import           Data.List.NonEmpty                (NonEmpty (..))
 import           Data.Maybe
@@ -91,7 +93,7 @@ type TraversalFoci      = NonEmpty TraversalFocus
 -- A generalized function representation: the "overlap" between dynamic character
 -- elements, supplying the corresponding median and cost to align the two
 -- characters.
-type TransitionCostMatrix e = e -> e -> (e, Word)
+type PairwiseTransitionCostMatrix e = e -> e -> (e, Word)
 -}
 
 
@@ -101,7 +103,10 @@ type TransitionCostMatrix e = e -> e -> (e, Word)
 data DynamicCharacterMetadataDec c
    = DynamicCharacterMetadataDec
    { optimalTraversalFoci        :: !(Maybe TraversalFoci)
-   , structuralRepresentationTCM :: !(MetricRepresentation (Either DenseTransitionCostMatrix MemoizedCostMatrix))
+   , structuralRepresentationTCM :: !(Either
+                                        (DenseTransitionCostMatrix, MetricRepresentation ())
+                                        (MetricRepresentation MemoizedCostMatrix)
+                                     )
    , metadata                    :: {-# UNPACK #-} !DiscreteCharacterMetadataDec
    } deriving (Generic, NFData)
 
@@ -191,21 +196,22 @@ instance HasCharacterWeight (DynamicCharacterMetadataDec c) Double where
 -- | (✔)
 instance GetDenseTransitionCostMatrix (DynamicCharacterMetadataDec c) (Maybe DenseTransitionCostMatrix) where
 
-    denseTransitionCostMatrix = to $
-      foldl' (either Just . const) Nothing . structuralRepresentationTCM
+    denseTransitionCostMatrix = to
+      $ either (Just . fst) (const Nothing) . structuralRepresentationTCM
 
 
 -- | (✔)
 instance GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec c) (Maybe MemoizedCostMatrix) where
 
-    sparseTransitionCostMatrix = to (
-      foldl' (\x -> either (const x) Just) Nothing . structuralRepresentationTCM)
+    sparseTransitionCostMatrix = to $
+       either (const Nothing) (foldl' (const Just) Nothing) . structuralRepresentationTCM
 
 
 -- | (✔)
 instance GetSymbolChangeMatrix (DynamicCharacterMetadataDec c) (Word -> Word -> Word) where
 
-    symbolChangeMatrix = to (retreiveSCM . structuralRepresentationTCM)
+    symbolChangeMatrix = to
+      $ retreiveSCM . either snd void . structuralRepresentationTCM
 
 
 -- | (✔)
@@ -248,12 +254,16 @@ dynamicMetadata name weight alpha tcm denseMay =
     , metadata                    = discreteMetadata name (weight * coefficient) alpha
     }
   where
-    representaionOfTCM =
+    representaionOfTCM = maybe largeAlphabet smallAlphabet denseMay
+      where
+        largeAlphabet   = Right $ metricRep $> memoMatrixValue
+        smallAlphabet x = Left (x,metricRep)
+
+    metricRep =
         case tcmStructure diagnosis of
           NonAdditive -> DiscreteMetric
           Additive    -> LinearNorm
-          _           -> ExplicitLayout (factoredTcm diagnosis)
-                       $ maybe (Right memoMatrixValue) Left denseMay
+          _           -> ExplicitLayout (factoredTcm diagnosis) ()
 
     diagnosis       = diagnoseTcm tcm
     coefficient     = fromIntegral $ factoredWeight diagnosis
@@ -309,12 +319,11 @@ extractPairwiseTransitionCostMatrix
   -> c
   -> c
   -> (c, Word)
-extractPairwiseTransitionCostMatrix = retreivePairwiseTCM handleGeneralCases . structuralRepresentationTCM
-  where
-    handleGeneralCases _ v =
-        case v of
-          Left dense -> lookupPairwise dense
-          Right memo -> getMedianAndCost2D memo
+extractPairwiseTransitionCostMatrix =
+  either
+    (lookupPairwise . fst)
+    (retreivePairwiseTCM (const getMedianAndCost2D))
+  . structuralRepresentationTCM
 
 
 -- |
@@ -333,12 +342,11 @@ extractThreewayTransitionCostMatrix
   -> c
   -> c
   -> (c, Word)
-extractThreewayTransitionCostMatrix = retreiveThreewayTCM handleGeneralCases . structuralRepresentationTCM
-  where
-    handleGeneralCases _ v =
-        case v of
-          Left dense -> lookupThreeway dense
-          Right memo -> getMedianAndCost3D memo
+extractThreewayTransitionCostMatrix =
+  either
+    (lookupThreeway . fst)
+    (retreiveThreewayTCM (const getMedianAndCost3D))
+  . structuralRepresentationTCM
 
 
 {-
