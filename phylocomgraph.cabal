@@ -4,7 +4,7 @@ build-type:         Simple
 extra-source-files: AUTHORS.md
                     CHANGELOG.md
                     README.md
-                    
+
 
 name:               phylocomgraph
 version:            0.1.0.1
@@ -127,7 +127,7 @@ library
                     , data-default
                     , dlist
                     , foldl
-                    -- >=2999.20 Required for forgivig constructio of DOT object
+                    -- >=2999.20 Required for forgiving construction of DOT object
                     , graphviz           >=2999.20
                     , hashable
                     , integer-gmp
@@ -157,6 +157,7 @@ library
 
   exposed-modules:  Analysis.Parsimony.Additive.Internal
                     Analysis.Parsimony.Dynamic.DirectOptimization
+                    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
                     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
                     Analysis.Parsimony.Dynamic.SequentialAlign
                     Analysis.Parsimony.Fitch.Internal
@@ -203,7 +204,9 @@ library
                     Data.Alphabet.IUPAC
                     Data.EdgeLength
                     Data.TCM
+                    Data.TCM.Dense
                     Data.TCM.Memoized
+                    Data.TCM.Dense.FFI
                     Data.TCM.Memoized.FFI
                     Data.TopologyRepresentation
                     Data.NodeLabel
@@ -218,7 +221,7 @@ library
                     Test.Custom.DynamicCharacterNode
 
   other-modules:    Analysis.Parsimony.Dynamic.DirectOptimization.Internal
-                    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
+--                    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
                     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
                     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
                     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
@@ -260,6 +263,7 @@ library
                     Bio.Metadata.DiscreteWithTCM.Internal
                     Bio.Metadata.Dynamic.Class
                     Bio.Metadata.Dynamic.Internal
+                    Bio.Metadata.MetricRepresentation
                     Bio.Graph.BinaryRenderingTree
                     Bio.Graph.Constructions
                     Bio.Graph.Forest
@@ -311,11 +315,10 @@ executable pcg
                     , gitrev
                     , Glob
                     -- >=2999.20 Required for forgivig constructio of DOT object
-                    , graphviz           >=2999.20
+                    , graphviz         >=2999.20
                     , keys
                     , lens
-                    , megaparsec       >=6.4.0
-                    , mono-traversable >=1.0
+                    , megaparsec       >=7.0.0
                     , optparse-applicative
                     , parallel
                     , pcg-file-parsers
@@ -360,7 +363,7 @@ executable fasta-differ
   build-depends:      base >=4.10
                     , containers
                     , keys
-                    , megaparsec
+                    , megaparsec  >=7.0.0
                     , pcg-file-parsers
 
   hs-source-dirs:   utils
@@ -460,7 +463,7 @@ executable newick-resolver
   main-is:          newick-resolver.hs
 
   build-depends:      base               >=4.8
-                    , megaparsec         >=6.4.0
+                    , megaparsec         >=7.0.0
                     , pcg-file-parsers
 
   hs-source-dirs:   utils
@@ -526,9 +529,10 @@ Test-Suite integration-tests
                     , deepseq
                     , directory
                     , filepath
-                    , megaparsec         >=6.4.0
+                    , megaparsec         >=7.0.0
                     , parser-combinators >=0.2.0
                     , pcg-utility
+                    , process 
                     , scientific
                     , semigroups
                     , tasty
@@ -536,15 +540,15 @@ Test-Suite integration-tests
                     , tasty-hunit
                     , tasty-rerun
                     , text
-                    , turtle
 
   ghc-options:      -threaded
                     -with-rtsopts=-N7
 
   hs-source-dirs:   test
 
-  other-modules:    TestSuite.ScriptTests
-                    TestSuite.GoldenTests
+  other-modules:    TestSuite.GoldenTests
+                    TestSuite.ScriptTests
+                    TestSuite.SubProcess
 
 
 Test-Suite unit-tests
@@ -565,6 +569,7 @@ Test-Suite unit-tests
                     , deepseq
                     , dlist
                     , foldl
+                    , graphviz           >=2999.20
                     , hashable
                     , integer-gmp
                     , keys
@@ -572,6 +577,7 @@ Test-Suite unit-tests
                     , mono-traversable   >=1.0
                     , mtl
                     , pcg-utility
+                    , pretty-tree
                     , phylocomgraph
                     , pointed
                     , QuickCheck
@@ -585,6 +591,7 @@ Test-Suite unit-tests
                     , tasty-smallcheck
                     , tasty-rerun
                     , transformers
+                    , unordered-containers
                     , vector
                     -- >=3.4 required for corrected definition of (!) & index
                     , vector-instances >=3.4
@@ -612,6 +619,7 @@ Test-Suite unit-tests
                     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
                     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Internal
                     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
+                    Analysis.Parsimony.Internal
                     Bio.Character
                     Bio.Character.Encodable
                     Bio.Character.Encodable.Continuous
@@ -632,6 +640,11 @@ Test-Suite unit-tests
                     Bio.Character.Encodable.Stream
                     Bio.Character.Exportable
                     Bio.Character.Exportable.Class
+                    Bio.Graph.BinaryRenderingTree
+                    Bio.Graph.Component
+                    Bio.Graph.LeafSet
+                    Bio.Graph.ReferenceDAG.Internal
+                    Bio.Graph.ReferenceDAG.Test
                     Control.Evaluation.Internal
                     Control.Evaluation.Test
                     Control.Evaluation.Unit
@@ -641,17 +654,23 @@ Test-Suite unit-tests
                     Data.Alphabet.Internal
                     Data.Alphabet.Special
                     Data.Alphabet.Test
+                    Data.EdgeSet
                     Data.Range
                     Data.TCM
                     Data.TCM.Internal
+                    Data.TCM.Dense
+                    Data.TCM.Dense.FFI
                     Data.TCM.Memoized
                     Data.TCM.Memoized.FFI
                     Data.TCM.Test
+                    Data.Vector.Custom
                     Data.Vector.NonEmpty
                     Test.QuickCheck.Arbitrary.Instances
                     Test.Custom.NucleotideSequence
                     Test.HUnit.Custom
                     TestSuite.ExecutableTests
                     TestSuite.LibraryTests
+                    Text.Newick.Class
                     Text.XML
                     Text.XML.Class
+                    Text.XML.Custom

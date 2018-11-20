@@ -34,10 +34,10 @@ main = do
         inputfileName : _ -> do
             inputStream  <- readFile inputfileName
             case parse' newickStreamParser inputfileName inputStream of
-                Left  errMsg -> putStrLn $ parseErrorPretty' inputfileName errMsg
+                Left  errMsg -> putStrLn $ errorBundlePretty errMsg
                 Right forest -> nicelyPrintAllResolutions $ renderAllResolutions <$> forest
     where
-        parse' :: Parsec Void s a -> String -> s -> Either (ParseError (Token s) Void) a
+        parse' :: Parsec Void s a -> String -> s -> Either (ParseErrorBundle s Void) a
         parse' = parse
         appendSemicolon = (<> ";")
         getLabel = fromJust . newickLabel

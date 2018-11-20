@@ -40,7 +40,7 @@ data PartialCharacterBlock u v w x y z
    , partialAdditiveCharacterBins    :: DList w
    , partialMetricCharacterBins      :: DList x
    , partialNonMetricCharacterBins   :: DList y
-   , partialDynamicCharacters   :: DList z
+   , partialDynamicCharacters        :: DList z
    } deriving (Eq)
 
 

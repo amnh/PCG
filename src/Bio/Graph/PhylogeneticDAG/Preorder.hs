@@ -155,7 +155,7 @@ preorderSequence f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag meta) = pdag2 & _phylogeneti
             datumResolutions :: ResolutionCache (CharacterSequence u v w x y z)
             datumResolutions = node ^. _nodeDecoration . _resolutions
 
-            parentIndices = toParentContext $ parentRefs node
+            parentIndices = otoParentContext $ parentRefs node
             -- In sparsely connected graphs (like ours) this will be effectively constant.
             childPosition j
               = toEnum . length . takeWhile (/= currInd) . IM.keys . childRefs $ refs ! j

@@ -28,7 +28,6 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Internal
   ) where
 
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (overlap)
 import           Analysis.Parsimony.Internal
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
@@ -36,19 +35,19 @@ import           Bio.Character.Exportable
 import           Bio.Metadata
 import           Control.Lens
 import           Data.Bits
-import           Data.Foldable
-import           Data.Foldable.Custom                                            (sum')
-import           Data.IntMap                                                     (IntMap)
-import qualified Data.IntMap                                                     as IM
+import           Data.Foldable.Custom                                   (sum')
+import           Data.IntMap                                            (IntMap)
+import qualified Data.IntMap                                            as IM
 import           Data.Key
-import           Data.List.NonEmpty                                              (NonEmpty ((:|)))
-import qualified Data.List.NonEmpty                                              as NE
-import           Data.List.Utility                                               (invariantTransformation)
+import           Data.List.NonEmpty                                     (NonEmpty ((:|)))
+import qualified Data.List.NonEmpty                                     as NE
+import           Data.List.Utility                                      (invariantTransformation)
 import           Data.MonoTraversable
+import           Data.Range
 import           Data.Semigroup
 import           Data.Word
 import           Numeric.Extended.Natural
-import           Prelude                                                         hiding (lookup)
+import           Prelude                                                hiding (lookup)
 
 
 -- |
@@ -77,23 +76,21 @@ sequentialAlignOverride = False
 selectDynamicMetric
   :: ( EncodableDynamicCharacter c
      , Exportable c
-     , HasDenseTransitionCostMatrix  dec (Maybe DenseTransitionCostMatrix)
-     , HasTransitionCostMatrix       dec (OverlapFunction (Element c))
+     , GetDenseTransitionCostMatrix    dec (Maybe DenseTransitionCostMatrix)
+     , GetPairwiseTransitionCostMatrix dec (OverlapFunction (Element c))
      , Ord (Element c)
      )
   => dec
   -> c
   -> c
   -> (Word, c, c, c, c)
-selectDynamicMetric candidate
+selectDynamicMetric meta
   | sequentialAlignOverride = undefined -- sequentialAlign sTCM
   | otherwise =
-      case candidate ^. denseTransitionCostMatrix of
+      case meta ^. denseTransitionCostMatrix of
         Just dm -> \x y -> foreignPairwiseDO x y dm
-        Nothing -> let !sTCM' = sTCM
-                   in  \x y -> ukkonenDO x y sTCM'
-  where
-    !sTCM = candidate ^. transitionCostMatrix
+        Nothing -> let !pTCM = meta ^. pairwiseTransitionCostMatrix
+                   in  \x y -> ukkonenDO x y pTCM
 
 
 -- |
@@ -110,7 +107,6 @@ directOptimizationPostorder pairwiseAlignment
   = postorderContext
       initializeLeaf
       (\_ (lChild, rChild) -> updateFromLeaves pairwiseAlignment (lChild, rChild))
-
 
 
 -- |
@@ -137,6 +133,7 @@ initializeLeaf =
 -- decoration. The recursive logic of the post-order traversal.
 updateFromLeaves
   :: ( EncodableDynamicCharacter c
+     , Exportable (Element c)
      )
   => PairwiseAlignment c
   -> (DynamicDecorationDirectOptimizationPostorderResult c, DynamicDecorationDirectOptimizationPostorderResult c)
@@ -155,7 +152,11 @@ updateFromLeaves pairwiseAlignment (lChild , rChild) = resultDecoration
 -- Parameterized over a 'PairwiseAlignment' function to allow for different
 -- atomic alignments depending on the character's metadata.
 directOptimizationPreorder
-  :: DirectOptimizationPostorderDecoration d c
+  :: ( DirectOptimizationPostorderDecoration d c
+     , Bound (Element c) ~ Word
+     , Ranged (Element c)
+--     , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
+     )
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
   -> PreorderContext d (DynamicDecorationDirectOptimization c)
@@ -195,7 +196,7 @@ lexicallyDisambiguate = omap disambiguateElement
 disambiguateElement :: FiniteBits b => b -> b
 disambiguateElement x = zed `setBit` idx
   where
-    idx = countLeadingZeros x
+    idx = min (finiteBitSize x - 1) $ countLeadingZeros x
     zed = x `xor` x
 
 
@@ -203,7 +204,11 @@ disambiguateElement x = zed `setBit` idx
 -- Use the decoration(s) of the ancestral nodes to calculate the corrent node
 -- decoration. The recursive logic of the pre-order traversal.
 updateFromParent
-  :: DirectOptimizationPostorderDecoration d c
+  :: ( DirectOptimizationPostorderDecoration d c
+     , Bound (Element c) ~ Word
+     , Ranged (Element c)
+--     , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
+     )
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
   -> d
@@ -237,7 +242,11 @@ updateFromParent pairwiseAlignment meta currentDecoration parentDecoration = res
 -- |
 -- A three way comparison of characters used in the DO preorder traversal.
 tripleComparison
-  :: DirectOptimizationPostorderDecoration d c
+  :: ( DirectOptimizationPostorderDecoration d c
+     , Ranged (Element c)
+     , Bound (Element c) ~ Word
+--     , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
+     )
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
   -> d
@@ -259,19 +268,19 @@ tripleComparison pairwiseAlignment meta childDecoration parentCharacter parentSi
     -- for all characters regardless of alphabet size on the pre-order.
     -- If we have a small alphabet, there will not have been a call to
     -- initialize a memoized TCM. We certainly don't want to force that here!
-    costStructure =
-        case meta ^. denseTransitionCostMatrix of
-                     -- TODO: Encapsilate this in DiscreteMetadataWithTCM
-          Nothing -> naiveMedianAndCost3D -- getMedianAndCost3D (meta ^. sparseTransitionCostMatrix)
-          -- Compute things naively
-          Just _  -> naiveMedianAndCost3D
+    costStructure = meta ^. threewayTransitionCostMatrix
+{-
+        case meta ^. sparseTransitionCostMatrix of
+          Just memo -> getMedianAndCost3D memo
+          Nothing   -> naiveMedianAndCost3D
       where
-        !scm = meta ^. symbolChangeMatrix
+        !tcm = meta ^. pairwiseTransitionCostMatrix
         !gap = gapOfStream parentCharacter
         !zed = gap `xor` gap
 
         singletonStates = (zed `setBit`) <$> [0 .. fromEnum (symbolCount zed) - 1]
-        naiveMedianAndCost3D a b c = unsafeToFinite <$> foldl' g (zed, infinity :: ExtendedNatural) singletonStates
+
+        naiveMedianAndCost3D a b c = foldl' g (zed, maxBound :: Word) singletonStates
           where
             g acc@(combinedState, curentMinCost) singleState =
                 case combinedCost `compare` curentMinCost of
@@ -279,8 +288,8 @@ tripleComparison pairwiseAlignment meta childDecoration parentCharacter parentSi
                   LT -> (                  singleState, combinedCost)
                   GT -> acc
               where
-                combinedCost = fromFinite . sum' $ snd . overlap scm singleState <$> [a, b, c]
-
+                combinedCost = sum' $ snd . tcm singleState <$> [a, b, c]
+-}
 
     single = lexicallyDisambiguate $ filterGaps almostSingle
     (_, ungapped, gapped)  = threeWayMean costStructure extendedParentFinal  extendedLeftCharacter1 extendedRightCharacter1
@@ -398,11 +407,12 @@ newGapLocations unaligned aligned
 -- Given a list of gap locations and a character, returns a longer character with
 -- the supplied gaps inserted at the corresponding locations.
 insertNewGaps :: EncodableDynamicCharacter c => IntMap Int -> c -> c
+-- TODO: The foldMapWithKey1 call takes up a lot of memory. Consider how to make this new dynamic character construction more efficient. Maybe use Control.Foldl?
 insertNewGaps insertionIndicies character = constructDynamic . appendGaps . foldMapWithKey1 f . NE.fromList $ otoList character
   where
     len = olength character
     gap = getGapElement $ character `indexStream` 0
-    appendGaps (x:|xs) = x:|(xs<>trailingGaps)
+    appendGaps (x:|xs) = x :| (xs <> trailingGaps)
     trailingGaps = maybe [] (`replicate` gap) $ len `lookup` insertionIndicies
 --    f :: Int -> a -> NonEmpty a
     f i e =

@@ -6,17 +6,10 @@ module PCG.Command.Report.Evaluate
   ( evaluate
   ) where
 
-
-import Bio.Character.Decoration.Dynamic
-import Bio.Character.Encodable
-import Bio.Character.Exportable
 import Bio.Graph
-import Bio.Graph.PhylogeneticDAG
 import Control.Monad.IO.Class
-import Data.Compact                     (getCompact)
+import Data.Compact                (getCompact)
 import Data.List.NonEmpty
-import Data.MonoTraversable
-import Data.Semigroup.Foldable
 import PCG.Command.Report
 import PCG.Command.Report.GraphViz
 import Text.XML
@@ -58,7 +51,7 @@ generateOutput
   -> FileStreamContext
 generateOutput g' format =
   case format of
-    Data {}    -> SingleStream $ either show showWithTotalEdgeCost  g
+    Data {}    -> SingleStream $ either show show g
     XML  {}    -> SingleStream $ either show (ppTopElement . toXML) g
     DotFile {} -> SingleStream $ generateDotFile g'
     _          -> ErrorCase "Unrecognized 'report' command"
@@ -97,7 +90,7 @@ generateOutput g ImpliedAlignmentCharacters {} =
                     zs -> MultiStream $ fromList zs
 -}
 
-
+{--
 showWithTotalEdgeCost
   :: ( HasSingleDisambiguation z c
      , EncodableDynamicCharacter c
@@ -125,7 +118,7 @@ showWithTotalEdgeCost x = unlines
     [ show $ fmap totalEdgeCosts . toNonEmpty <$> phylogeneticForests x
     , show x
     ]
-
+--}
 
 type FileContent = String
 

@@ -95,7 +95,7 @@ instance HasResolutions (PhylogeneticNode2 s n) (PhylogeneticNode2 s' n) (Resolu
 
     {-# INLINE _resolutions #-}
     _resolutions = lens resolutions (\p s -> p {resolutions = s})
-    
+
 
 -- |
 -- A 'Lens' for the 'nodeDecorationDatum' field.
@@ -103,7 +103,7 @@ instance HasResolutions (PhylogeneticNode2 s n) (PhylogeneticNode2 s' n) (Resolu
 class HasNodeDecorationDatum s t a b | s -> a, b s -> t where
 
     _nodeDecorationDatum :: Lens s t a b
-    
+
 
 instance HasNodeDecorationDatum (PhylogeneticNode2 s n) (PhylogeneticNode2 s n') n n' where
 

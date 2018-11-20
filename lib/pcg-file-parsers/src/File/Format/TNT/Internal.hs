@@ -583,11 +583,11 @@ assertIntegral labeling x
 -- |
 -- Parses a single character index or a contiguous character range.
 characterIndicies :: (MonadParsec e s m, Token s ~ Char) => m CharacterSet
-characterIndicies = choice $ try <$> [range, fromStart, single, toEnd, whole]
+characterIndicies = choice $ try <$> [range, fromStart, singleVal, toEnd, whole]
   where
     range     = Range     <$> num <* dot <*> num
     fromStart = FromStart <$> num <* dot
-    single    = Single    <$> num
+    singleVal = Single    <$> num
     toEnd     = dot *> (ToEnd <$> num)
     whole     = dot $>  Whole
     num       = symbol (nonNegInt <?> "sequence index value")

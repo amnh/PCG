@@ -25,7 +25,7 @@
 {-# LANGUAGE UndecidableInstances       #-}
 
 module Bio.Character.Encodable.Dynamic.Internal
-  ( DynamicCharacter (DC,Missing)
+  ( DynamicCharacter (DC, Missing)
   , DynamicCharacters
   , DynamicCharacterElement()
   ) where
@@ -47,7 +47,7 @@ import           Data.Hashable
 import           Data.Key
 import           Data.List.NonEmpty                    (NonEmpty (..))
 import qualified Data.List.NonEmpty                    as NE
-import           Data.List.Utility                     (invariantTransformation)
+import           Data.List.Utility                     (invariantTransformation, occurances)
 import           Data.Maybe                            (fromJust)
 import           Data.MonoTraversable
 import           Data.Range
@@ -287,7 +287,13 @@ instance MonoFunctor DynamicCharacter where
           []   -> bm
           dces -> case invariantTransformation finiteBitSize dces of
              Just i  -> DC . factorRows (toEnum i) $ foldMap unwrap dces
-             Nothing -> error "The mapping function over the Dynamic Character did not return *all* all elements of equal length."
+             Nothing -> error $ unlines
+                 [ "The mapping function over the Dynamic Character did not return *all* all elements of equal length."
+                 , show . occurances $ finiteBitSize <$> dces
+                 , show $ finiteBitSize <$> dces
+                 , unlines $ foldMap (\x -> if x then "1" else "0") . toBits . unwrap <$> dces
+                 , show bm
+                 ]
 
 
 instance MonoTraversable DynamicCharacterElement where
@@ -316,18 +322,22 @@ instance PossiblyMissingCharacter DynamicCharacter where
 
 instance Ranged DynamicCharacterElement where
 
-    toRange sc = fromTupleWithPrecision (firstSetBit, lastSetBit) totalBits
-        where
-            firstSetBit = toEnum $ countLeadingZeros sc
-            lastSetBit  = toEnum . max 0 $ totalBits - countTrailingZeros sc - 1
-            totalBits   = finiteBitSize sc
+    toRange dce = fromTupleWithPrecision (firstSetBit, lastSetBit) totalBits
+      where
+        firstSetBit = toEnum $ countLeadingZeros dce
+        lastSetBit  = toEnum . max 0 $ totalBits - countTrailingZeros dce - 1
+        totalBits   = finiteBitSize dce
 
-    fromRange x = zeroVector .|. (allBitsUpperBound `xor` allBitsLowerBound)
-        where
-            allBitsUpperBound = DCE . fromNumber (toEnum boundaryBit) $ (2 ^ upperBound x - 1 :: Integer)
-            allBitsLowerBound = DCE . fromNumber (toEnum boundaryBit) $ (2 ^ lowerBound x - 1 :: Integer)
-            zeroVector  = (zeroBits `setBit` boundaryBit) `clearBit` boundaryBit
-            boundaryBit = fromJust (precision x) - 1
+    fromRange x
+      | ub == lb  = toDCE $ 2 ^ ub
+      | otherwise = allBitsUpperBound `xor` allBitsLowerBound
+      where
+        toDCE = DCE . fromNumber dim
+        dim   = toEnum . fromJust $ precision x
+        ub    = upperBound x
+        lb    = lowerBound x
+        allBitsUpperBound = toDCE $ (2 :: Integer) ^ upperBound x - 1
+        allBitsLowerBound = toDCE $ (2 :: Integer) ^ lowerBound x - 1
 
     zeroRange sc = fromTupleWithPrecision (0,0) $ finiteBitSize sc
 

@@ -114,5 +114,12 @@ totalEdgeCosts (PDAG2 dag meta) = {-- toNonEmpty . --} applyWeights $ foldlWithK
                                              , show (x, key)
                                              ]) x) .
                         -}
-                        head . filter (/= key) .  IM.keys . childRefs $ refVec ! i
+              case filter (/= key) . IM.keys . childRefs $ refVec ! i of
+                x:_ -> x
+                _   -> error $ unlines
+                    [ "Found the empty list after filtering the child references which are not equal to the key."
+                    , "The key we are considering is: " <> show key
+                    , "The child index was: " <> show i
+                    , "The child references where: " <> show (IM.keys . childRefs $ refVec ! i)
+                    ]
 

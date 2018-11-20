@@ -17,12 +17,12 @@
 
 module Bio.Metadata.DiscreteWithTCM.Class
   ( DiscreteWithTcmCharacterMetadata()
+  , GetSymbolChangeMatrix(..)
+  , GetPairwiseTransitionCostMatrix(..)
+  , GetSparseTransitionCostMatrix(..)
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)
-  , HasSymbolChangeMatrix(..)
-  , HasTransitionCostMatrix(..)
-  , HasSparseTransitionCostMatrix(..)
   ) where
 
 import Bio.Character.Encodable
@@ -35,30 +35,30 @@ import Control.Lens
 -- appropriate 'Lens' & character class constraints.
 class ( DiscreteCharacterMetadata     s
       , EncodableStreamElement        c
-      , HasSymbolChangeMatrix         s (Word -> Word -> Word)
-      , HasTransitionCostMatrix       s (c -> c -> (c, Word))
+      , GetSymbolChangeMatrix         s (Word -> Word -> Word)
+      , GetPairwiseTransitionCostMatrix       s (c -> c -> (c, Word))
       ) => DiscreteWithTcmCharacterMetadata s c | s -> c where
 
 
 -- |
--- A 'Lens' for the 'symbolChangeMatrix' field
-class HasSymbolChangeMatrix s a | s -> a where
+-- A 'Getter' for the 'symbolChangeMatrix' field
+class GetSymbolChangeMatrix s a | s -> a where
 
     {-# MINIMAL symbolChangeMatrix #-}
-    symbolChangeMatrix :: Lens' s a
+    symbolChangeMatrix :: Getter s a
 
 
 -- |
--- A 'Lens' for the 'transitionCostMatrix' field
-class HasTransitionCostMatrix s a | s -> a where
+-- A 'Getter' for the 'pairwiseTransitionCostMatrix' field
+class GetPairwiseTransitionCostMatrix s a | s -> a where
 
-    {-# MINIMAL transitionCostMatrix #-}
-    transitionCostMatrix  :: Lens' s a
+    {-# MINIMAL pairwiseTransitionCostMatrix #-}
+    pairwiseTransitionCostMatrix  :: Getter s a
 
 
 -- |
--- A 'Lens' for the 'denseTransitionCostMatrix' field
-class HasSparseTransitionCostMatrix s a | s -> a where
+-- A 'Getter' for the 'denseTransitionCostMatrix' field
+class GetSparseTransitionCostMatrix s a | s -> a where
 
     {-# MINIMAL sparseTransitionCostMatrix #-}
-    sparseTransitionCostMatrix  :: Lens' s a
+    sparseTransitionCostMatrix  :: Getter s a

@@ -431,11 +431,8 @@ powerSet = filterM (const [False,True])
 
 
 parseInternal
-  :: ( LineToken (Token s)
-     , ShowToken (Token s)
-     , Stream s
-     )
+  :: Stream s
   => Parsec Void s a
   -> s
   -> Either String a
-parseInternal p s = first (parseErrorPretty' s) $ parse p "test-stream" s
+parseInternal p s = first errorBundlePretty $ parse p "test-stream" s

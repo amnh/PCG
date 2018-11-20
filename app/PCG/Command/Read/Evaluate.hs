@@ -9,6 +9,7 @@ module PCG.Command.Read.Evaluate
 import           Bio.Character.Parsed
 import           Bio.Graph
 import           Bio.Graph.Forest.Parsed
+import           Bio.Metadata
 import           Bio.Metadata.Parsed
 import           Control.Monad                             (when)
 import           Control.Monad.IO.Class
@@ -59,7 +60,7 @@ import           System.FilePath.Glob
 import           Text.Megaparsec
 
 
-parse' :: Parsec Void s a -> String -> s -> Either (ParseError (Token s) Void) a
+parse' :: Parsec Void s a -> String -> s -> Either (ParseErrorBundle s Void) a
 parse' = parse
 
 
@@ -147,7 +148,7 @@ fastaWithValidator validator spec = getSpecifiedContent spec >>= (ExceptT . pure
     parse'' :: FileResult -> Either ReadError FracturedParseResult
     parse'' (path, content) = toFractured Nothing path <$> parseResult
       where
-        parseResult = first (unparsable content) $ parse' combinator path content
+        parseResult = first unparsable $ parse' combinator path content
         combinator  = validator =<< fastaStreamParser
 
 
@@ -166,7 +167,7 @@ parseAndSetTCM
 parseAndSetTCM tcmPath fprs = do
     (path, content) <- getSpecifiedTcm tcmPath
     tcmVal <- ExceptT . pure
-            . first (unparsable content)
+            . first unparsable
             $ parse' tcmStreamParser path content
     pure $ setTcm tcmVal <$> fprs
 
@@ -185,7 +186,7 @@ parseCustomAlphabet dataFilePaths tcmPath = getSpecifiedContent spec
     parse'' :: DataContent -> Either ReadError FracturedParseResult
     parse'' (DataContent (path, content) _) = fracturedResult
       where
-        fracturedResult = first (unparsable content)
+        fracturedResult = first unparsable
                         $ parse' (try fastaCombinator <|> fastcCombinator) path content
         fastcCombinator = fmap (toFractured Nothing path) fastcStreamParser
         fastaCombinator = fmap (toFractured Nothing path) $
@@ -206,7 +207,7 @@ progressiveParse inputPath = do
     -- Otherwise collect all parse errors in the Right value
     case traverse (\f -> f filePath fileContent) parsers of
       Left  fpr    -> pure fpr
-      Right errors -> throwE . unparsable fileContent $
+      Right errors -> throwE . unparsable $
                         if   preferredFound
                         then NE.head errors
                         else maximumBy (comparing farthestParseErr) errors
@@ -215,8 +216,8 @@ progressiveParse inputPath = do
     -- We use this to find the parser which got farthest through the stream
     -- before failing, but only when we didn't find a preferred parser to try
     -- first.
-    farthestParseErr :: ParseError t e -> SourcePos
-    farthestParseErr = maximum . errorPos
+    farthestParseErr :: ParseErrorBundle s e -> Int
+    farthestParseErr = pstateOffset . bundlePosState
 
     -- |
     -- Takes a file extension and returns the /ordered/ list of parsers to try.
@@ -275,12 +276,11 @@ progressiveParse inputPath = do
           :: ( ParsedMetadata a
              , ParsedCharacters a
              , ParsedForest a
-             , Token s ~ Char
              )
           => Parsec Void s a
           -> FilePath
           -> s
-          -> Either FracturedParseResult (ParseError (Token s) Void)
+          -> Either FracturedParseResult (ParseErrorBundle s Void)
         makeParser parser path = eSwap . fmap (toFractured Nothing path) . parse' parser path
           where
             eSwap (Left  x) = Right x

@@ -27,7 +27,6 @@ module Analysis.Scoring
   , wipeScoring
   ) where
 
-
 import           Analysis.Parsimony.Additive.Internal
 import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Analysis.Parsimony.Fitch.Internal
@@ -51,7 +50,6 @@ import           Data.Vector                                   (Vector)
 
 import           Bio.Character.Decoration.Continuous
 import           Bio.Metadata
-
 
 
 -- |
@@ -121,7 +119,6 @@ performDecoration
   -> FinalDecorationDAG
 performDecoration x = finalizeEdgeData $ performPreorderDecoration performPostorderDecoration
   where
-
     finalizeEdgeData :: PreOrderDecorationDAG -> FinalDecorationDAG
     finalizeEdgeData = setEdgeSequences
                          (const additivePostorder :: ContinuousCharacterMetadataDec -> ContinuousOptimizationDecoration ContinuousCharacter -> [ContinuousOptimizationDecoration ContinuousCharacter] -> ContinuousOptimizationDecoration ContinuousCharacter)

@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Graph.EdgeSet
+-- Module      :  Data.EdgeSet
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -18,18 +18,21 @@
 module Data.EdgeSet
   ( EdgeSet()
 --  , NetworkDisplayEdgeSet(..)
-  , SetLike(difference, union)
+--  , SetLike(difference, union, intersection)
 --  , collapseToEdgeSet
 --  , fromEdgeSets
+  , disjoint
+  , makeParentEdgeSet
+--  , member
   , singletonEdgeSet
+--  , toIntSet
   ) where
 
 
 import           Control.DeepSeq
 import           Data.Foldable
-import           Data.Foldable.Custom (sum')
-import           Data.Key
-import           Data.List.NonEmpty   (NonEmpty (..))
+import           Data.IntSet          (IntSet)
+import           Data.MonoTraversable (MonoFoldable (..))
 import           Data.Semigroup
 import           Data.Set             (Set)
 import qualified Data.Set             as Set
@@ -44,7 +47,7 @@ import           Prelude              hiding (zipWith)
 newtype EdgeSet e = ES (Set e)
   deriving (Eq, Foldable, Generic, Monoid, Ord, Semigroup)
 
-
+{--
 -- |
 -- Represents multiple disconnected collections of edges.
 --
@@ -122,11 +125,16 @@ instance Ord a => SetLike (Set a) where
 
     union        = Set.union
 
+--}
+
+instance NFData e => NFData (EdgeSet e) where
+
+    rnf (ES set) = rnf set
+
 
 instance Show a => Show (EdgeSet a) where
 
   show (ES xs) = show (toList xs)
-
 
 {-
 -- |
@@ -143,9 +151,41 @@ fromEdgeSets = NDES
 -}
 
 
+{-
+-- |
+-- Get 'IntSet' from all nodes in an 'EdgeSet'
+toIntSet :: EdgeSet (Int, Int) -> IntSet
+toIntSet = foldMap edgeToIntSet
+  where
+    edgeToIntSet :: (Int, Int) -> IntSet
+    edgeToIntSet (ind1, ind2) = singleton ind1 <> singleton ind2
+
+-- |
+-- Determine if a term is a member of an 'EdgeSet'
+member :: Ord e => e -> EdgeSet e -> Bool
+member e (ES edgeSet) = e `Set.member` edgeSet
+-}
+
+
+-- |
+-- Check if two edge sets have any intersection.
+disjoint :: Ord e => EdgeSet e -> EdgeSet e -> Bool
+disjoint (ES edgeSet1) (ES edgeSet2) = edgeSet1 `Set.disjoint` edgeSet2
+
+
 -- |
 -- Construct a singleton 'EdgeSet' value. Use the semigroup operator '(<>)' to
 -- construct a larger 'EdgeSet'. This enforces the non-empty invariant of the
 -- 'EdgeSet' data structure.
 singletonEdgeSet :: e -> EdgeSet e
 singletonEdgeSet = ES . Set.singleton
+
+
+-- |
+-- Take node index and the parent indices and add the edge from parent to node.
+-- This is only intended to be used on non-root nodes.
+makeParentEdgeSet
+  :: Int                -- ^ Current node index
+  -> IntSet             -- ^ Parent indices
+  -> EdgeSet (Int, Int)
+makeParentEdgeSet currInd = ofoldMap (\parInd -> singletonEdgeSet (parInd, currInd))
