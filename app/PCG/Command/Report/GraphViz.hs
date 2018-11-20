@@ -24,9 +24,9 @@ import           Data.GraphViz.Printing
 import qualified Data.Text.Lazy         as L
 
 
-generateDotFile :: Compact GraphState -> String
+generateDotFile :: GraphState -> String
 generateDotFile = (<> "\n") . L.unpack . renderDot . getDotGraph
 
 
-getDotGraph :: Compact GraphState -> DotCode
+getDotGraph :: GraphState -> DotCode
 getDotGraph = either toDot toDot . getCompact

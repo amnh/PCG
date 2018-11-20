@@ -9,5 +9,5 @@ import Data.Functor           (($>))
 import PCG.Command.Echo
 
 
-evaluate :: EchoCommand -> Compact GraphState -> SearchState
+evaluate :: EchoCommand -> GraphState -> SearchState
 evaluate (EchoCommand message) g = liftIO (putStrLn message) $> g

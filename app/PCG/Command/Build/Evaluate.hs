@@ -56,7 +56,7 @@ type DatNode =
 
 evaluate
   :: BuildCommand
-  -> Compact GraphState
+  -> GraphState
   -> SearchState
 evaluate (BuildCommand trajectoryCount buildType) cpctInState =
     case getCompact cpctInState of

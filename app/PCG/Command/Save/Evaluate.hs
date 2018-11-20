@@ -15,7 +15,7 @@ import PCG.Command.Save
 evaluate :: SaveCommand -> GraphState -> SearchState
 evaluate (SaveCommand filePath serial) g =
   case serial of
-    Compact -> liftIO (writeCompact filePath g) $> g
+    Compact -> liftIO $ (writeCompact filePath g) $> g
     Binary  ->
       do
         let graph  = getCompact g

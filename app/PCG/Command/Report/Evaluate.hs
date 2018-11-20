@@ -15,7 +15,7 @@ import PCG.Command.Report.GraphViz
 import Text.XML
 
 
-evaluate :: ReportCommand -> Compact GraphState -> SearchState
+evaluate :: ReportCommand -> GraphState -> SearchState
 evaluate (ReportCommand format target) stateValue = do
     _ <- case generateOutput stateValue format of
            ErrorCase    errMsg  -> fail errMsg
@@ -46,7 +46,7 @@ generateOutput :: (Show c, Show t, ToXML c)
                -> FileStreamContext
 -}
 generateOutput
-  :: Compact GraphState
+  :: GraphState
   -> OutputFormat
   -> FileStreamContext
 generateOutput g' format =
