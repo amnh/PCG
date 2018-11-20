@@ -32,8 +32,6 @@ import Data.Range
 import Numeric.Extended
 
 {-
-  TODO: Add these trees to the new test suite
-
   To test pre-order additive logic Case 1:
     ((A, B), C)
     A: 1

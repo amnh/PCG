@@ -12,13 +12,13 @@ import Data.Either
 import Data.Void
 import Test.Tasty.HUnit
 import Text.Megaparsec       (Parsec, parse)
-import Text.Megaparsec.Error (parseErrorPretty)
+import Text.Megaparsec.Error (errorBundlePretty)
 
 
 parseEquals :: (Eq a, Show a) => Parsec Void String a -> String -> a -> Assertion
 parseEquals parser input expected =
   case result of
-    Left  x -> assertFailure $ parseErrorPretty x
+    Left  x -> assertFailure $ errorBundlePretty x
     Right x -> assertEqual ("Parse result of :" <> show input) expected x
   where
     result = parse parser "" input
@@ -34,7 +34,7 @@ parseFailure parser input =
 parseSuccess :: Parsec Void String a -> String -> Assertion
 parseSuccess parser input =
   case result of
-    Left  x -> assertFailure $ parseErrorPretty x
+    Left  x -> assertFailure $ errorBundlePretty x
     Right _ -> () @=? ()
   where
     result = parse parser "" input

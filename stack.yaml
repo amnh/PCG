@@ -8,6 +8,7 @@ extra-deps:
   - pretty-tree-0.1.0.0
   - compact-0.1.0.1
   - tasty-rerun-1.1.12
+  - megaparsec-7.0.4
 
 flags: {}
 

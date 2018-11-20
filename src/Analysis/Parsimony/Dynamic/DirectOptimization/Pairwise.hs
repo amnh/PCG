@@ -18,7 +18,6 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
   , filterGaps
   , foreignPairwiseDO
   , foreignThreeWayDO
-  , generateDenseTransitionCostMatrix
   , getOverlap
   , minimalChoice
   , naiveDO

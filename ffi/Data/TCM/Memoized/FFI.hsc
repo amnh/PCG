@@ -22,9 +22,13 @@ module Data.TCM.Memoized.FFI
   -- * Utility functions
   , calculateBufferLength
   , coerceEnum
-  , constructCharacterFromExportable
-  , constructElementFromExportable
+  -- * Constructors
+  , constructCharacter
+  , constructElement
   , constructEmptyElement
+  -- * Destructors 
+  , destructCharacter
+  , destructElement
   ) where
 
 import Bio.Character.Exportable.Class
@@ -78,6 +82,11 @@ data MemoizedCostMatrix
    = MemoizedCostMatrix
    { costMatrix :: StablePtr ForeignVoid
    } deriving (Eq, Generic)
+
+
+instance Show MemoizedCostMatrix where
+
+    show = const "(MemoizedCostMatrix ?)"
 
 
 {--
@@ -237,9 +246,11 @@ foreign import ccall unsafe "costMatrix getCostAndMedian3D"
 getMemoizedCostMatrix :: Word
                       -> (Word -> Word -> Word)
                       -> MemoizedCostMatrix
-getMemoizedCostMatrix alphabetSize costFn = unsafePerformIO . withArray rowMajorList $ \allocedTCM -> do
-    !resultPtr <- initializeMemoizedCMfn_c (coerceEnum alphabetSize) allocedTCM
-    pure $ MemoizedCostMatrix resultPtr
+getMemoizedCostMatrix alphabetSize costFn = unsafePerformIO . withArray rowMajorList $
+    -- The array 'allocedTCM' is free'd at the end of the IO code in the do block's scope.
+    \allocedTCM -> do
+        !resultPtr <- initializeMemoizedCMfn_c (coerceEnum alphabetSize) allocedTCM
+        pure $ MemoizedCostMatrix resultPtr
   where
     rowMajorList = [ coerceEnum $ costFn i j | i <- range,  j <- range ]
     range = [0 .. alphabetSize - 1]
@@ -255,11 +266,14 @@ getMemoizedCostMatrix alphabetSize costFn = unsafePerformIO . withArray rowMajor
 getMedianAndCost2D :: Exportable s => MemoizedCostMatrix -> s -> s -> (s, Word)
 getMedianAndCost2D memo e1 e2 = unsafePerformIO $ do
     medianPtr     <- constructEmptyElement alphabetSize
-    e1'           <- constructElementFromExportable e1
-    e2'           <- constructElementFromExportable e2
+    e1'           <- constructElement e1
+    e2'           <- constructElement e2
     !cost         <- getCostAndMedian2D_c e1' e2' medianPtr (costMatrix memo)
+    _             <- destructElement e1'
+    _             <- destructElement e2'
     medianElement <- peek medianPtr
     medianValue   <- fmap buildExportable . peekArray bufferLength $ characterElement medianElement
+    _             <- destructElement medianPtr
     pure (medianValue, coerceEnum cost)
   where
     alphabetSize    = exportedElementWidthSequence $ toExportableBuffer e1
@@ -277,12 +291,16 @@ getMedianAndCost2D memo e1 e2 = unsafePerformIO $ do
 getMedianAndCost3D :: Exportable s => MemoizedCostMatrix -> s -> s -> s -> (s, Word)
 getMedianAndCost3D memo e1 e2 e3 = unsafePerformIO $ do
     medianPtr     <- constructEmptyElement alphabetSize
-    e1'           <- constructElementFromExportable e1
-    e2'           <- constructElementFromExportable e2
-    e3'           <- constructElementFromExportable e3
+    e1'           <- constructElement e1
+    e2'           <- constructElement e2
+    e3'           <- constructElement e3
     !cost         <- getCostAndMedian3D_c e1' e2' e3' medianPtr (costMatrix memo)
+    _             <- destructElement e1'
+    _             <- destructElement e2'
+    _             <- destructElement e3'
     medianElement <- peek medianPtr
     medianValue   <- fmap buildExportable . peekArray bufferLength $ characterElement medianElement
+    _             <- destructElement medianPtr
     pure (medianValue, coerceEnum cost)
   where
     alphabetSize    = exportedElementWidthSequence $ toExportableBuffer e1
@@ -316,8 +334,10 @@ coerceEnum = toEnum . fromEnum
 -- Malloc and populate a pointer to an exportable representation of the
 -- 'Exportable' value. The supplied value is assumed to be a dynamic character
 -- and the result is a pointer to a C representation of a dynamic character.
-constructCharacterFromExportable :: Exportable s => s -> IO (Ptr CDynamicChar)
-constructCharacterFromExportable exChar = do
+--
+-- Call 'destructCharacter' to free the resulting pointer.
+constructCharacter :: Exportable s => s -> IO (Ptr CDynamicChar)
+constructCharacter exChar = do
     valueBuffer <- newArray $ exportedBufferChunks exportableBuffer
     charPointer <- malloc :: IO (Ptr CDynamicChar)
     let charValue = CDynamicChar (coerceEnum width) (coerceEnum count) bufLen valueBuffer
@@ -337,8 +357,10 @@ constructCharacterFromExportable exChar = do
 -- 'Exportable' value. The supplied value is assumed to be a dynamic character
 -- element and the result is a pointer to a C representation of a dynamic
 -- character element.
-constructElementFromExportable :: Exportable s => s -> IO (Ptr DCElement)
-constructElementFromExportable exChar = do
+--
+-- Call 'destructElement' to free the resulting pointer.
+constructElement :: Exportable s => s -> IO (Ptr DCElement)
+constructElement exChar = do
     valueBuffer    <- newArray $ exportedBufferChunks exportableBuffer
     elementPointer <- malloc :: IO (Ptr DCElement)
     let elementValue = DCElement (coerceEnum width) valueBuffer
@@ -354,6 +376,8 @@ constructElementFromExportable exChar = do
 --
 -- Malloc and populate a pointer to a C representation of a dynamic character.
 -- The buffer of the resulting value is intentially zeroed out.
+--
+-- Call 'destructElement' to free the resulting pointer.
 constructEmptyElement :: Word -- ^ Bit width of a dynamic character element.
                       -> IO (Ptr DCElement)
 constructEmptyElement alphabetSize = do
@@ -364,3 +388,25 @@ constructEmptyElement alphabetSize = do
     pure elementPointer
   where
     bufferLength = calculateBufferLength alphabetSize 1
+
+
+-- |
+-- /O(1)/
+--
+-- Free's a character allocated by a call to 'constructCharacter'.
+destructCharacter :: Ptr CDynamicChar -> IO ()
+destructCharacter p = do
+    !e <- peek p
+    !_ <- free (dynChar e)
+    free p
+
+
+-- |
+-- /O(1)/
+--
+-- Free's a character allocated by a call to 'constructElement' or 'constructEmptyElement'.
+destructElement :: Ptr DCElement -> IO ()
+destructElement p = do
+    !e <- peek p
+    !_ <- free (characterElement e)
+    free p
