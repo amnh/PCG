@@ -74,5 +74,5 @@ TAGS
 production/bin
 production/doc/haddock/*
 production/doc/haddock*
-*/log.err
-*/log.out
+*log.err
+*log.out

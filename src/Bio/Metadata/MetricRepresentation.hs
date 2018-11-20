@@ -26,8 +26,12 @@ module Bio.Metadata.MetricRepresentation
   , retreiveThreewayTCM
   ) where
 
+import Control.Arrow          ((&&&))
 import Control.DeepSeq
 import Data.Bits
+import Data.Foldable
+import Data.List              (sortBy)
+import Data.Ord               (comparing)
 import Data.Range
 import Data.TCM        as TCM
 import GHC.Generics    hiding (to)
@@ -155,14 +159,6 @@ firstLinearNormPairwiseLogic lhs rhs = (fromRange newInterval, cost)
       | otherwise     = upperBound newInterval - lowerBound newInterval
 
 
--- |
--- if           x    ⋂    y    ⋂    z    ≠ Ø ⮕  (    x    ⋂    y    ⋂    z    , 0)
---
--- else if   (x ⋂ y) ⋃ (x ⋂ z) ⋃ (y ⋂ z) ≠ Ø ⮕  ( (x ⋂ y) ⋃ (x ⋂ z) ⋃ (y ⋂ z) , 1)
---
--- otherwise (no intersections)              ⮕  (   y    , lowerBound y - upperBound x + lowerBound z - upperBound y)
---
---
 firstLinearNormThreewayLogic
   :: ( Ord (Bound a)
      , Ranged a
@@ -177,17 +173,28 @@ firstLinearNormThreewayLogic
   -> b
   -> c
   -> (d, Bound a)
-firstLinearNormThreewayLogic x y z = (fromRange newInterval, cost)
+firstLinearNormThreewayLogic x y z
+  | and intersections = (fromRange fullIntersection, 0)
+  | or  intersections = paritalIntersection
+  | otherwise         = (fromRange y', lowerBound y' - upperBound x' + lowerBound z' - upperBound y')
   where
-    x' = toRange x
-    y' = toRange y
-    z' = toRange y
+    [x', y', z'] = sortBy (comparing lowerBound)
+                 $ [toRange x, toRange y, toRange z]
 
-    newInterval
-      | isOverlapping = x' `intersection`   y'
-      | otherwise     = x' `smallestClosed` y'
-    isOverlapping     = x' `intersects`     y'
+    intersections =
+        [ x' `intersects` y'
+        , x' `intersects` z'
+        , y' `intersects` z'
+        ]
 
-    cost
-      | isOverlapping = 0
-      | otherwise     = upperBound newInterval - lowerBound newInterval
+    fullIntersection = x' `intersection` y' `intersection` z'
+
+    paritalIntersection = minimumBy (comparing snd)
+        [ getSmallestClosed x' y' z'
+        , getSmallestClosed x' z' y'
+        , getSmallestClosed y' z' x'
+        ]
+
+    getSmallestClosed i j k =
+      let v = (i `intersection` j) `smallestClosed` k
+      in  (fromRange v, upperBound v - lowerBound v)
