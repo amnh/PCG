@@ -2,10 +2,12 @@
 
 module Main where
 
+import Control.Concurrent
 import Control.DeepSeq
 import Control.Parallel.Strategies
 import Control.Parallel.Custom
 import Data.Bits
+import Data.Functor
 import Data.Foldable
 import Data.Hashable.Memoize
 import Data.List (zip3)
@@ -13,12 +15,13 @@ import Data.Time.Clock
 import Data.Word
 import System.Random
 import System.Random.Shuffle
+import System.IO.Unsafe
 
 
 main :: IO ()
 main = do
-   let !memo =  memoize expensiveFunction
-   let !gen  =  sequenceA $ replicate (1024^2) randomIO :: IO [Word]
+   let !memo =  memoize delayWork -- expensiveFunction
+   let !gen  =  sequenceA $ replicate 16 randomIO :: IO [Word]
    args      <- zip3 <$> gen <*> gen <*> gen
    args'     <- force <$> shuffleM args
    !t0       <- getCurrentTime
@@ -50,6 +53,8 @@ main = do
 sum' :: Foldable f => f Word -> Word
 sum' = foldl' (+) 0
 
+delayWork (x,_,_) = unsafePerformIO (threadDelay (1000000 + fromEnum (min x 1000000)) $> 0)
+
 
 expensiveFunction
   :: ( FiniteBits a
@@ -58,7 +63,7 @@ expensiveFunction
      )
   => (a, b, c)
   -> Word
-expensiveFunction (x, y, z) = force $ f (finiteBitSize x) 0
+expensiveFunction (x, y, z) = f (finiteBitSize x) 0
   where
     f 0 v = v
     f m v = v + g m (finiteBitSize y) 0
