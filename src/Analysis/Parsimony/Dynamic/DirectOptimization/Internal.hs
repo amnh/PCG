@@ -33,9 +33,11 @@ import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
 import           Bio.Character.Exportable
 import           Bio.Metadata
+import           Control.DeepSeq
 import           Control.Lens
 import           Data.Bits
 import           Data.Foldable.Custom                                   (sum')
+import           Data.Hashable
 import           Data.IntMap                                            (IntMap)
 import qualified Data.IntMap                                            as IM
 import           Data.Key
@@ -154,6 +156,9 @@ updateFromLeaves pairwiseAlignment (lChild , rChild) = resultDecoration
 directOptimizationPreorder
   :: ( DirectOptimizationPostorderDecoration d c
      , Bound (Element c) ~ Word
+     , Eq (Element c)
+     , Hashable (Element c)
+     , NFData (Element c)
      , Ranged (Element c)
 --     , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
      )
@@ -206,6 +211,9 @@ disambiguateElement x = zed `setBit` idx
 updateFromParent
   :: ( DirectOptimizationPostorderDecoration d c
      , Bound (Element c) ~ Word
+     , Eq (Element c)
+     , Hashable (Element c)
+     , NFData (Element c)
      , Ranged (Element c)
 --     , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
      )
@@ -245,7 +253,10 @@ tripleComparison
   :: ( DirectOptimizationPostorderDecoration d c
      , Ranged (Element c)
      , Bound (Element c) ~ Word
---     , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
+     , Eq (Element c)
+     , Hashable (Element c)
+     , NFData (Element c)
+     --     , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
      )
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)

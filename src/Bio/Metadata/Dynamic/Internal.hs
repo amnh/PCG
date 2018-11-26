@@ -10,6 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE BangPatterns           #-}
 {-# LANGUAGE ConstraintKinds        #-}
 {-# LANGUAGE DeriveAnyClass         #-}
 {-# LANGUAGE DeriveGeneric          #-}
@@ -48,22 +49,29 @@ import           Bio.Metadata.DiscreteWithTCM
 import           Bio.Metadata.Dynamic.Class
 import           Bio.Metadata.MetricRepresentation
 import           Control.DeepSeq
+import           Control.Foldl                            (Fold (..))
+import qualified Control.Foldl                     as F
 import           Control.Lens                      hiding (Fold)
 import           Control.Monad.State.Strict
 import           Data.Alphabet
+import           Data.Bits
 import           Data.Foldable
-import           Data.List                         (intercalate)
-import           Data.List.NonEmpty                (NonEmpty (..))
+import           Data.Hashable
+import           Data.Hashable.Memoize
+import           Data.List                                (intercalate)
+import           Data.List.NonEmpty                       (NonEmpty (..))
 import           Data.Maybe
+import           Data.MonoTraversable
 import           Data.Ord
 import           Data.Range
 import           Data.Semigroup
+import           Data.Semigroup.Foldable
 import           Data.TCM
 import qualified Data.TCM                          as TCM
 import           Data.TCM.Dense
 import           Data.TCM.Memoized
 import           Data.TopologyRepresentation
-import           GHC.Generics                      (Generic)
+import           GHC.Generics                             (Generic)
 import           Prelude                           hiding (lookup)
 import           Text.XML
 
@@ -148,12 +156,12 @@ instance DiscreteCharacterMetadata (DynamicCharacterMetadataDec c) where
 
 
 -- | (✔)
-instance (Bound c ~ Word, EncodableStreamElement c, Exportable c, Ranged c)
+instance (Bound c ~ Word, EncodableStreamElement c, Exportable c, Eq c, Hashable c, NFData c, Ranged c)
     => DiscreteWithTcmCharacterMetadata (DynamicCharacterMetadataDec c) c where
 
 
 -- | (✔)
-instance (Bound c ~ Word, EncodableStreamElement c, Exportable c, Ranged c)
+instance (Bound c ~ Word, EncodableStreamElement c, Exportable c, Eq c, Hashable c, NFData c, Ranged c)
     => DynamicCharacterMetadata (DynamicCharacterMetadataDec c) c where
 
     {-# INLINE extractDynamicCharacterMetadata #-}
@@ -209,14 +217,14 @@ instance GetSymbolChangeMatrix (DynamicCharacterMetadataDec c) (Word -> Word -> 
 
 
 -- | (✔)
-instance (Bound c ~ Word, EncodableStreamElement c, Exportable c, Ranged c)
+instance (Bound c ~ Word, EncodableStreamElement c, Exportable c, Eq c, Hashable c, NFData c, Ranged c)
     => GetPairwiseTransitionCostMatrix (DynamicCharacterMetadataDec c) (c -> c -> (c, Word)) where
 
     pairwiseTransitionCostMatrix = to extractPairwiseTransitionCostMatrix
 
 
 -- | (✔)
-instance (Bound c ~ Word, EncodableStreamElement c, Exportable c, Ranged c)
+instance (Bound c ~ Word, EncodableStreamElement c, Exportable c, Eq c, Hashable c, NFData c, Ranged c)
     => GetThreewayTransitionCostMatrix (DynamicCharacterMetadataDec c) (c -> c -> c -> (c, Word)) where
 
     threewayTransitionCostMatrix = to extractThreewayTransitionCostMatrix
@@ -299,9 +307,14 @@ maybeConstructDenseTransitionCostMatrix alpha sigma = force f
 --
 -- Correctly select the most efficient TCM function based on the alphabet size
 -- and metric specification.
+{-# INLINE extractPairwiseTransitionCostMatrix #-}
+{-# SPECIALISE extractPairwiseTransitionCostMatrix :: DynamicCharacterMetadataDec DynamicCharacterElement -> DynamicCharacterElement -> DynamicCharacterElement -> (DynamicCharacterElement, Word) #-}
 extractPairwiseTransitionCostMatrix
   :: ( Exportable c
      , EncodableStreamElement c
+     , Eq c
+     , Hashable c
+     , NFData c
      , Ranged c
      , Bound c ~ Word
      )
@@ -311,10 +324,10 @@ extractPairwiseTransitionCostMatrix
   -> (c, Word)
 extractPairwiseTransitionCostMatrix = retreivePairwiseTCM handleGeneralCases . structuralRepresentationTCM
   where
-    handleGeneralCases _ v =
+    handleGeneralCases scm v =
         case v of
-          Left dense -> lookupPairwise dense
-          Right memo -> getMedianAndCost2D memo
+          Left  dense -> lookupPairwise dense
+          Right _memo -> memoize2 $ overlap2 (\i j -> toEnum . fromEnum $ scm TCM.! (fromEnum i, fromEnum j)) --getMedianAndCost2D memo
 
 
 -- |
@@ -322,9 +335,14 @@ extractPairwiseTransitionCostMatrix = retreivePairwiseTCM handleGeneralCases . s
 --
 -- Correctly select the most efficient TCM function based on the alphabet size
 -- and metric specification.
+{-# INLINE extractThreewayTransitionCostMatrix #-}
+{-# SPECIALISE extractThreewayTransitionCostMatrix :: DynamicCharacterMetadataDec DynamicCharacterElement -> DynamicCharacterElement -> DynamicCharacterElement -> DynamicCharacterElement -> (DynamicCharacterElement, Word) #-}
 extractThreewayTransitionCostMatrix
   :: ( Exportable c
      , EncodableStreamElement c
+     , Eq c
+     , Hashable c
+     , NFData c
      , Ranged c
      , Bound c ~ Word
      )
@@ -335,21 +353,11 @@ extractThreewayTransitionCostMatrix
   -> (c, Word)
 extractThreewayTransitionCostMatrix = retreiveThreewayTCM handleGeneralCases . structuralRepresentationTCM
   where
-    handleGeneralCases _ v =
+    handleGeneralCases scm v =
         case v of
-          Left dense -> lookupThreeway dense
-          Right memo -> getMedianAndCost3D memo
+          Left  dense -> lookupThreeway dense
+          Right _memo -> memoize3 $ overlap3 (\i j -> toEnum . fromEnum $ scm TCM.! (fromEnum i, fromEnum j)) --getMedianAndCost3D memo
 
-
-{-
--- |
--- An overlap function that applies the discrete metric to aligning two elements.
-discreteOverlap :: EncodableStreamElement e => e -> e -> (e, Word)
-discreteOverlap lhs rhs
-  | intersect == zeroBits = (lhs .|. rhs, 1)
-  | otherwise             = (intersect  , 0)
-  where
-    intersect = lhs .&. rhs
 
 
 -- |
@@ -363,26 +371,27 @@ discreteOverlap lhs rhs
 -- combinations, so for instance, if @ char1 == A,T @ and @ char2 == G,C @, and
 -- the two (non-overlapping) least cost pairs are A,C and T,G, then the return
 -- value is A,C,G,T.
-overlap :: (EncodableStreamElement e {- , Show e -}) => (Word -> Word -> Word) -> e -> e -> (e, Word)
-overlap costStruct char1 char2
-  | intersectionStates == zero = deriveOverlap costStruct char1 char2 -- minimalChoice $ symbolDistances costStruct char1 char2
-  | otherwise                  = (intersectionStates, 0)
-  where
-    intersectionStates = char1 .&. char2
-    zero = char1 `xor` char1
-
-
-deriveOverlap
-  :: EncodableStreamElement e
+{-# INLINE overlap #-}
+{-# SPECIALISE overlap :: EncodableStreamElement e => (Word -> Word -> Word) -> NonEmpty e -> (e, Word) #-}
+{-# SPECIALISE overlap :: (Word -> Word -> Word) -> NonEmpty DynamicCharacterElement -> (DynamicCharacterElement, Word) #-}
+overlap
+  :: ( EncodableStreamElement e {- , Show e -}
+     , Foldable1 f
+     , Functor f
+     )
   => (Word -> Word -> Word)
-  -> e
-  -> e
+  -> f e
   -> (e, Word)
-deriveOverlap costStruct char1 char2 = F.fold
-    (F.premap (costAndSymbol . (toEnum &&& setBit zero)) outerFold)
-    symbolIndices
+overlap costStruct chars = F.impurely ofoldMUnwrap (F.premapM g outerFold) wlog `evalState` 0
   where
-    outerFold = Fold f (char1 `xor` char1, maxBound) id
+    !wlog = getFirst $ foldMap1 First chars
+    !zero = wlog `xor` wlog
+
+    outerFold = F.generalize $ Fold f (zero, maxBound) id
+
+    symbolAndCost (i, x) =
+      let !cost = sum $ getDistance costStruct i <$> chars
+      in  (x, cost)
 
     f (!symbol1, !cost1) (!symbol2, !cost2) =
         case cost1 `compare` cost2 of
@@ -390,24 +399,58 @@ deriveOverlap costStruct char1 char2 = F.fold
           LT -> (symbol1            , cost1)
           GT -> (symbol2            , cost2)
 
-    costAndSymbol (i, x) = (x, cost1 + cost2)
-      where
-        !cost1 = getDistance3 i char1
-        !cost2 = getDistance3 i char2
+    g = const $ do
+        j <- get
+        modify' (+1)
+        let !v = toEnum j
+        let !b = zero `setBit` j
+        pure $ symbolAndCost (v, b)
 
-    symbolIndices = NE.fromList [0 .. finiteBitSize char1 - 1]
-    zero          = char1 `xor` char1
 
-    getDistance3 :: (MonoFoldable b, Element b ~ Bool) => Word -> b -> Word
-    getDistance3 i b = fromMaybe errMsg $
-        F.impurely ofoldMUnwrap (F.prefilterM pure (F.premapM g (F.generalize F.minimum))) b `evalState` 0
-      where
-        errMsg = error "There were no bits set in the character!"
+{-# INLINE overlap2 #-}
+{-# SPECIALISE overlap2 :: (Word -> Word -> Word) -> DynamicCharacterElement -> DynamicCharacterElement -> (DynamicCharacterElement, Word) #-}
+overlap2
+  :: (EncodableStreamElement e {- , Show e -})
+  => (Word -> Word -> Word)
+  -> e
+  -> e
+  -> (e, Word)
+overlap2 costStruct char1 char2 = overlap costStruct $ char1 :| [char2]
 
-        g _ = do
-            j <- get
-            modify' (+1)
-            pure $ costStruct i j
+
+{-# INLINE overlap3 #-}
+{-# SPECIALISE overlap3 :: (Word -> Word -> Word) -> DynamicCharacterElement -> DynamicCharacterElement -> DynamicCharacterElement -> (DynamicCharacterElement, Word) #-}
+overlap3
+  :: (EncodableStreamElement e {- , Show e -})
+  => (Word -> Word -> Word)
+  -> e
+  -> e
+  -> e
+  -> (e, Word)
+overlap3 costStruct char1 char2 char3 = overlap costStruct $ char1 :| [char2, char3]
+
+
+{-# INLINE getDistance #-}
+{-# SPECIALISE getDistance :: (Word -> Word -> Word) -> Word -> DynamicCharacterElement -> Word #-}
+getDistance
+  :: ( MonoFoldable b
+     , Element b ~ Bool
+     )
+  => (Word -> Word -> Word)
+  -> Word
+  -> b
+  -> Word
+getDistance costStruct i b = fromMaybe errMsg $
+    F.impurely ofoldMUnwrap (F.premapM f (F.generalize F.minimum)) b `evalState` 0
+  where
+    errMsg = error "There were no bits set in the character!"
+
+    f e = do
+        j <- get
+        modify' (+1)
+        pure $ if e
+               then costStruct i j
+               else maxBound
 {-
     getDistance2 :: FiniteBits b => Word -> b -> Word
     getDistance2 i b =
@@ -417,4 +460,29 @@ deriveOverlap costStruct char1 char2 = F.fold
       where
         indices = [0 .. finiteBitSize b - 1]
 -}
+
+
+{-
+-- |
+-- Given a structure of unambiguous character elements and costs, calculates the
+-- least costly intersection of unambiguous character elements and the cost of
+-- that intersection.
+minimalChoice :: (Bits b, Foldable1 t, Ord c) => t (b, c) -> (b, c)
+minimalChoice = foldl1 f
+  where
+    f (!symbol1, !cost1) (!symbol2, !cost2) =
+        case cost1 `compare` cost2 of
+          EQ -> (symbol1 .|. symbol2, cost1)
+          LT -> (symbol1            , cost1)
+          GT -> (symbol2            , cost2)
+
+
+-- |
+-- An overlap function that applies the discrete metric to aligning two elements.
+discreteOverlap :: EncodableStreamElement e => e -> e -> (e, Word)
+discreteOverlap lhs rhs
+  | intersect == zeroBits = (lhs .|. rhs, 1)
+  | otherwise             = (intersect  , 0)
+  where
+    intersect = lhs .&. rhs
 -}

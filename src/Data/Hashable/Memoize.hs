@@ -19,6 +19,7 @@
 module Data.Hashable.Memoize
   ( memoize
   , memoize2
+  , memoize3
   ) where
 
 
@@ -120,6 +121,32 @@ memoize f = unsafePerformIO $ do
 memoize2 :: (Eq a, Eq b, Hashable a, Hashable b, NFData c) => (a -> b -> c) -> a -> b -> c
 memoize2 f = let f' = memoize (uncurry f)
              in curry f'
+
+
+-- |
+-- A memoizing combinator similar to 'memoize' except that it that acts on a
+-- function of two inputs rather than one.
+{-# NOINLINE memoize3 #-}
+memoize3
+  :: ( Eq a
+     , Eq b
+     , Eq c
+     , Hashable a
+     , Hashable b
+     , Hashable c
+     , NFData d
+     )
+  => (a -> b -> c -> d)
+  -> a
+  -> b
+  -> c
+  -> d
+memoize3 f = let f' = memoize (uncurry3 f)
+             in curry3 f'
+  where
+    curry3   f  x y z  = f (x,y,z)
+    uncurry3 f (x,y,z) = f x y z
+
 
 
 {-

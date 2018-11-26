@@ -75,7 +75,7 @@ data  DynamicCharacter
 -- Represents a sinlge element of a dynamic character.
 newtype DynamicCharacterElement
       = DCE BitVector
-      deriving (Bits, Eq, FiniteBits, Generic, MonoFoldable, MonoFunctor, Ord, Show)
+      deriving (Bits, Eq, FiniteBits, Generic, Hashable, MonoFoldable, MonoFunctor, Ord, Show)
 
 
 type instance Bound DynamicCharacterElement = Word
