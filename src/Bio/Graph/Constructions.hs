@@ -25,6 +25,7 @@ module Bio.Graph.Constructions
   , PostorderDecorationDAG
   , SearchState
   , TopologicalResult
+  , UndecoratedReferenceDAG
   , UnifiedBlock
   , UnifiedSequences
   , UnifiedCharacterBlock
@@ -96,6 +97,9 @@ type GraphState = Compact (Either TopologicalResult DecoratedCharacterResult)
 -- A solution that contains only topological information.
 -- There are no characters on which to optimize.
 type TopologicalResult = PhylogeneticSolution (ReferenceDAG () EdgeLength (Maybe String))
+
+
+type UndecoratedReferenceDAG = ReferenceDAG () EdgeLength (Maybe String)
 
 
 -- |

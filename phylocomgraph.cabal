@@ -505,6 +505,7 @@ executable three-way-mean-check
   hs-source-dirs:   utils
 
 
+
 executable ukkonen-do-comparison
 
   import:             ghc-flags
@@ -536,6 +537,7 @@ Test-Suite integration-tests
                     , deepseq
                     , directory
                     , filepath
+                    , lens
                     , megaparsec         >=7.0.0
                     , parser-combinators >=0.2.0
                     , pcg-language

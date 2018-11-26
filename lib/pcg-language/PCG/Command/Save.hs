@@ -49,7 +49,7 @@ data SerialType
 -- Defines the semantics of interpreting a valid \"SAVE\" command from the PCG
 -- scripting language syntax.
 saveCommandSpecification :: CommandSpecification SaveCommand
-saveCommandSpecification = command "save" . argList $ SaveCommand <$> (text `withDefault` defaultSaveFilePath) <*> serialType
+saveCommandSpecification = command "save" . argList $ SaveCommand <$> (text `withDefault` defaultSaveFilePath) <*> (serialType `withDefault` defaultFormat)
 
 serialType :: Ap SyntacticArgument SerialType
 serialType = choiceFrom [saveCompact , saveBinary] `withDefault` defaultFormat

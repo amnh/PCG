@@ -1,41 +1,18 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Strict            #-}
+{-# LANGUAGE TypeApplications  #-}
 {-# LANGUAGE TypeFamilies      #-}
 
 module TestSuite.ScriptTests
   ( testSuite
   ) where
 
-import           Bio.Graph                         (GraphState)
-import           Bio.Graph.PhylogeneticDAG         (phylogeneticForest)
-import           Bio.Graph.ReferenceDAG            (dagCost, graphData)
-import           Bio.Graph.Solution                (phylogeneticForests)
-import           Control.Arrow                     ((&&&))
-import           Data.Char                         (isSpace)
-import           Data.Compact                      (getCompact)
-import           Data.Compact.Serialize            (unsafeReadCompact)
-import           Data.Either
-import           Data.Foldable
-import           Data.Functor                      (($>))
-import qualified Data.List.NonEmpty         as NE
-import           Data.Scientific            hiding (scientific)
-import           Data.Semigroup.Foldable
-import           Data.Text                         (Text)
-import           Data.Void                         (Void)
-import           Numeric.Extended.Real
-import           PCG.Command.Save                  (defaultSaveFilePath)
-import           System.Directory                  (doesFileExist)
-import           Test.Tasty
-import           Test.Tasty.HUnit
-import           Text.Megaparsec
-import           Text.Megaparsec.Char
-import           Text.Megaparsec.Char.Lexer        (scientific)
-
-
-import Control.Arrow              ((&&&))
+import Bio.Graph
+import Bio.Graph.ReferenceDAG     (_dagCost, _graphData)
 import Control.DeepSeq
 import Data.Bifunctor             (first)
+import Data.Binary.Utility        (getFieldFromBinary)
 import Data.Char                  (isSpace)
 import Data.Either
 import Data.Functor               (void, ($>))
@@ -55,204 +32,197 @@ import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer (scientific)
 
 
-data  ExecutionResults
-    = ExeRes
-    { finalState   :: Either String GraphState
-    , fileContents :: [Text]
-    }
-
-
 testSuite :: TestTree
 testSuite = testGroup "Script Test Suite"
-  [ scriptCheckCost 50.46
+  [ scriptCheckCost' 50.46
         "datasets/continuous/single-block/arthropods.pcg"
-        "datasets/continuous/single-block/cost.data"
-  ,  scriptCheckCost 7
+        "datasets/continuous/single-block/refdag.bin"
+  ,  scriptCheckCost' 7
         "datasets/continuous/missing/test.pcg"
-        "datasets/continuous/missing/cost.data"
-  , scriptCheckCost 8
+        "datasets/continuous/missing/refdag.bin"
+  , scriptCheckCost' 8
         "datasets/non-additive/missing/test.pcg"
-        "datasets/non-additive/missing/cost.data"
-  , scriptCheckCost 1665
+        "datasets/non-additive/missing/refdag.bin"
+  , scriptCheckCost' 1665
         "datasets/non-additive/single-block/arthropods.pcg"
-        "datasets/non-additive/single-block/cost.data"
-  , scriptCheckCost 56
+        "datasets/non-additive/single-block/refdag.bin"
+  , scriptCheckCost' 56
         "datasets/additive/missing/test.pcg"
-        "datasets/additive/missing/cost.data"
-  , scriptCheckCost 2642
+        "datasets/additive/missing/refdag.bin"
+  , scriptCheckCost' 2642
         "datasets/additive/single-block/arthropods.pcg"
-        "datasets/additive/single-block/cost.data"
-  , scriptCheckCost 1
+        "datasets/additive/single-block/refdag.bin"
+  , scriptCheckCost' 1
         "datasets/additive/case-1/case-1.pcg"
-        "datasets/additive/case-1/cost.data"
-  , scriptCheckCost 3
+        "datasets/additive/case-1/refdag.bin"
+  , scriptCheckCost' 3
         "datasets/additive/case-2a/case-2a.pcg"
-        "datasets/additive/case-2a/cost.data"
-  , scriptCheckCost 5
+        "datasets/additive/case-2a/refdag.bin"
+  , scriptCheckCost' 5
         "datasets/additive/case-2b/case-2b.pcg"
-        "datasets/additive/case-2b/cost.data"
-  , scriptCheckCost 4
+        "datasets/additive/case-2b/refdag.bin"
+  , scriptCheckCost' 4
         "datasets/additive/case-3/case-3.pcg"
-        "datasets/additive/case-3/cost.data"
-  , scriptCheckCost 16
+        "datasets/additive/case-3/refdag.bin"
+  , scriptCheckCost' 16
       "datasets/sankoff/multi-block/missing/missing.pcg"
-      "datasets/sankoff/multi-block/missing/cost.data"
-  , scriptCheckCost 12
+      "datasets/sankoff/multi-block/missing/refdag.bin"
+  , scriptCheckCost' 12
       "datasets/sankoff/single-block/missing/missing-values.pcg"
-      "datasets/sankoff/single-block/missing/cost.data"
-  , scriptCheckCost 914
+      "datasets/sankoff/single-block/missing/refdag.bin"
+  , scriptCheckCost' 914
         "datasets/sankoff/single-block/dna/discrete/arthropods.pcg"
-        "datasets/sankoff/single-block/dna/discrete/cost.data"
-  , scriptCheckCost 1713
+        "datasets/sankoff/single-block/dna/discrete/refdag.bin"
+  , scriptCheckCost' 1713
         "datasets/sankoff/single-block/dna/L1-norm/arthropods.pcg"
-        "datasets/sankoff/single-block/dna/L1-norm/cost.data"
-  , scriptCheckCost 914
+        "datasets/sankoff/single-block/dna/L1-norm/refdag.bin"
+  , scriptCheckCost' 914
         "datasets/sankoff/single-block/dna/1-2/arthropods.pcg"
-        "datasets/sankoff/single-block/dna/1-2/cost.data"
-  , scriptCheckCost 1789
+        "datasets/sankoff/single-block/dna/1-2/refdag.bin"
+  , scriptCheckCost' 1789
         "datasets/sankoff/single-block/dna/2-1/arthropods.pcg"
-        "datasets/sankoff/single-block/dna/2-1/cost.data"
-  , scriptCheckCost 1143
+        "datasets/sankoff/single-block/dna/2-1/refdag.bin"
+  , scriptCheckCost' 1143
         "datasets/sankoff/single-block/protein/discrete/invertebrates.pcg"
-        "datasets/sankoff/single-block/protein/discrete/cost.data"
-  , scriptCheckCost 11813
+        "datasets/sankoff/single-block/protein/discrete/refdag.bin"
+  , scriptCheckCost' 11813
         "datasets/sankoff/single-block/protein/L1-norm/invertebrates.pcg"
-        "datasets/sankoff/single-block/protein/L1-norm/cost.data"
-  , scriptCheckCost 2012
+        "datasets/sankoff/single-block/protein/L1-norm/refdag.bin"
+  , scriptCheckCost' 2012
         "datasets/sankoff/single-block/protein/1-2/invertebrates.pcg"
-        "datasets/sankoff/single-block/protein/1-2/cost.data"
-  , scriptCheckCost 1304
+        "datasets/sankoff/single-block/protein/1-2/refdag.bin"
+  , scriptCheckCost' 1304
         "datasets/sankoff/single-block/protein/2-1/invertebrates.pcg"
-        "datasets/sankoff/single-block/protein/2-1/cost.data"
-  , scriptCheckCost 89
+        "datasets/sankoff/single-block/protein/2-1/refdag.bin"
+  , scriptCheckCost' 89
         "datasets/sankoff/single-block/slashes/discrete/test.pcg"
-        "datasets/sankoff/single-block/slashes/discrete/cost.data"
-  , scriptCheckCost 2089
+        "datasets/sankoff/single-block/slashes/discrete/refdag.bin"
+  , scriptCheckCost' 2089
         "datasets/sankoff/single-block/slashes/L1-norm/test.pcg"
-        "datasets/sankoff/single-block/slashes/L1-norm/cost.data"
-  , scriptCheckCost 89
+        "datasets/sankoff/single-block/slashes/L1-norm/refdag.bin"
+  , scriptCheckCost' 89
         "datasets/sankoff/single-block/slashes/1-2/test.pcg"
-        "datasets/sankoff/single-block/slashes/1-2/cost.data"
-  , scriptCheckCost 154
+        "datasets/sankoff/single-block/slashes/1-2/refdag.bin"
+  , scriptCheckCost' 154
         "datasets/sankoff/single-block/slashes/2-1/test.pcg"
-        "datasets/sankoff/single-block/slashes/2-1/cost.data"
-  , scriptCheckCost 240
+        "datasets/sankoff/single-block/slashes/2-1/refdag.bin"
+  , scriptCheckCost' 240
         "datasets/sankoff/single-block/slashes/hamming/test.pcg"
-        "datasets/sankoff/single-block/slashes/hamming/cost.data"
-  , scriptCheckCost 176
+        "datasets/sankoff/single-block/slashes/hamming/refdag.bin"
+  , scriptCheckCost' 176
         "datasets/sankoff/single-block/slashes/levenshtein/test.pcg"
-        "datasets/sankoff/single-block/slashes/levenshtein/cost.data"
-  , scriptCheckCost 158
+        "datasets/sankoff/single-block/slashes/levenshtein/refdag.bin"
+  , scriptCheckCost' 158
         "datasets/sankoff/single-block/large-mix/discrete/test.pcg"
-        "datasets/sankoff/single-block/large-mix/discrete/cost.data"
-  , scriptCheckCost 11004
+        "datasets/sankoff/single-block/large-mix/discrete/refdag.bin"
+  , scriptCheckCost' 11004
         "datasets/sankoff/single-block/large-mix/L1-norm/test.pcg"
-        "datasets/sankoff/single-block/large-mix/L1-norm/cost.data"
-  , scriptCheckCost 158
+        "datasets/sankoff/single-block/large-mix/L1-norm/refdag.bin"
+  , scriptCheckCost' 158
         "datasets/sankoff/single-block/large-mix/1-2/test.pcg"
-        "datasets/sankoff/single-block/large-mix/1-2/cost.data"
-  , scriptCheckCost 251
+        "datasets/sankoff/single-block/large-mix/1-2/refdag.bin"
+  , scriptCheckCost' 251
         "datasets/sankoff/single-block/large-mix/2-1/test.pcg"
-        "datasets/sankoff/single-block/large-mix/2-1/cost.data"
-  , scriptCheckCost 348
+        "datasets/sankoff/single-block/large-mix/2-1/refdag.bin"
+  , scriptCheckCost' 348
         "datasets/sankoff/single-block/large-mix/hamming/test.pcg"
-        "datasets/sankoff/single-block/large-mix/hamming/cost.data"
-  , scriptCheckCost 200
+        "datasets/sankoff/single-block/large-mix/hamming/refdag.bin"
+  , scriptCheckCost' 200
         "datasets/sankoff/single-block/large-mix/levenshtein/test.pcg"
-        "datasets/sankoff/single-block/large-mix/levenshtein/cost.data"
-  , scriptCheckCost 117
+        "datasets/sankoff/single-block/large-mix/levenshtein/refdag.bin"
+  , scriptCheckCost' 117
         "datasets/sankoff/single-block/huge-mix/discrete/test.pcg"
-        "datasets/sankoff/single-block/huge-mix/discrete/cost.data"
-  , scriptCheckCost 12681
+        "datasets/sankoff/single-block/huge-mix/discrete/refdag.bin"
+  , scriptCheckCost' 12681
         "datasets/sankoff/single-block/huge-mix/L1-norm/test.pcg"
-        "datasets/sankoff/single-block/huge-mix/L1-norm/cost.data"
-  , scriptCheckCost 117
+        "datasets/sankoff/single-block/huge-mix/L1-norm/refdag.bin"
+  , scriptCheckCost' 117
         "datasets/sankoff/single-block/huge-mix/1-2/test.pcg"
-        "datasets/sankoff/single-block/huge-mix/1-2/cost.data"
-  , scriptCheckCost 181
+        "datasets/sankoff/single-block/huge-mix/1-2/refdag.bin"
+  , scriptCheckCost' 181
         "datasets/sankoff/single-block/huge-mix/2-1/test.pcg"
-        "datasets/sankoff/single-block/huge-mix/2-1/cost.data"
-  , scriptCheckCost 275
+        "datasets/sankoff/single-block/huge-mix/2-1/refdag.bin"
+  , scriptCheckCost' 275
         "datasets/sankoff/single-block/huge-mix/hamming/test.pcg"
-        "datasets/sankoff/single-block/huge-mix/hamming/cost.data"
-  , scriptCheckCost 230
+        "datasets/sankoff/single-block/huge-mix/hamming/refdag.bin"
+  , scriptCheckCost' 230
         "datasets/sankoff/single-block/huge-mix/levenshtein/test.pcg"
-        "datasets/sankoff/single-block/huge-mix/levenshtein/cost.data"
-  , scriptCheckCost 45
+        "datasets/sankoff/single-block/huge-mix/levenshtein/refdag.bin"
+  , scriptCheckCost' 45
       "datasets/dynamic/multi-block/missing/missing.pcg"
-      "datasets/dynamic/multi-block/missing/cost.data"
-  , scriptCheckCost 2042
+      "datasets/dynamic/multi-block/missing/refdag.bin"
+  , scriptCheckCost' 2042
       "datasets/dynamic/multi-block/dna/arthropods.pcg"
-      "datasets/dynamic/multi-block/dna/cost.data"
-  , scriptCheckCost 28
+      "datasets/dynamic/multi-block/dna/refdag.bin"
+  , scriptCheckCost' 28
       "datasets/dynamic/single-block/missing/missing-values.pcg"
-      "datasets/dynamic/single-block/missing/cost.data"
-  , scriptCheckCost 11036
+      "datasets/dynamic/single-block/missing/refdag.bin"
+  , scriptCheckCost' 11036
       "datasets/dynamic/single-block/protein/L1-norm/invertebrates.pcg"
-      "datasets/dynamic/single-block/protein/L1-norm/cost.data"
-  , scriptCheckCost 1132
+      "datasets/dynamic/single-block/protein/L1-norm/refdag.bin"
+  , scriptCheckCost' 1132
       "datasets/dynamic/single-block/protein/discrete/invertebrates.pcg"
-      "datasets/dynamic/single-block/protein/discrete/cost.data"
-  , scriptCheckCost 1948
+      "datasets/dynamic/single-block/protein/discrete/refdag.bin"
+  , scriptCheckCost' 1948
         "datasets/dynamic/single-block/protein/1-2/invertebrates.pcg"
-        "datasets/dynamic/single-block/protein/1-2/cost.data"
-  , scriptCheckCost 1241
+        "datasets/dynamic/single-block/protein/1-2/refdag.bin"
+  , scriptCheckCost' 1241
         "datasets/dynamic/single-block/protein/2-1/invertebrates.pcg"
-        "datasets/dynamic/single-block/protein/2-1/cost.data"
-  , scriptCheckCost 3413
+        "datasets/dynamic/single-block/protein/2-1/refdag.bin"
+  , scriptCheckCost' 3413
       "datasets/dynamic/single-block/slashes/L1-norm/test.pcg"
-      "datasets/dynamic/single-block/slashes/L1-norm/cost.data"
-  , scriptCheckCost 197
+      "datasets/dynamic/single-block/slashes/L1-norm/refdag.bin"
+  , scriptCheckCost' 197
         "datasets/dynamic/single-block/slashes/discrete/test.pcg"
-        "datasets/dynamic/single-block/slashes/discrete/cost.data"
-  , scriptCheckCost 254
+        "datasets/dynamic/single-block/slashes/discrete/refdag.bin"
+  , scriptCheckCost' 254
         "datasets/dynamic/single-block/slashes/1-2/test.pcg"
-        "datasets/dynamic/single-block/slashes/1-2/cost.data"
-  , scriptCheckCost 228
+        "datasets/dynamic/single-block/slashes/1-2/refdag.bin"
+  , scriptCheckCost' 228
         "datasets/dynamic/single-block/slashes/2-1/test.pcg"
-        "datasets/dynamic/single-block/slashes/2-1/cost.data"
-  , scriptCheckCost 671
+        "datasets/dynamic/single-block/slashes/2-1/refdag.bin"
+  , scriptCheckCost' 671
         "datasets/dynamic/single-block/slashes/hamming/test.pcg"
-        "datasets/dynamic/single-block/slashes/hamming/cost.data"
-  , scriptCheckCost 488
+        "datasets/dynamic/single-block/slashes/hamming/refdag.bin"
+  , scriptCheckCost' 488
         "datasets/dynamic/single-block/slashes/levenshtein/test.pcg"
-        "datasets/dynamic/single-block/slashes/levenshtein/cost.data"
-  , scriptCheckCost 133
+        "datasets/dynamic/single-block/slashes/levenshtein/refdag.bin"
+  , scriptCheckCost' 133
         "datasets/dynamic/single-block/large-mix/discrete/test.pcg"
-        "datasets/dynamic/single-block/large-mix/discrete/cost.data"
-  , scriptCheckCost 7185
+        "datasets/dynamic/single-block/large-mix/discrete/refdag.bin"
+  , scriptCheckCost' 7185
         "datasets/dynamic/single-block/large-mix/L1-norm/test.pcg"
-        "datasets/dynamic/single-block/large-mix/L1-norm/cost.data"
-  , scriptCheckCost 164
+        "datasets/dynamic/single-block/large-mix/L1-norm/refdag.bin"
+  , scriptCheckCost' 164
         "datasets/dynamic/single-block/large-mix/1-2/test.pcg"
-        "datasets/dynamic/single-block/large-mix/1-2/cost.data"
-  , scriptCheckCost 172
+        "datasets/dynamic/single-block/large-mix/1-2/refdag.bin"
+  , scriptCheckCost' 172
         "datasets/dynamic/single-block/large-mix/2-1/test.pcg"
-        "datasets/dynamic/single-block/large-mix/2-1/cost.data"
-  , scriptCheckCost 367
+        "datasets/dynamic/single-block/large-mix/2-1/refdag.bin"
+  , scriptCheckCost' 367
         "datasets/dynamic/single-block/large-mix/hamming/test.pcg"
-        "datasets/dynamic/single-block/large-mix/hamming/cost.data"
-  , scriptCheckCost 213
+        "datasets/dynamic/single-block/large-mix/hamming/refdag.bin"
+  , scriptCheckCost' 213
         "datasets/dynamic/single-block/large-mix/levenshtein/test.pcg"
-        "datasets/dynamic/single-block/large-mix/levenshtein/cost.data"
-  , scriptCheckCost 246
+        "datasets/dynamic/single-block/large-mix/levenshtein/refdag.bin"
+  , scriptCheckCost' 246
         "datasets/dynamic/single-block/huge-mix/discrete/test.pcg"
-        "datasets/dynamic/single-block/huge-mix/discrete/cost.data"
-  , scriptCheckCost 21753
+        "datasets/dynamic/single-block/huge-mix/discrete/refdag.bin"
+  , scriptCheckCost' 21753
         "datasets/dynamic/single-block/huge-mix/L1-norm/test.pcg"
-        "datasets/dynamic/single-block/huge-mix/L1-norm/cost.data"
-  , scriptCheckCost 325
+        "datasets/dynamic/single-block/huge-mix/L1-norm/refdag.bin"
+  , scriptCheckCost' 325
         "datasets/dynamic/single-block/huge-mix/1-2/test.pcg"
-        "datasets/dynamic/single-block/huge-mix/1-2/cost.data"
-  , scriptCheckCost 284
+        "datasets/dynamic/single-block/huge-mix/1-2/refdag.bin"
+  , scriptCheckCost' 284
         "datasets/dynamic/single-block/huge-mix/2-1/test.pcg"
-        "datasets/dynamic/single-block/huge-mix/2-1/cost.data"
-  , scriptCheckCost 872
+        "datasets/dynamic/single-block/huge-mix/2-1/refdag.bin"
+  , scriptCheckCost' 872
         "datasets/dynamic/single-block/huge-mix/hamming/test.pcg"
-        "datasets/dynamic/single-block/huge-mix/hamming/cost.data"
-  , scriptCheckCost 698
+        "datasets/dynamic/single-block/huge-mix/hamming/refdag.bin"
+  , scriptCheckCost' 698
         "datasets/dynamic/single-block/huge-mix/levenshtein/test.pcg"
-        "datasets/dynamic/single-block/huge-mix/levenshtein/cost.data"
+        "datasets/dynamic/single-block/huge-mix/levenshtein/refdag.bin"
   , scriptFailure "datasets/unmatched-leaf-taxon/test.pcg"
   , scriptFailure "datasets/unmatched-tree-taxon/test.pcg"
   , scriptFailure "datasets/duplicate-leaf-taxon/test.pcg"
@@ -264,56 +234,57 @@ testSuite = testGroup "Script Test Suite"
   ]
 
 
-scriptTest
-  :: String                                    -- ^ Script File
-  -> [String]                                  -- ^ Expected Output Files
-  -> (Either Int ExecutionResults -> TestTree) -- ^ Build a TestTree from the resulting
-                                               --   output file contents or ExitStatus code
-  -> IO TestTree
-scriptTest scriptPath outputPaths testLogic = testLogic <$> runExecutable scriptPath outputPaths
+{-- scriptCheckCost
+  :: ExtendedReal -- ^ Expected cost ∈ [0, ∞]
+  -> String       -- ^ Script File
+  -> String       -- ^ Expected output file containing the cost
+  -> TestTree
+scriptCheckCost expectedCost scriptPath outputPath = testCase scriptPath $ do
+    v <- runExecutable scriptPath [outputPath]
+    case v of
+      Left     exitCode -> assertFailure $ "Script failed with exit code: " <> show exitCode
+      Right          [] -> assertFailure "No files were returned despite supplying one path!"
+      Right (outData:_) -> case force $ parseCost outputPath outData of
+                             Left  pErr -> assertFailure $ "No cost found in the output file!\n" <> pErr <> show outData
+                             Right cost -> cost @?= expectedCost
+
+--}
+
+scriptCheckCost'
+  :: ExtendedReal -- ^ Expected cost ∈ [0, ∞]
+  -> String       -- ^ Script File
+  -> String       -- ^ Expected output file containing the cost
+  -> TestTree
+scriptCheckCost' expectedCost scriptPath outputPath = testCase scriptPath $
+  do
+    v       <- runExecutable scriptPath []
+    case v of
+      Left exitCode -> assertFailure $ "Script failed with exit code: " <> show exitCode
+
+      Right _       -> do
+                         dagCost <- getCost outputPath
+                         dagCost @?= expectedCost
+
+--    v <- runExecutable scriptPath [outputPath]
+--    case v of
+--      Left     exitCode -> assertFailure $ "Script failed with exit code: " <> show exitCode
+--      Right          [] -> assertFailure "No files were returned despite supplying one path!"
+--      Right (outData:_) -> do
+--                             dagCost <- getCost outputPath
+--                             expectedCost @?= dagCost
 
 
-scriptCheckCost
-  :: ExtendedReal                    -- ^ Expected cost ∈ [0, ∞]
-  -> String                          -- ^ Script File
-  -> String                          -- ^ Expected output file containing the cost
-  -> IO TestTree
-scriptCheckCost expectedCost scriptPath outputPath = scriptTest scriptPath [outputPath] $ testCase scriptPath . checkResult
-  where
-    checkResult (Left  exitCode) = assertFailure $ "Script failed with exit code: " <> show exitCode
-    checkResult (Right   exeRes) =
-      case fileContents exeRes of
-        []        -> assertFailure "No files were returned despite supplying one path!"
-        outFile:_ -> case force $ parseCost outFile of
-                       Nothing   -> assertFailure "No cost found in the output file!"
-                       Just cost -> cost @?= expectedCost
+getCost :: FilePath -> IO ExtendedReal
+getCost filePath
+  = getFieldFromBinary
+      @UndecoratedReferenceDAG @_
+      filePath (_graphData . _dagCost)
 
-
-scriptCheckValue
-  :: ( Eq v
-     , Show v
-     )
-  => (GraphState -> v) -- ^ accessor function to retrieve value
-  -> v                 -- ^ expected value
-  -> String            -- ^ script file
-  -> IO TestTree
-scriptCheckValue accessor expectedValue scriptPath = scriptTest scriptPath [] $ testCase scriptPath . checkResult
-  where
-    checkResult (Left  exitCode) = assertFailure $ "Script failed with exit code: " <> show exitCode
-    checkResult (Right   exeRes) =
-      case finalState exeRes of
-        Left  errorMsg  -> assertFailure $ "No save state could be retreived for comparison:\n" <> errorMsg
-        Right saveState -> accessor saveState @?= expectedValue
-
-
-getCost :: GraphState -> ExtendedReal
-getCost = either
-            (const 0)
-            (dagCost . graphData . phylogeneticForest . NE.head . toNonEmpty . NE.head . phylogeneticForests)
-
-  
-parseCost :: Text -> Maybe ExtendedReal
-parseCost = parseMaybe fileSpec
+{-- parseCost
+  :: FilePath -- ^ The path of the input file
+  -> Text     -- ^ The text stream to parse
+  -> Either String ExtendedReal
+parseCost path str = first errorBundlePretty parseResult
   where
     parseResult :: Either (ParseErrorBundle Text Void) ExtendedReal
     parseResult = parse fileSpec path $ force str
@@ -342,7 +313,7 @@ parseCost = parseMaybe fileSpec
 
     newlineChar  :: (MonadParsec Void s m, Token s ~ Char) => m ()
     newlineChar  = void $ char '\n'
-
+--}
 
 scriptFailure :: String -> TestTree
 scriptFailure scriptPath = testCase scriptPath $ do
@@ -356,11 +327,10 @@ scriptFailure scriptPath = testCase scriptPath $ do
 --
 -- Useful for integration tests specified with 'Test.Tasty.withResource'.
 runExecutable
-  :: String                           -- ^ Path to the script file to run
-  -> [String]                         -- ^ Paths to the generated output files
-  -> IO (Either Int ExecutionResults) -- ^ Resulting file contents of the specified output
-                                      --   graph state at the end of the script (if applicable) and files,
-                                      --   or the exit code if the script failed
+  :: String                 -- ^ Path to the script file to run
+  -> [String]               -- ^ Paths to the generated output files
+  -> IO (Either Int [Text]) -- ^ Resulting file contents of the specified output
+                            --   files, or the exit code if the script failed
 runExecutable scriptStr outputPaths = do
 --
 {-
@@ -387,20 +357,14 @@ runExecutable scriptStr outputPaths = do
 {-
 outLogFileName :: String
 outLogFileName = "log.out"
-
-
 errLogFileName :: String
 errLogFileName = "log.err"
-
-
 data  ScriptContext
     = ScriptContext
     { process :: CreateProcess
     , outPath :: FilePath
     , errPath :: FilePath
     }
-
-
 constructProcess
   :: FilePath -- ^ Relative path to the PCG script
   -> IO ScriptContext
@@ -416,7 +380,6 @@ constructProcess scriptStr = do
                     , "2>"
                     , errFilePath
                     ]
-
     let p = CreateProcess
             { cmdspec            = ShellCommand commandStr
             , cwd                = Just scriptDirectory
@@ -435,7 +398,6 @@ constructProcess scriptStr = do
             , child_user         = Nothing
             , use_process_jobs   = False
             }
-
     pure ScriptContext
         { process = p
         , outPath = outFilePath
@@ -443,12 +405,9 @@ constructProcess scriptStr = do
         }
   where
     (scriptDirectory, scriptFileName) = breakScriptPath scriptStr
-
     breakScriptPath = (normalise . foldl' (</>) defaultDirectory . init &&& last) . splitDirectories
       where
         defaultDirectory = "."
-
-
 destructProcess :: ScriptContext -> IO ()
 destructProcess ctx = mapM_ cleanUpHandle $
     [ (std_out . process &&& outPath)

@@ -1,3 +1,4 @@
 read(set_tcm:(tcm:"../../../../shared-data/tcms/dna-2-1.tcm", prealigned:nucleotide:"../../../../shared-data/arthropods/arthSank.fasta"))
 read("../../../../shared-data/arthropods/arth.newick")
 report(data, (overwrite, "cost.data"))
+save(binary, "refdag.bin")

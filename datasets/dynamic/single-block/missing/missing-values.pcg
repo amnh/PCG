@@ -1,3 +1,4 @@
 read("topology.tree")
 read(set_tcm:(tcm:"../../../shared-data/tcms/dna-g4t4.tcm", nucleotide:"missing-values.fasta"))
 report(data, (overwrite, "cost.data"))
+save(binary, "refdag.bin")

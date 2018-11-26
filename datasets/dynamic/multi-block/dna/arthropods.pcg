@@ -4,3 +4,4 @@ read(set_tcm:(nucleotide:"../../../shared-data/arthropods/arthubi.fas", tcm:"../
 read(nucleotide:"../../../shared-data/arthropods/arth18a.fas")
 read("../../../shared-data/arthropods/arth.newick")
 report(data, (overwrite, "cost.data"))
+save(binary, "refdag.bin")

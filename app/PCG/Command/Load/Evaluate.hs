@@ -4,8 +4,8 @@ module PCG.Command.Load.Evaluate
   ) where
 
 import Bio.Graph
-import Data.Compact           (Compact)
 import Control.Monad.IO.Class (liftIO)
+import Data.Compact           (Compact)
 import Data.Compact.Serialize (unsafeReadCompact)
 import PCG.Command.Load
 

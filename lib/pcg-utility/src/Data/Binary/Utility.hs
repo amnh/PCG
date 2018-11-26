@@ -21,12 +21,11 @@ module Data.Binary.Utility
   where
 import Control.Lens.Getter    (Getter)
 import Control.Lens.Operators ((^.))
-import Data.Binary
-import Data.ByteString.Lazy   as BS (readFile)
+import Data.Binary            (Binary, decodeFile)
 import System.Directory       (doesFileExist, makeAbsolute)
 
 getFieldFromBinary
-  :: forall a s . (Binary s)
+  :: forall s a . (Binary s)
   => FilePath -> Getter s a -> IO a
 getFieldFromBinary filePath getter =
   do
@@ -37,6 +36,5 @@ getFieldFromBinary filePath getter =
                     "No file found with the specified filepath:\n"
                  <> absFilePath
       True -> do
-                byteString <- BS.readFile filePath
-                let (decodeS :: s) = decode byteString
+                (decodeS :: s) <- decodeFile filePath
                 pure $ decodeS ^. getter
