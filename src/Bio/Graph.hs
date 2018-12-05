@@ -29,6 +29,7 @@ module Bio.Graph
   , PostorderDecorationDAG
   , SearchState
   , TopologicalResult
+  , UndecoratedReferenceDAG
   , UnifiedBlock
   , UnifiedSequences
   , UnifiedCharacterBlock
@@ -41,6 +42,8 @@ module Bio.Graph
   , UnReifiedCharacterDAG
   , assignOptimalDynamicCharacterRootEdges
   , assignPunitiveNetworkEdgeCost
+  , extractSolution
+  , extractReferenceDAG
   , generateLocalResolutions
   , phylogeneticForests
   , postorderSequence'

@@ -118,10 +118,11 @@ library
                     , language-specs
 
   build-depends:      base               >=4.10
+                    , binary
                     , bimap
                     , bv-little
-                    -- >=0.5.8 Required for Data.Map.restrictKeys
                     , compact
+                    -- >=0.5.8 Required for Data.Map.restrictKeys
                     , containers         >=0.5.8
                     , deepseq
                     , data-default
@@ -149,6 +150,7 @@ library
                     , transformers
                     , unordered-containers
                     , vector
+                    , vector-binary-instances
                     -- >=3.4 required for corrected definition of (!) & index
                     , vector-instances   >=3.4
                     , xml
@@ -305,8 +307,9 @@ executable pcg
   build-depends:      phylocomgraph
                     , ansi-wl-pprint
                     , base             >=4.10
-                    -- Required for Data.Map.restrictKeys
+                    , binary
                     , compact
+                    -- Required for Data.Map.restrictKeys
                     , containers       >=0.5.8
                     , data-default
                     , deepseq
@@ -500,6 +503,7 @@ executable three-way-mean-check
   hs-source-dirs:   utils
 
 
+
 executable ukkonen-do-comparison
 
   import:             ghc-flags
@@ -524,22 +528,23 @@ Test-Suite integration-tests
 
   main-is:          IntegrationTests.hs
 
-  build-depends:       base               >=4.10
+
+  build-depends:      base               >=4.10
+                    , binary
+                    , bytestring
                     , containers
                     , deepseq
                     , directory
                     , filepath
-                    , megaparsec         >=7.0.0
-                    , parser-combinators >=0.2.0
+                    , lens
                     , pcg-utility
+                    , phylocomgraph
                     , process 
-                    , scientific
                     , semigroups
                     , tasty
                     , tasty-golden
                     , tasty-hunit
                     , tasty-rerun
-                    , text
 
   ghc-options:      -threaded
                     -with-rtsopts=-N7
@@ -563,6 +568,7 @@ Test-Suite unit-tests
 
   build-depends:      base               >=4.10
                     , bimap
+                    , binary
                     , bv-little
                     -- >=0.5.8 Required for Data.Map.restrictKeys
                     , containers         >=0.5.8
@@ -593,6 +599,7 @@ Test-Suite unit-tests
                     , transformers
                     , unordered-containers
                     , vector
+                    , vector-binary-instances
                     -- >=3.4 required for corrected definition of (!) & index
                     , vector-instances >=3.4
                     , xml

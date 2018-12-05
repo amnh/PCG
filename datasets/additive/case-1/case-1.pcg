@@ -1,2 +1,2 @@
 read("case-1.tnt")
-report(data, (overwrite, "cost.data"))
+save(binary, "graph.bin")

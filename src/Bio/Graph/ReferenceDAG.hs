@@ -18,6 +18,17 @@ module Bio.Graph.ReferenceDAG
   , nodeFoldMap
   , nodePostOrder
   , nodePreOrder
+  -- * Lenses
+  , HasNodeDecoration(..)
+  , HasParentRefs(..)
+  , HasChildRefs(..)
+  , HasGraphData(..)
+  , HasReferenceVector(..)
+  , HasDagCost(..)
+  , HasNetworkEdgeCost(..)
+  , HasRootingCost(..)
+  , HasTotalBlockCost(..)
+  , HasGraphMetadata(..)
   -- * Effciently construct a DAG
   , fromList
   , unfoldDAG
