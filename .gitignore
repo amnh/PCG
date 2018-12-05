@@ -76,3 +76,4 @@ production/doc/haddock/*
 production/doc/haddock*
 *log.err
 *log.out
+*.bin

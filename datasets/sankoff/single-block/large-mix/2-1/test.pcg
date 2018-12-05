@@ -1,4 +1,3 @@
 read(prealigned:custom_alphabet:(tcm:"../../../../shared-data/tcms/large-mix-2-1.tcm", "../../../../shared-data/large-mix/large-mix-aligned.fasta"))
 read("../../../../shared-data/large-mix/large-mix-aligned.tree")
-report(data, (overwrite, "cost.data"))
-save(binary, "refdag.bin")
+save(binary, "graph.bin")

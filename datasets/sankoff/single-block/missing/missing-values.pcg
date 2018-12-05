@@ -1,4 +1,3 @@
 read("topology.tree")
 read(set_tcm:(tcm:"../../../shared-data/tcms/dna-g4t4.tcm", prealigned:nucleotide:"missing-values.fasta"))
-report(data, (overwrite, "cost.data"))
-save(binary, "refdag.bin")
+save(binary, "graph.bin")

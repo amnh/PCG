@@ -19,7 +19,7 @@ module PCG.Command.Report.GraphViz
   ) where
 
 import           Bio.Graph
-import           Data.Compact           (Compact, getCompact)
+import           Data.Compact           (getCompact)
 import           Data.GraphViz.Printing
 import qualified Data.Text.Lazy         as L
 

@@ -61,7 +61,6 @@ library
   build-depends:    base             >=4.8
                   , binary
                   , bv-little
-                  , bytestring
                   , containers       >=0.5.8
                   , directory
                   , deepseq

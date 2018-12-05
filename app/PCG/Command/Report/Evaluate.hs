@@ -8,7 +8,7 @@ module PCG.Command.Report.Evaluate
 
 import Bio.Graph
 import Control.Monad.IO.Class
-import Data.Compact                (Compact, getCompact)
+import Data.Compact                (getCompact)
 import Data.List.NonEmpty
 import PCG.Command.Report
 import PCG.Command.Report.GraphViz

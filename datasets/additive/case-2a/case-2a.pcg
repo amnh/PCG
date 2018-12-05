@@ -1,3 +1,2 @@
 read("case-2a.tnt")
-report(data, (overwrite, "cost.data"))
-save(binary, "refdag.bin")
+save(binary, "graph.bin")
