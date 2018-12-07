@@ -97,7 +97,7 @@ type GraphState = Compact (Either TopologicalResult DecoratedCharacterResult)
 -- |
 -- A solution that contains only topological information.
 -- There are no characters on which to optimize.
-type TopologicalResult = PhylogeneticSolution (ReferenceDAG () EdgeLength (Maybe String))
+type TopologicalResult = PhylogeneticSolution (ReferenceDAG () EdgeAnnotation (Maybe String))
 
 
 type UndecoratedReferenceDAG = ReferenceDAG () EdgeLength (Maybe String)
@@ -259,17 +259,29 @@ type UnReifiedCharacterDAG =
          UnifiedDynamicCharacter
 
 
+type EdgeAnnotation =
+    ( EdgeLength
+    , CharacterSequence
+        (ContinuousOptimizationDecoration ContinuousCharacter)
+        (FitchOptimizationDecoration          StaticCharacter)
+        (AdditiveOptimizationDecoration       StaticCharacter)
+        (SankoffOptimizationDecoration        StaticCharacter)
+        (SankoffOptimizationDecoration        StaticCharacter)
+        (DynamicDecorationDirectOptimization DynamicCharacter)
+    )
+
+
 extractReferenceDAG
   :: Either TopologicalResult DecoratedCharacterResult
-  -> ReferenceDAG () EdgeLength (Maybe String)
+  -> ReferenceDAG () EdgeAnnotation (Maybe String)
 extractReferenceDAG = either extractTopResult extractRefDAGfromDec
   where
     extractTopResult = extractSolution
 
 
-
 extractRefDAGfromDec
-  :: DecoratedCharacterResult -> ReferenceDAG () EdgeLength (Maybe String)
+  :: DecoratedCharacterResult
+  -> ReferenceDAG () EdgeAnnotation (Maybe String)
 extractRefDAGfromDec finalDecDAG =
   let
     decRefDAG = finalDecDAG & (^. _phylogeneticForest) . extractSolution
