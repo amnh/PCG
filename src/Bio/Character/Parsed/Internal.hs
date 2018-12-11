@@ -20,15 +20,15 @@
 
 module Bio.Character.Parsed.Internal where
 
-import Data.Alphabet
-import Data.List.NonEmpty (NonEmpty)
-import Data.Map           (Map)
-import Data.Vector        (Vector)
-import Data.Text.Short (ShortText)
-import File.Format.Fastc (CharacterSequence)
-import Data.String (IsString (fromString))
+import           Data.Alphabet
+import           Data.Foldable      (Foldable (toList))
+import           Data.List.NonEmpty (NonEmpty)
 import qualified Data.List.NonEmpty as NE
-import Data.Foldable (Foldable(toList))
+import           Data.Map           (Map)
+import           Data.String        (IsString (fromString))
+import           Data.Text.Short    (ShortText)
+import           Data.Vector        (Vector)
+import           File.Format.Fastc  (CharacterSequence)
 
 
 -- |

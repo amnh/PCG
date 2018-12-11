@@ -26,9 +26,9 @@ module File.Format.Newick.Internal
 
 import Data.List.NonEmpty (NonEmpty, toList)
 import Data.Maybe
+import Data.String        (IsString (fromString))
+import Data.Text.Short    (ShortText)
 import Data.Tree
-import Data.Text.Short(ShortText)
-import Data.String (IsString(fromString))
 
 
 {----

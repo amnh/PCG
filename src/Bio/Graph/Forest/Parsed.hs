@@ -21,7 +21,8 @@ module Bio.Graph.Forest.Parsed where
 
 import           Bio.Graph.Forest
 import           Bio.Graph.ReferenceDAG
-import           Control.Arrow                    ((&&&), first)
+import           Control.Arrow                    (first, (&&&))
+import           Data.Coerce                      (coerce)
 import           Data.EdgeLength
 import           Data.Foldable
 import           Data.Hashable
@@ -34,7 +35,11 @@ import           Data.Map                         (Map, findMin)
 import qualified Data.Map                         as Map
 import           Data.Maybe
 import           Data.Monoid
+import           Data.NodeLabel
 import qualified Data.Set                         as Set
+import           Data.ShortText.Custom            (intToShortText)
+import           Data.String                      (IsString (fromString))
+import           Data.Text.Short                  (ShortText)
 import           File.Format.Dot
 import           File.Format.Fasta
 import           File.Format.Fastc                hiding (Identifier)
@@ -45,11 +50,6 @@ import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot       hiding (EdgeLength)
 import qualified File.Format.VertexEdgeRoot       as VER
 import           Prelude                          hiding (lookup)
-import Data.NodeLabel
-import Data.Text.Short(ShortText)
-import Data.String (IsString(fromString))
-import Data.ShortText.Custom (intToShortText)
-import Data.Coerce (coerce)
 
 
 -- |

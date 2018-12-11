@@ -12,10 +12,10 @@
 --
 -----------------------------------------------------------------------------
 {-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
 
 module Bio.Character.Parsed.Class
   ( ParsedCharacters(..)
@@ -35,10 +35,13 @@ import           Data.Maybe
 import           Data.Semigroup.Foldable
 import           Data.Set                         (Set)
 import qualified Data.Set                         as S
+import           Data.ShortText.Custom            (intToShortText)
+import           Data.String                      (IsString (fromString))
+import           Data.Text.Short                  (ShortText)
 import           Data.Tree
+import           Data.Vector                      (Vector)
 import           Data.Vector.Custom               as V (fromList')
 import           Data.Vector.Instances            ()
-import           Data.Vector (Vector)
 import           File.Format.Dot
 import           File.Format.Fasta
 import           File.Format.Fastc
@@ -49,9 +52,6 @@ import qualified File.Format.TNT                  as TNT
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
 import           Prelude                          hiding (zipWith)
-import Data.String(IsString(fromString))
-import Data.ShortText.Custom (intToShortText)
-import Data.Text.Short(ShortText)
 
 
 {-
@@ -120,7 +120,7 @@ instance ParsedCharacters FastcParseResult where
 -- | (✔)
 instance ParsedCharacters TaxonSequenceMap where
 
-    unifyCharacters = (fmap convertCharacterSequenceLikeFASTA) . M.mapKeysMonotonic fromString
+    unifyCharacters = fmap convertCharacterSequenceLikeFASTA . M.mapKeysMonotonic fromString
 
 
 -- | (✔)
@@ -139,7 +139,7 @@ instance ParsedCharacters (NonEmpty NewickForest) where
 instance ParsedCharacters Nexus where
 
     unifyCharacters (Nexus (seqMap, metadataVector) _)
-      = f <$> (M.mapKeysMonotonic fromString seqMap)
+      = f <$> M.mapKeysMonotonic fromString seqMap
       where
 
         f = zipWith g metadataVector
@@ -152,25 +152,25 @@ instance ParsedCharacters Nexus where
               v <- e                      -- Check if the element is empty
               w <- NE.nonEmpty $ toList v -- If not, coerce the Vector to a NonEmpty list
               NE.nonEmpty                 -- Then grab the first element of the Vector,
-                $ fmap fromString         -- making sure it is also a NonEmpty list
+                . fmap fromString         -- making sure it is also a NonEmpty list
                 . NE.head
-                $ w  
-                                          
+                $ w
+
 
                 -- Maybe (Vector [String])
-        convert :: Character -> Maybe (NonEmpty (NonEmpty (ShortText)))
+        convert :: Character -> Maybe (NonEmpty (NonEmpty ShortText))
         convert = fmap innerConv1
           where
-         
-            innerConv1 :: Vector [String] -> NonEmpty (NonEmpty (ShortText))
+
+            innerConv1 :: Vector [String] -> NonEmpty (NonEmpty ShortText)
             innerConv1 = NE.fromList . toList . fmap innerConv2
-    
-            innerConv2 :: [String] -> NonEmpty (ShortText)
+
+            innerConv2 :: [String] -> NonEmpty ShortText
             innerConv2 []           =
               error "Encountered empty list of Nexus characters during conversion"
             innerConv2 [str]        = fromString str :| []
             innerConv2 (str : str') = fromString str :| fmap fromString str'
-         
+
 
 
 -- | (✔)
@@ -239,4 +239,4 @@ tntToTheSuperSequence = V.fromList' . fmap f
 -- to duplicate keys. When identical keys occur in multiple 'Map's, the value
 -- occurring last in the 'Foldable' structure is returned.
 mergeMaps :: (Foldable t, Ord k) => t (Map k v) -> Map k v
-mergeMaps = foldl' (\accMap map -> M.unionWith (flip const) accMap map) mempty
+mergeMaps = foldl' (M.unionWith (flip const)) mempty

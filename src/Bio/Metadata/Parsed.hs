@@ -14,8 +14,8 @@
 
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeSynonymInstances  #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE TypeSynonymInstances  #-}
 
 module Bio.Metadata.Parsed
   ( ParsedCharacterMetadata(..)
@@ -29,8 +29,10 @@ import           Data.Key
 import           Data.List                        (transpose)
 import           Data.List.NonEmpty               (NonEmpty)
 import           Data.Monoid
+import           Data.String                      (IsString (fromString))
 import           Data.TCM                         (TCM, TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
 import qualified Data.TCM                         as TCM
+import           Data.Text.Short                  (ShortText)
 import           Data.Vector                      (Vector)
 import qualified Data.Vector                      as V
 import qualified Data.Vector.Custom               as V (fromList')
@@ -46,8 +48,6 @@ import qualified File.Format.TNT                  as TNT
 import qualified File.Format.TransitionCostMatrix as F
 import           File.Format.VertexEdgeRoot
 import           Prelude                          hiding (zip, zipWith)
-import Data.String (IsString (fromString))
-import Data.Text.Short (ShortText)
 
 
 -- |

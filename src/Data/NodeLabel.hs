@@ -25,12 +25,12 @@ module Data.NodeLabel
 
 
 import Control.DeepSeq
+import Data.Binary
 import Data.Default
 import Data.MonoTraversable
+import Data.String          (IsString)
+import Data.Text.Short      as TS
 import GHC.Generics
-import Data.Text.Short as TS
-import Data.Binary
-import Data.String (IsString())
 
 
 -- |
@@ -94,7 +94,7 @@ instance MonoFoldable NodeLabel where
     -- This function throws an error and is only here for the typeclass definition.
     ofoldl1Ex' = error "Do not use ofoldl1Ex' on NodeLabel"
 
-    
+
 -- |
 -- Performs a element-wise monomporphic map over a 'NodeLabel'.
 instance MonoFunctor NodeLabel where
@@ -103,5 +103,5 @@ instance MonoFunctor NodeLabel where
 
     where
       g char acc = singleton (f char) <> acc
-    
+
 

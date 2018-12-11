@@ -12,8 +12,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns     #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE FlexibleContexts    #-}
 
 {-# LANGUAGE ScopedTypeVariables #-}
 module PCG.Command.Read.Unification.Master
@@ -70,14 +70,13 @@ import           Data.String
 import           Data.TCM                                      (TCM, TCMStructure (..))
 import qualified Data.TCM                                      as TCM
 --import           Data.MonoTraversable
+import           Data.Coerce                                   (coerce)
+import           Data.NodeLabel
+import           Data.Text.Short                               (ShortText, toString)
 import           Data.Vector                                   (Vector)
 import           PCG.Command.Read.Unification.UnificationError
 import           Prelude                                       hiding (lookup, zipWith)
-import Data.Text.Short(ShortText, toString)
-import Data.Coerce (coerce)
-import Data.NodeLabel
 
---import Debug.Trace
 
 
 data FracturedParseResult
@@ -189,10 +188,7 @@ rectifyResults2 fprs =
                   labelShort   = coerce label
 
                   nodeLabel :: NodeLabel
-                  nodeLabel    =
-                      case label of
-                        Nothing -> def
-                        Just l  -> l
+                  nodeLabel = fromMaybe def label
 
                   charLabelMay :: Maybe UnifiedCharacterSequence
                   charLabelMay = labelShort >>= (`lookup` charMapping)
@@ -335,7 +331,7 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
           -> (ParsedCharacter, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName)
         updateMetadataInformation (reducedAlphabet, symbolDistance) (charMay, charMetadata, _, structure, charName) =
             ( charMay
-            , charMetadata { alphabet = fmap fromString $ reducedAlphabet }
+            , charMetadata { alphabet = fromString <$> reducedAlphabet }
             , symbolDistance
             , structure
             , charName
@@ -471,7 +467,7 @@ gatherForestsTerminalNames fpr = (identifiers, fpr)
         f forest =
           case foldMap terminalNames2 forest of
              []   -> Nothing
-             x:xs -> Just $ (x :| xs)
+             x:xs -> Just (x :| xs)
 
 
 

@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
-{-# LANGUAGE OverloadedStrings   #-}
 
 module PCG.Command.Read.Evaluate
   ( evaluate
@@ -35,9 +35,11 @@ import           Data.Maybe                                (catMaybes)
 import           Data.Ord                                  (comparing)
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
+import           Data.String                               (IsString (fromString))
 import           Data.TCM                                  (TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
 import qualified Data.TCM                                  as TCM
 import           Data.Text.IO                              (readFile)
+import qualified Data.Text.Short                           as TS (ShortText, filter)
 import           Data.Validation
 import qualified Data.Vector                               as V
 import           Data.Void
@@ -59,8 +61,6 @@ import           System.Directory
 import           System.FilePath                           (takeExtension)
 import           System.FilePath.Glob
 import           Text.Megaparsec
-import Data.String (IsString(fromString))
-import qualified Data.Text.Short as TS (filter, ShortText)
 
 
 parse' :: Parsec Void s a -> String -> s -> Either (ParseErrorBundle s Void) a
