@@ -82,6 +82,7 @@ library
                   , scientific
                   , semigroupoids
                   , text
+                  , text-short
                   , vector
 
   hs-source-dirs:   src
@@ -145,6 +146,7 @@ Test-Suite unit-tests
                   , tasty-hunit
                   , tasty-quickcheck
                   , tasty-rerun
+                  , text-short
                   , vector
 
   hs-source-dirs:   src, test
