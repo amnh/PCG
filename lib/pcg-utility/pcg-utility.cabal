@@ -71,7 +71,12 @@ library
                   , lens
                   , matrix
                   , mono-traversable >=1.0
+                  , pipes
+                  , pipes-safe
                   , QuickCheck
+                  , text
+                  , text-short
+                  , text-show
                   , transformers
                   , validation
                   , vector
@@ -85,6 +90,8 @@ library
                     Data.List.Utility
                     Data.Matrix.NotStupid
                     Data.MutualExclusionSet
+                    Data.Render.Utility
+                    Data.ShortText.Custom
                     Data.Tuple.Utility
                     Data.UnionSet
                     Data.Vector.Utility
