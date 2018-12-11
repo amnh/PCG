@@ -21,7 +21,7 @@ module Bio.Graph.Forest.Parsed where
 
 import           Bio.Graph.Forest
 import           Bio.Graph.ReferenceDAG
-import           Control.Arrow                    ((&&&))
+import           Control.Arrow                    ((&&&), first)
 import           Data.EdgeLength
 import           Data.Foldable
 import           Data.Hashable
@@ -45,10 +45,16 @@ import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot       hiding (EdgeLength)
 import qualified File.Format.VertexEdgeRoot       as VER
 import           Prelude                          hiding (lookup)
+import Data.NodeLabel
+import Data.Text.Short(ShortText)
+import Data.String (IsString(fromString))
+import Data.ShortText.Custom (intToShortText)
+import Data.Coerce (coerce)
+
 
 -- |
 -- The type of possibly-present decorations on a tree from a parsed file.
-type ParserTree   = ReferenceDAG () EdgeLength (Maybe String)
+type ParserTree   = ReferenceDAG () EdgeLength (Maybe NodeLabel)
 
 
 -- |
@@ -63,7 +69,7 @@ type ParserForestSet = Maybe (NonEmpty (PhylogeneticForest ParserTree))
 
 -- |
 -- An internal type for representing a node with a unique numeric identifier.
-data NewickEnum   = NE !Int (Maybe String) (Maybe Double) [NewickEnum]
+data NewickEnum   = NE !Int (Maybe NodeLabel) (Maybe Double) [NewickEnum]
 
 
 -- |
@@ -90,7 +96,7 @@ instance ParsedForest (DotGraph GraphID) where
         cMapping =  dotChildMap  dot
         pMapping =  dotParentMap dot
 
-        f :: GraphID -> ([(EdgeLength, GraphID)], Maybe String, [(EdgeLength, GraphID)])
+        f :: GraphID -> ([(EdgeLength, GraphID)], Maybe NodeLabel, [(EdgeLength, GraphID)])
         f x = (parents, marker, kids)
            where
             kids, parents :: [(EdgeLength, GraphID)]
@@ -98,7 +104,7 @@ instance ParsedForest (DotGraph GraphID) where
             parents = fmap (const mempty &&& id) . toList $ pMapping ! x
 
             marker
-              | null kids = Just $ toIdentifier x
+              | null kids = Just . fromString . toIdentifier $ x
               | otherwise = Nothing
 
 
@@ -145,36 +151,39 @@ instance ParsedForest (NonEmpty NewickForest) where
         enumerate :: NewickNode -> NewickEnum
         enumerate = (\(_,_,x) -> x) . f mempty 0
           where
-            f :: Map String NewickEnum -> Int -> NewickNode -> (Map String NewickEnum, Int, NewickEnum)
+            f :: Map NodeLabel NewickEnum -> Int -> NewickNode -> (Map NodeLabel NewickEnum, Int, NewickEnum)
             f seen n node =
-                case newickLabel node >>= (`lookup` seen) of
+              let
+                nodeLabel = coerce . newickLabelShort $ node
+              in
+                case nodeLabel >>= (`lookup` seen) of
                   Just x  -> (seen, n, x)
                   Nothing ->
                     case descendants node of
-                      [] -> let enumed = NE n (newickLabel node) (branchLength node) []
+                      [] -> let enumed = NE n nodeLabel (branchLength node) []
                                 seen'  =
                                   case newickLabel node of
                                     Nothing -> seen
-                                    Just x  -> seen <> Map.singleton x enumed
+                                    Just x  -> seen <> Map.singleton (nodeLabelString  x) enumed
                             in  (seen', n + 1, enumed)
                       xs -> let recursiveResult = NE.scanr (\e (x,y,_) -> f x y e) (seen, n+1, undefined) xs
                                 (seen', n', _)  = NE.head recursiveResult
                                 childEnumed     = (\(_,_,x) -> x) <$> NE.init recursiveResult
-                                enumed          = NE n (newickLabel node) (branchLength node) childEnumed
+                                enumed          = NE n nodeLabel (branchLength node) childEnumed
                                 seen''          =
                                   case newickLabel node of
                                     Nothing -> seen'
-                                    Just x  -> seen' <> Map.singleton x enumed
+                                    Just x  -> seen' <> Map.singleton (nodeLabelString x) enumed
                             in  (seen'', n', enumed)
 
         -- We use the unique indices from the 'enumerate' step to build a local connectivity map.
-        relationMap :: NewickEnum -> IntMap ([(EdgeLength, Int)], Maybe String, [(EdgeLength, Int)])
+        relationMap :: NewickEnum -> IntMap ([(EdgeLength, Int)], Maybe NodeLabel, [(EdgeLength, Int)])
         relationMap root = subCall Nothing root mempty
           where
             subCall :: Maybe Int
                     -> NewickEnum
-                    -> IntMap ([(EdgeLength, Int)], Maybe String, [(EdgeLength, Int)])
-                    -> IntMap ([(EdgeLength, Int)], Maybe String, [(EdgeLength, Int)])
+                    -> IntMap ([(EdgeLength, Int)], Maybe NodeLabel, [(EdgeLength, Int)])
+                    -> IntMap ([(EdgeLength, Int)], Maybe NodeLabel, [(EdgeLength, Int)])
             subCall parentMay (NE ref labelMay costMay children) prevMap =
                 case ref `lookup` prevMap of
                   Just (xs, datum, ys) -> IM.insert ref ((fromDoubleMay costMay, fromJust parentMay):xs, datum, ys) prevMap
@@ -192,10 +201,14 @@ instance ParsedForest (NonEmpty NewickForest) where
 
 -- | (✔)
 instance ParsedForest TntResult where
-    unifyGraph input = fmap pure $
+  unifyGraph input = fmap pure $
         case input of
-          Left                forest  -> toPhylogeneticForest getTNTName <$> Just     forest
-          Right (WithTaxa _ _ forest) -> toPhylogeneticForest fst        <$> nonEmpty forest
+          Left                forest  ->
+            toPhylogeneticForest getTNTName <$> Just     forest
+          Right (WithTaxa _ _ forest) ->
+            toPhylogeneticForest fst        <$> (nonEmpty
+                                              . fmap (fmap (first nodeLabelString))
+                                              $ forest)
       where
 
         -- | Propper fmapping over 'Maybe's and 'NonEmpty's
@@ -210,7 +223,7 @@ instance ParsedForest TntResult where
                 g = fmap (const mempty &&& id)
 
         -- | We assign a unique index to each node and create an adjcency matrix.
-        enumerate :: (n -> String) -> LeafyTree n -> IntMap (Maybe Int, Maybe String, [Int])
+        enumerate :: (n -> NodeLabel) -> LeafyTree n -> IntMap (Maybe Int, Maybe NodeLabel, [Int])
         enumerate toLabel = (\(_,_,x) -> x) . f Nothing 0
           where
             f parentRef n node =
@@ -224,20 +237,26 @@ instance ParsedForest TntResult where
                         selfMapping     = IM.singleton n (parentRef, Nothing, childrenRefs)
                     in (n, counter, selfMapping <> subTreeMapping)
 
-        -- | Conversion function for 'NodeType' to string
-        getTNTName :: NodeType -> String
+        -- | Conversion function for 'NodeType' to 'NodeLabel'
+        getTNTName :: NodeType -> NodeLabel
         getTNTName node =
             case node of
-              Index  i -> show i
-              Name   n -> n
-              Prefix s -> s
+              Index  i -> nodeLabel . intToShortText $ i
+              Name   n -> nodeLabel . fromString $ n
+              Prefix s -> nodeLabel . fromString $ s
 
 
 {- -}
 -- | (✔)
 instance ParsedForest VER.VertexEdgeRoot where
 
-    unifyGraph (VER vs es rs) = Just . pure . PhylogeneticForest . fmap convertToDAG . NE.fromList $ toList disconnectedRoots
+    unifyGraph (VER vs es rs) =
+        Just
+      . pure
+      . PhylogeneticForest
+      . fmap convertToDAG
+      . NE.fromList
+      $ toList disconnectedRoots
       where
 
         childMapping  = foldMap (collectEdges edgeTarget) vs
@@ -270,7 +289,7 @@ instance ParsedForest VER.VertexEdgeRoot where
 
         convertToDAG = unfoldDAG f
           where
-            f label = (pValues, Just label, cValues)
+            f label = (pValues, Just . nodeLabel . fromString $ label, cValues)
               where
                 pValues =
                     case label `lookup` parentMapping of
