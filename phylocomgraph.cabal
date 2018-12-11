@@ -148,6 +148,7 @@ library
                     , semigroups
                     , smallcheck
                     , text
+                    , text-short
                     , transformers
                     , unordered-containers
                     , vector
@@ -333,6 +334,7 @@ executable pcg
                     , semigroupoids
                     , semigroups
                     , text
+                    , text-short
                     , transformers
                     , validation
                     , vector
@@ -575,6 +577,7 @@ Test-Suite unit-tests
 
   build-depends:      base               >=4.10
                     , bimap
+                    , binary
                     , bv-little
                     -- >=0.5.8 Required for Data.Map.restrictKeys
                     , containers         >=0.5.8
@@ -606,6 +609,7 @@ Test-Suite unit-tests
                     , unordered-containers
                     , vector
                     -- >=3.4 required for corrected definition of (!) & index
+                    , vector-binary-instances
                     , vector-instances >=3.4
                     , xml
 
