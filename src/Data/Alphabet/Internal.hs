@@ -15,6 +15,7 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies      #-}
@@ -63,7 +64,7 @@ data Alphabet a =
      Alphabet
      { symbolVector :: {-# UNPACK #-} !(Vector a)
      , stateNames   :: [a]
-     } deriving (Generic)
+     } deriving (Generic, Functor)
 
 
 type instance Key Alphabet = Int

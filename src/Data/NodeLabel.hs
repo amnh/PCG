@@ -18,15 +18,19 @@
 {-# LANGUAGE TypeFamilies               #-}
 
 module Data.NodeLabel
-  ( NodeLabel()
+  ( NodeLabel(NL)
+  , nodeLabel
+  , nodeLabelString
   ) where
 
 
 import Control.DeepSeq
 import Data.Default
 import Data.MonoTraversable
-import Data.String
 import GHC.Generics
+import Data.Text.Short as TS
+import Data.Binary
+import Data.String (IsString())
 
 
 -- |
@@ -42,19 +46,62 @@ import GHC.Generics
 -- the node, that string will be returned from the call to 'show'. If the user
 -- did not specify a label for the node, the Show insatnce will return
 -- @{Unlabeled Node}@.
-newtype NodeLabel = NL String
-    deriving(Eq, Default, Generic, MonoFoldable, NFData, Ord)
+newtype NodeLabel = NL {getNodeLabel :: ShortText}
+    deriving(Eq, Generic, IsString, Monoid, NFData, Ord, Semigroup, Show)
 
+-- |
+-- Constructor for a 'NodeLabel'
+nodeLabel :: ShortText -> NodeLabel
+nodeLabel = NL
+
+-- |
+-- Construct a 'NodeLabel' from a 'String'
+nodeLabelString :: String -> NodeLabel
+nodeLabelString = NL. fromString
+
+
+instance Default NodeLabel where
+  def = mempty
 
 type instance Element NodeLabel = Char
 
-
-instance IsString NodeLabel where
-
-    fromString = NL
+instance Binary NodeLabel
 
 
-instance Show NodeLabel where
+instance MonoFoldable NodeLabel where
 
-    show (NL []) = ""
-    show (NL xs) = xs
+    -- |
+    -- Map each element of a structure to a 'Monoid' and combine the results.
+    {-# INLINE ofoldMap #-}
+    ofoldMap f = TS.foldr (mappend . f) mempty . getNodeLabel
+
+    -- |
+    -- Right-associative fold of a structure.
+    {-# INLINE ofoldr #-}
+    ofoldr f e = TS.foldr f e . getNodeLabel
+
+    -- |
+    -- Strict left-associative fold of a structure.
+    {-# INLINE ofoldl' #-}
+    ofoldl' f e = TS.foldl' f e . getNodeLabel
+
+
+    -- |
+    -- This function throws an error and is only defined for the typeclass definition.
+    ofoldr1Ex = error "Do not use ofoldr1Ex on NodeLabel"
+
+    -- |
+    -- This function throws an error and is only here for the typeclass definition.
+    ofoldl1Ex' = error "Do not use ofoldl1Ex' on NodeLabel"
+
+    
+-- |
+-- Performs a element-wise monomporphic map over a 'NodeLabel'.
+instance MonoFunctor NodeLabel where
+
+  omap f (NL shortText) = NL $ TS.foldr g mempty shortText
+
+    where
+      g char acc = singleton (f char) <> acc
+    
+
