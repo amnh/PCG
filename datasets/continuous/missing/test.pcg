@@ -1,2 +1,2 @@
 read("../../shared-data/missing/continuous.tnt")
-report(data, (overwrite, "cost.data"))
+save(binary, "graph.bin")

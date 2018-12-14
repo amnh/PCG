@@ -25,6 +25,7 @@ module Numeric.Extended.Real
   ) where
 
 import Control.DeepSeq
+import Data.Binary
 import GHC.Generics
 import Numeric.Extended.Internal
 import Test.QuickCheck
@@ -54,6 +55,7 @@ instance Arbitrary ExtendedReal where
         -- We generate the 'infinity' value 1 in 20 times.
         weightForInfinity = (1, 20) :: (Int, Int)
 
+instance Binary ExtendedReal
 
 instance Bounded ExtendedReal where
 

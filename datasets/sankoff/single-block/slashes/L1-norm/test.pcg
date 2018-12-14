@@ -1,3 +1,3 @@
 read(prealigned:custom_alphabet:(tcm:"../../../../shared-data/tcms/slashes-L1-norm.tcm", "../../../../shared-data/slashes/slashes-aligned.fasta"))
 read("../../../../shared-data/slashes/slashes-aligned.tree")
-report(data, (overwrite, "cost.data"))
+save(binary, "graph.bin")

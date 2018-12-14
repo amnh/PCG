@@ -59,22 +59,27 @@ library
   import:           ghc-settings
 
   build-depends:    base             >=4.8
+                  , binary
                   , bv-little
                   , containers       >=0.5.8
+                  , directory
                   , deepseq
                   , hashable
                   , integer-gmp
                   , keys
+                  , lens
                   , matrix
                   , mono-traversable >=1.0
                   , QuickCheck
                   , transformers
                   , validation
-                  , vector
+                  -- >=0.12.0.2 required for compatability with "compact regions"
+                  , vector             >=0.12.0.2 
 
   hs-source-dirs:   src
 
   exposed-modules:  Data.BitMatrix
+                    Data.Binary.Utility
                     Data.Either.Custom
                     Data.Foldable.Custom
                     Data.List.Utility

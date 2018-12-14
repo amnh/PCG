@@ -38,6 +38,7 @@ import           Control.Lens.Fold             (Fold, folding)
 import           Control.Lens.Operators        ((%~), (.~), (^.))
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
+import           Data.Binary                   (Binary)
 import           Data.EdgeSet
 import           Data.Foldable
 import           Data.Foldable.Custom
@@ -69,6 +70,7 @@ import           Data.Tree.Pretty              (drawVerticalTree)
 import           Data.Tuple.Utility
 import           Data.Vector                   (Vector)
 import qualified Data.Vector                   as V
+import           Data.Vector.Binary            ()
 import qualified Data.Vector.Custom            as V (fromList')
 import           Data.Vector.Instances         ()
 import           Data.Vector.Utility           as DV
@@ -85,7 +87,7 @@ data  ReferenceDAG d e n
     = ReferenceDAG
     { references :: {-# UNPACK #-} !(Vector (IndexData e n))
     , rootRefs   :: !(NonEmpty Int)
-    , graphData  :: GraphData d
+    , graphData  :: !(GraphData d)
     } deriving (Generic)
 
 
@@ -140,7 +142,6 @@ newtype NodeRef = NR Int deriving (Eq, Enum)
 class HasNodeDecoration s t a b | s -> a, t -> b, s b -> t, t a -> s where
   _nodeDecoration :: Lens s t a b
 
-  -- TODO (CM): Make these speicalise pragmas more monomorphic in the types being used?
 {-# SPECIALISE _nodeDecoration :: Lens (IndexData e n) (IndexData e n') n n' #-}
 
 instance HasNodeDecoration (IndexData e n) (IndexData e n') n n' where
@@ -290,6 +291,18 @@ instance Bifunctor (ReferenceDAG d) where
         }
       where
         h (IndexData node parentRefs' childRefs') = IndexData (g node) parentRefs' $ f <$> childRefs'
+
+
+-- | (✔)
+instance Binary d => Binary (GraphData d)
+
+
+-- | (✔)
+instance (Binary e, Binary n) => Binary (IndexData e n)
+
+
+-- | (✔)
+instance (Binary d, Binary e, Binary n) => Binary (ReferenceDAG d e n)
 
 
 -- | (✔)

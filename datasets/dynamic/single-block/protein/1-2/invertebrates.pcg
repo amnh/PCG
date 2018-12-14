@@ -1,3 +1,3 @@
 read(custom_alphabet:(tcm:"../../../../shared-data/tcms/protein-1-2.tcm", "../../../../shared-data/invertebrates/invertebrates.fasta"))
 read("../../../../shared-data/invertebrates/invertebrates.tree")
-report(data, (overwrite, "cost.data"))
+save(binary, "graph.bin")

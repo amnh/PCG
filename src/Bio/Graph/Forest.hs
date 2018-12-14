@@ -49,7 +49,7 @@ import Text.XML.Custom
 -- |
 -- A newtype wrapper for a 'NonEmpty' collection of forests.
 newtype PhylogeneticForest a
-      = PhylogeneticForest (NonEmpty a)
+      = PhylogeneticForest {getPhylogeneticForest :: NonEmpty a}
       deriving (Foldable, Foldable1, Functor, Generic, Semigroup, Traversable)
 
 
