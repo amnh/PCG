@@ -82,7 +82,8 @@ library
                   , scientific
                   , semigroupoids
                   , text
-                  , vector
+                  -- >=0.12.0.2 required for compatability with "compact regions"
+                  , vector             >=0.12.0.2 
 
   hs-source-dirs:   src
 
