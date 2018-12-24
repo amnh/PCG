@@ -79,9 +79,9 @@ instance Functor (CharacterSequence u v w x y) where
 
 
 instance HasBlocks
-  (CharacterSequence u v w x y z)
+  (CharacterSequence u  v  w  x  y  z )
   (CharacterSequence u' v' w' x' y' z')
-  (Vector (CharacterBlock u v w x y z))
+  (Vector (CharacterBlock u  v  w  x  y  z ))
   (Vector (CharacterBlock u' v' w' x' y' z')) where
 
       blockSequence = iso toBlocks fromBlocks

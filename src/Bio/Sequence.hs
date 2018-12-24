@@ -50,6 +50,7 @@ module Bio.Sequence
   , hexTranspose
   , hexZip
   , hexZipWith
+  , hexZipWith3
   , hexZipWithMeta
   , hexZipMeta
   -- * Cost quantification
@@ -64,7 +65,7 @@ import           Bio.Metadata.Continuous
 import           Bio.Metadata.Discrete
 import           Bio.Metadata.DiscreteWithTCM
 import           Bio.Metadata.Dynamic
-import           Bio.Sequence.Block           hiding (hexTranspose, hexZipMeta, hexZipWith, hexZipWithMeta, hexmap)
+import           Bio.Sequence.Block           hiding (hexTranspose, hexZipMeta, hexZipWith, hexZipWith3, hexZipWithMeta, hexmap)
 import qualified Bio.Sequence.Block           as Blk
 import           Bio.Sequence.Block.Builder
 import           Bio.Sequence.Block.Character (finalizeCharacterBlock, nonExistantBlock)
@@ -158,6 +159,28 @@ hexZipWith
   -> CharacterSequence u'' v'' w'' x'' y'' z''
 hexZipWith f1 f2 f3 f4 f5 f6 lhs =
     over blockSequence (parZipWith rpar (Blk.hexZipWith f1 f2 f3 f4 f5 f6) (lhs ^. blockSequence))
+
+
+-- |
+-- Performs a zip over the two character sequences. Uses the input functions to
+-- zip the different character types in the character block.
+--
+-- Assumes that the 'CharacterSequence' values have the same number of character
+-- blocks and the same number of each character type in the corresponding block
+-- of each block. If this assumtion is violated, the result will be truncated.
+hexZipWith3
+  :: (u -> u' -> u'' -> u''')
+  -> (v -> v' -> v'' -> v''')
+  -> (w -> w' -> w'' -> w''')
+  -> (x -> x' -> x'' -> x''')
+  -> (y -> y' -> y'' -> y''')
+  -> (z -> z' -> z'' -> z''')
+  -> CharacterSequence u    v    w    x    y    z
+  -> CharacterSequence u'   v'   w'   x'   y'   z'
+  -> CharacterSequence u''  v''  w''  x''  y''  z''
+  -> CharacterSequence u''' v''' w''' x''' y''' z'''
+hexZipWith3 f1 f2 f3 f4 f5 f6 lhs rhs =
+    over blockSequence (parZipWith3 rpar (Blk.hexZipWith3 f1 f2 f3 f4 f5 f6) (lhs ^. blockSequence) (rhs ^. blockSequence))
 
 
 -- |

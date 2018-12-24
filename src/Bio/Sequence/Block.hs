@@ -38,6 +38,7 @@ module Bio.Sequence.Block
   , hexTranspose
   , hexZipMeta
   , hexZipWith
+  , hexZipWith3
   , hexZipWithMeta
   ) where
 
