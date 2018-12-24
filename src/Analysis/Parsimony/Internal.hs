@@ -1,9 +1,3 @@
-{-# LANGUAGE DeriveFunctor         #-}
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE LambdaCase            #-}
-{-# LANGUAGE PatternSynonyms       #-}
-{-# LANGUAGE RecordWildCards       #-}
-
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Analysis.Parsimony.Internal
@@ -16,6 +10,12 @@
 --
 --
 -----------------------------------------------------------------------------
+
+{-# LANGUAGE DeriveFunctor         #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE LambdaCase            #-}
+{-# LANGUAGE PatternSynonyms       #-}
+{-# LANGUAGE RecordWildCards       #-}
 
 module Analysis.Parsimony.Internal
   ( PostorderContext(..)
@@ -33,8 +33,7 @@ module Analysis.Parsimony.Internal
   , preorderContext
   , preorderContextSym
   , rootFunction
-  )
-  where
+  ) where
 
 import Data.MonoTraversable
 
@@ -64,6 +63,7 @@ postorderContext leafFn binaryFn = \case
   PostNetworkContext netChild -> netChild
   PostBinaryContext {..}      -> binaryFn  binNode  (leftChild, rightChild)
 
+
 -- |
 -- Extract the function on leaves from a function on a 'PostorderContext'.
 leafFunction :: (PostorderContext n c -> e) -> (n -> e)
@@ -76,6 +76,7 @@ leafFunction postFn = postFn . LeafContext
 postBinaryFunction :: (PostorderContext n c -> e) -> (n -> (c, c) -> e)
 postBinaryFunction postFn binNode (leftChild, rightChild) = postFn $ PostBinaryContext{..}
 
+
 -- |
 -- Extracts the node data from a 'PostorderContext'.
 extractNode :: PostorderContext c c -> c
@@ -84,6 +85,7 @@ extractNode = \case
   PostNetworkContext netChild -> netChild
   PostBinaryContext  {..}     -> binNode
 
+
 -- |
 -- A data type for the child contexts that can occur in graphs.
 data ChildContext c
@@ -91,6 +93,7 @@ data ChildContext c
   | OneChild c
   | TwoChildren c c
     deriving Functor
+
 
 -- |
 -- Construct a 'ChildContext' from a monoTraversable structure ignoring
@@ -103,7 +106,6 @@ otoChildContext xs =
     (l: r: _) -> TwoChildren l r
 
 
-
 -- |
 -- A node context for performing a preorder traversal on a binary
 -- network with possible in-degree 2, out-degree 1 nodes
@@ -113,6 +115,7 @@ data PreorderContext c p
       { preParent       :: p
       , preChildContext :: Either c c
       }
+
 
 -- |
 -- Elimination principle for 'PreorderContext'
@@ -124,6 +127,7 @@ preorderContext
 preorderContext rootFn internalFn = \case
   RootContext        rootNode  -> rootFn rootNode
   PreInternalContext {..}      -> internalFn  preChildContext preParent
+
 
 -- |
 -- Elimination principle for 'PreorderContext' that is symmetric in
@@ -138,17 +142,20 @@ preorderContextSym rootFn symInternalFn =
   where
     internalFn optN = symInternalFn (either id id optN)
 
+
 -- |
 -- Extract the function on a root context from a function on a
 -- 'PreorderContext'.
 rootFunction :: (PreorderContext c p -> e) -> (c -> e)
 rootFunction preFn = preFn . RootContext
 
+
 -- |
 -- Extract the function on an internal binary context from a function on a
 -- 'PreorderContext'.
 preBinaryFunction :: (PreorderContext c p -> e) -> (Either c c -> p -> e)
 preBinaryFunction preFn optC p = preFn $ PreInternalContext p optC
+
 
 -- |
 -- Extracts the node data from a 'PreorderContext'.
