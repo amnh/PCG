@@ -589,30 +589,49 @@ constructDefaultMetadata = ((mempty, mempty, Nothing) <$) . graphData
 -- |
 -- Computes and sets the virtual node sequence on each edge.
 setEdgeSequences
-  :: forall m e n u v w x y z u' v' w' x' y' z'
+  :: forall m e n u v w x y z u' v' w' x' y' z' u'' v'' w'' x'' y''
   .  (ContinuousCharacterMetadataDec                         -> (u, u) -> u')
   -> (DiscreteCharacterMetadataDec                           -> (v, v) -> v')
   -> (DiscreteCharacterMetadataDec                           -> (w, w) -> w')
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> (x, x) -> x')
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> (y, y) -> y')
-  -> (DynamicCharacterMetadataDec (Element DynamicCharacter) -> (z, z) -> z')
+  -> HashMap EdgeReference (ResolutionCache (CharacterSequence u'' v'' w'' x'' y'' z'))  
   -> PhylogeneticDAG2 m e n u v w x y z
   -> PhylogeneticDAG2 m (e, CharacterSequence u' v' w' x' y' z') n u v w x y z
-setEdgeSequences f1 f2 f3 f4 f5 f6 (PDAG2 dag meta) = PDAG2 updatedDAG meta
+setEdgeSequences f1 f2 f3 f4 f5 edgeMapping p@(PDAG2 dag meta) = PDAG2 updatedDAG meta
   where
+    -- Looks like this value kis bad and can't be used.
+--    edgeMapping  = p ^. _virtualNodeMapping
     refVec       = references dag
     updatedDAG   = dag { references = updatedEdges }
-    updatedEdges = updateEdgeData <$> refVec
+    updatedEdges = updateEdgeData <#$> refVec
 
-    updateEdgeData idx = idx { childRefs = addEdgeSeq <#$> childRefs idx }
+    updateEdgeData
+      :: Int
+      -> IndexData
+           e
+           (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
+      -> IndexData
+           (e, CharacterSequence u' v' w' x' y' z')
+           (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
+    updateEdgeData i idx = idx { childRefs = addEdgeSeq <#$> childRefs idx }
       where
         thisSeq  = getDatum idx :: CharacterSequence u v w x y z
         getDatum = characterSequence . NE.head . resolutions . nodeDecoration
-        addEdgeSeq k v = (v, edgeSeq)
+        addEdgeSeq j v = (v, edgeSeq)
           where
             kidSeq  :: CharacterSequence u v w x y z
-            kidSeq  = getDatum $ refVec ! k
+            kidSeq  = getDatum $ refVec ! j
+
+            rerootSeq = characterSequence . NE.head $ edgeMapping ! (i,j)
+
+            f1' m (a,b,_) = f1 m (a,b)
+            f2' m (a,b,_) = f2 m (a,b)
+            f3' m (a,b,_) = f3 m (a,b)
+            f4' m (a,b,_) = f4 m (a,b)
+            f5' m (a,b,_) = f5 m (a,b)
+            f6' _ (_,_,c) = c 
 
             edgeSeq :: CharacterSequence u' v' w' x' y' z'
-            edgeSeq = hexZipMeta f1 f2 f3 f4 f5 f6 meta $ hexZip thisSeq kidSeq
+            edgeSeq = hexZipMeta f1' f2' f3' f4' f5' f6' meta $ hexZip3 thisSeq kidSeq rerootSeq
 

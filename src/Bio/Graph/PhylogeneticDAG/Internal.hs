@@ -39,6 +39,7 @@ module Bio.Graph.PhylogeneticDAG.Internal
   , resolutionsDoNotOverlap
   , HasPhylogeneticForest(..)
   , HasMinimalNetworkContext(..)
+  , HasVirtualNodeMapping(..)
   , setDefaultMetadata
   ) where
 
@@ -154,6 +155,28 @@ data  PhylogeneticDAG2 m e n u v w x y z
 -- |
 -- Reference to a edge in the DAG
 type EdgeReference = (Int, Int)
+
+
+-- |
+-- A 'Lens' for the 'virtualNodeMapping' field in 'PostorderContextualData'
+{-# SPECIALISE  _minimalNetworkContext :: Lens' (PostorderContextualData t) (HashMap EdgeReference (ResolutionCache t)) #-}
+class HasVirtualNodeMapping s a | s -> a where
+
+    _virtualNodeMapping :: Lens' s a
+
+
+instance HasVirtualNodeMapping (PostorderContextualData t) (HashMap EdgeReference (ResolutionCache t)) where
+
+    {-# INLINE _virtualNodeMapping #-}
+    _virtualNodeMapping = lens virtualNodeMapping (\p v -> p {virtualNodeMapping = v})
+
+
+instance HasVirtualNodeMapping (PhylogeneticDAG2 m e n u v w x y z) (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))) where
+
+    {-# INLINE _virtualNodeMapping #-}
+    _virtualNodeMapping = lens
+        (virtualNodeMapping . graphMetadata . graphData . phylogeneticForest)
+        (\p v -> p & _phylogeneticForest . _graphData . _graphMetadata . _virtualNodeMapping .~ v)
 
 
 -- |

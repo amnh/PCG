@@ -49,6 +49,7 @@ module Bio.Sequence
   , hexmap
   , hexTranspose
   , hexZip
+  , hexZip3
   , hexZipWith
   , hexZipWith3
   , hexZipWithMeta
@@ -138,6 +139,16 @@ hexZip
   -> CharacterSequence u' v' w' x' y' z'
   -> CharacterSequence (u,u') (v,v') (w,w') (x,x') (y,y') (z,z')
 hexZip = hexZipWith (,) (,) (,) (,) (,) (,)
+
+
+-- |
+-- Zips together two 'CharacterSequence' values to get pairs of values.
+hexZip3
+  :: CharacterSequence u   v   w   x   y   z
+  -> CharacterSequence u'  v'  w'  x'  y'  z'
+  -> CharacterSequence u'' v'' w'' x'' y'' z''
+  -> CharacterSequence (u,u',u'') (v,v',v'') (w,w',w'') (x,x',x'') (y,y',y'') (z,z',z'')
+hexZip3 = hexZipWith3 (,,) (,,) (,,) (,,) (,,) (,,)
 
 
 -- |

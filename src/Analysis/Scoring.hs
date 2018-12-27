@@ -128,7 +128,7 @@ performDecoration x = finalizeEdgeData . performPreorderDecoration . performPost
                          (const additivePostorderPairwise)
                          sankoffPostorderPairwise
                          sankoffPostorderPairwise
-                         undefined -- adaptiveDirectOptimizationPostorder2
+                         edgeCostMapping
  
     performPreorderDecoration
       :: PostorderDecorationDAG
