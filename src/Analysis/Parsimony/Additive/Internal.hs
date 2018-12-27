@@ -114,15 +114,15 @@ unionInterval x y = x & finalInterval .~ union xInt yInt
 -- Used on the post-order (i.e. first) traversal.
 -- Applies appropriate logic to internal node and leaf node cases.
 additivePostorder
-  :: ( RangedCharacterDecoration n c'
-     , RangedExtensionPostorder c c'
+  :: ( RangedCharacterDecoration n e
+     , RangedExtensionPostorder  c e
      )
   => PostorderContext n c
   -> c
 additivePostorder
   = postorderContext
       initializeLeaf
-      updatePostorder
+      additivePostorderPairwise
 
 -- |
 -- Initializes a leaf node by copying its current value into its preliminary
@@ -151,11 +151,13 @@ initializeLeaf curDecoration = finalDecoration
 -- intersection of the two child intervals.
 --
 -- Used on the postorder pass.
-updatePostorder
-  :: RangedExtensionPostorder c c'
-  => (c, c)
+additivePostorderPairwise
+  :: ( RangedExtensionPostorder  c e
+     , RangedPostorderDecoration d e
+     )
+  => (d, d)
   -> c
-updatePostorder (lChild, rChild) = finalDecoration
+additivePostorderPairwise (lChild, rChild) = finalDecoration
   where
     finalDecoration = extendRangedToPostorder lChild totalCost newInterval childIntervals False
     totalCost       = thisNodeCost + (lChild ^. characterCost) + (rChild ^. characterCost)

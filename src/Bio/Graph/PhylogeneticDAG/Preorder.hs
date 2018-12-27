@@ -590,12 +590,12 @@ constructDefaultMetadata = ((mempty, mempty, Nothing) <$) . graphData
 -- Computes and sets the virtual node sequence on each edge.
 setEdgeSequences
   :: forall m e n u v w x y z u' v' w' x' y' z'
-  .  (ContinuousCharacterMetadataDec                         -> AP.PostorderContext u u -> u')
-  -> (DiscreteCharacterMetadataDec                           -> AP.PostorderContext v v -> v')
-  -> (DiscreteCharacterMetadataDec                           -> AP.PostorderContext w w -> w')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> AP.PostorderContext x x -> x')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> AP.PostorderContext y y -> y')
-  -> (DynamicCharacterMetadataDec (Element DynamicCharacter) -> AP.PostorderContext z z -> z')
+  .  (ContinuousCharacterMetadataDec                         -> (u, u) -> u')
+  -> (DiscreteCharacterMetadataDec                           -> (v, v) -> v')
+  -> (DiscreteCharacterMetadataDec                           -> (w, w) -> w')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> (x, x) -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> (y, y) -> y')
+  -> (DynamicCharacterMetadataDec (Element DynamicCharacter) -> (z, z) -> z')
   -> PhylogeneticDAG2 m e n u v w x y z
   -> PhylogeneticDAG2 m (e, CharacterSequence u' v' w' x' y' z') n u v w x y z
 setEdgeSequences f1 f2 f3 f4 f5 f6 (PDAG2 dag meta) = PDAG2 updatedDAG meta
@@ -603,13 +603,6 @@ setEdgeSequences f1 f2 f3 f4 f5 f6 (PDAG2 dag meta) = PDAG2 updatedDAG meta
     refVec       = references dag
     updatedDAG   = dag { references = updatedEdges }
     updatedEdges = updateEdgeData <$> refVec
-
-    f1' = postBinaryFunction <$> f1
-    f2' = postBinaryFunction <$> f2
-    f3' = postBinaryFunction <$> f3
-    f4' = postBinaryFunction <$> f4
-    f5' = postBinaryFunction <$> f5
-    f6' = postBinaryFunction <$> f6
 
     updateEdgeData idx = idx { childRefs = addEdgeSeq <#$> childRefs idx }
       where
@@ -621,5 +614,5 @@ setEdgeSequences f1 f2 f3 f4 f5 f6 (PDAG2 dag meta) = PDAG2 updatedDAG meta
             kidSeq  = getDatum $ refVec ! k
 
             edgeSeq :: CharacterSequence u' v' w' x' y' z'
-            edgeSeq = hexZipMeta f1' f2' f3' f4' f5' f6' meta $ hexZip thisSeq kidSeq
+            edgeSeq = hexZipMeta f1 f2 f3 f4 f5 f6 meta $ hexZip thisSeq kidSeq
 

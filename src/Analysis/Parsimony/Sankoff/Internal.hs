@@ -54,7 +54,7 @@ sankoffPostorder
 sankoffPostorder meta
   = postorderContext
       (initializeCostVector meta)
-      (updateCostVector meta)
+      (sankoffPostorderPairwise meta)
 
 
 -- |
@@ -153,12 +153,12 @@ initializeCostVector meta inputDecoration =
 -- from the characters on each of the left and right children. Stores those mins as a tuple of lists.
 --
 --
-updateCostVector
+sankoffPostorderPairwise
   :: EncodableStaticCharacter c
   => DiscreteWithTCMCharacterMetadataDec c
   -> (SankoffOptimizationDecoration c , SankoffOptimizationDecoration c)
   -> SankoffOptimizationDecoration c
-updateCostVector meta (leftChildDec, rightChildDec) = returnNodeDecoration -- May? be able to amend this to use non-binary children.
+sankoffPostorderPairwise meta (leftChildDec, rightChildDec) = returnNodeDecoration -- May? be able to amend this to use non-binary children.
   where
     (cs, ds, minTransCost) = foldr findMins initialAccumulator range   -- Sorry abut these shitty variable names. It was to shorten
                                                                        -- the 'extendDiscreteToSankoff' call.
