@@ -106,7 +106,7 @@ directOptimizationPostorder
 directOptimizationPostorder pairwiseAlignment
   = postorderContext
       initializeLeaf
-      (\_ (lChild, rChild) -> updateFromLeaves pairwiseAlignment (lChild, rChild))
+      (updateFromLeaves pairwiseAlignment)
 
 
 -- |

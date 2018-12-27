@@ -12,7 +12,6 @@
 --
 -----------------------------------------------------------------------------
 
-
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -20,8 +19,6 @@
 -- This gap is necessary for stylish Haskell not to re-arrange
 -- NoMonoLocalBinds before TypeFamilies
 {-# LANGUAGE NoMonoLocalBinds    #-}
-
-
 
 module Bio.Graph.PhylogeneticDAG.Preorder
   ( preorderSequence
@@ -592,25 +589,37 @@ constructDefaultMetadata = ((mempty, mempty, Nothing) <$) . graphData
 -- |
 -- Computes and sets the virtual node sequence on each edge.
 setEdgeSequences
-  :: (ContinuousCharacterMetadataDec                      -> u -> [u] -> u)
-  -> (DiscreteCharacterMetadataDec                        -> v -> [v] -> v)
-  -> (DiscreteCharacterMetadataDec                        -> w -> [w] -> w)
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> x -> [x] -> x)
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> y -> [y] -> y)
-  -> (DynamicCharacterMetadataDec DynamicCharacterElement -> z -> [z] -> z)
+  :: forall m e n u v w x y z u' v' w' x' y' z'
+  .  (ContinuousCharacterMetadataDec                         -> AP.PostorderContext u u -> u')
+  -> (DiscreteCharacterMetadataDec                           -> AP.PostorderContext v v -> v')
+  -> (DiscreteCharacterMetadataDec                           -> AP.PostorderContext w w -> w')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> AP.PostorderContext x x -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> AP.PostorderContext y y -> y')
+  -> (DynamicCharacterMetadataDec (Element DynamicCharacter) -> AP.PostorderContext z z -> z')
   -> PhylogeneticDAG2 m e n u v w x y z
-  -> PhylogeneticDAG2 m (e, CharacterSequence u v w x y z) n u v w x y z
+  -> PhylogeneticDAG2 m (e, CharacterSequence u' v' w' x' y' z') n u v w x y z
 setEdgeSequences f1 f2 f3 f4 f5 f6 (PDAG2 dag meta) = PDAG2 updatedDAG meta
   where
     refVec       = references dag
     updatedDAG   = dag { references = updatedEdges }
     updatedEdges = updateEdgeData <$> refVec
 
+    f1' = postBinaryFunction <$> f1
+    f2' = postBinaryFunction <$> f2
+    f3' = postBinaryFunction <$> f3
+    f4' = postBinaryFunction <$> f4
+    f5' = postBinaryFunction <$> f5
+    f6' = postBinaryFunction <$> f6
+
     updateEdgeData idx = idx { childRefs = addEdgeSeq <#$> childRefs idx }
       where
-        thisSeq  = getDatum idx
+        thisSeq  = getDatum idx :: CharacterSequence u v w x y z
         getDatum = characterSequence . NE.head . resolutions . nodeDecoration
         addEdgeSeq k v = (v, edgeSeq)
           where
-            edgeSeq = hexZipWithMeta f1 f2 f3 f4 f5 f6 meta thisSeq . hexTranspose $ thisSeq :| [kidSeq]
+            kidSeq  :: CharacterSequence u v w x y z
             kidSeq  = getDatum $ refVec ! k
+
+            edgeSeq :: CharacterSequence u' v' w' x' y' z'
+            edgeSeq = hexZipMeta f1' f2' f3' f4' f5' f6' meta $ hexZip thisSeq kidSeq
+

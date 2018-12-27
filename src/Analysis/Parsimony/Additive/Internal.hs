@@ -115,7 +115,7 @@ unionInterval x y = x & finalInterval .~ union xInt yInt
 -- Applies appropriate logic to internal node and leaf node cases.
 additivePostorder
   :: ( RangedCharacterDecoration n c'
-     , RangedExtensionPostorder  c c'
+     , RangedExtensionPostorder c c'
      )
   => PostorderContext n c
   -> c
@@ -130,7 +130,7 @@ additivePostorder
 --
 -- Used on the post-order pass.
 initializeLeaf
-  :: ( RangedCharacterDecoration n  c
+  :: ( RangedCharacterDecoration n c
      , RangedExtensionPostorder  e c
      )
   => n
@@ -152,13 +152,10 @@ initializeLeaf curDecoration = finalDecoration
 --
 -- Used on the postorder pass.
 updatePostorder
-  :: ( RangedCharacterDecoration n c'
-     , RangedExtensionPostorder  c c'
-     )
-  => n
-  -> (c, c)
+  :: RangedExtensionPostorder c c'
+  => (c, c)
   -> c
-updatePostorder _parentDecoration (lChild, rChild) = finalDecoration
+updatePostorder (lChild, rChild) = finalDecoration
   where
     finalDecoration = extendRangedToPostorder lChild totalCost newInterval childIntervals False
     totalCost       = thisNodeCost + (lChild ^. characterCost) + (rChild ^. characterCost)

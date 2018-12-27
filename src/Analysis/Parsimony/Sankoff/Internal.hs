@@ -50,11 +50,12 @@ sankoffPostorder
   :: DiscreteCharacterDecoration d c
   => DiscreteWithTCMCharacterMetadataDec c
   -> PostorderContext d (SankoffOptimizationDecoration c)
-  ->  SankoffOptimizationDecoration c
+  -> SankoffOptimizationDecoration c
 sankoffPostorder meta
   = postorderContext
       (initializeCostVector meta)
       (updateCostVector meta)
+
 
 -- |
 -- Used on the pre-order (i.e. second) traversal.
@@ -153,12 +154,11 @@ initializeCostVector meta inputDecoration =
 --
 --
 updateCostVector
-  :: DiscreteCharacterDecoration d c
+  :: EncodableStaticCharacter c
   => DiscreteWithTCMCharacterMetadataDec c
-  -> d
   -> (SankoffOptimizationDecoration c , SankoffOptimizationDecoration c)
   -> SankoffOptimizationDecoration c
-updateCostVector meta _parentDecoration (leftChildDec, rightChildDec) = returnNodeDecoration -- May? be able to amend this to use non-binary children.
+updateCostVector meta (leftChildDec, rightChildDec) = returnNodeDecoration -- May? be able to amend this to use non-binary children.
   where
     (cs, ds, minTransCost) = foldr findMins initialAccumulator range   -- Sorry abut these shitty variable names. It was to shorten
                                                                        -- the 'extendDiscreteToSankoff' call.

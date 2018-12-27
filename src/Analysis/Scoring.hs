@@ -121,13 +121,19 @@ performDecoration x = finalizeEdgeData $ performPreorderDecoration performPostor
   where
     finalizeEdgeData :: PreOrderDecorationDAG -> FinalDecorationDAG
     finalizeEdgeData = setEdgeSequences
-                         (const additivePostorder :: ContinuousCharacterMetadataDec -> ContinuousOptimizationDecoration ContinuousCharacter -> [ContinuousOptimizationDecoration ContinuousCharacter] -> ContinuousOptimizationDecoration ContinuousCharacter)
+                         (const additivePostorder
+                            :: ContinuousCharacterMetadataDec
+                            -> PostorderContext
+                                 (ContinuousOptimizationDecoration ContinuousCharacter)
+                                 (ContinuousOptimizationDecoration ContinuousCharacter)
+                            -> (ContinuousPostorderDecoration ContinuousCharacter)
+                         )
                          (const fitchPostorder)
                          (const additivePostorder)
                          sankoffPostorder
                          sankoffPostorder
-                         (const id2)
-
+                         undefined -- adaptiveDirectOptimizationPostorder2
+ 
     performPreorderDecoration ::
       PostorderDecorationDAG
       (TraversalTopology
@@ -136,7 +142,7 @@ performDecoration x = finalizeEdgeData $ performPreorderDecoration performPostor
       , Double
       , Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge)
       )
-      ->  PreOrderDecorationDAG
+      -> PreOrderDecorationDAG
     performPreorderDecoration =
         preorderFromRooting
           adaptiveDirectOptimizationPreorder
@@ -183,16 +189,13 @@ performDecoration x = finalizeEdgeData $ performPreorderDecoration performPostor
         postFn $
           PostNetworkContext
             (error "The network internal node's data is used in the postorder!")
-      postBin@PostBinaryContext {} ->
-        postFn $
-          postBin
-          { binNode = error "A binary internal node's data is used in the postorder!"}
+      PostBinaryContext x y -> postFn $ PostBinaryContext x y
 
     adaptiveDirectOptimizationPostorder meta = directOptimizationPostorder pairwiseAlignmentFunction
       where
         pairwiseAlignmentFunction = selectDynamicMetric meta
 
-    adaptiveDirectOptimizationPostOrder2 meta = directOptimizationPostOrder pairwiseAlignmentFunction
+    adaptiveDirectOptimizationPostorder2 meta = directOptimizationPostorder pairwiseAlignmentFunction
       where
         pairwiseAlignmentFunction = selectDynamicMetric meta
 

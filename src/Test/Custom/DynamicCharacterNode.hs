@@ -89,17 +89,21 @@ toRootNode :: DynamicDecorationDirectOptimizationPostorderResult DynamicCharacte
            -> DynamicDecorationDirectOptimization DynamicCharacter
 toRootNode x y = directOptimizationPreorder pairwiseFunction defMetadata (RootContext z)
   where
+    f :: PostorderContext
+           (DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter)
+           (DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter)
+      -> DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter
+    f = directOptimizationPostorder pairwiseFunction
+      
     z :: DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter
-    z = directOptimizationPostorder
-          pairwiseFunction
-          (PostBinaryContext {binNode = e, leftChild = x , rightChild = y})
-    e :: DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter
-    e = undefined
+    z = f $ PostBinaryContext {leftChild = x , rightChild = y}
 
 
-pairwiseFunction :: ( Ord (Element s)
-                    , EncodableDynamicCharacter s
-                    ) => s -> s -> (Word, s, s, s, s)
+pairwiseFunction
+  :: ( Ord (Element s)
+     , EncodableDynamicCharacter s
+     )
+  => s -> s -> (Word, s, s, s, s)
 pairwiseFunction x y = naiveDO x y scm
 
 

@@ -357,27 +357,27 @@ applySoftwireResolutions nodeInfo =
       -- The apply operator here correctly updates the 'ResolutionMetadata' with a
       -- pointwise semigroup operator in the relevant fields.
          makeProductBinaryContexts ls rs =
-           [ PostBinaryContext (nodeInfo ^. _characterSequence) <$> l <.> r
-             | l <- toList ls
-             , r <- toList rs
-             , resolutionsDoNotOverlap l r
-             ]
+           [ PostBinaryContext <$> l <.> r
+           | l <- toList ls
+           , r <- toList rs
+           , resolutionsDoNotOverlap l r
+           ]
 
 -- |
 -- Given a pre-order transformation for each type parameter, apply the
 -- transformations to each possible resolution that is not inconsistent.
 generateLocalResolutions
   :: HasBlockCost u' v' w' x' y' z'
-  => (ContinuousCharacterMetadataDec                      -> PostorderContext u u' -> u')
-  -> (DiscreteCharacterMetadataDec                        -> PostorderContext v v' -> v')
-  -> (DiscreteCharacterMetadataDec                        -> PostorderContext w w' -> w')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> PostorderContext x x' -> x')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> PostorderContext y y' -> y')
-  -> (DynamicCharacterMetadataDec (Element DynamicCharacter)   -> PostorderContext z z' -> z')
+  => (ContinuousCharacterMetadataDec                         -> PostorderContext u u' -> u')
+  -> (DiscreteCharacterMetadataDec                           -> PostorderContext v v' -> v')
+  -> (DiscreteCharacterMetadataDec                           -> PostorderContext w w' -> w')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> PostorderContext x x' -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> PostorderContext y y' -> y')
+  -> (DynamicCharacterMetadataDec (Element DynamicCharacter) -> PostorderContext z z' -> z')
   ->  MetadataSequence m
   ->  ResolutionInformation
         (PostorderContext
-          (CharacterSequence u  v  w  x  y  z)
+          (CharacterSequence u  v  w  x  y  z )
           (CharacterSequence u' v' w' x' y' z')
         )
   ->  ResolutionInformation (CharacterSequence u' v' w' x' y' z')
@@ -389,61 +389,57 @@ generateLocalResolutions f1 f2 f3 f4 f5 f6 meta resolutionContext =
     (f4Leaf, f4Bin) = (leafFunction <$> f4 , postBinaryFunction <$> f4)
     (f5Leaf, f5Bin) = (leafFunction <$> f5 , postBinaryFunction <$> f5)
     (f6Leaf, f6Bin) = (leafFunction <$> f6 , postBinaryFunction <$> f6)
-  in
-    case resolutionContext ^. _characterSequence of
-      LeafContext leafCharSequence ->
-        let newCharacterSequence
-              = hexZipMeta
-                  f1Leaf
-                  f2Leaf
-                  f3Leaf
-                  f4Leaf
-                  f5Leaf
-                  f6Leaf
-                  meta
-                  leafCharSequence
-            newTotalCost = sequenceCost meta newCharacterSequence
-        in
-          resolutionContext & _characterSequence .~ newCharacterSequence
-                            & _totalSubtreeCost  .~ newTotalCost
-                            & _localSequenceCost .~ newTotalCost
+  in  case resolutionContext ^. _characterSequence of
+        LeafContext leafCharSequence ->
+          let newCharacterSequence
+                = hexZipMeta
+                    f1Leaf
+                    f2Leaf
+                    f3Leaf
+                    f4Leaf
+                    f5Leaf
+                    f6Leaf
+                    meta
+                    leafCharSequence
+              newTotalCost = sequenceCost meta newCharacterSequence
+          in
+            resolutionContext & _characterSequence .~ newCharacterSequence
+                              & _totalSubtreeCost  .~ newTotalCost
+                              & _localSequenceCost .~ newTotalCost
 
-      PostNetworkContext netChildCharSequence ->
+        PostNetworkContext netChildCharSequence ->
           resolutionContext & _characterSequence .~ netChildCharSequence
-       -- Want to propogate what is stored in the network child resolution
-       -- to the parent.
+          -- Want to propogate what is stored in the network child resolution
+          -- to the parent.
 
-      PostBinaryContext
-        { binNode    = parentalCharSequence
-        , leftChild  = leftCharSequence
-        , rightChild = rightCharSequence
-        } ->
-        let
-          totalChildCost = resolutionContext ^. _totalSubtreeCost
-          newCharacterSequence
-              = hexZipWithMeta
-                  f1Bin
-                  f2Bin
-                  f3Bin
-                  f4Bin
-                  f5Bin
-                  f6Bin
-                  meta
-                  parentalCharSequence
-                  (hexZip
-                    leftCharSequence
-                    rightCharSequence
-                  )
-          newTotalCost      = sequenceCost meta newCharacterSequence
-          newLocalCost      = newTotalCost - totalChildCost
-            in
-          resolutionContext
-            & _characterSequence .~ newCharacterSequence
-            & _totalSubtreeCost  .~ newTotalCost
-            & _localSequenceCost .~ newLocalCost
-
-
-
+        PostBinaryContext
+          { -- binNode    = parentalCharSequence
+            leftChild  = leftCharSequence
+          , rightChild = rightCharSequence
+          } ->
+          let
+            totalChildCost = resolutionContext ^. _totalSubtreeCost
+            newCharacterSequence
+                = hexZipMeta
+                    f1Bin
+                    f2Bin
+                    f3Bin
+                    f4Bin
+                    f5Bin
+                    f6Bin
+                    meta
+--                    parentalCharSequence
+                    (hexZip
+                      leftCharSequence
+                      rightCharSequence
+                    )
+            newTotalCost      = sequenceCost meta newCharacterSequence
+            newLocalCost      = newTotalCost - totalChildCost
+              in
+            resolutionContext
+              & _characterSequence .~ newCharacterSequence
+              & _totalSubtreeCost  .~ newTotalCost
+              & _localSequenceCost .~ newLocalCost
 
 
 -- |

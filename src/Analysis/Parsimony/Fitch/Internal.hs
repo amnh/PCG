@@ -66,11 +66,10 @@ fitchPreorder = preorderContextSym rootFn internalFn
 -- calculate the preliminary character state for the parent node. In addition, calculate the cost of assigning
 -- that character state to the parent.
 updatePostorder
-  :: DiscreteCharacterDecoration d c
-  => d
-  -> (FitchOptimizationDecoration c , FitchOptimizationDecoration c)
+  :: EncodableStaticCharacter c
+  => (FitchOptimizationDecoration c , FitchOptimizationDecoration c)
   -> FitchOptimizationDecoration c
-updatePostorder _parentDecoration (leftChildDec , rightChildDec) =
+updatePostorder (leftChildDec , rightChildDec) =
     extendDiscreteToFitch
       leftChildDec
       totalCost
