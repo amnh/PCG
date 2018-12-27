@@ -5,12 +5,12 @@ compiler: ghc-8.6.3
 compiler-check: match-exact
 
 extra-deps:
-- Cabal-2.4.0.1
+#- Cabal-2.4.0.1
 - compact-0.1.0.1
 - graphviz-2999.20.0.2@sha256:5fad513f27c6fa4ee92f27461bb7386a5541b6b7edd601483fe693d4ac3963c5
-- polyparse-1.12.1
+#- polyparse-1.12.1
 - pretty-tree-0.1.0.0
-- stm-2.5.0.0
+#- stm-2.5.0.0
 - tasty-rerun-1.1.12
 
 flags: {}
@@ -32,5 +32,4 @@ packages:
 
 require-stack-version: ">=1.7.1"
 
-#resolver: lts-12.19
-resolver: nightly-2018-12-12
+resolver: lts-13.0
