@@ -159,7 +159,7 @@ type EdgeReference = (Int, Int)
 
 -- |
 -- A 'Lens' for the 'virtualNodeMapping' field in 'PostorderContextualData'
-{-# SPECIALISE  _minimalNetworkContext :: Lens' (PostorderContextualData t) (HashMap EdgeReference (ResolutionCache t)) #-}
+{-# SPECIALISE  _virtualNodeMapping :: Lens' (PostorderContextualData t) (HashMap EdgeReference (ResolutionCache t)) #-}
 class HasVirtualNodeMapping s a | s -> a where
 
     _virtualNodeMapping :: Lens' s a

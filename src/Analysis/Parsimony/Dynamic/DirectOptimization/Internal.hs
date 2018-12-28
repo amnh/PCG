@@ -23,6 +23,7 @@
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Internal
   ( directOptimizationPostorder
+  , directOptimizationPostorderPairwise
   , directOptimizationPreorder
   , selectDynamicMetric
   ) where
@@ -99,23 +100,28 @@ selectDynamicMetric meta
 -- Parameterized over a 'PairwiseAlignment' function to allow for different
 -- atomic alignments depending on the character's metadata.
 directOptimizationPostorder
-  :: SimpleDynamicDecoration d c
+  :: ( DirectOptimizationPostorderDecoration s c
+     , SimpleDynamicDecoration d c
+     , SimpleDynamicExtensionPostorderDecoration s c
+     )
   => PairwiseAlignment c
-  -> PostorderContext d (DynamicDecorationDirectOptimizationPostorderResult c)
-  ->  DynamicDecorationDirectOptimizationPostorderResult c
+  -> PostorderContext d s -- (DynamicDecorationDirectOptimizationPostorderResult c)
+  -> s -- DynamicDecorationDirectOptimizationPostorderResult c
 directOptimizationPostorder pairwiseAlignment
   = postorderContext
       initializeLeaf
-      (updateFromLeaves pairwiseAlignment)
+      (directOptimizationPostorderPairwise pairwiseAlignment)
 
 
 -- |
 -- Given a simple dynamic character as input, initializes the leaf node
 -- decoration as the base case of the post-order traversal.
 initializeLeaf
-  :: SimpleDynamicDecoration d c
+  :: ( SimpleDynamicDecoration d c
+     , SimpleDynamicExtensionPostorderDecoration r c
+     )
   => d
-  -> DynamicDecorationDirectOptimizationPostorderResult c
+  -> r -- DynamicDecorationDirectOptimizationPostorderResult c
 initializeLeaf =
     extendDynamicToPostorder
       <$> id
@@ -131,14 +137,17 @@ initializeLeaf =
 -- |
 -- Use the decoration(s) of the descendant nodes to calculate the current node
 -- decoration. The recursive logic of the post-order traversal.
-updateFromLeaves
+directOptimizationPostorderPairwise
   :: ( EncodableDynamicCharacter c
+     , DirectOptimizationPostorderDecoration a c
+     , DirectOptimizationPostorderDecoration b c
      , Exportable (Element c)
+     , SimpleDynamicExtensionPostorderDecoration d c
      )
   => PairwiseAlignment c
-  -> (DynamicDecorationDirectOptimizationPostorderResult c, DynamicDecorationDirectOptimizationPostorderResult c)
-  -> DynamicDecorationDirectOptimizationPostorderResult c
-updateFromLeaves pairwiseAlignment (lChild , rChild) = resultDecoration
+  -> (a, b)
+  -> d
+directOptimizationPostorderPairwise pairwiseAlignment (lChild , rChild) = resultDecoration
   where
     resultDecoration = extendDynamicToPostorder lChild localCost totalCost combinedAverageLength ungapped gapped lhsAlignment rhsAlignment
     (localCost, ungapped, gapped, lhsAlignment, rhsAlignment) = pairwiseAlignment (lChild ^. preliminaryUngapped) (rChild ^. preliminaryUngapped)

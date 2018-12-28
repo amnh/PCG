@@ -152,11 +152,12 @@ initializeLeaf curDecoration = finalDecoration
 --
 -- Used on the postorder pass.
 additivePostorderPairwise
-  :: ( RangedExtensionPostorder  c e
-     , RangedPostorderDecoration d e
+  :: ( RangedExtensionPostorder  a e
+     , RangedPostorderDecoration b e
+     , RangedPostorderDecoration c e
      )
-  => (d, d)
-  -> c
+  => (b, c)
+  -> a
 additivePostorderPairwise (lChild, rChild) = finalDecoration
   where
     finalDecoration = extendRangedToPostorder lChild totalCost newInterval childIntervals False

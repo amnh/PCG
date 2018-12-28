@@ -41,7 +41,7 @@ import           Data.Bifunctor
 import           Data.Either.Custom                 (fromTaggedRep, toTaggedRep)
 import           Data.Foldable
 import           Data.GraphViz.Printing
-import           Data.HashMap.Lazy                  (HashMap)
+import           Data.HashMap.Lazy                  (HashMap, keys)
 import qualified Data.IntMap                        as IM
 import qualified Data.IntSet                        as IS
 import           Data.Key
@@ -59,7 +59,9 @@ import           Data.Vector                        (Vector)
 import qualified Data.Vector                        as V
 import           Data.Vector.Instances              ()
 import qualified Data.Vector.NonEmpty               as NEV
-import           Prelude                            hiding (lookup)
+import           Prelude                            hiding (lookup, zip)
+
+import Debug.Trace
 
 
 type BlockTopologies = NEV.Vector TraversalTopology
@@ -595,43 +597,52 @@ setEdgeSequences
   -> (DiscreteCharacterMetadataDec                           -> (w, w) -> w')
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> (x, x) -> x')
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> (y, y) -> y')
-  -> HashMap EdgeReference (ResolutionCache (CharacterSequence u'' v'' w'' x'' y'' z'))  
+  -> (DynamicCharacterMetadataDec (Element DynamicCharacter) -> (z, z) -> z')
+  -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u'' v'' w'' x'' y'' z')))
   -> PhylogeneticDAG2 m e n u v w x y z
   -> PhylogeneticDAG2 m (e, CharacterSequence u' v' w' x' y' z') n u v w x y z
-setEdgeSequences f1 f2 f3 f4 f5 edgeMapping p@(PDAG2 dag meta) = PDAG2 updatedDAG meta
+setEdgeSequences f1 f2 f3 f4 f5 f6 edgeMappingVec p@(PDAG2 dag meta) = PDAG2 updatedDAG meta
   where
-    -- Looks like this value kis bad and can't be used.
+    -- Looks like this value is bad and can't be used.
 --    edgeMapping  = p ^. _virtualNodeMapping
     refVec       = references dag
     updatedDAG   = dag { references = updatedEdges }
-    updatedEdges = updateEdgeData <#$> refVec
+    updatedEdges = updateEdgeData <#$> zip refVec edgeMappingVec
 
     updateEdgeData
       :: Int
-      -> IndexData
-           e
-           (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
+      -> ( IndexData
+             e
+             (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
+         , HashMap
+             EdgeReference
+             (ResolutionCache (CharacterSequence u'' v'' w'' x'' y'' z'))
+         )
       -> IndexData
            (e, CharacterSequence u' v' w' x' y' z')
            (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
-    updateEdgeData i idx = idx { childRefs = addEdgeSeq <#$> childRefs idx }
+    updateEdgeData i (idx, edgeMapping) = idx { childRefs = addEdgeSeq <#$> childRefs idx }
       where
         thisSeq  = getDatum idx :: CharacterSequence u v w x y z
         getDatum = characterSequence . NE.head . resolutions . nodeDecoration
         addEdgeSeq j v = (v, edgeSeq)
           where
-            kidSeq  :: CharacterSequence u v w x y z
-            kidSeq  = getDatum $ refVec ! j
+            kidSeq :: CharacterSequence u v w x y z
+            kidSeq = getDatum $ refVec ! j
 
-            rerootSeq = characterSequence . NE.head $ edgeMapping ! (i,j)
-
+            rerootSeq = characterSequence . NE.head $ 
+                case (i,j) `lookup` trace (show (keys edgeMapping) <> " " <> show (i,j)) edgeMapping of
+                  Nothing -> edgeMapping ! (j,i)
+                  Just v -> v
+{-
             f1' m (a,b,_) = f1 m (a,b)
             f2' m (a,b,_) = f2 m (a,b)
             f3' m (a,b,_) = f3 m (a,b)
             f4' m (a,b,_) = f4 m (a,b)
             f5' m (a,b,_) = f5 m (a,b)
-            f6' _ (_,_,c) = c 
-
+            f6' m (a,b,_) = f6 m (a,b)
+--            f6' _ (_,_,c) = c 
+-}
             edgeSeq :: CharacterSequence u' v' w' x' y' z'
-            edgeSeq = hexZipMeta f1' f2' f3' f4' f5' f6' meta $ hexZip3 thisSeq kidSeq rerootSeq
+            edgeSeq = hexZipMeta f1 f2 f3 f4 f5 f6 meta $ hexZip thisSeq kidSeq
 

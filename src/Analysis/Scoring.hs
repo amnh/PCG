@@ -128,7 +128,8 @@ performDecoration x = finalizeEdgeData . performPreorderDecoration . performPost
                          (const additivePostorderPairwise)
                          sankoffPostorderPairwise
                          sankoffPostorderPairwise
-                         edgeCostMapping
+                         adaptiveDirectOptimizationPostorderPairwise
+                         contextualNodeDatum
  
     performPreorderDecoration
       :: PostorderDecorationDAG
@@ -201,6 +202,10 @@ performDecoration x = finalizeEdgeData . performPreorderDecoration . performPost
         pairwiseAlignmentFunction = selectDynamicMetric meta
 
     adaptiveDirectOptimizationPostorder2 meta = directOptimizationPostorder pairwiseAlignmentFunction
+      where
+        pairwiseAlignmentFunction = selectDynamicMetric meta
+
+    adaptiveDirectOptimizationPostorderPairwise meta = directOptimizationPostorderPairwise pairwiseAlignmentFunction
       where
         pairwiseAlignmentFunction = selectDynamicMetric meta
 
