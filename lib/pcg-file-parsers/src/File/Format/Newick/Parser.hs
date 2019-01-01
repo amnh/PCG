@@ -190,9 +190,9 @@ symbol x = x <* whitespace
 -- Definition of space between tokens which can be discarded. This includes
 -- spaces /and/ comments.
 whitespace :: forall e s m. (MonadParsec e s m, Token s ~ Char) => m ()
-whitespace = skipMany $ choice [ hidden single, hidden block ]
+whitespace = skipMany $ choice [ hidden spChar, hidden block ]
   where
-    single = void spaceChar
+    spChar = void spaceChar
     block  = skipBlockCommentNested (tokenToChunk proxy '[') (tokenToChunk proxy ']')
     proxy  = Proxy :: Proxy s
 

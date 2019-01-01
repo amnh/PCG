@@ -78,8 +78,8 @@ sequentialAlignOverride = False
 selectDynamicMetric
   :: ( EncodableDynamicCharacter c
      , Exportable c
-     , GetDenseTransitionCostMatrix  dec (Maybe DenseTransitionCostMatrix)
-     , GetPairwiseTransitionCostMatrix       dec (OverlapFunction (Element c))
+     , GetDenseTransitionCostMatrix    dec (Maybe DenseTransitionCostMatrix)
+     , GetPairwiseTransitionCostMatrix dec (OverlapFunction (Element c))
      , Ord (Element c)
      )
   => dec

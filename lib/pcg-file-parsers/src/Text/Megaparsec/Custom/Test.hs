@@ -27,7 +27,7 @@ import Text.Megaparsec.Custom
 
 -- |
 -- Concrete types in the parameterized functions.
-testingParse :: Parsec Void s a -> String -> s -> Either (ParseError (Token s) Void) a
+testingParse :: Parsec Void s a -> String -> s -> Either (ParseErrorBundle s Void) a
 testingParse = parse
 
 

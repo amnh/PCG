@@ -9,7 +9,7 @@ import Data.Compact.Serialize (unsafeReadCompact)
 import PCG.Command.Load
 
 
-evaluate :: LoadCommand -> GraphState -> SearchState
+evaluate :: LoadCommand -> a -> SearchState
 evaluate (LoadCommand filePath) _ = do
   (optGraphState :: Either String GraphState) <- liftIO $ unsafeReadCompact filePath
   case optGraphState of

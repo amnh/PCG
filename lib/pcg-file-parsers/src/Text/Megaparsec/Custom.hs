@@ -83,13 +83,7 @@ anythingTill c = do
 somethingTill :: MonadParsec e s m => m a -> m [Token s]
 somethingTill c = do
     _ <- notFollowedBy c
-    anyToken <:> anythingTill c
-
-
--- |
--- Match any token. Fails only when the stream is empty.
-anyToken :: MonadParsec e s m => m (Token s)
-anyToken = token Right Nothing
+    anySingle <:> anythingTill c
 
 
 -- |
@@ -110,8 +104,8 @@ endOfLine = choice (try <$> [ nl, cr *> nl, cr ]) $> newLineChar
   where
     newLineChar  = enumCoerce '\n'
     carriageChar = enumCoerce '\r'
-    nl = tokenMatch newLineChar  $> ()
-    cr = tokenMatch carriageChar $> ()
+    nl = single newLineChar  $> ()
+    cr = single carriageChar $> ()
 
 
 -- |
@@ -123,20 +117,20 @@ fails = failure Nothing . S.fromList . fmap Label . mapMaybe nonEmpty
 -- |
 -- Consumes a whitespace character that is not a newline character.
 inlineSpaceChar :: (Enum (Token s), MonadParsec e s m) => m (Token s)
-inlineSpaceChar = token captureToken Nothing
+inlineSpaceChar = token captureToken expItem
   where
     captureToken x
-      | isInlineSpace x = Right x
-      | otherwise       = Left (Just (Tokens (x:|[])), mempty)
+      | isInlineSpace x = Just x
+      | otherwise       = Nothing
+
+    expItem = S.singleton . Label $ 'i':|"nline space"
 
     isInlineSpace x = and $
-        [ isSpace . enumCoerce
-        , (newLineChar  /=)
-        , (carriageChar /=)
-        ] <*> [x]
-
-    newLineChar  = enumCoerce '\n'
-    carriageChar = enumCoerce '\r'
+        [ isSpace
+        , (/= '\n')
+        , (/= '\r')
+--        , (/= '\v')
+        ] <*> [enumCoerce x]
 
 
 -- |
@@ -165,7 +159,7 @@ inlineSpace = skipMany inlineSpaceChar
 comment :: MonadParsec e s m => m [Token s] -> m [Token s] -> m [Token s]
 comment start end = commentDefinition' False
   where
-    commentChar    = notFollowedBy (start <|> end) *> anyToken
+    commentChar    = notFollowedBy (start <|> end) *> anySingle
     commentContent = many commentChar
     commentDefinition' enquote = do
         prefix   <- start
@@ -227,13 +221,3 @@ parseWithDefaultErrorType c = parse c ""
 -- Convert one Enum to another through the Int value.
 enumCoerce :: (Enum a, Enum b) => a -> b
 enumCoerce = toEnum . fromEnum
-
-
--- |
--- Matches a single token.
-tokenMatch :: (MonadParsec e s m) => Token s -> m (Token s)
-tokenMatch tok = token testToken Nothing
-  where
-    testToken x
-      | tok == x  = Right x
-      | otherwise = Left (Just (Tokens (x:|[])), mempty)

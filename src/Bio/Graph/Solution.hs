@@ -24,6 +24,7 @@ module Bio.Graph.Solution
   ( PhylogeneticSolution(..)
   , PhylogeneticForest(..)
   , phylogeneticForests
+  , extractSolution
   ) where
 
 import           Bio.Graph.Forest
@@ -52,7 +53,7 @@ import           Type.Reflection           (Typeable)
 -- |
 -- A solution that contains one or more equally costly forests.
 newtype PhylogeneticSolution a
-      = PhylogeneticSolution (NonEmpty (PhylogeneticForest a))
+      = PhylogeneticSolution {getPhylogeneticSolution :: NonEmpty (PhylogeneticForest a)}
       deriving (Generic, Semigroup, Typeable)
 
 
@@ -61,6 +62,13 @@ newtype PhylogeneticSolution a
 {-# INLINE phylogeneticForests #-}
 phylogeneticForests :: PhylogeneticSolution a -> NonEmpty (PhylogeneticForest a)
 phylogeneticForests (PhylogeneticSolution x) = x
+
+
+-- |
+-- Extract a solution without loss of generality.
+{-# INLINE extractSolution #-}
+extractSolution :: PhylogeneticSolution a -> a
+extractSolution = NE.head . getPhylogeneticForest . NE.head . getPhylogeneticSolution
 
 
 instance (HasLeafSet a b, Semigroup b) => HasLeafSet (PhylogeneticSolution a) b where

@@ -135,7 +135,7 @@ data DenseTransitionCostMatrix
    = DenseTransitionCostMatrix
    { costMatrix2D :: Ptr CostMatrix2d
    , costMatrix3D :: Ptr CostMatrix3d
-   } deriving (Generic, NFData)
+   } deriving (Generic, NFData, Show)
 
 
 instance Show CostMatrix2d where

@@ -1,2 +1,2 @@
 read("../../shared-data/arthropods/arthAdd.hen")
-report(data, (overwrite, "cost.data"))
+save(binary, "graph.bin")

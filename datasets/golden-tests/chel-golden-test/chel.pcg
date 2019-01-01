@@ -1,5 +1,2 @@
 read ("chel.fasta")
 read ("chel.tre")
-report(dot, ("chel.dot",overwrite))
-report(xml, ("chel.xml",overwrite))
-report(data, ("chel.data",overwrite))
