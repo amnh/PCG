@@ -149,6 +149,8 @@ library
                     , smallcheck
                     , text
                     , text-short
+                    , text-show
+                    , text-show-instances
                     , transformers
                     , unordered-containers
                     , vector
@@ -279,6 +281,7 @@ library
                     Bio.Graph.PhylogeneticDAG.Postorder
                     Bio.Graph.PhylogeneticDAG.Preorder
                     Bio.Graph.PhylogeneticDAG.Reification
+                    Bio.Graph.PhylogeneticDAG.Render
                     Bio.Graph.PhylogeneticDAG.TotalEdgeCost
                     Bio.Graph.ZipperDAG.Internal
                     Bio.Sequence.Block.Builder
@@ -335,6 +338,7 @@ executable pcg
                     , semigroups
                     , text
                     , text-short
+                    , text-show
                     , transformers
                     , validation
                     , vector
