@@ -14,7 +14,7 @@ flags: {}
 
 ghc-options:
   "$everything": -j -fdiagnostics-color=always
-  "$locals": -fhide-source-paths
+  "$locals": -fhide-source-paths 
 
 local-bin-path: bin
 
