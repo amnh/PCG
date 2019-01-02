@@ -94,7 +94,7 @@ toRootNode x y = directOptimizationPreorder pairwiseFunction defMetadata (RootCo
            (DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter)
       -> DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter
     f = directOptimizationPostorder pairwiseFunction
-      
+
     z :: DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter
     z = f $ PostBinaryContext {leftChild = x , rightChild = y}
 

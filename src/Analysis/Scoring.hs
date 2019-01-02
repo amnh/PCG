@@ -50,9 +50,6 @@ import qualified Data.List.NonEmpty                            as NE
 import           Data.NodeLabel
 import           Data.Vector                                   (Vector)
 
-import           Bio.Character.Decoration.Continuous
-import           Bio.Metadata
-
 
 -- |
 -- Remove all scoring data from nodes.
@@ -119,7 +116,7 @@ performDecoration
      )
   => PhylogeneticDAG2 m EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
   -> FinalDecorationDAG
-performDecoration x = finalizeEdgeData . performPreorderDecoration . performPostorderDecoration $ x 
+performDecoration x = finalizeEdgeData . performPreorderDecoration . performPostorderDecoration $ x
   where
     finalizeEdgeData :: PreOrderDecorationDAG -> FinalDecorationDAG
     finalizeEdgeData = setEdgeSequences
@@ -130,7 +127,7 @@ performDecoration x = finalizeEdgeData . performPreorderDecoration . performPost
                          sankoffPostorderPairwise
                          adaptiveDirectOptimizationPostorderPairwise
                          contextualNodeDatum
- 
+
     performPreorderDecoration
       :: PostorderDecorationDAG
            ( TraversalTopology
@@ -170,7 +167,7 @@ performDecoration x = finalizeEdgeData . performPreorderDecoration . performPost
            , Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge)
            )
 
-    performPostorderDecoration x = postorderResult
+    performPostorderDecoration _ = postorderResult
 
     (minBlockContext, postorderResult) = assignPunitiveNetworkEdgeCost post
     (post, edgeCostMapping, contextualNodeDatum) =
@@ -195,30 +192,12 @@ performDecoration x = finalizeEdgeData . performPreorderDecoration . performPost
         postFn $
           PostNetworkContext
             (error "The network internal node's data is used in the postorder!")
-      PostBinaryContext x y -> postFn $ PostBinaryContext x y
+      PostBinaryContext a b -> postFn $ PostBinaryContext a b
 
     adaptiveDirectOptimizationPostorder meta = directOptimizationPostorder pairwiseAlignmentFunction
-      where
-        pairwiseAlignmentFunction = selectDynamicMetric meta
-
-    adaptiveDirectOptimizationPostorder2 meta = directOptimizationPostorder pairwiseAlignmentFunction
       where
         pairwiseAlignmentFunction = selectDynamicMetric meta
 
     adaptiveDirectOptimizationPostorderPairwise meta = directOptimizationPostorderPairwise pairwiseAlignmentFunction
       where
         pairwiseAlignmentFunction = selectDynamicMetric meta
-
-id2 :: a -> b -> b
-id2 = const id
-
-{-
-instance HasCharacterCost (Maybe u) Double where
-
-    characterCost = lens (const 0) undefined
-
-
-instance HasCharacterCost (Maybe u) Word where
-
-    characterCost = lens (const 0) undefined
--}

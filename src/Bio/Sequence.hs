@@ -66,7 +66,8 @@ import           Bio.Metadata.Continuous
 import           Bio.Metadata.Discrete
 import           Bio.Metadata.DiscreteWithTCM
 import           Bio.Metadata.Dynamic
-import           Bio.Sequence.Block           hiding (hexTranspose, hexZipMeta, hexZipWith, hexZipWith3, hexZipWithMeta, hexmap)
+import           Bio.Sequence.Block           hiding (hexTranspose, hexZipMeta, hexZipWith, hexZipWith3, hexZipWithMeta,
+                                               hexmap)
 import qualified Bio.Sequence.Block           as Blk
 import           Bio.Sequence.Block.Builder
 import           Bio.Sequence.Block.Character (finalizeCharacterBlock, nonExistantBlock)

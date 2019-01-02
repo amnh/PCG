@@ -100,13 +100,12 @@ selectDynamicMetric meta
 -- Parameterized over a 'PairwiseAlignment' function to allow for different
 -- atomic alignments depending on the character's metadata.
 directOptimizationPostorder
-  :: ( DirectOptimizationPostorderDecoration s c
-     , SimpleDynamicDecoration d c
+  :: ( SimpleDynamicDecoration d c
      , SimpleDynamicExtensionPostorderDecoration s c
      )
   => PairwiseAlignment c
-  -> PostorderContext d s -- (DynamicDecorationDirectOptimizationPostorderResult c)
-  -> s -- DynamicDecorationDirectOptimizationPostorderResult c
+  -> PostorderContext d s
+  -> s
 directOptimizationPostorder pairwiseAlignment
   = postorderContext
       initializeLeaf
@@ -138,10 +137,8 @@ initializeLeaf =
 -- Use the decoration(s) of the descendant nodes to calculate the current node
 -- decoration. The recursive logic of the post-order traversal.
 directOptimizationPostorderPairwise
-  :: ( EncodableDynamicCharacter c
-     , DirectOptimizationPostorderDecoration a c
+  :: ( DirectOptimizationPostorderDecoration a c
      , DirectOptimizationPostorderDecoration b c
-     , Exportable (Element c)
      , SimpleDynamicExtensionPostorderDecoration d c
      )
   => PairwiseAlignment c

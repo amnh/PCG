@@ -9,7 +9,6 @@ module PCG.Command.Build.Evaluate
 import           Analysis.Parsimony.Additive.Internal
 import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Analysis.Parsimony.Fitch.Internal
-import           Analysis.Parsimony.Internal
 import           Analysis.Parsimony.Sankoff.Internal
 import           Analysis.Scoring
 import           Bio.Character
@@ -21,27 +20,27 @@ import           Bio.Character.Decoration.Metric
 import           Bio.Graph
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
-import           Bio.Graph.PhylogeneticDAG           (PostorderContextualData, setDefaultMetadata)
-import qualified Bio.Graph.ReferenceDAG              as DAG
+import           Bio.Graph.PhylogeneticDAG                     (PostorderContextualData, setDefaultMetadata)
+import qualified Bio.Graph.ReferenceDAG                        as DAG
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
-import           Control.Arrow                       ((&&&))
+import           Control.Arrow                                 ((&&&))
 import           Control.DeepSeq
 import           Control.Evaluation
 import           Control.Lens
-import           Control.Monad                       (replicateM)
+import           Control.Monad                                 (replicateM)
 import           Control.Monad.IO.Class
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
-import           Data.Compact                        (compact, getCompact)
+import           Data.Compact                                  (compact, getCompact)
 import           Data.Foldable
-import qualified Data.IntMap                         as IM
-import qualified Data.IntSet                         as IS
+import qualified Data.IntMap                                   as IM
+import qualified Data.IntSet                                   as IS
 import           Data.Key
-import           Data.List.NonEmpty                  (NonEmpty (..))
-import qualified Data.List.NonEmpty                  as NE
+import           Data.List.NonEmpty                            (NonEmpty (..))
+import qualified Data.List.NonEmpty                            as NE
 import           Data.NodeLabel
-import           Data.Ord                            (comparing)
+import           Data.Ord                                      (comparing)
 import           Data.Semigroup.Foldable
 import           PCG.Command.Build
 import           System.Random.Shuffle
@@ -166,8 +165,6 @@ iterativeBuild currentTree@(PDAG2 _ metaSeq) nextLeaf = nextTree
     tryEdge (i,j) = delta
       where
         delta   = sequenceCost metaSeq compSeq - sequenceCost metaSeq edgeSeq - sequenceCost metaSeq thisSeq
---        seqCost = sequenceCost metaSeq
-
         edgeSeq = snd $ childRefs (references dag ! i) ! j
         thisSeq = characterSequence . NE.head $ resolutions nextLeaf
         compSeq ::
@@ -186,15 +183,13 @@ iterativeBuild currentTree@(PDAG2 _ metaSeq) nextLeaf = nextTree
                     sankoffPostorderPairwise
                     adaptiveDirectOptimizationPostorderPairwise
                     metaSeq $ hexZip edgeSeq thisSeq
-        
---    tryEdge     = performDecoration . (`PDAG2` metaSeq) . invadeEdge (resetMetadata dag) deriveInternalNode (wipeNode False nextLeaf)
 
     nextEdge :: (Int, Int)
     nextEdge    = fst . minimumBy (comparing snd) $ parmap rpar (id &&& tryEdge) edgeSet
 
     nextTree    = performDecoration . (`PDAG2` metaSeq) . invadeEdge resetDAG deriveInternalNode (wipeNode False nextLeaf) $ nextEdge
 
-    getCost (PDAG2 v _) = dagCost $ graphData v
+--    getCost (PDAG2 v _) = dagCost $ graphData v
 
     deriveInternalNode parentDatum oldChildDatum _newChildDatum =
         PNode2 (resolutions oldChildDatum) (nodeDecorationDatum2 parentDatum)

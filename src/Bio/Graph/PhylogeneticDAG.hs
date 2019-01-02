@@ -19,6 +19,7 @@ module Bio.Graph.PhylogeneticDAG
   , PhylogeneticDAG2(..)
   , PhylogeneticDAGish(..)
   , PostorderContextualData(..)
+  , HasVirtualNodeMapping(..)
   , assignOptimalDynamicCharacterRootEdges
   , assignPunitiveNetworkEdgeCost
   , generateLocalResolutions

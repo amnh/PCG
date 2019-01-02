@@ -41,7 +41,7 @@ import           Data.Bifunctor
 import           Data.Either.Custom                 (fromTaggedRep, toTaggedRep)
 import           Data.Foldable
 import           Data.GraphViz.Printing
-import           Data.HashMap.Lazy                  (HashMap, keys)
+import           Data.HashMap.Lazy                  (HashMap)
 import qualified Data.IntMap                        as IM
 import qualified Data.IntSet                        as IS
 import           Data.Key
@@ -60,8 +60,6 @@ import qualified Data.Vector                        as V
 import           Data.Vector.Instances              ()
 import qualified Data.Vector.NonEmpty               as NEV
 import           Prelude                            hiding (lookup, zip)
-
-import Debug.Trace
 
 
 type BlockTopologies = NEV.Vector TraversalTopology
@@ -584,8 +582,10 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
 (.!>.) s k = fromMaybe (error $ "Could not index: " <> show k) $ k `lookup` s
 
 
+{-
 constructDefaultMetadata :: (Monoid a, Monoid b) => ReferenceDAG d e n -> GraphData (a, b, Maybe c)
 constructDefaultMetadata = ((mempty, mempty, Nothing) <$) . graphData
+-}
 
 
 -- |
@@ -601,7 +601,7 @@ setEdgeSequences
   -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u'' v'' w'' x'' y'' z')))
   -> PhylogeneticDAG2 m e n u v w x y z
   -> PhylogeneticDAG2 m (e, CharacterSequence u' v' w' x' y' z') n u v w x y z
-setEdgeSequences f1 f2 f3 f4 f5 f6 edgeMappingVec p@(PDAG2 dag meta) = PDAG2 updatedDAG meta
+setEdgeSequences f1 f2 f3 f4 f5 f6 edgeMappingVec (PDAG2 dag meta) = PDAG2 updatedDAG meta
   where
     -- Looks like this value is bad and can't be used.
 --    edgeMapping  = p ^. _virtualNodeMapping
@@ -621,7 +621,7 @@ setEdgeSequences f1 f2 f3 f4 f5 f6 edgeMappingVec p@(PDAG2 dag meta) = PDAG2 upd
       -> IndexData
            (e, CharacterSequence u' v' w' x' y' z')
            (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
-    updateEdgeData i (idx, edgeMapping) = idx { childRefs = addEdgeSeq <#$> childRefs idx }
+    updateEdgeData _i (idx, _edgeMapping) = idx { childRefs = addEdgeSeq <#$> childRefs idx }
       where
         thisSeq  = getDatum idx :: CharacterSequence u v w x y z
         getDatum = characterSequence . NE.head . resolutions . nodeDecoration
@@ -630,10 +630,11 @@ setEdgeSequences f1 f2 f3 f4 f5 f6 edgeMappingVec p@(PDAG2 dag meta) = PDAG2 upd
             kidSeq :: CharacterSequence u v w x y z
             kidSeq = getDatum $ refVec ! j
 
-            rerootSeq = characterSequence . NE.head $ 
-                case (i,j) `lookup` trace (show (keys edgeMapping) <> " " <> show (i,j)) edgeMapping of
-                  Nothing -> edgeMapping ! (j,i)
-                  Just v -> v
+{-
+            rerootSeq = characterSequence . NE.head .
+                fromMaybe (edgeMapping ! (j, i)) $ (i, j) `lookup` edgeMapping
+-}
+
 {-
             f1' m (a,b,_) = f1 m (a,b)
             f2' m (a,b,_) = f2 m (a,b)
@@ -641,7 +642,7 @@ setEdgeSequences f1 f2 f3 f4 f5 f6 edgeMappingVec p@(PDAG2 dag meta) = PDAG2 upd
             f4' m (a,b,_) = f4 m (a,b)
             f5' m (a,b,_) = f5 m (a,b)
             f6' m (a,b,_) = f6 m (a,b)
---            f6' _ (_,_,c) = c 
+--            f6' _ (_,_,c) = c
 -}
             edgeSeq :: CharacterSequence u' v' w' x' y' z'
             edgeSeq = hexZipMeta f1 f2 f3 f4 f5 f6 meta $ hexZip thisSeq kidSeq
