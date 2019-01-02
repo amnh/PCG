@@ -13,20 +13,29 @@ import Data.List.NonEmpty
 import PCG.Command.Report
 import PCG.Command.Report.GraphViz
 import Text.XML
+import TextShow (TextShow (showtl), printT)
+import Data.Render.Utility (writeFileT)
+import System.IO (IOMode(AppendMode, WriteMode))
+import qualified Data.Text.Lazy as Lazy
+import Data.Foldable (traverse_)
+
 
 
 evaluate :: ReportCommand -> GraphState -> SearchState
 evaluate (ReportCommand format target) stateValue = do
     _ <- case generateOutput stateValue format of
            ErrorCase    errMsg  -> fail errMsg
-           MultiStream  streams -> sequence_ (liftIO . uncurry writeFile <$> streams)
+           MultiStream  streams ->
+             traverse_
+               (\(filepath, content) -> liftIO $ (writeFileT WriteMode filepath content))
+               streams
            SingleStream output  ->
              let op = case target of
-                        OutputToStdout   -> putStr
+                        OutputToStdout   -> printT
                         OutputToFile f w ->
                           case w of
-                            Append    -> appendFile f
-                            Overwrite ->  writeFile f
+                            Append    ->  writeFileT AppendMode f
+                            Overwrite ->  writeFileT WriteMode  f
              in  liftIO (op output)
     pure stateValue
 
@@ -51,8 +60,8 @@ generateOutput
   -> FileStreamContext
 generateOutput g' format =
   case format of
-    Data {}    -> SingleStream $ either show show g
-    XML  {}    -> SingleStream $ either show (ppTopElement . toXML) g
+    Data {}    -> SingleStream $ either showtl showtl g
+    XML  {}    -> SingleStream $ either showtl (showtl . ppTopElement . toXML) g
     DotFile {} -> SingleStream $ generateDotFile g'
     _          -> ErrorCase "Unrecognized 'report' command"
   where
@@ -120,10 +129,10 @@ showWithTotalEdgeCost x = unlines
     ]
 --}
 
-type FileContent = String
+type FileContent = Lazy.Text
 
 
 data FileStreamContext
    = ErrorCase    String
    | SingleStream FileContent
-   | MultiStream  (NonEmpty (FilePath,FileContent))
+   | MultiStream  (NonEmpty (FilePath, FileContent))
