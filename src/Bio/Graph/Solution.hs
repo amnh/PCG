@@ -19,6 +19,7 @@
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
+{-# LANGUAGE OverloadedStrings          #-}
 
 module Bio.Graph.Solution
   ( PhylogeneticSolution(..)
@@ -48,6 +49,7 @@ import           GHC.Generics
 import           Text.Newick.Class
 import           Text.XML
 import           Type.Reflection           (Typeable)
+import TextShow (TextShow (showb, showtl), fromLazyText)
 
 
 -- |
@@ -122,6 +124,35 @@ instance Show a => Show (PhylogeneticSolution a) where
             f k e = mconcat
                 [ "Forest #"
                 , show k
+                , ":\n\n"
+                , indent e
+                , "\n"
+                ]
+
+instance TextShow a => TextShow (PhylogeneticSolution a) where
+
+    showb = fromLazyText
+          . ("Solution:\n\n" <>)
+          . indent
+          . renderForests
+          . fmap renderForest
+          . phylogeneticForests
+      where
+        indent       = L.intercalate  "\n" . fmap ("  " <>) . L.lines
+        renderForest = indent . foldMapWithKey f
+          where
+            f k e = fold
+                [ "Component #"
+                , showtl k
+                , ":\n\n"
+                , indent $ showtl e
+                , "\n"
+                ]
+        renderForests = indent . foldMapWithKey f
+          where
+            f k e = fold
+                [ "Forest #"
+                , showtl k
                 , ":\n\n"
                 , indent e
                 , "\n"

@@ -23,6 +23,7 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UnboxedSums                #-}
+{-# LANGUAGE OverloadedStrings          #-}
 
 module Bio.Graph.ReferenceDAG.Internal where
 
@@ -79,6 +80,8 @@ import           Numeric.Extended.Real
 import           Prelude                       hiding (lookup, zipWith)
 import           Text.Newick.Class
 import           Text.XML.Custom
+import TextShow (TextShow(..), Builder, unlinesB, toString)
+import qualified Data.TextShow.Custom as TextShow (intercalateB)
 
 
 -- |
@@ -439,9 +442,23 @@ instance Show n => Show (ReferenceDAG d e n) where
     show dag = intercalate "\n"
         [ topologyRendering dag
         , ""
-        , sconcat . intersperse "\n" $ horizontalRendering <$> toBinaryRenderingTree show dag
+        ,   sconcat
+          . intersperse "\n"
+          $ horizontalRendering <$> toBinaryRenderingTree show dag
         , ""
         , referenceRendering dag
+        ]
+
+
+-- | (✔)
+instance TextShow n => TextShow (ReferenceDAG d e n) where
+
+    showb dag = TextShow.intercalateB "\n"
+        [ showb . topologyRendering $ dag
+        , ""
+        , showb . sconcat . intersperse "\n" $ horizontalRendering <$> toBinaryRenderingTree (toString . showb) dag
+        , ""
+        , showb . referenceRendering $ dag
         ]
 
 
@@ -1080,9 +1097,18 @@ referenceRendering dag = unlines $ [shownRootRefs] <> toList shownDataLines
 
 
 -- |
--- Displays a tree-like rendering of the 'ReferenceDAG'.
+-- Displays a tree-like rendering of the 'ReferenceDAG' as a 'String'
 topologyRendering :: ReferenceDAG d e n -> String
 topologyRendering dag = drawVerticalTree . unfoldTree f . NE.head $ rootRefs dag
+  where
+    f i = (show i, IM.keys . childRefs $ references dag ! i)
+
+-- |
+-- Displays a tree-like rendering of the 'ReferenceDAG' as a 'Builder'
+topologyRenderingBuilder :: ReferenceDAG d e n -> String
+topologyRenderingBuilder dag
+  = undefined
+  -- drawVerticalTree . unfoldTree f . NE.head $ rootRefs dag
   where
     f i = (show i, IM.keys . childRefs $ references dag ! i)
 
@@ -1298,12 +1324,11 @@ toBinaryRenderingTree nodeRenderer dag = (`evalState` initialState) . traverse s
                  pure $ case subtrees of
                           []   -> Leaf shownNode
                           x:xs -> Node (sum' $ subtreeSize <$> x:xs) (Just (show ctr)) $ x:|xs
-
       where
         context     = refVec ! i
         kids        = IM.keys $ childRefs context
         parentCount = olength $ parentRefs context
-        shownNode   = takeWhile (/='\n') . nodeRenderer $ nodeDecoration context
+        shownNode = takeWhile (/='\n') . nodeRenderer $ nodeDecoration context
 
 
 -- |
@@ -1360,6 +1385,8 @@ dVectorPostorder indexFn dag = DVector f
               -> indexFn
                    (TwoChildren (recurseFn childInd1) (recurseFn childInd2))
                    (ind, refs ! ind)
+
+
 
 
 -- |

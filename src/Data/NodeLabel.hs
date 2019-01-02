@@ -31,6 +31,7 @@ import Data.MonoTraversable
 import Data.String          (IsString)
 import Data.Text.Short      as TS
 import GHC.Generics
+import TextShow (TextShow(showb))
 
 
 -- |
@@ -104,4 +105,9 @@ instance MonoFunctor NodeLabel where
     where
       g char acc = singleton (f char) <> acc
 
-
+-- |
+-- Prints the underlying textual representation of a `NodeLabel`.
+instance TextShow NodeLabel where
+  -- TO DO: When text-show-instances is updated to have an instance
+  --        for ShortText then use that instead.
+  showb = showb . TS.toString . getNodeLabel

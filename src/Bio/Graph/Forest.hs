@@ -132,7 +132,6 @@ instance PrintDot a => PrintDot (PhylogeneticForest a) where
 
     listToDot     = fmap mconcat . traverse toDot
 
-
 instance ToNewick a => ToNewick (PhylogeneticForest a) where
 
     toNewick forest = intercalate "\n" (toList $ fmap toNewick (unwrap forest))
