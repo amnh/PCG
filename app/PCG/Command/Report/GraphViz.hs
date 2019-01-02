@@ -12,7 +12,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module PCG.Command.Report.GraphViz
   ( generateDotFile
@@ -24,8 +25,8 @@ import           Data.GraphViz.Printing
 import qualified Data.Text.Lazy         as L
 
 
-generateDotFile :: GraphState -> String
-generateDotFile = (<> "\n") . L.unpack . renderDot . getDotGraph
+generateDotFile :: GraphState -> L.Text
+generateDotFile = (<> "\n") . renderDot . getDotGraph
 
 
 getDotGraph :: GraphState -> DotCode
