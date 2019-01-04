@@ -121,6 +121,7 @@ library
                     , bimap
                     , bv-little
                     -- >=0.5.8 Required for Data.Map.restrictKeys
+                    , cassava >=0.5
                     , compact
                     , containers         >=0.5.8
                     , deepseq
@@ -175,6 +176,7 @@ library
                     Bio.Character.Encodable.Continuous
                     Bio.Character.Exportable
                     Bio.Character.Parsed
+                    Bio.Character.Type
                     Bio.Metadata
                     Bio.Metadata.CharacterName
                     Bio.Metadata.Continuous
@@ -303,6 +305,7 @@ executable pcg
                     , base             >=4.10
                     -- Required for Data.Map.restrictKeys
                     , bytestring
+                    , cassava >=0.5
                     , compact
                     , containers       >=0.5.8
                     , data-default

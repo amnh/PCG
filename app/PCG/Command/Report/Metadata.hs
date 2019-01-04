@@ -1,4 +1,7 @@
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  PCG.Command.Types.Report.Metadata
@@ -18,18 +21,19 @@ module PCG.Command.Report.Metadata
   )
   where
 
+import           Bio.Character              (CharacterType (..))
 import           Bio.Graph
 import           Bio.Graph.PhylogeneticDAG
 import           Bio.Graph.Solution
 import           Bio.Metadata
 import           Bio.Metadata.CharacterName
 import           Bio.Sequence.Metadata
-import           Codec.Xlsx
 import           Control.Arrow              ((&&&))
 import           Control.Lens.Operators     ((?~), (^.))
 import qualified Data.ByteString.Lazy       as BS
 import           Data.ByteString.Lazy.Char8 (unpack)
 import           Data.Compact
+import           Data.Csv
 import           Data.Foldable
 import           Data.Function              ((&))
 import           Data.List                  (nub)
@@ -37,80 +41,73 @@ import qualified Data.List.NonEmpty         as NE
 import           Data.Maybe
 import           Data.Monoid                ((<>))
 import           Data.Text                  (Text, pack)
-import           Data.Time.Clock.POSIX
 import           Data.Vector                (Vector)
+
+data CharacterMetadata =
+  CharacterMetadata
+  { characterNameM :: String
+  , sourceFileM    :: FilePath
+  , characterTypeM :: CharacterType
+  }
+
+instance ToNamedRecord CharacterMetadata where
+  toNamedRecord CharacterMetadata {..} =
+    namedRecord
+      [ "Character Name" .= characterNameM
+      , "Source File"    .= sourceFileM
+      , "Character Type" .= characterTypeM
+      ]
+
+instance DefaultOrdered CharacterMetadata where
+  headerOrder _ = header ["Character Name", "Source File", "Character Type"]
+
+
 
 
 -- | Wrapper function to output a metadata csv
-outputMetadata :: DecoratedCharacterResult -> String
-outputMetadata decGraph =
-  let
-    xlsxWorkSheet = characterSourcefileOutput decGraph
-    xlsxOutput    = def & atSheet "CharacterSourceFiles" ?~ xlsxWorkSheet
-  in
-    unpack $ fromXlsx startOfTime xlsxOutput
+outputMetadata :: DecoratedCharacterResult -> BS.ByteString
+outputMetadata =
+  encodeDefaultOrderedByName . characterMetadataOutput
 
 
-
-characterSourcefileOutput :: DecoratedCharacterResult -> Worksheet
-characterSourcefileOutput decCharRes =
-    let
-      srcFileSheet        = foldr srcFileFn def indSrcFiles
-      srcFileAndCharSheet = foldr charNameFn srcFileSheet indCharNames
-      markedSpreadSheet   = foldr charSrcFileFn srcFileAndCharSheet indCharNames
-    in
-      markedSpreadSheet
+characterMetadataOutput :: DecoratedCharacterResult -> [CharacterMetadata]
+characterMetadataOutput decCharRes = getCharacterMetadata metaSeq
   where
- -- Extract a generic solution with metadata
+ -- Extract a generic solution and its metadata sequence
     pdag2        = extractSolution decCharRes
     metaSeq      = pdag2 ^. _columnMetadata
 
- -- Character name information
-    charNameInfo = getCharacterNames metaSeq
-    srcFileNames = nub . fmap snd $ charNameInfo
-    charNames    = fmap fst charNameInfo
-
- -- indexed rows and columns respectively
-    indSrcFiles  = zip srcFileNames [2..]
-    indCharNames = zip charNames    [2..]
-
- -- Folding functions
-    srcFileFn  (name, rowInd) acc = acc & cellValueAt (rowInd, 1) ?~ CellText name
-    charNameFn (name, colInd) acc = acc & cellValueAt (1, colInd) ?~ CellText name
-    charSrcFileFn (name, colInd) acc =
-      let
-        assocSrcFile = fromJust $ lookup name charNameInfo
-      in
-        case lookup assocSrcFile indSrcFiles of
-          Nothing     -> error . fold $
-                           ["Src file of character "
-                           ,  show name
-                           , " not found in "
-                           , show indSrcFiles
-                           ]
-          Just rowInd -> acc & cellValueAt (rowInd, colInd) ?~ CellText cellMarker
 
 
---                                             ┌ Character Name
---                                             │
---                                             │     ┌ Filepath
---                                             │     │
-getCharacterNames :: MetadataSequence m -> [(Text, Text)]
-getCharacterNames =
+getCharacterMetadata :: MetadataSequence m -> [CharacterMetadata]
+getCharacterMetadata =
     hexFoldMap
-      (filePathAndName . (^. characterName))
-      (filePathAndName . (^. characterName))
-      (filePathAndName . (^. characterName))
-      (filePathAndName . (^. characterName))
-      (filePathAndName . (^. characterName))
-      (filePathAndName . (^. characterName))
+      continuousMeta
+      nonAdditiveMeta
+      additiveMeta
+      metricMeta
+      nonMetricMeta
+      dynamicBin
+
   where
-    filePathAndName :: CharacterName -> [(Text, Text)]
-    filePathAndName = pure . ((pack . show) &&& (pack . sourceFile))
+    filePath :: HasCharacterName s CharacterName =>  s -> String
+    filePath = show . (^. characterName)
 
-cellMarker :: Text
-cellMarker = "x" --"✓"
+    sourceFilePath :: HasCharacterName s CharacterName =>  s -> FilePath
+    sourceFilePath = sourceFile . (^. characterName)
 
--- This should give 1970-01-01 00:00 UTC
-startOfTime :: POSIXTime
-startOfTime = 0
+    f :: HasCharacterName s CharacterName => CharacterType -> s -> CharacterMetadata
+    f ch = CharacterMetadata
+        <$> filePath
+        <*> sourceFilePath
+        <*> const ch
+
+    continuousMeta  = pure . f Continuous
+    nonAdditiveMeta = pure . f NonAdditive
+    additiveMeta    = pure . f Additive
+    metricMeta      = pure . f Metric
+    nonMetricMeta   = pure . f NonMetric
+    dynamicBin      = pure . f Dynamic
+
+
+
