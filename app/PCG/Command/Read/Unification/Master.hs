@@ -20,7 +20,7 @@ module PCG.Command.Read.Unification.Master
   , masterUnify
   ) where
 
-import           Bio.Character
+import           Bio.Character                                 hiding (CharacterType (..))
 import           Bio.Character.Decoration.Continuous           hiding (characterName)
 import           Bio.Character.Decoration.Discrete             hiding (characterName)
 import           Bio.Character.Decoration.Dynamic              hiding (characterName)
