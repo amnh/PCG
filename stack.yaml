@@ -32,4 +32,4 @@ packages:
 
 require-stack-version: ">=1.7.1"
 
-resolver: lts-13.0
+resolver: lts-13.1
