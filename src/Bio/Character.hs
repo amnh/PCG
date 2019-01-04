@@ -12,7 +12,8 @@
 
 module Bio.Character
   (  -- * Character Types
-    ContinuousCharacter()
+    CharacterType(..)
+  , ContinuousCharacter()
   , DynamicCharacter()
   , DynamicCharacterElement()
   , DynamicCharacters
@@ -34,3 +35,4 @@ module Bio.Character
 
 import Bio.Character.Encodable
 import Bio.Character.Exportable.Class
+import Bio.Character.Type
