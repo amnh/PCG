@@ -21,7 +21,7 @@ module PCG.Command.Report.Metadata
   )
   where
 
-import           Bio.Character              (CharacterType (..))
+import           Bio.Character.Type         (CharacterType (..))
 import           Bio.Graph
 import           Bio.Graph.PhylogeneticDAG
 import           Bio.Graph.Solution
@@ -43,22 +43,23 @@ import           Data.Monoid                ((<>))
 import           Data.Text                  (Text, pack)
 import           Data.Vector                (Vector)
 
-data CharacterMetadata =
-  CharacterMetadata
-  { characterNameM :: String
-  , sourceFileM    :: FilePath
-  , characterTypeM :: CharacterType
+
+data CharacterReportMetadata =
+  CharacterReportMetadata
+  { characterNameRM :: String
+  , sourceFileRM    :: FilePath
+  , characterTypeRM :: CharacterType
   }
 
-instance ToNamedRecord CharacterMetadata where
-  toNamedRecord CharacterMetadata {..} =
+instance ToNamedRecord CharacterReportMetadata where
+  toNamedRecord CharacterReportMetadata {..} =
     namedRecord
-      [ "Character Name" .= characterNameM
-      , "Source File"    .= sourceFileM
-      , "Character Type" .= characterTypeM
+      [ "Character Name" .= characterNameRM
+      , "Source File"    .= sourceFileRM
+      , "Character Type" .= characterTypeRM
       ]
 
-instance DefaultOrdered CharacterMetadata where
+instance DefaultOrdered CharacterReportMetadata where
   headerOrder _ = header ["Character Name", "Source File", "Character Type"]
 
 
@@ -70,8 +71,8 @@ outputMetadata =
   encodeDefaultOrderedByName . characterMetadataOutput
 
 
-characterMetadataOutput :: DecoratedCharacterResult -> [CharacterMetadata]
-characterMetadataOutput decCharRes = getCharacterMetadata metaSeq
+characterMetadataOutput :: DecoratedCharacterResult -> [CharacterReportMetadata]
+characterMetadataOutput decCharRes = getCharacterReportMetadata metaSeq
   where
  -- Extract a generic solution and its metadata sequence
     pdag2        = extractSolution decCharRes
@@ -79,8 +80,8 @@ characterMetadataOutput decCharRes = getCharacterMetadata metaSeq
 
 
 
-getCharacterMetadata :: MetadataSequence m -> [CharacterMetadata]
-getCharacterMetadata =
+getCharacterReportMetadata :: MetadataSequence m -> [CharacterReportMetadata]
+getCharacterReportMetadata =
     hexFoldMap
       continuousMeta
       nonAdditiveMeta
@@ -90,15 +91,15 @@ getCharacterMetadata =
       dynamicBin
 
   where
-    filePath :: HasCharacterName s CharacterName =>  s -> String
-    filePath = show . (^. characterName)
+    charName :: HasCharacterName s CharacterName =>  s -> String
+    charName = show . (^. characterName)
 
     sourceFilePath :: HasCharacterName s CharacterName =>  s -> FilePath
     sourceFilePath = sourceFile . (^. characterName)
 
-    f :: HasCharacterName s CharacterName => CharacterType -> s -> CharacterMetadata
-    f ch = CharacterMetadata
-        <$> filePath
+    f :: HasCharacterName s CharacterName => CharacterType -> s -> CharacterReportMetadata
+    f ch = CharacterReportMetadata
+        <$> charName
         <*> sourceFilePath
         <*> const ch
 
