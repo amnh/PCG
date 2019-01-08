@@ -192,6 +192,7 @@ library
                     Bio.Sequence.Metadata
                     Bio.Graph
                     Bio.Graph.Component
+                    Bio.Graph.Constructions
                     Bio.Graph.Forest.Parsed
                     Bio.Graph.LeafSet
                     Bio.Graph.Node
@@ -268,7 +269,7 @@ library
                     Bio.Metadata.Dynamic.Internal
                     Bio.Metadata.MetricRepresentation
                     Bio.Graph.BinaryRenderingTree
-                    Bio.Graph.Constructions
+
                     Bio.Graph.Forest
                     Bio.Graph.Node.Internal
                     Bio.Graph.PhylogeneticDAG.Class
@@ -684,3 +685,25 @@ Test-Suite unit-tests
                     Text.XML
                     Text.XML.Class
                     Text.XML.Custom
+
+benchmark benchmark
+
+  import:             ghc-flags
+                    , language-specs
+
+  type:             exitcode-stdio-1.0
+
+  main-is:          Benchmark.hs
+
+
+  build-depends:      base               >=4.10
+                    , criterion
+                    , filepath
+                    , pcg-utility
+                    , phylocomgraph
+                  
+
+  hs-source-dirs:   benchmark
+
+  other-modules:      BenchSuite.FileStreaming
+
