@@ -17,6 +17,7 @@
 
 module Bio.Metadata.Discrete.Class
   ( HasCharacterAlphabet(..)
+  , HasTcmSourceFile(..)
   ) where
 
 import Control.Lens
@@ -29,3 +30,9 @@ class HasCharacterAlphabet s a | s -> a where
     {-# MINIMAL characterAlphabet #-}
     characterAlphabet :: Lens' s a
 
+-- |
+-- A 'Lens' for the 'tcmSourceFile' field
+class HasTcmSourceFile s a | s -> a where
+
+    {-# MINIMAL _tcmSourceFile #-}
+    _tcmSourceFile :: Lens' s a
