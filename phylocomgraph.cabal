@@ -147,6 +147,7 @@ library
                     , semigroups
                     , smallcheck
                     , text
+                    , text-short
                     , transformers
                     , unordered-containers
                     , vector
@@ -328,6 +329,7 @@ executable pcg
                     , semigroupoids
                     , semigroups
                     , text
+                    , text-short
                     , time
                     , transformers
                     , validation
