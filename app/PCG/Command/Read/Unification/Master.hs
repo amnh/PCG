@@ -72,6 +72,7 @@ import qualified Data.TCM                                      as TCM
 import           Data.Vector                                   (Vector)
 import           PCG.Command.Read.Unification.UnificationError
 import           Prelude                                       hiding (lookup, zipWith)
+import Data.Text.Short (ShortText)
 
 --import Debug.Trace
 
@@ -241,7 +242,7 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
     deriveCharacterNames
       :: Foldable t
       => t FracturedParseResult
-      -> [ Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, Maybe (TCM, TCMStructure), CharacterName)) ]
+      -> [ Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, ShortText, Maybe (TCM, TCMStructure), CharacterName)) ]
     deriveCharacterNames xs = reverse . snd $ foldl' g (charNames, []) xs
       where
         g (propperNames, ys) fpr = (drop (length localMetadata) propperNames, newMap:ys)
@@ -311,12 +312,12 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
 
     collapseAndMerge
       :: Foldable f
-      => f (Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName)))
+      => f (Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, ShortText, Word -> Word -> Word, TCMStructure, CharacterName)))
       -> (Maybe UnifiedMetadataSequence, Map String UnifiedCharacterSequence)
     collapseAndMerge = (fmap MD.fromNonEmpty *** fmap CS.fromNonEmpty) . fst . foldl' f ((mempty, mempty), [])
       where
         f :: ((Maybe (NonEmpty UnifiedMetadataBlock), Map String (NonEmpty UnifiedCharacterBlock)), [UnifiedCharacterBlock])
-          -> Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName))
+          -> Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, ShortText, Word -> Word -> Word, TCMStructure, CharacterName))
           -> ((Maybe (NonEmpty UnifiedMetadataBlock), Map String (NonEmpty UnifiedCharacterBlock)), [UnifiedCharacterBlock])
         f ((prevMeta, prevMapping), prevPad) currTreeChars = ((nextMeta, nextMapping), nextPad)
           where
@@ -342,28 +343,30 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
 
             buildMetadataBlock
               :: Foldable1 t
-              => t (ParsedCharacter, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName)
+              => t (ParsedCharacter, ParsedCharacterMetadata, ShortText, Word -> Word -> Word, TCMStructure, CharacterName)
               -> UnifiedMetadataBlock
             buildMetadataBlock = foldMap1 encodeToSingletonMetadata
               where
-                encodeToSingletonMetadata (charMay, charMeta, scm, structure, charName) =
+                encodeToSingletonMetadata :: (ParsedCharacter, ParsedCharacterMetadata, ShortText, Word -> Word -> Word, TCMStructure, CharacterName)
+                          -> MetadataBlock ()
+                encodeToSingletonMetadata (charMay, charMeta, tcmSource,  scm, structure, charName) =
                     case charMay of
                       ParsedContinuousCharacter {} -> MD.continuousToMetadataBlock $ continuousMetadata charName charWeight
-                      ParsedDiscreteCharacter   {} -> MD.discreteToMetadataBlock structure $ discreteMetadataWithTCM charName charWeight specifiedAlphabet scm
-                      ParsedDynamicCharacter    {} -> MD.dynamicToMetadataBlock $ dynamicMetadataWithTCM charName charWeight specifiedAlphabet scm
+                      ParsedDiscreteCharacter   {} -> MD.discreteToMetadataBlock structure $ discreteMetadataWithTCM charName charWeight specifiedAlphabet tcmSource scm
+                      ParsedDynamicCharacter    {} -> MD.dynamicToMetadataBlock $ dynamicMetadataWithTCM charName charWeight specifiedAlphabet tcmSource scm
                   where
                     charWeight        = weight   charMeta
                     specifiedAlphabet = alphabet charMeta
 
             encodeToCharacterBlock :: Foldable1 t
-                          => t (ParsedCharacter, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName)
+                          => t (ParsedCharacter, ParsedCharacterMetadata, ShortText, Word -> Word -> Word, TCMStructure, CharacterName)
                           -> UnifiedCharacterBlock
             encodeToCharacterBlock = finalizeCharacterBlock . foldMap1 encodeBinToSingletonCharacterBlock
               where
                 encodeBinToSingletonCharacterBlock
-                  :: (ParsedCharacter, ParsedCharacterMetadata, Word -> Word -> Word, TCMStructure, CharacterName)
+                  :: (ParsedCharacter, ParsedCharacterMetadata, ShortText, Word -> Word -> Word, TCMStructure, CharacterName)
                   -> PartialCharacterBlock UnifiedContinuousCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDynamicCharacter
-                encodeBinToSingletonCharacterBlock (charMay, charMeta, _scm, structure, _charName) =
+                encodeBinToSingletonCharacterBlock (charMay, charMeta, tcmSource, _scm, structure, _charName) =
                     case charMay of
                       ParsedContinuousCharacter continuousMay -> continuousSingleton           . Just $  continuousDecorationInitial $ toContinuousCharacter continuousMay
                       ParsedDiscreteCharacter     discreteMay ->   discreteSingleton structure . Just $ toDiscreteCharacterDecoration staticTransform discreteMay
