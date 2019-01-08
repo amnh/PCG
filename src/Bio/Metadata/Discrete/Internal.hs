@@ -22,6 +22,7 @@ module Bio.Metadata.Discrete.Internal
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)
+  , HasTcmSourceFile(..)
   , discreteMetadata
   ) where
 
@@ -35,6 +36,7 @@ import Data.Alphabet
 import Data.List                   (intercalate)
 import GHC.Generics
 import Text.XML
+import Data.Text.Short (ShortText)
 
 
 -- |
@@ -42,8 +44,9 @@ import Text.XML
 -- discrete different bins. Continous bins do not have Alphabets.
 data DiscreteCharacterMetadataDec
    = DiscreteCharacterMetadataDec
-   { alphabet    :: {-# UNPACK #-} !(Alphabet String)
-   , generalData :: {-# UNPACK #-} !GeneralCharacterMetadataDec
+   { alphabet      :: {-# UNPACK #-} !(Alphabet String)
+   , generalData   :: {-# UNPACK #-} !GeneralCharacterMetadataDec
+   , tcmSourceFile :: {-# UNPACK #-} !ShortText
    } deriving (Generic)
 
 
@@ -73,6 +76,7 @@ instance Show DiscreteCharacterMetadataDec where
       , "  CharacterName: " <> show (e ^. characterName    )
       , "  Alphabet:      " <> show (e ^. characterAlphabet)
       , "  Weight:        " <> show (e ^. characterWeight  )
+      , "  TCMSourceFile: " <> show (e ^. _tcmSourceFile   )
       ]
 
 
@@ -109,6 +113,11 @@ instance HasCharacterWeight DiscreteCharacterMetadataDec Double where
     characterWeight = lens (\e -> generalData e ^. characterWeight)
                     $ \e x -> e { generalData = generalData e & characterWeight .~ x }
 
+-- | (✔)
+instance HasTcmSourceFile DiscreteCharacterMetadataDec ShortText where
+
+    _tcmSourceFile = lens tcmSourceFile $ \d s -> d { tcmSourceFile = s }
+
 
 instance ToXML DiscreteCharacterMetadataDec where
 
@@ -122,9 +131,10 @@ instance ToXML DiscreteCharacterMetadataDec where
 
 -- |
 -- Construct a concrete typed 'DiscreteCharacterMetadataDec' value from the supplied inputs.
-discreteMetadata :: CharacterName -> Double -> Alphabet String -> DiscreteCharacterMetadataDec
-discreteMetadata name weight alpha =
+discreteMetadata :: CharacterName -> Double -> Alphabet String -> ShortText -> DiscreteCharacterMetadataDec
+discreteMetadata name weight alpha tcmSource =
     DiscreteCharacterMetadataDec
     { alphabet       = alpha
     , generalData    = generalMetadata name weight
+    , tcmSourceFile  = tcmSource
     }
