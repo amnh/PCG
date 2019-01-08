@@ -36,6 +36,7 @@ import Data.MonoTraversable
 import Data.String
 import Test.Custom.NucleotideSequence
 import Test.QuickCheck
+import Data.Text.Short (ShortText)
 
 
 -- |
@@ -108,7 +109,7 @@ scm i j = if i == j then 0 else 1
 
 
 defMetadata :: DynamicCharacterMetadataDec (Element DynamicCharacter)
-defMetadata = dynamicMetadata defName defWeight defAlphabet scm Nothing
+defMetadata = dynamicMetadata defName defWeight defAlphabet defSourceFile scm Nothing
 
 
 initDec :: DynamicCharacter -> DynamicDecorationInitial DynamicCharacter
@@ -122,7 +123,9 @@ defName = fromString "Test Character"
 defWeight :: Double
 defWeight = 1
 
+defSourceFile :: ShortText
+defSourceFile = fromString "Test Directory"
+
 
 defAlphabet :: Alphabet String
 defAlphabet = fromSymbols ["A","C","G","T"]
-
