@@ -42,30 +42,38 @@ import           Data.Maybe
 import           Data.Monoid                ((<>))
 import           Data.Text                  (Text, pack)
 import           Data.Vector                (Vector)
+import Data.Text.Short (ShortText)
 
 
 data CharacterReportMetadata =
   CharacterReportMetadata
-  { characterNameRM :: String
-  , sourceFileRM    :: FilePath
-  , characterTypeRM :: CharacterType
+  { characterNameRM  :: String
+  , charsourceFileRM :: FilePath
+  , characterTypeRM  :: CharacterType
+  , tcmSourceFile    :: ShortText
   }
 
 instance ToNamedRecord CharacterReportMetadata where
   toNamedRecord CharacterReportMetadata {..} =
     namedRecord
-      [ "Character Name" .= characterNameRM
-      , "Source File"    .= sourceFileRM
-      , "Character Type" .= characterTypeRM
+      [ "Character Name"        .= characterNameRM
+      , "Character Source File" .= charsourceFileRM
+      , "Character Type"        .= characterTypeRM
+      , "TCM Source File"       .= tcmSourceFile
       ]
 
 instance DefaultOrdered CharacterReportMetadata where
-  headerOrder _ = header ["Character Name", "Source File", "Character Type"]
+  headerOrder _ =
+    header
+      [ "Character Name"
+      , "Character Source File"
+      , "Character Type"
+      , "TCM Source File"]
 
 
 
 
--- | Wrapper function to output a metadata csv
+-- | Wrapper function to output a metadata csv as a 'ByteString'
 outputMetadata :: DecoratedCharacterResult -> BS.ByteString
 outputMetadata =
   encodeDefaultOrderedByName . characterMetadataOutput
@@ -94,14 +102,23 @@ getCharacterReportMetadata =
     charName :: HasCharacterName s CharacterName =>  s -> String
     charName = show . (^. characterName)
 
-    sourceFilePath :: HasCharacterName s CharacterName =>  s -> FilePath
-    sourceFilePath = sourceFile . (^. characterName)
+    charSourceFilePath :: HasCharacterName s CharacterName =>  s -> FilePath
+    charSourceFilePath = sourceFile . (^. characterName)
 
-    f :: HasCharacterName s CharacterName => CharacterType -> s -> CharacterReportMetadata
+    tcmSourceFilePath :: HasTcmSourceFile s ShortText => s -> ShortText
+    tcmSourceFilePath = (^. _tcmSourceFile)
+
+    f
+      :: (HasCharacterName s CharacterName, HasTcmSourceFile s ShortText)
+      => CharacterType
+      -> s
+      -> CharacterReportMetadata
     f ch = CharacterReportMetadata
         <$> charName
-        <*> sourceFilePath
+        <*> charSourceFilePath
         <*> const ch
+        <*> tcmSourceFilePath
+    
 
     continuousMeta  = pure . f Continuous
     nonAdditiveMeta = pure . f NonAdditive
