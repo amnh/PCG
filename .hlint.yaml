@@ -104,3 +104,8 @@
 - ignore: { name: Use if
           , within: Data.Binary.Utility
           }
+
+# Ignore const rename suggestion
+- ignore: { name: Use const
+          , within: Bio.Metadata.Discrete.Class
+          }

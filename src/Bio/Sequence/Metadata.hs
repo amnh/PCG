@@ -14,6 +14,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 
 module Bio.Sequence.Metadata
@@ -26,12 +27,18 @@ module Bio.Sequence.Metadata
   -- * Construction / Decomposition
   , fromNonEmpty
   , unfoldr
+  , hexFoldMap
   -- * Mutation
   , setAllFoci
   , setFoci
   ) where
 
 
+import           Bio.Character.Encodable
+import           Bio.Metadata.Continuous
+import           Bio.Metadata.Discrete
+import           Bio.Metadata.DiscreteWithTCM
+import           Bio.Metadata.Dynamic
 import           Bio.Sequence.Block.Metadata
 import           Bio.Sequence.Internal
 import           Control.DeepSeq
@@ -39,8 +46,8 @@ import           Control.Lens
 import           Data.Foldable
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
-import           Data.Vector.NonEmpty        (Vector)
-import qualified Data.Vector.NonEmpty        as V
+import           Data.Vector.NonEmpty         (Vector)
+import qualified Data.Vector.NonEmpty         as V
 import           GHC.Generics
 import           Text.XML
 
@@ -162,3 +169,25 @@ toBlocks (MetaSeq x) =  x
 {-# INLINE fromBlocks #-}
 fromBlocks :: Vector (MetadataBlock m) -> MetadataSequence m
 fromBlocks = MetaSeq
+
+
+hexFoldMap
+  ::   forall m meta . (Monoid m)
+  => (ContinuousCharacterMetadataDec                      -> m)
+  -> (DiscreteCharacterMetadataDec                        -> m)
+  -> (DiscreteCharacterMetadataDec                        -> m)
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> m)
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> m)
+  -> (DynamicCharacterMetadataDec DynamicCharacterElement -> m)
+  -> (MetadataSequence meta -> m)
+hexFoldMap m1 m2 m3 m4 m5 m6 metaSeq =
+    foldMap foldMapBlock (toBlocks metaSeq)
+  where
+    foldMapBlock :: MetadataBlock meta -> m
+    foldMapBlock metaDataBlock =
+        (foldMap m1 . (^.  continuousBin) $ metaDataBlock)
+     <> (foldMap m2 . (^. nonAdditiveBin) $ metaDataBlock)
+     <> (foldMap m3 . (^.    additiveBin) $ metaDataBlock)
+     <> (foldMap m4 . (^.      metricBin) $ metaDataBlock)
+     <> (foldMap m5 . (^.   nonMetricBin) $ metaDataBlock)
+     <> (foldMap m6 . (^.     dynamicBin) $ metaDataBlock)

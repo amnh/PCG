@@ -279,6 +279,11 @@ tripleComparison pairwiseAlignment meta childDecoration parentCharacter parentSi
         case meta ^. sparseTransitionCostMatrix of
           Just memo -> getMedianAndCost3D memo
           Nothing   -> naiveMedianAndCost3D
+
+    costStructure =
+        case meta ^. sparseTransitionCostMatrix of
+          Nothing  -> naiveMedianAndCost3D
+          Just tcm -> getMedianAndCost3D tcm
       where
         !tcm = meta ^. pairwiseTransitionCostMatrix
         !gap = gapOfStream parentCharacter

@@ -92,9 +92,11 @@ instance Fractional ExtendedReal where
 
     lhs@(Cost x) / rhs@(Cost y) =
         case (lhs == infinity, rhs == infinity) of
-          ( True,    _) -> infinity
-          (False, True) -> minBound
-          (False,False) -> Cost $ x / y
+          ( True,     _) -> infinity
+          (False,  True) -> minBound
+          (False, False) -> if   y == 0
+                            then infinity
+                            else Cost $ x / y
 
     recip (Cost x) = Cost $ recip x
 
