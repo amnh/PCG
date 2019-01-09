@@ -50,6 +50,7 @@ module Bio.Metadata
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)
+  , HasTcmSourceFile(..)
   , HasTraversalFoci(..)
   ) where
 
