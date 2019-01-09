@@ -45,6 +45,7 @@ import Data.List                          (intercalate)
 import Data.Range
 import Data.TCM                           as TCM
 import Data.TCM.Memoized
+import Data.Text.Short                    (ShortText)
 import GHC.Generics                       hiding (to)
 import Text.XML
 
@@ -64,6 +65,69 @@ foreignPointerData x =
   case metricRepresentation x of
     ExplicitLayout _ v -> Just v
     _                  -> Nothing
+
+
+{-
+data RepresentedTCM a where
+  Disc :: Discrete -> RepresentedTCM Discrete
+  Explicit :: TCM -> MemoizedCostMatrix -> RepresentedTCM Explicit
+-}
+
+
+{-
+retreiveTCM
+  :: ( Bits c
+     , Bound c ~ Word
+     , Exportable c
+     , Ranged c
+     )
+  => RepresentedTCM
+  -> c
+  -> c
+  -> (c, Word)
+retreiveTCM (ExplicitLayout _ memo) = getMedianAndCost2D memo
+retreiveTCM DiscreteMetric          = discreteMetricLogic
+retreiveTCM LinearNorm              = linearNormLogic
+
+
+retreiveSCM :: RepresentedTCM -> Word -> Word -> Word
+retreiveSCM (ExplicitLayout tcm _) = \i j -> toEnum . fromEnum $ tcm TCM.! (i,j)
+retreiveSCM DiscreteMetric         = \i j -> if i == j then 0 else 1
+retreiveSCM LinearNorm             = \i j -> max i j - min i j
+-}
+
+
+discreteMetricLogic :: (Bits a, Num b) => a -> a -> (a, b)
+discreteMetricLogic lhs rhs
+  | popCount intersect > 0 = (intersect, 0)
+  | otherwise              = (  unioned, 1)
+  where
+    unioned   = lhs .|. rhs
+    intersect = lhs .&. rhs
+
+
+linearNormLogic
+  :: ( Ord (Bound a)
+     , Ranged a
+     , Ranged b
+     , Ranged c
+     , Bound b ~ Bound a
+     , Bound c ~ Bound a
+     )
+  => a -> b -> (c, Bound a)
+linearNormLogic lhs rhs = (fromRange newInterval, cost)
+  where
+    lhs' = toRange lhs
+    rhs' = toRange rhs
+
+    newInterval
+      | isOverlapping = lhs' `intersection`   rhs'
+      | otherwise     = lhs' `smallestClosed` rhs'
+    isOverlapping     = lhs' `intersects`     rhs'
+
+    cost
+      | isOverlapping = 0
+      | otherwise     = upperBound newInterval - lowerBound newInterval
 
 
 -- | (✔)
@@ -99,6 +163,12 @@ instance HasCharacterWeight (DiscreteWithTCMCharacterMetadataDec c) Double where
 
     characterWeight = lens (\e -> discreteData e ^. characterWeight)
                     $ \e x -> e { discreteData = discreteData e & characterWeight .~ x }
+
+-- | (✔)
+instance HasTcmSourceFile (DiscreteWithTCMCharacterMetadataDec c) ShortText where
+
+    _tcmSourceFile = lens (\s -> discreteData s ^. _tcmSourceFile)
+                   $ \d s -> d { discreteData = discreteData d & _tcmSourceFile .~ s }
 
 
 -- |
@@ -137,6 +207,7 @@ instance Show (DiscreteWithTCMCharacterMetadataDec c) where
         , "  CharacterName: " <> show (e ^. characterName    )
         , "  Alphabet:      " <> show (e ^. characterAlphabet)
         , "  Weight:        " <> show (e ^. characterWeight  )
+        , "  TCMSourceFile :" <> show (e ^. _tcmSourceFile   )
         , "  TCM: "
         , show . generate dimension $ \(i,j) -> cost (toEnum i) (toEnum j)
         ]
@@ -157,11 +228,17 @@ instance ToXML (DiscreteWithTCMCharacterMetadataDec c) where
 
 -- |
 -- Construct a concrete typed 'DiscreteWithTCMCharacterMetadataDec' value from the supplied inputs.
-discreteMetadataFromTCM :: CharacterName -> Double -> Alphabet String -> TCM -> DiscreteWithTCMCharacterMetadataDec c
-discreteMetadataFromTCM name weight alpha tcm =
+discreteMetadataFromTCM
+  :: CharacterName
+  -> Double
+  -> Alphabet String
+  -> ShortText
+  -> TCM
+  -> DiscreteWithTCMCharacterMetadataDec c
+discreteMetadataFromTCM name weight alpha tcmSource tcm =
     DiscreteWithTCMCharacterMetadataDec
     { metricRepresentation = representaionOfTCM
-    , discreteData   = discreteMetadata name (weight * coefficient) alpha
+    , discreteData   = discreteMetadata name (weight * coefficient) alpha tcmSource
     }
   where
     representaionOfTCM =
@@ -182,8 +259,9 @@ discreteMetadataWithTCM
   :: CharacterName
   -> Double
   -> Alphabet String
+  -> ShortText
   -> (Word -> Word -> Word)
   -> DiscreteWithTCMCharacterMetadataDec c
-discreteMetadataWithTCM name weight alpha scm = discreteMetadataFromTCM name weight alpha tcm
+discreteMetadataWithTCM name weight alpha tcmSource scm = discreteMetadataFromTCM name weight alpha tcmSource tcm
   where
     tcm = generate (length alpha) (uncurry scm)

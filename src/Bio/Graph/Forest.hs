@@ -38,12 +38,10 @@ import Data.List.NonEmpty      (NonEmpty (..))
 import Data.Maybe
 import Data.Semigroup
 import Data.Semigroup.Foldable
--- import Data.Semigroup.Traversable
 import GHC.Generics
 import Prelude                 hiding (lookup, zip, zipWith)
 import Text.Newick.Class
 import Text.XML.Custom
--- import Text.XML.Light.Types
 
 
 -- |
