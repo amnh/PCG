@@ -21,9 +21,9 @@ module Bio.Metadata.Discrete.Class
   , HasTcmSourceFile(..)
   ) where
 
-import Control.Lens
 import Bio.Metadata.Continuous
-import Data.Text.Short (ShortText)
+import Control.Lens
+import Data.Text.Short         (ShortText)
 
 
 -- |

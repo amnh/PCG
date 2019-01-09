@@ -41,8 +41,8 @@ import qualified Data.List.NonEmpty         as NE
 import           Data.Maybe
 import           Data.Monoid                ((<>))
 import           Data.Text                  (Text, pack)
+import           Data.Text.Short            (ShortText)
 import           Data.Vector                (Vector)
-import Data.Text.Short (ShortText)
 
 
 data CharacterReportMetadata =
@@ -118,7 +118,7 @@ getCharacterReportMetadata =
         <*> charSourceFilePath
         <*> const ch
         <*> tcmSourceFilePath
-    
+
 
     continuousMeta  = pure . f Continuous
     nonAdditiveMeta = pure . f NonAdditive

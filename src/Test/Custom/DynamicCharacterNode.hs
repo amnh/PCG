@@ -34,9 +34,9 @@ import Bio.Metadata.CharacterName
 import Data.Alphabet
 import Data.MonoTraversable
 import Data.String
+import Data.Text.Short                                        (ShortText)
 import Test.Custom.NucleotideSequence
 import Test.QuickCheck
-import Data.Text.Short (ShortText)
 
 
 -- |

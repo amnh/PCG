@@ -45,9 +45,9 @@ import Data.List                          (intercalate)
 import Data.Range
 import Data.TCM                           as TCM
 import Data.TCM.Memoized
+import Data.Text.Short                    (ShortText)
 import GHC.Generics                       hiding (to)
 import Text.XML
-import Data.Text.Short (ShortText)
 
 
 -- |

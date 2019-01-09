@@ -34,9 +34,9 @@ import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
 import Data.List                   (intercalate)
+import Data.Text.Short             (ShortText)
 import GHC.Generics
 import Text.XML
-import Data.Text.Short (ShortText)
 
 
 -- |

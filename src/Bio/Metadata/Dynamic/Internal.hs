@@ -53,10 +53,10 @@ import Data.List                                              (intercalate)
 import Data.List.NonEmpty                                     (NonEmpty)
 import Data.Range
 import Data.TCM
+import Data.Text.Short                                        (ShortText)
 import Data.TopologyRepresentation
 import GHC.Generics                                           (Generic)
 import Text.XML
-import Data.Text.Short (ShortText)
 
 
 -- |

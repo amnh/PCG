@@ -70,10 +70,10 @@ import           Data.String
 import           Data.TCM                                      (TCM, TCMStructure (..))
 import qualified Data.TCM                                      as TCM
 --import           Data.MonoTraversable
+import           Data.Text.Short                               (ShortText)
 import           Data.Vector                                   (Vector)
 import           PCG.Command.Read.Unification.UnificationError
 import           Prelude                                       hiding (lookup, zipWith)
-import Data.Text.Short (ShortText)
 
 --import Debug.Trace
 
@@ -250,7 +250,7 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
         g (propperNames, ys) fpr = (drop (length localMetadata) propperNames, newMap:ys)
           where
             localMetadata = parsedMetas fpr
-               
+
             -- This call to NE.fromList is safe, we checked that there were no empty characters in Step 1. (not realy though)
             newMap =
               (\x -> NE.fromList $ zip5
@@ -260,7 +260,7 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
                                      (repeat (relatedTcm fpr))
                                      propperNames
              ) <$> parsedChars fpr
-              
+
 
         charNames :: [CharacterName]
         charNames = makeCharacterNames . concatMap nameTransform $ toList xs
@@ -277,7 +277,7 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
       where
         selectTCM (charMay, charMetadata, charSource, tcmMay, charName) = (charMay, charMetadata, tcmSource, selectedTCM, selectedStructure, charName)
           where
-            (selectedTCM, selectedStructure, tcmSource) 
+            (selectedTCM, selectedStructure, tcmSource)
               = case (tcmMay, parsedTCM charMetadata) of
                   (Just (t,s), _)    -> (t, s, charSource)
                   (_, Just (t,s))    -> (t, s, charSource)
