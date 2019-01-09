@@ -112,7 +112,3 @@ toBimap :: [(Char, String)] ->  Bimap (AmbiguityGroup String) (AmbiguityGroup St
 toBimap = BM.fromList . fmap transform
   where
     transform = pure . pure *** fmap pure . NE.fromList
-
-
-
-

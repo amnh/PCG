@@ -6,6 +6,10 @@ module PCG.Command.Build.Evaluate
   ( evaluate
   ) where
 
+import           Analysis.Parsimony.Additive.Internal
+import           Analysis.Parsimony.Dynamic.DirectOptimization
+import           Analysis.Parsimony.Fitch.Internal
+import           Analysis.Parsimony.Sankoff.Internal
 import           Analysis.Scoring
 import           Bio.Character
 import           Bio.Character.Decoration.Additive
@@ -16,26 +20,27 @@ import           Bio.Character.Decoration.Metric
 import           Bio.Graph
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
-import           Bio.Graph.PhylogeneticDAG           (PostorderContextualData, setDefaultMetadata)
-import qualified Bio.Graph.ReferenceDAG              as DAG
+import           Bio.Graph.PhylogeneticDAG                     (PostorderContextualData, setDefaultMetadata)
+import qualified Bio.Graph.ReferenceDAG                        as DAG
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
-import           Control.Arrow                       ((&&&))
+import           Control.Arrow                                 ((&&&))
 import           Control.DeepSeq
 import           Control.Evaluation
 import           Control.Lens
-import           Control.Monad                       (replicateM)
+import           Control.Monad                                 (replicateM)
 import           Control.Monad.IO.Class
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
-import           Data.Compact                        (compact, getCompact)
+import           Data.Compact                                  (compact, getCompact)
 import           Data.Foldable
-import qualified Data.IntMap                         as IM
-import qualified Data.IntSet                         as IS
-import           Data.List.NonEmpty                  (NonEmpty (..))
-import qualified Data.List.NonEmpty                  as NE
+import qualified Data.IntMap                                   as IM
+import qualified Data.IntSet                                   as IS
+import           Data.Key
+import           Data.List.NonEmpty                            (NonEmpty (..))
+import qualified Data.List.NonEmpty                            as NE
 import           Data.NodeLabel
-import           Data.Ord                            (comparing)
+import           Data.Ord                                      (comparing)
 import           Data.Semigroup.Foldable
 import           PCG.Command.Build
 import           System.Random.Shuffle
@@ -126,22 +131,22 @@ naiveWagnerBuild
   -> FinalDecorationDAG
 naiveWagnerBuild metaSeq ns =
    case toNonEmpty ns of
-      x:|[]   -> fromRefDAG $ DAG.fromList
-                   [ ( mempty        , wipeNode False x, mempty )
-                   ]
-      x:|[y]  -> fromRefDAG $ DAG.fromList
-                   [ ( mempty        , wipeNode True  x, IM.fromList [(1,mempty), (2,mempty)] )
-                   , ( IS.singleton 0, wipeNode False x, mempty )
-                   , ( IS.singleton 0, wipeNode False y, mempty )
-                   ]
+      x:|[]  -> fromRefDAG $ DAG.fromList
+                  [ ( mempty        , wipeNode False x, mempty )
+                  ]
+      x:|[y] -> fromRefDAG $ DAG.fromList
+                  [ ( mempty        , wipeNode True  x, IM.fromList [(1,mempty), (2,mempty)] )
+                  , ( IS.singleton 0, wipeNode False x, mempty )
+                  , ( IS.singleton 0, wipeNode False y, mempty )
+                  ]
       x:|(y:z:xs) ->
           let initTree = fromRefDAG $ DAG.fromList
-                   [ ( mempty        , wipeNode True  x, IM.fromList [(1,mempty), (4,mempty)] )
-                   , ( IS.singleton 0, wipeNode True  x, IM.fromList [(2,mempty), (3,mempty)] )
-                   , ( IS.singleton 1, wipeNode False x, mempty )
-                   , ( IS.singleton 1, wipeNode False y, mempty )
-                   , ( IS.singleton 0, wipeNode False z, mempty )
-                   ]
+                  [ ( mempty        , wipeNode True  x, IM.fromList [(1,mempty), (4,mempty)] )
+                  , ( IS.singleton 0, wipeNode True  x, IM.fromList [(2,mempty), (3,mempty)] )
+                  , ( IS.singleton 1, wipeNode False x, mempty )
+                  , ( IS.singleton 1, wipeNode False y, mempty )
+                  , ( IS.singleton 0, wipeNode False z, mempty )
+                  ]
 --          in  iterativeBuild (trace ("Leaves remaining: " <> show (length xs) <> "\n"<> show initTree) initTree) xs
           in  foldl' iterativeBuild initTree xs
 
@@ -153,16 +158,45 @@ iterativeBuild :: FinalDecorationDAG -> DatNode -> FinalDecorationDAG
 iterativeBuild currentTree@(PDAG2 _ metaSeq) nextLeaf = nextTree
   where
     (PDAG2 dag _) = wipeScoring currentTree
-    edgeSet     = NE.fromList . toList $ referenceEdgeSet dag
+    edgeSet       = NE.fromList . toList $ referenceEdgeSet dag
+    resetDAG      = resetEdgeData $ resetMetadata dag
 
-    tryEdge :: (Int, Int) -> FinalDecorationDAG
-    tryEdge     = performDecoration . (`PDAG2` metaSeq) . invadeEdge (resetMetadata dag) deriveInternalNode (wipeNode False nextLeaf)
-    nextTree    = minimumBy (comparing getCost) $ parmap rpar tryEdge edgeSet
+    tryEdge :: (Int, Int) -> Double
+    tryEdge (i,j) = delta
+      where
+        delta   = sequenceCost metaSeq compSeq - sequenceCost metaSeq edgeSeq - sequenceCost metaSeq thisSeq
+        edgeSeq = snd $ childRefs (references dag ! i) ! j
+        thisSeq = characterSequence . NE.head $ resolutions nextLeaf
+        compSeq ::
+          CharacterSequence
+            (ContinuousPostorderDecoration ContinuousCharacter)
+            (FitchOptimizationDecoration       StaticCharacter)
+            (AdditivePostorderDecoration       StaticCharacter)
+            (SankoffOptimizationDecoration     StaticCharacter)
+            (SankoffOptimizationDecoration     StaticCharacter)
+            (DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter)
+        compSeq = hexZipMeta
+                    (const additivePostorderPairwise)
+                    (const    fitchPostorderPairwise)
+                    (const additivePostorderPairwise)
+                    sankoffPostorderPairwise
+                    sankoffPostorderPairwise
+                    adaptiveDirectOptimizationPostorderPairwise
+                    metaSeq $ hexZip edgeSeq thisSeq
 
-    getCost (PDAG2 v _) = dagCost $ graphData v
+    nextEdge :: (Int, Int)
+    nextEdge    = fst . minimumBy (comparing snd) $ parmap rpar (id &&& tryEdge) edgeSet
+
+    nextTree    = performDecoration . (`PDAG2` metaSeq) . invadeEdge resetDAG deriveInternalNode (wipeNode False nextLeaf) $ nextEdge
+
+--    getCost (PDAG2 v _) = dagCost $ graphData v
 
     deriveInternalNode parentDatum oldChildDatum _newChildDatum =
         PNode2 (resolutions oldChildDatum) (nodeDecorationDatum2 parentDatum)
+
+    adaptiveDirectOptimizationPostorderPairwise meta = directOptimizationPostorderPairwise pairwiseAlignmentFunction
+      where
+        pairwiseAlignmentFunction = selectDynamicMetric meta
 
 
 iterativeNetworkBuild :: FinalDecorationDAG -> FinalDecorationDAG
@@ -191,8 +225,10 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
 
     getCost (PDAG2 v _) = dagCost $ graphData v
 
+    resetDAG = resetEdgeData $ resetMetadata dag
+
     connectEdge'
-      = uncurry (connectEdge (resetMetadata dag) deriveOriginEdgeNode deriveTargetEdgeNode)
+      = uncurry (connectEdge resetDAG deriveOriginEdgeNode deriveTargetEdgeNode)
 
     deriveOriginEdgeNode parentDatum oldChildDatum _newChildDatum =
         PNode2 (resolutions oldChildDatum) (nodeDecorationDatum2 parentDatum)
@@ -203,3 +239,6 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
 
 resetMetadata :: ReferenceDAG d e n -> ReferenceDAG (PostorderContextualData t) e n
 resetMetadata ref = ref & _graphData %~ setDefaultMetadata
+
+resetEdgeData :: ReferenceDAG d (e,a) n -> ReferenceDAG d e n
+resetEdgeData ref = ref & _references . (mapped . _childRefs . mapped) %~ fst

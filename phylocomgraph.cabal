@@ -338,7 +338,7 @@ executable pcg
                     , vector             >=0.12.0.2
                     , xml
 
-  ghc-options:      -threaded
+  ghc-options:      -threaded -rtsopts
                     -- -rtsopts -with-rtsopts=-N8
 
   hs-source-dirs:   app

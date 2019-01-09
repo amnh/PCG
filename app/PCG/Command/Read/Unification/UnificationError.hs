@@ -68,7 +68,7 @@ instance Show UnificationErrorMessage where
         , listShow names
         ]
     show (VacuousInput files) = mconcat
-       [ "There was niether any character sequences nor any trees found in any of the supplied files input files:\n"
+       [ "There was niether any character sequences nor any trees found in any of the supplied input files:\n"
        , (\x -> "  ["<>x<>"]") . intercalate ", " $ show <$> toList files
        ]
 

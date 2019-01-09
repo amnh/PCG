@@ -38,6 +38,7 @@ module Bio.Sequence.Block.Character
   , hexTranspose
   , hexZipMeta
   , hexZipWith
+  , hexZipWith3
   , hexZipWithMeta
   , toMissingCharacters
   ) where
@@ -414,6 +415,34 @@ hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = CB
       , _metricBin      = parZipWith rpar f4 (lhs ^.      metricBin) (rhs ^.      metricBin)
       , _nonMetricBin   = parZipWith rpar f5 (lhs ^.   nonMetricBin) (rhs ^.   nonMetricBin)
       , _dynamicBin     = parZipWith rpar f6 (lhs ^.     dynamicBin) (rhs ^.     dynamicBin)
+      }
+
+
+-- |
+-- Performs a zip over the two character blocks. Uses the input functions to zip
+-- the different character types in the character block.
+--
+-- Assumes that the 'CharacterBlock' values have the same number of each character
+-- type. If this assumtion is violated, the result will be truncated.
+hexZipWith3
+  :: (u -> u' -> u'' -> u''')
+  -> (v -> v' -> v'' -> v''')
+  -> (w -> w' -> w'' -> w''')
+  -> (x -> x' -> x'' -> x''')
+  -> (y -> y' -> y'' -> y''')
+  -> (z -> z' -> z'' -> z''')
+  -> CharacterBlock u    v    w    x    y    z
+  -> CharacterBlock u'   v'   w'   x'   y'   z'
+  -> CharacterBlock u''  v''  w''  x''  y''  z''
+  -> CharacterBlock u''' v''' w''' x''' y''' z'''
+hexZipWith3 f1 f2 f3 f4 f5 f6 a b c = CB
+    Block
+      { _continuousBin  = parZipWith3 rpar f1 (a ^.  continuousBin) (b ^.  continuousBin) (c ^.  continuousBin)
+      , _nonAdditiveBin = parZipWith3 rpar f2 (a ^. nonAdditiveBin) (b ^. nonAdditiveBin) (c ^. nonAdditiveBin)
+      , _additiveBin    = parZipWith3 rpar f3 (a ^.    additiveBin) (b ^.    additiveBin) (c ^.    additiveBin)
+      , _metricBin      = parZipWith3 rpar f4 (a ^.      metricBin) (b ^.      metricBin) (c ^.      metricBin)
+      , _nonMetricBin   = parZipWith3 rpar f5 (a ^.   nonMetricBin) (b ^.   nonMetricBin) (c ^.   nonMetricBin)
+      , _dynamicBin     = parZipWith3 rpar f6 (a ^.     dynamicBin) (b ^.     dynamicBin) (c ^.     dynamicBin)
       }
 
 

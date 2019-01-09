@@ -68,12 +68,9 @@ import qualified Data.Set                                      as Set
 import           Data.String
 import           Data.TCM                                      (TCM, TCMStructure (..))
 import qualified Data.TCM                                      as TCM
---import           Data.MonoTraversable
 import           Data.Vector                                   (Vector)
 import           PCG.Command.Read.Unification.UnificationError
 import           Prelude                                       hiding (lookup, zipWith)
-
---import Debug.Trace
 
 
 data FracturedParseResult

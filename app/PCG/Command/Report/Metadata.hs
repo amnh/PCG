@@ -21,7 +21,6 @@ import Data.List               (intercalate)
 import Data.Monoid             ((<>))
 import Data.Vector             (Vector)
 
---import Debug.Trace
 
 -- TODO: use spreadsheet library for tabular output files
 -- | Wrapper function to output a metadata csv

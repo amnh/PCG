@@ -5,19 +5,16 @@ compiler: ghc-8.6.3
 compiler-check: match-exact
 
 extra-deps:
-#- Cabal-2.4.0.1
-- compact-0.1.0.1
-- graphviz-2999.20.0.2@sha256:5fad513f27c6fa4ee92f27461bb7386a5541b6b7edd601483fe693d4ac3963c5
-#- polyparse-1.12.1
-- pretty-tree-0.1.0.0
-#- stm-2.5.0.0
-- tasty-rerun-1.1.12
+  - compact-0.1.0.1
+  - graphviz-2999.20.0.2@sha256:5fad513f27c6fa4ee92f27461bb7386a5541b6b7edd601483fe693d4ac3963c5
+  - pretty-tree-0.1.0.0
+  - tasty-rerun-1.1.12
 
 flags: {}
 
 ghc-options:
   "$everything": -j -fdiagnostics-color=always
-  "$locals": -fhide-source-paths
+  "$locals": -fhide-source-paths 
 
 local-bin-path: bin
 

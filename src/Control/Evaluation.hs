@@ -15,11 +15,10 @@
 module Control.Evaluation
   ( EvaluationT()
   , Evaluation()
-  , EvalUnit(..) -- TODO: Restructure so we don’t export this internal structure!
   , Notification()
   , evalEither
   , evalIO
-  , evaluationResult
+  , evaluation
   , impure
   , notifications
   , runEvaluation
@@ -43,3 +42,16 @@ evalIO = impure
 evalEither :: Show s => Either s b -> Evaluation b
 evalEither (Left  e) = fail $ show e
 evalEither (Right x) = pure x
+
+
+evaluation
+  :: b             -- ^ Default value when no computation has been performed
+  -> (String -> b) -- ^ How to consume the error message when an error has occured
+  -> (a -> b)      -- ^ How to transform the stored value
+  -> Evaluation a
+  -> b
+evaluation def err val x =
+  case evaluationResult x of
+    NoOp    -> def
+    Error s -> err s
+    Value v -> val v

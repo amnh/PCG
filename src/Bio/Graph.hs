@@ -25,6 +25,7 @@ module Bio.Graph
   , PhylogeneticDAGish(..)
   , PhylogeneticForest(..)
   , PhylogeneticSolution(..)
+  , PreOrderDecorationDAG
   , PostorderDecorationDAG
   , SearchState
   , TopologicalResult
@@ -44,13 +45,14 @@ module Bio.Graph
   , extractSolution
   , extractReferenceDAG
   , generateLocalResolutions
+  , phylogeneticForests
   , postorderSequence'
   , preorderFromRooting
   , preorderSequence
   , renderSummary
   , reifiedSolution
   , rootCosts
-  , phylogeneticForests
+  , setEdgeSequences
   -- * Mapping over networks
   , edgePreorderMap
   , edgePostorderMap
