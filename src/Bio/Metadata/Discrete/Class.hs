@@ -14,6 +14,7 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE OverloadedStrings      #-}
 
 module Bio.Metadata.Discrete.Class
   ( HasCharacterAlphabet(..)
@@ -21,6 +22,8 @@ module Bio.Metadata.Discrete.Class
   ) where
 
 import Control.Lens
+import Bio.Metadata.Continuous
+import Data.Text.Short (ShortText)
 
 
 -- |
@@ -36,3 +39,9 @@ class HasTcmSourceFile s a | s -> a where
 
     {-# MINIMAL _tcmSourceFile #-}
     _tcmSourceFile :: Lens' s a
+
+
+-- |
+-- Note: This instance simply extracts a constant string and so doesn't obey the lens laws.
+instance HasTcmSourceFile ContinuousCharacterMetadataDec ShortText where
+  _tcmSourceFile = lens (const "N/A") $ \d s -> d
