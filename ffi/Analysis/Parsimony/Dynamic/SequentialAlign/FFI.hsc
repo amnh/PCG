@@ -6,8 +6,6 @@
 
 {-# LANGUAGE BangPatterns, DeriveGeneric, FlexibleInstances, ForeignFunctionInterface, TypeSynonymInstances #-}
 
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-
 module Analysis.Parsimony.Dynamic.SequentialAlign.FFI
   ( pairwiseSequentialAlignment
   ) where

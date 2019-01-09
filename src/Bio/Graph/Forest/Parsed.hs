@@ -46,6 +46,7 @@ import           File.Format.VertexEdgeRoot       hiding (EdgeLength)
 import qualified File.Format.VertexEdgeRoot       as VER
 import           Prelude                          hiding (lookup)
 
+
 -- |
 -- The type of possibly-present decorations on a tree from a parsed file.
 type ParserTree   = ReferenceDAG () EdgeLength (Maybe String)
@@ -189,9 +190,9 @@ instance ParsedForest (NonEmpty NewickForest) where
                 f (NE x _ y _) = (fromDoubleMay y,x)
 
 
-
 -- | (✔)
 instance ParsedForest TntResult where
+
     unifyGraph input = fmap pure $
         case input of
           Left                forest  -> toPhylogeneticForest getTNTName <$> Just     forest

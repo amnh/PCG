@@ -8,8 +8,6 @@
 
 {-# LANGUAGE BangPatterns, DeriveGeneric, FlexibleInstances, ForeignFunctionInterface, TypeSynonymInstances #-}
 
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-
 module Data.TCM.Memoized.FFI
   ( CBufferUnit
   , CDynamicChar(..)

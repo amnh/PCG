@@ -48,7 +48,8 @@ evaluation
   :: b             -- ^ Default value when no computation has been performed
   -> (String -> b) -- ^ How to consume the error message when an error has occured
   -> (a -> b)      -- ^ How to transform the stored value
-  -> Evaluation a -> b
+  -> Evaluation a
+  -> b
 evaluation def err val x =
   case evaluationResult x of
     NoOp    -> def
