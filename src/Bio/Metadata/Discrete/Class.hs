@@ -44,4 +44,4 @@ class HasTcmSourceFile s a | s -> a where
 -- |
 -- Note: This instance simply extracts a constant string and so doesn't obey the lens laws.
 instance HasTcmSourceFile ContinuousCharacterMetadataDec ShortText where
-  _tcmSourceFile = lens (const "N/A") $ \d s -> d
+  _tcmSourceFile = lens (const "N/A") $ \d _ -> d

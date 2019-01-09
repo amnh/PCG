@@ -34,4 +34,3 @@ module Bio.Character
 
 import Bio.Character.Encodable
 import Bio.Character.Exportable.Class
-import Bio.Character.Type
