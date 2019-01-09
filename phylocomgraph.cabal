@@ -570,6 +570,7 @@ Test-Suite unit-tests
                     , bimap
                     , bv-little
                     -- >=0.5.8 Required for Data.Map.restrictKeys
+                    , cassava >=0.5
                     , containers         >=0.5.8
                     , deepseq
                     , dlist
@@ -645,6 +646,7 @@ Test-Suite unit-tests
                     Bio.Character.Encodable.Stream
                     Bio.Character.Exportable
                     Bio.Character.Exportable.Class
+                    Bio.Character.Type
                     Bio.Graph.BinaryRenderingTree
                     Bio.Graph.Component
                     Bio.Graph.LeafSet
