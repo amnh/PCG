@@ -339,13 +339,12 @@ executable pcg
                     , semigroups
                     , text
                     , text-short
-                    , time
                     , transformers
                     , validation
                     -- >=0.12.0.2 required for compatability with "compact regions"
                     , vector             >=0.12.0.2
                     , xml
-                    , xlsx
+
 
   ghc-options:      -threaded -rtsopts
                     -- -rtsopts -with-rtsopts=-N8

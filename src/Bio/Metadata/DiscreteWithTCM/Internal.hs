@@ -74,6 +74,7 @@ data RepresentedTCM a where
 -}
 
 
+{-
 retreiveTCM
   :: ( Bits c
      , Bound c ~ Word
@@ -93,6 +94,7 @@ retreiveSCM :: RepresentedTCM -> Word -> Word -> Word
 retreiveSCM (ExplicitLayout tcm _) = \i j -> toEnum . fromEnum $ tcm TCM.! (i,j)
 retreiveSCM DiscreteMetric         = \i j -> if i == j then 0 else 1
 retreiveSCM LinearNorm             = \i j -> max i j - min i j
+-}
 
 
 discreteMetricLogic :: (Bits a, Num b) => a -> a -> (a, b)
@@ -235,7 +237,7 @@ discreteMetadataFromTCM
   -> DiscreteWithTCMCharacterMetadataDec c
 discreteMetadataFromTCM name weight alpha tcmSource tcm =
     DiscreteWithTCMCharacterMetadataDec
-    { representedTCM = representaionOfTCM
+    { metricRepresentation = representaionOfTCM
     , discreteData   = discreteMetadata name (weight * coefficient) alpha tcmSource
     }
   where

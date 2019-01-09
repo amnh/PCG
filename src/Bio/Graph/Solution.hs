@@ -70,13 +70,6 @@ extractSolution :: PhylogeneticSolution a -> a
 extractSolution = NE.head . getPhylogeneticForest . NE.head . getPhylogeneticSolution
 
 
--- |
--- Extract a solution without loss of generality.
-{-# INLINE extractSolution #-}
-extractSolution :: PhylogeneticSolution a -> a
-extractSolution = NE.head . getPhylogeneticForest . NE.head . getPhylogeneticSolution
-
-
 instance (HasLeafSet a b, Semigroup b) => HasLeafSet (PhylogeneticSolution a) b where
 
     leafSet = Lens.to getter

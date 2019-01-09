@@ -108,8 +108,8 @@ getCharacterReportMetadata =
     tcmSourceFilePath :: HasTcmSourceFile s ShortText => s -> ShortText
     tcmSourceFilePath = (^. _tcmSourceFile)
 
-    f
-      :: (HasCharacterName s CharacterName, HasTcmSourceFile s ShortText)
+
+    f :: (HasCharacterName s CharacterName, HasTcmSourceFile s ShortText)
       => CharacterType
       -> s
       -> CharacterReportMetadata

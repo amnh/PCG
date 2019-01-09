@@ -284,7 +284,6 @@ tripleComparison pairwiseAlignment meta childDecoration parentCharacter parentSi
         case meta ^. sparseTransitionCostMatrix of
           Nothing  -> naiveMedianAndCost3D
           Just tcm -> getMedianAndCost3D tcm
->>>>>>> report-command
       where
         !tcm = meta ^. pairwiseTransitionCostMatrix
         !gap = gapOfStream parentCharacter
