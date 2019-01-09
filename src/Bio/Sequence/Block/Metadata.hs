@@ -211,11 +211,11 @@ discreteToMetadataBlock struct v =
       NonSymmetric -> nonMetric
       Symmetric    -> nonMetric
   where
-    stipDec = discreteMetadata <$> (^. characterName) <*> (^. characterWeight) <*> (^. characterAlphabet)
+    stripDec = discreteMetadata <$> (^. characterName) <*> (^. characterWeight) <*> (^. characterAlphabet) <*> (^. _tcmSourceFile)
     nonAdditive = MB ()
         Block
         { _continuousBin  = mempty
-        , _nonAdditiveBin = pure $ stipDec v
+        , _nonAdditiveBin = pure $ stripDec v
         , _additiveBin    = mempty
         , _metricBin      = mempty
         , _nonMetricBin   = mempty
@@ -226,7 +226,7 @@ discreteToMetadataBlock struct v =
         Block
         { _continuousBin  = mempty
         , _nonAdditiveBin = mempty
-        , _additiveBin    = pure $ stipDec v
+        , _additiveBin    = pure $ stripDec v
         , _metricBin      = mempty
         , _nonMetricBin   = mempty
         , _dynamicBin     = mempty
