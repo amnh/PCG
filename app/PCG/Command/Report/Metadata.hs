@@ -1,7 +1,3 @@
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
-
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  PCG.Command.Types.Report.Metadata
@@ -16,6 +12,10 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
+
 module PCG.Command.Report.Metadata
   ( outputMetadata
   )
@@ -24,25 +24,13 @@ module PCG.Command.Report.Metadata
 import           Bio.Character.Type         (CharacterType (..))
 import           Bio.Graph
 import           Bio.Graph.PhylogeneticDAG
-import           Bio.Graph.Solution
 import           Bio.Metadata
 import           Bio.Metadata.CharacterName
 import           Bio.Sequence.Metadata
-import           Control.Arrow              ((&&&))
-import           Control.Lens.Operators     ((?~), (^.))
+import           Control.Lens.Operators     ((^.))
 import qualified Data.ByteString.Lazy       as BS
-import           Data.ByteString.Lazy.Char8 (unpack)
-import           Data.Compact
 import           Data.Csv
-import           Data.Foldable
-import           Data.Function              ((&))
-import           Data.List                  (nub)
-import qualified Data.List.NonEmpty         as NE
-import           Data.Maybe
-import           Data.Monoid                ((<>))
-import           Data.Text                  (Text, pack)
 import           Data.Text.Short            (ShortText)
-import           Data.Vector                (Vector)
 
 
 data CharacterReportMetadata =

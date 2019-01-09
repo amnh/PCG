@@ -52,7 +52,6 @@ import           Control.DeepSeq
 import           Control.Lens                      hiding (Fold)
 import           Control.Monad.State.Strict
 import           Data.Alphabet
-import           Data.Bits
 import           Data.Foldable
 import           Data.Functor                      (($>))
 import           Data.List                         (intercalate)
@@ -280,7 +279,7 @@ dynamicMetadata name weight alpha tcmSource tcm denseMay =
           _           -> ExplicitLayout (factoredTcm diagnosis) ()
 
     diagnosis       = diagnoseTcm tcm
-    coefficient     = fromIntegral $ factoredWeight diagnosis
+--    coefficient     = fromIntegral $ factoredWeight diagnosis
     sigma  i j      = toEnum . fromEnum $ factoredTcm diagnosis TCM.! (fromEnum i, fromEnum j)
     memoMatrixValue = generateMemoizedTransitionCostMatrix (toEnum $ length alpha) sigma
 

@@ -1,4 +1,3 @@
-
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Metadata.DiscreteWithTCM.Internal
@@ -94,7 +93,6 @@ retreiveSCM :: RepresentedTCM -> Word -> Word -> Word
 retreiveSCM (ExplicitLayout tcm _) = \i j -> toEnum . fromEnum $ tcm TCM.! (i,j)
 retreiveSCM DiscreteMetric         = \i j -> if i == j then 0 else 1
 retreiveSCM LinearNorm             = \i j -> max i j - min i j
--}
 
 
 discreteMetricLogic :: (Bits a, Num b) => a -> a -> (a, b)
@@ -128,6 +126,7 @@ linearNormLogic lhs rhs = (fromRange newInterval, cost)
     cost
       | isOverlapping = 0
       | otherwise     = upperBound newInterval - lowerBound newInterval
+-}
 
 
 -- | (✔)
