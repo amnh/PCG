@@ -70,6 +70,7 @@ library
                   , lens
                   , matrix
                   , mono-traversable >=1.0
+                  , parallel
                   , QuickCheck
                   , transformers
                   , validation
@@ -78,7 +79,8 @@ library
 
   hs-source-dirs:   src
 
-  exposed-modules:  Data.BitMatrix
+  exposed-modules:  Control.Parallel.Custom
+                    Data.BitMatrix
                     Data.Binary.Utility
                     Data.Either.Custom
                     Data.Foldable.Custom
@@ -135,6 +137,7 @@ test-suite test-suite
                   , deepseq
                   , integer-gmp
                   , mono-traversable   >=1.0
+                  , parallel
                   , pcg-utility
                   , QuickCheck
                   , tasty
@@ -144,9 +147,10 @@ test-suite test-suite
 
   hs-source-dirs: test
                     
-  other-modules:  Data.BitMatrix.Test
+  other-modules:  Control.Parallel.Test
+                  Data.BitMatrix.Test
+                  Data.List.Test
                   Data.MutualExclusionSet.Test
                   Numeric.Extended.Natural.Test
                   Numeric.Extended.Real.Test
                   Numeric.NonNegativeAverage.Test
-                  Data.List.Test

@@ -201,7 +201,6 @@ library
                     Bio.Graph.Solution
                     Bio.Graph.ZipperDAG
                     Control.Evaluation
-                    Control.Parallel.Custom
                     Control.Monad.Logger
                     Data.Alphabet
                     Data.Alphabet.IUPAC
