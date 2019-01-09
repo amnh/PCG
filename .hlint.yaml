@@ -99,3 +99,8 @@
 - ignore: { name: Use .
           , within: PCG.Command.Read.Unification.Master
           }
+
+# Ignore const rename suggestion
+- ignore: { name: Use const
+          , within: Bio.Metadata.Discrete.Class
+          }
