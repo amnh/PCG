@@ -25,6 +25,7 @@
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE OverloadedStrings      #-}
+-- {-# LANGUAGE RecordWildCards        #-}
 
 
 module Bio.Graph.PhylogeneticDAG.Internal
@@ -46,7 +47,7 @@ module Bio.Graph.PhylogeneticDAG.Internal
   ) where
 
 
-import           Analysis.Parsimony.Internal
+import Analysis.Parsimony.Internal
 import           Bio.Character.Decoration.Shared
 import           Bio.Character.Encodable
 import           Bio.Graph.LeafSet
@@ -84,6 +85,7 @@ import           Text.Newick.Class
 import           Text.XML
 import           Type.Reflection                 (Typeable)
 import Bio.Graph.PhylogeneticDAG.Render
+import TextShow (TextShow(showb), unlinesB)
 
 
 -- |
@@ -300,6 +302,22 @@ instance ( HasBlockCost u v w x y z
       where
         f i n = mconcat [ "Node {", show i, "}:\n\n", show n ]
 
+
+-- | (✔)
+instance Show n => ToNewick (PhylogeneticDAG2 m e n u v w x y z) where
+
+    toNewick = toNewick . discardCharacters
+
+-- | (✔)
+instance  TextShow t => TextShow (PostorderContextualData t) where
+
+    showb (PostorderContextualData v c m) = unlinesB
+        [ showb v
+        , showb c
+        , showb m
+        ]
+
+
 -- | (✔)
 instance ( HasBlockCost u v w x y z
          , TextShow m
@@ -321,13 +339,6 @@ instance ( HasBlockCost u v w x y z
       where
         f i n = fold [ "Node {", showb i, "}:\n\n", showb n ]
 
-
-
-
--- | (✔)
-instance Show n => ToNewick (PhylogeneticDAG2 m e n u v w x y z) where
-
-    toNewick = toNewick . discardCharacters
 
 
 -- | (✔)
