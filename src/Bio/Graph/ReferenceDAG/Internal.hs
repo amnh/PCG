@@ -451,6 +451,16 @@ instance Show n => Show (ReferenceDAG d e n) where
 
 
 -- | (✔)
+instance TextShow d => TextShow (GraphData d) where
+    showb x = unlinesB
+        [ "DAG total cost:           " <> showb (dagCost x)
+        , "DAG network edge cost:    " <> showb (networkEdgeCost x)
+        , "DAG mutli-rooting cost:   " <> showb (rootingCost     x)
+        , "DAG character block cost: " <> showb (totalBlockCost  x)
+        ]
+
+
+-- | (✔)
 instance TextShow n => TextShow (ReferenceDAG d e n) where
 
     showb dag = TextShow.intercalateB "\n"
@@ -460,6 +470,7 @@ instance TextShow n => TextShow (ReferenceDAG d e n) where
         , ""
         , showb . referenceRendering $ dag
         ]
+
 
 
 -- | (✔)
