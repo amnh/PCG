@@ -29,7 +29,6 @@ module Bio.Graph.PhylogeneticDAG.Render
   where
 import {-# SOURCE #-} Bio.Graph.PhylogeneticDAG.Internal
 import Control.Arrow ((***))
-import TextShow (TextShow(showb), unlinesB, Builder)
 import Data.TopologyRepresentation
 import           Bio.Sequence
 import Data.Foldable
@@ -47,6 +46,8 @@ import Bio.Character.Decoration.Metric
 import Data.Maybe (fromMaybe)
 import Data.List (zip4)
 import Data.MonoTraversable
+import qualified Data.Text as T (Text, unlines, filter, length)
+import TextShow (TextShow (showb, showt), fromText, Builder, unlinesB)
 
 
 -- |
@@ -94,6 +95,9 @@ renderMetadata :: Show m => MetadataSequence m -> String
 renderMetadata = unlines . fmap (show . (^. blockMetadata)) . toList . (^. blockSequence)
 
 
+renderMetadataB :: TextShow m => MetadataSequence m -> Builder
+renderMetadataB = unlinesB . fmap (showb . (^. blockMetadata)) . toList . (^. blockSequence)
+
 
 
 
@@ -126,7 +130,7 @@ renderSequenceSummary pdag@(PDAG2 dag _meta) = ("Sequence Summary\n\n" <>) . unl
 -- |
 -- Render a "summary" of a sequence consisting of a summary for each block as a 'Builder' type.
 renderSequenceSummaryB
-  :: ( Show n
+  :: ( TextShow n
      , HasBlockCost u v w x y z
      )
   => PhylogeneticDAG2 m e n u v w x y z
@@ -240,7 +244,7 @@ renderBlockSummary (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displa
 -- Same as renderBlockSummary but for a render the summary as a 'Builder'
 renderBlockSummaryB
   :: ( HasBlockCost u v w x y z
-     , Show n
+     , TextShow n
      )
   => PhylogeneticDAG2 m e n u v w x y z
   -> Int
@@ -249,19 +253,19 @@ renderBlockSummaryB
 renderBlockSummaryB (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displayMay, block)
   = mconcat . (renderedPrefix:) .
     (renderBlockMeta pair :) $
-    [ unlines . fmap renderStaticCharacterSummary              . toList . uncurry zip . ((^.  continuousBin) *** (^.  continuousBin))
-    , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^. nonAdditiveBin) *** (^. nonAdditiveBin))
-    , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^.    additiveBin) *** (^.    additiveBin))
-    , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^.      metricBin) *** (^.      metricBin))
-    , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^.   nonMetricBin) *** (^.   nonMetricBin))
-    , unlines . fmap renderDynamicCharacterSummary             . toList . uncurry zip . ((^.     dynamicBin) *** (^.     dynamicBin))
+    [ unlinesB . fmap renderStaticCharacterSummary              . toList . uncurry zip . ((^.  continuousBin) *** (^.  continuousBin))
+    , unlinesB . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^. nonAdditiveBin) *** (^. nonAdditiveBin))
+    , unlinesB . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^.    additiveBin) *** (^.    additiveBin))
+    , unlinesB . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^.      metricBin) *** (^.      metricBin))
+    , unlinesB . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^.   nonMetricBin) *** (^.   nonMetricBin))
+    , unlinesB . fmap renderDynamicCharacterSummary             . toList . uncurry zip . ((^.     dynamicBin) *** (^.     dynamicBin))
     ] <*> [(mBlock, block)]
   where
     pair@(mBlock, _) = ((meta ^. blockSequence) ! key, block)
 
     renderedPrefix = "Block " <> showb key <> "\n\n"
 
-    renderBlockMeta (mValue, bValue) = unlines
+    renderBlockMeta (mValue, bValue) = unlinesB
         [ "  Rooting Cost: " <> maybe "<Unavailible>" showb costOfRooting
         , "  Network Cost: " <> maybe "<Unavailible>" showb costOfNetworking
         , "  Block   Cost: " <> showb bCost
@@ -283,14 +287,14 @@ renderBlockSummaryB (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displ
         , "    Cost:     " <> showb (c ^. characterCost)
         ]
 
-    renderStaticCharacterWithAlphabetSummary (m, c) = unlines
+    renderStaticCharacterWithAlphabetSummary (m, c) = unlinesB
         [ "    Name:     " <> showb (m ^. characterName)
         , "    Weight:   " <> showb (m ^. characterWeight)
         , "    Cost:     " <> showb (c ^. characterCost)
         , "    "           <> showb (m ^. characterAlphabet)
         ]
 
-    renderDynamicCharacterSummary (m, c) = unlines
+    renderDynamicCharacterSummary (m, c) = unlinesB
         [ "    Name:   " <> showb (m ^. characterName)
         , "    Weight: " <> showb (m ^. characterWeight)
         , "    Cost:   " <> showb (c ^. characterCost)
@@ -302,7 +306,7 @@ renderBlockSummaryB (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displ
 
     inferDisplayForest = maybe "<Unavailible>" renderFunction displayMay
 
-    renderFunction = renderDisplayForestNewick (nodeDecorationDatum2 <$> dag)
+    renderFunction = renderDisplayForestNewickB (nodeDecorationDatum2 <$> dag)
 
 
 
@@ -333,3 +337,30 @@ renderDisplayForestNewick dag topo = unlines $ renderDisplayTree <$> toList (roo
         openParensIn = length . filter (== '(')
 
     renderLeaf _k = show
+
+
+-- |
+-- Render a display forest to a newick string.
+renderDisplayForestNewickB :: TextShow n => ReferenceDAG d e n -> TraversalTopology -> Builder
+renderDisplayForestNewickB dag topo = fromText . T.unlines $ renderDisplayTree <$> toList (rootRefs dag)
+  where
+    refVec = references dag
+
+    renderDisplayTree :: Int -> T.Text
+    renderDisplayTree nodeIdx =
+      case kidRefs of
+        []    -> renderLeaf nodeIdx $ nodeDecoration nodeVal
+        [x]   -> renderDisplayTree x
+        x:y:_ -> let x' = renderDisplayTree x
+                     y' = renderDisplayTree y
+                     (l, r) -- Do this to bias parens right
+                       | openParensIn x' > openParensIn y' = (y', x')
+                       | otherwise                         = (x', y')
+                 in mconcat ["(", l, ",", r, ")"]
+      where
+        nodeVal = refVec ! nodeIdx
+        kidRefs = filter (\i -> (nodeIdx, i) `isEdgePermissibleWith` topo) . IM.keys $ childRefs nodeVal
+
+        openParensIn = T.length . T.filter (== '(')
+
+    renderLeaf _k = showt
