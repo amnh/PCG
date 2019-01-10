@@ -198,7 +198,6 @@ instance ParsedForest (NonEmpty NewickForest) where
                 f (NE x _ y _) = (fromDoubleMay y,x)
 
 
-
 -- | (✔)
 instance ParsedForest TntResult where
   unifyGraph input = fmap pure $

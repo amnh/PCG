@@ -5,7 +5,7 @@ PCG uses [PVP Versioning][1].
 Releases are available [on GitHub][2].
 
 
-## _v0.1.1_ - Unreleased Changes
+## _v0.2_ - Unreleased Changes
 
 * Using semantic versioning
 * Updated to GHC-8.4.4
@@ -13,7 +13,7 @@ Releases are available [on GitHub][2].
 * Updated build command to add network edges to input graphs rather than wagner build a new tree first.
 * Updated read command grammar to allow for more specific TCM specification
 * Improved efficiency and consistency of character metadata representation
-* Improved efficiency of Wagner build
+* Improved efficiency of Wagner build from _O(n^3)_ to _O(n^2)_
 * Improved efficiency of Data.Vector.NonEmpty.fromNonEmpty, unfoldr, and traverse
 * Improved efficiency of three-way median and cost calculation (discrete metric, L1 norm, and small alphabet specialization)
 * Improved representation of character & metadata sequences

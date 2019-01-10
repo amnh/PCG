@@ -10,9 +10,9 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE DeriveTraversable          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeFamilies               #-}
 
@@ -70,7 +70,7 @@ newtype Vector a = NEV { unwrap :: V.Vector a }
             , Ord1
             , Pointed
             , Semigroup
---            , Traversable
+            , Traversable
             , Zip
             , ZipWithKey
             )
@@ -111,20 +111,6 @@ instance FoldableWithKey1 Vector where
 
 
 type instance Key Vector = Int
-
-
-instance Traversable Vector where
-
-    {-# INLINE traverse #-}
-    traverse f xs =
-        let !len = length xs
-        in  fmap (NEV . V.fromListN len) . traverse f $ toList xs
-
-    {-# INLINE mapM #-}
-    mapM f = fmap NEV . V.mapM f . unwrap
-
-    {-# INLINE sequence #-}
-    sequence = fmap NEV . V.sequence . unwrap
 
 
 instance Traversable1 Vector where

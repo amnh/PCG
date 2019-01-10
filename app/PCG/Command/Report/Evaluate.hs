@@ -6,9 +6,9 @@ module PCG.Command.Report.Evaluate
   ( evaluate
   ) where
 
+
 import Bio.Graph
 import Control.Monad.IO.Class
-import Data.Compact                (Compact, getCompact)
 import Data.List.NonEmpty
 import PCG.Command.Report
 import PCG.Command.Report.GraphViz
@@ -18,6 +18,11 @@ import Data.Render.Utility (writeFileT)
 import System.IO (IOMode(AppendMode, WriteMode))
 import qualified Data.Text.Lazy as Lazy
 import Data.Foldable (traverse_)
+import qualified Data.ByteString.Lazy        as BS
+import           Data.Compact                (getCompact)
+import           Data.List.NonEmpty
+import           PCG.Command.Report.Metadata
+import           Text.XML
 
 
 
@@ -34,8 +39,16 @@ evaluate (ReportCommand format target) stateValue = do
                         OutputToStdout   -> printT
                         OutputToFile f w ->
                           case w of
-                            Append    ->  writeFileT AppendMode f
-                            Overwrite ->  writeFileT WriteMode  f
+                            Append    -> appendFile f
+                            Overwrite -> writeFile  f
+             in  liftIO (op output)
+           SingleByteStream  output ->
+             let op = case target of
+                        OutputToStdout   -> BS.putStr
+                        OutputToFile f w ->
+                          case w of
+                            Append    ->  BS.appendFile f
+                            Overwrite ->  BS.writeFile  f
              in  liftIO (op output)
     pure stateValue
 
@@ -60,10 +73,14 @@ generateOutput
   -> FileStreamContext
 generateOutput g' format =
   case format of
-    Data {}    -> SingleStream $ either showtl showtl g
-    XML  {}    -> SingleStream $ either showtl (showtl . ppTopElement . toXML) g
-    DotFile {} -> SingleStream $ generateDotFile g'
-    _          -> ErrorCase "Unrecognized 'report' command"
+    Data     {} -> SingleStream $ either show show g
+    XML      {} -> SingleStream $ either show (ppTopElement . toXML) g
+    DotFile  {} -> SingleStream $ generateDotFile g'
+    Metadata {} -> either
+                     (const $ ErrorCase "No metadata in topological solution")
+                     (SingleByteStream . outputMetadata)
+                     g
+    _           -> ErrorCase "Unrecognized 'report' command"
   where
     g = getCompact g'
 
@@ -135,4 +152,5 @@ type FileContent = Lazy.Text
 data FileStreamContext
    = ErrorCase    String
    | SingleStream FileContent
-   | MultiStream  (NonEmpty (FilePath, FileContent))
+   | SingleByteStream BS.ByteString
+   | MultiStream  (NonEmpty (FilePath,FileContent))

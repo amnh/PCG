@@ -12,7 +12,6 @@
 --
 -----------------------------------------------------------------------------
 
-
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -21,11 +20,10 @@
 -- NoMonoLocalBinds before TypeFamilies
 {-# LANGUAGE NoMonoLocalBinds    #-}
 
-
-
 module Bio.Graph.PhylogeneticDAG.Preorder
   ( preorderSequence
   , preorderFromRooting
+  , setEdgeSequences
   ) where
 
 import           Analysis.Parsimony.Internal        as AP
@@ -61,7 +59,7 @@ import           Data.Vector                        (Vector)
 import qualified Data.Vector                        as V
 import           Data.Vector.Instances              ()
 import qualified Data.Vector.NonEmpty               as NEV
-import           Prelude                            hiding (lookup)
+import           Prelude                            hiding (lookup, zip)
 
 
 type BlockTopologies = NEV.Vector TraversalTopology
@@ -582,3 +580,70 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
 
 (.!>.) :: (Lookup f, Show (Key f)) => f a -> Key f -> a
 (.!>.) s k = fromMaybe (error $ "Could not index: " <> show k) $ k `lookup` s
+
+
+{-
+constructDefaultMetadata :: (Monoid a, Monoid b) => ReferenceDAG d e n -> GraphData (a, b, Maybe c)
+constructDefaultMetadata = ((mempty, mempty, Nothing) <$) . graphData
+-}
+
+
+-- |
+-- Computes and sets the virtual node sequence on each edge.
+setEdgeSequences
+  :: forall m e n u v w x y z u' v' w' x' y' z' u'' v'' w'' x'' y''
+  .  (ContinuousCharacterMetadataDec                         -> (u, u) -> u')
+  -> (DiscreteCharacterMetadataDec                           -> (v, v) -> v')
+  -> (DiscreteCharacterMetadataDec                           -> (w, w) -> w')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> (x, x) -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> (y, y) -> y')
+  -> (DynamicCharacterMetadataDec (Element DynamicCharacter) -> (z, z) -> z')
+  -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u'' v'' w'' x'' y'' z')))
+  -> PhylogeneticDAG2 m e n u v w x y z
+  -> PhylogeneticDAG2 m (e, CharacterSequence u' v' w' x' y' z') n u v w x y z
+setEdgeSequences f1 f2 f3 f4 f5 f6 edgeMappingVec (PDAG2 dag meta) = PDAG2 updatedDAG meta
+  where
+    -- Looks like this value is bad and can't be used.
+--    edgeMapping  = p ^. _virtualNodeMapping
+    refVec       = references dag
+    updatedDAG   = dag { references = updatedEdges }
+    updatedEdges = updateEdgeData <#$> zip refVec edgeMappingVec
+
+    updateEdgeData
+      :: Int
+      -> ( IndexData
+             e
+             (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
+         , HashMap
+             EdgeReference
+             (ResolutionCache (CharacterSequence u'' v'' w'' x'' y'' z'))
+         )
+      -> IndexData
+           (e, CharacterSequence u' v' w' x' y' z')
+           (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
+    updateEdgeData _i (idx, _edgeMapping) = idx { childRefs = addEdgeSeq <#$> childRefs idx }
+      where
+        thisSeq  = getDatum idx :: CharacterSequence u v w x y z
+        getDatum = characterSequence . NE.head . resolutions . nodeDecoration
+        addEdgeSeq j v = (v, edgeSeq)
+          where
+            kidSeq :: CharacterSequence u v w x y z
+            kidSeq = getDatum $ refVec ! j
+
+{-
+            rerootSeq = characterSequence . NE.head .
+                fromMaybe (edgeMapping ! (j, i)) $ (i, j) `lookup` edgeMapping
+-}
+
+{-
+            f1' m (a,b,_) = f1 m (a,b)
+            f2' m (a,b,_) = f2 m (a,b)
+            f3' m (a,b,_) = f3 m (a,b)
+            f4' m (a,b,_) = f4 m (a,b)
+            f5' m (a,b,_) = f5 m (a,b)
+            f6' m (a,b,_) = f6 m (a,b)
+--            f6' _ (_,_,c) = c
+-}
+            edgeSeq :: CharacterSequence u' v' w' x' y' z'
+            edgeSeq = hexZipMeta f1 f2 f3 f4 f5 f6 meta $ hexZip thisSeq kidSeq
+

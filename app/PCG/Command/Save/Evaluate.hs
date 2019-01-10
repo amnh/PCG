@@ -4,11 +4,8 @@ module PCG.Command.Save.Evaluate
   ) where
 
 import Bio.Graph
-import Bio.Graph.ReferenceDAG (_dagCost, _graphData)
 import Control.Monad.IO.Class (liftIO)
-import Data.Binary            (decodeFile, encodeFile)
-import Data.Binary.Utility
-import Data.ByteString.Lazy   as BS (writeFile)
+import Data.Binary            (encodeFile)
 import Data.Compact           (getCompact)
 import Data.Compact.Serialize (writeCompact)
 import Data.Functor           (($>))

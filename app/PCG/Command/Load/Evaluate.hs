@@ -5,7 +5,6 @@ module PCG.Command.Load.Evaluate
 
 import Bio.Graph
 import Control.Monad.IO.Class (liftIO)
-import Data.Compact           (Compact)
 import Data.Compact.Serialize (unsafeReadCompact)
 import PCG.Command.Load
 

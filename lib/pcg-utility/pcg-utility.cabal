@@ -61,7 +61,6 @@ library
   build-depends:    base             >=4.8
                   , binary
                   , bv-little
-                  , bytestring
                   , containers       >=0.5.8
                   , directory
                   , deepseq
@@ -79,7 +78,8 @@ library
                   , text-show
                   , transformers
                   , validation
-                  , vector
+                  -- >=0.12.0.2 required for compatability with "compact regions"
+                  , vector             >=0.12.0.2 
 
   hs-source-dirs:   src
 

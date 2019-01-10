@@ -22,6 +22,7 @@ module Bio.Graph.Constructions
   , GraphState
   , PhylogeneticDAG(..)
   , PhylogeneticDAG2(..)
+  , PreOrderDecorationDAG
   , PostorderDecorationDAG
   , SearchState
   , TopologicalResult
@@ -108,18 +109,33 @@ type DecoratedCharacterResult = PhylogeneticSolution FinalDecorationDAG
 
 
 -- |
--- Decoration of a phylogenetic DAG after a pre-order traversal.
+-- Decoration of a phylogenetic DAG after a pre-order traversal AND after the edge data has been finalized.
 type FinalDecorationDAG =
+       PhylogeneticDAG2
+         (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
+         EdgeAnnotation
+         NodeLabel
+         (ContinuousOptimizationDecoration ContinuousCharacter)
+         (FitchOptimizationDecoration          StaticCharacter)
+         (AdditiveOptimizationDecoration       StaticCharacter)
+         (SankoffOptimizationDecoration        StaticCharacter)
+         (SankoffOptimizationDecoration        StaticCharacter)
+         (DynamicDecorationDirectOptimization DynamicCharacter)
+
+
+-- |
+-- Decoration of a phylogenetic DAG after a pre-order traversal.
+type PreOrderDecorationDAG =
        PhylogeneticDAG2
          (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
          EdgeLength
          NodeLabel
-         (ContinuousOptimizationDecoration    ContinuousCharacter )
-         (FitchOptimizationDecoration         StaticCharacter)
-         (AdditiveOptimizationDecoration      StaticCharacter)
-         (SankoffOptimizationDecoration       StaticCharacter)
-         (SankoffOptimizationDecoration       StaticCharacter)
-         (DynamicDecorationDirectOptimization DynamicCharacter    )
+         (ContinuousOptimizationDecoration ContinuousCharacter)
+         (FitchOptimizationDecoration          StaticCharacter)
+         (AdditiveOptimizationDecoration       StaticCharacter)
+         (SankoffOptimizationDecoration        StaticCharacter)
+         (SankoffOptimizationDecoration        StaticCharacter)
+         (DynamicDecorationDirectOptimization DynamicCharacter)
 
 
 -- |
@@ -129,11 +145,11 @@ type PostorderDecorationDAG m =
          m
          EdgeLength
          NodeLabel
-         (ContinuousPostorderDecoration ContinuousCharacter )
-         (FitchOptimizationDecoration   StaticCharacter)
-         (AdditivePostorderDecoration   StaticCharacter)
-         (SankoffOptimizationDecoration StaticCharacter)
-         (SankoffOptimizationDecoration StaticCharacter)
+         (ContinuousPostorderDecoration ContinuousCharacter)
+         (FitchOptimizationDecoration       StaticCharacter)
+         (AdditivePostorderDecoration       StaticCharacter)
+         (SankoffOptimizationDecoration     StaticCharacter)
+         (SankoffOptimizationDecoration     StaticCharacter)
          (DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter)
 
 
@@ -231,13 +247,24 @@ type UnReifiedCharacterDAG =
          UnifiedDynamicCharacter
 
 
+type EdgeAnnotation =
+    ( EdgeLength
+    , CharacterSequence
+        (ContinuousPostorderDecoration ContinuousCharacter)
+        (FitchOptimizationDecoration       StaticCharacter)
+        (AdditivePostorderDecoration       StaticCharacter)
+        (SankoffOptimizationDecoration     StaticCharacter)
+        (SankoffOptimizationDecoration     StaticCharacter)
+        (DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter)
+    )
+
+
 extractReferenceDAG
   :: Either TopologicalResult DecoratedCharacterResult
   -> ReferenceDAG () EdgeLength (Maybe NodeLabel)
 extractReferenceDAG = either extractTopResult extractRefDAGfromDec
   where
     extractTopResult = extractSolution
-
 
 
 extractRefDAGfromDec
@@ -253,3 +280,15 @@ extractRefDAGfromDec finalDecDAG =
       refDAG
   where
     convert = undefined
+=======
+  :: DecoratedCharacterResult
+  -> ReferenceDAG () EdgeLength (Maybe String)
+extractRefDAGfromDec finalDecDAG =
+  let
+    decRefDAG        = finalDecDAG      & (^. _phylogeneticForest) . extractSolution
+    refDAGNoMetadata = decRefDAG        & (_graphData . _graphMetadata) .~ ()
+    refDAGNoEdgeData = refDAGNoMetadata & (_references . mapped . _childRefs . mapped) %~ fst
+    refDAG           = refDAGNoEdgeData &
+                         (_references . mapped . _nodeDecoration) %~ Just . show . nodeDecorationDatum2
+  in refDAG
+>>>>>>> master

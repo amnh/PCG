@@ -52,6 +52,7 @@ import           Control.DeepSeq
 import           Control.Lens                      hiding (Fold)
 import           Control.Monad.State.Strict
 import           Data.Alphabet
+import           Data.Bits
 import           Data.Foldable
 import           Data.Functor                      (($>))
 import           Data.List                         (intercalate)
@@ -64,10 +65,12 @@ import           Data.TCM
 import qualified Data.TCM                          as TCM
 import           Data.TCM.Dense
 import           Data.TCM.Memoized
+import           Data.Text.Short                   (ShortText)
 import           Data.TopologyRepresentation
 import           GHC.Generics                      (Generic)
 import           Prelude                           hiding (lookup)
 import           Text.XML
+
 
 
 -- |
@@ -199,6 +202,11 @@ instance GetDenseTransitionCostMatrix (DynamicCharacterMetadataDec c) (Maybe Den
     denseTransitionCostMatrix = to
       $ either (Just . fst) (const Nothing) . structuralRepresentationTCM
 
+-- | (✔)
+instance HasTcmSourceFile (DynamicCharacterMetadataDec c) ShortText where
+
+    _tcmSourceFile = lens (\d -> metadata d ^. _tcmSourceFile)
+                   $ \d s -> d { metadata = metadata d & _tcmSourceFile .~ s }
 
 -- | (✔)
 instance GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec c) (Maybe MemoizedCostMatrix) where
@@ -246,12 +254,18 @@ instance ToXML (DynamicCharacterMetadataDec c) where
 
 -- |
 -- Construct a concrete typed 'DynamicCharacterMetadataDec' value from the supplied inputs.
-dynamicMetadata :: CharacterName -> Double -> Alphabet String -> TCM -> Maybe DenseTransitionCostMatrix -> DynamicCharacterMetadataDec c
-dynamicMetadata name weight alpha tcm denseMay =
+dynamicMetadata
+  :: CharacterName
+  -> Double
+  -> Alphabet String
+  -> ShortText
+  -> TCM
+  -> Maybe DenseTransitionCostMatrix -> DynamicCharacterMetadataDec c
+dynamicMetadata name weight alpha tcmSource tcm denseMay =
     force DynamicCharacterMetadataDec
     { optimalTraversalFoci        = Nothing
     , structuralRepresentationTCM = representaionOfTCM
-    , metadata                    = discreteMetadata name (weight * coefficient) alpha
+    , metadata                    = discreteMetadata name weight alpha tcmSource
     }
   where
     representaionOfTCM = maybe largeAlphabet smallAlphabet denseMay
@@ -273,16 +287,30 @@ dynamicMetadata name weight alpha tcm denseMay =
 
 -- |
 -- Construct a concrete typed 'DynamicCharacterMetadataDec' value from the supplied inputs.
-dynamicMetadataFromTCM :: CharacterName -> Double -> Alphabet String -> TCM -> DynamicCharacterMetadataDec c
-dynamicMetadataFromTCM name weight alpha tcm = dynamicMetadata name weight alpha tcm denseMay
+dynamicMetadataFromTCM
+  :: CharacterName
+  -> Double
+  -> Alphabet String
+  -> ShortText
+  -> TCM
+  -> DynamicCharacterMetadataDec c
+dynamicMetadataFromTCM name weight alpha tcmSource tcm
+    = dynamicMetadata name weight alpha tcmSource tcm denseMay
   where
     denseMay = maybeConstructDenseTransitionCostMatrix alpha (\i j -> toEnum . fromEnum $ tcm TCM.! (i,j))
 
 
 -- |
 -- Construct a concrete typed 'DynamicCharacterMetadataDec' value from the supplied inputs.
-dynamicMetadataWithTCM :: CharacterName -> Double -> Alphabet String -> (Word -> Word -> Word) -> DynamicCharacterMetadataDec c
-dynamicMetadataWithTCM name weight alpha scm = dynamicMetadataFromTCM name weight alpha tcm
+dynamicMetadataWithTCM
+  :: CharacterName
+  -> Double
+  -> Alphabet String
+  -> ShortText
+  -> (Word -> Word -> Word)
+  -> DynamicCharacterMetadataDec c
+dynamicMetadataWithTCM name weight alpha tcmSource scm =
+    dynamicMetadataFromTCM name weight alpha tcmSource tcm
   where
     tcm = generate (length alpha) (uncurry scm)
 

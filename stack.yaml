@@ -9,12 +9,13 @@ extra-deps:
   - compact-0.1.0.1
   - tasty-rerun-1.1.12
   - megaparsec-7.0.4
+  - vector-0.12.0.2
 
 flags: {}
 
 ghc-options:
   "$everything": -j -fdiagnostics-color=always
-  "$locals": -fhide-source-paths
+  "$locals": -fhide-source-paths 
 
 local-bin-path: bin
 

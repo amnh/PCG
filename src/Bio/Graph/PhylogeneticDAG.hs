@@ -19,6 +19,9 @@ module Bio.Graph.PhylogeneticDAG
   , PhylogeneticDAG2(..)
   , PhylogeneticDAGish(..)
   , PostorderContextualData(..)
+  , HasVirtualNodeMapping(..)
+  , HasPhylogeneticForest(..)
+  , HasColumnMetadata(..)
   , assignOptimalDynamicCharacterRootEdges
   , assignPunitiveNetworkEdgeCost
   , generateLocalResolutions
@@ -28,6 +31,7 @@ module Bio.Graph.PhylogeneticDAG
   , preorderSequence
   , renderSummary
   , rootCosts
+  , setEdgeSequences
   , totalEdgeCosts
   , getDotContextWithBaseAndIndex
   -- * Mapping over networks

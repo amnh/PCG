@@ -4,7 +4,6 @@ module PCG.Command.Echo.Evaluate
 
 import Bio.Graph
 import Control.Monad.IO.Class (liftIO)
-import Data.Compact           (Compact)
 import Data.Functor           (($>))
 import PCG.Command.Echo
 

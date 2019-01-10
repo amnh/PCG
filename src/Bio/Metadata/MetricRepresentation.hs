@@ -26,11 +26,9 @@ module Bio.Metadata.MetricRepresentation
   , retreiveThreewayTCM
   ) where
 
-import Control.Arrow   ((&&&))
 import Control.DeepSeq
 import Data.Bits
 import Data.Foldable
-import Data.List       (sortOn)
 import Data.Ord        (comparing)
 import Data.Range
 import Data.TCM        as TCM
@@ -178,8 +176,21 @@ firstLinearNormThreewayLogic x y z
   | or  intersections = paritalIntersection
   | otherwise         = (fromRange y', lowerBound y' - upperBound x' + lowerBound z' - upperBound y')
   where
-    [x', y', z'] = sortOn lowerBound
-                   [toRange x, toRange y, toRange z]
+    (x', y', z') =
+      let rx = toRange x
+          ry = toRange y
+          rz = toRange z
+      in if lowerBound rx <= lowerBound ry
+         then if lowerBound rx <= lowerBound rz
+              then if lowerBound ry <= lowerBound rz
+                   then (rx, ry, rz)
+                   else (rx, rz, ry)
+              else (rz, rx, ry)
+         else if lowerBound ry <= lowerBound rz
+              then if lowerBound rx <= lowerBound rz
+                   then (ry, rx, rz)
+                   else (ry, rz, rx)
+              else (rz, ry, rx)
 
     intersections =
         [ x' `intersects` y'

@@ -121,7 +121,7 @@ library
                     , binary
                     , bimap
                     , bv-little
-                    , bytestring
+                    , cassava >=0.5
                     , compact
                     -- >=0.5.8 Required for Data.Map.restrictKeys
                     , containers         >=0.5.8
@@ -153,7 +153,8 @@ library
                     , text-show-instances
                     , transformers
                     , unordered-containers
-                    , vector
+                    -- >=0.12.0.2 required for compatability with "compact regions"
+                    , vector             >=0.12.0.2
                     , vector-binary-instances
                     -- >=3.4 required for corrected definition of (!) & index
                     , vector-instances   >=3.4
@@ -182,6 +183,7 @@ library
                     Bio.Character.Encodable.Continuous
                     Bio.Character.Exportable
                     Bio.Character.Parsed
+                    Bio.Character.Type
                     Bio.Metadata
                     Bio.Metadata.CharacterName
                     Bio.Metadata.Continuous
@@ -313,7 +315,9 @@ executable pcg
                     , ansi-wl-pprint
                     , base             >=4.10
                     , binary
+                    -- Required for Data.Map.restrictKeys
                     , bytestring
+                    , cassava >=0.5
                     , compact
                     -- Required for Data.Map.restrictKeys
                     , containers       >=0.5.8
@@ -341,10 +345,12 @@ executable pcg
                     , text-show
                     , transformers
                     , validation
-                    , vector
+                    -- >=0.12.0.2 required for compatability with "compact regions"
+                    , vector             >=0.12.0.2
                     , xml
 
-  ghc-options:      -threaded
+
+  ghc-options:      -threaded -rtsopts
                     -- -rtsopts -with-rtsopts=-N8
 
   hs-source-dirs:   app
@@ -360,6 +366,7 @@ executable pcg
                     PCG.Command.Read.Unification.UnificationError
                     PCG.Command.Report.Evaluate
                     PCG.Command.Report.GraphViz
+                    PCG.Command.Report.Metadata
                     PCG.Command.Save.Evaluate
                     PCG.Computation.Internal
 
@@ -538,26 +545,21 @@ Test-Suite integration-tests
 
 
   build-depends:      base               >=4.10
-                    , compact
+                    , binary
+                    , bytestring
                     , containers
                     , deepseq
                     , directory
                     , filepath
                     , lens
-                    , megaparsec         >=7.0.0
-                    , parser-combinators >=0.2.0
-                    , pcg-language
                     , pcg-utility
                     , phylocomgraph
                     , process 
-                    , scientific
-                    , semigroupoids      >=5.2.1
                     , semigroups
                     , tasty
                     , tasty-golden
                     , tasty-hunit
                     , tasty-rerun
-                    , text
 
   ghc-options:      -threaded
                     -with-rtsopts=-N7
@@ -584,6 +586,7 @@ Test-Suite unit-tests
                     , binary
                     , bv-little
                     -- >=0.5.8 Required for Data.Map.restrictKeys
+                    , cassava >=0.5
                     , containers         >=0.5.8
                     , deepseq
                     , dlist
@@ -611,7 +614,9 @@ Test-Suite unit-tests
                     , tasty-rerun
                     , transformers
                     , unordered-containers
-                    , vector
+                    -- >=0.12.0.2 required for compatability with "compact regions"
+                    , vector           >=0.12.0.2
+                    , vector-binary-instances
                     -- >=3.4 required for corrected definition of (!) & index
                     , vector-binary-instances
                     , vector-instances >=3.4
@@ -660,6 +665,7 @@ Test-Suite unit-tests
                     Bio.Character.Encodable.Stream
                     Bio.Character.Exportable
                     Bio.Character.Exportable.Class
+                    Bio.Character.Type
                     Bio.Graph.BinaryRenderingTree
                     Bio.Graph.Component
                     Bio.Graph.LeafSet

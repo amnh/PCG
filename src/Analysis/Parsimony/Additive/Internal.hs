@@ -99,19 +99,30 @@ import Numeric.Extended
  -}
 
 
+unionInterval
+  :: ( HasFinalInterval d (Range c)
+     , Ord c
+     )
+  => d -> d -> d
+unionInterval x y = x & finalInterval .~ union xInt yInt
+  where
+    xInt = x ^. finalInterval
+    yInt = y ^. finalInterval
+
+
 -- |
 -- Used on the post-order (i.e. first) traversal.
 -- Applies appropriate logic to internal node and leaf node cases.
 additivePostorder
-  :: ( RangedCharacterDecoration n c'
-     , RangedExtensionPostorder  c c'
+  :: ( RangedCharacterDecoration n e
+     , RangedExtensionPostorder  c e
      )
   => PostorderContext n c
   -> c
 additivePostorder
   = postorderContext
       initializeLeaf
-      updatePostorder
+      additivePostorderPairwise
 
 -- |
 -- Initializes a leaf node by copying its current value into its preliminary
@@ -119,7 +130,7 @@ additivePostorder
 --
 -- Used on the post-order pass.
 initializeLeaf
-  :: ( RangedCharacterDecoration n  c
+  :: ( RangedCharacterDecoration n c
      , RangedExtensionPostorder  e c
      )
   => n
@@ -140,14 +151,14 @@ initializeLeaf curDecoration = finalDecoration
 -- intersection of the two child intervals.
 --
 -- Used on the postorder pass.
-updatePostorder
-  :: ( RangedCharacterDecoration n c'
-     , RangedExtensionPostorder  c c'
+additivePostorderPairwise
+  :: ( RangedExtensionPostorder  a e
+     , RangedPostorderDecoration b e
+     , RangedPostorderDecoration c e
      )
-  => n
-  -> (c, c)
-  -> c
-updatePostorder _parentDecoration (lChild, rChild) = finalDecoration
+  => (b, c)
+  -> a
+additivePostorderPairwise (lChild, rChild) = finalDecoration
   where
     finalDecoration = extendRangedToPostorder lChild totalCost newInterval childIntervals False
     totalCost       = thisNodeCost + (lChild ^. characterCost) + (rChild ^. characterCost)

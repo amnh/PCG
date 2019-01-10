@@ -80,11 +80,12 @@ reportCommandSpecification = command "report" . argList $ ReportCommand <$> outp
 
 
 outputFormat :: Ap SyntacticArgument OutputFormat
-outputFormat = choiceFrom [ dataFormat, dotFormat, xmlFormat ]
+outputFormat = choiceFrom [ dataFormat, dotFormat, xmlFormat, metadataFormat ]
   where
-    dataFormat = value "data" $> Data
-    xmlFormat  = value "xml"  $> XML
-    dotFormat  = choiceFrom [value "dot", value "graphviz"]  $> DotFile
+    dataFormat     = value "data" $> Data
+    xmlFormat      = value "xml"  $> XML
+    dotFormat      = choiceFrom [value "dot", value "graphviz"]  $> DotFile
+    metadataFormat = choiceFrom [value "metadata", value "crossreferences"] $> Metadata
 
 
 outputTarget :: Ap SyntacticArgument OutputTarget
