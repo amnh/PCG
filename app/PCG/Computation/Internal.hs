@@ -49,10 +49,10 @@ evaluate (Computation xs) = foldl' f mempty xs
 
 
 renderSearchState :: Evaluation a -> (ExitCode, String)
-renderSearchState e =
-   case evaluationResult e of
-     NoOp         -> (ExitFailure 3, "[❓] No computation speciified...?")
-     Value _      -> (ExitSuccess  , "[✔] Computation complete!"        )
-     Error errMsg -> (ExitFailure 5, "[✘] Error: "<> trimR errMsg       )
+renderSearchState = evaluation def err val
   where
     trimR = reverse . dropWhile isSpace . reverse
+
+    def        = (ExitFailure 3, "[❓] No computation speciified...?")
+    err errMsg = (ExitFailure 5, "[✘] Error: "<> trimR errMsg       )
+    val _      = (ExitSuccess  , "[✔] Computation complete!"        )

@@ -17,6 +17,8 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies          #-}
 
+-- {-# LANGUAGE NoMonoLocalBinds      #-}
+
 module Analysis.Scoring
   (
   -- * Decoration
@@ -114,17 +116,27 @@ performDecoration
      )
   => PhylogeneticDAG2 m EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
   -> FinalDecorationDAG
-performDecoration x = performPreorderDecoration performPostorderDecoration
+performDecoration x = finalizeEdgeData . performPreorderDecoration . performPostorderDecoration $ x
   where
+    finalizeEdgeData :: PreOrderDecorationDAG -> FinalDecorationDAG
+    finalizeEdgeData = setEdgeSequences
+                         (const additivePostorderPairwise)
+                         (const    fitchPostorderPairwise)
+                         (const additivePostorderPairwise)
+                         sankoffPostorderPairwise
+                         sankoffPostorderPairwise
+                         adaptiveDirectOptimizationPostorderPairwise
+                         contextualNodeDatum
+
     performPreorderDecoration
       :: PostorderDecorationDAG
-          ( TraversalTopology
-          , Double
-          , Double
-          , Double
-          , Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge)
-          )
-      -> FinalDecorationDAG
+           ( TraversalTopology
+           , Double
+           , Double
+           , Double
+           , Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge)
+           )
+      -> PreOrderDecorationDAG
     performPreorderDecoration =
         preorderFromRooting
           adaptiveDirectOptimizationPreorder
@@ -145,8 +157,17 @@ performDecoration x = performPreorderDecoration performPostorderDecoration
             where
               pairwiseAlignmentFunction = selectDynamicMetric meta
 
-    performPostorderDecoration :: PostorderDecorationDAG (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge))
-    performPostorderDecoration = postorderResult
+    performPostorderDecoration
+      :: PhylogeneticDAG2 m EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
+      -> PostorderDecorationDAG
+           ( TraversalTopology
+           , Double
+           , Double
+           , Double
+           , Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge)
+           )
+
+    performPostorderDecoration _ = postorderResult
 
     (minBlockContext, postorderResult) = assignPunitiveNetworkEdgeCost post
     (post, edgeCostMapping, contextualNodeDatum) =
@@ -171,22 +192,12 @@ performDecoration x = performPreorderDecoration performPostorderDecoration
         postFn $
           PostNetworkContext
             (error "The network internal node's data is used in the postorder!")
-      postBin@PostBinaryContext {} ->
-        postFn $
-          postBin
-          { binNode = error "A binary internal node's data is used in the postorder!"}
+      PostBinaryContext a b -> postFn $ PostBinaryContext a b
 
     adaptiveDirectOptimizationPostorder meta = directOptimizationPostorder pairwiseAlignmentFunction
       where
         pairwiseAlignmentFunction = selectDynamicMetric meta
 
-{-
-instance HasCharacterCost (Maybe u) Double where
-
-    characterCost = lens (const 0) undefined
-
-
-instance HasCharacterCost (Maybe u) Word where
-
-    characterCost = lens (const 0) undefined
--}
+    adaptiveDirectOptimizationPostorderPairwise meta = directOptimizationPostorderPairwise pairwiseAlignmentFunction
+      where
+        pairwiseAlignmentFunction = selectDynamicMetric meta

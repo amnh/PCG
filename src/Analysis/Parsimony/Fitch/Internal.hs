@@ -30,7 +30,8 @@ import Control.Lens
 import Data.Bits
 
 
--- | Used on the post-order (i.e. first) traversal.
+-- |
+-- Used on the post-order (i.e. first) traversal.
 fitchPostorder
   :: DiscreteCharacterDecoration d c
   => PostorderContext d (FitchOptimizationDecoration c)
@@ -38,11 +39,11 @@ fitchPostorder
 fitchPostorder
   = postorderContext
       initializeLeaf
-      updatePostorder
+      fitchPostorderPairwise
 
 
-
--- | Used on the pre-order (i.e. second) traversal.
+-- |
+-- Used on the pre-order (i.e. second) traversal.
 fitchPreorder
   :: EncodableStaticCharacter c
   => PreorderContext (FitchOptimizationDecoration c) (FitchOptimizationDecoration c)
@@ -65,12 +66,11 @@ fitchPreorder = preorderContextSym rootFn internalFn
 -- Used in first, post-order, pass. Take in parent and two child nodes. Using the child preliminary decorations,
 -- calculate the preliminary character state for the parent node. In addition, calculate the cost of assigning
 -- that character state to the parent.
-updatePostorder
-  :: DiscreteCharacterDecoration d c
-  => d
-  -> (FitchOptimizationDecoration c , FitchOptimizationDecoration c)
+fitchPostorderPairwise
+  :: EncodableStaticCharacter c
+  => (FitchOptimizationDecoration c , FitchOptimizationDecoration c)
   -> FitchOptimizationDecoration c
-updatePostorder _parentDecoration (leftChildDec , rightChildDec) =
+fitchPostorderPairwise (leftChildDec , rightChildDec) =
     extendDiscreteToFitch
       leftChildDec
       totalCost

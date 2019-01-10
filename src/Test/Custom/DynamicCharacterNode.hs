@@ -34,6 +34,7 @@ import Bio.Metadata.CharacterName
 import Data.Alphabet
 import Data.MonoTraversable
 import Data.String
+import Data.Text.Short                                        (ShortText)
 import Test.Custom.NucleotideSequence
 import Test.QuickCheck
 
@@ -89,17 +90,21 @@ toRootNode :: DynamicDecorationDirectOptimizationPostorderResult DynamicCharacte
            -> DynamicDecorationDirectOptimization DynamicCharacter
 toRootNode x y = directOptimizationPreorder pairwiseFunction defMetadata (RootContext z)
   where
+    f :: PostorderContext
+           (DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter)
+           (DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter)
+      -> DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter
+    f = directOptimizationPostorder pairwiseFunction
+
     z :: DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter
-    z = directOptimizationPostorder
-          pairwiseFunction
-          (PostBinaryContext {binNode = e, leftChild = x , rightChild = y})
-    e :: DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter
-    e = undefined
+    z = f $ PostBinaryContext {leftChild = x , rightChild = y}
 
 
-pairwiseFunction :: ( Ord (Element s)
-                    , EncodableDynamicCharacter s
-                    ) => s -> s -> (Word, s, s, s, s)
+pairwiseFunction
+  :: ( Ord (Element s)
+     , EncodableDynamicCharacter s
+     )
+  => s -> s -> (Word, s, s, s, s)
 pairwiseFunction x y = naiveDO x y scm
 
 
@@ -108,7 +113,7 @@ scm i j = if i == j then 0 else 1
 
 
 defMetadata :: DynamicCharacterMetadataDec (Element DynamicCharacter)
-defMetadata = dynamicMetadataWithTCM defName defWeight defAlphabet scm
+defMetadata = dynamicMetadataWithTCM defName defWeight defAlphabet defSourceFile scm
 
 
 initDec :: DynamicCharacter -> DynamicDecorationInitial DynamicCharacter
@@ -122,7 +127,9 @@ defName = fromString "Test Character"
 defWeight :: Double
 defWeight = 1
 
+defSourceFile :: ShortText
+defSourceFile = fromString "Test Directory"
+
 
 defAlphabet :: Alphabet String
 defAlphabet = fromSymbols ["A","C","G","T"]
-

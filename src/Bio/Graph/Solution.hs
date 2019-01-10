@@ -63,7 +63,6 @@ newtype PhylogeneticSolution a
 phylogeneticForests :: PhylogeneticSolution a -> NonEmpty (PhylogeneticForest a)
 phylogeneticForests (PhylogeneticSolution x) = x
 
-
 -- |
 -- Extract a solution without loss of generality.
 {-# INLINE extractSolution #-}

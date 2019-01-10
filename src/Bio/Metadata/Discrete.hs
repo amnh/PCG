@@ -17,6 +17,7 @@ module Bio.Metadata.Discrete
   , HasCharacterAlphabet(..)
   , HasCharacterName(..)
   , HasCharacterWeight(..)
+  , HasTcmSourceFile(..)
   , discreteMetadata
   ) where
 

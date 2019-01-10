@@ -1,14 +1,14 @@
 allow-newer: true
 
-compiler: ghc-8.4.4
+compiler: ghc-8.6.3
 
 compiler-check: match-exact
 
 extra-deps:
-  - pretty-tree-0.1.0.0
   - compact-0.1.0.1
+  - graphviz-2999.20.0.2@sha256:5fad513f27c6fa4ee92f27461bb7386a5541b6b7edd601483fe693d4ac3963c5
+  - pretty-tree-0.1.0.0
   - tasty-rerun-1.1.12
-  - megaparsec-7.0.4
 
 flags: {}
 
@@ -23,7 +23,10 @@ packages:
   - lib/pcg-file-parsers
   - lib/pcg-language
   - lib/pcg-utility
+  #We use this upstream commit until it is uploaded to hackage and stackage respectively.
+  - location:  https://github.com/recursion-ninja/fgl/archive/d6735ce.zip
+    extra-dep: true
 
 require-stack-version: ">=1.7.1"
 
-resolver: lts-12.13
+resolver: lts-13.2

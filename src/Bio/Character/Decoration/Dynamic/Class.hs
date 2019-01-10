@@ -19,7 +19,6 @@
 
 -- For derived instance of PossiblyMissingCharacter
 {-# LANGUAGE UndecidableInstances       #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Bio.Character.Decoration.Dynamic.Class
   ( AverageLength()

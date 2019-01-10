@@ -22,8 +22,9 @@
 module Analysis.Parsimony.Dynamic.DirectOptimization
   ( DenseTransitionCostMatrix
   , OverlapFunction
-  , directOptimizationPreorder
   , directOptimizationPostorder
+  , directOptimizationPostorderPairwise
+  , directOptimizationPreorder
   , foreignPairwiseDO
   , foreignThreeWayDO
   , naiveDO

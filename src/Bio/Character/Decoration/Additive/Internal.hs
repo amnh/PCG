@@ -117,7 +117,7 @@ instance RangedCharacterDecoration (AdditivePostorderDecoration c) c => RangedPo
 
 
 -- | (✔)
-instance RangedPostorderDecoration   (AdditivePostorderDecoration a) a => RangedExtensionPostorder (AdditivePostorderDecoration a) a where
+instance RangedPostorderDecoration (AdditivePostorderDecoration a) a => RangedExtensionPostorder (AdditivePostorderDecoration a) a where
 
     extendRangedToPostorder subDecoration cost prelimInterval childMedianTup isLeafVal =
 
