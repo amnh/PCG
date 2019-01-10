@@ -44,7 +44,7 @@ import           Bio.Metadata.CharacterName                    hiding (sourceFil
 import           Bio.Metadata.DiscreteWithTCM                  (discreteMetadataWithTCM)
 import           Bio.Metadata.Dynamic                          (dynamicMetadataWithTCM)
 import           Bio.Metadata.Parsed
-import           Control.Applicative                           ((<|>))
+--import           Control.Applicative                           ((<|>))
 import           Control.Arrow                                 ((&&&), (***))
 import           Control.Lens                                  (over)
 import           Control.Parallel.Custom
@@ -56,7 +56,7 @@ import           Data.Foldable
 import qualified Data.IntMap                                   as IM
 import qualified Data.IntSet                                   as IS
 import           Data.Key
-import           Data.List                                     (transpose, zip4, zip5)
+import           Data.List                                     (transpose, zip5)
 import           Data.List.NonEmpty                            (NonEmpty (..))
 import qualified Data.List.NonEmpty                            as NE
 import           Data.List.Utility                             (duplicates)
@@ -416,35 +416,13 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
             encodeToCharacterBlock = finalizeCharacterBlock . foldMap1 encodeBinToSingletonCharacterBlock
               where
                 encodeBinToSingletonCharacterBlock
-                  :: (ParsedCharacter
-                     , ParsedCharacterMetadata
-                     , Word -> Word -> Word
-                     , TCMStructure
-                     , CharacterName
-                     )
-                  -> PartialCharacterBlock
-                       UnifiedContinuousCharacter
-                       UnifiedDiscreteCharacter
-                       UnifiedDiscreteCharacter
-                       UnifiedDiscreteCharacter
-                       UnifiedDiscreteCharacter
-                       UnifiedDynamicCharacter
-                encodeBinToSingletonCharacterBlock
-                  (charMay, charMeta, _scm, structure, _charName) =
+                  :: (ParsedCharacter, ParsedCharacterMetadata, ShortText, Word -> Word -> Word, TCMStructure, CharacterName)
+                  -> PartialCharacterBlock UnifiedContinuousCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDynamicCharacter
+                encodeBinToSingletonCharacterBlock (charMay, charMeta, _tcmSource, _scm, structure, _charName) =
                     case charMay of
-                      ParsedContinuousCharacter continuousMay ->
-                          continuousSingleton
-                        . Just
-                        $ continuousDecorationInitial
-                        $ toContinuousCharacter continuousMay
-                      ParsedDiscreteCharacter     discreteMay ->
-                          discreteSingleton structure
-                        . Just
-                        $ toDiscreteCharacterDecoration staticTransform discreteMay
-                      ParsedDynamicCharacter      dynamicMay ->
-                          dynamicSingleton
-                        . Just
-                        $ toDynamicCharacterDecoration dynamicTransform dynamicMay
+                      ParsedContinuousCharacter continuousMay -> continuousSingleton           . Just $  continuousDecorationInitial $ toContinuousCharacter continuousMay
+                      ParsedDiscreteCharacter     discreteMay ->   discreteSingleton structure . Just $ toDiscreteCharacterDecoration staticTransform discreteMay
+                      ParsedDynamicCharacter       dynamicMay ->    dynamicSingleton           . Just $  toDynamicCharacterDecoration dynamicTransform dynamicMay
                   where
                     alphabetLength    = toEnum $ length specifiedAlphabet
                     specifiedAlphabet = alphabet charMeta
