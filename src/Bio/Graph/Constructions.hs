@@ -270,20 +270,6 @@ extractReferenceDAG = either extractTopResult extractRefDAGfromDec
 extractRefDAGfromDec
   :: DecoratedCharacterResult -> ReferenceDAG () EdgeLength (Maybe NodeLabel)
 extractRefDAGfromDec finalDecDAG =
-    let
-      decRefDAG = finalDecDAG & (^. _phylogeneticForest) . extractSolution
-      refDAGNoGraphMetadata = decRefDAG & (_graphData . _graphMetadata) .~ ()
-      refDAG =
-        refDAGNoGraphMetadata
-          & (_references . mapped . _nodeDecoration) %~ Just . convert . nodeDecorationDatum2
-    in
-      refDAG
-  where
-    convert = undefined
-=======
-  :: DecoratedCharacterResult
-  -> ReferenceDAG () EdgeLength (Maybe String)
-extractRefDAGfromDec finalDecDAG =
   let
     decRefDAG        = finalDecDAG      & (^. _phylogeneticForest) . extractSolution
     refDAGNoMetadata = decRefDAG        & (_graphData . _graphMetadata) .~ ()
@@ -291,4 +277,3 @@ extractRefDAGfromDec finalDecDAG =
     refDAG           = refDAGNoEdgeData &
                          (_references . mapped . _nodeDecoration) %~ Just . show . nodeDecorationDatum2
   in refDAG
->>>>>>> master
