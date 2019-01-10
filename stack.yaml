@@ -18,15 +18,6 @@ ghc-options:
 
 local-bin-path: bin
 
-packages:
-  - '.'
-  - lib/pcg-file-parsers
-  - lib/pcg-language
-  - lib/pcg-utility
-  #We use this upstream commit until it is uploaded to hackage and stackage respectively.
-  - location:  https://github.com/recursion-ninja/fgl/archive/d6735ce.zip
-    extra-dep: true
-
 require-stack-version: ">=1.7.1"
 
 resolver: lts-13.2

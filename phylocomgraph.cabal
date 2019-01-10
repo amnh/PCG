@@ -695,3 +695,302 @@ Test-Suite unit-tests
                     Text.XML
                     Text.XML.Class
                     Text.XML.Custom
+
+
+--  Collection of utility functions and data structures
+--
+--  Defines custom data structures for special use cases,
+--  more abstract functions that base provides, and reexported
+--  correcting to deficient libraries.
+library pcg-utility
+
+  import:           ghc-flags
+                  , language-specs
+
+  build-depends:    base             >=4.8
+                  , binary
+                  , bv-little
+                  , containers       >=0.5.8
+                  , directory
+                  , deepseq
+                  , hashable
+                  , integer-gmp
+                  , keys
+                  , lens
+                  , matrix
+                  , mono-traversable >=1.0
+                  , QuickCheck
+                  , transformers
+                  , validation
+                  -- >=0.12.0.2 required for compatability with "compact regions"
+                  , vector             >=0.12.0.2 
+
+  hs-source-dirs:   lib/pcg-utility/src
+
+  exposed-modules:  Data.BitMatrix
+                    Data.Binary.Utility
+                    Data.Either.Custom
+                    Data.Foldable.Custom
+                    Data.List.Utility
+                    Data.Matrix.NotStupid
+                    Data.MutualExclusionSet
+                    Data.Tuple.Utility
+                    Data.UnionSet
+                    Data.Vector.Utility
+                    Numeric.Extended
+                    Numeric.Extended.Natural
+                    Numeric.Extended.Real
+                    Numeric.NonNegativeAverage
+
+  other-modules:    Data.BitMatrix.Internal
+                    Data.MutualExclusionSet.Internal
+                    Numeric.Extended.Internal
+
+benchmark pcg-utility-benchmark-suite
+
+  import:           ghc-flags
+                  , language-specs
+
+  type:             exitcode-stdio-1.0
+
+  main-is:          Benchmarks.hs
+                      
+  build-depends:    base               >=4.8
+                  , criterion
+                  , deepseq
+                  , ghc-prim
+                  , pcg-utility
+
+  ghc-options:    -fdicts-cheap
+                  -fmax-simplifier-iterations=10
+                  -fspec-constr-count=6
+                  -threaded
+
+  hs-source-dirs: lib/pcg-utility/bench
+                    
+  other-modules:  Data.MutualExclusionSet.Bench
+                  Numeric.Extended.Natural.Bench
+
+                       
+test-suite pcg-utility-test-suite
+
+  import:           ghc-flags
+                  , language-specs
+
+  type:             exitcode-stdio-1.0
+
+  main-is:          TestSuite.hs
+
+  build-depends:    base               >=4.8
+                  , bv-little
+                  , deepseq
+                  , integer-gmp
+                  , mono-traversable   >=1.0
+                  , pcg-utility
+                  , QuickCheck
+                  , tasty
+                  , tasty-hunit
+                  , tasty-quickcheck
+                  , tasty-rerun
+
+  hs-source-dirs: lib/pcg-utility/test
+                    
+  other-modules:  Data.BitMatrix.Test
+                  Data.MutualExclusionSet.Test
+                  Numeric.Extended.Natural.Test
+                  Numeric.Extended.Real.Test
+                  Numeric.NonNegativeAverage.Test
+                  Data.List.Test
+
+
+-- Parsers for the input file types accepted by PCG
+--
+-- Defines file parsers for Fasta files with sequence spliting,
+-- Newick files with support for extended newick format, Nexus
+-- files (though many block types are skipped), DOT files as
+-- graph input, TNT files (though many commands are skipped),
+-- and custom file formats for parsing transition cost matrices
+-- with an alphabet, and the depricated vertex/edge/root set
+-- format.
+library pcg-file-parsers
+
+  import:           ghc-flags
+                  , language-specs
+
+  build-depends:    base               >=4.10
+                  , case-insensitive
+                  -- >=0.5.8 Required for Data.Map.restrictKeys
+                  , containers         >=0.5.8
+                  , dlist
+                    -- >=2999.20 Required for forgivig constructio of DOT object
+                  , graphviz           >=2999.20
+                  , keys
+                  , megaparsec         >=7.0.0
+                  , mtl
+                  , parser-combinators >=0.2.0
+                  , pcg-utility
+                  , safe
+                  , scientific
+                  , semigroupoids
+                  , text
+                  -- >=0.12.0.2 required for compatability with "compact regions"
+                  , vector             >=0.12.0.2 
+
+  hs-source-dirs:   lib/pcg-file-parsers/src
+
+  exposed-modules:  File.Format.Dot
+                    File.Format.Fasta
+                    File.Format.Fastc
+                    File.Format.Newick
+                    File.Format.Nexus
+                    File.Format.TNT
+                    File.Format.TransitionCostMatrix
+                    File.Format.VertexEdgeRoot
+
+  other-modules:    File.Format.Fasta.Converter
+                    File.Format.Fasta.Internal
+                    File.Format.Fasta.Parser
+                    File.Format.Fastc.Parser
+                    File.Format.Newick.Internal
+                    File.Format.Newick.Parser
+                    File.Format.Nexus.Data
+                    File.Format.Nexus.Parser
+                    File.Format.Nexus.Partition
+                    File.Format.Nexus.Validate
+                    File.Format.TNT.Command.CCode
+                    File.Format.TNT.Command.CNames
+                    File.Format.TNT.Command.Cost
+                    File.Format.TNT.Command.NStates
+                    File.Format.TNT.Command.Procedure
+                    File.Format.TNT.Command.TRead
+                    File.Format.TNT.Command.XRead
+                    File.Format.TNT.Parser
+                    File.Format.TNT.Partitioning
+                    File.Format.TNT.Internal
+                    File.Format.TransitionCostMatrix.Parser
+                    File.Format.VertexEdgeRoot.Parser
+                    Text.Megaparsec.Custom
+
+
+Test-Suite pcg-file-parsers-unit-tests
+
+  import:           ghc-flags
+                  , language-specs
+
+  type:             exitcode-stdio-1.0
+
+  main-is:          TestSuite.hs
+
+  build-depends:    base               >=4.8
+                  , case-insensitive
+                  -- >=0.5.8 Required for Data.Map.restrictKeys
+                  , containers         >=0.5.8
+                  , dlist
+                  , either
+                  , keys
+                  , megaparsec         >=7.0.0
+                  , parser-combinators >=0.2.0
+                  , pcg-utility
+                  , safe
+                  , scientific
+                  , smallcheck
+                  , tasty
+                  , tasty-hunit
+                  , tasty-quickcheck
+                  , tasty-rerun
+                  , vector
+
+  hs-source-dirs:   lib/pcg-file-parsers/src, lib/pcg-file-parsers/test
+
+  ghc-options:      -threaded
+
+  other-modules:
+                       File.Format.Fasta.Internal
+                       File.Format.Fasta.Parser
+                       File.Format.Fasta.Test
+                       File.Format.Fastc.Parser
+                       File.Format.Fastc.Test
+                       File.Format.Newick.Internal
+                       File.Format.Newick.Parser
+                       File.Format.Newick.Test
+                       File.Format.TNT.Command.CCode
+                       File.Format.TNT.Command.CNames
+                       File.Format.TNT.Command.Procedure
+                       File.Format.TNT.Command.TRead
+                       File.Format.TNT.Command.XRead
+                       File.Format.TNT.Internal
+                       File.Format.TNT.Test
+                       File.Format.TransitionCostMatrix.Parser
+                       File.Format.TransitionCostMatrix.Test
+                       File.Format.VertexEdgeRoot.Parser
+                       File.Format.VertexEdgeRoot.Test
+                       Test.Custom.Parse
+                       Text.Megaparsec.Custom
+                       Text.Megaparsec.Custom.Test
+
+
+Executable pcg-file-parsers-file-tests
+
+  import:           ghc-flags
+                  , language-specs
+  main-is:             FileTests.hs
+
+  build-depends:       base               >=4.8
+                     -- >=0.5.8 Required for Data.Map.restrictKeys
+                     , containers         >=0.5.8
+                     , directory
+                     , megaparsec         >=7.0.0
+                     , pcg-file-parsers
+                     , tasty
+                     , tasty-hunit
+--                     , tasty-rerun
+
+  hs-source-dirs:      lib/pcg-file-parsers/test
+
+  ghc-options:         -threaded
+
+  other-modules:       Test.Custom.Parse
+                       TestSuite.GeneratedTests
+                       TestSuite.GeneratedTests.Fasta
+                       TestSuite.GeneratedTests.Fastc
+                       TestSuite.GeneratedTests.Internal
+                       TestSuite.GeneratedTests.Nexus
+                       TestSuite.GeneratedTests.TNT
+
+
+-- Defines the grammar & specific commands of the PCG langauge
+--
+-- In addition to the grammar definition, this library exports a parser for the
+-- grammar. Each command available in PCG is defined here and a script parser is
+-- exported to parse a sequence of commands which represents the computation to
+-- be performed by PCG.
+library pcg-language
+
+  import:              ghc-flags
+                     , language-specs
+
+  build-depends:       base               >=4.8
+                     , case-insensitive
+                       -- >=0.5.8 Required for Data.Map.restrictKeys
+                     , containers         >=0.5.8
+                     , free
+                     , keys
+                     , megaparsec         >=7.0.0
+                     , parser-combinators >=0.2.0
+                     , scientific
+                     , text
+                     , time
+
+  hs-source-dirs:      lib/pcg-language
+
+  exposed-modules:     PCG.Syntax
+                       PCG.Command.Build
+                       PCG.Command.Echo
+                       PCG.Command.Read
+                       PCG.Command.Report
+                       PCG.Command.Save
+                       PCG.Command.Load
+                       PCG.Syntax.Combinators
+
+  other-modules:       PCG.Syntax.Parser
+                       PCG.Syntax.Primitive
