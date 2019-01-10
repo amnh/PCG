@@ -13,7 +13,7 @@ extra-deps:
 flags: {}
 
 ghc-options:
-  "$everything": -j -fdiagnostics-color=always -fspecialize-aggressively
+  "$everything": -j -fdiagnostics-color=always -fspecialize-aggressively -fexpose-all-unfoldings
   "$locals": -fhide-source-paths 
 
 local-bin-path: bin
