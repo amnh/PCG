@@ -16,6 +16,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeFamilies               #-}
 
+{-# OPTIONS_GHC -fno-warn-unused-imports #-}
+
 module Data.Vector.NonEmpty
   ( Vector()
   , fromNonEmpty
@@ -44,6 +46,8 @@ import           Data.Semigroup.Traversable
 import qualified Data.Vector                as V
 import           Data.Vector.Instances      ()
 import           Test.QuickCheck            hiding (generate)
+import TextShow (TextShow())
+import TextShow.Instances ()
 
 
 -- |
@@ -70,6 +74,7 @@ newtype Vector a = NEV { unwrap :: V.Vector a }
             , Ord1
             , Pointed
             , Semigroup
+            , TextShow
             , Traversable
             , Zip
             , ZipWithKey

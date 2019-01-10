@@ -14,6 +14,8 @@
 
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
+
 
 module Data.TopologyRepresentation
   ( TopologyRepresentation
@@ -37,6 +39,7 @@ import           Data.MutualExclusionSet (MutualExclusionSet)
 import qualified Data.MutualExclusionSet as MES
 import           Data.Set                (Set)
 import           GHC.Generics
+import TextShow (TextShow(showb), unwordsB)
 
 {-
 isCompatableSubtopologyOf :: Ord a => TopologyRepresentation a -> TopologyRepresentation a -> Bool
@@ -98,6 +101,19 @@ instance (Ord a, Show a) => Show (TopologyRepresentation a) where
       where
         showIncluded = show . toList . includedNetworkEdges
         showExcluded = show . toList . excludedNetworkEdges
+
+
+instance (Ord a, TextShow a) => TextShow (TopologyRepresentation a) where
+
+    showb x = unwordsB
+        [ "Network Edges of Topology:"
+        , showIncluded x
+        , "|"
+        , showExcluded x
+        ]
+      where
+        showIncluded = showb . toList . includedNetworkEdges
+        showExcluded = showb . toList . excludedNetworkEdges
 
 
 -- |

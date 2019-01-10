@@ -26,7 +26,7 @@ import TextShow (TextShow())
 
 
 newtype UnionSet = Union BitVector
-  deriving (Bits, Generic, Ord)
+  deriving (Bits, Generic, Ord, TextShow)
 
 
 instance Eq UnionSet where

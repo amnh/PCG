@@ -147,6 +147,7 @@ newtype NewickSerialization = NS Text
   deriving         Generic
   deriving newtype Ord
   deriving newtype Show
+  deriving newtype TextShow
 
 
 -- |

@@ -16,6 +16,7 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE OverloadedStrings      #-}
 
 module Bio.Sequence.Block.Internal
   ( Block(..)
@@ -38,6 +39,8 @@ import Data.Vector           (Vector, fromListN)
 import Data.Vector.Instances ()
 import GHC.Generics
 import Text.XML
+import qualified Data.Text as T (Text, lines, unlines)
+import TextShow (TextShow (showb, showt), fromText)
 
 
 -- |
@@ -262,6 +265,32 @@ instance ( Show u
       where
         niceRendering :: (Foldable t, Show a) => t a -> String
         niceRendering = unlines . fmap (unlines . fmap ("  " <>) . lines . show) . toList
+
+instance ( TextShow u
+         , TextShow v
+         , TextShow w
+         , TextShow x
+         , TextShow y
+         , TextShow z
+         ) => TextShow (Block u v w x y z) where
+
+    showb block = fromText . T.unlines $
+        [ "Non-additive s:"
+        , niceRendering $ _nonAdditiveBin block
+        , "Additive s:"
+        , niceRendering $ _additiveBin block
+        , "NonMetric s:"
+        , niceRendering $ _nonMetricBin block
+        , "Continuous s: "
+        , niceRendering $ _continuousBin block
+        , "Metric s:"
+        , niceRendering $ _metricBin block
+        , "Dynamic s:"
+        , niceRendering $ _dynamicBin block
+        ]
+      where
+        niceRendering :: (Foldable t, TextShow a) => t a -> T.Text
+        niceRendering = T.unlines . fmap (T.unlines . fmap ("  " <>) . T.lines . showt) . toList
 
 
 instance ( ToXML u -- This is NOT a redundant constraint.
