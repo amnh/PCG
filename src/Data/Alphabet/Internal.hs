@@ -18,8 +18,8 @@
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeFamilies      #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies      #-}
 
 module Data.Alphabet.Internal
   ( Alphabet()
@@ -45,6 +45,7 @@ import           Data.Monoid
 import           Data.Semigroup.Foldable
 import qualified Data.Set                            as Set
 import           Data.String
+import           Data.TextShow.Custom                (intercalateB)
 import           Data.Vector.NonEmpty                (Vector)
 import qualified Data.Vector.NonEmpty                as NEV
 import           GHC.Generics                        (Generic)
@@ -52,8 +53,7 @@ import           Prelude                             hiding (lookup, unzip, zip)
 import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances ()
 import           Text.XML
-import           TextShow (TextShow(showb))
-import Data.TextShow.Custom (intercalateB)
+import           TextShow                            (TextShow (showb))
 
 
 -- |

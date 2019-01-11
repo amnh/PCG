@@ -46,8 +46,8 @@ import           Data.Semigroup.Traversable
 import qualified Data.Vector                as V
 import           Data.Vector.Instances      ()
 import           Test.QuickCheck            hiding (generate)
-import TextShow (TextShow())
-import TextShow.Instances ()
+import           TextShow                   (TextShow)
+import           TextShow.Instances         ()
 
 
 -- |

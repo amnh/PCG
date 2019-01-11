@@ -38,8 +38,8 @@ import           Data.Set             (Set)
 import qualified Data.Set             as Set
 import           GHC.Generics         (Generic)
 import           Prelude              hiding (zipWith)
-import           TextShow (TextShow())
-import TextShow.Instances ()
+import           TextShow             (TextShow)
+import           TextShow.Instances   ()
 
 
 -- |

@@ -39,7 +39,7 @@ import           Data.MutualExclusionSet (MutualExclusionSet)
 import qualified Data.MutualExclusionSet as MES
 import           Data.Set                (Set)
 import           GHC.Generics
-import TextShow (TextShow(showb), unwordsB)
+import           TextShow                (TextShow (showb), unwordsB)
 
 {-
 isCompatableSubtopologyOf :: Ord a => TopologyRepresentation a -> TopologyRepresentation a -> Bool

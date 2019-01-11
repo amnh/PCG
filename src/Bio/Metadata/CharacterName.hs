@@ -36,8 +36,8 @@
 
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE UnboxedSums       #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE UnboxedSums       #-}
 
 
 module Bio.Metadata.CharacterName
@@ -57,8 +57,8 @@ import Data.Traversable
 import GHC.Generics             (Generic)
 import Prelude                  hiding (lookup)
 import Text.Show                (showListWith, showString)
-import TextShow (TextShow(showb, showbList))
-import TextShow.Data.List (showbListWith)
+import TextShow                 (TextShow (showb, showbList))
+import TextShow.Data.List       (showbListWith)
 
 
 -- |
@@ -90,7 +90,7 @@ instance Show CharacterName where
 -- A custom 'TextShow' instance that agrees with the 'Show' instance.
 instance TextShow CharacterName where
     showb (UserDefined _ name) = showb name
-    showb (Default path index) = (showb path) <> ":" <> showb index
+    showb (Default path index) = showb path <> ":" <> showb index
 
     showbList = showbListWith f
       where

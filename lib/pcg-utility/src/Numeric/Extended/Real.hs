@@ -15,8 +15,8 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE TypeFamilies      #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies      #-}
 
 
 module Numeric.Extended.Real
@@ -31,7 +31,7 @@ import Data.Binary
 import GHC.Generics
 import Numeric.Extended.Internal
 import Test.QuickCheck
-import TextShow (TextShow(showb))
+import TextShow                  (TextShow (showb))
 
 
 -- |

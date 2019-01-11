@@ -30,17 +30,17 @@ module Bio.Sequence.Block.Internal
   ) where
 
 
-import Control.DeepSeq
-import Control.Lens
-import Data.Bifunctor
-import Data.Foldable
-import Data.Semigroup
-import Data.Vector           (Vector, fromListN)
-import Data.Vector.Instances ()
-import GHC.Generics
-import Text.XML
-import qualified Data.Text as T (Text, lines, unlines)
-import TextShow (TextShow (showb, showt), fromText)
+import           Control.DeepSeq
+import           Control.Lens
+import           Data.Bifunctor
+import           Data.Foldable
+import           Data.Semigroup
+import qualified Data.Text             as T (Text, lines, unlines)
+import           Data.Vector           (Vector, fromListN)
+import           Data.Vector.Instances ()
+import           GHC.Generics
+import           Text.XML
+import           TextShow              (TextShow (showb, showt), fromText)
 
 
 -- |

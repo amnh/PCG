@@ -15,8 +15,8 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE UnboxedSums           #-}
 {-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE UnboxedSums           #-}
 
 
 module Bio.Sequence.Block.Character
@@ -64,13 +64,13 @@ import           Data.Foldable
 import           Data.List.NonEmpty           (NonEmpty (..))
 import           Data.MonoTraversable         (Element)
 import           Data.Semigroup
+import qualified Data.Text                    as T (Text, lines, unlines)
 import           Data.Vector                  (Vector, fromListN)
 import qualified Data.Vector                  as V
 import           Data.Vector.Instances        ()
 import           GHC.Generics
 import           Text.XML
-import qualified Data.Text as T (Text, lines, unlines)
-import TextShow (TextShow (showb, showt), fromText)
+import           TextShow                     (TextShow (showb, showt), fromText)
 
 
 -- |

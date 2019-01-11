@@ -31,7 +31,7 @@ import Data.MonoTraversable
 import Data.String          (IsString)
 import Data.Text.Short      as TS
 import GHC.Generics
-import TextShow (TextShow(showb))
+import TextShow             (TextShow (showb))
 
 
 -- |
