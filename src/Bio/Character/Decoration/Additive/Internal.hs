@@ -14,6 +14,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeFamilies          #-}
 
 -- We need this for the generalized type family derivation of Ranged instances.
@@ -36,6 +37,7 @@ import Data.Range
 import GHC.Generics
 import Numeric.Extended
 import Text.XML
+import TextShow                                (TextShow (showb), unlinesB)
 
 
 -- |
@@ -146,6 +148,24 @@ instance
         , "Preliminary Interval : " <> show (c ^. preliminaryInterval )
         , "Child       Intervals: " <> show (c ^. childPrelimIntervals)
         , "Final       Interval : " <> show (c ^. finalInterval       )
+        ]
+
+-- | (✔)
+instance
+  ( EncodableStreamElement c
+  , TextShow c
+  , TextShow (Bound c)
+  , TextShow (Finite (Bound c))
+  , TextShow (Range  (Bound c))
+  ) => TextShow (AdditiveOptimizationDecoration c) where
+
+    showb c = unlinesB
+        [ "Cost = "                 <> showb (c ^. characterCost       )
+        , "Is Leaf Node?        : " <> showb (c ^. isLeaf              )
+        , "Discrete Character   : " <> showb (c ^. discreteCharacter   )
+        , "Preliminary Interval : " <> showb (c ^. preliminaryInterval )
+        , "Child       Intervals: " <> showb (c ^. childPrelimIntervals)
+        , "Final       Interval : " <> showb (c ^. finalInterval       )
         ]
 
 
@@ -263,6 +283,23 @@ instance
         , "Discrete Character   : " <> show (c ^. discreteCharacter)
         , "Preliminary Interval : " <> show (additivePreliminaryInterval c)
         , "Child       Intervals: " <> show (additiveChildPrelimIntervals c)
+        ]
+
+-- | (✔)
+instance
+  ( EncodableStreamElement c
+  , TextShow c
+  , TextShow (Bound c)
+  , TextShow (Finite (Bound c))
+  , TextShow (Range  (Bound c))
+  ) => TextShow (AdditivePostorderDecoration c) where
+
+    showb c = unlinesB
+        [ "Cost = "                 <> showb (c ^. characterCost)
+        , "Is Leaf Node?        : " <> showb (c ^. isLeaf)
+        , "Discrete Character   : " <> showb (c ^. discreteCharacter)
+        , "Preliminary Interval : " <> showb (additivePreliminaryInterval c)
+        , "Child       Intervals: " <> showb (additiveChildPrelimIntervals c)
         ]
 
 

@@ -34,9 +34,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric    #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE UnboxedSums      #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE UnboxedSums       #-}
+
 
 module Bio.Metadata.CharacterName
   ( CharacterName()
@@ -55,6 +57,8 @@ import Data.Traversable
 import GHC.Generics             (Generic)
 import Prelude                  hiding (lookup)
 import Text.Show                (showListWith, showString)
+import TextShow                 (TextShow (showb, showbList))
+import TextShow.Data.List       (showbListWith)
 
 
 -- |
@@ -73,7 +77,7 @@ instance IsString CharacterName where
 instance NFData CharacterName
 
 
--- A custom 'Show' instance for more legible rendering of lists
+-- A custom 'Show' instance for more legible rendering of lists.
 instance Show CharacterName where
     show (UserDefined _ name) = name
     show (Default path index) = path <> ":" <> show index
@@ -81,6 +85,16 @@ instance Show CharacterName where
     showList = showListWith f
       where
         f x = showString $ "\"" <> show x <> "\""
+
+
+-- A custom 'TextShow' instance that agrees with the 'Show' instance.
+instance TextShow CharacterName where
+    showb (UserDefined _ name) = showb name
+    showb (Default path index) = showb path <> ":" <> showb index
+
+    showbList = showbListWith f
+      where
+        f x = "\"" <> showb x <> "\""
 
 
 -- Ordering biases user defined names with a file path prefix before defaulted names with the same prefix.

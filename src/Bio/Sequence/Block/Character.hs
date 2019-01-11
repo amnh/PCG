@@ -15,7 +15,9 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE UnboxedSums           #-}
+
 
 module Bio.Sequence.Block.Character
   ( CharacterBlock()
@@ -62,11 +64,13 @@ import           Data.Foldable
 import           Data.List.NonEmpty           (NonEmpty (..))
 import           Data.MonoTraversable         (Element)
 import           Data.Semigroup
+import qualified Data.Text                    as T (Text, lines, unlines)
 import           Data.Vector                  (Vector, fromListN)
 import qualified Data.Vector                  as V
 import           Data.Vector.Instances        ()
 import           GHC.Generics
 import           Text.XML
+import           TextShow                     (TextShow (showb, showt), fromText)
 
 
 -- |
@@ -287,6 +291,33 @@ instance ( Show u
       where
         niceRendering :: (Foldable t, Show a) => t a -> String
         niceRendering = unlines . fmap (unlines . fmap ("  " <>) . lines . show) . toList
+
+instance ( TextShow u
+         , TextShow v
+         , TextShow w
+         , TextShow x
+         , TextShow y
+         , TextShow z
+         ) => TextShow (CharacterBlock u v w x y z) where
+
+    showb BlockDoesNotExist = "Block does not exists at this node"
+    showb (CB block) = fromText . T.unlines $
+        [ "Continuous s [" <> showt (length (_continuousBin block)) <> "]:"
+        , niceRendering $ _continuousBin block
+        , "Non-additive s [" <> showt (length (_nonAdditiveBin block)) <> "]:"
+        , niceRendering $ _nonAdditiveBin block
+        , "Additive s [" <> showt (length (_additiveBin block)) <> "]:"
+        , niceRendering $ _additiveBin block
+        , "Metric s [" <> showt (length (_metricBin block)) <> "]:"
+        , niceRendering $ _metricBin block
+        , "NonMetric s [" <> showt (length (_nonMetricBin block)) <> "]:"
+        , niceRendering $ _nonMetricBin block
+        , "Dynamic s [" <> showt (length (_dynamicBin block)) <> "]:"
+        , niceRendering $ _dynamicBin block
+        ]
+      where
+        niceRendering :: (Foldable t, TextShow a) => t a -> T.Text
+        niceRendering = T.unlines . fmap (T.unlines . fmap ("  " <>) . T.lines . showt) . toList
 
 
 -- | (✔)

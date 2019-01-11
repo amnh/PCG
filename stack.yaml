@@ -9,6 +9,10 @@ extra-deps:
   - graphviz-2999.20.0.2@sha256:5fad513f27c6fa4ee92f27461bb7386a5541b6b7edd601483fe693d4ac3963c5
   - pretty-tree-0.1.0.0
   - tasty-rerun-1.1.12
+  - text-show-3.7.5
+  - text-show-instances-3.7
+  - github: recursion-ninja/bv-little
+    commit: e4abc26a16398326c510875a1dd7195ac7b909be
 
 #ghc-options:
 #  "$everything": -j -fdiagnostics-color=always -fspecialize-aggressively -fexpose-all-unfoldings
@@ -19,3 +23,5 @@ local-bin-path: bin
 require-stack-version: ">=1.7.1"
 
 resolver: lts-13.2
+
+dump-logs: all

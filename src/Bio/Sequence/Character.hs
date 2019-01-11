@@ -13,11 +13,14 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE TypeFamilies               #-}
+
+{-# OPTIONS_GHC -fno-warn-unused-imports #-}
 
 module Bio.Sequence.Character
   ( CharacterSequence()
@@ -39,6 +42,8 @@ import           Data.Vector.NonEmpty    (Vector)
 import qualified Data.Vector.NonEmpty    as V
 import           GHC.Generics
 import           Text.XML
+import           TextShow                (TextShow)
+import           TextShow.Instances      ()
 
 -- |
 -- A multi-level partitioned, non-empty sequence of characters.
@@ -56,7 +61,7 @@ import           Text.XML
 -- was minimal.
 newtype CharacterSequence u v w x y z
     = CharSeq (Vector (CharacterBlock u v w x y z))
-    deriving (Eq, Generic)
+    deriving (Eq, Generic, TextShow)
 
 
 type instance Element (CharacterSequence u v w x y z) = CharacterBlock u v w x y z

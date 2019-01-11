@@ -123,10 +123,9 @@ common language-specs
 
 library
 
-  import:
-    ffi-buildinfo,
-    ghc-flags,
-    language-specs
+  import:             ffi-buildinfo
+                    , ghc-flags
+                    , language-specs
 
   hs-source-dirs:   src
 
@@ -162,6 +161,8 @@ library
     semigroups              ^>= 0.18      && < 0.19,
     smallcheck              ^>= 1.1.5     && < 1.2,
     text                    ^>= 1.2.3     && < 1.3,
+    text-show                                     ,
+    text-show-instances                           ,
     text-short              ^>= 0.1.2     && < 0.2,
     transformers            ^>= 0.5.5     && < 0.6,
     unordered-containers    ^>= 0.2.9     && < 0.3,
@@ -523,6 +524,7 @@ executable pcg
     semigroups              ^>= 0.18      && < 0.19,
     text                    ^>= 1.2.3     && < 1.3,
     text-short              ^>= 0.1.2     && < 0.2,
+    text-show                                     ,
     transformers            ^>= 0.5.5     && < 0.6,
     validation              ^>= 1         && < 1.1,
     -- >=0.12.0.2 required for compatability with "compact regions"
@@ -808,6 +810,50 @@ test-suite unit-tests
   main-is:          UnitTests.hs
 
   type:             exitcode-stdio-1.0
+
+  build-depends:      base               >=4.10
+                    , bimap
+                    , binary
+                    , bv-little
+                    -- >=0.5.8 Required for Data.Map.restrictKeys
+                    , cassava >=0.5
+                    , containers         >=0.5.8
+                    , deepseq
+                    , dlist
+                    , foldl
+                    , graphviz           >=2999.20
+                    , hashable
+                    , integer-gmp
+                    , keys
+                    , lens
+                    , mono-traversable   >=1.0
+                    , mtl
+                    , pcg-utility
+                    , pretty-tree
+                    , phylocomgraph
+                    , pointed
+                    , QuickCheck
+                    -- required for Data.Semigroup.Foldable.toNonEmpty
+                    , semigroupoids      >=5.2.1
+                    , semigroups
+                    , smallcheck
+                    , tasty
+                    , tasty-hunit
+                    , tasty-quickcheck
+                    , tasty-smallcheck
+                    , tasty-rerun
+                    , text-show
+                    , text-show-instances
+                    , transformers
+                    , unordered-containers
+                    -- >=0.12.0.2 required for compatability with "compact regions"
+                    , vector           >=0.12.0.2
+                    , vector-binary-instances
+                    -- >=3.4 required for corrected definition of (!) & index
+                    , vector-binary-instances
+                    , vector-instances >=3.4
+                    , xml
+>>>>>>> text-rendering
 
   ghc-options:      -threaded
 --    -with-rtsopts=-N4

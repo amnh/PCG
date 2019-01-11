@@ -61,7 +61,7 @@ import Data.UnionSet
 import GHC.Generics
 import Text.Newick.Class
 import Text.XML
-
+import TextShow                    (TextShow (showb), unlinesB)
 
 -- |
 -- This serves as a computation /invariant/ node decoration designed to hold node
@@ -147,6 +147,7 @@ newtype NewickSerialization = NS Text
   deriving         Generic
   deriving newtype Ord
   deriving newtype Show
+  deriving newtype TextShow
 
 
 -- |
@@ -383,6 +384,14 @@ instance (Show n, Show s) => Show (PhylogeneticNode2 s n) where
         , unlines . fmap show . toList $ resolutions node
         ]
 
+instance (TextShow n, TextShow s) => TextShow (PhylogeneticNode2 s n) where
+
+    showb node = unlinesB
+        [ showb $ nodeDecorationDatum2 node
+        , "Resolutions: {" <> (showb . length . resolutions) node <> "}\n"
+        , unlinesB . fmap showb . toList $ resolutions node
+        ]
+
 
 instance Show s => Show (ResolutionInformation s) where
 
@@ -395,6 +404,19 @@ instance Show s => Show (ResolutionInformation s) where
            , "Leaf Set  : "    <> show (resInfo ^. _leafSetRepresentation)
            , "Subtree   : "    <> show (resInfo ^. _subtreeRepresentation)
            , "Decoration:\n\n" <> show (resInfo ^. _characterSequence    )
+           ]
+
+instance TextShow s => TextShow (ResolutionInformation s) where
+
+    showb resInfo = unlinesB tokens
+      where
+        tokens =
+           [ "Total Cost: "    <> showb (resInfo ^. _totalSubtreeCost     )
+           , "Local Cost: "    <> showb (resInfo ^. _localSequenceCost    )
+           , "Edge Set  : "    <> showb (resInfo ^. _subtreeEdgeSet       )
+           , "Leaf Set  : "    <> showb (resInfo ^. _leafSetRepresentation)
+           , "Subtree   : "    <> showb (resInfo ^. _subtreeRepresentation)
+           , "Decoration:\n\n" <> showb (resInfo ^. _characterSequence    )
            ]
 
 

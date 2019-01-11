@@ -14,6 +14,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
@@ -33,6 +34,8 @@ import Data.Range
 import GHC.Generics
 import Numeric.Extended
 import Text.XML
+import TextShow                          (TextShow (showb), unlinesB)
+
 
 
 -- |
@@ -267,6 +270,11 @@ instance Show c => Show (ContinuousDecorationInitial c) where
 
     show = show . (^. intervalCharacter)
 
+-- | (✔)
+instance TextShow c => TextShow (ContinuousDecorationInitial c) where
+
+    showb = showb . (^. intervalCharacter)
+
 
 -- | (✔)
 instance
@@ -285,6 +293,23 @@ instance
         , "Final       Interval : " <> show (c ^. finalInterval)
         ]
 
+-- | (✔)
+instance
+    ( TextShow c
+    , TextShow (Bound c)
+    , TextShow (Finite (Bound c))
+    , TextShow (Range  (Bound c))
+    ) => TextShow (ContinuousOptimizationDecoration c) where
+
+    showb c = unlinesB
+        [ "Cost = "                 <> showb (c ^. characterCost)
+        , "Is Leaf Node?        : " <> showb (c ^. isLeaf)
+        , "Continuous Character : " <> showb (c ^. intervalCharacter)
+        , "Preliminary Interval : " <> showb (c ^. preliminaryInterval)
+        , "Child       Intervals: " <> showb (c ^. childPrelimIntervals)
+        , "Final       Interval : " <> showb (c ^. finalInterval)
+        ]
+
 
 -- | (✔)
 instance
@@ -299,6 +324,21 @@ instance
         , "Continuous Character : " <> show (c ^. intervalCharacter)
         , "Preliminary Interval : " <> show (c ^. preliminaryInterval)
         , "Child       Intervals: " <> show (c ^. childPrelimIntervals)
+        ]
+
+-- | (✔)
+instance
+    ( TextShow c
+    , TextShow (Finite (Bound c))
+    , TextShow (Range  (Bound c))
+    ) => TextShow (ContinuousPostorderDecoration c) where
+
+    showb c = unlinesB
+        [ "Cost = "                 <> showb (c ^. characterCost)
+        , "Is Leaf Node?        : " <> showb (c ^. isLeaf)
+        , "Continuous Character : " <> showb (c ^. intervalCharacter)
+        , "Preliminary Interval : " <> showb (c ^. preliminaryInterval)
+        , "Child       Intervals: " <> showb (c ^. childPrelimIntervals)
         ]
 
 

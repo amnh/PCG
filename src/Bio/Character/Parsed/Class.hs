@@ -12,7 +12,10 @@
 --
 -----------------------------------------------------------------------------
 {-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE TypeSynonymInstances #-}
+
+{-# LANGUAGE ScopedTypeVariables  #-}
 
 module Bio.Character.Parsed.Class
   ( ParsedCharacters(..)
@@ -20,7 +23,7 @@ module Bio.Character.Parsed.Class
   ) where
 
 import           Bio.Character.Parsed.Internal
-import           Control.Arrow                    ((&&&))
+import           Control.Arrow                    ((&&&), (***))
 import           Data.Bifunctor                   (second)
 import           Data.Foldable
 import           Data.Key
@@ -32,7 +35,11 @@ import           Data.Maybe
 import           Data.Semigroup.Foldable
 import           Data.Set                         (Set)
 import qualified Data.Set                         as S
+import           Data.ShortText.Custom            (intToShortText)
+import           Data.String                      (IsString (fromString))
+import           Data.Text.Short                  (ShortText)
 import           Data.Tree
+import           Data.Vector                      (Vector)
 import           Data.Vector.Custom               as V (fromList')
 import           Data.Vector.Instances            ()
 import           File.Format.Dot
@@ -86,7 +93,7 @@ class ParsedCharacters a where
 -- | (✔)
 instance ParsedCharacters (DotGraph GraphID) where
 
-    unifyCharacters = fromSet (const mempty) . S.map toIdentifier . leafNodeSet
+    unifyCharacters = fromSet (const mempty) . S.map (fromString . toIdentifier) . leafNodeSet
       where
         -- Get the set of all nodes with out degree 0.
         leafNodeSet :: Ord n => DotGraph n -> Set n
@@ -98,8 +105,8 @@ instance ParsedCharacters FastaParseResult where
 
     unifyCharacters = foldMap f
       where
-        f (FastaSequence n s) = M.singleton n $ convertSeq s
-        convertSeq = pure . ParsedDynamicCharacter . Just . NE.fromList . fmap (pure . pure)
+        f (FastaSequence n s) = M.singleton (fromString s) (convertSeq (fromString s))
+        convertSeq = pure . parsedDynamicCharacterFromShortText
 
 
 -- | (✔)
@@ -107,13 +114,13 @@ instance ParsedCharacters FastcParseResult where
 
     unifyCharacters = foldMap f
       where
-        f (FastcSequence label symbols) = M.singleton label $ convertCharacterSequenceLikeFASTA symbols
+        f (FastcSequence label symbols) = M.singleton (fromString label) $ convertCharacterSequenceLikeFASTA symbols
 
 
 -- | (✔)
 instance ParsedCharacters TaxonSequenceMap where
 
-    unifyCharacters = fmap convertCharacterSequenceLikeFASTA
+    unifyCharacters = fmap convertCharacterSequenceLikeFASTA . M.mapKeysMonotonic fromString
 
 
 -- | (✔)
@@ -125,40 +132,62 @@ instance ParsedCharacters (NonEmpty NewickForest) where
           | null (descendants node) = M.singleton nodeName mempty
           | otherwise = foldMap f $ descendants node -- foldl1 (<>) $ f <$> descendants node
           where
-            nodeName = fromMaybe "" $ newickLabel node
+            nodeName = fromMaybe "" $ newickLabelShort node
 
 
 -- | (✔)
 instance ParsedCharacters Nexus where
 
-    unifyCharacters (Nexus (seqMap, metadataVector) _) = f <$> seqMap
+    unifyCharacters (Nexus (seqMap, metadataVector) _)
+      = f <$> M.mapKeysMonotonic fromString seqMap
       where
 
         f = zipWith g metadataVector
 
         g :: CharacterMetadata -> Character -> ParsedCharacter
         g m e
-          | not $ isAligned m = ParsedDynamicCharacter  $ fmap NE.fromList . NE.fromList . toList <$> e
+          | not $ isAligned m
+              = ParsedDynamicCharacter . convert $ e
           | otherwise         = ParsedDiscreteCharacter $ do
               v <- e                      -- Check if the element is empty
               w <- NE.nonEmpty $ toList v -- If not, coerce the Vector to a NonEmpty list
-              NE.nonEmpty $ NE.head w     -- Then grab the first element of the Vector,
-                                          -- making sure it is also a NonEmpty list
+              NE.nonEmpty                 -- Then grab the first element of the Vector,
+                . fmap fromString         -- making sure it is also a NonEmpty list
+                . NE.head
+                $ w
+
+
+                -- Maybe (Vector [String])
+        convert :: Character -> Maybe (NonEmpty (NonEmpty ShortText))
+        convert = fmap innerConv1
+          where
+
+            innerConv1 :: Vector [String] -> NonEmpty (NonEmpty ShortText)
+            innerConv1 = NE.fromList . toList . fmap innerConv2
+
+            innerConv2 :: [String] -> NonEmpty ShortText
+            innerConv2 []           =
+              error "Encountered empty list of Nexus characters during conversion"
+            innerConv2 [str]        = fromString str :| []
+            innerConv2 (str : str') = fromString str :| fmap fromString str'
+
 
 
 -- | (✔)
 instance ParsedCharacters TntResult where
 
-    unifyCharacters (Left forest) = mergeMaps $ foldl f mempty forest
+    unifyCharacters (Left forest) = mergeMaps $ foldl' f mempty forest
       where
         f xs tree = foldMap g tree : xs
-        g (Index  i) = M.singleton (show i) mempty
-        g (Name   n) = M.singleton n mempty
-        g (Prefix p) = M.singleton p mempty
+        g (Index  i) = M.singleton (intToShortText i) mempty
+        g (Name   n) = M.singleton (fromString n) mempty
+        g (Prefix p) = M.singleton (fromString p) mempty
 
-    unifyCharacters (Right (WithTaxa seqs _ []    )) = M.fromList . toList $ second tntToTheSuperSequence   <$> seqs
+    unifyCharacters (Right (WithTaxa seqs _ []    ))
+      = M.fromList . toList $ (fromString *** tntToTheSuperSequence)  <$> seqs
     -- maybe just use the seq vaiable like above and remove this case?
-    unifyCharacters (Right (WithTaxa _    _ forest)) = mergeMaps $ M.fromList . toList . fmap (second tntToTheSuperSequence) <$> forest
+    unifyCharacters (Right (WithTaxa _    _ forest))
+      = mergeMaps $ M.fromList . toList . fmap (fromString *** tntToTheSuperSequence) <$> forest
 
 
 -- | (✔)
@@ -174,16 +203,17 @@ instance ParsedCharacters VertexEdgeRoot where
       where
         es = toList e
         f node
-          | null (subForest node) = insert (rootLabel node) mempty mempty
+          | null (subForest node) = M.singleton (fromString . rootLabel $ node) mempty
           | otherwise = foldl1 (<>) $ f <$> subForest node
         buildTree nodeName = Node nodeName kids
           where
-            kids = fmap (buildTree . snd) . filter ((==nodeName) . fst) $ (edgeOrigin &&& edgeTarget) <$> es
+            kids
+              = fmap (buildTree . snd)
+              . filter ((==nodeName) . fst)
+              $ (edgeOrigin &&& edgeTarget)
+              <$> es
 
 
-
-convertCharacterSequenceLikeFASTA :: CharacterSequence -> ParsedChars
-convertCharacterSequenceLikeFASTA = pure . ParsedDynamicCharacter . Just . NE.fromList . toList
 
 
 -- |
@@ -192,7 +222,12 @@ tntToTheSuperSequence :: TaxonSequence -> ParsedChars
 tntToTheSuperSequence = V.fromList' . fmap f
   where
     f (TNT.Continuous c) = ParsedContinuousCharacter c
-    f discreteCharacter  = ParsedDiscreteCharacter . Just . coerceDiscreteRendering $ show discreteCharacter
+    f discreteCharacter  = ParsedDiscreteCharacter
+                         . Just
+                         . fmap fromString
+                         . coerceDiscreteRendering
+                         . show
+                         $ discreteCharacter
 
     coerceDiscreteRendering ('[':xs) = NE.fromList $ pure <$> init xs
     coerceDiscreteRendering e        = pure e
@@ -204,4 +239,4 @@ tntToTheSuperSequence = V.fromList' . fmap f
 -- to duplicate keys. When identical keys occur in multiple 'Map's, the value
 -- occurring last in the 'Foldable' structure is returned.
 mergeMaps :: (Foldable t, Ord k) => t (Map k v) -> Map k v
-mergeMaps = foldl (mergeWithKey (\_ _ b -> Just b) id id) mempty
+mergeMaps = foldl' (M.unionWith (flip const)) mempty
