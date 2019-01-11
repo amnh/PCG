@@ -1,0 +1,6 @@
+with-compiler: ghc-8.6.3
+
+source-repository-package
+  type: git
+  location: https://github.com/recursion-ninja/bv-little
+  tag: e4abc26a16398326c510875a1dd7195ac7b909be
