@@ -283,7 +283,6 @@ library
                     Bio.Graph.PhylogeneticDAG.Postorder
                     Bio.Graph.PhylogeneticDAG.Preorder
                     Bio.Graph.PhylogeneticDAG.Reification
-                    Bio.Graph.PhylogeneticDAG.Render
                     Bio.Graph.PhylogeneticDAG.TotalEdgeCost
                     Bio.Graph.ZipperDAG.Internal
                     Bio.Sequence.Block.Builder
@@ -612,6 +611,8 @@ Test-Suite unit-tests
                     , tasty-quickcheck
                     , tasty-smallcheck
                     , tasty-rerun
+                    , text-show
+                    , text-show-instances
                     , transformers
                     , unordered-containers
                     -- >=0.12.0.2 required for compatability with "compact regions"
