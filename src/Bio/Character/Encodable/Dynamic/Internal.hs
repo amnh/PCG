@@ -25,6 +25,8 @@
 {-# LANGUAGE UnboxedSums                #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
+{-# OPTIONS_GHC -Wno-redundant-constraints #-}
+
 module Bio.Character.Encodable.Dynamic.Internal
   ( DynamicCharacter (DC, Missing)
   , DynamicCharacters

@@ -20,6 +20,8 @@
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE TypeFamilies               #-}
 
+{-# OPTIONS_GHC -Wno-redundant-constraints #-}
+
 module Bio.Character.Encodable.Static.Internal
   ( StaticCharacter()
   , StaticCharacterBlock()
