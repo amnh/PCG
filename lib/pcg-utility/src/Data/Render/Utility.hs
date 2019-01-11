@@ -19,14 +19,12 @@ module Data.Render.Utility
   ( writeFileT
   ) where
 
-import Control.Exception      (bracket)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.Text.Lazy         (Text)
 import Data.Text.Lazy.IO      (hPutStr)
 import Pipes                  (Producer, for, runEffect, yield)
 import Prelude                hiding (writeFile)
 import System.IO              (IOMode, hClose, openFile)
-import TextShow
 
 
 -- |

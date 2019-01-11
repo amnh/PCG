@@ -1115,16 +1115,6 @@ topologyRendering dag = drawVerticalTree . unfoldTree f . NE.head $ rootRefs dag
     f i = (show i, IM.keys . childRefs $ references dag ! i)
 
 -- |
--- Displays a tree-like rendering of the 'ReferenceDAG' as a 'Builder'
-topologyRenderingBuilder :: ReferenceDAG d e n -> String
-topologyRenderingBuilder dag
-  = undefined
-  -- drawVerticalTree . unfoldTree f . NE.head $ rootRefs dag
-  where
-    f i = (show i, IM.keys . childRefs $ references dag ! i)
-
-
--- |
 -- /O(n)/
 --
 -- Constructs a 'ReferenceDAG' from a "list" of references.

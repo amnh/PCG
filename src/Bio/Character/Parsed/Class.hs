@@ -24,12 +24,11 @@ module Bio.Character.Parsed.Class
 
 import           Bio.Character.Parsed.Internal
 import           Control.Arrow                    ((&&&), (***))
-import           Data.Bifunctor                   (second)
 import           Data.Foldable
 import           Data.Key
 import           Data.List.NonEmpty               (NonEmpty (..))
 import qualified Data.List.NonEmpty               as NE
-import           Data.Map                         (Map, fromSet, insert, keysSet, mergeWithKey)
+import           Data.Map                         (Map, fromSet, keysSet)
 import qualified Data.Map                         as M
 import           Data.Maybe
 import           Data.Semigroup.Foldable
@@ -105,7 +104,7 @@ instance ParsedCharacters FastaParseResult where
 
     unifyCharacters = foldMap f
       where
-        f (FastaSequence n s) = M.singleton (fromString s) (convertSeq (fromString s))
+        f (FastaSequence _ s) = M.singleton (fromString s) (convertSeq (fromString s))
         convertSeq = pure . parsedDynamicCharacterFromShortText
 
 

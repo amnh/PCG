@@ -39,7 +39,7 @@ import           Data.String                               (IsString (fromString
 import           Data.TCM                                  (TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
 import qualified Data.TCM                                  as TCM
 import           Data.Text.IO                              (readFile)
-import qualified Data.Text.Short                           as TS (ShortText, filter)
+import qualified Data.Text.Short                           as TS (ShortText)
 import           Data.Validation
 import qualified Data.Vector                               as V
 import           Data.Void

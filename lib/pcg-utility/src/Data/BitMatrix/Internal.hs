@@ -187,7 +187,7 @@ instance TextShow BitMatrix where
 
     showb bm = headerLine <> matrixLines
       where
-        renderRow   = foldMap (\bit -> if bit then singleton '1' else singleton '0') . toBits
+        renderRow   = foldMap (\b -> if b then singleton '1' else singleton '0') . toBits
         matrixLines = unlinesB $ renderRow <$> rows bm
         headerLine  = singleton '\n' <>
                     unwordsB

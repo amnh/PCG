@@ -179,15 +179,14 @@ rectifyResults2 fprs =
           -> PhylogeneticForest UnReifiedCharacterDAG
         matchToChars meta charMapping = fmap (PDAG meta . fmap f)
           where
-          --  f :: Maybe String -> PhylCogeneticNode NodeLabel _
             f label
-              = PNode nodeLabel $ fromMaybe defaultCharacterSequenceDatum charLabelMay
+              = PNode nodelabel_ $ fromMaybe defaultCharacterSequenceDatum charLabelMay
                 where
                   labelShort :: Maybe ShortText
                   labelShort   = coerce label
 
-                  nodeLabel :: NodeLabel
-                  nodeLabel = fromMaybe def label
+                  nodelabel_ :: NodeLabel
+                  nodelabel_ = fromMaybe def label
 
                   charLabelMay :: Maybe UnifiedCharacterSequence
                   charLabelMay = labelShort >>= (`lookup` charMapping)
