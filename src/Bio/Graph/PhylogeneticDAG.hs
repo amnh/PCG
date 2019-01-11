@@ -25,7 +25,6 @@ module Bio.Graph.PhylogeneticDAG
   , assignOptimalDynamicCharacterRootEdges
   , assignPunitiveNetworkEdgeCost
   , generateLocalResolutions
-  , phylogeneticForest
   , postorderSequence'
   , preorderFromRooting
   , preorderSequence

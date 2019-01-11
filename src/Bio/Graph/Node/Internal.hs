@@ -61,7 +61,7 @@ import Data.UnionSet
 import GHC.Generics
 import Text.Newick.Class
 import Text.XML
-import TextShow (TextShow(showb), unlinesB)
+import TextShow                    (TextShow (showb), unlinesB)
 
 -- |
 -- This serves as a computation /invariant/ node decoration designed to hold node

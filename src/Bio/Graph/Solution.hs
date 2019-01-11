@@ -17,9 +17,9 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MonoLocalBinds             #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
-{-# LANGUAGE OverloadedStrings          #-}
 
 module Bio.Graph.Solution
   ( PhylogeneticSolution(..)
@@ -48,8 +48,8 @@ import qualified Data.Text.Lazy            as L
 import           GHC.Generics
 import           Text.Newick.Class
 import           Text.XML
+import           TextShow                  (TextShow (showb, showtl), fromLazyText)
 import           Type.Reflection           (Typeable)
-import TextShow (TextShow (showb, showtl), fromLazyText)
 
 
 -- |

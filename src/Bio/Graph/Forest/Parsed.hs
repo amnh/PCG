@@ -39,7 +39,6 @@ import           Data.NodeLabel
 import qualified Data.Set                         as Set
 import           Data.ShortText.Custom            (intToShortText)
 import           Data.String                      (IsString (fromString))
-import           Data.Text.Short                  (ShortText)
 import           File.Format.Dot
 import           File.Format.Fasta
 import           File.Format.Fastc                hiding (Identifier)
@@ -154,13 +153,13 @@ instance ParsedForest (NonEmpty NewickForest) where
             f :: Map NodeLabel NewickEnum -> Int -> NewickNode -> (Map NodeLabel NewickEnum, Int, NewickEnum)
             f seen n node =
               let
-                nodeLabel = coerce . newickLabelShort $ node
+                nodelabel = coerce . newickLabelShort $ node
               in
-                case nodeLabel >>= (`lookup` seen) of
+                case nodelabel >>= (`lookup` seen) of
                   Just x  -> (seen, n, x)
                   Nothing ->
                     case descendants node of
-                      [] -> let enumed = NE n nodeLabel (branchLength node) []
+                      [] -> let enumed = NE n nodelabel (branchLength node) []
                                 seen'  =
                                   case newickLabel node of
                                     Nothing -> seen
@@ -169,7 +168,7 @@ instance ParsedForest (NonEmpty NewickForest) where
                       xs -> let recursiveResult = NE.scanr (\e (x,y,_) -> f x y e) (seen, n+1, undefined) xs
                                 (seen', n', _)  = NE.head recursiveResult
                                 childEnumed     = (\(_,_,x) -> x) <$> NE.init recursiveResult
-                                enumed          = NE n nodeLabel (branchLength node) childEnumed
+                                enumed          = NE n nodelabel (branchLength node) childEnumed
                                 seen''          =
                                   case newickLabel node of
                                     Nothing -> seen'

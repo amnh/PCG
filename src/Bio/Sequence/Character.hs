@@ -16,9 +16,9 @@
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
 
@@ -42,8 +42,8 @@ import           Data.Vector.NonEmpty    (Vector)
 import qualified Data.Vector.NonEmpty    as V
 import           GHC.Generics
 import           Text.XML
-import TextShow (TextShow)
-import TextShow.Instances()
+import           TextShow                (TextShow)
+import           TextShow.Instances      ()
 
 -- |
 -- A multi-level partitioned, non-empty sequence of characters.

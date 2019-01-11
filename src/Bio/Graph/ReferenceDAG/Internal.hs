@@ -20,10 +20,10 @@
 {-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UnboxedSums                #-}
-{-# LANGUAGE OverloadedStrings          #-}
 
 module Bio.Graph.ReferenceDAG.Internal where
 
@@ -65,6 +65,7 @@ import           Data.Semigroup.Foldable
 import           Data.Set                      (Set)
 import qualified Data.Set                      as S
 import           Data.String
+import qualified Data.TextShow.Custom          as TextShow (intercalateB)
 import           Data.Traversable
 import           Data.Tree                     (unfoldTree)
 import           Data.Tree.Pretty              (drawVerticalTree)
@@ -80,8 +81,7 @@ import           Numeric.Extended.Real
 import           Prelude                       hiding (lookup, zipWith)
 import           Text.Newick.Class
 import           Text.XML.Custom
-import TextShow (TextShow(..), Builder, unlinesB, toString)
-import qualified Data.TextShow.Custom as TextShow (intercalateB)
+import           TextShow                      (TextShow (..), toString, unlinesB)
 
 
 -- |

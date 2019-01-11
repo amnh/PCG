@@ -275,5 +275,5 @@ extractRefDAGfromDec finalDecDAG =
     refDAGNoMetadata = decRefDAG        & (_graphData . _graphMetadata) .~ ()
     refDAGNoEdgeData = refDAGNoMetadata & (_references . mapped . _childRefs . mapped) %~ fst
     refDAG           = refDAGNoEdgeData &
-                         (_references . mapped . _nodeDecoration) %~ Just . show . nodeDecorationDatum2
+                         (_references . mapped . _nodeDecoration) %~ Just . nodeDecorationDatum2
   in refDAG
