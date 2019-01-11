@@ -134,32 +134,32 @@ library
     pcg-file-parsers,
     pcg-utility,
     base                    ^>= 4.12.0    && < 4.13.0,
-    bimap                   ^>= 0.3.3     && < 0.4,
-    binary                  ^>= 0.8.6     && < 0.9,
+    bimap                   ^>= 0.3       && < 0.4,
+    binary                  ^>= 0.8       && < 0.9,
     bv-little               ^>= 0.1.2     && < 0.2,
-    cassava                 ^>= 0.5.0     && < 0.6,
-    compact                 ^>= 0.1.0     && < 0.2,
+    cassava                 ^>= 0.5       && < 0.6,
+    compact                 ^>= 0.1       && < 0.2,
     -- >=0.5.8 Required for Data.Map.restrictKeys
     containers               >= 0.5.8     && < 0.7,
-    data-default            ^>= 0.7.1     && < 0.8,
-    deepseq                 ^>= 1.4.4     && < 1.5,
-    dlist                   ^>= 0.8.0     && < 0.9,
-    foldl                   ^>= 1.4.5     && < 1.5,
+    data-default            ^>= 0.7       && < 0.8,
+    deepseq                 ^>= 1.4       && < 1.5,
+    dlist                   ^>= 0.8       && < 0.9,
+    foldl                   ^>= 1.4       && < 1.5,
     -- >=2999.20 Required for forgiving construction of DOT object
     graphviz                 >= 2999.20.0 && < 2999.21,
-    hashable                ^>= 1.2.7     && < 1.3,
-    integer-gmp             ^>= 1.0.2     && < 1.1,
-    keys                    ^>= 3.12.1    && < 3.13,
+    hashable                ^>= 1.2       && < 1.3,
+    integer-gmp             ^>= 1.0       && < 1.1,
+    keys                    ^>= 3.12      && < 3.13,
     lens                    ^>= 4.17      && < 4.18,
-    mono-traversable        ^>= 1.0.10    && < 1.1,
-    mtl                     ^>= 2.2.2     && < 2.3,
-    parallel                ^>= 3.2.2     && < 3.3,
-    pointed                 ^>= 5.0.1     && < 5.1,
-    pretty-tree             ^>= 0.1.0     && < 0.2,
-    QuickCheck              ^>= 2.12.6    && < 2.13,
+    mono-traversable        ^>= 1.0       && < 1.1,
+    mtl                     ^>= 2.2       && < 2.3,
+    parallel                ^>= 3.2       && < 3.3,
+    pointed                 ^>= 5.0       && < 5.1,
+    pretty-tree             ^>= 0.1       && < 0.2,
+    QuickCheck              ^>= 2.12      && < 2.13,
     -- required for Data.Semigroup.Foldable.toNonEmpty
     semigroupoids            >= 5.2.1     && < 5.4,
-    semigroups              ^>= 0.18.5    && < 0.19,
+    semigroups              ^>= 0.18      && < 0.19,
     smallcheck              ^>= 1.1.5     && < 1.2,
     text                    ^>= 1.2.3     && < 1.3,
     text-short              ^>= 0.1.2     && < 0.2,
@@ -339,9 +339,9 @@ library pcg-file-parsers
     containers              ^>= 0.5.8     && < 0.7,
     dlist                   ^>= 0.8.0     && < 0.9,
     graphviz                 >= 2999.20.0 && < 2999.21,
-    keys                    ^>= 3.12.1    && < 3.13,
+    keys                    ^>= 3.12      && < 3.13,
     megaparsec              ^>= 7.0       && < 7.1,
-    mtl                     ^>= 2.2.2     && < 2.3,
+    mtl                     ^>= 2.2       && < 2.3,
     parser-combinators      ^>= 1.0       && < 1.1,
     safe                    ^>= 0.3.17    && < 0.4,
     scientific              ^>= 0.3.6     && < 0.4,
@@ -404,7 +404,7 @@ library pcg-language
     case-insensitive        ^>= 1.2.0     && < 1.3,
     containers              ^>= 0.5.8     && < 0.7,
     free                    ^>= 5.1       && < 5.2,
-    keys                    ^>= 3.12.1    && < 3.13,
+    keys                    ^>= 3.12      && < 3.13,
     megaparsec              ^>= 7.0.0     && < 7.1,
     parser-combinators      ^>= 1.0.0     && < 1.1,
     scientific              ^>= 0.3.6     && < 0.4,
@@ -441,18 +441,18 @@ library pcg-utility
 
   build-depends:
     base                    ^>= 4.12.0    && < 4.13,
-    binary                  ^>= 0.8.6     && < 0.9,
+    binary                  ^>= 0.8       && < 0.9,
     bv-little               ^>= 0.1.2     && < 0.2,
     containers              ^>= 0.5.8     && < 0.7,
     directory               ^>= 1.3.3     && < 1.4,
-    deepseq                 ^>= 1.4.4     && < 1.5,
+    deepseq                 ^>= 1.4       && < 1.5,
     hashable                ^>= 1.2.7     && < 1.3,
     integer-gmp             ^>= 1.0.2     && < 1.1,
-    keys                    ^>= 3.12.1    && < 3.13,
+    keys                    ^>= 3.12      && < 3.13,
     lens                    ^>= 4.17      && < 4.18,
     matrix                  ^>= 0.3.6     && < 0.4,
     mono-traversable        ^>= 1.0.10    && < 1.1,
-    QuickCheck              ^>= 2.12.6    && < 2.13,
+    QuickCheck              ^>= 2.12      && < 2.13,
     transformers            ^>= 0.5.5     && < 0.6,
     validation              ^>= 1         && < 1.1,
     vector                   >= 0.12.0.2  && < 0.13,
@@ -498,29 +498,29 @@ executable pcg
     pcg-utility,
     ansi-wl-pprint          ^>= 0.6.8     && < 0.7,
     base                    ^>= 4.12.0    && < 4.13,
-    binary                  ^>= 0.8.6     && < 0.9,
+    binary                  ^>= 0.8       && < 0.9,
     bytestring              ^>= 0.10.8    && < 0.11,
     cassava                 ^>= 0.5.0     && < 0.6,
     compact                 ^>= 0.1.0     && < 0.2,
     -- Required for Data.Map.restrictKeys
     containers               >= 0.5.8     && < 0.7,
     data-default            ^>= 0.7.1     && < 0.8,
-    deepseq                 ^>= 1.4.4     && < 1.5,
+    deepseq                 ^>= 1.4       && < 1.5,
     directory               ^>= 1.3.3     && < 1.4,
     filepath                ^>= 1.4.2     && < 1.5,
     gitrev                  ^>= 1.3.1     && < 1.4,
     Glob                    ^>= 0.10.0    && < 0.11,
     -- >=2999.20 Required for forgivig constructio of DOT object
     graphviz                 >= 2999.20.0 && < 2999.21,
-    keys                    ^>= 3.12.1    && < 3.13,
+    keys                    ^>= 3.12      && < 3.13,
     lens                    ^>= 4.17      && < 4.18,
     megaparsec              ^>= 7.0       && < 7.1,
-    optparse-applicative    ^>= 0.14.3    && < 0.15,
-    parallel                ^>= 3.2.2     && < 3.3,
+    optparse-applicative    ^>= 0.14      && < 0.15,
+    parallel                ^>= 3.2       && < 3.3,
     random-shuffle          ^>= 0.0.4     && < 0.1,
     -- required for Data.Semigroup.Foldable.toNonEmpty
     semigroupoids            >= 5.2.1     && < 5.4,
-    semigroups              ^>= 0.18.5    && < 0.19,
+    semigroups              ^>= 0.18      && < 0.19,
     text                    ^>= 1.2.3     && < 1.3,
     text-short              ^>= 0.1.2     && < 0.2,
     transformers            ^>= 0.5.5     && < 0.6,
@@ -560,7 +560,7 @@ executable fasta-differ
     pcg-file-parsers,
     base                    ^>= 4.12.0    && < 4.13,
     containers              ^>= 0.5.8     && < 0.7,
-    keys                    ^>= 3.12.1    && < 3.13,
+    keys                    ^>= 3.12      && < 3.13,
     megaparsec              ^>= 7.0       && < 7.1,
 
 
@@ -577,8 +577,8 @@ executable 2d-do-comparison
   build-depends:
     phylocomgraph,
     base                    ^>= 4.12.0    && < 4.13,
-    bimap                   ^>= 0.3.3     && < 0.4,
-    QuickCheck              ^>= 2.12.6    && < 2.13,
+    bimap                   ^>= 0.3       && < 0.4,
+    QuickCheck              ^>= 2.12      && < 2.13,
 
 
 executable 3d-do-comparison
@@ -594,9 +594,9 @@ executable 3d-do-comparison
   build-depends:
     phylocomgraph,
     base                    ^>= 4.12.0    && < 4.13,
-    bimap                   ^>= 0.3.3     && < 0.4,
-    deepseq                 ^>= 1.4.4     && < 1.5,
-    QuickCheck              ^>= 2.12.6    && < 2.13,
+    bimap                   ^>= 0.3       && < 0.4,
+    deepseq                 ^>= 1.4       && < 1.5,
+    QuickCheck              ^>= 2.12      && < 2.13,
 
 
 executable affine-safety
@@ -612,8 +612,8 @@ executable affine-safety
   build-depends:
     phylocomgraph,
     base                    ^>= 4.12.0    && < 4.13,
-    bimap                   ^>= 0.3.3     && < 0.4,
-    QuickCheck              ^>= 2.12.6    && < 2.13,
+    bimap                   ^>= 0.3       && < 0.4,
+    QuickCheck              ^>= 2.12      && < 2.13,
 
 
 executable generate-data-set
@@ -630,10 +630,10 @@ executable generate-data-set
     ansi-wl-pprint          ^>= 0.6.8     && < 0.7,
     base                    ^>= 4.12.0    && < 4.13,
     containers              ^>= 0.5.8     && < 0.7,
-    keys                    ^>= 3.12.1    && < 3.13,
+    keys                    ^>= 3.12      && < 3.13,
     MemoTrie                ^>= 0.6.9     && < 0.7,
-    mtl                     ^>= 2.2.2     && < 2.3,
-    optparse-applicative    ^>= 0.14.3    && < 0.15,
+    mtl                     ^>= 2.2       && < 2.3,
+    optparse-applicative    ^>= 0.14      && < 0.15,
     random                  ^>= 1.1       && < 1.2,
     random-shuffle          ^>= 0.0.4     && < 0.1,
     vector                   >= 0.12.0.2  && < 0.13,
@@ -655,8 +655,8 @@ executable generate-tcm
     ansi-wl-pprint          ^>= 0.6.8     && < 0.7,
     base                    ^>= 4.12.0    && < 4.13,
     containers              ^>= 0.5.8     && < 0.7,
-    keys                    ^>= 3.12.1    && < 3.13,
-    optparse-applicative    ^>= 0.14.3    && < 0.15,
+    keys                    ^>= 3.12      && < 3.13,
+    optparse-applicative    ^>= 0.14      && < 0.15,
     vector                   >= 0.12.0.2  && < 0.13,
 
 
@@ -689,8 +689,8 @@ executable sequential-alignment-invariants
   build-depends:
     phylocomgraph,
     base                    ^>= 4.12.0    && < 4.13,
-    bimap                   ^>= 0.3.3     && < 0.4,
-    QuickCheck              ^>= 2.12.6    && < 2.13,
+    bimap                   ^>= 0.3       && < 0.4,
+    QuickCheck              ^>= 2.12      && < 2.13,
 
 
 executable three-way-mean-check
@@ -706,9 +706,9 @@ executable three-way-mean-check
   build-depends:
     phylocomgraph,
     base                    ^>= 4.12.0    && < 4.13,
-    bimap                   ^>= 0.3.3     && < 0.4,
+    bimap                   ^>= 0.3       && < 0.4,
     lens                    ^>= 4.17      && < 4.18,
-    QuickCheck              ^>= 2.12.6    && < 2.13,
+    QuickCheck              ^>= 2.12      && < 2.13,
 
 
 executable ukkonen-do-comparison
@@ -724,8 +724,8 @@ executable ukkonen-do-comparison
   build-depends:
     phylocomgraph,
     base                    ^>= 4.12.0    && < 4.13,
-    bimap                   ^>= 0.3.3     && < 0.4,
-    QuickCheck              ^>= 2.12.6    && < 2.13,
+    bimap                   ^>= 0.3       && < 0.4,
+    QuickCheck              ^>= 2.12      && < 2.13,
 
 
 executable pcg-file-parsers-file-tests
@@ -778,19 +778,19 @@ test-suite integration-tests
     pcg-utility,
     phylocomgraph,
     base                    ^>= 4.12.0    && < 4.13,
-    binary                  ^>= 0.8.6     && < 0.9,
+    binary                  ^>= 0.8       && < 0.9,
     bytestring              ^>= 0.10.8    && < 0.11,
     containers              ^>= 0.5.8     && < 0.7,
-    deepseq                 ^>= 1.4.4     && < 1.5,
+    deepseq                 ^>= 1.4       && < 1.5,
     directory               ^>= 1.3.3     && < 1.4,
     filepath                ^>= 1.4.2     && < 1.5,
     lens                    ^>= 4.17      && < 4.18,
-    process ,
-    semigroups              ^>= 0.18.5    && < 0.19,
+    process                 ^>= 1.6       && < 2.0,
+    semigroups              ^>= 0.18      && < 0.19,
     tasty                   ^>= 1.2       && < 1.3,
-    tasty-golden,
+    tasty-golden            ^>= 2.3       && < 3.0,
     tasty-hunit             ^>= 0.10.0    && < 0.11,
-    tasty-rerun
+    tasty-rerun             ^>= 1.1.14    && < 2.0
 
   other-modules:
     TestSuite.GoldenTests
@@ -828,32 +828,31 @@ test-suite unit-tests
     pcg-utility,
     phylocomgraph,
     base                    ^>= 4.12.0    && < 4.13,
-    bimap                   ^>= 0.3.3     && < 0.4,
-    binary                  ^>= 0.8.6     && < 0.9,
+    bimap                   ^>= 0.3       && < 0.4,
+    binary                  ^>= 0.8       && < 0.9,
     bv-little               ^>= 0.1.2     && < 0.2,
-    cassava                 ^>= 0.5       && < 0.6,
     containers              ^>= 0.5.8     && < 0.7,
-    deepseq                 ^>= 1.4.4     && < 1.5,
+    deepseq                 ^>= 1.4       && < 1.5,
     dlist                   ^>= 0.8.0     && < 0.9,
     foldl                   ^>= 1.4.5     && < 1.5,
     graphviz                 >= 2999.20.0 && < 2999.21,
     hashable                ^>= 1.2.7     && < 1.3,
     integer-gmp             ^>= 1.0.2     && < 1.1,
-    keys                    ^>= 3.12.1    && < 3.13,
+    keys                    ^>= 3.12      && < 3.13,
     lens                    ^>= 4.17      && < 4.18,
     mono-traversable        ^>= 1.0.10    && < 1.1,
-    mtl                     ^>= 2.2.2     && < 2.3,
-    pointed                 ^>= 5.0.1     && < 5.1,
-    pretty-tree             ^>= 0.1.0     && < 0.2,
-    QuickCheck              ^>= 2.12.6    && < 2.13,
+    mtl                     ^>= 2.2       && < 2.3,
+    pointed                 ^>= 5.0       && < 5.1,
+    pretty-tree             ^>= 0.1       && < 0.2,
+    QuickCheck              ^>= 2.12      && < 2.13,
     semigroupoids           ^>= 5.2.1     && < 5.4,
-    semigroups              ^>= 0.18.5    && < 0.19,
+    semigroups              ^>= 0.18      && < 0.19,
     smallcheck              ^>= 1.1.5     && < 1.2,
     tasty                   ^>= 1.2       && < 1.3,
     tasty-hunit             ^>= 0.10.0    && < 0.11,
-    tasty-quickcheck,
-    tasty-smallcheck,
-    tasty-rerun,
+    tasty-quickcheck        ^>= 0.9       && < 1.0,
+    tasty-smallcheck        ^>= 0.8       && < 1.0,
+    tasty-rerun             ^>= 1.1.14    && < 2.0,
     transformers            ^>= 0.5.5     && < 0.6,
     unordered-containers    ^>= 0.2.9     && < 0.3,
     vector                   >= 0.12.0.2  && < 0.13,
@@ -890,7 +889,7 @@ test-suite unit-tests
     Bio.Character.Encodable.Stream
     Bio.Character.Exportable
     Bio.Character.Exportable.Class
-    Bio.Character.Type
+--    Bio.Character.Type
     Bio.Graph.BinaryRenderingTree
     Bio.Graph.Component
     Bio.Graph.LeafSet
@@ -943,14 +942,14 @@ test-suite pcg-utility-test-suite
     pcg-utility,
     base                    ^>= 4.12.0    && < 4.13,
     bv-little               ^>= 0.1.2     && < 0.2,
-    deepseq                 ^>= 1.4.4     && < 1.5,
+    deepseq                 ^>= 1.4       && < 1.5,
     integer-gmp             ^>= 1.0.2     && < 1.1,
     mono-traversable        ^>= 1.0.10    && < 1.1,
-    QuickCheck              ^>= 2.12.6    && < 2.13,
+    QuickCheck              ^>= 2.12      && < 2.13,
     tasty                   ^>= 1.2       && < 1.3,
     tasty-hunit             ^>= 0.10.0    && < 0.11,
-    tasty-quickcheck,
-    tasty-rerun
+    tasty-quickcheck        ^>= 0.9       && < 1.0,
+    tasty-rerun             ^>= 1.1.14    && < 2.0,
                     
   other-modules:
     Data.BitMatrix.Test
@@ -981,8 +980,8 @@ test-suite pcg-file-parsers-unit-tests
     case-insensitive        ^>= 1.2.0     && < 1.3,
     containers              ^>= 0.5.8     && < 0.7,
     dlist                   ^>= 0.8.0     && < 0.9,
-    either,
-    keys                    ^>= 3.12.1    && < 3.13,
+    either                  ^>= 5.0       && < 6.0,
+    keys                    ^>= 3.12      && < 3.13,
     megaparsec              ^>= 7.0       && < 7.1,
     parser-combinators      ^>= 1.0       && < 1.1,
     safe                    ^>= 0.3.17    && < 0.4,
@@ -990,8 +989,8 @@ test-suite pcg-file-parsers-unit-tests
     smallcheck              ^>= 1.1.5     && < 1.2,
     tasty                   ^>= 1.2       && < 1.3,
     tasty-hunit             ^>= 0.10.0    && < 0.11,
-    tasty-quickcheck,
-    tasty-rerun,
+    tasty-quickcheck        ^>= 0.9       && < 1.0,
+    tasty-rerun             ^>= 1.1.14    && < 2.0,
     vector                   >= 0.12.0.2  && < 0.13,
 
   other-modules:
@@ -1033,9 +1032,9 @@ benchmark pcg-utility-benchmark-suite
   build-depends:
     pcg-utility,
     base                    ^>= 4.12.0    && < 4.13,
-    criterion,
-    deepseq                 ^>= 1.4.4     && < 1.5,
-    ghc-prim,
+    criterion               ^>= 1.5       && < 1.6,
+    deepseq                 ^>= 1.4       && < 1.5,
+    ghc-prim                ^>= 0.5       && < 0.6,
 
   ghc-options:
     -fdicts-cheap
