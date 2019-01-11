@@ -34,3 +34,5 @@ packages:
 require-stack-version: ">=1.7.1"
 
 resolver: lts-13.2
+
+dump-logs: all
