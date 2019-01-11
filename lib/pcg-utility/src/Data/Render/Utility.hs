@@ -21,8 +21,8 @@ module Data.Render.Utility
 
 import Control.Exception      (bracket)
 import Control.Monad.IO.Class (MonadIO (liftIO))
-import Data.Text              (Text)
-import Data.Text.IO           (hPutStr)
+import Data.Text.Lazy         (Text)
+import Data.Text.Lazy.IO      (hPutStr)
 import Pipes                  (Producer, for, runEffect, yield)
 import Prelude                hiding (writeFile)
 import System.IO              (IOMode, hClose, openFile)
@@ -32,14 +32,13 @@ import TextShow
 -- |
 -- Streams text to a file in constant memory for any type with a `TextShow`
 -- instance.
-writeFileT :: TextShow text => IOMode -> FilePath -> text -> IO ()
+writeFileT :: IOMode -> FilePath -> Text -> IO ()
 writeFileT mode fp text = do
   h <- openFile fp mode
-  let builder = showb text
-  runEffect $ for (builderTextProducer builder) (liftIO . hPutStr h)
+  runEffect $ for (textProducer text) (liftIO . hPutStr h)
   hClose h
 
 -- |
 -- Efficiently yield text from a 'Builder' type.
-builderTextProducer :: Monad m => Builder -> Producer Text m ()
-builderTextProducer = yield . toText
+textProducer :: Monad m => Text -> Producer Text m ()
+textProducer = yield
