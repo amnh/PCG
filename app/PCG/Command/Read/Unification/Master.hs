@@ -12,9 +12,9 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns      #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module PCG.Command.Read.Unification.Master
@@ -51,6 +51,7 @@ import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Alphabet
 import           Data.Bifunctor                                (first)
+import           Data.Coerce                                   (coerce)
 import           Data.Default
 import           Data.Foldable
 import qualified Data.IntMap                                   as IM
@@ -63,6 +64,7 @@ import           Data.List.Utility                             (duplicates)
 import           Data.Map                                      (Map, intersectionWith, keys)
 import qualified Data.Map                                      as Map
 import           Data.Maybe                                    (catMaybes, fromMaybe, listToMaybe)
+import           Data.NodeLabel
 import           Data.Semigroup                                (sconcat, (<>))
 import           Data.Semigroup.Foldable
 import           Data.Set                                      (Set, (\\))
@@ -70,8 +72,6 @@ import qualified Data.Set                                      as Set
 import           Data.String
 import           Data.TCM                                      (TCM, TCMStructure (..))
 import qualified Data.TCM                                      as TCM
-import           Data.Coerce                                   (coerce)
-import           Data.NodeLabel
 import           Data.Text.Short                               (ShortText, toString)
 import           Data.Vector                                   (Vector)
 import           PCG.Command.Read.Unification.UnificationError
@@ -139,8 +139,8 @@ rectifyResults2 fprs =
     missingNames    = filter (not . all null . fst) $ first (fmap ((taxaSet \\) . Set.fromList . toList)) `parmap'` forestTaxa
     -- Step 7: Combine disparte sequences from many sources into single metadata & character sequence.
     (metaSeq,charSeqs) = joinSequences2 dataSeqs
-    charSeqs' :: Map ShortText UnifiedCharacterSequence
-    charSeqs' = Map.mapKeysMonotonic fromString charSeqs
+   -- charSeqs' :: Map ShortText UnifiedCharacterSequence
+   -- charSeqs' = Map.mapKeysMonotonic fromString charSeqs
     -- Step 8: Collect the parsed forests to be merged
     suppliedForests :: [PhylogeneticForest ParserTree]
     suppliedForests = foldMap toList . catMaybes $ parsedForests `parmap'` allForests
@@ -160,7 +160,7 @@ rectifyResults2 fprs =
           (False, True , _        ) -> Right . Left  . PhylogeneticSolution $ NE.fromList suppliedForests
 
           -- Build a forest with the corresponding character data on the nodes
-          (False, False, Just meta) -> Right . Right . PhylogeneticSolution $ matchToChars meta charSeqs' <$> NE.fromList suppliedForests
+          (False, False, Just meta) -> Right . Right . PhylogeneticSolution $ matchToChars meta charSeqs <$> NE.fromList suppliedForests
       where
         defaultCharacterSequenceDatum = over blockSequence (fmap blockTransform) . head $ toList charSeqs
           where
@@ -168,8 +168,8 @@ rectifyResults2 fprs =
             f = const Nothing
 
         singletonComponent meta (label, datum) = PhylogeneticForest . pure . PDAG meta $ DAG.fromList
-            [ (        mempty, PNode (fromString "Trivial Root") defaultCharacterSequenceDatum, IM.singleton 1 mempty)
-            , (IS.singleton 0, PNode (fromString label         )                         datum, mempty               )
+            [ (        mempty, PNode (nodeLabel "Trivial Root") defaultCharacterSequenceDatum, IM.singleton 1 mempty)
+            , (IS.singleton 0, PNode (nodeLabel label         )                         datum, mempty               )
             ]
 
         matchToChars
@@ -255,7 +255,7 @@ rectifyResults2 fprs =
 -- * Lastly we collapse the many parse results into a single map of charcter
 --   blocks wrapped together as a charcter sequence. This will properly add
 --   missing character values to taxa provided in other files.
-joinSequences2 :: Foldable t => t FracturedParseResult -> (Maybe UnifiedMetadataSequence, Map String UnifiedCharacterSequence)
+joinSequences2 :: Foldable t => t FracturedParseResult -> (Maybe UnifiedMetadataSequence, Map ShortText UnifiedCharacterSequence)
 joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorrectTCMs . deriveCharacterNames
   where
 
@@ -265,10 +265,9 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
     deriveCharacterNames
       :: Foldable t
       => t FracturedParseResult
-      -> [ Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, ShortText, Maybe (TCM, TCMStructure), CharacterName)) ]
+      -> [ Map ShortText (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, ShortText, Maybe (TCM, TCMStructure), CharacterName)) ]
     deriveCharacterNames xs = reverse . snd $ foldl' g (charNames, []) xs
       where
-        ---g :: _
         g (propperNames, ys) fpr = (drop (length localMetadata) propperNames, newMap:ys)
           where
             localMetadata = parsedMetas fpr
@@ -292,8 +291,8 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
 
     deriveCorrectTCMs
       :: Functor f
-      => f (Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, ShortText, Maybe (TCM, TCMStructure), CharacterName)))
-      -> f (Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, ShortText, TCM, TCMStructure, CharacterName)))
+      => f (Map ShortText (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, ShortText, Maybe (TCM, TCMStructure), CharacterName)))
+      -> f (Map ShortText (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, ShortText, TCM, TCMStructure, CharacterName)))
     deriveCorrectTCMs = fmap (fmap (fmap selectTCM))
       where
         selectTCM (charMay, charMetadata, charSource, tcmMay, charName) = (charMay, charMetadata, tcmSource, selectedTCM, selectedStructure, charName)
@@ -315,13 +314,13 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
 
     performMetadataTransformations
       :: Functor f
-      => f (Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, ShortText, TCM, TCMStructure, CharacterName)))
-      -> f (Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, ShortText, Word -> Word -> Word, TCMStructure, CharacterName)))
+      => f (Map ShortText (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, ShortText, TCM, TCMStructure, CharacterName)))
+      -> f (Map ShortText (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, ShortText, Word -> Word -> Word, TCMStructure, CharacterName)))
     performMetadataTransformations = fmap reduceFileBlock
       where
         reduceFileBlock mapping = fmap (zipWith updateMetadataInformation updatedMetadataTokens) mapping
           where
-            updatedMetadataTokens :: NonEmpty (Alphabet String, Word -> Word -> Word)
+            updatedMetadataTokens :: NonEmpty (Alphabet ShortText, Word -> Word -> Word)
             updatedMetadataTokens = fmap generateMetadataToken . NE.fromList . transpose . fmap toList $ toList mapping
              where
                generateMetadataToken                []  = error "Should never happen in reduceAlphabets.reduceFileBlock.observedSymbolSets.generateObservedSymbolSetForCharacter" -- mempty
@@ -337,12 +336,13 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
                                         in (\i j -> toEnum . fromEnum $ tcm' TCM.! (i,j))
 
         updateMetadataInformation
-          :: (Alphabet String, Word -> Word -> Word)
+          :: (Alphabet ShortText, Word -> Word -> Word)
           -> (ParsedCharacter, ParsedCharacterMetadata, ShortText, TCM, TCMStructure, CharacterName)
           -> (ParsedCharacter, ParsedCharacterMetadata, ShortText, Word -> Word -> Word, TCMStructure, CharacterName)
         updateMetadataInformation (reducedAlphabet, symbolDistance) (charMay, charMetadata, tcmSourceFile, _, structure, charName) =
             ( charMay
-            , charMetadata { alphabet = fromString <$> reducedAlphabet }
+            , charMetadata { alphabet = reducedAlphabet }
+            , tcmSourceFile
             , symbolDistance
             , structure
             , charName
@@ -350,13 +350,13 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
 
     collapseAndMerge
       :: Foldable f
-      => f (Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, ShortText, Word -> Word -> Word, TCMStructure, CharacterName)))
-      -> (Maybe UnifiedMetadataSequence, Map String UnifiedCharacterSequence)
+      => f (Map ShortText (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, ShortText, Word -> Word -> Word, TCMStructure, CharacterName)))
+      -> (Maybe UnifiedMetadataSequence, Map ShortText UnifiedCharacterSequence)
     collapseAndMerge = (fmap MD.fromNonEmpty *** fmap CS.fromNonEmpty) . fst . foldl' f ((mempty, mempty), [])
       where
-        f :: ((Maybe (NonEmpty UnifiedMetadataBlock), Map String (NonEmpty UnifiedCharacterBlock)), [UnifiedCharacterBlock])
-          -> Map String (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, ShortText, Word -> Word -> Word, TCMStructure, CharacterName))
-          -> ((Maybe (NonEmpty UnifiedMetadataBlock), Map String (NonEmpty UnifiedCharacterBlock)), [UnifiedCharacterBlock])
+        f :: ((Maybe (NonEmpty UnifiedMetadataBlock), Map ShortText (NonEmpty UnifiedCharacterBlock)), [UnifiedCharacterBlock])
+          -> Map ShortText (NonEmpty (ParsedCharacter, ParsedCharacterMetadata, ShortText, Word -> Word -> Word, TCMStructure, CharacterName))
+          -> ((Maybe (NonEmpty UnifiedMetadataBlock), Map ShortText (NonEmpty UnifiedCharacterBlock)), [UnifiedCharacterBlock])
         f ((prevMeta, prevMapping), prevPad) currTreeChars = ((nextMeta, nextMapping), nextPad)
           where
             nextMapping   = inOnlyPrev <> inBoth <> inOnlyCurr
@@ -383,11 +383,11 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
               :: Foldable1 t
               => t (ParsedCharacter
                    , ParsedCharacterMetadata
+                   , ShortText
                    , Word -> Word -> Word
                    , TCMStructure
                    , CharacterName
                    )
-              => t (ParsedCharacter, ParsedCharacterMetadata, ShortText, Word -> Word -> Word, TCMStructure, CharacterName)
               -> UnifiedMetadataBlock
             buildMetadataBlock = foldMap1 encodeToSingletonMetadata
               where
@@ -400,10 +400,10 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
                         $ continuousMetadata charName charWeight
                       ParsedDiscreteCharacter   {} ->
                           MD.discreteToMetadataBlock structure
-                        $ discreteMetadataWithTCM charName charWeight specifiedAlphabet scm
+                        $ discreteMetadataWithTCM charName charWeight specifiedAlphabet tcmSource scm
                       ParsedDynamicCharacter    {} ->
                           MD.dynamicToMetadataBlock
-                        $ dynamicMetadataWithTCM charName charWeight specifiedAlphabet scm
+                        $ dynamicMetadataWithTCM charName charWeight specifiedAlphabet tcmSource scm
 
 
                   where
