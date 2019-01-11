@@ -7,22 +7,21 @@ module PCG.Command.Report.Evaluate
   ) where
 
 
-import Bio.Graph
-import Control.Monad.IO.Class
-import Data.List.NonEmpty
-import PCG.Command.Report
-import PCG.Command.Report.GraphViz
-import Text.XML
-import TextShow (TextShow (showtl), printT)
-import Data.Render.Utility (writeFileT)
-import System.IO (IOMode(AppendMode, WriteMode))
-import qualified Data.Text.Lazy as Lazy
-import Data.Foldable (traverse_)
+import           Bio.Graph
+import           Control.Monad.IO.Class
 import qualified Data.ByteString.Lazy        as BS
 import           Data.Compact                (getCompact)
+import           Data.Foldable               (traverse_)
 import           Data.List.NonEmpty
+import           Data.Render.Utility         (writeFileT)
+import           Data.String                 (IsString (fromString))
+import qualified Data.Text.Lazy              as Lazy
+import           PCG.Command.Report
+import           PCG.Command.Report.GraphViz
 import           PCG.Command.Report.Metadata
+import           System.IO                   (IOMode (AppendMode, WriteMode))
 import           Text.XML
+import           TextShow                    (TextShow (showtl), printT)
 
 
 
@@ -32,15 +31,15 @@ evaluate (ReportCommand format target) stateValue = do
            ErrorCase    errMsg  -> fail errMsg
            MultiStream  streams ->
              traverse_
-               (\(filepath, content) -> liftIO $ (writeFileT WriteMode filepath content))
+               (\(filepath, content) -> liftIO $ writeFileT WriteMode filepath content)
                streams
            SingleStream output  ->
              let op = case target of
                         OutputToStdout   -> printT
                         OutputToFile f w ->
                           case w of
-                            Append    -> appendFile f
-                            Overwrite -> writeFile  f
+                            Append    -> writeFileT AppendMode f
+                            Overwrite -> writeFileT WriteMode  f
              in  liftIO (op output)
            SingleByteStream  output ->
              let op = case target of
@@ -73,8 +72,8 @@ generateOutput
   -> FileStreamContext
 generateOutput g' format =
   case format of
-    Data     {} -> SingleStream $ either show show g
-    XML      {} -> SingleStream $ either show (ppTopElement . toXML) g
+    Data     {} -> SingleStream $ either showtl showtl g
+    XML      {} -> SingleStream $ either showtl (fromString . ppTopElement . toXML) g
     DotFile  {} -> SingleStream $ generateDotFile g'
     Metadata {} -> either
                      (const $ ErrorCase "No metadata in topological solution")
