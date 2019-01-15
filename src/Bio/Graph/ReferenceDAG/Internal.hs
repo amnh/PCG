@@ -73,7 +73,7 @@ import qualified Data.Vector                   as V
 import           Data.Vector.Binary            ()
 import qualified Data.Vector.Custom            as V (fromList')
 import           Data.Vector.Instances         ()
-import           Data.Vector.Utility           as DV
+import           Data.MemoVector              as DV
 import           GHC.Generics
 import           Numeric.Extended.Real
 import           Prelude                       hiding (lookup, zipWith)
