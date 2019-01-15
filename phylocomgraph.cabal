@@ -131,8 +131,10 @@ library
   hs-source-dirs:   src
 
   build-depends:
+    alphabet,
     pcg-file-parsers,
     pcg-utility,
+    serialize,
     base                    ^>= 4.12.0    && < 4.13.0,
     bimap                   ^>= 0.3.3     && < 0.4,
     binary                  ^>= 0.8.6     && < 0.9,
@@ -219,8 +221,6 @@ library
     Bio.Graph.ZipperDAG
     Control.Evaluation
     Control.Monad.Logger
-    Data.Alphabet
-    Data.Alphabet.IUPAC
     Data.EdgeLength
     Data.TCM
     Data.TCM.Dense
@@ -229,15 +229,8 @@ library
     Data.TCM.Memoized.FFI
     Data.TopologyRepresentation
     Data.NodeLabel
-    Data.Vector.Custom
-    Data.Vector.NonEmpty
-    Text.Newick.Class
-    Text.XML
-    Text.XML.Custom
-
-  -- probably can be moved to other-modules:
-   Test.Custom.NucleotideSequence
-   Test.Custom.DynamicCharacterNode
+    Test.Custom.DynamicCharacterNode
+    Test.Custom.NucleotideSequence
 
   other-modules:
     Analysis.Parsimony.Dynamic.DirectOptimization.Internal
@@ -305,13 +298,47 @@ library
     Control.Evaluation.Unit
     Control.Evaluation.Internal
     Control.Evaluation.Trans
-    Data.Alphabet.Internal
-    Data.Alphabet.Special
     Data.EdgeSet
     Data.Range
     Data.TCM.Internal
-    Test.QuickCheck.Arbitrary.Instances
-    Text.XML.Class
+
+
+
+-- A general purpose library for character state names.
+--
+-- Defines custom types for working with an alphabet of character
+-- state names dealing with ambiguity groups.
+
+library alphabet
+
+  import:
+    ghc-flags,
+    language-specs
+
+  hs-source-dirs:    lib/alphabet/src
+
+  build-depends:
+    base                    ^>= 4.12.0    && < 4.13,
+    bimap                   ^>= 0.3.3     && < 0.4,
+    containers              ^>= 0.5.8     && < 0.7,
+    deepseq                 ^>= 1.4.4     && < 1.5,
+    keys                    ^>= 3.12.1    && < 3.13,
+    mtl                     ^>= 2.2.2     && < 2.3,
+    pcg-utility,
+    QuickCheck              ^>= 2.12.6    && < 2.13,
+    semigroups              ^>= 0.18.5    && < 0.19,
+    semigroupoids           ^>= 5.2.1     && < 5.4,
+    serialize,
+    vector                   >= 0.12.0.2  && < 0.13,
+    xml                     ^>= 1.3.14    && < 1.4,
+
+  exposed-modules:
+    Data.Alphabet
+    Data.Alphabet.IUPAC
+ 
+  other-modules:
+    Data.Alphabet.Internal
+    Data.Alphabet.Special
 
 
 -- Parsers for the input file types accepted by PCG
@@ -446,6 +473,7 @@ library pcg-utility
     containers              ^>= 0.5.8     && < 0.7,
     directory               ^>= 1.3.3     && < 1.4,
     deepseq                 ^>= 1.4.4     && < 1.5,
+    foldl                   ^>= 1.4.5     && < 1.5,
     hashable                ^>= 1.2.7     && < 1.3,
     integer-gmp             ^>= 1.0.2     && < 1.1,
     keys                    ^>= 3.12.1    && < 3.13,
@@ -453,10 +481,15 @@ library pcg-utility
     matrix                  ^>= 0.3.6     && < 0.4,
     mono-traversable        ^>= 1.0.10    && < 1.1,
     parallel                ^>= 3.2.2     && < 3.3,
+    pointed                 ^>= 5.0.1     && < 5.1,
     QuickCheck              ^>= 2.12.6    && < 2.13,
+    semigroupoids           ^>= 5.2.1     && < 5.4,
     transformers            ^>= 0.5.5     && < 0.6,
+    tasty                   ^>= 1.2       && < 1.3,
+    tasty-hunit             ^>= 0.10.0    && < 0.11,
     validation              ^>= 1         && < 1.1,
     vector                   >= 0.12.0.2  && < 0.13,
+    vector-instances         >= 3.4       && < 3.5,
 
   exposed-modules:
     Control.Parallel.Custom
@@ -466,19 +499,55 @@ library pcg-utility
     Data.Foldable.Custom
     Data.List.Utility
     Data.Matrix.NotStupid
+    Data.MemoVector
     Data.MutualExclusionSet
     Data.Tuple.Utility
     Data.UnionSet
-    Data.Vector.Utility
+    Data.Vector.Custom
+    Data.Vector.NonEmpty
     Numeric.Extended
     Numeric.Extended.Natural
     Numeric.Extended.Real
     Numeric.NonNegativeAverage
+    Test.HUnit.Custom
+    Test.QuickCheck.Arbitrary.Instances
+
 
   other-modules:
     Data.BitMatrix.Internal
     Data.MutualExclusionSet.Internal
     Numeric.Extended.Internal
+
+
+-- A library for defining custom serialisation and rendering functionality.
+--
+-- Defines custom helper functions for serializing to data formats and related
+-- to text representations.
+
+library serialize
+
+  import:
+    ghc-flags,
+    language-specs
+
+  hs-source-dirs:    lib/serialize/src
+
+  build-depends:
+    base                    ^>= 4.12.0    && < 4.13,
+    keys                    ^>= 3.12.1    && < 3.13,
+    text-short              ^>= 0.1.2     && < 0.2,
+    text-show               ^>= 3.7.5     && < 3.8,
+    xml                     ^>= 1.3.14    && < 1.4,
+
+  exposed-modules:
+    ShortText.Custom
+    TextShow.Custom
+    Text.Newick.Class
+    Text.XML
+    Text.XML.Class
+    Text.XML.Custom
+ 
+  other-modules:
 
 
 executable pcg
@@ -494,10 +563,12 @@ executable pcg
   hs-source-dirs:   app
 
   build-depends:
+    alphabet,
     phylocomgraph,
     pcg-file-parsers,
     pcg-language,
     pcg-utility,
+    serialize,
     ansi-wl-pprint          ^>= 0.6.8     && < 0.7,
     base                    ^>= 4.12.0    && < 4.13,
     binary                  ^>= 0.8.6     && < 0.9,
@@ -577,6 +648,7 @@ executable 2d-do-comparison
   hs-source-dirs:   utils
 
   build-depends:
+    alphabet,
     phylocomgraph,
     base                    ^>= 4.12.0    && < 4.13,
     bimap                   ^>= 0.3.3     && < 0.4,
@@ -594,6 +666,7 @@ executable 3d-do-comparison
   hs-source-dirs:   utils
 
   build-depends:
+    alphabet,
     phylocomgraph,
     base                    ^>= 4.12.0    && < 4.13,
     bimap                   ^>= 0.3.3     && < 0.4,
@@ -612,6 +685,7 @@ executable affine-safety
   hs-source-dirs:   utils
 
   build-depends:
+    alphabet,
     phylocomgraph,
     base                    ^>= 4.12.0    && < 4.13,
     bimap                   ^>= 0.3.3     && < 0.4,
@@ -689,6 +763,7 @@ executable sequential-alignment-invariants
   hs-source-dirs:   utils
 
   build-depends:
+    alphabet,
     phylocomgraph,
     base                    ^>= 4.12.0    && < 4.13,
     bimap                   ^>= 0.3.3     && < 0.4,
@@ -706,6 +781,7 @@ executable three-way-mean-check
   hs-source-dirs:   utils
 
   build-depends:
+    alphabet,
     phylocomgraph,
     base                    ^>= 4.12.0    && < 4.13,
     bimap                   ^>= 0.3.3     && < 0.4,
@@ -724,6 +800,7 @@ executable ukkonen-do-comparison
   hs-source-dirs:   utils
 
   build-depends:
+    alphabet,
     phylocomgraph,
     base                    ^>= 4.12.0    && < 4.13,
     bimap                   ^>= 0.3.3     && < 0.4,
@@ -777,7 +854,9 @@ test-suite integration-tests
   hs-source-dirs:   test
 
   build-depends:
+    alphabet,
     pcg-utility,
+    serialize,
     phylocomgraph,
     base                    ^>= 4.12.0    && < 4.13,
     binary                  ^>= 0.8.6     && < 0.9,
@@ -827,7 +906,9 @@ test-suite unit-tests
   hs-source-dirs:   test, src, app
 
   build-depends:
+    alphabet,
     pcg-utility,
+    serialize,
     phylocomgraph,
     base                    ^>= 4.12.0    && < 4.13,
     bimap                   ^>= 0.3.3     && < 0.4,
@@ -902,11 +983,6 @@ test-suite unit-tests
     Control.Evaluation.Test
     Control.Evaluation.Unit
     Control.Monad.Logger
-    Data.Alphabet
-    Data.Alphabet.IUPAC
-    Data.Alphabet.Internal
-    Data.Alphabet.Special
-    Data.Alphabet.Test
     Data.EdgeSet
     Data.Range
     Data.TCM
@@ -916,17 +992,9 @@ test-suite unit-tests
     Data.TCM.Memoized
     Data.TCM.Memoized.FFI
     Data.TCM.Test
-    Data.Vector.Custom
-    Data.Vector.NonEmpty
-    Test.QuickCheck.Arbitrary.Instances
-    Test.Custom.NucleotideSequence
-    Test.HUnit.Custom
     TestSuite.ExecutableTests
     TestSuite.LibraryTests
-    Text.Newick.Class
-    Text.XML
-    Text.XML.Class
-    Text.XML.Custom
+
 
 
 test-suite pcg-utility-test-suite
@@ -935,14 +1003,19 @@ test-suite pcg-utility-test-suite
     ghc-flags,
     language-specs
 
-  main-is:          TestSuite.hs
+  main-is:          
+    TestSuite.hs
 
-  type:             exitcode-stdio-1.0
+  type:             
+    exitcode-stdio-1.0
 
-  hs-source-dirs:   lib/pcg-utility/test
+  hs-source-dirs:   
+    lib/pcg-utility/test
 
   build-depends:
+    alphabet,
     pcg-utility,
+    serialize,
     base                    ^>= 4.12.0    && < 4.13,
     bv-little               ^>= 0.1.2     && < 0.2,
     deepseq                 ^>= 1.4.4     && < 1.5,
@@ -971,16 +1044,22 @@ test-suite pcg-file-parsers-unit-tests
     ghc-flags,
     language-specs
 
-  main-is:          TestSuite.hs
+  main-is:          
+    TestSuite.hs
 
-  type:             exitcode-stdio-1.0
+  type:             
+    exitcode-stdio-1.0
 
-  hs-source-dirs:   lib/pcg-file-parsers/src, lib/pcg-file-parsers/test
+  hs-source-dirs:   
+    lib/pcg-file-parsers/src, lib/pcg-file-parsers/test
 
-  ghc-options:      -threaded
+  ghc-options:      
+    -threaded
 
   build-depends:
+    alphabet,
     pcg-utility,
+    serialize,
     base                    ^>= 4.12.0    && < 4.13,
     case-insensitive        ^>= 1.2.0     && < 1.3,
     containers              ^>= 0.5.8     && < 0.7,
@@ -1023,16 +1102,51 @@ test-suite pcg-file-parsers-unit-tests
        Text.Megaparsec.Custom.Test
 
 
+test-suite alphabet-test-suite
+
+  import:
+    ghc-flags,
+    language-specs
+
+  main-is:
+    TestSuite.hs
+
+  type:
+    exitcode-stdio-1.0
+
+  hs-source-dirs:
+    lib/alphabet/test
+
+  ghc-options:
+    -threaded
+
+  build-depends:
+    alphabet,
+    base                    ^>= 4.12.0    && < 4.13.0,
+    tasty                   ^>= 1.2       && < 1.3,
+    tasty-hunit             ^>= 0.10.0    && < 0.11,
+    tasty-quickcheck,
+    tasty-rerun
+
+  other-modules:
+    Alphabet.Test
+    
+
+
 benchmark pcg-utility-benchmark-suite
 
-  import:           ghc-flags
-                  , language-specs
+  import:           
+      ghc-flags
+    , language-specs
 
-  main-is:          Benchmarks.hs
+  main-is:          
+    Benchmarks.hs
 
-  type:             exitcode-stdio-1.0
+  type:             
+    exitcode-stdio-1.0
 
-  hs-source-dirs: lib/pcg-utility/bench
+  hs-source-dirs: 
+    lib/pcg-utility/bench
 
   build-depends:
     pcg-utility,
