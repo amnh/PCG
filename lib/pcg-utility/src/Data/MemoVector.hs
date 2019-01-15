@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.Vector.Utility
+-- Module      :  Data.MemoVector
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -14,7 +14,7 @@
 
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Data.Vector.Utility
+module Data.MemoVector
   ( DVector(..)
   , generateMemo
   , zip3
