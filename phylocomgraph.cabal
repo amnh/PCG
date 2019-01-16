@@ -135,6 +135,7 @@ library
     pcg-file-parsers,
     pcg-utility,
     serialize,
+    tcm,
     base                    ^>= 4.12.0    && < 4.13.0,
     bimap                   ^>= 0.3.3     && < 0.4,
     binary                  ^>= 0.8.6     && < 0.9,
@@ -195,7 +196,6 @@ library
     Bio.Character.Decoration.NonMetric
     Bio.Character.Encodable
     Bio.Character.Encodable.Continuous
-    Bio.Character.Exportable
     Bio.Character.Parsed
     Bio.Character.Type
     Bio.Metadata
@@ -222,11 +222,6 @@ library
     Control.Evaluation
     Control.Monad.Logger
     Data.EdgeLength
-    Data.TCM
-    Data.TCM.Dense
-    Data.TCM.Memoized
-    Data.TCM.Dense.FFI
-    Data.TCM.Memoized.FFI
     Data.TopologyRepresentation
     Data.NodeLabel
     Test.Custom.DynamicCharacterNode
@@ -264,7 +259,6 @@ library
     Bio.Character.Encodable.Static.Class
     Bio.Character.Encodable.Static.Internal
     Bio.Character.Encodable.Stream
-    Bio.Character.Exportable.Class
     Bio.Character.Parsed.Class
     Bio.Character.Parsed.Internal
     Bio.Metadata.General
@@ -300,7 +294,6 @@ library
     Control.Evaluation.Trans
     Data.EdgeSet
     Data.Range
-    Data.TCM.Internal
 
 
 
@@ -315,7 +308,8 @@ library alphabet
     ghc-flags,
     language-specs
 
-  hs-source-dirs:    lib/alphabet/src
+  hs-source-dirs:    
+    lib/alphabet/src
 
   build-depends:
     base                    ^>= 4.12.0    && < 4.13,
@@ -505,6 +499,8 @@ library pcg-utility
     Data.UnionSet
     Data.Vector.Custom
     Data.Vector.NonEmpty
+    FFI.Character.Exportable
+    FFI.Character.Exportable.Class
     Numeric.Extended
     Numeric.Extended.Natural
     Numeric.Extended.Real
@@ -549,6 +545,41 @@ library serialize
  
   other-modules:
 
+-- A general purpose library for working with transition cost matrices.
+
+library tcm
+
+  import:
+    ffi-buildinfo,
+    ghc-flags,
+    language-specs,
+
+  hs-source-dirs:
+    lib/tcm/src/
+
+  build-depends:
+    pcg-utility,
+    serialize,
+    base                    ^>= 4.12.0    && < 4.13,
+    containers              ^>= 0.5.8     && < 0.7,
+    deepseq                 ^>= 1.4.4     && < 1.5,
+    mono-traversable        ^>= 1.0.10    && < 1.1,
+    QuickCheck              ^>= 2.12.6    && < 2.13,
+    vector                   >= 0.12.0.2  && < 0.13,
+
+
+  exposed-modules:
+    Data.TCM
+    Data.TCM.Dense
+    Data.TCM.Dense.FFI
+    Data.TCM.Memoized
+    Data.TCM.Memoized.FFI
+
+  other-modules:
+    Data.TCM.Internal
+
+   
+
 
 executable pcg
 
@@ -569,6 +600,7 @@ executable pcg
     pcg-language,
     pcg-utility,
     serialize,
+    tcm,
     ansi-wl-pprint          ^>= 0.6.8     && < 0.7,
     base                    ^>= 4.12.0    && < 4.13,
     binary                  ^>= 0.8.6     && < 0.9,
@@ -650,6 +682,7 @@ executable 2d-do-comparison
   build-depends:
     alphabet,
     phylocomgraph,
+    tcm,
     base                    ^>= 4.12.0    && < 4.13,
     bimap                   ^>= 0.3.3     && < 0.4,
     QuickCheck              ^>= 2.12.6    && < 2.13,
@@ -668,6 +701,7 @@ executable 3d-do-comparison
   build-depends:
     alphabet,
     phylocomgraph,
+    tcm,
     base                    ^>= 4.12.0    && < 4.13,
     bimap                   ^>= 0.3.3     && < 0.4,
     deepseq                 ^>= 1.4.4     && < 1.5,
@@ -687,6 +721,7 @@ executable affine-safety
   build-depends:
     alphabet,
     phylocomgraph,
+    tcm,
     base                    ^>= 4.12.0    && < 4.13,
     bimap                   ^>= 0.3.3     && < 0.4,
     QuickCheck              ^>= 2.12.6    && < 2.13,
@@ -765,6 +800,7 @@ executable sequential-alignment-invariants
   build-depends:
     alphabet,
     phylocomgraph,
+    tcm,
     base                    ^>= 4.12.0    && < 4.13,
     bimap                   ^>= 0.3.3     && < 0.4,
     QuickCheck              ^>= 2.12.6    && < 2.13,
@@ -802,6 +838,7 @@ executable ukkonen-do-comparison
   build-depends:
     alphabet,
     phylocomgraph,
+    tcm,
     base                    ^>= 4.12.0    && < 4.13,
     bimap                   ^>= 0.3.3     && < 0.4,
     QuickCheck              ^>= 2.12.6    && < 2.13,
@@ -971,8 +1008,6 @@ test-suite unit-tests
     Bio.Character.Encodable.Static.Class
     Bio.Character.Encodable.Static.Internal
     Bio.Character.Encodable.Stream
-    Bio.Character.Exportable
-    Bio.Character.Exportable.Class
     Bio.Character.Type
     Bio.Graph.BinaryRenderingTree
     Bio.Graph.Component
@@ -985,12 +1020,6 @@ test-suite unit-tests
     Control.Monad.Logger
     Data.EdgeSet
     Data.Range
-    Data.TCM
-    Data.TCM.Internal
-    Data.TCM.Dense
-    Data.TCM.Dense.FFI
-    Data.TCM.Memoized
-    Data.TCM.Memoized.FFI
     Data.TCM.Test
     TestSuite.ExecutableTests
     TestSuite.LibraryTests
