@@ -1,6 +1,6 @@
  -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Character.Exportable.Class
+-- Module      :  FFI.Character.Exportable.Class
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -18,7 +18,7 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 
-module Bio.Character.Exportable.Class where
+module FFI.Character.Exportable.Class where
 
 
 import Control.Lens

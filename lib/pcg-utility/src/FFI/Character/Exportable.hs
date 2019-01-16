@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Character.Exportable
+-- Module      :  FFI.Character.Exportable
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -13,7 +13,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Bio.Character.Exportable
+module FFI.Character.Exportable
   ( Exportable(..)
   , HasExportedElementCount(..)
   , HasExportedElementWidth(..)
@@ -21,4 +21,4 @@ module Bio.Character.Exportable
   , ExportableCharacterSequence(ExportableCharacterSequence, exportedBufferChunks)
   ) where
 
-import Bio.Character.Exportable.Class
+import FFI.Character.Exportable.Class
