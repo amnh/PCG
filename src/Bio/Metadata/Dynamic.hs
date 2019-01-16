@@ -32,5 +32,5 @@ module Bio.Metadata.Dynamic
     , maybeConstructDenseTransitionCostMatrix
     ) where
 
-import Bio.Metadata.Dynamic.Class
+import Bio.Metadata.Dynamic.Class    hiding (DenseTransitionCostMatrix)
 import Bio.Metadata.Dynamic.Internal

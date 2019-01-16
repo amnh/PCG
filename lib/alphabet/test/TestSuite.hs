@@ -2,7 +2,7 @@ module Main where
 
 import Alphabet.Test
 import Test.Tasty
-import Test.Tasty.Ingredients.Rerun          (rerunningTests)
+import Test.Tasty.Ingredients.Rerun (rerunningTests)
 
 
 

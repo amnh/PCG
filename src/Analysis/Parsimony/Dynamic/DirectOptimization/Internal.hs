@@ -32,8 +32,7 @@ import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
 import           Analysis.Parsimony.Internal
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
-import           Bio.Character.Exportable
-import           Bio.Metadata
+import           Bio.Metadata                                           hiding (DenseTransitionCostMatrix)
 import           Control.Lens
 import           Data.Bits
 import           Data.Foldable.Custom                                   (sum')
@@ -47,6 +46,7 @@ import           Data.MonoTraversable
 import           Data.Range
 import           Data.Semigroup
 import           Data.Word
+import           FFI.Character.Exportable
 import           Numeric.Extended.Natural
 import           Prelude                                                hiding (lookup)
 

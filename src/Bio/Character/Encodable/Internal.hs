@@ -19,13 +19,13 @@ module Bio.Character.Encodable.Internal
   , exportableCharacterElementsHeadToBitVector
   ) where
 
-import Bio.Character.Exportable
 import Control.Lens
 import Data.Bifunctor              (bimap)
 import Data.BitMatrix              (BitMatrix, fromRows)
 import Data.Bits
 import Data.BitVector.LittleEndian
 import Data.Foldable
+import FFI.Character.Exportable
 import Foreign.C.Types
 
 

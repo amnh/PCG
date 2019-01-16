@@ -47,10 +47,10 @@ module Bio.Character.Decoration.Dynamic.Class
 
 import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
-import Bio.Character.Exportable
 import Control.DeepSeq
 import Control.Lens
 import Data.MonoTraversable            (Element)
+import FFI.Character.Exportable
 import GHC.Generics
 import Numeric.NonNegativeAverage
 

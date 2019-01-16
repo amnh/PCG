@@ -12,7 +12,7 @@ module Analysis.Parsimony.Dynamic.SequentialAlign.FFI
 
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (filterGaps)
 import Bio.Character.Encodable
-import Bio.Character.Exportable.Class
+import FFI.Character.Exportable.Class
 import Data.TCM.Memoized.FFI
 import Foreign         hiding (alignPtr)
 import Foreign.C.Types

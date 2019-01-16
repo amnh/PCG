@@ -25,7 +25,6 @@ import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
-import           Bio.Character.Exportable
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
@@ -43,6 +42,7 @@ import qualified Data.List.NonEmpty                            as NE
 import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
+import           FFI.Character.Exportable
 import           Prelude                                       hiding (zipWith)
 
 --import Debug.Trace

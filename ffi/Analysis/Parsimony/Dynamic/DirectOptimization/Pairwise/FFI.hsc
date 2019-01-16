@@ -29,7 +29,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
 
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (filterGaps, handleMissingCharacter, handleMissingCharacterThreeway)
 import Bio.Character.Encodable
-import Bio.Character.Exportable.Class
+import FFI.Character.Exportable.Class
 import Control.Lens
 import Data.Semigroup
 import Data.TCM.Dense.FFI

@@ -29,7 +29,7 @@ module Data.TCM.Memoized.FFI
   , destructElement
   ) where
 
-import Bio.Character.Exportable.Class
+import FFI.Character.Exportable.Class
 import Control.DeepSeq
 import Data.Bits
 import Data.Foldable

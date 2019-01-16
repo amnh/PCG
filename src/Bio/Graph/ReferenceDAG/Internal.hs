@@ -57,6 +57,7 @@ import           Data.List                     (intercalate, tails)
 import           Data.List.NonEmpty            (NonEmpty (..), intersperse)
 import qualified Data.List.NonEmpty            as NE
 import           Data.List.Utility             (isSingleton)
+import           Data.MemoVector               as DV
 import           Data.Monoid                   hiding ((<>))
 import           Data.MonoTraversable
 import           Data.Semigroup
@@ -73,7 +74,6 @@ import qualified Data.Vector                   as V
 import           Data.Vector.Binary            ()
 import qualified Data.Vector.Custom            as V (fromList')
 import           Data.Vector.Instances         ()
-import           Data.MemoVector              as DV
 import           GHC.Generics
 import           Numeric.Extended.Real
 import           Prelude                       hiding (lookup, zipWith)

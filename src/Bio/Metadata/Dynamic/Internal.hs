@@ -42,11 +42,10 @@ module Bio.Metadata.Dynamic.Internal
 
 
 import           Bio.Character.Encodable
-import           Bio.Character.Exportable
 import           Bio.Metadata.CharacterName
 import           Bio.Metadata.Discrete
 import           Bio.Metadata.DiscreteWithTCM
-import           Bio.Metadata.Dynamic.Class
+import           Bio.Metadata.Dynamic.Class        hiding (DenseTransitionCostMatrix)
 import           Bio.Metadata.MetricRepresentation
 import           Control.DeepSeq
 import           Control.Lens                      hiding (Fold)
@@ -66,6 +65,7 @@ import           Data.TCM.Dense
 import           Data.TCM.Memoized
 import           Data.Text.Short                   (ShortText)
 import           Data.TopologyRepresentation
+import           FFI.Character.Exportable
 import           GHC.Generics                      (Generic)
 import           Prelude                           hiding (lookup)
 import           Text.XML

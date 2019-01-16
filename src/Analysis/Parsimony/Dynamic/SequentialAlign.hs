@@ -21,8 +21,8 @@ module Analysis.Parsimony.Dynamic.SequentialAlign
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (handleMissingCharacter)
 import qualified Analysis.Parsimony.Dynamic.SequentialAlign.FFI                  as FFI
 import           Bio.Character.Encodable
-import           Bio.Character.Exportable.Class
 import           Data.TCM.Memoized
+import           FFI.Character.Exportable.Class
 
 
 -- |

@@ -33,4 +33,4 @@ module Bio.Character
   ) where
 
 import Bio.Character.Encodable
-import Bio.Character.Exportable.Class
+import FFI.Character.Exportable.Class

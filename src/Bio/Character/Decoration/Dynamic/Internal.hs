@@ -28,12 +28,12 @@ module Bio.Character.Decoration.Dynamic.Internal
 import Bio.Character.Decoration.Dynamic.Class
 import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
-import Bio.Character.Exportable
 import Control.DeepSeq
 import Control.Lens
 import Data.Bits
 import Data.Hashable
 import Data.MonoTraversable
+import FFI.Character.Exportable
 import GHC.Generics
 import Text.XML
 
