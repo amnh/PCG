@@ -1160,6 +1160,37 @@ test-suite alphabet-test-suite
   other-modules:
     Alphabet.Test
     
+test-suite tcm-test-suite
+
+  import:
+    ghc-flags,
+    language-specs
+
+  main-is:
+    TestSuite.hs
+
+  type:
+    exitcode-stdio-1.0
+
+  hs-source-dirs:
+    lib/tcm/test
+
+  ghc-options:
+    -threaded
+
+  build-depends:
+    pcg-utility,
+    tcm,
+    base                    ^>= 4.12.0    && < 4.13.0,
+    mono-traversable        ^>= 1.0.10    && < 1.1,
+    QuickCheck              ^>= 2.12.6    && < 2.13,
+    tasty                   ^>= 1.2       && < 1.3,
+    tasty-hunit             ^>= 0.10.0    && < 0.11,
+    tasty-quickcheck,
+    tasty-rerun
+
+  other-modules:
+    TCM.Test
 
 
 benchmark pcg-utility-benchmark-suite
