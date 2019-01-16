@@ -1,7 +1,7 @@
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Data.TCM.Test
+module TCM.Test
   ( testSuite
   ) where
 
