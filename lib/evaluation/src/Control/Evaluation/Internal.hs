@@ -14,6 +14,8 @@
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE LambdaCase            #-}
+
 
 module Control.Evaluation.Internal
   ( Evaluation(..)
@@ -33,6 +35,7 @@ import           Control.Monad.Logger
 import           Data.DList              (DList, toList)
 import           GHC.Generics
 import           Test.QuickCheck
+import Control.Monad.Writer.Strict (MonadWriter(..))
 
 
 -- |
@@ -142,6 +145,19 @@ instance MonadPlus Evaluation where
     mzero = mempty
 
     mplus = (<>)
+
+
+-- | (✔)
+instance MonadWriter (DList Notification) Evaluation where
+
+    writer (a, w) = Evaluation w (pure a)
+
+    listen (Evaluation w a) = Evaluation w ((\x -> (x,w)) <$> a)
+
+    pass = \case
+      Evaluation w (Value (a, f)) -> Evaluation (f w) (Value a)
+      Evaluation w  NoOp          -> Evaluation w NoOp
+      Evaluation w  (Error s)     -> Evaluation w (Error s)
 
 
 -- | (✔)

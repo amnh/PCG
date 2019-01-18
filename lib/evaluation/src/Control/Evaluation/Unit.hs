@@ -133,4 +133,3 @@ instance Semigroup (EvalUnit a) where
     Value _ <> e    = e
 
 --    sconcat (x:|xs) = foldl' (<>) x xs
-

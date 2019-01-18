@@ -1,7 +1,7 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE ViewPatterns        #-}
 
-module Control.Evaluation.Test
+module Evaluation.Test
   ( testSuite
   ) where
 
