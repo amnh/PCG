@@ -133,7 +133,7 @@ library
   build-depends:
     pcg-file-parsers,
     pcg-utility,
-    base                     >= 4.10      && < 5.0,
+    base                     >= 4.11      && < 5.0,
     bimap                    >= 0.3       && < 0.4,
     binary                   >= 0.6       && < 1.0,
     bv-little                >= 0.1.2     && < 0.2,
@@ -334,7 +334,7 @@ library pcg-file-parsers
 
   build-depends:
     pcg-utility,
-    base                     >= 4.10      && < 5.0,
+    base                     >= 4.11      && < 5.0,
     case-insensitive         >= 1.2.0     && < 1.3,
     containers               >= 0.5.8     && < 0.7,
     dlist                    >= 0.8.0     && < 0.9,
@@ -400,7 +400,7 @@ library pcg-language
   hs-source-dirs:      lib/pcg-language
 
   build-depends:
-    base                     >= 4.11.0    && < 4.13,
+    base                     >= 4.11      && < 5.0,
     case-insensitive         >= 1.2.0     && < 1.3,
     containers               >= 0.5.8     && < 0.7,
     free                     >= 5.1       && < 5.2,
@@ -440,14 +440,14 @@ library pcg-utility
   hs-source-dirs:   lib/pcg-utility/src
 
   build-depends:
-    base                     >= 4.10      && < 5.0,
+    base                     >= 4.11      && < 5.0,
     binary                   >= 0.6       && < 1.0,
     bv-little                >= 0.1.2     && < 0.2,
     containers               >= 0.5.8     && < 0.7,
     directory                >= 1.3.3     && < 1.4,
     deepseq                  >= 1.4       && < 1.5,
     hashable                 >= 1.2.7     && < 1.3,
-    integer-gmp              >= 1.0.2     && < 1.1,
+    integer-gmp              >= 1.0       && < 1.1,
     keys                     >= 3.12      && < 3.13,
     lens                     >= 4.17      && < 4.18,
     matrix                   >= 0.3.6     && < 0.4,
@@ -497,7 +497,7 @@ executable pcg
     pcg-language,
     pcg-utility,
     ansi-wl-pprint           >= 0.6.8     && < 0.7,
-    base                     >= 4.11.0    && < 5.0,
+    base                     >= 4.11      && < 5.0,
     binary                   >= 0.6       && < 1.0,
     bytestring               >= 0.10.8    && < 0.11,
     cassava                  >= 0.5       && < 0.6,
@@ -558,7 +558,7 @@ executable fasta-differ
 
   build-depends:
     pcg-file-parsers,
-    base                     >= 4.10      && < 5.0,
+    base                     >= 4.11      && < 5.0,
     containers               >= 0.5.8     && < 0.7,
     keys                     >= 3.12      && < 3.13,
     megaparsec               >= 7.0       && < 7.1,
@@ -576,7 +576,7 @@ executable 2d-do-comparison
 
   build-depends:
     phylocomgraph,
-    base                     >= 4.10      && < 5.0,
+    base                     >= 4.11      && < 5.0,
     bimap                    >= 0.3       && < 0.4,
     QuickCheck               >= 2.12      && < 2.13,
 
@@ -593,7 +593,7 @@ executable 3d-do-comparison
 
   build-depends:
     phylocomgraph,
-    base                     >= 4.10      && < 5.0,
+    base                     >= 4.11      && < 5.0,
     bimap                    >= 0.3       && < 0.4,
     deepseq                  >= 1.4       && < 1.5,
     QuickCheck               >= 2.12      && < 2.13,
@@ -611,7 +611,7 @@ executable affine-safety
 
   build-depends:
     phylocomgraph,
-    base                     >= 4.10      && < 5.0,
+    base                     >= 4.11      && < 5.0,
     bimap                    >= 0.3       && < 0.4,
     QuickCheck               >= 2.12      && < 2.13,
 
@@ -628,7 +628,7 @@ executable generate-data-set
 
   build-depends:
     ansi-wl-pprint           >= 0.6.8     && < 0.7,
-    base                     >= 4.10      && < 5.0,
+    base                     >= 4.11      && < 5.0,
     containers               >= 0.5.8     && < 0.7,
     keys                     >= 3.12      && < 3.13,
     MemoTrie                 >= 0.6.9     && < 0.7,
@@ -653,7 +653,7 @@ executable generate-tcm
   build-depends:
     pcg-utility,
     ansi-wl-pprint           >= 0.6.8     && < 0.7,
-    base                     >= 4.11.0    && < 4.13,
+    base                     >= 4.11      && < 5.0,
     containers               >= 0.5.8     && < 0.7,
     keys                     >= 3.12      && < 3.13,
     optparse-applicative     >= 0.14      && < 0.15,
@@ -672,7 +672,7 @@ executable newick-resolver
 
   build-depends:
     pcg-file-parsers,
-    base                     >= 4.10      && < 5.0,
+    base                     >= 4.11      && < 5.0,
     megaparsec               >= 7.0       && < 7.1,
 
 
@@ -688,7 +688,7 @@ executable sequential-alignment-invariants
 
   build-depends:
     phylocomgraph,
-    base                     >= 4.10      && < 5.0,
+    base                     >= 4.11      && < 5.0,
     bimap                    >= 0.3       && < 0.4,
     QuickCheck               >= 2.12      && < 2.13,
 
@@ -705,7 +705,7 @@ executable three-way-mean-check
 
   build-depends:
     phylocomgraph,
-    base                     >= 4.10      && < 5.0,
+    base                     >= 4.11      && < 5.0,
     bimap                    >= 0.3       && < 0.4,
     lens                     >= 4.17      && < 4.18,
     QuickCheck               >= 2.12      && < 2.13,
@@ -723,7 +723,7 @@ executable ukkonen-do-comparison
 
   build-depends:
     phylocomgraph,
-    base                     >= 4.10      && < 5.0,
+    base                     >= 4.11      && < 5.0,
     bimap                    >= 0.3       && < 0.4,
     QuickCheck               >= 2.12      && < 2.13,
 
@@ -742,7 +742,7 @@ executable pcg-file-parsers-file-tests
 
   build-depends: 
     pcg-file-parsers,
-    base                     >= 4.10      && < 5.0,
+    base                     >= 4.11      && < 5.0,
     tasty                    >= 1.2       && < 1.3,
     containers               >= 0.5.8     && < 0.7,
     directory                >= 1.3.3     && < 1.4,
@@ -777,7 +777,7 @@ test-suite integration-tests
   build-depends:
     pcg-utility,
     phylocomgraph,
-    base                     >= 4.10      && < 5.0,
+    base                     >= 4.11      && < 5.0,
     binary                   >= 0.6       && < 1.0,
     bytestring               >= 0.10.8    && < 0.11,
     containers               >= 0.5.8     && < 0.7,
@@ -827,7 +827,7 @@ test-suite unit-tests
   build-depends:
     pcg-utility,
     phylocomgraph,
-    base                     >= 4.10      && < 5.0,
+    base                     >= 4.11      && < 5.0,
     bimap                    >= 0.3       && < 0.4,
     binary                   >= 0.6       && < 1.0,
     bv-little                >= 0.1.2     && < 0.2,
@@ -837,7 +837,7 @@ test-suite unit-tests
     foldl                    >= 1.4.5     && < 1.5,
     graphviz                 >= 2999.20.0 && < 2999.21,
     hashable                 >= 1.2.7     && < 1.3,
-    integer-gmp              >= 1.0.2     && < 1.1,
+    integer-gmp              >= 1.0       && < 1.1,
     keys                     >= 3.12      && < 3.13,
     lens                     >= 4.17      && < 4.18,
     mono-traversable         >= 1.0.10    && < 1.1,
@@ -940,10 +940,10 @@ test-suite pcg-utility-test-suite
 
   build-depends:
     pcg-utility,
-    base                     >= 4.10      && < 5.0,
+    base                     >= 4.11      && < 5.0,
     bv-little                >= 0.1.2     && < 0.2,
     deepseq                  >= 1.4       && < 1.5,
-    integer-gmp              >= 1.0.2     && < 1.1,
+    integer-gmp              >= 1.0       && < 1.1,
     mono-traversable         >= 1.0.10    && < 1.1,
     QuickCheck               >= 2.12      && < 2.13,
     tasty                    >= 1.2       && < 1.3,
@@ -976,7 +976,7 @@ test-suite pcg-file-parsers-unit-tests
 
   build-depends:
     pcg-utility,
-    base                     >= 4.10      && < 5.0,
+    base                     >= 4.11      && < 5.0,
     case-insensitive         >= 1.2.0     && < 1.3,
     containers               >= 0.5.8     && < 0.7,
     dlist                    >= 0.8.0     && < 0.9,
@@ -1031,7 +1031,7 @@ benchmark pcg-utility-benchmark-suite
 
   build-depends:
     pcg-utility,
-    base                     >= 4.10      && < 5.0,
+    base                     >= 4.11      && < 5.0,
     criterion                >= 1.5       && < 1.6,
     deepseq                  >= 1.4       && < 1.5,
     ghc-prim                 >= 0.5       && < 0.6,
