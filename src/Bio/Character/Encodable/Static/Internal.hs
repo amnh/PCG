@@ -50,7 +50,7 @@ import           GHC.Generics
 import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances  ()
 import           Text.XML
-import           TextShow                             (TextShow ())
+import           TextShow                             (TextShow)
 
 
 -- |
