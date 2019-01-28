@@ -132,6 +132,7 @@ library
 
   build-depends:
     alphabet,
+    evaluation,
     pcg-file-parsers,
     pcg-utility,
     serialize,
@@ -219,8 +220,6 @@ library
     Bio.Graph.ReferenceDAG.Internal
     Bio.Graph.Solution
     Bio.Graph.ZipperDAG
-    Control.Evaluation
-    Control.Monad.Logger
     Data.EdgeLength
     Data.TopologyRepresentation
     Data.NodeLabel
@@ -289,9 +288,6 @@ library
     Bio.Sequence.Block.Internal
     Bio.Sequence.Block.Metadata
     Bio.Sequence.Internal
-    Control.Evaluation.Unit
-    Control.Evaluation.Internal
-    Control.Evaluation.Trans
     Data.EdgeSet
     Data.Range
 
@@ -333,6 +329,34 @@ library alphabet
   other-modules:
     Data.Alphabet.Internal
     Data.Alphabet.Special
+
+-- A library for the evaluation monad used by pcg.
+
+library evaluation
+
+  import:
+    ghc-flags,
+    language-specs
+
+  hs-source-dirs:
+    lib/evaluation/src
+
+  build-depends:
+    base                    ^>= 4.12.0    && < 4.13,
+    deepseq                 ^>= 1.4.4     && < 1.5,
+    dlist                   ^>= 0.8.0     && < 0.9,
+    mtl                     ^>= 2.2.2     && < 2.3,
+    QuickCheck              ^>= 2.12.6    && < 2.13,
+    transformers            ^>= 0.5.5     && < 0.6,
+
+  exposed-modules:
+    Control.Evaluation
+    Control.Monad.Logger
+
+  other-modules:
+    Control.Evaluation.Internal
+    Control.Evaluation.Unit
+    Control.Evaluation.Trans
 
 
 -- Parsers for the input file types accepted by PCG
@@ -595,6 +619,7 @@ executable pcg
 
   build-depends:
     alphabet,
+    evaluation,
     phylocomgraph,
     pcg-file-parsers,
     pcg-language,
@@ -1014,10 +1039,6 @@ test-suite unit-tests
     Bio.Graph.LeafSet
     Bio.Graph.ReferenceDAG.Internal
     Bio.Graph.ReferenceDAG.Test
-    Control.Evaluation.Internal
-    Control.Evaluation.Test
-    Control.Evaluation.Unit
-    Control.Monad.Logger
     Data.EdgeSet
     Data.Range
     Data.TCM.Test
@@ -1159,6 +1180,35 @@ test-suite alphabet-test-suite
 
   other-modules:
     Alphabet.Test
+
+test-suite evaluation-test-suite
+
+  import:
+    ghc-flags,
+    language-specs
+
+  main-is:
+    TestSuite.hs
+
+  type:
+    exitcode-stdio-1.0
+
+  hs-source-dirs:
+    lib/evaluation/test
+
+  ghc-options:
+    -threaded
+
+  build-depends:
+    evaluation,
+    tasty                   ^>= 1.2       && < 1.3,
+    tasty-hunit             ^>= 0.10.0    && < 0.11,
+    tasty-quickcheck,
+    tasty-rerun
+
+  other-modules:
+    Evaluation.Test
+
     
 test-suite tcm-test-suite
 
