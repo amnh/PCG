@@ -13,8 +13,8 @@
 
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE LambdaCase            #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 
 module Control.Evaluation.Internal
@@ -28,14 +28,14 @@ module Control.Evaluation.Internal
 import           Control.Applicative
 import           Control.DeepSeq
 import           Control.Evaluation.Unit
-import           Control.Monad           (MonadPlus (..))
-import           Control.Monad.Fail      (MonadFail)
-import qualified Control.Monad.Fail      as F
+import           Control.Monad               (MonadPlus (..))
+import           Control.Monad.Fail          (MonadFail)
+import qualified Control.Monad.Fail          as F
 import           Control.Monad.Logger
-import           Data.DList              (DList, toList)
+import           Control.Monad.Writer.Strict (MonadWriter (..))
+import           Data.DList                  (DList, toList)
 import           GHC.Generics
 import           Test.QuickCheck
-import Control.Monad.Writer.Strict (MonadWriter(..))
 
 
 -- |
@@ -88,7 +88,10 @@ instance Applicative Evaluation where
 
     (<*>) (Evaluation ms x) (Evaluation ns y) = Evaluation (ms <> ns) (x <*> y)
 
-    (*>)  (Evaluation ms x) (Evaluation ns y) = Evaluation (ms <> ns) (x  *> y)
+    (*>)  (Evaluation ms x) (Evaluation ns y) =
+      case x of
+        Error _ -> Evaluation ms         (x *> y)
+        _       -> Evaluation (ms <> ns) (x  *> y)
 
 
 -- | (✔)

@@ -14,8 +14,8 @@
 
 {-# LANGUAGE BangPatterns          #-}
 {-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 module Control.Evaluation.Trans where
@@ -24,15 +24,15 @@ import           Control.Applicative
 import           Control.DeepSeq
 import           Control.Evaluation.Internal
 import           Control.Evaluation.Unit
-import           Control.Monad               (MonadPlus (..), (>=>))
+import           Control.Monad               (MonadPlus (..))
 import           Control.Monad.Fail          (MonadFail)
 import qualified Control.Monad.Fail          as F
 import           Control.Monad.IO.Class
 import           Control.Monad.Logger
 import           Control.Monad.Trans.Class
+import           Control.Monad.Writer.Strict (MonadWriter (..))
+import           Data.DList                  (DList)
 import           GHC.Generics
-import           Control.Monad.Writer.Strict (MonadWriter(..))
-import           Data.DList              (DList)
 
 
 -- |
@@ -128,13 +128,13 @@ instance MonadWriter (DList Notification) m
 
     writer (a,w) =
       do
-        m <- (listen . writer $ (a,w))
+        m <- listen . writer $ (a,w)
         let ev = writer m
         state ev
 
-    listen = EvaluationT . (fmap listen) . runEvaluation
+    listen = EvaluationT . fmap listen . runEvaluation
 
-    pass = EvaluationT .  (fmap pass) . runEvaluation
+    pass = EvaluationT .  fmap pass . runEvaluation
 
 
 -- | (✔)
