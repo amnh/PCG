@@ -1,8 +1,9 @@
 module Main where
 
-import Alphabet.Test
-import Test.Tasty
-import Test.Tasty.Ingredients.Rerun (rerunningTests)
+import qualified Evaluation.Test              as Evaluation
+import qualified Monad.Logger.Test            as Logger
+import           Test.Tasty
+import           Test.Tasty.Ingredients.Rerun (rerunningTests)
 
 
 
@@ -11,3 +12,9 @@ main =
   defaultMainWithIngredients
   [ rerunningTests defaultIngredients ]
   testSuite
+
+testSuite :: TestTree
+testSuite = testGroup "Evaluation Tests"
+    [ Evaluation.testSuite
+    , Logger.testSuite
+    ]

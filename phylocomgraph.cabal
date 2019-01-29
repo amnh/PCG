@@ -351,11 +351,11 @@ library evaluation
 
   exposed-modules:
     Control.Evaluation
+    Control.Evaluation.Unit
     Control.Monad.Logger
 
   other-modules:
     Control.Evaluation.Internal
-    Control.Evaluation.Unit
     Control.Evaluation.Trans
 
 
@@ -1201,6 +1201,8 @@ test-suite evaluation-test-suite
 
   build-depends:
     evaluation,
+    base                    ^>= 4.12.0    && < 4.13.0,
+    QuickCheck              ^>= 2.12.6    && < 2.13,
     tasty                   ^>= 1.2       && < 1.3,
     tasty-hunit             ^>= 0.10.0    && < 0.11,
     tasty-quickcheck,
@@ -1208,6 +1210,7 @@ test-suite evaluation-test-suite
 
   other-modules:
     Evaluation.Test
+    Monad.Logger.Test
 
     
 test-suite tcm-test-suite

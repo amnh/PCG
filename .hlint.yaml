@@ -70,12 +70,12 @@
           }
 - ignore: { name: Use >=>
           , within:
-            [ Control.Evaluation.Test
+            [ Evaluation.Test
             ]
           }
 - ignore: { name: "Functor law"
           , within:
-            [ Control.Evaluation.Test
+            [ Evaluation.Test
             ]
           }
 
