@@ -23,6 +23,7 @@
 {-# LANGUAGE LambdaCase             #-}
 {-# LANGUAGE MonoLocalBinds         #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 
 
@@ -75,12 +76,14 @@ import           Data.List.NonEmpty              (NonEmpty (..))
 import qualified Data.List.NonEmpty              as NE
 import           Data.Maybe                      (fromMaybe)
 import           Data.MonoTraversable
+import qualified Data.Text                       as T (Text, filter, length, unlines)
 import           Data.TopologyRepresentation
 import           Data.Vector                     (Vector)
 import           GHC.Generics
 import           Prelude                         hiding (zip)
 import           Text.Newick.Class
 import           Text.XML
+import           TextShow                        (Builder, TextShow (showb, showt), fromText, toString, unlinesB)
 import           Type.Reflection                 (Typeable)
 
 
@@ -279,30 +282,56 @@ instance ( Show e
 
 -- | (✔)
 instance ( HasBlockCost u v w x y z
-         , Show m
-         , Show e
-         , Show n
-         , Show u
-         , Show v
-         , Show w
-         , Show x
-         , Show y
-         , Show z
+         , TextShow m
+         , TextShow e
+         , TextShow n
+         , TextShow u
+         , TextShow v
+         , TextShow w
+         , TextShow x
+         , TextShow y
+         , TextShow z
          ) => Show (PhylogeneticDAG2 m e n u v w x y z) where
 
-    show p@(PDAG2 dag m) = unlines
-        [ renderSummary  p
-        , renderMetadata m
-        , foldMapWithKey f dag
-        ]
-      where
-        f i n = mconcat [ "Node {", show i, "}:\n\n", show n ]
+    show = toString . showb
 
 
 -- | (✔)
 instance Show n => ToNewick (PhylogeneticDAG2 m e n u v w x y z) where
 
     toNewick = toNewick . discardCharacters
+
+-- | (✔)
+instance  TextShow t => TextShow (PostorderContextualData t) where
+
+    showb (PostorderContextualData virtual contextual minimal) = unlinesB
+        [ showb virtual
+        , showb contextual
+        , showb minimal
+        ]
+
+
+-- | (✔)
+instance ( HasBlockCost u v w x y z
+         , TextShow m
+         , TextShow e
+         , TextShow n
+         , TextShow u
+         , TextShow v
+         , TextShow w
+         , TextShow x
+         , TextShow y
+         , TextShow z
+         ) => TextShow (PhylogeneticDAG2 m e n u v w x y z) where
+
+    showb p@(PDAG2 dag m) = unlinesB
+        [ renderSummary  p
+        , renderMetadata m
+        , foldMapWithKey f dag
+        ]
+      where
+        f i n = fold [ "Node {", showb i, "}:\n\n", showb n ]
+
 
 
 -- | (✔)
@@ -527,40 +556,91 @@ localResolutionApplication dynFunction meta leftResolutions rightResolutions =
         , characterSequence  = characterSequence $ NE.head leftResolutions
         }
 
+
+
+
+
+
+-- |
+-- Assert that two resolutions do not overlap.
+resolutionsDoNotOverlap :: ResolutionInformation a -> ResolutionInformation b -> Bool
+resolutionsDoNotOverlap x y
+  = popCount ((x ^. _leafSetRepresentation) .&. (y ^. _leafSetRepresentation)) == 0
+
+
+-- |
+-- Retrieve only 'ReferenceDAG' from 'PhylogeneticDAG2'.
+discardCharacters :: PhylogeneticDAG2 m e n u v w x y z -> ReferenceDAG () e n
+discardCharacters (PDAG2 x _) = defaultMetadata $ nodeDecorationDatum2 <$> x
+
+
+-- |
+-- Set 'GraphData' to a default value.
+setDefaultMetadata
+  :: GraphData m
+  -> GraphData (PostorderContextualData t')
+{-# INLINE setDefaultMetadata #-}
+setDefaultMetadata gd = gd & _graphMetadata .~ defaultMetadataValue
+
+
+-- |
+-- A polymorphic default value for 'PostorderContextualData'.
+defaultMetadataValue :: PostorderContextualData t
+{-# INLINE defaultMetadataValue #-}
+defaultMetadataValue =
+  PostorderContextualData
+  { virtualNodeMapping    = mempty
+  , contextualNodeDatum   = mempty
+  , minimalNetworkContext = Nothing
+  }
+
+{-
+┌───────────────────────────────┐
+│                               │
+│  Rendering Utility Functions  │
+│                               │
+└───────────────────────────────┘
+-}
+
 -- |
 -- Nicely show the DAG information.
 renderSummary
-  :: ( Show n
-     , Show u
-     , Show v
-     , Show w
-     , Show x
-     , Show y
-     , Show z
+  :: ( TextShow n
+     , TextShow u
+     , TextShow v
+     , TextShow w
+     , TextShow x
+     , TextShow y
+     , TextShow z
      , HasBlockCost u v w x y z
      )
   => PhylogeneticDAG2 m e n u v w x y z
-  -> String
-renderSummary pdag@(PDAG2 dag _) = unlines
-    [ show dag
-    , show $ graphData dag
+  -> Builder
+renderSummary pdag@(PDAG2 dag _) = unlinesB
+    [ showb dag
+    , showb $ graphData dag
     , renderSequenceSummary pdag
     ]
 
 
-renderMetadata :: Show m => MetadataSequence m -> String
-renderMetadata = unlines . fmap (show . (^. blockMetadata)) . toList . (^. blockSequence)
+renderMetadata :: TextShow m => MetadataSequence m -> Builder
+renderMetadata = unlinesB . fmap (showb . (^. blockMetadata)) . toList . (^. blockSequence)
+
+
 
 
 -- |
 -- Render a "summary" of a sequence consisting of a summary for each block.
 renderSequenceSummary
-  :: ( Show n
+  :: ( TextShow n
      , HasBlockCost u v w x y z
      )
   => PhylogeneticDAG2 m e n u v w x y z
-  -> String
-renderSequenceSummary pdag@(PDAG2 dag _meta) = ("Sequence Summary\n\n" <>) . unlines $ mapWithKey (renderBlockSummary pdag) sequenceContext
+  -> Builder
+renderSequenceSummary pdag@(PDAG2 dag _meta)
+  = ("Sequence Summary\n\n" <>)
+  . unlinesB
+  $ mapWithKey (renderBlockSummary pdag) sequenceContext
   where
     refVec = references dag
     roots  = rootRefs dag
@@ -597,31 +677,32 @@ renderSequenceSummary pdag@(PDAG2 dag _meta) = ("Sequence Summary\n\n" <>) . unl
 --
 renderBlockSummary
   :: ( HasBlockCost u v w x y z
-     , Show n
+     , TextShow n
      )
   => PhylogeneticDAG2 m e n u v w x y z
   -> Int
   -> (Maybe Double, Maybe Double, Maybe TraversalTopology, CharacterBlock u v w x y z)
-  -> String
-renderBlockSummary (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displayMay, block) = mconcat . (renderedPrefix:) .
+  -> Builder
+renderBlockSummary (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displayMay, block)
+  = mconcat . (renderedPrefix:) .
     (renderBlockMeta pair :) $
-    [ unlines . fmap renderStaticCharacterSummary              . toList . uncurry zip . ((^.  continuousBin) *** (^.  continuousBin))
-    , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^. nonAdditiveBin) *** (^. nonAdditiveBin))
-    , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^.    additiveBin) *** (^.    additiveBin))
-    , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^.      metricBin) *** (^.      metricBin))
-    , unlines . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^.   nonMetricBin) *** (^.   nonMetricBin))
-    , unlines . fmap renderDynamicCharacterSummary             . toList . uncurry zip . ((^.     dynamicBin) *** (^.     dynamicBin))
+    [ unlinesB . fmap renderStaticCharacterSummary              . toList . uncurry zip . ((^.  continuousBin) *** (^.  continuousBin))
+    , unlinesB . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^. nonAdditiveBin) *** (^. nonAdditiveBin))
+    , unlinesB . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^.    additiveBin) *** (^.    additiveBin))
+    , unlinesB . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^.      metricBin) *** (^.      metricBin))
+    , unlinesB . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^.   nonMetricBin) *** (^.   nonMetricBin))
+    , unlinesB . fmap renderDynamicCharacterSummary             . toList . uncurry zip . ((^.     dynamicBin) *** (^.     dynamicBin))
     ] <*> [(mBlock, block)]
   where
     pair@(mBlock, _) = ((meta ^. blockSequence) ! key, block)
 
-    renderedPrefix = "Block " <> show key <> "\n\n"
+    renderedPrefix = "Block " <> showb key <> "\n\n"
 
-    renderBlockMeta (mValue, bValue) = unlines
-        [ "  Rooting Cost: " <> maybe "<Unavailible>" show costOfRooting
-        , "  Network Cost: " <> maybe "<Unavailible>" show costOfNetworking
-        , "  Block   Cost: " <> show bCost
-        , "  Total   Cost: " <> show totalCost
+    renderBlockMeta (mValue, bValue) = unlinesB
+        [ "  Rooting Cost: " <> maybe "<Unavailible>" showb costOfRooting
+        , "  Network Cost: " <> maybe "<Unavailible>" showb costOfNetworking
+        , "  Block   Cost: " <> showb bCost
+        , "  Total   Cost: " <> showb totalCost
         , "  Display Tree: " <> inferDisplayForest
         , ""
         ]
@@ -633,42 +714,43 @@ renderBlockSummary (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displa
             , bCost
             ]
 
-    renderStaticCharacterSummary (m, c) = unlines
-        [ "    Name:     " <> show (m ^. characterName)
-        , "    Weight:   " <> show (m ^. characterWeight)
-        , "    Cost:     " <> show (c ^. characterCost)
+    renderStaticCharacterSummary (m, c) = unlinesB
+        [ "    Name:     " <> showb (m ^. characterName)
+        , "    Weight:   " <> showb (m ^. characterWeight)
+        , "    Cost:     " <> showb (c ^. characterCost)
         ]
 
-    renderStaticCharacterWithAlphabetSummary (m, c) = unlines
-        [ "    Name:     " <> show (m ^. characterName)
-        , "    Weight:   " <> show (m ^. characterWeight)
-        , "    Cost:     " <> show (c ^. characterCost)
-        , "    "           <> show (m ^. characterAlphabet)
+    renderStaticCharacterWithAlphabetSummary (m, c) = unlinesB
+        [ "    Name:     " <> showb (m ^. characterName)
+        , "    Weight:   " <> showb (m ^. characterWeight)
+        , "    Cost:     " <> showb (c ^. characterCost)
+        , "    "           <> showb (m ^. characterAlphabet)
         ]
 
-    renderDynamicCharacterSummary (m, c) = unlines
-        [ "    Name:   " <> show (m ^. characterName)
-        , "    Weight: " <> show (m ^. characterWeight)
-        , "    Cost:   " <> show (c ^. characterCost)
+    renderDynamicCharacterSummary (m, c) = unlinesB
+        [ "    Name:   " <> showb (m ^. characterName)
+        , "    Weight: " <> showb (m ^. characterWeight)
+        , "    Cost:   " <> showb (c ^. characterCost)
         , "    Foci:   " <> maybe "<Unavailible>" renderFoci (m ^. traversalFoci)
         ]
       where
-        renderFoci (x:|[]) = show $ fst x
-        renderFoci xs      = show . fmap fst $ toList xs
+        renderFoci (x:|[]) = showb $ fst x
+        renderFoci xs      = showb . fmap fst $ toList xs
 
     inferDisplayForest = maybe "<Unavailible>" renderFunction displayMay
 
     renderFunction = renderDisplayForestNewick (nodeDecorationDatum2 <$> dag)
 
 
+
 -- |
 -- Render a display forest to a newick string.
-renderDisplayForestNewick :: Show n => ReferenceDAG d e n -> TraversalTopology -> String
-renderDisplayForestNewick dag topo = unlines $ renderDisplayTree <$> toList (rootRefs dag)
+renderDisplayForestNewick :: TextShow n => ReferenceDAG d e n -> TraversalTopology -> Builder
+renderDisplayForestNewick dag topo = fromText . T.unlines $ renderDisplayTree <$> toList (rootRefs dag)
   where
     refVec = references dag
 
-    renderDisplayTree :: Int -> String
+    renderDisplayTree :: Int -> T.Text
     renderDisplayTree nodeIdx =
       case kidRefs of
         []    -> renderLeaf nodeIdx $ nodeDecoration nodeVal
@@ -683,40 +765,7 @@ renderDisplayForestNewick dag topo = unlines $ renderDisplayTree <$> toList (roo
         nodeVal = refVec ! nodeIdx
         kidRefs = filter (\i -> (nodeIdx, i) `isEdgePermissibleWith` topo) . IM.keys $ childRefs nodeVal
 
-        openParensIn = length . filter (== '(')
+        openParensIn = T.length . T.filter (== '(')
 
-    renderLeaf _k = show
+    renderLeaf _k = showt
 
-
--- |
--- Assert that two resolutions do not overlap.
-resolutionsDoNotOverlap :: ResolutionInformation a -> ResolutionInformation b -> Bool
-resolutionsDoNotOverlap x y
-  = popCount ((x ^. _leafSetRepresentation) .&. (y ^. _leafSetRepresentation)) == 0
-
-
--- |
--- Retrieve only 'ReferenceDAG' from 'PhylogeneticDAG2'.
-discardCharacters :: PhylogeneticDAG2 m e n u v w x y z -> ReferenceDAG () e n
-discardCharacters (PDAG2 x _) = defaultMetadata $ nodeDecorationDatum2 <$> x
-
-
--- |
--- Set 'GraphData' to a default value.
-setDefaultMetadata
-  :: GraphData m
-  -> GraphData (PostorderContextualData t')
-{-# INLINE setDefaultMetadata #-}
-setDefaultMetadata gd = gd & _graphMetadata .~ defaultMetadataValue
-
-
--- |
--- A polymorphic default value for 'PostorderContextualData'.
-defaultMetadataValue :: PostorderContextualData t
-{-# INLINE defaultMetadataValue #-}
-defaultMetadataValue =
-  PostorderContextualData
-  { virtualNodeMapping    = mempty
-  , contextualNodeDatum   = mempty
-  , minimalNetworkContext = Nothing
-  }

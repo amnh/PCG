@@ -15,6 +15,7 @@
 
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
 
 module Data.EdgeLength
   ( EdgeLength()
@@ -29,6 +30,7 @@ import Data.Binary         (Binary)
 import Data.Default
 import Data.Monoid         (Sum (..))
 import GHC.Generics
+import TextShow            (TextShow (showb))
 
 
 -- |
@@ -71,6 +73,11 @@ instance Show EdgeLength where
 
     show (C  Nothing) = "{?}"
     show (C (Just x)) = "{" <> show (getSum x) <> "}"
+
+instance TextShow EdgeLength where
+
+    showb (C  Nothing) = "{?}"
+    showb (C (Just x)) = "{" <> showb (getSum x) <> "}"
 
 
 -- |

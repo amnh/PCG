@@ -17,7 +17,10 @@
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE TypeFamilies               #-}
+
+{-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
 module Bio.Character.Encodable.Static.Internal
   ( StaticCharacter()
@@ -47,13 +50,14 @@ import           GHC.Generics
 import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances  ()
 import           Text.XML
+import           TextShow                             (TextShow)
 
 
 -- |
 -- Represents an encoded static character. Supports binary and numeric operations.
 newtype StaticCharacter
       = SC BitVector
-     deriving (Arbitrary, Bits, Eq, Generic, MonoFunctor, MonoFoldable, Ord, Show)
+     deriving (Arbitrary, Bits, Eq, Generic, MonoFunctor, MonoFoldable, Ord, Show, TextShow)
 
 
 -- |

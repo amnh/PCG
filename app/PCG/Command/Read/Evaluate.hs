@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
 
@@ -34,9 +35,11 @@ import           Data.Maybe                                (catMaybes)
 import           Data.Ord                                  (comparing)
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
+import           Data.String                               (IsString (fromString))
 import           Data.TCM                                  (TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
 import qualified Data.TCM                                  as TCM
 import           Data.Text.IO                              (readFile)
+import qualified Data.Text.Short                           as TS (ShortText)
 import           Data.Validation
 import qualified Data.Vector                               as V
 import           Data.Void
@@ -126,7 +129,7 @@ setTcm t  fpr = fpr
                                                $   diagnoseTcm unfactoredTCM
     metadataUpdate x = x
         { weight   = weight x * fromRational unfactoredWeight * fromIntegral coefficient
-        , alphabet = relatedAlphabet
+        , alphabet = fmap fromString relatedAlphabet
         }
 
 
@@ -389,6 +392,8 @@ expandDynamicCharactersMarkedAsAligned fpr = updateFpr <$> result
 
     result = foldrWithKey expandDynamicCharacters (pure ([], [] <$ characterMap)) $ parsedMetas fpr
 
+                 -- Map Identifier ParsedChars
+    characterMap :: TaxonCharacters
     characterMap = parsedChars fpr
 
     getRepresentativeChar = head $ toList characterMap
@@ -396,8 +401,8 @@ expandDynamicCharactersMarkedAsAligned fpr = updateFpr <$> result
     expandDynamicCharacters
       :: Int
       -> ParsedCharacterMetadata
-      -> Validation ReadError ([ParsedCharacterMetadata], Map String [ParsedCharacter])
-      -> Validation ReadError ([ParsedCharacterMetadata], Map String [ParsedCharacter])
+      -> Validation ReadError ([ParsedCharacterMetadata], Map Identifier [ParsedCharacter])
+      -> Validation ReadError ([ParsedCharacterMetadata], Map Identifier [ParsedCharacter])
     expandDynamicCharacters k m acc =
         case getRepresentativeChar ! k of
           ParsedDynamicCharacter {} | not (isDynamic m) ->
@@ -421,9 +426,9 @@ expandDynamicCharactersMarkedAsAligned fpr = updateFpr <$> result
     expandMetadata len meta = replicate len $ setAligned meta
 
     expandCharacter
-      :: Int    -- ^ Length
-      -> Int    -- ^ Index
-      -> String -- ^ Key
+      :: Int          -- ^ Length
+      -> Int          -- ^ Index
+      -> TS.ShortText -- ^ Key
       -> v
       -> [ParsedCharacter]
     expandCharacter len i k _ =

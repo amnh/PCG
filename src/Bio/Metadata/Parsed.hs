@@ -14,6 +14,7 @@
 
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
 
 module Bio.Metadata.Parsed
@@ -28,8 +29,10 @@ import           Data.Key
 import           Data.List                        (transpose)
 import           Data.List.NonEmpty               (NonEmpty)
 import           Data.Monoid
+import           Data.String                      (IsString (fromString))
 import           Data.TCM                         (TCM, TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
 import qualified Data.TCM                         as TCM
+import           Data.Text.Short                  (ShortText)
 import           Data.Vector                      (Vector)
 import qualified Data.Vector                      as V
 import qualified Data.Vector.Custom               as V (fromList')
@@ -51,8 +54,8 @@ import           Prelude                          hiding (zip, zipWith)
 -- An intermediate composite type for parse result coercion.
 data ParsedCharacterMetadata
    = ParsedCharacterMetadata
-   { alphabet      :: Alphabet String
-   , characterName :: String
+   { alphabet      :: Alphabet ShortText
+   , characterName :: ShortText
    , weight        :: Double
    , parsedTCM     :: Maybe (TCM, TCMStructure)
    , isDynamic     :: Bool
@@ -110,8 +113,8 @@ instance ParsedMetadata TNT.TntResult where
         f :: TNT.CharacterMetaData -> TNT.TntCharacter -> ParsedCharacterMetadata
         f inMeta inChar =
             ParsedCharacterMetadata
-            { alphabet      = characterAlphabet
-            , characterName = TNT.characterName inMeta
+            { alphabet      = fmap fromString characterAlphabet
+            , characterName = fromString . TNT.characterName $ inMeta
             , weight        = fromRational rationalWeight * suppliedWeight
             , parsedTCM     = factoredTcmMay
             , isDynamic     = False
@@ -181,7 +184,7 @@ instance ParsedMetadata TNT.TntResult where
 instance ParsedMetadata F.TCM where
     unifyMetadata (F.TCM alph mat) =
         pure ParsedCharacterMetadata
-        { alphabet      = fromSymbols alph
+        { alphabet      = fmap fromString . fromSymbols $  alph
         , characterName = ""
         , weight        = fromRational rationalWeight * fromIntegral coefficient
         , parsedTCM     = Just (resultTCM, structure)
@@ -207,7 +210,7 @@ instance ParsedMetadata Nexus where
         convertNexusMeta developedAlphabet inMeta =
             ParsedCharacterMetadata
             { alphabet      = developedAlphabet
-            , characterName = Nex.name inMeta
+            , characterName = fromString . Nex.name $ inMeta
             , weight        = fromRational chosenWeight * suppliedWeight
             , parsedTCM     = chosenTCM
             , isDynamic     = not $ Nex.isAligned inMeta
@@ -237,8 +240,9 @@ instance ParsedMetadata Nexus where
 -- characters may be missing, hence Maybe Vector [String]
 -- each taxon may have a sequence (multiple characters), hence Vector Maybe Vector [String]
 -- sequences are values mapped to using taxon names as keys, hence Map String Vector Maybe Vector [String]
-developAlphabets :: TaxonCharacters -> Vector (Alphabet String)
-developAlphabets = V.fromList' . fmap (fromSymbols . foldMap f) . transpose . fmap toList . toList
+developAlphabets :: TaxonCharacters -> Vector (Alphabet ShortText)
+developAlphabets
+    = V.fromList' . fmap (fromSymbols . foldMap f) . transpose . fmap toList . toList
   where
     f (ParsedContinuousCharacter _      ) = mempty
     f (ParsedDiscreteCharacter   static ) = foldMap toList static
@@ -253,7 +257,7 @@ makeEncodeInfo = fmap makeOneInfo . developAlphabets
 
 -- |
 -- Make a single info given an alphabet without state names
-makeOneInfo :: Alphabet String -> ParsedCharacterMetadata
+makeOneInfo :: Alphabet ShortText -> ParsedCharacterMetadata
 makeOneInfo alph =
     ParsedCharacterMetadata
     { alphabet      = alph

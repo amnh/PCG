@@ -14,6 +14,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeFamilies          #-}
 
 {-# LANGUAGE UndecidableInstances  #-}
@@ -36,6 +37,7 @@ import Data.MonoTraversable
 import FFI.Character.Exportable
 import GHC.Generics
 import Text.XML
+import TextShow                               (Builder, TextShow (showb), unlinesB, unwordsB)
 
 
 -- |
@@ -451,6 +453,25 @@ instance (EncodableStream d, Show d) => Show (DynamicDecorationDirectOptimizatio
             , ("Right Alignment      : ", rightAlignment      )
             ]
 
+-- | (✔)
+instance (EncodableStream d, TextShow d) => TextShow (DynamicDecorationDirectOptimization d) where
+
+    showb dec = unlinesB . (shownCost:) $ f <$> pairs
+      where
+        shownCost = renderCostB dec
+
+        f (prefix, accessor) = prefix <> showb (dec ^. accessor)
+
+        pairs =
+            [ ("Original Encoding    : ", encoded             )
+            , ("Single Disambiguation: ", singleDisambiguation)
+            , ("Final        Ungapped: ", finalUngapped       )
+            , ("Final          Gapped: ", finalGapped         )
+            , ("Preliminary  Ungapped: ", preliminaryUngapped )
+            , ("Preliminary    Gapped: ", preliminaryGapped   )
+            , ("Left  Alignment      : ", leftAlignment       )
+            , ("Right Alignment      : ", rightAlignment      )
+            ]
 
 -- | (✔)
 instance (EncodableStream d, Show d) => Show (DynamicDecorationDirectOptimizationPostorderResult d) where
@@ -460,6 +481,23 @@ instance (EncodableStream d, Show d) => Show (DynamicDecorationDirectOptimizatio
         shownCost = renderCost dec
 
         f (prefix, accessor) = prefix <> show (dec ^. accessor)
+
+        pairs =
+          [ ("Original Encoding   : ", encoded            )
+          , ("Preliminary Ungapped: ", preliminaryUngapped)
+          , ("Preliminary   Gapped: ", preliminaryGapped  )
+          , ("Left  Alignment     : ", leftAlignment      )
+          , ("Right Alignment     : ", rightAlignment     )
+          ]
+
+-- | (✔)
+instance (EncodableStream d, TextShow d) => TextShow (DynamicDecorationDirectOptimizationPostorderResult d) where
+
+    showb dec = unlinesB . (shownCost:) $ f <$> pairs
+      where
+        shownCost = renderCostB dec
+
+        f (prefix, accessor) = prefix <> showb (dec ^. accessor)
 
         pairs =
           [ ("Original Encoding   : ", encoded            )
@@ -559,4 +597,21 @@ renderCost dec = unwords
       , show (dec ^. characterLocalCost)
       , "}"
       ]
+
+renderCostB
+  :: ( HasCharacterCost s a
+     , HasCharacterLocalCost s b
+     , TextShow a
+     , TextShow b
+     )
+  => s
+  -> Builder
+renderCostB dec = unwordsB
+      [ "Cost                 :"
+      , showb (dec ^. characterCost)
+      , "{"
+      , showb (dec ^. characterLocalCost)
+      , "}"
+      ]
+
 

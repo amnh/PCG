@@ -14,6 +14,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeFamilies          #-}
 
 module Bio.Character.Decoration.Fitch.Internal where
@@ -28,6 +29,7 @@ import Control.Lens
 import Data.Bits
 import GHC.Generics
 import Text.XML
+import TextShow                             (TextShow (showb), unlinesB)
 
 
 -- |
@@ -51,7 +53,7 @@ data FitchOptimizationDecoration f
 instance (Bits c, Show c) => Show (FitchOptimizationDecoration c) where
 
     show c = unlines
-        [ "Discrete Character : " <> showStatic (fitchCharacterField     c)
+        [ "Discrete Character : "    <> showStatic (fitchCharacterField     c)
         , "Preliminary Median : "    <> showStatic (fitchPreliminaryMedian  c)
         , "Final       Median : "    <> showStatic (fitchFinalMedian        c)
         ]
@@ -59,6 +61,19 @@ instance (Bits c, Show c) => Show (FitchOptimizationDecoration c) where
         showStatic x
           | x == zeroBits = "<Empty Character>"
           | otherwise     = show x
+
+-- | (✔)
+instance (Bits c, TextShow c) => TextShow (FitchOptimizationDecoration c) where
+
+    showb c = unlinesB
+        [ "Discrete Character : "    <> showStatic (fitchCharacterField     c)
+        , "Preliminary Median : "    <> showStatic (fitchPreliminaryMedian  c)
+        , "Final       Median : "    <> showStatic (fitchFinalMedian        c)
+        ]
+      where
+        showStatic x
+          | x == zeroBits = "<Empty Character>"
+          | otherwise     = showb x
 
 
 -- | (✔)
@@ -139,3 +154,6 @@ instance (Show f) => ToXML (FitchOptimizationDecoration f) where
                          , Left ("Final_median",       show $ decoration ^. finalMedian      )
                          , Left ("Is_a_leaf",          show $ decoration ^. isLeaf           )
                          ]
+
+
+

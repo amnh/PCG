@@ -14,9 +14,11 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies      #-}
 
 module Data.Alphabet.Internal
@@ -43,6 +45,7 @@ import           Data.Monoid
 import           Data.Semigroup.Foldable
 import qualified Data.Set                            as Set
 import           Data.String
+import           Data.TextShow.Custom                (intercalateB)
 import           Data.Vector.NonEmpty                (Vector)
 import qualified Data.Vector.NonEmpty                as NEV
 import           GHC.Generics                        (Generic)
@@ -50,6 +53,7 @@ import           Prelude                             hiding (lookup, unzip, zip)
 import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances ()
 import           Text.XML
+import           TextShow                            (TextShow (showb))
 
 
 -- |
@@ -63,7 +67,7 @@ data Alphabet a =
      Alphabet
      { symbolVector :: {-# UNPACK #-} !(Vector a)
      , stateNames   :: [a]
-     } deriving (Generic)
+     } deriving (Generic, Functor)
 
 
 type instance Key Alphabet = Int
@@ -340,10 +344,20 @@ instance Show a => Show (Alphabet a) where
         ]
 
 
+instance TextShow a => TextShow (Alphabet a) where
+
+    showb x = mconcat
+        [ "Alphabet: {"
+        , intercalateB ", " $ showb <$> toList x
+        , "}"
+        ]
+
+
 -- | (✔)
 instance (Show a) => ToXML (Alphabet a) where
 
     toXML alphabet = xmlElement "Alphabet" [] [ Left ("Symbols", show alphabet)]
+
 
 
 {-

@@ -97,10 +97,10 @@ type GraphState = Compact (Either TopologicalResult DecoratedCharacterResult)
 -- |
 -- A solution that contains only topological information.
 -- There are no characters on which to optimize.
-type TopologicalResult = PhylogeneticSolution (ReferenceDAG () EdgeLength (Maybe String))
+type TopologicalResult = PhylogeneticSolution (ReferenceDAG () EdgeLength (Maybe NodeLabel))
 
 
-type UndecoratedReferenceDAG = ReferenceDAG () EdgeLength (Maybe String)
+type UndecoratedReferenceDAG = ReferenceDAG () EdgeLength (Maybe NodeLabel)
 
 
 -- |
@@ -261,20 +261,19 @@ type EdgeAnnotation =
 
 extractReferenceDAG
   :: Either TopologicalResult DecoratedCharacterResult
-  -> ReferenceDAG () EdgeLength (Maybe String)
+  -> ReferenceDAG () EdgeLength (Maybe NodeLabel)
 extractReferenceDAG = either extractTopResult extractRefDAGfromDec
   where
     extractTopResult = extractSolution
 
 
 extractRefDAGfromDec
-  :: DecoratedCharacterResult
-  -> ReferenceDAG () EdgeLength (Maybe String)
+  :: DecoratedCharacterResult -> ReferenceDAG () EdgeLength (Maybe NodeLabel)
 extractRefDAGfromDec finalDecDAG =
   let
     decRefDAG        = finalDecDAG      & (^. _phylogeneticForest) . extractSolution
     refDAGNoMetadata = decRefDAG        & (_graphData . _graphMetadata) .~ ()
     refDAGNoEdgeData = refDAGNoMetadata & (_references . mapped . _childRefs . mapped) %~ fst
     refDAG           = refDAGNoEdgeData &
-                         (_references . mapped . _nodeDecoration) %~ Just . show . nodeDecorationDatum2
+                         (_references . mapped . _nodeDecoration) %~ Just . nodeDecorationDatum2
   in refDAG

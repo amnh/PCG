@@ -14,6 +14,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeFamilies          #-}
 
 module Bio.Character.Decoration.Metric.Internal where
@@ -28,6 +29,7 @@ import Control.Lens
 import GHC.Generics
 import Numeric.Extended.Natural
 import Text.XML
+import TextShow                              (TextShow (showb))
 
 
 -- |
@@ -173,6 +175,12 @@ instance EncodableStaticCharacter c => SankoffDecoration (SankoffOptimizationDec
 instance Show c => Show (SankoffOptimizationDecoration c) where
 
     show x = show $ x ^. discreteCharacter
+
+
+-- | (✔)
+instance TextShow c => TextShow (SankoffOptimizationDecoration c) where
+
+    showb x = showb $ x ^. discreteCharacter
 
 
 -- | (✔)

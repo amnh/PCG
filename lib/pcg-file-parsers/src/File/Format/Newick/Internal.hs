@@ -20,11 +20,14 @@ module File.Format.Newick.Internal
   , isLeaf
   , newickNode
   , renderNewickForest
+  , newickLabelShort
   ) where
 
 
 import Data.List.NonEmpty (NonEmpty, toList)
 import Data.Maybe
+import Data.String        (IsString (fromString))
+import Data.Text.Short    (ShortText)
 import Data.Tree
 
 
@@ -107,4 +110,12 @@ newickNode nodes label length'
 -- Determines whether a given 'NewickNode' is a leaf node in the tree.
 isLeaf :: NewickNode -> Bool
 isLeaf node = (null . descendants) node && (isJust . newickLabel) node
+
+-- |
+-- Extracts a newick label (if it exists) and converts to ShortText
+{-# INLINE newickLabelShort #-}
+newickLabelShort :: NewickNode -> Maybe ShortText
+newickLabelShort = fmap fromString . newickLabel
+
+
 

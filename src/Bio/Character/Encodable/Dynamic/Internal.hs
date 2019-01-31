@@ -19,10 +19,13 @@
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
 {-# LANGUAGE UnboxedSums                #-}
 {-# LANGUAGE UndecidableInstances       #-}
+
+{-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
 module Bio.Character.Encodable.Dynamic.Internal
   ( DynamicCharacter (DC, Missing)
@@ -57,6 +60,7 @@ import           GHC.Generics
 import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances   ()
 import           Text.XML
+import           TextShow                              (TextShow (showb))
 
 
 -- |
@@ -75,7 +79,7 @@ data  DynamicCharacter
 -- Represents a sinlge element of a dynamic character.
 newtype DynamicCharacterElement
       = DCE BitVector
-      deriving (Bits, Eq, FiniteBits, Generic, MonoFoldable, MonoFunctor, Ord, Show)
+      deriving (Bits, Eq, FiniteBits, Generic, MonoFoldable, MonoFunctor, Ord, Show, TextShow)
 
 
 type instance Bound DynamicCharacterElement = Word
@@ -340,6 +344,12 @@ instance Ranged DynamicCharacterElement where
         allBitsLowerBound = toDCE $ (2 :: Integer) ^ lowerBound x - 1
 
     zeroRange sc = fromTupleWithPrecision (0,0) $ finiteBitSize sc
+
+
+instance TextShow DynamicCharacter where
+
+    showb (Missing w)  = "Missing " <> showb w
+    showb (DC      bm) = "DC "      <> showb bm
 
 
 instance ToXML DynamicCharacter where

@@ -10,6 +10,9 @@ extra-deps:
   - pretty-tree-0.1.0.0
   - tasty-rerun-1.1.12
   - text-show-3.7.5
+  - text-show-instances-3.7
+  - github: recursion-ninja/bv-little
+    commit: e4abc26a16398326c510875a1dd7195ac7b909be
 
 #ghc-options:
 #  "$everything": -j -fdiagnostics-color=always -fspecialize-aggressively -fexpose-all-unfoldings
@@ -20,3 +23,5 @@ local-bin-path: bin
 require-stack-version: ">=1.7.1"
 
 resolver: lts-13.2
+
+dump-logs: all

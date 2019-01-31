@@ -38,6 +38,8 @@ import           Data.Set             (Set)
 import qualified Data.Set             as Set
 import           GHC.Generics         (Generic)
 import           Prelude              hiding (zipWith)
+import           TextShow             (TextShow)
+import           TextShow.Instances   ()
 
 
 -- |
@@ -45,7 +47,7 @@ import           Prelude              hiding (zipWith)
 --
 -- Often used to represent a spanning tree in a DAG.
 newtype EdgeSet e = ES (Set e)
-  deriving (Eq, Foldable, Generic, Monoid, Ord, Semigroup)
+  deriving (Eq, Foldable, Generic, Monoid, Ord, Semigroup, TextShow)
 
 {--
 -- |

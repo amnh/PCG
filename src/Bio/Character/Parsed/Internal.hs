@@ -20,10 +20,15 @@
 
 module Bio.Character.Parsed.Internal where
 
-import Data.Alphabet
-import Data.List.NonEmpty (NonEmpty)
-import Data.Map           (Map)
-import Data.Vector        (Vector)
+import           Data.Alphabet
+import           Data.Foldable      (Foldable (toList))
+import           Data.List.NonEmpty (NonEmpty)
+import qualified Data.List.NonEmpty as NE
+import           Data.Map           (Map)
+import           Data.String        (IsString (fromString))
+import           Data.Text.Short    (ShortText)
+import           Data.Vector        (Vector)
+import           File.Format.Fastc  (CharacterSequence)
 
 
 -- |
@@ -37,7 +42,7 @@ type ParsedChars = Vector ParsedCharacter
 
 -- |
 -- The string value that uniquely identifies a taxon.
-type Identifier = String
+type Identifier = ShortText
 
 
 -- |
@@ -46,6 +51,15 @@ type Identifier = String
 -- or discrete with variable length.
 data ParsedCharacter
    = ParsedContinuousCharacter (Maybe Double)
-   | ParsedDiscreteCharacter   (Maybe (AmbiguityGroup String))
-   | ParsedDynamicCharacter    (Maybe (NonEmpty (AmbiguityGroup String)))
+   | ParsedDiscreteCharacter   (Maybe (AmbiguityGroup ShortText))
+   | ParsedDynamicCharacter    (Maybe (NonEmpty (AmbiguityGroup ShortText)))
    deriving (Eq, Show)
+
+
+parsedDynamicCharacterFromShortText :: ShortText -> ParsedCharacter
+parsedDynamicCharacterFromShortText = ParsedDynamicCharacter . pure . pure . pure
+
+
+convertCharacterSequenceLikeFASTA :: CharacterSequence -> ParsedChars
+convertCharacterSequenceLikeFASTA
+  = pure . ParsedDynamicCharacter . Just . NE.fromList . toList . fmap (fmap fromString)

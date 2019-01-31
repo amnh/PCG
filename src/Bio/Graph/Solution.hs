@@ -17,6 +17,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MonoLocalBinds             #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
@@ -47,6 +48,7 @@ import qualified Data.Text.Lazy            as L
 import           GHC.Generics
 import           Text.Newick.Class
 import           Text.XML
+import           TextShow                  (TextShow (showb, showtl), fromLazyText)
 import           Type.Reflection           (Typeable)
 
 
@@ -121,6 +123,35 @@ instance Show a => Show (PhylogeneticSolution a) where
             f k e = mconcat
                 [ "Forest #"
                 , show k
+                , ":\n\n"
+                , indent e
+                , "\n"
+                ]
+
+instance TextShow a => TextShow (PhylogeneticSolution a) where
+
+    showb = fromLazyText
+          . ("Solution:\n\n" <>)
+          . indent
+          . renderForests
+          . fmap renderForest
+          . phylogeneticForests
+      where
+        indent       = L.intercalate  "\n" . fmap ("  " <>) . L.lines
+        renderForest = indent . foldMapWithKey f
+          where
+            f k e = fold
+                [ "Component #"
+                , showtl k
+                , ":\n\n"
+                , indent $ showtl e
+                , "\n"
+                ]
+        renderForests = indent . foldMapWithKey f
+          where
+            f k e = fold
+                [ "Forest #"
+                , showtl k
                 , ":\n\n"
                 , indent e
                 , "\n"

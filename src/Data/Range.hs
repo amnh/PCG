@@ -11,9 +11,10 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric    #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies      #-}
 
 module Data.Range
   ( Bound()
@@ -40,6 +41,7 @@ module Data.Range
 
 import Control.DeepSeq
 import GHC.Generics
+import TextShow        (TextShow (showb))
 
 -- |
 -- A range between two bounds. The lower bound will always be less than or equal
@@ -72,6 +74,11 @@ class Num (Bound a) => Ranged a where
 instance Show r => Show (Range r) where
 
     show (Range (x,y,_)) = mconcat [ "[" , show x, ", ", show y, "]" ]
+
+
+instance TextShow r => TextShow (Range r) where
+
+    showb (Range (x,y,_)) = mconcat [ "[" , showb x, ", ", showb y, "]" ]
 
 
 -- |
