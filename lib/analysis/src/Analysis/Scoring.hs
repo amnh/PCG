@@ -32,14 +32,14 @@ module Analysis.Scoring
 import           Analysis.Parsimony.Additive.Internal
 import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Analysis.Parsimony.Fitch.Internal
-import           Analysis.Parsimony.Internal
 import           Analysis.Parsimony.Sankoff.Internal
 import           Bio.Character
 import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Graph
 import           Bio.Graph.Node
-import           Bio.Graph.PhylogeneticDAG.Internal            (setDefaultMetadata)
+import           Bio.Graph.Node.Context
+import           Bio.Graph.PhylogeneticDAG                     (setDefaultMetadata)
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
 import           Control.Lens.Operators                        ((%~))

@@ -26,10 +26,10 @@
 
 module Bio.Graph.ReferenceDAG.Internal where
 
-import           Analysis.Parsimony.Internal
 import           Bio.Graph.BinaryRenderingTree
 import           Bio.Graph.Component
 import           Bio.Graph.LeafSet
+import           Bio.Graph.Node.Context
 import           Control.Applicative           as Alt (Alternative (empty, (<|>)))
 import           Control.Arrow                 ((&&&), (***))
 import           Control.DeepSeq
@@ -213,6 +213,17 @@ instance HasReferenceVector
     where
   {-# INLINE _references #-}
   _references = lens references (\r v -> r {references = v})
+
+-- |
+-- A 'Lens' for the 'rootRefs' field
+class HasRootReferences s a | s -> a where
+  _rootRefs :: Lens' s a
+
+{-# SPECIALISE _rootRefs :: Lens' (ReferenceDAG d e n) (NonEmpty Int) #-}
+
+instance HasRootReferences (ReferenceDAG d e n) (NonEmpty Int) where
+  {-# INLINE _rootRefs #-}
+  _rootRefs = lens rootRefs (\r v -> r {rootRefs = v})
 
 -- |
 -- A 'Fold' for folding over a structure containing node decorations.

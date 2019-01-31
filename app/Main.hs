@@ -6,21 +6,21 @@ module Main (main) where
 
 import Control.DeepSeq
 import Control.Evaluation
-import Data.Char                    (toUpper)
-import Data.Semigroup               ((<>))
-import Data.Version                 (showVersion)
+import Data.Char                          (toUpper)
+import Data.Semigroup                     ((<>))
+import Data.Version                       (showVersion)
 import Data.Void
-import Development.GitRev           (gitCommitCount, gitHash)
+import Development.GitRev                 (gitCommitCount, gitHash)
 import GHC.Generics
-import Options.Applicative          hiding (ParseError)
-import Paths_phylocomgraph          (version)
+import Options.Applicative                hiding (ParseError)
+import Paths_phylogenetic_component_graph (version)
 import PCG.Computation.Internal
-import PCG.Syntax                   (computationalStreamParser)
+import PCG.Syntax                         (computationalStreamParser)
 import System.Environment
 import System.Exit
 import System.IO
-import Text.Megaparsec              (ParseErrorBundle, Parsec, errorBundlePretty, parse)
-import Text.PrettyPrint.ANSI.Leijen (align, indent, int, line, string, text, (<+>), (</>))
+import Text.Megaparsec                    (ParseErrorBundle, Parsec, errorBundlePretty, parse)
+import Text.PrettyPrint.ANSI.Leijen       (align, indent, int, line, string, text, (<+>), (</>))
 
 
 -- |

@@ -14,13 +14,13 @@
 
 module Bio.Character.Encodable
   ( ContinuousCharacter()
-  , EncodableContinuousCharacter(..)
-  , DynamicCharacter(DC,Missing)
+  , DynamicCharacter(..)
   , DynamicCharacters
   , DynamicCharacterElement()
   , StaticCharacter()
   , StaticCharacterBlock()
   , EncodedAmbiguityGroupContainer(..)
+  , EncodableContinuousCharacter(..)
   , EncodableDynamicCharacter(..)
   , EncodableStaticCharacter(..)
   , EncodableStaticCharacterStream(..)

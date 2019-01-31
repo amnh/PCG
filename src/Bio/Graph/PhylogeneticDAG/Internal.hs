@@ -45,11 +45,11 @@ module Bio.Graph.PhylogeneticDAG.Internal
   ) where
 
 
-import           Analysis.Parsimony.Internal
 import           Bio.Character.Decoration.Shared
 import           Bio.Character.Encodable
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
+import           Bio.Graph.Node.Context
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Metadata.Continuous
 import           Bio.Metadata.Discrete

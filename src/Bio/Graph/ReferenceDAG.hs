@@ -24,6 +24,7 @@ module Bio.Graph.ReferenceDAG
   , HasChildRefs(..)
   , HasGraphData(..)
   , HasReferenceVector(..)
+  , HasRootReferences(..)
   , HasDagCost(..)
   , HasNetworkEdgeCost(..)
   , HasRootingCost(..)

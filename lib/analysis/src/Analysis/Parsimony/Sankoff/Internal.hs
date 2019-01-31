@@ -30,10 +30,10 @@
 
 module Analysis.Parsimony.Sankoff.Internal where
 
-import Analysis.Parsimony.Internal
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Metric
 import Bio.Character.Encodable
+import Bio.Graph.Node.Context
 import Bio.Metadata
 import Control.Lens
 import Data.Bits

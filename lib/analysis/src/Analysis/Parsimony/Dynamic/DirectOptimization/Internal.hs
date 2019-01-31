@@ -29,9 +29,9 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Internal
   ) where
 
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
-import           Analysis.Parsimony.Internal
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
+import           Bio.Graph.Node.Context
 import           Bio.Metadata                                           hiding (DenseTransitionCostMatrix)
 import           Control.Lens
 import           Data.Bits
@@ -45,6 +45,7 @@ import           Data.List.Utility                                      (invaria
 import           Data.MonoTraversable
 import           Data.Range
 import           Data.Semigroup
+import           Data.TCM.Dense.FFI                                     (DenseTransitionCostMatrix)
 import           Data.Word
 import           FFI.Character.Exportable
 import           Numeric.Extended.Natural

@@ -20,8 +20,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization
-  ( DenseTransitionCostMatrix
-  , OverlapFunction
+  ( OverlapFunction
   , directOptimizationPostorder
   , directOptimizationPostorderPairwise
   , directOptimizationPreorder

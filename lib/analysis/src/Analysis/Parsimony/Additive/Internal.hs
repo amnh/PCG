@@ -25,8 +25,8 @@
 module Analysis.Parsimony.Additive.Internal where
 
 
-import Analysis.Parsimony.Internal
 import Bio.Character.Decoration.Additive
+import Bio.Graph.Node.Context
 import Control.Lens
 import Data.Range
 import Numeric.Extended

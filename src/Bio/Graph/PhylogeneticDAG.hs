@@ -32,7 +32,6 @@ module Bio.Graph.PhylogeneticDAG
   , renderSummary
   , rootCosts
   , setEdgeSequences
-  , totalEdgeCosts
   , getDotContextWithBaseAndIndex
   -- * Mapping over networks
   , edgePreorderMap
@@ -54,7 +53,6 @@ import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
 import           Bio.Graph.PhylogeneticDAG.Postorder
 import           Bio.Graph.PhylogeneticDAG.Preorder
-import           Bio.Graph.PhylogeneticDAG.TotalEdgeCost
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
 import           Data.Key

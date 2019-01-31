@@ -26,10 +26,11 @@ module Bio.Graph.PhylogeneticDAG.Preorder
   , setEdgeSequences
   ) where
 
-import           Analysis.Parsimony.Internal        as AP
+                 -- TO DO: Change to more sensible qualified name
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
 import           Bio.Graph.Node
+import           Bio.Graph.Node.Context             as AP
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Metadata

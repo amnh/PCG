@@ -8,7 +8,7 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- 
+--
 --
 -----------------------------------------------------------------------------
 
@@ -26,8 +26,8 @@ import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
 import           Bio.Graph.Node
-import           Bio.Graph.PhylogeneticDAG.Internal
-import           Bio.Graph.ReferenceDAG.Internal
+import           Bio.Graph.PhylogeneticDAG
+import           Bio.Graph.ReferenceDAG
 import           Bio.Sequence
 import           Control.Applicative
 import           Control.DeepSeq
@@ -63,9 +63,9 @@ totalEdgeCosts
 --totalEdgeCosts _ (PDAG2 dag _) | trace ("Before Total Edge Cost: " <> referenceRendering dag) False = undefined
 totalEdgeCosts (PDAG2 dag meta) = {-- toNonEmpty . --} applyWeights $ foldlWithKey f initAcc refVec
   where
-    refVec  = references dag
+    refVec  = dag ^. _references
 
-    roots   = rootRefs dag
+    roots   = dag ^. _rootRefs
 
     initAcc = (0 <$) . toList . (^. dynamicBin) <$> sequencesWLOG
 
@@ -73,7 +73,7 @@ totalEdgeCosts (PDAG2 dag meta) = {-- toNonEmpty . --} applyWeights $ foldlWithK
 
     dynamicMetadataSeq = toList . (^. dynamicBin) <$> toNonEmpty (meta ^. blockSequence)
 
-    getSequence = NE.fromList . otoList . characterSequence . NE.head . resolutions . nodeDecoration . (refVec !)
+    getSequence = NE.fromList . otoList . characterSequence . NE.head . resolutions . (^. _nodeDecoration) . (refVec !)
 
     getFields        = fmap (fmap (^. singleDisambiguation) . toList . (^. dynamicBin)) . getSequence
 
@@ -94,8 +94,8 @@ totalEdgeCosts (PDAG2 dag meta) = {-- toNonEmpty . --} applyWeights $ foldlWithK
       | otherwise = ofoldl' g acc applicableNodes
       where
         adjacentNodes   = IS.map collapseRootEdge $
-                              parentRefs node <>
-                              IM.keysSet (childRefs node)
+                              node ^. _parentRefs <>
+                              IM.keysSet (node ^. _childRefs)
         applicableNodes = {- IS.map (\x -> trace ("Edge: " <> show (key, x)) x) $ -} IS.filter (> key) adjacentNodes
         nodeSequence    = getFields key
 
@@ -114,12 +114,12 @@ totalEdgeCosts (PDAG2 dag meta) = {-- toNonEmpty . --} applyWeights $ foldlWithK
                                              , show (x, key)
                                              ]) x) .
                         -}
-              case filter (/= key) . IM.keys . childRefs $ refVec ! i of
+              case filter (/= key) . IM.keys . (^. _childRefs) $ refVec ! i of
                 x:_ -> x
                 _   -> error $ unlines
                     [ "Found the empty list after filtering the child references which are not equal to the key."
                     , "The key we are considering is: " <> show key
                     , "The child index was: " <> show i
-                    , "The child references where: " <> show (IM.keys . childRefs $ refVec ! i)
+                    , "The child references where: " <> show (IM.keys . (^. _childRefs) $ refVec ! i)
                     ]
 

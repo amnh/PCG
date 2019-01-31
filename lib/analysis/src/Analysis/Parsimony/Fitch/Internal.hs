@@ -22,10 +22,10 @@
 
 module Analysis.Parsimony.Fitch.Internal where
 
-import Analysis.Parsimony.Internal
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Fitch
 import Bio.Character.Encodable
+import Bio.Graph.Node.Context
 import Control.Lens
 import Data.Bits
 
