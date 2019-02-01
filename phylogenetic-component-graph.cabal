@@ -717,6 +717,7 @@ executable pcg
     keys                    ^>= 3.12      && < 3.13,
     lens                    ^>= 4.17      && < 4.18,
     megaparsec              ^>= 7.0       && < 7.1,
+    mtl                     ^>= 2.2       && < 2.3,
     optparse-applicative    ^>= 0.14      && < 0.15,
     parallel                ^>= 3.2       && < 3.3,
     random-shuffle          ^>= 0.0.4     && < 0.1,
@@ -1049,6 +1050,7 @@ test-suite unit-tests
   build-depends:
     alphabet,
     analysis,
+    evaluation,
     pcg-utility,
     serialize,
     pcg-core,
@@ -1076,7 +1078,7 @@ test-suite unit-tests
     smallcheck              ^>= 1.1.5     && < 1.2,
     tasty                   ^>= 1.2       && < 1.3,
     tasty-hunit             ^>= 0.10.0    && < 0.11,
-    tasty-quickcheck        ^>= 0.9       && < 1.0,
+    tasty-quickcheck,  
     tasty-smallcheck        ^>= 0.8       && < 1.0,
     tasty-rerun             ^>= 1.1.14    && < 2.0,
     text-show               ^>= 3.7.5     && < 3.8,
@@ -1108,16 +1110,12 @@ test-suite unit-tests
     Bio.Character.Encodable.Static.Class
     Bio.Character.Encodable.Static.Internal
     Bio.Character.Encodable.Stream
-    Bio.Character.Type
-    Bio.Character.Exportable
-    Bio.Character.Exportable.Class
     Bio.Graph.BinaryRenderingTree
     Bio.Graph.Component
     Bio.Graph.LeafSet
     Bio.Graph.ReferenceDAG.Internal
     Bio.Graph.ReferenceDAG.Test
     Data.EdgeSet
-    Data.TCM.Test
     Data.Range
     TestSuite.ExecutableTests
     TestSuite.LibraryTests
@@ -1152,7 +1150,7 @@ test-suite pcg-utility-test-suite
     QuickCheck              ^>= 2.12      && < 2.13,
     tasty                   ^>= 1.2       && < 1.3,
     tasty-hunit             ^>= 0.10.0    && < 0.11,
-    tasty-quickcheck        ^>= 0.9       && < 1.0,
+    tasty-quickcheck,
     tasty-rerun             ^>= 1.1.14    && < 2.0,
     text-short              ^>= 0.1.2     && < 0.2,
     text-show-instances     ^>= 3.7       && < 3.8,
@@ -1202,7 +1200,7 @@ test-suite pcg-file-parsers-unit-tests
     smallcheck              ^>= 1.1.5     && < 1.2,
     tasty                   ^>= 1.2       && < 1.3,
     tasty-hunit             ^>= 0.10.0    && < 0.11,
-    tasty-quickcheck        ^>= 0.9       && < 1.0,
+    tasty-quickcheck,
     text-short              ^>= 0.1.2     && < 0.2,
     text-show               ^>= 3.7.5     && < 3.8,
     text-show-instances     ^>= 3.7       && < 3.8,
