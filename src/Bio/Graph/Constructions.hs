@@ -19,6 +19,7 @@ module Bio.Graph.Constructions
   , CharacterDAG
   , DecoratedCharacterResult
   , FinalDecorationDAG
+  , GlobalSettings
   , GraphState
   , PhylogeneticDAG(..)
   , PhylogeneticDAG2(..)
@@ -55,6 +56,7 @@ import Bio.Sequence
 import Control.Evaluation
 import Control.Lens.Combinators            (mapped)
 import Control.Lens.Operators              ((%~), (.~), (^.))
+import Control.Monad.Reader                (ReaderT)
 import Data.Compact
 import Data.EdgeLength
 import Data.Function                       ((&))
@@ -77,15 +79,17 @@ type CharacterDAG =
          UnifiedDiscreteCharacter
          UnifiedDynamicCharacter
 
+-- |
+-- A context type for global settings during evaluation
+type GlobalSettings = ()
 
 -- |
 -- A solution that contains only topological /and/ character information.
 type CharacterResult = PhylogeneticSolution CharacterDAG
 
-
 -- |
 -- Simple monad transformer stack for evaluating a phylogenetic search.
-type SearchState = EvaluationT IO GraphState
+type SearchState = EvaluationT (ReaderT GlobalSettings IO) GraphState
 
 
 -- |

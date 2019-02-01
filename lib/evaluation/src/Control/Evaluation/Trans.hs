@@ -18,6 +18,9 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
+-- This is needed due to the functional dependency in MonadReader.
+{-# LANGUAGE UndecidableInstances  #-}
+
 module Control.Evaluation.Trans where
 
 import           Control.Applicative
@@ -29,6 +32,7 @@ import           Control.Monad.Fail          (MonadFail)
 import qualified Control.Monad.Fail          as F
 import           Control.Monad.IO.Class
 import           Control.Monad.Logger
+import           Control.Monad.Reader        (MonadReader (..))
 import           Control.Monad.Trans.Class
 import           Control.Monad.Writer.Strict (MonadWriter (..))
 import           Data.DList                  (DList)
@@ -116,25 +120,26 @@ instance MonadIO m => MonadIO (EvaluationT m) where
 
     liftIO = lift . liftIO
 
+-- | (✔)
+instance MonadReader r m => MonadReader r (EvaluationT m) where
+
+    ask    = lift ask
+    local  = mapEvaluationT . local
+    reader = lift . reader
+
 
 -- | (✔)
 instance MonadTrans EvaluationT where
 
     lift = EvaluationT . fmap pure
 
+
 -- | (✔)
-instance MonadWriter (DList Notification) m
-           => MonadWriter (DList Notification) (EvaluationT m) where
+instance Monad m => MonadWriter (DList Notification) (EvaluationT m) where
 
-    writer (a,w) =
-      do
-        m <- listen . writer $ (a,w)
-        let ev = writer m
-        state ev
-
+    writer = EvaluationT . pure . writer
     listen = EvaluationT . fmap listen . runEvaluation
-
-    pass = EvaluationT .  fmap pass . runEvaluation
+    pass   = EvaluationT .  fmap pass . runEvaluation
 
 
 -- | (✔)
@@ -169,3 +174,9 @@ state = EvaluationT . pure
 -- the STDOUT.
 showRun :: Show a => EvaluationT IO a -> IO ()
 showRun = (print =<<) . runEvaluation
+
+
+-- |
+-- Map between two `EvaluationT` computations.
+mapEvaluationT :: (m (Evaluation a) -> n (Evaluation b)) -> EvaluationT m a -> EvaluationT n b
+mapEvaluationT f = EvaluationT . f . runEvaluation

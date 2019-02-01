@@ -2,6 +2,7 @@
 
 module PCG.Computation.Internal
   ( evaluate
+  , getGlobalSettings
   , optimizeComputation
   , renderSearchState
   ) where
@@ -56,3 +57,8 @@ renderSearchState = evaluation def err val
     def        = (ExitFailure 3, "[❓] No computation speciified...?")
     err errMsg = (ExitFailure 5, "[✘] Error: "<> trimR errMsg       )
     val _      = (ExitSuccess  , "[✔] Computation complete!"        )
+
+
+
+getGlobalSettings :: IO GlobalSettings
+getGlobalSettings = pure ()

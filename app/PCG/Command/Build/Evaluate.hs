@@ -30,6 +30,7 @@ import           Control.Evaluation
 import           Control.Lens
 import           Control.Monad                                 (replicateM)
 import           Control.Monad.IO.Class
+import           Control.Monad.Reader                          (ReaderT)
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Compact                                  (compact, getCompact)
@@ -81,7 +82,7 @@ evaluate (BuildCommand trajectoryCount buildType) cpctInState =
 wagnerBuildLogic
   :: PhylogeneticSolution FinalDecorationDAG
   -> Int
-  -> EvaluationT IO (NonEmpty FinalDecorationDAG)
+  -> EvaluationT (ReaderT GlobalSettings IO) (NonEmpty FinalDecorationDAG)
 wagnerBuildLogic v count =
     case toList $ v ^. leafSet of
       []   -> fail "There are no nodes with which to build a tree."
@@ -99,7 +100,7 @@ wagnerBuildLogic v count =
 networkBuildLogic
   :: PhylogeneticSolution FinalDecorationDAG
   -> a
-  -> EvaluationT IO (NonEmpty FinalDecorationDAG)
+  -> EvaluationT (ReaderT GlobalSettings IO) (NonEmpty FinalDecorationDAG)
 networkBuildLogic v _ = do
     let bestTrees = toNonEmpty . NE.head $ phylogeneticForests v
     liftIO $ putStrLn "Beginning network construction."
@@ -110,7 +111,7 @@ networkBuildLogic v _ = do
 forestBuildLogic
   :: PhylogeneticSolution FinalDecorationDAG
   -> Int
-  -> EvaluationT IO (NonEmpty FinalDecorationDAG)
+  -> EvaluationT (ReaderT GlobalSettings IO) (NonEmpty FinalDecorationDAG)
 forestBuildLogic _ _ = fail "The BUILD command type 'Forest' is not yet implemented!"
 
 

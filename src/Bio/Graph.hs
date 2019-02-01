@@ -19,6 +19,7 @@ module Bio.Graph
   , CharacterDAG
   , DecoratedCharacterResult
   , FinalDecorationDAG
+  , GlobalSettings
   , GraphState
   , PhylogeneticDAG(..)
   , PhylogeneticDAG2(..)

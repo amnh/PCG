@@ -6,6 +6,7 @@ module Main (main) where
 
 import Control.DeepSeq
 import Control.Evaluation
+import Control.Monad.Reader               (runReaderT)
 import Data.Char                          (toUpper)
 import Data.Semigroup                     ((<>))
 import Data.Version                       (showVersion)
@@ -64,6 +65,7 @@ instance NFData Verbosity
 main :: IO ()
 main = do
      opts <- force <$> parseCommandLineOptions
+     globalSettings <- getGlobalSettings
      let  _verbosity = verbosity opts
      if   printVersion opts
      then putStrLn fullVersionInformation
@@ -74,7 +76,7 @@ main = do
             Right inputStream -> do
                 (code, outputStream) <- case parse' computationalStreamParser (inputFile opts) inputStream of
                                           Left  err -> pure (ExitFailure 4, errorBundlePretty err)
-                                          Right val -> fmap renderSearchState . runEvaluation . evaluate $ optimizeComputation val
+                                          Right val -> fmap renderSearchState . (`runReaderT` globalSettings) . runEvaluation . evaluate $ optimizeComputation val
                 let  outputPath = outputFile opts
                 if   (toUpper <$> outputPath) == "STDOUT"
                 then hSetBuffering stdout NoBuffering >> putStrLn outputStream
