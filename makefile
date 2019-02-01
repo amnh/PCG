@@ -23,14 +23,14 @@ cabal-pcg-path = dist-newstyle/build/x86_64-linux/ghc-8.6.3/phylogenetic-compone
 ################################################################################
 
 # Default build target
-all: standard-build copy-haddock
+all: cabal-standard-build
 #all: stack-build-profiling
 
 # Rebuilds with profiling
-prof: stack-build-profiling
+prof: cabal-build-profiling
 
 # Builds fast as possible
-quick: stack-build-quick
+quick: cabal-build-quick
 
 # Rebuilds as fast as possible
 rebuild: quick
@@ -39,25 +39,25 @@ rebuild: quick
 rebuild-full: clean rebuild
 
 # Clean then rebuild outputting core
-core: clean stack-build-core
+core: clean cabal-build-core
 
 # Clean then build with the llvm backend
-llvm: clean stack-build-llvm
+llvm: clean cabal-build-llvm
 
 # Rebuilds with optimizations and runs tests
-test: stack-build-test
+test: cabal-test
 
 # Re-builds project then runs only integration tests
-test-integration: stack-build-test-integration
+test-integration: cabal-build-test-integration
 
 # Re-builds project then runs only unit tests
-test-unit: stack-build-test-unit
+test-unit: cabal-build-test-unit
 
-test-failures: stack-build-test-failures
+test-failures: cabal-build-test-failures
 
-test-new: stack-build-test-new
+test-new: cabal-build-test-new
 
-test-golden-new: stack-build-test-golden-new
+test-golden-new: cabal-build-test-golden-new
 
 # Runs linter
 
@@ -65,7 +65,7 @@ lint: run-linter
 
 # Makes hoogle server
 
-hoogle: stack-hoogle-server
+hoogle: cabal-hoogle-server
 
 
 # Target Definitions
@@ -148,6 +148,9 @@ cabal-standard-build: cabal-setup
 	cabal new-build
 	$(copy-executable)
 
+cabal-refresh:
+	   rm -rf dist-newstyle && cabal new-clean  && cabal new-configur && cabal new-build
+
 # Builds with all useful options for package power users
 cabal-full-build: clean cabal-setup cabal-build-prof
 
@@ -181,7 +184,13 @@ cabal-build-llvm: phylogenetic-component-graph.cabal cabal.project
 
 # Builds tests and updates log of tests that have been run
 cabal-test: phylogenetic-component-graph.cabal cabal.project cabal-test-unit cabal-test-integration
-	cabal new-run test:unit-tests -- "--rerun-update"
+	cabal new-run test:unit-tests                  --enable-tests -- "--rerun-update"
+	cabal new-run test:pcg-utility-test-suite      --enable-tests -- "--rerun-update"
+	cabal new-run test:pcg-file-parsers-unit-tests --enable-tests -- "--rerun-update"
+	cabal new-run test:alphabet-test-suite         --enable-tests -- "--rerun-update"
+	cabal new-run test:evaluation-test-suite       --enable-tests -- "--rerun-update"
+	cabal new-run test:tcm-test-suite              --enable-tests -- "--rerun-update"
+	cabal new-run test:integration-tests           --enable-tests -- "--rerun-update"
 
 # Builds and runs integration tests after a standard build.
 cabal-test-integration: phylogenetic-component-graph.cabal cabal.project
