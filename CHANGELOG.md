@@ -5,11 +5,11 @@ PCG uses [PVP Versioning][1].
 Releases are available [on GitHub][2].
 
 
-## _v0.2_ - Unreleased Changes
+## _v0.2.0.0_ - Unreleased Changes
 
 * Using semantic versioning
-* Updated to GHC-8.4.4
-* Updated to Cabal-2.2
+* Updated to GHC-8.6.3
+* Updated to Cabal-2.4
 * Updated build command to add network edges to input graphs rather than wagner build a new tree first.
 * Updated read command grammar to allow for more specific TCM specification
 * Improved efficiency and consistency of character metadata representation
@@ -35,7 +35,7 @@ Releases are available [on GitHub][2].
 * Added module for memoized vector computation abstracting the method used in pre/postorder
 * Streamlined build experience on MacOS
 * Corrected defect in handling of prealigned input data
-* Corrected defect in FFI resulting in a spae leak
+* Corrected defect in FFI resulting in a space leak
 * Corrected defect in Data.Range value construction
 * Corrected defect in Data.Range.Ranged type-class definitions
 * Corrected defect in Data.Vector.NonEmpty.unfoldr
