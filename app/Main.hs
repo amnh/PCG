@@ -6,6 +6,7 @@ module Main (main) where
 
 import Control.DeepSeq
 import Control.Evaluation
+import Control.Monad                (when)
 import Data.Char                    (toUpper)
 import Data.Semigroup               ((<>))
 import Data.Version                 (showVersion)
@@ -30,6 +31,7 @@ data  CommandLineOptions
     { inputFile    :: FilePath
     , outputFile   :: FilePath
     , printVersion :: Bool
+    , printSplash  :: Bool
     , verbosity    :: Verbosity
     } deriving (Generic)
 
@@ -65,6 +67,7 @@ main :: IO ()
 main = do
      opts <- force <$> parseCommandLineOptions
      let  _verbosity = verbosity opts
+     when (printSplash opts) printSplashImage
      if   printVersion opts
      then putStrLn fullVersionInformation
      else do
@@ -139,6 +142,7 @@ parserInformation = info (helper <*> commandLineOptions) description
           <$> fileSpec 'i' "input"  "STDIN"  "Input PCG script file"
           <*> fileSpec 'o' "output" "STDOUT" "Output file"
           <*> switch  (mconcat [long "version", help "Display version number"])
+          <*> switch  (mconcat [long "splash" , help "Display splash image"])
           <*> (validateVerbosity <$> option auto verbositySpec)
 
     fileSpec c s d h = strOption $ mconcat
@@ -216,3 +220,32 @@ validateVerbosity 1 = Errors
 validateVerbosity 2 = Warnings
 validateVerbosity 4 = Debugging
 validateVerbosity _ = Informational
+
+
+printSplashImage :: IO ()
+printSplashImage = putStrLn $ unlines
+  [ "______ _           _                             _   _      "
+  , "| ___ \\ |         | |                           | | (_)     "
+  , "| |_/ / |__  _   _| | ___   __ _  ___ _ __   ___| |_ _  ___ "
+  , "|  __/| '_ \\| | | | |/ _ \\ / _` |/ _ \\ '_ \\ / _ \\ __| |/ __|"
+  , "| |   | | | | |_| | | (_) | (_| |  __/ | | |  __/ |_| | (__ "
+  , "\\_|   |_| |_|\\__, |_|\\___/ \\__, |\\___|_| |_|\\___|\\__|_|\\___|"
+  , "              __/ |         __/ |                           "
+  , "             |___/         |___/                            "
+  , " _____                                              _       "
+  , "/  __ \\                                            | |      "
+  , "| /  \\/ ___  _ __ ___  _ __   ___  _ __   ___ _ __ | |_     "
+  , "| |    / _ \\| '_ ` _ \\| '_ \\ / _ \\| '_ \\ / _ \\ '_ \\| __|    "
+  , "| \\__/\\ (_) | | | | | | |_) | (_) | | | |  __/ | | | |_     "
+  , " \\____/\\___/|_| |_| |_| .__/ \\___/|_| |_|\\___|_| |_|\\__|    "
+  , "                      | |                                   "
+  , "                      |_|                                   "
+  , " _____                 _                                    "
+  , "|  __ \\               | |                                   "
+  , "| |  \\/_ __ __ _ _ __ | |__  ___                            "
+  , "| | __| '__/ _` | '_ \\| '_ \\/ __|                           "
+  , "| |_\ \ | | (_| | |_) | | | \\__ \\                           "
+  , " \\____/_|  \\__,_| .__/|_| |_|___/                           "
+  , "                | |                                         "
+  , "                |_|                                         "
+  ]
