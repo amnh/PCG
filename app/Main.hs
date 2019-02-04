@@ -68,10 +68,11 @@ main = do
      opts <- force <$> parseCommandLineOptions
      globalSettings <- getGlobalSettings
      let  _verbosity = verbosity opts
-     when (printSplash opts) printSplashImage
-     if   printVersion opts
-     then putStrLn fullVersionInformation
-     else do
+     case (printSplash opts, printVersion opts) of
+       (True , True ) -> printSplashImage *> putStrLn fullVersionInformation
+       (True , False) -> printSplashImage
+       (False, True ) -> putStrLn fullVersionInformation
+       (False, False) -> do
           inputStreamMaybe <- retreiveInputStream $ inputFile opts
           case inputStreamMaybe of
             Left errorMessage -> putStrLn errorMessage
@@ -245,7 +246,7 @@ printSplashImage = putStrLn $ unlines
   , "|  __ \\               | |                                   "
   , "| |  \\/_ __ __ _ _ __ | |__  ___                            "
   , "| | __| '__/ _` | '_ \\| '_ \\/ __|                           "
-  , "| |_\ \ | | (_| | |_) | | | \\__ \\                           "
+  , "| |_\\ \\ | | (_| | |_) | | | \\__ \\                           "
   , " \\____/_|  \\__,_| .__/|_| |_|___/                           "
   , "                | |                                         "
   , "                |_|                                         "
