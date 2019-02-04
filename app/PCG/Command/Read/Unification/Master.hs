@@ -204,11 +204,25 @@ rectifyResults2 fprs =
       . catMaybes
       $   colateErrors ForestExtraTaxa
       <$> expandForestErrors (Set.map toString) extraNames
-    missingError
+    missingError = constructErrorMaybe ForestMissingTaxa missingNames
+{-
       = listToMaybe
       . catMaybes
       $   colateErrors ForestMissingTaxa
       <$> expandForestErrors (Set.map toString) missingNames
+-}
+
+    constructErrorMaybe :: (Foldable f, Foldable t, Foldable c)
+                        => (NonEmpty a -> FilePath -> UnificationErrorMessage)
+                        -> f (t (c Identifier), FracturedParseResult)
+                        -> Maybe UnificationError
+    constructErrorMaybe f xs = listToMaybe . catMaybes
+                          . fmap (colateErrors f)
+                          . expandForestErrors id
+                          $ toList xs
+      where
+        convertToListsAndStrings = 
+          fmap (first (fmap (fmap toString . toList) . toList)) . toList
 
     colateErrors :: (Foldable t, Foldable t')
                  => (NonEmpty a -> FilePath -> UnificationErrorMessage)
