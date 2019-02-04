@@ -13,9 +13,9 @@
 -----------------------------------------------------------------------------
 
 module Bio.Metadata
-  ( ParsedMetadata(..)
+  (
   -- * General Metadata Shared by All Characters
-  , GeneralCharacterMetadata(..)
+    GeneralCharacterMetadata(..)
   , GeneralCharacterMetadataDec()
   , generalMetadata
   -- * Continuous Character Metadata
@@ -60,4 +60,3 @@ import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
 import Bio.Metadata.Dynamic
 import Bio.Metadata.General
-import Bio.Metadata.Parsed

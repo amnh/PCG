@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.PhyloGraph.Forest.Parsed
+-- Module      :  Data.Normalization.Topology
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -8,7 +8,7 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Typeclass for a parsed forest so that it can convert into an internal forest.
+-- Type-class for a normalizing topological data from input files.
 --
 -----------------------------------------------------------------------------
 
@@ -17,9 +17,14 @@
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Bio.Graph.Forest.Parsed where
+module Data.Normalization.Topology
+  ( NormalizedTree
+  , NormalizedForest
+  , NormalizedForestSet
+  , HasNormalizedTopology(..)
+  ) where
 
-import           Bio.Graph.Forest
+import           Bio.Graph
 import           Bio.Graph.ReferenceDAG
 import           Control.Arrow                    (first, (&&&))
 import           Data.Coerce                      (coerce)
@@ -53,42 +58,42 @@ import           Prelude                          hiding (lookup)
 
 -- |
 -- The type of possibly-present decorations on a tree from a parsed file.
-type ParserTree   = ReferenceDAG () EdgeLength (Maybe NodeLabel)
+type NormalizedTree   = ReferenceDAG () EdgeLength (Maybe NodeLabel)
 
 
 -- |
 -- The parser coalesced type representing a possibly present forest.
-type ParserForest = Maybe (PhylogeneticForest ParserTree)
+type NormalizedForest = Maybe (PhylogeneticForest NormalizedTree)
 
 
 -- |
 -- The parser coalesced type representing a possibly present forest.
-type ParserForestSet = Maybe (NonEmpty (PhylogeneticForest ParserTree))
+type NormalizedForestSet = Maybe (NonEmpty (PhylogeneticForest NormalizedTree))
 
 
 -- |
 -- An internal type for representing a node with a unique numeric identifier.
-data NewickEnum   = NE !Int (Maybe NodeLabel) (Maybe Double) [NewickEnum]
+data NewickEnum = NE !Int (Maybe NodeLabel) (Maybe Double) [NewickEnum]
 
 
 -- |
 -- Represents a parser result type which can have a possibly empty forest
 -- extracted from it.
-class ParsedForest a where
+class HasNormalizedTopology a where
 
-    unifyGraph :: a -> ParserForestSet
+    getNormalizedTopology :: a -> NormalizedForestSet
 
 
 -- | (✔)
 instance Hashable GraphID where
 
-   hashWithSalt salt = hashWithSalt salt . show -- Lazy hash, should be fine
+   hashWithSalt salt = hashWithSalt salt . show -- Stupid hash technique, should be fine
 
 
 -- | (✔)
-instance ParsedForest (DotGraph GraphID) where
+instance HasNormalizedTopology (DotGraph GraphID) where
 
-    unifyGraph dot = Just . pure . PhylogeneticForest . pure $ unfoldDAG f seed
+    getNormalizedTopology dot = Just . pure . PhylogeneticForest . pure $ unfoldDAG f seed
       where
         seed :: GraphID
         (seed,_) =  findMin cMapping
@@ -108,39 +113,39 @@ instance ParsedForest (DotGraph GraphID) where
 
 
 -- | (✔)
-instance ParsedForest FastaParseResult where
+instance HasNormalizedTopology FastaParseResult where
 
-    unifyGraph = const Nothing
-
-
--- | (✔)
-instance ParsedForest FastcParseResult where
-
-    unifyGraph = const Nothing
+    getNormalizedTopology = const Nothing
 
 
 -- | (✔)
-instance ParsedForest TaxonSequenceMap where
+instance HasNormalizedTopology FastcParseResult where
 
-    unifyGraph = const Nothing
-
-
--- | (✔)
-instance ParsedForest TCM where
-
-    unifyGraph = const Nothing
+    getNormalizedTopology = const Nothing
 
 
 -- | (✔)
-instance ParsedForest Nexus where
+instance HasNormalizedTopology TaxonSequenceMap where
 
-    unifyGraph (Nexus _ forest) = unifyGraph =<< nonEmpty forest
+    getNormalizedTopology = const Nothing
 
 
 -- | (✔)
-instance ParsedForest (NonEmpty NewickForest) where
+instance HasNormalizedTopology TCM where
 
-    unifyGraph = Just . fmap (PhylogeneticForest . fmap (coerceTree . relationMap . enumerate)) {- . (\x -> trace (unlines $ renderNewickForest <$> toList x) x) -}
+    getNormalizedTopology = const Nothing
+
+
+-- | (✔)
+instance HasNormalizedTopology Nexus where
+
+    getNormalizedTopology (Nexus _ forest) = getNormalizedTopology =<< nonEmpty forest
+
+
+-- | (✔)
+instance HasNormalizedTopology (NonEmpty NewickForest) where
+
+    getNormalizedTopology = Just . fmap (PhylogeneticForest . fmap (coerceTree . relationMap . enumerate))
       where
 
         -- Apply generating function by indexing adjacency matrix.
@@ -198,8 +203,8 @@ instance ParsedForest (NonEmpty NewickForest) where
 
 
 -- | (✔)
-instance ParsedForest TntResult where
-  unifyGraph input = fmap pure $
+instance HasNormalizedTopology TntResult where
+  getNormalizedTopology input = fmap pure $
         case input of
           Left                forest  ->
             toPhylogeneticForest getTNTName <$> Just     forest
@@ -244,11 +249,10 @@ instance ParsedForest TntResult where
               Prefix s -> nodeLabel . fromString $ s
 
 
-{- -}
 -- | (✔)
-instance ParsedForest VER.VertexEdgeRoot where
+instance HasNormalizedTopology VER.VertexEdgeRoot where
 
-    unifyGraph (VER vs es rs) =
+    getNormalizedTopology (VER vs es rs) =
         Just
       . pure
       . PhylogeneticForest
@@ -297,33 +301,3 @@ instance ParsedForest VER.VertexEdgeRoot where
                     case label `lookup` childMapping of
                        Nothing -> []
                        Just xs -> toList xs
-
-{- -}
-
-{-
--- | Convert the referential forests defined by sets of vertices, edges, and
---   roots into a forest of topological tree structure.
-convertVerToNewick :: VertexEdgeRoot -> Forest NewickNode
-convertVerToNewick (VER _ e r) = buildNewickTree Nothing <$> toList r
-  where
-    buildNewickTree :: Maybe Double -> VertexLabel -> NewickNode
-    buildNewickTree c n = fromJust $ newickNode kids (Just n) c
-      where
-        kids = fmap (uncurry buildNewickTree) . catMaybes $ kidMay n <$> toList e
-        kidMay vertex edge = do
-          other <- VER.connectedVertex vertex edge
-          pure (VER.edgeLength edge, other)
-
--- | Convert the topological 'LeafyTree' structure into a forest of topological
---   tree structures with nodes that hold additional information.
-convertTntToNewick :: (n -> String) -> LeafyTree n -> NewickNode
-convertTntToNewick f (Leaf   x ) = fromJust $ newickNode [] (Just $ f x) Nothing -- Scary use of fromJust?
-convertTntToNewick f (Branch xs) = fromJust $ newickNode (convertTntToNewick f <$> xs) Nothing Nothing
-
--- | Conversion function for NodeType to string
-getTNTName :: NodeType -> String
-getTNTName node = case node of
-    (Index i) -> show i
-    (Name n) -> n
-    (Prefix s) -> s
--}

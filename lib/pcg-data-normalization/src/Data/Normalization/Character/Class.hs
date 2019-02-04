@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Character.Parsed.Class
+-- Module      :  Data.Normalization.Character.Class
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -17,18 +17,21 @@
 
 {-# LANGUAGE ScopedTypeVariables  #-}
 
-module Bio.Character.Parsed.Class
-  ( ParsedCharacters(..)
-  , TaxonCharacters
+module Data.Normalization.Character.Class
+  ( Identifier
+  , HasNormalizedCharacters(..)
+  , NormalizedCharacter(..) 
+  , NormalizedCharacters
+  , NormalizedCharacterCollection
   ) where
 
-import           Bio.Character.Parsed.Internal
+import           Data.Normalization.Character.Internal
 import           Control.Arrow                    ((&&&), (***))
 import           Data.Foldable
 import           Data.Key
 import           Data.List.NonEmpty               (NonEmpty (..))
 import qualified Data.List.NonEmpty               as NE
-import           Data.Map                         (Map, fromSet, keysSet)
+import           Data.Map                         (fromSet, keysSet)
 import qualified Data.Map                         as M
 import           Data.Maybe
 import           Data.Semigroup.Foldable
@@ -43,7 +46,7 @@ import           Data.Vector.Custom               as V (fromList')
 import           Data.Vector.Instances            ()
 import           File.Format.Dot
 import           File.Format.Fasta
-import           File.Format.Fastc
+import           File.Format.Fastc                hiding (Identifier)
 import           File.Format.Newick
 import           File.Format.Nexus                hiding (TaxonSequenceMap)
 import           File.Format.TNT
@@ -51,20 +54,6 @@ import qualified File.Format.TNT                  as TNT
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
 import           Prelude                          hiding (zipWith)
-
-
-{-
-data ParsedCharacter
-   = ParsedContinuousCharacter  Double
-   | ParsedDiscreteCharacter   (AmbiguityGroup String)
-   | ParsedDynamicCharacter    (NonEmpty (AmbiguityGroup String))
-
-
-type ParsedChars = Vector (Maybe ParsedCharacter)
-
-
-type TaxonCharacters = Map String ParsedChars
--}
 
 
 -- |
@@ -84,15 +73,15 @@ type TaxonCharacters = Map String ParsedChars
 --
 -- I need to think about how this might interact with some things in Nexus, but it seems
 -- to make sense. It might make verification in the parsers more difficult.
-class ParsedCharacters a where
+class HasNormalizedCharacters a where
 
-    unifyCharacters :: a -> TaxonCharacters
+    getNormalizedCharacters :: a -> NormalizedCharacters
 
 
 -- | (✔)
-instance ParsedCharacters (DotGraph GraphID) where
+instance HasNormalizedCharacters (DotGraph GraphID) where
 
-    unifyCharacters = fromSet (const mempty) . S.map (fromString . toIdentifier) . leafNodeSet
+    getNormalizedCharacters = fromSet (const mempty) . S.map (fromString . toIdentifier) . leafNodeSet
       where
         -- Get the set of all nodes with out degree 0.
         leafNodeSet :: Ord n => DotGraph n -> Set n
@@ -100,32 +89,32 @@ instance ParsedCharacters (DotGraph GraphID) where
 
 
 -- | (✔)
-instance ParsedCharacters FastaParseResult where
+instance HasNormalizedCharacters FastaParseResult where
 
-    unifyCharacters = foldMap f
+    getNormalizedCharacters = foldMap f
       where
         f (FastaSequence _ s) = M.singleton (fromString s) (convertSeq (fromString s))
         convertSeq = pure . parsedDynamicCharacterFromShortText
 
 
 -- | (✔)
-instance ParsedCharacters FastcParseResult where
+instance HasNormalizedCharacters FastcParseResult where
 
-    unifyCharacters = foldMap f
+    getNormalizedCharacters = foldMap f
       where
         f (FastcSequence label symbols) = M.singleton (fromString label) $ convertCharacterSequenceLikeFASTA symbols
 
 
 -- | (✔)
-instance ParsedCharacters TaxonSequenceMap where
+instance HasNormalizedCharacters TaxonSequenceMap where
 
-    unifyCharacters = fmap convertCharacterSequenceLikeFASTA . M.mapKeysMonotonic fromString
+    getNormalizedCharacters = fmap convertCharacterSequenceLikeFASTA . M.mapKeysMonotonic fromString
 
 
 -- | (✔)
-instance ParsedCharacters (NonEmpty NewickForest) where
+instance HasNormalizedCharacters (NonEmpty NewickForest) where
 
-    unifyCharacters = mergeMaps . foldMap1 (fmap f)
+    getNormalizedCharacters = mergeMaps . foldMap1 (fmap f)
       where
         f node
           | null (descendants node) = M.singleton nodeName mempty
@@ -135,19 +124,19 @@ instance ParsedCharacters (NonEmpty NewickForest) where
 
 
 -- | (✔)
-instance ParsedCharacters Nexus where
+instance HasNormalizedCharacters Nexus where
 
-    unifyCharacters (Nexus (seqMap, metadataVector) _)
+    getNormalizedCharacters (Nexus (seqMap, metadataVector) _)
       = f <$> M.mapKeysMonotonic fromString seqMap
       where
 
         f = zipWith g metadataVector
 
-        g :: CharacterMetadata -> Character -> ParsedCharacter
+        g :: CharacterMetadata -> Character -> NormalizedCharacter
         g m e
           | not $ isAligned m
-              = ParsedDynamicCharacter . convert $ e
-          | otherwise         = ParsedDiscreteCharacter $ do
+              = NormalizedDynamicCharacter . convert $ e
+          | otherwise         = NormalizedDiscreteCharacter $ do
               v <- e                      -- Check if the element is empty
               w <- NE.nonEmpty $ toList v -- If not, coerce the Vector to a NonEmpty list
               NE.nonEmpty                 -- Then grab the first element of the Vector,
@@ -173,32 +162,32 @@ instance ParsedCharacters Nexus where
 
 
 -- | (✔)
-instance ParsedCharacters TntResult where
+instance HasNormalizedCharacters TntResult where
 
-    unifyCharacters (Left forest) = mergeMaps $ foldl' f mempty forest
+    getNormalizedCharacters (Left forest) = mergeMaps $ foldl' f mempty forest
       where
         f xs tree = foldMap g tree : xs
         g (Index  i) = M.singleton (intToShortText i) mempty
         g (Name   n) = M.singleton (fromString n) mempty
         g (Prefix p) = M.singleton (fromString p) mempty
 
-    unifyCharacters (Right (WithTaxa seqs _ []    ))
+    getNormalizedCharacters (Right (WithTaxa seqs _ []    ))
       = M.fromList . toList $ (fromString *** tntToTheSuperSequence)  <$> seqs
     -- maybe just use the seq vaiable like above and remove this case?
-    unifyCharacters (Right (WithTaxa _    _ forest))
+    getNormalizedCharacters (Right (WithTaxa _    _ forest))
       = mergeMaps $ M.fromList . toList . fmap (fromString *** tntToTheSuperSequence) <$> forest
 
 
 -- | (✔)
-instance ParsedCharacters TCM where
+instance HasNormalizedCharacters TCM where
 
-    unifyCharacters _ = mempty
+    getNormalizedCharacters _ = mempty
 
 
 -- | (✔)
-instance ParsedCharacters VertexEdgeRoot where
+instance HasNormalizedCharacters VertexEdgeRoot where
 
-    unifyCharacters (VER _ e r) = mergeMaps $ f . buildTree <$> toList r
+    getNormalizedCharacters (VER _ e r) = mergeMaps $ f . buildTree <$> toList r
       where
         es = toList e
         f node
@@ -216,12 +205,12 @@ instance ParsedCharacters VertexEdgeRoot where
 
 
 -- |
--- Coalesce the 'TaxonSequence' to the larger type 'ParsedSequences'
-tntToTheSuperSequence :: TaxonSequence -> ParsedChars
+-- Coalesce the 'TaxonSequence' to the larger type 'NormalizedSequences'
+tntToTheSuperSequence :: TaxonSequence -> NormalizedCharacterCollection
 tntToTheSuperSequence = V.fromList' . fmap f
   where
-    f (TNT.Continuous c) = ParsedContinuousCharacter c
-    f discreteCharacter  = ParsedDiscreteCharacter
+    f (TNT.Continuous c) = NormalizedContinuousCharacter c
+    f discreteCharacter  = NormalizedDiscreteCharacter
                          . Just
                          . fmap fromString
                          . coerceDiscreteRendering
@@ -230,12 +219,3 @@ tntToTheSuperSequence = V.fromList' . fmap f
 
     coerceDiscreteRendering ('[':xs) = NE.fromList $ pure <$> init xs
     coerceDiscreteRendering e        = pure e
-
-
--- |
--- Takes a 'Foldable' structure of 'Map's and returns the union 'Map'
--- containing all the key-value pairs. This fold is right biased with respect
--- to duplicate keys. When identical keys occur in multiple 'Map's, the value
--- occurring last in the 'Foldable' structure is returned.
-mergeMaps :: (Foldable t, Ord k) => t (Map k v) -> Map k v
-mergeMaps = foldl' (M.unionWith (flip const)) mempty

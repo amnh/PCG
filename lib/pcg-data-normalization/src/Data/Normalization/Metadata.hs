@@ -1,7 +1,6 @@
-
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Character.Parsed
+-- Module      :  Data.Normalization.Metadata
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -14,13 +13,10 @@
 -----------------------------------------------------------------------------
 
 
-module Bio.Character.Parsed
-  ( Identifier
-  , ParsedCharacter(..)
-  , ParsedChars
-  , ParsedCharacters(..)
-  , TaxonCharacters
+module Data.Normalization.Metadata
+  ( NormalizedMetadata(..)
+  , HasNormalizedMetadata(..)
   ) where
 
-import Bio.Character.Parsed.Class
-import Bio.Character.Parsed.Internal
+import Data.Normalization.Metadata.Class
+--import Bio.Metadata.Parsed.Internal

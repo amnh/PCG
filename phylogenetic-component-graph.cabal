@@ -189,7 +189,6 @@ library pcg-core
     Bio.Character.Decoration.NonMetric
     Bio.Character.Encodable
     Bio.Character.Encodable.Continuous
-    Bio.Character.Parsed
     Bio.Character.Type
     Bio.Metadata
     Bio.Metadata.CharacterName
@@ -197,7 +196,6 @@ library pcg-core
     Bio.Metadata.Discrete
     Bio.Metadata.DiscreteWithTCM
     Bio.Metadata.Dynamic
-    Bio.Metadata.Parsed
     Bio.Sequence
     Bio.Sequence.Block
     Bio.Sequence.Character
@@ -205,7 +203,6 @@ library pcg-core
     Bio.Graph
     Bio.Graph.Component
     Bio.Graph.Constructions
-    Bio.Graph.Forest.Parsed
     Bio.Graph.LeafSet
     Bio.Graph.Node
     Bio.Graph.Node.Context
@@ -244,8 +241,6 @@ library pcg-core
     Bio.Character.Encodable.Static.Class
     Bio.Character.Encodable.Static.Internal
     Bio.Character.Encodable.Stream
-    Bio.Character.Parsed.Class
-    Bio.Character.Parsed.Internal
     Bio.Metadata.General
     Bio.Metadata.General.Class
     Bio.Metadata.General.Internal
@@ -275,7 +270,46 @@ library pcg-core
     Data.EdgeSet
 
 
+library pcg-data-normalization
 
+  import:
+    ghc-flags,
+    language-specs
+
+  hs-source-dirs:   lib/pcg-data-normalization/src
+
+  build-depends:
+    alphabet,
+    pcg-core,
+    pcg-file-parsers,
+    pcg-utility,
+    serialize,
+    tcm,
+    base                     >= 4.11      && < 5.0,
+    containers               >= 0.5.8     && < 0.7,
+    keys                     >= 3.0       && < 4.0,
+    graphviz                 >= 2999.20   && < 3000,
+    hashable                 >= 1.2       && < 2.0,
+    semigroupoids            >= 5.2.1     && < 5.4,
+    text-short               >= 0.1       && < 1.0,
+--    text-show                >= 3.0       && < 4.0,
+--    text-show-instances      >= 3.0       && < 4.0,            
+    unordered-containers     >= 0.2.9     && < 0.3,
+    vector                   >= 0.12.0.2  && < 0.13,
+--    vector-binary-instances  >= 0.2.1.1   && < 0.3,
+    vector-instances         >= 3.4       && < 3.5,
+                
+
+  exposed-modules:
+    Data.Normalization.Character
+    Data.Normalization.Metadata
+    Data.Normalization.Topology
+  
+  other-modules:
+    Data.Normalization.Character.Class
+    Data.Normalization.Character.Internal
+    Data.Normalization.Metadata.Class
+    Data.Normalization.Metadata.Internal
 
 -- A general purpose library for character state names.
 --
@@ -692,6 +726,7 @@ executable pcg
     analysis,
     evaluation,
     pcg-core,
+    pcg-data-normalization,            
     pcg-file-parsers,
     pcg-language,
     pcg-utility,

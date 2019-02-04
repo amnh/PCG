@@ -7,11 +7,7 @@ module PCG.Command.Read.Evaluate
   ( evaluate
   ) where
 
-import           Bio.Character.Parsed
 import           Bio.Graph
-import           Bio.Graph.Forest.Parsed
-import           Bio.Metadata
-import           Bio.Metadata.Parsed
 import           Control.Monad                             (when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Except
@@ -32,6 +28,9 @@ import           Data.List.Utility                         (occurances)
 import           Data.Map                                  (Map, updateLookupWithKey)
 import qualified Data.Map                                  as M
 import           Data.Maybe                                (catMaybes)
+import           Data.Normalization.Character
+import           Data.Normalization.Metadata
+import           Data.Normalization.Topology
 import           Data.Ord                                  (comparing)
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
@@ -276,9 +275,9 @@ progressiveParse inputPath = do
             ]
 
         makeParser
-          :: ( ParsedMetadata a
-             , ParsedCharacters a
-             , ParsedForest a
+          :: ( HasNormalizedMetadata a
+             , HasNormalizedCharacters a
+             , HasNormalizedTopology a
              )
           => Parsec Void s a
           -> FilePath
@@ -295,18 +294,18 @@ progressiveParse inputPath = do
 
 
 toFractured
-  :: ( ParsedMetadata a
-     , ParsedCharacters a
-     , ParsedForest a
+  :: ( HasNormalizedMetadata a
+     , HasNormalizedCharacters a
+     , HasNormalizedTopology a
      )
   => Maybe (TCM.TCM, TCMStructure)
   -> FilePath
   -> a
   -> FracturedParseResult
 toFractured tcmMat path =
-    FPR <$> unifyCharacters
-        <*> unifyMetadata
-        <*> unifyGraph
+    FPR <$> getNormalizedCharacters
+        <*> getNormalizedMetadata
+        <*> getNormalizedTopology
         <*> const tcmMat
         <*> const path
 
@@ -393,19 +392,19 @@ expandDynamicCharactersMarkedAsAligned fpr = updateFpr <$> result
     result = foldrWithKey expandDynamicCharacters (pure ([], [] <$ characterMap)) $ parsedMetas fpr
 
                  -- Map Identifier ParsedChars
-    characterMap :: TaxonCharacters
+    characterMap :: NormalizedCharacters
     characterMap = parsedChars fpr
 
     getRepresentativeChar = head $ toList characterMap
 
     expandDynamicCharacters
       :: Int
-      -> ParsedCharacterMetadata
-      -> Validation ReadError ([ParsedCharacterMetadata], Map Identifier [ParsedCharacter])
-      -> Validation ReadError ([ParsedCharacterMetadata], Map Identifier [ParsedCharacter])
+      -> NormalizedMetadata
+      -> Validation ReadError ([NormalizedMetadata], Map Identifier [NormalizedCharacter])
+      -> Validation ReadError ([NormalizedMetadata], Map Identifier [NormalizedCharacter])
     expandDynamicCharacters k m acc =
         case getRepresentativeChar ! k of
-          ParsedDynamicCharacter {} | not (isDynamic m) ->
+          NormalizedDynamicCharacter {} | not (isDynamic m) ->
             case fmap fst . sortOn snd . occurances . catMaybes $ dynCharLen . (!k) <$> toList characterMap of
               []    -> acc
               [len] -> case acc of
@@ -416,13 +415,13 @@ expandDynamicCharactersMarkedAsAligned fpr = updateFpr <$> result
       where
         prependUnmodified (ms, cm) = (m:ms, (\i -> (((characterMap!i)!k):)) <#$> cm)
 
-    dynCharLen (ParsedDynamicCharacter x) = length <$> x
+    dynCharLen (NormalizedDynamicCharacter x) = length <$> x
     dynCharLen _                          = Nothing
 
     expandMetadata
       :: Int -- ^ Length
-      -> ParsedCharacterMetadata
-      -> [ParsedCharacterMetadata]
+      -> NormalizedMetadata
+      -> [NormalizedMetadata]
     expandMetadata len meta = replicate len $ setAligned meta
 
     expandCharacter
@@ -430,11 +429,11 @@ expandDynamicCharactersMarkedAsAligned fpr = updateFpr <$> result
       -> Int          -- ^ Index
       -> TS.ShortText -- ^ Key
       -> v
-      -> [ParsedCharacter]
+      -> [NormalizedCharacter]
     expandCharacter len i k _ =
         case (characterMap ! k) ! i of
-          ParsedDynamicCharacter  Nothing  -> replicate len $ ParsedDiscreteCharacter Nothing
-          ParsedDynamicCharacter (Just xs) -> toList $ ParsedDiscreteCharacter . Just <$> xs
+          NormalizedDynamicCharacter  Nothing  -> replicate len $ NormalizedDiscreteCharacter Nothing
+          NormalizedDynamicCharacter (Just xs) -> toList $ NormalizedDiscreteCharacter . Just <$> xs
           _                                -> error "Bad character indexing in Read.Evaluate.expandCharacter"
 
 
@@ -442,6 +441,6 @@ removeGapsFromDynamicCharactersNotMarkedAsAligned :: FracturedParseResult -> Fra
 removeGapsFromDynamicCharactersNotMarkedAsAligned fpr =
     fpr { parsedChars = fmap removeGapsFromUnalignedDynamicCharacters <$> parsedChars fpr }
   where
-    removeGapsFromUnalignedDynamicCharacters :: ParsedCharacter -> ParsedCharacter
-    removeGapsFromUnalignedDynamicCharacters (ParsedDynamicCharacter (Just xs)) = ParsedDynamicCharacter . NE.nonEmpty $ NE.filter (/= pure "-") xs
+    removeGapsFromUnalignedDynamicCharacters :: NormalizedCharacter -> NormalizedCharacter
+    removeGapsFromUnalignedDynamicCharacters (NormalizedDynamicCharacter (Just xs)) = NormalizedDynamicCharacter . NE.nonEmpty $ NE.filter (/= pure "-") xs
     removeGapsFromUnalignedDynamicCharacters e = e

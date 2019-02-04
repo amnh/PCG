@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Metadata.Parsed
+-- Module      :  Data.Normalization.Metadata.Class
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -17,22 +17,21 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
 
-module Bio.Metadata.Parsed
-  ( ParsedCharacterMetadata(..)
-  , ParsedMetadata(..)
+module Data.Normalization.Metadata.Class
+  ( NormalizedMetadata(..)
+  , HasNormalizedMetadata(..)
   ) where
 
-import           Bio.Character.Parsed
 import           Data.Alphabet
 import           Data.Foldable
 import           Data.Key
-import           Data.List                        (transpose)
 import           Data.List.NonEmpty               (NonEmpty)
 import           Data.Monoid
+import           Data.Normalization.Character
+import           Data.Normalization.Metadata.Internal
 import           Data.String                      (IsString (fromString))
-import           Data.TCM                         (TCM, TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
+import           Data.TCM                         (TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
 import qualified Data.TCM                         as TCM
-import           Data.Text.Short                  (ShortText)
 import           Data.Vector                      (Vector)
 import qualified Data.Vector                      as V
 import qualified Data.Vector.Custom               as V (fromList')
@@ -51,68 +50,55 @@ import           Prelude                          hiding (zip, zipWith)
 
 
 -- |
--- An intermediate composite type for parse result coercion.
-data ParsedCharacterMetadata
-   = ParsedCharacterMetadata
-   { alphabet      :: Alphabet ShortText
-   , characterName :: ShortText
-   , weight        :: Double
-   , parsedTCM     :: Maybe (TCM, TCMStructure)
-   , isDynamic     :: Bool
-   , isIgnored     :: Bool
-   } deriving (Show)
-
-
--- |
 -- Represents a parser result type which can have a character metadata
 -- structure extracted from it.
-class ParsedMetadata a where
+class HasNormalizedMetadata a where
 
-    unifyMetadata :: a -> Vector ParsedCharacterMetadata
-
-
--- | (✔)
-instance ParsedMetadata (DotGraph n) where
-
-    unifyMetadata _ = mempty
+    getNormalizedMetadata :: a -> Vector NormalizedMetadata
 
 
 -- | (✔)
-instance ParsedMetadata FastaParseResult where
+instance HasNormalizedMetadata (DotGraph n) where
 
-    unifyMetadata = makeEncodeInfo . unifyCharacters
-
-
--- | (✔)
-instance ParsedMetadata TaxonSequenceMap where
-
-    unifyMetadata = makeEncodeInfo . unifyCharacters
+    getNormalizedMetadata = const mempty
 
 
 -- | (✔)
-instance ParsedMetadata FastcParseResult where
+instance HasNormalizedMetadata FastaParseResult where
 
-    unifyMetadata = makeEncodeInfo . unifyCharacters
-
-
--- | (✔)
-instance ParsedMetadata (NonEmpty NewickForest) where
-
-    unifyMetadata _ = mempty
+    getNormalizedMetadata = makeEncodeInfo . getNormalizedCharacters
 
 
 -- | (✔)
-instance ParsedMetadata TNT.TntResult where
+instance HasNormalizedMetadata TaxonSequenceMap where
 
-    unifyMetadata (Left        _) = mempty
-    unifyMetadata (Right withSeq) = V.fromList' $ zipWith f parsedMetadatas parsedCharacters
+    getNormalizedMetadata = makeEncodeInfo . getNormalizedCharacters
+
+
+-- | (✔)
+instance HasNormalizedMetadata FastcParseResult where
+
+    getNormalizedMetadata = makeEncodeInfo . getNormalizedCharacters
+
+
+-- | (✔)
+instance HasNormalizedMetadata (NonEmpty NewickForest) where
+
+    getNormalizedMetadata = const mempty
+
+
+-- | (✔)
+instance HasNormalizedMetadata TNT.TntResult where
+
+    getNormalizedMetadata (Left        _) = mempty
+    getNormalizedMetadata (Right withSeq) = V.fromList' $ zipWith f parsedMetadatas parsedCharacters
       where
         parsedMetadatas  = toList $ TNT.charMetaData withSeq
         parsedCharacters = snd . head . toList $ TNT.sequences withSeq
 
-        f :: TNT.CharacterMetaData -> TNT.TntCharacter -> ParsedCharacterMetadata
+        f :: TNT.CharacterMetaData -> TNT.TntCharacter -> NormalizedMetadata
         f inMeta inChar =
-            ParsedCharacterMetadata
+            NormalizedMetadata
             { alphabet      = fmap fromString characterAlphabet
             , characterName = fromString . TNT.characterName $ inMeta
             , weight        = fromRational rationalWeight * suppliedWeight
@@ -181,9 +167,10 @@ instance ParsedMetadata TNT.TntResult where
 
 
 -- | (✔)
-instance ParsedMetadata F.TCM where
-    unifyMetadata (F.TCM alph mat) =
-        pure ParsedCharacterMetadata
+instance HasNormalizedMetadata F.TCM where
+
+    getNormalizedMetadata (F.TCM alph mat) =
+        pure NormalizedMetadata
         { alphabet      = fmap fromString . fromSymbols $  alph
         , characterName = ""
         , weight        = fromRational rationalWeight * fromIntegral coefficient
@@ -197,18 +184,19 @@ instance ParsedMetadata F.TCM where
 
 
 -- | (✔)
-instance ParsedMetadata VertexEdgeRoot where
-    unifyMetadata _ = mempty
+instance HasNormalizedMetadata VertexEdgeRoot where
+
+    getNormalizedMetadata = const mempty
 
 
 -- | (✔)
-instance ParsedMetadata Nexus where
+instance HasNormalizedMetadata Nexus where
 
-    unifyMetadata input @(Nexus (_, metas) _) = V.zipWith convertNexusMeta alphabetVector metas
+    getNormalizedMetadata input @(Nexus (_, metas) _) = V.zipWith convertNexusMeta alphabetVector metas
       where
-        alphabetVector = developAlphabets $ unifyCharacters input
+        alphabetVector = developAlphabets $ getNormalizedCharacters input
         convertNexusMeta developedAlphabet inMeta =
-            ParsedCharacterMetadata
+            NormalizedMetadata
             { alphabet      = developedAlphabet
             , characterName = fromString . Nex.name $ inMeta
             , weight        = fromRational chosenWeight * suppliedWeight
@@ -228,55 +216,3 @@ instance ParsedMetadata Nexus where
                     let (rationalWeight, unfactoredTcm)     = TCM.fromList . toList $ F.transitionCosts vals
                         (coefficient, resultTCM, structure) = (,,) <$> factoredWeight <*> factoredTcm <*> tcmStructure $ diagnoseTcm unfactoredTcm
                     in  (fromIntegral coefficient * rationalWeight, Just (resultTCM, structure))
-
-
--- |
--- Internal function to create alphabets
--- First is the new version. Following is the old version, which looks like it tosses the accumulator every once in a while.
--- Notes on data types follow
--- TreeChars :: Map String Maybe Vector [String]
--- bases are ambiguous, possibly multi-Char containers, hence [String]
--- characters are ordered groups of bases, hence Vector [String]
--- characters may be missing, hence Maybe Vector [String]
--- each taxon may have a sequence (multiple characters), hence Vector Maybe Vector [String]
--- sequences are values mapped to using taxon names as keys, hence Map String Vector Maybe Vector [String]
-developAlphabets :: TaxonCharacters -> Vector (Alphabet ShortText)
-developAlphabets
-    = V.fromList' . fmap (fromSymbols . foldMap f) . transpose . fmap toList . toList
-  where
-    f (ParsedContinuousCharacter _      ) = mempty
-    f (ParsedDiscreteCharacter   static ) = foldMap toList static
-    f (ParsedDynamicCharacter    dynamic) = foldMap (foldMap toList) dynamic
-
-
--- |
--- Functionality to make char info from tree seqs
-makeEncodeInfo :: TaxonCharacters -> Vector ParsedCharacterMetadata
-makeEncodeInfo = fmap makeOneInfo . developAlphabets
-
-
--- |
--- Make a single info given an alphabet without state names
-makeOneInfo :: Alphabet ShortText -> ParsedCharacterMetadata
-makeOneInfo alph =
-    ParsedCharacterMetadata
-    { alphabet      = alph
-    , characterName = ""
-    , weight        = 1
-    , parsedTCM     = Nothing
-    , isDynamic     = True
-    , isIgnored     = False
-    }
-
-
--- |
--- Generate the norm metric function.
-genAdditive :: (Int, Int) -> Int
-genAdditive (i,j) = max i j - min i j
-
-
--- |
--- Generate the discrete metric function.
-genFitch :: (Int, Int) -> Int
-genFitch    (i,j) = if i == j then 0 else 1
-
