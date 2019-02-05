@@ -341,57 +341,6 @@ joinSequences2 = collapseAndMerge . performMetadataTransformations . deriveCorre
                 lhs = Set.fromList $ keys x
                 rhs = Set.fromList $ keys y
 
-            buildMetadataBlock
-              :: Foldable1 t
-              => t (NormalizedCharacter
-                   , NormalizedMetadata
-                   , ShortText
-                   , Word -> Word -> Word
-                   , TCMStructure
-                   , CharacterName
-                   )
-              -> UnifiedMetadataBlock
-            buildMetadataBlock = foldMap1 encodeToSingletonMetadata
-              where
-                encodeToSingletonMetadata :: (NormalizedCharacter, NormalizedMetadata, ShortText, Word -> Word -> Word, TCMStructure, CharacterName)
-                          -> MetadataBlock ()
-                encodeToSingletonMetadata (charMay, charMeta, tcmSource,  scm, structure, charName) =
-                    case charMay of
-                      NormalizedContinuousCharacter {} ->
-                          MD.continuousToMetadataBlock
-                        $ continuousMetadata charName charWeight
-                      NormalizedDiscreteCharacter   {} ->
-                          MD.discreteToMetadataBlock structure
-                        $ discreteMetadataWithTCM charName charWeight specifiedAlphabet tcmSource scm
-                      NormalizedDynamicCharacter    {} ->
-                          MD.dynamicToMetadataBlock
-                        $ dynamicMetadataWithTCM charName charWeight specifiedAlphabet tcmSource scm
-
-
-                  where
-                    charWeight        = weight   charMeta
-                    specifiedAlphabet = fmap toString . alphabet  $ charMeta
-
-            encodeToCharacterBlock :: Foldable1 t
-                          => t (NormalizedCharacter, NormalizedMetadata, ShortText, Word -> Word -> Word, TCMStructure, CharacterName)
-                          -> UnifiedCharacterBlock
-            encodeToCharacterBlock = finalizeCharacterBlock . foldMap1 encodeBinToSingletonCharacterBlock
-              where
-                encodeBinToSingletonCharacterBlock
-                  :: (NormalizedCharacter, NormalizedMetadata, ShortText, Word -> Word -> Word, TCMStructure, CharacterName)
-                  -> PartialCharacterBlock UnifiedContinuousCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDiscreteCharacter UnifiedDynamicCharacter
-                encodeBinToSingletonCharacterBlock (charMay, charMeta, _tcmSource, _scm, structure, _charName) =
-                    case charMay of
-                      NormalizedContinuousCharacter continuousMay -> continuousSingleton           . Just $  continuousDecorationInitial $ toContinuousCharacter continuousMay
-                      NormalizedDiscreteCharacter     discreteMay ->   discreteSingleton structure . Just $ toDiscreteCharacterDecoration staticTransform discreteMay
-                      NormalizedDynamicCharacter       dynamicMay ->    dynamicSingleton           . Just $  toDynamicCharacterDecoration dynamicTransform dynamicMay
-                  where
-                    alphabetLength    = toEnum $ length specifiedAlphabet
-                    specifiedAlphabet = alphabet charMeta
-                    missingCharValue  = NE.fromList $ toList specifiedAlphabet
-                    dynamicTransform  = maybe (Missing alphabetLength) (encodeStream specifiedAlphabet)
-                    staticTransform   = encodeElement specifiedAlphabet . fromMaybe missingCharValue
-
 
             -- Necessary for mixing [] with NonEmpty
             prepend :: [a] -> NonEmpty a -> NonEmpty a
@@ -491,7 +440,6 @@ getUnificationErrors ParseData{..} = catMaybes [duplicateError, extraError, miss
         f (ys, fpr) = (id &&& const fpr) <$> ys
 
 
-
 additiveDistanceFunction :: Word -> Word -> Word
 additiveDistanceFunction i j = max i j - min i j
 
@@ -499,3 +447,84 @@ nonAdditiveDistanceFunction :: Word -> Word -> Word
 nonAdditiveDistanceFunction i j
   | i == j    = 0
   | otherwise = 1
+
+
+buildMetadataBlock
+  :: Foldable1 t
+  => t (NormalizedCharacter
+       , NormalizedMetadata
+       , ShortText
+       , Word -> Word -> Word
+       , TCMStructure
+       , CharacterName
+       )
+  -> UnifiedMetadataBlock
+buildMetadataBlock = foldMap1 encodeToSingletonMetadata
+  where
+    encodeToSingletonMetadata
+      :: (NormalizedCharacter
+         , NormalizedMetadata
+         , ShortText
+         , Word -> Word -> Word
+         , TCMStructure
+         , CharacterName
+         )
+         -> MetadataBlock ()
+    encodeToSingletonMetadata
+        (charMay, charMeta, tcmSource,  scm, structure, charName) =
+          case charMay of
+            NormalizedContinuousCharacter {} ->
+                MD.continuousToMetadataBlock
+              $ continuousMetadata charName charWeight
+            NormalizedDiscreteCharacter   {} ->
+                MD.discreteToMetadataBlock structure
+              $ discreteMetadataWithTCM charName charWeight specifiedAlphabet tcmSource scm
+            NormalizedDynamicCharacter    {} ->
+                MD.dynamicToMetadataBlock
+              $ dynamicMetadataWithTCM charName charWeight specifiedAlphabet tcmSource scm
+     where
+      charWeight        = weight   charMeta
+      specifiedAlphabet = fmap toString . alphabet  $ charMeta
+
+encodeToCharacterBlock
+  :: Foldable1 t
+  => t (NormalizedCharacter
+       , NormalizedMetadata
+       , ShortText
+       , Word -> Word -> Word
+       , TCMStructure
+       , CharacterName
+       )
+  -> UnifiedCharacterBlock
+encodeToCharacterBlock = finalizeCharacterBlock . foldMap1 encodeBinToSingletonCharacterBlock
+  where
+    encodeBinToSingletonCharacterBlock
+      :: (NormalizedCharacter
+         , NormalizedMetadata
+         , ShortText
+         , Word -> Word -> Word
+         , TCMStructure
+         , CharacterName
+         )
+      -> PartialCharacterBlock
+           UnifiedContinuousCharacter
+           UnifiedDiscreteCharacter
+           UnifiedDiscreteCharacter
+           UnifiedDiscreteCharacter
+           UnifiedDiscreteCharacter
+           UnifiedDynamicCharacter
+    encodeBinToSingletonCharacterBlock
+        (charMay, charMeta, _tcmSource, _scm, structure, _charName) =
+          case charMay of
+            NormalizedContinuousCharacter continuousMay
+              -> continuousSingleton . Just . continuousDecorationInitial $ toContinuousCharacter continuousMay
+            NormalizedDiscreteCharacter   discreteMay
+              ->   discreteSingleton structure . Just $ toDiscreteCharacterDecoration staticTransform discreteMay
+            NormalizedDynamicCharacter     dynamicMay
+              ->    dynamicSingleton . Just $  toDynamicCharacterDecoration dynamicTransform dynamicMay
+      where
+        alphabetLength    = toEnum $ length specifiedAlphabet
+        specifiedAlphabet = alphabet charMeta
+        missingCharValue  = NE.fromList $ toList specifiedAlphabet
+        dynamicTransform  = maybe (Missing alphabetLength) (encodeStream specifiedAlphabet)
+        staticTransform   = encodeElement specifiedAlphabet . fromMaybe missingCharValue
