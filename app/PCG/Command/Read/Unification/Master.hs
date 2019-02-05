@@ -16,6 +16,7 @@
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE RecordWildCards     #-}
 
 module PCG.Command.Read.Unification.Master
   ( FracturedParseResult(..)
@@ -85,6 +86,14 @@ data FracturedParseResult
    , sourceFile    :: FilePath
    }
 
+data ParseData
+  = ParseData
+  { dataSequences :: [FracturedParseResult]
+  , taxaSet       :: Set Identifier 
+  , allForests    :: [FracturedParseResult]
+  , forestTaxa    :: [([NonEmpty Identifier], FracturedParseResult)]
+  }
+
 
 instance Show FracturedParseResult where
 
@@ -121,32 +130,20 @@ rectifyResults2 fprs =
       []   -> fmap (fmap reifiedSolution) dagForest
       x:xs -> Left . sconcat $ x:|xs
   where
-    -- Step 1: Gather data file contents
-    dataSeqs        = filter (not . fromTreeOnlyFile) $ toList fprs
-    -- Step 2: Union the taxa names together into total terminal set
-    taxaSet         = mconcat $ (Set.fromList . keys . parsedChars) `parmap'` dataSeqs
-    -- Step 3: Gather forest file data
-    allForests      = filter (not . null . parsedForests) $ toList fprs
-    -- Step 4: Gather the taxa names for each forest from terminal nodes
-    forestTaxa :: [([NonEmpty Identifier], FracturedParseResult)]
-    forestTaxa      =  gatherForestsTerminalNames `parmap'` allForests
-    -- Step 5: Assert that each terminal node name is unique in each forest
-    duplicateNames :: [([[Identifier]], FracturedParseResult)]
-    duplicateNames  = filter (not . all null . fst) $ first (fmap duplicates) `parmap'` forestTaxa
-    -- Step 6: Assert that each forest's terminal node set is exactly the same as the taxa set from "data files"
-    extraNames   :: [([Set Identifier], FracturedParseResult)]
-    extraNames      = filter (not . all null . fst) $ first (fmap ((\\ taxaSet) . Set.fromList . toList)) `parmap'` forestTaxa
-    missingNames :: [([Set Identifier], FracturedParseResult)]
-    missingNames    = filter (not . all null . fst) $ first (fmap ((taxaSet \\) . Set.fromList . toList)) `parmap'` forestTaxa
-    -- Step 7: Combine disparte sequences from many sources into single metadata & character sequence.
-    (metaSeq,charSeqs) = joinSequences2 dataSeqs
-   -- charSeqs' :: Map ShortText UnifiedCharacterSequence
-   -- charSeqs' = Map.mapKeysMonotonic fromString charSeqs
-    -- Step 8: Collect the parsed forests to be merged
+
+    parseData@ParseData{..} = gatherParseData fprs
+    errors                  = getUnificationErrors parseData
+
+    -- Combine disparate sequences from many sources into single
+    -- metadata & character sequence.
+    seqs :: (Maybe UnifiedMetadataSequence, Map ShortText UnifiedCharacterSequence)
+    seqs@(metaSeq,charSeqs) = joinSequences2 dataSequences
+
+    -- Collect the parsed forests to be merged
     suppliedForests :: [PhylogeneticForest NormalizedTree]
     suppliedForests = foldMap toList . catMaybes $ parsedForests `parmap'` allForests
 
-    -- Step 9: Convert topological forests to DAGs (using reference indexing from #7 results)
+    -- Convert topological forests to DAGs (using reference indexing from #7 results)
     dagForest       =
         case (null suppliedForests, null charSeqs, metaSeq) of
           -- Throw a unification error here
@@ -192,38 +189,8 @@ rectifyResults2 fprs =
                   charLabelMay :: Maybe UnifiedCharacterSequence
                   charLabelMay = labelShort >>= (`lookup` charMapping)
 
-    -- Error collection
-    errors         = catMaybes [duplicateError, extraError, missingError]
-    duplicateError = constructErrorMaybe ForestDuplicateTaxa duplicateNames
-    extraError     = constructErrorMaybe ForestExtraTaxa     extraNames
-    missingError   = constructErrorMaybe ForestMissingTaxa   missingNames
 
-    constructErrorMaybe :: Foldable f
-                        => (NonEmpty Identifier -> FilePath -> UnificationErrorMessage)
-                        -> [([f Identifier], FracturedParseResult)]
-                        -> Maybe UnificationError
-    constructErrorMaybe f xs =
-        case catMaybes $ colateErrors f <$> expandForestErrors xs of
-          []   -> Nothing
-          y:ys -> Just . fold1 $ y:|ys
 
-    colateErrors :: (Foldable t, Foldable t')
-                 => (NonEmpty Identifier -> FilePath -> UnificationErrorMessage)
-                 -> t (t' Identifier, FracturedParseResult)
-                 -> Maybe UnificationError
-    colateErrors f xs =
-      case toList xs of
-        [] -> Nothing
-        ys -> Just . UnificationError . NE.fromList $ transformFPR <$> ys
-      where
-        transformFPR (x,y) = f (NE.fromList $ toList x) $ sourceFile y
-
-    expandForestErrors
-      :: [([t a], FracturedParseResult)]
-      -> [[(t a, FracturedParseResult)]]
-    expandForestErrors = fmap f
-      where
-        f (ys, fpr) = (id &&& const fpr) <$> ys
 
 
 -- |
@@ -457,6 +424,71 @@ gatherForestsTerminalNames fpr = (identifiers, fpr)
           case foldMap terminalNames2 forest of
              []   -> Nothing
              x:xs -> Just (x :| xs)
+
+
+
+gatherParseData
+  :: Foldable1 f
+  => f FracturedParseResult
+  -> ParseData
+gatherParseData fprs = ParseData{..}
+  where
+       -- Gather data file contents
+    dataSequences        = filter (not . fromTreeOnlyFile) $ toList fprs
+    -- Union the taxa names together into total terminal set
+    taxaSet         = mconcat $ (Set.fromList . keys . parsedChars) `parmap'` dataSequences
+    -- Gather forest file data
+    allForests      = filter (not . null . parsedForests) $ toList fprs
+    -- Gather the taxa names for each forest from terminal nodes
+    forestTaxa      =  gatherForestsTerminalNames `parmap'` allForests
+
+
+
+getUnificationErrors :: ParseData -> [UnificationError]
+getUnificationErrors ParseData{..} = catMaybes [duplicateError, extraError, missingError]
+  where
+    --Assert that each terminal node name is unique in each forest
+    duplicateNames :: [([[Identifier]], FracturedParseResult)]
+    duplicateNames = filter (not . all null . fst) $ first (fmap duplicates) `parmap'` forestTaxa
+    -- Assert that each forest's terminal node set is exactly the same
+    -- as the taxa set from "data files"
+    extraNames   :: [([Set Identifier], FracturedParseResult)]
+    extraNames      = filter (not . all null . fst) $ first (fmap ((\\ taxaSet) . Set.fromList . toList)) `parmap'` forestTaxa
+
+    missingNames :: [([Set Identifier], FracturedParseResult)]
+    missingNames    = filter (not . all null . fst) $ first (fmap ((taxaSet \\) . Set.fromList . toList)) `parmap'` forestTaxa
+
+ -- Error collecting
+    duplicateError = constructErrorMaybe ForestDuplicateTaxa duplicateNames
+    extraError     = constructErrorMaybe ForestExtraTaxa     extraNames
+    missingError   = constructErrorMaybe ForestMissingTaxa   missingNames
+
+    constructErrorMaybe :: Foldable f
+                        => (NonEmpty Identifier -> FilePath -> UnificationErrorMessage)
+                        -> [([f Identifier], FracturedParseResult)]
+                        -> Maybe UnificationError
+    constructErrorMaybe f xs =
+        case catMaybes $ colateErrors f <$> expandForestErrors xs of
+          []   -> Nothing
+          y:ys -> Just . fold1 $ y:|ys
+
+    colateErrors :: (Foldable t, Foldable t')
+                 => (NonEmpty Identifier -> FilePath -> UnificationErrorMessage)
+                 -> t (t' Identifier, FracturedParseResult)
+                 -> Maybe UnificationError
+    colateErrors f xs =
+      case toList xs of
+        [] -> Nothing
+        ys -> Just . UnificationError . NE.fromList $ transformFPR <$> ys
+      where
+        transformFPR (x,y) = f (NE.fromList $ toList x) $ sourceFile y
+
+    expandForestErrors
+      :: [([t a], FracturedParseResult)]
+      -> [[(t a, FracturedParseResult)]]
+    expandForestErrors = fmap f
+      where
+        f (ys, fpr) = (id &&& const fpr) <$> ys
 
 
 
