@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module PCG.Command.Read.Unification.UnificationError
   ( TaxaName
   , UnificationError(..)
@@ -5,11 +7,14 @@ module PCG.Command.Read.Unification.UnificationError
   ) where
 
 import Data.Foldable
-import Data.List          (intercalate)
-import Data.List.NonEmpty (NonEmpty)
+import Data.List.NonEmpty     (NonEmpty)
+import Data.Text.Short hiding (toString)
+import Data.Text.Short.Custom ()
+import TextShow
+import TextShow.Custom
 
 
-type TaxaName = String
+type TaxaName = ShortText
 
 
 newtype UnificationError
@@ -37,42 +42,58 @@ instance Show UnificationError where
 
 instance Show UnificationErrorMessage where
 
-    show (NonMatchingTaxa xs ys) = mconcat
+    show = toString . showb
+
+
+instance TextShow UnificationErrorMessage where
+
+    showb (NonMatchingTaxa xs ys) = mconcat
         [ "LHS: "
-        , show xs
+        , showb xs
         , "\nRHS: "
-        , show ys
+        , showb ys
         ]
-    show (NonMatchingTaxaSeqs xs ys) = mconcat
+
+    showb (NonMatchingTaxaSeqs xs ys) = mconcat
         [ "LHS: "
-        , show xs
+        , showb xs
         , "\nRHS:  "
-        , show ys
+        , showb ys
         ]
-    show (ForestDuplicateTaxa names path) = mconcat
+
+    showb (ForestDuplicateTaxa names path) = mconcat
         [ "The trees from file '"
-        , path
+        , showb path
         , "' contain an multiple entries for the following taxa: \n"
-        , listShow names
+        , listShowB names
         ]
-    show (ForestExtraTaxa names path) = mconcat
+
+    showb (ForestExtraTaxa names path) = mconcat
         [ "A tree from file '"
-        , path
+        , showb path
         , "' contains an entry for the following taxa not included in the data set(s): \n"
-        , listShow names
+        , listShowB names
         ]
-    show (ForestMissingTaxa names path) = mconcat
+
+    showb (ForestMissingTaxa names path) = mconcat
         [ "None of the trees from file '"
-        , path
+        , showb path
         , "' contain an entry for the taxa: \n"
-        , listShow names
+        , listShowB names
         ]
-    show (VacuousInput files) = mconcat
+
+    showb (VacuousInput files) = mconcat
        [ "There was niether any character sequences nor any trees found in any of the supplied input files:\n"
-       , (\x -> "  ["<>x<>"]") . intercalate ", " $ show <$> toList files
+       , (\x -> "  ["<>x<>"]") . intercalateB ", " $ showb <$> toList files
        ]
 
 
-listShow :: (Foldable t, Show a) => t a -> String
-listShow = (\x -> "[ " <> x <> "]") . drop 2 . unlines . fmap ((", " <>) . show) . toList
+listShowB :: (Foldable t, TextShow a) => t a -> Builder
+listShowB v =
+  case toList v of
+    []   -> "[]"
+    x:xs -> (\a -> "[ " <> a <> "]") . unlinesB
+          -- Add a leading comma to everything except the first element
+          -- Make everything Text values.
+          $ showb x : (((", " <>) . showb) <$> xs)
 

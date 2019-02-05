@@ -13,12 +13,21 @@
 -----------------------------------------------------------------------------
 {-# LANGUAGE BangPatterns      #-}
 {-# LANGUAGE OverloadedStrings #-}
+-- TODO: For the Data.Text.Short to have TextShow instance, remove when text-show-instances has been udated
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module ShortText.Custom where
+
+module Data.Text.Short.Custom where
 
 import Data.Char       (intToDigit, isSpace)
 import Data.Text.Short as TS
+import TextShow        hiding (singleton)
 import Prelude         hiding (break, dropWhile, reverse, words)
+
+ 
+instance TextShow ShortText where
+
+    showb = showb . toShortByteString
 
 
 -- |

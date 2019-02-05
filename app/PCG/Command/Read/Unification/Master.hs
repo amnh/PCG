@@ -58,7 +58,7 @@ import qualified Data.List.NonEmpty                            as NE
 import           Data.List.Utility                             (duplicates)
 import           Data.Map                                      (Map, intersectionWith, keys)
 import qualified Data.Map                                      as Map
-import           Data.Maybe                                    (catMaybes, fromMaybe, listToMaybe)
+import           Data.Maybe                                    (catMaybes, fromMaybe)
 import           Data.NodeLabel
 import           Data.Normalization.Character
 import           Data.Normalization.Metadata
@@ -193,40 +193,23 @@ rectifyResults2 fprs =
                   charLabelMay = labelShort >>= (`lookup` charMapping)
 
     -- Error collection
-    errors          = catMaybes [duplicateError, extraError, missingError]
-    duplicateError
-      = listToMaybe
-      . catMaybes
-      $   colateErrors ForestDuplicateTaxa
-      <$> expandForestErrors (fmap toString) duplicateNames
-    extraError
-      = listToMaybe
-      . catMaybes
-      $   colateErrors ForestExtraTaxa
-      <$> expandForestErrors (Set.map toString) extraNames
-    missingError = constructErrorMaybe ForestMissingTaxa missingNames
-{-
-      = listToMaybe
-      . catMaybes
-      $   colateErrors ForestMissingTaxa
-      <$> expandForestErrors (Set.map toString) missingNames
--}
+    errors         = catMaybes [duplicateError, extraError, missingError]
+    duplicateError = constructErrorMaybe ForestDuplicateTaxa duplicateNames
+    extraError     = constructErrorMaybe ForestExtraTaxa     extraNames
+    missingError   = constructErrorMaybe ForestMissingTaxa   missingNames
 
-    constructErrorMaybe :: (Foldable f, Foldable t, Foldable c)
-                        => (NonEmpty a -> FilePath -> UnificationErrorMessage)
-                        -> f (t (c Identifier), FracturedParseResult)
+    constructErrorMaybe :: Foldable f
+                        => (NonEmpty Identifier -> FilePath -> UnificationErrorMessage)
+                        -> [([f Identifier], FracturedParseResult)]
                         -> Maybe UnificationError
-    constructErrorMaybe f xs = listToMaybe . catMaybes
-                          . fmap (colateErrors f)
-                          . expandForestErrors id
-                          $ toList xs
-      where
-        convertToListsAndStrings = 
-          fmap (first (fmap (fmap toString . toList) . toList)) . toList
+    constructErrorMaybe f xs =
+        case catMaybes $ colateErrors f <$> expandForestErrors xs of
+          []   -> Nothing
+          y:ys -> Just . fold1 $ y:|ys
 
     colateErrors :: (Foldable t, Foldable t')
-                 => (NonEmpty a -> FilePath -> UnificationErrorMessage)
-                 -> t (t' a, FracturedParseResult)
+                 => (NonEmpty Identifier -> FilePath -> UnificationErrorMessage)
+                 -> t (t' Identifier, FracturedParseResult)
                  -> Maybe UnificationError
     colateErrors f xs =
       case toList xs of
@@ -235,14 +218,12 @@ rectifyResults2 fprs =
       where
         transformFPR (x,y) = f (NE.fromList $ toList x) $ sourceFile y
 
-    -- [([Set Identifier], FracturedParseResult)]
     expandForestErrors
-      :: (t a -> t b)
-      -> [([t a], FracturedParseResult)]
-      -> [[(t b, FracturedParseResult)]]
-    expandForestErrors g = fmap f
+      :: [([t a], FracturedParseResult)]
+      -> [[(t a, FracturedParseResult)]]
+    expandForestErrors = fmap f
       where
-        f (ys, fpr) = (g &&& const fpr) <$> ys
+        f (ys, fpr) = (id &&& const fpr) <$> ys
 
 
 -- |
