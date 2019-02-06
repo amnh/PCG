@@ -218,6 +218,18 @@ instance HasReferenceVector
   _references = lens references (\r v -> r {references = v})
 
 -- |
+-- A 'Lens' for the 'rootRefs' field
+class HasRootReferences s a | s -> a where
+  _rootRefs :: Lens' s a
+
+{-# SPECIALISE _rootRefs :: Lens' (ReferenceDAG d e n) (NonEmpty Int) #-}
+
+instance HasRootReferences (ReferenceDAG d e n) (NonEmpty Int) where
+  {-# INLINE _rootRefs #-}
+  _rootRefs = lens rootRefs (\r v -> r {rootRefs = v})
+
+
+-- |
 -- A 'Fold' for folding over a structure containing node decorations.
 class FoldNodeDecoration s a | s -> a where
   foldNodeDecoration :: Fold s a
@@ -1538,7 +1550,7 @@ tabulateNetworkInformation dag =
 
 
 -- |
--- Find all candidate network edges in a DAG.
+-- Find all candgidate network edges in a DAG.
 candidateNetworkEdges :: ReferenceDAG d e n -> Set ((Int, Int), (Int,Int))
 candidateNetworkEdges dag = S.fromList candidateEdgesList
   where
