@@ -28,7 +28,7 @@ import           Data.Map                 (Map)
 import qualified Data.Map           as M
 import           Data.String              (IsString (fromString))
 import           Data.Text.Short          (ShortText)
-import           Data.Vector              (Vector)
+import           Data.Vector.NonEmpty     (Vector)
 import           File.Format.Fastc        (CharacterSequence)
 
 

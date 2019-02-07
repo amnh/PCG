@@ -17,6 +17,8 @@
 
 {-# LANGUAGE ScopedTypeVariables  #-}
 
+{-# LANGUAGE NoMonoLocalBinds    #-}
+
 module Data.Normalization.Character.Class
   ( Identifier
   , HasNormalizedCharacters(..)
@@ -26,24 +28,26 @@ module Data.Normalization.Character.Class
   ) where
 
 import           Data.Normalization.Character.Internal
-import           Control.Arrow                    ((&&&), (***))
+import           Control.Arrow                    ((***))
 import           Data.Foldable
 import           Data.Key
 import           Data.List.NonEmpty               (NonEmpty (..))
 import qualified Data.List.NonEmpty               as NE
-import           Data.Map                         (fromSet, keysSet)
+import           Data.Map                         (Map)
 import qualified Data.Map                         as M
 import           Data.Maybe
-import           Data.Semigroup.Foldable
-import           Data.Set                         (Set)
-import qualified Data.Set                         as S
-import           Data.ShortText.Custom            (intToShortText)
+import           Data.Semigroup.Foldable          ()
+--import           Data.Set                         (Set)
+--import qualified Data.Set                         as S
+--import           Data.ShortText.Custom            (intToShortText)
 import           Data.String                      (IsString (fromString))
 import           Data.Text.Short                  (ShortText)
-import           Data.Tree
-import           Data.Vector                      (Vector)
-import           Data.Vector.Custom               as V (fromList')
-import           Data.Vector.Instances            ()
+--import           Data.Tree
+import           Data.Vector                             (Vector)
+--import qualified Data.Vector                      as V
+--import           Data.Vector.NonEmpty                  (Vector)
+import qualified Data.Vector.NonEmpty             as VNE
+--import           Data.Vector.Instances            ()
 import           File.Format.Dot
 import           File.Format.Fasta
 import           File.Format.Fastc                hiding (Identifier)
@@ -81,11 +85,13 @@ class HasNormalizedCharacters a where
 -- | (✔)
 instance HasNormalizedCharacters (DotGraph GraphID) where
 
-    getNormalizedCharacters = fromSet (const mempty) . S.map (fromString . toIdentifier) . leafNodeSet
+    getNormalizedCharacters = const mempty
+{-      fromSet (const mempty) . S.map (fromString . toIdentifier) . leafNodeSet
       where
         -- Get the set of all nodes with out degree 0.
         leafNodeSet :: Ord n => DotGraph n -> Set n
         leafNodeSet = keysSet . M.filter null . dotChildMap
+-}
 
 
 -- | (✔)
@@ -114,28 +120,33 @@ instance HasNormalizedCharacters TaxonSequenceMap where
 -- | (✔)
 instance HasNormalizedCharacters (NonEmpty NewickForest) where
 
-    getNormalizedCharacters = mergeMaps . foldMap1 (fmap f)
+    getNormalizedCharacters = const mempty
+{-
+      mergeMaps . foldMap1 (fmap f)
       where
-        f node
-          | null (descendants node) = M.singleton nodeName mempty
-          | otherwise = foldMap f $ descendants node -- foldl1 (<>) $ f <$> descendants node
+        f :: NewickNode -> Map ShortText NormalizedCharacterCollection
+        f node =
+          case descendants node of
+            []   -> M.singleton nodeName mempty
+            x:xs -> foldMap1 f $ x:|xs
           where
             nodeName = fromMaybe "" $ newickLabelShort node
+-}
 
 
 -- | (✔)
 instance HasNormalizedCharacters Nexus where
 
-    getNormalizedCharacters (Nexus (seqMap, metadataVector) _)
-      = f <$> M.mapKeysMonotonic fromString seqMap
+    getNormalizedCharacters (Nexus (seqMap, metadataVector) _) =
+        case VNE.fromVector metadataVector of
+          Nothing -> mempty
+          Just mv -> M.mapMaybe (f mv) $ M.mapKeysMonotonic fromString seqMap
       where
-
-        f = zipWith g metadataVector
+        f mv = fmap (zipWith g mv) . VNE.fromVector
 
         g :: CharacterMetadata -> Character -> NormalizedCharacter
         g m e
-          | not $ isAligned m
-              = NormalizedDynamicCharacter . convert $ e
+          | not $ isAligned m = NormalizedDynamicCharacter . convert $ e
           | otherwise         = NormalizedDiscreteCharacter $ do
               v <- e                      -- Check if the element is empty
               w <- NE.nonEmpty $ toList v -- If not, coerce the Vector to a NonEmpty list
@@ -143,7 +154,6 @@ instance HasNormalizedCharacters Nexus where
                 . fmap fromString         -- making sure it is also a NonEmpty list
                 . NE.head
                 $ w
-
 
                 -- Maybe (Vector [String])
         convert :: Character -> Maybe (NonEmpty (NonEmpty ShortText))
@@ -164,30 +174,35 @@ instance HasNormalizedCharacters Nexus where
 -- | (✔)
 instance HasNormalizedCharacters TntResult where
 
-    getNormalizedCharacters (Left forest) = mergeMaps $ foldl' f mempty forest
+    getNormalizedCharacters Left {} = mempty
+{-
+    getNormalizedCharacters (Left forest) = mergeMaps $ foldl' f [] forest
       where
         f xs tree = foldMap g tree : xs
         g (Index  i) = M.singleton (intToShortText i) mempty
         g (Name   n) = M.singleton (fromString n) mempty
         g (Prefix p) = M.singleton (fromString p) mempty
-
-    getNormalizedCharacters (Right (WithTaxa seqs _ []    ))
-      = M.fromList . toList $ (fromString *** tntToTheSuperSequence)  <$> seqs
-    -- maybe just use the seq vaiable like above and remove this case?
-    getNormalizedCharacters (Right (WithTaxa _    _ forest))
-      = mergeMaps $ M.fromList . toList . fmap (fromString *** tntToTheSuperSequence) <$> forest
+-}
+  
+    getNormalizedCharacters (Right (WithTaxa seqs _ forest)) =
+        case forest of
+          []   -> buildMapFromSeqs seqs
+          x:xs -> mergeMaps $ buildMapFromSeqs <$> (x:|xs)
 
 
 -- | (✔)
 instance HasNormalizedCharacters TCM where
 
-    getNormalizedCharacters _ = mempty
+    getNormalizedCharacters = const mempty
 
 
 -- | (✔)
 instance HasNormalizedCharacters VertexEdgeRoot where
 
-    getNormalizedCharacters (VER _ e r) = mergeMaps $ f . buildTree <$> toList r
+    getNormalizedCharacters = const mempty
+{-
+    getNormalizedCharacters (VER _ e r) =
+        mergeMaps $ f . buildTree <$> toList r
       where
         es = toList e
         f node
@@ -200,14 +215,27 @@ instance HasNormalizedCharacters VertexEdgeRoot where
               . filter ((==nodeName) . fst)
               $ (edgeOrigin &&& edgeTarget)
               <$> es
+-}
 
 
-
+buildMapFromSeqs
+  :: Traversable t
+  => t (String, TaxonSequence)
+  -> Map ShortText NormalizedCharacterCollection
+buildMapFromSeqs = M.fromList . filterNothings . fmap (fromString *** tntToTheSuperSequence)
+  where        
+    filterNothings = foldr f []
+      where
+        f (_, Nothing) acc = acc
+        f (k, Just v ) acc = (k,v):acc
 
 -- |
 -- Coalesce the 'TaxonSequence' to the larger type 'NormalizedSequences'
-tntToTheSuperSequence :: TaxonSequence -> NormalizedCharacterCollection
-tntToTheSuperSequence = V.fromList' . fmap f
+tntToTheSuperSequence :: TaxonSequence -> Maybe NormalizedCharacterCollection
+tntToTheSuperSequence ts =
+    case ts of
+      []   -> Nothing
+      x:xs -> Just . VNE.fromNonEmpty $ f <$> x:|xs 
   where
     f (TNT.Continuous c) = NormalizedContinuousCharacter c
     f discreteCharacter  = NormalizedDiscreteCharacter

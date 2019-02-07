@@ -1169,6 +1169,7 @@ test-suite unit-tests
     Data.TCM.Dense.FFI
     Data.TCM.Memoized.FFI
     Test.Custom.NucleotideSequence
+    Bio.Graph.Node.Context
 
 
 test-suite pcg-utility-test-suite

@@ -38,9 +38,8 @@ import           Data.String                               (IsString (fromString
 import           Data.TCM                                  (TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
 import qualified Data.TCM                                  as TCM
 import           Data.Text.IO                              (readFile)
-import qualified Data.Text.Short                           as TS (ShortText)
 import           Data.Validation
-import qualified Data.Vector                               as V
+import qualified Data.Vector.NonEmpty                      as VNE
 import           Data.Void
 import           File.Format.Dot
 import           File.Format.Fasta                         hiding (FastaSequenceType (..))
@@ -116,7 +115,7 @@ transformToAligned =
 
 setTcm :: TCM -> FracturedParseResult -> FracturedParseResult
 setTcm t  fpr = fpr
-              { parsedMetas = metadataUpdate <$> parsedMetas fpr
+              { parsedMetas = fmap metadataUpdate <$> parsedMetas fpr
               , relatedTcm  = Just (resultTCM, structure)
               }
   where
@@ -374,22 +373,25 @@ getFileContents path = do
 
 
 setCharactersToAligned :: FracturedParseResult -> FracturedParseResult
-setCharactersToAligned fpr = fpr { parsedMetas = setAligned <$> parsedMetas fpr }
+setCharactersToAligned fpr = fpr { parsedMetas = fmap setAligned <$> parsedMetas fpr }
   where
     setAligned x = x { isDynamic = False }
 
 
 expandDynamicCharactersMarkedAsAligned :: FracturedParseResult -> Validation ReadError FracturedParseResult
-expandDynamicCharactersMarkedAsAligned fpr = updateFpr <$> result
+expandDynamicCharactersMarkedAsAligned fpr =
+    case parsedMetas fpr of
+      Nothing -> pure fpr
+      Just xs -> updateFpr . foldl1 joinExpandedSeqs <$> traverseWithKey1 expandDynamicCharacters xs
   where
     setAligned x = x { isDynamic = False }
 
     updateFpr (ms, cm) = fpr
-        { parsedChars = V.fromList <$> cm
-        , parsedMetas = V.fromList ms
+        { parsedChars = VNE.fromNonEmpty <$> cm
+        , parsedMetas = Just $ VNE.fromNonEmpty ms
         }
 
-    result = foldrWithKey expandDynamicCharacters (pure ([], [] <$ characterMap)) $ parsedMetas fpr
+    joinExpandedSeqs (ms1, cm1) (ms2, cm2) = (ms1 <> ms2, M.intersectionWith (<>) cm1 cm2)
 
                  -- Map Identifier ParsedChars
     characterMap :: NormalizedCharacters
@@ -400,41 +402,43 @@ expandDynamicCharactersMarkedAsAligned fpr = updateFpr <$> result
     expandDynamicCharacters
       :: Int
       -> NormalizedMetadata
-      -> Validation ReadError ([NormalizedMetadata], Map Identifier [NormalizedCharacter])
-      -> Validation ReadError ([NormalizedMetadata], Map Identifier [NormalizedCharacter])
-    expandDynamicCharacters k m acc =
+      -> Validation ReadError (NonEmpty NormalizedMetadata, Map Identifier (NonEmpty NormalizedCharacter))
+    expandDynamicCharacters k m =
         case getRepresentativeChar ! k of
           NormalizedDynamicCharacter {} | not (isDynamic m) ->
-            case fmap fst . sortOn snd . occurances . catMaybes $ dynCharLen . (!k) <$> toList characterMap of
-              []    -> acc
-              [len] -> case acc of
-                         Failure _        -> acc
-                         Success (ms, cm) -> pure (expandMetadata len m <> ms, expandCharacter len k <#$> cm)
-              x:xs  -> const <$> acc <*> Failure (invalidPrealigned (sourceFile fpr) (x:|xs))
-          _ -> prependUnmodified <$> acc
+            case getDynamicCharacterLengths singleCharacterMap of
+              []    -> Failure $ invalidPrealigned (sourceFile fpr) (0:|([] :: [Word]))
+              [len] -> pure (expandMetadata len m, expandCharacter len <$> singleCharacterMap)
+              x:xs  -> Failure $ invalidPrealigned (sourceFile fpr) (x:|xs)
+          _ -> pure (pure m, pure <$> singleCharacterMap)
       where
-        prependUnmodified (ms, cm) = (m:ms, (\i -> (((characterMap!i)!k):)) <#$> cm)
+        singleCharacterMap = (!k) <$> characterMap
+
+    -- Get the lengths of all the dynamic characters in the map.
+    -- They should all be the same length, returning a singleton list.
+    getDynamicCharacterLengths :: Foldable f => f NormalizedCharacter -> [Int]
+    getDynamicCharacterLengths = fmap fst . sortOn snd . occurances . catMaybes . fmap dynCharLen . toList
 
     dynCharLen (NormalizedDynamicCharacter x) = length <$> x
-    dynCharLen _                          = Nothing
+    dynCharLen _                              = Nothing
 
     expandMetadata
       :: Int -- ^ Length
       -> NormalizedMetadata
-      -> [NormalizedMetadata]
-    expandMetadata len meta = replicate len $ setAligned meta
+      -> NonEmpty NormalizedMetadata
+    expandMetadata len meta = let m = setAligned meta
+                              in  m :| replicate (len-1) m
 
     expandCharacter
       :: Int          -- ^ Length
-      -> Int          -- ^ Index
-      -> TS.ShortText -- ^ Key
-      -> v
-      -> [NormalizedCharacter]
-    expandCharacter len i k _ =
-        case (characterMap ! k) ! i of
-          NormalizedDynamicCharacter  Nothing  -> replicate len $ NormalizedDiscreteCharacter Nothing
-          NormalizedDynamicCharacter (Just xs) -> toList $ NormalizedDiscreteCharacter . Just <$> xs
-          _                                -> error "Bad character indexing in Read.Evaluate.expandCharacter"
+      -> NormalizedCharacter
+      -> NonEmpty NormalizedCharacter
+    expandCharacter len v =
+        case v of
+          NormalizedDynamicCharacter  Nothing  -> let miss = NormalizedDiscreteCharacter Nothing
+                                                  in  miss :| replicate (len-1) miss
+          NormalizedDynamicCharacter (Just xs) -> toNonEmpty $ NormalizedDiscreteCharacter . Just <$> xs
+          _                                    -> error "Bad character indexing in Read.Evaluate.expandCharacter"
 
 
 removeGapsFromDynamicCharactersNotMarkedAsAligned :: FracturedParseResult -> FracturedParseResult
