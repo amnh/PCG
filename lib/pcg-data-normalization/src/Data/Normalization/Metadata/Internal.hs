@@ -21,14 +21,16 @@ module Data.Normalization.Metadata.Internal where
 
 import           Data.Alphabet
 import           Data.Foldable
-import           Data.List                        (transpose)
+import           Data.List.Utility                       (transpose)
 import           Data.Monoid
 import           Data.Normalization.Character
-import           Data.TCM                         (TCM, TCMStructure(..))
-import           Data.Text.Short                  (ShortText)
-import           Data.Vector                      (Vector)
-import qualified Data.Vector.Custom               as V (fromList')
-import           Data.Vector.Instances            ()
+import           Data.Semigroup.Foldable                 (Foldable1(..))
+import           Data.TCM                                (TCM, TCMStructure(..))
+import           Data.Text.Short                         (ShortText)
+--import qualified Data.Vector.Custom               as V   (fromList')
+--import           Data.Vector.Instances            ()
+import           Data.Vector.NonEmpty                    (Vector)
+import qualified Data.Vector.NonEmpty             as VNE
 import           Prelude                          hiding (zip, zipWith)
 
 
@@ -55,9 +57,9 @@ data NormalizedMetadata
 -- characters may be missing, hence Maybe Vector [String]
 -- each taxon may have a sequence (multiple characters), hence Vector Maybe Vector [String]
 -- sequences are values mapped to using taxon names as keys, hence Map String Vector Maybe Vector [String] 
-developAlphabets :: NormalizedCharacters -> Vector (Alphabet ShortText)
-developAlphabets
-    = V.fromList' . fmap (fromSymbols . foldMap f) . transpose . fmap toList . toList
+developAlphabets :: NormalizedCharacters -> VNE.Vector (Alphabet ShortText)
+developAlphabets = VNE.fromNonEmpty . fmap (fromSymbols . foldMap f)
+                 . transpose . fmap toNonEmpty . toList
   where
     f (NormalizedContinuousCharacter _      ) = mempty
     f (NormalizedDiscreteCharacter   static ) = foldMap toList static
@@ -66,8 +68,8 @@ developAlphabets
 
 -- |
 -- Functionality to make char info from tree seqs
-makeEncodeInfo :: NormalizedCharacters -> Vector NormalizedMetadata
-makeEncodeInfo = fmap makeOneInfo . developAlphabets
+makeEncodeInfo :: NormalizedCharacters -> Maybe (VNE.Vector NormalizedMetadata)
+makeEncodeInfo = Just . fmap makeOneInfo . developAlphabets
 
 
 -- |

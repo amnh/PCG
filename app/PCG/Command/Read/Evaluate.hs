@@ -41,6 +41,7 @@ import           Data.Text.IO                              (readFile)
 import qualified Data.Text.Short                           as TS (ShortText)
 import           Data.Validation
 import qualified Data.Vector                               as V
+import qualified Data.Vector.NonEmpty                      as VNE
 import           Data.Void
 import           File.Format.Dot
 import           File.Format.Fasta                         hiding (FastaSequenceType (..))
@@ -116,7 +117,7 @@ transformToAligned =
 
 setTcm :: TCM -> FracturedParseResult -> FracturedParseResult
 setTcm t  fpr = fpr
-              { parsedMetas = metadataUpdate <$> parsedMetas fpr
+              { parsedMetas = fmap metadataUpdate <$> parsedMetas fpr
               , relatedTcm  = Just (resultTCM, structure)
               }
   where
@@ -374,7 +375,7 @@ getFileContents path = do
 
 
 setCharactersToAligned :: FracturedParseResult -> FracturedParseResult
-setCharactersToAligned fpr = fpr { parsedMetas = setAligned <$> parsedMetas fpr }
+setCharactersToAligned fpr = fpr { parsedMetas = fmap setAligned <$> parsedMetas fpr }
   where
     setAligned x = x { isDynamic = False }
 
@@ -385,8 +386,8 @@ expandDynamicCharactersMarkedAsAligned fpr = updateFpr <$> result
     setAligned x = x { isDynamic = False }
 
     updateFpr (ms, cm) = fpr
-        { parsedChars = V.fromList <$> cm
-        , parsedMetas = V.fromList ms
+        { parsedChars = VNE.fromNonEmpty <$> cm
+        , parsedMetas = Just $ VNE.fromNonEmpty ms
         }
 
     result = foldrWithKey expandDynamicCharacters (pure ([], [] <$ characterMap)) $ parsedMetas fpr

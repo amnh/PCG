@@ -20,12 +20,16 @@
 
 module Data.Vector.NonEmpty
   ( Vector()
+  -- * Construction
   , fromNonEmpty
-  , singleton
-  -- * Useful stuff
   , generate
-  , uncons
+  , singleton
   , unfoldr
+  -- * Conversion
+  , toVector
+  , fromVector
+  -- * Deconstruction
+  , uncons
   ) where
 
 
@@ -181,6 +185,34 @@ unfoldr f = NEV . uncurry V.fromListN . go 0
          in  (v:) <$> maybe (n, []) (go (n+1)) mb
 
 
+-- |
+-- /O(n)/
+--
+-- Construct a vector of the given length by applying the function to each index
+generate :: Int -> (Int -> a) -> Vector a
+generate n f
+  | n < 1     = error $ "Called Vector.Nonempty.generate on a non-positive dimension " <> show n
+  | otherwise = NEV $ V.generate n f
+
+
+-- |
+-- /O(1)/
+--
+-- Get the underlying 'V.Vector'.
+toVector :: Vector a -> V.Vector a
+toVector = unwrap
+
+
+-- |
+-- /O(1)/
+--
+-- Attempt to conver a 'V.Vector' to a non-empty 'Vector'.
+fromVector :: V.Vector a -> Maybe (Vector a)
+fromVector v
+  | V.null v  = Nothing
+  | otherwise = Just $ NEV v
+
+
 -- | /O(n)/
 --
 -- 'uncons' produces both the first element of the 'Vector' and a
@@ -193,13 +225,3 @@ uncons (NEV v) = (first, stream)
       | otherwise = Just . NEV $ V.slice 1 (len-1) v
     first = v ! 0
     len   = length v
-
-
--- |
--- /O(n)/
---
--- Construct a vector of the given length by applying the function to each index
-generate :: Int -> (Int -> a) -> Vector a
-generate n f
-  | n < 1     = error $ "Called Vector.Nonempty.generate on a non-positive dimension " <> show n
-  | otherwise = NEV $ V.generate n f

@@ -22,22 +22,23 @@ module Data.Normalization.Metadata.Class
   , HasNormalizedMetadata(..)
   ) where
 
+import           Control.Applicative
 import           Data.Alphabet
 import           Data.Foldable
 import           Data.Key
-import           Data.List.NonEmpty               (NonEmpty)
+import           Data.List.NonEmpty                      (NonEmpty(..))
 import           Data.Monoid
 import           Data.Normalization.Character
 import           Data.Normalization.Metadata.Internal
-import           Data.String                      (IsString (fromString))
-import           Data.TCM                         (TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
+import           Data.String                             (IsString (fromString))
+import           Data.TCM                                (TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
 import qualified Data.TCM                         as TCM
-import           Data.Vector                      (Vector)
 import qualified Data.Vector                      as V
-import qualified Data.Vector.Custom               as V (fromList')
-import           Data.Vector.Instances            ()
+import           Data.Vector.Instances                   ()
+import           Data.Vector.NonEmpty                    (Vector)
+import qualified Data.Vector.NonEmpty             as VNE
 import           File.Format.Dot
-import           File.Format.Fasta                (FastaParseResult, TaxonSequenceMap)
+import           File.Format.Fasta                       (FastaParseResult, TaxonSequenceMap)
 import           File.Format.Fastc
 import           File.Format.Newick
 import           File.Format.Nexus                hiding (CharacterMetadata (..), DNA, Nucleotide, RNA,
@@ -54,7 +55,7 @@ import           Prelude                          hiding (zip, zipWith)
 -- structure extracted from it.
 class HasNormalizedMetadata a where
 
-    getNormalizedMetadata :: a -> Vector NormalizedMetadata
+    getNormalizedMetadata :: a -> Maybe (Vector NormalizedMetadata)
 
 
 -- | (✔)
@@ -91,10 +92,19 @@ instance HasNormalizedMetadata (NonEmpty NewickForest) where
 instance HasNormalizedMetadata TNT.TntResult where
 
     getNormalizedMetadata (Left        _) = mempty
-    getNormalizedMetadata (Right withSeq) = V.fromList' $ zipWith f parsedMetadatas parsedCharacters
+    getNormalizedMetadata (Right withSeq) = VNE.fromNonEmpty <$> liftA2 (zipWith f) parsedMetadatas parsedCharacters
       where
-        parsedMetadatas  = toList $ TNT.charMetaData withSeq
-        parsedCharacters = snd . head . toList $ TNT.sequences withSeq
+        parsedMetadatas  =
+          case toList $ TNT.charMetaData withSeq of
+            []   -> Nothing
+            x:xs -> Just $ x:|xs
+
+        parsedCharacters =
+          case toList $ TNT.sequences withSeq of
+            []  -> Nothing
+            x:_ -> case toList $ snd x of
+                     []   -> Nothing
+                     y:ys -> Just $ y:|ys
 
         f :: TNT.CharacterMetaData -> TNT.TntCharacter -> NormalizedMetadata
         f inMeta inChar =
@@ -170,7 +180,7 @@ instance HasNormalizedMetadata TNT.TntResult where
 instance HasNormalizedMetadata F.TCM where
 
     getNormalizedMetadata (F.TCM alph mat) =
-        pure NormalizedMetadata
+        Just $ pure NormalizedMetadata
         { alphabet      = fmap fromString . fromSymbols $  alph
         , characterName = ""
         , weight        = fromRational rationalWeight * fromIntegral coefficient
@@ -192,7 +202,8 @@ instance HasNormalizedMetadata VertexEdgeRoot where
 -- | (✔)
 instance HasNormalizedMetadata Nexus where
 
-    getNormalizedMetadata input @(Nexus (_, metas) _) = V.zipWith convertNexusMeta alphabetVector metas
+    getNormalizedMetadata input @(Nexus (_, metas) _) =
+        (zipWith convertNexusMeta alphabetVector) <$> VNE.fromVector metas
       where
         alphabetVector = developAlphabets $ getNormalizedCharacters input
         convertNexusMeta developedAlphabet inMeta =

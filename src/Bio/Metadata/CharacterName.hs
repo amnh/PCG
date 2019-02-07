@@ -49,29 +49,31 @@ module Bio.Metadata.CharacterName
 
 import Control.DeepSeq
 import Control.Monad.State.Lazy
-import Data.List                (isPrefixOf)
 import Data.Map                 hiding (null)
 import Data.Monoid
 import Data.String
+import Data.Text.Short          (ShortText, isPrefixOf, uncons)
+-- TODO: Remove when text-show-instances is updated
+import Data.Text.Short.Custom
 import Data.Traversable
 import GHC.Generics             (Generic)
 import Prelude                  hiding (lookup)
 import Text.Show                (showListWith, showString)
-import TextShow                 (TextShow (showb, showbList))
+import TextShow                 (TextShow (showb, showbList), toString)
 import TextShow.Data.List       (showbListWith)
 
 
 -- |
 -- Represents the name of a character in a type-safe manner which resolves namespace ambiguities.
 data CharacterName
-   = UserDefined !FilePath !String
+   = UserDefined !FilePath !ShortText
    | Default     !FilePath {-# UNPACK #-} !Int
    deriving (Eq, Generic)
 
 
 instance IsString CharacterName where
 
-    fromString = UserDefined "Unspecified Path"
+    fromString = UserDefined "Unspecified Path" . fromString
 
 
 instance NFData CharacterName
@@ -79,16 +81,13 @@ instance NFData CharacterName
 
 -- A custom 'Show' instance for more legible rendering of lists.
 instance Show CharacterName where
-    show (UserDefined _ name) = name
-    show (Default path index) = path <> ":" <> show index
 
-    showList = showListWith f
-      where
-        f x = showString $ "\"" <> show x <> "\""
+    show = toString . showb
 
 
 -- A custom 'TextShow' instance that agrees with the 'Show' instance.
 instance TextShow CharacterName where
+
     showb (UserDefined _ name) = showb name
     showb (Default path index) = showb path <> ":" <> showb index
 
@@ -99,13 +98,14 @@ instance TextShow CharacterName where
 
 -- Ordering biases user defined names with a file path prefix before defaulted names with the same prefix.
 instance Ord CharacterName where
+
   lhs@Default{} `compare` rhs@UserDefined{} =
-    case rhs `compare` lhs of
-      LT -> GT
-      GT -> LT
-      EQ -> EQ
+      case rhs `compare` lhs of
+        LT -> GT
+        GT -> LT
+        EQ -> EQ
   lhs@(UserDefined _ name) `compare` rhs@(Default path _index)
-    | (path <> ":") `isPrefixOf` name = LT
+    | (fromString path <> ":") `isPrefixOf` name = LT
     | otherwise = strCmp lhs rhs
   lhs `compare` rhs = strCmp lhs rhs
 
@@ -115,23 +115,26 @@ strCmp :: Show a => a -> a -> Ordering
 strCmp lhs rhs = show lhs `compare` show rhs
 
 
-
--- | Determine if the CharacterName was user defined or defaulted.
+-- |
+-- Determine if the CharacterName was user defined or defaulted.
 isUserDefined :: CharacterName -> Bool
 isUserDefined UserDefined{} = True
 isUserDefined _             = False
 
 
--- | Determine the source file for the character.
+-- |
+-- Determine the source file for the character.
 sourceFile :: CharacterName -> FilePath
 sourceFile (UserDefined x _) = x
 sourceFile (Default     x _) = x
 
--- | Construct many 'CharacterName's for the input list of '(FilePath, Maybe String)' pairs.
---   'Just' values represent user supplied character names while 'Nothing' values represent
---   character names to be defaulted. However, in some cases 'Just' valued strings may be
---   rejected and defaulted instead. This occurs when the user defined character name starts
---   with a ":" or is empty.
+
+-- |
+-- Construct many 'CharacterName's for the input list of '(FilePath, Maybe String)' pairs.
+-- 'Just' values represent user supplied character names while 'Nothing' values represent
+-- character names to be defaulted. However, in some cases 'Just' valued strings may be
+-- rejected and defaulted instead. This occurs when the user defined character name starts
+-- with a ":" or is empty.
 --
 --   The construction is order preserving on the input structure. Multiple characters from a
 --   ffrom the same input file will be defualted with incrementing indices.
@@ -179,7 +182,7 @@ sourceFile (Default     x _) = x
 -- >>> makeCharacterNames [("foo.txt", Nothing), ("foo.tx", Just ""), ("foo.tx", Nothing)]
 -- ["foo.txt:0","foo.txt:1","foo.txt:2"]
 --
-makeCharacterNames :: Traversable t => t (FilePath, Maybe String) -> t CharacterName
+makeCharacterNames :: Traversable t => t (FilePath, Maybe ShortText) -> t CharacterName
 makeCharacterNames = (`evalState` mempty) . mapM f
   where
     f (path, may) =
@@ -198,8 +201,9 @@ makeCharacterNames = (`evalState` mempty) . mapM f
       where
         g = const succ
 
-    validName :: String -> Bool
-    validName name
-      | null name        = False
-      | head name == ':' = False
-      | otherwise        = True
+    validName :: ShortText -> Bool
+    validName name =
+        case uncons name of
+          Nothing       -> False
+          Just (':', _) -> False
+          _             -> True
