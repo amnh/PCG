@@ -483,7 +483,27 @@ instance TextShow n => TextShow (ReferenceDAG d e n) where
         , showb . referenceRendering $ dag
         ]
 
+-- | (✔)
+instance Semigroup d => Semigroup (GraphData d) where
+  (<>)
+    (GraphData dagCost1 networkEdgeCost1 rootingCost1 totalBlockCost1 graphMetadata1)
+    (GraphData dagCost2 networkEdgeCost2 rootingCost2 totalBlockCost2 graphMetadata2)
+      = GraphData
+          (dagCost1         + dagCost2        )
+          (networkEdgeCost1 + networkEdgeCost2)
+          (rootingCost1     + rootingCost2    )
+          (totalBlockCost1  + totalBlockCost2 )
+          (graphMetadata1  <> graphMetadata2  )
 
+-- | (✔)
+instance Monoid d => Monoid (GraphData d) where
+  mempty = GraphData
+             { dagCost         = 0
+             , networkEdgeCost = 0
+             , rootingCost     = 0
+             , totalBlockCost  = 0
+             , graphMetadata   = mempty
+             }
 
 -- | (✔)
 instance Show n => ToNewick (ReferenceDAG d e n) where
@@ -765,13 +785,7 @@ defaultMetadata = _graphData %~ defaultGraphMetadata
 zeroCostGraphData :: Monoid m => GraphData m
 {-# INLINE zeroCostGraphData #-}
 zeroCostGraphData
-  = GraphData
-  { dagCost         = 0
-  , networkEdgeCost = 0
-  , rootingCost     = 0
-  , totalBlockCost  = 0
-  , graphMetadata   = mempty
-  }
+  = mempty
 
 
 -- |

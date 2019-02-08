@@ -24,8 +24,8 @@ import qualified Data.IntSet                     as IS (map)
 import           Data.Key                        ((!))
 import qualified Data.List.NonEmpty              as NE
 import           Data.Vector                     (Vector)
-import Test.QuickCheck
---import Data.Semigroup
+import           Test.QuickCheck
+
 
 -- |
 -- This function takes valid Networks n0 and n1 and forms the network:
@@ -59,7 +59,7 @@ makeBranchedNetwork fn n0 n1 = ReferenceDAG{..}
 
     references0 = n0 ^. _references
     references1 = n1 ^. _references
-    
+
     reindexedReferences1 = incrementNodeIndices (length references0) references0
 
   -- since vectors are zero-indexed this is the entry after the n0 and n1 node data.
@@ -75,7 +75,7 @@ makeBranchedNetwork fn n0 n1 = ReferenceDAG{..}
 --
 --
 -- >                    r
--- >                ┌───┴───┐                
+-- >                ┌───┴───┐
 -- >                │       │
 -- >                │       │
 -- >               n0       x
@@ -90,10 +90,10 @@ makeDoublyBranchedNetwork
   -> ReferenceDAG d () n   -- ^ n0
   -> ReferenceDAG d () n   -- ^ n1
   -> ReferenceDAG d () n   -- ^ n2
-  -> ReferenceDAG d () n 
-makeDoublyBranchedNetwork fnn n0 n1 n2 = makeBranchedNetwork fnn n0 (n0n1Branched)
+  -> ReferenceDAG d () n
+makeDoublyBranchedNetwork fnn n0 n1 n2 = makeBranchedNetwork fnn n0 n0n1Branched
   where
-    n0n1Branched = makeBranchedNetwork fnn n1 n2 
+    n0n1Branched = makeBranchedNetwork fnn n1 n2
 
 -- |
 -- This function takes valid networks n0, n1, n2 and n3 and forms the network:
@@ -122,7 +122,7 @@ makeDoublyBranchedNetworkWithNetworkEvent
   -> ReferenceDAG d () n   -- ^ n1
   -> ReferenceDAG d () n   -- ^ n2
   -> ReferenceDAG d () n   -- ^ n3
-  -> ReferenceDAG d () n 
+  -> ReferenceDAG d () n
 makeDoublyBranchedNetworkWithNetworkEvent fnn n0 n1 n2 n3
     = makeBranchedNetwork fnn n0 internalNetwork
   where
@@ -130,14 +130,19 @@ makeDoublyBranchedNetworkWithNetworkEvent fnn n0 n1 n2 n3
     internalNetwork= undefined
 
 
-generateBinaryTree' :: (Arbitrary n) =>  Int -> Gen (ReferenceDAG d () n)
-generateBinaryTree' 0 = undefined
-generateBinaryTree' n = undefined 
+makeBinaryTree
+  :: (Monoid d, Monoid n)
+  =>  Int                    -- ^ depth of binary tree
+  -> (ReferenceDAG d () n)   
+makeBinaryTree 0 = singletonRefDAG mempty
+makeBinaryTree n =
+  let subtree = makeBinaryTree (n - 1) in
+    makeBranchedNetwork (<>) subtree subtree
 
-generateBinaryTree ::  (Arbitrary n) => Gen (ReferenceDAG d () n)
+generateBinaryTree ::  (Monoid d, Monoid n) => Gen (ReferenceDAG d () n)
 generateBinaryTree = do
   depth <- choose (1, 10)
-  generateBinaryTree' depth
+  pure $ makeBinaryTree depth
 
 generateNetwork :: Gen (ReferenceDAG d () n)
 generateNetwork  = undefined
