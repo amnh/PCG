@@ -39,6 +39,7 @@ import           Data.TCM                                  (TCMDiagnosis (..), T
 import qualified Data.TCM                                  as TCM
 import           Data.Text.IO                              (readFile)
 import           Data.Validation
+import qualified Data.Vector                               as V
 import qualified Data.Vector.NonEmpty                      as VNE
 import           Data.Void
 import           File.Format.Dot
