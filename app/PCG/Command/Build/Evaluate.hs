@@ -6,10 +6,10 @@ module PCG.Command.Build.Evaluate
   ( evaluate
   ) where
 
-import           Analysis.Parsimony.Additive.Internal
+import           Analysis.Parsimony.Additive
 import           Analysis.Parsimony.Dynamic.DirectOptimization
-import           Analysis.Parsimony.Fitch.Internal
-import           Analysis.Parsimony.Sankoff.Internal
+import           Analysis.Parsimony.Fitch
+import           Analysis.Parsimony.Sankoff
 import           Analysis.Scoring
 import           Bio.Character
 import           Bio.Character.Decoration.Additive

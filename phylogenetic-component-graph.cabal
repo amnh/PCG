@@ -404,26 +404,29 @@ library analysis
     xml                     ^>= 1.3.14    && < 1.4,
 
   exposed-modules:
+    Analysis.Parsimony.Additive
+    Analysis.Parsimony.Dynamic.DirectOptimization
+    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
+    Analysis.Parsimony.Dynamic.SequentialAlign
+    Analysis.Parsimony.Fitch
+    Analysis.Parsimony.Sankoff
+    Analysis.Scoring
+    Analysis.TotalEdgeCost
+
+    Test.Custom.DynamicCharacterNode
+
+  other-modules:
     Analysis.Parsimony.Additive.Internal
     Analysis.Parsimony.Dynamic.DirectOptimization.Internal
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Internal
     Analysis.Parsimony.Fitch.Internal
     Analysis.Parsimony.Sankoff.Internal
-
-    Analysis.Parsimony.Dynamic.DirectOptimization
-    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
-    Analysis.Parsimony.Dynamic.SequentialAlign
     Analysis.Parsimony.Dynamic.SequentialAlign.FFI
-    Analysis.Scoring
-    Analysis.TotalEdgeCost
-
-
-    Test.Custom.DynamicCharacterNode
 
 
 -- A library for the evaluation monad used by pcg.
