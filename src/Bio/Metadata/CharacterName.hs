@@ -20,8 +20,9 @@
 -- default generated value. Where a given 'CharacterName' is user specified or
 -- defaulted may be queried by the function 'isUserDefined'.
 --
--- A 'CharacterName' is only constructable by calling 'makeCharacterNames'.
--- Calls to 'makeCharacterNames' should supply all possible character information
+-- A 'CharacterName' is only constructable by calling 'assignCharacterNames' or
+-- makeCharacterNames.
+-- Calls to either function should supply all possible character information
 -- available at parse time to ensure that the resulting 'CharacterNames' are
 -- uniquely idenitfible.
 --
@@ -42,8 +43,11 @@
 
 module Bio.Metadata.CharacterName
   ( CharacterName()
-  , isUserDefined
+  -- * Construction
+  , assignCharacterNames
   , makeCharacterNames
+  -- * Queries
+  , isUserDefined
   , sourceFile
   ) where
 
@@ -54,11 +58,10 @@ import Data.Monoid
 import Data.String
 import Data.Text.Short          (ShortText, isPrefixOf, uncons)
 -- TODO: Remove when text-show-instances is updated
-import Data.Text.Short.Custom
+import Data.Text.Short.Custom   ()
 import Data.Traversable
 import GHC.Generics             (Generic)
 import Prelude                  hiding (lookup)
-import Text.Show                (showListWith, showString)
 import TextShow                 (TextShow (showb, showbList), toString)
 import TextShow.Data.List       (showbListWith)
 
@@ -67,7 +70,7 @@ import TextShow.Data.List       (showbListWith)
 -- Represents the name of a character in a type-safe manner which resolves namespace ambiguities.
 data CharacterName
    = UserDefined !FilePath !ShortText
-   | Default     !FilePath {-# UNPACK #-} !Int
+   | Default     !FilePath {-# UNPACK #-} !Word
    deriving (Eq, Generic)
 
 
@@ -183,27 +186,52 @@ sourceFile (Default     x _) = x
 -- ["foo.txt:0","foo.txt:1","foo.txt:2"]
 --
 makeCharacterNames :: Traversable t => t (FilePath, Maybe ShortText) -> t CharacterName
-makeCharacterNames = (`evalState` mempty) . mapM f
+makeCharacterNames = fmap (fst . head) . assignCharacterNames . fmap (fmap (\x -> [(x, ())]))
+{-
   where
     f (path, may) =
       case may of
         Just name | validName name -> pure $ UserDefined path name
         _ -> do
-               im <- get
-               _  <- put $ incMap path im
+               seenMap <- get
+               modify $ incMap path
                pure $
-                 case path `lookup` im of
+                 case path `lookup` seenMap of
                    Nothing -> Default path 0
                    Just i  -> Default path i
+-}
 
-    incMap :: Ord a => a -> Map a Int -> Map a Int
-    incMap k = insertWith g k 1
-      where
-        g = const succ
 
-    validName :: ShortText -> Bool
-    validName name =
-        case uncons name of
-          Nothing       -> False
-          Just (':', _) -> False
-          _             -> True
+incMap :: Ord a => a -> Map a Word -> Map a Word
+incMap k = insertWith g k 1
+  where
+    g = const succ
+
+
+validName :: ShortText -> Bool
+validName name =
+    case uncons name of
+      Nothing       -> False
+      Just (':', _) -> False
+      _             -> True
+
+assignCharacterNames
+  :: ( Traversable f
+     , Traversable t
+     )
+  => f (FilePath, t (Maybe ShortText, a))
+  -> f (t (CharacterName, a))
+assignCharacterNames = (`evalState` mempty) . traverse f
+  where
+    f (path, struct) = traverse (g path) struct
+
+    g path (may, val) =
+      case may of
+        Just name | validName name -> pure (UserDefined path name, val)
+        _ -> do
+          seenMap <- get
+          modify $ incMap path
+          pure $
+              case path `lookup` seenMap of
+                Nothing -> (Default path 0, val)
+                Just i  -> (Default path i, val)

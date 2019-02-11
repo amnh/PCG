@@ -18,9 +18,11 @@ module Data.List.Utility where
 import Data.Foldable
 import Data.Key           (Zip (..))
 import Data.List          (sort, sortBy)
-import Data.List.NonEmpty (NonEmpty (..))
+import Data.List.NonEmpty (NonEmpty (..), nonEmpty)
 import Data.Map           (assocs, empty, insertWith)
+import Data.Maybe         (catMaybes, maybe)
 import Data.Ord           (comparing)
+import Data.Semigroup.Foldable
 import Data.Set           (insert, intersection)
 
 
@@ -86,6 +88,46 @@ isSingleton = f . toList
   where
     f [_] = True
     f  _  = False
+
+
+-- |
+-- \( \mathcal{O} \left( n \) where \( n\) is the length of the prefix
+--
+-- Prepend the foldable structure to the non-empty list.
+--
+-- ==_Example==
+--
+-- >>> [] `prepend` xs
+-- xs
+--
+-- >>> [42] `prepend` (1 :| [1,2,3,5])
+-- (42 :| [1,1,2,3,5])
+--
+prepend :: Foldable f => f a -> NonEmpty a -> NonEmpty a
+prepend p ne =
+    case toList p of
+      []   -> ne
+      x:xs -> x :| (xs <> toList ne)
+
+
+-- |
+-- \( \mathcal{O} \left( n \)
+--
+-- Collect all the 'Just' values of a 'Foldable1' non-empty structure.
+--
+-- ==== __Examples__
+--
+-- >>> catMaybes $ Just 1 :| [Nothing, Just 3]
+-- Just (1:|[3])
+--
+-- >>> catMaybes $ Nothing :| [Nothing]
+-- Nothing
+--
+catMaybes1 :: Foldable1 f => f (Maybe a) -> Maybe (NonEmpty a)
+catMaybes1 v =
+   let x:|xs = toNonEmpty v
+       as    = catMaybes xs
+   in  maybe (nonEmpty as) (Just . (:|as)) x
 
 
 -- |

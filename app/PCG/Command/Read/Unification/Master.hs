@@ -43,6 +43,7 @@ import           Bio.Metadata.DiscreteWithTCM                  (discreteMetadata
 import           Bio.Metadata.Dynamic                          (dynamicMetadataWithTCM)
 import           Control.Arrow                                 ((&&&), (***))
 import           Control.Lens                                  (over)
+import           Control.Monad.State.Strict
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Alphabet
@@ -54,9 +55,9 @@ import qualified Data.IntMap                                   as IM
 import qualified Data.IntSet                                   as IS
 import           Data.Key
 import           Data.List                                     (transpose, zip5)
-import           Data.List.NonEmpty                            (NonEmpty (..))
+import           Data.List.NonEmpty                            (NonEmpty (..), nonEmpty)
 import qualified Data.List.NonEmpty                            as NE
-import           Data.List.Utility                             (duplicates)
+import           Data.List.Utility                             (catMaybes1, duplicates, prepend)
 import           Data.Map                                      (Map, intersectionWith, keys)
 import qualified Data.Map                                      as Map
 import           Data.Maybe                                    (catMaybes, fromMaybe)
@@ -91,10 +92,10 @@ data FracturedParseResult
 
 data ParseData
   = ParseData
-  { dataSequences :: [FracturedParseResult]
-  , taxaSet       :: Set Identifier 
-  , allForests    :: [FracturedParseResult]
-  , forestTaxa    :: [([NonEmpty Identifier], FracturedParseResult)]
+  { dataSequences :: Maybe (NonEmpty FracturedParseResult)
+  , taxaSet       :: Set Identifier
+  , allForests    :: Maybe (NonEmpty FracturedParseResult)
+  , forestTaxa    :: Maybe (NonEmpty ([NonEmpty Identifier], FracturedParseResult))
   }
 
 
@@ -114,63 +115,45 @@ instance Show FracturedParseResult where
         ]
 
 
-masterUnify
-  :: Foldable1 f
-  => f FracturedParseResult
-  -> Either UnificationError (Either TopologicalResult CharacterResult)
-masterUnify = rectifyResults2
-
-
 parmap' :: Traversable t => (a -> b) -> t a -> t b
 parmap' = parmap rpar
 
 
 -- |
 -- Unify disparate parsed results into a single phylogenetic solution.
-rectifyResults2
+masterUnify
   :: Foldable1 f
   => f FracturedParseResult
   -> Either UnificationError (Either TopologicalResult CharacterResult)
-rectifyResults2 fprs =
-    case errors of
-      []   -> fmap (fmap reifiedSolution) dagForest
-      x:xs -> Left . sconcat $ x:|xs
+masterUnify fprs =
+    case getUnificationErrors parseData of
+      Nothing     -> fmap (fmap reifiedSolution) dagForest
+      Just errors -> Left errors
   where
-
     parseData@ParseData{..} = gatherParseData fprs
-    errors                  = getUnificationErrors parseData
-
-    -- Combine disparate sequences from many sources into single
-    -- metadata & character sequence.
-    -- TODO: Change type (Maybe a, b) to Maybe (a, b)
-    seqs :: (Maybe UnifiedMetadataSequence, Map ShortText UnifiedCharacterSequence)
-    seqs@(metaSeq,charSeqs) = joinSequences dataSequences
 
     -- Collect the parsed forests to be merged
-    suppliedForests :: [PhylogeneticForest NormalizedTree]
-    suppliedForests = foldMap toList . catMaybes $ parsedForests `parmap'` allForests
+    suppliedForests :: Maybe (NonEmpty (PhylogeneticForest NormalizedTree))
+    suppliedForests = (fmap fold1 . catMaybes1 . (parsedForests `parmap'`)) =<< allForests
 
     -- Convert topological forests to DAGs (using reference indexing from #7 results)
     dagForest =
-        case (hasData suppliedForests, hasData charSeqs, metaSeq) of
+        case (suppliedForests, joinSequences dataSequences) of
           -- Throw a unification error here
-          (False, False, _        ) -> Left . UnificationError . pure . VacuousInput $ sourceFile <$> toNonEmpty fprs
-          (_    , True , Nothing  ) -> Left . UnificationError . pure . VacuousInput $ sourceFile <$> toNonEmpty fprs
-
-          -- Build a default forest of singleton components
-          (False, True , Just meta) -> Right . Right . PhylogeneticSolution . pure
-                          . foldMap1 (singletonComponent meta) . NE.fromList $ toKeyedList charSeqs
+          (Nothing, Nothing) -> Left . UnificationError . pure . VacuousInput $ sourceFile <$> toNonEmpty fprs
 
           -- Build a forest of with Units () as character type parameter
-          (True , False, _        ) -> Right . Left  . PhylogeneticSolution $ NE.fromList suppliedForests
+          (Just someForests, Nothing) -> Right . Left  . PhylogeneticSolution $ someForests
+
+          -- Build a default forest of singleton components
+          (Nothing, Just v@(Just meta, charSeqs)) -> Right . Right . PhylogeneticSolution . pure
+                          . foldMap1 (singletonComponent v) . NE.fromList $ toKeyedList charSeqs
 
           -- Build a forest with the corresponding character data on the nodes
-          (True , True , Just meta) -> Right . Right . PhylogeneticSolution $ matchToChars meta charSeqs <$> NE.fromList suppliedForests
+          (Just someForests, Just (Just meta, charSeqs)) -> Right . Right . PhylogeneticSolution $ matchToChars meta charSeqs <$> someForests
       where
-        hasData :: Foldable f => f a -> Bool
-        hasData = not . null
         
-        singletonComponent meta (label, datum) = PhylogeneticForest . pure . PDAG meta $ DAG.fromList
+        singletonComponent (Just meta, charSeqs) (label, datum) = PhylogeneticForest . pure . PDAG meta $ DAG.fromList
             [ (        mempty, PNode (nodeLabel "Trivial Root") (defaultCharacterSequenceDatum charSeqs), IM.singleton 1 mempty)
             , (IS.singleton 0, PNode (nodeLabel label         )                         datum, mempty               )
             ]
@@ -249,16 +232,22 @@ type PartiallyUnififedCharacterSequences a = Map Identifier (NonEmpty (Partially
 -- * Lastly we collapse the many parse results into a single map of charcter
 --   blocks wrapped together as a charcter sequence. This will properly add
 --   missing character values to taxa provided in other files.
-joinSequences :: Foldable t => t FracturedParseResult -> (Maybe UnifiedMetadataSequence, Map ShortText UnifiedCharacterSequence)
-joinSequences = collapseAndMerge . performMetadataTransformations . deriveCorrectTCMs . deriveCharacterNames
+joinSequences
+  :: ( Functor f
+     , Foldable1 t
+     , Traversable t
+     )
+  => f (t FracturedParseResult)
+  -> f (Maybe UnifiedMetadataSequence, Map ShortText UnifiedCharacterSequence)
+joinSequences = fmap (collapseAndMerge . performMetadataTransformations . deriveCorrectTCMs . deriveCharacterNames)
   where
     deriveCorrectTCMs
       :: Functor f
-      => f (Map Identifier (NonEmpty (NormalizedCharacter, NormalizedMetadata, FileSource, Maybe (TCM, TCMStructure), CharacterName)))
-      -> f (Map Identifier (NonEmpty (NormalizedCharacter, NormalizedMetadata, FileSource, TCM, TCMStructure, CharacterName)))
+      => f (PartiallyUnififedCharacterSequences (Maybe (TCM, TCMStructure)))
+      -> f (PartiallyUnififedCharacterSequences (TCM, TCMStructure))
     deriveCorrectTCMs = fmap (fmap (fmap selectTCM))
       where
-        selectTCM (charMay, charMetadata, charSource, tcmMay, charName) = (charMay, charMetadata, tcmSource, selectedTCM, selectedStructure, charName)
+        selectTCM (charMay, charMetadata, charSource, tcmMay, charName) = (charMay, charMetadata, tcmSource, (selectedTCM, selectedStructure), charName)
           where
             (selectedTCM, selectedStructure, tcmSource)
               = case (tcmMay, parsedTCM charMetadata) of
@@ -277,8 +266,8 @@ joinSequences = collapseAndMerge . performMetadataTransformations . deriveCorrec
 
     performMetadataTransformations
       :: Functor f
-      => f (Map Identifier (NonEmpty (NormalizedCharacter, NormalizedMetadata, FileSource, TCM, TCMStructure, CharacterName)))
-      -> f (Map Identifier (NonEmpty (NormalizedCharacter, NormalizedMetadata, FileSource, Word -> Word -> Word, TCMStructure, CharacterName)))
+      => f (PartiallyUnififedCharacterSequences (TCM, TCMStructure))
+      -> f (PartiallyUnififedCharacterSequences (Word -> Word -> Word, TCMStructure))
     performMetadataTransformations = fmap reduceFileBlock
       where
         reduceFileBlock mapping = fmap (zipWith updateMetadataInformation updatedMetadataTokens) mapping
@@ -287,7 +276,7 @@ joinSequences = collapseAndMerge . performMetadataTransformations . deriveCorrec
             updatedMetadataTokens = fmap generateMetadataToken . NE.fromList . transpose . fmap toList $ toList mapping
              where
                generateMetadataToken                []  = error "Should never happen in reduceAlphabets.reduceFileBlock.observedSymbolSets.generateObservedSymbolSetForCharacter" -- mempty
-               generateMetadataToken (_x@(_,m,_,tcm,structure,_):_xs) = (reducedAlphabet, reducedTCM)
+               generateMetadataToken (_x@(_,m,_,(tcm,structure),_):_xs) = (reducedAlphabet, reducedTCM)
                  where
                    suppliedAlphabet = alphabet m
                    reducedAlphabet  = suppliedAlphabet
@@ -300,25 +289,24 @@ joinSequences = collapseAndMerge . performMetadataTransformations . deriveCorrec
 
         updateMetadataInformation
           :: (Alphabet ShortText, Word -> Word -> Word)
-          -> (NormalizedCharacter, NormalizedMetadata, FileSource, TCM, TCMStructure, CharacterName)
-          -> (NormalizedCharacter, NormalizedMetadata, FileSource, Word -> Word -> Word, TCMStructure, CharacterName)
-        updateMetadataInformation (reducedAlphabet, symbolDistance) (charMay, charMetadata, tcmSourceFile, _, structure, charName) =
+          -> PartiallyUnififedCharacterSequence (TCM, TCMStructure)
+          -> PartiallyUnififedCharacterSequence (Word -> Word -> Word, TCMStructure)
+        updateMetadataInformation (reducedAlphabet, symbolDistance) (charMay, charMetadata, tcmSourceFile, (_, structure), charName) =
             ( charMay
             , charMetadata { alphabet = reducedAlphabet }
             , tcmSourceFile
-            , symbolDistance
-            , structure
+            , (symbolDistance, structure)
             , charName
             )
 
     collapseAndMerge
-      :: Foldable f
-      => f (Map Identifier (NonEmpty (NormalizedCharacter, NormalizedMetadata, FileSource, Word -> Word -> Word, TCMStructure, CharacterName)))
+      :: Foldable1 f
+      => f (PartiallyUnififedCharacterSequences (Word -> Word -> Word, TCMStructure))
       -> (Maybe UnifiedMetadataSequence, Map ShortText UnifiedCharacterSequence)
     collapseAndMerge = (fmap MD.fromNonEmpty *** fmap CS.fromNonEmpty) . fst . foldl' f ((mempty, mempty), [])
       where
         f :: ((Maybe (NonEmpty UnifiedMetadataBlock), Map Identifier (NonEmpty UnifiedCharacterBlock)), [UnifiedCharacterBlock])
-          -> Map ShortText (NonEmpty (NormalizedCharacter, NormalizedMetadata, ShortText, Word -> Word -> Word, TCMStructure, CharacterName))
+          -> PartiallyUnififedCharacterSequences (Word -> Word -> Word, TCMStructure)
           -> ((Maybe (NonEmpty UnifiedMetadataBlock), Map Identifier (NonEmpty UnifiedCharacterBlock)), [UnifiedCharacterBlock])
         f ((prevMeta, prevMapping), prevPad) currTreeChars = ((nextMeta, nextMapping), nextPad)
           where
@@ -343,54 +331,51 @@ joinSequences = collapseAndMerge . performMetadataTransformations . deriveCorrec
                 rhs = Set.fromList $ keys y
 
 
-            -- Necessary for mixing [] with NonEmpty
-            prepend :: [a] -> NonEmpty a -> NonEmpty a
-            prepend list ne =
-              case list of
-                []   -> ne
-                x:xs -> x :| (xs <> toList ne)
-
-
 -- |
 -- We do this to correctly construct the CharacterNames.
 --
 -- We must be careful here, prealigned data requires unique names for each character "column" in the sequence.
 deriveCharacterNames
-  :: Foldable t
+  :: ( Foldable1 t
+     , Traversable t
+     )
   => t FracturedParseResult
-  -> [PartiallyUnififedCharacterSequences (Maybe (TCM, TCMStructure))]
-deriveCharacterNames xs = reverse . snd $ foldl' g (charNames, []) xs
+  -> t (PartiallyUnififedCharacterSequences (Maybe (TCM, TCMStructure)))
+deriveCharacterNames xs = (`evalState` charNames) $ traverse g xs
+  where
+    g :: FracturedParseResult
+      -> State
+           [CharacterName]
+           (PartiallyUnififedCharacterSequences (Maybe (TCM, TCMStructure)))
+    g fpr = do
+        unusedNames <- get
+        -- Split the unused names into the names will use for this fractured Parse result and
+        -- and the remainging names for remaining fractured parse results.
+        let (localNames, remainingNames) = splitAt (length localMetadata) unusedNames
+        -- Put the remainging names back into the state
+        put remainingNames
+        pure $ charMapToSplitValues localNames <$> parsedChars fpr
       where
-        g :: ([CharacterName], [PartiallyUnififedCharacterSequences (Maybe (TCM, TCMStructure))])
-          -> FracturedParseResult
-          -> ([CharacterName], [PartiallyUnififedCharacterSequences (Maybe (TCM, TCMStructure))])
-        g (properNames, ys) fpr = (properNames', newMap:ys)
-          where
-            localMetadata = parsedMetas fpr
+        localMetadata = parsedMetas fpr
 
-            -- We remove the CharacterName values that we assigned to the characters in this map.
-            properNames'  = drop (length localMetadata) properNames
-
-            -- This call to NE.fromList is """safe""", we checked that there were no empty characters.
-            newMap = charMapToSplitValues <$> parsedChars fpr
-
-            charMapToSplitValues
-              :: Vector NormalizedCharacter
-              -> NonEmpty (NormalizedCharacter, NormalizedMetadata, FileSource, Maybe (TCM, TCMStructure), CharacterName)
-            charMapToSplitValues x = NE.fromList $ zip5
+        charMapToSplitValues
+          :: [CharacterName]
+          -> Vector NormalizedCharacter
+          -> NonEmpty (PartiallyUnififedCharacterSequence (Maybe (TCM, TCMStructure)))
+        charMapToSplitValues characterNames x = NE.fromList $ zip5
                 (toList x)
                 (foldMap toList localMetadata)
                 (repeat (fromString . sourceFile $ fpr))
                 (repeat (relatedTcm fpr))
-                properNames   
+                characterNames
 
-        charNames :: [CharacterName]
-        charNames = makeCharacterNames . concatMap nameTransform $ toList xs
-          where
-            nameTransform x = fmap (const (sourceFile x) &&& correctName . characterName) . foldMap toList $ parsedMetas x
-            correctName txt
-              | TS.null txt = Nothing
-              | otherwise   = Just txt
+--    charNames :: Foldable1 f => f CharacterName
+    charNames = makeCharacterNames $ foldMap1 nameTransform xs
+      where
+        nameTransform x = fmap (const (sourceFile x) &&& correctName . characterName) . foldMap toList $ parsedMetas x
+        correctName txt
+          | TS.null txt = Nothing
+          | otherwise   = Just txt
 
 
 fromTreeOnlyFile :: FracturedParseResult -> Bool
@@ -418,46 +403,65 @@ gatherForestsTerminalNames fpr = (identifiers, fpr)
              x:xs -> Just (x :| xs)
 
 
-
 gatherParseData
   :: Foldable1 f
   => f FracturedParseResult
   -> ParseData
 gatherParseData fprs = ParseData{..}
   where
-       -- Gather data file contents
-    dataSequences   = filter (not . fromTreeOnlyFile) $ toList fprs
+    -- Gather data file contents
+    dataSequences   = nonEmpty . filter (not . fromTreeOnlyFile) $ toList fprs
+
     -- Union the taxa names together into total terminal set
-    taxaSet         = mconcat $ (Set.fromList . keys . parsedChars) `parmap'` dataSequences
+    taxaSet         = foldMap (sconcat . ((Map.keysSet . parsedChars) `parmap'`)) dataSequences
+
     -- Gather forest file data
-    allForests      = filter (not . null . parsedForests) $ toList fprs
+    allForests      = nonEmpty . filter (not . null . parsedForests) $ toList fprs
+
     -- Gather the taxa names for each forest from terminal nodes
-    forestTaxa      = gatherForestsTerminalNames `parmap'` allForests
+    forestTaxa      = (gatherForestsTerminalNames `parmap'`) <$> allForests
 
 
-getUnificationErrors :: ParseData -> [UnificationError]
-getUnificationErrors ParseData{..} = catMaybes [duplicateError, extraError, missingError]
+getUnificationErrors :: ParseData -> Maybe UnificationError
+getUnificationErrors ParseData{..} =
+    fmap sconcat . catMaybes1 $ duplicateError :| [extraError, missingError]
   where
+    duplicateError = constructErrorMaybe ForestDuplicateTaxa duplicateForestNames
+    extraError     = constructErrorMaybe ForestExtraTaxa         extraForestNames
+    missingError   = constructErrorMaybe ForestMissingTaxa     missingForestNames
+
     --Assert that each terminal node name is unique in each forest
-    duplicateNames :: [([[Identifier]], FracturedParseResult)]
-    duplicateNames = filter (not . all null . fst) $ first (fmap duplicates) `parmap'` forestTaxa
-    -- Assert that each forest's terminal node set is exactly the same
-    -- as the taxa set from "data files"
-    extraNames   :: [([Set Identifier], FracturedParseResult)]
-    extraNames      = filter (not . all null . fst) $ first (fmap ((\\ taxaSet) . Set.fromList . toList)) `parmap'` forestTaxa
+    duplicateForestNames :: [([[Identifier]], FracturedParseResult)]
+    duplicateForestNames = collectTaxaWith duplicates
 
-    missingNames :: [([Set Identifier], FracturedParseResult)]
-    missingNames    = filter (not . all null . fst) $ first (fmap ((taxaSet \\) . Set.fromList . toList)) `parmap'` forestTaxa
+    -- Assert that each forest's terminal node set is not a proper superset of
+    -- the taxa set from "data files"
+    extraForestNames   :: [([Set Identifier], FracturedParseResult)]
+    extraForestNames     = collectTaxaWith hasExtraNames
+      where
+        hasExtraNames = (\\ taxaSet) . Set.fromList . toList
 
- -- Error collecting
-    duplicateError = constructErrorMaybe ForestDuplicateTaxa duplicateNames
-    extraError     = constructErrorMaybe ForestExtraTaxa     extraNames
-    missingError   = constructErrorMaybe ForestMissingTaxa   missingNames
+    -- Assert that each forest's terminal node set is not a proper subset of
+    -- the taxa set from "data files"
+    missingForestNames :: [([Set Identifier], FracturedParseResult)]
+    missingForestNames   = collectTaxaWith hasMissingNames
+      where
+        hasMissingNames = (taxaSet \\) . Set.fromList . toList
 
-    constructErrorMaybe :: Foldable f
-                        => (NonEmpty Identifier -> FilePath -> UnificationErrorMessage)
-                        -> [([f Identifier], FracturedParseResult)]
-                        -> Maybe UnificationError
+    collectTaxaWith
+      :: Foldable t
+      => (NonEmpty Identifier -> t a)
+      -> [([t a], FracturedParseResult)]
+    collectTaxaWith f = foldMap (NE.filter hasData . (first (fmap f) `parmap'`)) forestTaxa
+      where
+        hasData :: (Foldable f, Foldable t) => (f (t a), b) -> Bool
+        hasData = any (not . null) . fst
+
+    constructErrorMaybe
+      :: Foldable f
+      => (NonEmpty Identifier -> FilePath -> UnificationErrorMessage)
+      -> [([f Identifier], FracturedParseResult)]
+      -> Maybe UnificationError
     constructErrorMaybe f xs =
         case catMaybes $ colateErrors f <$> expandForestErrors xs of
           []   -> Nothing
@@ -496,8 +500,7 @@ buildMetadataBlock
   => t (NormalizedCharacter
        , NormalizedMetadata
        , ShortText
-       , Word -> Word -> Word
-       , TCMStructure
+       , (Word -> Word -> Word, TCMStructure)
        , CharacterName
        )
   -> UnifiedMetadataBlock
@@ -507,13 +510,12 @@ buildMetadataBlock = foldMap1 encodeToSingletonMetadata
       :: (NormalizedCharacter
          , NormalizedMetadata
          , ShortText
-         , Word -> Word -> Word
-         , TCMStructure
+         , (Word -> Word -> Word, TCMStructure)
          , CharacterName
          )
          -> MetadataBlock ()
     encodeToSingletonMetadata
-        (charMay, charMeta, tcmSource,  scm, structure, charName) =
+        (charMay, charMeta, tcmSource, (scm, structure), charName) =
           case charMay of
             NormalizedContinuousCharacter {} ->
                 MD.continuousToMetadataBlock
@@ -528,13 +530,13 @@ buildMetadataBlock = foldMap1 encodeToSingletonMetadata
       charWeight        = weight   charMeta
       specifiedAlphabet = fmap toString . alphabet  $ charMeta
 
+
 encodeToCharacterBlock
   :: Foldable1 t
   => t (NormalizedCharacter
        , NormalizedMetadata
        , ShortText
-       , Word -> Word -> Word
-       , TCMStructure
+       , (Word -> Word -> Word, TCMStructure)
        , CharacterName
        )
   -> UnifiedCharacterBlock
@@ -544,8 +546,7 @@ encodeToCharacterBlock = finalizeCharacterBlock . foldMap1 encodeBinToSingletonC
       :: (NormalizedCharacter
          , NormalizedMetadata
          , ShortText
-         , Word -> Word -> Word
-         , TCMStructure
+         , (Word -> Word -> Word, TCMStructure)
          , CharacterName
          )
       -> PartialCharacterBlock
@@ -556,7 +557,7 @@ encodeToCharacterBlock = finalizeCharacterBlock . foldMap1 encodeBinToSingletonC
            UnifiedDiscreteCharacter
            UnifiedDynamicCharacter
     encodeBinToSingletonCharacterBlock
-        (charMay, charMeta, _tcmSource, _scm, structure, _charName) =
+        (charMay, charMeta, _tcmSource, (_scm, structure), _charName) =
           case charMay of
             NormalizedContinuousCharacter continuousMay
               -> continuousSingleton . Just . continuousDecorationInitial $ toContinuousCharacter continuousMay
