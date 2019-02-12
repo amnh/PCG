@@ -21,15 +21,15 @@ module Data.Normalization.Metadata.Internal where
 
 import           Data.Alphabet
 import           Data.Foldable
-import           Data.List.Utility                       (transpose)
+import           Data.List.Utility            (transpose)
 import           Data.Monoid
 import           Data.Normalization.Character
-import           Data.Semigroup.Foldable                 (Foldable1(..))
-import           Data.TCM                                (TCM, TCMStructure(..))
-import           Data.Text.Short                         (ShortText)
-import           Data.Vector.NonEmpty                    (Vector)
-import qualified Data.Vector.NonEmpty             as VNE
-import           Prelude                          hiding (zip, zipWith)
+import           Data.Semigroup.Foldable      (Foldable1 (..))
+import           Data.TCM                     (TCM, TCMStructure (..))
+import           Data.Text.Short              (ShortText)
+import           Data.Vector.NonEmpty         (Vector)
+import qualified Data.Vector.NonEmpty         as VNE
+import           Prelude                      hiding (zip, zipWith)
 
 
 -- |
@@ -54,7 +54,7 @@ data NormalizedMetadata
 -- characters are ordered groups of bases, hence Vector [String]
 -- characters may be missing, hence Maybe Vector [String]
 -- each taxon may have a sequence (multiple characters), hence Vector Maybe Vector [String]
--- sequences are values mapped to using taxon names as keys, hence Map String Vector Maybe Vector [String] 
+-- sequences are values mapped to using taxon names as keys, hence Map String Vector Maybe Vector [String]
 developAlphabets :: NormalizedCharacters -> Vector (Alphabet ShortText)
 developAlphabets = VNE.fromNonEmpty . fmap (fromSymbols . foldMap f)
                  . transpose . fmap toNonEmpty . toList

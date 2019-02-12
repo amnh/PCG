@@ -21,10 +21,10 @@ module Data.Text.Short.Custom where
 
 import Data.Char       (intToDigit, isSpace)
 import Data.Text.Short as TS
-import TextShow        hiding (singleton)
 import Prelude         hiding (break, dropWhile, reverse, words)
+import TextShow        hiding (singleton)
 
- 
+
 instance TextShow ShortText where
 
     showb = showb . toShortByteString

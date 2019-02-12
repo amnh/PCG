@@ -15,8 +15,8 @@
 {-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RecordWildCards     #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module PCG.Command.Read.Unification.Master
   ( FracturedParseResult(..)
@@ -28,19 +28,19 @@ import           Bio.Character.Decoration.Continuous           hiding (character
 import           Bio.Character.Decoration.Discrete             hiding (characterName)
 import           Bio.Character.Decoration.Dynamic              hiding (characterName)
 import           Bio.Character.Encodable
-import           Bio.Metadata.Continuous                       (continuousMetadata)
-import           Bio.Sequence                                  hiding (hexmap)
-import           Bio.Sequence.Block
-import qualified Bio.Sequence.Character                        as CS
-import qualified Bio.Sequence.Metadata                         as MD
 import           Bio.Graph
 import           Bio.Graph.Component
 import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG
 import qualified Bio.Graph.ReferenceDAG                        as DAG
 import           Bio.Metadata.CharacterName                    hiding (sourceFile)
+import           Bio.Metadata.Continuous                       (continuousMetadata)
 import           Bio.Metadata.DiscreteWithTCM                  (discreteMetadataWithTCM)
 import           Bio.Metadata.Dynamic                          (dynamicMetadataWithTCM)
+import           Bio.Sequence                                  hiding (hexmap)
+import           Bio.Sequence.Block
+import qualified Bio.Sequence.Character                        as CS
+import qualified Bio.Sequence.Metadata                         as MD
 import           Control.Arrow                                 ((&&&), (***))
 import           Control.Lens                                  (over)
 import           Control.Monad.State.Strict
@@ -152,18 +152,18 @@ masterUnify fprs =
           -- Build a forest with the corresponding character data on the nodes
           (Just someForests, Just (Just meta, charSeqs)) -> Right . Right . PhylogeneticSolution $ matchToChars meta charSeqs <$> someForests
       where
-        
+
         singletonComponent (Just meta, charSeqs) (label, datum) = PhylogeneticForest . pure . PDAG meta $ DAG.fromList
             [ (        mempty, PNode (nodeLabel "Trivial Root") (defaultCharacterSequenceDatum charSeqs), IM.singleton 1 mempty)
             , (IS.singleton 0, PNode (nodeLabel label         )                         datum, mempty               )
             ]
 
 
-defaultCharacterSequenceDatum 
-  :: (HasBlocks 
-       s 
+defaultCharacterSequenceDatum
+  :: (HasBlocks
+       s
        t
-       (f (CharacterBlock b1 b2 b3 b4 b5 b6)) 
+       (f (CharacterBlock b1 b2 b3 b4 b5 b6))
        (f (CharacterBlock
             (Maybe a1)
             (Maybe a2)

@@ -26,28 +26,28 @@ import           Control.Applicative
 import           Data.Alphabet
 import           Data.Foldable
 import           Data.Key
-import           Data.List.NonEmpty                      (NonEmpty(..))
+import           Data.List.NonEmpty                   (NonEmpty (..))
 import           Data.Monoid
 import           Data.Normalization.Character
 import           Data.Normalization.Metadata.Internal
-import           Data.String                             (IsString (fromString))
-import           Data.TCM                                (TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
-import qualified Data.TCM                         as TCM
-import qualified Data.Vector                      as V
-import           Data.Vector.Instances                   ()
-import           Data.Vector.NonEmpty                    (Vector)
-import qualified Data.Vector.NonEmpty             as VNE
+import           Data.String                          (IsString (fromString))
+import           Data.TCM                             (TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
+import qualified Data.TCM                             as TCM
+import qualified Data.Vector                          as V
+import           Data.Vector.Instances                ()
+import           Data.Vector.NonEmpty                 (Vector)
+import qualified Data.Vector.NonEmpty                 as VNE
 import           File.Format.Dot
-import           File.Format.Fasta                       (FastaParseResult, TaxonSequenceMap)
+import           File.Format.Fasta                    (FastaParseResult, TaxonSequenceMap)
 import           File.Format.Fastc
 import           File.Format.Newick
-import           File.Format.Nexus                hiding (CharacterMetadata (..), DNA, Nucleotide, RNA,
-                                                   TaxonSequenceMap)
-import qualified File.Format.Nexus                as Nex
-import qualified File.Format.TNT                  as TNT
-import qualified File.Format.TransitionCostMatrix as F
+import           File.Format.Nexus                    hiding (CharacterMetadata (..), DNA, Nucleotide, RNA,
+                                                       TaxonSequenceMap)
+import qualified File.Format.Nexus                    as Nex
+import qualified File.Format.TNT                      as TNT
+import qualified File.Format.TransitionCostMatrix     as F
 import           File.Format.VertexEdgeRoot
-import           Prelude                          hiding (zip, zipWith)
+import           Prelude                              hiding (zip, zipWith)
 
 
 -- |
@@ -203,7 +203,7 @@ instance HasNormalizedMetadata VertexEdgeRoot where
 instance HasNormalizedMetadata Nexus where
 
     getNormalizedMetadata input @(Nexus (_, metas) _) =
-        (zipWith convertNexusMeta alphabetVector) <$> VNE.fromVector metas
+        zipWith convertNexusMeta alphabetVector <$> VNE.fromVector metas
       where
         alphabetVector = developAlphabets $ getNormalizedCharacters input
         convertNexusMeta developedAlphabet inMeta =

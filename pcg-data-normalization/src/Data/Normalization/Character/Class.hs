@@ -17,47 +17,47 @@
 
 {-# LANGUAGE ScopedTypeVariables  #-}
 
-{-# LANGUAGE NoMonoLocalBinds    #-}
+{-# LANGUAGE NoMonoLocalBinds     #-}
 
 module Data.Normalization.Character.Class
   ( Identifier
   , HasNormalizedCharacters(..)
-  , NormalizedCharacter(..) 
+  , NormalizedCharacter(..)
   , NormalizedCharacters
   , NormalizedCharacterCollection
   ) where
 
-import           Data.Normalization.Character.Internal
-import           Control.Arrow                    ((***))
+import           Control.Arrow                         ((***))
 import           Data.Foldable
 import           Data.Key
-import           Data.List.NonEmpty               (NonEmpty (..))
-import qualified Data.List.NonEmpty               as NE
-import           Data.Map                         (Map)
-import qualified Data.Map                         as M
+import           Data.List.NonEmpty                    (NonEmpty (..))
+import qualified Data.List.NonEmpty                    as NE
+import           Data.Map                              (Map)
+import qualified Data.Map                              as M
 import           Data.Maybe
-import           Data.Semigroup.Foldable          ()
+import           Data.Normalization.Character.Internal
+import           Data.Semigroup.Foldable               ()
 --import           Data.Set                         (Set)
 --import qualified Data.Set                         as S
 --import           Data.ShortText.Custom            (intToShortText)
-import           Data.String                      (IsString (fromString))
-import           Data.Text.Short                  (ShortText)
+import           Data.String                           (IsString (fromString))
+import           Data.Text.Short                       (ShortText)
 --import           Data.Tree
-import           Data.Vector                             (Vector)
+import           Data.Vector                           (Vector)
 --import qualified Data.Vector                      as V
 --import           Data.Vector.NonEmpty                  (Vector)
-import qualified Data.Vector.NonEmpty             as VNE
+import qualified Data.Vector.NonEmpty                  as VNE
 --import           Data.Vector.Instances            ()
 import           File.Format.Dot
 import           File.Format.Fasta
-import           File.Format.Fastc                hiding (Identifier)
+import           File.Format.Fastc                     hiding (Identifier)
 import           File.Format.Newick
-import           File.Format.Nexus                hiding (TaxonSequenceMap)
+import           File.Format.Nexus                     hiding (TaxonSequenceMap)
 import           File.Format.TNT
-import qualified File.Format.TNT                  as TNT
+import qualified File.Format.TNT                       as TNT
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
-import           Prelude                          hiding (zipWith)
+import           Prelude                               hiding (zipWith)
 
 
 -- |
@@ -183,7 +183,7 @@ instance HasNormalizedCharacters TntResult where
         g (Name   n) = M.singleton (fromString n) mempty
         g (Prefix p) = M.singleton (fromString p) mempty
 -}
-  
+
     getNormalizedCharacters (Right (WithTaxa seqs _ forest)) =
         case forest of
           []   -> buildMapFromSeqs seqs
@@ -223,7 +223,7 @@ buildMapFromSeqs
   => t (String, TaxonSequence)
   -> Map ShortText NormalizedCharacterCollection
 buildMapFromSeqs = M.fromList . filterNothings . fmap (fromString *** tntToTheSuperSequence)
-  where        
+  where
     filterNothings = foldr f []
       where
         f (_, Nothing) acc = acc
@@ -235,7 +235,7 @@ tntToTheSuperSequence :: TaxonSequence -> Maybe NormalizedCharacterCollection
 tntToTheSuperSequence ts =
     case ts of
       []   -> Nothing
-      x:xs -> Just . VNE.fromNonEmpty $ f <$> x:|xs 
+      x:xs -> Just . VNE.fromNonEmpty $ f <$> x:|xs
   where
     f (TNT.Continuous c) = NormalizedContinuousCharacter c
     f discreteCharacter  = NormalizedDiscreteCharacter

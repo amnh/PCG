@@ -5,17 +5,17 @@ module Main (main) where
 import Control.DeepSeq
 import Control.Evaluation
 import Control.Monad.Trans.Reader
-import Data.Char                (toUpper)
+import Data.Char                  (toUpper)
 import Data.Maybe
-import Data.Semigroup           ((<>))
+import Data.Semigroup             ((<>))
 import Data.Void
 import PCG.CommandLineOptions
 import PCG.Computation.Internal
-import PCG.Syntax               (computationalStreamParser)
+import PCG.Syntax                 (computationalStreamParser)
 import System.Environment
 import System.Exit
 import System.IO
-import Text.Megaparsec          (ParseErrorBundle, Parsec, errorBundlePretty, parse)
+import Text.Megaparsec            (ParseErrorBundle, Parsec, errorBundlePretty, parse)
 
 
 -- |

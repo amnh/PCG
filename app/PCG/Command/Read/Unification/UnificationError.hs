@@ -8,7 +8,7 @@ module PCG.Command.Read.Unification.UnificationError
 
 import Data.Foldable
 import Data.List.NonEmpty     (NonEmpty)
-import Data.Text.Short hiding (toString)
+import Data.Text.Short        hiding (toString)
 import Data.Text.Short.Custom ()
 import TextShow
 import TextShow.Custom
@@ -95,5 +95,5 @@ listShowB v =
     x:xs -> (\a -> "[ " <> a <> "]") . unlinesB
           -- Add a leading comma to everything except the first element
           -- Make everything Text values.
-          $ showb x : (((", " <>) . showb) <$> xs)
+          $ showb x : ((", " <>) . showb <$> xs)
 

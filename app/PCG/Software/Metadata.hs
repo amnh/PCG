@@ -6,9 +6,9 @@ module PCG.Software.Metadata
   , fullVersionInformation
   ) where
 
-import Data.Semigroup      ((<>))
-import Data.Version        (showVersion)
-import Development.GitRev  (gitCommitCount, gitHash)
+import Data.Semigroup                     ((<>))
+import Data.Version                       (showVersion)
+import Development.GitRev                 (gitCommitCount, gitHash)
 import Paths_phylogenetic_component_graph (version)
 
 

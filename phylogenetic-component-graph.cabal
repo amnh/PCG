@@ -200,10 +200,11 @@ common language-specs
 -- Core data-types of PCG.
 library pcg-core
 
-  import:             dependencies
-                    , ffi-buildinfo
-                    , ghc-flags
-                    , language-specs
+  import:
+    dependencies,
+    ffi-buildinfo,
+    ghc-flags,
+    language-specs
 
   hs-source-dirs:
     pcg-core
