@@ -10,7 +10,7 @@ haddock       = --haddock --haddock-deps
               # --haddock-arguments --mathjax=https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML
 profiling     = --executable-profiling --library-profiling
 
-code-dirs     = $(shell find . -type d -name "pcg-*" ) #app ffi lib test utils
+code-dirs     = app ffi test utils $(shell find . -maxdepth 1 -type d -name "pcg-*") 
 
 sub-libs      = pcg-file-parsers pcg-language pcg-utility
 
@@ -248,10 +248,15 @@ install-weeder:
 	which weeder          || (stack install weeder          --resolver=lts)
 
 format-code: install-stylish-haskell
-	(./stylish.sh)
+	@echo -n "[?] Formatting code..."
+	@find $(code-dirs) -type f -name "*.hs" | while read fname; do \
+	  stylish-haskell -i "$$fname"; \
+	done
+	@echo -n -e "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b"
+	@echo "[✓] Formatting complete!"
 
 run-linter: install-hlint install-weeder format-code
-	hlint app ffi lib src test utils
+	hlint $(code-dirs)
 #	weeder . --build
 
 # Copies documentation director to local scope
@@ -275,7 +280,8 @@ set-dir-variables:
 clean: phylogenetic-component-graph.cabal stack.yaml
 	stack clean
 	cabal new-clean
-	for dir in $(code-dirs); do \
+	@echo "[X] Cleaning directories of junk files"
+	@for dir in $(code-dirs); do \
 	  find $$dir -type f -name '*.o'           -delete; \
 	  find $$dir -type f -name '*.hi'          -delete; \
 	  find $$dir -type f -name '*.*~'          -delete; \
