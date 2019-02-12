@@ -8,6 +8,7 @@ module Bio.Graph.ReferenceDAG.Test
   ) where
 
 import           Bio.Graph.ReferenceDAG.Internal
+import qualified Bio.Graph.ReferenceDAG.Test.Network as NP
 import           Data.Set                        as Set
 import qualified Data.Vector                     as V
 import           Test.Tasty
@@ -17,6 +18,7 @@ import           Test.Tasty.HUnit                as HU
 testSuite :: TestTree
 testSuite = testGroup "ReferenceDAG Tests"
     [ testExampleCases
+    , NP.candidateNetworkProperties
     ]
 
 testExampleCases :: TestTree
