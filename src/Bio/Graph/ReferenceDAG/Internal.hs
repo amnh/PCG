@@ -1478,9 +1478,9 @@ ancestralEdgeSetContextFn ancestralEdgeSets (currInd, nodeDatum) =
 -- It does this via a 'traversal with state' which keeps track of whether a child
 -- node has only a single child and so is a descendant network node.
 descendantNetworkNodesContextFn
-  ::  ChildContext (IntSet, Maybe Int)   -- ^ child descendent network set and maybe node
-  -> (Int, IndexData e n)                -- ^ Current node data
-  -> (IntSet, Maybe Int)                 -- ^ Current descendant edge sets and maybe node
+  ::  ChildContext (IntSet, Maybe Int) -- ^ Child descendent network node set and maybe node
+  -> (Int, IndexData e n)              -- ^ Current node data
+  -> (IntSet, Maybe Int)               -- ^ Current descendant network node sets and maybe node
 descendantNetworkNodesContextFn descendantNetworkNodes (currInd, _) =
   case descendantNetworkNodes of
     NoChildren                              -> (mempty, Nothing)
@@ -1509,6 +1509,42 @@ descendantNetworkNodesContextFn descendantNetworkNodes (currInd, _) =
                 , Nothing
                 )
 
+-- |
+-- This computes, in a nodal context, the set of descendent
+-- network edges from the child descendent network sets and current node data.
+-- It does this via a 'traversal with state' which keeps track of whether a child
+-- node has only a single child and so is a descendant network node.
+descendantNetworkEdgesContextFn
+  ::  ChildContext (Set (Int, Int), Maybe Int) -- ^ Child descendent network edge set and maybe node
+  -> (Int, IndexData e n)                      -- ^ Current node data
+  -> (IntSet, Maybe Int)                       -- ^ Current descendant network edge sets and maybe node
+descendantNetworkEdgesContextFn descendantNetworkNodes (currInd, _) =
+  case descendantNetworkNodes of
+    NoChildren                              -> (mempty, Nothing)
+ -- If a node has a single child then it is a network node and so is added
+ -- to the set of nodes to be included in the parent descendant sets.
+    OneChild (networkNodes, optNode)
+      -> case optNode of
+          Nothing -> (networkNodes, Just currInd)
+       -- This case should never happen as it corresponds to a
+       -- current network node with descendant network node.
+          Just n  -> (IS.singleton n <> networkNodes, Just currInd)
+    TwoChildren
+      (networkNodes1, optNode1)  (networkNodes2, optNode2)
+      -> case (optNode1, optNode2) of
+           (Nothing , Nothing)
+             -> (networkNodes1 <> networkNodes2, Nothing)
+           (Just n1 , Nothing)
+             -> (M.singleton (currInd, n1) <> networkNodes1 <> networkNodes2, Nothing)
+           (Nothing , Just n2)
+             -> (IS.singleton n2 <> networkNodes1 <> networkNodes2, Nothing)
+           (Just n1 , Just n2)
+             -> (     M.singleton (currInd, n1)
+                   <> M.singleton (currInd, n2)
+                   <> networkNodes1
+                   <> networkNodes2
+                , Nothing
+                )
 
 -- |
 -- This computes, in a nodal context, the set of ancestral
@@ -1708,3 +1744,16 @@ gatherDescendantNetworkNodes
   -> IntSet                     -- ^ All descendant network nodes
 gatherDescendantNetworkNodes inds vect
   = ofoldMap (\ind -> fst . proj3_2 $ vect ! ind) inds
+
+
+
+-- |
+-- Gets all edges from a `ReferenceDAG` which are incident to a network
+-- node.
+getNetworkEdges :: ReferenceDAG d e n -> Set (Int, Int)
+getNetworkEdges = foldMap (\(set, _) -> set) desendantNetwork
+  where
+    descendantNetwork    = generateMemo numberOfNodes dVectorDescendantNet
+    dVectorDescendantNet = dVectorPostorder descendantNetworkEdgesContextFn dag
+    numberOfNodes = length $ dag ^. _references
+
