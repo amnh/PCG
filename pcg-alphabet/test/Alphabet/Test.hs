@@ -1,4 +1,4 @@
-module Alphabet.Test
+module Data.Alphabet.Test
   ( testSuite
   ) where
 

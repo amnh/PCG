@@ -197,6 +197,7 @@ common language-specs
   other-extensions: MonadFailDesugaring
 
 
+-- Core data-types of PCG.
 library pcg-core
 
   import:             dependencies
@@ -204,15 +205,16 @@ library pcg-core
                     , ghc-flags
                     , language-specs
 
-  hs-source-dirs:   src
+  hs-source-dirs:
+    pcg-core
 
   build-depends:
-    alphabet,
-    evaluation,
+    pcg-alphabet,
+    pcg-evaluation,
     pcg-file-parsers,
     pcg-utility,
-    serialize,
-    tcm,
+    pcg-serialize,
+    pcg-tcm,
 
   exposed-modules:
     Bio.Character
@@ -306,40 +308,11 @@ library pcg-core
     Data.EdgeSet
 
 
-library pcg-data-normalization
-
-  import:             
-    dependencies,
-    ghc-flags,
-    language-specs
-
-  hs-source-dirs:   lib/pcg-data-normalization/src
-
-  build-depends:
-    alphabet,
-    pcg-core,
-    pcg-file-parsers,
-    pcg-utility,
-    serialize,
-    tcm,
-
-  exposed-modules:
-    Data.Normalization.Character
-    Data.Normalization.Metadata
-    Data.Normalization.Topology
-  
-  other-modules:
-    Data.Normalization.Character.Class
-    Data.Normalization.Character.Internal
-    Data.Normalization.Metadata.Class
-    Data.Normalization.Metadata.Internal
-
 -- A general purpose library for character state names.
 --
 -- Defines custom types for working with an alphabet of character
 -- state names dealing with ambiguity groups.
-
-library alphabet
+library pcg-alphabet
 
   import:
     dependencies,
@@ -347,11 +320,11 @@ library alphabet
     language-specs
 
   hs-source-dirs:    
-    lib/alphabet/src
+    pcg-alphabet/src
 
   build-depends:
     pcg-utility,
-    serialize,
+    pcg-serialize,
 
   exposed-modules:
     Data.Alphabet
@@ -361,9 +334,9 @@ library alphabet
     Data.Alphabet.Internal
     Data.Alphabet.Special
 
--- A library for performing parsimony analysis.
 
-library analysis
+-- A library for performing parsimony analysis.
+library pcg-analysis
 
   import:
     dependencies,
@@ -373,16 +346,16 @@ library analysis
 
 
   hs-source-dirs:
-    lib/analysis/src
+    pcg-analysis/src
 
   build-depends:
-    alphabet,
-    evaluation,
+    pcg-alphabet,
+    pcg-evaluation,
     pcg-file-parsers,
     pcg-utility,
     pcg-core,
-    serialize,
-    tcm,
+    pcg-serialize,
+    pcg-tcm,
 
   exposed-modules:
     Analysis.Parsimony.Additive
@@ -410,9 +383,40 @@ library analysis
     Analysis.Parsimony.Dynamic.SequentialAlign.FFI
 
 
--- A library for the evaluation monad used by pcg.
+-- Library for taking data from disperate input sources and converting the data
+-- to a normalized form.
+library pcg-data-normalization
 
-library evaluation
+  import:             
+    dependencies,
+    ghc-flags,
+    language-specs
+
+  hs-source-dirs:
+    pcg-data-normalization/src
+
+  build-depends:
+    pcg-alphabet,
+    pcg-core,
+    pcg-file-parsers,
+    pcg-utility,
+    pcg-serialize,
+    pcg-tcm,
+
+  exposed-modules:
+    Data.Normalization.Character
+    Data.Normalization.Metadata
+    Data.Normalization.Topology
+  
+  other-modules:
+    Data.Normalization.Character.Class
+    Data.Normalization.Character.Internal
+    Data.Normalization.Metadata.Class
+    Data.Normalization.Metadata.Internal
+
+
+-- A library for the evaluation monad used by pcg.
+library pcg-evaluation
 
   import:
     dependencies,
@@ -420,7 +424,7 @@ library evaluation
     language-specs
 
   hs-source-dirs:
-    lib/evaluation/src
+    pcg-evaluation/src
 
   exposed-modules:
     Control.Evaluation
@@ -448,8 +452,8 @@ library pcg-file-parsers
     ghc-flags,
     language-specs
 
-
-  hs-source-dirs:   lib/pcg-file-parsers/src
+  hs-source-dirs:
+    pcg-file-parsers/src
 
   build-depends:
     pcg-utility,
@@ -503,7 +507,8 @@ library pcg-language
     ghc-flags,
     language-specs
 
-  hs-source-dirs:      lib/pcg-language
+  hs-source-dirs:
+    pcg-language
 
   exposed-modules:
     PCG.Syntax
@@ -520,6 +525,65 @@ library pcg-language
     PCG.Syntax.Primitive
 
 
+-- A library for defining custom serialisation and rendering functionality.
+--
+-- Defines custom helper functions for serializing to data formats and related
+-- to text representations.
+library pcg-serialize
+
+  import:
+    dependencies,
+    ghc-flags,
+    language-specs
+
+  hs-source-dirs:
+    pcg-serialize/src
+
+  exposed-modules:
+    Data.Text.Short.Custom
+    TextShow.Custom
+    Text.Newick.Class
+    Text.XML
+    Text.XML.Class
+    Text.XML.Custom
+ 
+  other-modules:
+
+
+-- A general purpose library for working with transition cost matrices.
+library pcg-tcm
+
+  import:
+    dependencies,
+    ffi-buildinfo,
+    ghc-flags,
+    language-specs,
+
+  hs-source-dirs:
+    pcg-tcm/src
+
+  build-depends:
+    pcg-utility,
+    pcg-serialize,
+    base                     >= 4.11      && < 5.0,
+    containers              ^>= 0.5.8     && < 0.7,
+    deepseq                 ^>= 1.4.4     && < 1.5,
+    mono-traversable        ^>= 1.0.10    && < 1.1,
+    QuickCheck              ^>= 2.12.6    && < 2.13,
+    vector                   >= 0.12.0.2  && < 0.13,
+
+
+  exposed-modules:
+    Data.TCM
+    Data.TCM.Dense
+    Data.TCM.Dense.FFI
+    Data.TCM.Memoized
+    Data.TCM.Memoized.FFI
+
+  other-modules:
+    Data.TCM.Internal
+
+
 --  Collection of utility functions and data structures
 --
 --  Defines custom data structures for special use cases,
@@ -532,7 +596,8 @@ library pcg-utility
     ghc-flags,
     language-specs
 
-  hs-source-dirs:   lib/pcg-utility/src
+  hs-source-dirs:
+    pcg-utility/src
 
   exposed-modules:
     Control.Parallel.Custom
@@ -567,65 +632,6 @@ library pcg-utility
     Numeric.Extended.Internal
 
 
--- A library for defining custom serialisation and rendering functionality.
---
--- Defines custom helper functions for serializing to data formats and related
--- to text representations.
-
-library serialize
-
-  import:
-    dependencies,
-    ghc-flags,
-    language-specs
-
-  hs-source-dirs:    lib/serialize/src
-
-  exposed-modules:
-    Data.Text.Short.Custom
-    TextShow.Custom
-    Text.Newick.Class
-    Text.XML
-    Text.XML.Class
-    Text.XML.Custom
- 
-  other-modules:
-
--- A general purpose library for working with transition cost matrices.
-
-library tcm
-
-  import:
-    dependencies,
-    ffi-buildinfo,
-    ghc-flags,
-    language-specs,
-
-  hs-source-dirs:
-    lib/tcm/src/
-
-  build-depends:
-    pcg-utility,
-    serialize,
-    base                     >= 4.11      && < 5.0,
-    containers              ^>= 0.5.8     && < 0.7,
-    deepseq                 ^>= 1.4.4     && < 1.5,
-    mono-traversable        ^>= 1.0.10    && < 1.1,
-    QuickCheck              ^>= 2.12.6    && < 2.13,
-    vector                   >= 0.12.0.2  && < 0.13,
-
-
-  exposed-modules:
-    Data.TCM
-    Data.TCM.Dense
-    Data.TCM.Dense.FFI
-    Data.TCM.Memoized
-    Data.TCM.Memoized.FFI
-
-  other-modules:
-    Data.TCM.Internal
-
-
 executable pcg
 
   import:
@@ -633,23 +639,26 @@ executable pcg
     ghc-flags,
     language-specs
 
-  main-is:          Main.hs
+  main-is:
+    Main.hs
 
-  ghc-options:      -threaded -rtsopts
+  ghc-options:
+    -threaded -rtsopts
 
-  hs-source-dirs:   app
+  hs-source-dirs:
+    app
 
   build-depends:
-    alphabet,
-    analysis,
-    evaluation,
+    pcg-alphabet,
+    pcg-analysis,
+    pcg-evaluation,
     pcg-core,
     pcg-data-normalization,            
     pcg-file-parsers,
     pcg-language,
     pcg-utility,
-    serialize,
-    tcm,
+    pcg-serialize,
+    pcg-tcm,
 
   other-modules:
     Paths_phylogenetic_component_graph
@@ -680,9 +689,11 @@ executable fasta-differ
     ghc-flags,
     language-specs
 
-  main-is:          fasta-differ.hs
+  main-is:
+    fasta-differ.hs
 
-  hs-source-dirs:   utils
+  hs-source-dirs:
+    utils
 
   build-depends:
     pcg-file-parsers,
@@ -695,15 +706,17 @@ executable 2d-do-comparison
     ghc-flags,
     language-specs
 
-  main-is:          2d-do-comparison.hs
+  main-is:
+    2d-do-comparison.hs
 
-  hs-source-dirs:   utils
+  hs-source-dirs:
+    utils
 
   build-depends:
-    alphabet,
-    analysis,
+    pcg-alphabet,
+    pcg-analysis,
     pcg-core,
-    tcm,
+    pcg-tcm,
 
 
 executable 3d-do-comparison
@@ -713,15 +726,17 @@ executable 3d-do-comparison
     ghc-flags,
     language-specs
 
-  main-is:          3d-do-comparison.hs
+  main-is:
+    3d-do-comparison.hs
 
-  hs-source-dirs:   utils
+  hs-source-dirs:
+    utils
 
   build-depends:
-    alphabet,
-    analysis,
+    pcg-alphabet,
+    pcg-analysis,
     pcg-core,
-    tcm,
+    pcg-tcm,
 
 
 executable affine-safety
@@ -731,15 +746,17 @@ executable affine-safety
     ghc-flags,
     language-specs
 
-  main-is:          affine-safety.hs
+  main-is:
+    affine-safety.hs
 
-  hs-source-dirs:   utils
+  hs-source-dirs:
+    utils
 
   build-depends:
-    alphabet,
-    analysis,
+    pcg-alphabet,
+    pcg-analysis,
     pcg-core,
-    tcm,
+    pcg-tcm,
 
 
 executable generate-data-set
@@ -749,9 +766,11 @@ executable generate-data-set
     ghc-flags,
     language-specs
 
-  main-is:          generate-data-set.hs
+  main-is:
+    generate-data-set.hs
 
-  hs-source-dirs:   utils
+  hs-source-dirs:
+    utils
 
 
 executable generate-tcm
@@ -761,9 +780,11 @@ executable generate-tcm
     ghc-flags,
     language-specs
 
-  main-is:          generate-tcm.hs
+  main-is:
+    generate-tcm.hs
 
-  hs-source-dirs:   utils
+  hs-source-dirs:
+    utils
 
   build-depends:
     pcg-utility,
@@ -776,9 +797,11 @@ executable newick-resolver
     ghc-flags,
     language-specs
 
-  main-is:          newick-resolver.hs
+  main-is:
+    newick-resolver.hs
 
-  hs-source-dirs:   utils
+  hs-source-dirs:
+    utils
 
   build-depends:
     pcg-file-parsers,
@@ -791,15 +814,17 @@ executable sequential-alignment-invariants
     ghc-flags,
     language-specs
 
-  main-is:          sequential-alignment-invariants.hs
+  main-is:
+    sequential-alignment-invariants.hs
 
-  hs-source-dirs:   utils
+  hs-source-dirs:
+    utils
 
   build-depends:
-    alphabet,
-    analysis,
+    pcg-alphabet,
+    pcg-analysis,
     pcg-core,
-    tcm,
+    pcg-tcm,
 
 
 executable three-way-mean-check
@@ -809,13 +834,15 @@ executable three-way-mean-check
     ghc-flags,
     language-specs
 
-  main-is:          three-way-mean-check.hs
+  main-is:
+    three-way-mean-check.hs
 
-  hs-source-dirs:   utils
+  hs-source-dirs:
+    utils
 
   build-depends:
-    alphabet,
-    analysis,
+    pcg-alphabet,
+    pcg-analysis,
     pcg-core,
 
 
@@ -826,15 +853,17 @@ executable ukkonen-do-comparison
     ghc-flags,
     language-specs
 
-  main-is:          ukkonen-do-comparison.hs
+  main-is:
+    ukkonen-do-comparison.hs
 
-  hs-source-dirs:   utils
+  hs-source-dirs:
+    utils
 
   build-depends:
-    alphabet,
-    analysis,
+    pcg-alphabet,
+    pcg-analysis,
     pcg-core,
-    tcm,
+    pcg-tcm,
 
 
 executable pcg-file-parsers-file-tests
@@ -844,11 +873,14 @@ executable pcg-file-parsers-file-tests
     ghc-flags,
     language-specs
          
-  main-is:             FileTests.hs
+  main-is:
+    FileTests.hs
 
-  ghc-options:         -threaded
+  ghc-options:
+    -threaded
 
-  hs-source-dirs:      lib/pcg-file-parsers/test
+  hs-source-dirs:
+    pcg-file-parsers/test
   
   build-depends:
     pcg-file-parsers
@@ -870,17 +902,21 @@ test-suite integration-tests
     ghc-flags,
     language-specs
 
-  main-is:          IntegrationTests.hs
+  main-is:
+    IntegrationTests.hs
 
-  type:             exitcode-stdio-1.0
+  type:
+    exitcode-stdio-1.0
 
-  ghc-options:      -threaded -with-rtsopts=-N
+  ghc-options:
+    -threaded -with-rtsopts=-N
 
-  hs-source-dirs:   test
+  hs-source-dirs:
+    test
 
   build-depends:
-    alphabet,
-    serialize,
+    pcg-alphabet,
+    pcg-serialize,
     pcg-core,
     pcg-utility,
 
@@ -898,23 +934,27 @@ test-suite unit-tests
     ghc-flags,
     language-specs
 
-  main-is:          UnitTests.hs
+  main-is:
+    UnitTests.hs
 
-  type:             exitcode-stdio-1.0
+  type:
+    exitcode-stdio-1.0
 
-  ghc-options:      -threaded
+  ghc-options:
+    -threaded
 --    -with-rtsopts=-N4
 
-  hs-source-dirs:   test, src, app, ffi, lib/analysis
+  hs-source-dirs:
+    pcg-analysis, pcg-core, app, ffi, test
 
   build-depends:
-    alphabet,
-    analysis,
-    evaluation,
+    pcg-alphabet,
+    pcg-analysis,
+    pcg-evaluation,
     pcg-core,
     pcg-utility,
-    serialize,
-    tcm,
+    pcg-serialize,
+    pcg-tcm,
 
   other-modules:
     Bio.Character
@@ -966,13 +1006,13 @@ test-suite pcg-utility-test-suite
   type:             
     exitcode-stdio-1.0
 
-  hs-source-dirs:   
-    lib/pcg-utility/test
+  hs-source-dirs:
+    pcg-utility/test
 
   build-depends:
-    alphabet,
+    pcg-alphabet,
     pcg-utility,
-    serialize,
+    pcg-serialize,
                     
   other-modules:
     Control.Parallel.Test
@@ -998,15 +1038,16 @@ test-suite pcg-file-parsers-unit-tests
     exitcode-stdio-1.0
 
   hs-source-dirs:   
-    lib/pcg-file-parsers/src, lib/pcg-file-parsers/test
+    pcg-file-parsers/src,
+    pcg-file-parsers/test
 
   ghc-options:      
     -threaded
 
   build-depends:
-    alphabet,
+    pcg-alphabet,
     pcg-utility,
-    serialize,
+    pcg-serialize,
 
   other-modules:
        File.Format.Fasta.Internal
@@ -1033,7 +1074,7 @@ test-suite pcg-file-parsers-unit-tests
        Text.Megaparsec.Custom.Test
 
 
-test-suite alphabet-test-suite
+test-suite pcg-alphabet-test-suite
 
   import:
     dependencies,
@@ -1047,18 +1088,18 @@ test-suite alphabet-test-suite
     exitcode-stdio-1.0
 
   hs-source-dirs:
-    lib/alphabet/test
+    pcg-alphabet/test
 
   ghc-options:
     -threaded
 
   build-depends:
-    alphabet,
+    pcg-alphabet,
 
   other-modules:
-    Alphabet.Test
+    Data.Alphabet.Test
 
-test-suite analysis-test-suite
+test-suite pcg-analysis-test-suite
 
   import:
     dependencies,
@@ -1072,19 +1113,19 @@ test-suite analysis-test-suite
     exitcode-stdio-1.0
 
   hs-source-dirs:   
-    lib/analysis/test
+    pcg-analysis/test
 
   build-depends:
-    analysis,
+    pcg-analysis,
     pcg-utility,
     pcg-core,
-    tcm,
+    pcg-tcm,
                     
   other-modules:
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Test
 
 
-test-suite evaluation-test-suite
+test-suite pcg-evaluation-test-suite
 
   import:
     dependencies,
@@ -1098,20 +1139,20 @@ test-suite evaluation-test-suite
     exitcode-stdio-1.0
 
   hs-source-dirs:
-    lib/evaluation/test
+    pcg-evaluation/test
 
   ghc-options:
     -threaded
 
   build-depends:
-    evaluation,
+    pcg-evaluation,
 
   other-modules:
     Evaluation.Test
     Monad.Logger.Test
 
     
-test-suite tcm-test-suite
+test-suite pcg-tcm-test-suite
 
   import:
     dependencies,
@@ -1125,14 +1166,14 @@ test-suite tcm-test-suite
     exitcode-stdio-1.0
 
   hs-source-dirs:
-    lib/tcm/test
+    pcg-tcm/test
 
   ghc-options:
     -threaded
 
   build-depends:
     pcg-utility,
-    tcm,
+    pcg-tcm,
 
   other-modules:
     TCM.Test
@@ -1152,7 +1193,7 @@ benchmark pcg-utility-benchmark-suite
     exitcode-stdio-1.0
 
   hs-source-dirs: 
-    lib/pcg-utility/bench
+    pcg-utility/bench
 
   build-depends:
     pcg-utility,

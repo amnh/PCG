@@ -342,6 +342,7 @@ deriveCharacterNames
   => t FracturedParseResult
   -> t (PartiallyUnififedCharacterSequences (Maybe (TCM, TCMStructure)))
 deriveCharacterNames xs = (`evalState` charNames) $ traverse g xs
+    -- TODO: Use assignCharacterNames
   where
     g :: FracturedParseResult
       -> State

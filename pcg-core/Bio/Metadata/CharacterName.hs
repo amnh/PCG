@@ -38,6 +38,7 @@
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE StrictData        #-}
 {-# LANGUAGE UnboxedSums       #-}
 
 
@@ -182,7 +183,7 @@ sourceFile (Default     x _) = x
 -- >>> makeDefaultCharacterNameRange ("virus.exe", Just "%#:!")
 -- ["%#:!"]
 --
--- >>> makeCharacterNames [("foo.txt", Nothing), ("foo.tx", Just ""), ("foo.tx", Nothing)]
+-- >>> makeCharacterNames [("foo.txt", Nothing), ("foo.txt", Just ""), ("foo.txt", Nothing)]
 -- ["foo.txt:0","foo.txt:1","foo.txt:2"]
 --
 makeCharacterNames :: Traversable t => t (FilePath, Maybe ShortText) -> t CharacterName
@@ -203,9 +204,7 @@ makeCharacterNames = fmap (fst . head) . assignCharacterNames . fmap (fmap (\x -
 
 
 incMap :: Ord a => a -> Map a Word -> Map a Word
-incMap k = insertWith g k 1
-  where
-    g = const succ
+incMap k = insertWith (const succ) k 1
 
 
 validName :: ShortText -> Bool
@@ -214,6 +213,17 @@ validName name =
       Nothing       -> False
       Just (':', _) -> False
       _             -> True
+
+
+assignCharacterNames'
+  :: ( Traversable f
+     , Traversable t
+     )
+  => (a -> (FilePath, t (Maybe ShortText, b)))
+  -> f a
+  -> f (t (CharacterName, b))
+assignCharacterNames' = undefined
+
 
 assignCharacterNames
   :: ( Traversable f
