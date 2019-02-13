@@ -20,16 +20,15 @@ module File.Format.Fasta.Converter
   , fastaStreamConverter
   ) where
 
-import           Data.List                  (intercalate, partition)
-import           Data.List.NonEmpty         (NonEmpty)
-import qualified Data.List.NonEmpty         as NE
+import           Data.Alphabet.IUPAC
+import qualified Data.Bimap                 as BM
+import           Data.List                         (intercalate, partition)
 import           Data.Map                   hiding (filter, foldr, null, partition)
-import qualified Data.Map                   as M (fromList)
-import qualified Data.Vector                as V (fromList)
+import qualified Data.Vector                as V   (fromList)
 import           File.Format.Fasta.Internal
 import           File.Format.Fasta.Parser
-import           Text.Megaparsec            (MonadParsec)
-import           Text.Megaparsec.Custom     (fails)
+import           Text.Megaparsec                   (MonadParsec)
+import           Text.Megaparsec.Custom            (fails)
 
 
 -- |
@@ -63,15 +62,15 @@ validateStreamConversion seqType xs =
     g DNA       = filter (not . (`elem` iupacNucleotideChars))
     g RNA       = filter (not . (`elem` iupacRNAChars       ))
     errorMessage (name,badChars) = concat
-     [ "In the sequence for taxon: '"
-     , name
-     , "' the following invalid characters were found: "
-     , intercalate ", " $ (\c -> '\'':c:"'") <$> badChars
-     ]
+        [ "In the sequence for taxon: '"
+        , name
+        , "' the following invalid characters were found: "
+        , intercalate ", " $ (\c -> '\'':c:"'") <$> badChars
+        ]
 
 
 -- |
--- Interprets and converts an entire 'FastaParseResult according to the given 'FatsaSequenceType' .
+-- Interprets and converts an entire 'FastaParseResult according to the given 'FatsaSequenceType'.
 colate :: FastaSequenceType -> FastaParseResult -> TaxonSequenceMap
 colate seqType = foldr f empty
   where
@@ -82,13 +81,14 @@ colate seqType = foldr f empty
 -- Interprets and converts an ambiguous sequence according to the given 'FatsaSequenceType'
 -- from the ambiguous form to a 'CharacterSequence' based on IUPAC codes.
 seqCharMapping :: FastaSequenceType -> String -> CharacterSequence
-seqCharMapping seqType = V.fromList . fmap (f seqType)
+seqCharMapping seqType = V.fromList . fmap (f seqType . pure . pure)
   where
-    f AminoAcid = (!) iupacAminoAcidSubstitutions
-    f DNA       = (!) iupacNucleotideSubstitutions
-    f RNA       = (!) iupacRNASubstitutions
+    f AminoAcid = (BM.!) iupacToAminoAcid
+    f DNA       = (BM.!) iupacToDna
+    f RNA       = (BM.!) iupacToRna
 
 
+{-
 -- |
 -- Substitutions for converting to a DNA sequence based on IUPAC codes.
 iupacAminoAcidSubstitutions :: Map Char (NonEmpty String)
@@ -159,3 +159,4 @@ iupacRNASubstitutions = insert 'U' (pure "U") . delete 'T' $ f <$> iupacNucleoti
     f = NE.fromList . foldr g []
     g "T" xs = "U":xs
     g   x xs =   x:xs
+-}

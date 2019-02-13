@@ -97,7 +97,8 @@ iupacToDna = toBimap
     ]
 
 
--- | Substitutions for converting to a RNA sequence based on IUPAC codes.
+-- |
+-- Substitutions for converting to a RNA sequence based on IUPAC codes.
 iupacToRna :: Bimap (AmbiguityGroup String) (AmbiguityGroup String)
 iupacToRna = BM.mapMonotonic setUpdate $ BM.mapMonotonicR setUpdate iupacToDna
   where

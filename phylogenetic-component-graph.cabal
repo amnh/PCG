@@ -457,6 +457,7 @@ library pcg-file-parsers
     pcg-file-parsers/src
 
   build-depends:
+    pcg-alphabet,
     pcg-utility,
 
   exposed-modules:
