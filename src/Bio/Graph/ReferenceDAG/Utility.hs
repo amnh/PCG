@@ -24,14 +24,25 @@ import qualified Data.IntMap                     as IM (mapKeys)
 import qualified Data.IntSet                     as IS (map)
 import Data.IntSet (IntSet)
 import Data.IntMap (IntMap)
+import Data.EdgeSet
 import           Data.Key                        ((!))
 import qualified Data.List.NonEmpty              as NE
 import           Data.Vector                     (Vector)
 import           Test.QuickCheck
 import Control.Monad.Loops
 import Data.Foldable
-import Data.Set (Set)
+import Data.Set (Set, (\\))
 
+
+data NetworkInformation
+  = NetworkInformation
+  { _candidateNetworkEdges :: Set ((Int, Int), (Int, Int))
+  , _networkAdjacentEdges  :: Set (Int, Int)
+  , _edgeSet               :: Set (Int, Int)
+  }
+
+instance Show NetworkInformation where
+  show = const "[Network Information]"
 
 -- |
 -- This function takes valid Networks n0 and n1 and forms the network:
@@ -262,26 +273,29 @@ generateNetwork  = do
 generateBranchedNetwork
   :: (Monoid d, Monoid n)
   => Gen
-      ( ReferenceDAG d () n           -- ^ Branched network
-      , Set ((Int, Int), (Int, Int))  -- ^ Candidate network edge of n0
-      , Set ((Int, Int), (Int, Int))  -- ^ Candidate network edge of n1
+      ( ReferenceDAG d () n -- ^ Branched network
+      , NetworkInformation  -- ^ Candidate network information of n0
+      , NetworkInformation  -- ^ Candidate network information of n1
       )
 generateBranchedNetwork =
   do
     n0 <- generateNetwork
     n1 <- generateNetwork
-    let n0Cand = candidateNetworkEdges n0
-    let n1Cand = candidateNetworkEdges n1
-    pure $ (makeBranchedNetwork n0 n1, n0Cand, n1Cand)
+    let n0NetworkInfo = getNetworkInformation n0
+    let n1NetworkInfo = getNetworkInformation n1
+    pure $ (makeBranchedNetwork n0 n1
+           , n0NetworkInfo
+           , n1NetworkInfo
+           )
 
 generateBranchedNetworkWithNetworkEvent
   :: (Monoid d, Monoid n)
   => Gen
        ( (ReferenceDAG d () n)
-       , Set ((Int, Int), (Int, Int))  -- ^ Candidate network edge of n0
-       , Set ((Int, Int), (Int, Int))  -- ^ Candidate network edge of n1
-       , Set ((Int, Int), (Int, Int))  -- ^ Candidate network edge of n2
-       , Set ((Int, Int), (Int, Int))  -- ^ Candidate network edge of n3
+       , NetworkInformation  -- ^ Candidate network information of n0
+       , NetworkInformation  -- ^ Candidate network information of n1
+       , NetworkInformation  -- ^ Candidate network information of n2
+       , NetworkInformation  -- ^ Candidate network information of n3
        )
 generateBranchedNetworkWithNetworkEvent =
   do
@@ -289,29 +303,38 @@ generateBranchedNetworkWithNetworkEvent =
     n1 <- generateNetwork
     n2 <- generateNetwork
     n3 <- generateNetwork
-    let n0Cand = candidateNetworkEdges n0
-    let n1Cand = candidateNetworkEdges n1
-    let n2Cand = candidateNetworkEdges n2
-    let n3Cand = candidateNetworkEdges n3
-    pure $ (makeBranchedNetworkWithNetworkEvent n0 n1 n2 n3, n0Cand, n1Cand, n2Cand, n3Cand)
+    let n0NetworkInfo = getNetworkInformation n0
+    let n1NetworkInfo = getNetworkInformation n1
+    let n2NetworkInfo = getNetworkInformation n2
+    let n3NetworkInfo = getNetworkInformation n3
+    pure $ ( makeBranchedNetworkWithNetworkEvent n0 n1 n2 n3
+           , n0NetworkInfo
+           , n1NetworkInfo
+           , n2NetworkInfo
+           , n3NetworkInfo
+           )
 
 generateDoublyBranchedNetwork
   :: (Monoid d, Monoid n)
   => Gen
       ( (ReferenceDAG d () n)
-      , Set ((Int, Int), (Int, Int))  -- ^ Candidate network edge of n0
-      , Set ((Int, Int), (Int, Int))  -- ^ Candidate network edge of n1
-      , Set ((Int, Int), (Int, Int))  -- ^ Candidate network edge of n2
+      , NetworkInformation  -- ^ Candidate network information of n0
+      , NetworkInformation  -- ^ Candidate network information of n1
+      , NetworkInformation  -- ^ Candidate network information of n2
       )
 generateDoublyBranchedNetwork =
   do
     n0 <- generateNetwork
     n1 <- generateNetwork
     n2 <- generateNetwork
-    let n0Cand = candidateNetworkEdges n0
-    let n1Cand = candidateNetworkEdges n1
-    let n2Cand = candidateNetworkEdges n2
-    pure $ (makeDoublyBranchedNetwork n0 n1 n2, n0Cand, n1Cand, n2Cand)
+    let n0NetworkInfo = getNetworkInformation n0
+    let n1NetworkInfo = getNetworkInformation n1
+    let n2NetworkInfo = getNetworkInformation n2
+    pure $ ( makeDoublyBranchedNetwork n0 n1 n2
+           , n0NetworkInfo
+           , n1NetworkInfo
+           , n2NetworkInfo
+           )
 
 -- |
 -- This function takes an `Int` and increments the internal names of nodes
@@ -339,3 +362,20 @@ singletonRefDAG nodeDec = ReferenceDAG{..}
     references = pure nodeData
     rootRefs   = pure 0
     graphData  = mempty
+
+
+-- |
+-- Gets 'NetworkInformation' from a 'ReferenceDAG'.
+getNetworkInformation :: ReferenceDAG d e n -> NetworkInformation
+getNetworkInformation dag = NetworkInformation{..}
+  where
+    _candidateNetworkEdges = candidateNetworkEdges dag
+    _networkAdjacentEdges  = getNetworkEdges       dag
+    _edgeSet               = getUnderlyingEdgeSet . referenceEdgeSet $ dag
+    
+
+-- |
+-- Gets all edges which are not adjacent to a network node
+getNonNetworkEdges :: NetworkInformation -> Set ((Int, Int))
+getNonNetworkEdges NetworkInformation{..} = _edgeSet \\ _networkAdjacentEdges
+

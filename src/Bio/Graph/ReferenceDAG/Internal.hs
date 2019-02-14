@@ -1517,7 +1517,7 @@ descendantNetworkNodesContextFn descendantNetworkNodes (currInd, _) =
 descendantNetworkEdgesContextFn
   ::  ChildContext (Set (Int, Int), Maybe Int) -- ^ Child descendent network edge set and maybe node
   -> (Int, IndexData e n)                      -- ^ Current node data
-  -> (IntSet, Maybe Int)                       -- ^ Current descendant network edge sets and maybe node
+  -> (Set (Int, Int), Maybe Int)                       -- ^ Current descendant network edge sets and maybe node
 descendantNetworkEdgesContextFn descendantNetworkNodes (currInd, _) =
   case descendantNetworkNodes of
     NoChildren                              -> (mempty, Nothing)
@@ -1528,19 +1528,19 @@ descendantNetworkEdgesContextFn descendantNetworkNodes (currInd, _) =
           Nothing -> (networkNodes, Just currInd)
        -- This case should never happen as it corresponds to a
        -- current network node with descendant network node.
-          Just n  -> (IS.singleton n <> networkNodes, Just currInd)
+          Just n  -> (S.singleton (currInd, n) <> networkNodes, Just currInd)
     TwoChildren
       (networkNodes1, optNode1)  (networkNodes2, optNode2)
       -> case (optNode1, optNode2) of
            (Nothing , Nothing)
              -> (networkNodes1 <> networkNodes2, Nothing)
            (Just n1 , Nothing)
-             -> (M.singleton (currInd, n1) <> networkNodes1 <> networkNodes2, Nothing)
+             -> (S.singleton (currInd, n1) <> networkNodes1 <> networkNodes2, Nothing)
            (Nothing , Just n2)
-             -> (IS.singleton n2 <> networkNodes1 <> networkNodes2, Nothing)
+             -> (S.singleton (currInd, n2) <> networkNodes1 <> networkNodes2, Nothing)
            (Just n1 , Just n2)
-             -> (     M.singleton (currInd, n1)
-                   <> M.singleton (currInd, n2)
+             -> (     S.singleton (currInd, n1)
+                   <> S.singleton (currInd, n2)
                    <> networkNodes1
                    <> networkNodes2
                 , Nothing
@@ -1751,9 +1751,9 @@ gatherDescendantNetworkNodes inds vect
 -- Gets all edges from a `ReferenceDAG` which are incident to a network
 -- node.
 getNetworkEdges :: ReferenceDAG d e n -> Set (Int, Int)
-getNetworkEdges = foldMap (\(set, _) -> set) desendantNetwork
+getNetworkEdges dag = foldMap (\(set, _) -> set) descendantNetworkEdges
   where
-    descendantNetwork    = generateMemo numberOfNodes dVectorDescendantNet
-    dVectorDescendantNet = dVectorPostorder descendantNetworkEdgesContextFn dag
-    numberOfNodes = length $ dag ^. _references
+    descendantNetworkEdges = generateMemo numberOfNodes dVectorDescendantNet
+    dVectorDescendantNet   = dVectorPostorder descendantNetworkEdgesContextFn dag
+    numberOfNodes          = length $ dag ^. _references
 

@@ -18,8 +18,8 @@ import Bio.Graph.ReferenceDAG.Utility
 import           Test.Tasty
 import qualified Test.Tasty.QuickCheck as QC
 import           Bio.Graph.ReferenceDAG.Internal
-import Data.Set (Set)
-import Test.QuickCheck (forAll, Property)
+import qualified Data.Set as S (toList, fromList)
+import Test.QuickCheck (forAll, Property, (===))
 
 
 
@@ -39,12 +39,29 @@ candidateNetworkProperties = testGroup "Properties of candidateNetworkEdges func
     
     correctBranchedCandidateEdges
       :: ( ReferenceDAG () () ()
-         , Set ((Int, Int), (Int, Int))
-         , Set ((Int, Int), (Int, Int))
+         , NetworkInformation
+         , NetworkInformation
          )
-      -> Bool
-    correctBranchedCandidateEdges (branchedNet, n0CandEdges, n1CandEdges) =
-      undefined
+      -> Property
+    correctBranchedCandidateEdges (branchedNet, n0NetInfo, n1NetInfo) =
+        candidateNetworkEdges branchedNet === newNetworkEdges
+    
+      where
+        n0NonNetworkEdges = getNonNetworkEdges n0NetInfo
+        n1NonNetworkEdges = getNonNetworkEdges n1NetInfo
+
+        newNetworkEdges =
+             _candidateNetworkEdges n0NetInfo
+          <> _candidateNetworkEdges n1NetInfo
+          <> n0n1NetworkEdges
+
+        n0n1NetworkEdges  =
+          S.fromList 
+            [(n0Edge, n1Edge)
+            | n0Edge <- S.toList n0NonNetworkEdges
+            , n1Edge <- S.toList n1NonNetworkEdges
+            ]
+        
 
 
 renderBranchedNetwork :: String

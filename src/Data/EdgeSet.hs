@@ -26,6 +26,7 @@ module Data.EdgeSet
 --  , member
   , singletonEdgeSet
 --  , toIntSet
+  , getUnderlyingEdgeSet
   ) where
 
 
@@ -40,6 +41,7 @@ import           GHC.Generics         (Generic)
 import           Prelude              hiding (zipWith)
 import           TextShow             (TextShow)
 import           TextShow.Instances   ()
+import           Data.Coerce
 
 
 -- |
@@ -191,3 +193,10 @@ makeParentEdgeSet
   -> IntSet             -- ^ Parent indices
   -> EdgeSet (Int, Int)
 makeParentEdgeSet currInd = ofoldMap (\parInd -> singletonEdgeSet (parInd, currInd))
+
+
+
+-- |
+-- Get underlying 'Set' of edges from 'EdgeSet'
+getUnderlyingEdgeSet :: EdgeSet e -> Set e
+getUnderlyingEdgeSet = coerce
