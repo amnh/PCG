@@ -23,7 +23,7 @@ cabal-pcg-path = dist-newstyle/build/x86_64-linux/ghc-8.6.3/phylocomgraph-0.1.0.
 ################################################################################
 
 # Default build target
-all: standard-build copy-haddock
+all: cabal-standard-build
 #all: stack-build-profiling
 
 # Rebuilds with profiling
