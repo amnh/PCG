@@ -35,7 +35,7 @@ candidateNetworkProperties = testGroup "Properties of candidateNetworkEdges func
     ]
   where
     branchedNetworkProperty :: Property
-    branchedNetworkProperty = forAll generateBranchedNetwork correctBranchedCandidateEdges
+    branchedNetworkProperty = forAll generateBinaryTree' correctBranchedCandidateEdges
     
     correctBranchedCandidateEdges
       :: ( ReferenceDAG () () ()

@@ -2,6 +2,7 @@
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE TypeApplications    #-}
 
 
 -----------------------------------------------------------------------------
@@ -21,7 +22,7 @@ module Bio.Graph.ReferenceDAG.Utility where
 import           Bio.Graph.ReferenceDAG.Internal
 import           Control.Lens
 import qualified Data.IntMap                     as IM (mapKeys)
-import qualified Data.IntSet                     as IS (map)
+import qualified Data.IntSet                     as IS (map, singleton)
 import Data.IntSet (IntSet)
 import Data.IntMap (IntMap)
 import Data.EdgeSet
@@ -32,6 +33,10 @@ import           Test.QuickCheck
 import Control.Monad.Loops
 import Data.Foldable
 import Data.Set (Set, (\\))
+import Data.Tuple.Utility
+
+
+import Debug.Trace
 
 
 data NetworkInformation
@@ -52,48 +57,85 @@ instance Show NetworkInformation where
 -- >                │       │
 -- >                │       │
 -- >               n0       n1
-makeBranchedNetwork'
-  ::  (Semigroup d)
+makeBranchedNetworkWithInfo'
+  ::  (Semigroup d, Show n)
   =>  (n -> n -> n)        -- ^ Function for combining node decorations.
-  -> ReferenceDAG d () n   -- ^ n0
-  -> ReferenceDAG d () n   -- ^ n1
-  -> ReferenceDAG d () n
-makeBranchedNetwork' fnn n0 n1 = ReferenceDAG{..}
+  ->   ReferenceDAG d () n   -- ^ n0
+  ->   ReferenceDAG d () n   -- ^ n1
+  -> ( ReferenceDAG d () n
+     , NetworkInformation  -- ^ Network information for n0
+     , NetworkInformation  -- ^ Network information for n1 (with correct indicies)
+     )
+makeBranchedNetworkWithInfo' fnn n0 n1 = (ReferenceDAG{..}, networkInfoN0, networkInfoN1')
   where
     newNode    = IndexData {..}
       where
         nodeDecoration = fnn nodeDec0 nodeDec1
         parentRefs     = []
-        childRefs      = [(rootIndex0, ()), (rootIndex1, ())]
+        childRefs      = [(rootIndex0, ()), (rootIndex1', ())]
 
-    references = references0 <> reindexedReferences1 <> pure newNode
+ -- n1' with the corrected internal indices with respect to the new network
+    n1' = incrementNodeIndices (length references0) n1
+      
+    references = references0WithRoot <> references1'WithRoot <> pure newNode
     rootRefs   = pure rootNodeIndex
     graphData  = (n0 ^. _graphData) <> (n1 ^. _graphData)
 
     nodeDec0 = (references0 ! rootIndex0)  ^. _nodeDecoration
     nodeDec1 = (references1 ! rootIndex1)  ^. _nodeDecoration
 
-    rootIndex0      = NE.head  (n0  ^. _rootRefs)
-    rootIndex1      = NE.head  (n1  ^. _rootRefs)
+    rootIndex0     = NE.head (n0  ^. _rootRefs)
+    rootIndex1     = NE.head (n1  ^. _rootRefs)
+    rootIndex1'    = NE.head (n1' ^. _rootRefs) 
 
-    references0 = n0 ^. _references
-    references1 = n1 ^. _references
 
-    reindexedReferences1 = incrementNodeIndices (length references0) references0
+    references0  = n0  ^. _references
+    references1  = n1  ^. _references
+    references1' = n1' ^. _references
+
+ -- Add the new root node as a parent to the old root nodes 
+    references0WithRoot
+      = references0  & ix rootIndex0 . _parentRefs .~ IS.singleton rootNodeIndex  
+    references1'WithRoot
+      = references1' & ix rootIndex1 . _parentRefs .~ IS.singleton rootNodeIndex 
 
   -- since vectors are zero-indexed this is the entry after the n0 and n1 node data.
     rootNodeIndex = length references0 + length references1
 
+  -- Gets the network information about n0 and n1'
+    networkInfoN0  = getNetworkInformation n0
+    networkInfoN1' = getNetworkInformation n1'
+
+makeBranchedNetwork'
+  ::  (Semigroup d, Show n)
+  =>  (n -> n -> n)        -- ^ Function for combining node decorations.
+  -> ReferenceDAG d () n   -- ^ n0
+  -> ReferenceDAG d () n   -- ^ n1
+  -> ReferenceDAG d () n
+makeBranchedNetwork' fnn n0 n1 = proj3_1 $ makeBranchedNetworkWithInfo' fnn n0 n1
+
+
 makeBranchedNetwork
-  ::  (Semigroup d, Monoid n)
+  ::  (Semigroup d, Monoid n, Show n)
   => ReferenceDAG d () n   -- ^ n0
   -> ReferenceDAG d () n   -- ^ n1
   -> ReferenceDAG d () n
 makeBranchedNetwork = makeBranchedNetwork' (<>)
 
+
+makeBranchedNetwork
+  ::  (Semigroup d, Monoid n, Show n)
+  =>   ReferenceDAG d () n   -- ^ n0
+  ->   ReferenceDAG d () n   -- ^ n1
+  -> ( ReferenceDAG d () n
+     , NetworkInformation    -- ^ Network Information for n0
+     , NetworkInformation    -- ^ Network Information for n1 (with correct indices)
+     )
+makeBranchedNetwork = makeBranchedNetwork' (<>)
+
+
 -- |
 -- This function takes valid networks n0, n1 and n2 and forms the network:
---
 --
 -- >                    r
 -- >                ┌───┴───┐
@@ -106,7 +148,7 @@ makeBranchedNetwork = makeBranchedNetwork' (<>)
 -- >                   n1       n2
 -- |
 makeDoublyBranchedNetwork'
-  ::  (Monoid d)
+  ::  (Monoid d, Show n)
   =>  (n -> n -> n)        -- ^ Function for combining node decorations.
   -> ReferenceDAG d () n   -- ^ n0
   -> ReferenceDAG d () n   -- ^ n1
@@ -118,7 +160,7 @@ makeDoublyBranchedNetwork' fnn n0 n1 n2 = makeBranchedNetwork' fnn n0 n0n1Branch
 
 
 makeDoublyBranchedNetwork
-  ::  forall d n . (Monoid d, Monoid n)
+  ::  forall d n . (Monoid d, Monoid n, Show n)
   => ReferenceDAG d () n   -- ^ n0
   -> ReferenceDAG d () n   -- ^ n1
   -> ReferenceDAG d () n   -- ^ n2
@@ -146,7 +188,7 @@ makeDoublyBranchedNetwork = makeDoublyBranchedNetwork' (<>)
 -- >
 -- >
 makeBranchedNetworkWithNetworkEvent'
-  ::  forall d n . (Monoid d)
+  ::  forall d n . (Monoid d, Show n)
   =>  (n -> n -> n)        -- ^ Function for combining node decorations.
   -> ReferenceDAG d () n   -- ^ n0
   -> ReferenceDAG d () n   -- ^ n1
@@ -201,6 +243,7 @@ makeBranchedNetworkWithNetworkEvent' fnn n0 n1 n2 n3
     bIndex = n1n2n3Nodes
     cIndex = bIndex + 1
 
+--  TODO: fix node indexing
     n1RootIndex = NE.head (n1 ^. _rootRefs)
     n2RootIndex = NE.head (n2 ^. _rootRefs)
     n3RootIndex = NE.head (n3 ^. _rootRefs)
@@ -209,6 +252,7 @@ makeBranchedNetworkWithNetworkEvent' fnn n0 n1 n2 n3
     rootNodeDec2 = (referencesN2 ! n1RootIndex) ^. _nodeDecoration
     rootNodeDec3 = (referencesN3 ! n1RootIndex) ^. _nodeDecoration
 
+--  TODO: fix vector indexing
     referencesN1, referencesN2, referencesN3 :: Vector (IndexData () n)
     referencesN1 = n1 ^. _references
     referencesN2 = n2 ^. _references
@@ -217,7 +261,7 @@ makeBranchedNetworkWithNetworkEvent' fnn n0 n1 n2 n3
 
 
 makeBranchedNetworkWithNetworkEvent
-  ::  forall d n . (Monoid d, Monoid n)
+  ::  forall d n . (Monoid d, Monoid n, Show n)
   => ReferenceDAG d () n   -- ^ n0
   -> ReferenceDAG d () n   -- ^ n1
   -> ReferenceDAG d () n   -- ^ n2
@@ -227,7 +271,7 @@ makeBranchedNetworkWithNetworkEvent = makeBranchedNetworkWithNetworkEvent' (<>)
 
 
 makeBinaryTree
-  :: (Monoid d, Monoid n)
+  :: forall d n . (Monoid d, Monoid n, Show n)
   =>  Int                    -- ^ depth of binary tree
   -> (ReferenceDAG d () n)   
 makeBinaryTree 0 = singletonRefDAG mempty
@@ -236,13 +280,27 @@ makeBinaryTree n = let subtree = makeBinaryTree (n - 1) in
 
 
 
-generateBinaryTree ::  (Monoid d, Monoid n) => Gen (ReferenceDAG d () n)
+generateBinaryTree' ::  forall d n . (Monoid d, Monoid n, Show n)
+  => Gen
+       ( (ReferenceDAG d () n)
+       , NetworkInformation
+       , NetworkInformation
+       )
+generateBinaryTree' = do
+  depth <- choose (1, 4)
+  let binTree = makeBinaryTree @d @n depth
+  let netInfo = getNetworkInformation binTree
+  pure $ (binTree, netInfo, netInfo)
+
+generateBinaryTree ::  (Monoid d, Monoid n, Show n)
+  => Gen (ReferenceDAG d () n)
 generateBinaryTree = do
   depth <- choose (1, 10)
-  pure $ makeBinaryTree depth
+  pure $ (makeBinaryTree depth)
 
 
-generateNetwork :: forall d n . (Monoid d, Monoid n) => Gen (ReferenceDAG d () n)
+
+generateNetwork :: forall d n . (Monoid d, Monoid n, Show n) => Gen (ReferenceDAG d () n)
 generateNetwork  = do
   (binTree :: ReferenceDAG d () n)  <- generateBinaryTree
   (refDAG, _) <- iterateUntilM stoppingCondition addNetworkEdge (binTree, True)
@@ -250,20 +308,20 @@ generateNetwork  = do
     where
       stoppingCondition :: (ReferenceDAG d () n, Bool) -> Bool
       stoppingCondition = \case
-        (_, False)     -> False
-        (refDAG, True) -> not . null $ candidateNetworkEdges refDAG
+        (_, False)   -> False
+        (rdag, True) -> not . null $ candidateNetworkEdges rdag
 
       addNetworkEdge :: (ReferenceDAG d () n, Bool) -> Gen ((ReferenceDAG d () n), Bool)
-      addNetworkEdge (refDAG, _) = do
+      addNetworkEdge (dag, _) = do
           (prob :: Int) <- choose (1, 100)
           if prob > 90 then
-            pure (refDAG, False)
+            pure (dag, False)
           else
             do
-              let networkEdges = toList . candidateNetworkEdges $ refDAG
+              let networkEdges = toList . candidateNetworkEdges $ dag
               ind <- choose (0, length networkEdges - 1)
               let (sourceEdge, targetEdge) = networkEdges ! ind
-              let newRefDAG = connectEdge refDAG combine (<>) sourceEdge targetEdge
+              let newRefDAG = connectEdge dag combine (<>) sourceEdge targetEdge
               pure (newRefDAG, True)
         where
           combine n1 n2 n3 = n1 <> n2 <> n3
@@ -271,7 +329,7 @@ generateNetwork  = do
           
 
 generateBranchedNetwork
-  :: (Monoid d, Monoid n)
+  :: (Monoid d, Monoid n, Show n)
   => Gen
       ( ReferenceDAG d () n -- ^ Branched network
       , NetworkInformation  -- ^ Candidate network information of n0
@@ -289,7 +347,7 @@ generateBranchedNetwork =
            )
 
 generateBranchedNetworkWithNetworkEvent
-  :: (Monoid d, Monoid n)
+  :: (Monoid d, Monoid n, Show n)
   => Gen
        ( (ReferenceDAG d () n)
        , NetworkInformation  -- ^ Candidate network information of n0
@@ -315,7 +373,7 @@ generateBranchedNetworkWithNetworkEvent =
            )
 
 generateDoublyBranchedNetwork
-  :: (Monoid d, Monoid n)
+  :: (Monoid d, Monoid n, Show n)
   => Gen
       ( (ReferenceDAG d () n)
       , NetworkInformation  -- ^ Candidate network information of n0
@@ -339,13 +397,16 @@ generateDoublyBranchedNetwork =
 -- |
 -- This function takes an `Int` and increments the internal names of nodes
 -- uniformly by that amount.
-incrementNodeIndices :: Int -> Vector (IndexData e n) -> Vector (IndexData e n)
-incrementNodeIndices n = fmap incrementIndexData
+incrementNodeIndices :: forall d e n . Int -> ReferenceDAG d e n -> ReferenceDAG d e n
+incrementNodeIndices n refDAG = refDAG & _rootRefs   %~ (fmap (+ n))
+                                       & _references %~ incrementRefVector
   where
+    incrementRefVector :: Vector (IndexData e n) -> Vector (IndexData e n)
+    incrementRefVector = fmap incrementIndexData
+
     incrementIndexData :: IndexData e n -> IndexData e n
     incrementIndexData ind = ind & _parentRefs %~ IS.map     (+ n)
                                  & _childRefs  %~ IM.mapKeys (+ n)
-
 
 -- |
 -- Constructs a singleton `ReferenceDAG`. 

@@ -14,11 +14,12 @@ import           Test.Tasty
 
 testSuite :: TestTree
 testSuite = testGroup "Library Test Suite"
-    [ Evaluation.testSuite
-    , Alphabet.testSuite
-    , TCM.testSuite
-    , DynamicChar.testSuite
-    , StaticChar.testSuite
-    , Pairwise.testSuite
-    , ReferenceDAG.testSuite
+    [
+ --     Evaluation.testSuite
+ --   , Alphabet.testSuite
+ --   , TCM.testSuite
+ --   , DynamicChar.testSuite
+ --   , StaticChar.testSuite
+ --   , Pairwise.testSuite
+      ReferenceDAG.testSuite
     ]
