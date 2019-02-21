@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedLists     #-}
+{-# LANGUAGE OveeloadedLists     #-}
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE LambdaCase          #-}
@@ -33,6 +33,7 @@ import           Test.QuickCheck
 import Control.Monad.Loops
 import Data.Foldable
 import Data.Set (Set, (\\))
+import qualified Data.Set as Set
 import Data.Tuple.Utility
 
 
@@ -45,6 +46,10 @@ data NetworkInformation
   , _networkAdjacentEdges  :: Set (Int, Int)
   , _edgeSet               :: Set (Int, Int)
   }
+
+emptyNetworkInfo = NetworkInformation mempty mempty mempty
+
+
 
 instance Show NetworkInformation where
   show = const "[Network Information]"
@@ -104,7 +109,9 @@ makeBranchedNetworkWithInfo' fnn n0 n1 = (ReferenceDAG{..}, networkInfoN0, netwo
 
   -- Gets the network information about n0 and n1'
     networkInfoN0  = getNetworkInformation n0
-    networkInfoN1' = getNetworkInformation n1'
+    networkInfoN1  = getNetworkInformation n1
+    networkInfoN1' = incrementNetworkInformation (length references0) networkInfoN1
+
 
 makeBranchedNetwork'
   ::  (Semigroup d, Show n)
@@ -115,15 +122,7 @@ makeBranchedNetwork'
 makeBranchedNetwork' fnn n0 n1 = proj3_1 $ makeBranchedNetworkWithInfo' fnn n0 n1
 
 
-makeBranchedNetwork
-  ::  (Semigroup d, Monoid n, Show n)
-  => ReferenceDAG d () n   -- ^ n0
-  -> ReferenceDAG d () n   -- ^ n1
-  -> ReferenceDAG d () n
-makeBranchedNetwork = makeBranchedNetwork' (<>)
-
-
-makeBranchedNetwork
+makeBranchedNetworkWithInfo
   ::  (Semigroup d, Monoid n, Show n)
   =>   ReferenceDAG d () n   -- ^ n0
   ->   ReferenceDAG d () n   -- ^ n1
@@ -131,6 +130,14 @@ makeBranchedNetwork
      , NetworkInformation    -- ^ Network Information for n0
      , NetworkInformation    -- ^ Network Information for n1 (with correct indices)
      )
+makeBranchedNetworkWithInfo = makeBranchedNetworkWithInfo' (<>)
+
+
+makeBranchedNetwork
+  ::  (Semigroup d, Monoid n, Show n)
+  => ReferenceDAG d () n   -- ^ n0
+  -> ReferenceDAG d () n   -- ^ n1
+  -> ReferenceDAG d () n
 makeBranchedNetwork = makeBranchedNetwork' (<>)
 
 
@@ -141,11 +148,11 @@ makeBranchedNetwork = makeBranchedNetwork' (<>)
 -- >                ┌───┴───┐
 -- >                │       │
 -- >                │       │
--- >               n0       x
+-- >               n2       x
 -- >                    ┌───┴───┐
 -- >                    │       │
 -- >                    │       │
--- >                   n1       n2
+-- >                   n0       n1
 -- |
 makeDoublyBranchedNetwork'
   ::  (Monoid d, Show n)
@@ -154,10 +161,9 @@ makeDoublyBranchedNetwork'
   -> ReferenceDAG d () n   -- ^ n1
   -> ReferenceDAG d () n   -- ^ n2
   -> ReferenceDAG d () n
-makeDoublyBranchedNetwork' fnn n0 n1 n2 = makeBranchedNetwork' fnn n0 n0n1Branched
+makeDoublyBranchedNetwork' fnn n0 n1 n2 = makeBranchedNetwork' fnn n2 n0n1Branched
   where
-    n0n1Branched = makeBranchedNetwork' fnn n1 n2
-
+    n0n1Branched = makeBranchedNetwork' fnn n0 n1
 
 makeDoublyBranchedNetwork
   ::  forall d n . (Monoid d, Monoid n, Show n)
@@ -167,6 +173,22 @@ makeDoublyBranchedNetwork
   -> ReferenceDAG d () n
 makeDoublyBranchedNetwork = makeDoublyBranchedNetwork' (<>)
 
+
+makeDoublyBranchedNetworkWithInfo
+  ::  forall d n . (Monoid d, Monoid n, Show n)
+  =>   ReferenceDAG d () n   -- ^ n0
+  ->   ReferenceDAG d () n   -- ^ n1
+  ->   ReferenceDAG d () n   -- ^ n2
+  -> ( ReferenceDAG d () n
+     , NetworkInformation    -- ^ Network information of n0 (with correct indices) 
+     , NetworkInformation    -- ^ Network information of n1 (with correct indices)
+     , NetworkInformation    -- ^ Network information of n2 (with correct indices)
+     )
+makeDoublyBranchedNetworkWithInfo n0 n1 n2 = (network, n0NetInfo, n1NetInfo, n2NetInfo)
+  where
+    (n0n1Branched, n0NetInfo, n1NetInfo) = makeBranchedNetworkWithInfo n0 n1
+    (network     , n2NetInfo, _        ) = makeBranchedNetworkWithInfo n2 n0n1Branched  
+
 -- |
 -- This function takes valid networks n0, n1, n2 and n3 and forms the network:
 --
@@ -174,7 +196,7 @@ makeDoublyBranchedNetwork = makeDoublyBranchedNetwork' (<>)
 -- >                ┌───┴───┐
 -- >                │       │
 -- >                │       │
--- >                n0      a
+-- >                n3      a
 -- >                   ┌────┴────┐
 -- >                   │         │
 -- >                   │         │
@@ -183,29 +205,36 @@ makeDoublyBranchedNetwork = makeDoublyBranchedNetwork' (<>)
 -- >               │       │ │       │
 -- >               │       │ │       │
 -- >               │       └┬┘       │
--- >              n1        n2       n3
+-- >              n0        n1       n2
 -- >
 -- >
 -- >
-makeBranchedNetworkWithNetworkEvent'
+makeBranchedNetworkWithNetworkEventWithInfo
   ::  forall d n . (Monoid d, Show n)
-  =>  (n -> n -> n)        -- ^ Function for combining node decorations.
-  -> ReferenceDAG d () n   -- ^ n0
-  -> ReferenceDAG d () n   -- ^ n1
-  -> ReferenceDAG d () n   -- ^ n2
-  -> ReferenceDAG d () n   -- ^ n3
-  -> ReferenceDAG d () n
-makeBranchedNetworkWithNetworkEvent' fnn n0 n1 n2 n3
-    = makeBranchedNetwork' fnn n0 internalNetwork
+  =>  (n -> n -> n)         -- ^ Function for combining node decorations.
+  -> ReferenceDAG d () n    -- ^ n0
+  -> ReferenceDAG d () n    -- ^ n1
+  -> ReferenceDAG d () n    -- ^ n2
+  -> ReferenceDAG d () n    -- ^ n3
+  -> ( ReferenceDAG d () n
+     , NetworkInformation   -- ^ Network information of n0 (with correct indices)
+     , NetworkInformation   -- ^ Network information of n1 (with correct indices)
+     , NetworkInformation   -- ^ Network information of n1 (with correct indices)
+     , NetworkInformation   -- ^ Network information of n1 (with correct indices)
+     )
+makeBranchedNetworkWithNetworkEventWithInfo fnn n0 n1 n2 n3
+    = (network, n0NetworkInfo, n1NetworkInfo, n2NetworkInfo, n3NetworkInfo)
   where
+    (network, n3NetworkInfo, _ ) = makeBranchedNetworkWithInfo' fnn n3 internalNetwork
+
     internalNetwork :: ReferenceDAG d () n
     internalNetwork = ReferenceDAG{..}
 
     references :: Vector (IndexData () n)
     references = mconcat
-                   [ referencesN1
-                   , referencesN2
-                   , referencesN3
+                   [ referencesN0
+                   , referencesN1'
+                   , referencesN2'
                    , pure bIndexData
                    , pure cIndexData
                    , pure aIndexData
@@ -223,41 +252,54 @@ makeBranchedNetworkWithNetworkEvent' fnn n0 n1 n2 n3
     bIndexData :: IndexData () n
     bIndexData = IndexData{..}
       where
-        nodeDecoration = fnn rootNodeDec1 rootNodeDec2
+        nodeDecoration = fnn rootNodeDec0 rootNodeDec1
         parentRefs :: IntSet
         parentRefs     = [aIndex]
         childRefs :: IntMap ()
-        childRefs      = [(n1RootIndex, ()), (n2RootIndex, ())]
+        childRefs      = [(n0RootIndex, ()), (n1RootIndex', ())]
 
     cIndexData :: IndexData () n
     cIndexData = IndexData{..}
       where
-        nodeDecoration = fnn rootNodeDec2 rootNodeDec3
+        nodeDecoration = fnn rootNodeDec1 rootNodeDec2
         parentRefs :: IntSet
         parentRefs     = [aIndex]
         childRefs :: IntMap ()
-        childRefs      = [(n2RootIndex, ()), (n3RootIndex, ())]
+        childRefs      = [(n1RootIndex', ()), (n2RootIndex', ())]
 
-    aIndex, bIndex, cIndex, n1RootIndex, n2RootIndex, n3RootIndex :: Int
+    aIndex, bIndex, cIndex, n0RootIndex, n1RootIndex, n2RootIndex :: Int
     aIndex = cIndex + 1
-    bIndex = n1n2n3Nodes
+    bIndex = n0n1n2Nodes
     cIndex = bIndex + 1
 
---  TODO: fix node indexing
-    n1RootIndex = NE.head (n1 ^. _rootRefs)
-    n2RootIndex = NE.head (n2 ^. _rootRefs)
-    n3RootIndex = NE.head (n3 ^. _rootRefs)
+    n0RootIndex  = NE.head (n1 ^. _rootRefs)
+    n1RootIndex  = NE.head (n2 ^. _rootRefs)
+    n1RootIndex' = n1RootIndex + n0Nodes
+    n2RootIndex  = NE.head (n3 ^. _rootRefs)
+    n2RootIndex' = n2RootIndex + n0n1Nodes
 
-    rootNodeDec1 = (referencesN1 ! n1RootIndex) ^. _nodeDecoration
-    rootNodeDec2 = (referencesN2 ! n1RootIndex) ^. _nodeDecoration
-    rootNodeDec3 = (referencesN3 ! n1RootIndex) ^. _nodeDecoration
+    rootNodeDec0 = (referencesN0  ! n1RootIndex) ^. _nodeDecoration
+    rootNodeDec1 = (referencesN1' ! n1RootIndex) ^. _nodeDecoration
+    rootNodeDec2 = (referencesN2' ! n1RootIndex) ^. _nodeDecoration
 
---  TODO: fix vector indexing
-    referencesN1, referencesN2, referencesN3 :: Vector (IndexData () n)
-    referencesN1 = n1 ^. _references
-    referencesN2 = n2 ^. _references
-    referencesN3 = n3 ^. _references
-    n1n2n3Nodes  = (length referencesN1) + (length referencesN2) + (length referencesN3)
+    n1', n2' :: ReferenceDAG d () n
+    n1' = incrementNodeIndices n0Nodes   n1
+    n2' = incrementNodeIndices n0n1Nodes n2
+
+    n0NetworkInfo, n1NetworkInfo, n2NetworkInfo :: NetworkInformation
+    n0NetworkInfo = getNetworkInformation n0
+    n1NetworkInfo = getNetworkInformation n1'
+    n2NetworkInfo = getNetworkInformation n2'
+
+    referencesN0, referencesN1', referencesN2' :: Vector (IndexData () n)
+    referencesN0   = n0  ^. _references
+    referencesN1'  = n1' ^. _references
+    referencesN2'  = n2' ^. _references
+
+    n0Nodes, n0n1Nodes, n0n1n2Nodes :: Int
+    n0Nodes        = length referencesN0
+    n0n1Nodes      = n0Nodes   + length referencesN1'
+    n0n1n2Nodes    = n0n1Nodes + length referencesN2'
 
 
 makeBranchedNetworkWithNetworkEvent
@@ -267,30 +309,38 @@ makeBranchedNetworkWithNetworkEvent
   -> ReferenceDAG d () n   -- ^ n2
   -> ReferenceDAG d () n   -- ^ n3
   -> ReferenceDAG d () n
-makeBranchedNetworkWithNetworkEvent = makeBranchedNetworkWithNetworkEvent' (<>)
+makeBranchedNetworkWithNetworkEvent n0 n1 n2 n3
+  = proj5_1 $ makeBranchedNetworkWithNetworkEventWithInfo (<>) n0 n1 n2 n3
 
 
-makeBinaryTree
+
+makeBinaryTreeWithInfo
   :: forall d n . (Monoid d, Monoid n, Show n)
   =>  Int                    -- ^ depth of binary tree
-  -> (ReferenceDAG d () n)   
-makeBinaryTree 0 = singletonRefDAG mempty
-makeBinaryTree n = let subtree = makeBinaryTree (n - 1) in
-                     makeBranchedNetwork subtree subtree
+  -> ( ReferenceDAG d () n
+     , NetworkInformation
+     , NetworkInformation)   
+makeBinaryTreeWithInfo 0 = (singletonRefDAG mempty, emptyNetworkInfo, emptyNetworkInfo)
+makeBinaryTreeWithInfo n = let subtree = makeBinaryTree (n - 1) in
+                     makeBranchedNetworkWithInfo subtree subtree
 
 
+makeBinaryTree  :: forall d n . (Monoid d, Monoid n, Show n)
+  =>  Int                    -- ^ depth of binary tree
+  -> ReferenceDAG d () n
+makeBinaryTree n = proj3_1 $ makeBinaryTreeWithInfo n
 
-generateBinaryTree' ::  forall d n . (Monoid d, Monoid n, Show n)
+
+generateBinaryTreeWithInfo ::  forall d n . (Monoid d, Monoid n, Show n)
   => Gen
        ( (ReferenceDAG d () n)
        , NetworkInformation
        , NetworkInformation
        )
-generateBinaryTree' = do
-  depth <- choose (1, 4)
-  let binTree = makeBinaryTree @d @n depth
-  let netInfo = getNetworkInformation binTree
-  pure $ (binTree, netInfo, netInfo)
+generateBinaryTreeWithInfo = do
+  depth <- choose (1, 2)
+  pure $ makeBinaryTreeWithInfo @d @n depth
+
 
 generateBinaryTree ::  (Monoid d, Monoid n, Show n)
   => Gen (ReferenceDAG d () n)
@@ -339,12 +389,7 @@ generateBranchedNetwork =
   do
     n0 <- generateNetwork
     n1 <- generateNetwork
-    let n0NetworkInfo = getNetworkInformation n0
-    let n1NetworkInfo = getNetworkInformation n1
-    pure $ (makeBranchedNetwork n0 n1
-           , n0NetworkInfo
-           , n1NetworkInfo
-           )
+    pure $ makeBranchedNetworkWithInfo n0 n1
 
 generateBranchedNetworkWithNetworkEvent
   :: (Monoid d, Monoid n, Show n)
@@ -399,14 +444,34 @@ generateDoublyBranchedNetwork =
 -- uniformly by that amount.
 incrementNodeIndices :: forall d e n . Int -> ReferenceDAG d e n -> ReferenceDAG d e n
 incrementNodeIndices n refDAG = refDAG & _rootRefs   %~ (fmap (+ n))
-                                       & _references %~ incrementRefVector
-  where
-    incrementRefVector :: Vector (IndexData e n) -> Vector (IndexData e n)
-    incrementRefVector = fmap incrementIndexData
+                                       & _references %~ incrementRefVector n
 
+
+incrementRefVector :: Int ->  Vector (IndexData e n) -> Vector (IndexData e n)
+incrementRefVector n = fmap incrementIndexData
+  where
     incrementIndexData :: IndexData e n -> IndexData e n
     incrementIndexData ind = ind & _parentRefs %~ IS.map     (+ n)
                                  & _childRefs  %~ IM.mapKeys (+ n)
+
+incrementNetworkInformation :: Int -> NetworkInformation -> NetworkInformation
+incrementNetworkInformation n NetworkInformation{..}
+  = NetworkInformation
+    { _candidateNetworkEdges = _candidateNetworkEdges'
+    , _networkAdjacentEdges   = _networkAdjacentEdges' 
+    , _edgeSet               = _edgeSet'
+    }
+     
+  where
+    _candidateNetworkEdges'
+      = Set.map (\ (e1,e2) -> (incrementEdge e1, incrementEdge e2)) _candidateNetworkEdges
+    _networkAdjacentEdges'
+      = Set.map incrementEdge _networkAdjacentEdges
+    _edgeSet'
+      = Set.map incrementEdge _edgeSet
+
+    incrementEdge :: (Int, Int) -> (Int, Int)
+    incrementEdge (src, tgt) = (src + n, tgt + n)
 
 -- |
 -- Constructs a singleton `ReferenceDAG`. 
