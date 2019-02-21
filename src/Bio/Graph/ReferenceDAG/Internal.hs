@@ -27,6 +27,8 @@
 
 module Bio.Graph.ReferenceDAG.Internal where
 
+import Debug.Trace
+
 import           Analysis.Parsimony.Internal
 import           Bio.Graph.BinaryRenderingTree
 import           Bio.Graph.Component
@@ -1528,7 +1530,8 @@ descendantNetworkEdgesContextFn descendantNetworkNodes (currInd, _) =
           Nothing -> (networkNodes, Just currInd)
        -- This case should never happen as it corresponds to a
        -- current network node with descendant network node.
-          Just n  -> (S.singleton (currInd, n) <> networkNodes, Just currInd)
+          Just n  -> error "This graph contains a network node as a child of a network node."
+                  --(S.singleton (currInd, n) <> networkNodes, Just currInd)
     TwoChildren
       (networkNodes1, optNode1)  (networkNodes2, optNode2)
       -> case (optNode1, optNode2) of
@@ -1751,7 +1754,7 @@ gatherDescendantNetworkNodes inds vect
 -- Gets all edges from a `ReferenceDAG` which are incident to a network
 -- node.
 getNetworkEdges :: ReferenceDAG d e n -> Set (Int, Int)
-getNetworkEdges dag = foldMap (\(set, _) -> set) descendantNetworkEdges
+getNetworkEdges dag = foldMap fst descendantNetworkEdges
   where
     descendantNetworkEdges = generateMemo numberOfNodes dVectorDescendantNet
     dVectorDescendantNet   = dVectorPostorder descendantNetworkEdgesContextFn dag
