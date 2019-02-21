@@ -431,7 +431,7 @@ getUnificationErrors ParseData{..} =
     extraError     = constructErrorMaybe ForestExtraTaxa         extraForestNames
     missingError   = constructErrorMaybe ForestMissingTaxa     missingForestNames
 
-    --Assert that each terminal node name is unique in each forest
+    -- Assert that each terminal node name is unique in each forest
     duplicateForestNames :: [([[Identifier]], FracturedParseResult)]
     duplicateForestNames = collectTaxaWith duplicates
 

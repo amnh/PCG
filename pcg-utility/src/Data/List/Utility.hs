@@ -102,7 +102,6 @@ isSingleton = f . toList
 --
 -- >>> [42] `prepend` (1 :| [1,2,3,5])
 -- (42 :| [1,1,2,3,5])
---
 prepend :: Foldable f => f a -> NonEmpty a -> NonEmpty a
 prepend p ne =
     case toList p of
@@ -122,7 +121,6 @@ prepend p ne =
 --
 -- >>> catMaybes $ Nothing :| [Nothing]
 -- Nothing
---
 catMaybes1 :: Foldable1 f => f (Maybe a) -> Maybe (NonEmpty a)
 catMaybes1 v =
    let x:|xs = toNonEmpty v
@@ -167,6 +165,9 @@ duplicates = duplicates' . sort . toList
 --
 -- >>> mostCommon "AABCDDDEFGGT"
 -- Just 'D'
+--
+-- >>> mostCommon []
+-- Nothing
 mostCommon :: (Foldable t, Ord a) => t a -> Maybe a
 mostCommon xs
   | null xs   = Nothing
@@ -190,7 +191,7 @@ mostCommon xs
 --
 -- >>> occurances "AABCDDDEFGGT"
 -- [('D',3),('A',2),('G',2),('B',1),('C',1),('E',1),('F',1),('T',1)]
-occurances :: (Foldable t, Ord a) => t a -> [(a,Int)]
+occurances :: (Foldable t, Ord a) => t a -> [(a, Word)]
 occurances = collateOccuranceMap . buildOccuranceMap
   where
     buildOccuranceMap = foldr occurance empty
@@ -264,7 +265,8 @@ equalityOf f xs =
   case toList xs of
     []   -> True
     [_]  -> True
-    y:ys -> all (\e -> f y == f e) ys
+    y:ys -> let v = f y
+            in  all (\e -> v == f e) ys
 
 
 -- |

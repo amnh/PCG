@@ -1,2 +1,3 @@
 read("../../shared-data/arthropods/arthAdd.hen")
 save(binary, "graph.bin")
+report(data, "cost.data")
