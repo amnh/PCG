@@ -448,21 +448,14 @@ instance Show (GraphData m) where
 
 
 -- | (✔)
-instance Show n => Show (ReferenceDAG d e n) where
+instance (TextShow d, TextShow n) => Show (ReferenceDAG d e n) where
 
-    show dag = intercalate "\n"
-        [ topologyRendering dag
-        , ""
-        ,   sconcat
-          . intersperse "\n"
-          $ horizontalRendering <$> toBinaryRenderingTree show dag
-        , ""
-        , referenceRendering dag
-        ]
+    show = toString . showb
 
 
 -- | (✔)
 instance TextShow d => TextShow (GraphData d) where
+
     showb x = unlinesB
         [ "DAG total cost:           " <> showb (dagCost x)
         , "DAG network edge cost:    " <> showb (networkEdgeCost x)
@@ -472,14 +465,15 @@ instance TextShow d => TextShow (GraphData d) where
 
 
 -- | (✔)
-instance TextShow n => TextShow (ReferenceDAG d e n) where
+instance (TextShow d, TextShow n) => TextShow (ReferenceDAG d e n) where
 
     showb dag = TextShow.intercalateB "\n"
-        [ showb . topologyRendering $ dag
+        [ fromString . topologyRendering $ dag
         , ""
-        , showb . sconcat . intersperse "\n" $ horizontalRendering <$> toBinaryRenderingTree (toString . showb) dag
+        , fromString . sconcat . intersperse "\n" $ horizontalRendering <$> toBinaryRenderingTree (toString . showb) dag
         , ""
-        , showb . referenceRendering $ dag
+        , fromString . referenceRendering $ dag
+        , showb $ graphData dag
         ]
 
 

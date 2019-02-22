@@ -76,6 +76,7 @@ import           Data.List.NonEmpty              (NonEmpty (..))
 import qualified Data.List.NonEmpty              as NE
 import           Data.Maybe                      (fromMaybe)
 import           Data.MonoTraversable
+import           Data.String
 import qualified Data.Text                       as T (Text, filter, length, unlines)
 import           Data.TopologyRepresentation
 import           Data.Vector                     (Vector)
@@ -265,19 +266,33 @@ instance Show n => PrintDot (PhylogeneticDAG2 m e n u v w x y z) where
 
 
 -- | (✔)
-instance ( Show e
-         , Show n
-         , Show u
-         , Show v
-         , Show w
-         , Show x
-         , Show y
-         , Show z
+instance ( TextShow e
+         , TextShow n
+         , TextShow u
+         , TextShow v
+         , TextShow w
+         , TextShow x
+         , TextShow y
+         , TextShow z
          ) => Show (PhylogeneticDAG m e n u v w x y z) where
 
-    show (PDAG _ dag) = show dag <> "\n" <> foldMapWithKey f dag
+    show = toString . showb
+
+
+-- | (✔)
+instance ( TextShow e
+         , TextShow n
+         , TextShow u
+         , TextShow v
+         , TextShow w
+         , TextShow x
+         , TextShow y
+         , TextShow z
+         ) => TextShow (PhylogeneticDAG m e n u v w x y z) where
+
+    showb (PDAG _ dag) = showb dag <> "\n" <> foldMapWithKey f dag
       where
-        f i (PNode n sek) = mconcat [ "Node {", show i, "}:\n\n", unlines [show n, show sek] ]
+        f i (PNode n sek) = mconcat [ "Node {", showb i, "}:\n\n", unlinesB [showb n, showb sek] ]
 
 
 -- | (✔)
@@ -335,13 +350,13 @@ instance ( HasBlockCost u v w x y z
 
 
 -- | (✔)
-instance ( Show  n
-         , Show  u
-         , Show  v
-         , Show  w
-         , Show  y
-         , Show  x
-         , Show  z
+instance ( TextShow n
+         , TextShow u
+         , TextShow v
+         , TextShow w
+         , TextShow y
+         , TextShow x
+         , TextShow z
          , ToXML u
          , ToXML v
          , ToXML w

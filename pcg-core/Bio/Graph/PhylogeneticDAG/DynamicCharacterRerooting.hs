@@ -48,6 +48,7 @@ import           Data.Vector                        (Vector)
 import qualified Data.Vector                        as V
 import qualified Data.Vector.NonEmpty               as NEV
 import           Prelude                            hiding (lookup, zipWith)
+import           TextShow
 
 
 -- |
@@ -67,13 +68,13 @@ import           Prelude                            hiding (lookup, zipWith)
 
 assignOptimalDynamicCharacterRootEdges
   :: ( HasBlockCost u v w x y z
-     , Show n
-     , Show u
-     , Show v
-     , Show w
-     , Show x
-     , Show y
-     , Show z
+     , TextShow n
+     , TextShow u
+     , TextShow v
+     , TextShow w
+     , TextShow x
+     , TextShow y
+     , TextShow z
      )
   => (DynamicCharacterMetadataDec (Element DynamicCharacter)
   -> PostorderContext z z -> z)  -- ^ Post-order traversal function for Dynamic Characters.

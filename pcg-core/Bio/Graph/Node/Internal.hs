@@ -61,7 +61,8 @@ import Data.UnionSet
 import GHC.Generics
 import Text.Newick.Class
 import Text.XML
-import TextShow                    (TextShow (showb), unlinesB)
+import TextShow                    (TextShow (showb), toString, unlinesB)
+
 
 -- |
 -- This serves as a computation /invariant/ node decoration designed to hold node
@@ -190,6 +191,7 @@ instance HasLocalSequenceCost (ResolutionInformation s) Double where
 
     {-# INLINE _localSequenceCost #-}
     _localSequenceCost = _resolutionMetadata . _localSequenceCost
+
 
 -- |
 -- A 'Lens' for the 'LeafSetRepresentation' field in 'ResolutionMetadata'
@@ -368,7 +370,7 @@ instance Semigroup NewickSerialization where
 instance Semigroup ResolutionMetadata where
     (<>) l r =
       ResolutionMetadata
-      { totalSubtreeCost       = l ^. _totalSubtreeCost       + r ^. _totalSubtreeCost
+      { totalSubtreeCost       = l ^. _totalSubtreeCost       +  r ^. _totalSubtreeCost
       , localSequenceCost      = 0
       , leafSetRepresentation  = l ^. _leafSetRepresentation  <> r ^. _leafSetRepresentation
       , subtreeRepresentation  = l ^. _subtreeRepresentation  <> r ^. _subtreeRepresentation
@@ -376,13 +378,21 @@ instance Semigroup ResolutionMetadata where
       , topologyRepresentation = l ^. _topologyRepresentation <> r ^. _topologyRepresentation
       }
 
-instance (Show n, Show s) => Show (PhylogeneticNode2 s n) where
 
-    show node = unlines
-        [ show $ nodeDecorationDatum2 node
-        , "Resolutions: {" <> (show . length . resolutions) node <> "}\n"
-        , unlines . fmap show . toList $ resolutions node
+instance (TextShow n, TextShow s) => Show (PhylogeneticNode2 s n) where
+
+    show = toString . showb
+
+
+instance (TextShow n, TextShow s) => TextShow (PhylogeneticNode s n) where
+
+    showb node = unlinesB
+        [ "PNode {"
+        , "  " <> showb (nodeDecorationDatum node)
+        , "  " <> showb (sequenceDecoration  node)
+        , "}"
         ]
+
 
 instance (TextShow n, TextShow s) => TextShow (PhylogeneticNode2 s n) where
 
@@ -405,6 +415,7 @@ instance Show s => Show (ResolutionInformation s) where
            , "Subtree   : "    <> show (resInfo ^. _subtreeRepresentation)
            , "Decoration:\n\n" <> show (resInfo ^. _characterSequence    )
            ]
+
 
 instance TextShow s => TextShow (ResolutionInformation s) where
 

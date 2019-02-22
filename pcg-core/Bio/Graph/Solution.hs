@@ -164,12 +164,7 @@ instance ToNewick a => ToNewick (PhylogeneticSolution a) where
 
 
 instance
-  ( ToXML u
-  , ToXML v
-  , ToXML w
-  , ToXML y
-  , ToXML z
-  , HasBlockCost u v w x y z
+  ( HasBlockCost u v w x y z
   , Show n
   , Show u
   , Show v
@@ -177,6 +172,18 @@ instance
   , Show x
   , Show y
   , Show z
+  , TextShow n
+  , TextShow u
+  , TextShow v
+  , TextShow w
+  , TextShow x
+  , TextShow y
+  , TextShow z
+  , ToXML u
+  , ToXML v
+  , ToXML w
+  , ToXML y
+  , ToXML z
   ) => ToXML (PhylogeneticSolution (PhylogeneticDAG2 m e n u v w x y z)) where
 
     toXML soln@(PhylogeneticSolution forests) = xmlElement "Solution" attrs forestContents
