@@ -120,6 +120,7 @@ instance MonadIO m => MonadIO (EvaluationT m) where
 
     liftIO = lift . liftIO
 
+
 -- | (✔)
 instance MonadReader r m => MonadReader r (EvaluationT m) where
 
@@ -139,7 +140,7 @@ instance Monad m => MonadWriter (DList Notification) (EvaluationT m) where
 
     writer = EvaluationT . pure . writer
     listen = EvaluationT . fmap listen . runEvaluation
-    pass   = EvaluationT .  fmap pass . runEvaluation
+    pass   = EvaluationT . fmap pass . runEvaluation
 
 
 -- | (✔)
