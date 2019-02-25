@@ -42,6 +42,7 @@ import           Bio.Sequence.Block
 import qualified Bio.Sequence.Character                        as CS
 import qualified Bio.Sequence.Metadata                         as MD
 import           Control.Arrow                                 ((&&&), (***))
+import           Control.DeepSeq
 import           Control.Lens                                  (over)
 import           Control.Monad.State.Strict
 import           Control.Parallel.Custom
@@ -74,29 +75,28 @@ import           Data.TCM                                      (TCM, TCMStructur
 import qualified Data.TCM                                      as TCM
 import           Data.Text.Short                               (ShortText, toString)
 import qualified Data.Text.Short                               as TS
---import           Data.Vector                                   (Vector)
 import           Data.Vector.NonEmpty                          (Vector)
 import           PCG.Command.Read.Unification.UnificationError
 import           Prelude                                       hiding (lookup, zipWith)
 
 
-data FracturedParseResult
-   = FPR
-   { parsedChars   :: NormalizedCharacters
-   , parsedMetas   :: Maybe (Vector NormalizedMetadata)
-   , parsedForests :: NormalizedForestSet
-   , relatedTcm    :: Maybe (TCM, TCMStructure)
-   , sourceFile    :: FilePath
-   }
+data  FracturedParseResult
+     = FPR
+     { parsedChars   :: NormalizedCharacters
+     , parsedMetas   :: Maybe (Vector NormalizedMetadata)
+     , parsedForests :: NormalizedForestSet
+     , relatedTcm    :: Maybe (TCM, TCMStructure)
+     , sourceFile    :: FilePath
+     }
 
 
-data ParseData
-  = ParseData
-  { dataSequences :: Maybe (NonEmpty FracturedParseResult)
-  , taxaSet       :: Set Identifier
-  , allForests    :: Maybe (NonEmpty FracturedParseResult)
-  , forestTaxa    :: Maybe (NonEmpty ([NonEmpty Identifier], FracturedParseResult))
-  }
+data  ParseData
+    = ParseData
+    { dataSequences :: Maybe (NonEmpty FracturedParseResult)
+    , taxaSet       :: Set Identifier
+    , allForests    :: Maybe (NonEmpty FracturedParseResult)
+    , forestTaxa    :: Maybe (NonEmpty ([NonEmpty Identifier], FracturedParseResult))
+    } deriving (Show)
 
 
 type FileSource = ShortText
@@ -234,8 +234,11 @@ type PartiallyUnififedCharacterSequences a = Map Identifier (NonEmpty (Partially
 --   missing character values to taxa provided in other files.
 joinSequences
   :: ( Functor f
+     , Foldable f
      , Foldable1 t
      , Traversable t
+     , Show (t FracturedParseResult)
+     , Show (t (PartiallyUnififedCharacterSequences (Maybe (TCM, TCMStructure))))
      )
   => f (t FracturedParseResult)
   -> f (Maybe UnifiedMetadataSequence, Map ShortText UnifiedCharacterSequence)
@@ -338,10 +341,12 @@ joinSequences = fmap (collapseAndMerge . performMetadataTransformations . derive
 deriveCharacterNames
   :: ( Foldable1 t
      , Traversable t
+     , Show (t FracturedParseResult)
+     , Show (t (PartiallyUnififedCharacterSequences (Maybe (TCM, TCMStructure))))
      )
   => t FracturedParseResult
   -> t (PartiallyUnififedCharacterSequences (Maybe (TCM, TCMStructure)))
-deriveCharacterNames xs = (`evalState` charNames) $ traverse g xs
+deriveCharacterNames xs = (`evalState` charNames) . traverse g $ xs
     -- TODO: Use assignCharacterNames
   where
     g :: FracturedParseResult
@@ -357,18 +362,19 @@ deriveCharacterNames xs = (`evalState` charNames) $ traverse g xs
         put remainingNames
         pure $ charMapToSplitValues localNames <$> parsedChars fpr
       where
-        localMetadata = parsedMetas fpr
+        localMetadata = foldMap toList $ parsedMetas fpr
 
         charMapToSplitValues
           :: [CharacterName]
           -> Vector NormalizedCharacter
           -> NonEmpty (PartiallyUnififedCharacterSequence (Maybe (TCM, TCMStructure)))
-        charMapToSplitValues characterNames x = NE.fromList $ zip5
-                (toList x)
-                (foldMap toList localMetadata)
-                (repeat (fromString . sourceFile $ fpr))
-                (repeat (relatedTcm fpr))
-                characterNames
+        charMapToSplitValues characterNames v = NE.fromList $ zip5 a b c d e
+          where
+            a = toList v
+            b = localMetadata
+            c = let x = force . fromString $ sourceFile fpr in repeat x
+            d = let x = force              $ relatedTcm fpr in repeat x
+            e = characterNames
 
 --    charNames :: Foldable1 f => f CharacterName
     charNames = makeCharacterNames $ foldMap1 nameTransform xs

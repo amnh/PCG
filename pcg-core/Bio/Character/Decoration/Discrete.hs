@@ -41,12 +41,16 @@ import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
 import Control.Lens
 import Data.Range
+import Data.String
 import Numeric.Extended
 import Text.XML
+import TextShow                        (TextShow (showb))
+
 
 -- |
 -- General, concrete type for 'Discrete' characters.
 newtype DiscreteDecoration c = DiscreteDec { discreteDecorationCharacter :: c }
+
 
 -- |
 -- A 'Lens' for the 'discreteCharacter' field
@@ -73,6 +77,11 @@ class DiscreteCharacterDecoration s a => SimpleDiscreteCharacterDecoration s a |
 instance Show c => Show (DiscreteDecoration c) where
 
     show = show . (^. discreteCharacter)
+
+
+instance TextShow c => TextShow (DiscreteDecoration c) where
+
+    showb = showb . (^. discreteCharacter)
 
 
 -- | (✔)

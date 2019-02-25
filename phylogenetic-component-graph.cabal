@@ -330,10 +330,10 @@ library pcg-alphabet
   exposed-modules:
     Data.Alphabet
     Data.Alphabet.IUPAC
+    Data.Alphabet.Special
  
   other-modules:
     Data.Alphabet.Internal
-    Data.Alphabet.Special
 
 
 -- A library for performing parsimony analysis.

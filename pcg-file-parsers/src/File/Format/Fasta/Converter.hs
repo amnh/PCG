@@ -21,14 +21,15 @@ module File.Format.Fasta.Converter
   ) where
 
 import           Data.Alphabet.IUPAC
+import           Data.Alphabet.Special
 import qualified Data.Bimap                 as BM
-import           Data.List                         (intercalate, partition)
+import           Data.List                  (intercalate, partition)
 import           Data.Map                   hiding (filter, foldr, null, partition)
-import qualified Data.Vector                as V   (fromList)
+import qualified Data.Vector                as V (fromList)
 import           File.Format.Fasta.Internal
 import           File.Format.Fasta.Parser
-import           Text.Megaparsec                   (MonadParsec)
-import           Text.Megaparsec.Custom            (fails)
+import           Text.Megaparsec            (MonadParsec)
+import           Text.Megaparsec.Custom     (fails)
 
 
 -- |
@@ -57,10 +58,15 @@ validateStreamConversion seqType xs =
     result = containsIncorrectChars <$> xs
     hasErrors = not . null . snd
     containsIncorrectChars (FastaSequence name seq') = (name, f seq')
-    f = g seqType
-    g AminoAcid = filter (not . (`elem` iupacAminoAcidChars ))
-    g DNA       = filter (not . (`elem` iupacNucleotideChars))
-    g RNA       = filter (not . (`elem` iupacRNAChars       ))
+
+    f = case seqType of
+          AminoAcid -> h iupacToAminoAcid
+          DNA       -> h iupacToDna
+          RNA       -> h iupacToRna
+      where
+        h bm = let s = keysSet $ BM.toMap bm
+               in  filter ((`notElem` s) . pure . pure)
+
     errorMessage (name,badChars) = concat
         [ "In the sequence for taxon: '"
         , name

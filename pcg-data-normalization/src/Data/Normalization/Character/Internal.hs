@@ -14,12 +14,15 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass       #-}
+{-# LANGUAGE DeriveGeneric        #-}
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE StrictData           #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
 module Data.Normalization.Character.Internal where
 
+import           Control.DeepSeq
 import           Data.Alphabet
 import           Data.Foldable
 import           Data.List.NonEmpty   (NonEmpty)
@@ -30,6 +33,7 @@ import           Data.String          (IsString (fromString))
 import           Data.Text.Short      (ShortText)
 import           Data.Vector.NonEmpty (Vector)
 import           File.Format.Fastc    (CharacterSequence)
+import           GHC.Generics
 
 
 -- |
@@ -40,6 +44,7 @@ type NormalizedCharacters = Map Identifier NormalizedCharacterCollection
 -- |
 -- Represents a character sequence containing possibly-missing character data.
 type NormalizedCharacterCollection = Vector NormalizedCharacter
+
 
 -- |
 -- The string value that uniquely identifies a taxon.
@@ -54,7 +59,7 @@ data NormalizedCharacter
    = NormalizedContinuousCharacter (Maybe Double)
    | NormalizedDiscreteCharacter   (Maybe (AmbiguityGroup ShortText))
    | NormalizedDynamicCharacter    (Maybe (NonEmpty (AmbiguityGroup ShortText)))
-   deriving (Eq, Show)
+   deriving (Eq, Ord, Generic, NFData, Show)
 
 
 parsedDynamicCharacterFromShortText :: ShortText -> NormalizedCharacter

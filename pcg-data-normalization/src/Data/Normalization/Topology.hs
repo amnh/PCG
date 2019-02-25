@@ -12,6 +12,8 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass    #-}
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
 
@@ -27,6 +29,7 @@ module Data.Normalization.Topology
 import           Bio.Graph
 import           Bio.Graph.ReferenceDAG
 import           Control.Arrow                    (first, (&&&))
+import           Control.DeepSeq
 import           Data.Coerce                      (coerce)
 import           Data.EdgeLength
 import           Data.Foldable
@@ -53,6 +56,7 @@ import           File.Format.TNT
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot       hiding (EdgeLength)
 import qualified File.Format.VertexEdgeRoot       as VER
+import           GHC.Generics                     (Generic)
 import           Prelude                          hiding (lookup)
 
 
@@ -74,6 +78,7 @@ type NormalizedForestSet = Maybe (NonEmpty (PhylogeneticForest NormalizedTree))
 -- |
 -- An internal type for representing a node with a unique numeric identifier.
 data NewickEnum = NE !Int (Maybe NodeLabel) (Maybe Double) [NewickEnum]
+    deriving (Eq, Ord, Generic, NFData, Show)
 
 
 -- |

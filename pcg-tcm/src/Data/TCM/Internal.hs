@@ -142,7 +142,7 @@ data TCMStructure
    | UltraMetric
    | Additive
    | NonAdditive
-   deriving (Eq, Show)
+   deriving (Eq, Generic, NFData, Show)
 
 
 -- |
@@ -156,7 +156,7 @@ data TCMDiagnosis
                                     --   the 'factoredWeight'.
    , tcmStructure   :: TCMStructure -- ^ The most restrictive present in the
                                     --   'factoredTcm'.
-   } deriving (Show)
+   } deriving (Eq, Generic, NFData, Show)
 
 
 -- |

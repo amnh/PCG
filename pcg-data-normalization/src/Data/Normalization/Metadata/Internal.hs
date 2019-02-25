@@ -12,6 +12,8 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass        #-}
+{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
@@ -19,6 +21,7 @@
 
 module Data.Normalization.Metadata.Internal where
 
+import           Control.DeepSeq
 import           Data.Alphabet
 import           Data.Foldable
 import           Data.List.Utility            (transpose)
@@ -29,6 +32,7 @@ import           Data.TCM                     (TCM, TCMStructure (..))
 import           Data.Text.Short              (ShortText)
 import           Data.Vector.NonEmpty         (Vector)
 import qualified Data.Vector.NonEmpty         as VNE
+import           GHC.Generics
 import           Prelude                      hiding (zip, zipWith)
 
 
@@ -42,7 +46,7 @@ data NormalizedMetadata
    , parsedTCM     :: Maybe (TCM, TCMStructure)
    , isDynamic     :: Bool
    , isIgnored     :: Bool
-   } deriving (Show)
+   } deriving (Eq, Generic, NFData, Show)
 
 
 -- |
