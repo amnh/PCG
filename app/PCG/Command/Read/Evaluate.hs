@@ -27,7 +27,7 @@ import qualified Data.List.NonEmpty                        as NE
 import           Data.List.Utility                         (occurances)
 import           Data.Map                                  (Map, updateLookupWithKey)
 import qualified Data.Map                                  as M
-import           Data.Maybe                                (catMaybes, mapMaybe)
+import           Data.Maybe                                (mapMaybe)
 import           Data.Normalization.Character
 import           Data.Normalization.Metadata
 import           Data.Normalization.Topology

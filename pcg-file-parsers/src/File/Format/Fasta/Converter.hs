@@ -21,9 +21,10 @@ module File.Format.Fasta.Converter
   ) where
 
 import           Data.Alphabet.IUPAC
-import           Data.Alphabet.Special
 import qualified Data.Bimap                 as BM
 import           Data.List                  (intercalate, partition)
+import           Data.List.NonEmpty         (NonEmpty)
+import qualified Data.List.NonEmpty         as NE
 import           Data.Map                   hiding (filter, foldr, null, partition)
 import qualified Data.Vector                as V (fromList)
 import           File.Format.Fasta.Internal
@@ -44,7 +45,30 @@ data  FastaSequenceType
 -- |
 -- Define and convert a 'FastaParseResult' to the expected sequence type
 fastaStreamConverter :: MonadParsec e s m => FastaSequenceType -> FastaParseResult -> m TaxonSequenceMap
-fastaStreamConverter seqType = fmap (colate seqType) . validateStreamConversion seqType
+fastaStreamConverter seqType =
+    fmap (colate seqType) . validateStreamConversion seqType . processedChars seqType
+
+
+-- |
+-- Since Bimap's are bijective, and there are some elements of the range that are
+-- not surjectively mapped to from the domain
+-- (ie, more than one element on the left side goes to an element on the right side),
+-- this means that we must preprocess these element so that there is a bijective mapping.
+processedChars :: FastaSequenceType -> FastaParseResult -> FastaParseResult
+processedChars seqType = fmap processElement
+  where
+    processElement :: FastaSequence -> FastaSequence
+    processElement (FastaSequence name chars) = FastaSequence name $ replaceSymbol chars
+
+    replaceSymbol :: String -> String
+    replaceSymbol =
+        case seqType of
+          AminoAcid -> replace 'U' 'C'
+          DNA       -> replace 'n' '?'
+          RNA       -> replace 'n' '?'
+
+    replace :: (Functor f, Eq b) => b -> b -> f b -> f b
+    replace a b = fmap $ \x -> if a == x then b else x
 
 
 -- |
@@ -57,22 +81,24 @@ validateStreamConversion seqType xs =
   where
     result = containsIncorrectChars <$> xs
     hasErrors = not . null . snd
-    containsIncorrectChars (FastaSequence name seq') = (name, f seq')
+    containsIncorrectChars (FastaSequence name chars) = (name, f chars)
 
-    f = case seqType of
-          AminoAcid -> h iupacToAminoAcid
-          DNA       -> h iupacToDna
-          RNA       -> h iupacToRna
+    f = filter ((`notElem` s) . pure . pure)
       where
-        h bm = let s = keysSet $ BM.toMap bm
-               in  filter ((`notElem` s) . pure . pure)
+        s  = keysSet $ BM.toMap bm
+        bm = case seqType of
+               AminoAcid -> iupacToAminoAcid
+               DNA       -> iupacToDna
+               RNA       -> iupacToRna
 
-    errorMessage (name,badChars) = concat
+    errorMessage (name, badChars) = concat
         [ "In the sequence for taxon: '"
         , name
         , "' the following invalid characters were found: "
-        , intercalate ", " $ (\c -> '\'':c:"'") <$> badChars
+        , intercalate ", " $ enquote <$> badChars
         ]
+
+    enquote c = '\'' : c : "'"
 
 
 -- |
@@ -89,9 +115,18 @@ colate seqType = foldr f empty
 seqCharMapping :: FastaSequenceType -> String -> CharacterSequence
 seqCharMapping seqType = V.fromList . fmap (f seqType . pure . pure)
   where
-    f AminoAcid = (BM.!) iupacToAminoAcid
-    f DNA       = (BM.!) iupacToDna
-    f RNA       = (BM.!) iupacToRna
+    f :: FastaSequenceType -> NonEmpty String -> NonEmpty String
+    f t = let bm = case t of
+                     AminoAcid -> iupacToAminoAcid
+                     DNA       -> iupacToDna
+                     RNA       -> iupacToRna
+          in (bm .!.)
+
+    (.!.) :: BM.Bimap (NonEmpty String) (NonEmpty String) -> NonEmpty String -> NonEmpty String
+    (.!.) bm i =
+        case BM.lookup i bm of
+          Nothing -> error $ "Could not find key: " <> show i
+          Just v  -> v
 
 
 {-

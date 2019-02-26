@@ -46,7 +46,6 @@ iupacToAminoAcid = toBimap
     , ('R', "R")
     , ('S', "S")
     , ('T', "T")
-    , ('U', "C")
     , ('V', "V")
     , ('W', "W")
     , ('X', "ACDEFGHIKLMNPQRSTVWY")
@@ -93,7 +92,6 @@ iupacToDna = toBimap
     , ('d', "AGT-")
     , ('h', "ACT-")
     , ('v', "ACG-")
-    , ('n', "ACGT-")
     ]
 
 

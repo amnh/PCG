@@ -49,7 +49,7 @@ import           Data.TCM.Dense.FFI                                     (DenseTr
 import           Data.Word
 import           FFI.Character.Exportable
 import           Numeric.Extended.Natural
-import           Prelude                                                hiding (lookup)
+import           Prelude                                                hiding (lookup, zipWith)
 
 
 -- |
@@ -162,6 +162,7 @@ directOptimizationPreorder
   :: ( DirectOptimizationPostorderDecoration d c
      , Bound (Element c) ~ Word
      , Ranged (Element c)
+     , Show (Element c)     
 --     , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
      )
   => PairwiseAlignment c
@@ -214,6 +215,7 @@ updateFromParent
   :: ( DirectOptimizationPostorderDecoration d c
      , Bound (Element c) ~ Word
      , Ranged (Element c)
+     , Show (Element c)     
 --     , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
      )
   => PairwiseAlignment c
@@ -252,6 +254,7 @@ tripleComparison
   :: ( DirectOptimizationPostorderDecoration d c
      , Ranged (Element c)
      , Bound (Element c) ~ Word
+     , Show (Element c)
 --     , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
      )
   => PairwiseAlignment c
@@ -263,10 +266,6 @@ tripleComparison
 tripleComparison pairwiseAlignment meta childDecoration parentCharacter parentSingle =
    {-  trace context () `seq` -} (ungapped, gapped, single)
   where
-    childCharacter    = childDecoration ^. preliminaryGapped
-    childLeftAligned  = childDecoration ^. leftAlignment
-    childRightAligned = childDecoration ^. rightAlignment
-
     -- We conditionally decide how to derive the metric.
     -- If we are working with large alphabets we use the memoized TCM.
     -- Otherwise we use the naive calculations.
@@ -276,34 +275,13 @@ tripleComparison pairwiseAlignment meta childDecoration parentCharacter parentSi
     -- If we have a small alphabet, there will not have been a call to
     -- initialize a memoized TCM. We certainly don't want to force that here!
     costStructure = meta ^. threewayTransitionCostMatrix
-{-
-        case meta ^. sparseTransitionCostMatrix of
-          Just memo -> getMedianAndCost3D memo
-          Nothing   -> naiveMedianAndCost3D
 
-    costStructure =
-        case meta ^. sparseTransitionCostMatrix of
-          Nothing  -> naiveMedianAndCost3D
-          Just tcm -> getMedianAndCost3D tcm
-      where
-        !tcm = meta ^. pairwiseTransitionCostMatrix
-        !gap = gapOfStream parentCharacter
-        !zed = gap `xor` gap
-
-        singletonStates = (zed `setBit`) <$> [0 .. fromEnum (symbolCount zed) - 1]
-
-        naiveMedianAndCost3D a b c = foldl' g (zed, maxBound :: Word) singletonStates
-          where
-            g acc@(combinedState, curentMinCost) singleState =
-                case combinedCost `compare` curentMinCost of
-                  EQ -> (combinedState .|. singleState, curentMinCost)
-                  LT -> (                  singleState, combinedCost)
-                  GT -> acc
-              where
-                combinedCost = sum' $ snd . tcm singleState <$> [a, b, c]
--}
-
-    single = lexicallyDisambiguate $ filterGaps almostSingle
+    -- Collect the relevant child character sequences from the decoration
+    childCharacter    = childDecoration ^. preliminaryGapped
+    childLeftAligned  = childDecoration ^. leftAlignment
+    childRightAligned = childDecoration ^. rightAlignment
+    single            = lexicallyDisambiguate $ filterGaps almostSingle
+    
     (_, ungapped, gapped)  = threeWayMean costStructure extendedParentFinal  extendedLeftCharacter1 extendedRightCharacter1
     (_, almostSingle, _)   = threeWayMean costStructure extendedParentSingle extendedLeftCharacter2 extendedRightCharacter2
 
@@ -430,13 +408,14 @@ insertNewGaps insertionIndicies character = constructDynamic . appendGaps . fold
     f i e =
       case i `lookup` insertionIndicies of
         Nothing -> pure e
-        Just n  -> NE.fromList (replicate n gap) <> pure e
+        Just n  -> gap :| replicate (n-1) gap <> pure e
 
 
 -- |
 -- Calculates the mean character and cost between three supplied characters.
 threeWayMean
   :: ( EncodableDynamicCharacter c
+     , Show (Element c)
      )
   => (Element c -> Element c -> Element c -> (Element c, Word))
   -> c
@@ -446,11 +425,25 @@ threeWayMean
 threeWayMean sigma char1 char2 char3 =
   case invariantTransformation olength [char1, char2, char3] of
     Nothing -> error $ unwords [ "Three sequences supplied to 'threeWayMean' function did not have uniform length.", show (olength char1), show (olength char2), show (olength char3) ]
-    Just 0  -> (0, char1, char1)
-    Just _  -> ( unsafeToFinite   $ sum' costValues
-               , constructDynamic . NE.fromList $ filter (/= gap) meanStates
-               , constructDynamic $ NE.fromList meanStates
-               )
-  where
-    gap = gapOfStream char1
-    (meanStates, costValues) = unzip $ zipWith3 sigma (otoList char1) (otoList char2) (otoList char3)
+    Just _  ->
+      let result = do a <- destructDynamic char1
+                      b <- destructDynamic char2
+                      c <- destructDynamic char3
+                      pure (a, b, c)
+      in  case result of
+            Nothing -> (0, char1, char1)
+            Just (a, b, c) ->
+              let (meanStates, costValues) = NE.unzip $ zipWith ($) (zipWith sigma a b) c
+                  gap  = gapOfStream char1
+              in  case NE.filter (/= gap) meanStates of
+                    []   -> error $ unlines
+                                  [ "The zipped sequence was length zero after filtering gaps!"
+                                  , "Zipped: " <> show (meanStates)
+                                  , "1st :   " <> show a
+                                  , "2nd :   " <> show b
+                                  , "3rd :   " <> show c                                  
+                                  ]
+                    y:ys -> ( unsafeToFinite   $ sum' costValues
+                            , constructDynamic $ y:|ys
+                            , constructDynamic meanStates
+                            )
