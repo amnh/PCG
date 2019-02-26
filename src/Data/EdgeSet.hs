@@ -33,6 +33,7 @@ module Data.EdgeSet
 import           Control.DeepSeq
 import           Data.Foldable
 import           Data.IntSet          (IntSet)
+import qualified Data.IntSet as IS
 import           Data.MonoTraversable (MonoFoldable (..))
 import           Data.Semigroup
 import           Data.Set             (Set)
